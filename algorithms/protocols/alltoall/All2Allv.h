@@ -43,7 +43,7 @@ namespace CCMI
             _app_cb_done(cb_done)
         {
           //pami_task_t self = __global.mapping.task();
-          PAMI::Topology * all = (PAMI::Topology *)_geometry->getTopology(0);
+          PAMI::Topology * all = (PAMI::Topology *)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
           size_t topo_size = all->size();
           TRACE_ADAPTOR((stderr, "<%p>All2AllvProtocol size %zu\n", this, topo_size));
           //_my_index = all->rank2Index(self);

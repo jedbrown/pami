@@ -85,7 +85,7 @@ namespace CCMI
             _dstPwq.reset();
 
             DO_DEBUG(PAMI::Topology all);
-            DO_DEBUG(all = *(PAMI::Topology*)_geometry->getTopology(0));
+            DO_DEBUG(all = *(PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
             DO_DEBUG(for (unsigned j = 0; j < all.size(); ++j) fprintf(stderr, "all[%u]=%zu, size %zu\n", j, (size_t)all.index2Rank(j), all.size()));
 
             _minfo.client               = 0;
@@ -94,8 +94,8 @@ namespace CCMI
             //_minfo.cb_done.clientdata   = _clientdata;
             _minfo.connection_id        = 0;
             _minfo.roles                = -1U;
-            _minfo.results_participants = _geometry->getTopology(0);
-            _minfo.data_participants    = _geometry->getTopology(0);
+            _minfo.results_participants = _geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
+            _minfo.data_participants    = _geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
             _minfo.data                 = (pami_pipeworkqueue_t *) & _srcPwq;
             _minfo.results              = (pami_pipeworkqueue_t *) & _dstPwq;
             _minfo.optor                = cmd->cmd.xfer_allreduce.op;
@@ -226,9 +226,9 @@ namespace CCMI
           _native_g(native_g),
           _geometry((PAMI_GEOMETRY_CLASS*)g)
           {
-            PAMI::Topology  *t_master    = (PAMI::Topology*)_geometry->getLocalMasterTopology();
-            PAMI::Topology  *t_local     = (PAMI::Topology*)_geometry->getLocalTopology();
-            PAMI::Topology  *t_my_master = (PAMI::Topology*)_geometry->getMyMasterTopology();
+            PAMI::Topology  *t_master    = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
+            PAMI::Topology  *t_local     = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
+            PAMI::Topology  *t_my_master = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_MASTER_TOPOLOGY_INDEX);
             bool             amMaster    = _geometry->isLocalMasterParticipant();
             _deviceInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
             // todo:  shared mem may need its own devinfo
@@ -586,9 +586,9 @@ namespace CCMI
               _pwq_src(),
               _pwq_dst(),
               _pwq_temp(),
-              _topology_l((PAMI::Topology*)_geometry->getLocalTopology()),
+              _topology_l((PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX)),
               _topology_lm(_geometry->localMasterParticipant()),
-              _topology_g((PAMI::Topology*)_geometry->getLocalMasterTopology()),
+              _topology_g((PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX)),
               _deviceMcombInfo(NULL),
               _deviceMcastInfo(NULL)
           {

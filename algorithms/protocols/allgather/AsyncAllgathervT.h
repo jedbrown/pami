@@ -123,7 +123,7 @@ namespace CCMI
                          PAMI_GEOMETRY_CLASS            * geometry,
                          void                           *cmd) :
         Executor::Composite(),
-        _executor (native, cmgr, geometry->comm(), (PAMI::Topology*)geometry->getTopology(0)),
+        _executor (native, cmgr, geometry->comm(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)),
         _cmgr(cmgr)
         {
           TRACE_ADAPTOR ((stderr, "<%p>Allgatherv::AsyncAllgathervT() \n",this));

@@ -56,7 +56,7 @@ namespace CCMI
           _deviceInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
 
           PAMI::Topology all;
-          all = *(PAMI::Topology*)_geometry->getTopology(0);
+          all = *(PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
           all.subtractTopology(&_destinations,  &_root);
 
           DO_DEBUG(for (unsigned j = 0; j < _root.size(); ++j) fprintf(stderr, "root[%u]=%zu, size %zu\n", j, (size_t)_root.index2Rank(j), _root.size()));
@@ -165,7 +165,7 @@ namespace CCMI
           _deviceMcastInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
           _deviceMsyncInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID); /// \todo switch to GKEY_MSYNC_CLASSROUTEID
 
-          _all = *(PAMI::Topology*)_geometry->getTopology(0);
+          _all = *(PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
           _all.subtractTopology(&_destinations,  &_root);
 
           DO_DEBUG(for (unsigned j = 0; j < _root.size(); ++j) fprintf(stderr, "root[%u]=%zu, size %zu\n", j, (size_t)_root.index2Rank(j), _root.size()));
@@ -386,9 +386,9 @@ namespace CCMI
         {
           _active_native[0] = NULL;
           _active_native[1] = NULL;
-          PAMI::Topology  *t_master    = (PAMI::Topology*)_geometry->getLocalMasterTopology();
-          PAMI::Topology  *t_local     = (PAMI::Topology*)_geometry->getLocalTopology();
-          PAMI::Topology  *t_my_master = (PAMI::Topology*)_geometry->getMyMasterTopology();
+          PAMI::Topology  *t_master    = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
+          PAMI::Topology  *t_local     = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
+          PAMI::Topology  *t_my_master = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_MASTER_TOPOLOGY_INDEX);
 
           // Discover the root node and intereesting topology information
           size_t           root        = cmd->cmd.xfer_broadcast.root;

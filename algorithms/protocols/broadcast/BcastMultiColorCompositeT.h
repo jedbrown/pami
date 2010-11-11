@@ -22,7 +22,7 @@ namespace CCMI
       ///
       ///  \brief Base class for synchronous broadcasts
       ///
-      template <int NUMCOLORS, class T_Sched, class T_Conn, Executor::GetColorsFn pwcfn, int T_Geometry_Index=PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX>
+      template <int NUMCOLORS, class T_Sched, class T_Conn, Executor::GetColorsFn pwcfn, PAMI::Geometry::topologyIndex_t T_Geometry_Index=PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX>
       class BcastMultiColorCompositeT : public Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>
       {
       public:

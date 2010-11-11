@@ -77,7 +77,7 @@ namespace CCMI
                          void                           *cmd) :
         Executor::Composite(),
         _executor (native, cmgr, geometry->comm()),
-        _schedule (native->myrank(), (PAMI::Topology*)geometry->getTopology(0), 0),
+        _schedule (native->myrank(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0),
         _cmgr(cmgr)
         {
           TRACE_ADAPTOR ((stderr, "<%p>Allreduce::AsyncAllreduceT() \n",this));
@@ -114,7 +114,7 @@ namespace CCMI
                          pami_op                        op ) :
         Executor::Composite(),
         _executor (native, cmgr, geometry->comm()),
-        _schedule (native->myrank(), (PAMI::Topology*)geometry->getTopology(0), 0),
+        _schedule (native->myrank(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0),
         _cmgr(cmgr)
         {
           TRACE_ADAPTOR ((stderr, "<%p>Allreduce::AsyncAllreduceT() \n",this));

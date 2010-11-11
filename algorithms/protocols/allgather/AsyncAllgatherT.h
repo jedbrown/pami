@@ -58,7 +58,7 @@ namespace CCMI
                          PAMI_GEOMETRY_CLASS            * geometry,
                          void                           *cmd) :
         Executor::Composite(),
-        _executor (native, cmgr, geometry->comm(), (PAMI::Topology*)geometry->getTopology(0)),
+        _executor (native, cmgr, geometry->comm(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)),
         _cmgr(cmgr)
         {
           TRACE_ADAPTOR ((stderr, "<%p>Allgather::AsyncAllgatherT() \n",this));
@@ -82,8 +82,8 @@ namespace CCMI
                          pami_type_t                    rtype,
                          size_t                         rtypecount) :
         Executor::Composite(),
-        _executor (native, cmgr, geometry->comm(), (PAMI::Topology*)geometry->getTopology(0)),
-        //_schedule (native->myrank(), (PAMI::Topology*)geometry->getTopology(0), 0),
+        _executor (native, cmgr, geometry->comm(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)),
+        //_schedule (native->myrank(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0),
         _cmgr(cmgr)
         {
           TRACE_ADAPTOR ((stderr, "<%p>Allgather::AsyncAllgatherT() \n",this));

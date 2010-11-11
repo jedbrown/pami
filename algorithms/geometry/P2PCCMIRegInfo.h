@@ -222,7 +222,7 @@ namespace CCMI
                            PAMI_GEOMETRY_CLASS         * g)
       {
         TRACE_INIT((stderr, "<%p>AsyncRBBinomialBroadcastComposite::create_schedule()\n",(void*)NULL));
-        new (buf) CCMI::Schedule::ListMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(0), 0);
+        new (buf) CCMI::Schedule::ListMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0);
       }
 
       unsigned getKey(unsigned                                                root,
@@ -241,7 +241,7 @@ namespace CCMI
                               PAMI_GEOMETRY_CLASS          * g)
       {
         TRACE_INIT((stderr, "<%p>AsyncCSBinomialBroadcastComposite::create_schedule()\n",(void*)NULL));
-        new (buf) CCMI::Schedule::ListMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(0), 0);
+        new (buf) CCMI::Schedule::ListMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0);
       }
 
       unsigned getKey_as(unsigned                                   root,
@@ -303,7 +303,7 @@ namespace CCMI
                            PAMI_GEOMETRY_CLASS          * g)
       {
         TRACE_INIT((stderr, "<%p>AMBinomialBroadcastComposite::create_schedule()\n",(void*)NULL));
-        new (buf) CCMI::Schedule::ListMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(0), 0);
+        new (buf) CCMI::Schedule::ListMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0);
       }
 
       typedef CCMI::Adaptor::AMBroadcast::AMBroadcastT
@@ -436,7 +436,7 @@ namespace CCMI
                              PAMI_GEOMETRY_CLASS          * g)
         {
           TRACE_INIT((stderr, "<%p>AsyncBinomialScatterComposite::create_schedule()\n",(void*)NULL));
-          new (buf) CCMI::Schedule::GenericTreeSchedule<>(native->myrank(), (PAMI::Topology *)g->getTopology(0));
+          new (buf) CCMI::Schedule::GenericTreeSchedule<>(native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
         void binomial_scatter_metadata(pami_metadata_t *m)
@@ -468,7 +468,7 @@ namespace CCMI
                              PAMI_GEOMETRY_CLASS          * g)
         {
           TRACE_INIT((stderr, "<%p>AsyncFlatScatterComposite::create_schedule()\n",(void*)NULL));
-          new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->myrank(), (PAMI::Topology *)g->getTopology(0));
+          new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
         void flat_scatter_metadata(pami_metadata_t *m)
@@ -517,7 +517,7 @@ namespace CCMI
                              PAMI_GEOMETRY_CLASS          * g)
         {
           TRACE_INIT((stderr, "<%p>AsyncScattervComposite::create_schedule()\n",(void*)NULL));
-          new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->myrank(), (PAMI::Topology *)g->getTopology(0));
+          new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
         void scatterv_metadata(pami_metadata_t *m)
@@ -583,7 +583,7 @@ namespace CCMI
                            PAMI_GEOMETRY_CLASS          * g)
       {
         TRACE_INIT((stderr, "<%p>AsyncReduceScatterComposite::create_schedule()\n",(void*)NULL));
-        new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->myrank(), (PAMI::Topology *)g->getTopology(0));
+        new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
       }
 
 
@@ -631,7 +631,7 @@ namespace CCMI
                              PAMI_GEOMETRY_CLASS          * g)
         {
           TRACE_INIT((stderr, "<%p>AsyncBinomialGatherComposite::create_schedule()\n",(void*)NULL));
-          new (buf) CCMI::Schedule::GenericTreeSchedule<> (native->myrank(), (PAMI::Topology *)g->getTopology(0));
+          new (buf) CCMI::Schedule::GenericTreeSchedule<> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
         void binomial_gather_metadata(pami_metadata_t *m)
@@ -664,7 +664,7 @@ namespace CCMI
                                     PAMI_GEOMETRY_CLASS          * g)
         {
           TRACE_INIT((stderr, "<%p>AsyncFlatGatherComposite::create_gather_schedule()\n",(void*)NULL));
-          new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->myrank(), (PAMI::Topology *)g->getTopology(0));
+          new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
         void create_bcast_schedule(void                        * buf,
@@ -674,7 +674,7 @@ namespace CCMI
                                    PAMI_GEOMETRY_CLASS          * g)
         {
           TRACE_INIT((stderr, "<%p>AsyncFlatGatherComposite::create_bcast_schedule()\n",(void*)NULL));
-          new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,2> (native->myrank(), (PAMI::Topology *)g->getTopology(0));
+          new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,2> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
         void flat_gather_metadata(pami_metadata_t *m)
@@ -726,7 +726,7 @@ namespace CCMI
                                      PAMI_GEOMETRY_CLASS          * g)
         {
           TRACE_INIT((stderr, "<%p>AsyncGathervComposite::create_gatherv_schedule()\n",(void*)NULL));
-          new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->myrank(), (PAMI::Topology *)g->getTopology(0));
+          new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
         void create_bcast_schedule(void                        * buf,
@@ -736,7 +736,7 @@ namespace CCMI
                                    PAMI_GEOMETRY_CLASS          * g)
         {
           TRACE_INIT((stderr, "<%p>AsyncGathervComposite::create_bcast_schedule()\n",(void*)NULL));
-          new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,2> (native->myrank(), (PAMI::Topology *)g->getTopology(0));
+          new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,2> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
         void gatherv_metadata(pami_metadata_t *m)
@@ -809,7 +809,7 @@ namespace CCMI
                              PAMI_GEOMETRY_CLASS          * g)
         {
           TRACE_INIT((stderr, "<%p>AsyncBinomialScanComposite::create_schedule()\n",(void*)NULL));
-          new (buf) CCMI::Schedule::GenericTreeSchedule<> (native->myrank(), (PAMI::Topology *)g->getTopology(0));
+          new (buf) CCMI::Schedule::GenericTreeSchedule<> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
         void binomial_scan_metadata(pami_metadata_t *m)
@@ -860,7 +860,7 @@ namespace CCMI
                              PAMI_GEOMETRY_CLASS          * g)
         {
           TRACE_INIT((stderr, "<%p>AsyncBinomialAllgatherComposite::create_schedule()\n",(void*)NULL));
-          new (buf) CCMI::Schedule::GenericTreeSchedule<> (native->myrank(), (PAMI::Topology *)g->getTopology(0));
+          new (buf) CCMI::Schedule::GenericTreeSchedule<> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
         void binomial_allgather_metadata(pami_metadata_t *m)

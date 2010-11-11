@@ -455,7 +455,7 @@ namespace PAMI
 
       inline pami_result_t initCollectives()
         {
-          PAMI::Topology *local_master_topo = (PAMI::Topology *) ((PAMI::Geometry::Lapi *)_world_geometry)->getLocalMasterTopology();
+          PAMI::Topology *local_master_topo = (PAMI::Topology *) ((PAMI::Geometry::Lapi *)_world_geometry)->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
           uint64_t *invec = (uint64_t *)malloc((3 + local_master_topo->size()) * sizeof(uint64_t));
           // for cau classroute initialization
           invec[2]  = 0xFFFFFFFFFFFFFFFFULL;

@@ -130,7 +130,7 @@ namespace CCMI
 
 
               Executor::Composite(),
-              _executor (native, cmgr, geometry->comm(), (PAMI::Topology*)geometry->getTopology(0))
+              _executor (native, cmgr, geometry->comm(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))
           {
             TRACE_ADAPTOR ((stderr, "<%p>Scatter::AsyncScatterT() \n", this));
 

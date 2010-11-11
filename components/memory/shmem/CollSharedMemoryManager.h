@@ -540,8 +540,8 @@ namespace PAMI
         {
 
           PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)geo;
-          PAMI::Topology *local_topo    = (PAMI::Topology *)geometry->getLocalTopology();
-          PAMI::Topology *lm_topo       = (PAMI::Topology *)geometry->getLocalMasterTopology();
+          PAMI::Topology *local_topo    = (PAMI::Topology *)geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
+          PAMI::Topology *lm_topo       = (PAMI::Topology *)geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
 
           uint master_rank              =  local_topo->index2Rank(0);
           uint master_size              =  lm_topo->size();

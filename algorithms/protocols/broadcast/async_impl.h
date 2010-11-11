@@ -45,7 +45,7 @@ namespace CCMI
                            Interfaces::NativeInterface * native,
                            PAMI_GEOMETRY_CLASS          * g)
   {
-    new (buf) CCMI::Schedule::ListMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(0), 0);
+    new (buf) CCMI::Schedule::ListMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0);
   }
 
       unsigned getKey(unsigned                                                root,

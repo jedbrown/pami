@@ -470,7 +470,7 @@ namespace PAMI
         if (_contextid == 0)
         {
 
-            PAMI::Topology *local_master_topo = (PAMI::Topology *) _world_geometry->getLocalMasterTopology();
+            PAMI::Topology *local_master_topo = (PAMI::Topology *) _world_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
             uint64_t *invec = (uint64_t *)malloc((local_master_topo->size()) * sizeof(uint64_t));
             for (size_t i = 0; i < local_master_topo->size(); ++i)  invec[i] = 0ULL;
 
@@ -488,7 +488,7 @@ namespace PAMI
                          __global.mapping,
                          &_dispatch_id);
 
-            if(((PAMI::Topology*)_world_geometry->getTopology(0))->isLocal() && _coll_shm_registration)
+            if(((PAMI::Topology*)_world_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->isLocal() && _coll_shm_registration)
                  _coll_shm_registration->analyze_global(_contextid, _world_geometry, invec);
             else _bgq2d_registration->analyze_global(_contextid, _world_geometry, invec);
 
@@ -514,7 +514,7 @@ namespace PAMI
         _ccmi_registration =  new(_ccmi_registration) CCMIRegistration(_client, _context, _contextid, _clientid, _devices->_shmem[_contextid], _devices->_mu[_contextid], _protocol, __global.useshmem(), __global.useMU(), __global.topology_global.size(), __global.topology_local.size(), &_dispatch_id, _geometry_map);
 
         // Can only use shmem pgas if the geometry is all local tasks, so check the topology
-        if (_pgas_shmem_registration && ((PAMI::Topology*)_world_geometry->getTopology(0))->isLocal()) _pgas_shmem_registration->analyze(_contextid, _world_geometry, 0);
+        if (_pgas_shmem_registration && ((PAMI::Topology*)_world_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->isLocal()) _pgas_shmem_registration->analyze(_contextid, _world_geometry, 0);
 
         // Can always use MU if it's available
         if (_pgas_mu_registration) _pgas_mu_registration->analyze(_contextid, _world_geometry, 0);
@@ -1018,7 +1018,7 @@ namespace PAMI
       {
         TRACE_ERR((stderr, "Context::analyze_local context id %zu, geometry %p\n", context_id, geometry));
   #ifdef _COLLSHM
-        if(_coll_shm_registration && ((PAMI::Topology*)geometry->getTopology(0))->isLocal())
+        if(_coll_shm_registration && ((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->isLocal())
             _coll_shm_registration->analyze_local(context_id, geometry, reduce_result);
         else if(_bgq2d_registration) _bgq2d_registration->analyze_global(context_id, geometry, reduce_result);
   #endif // _COLLSHM
@@ -1031,7 +1031,7 @@ namespace PAMI
       {
         TRACE_ERR((stderr, "Context::analyze_global context id %zu, geometry %p\n", context_id, geometry));
   #ifdef _COLLSHM
-        if(_coll_shm_registration && ((PAMI::Topology*)geometry->getTopology(0))->isLocal())
+        if(_coll_shm_registration && ((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->isLocal())
             _coll_shm_registration->analyze_global(context_id, geometry, reduce_result);
         else if(_bgq2d_registration) _bgq2d_registration->analyze_global(context_id, geometry, reduce_result);
   #endif // _COLLSHM
@@ -1046,11 +1046,11 @@ namespace PAMI
 
 // Only analyzed in analyze_local and/or analyze_global
 //#ifdef _COLLSHM
-//        if(_coll_shm_registration && ((PAMI::Topology*)geometry->getTopology(0))->isLocal())
+//        if(_coll_shm_registration && ((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->isLocal())
 //            _coll_shm_registration->analyze(context_id, geometry, phase);
 //#endif
         // Can only use shmem pgas if the geometry is all local tasks, so check the topology
-        if (_pgas_shmem_registration && ((PAMI::Topology*)geometry->getTopology(0))->isLocal())
+        if (_pgas_shmem_registration && ((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->isLocal())
             _pgas_shmem_registration->analyze(_contextid, geometry, phase);
 
         // Can always use MU if it's available

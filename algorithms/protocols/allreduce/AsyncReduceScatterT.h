@@ -69,8 +69,8 @@ namespace CCMI
                          void                           *cmd) :
         Executor::Composite(),
         _reduce_executor (native, cmgr, geometry->comm()),
-        _reduce_schedule (native->myrank(), (PAMI::Topology*)geometry->getTopology(0), 0),
-        _scatter_executor (native, cmgr, geometry->comm(), (PAMI::Topology*)geometry->getTopology(0)),
+        _reduce_schedule (native->myrank(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0),
+        _scatter_executor (native, cmgr, geometry->comm(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)),
         _cmgr(cmgr),
         _sdispls(NULL),
         _scounts(NULL),
@@ -80,7 +80,7 @@ namespace CCMI
         {
           TRACE_ADAPTOR ((stderr, "<%p>Allreduce::AsyncReduceScatterT() \n",this));
 
-          PAMI::Topology *topo = (PAMI::Topology*)geometry->getTopology(0);
+          PAMI::Topology *topo = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
           unsigned root = topo->index2Rank(0);
           coremath func;
           unsigned sizeOfType;
@@ -119,8 +119,8 @@ namespace CCMI
                          pami_op                        op ) :
         Executor::Composite(),
         _reduce_executor (native, cmgr, geometry->comm()),
-        _reduce_schedule (native->myrank(), (PAMI::Topology*)geometry->getTopology(0), 0),
-        _scatter_executor (native, cmgr, geometry->comm(), (PAMI::Topology*)geometry->getTopology(0)),
+        _reduce_schedule (native->myrank(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0),
+        _scatter_executor (native, cmgr, geometry->comm(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)),
         _cmgr(cmgr),
         _sdispls(NULL),
         _scounts(NULL),
@@ -131,7 +131,7 @@ namespace CCMI
           TRACE_ADAPTOR ((stderr, "<%p>Allreduce::AsyncReduceScatterT() \n",this));
           unsigned sizeOfType;
           coremath func;
-          PAMI::Topology *topo = (PAMI::Topology*)geometry->getTopology(0);
+          PAMI::Topology *topo = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
           unsigned root = topo->index2Rank(0);
 
           _reduce_executor.setRoot(root);
@@ -339,7 +339,7 @@ namespace CCMI
 	    T_Composite* a_composite = NULL;
 	    CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *co = NULL;
 	    pami_reduce_scatter_t *a_xfer = (pami_reduce_scatter_t *)&(((pami_xfer_t *)cmd)->cmd.xfer_reduce_scatter);
-            PAMI::Topology *topo = (PAMI::Topology*)geometry->getTopology(0);
+            PAMI::Topology *topo = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
             unsigned root = topo->index2Rank(0);
 
 	    C *cmgr = _cmgr;
@@ -444,7 +444,7 @@ namespace CCMI
 	    int comm = cdata->_comm;
 	    PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry (ctxt, comm);
 
-            PAMI::Topology *topo = (PAMI::Topology*)geometry->getTopology(0);
+            PAMI::Topology *topo = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
             unsigned root = topo->index2Rank(0);
             CCMI_assert(cdata->_root == root);
 
@@ -529,7 +529,7 @@ namespace CCMI
             }
 
             PAMI_GEOMETRY_CLASS *geometry = co->getGeometry();
-            PAMI::Topology *topo = (PAMI::Topology*)geometry->getTopology(0);
+            PAMI::Topology *topo = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
             unsigned root = topo->index2Rank(0);
             if (factory->_native->myrank() == root)
               a_composite->getScatterExecutor().start();

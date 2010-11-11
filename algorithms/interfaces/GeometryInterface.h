@@ -57,8 +57,9 @@ namespace PAMI
       MASTER_TOPOLOGY_INDEX       =  1,  // master/global sub-topology
       LOCAL_TOPOLOGY_INDEX        =  2,  // local sub-topology
       LOCAL_MASTER_TOPOLOGY_INDEX =  3,  // local master sub-topology
-      COORDINATE_TOPOLOGY_INDEX   =  4,  // coordinate (rectangle) topology
-      MAX_NUM_TOPOLOGIES          =  5   // Number of topologies stored
+      COORDINATE_TOPOLOGY_INDEX   =  4,  // coordinate topology (if valid)
+      LIST_TOPOLOGY_INDEX         =  5,  // (optional) rank list topology
+      MAX_NUM_TOPOLOGIES          =  6   // Number of topologies stored
     } topologyIndex_t;             // indices into _topos[] for special topologies
 
     template <class T_Geometry>
@@ -98,11 +99,9 @@ namespace PAMI
       inline void                       generatePermutation();
       inline void                       freePermutation();
       inline unsigned                  *permutation();
-      inline pami_topology_t           *getTopology(int topo_num);
-      inline pami_topology_t           *getLocalTopology();
-      inline pami_topology_t           *getLocalMasterTopology();
+      inline pami_topology_t           *getTopology(topologyIndex_t topo_num);
+      inline pami_topology_t           *createTopology(topologyIndex_t topo_num);
       inline pami_task_t                localMasterParticipant();
-      inline pami_topology_t           *getMyMasterTopology();
       inline bool                       isLocalMasterParticipant();
       inline void                       generatePermutation_sizet();
       inline void                       freePermutation_sizet();
@@ -198,28 +197,15 @@ namespace PAMI
     }; // class Geometry
 
     template <class T_Geometry>
-    inline pami_topology_t* Geometry<T_Geometry>::getTopology(int topo_num)
+    inline pami_topology_t* Geometry<T_Geometry>::getTopology(topologyIndex_t topo_num)
     {
-      PAMI_assertf((topologyIndex_t)topo_num < MAX_NUM_TOPOLOGIES,"topo_num %d",topo_num);
-      return static_cast<T_Geometry*>(this)->getTopology_impl((topologyIndex_t)topo_num);
+      return static_cast<T_Geometry*>(this)->getTopology_impl(topo_num);
     }
 
     template <class T_Geometry>
-    inline pami_topology_t* Geometry<T_Geometry>::getLocalTopology()
+    inline pami_topology_t* Geometry<T_Geometry>::createTopology(topologyIndex_t topo_num)
     {
-      return static_cast<T_Geometry*>(this)->getLocalTopology_impl();
-    }
-
-    template <class T_Geometry>
-    inline pami_topology_t* Geometry<T_Geometry>::getLocalMasterTopology()
-    {
-      return static_cast<T_Geometry*>(this)->getLocalMasterTopology_impl();
-    }
-
-    template <class T_Geometry>
-    inline pami_topology_t* Geometry<T_Geometry>::getMyMasterTopology()
-    {
-      return static_cast<T_Geometry*>(this)->getMyMasterTopology_impl();
+      return static_cast<T_Geometry*>(this)->createTopology_impl(topo_num);
     }
 
     template <class T_Geometry>

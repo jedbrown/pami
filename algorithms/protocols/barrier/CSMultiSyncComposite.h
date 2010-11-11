@@ -39,7 +39,7 @@ namespace CCMI
          _minfo.cb_done.clientdata = cookie;
          _minfo.connection_id      = 0;
          _minfo.roles              = -1U;
-         _minfo.participants       = _geometry->getTopology(0);
+         _minfo.participants       = _geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
 
         }
 

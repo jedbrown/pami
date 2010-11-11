@@ -188,8 +188,8 @@ namespace PAMI
 
               // Check if the full binomial barrier can act as a local or global sub-geometry barrier...
               // that is, we only have one or the other subtopology.
-              PAMI::Topology * local_sub_topology = (PAMI::Topology*) geometry->getLocalTopology();
-              PAMI::Topology * master_sub_topology = (PAMI::Topology*) geometry->getLocalMasterTopology();
+              PAMI::Topology * local_sub_topology = (PAMI::Topology*) geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
+              PAMI::Topology * master_sub_topology = (PAMI::Topology*) geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
               if(master_sub_topology->size() == 1) // no global topology so use binomial locally
                 geometry->setKey(context_id, PAMI::Geometry::CKEY_LOCALBARRIERCOMPOSITE,
                                  (void*)_binomial_barrier_composite);
@@ -216,15 +216,12 @@ namespace PAMI
 
               geometry->setUEBarrier((CCMI::Adaptor::CollectiveProtocolFactory*)&_binomial_barrier_factory);
 
-              PAMI::Topology rectangle = *master_sub_topology;
-              if(rectangle.type() != PAMI_COORD_TOPOLOGY) rectangle.convertTopology(PAMI_COORD_TOPOLOGY);
-              if(rectangle.type() == PAMI_COORD_TOPOLOGY)
+              PAMI::Topology * rectangle = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX);
+              if(rectangle->type() == PAMI_COORD_TOPOLOGY)  // could be EMPTY
               {
-		//#if 0           // currently fails data checks in bcast.c   
                 geometry->addCollective(PAMI_XFER_BROADCAST,
                                         _rectangle_broadcast_factory,
                                         _context_id);
-		//#endif
                 geometry->addCollective(PAMI_XFER_BROADCAST,
                                       _rectangle_1color_broadcast_factory,
                                       _context_id);

@@ -463,7 +463,7 @@ namespace PAMI
                                           rank_slices,
                                           &_geometry_map);
             
-            PAMI::Topology *local_master_topology  = (PAMI::Topology *)new_geometry->getLocalMasterTopology();
+            PAMI::Topology *local_master_topology  = (PAMI::Topology *)new_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
             to_reduce_count = 3 + local_master_topology->size();
             if (to_reduce_count >16) {
                to_reduce = (uint64_t *)malloc(to_reduce_count * sizeof(uint64_t));
@@ -582,7 +582,7 @@ namespace PAMI
                                           tasks,
                                           &_geometry_map);
 
-            PAMI::Topology *local_master_topology  = (PAMI::Topology *)new_geometry->getLocalMasterTopology();
+            PAMI::Topology *local_master_topology  = (PAMI::Topology *)new_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
             to_reduce_count = 3 + local_master_topology->size();
             if (to_reduce_count >16) {
               to_reduce = (uint64_t *)malloc(to_reduce_count * sizeof(uint64_t));

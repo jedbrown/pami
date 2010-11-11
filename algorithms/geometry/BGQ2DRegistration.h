@@ -181,8 +181,8 @@ namespace PAMI
 
           // Get the topology for the local nodes
           // and the topology for the "distributed masters" for the global communication
-          PAMI::Topology *local_topo        = (PAMI::Topology *) (geometry->getLocalTopology());
-          PAMI::Topology *local_master_topo = (PAMI::Topology *) (geometry->getLocalMasterTopology());
+          PAMI::Topology *local_topo        = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX));
+          PAMI::Topology *local_master_topo = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX));
           PAMI_assert(local_topo->size() != 0);
           PAMI_assert(local_master_topo->size() != 0);
 
@@ -269,8 +269,8 @@ namespace PAMI
           if (context_id != 0) return PAMI_SUCCESS;
 
           // This is where we get our reduction result back from the geometry create operation
-          PAMI::Topology *local_master_topo = (PAMI::Topology *) (geometry->getLocalMasterTopology());
-          PAMI::Topology *local_topo        = (PAMI::Topology *)geometry->getLocalTopology();
+          PAMI::Topology *local_master_topo = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX));
+          PAMI::Topology *local_topo        = (PAMI::Topology *)geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
 
           uint master_rank   = local_topo->index2Rank(0);
           uint master_index  = local_master_topo->rank2Index(master_rank);

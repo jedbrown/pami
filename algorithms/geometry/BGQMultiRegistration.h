@@ -649,9 +649,9 @@ namespace PAMI
         /// \todo These are really 'must query' protocols and should not be added to the regular protocol list
         TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() phase %d, context_id %zu, geometry %p, msync %p, mcast %p, mcomb %p\n", this, phase, context_id, geometry, &_shmem_msync_factory, &_shmem_mcast_factory, &_shmem_mcomb_factory));
         pami_xfer_t xfer = {0};
-        PAMI::Topology * topology = (PAMI::Topology*) geometry->getTopology(0);
-        PAMI::Topology * local_sub_topology = (PAMI::Topology*) geometry->getLocalTopology();
-        PAMI::Topology * master_sub_topology = (PAMI::Topology*) geometry->getLocalMasterTopology();
+        PAMI::Topology * topology = (PAMI::Topology*) geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
+        PAMI::Topology * local_sub_topology = (PAMI::Topology*) geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
+        PAMI::Topology * master_sub_topology = (PAMI::Topology*) geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
         TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() topology: size() %zu, isLocal() %u/%zu, isGlobal #u/%zu\n", this, topology->size(),  topology->isLocalToMe(), local_sub_topology->size(), master_sub_topology->size()));//,  topology->isGlobal()));
 
         //DO_DEBUG(for (unsigned i = 0; i < topology->size(); ++i) fprintf(stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() topology[%u] = %u\n", this, i, topology->index2Rank(i)););
@@ -693,7 +693,7 @@ namespace PAMI
 //          do
 //          {
 //            // make a local copy of the topology
-//            PAMI::Topology coord_topology = *(PAMI::Topology*) geometry->getTopology(0);
+//            PAMI::Topology coord_topology = *(PAMI::Topology*) geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
 //            coord_topology.convertTopology(PAMI_COORD_TOPOLOGY);
 //            TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Analyze Rectangle type %u\n", this, coord_topology.type()));
 //            if (coord_topology.type() != PAMI_COORD_TOPOLOGY) break; //not a coord? then not a line
@@ -709,7 +709,8 @@ namespace PAMI
 //          } while (0);
 
           // Is there a coordinate topology? Try rectangle protocols
-          if(geometry->getTopology(PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX) != NULL)
+          PAMI::Topology * rectangle = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX);
+          if(rectangle->type() == PAMI_COORD_TOPOLOGY)  // could be EMPTY
           {
             TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register Rectangle\n", this));
             //Add a rectangle broadcasts
@@ -791,7 +792,7 @@ namespace PAMI
                 do
                 {
                   // make a local copy of the topology
-                  PAMI::Topology coord_topology = *(PAMI::Topology*) geometry->getTopology(0);
+                  PAMI::Topology coord_topology = *(PAMI::Topology*) geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
                   coord_topology.convertTopology(PAMI_COORD_TOPOLOGY);
                   TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register Axial (line) type %u\n", this, coord_topology.type()));
                   if (coord_topology.type() != PAMI_COORD_TOPOLOGY) break; //not a coord? then not a line

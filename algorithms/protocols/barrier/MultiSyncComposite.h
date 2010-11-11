@@ -15,7 +15,7 @@ namespace CCMI
     namespace Barrier
     {
 
-      template <int T_Geometry_Index=PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX>
+      template <PAMI::Geometry::topologyIndex_t T_Geometry_Index=PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX>
       class MultiSyncComposite : public CCMI::Executor::Composite
       {
         protected:
@@ -88,8 +88,8 @@ namespace CCMI
               _geometry((PAMI_GEOMETRY_CLASS*)g),
               _deviceInfo(NULL)
           {
-            PAMI::Topology  *t_master    = (PAMI::Topology*)_geometry->getLocalMasterTopology();
-            PAMI::Topology  *t_local     = (PAMI::Topology*)_geometry->getLocalTopology();
+            PAMI::Topology  *t_master    = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
+            PAMI::Topology  *t_local     = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
 
             _minfo_l0.connection_id      = 0;
             _minfo_l0.roles              = -1U;
@@ -215,8 +215,8 @@ namespace CCMI
             _cb_done.clientdata = cookie;
 
             TRACE_ADAPTOR((stderr, "<%p> MultiSync2Composite (_cb_done.function %p, _cb_done.clientdata %p)\n", this,_cb_done.function,_cb_done.clientdata));
-            PAMI::Topology  *t_master    = (PAMI::Topology*)_geometry->getLocalMasterTopology();
-            PAMI::Topology  *t_local     = (PAMI::Topology*)_geometry->getLocalTopology();
+            PAMI::Topology  *t_master    = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
+            PAMI::Topology  *t_local     = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
 
             _local_barrier  = (CCMI::Executor::Composite *)_geometry->getKey((size_t)0, /// \todo does NOT support multicontext
                                                                             PAMI::Geometry::CKEY_LOCALBARRIERCOMPOSITE);

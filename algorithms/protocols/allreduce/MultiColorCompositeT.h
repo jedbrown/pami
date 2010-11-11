@@ -86,7 +86,7 @@ namespace CCMI
 
             Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::
             initialize (((PAMI_GEOMETRY_CLASS *)g)->comm(),
-                        (PAMI::Topology*)((PAMI_GEOMETRY_CLASS *)g)->getTopology(0),
+                        (PAMI::Topology*)((PAMI_GEOMETRY_CLASS *)g)->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX),
                         (unsigned) - 1,/*((pami_allreduce_t *)cmd)->root,*/
                         bytes,
                         ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.sndbuf,

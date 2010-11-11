@@ -74,7 +74,7 @@ namespace CCMI
           _minfo.cb_done.clientdata = cookie;
           _minfo.connection_id      = 0;
           _minfo.roles              = -1U;
-          _minfo.dst_participants   = (pami_topology_t *)_geometry->getTopology(0);
+          _minfo.dst_participants   = (pami_topology_t *)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
           _minfo.src_participants   = (pami_topology_t *)&_root_topo;
           _minfo.src                = (pami_pipeworkqueue_t *)&_pwq;
           _minfo.dst                = (pami_pipeworkqueue_t *)&_pwq;

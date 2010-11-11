@@ -190,8 +190,8 @@ namespace PAMI
 
             // Get the topology for the local nodes
             // and the topology for the "distributed masters" for the global communication
-            PAMI::Topology *local_topo        = (PAMI::Topology *) (geometry->getLocalTopology());
-            PAMI::Topology *local_master_topo = (PAMI::Topology *) (geometry->getLocalMasterTopology());
+            PAMI::Topology *local_topo        = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
+            PAMI::Topology *local_master_topo = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX));
             PAMI_assert(local_topo->size() != 0);
             PAMI_assert(local_master_topo->size() != 0);
 
@@ -296,7 +296,7 @@ namespace PAMI
             // Parse the topologies to determine if we are going to call the group
             // create on the cau.
             pami_task_t *rl = NULL;
-            PAMI::Topology *local_master_topo = (PAMI::Topology *) (geometry->getLocalMasterTopology());
+            PAMI::Topology *local_master_topo = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX));
             pami_result_t   rc                = local_master_topo->rankList(&rl);
             uint            num_tasks         = local_master_topo->size();
             uint           *tasks             = (uint*)rl;
@@ -327,7 +327,7 @@ namespace PAMI
             geometry->setKey(Geometry::GKEY_MCOMB_CLASSROUTEID,gi);
             geometry->setKey(Geometry::GKEY_MSYNC_CLASSROUTEID,gi);
 
-            uint master_rank   = ((PAMI::Topology *)geometry->getLocalTopology())->index2Rank(0);
+            uint master_rank   = ((PAMI::Topology *)geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX))->index2Rank(0);
             uint master_index  = local_master_topo->rank2Index(master_rank);
             void *ctrlstr      = (void *)in[master_index+1];
             if (ctrlstr == NULL)

@@ -64,7 +64,7 @@ namespace CCMI
        * \param[IN] phase : phase of the collective
        * \retval topology : the topolgy that sends messages to me in this phase
        */
-      virtual Toplogy *getSrcTopology (unsigned  phase) = 0;
+      virtual Topology *getSrcTopology (unsigned  phase) = 0;
 
       /**
        * \brief Get the downstream processors to send data to.

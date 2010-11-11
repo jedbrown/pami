@@ -801,7 +801,7 @@ namespace PAMI
         uint                       to_reduce_count;
         TRACE_ERR((stderr, "<%p:%zu>BGQ::Client::start_barrier() context %p\n", this, _clientid, context));
 
-        PAMI::Topology *local_master_topology  = (PAMI::Topology *)new_geometry->getLocalMasterTopology();
+        PAMI::Topology *local_master_topology  = (PAMI::Topology *)new_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
         to_reduce_count = local_master_topology->size();
 
         to_reduce = (uint64_t *)malloc(to_reduce_count * sizeof(uint64_t));

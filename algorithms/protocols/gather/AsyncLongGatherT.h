@@ -65,7 +65,7 @@ namespace CCMI
                          void                           *cmd) :
         Executor::Composite(),
         _bcast_executor (native, cmgr, geometry->comm()),
-        _gather_executor (native, cmgr, geometry->comm(), (PAMI::Topology*)geometry->getTopology(0)),
+        _gather_executor (native, cmgr, geometry->comm(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)),
         _cmgr(cmgr)
         {
           TRACE_ADAPTOR ((stderr, "<%p>Gather::AsyncLongGatherT() \n",this));

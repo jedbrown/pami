@@ -73,7 +73,7 @@ namespace CCMI
       ///
       /// \brief Binomial barrier
       ///
-      template <class T_Schedule, AnalyzeFn afn, int T_Geometry_Index=PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX, PAMI::Geometry::ckeys_t T_Key=PAMI::Geometry::CKEY_BARRIERCOMPOSITE1>
+      template <class T_Schedule, AnalyzeFn afn, PAMI::Geometry::topologyIndex_t T_Geometry_Index=PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX, PAMI::Geometry::ckeys_t T_Key=PAMI::Geometry::CKEY_BARRIERCOMPOSITE1>
       class BarrierT : public CCMI::Executor::Composite
       {
           ///
