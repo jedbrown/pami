@@ -28,8 +28,10 @@
 #include "components/devices/shmemcoll/ShaddrMcstMessage.h"
 #include "components/devices/shmemcoll/ShmemDescMessage.h"
 
+#undef TRACE_ERR
+
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) // fprintf x
+#define TRACE_ERR(x)  fprintf x
 #endif
 
 #define SHORT_MCST_OPT
@@ -69,6 +71,7 @@ namespace PAMI
 	//currently assume all the processes local to the node are participating
 	//identify the peers by the local tasks
 	TRACE_ERR((stderr, "posting multicast descriptor\n"));
+	fprintf(stderr, "posting multicast descriptor from the model\n");
 
 	PAMI::Topology *src_topo = (PAMI::Topology *)mcast->src_participants;
 	PAMI::Topology *dst_topo = (PAMI::Topology *)mcast->dst_participants;

@@ -39,7 +39,7 @@
 #undef TRACE_ERR
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) // fprintf x
+#define TRACE_ERR(x)  fprintf x
 #endif
 
 #define MATCH_DISPATCH_SIZE	256
@@ -152,25 +152,42 @@ namespace PAMI
               __global.mapping.node2peer (address, me);
               TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() me = %zu\n", me));
 
-        // will there always be a "0"?
-        local_barriered_shmemzero((void *)ncontexts, size, npeers, me == 0);
-        ncontexts[me] = n;
-        __sync_fetch_and_add(&ncontexts[npeers], 1);
-        mem_sync(); // paranoia?
-        while (ncontexts[npeers] < npeers);
-        mem_sync(); // paranoia?
-        //size_t total_fifos_on_node = 0;
-              size_t total_desc_fifos = 0;
-              // Assign fifo indexes to the peer fnum cache while computing total
-        for (i = 0; i < npeers; i++)
-        {
-    // This should only be done by one peer, but all write the same data
-    // and this way no extra synchronization is needed.
-    peer_fnum[i] = total_desc_fifos;
-          total_desc_fifos += ncontexts[i];
-        }
+			  // will there always be a "0"?
+              TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() before barriered shmemzero \n"));
+			  local_barriered_shmemzero((void *)ncontexts, size, npeers, me == 0);
+              TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() after barriered shmemzero \n"));
+#if 1
 
-              //T_Desc * all_desc = NULL;
+			  ncontexts[me] = n;
+			  __sync_fetch_and_add(&ncontexts[npeers], 1);
+			  mem_sync(); // paranoia?
+			  while (ncontexts[npeers] < npeers);
+              TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() after getting the total contexts \n"));
+			  mem_sync(); // paranoia?
+			  //size_t total_fifos_on_node = 0;
+			  size_t total_desc_fifos = 0;
+			  // Assign fifo indexes to the peer fnum cache while computing total
+			  for (i = 0; i < npeers; i++)
+			  {
+					  // This should only be done by one peer, but all write the same data
+					  // and this way no extra synchronization is needed.
+					  peer_fnum[i] = total_desc_fifos;
+					  total_desc_fifos += ncontexts[i];
+			  }
+#endif
+#if 0
+				//hack for now..remove later
+			  size_t total_desc_fifos = 0;
+			  for (i = 0; i < npeers; i++)
+			  {
+					  // This should only be done by one peer, but all write the same data
+					  // and this way no extra synchronization is needed.
+					  peer_fnum[i] = total_desc_fifos;
+					  total_desc_fifos += 1;
+			  }
+#endif
+
+			  //T_Desc * all_desc = NULL;
 			  Shmem::ShmemCollDescFifo<T_Desc>* all_desc_fifos = NULL;
               //size = (sizeof(Shmem::ShmemCollDescFifo<T_Desc>)) * total_desc_fifos + 128;
               size = ((sizeof(Shmem::ShmemCollDescFifo<T_Desc>)+128) & 0xffffff80 ) * total_desc_fifos ;

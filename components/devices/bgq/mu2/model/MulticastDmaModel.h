@@ -74,14 +74,15 @@ namespace PAMI
 
 	static const unsigned sizeof_msg = sizeof(InjectDPutMulticast);
 	static const unsigned POLLING = 0x1;
-	
+	static const unsigned LOCAL_MULTICAST = 0x2;
+
 	MulticastDmaModel (MU::Context                 & device, 
 			   pami_result_t               & status) : 
 	  Interface::MulticastModel<MulticastDmaModel, MU::Context, sizeof(InjectDPutMulticast)> (device, status), 
 	  _mucontext(device),
 	  _nActiveRecvs(0),
 	  _nActiveSends(0),
-	  _flags(0) //,
+	  _flags(LOCAL_MULTICAST)//,
 	  //_curBaseAddress(0)
 	  {	    
 	    TRACE_FN_ENTER();
@@ -124,6 +125,13 @@ namespace PAMI
 
 	    initModels ();
 	    TRACE_FN_EXIT();
+	  }
+
+	  void setLocalMulticast (bool val) {
+	    if (!val) 
+	      _flags &= ~(LOCAL_MULTICAST);
+	    else
+	      _flags |= LOCAL_MULTICAST;
 	  }
 
 	  void initModels() {
@@ -222,7 +230,8 @@ namespace PAMI
 									 ll,
 									 ur,
 									 pwq,
-									 length);
+									 length,
+									 _flags & LOCAL_MULTICAST);
 	    	    	    
 	    _sends[_nActiveSends] = msg;
 	    
@@ -244,7 +253,7 @@ namespace PAMI
 	    _nActiveSends ++;
 	    bool done = msg->advance();
 
-	    if (!done && !_flags) {
+	    if (!done && !(_flags & POLLING)) {
 	      _flags |= POLLING;	      
 	      PAMI::Device::Generic::GenericThread *work = new (&_swork) PAMI::Device::Generic::GenericThread(advance, this);
 	      _mucontext.getProgressDevice()->postThread(work);
@@ -286,8 +295,8 @@ namespace PAMI
 	    _mucontext.setBatEntry (_b_batids[connid], paddr);
 	    //}
 
-	    if (_flags == 0) {
-	      _flags = POLLING; 
+	    if ((_flags & POLLING) == 0) {
+	      _flags |= POLLING; 
 	      PAMI::Device::Generic::GenericThread *work = new (&_rwork) PAMI::Device::Generic::GenericThread(advance, this);
 	      _mucontext.getProgressDevice()->postThread(work);
 	    }
@@ -317,7 +326,7 @@ namespace PAMI
 	      model->advance_sends (context);
 	      
 	      if (model->_nActiveRecvs == 0 && model->_nActiveSends ==0) {
-		model->_flags = 0;
+		model->_flags &= ~(POLLING);
 		return PAMI_SUCCESS;
 	      }
 	      return PAMI_EAGAIN;
@@ -386,6 +395,7 @@ namespace PAMI
 	  unsigned                                   _nActiveRecvs;
 	  unsigned                                   _nActiveSends;
 	  unsigned                                   _flags;
+	  bool                                       _processLocal;
 	  uint16_t                                   _b_batids[MAX_COUNTERS];  /// The base address table id for payload
 	  uint16_t                                   _c_batid;             /// The base address table id for counter
 	  MUHWI_Destination_t                        _me;

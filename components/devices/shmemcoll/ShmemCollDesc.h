@@ -183,6 +183,10 @@ namespace PAMI
 			{
 				return _synch_counter.fetch();
 			}
+			inline unsigned done_peers()
+			{
+				return _done_counter.fetch();
+			}
 
 			inline void signal_arrived(){
 				_synch_counter.fetch_and_inc();

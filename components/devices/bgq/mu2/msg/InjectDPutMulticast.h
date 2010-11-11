@@ -95,7 +95,17 @@ namespace PAMI
 	///
 	/// \brief Inject descriptor(s) into a specific injection fifo
 	///
-	/// \param[in] injfifo Specific injection fifo for the descriptor(s)
+	/// \param[in] context the MU context for this message
+	/// \param[in] fn  completion event fn
+	/// \param[in] cookie callback cookie
+	/// \param[in] me  my coordinates as an MUHWI_Destination_t 
+	/// \param[in] ref  the ref of the axial topology
+	/// \param[in] istorus istorus bits
+	/// \param[in] ll  lower left of the axial
+	/// \param[in] ur  upper right of the axial
+	/// \param[in] pwq pipeworkqueue that has data to be consumed
+	/// \param[in] length the totaly number of bytes to be transfered
+	/// \param[in] localMultcast : should this message do local sends
 	///
 	InjectDPutMulticast (MU::Context         & context,
 			     pami_event_function   fn,
@@ -106,7 +116,8 @@ namespace PAMI
 			     pami_coord_t        * ll, 
 			     pami_coord_t        * ur,
 			     PipeWorkQueue       * pwq,
-			     uint32_t              length
+			     uint32_t              length,
+			     uint32_t              localMulticast
 			     ) :
 	  _context (context),
 	  _nextdst (0),
@@ -128,7 +139,8 @@ namespace PAMI
 	      //TRACE_FN_ENTER();
 	      
 	      setupDestinations (me, ref, isTorus, ll, ur);
-	      setupLocalDestinations (me, ref, isTorus, ll, ur);
+	      if (localMulticast)
+		setupLocalDestinations (me, ref, isTorus, ll, ur);
 
 	      //TRACE_FN_EXIT();
 	    };

@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/shmemcoll/ShaddrMcstMessageNonPipe.h
+ * \file components/devices/shmemcoll/ShaddrMcstMessage.h
  * \brief ???
  */
 
-#ifndef __components_devices_shmemcoll_ShaddrMcstMessageNonPipe_h__
-#define __components_devices_shmemcoll_ShaddrMcstMessageNonPipe_h__
+#ifndef __components_devices_shmemcoll_ShaddrMcstMessage_h__
+#define __components_devices_shmemcoll_ShaddrMcstMessage_h__
 
 #include <errno.h>
 #include <sys/uio.h>
@@ -53,7 +53,7 @@ namespace PAMI
 			T_Desc* _my_desc = this->_my_desc;
             T_Desc* _master_desc = this->_master_desc;
 
-			unsigned _my_index = __global.topology_local.rank2Index(__global.mapping.task());
+			//unsigned _my_index = __global.topology_local.rank2Index(__global.mapping.task());
 			unsigned master = _my_desc->get_master();
 
 			void* mybuf;
@@ -66,12 +66,14 @@ namespace PAMI
 
 			unsigned bytes;
 
-			if (_my_index == master){
+			/*if (_my_index == master){
 				while (_master_desc->in_use()){};
 				this->setStatus (PAMI::Device::Done);
 				return PAMI_SUCCESS;
 			}
-			else{
+			else{*/
+			if (((PAMI::Topology*)mcast_params.dst_participants)->isRankMember(__global.mapping.task()))
+			{
 			  	if (this->_master_desc->get_state() != INIT){
                     TRACE_ERR((stderr,"matched desc is not in INIT state\n"));
                      return PAMI_EAGAIN;
@@ -90,8 +92,9 @@ namespace PAMI
 				return PAMI_SUCCESS;
 			}
 
-            TRACE_ERR((stderr, "<< McstMessageShaddr::advance(), return PAMI_EAGAIN\n"));
-            return PAMI_EAGAIN;
+			while (_master_desc->in_use()){};
+			this->setStatus (PAMI::Device::Done);
+			return PAMI_SUCCESS;
           }
 
 

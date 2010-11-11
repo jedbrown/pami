@@ -52,7 +52,8 @@ namespace PAMI
 
 		inline McstMessage (T_Device * device, T_Desc * desc, T_Desc * master_desc,
                                 pami_work_function  work_func, void * work_cookie) :
-		SendQueue::Message (work_func, work_cookie, McstMessage::__done, this, device->getContextOffset()),
+		//SendQueue::Message (work_func, work_cookie, McstMessage::__done, this, device->getContextOffset()),
+		SendQueue::Message (work_func, work_cookie, McstMessage::__done, this, 0),
 		_device (device),
 		_my_desc(desc),
 		_master_desc(master_desc),
