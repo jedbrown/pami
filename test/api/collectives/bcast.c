@@ -144,7 +144,7 @@ int main (int argc, char ** argv)
           printf("# Size(bytes)           cycles    bytes/sec    usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
         }
-      //      if(strcmp(bcast_always_works_md[nalg].name,"RectangleP2PBroadcast")) continue;
+      /*      if(strcmp(bcast_always_works_md[nalg].name,"RectangleP2PBroadcast")) continue; */
       int i, j;
 
       for (i = 1; i <= BUFSIZE; i *= 2)
