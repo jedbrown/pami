@@ -173,9 +173,9 @@ int LapiFunc::load()
     filename = "libpami.so";
 #else
 #ifdef __64BIT__
-    filename = "libpami_r.a(libpami64_r.o)";
+    filename = "libpami_r.a(liblapi64_r.o)";
 #else  // 32-bit
-    filename = "libpami_r.a(libpami_r.o)";
+    filename = "libpami_r.a(liblapi_r.o)";
 #endif
 #endif
 
