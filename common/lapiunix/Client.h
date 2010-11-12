@@ -350,7 +350,7 @@ namespace PAMI
             switch (configuration[i].name)
               {
                 case PAMI_CLIENT_NUM_CONTEXTS:
-                  configuration[i].value.intval = 1;
+                  configuration[i].value.intval = 1;  // will change when multi-endpoint support is available
                   break;
                 case PAMI_CLIENT_CONST_CONTEXTS:
                   configuration[i].value.intval = 1;
@@ -368,14 +368,15 @@ namespace PAMI
                 case PAMI_CLIENT_WTICK:
                   configuration[i].value.doubleval =__global.time.tick();
                   break;
+                case PAMI_GEOMETRY_OPTIMIZE:
+                  result = PAMI_UNIMPL;
+                  break;
                 case PAMI_CLIENT_ACTIVE_CONTEXT:
                   _active_contexts.context_num = _ncontexts;
                   for (int i = 0; i < _ncontexts; i ++)
                     _active_contexts.contexts[i] = (pami_context_t) _contexts[i];
                   configuration[i].value.chararray = (char*)&_active_contexts;
                   break;
-                case PAMI_CLIENT_MEM_SIZE:
-                case PAMI_CLIENT_PROCESSOR_NAME:
                 default:
                 {
                   internal_error_t rc;
@@ -383,7 +384,7 @@ namespace PAMI
                   LapiImpl::Context *cp = (LapiImpl::Context *)lp;
                   rc = (cp->*(cp->pConfigQuery))(configuration);
                   if(rc != SUCCESS)
-                    result = PAMI_INVAL;
+                    result = PAMI_UNIMPL;
                 }
               }
           }
