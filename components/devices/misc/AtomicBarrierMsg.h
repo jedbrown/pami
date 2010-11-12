@@ -128,7 +128,7 @@ public:
 	_gd(&device)
         {
 		char mmkey[PAMI::Memory::MMKEYSIZE];
-		sprintf(mmkey, "/pami-AtomicBarrierMdl-%d-%d",
+		sprintf(mmkey, "/pami-AtomicBarrierMdl-%zd-%zd",
 					_gd->clientId(), _gd->contextId());
 
                 // "default" barrier: all local processes...

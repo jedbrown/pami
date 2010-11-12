@@ -50,17 +50,22 @@ namespace PAMI
           _participants = participants;
           _master = master;
 	  if (T_Counter::isIndirect) {
-	  	char *k = (char *)key;
+		char k[PAMI::Memory::MMKEYSIZE];
+		if (key) {
+			strncpy(k, key, PAMI::Memory::MMKEYSIZE);
+		} else {
+			sprintf(k, "/pami-CounterBarrier-%p", this);
+		}
 	  	unsigned n = strlen(k);
-	  	PAMI_assert_debugf(n + 1 < PAMI::Memory::MMKEYSIZE,
+	  	PAMI_assert_debugf(n + 2 < PAMI::Memory::MMKEYSIZE,
 			"overflow mm key");
+	  	k[n++] = '-';
 	  	k[n+1] = '\0';
           	for (i=0; i<5; i++) {
 			k[n] = "0123456789"[i];
 			new (&_counter[i]) T_Counter();
 			_counter[i].init(mm, k);
 	  	}
-	  	k[n] = '\0'; // repair caller's key
 	  	_control = &_counter[0];
 	  	_lock = &_counter[1];
 	  	_stat = &_counter[3];
