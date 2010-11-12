@@ -82,12 +82,11 @@ namespace PAMI
           size_t tCoord = personality.tCoord ();
           size_t tsize  = personality.tSize ();
 
-          _numActiveRanksLocal = 0;
-          _numActiveRanksGlobal = 0;
-          _numActiveNodesGlobal = 0;
-
           // Calculate the number of potential ranks in this partition.
-          _fullSize = xSize() * ySize() * zSize() * tsize;
+	  size_t fullSize = personality.xSize() *
+				personality.ySize() *
+				personality.zSize() *
+				personality.tSize();
 
           // Use the static portion of the shared memory area (guaranteed to be zeros
           // at this point when it is in shared memory) to anchor pointers to
@@ -146,7 +145,7 @@ namespace PAMI
           // Allocate the map cache from shared memory (in DUAL or VN modes) or from
           // heap (in SMP mode).
           result = mm.memalign((void **)&_mapcache, 16,
-			sizeof(kernel_coords_t) * _fullSize, "/bgp-_mapcache");
+			sizeof(kernel_coords_t) * fullSize, "/bgp-_mapcache");
 	  PAMI_assertf(result == PAMI_SUCCESS, "alloc failed for _mapcache");
 
 
@@ -154,7 +153,7 @@ namespace PAMI
           // Allocate the rank cache from shared memory (in DUAL or VN modes) or from
           // heap (in SMP mode).
           result = mm.memalign((void **)&_rankcache, 16,
-			sizeof(size_t) * _fullSize, "/bgp-_rankcache");
+			sizeof(size_t) * fullSize, "/bgp-_rankcache");
 	  PAMI_assertf(result == PAMI_SUCCESS, "alloc failed for _rankcache");
 
           _max_rank = 0;

@@ -127,16 +127,21 @@ public:
                         AtomicBarrierDev,sizeof(AtomicBarrierMsg<T_Barrier>) >(device, status),
 	_gd(&device)
         {
+		char mmkey[PAMI::Memory::MMKEYSIZE];
+		sprintf(mmkey, "/pami-AtomicBarrierMdl-%d-%d",
+					_gd->clientId(), _gd->contextId());
+
                 // "default" barrier: all local processes...
                 size_t peers = __global.topology_local.size();
                 size_t peer0 = __global.topology_local.index2Rank(0);
                 size_t me = __global.mapping.task();
 		// can't validate ctor, can't tell what memory 'this' points to...
+		// caller needs to do that. (then caller does this, too?)
 		if (!checkDataMm(_gd->getMM())) {
 			status = PAMI_INVAL;
 			return;
 		}
-                _barrier.init(_gd->getMM(), NULL, peers, (peer0 == me)); // problem...
+                _barrier.init(_gd->getMM(), mmkey, peers, (peer0 == me));
 		_queue.__init(_gd->clientId(), _gd->contextId(), NULL, _gd->getContext(), _gd->getMM(), _gd->getAllDevs());
         }
 
