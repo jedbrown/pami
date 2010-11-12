@@ -2383,19 +2383,32 @@ extern "C"
   pami_result_t PAMI_Type_create (pami_type_t * type);
 
   /**
-   * \brief Append a simple contiguous buffer to an existing type identifier
+   * \brief Append simple contiguous buffers to an existing type identifier
    *
-   * \todo doxygen for offset parameter
-   * \todo provide example code
+   * A cursor, starting from 0, tracks the placement of buffers in a type.
+   * Simple buffers are placed by this pseudo-code.
+   *
+   * \code
+   * cursor += offset;
+   * while (count--) {
+   *   Put a contiguous buffer of bytes at the cursor;
+   *   cursor += stride;
+   * }
+   * \endcode
+   *
+   * If \c count is 0, this function simply moves the cursor. It is valid to
+   * move the cursor forward or backward. It is also valid to place overlapping
+   * buffers in a type but the overlapping buffers hold undefined data when
+   * such a type is used in data manipulation.
    *
    * \param[in,out] type   Type identifier to be modified
-   * \param[in]     bytes  Number of contiguous bytes to append
-   * \param[in]     offset Offset from the end of the type to place the buffer
+   * \param[in]     bytes  Number of bytes of each contiguous buffer
+   * \param[in]     offset Offset from the cursor to place the buffers
    * \param[in]     count  Number of buffers
-   * \param[in]     stride Data stride
+   * \param[in]     stride Stride between buffers
    *
-   * \retval PAMI_SUCCESS  The buffer is added to the type.
-   * \retval PAMI_INVAL    The type is complete.
+   * \retval PAMI_SUCCESS  The buffers are added to the type.
+   * \retval PAMI_INVAL    A completed type cannot be modified.
    * \retval PAMI_ENOMEM   Out of memory.
    */
   pami_result_t PAMI_Type_add_simple (pami_type_t type,
@@ -2405,22 +2418,38 @@ extern "C"
                                       size_t      stride);
 
   /**
-   * \brief Append a typed buffer to an existing type identifier
+   * \brief Append typed buffers to an existing type identifier
    *
-   * \todo doxygen for offset parameter
-   * \todo provide example code
+   * A cursor, starting from 0, tracks the placement of buffers in a type.
+   * Typed buffers are placed by this pseudo-code.
+   *
+   * \code
+   * cursor += offset;
+   * while (count--) {
+   *   Put a typed buffer of subtype at the cursor;
+   *   cursor += stride;
+   * }
+   * \endcode
+   *
+   * The cursor movement in \c subtype has no impact to the cursor of \c type.
+   *
+   * If \c count is 0, this function simply moves the cursor. It is valid to
+   * move the cursor forward or backward. It is also valid to place overlapping
+   * buffers in a type but the overlapping buffers hold undefined data when
+   * such a type is used in data manipulation.
    *
    * \warning It is considered \b illegal to append an incomplete type to
    *          another type.
    *
    * \param[in,out] type    Type identifier to be modified
-   * \param[in]     subtype Subtype to append
-   * \param[in]     offset  Offset from the end of the type to place the buffer
+   * \param[in]     subtype Type of each typed buffer
+   * \param[in]     offset  Offset from the cursor to place the buffers
    * \param[in]     count   Number of buffers
-   * \param[in]     stride  Data stride
+   * \param[in]     stride  Stride between buffers
    *
-   * \retval PAMI_SUCCESS  The subtype is added to the type.
-   * \retval PAMI_INVAL    The type is complete or the subtype is incomplete.
+   * \retval PAMI_SUCCESS  The buffers are added to the type.
+   * \retval PAMI_INVAL    A completed type cannot be modified or an incomplete
+   *                       subtype cannot be added.
    * \retval PAMI_ENOMEM   Out of memory.
    */
   pami_result_t PAMI_Type_add_typed (pami_type_t type,
