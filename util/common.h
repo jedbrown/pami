@@ -171,6 +171,7 @@ typedef pami_geometry_t (*pami_mapidtogeometry_fn) (pami_context_t c, int comm);
 
 #ifdef __cplusplus
 #define ENFORCE_CLASS_MEMBER(class,member)	{ PAMI_assert_debug(&((class *)this)->member || true); }
+#define ENFORCE_STATIC_CONST_CLASS_MEMBER(class,member)	{ PAMI_assert_debug(((class *)this)->member || true); }
 #endif // __cplusplus
 
 /*

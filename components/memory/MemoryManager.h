@@ -19,6 +19,7 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
+#include "NativeAtomics.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
@@ -70,13 +71,13 @@ namespace PAMI
 		MemoryManagerSync() { }
 
 		inline size_t addRef() {
-			return __sync_fetch_and_add(&_ref_count, 1);
+			return _ref_count.fetch_and_add(1);
 		}
 		inline size_t rmRef() {
-			return __sync_fetch_and_add(&_ref_count, -1);
+			return _ref_count.fetch_and_sub(1);
 		}
 		inline size_t refCount() {
-			return _ref_count;
+			return _ref_count.fetch();
 		}
 		inline void initDone() { _init_done = 1; }
 
@@ -85,7 +86,7 @@ namespace PAMI
 			while (_init_done == 0) { }
 		}
 	private:
-		volatile size_t _ref_count;
+		PAMI::Atomic::NativeAtomic _ref_count;
 		volatile size_t _init_done;
 	}; // class MemoryManagerSync
 
@@ -222,7 +223,7 @@ namespace PAMI
 	class MemoryManagerHeader {
 	public:
 		MemoryManagerHeader() :
-		_mutex(0),
+		_mutex(),
 		_offset(0),
 		_nmetas(0)
 		{
@@ -238,18 +239,18 @@ namespace PAMI
 		}
 
 		inline void acquire() {
-			while (__sync_fetch_and_add(&_mutex, 1) != 0);
+			while (_mutex.fetch_and_add(1) != 0);
 		}
 
 		inline void release() {
 			mem_sync();
-			_mutex = 0;
+			_mutex.set(0);
 		}
 
 		inline size_t numMetas() { return _nmetas; }
 		inline void setMeta(size_t x) { if (x >= _nmetas) _nmetas = x + 1; }
 	private:
-		volatile size_t _mutex;
+		PAMI::Atomic::NativeAtomic _mutex;
         	volatile size_t _offset; // simple free-space handling
         	volatile size_t _nmetas; // number of _metas[] allocated globally
 	}; // class MemoryManagerHeader
