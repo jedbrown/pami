@@ -34,7 +34,7 @@ namespace PAMI
 
         inline ~BgpMapCache () {};
 
-        inline size_t init (BgpPersonality & personality,
+        inline void init(BgpPersonality & personality,
                             PAMI::Memory::MemoryManager &mm
                             )
         {
@@ -82,7 +82,6 @@ namespace PAMI
           size_t tCoord = personality.tCoord ();
           size_t tsize  = personality.tSize ();
 
-#if 0
           _numActiveRanksLocal = 0;
           _numActiveRanksGlobal = 0;
           _numActiveNodesGlobal = 0;
@@ -95,11 +94,8 @@ namespace PAMI
           // the caches.  Only the master rank will initialize these caches and set the
           // pointers into this structure.  When the non-master ranks on this physical
           // node see the non-zero pointers, they can begin to use them.
-          pami_result_t result = mm.memalign((void **) & cacheAnchorsPtr, 16, sizeof(cacheAnchors_t));
-#warning fixme - shared memory allocation will FAIL in SMP mode - blocksome
-#endif
-          pami_result_t result = mm.memalign((void **)&cacheAnchorsPtr, 0,
-			sizeof(*cacheAnchorsPtr), "/pami-bgp-cacheAnchors");
+          pami_result_t result = mm.memalign((void **)&cacheAnchorsPtr, 16,
+			sizeof(cacheAnchors_t), "/bgp-cacheAnchors");
 	  PAMI_assertf(result == PAMI_SUCCESS, "alloc failed for cacheAnchorsPtr");
 
           // Determine if we are the master rank on our physical node.  Do this
@@ -142,7 +138,6 @@ namespace PAMI
                   cacheAnchorsPtr->done[tt] = 1;
                 }
             }
-#if 0
           // Note:  All nodes allocate the map and rank caches.  When in DUAL or VN modes,
           //        the allocator will return the same address in shared memory,
           //        effectively allocating the physically same buffer.  When in SMP mode,
@@ -150,28 +145,17 @@ namespace PAMI
 
           // Allocate the map cache from shared memory (in DUAL or VN modes) or from
           // heap (in SMP mode).
-#warning fixme - shared memory allocation will FAIL in SMP mode - blocksome
-          //_mapcache = (size_t *) mm.scratchpad_dynamic_area_memalign (16, sizeof(kernel_coords_t) * _fullSize );
-          result = mm.memalign((void **) & _mapcache, 16, sizeof(kernel_coords_t) * _fullSize);
+          result = mm.memalign((void **)&_mapcache, 16,
+			sizeof(kernel_coords_t) * _fullSize, "/bgp-_mapcache");
+	  PAMI_assertf(result == PAMI_SUCCESS, "alloc failed for _mapcache");
 
 
 
           // Allocate the rank cache from shared memory (in DUAL or VN modes) or from
           // heap (in SMP mode).
-#warning fixme - shared memory allocation will FAIL in SMP mode - blocksome
-          //_rankcache = (unsigned *) mm.scratchpad_dynamic_area_memalign ( 16, sizeof(size_t) * _fullSize);
-          result = mm.memalign((void **) & _rankcache, 16, sizeof(size_t) * _fullSize);
-#endif
-
-          // Calculate the number of potential ranks in this partition.
-          size_t fullSize = personality.xSize() *
-                            personality.ySize() *
-                            personality.zSize() *
-                            personality.tSize();
-
-          _mapcache  = (size_t *) (cacheAnchorsPtr + 1);
-          _rankcache = (size_t *) (_mapcache + fullSize);
-
+          result = mm.memalign((void **)&_rankcache, 16,
+			sizeof(size_t) * _fullSize, "/bgp-_rankcache");
+	  PAMI_assertf(result == PAMI_SUCCESS, "alloc failed for _rankcache");
 
           _max_rank = 0;
           _min_rank = (size_t) - 1;
@@ -360,9 +344,6 @@ namespace PAMI
 
               cacheAnchorsPtr->done[personality.tCoord()] = 1;  // Indicate we have seen the info.
             }
-
-          return sizeof(cacheAnchors_t) +
-                 (sizeof(kernel_coords_t) + sizeof(size_t)) * fullSize;
         };
 
         inline size_t * getMapCache ()
