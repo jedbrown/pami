@@ -606,12 +606,10 @@ inline pami_result_t
 CCMI::Schedule::TorusRect::getDstUnionTopology(PAMI::Topology *topology)
 {
   TRACE_FN_ENTER();
-  uint8_t torus_link[PAMI_MAX_DIMS],tmp_torus_link[PAMI_MAX_DIMS];
-  for(int i=0; i<PAMI_MAX_DIMS;++i)
-  {
-    tmp_torus_link[i] = torus_link[i] = 0;
-  }
+  unsigned char torus_link[PAMI_MAX_DIMS] = {0};
+  unsigned char tmp_torus_link[PAMI_MAX_DIMS] = {0};
 
+//  unsigned char risTorus[PAMI_MAX_DIMS];
   PAMI::Topology tmp;
   pami_coord_t tmp_low, tmp_high, tmp_ref;
   pami_coord_t low, high;
@@ -678,7 +676,7 @@ CCMI::Schedule::TorusRect::getDstUnionTopology(PAMI::Topology *topology)
   {
     pami_task_t  tmp_task=0;
     pami_network tmp_type=PAMI_N_TORUS_NETWORK;
-    topology->axial(&tmp_low, &tmp_high, &tmp_ref, tmp_torus_link);
+    topology->axial(&tmp_low, &tmp_high, &tmp_ref, risTorus);
     _map->network2task(&tmp_ref , &tmp_task, &tmp_type);
     DO_DEBUG(for (unsigned j = 0; j < _map->torusDims(); ++j) TRACE_FORMAT("<%u:%p>UNION:: ref task %u, coord[%u]=%zu",_color,this, tmp_task, j, tmp_ref.u.n_torus.coords[j]));
     _map->network2task(&tmp_low , &tmp_task, &tmp_type);

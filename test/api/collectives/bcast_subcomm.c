@@ -20,7 +20,7 @@
 
 #include <pami.h>
 
-#define BUFSIZE 1 //1048576
+#define BUFSIZE 1048576
 #include "../pami_util.h"
 
 
@@ -251,20 +251,17 @@ int main(int argc, char*argv[])
         {
           if (set[k])
             {
-	      if((!strcmp(newbcast_md[nalg].name,"RectangleP2PBroadcast"))||
-		 (!strcmp(newbcast_md[nalg].name,"Rectangle1ColorP2PBroadcast"))) ;
-	      else continue;               if (task_id == root)
+              if (task_id == root)
                 {
                   printf("# Broadcast Bandwidth Test -- root = %d  protocol: %s\n", root, newbcast_md[nalg].name);
                   printf("# Size(bytes)           cycles    bytes/sec    usec\n");
                   printf("# -----------      -----------    -----------    ---------\n");
                 }
 
-
               fflush(stdout);
               blocking_coll(context, &newbarrier, &newbar_poll_flag);
 
-              for (i = BUFSIZE; i <= BUFSIZE; i *= 2)
+              for (i = 1; i <= BUFSIZE; i *= 2)
                 {
                   long long dataSent = i;
                   int          niter = 100;
