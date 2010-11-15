@@ -438,7 +438,8 @@ namespace PAMI
       req->_ni               = this;
       req->_user_callback    = mcast->cb_done;
       TRACE_FORMAT( "<%p> %p/%p connection id %u, msgcount %u, bytes %zu, devinfo %p", this, mcast, req, mcast->connection_id, mcast->msgcount, mcast->bytes,devinfo);
-      DO_DEBUG((templateName<T_Mcast>()));
+      DO_DEBUG((templateName<T_Mcast1>()));
+      DO_DEBUG((templateName<T_Mcast2>()));
       
       //  \todo:  this copy will cause a latency hit, maybe we need to change Multisync
       //          interface so we don't need to copy
