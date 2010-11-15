@@ -694,8 +694,45 @@ namespace PAMI
 
       inline pami_result_t rmw_impl (pami_rmw_t * parameters)
         {
-          PAMI_abort();
-          return PAMI_UNIMPL;
+          LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
+          size_t            len = (PAMI_RMW_KIND_UINT32 == parameters->rmw.kind)?4:8;
+          AtomicOps         op;
+          RMW_input_t       input;
+
+          switch (parameters->rmw.compare | parameters->rmw.assign) {
+            case (PAMI_RMW_COMPARISON_EQUAL | PAMI_RMW_ASSIGNMENT_SET):
+              op = _OP_FETCH_COMPARE_SET;
+              break;
+            case (PAMI_RMW_COMPARISON_NOOP | PAMI_RMW_ASSIGNMENT_SET):
+              op = _OP_FETCH_SET;
+              break;
+            case (PAMI_RMW_COMPARISON_NOOP | PAMI_RMW_ASSIGNMENT_ADD):
+              op = _OP_FETCH_ADD;
+              break;
+            case (PAMI_RMW_COMPARISON_NOOP | PAMI_RMW_ASSIGNMENT_OR):
+              op = _OP_FETCH_OR;
+              break;
+            case (PAMI_RMW_COMPARISON_NOOP | PAMI_RMW_ASSIGNMENT_AND):
+              op = _OP_FETCH_AND;
+              break;
+            default:
+              RETURN_ERR_PAMI(PAMI_INVAL, "Invalid combination of 'compare' and 'assign'\n");
+          }
+
+          if (4 == len) {
+            input.int32.in_val = parameters->rmw.input.int32.value;
+            input.int32.test_val = parameters->rmw.input.int32.test;
+          } else {
+            input.int64.in_val = parameters->rmw.input.int64.value;
+            input.int64.test_val = parameters->rmw.input.int64.test;
+          }
+
+          internal_error_t rc = 
+            (cp->*(cp->pRmw))(parameters->rma.dest, parameters->addr.local, parameters->addr.remote, len, 
+                op, input, *(send_hint_t*)&(parameters->rma.hints), INTERFACE_PAMI,
+                (void*)parameters->rma.done_fn, parameters->rma.cookie, NULL); 
+
+          return PAMI_RC(rc);
         }
 
       inline pami_result_t memregion_create_impl (void             * address,
