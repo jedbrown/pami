@@ -2533,7 +2533,7 @@ extern "C"
    * \param [in] dst_addr       Destination buffer address
    * \param [in] dst_type       Destination data type
    * \param [in] dst_offset     Starting offset of destination data type
-   * \param [in] bytes          Amount of data to transform
+   * \param [in] size           Amount of data to transform
    * \param [in] data_fn        Function to transform the data
    * \param [in] cookie         Argument to data function
    *
