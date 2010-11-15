@@ -36,7 +36,6 @@ protected:
 
 	NativeAtomic() {
 		ENFORCE_STATIC_CONST_CLASS_MEMBER(T_Object,ALIGNMENT);
-		ENFORCE_STATIC_CONST_CLASS_MEMBER(T_Object,LENGTH);
 	}
 	~NativeAtomic() { }
 public:

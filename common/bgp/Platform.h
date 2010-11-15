@@ -17,4 +17,9 @@
 
 #include "Arch.h"
 
+#include "arch/include/bpcore/ppc450_core.h"
+
+/// \brief Constant used to specify alignment in declarations of lwarx/stwcx atomics.
+#define PAMI_BGP_NATIVE_ATOMIC_ALIGN    L1D_CACHE_LINE_SIZE
+
 #endif // __common_bgp_platform_h__

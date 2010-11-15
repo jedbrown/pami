@@ -14,9 +14,13 @@
 #ifndef __common_default_NativeAtomics_h__
 #define __common_default_NativeAtomics_h__
 
+#include "Platform.h"
 #include "common/NativeAtomicsInterface.h"
 
-#define PAMI_DEFAULT_NATIVE_ATOMIC_ALIGN	sizeof(size_t)
+#ifndef PAMI_NATIVE_ATOMIC_ALIGN
+/// \brief Constant for aligning declarations the base atomic (internal only?)
+#define PAMI_NATIVE_ATOMIC_ALIGN	sizeof(size_t)
+#endif // ! PAMI_NATIVE_ATOMIC_ALIGN
 
 namespace PAMI {
 namespace Atomic {
@@ -34,8 +38,8 @@ namespace Atomic {
 
 class NativeAtomic : public PAMI::Interface::NativeAtomic<NativeAtomic> {
 public:
-	static const int ALIGNMENT = PAMI_DEFAULT_NATIVE_ATOMIC_ALIGN; // for in-place decl and indirect alloc
-	static const int LENGTH = sizeof(size_t); // for indirect alloc
+	/// \brief Constant for aligning allocations of this class
+	static const int ALIGNMENT = PAMI_NATIVE_ATOMIC_ALIGN;
 
 	NativeAtomic() { }
 	~NativeAtomic() { }
@@ -107,7 +111,7 @@ public:
 	}
 
 private:
-	volatile size_t _atom __attribute__((__aligned__(PAMI_DEFAULT_NATIVE_ATOMIC_ALIGN)));
+	volatile size_t _atom __attribute__((__aligned__(PAMI_NATIVE_ATOMIC_ALIGN)));
 }; // class NativeAtomic
 
 }; // PAMI::Atomic namespace

@@ -16,6 +16,10 @@
 #define __common_bgq_Platform_h__
 
 #include "Arch.h"
+#include "hwi/include/bqc/A2_core.h"
+
+/// \brief Constant used to specify alignment in declarations of lwarx/stwcx atomics.
+#define PAMI_NATIVE_ATOMIC_ALIGN	L1D_CACHE_LINE_SIZE
 
 // New converged shmem stack:
 //#define _COLLSHM
