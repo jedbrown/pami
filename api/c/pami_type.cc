@@ -147,7 +147,7 @@ pami_result_t PAMI_Type_query (pami_type_t           type,
                                size_t                num_configs)
 {
     TypeCode * type_obj = (TypeCode *)type;
-    if (type_obj->IsCompleted()) {
+    if (!type_obj->IsCompleted()) {
         RETURN_ERR_PAMI(PAMI_INVAL, "Querying an incompleted type.\n");
     }
 
