@@ -39,7 +39,7 @@ namespace Atomic {
 class NativeAtomic : public PAMI::Interface::NativeAtomic<NativeAtomic> {
 public:
 	/// \brief Constant for aligning allocations of this class
-	static const int ALIGNMENT = PAMI_NATIVE_ATOMIC_ALIGN;
+	static const size_t ALIGNMENT = PAMI_NATIVE_ATOMIC_ALIGN;
 
 	NativeAtomic() { }
 	~NativeAtomic() { }

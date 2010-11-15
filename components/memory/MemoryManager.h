@@ -68,6 +68,7 @@ namespace PAMI
 
 	class MemoryManagerSync {
 	public:
+		static const size_t ALIGNMENT = PAMI::Atomic::NativeAtomic::ALIGNMENT;
 		MemoryManagerSync() { }
 
 		inline size_t addRef() {
@@ -124,7 +125,7 @@ namespace PAMI
 	class MemoryManagerAlloc :	public MemoryManagerSync,
 					public MemoryManagerKey {
 	public:
-		static const size_t ALIGNMENT = sizeof(void *);
+		static const size_t ALIGNMENT = MemoryManagerSync::ALIGNMENT;
 		MemoryManagerAlloc() { }
 		virtual ~MemoryManagerAlloc() { }
 
@@ -222,6 +223,7 @@ namespace PAMI
 	///
 	class MemoryManagerHeader {
 	public:
+		static const size_t ALIGNMENT = PAMI::Atomic::NativeAtomic::ALIGNMENT;
 		MemoryManagerHeader() :
 		_mutex(),
 		_offset(0),
@@ -304,13 +306,13 @@ namespace PAMI
 			++z;
 		}
 
-		inline pami_result_t _metaAlloc(void **pptr, size_t len, char tag) {
+		inline pami_result_t _metaAlloc(void **pptr, size_t align, size_t len, char tag) {
 			pami_result_t rc;
 			if (_meta_key_len) {
 				_meta_key_fmt[_meta_key_len] = tag; // replaced on each use
-				rc = _meta_mm->memalign(pptr, 0, len, _meta_key_fmt);
+				rc = _meta_mm->memalign(pptr, align, len, _meta_key_fmt);
 			} else {
-				rc = _meta_mm->memalign(pptr, 0, len, NULL);
+				rc = _meta_mm->memalign(pptr, align, len, NULL);
 			}
 			// PAMI_assertf(rc == PAMI_SUCCESS, "Failed to get memory for meta \"%s\" from \"%s\"", _meta_key_fmt, _meta_mm->getName());
 			return rc;
@@ -319,7 +321,7 @@ namespace PAMI
 		inline pami_result_t _getMeta(size_t x) {
 			pami_result_t rc = PAMI_SUCCESS;
 			if (_metas[x] == NULL) {
-				rc = _metaAlloc((void **)&_metas[x],
+				rc = _metaAlloc((void **)&_metas[x], _metas[x]->ALIGNMENT,
 						MM_META_NUM(x) * sizeof(*_metas[x]),
 						"0123456789"[x]);
 				if (rc == PAMI_SUCCESS) _metahdr->setMeta(x);
@@ -428,7 +430,7 @@ namespace PAMI
 			}
 			pami_result_t rc;
 			if (_pre_alloc) {
-				rc = _metaAlloc((void **)&_metahdr,
+				rc = _metaAlloc((void **)&_metahdr, _metahdr->ALIGNMENT,
 					sizeof(*_metahdr) +
 						MAX_NUM_META() * sizeof(*_metas[0]),
 					'a');
@@ -442,7 +444,7 @@ namespace PAMI
 					mp += MM_META_NUM(x);
 				}
 			} else {
-				rc = _metaAlloc((void **)&_metahdr, sizeof(*_metahdr), 'h');
+				rc = _metaAlloc((void **)&_metahdr, _metahdr->ALIGNMENT, sizeof(*_metahdr), 'h');
 				PAMI_assertf(rc == PAMI_SUCCESS,
 					"Failed to get memory for _metahdr");
 			}
