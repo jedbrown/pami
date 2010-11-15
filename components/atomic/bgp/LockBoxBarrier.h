@@ -20,173 +20,251 @@
  * code common for all granularities.
  */
 #include "common/bgp/LockBoxFactory.h"
-#include "components/atomic/Barrier.h"
+#include "components/atomic/BarrierInterface.h"
 #include "Global.h"
 #include <spi/bgp_SPI.h>
 
-namespace PAMI {
-namespace Barrier {
-namespace BGP {
-/*
- * This class cannot be used directly. The super class must allocate the
- * particular type of lockbox based on desired scope.
- */
-class _LockBoxBarrier {
-private:
-        /**
-         * \brief Base structure for lockbox barrier
-         *
-         * This houses 5 lockboxes which are used to implement
-         * a barrier.
-         */
-        struct LockBox_Barrier_s {
-                union {
-                        uint32_t *lkboxes[5]; /**< access all 5 lockboxes */
-                        struct {
-                                LockBox_Counter_t ctrl_lock; /**< the control lockbox (phase) */
-                                LockBox_Counter_t lock[2]; /**< lock lockboxes for all phases */
-                                LockBox_Counter_t status[2]; /**< status lockboxes for all phases */
-                        } lbx_s;
-                } lbx_u;
-                uint8_t master;    /**< master participant */
-                uint8_t coreshift; /**< convert core to process for comparing to master */
-                uint8_t nparties;  /**< number of participants */
-                uint8_t _pad;      /**< pad to int */
-        };
+namespace PAMI
+{
+  namespace Barrier
+  {
+    namespace BGP
+    {
+      /*
+       * This class cannot be used directly. The super class must allocate the
+       * particular type of lockbox based on desired scope.
+       */
+      class _LockBoxBarrier
+      {
+        private:
+          /**
+           * \brief Base structure for lockbox barrier
+           *
+           * This houses 5 lockboxes which are used to implement
+           * a barrier.
+           */
+          struct LockBox_Barrier_s
+          {
+            union
+            {
+              uint32_t *lkboxes[5]; /**< access all 5 lockboxes */
+              struct
+              {
+                LockBox_Counter_t ctrl_lock; /**< the control lockbox (phase) */
+                LockBox_Counter_t lock[2]; /**< lock lockboxes for all phases */
+                LockBox_Counter_t status[2]; /**< status lockboxes for all phases */
+              } lbx_s;
+            } lbx_u;
+            uint8_t master;    /**< master participant */
+            uint8_t coreshift; /**< convert core to process for comparing to master */
+            uint8_t nparties;  /**< number of participants */
+            uint8_t _pad;      /**< pad to int */
+          };
 #define lbx_lkboxes	lbx_u.lkboxes		/**< shortcut for lkboxes */
 #define lbx_ctrl_lock	lbx_u.lbx_s.ctrl_lock	/**< shortcut for ctrl_lock */
 #define lbx_lock	lbx_u.lbx_s.lock	/**< shortcut for lock */
 #define lbx_status	lbx_u.lbx_s.status	/**< shortcut for status */
-public:
-        _LockBoxBarrier() { }
-        ~_LockBoxBarrier() { }
+        protected:
+          inline _LockBoxBarrier () :
+            _data (NULL),
+            _active (false),
+            _initialized (false)
+          {};
 
-        inline void init_impl(const char *key, size_t z, bool m) {
-                PAMI_abortf("_LockBoxBarrier class must be subclass");
-        }
+          inline ~_LockBoxBarrier () {};
 
-        inline pami_result_t enter_impl() {
-                pollInit_impl();
-                while (poll_impl() != PAMI::Atomic::Interface::Done);
-                return PAMI_SUCCESS;
-        }
+          // -------------------------------------------------------------------
+          // PAMI::Barrier::Interface<T> implementation
+          // -------------------------------------------------------------------
 
-        inline void enterPoll_impl(PAMI::Atomic::Interface::pollFcn fcn, void *arg) {
-                pollInit_impl();
-                while (poll_impl() != PAMI::Atomic::Interface::Done) {
-                        fcn(arg);
-                }
-        }
+          inline void enter_impl()
+          {
+            begin_impl ();
+            while (poll_impl ());
+            end_impl ();
+          }
 
-        inline void pollInit_impl() {
-                uint32_t lockup;
-                _bgp_msync();
-                lockup = LockBox_Query(_barrier.lbx_ctrl_lock);
-                LockBox_FetchAndInc(_barrier.lbx_lock[lockup]);
-                _data = (void*)lockup;
-                _status = PAMI::Atomic::Interface::Entered;
-        }
+          template <class T_Functor>
+          inline void enter_impl(T_Functor & functor)
+          {
+            begin_impl ();
+            while (poll_impl ()) functor ();
+            end_impl ();
+          }
 
-        inline PAMI::Atomic::Interface::barrierPollStatus poll_impl() {
-                PAMI_assert(_status == PAMI::Atomic::Interface::Entered);
-                uint32_t lockup, value;
-                lockup = (unsigned)_data;
-                if (LockBox_Query(_barrier.lbx_lock[lockup]) < _barrier.nparties) {
-                        return PAMI::Atomic::Interface::Entered;
-                }
+          inline void begin_impl()
+          {
+            PAMI_assert(_initialized == true);
+            PAMI_assert(_active == false);
 
-                // All cores have participated in the barrier
-                // We need all cores to block until checkin
-                // to clear the lock atomically
-                LockBox_FetchAndInc(_barrier.lbx_lock[lockup]);
-                do {
-                        value = LockBox_Query(_barrier.lbx_lock[lockup]);
-                } while (value > 0 && value < (unsigned)(2 * _barrier.nparties));
+            uint32_t lockup;
+            _bgp_msync();
+            lockup = LockBox_Query(_barrier.lbx_ctrl_lock);
+            LockBox_FetchAndInc(_barrier.lbx_lock[lockup]);
+            _data = (void*)lockup;
+            _active = true;
+          }
 
-                if ((Kernel_PhysicalProcessorID() >> _barrier.coreshift) == _barrier.master) {
-                        if (lockup) {
-                                LockBox_FetchAndDec(_barrier.lbx_ctrl_lock);
-                        } else {
-                                LockBox_FetchAndInc(_barrier.lbx_ctrl_lock);
-                        }
-                        LockBox_FetchAndClear(_barrier.lbx_status[lockup]);
-                        LockBox_FetchAndClear(_barrier.lbx_lock[lockup]);
-                } else {
-                        // wait until master releases the barrier by clearing the lock
-                        while (LockBox_Query(_barrier.lbx_lock[lockup]) > 0);
-                }
-                _status = PAMI::Atomic::Interface::Initialized;
-                return PAMI::Atomic::Interface::Done;
-        }
-        // With 5 lockboxes used... which one should be returned?
-        inline void *returnBarrier_impl() { return _barrier.lbx_ctrl_lock; }
-protected:
-        LockBox_Barrier_s _barrier;
-        void *_data;
-        PAMI::Atomic::Interface::barrierPollStatus _status;
-}; // class _LockBoxBarrier
+          inline bool poll_impl()
+          {
+            PAMI_assert(_initialized == true);
+            PAMI_assert(_active == true);
 
-class LockBoxNodeCoreBarrier :
-                public PAMI::Atomic::Interface::Barrier<LockBoxNodeCoreBarrier>,
-                public _LockBoxBarrier {
-public:
-        LockBoxNodeCoreBarrier() {}
-        ~LockBoxNodeCoreBarrier() {}
-        inline void init_impl(PAMI::Memory::MemoryManager *mm, const char *key, size_t z, bool m) {
-                // For core-granularity, everything is
-                // a core number. Assume the master core
-                // is the lowest-numbered core in the
-                // process.
-                /** \todo #warning take master cue from params? */
-                _barrier.master = __global.lockboxFactory.masterProc() << __global.lockboxFactory.coreShift();
-                _barrier.coreshift = 0;
-                _barrier.nparties = __global.lockboxFactory.numCore();
-                __global.lockboxFactory.lbx_alloc((void **)_barrier.lbx_lkboxes, 5,
-			key ? PAMI::Atomic::BGP::LBX_NODE_SCOPE : PAMI::Atomic::BGP::LBX_PROC_SCOPE);
-                _status = PAMI::Atomic::Interface::Initialized;
-        }
-	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
-		// This is an indirect object, cannot instantiate in shared memory.
-		return ((mm->attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) == 0);
-	}
-	static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
-		// until a lockbox mm exists
-		return ((mm->attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) != 0);
-		// return ((mm->attrs() & PAMI::Memory::PAMI_MM_LOCKBOX) != 0);
-	}
-}; // class LockBoxNodeCoreBarrier
+            uint32_t lockup, value;
+            lockup = (unsigned)_data;
 
-class LockBoxNodeProcBarrier :
-                public PAMI::Atomic::Interface::Barrier<LockBoxNodeProcBarrier>,
-                public _LockBoxBarrier {
-public:
-        LockBoxNodeProcBarrier() {}
-        ~LockBoxNodeProcBarrier() {}
-        inline void init_impl(PAMI::Memory::MemoryManager *mm, const char *key, size_t z, bool m) {
-                // For proc-granularity, must convert
-                // between core id and process id,
-                // and only one core per process will
-                // participate.
-                _barrier.master = __global.lockboxFactory.coreXlat(__global.lockboxFactory.masterProc()) >> __global.lockboxFactory.coreShift();
-                _barrier.coreshift = __global.lockboxFactory.coreShift();
-                _barrier.nparties = __global.lockboxFactory.numProc();
-                __global.lockboxFactory.lbx_alloc((void **)_barrier.lbx_lkboxes, 5,
-			key ? PAMI::Atomic::BGP::LBX_NODE_SCOPE : PAMI::Atomic::BGP::LBX_PROC_SCOPE);
-                _status = PAMI::Atomic::Interface::Initialized;
-        }
-	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
-		// This is an indirect object, cannot instantiate in shared memory.
-		return ((mm->attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) == 0);
-	}
-	static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
-		// until a lockbox mm exists
-		return ((mm->attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) != 0);
-		// return ((mm->attrs() & PAMI::Memory::PAMI_MM_LOCKBOX) != 0);
-	}
-}; // class LockBoxNodeProcBarrier
+            if (LockBox_Query(_barrier.lbx_lock[lockup]) < _barrier.nparties)
+              {
+                return true;
+              }
 
-}; // BGP namespace
-}; // Barrier namespace
+            // All cores have participated in the barrier
+            // We need all cores to block until checkin
+            // to clear the lock atomically
+            LockBox_FetchAndInc(_barrier.lbx_lock[lockup]);
+
+            do
+              {
+                value = LockBox_Query(_barrier.lbx_lock[lockup]);
+              }
+            while (value > 0 && value < (unsigned)(2 * _barrier.nparties));
+
+            if ((Kernel_PhysicalProcessorID() >> _barrier.coreshift) == _barrier.master)
+              {
+                if (lockup)
+                  {
+                    LockBox_FetchAndDec(_barrier.lbx_ctrl_lock);
+                  }
+                else
+                  {
+                    LockBox_FetchAndInc(_barrier.lbx_ctrl_lock);
+                  }
+
+                LockBox_FetchAndClear(_barrier.lbx_status[lockup]);
+                LockBox_FetchAndClear(_barrier.lbx_lock[lockup]);
+              }
+            else
+              {
+                // wait until master releases the barrier by clearing the lock
+                while (LockBox_Query(_barrier.lbx_lock[lockup]) > 0);
+              }
+
+            _active = false;
+            return false;
+          }
+
+          inline void end_impl ()
+          {
+            PAMI_assert(_initialized == true);
+            //PAMI_assert(_active == false);   // ???
+            // noop
+          };
+
+          LockBox_Barrier_s   _barrier;
+          void              * _data;
+          bool                _active;
+          bool                _initialized;
+
+      }; // class _LockBoxBarrier
+
+      class LockBoxNodeCoreBarrier :
+          public PAMI::Barrier::Interface<LockBoxNodeCoreBarrier>,
+          public PAMI::Atomic::Indirect<LockBoxNodeCoreBarrier>,
+          public _LockBoxBarrier
+      {
+        public:
+
+          friend class PAMI::Barrier::Interface<LockBoxNodeCoreBarrier>;
+          friend class PAMI::Atomic::Indirect<LockBoxNodeCoreBarrier>;
+
+          inline LockBoxNodeCoreBarrier (size_t participants, bool master) :
+            PAMI::Barrier::Interface<LockBoxNodeCoreBarrier> (0, false)
+          {};
+
+          ~LockBoxNodeCoreBarrier() {}
+
+        protected:
+
+          // -------------------------------------------------------------------
+          // PAMI::Atomic::Indirect<T> implementation
+          // -------------------------------------------------------------------
+
+          template <class T_MemoryManager>
+          inline void init_impl (T_MemoryManager *mm, const char *key)
+          {
+            // For core-granularity, everything is
+            // a core number. Assume the master core
+            // is the lowest-numbered core in the
+            // process.
+            /** \todo #warning take master cue from params? */
+            _barrier.master = __global.lockboxFactory.masterProc() << __global.lockboxFactory.coreShift();
+            _barrier.coreshift = 0;
+            _barrier.nparties = __global.lockboxFactory.numCore();
+            __global.lockboxFactory.lbx_alloc((void **)_barrier.lbx_lkboxes, 5,
+                                              key ? PAMI::Atomic::BGP::LBX_NODE_SCOPE : PAMI::Atomic::BGP::LBX_PROC_SCOPE);
+            _initialized = true;
+          }
+
+          inline void clone_impl (LockBoxNodeCoreBarrier & atomic)
+          {
+            PAMI_abortf("how do we clone the lockbox objects?\n");
+
+            //_barrier.master = atomic._barrier.master;
+            //_barrier.coreshift = atomic._barrier.coreshift;
+            //_barrier.nparties = atomic._barrier.nparties;
+          };
+
+      }; // class LockBoxNodeCoreBarrier
+
+      class LockBoxNodeProcBarrier :
+          public PAMI::Barrier::Interface<LockBoxNodeProcBarrier>,
+          public PAMI::Atomic::Indirect<LockBoxNodeProcBarrier>,
+          public _LockBoxBarrier
+      {
+        public:
+
+          friend class PAMI::Barrier::Interface<LockBoxNodeProcBarrier>;
+          friend class PAMI::Atomic::Indirect<LockBoxNodeProcBarrier>;
+
+          inline LockBoxNodeProcBarrier(size_t participants, bool master) :
+            PAMI::Barrier::Interface<LockBoxNodeProcBarrier> (0, false)
+          {};
+
+          inline ~LockBoxNodeProcBarrier() {};
+
+        protected:
+
+          // -------------------------------------------------------------------
+          // PAMI::Atomic::Indirect<T> implementation
+          // -------------------------------------------------------------------
+
+          template <class T_MemoryManager>
+          inline void init_impl(T_MemoryManager *mm, const char *key)
+          {
+            // For proc-granularity, must convert
+            // between core id and process id,
+            // and only one core per process will
+            // participate.
+            _barrier.master = __global.lockboxFactory.coreXlat(__global.lockboxFactory.masterProc()) >> __global.lockboxFactory.coreShift();
+            _barrier.coreshift = __global.lockboxFactory.coreShift();
+            _barrier.nparties = __global.lockboxFactory.numProc();
+            __global.lockboxFactory.lbx_alloc((void **)_barrier.lbx_lkboxes, 5,
+                                              key ? PAMI::Atomic::BGP::LBX_NODE_SCOPE : PAMI::Atomic::BGP::LBX_PROC_SCOPE);
+            _initialized = true;
+          }
+
+          inline void clone_impl (LockBoxNodeCoreBarrier & atomic)
+          {
+            PAMI_abortf("how do we clone the lockbox objects?\n");
+
+            //_barrier.master = atomic._barrier.master;
+            //_barrier.coreshift = atomic._barrier.coreshift;
+            //_barrier.nparties = atomic._barrier.nparties;
+          };
+
+      }; // class LockBoxNodeProcBarrier
+    }; // BGP namespace
+  }; // Barrier namespace
 }; // PAMI namespace
 
 #endif // __pami_bgp_lockboxbarrier_h__

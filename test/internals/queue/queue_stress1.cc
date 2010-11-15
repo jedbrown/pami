@@ -32,6 +32,7 @@
 #include "util/queue/Queue.h"
 #include "util/queue/MutexedQueue.h"
 #include "components/atomic/counter/CounterMutex.h"
+#include "components/atomic/indirect/IndirectMutex.h"
 #include "components/atomic/gcc/GccCounter.h"
 #include "Global.h"
 
@@ -43,15 +44,15 @@ static inline pid_t gettid() {
 #define MAX_PTHREADS	8
 #endif // MAX_PTHREADS
 
-#define QUEUE1_NAME	"GccThreadSafeQueue<GccIndirCounter>"
+#define QUEUE1_NAME	"GccThreadSafeQueue<PAMI::MutexedQueue<PAMI::Mutex::Indirect<PAMI::Mutex::Counter<PAMI::Counter::Gcc> > > >"
 #define QUEUE1_TYPE	(1 << 0)
-typedef PAMI::MutexedQueue<PAMI::Mutex::CounterMutex<PAMI::Counter::GccIndirCounter> > queue_1a;
+typedef PAMI::MutexedQueue<PAMI::Mutex::Indirect<PAMI::Mutex::Counter<PAMI::Counter::Gcc> > > queue_1a;
 typedef PAMI::GccThreadSafeQueue<queue_1a> queue_1;
 
 
-#define QUEUE2_NAME	"MutexedQueue<GccIndirCounter>"
+#define QUEUE2_NAME	"MutexedQueue<PAMI::Mutex::Indirect<PAMI::Mutex::Counter<PAMI::Counter::Gcc> > >"
 #define QUEUE2_TYPE	(1 << 1)
-typedef PAMI::MutexedQueue<PAMI::Mutex::CounterMutex<PAMI::Counter::GccIndirCounter> > queue_2;
+typedef PAMI::MutexedQueue<PAMI::Mutex::Indirect<PAMI::Mutex::Counter<PAMI::Counter::Gcc> > > queue_2;
 
 #define QUEUE3_NAME	"GccThreadSafeQueue<GccCmpSwap>"
 #define QUEUE3_TYPE	(1 << 2)
@@ -74,19 +75,19 @@ typedef PAMI::GccThreadSafeQueue<queue_5a> queue_5;
 
 #ifdef __bgq__
 #include "components/atomic/bgq/L2Mutex.h"
-#define QUEUE4_NAME	"MutexedQueue<L2InPlaceMutex>"
+#define QUEUE4_NAME	"MutexedQueue<PAMI::Mutex::BGQ::IndirectL2>"
 #define QUEUE4_TYPE	(1 << 3)
-typedef PAMI::MutexedQueue<PAMI::Mutex::BGQ::L2InPlaceMutex> queue_4;
+typedef PAMI::MutexedQueue<PAMI::Mutex::BGQ::IndirectL2> queue_4;
 
-#define QUEUE5_NAME	"GccThreadSafeQueue<L2InPlaceMutex>"
+#define QUEUE5_NAME	"GccThreadSafeQueue<PAMI::Mutex::BGQ::IndirectL2>"
 #define QUEUE5_TYPE	(1 << 4)
-typedef PAMI::MutexedQueue<PAMI::Mutex::BGQ::L2InPlaceMutex> queue_5a;
+typedef PAMI::MutexedQueue<PAMI::Mutex::BGQ::IndirectL2> queue_5a;
 typedef PAMI::GccThreadSafeQueue<queue_5a> queue_5;
 
 #include <util/queue/bgq/ArrayBasedQueue.h>
-#define QUEUE6_NAME	"ArrayBasedQueue<L2InPlaceMutex>"
+#define QUEUE6_NAME	"ArrayBasedQueue<PAMI::Mutex::BGQ::L2>"
 #define QUEUE6_TYPE	(1 << 5)
-typedef PAMI::ArrayBasedQueue<PAMI::Mutex::BGQ::L2InPlaceMutex> queue_6;
+typedef PAMI::ArrayBasedQueue<PAMI::Mutex::BGQ::L2> queue_6;
 
 #define QUEUE_ALL	(QUEUE1_TYPE | QUEUE2_TYPE | QUEUE3_TYPE | QUEUE4_TYPE | QUEUE5_TYPE | QUEUE6_TYPE)
 //#define QUEUE_ALL	(QUEUE6_TYPE)

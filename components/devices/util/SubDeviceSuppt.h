@@ -570,7 +570,7 @@ public:
 			strcpy((char *)&key[n], "-done");
 #endif
                         _mm = mm;
-                        _doneThreads.init();
+                        //_doneThreads.init();
                         _doneThreads.fetch_and_clear();
                         _init = 1;
                 }

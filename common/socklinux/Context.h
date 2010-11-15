@@ -28,7 +28,8 @@
 #include "util/fifo/LinearFifo.h"
 #endif
 
-#include "components/atomic/gcc/GccBuiltin.h"
+#include "components/atomic/gcc/GccCounter.h"
+#include "components/atomic/indirect/IndirectCounter.h"
 //#include "components/atomic/pthread/Pthread.h"
 
 #include "components/memory/MemoryAllocator.h"
@@ -57,7 +58,7 @@ namespace PAMI
 
 #ifdef ENABLE_SHMEM_DEVICE
   typedef Fifo::FifoPacket <sizeof(void*)*4, 240> ShmemPacket;
-  typedef Fifo::LinearFifo<ShmemPacket, Counter::GccIndirCounter> ShmemFifo;
+  typedef Fifo::LinearFifo<ShmemPacket, Counter::Indirect<Counter::Gcc> > ShmemFifo;
   typedef Device::ShmemDevice<ShmemFifo> ShmemDevice;
   typedef Device::Shmem::PacketModel<ShmemDevice> ShmemModel;
 #endif

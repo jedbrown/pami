@@ -44,7 +44,7 @@
 #include "components/devices/generic/AdvanceThread.h"
 #include "components/devices/MultisyncModel.h"
 #include "components/devices/FactoryInterface.h"
-#include "components/atomic/Mutex.h"
+#include "components/atomic/MutexInterface.h"
 #include <pami.h>
 
 namespace PAMI {

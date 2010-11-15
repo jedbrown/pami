@@ -20,7 +20,7 @@
 #include "Arch.h"
 #include "Memregion.h"
 
-#include "components/atomic/Counter.h"
+#include "components/atomic/CounterInterface.h"
 #include "components/devices/BaseDevice.h"
 #include "components/devices/FactoryInterface.h"
 #include "components/devices/PacketInterface.h"
@@ -215,10 +215,10 @@ namespace PAMI
           __global.mapping.nodePeers (_npeers);
           _task = __global.mapping.task();
 
-#ifdef __bgq__
-          unsigned stride = 16 / _npeers; //hack
-          _peer = _peer / stride;         //hack
-#endif
+//#ifdef __bgq__
+  //        unsigned stride = 16 / _npeers; //hack
+    //      _peer = _peer / stride;         //hack
+//#endif
 
           // Initialize all fifos on the node
           size_t i;

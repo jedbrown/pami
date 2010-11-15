@@ -23,7 +23,8 @@
 #include "util/queue/MultiQueue.h"
 
 /// \brief The atomic counter used by threads for tracking completion of message
-typedef PAMI::Counter::GccInPlaceCounter GenericDeviceCounter;
+typedef PAMI::Counter::Gcc GenericDeviceCounter;
+//typedef PAMI::Counter::BGP::LockBoxCounter GenericDeviceCounter;
 
 #define GENDEVMSG_SEND_QNUM	0	///< queue number used for send queue
 #define GENDEVMSG_COMPL_QNUM	1	///< queue number used for completion queue

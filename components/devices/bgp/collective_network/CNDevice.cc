@@ -103,7 +103,8 @@ namespace BGP {
                  */
                 _g_num_active_nodes = __global.mapping.size();
                 if (peers > 1) {
-                        lbb.init(mm, "/bgp-tree-init", peers, false);
+                        //lbb.init(mm, "/bgp-tree-init", peers, false);
+                        lbb.init(mm, "/bgp-tree-init");
                         loc = NULL;
                         mm->memalign((void **)&loc, sizeof(loc), BGPCN_PKT_SIZE);
                         PAMI_assertf(loc, "Failed to get shmem for Tree Device init");

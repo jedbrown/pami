@@ -14,7 +14,7 @@
 #ifndef __components_atomic_pthread_Pthread_h__
 #define __components_atomic_pthread_Pthread_h__
 
-#include "components/atomic/Counter.h"
+#include "components/atomic/CounterInterface.h"
 
 #include <pthread.h>
 
@@ -23,23 +23,27 @@ namespace PAMI
   namespace Counter
   {
     ///
-    /// \brief CRTP interface for pthread atomic objects.
+    /// \brief PAMI::Counter::Interface implementation using pthread atomics
     ///
-      class Pthread : public PAMI::Atomic::Interface::InPlaceCounter <Pthread>
+    class Pthread : public PAMI::Counter::Interface <Pthread>
     {
       public:
-        Pthread (){}
 
-        ~Pthread () {}
+        friend class PAMI::Counter::Interface <Pthread>;
 
-        /// \see PAMI::Atomic::AtomicObject::init
-        void init_impl ()
+        inline Pthread ()
         {
           pthread_mutex_init (&_mutex, NULL);
-          fetch_and_clear_impl ();
-        }
+        };
 
-        /// \see PAMI::Atomic::AtomicObject::fetch
+        inline ~Pthread () {};
+
+      protected:
+
+        // -------------------------------------------------------------------
+        // PAMI::Counter::Interface<T> implementation
+        // -------------------------------------------------------------------
+
         inline size_t fetch_impl ()
         {
           pthread_mutex_lock (&_mutex);
@@ -49,7 +53,6 @@ namespace PAMI
           return value;
         };
 
-        /// \see PAMI::Atomic::AtomicObject::fetch_and_inc
         inline size_t fetch_and_inc_impl ()
         {
           pthread_mutex_lock (&_mutex);
@@ -60,7 +63,6 @@ namespace PAMI
           return value;
         };
 
-        /// \see PAMI::Atomic::AtomicObject::fetch_and_dec
         inline size_t fetch_and_dec_impl ()
         {
           pthread_mutex_lock (&_mutex);
@@ -71,7 +73,6 @@ namespace PAMI
           return value;
         };
 
-        /// \see PAMI::Atomic::AtomicObject::fetch_and_clear
         inline size_t fetch_and_clear_impl ()
         {
           pthread_mutex_lock (&_mutex);
@@ -82,7 +83,6 @@ namespace PAMI
           return value;
         };
 
-        /// \see PAMI::Atomic::AtomicObject::clear
         inline void clear_impl ()
         {
           pthread_mutex_lock (&_mutex);
@@ -90,7 +90,6 @@ namespace PAMI
           pthread_mutex_unlock (&_mutex);
         };
 
-        /// \see PAMI::Atomic::AtomicObject::compare_and_swap
         inline bool compare_and_swap_impl (size_t compare, size_t swap)
         {
           bool did_swap = false;
@@ -114,4 +113,4 @@ namespace PAMI
 };
 
 
-#endif // __pami_atomic_pthread_pthread_h__
+#endif // __components_atomic_pthread_Pthread_h__

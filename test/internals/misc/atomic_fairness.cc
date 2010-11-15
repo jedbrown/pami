@@ -32,11 +32,12 @@
 #include <pthread.h>
 #include "components/atomic/counter/CounterMutex.h"
 #include "components/atomic/gcc/GccCounter.h"
+#include "components/atomic/indirect/IndirectCounter.h"
 #include "Global.h"
 
 #ifdef __pami_target_bgq__
 #include "components/atomic/bgq/L2Counter.h"
-#define COUNTER_T	PAMI::Counter::BGQ::L2IndirCounter
+#define COUNTER_T	PAMI::Counter::BGQ::IndirectL2
 #ifndef NUM_THREADS
 #define NUM_THREADS	16
 #endif // ! NUM_THREADS
@@ -47,10 +48,10 @@
 #endif
 
 #ifndef COUNTER_T
-#define COUNTER_T	PAMI::Counter::GccInPlaceCounter
+#define COUNTER_T	PAMI::Counter::Indirect<PAMI::Counter::Gcc>
 #endif // !COUNTER_T
 
-typedef PAMI::Mutex::CounterMutex<COUNTER_T> Mutex_t;
+typedef PAMI::Mutex::IndirectCounter<COUNTER_T> Mutex_t;
 
 #ifndef TEST_DURATION
 #define TEST_DURATION	(1*60)

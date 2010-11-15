@@ -6,105 +6,167 @@
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
-
+/**
+ * \file components/atomic/bgq/L2Mutex.h
+ * \brief BGQ L2 Atomics implementation of "in place" and "indirect" mutexes
+ */
 #ifndef __components_atomic_bgq_L2Mutex_h__
 #define __components_atomic_bgq_L2Mutex_h__
 
-/**
- * \file components/atomic/bgq/L2Mutex.h
- * \brief BGQ L2 Atomics implementation of Node- or Process-scoped Mutexes
- *
- * LockBox is the only implementation, currently. Additional implementations
- * would be new classes, all inheriting from "Mutex".
- *
- *
- */
 #include "Global.h"
-#include "components/memory/MemoryManager.h"
-#include "components/atomic/Mutex.h"
+#include "components/atomic/MutexInterface.h"
+#include "components/atomic/IndirectInterface.h"
+
+#include "common/bgq/L2AtomicFactory.h"
 #include <spi/include/l2/atomic.h>
 
-namespace PAMI {
-namespace Mutex {
-namespace BGQ {
-        //
-        // These classes are used internally ONLY. See following classes for users
-        //
-        class L2InPlaceMutex : public PAMI::Atomic::Interface::InPlaceMutex<L2InPlaceMutex> {
+namespace PAMI
+{
+  namespace Mutex
+  {
+    namespace BGQ
+    {
+      ///
+      /// \brief PAMI::Mutex::Interface implementation using bgq L2 atomics
+      ///
+      /// The PAMI::Mutex::BGQ::L2 class is considered an "in place" implementation
+      /// because the storage for the actual atomic resource is embedded within
+      /// the class instance.
+      ///
+      /// Any "in place" counter implementation may be converted to an "indirect"
+      /// counter implementation, where the atomic resource is located outside
+      /// of the class instance, by using the PAMI::Mutex::Indirect<T> class
+      /// instead of the native "in place" implementation.
+      ///
+      /// Alternatively, the PAMI::Counter::BGQ::IndirectL2 may be used which
+      /// will allocate the L2 resources using the L2 Atomic Factory
+      ///
+      /// \note This "in place" class is used internally ONLY.
+      ///
+      class L2 : public PAMI::Mutex::Interface<L2>
+      {
         public:
-                L2InPlaceMutex() { }
-                inline void init_impl() {
-                }
-                void acquire_impl() {
-                        while (L2_AtomicLoadIncrement(&_counter) != 0);
-                }
-                void release_impl() {
-			mem_sync();
-                        L2_AtomicLoadClear(&_counter);
-                }
-                bool tryAcquire_impl() {
-                        return (L2_AtomicLoadIncrement(&_counter) == 0);
-                }
-                bool isLocked_impl() {
-                        return (L2_AtomicLoad(&_counter) > 0) ? true : false;
-                }
-                void *returnLock_impl() { return &_counter; }
 
-		static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
-			// This is an L2 Atomic object, must have L2 Atomic-mapped memory
-			return ((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0);
-		}
-		static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
-			// This is an L2 Atomic object, must have L2 Atomic-mapped memory
-			return ((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0);
-		}
+          friend class PAMI::Mutex::Interface<L2>;
+
+          inline L2() {};
+
+          inline ~L2() {};
+
         protected:
-                uint64_t _counter;
-        }; // class L2InPlaceMutex
 
-        //
-        // These classes are used internally ONLY. See following classes for users
-        //
-        class L2IndirMutex : public PAMI::Atomic::Interface::IndirMutex<L2IndirMutex> {
+          // -------------------------------------------------------------------
+          // PAMI::Mutex::Interface<T> implementation
+          // -------------------------------------------------------------------
+
+          void acquire_impl()
+          {
+            while (L2_AtomicLoadIncrement(&_counter) != 0);
+          }
+
+          void release_impl()
+          {
+            mem_sync();
+            L2_AtomicLoadClear(&_counter);
+          }
+
+          bool tryAcquire_impl()
+          {
+            return (L2_AtomicLoadIncrement(&_counter) == 0);
+          }
+
+          bool isLocked_impl()
+          {
+            return (L2_AtomicLoad(&_counter) > 0) ? true : false;
+          }
+
+          uint64_t _counter;
+
+      }; // class PAMI::Mutex::BGQ::L2
+
+
+      class IndirectL2 : public PAMI::Mutex::Interface<IndirectL2>,
+                         public PAMI::Atomic::Indirect<IndirectL2>
+      {
         public:
-                L2IndirMutex() { _counter = NULL; }
-                inline void init_impl(PAMI::Memory::MemoryManager *mm, const char *key) {
-			PAMI_assert_debugf((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0,
-				"mm is not L2Atomic-capable");
-			PAMI_assert_debugf(!_counter, "Re-init or object is in shmem");
-                        pami_result_t rc;
-                        rc = mm->memalign((void **)&_counter, 0, 1, key);
-                        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to allocate L2 Atomic Mutex");
-                }
-                void acquire_impl() {
-                        while (L2_AtomicLoadIncrement(_counter) != 0);
-                }
-                void release_impl() {
-			mem_sync();
-                        L2_AtomicLoadClear(_counter);
-                }
-                bool tryAcquire_impl() {
-                        return (L2_AtomicLoadIncrement(_counter) == 0);
-                }
-                bool isLocked_impl() {
-                        return (L2_AtomicLoad(_counter) > 0) ? true : false;
-                }
-                void *returnLock_impl() { return _counter; }
 
-		static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
-			// This is an indirect object, cannot instantiate in shared memory.
-			return ((mm->attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) == 0);
-		}
-		static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
-			// This is an L2 Atomic object, must have L2 Atomic-mapped memory
-			return ((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0);
-		}
+          friend class PAMI::Mutex::Interface<IndirectL2>;
+          friend class PAMI::Atomic::Indirect<IndirectL2>;
+
+          static const bool indirect = true;
+
+          inline IndirectL2() {};
+
+          inline ~IndirectL2() {};
+
         protected:
-                uint64_t *_counter;
-        }; // class L2IndirMutex
 
-}; // BGQ namespace
-}; // Mutex namespace
+          // -------------------------------------------------------------------
+          // PAMI::Atomic::Indirect<T> implementation
+          // -------------------------------------------------------------------
+
+          ///
+          /// \brief Initialize the indirect L2 atomic mutex
+          ///
+          /// Does not use the memory manager from the user, but instead uses
+          /// the BGQ-specific L2 Atomic Factory to access the L2 Memory Manager
+          /// to allocate the memory.
+          ///
+          template <class T_MemoryManager>
+          inline void init_impl (T_MemoryManager * mm, const char * key)
+          {
+            pami_result_t rc;
+            rc = __global.l2atomicFactory.__nodescoped_mm.memalign ((void **) & _counter,
+                                                                    sizeof(*_counter),
+                                                                    sizeof(*_counter),
+                                                                    key);
+
+            PAMI_assertf (rc == PAMI_SUCCESS, "Failed to allocate memory from memory manager (%p) with key (\"%s\")", mm, key);
+          };
+
+          inline void clone_impl (IndirectL2 & atomic)
+          {
+            _counter = atomic._counter;
+          };
+
+          // -------------------------------------------------------------------
+          // PAMI::Mutex::Interface<T> implementation
+          // -------------------------------------------------------------------
+
+          void acquire_impl()
+          {
+            while (L2_AtomicLoadIncrement(_counter) != 0);
+          }
+
+          void release_impl()
+          {
+            mem_sync();
+            L2_AtomicLoadClear(_counter);
+          }
+
+          bool tryAcquire_impl()
+          {
+            return (L2_AtomicLoadIncrement(_counter) == 0);
+          }
+
+          bool isLocked_impl()
+          {
+            return (L2_AtomicLoad(_counter) > 0) ? true : false;
+          }
+
+          uint64_t * _counter;
+
+      }; // class PAMI::Mutex::BGQ::IndirectL2
+    }; // BGQ namespace
+  }; // Mutex namespace
 }; // PAMI namespace
 
 #endif // __components_atomic_bgq_L2Mutex_h__
+
+//
+// astyle info    http://astyle.sourceforge.net
+//
+// astyle options --style=gnu --indent=spaces=2 --indent-classes
+// astyle options --indent-switches --indent-namespaces --break-blocks
+// astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
+//

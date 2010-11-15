@@ -44,7 +44,7 @@
 #include "components/devices/generic/AdvanceThread.h"
 #include "components/devices/MultisyncModel.h"
 #include "components/devices/FactoryInterface.h"
-#include "components/atomic/Barrier.h"
+#include "components/atomic/BarrierInterface.h"
 #include <pami.h>
 
 namespace PAMI {
@@ -83,7 +83,8 @@ protected:
         DECL_ADVANCE_ROUTINE(advanceThread,AtomicBarrierMsg<T_Barrier>,AtomicBarrierThr);
         inline pami_result_t __advanceThread(AtomicBarrierThr *thr) {
                 for (int x = 0; x < 32; ++x) {
-                        if (_barrier->poll() == PAMI::Atomic::Interface::Done) {
+                        if (_barrier->poll() == false) {
+                                _barrier->end();
                                 setStatus(PAMI::Device::Done);
                                 thr->setStatus(PAMI::Device::Complete);
                                 return PAMI_SUCCESS;
@@ -125,32 +126,36 @@ public:
         AtomicBarrierMdl(AtomicBarrierDev &device, pami_result_t &status) :
           PAMI::Device::Interface::MultisyncModel<AtomicBarrierMdl<T_Barrier>,
                         AtomicBarrierDev,sizeof(AtomicBarrierMsg<T_Barrier>) >(device, status),
-	_gd(&device)
+	_gd(&device),
+  _barrier (__global.topology_local.size(), (__global.topology_local.index2Rank(0) == __global.mapping.task()))
         {
 		char mmkey[PAMI::Memory::MMKEYSIZE];
 		sprintf(mmkey, "/pami-AtomicBarrierMdl-%zd-%zd",
 					_gd->clientId(), _gd->contextId());
 
                 // "default" barrier: all local processes...
-                size_t peers = __global.topology_local.size();
-                size_t peer0 = __global.topology_local.index2Rank(0);
-                size_t me = __global.mapping.task();
+                //size_t peers = __global.topology_local.size();
+                //size_t peer0 = __global.topology_local.index2Rank(0);
+                //size_t me = __global.mapping.task();
 		// can't validate ctor, can't tell what memory 'this' points to...
 		// caller needs to do that. (then caller does this, too?)
 		if (!checkDataMm(_gd->getMM())) {
 			status = PAMI_INVAL;
 			return;
 		}
-                _barrier.init(_gd->getMM(), mmkey, peers, (peer0 == me));
+
+    COMPILE_TIME_ASSERT(T_Barrier::indirect);
+      _barrier.init(_gd->getMM(), mmkey);//, peers, (peer0 == me));
+
 		_queue.__init(_gd->clientId(), _gd->contextId(), NULL, _gd->getContext(), _gd->getMM(), _gd->getAllDevs());
         }
 
 	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
-		return T_Barrier::checkCtorMm(mm);
+		return true;//T_Barrier::checkCtorMm(mm);
 	}
 
 	static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
-		return T_Barrier::checkDataMm(mm);
+		return true;//T_Barrier::checkDataMm(mm);
 	}
 
         inline pami_result_t postMultisync_impl(uint8_t (&state)[sizeof_msg],
@@ -170,10 +175,11 @@ template <class T_Barrier>
 inline pami_result_t PAMI::Device::AtomicBarrierMdl<T_Barrier>::postMultisync_impl(uint8_t (&state)[sizeof_msg],
                                                                                    pami_multisync_t *msync,
                                                                                    void *devinfo) {
-        _barrier.pollInit();
+        _barrier.begin();
         // See if we can complete the barrier immediately...
         for (int x = 0; x < 32; ++x) {
-                if (_barrier.poll() == PAMI::Atomic::Interface::Done) {
+                if (_barrier.poll() == false) {
+                        _barrier.end();
                         if (msync->cb_done.function) {
                                 pami_context_t ctx = _gd->getContext();
                                 msync->cb_done.function(ctx, msync->cb_done.clientdata, PAMI_SUCCESS);

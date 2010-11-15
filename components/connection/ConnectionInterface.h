@@ -118,7 +118,7 @@ namespace PAMI
           private:
 
             Queue _queue;
-            Mutex::CounterMutex<Counter::GccInPlaceCounter> _lock;
+            PAMI::Mutex::Counter<Counter::Gcc> _lock;
         };
 
         inline Interface (T_Device & device) {};

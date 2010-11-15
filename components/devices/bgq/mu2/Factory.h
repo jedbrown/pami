@@ -22,6 +22,7 @@
 #include "components/devices/generic/Device.h"
 #include "components/atomic/gcc/GccCounter.h"
 #include "components/atomic/counter/CounterBarrier.h"
+#include "components/atomic/indirect/IndirectBarrier.h"
 #include "spi/include/kernel/gi.h"
 #include "spi/include/mu/GIBarrier.h"
 
@@ -59,12 +60,12 @@ namespace PAMI
 	    ( myTask == __global.mapping.lowestT() ) ? master=true : master=false;
 
 	    TRACE((stderr, "MU::Context::generate_impl: Initializing local barrier, size=%zu, master=%d\n", numLocalTasks, master));
-	    PAMI::Barrier::CounterBarrier<PAMI::Counter::GccIndirCounter> barrier;
+	    PAMI::Barrier::Indirect<PAMI::Barrier::Counter<PAMI::Counter::Gcc> > barrier(numLocalTasks,master);
 	    char key[PAMI::Memory::MMKEYSIZE];
 	    sprintf(key, "/pami-mu2-rm%zd", id_client);
-	    barrier.init(&__global.mm, key,
-			 numLocalTasks,
-			 master );
+	    barrier.init(&__global.mm, key);//,
+//			 numLocalTasks,
+	//		 master );
 
 	    //
 	    // The MU resource manager requires that only one task on the local node

@@ -73,10 +73,10 @@ namespace PAMI {
     Queue::Element,
     BasicQueueIterator<ArrayBasedQueue<T_Mutex>, Queue::Element> > {
 
-  public:    
+  public:
     const static bool removeAll_can_race = false;
     typedef Queue::Element  Element;
-    typedef BasicQueueIterator<ArrayBasedQueue<T_Mutex>, Element > Iterator;    
+    typedef BasicQueueIterator<ArrayBasedQueue<T_Mutex>, Element > Iterator;
 
   protected:
 
@@ -86,7 +86,7 @@ namespace PAMI {
     ///  thread.
     ///
     inline bool  advance() {
-      bool newwork = false;      
+      bool newwork = false;
       int tid = Kernel_ProcessorThreadID();
       uint64_t index = *_tailLoadAddress[tid];
       uint64_t head  = _headCounter;
@@ -96,9 +96,9 @@ namespace PAMI {
 	uint64_t qindex = head & (DEFAULT_SIZE - 1);
 	head ++;
 
-	//Wait till producer updates this	
+	//Wait till producer updates this
 	while (_queueArray[qindex] == NULL);
-      
+
 	Element *element = (Element *)_queueArray[qindex];
 	_queueArray[qindex] = NULL; //Mark the element as unused
 	mem_sync();
@@ -108,7 +108,7 @@ namespace PAMI {
 	newwork = true;
 
 	//Increment the queue bound to permit another enqueue
-	*_boundAddress[tid] = 1;  //Store increment operation 
+	*_boundAddress[tid] = 1;  //Store increment operation
       }
       _headCounter = head;
 
@@ -138,12 +138,12 @@ namespace PAMI {
       _tailAddress[0]    = NULL;
       _tailAddress[1]    = NULL;
       _tailAddress[2]    = NULL;
-      _tailAddress[3]    = NULL;		         
-      
+      _tailAddress[3]    = NULL;
+
       _tailLoadAddress[0]    = NULL;
       _tailLoadAddress[1]    = NULL;
       _tailLoadAddress[2]    = NULL;
-      _tailLoadAddress[3]    = NULL;		         
+      _tailLoadAddress[3]    = NULL;
 
       _headCounter       = 0;
       _boundAddress[0]   = NULL;
@@ -153,11 +153,11 @@ namespace PAMI {
     }
 
     inline void init(PAMI::Memory::MemoryManager *mm, const char *key)
-      {    
-	_mutex.init(); // in-place mutex
+      {
+	//_mutex.init(); // in-place mutex
 	_overflowq.init(mm, key);
 	_privateq.init(mm, key);
-	
+
 	uint64_t *buffer;
 	int rc = 0;
 	rc = __global.l2atomicFactory.__procscoped_mm.memalign((void **)&buffer,
@@ -188,14 +188,14 @@ namespace PAMI {
 	       ((((uint64_t) &_atomicCounters[1]) << 5) & ~0xfful)) |
 	      (tid << 6)) +
 	     (0UL << 3)); /*Load counter*/
-	
+
 	for (tid = 0; tid < 4UL; tid ++)
 	  _boundAddress[tid] =  (volatile uint64_t *)
 	    (((Kernel_L2AtomicsBaseAddress() +
 	       ((((uint64_t) &_atomicCounters[2]) << 5) & ~0xfful)) |
 	      (tid << 6)) +
 	     (2UL << 3)); /*Store add*/
-	
+
 #if USE_GUARDED_WC_FLUSH
 	for (tid = 0; tid < 4UL; tid ++)
 	  _flushAddress[tid] =  (volatile uint64_t *)
@@ -203,14 +203,14 @@ namespace PAMI {
 	       ((((uint64_t) &_atomicCounters[3]) << 5) & ~0xfful)) |
 	      (tid << 6)) +
 	     (0UL << 3)); /*direct store*/
-#endif	
+#endif
 
-	_queueArray = (volatile Element * volatile *) memalign (L1D_CACHE_LINE_SIZE, 
+	_queueArray = (volatile Element * volatile *) memalign (L1D_CACHE_LINE_SIZE,
 								sizeof(Element*) * DEFAULT_SIZE);
 	PAMI_assert (_queueArray != NULL);
 	memset ((void*)_queueArray, 0, sizeof(Element*) * DEFAULT_SIZE);
       }
-      
+
     /// \copydoc PAMI::Interface::QueueInterface::enqueue
     inline void enqueue_impl(Element *element)
       {
@@ -223,9 +223,9 @@ namespace PAMI {
 #endif
 	//mbar();
 	uint64_t index = 0;
-	if ( likely (_overflowq.isEmpty() && 
+	if ( likely (_overflowq.isEmpty() &&
 		     ((index = *_tailAddress[tid]) != L2_ATOMIC_FULL)) )
-	  { 
+	  {
 	    uint64_t qindex = index & (DEFAULT_SIZE - 1);
 	    //PAMI_assert ( _queueArray[qindex] == NULL);
 	    //printf("Atomic increment of counter %lx returned index %lu\n", (uint64_t)&_atomicCounters[1], index);
@@ -403,7 +403,7 @@ namespace PAMI {
 
   protected:
 
-    volatile Element          * volatile           * _queueArray;      
+    volatile Element          * volatile           * _queueArray;
     Queue                                            _overflowq;
     volatile uint64_t                              * _tailAddress[4];
     volatile uint64_t                              * _flushAddress[4];

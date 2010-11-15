@@ -15,6 +15,7 @@
 
 #include <pami.h>
 #include "components/atomic/bgq/L2Mutex.h"
+#include "components/atomic/indirect/IndirectMutex.h"
 #include "Context.h"
 
 namespace PAMI {
@@ -22,7 +23,7 @@ namespace Device {
 namespace CommThread {
 
 class BgqContextPool {
-	typedef PAMI::Mutex::BGQ::L2IndirMutex ContextSetMutex;
+	typedef PAMI::Mutex::Indirect<PAMI::Mutex::BGQ::L2> ContextSetMutex;
 
 	// lock is held by caller...
 	inline uint64_t __getOneContext(uint64_t &ref) {

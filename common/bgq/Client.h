@@ -138,7 +138,7 @@ namespace PAMI
 
 	/// \page env_vars Environment Variables
 	///
-	/// PAMI_CONTEXT_SHMEMSIZE - Size, bytes, of each Context's shmem pool. 
+	/// PAMI_CONTEXT_SHMEMSIZE - Size, bytes, of each Context's shmem pool.
 	/// May use 'K' or 'M' suffix as multiplier. default: 135K
 	///
         char *env = getenv("PAMI_CONTEXT_SHMEMSIZE");
@@ -197,7 +197,9 @@ namespace PAMI
 
         for (i = 0; i < _ncontexts; ++i)
           {
-            context[i] = NULL;
+            if (context != NULL)
+              context[i] = NULL;
+
             PAMI::Context * ctx = &_contexts[i];
 	    ctx->~Context();
             pami_result_t rc = ctx->destroy ();
@@ -478,7 +480,7 @@ namespace PAMI
 	    start_barrier(bargeom, new_geometry,
 			  ctxt->getId(), context,
 			  num_configs? PAMI_GEOMETRY_OPTIMIZE: (pami_attribute_name_t)-1);
-	    
+
 	    new_geometry->processUnexpBarrier(&_ueb_queue,
                                               &_ueb_allocator);
           }
@@ -547,7 +549,7 @@ namespace PAMI
 	    start_barrier(bargeom, new_geometry,
 			  ctxt->getId(), context,
 			  num_configs? PAMI_GEOMETRY_OPTIMIZE: (pami_attribute_name_t)-1);
-	    
+
 	    new_geometry->processUnexpBarrier(&_ueb_queue,
                                               &_ueb_allocator);
           }
@@ -671,7 +673,7 @@ namespace PAMI
         TRACE_ERR((stderr, "<%p>%s\n", g, __PRETTY_FUNCTION__));
         return g;
       }
-    
+
     inline void registerUnexpBarrier_impl (unsigned     comm,
                                            pami_quad_t &info,
                                            unsigned     peer,
@@ -713,14 +715,14 @@ namespace PAMI
       Memory::GenMemoryManager _mm;
       Memory::GenMemoryManager _xmm; // used to fill context mm, from single OS alloc.
       //  Unexpected Barrier allocator
-      MemoryAllocator <sizeof(PAMI::Geometry::UnexpBarrierQueueElement), 16> _ueb_allocator;       
+      MemoryAllocator <sizeof(PAMI::Geometry::UnexpBarrierQueueElement), 16> _ueb_allocator;
       //  Unexpected Barrier match queue
       MatchQueue                                                             _ueb_queue;
 
 
 	/// \page env_vars Environment Variables
 	///
-	/// PAMI_CLIENT_SHMEMSIZE - Size, bytes, of each Client shmem pool. 
+	/// PAMI_CLIENT_SHMEMSIZE - Size, bytes, of each Client shmem pool.
 	/// May use 'K' or 'M' suffix as multiplier. default: 2MB
 	///
 
@@ -734,7 +736,7 @@ namespace PAMI
 #else
         size_t num_ctx = 256 / Kernel_ProcessCount();
 #endif
-	// 18K * Ncontexts... 
+	// 18K * Ncontexts...
         size_t bytes = 8800 * num_ctx * Kernel_ProcessCount();
 
 	/// \page env_vars Environment Variables
@@ -818,7 +820,7 @@ namespace PAMI
         TRACE_ERR((stderr, "<%p:%zu>BGQ::Client::start_barrier() context %p  %s\n", this, _clientid, context, optimize == PAMI_GEOMETRY_OPTIMIZE? "Optimized":" "));
         if(bargeom)
         {
-          if(optimize == PAMI_GEOMETRY_OPTIMIZE) 
+          if(optimize == PAMI_GEOMETRY_OPTIMIZE)
             bargeom->default_barrier(_geom_newopt_start, (void *)new_geometry, context_id, context);
           else
             bargeom->default_barrier(_geom_newopt_finish, (void *)new_geometry, context_id, context);
@@ -829,7 +831,7 @@ namespace PAMI
 	//}
 	else {
 	  _geom_newopt_finish(context, (void *)new_geometry, PAMI_SUCCESS);
-	}	
+	}
 #endif
       }
 

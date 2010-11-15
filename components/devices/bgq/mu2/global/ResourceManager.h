@@ -51,8 +51,9 @@
 
 #include "algorithms/geometry/Geometry.h"
 #include "components/atomic/bgq/L2Mutex.h"
+#include "components/atomic/indirect/IndirectMutex.h"
 #include "components/devices/misc/AtomicMutexMsg.h"
-typedef PAMI::Mutex::BGQ::L2IndirMutex MUCR_mutex_t;
+typedef PAMI::Mutex::BGQ::IndirectL2 MUCR_mutex_t;
 typedef PAMI::Device::SharedAtomicMutexMdl<MUCR_mutex_t> MUCR_mutex_model_t;
 #include <spi/include/kernel/collective.h>
 #include <spi/include/mu/Classroute_inlines.h>
@@ -552,11 +553,7 @@ if (rc) fprintf(stderr, "Kernel_AllocateGlobalInterruptClassRoute(%d) failed %d 
 
 	  // should this mutex be in the WAC?
 	  PAMI::Memory::MemoryManager *mxmm = &__global.l2atomicFactory.__procscoped_mm;
-	  PAMI_assertf(MUCR_mutex_t::checkDataMm(mxmm),
-		"Cannot init MUCR_mutex_t in given mm");
 	  _cr_mtx.init(mxmm, "/pami-mu-rm-cr-lk");
-	  PAMI_assertf(MUCR_mutex_model_t::checkCtorMm(__global.heap_mm),
-		"Cannot construct MUCR_mutex_model_t on heap");
 	  prc = __global.heap_mm->memalign((void **)&_cr_mtx_mdls,
 			sizeof(void *), _pamiRM.getNumClients() * sizeof(*_cr_mtx_mdls));
 	  PAMI_assertf(prc == PAMI_SUCCESS, "Failed to alloc mem for CR mutex models");
@@ -602,7 +599,7 @@ fprintf(stderr, "%s\n", buf);
 
 	  // this code should be very similar to classroute_test.c
 	  // Get all the rectangles and coords we need to describe the system.
-	  
+
 	  _pers.blockRectangle(*CR_RECT_LL(&_refcomm), *CR_RECT_UR(&_refcomm));
 	  _pers.blockCoord(_mycoord);
 
@@ -1268,13 +1265,13 @@ fprintf(stderr, "%s\n", buf);
 					batId,
 					value );
 	}
-	
+
 	/// \brief Query the Number of Free BAT IDs Within A Context
 	///
 	/// \retval  numFree
 	inline uint32_t queryFreeBatIdsForContext( size_t    rmClientId,
 						   size_t    contextOffset );
-	
+
 	/// \brief Allocate (reserve) BAT IDs Within A Context
 	///
 	/// \retval  0  Success
@@ -1284,7 +1281,7 @@ fprintf(stderr, "%s\n", buf);
 						 size_t    contextOffset,
 						 size_t    numBatIds,
 						 uint16_t *globalBatIds );
-	
+
 	/// \brief Free (unreserve) BAT IDs Within A Context
 	///
 	inline void freeBatIdsForContext( size_t    rmClientId,
@@ -1307,7 +1304,7 @@ fprintf(stderr, "%s\n", buf);
 					       size_t *numInjFifos,
 					       size_t *numRecFifos,
 					       size_t *numBatIds );
-	
+
 	inline uint16_t *getPinBroadcastFifoMap( size_t numInjFifos )
 	  { return &(_pinBroadcastFifoMap[numInjFifos-1][0]); }
 
@@ -1340,7 +1337,7 @@ fprintf(stderr, "%s\n", buf);
 				     size_t contextOffset,
 				     size_t t,
 				     uint16_t globalBatId )
-	{ 
+	{
 	  uint16_t myRelativeGlobalBatId = globalBatId - _clientResources[rmClientId].pinBatId[(contextOffset*_tSize) + _myT];
 	  return _clientResources[rmClientId].pinBatId[(contextOffset*_tSize) + t] + myRelativeGlobalBatId;
 	}
@@ -3322,8 +3319,8 @@ void PAMI::Device::MU::ResourceManager::allocateContextResources( size_t rmClien
   if ( numBatIds )
     {
       uint32_t numBatIdsSetup;
-      
-      numBatIdsSetup = setupBatIds( 
+
+      numBatIdsSetup = setupBatIds(
 		    _clientResources[rmClientId].startingSubgroupIds[contextOffset],
 		    _clientResources[rmClientId].endingSubgroupIds[contextOffset],
 		    numBatIds,  // Number of BAT ids
@@ -3332,15 +3329,15 @@ void PAMI::Device::MU::ResourceManager::allocateContextResources( size_t rmClien
 		    &(_clientResources[rmClientId].batResources[contextOffset].globalBatIds) );
 
       PAMI_assertf( numBatIdsSetup == numBatIds, "Only %u base address Ids were set up.  Expected %zu.\n",numBatIdsSetup, numBatIds);
-      
+
       // Set the status of the BATids (free vs allocated) to be free.
       // Turn ON a bit in a 32-bit field for each BATid, indicating free.
-      _clientResources[rmClientId].batResources[contextOffset].status = 
+      _clientResources[rmClientId].batResources[contextOffset].status =
 	(_BN(63-numBatIds) - 1) << (32-numBatIds);
       TRACE((stderr,"%zu BATids set up, status=0x%08x\n",numBatIds,_clientResources[rmClientId].batResources[contextOffset].status));
     }
 
-  // For each tcoord, store the adjusted 
+  // For each tcoord, store the adjusted
   // - global rec fifo id in the pinRecFifo array
   // - global bat id in the pinBatId array.  We only store the first global bat id in the group
   //   associated with this context.
@@ -3389,7 +3386,7 @@ void PAMI::Device::MU::ResourceManager::allocateContextResources( size_t rmClien
 	(startingSubgroup * BGQ_MU_NUM_REC_FIFOS_PER_SUBGROUP) + myRelativeGlobalFifoId;
 
       if ( numBatIds)
-	_clientResources[rmClientId].pinBatId[(contextOffset*_tSize)+t] = 
+	_clientResources[rmClientId].pinBatId[(contextOffset*_tSize)+t] =
 	  (startingSubgroup * BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP) + myRelativeGlobalBatId;
 
       TRACE((stderr,"MU ResourceManager: allocateContextResources: startingSubgroup=%u, pinRecFifo,pinBatId[t=%zu][contextOffset=%zu] = %u,%u\n",startingSubgroup,t,contextOffset,_clientResources[rmClientId].pinRecFifo[(contextOffset*_tSize) + t],_clientResources[rmClientId].pinBatId[(contextOffset*_tSize) + t]));
@@ -3644,7 +3641,7 @@ uint32_t PAMI::Device::MU::ResourceManager::queryFreeBatIdsForContext( size_t   
   size_t numFreeBatIds = 0;
   size_t i;
   uint32_t status = _clientResources[rmClientId].batResources[contextOffset].status;
-  
+
   for ( i=0; i<numBatIds; i++ )
     {
       if ( status & 0x80000000 ) numFreeBatIds++;
@@ -3657,7 +3654,7 @@ uint32_t PAMI::Device::MU::ResourceManager::queryFreeBatIdsForContext( size_t   
 
 }// End: queryFreeBatIdsForContext()
 
-	
+
 /// \brief Allocate (reserve) BAT IDs Within A Context
 ///
 /// \retval  0  Success
@@ -3685,7 +3682,7 @@ int32_t PAMI::Device::MU::ResourceManager::allocateBatIdsForContext( size_t    r
 	  _clientResources[rmClientId].batResources[contextOffset].status &= ~(1<<(31-i)); // Mark allocated.
 	  globalBatIds[j++] =  _clientResources[rmClientId].batResources[contextOffset].globalBatIds[i];
 	  numBatIds--;
-	  
+
 	  TRACE((stderr,"MU ResourceManager: allocateBatIdsForContext: allocated batId %zu, globalBatId=%u, newStatus=0x%08x\n",i,globalBatIds[j-1],_clientResources[rmClientId].batResources[contextOffset].status));
 	}
       status = status << 1;
@@ -3694,7 +3691,7 @@ int32_t PAMI::Device::MU::ResourceManager::allocateBatIdsForContext( size_t    r
 
 } // End: allocateBatIdsForContext()
 
-	
+
 /// \brief Free (unreserve) BAT IDs Within A Context
 ///
 void PAMI::Device::MU::ResourceManager::freeBatIdsForContext( size_t    rmClientId,
@@ -3729,11 +3726,11 @@ int32_t PAMI::Device::MU::ResourceManager::setBatEntryForContext ( size_t    rmC
 								   uint16_t  globalBatId,
 								   uint64_t  value )
 {
-  uint32_t startingSubgroupForContext = 
+  uint32_t startingSubgroupForContext =
     _clientResources[rmClientId].startingSubgroupIds[contextOffset];
-  uint32_t relativeSubgroupIndex = ( (globalBatId - 
-				      (startingSubgroupForContext * 
-				       BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP)) / 
+  uint32_t relativeSubgroupIndex = ( (globalBatId -
+				      (startingSubgroupForContext *
+				       BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP)) /
 				     BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP );
   uint8_t  relativeBatId = globalBatId % BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP;
 

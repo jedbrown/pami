@@ -14,11 +14,15 @@
 
 #include "../compilation.h"
 
-#include "components/atomic/bgp/BgpAtomic.h"
+#include "components/atomic/bgp/BgpAtomicCounter.h"
+#include "components/atomic/bgp/BgpAtomicMutex.h"
 #include "components/atomic/bgp/LockBoxCounter.h"
 #include "components/atomic/bgp/LockBoxMutex.h"
 #include "components/atomic/bgp/LockBoxBarrier.h"
 #include "components/atomic/bgp/LwarxStwcxMutex.h"
+#include "components/atomic/indirect/IndirectBarrier.h"
+#include "components/atomic/indirect/IndirectCounter.h"
+#include "components/atomic/indirect/IndirectMutex.h"
 
 int main(int argc, char **argv) {
 	if (argc >= 0) {
@@ -30,24 +34,24 @@ int main(int argc, char **argv) {
 
         COUNTER_HELPER(PAMI::Counter::BGP::LockBoxCounter, counter1, &mm, argv[1]);
 
-        COUNTER_HELPER(PAMI::Counter::BGP::BgpProcCounter, counter3, &mm, argv[1]);
+        COUNTER_HELPER2(PAMI::Counter::BGP::Atomic, counter3);
 
-        COUNTER_HELPER(PAMI::Counter::BGP::BgpNodeCounter, counter4, &mm, argv[1]);
-
-
+        COUNTER_HELPER(PAMI::Counter::Indirect<PAMI::Counter::BGP::Atomic>, counter4, &mm, argv[1]);
 
 
-        MUTEX_HELPER(PAMI::Mutex::BGP::BgpProcMutex, mutex1, &mm, argv[1]);
 
-        MUTEX_HELPER(PAMI::Mutex::BGP::BgpNodeMutex, mutex2, &mm, argv[1]);
+
+        MUTEX_HELPER2(PAMI::Mutex::BGP::Atomic, mutex1);
+
+        MUTEX_HELPER(PAMI::Mutex::Indirect<PAMI::Mutex::BGP::Atomic>, mutex2, &mm, argv[1]);
 
         MUTEX_HELPER(PAMI::Mutex::BGP::LockBoxMutex, mutex3, &mm, argv[1]);
 
         MUTEX_HELPER(PAMI::Mutex::BGP::FairLockBoxMutex, mutex5, &mm, argv[1]);
 
-        MUTEX_HELPER(PAMI::Mutex::BGP::LwarxStwcxInPlaceMutex, mutex7, &mm, argv[1]);
+        MUTEX_HELPER2(PAMI::Mutex::BGP::LwarxStwcx, mutex7);
 
-        MUTEX_HELPER(PAMI::Mutex::BGP::LwarxStwcxIndirMutex, mutex8, &mm, argv[1]);
+        MUTEX_HELPER(PAMI::Mutex::Indirect<PAMI::Mutex::BGP::LwarxStwcx>, mutex8, &mm, argv[1]);
 
 
 

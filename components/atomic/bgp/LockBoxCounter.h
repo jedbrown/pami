@@ -20,60 +20,102 @@
  *
  */
 #include <pami.h>
-#include "components/atomic/Counter.h"
+#include "components/atomic/CounterInterface.h"
+#include "components/atomic/indirect/IndirectCounter.h"
 #include "Global.h"
 
 #include <spi/bgp_SPI.h>
 #include <bpcore/bgp_atomic_ops.h>
 
-namespace PAMI {
-namespace Counter {
-namespace BGP {
-        //
-        // This class is used internally ONLY. See following classes for users
-        //
-        class LockBoxCounter : public PAMI::Atomic::Interface::IndirCounter<LockBoxCounter> {
+namespace PAMI
+{
+  namespace Counter
+  {
+    namespace BGP
+    {
+      //
+      // This class is used internally ONLY. See following classes for users
+      //
+      class LockBoxCounter : public PAMI::Counter::Interface<LockBoxCounter>,
+                             public PAMI::Atomic::Indirect<LockBoxCounter>
+      {
         public:
-                LockBoxCounter() { _addr = NULL; }
-                ~LockBoxCounter() {}
-		static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
-			return true;	// all participants get the same lockbox id,
-					// so memory type doesn't matter.
-		}
-		static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
-			return true; // for now, until a lockbox mm is done
-			// return ((mm->attrs() & PAMI::Memory::PAMI_MM_LOCKBOX) != 0);
-		}
-                inline void init_impl(PAMI::Memory::MemoryManager *mm, const char *key) {
-                        __global.lockboxFactory.lbx_alloc(&_addr, 1,
-					key ? PAMI::Atomic::BGP::LBX_NODE_SCOPE : PAMI::Atomic::BGP::LBX_PROC_SCOPE);
-                }
-                inline size_t fetch_impl() {
-                        return LockBox_Query((LockBox_Counter_t)_addr);
-                }
-                inline size_t fetch_and_inc_impl() {
-                        return LockBox_FetchAndInc((LockBox_Counter_t)_addr);
-                }
-                inline size_t fetch_and_dec_impl() {
-                        return LockBox_FetchAndDec((LockBox_Counter_t)_addr);
-                }
-                inline size_t fetch_and_clear_impl() {
-                        return LockBox_FetchAndClear((LockBox_Counter_t)_addr);
-                }
-                inline void clear_impl() {
-                        LockBox_FetchAndClear((LockBox_Counter_t)_addr);
-                }
-/* no such thing exists for BG/P lockboxes.
-                inline bool compare_and_swap_impl(size_t compare, size_t swap) {
-                }
-*/
-                void *returnLock_impl() { return _addr; }
+
+          friend class PAMI::Counter::Interface<LockBoxCounter>;
+          friend class PAMI::Atomic::Indirect<LockBoxCounter>;
+
+          LockBoxCounter() { _addr = NULL; }
+          ~LockBoxCounter() {}
+
+          static const bool indirect = true;
+
         protected:
-                void *_addr;
-        }; // class LockBoxCounter
 
-}; // BGP namespace
-}; // Counter namespace
-}; // PAMI namespace
+          // -------------------------------------------------------------------
+          // PAMI::Atomic::Indirect<T> implementation
+          // -------------------------------------------------------------------
 
-#endif // __components_atomic_bgp_lockboxcounter_h__
+          template <class T_MemoryManager>
+          inline void init_impl(T_MemoryManager *mm, const char *key)
+          {
+            __global.lockboxFactory.lbx_alloc(&_addr, 1,
+                                              key ? PAMI::Atomic::BGP::LBX_NODE_SCOPE : PAMI::Atomic::BGP::LBX_PROC_SCOPE);
+          }
+
+          inline void clone_impl (LockBoxCounter & atomic)
+          {
+            PAMI_abortf("how do we clone the lockbox objects?\n");
+
+            //_addr = atomic._addr;
+          };
+
+          // -------------------------------------------------------------------
+          // PAMI::Counter::Interface<T> implementation
+          // -------------------------------------------------------------------
+
+          inline size_t fetch_impl()
+          {
+            return LockBox_Query((LockBox_Counter_t)_addr);
+          }
+
+          inline size_t fetch_and_inc_impl()
+          {
+            return LockBox_FetchAndInc((LockBox_Counter_t)_addr);
+          }
+
+          inline size_t fetch_and_dec_impl()
+          {
+            return LockBox_FetchAndDec((LockBox_Counter_t)_addr);
+          }
+
+          inline size_t fetch_and_clear_impl()
+          {
+            return LockBox_FetchAndClear((LockBox_Counter_t)_addr);
+          }
+
+          inline void clear_impl()
+          {
+            LockBox_FetchAndClear((LockBox_Counter_t)_addr);
+          }
+
+          //
+          // no such thing exists for BG/P lockboxes.
+          //
+          //inline bool compare_and_swap_impl(size_t compare, size_t swap) {}
+
+          void *_addr;
+
+      }; // class     PAMI::Counter::BGP::LockBoxCounter
+    };   // namespace PAMI::Counter::BGP
+  };     // namespace PAMI::Counter
+};       // namespace PAMI
+
+#endif // __components_atomic_bgp_LockBoxCounter_h__
+
+//
+// astyle info    http://astyle.sourceforge.net
+//
+// astyle options --style=gnu --indent=spaces=2 --indent-classes
+// astyle options --indent-switches --indent-namespaces --break-blocks
+// astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
+//

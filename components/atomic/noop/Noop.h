@@ -10,105 +10,73 @@
  * \file components/atomic/noop/Noop.h
  * \brief ???
  */
-
 #ifndef __components_atomic_noop_Noop_h__
 #define __components_atomic_noop_Noop_h__
 
-#include "components/memory/MemoryManager.h"
-#include "components/atomic/Counter.h"
-#include "components/atomic/Mutex.h"
+#include "components/atomic/CounterInterface.h"
+#include "components/atomic/MutexInterface.h"
 
 namespace PAMI
 {
   namespace Atomic
   {
     ///
-    /// \brief CRTP interface for a "noop" atomic counter.
+    /// \brief A "noop" atomic counter and mutex
     ///
-    class Noop : public Interface::Counter <Noop>
+    class Noop : public PAMI::Counter::Interface <Noop>,
+                 public PAMI::Mutex::Interface <Noop>
     {
       public:
+
+        friend class PAMI::Counter::Interface <Noop>;
+        friend class PAMI::Mutex::Interface <Noop>;
+
         Noop () :
-            Interface::Counter <Noop> ()
+            PAMI::Counter::Interface <Noop> (),
+            PAMI::Mutex::Interface <Noop> ()
         {};
 
         ~Noop () {};
 
-        /// \see PAMI::Atomic::AtomicObject::init
-        void init_impl (PAMI::Memory::MemoryManager *mm)
-        {
-          return;
-        };
+      protected:
 
-        /// \see PAMI::Atomic::AtomicObject::fetch
-        inline size_t fetch_impl ()
-        {
-          return 0;
-        };
+        // -------------------------------------------------------------------
+        // PAMI::Counter::Interface<T> implementation
+        // -------------------------------------------------------------------
 
-        /// \see PAMI::Atomic::AtomicObject::fetch_and_inc
-        inline size_t fetch_and_inc_impl ()
-        {
-          return 0;
-        };
+        inline size_t fetch_impl () { return 0; };
 
-        /// \see PAMI::Atomic::AtomicObject::fetch_and_dec
-        inline size_t fetch_and_dec_impl ()
-        {
-          return 0;
-        };
+        inline size_t fetch_and_inc_impl () { return 0; };
 
-        /// \see PAMI::Atomic::AtomicObject::fetch_and_clear
-        inline size_t fetch_and_clear_impl ()
-        {
-          return 0;
-        };
+        inline size_t fetch_and_dec_impl () { return 0; };
 
-        /// \see PAMI::Atomic::AtomicObject::clear
-        inline void clear_impl ()
-        {
-        };
+        inline size_t fetch_and_clear_impl () { return 0; };
 
-        /// \see PAMI::Atomic::AtomicObject::compare_and_swap
-        inline bool compare_and_swap_impl (size_t compare, size_t swap)
-        {
-          return true;
-        }
-    };
+        inline void clear_impl () {};
 
+        inline bool compare_and_swap_impl (size_t compare, size_t swap) { return true; }
 
-    ///
-    /// \brief CRTP interface for a "noop" atomic mutex.
-    ///
-    class NoopMutex : public Interface::Mutex <NoopMutex>
-    {
-      public:
-        NoopMutex () :
-          Interface::Mutex <NoopMutex> ()
-        {};
+        // -------------------------------------------------------------------
+        // PAMI::Mutex::Interface<T> implementation
+        // -------------------------------------------------------------------
 
-        ~NoopMutex () {};
-
-        /// \see PAMI::Atomic::Interface::Mutex::acquire
         inline void acquire_impl () {};
 
-        /// \see PAMI::Atomic::Interface::Mutex::release
         inline void release_impl () {};
 
-        /// \see PAMI::Atomic::Interface::Mutex::tryAcquire
         inline bool tryAcquire_impl () { return true; };
 
-        /// \see PAMI::Atomic::Interface::Mutex::isLocked
         inline bool isLocked_impl () { return false; };
-
-        /// \see PAMI::Atomic::Interface::Mutex::init
-        inline void init_impl (PAMI::Memory::MemoryManager *mm) {};
-
-        /// \see PAMI::Atomic::Interface::Mutex::returnLock
-        inline void * returnLock_impl () { return NULL; };
     };
   };
 };
 
+#endif // __components_atomic_noop_Noop_h__
 
-#endif // __pami_atomic_noop_noop_h__
+//
+// astyle info    http://astyle.sourceforge.net
+//
+// astyle options --style=gnu --indent=spaces=2 --indent-classes
+// astyle options --indent-switches --indent-namespaces --break-blocks
+// astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
+//

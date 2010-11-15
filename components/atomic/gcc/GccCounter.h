@@ -6,139 +6,94 @@
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
-
+/**
+ * \file components/atomic/gcc/GccCounter.h
+ * \brief gcc builtin atomics implementation of the atomic counter interface
+ */
 #ifndef __components_atomic_gcc_GccCounter_h__
 #define __components_atomic_gcc_GccCounter_h__
 
-/**
- * \file components/atomic/gcc/GccCounter.h
- * \brief gcc builtin atomics implementation of in-place Counter
- *
- */
-#include "components/atomic/Counter.h"
-#include "components/atomic/gcc/GccBuiltin.h"
+#include <stdint.h>
 
-#undef TRACE_ERR
-#define TRACE_ERR(x) //fprintf x
+#include "components/atomic/CounterInterface.h"
 
 namespace PAMI
 {
   namespace Counter
   {
-
-    class GccInPlaceCounter : public PAMI::Atomic::Interface::InPlaceCounter<GccInPlaceCounter>
+    ///
+    /// \brief PAMI::Counter::Interface implementation using gcc builtin atomics
+    ///
+    /// The PAMI::Counter::Gcc class is considered an "in place" implementation
+    /// because the storage for the actual atomic resource is embedded within
+    /// the class instance.
+    ///
+    /// Any "in place" counter implementation may be converted to an "indirect"
+    /// counter implementation, where the atomic resource is located outside
+    /// of the class instance, by using the PAMI::Counter::Indirect<T> class
+    /// instead of the native "in place" implementation.
+    ///
+    class Gcc : public PAMI::Counter::Interface<Gcc>
     {
       public:
-        GccInPlaceCounter() {}
-        ~GccInPlaceCounter() {}
 
-	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
-		return true;
-	}
+        friend class PAMI::Counter::Interface<Gcc>;
 
-	static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
-		return true;
-	}
+        inline Gcc() {};
 
-        inline void init_impl()
-        {
-          TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
-	  new (&_addr) PAMI::Atomic::GccBuiltin();
-        }
-        inline size_t fetch_impl()
-        {
-          return _addr.fetch();
-        }
-        inline size_t fetch_and_inc_impl()
-        {
-          return _addr.fetch_and_inc();
-        }
-        inline size_t fetch_and_dec_impl()
-        {
-          return _addr.fetch_and_dec();
-        }
-        inline size_t fetch_and_clear_impl()
-        {
-          return _addr.fetch_and_clear();
-        }
-        inline void clear_impl()
-        {
-          _addr.clear();
-        }
-        void *returnLock_impl() { return &_addr; }
+        inline ~Gcc() {};
+
       protected:
-        PAMI::Atomic::GccBuiltin _addr;
-    }; // class GccInPlaceCounter
 
-    class GccIndirCounter : public PAMI::Atomic::Interface::IndirCounter<GccIndirCounter>
-    {
-      public:
-        GccIndirCounter() {}
-        ~GccIndirCounter() {}
+        // -------------------------------------------------------------------
+        // PAMI::Counter::Interface<T> implementation
+        // -------------------------------------------------------------------
 
-	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
-		return ((mm->attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) == 0);
-	}
-
-	static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
-		return true;
-	}
-
-        inline void clone (GccIndirCounter & atomic)
+        inline size_t fetch_impl ()
         {
-          _c = atomic._c;
+          // return __sync_fetch_and_or (&_atom, 0);
+          // can't use __sync_fetch_and_or... it's broken?
+          // instead, ensure "_atom" is volatile
+          return _atom;
         };
 
-        inline void init_impl(PAMI::Memory::MemoryManager *mm, const char *key)
+        inline size_t fetch_and_add (size_t inc)
         {
-          TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
-	  pami_result_t rc;
-          rc = mm->memalign((void **)&_c, sizeof(*_c), sizeof(*_c), key, GccIndirCounter::gcc_initialize, (void *) this);
-	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to get memory for GccIndirCounter");
-	  new (_c) PAMI::Atomic::GccBuiltin();
-        }
-        inline size_t fetch_impl()
-        {
-          return _c->fetch();
-        }
-        inline size_t fetch_and_inc_impl()
-        {
-          return _c->fetch_and_inc();
-        }
-        inline size_t fetch_and_dec_impl()
-        {
-          return _c->fetch_and_dec();
-        }
-        inline size_t fetch_and_clear_impl()
-        {
-          return _c->fetch_and_clear();
-        }
-        inline void clear_impl()
-        {
-          _c->clear();
-        }
-        void *returnLock_impl() { return _c; }
-      protected:
-        static void gcc_initialize (void       * memory,
-                                    size_t       bytes,
-                                    const char * key,
-                                    unsigned     attributes,
-                                    void       * cookie)
-	      {
-          //fprintf(stderr,"GccIndirCounter::gcc_initialize() >>\n");
-          PAMI::Atomic::GccBuiltin * _c =
-            (PAMI::Atomic::GccBuiltin *) memory;
-          _c->clear();
-          //fprintf(stderr,"GccIndirCounter::gcc_initialize() <<\n");
+           return __sync_fetch_and_add(&_atom, inc);
         };
 
-        PAMI::Atomic::GccBuiltin * _c;
-    }; // class GccIndirCounter
+        inline size_t fetch_and_inc_impl ()
+        {
+          return __sync_fetch_and_add (&_atom, 1);
+        };
 
-  }; // Counter namespace
-}; // PAMI namespace
+        inline size_t fetch_and_dec_impl ()
+        {
+          return __sync_fetch_and_sub (&_atom, 1);
+        };
 
-#endif // __components_atomic_gcccounter_h__
+        inline size_t fetch_and_clear_impl ()
+        {
+          return __sync_fetch_and_and (&_atom, 0);
+        };
+
+        inline void clear_impl ()
+        {
+          _atom = 0;
+        };
+
+        inline bool compare_and_swap_impl (size_t compare, size_t swap)
+        {
+          return __sync_bool_compare_and_swap (&_atom, compare, swap);
+        };
+
+        volatile uintptr_t _atom;
+
+    }; // PAMI::Counter::Gcc class
+  }; //   PAMI::Counter namespace
+}; //     PAMI namespace
+
+#endif // __components_atomic_gcc_GccCounter_h__
 
 //
 // astyle info    http://astyle.sourceforge.net

@@ -22,6 +22,9 @@
 #endif
 #include "components/atomic/gcc/GccCounter.h"
 #include "components/atomic/bgq/L2Counter.h"
+#include "components/atomic/counter/CounterMutex.h"
+#include "components/atomic/indirect/IndirectCounter.h"
+#include "components/atomic/indirect/IndirectMutex.h"
 
 #include "components/memory/MemoryAllocator.h"
 
@@ -72,8 +75,8 @@ namespace PAMI
               CSNativeInterface, CSMemoryManager, CollShmModel>            CollShmCollreg;
 
   typedef CollRegistration::BGQ2D::BGQ2DRegistration<BGQGeometry,
-              PAMI::Device::Generic::Device, 
-              MUDevice, 
+              PAMI::Device::Generic::Device,
+              MUDevice,
               CSNativeInterface,
               MUGlobalNI,
               CollShmModel, CSMemoryManager>                               BGQ2DCollreg;
@@ -82,7 +85,7 @@ namespace PAMI
 #endif
 
 
-  typedef Mutex::CounterMutex<Counter::BGQ::L2IndirCounter>  ContextLock;
+  typedef Mutex::Indirect<Mutex::Counter<Counter::BGQ::L2> >  ContextLock;
 
   typedef CollRegistration::P2P::CCMIRegistration < BGQGeometry,
   ShmemDevice,
@@ -494,8 +497,8 @@ namespace PAMI
             else  _coll_shm_registration = NULL;
 
             _bgq2d_registration = new((BGQ2DCollreg *) _bgq2d_registration_storage)
-            BGQ2DCollreg(_client, _context, _contextid, _clientid, 
-                         PAMI::Device::Generic::Device::Factory::getDevice(_devices->_generics, _clientid, _contextid), 
+            BGQ2DCollreg(_client, _context, _contextid, _clientid,
+                         PAMI::Device::Generic::Device::Factory::getDevice(_devices->_generics, _clientid, _contextid),
                          PAMI::Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid),
                          __global.mapping,
                          &_dispatch_id);

@@ -35,10 +35,11 @@
 #include "util/fifo/FifoPacket.h"
 #include "util/fifo/LinearFifo.h"
 
-#include "components/atomic/bgp/BgpAtomic.h"
+//#include "components/atomic/bgp/BgpAtomic.h"
 #include "components/atomic/bgp/LockBoxCounter.h"
 #include "components/atomic/counter/CounterMutex.h"
 #include "components/atomic/gcc/GccCounter.h"
+#include "components/atomic/indirect/IndirectCounter.h"
 
 #include "components/memory/MemoryAllocator.h"
 #include "components/memory/MemoryManager.h"
@@ -58,10 +59,10 @@
 
 namespace PAMI
 {
-  typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccIndirCounter>  ContextLock;
+  typedef PAMI::Mutex::Counter<PAMI::Counter::Gcc>  ContextLock;
 
   typedef Fifo::FifoPacket <sizeof(void*)*4, 256> ShmemPacket;
-  typedef Fifo::LinearFifo<ShmemPacket, Counter::GccIndirCounter> ShmemFifo;
+  typedef Fifo::LinearFifo<ShmemPacket, Counter::Indirect<Counter::Gcc> > ShmemFifo;
   typedef Device::ShmemDevice<ShmemFifo,Device::Shmem::BgpShaddr> ShmemDevice;
   //typedef Device::ShmemDevice<ShmemFifo> ShmemDevice;
   typedef Device::Shmem::PacketModel<ShmemDevice> ShmemPacketModel;
@@ -244,7 +245,7 @@ namespace PAMI
 	_mm.init(pmm, bytes, 16, 16, 0, mmkey);
 
 	strcpy(mms, "-lk");
-        _lock.init(&_mm, mmkey);
+        //_lock.init(&_mm, mmkey);
         _devices->init(_clientid, _contextid, _client, _context, &_mm);
         _local_generic_device = & PAMI::Device::Generic::Device::Factory::getDevice(_devices->_generics, clientid, id);
 

@@ -25,6 +25,7 @@
 
 #include "components/atomic/gcc/GccCounter.h"
 #include "components/atomic/counter/CounterBarrier.h"
+#include "components/atomic/indirect/IndirectBarrier.h"
 #include "components/devices/misc/AtomicBarrierMsg.h"
 
 #include "common/bgp/NativeInterface.h"
@@ -35,7 +36,7 @@ namespace PAMI
   typedef Geometry::Common                     BGPGeometry;
 
 
-  typedef PAMI::Barrier::CounterBarrier<PAMI::Counter::GccIndirCounter> Barrier_Type;
+  typedef PAMI::Barrier::Indirect<PAMI::Barrier::Counter<PAMI::Counter::Gcc> > Barrier_Type;
 
   typedef PAMI::Device::AtomicBarrierMdl<Barrier_Type> Barrier_Model;
 

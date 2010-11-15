@@ -13,7 +13,8 @@
 #ifndef __components_atomic_counter_CounterBarrier_h__
 #define __components_atomic_counter_CounterBarrier_h__
 
-#include "components/atomic/Barrier.h"
+#include "components/atomic/BarrierInterface.h"
+#include "components/atomic/indirect/IndirectBarrier.h"
 #include "util/common.h"
 
 namespace PAMI
@@ -21,163 +22,302 @@ namespace PAMI
   namespace Barrier
   {
     ///
-    /// \brief Generic atomic counter based barrier implementation
+    /// \brief Atomic counter barrier implementation
     ///
-    /// \param T_Counter  Atomic counter object derived class
+    /// \tparam T PAMI::Counter::Interface implementation class
     ///
-    template <class T_Counter>
-    class CounterBarrier : public PAMI::Atomic::Interface::Barrier<CounterBarrier<T_Counter> >
+    template <class T>
+    class Counter : public PAMI::Barrier::Interface<PAMI::Barrier::Counter<T> >
     {
       public:
-        CounterBarrier () :
-          PAMI::Atomic::Interface::Barrier<CounterBarrier<T_Counter> > (),
-          _control (NULL),
-          _lock (NULL),
-          _stat (NULL),
-          _participants (0),
+
+        friend class PAMI::Barrier::Interface<PAMI::Barrier::Counter<T> >;
+
+        inline Counter (size_t participants, bool master) :
+          PAMI::Barrier::Interface<PAMI::Barrier::Counter<T> > (participants, master),
+          _participants (participants),
+          _master(master),
           _data(0),
-          _master(false)
-        {
-	}
+          _active(false)
+        {};
 
-        ~CounterBarrier () {}
-
-        /// \see PAMI::Atomic::Interface::Barrier::init()
-        void init_impl (PAMI::Memory::MemoryManager *mm, const char *key, size_t participants, bool master)
-        {
-	  PAMI_assert_debugf(!_control, "Re-init or object is in shmem");
-          unsigned i;
-          _participants = participants;
-          _master = master;
-	  if (T_Counter::isIndirect) {
-		char k[PAMI::Memory::MMKEYSIZE];
-		if (key) {
-			strncpy(k, key, PAMI::Memory::MMKEYSIZE);
-		} else {
-			sprintf(k, "/pami-CounterBarrier-%p", this);
-		}
-	  	unsigned n = strlen(k);
-	  	PAMI_assert_debugf(n + 2 < PAMI::Memory::MMKEYSIZE,
-			"overflow mm key");
-	  	k[n++] = '-';
-	  	k[n+1] = '\0';
-          	for (i=0; i<5; i++) {
-			k[n] = "0123456789"[i];
-			new (&_counter[i]) T_Counter();
-			_counter[i].init(mm, k);
-	  	}
-	  	_control = &_counter[0];
-	  	_lock = &_counter[1];
-	  	_stat = &_counter[3];
-	  } else {
-		PAMI_assertf(T_Counter::checkCtorMm(mm),
-			"counters are incompatible with given mm");
-		pami_result_t rc;
-		rc = mm->memalign((void **)&_counters, sizeof(void *),
-					5 * sizeof(T_Counter), key);
-		PAMI_assertf(rc == PAMI_SUCCESS,
-			"Failed to allocate counters for Barrier from provided mm");
-          	for (i = 0; i < 5; ++i) {
-			new (&_counters[i]) T_Counter();
-			_counters[i].init();
-	  	}
-	  	_control = &_counters[0];
-	  	_lock = &_counters[1];
-	  	_stat = &_counters[3];
-	  }
-#if 0
-fprintf(stderr, "local_barriered_ctrzero<>(%p {%p,%p,%p,%p,%p}, 5, %zd, %d)\n", _counter,
-_counter[0].returnLock(),
-_counter[1].returnLock(),
-_counter[2].returnLock(),
-_counter[3].returnLock(),
-_counter[4].returnLock(),
-participants, master);
-#endif
-        }
-
-	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
-		// This is an indirect object, cannot instantiate in shared memory.
-		return ((mm->attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) == 0);
-	}
-	static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
-		if (T_Counter::isIndirect) {
-			return T_Counter::checkDataMm(mm);
-		} else {
-			return T_Counter::checkCtorMm(mm) &&
-				T_Counter::checkDataMm(mm); // redundant?
-		}
-	}
-
-        /// \see PAMI::Atomic::Interface::Barrier::enter()
-        inline pami_result_t enter_impl ()
-        {
-                pollInit_impl();
-                while (poll_impl() != PAMI::Atomic::Interface::Done);
-                return PAMI_SUCCESS;
-        }
-
-        inline void enterPoll_impl(PAMI::Atomic::Interface::pollFcn fcn, void *arg) {
-                pollInit_impl();
-                while (poll_impl() != PAMI::Atomic::Interface::Done) {
-                        fcn(arg);
-                }
-        }
-
-        inline void pollInit_impl() {
-                size_t phase;
-                // msync...
-                phase = _control->fetch();
-                _lock[phase].fetch_and_inc();
-                _data = phase;
-                _status = PAMI::Atomic::Interface::Entered;
-        }
-
-        inline PAMI::Atomic::Interface::barrierPollStatus poll_impl() {
-                PAMI_assert(_status == PAMI::Atomic::Interface::Entered);
-                size_t value;
-                size_t phase = _data;
-                if (_lock[phase].fetch() < _participants) return PAMI::Atomic::Interface::Entered;
-                _lock[phase].fetch_and_inc();
-                do {
-                        value = _lock[phase].fetch();
-                } while (value > 0 && value < (2 * _participants));
-                if (_master) {
-                        if (phase) {
-                                _control->fetch_and_dec();
-                        } else {
-                                _control->fetch_and_inc();
-                        }
-                        _stat[phase].fetch_and_clear();
-                        _lock[phase].fetch_and_clear();
-                } else {
-                        // wait until master releases the barrier by clearing the lock
-                        while (_lock[phase].fetch() > 0);
-                }
-                _status = PAMI::Atomic::Interface::Initialized;
-                return PAMI::Atomic::Interface::Done;
-        }
-        inline void * returnBarrier_impl() { PAMI_abortf("%s<%d>\n",__FILE__,__LINE__); }
-        inline void dump_impl(char *string) { PAMI_abortf("%s<%d>\n",__FILE__,__LINE__); }
+        inline ~Counter () {};
 
       protected:
 
+        // -------------------------------------------------------------------
+        // PAMI::Barrier::Interface<T> implementation
+        // -------------------------------------------------------------------
+
+        inline void enter_impl ()
+        {
+          this->begin();
+          while (this->poll());
+          this->end();
+        };
+
+        template <class T_Functor>
+        inline void enter_impl (T_Functor & functor)
+        {
+          this->begin();
+          while (this->poll())
+            functor();
+          this->end();
+        };
+
+        inline void begin_impl ()
+        {
+          size_t phase = _control.fetch();
+          _lock[phase].fetch_and_inc(); // enter the barrier.
+          _data = phase;
+          _active = true;
+        };
+
+        inline bool poll_impl ()
+        {
+          PAMI_assert(_active == true);
+
+          size_t value;
+          size_t phase = _data;
+
+          if (_lock[phase].fetch() < _participants)
+            return true; // barrier is still active.
+
+          _lock[phase].fetch_and_inc();
+
+          const size_t test = 2 * _participants;
+          do
+            {
+              value = _lock[phase].fetch();
+            }
+          while (value > 0 && value < test);
+
+          if (_master)
+            {
+              if (phase)
+                {
+                  _control.fetch_and_dec();
+                }
+              else
+                {
+                  _control.fetch_and_inc();
+                }
+
+              _stat[phase].fetch_and_clear();
+              _lock[phase].fetch_and_clear();
+            }
+          else
+            {
+              // wait until master releases the barrier by clearing the lock
+              while (_lock[phase].fetch() > 0);
+            }
+
+          _active = false;
+
+          return false; // barrier is now complete
+        };
+
+        inline void end_impl ()
+        {
+          // _active is set at the end of the poll() method
+        };
+
+        inline void dump_impl (const char * string = NULL)
+        {
+          PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+        };
+
       private:
 
-        T_Counter   _counter[5]; // can't put things with ctors in union,
-        T_Counter   *_counters;  // so these are distinct members for now...
+        T _control;
+        T _lock[2];
+        T _stat[2];
 
-        T_Counter * _control;
-        T_Counter * _lock;
-        T_Counter * _stat;
+        size_t _participants;
+        bool   _master;
 
-        size_t      _participants;
-        size_t      _data;
-        bool        _master;
-        PAMI::Atomic::Interface::barrierPollStatus _status;
+        size_t _data;
+        bool   _active;
 
-    };  // PAMI::Barrier::CounterBarrier class
+    }; // PAMI::Barrier::Counter<T> class
+
+
+    ///
+    /// \brief Barrier implementation using an "indirect" counter class
+    ///
+    /// This class implements an indirect barrier via an indirect counter. The
+    /// indirect interfaces are implemented merely as a pass-through to the
+    /// counter indirect interface implementation.
+    ///
+    /// \note There is a subtle difference between an "indirect barrier counter"
+    ///       and an "indirect counter barrier" (this class).
+    ///
+    template <class T>
+    class IndirectCounter : public PAMI::Barrier::Interface< PAMI::Barrier::IndirectCounter<T> >,
+                            public PAMI::Atomic::Indirect< PAMI::Barrier::IndirectCounter<T> >
+    {
+      public:
+
+        friend class PAMI::Barrier::Interface< PAMI::Barrier::IndirectCounter<T> >;
+        friend class PAMI::Atomic::Indirect< PAMI::Barrier::IndirectCounter<T> >;
+
+        inline IndirectCounter(size_t participants, bool master) :
+          PAMI::Barrier::Interface< PAMI::Barrier::IndirectCounter<T> > (participants, master),
+          PAMI::Atomic::Indirect< PAMI::Barrier::IndirectCounter<T> > (),
+          _participants (participants),
+          _master(master),
+          _data(0),
+          _active(false)
+        {};
+
+        inline ~IndirectCounter() {};
+
+      protected:
+
+        // -------------------------------------------------------------------
+        // PAMI::Atomic::Indirect<T> implementation
+        // -------------------------------------------------------------------
+
+        template <class T_MemoryManager>
+        inline void init_impl (T_MemoryManager * mm, const char * key)
+        {
+          char newkey[PAMI::Memory::MMKEYSIZE];
+
+          snprintf (newkey, PAMI::Memory::MMKEYSIZE - 1, "%s-control", key);
+          _control.init (mm, newkey);
+
+          snprintf (newkey, PAMI::Memory::MMKEYSIZE - 1, "%s-lock0", key);
+          _lock[0].init (mm, newkey);
+
+          snprintf (newkey, PAMI::Memory::MMKEYSIZE - 1, "%s-lock1", key);
+          _lock[1].init (mm, newkey);
+
+          snprintf (newkey, PAMI::Memory::MMKEYSIZE - 1, "%s-stat0", key);
+          _stat[0].init (mm, newkey);
+
+          snprintf (newkey, PAMI::Memory::MMKEYSIZE - 1, "%s-stat1", key);
+          _stat[1].init (mm, newkey);
+        };
+
+        inline void clone_impl (IndirectCounter & atomic)
+        {
+          _control.clone (atomic._control);
+          _lock[0].clone (atomic._lock[0]);
+          _lock[1].clone (atomic._lock[1]);
+          _stat[0].clone (atomic._stat[0]);
+          _stat[1].clone (atomic._stat[1]);
+
+          _participants = atomic._participants;
+          _master = atomic._master;
+
+          _data = atomic._data;
+          _active = atomic._active;
+        };
+
+        // -------------------------------------------------------------------
+        // PAMI::Barrier::Interface<T> implementation
+        // -------------------------------------------------------------------
+
+        inline void enter_impl ()
+        {
+          this->begin();
+          while (this->poll());
+          this->end();
+        };
+
+        template <class T_Functor>
+        inline void enter_impl (T_Functor & functor)
+        {
+          this->begin();
+          while (this->poll())
+            functor();
+          this->end();
+        };
+
+        inline void begin_impl ()
+        {
+          size_t phase = _control.fetch();
+          _lock[phase].fetch_and_inc(); // enter the barrier.
+          _data = phase;
+          _active = true;
+        };
+
+        inline bool poll_impl ()
+        {
+          PAMI_assert(_active == true);
+
+          size_t value;
+          size_t phase = _data;
+
+          if (_lock[phase].fetch() < _participants)
+            return true; // barrier is still active.
+
+          _lock[phase].fetch_and_inc();
+
+          const size_t test = 2 * _participants;
+          do
+            {
+              value = _lock[phase].fetch();
+            }
+          while (value > 0 && value < test);
+
+          if (_master)
+            {
+              if (phase)
+                {
+                  _control.fetch_and_dec();
+                }
+              else
+                {
+                  _control.fetch_and_inc();
+                }
+
+              _stat[phase].fetch_and_clear();
+              _lock[phase].fetch_and_clear();
+            }
+          else
+            {
+              // wait until master releases the barrier by clearing the lock
+              while (_lock[phase].fetch() > 0);
+            }
+
+          _active = false;
+
+          return false; // barrier is now complete
+        };
+
+        inline void end_impl ()
+        {
+          // _active is set at the end of the poll() method
+        };
+
+        inline void dump_impl (const char * string = NULL)
+        {
+          PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+        };
+
+      private:
+
+        T _control;
+        T _lock[2];
+        T _stat[2];
+
+        size_t _participants;
+        bool   _master;
+
+        size_t _data;
+        bool   _active;
+
+    }; // PAMI::Barrier::IndirectCounter<T> class
   };   // PAMI::Barrier namespace
 };     // PAMI namespace
 
 #endif // __components_atomic_counter_counterbarier_h__
+
+//
+// astyle info    http://astyle.sourceforge.net
+//
+// astyle options --style=gnu --indent=spaces=2 --indent-classes
+// astyle options --indent-switches --indent-namespaces --break-blocks
+// astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
+//

@@ -17,7 +17,7 @@
 #ifdef __GNUC__
 
 #include "components/atomic/gcc/GccCounter.h"
-typedef PAMI::Counter::GccInPlaceCounter GenericDeviceCounter;
+typedef PAMI::Counter::Gcc GenericDeviceCounter;
 
 #else /* !__GNUC__ */
 

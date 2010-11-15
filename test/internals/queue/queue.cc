@@ -18,14 +18,15 @@
 #include "util/queue/Queue.h"
 #include "util/queue/MutexedQueue.h"
 #ifdef __bgp__
-#include "components/atomic/bgp/BgpAtomic.h"
+#include "components/atomic/bgp/BgpAtomicCounter.h"
+#include "components/atomic/bgp/BgpAtomicMutex.h"
 #endif
 #include "components/atomic/noop/Noop.h"
 
 #define ELEMENTS 10240
 
 #ifdef __bgp__
-typedef PAMI::MutexedQueue<PAMI::Mutex::BGP::BgpProcMutex> QueueType;
+typedef PAMI::MutexedQueue<PAMI::Mutex::BGP::Atomic> QueueType;
 #else
 typedef PAMI::Queue QueueType;
 #endif
@@ -84,7 +85,7 @@ int main(int argc, char **argv)
 
   PAMI::Queue simpleq;
 #ifdef __bgp__
-  PAMI::MutexedQueue<PAMI::Mutex::BGP::BgpProcMutex> atomicq;
+  PAMI::MutexedQueue<PAMI::Mutex::BGP::Atomic> atomicq;
 #endif
 
   unsigned long long t0, t1;

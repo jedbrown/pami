@@ -56,6 +56,8 @@
 #include "components/atomic/bgq/L2Counter.h"
 #include "components/atomic/gcc/GccCounter.h"
 #include "components/atomic/counter/CounterBarrier.h"
+#include "components/atomic/indirect/IndirectBarrier.h"
+#include "components/atomic/indirect/IndirectCounter.h"
 #include "components/devices/misc/AtomicBarrierMsg.h"
 
 #include "common/NativeInterface.h"
@@ -116,7 +118,8 @@ namespace PAMI
     Device::MU::MulticombineModel<PAMI::Device::MU::AllreducePacketModel, false, false> > MUShmemAxialDputNI;
 
   typedef Fifo::FifoPacket <32, 544> ShmemPacket;
-  typedef Fifo::LinearFifo<ShmemPacket, Counter::GccIndirCounter> ShmemFifo;
+  //typedef Fifo::LinearFifo<ShmemPacket, Counter::Indirect<Counter::Gcc> > ShmemFifo;
+  typedef Fifo::LinearFifo<ShmemPacket, PAMI::Counter::BGQ::IndirectL2> ShmemFifo;
   typedef Device::ShmemDevice<ShmemFifo,Device::Shmem::BgqShaddrReadOnly> ShmemDevice;
 //  typedef Device::ShmemDevice<ShmemFifo> ShmemDevice;
   typedef Device::Shmem::PacketModel<ShmemDevice> ShmemPacketModel;
@@ -161,12 +164,12 @@ namespace PAMI
   typedef PAMI::NativeInterfaceAllsided< PAMI::Protocol::Send::SendPWQ< Protocol::Send::Send> > CompositeNI_AS;
 
 
-  typedef PAMI::Barrier::CounterBarrier<PAMI::Counter::BGQ::L2IndirCounter> Barrier_Type;
+  typedef PAMI::Barrier::Indirect<PAMI::Barrier::Counter<PAMI::Counter::BGQ::L2> > Barrier_Type;
 
   typedef PAMI::Device::AtomicBarrierMdl<Barrier_Type>                           ShmemMsyncModel;
 
 #ifdef ENABLE_NEW_SHMEM
-  typedef PAMI::Device::Shmem::ShmemCollDesc <Counter::GccInPlaceCounter> ShmemCollDesc;
+  typedef PAMI::Device::Shmem::ShmemCollDesc <Counter::Gcc> ShmemCollDesc;
   typedef PAMI::Device::ShmemCollDevice<ShmemCollDesc> ShmemCollDevice;
   typedef PAMI::Device::Shmem::ShmemMcombModelWorld <ShmemCollDevice, ShmemCollDesc> ShmemMcombModel;
   typedef PAMI::Device::Shmem::ShmemMcstModelWorld <ShmemCollDevice, ShmemCollDesc> ShmemMcstModel;

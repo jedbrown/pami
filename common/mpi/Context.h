@@ -40,6 +40,7 @@
 #include "Mapping.h"
 #include <new>
 #include <map>
+#include "components/atomic/indirect/IndirectCounter.h"
 #include "components/atomic/counter/CounterMutex.h"
 #include "components/atomic/gcc/GccCounter.h"
 #include <sched.h>
@@ -65,7 +66,7 @@ extern PAMI::Device::MPIDevice _g_mpi_device;
 namespace PAMI
 {
     // This won't work with XL
-    typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccIndirCounter>  ContextLock;
+    typedef PAMI::Mutex::Counter<PAMI::Counter::Gcc>  ContextLock;
     typedef Device::MPIMessage MPIMessage;
     typedef Device::MPIDevice MPIDevice;
     typedef Device::MPIPacketModel<MPIDevice,MPIMessage> MPIPacketModel;
@@ -80,7 +81,7 @@ namespace PAMI
 
 #ifdef ENABLE_SHMEM_DEVICE
     typedef Fifo::FifoPacket <64, 1024>                            ShmemPacket;
-    typedef Fifo::LinearFifo<ShmemPacket, Counter::GccIndirCounter> ShmemFifo;
+    typedef Fifo::LinearFifo<ShmemPacket, Counter::Indirect<Counter::Gcc> > ShmemFifo;
     typedef Device::ShmemDevice<ShmemFifo>                         ShmemDevice;
     typedef Device::Shmem::PacketModel<ShmemDevice>                ShmemPacketModel;
     typedef Protocol::Send::Eager <ShmemPacketModel, ShmemDevice>  ShmemEagerBase;
@@ -319,7 +320,7 @@ namespace PAMI
           _devices->init(_clientid, _contextid, _client, _context, &_mm);
           _mpi->init(&_mm, _clientid, num, (pami_context_t)this, id);
 	  strcpy(mms, "-lk");
-          _lock.init(&_mm, mmkey);
+          //_lock.init(&_mm, mmkey);
 
           // this barrier is here because the shared memory init
           // needs to be synchronized
