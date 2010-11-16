@@ -59,7 +59,7 @@ namespace PAMI
         {
         };
 
-      inline void setLapiHandle(lapi_handle_t handle)
+      inline void setLapiHandle(lapi_handle_t handle, int* dispatch_id)
         {
           _lapi_handle=handle;
           __global._context_to_device_table[handle]=(void*) this;
@@ -68,16 +68,16 @@ namespace PAMI
           CheckLapiRC(lapi_util(_lapi_handle, (lapi_util_t *)&_tf));
 
           CheckLapiRC(lapi_addr_set (_lapi_handle,
-                                            (void *)__pami_lapi_mcast_fn,
-                                            1));
+                                     (void *)__pami_lapi_mcast_fn,
+                                     (*dispatch_id)--));
 
           CheckLapiRC(lapi_addr_set (_lapi_handle,
                                             (void *)__pami_lapi_m2m_fn,
-                                            2));
+                                            (*dispatch_id)--));
 
           CheckLapiRC(lapi_addr_set (_lapi_handle,
-                                            (void *)__pami_lapi_msync_fn,
-                                            3));
+                                     (void *)__pami_lapi_msync_fn,
+                                     (*dispatch_id)--));
         }
 
       void lock()

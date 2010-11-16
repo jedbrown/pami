@@ -27,7 +27,6 @@
 
 // Components
 #include "components/devices/generic/Device.h"
-#include "components/devices/lapiunix/lapiunixdevice.h"
 #include "components/devices/lapiunix/lapiunixpacketmodel.h"
 #include "components/devices/lapiunix/lapiunixmessage.h"
 #include "components/devices/lapiunix/lapiunixmulticastmodel.h"
@@ -187,7 +186,6 @@ namespace PAMI
   };
 
   // Device Typedefs
-  typedef Device::LAPIDevice                                          LAPIDevice;
   typedef Device::CAUDevice                                           CAUDevice;
 
   // P2P Message Typedefs
@@ -201,10 +199,6 @@ namespace PAMI
   typedef Device::Shmem::PacketModel<ShmemDevice>                     ShmemPacketModel;
   typedef Protocol::Send::Eager<ShmemPacketModel, ShmemDevice>        ShmemEagerBase;
   typedef PAMI::Protocol::Send::SendPWQ<ShmemEagerBase>               ShmemEager;
-
-  // "Old" Collective Typedefs
-  typedef Device::OldLAPIMcastMessage                                 OldLAPIMcastMessage;
-  typedef Device::OldLAPIM2MMessage                                   OldLAPIM2MMessage;
 
   // "New" Collective Message Typedefs
   typedef Device::LAPIMsyncMessage                                    LAPIMsyncMessage;
@@ -220,23 +214,11 @@ namespace PAMI
   // P2P Model Classes:  None here, LAPI component implements p2p
 
   // "New" Collective Model typedefs
-  typedef Device::LAPIMultisyncModel<LAPIDevice,LAPIMsyncMessage>     LAPIMultisyncModel;
-  typedef Device::LAPIMulticastModel<LAPIDevice,LAPIMcastMessage>     LAPIMulticastModel;
-  typedef Device::LAPIMulticombineModel<LAPIDevice,
-                                       LAPIMcombineMessage>           LAPIMulticombineModel;
-  typedef Device::LAPIManytomanyModel<LAPIDevice,LAPIM2MMessage>      LAPIManytomanyModel;
-
   typedef Device::CAUMultisyncModel<CAUDevice,CAUMsyncMessage>        CAUMultisyncModel;
   typedef Device::CAUMulticastModel<CAUDevice,CAUMcastSendMessage>    CAUMulticastModel;
   typedef Device::CAUMulticombineModel<CAUDevice,
                                        CAUMcombineMessage>            CAUMulticombineModel;
 
-  // "Old" Collective Model Typedefs
-  typedef PAMI::Device::LAPIOldmulticastModel<LAPIDevice,
-                                             OldLAPIMcastMessage>     LAPIOldMcastModel;
-  typedef PAMI::Device::LAPIOldm2mModel<LAPIDevice,
-                                       OldLAPIM2MMessage,
-                                       size_t>                        LAPIOldM2MModel;
 
   // "OverP2P Collective Native Interface Typedefs
   typedef PAMI::NativeInterfaceActiveMessage<LAPISend>                LAPISendNI_AM;
@@ -256,9 +238,6 @@ namespace PAMI
 
 
   // PGAS RT Typedefs/Coll Registration
-  typedef PAMI::Device::LAPIOldmulticastModel<LAPIDevice,
-                                             OldLAPIMcastMessage> LAPIOldMcastModel;
-
   typedef TSPColl::NBCollManager<LAPISendNI_AM> LAPINBCollManager;
   typedef CollRegistration::PGASRegistration<LAPIGeometry,
                                              LAPISendNI_AM,
@@ -441,8 +420,6 @@ namespace PAMI
           _lapi_handle = ((lapi_state_t*)_lapi_state)->my_hndl;
 
           // Initialize the lapi device for collectives
-          _lapi_device.init(_mm, _clientid, 0, _context, _contextid);
-          _lapi_device.setLapiHandle(_lapi_handle);
           _lapi_device2.init((lapi_state_t*)_lapi_state);
           _cau_device.init((lapi_state_t*)_lapi_state,
                            _lapi_handle,
@@ -579,7 +556,6 @@ namespace PAMI
               {
                 // don't we want this advanced too?
                 // events += _work.advance ();
-                events += _lapi_device.advance_impl();
                 events += _devices->advance(_clientid, _contextid);
               }
           return events;
@@ -1066,7 +1042,6 @@ namespace PAMI
       ProtocolAllocator                      _protocol;
 
       /*  The over lapi devices                                 */
-      LAPIDevice                             _lapi_device;
       DeviceWrapper                          _lapi_device2;
       CAUDevice                              _cau_device;
   public:
