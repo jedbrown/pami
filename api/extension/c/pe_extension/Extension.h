@@ -16,7 +16,7 @@
 #ifdef __pami_extension_pe_extension__ // configure --with-pami-extension=pe_extension
 
 #include "api/extension/Extension.h"
-#include "sys/pami_ext_pe.h"
+#include "PeExtension.h"
 
 namespace PAMI
 {
@@ -40,7 +40,7 @@ namespace PAMI
   void * Extension::queryExtension<2000> (const char * name, void * cookie)
   {
     if (strcasecmp (name, "global_query") == 0)
-      return (void *) PAMI_Global_query;
+      return (void *) PAMI::PeExtension::global_query;
 
     if (strcasecmp (name, "mutex_getowner") == 0)
       return NULL;

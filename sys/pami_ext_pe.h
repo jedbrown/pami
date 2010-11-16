@@ -42,7 +42,7 @@ extern "C"
     PAMI_CLIENT_PROGRESS_HANDLER,  /**< CQ : pami_event_function : NULL : asynchronous progress handler */
     PAMI_CLIENT_PROGRESS_COOKIE,   /**< CQ : void * : NULL : cookie to asynchronous progress handler */
     PAMI_CLIENT_ERROR_HANDLER,     /**< CQ : pami_error_handler_t : NULL : asynchronous error handler */
-    PAMI_CLIENT_STATISTICS,        /**<  Q : pami_statistics_t : N/A : retrieve communication statistics */
+    PAMI_CONTEXT_STATISTICS,        /**<  Q : pami_statistics_t : N/A : retrieve communication statistics */
     PAMI_CLIENT_TRIGGER,           /**<   U: pami_trigger_t : N/A : add or remove a trigger */
     PAMI_ACTIVE_CLIENT,            /**<  Q : pami_active_client_t : N/A : retrieve all active clients */
     PAMI_CLIENT_ACTIVE_CONTEXT,    /**<  Q : pami_active_context_t : N/A : retrieve all active contexts in the client */
@@ -73,7 +73,7 @@ extern "C"
    * \defgroup comm_stat Communication statistics
    * \{
    *
-   * \ref PAMI_Context_query with \c PAMI_CLIENT_STATISTICS returns in
+   * \ref PAMI_Context_query with \c PAMI_CONTEXT_STATISTICS returns in
    * \ref pami_attribute_value_t.chararray a pointer to \ref pami_statistics_t
    * whose memory is managed by PAMI internally.
    *
@@ -145,80 +145,8 @@ extern "C"
    *
    */
   
-  /**
-   * \brief PAMI Global query that can be invoked before any clients being
-   * created
-   *
-   * \param[in]  configuration Array of queries
-   * \param[out] num_configs   Number of queries
-   *
-   * \retval PAMI_SUCCESS  The queries successfully handled.
-   * \retval PAMI_INVAL    The queries are not recognized.
-   */
 
   #define PAMI_VOID_CLIENT      NULL   /**< PAMI client used to open PE Extension before any client is created */
-  #define PAMI_MAX_CLIENT_NUM   128 /**< PAMI max number of clients allowed */
-
-  class PamiActiveClients {
-    size_t          client_num;
-    pami_client_t   clients[PAMI_MAX_CLIENT_NUM];
-
-    public:
-    PamiActiveClients() {
-      client_num = 0;
-      for (size_t i = 0; i < PAMI_MAX_CLIENT_NUM; i ++)
-        clients[i] = NULL;
-    }
-    inline pami_result_t AddClient(pami_client_t client) {
-      if (client_num < PAMI_MAX_CLIENT_NUM && client != NULL) {  
-        clients[client_num] = client;
-        client_num ++;
-        return PAMI_SUCCESS;
-      } else {
-        return PAMI_ERROR;
-      }
-    }
-    inline pami_result_t RemoveClient(pami_client_t client) {
-      bool found = false; 
-
-      for (size_t i = 0; i < client_num; i ++) {
-        if (!found) {
-          if (clients[i] == client)
-            found = true;
-        } else {
-          clients[i-1] = clients[i];
-          if (i == client_num - 1)
-            clients[i] = NULL;  
-        } 
-      }
-
-      if (found) {
-        client_num --;
-        return PAMI_SUCCESS;
-      } else
-        return PAMI_ERROR;  
-    }
-  };
-
-  extern PamiActiveClients _pami_act_clients;
-
-  inline pami_result_t PAMI_Global_query (pami_configuration_t     configuration[],
-                                          size_t                   num_configs)
-  {
-    pami_result_t result = PAMI_SUCCESS;
-    size_t i;
-    for (i = 0; i < num_configs; i ++)
-    {
-      switch (configuration[i].name) {
-        case PAMI_ACTIVE_CLIENT:
-          configuration[i].value.chararray = (char*)&(_pami_act_clients);
-          break;
-        default:
-          result = PAMI_INVAL;
-      }
-    }
-    return result;
-  }
 
   /**
    * \brief Struct user get after query with PAMI_ACTIVE_CLIENT
@@ -226,7 +154,7 @@ extern "C"
   typedef struct
   {
     const size_t        client_num;  
-    const pami_client_t clients[PAMI_MAX_CLIENT_NUM];
+    const pami_client_t clients[1];
   } pami_active_client_t; 
   
   /** \} */ /* end of "act_clients" group */
@@ -241,15 +169,13 @@ extern "C"
    *
    */
 
-#define PAMI_MAX_CONTEXT_NUM 1 /**< PAMI max number of contexts allowed in a client */
-
   /**
    * \brief Struct user get after query with PAMI_ACTIVE_CONTEXT
    */
   typedef struct
   {
-    size_t         context_num;  
-    pami_context_t contexts[PAMI_MAX_CONTEXT_NUM];
+    const size_t         context_num;  
+    const pami_context_t contexts[1];
   } pami_active_context_t; 
   
   /** \} */ /* end of "act_clients" group */

@@ -14,10 +14,11 @@
 #include "common/lapiunix/Context.h"
 #include "algorithms/geometry/LapiGeometry.h"
 #include "../lapi/include/Client.h"
+#include "api/extension/c/pe_extension/PeExtension.h"
 
 extern pthread_once_t  _Per_proc_lapi_init;
 extern void _lapi_perproc_setup(void);
-extern PamiActiveClients  _pami_act_clients;
+extern PAMI::PamiActiveClients  _pami_act_clients;
 
 namespace PAMI
 {
@@ -802,7 +803,7 @@ namespace PAMI
     MatchQueue                                                             _ueb_queue;
 
     // Active contexts in the Client
-    pami_active_context_t                        _active_contexts;
+    PamiActiveContexts                           _active_contexts;
   }; // end class PAMI::Client
 }; // end namespace PAMI
 
