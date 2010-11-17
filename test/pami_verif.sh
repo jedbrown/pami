@@ -641,22 +641,7 @@ runSim ()
     # svchost (for MMCS-Lite and FPGA)
     if [ "$type" != "runMambo" ] && [[ ! "$opts" =~ "--svchost" ]] 
 	then
-	if [ "$PAMI_DEVICE" == 'M' ]
-	    then
-	    opts="${opts} --svchost ${abs_test_dir}/pers.mu"
-	elif [ "$PAMI_DEVICE" == 'S' ]
-	    then
-#	    if [ "$type" == "runFpga" ]
-#		then
-#	        opts="${opts} --svchost ${abs_scripts_dir}/pers.fpga"
-#	    else
-		opts="${opts} --svchost ${abs_test_dir}/pers.shmem"
-#	    fi
-	else
-	    echo "ERROR (E)::runSim: PAMI_DEVICE = $PAMI_DEVICE"
-	    echo "ERROR (E)::runSim: set PAMI_DEVICE to either S or M"
-	    cleanExit 1
-	fi
+	opts="${opts} --svchost ${abs_test_dir}/svchost.pers"
     fi
 
     # Check for MMCS-Lite specific parms that we don't want to fill the input file with:
@@ -1065,6 +1050,10 @@ usage ()
     echo ""
     echo "-d | --debug                 Debug enabled, major commands (make, runjob, etc) are only echoed."
     echo ""
+    echo "-db | --dbhost <arg>         Select which DB to add results to."
+    echo "                             Valid values: sst or msg (PAMI)."
+    echo "                             default: msg"
+    echo ""
     echo "-dn | --display-name <length>Specify how much of the test name to display on the SST Test History web page."
     echo "                             Valid values: short or rel."
     echo "                             default: rel              (displays /exercisers/bgqmem/bgqmem.elf)"
@@ -1119,6 +1108,10 @@ usage ()
     echo "" 
     echo "-o | --outdir <path>         Specify dir for runtime output logs."
     echo "                             default:  <exedir>/results"
+    echo ""
+    echo "-p | --platform <arg>        Specify the platform that tests were run on (used with logXML.sh)."
+    echo "                             Valid values: bgp, bgq, linux, mpi & percs."
+    echo "                             default:  bgq"
     echo ""
     echo "-q | --quiet )               Redirect runtime output (>>) instead of tee."
     echo ""
@@ -1206,7 +1199,9 @@ summaryFile="pami_verif_summary.${timestamp}"
 
 # Logging/Documenting vars
 web_update=1
-logXml="/bglhome/alderman/bgq_svn/bgq/system_tests/sst/scripts/logXML.sh"
+logXml="${abs_test_dir}/logXML.sh"
+db_host='msg'
+platform='BGQ'
 testNameLength='rel'
 groupDev='MU'
 autoGroup=0
@@ -1243,6 +1238,9 @@ while [ "$1" != "" ]; do
 	                        if [ $run -eq 2 ]; then run=0; fi
                                 ;;
         -d | --debug )          debug=1
+                                ;;
+        -db | --dbhost )        shift
+	                        db_host=$1
                                 ;;
         -dn | --display-name )  shift
 	                        testNameLength=$1
@@ -1311,9 +1309,11 @@ while [ "$1" != "" ]; do
 	                        serverID=$1
 				;;
         -sb | --sandbox )       shift
-	                        abs_bgq_dir="${1}/bgq"
-				abs_systest_dir="${abs_bgq_dir}/system_tests"
-				abs_sst_dir="${abs_systest_dir}/sst"
+	                        abs_sanbox_dir="${1}"
+				abs_pami_dir="${abs_sandbox_dir}/pami"
+				abs_test_dir="${abs_pami_dir}/test"
+				abs_buildtools_dir="${abs_sandbox_dir}/buildtools"
+				abs_build_dir="${abs_sandbox_dir}/build"
                                 ;;
         -v | --verbose )        verbose=1
                                 ;;
@@ -1525,6 +1525,23 @@ if [ $user_outdir -eq 1 ] && [ ! -d "$out_dir" ] && [ $run -eq 1 ]
     fi
 fi
 
+# Verify platform
+# Turn on case-insensitive matching (-s set nocasematch)
+shopt -s nocasematch
+
+case $platform in
+    bgp | bgq | linux | mpi | percs )
+	logXml="${logXml} --platform ${platform}"
+	;;
+    * )                     
+	echo "ERROR (E):  Unrecognized platform: ${platform}"
+	echo "ERROR (E):  Valid values are:  bgp, bgq, linux, mpi & percs"
+	cleanExit 1
+esac
+
+# Turn off case-insensitive matching (-u unset nocasematch)
+shopt -u nocasematch
+
 # Set "mode" ENV variable to default value
 if [ "$BG_PROCESSESPERNODE" == "" ]
     then 
@@ -1588,9 +1605,7 @@ if [ $run -eq 1 ]
 	    export PAMI_DEVICE='S' # works for single node only
 	    groupDev='SHMem'
 	else
-	    echo "Setting PAMI_DEVICE to M"
-	    export PAMI_DEVICE='M' # works for single and multi-node
-	    groupDev='MU'
+	    groupDev='Both'
 	fi
     else # When PAMI_DEVICE env var is set
 	if [ "${run_type}" == 'runFpga' ] && [ "${PAMI_DEVICE}" != 'S' ]
@@ -1615,6 +1630,25 @@ if [ $run -eq 1 ]
 		echo "ERROR (E):  Valid options for PAMI_DEVICE are: B, M or S"
 		cleanExit 1
 	    fi
+	fi
+    fi
+fi
+
+# Verify DB host
+if [ $web_update -eq 1 ]
+    then
+    
+    # Verify DB host
+    if [ "${db_host}" == 'msg' ]
+	then
+	logXml="${logXml} --messaging"
+    else # better be sst then
+	if [ "${db_host}" != 'sst' ]
+	    then
+	    echo "ERROR (E):  Unrecognizd DB host: ${db_host} !!"
+	    echo "ERROR (E):  Valid values are:  sst & msg"
+	    echo "ERROR (E):  Exiting."
+	    cleanExit 1
 	fi
     fi
 fi
@@ -2691,29 +2725,49 @@ fi
 echo "Creating summary file ..."
 
 {
-    echo -e "\nTEST\t\t\t\t\tSYSTEM\tNP\tMODE\tOVRRIDE\tSTATUS\t\tRUNTIME\tXML\tLOG"
-    echo -e "=======================================\t=======\t=======\t=======\t=======\t===============\t=======\t=======\t=====================================================================================" 
+    echo -e "\nTEST\t\t\t\t\t\t\tSYSTEM\tNP\tMODE\tOVRRIDE\tSTATUS\t\tRUNTIME\tXML\tLOG"
+    echo -e "======================================================\t=======\t=======\t=======\t=======\t===============\t=======\t=======\t=====================================================================================" 
 } >> $summaryFile
 
 
 for ((test=0; test < ${#TEST_ARRAY[@]}; test++))
   do
 
-  # Print testname to summary file
-  if [ ${#TEST_ARRAY[$test]} -lt 8 ]
+  # Create test name to be displayed in DB
+  testName=""
+
+  # Grab rel and abs exe paths
+  hget $exeHash "${TEST_ARRAY[$test]}:$test:stub" relPath
+  hget $exeHash "${TEST_ARRAY[$test]}:$test:exeDir" exeDir
+
+  if [ "${testNameLength}" == 'short' ]
       then
-      echo -e -n "${TEST_ARRAY[$test]}\t\t\t\t\t" >> $summaryFile
-  elif [ ${#TEST_ARRAY[$test]} -lt 16 ]
-      then
-      echo -e -n "${TEST_ARRAY[$test]}\t\t\t\t" >> $summaryFile
-  elif [ ${#TEST_ARRAY[$test]} -lt 24 ]
-      then
-      echo -e -n "${TEST_ARRAY[$test]}\t\t\t" >> $summaryFile
-  elif [ ${#TEST_ARRAY[$test]} -lt 32 ]
-      then
-      echo -e -n "${TEST_ARRAY[$test]}\t\t" >> $summaryFile
+      testName="${TEST_ARRAY[$test]}"
   else
-      echo -e -n "${TEST_ARRAY[$test]}\t" >> $summaryFile
+      testName="${relPath}/${TEST_ARRAY[$test]}"
+  fi
+
+  # Print testname to summary file
+  if [ ${#testName} -lt 8 ]
+      then
+      echo -e -n "${testName}\t\t\t\t\t\t\t" >> $summaryFile
+  elif [ ${#testName} -lt 16 ]
+      then
+      echo -e -n "${testName}\t\t\t\t\t\t" >> $summaryFile
+  elif [ ${#testName} -lt 24 ]
+      then
+      echo -e -n "${testName}\t\t\t\t\t" >> $summaryFile
+  elif [ ${#testName} -lt 32 ]
+      then
+      echo -e -n "${testName}\t\t\t\t" >> $summaryFile
+  elif [ ${#testName} -lt 40 ]
+      then
+      echo -e -n "${testName}\t\t\t" >> $summaryFile
+  elif [ ${#testName} -lt 48 ]
+      then
+      echo -e -n "${testName}\t\t" >> $summaryFile
+  else # < 56
+      echo -e -n "${testName}\t" >> $summaryFile
   fi
 
   # Determine platform test was run on:
@@ -2827,7 +2881,7 @@ for ((test=0; test < ${#TEST_ARRAY[@]}; test++))
 	      fi
 	      
               # Print NP, mode, status to summary file
-	      echo -e -n "\t\t\t\t\t\t${np}\t${ppn}\t${override}\t${hashStatus}" >> $summaryFile
+	      echo -e -n "\t\t\t\t\t\t\t\t${np}\t${ppn}\t${override}\t${hashStatus}" >> $summaryFile
 	      
 	      # Print run time & XML status to summary file
 	      if [ ${#hashStatus} -lt 8 ]
