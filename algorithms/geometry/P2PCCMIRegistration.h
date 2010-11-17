@@ -229,10 +229,10 @@ namespace PAMI
               geometry->addCollective(PAMI_XFER_BROADCAST,
                                       _binomial_broadcast_factory,
                                       _context_id);
-#ifndef __bgq__ // currently not working reliably on BGQ/MU
               geometry->addCollective(PAMI_XFER_BROADCAST,
                                       _ring_broadcast_factory,
                                       _context_id);
+#ifndef __bgq__ // currently not working reliably on BGQ/MU
               geometry->addCollective(PAMI_XFER_BROADCAST,
                                       _ascs_binomial_broadcast_factory,
                                       _context_id);
