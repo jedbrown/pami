@@ -21,6 +21,7 @@ namespace PAMI
   {
     namespace Mapping
     {
+      static const unsigned char Mesh          = 0x00; /// no torus                           
       static const unsigned char TorusPositive = 0x01; /// positive torus direction flag
       static const unsigned char TorusNegative = 0x02; /// negative torus direction flag
       ///
@@ -198,18 +199,6 @@ namespace PAMI
           inline size_t torusCoord_impl<T_Dimension> () const;
 
           ///
-          /// \brief Default torus dimension size template implementation.
-          ///
-          /// If a torus mapping implementation does not define a method for a
-          /// specific dimension then the base torus mapping
-          /// template implementation will be invoked and will abort.
-          ///
-          /// \see PAMI::Mapping::Torus::torusSize()
-          ///
-          template <int T_Dimension>
-          inline size_t torusSize_impl<T_Dimension> () const;
-
-          ///
           /// \brief Default torus address template implementation.
           ///
           /// If a torus mapping implementation does not define a method for a
@@ -245,6 +234,17 @@ namespace PAMI
           template <int T_Dimension>
           inline pami_result_t torus2task_impl (size_t (&addr)[T_Dimension], size_t & task) const;
 #endif
+          ///
+          /// \brief Default torus dimension size implementation.
+          ///
+          /// If a torus mapping implementation does not define a method for a
+          /// specific dimension then the base torus mapping
+          /// template implementation will be invoked and will abort.
+          ///
+          /// \see PAMI::Mapping::Torus::torusSize()
+          ///
+          inline size_t torusSize_impl (size_t i) const;
+
       }; // class Torus
 #if 0
       template <class T_Mapping, unsigned T_Dimensions>
@@ -299,6 +299,13 @@ namespace PAMI
         return static_cast<T_Mapping*>(this)->torusgetcoord_impl (dimension);
       }
 
+      template <class T_Mapping, unsigned T_Dimensions>
+      inline size_t Torus<T_Mapping,T_Dimensions>::torusSize_impl(size_t i) const
+      {
+        abort();
+        return 0;
+      }
+
 #if 0
       template <class T_Mapping>
       template <int T_Dimension>
@@ -308,14 +315,7 @@ namespace PAMI
         return 0;
       }
 
-      template <class T_Mapping>
-      template <int T_Dimension>
-      inline size_t Torus<T_Mapping>::torusSize_impl<T_Dimension> () const
-      {
-        abort();
-        return 0;
-      }
-
+//      template <class T_Mapping>
       template <class T_Mapping>
       template <int T_Dimension>
       inline void Torus<T_Mapping>::torusAddr_impl (size_t (&addr)[T_Dimension]) const;

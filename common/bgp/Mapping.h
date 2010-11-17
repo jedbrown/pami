@@ -263,7 +263,17 @@ namespace PAMI
         {
           return _personality.tSize();
         }
-
+        inline size_t torusSize_impl (size_t i) 
+        {
+          PAMI_assert (i < 4);
+          size_t sizes[4];
+          sizes[0] = xSize();
+          sizes[1] = ySize();
+          sizes[2] = zSize();
+          sizes[3] = tSize();
+      
+          return sizes[i];
+        }
 
 #if 0
 
@@ -310,6 +320,7 @@ namespace PAMI
         {
           return _personality.tCoord();
         }
+
 
         ///
         /// \brief Return the size of the BGP torus x dimension

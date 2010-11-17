@@ -24,38 +24,38 @@ namespace CCMI
   {
     class ColorConnMgr : public ConnectionManager<ColorConnMgr>
     {
-    public:
-      
-      /// Constructor
-      ColorConnMgr () : ConnectionManager<ColorConnMgr> ()
-	{
-	}
+      public:
 
-      inline void setNumConnections_impl (size_t sz)
-	{
-	}
-      
-      ///
-      /// \brief return the connection id given a set of inputs
-      /// \param comm the communicator id of the collective
-      /// \param root the root of the collective operation
-      /// \param color the dimension of the collective operation
-      inline unsigned getConnectionId_impl (unsigned comm, unsigned root,
-                                            unsigned color, unsigned phase, unsigned dst=(unsigned)-1)
-	{
-	  return color;
-	}
-      
-      inline unsigned getRecvConnectionId_impl (unsigned comm, unsigned root,
-						unsigned src, unsigned phase, unsigned color)
-	{
-	  return color;
-	}
-      
-      virtual int getNumConnections_impl ()
-      {
-	return MAX_COLORS;
-      }
+        /// Constructor
+        ColorConnMgr () : ConnectionManager<ColorConnMgr> ()
+        {
+        }
+
+        inline void setNumConnections_impl (size_t sz)
+        {
+        }
+
+        ///
+        /// \brief return the connection id given a set of inputs
+        /// \param comm the communicator id of the collective
+        /// \param root the root of the collective operation
+        /// \param color the dimension of the collective operation
+        inline unsigned getConnectionId_impl (unsigned comm, unsigned root,
+                                              unsigned color, unsigned phase, unsigned dst = (unsigned) - 1)
+        {
+          return color;
+        }
+
+        inline unsigned getRecvConnectionId_impl (unsigned comm, unsigned root,
+                                                  unsigned src, unsigned phase, unsigned color)
+        {
+          return color;
+        }
+
+        virtual int getNumConnections_impl ()
+        {
+          return MAX_COLORS;
+        }
     };
   };
 };

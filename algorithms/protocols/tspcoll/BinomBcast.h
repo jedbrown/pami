@@ -33,12 +33,12 @@ namespace TSPColl
   template<class T_NI>
   class BinomBcast: public CollExchange<T_NI>
   {
-  public:
-    void * operator new (size_t, void * addr) { return addr; }
-    BinomBcast (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int tagoff);
-    void reset (int root, const void * sbuf, void *buf, size_t);
-  private:
-    char _dummy;
+    public:
+      void * operator new (size_t, void * addr) { return addr; }
+      BinomBcast (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int tagoff);
+      void reset (int root, const void * sbuf, void *buf, size_t);
+    private:
+      char _dummy;
   };
 };
 
@@ -47,19 +47,23 @@ namespace TSPColl
 template<class T_NI>
 inline TSPColl::BinomBcast<T_NI>::
 BinomBcast(PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int tagoff) :
-  CollExchange<T_NI>(comm, tag, instID, tagoff, false)
+    CollExchange<T_NI>(comm, tag, instID, tagoff, false)
 {
-  this->_numphases = -1; for (int n=2*this->_comm->size()-1; n>0; n>>=1) this->_numphases++;
-  for (int i=0; i< this->_numphases; i++)
+  this->_numphases = -1;
+
+  for (int n = 2 * this->_comm->size() - 1; n > 0; n >>= 1) this->_numphases++;
+
+  for (int i = 0; i < this->_numphases; i++)
     {
 
       int rank = this->_comm->virtrank();
-      int destindex = (rank+2*this->_comm->size()-(1<<i))%this->_comm->size();
+      int destindex = (rank + 2 * this->_comm->size() - (1 << i)) % this->_comm->size();
       this->_dest[i] = this->_comm->absrankof(destindex);
       this->_sbuf[i] = &_dummy;
       this->_rbuf[i] = &_dummy;
       this->_sbufln[i] = 1;
     }
+
   this->_numphases   *= 2;
   this->_phase        = this->_numphases;
   this->_sendcomplete = this->_numphases;
@@ -79,6 +83,7 @@ reset (int rootindex, const void * sbuf, void * buf, size_t nbytes)
   /* --------------------------------------------------- */
 
   int rank = this->_comm->virtrank();
+
   if (rootindex == rank && sbuf != buf)
     memcpy (buf, sbuf, nbytes);
 
@@ -86,15 +91,16 @@ reset (int rootindex, const void * sbuf, void * buf, size_t nbytes)
   /* --------------------------------------------------- */
 
   int myrelrank = (rank + this->_comm->size() - rootindex) % this->_comm->size();
-  for (int i=0, phase=this->_numphases/2; i<this->_numphases/2; i++, phase++)
+
+  for (int i = 0, phase = this->_numphases / 2; i < this->_numphases / 2; i++, phase++)
     {
-      int  dist       = 1<<(this->_numphases/2-1-i);
-      int  sendmask   = (1<<(this->_numphases/2-i))-1;
-      int  destrelrank= myrelrank + dist;
+      int  dist       = 1 << (this->_numphases / 2 - 1 - i);
+      int  sendmask   = (1 << (this->_numphases / 2 - i)) - 1;
+      int  destrelrank = myrelrank + dist;
       int  srcrelrank = myrelrank - dist;
-      bool dosend     = ((myrelrank&sendmask)==0)&&((size_t)destrelrank<this->_comm->size());
-      bool dorecv     = ((srcrelrank&sendmask)==0)&&(srcrelrank>=0);
-      int  destindex  = (destrelrank + rootindex)%this->_comm->size();
+      bool dosend     = ((myrelrank & sendmask) == 0) && ((size_t)destrelrank < this->_comm->size());
+      bool dorecv     = ((srcrelrank & sendmask) == 0) && (srcrelrank >= 0);
+      int  destindex  = (destrelrank + rootindex) % this->_comm->size();
       this->_dest[phase]    = this->_comm->absrankof(destindex);
       this->_sbuf[phase]    = dosend ? buf : NULL;
       this->_sbufln[phase]  = dosend ? nbytes : 0;

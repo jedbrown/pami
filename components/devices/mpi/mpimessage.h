@@ -39,8 +39,6 @@ namespace PAMI
     {
       P2P_PACKET_TAG=0,
       P2P_PACKET_DATA_TAG,
-      OLD_MULTICAST_TAG,
-      OLD_M2M_TAG,
       MULTICAST_TAG,
       MULTISYNC_TAG,
       LAST_TAG=MULTISYNC_TAG+MAX_MULTISYNCS
@@ -84,40 +82,6 @@ namespace PAMI
     private:
     };
 
-
-    class OldMPIMcastMessage
-    {
-    public:
-      pami_client_t  _client;
-      size_t  _context;
-      size_t         _dispatch_id;
-      pami_quad_t     _info[2];
-      int            _info_count;
-      int            _size;
-      unsigned       _conn;
-      MPI_Request    *_req;
-      int            _num;
-      pami_callback_t _cb_done;
-      inline void *buffer() { return ((char *)this + sizeof (*this)); }
-      inline int  totalsize () { return _size + sizeof (*this); }
-    };
-
-    class OldMPIMcastRecvMessage
-    {
-    public:
-      size_t              _dispatch_id;
-      unsigned            _conn;
-      pami_event_function  _done_fn;
-      void               *_cookie;
-      char               *_buf;
-      size_t              _size;
-      size_t              _pwidth;
-      unsigned            _nranks;
-      unsigned            _hint;
-      pami_op              _op;
-      pami_dt              _dtype;
-      size_t              _counter;
-    };
 
     class MPIM2MMessage
     {

@@ -37,6 +37,7 @@ namespace CCMI
 {
   namespace Schedule
   {
+#define MESH     PAMI::Interface::Mapping::Mesh
 #define POSITIVE PAMI::Interface::Mapping::TorusPositive
 #define NEGATIVE PAMI::Interface::Mapping::TorusNegative
 

@@ -27,12 +27,14 @@ ShortAllreduce::ShortAllreduce ()
   /* --------------------------------------------------- */
 
   int nonBF, maxBF, logMaxBF, logN;
+
   //  logN = -1; for (int n=2*_comm->size()-1; n>0; n>>=1) logN++;
-  for (logMaxBF = 0; (1<<(logMaxBF+1)) <= _comm->size(); logMaxBF++) ;
-  maxBF = 1<<logMaxBF;   /* largest power of 2 that fits into comm->size() */
+  for (logMaxBF = 0; (1 << (logMaxBF + 1)) <= _comm->size(); logMaxBF++) ;
+
+  maxBF = 1 << logMaxBF; /* largest power of 2 that fits into comm->size() */
   nonBF = _comm->size() - maxBF;      /* comm->size() - largest power of 2 */
   int rank = _comm->virtrank();
-  int phase=0;
+  int phase = 0;
 
   /* phase 0: gather buffers from ranks > n2prev */
 
@@ -47,9 +49,9 @@ ShortAllreduce::ShortAllreduce ()
       phase ++;
     }
 
-  for (int i=0; i<logMaxBF; i++)   /* middle phases: butterfly pattern */
+  for (int i = 0; i < logMaxBF; i++)   /* middle phases: butterfly pattern */
     {
-      unsigned rdest   = _comm->absrankof (rank ^ (1<<i));
+      unsigned rdest   = _comm->absrankof (rank ^ (1 << i));
       _dest    [phase] = (rank < maxBF) ? rdest : -1;
       _sbuf    [phase] = (rank < maxBF) ? dbuf  : NULL;
       _rbuf    [phase] = (rank < maxBF) ? _phasebuf[phase] : NULL;
@@ -78,7 +80,7 @@ ShortAllreduce::ShortAllreduce ()
       _sbufln  [phase] = 0;
     }
 
-  _numphases = 2*(logMaxBF + 2 * (nonBF > 0));
+  _numphases = 2 * (logMaxBF + 2 * (nonBF > 0));
 
 
 }

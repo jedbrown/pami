@@ -15,7 +15,6 @@
 #define __algorithms_schedule_RingSchedule_h__
 
 #include "algorithms/interfaces/Schedule.h"
-#include "algorithms/schedule/OldRingSchedule.h"
 
 #include "util/ccmi_debug.h"
 #include "util/trace.h"

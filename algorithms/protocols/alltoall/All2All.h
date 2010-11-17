@@ -45,7 +45,7 @@ namespace CCMI
           //pami_task_t self = __global.mapping.task();
           PAMI::Topology * all = (PAMI::Topology *)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
           size_t topo_size = all->size();
-          TRACE_ADAPTOR((stderr, "<%p>All2AllProtocol size %zu, stypecount %zu, rtypecount %zu\n", this, topo_size, coll->cmd.xfer_alltoall.stypecount,coll->cmd.xfer_alltoall.rtypecount));
+          TRACE_ADAPTOR((stderr, "<%p>All2AllProtocol size %zu, stypecount %zu, rtypecount %zu\n", this, topo_size, coll->cmd.xfer_alltoall.stypecount, coll->cmd.xfer_alltoall.rtypecount));
           //_my_index = all->rank2Index(self);
 
 
@@ -267,8 +267,8 @@ namespace CCMI
           return a2a;
         }
 
-      static void cb_manytomany(pami_context_t ctxt,
-                                void *arg,
+        static void cb_manytomany(pami_context_t ctxt,
+                                  void *arg,
                                   unsigned conn_id,
                                   pami_quad_t *msginfo,
                                   unsigned msgcount,
@@ -282,7 +282,7 @@ namespace CCMI
           All2AllProtocol *a2a = NULL;
           int comm = md->_comm;
 
-          PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry(ctxt,comm);
+          PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry(ctxt, comm);
 
           C *cmgr = factory->_cmgr;
           unsigned key = factory->getKey(geometry, &cmgr);

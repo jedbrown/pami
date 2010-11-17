@@ -339,7 +339,8 @@ namespace PAMI
             (PAMI::Geometry::Common*)parent,
                                     &__global.mapping,
                                     id,
-                                    (PAMI::Topology *)topology);
+                                    (PAMI::Topology *)topology,
+                                        &_geometry_map);
           for(size_t n=0; n<_ncontexts; n++)
           {
             _contexts[n].analyze(n,(BGPGeometry*)new_geometry);

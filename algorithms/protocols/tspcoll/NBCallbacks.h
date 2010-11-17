@@ -29,30 +29,30 @@
 template<class T_NI>
 class UnexpectedColl
 {
-  static pami_result_t wf(pami_context_t context, void *cookie)
+    static pami_result_t wf(pami_context_t context, void *cookie)
     {
       UnexpectedColl *c = (UnexpectedColl *)cookie;
       c->deliverCallback();
       return PAMI_SUCCESS;
     }
-public:
-  UnexpectedColl():
-    _work_fn(wf),
-    _cookie(this),
-    _work(PAMI::Device::Generic::GenericThread(_work_fn, _cookie))
+  public:
+    UnexpectedColl():
+        _work_fn(wf),
+        _cookie(this),
+        _work(PAMI::Device::Generic::GenericThread(_work_fn, _cookie))
     {
     }
 
-  void initialize(TSPColl::NBCollManager<T_NI> *mc,
-                  pami_dispatch_p2p_function    fn,
-                  pami_context_t                context,
-                  void                         *cookie,
-                  const void                   *header_addr,
-                  size_t                        header_size,
-                  const void                   *pipe_addr,
-                  size_t                        data_size,
-                  pami_endpoint_t               origin,
-                  pami_recv_t                  *recv)
+    void initialize(TSPColl::NBCollManager<T_NI> *mc,
+                    pami_dispatch_p2p_function    fn,
+                    pami_context_t                context,
+                    void                         *cookie,
+                    const void                   *header_addr,
+                    size_t                        header_size,
+                    const void                   *pipe_addr,
+                    size_t                        data_size,
+                    pami_endpoint_t               origin,
+                    pami_recv_t                  *recv)
     {
       if (data_size)
         CCMI_FATALERROR (-1, "Collective Fatal: Only short(0-byte data) UE messages allowed");
@@ -77,13 +77,13 @@ public:
 
     }
 
-  void repost()
+    void repost()
     {
       _work.setStatus(PAMI::Device::OneShot);
       _mc->postWork(&_work);
     }
 
-  void deliverCallback()
+    void deliverCallback()
     {
       _ue_dispatch_fn(_ue_context,
                       _ue_cookie,
@@ -94,28 +94,28 @@ public:
                       _ue_origin,
                       _ue_recv);
     }
-  void finalize()
+    void finalize()
     {
       free(_ue_header_addr);
     }
 
-  // Work function parameters
-  pami_work_function                    _work_fn;
-  void                                 *_cookie;
-  PAMI::Device::Generic::GenericThread  _work;
+    // Work function parameters
+    pami_work_function                    _work_fn;
+    void                                 *_cookie;
+    PAMI::Device::Generic::GenericThread  _work;
 
-  // cb_incoming parameters
+    // cb_incoming parameters
 
-  TSPColl::NBCollManager<T_NI>         *_mc;
-  pami_dispatch_p2p_function            _ue_dispatch_fn;
-  pami_context_t                        _ue_context;
-  void                                 *_ue_cookie;
-  void                                 *_ue_header_addr;
-  size_t                                _ue_header_size;
-  void                                 *_ue_pipe_addr;
-  size_t                                _ue_data_size;
-  pami_endpoint_t                       _ue_origin;
-  pami_recv_t                          *_ue_recv;
+    TSPColl::NBCollManager<T_NI>         *_mc;
+    pami_dispatch_p2p_function            _ue_dispatch_fn;
+    pami_context_t                        _ue_context;
+    void                                 *_ue_cookie;
+    void                                 *_ue_header_addr;
+    size_t                                _ue_header_size;
+    void                                 *_ue_pipe_addr;
+    size_t                                _ue_data_size;
+    pami_endpoint_t                       _ue_origin;
+    pami_recv_t                          *_ue_recv;
 };
 
 
@@ -137,17 +137,18 @@ inline void TSPColl::CollExchange<T_NI>::cb_incoming_ue(pami_context_t    contex
   NBCollManager<T_NI> *mc = (NBCollManager<T_NI>*) cookie;
   void * base0 = mc->find (header->tag, header->id);
   void * base1 = mc->find_ue(header->tag, header->id);
+
   if (base0 == NULL)
     {
       // Unexpected collective case
-      if(base1 == NULL)
+      if (base1 == NULL)
         {
           TRACE((stderr, "Incoming, ALLOCATE(tag=%d, id=%d):  ctxt:%p cookie:%p header:%p h_sz=%zd "
                  "p_addr=%p d_size=%zd orig=%zd recv=%p\n",
                  header->tag, header->id,
                  context, cookie, header_addr, header_size,
-                 pipe_addr, data_size,(size_t)origin, recv));
-          UnexpectedColl<T_NI> *uecoll= (UnexpectedColl<T_NI>*)malloc(sizeof(UnexpectedColl<T_NI>));
+                 pipe_addr, data_size, (size_t)origin, recv));
+          UnexpectedColl<T_NI> *uecoll = (UnexpectedColl<T_NI>*)malloc(sizeof(UnexpectedColl<T_NI>));
           new(uecoll) UnexpectedColl<T_NI>();
           uecoll->initialize(mc,
                              cb_incoming_ue,
@@ -167,17 +168,18 @@ inline void TSPColl::CollExchange<T_NI>::cb_incoming_ue(pami_context_t    contex
                  "p_addr=%p d_size=%zd orig=%zd recv=%p\n",
                  header->tag, header->id,
                  context, cookie, header_addr, header_size,
-                 pipe_addr, data_size,(size_t)origin, recv));
+                 pipe_addr, data_size, (size_t)origin, recv));
           UnexpectedColl<T_NI> *uecoll = (UnexpectedColl<T_NI> *)base1;
           uecoll->repost();
           return;
         }
+
       return;
       CCMI_FATALERROR (-1, "incoming: cannot find coll=<%d,%d>",
                        header->tag, header->id);
     }
 
-  if(base1)
+  if (base1)
     mc->delete_ue(header->tag, header->id);
 
 
@@ -190,16 +192,18 @@ inline void TSPColl::CollExchange<T_NI>::cb_incoming_ue(pami_context_t    contex
 
   PAMI_assert(b->_header[0].id == header->id);
   PAMI_assert(b->_numphases > 0);
+
   if (b->_strict)
     {
       if (header->counter != b->_counter || b->_phase >= b->_numphases)
         b->internalerror (header, __LINE__);
     }
+
   b->_cmplt[header->phase].counter = header->counter;
 
-  if(pipe_addr)
-    memcpy(b->_rbuf[header->phase],pipe_addr,data_size);
-  else if(recv)
+  if (pipe_addr)
+    memcpy(b->_rbuf[header->phase], pipe_addr, data_size);
+  else if (recv)
     {
       memset(&recv->hints, 0, sizeof(recv->hints));
       recv->cookie        = &b->_cmplt[header->phase];
@@ -209,7 +213,8 @@ inline void TSPColl::CollExchange<T_NI>::cb_incoming_ue(pami_context_t    contex
       recv->offset        = 0;
       return;
     }
-  CollExchange<T_NI>::cb_recvcomplete(context,&b->_cmplt[header->phase],PAMI_SUCCESS);
+
+  CollExchange<T_NI>::cb_recvcomplete(context, &b->_cmplt[header->phase], PAMI_SUCCESS);
 }
 
 /* *********************************************************************** */
@@ -228,6 +233,7 @@ inline void TSPColl::CollExchange<T_NI>::cb_incoming(pami_context_t    context,
   struct AMHeader * header = (struct AMHeader *) header_addr;
   NBCollManager<T_NI> *mc = (NBCollManager<T_NI>*) cookie;
   void * base0 =  mc->find (header->tag, header->id);
+
   if (base0 == NULL)
     CCMI_FATALERROR (-1, "incoming: cannot find coll=<%d,%d>",
                      header->tag, header->id);
@@ -241,16 +247,18 @@ inline void TSPColl::CollExchange<T_NI>::cb_incoming(pami_context_t    context,
 
   PAMI_assert(b->_header[0].id == header->id);
   PAMI_assert(b->_numphases > 0);
+
   if (b->_strict)
     {
       if (header->counter != b->_counter || b->_phase >= b->_numphases)
         b->internalerror (header, __LINE__);
     }
+
   b->_cmplt[header->phase].counter = header->counter;
 
-  if(pipe_addr)
-    memcpy(b->_rbuf[header->phase],pipe_addr,data_size);
-  else if(recv)
+  if (pipe_addr)
+    memcpy(b->_rbuf[header->phase], pipe_addr, data_size);
+  else if (recv)
     {
       memset(&recv->hints, 0, sizeof(recv->hints));
       recv->cookie        = &b->_cmplt[header->phase];
@@ -260,7 +268,8 @@ inline void TSPColl::CollExchange<T_NI>::cb_incoming(pami_context_t    context,
       recv->offset        = 0;
       return;
     }
-  CollExchange::cb_recvcomplete(context,&b->_cmplt[header->phase],PAMI_SUCCESS);
+
+  CollExchange::cb_recvcomplete(context, &b->_cmplt[header->phase], PAMI_SUCCESS);
 }
 
 
@@ -281,15 +290,17 @@ void TSPColl::Scatter<T_NI>::cb_incoming(pami_context_t    context,
   struct scatter_header * header = (struct scatter_header *) header_addr;
   NBCollManager<T_NI> *mc = (NBCollManager<T_NI>*) cookie;
   void * base0 =  mc->find (header->tag, header->id);
+
   if (base0 == NULL)
     CCMI_FATALERROR (-1, "Scatter/v: <%d,%d> is undefined",
                      header->tag, header->id);
+
   Scatter * s = (Scatter * ) ((char *)base0 + header->tagoff);
   TRACE((stderr, "SCATTER/v: <%d,%d> INCOMING base=%p ptr=%p\n",
          header->tag, header->id, base0, s));
 
-  if(pipe_addr)
-      memcpy(s->_rbuf,pipe_addr,data_size);
+  if (pipe_addr)
+    memcpy(s->_rbuf, pipe_addr, data_size);
   else if (recv)
     {
       memset(&recv->hints, 0, sizeof(recv->hints));
@@ -302,7 +313,8 @@ void TSPColl::Scatter<T_NI>::cb_incoming(pami_context_t    context,
              header->tag, header->id, base0, s));
       return;
     }
-  Scatter::cb_recvcomplete(context,s,PAMI_SUCCESS);
+
+  Scatter::cb_recvcomplete(context, s, PAMI_SUCCESS);
 }
 
 

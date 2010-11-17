@@ -23,58 +23,61 @@ namespace CCMI
      * Implements a scatter strategy which uses one network link.
      */
 
-      template <class T_Scatter_type>
-      struct ScatterVecType
-      {
-         // COMPILE_TIME_ASSERT(0==1);
-      };
+    template <class T_Scatter_type>
+    struct ScatterVecType
+    {
+      // COMPILE_TIME_ASSERT(0==1);
+    };
 
-      template<>
-      struct ScatterVecType<pami_scatter_t>
-      {
-         typedef int base_type;
-      };
+    template<>
+    struct ScatterVecType<pami_scatter_t>
+    {
+      typedef int base_type;
+    };
 
-      template<>
-      struct ScatterVecType<pami_scatterv_t> {
-         typedef size_t base_type;
-      };
+    template<>
+    struct ScatterVecType<pami_scatterv_t>
+    {
+      typedef size_t base_type;
+    };
 
-      template<>
-      struct ScatterVecType<pami_scatterv_int_t> {
-         typedef int base_type;
-      };
+    template<>
+    struct ScatterVecType<pami_scatterv_int_t>
+    {
+      typedef int base_type;
+    };
 
-      template <class T_Scatter_type>
-      void setScatterVectors(T_Scatter_type *xfer, void *disps, void *sndcounts)
-      {
-      }
+    template <class T_Scatter_type>
+    void setScatterVectors(T_Scatter_type *xfer, void *disps, void *sndcounts)
+    {
+    }
 
-      template<>
-      void setScatterVectors<pami_scatter_t> (pami_scatter_t *xfer, void *disps, void * sndcounts)
-      {
-      }
+    template<>
+    void setScatterVectors<pami_scatter_t> (pami_scatter_t *xfer, void *disps, void * sndcounts)
+    {
+    }
 
-      template<>
-      void setScatterVectors<pami_scatterv_t> (pami_scatterv_t *xfer, void *disps, void * sndcounts)
-      {
-            *((size_t **)disps)     = xfer->sdispls;
-            *((size_t **)sndcounts) = xfer->stypecounts;
-      }
+    template<>
+    void setScatterVectors<pami_scatterv_t> (pami_scatterv_t *xfer, void *disps, void * sndcounts)
+    {
+      *((size_t **)disps)     = xfer->sdispls;
+      *((size_t **)sndcounts) = xfer->stypecounts;
+    }
 
-      template<>
-      void setScatterVectors<pami_scatterv_int_t> (pami_scatterv_int_t *xfer, void *disps, void * sndcounts)
-      {
-           *((int **)disps)     = xfer->sdispls;
-           *((int **)sndcounts) = xfer->stypecounts;
-      }
+    template<>
+    void setScatterVectors<pami_scatterv_int_t> (pami_scatterv_int_t *xfer, void *disps, void * sndcounts)
+    {
+      *((int **)disps)     = xfer->sdispls;
+      *((int **)sndcounts) = xfer->stypecounts;
+    }
 
     template<class T_ConnMgr, class T_Schedule, typename T_Scatter_type>
     class ScatterExec : public Interfaces::Executor
     {
       public:
 
-        struct SendStruct {
+        struct SendStruct
+        {
           pami_multicast_t    msend;
           PAMI::PipeWorkQueue pwq;
           PAMI::Topology      dsttopology;
@@ -138,9 +141,9 @@ namespace CCMI
         }
 
         ScatterExec (Interfaces::NativeInterface  * mf,
-                       T_ConnMgr                    * connmgr,
-                       unsigned                       comm,
-                       PAMI::Topology               *gtopology) :
+                     T_ConnMgr                    * connmgr,
+                     unsigned                       comm,
+                     PAMI::Topology               *gtopology) :
             Interfaces::Executor(),
             _comm_schedule (NULL),
             _native(mf),
@@ -174,9 +177,10 @@ namespace CCMI
 
         virtual ~ScatterExec ()
         {
-           /// Todo: convert this to allocator ?
-           if (_maxdsts) free (_msendstr);
-           if (_native->myrank() != _root || (_root != 0 && _native->numranks() != (unsigned)_nphases+1)) free (_tmpbuf);
+          /// Todo: convert this to allocator ?
+          if (_maxdsts) free (_msendstr);
+
+          if (_native->myrank() != _root || (_root != 0 && _native->numranks() != (unsigned)_nphases + 1)) free (_tmpbuf);
         }
 
         /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -204,24 +208,27 @@ namespace CCMI
           _myindex    = _gtopology->rank2Index(_native->myrank());
           _rootindex  = _gtopology->rank2Index(_root);
 
-          unsigned connection_id = (unsigned) -1;
+          unsigned connection_id = (unsigned) - 1;
+
           if (_connmgr)
             connection_id = _connmgr->getConnectionId(_comm, _root, 0, (unsigned) - 1, (unsigned) - 1);
 
           _msendstr = NULL;
-          if (_maxdsts)
-          {
-            _msendstr = (SendStruct *) malloc (_maxdsts * sizeof(SendStruct)) ;
 
-            pami_quad_t *info      =  (pami_quad_t*)((void*) & _mdata);
-            for (int i = 0; i <_maxdsts; ++i)
+          if (_maxdsts)
             {
-              _msendstr[i].msend.msginfo       =  info;
-              _msendstr[i].msend.msgcount      =  1;
-              _msendstr[i].msend.roles         = -1U;
-              _msendstr[i].msend.connection_id = connection_id;
+              _msendstr = (SendStruct *) malloc (_maxdsts * sizeof(SendStruct)) ;
+
+              pami_quad_t *info      =  (pami_quad_t*)((void*) & _mdata);
+
+              for (int i = 0; i < _maxdsts; ++i)
+                {
+                  _msendstr[i].msend.msginfo       =  info;
+                  _msendstr[i].msend.msgcount      =  1;
+                  _msendstr[i].msend.roles         = -1U;
+                  _msendstr[i].msend.connection_id = connection_id;
+                }
             }
-          }
         }
 
         void setConnectionID (unsigned cid)
@@ -230,7 +237,7 @@ namespace CCMI
           CCMI_assert(_comm_schedule != NULL);
 
           //Override the connection id from the connection manager
-          for (int i = 0; i <_maxdsts; ++i) _msendstr[i].msend.connection_id = cid;
+          for (int i = 0; i < _maxdsts; ++i) _msendstr[i].msend.connection_id = cid;
 
         }
 
@@ -252,41 +259,43 @@ namespace CCMI
           _mdata._count = len;
 
           CCMI_assert(_comm_schedule != NULL);
+
           // setup PWQ
           if (_native->myrank() == _root)
-          {
-            if ((unsigned)_nphases == _native->numranks()-1 || _root == 0)
-              _tmpbuf = src;
-            else  // allocate temporary buffer and reshuffle the data
             {
-              size_t buflen = _native->numranks() * len;
-              _tmpbuf = (char *) malloc(buflen);
-              memcpy (_tmpbuf, src+_myindex*len, (_native->numranks() - _myindex)*len);
-              memcpy (_tmpbuf+(_native->numranks() - _myindex)*len  ,src, _myindex * len);
+              if ((unsigned)_nphases == _native->numranks() - 1 || _root == 0)
+                _tmpbuf = src;
+              else  // allocate temporary buffer and reshuffle the data
+                {
+                  size_t buflen = _native->numranks() * len;
+                  _tmpbuf = (char *) malloc(buflen);
+                  memcpy (_tmpbuf, src + _myindex*len, (_native->numranks() - _myindex)*len);
+                  memcpy (_tmpbuf + (_native->numranks() - _myindex)*len  , src, _myindex * len);
+                }
             }
-          }
           else if (_nphases > 1)
-          {
-            // schedule's getLList() method can be used for an accurate buffer size
-            size_t  buflen = _native->numranks() * len;
-            _tmpbuf = (char *)malloc(buflen);
-            _pwq.configure (NULL, _tmpbuf, buflen, 0);
-            _pwq.reset();
-          }
+            {
+              // schedule's getLList() method can be used for an accurate buffer size
+              size_t  buflen = _native->numranks() * len;
+              _tmpbuf = (char *)malloc(buflen);
+              _pwq.configure (NULL, _tmpbuf, buflen, 0);
+              _pwq.reset();
+            }
           else
-          {
-            _pwq.configure (NULL, dst, len, 0);
-            _pwq.reset();
-          }
+            {
+              _pwq.configure (NULL, dst, len, 0);
+              _pwq.reset();
+            }
 
         }
 
         void setVectors(T_Scatter_type *xfer)
         {
 
-           if (_native->myrank() == _root) {
-             setScatterVectors<T_Scatter_type>(xfer, (void *)&_disps, (void *)&_sndcounts);
-           }
+          if (_native->myrank() == _root)
+            {
+              setScatterVectors<T_Scatter_type>(xfer, (void *)&_disps, (void *)&_sndcounts);
+            }
         }
 
         //------------------------------------------
@@ -325,7 +334,7 @@ namespace CCMI
         {
           TRACE_MSG ((stderr, "<%p>Executor::ScatterExec::notifyRecvDone()\n", cookie));
           ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type> *exec =  (ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type> *) cookie;
-          exec->_curphase      =  exec->_startphase+1;
+          exec->_curphase      =  exec->_startphase + 1;
           exec->sendNext();
         }
 
@@ -365,19 +374,21 @@ inline void  CCMI::Executor::ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type>:
 
   CCMI_assert(_comm_schedule != NULL);
   CCMI_assert(_curphase >= _startphase);
-  if (_curphase == _startphase + _nphases)
-  {
-     // all parents copy from send buffer to application destination buffer
-     if (_disps && _sndcounts)
-       memcpy(_rbuf, _sbuf+_disps[_myindex], _buflen);
-     else if (_native->myrank() == _root)
-       memcpy(_rbuf, _sbuf+_myindex * _buflen, _buflen);
-     else if (_nphases > 1)
-       memcpy(_rbuf, _tmpbuf, _buflen);
 
-     if (_cb_done) _cb_done (NULL, _clientdata, PAMI_SUCCESS);
-     return;
-  }
+  if (_curphase == _startphase + _nphases)
+    {
+      // all parents copy from send buffer to application destination buffer
+      if (_disps && _sndcounts)
+        memcpy(_rbuf, _sbuf + _disps[_myindex], _buflen);
+      else if (_native->myrank() == _root)
+        memcpy(_rbuf, _sbuf + _myindex * _buflen, _buflen);
+      else if (_nphases > 1)
+        memcpy(_rbuf, _tmpbuf, _buflen);
+
+      if (_cb_done) _cb_done (NULL, _clientdata, PAMI_SUCCESS);
+
+      return;
+    }
 
   _comm_schedule->getRList(_curphase, &_dstranks[0], ndst, &_dstlens[0]);
 
@@ -385,49 +396,50 @@ inline void  CCMI::Executor::ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type>:
   _donecount = ndst;
 
   for (unsigned i = 0; i < ndst; ++i)
-  {
-
-    SendStruct *sendstr = &(_msendstr[i]);
-    pami_multicast_t *msend = &sendstr->msend;
-    //new (&sendstr->dsttopology) PAMI::Topology(_gtopology->index2Rank(_dstranks[i]));
-    new (&sendstr->dsttopology) PAMI::Topology(_dstranks[i]);
-
-    unsigned dstindex = _gtopology->rank2Index(_dstranks[i]);
-    size_t buflen;
-    unsigned offset;
-    if (_disps && _sndcounts)
     {
-      CCMI_assert(_native->myrank() == _root);
-      CCMI_assert(ndst == 1);
-      buflen   =  _sndcounts[dstindex];
-      offset   =  _disps[dstindex];
-      _mdata._count = buflen;
-    }
-    else if ((unsigned)_nphases == _native->numranks() - 1)
-    {
-      buflen   = _buflen;
-      offset   = dstindex * _buflen;
-    }
-    else
-    {
-      buflen   = _dstlens[i] * _buflen;
-      offset   = ((dstindex + size - _myindex)% size) * _buflen;
-    }
 
-    char    *tmpbuf   = _tmpbuf + offset;
-    sendstr->pwq.configure (NULL, tmpbuf, buflen, 0);
-    sendstr->pwq.reset();
-    sendstr->pwq.produceBytes(buflen);
+      SendStruct *sendstr = &(_msendstr[i]);
+      pami_multicast_t *msend = &sendstr->msend;
+      //new (&sendstr->dsttopology) PAMI::Topology(_gtopology->index2Rank(_dstranks[i]));
+      new (&sendstr->dsttopology) PAMI::Topology(_dstranks[i]);
 
-    msend->src_participants   = (pami_topology_t *) & _selftopology;
-    msend->dst_participants   = (pami_topology_t *) & sendstr->dsttopology;
-    msend->cb_done.function   = notifySendDone;
-    msend->cb_done.clientdata = this;
-    msend->src                = (pami_pipeworkqueue_t *) & sendstr->pwq;
-    msend->dst                = NULL;
-    msend->bytes              = buflen;
-    _native->multicast(&_msendstr[i].msend);
-  }
+      unsigned dstindex = _gtopology->rank2Index(_dstranks[i]);
+      size_t buflen;
+      unsigned offset;
+
+      if (_disps && _sndcounts)
+        {
+          CCMI_assert(_native->myrank() == _root);
+          CCMI_assert(ndst == 1);
+          buflen   =  _sndcounts[dstindex];
+          offset   =  _disps[dstindex];
+          _mdata._count = buflen;
+        }
+      else if ((unsigned)_nphases == _native->numranks() - 1)
+        {
+          buflen   = _buflen;
+          offset   = dstindex * _buflen;
+        }
+      else
+        {
+          buflen   = _dstlens[i] * _buflen;
+          offset   = ((dstindex + size - _myindex) % size) * _buflen;
+        }
+
+      char    *tmpbuf   = _tmpbuf + offset;
+      sendstr->pwq.configure (NULL, tmpbuf, buflen, 0);
+      sendstr->pwq.reset();
+      sendstr->pwq.produceBytes(buflen);
+
+      msend->src_participants   = (pami_topology_t *) & _selftopology;
+      msend->dst_participants   = (pami_topology_t *) & sendstr->dsttopology;
+      msend->cb_done.function   = notifySendDone;
+      msend->cb_done.clientdata = this;
+      msend->src                = (pami_pipeworkqueue_t *) & sendstr->pwq;
+      msend->dst                = NULL;
+      msend->bytes              = buflen;
+      _native->multicast(&_msendstr[i].msend);
+    }
 }
 
 template <class T_ConnMgr, class T_Schedule, typename T_Scatter_type>

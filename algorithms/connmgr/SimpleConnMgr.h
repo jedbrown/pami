@@ -22,48 +22,48 @@ namespace CCMI
   {
     class SimpleConnMgr : public ConnectionManager<SimpleConnMgr>
     {
-    protected:
-      int   _connid;
-      int   _nconn;
-    public:
-      // the conn parm is what the connection id is, since multiple color executors
-      //   will still only have one connection manager this parm will be the last
-      //   color.
-      /* This class is really just a place holder for future extensions.  */
-      SimpleConnMgr (int conn=0)
-        : ConnectionManager<SimpleConnMgr>()
-      , _connid(0)
-      {
-        this->setNumConnections (conn == 0 ? 1 : conn );
-      }
-      ///
-      /// \brief Virtual destructors make compilers happy.
-      ///
-      virtual ~SimpleConnMgr() {};
+      protected:
+        int   _connid;
+        int   _nconn;
+      public:
+        // the conn parm is what the connection id is, since multiple color executors
+        //   will still only have one connection manager this parm will be the last
+        //   color.
+        /* This class is really just a place holder for future extensions.  */
+        SimpleConnMgr (int conn = 0)
+            : ConnectionManager<SimpleConnMgr>()
+            , _connid(0)
+        {
+          this->setNumConnections (conn == 0 ? 1 : conn );
+        }
+        ///
+        /// \brief Virtual destructors make compilers happy.
+        ///
+        virtual ~SimpleConnMgr() {};
 
-      ///
-      /// \brief return the connection id given a set of inputs
-      /// \param comm the communicator id of the collective
-      /// \param root the root of the collective operation
-      /// \param color the dimension of the collective operation
-      virtual unsigned getConnectionId_impl (unsigned comm, unsigned root,
-                                        unsigned color, unsigned phase, unsigned dst=(unsigned)-1)
-      {
-        return _connid;
-      }
+        ///
+        /// \brief return the connection id given a set of inputs
+        /// \param comm the communicator id of the collective
+        /// \param root the root of the collective operation
+        /// \param color the dimension of the collective operation
+        virtual unsigned getConnectionId_impl (unsigned comm, unsigned root,
+                                               unsigned color, unsigned phase, unsigned dst = (unsigned) - 1)
+        {
+          return _connid;
+        }
 
-      virtual unsigned getRecvConnectionId_impl (unsigned comm, unsigned root,
-                                            unsigned src, unsigned phase, unsigned color)
-      {
-        return _connid;
-      }
+        virtual unsigned getRecvConnectionId_impl (unsigned comm, unsigned root,
+                                                   unsigned src, unsigned phase, unsigned color)
+        {
+          return _connid;
+        }
 
-      virtual void setNumConnections_impl(int nconn)
-      {
-        _nconn = nconn;
-      }
+        virtual void setNumConnections_impl(int nconn)
+        {
+          _nconn = nconn;
+        }
 
-      virtual int getNumConnections_impl ()
+        virtual int getNumConnections_impl ()
         {
           return _nconn;
         }

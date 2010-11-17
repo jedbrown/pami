@@ -15,7 +15,7 @@ namespace CCMI
     namespace Barrier
     {
 
-      template <PAMI::Geometry::topologyIndex_t T_Geometry_Index=PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX>
+      template < PAMI::Geometry::topologyIndex_t T_Geometry_Index = PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX >
       class MultiSyncComposite : public CCMI::Executor::Composite
       {
         protected:
@@ -193,17 +193,17 @@ namespace CCMI
             TRACE_ADAPTOR((stderr, "<%p> MultiSync2Composite::global_done_fn()\n", cookie));
             MultiSync2Composite *m = (MultiSync2Composite*) cookie;
             // next local barrier done is the user's done
-            m->_local_barrier->setDoneCallback(m->_cb_done.function,m->_cb_done.clientdata);
+            m->_local_barrier->setDoneCallback(m->_cb_done.function, m->_cb_done.clientdata);
             m->_local_barrier->start();
           }
 
         public:
           MultiSync2Composite (Interfaces::NativeInterface                         *mInterface,
-                                     ConnectionManager::SimpleConnMgr              *cmgr,
-                                     pami_geometry_t                                g,
-                                     void                                          *cmd,
-                                     pami_event_function                            fn,
-                                     void                                          *cookie) :
+                               ConnectionManager::SimpleConnMgr              *cmgr,
+                               pami_geometry_t                                g,
+                               void                                          *cmd,
+                               pami_event_function                            fn,
+                               void                                          *cookie) :
               Composite(),
               _local_barrier(NULL),
               _global_barrier(NULL),
@@ -214,32 +214,32 @@ namespace CCMI
             _cb_done.function   = fn;
             _cb_done.clientdata = cookie;
 
-            TRACE_ADAPTOR((stderr, "<%p> MultiSync2Composite (_cb_done.function %p, _cb_done.clientdata %p)\n", this,_cb_done.function,_cb_done.clientdata));
+            TRACE_ADAPTOR((stderr, "<%p> MultiSync2Composite (_cb_done.function %p, _cb_done.clientdata %p)\n", this, _cb_done.function, _cb_done.clientdata));
             PAMI::Topology  *t_master    = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
             PAMI::Topology  *t_local     = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
 
             _local_barrier  = (CCMI::Executor::Composite *)_geometry->getKey((size_t)0, /// \todo does NOT support multicontext
-                                                                            PAMI::Geometry::CKEY_LOCALBARRIERCOMPOSITE);
+                                                                             PAMI::Geometry::CKEY_LOCALBARRIERCOMPOSITE);
             _global_barrier = (CCMI::Executor::Composite *)_geometry->getKey((size_t)0, /// \todo does NOT support multicontext
-                                                                            PAMI::Geometry::CKEY_GLOBALBARRIERCOMPOSITE);
+                                                                             PAMI::Geometry::CKEY_GLOBALBARRIERCOMPOSITE);
 
             // If the global "master" topology has only one rank, the local barrier will
             // suffice to implement the barrier
             if (t_master->size() == 1 && t_local->size() != 1)
-            {
-              _final_barrier = _active_barrier  =  _local_barrier;
-              return;
-            }
+              {
+                _final_barrier = _active_barrier  =  _local_barrier;
+                return;
+              }
 
             // If we have more than one master, but we are the only local process
             // we are guaranteed to be a "local master", so we will just
             // issue the collective on the global device
 
             if (t_master->size() > 1 && t_local->size() == 1)
-            {
-              _final_barrier = _active_barrier  =  _global_barrier;
-              return;
-            }
+              {
+                _final_barrier = _active_barrier  =  _global_barrier;
+                return;
+              }
 
             // We have a mix of both local nodes and master nodes
             // We need to determine if we are the master.
@@ -252,27 +252,27 @@ namespace CCMI
             // the final cb_done for the last local barrier.
 
             if (t_master->size() > 1 && t_local->size() > 1)
-            {
-              if (_geometry->isLocalMasterParticipant())
               {
-                _local_barrier->setDoneCallback(local_done_fn, this);
-                _global_barrier->setDoneCallback(global_done_fn, this);
-              }
-              else
-              {
-                _local_barrier->setDoneCallback(global_done_fn, this);
-              }
+                if (_geometry->isLocalMasterParticipant())
+                  {
+                    _local_barrier->setDoneCallback(local_done_fn, this);
+                    _global_barrier->setDoneCallback(global_done_fn, this);
+                  }
+                else
+                  {
+                    _local_barrier->setDoneCallback(global_done_fn, this);
+                  }
 
-              _active_barrier               =  _local_barrier;
-              return;
-            }
+                _active_barrier               =  _local_barrier;
+                return;
+              }
 
           }
           virtual void start()
           {
-            TRACE_ADAPTOR((stderr, "<%p> MultiSync2Composite::start() _cb_done.function %p, _cb_done.clientdata %p\n", this,_cb_done.function,_cb_done.clientdata));
+            TRACE_ADAPTOR((stderr, "<%p> MultiSync2Composite::start() _cb_done.function %p, _cb_done.clientdata %p\n", this, _cb_done.function, _cb_done.clientdata));
 
-            if(_final_barrier) _final_barrier->setDoneCallback(_cb_done.function, _cb_done.clientdata);
+            if (_final_barrier) _final_barrier->setDoneCallback(_cb_done.function, _cb_done.clientdata);
 
             return _active_barrier->start();
           }

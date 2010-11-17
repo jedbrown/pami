@@ -68,7 +68,6 @@ namespace PAMI
 
       T_Device                     &_device;
       size_t                        _dispatch_id;
-      pami_olddispatch_multicast_fn  _cb_async_head;
       void                         *_async_arg;
     };
   };

@@ -24,51 +24,53 @@ namespace CCMI
      * Implements a gather strategy which uses one network link.
      */
 
-      template <class T_Gather_type>
-      struct GatherVecType
-      {
-         // COMPILE_TIME_ASSERT(0==1);
-      };
+    template <class T_Gather_type>
+    struct GatherVecType
+    {
+      // COMPILE_TIME_ASSERT(0==1);
+    };
 
-      template<>
-      struct GatherVecType<pami_gather_t>
-      {
-         typedef int base_type;
-      };
+    template<>
+    struct GatherVecType<pami_gather_t>
+    {
+      typedef int base_type;
+    };
 
-      template<>
-      struct GatherVecType<pami_gatherv_t> {
-         typedef size_t base_type;
-      };
+    template<>
+    struct GatherVecType<pami_gatherv_t>
+    {
+      typedef size_t base_type;
+    };
 
-      template<>
-      struct GatherVecType<pami_gatherv_int_t> {
-         typedef int base_type;
-      };
+    template<>
+    struct GatherVecType<pami_gatherv_int_t>
+    {
+      typedef int base_type;
+    };
 
-      template <class T_Gather_type>
-      void setGatherVectors(T_Gather_type *xfer, void *disps, void *sndcounts)
-      {
-      }
+    template <class T_Gather_type>
+    void setGatherVectors(T_Gather_type *xfer, void *disps, void *sndcounts)
+    {
+    }
 
-      template<>
-      void setGatherVectors<pami_gather_t> (pami_gather_t *xfer, void *disps, void * rcvcounts)
-      {
-      }
+    template<>
+    void setGatherVectors<pami_gather_t> (pami_gather_t *xfer, void *disps, void * rcvcounts)
+    {
+    }
 
-      template<>
-      void setGatherVectors<pami_gatherv_t> (pami_gatherv_t *xfer, void *disps, void *rcvcounts)
-      {
-            *((size_t **)disps)     = xfer->rdispls;
-            *((size_t **)rcvcounts) = xfer->rtypecounts;
-      }
+    template<>
+    void setGatherVectors<pami_gatherv_t> (pami_gatherv_t *xfer, void *disps, void *rcvcounts)
+    {
+      *((size_t **)disps)     = xfer->rdispls;
+      *((size_t **)rcvcounts) = xfer->rtypecounts;
+    }
 
-      template<>
-      void setGatherVectors<pami_gatherv_int_t> (pami_gatherv_int_t *xfer, void *disps, void *rcvcounts)
-      {
-           *((int **)disps)     = xfer->rdispls;
-           *((int **)rcvcounts) = xfer->rtypecounts;
-      }
+    template<>
+    void setGatherVectors<pami_gatherv_int_t> (pami_gatherv_int_t *xfer, void *disps, void *rcvcounts)
+    {
+      *((int **)disps)     = xfer->rdispls;
+      *((int **)rcvcounts) = xfer->rtypecounts;
+    }
 
 
     template<class T_ConnMgr, class T_Schedule, typename T_Gather_type>
@@ -76,10 +78,11 @@ namespace CCMI
     {
       public:
 
-        struct RecvStruct {
-           int                 subsize;
-           PAMI::PipeWorkQueue pwq;
-           GatherExec         *exec;
+        struct RecvStruct
+        {
+          int                 subsize;
+          PAMI::PipeWorkQueue pwq;
+          GatherExec         *exec;
         };
 
       protected:
@@ -143,9 +146,9 @@ namespace CCMI
         }
 
         GatherExec (Interfaces::NativeInterface  * mf,
-                       T_ConnMgr                    * connmgr,
-                       unsigned                       comm,
-                       PAMI::Topology               *gtopology) :
+                    T_ConnMgr                    * connmgr,
+                    unsigned                       comm,
+                    PAMI::Topology               *gtopology) :
             Interfaces::Executor(),
             _comm_schedule (NULL),
             _native(mf),
@@ -185,9 +188,10 @@ namespace CCMI
 
         virtual ~GatherExec ()
         {
-           /// Todo: convert this to allocator ?
-           if (_maxsrcs) free (_mrecvstr);
-           if (!(_disps && _rcvcounts)) free (_tmpbuf);
+          /// Todo: convert this to allocator ?
+          if (_maxsrcs) free (_mrecvstr);
+
+          if (!(_disps && _rcvcounts)) free (_tmpbuf);
         }
 
         /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -211,7 +215,8 @@ namespace CCMI
           _myindex    = _gtopology->rank2Index(_native->myrank());
           _rootindex  = _gtopology->rank2Index(_root);
 
-          unsigned connection_id = (unsigned) -1;
+          unsigned connection_id = (unsigned) - 1;
+
           if (_connmgr)
             connection_id = _connmgr->getConnectionId(_comm, _root, 0, (unsigned) - 1, (unsigned) - 1);
 
@@ -266,50 +271,60 @@ namespace CCMI
           _mdata._count = len;
 
           CCMI_assert(_comm_schedule != NULL);
+
           if (_native->myrank() == _root)
-          {
-            _donecount = _native->numranks();
-            size_t buflen = 0;
-            if (_disps && _rcvcounts) {
-              for (unsigned i = 0; i < _native->numranks() ; ++i)
-              {
-                buflen += _rcvcounts[i];
-                if (_rcvcounts[i] == 0 && i != _rootindex) _donecount--;
-              }
-              _buflen = buflen;
-              _tmpbuf = _rbuf;
-            } else {
-              buflen = _native->numranks() * len;
-              _tmpbuf = (char *) malloc(buflen);
+            {
+              _donecount = _native->numranks();
+              size_t buflen = 0;
+
+              if (_disps && _rcvcounts)
+                {
+                  for (unsigned i = 0; i < _native->numranks() ; ++i)
+                    {
+                      buflen += _rcvcounts[i];
+
+                      if (_rcvcounts[i] == 0 && i != _rootindex) _donecount--;
+                    }
+
+                  _buflen = buflen;
+                  _tmpbuf = _rbuf;
+                }
+              else
+                {
+                  buflen = _native->numranks() * len;
+                  _tmpbuf = (char *) malloc(buflen);
+                }
             }
-          }
           else // setup PWQ
-          {
-
-            unsigned ndst;
-            _comm_schedule->getLList(_startphase, &_srcranks[0], ndst, &_srclens[0]);
-            CCMI_assert(ndst == 1);
-
-            //new (&_dsttopology) PAMI::Topology(_gtopology->index2Rank(_srcranks[0]));
-            new (&_dsttopology) PAMI::Topology(_srcranks[0]);
-
-            _donecount        = _srclens[0];
-            size_t  buflen    = _srclens[0]  * _buflen;
-            if (_mynphases > 1)
             {
-              _tmpbuf = (char *)malloc(buflen);
-              _pwq.configure (NULL, _tmpbuf, buflen, 0);
-            }
-            else
-            {
-              _pwq.configure (NULL, src, buflen, 0);
-            }
-            _pwq.reset();
-            _pwq.produceBytes(buflen);
 
-            _totallen = _srclens[0];
+              unsigned ndst;
+              _comm_schedule->getLList(_startphase, &_srcranks[0], ndst, &_srclens[0]);
+              CCMI_assert(ndst == 1);
 
-          }
+              //new (&_dsttopology) PAMI::Topology(_gtopology->index2Rank(_srcranks[0]));
+              new (&_dsttopology) PAMI::Topology(_srcranks[0]);
+
+              _donecount        = _srclens[0];
+              size_t  buflen    = _srclens[0]  * _buflen;
+
+              if (_mynphases > 1)
+                {
+                  _tmpbuf = (char *)malloc(buflen);
+                  _pwq.configure (NULL, _tmpbuf, buflen, 0);
+                }
+              else
+                {
+                  _pwq.configure (NULL, src, buflen, 0);
+                }
+
+              _pwq.reset();
+              _pwq.produceBytes(buflen);
+
+              _totallen = _srclens[0];
+
+            }
+
           //TRACE_ADAPTOR((stderr, "<%p>Executor::GatherExec::setInfo() _pwq %p, bytes available %zu/%zu\n", this, &_pwq, _pwq.bytesAvailableToConsume(), _pwq.bytesAvailableToProduce()));
 
         }
@@ -317,9 +332,10 @@ namespace CCMI
         void setVectors(T_Gather_type *xfer)
         {
 
-           if (_native->myrank() == _root) {
-             setGatherVectors<T_Gather_type>(xfer, (void *)&_disps, (void *)&_rcvcounts);
-           }
+          if (_native->myrank() == _root)
+            {
+              setGatherVectors<T_Gather_type>(xfer, (void *)&_disps, (void *)&_rcvcounts);
+            }
         }
 
 
@@ -354,6 +370,7 @@ namespace CCMI
 
           EXECUTOR_DEBUG((stderr, "GatherExec::notifyRecvDone, donecount = %d, subsize = %d\n", exec->_donecount, mrecv->subsize);)
           exec->_donecount -= mrecv->subsize;
+
           if (exec->_donecount == 0) exec->sendNext();
         }
 
@@ -371,7 +388,7 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::s
   TRACE_ADAPTOR((stderr, "<%p>Executor::GatherExec::start() count%d\n", this, _buflen));
 
   EXECUTOR_DEBUG((stderr, "GatherExec::start, mynphases = %d, buflen = %d, donecount = %d\n",
-        _mynphases, _buflen, _donecount);)
+                  _mynphases, _buflen, _donecount);)
 
   // Nothing to gather? We're done. What if in Gatherv ?
   if ((_buflen == 0) && _cb_done)
@@ -383,13 +400,14 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::s
   _curphase  = _startphase;
 
   if (_native->myrank() == _root)
-  {
-    if (_disps && _rcvcounts)
-      memcpy(_rbuf + _disps[_rootindex], _sbuf, _rcvcounts[_rootindex]);
-    else
-      memcpy(_rbuf + _rootindex * _buflen, _sbuf, _buflen);
-  }
+    {
+      if (_disps && _rcvcounts)
+        memcpy(_rbuf + _disps[_rootindex], _sbuf, _rcvcounts[_rootindex]);
+      else
+        memcpy(_rbuf + _rootindex * _buflen, _sbuf, _buflen);
+    }
   else if (_mynphases > 1)  memcpy(_tmpbuf, _sbuf, _buflen);
+
   --_donecount;
 
   if (_donecount == 0) sendNext();
@@ -403,20 +421,25 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::s
 
   // TODO: needs to add noncontiguous datatype handling
   if (_native->myrank() == _root)
-  {
+    {
 
-    if (!(_disps && _rcvcounts)) {
-      if (_rootindex != 0) {
-        memcpy (_rbuf + ((_myindex+1)%_native->numranks())* _buflen, _tmpbuf+_buflen, (_native->numranks() - _myindex-1)*_buflen);
-        memcpy (_rbuf, _tmpbuf+(_native->numranks() - _myindex)*_buflen, _myindex * _buflen);
-      } else{
-        memcpy (_rbuf, _tmpbuf, _myindex * _buflen);
-      }
+      if (!(_disps && _rcvcounts))
+        {
+          if (_rootindex != 0)
+            {
+              memcpy (_rbuf + ((_myindex + 1) % _native->numranks())* _buflen, _tmpbuf + _buflen, (_native->numranks() - _myindex - 1)*_buflen);
+              memcpy (_rbuf, _tmpbuf + (_native->numranks() - _myindex)*_buflen, _myindex * _buflen);
+            }
+          else
+            {
+              memcpy (_rbuf, _tmpbuf, _myindex * _buflen);
+            }
+        }
+
+      if (_cb_done) _cb_done (NULL, _clientdata, PAMI_SUCCESS);
+
+      return;
     }
-
-    if (_cb_done) _cb_done (NULL, _clientdata, PAMI_SUCCESS);
-    return;
-  }
 
   _mdata._phase             = _startphase;
   _msend.src_participants   = (pami_topology_t *) & _selftopology;
@@ -439,13 +462,14 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::n
  pami_callback_t      * cb_done)
 {
 
-  CollHeaderData *cdata = (CollHeaderData*) &info;
+  CollHeaderData *cdata = (CollHeaderData*) & info;
 
   unsigned i;
   unsigned nsrcs;
   _comm_schedule->getRList(cdata->_phase, &_srcranks[0], nsrcs, &_srclens[0]);
 
   for (i = 0; i < nsrcs; ++i)
+
     //if (_srcranks[i] == _gtopology->rank2Index(src)) break;
     if (_srcranks[i] == src) break;
 
@@ -457,19 +481,25 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::n
   size_t      buflen;
   unsigned    offset;
 
-  if (_disps && _rcvcounts) {
-    CCMI_assert(_native->myrank() == _root);
-    _srclens[i] = 1;
-    buflen    =  _rcvcounts[srcindex];
-    offset    =  _disps[srcindex];
-  } else if (0 && (unsigned)_mynphases == _native->numranks() - 1) {
-    _srclens[i] = 1;
-    buflen   = _buflen;
-    offset   = srcindex * _buflen;
-  } else {
-    buflen   = _srclens[i] * _buflen;
-    offset   = ((srcindex + size - _myindex)% size) * _buflen; // will root be affected by this ?
-  }
+  if (_disps && _rcvcounts)
+    {
+      CCMI_assert(_native->myrank() == _root);
+      _srclens[i] = 1;
+      buflen    =  _rcvcounts[srcindex];
+      offset    =  _disps[srcindex];
+    }
+  else if (0 && (unsigned)_mynphases == _native->numranks() - 1)
+    {
+      _srclens[i] = 1;
+      buflen   = _buflen;
+      offset   = srcindex * _buflen;
+    }
+  else
+    {
+      buflen   = _srclens[i] * _buflen;
+      offset   = ((srcindex + size - _myindex) % size) * _buflen; // will root be affected by this ?
+    }
+
   // CCMI_assert (buflen == cdata->_count);
 
   char    *tmpbuf   = _tmpbuf + offset;

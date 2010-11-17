@@ -40,29 +40,29 @@ namespace TSPColl
     template<class T_NI>
     class Short: public CollExchange<T_NI>
     {
-    public:
-      static const int MAXBUF = 1000;
-      void * operator new (size_t, void * addr) { return addr; }
-      Short(PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset);
-      void reset (const void        * s,
-                  void              * d,
-                  pami_op             op,
-                  pami_dt             dt,
-                  unsigned            bytes);
-    protected:
-      static void cb_switchbuf (CollExchange<T_NI> *, unsigned phase);
-      static void cb_allreduce (CollExchange<T_NI> *, unsigned phase);
-    protected:
-      int           _nelems, _logMaxBF;
-      void        * _dbuf;
-      //void       (* _cb_allreduce) (const void *, void *, unsigned);
-      coremath _cb_allreduce;
-      char          _dummy;
+      public:
+        static const int MAXBUF = 1000;
+        void * operator new (size_t, void * addr) { return addr; }
+        Short(PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset);
+        void reset (const void        * s,
+                    void              * d,
+                    pami_op             op,
+                    pami_dt             dt,
+                    unsigned            bytes);
+      protected:
+        static void cb_switchbuf (CollExchange<T_NI> *, unsigned phase);
+        static void cb_allreduce (CollExchange<T_NI> *, unsigned phase);
+      protected:
+        int           _nelems, _logMaxBF;
+        void        * _dbuf;
+        //void       (* _cb_allreduce) (const void *, void *, unsigned);
+        coremath _cb_allreduce;
+        char          _dummy;
 
-    protected:
-      typedef char PhaseBufType[MAXBUF] __attribute__((__aligned__(16)));
-      PhaseBufType  _phasebuf[MAX_PHASES][2];
-      int           _bufctr  [MAX_PHASES]; /* 0 or 1 */
+      protected:
+        typedef char PhaseBufType[MAXBUF] __attribute__((__aligned__(16)));
+        PhaseBufType  _phasebuf[MAX_PHASES][2];
+        int           _bufctr  [MAX_PHASES]; /* 0 or 1 */
     }; /* Short Allreduce */
 
     /* ******************************************************************* */
@@ -71,22 +71,22 @@ namespace TSPColl
     template<class T_NI>
     class Long: public CollExchange<T_NI>
     {
-    public:
-      void * operator new (size_t, void * addr) { return addr; }
-      Long (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset);
-      void reset (const void * s, void * d,
-                  pami_op op, pami_dt dt, unsigned bytes);
+      public:
+        void * operator new (size_t, void * addr) { return addr; }
+        Long (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset);
+        void reset (const void * s, void * d,
+                    pami_op op, pami_dt dt, unsigned bytes);
 
-    protected:
-      static void cb_allreduce (CollExchange<T_NI> *, unsigned phase);
+      protected:
+        static void cb_allreduce (CollExchange<T_NI> *, unsigned phase);
 
-    protected:
-      int           _nelems, _logMaxBF;
-      void        * _dbuf;
-      //      void       (* _cb_allreduce) (const void *, void *, unsigned);
-      coremath _cb_allreduce;
-      char          _dummy;
-      void        * _tmpbuf;
+      protected:
+        int           _nelems, _logMaxBF;
+        void        * _dbuf;
+        //      void       (* _cb_allreduce) (const void *, void *, unsigned);
+        coremath _cb_allreduce;
+        char          _dummy;
+        void        * _tmpbuf;
     }; /* Long Allreduce */
   }; /* Allreduce */
 }; /* TSPColl */
@@ -106,12 +106,14 @@ namespace TSPColl
 template <class T_NI>
 TSPColl::Allreduce::Short<T_NI>::
 Short (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
-       CollExchange<T_NI> (comm, tag, instID, offset, false)
+    CollExchange<T_NI> (comm, tag, instID, offset, false)
 {
   _dbuf   = NULL;
   _nelems = 0;
-  for (_logMaxBF = 0; (size_t)(1<<(_logMaxBF+1)) <= this->_comm->size(); _logMaxBF++) ;
-  int maxBF  = 1<<_logMaxBF;
+
+  for (_logMaxBF = 0; (size_t)(1 << (_logMaxBF + 1)) <= this->_comm->size(); _logMaxBF++) ;
+
+  int maxBF  = 1 << _logMaxBF;
   int nonBF  = this->_comm->size() - maxBF;
   int phase  = 0;
   int rank   = comm->virtrank();
@@ -136,9 +138,9 @@ Short (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
   /* butterfly phases                             */
   /* -------------------------------------------- */
 
-  for (int i=0; i<_logMaxBF; i++)
+  for (int i = 0; i < _logMaxBF; i++)
     {
-      unsigned rdest   = comm->absrankof (rank ^ (1<<i));
+      unsigned rdest   = comm->absrankof (rank ^ (1 << i));
       this->_dest    [phase] = (rank < maxBF) ? rdest : -1;
       this->_sbuf    [phase] = NULL;     /* unknown */
       this->_rbuf    [phase] = (rank < maxBF) ? _phasebuf[phase][0] : NULL;
@@ -179,7 +181,7 @@ void TSPColl::Allreduce::Short<T_NI>::
 cb_allreduce (CollExchange<T_NI> *coll, unsigned phase)
 {
   TSPColl::Allreduce::Short<T_NI> * ar = (TSPColl::Allreduce::Short<T_NI> *) coll;
-  int c = (ar->_counter+1) & 1;
+  int c = (ar->_counter + 1) & 1;
   void * inputs[] = {ar->_dbuf, ar->_phasebuf[phase][c]};
   //  ar->_cb_allreduce (ar->_dbuf, ar->_phasebuf[phase][c], ar->_nelems);
   ar->_cb_allreduce (ar->_dbuf, inputs, 2, ar->_nelems);
@@ -215,19 +217,21 @@ void TSPColl::Allreduce::Short<T_NI>::reset (const void         * sbuf,
   _dbuf   = dbuf;
   unsigned datawidth;
   //  size_t datawidth = datawidthof (dt);
-  CCMI::Adaptor::Allreduce::getReduceFunction(dt, op, _nelems, datawidth,_cb_allreduce);
-  _nelems = bytes/datawidth;
+  CCMI::Adaptor::Allreduce::getReduceFunction(dt, op, _nelems, datawidth, _cb_allreduce);
+  _nelems = bytes / datawidth;
   PAMI_assert(bytes < sizeof(PhaseBufType));
+
   if (sbuf != dbuf) memcpy (dbuf, sbuf, bytes);
 
-  int maxBF = 1<<_logMaxBF; /* largest power of 2 that fits into comm */
+  int maxBF = 1 << _logMaxBF; /* largest power of 2 that fits into comm */
   int nonBF = this->_comm->size() - maxBF; /* comm->size() - largest power of 2 */
   int rank  = this->_comm->virtrank();
   /* -------------------------------------------- */
   /* phase 0: gather buffers from ranks > n2prev  */
   /* -------------------------------------------- */
 
-  int phase=0;
+  int phase = 0;
+
   if (nonBF > 0)   /* phase 0: gather buffers from ranks > n2prev */
     {
       this->_sbuf    [phase] = (rank >= maxBF) ? dbuf  : NULL;
@@ -239,7 +243,7 @@ void TSPColl::Allreduce::Short<T_NI>::reset (const void         * sbuf,
   /* butterfly phases                             */
   /* -------------------------------------------- */
 
-  for (int i=0; i<_logMaxBF; i++)   /* middle phases: butterfly pattern */
+  for (int i = 0; i < _logMaxBF; i++)   /* middle phases: butterfly pattern */
     {
       this->_sbuf    [phase] = (rank < maxBF) ? dbuf  : NULL;
       this->_sbufln  [phase] = bytes;
@@ -263,8 +267,10 @@ void TSPColl::Allreduce::Short<T_NI>::reset (const void         * sbuf,
 
 #ifdef DEBUG_ALLREDUCE
   printf ("%d: ", rank);
-  for (int i=0; i<this->_numphases; i++)
-    printf ("[%d %s] ", this->_dest[i], this->_rbuf[i]? "Y" : "N");
+
+  for (int i = 0; i < this->_numphases; i++)
+    printf ("[%d %s] ", this->_dest[i], this->_rbuf[i] ? "Y" : "N");
+
   printf ("\n");
 #endif
 
@@ -287,13 +293,15 @@ void TSPColl::Allreduce::Short<T_NI>::reset (const void         * sbuf,
 template <class T_NI>
 TSPColl::Allreduce::Long<T_NI>::
 Long (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
-  CollExchange<T_NI> (comm, tag, instID, offset, false)
+    CollExchange<T_NI> (comm, tag, instID, offset, false)
 {
   _tmpbuf = NULL;
   _dbuf   = NULL;
   _nelems = 0;
-  for (_logMaxBF = 0; (size_t)(1<<(_logMaxBF+1)) <= this->_comm->size(); _logMaxBF++) ;
-  int maxBF  = 1<<_logMaxBF;
+
+  for (_logMaxBF = 0; (size_t)(1 << (_logMaxBF + 1)) <= this->_comm->size(); _logMaxBF++) ;
+
+  int maxBF  = 1 << _logMaxBF;
   int nonBF  = this->_comm->size() - maxBF;
   int phase  = 0;
   int rank   = this->_comm->virtrank();
@@ -328,11 +336,11 @@ Long (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
   /* butterfly phase                              */
   /* -------------------------------------------- */
 
-  for (int i=0; i<_logMaxBF; i++)
+  for (int i = 0; i < _logMaxBF; i++)
     {
       /* send permission chits to senders */
 
-      unsigned rdest   = this->_comm->absrankof (rank ^ (1<<i));
+      unsigned rdest   = this->_comm->absrankof (rank ^ (1 << i));
       this->_dest    [phase] = (rank < maxBF) ? rdest : -1;
       this->_sbuf    [phase] = (rank < maxBF) ? &_dummy : NULL;
       this->_rbuf    [phase] = (rank < maxBF) ? &_dummy : NULL;
@@ -400,10 +408,10 @@ cb_allreduce (CollExchange<T_NI> *coll, unsigned phase)
 /* ************************************************************************* */
 template <class T_NI>
 void TSPColl::Allreduce::Long<T_NI>::reset (const void         * sbuf,
-                                      void               * dbuf,
-                                      pami_op              op,
-                                      pami_dt              dt,
-                                      unsigned             bytes)
+                                            void               * dbuf,
+                                            pami_op              op,
+                                            pami_dt              dt,
+                                            unsigned             bytes)
 {
   PAMI_assert(sbuf != NULL);
   PAMI_assert(dbuf != NULL);
@@ -416,10 +424,15 @@ void TSPColl::Allreduce::Long<T_NI>::reset (const void         * sbuf,
   _nelems = 0;
   //  size_t datawidth = datawidthof (dt);
   unsigned datawidth;
-  CCMI::Adaptor::Allreduce::getReduceFunction(dt, op, _nelems, datawidth,_cb_allreduce);
-  _nelems = bytes/datawidth;
+  CCMI::Adaptor::Allreduce::getReduceFunction(dt, op, _nelems, datawidth, _cb_allreduce);
+  _nelems = bytes / datawidth;
+
   if (sbuf != dbuf) memcpy (dbuf, sbuf, bytes);
-  if (_tmpbuf) free (_tmpbuf); _tmpbuf = malloc (bytes);
+
+  if (_tmpbuf) free (_tmpbuf);
+
+  _tmpbuf = malloc (bytes);
+
   if (!_tmpbuf) CCMI_FATALERROR (-1, "Allreduce: memory allocation error");
 
   /* --------------------------------------------------- */
@@ -427,7 +440,7 @@ void TSPColl::Allreduce::Long<T_NI>::reset (const void         * sbuf,
   /* We deal with non-power-of-2 nodes                   */
   /* --------------------------------------------------- */
 
-  int maxBF  = 1<<_logMaxBF;
+  int maxBF  = 1 << _logMaxBF;
   int nonBF  = this->_comm->size() - maxBF;
   int phase  = 0;
   int rank   = this->_comm->virtrank();
@@ -441,7 +454,7 @@ void TSPColl::Allreduce::Long<T_NI>::reset (const void         * sbuf,
       phase ++;
     }
 
-  for (int i=0; i<_logMaxBF; i++)   /* middle phases: butterfly pattern */
+  for (int i = 0; i < _logMaxBF; i++)   /* middle phases: butterfly pattern */
     {
       phase ++;
       this->_sbuf    [phase] = (rank < maxBF) ? _dbuf : NULL;

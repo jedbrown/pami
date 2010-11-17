@@ -31,67 +31,69 @@ namespace CCMI
      * Implements a allgatherv strategy which uses one network link.
      */
 
-      template <class T_Allgather_type>
-      struct AllgatherVecType
-      {
-         //COMPILE_TIME_ASSERT(0==1);
-      };
+    template <class T_Allgather_type>
+    struct AllgatherVecType
+    {
+      //COMPILE_TIME_ASSERT(0==1);
+    };
 
-      template<>
-      struct AllgatherVecType<pami_allgather_t>
-      {
-         typedef int base_type;
-      };
+    template<>
+    struct AllgatherVecType<pami_allgather_t>
+    {
+      typedef int base_type;
+    };
 
-      template<>
-      struct AllgatherVecType<pami_allgatherv_t> {
-         typedef size_t base_type;
-      };
+    template<>
+    struct AllgatherVecType<pami_allgatherv_t>
+    {
+      typedef size_t base_type;
+    };
 
-      template<>
-      struct AllgatherVecType<pami_allgatherv_int_t> {
-         typedef int base_type;
-      };
+    template<>
+    struct AllgatherVecType<pami_allgatherv_int_t>
+    {
+      typedef int base_type;
+    };
 
-      template <class T_Allgather_type>
-      inline void setAllgatherVec(T_Allgather_type *xfer, int *buflen, char **sbuf, char **rbuf, void *rdisps, void *rcounts)
-      {
-         COMPILE_TIME_ASSERT(0==1);
-      }
+    template <class T_Allgather_type>
+    inline void setAllgatherVec(T_Allgather_type *xfer, int *buflen, char **sbuf, char **rbuf, void *rdisps, void *rcounts)
+    {
+      COMPILE_TIME_ASSERT(0 == 1);
+    }
 
-      template <>
-      inline void setAllgatherVec<pami_allgather_t> (pami_allgather_t *xfer,
-                int *buflen, char **sbuf, char **rbuf, void *rdisps, void *rcounts)
-      {
-         *sbuf = xfer->sndbuf;
-         *rbuf = xfer->rcvbuf;
-         *buflen = xfer->rtypecount;
-         return;
-      }
+    template <>
+    inline void setAllgatherVec<pami_allgather_t> (pami_allgather_t *xfer,
+                                                   int *buflen, char **sbuf, char **rbuf, void *rdisps, void *rcounts)
+    {
+      *sbuf = xfer->sndbuf;
+      *rbuf = xfer->rcvbuf;
+      *buflen = xfer->rtypecount;
+      return;
+    }
 
-      template <>
-      inline void setAllgatherVec<pami_allgatherv_t> (pami_allgatherv_t *xfer,
-                int *buflen, char **sbuf, char **rbuf, void *rdisps, void *rcounts)
-      {
-         *sbuf = xfer->sndbuf;
-         *rbuf = xfer->rcvbuf;
-         *buflen = 0;
-         *((size_t **)rdisps)   = xfer->rdispls;
-         *((size_t **)rcounts)  = xfer->rtypecounts;
-         return;
-      }
+    template <>
+    inline void setAllgatherVec<pami_allgatherv_t> (pami_allgatherv_t *xfer,
+                                                    int *buflen, char **sbuf, char **rbuf, void *rdisps, void *rcounts)
+    {
+      *sbuf = xfer->sndbuf;
+      *rbuf = xfer->rcvbuf;
+      *buflen = 0;
+      *((size_t **)rdisps)   = xfer->rdispls;
+      *((size_t **)rcounts)  = xfer->rtypecounts;
+      return;
+    }
 
-      template <>
-      inline void setAllgatherVec<pami_allgatherv_int_t> (pami_allgatherv_int_t *xfer,
-                int *buflen, char **sbuf, char **rbuf, void *rdisps, void *rcounts)
-      {
-         *sbuf = xfer->sndbuf;
-         *rbuf = xfer->rcvbuf;
-         *buflen = 0;
-         *((int **)rdisps)   = xfer->rdispls;
-         *((int **)rcounts)  = xfer->rtypecounts;
-         return;
-      }
+    template <>
+    inline void setAllgatherVec<pami_allgatherv_int_t> (pami_allgatherv_int_t *xfer,
+                                                        int *buflen, char **sbuf, char **rbuf, void *rdisps, void *rcounts)
+    {
+      *sbuf = xfer->sndbuf;
+      *rbuf = xfer->rcvbuf;
+      *buflen = 0;
+      *((int **)rdisps)   = xfer->rdispls;
+      *((int **)rcounts)  = xfer->rtypecounts;
+      return;
+    }
 
     template<class T_ConnMgr, class T_Type>
     class AllgathervExec : public Interfaces::Executor
@@ -165,9 +167,9 @@ namespace CCMI
         }
 
         AllgathervExec (Interfaces::NativeInterface  * mf,
-                       T_ConnMgr                    * connmgr,
-                       unsigned                       comm,
-                       PAMI::Topology               *gtopology) :
+                        T_ConnMgr                    * connmgr,
+                        unsigned                       comm,
+                        PAMI::Topology               *gtopology) :
             Interfaces::Executor(),
             _comm_schedule (NULL),
             _native(mf),
@@ -250,16 +252,17 @@ namespace CCMI
           new (&_srctopology) PAMI::Topology(_src);
 
 
-          unsigned connection_id = (unsigned) -1;
+          unsigned connection_id = (unsigned) - 1;
+
           if (_connmgr)
-            connection_id = _connmgr->getConnectionId(_comm, (unsigned)-1, 0, (unsigned) - 1, (unsigned) - 1);
+            connection_id = _connmgr->getConnectionId(_comm, (unsigned) - 1, 0, (unsigned) - 1, (unsigned) - 1);
 
 #ifdef CONNECTION_ID_SHFT
-           _lconnid = (connection_id << SHFT_BITS) + (_myindex << SHFT_BITS_SRC);
-           _rconnid = (connection_id << SHFT_BITS) + (_myindex << SHFT_BITS_SRC);
+          _lconnid = (connection_id << SHFT_BITS) + (_myindex << SHFT_BITS_SRC);
+          _rconnid = (connection_id << SHFT_BITS) + (_myindex << SHFT_BITS_SRC);
 #else
-           _lconnid = connection_id;
-           _rconnid = connection_id;
+          _lconnid = connection_id;
+          _rconnid = connection_id;
 #endif
         }
 
@@ -268,11 +271,11 @@ namespace CCMI
 
           //Override the connection id from the connection manager
 #ifdef CONNECTION_ID_SHFT
-           _lconnid = (cid << SHFT_BITS) + (_myindex << SHFT_BITS_SRC);
-           _rconnid = (cid << SHFT_BITS) + (_myindex << SHFT_BITS_SRC);
+          _lconnid = (cid << SHFT_BITS) + (_myindex << SHFT_BITS_SRC);
+          _rconnid = (cid << SHFT_BITS) + (_myindex << SHFT_BITS_SRC);
 #else
-           _lconnid = cid;
-           _rconnid = cid;
+          _lconnid = cid;
+          _rconnid = cid;
 #endif
         }
 
@@ -295,43 +298,43 @@ namespace CCMI
 
         void setVectors(int *disps, int *rcvcounts)
         {
-           _disps     = disps;
-           _rcvcounts = rcvcounts;
+          _disps     = disps;
+          _rcvcounts = rcvcounts;
         }
 
         void setVectors(T_Type *xfer)
         {
-           setAllgatherVec<T_Type> (xfer, &_buflen, &_sbuf, &_rbuf, &_disps, &_rcvcounts);
+          setAllgatherVec<T_Type> (xfer, &_buflen, &_sbuf, &_rbuf, &_disps, &_rcvcounts);
         }
 
         void  updateVectors(T_Type *xfer)
         {
-           setAllgatherVec<T_Type> (xfer, &_buflen, &_sbuf, &_rbuf, &_disps, &_rcvcounts);
+          setAllgatherVec<T_Type> (xfer, &_buflen, &_sbuf, &_rbuf, &_disps, &_rcvcounts);
         }
 
 
         size_t getSendLength(int phase)
         {
-           int index = (_myindex + _native->numranks() - phase - 1) % _native->numranks();
-           return (_rcvcounts) ? _rcvcounts[index] : _buflen;
+          int index = (_myindex + _native->numranks() - phase - 1) % _native->numranks();
+          return (_rcvcounts) ? _rcvcounts[index] : _buflen;
         }
 
         size_t getRecvLength(int phase)
         {
-           int index = (_myindex +  phase + 1) % _native->numranks();
-           return (_rcvcounts) ? _rcvcounts[index] : _buflen;
+          int index = (_myindex +  phase + 1) % _native->numranks();
+          return (_rcvcounts) ? _rcvcounts[index] : _buflen;
         }
 
         size_t getSendDisp(int phase)
         {
-           int index = (_myindex + _native->numranks() - phase - 1) % _native->numranks();
-           return (_disps) ? _disps[index] : index * _buflen;
+          int index = (_myindex + _native->numranks() - phase - 1) % _native->numranks();
+          return (_disps) ? _disps[index] : index * _buflen;
         }
 
         size_t getRecvDisp(int phase)
         {
-           int index = (_myindex +  phase + 1) % _native->numranks();
-           return (_disps) ? _disps[index] : index * _buflen;
+          int index = (_myindex +  phase + 1) % _native->numranks();
+          return (_disps) ? _disps[index] : index * _buflen;
         }
 
         PAMI::PipeWorkQueue *getSendPWQ(int phase)
@@ -382,12 +385,14 @@ namespace CCMI
           AllgathervExec<T_ConnMgr, T_Type> *exec =  (AllgathervExec<T_ConnMgr, T_Type> *) cookie;
           EXECUTOR_DEBUG((stderr, "notifySendDone, phase %d, recvdone %d\n", exec->_curphase, exec->_recvdone);)
           exec->_senddone = 1;
-          if (exec->_recvdone == 1) {
-            exec->_recvdone = exec->_senddone = 0;
-            exec->_curphase ++;
-            EXECUTOR_DEBUG((stderr, "notify send done - calling sendNext\n");)
-            exec->sendNext();
-          }
+
+          if (exec->_recvdone == 1)
+            {
+              exec->_recvdone = exec->_senddone = 0;
+              exec->_curphase ++;
+              EXECUTOR_DEBUG((stderr, "notify send done - calling sendNext\n");)
+              exec->sendNext();
+            }
         }
 
         static void notifyRecvDone( pami_context_t   context,
@@ -398,26 +403,30 @@ namespace CCMI
           AllgathervExec<T_ConnMgr, T_Type> *exec =  (AllgathervExec<T_ConnMgr, T_Type> *) cookie;
           EXECUTOR_DEBUG((stderr, "notifyRecvDone, phase %d, senddone %d\n", exec->_curphase, exec->_senddone);)
           exec->_recvdone = 1;
-          if (exec->_senddone == 1) {
-            exec->_recvdone = exec->_senddone = 0;
-            exec->_curphase ++;
-            EXECUTOR_DEBUG((stderr, "notify recv done - calling sendNext\n");)
-            exec->sendNext();
-          }
+
+          if (exec->_senddone == 1)
+            {
+              exec->_recvdone = exec->_senddone = 0;
+              exec->_curphase ++;
+              EXECUTOR_DEBUG((stderr, "notify recv done - calling sendNext\n");)
+              exec->sendNext();
+            }
         }
 
         static void notifyAvailRecvDone( pami_context_t   context,
-                                    void           * cookie,
-                                    pami_result_t    result )
+                                         void           * cookie,
+                                         pami_result_t    result )
         {
           TRACE_MSG ((stderr, "<%p>Executor::AllgathervExec::notifyRecvDone()\n", cookie));
           AllgathervExec<T_ConnMgr, T_Type> *exec =  (AllgathervExec<T_ConnMgr, T_Type> *) cookie;
           EXECUTOR_DEBUG((stderr, "notifyAvailRecvDone, phase %d, rphase%d\n", exec->_curphase, exec->_rphase);)
           exec->_rphase ++;
-          if (exec->_curphase >= exec->_startphase && !exec->_in_send_next) {
-            EXECUTOR_DEBUG((stderr, "notifyAvail - calling sendNext();\n");)
-            exec->sendNext();
-          }
+
+          if (exec->_curphase >= exec->_startphase && !exec->_in_send_next)
+            {
+              EXECUTOR_DEBUG((stderr, "notifyAvail - calling sendNext();\n");)
+              exec->sendNext();
+            }
         }
 
 
@@ -434,6 +443,7 @@ inline void  CCMI::Executor::AllgathervExec<T_ConnMgr, T_Type>::start ()
   TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::start() count%d\n", this, _buflen));
 
   _curphase  = _startphase;
+
   if (_rphase == -1)
     _rphase = _startphase;
   else
@@ -447,52 +457,56 @@ inline void  CCMI::Executor::AllgathervExec<T_ConnMgr, T_Type>::start ()
 template <class T_ConnMgr, class T_Type>
 inline void  CCMI::Executor::AllgathervExec<T_ConnMgr, T_Type>::sendNext ()
 {
-  if (_curphase == _startphase + _nphases) {
-    if (_cb_done) _cb_done (NULL, _clientdata, PAMI_SUCCESS);
-    return;
-  }
+  if (_curphase == _startphase + _nphases)
+    {
+      if (_cb_done) _cb_done (NULL, _clientdata, PAMI_SUCCESS);
+
+      return;
+    }
 
   _in_send_next = 1;
 
   // send buffer available msg to left neighbor
-  if (_lphase == _curphase) {
-    _lphase ++;
-    _mldata._phase             = _curphase+1;
-    _mrdata._count             = -1;
-    _mlsend.src_participants   = (pami_topology_t *) & _selftopology;
-    _mlsend.dst_participants   = (pami_topology_t *) & _srctopology;
-    _mlsend.cb_done.function   = NULL;
-    _mlsend.cb_done.clientdata = 0;
-    _mlsend.src                = NULL;
-    _mlsend.dst                = NULL;
-    _mlsend.bytes              = 0;
+  if (_lphase == _curphase)
+    {
+      _lphase ++;
+      _mldata._phase             = _curphase + 1;
+      _mrdata._count             = -1;
+      _mlsend.src_participants   = (pami_topology_t *) & _selftopology;
+      _mlsend.dst_participants   = (pami_topology_t *) & _srctopology;
+      _mlsend.cb_done.function   = NULL;
+      _mlsend.cb_done.clientdata = 0;
+      _mlsend.src                = NULL;
+      _mlsend.dst                = NULL;
+      _mlsend.bytes              = 0;
 #ifdef CONNECTION_ID_SHFT
-    _mlsend.connection_id      = _lconnid + 2*_curphase+1;
+      _mlsend.connection_id      = _lconnid + 2 * _curphase + 1;
 #else
-    _mlsend.connection_id      = _lconnid;
+      _mlsend.connection_id      = _lconnid;
 #endif
-    EXECUTOR_DEBUG((stderr, "key %d, phase %d, send to %d\n", _mlsend.connection_id, _curphase, _srctopology.index2Rank(0));)
-    _native->multicast(&_mlsend);
-  }
+      EXECUTOR_DEBUG((stderr, "key %d, phase %d, send to %d\n", _mlsend.connection_id, _curphase, _srctopology.index2Rank(0));)
+      _native->multicast(&_mlsend);
+    }
 
-  if (_rphase == _curphase+1) { // buffer available at the right neighbor
-    _mrdata._phase             = _curphase;
-    _mrdata._count             = 0; // indicating this is data message
-    _mrsend.src_participants   = (pami_topology_t *) & _selftopology;
-    _mrsend.dst_participants   = (pami_topology_t *) & _dsttopology;
-    _mrsend.cb_done.function   = notifySendDone;
-    _mrsend.cb_done.clientdata = this;
-    _mrsend.src                = (pami_pipeworkqueue_t *) getSendPWQ(_curphase);
-    _mrsend.dst                = NULL;
-    _mrsend.bytes              = getSendLength(_curphase);
+  if (_rphase == _curphase + 1) // buffer available at the right neighbor
+    {
+      _mrdata._phase             = _curphase;
+      _mrdata._count             = 0; // indicating this is data message
+      _mrsend.src_participants   = (pami_topology_t *) & _selftopology;
+      _mrsend.dst_participants   = (pami_topology_t *) & _dsttopology;
+      _mrsend.cb_done.function   = notifySendDone;
+      _mrsend.cb_done.clientdata = this;
+      _mrsend.src                = (pami_pipeworkqueue_t *) getSendPWQ(_curphase);
+      _mrsend.dst                = NULL;
+      _mrsend.bytes              = getSendLength(_curphase);
 #ifdef CONNECTION_ID_SHFT
-    _mrsend.connection_id      = _rconnid + 2*_curphase;
+      _mrsend.connection_id      = _rconnid + 2 * _curphase;
 #else
-    _mrsend.connection_id      = _rconnid;
+      _mrsend.connection_id      = _rconnid;
 #endif
-    EXECUTOR_DEBUG((stderr, "key %d, data phase %d, send to %d\n", _mrsend.connection_id, _curphase, _dsttopology.index2Rank(0));)
-    _native->multicast(&_mrsend);
-  }
+      EXECUTOR_DEBUG((stderr, "key %d, data phase %d, send to %d\n", _mrsend.connection_id, _curphase, _dsttopology.index2Rank(0));)
+      _native->multicast(&_mrsend);
+    }
 
   _in_send_next = 0;
 
@@ -507,28 +521,38 @@ inline void  CCMI::Executor::AllgathervExec<T_ConnMgr, T_Type>::notifyRecv
  pami_callback_t      * cb_done)
 {
 
-  CollHeaderData *cdata = (CollHeaderData*) &info;
+  CollHeaderData *cdata = (CollHeaderData*) & info;
 
-  if ((int)cdata->_count == -1) {
-    CCMI_assert(src == _dst);
-    if (_rphase == _curphase && _curphase >= _startphase) {
-      CCMI_assert(cdata->_phase == _curphase+1);
-    } else if (_rphase == _curphase+1 || _curphase < _startphase) {
-      CCMI_assert(cdata->_phase == _curphase+2);
-    } else {
-      CCMI_assert(0);
+  if ((int)cdata->_count == -1)
+    {
+      CCMI_assert(src == _dst);
+
+      if (_rphase == _curphase && _curphase >= _startphase)
+        {
+          CCMI_assert(cdata->_phase == _curphase + 1);
+        }
+      else if (_rphase == _curphase + 1 || _curphase < _startphase)
+        {
+          CCMI_assert(cdata->_phase == _curphase + 2);
+        }
+      else
+        {
+          CCMI_assert(0);
+        }
+
+      *pwq = NULL;
+      cb_done->function   = notifyAvailRecvDone;
+      cb_done->clientdata = this;
     }
-    *pwq = NULL;
-    cb_done->function   = notifyAvailRecvDone;
-    cb_done->clientdata = this;
-  } else {
-    CCMI_assert(src == _src);
-    CCMI_assert(cdata->_phase == _curphase);
-    CCMI_assert(cdata->_count == 0);
-    *pwq = getRecvPWQ(_curphase);
-    cb_done->function   = notifyRecvDone;
-    cb_done->clientdata = this;
-  }
+  else
+    {
+      CCMI_assert(src == _src);
+      CCMI_assert(cdata->_phase == _curphase);
+      CCMI_assert(cdata->_count == 0);
+      *pwq = getRecvPWQ(_curphase);
+      cb_done->function   = notifyRecvDone;
+      cb_done->clientdata = this;
+    }
 
   return;
 }

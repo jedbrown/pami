@@ -15,16 +15,16 @@ namespace CCMI
 
     class BaseConnectionManager
     {
-    public:
-      BaseConnectionManager() {}
-      virtual ~BaseConnectionManager() {}
+      public:
+        BaseConnectionManager() {}
+        virtual ~BaseConnectionManager() {}
 
-      virtual void     setNumConnections (int nconn) =0;
-      virtual int      getNumConnections() = 0;
-      virtual unsigned getConnectionId (unsigned comm, unsigned root,
-                                        unsigned color, unsigned phase, unsigned dst) = 0;
-      virtual unsigned getRecvConnectionId (unsigned comm, unsigned root,
-                                            unsigned src, unsigned phase, unsigned color) = 0;
+        virtual void     setNumConnections (int nconn) = 0;
+        virtual int      getNumConnections() = 0;
+        virtual unsigned getConnectionId (unsigned comm, unsigned root,
+                                          unsigned color, unsigned phase, unsigned dst) = 0;
+        virtual unsigned getRecvConnectionId (unsigned comm, unsigned root,
+                                              unsigned src, unsigned phase, unsigned color) = 0;
     };
 
     typedef unsigned (*GetKeyFn)      (unsigned                root,
@@ -36,14 +36,14 @@ namespace CCMI
     template <class T_ConnectionManager>
     class ConnectionManager: public BaseConnectionManager
     {
-    public:
-      ConnectionManager () {}
-      inline void     setNumConnections (int nconn);
-      inline int      getNumConnections();
-      inline unsigned getConnectionId (unsigned comm, unsigned root,
-                                       unsigned color, unsigned phase, unsigned dst);
-      inline unsigned getRecvConnectionId (unsigned comm, unsigned root,
-                                           unsigned src, unsigned phase, unsigned color);
+      public:
+        ConnectionManager () {}
+        inline void     setNumConnections (int nconn);
+        inline int      getNumConnections();
+        inline unsigned getConnectionId (unsigned comm, unsigned root,
+                                         unsigned color, unsigned phase, unsigned dst);
+        inline unsigned getRecvConnectionId (unsigned comm, unsigned root,
+                                             unsigned src, unsigned phase, unsigned color);
     }; //- ConnectionManager
 
 

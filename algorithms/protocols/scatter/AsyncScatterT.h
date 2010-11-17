@@ -40,69 +40,69 @@ namespace CCMI
       template <class T_Scatter_type>
       inline void getScatterXfer(T_Scatter_type **xfer, pami_collective_t *coll)
       {
-         COMPILE_TIME_ASSERT(0==1);
+        COMPILE_TIME_ASSERT(0 == 1);
       }
 
       template <>
       inline void getScatterXfer<pami_scatter_t>(pami_scatter_t **xfer, pami_collective_t *coll)
       {
-         *xfer =  &(coll->xfer_scatter);
+        *xfer =  &(coll->xfer_scatter);
       }
 
       template <>
       inline void getScatterXfer<pami_scatterv_t>(pami_scatterv_t **xfer, pami_collective_t *coll)
       {
-         *xfer =  &(coll->xfer_scatterv);
+        *xfer =  &(coll->xfer_scatterv);
       }
 
       template <>
       inline void getScatterXfer<pami_scatterv_int_t>(pami_scatterv_int_t **xfer, pami_collective_t *coll)
       {
-         *xfer =  &(coll->xfer_scatterv_int);
+        *xfer =  &(coll->xfer_scatterv_int);
       }
 
       template <class T_Scatter_type>
       inline void setTempScatterXfer(pami_collective_t *xfer)
       {
-         COMPILE_TIME_ASSERT(0 == 1);
+        COMPILE_TIME_ASSERT(0 == 1);
       }
 
       template <>
       inline void setTempScatterXfer<pami_scatter_t> (pami_collective_t *xfer)
       {
-         xfer->xfer_scatter.root   = -1;
-         xfer->xfer_scatter.sndbuf = NULL;
-         xfer->xfer_scatter.stype  = PAMI_BYTE;
-         xfer->xfer_scatter.stypecount = 0;
-         xfer->xfer_scatter.rcvbuf = NULL;
-         xfer->xfer_scatter.rtype  = PAMI_BYTE;
-         xfer->xfer_scatter.rtypecount = 0;
+        xfer->xfer_scatter.root   = -1;
+        xfer->xfer_scatter.sndbuf = NULL;
+        xfer->xfer_scatter.stype  = PAMI_BYTE;
+        xfer->xfer_scatter.stypecount = 0;
+        xfer->xfer_scatter.rcvbuf = NULL;
+        xfer->xfer_scatter.rtype  = PAMI_BYTE;
+        xfer->xfer_scatter.rtypecount = 0;
       }
 
       template <>
       inline void setTempScatterXfer<pami_scatterv_t> (pami_collective_t *xfer)
       {
-         xfer->xfer_scatterv.root    = -1;
-         xfer->xfer_scatterv.sndbuf  = NULL;
-         xfer->xfer_scatterv.stype   = PAMI_BYTE;
-         xfer->xfer_scatterv.stypecounts = NULL;
-         xfer->xfer_scatterv.sdispls = NULL;
-         xfer->xfer_scatterv.rcvbuf  = NULL;
-         xfer->xfer_scatterv.rtype   = PAMI_BYTE;
-         xfer->xfer_scatterv.rtypecount = 0;
+        xfer->xfer_scatterv.root    = -1;
+        xfer->xfer_scatterv.sndbuf  = NULL;
+        xfer->xfer_scatterv.stype   = PAMI_BYTE;
+        xfer->xfer_scatterv.stypecounts = NULL;
+        xfer->xfer_scatterv.sdispls = NULL;
+        xfer->xfer_scatterv.rcvbuf  = NULL;
+        xfer->xfer_scatterv.rtype   = PAMI_BYTE;
+        xfer->xfer_scatterv.rtypecount = 0;
       }
 
       template <>
       inline void setTempScatterXfer<pami_scatterv_int_t> (pami_collective_t *xfer)
       {
-         xfer->xfer_scatterv_int.root    = -1;
-         xfer->xfer_scatterv_int.sndbuf  = NULL;
-         xfer->xfer_scatterv_int.stype   = PAMI_BYTE;
-         xfer->xfer_scatterv_int.stypecounts = NULL;
-         xfer->xfer_scatterv_int.sdispls = NULL;
-         xfer->xfer_scatterv_int.rcvbuf  = NULL;
-         xfer->xfer_scatterv_int.rtype   = PAMI_BYTE;
-         xfer->xfer_scatterv_int.rtypecount = 0;
+        xfer->xfer_scatterv_int.root    = -1;
+        xfer->xfer_scatterv_int.sndbuf  = NULL;
+        xfer->xfer_scatterv_int.stype   = PAMI_BYTE;
+        xfer->xfer_scatterv_int.stypecounts = NULL;
+        xfer->xfer_scatterv_int.sdispls = NULL;
+        xfer->xfer_scatterv_int.rcvbuf  = NULL;
+        xfer->xfer_scatterv_int.rtype   = PAMI_BYTE;
+        xfer->xfer_scatterv_int.rtypecount = 0;
       }
 
       template <class T_Schedule, class T_Conn, SFunc<PAMI_GEOMETRY_CLASS>::ScheduleFn create_schedule, typename T_Scatter_type>
@@ -120,10 +120,10 @@ namespace CCMI
           {
           };
           AsyncScatterT (Interfaces::NativeInterface   * native,
-                           T_Conn                        * cmgr,
-                           pami_callback_t                  cb_done,
-                           PAMI_GEOMETRY_CLASS            * geometry,
-                           void                           *cmd) :
+                         T_Conn                        * cmgr,
+                         pami_callback_t                  cb_done,
+                         PAMI_GEOMETRY_CLASS            * geometry,
+                         void                           *cmd) :
 
 
 
@@ -189,7 +189,7 @@ namespace CCMI
 
         public:
           AsyncScatterFactoryT (C                           *cmgr,
-                                  Interfaces::NativeInterface *native):
+                                Interfaces::NativeInterface *native):
               CollectiveProtocolFactory(),
               _cmgr(cmgr),
               _native(native)
@@ -209,9 +209,9 @@ namespace CCMI
 
           //Override the connection manager in this call
           unsigned myGetKey   (unsigned                 root,
-                             unsigned                 iconnid,
-                             PAMI_GEOMETRY_CLASS    * geometry,
-                             C                     ** connmgr)
+                               unsigned                 iconnid,
+                               PAMI_GEOMETRY_CLASS    * geometry,
+                               C                     ** connmgr)
           {
             return getKey(root,
                           iconnid,
@@ -221,7 +221,7 @@ namespace CCMI
 
           virtual void metadata(pami_metadata_t *mdata)
           {
-            TRACE_ADAPTOR((stderr, "<%p>AsyncScatterFactoryT::metadata()\n",this));
+            TRACE_ADAPTOR((stderr, "<%p>AsyncScatterFactoryT::metadata()\n", this));
             DO_DEBUG((templateName<MetaDataFn>()));
             get_metadata(mdata);
           }
@@ -258,7 +258,7 @@ namespace CCMI
             unsigned key = getKey(scatter_xfer->root,
                                   (unsigned) - 1,
                                   (PAMI_GEOMETRY_CLASS*)g,
-                                  (ConnectionManager::BaseConnectionManager**)&cmgr);
+                                  (ConnectionManager::BaseConnectionManager**) & cmgr);
 
             if (_native->myrank() == scatter_xfer->root)
               {
@@ -302,6 +302,7 @@ namespace CCMI
                     if (ead->flag == EACOMPLETED)
                       {
                         DEBUG((stderr, "AsyncScatter: early arrival received key = %d\n", key);)
+
                         if (scatter_xfer->rtypecount)
                           {
                             char *eab = ead->buf;

@@ -34,41 +34,41 @@ namespace TSPColl
 
   class Gather: public NBColl
   {
-  public:
-    void * operator new (size_t, void * addr)    { return addr; }
-    Gather       (Communicator *comm, NBTag tag, int id, int tagoff);
-    void reset   (int root, const void * sbuf, void * rbuf, size_t length);
-    virtual void kick    (void);
-    virtual bool isdone  (void) const { return _complete >= _counter; }
-  protected:
-    const void    * _sbuf;         /* send buffer    */
-    void          * _rbuf;         /* receive buffer */
-    size_t          _length;       /* msg length     */
-    int             _root;         /* root thread ID */
-    int             _incoming;     /* how many messages I got */
+    public:
+      void * operator new (size_t, void * addr)    { return addr; }
+      Gather       (Communicator *comm, NBTag tag, int id, int tagoff);
+      void reset   (int root, const void * sbuf, void * rbuf, size_t length);
+      virtual void kick    (void);
+      virtual bool isdone  (void) const { return _complete >= _counter; }
+    protected:
+      const void    * _sbuf;         /* send buffer    */
+      void          * _rbuf;         /* receive buffer */
+      size_t          _length;       /* msg length     */
+      int             _root;         /* root thread ID */
+      int             _incoming;     /* how many messages I got */
 
-    int             _commID;       /* communicator   */
-    unsigned        _counter;      /* instance counter */
-    unsigned        _complete;     /* instance completion counter */
+      int             _commID;       /* communicator   */
+      unsigned        _counter;      /* instance counter */
+      unsigned        _complete;     /* instance completion counter */
 
-    struct gather_header
-    {
-      __pgasrt_AMHeader_t hdr;
-      int                 tag;
-      int                 id;
-      int                 tagoff;
-      unsigned            counter;
-      size_t              offset;   /* message offset in recv buffer */
-    }
-    _header __attribute__((__aligned__(16)));
+      struct gather_header
+      {
+        __pgasrt_AMHeader_t hdr;
+        int                 tag;
+        int                 id;
+        int                 tagoff;
+        unsigned            counter;
+        size_t              offset;   /* message offset in recv buffer */
+      }
+      _header __attribute__((__aligned__(16)));
 
-  protected:
-    static void cb_senddone (void *arg);
-    static __pgasrt_local_addr_t
+    protected:
+      static void cb_senddone (void *arg);
+      static __pgasrt_local_addr_t
       cb_incoming (const struct __pgasrt_AMHeader_t *,
-                   void (**)(void *,void *), void **);
-    static void cb_recvcomplete (void * unused, void * arg);
-    Barrier _barrier;
+                   void (**)(void *, void *), void **);
+      static void cb_recvcomplete (void * unused, void * arg);
+      Barrier _barrier;
   };
 };
 
@@ -81,11 +81,11 @@ namespace TSPColl
 {
   class Gatherv: public Gather
   {
-  public:
-    void * operator new (size_t, void * addr)    { return addr; }
-    Gatherv (int comm, int tag, int id, int tagoff):
-    Gather(comm, tag, id, tagoff) { }
-    void reset (int root, const void * sbuf, void * rbuf, size_t * lengths);
+    public:
+      void * operator new (size_t, void * addr)    { return addr; }
+      Gatherv (int comm, int tag, int id, int tagoff):
+          Gather(comm, tag, id, tagoff) { }
+      void reset (int root, const void * sbuf, void * rbuf, size_t * lengths);
   };
 };
 

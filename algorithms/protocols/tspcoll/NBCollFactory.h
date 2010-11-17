@@ -29,9 +29,9 @@ namespace TSPColl
   template <class T_NI>
   class NBCollFactory
   {
-  public:
-    NBColl<T_NI> * create (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int id);
-    void              initialize();
+    public:
+      NBColl<T_NI> * create (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int id);
+      void              initialize();
   };
 };
 
@@ -56,7 +56,7 @@ TSPColl::NBCollFactory<T_NI>::create (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int
 {
   switch (tag)
     {
-    case BarrierTag:
+      case BarrierTag:
       {
         NBColl<T_NI> * b = (NBColl<T_NI> *)malloc (sizeof(Barrier<T_NI>));
         PAMI_assert(b != NULL);
@@ -64,7 +64,7 @@ TSPColl::NBCollFactory<T_NI>::create (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int
         new (b) Barrier<T_NI> (comm, tag, instID, 0);
         return b;
       }
-    case BarrierUETag:
+      case BarrierUETag:
       {
         NBColl<T_NI> * b = (NBColl<T_NI> *)malloc (sizeof(BarrierUE<T_NI>));
         PAMI_assert(b != NULL);
@@ -72,7 +72,7 @@ TSPColl::NBCollFactory<T_NI>::create (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int
         new (b) BarrierUE<T_NI> (comm, tag, instID, 0);
         return b;
       }
-    case AllgatherTag:
+      case AllgatherTag:
       {
         NBColl<T_NI> * b = (NBColl<T_NI> *)malloc (sizeof(Allgather<T_NI>));
         PAMI_assert(b != NULL);
@@ -80,7 +80,7 @@ TSPColl::NBCollFactory<T_NI>::create (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int
         new (b) Allgather<T_NI> (comm, tag, instID, 0);
         return b;
       }
-    case AllgathervTag:
+      case AllgathervTag:
       {
         NBColl<T_NI> * b = (NBColl<T_NI> *)malloc (sizeof(Allgatherv<T_NI>));
         PAMI_assert(b != NULL);
@@ -88,7 +88,7 @@ TSPColl::NBCollFactory<T_NI>::create (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int
         new (b) Allgatherv<T_NI> (comm, tag, instID, 0);
         return b;
       }
-    case BcastTag:
+      case BcastTag:
       {
         NBColl<T_NI> * b = (NBColl<T_NI> *)malloc (sizeof(BinomBcast<T_NI>));
         PAMI_assert(b != NULL);
@@ -96,7 +96,7 @@ TSPColl::NBCollFactory<T_NI>::create (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int
         new (b) BinomBcast<T_NI> (comm, tag, instID, 0);
         return b;
       }
-    case BcastTag2:
+      case BcastTag2:
       {
         NBColl<T_NI> * b = (NBColl<T_NI> *)malloc (sizeof(ScBcast<T_NI>));
         PAMI_assert(b != NULL);
@@ -104,7 +104,7 @@ TSPColl::NBCollFactory<T_NI>::create (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int
         new (b) ScBcast<T_NI> (comm, tag, instID, 0);
         return b;
       }
-    case ShortAllreduceTag:
+      case ShortAllreduceTag:
       {
         NBColl<T_NI> * b = (NBColl<T_NI> *)malloc (sizeof(Allreduce::Short<T_NI>));
         PAMI_assert(b != NULL);
@@ -112,7 +112,7 @@ TSPColl::NBCollFactory<T_NI>::create (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int
         new (b) Allreduce::Short<T_NI> (comm, tag, instID, 0);
         return b;
       }
-    case LongAllreduceTag:
+      case LongAllreduceTag:
       {
         NBColl<T_NI> * b = (NBColl<T_NI> *)malloc (sizeof(Allreduce::Long<T_NI>));
         PAMI_assert(b != NULL);
@@ -120,7 +120,7 @@ TSPColl::NBCollFactory<T_NI>::create (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int
         new (b) Allreduce::Long<T_NI> (comm, tag, instID, 0);
         return b;
       }
-    case ScatterTag:
+      case ScatterTag:
       {
         NBColl<T_NI> * b = (NBColl<T_NI> *)malloc (sizeof(Scatter<T_NI>));
         PAMI_assert(b != NULL);
@@ -128,7 +128,7 @@ TSPColl::NBCollFactory<T_NI>::create (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int
         new (b) Scatter<T_NI> (comm, tag, instID, 0);
         return b;
       }
-    case ScattervTag:
+      case ScattervTag:
       {
         NBColl<T_NI> * b = (NBColl<T_NI> *)malloc (sizeof(Scatterv<T_NI>));
         PAMI_assert(b != NULL);
@@ -136,13 +136,14 @@ TSPColl::NBCollFactory<T_NI>::create (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int
         new (b) Scatterv<T_NI> (comm, tag, instID, 0);
         return b;
       }
-    case GatherTag:
-    case GathervTag:
-    default:
+      case GatherTag:
+      case GathervTag:
+      default:
       {
         PAMI_abort();
       }
     }
+
   return (NBColl<T_NI> *) NULL;
 }
 

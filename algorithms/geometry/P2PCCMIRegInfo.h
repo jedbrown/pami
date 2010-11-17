@@ -86,7 +86,7 @@ namespace CCMI
       {
         TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
         ncolors = 1;
-        colors[0] = CCMI::Schedule::NO_COLOR;
+        colors[0] = CCMI::Schedule::TorusRect::NO_COLOR;
       }
     void get_rect_colors (PAMI::Topology             * t,
                           unsigned                    bytes,
@@ -338,7 +338,7 @@ namespace CCMI
                          unsigned                  & ncolors)
         {
           ncolors = 1;
-          colors[0] = CCMI::Schedule::NO_COLOR;
+          colors[0] = CCMI::Schedule::TorusRect::NO_COLOR;
         }
 
         void binomial_allreduce_metadata(pami_metadata_t *m)

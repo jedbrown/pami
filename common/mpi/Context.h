@@ -34,7 +34,6 @@
 #include "components/devices/mpi/MPIBcastMsg.h"
 #include "components/devices/mpi/MPISyncMsg.h"
 #include "algorithms/geometry/PGASCollRegistration.h"
-#include "algorithms/geometry/OldCCMICollRegistration.h"
 #include "algorithms/geometry/P2PCCMIRegistration.h"
 #include "algorithms/geometry/ClassRouteId.h"
 
@@ -102,11 +101,6 @@ namespace PAMI
                                        MPIMcombineMessage>           MPIMulticombineModel;
   typedef Device::MPIM2MMessage                                      MPIM2MMessage;
   typedef Device::MPIManytomanyModel<MPIDevice,MPIM2MMessage>        MPIManytomanyModel;
-  typedef PAMI::Device::MPIOldmulticastModel<PAMI::Device::MPIDevice,
-                                            PAMI::Device::MPIMessage> MPIOldMcastModel;
-  typedef PAMI::Device::MPIOldm2mModel<PAMI::Device::MPIDevice,
-                                      PAMI::Device::MPIMessage,
-                                      size_t>                        MPIOldM2MModel;
 
   // "New" CCMI Typedefs/Coll Registration
   typedef PAMI::NativeInterfaceActiveMessage<MPIEager>   MPIEagerNI_AM;
@@ -147,8 +141,6 @@ namespace PAMI
 
 
   // PGAS RT Typedefs/Coll Registration
-  typedef PAMI::Device::MPIOldmulticastModel<PAMI::Device::MPIDevice,
-                                            PAMI::Device::MPIMessage> MPIOldMcastModel;
   typedef TSPColl::NBCollManager<MPIEagerNI_AM> MPINBCollManager;
   typedef CollRegistration::PGASRegistration<MPIGeometry,
                                              MPIEagerNI_AM,
@@ -156,11 +148,6 @@ namespace PAMI
                                              MPIEager,
                                              MPIDevice,
                                              MPINBCollManager> PGASCollreg;
-
-  typedef CollRegistration::OldCCMIRegistration<MPIGeometry,
-                                                MPIOldMcastModel,
-                                                MPIOldM2MModel,
-                                                MPIDevice> OldCCMICollreg;
 
   typedef Geometry::ClassRouteId<MPIGeometry> MPIClassRouteId;
 
@@ -353,11 +340,6 @@ namespace PAMI
                                                 &_dispatch_id,
                                                 _geometry_map);
           _p2p_ccmi_collreg->analyze(_contextid, _world_geometry);
-
-          _oldccmi_collreg=(OldCCMICollreg*) malloc(sizeof(*_oldccmi_collreg));
-          new(_oldccmi_collreg) OldCCMICollreg(client, (pami_context_t)this, id,*_mpi,_geometry_map);
-          _oldccmi_collreg->analyze(_contextid, _world_geometry);
-
 
 
           MPI_Barrier(MPI_COMM_WORLD);
@@ -778,7 +760,6 @@ namespace PAMI
   public:
       P2PCCMICollreg            *_p2p_ccmi_collreg;
       PGASCollreg               *_pgas_collreg;
-      OldCCMICollreg            *_oldccmi_collreg;
       MPIGeometry               *_world_geometry;
   private:
     DefaultNativeInterface       _minterface;

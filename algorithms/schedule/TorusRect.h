@@ -67,12 +67,16 @@ namespace CCMI
   {
 
 #define MY_TASK _map->task()
+#define MESH     PAMI::Interface::Mapping::Mesh
 #define POSITIVE PAMI::Interface::Mapping::TorusPositive
 #define NEGATIVE PAMI::Interface::Mapping::TorusNegative
+      
 
     class TorusRect: public CCMI::Interfaces::Schedule
     {
     public:
+      static const unsigned NO_COLOR = 0;       ///< "null" color value
+
       TorusRect(): _rect(*(PAMI::Topology*)NULL), _map(NULL)
       { }
 

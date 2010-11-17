@@ -433,7 +433,7 @@ namespace PAMI
     {
       TRACE_INIT((stderr, "get_colors\n"));
       ncolors = 1;
-      colors[0] = CCMI::Schedule::NO_COLOR;
+      colors[0] = CCMI::Schedule::TorusRect::NO_COLOR;
     }
 
     void get_rect_colors (PAMI::Topology             * t,

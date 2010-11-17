@@ -40,13 +40,13 @@ namespace TSPColl
   template <class T_NI>
   class Allgather: public CollExchange<T_NI>
   {
-  public:
-    static
-    void * operator new (size_t, void * addr)    { return addr; }
-    Allgather (PAMI_GEOMETRY_CLASS *, NBTag tag, int instID, int offset);
-    void reset (const void *, void *, size_t nbytes);
-  private:
-    char _dummy;
+    public:
+      static
+      void * operator new (size_t, void * addr)    { return addr; }
+      Allgather (PAMI_GEOMETRY_CLASS *, NBTag tag, int instID, int offset);
+      void reset (const void *, void *, size_t nbytes);
+    private:
+      char _dummy;
   };
 }
 
@@ -55,19 +55,23 @@ namespace TSPColl
 /* *********************************************************************** */
 template <class T_NI>
 inline TSPColl::Allgather<T_NI>::Allgather (PAMI_GEOMETRY_CLASS *comm, NBTag tag,
-                                      int instID, int offset):
-  CollExchange<T_NI> (comm, tag, instID, offset, false)
+                                            int instID, int offset):
+    CollExchange<T_NI> (comm, tag, instID, offset, false)
 {
-  this->_numphases = -1; for (int n=2*this->_comm->size()-1; n>0; n>>=1) this->_numphases++;
-  for (int i=0; i< this->_numphases; i++)
+  this->_numphases = -1;
+
+  for (int n = 2 * this->_comm->size() - 1; n > 0; n >>= 1) this->_numphases++;
+
+  for (int i = 0; i < this->_numphases; i++)
     {
       int rank       = this->_comm->virtrank();
-      int destindex  = (rank+2*this->_comm->size()-(1<<i))%this->_comm->size();
+      int destindex  = (rank + 2 * this->_comm->size() - (1 << i)) % this->_comm->size();
       this->_dest[i] = this->_comm->absrankof(destindex);
       this->_sbuf[i] = &_dummy;
       this->_rbuf[i] = &_dummy;
       this->_sbufln[i] = 1;
     }
+
   this->_numphases   *= 3;
   this->_phase        = this->_numphases;
   this->_sendcomplete = this->_numphases;
@@ -91,10 +95,10 @@ void TSPColl::Allgather<T_NI>::reset (const void *sbuf, void *rbuf, size_t nbyte
   /* initialize destinations, offsets and buffer lengths */
   /* --------------------------------------------------- */
 
-  for (int i=0, phase=this->_numphases/3; i<this->_numphases/3; i++, phase+=2)
+  for (int i = 0, phase = this->_numphases / 3; i < this->_numphases / 3; i++, phase += 2)
     {
-      int previndex  = (rank+2*this->_comm->size()-(1<<i))%this->_comm->size();
-      int nextindex  = (rank+(1<<i))%this->_comm->size();
+      int previndex  = (rank + 2 * this->_comm->size() - (1 << i)) % this->_comm->size();
+      int nextindex  = (rank + (1 << i)) % this->_comm->size();
 
       this->_dest[phase]   = this->_comm->absrankof (previndex);
       this->_dest[phase+1] = this->_dest[phase];
@@ -102,17 +106,17 @@ void TSPColl::Allgather<T_NI>::reset (const void *sbuf, void *rbuf, size_t nbyte
       this->_sbuf[phase]   = (char *)rbuf + rank * nbytes;
       this->_sbuf[phase+1] = (char *)rbuf;
 
-      this->_rbuf[phase]   = (char *)rbuf + nextindex*nbytes;
+      this->_rbuf[phase]   = (char *)rbuf + nextindex * nbytes;
       this->_rbuf[phase+1] = (char *)rbuf;
 
-      if ((size_t)rank + (1<<i) >= this->_comm->size())
-         {
+      if ((size_t)rank + (1 << i) >= this->_comm->size())
+        {
           this->_sbufln[phase]   = nbytes * (this->_comm->size() - rank);
-          this->_sbufln[phase+1] = nbytes * (rank + (1<<i) - this->_comm->size());
+          this->_sbufln[phase+1] = nbytes * (rank + (1 << i) - this->_comm->size());
         }
       else
         {
-          this->_sbufln[phase] = nbytes * (1<<i);
+          this->_sbufln[phase] = nbytes * (1 << i);
           this->_sbufln[phase+1] = 0;
         }
     }

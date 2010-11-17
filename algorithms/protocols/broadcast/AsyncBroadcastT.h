@@ -121,9 +121,9 @@ namespace CCMI
 
           //Override the connection manager in this call
           unsigned myGetKey   (unsigned                 root,
-                             unsigned                 iconnid,
-                             PAMI_GEOMETRY_CLASS    * geometry,
-                             C                     ** connmgr)
+                               unsigned                 iconnid,
+                               PAMI_GEOMETRY_CLASS    * geometry,
+                               C                     ** connmgr)
           {
             return getKey(root,
                           iconnid,
@@ -133,7 +133,7 @@ namespace CCMI
 
           virtual void metadata(pami_metadata_t *mdata)
           {
-            TRACE_ADAPTOR((stderr, "<%p>AsyncBroadcastFactoryT::metadata()\n",this));
+            TRACE_ADAPTOR((stderr, "<%p>AsyncBroadcastFactoryT::metadata()\n", this));
             DO_DEBUG((templateName<MetaDataFn>()));
             get_metadata(mdata);
           }
@@ -168,7 +168,7 @@ namespace CCMI
             unsigned key = getKey(bcast_xfer->root,
                                   (unsigned) - 1,
                                   (PAMI_GEOMETRY_CLASS*)g,
-                                  (ConnectionManager::BaseConnectionManager**)&cmgr);
+                                  (ConnectionManager::BaseConnectionManager**) & cmgr);
 
             //fprintf (stderr, "%d: Using Key %d\n", _native->myrank(), key);
 

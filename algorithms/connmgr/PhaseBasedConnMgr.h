@@ -30,33 +30,33 @@ namespace CCMI
 
     class PhaseBasedConnMgr : public ConnectionManager
     {
-    protected:
-      CollectiveMapping *_mapping;
+      protected:
+        CollectiveMapping *_mapping;
 
-    public:
+      public:
 
-      /// Constructor
-      PhaseBasedConnMgr (CollectiveMapping *map) : ConnectionManager(), _mapping(map)
-      {
-        setNumConnections (-1);
-      }
+        /// Constructor
+        PhaseBasedConnMgr (CollectiveMapping *map) : ConnectionManager(), _mapping(map)
+        {
+          setNumConnections (-1);
+        }
 
-      ///
-      /// \brief return the connection id given a set of inputs
-      /// \param comm the communicator id of the collective
-      /// \param root the root of the collective operation
-      ///
+        ///
+        /// \brief return the connection id given a set of inputs
+        /// \param comm the communicator id of the collective
+        /// \param root the root of the collective operation
+        ///
 
-      virtual unsigned getConnectionId (unsigned comm, unsigned root,
-                                        unsigned color, unsigned phase, unsigned dst=(unsigned)-1)
-      {
-        return phase;
-      }
-      virtual unsigned getRecvConnectionId (unsigned comm, unsigned root, unsigned src,
-                                            unsigned phase, unsigned color)
-      {
-        return phase;
-      }
+        virtual unsigned getConnectionId (unsigned comm, unsigned root,
+                                          unsigned color, unsigned phase, unsigned dst = (unsigned) - 1)
+        {
+          return phase;
+        }
+        virtual unsigned getRecvConnectionId (unsigned comm, unsigned root, unsigned src,
+                                              unsigned phase, unsigned color)
+        {
+          return phase;
+        }
     };
   };
 };

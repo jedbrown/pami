@@ -88,7 +88,7 @@ namespace CCMI
             }
 
           if (nranks > 0)
-              TRACE_SCHEDULE ((stderr, "%d: phase %d, node %d\n", _map.getMyRank(), ph, nodes[0]));
+            TRACE_SCHEDULE ((stderr, "%d: phase %d, node %d\n", _map.getMyRank(), ph, nodes[0]));
         }
 
         /**
@@ -117,14 +117,14 @@ namespace CCMI
 
           _maxphases = getMaxPhases(_nranks, &_nphbino);
           _hnranks = (1 << (_nphbino * _logradix)); // threshold for special handling
-          TRACE_SCHEDULE((stderr,"<%p> initBinoSched()"
+          TRACE_SCHEDULE((stderr, "<%p> initBinoSched()"
                           "_maxphases = %u, _nphbino   = %u, _op        = %u, _radix     = %u, _logradix  = %u, "
                           "_nranks    = %u, _hnranks   = %u, _sendph    = %u, _recvph    = %u, _auxsendph = %u, "
                           "_auxrecvph = %u, _startphase= %u, _nphases   = %u\n",
                           this,
-                          _maxphases,_nphbino,_op,_radix,_logradix,
-                          _nranks,_hnranks,_sendph,_recvph,_auxsendph,
-                          _auxrecvph,_startphase,_nphases));
+                          _maxphases, _nphbino, _op, _radix, _logradix,
+                          _nranks, _hnranks, _sendph, _recvph, _auxsendph,
+                          _auxrecvph, _startphase, _nphases));
         }
 
       public:
@@ -148,9 +148,10 @@ namespace CCMI
             radix = 8;
           else if ((nph & 1) == 0) //multiple of 2
             radix = 4;
+
 #endif
 
-          TRACE_SCHEDULE ((stderr, "<> getRadix() nranks %u, radiz %u\n",nranks,radix));
+          TRACE_SCHEDULE ((stderr, "<> getRadix() nranks %u, radiz %u\n", nranks, radix));
           return radix;
         }
 
@@ -187,7 +188,7 @@ namespace CCMI
               nph += 1; // non-power of two adds phase 0 and phase N+1
             }
 
-          TRACE_SCHEDULE ((stderr, "<> getMaxPhases() nranks %u, nph %u\n",nranks,nph));
+          TRACE_SCHEDULE ((stderr, "<> getMaxPhases() nranks %u, nph %u\n", nranks, nph));
           return nph;
         }
 
@@ -265,10 +266,11 @@ namespace CCMI
 
           CCMI_assert (nsrc <= topology->size());
 
-          TRACE_SCHEDULE ((stderr, "<%p> getSrcTopology() phase %u, nsrc %u\n",this,phase, nsrc));
+          TRACE_SCHEDULE ((stderr, "<%p> getSrcTopology() phase %u, nsrc %u\n", this, phase, nsrc));
+
           for (unsigned count = 0; count < nsrc; count ++)
             {
-              TRACE_SCHEDULE ((stderr, "<%p> getSrcTopology() srcranks %u/%u\n",this,srcranks[count],_map.getGlobalRank(srcranks[count])));
+              TRACE_SCHEDULE ((stderr, "<%p> getSrcTopology() srcranks %u/%u\n", this, srcranks[count], _map.getGlobalRank(srcranks[count])));
               srcranks[count] = _map.getGlobalRank(srcranks[count]);
             }
 
@@ -301,10 +303,11 @@ namespace CCMI
 
           CCMI_assert (ndst <= topology->size());
 
-          TRACE_SCHEDULE ((stderr, "<%p> getDstTopology() phase %u, ndst %u\n",this,phase, ndst));
+          TRACE_SCHEDULE ((stderr, "<%p> getDstTopology() phase %u, ndst %u\n", this, phase, ndst));
+
           for (unsigned count = 0; count < ndst; count ++)
             {
-              TRACE_SCHEDULE ((stderr, "<%p> getDstTopology() dstranks %u/%u\n",this,dstranks[count],_map.getGlobalRank(dstranks[count])));
+              TRACE_SCHEDULE ((stderr, "<%p> getDstTopology() dstranks %u/%u\n", this, dstranks[count], _map.getGlobalRank(dstranks[count])));
               dstranks[count]   = _map.getGlobalRank(dstranks[count]);
               TRACE_SCHEDULE ((stderr, "%d: phase %d, index %d node %d\n", _map.getMyRank(), phase, count, dstranks[count]));
             }
@@ -342,10 +345,11 @@ namespace CCMI
               CCMI_assert (ntotal_src <= topology->size());
             }
 
-          TRACE_SCHEDULE ((stderr, "<%p> getSrcUnionTopology() ntotal_src %u\n",this,ntotal_src));
+          TRACE_SCHEDULE ((stderr, "<%p> getSrcUnionTopology() ntotal_src %u\n", this, ntotal_src));
+
           for (unsigned count = 0; count < ntotal_src; count ++)
             {
-              TRACE_SCHEDULE ((stderr, "<%p> getSrcUnionTopology() srcranks %u/%u\n",this,srcranks[count],_map.getGlobalRank(srcranks[count])));
+              TRACE_SCHEDULE ((stderr, "<%p> getSrcUnionTopology() srcranks %u/%u\n", this, srcranks[count], _map.getGlobalRank(srcranks[count])));
               srcranks[count] = _map.getGlobalRank(srcranks[count]);
             }
 
@@ -384,10 +388,11 @@ namespace CCMI
               CCMI_assert (ntotal_dst <= topology->size());
             }
 
-          TRACE_SCHEDULE ((stderr, "<%p> getDstUnionTopology() ntotal_dst %u\n",this,ntotal_dst));
+          TRACE_SCHEDULE ((stderr, "<%p> getDstUnionTopology() ntotal_dst %u\n", this, ntotal_dst));
+
           for (unsigned count = 0; count < ntotal_dst; count ++)
             {
-              TRACE_SCHEDULE ((stderr, "<%p> getDstUnionTopology() dstranks %u/%u\n",this,dstranks[count],_map.getGlobalRank(dstranks[count])));
+              TRACE_SCHEDULE ((stderr, "<%p> getDstUnionTopology() dstranks %u/%u\n", this, dstranks[count], _map.getGlobalRank(dstranks[count])));
               dstranks[count]   = _map.getGlobalRank(dstranks[count]);
               TRACE_SCHEDULE ((stderr, "%d: phase %d, index %d node %d\n", _map.getMyRank(), phase, count, dstranks[count]));
             }
@@ -441,8 +446,10 @@ template <class M>
 inline CCMI::Schedule::MultinomialTreeT<M>::
 MultinomialTreeT(unsigned myrank, PAMI::Topology *topology, unsigned c): _map(topology->rank2Index(myrank), topology)
 {
-  TRACE_SCHEDULE((stderr,  "<%p>MultinomialTreeT(unsigned myrank, PAMI::Topology *topology, unsigned c): _map(myrank, topology) myrank %u, nranks %zu, c %u\n", this,myrank, topology->size(), c));
-  DO_DEBUG(for(unsigned i = 0; i < topology->size(); ++i) fprintf(stderr, "<%p> topology[%u] = %u\n", this, i, topology->index2Rank(i)););
+  TRACE_SCHEDULE((stderr,  "<%p>MultinomialTreeT(unsigned myrank, PAMI::Topology *topology, unsigned c): _map(myrank, topology) myrank %u, nranks %zu, c %u\n", this, myrank, topology->size(), c));
+
+  DO_DEBUG(for (unsigned i = 0; i < topology->size(); ++i) fprintf(stderr, "<%p> topology[%u] = %u\n", this, i, topology->index2Rank(i)););
+
   initBinoSched();
 }
 
@@ -458,8 +465,10 @@ template <class M>
 inline CCMI::Schedule::MultinomialTreeT<M>::
 MultinomialTreeT(unsigned myrank, size_t *ranks, unsigned nranks): _topology(ranks, nranks), _map()
 {
-  TRACE_SCHEDULE((stderr,  "<%p> MultinomialTreeT(unsigned myrank, size_t *ranks, unsigned nranks): _topology(ranks, nranks), _map() myrank %u, nranks %u\n", this,myrank,nranks));
-  DO_DEBUG(for(unsigned i = 0; i < _topology.size(); ++i) fprintf(stderr, "<%p> topology[%u] = %u\n", this, i, _topology.index2Rank(i)););
+  TRACE_SCHEDULE((stderr,  "<%p> MultinomialTreeT(unsigned myrank, size_t *ranks, unsigned nranks): _topology(ranks, nranks), _map() myrank %u, nranks %u\n", this, myrank, nranks));
+
+  DO_DEBUG(for (unsigned i = 0; i < _topology.size(); ++i) fprintf(stderr, "<%p> topology[%u] = %u\n", this, i, _topology.index2Rank(i)););
+
   CCMI_assert (_topology.type() == PAMI_LIST_TOPOLOGY);
 
   new (&_map) M (_topology.rank2Index(myrank), &_topology);
@@ -493,8 +502,9 @@ setupContext(unsigned &startph, unsigned &nph)
   np = _nphbino;
   _auxrecvph = NO_PHASES;
   _auxsendph = NO_PHASES;
-  TRACE_SCHEDULE((stderr,"<%p> setupContext() _map.getMyRank() %u, _map.isPeerProc(_map.getMyRank()) %u,  _map.isAuxProc(_map.getMyRank()) %u\n",this,
-                         _map.getMyRank(),_map.isPeerProc(_map.getMyRank()), _map.isAuxProc(_map.getMyRank())));
+  TRACE_SCHEDULE((stderr, "<%p> setupContext() _map.getMyRank() %u, _map.isPeerProc(_map.getMyRank()) %u,  _map.isAuxProc(_map.getMyRank()) %u\n", this,
+                  _map.getMyRank(), _map.isPeerProc(_map.getMyRank()), _map.isAuxProc(_map.getMyRank())));
+
   if (_map.isPeerProc(_map.getMyRank()))
     {
       /* non-power of two */
@@ -615,14 +625,14 @@ setupContext(unsigned &startph, unsigned &nph)
 
   startph = st;
   nph = np;
-  TRACE_SCHEDULE((stderr,"<%p> setupContext() startph %u, nph %u, "
+  TRACE_SCHEDULE((stderr, "<%p> setupContext() startph %u, nph %u, "
                   "_maxphases = %u, _nphbino   = %u, _op        = %u, _radix     = %u, _logradix  = %u, "
                   "_nranks    = %u, _hnranks   = %u, _sendph    = %u, _recvph    = %u, _auxsendph = %u, "
                   "_auxrecvph = %u, _startphase= %u, _nphases   = %u\n",
                   this, startph, nph,
-                  _maxphases,_nphbino,_op,_radix,_logradix,
-                  _nranks,_hnranks,_sendph,_recvph,_auxsendph,
-                  _auxrecvph,_startphase,_nphases));
+                  _maxphases, _nphbino, _op, _radix, _logradix,
+                  _nranks, _hnranks, _sendph, _recvph, _auxsendph,
+                  _auxrecvph, _startphase, _nphases));
 }
 
 /**
@@ -653,7 +663,7 @@ init(int root, int comm_op, int &start, int &nph)
 
   nph   = _nphases;
   start = _startphase;
-  TRACE_SCHEDULE ((stderr, "<%p> init() root %d, comm_op %d, start %d, nph %d\n",this,root, comm_op, start, nph));
+  TRACE_SCHEDULE ((stderr, "<%p> init() root %d, comm_op %d, start %d, nph %d\n", this, root, comm_op, start, nph));
 }
 
 

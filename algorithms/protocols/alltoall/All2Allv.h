@@ -33,10 +33,10 @@ namespace CCMI
       public:
         All2AllvProtocol() {};
         All2AllvProtocol(Interfaces::NativeInterface *mInterface,
-                        CCMI::ConnectionManager::CommSeqConnMgr *cmgr,
-                        pami_geometry_t g,
-                        pami_xfer_t *coll,
-                        pami_callback_t cb_done):
+                         CCMI::ConnectionManager::CommSeqConnMgr *cmgr,
+                         pami_geometry_t g,
+                         pami_xfer_t *coll,
+                         pami_callback_t cb_done):
             CCMI::Executor::Composite(),
             _native(mInterface),
             _geometry((PAMI_GEOMETRY_CLASS*)g),
@@ -205,7 +205,7 @@ namespace CCMI
         CCMI::Adaptor::CollOpPoolT<pami_xfer_t, T_Composite> _free_pool;
       public:
         All2AllvFactoryT(C *cmgr,
-                        Interfaces::NativeInterface *native):
+                         Interfaces::NativeInterface *native):
             CollectiveProtocolFactory(),
             _cmgr(cmgr),
             _native(native)
@@ -311,7 +311,7 @@ namespace CCMI
                 xfer->cb_done(NULL, xfer->cookie, PAMI_SUCCESS);
 
               All2AllvFactoryT *factory = (All2AllvFactoryT *)
-                                         coll_object->getFactory();
+                                          coll_object->getFactory();
               factory->_free_pool.free(coll_object);
             }
         }

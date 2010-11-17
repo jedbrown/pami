@@ -14,7 +14,6 @@
 #ifndef __algorithms_protocols_allreduce_MultiColorCompositeT_h__
 #define __algorithms_protocols_allreduce_MultiColorCompositeT_h__
 
-#include "algorithms/protocols/allreduce/BaseComposite.h"
 #include "algorithms/executor/Barrier.h"
 #include "math/math_coremath.h"
 #include "algorithms/executor/AllreduceBaseExec.h"
@@ -24,9 +23,6 @@ namespace CCMI
 {
   namespace Adaptor
   {
-    /// \brief Default for reuse_storage_limit is currently MAXINT/2G-1
-#define CCMI_DEFAULT_REUSE_STORAGE_LIMIT ((unsigned)2*1024*1024*1024 - 1)
-    /// \brief configuration flags/options for creating the factory
     namespace Allreduce
     {
       //-- MultiColorCompositeT
@@ -64,10 +60,10 @@ namespace CCMI
                mf,
                NUMCOLORS)
           {
-            TRACE_ADAPTOR((stderr, "<%p>Allreduce::MultiColorCompositeT::ctor() count %zu, dt %#X, op %#X\n", this,((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount,
-                           ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.dt,((pami_xfer_t *)cmd)->cmd.xfer_allreduce.op));
+            TRACE_ADAPTOR((stderr, "<%p>Allreduce::MultiColorCompositeT::ctor() count %zu, dt %#X, op %#X\n", this, ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount,
+                           ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.dt, ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.op));
             /// \todo only supporting PAMI_BYTE right now
-            PAMI_assertf((((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype == PAMI_BYTE)&&(((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rtype == PAMI_BYTE),"Not PAMI_BYTE? %#zX %#zX\n",(size_t)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype,(size_t)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rtype);
+            PAMI_assertf((((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype == PAMI_BYTE) && (((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rtype == PAMI_BYTE), "Not PAMI_BYTE? %#zX %#zX\n", (size_t)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype, (size_t)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rtype);
 
 //            PAMI_Type_sizeof(((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype); /// \todo PAMI_Type_sizeof() is PAMI_UNIMPL
 
@@ -82,7 +78,7 @@ namespace CCMI
             unsigned bytes = ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount * 1; /// \todo presumed size of PAMI_BYTE is 1?
 
             /// \todo only supporting PAMI_BYTE right now, so better be a valid count of dt's
-            PAMI_assertf(!(bytes%sizeOfType),"Not a valid PAMI_BYTE count of dt[%#X] bytes %u, sizeOfType %u\n",((pami_xfer_t *)cmd)->cmd.xfer_allreduce.dt,bytes,sizeOfType);
+            PAMI_assertf(!(bytes % sizeOfType), "Not a valid PAMI_BYTE count of dt[%#X] bytes %u, sizeOfType %u\n", ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.dt, bytes, sizeOfType);
 
             Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::
             initialize (((PAMI_GEOMETRY_CLASS *)g)->comm(),
@@ -98,7 +94,7 @@ namespace CCMI
               {
                 T_Exec *allreduce = Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::getExecutor(c);
                 initialize(allreduce,
-                           ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount/sizeOfType, /// \todo presumed PAMI_BYTE count, convert to dt count
+                           ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount / sizeOfType, /// \todo presumed PAMI_BYTE count, convert to dt count
                            ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.dt,
                            ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.op);
                 allreduce->reset();
@@ -244,7 +240,7 @@ namespace CCMI
            pami_pipeworkqueue_t ** rcvpwq,
            PAMI_Callback_t       * cb_done)
           {
-            TRACE_ADAPTOR((stderr,"<%p>Allreduce::MultiColorCompositeT::cb_receiveHead peer %zd, conn_id %d\n",
+            TRACE_ADAPTOR((stderr, "<%p>Allreduce::MultiColorCompositeT::cb_receiveHead peer %zd, conn_id %d\n",
                            arg, peer, conn_id));
             CCMI_assert (info && arg);
             CollHeaderData  *cdata = (CollHeaderData *) info;
@@ -259,10 +255,10 @@ namespace CCMI
             CCMI_assert (executor != NULL);
 
             executor->notifyRecvHead (info,      count,
-                                                          conn_id,   peer,
-                                                          sndlen,    arg,
-                                                          rcvlen,    rcvpwq,
-                                                          cb_done);
+                                      conn_id,   peer,
+                                      sndlen,    arg,
+                                      rcvlen,    rcvpwq,
+                                      cb_done);
             return;
           };
 

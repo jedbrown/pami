@@ -27,114 +27,114 @@ namespace CCMI
 
       class BcastQueueElem : public PAMI::MatchQueueElem
       {
-      protected:
-        //matchq
-        unsigned            _bytes;  ///Bytes in the broadcast
-        PAMI_Callback_t     _cb_done;///Application completion callback
+        protected:
+          //matchq
+          unsigned            _bytes;  ///Bytes in the broadcast
+          PAMI_Callback_t     _cb_done;///Application completion callback
 
-        char              * _rcvbuf;  ///buffer to receive bcast
-        char              * _appbuf;  ///App buffer which will be
-                                      ///different from rcvbuf for an
-                                      ///unexpected bcast
+          char              * _rcvbuf;  ///buffer to receive bcast
+          char              * _appbuf;  ///App buffer which will be
+          ///different from rcvbuf for an
+          ///unexpected bcast
 
-        bool                _isFinished;  ///Bcast completed locally?
-        CCMI::Executor::Composite   * _composite;  ///Executor Composite associated with this queue elem
+          bool                _isFinished;  ///Bcast completed locally?
+          CCMI::Executor::Composite   * _composite;  ///Executor Composite associated with this queue elem
 
-      public:
+        public:
 
-        ///
-        /// \brief Default constructor
-        ///
-        BcastQueueElem (CCMI::Executor::Composite *c=NULL, unsigned root=-1) : PAMI::MatchQueueElem (root),
-        _isFinished (false),
-        _composite (c)
-        {
-        }
+          ///
+          /// \brief Default constructor
+          ///
+          BcastQueueElem (CCMI::Executor::Composite *c = NULL, unsigned root = -1) : PAMI::MatchQueueElem (root),
+              _isFinished (false),
+              _composite (c)
+          {
+          }
 
-        void initUnexpMsg (unsigned bytes, char *unexpbuf)
-        {
-          _bytes    = bytes;
-          _rcvbuf   = unexpbuf;
+          void initUnexpMsg (unsigned bytes, char *unexpbuf)
+          {
+            _bytes    = bytes;
+            _rcvbuf   = unexpbuf;
 
-          _appbuf = NULL;  //Will be set by the application later
-          _cb_done.function = NULL;
-          _cb_done.clientdata = NULL;
+            _appbuf = NULL;  //Will be set by the application later
+            _cb_done.function = NULL;
+            _cb_done.clientdata = NULL;
 
-          CCMI_assert(bytes > 0);
-        }
+            CCMI_assert(bytes > 0);
+          }
 
-        void initPostMsg (unsigned bytes, char *rcvbuf, PAMI_Callback_t &cb)
-        {
-          _bytes    = bytes;
-          _cb_done  = cb;
-          _rcvbuf   = rcvbuf;
-          _appbuf   = NULL;
-        }
+          void initPostMsg (unsigned bytes, char *rcvbuf, PAMI_Callback_t &cb)
+          {
+            _bytes    = bytes;
+            _cb_done  = cb;
+            _rcvbuf   = rcvbuf;
+            _appbuf   = NULL;
+          }
 
-        ///
-        /// \brief Call this function when the bcast was received
-        ///        unexpected and the application wants to provide the final target
-        ///        buffer
-        void  setPosted (unsigned bytes, char *buf,
-                         pami_callback_t &cb_done)
-        {
-          CCMI_assert(bytes >= _bytes);
-          _appbuf = buf;
-          _cb_done = cb_done;
-        }
+          ///
+          /// \brief Call this function when the bcast was received
+          ///        unexpected and the application wants to provide the final target
+          ///        buffer
+          void  setPosted (unsigned bytes, char *buf,
+                           pami_callback_t &cb_done)
+          {
+            CCMI_assert(bytes >= _bytes);
+            _appbuf = buf;
+            _cb_done = cb_done;
+          }
 
-        CCMI::Executor::Composite *composite ()
-        {
-          return _composite;
-        }
+          CCMI::Executor::Composite *composite ()
+          {
+            return _composite;
+          }
 
-        PAMI_Callback_t  &callback ()
-        {
-          return _cb_done;
-        }
+          PAMI_Callback_t  &callback ()
+          {
+            return _cb_done;
+          }
 
-        unsigned bytes ()
-        {
-          return _bytes;
-        }
-        unsigned root  ()
-        {
-          return key();
-        }
+          unsigned bytes ()
+          {
+            return _bytes;
+          }
+          unsigned root  ()
+          {
+            return key();
+          }
 
-        char *rcvbuf ()
-        {
-          return _rcvbuf;
-        }
+          char *rcvbuf ()
+          {
+            return _rcvbuf;
+          }
 
-        bool  isFinished ()
-        {
-          return _isFinished;
-        }
-        void  setFinished ()
-        {
-          _isFinished = true;
-        }
+          bool  isFinished ()
+          {
+            return _isFinished;
+          }
+          void  setFinished ()
+          {
+            _isFinished = true;
+          }
 
-        bool  isPosted ()
-        {
-          return(_appbuf != NULL);
-        }
+          bool  isPosted ()
+          {
+            return(_appbuf != NULL);
+          }
 
-        void completeUnexpected ()
-        {
-          CCMI_assert(isPosted() && isFinished());
-          memcpy (_appbuf, _rcvbuf, _bytes);
+          void completeUnexpected ()
+          {
+            CCMI_assert(isPosted() && isFinished());
+            memcpy (_appbuf, _rcvbuf, _bytes);
 
-          if(_cb_done.function)
-            _cb_done.function(NULL, _cb_done.clientdata, PAMI_SUCCESS);
-        }
+            if (_cb_done.function)
+              _cb_done.function(NULL, _cb_done.clientdata, PAMI_SUCCESS);
+          }
 
-        void completePosted ()
-        {
-          if(_cb_done.function)
-            _cb_done.function(NULL, _cb_done.clientdata, PAMI_SUCCESS);
-        }
+          void completePosted ()
+          {
+            if (_cb_done.function)
+              _cb_done.function(NULL, _cb_done.clientdata, PAMI_SUCCESS);
+          }
 
       } __attribute__((__aligned__(16))); //- BcastQueueElem
     };  //- Broadcast

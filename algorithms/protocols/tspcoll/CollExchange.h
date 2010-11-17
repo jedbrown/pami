@@ -39,107 +39,107 @@ namespace TSPColl
   template<class T_NI>
   class CollExchange: public NBColl<T_NI>
   {
-  protected:
-    //    static const int MAX_PHASES=64;
-    typedef void (* cb_Coll_t) (CollExchange *, unsigned);
+    protected:
+      //    static const int MAX_PHASES=64;
+      typedef void (* cb_Coll_t) (CollExchange *, unsigned);
 
-  public:
-    /* ------------------------------ */
-    /*  public API                    */
-    /* ------------------------------ */
-    virtual void  kick             (T_NI *p2p_iface, pami_context_t context=NULL);
-    virtual bool  isdone           () const;
-    static void   amsend_reg       (T_NI *p2p_iface, void *cd);
-  protected:
+    public:
+      /* ------------------------------ */
+      /*  public API                    */
+      /* ------------------------------ */
+      virtual void  kick             (T_NI *p2p_iface, pami_context_t context = NULL);
+      virtual bool  isdone           () const;
+      static void   amsend_reg       (T_NI *p2p_iface, void *cd);
+    protected:
 
-    CollExchange                   (PAMI_GEOMETRY_CLASS *, NBTag,
-                                    int id, int off, bool strict=true,
-                                    pami_event_function cb_complete=NULL,
-                                    void * arg = NULL);
-    void          reset            (void);
+      CollExchange                   (PAMI_GEOMETRY_CLASS *, NBTag,
+                                      int id, int off, bool strict = true,
+                                      pami_event_function cb_complete = NULL,
+                                      void * arg = NULL);
+      void          reset            (void);
 
 
-  public:
+    public:
 
-    /* ------------------------------ */
-    /*  local functions               */
-    /* ------------------------------ */
-    void          send                     (int phase,T_NI*p2p_iface);
-    static inline void cb_incoming(pami_context_t    context,
-                                   void            * cookie,
-                                   const void      * header_addr,
-                                   size_t            header_size,
-                                   const void      * pipe_addr,
-                                   size_t            data_size,
-                                   pami_endpoint_t   origin,
-                                   pami_recv_t     * recv);
-    static inline void cb_incoming_ue(pami_context_t    context,
-                                      void            * cookie,
-                                      const void      * header_addr,
-                                      size_t            header_size,
-                                      const void      * pipe_addr,
-                                      size_t            data_size,
-                                      pami_endpoint_t   origin,
-                                      pami_recv_t     * recv);
-    static void   cb_recvcomplete (pami_context_t context, void * arg, pami_result_t error);
-    static void   cb_senddone     (pami_context_t, void*, pami_result_t);
-  protected:
-    T_NI                            *_p2p_iface;
-    int          _numphases;
+      /* ------------------------------ */
+      /*  local functions               */
+      /* ------------------------------ */
+      void          send                     (int phase, T_NI*p2p_iface);
+      static inline void cb_incoming(pami_context_t    context,
+                                     void            * cookie,
+                                     const void      * header_addr,
+                                     size_t            header_size,
+                                     const void      * pipe_addr,
+                                     size_t            data_size,
+                                     pami_endpoint_t   origin,
+                                     pami_recv_t     * recv);
+      static inline void cb_incoming_ue(pami_context_t    context,
+                                        void            * cookie,
+                                        const void      * header_addr,
+                                        size_t            header_size,
+                                        const void      * pipe_addr,
+                                        size_t            data_size,
+                                        pami_endpoint_t   origin,
+                                        pami_recv_t     * recv);
+      static void   cb_recvcomplete (pami_context_t context, void * arg, pami_result_t error);
+      static void   cb_senddone     (pami_context_t, void*, pami_result_t);
+    protected:
+      T_NI                            *_p2p_iface;
+      int          _numphases;
 
-    /* ------------------------------ */
-    /* set by start()                 */
-    /* ------------------------------ */
+      /* ------------------------------ */
+      /* set by start()                 */
+      /* ------------------------------ */
 
-    int          _dest     [MAX_PHASES];    /* list of destination nodes     */
-    void       * _sbuf     [MAX_PHASES];    /* list of source addresses      */
-    void       * _rbuf     [MAX_PHASES];    /* list of destination addresses */
-    size_t       _sbufln   [MAX_PHASES];    /* list of buffer lenghts        */
-    cb_Coll_t    _cb_recv1 [MAX_PHASES];    /* immediate callback */
-    cb_Coll_t    _cb_recv2 [MAX_PHASES];    /* callback to process buffer */
+      int          _dest     [MAX_PHASES];    /* list of destination nodes     */
+      void       * _sbuf     [MAX_PHASES];    /* list of source addresses      */
+      void       * _rbuf     [MAX_PHASES];    /* list of destination addresses */
+      size_t       _sbufln   [MAX_PHASES];    /* list of buffer lenghts        */
+      cb_Coll_t    _cb_recv1 [MAX_PHASES];    /* immediate callback */
+      cb_Coll_t    _cb_recv2 [MAX_PHASES];    /* callback to process buffer */
 
-    /* --------------------------------- */
-    /* STATE: changes during execution   */
-    /* --------------------------------- */
+      /* --------------------------------- */
+      /* STATE: changes during execution   */
+      /* --------------------------------- */
 
-  protected:
-    int          _phase;                    /* phase in current execution    */
-    int          _counter;                  /* how many times been reset     */
-    int          _sendstarted;
-    int          _sendcomplete;             /* #sends complete               */
-    int          _recvcomplete[MAX_PHASES]; /* #recv complete in each phase  */
-    int          _cbcomplete  [MAX_PHASES]; /* #callbacks complete           */
-    bool         _strict;                   /* early incoming msgs not perm. */
+    protected:
+      int          _phase;                    /* phase in current execution    */
+      int          _counter;                  /* how many times been reset     */
+      int          _sendstarted;
+      int          _sendcomplete;             /* #sends complete               */
+      int          _recvcomplete[MAX_PHASES]; /* #recv complete in each phase  */
+      int          _cbcomplete  [MAX_PHASES]; /* #callbacks complete           */
+      bool         _strict;                   /* early incoming msgs not perm. */
 
-    /* ------------------------------ */
-    /*      active message helpers    */
-    /* ------------------------------ */
+      /* ------------------------------ */
+      /*      active message helpers    */
+      /* ------------------------------ */
 
-    struct AMHeader
-    {
-      NBTag               tag;
-      int                 id;
-      int                 offset;
-      int                 counter;
-      int                 phase;
-    }
-    _header [MAX_PHASES] __attribute__((__aligned__(16)));
+      struct AMHeader
+      {
+        NBTag               tag;
+        int                 id;
+        int                 offset;
+        int                 counter;
+        int                 phase;
+      }
+      _header [MAX_PHASES] __attribute__((__aligned__(16)));
 
-    /* --------------------------------- */
-    /* send & receive completion helper  */
-    /* --------------------------------- */
+      /* --------------------------------- */
+      /* send & receive completion helper  */
+      /* --------------------------------- */
 
-    struct CompleteHelper
-    {
-      int                phase;
-      int                counter;
-      CollExchange     * base;
-    }
-    _cmplt [MAX_PHASES];
+      struct CompleteHelper
+      {
+        int                phase;
+        int                counter;
+        CollExchange     * base;
+      }
+      _cmplt [MAX_PHASES];
 
-    DECL_MUTEX(_mutex);
+      DECL_MUTEX(_mutex);
 
-    void internalerror (AMHeader *, int);
+      void internalerror (AMHeader *, int);
   };
 };
 
@@ -161,14 +161,15 @@ inline void TSPColl::CollExchange<T_NI>::amsend_reg  (T_NI *p2p_iface, void* cd)
 template <class T_NI>
 inline TSPColl::CollExchange<T_NI>::
 CollExchange (PAMI_GEOMETRY_CLASS * comm,
-                       NBTag tag, int id, int offset,
-                       bool strict, pami_event_function cb_complete, void *arg):
-NBColl<T_NI> (comm, tag, id, cb_complete, arg), _strict(strict)
+              NBTag tag, int id, int offset,
+              bool strict, pami_event_function cb_complete, void *arg):
+    NBColl<T_NI> (comm, tag, id, cb_complete, arg), _strict(strict)
 {
   _counter         = 0;
   _numphases       = -100 * tag;
-  _phase           = _numphases+1;
-  for (int i=0; i<MAX_PHASES; i++)
+  _phase           = _numphases + 1;
+
+  for (int i = 0; i < MAX_PHASES; i++)
     {
       _sbuf[i]                 = NULL;
       _rbuf[i]                 = NULL;
@@ -209,6 +210,7 @@ inline void TSPColl::CollExchange<T_NI>::kick(T_NI *p2p_iface, pami_context_t co
 {
   /* continued ATOMIC (code should be entered with mutex already locked */
   _p2p_iface = p2p_iface;
+
   for (; _phase < _numphases; _phase++)
     {
       /* ---------------------------------------------------- */
@@ -218,11 +220,12 @@ inline void TSPColl::CollExchange<T_NI>::kick(T_NI *p2p_iface, pami_context_t co
       if (_sendstarted <= _phase)
         {
           _sendstarted++;
+
           if (_sbuf[_phase])
             {
               int phase = _phase;
               MUTEX_UNLOCK(&_mutex);
-              send(phase,p2p_iface);
+              send(phase, p2p_iface);
               return;
             }
           else
@@ -293,15 +296,15 @@ inline void TSPColl::CollExchange<T_NI>::kick(T_NI *p2p_iface, pami_context_t co
          this->_cb_complete));
 
   if (this->_cb_complete)
-      if (_phase == _numphases)
-          {
-              _phase++;
-              TRACE((stderr, "Delivering user done callback fcn=%p arg=%p\n",
-                     this->_cb_complete, this->_arg));
-              this->_cb_complete (context, this->_arg, PAMI_SUCCESS);
-          }
+    if (_phase == _numphases)
+      {
+        _phase++;
+        TRACE((stderr, "Delivering user done callback fcn=%p arg=%p\n",
+               this->_cb_complete, this->_arg));
+        this->_cb_complete (context, this->_arg, PAMI_SUCCESS);
+      }
 
- the_end:
+the_end:
   ;
   /* END ATOMIC */
   MUTEX_UNLOCK(&_mutex);
@@ -313,8 +316,8 @@ inline void TSPColl::CollExchange<T_NI>::kick(T_NI *p2p_iface, pami_context_t co
 template <class T_NI>
 inline bool TSPColl::CollExchange<T_NI>::isdone() const
 {
-    TRACE((stderr, "Is done:  _phase=%d sendcomplete=%d, numphase=%d\n",
-           _phase, _sendcomplete, _numphases));
+  TRACE((stderr, "Is done:  _phase=%d sendcomplete=%d, numphase=%d\n",
+         _phase, _sendcomplete, _numphases));
   return (_phase >= _numphases && _sendcomplete >= _numphases);
 }
 
@@ -326,7 +329,7 @@ inline void TSPColl::CollExchange<T_NI>::send (int phase, T_NI *p2p_iface)
 {
   TRACE((stderr, "SEND tag=%d ctr=%d phase=%d tgt=%d nbytes=%d, p2p_iface=%p\n",
          _tag, _counter, phase,
-         _dest[phase], _sbufln[phase],p2p_iface));
+         _dest[phase], _sbufln[phase], p2p_iface));
   _header[phase].counter = _counter;
   PAMI_assert(_dest[phase] != -1);
 
@@ -369,7 +372,7 @@ inline void TSPColl::CollExchange<T_NI>::cb_senddone (pami_context_t context, vo
          base->_phase, base->_numphases,
          base->_dest[base->_phase], base->_sbufln[base->_phase],
          base->_sendcomplete));
-  base->kick(base->_p2p_iface,context);
+  base->kick(base->_p2p_iface, context);
 }
 
 
@@ -382,18 +385,22 @@ TSPColl::CollExchange<T_NI>::cb_recvcomplete (pami_context_t context, void * arg
 {
   CollExchange * base  = ((CompleteHelper *) arg)->base;
   unsigned  phase = ((CompleteHelper *) arg)->phase;
+
   // int  counter = ((CompleteHelper *)arg)->counter;
   if (base->_strict)
     if (base->_recvcomplete[phase] > base->_counter)
       base->internalerror (NULL, __LINE__);
+
   /* BEGIN ATOMIC */
   MUTEX_LOCK(&base->_mutex);
   base->_recvcomplete[phase]++;
   TRACE((stderr, "IN_D tag=%d ctr=%d phase=%d msgphase=%d cplt=%d\n",
          base->_tag,
          base->_counter, base->_phase, phase, base->_recvcomplete[phase]));
+
   if (base->_cb_recv1[phase]) base->_cb_recv1[phase](base, phase);
-  base->kick(base->_p2p_iface,context);
+
+  base->kick(base->_p2p_iface, context);
 }
 
 /* *********************************************************************** */
@@ -418,6 +425,7 @@ TSPColl::CollExchange<T_NI>::internalerror (AMHeader * header, int lineno)
              lineno,
              NBColl<T_NI>::_tag, NBColl<T_NI>::_instID,
              _phase, _numphases, _counter);
+
   abort();
 }
 

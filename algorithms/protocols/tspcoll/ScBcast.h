@@ -44,29 +44,29 @@ namespace TSPColl
   template <class T_NI>
   class ScBcast: public NBColl<T_NI>
   {
-  public:
-    void * operator new (size_t, void * addr) { return addr; }
-    ScBcast (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int tagoff);
-    void reset (int root, const void * sbuf, void *buf, size_t);
-    virtual void kick (T_NI *p2p_iface);
-    virtual bool isdone (void) const;
-    static void amsend_reg  (T_NI *p2p_iface, void *cd);
-  protected:
-    T_NI *_p2p_iface;
-  private:
-    size_t             *_lengths;
-    Scatterv<T_NI>   _scatterv;
-    Barrier<T_NI>    _barrier;
-    Barrier<T_NI>    _barrier2;
-    Barrier<T_NI>    _barrier3;
-    Allgatherv<T_NI> _allgatherv;
+    public:
+      void * operator new (size_t, void * addr) { return addr; }
+      ScBcast (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int tagoff);
+      void reset (int root, const void * sbuf, void *buf, size_t);
+      virtual void kick (T_NI *p2p_iface);
+      virtual bool isdone (void) const;
+      static void amsend_reg  (T_NI *p2p_iface, void *cd);
+    protected:
+      T_NI *_p2p_iface;
+    private:
+      size_t             *_lengths;
+      Scatterv<T_NI>   _scatterv;
+      Barrier<T_NI>    _barrier;
+      Barrier<T_NI>    _barrier2;
+      Barrier<T_NI>    _barrier3;
+      Allgatherv<T_NI> _allgatherv;
 
-  private:
-    static void scattercomplete(pami_context_t context, void *arg, pami_result_t res);
-    static void barriercomplete(pami_context_t context, void *arg, pami_result_t res);
-    static void barrier2complete(pami_context_t context, void *arg, pami_result_t res);
-    static void barrier3complete(pami_context_t context, void *arg, pami_result_t res);
-    static void allgathervcomplete(pami_context_t context, void *arg, pami_result_t res);
+    private:
+      static void scattercomplete(pami_context_t context, void *arg, pami_result_t res);
+      static void barriercomplete(pami_context_t context, void *arg, pami_result_t res);
+      static void barrier2complete(pami_context_t context, void *arg, pami_result_t res);
+      static void barrier3complete(pami_context_t context, void *arg, pami_result_t res);
+      static void allgathervcomplete(pami_context_t context, void *arg, pami_result_t res);
   };
 }
 
@@ -76,17 +76,17 @@ namespace TSPColl
 template <class T_NI>
 inline TSPColl::ScBcast<T_NI>::
 ScBcast(PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int tagoff) :
-               NBColl<T_NI> (comm, tag, instID, NULL, NULL),
-               _scatterv (comm, tag, instID,
-                          (size_t)&_scatterv - (size_t) this + tagoff),
-               _barrier (comm, tag, instID,
-                         (size_t)&_barrier - (size_t) this + tagoff),
-               _barrier2 (comm, tag, instID,
-                          (size_t)&_barrier2 - (size_t) this + tagoff),
-               _barrier3 (comm, tag, instID,
-                          (size_t)&_barrier3 - (size_t) this + tagoff),
-               _allgatherv (comm, tag, instID,
-                            (size_t)&_allgatherv - (size_t) this + tagoff)
+    NBColl<T_NI> (comm, tag, instID, NULL, NULL),
+    _scatterv (comm, tag, instID,
+               (size_t)&_scatterv - (size_t) this + tagoff),
+    _barrier (comm, tag, instID,
+              (size_t)&_barrier - (size_t) this + tagoff),
+    _barrier2 (comm, tag, instID,
+               (size_t)&_barrier2 - (size_t) this + tagoff),
+    _barrier3 (comm, tag, instID,
+               (size_t)&_barrier3 - (size_t) this + tagoff),
+    _allgatherv (comm, tag, instID,
+                 (size_t)&_allgatherv - (size_t) this + tagoff)
 {
   TRACE((stderr, "%d: SCBCAST<%d,%d> constr. this=%p sc=%p ag=%p\n",
          PGASRT_MYNODE, tag, instID, this, &_scatterv, &_allgatherv));
@@ -112,9 +112,11 @@ reset (int root, const void * sbuf, void *rbuf, size_t len)
   int myoffset = -1;
   size_t pernodelen = CEIL (len, this->_comm->size());
   int rank = this->_comm->virtrank();
-  for (int i=0, current = 0; i<this->_comm->size(); i++)
+
+  for (int i = 0, current = 0; i < this->_comm->size(); i++)
     {
       if (rank == i) myoffset = current;
+
       current += (_lengths[i] = MIN (pernodelen, len - current));
     }
 

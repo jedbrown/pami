@@ -32,72 +32,74 @@ namespace CCMI
     class CommSeqConnMgr : public ConnectionManager<CommSeqConnMgr>
     {
 
-    public :
-    static const unsigned _commbits=11;
-    static const unsigned _seqbits =11;
-    static const unsigned _phabits =10;
-    static const unsigned _commmask=0x7FF;
-    static const unsigned _seqmask =0x7FF;
+      public :
+        static const unsigned _commbits = 11;
+        static const unsigned _seqbits = 11;
+        static const unsigned _phabits = 10;
+        static const unsigned _commmask = 0x7FF;
+        static const unsigned _seqmask = 0x7FF;
 
-    protected:
-      std::map<unsigned, unsigned>  _comm_seq_map;
-      unsigned                      _connid;
-      int                           _nconn;
+      protected:
+        std::map<unsigned, unsigned>  _comm_seq_map;
+        unsigned                      _connid;
+        int                           _nconn;
 
-    public:
+      public:
 
-      /// Constructor
-      CommSeqConnMgr (unsigned connid = (unsigned) -1) : ConnectionManager<CommSeqConnMgr> (),
-      _connid(connid)
-      {
-      }
+        /// Constructor
+        CommSeqConnMgr (unsigned connid = (unsigned) - 1) : ConnectionManager<CommSeqConnMgr> (),
+            _connid(connid)
+        {
+        }
 
-      ///
-      /// \brief return the connection id given a set of inputs
-      /// \param comm the communicator id of the collective
-      /// \param phase the phase of the collective operation
-      ///
+        ///
+        /// \brief return the connection id given a set of inputs
+        /// \param comm the communicator id of the collective
+        /// \param phase the phase of the collective operation
+        ///
 
-      unsigned getConnectionId_impl (unsigned comm, unsigned root, unsigned color,
-                                     unsigned phase, unsigned dst)
-      {
-         if (_connid != (unsigned)-1) return _connid;
-         unsigned cid = (((comm & _commmask) << _seqbits) | (_comm_seq_map[comm] & _seqmask));
-         return cid;
+        unsigned getConnectionId_impl (unsigned comm, unsigned root, unsigned color,
+                                       unsigned phase, unsigned dst)
+        {
+          if (_connid != (unsigned) - 1) return _connid;
 
-      }
+          unsigned cid = (((comm & _commmask) << _seqbits) | (_comm_seq_map[comm] & _seqmask));
+          return cid;
 
-      unsigned getRecvConnectionId_impl (unsigned comm, unsigned root, unsigned src, unsigned phase,
-                                    unsigned color)
-      {
-         if (_connid != (unsigned)-1) return _connid;
-         unsigned cid = (((comm & _commmask) << _seqbits) | (_comm_seq_map[comm] & _seqmask));
-         return cid;
-      }
+        }
 
-      void setNumConnections_impl(int nconn)
-      {
-        _nconn = nconn;
-      }
+        unsigned getRecvConnectionId_impl (unsigned comm, unsigned root, unsigned src, unsigned phase,
+                                           unsigned color)
+        {
+          if (_connid != (unsigned) - 1) return _connid;
 
-      int getNumConnections_impl ()
-      {
-         return _nconn;
-      }
+          unsigned cid = (((comm & _commmask) << _seqbits) | (_comm_seq_map[comm] & _seqmask));
+          return cid;
+        }
 
-      unsigned updateConnectionId (unsigned comm)
-      {
-        _comm_seq_map[comm] ++;
-        _comm_seq_map[comm] &= _commmask;
-        unsigned cid = (((comm & _commmask) << _seqbits) | (_comm_seq_map[comm] & _seqmask));
-        return cid;
-      }
+        void setNumConnections_impl(int nconn)
+        {
+          _nconn = nconn;
+        }
 
-      void setSequence (unsigned comm)
-      {
-	//XMI_assert(_comm_seq_map.size() < (0x1 << _commbits));
-	_comm_seq_map[comm] = 0;
-      }
+        int getNumConnections_impl ()
+        {
+          return _nconn;
+        }
+
+        unsigned updateConnectionId (unsigned comm)
+        {
+          _comm_seq_map[comm] ++;
+          _comm_seq_map[comm] &= _commmask;
+          unsigned cid = (((comm & _commmask) << _seqbits) | (_comm_seq_map[comm] & _seqmask));
+          return cid;
+        }
+
+        void setSequence (unsigned comm)
+        {
+          //XMI_assert(_comm_seq_map.size() < (0x1 << _commbits));
+          _comm_seq_map[comm] = 0;
+        }
     };
   };
 };

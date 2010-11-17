@@ -86,6 +86,7 @@ namespace CCMI
 
             DO_DEBUG(PAMI::Topology all);
             DO_DEBUG(all = *(PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
+
             DO_DEBUG(for (unsigned j = 0; j < all.size(); ++j) fprintf(stderr, "all[%u]=%zu, size %zu\n", j, (size_t)all.index2Rank(j), all.size()));
 
             _minfo.client               = 0;
@@ -119,63 +120,63 @@ namespace CCMI
       template <class T_Composite, MetaDataFn get_metadata, class T_Connmgr>
       class MultiCombineComposite2DeviceFactoryT: public CollectiveProtocolFactory
       {
-        class collObj
-        {
+          class collObj
+          {
+            public:
+              collObj(Interfaces::NativeInterface          *native0,
+                      Interfaces::NativeInterface          *native1,
+                      T_Connmgr                            *cmgr,
+                      pami_geometry_t                       geometry,
+                      pami_xfer_t                          *cmd,
+                      pami_event_function                   fn,
+                      void                                 *cookie,
+                      MultiCombineComposite2DeviceFactoryT *factory):
+                  _factory(factory),
+                  _user_done_fn(cmd->cb_done),
+                  _user_cookie(cmd->cookie),
+                  _obj(native0, native1, cmgr, geometry, cmd, fn, cookie)
+              {
+              }
+              void done_fn( pami_context_t   context,
+                            pami_result_t    result )
+              {
+                _user_done_fn(context, _user_cookie, result);
+              }
+
+              MultiCombineComposite2DeviceFactoryT *_factory;
+              pami_event_function                   _user_done_fn;
+              void                                 *_user_cookie;
+              T_Composite                           _obj;
+              unsigned                              _connection_id;
+          };
         public:
-          collObj(Interfaces::NativeInterface          *native0,
-                  Interfaces::NativeInterface          *native1,
-                  T_Connmgr                            *cmgr,
-                  pami_geometry_t                       geometry,
-                  pami_xfer_t                          *cmd,
-                  pami_event_function                   fn,
-                  void                                 *cookie,
-                  MultiCombineComposite2DeviceFactoryT *factory):
-            _factory(factory),
-            _user_done_fn(cmd->cb_done),
-            _user_cookie(cmd->cookie),
-            _obj(native0,native1, cmgr, geometry, cmd, fn, cookie)
-            {
-            }
-          void done_fn( pami_context_t   context,
-                        pami_result_t    result )
-            {
-              _user_done_fn(context, _user_cookie, result);
-            }
-
-          MultiCombineComposite2DeviceFactoryT *_factory;
-          pami_event_function                   _user_done_fn;
-          void                                 *_user_cookie;
-          T_Composite                           _obj;
-          unsigned                              _connection_id;
-        };
-      public:
-        MultiCombineComposite2DeviceFactoryT (T_Connmgr                   *cmgr,
-                                              Interfaces::NativeInterface *native_l,
-                                              Interfaces::NativeInterface *native_g):
-          CollectiveProtocolFactory(),
-          _cmgr(cmgr),
-          _native_l(native_l),
-          _native_g(native_g)
+          MultiCombineComposite2DeviceFactoryT (T_Connmgr                   *cmgr,
+                                                Interfaces::NativeInterface *native_l,
+                                                Interfaces::NativeInterface *native_g):
+              CollectiveProtocolFactory(),
+              _cmgr(cmgr),
+              _native_l(native_l),
+              _native_g(native_g)
           {
           }
 
-        virtual ~MultiCombineComposite2DeviceFactoryT()
+          virtual ~MultiCombineComposite2DeviceFactoryT()
           {
           }
-        virtual void metadata(pami_metadata_t *mdata)
+          virtual void metadata(pami_metadata_t *mdata)
           {
             get_metadata(mdata);
           }
-        static void done_fn(pami_context_t  context,
-                            void           *clientdata,
-                            pami_result_t   res)
+          static void done_fn(pami_context_t  context,
+                              void           *clientdata,
+                              pami_result_t   res)
           {
             collObj *cobj = (collObj *)clientdata;
             cobj->done_fn(context, res);
             cobj->_factory->_alloc.returnObject(cobj);
           }
-        virtual Executor::Composite * generate(pami_geometry_t  geometry,
-                                               void            *cmd)
+          virtual Executor::Composite * generate(pami_geometry_t  geometry,
+                                                 void            *cmd)
           {
             collObj *cobj = (collObj*) _alloc.allocateObject();
             TRACE_ADAPTOR((stderr, "<%p>CollectiveProtocolFactoryT::generate()\n", cobj));
@@ -190,11 +191,11 @@ namespace CCMI
             return (Executor::Composite *)&cobj->_obj;
 
           }
-      protected:
-        T_Connmgr                                       *_cmgr;
-        Interfaces::NativeInterface                     *_native_l;
-        Interfaces::NativeInterface                     *_native_g;
-        PAMI::MemoryAllocator < sizeof(collObj), 16 >    _alloc;
+        protected:
+          T_Connmgr                                       *_cmgr;
+          Interfaces::NativeInterface                     *_native_l;
+          Interfaces::NativeInterface                     *_native_g;
+          PAMI::MemoryAllocator < sizeof(collObj), 16 >    _alloc;
       };
 
       /// \brief All sided allreduce over active message multicombines
@@ -202,29 +203,30 @@ namespace CCMI
       template <int ReduceOnly>
       class MultiCombineComposite2Device : public CCMI::Executor::Composite
       {
-      public:
-        static void composite_done(pami_context_t  context,
-                                   void           *cookie,
-                                   pami_result_t   result)
+        public:
+          static void composite_done(pami_context_t  context,
+                                     void           *cookie,
+                                     pami_result_t   result)
           {
             MultiCombineComposite2Device *m = (MultiCombineComposite2Device*) cookie;
             m->_count--;
             TRACE((stderr, "MultiCombineComposite2Device:  composite done:  count=%ld\n", m->_count));
-            if (m->_count==0)
+
+            if (m->_count == 0)
               m->_user_done.function(context, m->_user_done.clientdata, result);
           }
 
-        MultiCombineComposite2Device (Interfaces::NativeInterface      *native_l,
-                                      Interfaces::NativeInterface      *native_g,
-                                      ConnectionManager::SimpleConnMgr *cmgr,
-                                      pami_geometry_t                   g,
-                                      pami_xfer_t                      *cmd,
-                                      pami_event_function               fn,
-                                      void                             *cookie) :
-          Composite(),
-          _native_l(native_l),
-          _native_g(native_g),
-          _geometry((PAMI_GEOMETRY_CLASS*)g)
+          MultiCombineComposite2Device (Interfaces::NativeInterface      *native_l,
+                                        Interfaces::NativeInterface      *native_g,
+                                        ConnectionManager::SimpleConnMgr *cmgr,
+                                        pami_geometry_t                   g,
+                                        pami_xfer_t                      *cmd,
+                                        pami_event_function               fn,
+                                        void                             *cookie) :
+              Composite(),
+              _native_l(native_l),
+              _native_g(native_g),
+              _geometry((PAMI_GEOMETRY_CLASS*)g)
           {
             PAMI::Topology  *t_master    = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
             PAMI::Topology  *t_local     = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
@@ -232,14 +234,14 @@ namespace CCMI
             bool             amMaster    = _geometry->isLocalMasterParticipant();
             _deviceInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
             // todo:  shared mem may need its own devinfo
-            unsigned        typesize;            
+            unsigned        typesize;
             coremath        func;
             getReduceFunction(cmd->cmd.xfer_allreduce.dt,
                               cmd->cmd.xfer_allreduce.op,
                               cmd->cmd.xfer_allreduce.stypecount,
                               typesize,
                               func);
-            size_t           sbytes      = cmd->cmd.xfer_allreduce.stypecount*1; // todo add type
+            size_t           sbytes      = cmd->cmd.xfer_allreduce.stypecount * 1; // todo add type
             size_t           scountDt    = sbytes / typesize;
 
             TRACE((stderr, "MultiCombineComposite2Device:  In Composite Constructor, setting up PWQ's %p %p, sbytes=%ld buf=%p\n",
@@ -262,7 +264,7 @@ namespace CCMI
             // The "Only Local" case
             // This means the geometry only contains local tasks
             // A single multicombine will suffice to handle the allreduce
-            if(t_local->size() == _geometry->size() && amMaster)
+            if (t_local->size() == _geometry->size() && amMaster)
               {
                 _pwq_inter0.configure(NULL,                            // Memory manager
                                       cmd->cmd.xfer_allreduce.rcvbuf,  // buffer
@@ -275,9 +277,9 @@ namespace CCMI
                 _mcombine_l.cb_done.function     = composite_done;
                 _mcombine_l.connection_id        = _geometry->comm();
                 _mcombine_l.roles                = -1U;
-                _mcombine_l.data                 = (pami_pipeworkqueue_t*)&_pwq_src;
+                _mcombine_l.data                 = (pami_pipeworkqueue_t*) & _pwq_src;
                 _mcombine_l.data_participants    = (pami_topology_t*)t_local;
-                _mcombine_l.results              = (pami_pipeworkqueue_t*)&_pwq_inter0;
+                _mcombine_l.results              = (pami_pipeworkqueue_t*) & _pwq_inter0;
                 _mcombine_l.results_participants = (pami_topology_t*)t_my_master;
                 _mcombine_l.optor                = cmd->cmd.xfer_allreduce.op;
                 _mcombine_l.dtype                = cmd->cmd.xfer_allreduce.dt;
@@ -293,16 +295,16 @@ namespace CCMI
                 _mcast_l.connection_id           = _geometry->comm();
                 _mcast_l.roles                   = -1U;
                 _mcast_l.bytes                   = cmd->cmd.xfer_allreduce.rtypecount;
-                _mcast_l.src                     = (pami_pipeworkqueue_t*)&_pwq_inter0;
+                _mcast_l.src                     = (pami_pipeworkqueue_t*) & _pwq_inter0;
                 _mcast_l.src_participants        = (pami_topology_t*)t_my_master;
-                _mcast_l.dst                     = (pami_pipeworkqueue_t*)&_pwq_dest;
+                _mcast_l.dst                     = (pami_pipeworkqueue_t*) & _pwq_dest;
                 _mcast_l.dst_participants        = (pami_topology_t*)t_local;
                 _mcast_l.msginfo                 = 0;
                 _mcast_l.msgcount                = 0;
                 _startFcn                        = &MultiCombineComposite2Device::start2;
                 _count                           = 2;
 
-                TRACE((stderr, "<%p>Local Only MASTER Setting up start2: local native() %p\n",this,_native_l));
+                TRACE((stderr, "<%p>Local Only MASTER Setting up start2: local native() %p\n", this, _native_l));
                 return;
               }
 
@@ -310,7 +312,7 @@ namespace CCMI
             // My task only belongs to a global master, with no other local task
             // A single multicombine will suffice in this case as well
             // To detect this case, the local size will be only me
-            if(t_local->size() == 1)
+            if (t_local->size() == 1)
               {
                 _mcombine_g.client               = 0; /// \todo ?
                 _mcombine_g.context              = 0; /// \todo ?
@@ -318,16 +320,16 @@ namespace CCMI
                 _mcombine_g.cb_done.function     = composite_done;
                 _mcombine_g.connection_id        = _geometry->comm();
                 _mcombine_g.roles                = -1U;
-                _mcombine_g.data                 = (pami_pipeworkqueue_t*)&_pwq_src;
+                _mcombine_g.data                 = (pami_pipeworkqueue_t*) & _pwq_src;
                 _mcombine_g.data_participants    = (pami_topology_t*)t_master;
-                _mcombine_g.results              = (pami_pipeworkqueue_t*)&_pwq_dest;
+                _mcombine_g.results              = (pami_pipeworkqueue_t*) & _pwq_dest;
                 _mcombine_g.results_participants = (pami_topology_t*)t_master;
                 _mcombine_g.optor                = cmd->cmd.xfer_allreduce.op;
                 _mcombine_g.dtype                = cmd->cmd.xfer_allreduce.dt;
                 _mcombine_g.count                = scountDt;
                 _startFcn                        = &MultiCombineComposite2Device::start1;
                 _count                           = 1;
-                TRACE((stderr, "<%p>Global Only Setting up start1:\n",this));
+                TRACE((stderr, "<%p>Global Only Setting up start1:\n", this));
                 return;
               }
 
@@ -335,7 +337,7 @@ namespace CCMI
             // In this case, the task will participate in a local multicombine as a contributer(only)
             // followed by a local multicast(as a recipient).  To detect this case
             // we must not be a master task
-            if(!amMaster)
+            if (!amMaster)
               {
                 // The local multicombine
                 // Source is local topology
@@ -346,7 +348,7 @@ namespace CCMI
                 _mcombine_l.cb_done.function     = composite_done;
                 _mcombine_l.connection_id        = _geometry->comm();
                 _mcombine_l.roles                = -1U;
-                _mcombine_l.data                 = (pami_pipeworkqueue_t*)&_pwq_src;
+                _mcombine_l.data                 = (pami_pipeworkqueue_t*) & _pwq_src;
                 _mcombine_l.data_participants    = (pami_topology_t*)t_local;
                 _mcombine_l.results              = NULL;
                 _mcombine_l.results_participants = (pami_topology_t*)t_my_master;
@@ -366,13 +368,13 @@ namespace CCMI
                 _mcast_l.bytes                   = cmd->cmd.xfer_allreduce.rtypecount;
                 _mcast_l.src                     = NULL;
                 _mcast_l.src_participants        = (pami_topology_t*)t_my_master;
-                _mcast_l.dst                     = (pami_pipeworkqueue_t*)&_pwq_dest;
+                _mcast_l.dst                     = (pami_pipeworkqueue_t*) & _pwq_dest;
                 _mcast_l.dst_participants        = (pami_topology_t*)t_local;
                 _mcast_l.msginfo                 = 0;
                 _mcast_l.msgcount                = 0;
                 _startFcn                        = &MultiCombineComposite2Device::start2;
                 _count                           = 2;
-                TRACE((stderr, "<%p>Non Master Setting up start2:\n",this));
+                TRACE((stderr, "<%p>Non Master Setting up start2:\n", this));
                 return;
               }
 
@@ -401,9 +403,9 @@ namespace CCMI
             _mcombine_l.cb_done.function     = composite_done;
             _mcombine_l.connection_id        = _geometry->comm();
             _mcombine_l.roles                = -1U;
-            _mcombine_l.data                 = (pami_pipeworkqueue_t*)&_pwq_src;
+            _mcombine_l.data                 = (pami_pipeworkqueue_t*) & _pwq_src;
             _mcombine_l.data_participants    = (pami_topology_t*)t_local;
-            _mcombine_l.results              = (pami_pipeworkqueue_t*)&_pwq_inter0; // results can go in dest buffer
+            _mcombine_l.results              = (pami_pipeworkqueue_t*) & _pwq_inter0; // results can go in dest buffer
             _mcombine_l.results_participants = (pami_topology_t*)t_my_master;       // me!
             _mcombine_l.optor                = cmd->cmd.xfer_allreduce.op;
             _mcombine_l.dtype                = cmd->cmd.xfer_allreduce.dt;
@@ -415,9 +417,9 @@ namespace CCMI
             _mcombine_g.cb_done.function     = composite_done;
             _mcombine_g.connection_id        = _geometry->comm();
             _mcombine_g.roles                = -1U;
-            _mcombine_g.data                 = (pami_pipeworkqueue_t*)&_pwq_inter0;
+            _mcombine_g.data                 = (pami_pipeworkqueue_t*) & _pwq_inter0;
             _mcombine_g.data_participants    = (pami_topology_t*)t_master;
-            _mcombine_g.results              = (pami_pipeworkqueue_t*)&_pwq_inter1;
+            _mcombine_g.results              = (pami_pipeworkqueue_t*) & _pwq_inter1;
             _mcombine_g.results_participants = (pami_topology_t*)t_master;
             _mcombine_g.optor                = cmd->cmd.xfer_allreduce.op;
             _mcombine_g.dtype                = cmd->cmd.xfer_allreduce.dt;
@@ -430,62 +432,62 @@ namespace CCMI
             _mcast_l.connection_id           = _geometry->comm();
             _mcast_l.roles                   = -1U;
             _mcast_l.bytes                   = cmd->cmd.xfer_allreduce.rtypecount;
-            _mcast_l.src                     = (pami_pipeworkqueue_t*)&_pwq_inter1;
+            _mcast_l.src                     = (pami_pipeworkqueue_t*) & _pwq_inter1;
             _mcast_l.src_participants        = (pami_topology_t*)t_my_master;  // me!
-            _mcast_l.dst                     = (pami_pipeworkqueue_t*)&_pwq_dest;
+            _mcast_l.dst                     = (pami_pipeworkqueue_t*) & _pwq_dest;
             _mcast_l.dst_participants        = (pami_topology_t*)t_local;
             _mcast_l.msginfo                 = 0;
             _mcast_l.msgcount                = 0;
             _count                           = 3;
             _startFcn                        = &MultiCombineComposite2Device::start3;
-            TRACE((stderr, "<%p>Master(local and global) Setting up start3:\n",this));
+            TRACE((stderr, "<%p>Master(local and global) Setting up start3:\n", this));
           }
-        void start0()
+          void start0()
           {
-            TRACE((stderr, "<%p>start0: local native() native=%p\n",this,_native_l));
+            TRACE((stderr, "<%p>start0: local native() native=%p\n", this, _native_l));
             _native_l->multicombine(&_mcombine_l, _deviceInfo);
           }
-        void start1()
+          void start1()
           {
-            TRACE((stderr, "<%p>start1(): global multicombine %p\n",this,_native_g));
+            TRACE((stderr, "<%p>start1(): global multicombine %p\n", this, _native_g));
             _native_g->multicombine(&_mcombine_g, _deviceInfo);
           }
-        void start2()
+          void start2()
           {
-            TRACE((stderr, "<%p>start2(): local mcast+local multicombine %p\n",this,_native_l));
+            TRACE((stderr, "<%p>start2(): local mcast+local multicombine %p\n", this, _native_l));
             _native_l->multicast(&_mcast_l, _deviceInfo);
             _native_l->multicombine(&_mcombine_l, _deviceInfo);
           }
-        void start3()
+          void start3()
           {
             TRACE((stderr, "<%p>start3(): local mcast+local multicombine+global multicombine l=%p g=%p\n"
-                           ,this,_native_l, _native_g));
+                   , this, _native_l, _native_g));
             _native_l->multicast(&_mcast_l, _deviceInfo);
             _native_l->multicombine(&_mcombine_l, _deviceInfo);
             _native_g->multicombine(&_mcombine_g, _deviceInfo);
           }
 
-        virtual void start()
+          virtual void start()
           {
-            TRACE((stderr, "<%p>Calling startFcn: multicombine() %p\n",this,this->_startFcn));
+            TRACE((stderr, "<%p>Calling startFcn: multicombine() %p\n", this, this->_startFcn));
             (this->*_startFcn)();
           }
-        void (MultiCombineComposite2Device::*_startFcn)();
-        Interfaces::NativeInterface         *_native_l;
-        Interfaces::NativeInterface         *_native_g;
-        PAMI_GEOMETRY_CLASS                 *_geometry;
-        void                                *_deviceInfo;
-        PAMI::Topology                      *_l_topology;
-        PAMI::Topology                      *_g_topology;
-        pami_multicombine_t                  _mcombine_l;
-        pami_multicombine_t                  _mcombine_g;
-        pami_multicast_t                     _mcast_l;
-        PAMI::PipeWorkQueue                  _pwq_src;
-        PAMI::PipeWorkQueue                  _pwq_dest;
-        PAMI::PipeWorkQueue                  _pwq_inter0;
-        PAMI::PipeWorkQueue                  _pwq_inter1;
-        pami_callback_t                      _user_done;
-        size_t                               _count;
+          void (MultiCombineComposite2Device::*_startFcn)();
+          Interfaces::NativeInterface         *_native_l;
+          Interfaces::NativeInterface         *_native_g;
+          PAMI_GEOMETRY_CLASS                 *_geometry;
+          void                                *_deviceInfo;
+          PAMI::Topology                      *_l_topology;
+          PAMI::Topology                      *_g_topology;
+          pami_multicombine_t                  _mcombine_l;
+          pami_multicombine_t                  _mcombine_g;
+          pami_multicast_t                     _mcast_l;
+          PAMI::PipeWorkQueue                  _pwq_src;
+          PAMI::PipeWorkQueue                  _pwq_dest;
+          PAMI::PipeWorkQueue                  _pwq_inter0;
+          PAMI::PipeWorkQueue                  _pwq_inter1;
+          pami_callback_t                      _user_done;
+          size_t                               _count;
       };
 
 
@@ -504,9 +506,9 @@ namespace CCMI
                                            pami_result_t   result )
           {
             MultiCombineComposite2DeviceNP *m = (MultiCombineComposite2DeviceNP*) cookie;
-            TRACE_ADAPTOR((stderr, "<%p>MultiCombineComposite2DeviceNP::local_master_done_fn() bytes produced:%zd buffer:%p\n",cookie,m->_pwq_temp.bytesAvailableToConsume(),
+            TRACE_ADAPTOR((stderr, "<%p>MultiCombineComposite2DeviceNP::local_master_done_fn() bytes produced:%zd buffer:%p\n", cookie, m->_pwq_temp.bytesAvailableToConsume(),
                            m->_pwq_temp.bufferToConsume()));
-            DO_DEBUG(dumpDbuf((double*)m->_pwq_temp.bufferToConsume() , m->_pwq_temp.bytesAvailableToConsume()/sizeof(double)));
+            DO_DEBUG(dumpDbuf((double*)m->_pwq_temp.bufferToConsume() , m->_pwq_temp.bytesAvailableToConsume() / sizeof(double)));
             m->_native_g->multicombine(&m->_mcomb_g, m->_deviceMcombInfo);
           }
 
@@ -514,7 +516,7 @@ namespace CCMI
                                     void           *cookie,
                                     pami_result_t   result )
           {
-            TRACE_ADAPTOR((stderr, "<%p>MultiCombineComposite2DeviceNP::local_done_fn()\n",cookie));
+            TRACE_ADAPTOR((stderr, "<%p>MultiCombineComposite2DeviceNP::local_done_fn()\n", cookie));
             MultiCombineComposite2DeviceNP *m = (MultiCombineComposite2DeviceNP*) cookie;
             m->_native_l->multicast(&m->_mcast_l, m->_deviceMcastInfo);
           }
@@ -524,9 +526,9 @@ namespace CCMI
                                      pami_result_t   result )
           {
             MultiCombineComposite2DeviceNP *m = (MultiCombineComposite2DeviceNP*) cookie;
-            TRACE_ADAPTOR((stderr, "<%p>MultiCombineComposite2DeviceNP::global_master_done_fn() bytes produced:%zd buffer:%p\n",cookie, m->_pwq_dst.bytesAvailableToConsume(),
+            TRACE_ADAPTOR((stderr, "<%p>MultiCombineComposite2DeviceNP::global_master_done_fn() bytes produced:%zd buffer:%p\n", cookie, m->_pwq_dst.bytesAvailableToConsume(),
                            m->_pwq_dst.bufferToConsume()));
-            DO_DEBUG(dumpDbuf((double*)m->_pwq_dst.bufferToConsume() , m->_pwq_dst.bytesAvailableToConsume()/sizeof(double)));
+            DO_DEBUG(dumpDbuf((double*)m->_pwq_dst.bufferToConsume() , m->_pwq_dst.bytesAvailableToConsume() / sizeof(double)));
             m->_native_l->multicast(&m->_mcast_l, m->_deviceMcastInfo);
           }
 
@@ -534,26 +536,30 @@ namespace CCMI
           static void dumpDbuf(double* dbuf, size_t count)
           {
             fprintf(stderr, "dbuf=%p, size %zu\n", dbuf, count);
+
             for (size_t i = 0; i < count; i++)
               fprintf(stderr, "dbuf[%zu]=%f\n", i, dbuf[i]);
           }
 
           static void test_local_done_fn(pami_context_t  context,
-                                     void           *cookie,
-                                     pami_result_t   result )
+                                         void           *cookie,
+                                         pami_result_t   result )
           {
             MultiCombineComposite2DeviceNP *m = (MultiCombineComposite2DeviceNP*) cookie;
-            TRACE_ADAPTOR((stderr, "<%p>MultiCombineComposite2DeviceNP::test_local_done_fn() %p, %p\n",cookie,m->_buffer,m->_buffer1));
-            DO_DEBUG(dumpDbuf((double*)m->_pwq_dst.bufferToConsume() , m->_pwq_dst.bytesAvailableToConsume()/sizeof(double)));
+            TRACE_ADAPTOR((stderr, "<%p>MultiCombineComposite2DeviceNP::test_local_done_fn() %p, %p\n", cookie, m->_buffer, m->_buffer1));
+            DO_DEBUG(dumpDbuf((double*)m->_pwq_dst.bufferToConsume() , m->_pwq_dst.bytesAvailableToConsume() / sizeof(double)));
+
             if (m->_cb_done.function)
-                   m->_cb_done.function(context, m->_cb_done.clientdata, result);
-            if(m->_bytes > 2048)
-            {
-              free(m->_buffer);
-              free(m->_buffer1);
-            }
-            m->_buffer=NULL;
-            m->_buffer1=NULL;
+              m->_cb_done.function(context, m->_cb_done.clientdata, result);
+
+            if (m->_bytes > 2048)
+              {
+                free(m->_buffer);
+                free(m->_buffer1);
+              }
+
+            m->_buffer = NULL;
+            m->_buffer1 = NULL;
           }
 #else
           static void dumpDbuf(double* dbuf,  unsigned count) {}
@@ -562,12 +568,13 @@ namespace CCMI
         public:
           ~MultiCombineComposite2DeviceNP ()
           {
-            TRACE_ADAPTOR((stderr, "<%p>~MultiCombineComposite2DeviceNP() %p, %p\n",this,_buffer,_buffer1));
-            if(_bytes > 2048)
-            {
-              free(_buffer);
-              free(_buffer1);
-            }
+            TRACE_ADAPTOR((stderr, "<%p>~MultiCombineComposite2DeviceNP() %p, %p\n", this, _buffer, _buffer1));
+
+            if (_bytes > 2048)
+              {
+                free(_buffer);
+                free(_buffer1);
+              }
           }
           MultiCombineComposite2DeviceNP (Interfaces::NativeInterface      *mInterface,
                                           ConnectionManager::SimpleConnMgr *cmgr,
@@ -592,15 +599,17 @@ namespace CCMI
               _deviceMcombInfo(NULL),
               _deviceMcastInfo(NULL)
           {
-            TRACE_ADAPTOR((stderr,"<%p>%s, type %#zX/%#zX, count %zu/%zu, op %#X, dt %#X\n",this, __PRETTY_FUNCTION__,
+            TRACE_ADAPTOR((stderr, "<%p>%s, type %#zX/%#zX, count %zu/%zu, op %#X, dt %#X\n", this, __PRETTY_FUNCTION__,
                            (size_t)cmd->cmd.xfer_allreduce.stype, (size_t)cmd->cmd.xfer_allreduce.rtype,
                            cmd->cmd.xfer_allreduce.stypecount, cmd->cmd.xfer_allreduce.rtypecount, cmd->cmd.xfer_allreduce.op, cmd->cmd.xfer_allreduce.dt));
 
             DO_DEBUG(for (unsigned j = 0; j < _topology_l->size(); ++j) fprintf(stderr, "_topology_l[%u]=%zu, size %zu\n", j, (size_t)_topology_l->index2Rank(j), _topology_l->size()));
+
             DO_DEBUG(for (unsigned j = 0; j < _topology_g->size(); ++j) fprintf(stderr, "_topology_g[%u]=%zu, size %zu\n", j, (size_t)_topology_g->index2Rank(j), _topology_g->size()));
+
             DO_DEBUG(for (unsigned j = 0; j < _topology_lm.size(); ++j) fprintf(stderr, "_topology_lm[%u]=%zu, size %zu\n", j, (size_t)_topology_lm.index2Rank(j), _topology_lm.size()));
 
-            PAMI_assert(_topology_lm.index2Rank(0) != (unsigned) -1); // no local master?
+            PAMI_assert(_topology_lm.index2Rank(0) != (unsigned) - 1); // no local master?
 
             /// \todo only supporting PAMI_BYTE right now
             PAMI_assertf((cmd->cmd.xfer_allreduce.stype == PAMI_BYTE) && (cmd->cmd.xfer_allreduce.rtype == PAMI_BYTE), "Not PAMI_BYTE? %#zX %#zX\n", (size_t)cmd->cmd.xfer_allreduce.stype, (size_t)cmd->cmd.xfer_allreduce.rtype);
@@ -617,16 +626,17 @@ namespace CCMI
                               func );
 
             _bytes                       = cmd->cmd.xfer_allreduce.stypecount * 1; /// \todo presumed size of PAMI_BYTE?
-            if(_bytes > 2048)
-            {
-              _buffer = (char*) malloc(_bytes + 128); /// \todo memory leak?
-              _buffer1 = (char*) malloc(_bytes + 128); /// \todo memory leak?
-            }
+
+            if (_bytes > 2048)
+              {
+                _buffer = (char*) malloc(_bytes + 128); /// \todo memory leak?
+                _buffer1 = (char*) malloc(_bytes + 128); /// \todo memory leak?
+              }
             else
-            {
-              _buffer = _bufferb;
-              _buffer1 = _buffer1b;
-            }
+              {
+                _buffer = _bufferb;
+                _buffer1 = _buffer1b;
+              }
 
             size_t countDt = _bytes / sizeOfType;
 
@@ -634,7 +644,8 @@ namespace CCMI
             size_t           numMasters  = _topology_g->size();
             size_t           numLocals   = _topology_l->size();
             PAMI_assertf(numMasters > 1 && numLocals > 1, "numMasters %zu, numLocals %zu\n", numMasters, numLocals); /// \todo keep it simple for now.
-	    numLocals = numLocals; numMasters = numMasters; // silence warnings when ASSERTS=0
+            numLocals = numLocals;
+            numMasters = numMasters; // silence warnings when ASSERTS=0
 
             _deviceMcombInfo = _geometry->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
             _deviceMcastInfo = _geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
@@ -646,7 +657,7 @@ namespace CCMI
             _pwq_src.reset();
             TRACE_ADAPTOR((stderr, "<%p>MultiCombineComposite2DeviceNP() send buffer %p, bytes available to consume:%zd, produce:%zd\n", this, _pwq_src.bufferToConsume(),
                            _pwq_src.bytesAvailableToConsume(), _pwq_src.bytesAvailableToProduce()));
-            DO_DEBUG(dumpDbuf((double*)_pwq_src.bufferToConsume() , _pwq_src.bytesAvailableToConsume()/sizeof(double)));
+            DO_DEBUG(dumpDbuf((double*)_pwq_src.bufferToConsume() , _pwq_src.bytesAvailableToConsume() / sizeof(double)));
 
             _pwq_dst.configure(NULL,                            // Memory manager
                                cmd->cmd.xfer_allreduce.rcvbuf,  // buffer

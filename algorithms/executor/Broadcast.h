@@ -10,7 +10,6 @@
 #include "algorithms/interfaces/Executor.h"
 #include "algorithms/connmgr/ConnectionManager.h"
 #include "algorithms/interfaces/NativeInterface.h"
-#include "algorithms/executor/OldBroadcast.h"
 
 #define MAX_PARALLEL 20
 
@@ -236,7 +235,7 @@ inline void  CCMI::Executor::BroadcastExec<T>::sendNext ()
   char tbuf[1024];
   char sbuf[16384];
   sprintf(sbuf, "<%p>Executor::BroadcastExec::sendNext() from %zu: bytes %d, ndsts %zu bytes available to consume %zu\n",
-          this,__global.mapping.task(), _buflen, _dsttopology.size(), _pwq.bytesAvailableToConsume());
+          this, __global.mapping.task(), _buflen, _dsttopology.size(), _pwq.bytesAvailableToConsume());
 
   for (unsigned i = 0; i < _dsttopology.size(); ++i)
     {

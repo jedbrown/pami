@@ -9,9 +9,10 @@
 #include "algorithms/interfaces/Schedule.h"
 #include "algorithms/interfaces/Executor.h"
 #include "algorithms/interfaces/NativeInterface.h"
-#include "algorithms/executor/OldBarrier.h"
 
 #include "algorithms/executor/ScheduleCache.h"
+
+#define CCMI_BARRIER_MAXPHASES  20
 
 namespace CCMI
 {

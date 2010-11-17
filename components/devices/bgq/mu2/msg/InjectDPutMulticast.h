@@ -24,7 +24,7 @@
 #define LOCAL_DIM  5 //the index of the local dimension
 #define MAX_CHANNELS 10
 
-#define MESH            0
+#define MESH            PAMI::Interface::Mapping::Mesh
 #define TORUS_POSITIVE  PAMI::Interface::Mapping::TorusPositive
 #define TORUS_NEGATIVE  PAMI::Interface::Mapping::TorusNegative
 

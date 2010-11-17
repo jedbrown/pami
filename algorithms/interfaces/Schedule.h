@@ -119,43 +119,6 @@ namespace CCMI
       virtual pami_result_t
       getDstUnionTopology (PAMI::Topology *topology)=0;
 
-      /**
-       * Old ccmi schedule interfaces
-       */
-
-      /**
-       * \brief Get the upstream processors. Source processors
-       * that send messages to me in this collective operation
-       * \param phase : phase of the collective
-       * \param srcpes : List of source processors
-       * \param nsrc :  number of source processors
-       * \param subtasks : what operations to perform? combine?
-       */
-
-      virtual void getSrcPeList (unsigned  phase, unsigned *srcpes,
-                                 unsigned  &nsrc, unsigned *subtasks=NULL)=0;
-
-
-      /**
-       * \brief Get the downstream processors to send data to.
-       * \param phase : phase of the collective
-       * \param dstpes : List of source processors
-       * \param ndst :  number of source processors
-       * \param subtasks : what operations to perform? pt-to-pt, line bcast
-       */
-      virtual void getDstPeList (unsigned  phase, unsigned *dstpes,
-                                 unsigned  &ndst, unsigned *subtasks)=0;
-
-      /**
-       * \brief Initialize the schedule for collective operation
-       * \param root : the root of the collective
-       * \param startphase : The phase where I become active
-       * \param nphases : number of phases
-       * \param maxranks : total number of processors to communicate
-       *  with. Mainly needed in the executor to allocate queues
-       *  and other resources
-       */
-
 
     };  //-- Schedule
   };  //-- Schedule

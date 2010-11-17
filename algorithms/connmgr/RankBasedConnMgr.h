@@ -23,44 +23,44 @@ namespace CCMI
   {
     class RankBasedConnMgr : public ConnectionManager<RankBasedConnMgr>
     {
-    public:
-      RankBasedConnMgr () :
-        ConnectionManager<RankBasedConnMgr>(),
-        _numConnections(__global.mapping.size())
+      public:
+        RankBasedConnMgr () :
+            ConnectionManager<RankBasedConnMgr>(),
+            _numConnections(__global.mapping.size())
         {
         }
 
-      inline void setNumConnections_impl (size_t sz)
+        inline void setNumConnections_impl (size_t sz)
         {
           _numConnections = sz;
         }
 
-      inline int getNumConnections_impl ()
+        inline int getNumConnections_impl ()
         {
           return _numConnections;
         }
 
-      inline unsigned getConnectionId_impl (unsigned comm,
-                                            unsigned root,
-                                            unsigned color,
-                                            unsigned phase,
-                                            unsigned dst=(unsigned)-1)
+        inline unsigned getConnectionId_impl (unsigned comm,
+                                              unsigned root,
+                                              unsigned color,
+                                              unsigned phase,
+                                              unsigned dst = (unsigned) - 1)
         {
           return __global.mapping.task();
         }
 
-      inline unsigned getRecvConnectionId_impl (unsigned comm,
-                                                unsigned root,
-                                                unsigned src,
-                                                unsigned phase,
-                                                unsigned color)
+        inline unsigned getRecvConnectionId_impl (unsigned comm,
+                                                  unsigned root,
+                                                  unsigned src,
+                                                  unsigned phase,
+                                                  unsigned color)
         {
           return src;
         }
 
 
-    private:
-      size_t    _numConnections;
+      private:
+        size_t    _numConnections;
     };
   };
 };

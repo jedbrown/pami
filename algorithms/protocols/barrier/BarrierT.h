@@ -16,7 +16,6 @@
 
 #include "algorithms/connmgr/SimpleConnMgr.h"
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
-#include "algorithms/protocols/barrier/BarrierFactory.h"
 #include "algorithms/executor/Barrier.h"
 
 extern void registerunexpbarrier(pami_context_t context,
@@ -37,7 +36,7 @@ namespace CCMI
       // Barrier Factory for generate routine
       // generate
       //
-      template <class T, MetaDataFn get_metadata, class C, PAMI::Geometry::ckeys_t T_Key=PAMI::Geometry::CKEY_BARRIERCOMPOSITE1>
+      template < class T, MetaDataFn get_metadata, class C, PAMI::Geometry::ckeys_t T_Key = PAMI::Geometry::CKEY_BARRIERCOMPOSITE1 >
       class BarrierFactoryT : public CollectiveProtocolFactoryT<T, get_metadata, C>
       {
         public:
@@ -60,10 +59,10 @@ namespace CCMI
 
             if (!c)
               {
-              c = CollectiveProtocolFactoryT<T, get_metadata, C>::generate(geometry, cmd);
-              g->setKey((size_t)0, /// \todo does NOT support multicontext
-                        T_Key,
-                        (void*)c);
+                c = CollectiveProtocolFactoryT<T, get_metadata, C>::generate(geometry, cmd);
+                g->setKey((size_t)0, /// \todo does NOT support multicontext
+                          T_Key,
+                          (void*)c);
               }
 
             return c;
@@ -73,7 +72,7 @@ namespace CCMI
       ///
       /// \brief Binomial barrier
       ///
-      template <class T_Schedule, AnalyzeFn afn, PAMI::Geometry::topologyIndex_t T_Geometry_Index=PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX, PAMI::Geometry::ckeys_t T_Key=PAMI::Geometry::CKEY_BARRIERCOMPOSITE1>
+      template < class T_Schedule, AnalyzeFn afn, PAMI::Geometry::topologyIndex_t T_Geometry_Index = PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX, PAMI::Geometry::ckeys_t T_Key = PAMI::Geometry::CKEY_BARRIERCOMPOSITE1 >
       class BarrierT : public CCMI::Executor::Composite
       {
           ///
@@ -122,25 +121,25 @@ namespace CCMI
             _myexecutor.start();
           }
 
-    virtual void   notifyRecv  (unsigned              src,
-                                const pami_quad_t   & metadata,
-                                PAMI::PipeWorkQueue ** pwq,
-                                pami_callback_t      * cb_done,
-                                void                 * cookie)
+          virtual void   notifyRecv  (unsigned              src,
+                                      const pami_quad_t   & metadata,
+                                      PAMI::PipeWorkQueue ** pwq,
+                                      pami_callback_t      * cb_done,
+                                      void                 * cookie)
           {
             _myexecutor.notifyRecv (src, metadata, NULL, NULL);
           }
-        
-        static void    cb_head   (pami_context_t         ctxt,
-                                  const pami_quad_t    * info,
-                                  unsigned              count,
-                                  unsigned              conn_id,
-                                  size_t                peer,
-                                  size_t                sndlen,
-                                  void                * arg,
-                                  size_t              * rcvlen,
-                                  pami_pipeworkqueue_t **recvpwq,
-                                  PAMI_Callback_t  *     cb_done)
+
+          static void    cb_head   (pami_context_t         ctxt,
+                                    const pami_quad_t    * info,
+                                    unsigned              count,
+                                    unsigned              conn_id,
+                                    size_t                peer,
+                                    size_t                sndlen,
+                                    void                * arg,
+                                    size_t              * rcvlen,
+                                    pami_pipeworkqueue_t **recvpwq,
+                                    PAMI_Callback_t  *     cb_done)
           {
             TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
             CollHeaderData  *cdata = (CollHeaderData *) info;
@@ -150,9 +149,10 @@ namespace CCMI
             *recvpwq   = 0;
             cb_done->function   = NULL;
             cb_done->clientdata = NULL;
-            
-            PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry (ctxt, cdata->_comm);            
-            if (geometry== NULL)
+
+            PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry (ctxt, cdata->_comm);
+
+            if (geometry == NULL)
               {
                 //Geoemtry doesnt exist
                 registerunexpbarrier(ctxt,
@@ -162,11 +162,12 @@ namespace CCMI
                                      (unsigned) PAMI::Geometry::GKEY_UEBARRIERCOMPOSITE1);
                 return;
               }
+
             PAMI_assert(geometry != NULL);
             BarrierT *composite = (BarrierT*) geometry->getKey((size_t)0, /// \todo does NOT support multicontext
-                                                                T_Key);
+                                                               T_Key);
             CCMI_assert (composite != NULL);
-            TRACE_INIT((stderr, "<%p>CCMI::Adaptor::Barrier::BarrierFactory::cb_head(%d,%p)\n",
+            TRACE_INIT((stderr, "<%p>CCMI::Adaptor::Barrier::BarrierFactoryT::cb_head(%d,%p)\n",
                         factory, cdata->_comm, composite));
 
             //Override poly morphism

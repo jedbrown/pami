@@ -52,15 +52,12 @@
 //#include "p2p/protocols/send/datagram/Datagram.h"
 
 #include "TypeDefs.h"
-#include "algorithms/geometry/CCMIMultiRegistration.h"
 
 #undef TRACE_ERR
 #define TRACE_ERR(x) // fprintf x
 
 namespace PAMI
 {
-  typedef CollRegistration::CCMIMultiRegistration < BGPGeometry, AllSidedNI > MultiCollectiveRegistration;
-
   typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCounter>  ContextLock;
 
   typedef Fifo::FifoPacket <16, 256> ShmemPacket;
@@ -224,14 +221,8 @@ namespace PAMI
           _contextid (id),
           _mm (addr, bytes),
           _lock (),
-          _multi_registration(NULL),
           _world_geometry(world_geometry),
 	  _geometry_map(geometry_map),
-          _status(PAMI_SUCCESS),
-          _mcastModel(NULL),
-          _msyncModel(NULL),
-          _mcombModel(NULL),
-          _native_interface(NULL),
           _devices(devices)
       {
         TRACE_ERR((stderr, "%s\n", __PRETTY_FUNCTION__));
@@ -250,27 +241,6 @@ namespace PAMI
         _lock.init(&_mm);
         _devices->init(_clientid, _contextid, _client, _context, &_mm);
         _local_generic_device = & PAMI::Device::Generic::Device::Factory::getDevice(_devices->_generics, clientid, id);
-        _mcastModel         = (Device::LocalBcastWQModel*)_mcastModel_storage;
-        _msyncModel         = (Barrier_Model*)_msyncModel_storage;
-        _mcombModel         = (Device::LocalReduceWQModel*)_mcombModel_storage;
-        _native_interface   = (AllSidedNI*)_native_interface_storage;
-        _multi_registration = (MultiCollectiveRegistration*) _multi_registration_storage;
-
-        if (__global.topology_local.size() > 1)
-        {
-        TRACE_ERR((stderr, "%s<%u>\n", __PRETTY_FUNCTION__,__LINE__));
-        new (_mcastModel_storage)       Device::LocalBcastWQModel(PAMI::Device::LocalBcastWQDevice::Factory::getDevice(_devices->_localbcast, _clientid, _contextid),_status);
-        TRACE_ERR((stderr, "%s<%u>\n", __PRETTY_FUNCTION__,__LINE__));
-        new (_msyncModel_storage)       Barrier_Model(PAMI::Device::AtomicBarrierDev::Factory::getDevice(_devices->_atombarr, _clientid, _contextid),_status);
-        TRACE_ERR((stderr, "%s<%u>\n", __PRETTY_FUNCTION__,__LINE__));
-        new (_mcombModel_storage)       Device::LocalReduceWQModel(PAMI::Device::LocalReduceWQDevice::Factory::getDevice(_devices->_localreduce, _clientid, _contextid),_status);
-        TRACE_ERR((stderr, "%s<%u>\n", __PRETTY_FUNCTION__,__LINE__));
-        new (_native_interface_storage) AllSidedNI(_mcastModel, _msyncModel, _mcombModel, client, (pami_context_t)this, id, clientid);
-        TRACE_ERR((stderr, "%s<%u>\n", __PRETTY_FUNCTION__,__LINE__));
-        new (_multi_registration)       MultiCollectiveRegistration(*_native_interface, client, (pami_context_t)this, id, clientid,_geometry_map);
-        TRACE_ERR((stderr, "%s<%u>\n", __PRETTY_FUNCTION__,__LINE__));
-        _multi_registration->analyze(_contextid, _world_geometry);
-        }
 
         // ----------------------------------------------------------------
         // Initialize the rdma protocol(s)
@@ -608,7 +578,7 @@ namespace PAMI
       inline pami_result_t analyze(size_t         context_id,
                                   BGPGeometry    *geometry)
       {
-        return _multi_registration->analyze(context_id,geometry);
+        return PAMI_SUCCESS;
       }
 
 
@@ -666,20 +636,9 @@ namespace PAMI
 
       void * _dispatch[1024];
     public:
-      MultiCollectiveRegistration *_multi_registration;
       BGPGeometry                 *_world_geometry;
       std::map<unsigned, pami_geometry_t> *_geometry_map;
     private:
-      pami_result_t                _status;
-      Device::LocalBcastWQModel   *_mcastModel;
-      Barrier_Model               *_msyncModel;
-      Device::LocalReduceWQModel  *_mcombModel;
-      AllSidedNI                  *_native_interface;
-      uint8_t                      _multi_registration_storage[sizeof(MultiCollectiveRegistration)];
-      uint8_t                      _mcastModel_storage[sizeof(Device::LocalBcastWQModel)];
-      uint8_t                      _msyncModel_storage[sizeof(Barrier_Model)];
-      uint8_t                      _mcombModel_storage[sizeof(Device::LocalReduceWQModel)];
-      uint8_t                      _native_interface_storage[sizeof(AllSidedNI)];
       ProtocolAllocator _protocol;
       PlatformDeviceList *_devices;
 

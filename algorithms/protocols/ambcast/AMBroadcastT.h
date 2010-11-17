@@ -91,7 +91,7 @@ namespace CCMI
         public:
           AMBroadcastFactoryT (C                           *cmgr,
                                Interfaces::NativeInterface *native):
-              CollectiveProtocolFactoryT<T, get_metadata, C>(cmgr, native,cb_head)
+              CollectiveProtocolFactoryT<T, get_metadata, C>(cmgr, native, cb_head)
           {
           }
 

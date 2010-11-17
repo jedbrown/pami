@@ -76,7 +76,7 @@ namespace CCMI
             CCMI::Executor::CompositeT<NUMCOLORS, T_Bar, T_Exec>(), _doneCount(0), _numColors(ncolors), _cb_done(cb_done), _clientdata(clientdata), _native(mf), _cmgr(cmgr)
         {
           _nComplete     = _numColors + 1;
-          TRACE_ADAPTOR((stderr, "<%p>Executor::MultiColorCompositeT(..) numcolors %u, complete %u\n", this,_numColors,_nComplete));
+          TRACE_ADAPTOR((stderr, "<%p>Executor::MultiColorCompositeT(..) numcolors %u, complete %u\n", this, _numColors, _nComplete));
         }
 
         void initialize (unsigned                                comm,
@@ -86,15 +86,15 @@ namespace CCMI
                          char                                  * src,
                          char                                  * dst)
         {
-          TRACE_ADAPTOR((stderr, "<%p>Executor::MultiColorCompositeT::initialize() root %u, bytes %u\n", this,root, bytes));
+          TRACE_ADAPTOR((stderr, "<%p>Executor::MultiColorCompositeT::initialize() root %u, bytes %u\n", this, root, bytes));
           pwcfn (topology, bytes, _colors, _numColors);
 
           //printf ("Using %d colors, %d\n", _numColors, _colors[0]);
           if (_numColors > NUMCOLORS)
             _numColors = NUMCOLORS;
-          
+
           _nComplete     = _numColors + 1;
-          TRACE_ADAPTOR((stderr, "<%p>Executor::MultiColorCompositeT::initialize() numcolors %u, complete %u\n", this,_numColors,_nComplete));
+          TRACE_ADAPTOR((stderr, "<%p>Executor::MultiColorCompositeT::initialize() numcolors %u, complete %u\n", this, _numColors, _nComplete));
 
           unsigned bytecounts[NUMCOLORS];
           bytecounts[0] = bytes;
@@ -109,11 +109,11 @@ namespace CCMI
               for (unsigned c = 1; c < _numColors; ++c)
                 {
                   bytecounts[c] = aligned_bytes;
-                  TRACE_ADAPTOR((stderr, "<%p>Executor::MultiColorCompositeT::initialize() bytecounts[%u] %u\n", this,c,bytecounts[c]));
+                  TRACE_ADAPTOR((stderr, "<%p>Executor::MultiColorCompositeT::initialize() bytecounts[%u] %u\n", this, c, bytecounts[c]));
                 }
 
               bytecounts[_numColors-1]  = bytes - (aligned_bytes * (_numColors - 1));
-              TRACE_ADAPTOR((stderr, "<%p>Executor::MultiColorCompositeT::initialize() bytecounts[%u] %u\n", this,_numColors-1,bytecounts[_numColors-1]));
+              TRACE_ADAPTOR((stderr, "<%p>Executor::MultiColorCompositeT::initialize() bytecounts[%u] %u\n", this, _numColors - 1, bytecounts[_numColors-1]));
             }
 
           for (unsigned c = 0; c < _numColors; c++)
@@ -143,10 +143,11 @@ namespace CCMI
         virtual unsigned restart(void *cmd)
         {
           TRACE_ADAPTOR((stderr, "<%p>Executor::MultiColorCompositeT::restart()\n", this));
+
           if (CompositeT<NUMCOLORS, T_Bar, T_Exec>::_barrier != NULL)
             {
               // reset barrier since it may be been used between calls
-            TRACE_ADAPTOR((stderr, "<%p>Executor::MultiColorCompositeT::restart() reset barrier(%p)\n", this, (CompositeT<NUMCOLORS, T_Bar, T_Exec>::_barrier)));
+              TRACE_ADAPTOR((stderr, "<%p>Executor::MultiColorCompositeT::restart() reset barrier(%p)\n", this, (CompositeT<NUMCOLORS, T_Bar, T_Exec>::_barrier)));
 
               T_Bar  *barrier =  CompositeT<NUMCOLORS, T_Bar, T_Exec>::_barrier;
               barrier->setDoneCallback(cb_barrier_done, this);
@@ -165,7 +166,7 @@ namespace CCMI
         void addBarrier (T_Bar *exec)
         {
           CompositeT<NUMCOLORS, T_Bar, T_Exec>::addBarrier(exec);
-          TRACE_ADAPTOR((stderr, "<%p>Executor::MultiColorCompositeT::addBarrier() numcolors %u, donecount %u, complete count %u\n", this,_numColors,_doneCount,_nComplete));
+          TRACE_ADAPTOR((stderr, "<%p>Executor::MultiColorCompositeT::addBarrier() numcolors %u, donecount %u, complete count %u\n", this, _numColors, _doneCount, _nComplete));
         }
 
         T_Exec * getExecutor (int idx)
@@ -180,7 +181,7 @@ namespace CCMI
         static void cb_barrier_done(pami_context_t context, void *me, pami_result_t err)
         {
           MultiColorCompositeT * composite = (MultiColorCompositeT *) me;
-          TRACE_ADAPTOR((stderr, "<%p>Executor::MultiColorCompositeT::cb_barrier_done() numcolors %u, donecount %u, complete count %u\n", me,composite->_numColors,composite->_doneCount,composite->_nComplete));
+          TRACE_ADAPTOR((stderr, "<%p>Executor::MultiColorCompositeT::cb_barrier_done() numcolors %u, donecount %u, complete count %u\n", me, composite->_numColors, composite->_doneCount, composite->_nComplete));
           CCMI_assert (composite != NULL);
 
           //printf ("In cb_barrier_done donec=%d\n",
@@ -202,7 +203,7 @@ namespace CCMI
         static void cb_composite_done(pami_context_t context, void *me, pami_result_t err)
         {
           MultiColorCompositeT * composite = (MultiColorCompositeT *) me;
-          TRACE_ADAPTOR((stderr, "<%p>Executor::MultiColorCompositeT::cb_composite_done() numcolors %u, donecount %u, complete count %u\n", me,composite->_numColors,composite->_doneCount,composite->_nComplete));
+          TRACE_ADAPTOR((stderr, "<%p>Executor::MultiColorCompositeT::cb_composite_done() numcolors %u, donecount %u, complete count %u\n", me, composite->_numColors, composite->_doneCount, composite->_nComplete));
           CCMI_assert (composite != NULL);
 
           CCMI_assert (composite->_doneCount <  composite->_nComplete);

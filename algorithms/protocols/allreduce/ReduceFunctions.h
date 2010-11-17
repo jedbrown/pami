@@ -51,679 +51,706 @@ namespace CCMI
 /// \brief Get the reduce function and datatype size
 ///
       inline void getReduceFunction(pami_dt           dtype,
-                             pami_op           op,
-                             unsigned          count,
-                             unsigned        & sizeOfType,
-                             coremath        & func )
+                                    pami_op           op,
+                                    unsigned          count,
+                                    unsigned        & sizeOfType,
+                                    coremath        & func )
       {
         TRACE_ADAPTOR ((stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X)\n",
                         dtype, op));
 
-        switch(op)
-        {
-        case PAMI_SUM:
-          switch(dtype)
+        switch (op)
           {
-          case PAMI_SIGNED_INT:
-            sizeOfType = sizeof(int);
-            func = (coremath) Core_int32_sum;
-            break;
-          case PAMI_UNSIGNED_INT:
-            sizeOfType = sizeof(unsigned int);
-            func = (coremath) Core_uint32_sum;
-            break;
-          case PAMI_SIGNED_LONG_LONG:
-            sizeOfType = sizeof(long long);
-            func = (coremath) Core_int64_sum;
-            break;
-          case PAMI_UNSIGNED_LONG_LONG:
-            sizeOfType = sizeof(long long);
-            func = (coremath) Core_uint64_sum;
-            break;
-          case PAMI_SIGNED_SHORT:
-            sizeOfType = sizeof(short);
-            func = (coremath) Core_int16_sum;
-            break;
-          case PAMI_UNSIGNED_SHORT:
-            sizeOfType = sizeof(unsigned short);
-            func = (coremath) Core_uint16_sum;
-            break;
-          case PAMI_DOUBLE:
-            sizeOfType = sizeof(double);
-            func = (coremath) Core_fp64_sum;
-            break;
-          case PAMI_FLOAT:
-            sizeOfType = sizeof(float);
-            func = (coremath) Core_fp32_sum;
-            break;
-          case PAMI_LONG_DOUBLE:
-            sizeOfType = sizeof(long double);
-            func = (coremath) Core_fp128_sum;
-            break;
-          case PAMI_DOUBLE_COMPLEX:
-            sizeOfType = 2 * sizeof(double);
-            func = (coremath) double_complex_sum;
-            break;
-          case PAMI_SINGLE_COMPLEX:
-            sizeOfType = 2 * sizeof(float);
-            func = (coremath) single_complex_sum;
-            break;
+            case PAMI_SUM:
 
-          case PAMI_SIGNED_CHAR:
-            sizeOfType = sizeof(char);
-            func = (coremath) Core_int8_sum;
-            break;
-          case PAMI_UNSIGNED_CHAR:
-            sizeOfType = sizeof(unsigned char);
-            func = (coremath) Core_uint8_sum;
-            break;
-          default:
-            fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
-                    dtype, op, count);
-            PAMI_abort();
-          }
-          break;
-        case PAMI_MAX:
-                  switch(dtype)
-                  {
+              switch (dtype)
+                {
                   case PAMI_SIGNED_INT:
                     sizeOfType = sizeof(int);
-            func = (coremath) Core_int32_max;
-                    break;
-                  case PAMI_SIGNED_LONG_LONG:
-                    sizeOfType = sizeof(long long);
-            func = (coremath) Core_int64_max;
-                    break;
-                  case PAMI_UNSIGNED_LONG_LONG:
-                    sizeOfType = sizeof(long long);
-            func = (coremath) Core_uint64_max;
-                    break;
-                  case PAMI_SIGNED_SHORT:
-                    sizeOfType = sizeof(short);
-            func = (coremath) Core_int16_max;
+                    func = (coremath) Core_int32_sum;
                     break;
                   case PAMI_UNSIGNED_INT:
                     sizeOfType = sizeof(unsigned int);
-            func = (coremath) Core_uint32_max;
+                    func = (coremath) Core_uint32_sum;
+                    break;
+                  case PAMI_SIGNED_LONG_LONG:
+                    sizeOfType = sizeof(long long);
+                    func = (coremath) Core_int64_sum;
+                    break;
+                  case PAMI_UNSIGNED_LONG_LONG:
+                    sizeOfType = sizeof(long long);
+                    func = (coremath) Core_uint64_sum;
+                    break;
+                  case PAMI_SIGNED_SHORT:
+                    sizeOfType = sizeof(short);
+                    func = (coremath) Core_int16_sum;
                     break;
                   case PAMI_UNSIGNED_SHORT:
                     sizeOfType = sizeof(unsigned short);
-            func = (coremath) Core_uint16_max;
-                    break;
-                  case PAMI_FLOAT:
-                    sizeOfType = sizeof(float);
-            func = (coremath) Core_fp32_max;
+                    func = (coremath) Core_uint16_sum;
                     break;
                   case PAMI_DOUBLE:
                     sizeOfType = sizeof(double);
-            func = (coremath) Core_fp64_max;
+                    func = (coremath) Core_fp64_sum;
+                    break;
+                  case PAMI_FLOAT:
+                    sizeOfType = sizeof(float);
+                    func = (coremath) Core_fp32_sum;
                     break;
                   case PAMI_LONG_DOUBLE:
                     sizeOfType = sizeof(long double);
-            func = (coremath) Core_fp128_max;
+                    func = (coremath) Core_fp128_sum;
                     break;
+                  case PAMI_DOUBLE_COMPLEX:
+                    sizeOfType = 2 * sizeof(double);
+                    func = (coremath) double_complex_sum;
+                    break;
+                  case PAMI_SINGLE_COMPLEX:
+                    sizeOfType = 2 * sizeof(float);
+                    func = (coremath) single_complex_sum;
+                    break;
+
                   case PAMI_SIGNED_CHAR:
                     sizeOfType = sizeof(char);
-            func = (coremath) Core_int8_max;
+                    func = (coremath) Core_int8_sum;
                     break;
                   case PAMI_UNSIGNED_CHAR:
                     sizeOfType = sizeof(unsigned char);
-            func = (coremath) Core_uint8_max;
+                    func = (coremath) Core_uint8_sum;
                     break;
                   default:
                     fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
                             dtype, op, count);
                     PAMI_abort();
-                  }
-                  break;
-                case PAMI_MIN:
-                  switch(dtype)
-                  {
+                }
+
+              break;
+            case PAMI_MAX:
+
+              switch (dtype)
+                {
                   case PAMI_SIGNED_INT:
                     sizeOfType = sizeof(int);
-            func = (coremath) Core_int32_min;
+                    func = (coremath) Core_int32_max;
                     break;
                   case PAMI_SIGNED_LONG_LONG:
                     sizeOfType = sizeof(long long);
-            func = (coremath) Core_int64_min;
+                    func = (coremath) Core_int64_max;
                     break;
                   case PAMI_UNSIGNED_LONG_LONG:
-                    sizeOfType = sizeof(unsigned long long);
-            func = (coremath) Core_uint64_min;
+                    sizeOfType = sizeof(long long);
+                    func = (coremath) Core_uint64_max;
                     break;
                   case PAMI_SIGNED_SHORT:
                     sizeOfType = sizeof(short);
-            func = (coremath) Core_int16_min;
+                    func = (coremath) Core_int16_max;
                     break;
                   case PAMI_UNSIGNED_INT:
                     sizeOfType = sizeof(unsigned int);
-            func = (coremath) Core_uint32_min;
+                    func = (coremath) Core_uint32_max;
                     break;
                   case PAMI_UNSIGNED_SHORT:
                     sizeOfType = sizeof(unsigned short);
-            func = (coremath) Core_uint16_min;
+                    func = (coremath) Core_uint16_max;
                     break;
                   case PAMI_FLOAT:
                     sizeOfType = sizeof(float);
-            func = (coremath) Core_fp32_min;
+                    func = (coremath) Core_fp32_max;
                     break;
                   case PAMI_DOUBLE:
                     sizeOfType = sizeof(double);
-            func = (coremath) Core_fp64_min;
+                    func = (coremath) Core_fp64_max;
                     break;
                   case PAMI_LONG_DOUBLE:
                     sizeOfType = sizeof(long double);
-            func = (coremath) Core_fp128_min;
-                    break;
-                  case PAMI_UNSIGNED_CHAR:
-                    sizeOfType = sizeof(unsigned char);
-            func = (coremath) Core_uint8_min;
+                    func = (coremath) Core_fp128_max;
                     break;
                   case PAMI_SIGNED_CHAR:
                     sizeOfType = sizeof(char);
-            func = (coremath) Core_int8_min;
+                    func = (coremath) Core_int8_max;
+                    break;
+                  case PAMI_UNSIGNED_CHAR:
+                    sizeOfType = sizeof(unsigned char);
+                    func = (coremath) Core_uint8_max;
                     break;
                   default:
                     fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
                             dtype, op, count);
                     PAMI_abort();
-                  }
-                  break;
-                case PAMI_BAND:
-                  switch(dtype)
-                  {
-                  case PAMI_FLOAT:
-                    sizeOfType = sizeof(float);
-            func = (coremath) Core_uint32_band;
-                    break;
-                  case PAMI_LOGICAL:
-                  case PAMI_UNSIGNED_INT:
-                    sizeOfType = sizeof(unsigned int);
-            func = (coremath) Core_uint32_band;
-                    break;
+                }
+
+              break;
+            case PAMI_MIN:
+
+              switch (dtype)
+                {
                   case PAMI_SIGNED_INT:
                     sizeOfType = sizeof(int);
-            func = (coremath) Core_int32_band;
-                    break;
-                  case PAMI_DOUBLE:
-                    sizeOfType = sizeof(float);
-            func = (coremath) Core_uint64_band;
+                    func = (coremath) Core_int32_min;
                     break;
                   case PAMI_SIGNED_LONG_LONG:
                     sizeOfType = sizeof(long long);
-            func = (coremath) Core_int64_band;
+                    func = (coremath) Core_int64_min;
                     break;
                   case PAMI_UNSIGNED_LONG_LONG:
                     sizeOfType = sizeof(unsigned long long);
-            func = (coremath) Core_uint64_band;
-                    break;
-                  case PAMI_UNSIGNED_SHORT:
-                    sizeOfType = sizeof(unsigned short);
-            func = (coremath) Core_uint16_band;
+                    func = (coremath) Core_uint64_min;
                     break;
                   case PAMI_SIGNED_SHORT:
                     sizeOfType = sizeof(short);
-            func = (coremath) Core_int16_band;
+                    func = (coremath) Core_int16_min;
                     break;
-                  case PAMI_UNSIGNED_CHAR:
-                    sizeOfType = sizeof(unsigned char);
-            func = (coremath) Core_uint8_band;
-                    break;
-                  case PAMI_SIGNED_CHAR:
-                    sizeOfType = sizeof(char);
-            func = (coremath) Core_int8_band;
-                    break;
-                  default:
-                    fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
-                            dtype, op, count);
-                    PAMI_abort();
-                  }
-                  break;
-                case PAMI_BOR:
-                  switch(dtype)
-                  {
-                  case PAMI_FLOAT:
-                    sizeOfType = sizeof(float);
-            func = (coremath) Core_uint32_bor;
-                    break;
-                  case PAMI_LOGICAL:
                   case PAMI_UNSIGNED_INT:
                     sizeOfType = sizeof(unsigned int);
-            func = (coremath) Core_uint32_bor;
+                    func = (coremath) Core_uint32_min;
                     break;
-                  case PAMI_SIGNED_INT:
-                    sizeOfType = sizeof(int);
-            func = (coremath) Core_int32_bor;
+                  case PAMI_UNSIGNED_SHORT:
+                    sizeOfType = sizeof(unsigned short);
+                    func = (coremath) Core_uint16_min;
+                    break;
+                  case PAMI_FLOAT:
+                    sizeOfType = sizeof(float);
+                    func = (coremath) Core_fp32_min;
                     break;
                   case PAMI_DOUBLE:
                     sizeOfType = sizeof(double);
-            func = (coremath) Core_uint64_bor;
+                    func = (coremath) Core_fp64_min;
                     break;
-                  case PAMI_SIGNED_LONG_LONG:
-                    sizeOfType = sizeof(long long);
-            func = (coremath) Core_int64_bor;
-                    break;
-                  case PAMI_UNSIGNED_LONG_LONG:
-                    sizeOfType = sizeof(unsigned long long);
-            func = (coremath) Core_uint64_bor;
-                    break;
-                  case PAMI_UNSIGNED_SHORT:
-                    sizeOfType = sizeof(unsigned short);
-            func = (coremath) Core_uint16_bor;
-                    break;
-                  case PAMI_SIGNED_SHORT:
-                    sizeOfType = sizeof(short);
-            func = (coremath) Core_int16_bor;
+                  case PAMI_LONG_DOUBLE:
+                    sizeOfType = sizeof(long double);
+                    func = (coremath) Core_fp128_min;
                     break;
                   case PAMI_UNSIGNED_CHAR:
                     sizeOfType = sizeof(unsigned char);
-            func = (coremath) Core_uint8_bor;
+                    func = (coremath) Core_uint8_min;
                     break;
                   case PAMI_SIGNED_CHAR:
                     sizeOfType = sizeof(char);
-            func = (coremath) Core_int8_bor;
+                    func = (coremath) Core_int8_min;
                     break;
                   default:
                     fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
                             dtype, op, count);
                     PAMI_abort();
-                  }
-                  break;
-                case PAMI_BXOR:
-                  switch(dtype)
-                  {
+                }
+
+              break;
+            case PAMI_BAND:
+
+              switch (dtype)
+                {
                   case PAMI_FLOAT:
                     sizeOfType = sizeof(float);
-            func = (coremath) Core_uint32_bxor;
+                    func = (coremath) Core_uint32_band;
                     break;
                   case PAMI_LOGICAL:
                   case PAMI_UNSIGNED_INT:
                     sizeOfType = sizeof(unsigned int);
-            func = (coremath) Core_uint32_bxor;
+                    func = (coremath) Core_uint32_band;
                     break;
                   case PAMI_SIGNED_INT:
                     sizeOfType = sizeof(int);
-            func = (coremath) Core_int32_bxor;
+                    func = (coremath) Core_int32_band;
                     break;
                   case PAMI_DOUBLE:
-                    sizeOfType = sizeof(double);
-            func = (coremath) Core_uint64_bxor;
+                    sizeOfType = sizeof(float);
+                    func = (coremath) Core_uint64_band;
                     break;
                   case PAMI_SIGNED_LONG_LONG:
                     sizeOfType = sizeof(long long);
-            func = (coremath) Core_int64_bxor;
+                    func = (coremath) Core_int64_band;
                     break;
                   case PAMI_UNSIGNED_LONG_LONG:
                     sizeOfType = sizeof(unsigned long long);
-            func = (coremath) Core_uint64_bxor;
+                    func = (coremath) Core_uint64_band;
                     break;
                   case PAMI_UNSIGNED_SHORT:
                     sizeOfType = sizeof(unsigned short);
-            func = (coremath) Core_uint16_bxor;
+                    func = (coremath) Core_uint16_band;
                     break;
                   case PAMI_SIGNED_SHORT:
                     sizeOfType = sizeof(short);
-            func = (coremath) Core_int16_bxor;
+                    func = (coremath) Core_int16_band;
                     break;
                   case PAMI_UNSIGNED_CHAR:
                     sizeOfType = sizeof(unsigned char);
-            func = (coremath) Core_uint8_bxor;
+                    func = (coremath) Core_uint8_band;
                     break;
                   case PAMI_SIGNED_CHAR:
                     sizeOfType = sizeof(char);
-            func = (coremath) Core_int8_bxor;
+                    func = (coremath) Core_int8_band;
                     break;
                   default:
                     fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
                             dtype, op, count);
                     PAMI_abort();
-                  }
-                  break;
-                case PAMI_LAND:
-                  switch(dtype)
-                  {
+                }
+
+              break;
+            case PAMI_BOR:
+
+              switch (dtype)
+                {
                   case PAMI_FLOAT:
                     sizeOfType = sizeof(float);
-            func = (coremath) Core_uint32_land;
+                    func = (coremath) Core_uint32_bor;
                     break;
                   case PAMI_LOGICAL:
                   case PAMI_UNSIGNED_INT:
                     sizeOfType = sizeof(unsigned int);
-            func = (coremath) Core_uint32_land;
+                    func = (coremath) Core_uint32_bor;
                     break;
                   case PAMI_SIGNED_INT:
                     sizeOfType = sizeof(int);
-            func = (coremath) Core_int32_land;
+                    func = (coremath) Core_int32_bor;
                     break;
                   case PAMI_DOUBLE:
                     sizeOfType = sizeof(double);
-            func = (coremath) Core_uint64_land;
+                    func = (coremath) Core_uint64_bor;
                     break;
                   case PAMI_SIGNED_LONG_LONG:
                     sizeOfType = sizeof(long long);
-            func = (coremath) Core_int64_land;
+                    func = (coremath) Core_int64_bor;
                     break;
                   case PAMI_UNSIGNED_LONG_LONG:
                     sizeOfType = sizeof(unsigned long long);
-            func = (coremath) Core_uint64_land;
+                    func = (coremath) Core_uint64_bor;
                     break;
                   case PAMI_UNSIGNED_SHORT:
                     sizeOfType = sizeof(unsigned short);
-            func = (coremath) Core_uint16_land;
+                    func = (coremath) Core_uint16_bor;
                     break;
                   case PAMI_SIGNED_SHORT:
                     sizeOfType = sizeof(short);
-            func = (coremath) Core_int16_land;
+                    func = (coremath) Core_int16_bor;
                     break;
                   case PAMI_UNSIGNED_CHAR:
                     sizeOfType = sizeof(unsigned char);
-            func = (coremath) Core_uint8_land;
+                    func = (coremath) Core_uint8_bor;
                     break;
                   case PAMI_SIGNED_CHAR:
                     sizeOfType = sizeof(char);
-            func = (coremath) Core_int8_land;
+                    func = (coremath) Core_int8_bor;
                     break;
                   default:
                     fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
                             dtype, op, count);
                     PAMI_abort();
-                  }
-                  break;
-                case PAMI_LOR:
-                  switch(dtype)
-                  {
+                }
+
+              break;
+            case PAMI_BXOR:
+
+              switch (dtype)
+                {
                   case PAMI_FLOAT:
                     sizeOfType = sizeof(float);
-            func = (coremath) Core_uint32_lor;
+                    func = (coremath) Core_uint32_bxor;
                     break;
                   case PAMI_LOGICAL:
                   case PAMI_UNSIGNED_INT:
                     sizeOfType = sizeof(unsigned int);
-            func = (coremath) Core_uint32_lor;
+                    func = (coremath) Core_uint32_bxor;
                     break;
                   case PAMI_SIGNED_INT:
                     sizeOfType = sizeof(int);
-            func = (coremath) Core_int32_lor;
+                    func = (coremath) Core_int32_bxor;
                     break;
                   case PAMI_DOUBLE:
                     sizeOfType = sizeof(double);
-            func = (coremath) Core_uint64_lor;
+                    func = (coremath) Core_uint64_bxor;
                     break;
                   case PAMI_SIGNED_LONG_LONG:
                     sizeOfType = sizeof(long long);
-            func = (coremath) Core_int64_lor;
+                    func = (coremath) Core_int64_bxor;
                     break;
                   case PAMI_UNSIGNED_LONG_LONG:
                     sizeOfType = sizeof(unsigned long long);
-            func = (coremath) Core_uint64_lor;
+                    func = (coremath) Core_uint64_bxor;
                     break;
                   case PAMI_UNSIGNED_SHORT:
                     sizeOfType = sizeof(unsigned short);
-            func = (coremath) Core_uint16_lor;
+                    func = (coremath) Core_uint16_bxor;
                     break;
                   case PAMI_SIGNED_SHORT:
                     sizeOfType = sizeof(short);
-            func = (coremath) Core_int16_lor;
+                    func = (coremath) Core_int16_bxor;
                     break;
                   case PAMI_UNSIGNED_CHAR:
                     sizeOfType = sizeof(unsigned char);
-            func = (coremath) Core_uint8_lor;
+                    func = (coremath) Core_uint8_bxor;
                     break;
                   case PAMI_SIGNED_CHAR:
                     sizeOfType = sizeof(char);
-            func = (coremath) Core_int8_lor;
+                    func = (coremath) Core_int8_bxor;
                     break;
                   default:
                     fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
                             dtype, op, count);
                     PAMI_abort();
-                  }
-                  break;
-                case PAMI_LXOR:
-                  switch(dtype)
-                  {
+                }
+
+              break;
+            case PAMI_LAND:
+
+              switch (dtype)
+                {
                   case PAMI_FLOAT:
                     sizeOfType = sizeof(float);
-            func = (coremath) Core_uint32_lxor;
+                    func = (coremath) Core_uint32_land;
                     break;
                   case PAMI_LOGICAL:
                   case PAMI_UNSIGNED_INT:
                     sizeOfType = sizeof(unsigned int);
-            func = (coremath) Core_uint32_lxor;
+                    func = (coremath) Core_uint32_land;
                     break;
                   case PAMI_SIGNED_INT:
                     sizeOfType = sizeof(int);
-            func = (coremath) Core_int32_lxor;
+                    func = (coremath) Core_int32_land;
                     break;
                   case PAMI_DOUBLE:
                     sizeOfType = sizeof(double);
-            func = (coremath) Core_uint64_lxor;
+                    func = (coremath) Core_uint64_land;
                     break;
                   case PAMI_SIGNED_LONG_LONG:
                     sizeOfType = sizeof(long long);
-            func = (coremath) Core_int64_lxor;
+                    func = (coremath) Core_int64_land;
                     break;
                   case PAMI_UNSIGNED_LONG_LONG:
                     sizeOfType = sizeof(unsigned long long);
-            func = (coremath) Core_uint64_lxor;
+                    func = (coremath) Core_uint64_land;
                     break;
                   case PAMI_UNSIGNED_SHORT:
                     sizeOfType = sizeof(unsigned short);
-            func = (coremath) Core_uint16_lxor;
+                    func = (coremath) Core_uint16_land;
                     break;
                   case PAMI_SIGNED_SHORT:
                     sizeOfType = sizeof(short);
-            func = (coremath) Core_int16_lxor;
+                    func = (coremath) Core_int16_land;
                     break;
                   case PAMI_UNSIGNED_CHAR:
                     sizeOfType = sizeof(unsigned char);
-            func = (coremath) Core_uint8_lxor;
+                    func = (coremath) Core_uint8_land;
                     break;
                   case PAMI_SIGNED_CHAR:
                     sizeOfType = sizeof(char);
-            func = (coremath) Core_int8_lxor;
+                    func = (coremath) Core_int8_land;
                     break;
                   default:
                     fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
                             dtype, op, count);
                     PAMI_abort();
-                  }
-                  break;
-                case PAMI_MAXLOC:
-                  switch(dtype)
-                  {
+                }
+
+              break;
+            case PAMI_LOR:
+
+              switch (dtype)
+                {
+                  case PAMI_FLOAT:
+                    sizeOfType = sizeof(float);
+                    func = (coremath) Core_uint32_lor;
+                    break;
+                  case PAMI_LOGICAL:
+                  case PAMI_UNSIGNED_INT:
+                    sizeOfType = sizeof(unsigned int);
+                    func = (coremath) Core_uint32_lor;
+                    break;
+                  case PAMI_SIGNED_INT:
+                    sizeOfType = sizeof(int);
+                    func = (coremath) Core_int32_lor;
+                    break;
+                  case PAMI_DOUBLE:
+                    sizeOfType = sizeof(double);
+                    func = (coremath) Core_uint64_lor;
+                    break;
+                  case PAMI_SIGNED_LONG_LONG:
+                    sizeOfType = sizeof(long long);
+                    func = (coremath) Core_int64_lor;
+                    break;
+                  case PAMI_UNSIGNED_LONG_LONG:
+                    sizeOfType = sizeof(unsigned long long);
+                    func = (coremath) Core_uint64_lor;
+                    break;
+                  case PAMI_UNSIGNED_SHORT:
+                    sizeOfType = sizeof(unsigned short);
+                    func = (coremath) Core_uint16_lor;
+                    break;
+                  case PAMI_SIGNED_SHORT:
+                    sizeOfType = sizeof(short);
+                    func = (coremath) Core_int16_lor;
+                    break;
+                  case PAMI_UNSIGNED_CHAR:
+                    sizeOfType = sizeof(unsigned char);
+                    func = (coremath) Core_uint8_lor;
+                    break;
+                  case PAMI_SIGNED_CHAR:
+                    sizeOfType = sizeof(char);
+                    func = (coremath) Core_int8_lor;
+                    break;
+                  default:
+                    fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
+                            dtype, op, count);
+                    PAMI_abort();
+                }
+
+              break;
+            case PAMI_LXOR:
+
+              switch (dtype)
+                {
+                  case PAMI_FLOAT:
+                    sizeOfType = sizeof(float);
+                    func = (coremath) Core_uint32_lxor;
+                    break;
+                  case PAMI_LOGICAL:
+                  case PAMI_UNSIGNED_INT:
+                    sizeOfType = sizeof(unsigned int);
+                    func = (coremath) Core_uint32_lxor;
+                    break;
+                  case PAMI_SIGNED_INT:
+                    sizeOfType = sizeof(int);
+                    func = (coremath) Core_int32_lxor;
+                    break;
+                  case PAMI_DOUBLE:
+                    sizeOfType = sizeof(double);
+                    func = (coremath) Core_uint64_lxor;
+                    break;
+                  case PAMI_SIGNED_LONG_LONG:
+                    sizeOfType = sizeof(long long);
+                    func = (coremath) Core_int64_lxor;
+                    break;
+                  case PAMI_UNSIGNED_LONG_LONG:
+                    sizeOfType = sizeof(unsigned long long);
+                    func = (coremath) Core_uint64_lxor;
+                    break;
+                  case PAMI_UNSIGNED_SHORT:
+                    sizeOfType = sizeof(unsigned short);
+                    func = (coremath) Core_uint16_lxor;
+                    break;
+                  case PAMI_SIGNED_SHORT:
+                    sizeOfType = sizeof(short);
+                    func = (coremath) Core_int16_lxor;
+                    break;
+                  case PAMI_UNSIGNED_CHAR:
+                    sizeOfType = sizeof(unsigned char);
+                    func = (coremath) Core_uint8_lxor;
+                    break;
+                  case PAMI_SIGNED_CHAR:
+                    sizeOfType = sizeof(char);
+                    func = (coremath) Core_int8_lxor;
+                    break;
+                  default:
+                    fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
+                            dtype, op, count);
+                    PAMI_abort();
+                }
+
+              break;
+            case PAMI_MAXLOC:
+
+              switch (dtype)
+                {
                   case PAMI_LOC_2INT:
-            func = (coremath) Core_int32_int32_maxloc;
+                    func = (coremath) Core_int32_int32_maxloc;
                     sizeOfType = sizeof(int32_int32_t);
                     break;
                   case PAMI_LOC_SHORT_INT:
-            func = (coremath) Core_int16_int32_maxloc;
+                    func = (coremath) Core_int16_int32_maxloc;
                     sizeOfType = sizeof(int16_int32_t);
                     break;
                   case PAMI_LOC_FLOAT_INT:
-            func = (coremath) Core_fp32_int32_maxloc;
+                    func = (coremath) Core_fp32_int32_maxloc;
                     sizeOfType = sizeof(fp32_int32_t);
                     break;
                   case PAMI_LOC_DOUBLE_INT:
-            func = (coremath) Core_fp64_int32_maxloc;
+                    func = (coremath) Core_fp64_int32_maxloc;
                     sizeOfType = sizeof(fp64_int32_t);
                     break;
                   case PAMI_LOC_2FLOAT:
-            func = (coremath) Core_fp32_fp32_maxloc;
+                    func = (coremath) Core_fp32_fp32_maxloc;
                     sizeOfType = sizeof(fp32_fp32_t);
                     break;
                   case PAMI_LOC_2DOUBLE:
-            func = (coremath) Core_fp64_fp64_maxloc;
+                    func = (coremath) Core_fp64_fp64_maxloc;
                     sizeOfType = sizeof(fp64_fp64_t);
                     break;
                   default:
                     fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
                             dtype, op, count);
                     PAMI_abort();
-                  }
-                  break;
-                case PAMI_MINLOC:
-                  switch(dtype)
-                  {
+                }
+
+              break;
+            case PAMI_MINLOC:
+
+              switch (dtype)
+                {
                   case PAMI_LOC_2INT:
-            func = (coremath) Core_int32_int32_minloc;
+                    func = (coremath) Core_int32_int32_minloc;
                     sizeOfType = sizeof(int32_int32_t);
                     break;
                   case PAMI_LOC_SHORT_INT:
-            func = (coremath) Core_int16_int32_minloc;
+                    func = (coremath) Core_int16_int32_minloc;
                     sizeOfType = sizeof(int16_int32_t);
                     break;
                   case PAMI_LOC_FLOAT_INT:
-            func = (coremath) Core_fp32_int32_minloc;
+                    func = (coremath) Core_fp32_int32_minloc;
                     sizeOfType = sizeof(fp32_int32_t);
                     break;
                   case PAMI_LOC_DOUBLE_INT:
-            func = (coremath) Core_fp64_int32_minloc;
+                    func = (coremath) Core_fp64_int32_minloc;
                     sizeOfType = sizeof(fp64_int32_t);
                     break;
                   case PAMI_LOC_2FLOAT:
-            func = (coremath) Core_fp32_fp32_minloc;
+                    func = (coremath) Core_fp32_fp32_minloc;
                     sizeOfType = sizeof(fp32_fp32_t);
                     break;
                   case PAMI_LOC_2DOUBLE:
-            func = (coremath) Core_fp64_fp64_minloc;
+                    func = (coremath) Core_fp64_fp64_minloc;
                     sizeOfType = sizeof(fp64_fp64_t);
                     break;
                   default:
                     fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
                             dtype, op, count);
                     PAMI_abort();
-                  }
-                  break;
-                case PAMI_PROD:
-                  switch(dtype)
-                  {
+                }
+
+              break;
+            case PAMI_PROD:
+
+              switch (dtype)
+                {
                   case PAMI_SIGNED_INT:
                     sizeOfType = sizeof(int);
-            func = (coremath) Core_int32_prod;
+                    func = (coremath) Core_int32_prod;
                     break;
                   case PAMI_UNSIGNED_INT:
                     sizeOfType = sizeof(unsigned int);
-            func = (coremath) Core_uint32_prod;
+                    func = (coremath) Core_uint32_prod;
                     break;
                   case PAMI_SIGNED_LONG_LONG:
                     sizeOfType = sizeof(long long);
-            func = (coremath) Core_int64_prod;
+                    func = (coremath) Core_int64_prod;
                     break;
                   case PAMI_UNSIGNED_LONG_LONG:
                     sizeOfType = sizeof(unsigned long long);
-            func = (coremath) Core_uint64_prod;
+                    func = (coremath) Core_uint64_prod;
                     break;
                   case PAMI_SIGNED_SHORT:
                     sizeOfType = sizeof(short);
-            func = (coremath) Core_int16_prod;
+                    func = (coremath) Core_int16_prod;
                     break;
                   case PAMI_UNSIGNED_SHORT:
                     sizeOfType = sizeof(unsigned short);
-            func = (coremath) Core_uint16_prod;
+                    func = (coremath) Core_uint16_prod;
                     break;
                   case PAMI_DOUBLE:
                     sizeOfType = sizeof(double);
-            func = (coremath) Core_fp64_prod;
+                    func = (coremath) Core_fp64_prod;
                     break;
                   case PAMI_FLOAT:
                     sizeOfType = sizeof(float);
-            func = (coremath) Core_fp32_prod;
+                    func = (coremath) Core_fp32_prod;
                     break;
                   case PAMI_LONG_DOUBLE:
                     sizeOfType = sizeof(long double);
-            func = (coremath) Core_fp128_prod;
+                    func = (coremath) Core_fp128_prod;
                     break;
                   case PAMI_SIGNED_CHAR:
                     sizeOfType = sizeof(char);
-            func = (coremath) Core_int8_prod;
+                    func = (coremath) Core_int8_prod;
                     break;
                   case PAMI_UNSIGNED_CHAR:
                     sizeOfType = sizeof(unsigned char);
-            func = (coremath) Core_uint8_prod;
+                    func = (coremath) Core_uint8_prod;
                     break;
                   case PAMI_DOUBLE_COMPLEX: // Choose not to optimize this
                   default:
                     fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
                             dtype, op, count);
                     PAMI_abort();
-                  }
-                  break;
-        case PAMI_NOOP:
-          func = (coremath) NULL;
-          switch(dtype)
-          {
-          case PAMI_SIGNED_CHAR:
-            sizeOfType = sizeof(char);
-            break;
-          case PAMI_UNSIGNED_CHAR:
-            sizeOfType = sizeof(unsigned char);
-            break;
-          case PAMI_SIGNED_SHORT:
-            sizeOfType = sizeof(short);
-            break;
-          case PAMI_UNSIGNED_SHORT:
-            sizeOfType = sizeof(unsigned short);
-            break;
-          case PAMI_SIGNED_INT:
-            sizeOfType = sizeof(int);
-            break;
-          case PAMI_UNSIGNED_INT:
-            sizeOfType = sizeof(unsigned int);
-            break;
-          case PAMI_SIGNED_LONG_LONG:
-            sizeOfType = sizeof(long long);
-            break;
-          case PAMI_UNSIGNED_LONG_LONG:
-            sizeOfType = sizeof(unsigned long long);
-            break;
-          case PAMI_FLOAT:
-            sizeOfType = sizeof(float);
-            break;
-          case PAMI_DOUBLE:
-            sizeOfType = sizeof(double);
-            break;
-          case PAMI_LONG_DOUBLE:
-            sizeOfType = sizeof(long double);
-            break;
-          case PAMI_LOGICAL:
-            sizeOfType = sizeof(unsigned int);
-            break;
-          case PAMI_SINGLE_COMPLEX:
-            sizeOfType = 2 * sizeof(float);
-            break;
-          case PAMI_DOUBLE_COMPLEX:
-            sizeOfType = 2 * sizeof(double);
-            break;
-          case PAMI_LOC_2INT:
-            sizeOfType = sizeof(int32_int32_t);
-            break;
-          case PAMI_LOC_SHORT_INT:
-            sizeOfType = sizeof(int16_int32_t);
-            break;
-          case PAMI_LOC_FLOAT_INT:
-            sizeOfType = sizeof(fp32_int32_t);
-            break;
-          case PAMI_LOC_DOUBLE_INT:
-            sizeOfType = sizeof(fp64_int32_t);
-            break;
-          case PAMI_LOC_2FLOAT:
-            sizeOfType = sizeof(fp32_fp32_t);
-            break;
-          case PAMI_LOC_2DOUBLE:
-            sizeOfType = sizeof(fp64_fp64_t);
-            break;
-          default:
-            fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
-                    dtype, op, count);
-            PAMI_abort();
+                }
+
+              break;
+            case PAMI_NOOP:
+              func = (coremath) NULL;
+
+              switch (dtype)
+                {
+                  case PAMI_SIGNED_CHAR:
+                    sizeOfType = sizeof(char);
+                    break;
+                  case PAMI_UNSIGNED_CHAR:
+                    sizeOfType = sizeof(unsigned char);
+                    break;
+                  case PAMI_SIGNED_SHORT:
+                    sizeOfType = sizeof(short);
+                    break;
+                  case PAMI_UNSIGNED_SHORT:
+                    sizeOfType = sizeof(unsigned short);
+                    break;
+                  case PAMI_SIGNED_INT:
+                    sizeOfType = sizeof(int);
+                    break;
+                  case PAMI_UNSIGNED_INT:
+                    sizeOfType = sizeof(unsigned int);
+                    break;
+                  case PAMI_SIGNED_LONG_LONG:
+                    sizeOfType = sizeof(long long);
+                    break;
+                  case PAMI_UNSIGNED_LONG_LONG:
+                    sizeOfType = sizeof(unsigned long long);
+                    break;
+                  case PAMI_FLOAT:
+                    sizeOfType = sizeof(float);
+                    break;
+                  case PAMI_DOUBLE:
+                    sizeOfType = sizeof(double);
+                    break;
+                  case PAMI_LONG_DOUBLE:
+                    sizeOfType = sizeof(long double);
+                    break;
+                  case PAMI_LOGICAL:
+                    sizeOfType = sizeof(unsigned int);
+                    break;
+                  case PAMI_SINGLE_COMPLEX:
+                    sizeOfType = 2 * sizeof(float);
+                    break;
+                  case PAMI_DOUBLE_COMPLEX:
+                    sizeOfType = 2 * sizeof(double);
+                    break;
+                  case PAMI_LOC_2INT:
+                    sizeOfType = sizeof(int32_int32_t);
+                    break;
+                  case PAMI_LOC_SHORT_INT:
+                    sizeOfType = sizeof(int16_int32_t);
+                    break;
+                  case PAMI_LOC_FLOAT_INT:
+                    sizeOfType = sizeof(fp32_int32_t);
+                    break;
+                  case PAMI_LOC_DOUBLE_INT:
+                    sizeOfType = sizeof(fp64_int32_t);
+                    break;
+                  case PAMI_LOC_2FLOAT:
+                    sizeOfType = sizeof(fp32_fp32_t);
+                    break;
+                  case PAMI_LOC_2DOUBLE:
+                    sizeOfType = sizeof(fp64_fp64_t);
+                    break;
+                  default:
+                    fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
+                            dtype, op, count);
+                    PAMI_abort();
+                }
+
+              break;
+            default:
+              fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
+                      dtype, op, count);
+              PAMI_abort();
           }
-          break;
-        default:
-          fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
-                  dtype, op, count);
-          PAMI_abort();
-        }
+
         TRACE_ADAPTOR ((stderr, "<          >CCMI::Adaptor::getReduceFunction()"
                         " count %#X, size %#X, function %p)\n",
                         count, sizeOfType, func));
