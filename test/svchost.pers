@@ -1,0 +1,13 @@
++MU
++ND
+-MUFlags=0xFFFF800000000000
++MMU
++Mailbox
+-envmon
+-SERDES
++JTagLoader
++DDRInit
++DDRCal
++DDRFastInit
++L2
+
