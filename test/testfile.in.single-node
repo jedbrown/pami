@@ -14,7 +14,7 @@ api/collectives/ambcast.cnk --timelimit 360
 api/collectives/barrier.cnk
 api/collectives/barrier_subcomm.cnk
 api/collectives/bcast.cnk --timelimit 120
-api/collectives/bcast_advisor.cnk --timelimit 300
+#api/collectives/bcast_advisor.cnk --timelimit 300
 #api/collectives/bcast_subcomm.cnk  --timelimit 480
 #api/collectives/bcast_subcomm2.cnk --timelimit 480
 #api/collectives/bcast_subcomm_noparent.cnk --timelimit 120
