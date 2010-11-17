@@ -17,7 +17,6 @@
 
 #include "p2p/protocols/Send.h" // assumed basis of T_Protocol
 
-/// \todo put this trace facility somewhere common
 #include "util/trace.h"
 
 #include "util/ccmi_debug.h"

@@ -27,7 +27,6 @@
   #include "Global.h"
 
   #include "util/ccmi_debug.h"
-/// \todo put this trace facility somewhere common
   #include "util/trace.h"
 
   #ifdef CCMI_TRACE_ALL

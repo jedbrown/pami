@@ -17,7 +17,7 @@
 
 #include "components/memory/MemoryAllocator.h"
 
-/// \todo put this trace facility somewhere common
+
 #include "util/trace.h"
 
 #ifdef CCMI_TRACE_ALL
