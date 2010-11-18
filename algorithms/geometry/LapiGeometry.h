@@ -174,8 +174,6 @@ namespace PAMI
               new(&_topos[DEFAULT_TOPOLOGY_INDEX]) PAMI::Topology(_ranks, nranks);
             }
 
-              buildSpecialTopologies();
-
           if (gen_topo)
             regenTopo();
 
