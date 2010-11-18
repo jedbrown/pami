@@ -500,7 +500,7 @@ namespace PAMI
 	  // resource manager - TBD.
 	  uint32_t N = ncr; // take all, until we know otherwise...
 	  if (N > ncr) N = ncr;
-	  MUSPI_InitClassrouteIds(&crs[ncr - N], N, 0, NULL, &_cncrdata);
+	  MUSPI_InitClassrouteIds(&crs[ncr - N], N, 0, &_cncrdata);
 	  uint32_t x;
 	  for (x = ncr - N; x < N; ++x)
 	  {
@@ -513,7 +513,7 @@ namespace PAMI
 	  // resource manager - TBD.
 	  N = ncr; // take all, until we know otherwise...
 	  if (N > ncr) N = ncr;
-	  MUSPI_InitClassrouteIds(&crs[ncr - N], N, 1, NULL, &_gicrdata);
+	  MUSPI_InitClassrouteIds(&crs[ncr - N], N, 1, &_gicrdata);
 	  for (x = ncr - N; x < N; ++x)
 	  {
 	    Kernel_AllocateGlobalInterruptClassRoute(crs[x], NULL);
