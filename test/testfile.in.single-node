@@ -19,7 +19,7 @@ api/collectives/bcast.cnk --timelimit 120
 #api/collectives/bcast_subcomm2.cnk --timelimit 480
 #api/collectives/bcast_subcomm_noparent.cnk --timelimit 120
 #api/collectives/multisync.cnk
-api/collectives/reduce.cnk
+api/collectives/reduce.cnk --timelimit 120
 api/collectives/scatter.cnk
 api/collectives/scatterv.cnk
 api/context/advance.cnk
