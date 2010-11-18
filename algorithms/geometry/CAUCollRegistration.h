@@ -190,7 +190,7 @@ namespace PAMI
 
             // Get the topology for the local nodes
             // and the topology for the "distributed masters" for the global communication
-            PAMI::Topology *local_topo        = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
+            PAMI::Topology *local_topo        = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX));
             PAMI::Topology *local_master_topo = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX));
             PAMI_assert(local_topo->size() != 0);
             PAMI_assert(local_master_topo->size() != 0);

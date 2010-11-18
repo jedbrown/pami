@@ -177,7 +177,7 @@ namespace PAMI
               buildSpecialTopologies();
 
           if (gen_topo)
-            regen_topo();
+            regenTopo();
 
           // See if we can eliminate the rank list default geometry with a coord?
           if (_topos[COORDINATE_TOPOLOGY_INDEX].type() == PAMI_COORD_TOPOLOGY)
@@ -731,7 +731,7 @@ namespace PAMI
       void resetUEBarrier_impl()
         {
           _ue_barrier._factory  = (CCMI::Adaptor::CollectiveProtocolFactory*)NULL;
-          _ue_barrier._geometry = (PAMI::Geometry::Common*)NULL;
+          _ue_barrier._geometry = (PAMI::Geometry::Lapi*)NULL;
         }
 
       void setUEBarrier_impl(CCMI::Adaptor::CollectiveProtocolFactory *f)
