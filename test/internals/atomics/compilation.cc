@@ -39,8 +39,6 @@ int main(int argc, char **argv) {
         MUTEX_HELPER2(PAMI::Mutex::Counter<PAMI::Counter::Gcc>, mutex1);
         MUTEX_HELPER(PAMI::Mutex::IndirectCounter<PAMI::Counter::Indirect<PAMI::Counter::Gcc> >, mutex2, &mm, argv[1]);
 
-        BARRIER_HELPER2(PAMI::Barrier::Counter<PAMI::Counter::Gcc>, barrier1, &mm, argv[1], argc, (argc == 0));
-        BARRIER_HELPER(PAMI::Barrier::Indirect<PAMI::Barrier::Counter<PAMI::Counter::Gcc> >, barrier2, &mm, argv[1], argc, (argc == 0));
         BARRIER_HELPER(PAMI::Barrier::IndirectCounter<PAMI::Counter::Indirect<PAMI::Counter::Gcc> >, barrier3, &mm, argv[1], argc, (argc == 0));
 
         return 1;

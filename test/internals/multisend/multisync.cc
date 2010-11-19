@@ -13,8 +13,8 @@
 #define BARRIER1_ISLOCAL	1
 #include "components/atomic/gcc/GccCounter.h"
 #include "components/atomic/counter/CounterBarrier.h"
-#include "components/atomic/indirect/IndirectBarrier.h"
-typedef PAMI::Barrier::Indirect< PAMI::Barrier::Counter<PAMI::Counter::Gcc> > Barrier_Type1;
+#include "components/atomic/indirect/IndirectCounter.h"
+typedef PAMI::Barrier::IndirectCounter< PAMI::Counter::Indirect<PAMI::Counter::Gcc> > Barrier_Type1;
 
 typedef PAMI::Device::AtomicBarrierMdl<Barrier_Type1> Barrier_Model1;
 typedef PAMI::Device::AtomicBarrierDev Barrier_Device1;

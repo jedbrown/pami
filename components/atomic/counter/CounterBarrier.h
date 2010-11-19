@@ -21,8 +21,13 @@ namespace PAMI
 {
   namespace Barrier
   {
+#if 0
     ///
     /// \brief Atomic counter barrier implementation
+    ///
+    /// \note There is (currently) no way to specify the participant id when
+    ///       entering the barrier - this makes an "in place" barrier implementation
+    ///       impossible.
     ///
     /// \tparam T PAMI::Counter::Interface implementation class
     ///
@@ -129,6 +134,31 @@ namespace PAMI
 
       private:
 
+        // -------------------------------------------------------------------
+        // Memory manager counter initialization function
+        // -------------------------------------------------------------------
+
+        ///
+        /// \brief Initialize the barrier resources
+        ///
+        /// \see PAMI::Memory::MM_INIT_FN
+        ///
+        static void barrier_initialize (void       * memory,
+                                        size_t       bytes,
+                                        const char * key,
+                                        unsigned     attributes,
+                                        void       * cookie)
+        {
+          size_t i, n = (size_t) cookie;
+          size_t * data = (size_t *) memory;
+          bool * active = (bool *) &data[n];
+          for (i=0; i<n; i++)
+          {
+            data[i]   = 0;
+            active[i] = false;
+          }
+        };
+
         T _control;
         T _lock[2];
         T _stat[2];
@@ -136,11 +166,12 @@ namespace PAMI
         size_t _participants;
         bool   _master;
 
-        size_t _data;
-        bool   _active;
+        size_t * _data;    // one element for each participant
+        bool   * _active;  // one element for each participant
+
 
     }; // PAMI::Barrier::Counter<T> class
-
+#endif
 
     ///
     /// \brief Barrier implementation using an "indirect" counter class
@@ -160,6 +191,8 @@ namespace PAMI
 
         friend class PAMI::Barrier::Interface< PAMI::Barrier::IndirectCounter<T> >;
         friend class PAMI::Atomic::Indirect< PAMI::Barrier::IndirectCounter<T> >;
+
+        static const bool indirect = true;
 
         inline IndirectCounter(size_t participants, bool master) :
           PAMI::Barrier::Interface< PAMI::Barrier::IndirectCounter<T> > (participants, master),

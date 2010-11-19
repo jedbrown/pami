@@ -56,11 +56,11 @@ namespace PAMI
           pami_result_t rc = mm->memalign ((void **) & _mutex,
                                            sizeof(*_mutex),
                                            sizeof(*_mutex),
-                                           key);
+                                           key,
+                                           Indirect::mutex_initialize,
+                                           NULL);
 
           PAMI_assertf (rc == PAMI_SUCCESS, "Failed to allocate memory from memory manager (%p) with key (\"%s\")", mm, key);
-
-          new (_mutex) T ();
         };
 
         inline void clone_impl (Indirect & atomic)
@@ -90,6 +90,25 @@ namespace PAMI
         inline bool isLocked_impl ()
         {
           return _mutex->isLocked ();
+        };
+
+        // -------------------------------------------------------------------
+        // Memory manager counter initialization function
+        // -------------------------------------------------------------------
+
+        ///
+        /// \brief Initialize the mutex resources
+        ///
+        /// \see PAMI::Memory::MM_INIT_FN
+        ///
+        static void mutex_initialize (void       * memory,
+                                      size_t       bytes,
+                                      const char * key,
+                                      unsigned     attributes,
+                                      void       * cookie)
+        {
+          T * mutex = (T *) memory;
+          new (mutex) T ();
         };
 
         T * _mutex;

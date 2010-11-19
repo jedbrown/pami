@@ -215,11 +215,6 @@ namespace PAMI
           __global.mapping.nodePeers (_npeers);
           _task = __global.mapping.task();
 
-//#ifdef __bgq__
-  //        unsigned stride = 16 / _npeers; //hack
-    //      _peer = _peer / stride;         //hack
-//#endif
-
           // Initialize all fifos on the node
           size_t i;
           _nfifos = _npeers * _ncontexts;
@@ -227,7 +222,7 @@ namespace PAMI
 
           for (i = 0; i < _nfifos; i++)
             {
-              snprintf (fifokey, PAMI::Memory::MMKEYSIZE - 1, "/device/shmem/client-%zu/fifo-%zu", _clientid, i);
+              snprintf (fifokey, PAMI::Memory::MMKEYSIZE - 1, "/device-shmem-client-%zu-fifo-%zu", _clientid, i);
               _fifo[i].initialize (&mm, fifokey);
             }
 
@@ -244,12 +239,9 @@ namespace PAMI
               _sendQ[i].init(_local_progress_device);
             }
 
-
-
           // Register system dispatch functions
           _dispatch.registerSystemDispatch (SystemShaddrInfo::system_shaddr_read,
                                             &shaddr, system_ro_put_dispatch);
-
         };
 
         inline ~ShmemDevice () {};
@@ -338,8 +330,6 @@ namespace PAMI
                                       void                * cookie,
                                       size_t                fnum,
                                       size_t                sequence);
-
-        //pami_result_t post (size_t ififo, Shmem::DoneQueue::Message * msg);
 
         ///
         /// \brief Check if the send queue to an injection fifo is empty

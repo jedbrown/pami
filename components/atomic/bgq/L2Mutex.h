@@ -154,6 +154,25 @@ namespace PAMI
             return (L2_AtomicLoad(_counter) > 0) ? true : false;
           }
 
+          // -------------------------------------------------------------------
+          // Memory manager counter initialization function
+          // -------------------------------------------------------------------
+
+          ///
+          /// \brief Initialize the counter resources
+          ///
+          /// \see PAMI::Memory::MM_INIT_FN
+          ///
+          static void counter_initialize (void       * memory,
+                                          size_t       bytes,
+                                          const char * key,
+                                          unsigned     attributes,
+                                          void       * cookie)
+          {
+            volatile uint64_t * counter = (volatile uint64_t *) memory;
+            L2_AtomicLoadClear(counter);
+          };
+
           uint64_t * _counter;
 
       }; // class PAMI::Mutex::BGQ::IndirectL2

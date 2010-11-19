@@ -68,18 +68,17 @@ namespace PAMI
           pami_result_t rc = mm->memalign ((void **) & _barrier,
                                            sizeof(*_barrier),
                                            sizeof(*_barrier),
-                                           key);
+                                           key,
+                                           Indirect<T>::barrier_initialize,
+                                           (void *) this);
 
           PAMI_assertf (rc == PAMI_SUCCESS, "Failed to allocate memory from memory manager (%p) with key (\"%s\")", mm, key);
-
-          new (_barrier) T (_participants, _master);
         };
 
         inline void clone_impl (Indirect & atomic)
         {
           _barrier = atomic._barrier;
         };
-
 
         // -------------------------------------------------------------------
         // PAMI::Barrier::Interface<T> implementation
@@ -114,6 +113,26 @@ namespace PAMI
         inline void dump_impl (const char * string = NULL)
         {
           _barrier->dump (string);
+        };
+
+        // -------------------------------------------------------------------
+        // Memory manager barrier initialization function
+        // -------------------------------------------------------------------
+
+        ///
+        /// \brief Initialize the counter resources
+        ///
+        /// \see PAMI::Memory::MM_INIT_FN
+        ///
+        static void barrier_initialize (void       * memory,
+                                        size_t       bytes,
+                                        const char * key,
+                                        unsigned     attributes,
+                                        void       * cookie)
+        {
+          T * barrier = (T *) memory;
+          Indirect<T> * indirect = (Indirect<T> *) cookie;
+          new (barrier) T (indirect->_participants, indirect->_master);
         };
 
         T      * _barrier;

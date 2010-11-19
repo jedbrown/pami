@@ -35,7 +35,6 @@ int main(int argc, char **argv) {
 
         BARRIER_HELPER(PAMI::Barrier::BGQ::L2NodeCoreBarrier, barrier1, &mm, argv[1], argc, (argc == 0));
         BARRIER_HELPER(PAMI::Barrier::BGQ::L2NodeProcBarrier, barrier2, &mm, argv[1], argc, (argc == 0));
-        BARRIER_HELPER2(PAMI::Barrier::Counter<PAMI::Counter::BGQ::L2>, barrier3, &mm, argv[1], argc, (argc == 0));
         BARRIER_HELPER(PAMI::Barrier::IndirectCounter<PAMI::Counter::BGQ::IndirectL2>, barrier4, &mm, argv[1], argc, (argc == 0));
 
         return 1;

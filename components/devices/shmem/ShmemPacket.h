@@ -16,32 +16,6 @@
 
 #include <pami.h>
 
-//#include "components/memory/MemoryManager.h"
-//#include "Arch.h"
-//#include "Memregion.h"
-
-//#include "components/atomic/Counter.h"
-//#include "components/devices/BaseDevice.h"
-//#include "components/devices/FactoryInterface.h"
-//#include "components/devices/PacketInterface.h"
-//#include "components/devices/generic/Device.h"
-//#include "components/devices/shmem/ShmemMessage.h"
-//#include "components/devices/shmem/shaddr/NoShaddr.h"
-//#include "components/memory/MemoryAllocator.h"
-//#include "util/fifo/LinearFifo.h"
-//#include "util/fifo/FifoPacket.h"
-//#include "util/queue/Queue.h"
-//#include "util/queue/CircularQueue.h"
-
-//#define TRAP_ADVANCE_DEADLOCK
-//#define ADVANCE_DEADLOCK_MAX_LOOP 10000
-
-//#define EMULATE_NONDETERMINISTIC_SHMEM_DEVICE
-//#define EMULATE_NONDETERMINISTIC_SHMEM_DEVICE_FREQUENCY 4
-
-//#define EMULATE_UNRELIABLE_SHMEM_DEVICE
-//#define EMULATE_UNRELIABLE_SHMEM_DEVICE_FREQUENCY 10
-
 #undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
 
@@ -82,38 +56,6 @@ namespace PAMI
           {
             return (void *) packet.getHeader();
           };
-
-          ///
-          /// \brief Get the packet dispatch identifier
-          ///
-          /// For alignment reasons the 2 bytes of the dispatch identifier
-          /// are placed at the end of the packet header.
-          ///
-          /// \see setDispatch()
-          ///
-          /// \return Shared memory packet dispatch identifier
-          ///
-//          inline uint16_t getDispatch ()
-//          {
-//            uint16_t * hdr = (uint16_t *) this->getHeader ();
-//            return hdr[(T_Packet::header_size>>1)-1];
-//          };
-
-          ///
-          /// \brief Set the packet dispatch identifier
-          ///
-          /// For alignment reasons the 2 bytes of the dispatch identifier
-          /// are placed at the end of the packet header.
-          ///
-          /// \see getDispatch()
-          ///
-          /// \param [in] dispatch Shared memory packet dispatch identifier
-          ///
-//          inline void setDispatch (uint16_t dispatch)
-//          {
-//            uint16_t * hdr = (uint16_t *) this->getHeader ();
-//            hdr[(T_Packet::header_size>>1)-1] = dispatch;
-//          };
 
           ///
           /// \brief Write data into the packet header
@@ -200,70 +142,6 @@ namespace PAMI
           {
             writePayload (packet, (struct iovec *) iov, T_Niov);
           };
-#if 0
-          ///
-          /// \brief Write single element iovec payload data to the packet
-          ///
-          /// This method is a template specialization.
-          ///
-          /// \see PAMI::Fifo::Packet::getPayload()
-          ///
-          /// \param [in] iov Array of 1 source data iovec element
-          ///
-          template <>
-          inline void writePayload<1> (struct iovec (&iov)[1])
-          {
-            uint64_t * dst = (uint64_t *) this->getPayload ();
-            uint64_t * src = (uint64_t *) iov[0].iov_base;
-
-            // Determine the number of 8 byte elements in the source and
-            // round up to cover any remainder.
-            //
-            // This forces the requirement that the packet payload size must
-            // be a multiple of 8.
-            size_t i, n = (iov[0].iov_len >> 3) + ((iov[0].iov_len & 0x07) != 0);
-
-            for (i = 0; i < n; i++) dst[i] = src[i];
-
-            return;
-          };
-
-          ///
-          /// \brief Write double element iovec payload data to the packet
-          ///
-          /// This method is a template specialization.
-          ///
-          /// \see PAMI::Fifo::Packet::getPayload()
-          ///
-          /// \param [in] iov Array of 2 source data iovec elements
-          ///
-          template <>
-          inline void writePayload<2> (struct iovec (&iov)[2])
-          {
-            uint64_t * dst = (uint64_t *) this->getPayload ();
-            uint64_t * src = (uint64_t *) iov[0].iov_base;
-
-            // Determine the number of 8 byte elements in the source and
-            // round up to cover any remainder.
-            //
-            // This forces the requirement that the packet payload size must
-            // be a multiple of 8.
-            size_t i, n = (iov[0].iov_len >> 3) + ((iov[0].iov_len & 0x07) != 0);
-
-            for (i = 0; i < n; i++) dst[i] = src[i];
-
-            // Move destination pointer to the end of the previous iovec data.
-            // This covers the remainder case.
-            dst = (uint64_t *)((uint8_t *) dst + iov[0].iov_len);
-            src = (uint64_t *) iov[1].iov_base;
-
-            n = (iov[1].iov_len >> 3) + ((iov[1].iov_len & 0x07) != 0);
-
-            for (i = 0; i < n; i++) dst[i] = src[i];
-
-            return;
-          };
-#endif
 
           ///
           /// \brief Write a single contiguous payload data buffer to the packet
@@ -290,26 +168,6 @@ namespace PAMI
             //fprintf(stderr,"Shmem::Packet::writePayload<void>(.., %p, %zu) <<\n", payload, bytes);
             return;
           }
-#if 0
-          ///
-          /// \brief Write a "full packet" payload data buffer to the packet
-          ///
-          /// \param [in] payload Address of the data to write to the packet payload
-          ///
-          static void writePayload (T_Packet & packet, void * payload)
-          {
-            // This forces the requirement that the packet payload size must
-            // be a multiple of 8.
-
-            size_t i;
-            uint64_t * dst = (uint64_t *) packet.getPayload ();
-            uint64_t * src = (uint64_t *) payload;
-
-            for (i = 0; i < (T_Packet::header_size >> 3); i++) dst[i] = src[i];
-
-            return;
-          }
-#endif
       };
 
 

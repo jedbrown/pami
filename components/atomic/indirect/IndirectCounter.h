@@ -56,11 +56,11 @@ namespace PAMI
           pami_result_t rc = mm->memalign ((void **) & _counter,
                                            sizeof(*_counter),
                                            sizeof(*_counter),
-                                           key);
+                                           key,
+                                           Indirect::counter_initialize,
+                                           NULL);
 
           PAMI_assertf (rc == PAMI_SUCCESS, "Failed to allocate memory from memory manager (%p) with key (\"%s\")", mm, key);
-
-          new (_counter) T ();
         };
 
         inline void clone_impl (Indirect & atomic)
@@ -100,6 +100,25 @@ namespace PAMI
         inline bool compare_and_swap_impl (size_t compare, size_t swap)
         {
           return _counter->compare_and_swap (compare, swap);
+        };
+
+        // -------------------------------------------------------------------
+        // Memory manager counter initialization function
+        // -------------------------------------------------------------------
+
+        ///
+        /// \brief Initialize the counter resources
+        ///
+        /// \see PAMI::Memory::MM_INIT_FN
+        ///
+        static void counter_initialize (void       * memory,
+                                        size_t       bytes,
+                                        const char * key,
+                                        unsigned     attributes,
+                                        void       * cookie)
+        {
+          T * counter = (T *) memory;
+          new (counter) T ();
         };
 
         T * _counter;
