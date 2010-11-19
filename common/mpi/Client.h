@@ -447,11 +447,13 @@ namespace PAMI
 
         // CAUTION! The following sequence MUST ensure that "rc" is "-1" iff failure.
         rc = shm_open (shmemfile, O_CREAT|O_RDWR,0600);
+        //fprintf(stderr,"rc = shm_open (%s, O_CREAT|O_RDWR,0600) = %d\n",shmemfile,rc);
         if ( rc != -1 )
           {
             fd = rc;
             rc = ftruncate( fd, n );
             void * ptr = mmap( NULL, n, PROT_READ | PROT_WRITE, MAP_FILE|MAP_SHARED, fd, 0);
+            //fprintf(stderr,"void * ptr = mmap( NULL, %zu, PROT_READ | PROT_WRITE, MAP_FILE|MAP_SHARED, fd, 0) = %p\n",n,ptr);
             if ( ptr != MAP_FAILED )
               {
                 _mm.init (ptr, n);
@@ -459,6 +461,9 @@ namespace PAMI
               }
           }
         // Abort if we *should* have created shmem, but allow single process nodes to continue
+        //fprintf(stderr,"__global.topology_local.size() %zu\n",__global.topology_local.size());
+        //fprintf(stderr,"__global.topology_global.size() %zu\n",__global.topology_global.size());
+        //fprintf(stderr,"__global.mapping.torusDims() %zu\n",__global.mapping.torusDims());
         if(__global.topology_local.size() > 1) PAMI_abort();
         // Failed to create shared memory .. fake it using the heap ??
         _mm.init (malloc (n), n);

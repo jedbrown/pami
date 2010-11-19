@@ -122,6 +122,16 @@ namespace PAMI
     {
       memset(info, 0x00, LAPI_TDIMS*sizeof(unsigned char));
     }
+    inline size_t torusSize_impl (size_t i) 
+    {
+        PAMI_assert (i < LAPI_TDIMS);
+      
+        PAMI_assert (i < (LAPI_TDIMS+LAPI_LDIMS)); /// \todo this is a mess..
+        size_t sizes[2];
+        sizes[0] = _size/_npeers;
+        sizes[1] = _npeers;
+        return sizes[i];
+    }
 
     inline pami_result_t node2task_impl (Interface::Mapping::nodeaddr_t & address, size_t & task)
       {

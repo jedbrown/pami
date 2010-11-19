@@ -217,7 +217,9 @@ namespace PAMI
               geometry->setUEBarrier((CCMI::Adaptor::CollectiveProtocolFactory*)&_binomial_barrier_factory);
 
               PAMI::Topology * rectangle = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX);
-              if(rectangle->type() == PAMI_COORD_TOPOLOGY)  // could be EMPTY
+              if((rectangle->type() == PAMI_COORD_TOPOLOGY) &&   // could be EMPTY
+                 (__global.mapping.torusDims() > 1))             /// \todo problems on pseudo-torus platforms so disable it on tdim == 1
+
               {
                 geometry->addCollective(PAMI_XFER_BROADCAST,
                                         _rectangle_broadcast_factory,

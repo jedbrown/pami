@@ -132,10 +132,12 @@ namespace PAMI
                 s = getenv("PAMI_MAPPING_TSIZE");
                 if (s) {
                         tz = strtol(s, NULL, 0);
+                        //fprintf(stderr,"PAMI_MAPPING_TSIZE = %s/%d\n",s,tz);
                 }
                 s = getenv("PAMI_MAPPING_NSIZE");
                 if (s) {
                         nz = strtol(s, NULL, 0);
+                        //fprintf(stderr,"PAMI_MAPPING_NSIZE = %s/%d\n",s,nz);
                 }
                 if (_nSize == 1 && (nz > 0 || tz > 0)) {
                         uint32_t t = 0;
@@ -181,6 +183,7 @@ namespace PAMI
                 // At this point, _mapcache[rank] -> [index1]|[index2], where:
                 // (at target node)_peers[index2] -> rank
                 // coordinates = (index1,index2)
+                //fprintf(stderr,"_size %zu, _peers %zu, _npeers %zu, _tSize %zu, _nSize %zu\n",_size, *_peers, _npeers, _tSize, _nSize);
 
                 return PAMI_SUCCESS;
         }
@@ -238,6 +241,15 @@ namespace PAMI
       inline void torusInformation_impl(pami_coord_t &ll, pami_coord_t &ur, unsigned char info[])
       {
         memset(info, 0x00, MPI_TDIMS*sizeof(unsigned char));
+      }
+      inline size_t torusSize_impl (size_t i) 
+      {
+        PAMI_assert (i < (MPI_TDIMS+MPI_LDIMS)); /// \todo this is a mess..
+        size_t sizes[2];
+        sizes[0] = _nSize/_npeers;
+        sizes[1] = _npeers;
+
+        return sizes[i];
       }
 
       inline pami_result_t node2task_impl (Interface::Mapping::nodeaddr_t & address, size_t & task)
