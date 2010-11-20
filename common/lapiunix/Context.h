@@ -27,12 +27,6 @@
 
 // Components
 #include "components/devices/generic/Device.h"
-#include "components/devices/lapiunix/lapiunixpacketmodel.h"
-#include "components/devices/lapiunix/lapiunixmessage.h"
-#include "components/devices/lapiunix/lapiunixmulticastmodel.h"
-#include "components/devices/lapiunix/lapiunixmultisyncmodel.h"
-#include "components/devices/lapiunix/lapiunixmulticombinemodel.h"
-#include "components/devices/lapiunix/lapiunixmanytomanymodel.h"
 #include "../lapi/include/Context.h"
 
 // CAU Components
@@ -201,11 +195,6 @@ namespace PAMI
   typedef PAMI::Protocol::Send::SendPWQ<ShmemEagerBase>               ShmemEager;
 
   // "New" Collective Message Typedefs
-  typedef Device::LAPIMsyncMessage                                    LAPIMsyncMessage;
-  typedef Device::LAPIMcastMessage                                    LAPIMcastMessage;
-  typedef Device::LAPIMcombineMessage                                 LAPIMcombineMessage;
-  typedef Device::LAPIM2MMessage                                      LAPIM2MMessage;
-
   typedef Device::CAUMsyncMessage                                     CAUMsyncMessage;
   typedef Device::CAUMcastSendMessage                                 CAUMcastSendMessage;
   typedef Device::CAUMcombineMessage                                  CAUMcombineMessage;

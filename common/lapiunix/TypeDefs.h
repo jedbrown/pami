@@ -14,8 +14,6 @@
 #ifndef __common_lapiunix_TypeDefs_h__
 #define __common_lapiunix_TypeDefs_h__
 
-
-#include "components/devices/lapiunix/lapiunixmessage.h"
 #include "algorithms/geometry/LapiGeometry.h"
 
 #define PAMI_GEOMETRY_CLASS    PAMI::Geometry::Lapi
