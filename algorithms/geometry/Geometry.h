@@ -192,7 +192,8 @@ namespace PAMI
           }
           else if (_topos[LIST_TOPOLOGY_INDEX].type() == PAMI_LIST_TOPOLOGY)
           {
-            pami_result_t rc = _topos[DEFAULT_TOPOLOGY_INDEX].rankList(&_ranks);
+            pami_result_t rc;
+            rc = _topos[DEFAULT_TOPOLOGY_INDEX].rankList(&_ranks);
             PAMI_assert(rc == PAMI_SUCCESS);
           }
           // Initialize remaining members
