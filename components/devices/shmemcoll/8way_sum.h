@@ -2,6 +2,9 @@
  * \file components/devices/shmemcoll/8way_sum.h
  * \brief ???
  */
+#ifndef __components_devices_shmemcoll_8way_sum_h__
+#define __components_devices_shmemcoll_8way_sum_h__
+
 #include "asmheader.h"
 
 #ifdef __GNUC__
@@ -788,4 +791,6 @@ inline int quad_double_sum_8way_opt(double* dest, double* src0, double *src1, do
   VECTOR_STORE(dst_2,inc1,31);
 
 }
+#endif
+
 #endif

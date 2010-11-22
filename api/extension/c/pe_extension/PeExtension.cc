@@ -1,3 +1,7 @@
+/**
+ * \file api/extension/c/pe_extension/PeExtension.cc
+ * \brief ???
+ */
 #include "PeExtension.h"
 
 PAMI::PamiActiveClients _pami_act_clients;
@@ -20,4 +24,3 @@ PAMI::PeExtension::global_query(pami_configuration_t    configs[],
   }
   return result;
 }
-

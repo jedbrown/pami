@@ -2,6 +2,9 @@
  * \file components/devices/shmemcoll/2way_sum.h
  * \brief ???
  */
+#ifndef __components_devices_shmemcoll_2way_sum_h__
+#define __components_devices_shmemcoll_2way_sum_h__
+
 //adding num doubles
 inline int quad_double_sum_2way(double* dst, double* src0, double* src1,  uint64_t num )
 {
@@ -157,3 +160,5 @@ inline int quad_double_sum_2way(double* dst, double* src0, double* src1,  uint64
 
   return 0;
 }
+
+#endif

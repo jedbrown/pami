@@ -2,6 +2,9 @@
  * \file components/devices/shmemcoll/4way_sum.h
  * \brief ???
  */
+#ifndef __components_devices_shmemcoll_4way_sum_h__
+#define __components_devices_shmemcoll_4way_sum_h__
+
 #include "asmheader.h"
 
 #ifdef __GNUC__
@@ -156,3 +159,5 @@ inline int quad_double_sum_4way( double* dest, double* src0, double *src1, doubl
 
   return 0;
 }
+
+#endif

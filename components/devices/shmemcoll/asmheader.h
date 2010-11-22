@@ -2,8 +2,8 @@
  * \file components/devices/shmemcoll/asmheader.h
  * \brief ???
  */
-#ifndef __asmheader_h__
-#define __ashheader_h__
+#ifndef __components_devices_shmemcoll_asmheader_h__
+#define __components_devices_shmemcoll_asmheader_h__
 
 /*#include <firmware/include/fwext/fwext.h>
 

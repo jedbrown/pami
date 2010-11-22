@@ -1,3 +1,7 @@
+/**
+ * \file api/extension/c/pe_extension/PeExtension.h
+ * \brief ???
+ */
 #ifndef __api_extension_c_pe_extension_PeExtension_h__
 #define __api_extension_c_pe_extension_PeExtension_h__
 
