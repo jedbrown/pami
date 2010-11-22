@@ -458,10 +458,11 @@ extern "C"
     pami_send_event_t     events;   /**< Non-blocking event parameters */
     struct
     {
-      pami_type_t         type;     /**< Datatype */
-      size_t              offset;   /**< Starting offset in \c datatype */
-      pami_data_function  data_fn;  /**< Function to produce data */
-    } typed;                        /**< Typed send parameters */
+      pami_type_t         type;        /**< Datatype */
+      size_t              offset;      /**< Starting offset in \c datatype */
+      pami_data_function  data_fn;     /**< Function to produce data */
+      void               *data_cookie; /**< cookie for produce data function */
+    } typed;                           /**< Typed send parameters */
   } pami_send_typed_t;
 
   /**
@@ -579,13 +580,14 @@ extern "C"
    */
   typedef struct
   {
-    pami_recv_hint_t        hints;    /**< Hints for receiving the message */
-    void                  * cookie;   /**< Argument to \b all event callbacks */
-    pami_event_function     local_fn; /**< Local message completion event */
-    void                  * addr;     /**< Starting address of the buffer */
-    pami_type_t             type;     /**< Datatype */
-    size_t                  offset;   /**< Starting offset of the type */
-    pami_data_function      data_fn;  /**< Function to consume data */
+    pami_recv_hint_t        hints;       /**< Hints for receiving the message */
+    void                  * cookie;      /**< Argument to \b all event callbacks */
+    pami_event_function     local_fn;    /**< Local message completion event */
+    void                  * addr;        /**< Starting address of the buffer */
+    pami_type_t             type;        /**< Datatype */
+    size_t                  offset;      /**< Starting offset of the type */
+    pami_data_function      data_fn;     /**< Function to consume data */
+    void                  * data_cookie; /**< cookie for produce data function */
   } pami_recv_t;
 
   /**
