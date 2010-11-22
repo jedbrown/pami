@@ -87,6 +87,14 @@ namespace PAMI
       return _dispatch.registerSystemDispatch (recv_func, recv_func_parm, id);
     };
 
+    template <class T_Fifo, class T_Shaddr, unsigned T_FifoCount>
+    void ShmemDevice<T_Fifo, T_Shaddr, T_FifoCount>::dispatch (uint16_t id,
+                                                               void * metadata,
+                                                               void * payload,
+                                                               size_t bytes)
+    {
+      _dispatch.dispatch(id, metadata, payload, bytes);
+    };
 
     template <class T_Fifo, class T_Shaddr, unsigned T_FifoCount>
     pami_result_t ShmemDevice<T_Fifo, T_Shaddr, T_FifoCount>::post (size_t fnum, Shmem::SendQueue::Message * msg)

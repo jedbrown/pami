@@ -20,6 +20,7 @@
   #include "components/devices/shmem/ShmemPacketModel.h"
   #include "components/devices/shmem/ShmemDmaModel.h"
   #include "components/devices/shmem/shaddr/BgqShaddrReadOnly.h"
+  #include "components/devices/shmem/shaddr/BgqShaddrPacketModel.h"
   #include "util/fifo/FifoPacket.h"
   #include "util/fifo/LinearFifo.h"
 
@@ -121,8 +122,8 @@ namespace PAMI
   //typedef Fifo::LinearFifo<ShmemPacket, Counter::Indirect<Counter::Gcc> > ShmemFifo;
   typedef Fifo::LinearFifo<ShmemPacket, PAMI::Counter::BGQ::IndirectL2> ShmemFifo;
   typedef Device::ShmemDevice<ShmemFifo,Device::Shmem::BgqShaddrReadOnly> ShmemDevice;
-//  typedef Device::ShmemDevice<ShmemFifo> ShmemDevice;
   typedef Device::Shmem::PacketModel<ShmemDevice> ShmemPacketModel;
+  //typedef Device::Shmem::BgqShaddrPacketModel<ShmemDevice> ShmemPacketModel;
   typedef Device::Shmem::DmaModel<ShmemDevice> ShmemDmaModel;
 
   typedef Protocol::Send::Eager <ShmemPacketModel, ShmemDevice> ShmemEagerBase;

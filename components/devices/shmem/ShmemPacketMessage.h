@@ -123,9 +123,9 @@ namespace PAMI
                                 size_t                fnum,
                                 T_Functor           & writer) :
               SendQueue::Message (PacketMessage::__advance, this, fn, cookie, device->getContextOffset()),
+              _writer (writer),
               _device (device),
-              _fnum (fnum),
-              _writer (writer)
+              _fnum (fnum)
           {
             TRACE_ERR((stderr, ">> PacketMessage::PacketMessage()\n"));
 
@@ -153,9 +153,9 @@ namespace PAMI
                                 void                * payload,
                                 size_t                bytes) :
               SendQueue::Message (PacketMessage::__advance, this, fn, cookie, device->getContextOffset()),
+              _writer (dispatch_id),
               _device (device),
-              _fnum (fnum),
-              _writer (dispatch_id)
+              _fnum (fnum)
           {
             TRACE_ERR((stderr, ">> PacketMessage::PacketMessage()\n"));
 
@@ -175,11 +175,12 @@ namespace PAMI
             TRACE_ERR((stderr, "<< PacketMessage::PacketMessage()\n"));
           };
 
+          T_Functor             _writer;
+
         protected:
 
           T_Device            * _device;
           size_t                _fnum;
-          T_Functor             _writer;
           uint8_t               _state[T_Device::completion_work_size];
           pami_event_function   _user_fn;
           void                * _user_cookie;

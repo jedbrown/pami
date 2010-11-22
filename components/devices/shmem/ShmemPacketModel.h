@@ -267,6 +267,14 @@ namespace PAMI
             return false;
           };
 
+          ///
+          /// \brief Non-public-interface method to retrieve the shared memory device dispatch id.
+          ///
+          inline uint16_t getDispatchId ()
+          {
+            return _dispatch_id;
+          }
+
         protected:
 
           T_Device       & _device;

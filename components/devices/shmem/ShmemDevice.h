@@ -323,6 +323,8 @@ namespace PAMI
                                                   void                      * recv_func_parm,
                                                   uint16_t                  & id);
 
+        void dispatch (uint16_t id, void * metadata, void * payload, size_t bytes);
+
         pami_result_t post (size_t ififo, Shmem::SendQueue::Message * msg);
 
         pami_result_t postCompletion (uint8_t               state[completion_work_size],

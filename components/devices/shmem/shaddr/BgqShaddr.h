@@ -30,10 +30,15 @@ namespace PAMI
       {
         protected:
 
-          inline  BgqShaddr () {};
+          inline  BgqShaddr () :
+            _shaddr_packet_dispatch ((uint16_t) -1)
+          {};
+
           inline ~BgqShaddr () {};
 
         public:
+
+          uint16_t _shaddr_packet_dispatch;
 
           static const bool shaddr_va_supported    = false;
           static const bool shaddr_mr_supported    = true;
