@@ -224,9 +224,13 @@ namespace PAMI
                 geometry->addCollective(PAMI_XFER_BROADCAST,
                                         _rectangle_broadcast_factory,
                                         _context_id);
-                geometry->addCollective(PAMI_XFER_BROADCAST,
-                                      _rectangle_1color_broadcast_factory,
-                                      _context_id);
+                /// \todo 1 color doesn't work on sub-communicators, so disable it
+                if(rectangle->size() == __global.topology_global.size())
+                {
+                  geometry->addCollective(PAMI_XFER_BROADCAST,
+                                          _rectangle_1color_broadcast_factory,
+                                          _context_id);
+                }
               }
               geometry->addCollective(PAMI_XFER_BROADCAST,
                                       _binomial_broadcast_factory,
