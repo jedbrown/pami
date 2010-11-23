@@ -34,13 +34,13 @@ namespace PAMI
   {
     namespace MU
     {
-      class AllreducePacketModel : public CollectivePacketModelBase<AllreducePacketModel, MUHWI_COLLECTIVE_TYPE_ALLREDUCE, MUHWI_PACKET_VIRTUAL_CHANNEL_USER_COMM_WORLD>
+      class AllreducePacketModel : public CollectivePacketModelBase<AllreducePacketModel, MUHWI_COLLECTIVE_TYPE_ALLREDUCE, MUHWI_PACKET_VIRTUAL_CHANNEL_USER_SUB_COMM>
       {
         public :
 
           /// \see PAMI::Device::Interface::CollectivePacketModel::CollectivePacketModel
           inline AllreducePacketModel (MU::Context & context) :
-              CollectivePacketModelBase<AllreducePacketModel, MUHWI_COLLECTIVE_TYPE_ALLREDUCE, MUHWI_PACKET_VIRTUAL_CHANNEL_USER_COMM_WORLD> (context)
+              CollectivePacketModelBase<AllreducePacketModel, MUHWI_COLLECTIVE_TYPE_ALLREDUCE, MUHWI_PACKET_VIRTUAL_CHANNEL_USER_SUB_COMM> (context)
           {
             TRACE_FN_ENTER();
             TRACE_FN_EXIT();

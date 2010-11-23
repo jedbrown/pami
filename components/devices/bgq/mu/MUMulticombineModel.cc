@@ -219,7 +219,7 @@ _wrapper_model (&_desc_model)
     0,    /// \todo global class route (arbitrary see MUCollDevice)?
 
     Misc:
-    MUHWI_PACKET_VIRTUAL_CHANNEL_USER_COMM_WORLD |
+    MUHWI_PACKET_VIRTUAL_CHANNEL_USER_SUB_COMM |
     MUHWI_COLLECTIVE_TYPE_ALLREDUCE,
 
     Skip       :

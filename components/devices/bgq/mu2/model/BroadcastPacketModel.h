@@ -34,13 +34,13 @@ namespace PAMI
   {
     namespace MU
     {
-      class BroadcastPacketModel : public CollectivePacketModelBase<BroadcastPacketModel, MUHWI_COLLECTIVE_TYPE_BROADCAST, MUHWI_PACKET_VIRTUAL_CHANNEL_USER_COMM_WORLD>
+      class BroadcastPacketModel : public CollectivePacketModelBase<BroadcastPacketModel, MUHWI_COLLECTIVE_TYPE_BROADCAST, MUHWI_PACKET_VIRTUAL_CHANNEL_USER_SUB_COMM>
       {
         public :
 
           /// \see PAMI::Device::Interface::CollectivePacketModel::CollectivePacketModel
           inline BroadcastPacketModel (MU::Context & context) :
-              CollectivePacketModelBase<BroadcastPacketModel, MUHWI_COLLECTIVE_TYPE_BROADCAST, MUHWI_PACKET_VIRTUAL_CHANNEL_USER_COMM_WORLD> (context)
+              CollectivePacketModelBase<BroadcastPacketModel, MUHWI_COLLECTIVE_TYPE_BROADCAST, MUHWI_PACKET_VIRTUAL_CHANNEL_USER_SUB_COMM> (context)
           {
             TRACE_FN_ENTER();
             TRACE_FN_EXIT();
