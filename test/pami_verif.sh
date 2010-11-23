@@ -232,10 +232,10 @@ runHW ()
     # Determine which ENV vars need to be saved, updated and documented
     set - $(echo "${opts}")
 
-    while [ "$1" != "" ]; do
+    while [ "${1}" != "" ]; do
 	case $1 in
 	    -env | --envs )           shift                  
-		                      while [[ "$1" =~ '=' ]];do
+		                      while [[ "${1}" =~ '=' ]];do
 					  env_name=$( echo $1 | cut -d '=' -f1 | sed 's/"//g' )
 					  env_val=$( echo $1 | cut -d '=' -f2 | sed 's/"//g' )
 					  
@@ -268,7 +268,7 @@ runHW ()
     # Look for number of threads in exe args
     set - $(echo "${args}" | sed 's/"//g')
 
-    while [ "$1" != "" ]; do
+    while [ "${1}" != "" ]; do
 	case $1 in
 	    --numPthreads )                  shift 
 		                             threads=$((1 + $1)) # total num threads = main thread + $1 Pthreads = 1 + $1
@@ -357,7 +357,7 @@ runHW ()
       fi
     done
 
-    echo "SERVER ID = $serverID" >> $logFile
+    echo "SERVER ID = ${serverID}" >> $logFile
 
     echo ""
 
@@ -407,8 +407,8 @@ runHW ()
     after=$(date +%s)
 
     # Run time in readable format
-    elapsed_seconds="$(($after - $before))" # Needs to be a string
-    eval $elapsedTimeVar=$(date -d "1970-01-01 $elapsed_seconds seconds" +%T)
+    elapsed_seconds="$((${after} - ${before}))" # Needs to be a string
+    eval $elapsedTimeVar=$(date -d "1970-01-01 ${elapsed_seconds seconds}" +%T)
 
     if [ $debug -eq 1 ]
 	then
@@ -1525,9 +1525,9 @@ usage ()
     echo "                             ex:  --display-name short (displays bgqmem.elf)"
     echo ""
     echo "-e | --exebase <path>        Specify trunk for binaries to be copied to and run from."
-    echo "                              hw default: /bgusr/<USER>/<sandbox>/pami/<target>/exe/test"
+    echo "                              hw default: /bgusr/<USER>/<sandbox>/pami/<platform>/exe/test"
     echo "                                      ex: /bgusr/alderman/pami_sb_bgq/pami/bgq/exe/test" 
-    echo "                             sim default: /gsa/rchgsa/home/<USER0:1>/<USER1:1>/<USER>/<sandbox>/pami/<target>/exe/test"                                 
+    echo "                             sim default: /gsa/rchgsa/home/<USER0:1>/<USER1:1>/<USER>/<sandbox>/pami/<platform>/exe/test"                                 
     echo "                                      ex: /gsa/rchgsa/home/a/l/alderman/pami_sb_bgq/pami/bgq/exe/test"
     echo ""
     echo "-email | --email <addr>      Email results summary to recipient(s). Can be combined with -comment option."
@@ -1671,7 +1671,6 @@ jobid=""           # used by FPGA and HW runs
 # Logging/Documenting vars
 summaryFile="pami_verif_summary.${timestamp}"
 web_update=1
-#logXml="/bglhome/alderman/bgq_svn/bgq/system_tests/sst/scripts/logXML.sh"
 logXml="${abs_test_dir}/logXML.sh"
 db_host='msg'
 platform='BGQ'
@@ -1810,22 +1809,39 @@ if [ $compile -eq 2 ]; then compile=1; fi
 if [ $copy -eq 2 ]; then copy=1; fi
 if [ $run -eq 2 ]; then run=1; fi
 
-# Set target
-if [ "${target}" == "" ]
+# Verify platform
+# Turn on case-insensitive matching (-s set nocasematch)
+shopt -s nocasematch
+
+case $platform in
+    bgp | bgq | linux | mpi | percs )
+	logXml="${logXml} --platform ${platform}"
+	;;
+    * )                     
+	echo "ERROR (E):  Unrecognized platform: ${platform}"
+	echo "ERROR (E):  Valid values are:  bgp, bgq, linux, mpi & percs"
+	cleanExit 1
+esac
+
+# Turn off case-insensitive matching (-u unset nocasematch)
+shopt -u nocasematch
+
+# Set platform
+if [ "${platform}" == "" ]
     then
     if [ ! -e "${abs_build_dir}/Make.rules" ]
 	then 
-	echo "ERROR (E): ${abs_build_dir}/Make.rules DNE!! Cannot determine target."
+	echo "ERROR (E): ${abs_build_dir}/Make.rules DNE!! Cannot determine platform."
 	echo "ERROR (E): Run ../scripts/configure manually from: $abs_build_dir"
 	echo "ERROR (E):    or"
-	echo "ERROR (E): Rerun pami_verif.sh with -t <target> and <-co | -rc <floor>> options."
+	echo "ERROR (E): Rerun pami_verif.sh with -t <platform> and <-co | -rc <floor>> options."
 	echo "ERROR (E): Exiting."
 	cleanExit 1
     else
-	target=$(grep "^TARGET" "${abs_build_dir}/Make.rules" | awk '{print $3}')
-	if [ $? -ne 0 ] || [ "${target}" == "" ]
+	platform=$(grep "^TARGET" "${abs_build_dir}/Make.rules" | awk '{print $3}')
+	if [ $? -ne 0 ] || [ "${platform}" == "" ]
 	    then
-	    echo "ERROR (E): FAILED to determine target. Exiting."
+	    echo "ERROR (E): FAILED to determine platform. Exiting."
 	    cleanExit 1
 	fi
 	
@@ -1867,7 +1883,7 @@ fi
 
 # exe_base default algorithm
 # Set exe_base to default
-common_exe_dir="pami/${target}/exe/test"
+common_exe_dir="pami/${platform}/exe/test"
 temp=${abs_pami_dir%/*}
 sandbox=${temp#*${USER}/}
 
@@ -1916,23 +1932,6 @@ if [ $user_outdir -eq 1 ] && [ ! -d "${out_dir}" ] && [ $run -eq 1 ]
 	cleanExit 1
     fi
 fi
-
-# Verify platform
-# Turn on case-insensitive matching (-s set nocasematch)
-shopt -s nocasematch
-
-case $platform in
-    bgp | bgq | linux | mpi | percs )
-	logXml="${logXml} --platform ${platform}"
-	;;
-    * )                     
-	echo "ERROR (E):  Unrecognized platform: ${platform}"
-	echo "ERROR (E):  Valid values are:  bgp, bgq, linux, mpi & percs"
-	cleanExit 1
-esac
-
-# Turn off case-insensitive matching (-u unset nocasematch)
-shopt -u nocasematch
 
 # Set "mode" ENV variable to default value
 if [ "${platform}" == 'BGQ' ]
@@ -2116,7 +2115,7 @@ if [ $reconfigure -eq 1 ]
 	fi
     fi
 	
-    reConfig $target $compile_floor $run_type
+    reConfig $platform $compile_floor $run_type
     if [ $? -ne 0 ]
 	then
 	echo "ERROR (E): reConfig FAILED!! Exiting."
@@ -2521,9 +2520,12 @@ if [ $run -eq 1 ]
 	      numProcs=$forceNP
 	  fi
 	      
-	  exeNodes=$numNodes
-	  exeMode=$mode
-	  exeNP=$numProcs
+	  # Set default test scenario values
+	  exeNodes=$numNodes # Numeric value of # of nodes sent to run* subroutine
+	  eppInputMode=$mode # Alpha-numeric value of mode sent to exe_preProcessing subroutine
+	  exeMode=$mode      # Numerical value of final mode used for math and documentation 
+	  exeInputMode=$mode # Alpha-numeric value of final mode sent to run* subroutine
+	  exeNP=$numProcs    # Numeric value of # of procs sent to run* subroutine
 
 	  # Get parms for this test
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:exeDir" exeDir
@@ -2532,7 +2534,7 @@ if [ $run -eq 1 ]
 
 	  # Remove until PAMI inserts driver level into binaries
           # Compare binary floor with runtime floor
-#          bin_floor=$(strings $exe_dir/${TEST_ARRAY[$test]} | grep)
+#          bin_floor=$( strings "${exeDir}/${TEST_ARRAY[$test]}" | grep "SST_COMPILE_DRIVER" )
 #          if [ "${bin_floor}" != "${run_floor}" ]
 #	       then
 #	       echo "WARNING (W): Floor mismatch:"
@@ -2541,8 +2543,6 @@ if [ $run -eq 1 ]
 #          fi
 
 	  # Determine values for nodes, mode & NP
-	  eppInputMode=$mode
-
 	  # Get text version of BGP mode
 	  if [ "${platform}" == 'BGP' ]
 	      then
@@ -2714,7 +2714,7 @@ if [ $run -eq 1 ]
 	      hput $exeHash "${TEST_ARRAY[$test]}:$test:runtime_n${numNodes}_m${mode}_p${numProcs}" $exeRuntime
 
 	      # Append run time to log file
-	      echo "Elapsed time:  $runtime" >> $runLog
+	      echo "Elapsed time:  $exeRuntime" >> $runLog
 	  else # FPGA run
 	      hput $exeHash "${TEST_ARRAY[$test]}:$test:runtime_n${numNodes}_m${mode}_p${numProcs}" 'Funknown' # Threw an 'F' in there since I cut off the first runtime character when printing summary to preserve tabs
 
