@@ -11,6 +11,8 @@
  * \brief ???
  */
 
+#include "math/Memcpy.x.h"
+
 #ifndef OPTIMIZED_Core_memcpy
 #include <string.h>
 void * Core_memcpy (void *dest, const void *src, size_t n)
