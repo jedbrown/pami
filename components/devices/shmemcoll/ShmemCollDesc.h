@@ -62,6 +62,7 @@ namespace PAMI
 			volatile uint64_t		_seq_num __attribute__((__aligned__(8)));;
 			unsigned				_num_consumers;
 			volatile unsigned		_flag;
+			volatile unsigned       _master_done;
 			//union
 			//{
 				pami_multicast_t	_mcast;
@@ -171,6 +172,22 @@ namespace PAMI
 			{
 				return _flag;
 			}
+
+		  inline void reset_master_done()
+            {
+                _master_done = 0;
+            }
+
+            inline void signal_master_done()
+            {
+                _master_done = 1;
+            }
+
+            inline unsigned get_master_done()
+            {
+                return _master_done;
+            }
+
 
 			inline void* get_buffer(unsigned index){
 				return (void*)(_buffer+index*BUFFER_SIZE_PER_TASK);

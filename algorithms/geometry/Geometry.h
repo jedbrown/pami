@@ -111,6 +111,7 @@ namespace PAMI
             _client(client),
             _rank(mapping->task()),
             _ranks_malloc(false),
+            _ranks(NULL),
             _geometry_map(geometry_map),
             _allreduce_async_mode(0),
             _allreduce_iteration(0),
@@ -155,6 +156,12 @@ namespace PAMI
             }
           else
 #endif
+            if (numranges == 1)
+            {
+              // this creates the topology from a (single) range
+              new(&_topos[DEFAULT_TOPOLOGY_INDEX]) PAMI::Topology(rangelist[0].lo, rangelist[0].hi);
+            }
+            else // build a rank list from N ranges
             {
               pami_task_t nranks = 0;
               int i, j, k;
@@ -173,12 +180,13 @@ namespace PAMI
                     _ranks[k] = rangelist[i].lo + j;
                 }
 
-              // this creates the topology including all subtopologies
+              // this creates the topology 
               new(&_topos[DEFAULT_TOPOLOGY_INDEX]) PAMI::Topology(_ranks, nranks);
             }
 
           buildSpecialTopologies();
 
+#if 0 // not sure we should convert the default... 
           // See if we can eliminate the rank list default geometry with a coord?
           if (_topos[COORDINATE_TOPOLOGY_INDEX].type() == PAMI_COORD_TOPOLOGY)
           {
@@ -188,12 +196,14 @@ namespace PAMI
             new(&_topos[LIST_TOPOLOGY_INDEX]) PAMI::Topology();
             // Free rank list
             free(_ranks);
+            _ranks = NULL;
             _ranks_malloc = false;
           }
-          else if (_topos[LIST_TOPOLOGY_INDEX].type() == PAMI_LIST_TOPOLOGY)
+#endif
+          if (_topos[LIST_TOPOLOGY_INDEX].type() == PAMI_LIST_TOPOLOGY)
           {
-            pami_result_t rc;
-            rc = _topos[DEFAULT_TOPOLOGY_INDEX].rankList(&_ranks);
+            pami_result_t rc = PAMI_SUCCESS;
+            rc = _topos[LIST_TOPOLOGY_INDEX].rankList(&_ranks);
             PAMI_assert(rc == PAMI_SUCCESS);
           }
           // Initialize remaining members
@@ -337,12 +347,12 @@ namespace PAMI
 
         inline pami_task_t*              ranks_impl()
         {
-          return _ranks;
+          return _ranks; // use createTopology() if necessary, otherwise this could be null.
         }
 
         inline pami_task_t*              ranks_sizet_impl()
         {
-          return _ranks;
+          return _ranks; // use createTopology() if necessary, otherwise this could be null.
         }
 
         inline pami_task_t               nranks_impl()
@@ -367,7 +377,7 @@ namespace PAMI
 
         inline pami_task_t*              permutation_impl()
         {
-          return _ranks;
+          return _ranks; // use createTopology() if necessary, otherwise this could be null.
         }
 
         inline void                      generatePermutation_sizet_impl()
@@ -382,7 +392,7 @@ namespace PAMI
         }
         inline pami_task_t*              permutation_sizet_impl()
         {
-          return _ranks;
+          return _ranks; // use createTopology() if necessary, otherwise this could be null.
         }
 
         inline bool                      isRectangle_impl()

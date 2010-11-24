@@ -17,7 +17,7 @@
 
 #include "components/memory/MemoryAllocator.h"
 
-
+/// \todo put this trace facility somewhere common
 #include "util/trace.h"
 
 #ifdef CCMI_TRACE_ALL
@@ -371,6 +371,9 @@ namespace PAMI
 
       int done_count;
       int completion_count;
+	  unsigned total_bytes;
+	  unsigned	is_master;
+	  PAMI::PipeWorkQueue *src;
 	  PAMI::Topology       _src_topo_local;
 	  PAMI::Topology       _dst_topo_local;
     };
@@ -411,9 +414,12 @@ namespace PAMI
                                                                             size_t         client_id,
                                                                             int           *dispatch_id)
 	: BGQNativeInterfaceAS<T_Device1,T_Mcast1,T_Msync, T_Mcomb>(device1, client, context, context_id, client_id, dispatch_id),
-	_mcast2(device2, _mcast2_status)
+    _mcast2_status(PAMI_SUCCESS),
+    _mcast2(device2, _mcast2_status)
 	
-    { }
+    { 
+      this->CCMI::Interfaces::NativeInterface::_status = _mcast2_status; 
+    }
 
   template <class T_Device1, class T_Device2, class T_Mcast1, class T_Mcast2, class T_Msync, class T_Mcomb>
     BGQNativeInterfaceASMultiDevice<T_Device1, T_Device2, T_Mcast1, T_Mcast2, T_Msync, T_Mcomb>:: 
@@ -424,50 +430,28 @@ namespace PAMI
                                                                             size_t         client_id,
                                                                             int           *dispatch_id)
 	: BGQNativeInterfaceAS<T_Device1,T_Mcast1,T_Msync, T_Mcomb>(device1, client, context, context_id, client_id, dispatch_id),
+    _mcast2_status(PAMI_SUCCESS),
 	_mcast2(*(device1.getProgressDevice()), _mcast2_status)
 	
-    { }
+    {
+      this->CCMI::Interfaces::NativeInterface::_status = _mcast2_status;
+
+    } 
 
   template <class T_Device1, class T_Device2, class T_Mcast1, class T_Mcast2, class T_Msync, class T_Mcomb>
     inline pami_result_t BGQNativeInterfaceASMultiDevice<T_Device1, T_Device2, T_Mcast1, T_Mcast2, T_Msync, T_Mcomb>::multicast (pami_multicast_t *mcast, void *devinfo)
     {
       TRACE_FN_ENTER();
-      //allocObjMD *req          = (allocObjMD *)_allocator.allocateObject();
       allocObjMD *req          = (allocObjMD *)(this->_allocator).allocateObject();
 
       req->_ni               = this;
       req->_user_callback    = mcast->cb_done;
+	  req->done_count = 0;
       TRACE_FORMAT( "<%p> %p/%p connection id %u, msgcount %u, bytes %zu, devinfo %p", this, mcast, req, mcast->connection_id, mcast->msgcount, mcast->bytes,devinfo);
-      DO_DEBUG((templateName<T_Mcast1>()));
-      DO_DEBUG((templateName<T_Mcast2>()));
+      DO_DEBUG((templateName<T_Mcast>()));
       
-      //  \todo:  this copy will cause a latency hit, maybe we need to change Multisync
-      //          interface so we don't need to copy
-#if 0		
-      pami_multicast_t  m     = *mcast;
-      m.dispatch =  this->_dispatch; // \todo ? Not really used in C++ objects?
-      m.client   =  this->_clientid;   // \todo ? Why doesn't caller set this?
-      m.context  =  this->_contextid;// \todo ? Why doesn't caller set this?
-      m.cb_done.function     =  ni_multi_client_done;
-	  m.cb_done.clientdata   =  req;
 
-	 if (mcast->src_participants != NULL) //I am the master
-	 {
-		 size_t local_root = __global.topology_local.index2Rank(0);
-		 new (&req->_src_topo_local) PAMI::Topology(local_root);
-		 __global.topology_local.subtractTopology(&req->_dst_topo_local, &req->_src_topo_local);	
-
-		 m.src_participants = (pami_topology_t *)&req->_src_topo_local;
-		 m.dst_participants = (pami_topology_t *)&req->_dst_topo_local;
-		fprintf(stderr,"master setting the local topology information\n");
-	 }	 
-	  //only for pure shmem
-	  req->completion_count = 1;
-	  _mcast2.postMulticast_impl(req->_state._mcast2, &m, devinfo);
-#endif
-
-#if 1 
-      pami_multicast_t  m_local     = *mcast;
+	  pami_multicast_t  m_local     = *mcast;
       pami_multicast_t  m_global    = *mcast;
       m_local.dispatch = m_global.dispatch =  this->_dispatch; // \todo ? Not really used in C++ objects?
       m_local.client   = m_global.dispatch =  this->_clientid;   // \todo ? Why doesn't caller set this?
@@ -475,46 +459,106 @@ namespace PAMI
 
       m_local.cb_done.function     = m_global.cb_done.function =  ni_multi_client_done;
       m_local.cb_done.clientdata   = m_global.cb_done.clientdata =  req;
+
+	 //fprintf(stderr, "src pwq:%p recv pwq:%p passed in native interface\n", mcast->src, mcast->dst);
       
 	  TRACE_FN_EXIT();
 
-	  fprintf(stderr,"posting multicast from the native interface\n");
-	  if (mcast->src_participants != NULL) //I am the master
+	  //fprintf(stderr,"posting multicast from the native interface\n");
 	 //if (local_root == __global.mapping.task()) /* master */
+
+	  /* Check for the master/root */
+
+    PAMI::Topology *root_topo = (PAMI::Topology*)mcast->src_participants;
+	  if ((root_topo != NULL)  && (root_topo->index2Rank(0) == this->myrank()))
 	  {
-	 	  /*size_t local_root = __global.topology_local.index2Rank(0);
-		  new (&req->_src_topo_local) PAMI::Topology(local_root);
-		  __global.topology_local.subtractTopology(&req->_dst_topo_local, &req->_src_topo_local);	
+		  req->is_master = 1;
+		  req->total_bytes = mcast->bytes;
+	  	  req->src = (PAMI::PipeWorkQueue*) mcast->src;
+			
+		  unsigned any_local_dst_procs = 0, any_nw_dst_procs=0;
 
-		  m_local.src_participants = (pami_topology_t *)&req->_src_topo_local;
-		  m_local.dst_participants = (pami_topology_t *)&req->_dst_topo_local;*/
+		  PAMI::Topology *dst_topology = (PAMI::Topology *)mcast->dst_participants;
 
-		  req->completion_count = 2;
-		  this->_mcast.setLocalMulticast(false);
+		  if (dst_topology == NULL)
+		  {
+			any_local_dst_procs = any_nw_dst_procs = 0;
+		  }
+		  else
+		  {	
+		  	PAMI_assert (dst_topology->type() == PAMI_AXIAL_TOPOLOGY);
+
+		  	pami_coord_t *ll=NULL;
+		  	pami_coord_t *ur=NULL;
+		  	pami_coord_t *ref=NULL;
+		  	unsigned char *isTorus=NULL;
+
+		  	pami_result_t result = PAMI_SUCCESS;
+		  	result = dst_topology->axial(&ll, &ur, &ref, &isTorus);
+		  	PAMI_assert(result == PAMI_SUCCESS);
+
+
+		  	if ((ur->u.n_torus.coords[LOCAL_DIM] - ll->u.n_torus.coords[LOCAL_DIM]) > 0 )
+				  any_local_dst_procs  = 1;
+
+		  	if ( (ll->u.n_torus.coords[0] == ur->u.n_torus.coords[0]) &&
+						  (ll->u.n_torus.coords[1] == ur->u.n_torus.coords[1]) && 	
+						  (ll->u.n_torus.coords[2] == ur->u.n_torus.coords[2]) && 	
+						  (ll->u.n_torus.coords[3] == ur->u.n_torus.coords[3]) && 	
+						  (ll->u.n_torus.coords[4] == ur->u.n_torus.coords[4]))
+				  any_nw_dst_procs = 0;
+		  	else
+				  any_nw_dst_procs = 1;
+
+		  }
+		  //fprintf(stderr,"any_nw_dst_procs:%d any_local_dst_pocs:%d\n", any_local_dst_procs, any_nw_dst_procs);
+
+	      this->_mcast.setLocalMulticast(false);
+          this->_mcast.callConsumeBytesOnMaster(false);
+
+
+		  req->completion_count = 0;
+		  if (any_local_dst_procs)
+		  {	
+		    //fprintf(stderr,"[%zu]master posting local multicast\n", __global.mapping.task());		
+		   req->completion_count++;		        
+		  	_mcast2.postMulticast_impl(req->_state._mcast2, &m_local, devinfo);
+		  }	
+
+		 if (any_nw_dst_procs)
+		 {	
+		   //fprintf(stderr,"[%zu] master posting nw multicast\n", __global.mapping.task());		
+		   req->completion_count++;
+		  	//this->_mcast.callConsumeBytesOnMaster(false);
 		  this->_mcast.postMulticast_impl(req->_state._mcast1, &m_global, devinfo);
-		  _mcast2.postMulticast_impl(req->_state._mcast2, &m_local, devinfo);
-
+		 }
+		  	//this->_mcast.setLocalMulticast(false);
 	  }
-	  else
+	  else /* is not the master/root */ 
 	  {
 		  req->completion_count = 1;
-		  _mcast2.postMulticast_impl(req->_state._mcast2, &m_local, devinfo);
+		  req->is_master = 0;
+		  req->src = NULL;
+
+          //pami_task_t root[1];
+          pami_task_t root;
+          pami_coord_t root_coord;
+          root = root_topo->rank2Index(0);
+	  		//fprintf(stderr,"[%zu] non-master root:%d\n", __global.mapping.task(), root[0]);
+          __global.mapping.task2network(root, &root_coord, PAMI_N_TORUS_NETWORK);
+         
+		  if (root_coord.u.n_torus.coords[5] == __global.mapping.t()) //network receiver is the same peer as root 
+		  {
+		    //fprintf (stderr,"[%zu] non master posting MU Multicast \n", __global.mapping.task());
+		  	this->_mcast.postMulticast_impl(req->_state._mcast1, &m_global, devinfo);
+
+		  }		
+	      else //shmem
+		  {
+		    //fprintf (stderr,"[%zu] non master posting Local Multicast \n", __global.mapping.task());
+		  	_mcast2.postMulticast_impl(req->_state._mcast2, &m_local, devinfo);
+		  }	
 	  }	 	  
-#endif
-#if 0
-	PAMI::Topology *dst_topology = (PAMI::Topology *)mcast->dst_participants;
-    PAMI_assert (dst_topology->type() == PAMI_AXIAL_TOPOLOGY);
-
-    pami_coord_t *ll=NULL;
-    pami_coord_t *ur=NULL;
-    pami_coord_t *ref=NULL;
-    unsigned char *isTorus=NULL;
-
-    pami_result_t result = PAMI_SUCCESS;
-    result = dst_topology->axial(&ll, &ur, &ref, &isTorus);
-    PAMI_assert(result == PAMI_SUCCESS);
-#endif
-
 
 	return PAMI_SUCCESS;	
 	}
@@ -534,17 +578,19 @@ namespace PAMI
 		  obj->_user_callback.function, obj->_user_callback.clientdata);
 
 	++obj->done_count;
-	printf("calling ni_multi_client_done:%d\n", obj->done_count);
+	//printf("calling ni_multi_client_done:%d\n", obj->done_count);
     
     if (obj->done_count == obj->completion_count) {
       //Call pipework queue consume bytes
+      if (obj->src) obj->src->consumeBytes(obj->total_bytes);
+
       if (obj->_user_callback.function)
 		obj->_user_callback.function(context,
 				     obj->_user_callback.clientdata,
 				     res);
+    	ni->_allocator.returnObject(obj);
     }
     
-    ni->_allocator.returnObject(obj);
     TRACE_FN_EXIT();
   }
 

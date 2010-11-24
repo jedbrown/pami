@@ -70,7 +70,6 @@ namespace CCMI
 #define MESH     PAMI::Interface::Mapping::Mesh
 #define POSITIVE PAMI::Interface::Mapping::TorusPositive
 #define NEGATIVE PAMI::Interface::Mapping::TorusNegative
-      
 
     class TorusRect: public CCMI::Interfaces::Schedule
     {
@@ -78,7 +77,8 @@ namespace CCMI
       static const unsigned NO_COLOR = 0;       ///< "null" color value
 
       TorusRect(): _rect(*(PAMI::Topology*)NULL), _map(NULL)
-      { }
+      {
+      }
 
       TorusRect(unsigned myrank, 
                 PAMI::Topology *rect,
@@ -195,7 +195,7 @@ namespace CCMI
           sizes[i] = ur->u.n_torus.coords[i] - ll->u.n_torus.coords[i] + 1;
           if (sizes[i] > 1)
           {  
-            TRACE_FORMAT("color[%u]=%u",ideal, i);
+            TRACE_FORMAT("color[%u]=%u", ideal, i);
             colors[ideal++] = i;
           }
         }
@@ -208,11 +208,11 @@ namespace CCMI
           if (sizes[i] > 1 && torus_link[i])
           {  
             TRACE_FORMAT("color[%u]=%zu",  max, i + torus_dims);
-            colors[max++] = i + torus_dims;
+            colors[max++] = i+torus_dims;
           }
         }
-          if (max == 2 * ideal)
-            ideal = max;
+        if (max == 2 * ideal)
+          ideal = max;
 #endif
         if (ideal == 0)
         {
@@ -331,7 +331,7 @@ CCMI::Schedule::TorusRect::getSrcTopology(unsigned phase,
    * \param[out] dstranks	Array to hold destination node(s)
    * \param[out] ndst	Number of destination nodes (and subtasks)
    * \param[out] subtask	Array to hold subtasks (operation, e.g. LINE_BCAST_XM)
-   * \return nothing (else).
+   * \return	nothing (else).
    */
 
 inline void
@@ -364,16 +364,20 @@ CCMI::Schedule::TorusRect::getDstTopology(unsigned phase,
       else if (phase == _ndims)
         setupGhost(topo);
     }
-    else new (topo) PAMI::Topology();
+#if DO_DEBUG(1)+0
+    else new (topo) PAMI::Topology(); // creating an empty topo isn't necessary but is nice for debug
+#endif
 
     ///Process local broadcasts
     if ((phase == ( _ndims + 1)) && (peers > 1))
       setupLocal(topo);
 
-    if ((topo->size() == 1) && (topo->index2Rank(0) == _map->task()))
-      new (topo) PAMI::Topology();
+  if ((topo->size() == 1) && (topo->index2Rank(0) == _map->task()))
+    new (topo) PAMI::Topology();
   }
-  else new (topo) PAMI::Topology();
+#if DO_DEBUG(1)+0
+  else new (topo) PAMI::Topology(); // creating an empty topo isn't necessary but is nice for debug
+#endif
 
 #if DO_DEBUG(1)+0
   TRACE_FORMAT("<%u:%p>topology size %zu",_color,this,topo->size());
@@ -396,7 +400,7 @@ CCMI::Schedule::TorusRect::getDstTopology(unsigned phase,
  * \param[out] dstranks	Array to hold destination node(s)
  * \param[out] subtask	Array to hold subtasks (operation, e.g. LINE_BCAST_XM)
  * \param[out] ndst	Number of destination nodes (and subtasks)
- * \return nothing (else).
+ * \return	nothing (else).
  */
 inline void
 CCMI::Schedule::TorusRect::setupBroadcast(int phase,
@@ -447,7 +451,7 @@ CCMI::Schedule::TorusRect::setupBroadcast(int phase,
  * \param[out] dstranks	Array to hold destination node(s)
  * \param[out] subtask	Array to hold subtasks (operation, e.g. LINE_BCAST_XM)
  * \param[out] ndst	Number of destination nodes (and subtasks)
- * \return nothing (else).
+ * \return	nothing (else).
  */
 inline void
 CCMI::Schedule::TorusRect::setupGhost(PAMI::Topology *topo)
@@ -525,15 +529,22 @@ CCMI::Schedule::TorusRect::setupGhost(PAMI::Topology *topo)
         low.net_coord(axis) = dst.net_coord(axis);
       }
 
-      TRACE_FORMAT("<%u:%p>axis %zu, _self %zu, dst %zu, dst %zu ",_color,this,axis,_self_coord.net_coord(axis),dst.net_coord(axis),dst.net_coord(axis));
-
+      TRACE_FORMAT("<%u:%p>axis %zu, _self %zu, dst %zu tlink %d\n",_color,this,axis,_self_coord.net_coord(axis),dst.net_coord(axis), 
+                   toruslinks[axis]);
+      
       /// \todo why build an axial topoology for one ghost?   You can't
       /// multicast/deposit to it?  Why not leave it as a single rank topology.
-      new (topo) PAMI::Topology(&low, &high, &_self_coord, toruslinks);
+      new (topo) PAMI::Topology(&low, &high, &_self_coord,
+                                toruslinks);
     }
-    else new (topo) PAMI::Topology();   // Empty topology
+#if DO_DEBUG(1)+0
+    else new (topo) PAMI::Topology(); // creating an empty topo isn't necessary but is nice for debug
+#endif
   }
-  else new (topo) PAMI::Topology();   // Empty topology
+#if DO_DEBUG(1)+0
+  else new (topo) PAMI::Topology(); // creating an empty topo isn't necessary but is nice for debug
+#endif
+
 #if DO_DEBUG(1)+0
   TRACE_FORMAT("<%u:%p>topology size %zu",_color,this,topo->size());
   for (unsigned j = 0;  j < topo->size(); ++j) 
@@ -554,7 +565,7 @@ CCMI::Schedule::TorusRect::setupGhost(PAMI::Topology *topo)
  * \param[out] dstranks	Array to hold destination node(s)
  * \param[out] subtask	Array to hold subtasks (operation, e.g. LINE_BCAST_XM)
  * \param[out] ndst	Number of destination nodes (and subtasks)
- * \return nothing (else).
+ * \return	nothing (else).
  */
 inline void
 CCMI::Schedule::TorusRect::setupLocal(PAMI::Topology *topo)
@@ -587,7 +598,7 @@ CCMI::Schedule::TorusRect::setupLocal(PAMI::Topology *topo)
 
     // make an axial topology
     new (topo) PAMI::Topology(&low, &high, &_self_coord,
-                              &torus_link[0]);    
+                              &torus_link[0]);
   }
   else new (topo) PAMI::Topology();   // Empty topology
   TRACE_FORMAT("<%u:%p>match %u, core_dim %zu, global dims %zu",_color,this,match, core_dim, _map->globalDims());
@@ -634,45 +645,29 @@ CCMI::Schedule::TorusRect::getDstUnionTopology(PAMI::Topology *topology)
 
     if (tmp.size())
     {
-      // convert a local coord to axial?
-      //if (tmp.type() != PAMI_AXIAL_TOPOLOGY)
-      //{
-      //  PAMI::Topology ctmp = tmp;
-      /// \todo doesn't work? tmp.convertTopology(PAMI_AXIAL_TOPOLOGY);
-      //  ctmp.convertTopology(PAMI_AXIAL_TOPOLOGY);
-      //  TRACE_FORMAT("<%u:%p>tmp.convertTopology(PAMI_AXIAL_TOPOLOGY), input topology.type = %s%u",_color,this, 
-      //               ctmp.type() == PAMI_COORD_TOPOLOGY? "PAMI_COORD_TOPOLOGY:":(ctmp.type() == PAMI_EMPTY_TOPOLOGY? "PAMI_EMPTY_TOPOLOGY:": ""), ctmp.type())
-      //  tmp.rectSeg(&tmp_low, &tmp_high, risTorus);
-      //  _map->task2network(_map->task(), &tmp_ref, PAMI_N_TORUS_NETWORK);
-      //  new (&tmp) PAMI::Topology(&tmp_low, &tmp_high, &tmp_ref, risTorus);
-      //  TRACE_FORMAT("<%u:%p>tmp.convertTopology(PAMI_AXIAL_TOPOLOGY), output topology.type = %s%u",_color,this, 
-      //               ctmp.type() == PAMI_AXIAL_TOPOLOGY? "PAMI_AXIAL_TOPOLOGY:":(ctmp.type() == PAMI_EMPTY_TOPOLOGY? "PAMI_EMPTY_TOPOLOGY:": ""), ctmp.type())
-      //  PAMI_assert(tmp.type() == PAMI_AXIAL_TOPOLOGY);
-      //}
-
       // Get the axial members
       result = tmp.axial(&tmp_low, &tmp_high,
                          &tmp_ref,
                          tmp_torus_link);
-
+      
       PAMI_assert(result == PAMI_SUCCESS);
-
+      
       // now add this topology to the union
       for (int j = 0; j < (int) ndims; j++)
       {
         torus_link[j] |= tmp_torus_link[j];
-
+        
         ///On a torus network when the wrap links are used lo and hi are relative (SK)       
         if (tmp_low.net_coord(j)  != _self_coord.net_coord(j))
           low.net_coord(j)  =  tmp_low.net_coord(j); //MIN(low.net_coord(j), tmp_low.net_coord(j));
-
+        
         if (tmp_high.net_coord(j) != _self_coord.net_coord(j))
           high.net_coord(j) = tmp_high.net_coord(j);   //MAX(high.net_coord(j), tmp_high.net_coord(j));
-      }
+      }      
     }
   }
   // make an axial topology
-  new (topology) PAMI::Topology(&low, &high, &_self_coord, torus_link);
+  new (topology) PAMI::Topology(&low, &high, &_self_coord, torus_link);  
   if((topology->size() == 1) && (topology->index2Rank(0) == _map->task()))
     new (topology) PAMI::Topology();
 

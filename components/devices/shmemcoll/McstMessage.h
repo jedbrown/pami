@@ -64,6 +64,7 @@ namespace PAMI
 
 	public:
 		static const size_t short_msg_cutoff                  = 512;
+		static unsigned seq_num;
 
 		protected:
 		 T_Device      * _device;
@@ -72,6 +73,11 @@ namespace PAMI
 		 size_t	_bytes_consumed;
 
       };  // PAMI::Device::McstMessage class
+		
+	  template <class T_Device, class T_Desc>
+    	unsigned   McstMessage<T_Device,T_Desc> :: seq_num = 0;
+
+
 
     };
   };    // PAMI::Device namespace

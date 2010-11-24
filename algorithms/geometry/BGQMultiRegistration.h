@@ -32,6 +32,7 @@
 #include "algorithms/schedule/MCRect.h"
 #include "algorithms/schedule/TorusRect.h"
 #include "common/NativeInterface.h"
+#include "algorithms/protocols/allgather/AllgatherOnBroadcastT.h"
 
 #include "util/ccmi_debug.h" // tracing
 #include "util/ccmi_util.h"
@@ -507,12 +508,63 @@ namespace PAMI
       CCMI::ConnectionManager::ColorConnMgr>
       RectangleDputBroadcastFactory;
 
+    void rectangle_dput_allgather_metadata(pami_metadata_t *m)
+    {
+      // \todo:  fill in other metadata
+      strcpy(&m->name[0], "RectangleDputAllgather");
+    }            
+    
+    void get_rect_allgv_colors (PAMI::Topology             * t,
+				unsigned                    bytes,
+				unsigned                  * colors,
+				unsigned                  & ncolors) 
+    {
+      unsigned max = 0, ideal = 0;
+      unsigned _colors[10];
+      CCMI::Schedule::TorusRect::getColors (t, ideal, max, _colors);
+      
+      //if (bytes <= 8192) //16 packets
+      //ideal = 1;
+
+      if (bytes <= 8192) //16 packets
+        ideal = 1;
+      else if (bytes <= 65536 && ideal >= 2)
+        ideal = 2;
+      else if (bytes <= 262144 && ideal >= 3)
+        ideal = 3;
+      else if (bytes <= 1048576 && ideal >= 5)
+        ideal = 5;
+      else if (bytes <= 4194304 && ideal >= 7)
+        ideal = 7;
+      
+      if (ncolors > ideal)
+	ncolors = ideal;
+      
+      memcpy (colors, _colors, ncolors * sizeof(int));
+    }
+
+    typedef CCMI::Adaptor::Allgather::AllgatherOnBroadcastT<6, 15,
+      CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
+      <10,
+      CCMI::Schedule::TorusRect,
+      CCMI::ConnectionManager::ColorConnMgr,
+      get_rect_allgv_colors,
+      PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX>,
+      CCMI::ConnectionManager::ColorConnMgr,
+      PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX> RectangleDputAllgather;
+    
+    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT
+      < RectangleDputAllgather,
+      rectangle_dput_allgather_metadata,
+      CCMI::ConnectionManager::ColorConnMgr>
+      RectangleDputAllgatherFactory;    
+    
     //----------------------------------------------------------------------------
     /// \brief The BGQ Multi* registration class for Shmem and MU.
     //----------------------------------------------------------------------------
-    template <class T_Geometry, class T_ShmemNativeInterface, class T_MUDevice, class T_MUNativeInterface, class T_AxialNativeInterface, class T_AxialDputNativeInterface>
+    template <class T_Geometry, class T_ShmemNativeInterface, class T_MUDevice, class T_MUNativeInterface, class T_AxialNativeInterface, class T_AxialDputNativeInterface, class T_AxialShmemDputNativeInterface>
     class BGQMultiRegistration :
-    public CollRegistration<PAMI::CollRegistration::BGQMultiRegistration<T_Geometry, T_ShmemNativeInterface, T_MUDevice, T_MUNativeInterface, T_AxialNativeInterface, T_AxialDputNativeInterface>, T_Geometry>
+    public CollRegistration<PAMI::CollRegistration::BGQMultiRegistration<T_Geometry, T_ShmemNativeInterface, T_MUDevice, T_MUNativeInterface, T_AxialNativeInterface, T_AxialDputNativeInterface, T_AxialShmemDputNativeInterface>, T_Geometry>
     {
 
     public:
@@ -524,7 +576,7 @@ namespace PAMI
                                   size_t                               client_id,
                                   int                                 *dispatch_id,
                                   std::map<unsigned, pami_geometry_t> *geometry_map):
-      CollRegistration<PAMI::CollRegistration::BGQMultiRegistration<T_Geometry, T_ShmemNativeInterface, T_MUDevice, T_MUNativeInterface, T_AxialNativeInterface, T_AxialDputNativeInterface>, T_Geometry> (),
+      CollRegistration<PAMI::CollRegistration::BGQMultiRegistration<T_Geometry, T_ShmemNativeInterface, T_MUDevice, T_MUNativeInterface, T_AxialNativeInterface, T_AxialDputNativeInterface, T_AxialShmemDputNativeInterface>, T_Geometry> (),
       _client(client),
       _context(context),
       _context_id(context_id),
@@ -557,12 +609,12 @@ namespace PAMI
       _axial_mu_ni(NULL),
       _axial_mu_1_ni(NULL),
       _axial_dput_mu_ni(NULL),
-	//_axial_dput_mu_1_ni(NULL),
+        //_axial_dput_mu_1_ni(NULL),
       _mu_msync_factory(NULL),
       _sub_mu_msync_factory(NULL),
       _mu_mcast2_factory(NULL),
       _line_mcast2_factory(NULL),
-	//_line_dput_mcast2_factory(NULL),
+        //_line_dput_mcast2_factory(NULL),
       _mu_mcomb_factory(NULL),
       _msync_composite_factory(&_sconnmgr, NULL),
       _msync2d_composite_factory(NULL),
@@ -570,7 +622,8 @@ namespace PAMI
       _mcomb2d_composite_factory(NULL),
       _mcomb2dNP_composite_factory(NULL),
       _rectangle_1color_dput_broadcast_factory(NULL),
-      _rectangle_dput_broadcast_factory(NULL)
+      _rectangle_dput_broadcast_factory(NULL),
+      _rectangle_dput_allgather_factory(NULL)
       {
         TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration()\n", this));
         //DO_DEBUG((templateName<T_Geometry>()));
@@ -604,19 +657,33 @@ namespace PAMI
 
           _axial_dput_mu_ni     = new (_axial_dput_mu_ni_storage    ) T_AxialDputNativeInterface(_mu_device, client, context, context_id, client_id,_dispatch_id);
           if (_axial_dput_mu_ni->status() != PAMI_SUCCESS) _axial_dput_mu_ni = NULL; // Not enough resources?
+          
+          _axial_shmem_dput_ni     = new (_axial_shmem_dput_ni_storage    ) T_AxialShmemDputNativeInterface(_mu_device, client, context, context_id, client_id,_dispatch_id);
+          if (_axial_shmem_dput_ni->status() != PAMI_SUCCESS) _axial_shmem_dput_ni = NULL; // Not enough resources?	  
 
           _mu_msync_factory     = new (_mu_msync_factory_storage    ) MUMultiSyncFactory(&_sconnmgr, _mu_ni_msync);
           _sub_mu_msync_factory = new (_sub_mu_msync_factory_storage) SubMUMultiSyncFactory(&_sconnmgr, _mu_ni_sub_msync);
           _mu_mcomb_factory     = new (_mu_mcomb_factory_storage    ) MUMultiCombineFactory(&_sconnmgr, _mu_ni_mcomb);
 
-          TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration()  RectangleDput1ColorBroadcastFactory\n", this));
-          if (_axial_dput_mu_ni)
+
+          if (_axial_shmem_dput_ni) {
+            TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration()  RectangleDput1ColorBroadcastFactory\n", this));
+            _rectangle_1color_dput_broadcast_factory = new (_rectangle_1color_dput_broadcast_factory_storage) RectangleDput1ColorBroadcastFactory(&_color_connmgr, _axial_shmem_dput_ni);
+
+            TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration()  RectangleDputBroadcastFactory\n", this));
+            _rectangle_dput_broadcast_factory = new (_rectangle_dput_broadcast_factory_storage) RectangleDputBroadcastFactory(&_color_connmgr, _axial_shmem_dput_ni);
+
+            _rectangle_dput_allgather_factory = new (_rectangle_dput_allgather_factory_storage) RectangleDputAllgatherFactory(&_color_connmgr, _axial_shmem_dput_ni);
+          }
+          else if (_axial_dput_mu_ni) {
+            TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration()  RectangleDput1ColorBroadcastFactory\n", this));
             _rectangle_1color_dput_broadcast_factory = new (_rectangle_1color_dput_broadcast_factory_storage) RectangleDput1ColorBroadcastFactory(&_color_connmgr, _axial_dput_mu_ni);
 
-          TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration()  RectangleDputBroadcastFactory\n", this));
-          if (_axial_dput_mu_ni)
-            _rectangle_dput_broadcast_factory = new (_rectangle_dput_broadcast_factory_storage) RectangleDputBroadcastFactory(&_color_connmgr, _axial_dput_mu_ni);
+            TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration()  RectangleDputBroadcastFactory\n", this));
+            _rectangle_dput_broadcast_factory = new (_rectangle_dput_broadcast_factory_storage) RectangleDputBroadcastFactory(&_color_connmgr, _axial_dput_mu_ni);	  
 
+            _rectangle_dput_allgather_factory = new (_rectangle_dput_allgather_factory_storage) RectangleDputAllgatherFactory(&_color_connmgr, _axial_dput_mu_ni);
+          }
 
           _mu_msync_factory->setMapIdToGeometry(mapidtogeometry);
           _sub_mu_msync_factory->setMapIdToGeometry(mapidtogeometry);
@@ -626,7 +693,6 @@ namespace PAMI
           _mu_mcast2_factory = new (_mu_mcast2_factory_storage) MUMultiCast2Factory(&_csconnmgr, _mu_ni_mcast2);
           _line_mcast2_factory = new (_line_mcast2_factory_storage) LineMultiCast2Factory(&_csconnmgr, _axial_mu_ni);
           //_line_dput_mcast2_factory = new (_line_dput_mcast2_factory_storage) LineMultiCast2Factory(&_csconnmgr, _axial_dput_mu_ni);
-
         }
 
 //          if ((__global.useMU()) && (__global.useshmem()))
@@ -689,24 +755,6 @@ namespace PAMI
 
           // (Maybe) Add rectangle broadcasts
           TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Analyze Rectangle factories %p/%p, isLocal? %u\n", this, _rectangle_1color_dput_broadcast_factory,_rectangle_dput_broadcast_factory,topology->isLocal()));
-//        if ((_rectangle_1color_dput_broadcast_factory) && (!topology->isLocal()))
-//          do
-//          {
-//            // make a local copy of the topology
-//            PAMI::Topology coord_topology = *(PAMI::Topology*) geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
-//            coord_topology.convertTopology(PAMI_COORD_TOPOLOGY);
-//            TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Analyze Rectangle type %u\n", this, coord_topology.type()));
-//            if (coord_topology.type() != PAMI_COORD_TOPOLOGY) break; //not a coord? then not a line
-//
-//            PAMI::Topology tmp;
-//            topology->subTopologyLocalToMe(&tmp);
-//            TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Analyze Rectangle local size %zu\n", this, tmp.size()));
-//            if (tmp.size()!=1) break; // local ranks not yet supported
-//
-//            TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register Rectangle\n", this));
-//            //Add a rectangle broadcasts
-//
-//          } while (0);
 
           // Is there a coordinate topology? Try rectangle protocols
           PAMI::Topology * rectangle = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX);
@@ -719,6 +767,9 @@ namespace PAMI
 
             if (_rectangle_dput_broadcast_factory)              
               geometry->addCollective(PAMI_XFER_BROADCAST,  _rectangle_dput_broadcast_factory, _context_id);
+
+            if (_rectangle_dput_allgather_factory)              
+              geometry->addCollective(PAMI_XFER_ALLGATHERV,  _rectangle_dput_allgather_factory, _context_id);
           }
 
         }
@@ -976,8 +1027,9 @@ namespace PAMI
 
       T_AxialDputNativeInterface                     *_axial_dput_mu_ni;
       uint8_t                                         _axial_dput_mu_ni_storage[sizeof(T_AxialDputNativeInterface)];
-      //T_AxialDputNativeInterface                     *_axial_dput_mu_1_ni;
-      //uint8_t                                         _axial_dput_mu_1_ni_storage[sizeof(T_AxialDputNativeInterface)];
+
+      T_AxialShmemDputNativeInterface                *_axial_shmem_dput_ni;
+      uint8_t                                         _axial_shmem_dput_ni_storage[sizeof(T_AxialShmemDputNativeInterface)];
 
       // Barrier factories
       MUMultiSyncFactory                             *_mu_msync_factory;
@@ -1014,12 +1066,14 @@ namespace PAMI
       MultiCombine2DeviceFactoryNP                   *_mcomb2dNP_composite_factory;
       uint8_t                                         _mcomb2dNP_composite_factory_storage[sizeof(MultiCombine2DeviceFactoryNP)];
 
-      // 2 device/NI composite
       RectangleDput1ColorBroadcastFactory            *_rectangle_1color_dput_broadcast_factory;
       uint8_t                                         _rectangle_1color_dput_broadcast_factory_storage[sizeof(RectangleDput1ColorBroadcastFactory)];
 
       RectangleDputBroadcastFactory                  *_rectangle_dput_broadcast_factory;
       uint8_t                                         _rectangle_dput_broadcast_factory_storage[sizeof(RectangleDputBroadcastFactory)];
+
+      RectangleDputAllgatherFactory                  *_rectangle_dput_allgather_factory;
+      uint8_t                                         _rectangle_dput_allgather_factory_storage[sizeof(RectangleDputAllgatherFactory)];
     };
 
 

@@ -300,7 +300,7 @@ namespace PAMI
           _coll_shm_registration(NULL),
           _bgq2d_registration(NULL),
 #endif
-          _multi_registration((CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI, MUAxialDputNI >*) _multi_registration_storage),
+	    _multi_registration((CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI, MUAxialDputNI, MUShmemAxialDputNI >*) _multi_registration_storage),
           _ccmi_registration((CCMIRegistration*)_ccmi_registration_storage),
           _world_geometry(world_geometry),
           _status(PAMI_SUCCESS),
@@ -502,7 +502,7 @@ namespace PAMI
 #endif
 
         _multi_registration       =  new (_multi_registration)
-        CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI,MUAxialDputNI >(_shmem_native_interface,
+	  CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI,MUAxialDputNI, MUShmemAxialDputNI >(_shmem_native_interface,
                                                                                                        PAMI::Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid), 
                                                                                                        client, 
                                                                                                        (pami_context_t)this, 
@@ -1124,7 +1124,7 @@ namespace PAMI
       CollShmCollreg              *_coll_shm_registration;
       BGQ2DCollreg                *_bgq2d_registration;
 #endif
-      CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI,MUAxialDputNI >    *_multi_registration;
+      CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI,MUAxialDputNI,MUShmemAxialDputNI >    *_multi_registration;
       CCMIRegistration            *_ccmi_registration;
       BGQGeometry                 *_world_geometry;
       pami_result_t                _status;
@@ -1137,7 +1137,7 @@ namespace PAMI
       uint8_t                      _coll_shm_registration_storage[sizeof(CollShmCollreg)];
       uint8_t                      _bgq2d_registration_storage[sizeof(BGQ2DCollreg)];
 #endif
-      uint8_t                      _multi_registration_storage[sizeof(CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI,MUAxialDputNI >)];
+      uint8_t                      _multi_registration_storage[sizeof(CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI,MUAxialDputNI,MUShmemAxialDputNI >)];
       uint8_t                      _shmemMcastModel_storage[sizeof(ShmemMcstModel)];
       uint8_t                      _shmemMsyncModel_storage[sizeof(ShmemMsyncModel)];
       uint8_t                      _shmemMcombModel_storage[sizeof(ShmemMcombModel)];

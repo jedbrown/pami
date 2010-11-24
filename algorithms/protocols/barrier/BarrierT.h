@@ -97,10 +97,8 @@ namespace CCMI
                      void                                 * cmd,
                      pami_event_function                     fn,
                      void                                 * cookie):
-              _myexecutor(((PAMI_GEOMETRY_CLASS *)geometry)->nranks(),
-                          ((PAMI_GEOMETRY_CLASS *)geometry)->ranks(),
-                          ((PAMI_GEOMETRY_CLASS *)geometry)->comm(),
-                          0,
+              _myexecutor(((PAMI_GEOMETRY_CLASS *)geometry)->comm(),
+                          0,                                        // connection id?
                           mInterface),
               _myschedule (__global.mapping.task(), (PAMI::Topology *)((PAMI_GEOMETRY_CLASS *)geometry)->getTopology(T_Geometry_Index))
           {

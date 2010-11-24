@@ -89,7 +89,7 @@ namespace CCMI
         }
 
         /// Main constructor to initialize the executor
-        BarrierExec(unsigned nranks, unsigned *ranks, unsigned comm,
+        BarrierExec(unsigned comm,
                     unsigned connid,
                     Interfaces::NativeInterface *ninterface):
             Interfaces::Executor(),
@@ -97,8 +97,8 @@ namespace CCMI
             _connid(connid),
             _srctopology(ninterface->myrank())
         {
-          TRACE_FLOW((stderr, "<%p>Executor::BarrierExec::::ctor(nranks %d,comm %X,connid %d)\n",
-                      this, nranks, comm, connid));
+          TRACE_FLOW((stderr, "<%p>Executor::BarrierExec::::ctor(comm %X,connid %d)\n",
+                      this, comm, connid));
           _start          =  0;
           _phase          =  0;
           _nphases        =  0;
@@ -186,14 +186,9 @@ inline void CCMI::Executor::BarrierExec::sendNext()
   if (ndest > 0)
     {
 #ifdef CCMI_DEBUG
-      pami_task_t *dstranks = NULL;
-      topology->rankList(&dstranks);
-      CCMI_assert (dstranks != NULL);
-
-      TRACE_FLOW((stderr, "<%p>Executor::BarrierExec::sendNext dstranks %p\n", this, dstranks));
-
-      for (int count = 0; count < ndest; count++)
-        TRACE_FLOW((stderr, "<%p>Executor::BarrierExec::sendNext _phase %d, ndest %d, _dstranks[count] %u, _connid %d, _clientdata %p\n", this, _phase, ndest, dstranks[count], _connid, _clientdata));
+      TRACE_FLOW((stderr, "<%p>Executor::BarrierExec::sendNext _phase %d, ndest %d,_connid %d, _clientdata %p\n", this, _phase, topology->size(), _connid, _clientdata));
+      for (int count = 0; count < topology->size(); count++)
+        TRACE_FLOW((stderr, "<%p>Executor::BarrierExec::sendNext _dstranks[%u] %u\n", this, count, topology->index2Rank(count)));
 
       CCMI_assert (topology->type() == PAMI_LIST_TOPOLOGY);
 #endif

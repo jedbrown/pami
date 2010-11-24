@@ -14,9 +14,9 @@
 #define __components_devices_bgq_mu2_msg_InjectDPutMulticast_h__
 
 #include "spi/include/mu/DescriptorBaseXX.h"
+#include "util/trace.h"
 #include "components/devices/bgq/mu2/InjChannel.h"
 #include "components/devices/bgq/mu2/msg/MessageQueue.h"
-#include "util/trace.h"
 #include "common/bgq/Mapping.h"
 #include "components/memory/MemoryAllocator.h"
 
@@ -117,7 +117,8 @@ namespace PAMI
 			     pami_coord_t        * ur,
 			     PipeWorkQueue       * pwq,
 			     uint32_t              length,
-			     uint32_t              localMulticast
+			     uint32_t              localMulticast,
+			     uint32_t              call_consume_bytes
 			     ) :
 	  _context (context),
 	  _nextdst (0),
@@ -134,15 +135,21 @@ namespace PAMI
 	  _localStart(0),
 	  _myLocal(0),
 	  _localEnd(0),
-	  _localIdx(0)
+	  _localIdx(0),
+	  _callConsumeBytes(call_consume_bytes)
 	    {
-	      //TRACE_FN_ENTER();
+	      TRACE_FN_ENTER();
 	      
 	      setupDestinations (me, ref, isTorus, ll, ur);
 	      if (localMulticast)
 		setupLocalDestinations (me, ref, isTorus, ll, ur);
 
-	      //TRACE_FN_EXIT();
+	      for (unsigned fnum = 0; fnum < MAX_DIMS*2; fnum++)
+		_lastCompletionSeqNo[fnum] = UNDEFINED_SEQ_NO;
+
+	      _nExpectedCompletions = 0;
+
+	      TRACE_FN_EXIT();
 	    };
 	  
 	inline ~InjectDPutMulticast () {};
@@ -232,17 +239,24 @@ namespace PAMI
 		_fifos[_ndestinations] = nidx;
 		_ndestinations ++;
 	      }
+	    else PAMI_abort();
 	  }
 	  
 #if 0
 	  for (i = 0; i < _ndestinations; i++)
-	    printf ("Sending to 0x%x %d %d %d %d %d\n", 
+	    printf ("(%d,%d,%d,%d,%d) Sending to 0x%x (%d,%d,%d,%d,%d) direction %d\n", 
+		    me->Destination.A_Destination,
+		    me->Destination.B_Destination,
+		    me->Destination.C_Destination,
+		    me->Destination.D_Destination,
+		    me->Destination.E_Destination,
 		    _destinations[i].Destination.Destination,
 		    _destinations[i].Destination.A_Destination,
 		    _destinations[i].Destination.B_Destination,
 		    _destinations[i].Destination.C_Destination,
 		    _destinations[i].Destination.D_Destination,
-		    _destinations[i].Destination.E_Destination
+		    _destinations[i].Destination.E_Destination,
+		    (_fifos[i] & 0x1)
 		    );
 #endif
 	}  
@@ -280,23 +294,9 @@ namespace PAMI
 		  muh_dput->Packet_Types.Direct_Put.Rec_Payload_Base_Address_Id = _context.pinBatId(_localIdx, pid); 
 		  muh_dput->Packet_Types.Direct_Put.Rec_Counter_Base_Address_Id = _context.pinBatId(_localIdx, cid);
 		  
-		  //TRACE_FORMAT("inject descriptor (%p) from message (%p)", &desc, this);
-		  // Advance the injection fifo tail pointer. This will be
-		  // moved outside the loop when an "advance multiple" is
-		  // available.
-		  uint64_t sequence = channel.injFifoAdvanceDesc ();
-		
-		  //printf ("Injected descriptor for local rank %d at bat ids %d %d\n", _localIdx, 
-		  //  _context.pinBatId(_localIdx, pid), _context.pinBatId(_localIdx, cid)); 
-  
-		  //last descriptor to that destination
-		  if (unlikely(_fn != NULL) && bytes_available == _length)
-		    {
-		      CompletionMsg *msg = (CompletionMsg *)_completion_alloc.allocateObject();
-		      msg->_multicast = this;
-		      channel.addCompletionEvent (msg->_state, done, msg, sequence);
-		    }
-
+		  uint64_t sequence = channel.injFifoAdvanceDesc ();		
+		  _lastCompletionSeqNo [fnum] = sequence;
+		  
 		  fnum ++;
 		  if (fnum == MAX_CHANNELS)
 		    fnum = 0;
@@ -360,20 +360,10 @@ namespace PAMI
 	      d->setHints(hints, hints_e);
 	      d->Torus_FIFO_Map = map;
 
-	      //TRACE_FORMAT("inject descriptor (%p) from message (%p)", &desc, this);
-	      // Advance the injection fifo tail pointer. This will be
-	      // moved outside the loop when an "advance multiple" is
-	      // available.
-	      sequence = channel.injFifoAdvanceDesc ();
-
-	      //last descriptor to that destination
-	      if (unlikely(_fn != NULL) && bytes_available == _length)
-	      {
-		CompletionMsg *msg = (CompletionMsg *)_completion_alloc.allocateObject();
-		msg->_multicast = this;
-		channel.addCompletionEvent(msg->_state, done, msg, sequence);
-	      }
+	      sequence = channel.injFifoAdvanceDesc ();	      
+	      _lastCompletionSeqNo[fnum] = sequence;
 	    }
+	    //No descriptor slots available, so come back and try later
 	    else break;
 	  }
 	  
@@ -388,27 +378,38 @@ namespace PAMI
 	  }
 	  
 	  _done = (bytes_available == _length && _nextdst == _ndestinations && _localIdx == (_localEnd +1));
+
+	  if (_done && _fn != NULL)
+	    processCompletionEvents();
+
 	  //TRACE_FN_EXIT();
 	  return _done;
+	}
+
+	void processCompletionEvents () {
+	  unsigned fnum = 0;
+	  for (fnum = 0; fnum < 2*MAX_DIMS; fnum++) 	    
+	    if (_lastCompletionSeqNo[fnum] != UNDEFINED_SEQ_NO) {
+	      InjChannel & channel = _context.injectionGroup.channel[fnum];
+	      CompletionMsg *msg = (CompletionMsg *) &_completionMsg[fnum];
+	      msg->_multicast = this;
+	      _nExpectedCompletions ++;
+	      channel.addCompletionEvent(msg->_state, done, msg, _lastCompletionSeqNo[fnum]);
+	    }
 	}
 	
 	static void done (pami_context_t     context,
 			  void             * cookie,
 			  pami_result_t      result) 
 	  {
-	    //printf ("Calling Descriptor Done\n");
 	    CompletionMsg *m = (CompletionMsg *)cookie;
 	    InjectDPutMulticast *msg = m->_multicast;
 	    msg->_ncomplete ++;
-	    unsigned ntotal_dst = msg->_ndestinations + msg->_localEnd - msg->_localStart;
-	    if (msg->_ncomplete == ntotal_dst) {
-	      msg->_pwq->consumeBytes((size_t)msg->_length);
-	      //printf ("Calling Send Done\n");
-	      msg->_completion_alloc.returnObject(m);
+	    if (msg->_ncomplete == msg->_nExpectedCompletions) {
+	      if (msg->_callConsumeBytes)
+		msg->_pwq->consumeBytes((size_t)msg->_length);
 	      msg->_fn (context, msg->_cookie, result);
 	    }
-	    else
-	      msg->_completion_alloc.returnObject(m);
 	  }
 
 	///
@@ -420,8 +421,10 @@ namespace PAMI
 	
 	inline PipeWorkQueue *getPwq() { return _pwq; }
 
+	inline uint32_t ndestinations() { return _ndestinations; }
+
 	MUSPI_DescriptorBase     _desc; //The descriptor is setup externally and contains batids, sndbuffer base and msg length
-	
+
       protected:
 	
 	MU::Context            & _context;
@@ -442,10 +445,14 @@ namespace PAMI
 	uint8_t                  _myLocal;
 	uint8_t                  _localEnd;
 	uint8_t                  _localIdx;
-	//	uint8_t                  _state[MAX_DIMS*2][InjChannel::completion_event_state_bytes];
-	///uint8_t                  _local_state[8][InjChannel::completion_event_state_bytes];
+	uint8_t                  _callConsumeBytes;
+	uint32_t                 _nExpectedCompletions;
+	uint64_t                 _lastCompletionSeqNo[MAX_DIMS*2];
+	CompletionMsg            _completionMsg[MAX_DIMS*2];
 
-	PAMI::MemoryAllocator<sizeof(CompletionMsg), 16>   _completion_alloc;
+	static const uint64_t UNDEFINED_SEQ_NO = 0xffffffffffffffffUL;
+	
+	//PAMI::MemoryAllocator<sizeof(CompletionMsg), 16>   _completion_alloc;
       }; // class     PAMI::Device::MU::InjectDPutMulticast     
     };   // namespace PAMI::Device::MU                          
   };     // namespace PAMI::Device           

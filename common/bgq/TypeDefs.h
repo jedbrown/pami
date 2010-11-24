@@ -73,6 +73,9 @@
 #include "components/devices/shmemcoll/ShmemMcstModelWorld.h"
 #endif
 
+#include "components/devices/shmemcoll/ShmemCollDesc.h"
+#include "components/devices/shmemcoll/ShmemColorMcstModel.h"
+
 namespace PAMI
 {
   typedef Geometry::Common                     BGQGeometry;
@@ -100,6 +103,16 @@ namespace PAMI
                                Device::MU::MulticastDmaModel,
                                Device::MU::MultisyncModel<false, false>,
                                Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false> > MUAxialDputNI;
+
+  typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Atomic::GccBuiltin> ShmemCollDesc;
+  typedef PAMI::Device::Shmem::ShmemColorMcstModel<PAMI::Device::Generic::Device, ShmemCollDesc> ShaddrMcstModel;
+  
+  typedef  PAMI::BGQNativeInterfaceASMultiDevice<MUDevice,
+    MUDevice,
+    Device::MU::MulticastDmaModel,
+    ShaddrMcstModel,
+    Device::MU::MultisyncModel<false, false>,
+    Device::MU::MulticombineModel<PAMI::Device::MU::AllreducePacketModel, false, false> > MUShmemAxialDputNI;
 
   typedef Fifo::FifoPacket <32, 544> ShmemPacket;
   typedef Fifo::LinearFifo<Atomic::GccBuiltin, ShmemPacket, 16> ShmemFifo;
@@ -164,6 +177,7 @@ namespace PAMI
 #endif
 
   typedef BGQNativeInterfaceAS <ShmemCollDevice, ShmemMcstModel, ShmemMsyncModel,ShmemMcombModel> AllSidedShmemNI;
+
 }
 
 //#define PAMI_COLL_MCAST_CLASS

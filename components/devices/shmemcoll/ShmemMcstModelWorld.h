@@ -71,7 +71,7 @@ namespace PAMI
 	//currently assume all the processes local to the node are participating
 	//identify the peers by the local tasks
 	TRACE_ERR((stderr, "posting multicast descriptor\n"));
-	fprintf(stderr, "posting multicast descriptor from the model\n");
+	//fprintf(stderr, "posting multicast descriptor from the model\n");
 
 	PAMI::Topology *src_topo = (PAMI::Topology *)mcast->src_participants;
 	PAMI::Topology *dst_topo = (PAMI::Topology *)mcast->dst_participants;

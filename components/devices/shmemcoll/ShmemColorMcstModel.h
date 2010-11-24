@@ -31,10 +31,10 @@
 #undef TRACE_ERR
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x)  fprintf x
+#define TRACE_ERR(x) // fprintf x
 #endif
 
-#define NUM_SHMEM_MCST_COLORS	10 
+#define NUM_SHMEM_MCST_COLORS	16 
 #define NUM_LOCAL_DST_RANKS		3 //assuming that the model is run with 4 procs/node
 
 namespace PAMI
@@ -53,7 +53,8 @@ namespace PAMI
 		ShmemColorMcstModel (T_Device &device, pami_result_t &status) :
 		Interface::MulticastModel < ShmemColorMcstModel<T_Device, T_Desc>, T_Device, sizeof(Shmem::McstMessage<T_Device,T_Desc>) > (device, status),
 		_device(device),
-		_peer(__global.topology_local.rank2Index(__global.mapping.task())),
+		_mytask(__global.mapping.task()),
+		_peer(__global.topology_local.rank2Index(_mytask)),
 		_npeers(__global.topology_local.size())
 
 		{
@@ -79,9 +80,9 @@ namespace PAMI
 
 		void* dummy;
 		__global.mm.memalign((void**)&dummy, 16, sizeof(size_t)*NUM_SHMEM_MCST_COLORS);
-		printf("before\n");
+		//printf("before\n");
 		 local_barriered_shmemzero((void *)dummy, sizeof(size_t)*NUM_SHMEM_MCST_COLORS, _npeers, _peer == 0);
-		printf("after\n");
+		 //printf("after\n");
 
 		};
 
@@ -94,34 +95,18 @@ namespace PAMI
                      			          	pami_multicast_t *mcast, void* devinfo)
   {
 
-	//currently assume all the processes local to the node are participating
-	//identify the peers by the local tasks
 	TRACE_ERR((stderr, "posting multicast descriptor\n"));
+
+	/* increment the seq_num to compare with master's */
+
+	Shmem::McstMessageShaddr<T_Device, T_Desc>::seq_num++;
 
 	PAMI::Topology *src_topo = (PAMI::Topology *)mcast->src_participants;
 	PAMI::Topology *dst_topo = (PAMI::Topology *)mcast->dst_participants;
 	size_t num_dst_ranks =0;
-	/*if (dst_topo != NULL)
-		num_dst_ranks = dst_topo->size();*/
-	PAMI_assert (dst_topology->type() == PAMI_AXIAL_TOPOLOGY);
-
-	mi_coord_t *ll=NULL;
-    pami_coord_t *ur=NULL;
-    pami_coord_t *ref=NULL;
-    unsigned char *isTorus=NULL;
-
-    pami_result_t result = PAMI_SUCCESS;
-    result = dst_topology->axial(&ll, &ur, &ref, &isTorus);
-    PAMI_assert(result == PAMI_SUCCESS);
-	num_dst_ranks =  ll->u.n_torus.coords[LOCAL_DIM] - ur->u.n_torus.coords[LOCAL_DIM] + 1;
-	
-	TRACE_ERR((stderr, "size of destination topology:%zu\n", num_dst_ranks));
 
 	unsigned conn_id = mcast->connection_id;
 	TRACE_ERR((stderr, "conn_id:%u\n", conn_id));
-
-	//unsigned local_root = __global.topology_local.rank2Index(src_topo->index2Rank(0));
-	//unsigned my_topo_idx = _peer; //for now my index in the group is the same as my _peer
 
 	T_Desc *my_desc=NULL, *master_desc=NULL;
 
@@ -130,31 +115,55 @@ namespace PAMI
 
 	my_desc->set_mcast_params(mcast);
 
-	//? Not setting this..is master index used elsewhere
-	//my_desc->set_master(local_root); 
-	if (src_topo != NULL)
-		my_desc->set_master(1);
-	else
-		my_desc->set_master(0);
+	if ((src_topo != NULL)  && (src_topo->index2Rank(0) == _mytask)) //am the master/root
+	{
+		if (dst_topo != NULL)
+		{
+			PAMI_assert (dst_topo->type() == PAMI_AXIAL_TOPOLOGY);
+			pami_coord_t *ll=NULL;
+			pami_coord_t *ur=NULL;
+			pami_coord_t *ref=NULL;
+			unsigned char *isTorus=NULL;
 
-	if (src_topo != NULL){ // I am the master
+			pami_result_t result = PAMI_SUCCESS;
+			result = dst_topo->axial(&ll, &ur, &ref, &isTorus);
+			PAMI_assert(result == PAMI_SUCCESS);
+			num_dst_ranks =  ur->u.n_torus.coords[LOCAL_DIM] - ll->u.n_torus.coords[LOCAL_DIM];
+			TRACE_ERR((stderr, "num_dst_ranks:%zu\n", num_dst_ranks));
+			my_desc->set_master(1);
+		}
+	}
+	else
+	{	
+		my_desc->set_master(0);
+	}
+
+	if ((src_topo != NULL)  && (src_topo->index2Rank(0) == _mytask)) //am the master/root
+	{ // I am the master
 			Memregion memregion;
-			void* buf = (void*) master_desc->get_buffer();
+			//void* buf = (void*) master_desc->get_buffer();
+			Shmem::McstControl* mcst_control = (Shmem::McstControl*) master_desc->get_buffer();
 			void* mybuf = ((PAMI::PipeWorkQueue *)mcast->src)->bufferToConsume();
 			size_t bytes_out;
 			
 			//? Have to create the entire memregion at once..does mcast->bytes include all the data bytes
 			memregion.createMemregion(&bytes_out, mcast->bytes, mybuf, 0);
+			assert(bytes_out == mcast->bytes);
 			void* phy_addr = (void*)memregion.getBasePhysicalAddress();
 			void * global_vaddr = NULL;
 			uint32_t rc = 0;
 			rc = Kernel_Physical2GlobalVirtual (phy_addr, &global_vaddr);
 			assert(rc == 0);
+			TRACE_ERR((stderr,"ShmemMcstModel: buffer to consume:va:%p ga:%p\n", mybuf, global_vaddr));
 
-			memcpy(buf, &global_vaddr, sizeof(global_vaddr));
+			//memcpy(buf, &global_vaddr, sizeof(global_vaddr));
+			mcst_control->glob_src_buffer = global_vaddr;
 			TRACE_ERR((stderr,"copied global_vaddr:%p to %p \n", global_vaddr, buf));
 			TRACE_ERR((stderr,"done processes:%u \n", master_desc->done_peers()));
 			master_desc->set_consumers(num_dst_ranks);
+			//master_desc->reset_master_done();
+			mem_barrier();
+			master_desc->set_seq_id(Shmem::McstMessageShaddr<T_Device, T_Desc>::seq_num);	
 			master_desc->set_state(Shmem::INIT);
 	}
 
@@ -175,18 +184,22 @@ protected:
 
   T_Device      & _device;
   pami_context_t   _context;
+	pami_task_t _mytask;
   unsigned _peer;
   unsigned _npeers;
 
 
   T_Desc 	*_my_desc_array;
   T_Desc	*_shared_desc_array;		
-  pami_work_t	_shmem_work[NUM_SHMEM_MCST_COLORS];
+  //pami_work_t	_shmem_work[NUM_SHMEM_MCST_COLORS];
 
   Shmem::SendQueue    *__collectiveQ;
 
+  static unsigned seq_num;
+
 
       };  // PAMI::Device::Shmem::ShmemColorMcstModel class
+
 
 
     };    // PAMI::Device::Shmem namespace

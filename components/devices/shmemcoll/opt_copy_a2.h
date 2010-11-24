@@ -141,14 +141,21 @@ inline int quad_double_copy( double* dest, double* src, size_t num )
 
 inline int opt_bgq_memcpy(void* dst, void* src, size_t bytes)
 {
-	uint64_t alignment = 64;
+	uint64_t alignment = 32;
 	uint64_t mask = (alignment - 1);
 	uint64_t dst_buf = (uint64_t)dst;
 	uint64_t src_buf = (uint64_t)src;
 
-	assert ((dst_buf & mask) == 0);
-	assert ((src_buf & mask) == 0);
+	//assert ((dst_buf & mask) == 0);
+	//assert ((src_buf & mask) == 0);
+	//PAMI_assertf(((dst_buf & mask) == 0), "dst_buf:%p bytes:%zd\n", dst, bytes);
+	//PAMI_assertf(((src_buf & mask) == 0), "src_buf:%p bytes:%zd\n", src, bytes);
 
+	if ( ((dst_buf & mask) != 0) ||
+	     ((src_buf & mask) != 0) ) {
+	  memcpy (dst, src, bytes);
+	  return 0;
+	}
 
 	//multiples of 1024
 	size_t quad_copy_bytes = (bytes /1024)* 1024;

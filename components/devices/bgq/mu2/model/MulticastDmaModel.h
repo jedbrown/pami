@@ -15,11 +15,12 @@
 
 #include "components/devices/MulticastModel.h"
 #include "components/memory/MemoryAllocator.h"
+#include "util/trace.h"
 #include "components/devices/bgq/mu2/Context.h"
 #include "components/devices/bgq/mu2/msg/InjectDPutMulticast.h"
 
 
-#define MAX_COUNTERS 12
+#define MAX_COUNTERS 15
 
 #ifndef L1_DCACHE_LINE_SIZE
 #define L1_DCACHE_LINE_SIZE   64
@@ -27,7 +28,6 @@
 
 #include "util/ccmi_debug.h"
 #include "util/ccmi_util.h"
-#include "util/trace.h"
 
 #ifdef CCMI_TRACE_ALL
   #define DO_TRACE_ENTEREXIT 1
@@ -75,6 +75,7 @@ namespace PAMI
 	static const unsigned sizeof_msg = sizeof(InjectDPutMulticast);
 	static const unsigned POLLING = 0x1;
 	static const unsigned LOCAL_MULTICAST = 0x2;
+	static const unsigned CALL_CONSUME_BYTES = 0x4;
 
 	MulticastDmaModel (MU::Context                 & device, 
 			   pami_result_t               & status) : 
@@ -82,8 +83,11 @@ namespace PAMI
 	  _mucontext(device),
 	  _nActiveRecvs(0),
 	  _nActiveSends(0),
-	  _flags(LOCAL_MULTICAST)//,
+	  _nRecvsComplete(0),
+	  _nSendsComplete(0),
+	  _flags(LOCAL_MULTICAST | CALL_CONSUME_BYTES),
 	  //_curBaseAddress(0)
+		_mytask(__global.mapping.task())
 	  {	    
 	    TRACE_FN_ENTER();
 	    memset(_sends, 0, sizeof(_sends));
@@ -110,9 +114,9 @@ namespace PAMI
 	      }
 
 	    //printf ("Get Bat Ids %d %d\n", _batids[0], _batids[1]);
-	    uint rc = 0;
 
 	    Kernel_MemoryRegion_t memRegion;
+	    int rc = 0;
 	    rc = Kernel_CreateMemoryRegion (&memRegion, (void *)_counterVec, sizeof(_counterVec));
 	    PAMI_assert ( rc == 0 );
 	    uint64_t paddr = (uint64_t)memRegion.BasePa +
@@ -124,6 +128,8 @@ namespace PAMI
 	    _me = *_mucontext.getMuDestinationSelf();
 
 	    initModels ();
+
+	    status = PAMI_SUCCESS;
 	    TRACE_FN_EXIT();
 	  }
 
@@ -132,6 +138,13 @@ namespace PAMI
 	      _flags &= ~(LOCAL_MULTICAST);
 	    else
 	      _flags |= LOCAL_MULTICAST;
+	  }
+	  
+	  void callConsumeBytesOnMaster (bool val) {
+	    if (!val) 
+	      _flags &= ~(CALL_CONSUME_BYTES);
+	    else
+	      _flags |= CALL_CONSUME_BYTES;
 	  }
 
 	  void initModels() {
@@ -231,8 +244,13 @@ namespace PAMI
 									 ur,
 									 pwq,
 									 length,
-									 _flags & LOCAL_MULTICAST);
+									 _flags & LOCAL_MULTICAST,
+									 _flags & CALL_CONSUME_BYTES);
+									 
 	    	    	    
+	    //if (msg->ndestinations() == 0)
+	    //PAMI_assert (dst_topology->size() == 0);
+
 	    _sends[_nActiveSends] = msg;
 	    
 	    // Clone the single-packet model descriptor into the injection fifo
@@ -271,10 +289,13 @@ namespace PAMI
 	  {
 	    TRACE_FN_ENTER();
 	    int connid = mcast->connection_id;
+	    if (connid >= MAX_COUNTERS)
+	      printf ("recv connection id %d\n", connid);
+
 	    PAMI_assert(connid < MAX_COUNTERS);	
 	    
 	    int idx = _nActiveRecvs ++;
-	    PAMI_assert (_nActiveRecvs < MAX_COUNTERS);
+	    PAMI_assert (_nActiveRecvs <= MAX_COUNTERS);
 	    PAMI_assert(_recvs[idx] == NULL);
 
 	    //fprintf(stderr, "Processing recv for idx %d connid %d\n", idx, connid);
@@ -310,7 +331,9 @@ namespace PAMI
 	  {
 	    TRACE_FN_ENTER();
 	    // Get the source data buffer/length and validate (assert) inputs
-	    if (mcast->src_participants)
+
+    PAMI::Topology *root_topo = (PAMI::Topology*)mcast->src_participants;
+		if ((root_topo != NULL)  && (root_topo->index2Rank(0) == _mytask))
 	      processSend (state, mcast, devinfo);
 	    else
 	      processRecv (state, mcast, devinfo);
@@ -335,10 +358,12 @@ namespace PAMI
 	  void advance_recvs (pami_context_t     context)
 	  {
 	    TRACE_FN_ENTER();
-	    unsigned i = 0, ncomplete = 0;
+	    unsigned i = 0;
 
 	    for (i=0; i < _nActiveRecvs; i++)  {
-	      if (_recvs[i] != NULL) {
+	      bool done = false;
+	      MulticastDmaRecv *recv = _recvs[i];
+	      if (recv != NULL) {
 		uint8_t cid = _recvIdVec[i];
 		uint64_t cc = _counterVec[cid];
 		uint32_t bytes = _counterShadowVec[i] - cc;
@@ -346,47 +371,52 @@ namespace PAMI
 		  mem_sync();
 		  //printf("Advancing counter %d connid %d\n", i, cid);
 		    
-		  _recvs[i]->produceBytes (_counterShadowVec[i] - cc);
+		  recv->produceBytes (_counterShadowVec[i] - cc);
 		  _counterShadowVec[i] = cc;
 		}
 		
 		//Trigger a send check on counter i??
 		if (cc == 0) {
-		  ncomplete++;		      
-		  if (_recvs[i]->_fn)
-		    _recvs[i]->_fn (context, _recvs[i]->_cookie, PAMI_SUCCESS);
+		  _nRecvsComplete++;		      		  
+		  if (_nActiveRecvs == _nRecvsComplete) {
+		    _nActiveRecvs = 0;
+		    _nRecvsComplete = 0;
+		    done = true;
+		  }
+		  
 		  _recvs[i] = NULL;
 		  _mucontext.setBatEntry (_b_batids[cid], 0);
+		  
+		  if (recv->_fn)
+		    recv->_fn (context, recv->_cookie, PAMI_SUCCESS);
 		}
 	      }
-	      else {
-		ncomplete++;
-	      }
-	    }
-	    
-	    if (_nActiveRecvs == ncomplete) 
-	      _nActiveRecvs = 0;
+	      
+	      //We are done processing all messages
+	      if (done)
+		break;
+	    }	    
 	  }
 	  
 
 	  void advance_sends (pami_context_t     context)
 	  {
 	    TRACE_FN_ENTER();
-	    unsigned i = 0, ncomplete = 0;	      
+	    unsigned i = 0; 
 	    for (i=0; i < _nActiveSends; i++)  {
 	      if (_sends[i] != NULL) {
 		bool done = _sends[i]->advance();
 		if (done) {
 		  _sends[i] = NULL;
-		  ncomplete++;
+		  _nSendsComplete++;
 		}
 	      }
-	      else
-		ncomplete ++;
 	    }
 	    
-	    if (ncomplete == _nActiveSends) 
+	    if (_nSendsComplete == _nActiveSends) {
+	      _nSendsComplete = 0;
 	      _nActiveSends = 0;
+	    }
 	  }
 
 	  
@@ -394,6 +424,8 @@ namespace PAMI
 	  MU::Context                              & _mucontext;
 	  unsigned                                   _nActiveRecvs;
 	  unsigned                                   _nActiveSends;
+	  unsigned                                   _nRecvsComplete;
+	  unsigned                                   _nSendsComplete;
 	  unsigned                                   _flags;
 	  bool                                       _processLocal;
 	  uint16_t                                   _b_batids[MAX_COUNTERS];  /// The base address table id for payload
@@ -407,6 +439,7 @@ namespace PAMI
 	  pami_work_t                                _swork;	  
 	  pami_work_t                                _rwork;
 	  MUSPI_DescriptorBase                       _modeldesc;         /// Model descriptor
+		pami_task_t                                _mytask;
 
 	  ///These counters are indexed by the connetion id known to the remote node
 	  volatile uint64_t      _counterVec[MAX_COUNTERS] __attribute__((__aligned__(L1_DCACHE_LINE_SIZE)));

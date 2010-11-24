@@ -38,6 +38,7 @@ namespace CCMI
         pami_task_t             _dstranks [MAX_PARALLEL];
         PAMI::Topology          _dsttopology;
         PAMI::Topology          _selftopology;
+        PAMI::Topology          _roottopology;
 
         CollHeaderData                               _mdata;
         T                                         *  _connmgr;
@@ -116,6 +117,7 @@ namespace CCMI
         {
           TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::setRoot()\n", this));
           _root = root;
+          new (&_roottopology) PAMI::Topology(root);
         }
 
         void  setBuffers (char *src, char *dst, int len)
@@ -160,7 +162,7 @@ namespace CCMI
           memcpy (&mrecv, &_msend, sizeof(pami_multicast_t));
 
           TRACE_MSG((stderr, "<%p>Executor::BroadcastExec::postReceives bytes %d, rank %d\n", this, _buflen, _selftopology.index2Rank(0)));
-          mrecv.src_participants   = NULL; //current mechanism to identify a non-root node
+          mrecv.src_participants   = (pami_topology_t *) & _roottopology; 
           mrecv.dst_participants   = (pami_topology_t *) & _selftopology;
 
           if (_dsttopology.size() == 0)
@@ -235,7 +237,7 @@ inline void  CCMI::Executor::BroadcastExec<T>::sendNext ()
   char tbuf[1024];
   char sbuf[16384];
   sprintf(sbuf, "<%p>Executor::BroadcastExec::sendNext() from %zu: bytes %d, ndsts %zu bytes available to consume %zu\n",
-          this, __global.mapping.task(), _buflen, _dsttopology.size(), _pwq.bytesAvailableToConsume());
+          this,__global.mapping.task(), _buflen, _dsttopology.size(), _pwq.bytesAvailableToConsume());
 
   for (unsigned i = 0; i < _dsttopology.size(); ++i)
     {

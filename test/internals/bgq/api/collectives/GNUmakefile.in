@@ -13,7 +13,7 @@ FRAMEWORK       = pami
 VPATH		= @abs_srcdir@
 SUBDIRS         =
 NOTBUILT        = 
-APPS            = allreduce-${FRAMEWORK}.${EXTENSION}
+APPS            = allreduce-${FRAMEWORK}.${EXTENSION} bcast-${FRAMEWORK}.${EXTENSION}
 
 include @abs_top_builddir@/Build.rules
 
