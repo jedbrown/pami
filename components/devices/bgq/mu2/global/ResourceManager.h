@@ -35,7 +35,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <hwi/include/bqc/MU_Macros.h>
-#include <hwi/include/bqc/classroute.h>
+#include "components/devices/bgq/mu2/CollectiveNetwork.h"
 #include <hwi/include/bqc/mu_dcr.h>
 #include <hwi/include/bqc/nd_500_dcr.h>
 #include <hwi/include/bqc/nd_x2_dcr.h>
@@ -628,8 +628,8 @@ namespace PAMI
 	  // This sets up our tables for a pre-existing classroute for the
 	  // entire job. So, we only update our table, we don't write DCRs
 	  // or any such thing.
-	  MUSPI_SetClassrouteId(0, BGQ_CLASS_INPUT_VC_SUBCOMM, &_commworld, &_cncrdata);
-	  MUSPI_SetClassrouteId(0, BGQ_CLASS_INPUT_VC_SUBCOMM, &_commworld, &_gicrdata);
+	  MUSPI_SetClassrouteId(0, PAMI_MU_CR_SPI_VC, &_commworld, &_cncrdata);
+	  MUSPI_SetClassrouteId(0, PAMI_MU_CR_SPI_VC, &_commworld, &_gicrdata);
 	  // do we need to place this rectangle someplace? like the "world geom" topology?
 
 	  // Now, we should be ready to get requests for classroutes...
@@ -783,7 +783,7 @@ namespace PAMI
 	    int id = (int)((uintptr_t)val & 0xffffffff) - 1;
 	    if (id != 0) // never free classroute 0 - a.k.a. comm-world
 	    {
-	      int last = MUSPI_ReleaseClassrouteId(id, BGQ_CLASS_INPUT_VC_SUBCOMM,
+	      int last = MUSPI_ReleaseClassrouteId(id, PAMI_MU_CR_SPI_VC,
 	                                                        NULL, &_cncrdata);
 	      if (last)
 	      {
@@ -805,7 +805,7 @@ namespace PAMI
 	    int id = (int)((uintptr_t)val & 0xffffffff) - 1;
 	    if (id != 0) // never free classroute 0 - a.k.a. comm-world
 	    {
-	      int last = MUSPI_ReleaseClassrouteId(id, BGQ_CLASS_INPUT_VC_SUBCOMM,
+	      int last = MUSPI_ReleaseClassrouteId(id, PAMI_MU_CR_SPI_VC,
 	                                                        NULL, &_gicrdata);
 	      if (last)
 	      {
@@ -872,12 +872,12 @@ namespace PAMI
 
 	  void *val = crck->geom->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
 	  if (!val || val == PAMI_CR_GKEY_FAIL) {
-	    mask1 = MUSPI_GetClassrouteIds(BGQ_CLASS_INPUT_VC_SUBCOMM,
+	    mask1 = MUSPI_GetClassrouteIds(PAMI_MU_CR_SPI_VC,
 	            &rect, &crck->thus->_cncrdata);
 	  }
 	  val = crck->geom->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
 	  if (!val || val == PAMI_CR_GKEY_FAIL) {
-	    mask2 = MUSPI_GetClassrouteIds(BGQ_CLASS_INPUT_VC_SUBCOMM,
+	    mask2 = MUSPI_GetClassrouteIds(PAMI_MU_CR_SPI_VC,
 	            &rect, &crck->thus->_gicrdata);
 	  }
 	  // is this true? can we be sure ALL nodes got the same result?
@@ -992,7 +992,7 @@ namespace PAMI
 	    --id; // ffs() returns bit# + 1
 	    CR_RECT_T rect;
 	    crck->topo.rectSeg(CR_RECT_LL(&rect), CR_RECT_UR(&rect));
-	    int first = MUSPI_SetClassrouteId(id, BGQ_CLASS_INPUT_VC_SUBCOMM,
+	    int first = MUSPI_SetClassrouteId(id, PAMI_MU_CR_SPI_VC,
 								&rect, envpp);
 	    // Note: need to detect if classroute was already programmed...
 	    if (crck->master && first)
@@ -1001,7 +1001,7 @@ namespace PAMI
 	        MUSPI_BuildNodeClassroute(&_refcomm, &_refroot, &_mycoord, &rect,
 							_map, _pri_dim, cr);
 	        cr->input |= BGQ_CLASS_INPUT_LINK_LOCAL;
-	        cr->input |= BGQ_CLASS_INPUT_VC_SUBCOMM;
+	        cr->input |= PAMI_MU_CR_SPI_VC;
 	      }
 	      int rc;
 	      if (gi) {

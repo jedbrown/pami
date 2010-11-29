@@ -13,7 +13,7 @@
 #ifndef __components_devices_bgq_mu2_model_CollectivePacketModelBase_h__
 #define __components_devices_bgq_mu2_model_CollectivePacketModelBase_h__
 
-#include <hwi/include/bqc/MU_PacketHeader.h>
+#include "components/devices/bgq/mu2/CollectiveNetwork.h"
 
 #include <spi/include/mu/DescriptorBaseXX.h>
 #include <spi/include/mu/DescriptorWrapperXX.h>
