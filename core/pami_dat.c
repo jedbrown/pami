@@ -35,8 +35,8 @@ int pami_dt_sizes[] = {
 [PAMI_DOUBLE] =             sizeof(double),
 [PAMI_LONG_DOUBLE] =        sizeof(long double),
 [PAMI_LOGICAL] =            sizeof(unsigned int),
-[PAMI_SINGLE_COMPLEX] =     2 * sizeof(float),
-[PAMI_DOUBLE_COMPLEX] =     2 * sizeof(double),
+[PAMI_SINGLE_COMPLEX] =     sizeof(fp32_fp32_t),
+[PAMI_DOUBLE_COMPLEX] =     sizeof(fp64_fp64_t),
 [PAMI_LOC_2INT] =           sizeof(int32_int32_t),
 [PAMI_LOC_SHORT_INT] =      sizeof(int16_int32_t),
 [PAMI_LOC_FLOAT_INT] =      sizeof(fp32_int32_t),
@@ -67,8 +67,8 @@ int pami_dt_shift[] = {
 [PAMI_DOUBLE] =             3, /* sizeof(double) = 8 */
 [PAMI_LONG_DOUBLE] =        4, /* sizeof(long double) = 16 */
 [PAMI_LOGICAL] =            2, /* sizeof(unsigned int) = 4 */
-[PAMI_SINGLE_COMPLEX] =     3, /* 2 * sizeof(float) = 8 */
-[PAMI_DOUBLE_COMPLEX] =     4, /* 2 * sizeof(double) = 16 */
+[PAMI_SINGLE_COMPLEX] =     3, /* sizeof(fp32_fp32_t) = 8 */
+[PAMI_DOUBLE_COMPLEX] =     4, /* sizeof(fp64_fp64_t) = 16 */
 [PAMI_LOC_2INT] =           3, /* sizeof(int32_int32_t) = 8 */
 [PAMI_LOC_SHORT_INT] =      3, /* sizeof(int16_int32_t) = 8 */
 [PAMI_LOC_FLOAT_INT] =      3, /* sizeof(fp32_int32_t) = 8 */
@@ -260,6 +260,8 @@ OPTIMIZED_fp64_fp64_minloc
 [PAMI_PROD][PAMI_FLOAT][0] =		(void*)_pami_core_fp32_prod,
 [PAMI_PROD][PAMI_DOUBLE][0] =		(void*)_pami_core_fp64_prod,
 [PAMI_PROD][PAMI_LONG_DOUBLE][0] =	(void*)_pami_core_fp128_prod,
+[PAMI_PROD][PAMI_SINGLE_COMPLEX][0] =	(void*)_pami_core_fp32_fp32_cplx_prod,
+[PAMI_PROD][PAMI_DOUBLE_COMPLEX][0] =	(void*) _pami_core_fp64_fp64_cplx_prod,
 
 [PAMI_LAND][PAMI_SIGNED_CHAR][0] =	(void*)_pami_core_int8_land,
 [PAMI_LAND][PAMI_UNSIGNED_CHAR][0] =	(void*)_pami_core_uint8_land,

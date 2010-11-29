@@ -135,6 +135,7 @@ extern void _pami_core_fp32_int32_maxloc(fp32_int32_t *dst, const fp32_int32_t *
 extern void _pami_core_fp32_fp32_maxloc(fp32_fp32_t *dst, const fp32_fp32_t **srcs, int nsrc, int count);
 extern void _pami_core_fp32_int32_minloc(fp32_int32_t *dst, const fp32_int32_t **srcs, int nsrc, int count);
 extern void _pami_core_fp32_fp32_minloc(fp32_fp32_t *dst, const fp32_fp32_t **srcs, int nsrc, int count);
+extern void _pami_core_fp32_fp32_cplx_prod(fp32_fp32_t *dst, const fp32_fp32_t **srcs, int nsrc, int count);
 extern void _pami_core_fp64_max(double *dst, const double **srcs, int nsrc, int count);
 extern void _pami_core_fp64_min(double *dst, const double **srcs, int nsrc, int count);
 extern void _pami_core_fp64_prod(double *dst, const double **srcs, int nsrc, int count);
@@ -149,6 +150,7 @@ extern void _pami_core_fp64_int32_maxloc(fp64_int32_t *dst, const fp64_int32_t *
 extern void _pami_core_fp64_fp64_maxloc(fp64_fp64_t *dst, const fp64_fp64_t **srcs, int nsrc, int count);
 extern void _pami_core_fp64_int32_minloc(fp64_int32_t *dst, const fp64_int32_t **srcs, int nsrc, int count);
 extern void _pami_core_fp64_fp64_minloc(fp64_fp64_t *dst, const fp64_fp64_t **srcs, int nsrc, int count);
+extern void _pami_core_fp64_fp64_cplx_prod(fp64_fp64_t *dst, const fp64_fp64_t **srcs, int nsrc, int count);
 extern void _pami_core_fp128_max(long double *dst, const long double **srcs, int nsrc, int count);
 extern void _pami_core_fp128_min(long double *dst, const long double **srcs, int nsrc, int count);
 extern void _pami_core_fp128_prod(long double *dst, const long double **srcs, int nsrc, int count);
@@ -534,6 +536,8 @@ extern void _pami_core_uint8_sum2(uint8_t *dst, const uint8_t **srcs, int nsrc, 
         OPTIMATH_NSRC(PAMI_LOC_FLOAT_INT,PAMI_MINLOC,2,_pami_core_fp32_int32_minloc2)
 #define OPTIMIZED_fp32_fp32_minloc	\
         OPTIMATH_NSRC(PAMI_LOC_2FLOAT,PAMI_MINLOC,2,_pami_core_fp32_fp32_minloc2)
+#define OPTIMIZED_fp32_fp32_cmplx_prod	\
+        OPTIMATH_NSRC(PAMI_SINGLE_COMPLEX,PAMI_PROD,2,_pami_core_fp32_fp32_cmplx_prod)
 #define OPTIMIZED_fp64_max	\
         OPTIMATH_NSRC(PAMI_DOUBLE,PAMI_MAX,2,_pami_core_fp64_max2)	\
         OPTIMATH_NSRC(PAMI_DOUBLE,PAMI_MAX,4,_pami_core_fp64_max4)
@@ -554,6 +558,8 @@ extern void _pami_core_uint8_sum2(uint8_t *dst, const uint8_t **srcs, int nsrc, 
         OPTIMATH_NSRC(PAMI_LOC_DOUBLE_INT,PAMI_MINLOC,2,_pami_core_fp64_int32_minloc2)
 #define OPTIMIZED_fp64_fp64_minloc	\
         OPTIMATH_NSRC(PAMI_LOC_2DOUBLE,PAMI_MINLOC,2,_pami_core_fp64_fp64_minloc2)
+#define OPTIMIZED_fp64_fp64_cmplx_prod	\
+        OPTIMATH_NSRC(PAMI_DOUBLE_COMPLEX,PAMI_PROD,2,_pami_core_fp64_fp64_cmplx_prod)
 #define OPTIMIZED_fp128_max	\
         OPTIMATH_NSRC(PAMI_LONG_DOUBLE,PAMI_MAX,2,_pami_core_fp128_max2)
 #define OPTIMIZED_fp128_min	\

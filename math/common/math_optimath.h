@@ -146,6 +146,7 @@ extern void _pami_core_fp32_int32_maxloc(fp32_int32_t *dst, const fp32_int32_t *
 extern void _pami_core_fp32_fp32_maxloc(fp32_fp32_t *dst, const fp32_fp32_t **srcs, int nsrc, int count);
 extern void _pami_core_fp32_int32_minloc(fp32_int32_t *dst, const fp32_int32_t **srcs, int nsrc, int count);
 extern void _pami_core_fp32_fp32_minloc(fp32_fp32_t *dst, const fp32_fp32_t **srcs, int nsrc, int count);
+extern void _pami_core_fp32_fp32_cplx_prod(fp32_fp32_t *dst, const fp32_fp32_t **srcs, int nsrc, int count);
 extern void _pami_core_fp64_max(double *dst, const double **srcs, int nsrc, int count);
 extern void _pami_core_fp64_min(double *dst, const double **srcs, int nsrc, int count);
 extern void _pami_core_fp64_prod(double *dst, const double **srcs, int nsrc, int count);
@@ -160,10 +161,12 @@ extern void _pami_core_fp64_int32_maxloc(fp64_int32_t *dst, const fp64_int32_t *
 extern void _pami_core_fp64_fp64_maxloc(fp64_fp64_t *dst, const fp64_fp64_t **srcs, int nsrc, int count);
 extern void _pami_core_fp64_int32_minloc(fp64_int32_t *dst, const fp64_int32_t **srcs, int nsrc, int count);
 extern void _pami_core_fp64_fp64_minloc(fp64_fp64_t *dst, const fp64_fp64_t **srcs, int nsrc, int count);
+extern void _pami_core_fp64_fp64_cplx_prod(fp64_fp64_t *dst, const fp64_fp64_t **srcs, int nsrc, int count);
 extern void _pami_core_fp128_max(long double *dst, const long double **srcs, int nsrc, int count);
 extern void _pami_core_fp128_min(long double *dst, const long double **srcs, int nsrc, int count);
 extern void _pami_core_fp128_prod(long double *dst, const long double **srcs, int nsrc, int count);
 extern void _pami_core_fp128_sum(long double *dst, const long double **srcs, int nsrc, int count);
+
 #if defined(__cplusplus)
 }; // extern "C"
 #endif /* C++ */
@@ -313,6 +316,7 @@ extern void _pami_core_fp128_sum(long double *dst, const long double **srcs, int
 #define OPTIMIZED_fp32_fp32_maxloc
 #define OPTIMIZED_fp32_int32_minloc
 #define OPTIMIZED_fp32_fp32_minloc
+#define OPTIMIZED_fp32_fp32_cmplx_prod
 #define OPTIMIZED_fp64_max
 #define OPTIMIZED_fp64_min
 #define OPTIMIZED_fp64_prod
@@ -321,6 +325,7 @@ extern void _pami_core_fp128_sum(long double *dst, const long double **srcs, int
 #define OPTIMIZED_fp64_fp64_maxloc
 #define OPTIMIZED_fp64_int32_minloc
 #define OPTIMIZED_fp64_fp64_minloc
+#define OPTIMIZED_fp64_fp64_cmplx_prod
 #define OPTIMIZED_fp128_max
 #define OPTIMIZED_fp128_min
 #define OPTIMIZED_fp128_prod

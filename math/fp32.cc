@@ -150,3 +150,17 @@ void _pami_core_fp32_fp32_minloc(fp32_fp32_t *dst, const fp32_fp32_t **srcs, int
                 dst[n].b = srcs[m][n].b;
         }
 }
+
+void _pami_core_fp32_fp32_cplx_prod(fp32_fp32_t *dst, const fp32_fp32_t **srcs, int nsrc, int count) {
+        register int n = 0, m;
+        for (n = 0; n < count; n++) {
+                dst[n].a = srcs[0][n].a;
+                dst[n].b = srcs[0][n].b;
+                for (m = 1; m < nsrc; ++m) {
+                        dst[n].a = dst[n].a * srcs[m][n].a - dst[n].b * srcs[m][n].b;
+                        dst[n].b = dst[n].a * srcs[m][n].b + dst[n].b * srcs[m][n].a;
+                }
+        }
+}
+
+

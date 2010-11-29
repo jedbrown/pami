@@ -102,11 +102,11 @@ namespace CCMI
                     func = (coremath) Core_fp128_sum;
                     break;
                   case PAMI_DOUBLE_COMPLEX:
-                    sizeOfType = 2 * sizeof(double);
+                    sizeOfType = sizeof(fp64_fp64_t);
                     func = (coremath) double_complex_sum;
                     break;
                   case PAMI_SINGLE_COMPLEX:
-                    sizeOfType = 2 * sizeof(float);
+                    sizeOfType = sizeof(fp32_fp32_t);
                     func = (coremath) single_complex_sum;
                     break;
 
@@ -665,7 +665,14 @@ namespace CCMI
                     sizeOfType = sizeof(unsigned char);
                     func = (coremath) Core_uint8_prod;
                     break;
-                  case PAMI_DOUBLE_COMPLEX: // Choose not to optimize this
+                  case PAMI_SINGLE_COMPLEX:
+                    sizeOfType = sizeof(fp32_fp32_t);
+                    func = (coremath) Core_fp32_fp32_cmplx_prod;
+                    break;
+                  case PAMI_DOUBLE_COMPLEX:
+                    sizeOfType = sizeof(fp64_fp64_t);
+                    func = (coremath) Core_fp64_fp64_cmplx_prod;
+                    break;
                   default:
                     fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
                             dtype, op, count);
@@ -715,10 +722,10 @@ namespace CCMI
                     sizeOfType = sizeof(unsigned int);
                     break;
                   case PAMI_SINGLE_COMPLEX:
-                    sizeOfType = 2 * sizeof(float);
+                    sizeOfType = sizeof(fp32_fp32_t);
                     break;
                   case PAMI_DOUBLE_COMPLEX:
-                    sizeOfType = 2 * sizeof(double);
+                    sizeOfType = sizeof(fp64_fp64_t);
                     break;
                   case PAMI_LOC_2INT:
                     sizeOfType = sizeof(int32_int32_t);

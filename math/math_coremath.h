@@ -2276,6 +2276,47 @@ static inline void Core_fp128_sum(long double *dst, const long double **srcs, in
         }
 }
 
+/**
+ * \brief Optimized multiplication on single complex.
+ *
+ * \param dst The destination buffer.
+ * \param srcs The source buffers.
+ * \param nsrc The number of source buffers.
+ * \param count The number of elements.
+ *
+ * Optimized multiplication operation on \a count single complex
+ * elements of the source buffers, results in destination buffer.
+ */
+static inline void Core_fp32_fp32_cmplx_prod(fp32_fp32_t *dst, const fp32_fp32_t **srcs, int nsrc, int count) {
+        switch(nsrc) {
+        OPTIMIZED_fp32_fp32_cmplx_prod
+        default:
+                _pami_core_fp32_fp32_cplx_prod(dst, srcs, nsrc, count);
+                break;
+        }
+}
+
+/**
+ * \brief Optimized multiplication on double complex.
+ *
+ * \param dst The destination buffer.
+ * \param srcs The source buffers.
+ * \param nsrc The number of source buffers.
+ * \param count The number of elements.
+ *
+ * Optimized multiplication operation on \a count double complex
+ * elements of the source buffers, results in destination buffer.
+ */
+static inline void Core_fp64_fp64_cmplx_prod(fp64_fp64_t *dst, const fp64_fp64_t **srcs, int nsrc, int count) {
+        switch(nsrc) {
+        OPTIMIZED_fp64_fp64_cmplx_prod
+        default:
+                _pami_core_fp64_fp64_cplx_prod(dst, srcs, nsrc, count);
+                break;
+        }
+}
+
+
 #undef OPTIMATH_NSRC
 
 /**** Unary routines ****/
