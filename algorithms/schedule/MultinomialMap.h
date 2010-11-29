@@ -196,8 +196,6 @@ namespace CCMI
           return relrank + _x0;
         }
 
-      ~ListMap() {__global.heap_mm->free(_ranks);}
-
         ///
         /// \brief Get my rank in the collective
         ///
@@ -226,7 +224,7 @@ namespace CCMI
 
         ListMap() {}
 
-        ~ListMap() {free(_ranks);}
+        ~ListMap() {__global.heap_mm->free(_ranks);}
 
         ListMap (unsigned myrank, PAMI::Topology *topology)
         {

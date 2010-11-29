@@ -162,8 +162,8 @@ namespace CCMI
         {
           TRACE_ADAPTOR((stderr, "<%p>%s type %#zX, count %zu, root %zu\n", this, __PRETTY_FUNCTION__, (size_t)cmd->cmd.xfer_broadcast.type, cmd->cmd.xfer_broadcast.typecount, cmd->cmd.xfer_broadcast.root));
 
-          _deviceMcastInfo                  = _geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCAST_CLASSROUTEID);
-          _deviceMsyncInfo                  = _geometry->getKey(PAMI::Geometry::PAMI_GKEY_MCAST_CLASSROUTEID); /// \todo switch to PAMI_GKEY_MSYNC_CLASSROUTEID
+          _deviceMcastInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
+          _deviceMsyncInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID); /// \todo switch to GKEY_MSYNC_CLASSROUTEID
 
           _all = *(PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
           _all.subtractTopology(&_destinations,  &_root);

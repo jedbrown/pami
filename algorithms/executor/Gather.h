@@ -291,6 +291,7 @@ namespace CCMI
 	      pami_result_t rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
 	      PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
             }
+            }
           else // setup PWQ
             {
 
