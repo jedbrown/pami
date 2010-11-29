@@ -45,7 +45,7 @@ namespace PAMI
   {
   public:
 
-    inline Mapping (PAMI::BgqPersonality &pers) :
+    inline Mapping (PAMI::BgqJobPersonality &pers) :
     Interface::Mapping::Base<Mapping>(),
     Interface::Mapping::Torus<Mapping, BGQ_TDIMS>(),
     Interface::Mapping::Node<Mapping,BGQ_LDIMS> (),
@@ -100,7 +100,7 @@ namespace PAMI
     };
 
   protected:
-    PAMI::BgqPersonality &_pers;
+    PAMI::BgqJobPersonality &_pers;
     size_t _task;
 //    size_t _nodes;
 //    size_t _peers;
@@ -251,7 +251,7 @@ namespace PAMI
     /// \see PAMI::Interface::Mapping::Base::init()
     ///
     inline pami_result_t init(bgq_mapcache_t &mapcache,
-                             PAMI::BgqPersonality &personality);
+                             PAMI::BgqJobPersonality &personality);
 
     ///
     /// \brief Return the BGP global task for this process
@@ -732,7 +732,7 @@ namespace PAMI
 };  // namespace PAMI
 
 pami_result_t PAMI::Mapping::init(bgq_mapcache_t &mapcache,
-                                PAMI::BgqPersonality &personality)
+                                PAMI::BgqJobPersonality &personality)
 {
   _mapcache.torus.task2coords = mapcache.torus.task2coords;
   _mapcache.torus.coords2task = mapcache.torus.coords2task;

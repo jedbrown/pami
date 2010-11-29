@@ -113,9 +113,6 @@ namespace PAMI
           {
             TRACE_FN_ENTER();
 
-	    Personality_t pers;
-	    Kernel_GetPersonality(&pers, sizeof(pers));
-
 	    // Reverse the fifo pin.
 	    // For example, if pinned to fifo 0 (AM), output is pinned to fifo 1 (AP).
 	    injFifoPinReverse[0] = 1;

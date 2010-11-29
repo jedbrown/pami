@@ -271,7 +271,7 @@ namespace PAMI
                   configuration[i].value.intval = 64 / __global.mapping.tSize();
                   break;
                 case PAMI_CLIENT_MEM_SIZE:
-                  configuration[i].value.intval = __global.personality.DDR_Config.DDRSizeMB;
+                  configuration[i].value.intval = __global.personality.memSize();
                   break;
                 default:
                   result = PAMI_INVAL;

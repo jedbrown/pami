@@ -84,7 +84,7 @@ namespace PAMI
       {
       };
 
-      inline size_t init (PAMI::BgqPersonality & personality,
+      inline size_t init (PAMI::BgqJobPersonality & personality,
                           void                   * ptr,
                           size_t                   bytes
                          )

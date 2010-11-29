@@ -58,7 +58,7 @@ namespace PAMI
 	/////////////////////////////////////////////////////////////////////////
 	Global ( PAMI::ResourceManager &pamiRM,
 		 PAMI::Mapping         &mapping,
-		 PAMI::BgqPersonality  &pers,
+		 PAMI::BgqJobPersonality  &pers,
 		 PAMI::Memory::MemoryManager   &mm ) :
 	  _pamiRM( pamiRM ),
 	  _mapping( mapping ),

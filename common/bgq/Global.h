@@ -88,7 +88,7 @@ namespace PAMI
         _useshmem = true;
         _useMU = true;
 
-        time.init(personality.Kernel_Config.FreqMHz);
+        time.init(personality.clockMHz());
 
 	heap_mm = new (_heap_mm) PAMI::Memory::HeapMemoryManager();
 	PAMI::Memory::MemoryManager::heap_mm = heap_mm;
@@ -241,13 +241,13 @@ namespace PAMI
       }
     private:
 
-      inline size_t initializeMapCache (BgqPersonality  & personality,
+      inline size_t initializeMapCache (BgqJobPersonality  & personality,
                                         PAMI::Memory::MemoryManager *mm,
                                         pami_coord_t &ll, pami_coord_t &ur, pami_task_t &min, pami_task_t &max, bool shared);
 
     public:
 
-      BgqPersonality       personality;
+      BgqJobPersonality       personality;
       PAMI::Mapping         mapping;
       PAMI::Atomic::BGQ::L2AtomicFactory l2atomicFactory;
       PAMI::Memory::GenMemoryManager mm;
@@ -264,7 +264,7 @@ namespace PAMI
 
 
 // If 'mm' is NULL, compute total memory needed for mapcache and return (doing nothing else).
-size_t PAMI::Global::initializeMapCache (BgqPersonality  & personality,
+size_t PAMI::Global::initializeMapCache (BgqJobPersonality  & personality,
                                          PAMI::Memory::MemoryManager *mm,
                                          pami_coord_t &ll, pami_coord_t &ur, pami_task_t &min, pami_task_t &max, bool shared)
 {

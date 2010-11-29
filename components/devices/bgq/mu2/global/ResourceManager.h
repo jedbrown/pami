@@ -423,6 +423,66 @@ namespace PAMI
 
       class ResourceManager
       {
+      private:
+		struct cr_shared {
+			uint32_t ncncr, cnfirst, cnused;
+			uint32_t ngicr, gifirst, giused;
+			uint32_t cn_crs[BGQ_COLL_CLASS_MAX_CLASSROUTES];
+			uint32_t gi_crs[BGQ_COLL_CLASS_MAX_CLASSROUTES];
+		};
+		// This is a mm init function. Only the first alloc will call this,
+		// and all subsequent allocs will wait until this completes.
+		static void cr_init_shm(void *mem, size_t bytes, const char *key,
+							unsigned attrs, void *cookie) {
+			//ResourceManager *thus = (ResourceManager *)cookie;
+			struct cr_shared *sh_crs = (struct cr_shared *)mem;
+
+			int rc;
+			uint32_t N;
+			rc = Kernel_QueryCollectiveClassRoutes(&sh_crs->ncncr,
+						sh_crs->cn_crs, sizeof(sh_crs->cn_crs));
+			PAMI_assertf(rc == 0, "Kernel_QueryCollectiveClassRoutes failed %d", rc);
+			// we take the "last" N ids, where "N" is some number we get from a
+			// resource manager - TBD.
+			N = sh_crs->ncncr; // take all, until we know otherwise...
+
+			if (N > sh_crs->ncncr) N = sh_crs->ncncr;
+			sh_crs->cnfirst = sh_crs->ncncr - N;
+			sh_crs->cnused = N;
+			uint32_t x;
+			for (x = sh_crs->cnfirst; x < sh_crs->cnfirst + sh_crs->cnused; ++x) {
+				rc = Kernel_AllocateCollectiveClassRoute(sh_crs->cn_crs[x]);
+#ifdef MU_CR_DEBUG
+if (rc) fprintf(stderr, "Kernel_AllocateCollectiveClassRoute(%d) failed %d %d\n", sh_crs->cn_crs[x], rc, errno);
+#else // !MU_CR_DEBUG
+				PAMI_assertf(rc == 0, "Kernel_AllocateCollectiveClassRoute(%d) failed %d %d", sh_crs->cn_crs[x], rc, errno);
+#endif // !MU_CR_DEBUG
+			}
+
+
+			rc = Kernel_QueryGlobalInterruptClassRoutes(&sh_crs->ngicr,
+						sh_crs->gi_crs, sizeof(sh_crs->gi_crs));
+			PAMI_assertf(rc == 0, "Kernel_QueryCollectiveClassRoutes failed %d", rc);
+
+			// we take the "last" N ids, where "N" is some number we get from a
+			// resource manager - TBD.
+			N = sh_crs->ngicr; // take all, until we know otherwise...
+
+			if (N > sh_crs->ngicr) N = sh_crs->ngicr;
+			sh_crs->gifirst = sh_crs->ngicr - N;
+			sh_crs->giused = N;
+
+			for (x = sh_crs->gifirst; x < sh_crs->gifirst + sh_crs->giused; ++x) {
+				//rc = Kernel_AllocateGlobalInterruptClassRoute(sh_crs->gi_crs[x], NULL);
+				rc = Kernel_AllocateGlobalInterruptClassRoute(sh_crs->gi_crs[x], NULL);
+#ifdef MU_CR_DEBUG
+if (rc) fprintf(stderr, "Kernel_AllocateGlobalInterruptClassRoute(%d) failed %d %d\n", sh_crs->gi_crs[x], rc, errno);
+#else // !MU_CR_DEBUG
+				PAMI_assertf(rc == 0, "Kernel_AllocateGlobalInterruptClassRoute(%d) failed %d %d", sh_crs->gi_crs[x], rc, errno);
+#endif // !MU_CR_DEBUG
+			}
+		}
+
       public:
 
 	//////////////////////////////////////////////////////////////////////////
@@ -432,7 +492,7 @@ namespace PAMI
 	/////////////////////////////////////////////////////////////////////////
 	ResourceManager ( PAMI::ResourceManager &pamiRM,
 			  PAMI::Mapping         &mapping,
-			  PAMI::BgqPersonality  &pers,
+			  PAMI::BgqJobPersonality  &pers,
 			  PAMI::Memory::MemoryManager   &mm )  :
 	  _pamiRM( pamiRM ),
 	  _mapping( mapping ),
@@ -476,8 +536,10 @@ namespace PAMI
 
 	  // might want more shmem here, to use for coordinating locals in VN.
 	  // possibly changing this to a structure.
-	  mm.memalign((void **)&_lowest_geom_id, sizeof(void *), 1 * sizeof(void *));
-	  PAMI_assertf(_lowest_geom_id, "Failed to get shmem for _lowest_geom_id");
+	  pami_result_t prc;
+	  prc = mm.memalign((void **)&_lowest_geom_id, sizeof(void *), 1 * sizeof(void *),
+				"/pami-mu-rm-cr-_lowest_geom_id");
+	  PAMI_assertf(prc == PAMI_SUCCESS, "Failed to get shmem for _lowest_geom_id");
 	  *_lowest_geom_id = 0xffffffff;
 
 	  TRACE((stderr,"MU ResourceManager: Inside ENABLE_MU_CLASSROUTES code\n"));
@@ -489,45 +551,48 @@ namespace PAMI
 	  // don't know where 'this' was allocated, so can't call MUCR_mutex_t::checkCtorMm
 
 	  // should this mutex be in the WAC?
-	  PAMI::Memory::MemoryManager *mxmm = &__global.l2atomicFactory.__nodescoped_mm;
+	  PAMI::Memory::MemoryManager *mxmm = &__global.l2atomicFactory.__procscoped_mm;
 	  PAMI_assertf(MUCR_mutex_t::checkDataMm(mxmm),
 		"Cannot init MUCR_mutex_t in given mm");
-	  _cr_mtx.init(mxmm, "/pami-mu2-rm-cr");
+	  _cr_mtx.init(mxmm, "/pami-mu-rm-cr-lk");
 	  PAMI_assertf(MUCR_mutex_model_t::checkCtorMm(__global.heap_mm),
 		"Cannot construct MUCR_mutex_model_t on heap");
-	  pami_result_t prc = __global.heap_mm->memalign((void **)&_cr_mtx_mdls,
+	  prc = __global.heap_mm->memalign((void **)&_cr_mtx_mdls,
 			sizeof(void *), _pamiRM.getNumClients() * sizeof(*_cr_mtx_mdls));
 	  PAMI_assertf(prc == PAMI_SUCCESS, "Failed to alloc mem for CR mutex models");
 
 	  // Note, we NEVER use BGQ_CLASS_INPUT_VC_USER. Only BGQ_CLASS_INPUT_VC_SUBCOMM.
+	  struct cr_shared *sh_crs;
+	  prc = mm.memalign((void **)&sh_crs, sizeof(void *), sizeof(*sh_crs),
+			"/pami-mu-rm-cr-shm", cr_init_shm, this);
+	  PAMI_assertf(prc == PAMI_SUCCESS, "Failed to alloc mem for CR shared init");
 
-	  uint32_t crs[BGQ_COLL_CLASS_MAX_CLASSROUTES];
-	  uint32_t ncr = 0;
-	  int rc = Kernel_QueryCollectiveClassRoutes(&ncr, crs, sizeof(crs));
-	  rc = rc;
-	  // first, locally "block-out" any already reserved classroutes...
-	  // we take the "last" N ids, where "N" is some number we get from a
-	  // resource manager - TBD.
-	  uint32_t N = ncr; // take all, until we know otherwise...
-	  if (N > ncr) N = ncr;
-	  MUSPI_InitClassrouteIds(&crs[ncr - N], N, 0, &_cncrdata);
-	  uint32_t x;
-	  for (x = ncr - N; x < N; ++x)
-	  {
-	    Kernel_AllocateCollectiveClassRoute(crs[x]);
-	  }
-	  rc = Kernel_QueryGlobalInterruptClassRoutes(&ncr, crs, sizeof(crs));
-	  rc = rc;
-	  // first, locally "block-out" any already reserved classroutes...
-	  // we take the "last" N ids, where "N" is some number we get from a
-	  // resource manager - TBD.
-	  N = ncr; // take all, until we know otherwise...
-	  if (N > ncr) N = ncr;
-	  MUSPI_InitClassrouteIds(&crs[ncr - N], N, 1, &_gicrdata);
-	  for (x = ncr - N; x < N; ++x)
-	  {
-	    Kernel_AllocateGlobalInterruptClassRoute(crs[x], NULL);
-	  }
+	  int i;
+	  char *s;
+#ifdef MU_CR_DEBUG
+static char buf[4096];
+s = buf;
+s += sprintf(s, "Got CN classroutes");
+for (i = sh_crs->cnfirst; i < (int)(sh_crs->cnfirst + sh_crs->cnused); ++i) {
+s += sprintf(s, " %d", sh_crs->cn_crs[i]);
+}
+s += sprintf(s, "\nGot GI classroutes");
+for (i = sh_crs->gifirst; i < (int)(sh_crs->gifirst + sh_crs->giused); ++i) {
+s += sprintf(s, " %d", sh_crs->gi_crs[i]);
+}
+fprintf(stderr, "%s\n", buf);
+#endif // MU_CR_DEBUG
+
+	  // Only one process on each node will actually reserve the classroutes,
+	  // and then will share the info with all the rest.
+
+	// locally "block-out" our reserved classroutes...
+	MUSPI_InitClassrouteIds(&sh_crs->cn_crs[sh_crs->cnfirst], sh_crs->cnused,
+							0, &_cncrdata);
+
+	// locally "block-out" our reserved classroutes...
+	MUSPI_InitClassrouteIds(&sh_crs->gi_crs[sh_crs->gifirst], sh_crs->giused,
+							0, &_gicrdata);
 
 	  // next, add classroute #0 (user comm-world) which is
 	  // pre-fabricated by controlsystem and CNK (not in free list, above).
@@ -535,25 +600,15 @@ namespace PAMI
 
 	  // this code should be very similar to classroute_test.c
 	  // Get all the rectangles and coords we need to describe the system.
-	  *CR_RECT_LL(&_refcomm) = CR_COORD_INIT(0,0,0,0,0);
-	  *CR_RECT_UR(&_refcomm) = CR_COORD_INIT(
-	    _pers.Network_Config.Anodes - 1,
-	    _pers.Network_Config.Bnodes - 1,
-	    _pers.Network_Config.Cnodes - 1,
-	    _pers.Network_Config.Dnodes - 1,
-	    _pers.Network_Config.Enodes - 1
-	  );
-	  _mycoord = CR_COORD_INIT(
-	    _pers.Network_Config.Acoord,
-	    _pers.Network_Config.Bcoord,
-	    _pers.Network_Config.Ccoord,
-	    _pers.Network_Config.Dcoord,
-	    _pers.Network_Config.Ecoord
-	  );
+	  
+	  _pers.blockRectangle(*CR_RECT_LL(&_refcomm), *CR_RECT_UR(&_refcomm));
+	  _pers.blockCoord(_mycoord);
+
 	  MUSPI_PickWorldRoot(&_refcomm, NULL, &_refroot, &_pri_dim);
-	  char *s = getenv("BG_MAPFILE");
-	  int i = 0;
-	  int map[CR_NUM_DIMS];
+	  s = getenv("BG_MAPFILE");
+	  /// \todo #warning need authoritative CNK default mapping constant
+	  if (!s) s = (char*)"ABCDET";
+	  i = 0;
 	  if (s)
 	  {
 	    char *x;
@@ -563,39 +618,23 @@ namespace PAMI
 	      if (*s == 'T') continue;
 	      x = strchr(m, *s);
 	      if (!x) break;
-	      map[i++] = (x - m);
+	      _map[i++] = (x - m);
 	    }
 	  }
+	  // if the map string has trailing characters, or we did not
+	  // get all dimensions set, punt.
 	  if ((s && *s) || i != CR_NUM_DIMS)
 	  {
 	    // error - invalid map string, or an actual map file...
 	    // no classroutes supported (no MU collectives at all?)
-	    // \todo #warning need to handle mapfiles somehow
+	    // \todo #warning need to handle "usable" mapfiles somehow
 
 	    // for now, just use simple 1:1 mapping
-	    for (i = 0; i < CR_NUM_DIMS; ++i) map[i] = i;
+	    for (i = 0; i < CR_NUM_DIMS; ++i) _map[i] = i;
 	  }
-	  BG_JobCoords_t subblk;
-	  rc = Kernel_JobCoords(&subblk);
-	  PAMI_assertf(rc == 0, "JobCoords call failed %d", rc);
-	  if (subblk.isSubBlock)
-	  {
-	    PAMI_assertf(subblk.shape.core == 16, "Sub-node jobs not supported");
-	  }
-	  *CR_RECT_LL(&_communiv) = CR_COORD_INIT(
-	    subblk.corner.a,
-	    subblk.corner.b,
-	    subblk.corner.c,
-	    subblk.corner.d,
-	    subblk.corner.e
-	  );
-	  *CR_RECT_UR(&_communiv) = CR_COORD_INIT(
-	    subblk.corner.a + subblk.shape.a - 1,
-	    subblk.corner.b + subblk.shape.b - 1,
-	    subblk.corner.c + subblk.shape.c - 1,
-	    subblk.corner.d + subblk.shape.d - 1,
-	    subblk.corner.e + subblk.shape.e - 1
-	  );
+
+	  _pers.jobRectangle(*CR_RECT_LL(&_communiv), *CR_RECT_UR(&_communiv));
+
 	  size_t univz = __MUSPI_rect_size(&_communiv);
 	  // now, factor in any -np...
 	  s = getenv("BG_NP");
@@ -628,6 +667,77 @@ namespace PAMI
 	    // do we really need so many rectangles?
 	    _commworld = _communiv;
 	  }
+#ifdef MU_CR_DEBUG
+s = buf;
+s += sprintf(s, "Block rectangle (%zd,%zd,%zd,%zd,%zd):(%zd,%zd,%zd,%zd,%zd)",
+			CR_COORD_DIM(CR_RECT_LL(&_refcomm),0),
+			CR_COORD_DIM(CR_RECT_LL(&_refcomm),1),
+			CR_COORD_DIM(CR_RECT_LL(&_refcomm),2),
+			CR_COORD_DIM(CR_RECT_LL(&_refcomm),3),
+			CR_COORD_DIM(CR_RECT_LL(&_refcomm),4),
+			CR_COORD_DIM(CR_RECT_UR(&_refcomm),0),
+			CR_COORD_DIM(CR_RECT_UR(&_refcomm),1),
+			CR_COORD_DIM(CR_RECT_UR(&_refcomm),2),
+			CR_COORD_DIM(CR_RECT_UR(&_refcomm),3),
+			CR_COORD_DIM(CR_RECT_UR(&_refcomm),4));
+bool inside = true;
+for (i = 0; i < CR_NUM_DIMS; ++i) inside = (inside &&
+CR_COORD_DIM(&_mycoord,i) >= CR_COORD_DIM(CR_RECT_LL(&_commworld),i) &&
+CR_COORD_DIM(&_mycoord,i) <= CR_COORD_DIM(CR_RECT_UR(&_commworld),i)
+);
+s += sprintf(s, "\nBlock Root (%zd,%zd,%zd,%zd,%zd), My coord (%zd,%zd,%zd,%zd,%zd)%s, Mapping ",
+			CR_COORD_DIM(&_refroot,0),
+			CR_COORD_DIM(&_refroot,1),
+			CR_COORD_DIM(&_refroot,2),
+			CR_COORD_DIM(&_refroot,3),
+			CR_COORD_DIM(&_refroot,4),
+			CR_COORD_DIM(&_mycoord,0),
+			CR_COORD_DIM(&_mycoord,1),
+			CR_COORD_DIM(&_mycoord,2),
+			CR_COORD_DIM(&_mycoord,3),
+			CR_COORD_DIM(&_mycoord,4), !inside ? "*" : "");
+for (i = 0; i < CR_NUM_DIMS; ++i) *s++ = "ABCDEFGHIJKL"[_map[i]];
+*s++ = '\0';
+fprintf(stderr, "%s\n", buf);
+
+fprintf(stderr, "Universe rectangle (%zd,%zd,%zd,%zd,%zd):(%zd,%zd,%zd,%zd,%zd)\n",
+			CR_COORD_DIM(CR_RECT_LL(&_communiv),0),
+			CR_COORD_DIM(CR_RECT_LL(&_communiv),1),
+			CR_COORD_DIM(CR_RECT_LL(&_communiv),2),
+			CR_COORD_DIM(CR_RECT_LL(&_communiv),3),
+			CR_COORD_DIM(CR_RECT_LL(&_communiv),4),
+			CR_COORD_DIM(CR_RECT_UR(&_communiv),0),
+			CR_COORD_DIM(CR_RECT_UR(&_communiv),1),
+			CR_COORD_DIM(CR_RECT_UR(&_communiv),2),
+			CR_COORD_DIM(CR_RECT_UR(&_communiv),3),
+			CR_COORD_DIM(CR_RECT_UR(&_communiv),4));
+fprintf(stderr, "World rectangle (%zd,%zd,%zd,%zd,%zd):(%zd,%zd,%zd,%zd,%zd)\n",
+			CR_COORD_DIM(CR_RECT_LL(&_commworld),0),
+			CR_COORD_DIM(CR_RECT_LL(&_commworld),1),
+			CR_COORD_DIM(CR_RECT_LL(&_commworld),2),
+			CR_COORD_DIM(CR_RECT_LL(&_commworld),3),
+			CR_COORD_DIM(CR_RECT_LL(&_commworld),4),
+			CR_COORD_DIM(CR_RECT_UR(&_commworld),0),
+			CR_COORD_DIM(CR_RECT_UR(&_commworld),1),
+			CR_COORD_DIM(CR_RECT_UR(&_commworld),2),
+			CR_COORD_DIM(CR_RECT_UR(&_commworld),3),
+			CR_COORD_DIM(CR_RECT_UR(&_commworld),4));
+s = buf;
+s += sprintf(s, "NP=%zd", _np);
+if (_excluded) {
+	s += sprintf(s, " Excluding nodes:");
+	for (i = 0; i < _nexcl; ++i) {
+		bool exclude_me = __MUSPI_eq_coords(&_mycoord, &_excluded[i]);
+		s += sprintf(s, "\n\t(%zd,%zd,%zd,%zd,%zd)%s",
+			CR_COORD_DIM(&_excluded[i],0),
+			CR_COORD_DIM(&_excluded[i],1),
+			CR_COORD_DIM(&_excluded[i],2),
+			CR_COORD_DIM(&_excluded[i],3),
+			CR_COORD_DIM(&_excluded[i],4), exclude_me ? "*" : "");
+	}
+}
+fprintf(stderr, "%s\n", buf);
+#endif // MU_CR_DEBUG
 	  // could do: new (t) Topology(CR_RECT_LL(&_commworld),
 	  //                              CR_RECT_UR(&_commworld), ... );
 	  //
@@ -958,6 +1068,8 @@ namespace PAMI
 	      crck->bbuf[2] != crck->abuf[2])
 	  {
 	    // failed (collided), must reset and start over...
+	    // this probably won't happen, we'll just hang as there two nodes
+	    // (or more) waiting on different participant sets to complete.
 	    crck->thus->release_mutex(ctx, cookie, PAMI_SUCCESS);
 	    start_over(ctx, cookie, PAMI_EAGAIN);
 	    return;
@@ -1367,7 +1479,7 @@ namespace PAMI
 
 	PAMI::ResourceManager &_pamiRM;
 	PAMI::Mapping         &_mapping;
-	PAMI::BgqPersonality  &_pers;
+	PAMI::BgqJobPersonality  &_pers;
 	MUCR_mutex_t _cr_mtx; // each context has MUCR_mutex_model_t pointing to this
 	MUCR_mutex_model_t **_cr_mtx_mdls;
 	PAMI::Topology _node_topo;

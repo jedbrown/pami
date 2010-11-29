@@ -23,6 +23,8 @@
 ///  - Personality is an object that returns machine specific hardware info
 ///
 
+#define MU_CR_DEBUG
+
 #define PERS_SIZE 1024
 
 #include <sys/types.h>
@@ -38,22 +40,22 @@
 #undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
 
-//#define FAKE_PERSONALITY
-
 #ifdef ENABLE_MAMBO_WORKAROUNDS
 #include <hwi/include/bqc/nd_500_dcr.h>
 #endif
 
+#define COORD_INIT(c...) (pami_coord_t){ network: PAMI_N_TORUS_NETWORK, u: { n_torus: {{ c }} } }
+
 namespace PAMI
 {
-  class BgqPersonality : public Personality_t
+  class BgqJobPersonality : private Personality_t
   {
     public:
 
-      BgqPersonality ()
+      BgqJobPersonality ()
       {
 
-        Personality_t * p = (Personality_t *) this;
+        Personality_t * p = this;
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
 
@@ -87,62 +89,6 @@ namespace PAMI
         if (_is_mambo)
           fprintf(stderr, "Running mambo circumventions\n");
 
-#if 0 // no longer need to set personality from ND 500 if using runmm correctly
-        // this seems really lame...
-        if (Network_Config.Anodes == 0) Network_Config.Anodes = 1;
-
-        if (Network_Config.Bnodes == 0) Network_Config.Bnodes = 1;
-
-        if (Network_Config.Cnodes == 0) Network_Config.Cnodes = 1;
-
-        if (Network_Config.Dnodes == 0) Network_Config.Dnodes = 1;
-
-        if (Network_Config.Enodes == 0) Network_Config.Enodes = 1;
-
-        if (_is_mambo)
-        {
-          fprintf(stderr, "Running mambo circumventions\n");
-
-            unsigned dcr_num = ND_500_DCR_base + ND_500_DCR__CTRL_COORDS_offset;
-
-            // funky code to avoid "unused variable" warning when TRACE_ERR is off.
-            unsigned long long dcr = 0;
-            dcr = DCRReadUser(dcr_num);
-
-            TRACE_ERR((stderr, "BGQPersonality() NODE_COORDINATES DCR = 0x%016llx\n", dcr));
-
-            Network_Config.Acoord = ND_500_DCR__CTRL_COORDS__NODE_COORD_A_get(dcr);
-            Network_Config.Bcoord = ND_500_DCR__CTRL_COORDS__NODE_COORD_B_get(dcr);
-            Network_Config.Ccoord = ND_500_DCR__CTRL_COORDS__NODE_COORD_C_get(dcr);
-            Network_Config.Dcoord = ND_500_DCR__CTRL_COORDS__NODE_COORD_D_get(dcr);
-            Network_Config.Ecoord = ND_500_DCR__CTRL_COORDS__NODE_COORD_E_get(dcr);
-
-            Network_Config.Anodes = ND_500_DCR__CTRL_COORDS__MAX_COORD_A_get(dcr) + 1;
-            Network_Config.Bnodes = ND_500_DCR__CTRL_COORDS__MAX_COORD_B_get(dcr) + 1;
-            Network_Config.Cnodes = ND_500_DCR__CTRL_COORDS__MAX_COORD_C_get(dcr) + 1;
-            Network_Config.Dnodes = ND_500_DCR__CTRL_COORDS__MAX_COORD_D_get(dcr) + 1;
-            Network_Config.Enodes = ND_500_DCR__CTRL_COORDS__MAX_COORD_E_get(dcr) + 1;
-
-            TRACE_ERR((stderr, "ND_500_DCR__CTRL_COORDS__NODE_COORD_A = %#llx\n", ND_500_DCR__CTRL_COORDS__NODE_COORD_A_get(dcr)));
-            TRACE_ERR((stderr, "ND_500_DCR__CTRL_COORDS__NODE_COORD_B = %#llx\n", ND_500_DCR__CTRL_COORDS__NODE_COORD_B_get(dcr)));
-            TRACE_ERR((stderr, "ND_500_DCR__CTRL_COORDS__NODE_COORD_C = %#llx\n", ND_500_DCR__CTRL_COORDS__NODE_COORD_C_get(dcr)));
-            TRACE_ERR((stderr, "ND_500_DCR__CTRL_COORDS__NODE_COORD_D = %#llx\n", ND_500_DCR__CTRL_COORDS__NODE_COORD_D_get(dcr)));
-            TRACE_ERR((stderr, "ND_500_DCR__CTRL_COORDS__NODE_COORD_E = %#llx\n", ND_500_DCR__CTRL_COORDS__NODE_COORD_E_get(dcr)));
-
-            TRACE_ERR((stderr, "ND_500_DCR__CTRL_COORDS__MAX_COORD_A = %#llx\n", ND_500_DCR__CTRL_COORDS__MAX_COORD_A_get(dcr)));
-            TRACE_ERR((stderr, "ND_500_DCR__CTRL_COORDS__MAX_COORD_B = %#llx\n", ND_500_DCR__CTRL_COORDS__MAX_COORD_B_get(dcr)));
-            TRACE_ERR((stderr, "ND_500_DCR__CTRL_COORDS__MAX_COORD_C = %#llx\n", ND_500_DCR__CTRL_COORDS__MAX_COORD_C_get(dcr)));
-            TRACE_ERR((stderr, "ND_500_DCR__CTRL_COORDS__MAX_COORD_D = %#llx\n", ND_500_DCR__CTRL_COORDS__MAX_COORD_D_get(dcr)));
-            TRACE_ERR((stderr, "ND_500_DCR__CTRL_COORDS__MAX_COORD_E = %#llx\n", ND_500_DCR__CTRL_COORDS__MAX_COORD_E_get(dcr)));
-
-            PAMI_assertf(Network_Config.Acoord < Network_Config.Anodes, "assert Network_Config.Acoord(%#X) < Network_Config.Anodes(%#X)\n", Network_Config.Acoord, Network_Config.Anodes);
-            PAMI_assertf(Network_Config.Bcoord < Network_Config.Bnodes, "assert Network_Config.Bcoord(%#X) < Network_Config.Bnodes(%#X)\n", Network_Config.Bcoord, Network_Config.Bnodes);
-            PAMI_assertf(Network_Config.Ccoord < Network_Config.Cnodes, "assert Network_Config.Ccoord(%#X) < Network_Config.Cnodes(%#X)\n", Network_Config.Ccoord, Network_Config.Cnodes);
-            PAMI_assertf(Network_Config.Dcoord < Network_Config.Dnodes, "assert Network_Config.Dcoord(%#X) < Network_Config.Dnodes(%#X)\n", Network_Config.Dcoord, Network_Config.Dnodes);
-            PAMI_assertf(Network_Config.Ecoord < Network_Config.Enodes, "assert Network_Config.Ecoord(%#X) < Network_Config.Enodes(%#X)\n", Network_Config.Ecoord, Network_Config.Enodes);
-          }
-#endif
-
 #else // no mambo workarounds..
 
         if (Kernel_GetPersonality(p, sizeof(Personality_t)) != 0)
@@ -150,26 +96,6 @@ namespace PAMI
 
 #endif
 
-#ifdef FAKE_PERSONALITY
-#warning FAKE PERSONALITY ?
-        Kernel_GetPersonality(p, sizeof(Personality_t));
-
-        Network_Config.Anodes = 1;
-        Network_Config.Bnodes = 1;
-        Network_Config.Cnodes = 1;
-        Network_Config.Dnodes = 1;
-        Network_Config.Enodes = 1;
-
-        Network_Config.Acoord = 0;
-        Network_Config.Bcoord = 0;
-        Network_Config.Ccoord = 0;
-        Network_Config.Dcoord = 0;
-        Network_Config.Ecoord = 0;
-#endif
-
-        //size_t num_local_processes = Kernel_ProcessCount();
-
-        // get the number of processes on a node (t dimension)
         _tSize = Kernel_ProcessCount();
 
         // Set the t coord
@@ -177,14 +103,129 @@ namespace PAMI
 
         TRACE_ERR((stderr, "BGQPersonality() tid %zu, t %zu, core %zu, thread %zu, tSize %zu\n", tid(),  tCoord(),  core(), thread(), tSize()));
 
-        _torusA = (bool) (ND_ENABLE_TORUS_DIM_A & Network_Config.NetFlags);
-        _torusB = (bool) (ND_ENABLE_TORUS_DIM_B & Network_Config.NetFlags);
-        _torusC = (bool) (ND_ENABLE_TORUS_DIM_C & Network_Config.NetFlags);
-        _torusD = (bool) (ND_ENABLE_TORUS_DIM_D & Network_Config.NetFlags);
-        _torusE = (bool) (ND_ENABLE_TORUS_DIM_E & Network_Config.NetFlags);
+        _blkTorus[0] = (bool) (ND_ENABLE_TORUS_DIM_A & Network_Config.NetFlags);
+        _blkTorus[1] = (bool) (ND_ENABLE_TORUS_DIM_B & Network_Config.NetFlags);
+        _blkTorus[2] = (bool) (ND_ENABLE_TORUS_DIM_C & Network_Config.NetFlags);
+        _blkTorus[3] = (bool) (ND_ENABLE_TORUS_DIM_D & Network_Config.NetFlags);
+        _blkTorus[4] = (bool) (ND_ENABLE_TORUS_DIM_E & Network_Config.NetFlags);
+	_blkTorus[5] = true; // correct?
 
-        TRACE_ERR((stderr, "BGQPersonality() _torusA %d, _torusB %d, _torusC %d, _torusD %d, _torusE %d\n", _torusA, _torusB, _torusC, _torusD, _torusE));
+        TRACE_ERR((stderr, "BGQPersonality() _blkTorus[0] %d, _blkTorus[1] %d, _blkTorus[2] %d, _blkTorus[3] %d, _blkTorus[4] %d\n", _blkTorus[0], _blkTorus[1], _blkTorus[2], _blkTorus[3], _blkTorus[4]));
 
+	_blkLL = COORD_INIT( 0,0,0,0,0,0 );
+	_blkUR = COORD_INIT(
+		Network_Config.Anodes - 1,
+		Network_Config.Bnodes - 1,
+		Network_Config.Cnodes - 1,
+		Network_Config.Dnodes - 1,
+		Network_Config.Enodes - 1,
+		_tSize - 1
+	);
+	_blkCoord = COORD_INIT(
+		Network_Config.Acoord,
+		Network_Config.Bcoord,
+		Network_Config.Ccoord,
+		Network_Config.Dcoord,
+		Network_Config.Ecoord,
+		_tCoord
+	);
+
+	BG_JobCoords_t subblk;
+	_isSubBlockJob = Kernel_JobCoords(&subblk);
+	if (_isSubBlockJob) {
+		PAMI_assertf(subblk.shape.core == 16, "Sub-node jobs not supported");
+		_jobLL = COORD_INIT(
+			subblk.corner.a,
+			subblk.corner.b,
+			subblk.corner.c,
+			subblk.corner.d,
+			subblk.corner.e,
+			0
+		);
+		_jobUR = COORD_INIT(
+			subblk.corner.a + subblk.shape.a - 1,
+			subblk.corner.b + subblk.shape.b - 1,
+			subblk.corner.c + subblk.shape.c - 1,
+			subblk.corner.d + subblk.shape.d - 1,
+			subblk.corner.e + subblk.shape.e - 1,
+			_tSize - 1
+		);
+		// don't (yet) know how many actual dimensions to use, so use all.
+		// any undefined values will be ignored later.
+		int x;
+		for (x = 0; x < PAMI_MAX_DIMS; ++x) {
+			_jobTorus[x] = (_blkTorus[x] &&
+				_jobLL.u.n_torus.coords[x] == _blkLL.u.n_torus.coords[x] &&
+				_jobUR.u.n_torus.coords[x] == _blkUR.u.n_torus.coords[x]);
+		}
+		_jobCoord = COORD_INIT(
+			Network_Config.Acoord - _jobLL.u.n_torus.coords[0],
+			Network_Config.Bcoord - _jobLL.u.n_torus.coords[1],
+			Network_Config.Ccoord - _jobLL.u.n_torus.coords[2],
+			Network_Config.Dcoord - _jobLL.u.n_torus.coords[3],
+			Network_Config.Ecoord - _jobLL.u.n_torus.coords[4],
+			_tCoord
+		);
+		_jobSize = COORD_INIT(
+			subblk.shape.a,
+			subblk.shape.b,
+			subblk.shape.c,
+			subblk.shape.d,
+			subblk.shape.e,
+			_tSize
+		);
+	} else {
+		_jobLL = _blkLL;
+		_jobUR = _blkUR;
+		memcpy(&_jobTorus, &_blkTorus, sizeof(_jobTorus));
+		_jobCoord = _blkCoord;
+		_jobSize = COORD_INIT(
+			Network_Config.Anodes,
+			Network_Config.Bnodes,
+			Network_Config.Cnodes,
+			Network_Config.Dnodes,
+			Network_Config.Enodes,
+			_tSize
+		);
+	}
+#ifdef MU_CR_DEBUG
+fprintf(stderr, "Block (%zd,%zd,%zd,%zd,%zd):(%zd,%zd,%zd,%zd,%zd) [%d,%d,%d,%d,%d]\n",
+_blkLL.u.n_torus.coords[0],
+_blkLL.u.n_torus.coords[1],
+_blkLL.u.n_torus.coords[2],
+_blkLL.u.n_torus.coords[3],
+_blkLL.u.n_torus.coords[4],
+_blkUR.u.n_torus.coords[0],
+_blkUR.u.n_torus.coords[1],
+_blkUR.u.n_torus.coords[2],
+_blkUR.u.n_torus.coords[3],
+_blkUR.u.n_torus.coords[4],
+_blkTorus[0],
+_blkTorus[1],
+_blkTorus[2],
+_blkTorus[3],
+_blkTorus[4]);
+fprintf(stderr, "Job   (%zd,%zd,%zd,%zd,%zd):(%zd,%zd,%zd,%zd,%zd) [%d,%d,%d,%d,%d]\n",
+_jobLL.u.n_torus.coords[0],
+_jobLL.u.n_torus.coords[1],
+_jobLL.u.n_torus.coords[2],
+_jobLL.u.n_torus.coords[3],
+_jobLL.u.n_torus.coords[4],
+_jobUR.u.n_torus.coords[0],
+_jobUR.u.n_torus.coords[1],
+_jobUR.u.n_torus.coords[2],
+_jobUR.u.n_torus.coords[3],
+_jobUR.u.n_torus.coords[4],
+_jobTorus[0],
+_jobTorus[1],
+_jobTorus[2],
+_jobTorus[3],
+_jobTorus[4]);
+fprintf(stderr, "NP=%s PPN=%s MAP=%s\n",
+getenv("BG_NP"),
+getenv("BG_PROCESSESPERNODE"),
+getenv("BG_MAPFILE"));
+#endif // MU_CR_DEBUG
       };
 
       void location (char location[], size_t size)
@@ -195,51 +236,83 @@ namespace PAMI
       {
       };
 
-      ///
-      /// \brief Retrieves the rank of the task in this job.
-      ///
-      /// deprecated - Rank is not part of the personality
-      //size_t rank() const { return Network_Config.Rank; }
+      bool isSubBlockJob() { return _isSubBlockJob; }
 
+      pami_result_t jobRectangle(pami_coord_t &ll, pami_coord_t &ur) {
+	memcpy(&ll, &_jobLL, sizeof(ll));
+	memcpy(&ur, &_jobUR, sizeof(ur));
+	return PAMI_SUCCESS;
+      }
+
+      pami_result_t jobCoord(pami_coord_t &me) {
+	me = _jobCoord;
+	return PAMI_SUCCESS;
+      }
+
+      pami_result_t jobTorus(bool torus[PAMI_MAX_DIMS]) {
+	memcpy(&torus, &_jobTorus, sizeof(torus));
+	return PAMI_SUCCESS;
+      }
+
+      pami_result_t blockRectangle(pami_coord_t &ll, pami_coord_t &ur) {
+	memcpy(&ll, &_blkLL, sizeof(ll));
+	memcpy(&ur, &_blkUR, sizeof(ur));
+	return PAMI_SUCCESS;
+      }
+
+      pami_result_t blockCoord(pami_coord_t &me) {
+	me = _blkCoord;
+	return PAMI_SUCCESS;
+      }
+
+      pami_result_t blockTorus(bool torus[PAMI_MAX_DIMS]) {
+	memcpy(&torus, &_blkTorus, sizeof(torus));
+	return PAMI_SUCCESS;
+      }
 
       ///
       /// \brief Retrieves the 'A' coordinate of the node
+      /// relative to the lower-left corner of the job.
       ///
       size_t aCoord() const
       {
-        return Network_Config.Acoord;
+        return _jobCoord.u.n_torus.coords[0];
       }
 
       ///
       /// \brief Retrieves the 'B' coordinate of the node
+      /// relative to the lower-left corner of the job.
       ///
       size_t bCoord() const
       {
-        return Network_Config.Bcoord;
+        return _jobCoord.u.n_torus.coords[1];
       }
 
       ///
       /// \brief Retrieves the 'C' coordinate of the node
+      /// relative to the lower-left corner of the job.
       ///
       size_t cCoord() const
       {
-        return Network_Config.Ccoord;
+        return _jobCoord.u.n_torus.coords[2];
       }
 
       ///
       /// \brief Retrieves the 'D' coordinate of the node
+      /// relative to the lower-left corner of the job.
       ///
       size_t dCoord() const
       {
-        return Network_Config.Dcoord;
+        return _jobCoord.u.n_torus.coords[3];
       }
 
       ///
       /// \brief Retrieves the 'E' coordinate of the node
+      /// relative to the lower-left corner of the job.
       ///
       size_t eCoord() const
       {
-        return Network_Config.Ecoord;
+        return _jobCoord.u.n_torus.coords[4];
       }
 
       ///
@@ -279,48 +352,48 @@ namespace PAMI
       }
 
       ///
-      /// \brief Retrieves the size of the 'A' dimension.
+      /// \brief Retrieves the size of the 'A' dimension in job.
       /// \note  Does not consider the mapping.
       ///
       size_t aSize()  const
       {
-        return Network_Config.Anodes;
+        return _jobSize.u.n_torus.coords[0];
       }
 
       ///
-      /// \brief Retrieves the size of the 'B' dimension.
+      /// \brief Retrieves the size of the 'B' dimension in job.
       /// \note  Does not consider the mapping.
       ///
       size_t bSize()  const
       {
-        return Network_Config.Bnodes;
+        return _jobSize.u.n_torus.coords[1];
       }
 
       ///
-      /// \brief Retrieves the size of the 'C' dimension.
+      /// \brief Retrieves the size of the 'C' dimension in job.
       /// \note  Does not consider the mapping.
       ///
       size_t cSize()  const
       {
-        return Network_Config.Cnodes;
+        return _jobSize.u.n_torus.coords[2];
       }
 
       ///
-      /// \brief Retrieves the size of the 'D' dimension.
+      /// \brief Retrieves the size of the 'D' dimension in job.
       /// \note  Does not consider the mapping.
       ///
       size_t dSize()  const
       {
-        return Network_Config.Dnodes;
+        return _jobSize.u.n_torus.coords[3];
       }
 
       ///
-      /// \brief Retrieves the size of the 'E' dimension.
+      /// \brief Retrieves the size of the 'E' dimension in job.
       /// \note  Does not consider the mapping.
       ///
       size_t eSize()  const
       {
-        return Network_Config.Enodes;
+        return _jobSize.u.n_torus.coords[4];
       }
 
       ///
@@ -335,43 +408,43 @@ namespace PAMI
       }
 
       ///
-      /// \brief Retrieves the torus vs mesh status of the 'A' dimension.
+      /// \brief Retrieves the torus vs mesh status of the 'A' dimension in job.
       ///
       bool isTorusA()  const
       {
-        return _torusA;
+        return _jobTorus[0];
       }
 
       ///
-      /// \brief Retrieves the torus vs mesh status of the 'B' dimension.
+      /// \brief Retrieves the torus vs mesh status of the 'B' dimension in job.
       ///
       bool isTorusB()  const
       {
-        return _torusB;
+        return _jobTorus[1];
       }
 
       ///
-      /// \brief Retrieves the torus vs mesh status of the 'C' dimension.
+      /// \brief Retrieves the torus vs mesh status of the 'C' dimension in job.
       ///
       bool isTorusC()  const
       {
-        return _torusC;
+        return _jobTorus[2];
       }
 
       ///
-      /// \brief Retrieves the torus vs mesh status of the 'D' dimension.
+      /// \brief Retrieves the torus vs mesh status of the 'D' dimension in job.
       ///
       bool isTorusD()  const
       {
-        return _torusD;
+        return _jobTorus[3];
       }
 
       ///
-      /// \brief Retrieves the torus vs mesh status of the 'E' dimension.
+      /// \brief Retrieves the torus vs mesh status of the 'E' dimension in job.
       ///
       bool isTorusE()  const
       {
-        return _torusE;
+        return _jobTorus[4];
       }
 
       ///
@@ -379,16 +452,16 @@ namespace PAMI
       ///
       size_t maxCores() const
       {
-        return 16;
-      }/// \todo max cores == 16?
+        return NUM_CORES;
+      }
 
       ///
       /// \brief Retrieves the max number of threads, not the number active
       ///
       size_t maxThreads() const
       {
-        return 4;
-      }/// \todo max threads == 4?
+        return NUM_SMT;
+      }
 
       ///
       /// \brief Get the size of NODE memory
@@ -413,140 +486,26 @@ namespace PAMI
       size_t _tCoord;
       size_t _tSize;
 
-      bool   _torusA;
-      bool   _torusB;
-      bool   _torusC;
-      bool   _torusD;
-      bool   _torusE;
+      bool _isSubBlockJob;
+      bool _blkTorus[PAMI_MAX_DIMS];
+      bool _jobTorus[PAMI_MAX_DIMS];
+      pami_coord_t _blkLL;
+      pami_coord_t _blkUR;
+      pami_coord_t _blkCoord;
+      pami_coord_t _jobLL;
+      pami_coord_t _jobUR;
+      pami_coord_t _jobCoord;
+      pami_coord_t _jobSize;
 #ifdef ENABLE_MAMBO_WORKAROUNDS
     public:
       bool   _is_mambo; // Indicates whether mambo is being used
     protected:
 #endif
 
-  };  // class BgqPersonality
+  };  // class BgqJobPersonality
 };  // namespace PAMI
 
 
-//PAMI::BgqPersonality::BgqPersonality ()
-//{
-//};
-#if 0
-void PAMI::BgqPersonality::location (char location[], size_t size)
-{
-  _BGP_Personality_t * p = (_BGP_Personality_t *) this;
-  char tmp[BGPPERSONALITY_MAX_LOCATION+1];
-  BGP_Personality_getLocationString(p, tmp);
-
-  snprintf (location, MIN(size, BGPPERSONALITY_MAX_LOCATION), " %s", tmp);
-
-  return;
-};
-
-void PAMI::BgqPersonality::dumpPersonality ()
-{
-  _BGP_Personality_t * p = (_BGP_Personality_t *) this;
-  int i, tmp;
-
-  printf("Personality: CRC 0x %04x, Version %d, Size %d.\n",
-         p->CRC, p->Version, p->PersonalitySizeWords );
-
-  printf(" BlockID:         0x %08x\n", p->Network_Config.BlockID );
-  printf(" RASPolicy:       0x %08x\n", p->Kernel_Config.RASPolicy );
-  printf(" ProcessConfig:   0x %08x\n", p->Kernel_Config.ProcessConfig );
-  printf(" TraceConfig:     0x %08x\n", p->Kernel_Config.TraceConfig );
-  printf(" NodeConfig:      0x %08x\n", p->Kernel_Config.NodeConfig );
-  printf(" L1Config:        0x %08x\n", p->Kernel_Config.L1Config );
-  printf(" L2Config:        0x %08x\n", p->Kernel_Config.L2Config );
-  printf(" L3Config:        0x %08x\n", p->Kernel_Config.L3Config );
-  printf(" L3Select:        0x %08x\n", p->Kernel_Config.L3Select );
-
-  printf(" FreqMHz:         %d\n",      p->Kernel_Config.FreqMHz );
-
-  printf(" Torus:         ( %2d, %2d, %2d) in ( %2d %c, %2d %c, %2d %c)\n",
-         p->Network_Config.Xcoord,
-         p->Network_Config.Ycoord,
-         p->Network_Config.Zcoord,
-         p->Network_Config.Xnodes,
-         (p->Kernel_Config.NodeConfig & _BGP_PERS_ENABLE_TorusMeshX ? 'M' : 'T'),
-         p->Network_Config.Ynodes,
-         (p->Kernel_Config.NodeConfig & _BGP_PERS_ENABLE_TorusMeshY ? 'M' : 'T'),
-         p->Network_Config.Znodes,
-         (p->Kernel_Config.NodeConfig & _BGP_PERS_ENABLE_TorusMeshZ ? 'M' : 'T'));
-
-  printf(" IOnodes:         %d\n", p->Network_Config.IOnodes );
-  printf(" Rank:         %d\n", p->Network_Config.Rank );
-
-  for (i = 0, tmp = 0 ; i < 16 ; i++)
-    {
-      if (p->Network_Config.TreeRoutes[i])
-        {
-          tmp++;
-          printf(" TreeRoutes[%d]: 0x %04x\n",
-                 i, p->Network_Config.TreeRoutes[i] );
-        }
-    }
-
-  if (!tmp)
-    printf(" TreeRoutes:           (none defined)\n" );
-
-
-  printf(" DDRSizeMB:         %d\n",      p->DDR_Config.DDRSizeMB   );
-  printf(" DDRChips:        0x %02x\n", p->DDR_Config.Chips    );
-  printf(" DDRCAS:         %d\n",      p->DDR_Config.CAS      );
-  printf(" DDRThrottle:         %d %% \n",    p->DDR_Config.Throttle );
-  printf(" MTU:         %d\n", p->Ethernet_Config.MTU );
-
-  printf(" EmacID:         %02x:%02x:%02x:%02x:%02x:%02x\n",
-         p->Ethernet_Config.EmacID[0],
-         p->Ethernet_Config.EmacID[1],
-         p->Ethernet_Config.EmacID[2],
-         p->Ethernet_Config.EmacID[3],
-         p->Ethernet_Config.EmacID[4],
-         p->Ethernet_Config.EmacID[5] );
-
-  printf(" IPAddress:         %d.%d.%d.%d\n",
-         p->Ethernet_Config.IPAddress.octet[12],
-         p->Ethernet_Config.IPAddress.octet[13],
-         p->Ethernet_Config.IPAddress.octet[14],
-         p->Ethernet_Config.IPAddress.octet[15]  );
-
-  printf(" IPNetmask:         %d.%d.%d.%d\n",
-         p->Ethernet_Config.IPNetmask.octet[12],
-         p->Ethernet_Config.IPNetmask.octet[13],
-         p->Ethernet_Config.IPNetmask.octet[14],
-         p->Ethernet_Config.IPNetmask.octet[15]  );
-
-  printf(" IPBroadcast:       %d.%d.%d.%d\n",
-         p->Ethernet_Config.IPBroadcast.octet[12],
-         p->Ethernet_Config.IPBroadcast.octet[13],
-         p->Ethernet_Config.IPBroadcast.octet[14],
-         p->Ethernet_Config.IPBroadcast.octet[15]  );
-
-  printf(" IPGateway:         %d.%d.%d.% d\n",
-         p->Ethernet_Config.IPGateway.octet[12],
-         p->Ethernet_Config.IPGateway.octet[13],
-         p->Ethernet_Config.IPGateway.octet[14],
-         p->Ethernet_Config.IPGateway.octet[15]  );
-
-  printf(" NFSServer:         %d.%d.%d.%d\n",
-         p->Ethernet_Config.NFSServer.octet[12],
-         p->Ethernet_Config.NFSServer.octet[13],
-         p->Ethernet_Config.NFSServer.octet[14],
-         p->Ethernet_Config.NFSServer.octet[15]  );
-
-  printf(" serviceNode:       %d.%d.%d.%d\n",
-         p->Ethernet_Config.serviceNode.octet[12],
-         p->Ethernet_Config.serviceNode.octet[13],
-         p->Ethernet_Config.serviceNode.octet[14],
-         p->Ethernet_Config.serviceNode.octet[15]  );
-
-  printf(" NFSExportDir:         > %s < \n", p->Ethernet_Config.NFSExportDir );
-  printf(" NFSMountDir:          > %s < \n", p->Ethernet_Config.NFSMountDir  );
-
-  return;
-};
-#endif
 #endif // __pami_components_sysdep_bgq_bgqpersonnality_h__
 //
 // astyle info    http://astyle.sourceforge.net
