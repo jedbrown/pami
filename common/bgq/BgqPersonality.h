@@ -23,7 +23,7 @@
 ///  - Personality is an object that returns machine specific hardware info
 ///
 
-#define MU_CR_DEBUG
+#undef MU_CR_DEBUG
 
 #define PERS_SIZE 1024
 
