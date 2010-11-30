@@ -157,8 +157,9 @@ void _pami_core_fp64_fp64_cplx_prod(fp64_fp64_t *dst, const fp64_fp64_t **srcs, 
                 dst[n].a = srcs[0][n].a;
                 dst[n].b = srcs[0][n].b;
                 for (m = 1; m < nsrc; ++m) {
-                        dst[n].a = dst[n].a * srcs[m][n].a - dst[n].b * srcs[m][n].b;
+                        double a = dst[n].a * srcs[m][n].a - dst[n].b * srcs[m][n].b;
                         dst[n].b = dst[n].a * srcs[m][n].b + dst[n].b * srcs[m][n].a;
+                        dst[n].a = a;
                 }
         }
 }
