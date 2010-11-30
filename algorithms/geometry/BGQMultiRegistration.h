@@ -635,11 +635,11 @@ namespace PAMI
           _ni_array[1] = _mu_ni_msync2d;
           _ni_array[2] = _shmem_ni;
           _ni_array[3] = _mu_ni_mcomb2dNP;
-          _msync2d_composite_factory = new (_msync2d_composite_factory_storage) MultiSync2DeviceFactory(&_sconnmgr, (CCMI::Interfaces::NativeInterface*)_ni_array);
+          _msync2d_composite_factory = new (_msync2d_composite_factory_storage) MultiSync2DeviceFactory(&_sconnmgr, (CCMI::Interfaces::NativeInterface*)&_ni_array);
           _msync2d_composite_factory->setMapIdToGeometry(mapidtogeometry);
           _mcast2d_composite_factory = new (_mcast2d_composite_factory_storage) MultiCast2DeviceFactory(&_sconnmgr, _shmem_ni, false, _mu_ni_mcast2d,  _mu_ni_mcast2d ? true : false);
           _mcomb2d_composite_factory = new (_mcomb2d_composite_factory_storage) MultiCombine2DeviceFactory(&_sconnmgr, _shmem_ni, _mu_ni_mcomb2d);
-          _mcomb2dNP_composite_factory = new (_mcomb2dNP_composite_factory_storage) MultiCombine2DeviceFactoryNP(&_sconnmgr,  (CCMI::Interfaces::NativeInterface*)_ni_array[2]);
+          _mcomb2dNP_composite_factory = new (_mcomb2dNP_composite_factory_storage) MultiCombine2DeviceFactoryNP(&_sconnmgr,  (CCMI::Interfaces::NativeInterface*)&_ni_array[2]);
         }
 
       }
