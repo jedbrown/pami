@@ -163,5 +163,3 @@ void _pami_core_fp64_fp64_cplx_prod(fp64_fp64_t *dst, const fp64_fp64_t **srcs, 
                 }
         }
 }
-
-

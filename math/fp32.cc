@@ -163,5 +163,3 @@ void _pami_core_fp32_fp32_cplx_prod(fp32_fp32_t *dst, const fp32_fp32_t **srcs, 
                 }
         }
 }
-
-

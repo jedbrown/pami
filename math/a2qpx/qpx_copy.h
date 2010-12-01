@@ -1,6 +1,18 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file math/a2qpx/qpx_copy.h
+ * \brief ???
+ */
 
-#ifndef  __qpx_double_copy__
-#define  __qpx_double_copy__
+#ifndef __math_a2qpx_qpx_copy_h__
+#define __math_a2qpx_qpx_copy_h__
 
 #include "math/a2qpx/a2qpx_asm.h"
 

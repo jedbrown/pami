@@ -1,5 +1,18 @@
-#ifndef __a2qpx_asm_h__
-#define __a2qpx_asm_h__
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file math/a2qpx/a2qpx_asm.h
+ * \brief ???
+ */
+
+#ifndef __math_a2qpx_a2qpx_asm_h__
+#define __math_a2qpx_a2qpx_asm_h__
 
 #define VECTOR_LOAD(si,sb,tgt) \
 do { \

@@ -1,9 +1,9 @@
 /**
- * \file components/devices/shmemcoll/opt_copy_a2.h
+ * \file math/a2qpx/Core_memcpy.h
  * \brief ???
  */
-#ifndef __math_a2qpx_Core_memcpy__
-#define __math_a2qpx_Core_memcpy__
+#ifndef __math_a2qpx_Core_memcpy_h__
+#define __math_a2qpx_Core_memcpy_h__
 
 #define OPTIMIZED_Core_memcpy
 
