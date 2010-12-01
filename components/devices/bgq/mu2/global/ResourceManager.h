@@ -594,6 +594,8 @@ fprintf(stderr, "%s\n", buf);
 	MUSPI_InitClassrouteIds(&sh_crs->gi_crs[sh_crs->gifirst], sh_crs->giused,
 							0, &_gicrdata);
 
+	mm.free(sh_crs);
+
 	  // next, add classroute #0 (user comm-world) which is
 	  // pre-fabricated by controlsystem and CNK (not in free list, above).
 	  // but, we need to cnostruct the rectangle for it ourself...
