@@ -470,7 +470,8 @@ namespace PAMI
 	  /* Check for the master/root */
 
     PAMI::Topology *root_topo = (PAMI::Topology*)mcast->src_participants;
-	  if ((root_topo != NULL)  && (root_topo->index2Rank(0) == this->myrank()))
+    PAMI_assert(root_topo);
+	  if (root_topo->index2Rank(0) == this->myrank())
 	  {
 		  req->is_master = 1;
 		  req->total_bytes = mcast->bytes;
