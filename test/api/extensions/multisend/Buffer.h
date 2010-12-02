@@ -85,10 +85,10 @@ namespace PAMI
       {
         DBGF_FUNCTIONNAME;
         DBG_FPRINTF((stderr,"<%p> src %p, dst %p\n",this,src, dst));
-        src->configure(NULL, _source, sizeof(_source), sizeof(_source));
+        src->configure(_source, sizeof(_source), sizeof(_source));
         src->reset();
 
-        dst->configure(NULL, _destination, sizeof(_destination), 0);
+        dst->configure(_destination, sizeof(_destination), 0);
         dst->reset();
 
         return setup(src, dst, isRoot);
@@ -249,10 +249,10 @@ namespace PAMI
       {
         DBGF_FUNCTIONNAME;
         DBG_FPRINTF((stderr,"<%p> src %p, dst %p\n",this,src, dst));
-        src->configure(NULL, _source, sizeof(_source), sizeof(_source));
+        src->configure(_source, sizeof(_source), sizeof(_source));
         src->reset();
 
-        dst->configure(NULL, _destination, sizeof(_destination), 0);
+        dst->configure(_destination, sizeof(_destination), 0);
         dst->reset();
 
         return setupMIN0(src, dst, isRoot);

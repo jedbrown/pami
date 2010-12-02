@@ -151,11 +151,11 @@ public:
 
                 root = ((PAMI::Topology *)mcast->src_participants)->index2Rank(0);
 
-                //_ipwq.configure(NULL, _source, T_BufSize, T_BufSize);
-                _ipwq.configure(NULL, _source, mcast->bytes, mcast->bytes);
+                //_ipwq.configure(_source, T_BufSize, T_BufSize);
+                _ipwq.configure(_source, mcast->bytes, mcast->bytes);
                 _ipwq.reset();
-                //_opwq.configure(NULL, _result, T_BufSize, 0);
-                _opwq.configure(NULL, _result, mcast->bytes, 0);
+                //_opwq.configure(_result, T_BufSize, 0);
+                _opwq.configure(_result, mcast->bytes, 0);
                 _opwq.reset();
 
                 // simple allreduce on the local ranks...
@@ -231,9 +231,9 @@ public:
 
                 root = ((PAMI::Topology *)mcast->src_participants)->index2Rank(0);
 
-                _ipwq.configure(NULL, _source, sizeof(_source), sizeof(_source));
+                _ipwq.configure(_source, sizeof(_source), sizeof(_source));
                 _ipwq.reset();
-                _opwq.configure(NULL, _result, sizeof(_result), 0);
+                _opwq.configure(_result, sizeof(_result), 0);
                 _opwq.reset();
 
                 // simple allreduce on the local ranks...

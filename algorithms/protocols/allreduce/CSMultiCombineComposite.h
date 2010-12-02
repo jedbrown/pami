@@ -56,13 +56,13 @@ namespace CCMI
                               sizeOfType,
                               func );
             size_t size = cmd->cmd.xfer_reduce.stypecount * 1; /// \todo presumed size of PAMI_BYTE is 1?
-            _srcPwq.configure(NULL, cmd->cmd.xfer_reduce.sndbuf, size, size);
+            _srcPwq.configure(cmd->cmd.xfer_reduce.sndbuf, size, size);
             _srcPwq.reset();
 
             if (cmd->cmd.xfer_reduce.root == __global.mapping.task())
               {
                 size = cmd->cmd.xfer_reduce.rtypecount * 1; /// \todo presumed size of PAMI_BYTE is 1?
-                _dstPwq.configure(NULL, cmd->cmd.xfer_reduce.rcvbuf, size, 0);
+                _dstPwq.configure(cmd->cmd.xfer_reduce.rcvbuf, size, 0);
                 _dstPwq.reset();
               }
 

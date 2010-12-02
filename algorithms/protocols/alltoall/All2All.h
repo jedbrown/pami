@@ -70,7 +70,7 @@ namespace CCMI
             }
 
           _send.buffer = &_sendpwq;
-          _send.buffer->configure(NULL,
+          _send.buffer->configure(
                                   coll->cmd.xfer_alltoall.sndbuf,
                                   topo_size,
                                   &coll->cmd.xfer_alltoall.stype,
@@ -86,7 +86,7 @@ namespace CCMI
           memset(_recvinit, 0x00, sizeof(size_t)*topo_size);
 
           _recv.buffer = &_recvpwq;
-          _recv.buffer->configure(NULL,
+          _recv.buffer->configure(
                                   coll->cmd.xfer_alltoall.rcvbuf,
                                   topo_size,
                                   &coll->cmd.xfer_alltoall.rtype,

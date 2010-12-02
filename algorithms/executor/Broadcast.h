@@ -125,7 +125,7 @@ namespace CCMI
           TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::setBuffers() src %p, dst %p, len %d, _pwq %p\n", this, src, dst, len, &_pwq));
           _buflen = len;
           //Setup pipework queue
-          _pwq.configure (NULL, src, len, 0);
+          _pwq.configure (src, len, 0);
           _pwq.reset();
           TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::setBuffers() _pwq %p, bytes available %zu/%zu\n", this, &_pwq,
                          _pwq.bytesAvailableToConsume(), _pwq.bytesAvailableToProduce()));

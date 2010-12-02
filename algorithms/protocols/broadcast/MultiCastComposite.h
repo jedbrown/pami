@@ -85,11 +85,11 @@ namespace CCMI
 
             if (cmd->cmd.xfer_broadcast.root == __global.mapping.task())
               {
-                _pwq.configure(NULL, cmd->cmd.xfer_broadcast.buf, bytes, bytes);
+                _pwq.configure(cmd->cmd.xfer_broadcast.buf, bytes, bytes);
               }
             else
               {
-                _pwq.configure(NULL, cmd->cmd.xfer_broadcast.buf, bytes, 0);
+                _pwq.configure(cmd->cmd.xfer_broadcast.buf, bytes, 0);
               }
 
             _pwq.reset();
@@ -192,17 +192,17 @@ namespace CCMI
 
           if (cmd->cmd.xfer_broadcast.root == __global.mapping.task())
           {
-            _src.configure(NULL, cmd->cmd.xfer_broadcast.buf, _bytes, _bytes);
+            _src.configure(cmd->cmd.xfer_broadcast.buf, _bytes, _bytes);
             /// \todo unless the device lets me toss unwanted data, we need a dummy buffer to receive.
 	    pami_result_t prc = __global.heap_mm->memalign((void **)&_buffer, 0, _bytes);
 	    PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _buffer failed");
-            _dst.configure(NULL, _buffer, _bytes, 0);
+            _dst.configure(_buffer, _bytes, 0);
           }
           else
           {
             //_buffer = (char*) & _bytes; // dummy buffer - unused
-            _src.configure(NULL, (char*)NULL, 0, 0);
-            _dst.configure(NULL, cmd->cmd.xfer_broadcast.buf, _bytes, 0);
+            _src.configure((char*)NULL, 0, 0);
+            _dst.configure(cmd->cmd.xfer_broadcast.buf, _bytes, 0);
           }
 
             _src.reset();
@@ -423,12 +423,12 @@ namespace CCMI
               initBytes = 0;
 
             // Create a "flat pwq" for the send buffer
-            _pwq0.configure(NULL,                            // Memory manager
+            _pwq0.configure(
                             cmd->cmd.xfer_broadcast.buf,     // buffer
                             bytes,                           // buffer bytes
                             initBytes);                      // amount initially in buffer
 
-            _pwq1.configure(NULL,                            // Memory manager
+            _pwq1.configure(
                             cmd->cmd.xfer_broadcast.buf,     // buffer
                             bytes,                           // buffer bytes
                             initBytes);                      // amount initially in buffer
@@ -593,7 +593,7 @@ namespace CCMI
                 if (pwqBuf)
                   {
                     pwqBuf->_target_pwq           = &pwqBuf->_ue_pwq;
-                    pwqBuf->_ue_pwq.configure(NULL, cmd->cmd.xfer_broadcast.buf, bytes, 0);
+                    pwqBuf->_ue_pwq.configure(cmd->cmd.xfer_broadcast.buf, bytes, 0);
                     pwqBuf->_ue_pwq.reset();
                     _minfo_l.src                = (pami_pipeworkqueue_t*) & pwqBuf->_ue_pwq;
                     _activePwqBuf                 = pwqBuf;
@@ -829,7 +829,7 @@ namespace CCMI
                 // the user gets around to posting
                 TRACE_ADAPTOR((stderr, "MultiCastComposite2DeviceFactoryT: cb_async_g, unexpected buffer\n"));
                 pbuf = f->allocatePbuf(sndlen);
-                pbuf->_ue_pwq.configure(NULL, NULL, 0, 0);
+                pbuf->_ue_pwq.configure((char *)NULL, 0, 0);
                 pbuf->_ue_pwq.reset();
                 f->_ue.enqueue((PAMI::Queue::Element*)pbuf);
               }

@@ -71,7 +71,6 @@ namespace PAMI
       /// Warning! The PWQ retains and uses the input arrays, it does NOT copy them.  It
       /// may change the contents of these arrays.
       ///
-      /// \param[out] unused        REMOVE? Consistent with PAMI::PipeWorkQueue?
       /// \param[in]  buffer        Buffer to use
       /// \param[in]  indexcount    Number of indexed access points to the pwq
       /// \param[in]  dgsp          Memory layout of each buffer unit
@@ -81,7 +80,7 @@ namespace PAMI
       ///
       /// \note bufinit must be empty (0) for producer PWQ or full (size of dgsp type * dsgpcounts[index]) for consumer PWQ.
       ///
-      inline void configure_impl(PAMI::Memory::MemoryManager *unused, char *buffer, size_t indexcount,
+      inline void configure_impl(char *buffer, size_t indexcount,
                                  pami_type_t *dgsp, size_t *offsets, size_t *dgspcounts, size_t *bufinit)
       {
         /// \todo 'real' dgsp is unimplemented now, so assume PAMI_BYTE
@@ -117,7 +116,6 @@ namespace PAMI
       /// Warning! The PWQ retains and uses the input arrays, it does NOT copy them.  It
       /// may change the contents of these arrays.
       ///
-      /// \param[out] unused        REMOVE? Consistent with PAMI::PipeWorkQueue?
       /// \param[in]  buffer        Buffer to use
       /// \param[in]  indexcount    Number of indexed access points to the pwq (bufinit array only)
       /// \param[in]  dgsp          Memory layout of each buffer unit
@@ -127,7 +125,7 @@ namespace PAMI
       ///
       /// \note bufinit must be empty (0) for producer PWQ or full (size of dgsp type * dsgpcounts[index]) for consumer PWQ.
       ///
-      inline void configure_impl(PAMI::Memory::MemoryManager *unused, char *buffer, size_t indexcount,
+      inline void configure_impl(char *buffer, size_t indexcount,
                                  pami_type_t *dgsp, size_t offset, size_t dgspcount, size_t *bufinit)
       {
         /// \todo 'real' dgsp is unimplemented now, so assume PAMI_BYTE

@@ -25,12 +25,12 @@
 #define OPTIMIZE_FOR_FLAT_WORKQUEUE
 #undef USE_FLAT_BUFFER  // (4*1024*1024)
 
-#define ALLOC_SHMEM(memptr, align, size)  \
-        { memptr = NULL; _mm->memalign((void **)&memptr, align, size); }
+#define ALLOC_SHMEM(memptr, align, size, key)  \
+        { memptr = NULL; mm->memalign((void **)&memptr, align, size, key); }
 
 /// \todo Fix shmem free so that it doesn't assert
 #define FREE_SHMEM(memptr)  \
-        //_mm->free(memptr)
+        //mm->free(memptr)
 
 #define WAKEUP(vector)    \
         // _wakeupManager().wakeup(vector)
@@ -78,7 +78,6 @@ class PipeWorkQueue : public Interface::PipeWorkQueue<PAMI::PipeWorkQueue> {
 public:
         PipeWorkQueue() :
         Interface::PipeWorkQueue<PAMI::PipeWorkQueue>(),
-        _mm(NULL),
         _qsize(0),
         _isize(0),
         _pmask(0),
@@ -89,14 +88,13 @@ public:
 #ifdef USE_FLAT_BUFFER
 #warning USE_FLAT_BUFFER Requires MemoryManager.cc change to increase shmem pool, also BG_SHAREDMEMPOOLSIZE when run
         // shmem flat buffer... experimental
-        inline void configure_impl(PAMI::Memory::MemoryManager *mm, size_t bufsize, size_t bufinit)
+        inline void configure_impl(PAMI::Memory::MemoryManager *mm, const char *key, size_t bufsize, size_t bufinit)
         {
-          _mm = mm;
           _qsize = bufsize;
           _isize = bufinit;
           size_t size = sizeof(workqueue_t) + _qsize;
             TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
-          ALLOC_SHMEM(_sharedqueue, 16, size);
+          ALLOC_SHMEM(_sharedqueue, 16, size, key);
           PAMI_assert_debugf(_sharedqueue, "failed to allocate shared memory\n");
           _buffer = &_sharedqueue->buffer[0];
           PAMI_assert_debugf((_qsize & (_qsize - 1)) == 0, "workqueue size is not power of two\n");
@@ -117,13 +115,12 @@ public:
         /// \param[in] mm System dependent methods
         /// \param[in] bufsize  Size of buffer to allocate
         ///
-        inline void configure_impl(PAMI::Memory::MemoryManager *mm, size_t bufsize)
+        inline void configure_impl(PAMI::Memory::MemoryManager *mm, const char *key, size_t bufsize)
         {
-          _mm = mm;
           _qsize = bufsize;
           size_t size = sizeof(workqueue_t) + _qsize;
             TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
-          ALLOC_SHMEM(_sharedqueue, 16, size);
+          ALLOC_SHMEM(_sharedqueue, 16, size, key);
           PAMI_assert_debugf(_sharedqueue, "failed to allocate shared memory\n");
           _buffer = &_sharedqueue->buffer[0];
           PAMI_assert_debugf((_qsize & (_qsize - 1)) == 0, "workqueue size is not power of two\n");
@@ -143,9 +140,8 @@ public:
         /// \param[in] buffer Buffer to use
         /// \param[in] bufsize  Size of buffer
         ///
-        inline void configure_impl(PAMI::Memory::MemoryManager *mm, char *buffer, size_t bufsize)
+        inline void configure_impl(char *buffer, size_t bufsize)
         {
-          _mm = mm;
           _qsize = bufsize;
           _buffer = buffer;
           _sharedqueue = &this->__sq;
@@ -167,9 +163,8 @@ public:
         /// \param[in] bufsize  Size of buffer
         /// \param[in] bufinit  Amount of data initially in buffer
         ///
-        inline void configure_impl(PAMI::Memory::MemoryManager *mm, char *buffer, size_t bufsize, size_t bufinit)
+        inline void configure_impl(char *buffer, size_t bufsize, size_t bufinit)
         {
-          _mm = mm;
           _qsize = bufsize;
           _isize = bufinit;
           _buffer = buffer;
@@ -201,7 +196,7 @@ public:
         /// \param[in] dgspcount      Number of repetitions of buffer units
         /// \param[in] bufinit        Number of bytes initially in buffer
         ///
-        inline void configure_impl(PAMI::Memory::MemoryManager *mm, char *buffer, pami_type_t *dgsp, size_t dgspcount, size_t bufinit) {
+        inline void configure_impl(char *buffer, pami_type_t *dgsp, size_t dgspcount, size_t bufinit) {
                 PAMI_abortf("DGSP PipeWorkQueue not yet supported");
         }
 
@@ -217,7 +212,6 @@ public:
         ///
         PipeWorkQueue(PipeWorkQueue &obj) :
         Interface::PipeWorkQueue<PAMI::PipeWorkQueue>(),
-        _mm(obj._mm),
         _qsize(obj._qsize),
         _pmask(obj._pmask),
         _buffer(obj._buffer),
@@ -610,7 +604,6 @@ public:
         }
 
 private:
-        PAMI::Memory::MemoryManager *_mm;
         unsigned _qsize;
         unsigned _isize;
         unsigned _pmask;

@@ -57,7 +57,9 @@ public:
 
 	ShmemZeroModel(ShmemZeroDevice &dev, pami_result_t &status) {
 		_shmem = NULL;
-		status = dev._mm->memalign(&_shmem, sizeof(void *), sizeof_shm);
+		char mmkey[PAMI::Memory::MMKEYSIZE];
+		sprintf(mmkey, "/ShmemZeroModel-%zd", sizeof_shm);
+		status = dev._mm->memalign(&_shmem, sizeof(void *), sizeof_shm, mmkey);
 		PAMI_assertf(_shmem, "Failed to allocate %zu bytes Shmem\n", sizeof_shm);
 	}
 

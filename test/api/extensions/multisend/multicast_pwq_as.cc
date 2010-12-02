@@ -166,7 +166,7 @@ int main(int argc, char ** argv)
     if(gRoot == task_id)
     {
       _buffer1.reset(true); // isRoot = true
-      srcPwq->configure(NULL, _buffer1.buffer(), TEST_BUF_SIZE, 0);
+      srcPwq->configure(_buffer1.buffer(), TEST_BUF_SIZE, 0);
       srcPwq->reset();
       mcast.src = (pami_pipeworkqueue_t *) srcPwq;
       mcast.dst = (pami_pipeworkqueue_t *) NULL;
@@ -292,7 +292,7 @@ int main(int argc, char ** argv)
         _buffer1.reset(true); // isRoot = true;
 
         PAMI::PipeWorkQueue * srcPwq =_buffer1.srcPwq();
-        srcPwq->configure(NULL, _buffer1.buffer(), (TEST_BUF_SIZE/4)*4, 0);
+        srcPwq->configure(_buffer1.buffer(), (TEST_BUF_SIZE/4)*4, 0);
         srcPwq->reset();
 
 

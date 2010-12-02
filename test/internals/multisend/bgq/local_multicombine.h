@@ -83,9 +83,9 @@ public:
                 }
 
 				//assert(root != 0); //everybody is the root
-                _ipwq.configure(NULL, _source, sizeof(_source), sizeof(_source));
+                _ipwq.configure(_source, sizeof(_source), sizeof(_source));
                 _ipwq.reset();
-                _opwq.configure(NULL, _result, sizeof(_result), 0);
+                _opwq.configure(_result, sizeof(_result), 0);
                 _opwq.reset();
 
                 mcomb->cb_done = (pami_callback_t){_done_cb, (void *)this};

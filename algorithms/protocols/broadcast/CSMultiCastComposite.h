@@ -61,11 +61,11 @@ namespace CCMI
 
             if (cmd->cmd.xfer_broadcast.root == __global.mapping.task())
               {
-                _pwq.configure(NULL, cmd->cmd.xfer_broadcast.buf, bytes, bytes);
+                _pwq.configure(cmd->cmd.xfer_broadcast.buf, bytes, bytes);
               }
             else
               {
-                _pwq.configure(NULL, cmd->cmd.xfer_broadcast.buf, bytes, 0);
+                _pwq.configure(cmd->cmd.xfer_broadcast.buf, bytes, 0);
               }
 
             _pwq.reset();

@@ -278,12 +278,12 @@ namespace CCMI
             size_t  buflen = _native->numranks() * len;
 	    pami_result_t rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
 	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
-            _pwq.configure (NULL, _tmpbuf, buflen, 0);
+            _pwq.configure (_tmpbuf, buflen, 0);
             _pwq.reset();
           }
           else
             {
-              _pwq.configure (NULL, dst, len, 0);
+              _pwq.configure (dst, len, 0);
               _pwq.reset();
             }
 
@@ -427,7 +427,7 @@ inline void  CCMI::Executor::ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type>:
         }
 
       char    *tmpbuf   = _tmpbuf + offset;
-      sendstr->pwq.configure (NULL, tmpbuf, buflen, 0);
+      sendstr->pwq.configure (tmpbuf, buflen, 0);
       sendstr->pwq.reset();
       sendstr->pwq.produceBytes(buflen);
 

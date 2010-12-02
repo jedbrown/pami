@@ -645,7 +645,7 @@ inline void CCMI::Executor::AllreduceCache<T_Conn>::constructPhaseData()
 
               PAMI::PipeWorkQueue *dpwq = &_phaseVec[i].dpwq;
               new (dpwq) PAMI::PipeWorkQueue();
-              dpwq->configure (NULL, _tempBuf, _pcache._bytes, 0);
+              dpwq->configure (_tempBuf, _pcache._bytes, 0);
               dpwq->reset();
             }
           else // No source/receive processing this phase.
@@ -814,7 +814,7 @@ inline void  CCMI::Executor::AllreduceCache<T_Conn>::setupReceives(bool infoRequ
               CCMI_assert (_phaseVec[p].recvBufs[scount] != NULL);
               PAMI::PipeWorkQueue *pwq = &_phaseVec[p].pwqs[scount];
               new (pwq) PAMI::PipeWorkQueue();
-              pwq->configure (NULL, _phaseVec[p].recvBufs[scount], _pcache._bytes, 0);
+              pwq->configure (_phaseVec[p].recvBufs[scount], _pcache._bytes, 0);
               pwq->reset();
               CCMI_assert (pwq->bufferToProduce() != NULL);
 

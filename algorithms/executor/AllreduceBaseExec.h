@@ -625,7 +625,7 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::sendMessage
   _msend.bytes         = bytes;
 
   PAMI::PipeWorkQueue *pwq = _acache.getPhaseDstPipeWorkQueue(sphase);
-  pwq->configure(NULL, (char *)buf, bytes, 0);
+  pwq->configure((char *)buf, bytes, 0);
   pwq->reset();
   pwq->produceBytes(bytes);
 

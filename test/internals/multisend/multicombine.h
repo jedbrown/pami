@@ -76,9 +76,9 @@ public:
 
                 bool root = (mcomb->results_participants == NULL ||
                         ((PAMI::Topology *)mcomb->results_participants)->isRankMember(task_id));
-                _ipwq.configure(NULL, _source, sizeof(_source), sizeof(_source));
+                _ipwq.configure(_source, sizeof(_source), sizeof(_source));
                 _ipwq.reset();
-                _opwq.configure(NULL, _result, sizeof(_result), 0);
+                _opwq.configure(_result, sizeof(_result), 0);
                 _opwq.reset();
 
                 mcomb->cb_done = (pami_callback_t){_done_cb, (void *)this};

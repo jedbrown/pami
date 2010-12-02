@@ -256,7 +256,7 @@ namespace CCMI
 
         void updatePWQ()
         {
-          _pwq.configure (NULL, _sbuf, _buflen, 0);
+          _pwq.configure (_sbuf, _buflen, 0);
           _pwq.reset();
           _pwq.produceBytes(_buflen);
         }
@@ -308,11 +308,11 @@ namespace CCMI
             {
 	      pami_result_t rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
 	      PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
-              _pwq.configure (NULL, _tmpbuf, buflen, 0);
+              _pwq.configure (_tmpbuf, buflen, 0);
             }
             else
             {
-              _pwq.configure (NULL, src, buflen, 0);
+              _pwq.configure (src, buflen, 0);
             }
             _pwq.reset();
             _pwq.produceBytes(buflen);
@@ -501,7 +501,7 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::n
   char    *tmpbuf   = _tmpbuf + offset;
   unsigned ind      = cdata->_phase * _maxsrcs + i;
   *pwq = &_mrecvstr[ind].pwq;
-  (*pwq)->configure (NULL, tmpbuf, buflen, 0);
+  (*pwq)->configure (tmpbuf, buflen, 0);
   (*pwq)->reset();
   // (*pwq)->produceBytes(buflen);
   _mrecvstr[ind].subsize  = _srclens[i];

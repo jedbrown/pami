@@ -423,7 +423,7 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::sendNext ()
               if (srcindex > _myindex)
                 {
                   RecvStruct *recvstr = &_mrecvstr[_curphase].recvstr[i];
-                  recvstr->pwq.configure (NULL, _tmpbuf + (_curphase + 1)* _buflen, _buflen, 0);
+                  recvstr->pwq.configure (_tmpbuf + (_curphase + 1)* _buflen, _buflen, 0);
                   recvstr->pwq.reset();
                   recvstr->subsize    = _buflen;
                   recvstr->rank       = _srcranks[i];
@@ -451,7 +451,7 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::sendNext ()
               new (&_dsttopology[i]) PAMI::Topology(_dstranks[i]);
 
               size_t buflen = _buflen;
-              _pwq[i].configure (NULL, _tmpbuf, buflen, 0);
+              _pwq[i].configure (_tmpbuf, buflen, 0);
               _pwq[i].reset();
               _pwq[i].produceBytes(buflen);
 
@@ -544,7 +544,7 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::notifyRecv
           CCMI_assert(_myindex + dist < _native->numranks());
 #endif
           RecvStruct *recvstr = &_mrecvstr[cdata->_phase].recvstr[i];
-          recvstr->pwq.configure (NULL, _tmpbuf + (cdata->_phase + 1) * _buflen, buflen, 0);
+          recvstr->pwq.configure (_tmpbuf + (cdata->_phase + 1) * _buflen, buflen, 0);
           recvstr->pwq.reset();
           recvstr->subsize = buflen;
           recvstr->rank    = _srcranks[i];

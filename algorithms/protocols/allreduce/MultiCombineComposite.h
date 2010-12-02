@@ -77,11 +77,11 @@ namespace CCMI
                               sizeOfType,
                               func );
             size_t size = cmd->cmd.xfer_allreduce.stypecount * 1; /// \todo presumed size of PAMI_BYTE is 1?
-            _srcPwq.configure(NULL, cmd->cmd.xfer_allreduce.sndbuf, size, size);
+            _srcPwq.configure(cmd->cmd.xfer_allreduce.sndbuf, size, size);
             _srcPwq.reset();
 
             size = cmd->cmd.xfer_allreduce.rtypecount * 1; /// \todo presumed size of PAMI_BYTE is 1?
-            _dstPwq.configure(NULL, cmd->cmd.xfer_allreduce.rcvbuf, size, 0);
+            _dstPwq.configure(cmd->cmd.xfer_allreduce.rcvbuf, size, 0);
             _dstPwq.reset();
 
             DO_DEBUG(PAMI::Topology all);
@@ -248,11 +248,11 @@ namespace CCMI
                    &_pwq_src, &_pwq_dest, sbytes, cmd->cmd.xfer_allreduce.sndbuf));
 
             // Create a "flat pwq" for the send buffer
-            _pwq_src.configure(NULL,                            // Memory manager
+            _pwq_src.configure(
                                cmd->cmd.xfer_allreduce.sndbuf,  // buffer
                                sbytes,                          // buffer bytes
                                sbytes);                         // amount initially in buffer
-            _pwq_dest.configure(NULL,                            // Memory manager
+            _pwq_dest.configure(
                                 cmd->cmd.xfer_allreduce.rcvbuf,  // buffer
                                 sbytes,                          // buffer bytes
                                 0);                              // amount initially in buffer
@@ -266,7 +266,7 @@ namespace CCMI
             // A single multicombine will suffice to handle the allreduce
             if (t_local->size() == _geometry->size() && amMaster)
               {
-                _pwq_inter0.configure(NULL,                            // Memory manager
+                _pwq_inter0.configure(
                                       cmd->cmd.xfer_allreduce.rcvbuf,  // buffer
                                       sbytes,                          // buffer bytes
                                       0);                              // amount initially in buffer
@@ -386,11 +386,11 @@ namespace CCMI
             // These extra PWQ's are pointing at the reception buffer.  This means that the
             // reception buffers will be overwritten, maybe more than once
             // todo Do we need some scratch space if we want to do something like in place?
-            _pwq_inter0.configure(NULL,                            // Memory manager
+            _pwq_inter0.configure(
                                   cmd->cmd.xfer_allreduce.rcvbuf,  // buffer
                                   sbytes,                          // buffer bytes
                                   0);                              // amount initially in buffer
-            _pwq_inter1.configure(NULL,                            // Memory manager
+            _pwq_inter1.configure(
                                   cmd->cmd.xfer_allreduce.rcvbuf,  // buffer
                                   sbytes,                          // buffer bytes
                                   0);                              // amount initially in buffer
@@ -650,7 +650,7 @@ namespace CCMI
             _deviceMcombInfo = _geometry->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
             _deviceMcastInfo = _geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
 
-            _pwq_src.configure(NULL,                            // Memory manager
+            _pwq_src.configure(
                                cmd->cmd.xfer_allreduce.sndbuf,  // buffer
                                _bytes,                          // buffer bytes
                                _bytes);                         // amount initially in buffer
@@ -659,7 +659,7 @@ namespace CCMI
                            _pwq_src.bytesAvailableToConsume(), _pwq_src.bytesAvailableToProduce()));
             DO_DEBUG(dumpDbuf((double*)_pwq_src.bufferToConsume() , _pwq_src.bytesAvailableToConsume() / sizeof(double)));
 
-            _pwq_dst.configure(NULL,                            // Memory manager
+            _pwq_dst.configure(
                                cmd->cmd.xfer_allreduce.rcvbuf,  // buffer
                                _bytes,                          // buffer bytes
                                0);                              // amount initially in buffer
@@ -669,7 +669,7 @@ namespace CCMI
 
             char* tmp = (char*)(((uint64_t)_buffer + 127) & ~(uint64_t)127); // align the buffer
             TRACE_ADAPTOR((stderr, "<%p>MultiCombineComposite2DeviceNP() _buffer %p/%p\n", this, _buffer, tmp));
-            _pwq_temp.configure(NULL,                           // Memory manager
+            _pwq_temp.configure(
                                 tmp,                            // buffer
                                 _bytes,                         // buffer bytes
                                 0);                             // amount initially in buffer
@@ -677,7 +677,7 @@ namespace CCMI
 
             tmp = (char*)(((uint64_t)_buffer1 + 127) & ~(uint64_t)127); // align the buffer
             TRACE_ADAPTOR((stderr, "<%p>MultiCombineComposite2DeviceNP() _buffer1 %p/%p\n", this, _buffer1, tmp));
-            _pwq_temp1.configure(NULL,                           // Memory manager
+            _pwq_temp1.configure(
                                  tmp,                            // buffer
                                  _bytes,                         // buffer bytes
                                  0);                             // amount initially in buffer

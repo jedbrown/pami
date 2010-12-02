@@ -150,12 +150,12 @@ int main(int argc, char ** argv)
 
   memset (&srcp, 0, sizeof(srcp));
   new (&srcp) PAMI::PipeWorkQueue();
-  srcp.configure(NULL, bcastbuf, MAX_BUF_SIZE, 0);
+  srcp.configure(bcastbuf, MAX_BUF_SIZE, 0);
 	
   /*if (myrank == 0)
-  srcp.configure(NULL, bcastbuf, MAX_BUF_SIZE, MAX_BUF_SIZE);
+  srcp.configure(bcastbuf, MAX_BUF_SIZE, MAX_BUF_SIZE);
   else
-  srcp.configure(NULL, bcastbuf, MAX_BUF_SIZE, 0);
+  srcp.configure(bcastbuf, MAX_BUF_SIZE, 0);
 	*/
 
   if (myrank == 0) {

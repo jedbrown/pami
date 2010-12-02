@@ -209,7 +209,7 @@ int main(int argc, char ** argv)
       mcast.connection_id = 1; // I'm going to use connection id to specify which buffer to receive into.
 
       PAMI::PipeWorkQueue * srcPwq =_buffer1.srcPwq();
-      srcPwq->configure(NULL, _buffer1.buffer(), (TEST_BUF_SIZE/4)*4, 0);
+      srcPwq->configure(_buffer1.buffer(), (TEST_BUF_SIZE/4)*4, 0);
       srcPwq->reset();
 
       mcast.src = (pami_pipeworkqueue_t *) srcPwq;
@@ -330,7 +330,7 @@ int main(int argc, char ** argv)
       _buffer1.reset(true); // isRoot = true;
 
       PAMI::PipeWorkQueue * srcPwq =_buffer1.srcPwq();
-      srcPwq->configure(NULL, _buffer1.buffer(), (TEST_BUF_SIZE/4)*4, 0);
+      srcPwq->configure(_buffer1.buffer(), (TEST_BUF_SIZE/4)*4, 0);
       srcPwq->reset();
 
 

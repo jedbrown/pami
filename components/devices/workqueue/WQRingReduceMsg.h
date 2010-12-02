@@ -191,12 +191,16 @@ public:
                 _me = __global.mapping.task();
                 size_t t0 = __global.topology_local.index2Rank(0);
                 size_t tz;
+		char mmkey[PAMI::Memory::MMKEYSIZE];
+		char *mms;
+		mms = mmkey + sprintf(mmkey, "/WQRingReduceMdl-");
                 __global.mapping.nodePeers(tz);
                 for (size_t x = 0; x < tz; ++x) {
+			sprintf(mms, "%zd", x);
 #ifdef USE_FLAT_BUFFER
-                        _wq[x].configure(mm, USE_FLAT_BUFFER, 0);
+                        _wq[x].configure(mm, mmkey, USE_FLAT_BUFFER, 0);
 #else /* ! USE_FLAT_BUFFER */
-                        _wq[x].configure(mm, 8192);
+                        _wq[x].configure(mm, mmkey, 8192);
 #endif /* ! USE_FLAT_BUFFER */
                         _wq[x].barrier_reset(tz, _me == t0);
                 }

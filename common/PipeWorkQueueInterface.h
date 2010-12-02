@@ -43,10 +43,11 @@ namespace PAMI
             /// Creates a circular buffer of specified size in shared memory.
             /// Buffer size must be power-of-two.
             ///
-            /// \param[in] mm System dependent methods
-            /// \param[in] bufsize  Size of buffer to allocate
+            /// \param[in] mm	Memory to use
+            /// \param[in] key	Unique id for memory allocation
+            /// \param[in] bufsize  Size of data buffer to allocate
             ///
-            inline void configure(PAMI::Memory::MemoryManager *mm, size_t bufsize);
+            inline void configure(PAMI::Memory::MemoryManager *mm, const char *key, size_t bufsize);
 
             ///
             /// \brief Configure for User-supplied Circular Buffer variety.
@@ -57,11 +58,10 @@ namespace PAMI
             /// Assumes the caller has placed buffer and (this) in appropriate memory
             /// for desired use - i.e. all in shared memory if to be used beyond this process.
             ///
-            /// \param[in] mm   System dependent methods
             /// \param[in] buffer Buffer to use
             /// \param[in] bufsize  Size of buffer
             ///
-            inline void configure(PAMI::Memory::MemoryManager *mm, char *buffer, size_t bufsize);
+            inline void configure(char *buffer, size_t bufsize);
 
             ///
             /// \brief Configure for Memeory (flat buffer) variety.
@@ -76,7 +76,7 @@ namespace PAMI
             /// \param[in] bufsize  Size of buffer
             /// \param[in] bufinit  Amount of data initially in buffer
             ///
-            inline void configure(PAMI::Memory::MemoryManager *mm, char *buffer, size_t bufsize, size_t bufinit);
+            inline void configure(char *buffer, size_t bufsize, size_t bufinit);
 
             ///
             /// \brief PROPOSAL: Configure for Non-Contig Memory (flat buffer) variety.
@@ -98,7 +98,7 @@ namespace PAMI
             /// \param[in] typecount      Number of repetitions of buffer units
             /// \param[in] bufinit        Number of bytes initially in buffer
             ///
-            inline void configure(PAMI::Memory::MemoryManager *mm, char *buffer, pami_type_t *type, size_t typecount, size_t bufinit);
+            inline void configure(char *buffer, pami_type_t *type, size_t typecount, size_t bufinit);
 
             /// \brief Configure for Many to Many (indexed flat buffer) access.
             ///
@@ -129,7 +129,7 @@ namespace PAMI
             ///
             /// \note bufinit must be empty (0) for producer PWQ or full (size of dgsp type * dsgpcounts[index]) for consumer PWQ.
             ///
-            inline void configure(PAMI::Memory::MemoryManager *unused, char *buffer, size_t indexcount,
+            inline void configure(char *buffer, size_t indexcount,
                                   pami_type_t *dgsp, size_t *offsets, size_t *dgspcounts, size_t *bufinit);
 
             /// \brief Configure for Many to Many (indexed flat buffer) access.
@@ -161,7 +161,7 @@ namespace PAMI
             ///
             /// \note bufinit must be empty (0) for producer PWQ or full (size of dgsp type * dsgpcounts[index]) for consumer PWQ.
             ///
-            inline void configure(PAMI::Memory::MemoryManager *unused, char *buffer, size_t indexcount,
+            inline void configure(char *buffer, size_t indexcount,
                                        pami_type_t *dgsp, size_t offset, size_t dgspcount, size_t *bufinit);
             ///
             /// \brief Reset this shared memory work queue.
@@ -415,9 +415,10 @@ namespace PAMI
 
         template <class T_PipeWorkQueue>
         void PipeWorkQueue<T_PipeWorkQueue>::configure(PAMI::Memory::MemoryManager *mm,
-                                                       size_t bufsize)
+							const char *key,
+                                                        size_t bufsize)
         {
-            return static_cast<T_PipeWorkQueue*>(this)->configure_impl(mm,bufsize);
+            return static_cast<T_PipeWorkQueue*>(this)->configure_impl(mm, key, bufsize);
         }
 
         template <class T_PipeWorkQueue>
@@ -433,41 +434,41 @@ namespace PAMI
         }
 
         template <class T_PipeWorkQueue>
-        void PipeWorkQueue<T_PipeWorkQueue>::configure(PAMI::Memory::MemoryManager *mm,
+        void PipeWorkQueue<T_PipeWorkQueue>::configure(
                                                        char *buffer,
                                                        size_t bufsize)
         {
-            return static_cast<T_PipeWorkQueue*>(this)->configure_impl(mm, buffer,bufsize);
+            return static_cast<T_PipeWorkQueue*>(this)->configure_impl(buffer,bufsize);
         }
 
         template <class T_PipeWorkQueue>
-        void PipeWorkQueue<T_PipeWorkQueue>::configure(PAMI::Memory::MemoryManager *mm, char *buffer,
+        void PipeWorkQueue<T_PipeWorkQueue>::configure(char *buffer,
                                                        size_t bufsize, size_t bufinit)
         {
-            return static_cast<T_PipeWorkQueue*>(this)->configure_impl(mm, buffer,bufsize,bufinit);
+            return static_cast<T_PipeWorkQueue*>(this)->configure_impl(buffer,bufsize,bufinit);
         }
 
         template <class T_PipeWorkQueue>
-        void PipeWorkQueue<T_PipeWorkQueue>::configure(PAMI::Memory::MemoryManager *mm, char *buffer, pami_type_t *type,
+        void PipeWorkQueue<T_PipeWorkQueue>::configure(char *buffer, pami_type_t *type,
                                                        size_t typecount, size_t bufinit)
         {
-            return static_cast<T_PipeWorkQueue*>(this)->configure_impl(mm, buffer, type,
+            return static_cast<T_PipeWorkQueue*>(this)->configure_impl(buffer, type,
                                                                        typecount, bufinit);
         }
 
         template <class T_PipeWorkQueue>
-        void PipeWorkQueue<T_PipeWorkQueue>::configure(PAMI::Memory::MemoryManager *unused, char *buffer, size_t indexcount,
+        void PipeWorkQueue<T_PipeWorkQueue>::configure(char *buffer, size_t indexcount,
                                   pami_type_t *dgsp, size_t *offsets, size_t *dgspcounts, size_t *bufinit)
         {
-            return static_cast<T_PipeWorkQueue*>(this)->configure_impl(unused, buffer, indexcount, dgsp, offsets,
+            return static_cast<T_PipeWorkQueue*>(this)->configure_impl(buffer, indexcount, dgsp, offsets,
                                                                        dgspcounts, bufinit);
         }
 
         template <class T_PipeWorkQueue>
-        void PipeWorkQueue<T_PipeWorkQueue>::configure(PAMI::Memory::MemoryManager *unused, char *buffer, size_t indexcount,
+        void PipeWorkQueue<T_PipeWorkQueue>::configure(char *buffer, size_t indexcount,
                                   pami_type_t *dgsp, size_t offset, size_t dgspcount, size_t *bufinit)
         {
-            return static_cast<T_PipeWorkQueue*>(this)->configure_impl(unused, buffer, indexcount, dgsp, offset,
+            return static_cast<T_PipeWorkQueue*>(this)->configure_impl(buffer, indexcount, dgsp, offset,
                                                                        dgspcount, bufinit);
         }
 
