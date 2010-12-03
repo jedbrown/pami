@@ -144,7 +144,7 @@ namespace CCMI
       {
         // \todo:  fill in other metadata
         TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
-        strcpy(&m->name[0], "Rectangle1ColorP2PBroadcast");
+        strcpy(&m->name[0], "RectangleP2P1ColorBroadcast");
       }
 
       typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT

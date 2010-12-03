@@ -10,6 +10,16 @@
 #include "components/memory/MemoryAllocator.h"
 #include "util/ccmi_util.h"
 
+#include "util/trace.h"
+
+#ifdef CCMI_TRACE_ALL
+ #define DO_TRACE_ENTEREXIT 1
+ #define DO_TRACE_DEBUG     1
+#else
+ #define DO_TRACE_ENTEREXIT 0
+ #define DO_TRACE_DEBUG     0
+#endif
+
 namespace CCMI
 {
   namespace Adaptor
@@ -25,6 +35,16 @@ namespace CCMI
       class collObj
       {
       public:
+        class Tracer
+        {
+        public:
+          Tracer(unsigned line)
+          {
+            TRACE_FN_ENTER();
+            TRACE_FORMAT("%d", line);
+            TRACE_FN_EXIT();
+          }
+        };
         collObj(Interfaces::NativeInterface             * native,
                 C                                       * cmgr,
                 pami_geometry_t                           geometry,
@@ -32,15 +52,21 @@ namespace CCMI
                 pami_event_function                       fn,
                 void                                    * cookie,
                 AllSidedCollectiveProtocolFactoryT      * factory):
+          _trace1(__LINE__),
         _obj(native,cmgr,geometry,cmd,fn,cookie),
+          _trace2(__LINE__),
         _factory(factory),
         _user_done_fn(cmd->cb_done),
         _user_cookie(cmd->cookie)
         {
-              TRACE_ADAPTOR((stderr, "<%p>AllSidedCollectiveProtocolFactoryT::collObj()\n",this));
+          TRACE_FN_ENTER();
+          TRACE_FORMAT("<%p>",this);
           DO_DEBUG((templateName<T>()));
+          TRACE_FN_EXIT();
         }
+        Tracer                               _trace1;
         T                                    _obj;
+        Tracer                               _trace2;
         AllSidedCollectiveProtocolFactoryT * _factory;
         pami_event_function                  _user_done_fn;
         void                               * _user_cookie;
@@ -54,7 +80,9 @@ namespace CCMI
       _cmgr(cmgr),
       _native(native)
       {
-      TRACE_ADAPTOR((stderr, "<%p>AllSidedCollectiveProtocolFactoryT()\n",this));
+        TRACE_FN_ENTER();
+        TRACE_FORMAT("<%p>",this);
+        TRACE_FN_EXIT();
       }
 
       virtual ~AllSidedCollectiveProtocolFactoryT ()
@@ -71,18 +99,21 @@ namespace CCMI
                           void          * clientdata,
                           pami_result_t   res)
       {
+        TRACE_FN_ENTER();
         collObj *cobj = (collObj *)clientdata;
-          TRACE_ADAPTOR((stderr, "<%p>AllSidedCollectiveProtocolFactoryT::done_fn()\n",cobj));
+        TRACE_FORMAT("<%p> cobj %p",cobj->_factory, cobj);
         cobj->_user_done_fn(context, cobj->_user_cookie, res);
         cobj->_factory->_alloc.returnObject(cobj);
+        TRACE_FN_EXIT();
       }
 
 
       virtual Executor::Composite * generate(pami_geometry_t             geometry,
                                              void                      * cmd)
       {
+        TRACE_FN_ENTER();
         collObj *cobj = (collObj*)  _alloc.allocateObject();
-          TRACE_ADAPTOR((stderr, "<%p>AllSidedCollectiveProtocolFactoryT::generate()\n",cobj));
+        TRACE_FORMAT("<%p> cobj %p",this, cobj);
         new(cobj) collObj(_native,          // Native interface
                           _cmgr,            // Connection Manager
                           geometry,         // Geometry Object
@@ -90,13 +121,16 @@ namespace CCMI
                           done_fn,          // Intercept function
                           cobj,             // Intercept cookie
                           this);            // Factory
+        TRACE_FN_EXIT();
         return(Executor::Composite *)&cobj->_obj;
       }
 
       virtual void metadata(pami_metadata_t *mdata)
       {
-        TRACE_ADAPTOR((stderr,"%s , mdata=%p\n", __PRETTY_FUNCTION__,  mdata));
+        TRACE_FN_ENTER();
+        TRACE_FORMAT("mdata=%p",mdata);
         get_metadata(mdata);
+        TRACE_FN_EXIT();
       }
     private:
       C                                          * _cmgr;

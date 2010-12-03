@@ -22,6 +22,13 @@
 #endif
 //#define USE_MEMALIGN
 
+#include "util/trace.h"
+
+#undef  DO_TRACE_ENTEREXIT
+#define DO_TRACE_ENTEREXIT 0
+#undef  DO_TRACE_DEBUG    
+#define DO_TRACE_DEBUG     0
+
 namespace PAMI
 {
   /// \todo Update to use a memory manager template parameter.
@@ -49,6 +56,7 @@ namespace PAMI
 
       inline void * allocateObject ()
       {
+        TRACE_FN_ENTER();
         lock ();
 
         memory_object_t * object = _head;
@@ -62,9 +70,11 @@ namespace PAMI
           unsigned i;
 #ifdef USE_MEMALIGN
           int rc;
+          TRACE_FORMAT("%zu", sizeof(memory_object_t) * 10);
           rc = posix_memalign ((void **)&object, T_ObjAlign, sizeof(memory_object_t) * 10);
           PAMI_assertf(rc==0, "posix_memalign failed for context, errno=%d, %s\n", errno, strerror(errno));
 #else
+          TRACE_FORMAT("%zu", sizeof(memory_object_t) * 10);
           object = (memory_object_t*)malloc(sizeof(memory_object_t)*10);
           PAMI_assertf((((unsigned long)object) & (T_ObjAlign-1))== 0, "object (%p) not aligned on %#X bytes.\n", object, T_ObjAlign);
 #endif
@@ -74,18 +84,23 @@ namespace PAMI
 
         unlock ();
 
+        TRACE_FORMAT("<%p>", object);
+        TRACE_FN_EXIT();
         return (void *) object;
       };
 
       inline void returnObject (void * object)
       {
+        TRACE_FN_ENTER();
         lock ();
 
+        TRACE_FORMAT("<%p>", object);
         memory_object_t * tmp = (memory_object_t *) object;
         tmp->next = _head;
         _head = tmp;
 
         unlock ();
+        TRACE_FN_EXIT();
       };
 
       static const size_t objsize = T_ObjSize;
@@ -107,5 +122,9 @@ namespace PAMI
       memory_object_t * _head;
   };
 };
+#undef  DO_TRACE_ENTEREXIT
+#define DO_TRACE_ENTEREXIT 0
+#undef  DO_TRACE_DEBUG    
+#define DO_TRACE_DEBUG     0
 
 #endif // __pami_components_memory_memoryallocator_h__

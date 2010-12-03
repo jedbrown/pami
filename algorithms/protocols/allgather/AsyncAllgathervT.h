@@ -102,7 +102,7 @@ namespace CCMI
       ///
       /// \brief Asyc Allgatherv Composite.
       ///
-      template <class T_Conn, typename T_Type>
+      template <class T_Conn, typename T_Type, PAMI::Geometry::topologyIndex_t T_Geometry_Index = PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX>
       class AsyncAllgathervT : public CCMI::Executor::Composite
       {
 
@@ -123,7 +123,7 @@ namespace CCMI
                             PAMI_GEOMETRY_CLASS            * geometry,
                             void                           *cmd) :
               Executor::Composite(),
-              _executor (native, cmgr, geometry->comm(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)),
+              _executor (native, cmgr, geometry->comm(), (PAMI::Topology*)geometry->getTopology(T_Geometry_Index)),
               _cmgr(cmgr)
           {
             TRACE_ADAPTOR ((stderr, "<%p>Allgatherv::AsyncAllgathervT() \n", this));

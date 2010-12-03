@@ -12,6 +12,16 @@
 #include "algorithms/connmgr/SimpleConnMgr.h"
 #include "algorithms/connmgr/RankBasedConnMgr.h"
 
+#include "util/trace.h"
+
+#ifdef CCMI_TRACE_ALL
+  #define DO_TRACE_ENTEREXIT 1
+  #define DO_TRACE_DEBUG     1
+#else
+  #define DO_TRACE_ENTEREXIT 0
+  #define DO_TRACE_DEBUG     0
+#endif
+
 namespace CCMI
 {
   namespace Adaptor
@@ -25,8 +35,23 @@ namespace CCMI
       class BcastMultiColorCompositeT : public Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>
       {
       public:
+        class Tracer
+        {
+        public:
+          Tracer(unsigned line)
+          {
+            TRACE_FN_ENTER();
+            TRACE_FORMAT("%d", line);
+            TRACE_FN_EXIT();
+          }
+        };
 
-	BcastMultiColorCompositeT() {}
+        BcastMultiColorCompositeT(): _traceit(__LINE__)
+        {
+          TRACE_FN_ENTER();
+          TRACE_FORMAT( "<%p>",this);
+          TRACE_FN_EXIT();
+        }
 
         BcastMultiColorCompositeT(Interfaces::NativeInterface              * mf,
                                   T_Conn                                   * cmgr,
@@ -35,103 +60,121 @@ namespace CCMI
                                   pami_event_function                         fn,
                                   void                                     * cookie):
         Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>
+           
         ( cmgr,
           fn,
           cookie,
           mf,
           NUMCOLORS),
-	  _geometry ((PAMI_GEOMETRY_CLASS *)g), _status(INTERNAL_BARRIER)
+          _traceit(__LINE__),
+        _geometry ((PAMI_GEOMETRY_CLASS *)g), _status(INTERNAL_BARRIER)
         {
-          TRACE_ADAPTOR((stderr, "<%p>BcastMultiColorCompositeT()\n",this));
+          TRACE_FN_ENTER();
+          TRACE_FORMAT( "<%p>",this);
           Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::
-	    initialize (_geometry->comm(),
-			(PAMI::Topology*)_geometry->getTopology(T_Geometry_Index),
-			((pami_xfer_t *)cmd)->cmd.xfer_broadcast.root,
-			((pami_xfer_t *)cmd)->cmd.xfer_broadcast.typecount,
-			((pami_xfer_t *)cmd)->cmd.xfer_broadcast.buf,
-			((pami_xfer_t *)cmd)->cmd.xfer_broadcast.buf);
-	  
+          initialize (_geometry->comm(),
+                      (PAMI::Topology*)_geometry->getTopology(T_Geometry_Index),
+                      ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.root,
+                      ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.typecount,
+                      ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.buf,
+                      ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.buf);
+
           SyncBcastPost();
-	  
+
           PAMI_GEOMETRY_CLASS *geometry = ((PAMI_GEOMETRY_CLASS *)g);
           CCMI::Executor::Composite  *barrier =  (CCMI::Executor::Composite *)
-	                                          geometry->getKey((size_t)0, /// \todo does NOT support multicontext
+                                                 geometry->getKey((size_t)0, /// \todo does NOT support multicontext
                                                                   PAMI::Geometry::CKEY_BARRIERCOMPOSITE1);
           this->addBarrier(barrier);
           barrier->setDoneCallback(Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::cb_barrier_done, this);
 
           barrier->start();
+          TRACE_FN_EXIT();
         }
 
-	/// \brief constructor for allgather/allgatherv
-	BcastMultiColorCompositeT(Interfaces::NativeInterface              *  mf,
-				  T_Conn                                   *  cmgr,
-				  pami_geometry_t                             g,
-				  pami_event_function                         fn,
-				  void                                     *  cookie):
-	  Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>
-	  ( cmgr,
-	    fn,
-	    cookie,
-	    mf,
-	    NUMCOLORS),
-	    _geometry ((PAMI_GEOMETRY_CLASS *)g),_status(EXTERNAL_BARRIER)
+        /// \brief constructor for allgather/allgatherv
+        BcastMultiColorCompositeT(Interfaces::NativeInterface              *  mf,
+                                  T_Conn                                   *  cmgr,
+                                  pami_geometry_t                             g,
+                                  pami_event_function                         fn,
+                                  void                                     *  cookie):
+        Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>
+        ( cmgr,
+          fn,
+          cookie,
+          mf,
+          NUMCOLORS),
+           _traceit(__LINE__),
+        _geometry ((PAMI_GEOMETRY_CLASS *)g),_status(EXTERNAL_BARRIER)
         {
-	}
+          TRACE_FN_ENTER();
+          TRACE_FN_EXIT();
+        }
 
-	/// \brief initialize routing for allgatherv
-	unsigned initialize (size_t                                  root,
-			     size_t                                  bytes,
-			     char                                  * src,
-			     char                                  * dst) {
-	  TRACE_ADAPTOR((stderr, "<%p>BcastMultiColorCompositeT()\n",this));
-	  
-	  Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::initialize 
-	    (_geometry->comm(),						
-	     (PAMI::Topology*)_geometry->getTopology(T_Geometry_Index),
-	     root,
-	     bytes,
-	     src,
-	     dst );
-	  
+        /// \brief initialize routing for allgatherv
+        unsigned initialize (size_t                                  root,
+                             size_t                                  bytes,
+                             char                                  * src,
+                             char                                  * dst)
+        {
+          TRACE_FN_ENTER();
+          TRACE_FORMAT( "<%p>",this);
+
+          Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::initialize 
+          (_geometry->comm(),           
+           (PAMI::Topology*)_geometry->getTopology(T_Geometry_Index),
+           root,
+           bytes,
+           src,
+           dst );
+
           SyncBcastPost();
-	  
-	  return 0;
+
+          TRACE_FN_EXIT();
+          return 0;
         }
-	
-	void start () {
-	  //If composite calls barrier then do nothing. The barrier
-	  //completion will trigger data movement
-	  if (_status == EXTERNAL_BARRIER)
-	    //Start all executors
-	    Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::cb_barrier_done(NULL, this, PAMI_SUCCESS);
-	  
-	}
-	   
-	void SyncBcastPost ()
+
+        void start ()
         {
+          TRACE_FN_ENTER();
+          //If composite calls barrier then do nothing. The barrier
+          //completion will trigger data movement
+          if (_status == EXTERNAL_BARRIER)
+            //Start all executors
+            Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::cb_barrier_done(NULL, this, PAMI_SUCCESS);
+
+          TRACE_FN_EXIT();
+        }
+
+        void SyncBcastPost ()
+        {
+          TRACE_FN_ENTER();
           //fprintf(stderr, "<%p>BcastMultiColorCompositeT::SyncBcastPost()\n",this);
-	  unsigned ncolors = Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::_numColors;
-	  //fprintf(stderr,"SyncBcastPost ncolors %d\n",ncolors);
-	  for (unsigned c = 0; c < ncolors; c++)
+          unsigned ncolors = Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::_numColors;
+          //fprintf(stderr,"SyncBcastPost ncolors %d\n",ncolors);
+          for (unsigned c = 0; c < ncolors; c++)
           {
-	    Executor::BroadcastExec<T_Conn> *exec = (Executor::BroadcastExec<T_Conn> *) Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::getExecutor(c);
-	    unsigned root = exec->getRoot();
-	    
-	    if (Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::_native->myrank() != root) {
-	      //fprintf(stderr, "<%p>BcastMultiColorCompositeT::SyncBcastPost() post receives for color %u, root %u\n", this,c,root);
-	      exec->setPostReceives(true);
-	      exec->postReceives();
-	    }
-	  }
+            Executor::BroadcastExec<T_Conn> *exec = (Executor::BroadcastExec<T_Conn> *) Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::getExecutor(c);
+            unsigned root = exec->getRoot();
+            TRACE_FORMAT( "<%p> root %u, exec %p",this, root, exec);
+
+            if (Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::_native->myrank() != root)
+            {
+              //fprintf(stderr, "<%p>BcastMultiColorCompositeT::SyncBcastPost() post receives for color %u, root %u\n", this,c,root);
+              exec->setPostReceives(true);
+              exec->postReceives();
+            }
+          }
+          TRACE_FN_EXIT();
         }
 
       protected:
-	PAMI_GEOMETRY_CLASS     * _geometry;
-	unsigned                  _status;
+        Tracer                    _traceit;
+        PAMI_GEOMETRY_CLASS     * _geometry;
+        unsigned                  _status;
 
-	static const unsigned INTERNAL_BARRIER = 0;
-	static const unsigned EXTERNAL_BARRIER = 1;
+        static const unsigned INTERNAL_BARRIER = 0;
+        static const unsigned EXTERNAL_BARRIER = 1;
       };
     };
   };

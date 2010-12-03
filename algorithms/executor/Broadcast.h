@@ -161,7 +161,7 @@ namespace CCMI
           pami_multicast_t mrecv;
           memcpy (&mrecv, &_msend, sizeof(pami_multicast_t));
 
-          TRACE_MSG((stderr, "<%p>Executor::BroadcastExec::postReceives bytes %d, rank %d\n", this, _buflen, _selftopology.index2Rank(0)));
+          TRACE_MSG((stderr, "<%p>Executor::BroadcastExec::postReceives ndest %zu, bytes %d, rank %u, root %u\n", this, _dsttopology.size(), _buflen, _selftopology.index2Rank(0),_roottopology.index2Rank(0)));
           mrecv.src_participants   = (pami_topology_t *) & _roottopology; 
           mrecv.dst_participants   = (pami_topology_t *) & _selftopology;
 

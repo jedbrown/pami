@@ -470,7 +470,7 @@ namespace PAMI
     {
       // \todo:  fill in other metadata
       TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
-      strcpy(&m->name[0], "Rectangle1ColorDputBroadcast");
+      strcpy(&m->name[0], "RectangleDput1ColorBroadcast");
     }
 
     typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
@@ -515,9 +515,9 @@ namespace PAMI
     }            
     
     void get_rect_allgv_colors (PAMI::Topology             * t,
-				unsigned                    bytes,
-				unsigned                  * colors,
-				unsigned                  & ncolors) 
+                                unsigned                    bytes,
+                                unsigned                  * colors,
+                                unsigned                  & ncolors) 
     {
       unsigned max = 0, ideal = 0;
       unsigned _colors[10];
@@ -538,7 +538,7 @@ namespace PAMI
         ideal = 7;
       
       if (ncolors > ideal)
-	ncolors = ideal;
+        ncolors = ideal;
       
       memcpy (colors, _colors, ncolors * sizeof(int));
     }

@@ -90,8 +90,8 @@ namespace PAMI
       _torusInfo[3]= _pers.isTorusD();
       _torusInfo[4]= _pers.isTorusE();
 
-      TRACE_ERR((stderr, "Mapping() coords(a,b,c,d,e,t):(%zu %zu %zu %zu %zu %zu), node: (%#lX %#lX)\n", _a, _b, _c, _d, _e, _t, _nodeaddr.global, _nodeaddr.local));
-      TRACE_ERR((stderr, "Mapping() torusInfo(a,b,c,d,e,t):(%u %u %u %u %u %u), node: (%#lX %#lX)\n", _torusInfo[0],_torusInfo[1],_torusInfo[2],_torusInfo[3],_torusInfo[4]));
+      TRACE_ERR((stderr, "Mapping() coords(%zu %zu %zu %zu %zu %zu), node: (%#lX %#lX)\n", _a, _b, _c, _d, _e, _t, _nodeaddr.global, _nodeaddr.local));
+      TRACE_ERR((stderr, "Mapping() torusInfo(%u %u %u %u %u )", _torusInfo[0],_torusInfo[1],_torusInfo[2],_torusInfo[3],_torusInfo[4]));
 
     };
 
