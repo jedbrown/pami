@@ -95,6 +95,9 @@ int main(int argc, char*argv[])
   pami_xfer_t          barrier;
   pami_xfer_t          alltoallv;
 
+  char* selected = getenv("TEST_PROTOCOL");
+  if(!selected) selected = "";
+
   /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
                      &context,       /* Context            */
@@ -161,6 +164,7 @@ int main(int argc, char*argv[])
             printf("# Size(bytes)           cycles    bytes/sec      usec\n");
             printf("# -----------      -----------    -----------    ---------\n");
           }
+        if(strncmp(alltoallv_always_works_md[nalg].name,selected, strlen(selected))) continue;
 
         alltoallv.algorithm  = alltoallv_always_works_algo[nalg];
 

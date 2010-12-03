@@ -79,6 +79,9 @@ int main (int argc, char ** argv)
   pami_xfer_t          barrier;
   pami_xfer_t          gatherv;
 
+  char* selected = getenv("TEST_PROTOCOL");
+  if(!selected) selected = "";
+
   /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
                      &context,       /* Context            */

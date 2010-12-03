@@ -28,7 +28,10 @@ int main (int argc, char ** argv)
   pami_xfer_t          barrier;
   volatile unsigned    poll_flag = 0;
 
-  int                  algo;
+  int                  nalg;
+
+  char* selected = getenv("TEST_PROTOCOL");
+  if(!selected) selected = "";
 
   int rc = pami_init(&client,        /* Client             */
                      &context,       /* Context            */
@@ -181,15 +184,21 @@ int main (int argc, char ** argv)
     if (set[k])
     {
 
-      for (algo = 0; algo < newbar_num_algo[0]; algo++)
+      for (nalg = 0; nalg < newbar_num_algo[0]; nalg++)
       {
         double ti, tf, usec;
-        newbarrier.algorithm = newbar_algo[algo];
+        newbarrier.algorithm = newbar_algo[nalg];
+        if (task_id == root)
+        {
+          printf("# Barrier Test -- root = %d, protocol: %s\n", root, always_works_md[nalg].name);
+          printf("# -------------------------------------------------------------------\n");
+        }
+        if(strncmp(always_works_md[nalg].name,selected, strlen(selected))) continue;
 
         if (task_id == root)
         {
           fprintf(stderr, "Test set(%u):  Barrier protocol(%s) Correctness (%d of %zd algorithms)\n",k,
-                  newbar_md[algo].name, algo + 1, newbar_num_algo[0]);
+                  newbar_md[nalg].name, nalg + 1, newbar_num_algo[0]);
           ti = timer();
           blocking_coll(context, &newbarrier, &poll_flag);
           tf = timer();
@@ -221,7 +230,7 @@ int main (int argc, char ** argv)
 
         if (task_id == root)
           fprintf(stderr, "Test set(%u): Barrier protocol(%s) Performance: time=%f usec\n",k,
-                  newbar_md[algo].name, usec / (double)niter);
+                  newbar_md[nalg].name, usec / (double)niter);
       }
     }
   }

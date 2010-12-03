@@ -120,7 +120,10 @@ int main(int argc, char*argv[])
   size_t                 half        = num_tasks / 2;
   range     = (pami_geometry_range_t *)malloc(((num_tasks + 1) / 2) * sizeof(pami_geometry_range_t));
 
-  char *method = getenv("BCAST_TEST_SPLIT_METHOD");
+  char* selected = getenv("TEST_PROTOCOL");
+  if(!selected) selected = "";
+
+  char *method = getenv("TEST_SPLIT_METHOD");
 
   if (!(method && !strcmp(method, "1")))
     {
@@ -254,10 +257,11 @@ int main(int argc, char*argv[])
     {
       if (task_id == root)
         {
-          printf("# Broadcast Bandwidth Test -- root = %d\n", (int)root);
+          printf("# Broadcast Bandwidth Test -- root = %d  protocol: %s\n", root, newbcast_md[0].name);
           printf("# Size(bytes)           cycles    bytes/sec    usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
         }
+      if(strncmp(newbcast_md[0].name,selected, strlen(selected))) continue;
 
       if (set[k])
         {

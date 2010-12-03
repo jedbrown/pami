@@ -121,7 +121,10 @@ int main(int argc, char*argv[])
   size_t                 half        = num_tasks / 2;
   range     = (pami_geometry_range_t *)malloc(((num_tasks + 1) / 2) * sizeof(pami_geometry_range_t));
 
-  char *method = getenv("BCAST_TEST_SPLIT_METHOD");
+  char* selected = getenv("TEST_PROTOCOL");
+  if(!selected) selected = "";
+
+  char *method = getenv("TEST_SPLIT_METHOD");
 
   if (!(method && !strcmp(method, "1")))
     {
@@ -259,6 +262,8 @@ int main(int argc, char*argv[])
                 }
 
               fflush(stdout);
+              if(strncmp(newbcast_md[nalg].name,selected, strlen(selected))) continue;
+
               blocking_coll(context, &newbarrier, &newbar_poll_flag);
 
               for (i = 1; i <= BUFSIZE; i *= 2)

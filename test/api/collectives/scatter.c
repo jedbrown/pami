@@ -38,6 +38,9 @@ int main (int argc, char ** argv)
 
   double               ti, tf, usec;
 
+  char* selected = getenv("TEST_PROTOCOL");
+  if(!selected) selected = "";
+
   /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
                      &context,       /* Context            */
@@ -100,6 +103,7 @@ int main (int argc, char ** argv)
             printf("# Size(bytes)           cycles    bytes/sec    usec\n");
             printf("# -----------      -----------    -----------    ---------\n");
           }
+        if(strncmp(scatter_always_works_md[nalg].name,selected, strlen(selected))) continue;
 
         scatter.cb_done    = cb_done;
         scatter.cookie     = (void*) & scatter_poll_flag;

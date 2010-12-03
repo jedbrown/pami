@@ -28,7 +28,10 @@ int main (int argc, char ** argv)
   pami_xfer_t          barrier;
   volatile unsigned    poll_flag = 0;
 
-  int                  algo;
+  int                  nalg;
+
+  char* selected = getenv("TEST_PROTOCOL");
+  if(!selected) selected = "";
 
   int rc = pami_init(&client,        /* Client             */
                      &context,       /* Context            */
@@ -59,26 +62,35 @@ int main (int argc, char ** argv)
   barrier.cookie    = (void*) & poll_flag;
   barrier.algorithm = always_works_algo[0];
 
-  if (!task_id)
-    fprintf(stderr, "Test Default Barrier(%s)\n", always_works_md[0].name);
+  if(!strncmp(always_works_md[0].name,selected, strlen(selected)))
+  {
+    if (!task_id)
+        fprintf(stderr, "Test Default Barrier(%s)\n", always_works_md[0].name);
 
-  rc = blocking_coll(context, &barrier, &poll_flag);
+    rc = blocking_coll(context, &barrier, &poll_flag);
 
-  if (rc == 1)
-    return 1;
+    if (rc == 1)
+        return 1;
 
-  if (!task_id)
-    fprintf(stderr, "Barrier Done (%s)\n", always_works_md[0].name);
+    if (!task_id)
+        fprintf(stderr, "Barrier Done (%s)\n", always_works_md[0].name);
+  }
 
-  for (algo = 0; algo < num_algorithm[0]; algo++)
+  for (nalg = 0; nalg < num_algorithm[0]; nalg++)
     {
       double ti, tf, usec;
-      barrier.algorithm = always_works_algo[algo];
+      barrier.algorithm = always_works_algo[nalg];
+      if (!task_id)
+        {
+          printf("# Barrier Test protocol: %s\n", always_works_md[nalg].name);
+          printf("# -------------------------------------------------------------------\n");
+        }
+      if(strncmp(always_works_md[nalg].name,selected, strlen(selected))) continue;
 
       if (!task_id)
         {
           fprintf(stderr, "Test Barrier protocol(%s) Correctness (%d of %zd algorithms)\n",
-                  always_works_md[algo].name, algo + 1, num_algorithm[0]);
+                  always_works_md[nalg].name, nalg + 1, num_algorithm[0]);
           ti = timer();
           blocking_coll(context, &barrier, &poll_flag);
           tf = timer();
@@ -111,7 +123,7 @@ int main (int argc, char ** argv)
       if (!task_id)
       {
           fprintf(stderr, "Test Barrier protocol(%s) Performance: time=%f usec\n",
-                  always_works_md[algo].name, usec / (double)niter);
+                  always_works_md[nalg].name, usec / (double)niter);
           delayTest(2);
       }
 

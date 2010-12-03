@@ -79,6 +79,9 @@ int main(int argc, char*argv[])
   char                 buf[BUFSIZE];
   char                 rbuf[BUFSIZE];
 
+  char* selected = getenv("TEST_PROTOCOL");
+  if(!selected) selected = "";
+
   /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
                      &context,       /* Context            */
@@ -146,6 +149,7 @@ int main(int argc, char*argv[])
           printf("# Size(bytes)           cycles    bytes/sec    usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
         }
+      if(strncmp(ambcast_always_works_md[nalg].name,selected, strlen(selected))) continue;
 
       pami_collective_hint_t h = {0};
       pami_dispatch_callback_function fn;

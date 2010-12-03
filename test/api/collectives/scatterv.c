@@ -38,6 +38,9 @@ int main (int argc, char ** argv)
   pami_xfer_t          barrier;
   pami_xfer_t          scatterv;
 
+  char* selected = getenv("TEST_PROTOCOL");
+  if(!selected) selected = "";
+
   /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
                      &context,       /* Context            */
@@ -102,6 +105,7 @@ int main (int argc, char ** argv)
             printf("# Size(bytes)           cycles    bytes/sec    usec\n");
             printf("# -----------      -----------    -----------    ---------\n");
           }
+        if(strncmp(scatterv_always_works_md[nalg].name,selected, strlen(selected))) continue;
 
         scatterv.cb_done                       = cb_done;
         scatterv.cookie                        = (void*) & scatterv_poll_flag;

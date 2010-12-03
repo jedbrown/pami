@@ -79,6 +79,9 @@ int main (int argc, char ** argv)
   pami_xfer_t          barrier;
   pami_xfer_t          gatherv;
 
+  char* selected = getenv("TEST_PROTOCOL");
+  if(!selected) selected = "";
+
   /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
                      &context,       /* Context            */
@@ -143,6 +146,7 @@ int main (int argc, char ** argv)
             printf("# Size(bytes)           cycles    bytes/sec    usec\n");
             printf("# -----------      -----------    -----------    ---------\n");
           }
+        if(strncmp(gatherv_always_works_md[nalg].name,selected, strlen(selected))) continue;
 
         gatherv.cb_done                       = cb_done;
         gatherv.cookie                        = (void*) & gatherv_poll_flag;

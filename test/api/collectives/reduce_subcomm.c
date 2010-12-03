@@ -294,7 +294,10 @@ int main(int argc, char*argv[])
   size_t                 half        = num_tasks / 2;
   range     = (pami_geometry_range_t *)malloc(((num_tasks + 1) / 2) * sizeof(pami_geometry_range_t));
 
-  char *method = getenv("REDUCE_TEST_SPLIT_METHOD");
+  char* selected = getenv("TEST_PROTOCOL");
+  if(!selected) selected = "";
+
+  char *method = getenv("TEST_SPLIT_METHOD");
 
   if (!(method && !strcmp(method, "1")))
     {
@@ -531,6 +534,7 @@ int main(int argc, char*argv[])
           printf("# Size(bytes)           cycles    bytes/sec    usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
         }
+      if(strncmp(reduce_always_works_md[nalg].name,selected, strlen(selected))) continue;
 
       blocking_coll(context, &newbarrier, &newbar_poll_flag);
 

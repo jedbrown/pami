@@ -38,6 +38,9 @@ int main (int argc, char ** argv)
   pami_xfer_t          barrier;
   pami_xfer_t          allgather;
 
+  char* selected = getenv("TEST_PROTOCOL");
+  if(!selected) selected = "";
+
   /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
                      &context,       /* Context            */
@@ -97,6 +100,7 @@ int main (int argc, char ** argv)
             printf("# Size(bytes)           cycles    bytes/sec    usec\n");
             printf("# -----------      -----------    -----------    ---------\n");
           }
+        if(strncmp(allgather_always_works_md[nalg].name,selected, strlen(selected))) continue;
 
         allgather.cb_done    = cb_done;
         allgather.cookie     = (void*) & allgather_poll_flag;
