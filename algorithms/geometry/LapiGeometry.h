@@ -57,7 +57,8 @@ namespace PAMI
                     unsigned                             comm,
                     pami_task_t                          nranks,
                     pami_task_t                         *ranks,
-                    std::map<unsigned, pami_geometry_t> *geometry_map):
+                    std::map<unsigned, pami_geometry_t> *geometry_map,
+                    int                                  gen_topo=1):
             Geometry<PAMI::Geometry::Lapi>(parent,
                                            mapping,
                                            comm,
@@ -77,7 +78,8 @@ namespace PAMI
           TRACE_ERR((stderr, "<%p>Lapi(ranklist)\n", this));
           // this creates the topology including all subtopologies
           new(&_topos[DEFAULT_TOPOLOGY_INDEX]) PAMI::Topology(_ranks, nranks);
-          buildSpecialTopologies();
+          if(gen_topo)
+            buildSpecialTopologies();
 
           // Initialize remaining members
 

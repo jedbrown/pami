@@ -318,11 +318,15 @@ namespace PAMI
      * \param[in] clientid     Client ID (index)
      * \param[in] contextid    Context ID (index)
      */
-    inline pami_result_t generate(size_t clientid, size_t num_ctx, Memory::MemoryManager &mm) {
+    inline pami_result_t generate(size_t clientid, size_t num_ctx, Memory::MemoryManager &mm, bool disable_shmem=false) {
         // these calls create (allocate and construct) each element.
         // We don't know how these relate to contexts, they are semi-opaque.
         _generics = PAMI::Device::Generic::Device::Factory::generate(clientid, num_ctx, mm, NULL);
-        _shmem    = ShmemDevice::Factory::generate(clientid, num_ctx, mm, _generics);
+        if(disable_shmem==false)
+          _shmem    = ShmemDevice::Factory::generate(clientid, num_ctx, mm, _generics);
+        else
+          _shmem    = NULL;
+        
         return PAMI_SUCCESS;
     }
 
@@ -341,9 +345,10 @@ namespace PAMI
      * \param[in] ctx          Context opaque entity
      * \param[in] contextid    Context ID (index)
      */
-    inline pami_result_t init(size_t clientid, size_t contextid, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm) {
+    inline pami_result_t init(size_t clientid, size_t contextid, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, bool disable_shmem=false) {
         PAMI::Device::Generic::Device::Factory::init(_generics, clientid, contextid, clt, ctx, mm, _generics);
-        ShmemDevice::Factory::init(_shmem, clientid, contextid, clt, ctx, mm, _generics);
+        if(disable_shmem==false)
+          ShmemDevice::Factory::init(_shmem, clientid, contextid, clt, ctx, mm, _generics);
         return PAMI_SUCCESS;
     }
 
@@ -359,7 +364,8 @@ namespace PAMI
     inline size_t advance(size_t clientid, size_t contextid) {
         size_t events = 0;
         events += PAMI::Device::Generic::Device::Factory::advance(_generics, clientid, contextid);
-        events += ShmemDevice::Factory::advance(_shmem, clientid, contextid);
+        if(_shmem)
+          events += ShmemDevice::Factory::advance(_shmem, clientid, contextid);
         return events;
     }
     PAMI::Device::Generic::Device        *_generics; // need better name...

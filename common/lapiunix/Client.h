@@ -10,6 +10,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <map>
+#include <vector>
 #include "common/ClientInterface.h"
 #include "common/lapiunix/Context.h"
 #include "algorithms/geometry/LapiGeometry.h"
@@ -19,6 +20,22 @@
 extern pthread_once_t  _Per_proc_lapi_init;
 extern void _lapi_perproc_setup(void);
 extern PAMI::PamiActiveClients  _pami_act_clients;
+
+void
+simplesplit(vector<string> &vec,
+            const  string  &str,
+            const  string  &del )
+{
+  size_t  start = 0, end = 0;
+  while ( end != string::npos )
+    {
+      end = str.find( del, start );
+      vec.push_back( str.substr(start,
+                                (end == string::npos)?string::npos : end - start ) );
+      start =((end>(string::npos-del.size()))
+              ?string::npos:end+del.size());
+    }
+}
 
 namespace PAMI
 {
@@ -31,6 +48,7 @@ namespace PAMI
       _client ((pami_client_t) this),
       _maxctxts(0),
       _ncontexts (0),
+      _world_list(NULL),
       _mm ()
       {
         pami_result_t   rc               = PAMI_SUCCESS;
@@ -42,11 +60,8 @@ namespace PAMI
         _maxctxts = 1;
 
         // Initialize a LAPI Client Object
-        new(&_lapiClient[0]) LapiImpl::Client(name, configuration, num_configs);
-
-        // Initialize the shared memory manager
-        initializeMemoryManager ();
-
+        new(&_lapiClient[0]) LapiImpl::Client(name, configuration, num_configs);\
+                                                                                  
         // Create an initial context for initialization
         rc = createOneContext(&_contexts[0],0);
         if(rc) {result=rc;  return;}
@@ -55,24 +70,90 @@ namespace PAMI
         // Using rank and size
         rc = _contexts[0]->initP2P(&myrank, &mysize, &_main_lapi_handle);
         if(rc) {result=rc;  return;}
+        
 
         // Initialize the mapping to be used for collectives
-        __global.mapping.init(myrank, mysize);
+        __global.mapping.init(myrank, mysize);        
 
-        // Initialize world geometry object, and set the geometry ptr for the context
-        _world_geometry = (LAPIGeometry*)_geometryAlloc.allocateObject();
-        _world_range.lo = 0;
-        _world_range.hi = mysize-1;
-        new(_world_geometry) LAPIGeometry((pami_client_t) this,
-                                          NULL,
-                                          &__global.mapping,
-                                          0,
-                                          1,
-                                          &_world_range,
-                                          &_geometry_map,
-                                          0); // This tells the geometry not to build
-                                              // the optimized topologies.  we can
-                                              // generate them after building a mapping
+        // Get number of tasks for this world
+        // Get list of tasks for this world (colon separated string)
+        // Determine whether or not we are initializing shared memory
+        char *world_procs, *world_tasks, *dyntasking;
+        world_procs = getenv("MP_I_WORLD_PROCS");
+        world_tasks = getenv("MP_I_WORLD_TASKS");
+        dyntasking  = getenv("MP_I_DYNAMIC_TASKING");
+        
+        // If I am a spawned task, Do not set up a geometry, or even
+        // a mapping
+        // see the TODO below about building mappings for
+        // dynamic tasking
+        // Also, do what we can to disable the shared memory:
+        // Another TODO:  remove the _mm dependency from platdevs
+        if(!world_procs && dyntasking)
+          {
+            _mm.init (malloc (1024), 1024);
+            _platdevs.generate(_clientid, _maxctxts, _mm, true);
+            _platdevs.init(_clientid,0,_client,(pami_context_t)_contexts[0],&_mm,true);
+            result=rc;
+            return;
+          }
+
+        // Initialize the shared memory manager
+        initializeMemoryManager ();
+
+        
+        // We do something slightly different for dynamic tasking
+        // vs non-dynamic tasking.  In the dynamic tasking case,
+        // the world geometry is only available for the "world" created
+        // at init time.
+        // TODO:  we need to construct a mapping that contains
+        // a list of ALL the ranks available at init time, so when the
+        // user adds a process, it is viable to create a geometry
+        // that is larger than the initial world.  We will probably
+        // want to get our process managers(poe) to give us support for that.
+        if(world_procs)
+          {
+            // Dynamic tasking case, we need to resize the world we are using
+            // for collectives...
+            size_t num_world_procs = atoi(world_procs);
+            std::string str = world_tasks;
+            std::string del = ":";
+            vector<string> vec;
+            simplesplit(vec,str,del);
+            _world_list = (pami_task_t*)malloc(num_world_procs*sizeof(pami_task_t));
+            for( unsigned int i = 0;  i < vec.size();   i++ )
+              _world_list[i]=atoi(vec[i].c_str());
+            
+            // Initialize world geometry object, and set the geometry ptr for the context
+            _world_geometry = (LAPIGeometry*)_geometryAlloc.allocateObject();
+            new(_world_geometry) LAPIGeometry((pami_client_t) this,
+                                              NULL,
+                                              &__global.mapping,
+                                              0,
+                                              num_world_procs,
+                                              _world_list,
+                                              &_geometry_map,
+                                              0); // This tells the geometry not to build
+                                                  // the optimized topologies.  we can
+                                                  // generate them after building a mapping
+          }
+        else
+          {
+            // Initialize world geometry object, and set the geometry ptr for the context
+            _world_geometry = (LAPIGeometry*)_geometryAlloc.allocateObject();
+            _world_range.lo = 0;
+            _world_range.hi = mysize-1;
+            new(_world_geometry) LAPIGeometry((pami_client_t) this,
+                                              NULL,
+                                              &__global.mapping,
+                                              0,
+                                              1,
+                                              &_world_range,
+                                              &_geometry_map,
+                                              0); // This tells the geometry not to build
+                                                  // the optimized topologies.  we can
+                                                  // generate them after building a mapping
+          }
         _contexts[0]->setWorldGeometry(_world_geometry);
 
         // Initialize "Safe" Collectives, which will be used
@@ -81,10 +162,6 @@ namespace PAMI
         _contexts[0]->initP2PCollectives();
 
         // --> Ok to do collectives after here, build better mappings
-        // Fence the create
-        // Todo:  remove this, does it violate the API?
-        CheckLapiRC(lapi_gfence (_main_lapi_handle));
-
         size_t min_rank, max_rank, num_local, *local_ranks;
         generateMapCache(myrank,
                          mysize,
@@ -95,6 +172,7 @@ namespace PAMI
         __global.mapping.set_mapcache(_mapcache,
                                       _peers,
                                       _npeers);
+        
         PAMI::Topology::static_init(&__global.mapping);
 
         // Generate the "generic" device queues
@@ -118,6 +196,7 @@ namespace PAMI
 
     inline ~Client ()
       {
+        if(_world_list) free(_world_list);
       }
 
 
@@ -151,7 +230,6 @@ namespace PAMI
         PAMI_assertf(hosts != NULL, "memory alloc failed");
         err = gethostname(host, str_len);
         PAMI_assertf(err == 0, "gethostname failed, errno %d", errno);
-
 
 	// Do an allgather to collect the map
         pami_xfer_type_t   colltype = PAMI_XFER_ALLGATHER;
@@ -778,6 +856,9 @@ namespace PAMI
 
     // Geometry Range Object for the initial world geometry
     pami_geometry_range_t                        _world_range;
+
+    // Geometry list Object for the initial world geometry(dynamic tasking)
+    pami_task_t                                 *_world_list;
 
     // This is a map of geometries to geometry id's
     std::map<unsigned, pami_geometry_t>          _geometry_map;
