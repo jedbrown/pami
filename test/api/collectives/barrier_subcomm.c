@@ -75,7 +75,7 @@ int main (int argc, char ** argv)
   size_t                 half        = num_tasks / 2;
   range     = (pami_geometry_range_t *)malloc(((num_tasks + 1) / 2) * sizeof(pami_geometry_range_t));
 
-  char *method = getenv("BARRIER_TEST_SPLIT_METHOD");
+  char *method = getenv("TEST_SPLIT_METHOD");
 
   if (!(method && !strcmp(method, "1")))
   {
