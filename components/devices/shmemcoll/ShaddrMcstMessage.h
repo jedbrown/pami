@@ -172,7 +172,7 @@ namespace PAMI
 					mcst_control->incoming_bytes = 0;
 					mcst_control->glob_src_buffer = NULL;
 					_master_desc->set_state(FREE);
-					//_master_desc->signal_master_done();
+					_master_desc->signal_master_done();
 					mem_barrier();
 					this->setStatus (PAMI::Device::Done);
 					return PAMI_SUCCESS;
@@ -190,7 +190,8 @@ namespace PAMI
 			}
 			else
 			{
-			  	if ((this->_master_desc->get_state() != INIT) && (this->seq_num != this->_master_desc->get_seq_id())){
+			  	//if ((this->_master_desc->get_state() != INIT) && (this->seq_num != this->_master_desc->get_seq_id())){
+			  	if (this->_master_desc->get_state() != INIT) {
                      return PAMI_EAGAIN;
                 }
 				else
@@ -202,7 +203,7 @@ namespace PAMI
 				if (this->_bytes_consumed == bytes)
 				{
 					_master_desc->signal_done();
-					//while (_master_desc->get_master_done() == 0) {}; //wait for the master to be done
+					while (_master_desc->get_master_done() == 0) {}; //wait for the master to be done
 					this->setStatus (PAMI::Device::Done);
 
 					return PAMI_SUCCESS;

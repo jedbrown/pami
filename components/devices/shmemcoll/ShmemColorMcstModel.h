@@ -31,11 +31,11 @@
 #undef TRACE_ERR
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) // fprintf x
+#define TRACE_ERR(x)  //fprintf x
 #endif
 
 #define NUM_SHMEM_MCST_COLORS	16 
-#define NUM_LOCAL_DST_RANKS		3 //assuming that the model is run with 4 procs/node
+//#define NUM_LOCAL_DST_RANKS		3 //assuming that the model is run with 4 procs/node
 
 namespace PAMI
 {
@@ -158,12 +158,12 @@ namespace PAMI
 
 			//memcpy(buf, &global_vaddr, sizeof(global_vaddr));
 			mcst_control->glob_src_buffer = global_vaddr;
-			TRACE_ERR((stderr,"copied global_vaddr:%p to %p \n", global_vaddr, buf));
+			//TRACE_ERR((stderr,"copied global_vaddr:%p to %p \n", global_vaddr, buf));
 			TRACE_ERR((stderr,"done processes:%u \n", master_desc->done_peers()));
 			master_desc->set_consumers(num_dst_ranks);
-			//master_desc->reset_master_done();
+			master_desc->reset_master_done();
 			mem_barrier();
-			master_desc->set_seq_id(Shmem::McstMessageShaddr<T_Device, T_Desc>::seq_num);	
+			//master_desc->set_seq_id(Shmem::McstMessageShaddr<T_Device, T_Desc>::seq_num);	
 			master_desc->set_state(Shmem::INIT);
 	}
 
