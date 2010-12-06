@@ -35,18 +35,6 @@ namespace CCMI
       class collObj
       {
       public:
-#if DO_TRACE_DEBUG
-        class Tracer
-        {
-        public:
-          Tracer(unsigned line)
-          {
-            TRACE_FN_ENTER();
-            TRACE_FORMAT("%d", line);
-            TRACE_FN_EXIT();
-          }
-        };
-#endif
         collObj(Interfaces::NativeInterface             * native,
                 C                                       * cmgr,
                 pami_geometry_t                           geometry,
@@ -54,11 +42,7 @@ namespace CCMI
                 pami_event_function                       fn,
                 void                                    * cookie,
                 AllSidedCollectiveProtocolFactoryT      * factory):
-#if DO_TRACE_DEBUG
-          _trace1(__LINE__),
-#endif
           _obj(native,cmgr,geometry,cmd,fn,cookie),
-          _trace2(__LINE__),
         _factory(factory),
         _user_done_fn(cmd->cb_done),
         _user_cookie(cmd->cookie)
@@ -68,9 +52,6 @@ namespace CCMI
           DO_DEBUG((templateName<T>()));
           TRACE_FN_EXIT();
         }
-#if DO_TRACE_DEBUG
-        Tracer                               _trace1;
-#endif
         T                                    _obj;
         AllSidedCollectiveProtocolFactoryT * _factory;
         pami_event_function                  _user_done_fn;

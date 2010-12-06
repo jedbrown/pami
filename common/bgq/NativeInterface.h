@@ -63,18 +63,6 @@ namespace PAMI
     static const size_t multisync_sizeof_msg     = T_Msync::sizeof_msg;
     static const size_t multicombine_sizeof_msg  = T_Mcomb::sizeof_msg;
 
-#if DO_TRACE_DEBUG
-    class Tracer
-    {
-    public:
-      Tracer(unsigned line)
-      {
-        TRACE_FN_ENTER();
-        TRACE_FORMAT("%d", line);
-        TRACE_FN_EXIT();
-      }
-    };
-#endif
   protected:
     /// \brief NativeInterface done function - free allocation and call client's done
     static void ni_client_done(pami_context_t  context,
@@ -94,9 +82,6 @@ namespace PAMI
       BGQNativeInterfaceAS *_ni;
       pami_callback_t       _user_callback;
     };
-#if DO_TRACE_DEBUG
-    Tracer                   _tracer;
-#endif
     PAMI::MemoryAllocator < sizeof(allocObj), 16 > _allocator;  // Allocator
 
     pami_result_t              _mcast_status;
@@ -140,9 +125,6 @@ namespace PAMI
   inline BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>::BGQNativeInterfaceAS(T_Mcast *mcast, T_Msync *msync, T_Mcomb *mcomb, pami_client_t client, pami_context_t context, size_t context_id, size_t client_id,int *dispatch_id):
   CCMI::Interfaces::NativeInterface(__global.mapping.task(),
                                     __global.mapping.size()),
-#if DO_TRACE_DEBUG
-  _tracer(__LINE__),
-#endif
   _allocator(),
   _mcast(*mcast),
   _msync(*msync),
@@ -167,9 +149,6 @@ namespace PAMI
                                                                                   int           *dispatch_id):
   CCMI::Interfaces::NativeInterface(__global.mapping.task(),
                                     __global.mapping.size()),
-#if DO_TRACE_DEBUG
-  _tracer(__LINE__),
-#endif
   _allocator(),
 
   _mcast_status(PAMI_SUCCESS),
