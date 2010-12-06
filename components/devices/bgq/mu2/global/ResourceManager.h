@@ -2404,7 +2404,7 @@ uint32_t PAMI::Device::MU::ResourceManager::setupInjFifos(
 				    numFree,
 				    freeIds,
 				    fifoAttrs );
-      PAMI_assertf( rc == 0, "Kernel_AllocateInjFifos failed with rc=%d, errno=%d.\n",rc,errno );
+      PAMI_assertf( rc == 0, "Kernel_AllocateInjFifos failed with rc=%d\n",rc );
       TRACE((stderr,"MU ResourceManager: setupInjFifos: Allocated subgroup ptr = %p\n",&((*subgroups)[subgroupIndex])));
 
       free(fifoAttrs); fifoAttrs=NULL;
