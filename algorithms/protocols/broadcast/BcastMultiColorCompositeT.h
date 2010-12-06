@@ -35,6 +35,7 @@ namespace CCMI
       class BcastMultiColorCompositeT : public Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>
       {
       public:
+#if DO_TRACE_DEBUG
         class Tracer
         {
         public:
@@ -45,8 +46,11 @@ namespace CCMI
             TRACE_FN_EXIT();
           }
         };
-
-        BcastMultiColorCompositeT(): _traceit(__LINE__)
+#endif
+        BcastMultiColorCompositeT(): 
+#if DO_TRACE_DEBUG
+          _traceit(__LINE__)
+#endif
         {
           TRACE_FN_ENTER();
           TRACE_FORMAT( "<%p>",this);
@@ -66,8 +70,10 @@ namespace CCMI
           cookie,
           mf,
           NUMCOLORS),
+#if DO_TRACE_DEBUG
           _traceit(__LINE__),
-        _geometry ((PAMI_GEOMETRY_CLASS *)g), _status(INTERNAL_BARRIER)
+#endif
+          _geometry ((PAMI_GEOMETRY_CLASS *)g), _status(INTERNAL_BARRIER)
         {
           TRACE_FN_ENTER();
           TRACE_FORMAT( "<%p>",this);
@@ -104,8 +110,10 @@ namespace CCMI
           cookie,
           mf,
           NUMCOLORS),
+#if DO_TRACE_DEBUG
            _traceit(__LINE__),
-        _geometry ((PAMI_GEOMETRY_CLASS *)g),_status(EXTERNAL_BARRIER)
+#endif
+          _geometry ((PAMI_GEOMETRY_CLASS *)g),_status(EXTERNAL_BARRIER)
         {
           TRACE_FN_ENTER();
           TRACE_FN_EXIT();
@@ -169,7 +177,9 @@ namespace CCMI
         }
 
       protected:
+#if DO_TRACE_DEBUG
         Tracer                    _traceit;
+#endif
         PAMI_GEOMETRY_CLASS     * _geometry;
         unsigned                  _status;
 

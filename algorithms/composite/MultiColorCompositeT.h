@@ -36,6 +36,7 @@ namespace CCMI
     template <int NUMCOLORS, class T_Bar, class T_Exec, class T_Sched, class T_Conn, GetColorsFn pwcfn>
     class MultiColorCompositeT : public CompositeT<NUMCOLORS, T_Bar, T_Exec>
     {
+#if DO_TRACE_DEBUG
       public:
         class Tracer
         {
@@ -47,8 +48,9 @@ namespace CCMI
             TRACE_FN_EXIT();
           }
         };
-    protected:
       Tracer                    _traceit;
+#endif
+    protected:
       ///
       /// \brief number of done callbacks called
       ///
@@ -71,7 +73,11 @@ namespace CCMI
       static const uint32_t alignment_mask = ~(alignment-1); //the mask for sizes
 
     public:
-      MultiColorCompositeT () : CompositeT<NUMCOLORS, T_Bar, T_Exec>(), _traceit(__LINE__),_doneCount(0), _nComplete(0)
+      MultiColorCompositeT () : CompositeT<NUMCOLORS, T_Bar, T_Exec>(), 
+#if DO_TRACE_DEBUG
+        _traceit(__LINE__),
+#endif
+        _doneCount(0), _nComplete(0)
       {
         TRACE_FN_ENTER();
         TRACE_FORMAT("<%p>", this);
@@ -103,7 +109,11 @@ namespace CCMI
                             void                                  * clientdata,
                             Interfaces::NativeInterface           * mf,
                             unsigned                                ncolors = NUMCOLORS):
-      CCMI::Executor::CompositeT<NUMCOLORS, T_Bar, T_Exec>(), _traceit(__LINE__), _doneCount(0), _numColors(ncolors), _cb_done(cb_done), _clientdata(clientdata), _native(mf), _cmgr(cmgr)
+      CCMI::Executor::CompositeT<NUMCOLORS, T_Bar, T_Exec>(), 
+#if DO_TRACE_DEBUG
+        _traceit(__LINE__), 
+#endif
+        _doneCount(0), _numColors(ncolors), _cb_done(cb_done), _clientdata(clientdata), _native(mf), _cmgr(cmgr)
       {
         TRACE_FN_ENTER();
         _nComplete     = _numColors + 1;
