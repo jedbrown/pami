@@ -781,10 +781,12 @@ namespace PAMI
             else if (_mu_rectangle_dput_broadcast_factory)              
               geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_rectangle_dput_broadcast_factory, _context_id);
 
+#if 0  // hangs 
             if ((local_sub_topology->size() < 8) && (_shmem_mu_rectangle_dput_allgather_factory))              
               geometry->addCollective(PAMI_XFER_ALLGATHERV,  _shmem_mu_rectangle_dput_allgather_factory, _context_id);
             else if (_mu_rectangle_dput_allgather_factory)              
               geometry->addCollective(PAMI_XFER_ALLGATHERV,  _mu_rectangle_dput_allgather_factory, _context_id);
+#endif
           }
 
         }
