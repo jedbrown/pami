@@ -566,8 +566,9 @@ namespace PAMI
 	    for (i = 0; i < CR_NUM_DIMS; ++i) map[i] = i;
 	  }
 	  BG_JobCoords_t subblk;
-	  int is_subblockjob = Kernel_JobCoords(&subblk);
-	  if (is_subblockjob)
+	  rc = Kernel_JobCoords(&subblk);
+	  PAMI_assertf(rc == 0, "JobCoords call failed %d", rc);
+	  if (subblk.isSubBlock)
 	  {
 	    PAMI_assertf(subblk.shape.core == 16, "Sub-node jobs not supported");
 	  }
