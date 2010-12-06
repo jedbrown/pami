@@ -770,19 +770,22 @@ namespace PAMI
           if(rectangle->type() == PAMI_COORD_TOPOLOGY)  // could be EMPTY
           {
             TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register Rectangle\n", this));
-            //Add rectangle broadcasts.  If < 8 processes per node, use the shmem+mu rectangle, otherwise use mu (only) rectangle.
-            if((local_sub_topology->size() < 8) && (_shmem_mu_rectangle_1color_dput_broadcast_factory))
+
+            // Add rectangle protocols: 
+            // If single node or < 32 processes per node, use the shmem+mu rectangle, otherwise use mu (only) rectangle.
+
+            if(((master_sub_topology->size() == 1) || (local_sub_topology->size() < 32)) && (_shmem_mu_rectangle_1color_dput_broadcast_factory))
               geometry->addCollective(PAMI_XFER_BROADCAST,  _shmem_mu_rectangle_1color_dput_broadcast_factory, _context_id);
             else if (_mu_rectangle_1color_dput_broadcast_factory)
               geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_rectangle_1color_dput_broadcast_factory, _context_id);
 
-            if ((local_sub_topology->size() < 8) && (_shmem_mu_rectangle_dput_broadcast_factory))              
+            if(((master_sub_topology->size() == 1) || (local_sub_topology->size() < 32)) && (_shmem_mu_rectangle_dput_broadcast_factory))              
               geometry->addCollective(PAMI_XFER_BROADCAST,  _shmem_mu_rectangle_dput_broadcast_factory, _context_id);
             else if (_mu_rectangle_dput_broadcast_factory)              
               geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_rectangle_dput_broadcast_factory, _context_id);
 
-#if 0  // hangs 
-            if ((local_sub_topology->size() < 8) && (_shmem_mu_rectangle_dput_allgather_factory))              
+#if 0  // allgatherv hangs 
+            if(((master_sub_topology->size() == 1) || (local_sub_topology->size() < 32)) && (_shmem_mu_rectangle_dput_allgather_factory))
               geometry->addCollective(PAMI_XFER_ALLGATHERV,  _shmem_mu_rectangle_dput_allgather_factory, _context_id);
             else if (_mu_rectangle_dput_allgather_factory)              
               geometry->addCollective(PAMI_XFER_ALLGATHERV,  _mu_rectangle_dput_allgather_factory, _context_id);
