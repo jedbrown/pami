@@ -120,6 +120,7 @@ namespace PAMI
             _cb_result(PAMI_EAGAIN)
         {
           TRACE_ERR((stderr, "<%p>Common(ranges)\n", this));
+	  pami_result_t rc;
 
 #if 0
           PAMI::Topology *cur         = NULL;
@@ -133,7 +134,8 @@ namespace PAMI
           // we can re-enable this code
           if (0)
             {
-              PAMI::Topology *_temp_topo  = (PAMI::Topology *)malloc((numranges) * sizeof(PAMI::Topology));
+	      rc = __global.heap_mm->memalign((void **)&_temp_topo, 0, (numranges) * sizeof(PAMI::Topology));
+	      PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
 
               for (int i = 0; i < numranges; i++)
                 new(&_temp_topo[i])Topology(rangelist[i].lo, rangelist[i].hi);
@@ -143,17 +145,18 @@ namespace PAMI
               for (int i = 1; i < numranges; i++)
                 {
                   cur      = &_temp_topo[i];
-                  new_topo = (PAMI::Topology *)malloc(sizeof(PAMI::Topology));
+	          rc = __global.heap_mm->memalign((void **)&new_topo, 0, sizeof(PAMI::Topology));
+	          PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc new_topo[%d]", i);
                   prev->unionTopology(new_topo, cur);
                   prev = new_topo;
 
                   if (free_topo)
-                    free(free_topo);
+                    __global.heap_mm->free(free_topo);
 
                   free_topo = new_topo;
                 }
 
-              free(_temp_topo);
+              __global.heap_mm->free(_temp_topo);
             }
           else
 #endif
@@ -171,7 +174,8 @@ namespace PAMI
                 nranks += (rangelist[i].hi - rangelist[i].lo + 1);
 
               _ranks_malloc = true;
-              _ranks = (pami_task_t*)malloc(nranks * sizeof(pami_task_t));
+	      rc = __global.heap_mm->memalign((void **)&_ranks, 0, nranks * sizeof(pami_task_t));
+	      PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _ranks");
 
               for (k = 0, i = 0; i < numranges; i++)
                 {
@@ -196,7 +200,7 @@ namespace PAMI
             // Empty the special list topo
             new(&_topos[LIST_TOPOLOGY_INDEX]) PAMI::Topology();
             // Free rank list
-            free(_ranks);
+            __global.heap_mm->free(_ranks);
             _ranks = NULL;
             _ranks_malloc = false;
           }
@@ -432,12 +436,12 @@ namespace PAMI
         }
         inline void                      freeAllocations_impl()
         {
-          if (_ranks_malloc) free(_ranks);
+          if (_ranks_malloc) __global.heap_mm->free(_ranks);
 
           _ranks = NULL;
           _ranks_malloc = false;
-          free(_allreduce_storage[0]);
-          free(_allreduce_storage[1]);
+          __global.heap_mm->free(_allreduce_storage[0]);
+          __global.heap_mm->free(_allreduce_storage[1]);
 
           return;
         }

@@ -38,10 +38,13 @@ namespace PAMI
         result = PAMI_UNIMPL;
 #ifdef __pami_extension_dynamic__
         const char * dlext = ".so";
-        char * dlname = (char *) malloc (strlen (name) + strlen (dlext) + 1);
+        char * dlname;
+	pami_result_t rc;
+	rc = __global.heap_mm->memalign((void **)&dlname, 0, strlen (name) + strlen (dlext) + 1);
+	PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc dlname");
         sprintf (dlname, "%s%s", name, dlext);
         void * dlhandle = dlopen (dlname, RTLD_NOW);
-        free (dlname);
+        __global.heap_mm->free (dlname);
 
         if (dlhandle)
           result = PAMI_SUCCESS;
@@ -105,8 +108,10 @@ namespace PAMI
         pami_result_t result = PAMI_UNIMPL;
 
         size_t length = strlen (name) + 2;
-        Extension * ext =
-          (Extension *) malloc (sizeof (Extension) + length);
+        Extension * ext;
+	pami_result_t rc;
+	rc = __global.heap_mm->memalign((void **)&ext, 0, sizeof(*ext) + length);
+	PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc ext");
         char * n = (char *) ext + 1;
         strncpy (n, name, length);
 

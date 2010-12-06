@@ -23,8 +23,10 @@ namespace PAMI
                                          const char    * name,
                                          pami_result_t & result)
   {
-    PAMI::HfiExtension * x =
-      (PAMI::HfiExtension *) malloc (sizeof(PAMI::HfiExtension));
+    PAMI::HfiExtension * x;
+    pami_result_t rc;
+    rc = __global.heap_mm->memalign((void **)&x, 0, sizeof(*x));
+    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PAMI::HfiExtension");
     new (x) PAMI::HfiExtension();
 
     result = PAMI_SUCCESS;
@@ -41,7 +43,7 @@ namespace PAMI
   void Extension::closeExtension<3000> (void * cookie, pami_result_t & result)
   {
     PAMI::HfiExtension * x = (PAMI::HfiExtension *) cookie;
-    free (x);
+    __global.heap_mm->free (x);
 
     result = PAMI_SUCCESS;
     return;

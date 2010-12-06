@@ -54,6 +54,7 @@
 #include "p2p/protocols/SendPWQ.h"
 
 #include "components/atomic/bgq/L2Counter.h"
+#include "components/atomic/gcc/GccCounter.h"
 #include "components/atomic/counter/CounterBarrier.h"
 #include "components/devices/misc/AtomicBarrierMsg.h"
 
@@ -104,7 +105,7 @@ namespace PAMI
                                Device::MU::MultisyncModel<false, false>,
                                Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false> > MUAxialDputNI;
 
-  typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Atomic::GccBuiltin> ShmemCollDesc;
+  typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::GccInPlaceCounter> ShmemCollDesc;
   typedef PAMI::Device::Shmem::ShmemColorMcstModel<PAMI::Device::Generic::Device, ShmemCollDesc> ShaddrMcstModel;
   
   typedef  PAMI::BGQNativeInterfaceASMultiDevice<MUDevice,

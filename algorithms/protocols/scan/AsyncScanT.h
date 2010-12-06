@@ -196,7 +196,10 @@ namespace CCMI
             if (size <= 32768)
               return (char *)_eab_allocator.allocateObject();
 
-            char *buf = (char *)malloc(size);
+            char *buf;
+	    pami_result_t rc;
+	    rc = __global.heap_mm->memalign((void **)&buf, 0, size);
+	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc buf");
             return buf;
           }
 
@@ -205,7 +208,7 @@ namespace CCMI
             if (size <= 32768)
               return _eab_allocator.returnObject(buf);
 
-            free(buf);
+            __global.heap_mm->free(buf);
           }
 
           virtual Executor::Composite * generate(pami_geometry_t              g,

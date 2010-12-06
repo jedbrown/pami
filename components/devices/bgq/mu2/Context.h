@@ -315,8 +315,9 @@ namespace PAMI
 
 	    // The following ifdef'd out code is for testing only...
 #if 0
-            _globalBatIds = (uint16_t *)malloc( _numBatIds * sizeof(uint16_t) );
-            PAMI_assertf( _globalBatIds != NULL, "The heap is full.\n" );
+	    prc = __global.heap_mm->memalign((void **)&_globalBatIds, 0,
+						_numBatIds * sizeof(uint16_t) );
+            PAMI_assertf( prc == PAMI_SUCCESS, "alloc of _globalBatIds failed");
 
             fprintf(stderr,"Context.h: queryFreeBatIds returned %u\n",queryFreeBatIds());
 

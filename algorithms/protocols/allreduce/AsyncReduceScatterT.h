@@ -156,9 +156,9 @@ namespace CCMI
 
           ~AsyncReduceScatterT ()
           {
-            free(_sdispls);
-            free(_scounts);
-            free(_tmpbuf);
+            __global.heap_mm->free(_sdispls);
+            __global.heap_mm->free(_scounts);
+            __global.heap_mm->free(_tmpbuf);
           }
 
 
@@ -176,7 +176,9 @@ namespace CCMI
           {
             if (root)
               {
-                _tmpbuf = (char *) malloc(bytes);
+		pami_result_t rc;
+		rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, bytes);
+		PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
                 _relbuf = rcvbuf;
                 _reduce_executor.setBuffers (sndbuf, _tmpbuf, bytes);
               }
@@ -197,8 +199,11 @@ namespace CCMI
 
             CCMI::Adaptor::Allreduce::getReduceFunction(dt, op, rtypecount, sizeOfType, func);
 
-            _sdispls = (size_t *) malloc(counts * sizeof(size_t));
-            _scounts = (size_t *) malloc(counts * sizeof(size_t));
+	    pami_result_t rc;
+	    rc = __global.heap_mm->memalign((void **)&_sdispls, 0, counts * sizeof(*_sdispls));
+	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _sdispls");
+	    rc = __global.heap_mm->memalign((void **)&_scounts, 0, counts * sizeof(*_scounts));
+	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _scounts");
             _sdispls[0] = 0;
             _scounts[0] = stypecounts[0] * sizeOfType;
 
@@ -324,7 +329,10 @@ namespace CCMI
             if (size <= 32768)
               return (char *)_eab_allocator.allocateObject();
 
-            char *buf = (char *)malloc(size);
+	    char *buf;
+	    pami_result_t rc;
+	    rc = __global.heap_mm->memalign((void **)&buf, 0, size);
+	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc buf");
             return buf;
           }
 
@@ -333,7 +341,7 @@ namespace CCMI
             if (size <= 32768)
               return _eab_allocator.returnObject(buf);
 
-            free(buf);
+            __global.heap_mm->free(buf);
           }
 
           virtual Executor::Composite * generate(pami_geometry_t              g,

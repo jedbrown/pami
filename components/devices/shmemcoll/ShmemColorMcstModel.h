@@ -60,9 +60,9 @@ namespace PAMI
 		{
 
 		//create my descriptors
-		int rc;
-		rc = posix_memalign((void**)&_my_desc_array, 32, sizeof(T_Desc)*NUM_SHMEM_MCST_COLORS);
-		PAMI_assertf(rc == 0, "posix_memalign failed for ShmemCollMcstModel errno=%d\n", errno);
+		pami_result_t rc;
+		rc = __global.heap_mm->memalign((void**)&_my_desc_array, 32, sizeof(T_Desc)*NUM_SHMEM_MCST_COLORS);
+		PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for ShmemCollMcstModel errno=%d\n", errno);
 
 		//create shared descriptors
 		__global.mm.memalign((void**)&_shared_desc_array, 32, sizeof(T_Desc)*NUM_SHMEM_MCST_COLORS);
@@ -70,12 +70,17 @@ namespace PAMI
 
 		if (_peer == 0) //only one rank inits the shared buffers
 		{
-			for(unsigned i =0; i < NUM_SHMEM_MCST_COLORS; i++)
-				_shared_desc_array[i].init(&__global.mm);				
+			for(unsigned i =0; i < NUM_SHMEM_MCST_COLORS; i++) {
+				char key[PAMI::Memory::MMKEYSIZE];
+				// need client/context ids...
+				sprintf(key, "/ShmemColorMcstModel-%p-%u", &device, i);
+				_shared_desc_array[i].init(&__global.mm, key);
+			}
 
 		}
 
-		__collectiveQ = (Shmem::SendQueue *) malloc ((sizeof (Shmem::SendQueue)));
+		rc = __global.heap_mm->memalign((void **)&__collectiveQ, 0, sizeof(*__collectiveQ));
+		PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc __collectiveQ");
        new (__collectiveQ) Shmem::SendQueue (device);
 
 		void* dummy;

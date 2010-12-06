@@ -137,8 +137,8 @@ namespace CCMI
         virtual ~ScanExec ()
         {
           /// Todo: convert this to allocator ?
-          free (_mrecvstr);
-          free (_tmpbuf);
+          __global.heap_mm->free (_mrecvstr);
+          __global.heap_mm->free (_tmpbuf);
         }
 
         /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -160,7 +160,9 @@ namespace CCMI
           CCMI_assert(_maxsrcs <= MAX_CONCURRENT);
           CCMI_assert(_nphases <= MAX_PARALLEL);
 
-          _mrecvstr = (PhaseRecvStr *) malloc ((_nphases + 1) * sizeof(PhaseRecvStr)) ;
+	  pami_result_t rc;
+	  rc = __global.heap_mm->memalign((void **)&_mrecvstr, 0, (_nphases + 1) * sizeof(PhaseRecvStr));
+	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _mrecvstr");
 
           for (int i = 0; i < _nphases; ++i)
             {
@@ -269,7 +271,9 @@ namespace CCMI
 
           CCMI_assert(_comm_schedule != NULL);
           size_t buflen = (_nphases + 1) * len;
-          _tmpbuf = (char *) malloc(buflen);
+	  pami_result_t rc;
+	  rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
+	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
         }
 
         //------------------------------------------

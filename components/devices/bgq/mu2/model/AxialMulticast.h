@@ -381,7 +381,9 @@ namespace PAMI
           PAMI::Topology coord_topology;
 // aborts          src_topology->unionTopology(&coord_topology, dst_topology);
           size_t tsize = (src_topology?src_topology->size():0)+(dst_topology?dst_topology->size():0);
-          ranklist = (pami_task_t*)malloc(tsize);
+	  pami_result_t rc;
+	  rc = __global.heap_mm->memalign((void **)&ranklist, 0, tsize * sizeof(*ranklist));
+	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc ranklist");
           for (size_t i = 0 ; src_topology && i < src_topology->size(); ++i)
           {
             ranklist[i] = src_topology->index2Rank(i);
@@ -656,7 +658,7 @@ namespace PAMI
                       mcast->dispatch, mcast->connection_id);
         if (ranklist != NULL)
         {
-          free(ranklist);
+          __global.heap_mm->free(ranklist);
           delete dst_topology;
         }
         // send could have completed before we had calculated the correct send_countdown so maybe call done now.

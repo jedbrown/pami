@@ -237,7 +237,9 @@ namespace CCMI
           //      CCMI_assert (topology->type() == PAMI_LIST_TOPOLOGY);
           //topology->rankList(&_ranks);
           _nranks = topology->size();
-          _ranks = (pami_task_t*)malloc(_nranks * sizeof(pami_task_t));
+	  pami_result_t rc;
+	  rc = __global.heap_mm->memalign((void **)&_ranks, 0, _nranks * sizeof(pami_task_t));
+	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _ranks");
 
           for (unsigned i = 0; i < _nranks; ++i)
             {

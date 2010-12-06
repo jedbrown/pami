@@ -3441,8 +3441,9 @@ void PAMI::Device::MU::ResourceManager::initializeContexts( size_t rmClientId,
 	numContexts * sizeof(*_clientResources[rmClientId].recResources));
   PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _clientResources[%zd].recResources failed", rmClientId);
 
-  _clientResources[rmClientId].batResources = (batResources_t*)malloc( numContexts * sizeof(batResources_t) );
-  PAMI_assertf( _clientResources[rmClientId].batResources, "The heap is full.\n" );
+  prc = __global.heap_mm->memalign((void **)&_clientResources[rmClientId].batResources, 0,
+  						numContexts * sizeof(batResources_t) );
+  PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _clientResources[%zd].batResources failed", rmClientId);
 
   // Determine the number of contexts per core needed by this client.
   size_t numCoresPerProcess = _pamiRM.getNumCoresPerProcess();
@@ -3472,10 +3473,9 @@ void PAMI::Device::MU::ResourceManager::initializeContexts( size_t rmClientId,
 
   TRACE((stderr,"MU ResourceManager: initializeContexts: Each context for client %zu gets %zu injFifos and %zu recFifos after lowering to needed limits\n",rmClientId, _perContextMUResources[rmClientId].numInjFifos, _perContextMUResources[rmClientId].numRecFifos));
 
-  _clientResources[rmClientId].pinBatId = (uint16_t*)malloc( _mapping.tSize() *
-							     numContexts *
-							     sizeof(uint16_t) );
-  PAMI_assertf( _clientResources[rmClientId].pinBatId, "The heap is full.\n" );
+  prc = __global.heap_mm->memalign((void **)&_clientResources[rmClientId].pinBatId, 0,
+  					_mapping.tSize() * numContexts * sizeof(uint16_t) );
+  PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _clientResources[%zd].pinBatId failed", rmClientId);
 
   // Obtain the list of HW threads for this process (corresponding to subgroups) from the kernel
   // We will use this to determine which subgroups to allocate resources from.
