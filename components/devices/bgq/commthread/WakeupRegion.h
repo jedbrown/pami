@@ -113,20 +113,25 @@ public:
 		}
 
 		char key[PAMI::Memory::MMKEYSIZE];
-		sprintf(key, "/pami-wu-region-%zd", me);
-		pami_result_t rc = _wu_mm.init(mm, esize, esize, 0,
+		size_t i;
+		for (i = 0; i < lsize; ++i) {
+			sprintf(key, "/pami-wu-region-%zd", i);
+			pami_result_t rc = _wu_mm[i].init(mm, esize, esize, 0,
 					PAMI::Memory::PAMI_MM_WACREGION, key);
-		if (rc != PAMI_SUCCESS) {
+			if (rc != PAMI_SUCCESS) {
 fprintf(stderr, "memalign failed for %zd %zd (avail=%zd)\n", esize, esize, mm->available());
-			return PAMI_ERROR;
-		}
-		uint32_t krc = Kernel_CreateMemoryRegion(&_wu_memreg, _wu_mm.base(),
-								_wu_mm.size());
-		if (krc != 0) {
-			//mm->free(virt);
+				return PAMI_ERROR;
+			}
+			if (i == me) {
+				uint32_t krc = Kernel_CreateMemoryRegion(&_wu_memreg,
+						_wu_mm[i].base(), _wu_mm[i].size());
+				if (krc != 0) {
+					//mm->free(virt);
 fprintf(stderr, "Kernel_CreateMemoryRegion failed for %p %zd (%d)\n",
-				_wu_mm.base(), _wu_mm.size(), krc);
-			return PAMI_ERROR;
+				_wu_mm[i].base(), _wu_mm[i].size(), krc);
+					return PAMI_ERROR;
+				}
+			}
 		}
 #if 0
 		size_t size = lsize * esize;
@@ -154,19 +159,17 @@ fprintf(stderr, "Kernel_CreateMemoryRegion failed for %p %zd (%d)\n",
 	///
 	inline void getWURange(uint64_t ctx, uint64_t *base, uint64_t *mask) {
 		*base = (uint64_t)_wu_memreg.BasePa +
-			((char *)_wu_mm.base() - (char *)_wu_memreg.BaseVa);
-		*mask = ~(_wu_mm.size() - 1);
+			((char *)_wu_mm[_wu_region_me].base() - (char *)_wu_memreg.BaseVa);
+		*mask = ~(_wu_mm[_wu_region_me].size() - 1);
 	}
 
 	inline PAMI::Memory::MemoryManager *getWUmm(size_t process = (size_t)-1) {
 		if (process == (size_t)-1) process = _wu_region_me;
-PAMI_assertf(process == _wu_region_me, "do not use getWUmm(!me)");
-		return &_wu_mm;
+		return &_wu_mm[process];
 	}
 
 	inline PAMI::Memory::MemoryManager *getAllWUmm() {
-PAMI_abortf("do not use getAllWUmm()");
-		return NULL; //&_wu_mm[0];
+		return &_wu_mm[0];
 	}
 
 	inline void addRef() {
@@ -180,8 +183,7 @@ PAMI_abortf("do not use getAllWUmm()");
 private:
 	typedef uint64_t BgqWakeupRegionBuffer[BGQ_WACREGION_SIZE];
 
-	//PAMI::Memory::GenMemoryManager _wu_mm[PAMI_MAX_PROC_PER_NODE];
-	PAMI::Memory::GenMemoryManager _wu_mm;
+	PAMI::Memory::GenMemoryManager _wu_mm[PAMI_MAX_PROC_PER_NODE];
 	size_t _wu_region_me;	///< local process index into WAC regions
 	Kernel_MemoryRegion_t _wu_memreg;	///< phy addr of WAC region
 	size_t _ref;

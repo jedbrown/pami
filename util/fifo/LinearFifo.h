@@ -114,6 +114,7 @@ namespace PAMI
             }
 #if defined(__pami_target_bgq__) && defined(USE_COMMTHREADS)
 	// since we currently wakeup all contexts if any are changed, this is fine.
+	// note, this needs to be done for all other process as well. and with a key...
 	__global._wuRegion_mm->memalign((void **)&_active, sizeof(void *),
 					T_FifoSize * sizeof(*_active),
 					NULL, PAMI::Memory::MemoryManager::memzero, NULL);

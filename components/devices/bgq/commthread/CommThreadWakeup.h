@@ -561,9 +561,10 @@ _commThreads(NULL)
 	new (wu) BgqWakeupRegion();
 	rc = wu->init(num_ctx, me, lsize, l2xmm);
 	PAMI_assertf(rc == PAMI_SUCCESS, "Failed to init BgqWakeupRegion - not enough shared memory?");
+	__global._wuRegion_mms = wu->getAllWUmm();
 	__global._wuRegion_mm = wu->getWUmm();
 	new (pool) BgqContextPool();
-	pool->init(BgqCommThread::_maxActive, num_ctx, l2xmm, __global._wuRegion_mm);
+	pool->init(BgqCommThread::_maxActive, num_ctx, l2xmm, wu->getWUmm());
 
 	for (x = 0; x < BgqCommThread::_maxActive; ++x) {
 		new (&devs[x]) BgqCommThread(wu, pool, num_ctx);

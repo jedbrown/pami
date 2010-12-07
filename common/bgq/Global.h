@@ -251,7 +251,8 @@ namespace PAMI
       PAMI::Mapping         mapping;
       PAMI::Atomic::BGQ::L2AtomicFactory l2atomicFactory;
       PAMI::Memory::GenMemoryManager mm;
-      PAMI::Memory::MemoryManager *_wuRegion_mm;
+      PAMI::Memory::MemoryManager *_wuRegion_mm; // this process
+      PAMI::Memory::MemoryManager *_wuRegion_mms; // all processes on node
 
     private:
 
