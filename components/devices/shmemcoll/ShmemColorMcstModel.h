@@ -34,7 +34,7 @@
 #define TRACE_ERR(x)  //fprintf x
 #endif
 
-#define NUM_SHMEM_MCST_COLORS	16 
+#define NUM_SHMEM_MCST_COLORS	16
 //#define NUM_LOCAL_DST_RANKS		3 //assuming that the model is run with 4 procs/node
 
 namespace PAMI
@@ -81,7 +81,8 @@ namespace PAMI
 
 		rc = __global.heap_mm->memalign((void **)&__collectiveQ, 0, sizeof(*__collectiveQ));
 		PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc __collectiveQ");
-       new (__collectiveQ) Shmem::SendQueue (device);
+       new (__collectiveQ) Shmem::SendQueue ();
+       __collectiveQ->init(&device);
 
 		void* dummy;
 		__global.mm.memalign((void**)&dummy, 16, sizeof(size_t)*NUM_SHMEM_MCST_COLORS);
@@ -115,7 +116,7 @@ namespace PAMI
 
 	T_Desc *my_desc=NULL, *master_desc=NULL;
 
-	my_desc = &_my_desc_array[conn_id]; 
+	my_desc = &_my_desc_array[conn_id];
 	master_desc = &_shared_desc_array[conn_id];
 
 	my_desc->set_mcast_params(mcast);
@@ -139,7 +140,7 @@ namespace PAMI
 		}
 	}
 	else
-	{	
+	{
 		my_desc->set_master(0);
 	}
 
@@ -150,7 +151,7 @@ namespace PAMI
 			Shmem::McstControl* mcst_control = (Shmem::McstControl*) master_desc->get_buffer();
 			void* mybuf = ((PAMI::PipeWorkQueue *)mcast->src)->bufferToConsume();
 			size_t bytes_out;
-			
+
 			//? Have to create the entire memregion at once..does mcast->bytes include all the data bytes
 			memregion.createMemregion(&bytes_out, mcast->bytes, mybuf, 0);
 			assert(bytes_out == mcast->bytes);
@@ -168,7 +169,7 @@ namespace PAMI
 			master_desc->set_consumers(num_dst_ranks);
 			master_desc->reset_master_done();
 			mem_barrier();
-			//master_desc->set_seq_id(Shmem::McstMessageShaddr<T_Device, T_Desc>::seq_num);	
+			//master_desc->set_seq_id(Shmem::McstMessageShaddr<T_Device, T_Desc>::seq_num);
 			master_desc->set_state(Shmem::INIT);
 	}
 
@@ -176,7 +177,7 @@ namespace PAMI
 	new (obj) Shmem::McstMessageShaddr<T_Device, T_Desc> (&_device, my_desc, master_desc);
 	//_device.post(obj);
 	__collectiveQ->post(obj);
-	/*PAMI::Device::Generic::GenericThread *work = new (&_shmem_work[conn_id]) 
+	/*PAMI::Device::Generic::GenericThread *work = new (&_shmem_work[conn_id])
 					PAMI::Device::Generic::GenericThread (Shmem::McstMessageShaddr<T_Device,T_Desc>::advanceMcstShaddr, obj);
     _device.postThread(work);*/
 
@@ -195,7 +196,7 @@ protected:
 
 
   T_Desc 	*_my_desc_array;
-  T_Desc	*_shared_desc_array;		
+  T_Desc	*_shared_desc_array;
   //pami_work_t	_shmem_work[NUM_SHMEM_MCST_COLORS];
 
   Shmem::SendQueue    *__collectiveQ;

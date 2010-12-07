@@ -81,10 +81,10 @@ namespace PAMI
 				//char mmkey[PAMI::Memory::MMKEYSIZE];
 				//size_t keyl = sprintf(mmkey, "%s-x", key) - 1;
 				//mmkey[keyl] = 's';
-				_synch_counter.init (); // in-place counter
+				//_synch_counter.init (); // in-place counter
           		_synch_counter.fetch_and_clear ();
 				//mmkey[keyl] = 'd';
-				_done_counter.init (); // in-place counter
+				//_done_counter.init (); // in-place counter
           		_done_counter.fetch_and_clear ();
 				//mmkey[keyl] = 'q';
 				//_seq_num.init (mm, mmkey);

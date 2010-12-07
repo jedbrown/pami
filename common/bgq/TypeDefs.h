@@ -108,9 +108,9 @@ namespace PAMI
                                Device::MU::MultisyncModel<false, false>,
                                Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false> > MUAxialDputNI;
 
-  typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::GccInPlaceCounter> ShmemCollDesc;
+  typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::Gcc> ShmemCollDesc;
   typedef PAMI::Device::Shmem::ShmemColorMcstModel<PAMI::Device::Generic::Device, ShmemCollDesc> ShaddrMcstModel;
-  
+
   typedef  PAMI::BGQNativeInterfaceASMultiDevice<MUDevice,
     MUDevice,
     Device::MU::MulticastDmaModel,
