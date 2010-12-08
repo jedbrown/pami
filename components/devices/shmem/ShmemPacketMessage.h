@@ -62,6 +62,9 @@ namespace PAMI
           {
             PacketMessage * msg = (PacketMessage *) cookie;
 
+            // No completion notification is needed if the function pointer is NULL
+            if (unlikely(msg->_user_fn == NULL)) return;
+
             size_t sequence = msg->_device->_fifo[msg->_fnum].lastPacketProduced();
             msg->_device->postCompletion (msg->_state,
                                           msg->_user_fn,
