@@ -20,7 +20,7 @@ namespace PAMI
   {
     PAMI::TorusExtension * x;
     pami_result_t rc;
-    rc = __globa.heap_mm->memalign((void **)&x, 0, sizeof(*x));
+    rc = __global.heap_mm->memalign((void **)&x, 0, sizeof(*x));
     PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PAMI::TorusExtension");
     new (x) PAMI::TorusExtension();
 
@@ -32,7 +32,7 @@ namespace PAMI
   void Extension::closeExtension<1000> (void * cookie, pami_result_t & result)
   {
     PAMI::TorusExtension * x = (PAMI::TorusExtension *) cookie;
-    __globa.heap_mm->free (x);
+    __global.heap_mm->free (x);
 
     result = PAMI_SUCCESS;
     return;
