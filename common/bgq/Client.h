@@ -126,7 +126,7 @@ namespace PAMI
         PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for _contexts[%d], errno=%d\n", n, errno);
         int x;
         TRACE_ERR((stderr, "BGQ::Client::createContext mm available %zu\n", _mm.available()));
-        _platdevs.generate(_clientid, n, _mm);
+        _platdevs.generate(_clientid, n, _mm); // _mm is the client-scoped shared memory manager
         // _platdevs.generate(_clientid, n, _mm, __global._wuRegion[_clientid]->_wu_mm);
 
         // This memset has been removed due to the amount of cycles it takes
@@ -734,10 +734,10 @@ namespace PAMI
         size_t num_ctx = __MUGlobal.getMuRM().getPerProcessMaxPamiResources();
         // may need to factor in others such as shmem?
 #else
-        size_t num_ctx = 256 / Kernel_ProcessCount();
+        size_t num_ctx = 64;
 #endif
 	// 18K * Ncontexts...
-        size_t bytes = 8800 * num_ctx * Kernel_ProcessCount();
+        size_t bytes = (32*1024) * num_ctx; // 32k for each context in the client
 
 	/// \page env_vars Environment Variables
 	///

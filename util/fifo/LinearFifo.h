@@ -66,8 +66,9 @@ namespace PAMI
         // PAMI::Fifo::Fifo interface implementation
         // ---------------------------------------------------------------------
 
-        inline void initialize_impl (PAMI::Memory::MemoryManager * mm,
-                                     char                        * key)
+        template <class T_MemoryManager>
+        inline void initialize_impl (T_MemoryManager * mm,
+                                     char            * key)
         {
           TRACE_ERR((stderr, ">> LinearFifo::initialize_impl(%p, \"%s\")\n", mm, key));
 
@@ -88,13 +89,17 @@ namespace PAMI
           // Allocation is for N packets, N active flags, 1 head counter,
           // and 1 wrap counter.
 
-          mm->memalign ((void **)&_packet,
-                        sizeof(T_Packet),
-                        (sizeof(T_Packet) + sizeof(size_t)) * T_Size +
-                        sizeof(size_t) * 2,
-                        key,
-                        LinearFifo::packet_initialize,
-                        NULL);
+          size_t total_size = (sizeof(T_Packet) + sizeof(size_t)) * T_Size + sizeof(size_t) * 2;
+          TRACE_ERR((stderr, "   LinearFifo::initialize_impl() before sync memalign, key = '%s', total size to allocate = %zu\n", key, total_size));
+
+          pami_result_t rc;
+          rc = mm->memalign ((void **)&_packet,
+                             sizeof(T_Packet),
+                             total_size,
+                             key,
+                             LinearFifo::packet_initialize,
+                             NULL);
+          PAMI_assertf(rc == PAMI_SUCCESS, "Failed to allocate LinearFifo shared memory resources");
 
           TRACE_ERR((stderr, "   LinearFifo::initialize_impl() after sync memalign\n"));
 
