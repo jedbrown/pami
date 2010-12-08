@@ -215,7 +215,8 @@ namespace CCMI
           _msendstr = NULL;
           if (_maxdsts)
           {
-	    pami_result_t rc = __global.heap_mm->memalign((void **)&_msendstr, 0, 
+	    pami_result_t rc;
+	    rc = __global.heap_mm->memalign((void **)&_msendstr, 0, 
             						_maxdsts * sizeof(SendStruct));
 	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _msendstr");
             pami_quad_t *info      =  (pami_quad_t*)((void*) & _mdata);
@@ -266,7 +267,8 @@ namespace CCMI
               else  // allocate temporary buffer and reshuffle the data
                 {
               size_t buflen = _native->numranks() * len;
-	      pami_result_t rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
+	      pami_result_t rc;
+	      rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
 	      PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
               memcpy (_tmpbuf, src+_myindex*len, (_native->numranks() - _myindex)*len);
               memcpy (_tmpbuf+(_native->numranks() - _myindex)*len  ,src, _myindex * len);
@@ -276,7 +278,8 @@ namespace CCMI
           {
             // schedule's getLList() method can be used for an accurate buffer size
             size_t  buflen = _native->numranks() * len;
-	    pami_result_t rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
+	    pami_result_t rc;
+	    rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
 	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
             _pwq.configure (_tmpbuf, buflen, 0);
             _pwq.reset();

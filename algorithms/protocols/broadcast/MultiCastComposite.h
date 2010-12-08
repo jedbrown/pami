@@ -194,7 +194,8 @@ namespace CCMI
           {
             _src.configure(cmd->cmd.xfer_broadcast.buf, _bytes, _bytes);
             /// \todo unless the device lets me toss unwanted data, we need a dummy buffer to receive.
-	    pami_result_t prc = __global.heap_mm->memalign((void **)&_buffer, 0, _bytes);
+	    pami_result_t prc;
+	    prc = __global.heap_mm->memalign((void **)&_buffer, 0, _bytes);
 	    PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _buffer failed");
             _dst.configure(_buffer, _bytes, 0);
           }

@@ -259,7 +259,8 @@ public:
                                 <= T_Model::packet_model_payload_bytes);
 
                 //allocate memory
-		pami_result_t prc = __global.heap_mm->memalign((void **)&_queue, 0,
+		pami_result_t prc;
+		prc = __global.heap_mm->memalign((void **)&_queue, 0,
 						sizeof(*_queue) * _device.peers());
 		PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _queue failed");
 
@@ -317,7 +318,8 @@ public:
                 pami_result_t result;
                 pami_send_t simple_parm;
                 // Create storage to save message until sent (have to malloc since unbounded)
-		pami_result_t prc = __global.heap_mm->memalign((void **)&msg_copy, 0,
+		pami_result_t prc;
+		prc = __global.heap_mm->memalign((void **)&msg_copy, 0,
 								sizeof(*msg_copy));
 		PAMI_assertf(prc == PAMI_SUCCESS, "alloc of msg_copy failed");
                 memcpy(msg_copy->header, parameters->header.iov_base,
@@ -840,11 +842,13 @@ private:
 
                         // TODO Why two arrays?
                         ///initialize Array with zeros
-			pami_result_t prc = __global.heap_mm->memalign(
+			pami_result_t prc;
+			prc = __global.heap_mm->memalign(
 					(void **)&rcv->lost_list, 0,
 					sizeof(*rcv->lost_list) * rts->bytes);
 			PAMI_assertf(prc == PAMI_SUCCESS, "alloc of rcv->lost_list failed");
-			pami_result_t prc = __global.heap_mm->memalign(
+			pami_result_t prc;
+			prc = __global.heap_mm->memalign(
 					(void **)&rcv->rcv_list, 0,
 					sizeof(*rcv->rcv_list) * rts->bytes);
 			PAMI_assertf(prc == PAMI_SUCCESS, "alloc of rcv->rcv_list failed");

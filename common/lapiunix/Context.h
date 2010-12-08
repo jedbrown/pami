@@ -434,7 +434,8 @@ namespace PAMI
       inline pami_result_t initP2PCollectives()
         {
           // Initalize Collective Registration
-	  pami_result_t rc = __global.heap_mm->memalign((void **)&_pgas_collreg, 0,
+	  pami_result_t rc;
+	  rc = __global.heap_mm->memalign((void **)&_pgas_collreg, 0,
 								sizeof(*_pgas_collreg));
 	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PGASCollreg");
           new(_pgas_collreg) PGASCollreg(_client,_context,_clientid,_contextid,_protocol,_lapi_device2,&_dispatch_id,_geometry_map);
@@ -446,7 +447,8 @@ namespace PAMI
       inline pami_result_t initCollectives()
         {
           PAMI::Topology *local_master_topo = (PAMI::Topology *) ((PAMI::Geometry::Lapi *)_world_geometry)->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
-	  pami_result_t rc = __global.heap_mm->memalign((void **)&invec, 0,
+	  pami_result_t rc;
+	  rc = __global.heap_mm->memalign((void **)&invec, 0,
 				(3 + local_master_topo->size()) * sizeof(uint64_t));
 	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc invec");
           // for cau classroute initialization

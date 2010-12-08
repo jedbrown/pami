@@ -55,7 +55,8 @@ namespace PAMI
 
       // Allocate memory for and construct the queue objects,
       // one for each context on the local node
-      pami_result_t prc = __global.heap_mm->memalign((void **)&__sendQ, 0,
+      pami_result_t prc;
+      prc = __global.heap_mm->memalign((void **)&__sendQ, 0,
 						_total_fifos * sizeof(*__sendQ));
       PAMI_assertf(prc == PAMI_SUCCESS, "alloc of __sendQ failed");
 
@@ -268,7 +269,8 @@ namespace PAMI
       PacketImpl * pkt = (PacketImpl *) metadata;
 
       UnexpectedPacket * uepkt;
-      pami_result_t prc = __global.heap_mm->memalign((void **)&uepkt, 0, sizeof(*uepkt));
+      pami_result_t prc;
+      prc = __global.heap_mm->memalign((void **)&uepkt, 0, sizeof(*uepkt));
       PAMI_assertf(prc == PAMI_SUCCESS, "alloc of uepkt failed");
       new ((void *)uepkt) UnexpectedPacket (pkt);
 

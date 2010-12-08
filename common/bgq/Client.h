@@ -447,7 +447,8 @@ namespace PAMI
 
         if (geometry != NULL)
           {
-	    pami_result_t rc = __global.heap_mm->memalign((void **)&new_geometry, 0,
+	    pami_result_t rc;
+	    rc = __global.heap_mm->memalign((void **)&new_geometry, 0,
 							sizeof(*new_geometry)); /// \todo use allocator
 	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc new_geometry");
             new (new_geometry) BGQGeometry(_client,
@@ -516,7 +517,8 @@ namespace PAMI
 
         if (geometry != NULL)
           {
-	    pami_result_t rc = __global.heap_mm->memalign((void **)&new_geometry, 0,
+	    pami_result_t rc;
+	    rc = __global.heap_mm->memalign((void **)&new_geometry, 0,
 					sizeof(*new_geometry)); /// \todo use allocator
 	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc new_geometry");
             new (new_geometry) BGQGeometry(_client,

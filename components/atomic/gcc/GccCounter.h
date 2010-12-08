@@ -87,7 +87,8 @@ namespace PAMI
         inline void init_impl(PAMI::Memory::MemoryManager *mm, const char *key)
         {
           TRACE_ERR((stderr,  "%s enter\n", __PRETTY_FUNCTION__));
-	  pami_result_t rc = mm->memalign((void **)&_addr, sizeof(*_addr), sizeof(*_addr), key);
+	  pami_result_t rc;
+	  rc = mm->memalign((void **)&_addr, sizeof(*_addr), sizeof(*_addr), key);
 	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to get memory for GccIndirCounter");
 	  new (_addr) PAMI::Atomic::GccBuiltin();
         }

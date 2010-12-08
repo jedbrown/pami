@@ -177,7 +177,8 @@ namespace BGP {
 	}
         inline void init_impl (PAMI::Memory::MemoryManager *mm, const char *key)
         {
-		pami_result_t rc = mm->memalign((void **)&_atomic, sizeof(*_atomic),
+		pami_result_t rc;
+		rc = mm->memalign((void **)&_atomic, sizeof(*_atomic),
 				sizeof(*_atomic), key);
 		PAMI_assertf(rc == PAMI_SUCCESS, "Failed to get BGP Atomic Counter");
         }
@@ -294,7 +295,8 @@ namespace BGP {
         /// \see PAMI::Atomic::Interface::Mutex::init
         inline void init_impl (PAMI::Memory::MemoryManager *mm, const char *key)
         {
-		pami_result_t rc = mm->memalign((void **)&_atomic,
+		pami_result_t rc;
+		rc = mm->memalign((void **)&_atomic,
 					sizeof(*_atomic), sizeof(*_atomic), key);
 		PAMI_assertf(rc == PAMI_SUCCESS, "Failed to allocate BGP Atomic Mutex");
         };

@@ -701,7 +701,8 @@ namespace PAMI
 
                 if (unlikely((header_bytes) > (T_Model::packet_model_payload_bytes - pbytes)))
                   {
-		    pami_result_t prc = __global.heap_mm->memalign((void **)&state->longheader.addr, 0,
+		    pami_result_t prc;
+		    prc = __global.heap_mm->memalign((void **)&state->longheader.addr, 0,
 								header_bytes);
 		    PAMI_assertf(prc == PAMI_SUCCESS, "alloc of state->longheader.addr failed");
                     state->longheader.bytes  = header_bytes;

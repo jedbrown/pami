@@ -467,7 +467,8 @@ namespace PAMI
         inline CCMI_EXECUTOR_TYPE        getAllreduceCompositeStorage_impl(unsigned i)
         {
           if(_allreduce_storage[i] == NULL) {
-	    pami_result_t rc = __global.heap_mm->memalign((void **)&_allreduce_storage[i],
+	    pami_result_t rc;
+	    rc = __global.heap_mm->memalign((void **)&_allreduce_storage[i],
 			sizeof(void *), PAMI_REQUEST_NQUADS*4);
 	    PAMI_assertf(rc == PAMI_SUCCESS,
 			"Failed to alloc memory for _allreduce_storage[%d]", i);
@@ -492,7 +493,8 @@ namespace PAMI
         inline CCMI_EXECUTOR_TYPE        getAllreduceCompositeStorage_impl()
         {
           if(_allreduce_storage[_allreduce_iteration] == NULL) {
-	    pami_result_t rc = __global.heap_mm->memalign(
+	    pami_result_t rc;
+	    rc = __global.heap_mm->memalign(
 			(void **)&_allreduce_storage[_allreduce_iteration],
 			sizeof(void *), PAMI_REQUEST_NQUADS*4);
 	    PAMI_assertf(rc == PAMI_SUCCESS,

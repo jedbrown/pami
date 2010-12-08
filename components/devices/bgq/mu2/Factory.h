@@ -93,7 +93,8 @@ namespace PAMI
             // Allocate an array of mu contexts, one for each pami context
             // in this _task_ (from heap, not from shared memory)
             MU::Context * mu;
-            pami_result_t res = __global.heap_mm->memalign((void **)&mu, 64, sizeof(*mu) * id_count);
+            pami_result_t res;
+            res = __global.heap_mm->memalign((void **)&mu, 64, sizeof(*mu) * id_count);
             PAMI_assertf(res == PAMI_SUCCESS, "alloc failed for mu[%zu]\n", id_count);
 
 // !!!!

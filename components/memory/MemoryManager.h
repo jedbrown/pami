@@ -823,7 +823,8 @@ namespace PAMI
 		} else {
 			_name[0] = '\0';
 		}
-		pami_result_t rc = mm->memalign((void **)&_base, alignment, bytes,
+		pami_result_t rc;
+		rc = mm->memalign((void **)&_base, alignment, bytes,
 								_name, init_fn, cookie);
 		if (rc != PAMI_SUCCESS) {
 			return rc;

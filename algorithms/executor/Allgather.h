@@ -152,7 +152,8 @@ namespace CCMI
           CCMI_assert(_maxsrcs <= MAX_CONCURRENT);
           CCMI_assert(_nphases <= MAX_PARALLEL);
 
-	  pami_result_t rc = __global.heap_mm->memalign((void **)&_mrecvstr, 0,
+	  pami_result_t rc;
+	  rc = __global.heap_mm->memalign((void **)&_mrecvstr, 0,
           					_nphases * sizeof(PhaseRecvStr));
 	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _mrecvstr");
 
@@ -216,7 +217,8 @@ namespace CCMI
 
           CCMI_assert(_comm_schedule != NULL);
           size_t buflen = _native->numranks() * len;
-	  pami_result_t rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
+	  pami_result_t rc;
+	  rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
 	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
         }
 

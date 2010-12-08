@@ -186,7 +186,8 @@ namespace CCMI
               return (char *)_eab_allocator.allocateObject();
 
 	    char *buf;
-	    pami_result_t prc = __global.heap_mm->memalign((void **)&buf, 0, size);
+	    pami_result_t prc;
+	    prc = __global.heap_mm->memalign((void **)&buf, 0, size);
 	    return prc == PAMI_SUCCESS ? buf : NULL;
 	  }
 

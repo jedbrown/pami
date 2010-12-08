@@ -266,7 +266,8 @@ namespace PAMI
 
           int rc;
           void       * obj;
-	  pami_result_t prc = __global.heap_mm->memalign((void **)&obj, 0, sizeof(MPIMessage));
+	  pami_result_t prc;
+	  prc = __global.heap_mm->memalign((void **)&obj, 0, sizeof(MPIMessage));
 	  PAMI_assertf(prc == PAMI_SUCCESS, "alloc of MPIMessage failed");
           TRACE_DEVICE((stderr,"<%p>MPIPacketModel::postPacket_impl %d \n",this, this->_dispatch_id));
 #ifdef EMULATE_UNRELIABLE_DEVICE
@@ -332,7 +333,8 @@ namespace PAMI
           if (t % EMULATE_UNRELIABLE_DEVICE_FREQUENCY == 0) return true;
 #endif
 	  MPIMessage *msg;
-	  pami_result_t prc = __global.heap_mm->memalign((void **)&msg, 0,
+	  pami_result_t prc;
+	  prc = __global.heap_mm->memalign((void **)&msg, 0,
 				sizeof(*msg) + metasize + length - 128 - 224);
 	  PAMI_assertf(prc == PAMI_SUCCESS, "alloc of MPIMessage failed");
           new(msg)MPIMessage(this->_client,this->_contextid,

@@ -69,7 +69,8 @@ namespace PAMI
           else
             {
               size_t bytes = sizeof(void *) * device.peers() * device.getContextCount();
-	      pami_result_t prc = __global.heap_mm->memalign((void **)&_array, 0, bytes);
+	      pami_result_t prc;
+	      prc = __global.heap_mm->memalign((void **)&_array, 0, bytes);
 	      PAMI_assertf(prc == PAMI_SUCCESS, "alloc of %zd failed", bytes);
               memset((void *)_array, 0, bytes);
               TRACE_FORMAT("_array = %p, bytes = %zu, device.peers() = %zu, device.getContextCount() = %zu", _array, bytes, device.peers(), device.getContextCount());

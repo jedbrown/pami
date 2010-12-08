@@ -874,7 +874,8 @@ fprintf(stderr, "%s\n", buf);
 	  // This topology is part of the geometry, so we know it won't
 	  // "go away" after this method returns...
 	  cr_cookie *cookie;
-	  pami_result_t prc = __global.heap_mm->memalign((void **)&cookie, 0, sizeof(*cookie));
+	  pami_result_t prc;
+	  prc = __global.heap_mm->memalign((void **)&cookie, 0, sizeof(*cookie));
 	  PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _excluded failed");
 	  cookie->thus = this;
 	  cookie->master = master;
@@ -1775,7 +1776,8 @@ void PAMI::Device::MU::ResourceManager::initFifoPin()
 
   // Copy the pinInfo arrary into this process' storage.  These contain
   // initial fifo pin values that will be modified later.
-  pami_result_t rc = __global.heap_mm->memalign((void **)&_pinInfo, 64,
+  pami_result_t rc;
+  rc = __global.heap_mm->memalign((void **)&_pinInfo, 64,
 				numTorusDirections * sizeof(pinInfoEntry_t));
   PAMI_assertf(rc == PAMI_SUCCESS, "The heap is full.\n" );
 
@@ -2171,7 +2173,8 @@ void PAMI::Device::MU::ResourceManager::calculatePerProcessMaxPamiResources()
 
   // Allocate space for the array of MaxPamiResources.  Free any previous.
   if (_perProcessMaxPamiResources) __global.heap_mm->free(_perProcessMaxPamiResources);
-  pami_result_t prc = __global.heap_mm->memalign((void **)&_perProcessMaxPamiResources, 0,
+  pami_result_t prc;
+  prc = __global.heap_mm->memalign((void **)&_perProcessMaxPamiResources, 0,
 			numClients * sizeof(*_perProcessMaxPamiResources));
   PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _perProcessMaxPamiResources failed");
 
@@ -2210,7 +2213,8 @@ void PAMI::Device::MU::ResourceManager::calculatePerProcessOptimalPamiResources(
 
   // Allocate space for the array of OptimalPamiResources.  Free any previous.
   if (_perProcessOptimalPamiResources) __global.heap_mm->free(_perProcessOptimalPamiResources);
-  pami_result_t prc = __global.heap_mm->memalign((void **)&_perProcessOptimalPamiResources, 0,
+  pami_result_t prc;
+  prc = __global.heap_mm->memalign((void **)&_perProcessOptimalPamiResources, 0,
 			numClients * sizeof(*_perProcessOptimalPamiResources));
   PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _perProcessOptimalPamiResources failed");
   PAMI_assertf ( _perProcessOptimalPamiResources != NULL, "The heap is full.\n" );
@@ -2263,7 +2267,8 @@ void PAMI::Device::MU::ResourceManager::calculatePerCorePerProcessPerClientMURes
   size_t numClients = _pamiRM.getNumClients();
 
   // Allocate space for the client array
-  pami_result_t prc = __global.heap_mm->memalign((void **)&_perCorePerProcessPerClientMUResources, 0,
+  pami_result_t prc;
+  prc = __global.heap_mm->memalign((void **)&_perCorePerProcessPerClientMUResources, 0,
 			numClients * sizeof(*_perCorePerProcessPerClientMUResources));
   PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _perCorePerProcessPerClientMUResources failed");
 
@@ -2470,7 +2475,8 @@ uint32_t PAMI::Device::MU::ResourceManager::setupInjFifos(
       if ( numFree > numLeftToAllocate ) numFree = numLeftToAllocate;
 
       Kernel_InjFifoAttributes_t *fifoAttrs;
-      pami_result_t prc = __global.heap_mm->memalign((void **)&fifoAttrs, 0,
+      pami_result_t prc;
+      prc = __global.heap_mm->memalign((void **)&fifoAttrs, 0,
 			numFree * sizeof(*fifoAttrs));
       PAMI_assertf(prc == PAMI_SUCCESS, "alloc of fifoAttrs failed");
       for (fifo=0; fifo<numFree; fifo++)
@@ -2950,7 +2956,8 @@ uint32_t PAMI::Device::MU::ResourceManager::setupRecFifos(
       if ( numFree > numLeftToAllocate ) numFree = numLeftToAllocate;
 
       Kernel_RecFifoAttributes_t *fifoAttrs;
-      pami_result_t prc = __global.heap_mm->memalign((void **)&fifoAttrs, 0,
+      pami_result_t prc;
+      prc = __global.heap_mm->memalign((void **)&fifoAttrs, 0,
 			numFree * sizeof(*fifoAttrs));
       PAMI_assertf(prc == PAMI_SUCCESS, "alloc of fifoAttrs failed");
       for (fifo=0; fifo<numFree; fifo++)
@@ -3229,7 +3236,8 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalResources()
   allocateGlobalRecFifos();
 
   // Allocate space for the client resources array
-  pami_result_t prc = __global.heap_mm->memalign((void **)&_clientResources, 0,
+  pami_result_t prc;
+  prc = __global.heap_mm->memalign((void **)&_clientResources, 0,
 		numClients * sizeof(*_clientResources));
   PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _clientResources failed");
 
@@ -3421,7 +3429,8 @@ void PAMI::Device::MU::ResourceManager::initializeContexts( size_t rmClientId,
 
   _clientResources[rmClientId].numContexts = numContexts;
 
-  pami_result_t prc = __global.heap_mm->memalign((void **)&_clientResources[rmClientId].pinRecFifo, 0,
+  pami_result_t prc;
+  prc = __global.heap_mm->memalign((void **)&_clientResources[rmClientId].pinRecFifo, 0,
 		_mapping.tSize() * numContexts * sizeof(uint16_t));
   PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _clientResources[%zd].pinRecFifo failed", rmClientId);
 

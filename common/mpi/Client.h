@@ -48,7 +48,8 @@ namespace PAMI
         // Initialize the world geometry
         MPI_Comm_rank(MPI_COMM_WORLD,&_myrank);
         MPI_Comm_size(MPI_COMM_WORLD,&_mysize);
-	pami_result_t rc = __global.heap_mm->memalign((void **)&_world_geometry, 0,
+	pami_result_t rc;
+	rc = __global.heap_mm->memalign((void **)&_world_geometry, 0,
 							sizeof(*_world_geometry));
 	PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _world_geometry");
         _world_range.lo=0;
@@ -103,7 +104,8 @@ namespace PAMI
           return PAMI_ERROR;
         }
 
-        pami_result_t rc = __global.heap_mm->memalign((void **)&_contexts, 16, sizeof(PAMI::Context) * n);
+        pami_result_t rc;
+        rc = __global.heap_mm->memalign((void **)&_contexts, 16, sizeof(PAMI::Context) * n);
         PAMI_assertf(rc == PAMI_SUCCESS, "posix_memalign failed for _contexts[%d], errno=%d\n", n, errno);
         _platdevs.generate(_clientid, n, _mm);
 
@@ -255,7 +257,8 @@ namespace PAMI
         // set of algorithms.
         if(geometry != NULL)
           {
-	    pami_result_t rc = __global.heap_mm->memalign((void **)&new_geometry, 0,
+	    pami_result_t rc;
+	    rc = __global.heap_mm->memalign((void **)&new_geometry, 0,
 							sizeof(*new_geometry));
 	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc new_geometry");
             new(new_geometry)MPIGeometry(_client,
@@ -302,7 +305,8 @@ namespace PAMI
                                           ctxt->getId());
             Geometry::Algorithm<MPIGeometry> *ar_algo = (Geometry::Algorithm<MPIGeometry> *)alg;
             MPIClassRouteId *cr;
-	    pami_result_t rc = __global.heap_mm->memalign((void **)&cr, 0, sizeof(*cr));
+	    pami_result_t rc;
+	    rc = __global.heap_mm->memalign((void **)&cr, 0, sizeof(*cr));
 	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc MPIClassRouteId");
             new(cr)MPIClassRouteId(ar_algo,
                                    new_geometry,

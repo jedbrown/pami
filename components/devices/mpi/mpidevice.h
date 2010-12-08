@@ -78,7 +78,8 @@ namespace PAMI
 static inline MPIDevice *generate_impl(size_t clientid, size_t num_ctx, Memory::MemoryManager & mm, PAMI::Device::Generic::Device *devices) {
         size_t x;
         MPIDevice *devs;
-        pami_result_t rc = __global.heap_mm->memalign((void **)&devs, 16, sizeof(*devs) * num_ctx);
+        pami_result_t rc;
+        rc = __global.heap_mm->memalign((void **)&devs, 16, sizeof(*devs) * num_ctx);
         PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for MPIDevice[%zu], errno=%d\n", num_ctx, errno);
         for (x = 0; x < num_ctx; ++x) {
                 new (&devs[x]) MPIDevice(num_ctx);

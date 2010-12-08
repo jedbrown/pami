@@ -182,11 +182,13 @@ namespace PAMI
                                      &_ififoid,
                                      &injFifoAttrs);
 
-            pami_result_t prc = __global.heap_mm->memalign((void **)&__injFifoBuf, 64,
+            pami_result_t prc;
+            prc = __global.heap_mm->memalign((void **)&__injFifoBuf, 64,
 								INJ_MEMORY_FIFO_SIZE + 1);
 	    PAMI_assertf(prc == PAMI_SUCCESS, "alloc of __injFifoBuf failed");
             PAMI_assert((((uint64_t)_injFifoBuf) % 64) == 0);
-	    pami_result_t prc = __global.heap_mm->memalign((void **)&_lookAsideBuf, 0,
+	    pami_result_t prc;
+	    prc = __global.heap_mm->memalign((void **)&_lookAsideBuf, 0,
 			(INJ_MEMORY_FIFO_SIZE + 1) * sizeof(*_lookAsideBuf));
 	    PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _lookAsideBuf failed");
 
@@ -290,7 +292,8 @@ namespace PAMI
                                         &_numInjFifos,
                                         &_numRecFifos,
 				        &_numBatIds );
-	    pami_result_t prc = __global.heap_mm->memalign((void **)&_injFifos, 0,
+	    pami_result_t prc;
+	    prc = __global.heap_mm->memalign((void **)&_injFifos, 0,
 					_numInjFifos * sizeof(*_injFifos));
 	    PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _injFifos failed");
 

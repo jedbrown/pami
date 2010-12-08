@@ -224,7 +224,8 @@ namespace CCMI
           // todo: this is clearly not scalable, need to use rendezvous similar to
           // that in allgather
           if (_maxsrcs) {
-	    pami_result_t rc = __global.heap_mm->memalign((void **)&_mrecvstr, 0,
+	    pami_result_t rc;
+	    rc = __global.heap_mm->memalign((void **)&_mrecvstr, 0,
 					_maxsrcs * _mynphases * sizeof(RecvStruct));
 	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _mrecvstr");
 	  }
@@ -288,7 +289,8 @@ namespace CCMI
               _tmpbuf = _rbuf;
             } else {
               buflen = _native->numranks() * len;
-	      pami_result_t rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
+	      pami_result_t rc;
+	      rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
 	      PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
             }
             }
@@ -306,7 +308,8 @@ namespace CCMI
             size_t  buflen    = _srclens[0]  * _buflen;
             if (_mynphases > 1)
             {
-	      pami_result_t rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
+	      pami_result_t rc;
+	      rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
 	      PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
               _pwq.configure (_tmpbuf, buflen, 0);
             }

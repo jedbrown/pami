@@ -79,7 +79,8 @@ namespace PAMI
           {
             TRACE_ERR((stderr,  "%s enter mm %p, workunits %u, worksize %u\n", __PRETTY_FUNCTION__,mm,workunits, worksize));
                 size_t size = sizeof(workqueue_t) + _qsize;
-                pami_result_t rc = mm->memalign((void **)&_sharedqueue, 16, size, key);
+                pami_result_t rc;
+                rc = mm->memalign((void **)&_sharedqueue, 16, size, key);
                 TRACE_ERR((stderr,  "%s sharedqueue %p\n", __PRETTY_FUNCTION__,_sharedqueue));
 		// if (!(rc == PAMI_SUCCESS)) mm->dump("SharedWorkQueue()");
                 PAMI_assert_debug(rc == PAMI_SUCCESS);

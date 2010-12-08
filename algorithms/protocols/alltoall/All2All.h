@@ -60,7 +60,8 @@ namespace CCMI
           /// \todo presumed size of PAMI_BYTE?
           //size_t bytes = topo_size * coll->cmd.xfer_alltoall.stypecount * 1;
 
-	  pami_result_t rc = __global.heap_mm->memalign((void **)&_sendinit, 0,
+	  pami_result_t rc;
+	  rc = __global.heap_mm->memalign((void **)&_sendinit, 0,
 						sizeof(size_t) * topo_size);
           PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _sendinit");
 

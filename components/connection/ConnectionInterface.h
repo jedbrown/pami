@@ -84,7 +84,8 @@ namespace PAMI
                              T_Connection * value)
             {
               Element * element;
-	      pami_result_t prc = __global.heap_mm->memalign((void **)&element, 0, sizeof(*element));
+	      pami_result_t prc;
+	      prc = __global.heap_mm->memalign((void **)&element, 0, sizeof(*element));
 	      PAMI_assertf(prc == PAMI_SUCCESS, "alloc of Element failed");
               new (element) Element (key, value);
 

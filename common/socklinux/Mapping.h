@@ -309,7 +309,8 @@ namespace PAMI
       {
         _tcpConnInit = true;
         // Allocate space for the connection table
-	pami_result_t rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+	pami_result_t rc;
+	rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
 			(void **)&_tcpConnTable, 0, _size * sizeof(*_tcpConnTable));
 	PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc *_tcpConnTable");
 

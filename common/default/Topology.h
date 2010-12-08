@@ -192,7 +192,8 @@ namespace PAMI {
           size_t z;
           mapping->nodePeers(z);
           pami_task_t *rl;
-	  pami_result_t rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+	  pami_result_t rc;
+	  rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
 						(void **)&rl, 0, z * sizeof(*rl));
 	  PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", z);
           pami_task_t *rp = rl;
@@ -630,7 +631,8 @@ namespace PAMI {
 	memcpy(this, topo, sizeof(*topo));
 	// right now, the only type that allocates additional storage is PAMI_LIST_TOPOLOGY
 	if (topo->__type == PAMI_LIST_TOPOLOGY) {
-	    pami_result_t rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+	    pami_result_t rc;
+	    rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
 			(void **)&topo_ranklist, 0, __size * sizeof(*topo_ranklist));
 	    PAMI_assertf(rc == PAMI_SUCCESS, "ranklist[%zd] alloc failed", __size);
 	    memcpy(topo_ranklist, topo->topo_ranklist, __size * sizeof(*topo_ranklist));
@@ -1155,7 +1157,8 @@ namespace PAMI {
 	typedef size_t tb_t[2];
 	pami_task_t *rl;
 	tb_t *tb;
-	pami_result_t rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+	pami_result_t rc;
+	rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
 						(void **)&rl, 0, s * sizeof(*rl));
 	PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", s);
 	rc = PAMI::Memory::MemoryManager::heap_mm->memalign(

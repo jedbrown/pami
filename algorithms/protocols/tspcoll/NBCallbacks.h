@@ -62,7 +62,8 @@ class UnexpectedColl
 
       _ue_context     = context;
       _ue_cookie      = cookie;
-      pami_result_t prc = __global.heap_mm->memalign((void **)&_ue_header_addr, 0, header_size);
+      pami_result_t prc;
+      prc = __global.heap_mm->memalign((void **)&_ue_header_addr, 0, header_size);
       PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _ue_header_addr failed");
       _ue_header_size = header_size;
       memcpy(_ue_header_addr, header_addr, header_size);
@@ -150,7 +151,8 @@ inline void TSPColl::CollExchange<T_NI>::cb_incoming_ue(pami_context_t    contex
                  context, cookie, header_addr, header_size,
                  pipe_addr, data_size,(size_t)origin, recv));
           UnexpectedColl<T_NI> *uecoll;
-	  pami_result_t prc = __global.heap_mm->memalign((void **)&uecoll, 0, sizeof(*uecoll));
+	  pami_result_t prc;
+	  prc = __global.heap_mm->memalign((void **)&uecoll, 0, sizeof(*uecoll));
 	  PAMI_assertf(prc == PAMI_SUCCESS, "alloc of UnexpectedColl<T_NI> failed");
           new(uecoll) UnexpectedColl<T_NI>();
           uecoll->initialize(mc,

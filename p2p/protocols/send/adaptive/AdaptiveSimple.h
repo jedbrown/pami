@@ -223,7 +223,8 @@ namespace PAMI
             //No tested
             //Queue Setup
             //allocate memory
-	    pami_result_t prc = __global.heap_mm->memalign((void **)&_queue, 0,
+	    pami_result_t prc;
+	    prc = __global.heap_mm->memalign((void **)&_queue, 0,
 						sizeof(*_queue) * _device.peers());
 	    PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _queue failed");
 
@@ -674,7 +675,8 @@ namespace PAMI
             rcv->fromRank  = send->fromRank;              ///Origin Rank
             rcv->mbytes  = send->mbytes;                    ///Metadata application bytes
 
-	    pami_result_t prc = __global.heap_mm->memalign((void **)&rcv->msgbuff, 0,
+	    pami_result_t prc;
+	    prc = __global.heap_mm->memalign((void **)&rcv->msgbuff, 0,
 		sizeof(*rcv->msgbuff) * send->mbytes);  ///Allocate buffer for Metadata
 	    PAMI_assertf(prc == PAMI_SUCCESS, "alloc of buffer for Metadata failed");
             rcv->msgbytes = 0;                                            ///Initalized received bytes

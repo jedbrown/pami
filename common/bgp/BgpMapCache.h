@@ -93,7 +93,8 @@ namespace PAMI
           // the caches.  Only the master rank will initialize these caches and set the
           // pointers into this structure.  When the non-master ranks on this physical
           // node see the non-zero pointers, they can begin to use them.
-          pami_result_t result = mm.memalign((void **)&cacheAnchorsPtr, 16,
+          pami_result_t result;
+          result = mm.memalign((void **)&cacheAnchorsPtr, 16,
 			sizeof(cacheAnchors_t), "/bgp-cacheAnchors");
 	  PAMI_assertf(result == PAMI_SUCCESS, "alloc failed for cacheAnchorsPtr");
 

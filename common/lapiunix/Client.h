@@ -220,7 +220,8 @@ namespace PAMI
         char   *host,*hosts,*s;
 
         // local node process/rank info
-	pami_result_t rc = __global.heap_mm->memalign((void **)&_mapcache, 0,
+	pami_result_t rc;
+	rc = __global.heap_mm->memalign((void **)&_mapcache, 0,
 						sizeof(*_mapcache) * mysize);
         PAMI_assertf(rc == PAMI_SUCCESS, "memory alloc failed");
 	rc = __global.heap_mm->memalign((void **)&_peers, 0, sizeof(*_peers) * mysize);

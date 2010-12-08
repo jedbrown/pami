@@ -181,7 +181,8 @@ namespace TSPColl
   {
     for (int i = 0; i < MAXTAG; i++)
       {
-	pami_result_t prc = __global.heap_mm->memalign((void **)&_taglist[i], 0,
+	pami_result_t prc;
+	prc = __global.heap_mm->memalign((void **)&_taglist[i], 0,
 						sizeof(Vector<NBColl<T_NI> *>));
 	PAMI_assertf(prc == PAMI_SUCCESS, "alloc of Vector<NBColl<T_NI> *> failed");
         new (_taglist[i]) Vector<NBColl<T_NI> *> ();

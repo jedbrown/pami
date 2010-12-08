@@ -72,7 +72,8 @@ namespace PAMI
 	  } else {
 		PAMI_assertf(T_Counter::checkCtorMm(mm),
 			"counters are incompatible with given mm");
-		pami_result_t rc = mm->memalign((void **)&_counters, sizeof(void *),
+		pami_result_t rc;
+		rc = mm->memalign((void **)&_counters, sizeof(void *),
 					5 * sizeof(T_Counter), key);
 		PAMI_assertf(rc == PAMI_SUCCESS,
 			"Failed to allocate counters for Barrier from provided mm");

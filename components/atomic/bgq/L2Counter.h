@@ -115,7 +115,8 @@ public:
         void init_impl(PAMI::Memory::MemoryManager *mm, const char *key) {
 		PAMI_assert_debugf(checkDataMm(mm), "mm is not L2-Atomic capable");
 		PAMI_assert_debugf(!_counter, "Re-init or object is in shmem");
-                pami_result_t rc = mm->memalign((void **)&_counter, sizeof(*_counter),
+                pami_result_t rc;
+                rc = mm->memalign((void **)&_counter, sizeof(*_counter),
 							sizeof(*_counter), key);
                 PAMI_assertf(rc == PAMI_SUCCESS, "Failed to get L2 Atomic Counter");
         }

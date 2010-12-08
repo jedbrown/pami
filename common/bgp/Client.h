@@ -292,7 +292,8 @@ namespace PAMI
 
         if(geometry != NULL)
         {
-	  pami_result_t rc = __global.heap_mm->memalign((void **)&new_geometry, 0,
+	  pami_result_t rc;
+	  rc = __global.heap_mm->memalign((void **)&new_geometry, 0,
 					sizeof(*new_geometry)); /// \todo use allocator
           if (rc != PAMI_SUCCESS) return rc;
           new(new_geometry) BGPGeometry(_client,
@@ -334,7 +335,8 @@ namespace PAMI
 
         if(geometry != NULL)
         {
-	  pami_result_t rc = __global.heap_mm->memalign((void **)&new_geometry, 0,
+	  pami_result_t rc;
+	  rc = __global.heap_mm->memalign((void **)&new_geometry, 0,
 					sizeof(*new_geometry)); /// \todo use allocator
           if (rc != PAMI_SUCCESS) return rc;
           new(new_geometry) BGPGeometry(_client,

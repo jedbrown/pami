@@ -307,7 +307,8 @@ void PAMI::ResourceManager::getSubStringsFromConfigValueString(
   size_t       i;
 
   // Allocate space for _numClients pointers, to point to the client names.
-  pami_result_t prc = __global.heap_mm->memalign((void **)&mySubStringConfigValuePtrs, 0,
+  pami_result_t prc;
+  prc = __global.heap_mm->memalign((void **)&mySubStringConfigValuePtrs, 0,
 			numSubStringConfigValues * sizeof(*mySubStringConfigValuePtrs));
   PAMI_assertf(prc == PAMI_SUCCESS, "alloc of mySubStringConfigValuePtrs failed");
 
@@ -324,7 +325,8 @@ void PAMI::ResourceManager::getSubStringsFromConfigValueString(
       while ( configValueString[configValueStringLen++] != '\0' );
 
       // Allocate space for a copy of the comma-delimited list of values
-      pami_result_t prc = __global.heap_mm->memalign((void **)&myConfigValueStringCopy, 0,
+      pami_result_t prc;
+      prc = __global.heap_mm->memalign((void **)&myConfigValueStringCopy, 0,
 						configValueStringLen);
       PAMI_assertf(prc == PAMI_SUCCESS, "alloc of myConfigValueStringCopy failed");
 
@@ -386,7 +388,8 @@ void PAMI::ResourceManager::getClientWeights( const char *clientWeightsConfigVal
   size_t sum;
 
   // Allocate space for _numClients weights.
-  pami_result_t prc = __global.heap_mm->memalign((void **)&_clientWeights, 0,
+  pami_result_t prc;
+  prc = __global.heap_mm->memalign((void **)&_clientWeights, 0,
 				_numClients * sizeof(*_clientWeights));
   PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _clientWeights failed");
 

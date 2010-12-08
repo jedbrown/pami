@@ -72,7 +72,8 @@ namespace BGQ {
 			PAMI_assert_debugf((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0,
 				"mm is not L2Atomic-capable");
 			PAMI_assert_debugf(!_counter, "Re-init or object is in shmem");
-                        pami_result_t rc = mm->memalign((void **)&_counter, 0, 1, key);
+                        pami_result_t rc;
+                        rc = mm->memalign((void **)&_counter, 0, 1, key);
                         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to allocate L2 Atomic Mutex");
                 }
                 void acquire_impl() {

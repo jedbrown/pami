@@ -326,7 +326,8 @@ namespace PAMI
           // we shoudl find a way to remove this
           MPI_Barrier(MPI_COMM_WORLD);
 
-	  pami_result_t rc = __global.heap_mm->memalign((void **)&_pgas_collreg, 0,
+	  pami_result_t rc;
+	  rc = __global.heap_mm->memalign((void **)&_pgas_collreg, 0,
 								sizeof(*_pgas_collreg));
 	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PGASCollreg");
           new(_pgas_collreg) PGASCollreg(client,(pami_context_t)this,clientid,id,_protocol,*_mpi, &_dispatch_id, _geometry_map);

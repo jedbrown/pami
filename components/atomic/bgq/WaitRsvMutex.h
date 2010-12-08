@@ -72,7 +72,8 @@ namespace BGQ {
                 WaitRsvIndirMutex() { _mutex = NULL; }
                 inline void init_impl(PAMI::Memory::MemoryManager *mm, const char *key) {
 			PAMI_assert_debugf(!_mutex, "Re-init or object is in shmem");
-                        pami_result_t rc = mm->memalign((void **)&_mutex, 0, sizeof(*_mutex), key);
+                        pami_result_t rc;
+                        rc = mm->memalign((void **)&_mutex, 0, sizeof(*_mutex), key);
                         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to allocate WaitRsvIndirMutex");
 			_mutex->init();
                 }

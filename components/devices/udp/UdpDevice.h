@@ -57,7 +57,8 @@ namespace PAMI
               // Allocate an array of udp devices, one for each context in this
               // _task_ (from heap, not from shared memory)
               UdpDevice * devices;
-              pami_result_t rc = __global.heap_mm->memalign((void **)&devices, 16, sizeof(*devices) * n);
+              pami_result_t rc;
+              rc = __global.heap_mm->memalign((void **)&devices, 16, sizeof(*devices) * n);
               PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for UdpDevice[%zu], errno=%d\n", n, errno);
 
               // Instantiate the udp devices
@@ -156,7 +157,8 @@ namespace PAMI
       {
         _context   = context;
 
-	pami_result_t rc = __global.heap_mm->memalign((void **)&_sndConnections, 0,
+	pami_result_t rc;
+	rc = __global.heap_mm->memalign((void **)&_sndConnections, 0,
 				__global.mapping.size() *  sizeof(*_sndConnections));
 	PAMI_assertf(rc == PAMI_SUCCESS, "alloc of _sndConnections failed");
         // setup the connections
