@@ -407,7 +407,7 @@ namespace PAMI
   {
     TRACE_FN_ENTER();
     TRACE_FORMAT( "<%p> status %u", this, _mcast2_status);
-    this->CCMI::Interfaces::NativeInterface::_status = _mcast2_status; 
+    this->CCMI::Interfaces::NativeInterface::_status = (pami_result_t) (this->CCMI::Interfaces::NativeInterface::_status | _mcast2_status); 
     TRACE_FN_EXIT();
   }
 
@@ -425,7 +425,7 @@ namespace PAMI
   {
     TRACE_FN_ENTER();
     TRACE_FORMAT( "<%p> status %u", this, _mcast2_status);
-    this->CCMI::Interfaces::NativeInterface::_status = _mcast2_status;
+    this->CCMI::Interfaces::NativeInterface::_status = (pami_result_t) (this->CCMI::Interfaces::NativeInterface::_status | _mcast2_status); 
     TRACE_FN_EXIT();
   } 
 
