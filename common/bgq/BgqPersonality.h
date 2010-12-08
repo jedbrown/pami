@@ -131,7 +131,9 @@ namespace PAMI
 	);
 
 	BG_JobCoords_t subblk;
-	PAMI_assertf(Kernel_JobCoords(&subblk) == 0, "Kernel_JobCoords failed");
+	uint32_t krc;
+	krc = Kernel_JobCoords(&subblk);
+	PAMI_assertf(krc == 0, "Kernel_JobCoords failed");
 	_isSubBlockJob = subblk.isSubBlock;
 	if (_isSubBlockJob) {
 		PAMI_assertf(subblk.shape.core == 16, "Sub-node jobs not supported");
