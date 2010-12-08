@@ -755,7 +755,8 @@ namespace PAMI
         // Round up to the page size
         //size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
 
-	pami_result_t rc = _mm.init(__global.shared_mm, bytes, 1, 1, 0, shmemfile);
+	pami_result_t rc;
+	rc = _mm.init(__global.shared_mm, bytes, 1, 1, 0, shmemfile);
 	PAMI_assertf(rc == PAMI_SUCCESS, "Failed to create \"%s\" mm for %zd bytes",
 									shmemfile, bytes);
         return;
