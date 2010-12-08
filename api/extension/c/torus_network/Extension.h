@@ -19,6 +19,7 @@ namespace PAMI
                                          pami_result_t & result)
   {
     PAMI::TorusExtension * x;
+    pami_result_t rc;
     rc = __globa.heap_mm->memalign((void **)&x, 0, sizeof(*x));
     PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PAMI::TorusExtension");
     new (x) PAMI::TorusExtension();
