@@ -1749,6 +1749,8 @@ namespace PAMI {
 	  PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", s);
           k = 0;
           c0 = topo_llcoord;
+          __initRange(&ll, &ur, &c0, mapping->globalDims());
+          min = max = rank;
           do {
             if (other->__isMemberCoord(&c0,
                                        mapping->globalDims())) {
@@ -1756,14 +1758,9 @@ namespace PAMI {
             }
             // keep it
             rc = COORDS2RANK(&c0, &rank);
-            if (k == 0) { // first one found...
-              __initRange(&ll, &ur, &c0, mapping->globalDims());
-              min = max = rank;
-            } else {
-              __bumpRange(&ll, &ur, &c0, mapping->globalDims());
-              if (rank < min) min = rank;
-              if (rank > max) max = rank;
-            }
+            __bumpRange(&ll, &ur, &c0, mapping->globalDims());
+            if (rank < min) min = rank;
+            if (rank > max) max = rank;
             rl[k++] = rank;
           } while (__nextCoord(&c0, mapping->globalDims()));
           if (k == 0) {
