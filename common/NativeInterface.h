@@ -1332,11 +1332,14 @@ namespace PAMI
                   this, __LINE__, rcvpwq,rcvpwq->bytesAvailableToProduce(),cb_done.function,cb_done.clientdata);
     PAMI_assert(model_available_buffers_only && (rcvpwq->bytesAvailableToProduce() >= data_size));
 
+    recv->cookie   = cb_done.clientdata;
+    recv->local_fn = cb_done.function;
     recv->addr     = rcvpwq->bufferToProduce();
     recv->type     = PAMI_BYTE;
     recv->offset   = 0;
-    recv->local_fn = cb_done.function;
-    recv->cookie   = cb_done.clientdata;
+    recv->data_fn  = PAMI_DATA_COPY;
+    recv->data_cookie = (void*)NULL;
+
     TRACE_FN_EXIT();
   }
 
@@ -1966,13 +1969,14 @@ namespace PAMI
 
     TRACE_FORMAT( "<%p> %p connection id %u, bytes %zu", this, req, connection_id, bytes);
 
-    recv->hints.inline_completion = 1;
-
+    recv->cookie   = req;
+    recv->local_fn = ni_client_done;
     recv->addr     = rcvpwq->bufferToProduce();
     recv->type     = PAMI_BYTE;
     recv->offset   = 0;
-    recv->local_fn = ni_client_done;
-    recv->cookie   = req;
+    recv->data_fn  = PAMI_DATA_COPY;
+    recv->data_cookie = (void*)NULL;
+
     TRACE_FN_EXIT();
   }
 
@@ -2071,11 +2075,14 @@ namespace PAMI
 
     TRACE_FORMAT( "<%p> data_size %zu, bytesToProduce(%zu) %zu", this, data_size, originIndex, bytesToProduce);
 
-    recv->addr     = buffer;
-    recv->type     = PAMI_BYTE; /// \todo assume PAMI_BYTE for now
-    recv->offset   = 0;
-    recv->local_fn = recvM2mDone;
     recv->cookie   = state;
+    recv->local_fn = recvM2mDone;
+    recv->addr     = buffer;
+    recv->type     = PAMI_BYTE;
+    recv->offset   = 0;
+    recv->data_fn  = PAMI_DATA_COPY;
+    recv->data_cookie = (void*)NULL;
+
     TRACE_FN_EXIT();
   }
 

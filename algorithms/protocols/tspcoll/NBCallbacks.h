@@ -205,12 +205,13 @@ inline void TSPColl::CollExchange<T_NI>::cb_incoming_ue(pami_context_t    contex
     memcpy(b->_rbuf[header->phase], pipe_addr, data_size);
   else if (recv)
     {
-      memset(&recv->hints, 0, sizeof(recv->hints));
       recv->cookie        = &b->_cmplt[header->phase];
       recv->local_fn      = CollExchange<T_NI>::cb_recvcomplete;
       recv->addr          = (char*)b->_rbuf[header->phase];
       recv->type          = PAMI_BYTE;
       recv->offset        = 0;
+      recv->data_fn       = PAMI_DATA_COPY;
+      recv->data_cookie   = (void*)NULL;
       return;
     }
 
@@ -260,12 +261,13 @@ inline void TSPColl::CollExchange<T_NI>::cb_incoming(pami_context_t    context,
     memcpy(b->_rbuf[header->phase], pipe_addr, data_size);
   else if (recv)
     {
-      memset(&recv->hints, 0, sizeof(recv->hints));
       recv->cookie        = &b->_cmplt[header->phase];
       recv->local_fn      = CollExchange::cb_recvcomplete;
       recv->addr          = (char*)b->_rbuf[header->phase];
       recv->type          = PAMI_BYTE;
       recv->offset        = 0;
+      recv->data_fn       = PAMI_DATA_COPY;
+      recv->data_cookie   = (void*)NULL;
       return;
     }
 
@@ -303,12 +305,13 @@ void TSPColl::Scatter<T_NI>::cb_incoming(pami_context_t    context,
     memcpy(s->_rbuf, pipe_addr, data_size);
   else if (recv)
     {
-      memset(&recv->hints, 0, sizeof(recv->hints));
       recv->cookie        = s;
       recv->local_fn      = Scatter::cb_recvcomplete;
       recv->addr          = s->_rbuf;
       recv->type          = PAMI_BYTE;
       recv->offset        = 0;
+      recv->data_fn       = PAMI_DATA_COPY;
+      recv->data_cookie   = (void*)NULL;
       TRACE((stderr, "SCATTER/v: <%d,%d> INCOMING RETURING base=%p ptr=%p\n",
              header->tag, header->id, base0, s));
       return;
