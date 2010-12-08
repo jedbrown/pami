@@ -373,8 +373,8 @@ namespace PAMI {
     /// \return 'true' means "this" was altered!
     bool __analyzeCoordsRange() {
       pami_result_t rc;
-      static pami_coord_t ll, ur;
-      static pami_coord_t c0;
+      pami_coord_t ll, ur;
+      pami_coord_t c0;
       pami_task_t r = topo_first;
       rc = RANK2COORDS(r, &c0);
       __initRange(&ll, &ur, &c0, mapping->globalDims());
@@ -400,8 +400,8 @@ namespace PAMI {
     /// \return 'true' means "this" was altered!
     bool __analyzeCoordsList() {
       pami_result_t rc;
-      static pami_coord_t ll, ur;
-      static pami_coord_t c0;
+      pami_coord_t ll, ur;
+      pami_coord_t c0;
       unsigned i = 0;
       rc = RANK2COORDS(topo_list(i), &c0);
       __initRange(&ll, &ur, &c0, mapping->globalDims());
@@ -748,7 +748,7 @@ namespace PAMI {
     ///
     size_t rank2Index_impl(pami_task_t rank) {
       size_t x, ix, nn;
-      static pami_coord_t c0;
+      pami_coord_t c0;
       pami_result_t rc;
       switch (__type) {
       case PAMI_SINGLE_TOPOLOGY:
@@ -1730,7 +1730,7 @@ namespace PAMI {
     ///
     void subtractTopology_impl(Topology *_new, Topology *other) {
       pami_result_t rc;
-      static pami_coord_t ll, ur, c0;
+      pami_coord_t ll, ur, c0;
       pami_task_t rank = 0;
       pami_task_t min = 0, max = 0;
       size_t s;
