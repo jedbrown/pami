@@ -42,8 +42,8 @@ namespace PAMI
   /// \see PAMI::Protocol::Send::SendPWQ
   /// \see PAMI::CollRegistration::BGQ:CCMIRegistration
   ///
-  /// \example of usage
-  ///
+  /// \par example of usage
+  /// \code
   /// // Define a point-to-point protocol (
   ///
   /// typedef Protocol::Send::...<> MyProtocol;
@@ -57,7 +57,7 @@ namespace PAMI
   ///
   /// // Generate the protocol with the NI dispatch function and the NI pointer as a cookie
   ///
-  ///  pami_dispatch_multicast_function dispatch_fn;
+  /// pami_dispatch_multicast_function dispatch_fn;
   /// dispatch_fn = NativeInterfaceActiveMessage::dispatch_mcast;
   ///
   /// MySendPWQ *protocol = (MySendPWQ*) MySendPWQ::generate(dispatch, dispatch_fn,(void*) ni,  ...);
@@ -65,6 +65,7 @@ namespace PAMI
   /// // Set the p2p dispatch id and protocol back in the Native Interface
   ///
   /// ni->setMcastProtocol(dispatch, protocol);
+  /// \endcode
   ///
   /// This sequence is necessary.  We can't pass the protocol on the NI ctor because it's a
   /// chicken-n-egg problem.  NativeInterface  ctor needs a protocol. Protocol ctor needs a
