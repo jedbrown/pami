@@ -551,17 +551,6 @@ extern "C"
                                pami_send_typed_t * parameters);
 
   /**
-   * \brief Active message receive hints
-   */
-  typedef struct
-  {
-    uint32_t inline_completion :  1; /**< The receive completion callback
-                                      *   \b must be invoked by the thread that
-                                      *   receives the dispatch notification. */
-    uint32_t reserved          : 31; /**< Reserved. Do not use. */
-  } pami_recv_hint_t;
-
-  /**
    * \brief Receive message structure
    *
    * This structure is initialized and then returned as an output parameter from
@@ -580,7 +569,6 @@ extern "C"
    */
   typedef struct
   {
-    pami_recv_hint_t        hints;       /**< Hints for receiving the message */
     void                  * cookie;      /**< Argument to \b all event callbacks */
     pami_event_function     local_fn;    /**< Local message completion event */
     void                  * addr;        /**< Starting address of the buffer */
