@@ -84,7 +84,7 @@ namespace PAMI
         pami_result_t rc;
         rc = __global.heap_mm->memalign((void **)&_contexts, 16, sizeof(*_contexts) * n);
         PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for _contexts[%d]", n);
-        int x;
+        size_t x;
 
         _platdevs.generate(_clientid, n, _mm);
 

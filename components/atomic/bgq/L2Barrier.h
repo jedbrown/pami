@@ -212,7 +212,8 @@ namespace PAMI
             // is the lowest-numbered core in the
             // process.
 
-            pami_result_t rc = _barrier.__init(mm, key);
+            pami_result_t rc;
+	    rc = _barrier.__init(mm, key);
             PAMI_assertf(rc == PAMI_SUCCESS, "Failed to get L2 Atomic NodeCoreBarrier");
 
             // PAMI_assert(m .iff. me == masterProc());

@@ -53,7 +53,8 @@ namespace PAMI
         template <class T_MemoryManager>
         inline void init_impl (T_MemoryManager * mm, const char * key)
         {
-          pami_result_t rc = mm->memalign ((void **) & _counter,
+          pami_result_t rc;
+	  rc = mm->memalign ((void **) & _counter,
                                            sizeof(*_counter),
                                            sizeof(*_counter),
                                            key,

@@ -26,7 +26,7 @@
 
 #include "components/memory/MemoryManager.h"
 #define MEM_ALLOC(ptr,size,err...) {\
-	pami_result_t _rc;
+	pami_result_t _rc;\
 	_rc = PAMI::Memory::MemoryManager::heap_mm->memalign(\
 			(void **)&ptr, 0, size);	\
 	PAMI_assertf(_rc == PAMI_SUCCESS, err);	\

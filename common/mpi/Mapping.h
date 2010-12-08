@@ -327,6 +327,7 @@ namespace PAMI
         {
                 if (task >= _size ||
                         (type != PAMI_N_TORUS_NETWORK && type != PAMI_DEFAULT_NETWORK)) {
+			memset(addr, 0, sizeof(*addr));
                         return PAMI_ERROR;
                 }
                 uint32_t x = _mapcache[task];

@@ -73,7 +73,8 @@ namespace PAMI
               // Allocate an array of shared memory devices, one for each
               // context in this task (from heap, not from shared memory)
               ShmemDevice * devices;
-              pami_result_t mmrc = __global.heap_mm->memalign((void **) & devices, 16, sizeof(*devices) * ncontexts);
+              pami_result_t mmrc;
+	      mmrc = __global.heap_mm->memalign((void **) & devices, 16, sizeof(*devices) * ncontexts);
               PAMI_assertf(mmrc == PAMI_SUCCESS, "memalign failed for shared memory devices, rc=%d\n", mmrc);
 
               // Instantiate the shared memory devices
