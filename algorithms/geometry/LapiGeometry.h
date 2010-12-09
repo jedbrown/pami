@@ -166,9 +166,9 @@ namespace PAMI
               for (i = 0; i < numranges; i++)
                 nranks += (rangelist[i].hi - rangelist[i].lo + 1);
 
-              _ranks_malloc = true;
-              _ranks = (pami_task_t*)malloc(nranks * sizeof(pami_task_t));
-
+              _ranks_malloc    = true;
+	      pami_result_t rc = __global.heap_mm->memalign((void **)&_ranks,0,nranks*sizeof(pami_task_t));
+              PAMI_assert(rc == PAMI_SUCCESS);
               for (k = 0, i = 0; i < numranges; i++)
                 {
                   int size = rangelist[i].hi - rangelist[i].lo + 1;
@@ -429,7 +429,7 @@ namespace PAMI
         }
         inline void                      freeAllocations_impl()
         {
-          if (_ranks_malloc) free(_ranks);
+          if (_ranks_malloc) __global.heap_mm->free(_ranks);
 
           _ranks = NULL;
           _ranks_malloc = false;
@@ -795,7 +795,7 @@ namespace PAMI
         pami_task_t                                 _rank;
         MatchQueue                                  _ue;
         MatchQueue                                  _post;
-        bool                                          _ranks_malloc;
+        bool                                        _ranks_malloc;
         pami_task_t                                *_ranks;
         std::map<unsigned, pami_geometry_t>        *_geometry_map;
         void                                       *_allreduce_storage[2];
