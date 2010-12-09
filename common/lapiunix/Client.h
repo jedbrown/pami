@@ -70,7 +70,6 @@ namespace PAMI
         // Using rank and size
         rc = _contexts[0]->initP2P(&myrank, &mysize, &_main_lapi_handle);
         if(rc) {result=rc;  return;}
-        
 
         // Initialize the mapping to be used for collectives
         __global.mapping.init(myrank, mysize);        
@@ -91,7 +90,7 @@ namespace PAMI
         // Another TODO:  remove the _mm dependency from platdevs
         if(!world_procs && dyntasking)
           {
-            _mm.init (malloc (1024), 1024);
+            _mm.init (__global.heap_mm, 16);
             _platdevs.generate(_clientid, _maxctxts, _mm, true);
             _platdevs.init(_clientid,0,_client,(pami_context_t)_contexts[0],&_mm,true);
             result=rc;
@@ -238,7 +237,6 @@ namespace PAMI
         pami_algorithm_t   alg;
         pami_metadata_t    mdata;
         pami_xfer_t        xfer;
-        pami_result_t      rc;
         volatile int       flag = 1;
         _world_geometry->algorithms_info(colltype,&alg,&mdata,1,NULL,NULL,0,0);
         xfer.cb_done                        = map_cache_fn;

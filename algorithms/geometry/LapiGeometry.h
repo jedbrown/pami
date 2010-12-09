@@ -35,8 +35,6 @@
 #include "algorithms/geometry/UnexpBarrierQueueElement.h"
 #include "components/atomic/gcc/GccCounter.h"
 #include "components/memory/MemoryAllocator.h"
-typedef PAMI::Counter::GccInPlaceCounter GeomCompCtr;
-
 
 namespace PAMI
 {

@@ -42,7 +42,15 @@ namespace PAMI
         inline Gcc() {};
 
         inline ~Gcc() {};
-
+      
+        // Todo:  move this to an "Extended interface"
+        // This member needs to be public because
+        // it is not part of the parent interface
+        inline size_t fetch_and_add (size_t inc)
+        {
+          return __sync_fetch_and_add(&_atom, inc);
+        };
+      
       protected:
 
         // -------------------------------------------------------------------
@@ -55,11 +63,6 @@ namespace PAMI
           // can't use __sync_fetch_and_or... it's broken?
           // instead, ensure "_atom" is volatile
           return _atom;
-        };
-
-        inline size_t fetch_and_add (size_t inc)
-        {
-           return __sync_fetch_and_add(&_atom, inc);
         };
 
         inline size_t fetch_and_inc_impl ()

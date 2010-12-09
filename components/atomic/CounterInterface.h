@@ -28,7 +28,7 @@ namespace PAMI
     template <class T>
     class Interface
     {
-      protected:
+    public:
 
         inline Interface() {}
         inline ~Interface() {}

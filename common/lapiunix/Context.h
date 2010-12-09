@@ -46,7 +46,9 @@
 // P2P Shared memory protocols
 #include "components/devices/shmem/ShmemDevice.h"
 #include "components/devices/shmem/ShmemPacketModel.h"
-#include "components/atomic/gcc/GccBuiltin.h"
+#include "components/atomic/indirect/IndirectCounter.h"
+#include "components/atomic/counter/CounterMutex.h"
+#include "components/atomic/gcc/GccCounter.h"
 #include "util/fifo/FifoPacket.h"
 #include "util/fifo/LinearFifo.h"
 
@@ -59,11 +61,6 @@
 #ifdef _COLLSHM
 // Collective shmem device
 #include "components/devices/cshmem/CollSharedMemoryManager.h"
-#ifdef _LAPI_LINUX
-#include "components/atomic/gcc/GccBuiltin.h"
-#else
-#include "components/atomic/xlc/XlcBuiltinT.h"
-#endif
 #include "components/devices/cshmem/CollShmDevice.h"
 #include "algorithms/geometry/CCMICSMultiRegistration.h"
 #endif
@@ -188,11 +185,11 @@ namespace PAMI
 
   // Shared Memory P2P Typedefs
   typedef Fifo::FifoPacket <64, 1024>                                 ShmemPacket;
-  typedef Fifo::LinearFifo<PAMI::Counter::GccInPlaceCounter, ShmemPacket,128> ShmemFifo;
+  typedef Fifo::LinearFifo<ShmemPacket, Counter::Indirect<Counter::Gcc> > ShmemFifo;
   typedef Device::ShmemDevice<ShmemFifo>                              ShmemDevice;
   typedef Device::Shmem::PacketModel<ShmemDevice>                     ShmemPacketModel;
-  typedef Protocol::Send::Eager<ShmemPacketModel, ShmemDevice>        ShmemEagerBase;
-  typedef PAMI::Protocol::Send::SendPWQ<ShmemEagerBase>               ShmemEager;
+  typedef Protocol::Send::Eager <ShmemPacketModel, ShmemDevice>       ShmemEagerBase;
+  typedef PAMI::Protocol::Send::SendPWQ < ShmemEagerBase >            ShmemEager;
 
   // "New" Collective Message Typedefs
   typedef Device::CAUMsyncMessage                                     CAUMsyncMessage;
@@ -257,11 +254,7 @@ namespace PAMI
 
 #ifdef _COLLSHM
   // Collective Shmem Protocol Typedefs
-#ifdef _LAPI_LINUX
-  typedef PAMI::Atomic::GccBuiltin                                               LAPICSAtomic;
-#else
-  typedef PAMI::Atomic::XlcBuiltinT<long>                                        LAPICSAtomic;
-#endif
+  typedef Counter::Gcc                                                           LAPICSAtomic;
   typedef PAMI::Memory::CollSharedMemoryManager<LAPICSAtomic,COLLSHM_SEGSZ,COLLSHM_PAGESZ,
                                     COLLSHM_WINGROUPSZ,COLLSHM_BUFSZ>            LAPICSMemoryManager;
   typedef PAMI::Device::CollShm::CollShmDevice<LAPICSAtomic, LAPICSMemoryManager,
@@ -448,8 +441,9 @@ namespace PAMI
         {
           PAMI::Topology *local_master_topo = (PAMI::Topology *) ((PAMI::Geometry::Lapi *)_world_geometry)->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
 	  pami_result_t rc;
+          uint64_t *invec;
 	  rc = __global.heap_mm->memalign((void **)&invec, 0,
-				(3 + local_master_topo->size()) * sizeof(uint64_t));
+                                          (3 + local_master_topo->size()) * sizeof(uint64_t));
 	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc invec");
           // for cau classroute initialization
           invec[2]  = 0xFFFFFFFFFFFFFFFFULL;

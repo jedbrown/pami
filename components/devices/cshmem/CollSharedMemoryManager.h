@@ -102,12 +102,12 @@ namespace PAMI
           _localsize (__global.mapping.size())  // hacking for now, only support single node job
         { }
 
-	static void _collshminit(void *mem, size_t bytes, char *key, unsigned attrs, void *cookie) {
+	static void _collshminit(void *mem, size_t bytes, const char *key, unsigned attrs, void *cookie) {
 	    CollSharedMemoryManager *thus = (CollSharedMemoryManager *)cookie;
 	    thus->__collshminit(mem, bytes, key, attrs);
 	}
 
-	void __collshminit(void *mem, size_t bytes, char *key, unsigned attrs) {
+	void __collshminit(void *mem, size_t bytes, const char *key, unsigned attrs) {
 
             // both shm_open and shmget should guarantee initial
             // content of the shared memory to be zero
@@ -157,7 +157,7 @@ namespace PAMI
           _localrank = rank;
           _localsize = size;
 
-	  __global.shared_mm->memalign((void **)&_collshm, 16, _size, "/pami-collshmem",
+	  __global.mm.memalign((void **)&_collshm, 16, _size, "/pami-collshmem",
 					_collshminit, (void *)this);
           return PAMI_SUCCESS;
         }
@@ -169,7 +169,7 @@ namespace PAMI
 
             if (_collshm != NULL)
             {
-		// __global.shared_mm.free(_collshm);
+              __global.mm.free(_collshm);
 
 		/// \todo this should be a barrier, if needed at all.
                _collshm->term_count.fetch_and_inc();
