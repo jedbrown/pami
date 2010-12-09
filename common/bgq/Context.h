@@ -302,7 +302,7 @@ namespace PAMI
           _coll_shm_registration(NULL),
           _bgq2d_registration(NULL),
 #endif
-//	    _multi_registration((CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI, MUAxialDputNI, MUShmemAxialDputNI >*) _multi_registration_storage),
+	    _multi_registration((CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI, MUAxialDputNI, MUShmemAxialDputNI >*) _multi_registration_storage),
           _ccmi_registration((CCMIRegistration*)_ccmi_registration_storage),
           _world_geometry(world_geometry),
           _status(PAMI_SUCCESS),
@@ -516,15 +516,15 @@ namespace PAMI
         }
 #endif
 
-//        _multi_registration       =  new (_multi_registration)
-//	  CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI,MUAxialDputNI, MUShmemAxialDputNI >(_shmem_native_interface,
-//                                                                                                       PAMI::Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid), 
-//                                                                                                       client, 
-//                                                                                                       (pami_context_t)this, 
-//                                                                                                       id, 
-//                                                                                                       clientid,
-//												       &_dispatch_id,
-//													_geometry_map);
+        _multi_registration       =  new (_multi_registration)
+	  CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI,MUAxialDputNI, MUShmemAxialDputNI >(_shmem_native_interface,
+                                                                                                       PAMI::Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid), 
+                                                                                                       client, 
+                                                                                                       (pami_context_t)this, 
+                                                                                                       id, 
+                                                                                                       clientid,
+												       &_dispatch_id,
+													_geometry_map);
 
         _ccmi_registration =  new(_ccmi_registration) CCMIRegistration(_client, _context, _contextid, _clientid, _devices->_shmem[_contextid], _devices->_mu[_contextid], _protocol, __global.useshmem(), __global.useMU(), __global.topology_global.size(), __global.topology_local.size(), &_dispatch_id, _geometry_map);
 
@@ -537,11 +537,11 @@ namespace PAMI
         _world_geometry->resetUEBarrier(); // Reset so ccmi will select the UE barrier
         _ccmi_registration->analyze(_contextid, _world_geometry, 0);
 
-//        _multi_registration->analyze(_contextid, _world_geometry, 0);
+        _multi_registration->analyze(_contextid, _world_geometry, 0);
 
         // for now, this is the only registration that has a phase 1...
         // We know that _world_geometry is always "optimized" at create time.
-//        _multi_registration->analyze(_contextid, _world_geometry, 1);
+        _multi_registration->analyze(_contextid, _world_geometry, 1);
 
         // Complete rget and rput protocol initialization
         if (((rget_mu != NULL) && (rget_shmem != NULL)) &&
@@ -1077,7 +1077,7 @@ namespace PAMI
         geometry->resetUEBarrier(); // Reset so ccmi will select the UE barrier
         _ccmi_registration->analyze(context_id, geometry, phase);
 
-//        _multi_registration->analyze(context_id, geometry, phase);
+        _multi_registration->analyze(context_id, geometry, phase);
 
         return PAMI_SUCCESS;
       }
@@ -1142,7 +1142,7 @@ namespace PAMI
       CollShmCollreg              *_coll_shm_registration;
       BGQ2DCollreg                *_bgq2d_registration;
 #endif
-//      CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI,MUAxialDputNI,MUShmemAxialDputNI >    *_multi_registration;
+      CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI,MUAxialDputNI,MUShmemAxialDputNI >    *_multi_registration;
       CCMIRegistration            *_ccmi_registration;
       BGQGeometry                 *_world_geometry;
       pami_result_t                _status;
@@ -1155,7 +1155,7 @@ namespace PAMI
       uint8_t                      _coll_shm_registration_storage[sizeof(CollShmCollreg)];
       uint8_t                      _bgq2d_registration_storage[sizeof(BGQ2DCollreg)];
 #endif
-//      uint8_t                      _multi_registration_storage[sizeof(CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI,MUAxialDputNI,MUShmemAxialDputNI >)];
+      uint8_t                      _multi_registration_storage[sizeof(CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI,MUAxialDputNI,MUShmemAxialDputNI >)];
       uint8_t                      _shmemMcastModel_storage[sizeof(ShmemMcstModel)];
       uint8_t                      _shmemMsyncModel_storage[sizeof(ShmemMsyncModel)];
       uint8_t                      _shmemMcombModel_storage[sizeof(ShmemMcombModel)];
