@@ -97,7 +97,7 @@ namespace PAMI
               PAMI::Interface::Mapping::nodeaddr_t address;
 
               __global.mapping.nodeAddr (address);
-              TRACE_ERR((stderr, "ShmemCollDevice::Factory::generate_impl() after nodeAddr() global %zu, local %zu\n",address.global,address.local));
+              TRACE_ERR((stderr, "ShmemCollDevice::Factory::generate_impl() after nodeAddr() global %zu, local %zu\n", address.global, address.local));
               __global.mapping.node2peer (address, me);
               TRACE_ERR((stderr, "ShmemCollDevice::Factory::generate_impl() me = %zu\n", me));
 
@@ -110,8 +110,9 @@ namespace PAMI
               size_t done = 0;
               size_t total_desc_fifos = 0;
 #if 1
-              int countdown=10000;
+              int countdown = 10000;
 #endif
+
               while (done != npeers)
                 {
                   total_desc_fifos = 0;
@@ -122,10 +123,14 @@ namespace PAMI
                       total_desc_fifos += ncontexts[i];
 
                       if (ncontexts[i] > 0) done++;
+
 #if 1
-                      if(countdown==1) fprintf(stderr, "ShmemCollDevice::Factory::generate_impl() ncontexts[%zu] = %zu, %p, %zu\n", i, ncontexts[i],ncontexts,mm.available());
+
+                      if (countdown == 1) fprintf(stderr, "ShmemCollDevice::Factory::generate_impl() ncontexts[%zu] = %zu, %p, %zu\n", i, ncontexts[i], ncontexts, mm.available());
+
 #endif
                     }
+
 #if 1
                   PAMI_assertf(countdown--, "I give up\n");
 #endif
@@ -148,75 +153,81 @@ namespace PAMI
               PAMI::Interface::Mapping::nodeaddr_t address;
 
               __global.mapping.nodeAddr (address);
-              TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() after nodeAddr() global %zu, local %zu\n",address.global,address.local));
+              TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() after nodeAddr() global %zu, local %zu\n", address.global, address.local));
               __global.mapping.node2peer (address, me);
               TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() me = %zu\n", me));
 
-			  // will there always be a "0"?
+              // will there always be a "0"?
               TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() before barriered shmemzero \n"));
-			  local_barriered_shmemzero((void *)ncontexts, size, npeers, me == 0);
+              local_barriered_shmemzero((void *)ncontexts, size, npeers, me == 0);
               TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() after barriered shmemzero \n"));
 #if 1
 
-			  ncontexts[me] = n;
-			  __sync_fetch_and_add(&ncontexts[npeers], 1);
-			  mem_sync(); // paranoia?
-			  while (ncontexts[npeers] < npeers);
+              ncontexts[me] = n;
+              __sync_fetch_and_add(&ncontexts[npeers], 1);
+              mem_sync(); // paranoia?
+
+              while (ncontexts[npeers] < npeers);
+
               TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() after getting the total contexts \n"));
-			  mem_sync(); // paranoia?
-			  //size_t total_fifos_on_node = 0;
-			  size_t total_desc_fifos = 0;
-			  // Assign fifo indexes to the peer fnum cache while computing total
-			  for (i = 0; i < npeers; i++)
-			  {
-					  // This should only be done by one peer, but all write the same data
-					  // and this way no extra synchronization is needed.
-					  peer_fnum[i] = total_desc_fifos;
-					  total_desc_fifos += ncontexts[i];
-			  }
+              mem_sync(); // paranoia?
+              //size_t total_fifos_on_node = 0;
+              size_t total_desc_fifos = 0;
+
+              // Assign fifo indexes to the peer fnum cache while computing total
+              for (i = 0; i < npeers; i++)
+                {
+                  // This should only be done by one peer, but all write the same data
+                  // and this way no extra synchronization is needed.
+                  peer_fnum[i] = total_desc_fifos;
+                  total_desc_fifos += ncontexts[i];
+                }
+
 #endif
 #if 0
-				//hack for now..remove later
-			  size_t total_desc_fifos = 0;
-			  for (i = 0; i < npeers; i++)
-			  {
-					  // This should only be done by one peer, but all write the same data
-					  // and this way no extra synchronization is needed.
-					  peer_fnum[i] = total_desc_fifos;
-					  total_desc_fifos += 1;
-			  }
+              //hack for now..remove later
+              size_t total_desc_fifos = 0;
+
+              for (i = 0; i < npeers; i++)
+                {
+                  // This should only be done by one peer, but all write the same data
+                  // and this way no extra synchronization is needed.
+                  peer_fnum[i] = total_desc_fifos;
+                  total_desc_fifos += 1;
+                }
+
 #endif
 
-			  //T_Desc * all_desc = NULL;
-			  Shmem::ShmemCollDescFifo<T_Desc>* all_desc_fifos = NULL;
+              //T_Desc * all_desc = NULL;
+              Shmem::ShmemCollDescFifo<T_Desc>* all_desc_fifos = NULL;
               //size = (sizeof(Shmem::ShmemCollDescFifo<T_Desc>)) * total_desc_fifos + 128;
-              size = ((sizeof(Shmem::ShmemCollDescFifo<T_Desc>)+128) & 0xffffff80 ) * total_desc_fifos ;
+              size = ((sizeof(Shmem::ShmemCollDescFifo<T_Desc>) + 128) & 0xffffff80 ) * total_desc_fifos ;
               TRACE_ERR((stderr, "ShmemCollDevice::Factory::allocating %zu bytes\n", size));
               mm.memalign ((void **)&all_desc_fifos, 128, size);
-			  assert(all_desc_fifos != NULL);
+              assert(all_desc_fifos != NULL);
 
-			  Shmem::ShmemCollDescFifo<T_Desc>* all_world_desc_fifos = NULL;
+              Shmem::ShmemCollDescFifo<T_Desc>* all_world_desc_fifos = NULL;
               //size = (sizeof(Shmem::ShmemCollDescFifo<T_Desc>)) * total_desc_fifos + 128;
-              size = ((sizeof(Shmem::ShmemCollDescFifo<T_Desc>)+128) & 0xffffff80 ) * total_desc_fifos ;
+              size = ((sizeof(Shmem::ShmemCollDescFifo<T_Desc>) + 128) & 0xffffff80 ) * total_desc_fifos ;
               mm.memalign ((void **)&all_world_desc_fifos, 128, size);
-			  assert(all_world_desc_fifos != NULL);
+              assert(all_world_desc_fifos != NULL);
 
-			  size_t *peer_desc_fnum;
+              size_t *peer_desc_fnum;
               pami_result_t rc;	// avoid warning when ASSERTS=0
-	      rc = __global.heap_mm->memalign((void **)&peer_desc_fnum, 0, sizeof(*peer_desc_fnum)*npeers);
-	      PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for peer_desc_fnum");
-		      // Assign fifo indexes to the peer fnum cache
+              rc = __global.heap_mm->memalign((void **) & peer_desc_fnum, 0, sizeof(*peer_desc_fnum) * npeers);
+              PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for peer_desc_fnum");
+              // Assign fifo indexes to the peer fnum cache
               peer_desc_fnum[0] = 0;
 
 
               for (i = 1; i < npeers; i++)
                 {
                   peer_desc_fnum[i] = peer_desc_fnum[i-1] + ncontexts[i-1];
-              	  TRACE_ERR((stderr, "ShmemCollDevice::Factory::generate_impl() i=%zu peer_desc_fnum[i]:%zu \n", i,peer_desc_fnum[i]));
+                  TRACE_ERR((stderr, "ShmemCollDevice::Factory::generate_impl() i=%zu peer_desc_fnum[i]:%zu \n", i, peer_desc_fnum[i]));
                 }
 
               ShmemCollDevice * devices;
-	      rc = __global.heap_mm->memalign((void **) & devices, 16, sizeof(*devices) * n);
+              rc = __global.heap_mm->memalign((void **) & devices, 16, sizeof(*devices) * n);
               PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for ShmemCollDevice[%zu], errno=%d\n", n, errno);
 
               for (i = 0; i < n; ++i)
@@ -229,12 +240,12 @@ namespace PAMI
             };
 
             static inline pami_result_t init_impl (ShmemCollDevice    * devices,
-                                                  size_t           clientid,
-                                                  size_t           contextid,
-                                                  pami_client_t     client,
-                                                  pami_context_t    context,
-                                                  Memory::MemoryManager *mm,
-                                                  PAMI::Device::Generic::Device * progress)
+                                                   size_t           clientid,
+                                                   size_t           contextid,
+                                                   pami_client_t     client,
+                                                   pami_context_t    context,
+                                                   Memory::MemoryManager *mm,
+                                                   PAMI::Device::Generic::Device * progress)
             {
               return getDevice_impl(devices, clientid, contextid).init (clientid, contextid, client, context, mm, progress);
             };
@@ -247,15 +258,15 @@ namespace PAMI
             };
 
             static inline ShmemCollDevice & getDevice_impl (ShmemCollDevice * devices,
-                                                        size_t        clientid,
-                                                        size_t        contextid)
+                                                            size_t        clientid,
+                                                            size_t        contextid)
             {
               return devices[contextid];
             };
         };
 
         inline ShmemCollDevice (size_t contextid, size_t ndescfifos, Shmem::ShmemCollDescFifo<T_Desc>* all_fifos,
-							Shmem::ShmemCollDescFifo<T_Desc>* all_world_fifos, size_t * fnum_hash) :
+                                Shmem::ShmemCollDescFifo<T_Desc>* all_world_fifos, size_t * fnum_hash) :
             Interface::BaseDevice< ShmemCollDevice<T_Desc> > (),
             _total_fifos (ndescfifos),
             _fnum_hash (fnum_hash),
@@ -312,24 +323,24 @@ namespace PAMI
 
         pami_result_t post (Shmem::SendQueue::Message * msg);
 
-    	pami_result_t postCollective (PAMI::PipeWorkQueue *src, PAMI::PipeWorkQueue *dst, size_t bytes, pami_callback_t cb_done,
-									unsigned conn_id, unsigned master, uint16_t dispatch_id, void* state);
+        pami_result_t postCollective (PAMI::PipeWorkQueue *src, PAMI::PipeWorkQueue *dst, size_t bytes, pami_callback_t cb_done,
+                                      unsigned conn_id, unsigned master, uint16_t dispatch_id, void* state);
 
-    	pami_result_t postMulticastShmem (pami_multicast_t* mcast, unsigned master, uint16_t dispatch_id, void* state);
+        pami_result_t postMulticastShmem (pami_multicast_t* mcast, unsigned master, uint16_t dispatch_id, void* state);
 
-    	pami_result_t postMulticastShaddr (pami_multicast_t* mcast, unsigned master, uint16_t dispatch_id, void* state);
-		pami_result_t postDescriptor (T_Desc & desc);
+        pami_result_t postMulticastShaddr (pami_multicast_t* mcast, unsigned master, uint16_t dispatch_id, void* state);
+        pami_result_t postDescriptor (T_Desc & desc);
 
-		pami_result_t postPendingDescriptor (Shmem::SendQueue::Message * msg);
+        pami_result_t postPendingDescriptor (Shmem::SendQueue::Message * msg);
 
-		pami_result_t getShmemWorldDesc(T_Desc** my_desc, T_Desc** master_desc, unsigned master);
+        pami_result_t getShmemWorldDesc(T_Desc** my_desc, T_Desc** master_desc, unsigned master);
         ///
         /// \brief Check if the send queue to an injection fifo is empty
         ///
         ///
         inline bool isCollectiveQueueEmpty ();
 
-		inline bool isPendingDescQueueEmpty();
+        inline bool isPendingDescQueueEmpty();
 
         inline Shmem::SendQueue *getQS ();
 
@@ -337,18 +348,18 @@ namespace PAMI
 
         inline size_t advance ();
 
-		inline size_t fnum (size_t peer, size_t offset);
+        inline size_t fnum (size_t peer, size_t offset);
 
-	    pami_result_t registerMatchDispatch (Interface::MatchFunction_t   match_func, void * recv_func_parm, uint16_t &id);
+        pami_result_t registerMatchDispatch (Interface::MatchFunction_t   match_func, void * recv_func_parm, uint16_t &id);
 
 
         T_Desc * _desc;
         size_t _total_fifos;
         size_t * _fnum_hash;    //< Fifo number lookup table
-		Shmem::ShmemCollDescFifo<T_Desc> *_all_desc_fifos;
+        Shmem::ShmemCollDescFifo<T_Desc> *_all_desc_fifos;
         Shmem::ShmemCollDescFifo<T_Desc>  * _my_desc_fifo;
 
-		Shmem::ShmemCollDescFifo<T_Desc> *_all_world_desc_fifos;
+        Shmem::ShmemCollDescFifo<T_Desc> *_all_world_desc_fifos;
         Shmem::ShmemCollDescFifo<T_Desc>  * _my_world_desc_fifo;
 
         Memory::MemoryManager *_mm;
@@ -371,8 +382,8 @@ namespace PAMI
 
     template <class T_Desc>
     inline ShmemCollDevice<T_Desc>::~ShmemCollDevice()
-	{
-	}
+    {
+    }
 
     template <class T_Desc>
     inline size_t ShmemCollDevice<T_Desc>::getLocalRank()
@@ -421,48 +432,54 @@ namespace PAMI
     {
       size_t events = 0;
 
-		/* Releasing done descriptors for comm world communicators */
+      /* Releasing done descriptors for comm world communicators */
 
-		if (!_my_world_desc_fifo->is_empty()){
-			//printf("Calling shmem colldevice advance\n");
-			_my_world_desc_fifo->release_done_descriptors();
-			events++;
-		}
+      if (!_my_world_desc_fifo->is_empty())
+        {
+          //printf("Calling shmem colldevice advance\n");
+          _my_world_desc_fifo->release_done_descriptors();
+          events++;
+        }
 
 
-		return events;
+      return events;
 
-		/* Advance logic for arbitrary communicator collective */
+      /* Advance logic for arbitrary communicator collective */
 
-		if (!_my_desc_fifo->is_empty()){
+      if (!_my_desc_fifo->is_empty())
+        {
 
-		/*  Release all the "Done" descriptors */
+          /*  Release all the "Done" descriptors */
 
-			_my_desc_fifo->release_done_descriptors();
+          _my_desc_fifo->release_done_descriptors();
 
-		/* Get the next descriptor to match..return if there no descriptor to be matched */
+          /* Get the next descriptor to match..return if there no descriptor to be matched */
 
-			T_Desc* desc = _my_desc_fifo->next_desc_pending_match();
-			if (desc != NULL){
+          T_Desc* desc = _my_desc_fifo->next_desc_pending_match();
 
-				/* Find the descriptor matching the same connection id at the master */
-				unsigned master = desc->get_master();
-				T_Desc* matched_desc = _all_desc_fifos[master].match_descriptor(desc->get_conn_id());
-				if (matched_desc != NULL)
-				{
-      				TRACE_ERR((stderr, "(%zu) ShmemCollDevice::found the matching descriptor at the master:%u and conn_id:%u \n",
-							 __global.mapping.task(),master, desc->get_conn_id()));
+          if (desc != NULL)
+            {
 
-					uint16_t dispatch_id = desc->get_dispatch_id();
-          			_dispatch[dispatch_id].function (desc, matched_desc, _dispatch[dispatch_id].clientdata);
-					desc->set_state(Shmem::ACTIVE);
-					_my_desc_fifo->advance_next_match();
-				}
-			}
-		}
-		else{
+              /* Find the descriptor matching the same connection id at the master */
+              unsigned master = desc->get_master();
+              T_Desc* matched_desc = _all_desc_fifos[master].match_descriptor(desc->get_conn_id());
+
+              if (matched_desc != NULL)
+                {
+                  TRACE_ERR((stderr, "(%zu) ShmemCollDevice::found the matching descriptor at the master:%u and conn_id:%u \n",
+                             __global.mapping.task(), master, desc->get_conn_id()));
+
+                  uint16_t dispatch_id = desc->get_dispatch_id();
+                  _dispatch[dispatch_id].function (desc, matched_desc, _dispatch[dispatch_id].clientdata);
+                  desc->set_state(Shmem::ACTIVE);
+                  _my_desc_fifo->advance_next_match();
+                }
+            }
+        }
+      else
+        {
 //			TRACE_ERR((stderr,"my_desc_fifo is empty\n"));
-		}
+        }
 
     }
 

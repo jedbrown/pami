@@ -18,7 +18,7 @@
 #include "components/devices/misc/AtomicBarrierMsg.h"
 #include "components/devices/misc/AtomicMutexMsg.h"
 #ifdef ENABLE_NEW_SHMEM
-  #include "components/devices/shmemcoll/ShmemCollDevice.h"
+#include "components/devices/shmemcoll/ShmemCollDevice.h"
 #endif
 #include "components/atomic/gcc/GccCounter.h"
 #include "components/atomic/bgq/L2Counter.h"
@@ -64,22 +64,22 @@ namespace PAMI
   typedef Counter::GccInPlaceCounter                                       CSAtomic;
 #endif
 
-  typedef Memory::CollSharedMemoryManager<CSAtomic,COLLSHM_SEGSZ,
-                COLLSHM_PAGESZ, COLLSHM_WINGROUPSZ,COLLSHM_BUFSZ>          CSMemoryManager;
-  typedef Device::CollShm::CollShmDevice<CSAtomic, CSMemoryManager,
-                       COLLSHM_DEVICE_NUMSYNCS, COLLSHM_DEVICE_SYNCCOUNT>  CSDevice;
+  typedef Memory::CollSharedMemoryManager < CSAtomic, COLLSHM_SEGSZ,
+  COLLSHM_PAGESZ, COLLSHM_WINGROUPSZ, COLLSHM_BUFSZ >          CSMemoryManager;
+  typedef Device::CollShm::CollShmDevice < CSAtomic, CSMemoryManager,
+  COLLSHM_DEVICE_NUMSYNCS, COLLSHM_DEVICE_SYNCCOUNT >  CSDevice;
   typedef Device::CollShm::CollShmModel<CSDevice, CSMemoryManager>         CollShmModel;
   typedef Device::CSNativeInterface<CollShmModel>                          CSNativeInterface;
-    ;
-  typedef CollRegistration::CCMICSMultiRegistration<BGQGeometry,
-              CSNativeInterface, CSMemoryManager, CollShmModel>            CollShmCollreg;
+  ;
+  typedef CollRegistration::CCMICSMultiRegistration < BGQGeometry,
+  CSNativeInterface, CSMemoryManager, CollShmModel >            CollShmCollreg;
 
-  typedef CollRegistration::BGQ2D::BGQ2DRegistration<BGQGeometry,
-              PAMI::Device::Generic::Device,
-              MUDevice,
-              CSNativeInterface,
-              MUGlobalNI,
-              CollShmModel, CSMemoryManager>                               BGQ2DCollreg;
+  typedef CollRegistration::BGQ2D::BGQ2DRegistration < BGQGeometry,
+  PAMI::Device::Generic::Device,
+  MUDevice,
+  CSNativeInterface,
+  MUGlobalNI,
+  CollShmModel, CSMemoryManager >                               BGQ2DCollreg;
 
 
 #endif
@@ -289,20 +289,20 @@ namespace PAMI
                       PlatformDeviceList *devices,
                       PAMI::Memory::MemoryManager * pmm, size_t bytes,
                       BGQGeometry *world_geometry,
-		      std::map<unsigned, pami_geometry_t> *geometry_map) :
+                      std::map<unsigned, pami_geometry_t> *geometry_map) :
           Interface::Context<PAMI::Context> (client, id),
           _client (client),
           _context ((pami_context_t)this),
           _clientid (clientid),
           _contextid (id),
-	  _dispatch_id(255),
-	  _geometry_map(geometry_map),
+          _dispatch_id(255),
+          _geometry_map(geometry_map),
           _lock(),
 #ifdef _COLLSHM
           _coll_shm_registration(NULL),
           _bgq2d_registration(NULL),
 #endif
-	    _multi_registration((CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI, MUAxialDputNI, MUShmemAxialDputNI >*) _multi_registration_storage),
+          _multi_registration((CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI, MUAxialDputNI, MUShmemAxialDputNI >*) _multi_registration_storage),
           _ccmi_registration((CCMIRegistration*)_ccmi_registration_storage),
           _world_geometry(world_geometry),
           _status(PAMI_SUCCESS),
@@ -316,9 +316,9 @@ namespace PAMI
           _dummy_disable(false),
           _dummy_disabled(false)
       {
-	char mmkey[PAMI::Memory::MMKEYSIZE];
-	char *mms;
-	mms = mmkey + sprintf(mmkey, "/pami-clt%zd-ctx%zd", clientid, id);
+        char mmkey[PAMI::Memory::MMKEYSIZE];
+        char *mms;
+        mms = mmkey + sprintf(mmkey, "/pami-clt%zd-ctx%zd", clientid, id);
 
         TRACE_ERR((stderr,  "<%p>Context::Context() enter\n", this));
         // ----------------------------------------------------------------
@@ -332,11 +332,11 @@ namespace PAMI
         // Compile-time assertions
         // ----------------------------------------------------------------
 
-	strcpy(mms, "-mm");
+        strcpy(mms, "-mm");
         _mm.init(pmm, bytes, 16, 16, 0, mmkey);
         _self = PAMI_ENDPOINT_INIT(_clientid, __global.mapping.task(), _contextid);
 
-	//strcpy(mms, "-lock");
+        //strcpy(mms, "-lock");
         _lock.init(__global._wuRegion_mm, NULL);
 
         _devices->init(_clientid, _contextid, _client, _context, &_mm);
@@ -440,8 +440,8 @@ namespace PAMI
                 _shmemMcombModel         = (ShmemMcombModel*)_shmemMcombModel_storage;
                 _shmemMsyncModel         = (ShmemMsyncModel*)_shmemMsyncModel_storage;
 
-		// if _shmemMsyncModel_storage is in heap...
-		// PAMI_assert(Barrier_Model::checkCtorMm(__global.heap_mm);
+                // if _shmemMsyncModel_storage is in heap...
+                // PAMI_assert(Barrier_Model::checkCtorMm(__global.heap_mm);
                 new (_shmemMsyncModel_storage)        ShmemMsyncModel(PAMI::Device::AtomicBarrierDev::Factory::getDevice(_devices->_atombarr, _clientid, _contextid), _status);
 
 #ifdef ENABLE_NEW_SHMEM
@@ -468,7 +468,7 @@ namespace PAMI
 
                 if (result != PAMI_SUCCESS) rput_shmem = NULL;
 
-                _pgas_shmem_registration = new(_pgas_shmem_registration_storage) Shmem_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _protocol, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid),& _dispatch_id,_geometry_map);
+                _pgas_shmem_registration = new(_pgas_shmem_registration_storage) Shmem_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _protocol, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), & _dispatch_id, _geometry_map);
               }
             else TRACE_ERR((stderr, "topology does not support shmem\n"));
           }
@@ -477,23 +477,24 @@ namespace PAMI
         // The multi registration will use shmem/mu if they are ctor'd above.
 
 #ifdef _COLLSHM   // New Collective Shmem Registration
-         // only enable collshm for context 0
+        // only enable collshm for context 0
         if (_contextid == 0)
-        {
+          {
 
             PAMI::Topology *local_master_topo = (PAMI::Topology *) _world_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
             uint64_t *invec;
-	    pami_result_t rc;
-	    rc = __global.heap_mm->memalign((void **)&invec, 0,
-				local_master_topo->size() * sizeof(uint64_t));
-	    PAMI_assertf(rc == PAMI_SUCCESS, "out of memory for invec");
+            pami_result_t rc;
+            rc = __global.heap_mm->memalign((void **) & invec, 0,
+                                            local_master_topo->size() * sizeof(uint64_t));
+            PAMI_assertf(rc == PAMI_SUCCESS, "out of memory for invec");
+
             for (size_t i = 0; i < local_master_topo->size(); ++i)  invec[i] = 0ULL;
 
             if (__global.useshmem())
-            {
+              {
                 _coll_shm_registration = new((CollShmCollreg *) _coll_shm_registration_storage)
                 CollShmCollreg(_client, _clientid, _context, _contextid, PAMI::Device::Generic::Device::Factory::getDevice(_devices->_generics, _clientid, _contextid));
-            }
+              }
             else  _coll_shm_registration = NULL;
 
             _bgq2d_registration = new((BGQ2DCollreg *) _bgq2d_registration_storage)
@@ -503,28 +504,29 @@ namespace PAMI
                          __global.mapping,
                          &_dispatch_id);
 
-            if(((PAMI::Topology*)_world_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->isLocal() && _coll_shm_registration)
-                 _coll_shm_registration->analyze_global(_contextid, _world_geometry, invec);
+            if (((PAMI::Topology*)_world_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->isLocal() && _coll_shm_registration)
+              _coll_shm_registration->analyze_global(_contextid, _world_geometry, invec);
             else _bgq2d_registration->analyze_global(_contextid, _world_geometry, invec);
 
             free(invec);
-        }
+          }
         else
-        {
+          {
             _coll_shm_registration = NULL;
             _bgq2d_registration = NULL;
-        }
+          }
+
 #endif
 
         _multi_registration       =  new (_multi_registration)
-	  CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI,MUAxialDputNI, MUShmemAxialDputNI >(_shmem_native_interface,
-                                                                                                       PAMI::Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid), 
-                                                                                                       client, 
-                                                                                                       (pami_context_t)this, 
-                                                                                                       id, 
-                                                                                                       clientid,
-												       &_dispatch_id,
-													_geometry_map);
+        CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI, MUAxialDputNI, MUShmemAxialDputNI >(_shmem_native_interface,
+            PAMI::Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid),
+            client,
+            (pami_context_t)this,
+            id,
+            clientid,
+            &_dispatch_id,
+            _geometry_map);
 
         _ccmi_registration =  new(_ccmi_registration) CCMIRegistration(_client, _context, _contextid, _clientid, _devices->_shmem[_contextid], _devices->_mu[_contextid], _protocol, __global.useshmem(), __global.useMU(), __global.topology_global.size(), __global.topology_local.size(), &_dispatch_id, _geometry_map);
 
@@ -966,18 +968,18 @@ namespace PAMI
       ///
       inline uint32_t coreAffinity()
       {
-	// might be other affinities to consider, in the future.
-	// could be cached in context, instead of calling MU RM (etc) every time
-	// When the MU is active, go with its affinity.
-	// Otherwise, compute an affinity.
-	if ( __global.useMU() )
-	  {
-	    return Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid).affinity();
-	  }
-	else
-	  {
-	    return (NUM_CORES - 1) - (_contextid % (Kernel_ProcessorCount() / NUM_SMT));
-	  }
+        // might be other affinities to consider, in the future.
+        // could be cached in context, instead of calling MU RM (etc) every time
+        // When the MU is active, go with its affinity.
+        // Otherwise, compute an affinity.
+        if ( __global.useMU() )
+          {
+            return Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid).affinity();
+          }
+        else
+          {
+            return (NUM_CORES - 1) - (_contextid % (Kernel_ProcessorCount() / NUM_SMT));
+          }
       }
 
       /// \brief BGQ-only method to fix any problems with hardware affinity to core/thread
@@ -998,21 +1000,22 @@ namespace PAMI
       inline void cleanupAffinity(bool acquire)
       {
 #if 1
-	bool affinity = (coreAffinity() == Kernel_ProcessorCoreID());
-	TRACE_ERR((stderr, "acquire=%d, affinity=%d, coreAffinity=%u, Kernel_ProcessorCoreID=%u, ContextID=%zu\n",acquire,affinity,coreAffinity(),Kernel_ProcessorCoreID(),_contextid));
+        bool affinity = (coreAffinity() == Kernel_ProcessorCoreID());
+        TRACE_ERR((stderr, "acquire=%d, affinity=%d, coreAffinity=%u, Kernel_ProcessorCoreID=%u, ContextID=%zu\n", acquire, affinity, coreAffinity(), Kernel_ProcessorCoreID(), _contextid));
 #else
-	bool affinity = !__global.useMU(); // if no MU, affinity anywhere
+        bool affinity = !__global.useMU(); // if no MU, affinity anywhere
 #endif
         bool enqueue = (acquire && !affinity);
         bool cancel = (enqueue && _dummy_disable && !_dummy_disabled);
         bool dequeue = (!acquire);
 
-	// If we are using the MU, tell the MU device to set up interrupts properly
-	// depending on whether we are acquiring the context or releasing it.
-	if ( __global.useMU() )
-	  {
-	    Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid).setInterrupts(acquire);
-	  }
+        // If we are using the MU, tell the MU device to set up interrupts properly
+        // depending on whether we are acquiring the context or releasing it.
+        if ( __global.useMU() )
+          {
+            Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid).setInterrupts(acquire);
+          }
+
         if (cancel)
           {
             _dummy_disable = _dummy_disabled = false;
@@ -1035,12 +1038,14 @@ namespace PAMI
                                           uint64_t       *reduce_result)
       {
         TRACE_ERR((stderr, "Context::analyze_local context id %zu, geometry %p\n", context_id, geometry));
-  #ifdef _COLLSHM
-        if(_coll_shm_registration && ((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->isLocal())
-            _coll_shm_registration->analyze_local(context_id, geometry, reduce_result);
-        else if(_bgq2d_registration) _bgq2d_registration->analyze_global(context_id, geometry, reduce_result);
-  #endif // _COLLSHM
-          return PAMI_SUCCESS;
+#ifdef _COLLSHM
+
+        if (_coll_shm_registration && ((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->isLocal())
+          _coll_shm_registration->analyze_local(context_id, geometry, reduce_result);
+        else if (_bgq2d_registration) _bgq2d_registration->analyze_global(context_id, geometry, reduce_result);
+
+#endif // _COLLSHM
+        return PAMI_SUCCESS;
       }
 
       inline pami_result_t analyze_global(size_t         context_id,
@@ -1048,12 +1053,14 @@ namespace PAMI
                                           uint64_t       *reduce_result)
       {
         TRACE_ERR((stderr, "Context::analyze_global context id %zu, geometry %p\n", context_id, geometry));
-  #ifdef _COLLSHM
-        if(_coll_shm_registration && ((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->isLocal())
-            _coll_shm_registration->analyze_global(context_id, geometry, reduce_result);
-        else if(_bgq2d_registration) _bgq2d_registration->analyze_global(context_id, geometry, reduce_result);
-  #endif // _COLLSHM
-          return PAMI_SUCCESS;
+#ifdef _COLLSHM
+
+        if (_coll_shm_registration && ((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->isLocal())
+          _coll_shm_registration->analyze_global(context_id, geometry, reduce_result);
+        else if (_bgq2d_registration) _bgq2d_registration->analyze_global(context_id, geometry, reduce_result);
+
+#endif // _COLLSHM
+        return PAMI_SUCCESS;
       }
 
       inline pami_result_t analyze(size_t         context_id,
@@ -1069,7 +1076,7 @@ namespace PAMI
 //#endif
         // Can only use shmem pgas if the geometry is all local tasks, so check the topology
         if (_pgas_shmem_registration && ((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->isLocal())
-            _pgas_shmem_registration->analyze(_contextid, geometry, phase);
+          _pgas_shmem_registration->analyze(_contextid, geometry, phase);
 
         // Can always use MU if it's available
         if (phase == 0 && _pgas_mu_registration) _pgas_mu_registration->analyze(_contextid, geometry, phase);
@@ -1142,7 +1149,7 @@ namespace PAMI
       CollShmCollreg              *_coll_shm_registration;
       BGQ2DCollreg                *_bgq2d_registration;
 #endif
-      CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI,MUAxialDputNI,MUShmemAxialDputNI >    *_multi_registration;
+      CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI, MUAxialDputNI, MUShmemAxialDputNI >    *_multi_registration;
       CCMIRegistration            *_ccmi_registration;
       BGQGeometry                 *_world_geometry;
       pami_result_t                _status;
@@ -1155,7 +1162,7 @@ namespace PAMI
       uint8_t                      _coll_shm_registration_storage[sizeof(CollShmCollreg)];
       uint8_t                      _bgq2d_registration_storage[sizeof(BGQ2DCollreg)];
 #endif
-      uint8_t                      _multi_registration_storage[sizeof(CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI,MUAxialDputNI,MUShmemAxialDputNI >)];
+      uint8_t                      _multi_registration_storage[sizeof(CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI, MUAxialDputNI, MUShmemAxialDputNI >)];
       uint8_t                      _shmemMcastModel_storage[sizeof(ShmemMcstModel)];
       uint8_t                      _shmemMsyncModel_storage[sizeof(ShmemMsyncModel)];
       uint8_t                      _shmemMcombModel_storage[sizeof(ShmemMcombModel)];

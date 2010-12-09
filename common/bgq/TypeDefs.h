@@ -16,32 +16,32 @@
 
 #include "util/ccmi_debug.h"
 
-  #include "components/devices/shmem/ShmemDevice.h"
-  #include "components/devices/shmem/ShmemPacketModel.h"
-  #include "components/devices/shmem/ShmemDmaModel.h"
-  #include "components/devices/shmem/shaddr/BgqShaddrReadOnly.h"
-  #include "components/devices/shmem/shaddr/BgqShaddrPacketModel.h"
-  #include "util/fifo/FifoPacket.h"
-  #include "util/fifo/LinearFifo.h"
+#include "components/devices/shmem/ShmemDevice.h"
+#include "components/devices/shmem/ShmemPacketModel.h"
+#include "components/devices/shmem/ShmemDmaModel.h"
+#include "components/devices/shmem/shaddr/BgqShaddrReadOnly.h"
+#include "components/devices/shmem/shaddr/BgqShaddrPacketModel.h"
+#include "util/fifo/FifoPacket.h"
+#include "util/fifo/LinearFifo.h"
 
 #ifndef ENABLE_NEW_SHMEM
-  #include "components/devices/workqueue/LocalBcastWQMessage.h"
-  #include "components/devices/workqueue/LocalAllreduceWQMessage.h"
-  #include "components/devices/workqueue/LocalReduceWQMessage.h"
+#include "components/devices/workqueue/LocalBcastWQMessage.h"
+#include "components/devices/workqueue/LocalAllreduceWQMessage.h"
+#include "components/devices/workqueue/LocalReduceWQMessage.h"
 #endif
 
-  #include "components/devices/bgq/mu2/Factory.h"
-  #include "components/devices/bgq/mu2/Context.h"
-  #include "components/devices/bgq/mu2/model/PacketModel.h"
-  #include "components/devices/bgq/mu2/model/DmaModel.h"
-  #include "components/devices/bgq/mu2/model/DmaModelMemoryFifoCompletion.h"
+#include "components/devices/bgq/mu2/Factory.h"
+#include "components/devices/bgq/mu2/Context.h"
+#include "components/devices/bgq/mu2/model/PacketModel.h"
+#include "components/devices/bgq/mu2/model/DmaModel.h"
+#include "components/devices/bgq/mu2/model/DmaModelMemoryFifoCompletion.h"
 
-  #include "components/devices/bgq/mu2/model/AxialMulticast.h"
-  #include "components/devices/bgq/mu2/model/MulticastDmaModel.h"
-  #include "components/devices/bgq/mu2/model/Multicast.h"
-  #include "components/devices/bgq/mu2/model/Multicombine.h"
-  #include "components/devices/bgq/mu2/model/Multisync.h"
-  #include "components/devices/bgq/mu2/model/AllreducePacketModel.h"
+#include "components/devices/bgq/mu2/model/AxialMulticast.h"
+#include "components/devices/bgq/mu2/model/MulticastDmaModel.h"
+#include "components/devices/bgq/mu2/model/Multicast.h"
+#include "components/devices/bgq/mu2/model/Multicombine.h"
+#include "components/devices/bgq/mu2/model/Multisync.h"
+#include "components/devices/bgq/mu2/model/AllreducePacketModel.h"
 
 //  #include "components/devices/bgq/mu/MUCollDevice.h"
 //  #include "components/devices/bgq/mu/MUMulticastModel.h"
@@ -89,39 +89,39 @@ namespace PAMI
   typedef Device::MU::Context MUDevice;
 
   typedef BGQNativeInterface < MUDevice,
-                               Device::MU::MulticastModel<false, false>,
-                               Device::MU::MultisyncModel<false, false>,
-                               Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false> > MUGlobalNI;
+  Device::MU::MulticastModel<false, false>,
+  Device::MU::MultisyncModel<false, false>,
+  Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false> > MUGlobalNI;
 
   typedef BGQNativeInterface < MUDevice,
-                               Device::MU::AxialMulticastModel<false, false>,
-                               Device::MU::MultisyncModel<false, false>,
-                               Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false> > MUAxialNI;
+  Device::MU::AxialMulticastModel<false, false>,
+  Device::MU::MultisyncModel<false, false>,
+  Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false> > MUAxialNI;
 
-/*  typedef BGQNativeInterface < MUDevice,
-                               Device::MU::AxialMulticastModel<false, false>,
-                               Device::MU::MultisyncModel<false, false>,
-                               Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false> > MUAxialDputNI;
-*/
+  /*  typedef BGQNativeInterface < MUDevice,
+                                 Device::MU::AxialMulticastModel<false, false>,
+                                 Device::MU::MultisyncModel<false, false>,
+                                 Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false> > MUAxialDputNI;
+  */
   typedef BGQNativeInterfaceAS < MUDevice,
-                               Device::MU::MulticastDmaModel,
-                               Device::MU::MultisyncModel<false, false>,
-                               Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false> > MUAxialDputNI;
+  Device::MU::MulticastDmaModel,
+  Device::MU::MultisyncModel<false, false>,
+  Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false> > MUAxialDputNI;
 
   typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::Gcc> ShmemCollDesc;
   typedef PAMI::Device::Shmem::ShmemColorMcstModel<PAMI::Device::Generic::Device, ShmemCollDesc> ShaddrMcstModel;
 
-  typedef  PAMI::BGQNativeInterfaceASMultiDevice<MUDevice,
-    MUDevice,
-    Device::MU::MulticastDmaModel,
-    ShaddrMcstModel,
-    Device::MU::MultisyncModel<false, false>,
-    Device::MU::MulticombineModel<PAMI::Device::MU::AllreducePacketModel, false, false> > MUShmemAxialDputNI;
+  typedef  PAMI::BGQNativeInterfaceASMultiDevice < MUDevice,
+  MUDevice,
+  Device::MU::MulticastDmaModel,
+  ShaddrMcstModel,
+  Device::MU::MultisyncModel<false, false>,
+  Device::MU::MulticombineModel<PAMI::Device::MU::AllreducePacketModel, false, false> > MUShmemAxialDputNI;
 
   typedef Fifo::FifoPacket <32, 160> ShmemPacket;
   //typedef Fifo::LinearFifo<ShmemPacket, Counter::Indirect<Counter::Gcc> > ShmemFifo;
   typedef Fifo::LinearFifo<ShmemPacket, PAMI::Counter::BGQ::IndirectL2> ShmemFifo;
-  typedef Device::ShmemDevice<ShmemFifo,Device::Shmem::BgqShaddrReadOnly> ShmemDevice;
+  typedef Device::ShmemDevice<ShmemFifo, Device::Shmem::BgqShaddrReadOnly> ShmemDevice;
   typedef Device::Shmem::PacketModel<ShmemDevice> ShmemPacketModel;
   //typedef Device::Shmem::BgqShaddrPacketModel<ShmemDevice> ShmemPacketModel;
   typedef Device::Shmem::DmaModel<ShmemDevice> ShmemDmaModel;
@@ -144,20 +144,20 @@ namespace PAMI
 
   // PGAS over MU
   typedef TSPColl::NBCollManager<MUNI_AM> MU_NBCollManager;
-  typedef CollRegistration::PGASRegistration<BGQGeometry,
-                                             MUNI_AM,
-                                             ProtocolAllocator,
-                                             MUEager,
-                                             MUDevice,
-                                             MU_NBCollManager> MU_PGASCollreg;
+  typedef CollRegistration::PGASRegistration < BGQGeometry,
+  MUNI_AM,
+  ProtocolAllocator,
+  MUEager,
+  MUDevice,
+  MU_NBCollManager > MU_PGASCollreg;
   // PGAS over Shmem
   typedef TSPColl::NBCollManager<ShmemNI_AM> Shmem_NBCollManager;
-  typedef CollRegistration::PGASRegistration<BGQGeometry,
-                                             ShmemNI_AM,
-                                             ProtocolAllocator,
-                                             ShmemEager,
-                                             ShmemDevice,
-                                             Shmem_NBCollManager> Shmem_PGASCollreg;
+  typedef CollRegistration::PGASRegistration < BGQGeometry,
+  ShmemNI_AM,
+  ProtocolAllocator,
+  ShmemEager,
+  ShmemDevice,
+  Shmem_NBCollManager > Shmem_PGASCollreg;
 
   // shmem + MU composite active message over p2p eager
   typedef PAMI::NativeInterfaceActiveMessage< PAMI::Protocol::Send::SendPWQ< Protocol::Send::Send> > CompositeNI_AM;
@@ -181,7 +181,7 @@ namespace PAMI
   typedef ShmemDevice ShmemCollDevice;
 #endif
 
-  typedef BGQNativeInterfaceAS <ShmemCollDevice, ShmemMcstModel, ShmemMsyncModel,ShmemMcombModel> AllSidedShmemNI;
+  typedef BGQNativeInterfaceAS <ShmemCollDevice, ShmemMcstModel, ShmemMsyncModel, ShmemMcombModel> AllSidedShmemNI;
 
 }
 

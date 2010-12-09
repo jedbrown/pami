@@ -42,75 +42,90 @@ namespace PAMI
       template <class T_Device, class T_Desc>
       class McombMessageShmem : public McombMessage<T_Device, T_Desc>
       {
-		public:
-			//currently optimized to a many-to-one combine
-		  static inline pami_result_t short_msg_advance(T_Desc* master_desc, pami_multicombine_t* mcomb_params,
-														unsigned npeers, unsigned local_rank, unsigned task)
-		  {
+        public:
+          //currently optimized to a many-to-one combine
+          static inline pami_result_t short_msg_advance(T_Desc* master_desc, pami_multicombine_t* mcomb_params,
+                                                        unsigned npeers, unsigned local_rank, unsigned task)
+          {
 
-			if (local_rank == 0){
+            if (local_rank == 0)
+              {
 
-				size_t num_src_ranks = ((PAMI::Topology*)mcomb_params->data_participants)->size();
-				while (master_desc->arrived_peers() != (unsigned)num_src_ranks){};
+                size_t num_src_ranks = ((PAMI::Topology*)mcomb_params->data_participants)->size();
 
-				TRACE_ERR((stderr, "all peers:%zu arrived, starting the blocking Shmem Mcomb protocol\n", num_src_ranks));
+                while (master_desc->arrived_peers() != (unsigned)num_src_ranks) {};
 
-				PAMI::PipeWorkQueue *rcv = (PAMI::PipeWorkQueue *)mcomb_params->results;
-				size_t bytes = mcomb_params->count << pami_dt_shift[mcomb_params->dtype];
-				double* dst = (double*)(rcv->bufferToConsume());
+                TRACE_ERR((stderr, "all peers:%zu arrived, starting the blocking Shmem Mcomb protocol\n", num_src_ranks));
 
-				if (npeers == 4)
-				{
+                PAMI::PipeWorkQueue *rcv = (PAMI::PipeWorkQueue *)mcomb_params->results;
 
-					for (unsigned i = 0; i < mcomb_params->count; i++)
-						SHMEMBUF_SHORT(0)[i] = SHMEMBUF_SHORT(0)[i] + SHMEMBUF_SHORT(1)[i] + SHMEMBUF_SHORT(2)[i] + SHMEMBUF_SHORT(3)[i];
+                size_t bytes = mcomb_params->count << pami_dt_shift[mcomb_params->dtype];
 
-				}
-				else if (npeers == 8)
-				{
-					for (unsigned i = 0; i < mcomb_params->count; i++)
-						SHMEMBUF_SHORT(0)[i] = SHMEMBUF_SHORT(0)[i] + SHMEMBUF_SHORT(1)[i] + SHMEMBUF_SHORT(2)[i] + SHMEMBUF_SHORT(3)[i] +
-									SHMEMBUF_SHORT(4)[i] + SHMEMBUF_SHORT(5)[i] + SHMEMBUF_SHORT(6)[i] + SHMEMBUF_SHORT(7)[i] ;
+                double* dst = (double*)(rcv->bufferToConsume());
+
+                if (npeers == 4)
+                  {
+
+                    for (unsigned i = 0; i < mcomb_params->count; i++)
+                      SHMEMBUF_SHORT(0)[i] = SHMEMBUF_SHORT(0)[i] + SHMEMBUF_SHORT(1)[i] + SHMEMBUF_SHORT(2)[i] + SHMEMBUF_SHORT(3)[i];
+
+                  }
+                else if (npeers == 8)
+                  {
+                    for (unsigned i = 0; i < mcomb_params->count; i++)
+                      SHMEMBUF_SHORT(0)[i] = SHMEMBUF_SHORT(0)[i] + SHMEMBUF_SHORT(1)[i] + SHMEMBUF_SHORT(2)[i] + SHMEMBUF_SHORT(3)[i] +
+                                             SHMEMBUF_SHORT(4)[i] + SHMEMBUF_SHORT(5)[i] + SHMEMBUF_SHORT(6)[i] + SHMEMBUF_SHORT(7)[i] ;
 
 
-				}
-				else if (npeers == 16){
-					for (unsigned i = 0; i < mcomb_params->count; i++)
-						SHMEMBUF_SHORT(0)[i] = SHMEMBUF_SHORT(0)[i] + SHMEMBUF_SHORT(1)[i] + SHMEMBUF_SHORT(2)[i] + SHMEMBUF_SHORT(3)[i] +
-									SHMEMBUF_SHORT(4)[i] + SHMEMBUF_SHORT(5)[i] + SHMEMBUF_SHORT(6)[i] + SHMEMBUF_SHORT(7)[i] +
-									SHMEMBUF_SHORT(8)[i] + SHMEMBUF_SHORT(9)[i] + SHMEMBUF_SHORT(10)[i] + SHMEMBUF_SHORT(11)[i] +
-									SHMEMBUF_SHORT(12)[i] + SHMEMBUF_SHORT(13)[i] + SHMEMBUF_SHORT(14)[i] + SHMEMBUF_SHORT(15)[i];
+                  }
+                else if (npeers == 16)
+                  {
+                    for (unsigned i = 0; i < mcomb_params->count; i++)
+                      SHMEMBUF_SHORT(0)[i] = SHMEMBUF_SHORT(0)[i] + SHMEMBUF_SHORT(1)[i] + SHMEMBUF_SHORT(2)[i] + SHMEMBUF_SHORT(3)[i] +
+                                             SHMEMBUF_SHORT(4)[i] + SHMEMBUF_SHORT(5)[i] + SHMEMBUF_SHORT(6)[i] + SHMEMBUF_SHORT(7)[i] +
+                                             SHMEMBUF_SHORT(8)[i] + SHMEMBUF_SHORT(9)[i] + SHMEMBUF_SHORT(10)[i] + SHMEMBUF_SHORT(11)[i] +
+                                             SHMEMBUF_SHORT(12)[i] + SHMEMBUF_SHORT(13)[i] + SHMEMBUF_SHORT(14)[i] + SHMEMBUF_SHORT(15)[i];
 
-				}
-				else{
-				fprintf(stderr,"sum not yet supported\n");
-				}
+                  }
+                else
+                  {
+                    fprintf(stderr, "sum not yet supported\n");
+                  }
 
-				char* src = (char*) master_desc->get_buffer(0);
-				char* my_dst = (char*)(dst);
-				memcpy((void*)my_dst, (void*)src, bytes);
-				rcv->produceBytes(bytes);
-				TRACE_ERR((stderr, "Finished gathering results, signalling done\n"));
+                char* src = (char*) master_desc->get_buffer(0);
+                char* my_dst = (char*)(dst);
+                memcpy((void*)my_dst, (void*)src, bytes);
+                rcv->produceBytes(bytes);
+                TRACE_ERR((stderr, "Finished gathering results, signalling done\n"));
 //				master_desc->signal_flag();
-			}
+              }
 
-		/* Reduction over...start gathering the results */
+            /* Reduction over...start gathering the results */
 
 #if 0
-			if (((PAMI::Topology*)mcomb_params->results_participants)->isRankMember(task))
-			{
-					while (master_desc->get_flag()==0){}; //wait till reduction is done
-					char* src = (char*) master_desc->get_buffer(0);
-					char* my_dst = (char*)(dst);
-					memcpy((void*)my_dst, (void*)src, bytes);
-					rcv->produceBytes(bytes);
-					TRACE_ERR((stderr, "Finished gathering results, signalling done\n"));
-			}
-			master_desc->signal_done();
-			while (master_desc->in_use()){}; //wait for everyone to signal done
+
+            if (((PAMI::Topology*)mcomb_params->results_participants)->isRankMember(task))
+              {
+                while (master_desc->get_flag() == 0) {}; //wait till reduction is done
+
+                char* src = (char*) master_desc->get_buffer(0);
+
+                char* my_dst = (char*)(dst);
+
+                memcpy((void*)my_dst, (void*)src, bytes);
+
+                rcv->produceBytes(bytes);
+
+                TRACE_ERR((stderr, "Finished gathering results, signalling done\n"));
+              }
+
+            master_desc->signal_done();
+
+            while (master_desc->in_use()) {}; //wait for everyone to signal done
+
 #endif
-			return PAMI_SUCCESS;
-		  }
+            return PAMI_SUCCESS;
+          }
 
         protected:
           // invoked by the thread object
@@ -124,83 +139,95 @@ namespace PAMI
           inline pami_result_t advance ()
           {
 
-			TRACE_ERR((stderr, "in Shmem Mcomb advance\n"));
-			T_Desc* _my_desc = this->_my_desc;
-			T_Desc* _master_desc = this->_master_desc;
-			unsigned _npeers = this->_npeers;
-			unsigned _local_rank = this->_local_rank;
-			unsigned _task = this->_task;
+            TRACE_ERR((stderr, "in Shmem Mcomb advance\n"));
+            T_Desc* _my_desc = this->_my_desc;
+            T_Desc* _master_desc = this->_master_desc;
+            unsigned _npeers = this->_npeers;
+            unsigned _local_rank = this->_local_rank;
+            unsigned _task = this->_task;
 
-			pami_multicombine_t & mcomb_params = _my_desc->get_mcomb_params();
-			size_t num_src_ranks = ((PAMI::Topology*)mcomb_params.data_participants)->size();
+            pami_multicombine_t & mcomb_params = _my_desc->get_mcomb_params();
+            size_t num_src_ranks = ((PAMI::Topology*)mcomb_params.data_participants)->size();
 
-			/* Non blocking until all the peers arrive at the collective */
+            /* Non blocking until all the peers arrive at the collective */
 
-			//assert(_my_desc != NULL);
-			//assert(_master_desc != NULL);
-			/*if (_master_desc->arrived_peers() != (unsigned) num_src_ranks)
-			{
-				 TRACE_ERR((stderr,"arrived_peers:%u waiting for:%u\n", _master_desc->arrived_peers(), (unsigned) num_src_ranks));
-				 return PAMI_EAGAIN;
-			}*/
-			while (_master_desc->arrived_peers() != (unsigned)num_src_ranks){};
+            //assert(_my_desc != NULL);
+            //assert(_master_desc != NULL);
+            /*if (_master_desc->arrived_peers() != (unsigned) num_src_ranks)
+            {
+            	 TRACE_ERR((stderr,"arrived_peers:%u waiting for:%u\n", _master_desc->arrived_peers(), (unsigned) num_src_ranks));
+            	 return PAMI_EAGAIN;
+            }*/
+            while (_master_desc->arrived_peers() != (unsigned)num_src_ranks) {};
 
-			TRACE_ERR((stderr, "all peers:%zu arrived, starting the blocking Shmem Mcomb protocol\n", num_src_ranks));
+            TRACE_ERR((stderr, "all peers:%zu arrived, starting the blocking Shmem Mcomb protocol\n", num_src_ranks));
 
-			/* Start the protocol here..blocking version since everyone arrived */
+            /* Start the protocol here..blocking version since everyone arrived */
 
-			PAMI::PipeWorkQueue *rcv = (PAMI::PipeWorkQueue *)mcomb_params.results;
-			size_t bytes = mcomb_params.count << pami_dt_shift[mcomb_params.dtype];
+            PAMI::PipeWorkQueue *rcv = (PAMI::PipeWorkQueue *)mcomb_params.results;
 
-			double* dst = (double*)(rcv->bufferToConsume());
+            size_t bytes = mcomb_params.count << pami_dt_shift[mcomb_params.dtype];
 
-			if (_local_rank == 0){
-				if (_npeers == 4)
-				{
+            double* dst = (double*)(rcv->bufferToConsume());
 
-					for (unsigned i = 0; i < mcomb_params.count; i++)
-						SHMEMBUF(0)[i] = SHMEMBUF(0)[i] + SHMEMBUF(1)[i] + SHMEMBUF(2)[i] + SHMEMBUF(3)[i];
+            if (_local_rank == 0)
+              {
+                if (_npeers == 4)
+                  {
 
-				}
-				else if (_npeers == 8)
-				{
-					for (unsigned i = 0; i < mcomb_params.count; i++)
-						SHMEMBUF(0)[i] = SHMEMBUF(0)[i] + SHMEMBUF(1)[i] + SHMEMBUF(2)[i] + SHMEMBUF(3)[i] +
-									SHMEMBUF(4)[i] + SHMEMBUF(5)[i] + SHMEMBUF(6)[i] + SHMEMBUF(7)[i] ;
+                    for (unsigned i = 0; i < mcomb_params.count; i++)
+                      SHMEMBUF(0)[i] = SHMEMBUF(0)[i] + SHMEMBUF(1)[i] + SHMEMBUF(2)[i] + SHMEMBUF(3)[i];
+
+                  }
+                else if (_npeers == 8)
+                  {
+                    for (unsigned i = 0; i < mcomb_params.count; i++)
+                      SHMEMBUF(0)[i] = SHMEMBUF(0)[i] + SHMEMBUF(1)[i] + SHMEMBUF(2)[i] + SHMEMBUF(3)[i] +
+                                       SHMEMBUF(4)[i] + SHMEMBUF(5)[i] + SHMEMBUF(6)[i] + SHMEMBUF(7)[i] ;
 
 
-				}
-				else if (_npeers == 16){
-					for (unsigned i = 0; i < mcomb_params.count; i++)
-						SHMEMBUF(0)[i] = SHMEMBUF(0)[i] + SHMEMBUF(1)[i] + SHMEMBUF(2)[i] + SHMEMBUF(3)[i] +
-									SHMEMBUF(4)[i] + SHMEMBUF(5)[i] + SHMEMBUF(6)[i] + SHMEMBUF(7)[i] +
-									SHMEMBUF(8)[i] + SHMEMBUF(9)[i] + SHMEMBUF(10)[i] + SHMEMBUF(11)[i] +
-									SHMEMBUF(12)[i] + SHMEMBUF(13)[i] + SHMEMBUF(14)[i] + SHMEMBUF(15)[i];
+                  }
+                else if (_npeers == 16)
+                  {
+                    for (unsigned i = 0; i < mcomb_params.count; i++)
+                      SHMEMBUF(0)[i] = SHMEMBUF(0)[i] + SHMEMBUF(1)[i] + SHMEMBUF(2)[i] + SHMEMBUF(3)[i] +
+                                       SHMEMBUF(4)[i] + SHMEMBUF(5)[i] + SHMEMBUF(6)[i] + SHMEMBUF(7)[i] +
+                                       SHMEMBUF(8)[i] + SHMEMBUF(9)[i] + SHMEMBUF(10)[i] + SHMEMBUF(11)[i] +
+                                       SHMEMBUF(12)[i] + SHMEMBUF(13)[i] + SHMEMBUF(14)[i] + SHMEMBUF(15)[i];
 
-				}
-				else{
-				fprintf(stderr,"sum not yet supported\n");
-				}
+                  }
+                else
+                  {
+                    fprintf(stderr, "sum not yet supported\n");
+                  }
 
-				_master_desc->signal_flag();
-			}
+                _master_desc->signal_flag();
+              }
 
-		/* Reduction over...start gathering the results */
+            /* Reduction over...start gathering the results */
 
-			if (((PAMI::Topology*)mcomb_params.results_participants)->isRankMember(_task))
-			{
-					while (_master_desc->get_flag()==0){}; //wait till reduction is done
-					char* src = (char*) _master_desc->get_buffer(0);
-					char* my_dst = (char*)(dst);
-					memcpy((void*)my_dst, (void*)src, bytes);
-					rcv->produceBytes(bytes);
-					TRACE_ERR((stderr, "Finished gathering results, signalling done\n"));
-			}
+            if (((PAMI::Topology*)mcomb_params.results_participants)->isRankMember(_task))
+              {
+                while (_master_desc->get_flag() == 0) {}; //wait till reduction is done
 
-			_master_desc->signal_done();
-			while (_master_desc->in_use()){}; //wait for everyone to signal done
-			this->setStatus (PAMI::Device::Done);
-			return PAMI_SUCCESS;
+                char* src = (char*) _master_desc->get_buffer(0);
+
+                char* my_dst = (char*)(dst);
+
+                memcpy((void*)my_dst, (void*)src, bytes);
+
+                rcv->produceBytes(bytes);
+
+                TRACE_ERR((stderr, "Finished gathering results, signalling done\n"));
+              }
+
+            _master_desc->signal_done();
+
+            while (_master_desc->in_use()) {}; //wait for everyone to signal done
+
+            this->setStatus (PAMI::Device::Done);
+
+            return PAMI_SUCCESS;
 
           }
 
