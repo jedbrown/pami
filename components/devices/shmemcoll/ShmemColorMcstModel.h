@@ -28,11 +28,10 @@
 #include "components/devices/shmemcoll/ShaddrMcstMessage.h"
 #include "components/devices/shmemcoll/ShmemDescMessage.h"
 
-#undef TRACE_ERR
+#include "util/trace.h"
 
-#ifndef TRACE_ERR
-#define TRACE_ERR(x)  //fprintf x
-#endif
+#define DO_TRACE_ENTEREXIT 0
+#define DO_TRACE_DEBUG     0
 
 #define NUM_SHMEM_MCST_COLORS	16
 //#define NUM_LOCAL_DST_RANKS		3 //assuming that the model is run with 4 procs/node
@@ -59,36 +58,26 @@ namespace PAMI
 
 		{
 
-		//create my descriptors
 		pami_result_t rc;
-		rc = __global.heap_mm->memalign((void**)&_my_desc_array, 32, sizeof(T_Desc)*NUM_SHMEM_MCST_COLORS);
+		char key[PAMI::Memory::MMKEYSIZE];
+
+		//create my descriptors
+		strcpy(key, "/ShmemColorMcstModel-my_desc_array");
+		rc = __global.heap_mm->memalign((void**)&_my_desc_array, 32, sizeof(T_Desc)*NUM_SHMEM_MCST_COLORS); //, key, (PAMI::Memory::MM_INIT_FN*)NULL,NULL);
 		PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for ShmemCollMcstModel errno=%d\n", errno);
 
-		//create shared descriptors
-		__global.mm.memalign((void**)&_shared_desc_array, 32, sizeof(T_Desc)*NUM_SHMEM_MCST_COLORS);
-		assert(_shared_desc_array != NULL);
 
-		if (_peer == 0) //only one rank inits the shared buffers
-		{
-			for(unsigned i =0; i < NUM_SHMEM_MCST_COLORS; i++) {
-				char key[PAMI::Memory::MMKEYSIZE];
-				// need client/context ids...
-				sprintf(key, "/ShmemColorMcstModel-%p-%u", &device, i);
-				_shared_desc_array[i].init(&__global.mm, key);
-			}
-
-		}
-
-		rc = __global.heap_mm->memalign((void **)&__collectiveQ, 0, sizeof(*__collectiveQ));
+		//create my collective queue
+		strcpy(key, "/ShmemColorMcstModel-collectiveQ");
+		rc = __global.heap_mm->memalign((void **)&__collectiveQ, 0, sizeof(*__collectiveQ), key, cq_initialize, &_device);
 		PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc __collectiveQ");
-       new (__collectiveQ) Shmem::SendQueue ();
-       __collectiveQ->init(&device);
 
-		void* dummy;
-		__global.mm.memalign((void**)&dummy, 16, sizeof(size_t)*NUM_SHMEM_MCST_COLORS);
-		//printf("before\n");
-		 local_barriered_shmemzero((void *)dummy, sizeof(size_t)*NUM_SHMEM_MCST_COLORS, _npeers, _peer == 0);
-		 //printf("after\n");
+
+		//create shared descriptors
+		sprintf(key, "/ShmemColorMcstModel-shared_desc_array-client-%2.2zu-context-%2.2zu",_device.clientId(), _device.contextId());
+		rc = __global.mm.memalign((void**)&_shared_desc_array, 32, sizeof(T_Desc)*NUM_SHMEM_MCST_COLORS, key, desc_initialize, NULL);
+		PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for ShmemCollMcstModel errno=%d\n", errno);
+
 
 		};
 
@@ -100,8 +89,7 @@ namespace PAMI
   inline pami_result_t postMulticast_impl(uint8_t (&state)[sizeof(Shmem::McstMessage<T_Device,T_Desc>)],
                      			          	pami_multicast_t *mcast, void* devinfo)
   {
-
-	TRACE_ERR((stderr, "posting multicast descriptor\n"));
+					TRACE_FN_ENTER();
 
 	/* increment the seq_num to compare with master's */
 
@@ -112,7 +100,7 @@ namespace PAMI
 	size_t num_dst_ranks =0;
 
 	unsigned conn_id = mcast->connection_id;
-	TRACE_ERR((stderr, "conn_id:%u\n", conn_id));
+	TRACE_FORMAT("conn_id:%u", conn_id);
 
 	T_Desc *my_desc=NULL, *master_desc=NULL;
 
@@ -135,7 +123,7 @@ namespace PAMI
 			result = dst_topo->axial(&ll, &ur, &ref, &isTorus);
 			PAMI_assert(result == PAMI_SUCCESS);
 			num_dst_ranks =  ur->u.n_torus.coords[LOCAL_DIM] - ll->u.n_torus.coords[LOCAL_DIM];
-			TRACE_ERR((stderr, "num_dst_ranks:%zu\n", num_dst_ranks));
+			TRACE_FORMAT("num_dst_ranks:%zu", num_dst_ranks);
 			my_desc->set_master(1);
 		}
 	}
@@ -154,18 +142,18 @@ namespace PAMI
 
 			//? Have to create the entire memregion at once..does mcast->bytes include all the data bytes
 			memregion.createMemregion(&bytes_out, mcast->bytes, mybuf, 0);
-			assert(bytes_out == mcast->bytes);
+			PAMI_assert(bytes_out == mcast->bytes);
 			void* phy_addr = (void*)memregion.getBasePhysicalAddress();
 			void * global_vaddr = NULL;
 			uint32_t rc = 0;
 			rc = Kernel_Physical2GlobalVirtual (phy_addr, &global_vaddr);
-			assert(rc == 0);
-			TRACE_ERR((stderr,"ShmemMcstModel: buffer to consume:va:%p ga:%p\n", mybuf, global_vaddr));
+			PAMI_assert(rc == 0);
+			TRACE_FORMAT("buffer to consume:va:%p ga:%p", mybuf, global_vaddr);
 
 			//memcpy(buf, &global_vaddr, sizeof(global_vaddr));
 			mcst_control->glob_src_buffer = global_vaddr;
-			//TRACE_ERR((stderr,"copied global_vaddr:%p to %p \n", global_vaddr, buf));
-			TRACE_ERR((stderr,"done processes:%u \n", master_desc->done_peers()));
+			//TRACE_FORMAT("copied global_vaddr:%p to %p", global_vaddr, buf);
+			TRACE_FORMAT("done processes:%u", master_desc->done_peers());
 			master_desc->set_consumers(num_dst_ranks);
 			master_desc->reset_master_done();
 			mem_barrier();
@@ -181,6 +169,7 @@ namespace PAMI
 					PAMI::Device::Generic::GenericThread (Shmem::McstMessageShaddr<T_Device,T_Desc>::advanceMcstShaddr, obj);
     _device.postThread(work);*/
 
+    TRACE_FN_EXIT();
 	return PAMI_SUCCESS;
 
   };
@@ -203,6 +192,50 @@ protected:
 
   static unsigned seq_num;
 
+        ///
+        /// \brief Initialize the memory/descriptor array
+        ///
+        /// \see PAMI::Memory::MM_INIT_FN
+        ///
+        static void desc_initialize(void       * memory,
+                                        size_t       bytes,
+                                        const char * key,
+                                        unsigned     attributes,
+                                        void       * cookie)
+        {
+					TRACE_FN_ENTER();
+					TRACE_FORMAT("%s",key);
+					T_Desc	*shared_desc_array = (T_Desc	*)memory;
+					PAMI_assert(shared_desc_array != NULL);
+					for(unsigned i =0; i < NUM_SHMEM_MCST_COLORS; i++) {
+						char skey[PAMI::Memory::MMKEYSIZE];
+						sprintf(skey, "%s-%2.2u", key, i);
+						TRACE_FORMAT("%s",skey);
+						shared_desc_array[i].init(&__global.mm, skey);
+					};
+						TRACE_FN_EXIT();
+				};
+
+        ///
+        /// \brief Initialize the collective queue
+        ///
+        /// \see PAMI::Memory::MM_INIT_FN
+        ///
+        static void cq_initialize(void       * memory,
+                                        size_t       bytes,
+                                        const char * key,
+                                        unsigned     attributes,
+                                        void       * cookie)
+        {
+					TRACE_FN_ENTER();
+				TRACE_FORMAT("%s",key);
+					  T_Device  *device = (T_Device  *)cookie;
+        Shmem::SendQueue *collectiveQ = (Shmem::SendQueue*)memory;
+					PAMI_assert(collectiveQ != NULL);
+       new (collectiveQ) Shmem::SendQueue ();
+       collectiveQ->init(device);
+			 TRACE_FN_EXIT();
+        };
 
       };  // PAMI::Device::Shmem::ShmemColorMcstModel class
 
@@ -211,7 +244,10 @@ protected:
     };    // PAMI::Device::Shmem namespace
   };      // PAMI::Device namespace
 };        // PAMI namespace
-#undef TRACE_ERR
+
+#undef DO_TRACE_ENTEREXIT 
+#undef DO_TRACE_DEBUG
+
 #endif // __components_devices_shmem_ShmemPacketModel_h__
 
 //
