@@ -95,10 +95,12 @@ namespace PAMI
           /// \param[in] bytes  Number of bytes to transfer
           /// \param[in] task   Remote task id
           ///
-          inline void read (void   * local,
-                            void   * remote,
-                            size_t   bytes,
-                            size_t   task);
+          /// \return Number of bytes read from the remote memory region
+          ///
+          inline size_t read (void   * local,
+                              void   * remote,
+                              size_t   bytes,
+                              size_t   task);
 
           ///
           /// \brief Shared address write operation using virtual addresses
@@ -111,10 +113,12 @@ namespace PAMI
           /// \param[in] bytes  Number of bytes to transfer
           /// \param[in] task   Remote task id
           ///
-          inline void write (void   * remote,
-                             void   * local,
-                             size_t   bytes,
-                             size_t   task);
+          /// \return Number of bytes written to the remote memory region
+          ///
+          inline size_t write (void   * remote,
+                               void   * local,
+                               size_t   bytes,
+                               size_t   task);
 
           ///
           /// \brief Shared address read operation using memory regions
@@ -128,11 +132,13 @@ namespace PAMI
           /// \param[in] remote_offset Source offset
           /// \param[in] bytes         Number of bytes to transfer
           ///
-          inline void read (Memregion * local,
-                            size_t      local_offset,
-                            Memregion * remote,
-                            size_t      remote_offset,
-                            size_t      bytes);
+          /// \return Number of bytes read from the remote memory region
+          ///
+          inline size_t read (Memregion * local,
+                              size_t      local_offset,
+                              Memregion * remote,
+                              size_t      remote_offset,
+                              size_t      bytes);
 
           ///
           /// \brief Shared address write operation using memory regions
@@ -146,11 +152,13 @@ namespace PAMI
           /// \param[in] local_offset  Source offset
           /// \param[in] bytes         Number of bytes to transfer
           ///
-          inline void write (Memregion * remote,
-                             size_t      remote_offset,
-                             Memregion * local,
-                             size_t      local_offset,
-                             size_t      bytes);
+          /// \return Number of bytes written to the remote memory region
+          ///
+          inline size_t write (Memregion * remote,
+                               size_t      remote_offset,
+                               Memregion * local,
+                               size_t      local_offset,
+                               size_t      bytes);
 
       };  // PAMI::Device::Shmem::ShaddrInterface::FactoryInterface class
     };    // PAMI::Device::Shmem namespace
@@ -205,29 +213,29 @@ const bool PAMI::Device::Shmem::ShaddrInterface<T>::isWriteSupported ()
 };
 
 template <class T>
-void PAMI::Device::Shmem::ShaddrInterface<T>::read (void   * local,
-                                                    void   * remote,
-                                                    size_t   bytes,
-                                                    size_t   task)
+size_t PAMI::Device::Shmem::ShaddrInterface<T>::read (void   * local,
+                                                      void   * remote,
+                                                      size_t   bytes,
+                                                      size_t   task)
 {
   return static_cast<T*>(this)->read_impl (local, remote, bytes, task);
 };
 
 template <class T>
-void PAMI::Device::Shmem::ShaddrInterface<T>::write (void   * remote,
-                                                     void   * local,
-                                                     size_t   bytes,
-                                                     size_t   task)
+size_t PAMI::Device::Shmem::ShaddrInterface<T>::write (void   * remote,
+                                                       void   * local,
+                                                       size_t   bytes,
+                                                       size_t   task)
 {
   return static_cast<T*>(this)->write_impl (remote, local, bytes, task);
 };
 
 template <class T>
-void PAMI::Device::Shmem::ShaddrInterface<T>::read (Memregion * local,
-                                                    size_t      local_offset,
-                                                    Memregion * remote,
-                                                    size_t      remote_offset,
-                                                    size_t      bytes)
+size_t PAMI::Device::Shmem::ShaddrInterface<T>::read (Memregion * local,
+                                                      size_t      local_offset,
+                                                      Memregion * remote,
+                                                      size_t      remote_offset,
+                                                      size_t      bytes)
 {
   return static_cast<T*>(this)->read_impl (local, local_offset,
                                            remote, remote_offset,
@@ -235,11 +243,11 @@ void PAMI::Device::Shmem::ShaddrInterface<T>::read (Memregion * local,
 };
 
 template <class T>
-void PAMI::Device::Shmem::ShaddrInterface<T>::write (Memregion * remote,
-                                                     size_t      remote_offset,
-                                                     Memregion * local,
-                                                     size_t      local_offset,
-                                                     size_t      bytes)
+size_t PAMI::Device::Shmem::ShaddrInterface<T>::write (Memregion * remote,
+                                                       size_t      remote_offset,
+                                                       Memregion * local,
+                                                       size_t      local_offset,
+                                                       size_t      bytes)
 {
   return static_cast<T*>(this)->write_impl (remote, remote_offset,
                                             local, local_offset,

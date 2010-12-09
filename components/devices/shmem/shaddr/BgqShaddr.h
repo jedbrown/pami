@@ -16,6 +16,8 @@
 
 #include <pami.h>
 
+#define SHMEM_COPY_BLOCK_SIZE	16384
+
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) // fprintf x
 #endif
@@ -30,15 +32,10 @@ namespace PAMI
       {
         protected:
 
-          inline  BgqShaddr () :
-            _shaddr_packet_dispatch ((uint16_t) -1)
-          {};
-
+          inline  BgqShaddr () {};
           inline ~BgqShaddr () {};
 
         public:
-
-          uint16_t _shaddr_packet_dispatch;
 
           static const bool shaddr_va_supported    = false;
           static const bool shaddr_mr_supported    = true;
@@ -52,41 +49,42 @@ namespace PAMI
           ///
           /// \see ShaddrInterface::read
           ///
-          inline void read_impl (void   * local,
-                                 void   * remote,
-                                 size_t   bytes,
-                                 size_t   task);
+          inline size_t read_impl (void   * local,
+                                   void   * remote,
+                                   size_t   bytes,
+                                   size_t   task);
 
           ///
           /// \brief Shared address read operation using memory regions
           ///
           /// \see ShaddrInterface::read
           ///
-          inline void read_impl (Memregion * local,
-                                 size_t      local_offset,
-                                 Memregion * remote,
-                                 size_t      remote_offset,
-                                 size_t      bytes);
+          inline size_t read_impl (Memregion * local,
+                                   size_t      local_offset,
+                                   Memregion * remote,
+                                   size_t      remote_offset,
+                                   size_t      bytes);
 
       };  // PAMI::Device::Shmem::BgqShaddr class
     };    // PAMI::Device::Shmem namespace
   };      // PAMI::Device namespace
 };        // PAMI namespace
 
-void PAMI::Device::Shmem::BgqShaddr::read_impl (void   * local,
-                                                void   * remote,
-                                                size_t   bytes,
-                                                size_t   task)
+size_t PAMI::Device::Shmem::BgqShaddr::read_impl (void   * local,
+                                                  void   * remote,
+                                                  size_t   bytes,
+                                                  size_t   task)
 {
   PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+  return 0;
 };
 
 
-void PAMI::Device::Shmem::BgqShaddr::read_impl (Memregion * local,
-                                                size_t      local_offset,
-                                                Memregion * remote,
-                                                size_t      remote_offset,
-                                                size_t      bytes)
+size_t PAMI::Device::Shmem::BgqShaddr::read_impl (Memregion * local,
+                                                  size_t      local_offset,
+                                                  Memregion * remote,
+                                                  size_t      remote_offset,
+                                                  size_t      bytes)
 {
   TRACE_ERR((stderr, ">> Shmem::BgqShaddr::read_impl()\n"));
   uint32_t rc = 0;
@@ -104,9 +102,14 @@ void PAMI::Device::Shmem::BgqShaddr::read_impl (Memregion * local,
 
   TRACE_ERR((stderr, "   Shmem::BgqShaddr::read_impl(), local_vaddr = %p, remote_vaddr = %p\n", local_vaddr, remote_vaddr));
 
-  memcpy (local_vaddr, remote_vaddr, bytes);
+  size_t bytes_to_copy = bytes;
+  if (unlikely(bytes_to_copy > SHMEM_COPY_BLOCK_SIZE))
+    bytes_to_copy = SHMEM_COPY_BLOCK_SIZE;
 
-  TRACE_ERR((stderr, "<< Shmem::BgqShaddr::read_impl()\n"));
+  memcpy (local_vaddr, remote_vaddr, bytes_to_copy);
+
+  TRACE_ERR((stderr, "<< Shmem::BgqShaddr::read_impl(), bytes_to_copy = %zu\n", bytes_to_copy));
+  return bytes_to_copy;
 };
 
 #undef TRACE_ERR

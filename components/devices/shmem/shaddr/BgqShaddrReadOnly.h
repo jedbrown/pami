@@ -46,12 +46,13 @@ namespace PAMI
           ///
           /// \see ShaddrInterface::write
           ///
-          inline void write_impl (void   * remote,
-                                  void   * local,
-                                  size_t   bytes,
-                                  size_t   task)
+          inline size_t write_impl (void   * remote,
+                                    void   * local,
+                                    size_t   bytes,
+                                    size_t   task)
           {
             PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+            return 0;
           }
 
           ///
@@ -59,13 +60,14 @@ namespace PAMI
           ///
           /// \see ShaddrInterface::write
           ///
-          inline void write_impl (Memregion * remote,
-                                  size_t      remote_offset,
-                                  Memregion * local,
-                                  size_t      local_offset,
-                                  size_t      bytes)
+          inline size_t write_impl (Memregion * remote,
+                                    size_t      remote_offset,
+                                    Memregion * local,
+                                    size_t      local_offset,
+                                    size_t      bytes)
           {
             PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+            return 0;
           }
       };  // PAMI::Device::Shmem::BgqShaddrReadOnly class
     };    // PAMI::Device::Shmem namespace

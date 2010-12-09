@@ -38,42 +38,54 @@ namespace PAMI
           ///
           /// \see ShaddrInterface::read
           ///
-          inline void read_impl (void   * local,
-                                 void   * remote,
-                                 size_t   bytes,
-                                 size_t   task) {};
+          inline size_t read_impl (void   * local,
+                                   void   * remote,
+                                   size_t   bytes,
+                                   size_t   task)
+          {
+            return 0;
+          };
 
           ///
           /// \brief Shared address write operation using virtual addresses
           ///
           /// \see ShaddrInterface::write
           ///
-          inline void write_impl (void   * remote,
-                                  void   * local,
-                                  size_t   bytes,
-                                  size_t   task) {};
+          inline size_t write_impl (void   * remote,
+                                    void   * local,
+                                    size_t   bytes,
+                                    size_t   task)
+          {
+            return 0;
+          };
 
           ///
           /// \brief Shared address read operation using memory regions
           ///
           /// \see ShaddrInterface::read
           ///
-          inline void read_impl (Memregion * local,
-                                 size_t      local_offset,
-                                 Memregion * remote,
-                                 size_t      remote_offset,
-                                 size_t      bytes) {};
+          inline size_t read_impl (Memregion * local,
+                                   size_t      local_offset,
+                                   Memregion * remote,
+                                   size_t      remote_offset,
+                                   size_t      bytes)
+          {
+            return 0;
+          };
 
           ///
           /// \brief Shared address write operation using memory regions
           ///
           /// \see ShaddrInterface::write
           ///
-          inline void write_impl (Memregion * remote,
-                                  size_t      remote_offset,
-                                  Memregion * local,
-                                  size_t      local_offset,
-                                  size_t      bytes) {};
+          inline size_t write_impl (Memregion * remote,
+                                    size_t      remote_offset,
+                                    Memregion * local,
+                                    size_t      local_offset,
+                                    size_t      bytes)
+          {
+            return 0;
+          };
 
       };  // PAMI::Device::Shmem::NoShaddr class
     };    // PAMI::Device::Shmem namespace

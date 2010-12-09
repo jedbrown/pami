@@ -456,9 +456,13 @@ namespace PAMI
                  (_device.activePackets(fnum) == false)))
               {
                 TRACE_ERR((stderr, "   Shmem::DmaModel<T_Ordered=%d>::postDmaGet_impl('memregion'), do an 'unordered' shared address read.\n", T_Ordered));
-                _device.shaddr.read (local_memregion, local_offset, remote_memregion, remote_offset, bytes);
-                TRACE_ERR((stderr, "<< Shmem::DmaModel::postDmaGet_impl('non-blocking memregion'), return true\n"));
-                return true;
+                size_t bytes_copied =
+                  _device.shaddr.read (local_memregion, local_offset, remote_memregion, remote_offset, bytes);
+                if (likely(bytes_copied == bytes))
+                {
+                  TRACE_ERR((stderr, "<< Shmem::DmaModel::postDmaGet_impl('non-blocking memregion'), return true\n"));
+                  return true;
+                }
               }
 
             TRACE_ERR((stderr, "<< Shmem::DmaModel::postDmaGet_impl('memregion'), return false\n"));
@@ -483,39 +487,42 @@ namespace PAMI
               PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
 
             size_t fnum = _device.fnum (_device.task2peer(target_task), target_offset);
+            size_t bytes_copied = 0;
 
             if ((T_Ordered == false) ||
                 ((_device.isSendQueueEmpty (fnum)) &&
                  (_device.activePackets(fnum) == false)))
               {
+                // No active packets from this device, therefore the read operation
+                // may proceed immediately and still preserve ordering - if ordering
+                // is required.
                 TRACE_ERR((stderr, "   Shmem::DmaModel<T_Ordered=%d>::postDmaGet_impl('non-blocking memregion'), do an 'unordered' shared address read.\n", T_Ordered));
-                _device.shaddr.read (local_memregion, local_offset, remote_memregion, remote_offset, bytes);
-                TRACE_ERR((stderr, "<< Shmem::DmaModel::postDmaGet_impl('non-blocking memregion'), return true\n"));
-                return true;
-              }
-            else // T_Ordered == true
-              {
-                TRACE_ERR((stderr, "   Shmem::DmaModel<T_Ordered=%d>::postDmaGet_impl('non-blocking memregion'), do an 'ordered' shared address read.\n", T_Ordered));
-
-                // Block at head of send queue, then perform a shared
-                // address read operation.
-                DmaMessage<T_Device, true> * msg =
-                  (DmaMessage<T_Device, true> *) state;
-                new (msg) DmaMessage<T_Device, true> (local_fn,
-                                                      cookie,
-                                                      &_device,
-                                                      fnum,
-                                                      local_memregion,
-                                                      local_offset,
-                                                      remote_memregion,
-                                                      remote_offset,
-                                                      bytes);
-                _device.post (fnum, msg);
-
-                return false;
+                bytes_copied =
+                  _device.shaddr.read (local_memregion, local_offset, remote_memregion, remote_offset, bytes);
+                if (likely(bytes_copied == bytes))
+                {
+                  TRACE_ERR((stderr, "<< Shmem::DmaModel::postDmaGet_impl('non-blocking memregion'), return true\n"));
+                  return true;
+                }
               }
 
-            // Should never get here ...
+            TRACE_ERR((stderr, "   Shmem::DmaModel<T_Ordered=%d>::postDmaGet_impl('non-blocking memregion'), do an 'ordered' shared address read.\n", T_Ordered));
+
+            // Block at head of send queue, then perform a shared
+            // address read operation.
+            DmaMessage<T_Device, true> * msg =
+              (DmaMessage<T_Device, true> *) state;
+            new (msg) DmaMessage<T_Device, true> (local_fn,
+                                                  cookie,
+                                                  &_device,
+                                                  fnum,
+                                                  local_memregion,
+                                                  local_offset + bytes_copied,
+                                                  remote_memregion,
+                                                  remote_offset + bytes_copied,
+                                                  bytes - bytes_copied);
+            _device.post (fnum, msg);
+
             TRACE_ERR((stderr, "<< Shmem::DmaModel::postDmaGet_impl('non-blocking memregion'), return false\n"));
             return false;
           };

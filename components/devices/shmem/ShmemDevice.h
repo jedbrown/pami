@@ -144,12 +144,19 @@ namespace PAMI
               T_Shaddr * shaddr = (T_Shaddr *) recv_func_parm;
 
               SystemShaddrInfo * info = (SystemShaddrInfo *) payload;
+              size_t total_bytes = info->_bytes;
+              size_t bytes_copied = 0;
+              size_t target_offset = info->_target_offset;
+              size_t origin_offset = info->_origin_offset;
 
-              shaddr->read (&(info->_target_mr),
-                            info->_target_offset,
-                            &(info->_origin_mr),
-                            info->_origin_offset,
-                            info->_bytes);
+              while (bytes_copied < total_bytes)
+              {
+                bytes_copied += shaddr->read (&(info->_target_mr),
+                                              target_offset + bytes_copied,
+                                              &(info->_origin_mr),
+                                              origin_offset + bytes_copied,
+                                              total_bytes - bytes_copied);
+              }
 
               TRACE_ERR((stderr, "<< SystemShaddrInfo::system_shaddr_read():%d\n", __LINE__));
               return 0;
@@ -169,12 +176,19 @@ namespace PAMI
               T_Shaddr * shaddr = (T_Shaddr *) recv_func_parm;
 
               SystemShaddrInfo * info = (SystemShaddrInfo *) payload;
+              size_t total_bytes = info->_bytes;
+              size_t bytes_copied = 0;
+              size_t target_offset = info->_target_offset;
+              size_t origin_offset = info->_origin_offset;
 
-              shaddr->write (&(info->_origin_mr),
-                             info->_origin_offset,
-                             &(info->_target_mr),
-                             info->_target_offset,
-                             info->_bytes);
+              while (bytes_copied < total_bytes)
+              {
+                bytes_copied += shaddr->read (&(info->_origin_mr),
+                                              origin_offset + bytes_copied,
+                                              &(info->_target_mr),
+                                              target_offset + bytes_copied,
+                                              total_bytes - bytes_copied);
+              }
 
               TRACE_ERR((stderr, "<< SystemShaddrInfo::system_shaddr_write():%d\n", __LINE__));
               return 0;

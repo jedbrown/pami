@@ -46,41 +46,42 @@ namespace PAMI
           ///
           /// \see ShaddrInterface::write
           ///
-          inline void write_impl (void   * remote,
-                                  void   * local,
-                                  size_t   bytes,
-                                  size_t   task);
+          inline size_t write_impl (void   * remote,
+                                    void   * local,
+                                    size_t   bytes,
+                                    size_t   task);
 
           ///
           /// \brief Shared address write operation using memory regions
           ///
           /// \see ShaddrInterface::write
           ///
-          inline void write_impl (Memregion * remote,
-                                  size_t      remote_offset,
-                                  Memregion * local,
-                                  size_t      local_offset,
-                                  size_t      bytes);
+          inline size_t write_impl (Memregion * remote,
+                                    size_t      remote_offset,
+                                    Memregion * local,
+                                    size_t      local_offset,
+                                    size_t      bytes);
       };  // PAMI::Device::Shmem::BgqShaddrReadWrite class
     };    // PAMI::Device::Shmem namespace
   };      // PAMI::Device namespace
 };        // PAMI namespace
 
 
-void PAMI::Device::Shmem::BgqShaddrReadWrite::write_impl (void   * remote,
-                                                 void   * local,
-                                                 size_t   bytes,
-                                                 size_t   task)
+size_t PAMI::Device::Shmem::BgqShaddrReadWrite::write_impl (void   * remote,
+                                                            void   * local,
+                                                            size_t   bytes,
+                                                            size_t   task)
 {
   PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+  return 0;
 };
 
 
-void PAMI::Device::Shmem::BgqShaddrReadWrite::write_impl (Memregion * remote,
-                                                 size_t      remote_offset,
-                                                 Memregion * local,
-                                                 size_t      local_offset,
-                                                 size_t      bytes)
+size_t PAMI::Device::Shmem::BgqShaddrReadWrite::write_impl (Memregion * remote,
+                                                            size_t      remote_offset,
+                                                            Memregion * local,
+                                                            size_t      local_offset,
+                                                            size_t      bytes)
 {
   TRACE_ERR((stderr, ">> Shmem::BgqShaddrReadWrite::write_impl()\n"));
   uint32_t rc = 0;
@@ -98,9 +99,14 @@ void PAMI::Device::Shmem::BgqShaddrReadWrite::write_impl (Memregion * remote,
 
   TRACE_ERR((stderr, "   Shmem::BgqShaddrReadWrite::write_impl(), local_vaddr = %p, remote_vaddr = %p\n", local_vaddr, remote_vaddr));
 
-  memcpy (remote_vaddr, local_vaddr, bytes);
+  size_t bytes_to_copy = bytes;
+  if (unlikely(bytes_to_copy > SHMEM_COPY_BLOCK_SIZE))
+    bytes_to_copy = SHMEM_COPY_BLOCK_SIZE;
 
-  TRACE_ERR((stderr, "<< Shmem::BgqShaddrReadWrite::write_impl()\n"));
+  memcpy (remote_vaddr, local_vaddr, bytes_to_copy);
+
+  TRACE_ERR((stderr, "<< Shmem::BgqShaddrReadWrite::write_impl(), bytes_to_copy = %zu\n", bytes_to_copy));
+  return bytes_to_copy;
 };
 
 #undef TRACE_ERR

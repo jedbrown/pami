@@ -135,42 +135,42 @@ namespace PAMI
           ///
           /// \see ShaddrInterface::read
           ///
-          inline void read_impl (void   * local,
-                                 void   * remote,
-                                 size_t   bytes,
-                                 size_t   task);
+          inline size_t read_impl (void   * local,
+                                   void   * remote,
+                                   size_t   bytes,
+                                   size_t   task);
 
           ///
           /// \brief Shared address write operation using virtual addresses
           ///
           /// \see ShaddrInterface::write
           ///
-          inline void write_impl (void   * remote,
-                                  void   * local,
-                                  size_t   bytes,
-                                  size_t   task);
+          inline size_t write_impl (void   * remote,
+                                    void   * local,
+                                    size_t   bytes,
+                                    size_t   task);
 
           ///
           /// \brief Shared address read operation using memory regions
           ///
           /// \see ShaddrInterface::read
           ///
-          inline void read_impl (Memregion * local,
-                                 size_t      local_offset,
-                                 Memregion * remote,
-                                 size_t      remote_offset,
-                                 size_t      bytes);
+          inline size_t read_impl (Memregion * local,
+                                   size_t      local_offset,
+                                   Memregion * remote,
+                                   size_t      remote_offset,
+                                   size_t      bytes);
 
           ///
           /// \brief Shared address write operation using memory regions
           ///
           /// \see ShaddrInterface::write
           ///
-          inline void write_impl (Memregion * remote,
-                                  size_t      remote_offset,
-                                  Memregion * local,
-                                  size_t      local_offset,
-                                  size_t      bytes);
+          inline size_t write_impl (Memregion * remote,
+                                    size_t      remote_offset,
+                                    Memregion * local,
+                                    size_t      local_offset,
+                                    size_t      bytes);
 
         protected:
 
@@ -204,10 +204,10 @@ namespace PAMI
   };      // PAMI::Device namespace
 };        // PAMI namespace
 
-void PAMI::Device::Shmem::BgpShaddr::read_impl (void   * local,
-                                                void   * remote,
-                                                size_t   bytes,
-                                                size_t   task)
+size_t PAMI::Device::Shmem::BgpShaddr::read_impl (void   * local,
+                                                  void   * remote,
+                                                  size_t   bytes,
+                                                  size_t   task)
 {
   TRACE_ERR((stderr, ">> BgpShaddr::read_impl(%p, %p, %zu, %zu)\n", local, remote, bytes, task));
   size_t n, bytes_available;
@@ -249,13 +249,13 @@ void PAMI::Device::Shmem::BgpShaddr::read_impl (void   * local,
     }
 
   TRACE_ERR((stderr, "<< BgpShaddr::read_impl()\n"));
-  return;
+  return bytes;
 };
 
-void PAMI::Device::Shmem::BgpShaddr::write_impl (void   * remote,
-                                                 void   * local,
-                                                 size_t   bytes,
-                                                 size_t   task)
+size_t PAMI::Device::Shmem::BgpShaddr::write_impl (void   * remote,
+                                                   void   * local,
+                                                   size_t   bytes,
+                                                   size_t   task)
 {
   TRACE_ERR((stderr, ">> BgpShaddr::write_impl(%p, %p, %zu, %zu)\n", remote, local, bytes, task));
   size_t n, bytes_available;
@@ -296,14 +296,14 @@ void PAMI::Device::Shmem::BgpShaddr::write_impl (void   * remote,
     }
 
   TRACE_ERR((stderr, "<< BgpShaddr::write_impl()\n"));
-  return;
+  return bytes;
 };
 
-void PAMI::Device::Shmem::BgpShaddr::read_impl (Memregion * local,
-                                                size_t      local_offset,
-                                                Memregion * remote,
-                                                size_t      remote_offset,
-                                                size_t      bytes)
+size_t PAMI::Device::Shmem::BgpShaddr::read_impl (Memregion * local,
+                                                  size_t      local_offset,
+                                                  Memregion * remote,
+                                                  size_t      remote_offset,
+                                                  size_t      bytes)
 {
   TRACE_ERR((stderr, ">> BgpShaddr::read_impl('memregion'), %p, %zu, %p, %zu, %zu)\n", local, local_offset, remote, remote_offset, bytes));
 
@@ -349,14 +349,14 @@ void PAMI::Device::Shmem::BgpShaddr::read_impl (Memregion * local,
     }
 
   TRACE_ERR((stderr, "<< BgpShaddr::read_impl('memregion')\n"));
-  return;
+  return bytes;
 };
 
-void PAMI::Device::Shmem::BgpShaddr::write_impl (Memregion * remote,
-                                                 size_t      remote_offset,
-                                                 Memregion * local,
-                                                 size_t      local_offset,
-                                                 size_t      bytes)
+size_t PAMI::Device::Shmem::BgpShaddr::write_impl (Memregion * remote,
+                                                   size_t      remote_offset,
+                                                   Memregion * local,
+                                                   size_t      local_offset,
+                                                   size_t      bytes)
 {
   TRACE_ERR((stderr, ">> BgpShaddr::write_impl('memregion'):%d .. %p, %zu, %p, %zu, %zu)\n", __LINE__, local, local_offset, remote, remote_offset, bytes));
   size_t n = bytes;
@@ -400,6 +400,7 @@ void PAMI::Device::Shmem::BgpShaddr::write_impl (Memregion * remote,
     }
 
   TRACE_ERR((stderr, "<< BgpShaddr::write_impl('memregion'):%d\n", __LINE__));
+  return bytes;
 };
 
 void * PAMI::Device::Shmem::BgpShaddr::p2v (size_t     peer,
@@ -504,5 +505,4 @@ void * PAMI::Device::Shmem::BgpShaddr::v2p (size_t   peer,
 #endif
 }
 #endif
-
 #endif /* __components_devices_shmem_bgp_BgpShaddr_h__ */
