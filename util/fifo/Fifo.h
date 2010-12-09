@@ -86,18 +86,26 @@ namespace PAMI
         ///
         /// \brief Number of available bytes in each packet header for application data
         ///
-        /// \note All fifo implementation classes must define the static constant
-        ///       \c packet_header_size_impl.
+        /// \attention All fifo interface implementation classes \b must
+        ///            contain a public static const data member named
+        ///            'size_t packet_header_size'.
         ///
-        static const size_t packet_header_size = T_Fifo::packet_header_size_impl;
+        /// C++ code using templates to specify the fifo may safely access the
+        /// 'packet_header_size' static constant.
+        ///
+        static const size_t getPacketHeaderSize ();
 
         ///
         /// \brief Number of available bytes in each packet payload for application data
         ///
-        /// \note All fifo implementation classes must define the static constant
-        ///       \c packet_payload_size_impl.
+        /// \attention All fifo interface implementation classes \b must
+        ///            contain a public static const data member named
+        ///            'size_t packet_payload_size'.
         ///
-        static const size_t packet_payload_size = T_Fifo::packet_payload_size_impl;
+        /// C++ code using templates to specify the fifo may safely access the
+        /// 'packet_payload_size' static constant.
+        ///
+        static const size_t getPacketPayloadSize ();
 
         ///
         /// \brief Initialize a fifo using a memory manager and unique key.
@@ -184,6 +192,18 @@ namespace PAMI
         template <class T_Functor>
         inline bool consumePacket (T_Functor & consume);
     };
+
+    template <class T_Fifo>
+    const size_t Fifo<T_Fifo>::getPacketHeaderSize ()
+    {
+      return T_Fifo::packet_header_size;
+    }
+
+    template <class T_Fifo>
+    const size_t Fifo<T_Fifo>::getPacketPayloadSize ()
+    {
+      return T_Fifo::packet_payload_size;
+    }
 
     template <class T_Fifo>
     void Fifo<T_Fifo>::initialize (PAMI::Memory::MemoryManager * mm,

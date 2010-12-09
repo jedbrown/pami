@@ -33,20 +33,28 @@ namespace PAMI
       public:
 
         ///
-        /// \brief Number of available bytes in the packet header for application data
+        /// \brief Number of available bytes in each packet header for application data
         ///
-        /// \note All fifo implementation classes must define the static constant
-        ///       \c headerSize_impl.
+        /// \attention All packet interface implementation classes \b must
+        ///            contain a public static const data member named
+        ///            'size_t header_size'.
         ///
-        static const size_t header_size  = T_Packet::headerSize_impl;
+        /// C++ code using templates to specify the packet may safely access the
+        /// 'header_size' static constant.
+        ///
+        static const size_t getHeaderSize ();
 
         ///
-        /// \brief Number of available bytes in the packet payload for application data
+        /// \brief Number of available bytes in each packet payload for application data
         ///
-        /// \note All fifo implementation classes must define the static constant
-        ///       \c payloadSize_impl.
+        /// \attention All packet interface implementation classes \b must
+        ///            contain a public static const data member named
+        ///            'size_t payload_size'.
         ///
-        static const size_t payload_size = T_Packet::payloadSize_impl;
+        /// C++ code using templates to specify the packet may safely access the
+        /// 'payload_size' static constant.
+        ///
+        static const size_t getPayloadSize ();
 
         Packet () {};
         ~Packet () {};
@@ -95,6 +103,18 @@ namespace PAMI
         ///
         inline void copyPayload (void * dst);
     };
+
+    template <class T_Packet>
+    const size_t Packet<T_Packet>::getHeaderSize ()
+    {
+      return T_Packet::header_size;
+    }
+
+    template <class T_Packet>
+    const size_t Packet<T_Packet>::getPayloadSize ()
+    {
+      return T_Packet::payload_size;
+    }
 
     template <class T_Packet>
     void Packet<T_Packet>::clear ()

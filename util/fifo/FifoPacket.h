@@ -44,6 +44,10 @@ namespace PAMI
 
         friend class Packet<FifoPacket <T_HeaderSize, T_PacketSize> >;
 
+        static const size_t header_size  = T_HeaderSize;
+
+        static const size_t payload_size = T_PacketSize - T_HeaderSize;
+
         inline FifoPacket () :
             Packet<FifoPacket <T_HeaderSize, T_PacketSize> > ()
         {};
@@ -79,10 +83,6 @@ namespace PAMI
         {
           memcpy ((void *) &_data[T_HeaderSize/sizeof(pami_quad_t)], addr, T_PacketSize - T_HeaderSize);
         };
-
-        static const size_t headerSize_impl  = T_HeaderSize;
-
-        static const size_t payloadSize_impl = T_PacketSize - T_HeaderSize;
 
       private:
         uint8_t _data[T_PacketSize];

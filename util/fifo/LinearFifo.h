@@ -44,6 +44,10 @@ namespace PAMI
 
         static const size_t mask = T_Size - 1;
 
+        static const size_t packet_header_size = T_Packet::header_size;
+
+        static const size_t packet_payload_size = T_Packet::payload_size;
+
         inline LinearFifo () :
             Fifo <LinearFifo <T_Packet, T_Atomic, T_Size> > (),
             _packet (NULL),
@@ -130,10 +134,10 @@ namespace PAMI
           size_t i = 0;
 
           uint32_t * hdr = (uint32_t *) _packet[index].getHeader();
-          str += sprintf(str, "LinearFifo::dumpPacket.header  [%p,%4zu] ", hdr, packet_header_size_impl);
+          str += sprintf(str, "LinearFifo::dumpPacket.header  [%p,%4zu] ", hdr, packet_header_size);
           size_t bytes = 0;
 
-          while (bytes < packet_header_size_impl)
+          while (bytes < packet_header_size)
             {
               str += sprintf(str, "%08x ", hdr[i++]);
               bytes += sizeof(uint32_t);
@@ -146,11 +150,11 @@ namespace PAMI
 
           str = tmp;
           uint32_t * payload = (uint32_t *) _packet[index].getPayload();
-          str += sprintf(str, "LinearFifo::dumpPacket.payload [%p,%4zu] ", payload, packet_payload_size_impl);
+          str += sprintf(str, "LinearFifo::dumpPacket.payload [%p,%4zu] ", payload, packet_payload_size);
           bytes = 0;
           i = 0;
 
-          while (bytes < packet_payload_size_impl)
+          while (bytes < packet_payload_size)
             {
               str += sprintf(str, "%08x ", payload[i++]);
               bytes += sizeof(uint32_t);
@@ -161,10 +165,6 @@ namespace PAMI
 
           fprintf(stderr, "%s\n", tmp);
         };
-
-        static const size_t packet_header_size_impl = T_Packet::header_size;
-
-        static const size_t packet_payload_size_impl = T_Packet::payload_size;
 
         inline size_t lastPacketProduced_impl ()
         {
