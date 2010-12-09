@@ -26,12 +26,28 @@
 
 #define __sync_synchronize() __sync()
 
-#ifdef __64BIT__
+#ifdef __64BIT__ // =====================================================================
 #define __sync_fetch_and_or(x,y)	__fetch_and_orlp((volatile unsigned long *)x,y)
 #define __sync_fetch_and_and(x,y)	__fetch_and_andlp((volatile unsigned long *)x,y)
 #define __sync_fetch_and_add(x,y)	__fetch_and_addlp((volatile long *)x,y)
 #define __sync_fetch_and_sub(x,y)	__fetch_and_addlp((volatile long *)x,-(y))
-#define __sync_fetch_and_swap(x,y)	__fetch_and_swaplp((volatile long *)x,y)
+#define __sync_fetch_and_xor(x,y)	({		\
+	unsigned long _v;				\
+	do {						\
+		_v = __ldarx((volatile unsigned long *)x);\
+		unsigned long _y = _v ^ (unsigned long)y;\
+	} while (!__stdcx((volatile unsigned long *)x, _y);\
+	_v;						\
+})
+#define __sync_fetch_and_nand(x,y)	({		\
+	unsigned long _v;				\
+	do {						\
+		_v = __ldarx((volatile unsigned long *)x);\
+		unsigned long _y = ~_v & (unsigned long)y;\
+	} while (!__stdcx((volatile unsigned long *)x, _y);\
+	_v;						\
+})
+#define __sync_fetch_and_swap(x,y)	__fetch_and_swaplp((volatile unsigned long *)x,y)
 
 #define __sync_bool_compare_and_swap(x,y,z) ({		\
 	bool _b;					\
@@ -44,11 +60,81 @@
 	__compare_and_swaplp((volatile long *)x,&_y,(long)z);\
 	_y;						\
 })
-#else	// 32-bit
+#define __sync_add_and_fetch(x,y)	({		\
+	long _v;					\
+	do {						\
+		_v = __ldarx((volatile long *)x);	\
+		_v = _v + (long)y;			\
+	} while (!__stdcx((volatile long *)x, _v);	\
+	_v;						\
+})
+#define __sync_sub_and_fetch(x,y)	({		\
+	long _v;					\
+	do {						\
+		_v = __ldarx((volatile long *)x);	\
+		_v = _v - (long)y;			\
+	} while (!__stdcx((volatile long *)x, _v);	\
+	_v;						\
+})
+#define __sync_or_and_fetch(x,y)	({		\
+	unsigned long _v;				\
+	do {						\
+		_v = __ldarx((volatile unsigned long *)x);\
+		_v = _v | (unsigned long)y;		\
+	} while (!__stdcx((volatile unsigned long *)x, _v);\
+	_v;						\
+})
+#define __sync_and_and_fetch(x,y)	({		\
+	unsigned long _v;				\
+	do {						\
+		_v = __ldarx((volatile unsigned long *)x);\
+		_v = _v & (unsigned long)y;		\
+	} while (!__stdcx((volatile unsigned long *)x, _v);\
+	_v;						\
+})
+#define __sync_xor_and_fetch(x,y)	({		\
+	unsigned long _v;				\
+	do {						\
+		_v = __ldarx((volatile unsigned long *)x);\
+		_v = _v ^ (unsigned long)y;		\
+	} while (!__stdcx((volatile unsigned long *)x, _v);\
+	_v;						\
+})
+#define __sync_nand_and_fetch(x,y)	({		\
+	unsigned long _v;				\
+	do {						\
+		_v = __ldarx((volatile unsigned long *)x);\
+		_v = ~_v & (unsigned long)y;		\
+	} while (!__stdcx((volatile unsigned long *)x, _v);\
+	_v;						\
+})
+#define __sync_lock_test_and_set(x,y)	__fetch_and_swaplp((volatile unsigned long *)x, y)
+#define __sync_lock_release(x)		__clear_lockd_mp((volatile unsigned long *)x,0)
+
+#else	// 32-bit ====================================================================
+
 #define __sync_fetch_and_or(x,y)	__fetch_and_or((volatile unsigned int *)x,y)
 #define __sync_fetch_and_and(x,y)	__fetch_and_and((volatile unsigned int *)x,y)
 #define __sync_fetch_and_add(x,y)	__fetch_and_add((volatile int *)x,y)
 #define __sync_fetch_and_sub(x,y)	__fetch_and_add((volatile int *)x,-(y))
+#define __sync_fetch_and_xor(x,y)	__fetch_and_xor((volatile unsigned int *)x,y)
+#define __sync_fetch_and_nand(x,y)	__fetch_and_nand((volatile unsigned int *)x,y)
+#define __sync_fetch_and_xor(x,y)	({		\
+	unsigned int _v;				\
+	do {						\
+		_v = __lwarx((volatile unsigned int *)x);\
+		unsigned int _y = _v ^ (unsigned int)y;	\
+	} while (!__stwcx((volatile unsigned int *)x, _y);\
+	_v;						\
+})
+#define __sync_fetch_and_nand(x,y)	({		\
+	unsigned int _v;				\
+	do {						\
+		_v = __lwarx((volatile unsigned int *)x);\
+		unsigned int _y = ~_v & (unsigned int)y;\
+	} while (!__stwcx((volatile unsigned int *)x, _y);\
+	_v;						\
+})
 #define __sync_fetch_and_swap(x,y)	__fetch_and_swap((volatile int *)x,y)
 #define __sync_bool_compare_and_swap(x,y,z) ({		\
 	bool _b;					\
@@ -61,6 +147,57 @@
 	__compare_and_swap((volatile int *)x,&_y,(int)z);\
 	_y;						\
 })
-#endif	// 32/64-bit
+#define __sync_add_and_fetch(x,y)	({		\
+	int _v;						\
+	do {						\
+		_v = __lwarx((volatile int *)x);	\
+		_v = _v + (int)y;			\
+	} while (!__stwcx((volatile int *)x, _v);	\
+	_v;						\
+})
+#define __sync_sub_and_fetch(x,y)	({		\
+	int _v;						\
+	do {						\
+		_v = __lwarx((volatile int *)x);	\
+		_v = _v - (int)y;			\
+	} while (!__stwcx((volatile int *)x, _v);	\
+	_v;						\
+})
+#define __sync_or_and_fetch(x,y)	({		\
+	unsigned int _v;				\
+	do {						\
+		_v = __lwarx((volatile unsigned int *)x);\
+		_v = _v | (unsigned int)y;		\
+	} while (!__stwcx((volatile unsigned int *)x, _v);\
+	_v;						\
+})
+#define __sync_and_and_fetch(x,y)	({		\
+	unsigned int _v;				\
+	do {						\
+		_v = __lwarx((volatile unsigned int *)x);\
+		_v = _v & (unsigned int)y;		\
+	} while (!__stwcx((volatile unsigned int *)x, _v);\
+	_v;						\
+})
+#define __sync_xor_and_fetch(x,y)	({		\
+	unsigned int _v;				\
+	do {						\
+		_v = __lwarx((volatile unsigned int *)x);\
+		_v = _v ^ (unsigned int)y;		\
+	} while (!__stwcx((volatile unsigned int *)x, _v);\
+	_v;						\
+})
+#define __sync_nand_and_fetch(x,y)	({		\
+	unsigned int _v;				\
+	do {						\
+		_v = __lwarx((volatile unsigned int *)x);\
+		_v = ~_v & (unsigned int)y;		\
+	} while (!__stwcx((volatile unsigned int *)x, _v);\
+	_v;						\
+})
+#define __sync_lock_test_and_set(x,y)	__fetch_and_swap((volatile unsigned int *)x, y)
+#define __sync_lock_release(x)		__clear_lock_mp((volatile unsigned int *)x,0)
+
+#endif	// 32/64-bit ==================================================================
 
 #endif // __pami_compiler_xl_h__
