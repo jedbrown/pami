@@ -16,6 +16,7 @@
 
 #include <pami.h>
 
+#include "util/common.h"
 #include "util/fifo/Fifo.h"
 #include "util/queue/CircularQueue.h"
 
@@ -60,8 +61,10 @@ namespace PAMI
                 // The metadata is at the front of the packet.
                 T_Packet * pkt = (T_Packet *) metadata;
 
-                UnexpectedPacket * uepkt =
-                  (UnexpectedPacket *) malloc (sizeof(UnexpectedPacket));
+                UnexpectedPacket * uepkt = NULL;
+                pami_result_t rc;
+                rc = __global.heap_mm->memalign ((void**)&uepkt, 16, sizeof(UnexpectedPacket));
+                PAMI_assert_debugf(rc == PAMI_SUCCESS, "Failed to allocate Shmem::Dispatch::UnexpectedPacket from heap");
                 new ((void *)uepkt) UnexpectedPacket (pkt);
 
                 CircularQueue * q = (CircularQueue *) recv_func_parm;
@@ -102,7 +105,6 @@ namespace PAMI
                                               void                      * clientdata,
                                               uint16_t                  & id)
           {
-//fprintf(stderr,"ShmemDispatch::registerUserDispatch(%zu, %p, %p, ...)\n", set, function, clientdata);
             if (set >= T_SetCount) return PAMI_ERROR;
 
 
@@ -118,13 +120,11 @@ namespace PAMI
                     break;
                   }
               }
-//fprintf(stderr,"ShmemDispatch::registerUserDispatch(%zu, %p, %p, ...), id = %d\n", set, function, clientdata, id);
 
             if (!found_free_slot) return PAMI_ERROR;
 
             _function[id]   = function;
             _clientdata[id] = clientdata;
-//fprintf(stderr,"ShmemDispatch::registerUserDispatch(%zu, %p, %p, ...), _function = %p, _clientdata = %p\n", set, function, clientdata, _function, _clientdata);
 
             // Deliver any unexpected packets for registered dispatch ids. Stop at
             // the first unexpected packet for an un-registered dispatch id.
@@ -207,9 +207,6 @@ namespace PAMI
 
           void dispatch (uint16_t id, void * metadata, void * payload, size_t bytes)
           {
-//fprintf(stderr, "ShmemDispatch::dispatch(%d, %p, %p, %zu)\n", id, metadata, payload, bytes);
-//fprintf(stderr, "ShmemDispatch::dispatch(%d, %p, %p, %zu), _function = %p, _clientdata = %p\n", id, metadata, payload, bytes, _function, _clientdata);
-//fprintf(stderr, "ShmemDispatch::dispatch(%d, %p, %p, %zu), _function[%d] = %p, _clientdata[%d] = %p\n", id, metadata, payload, bytes, id, _function[id], id, _clientdata[id]);
             _function[id] (metadata, payload, bytes, _clientdata[id], payload);
           };
 
@@ -218,10 +215,7 @@ namespace PAMI
           template <class T_FifoPacket>
           inline bool consume_impl (T_FifoPacket & packet)
           {
-//fprintf(stderr, "ShmemDispatch::consume_impl(...)\n");
             uint16_t id = T_Packet::getDispatch (packet);
-//fprintf(stderr, "ShmemDispatch::consume_impl(...), id = %d\n", id);
-//fprintf(stderr, "ShmemDispatch::consume_impl(...), _function[%d] = %p, _clientdata[%d] = %p\n", id, _function[id], id, _clientdata[id]);
             _function[id] (T_Packet::getMetadata (packet),
                            packet.getPayload (),
                            T_Packet::payload_size,
