@@ -26,7 +26,7 @@ namespace PAMI
     ///
     /// \brief Template class for a counter mutex - a.k.a. an "in place" counter mutex
     ///
-    /// PAMI::Mutex::Counter<PAMI::Counter::Gcc> mutex; // "in place counter mutex"
+    /// PAMI::Mutex::Counter<PAMI::Counter::Native> mutex; // "in place counter mutex"
     /// mutex.acquire();
     /// foo++;
     /// mutex.release();

@@ -14,17 +14,10 @@
 #ifndef __common_mpi_GenericDevicePlatform_h__
 #define __common_mpi_GenericDevicePlatform_h__
 
-#ifdef __GNUC__
-
-#include "components/atomic/gcc/GccCounter.h"
-typedef PAMI::Counter::Gcc GenericDeviceCounter;
-
-#else /* !__GNUC__ */
-
-#include "components/atomic/pthread/Pthread.h"
-typedef PAMI::Counter::Pthread GenericDeviceCounter;
-
-#endif /* !__GNUC__ */
+#include "components/atomic/native/NativeCounter.h"
+typedef PAMI::Counter::Native GenericDeviceCounter;
+//#include "components/atomic/pthread/Pthread.h"
+//typedef PAMI::Counter::Pthread GenericDeviceCounter;
 
 #include "util/queue/Queue.h"
 #include "util/queue/MutexedQueue.h"

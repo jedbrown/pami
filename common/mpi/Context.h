@@ -42,7 +42,7 @@
 #include <map>
 #include "components/atomic/indirect/IndirectCounter.h"
 #include "components/atomic/counter/CounterMutex.h"
-#include "components/atomic/gcc/GccCounter.h"
+#include "components/atomic/native/NativeCounter.h"
 #include <sched.h>
 
 #ifdef ENABLE_SHMEM_DEVICE
@@ -65,8 +65,8 @@ extern PAMI::Device::MPIDevice _g_mpi_device;
 
 namespace PAMI
 {
-    // This won't work with XL
-    typedef PAMI::Mutex::Counter<PAMI::Counter::Gcc>  ContextLock;
+    // This should work with XL
+    typedef PAMI::Mutex::Counter<PAMI::Counter::Native>  ContextLock;
     typedef Device::MPIMessage MPIMessage;
     typedef Device::MPIDevice MPIDevice;
     typedef Device::MPIPacketModel<MPIDevice,MPIMessage> MPIPacketModel;
@@ -81,7 +81,7 @@ namespace PAMI
 
 #ifdef ENABLE_SHMEM_DEVICE
     typedef Fifo::FifoPacket <64, 1024>                            ShmemPacket;
-    typedef Fifo::LinearFifo<ShmemPacket, Counter::Indirect<Counter::Gcc> > ShmemFifo;
+    typedef Fifo::LinearFifo<ShmemPacket, Counter::Indirect<Counter::Native> > ShmemFifo;
     typedef Device::ShmemDevice<ShmemFifo>                         ShmemDevice;
     typedef Device::Shmem::PacketModel<ShmemDevice>                ShmemPacketModel;
     typedef Protocol::Send::Eager <ShmemPacketModel, ShmemDevice>  ShmemEagerBase;

@@ -34,9 +34,9 @@
 #endif
 
 #include "algorithms/geometry/UnexpBarrierQueueElement.h"
-#include "components/atomic/gcc/GccCounter.h"
+#include "components/atomic/native/NativeCounter.h"
 #include "components/memory/MemoryAllocator.h"
-typedef PAMI::Counter::Gcc GeomCompCtr;
+typedef PAMI::Counter::Native GeomCompCtr;
 
 
 namespace PAMI

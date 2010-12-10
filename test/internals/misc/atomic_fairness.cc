@@ -31,7 +31,7 @@
 #include <stdio.h>
 #include <pthread.h>
 #include "components/atomic/counter/CounterMutex.h"
-#include "components/atomic/gcc/GccCounter.h"
+#include "components/atomic/native/NativeCounter.h"
 #include "components/atomic/indirect/IndirectCounter.h"
 #include "Global.h"
 
@@ -48,7 +48,7 @@
 #endif
 
 #ifndef COUNTER_T
-#define COUNTER_T	PAMI::Counter::Indirect<PAMI::Counter::Gcc>
+#define COUNTER_T	PAMI::Counter::Indirect<PAMI::Counter::Native>
 #endif // !COUNTER_T
 
 typedef PAMI::Mutex::IndirectCounter<COUNTER_T> Mutex_t;

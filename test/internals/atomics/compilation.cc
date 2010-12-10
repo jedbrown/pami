@@ -14,7 +14,7 @@
 
 #include "compilation.h"
 
-#include "components/atomic/gcc/GccCounter.h"
+#include "components/atomic/native/NativeCounter.h"
 #include "components/atomic/counter/CounterMutex.h"
 #include "components/atomic/counter/CounterBarrier.h"
 #include "components/atomic/pthread/Pthread.h"
@@ -32,14 +32,14 @@ int main(int argc, char **argv) {
 	PAMI::Memory::GenMemoryManager mm;
 	mm.init(&mm, argc); // anything
 
-        COUNTER_HELPER(PAMI::Counter::Indirect<PAMI::Counter::Gcc>, counter1, &mm, argv[1]);
-        COUNTER_HELPER2(PAMI::Counter::Gcc, counter2);
+        COUNTER_HELPER(PAMI::Counter::Indirect<PAMI::Counter::Native>, counter1, &mm, argv[1]);
+        COUNTER_HELPER2(PAMI::Counter::Native, counter2);
         COUNTER_HELPER2(PAMI::Counter::Pthread, counter3);
 
-        MUTEX_HELPER2(PAMI::Mutex::Counter<PAMI::Counter::Gcc>, mutex1);
-        MUTEX_HELPER(PAMI::Mutex::IndirectCounter<PAMI::Counter::Indirect<PAMI::Counter::Gcc> >, mutex2, &mm, argv[1]);
+        MUTEX_HELPER2(PAMI::Mutex::Counter<PAMI::Counter::Native>, mutex1);
+        MUTEX_HELPER(PAMI::Mutex::IndirectCounter<PAMI::Counter::Indirect<PAMI::Counter::Native> >, mutex2, &mm, argv[1]);
 
-        BARRIER_HELPER(PAMI::Barrier::IndirectCounter<PAMI::Counter::Indirect<PAMI::Counter::Gcc> >, barrier3, &mm, argv[1], argc, (argc == 0));
+        BARRIER_HELPER(PAMI::Barrier::IndirectCounter<PAMI::Counter::Indirect<PAMI::Counter::Native> >, barrier3, &mm, argv[1], argc, (argc == 0));
 
         return 1;
 }

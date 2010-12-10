@@ -17,13 +17,13 @@
 #include "spi/kernel_interface.h"
 #include "components/atomic/bgp/LockBoxMutex.h"
 #include "components/atomic/bgp/LockBoxCounter.h"
-#include "components/atomic/gcc/GccCounter.h"
+#include "components/atomic/native/NativeCounter.h"
 #include "util/queue/Queue.h"
 #include "util/queue/MutexedQueue.h"
 #include "util/queue/MultiQueue.h"
 
 /// \brief The atomic counter used by threads for tracking completion of message
-typedef PAMI::Counter::Gcc GenericDeviceCounter;
+typedef PAMI::Counter::Native GenericDeviceCounter;
 //typedef PAMI::Counter::BGP::LockBoxCounter GenericDeviceCounter;
 
 #define GENDEVMSG_SEND_QNUM	0	///< queue number used for send queue

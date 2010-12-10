@@ -23,7 +23,7 @@
 
 #include "components/devices/workqueue/LocalReduceWQMessage.h"
 
-#include "components/atomic/gcc/GccCounter.h"
+#include "components/atomic/native/NativeCounter.h"
 #include "components/atomic/counter/CounterBarrier.h"
 #include "components/atomic/indirect/IndirectBarrier.h"
 #include "components/devices/misc/AtomicBarrierMsg.h"
@@ -36,7 +36,7 @@ namespace PAMI
   typedef Geometry::Common                     BGPGeometry;
 
 
-  typedef PAMI::Barrier::IndirectCounter<PAMI::Counter::Indirect<PAMI::Counter::Gcc> > Barrier_Type;
+  typedef PAMI::Barrier::IndirectCounter<PAMI::Counter::Indirect<PAMI::Counter::Native> > Barrier_Type;
 
   typedef PAMI::Device::AtomicBarrierMdl<Barrier_Type> Barrier_Model;
 

@@ -33,7 +33,7 @@
 #include "util/queue/MutexedQueue.h"
 #include "components/atomic/counter/CounterMutex.h"
 #include "components/atomic/indirect/IndirectMutex.h"
-#include "components/atomic/gcc/GccCounter.h"
+#include "components/atomic/native/NativeCounter.h"
 #include "Global.h"
 
 static inline pid_t gettid() {
@@ -44,15 +44,15 @@ static inline pid_t gettid() {
 #define MAX_PTHREADS	8
 #endif // MAX_PTHREADS
 
-#define QUEUE1_NAME	"GccThreadSafeQueue<PAMI::MutexedQueue<PAMI::Mutex::Indirect<PAMI::Mutex::Counter<PAMI::Counter::Gcc> > > >"
+#define QUEUE1_NAME	"GccThreadSafeQueue<PAMI::MutexedQueue<PAMI::Mutex::Indirect<PAMI::Mutex::Counter<PAMI::Counter::Native> > > >"
 #define QUEUE1_TYPE	(1 << 0)
-typedef PAMI::MutexedQueue<PAMI::Mutex::Indirect<PAMI::Mutex::Counter<PAMI::Counter::Gcc> > > queue_1a;
+typedef PAMI::MutexedQueue<PAMI::Mutex::Indirect<PAMI::Mutex::Counter<PAMI::Counter::Native> > > queue_1a;
 typedef PAMI::GccThreadSafeQueue<queue_1a> queue_1;
 
 
-#define QUEUE2_NAME	"MutexedQueue<PAMI::Mutex::Indirect<PAMI::Mutex::Counter<PAMI::Counter::Gcc> > >"
+#define QUEUE2_NAME	"MutexedQueue<PAMI::Mutex::Indirect<PAMI::Mutex::Counter<PAMI::Counter::Native> > >"
 #define QUEUE2_TYPE	(1 << 1)
-typedef PAMI::MutexedQueue<PAMI::Mutex::Indirect<PAMI::Mutex::Counter<PAMI::Counter::Gcc> > > queue_2;
+typedef PAMI::MutexedQueue<PAMI::Mutex::Indirect<PAMI::Mutex::Counter<PAMI::Counter::Native> > > queue_2;
 
 #define QUEUE3_NAME	"GccThreadSafeQueue<GccCmpSwap>"
 #define QUEUE3_TYPE	(1 << 2)

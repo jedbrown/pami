@@ -28,7 +28,7 @@
 #include "util/fifo/LinearFifo.h"
 #endif
 
-#include "components/atomic/gcc/GccCounter.h"
+#include "components/atomic/native/NativeCounter.h"
 #include "components/atomic/indirect/IndirectCounter.h"
 //#include "components/atomic/pthread/Pthread.h"
 
@@ -49,7 +49,6 @@
 
 namespace PAMI
 {
-  //typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccProcCounter>  ContextLock;
 #ifdef ENABLE_UDP_DEVICE
   typedef Device::UDP::UdpDevice UdpDevice;
   typedef Device::UDP::UdpModel<UdpDevice,Device::UDP::UdpSendMessage> UdpModel;
@@ -58,7 +57,7 @@ namespace PAMI
 
 #ifdef ENABLE_SHMEM_DEVICE
   typedef Fifo::FifoPacket <sizeof(void*)*4, 240> ShmemPacket;
-  typedef Fifo::LinearFifo<ShmemPacket, Counter::Indirect<Counter::Gcc> > ShmemFifo;
+  typedef Fifo::LinearFifo<ShmemPacket, Counter::Indirect<Counter::Native> > ShmemFifo;
   typedef Device::ShmemDevice<ShmemFifo> ShmemDevice;
   typedef Device::Shmem::PacketModel<ShmemDevice> ShmemModel;
 #endif

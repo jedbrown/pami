@@ -32,9 +32,9 @@
 #if defined(GCCSAFE) && !defined(QUEUE_NAME)
 #define QUEUE_NAME	"GccThreadSafeQueue<GccIndirCounter>"
 #include "components/atomic/counter/CounterMutex.h"
-#include "components/atomic/gcc/GccCounter.h"
+#include "components/atomic/native/NativeCounter.h"
 #define GenericDeviceWorkQueue	PAMI::GccThreadSafeQueue<\
-		PAMI::MutexedQueue<PAMI::Mutex::CounterMutex<PAMI::Counter::GccIndirCounter> >\
+		PAMI::MutexedQueue<PAMI::Mutex::Counter<PAMI::Counter::Native> >\
 		>
 #endif // GCCSAFE
 
@@ -81,18 +81,18 @@
 
 #if defined(GCCMUTEX) && !defined(QUEUE_NAME)
 #include "components/atomic/counter/CounterMutex.h"
-#include "components/atomic/gcc/GccCounter.h"
-#define QUEUE_NAME	"MutexedQueue<CounterMutex<GccIndirCounter>>"
+#include "components/atomic/native/NativeCounter.h"
+#define QUEUE_NAME	"MutexedQueue<Mutex::Counter<Counter::Native> >"
 #define GenericDeviceWorkQueue	PAMI::MutexedQueue<\
-		PAMI::Mutex::CounterMutex<PAMI::Counter::GccIndirCounter>\
+		PAMI::Mutex::Counter<PAMI::Counter::Native>\
 		>
 #endif // GCCMUTEX
 
 #include "components/atomic/counter/CounterMutex.h"
 #ifdef __GNUC__
 
-#include "components/atomic/gcc/GccCounter.h"
-//typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccIndirCounter> GenericDeviceMutex;
+#include "components/atomic/native/NativeCounter.h"
+//typedef PAMI::Mutex::Counter<PAMI::Counter::Native> GenericDeviceMutex;
 
 #else /* !__GNUC__ */
 
@@ -114,7 +114,7 @@ typedef PAMI::Mutex::CounterMutex<PAMI::Counter::Pthread> GenericDeviceMutex;
 #include "util/queue/Queue.h"
 #include "util/queue/MutexedQueue.h"
 #include "components/atomic/counter/CounterMutex.h"
-#include "components/atomic/gcc/GccCounter.h"
+#include "components/atomic/native/NativeCounter.h"
 
 #include "components/devices/generic/Device.h"
 #include "components/devices/generic/AdvanceThread.h"

@@ -38,7 +38,7 @@
 
 #include "test/internals/multisend/memorymanager.h"
 
-typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Atomic::GccBuiltin> ShmemCollDesc;
+typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::Native> ShmemCollDesc;
 //typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::BGQ::L2NodeCounter> ShmemCollDesc;
 typedef PAMI::Device::ShmemCollDevice <ShmemCollDesc> ShmemCollDevice;
 typedef PAMI::Device::Shmem::ShmemMcstModelWorld <ShmemCollDevice, ShmemCollDesc> ShmemMcstModel;

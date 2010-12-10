@@ -20,7 +20,7 @@
 #ifdef ENABLE_NEW_SHMEM
 #include "components/devices/shmemcoll/ShmemCollDevice.h"
 #endif
-#include "components/atomic/gcc/GccCounter.h"
+#include "components/atomic/native/NativeCounter.h"
 #include "components/atomic/bgq/L2Counter.h"
 #include "components/atomic/counter/CounterMutex.h"
 #include "components/atomic/indirect/IndirectCounter.h"
@@ -59,9 +59,9 @@ namespace PAMI
 #ifdef _COLLSHM   // New Collective Shmem Protocol Typedefs
 
 #if 1
-  typedef Counter::GccInPlaceCounter                                       CSAtomic;
+  typedef Counter::Native                                       CSAtomic;
 #else
-  typedef Counter::GccInPlaceCounter                                       CSAtomic;
+  typedef Counter::Native                                       CSAtomic;
 #endif
 
   typedef Memory::CollSharedMemoryManager < CSAtomic, COLLSHM_SEGSZ,

@@ -7,14 +7,15 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/atomic/gcc/GccCounter.h
- * \brief gcc builtin atomics implementation of the atomic counter interface
+ * \file components/atomic/native/NativeCounter.h
+ * \brief "native" compiler builtin atomics implementation of the atomic counter interface
  */
-#ifndef __components_atomic_gcc_GccCounter_h__
-#define __components_atomic_gcc_GccCounter_h__
+#ifndef __components_atomic_native_NativeCounter_h__
+#define __components_atomic_native_NativeCounter_h__
 
 #include <stdint.h>
 
+#include "Compiler.h"
 #include "components/atomic/CounterInterface.h"
 
 namespace PAMI
@@ -22,9 +23,9 @@ namespace PAMI
   namespace Counter
   {
     ///
-    /// \brief PAMI::Counter::Interface implementation using gcc builtin atomics
+    /// \brief PAMI::Counter::Interface implementation using "native" compiler builtin atomics
     ///
-    /// The PAMI::Counter::Gcc class is considered an "in place" implementation
+    /// The PAMI::Counter::Native class is considered an "in place" implementation
     /// because the storage for the actual atomic resource is embedded within
     /// the class instance.
     ///
@@ -33,15 +34,15 @@ namespace PAMI
     /// of the class instance, by using the PAMI::Counter::Indirect<T> class
     /// instead of the native "in place" implementation.
     ///
-    class Gcc : public PAMI::Counter::Interface<Gcc>
+    class Native : public PAMI::Counter::Interface<Native>
     {
       public:
 
-        friend class PAMI::Counter::Interface<Gcc>;
+        friend class PAMI::Counter::Interface<Native>;
 
-        inline Gcc() {};
+        inline Native() {};
 
-        inline ~Gcc() {};
+        inline ~Native() {};
       
         // Todo:  move this to an "Extended interface"
         // This member needs to be public because
@@ -92,11 +93,11 @@ namespace PAMI
 
         volatile uintptr_t _atom;
 
-    }; // PAMI::Counter::Gcc class
+    }; // PAMI::Counter::Native class
   }; //   PAMI::Counter namespace
 }; //     PAMI namespace
 
-#endif // __components_atomic_gcc_GccCounter_h__
+#endif // __components_atomic_native_NativeCounter_h__
 
 //
 // astyle info    http://astyle.sourceforge.net

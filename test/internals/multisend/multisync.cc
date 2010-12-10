@@ -9,12 +9,12 @@
 #include "test/internals/multisend/multisync.h"
 #include "components/devices/misc/AtomicBarrierMsg.h"
 
-#define BARRIER1_NAME	"PAMI::Barrier::Indirect< PAMI::Barrier::Counter<PAMI::Counter::Gcc> >"
+#define BARRIER1_NAME	"PAMI::Barrier::Indirect< PAMI::Barrier::Counter<PAMI::Counter::Native> >"
 #define BARRIER1_ISLOCAL	1
-#include "components/atomic/gcc/GccCounter.h"
+#include "components/atomic/native/NativeCounter.h"
 #include "components/atomic/counter/CounterBarrier.h"
 #include "components/atomic/indirect/IndirectCounter.h"
-typedef PAMI::Barrier::IndirectCounter< PAMI::Counter::Indirect<PAMI::Counter::Gcc> > Barrier_Type1;
+typedef PAMI::Barrier::IndirectCounter< PAMI::Counter::Indirect<PAMI::Counter::Native> > Barrier_Type1;
 
 typedef PAMI::Device::AtomicBarrierMdl<Barrier_Type1> Barrier_Model1;
 typedef PAMI::Device::AtomicBarrierDev Barrier_Device1;
@@ -22,11 +22,11 @@ typedef PAMI::Device::AtomicBarrierDev Barrier_Device1;
 #undef BARRIER2_NAME
 
 #if 0
-#define MUTEX1_NAME	"AtomicMutexMdl<GccIndirCounter>"
+#define MUTEX1_NAME	"AtomicMutexMdl<PAMI::Counter::Native>"
 #define MUTEX1_ISLOCAL	1
 #include "components/devices/misc/AtomicMutexMsg.h"
 #include "components/atomic/counter/CounterMutex.h"
-typedef PAMI::Mutex::CounterMutex<PAMI::Counter::GccInPlaceCounter> Mutex_Type1;
+typedef PAMI::Mutex::CounterMutex<PAMI::Counter::Native> Mutex_Type1;
 typedef PAMI::Device::SharedAtomicMutexMdl<Mutex_Type1> Mutex_Model1;
 typedef PAMI::Device::SharedAtomicMutexDev Mutex_Device1;
 #endif

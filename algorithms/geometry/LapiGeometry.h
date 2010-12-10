@@ -33,7 +33,7 @@
 #endif
 
 #include "algorithms/geometry/UnexpBarrierQueueElement.h"
-#include "components/atomic/gcc/GccCounter.h"
+#include "components/atomic/native/NativeCounter.h"
 #include "components/memory/MemoryAllocator.h"
 
 namespace PAMI

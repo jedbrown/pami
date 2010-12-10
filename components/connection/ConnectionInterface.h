@@ -16,7 +16,7 @@
 #include <stdlib.h>
 
 #include "components/atomic/counter/CounterMutex.h"
-#include "components/atomic/gcc/GccCounter.h"
+#include "components/atomic/native/NativeCounter.h"
 
 
 #ifndef TRACE_ERR
@@ -118,7 +118,7 @@ namespace PAMI
           private:
 
             Queue _queue;
-            PAMI::Mutex::Counter<Counter::Gcc> _lock;
+            PAMI::Mutex::Counter<Counter::Native> _lock;
         };
 
         inline Interface (T_Device & device) {};

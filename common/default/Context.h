@@ -36,7 +36,7 @@
 #include "util/fifo/LinearFifo.h"
 #endif
 
-#include "components/atomic/gcc/GccCounter.h"
+#include "components/atomic/native/NativeCounter.h"
 //#include "components/atomic/pthread/Pthread.h"
 
 #include "components/memory/MemoryAllocator.h"

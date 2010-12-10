@@ -48,7 +48,7 @@
 #include "components/devices/shmem/ShmemPacketModel.h"
 #include "components/atomic/indirect/IndirectCounter.h"
 #include "components/atomic/counter/CounterMutex.h"
-#include "components/atomic/gcc/GccCounter.h"
+#include "components/atomic/native/NativeCounter.h"
 #include "util/fifo/FifoPacket.h"
 #include "util/fifo/LinearFifo.h"
 
@@ -185,7 +185,7 @@ namespace PAMI
 
   // Shared Memory P2P Typedefs
   typedef Fifo::FifoPacket <64, 1024>                                 ShmemPacket;
-  typedef Fifo::LinearFifo<ShmemPacket, Counter::Indirect<Counter::Gcc> > ShmemFifo;
+  typedef Fifo::LinearFifo<ShmemPacket, Counter::Indirect<Counter::Native> > ShmemFifo;
   typedef Device::ShmemDevice<ShmemFifo>                              ShmemDevice;
   typedef Device::Shmem::PacketModel<ShmemDevice>                     ShmemPacketModel;
   typedef Protocol::Send::Eager <ShmemPacketModel, ShmemDevice>       ShmemEagerBase;
@@ -254,7 +254,7 @@ namespace PAMI
 
 #ifdef _COLLSHM
   // Collective Shmem Protocol Typedefs
-  typedef Counter::Gcc                                                           LAPICSAtomic;
+  typedef Counter::Native                                                        LAPICSAtomic;
   typedef PAMI::Memory::CollSharedMemoryManager<LAPICSAtomic,COLLSHM_SEGSZ,COLLSHM_PAGESZ,
                                     COLLSHM_WINGROUPSZ,COLLSHM_BUFSZ>            LAPICSMemoryManager;
   typedef PAMI::Device::CollShm::CollShmDevice<LAPICSAtomic, LAPICSMemoryManager,

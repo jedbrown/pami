@@ -20,7 +20,7 @@
 #include "components/devices/bgq/mu2/global/Global.h"
 #include "components/devices/bgq/mu2/Context.h"
 #include "components/devices/generic/Device.h"
-#include "components/atomic/gcc/GccCounter.h"
+#include "components/atomic/native/NativeCounter.h"
 #include "components/atomic/counter/CounterBarrier.h"
 #include "components/atomic/indirect/IndirectBarrier.h"
 #include "spi/include/kernel/gi.h"
@@ -61,7 +61,7 @@ namespace PAMI
 
 	    TRACE((stderr, "MU::Context::generate_impl: Initializing local barrier, size=%zu, master=%d\n", numLocalTasks, master));
 
-      PAMI::Barrier::IndirectCounter<PAMI::Counter::Indirect<PAMI::Counter::Gcc> > barrier(numLocalTasks,master);
+      PAMI::Barrier::IndirectCounter<PAMI::Counter::Indirect<PAMI::Counter::Native> > barrier(numLocalTasks,master);
 	    char key[PAMI::Memory::MMKEYSIZE];
 	    sprintf(key, "/pami-mu2-rm%zd", id_client);
 	    barrier.init(&__global.mm, key);//,

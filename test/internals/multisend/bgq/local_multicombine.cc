@@ -28,7 +28,7 @@
 
 #define SHORTITER 100
 #define LONGITER	10
-typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::GccInPlaceCounter> ShmemCollDesc;
+typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::Native> ShmemCollDesc;
 //typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::BGQ::L2NodeCounter> ShmemCollDesc;
 typedef PAMI::Device::ShmemCollDevice <ShmemCollDesc> ShmemCollDevice;
 typedef PAMI::Device::Shmem::ShmemMcombModelWorld <ShmemCollDevice, ShmemCollDesc> ShmemMcombModel;

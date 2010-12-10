@@ -20,18 +20,11 @@
 
 #include "components/atomic/indirect/IndirectCounter.h"
 #include "components/atomic/indirect/IndirectMutex.h"
+#include "components/atomic/native/NativeCounter.h"
+typedef PAMI::Counter::Native GenericDeviceCounter;
 
-#ifdef __GNUC__
-
-#include "components/atomic/gcc/GccCounter.h"
-typedef PAMI::Counter::Gcc GenericDeviceCounter;
-
-#else /* !__GNUC__ */
-
-#include "components/atomic/pthread/Pthread.h"
-typedef PAMI::Counter::Pthread GenericDeviceCounter;
-
-#endif /* !__GNUC__ */
+//#include "components/atomic/pthread/Pthread.h"
+//typedef PAMI::Counter::Pthread GenericDeviceCounter;
 
 #include "util/queue/Queue.h"
 #include "util/queue/MutexedQueue.h"

@@ -38,7 +38,7 @@
 //#include "components/atomic/bgp/BgpAtomic.h"
 #include "components/atomic/bgp/LockBoxCounter.h"
 #include "components/atomic/counter/CounterMutex.h"
-#include "components/atomic/gcc/GccCounter.h"
+#include "components/atomic/native/NativeCounter.h"
 #include "components/atomic/indirect/IndirectCounter.h"
 
 #include "components/memory/MemoryAllocator.h"
@@ -59,10 +59,10 @@
 
 namespace PAMI
 {
-  typedef PAMI::Mutex::Counter<PAMI::Counter::Gcc>  ContextLock;
+  typedef PAMI::Mutex::Counter<PAMI::Counter::Native>  ContextLock;
 
   typedef Fifo::FifoPacket <sizeof(void*)*4, 256> ShmemPacket;
-  typedef Fifo::LinearFifo<ShmemPacket, Counter::Indirect<Counter::Gcc> > ShmemFifo;
+  typedef Fifo::LinearFifo<ShmemPacket, Counter::Indirect<Counter::Native> > ShmemFifo;
   typedef Device::ShmemDevice<ShmemFifo,Device::Shmem::BgpShaddr> ShmemDevice;
   //typedef Device::ShmemDevice<ShmemFifo> ShmemDevice;
   typedef Device::Shmem::PacketModel<ShmemDevice> ShmemPacketModel;
