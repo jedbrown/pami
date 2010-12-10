@@ -56,10 +56,8 @@ namespace PAMI
             _tail (),
             _last_packet_produced (0)
         {
-          // How to compile-time-assert that the fifo length is a power of two?
-          //
-          // The following code is pretty lame .. but it works.
-          //COMPILE_TIME_ASSERT((T_Size==1)||(T_Size==2)||(T_Size==4)||(T_Size==8)||(T_Size==16)||(T_Size==32)||(T_Size==64)||(T_Size==128)||(T_Size==256)||(T_Size==1024)||(T_Size==2048)||(T_Size==4096)||(T_Size==8192)||(T_Size==16384)||(T_Size==32768));
+          // Do a compile-time-assert that the fifo length is a power of two
+          COMPILE_TIME_ASSERT(!(T_Size & (T_Size - 1)));
         };
 
         inline ~LinearFifo () {};
