@@ -64,19 +64,34 @@ namespace PAMI
             //create my descriptors
             strcpy(key, "/ShmemColorMcstModel-my_desc_array");
             rc = __global.heap_mm->memalign((void**) & _my_desc_array, 32, sizeof(T_Desc) * NUM_SHMEM_MCST_COLORS); //, key, (PAMI::Memory::MM_INIT_FN*)NULL,NULL);
-            PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for ShmemCollMcstModel errno=%d\n", errno);
+            //PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for ShmemCollMcstModel errno=%d\n", errno);
+            if(rc != PAMI_SUCCESS) 
+            {
+              status = PAMI_ENOMEM;
+              return;
+            }
 
 
             //create my collective queue
             strcpy(key, "/ShmemColorMcstModel-collectiveQ");
             rc = __global.heap_mm->memalign((void **) & __collectiveQ, 0, sizeof(*__collectiveQ), key, cq_initialize, &_device);
-            PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc __collectiveQ");
+            //PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc __collectiveQ");
+            if(rc != PAMI_SUCCESS) 
+            {
+              status = PAMI_ENOMEM;
+              return;
+            }
 
 
             //create shared descriptors
             sprintf(key, "/ShmemColorMcstModel-shared_desc_array-client-%2.2zu-context-%2.2zu", _device.clientId(), _device.contextId());
             rc = __global.mm.memalign((void**) & _shared_desc_array, 32, sizeof(T_Desc) * NUM_SHMEM_MCST_COLORS, key, desc_initialize, NULL);
-            PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for ShmemCollMcstModel errno=%d\n", errno);
+            //PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for ShmemCollMcstModel errno=%d\n", errno);
+            if(rc != PAMI_SUCCESS) 
+            {
+              status = PAMI_ENOMEM;
+              return;
+            }
 
 
           };
