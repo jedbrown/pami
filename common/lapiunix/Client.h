@@ -440,10 +440,6 @@ namespace PAMI
                 case PAMI_CLIENT_NUM_TASKS:
                   configuration[i].value.intval = __global.mapping.size();
                   break;
-                case PAMI_CLIENT_CLOCK_MHZ:
-                case PAMI_CLIENT_WTIMEBASE_MHZ:
-                  configuration[i].value.intval = __global.time.clockMHz();
-                  break;
                 case PAMI_CLIENT_WTICK:
                   configuration[i].value.doubleval =__global.time.tick();
                   break;
