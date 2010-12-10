@@ -138,8 +138,6 @@ namespace PAMI
 #if 0
         size_t num_ctx = __MUGlobal.getMuRM().getPerProcessMaxPamiResources();
         // may need to factor in others such as shmem?
-#else
-        size_t num_ctx = 256 / Kernel_ProcessCount();
 #endif
 #if 0
         bytes = initializeMapCache(personality, NULL, ll, ur, min, max, true);
@@ -147,7 +145,7 @@ namespace PAMI
 	// reserve space for 8 sub-mm's...
 	bytes += PAMI::Memory::GenMemoryManager::MAX_META_SIZE() * 8;
 #else
-	bytes = 12000 + 5800 * num_ctx + 2500 * Kernel_ProcessCount();
+	bytes = 1024*1024*4;
 #endif
 
 	/// \page env_vars Environment Variables

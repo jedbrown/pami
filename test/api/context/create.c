@@ -5,7 +5,7 @@
 
 #include <pami.h>
 #include <stdio.h>
-
+#include "test/api/pami_util.h"
 
 int main (int argc, char ** argv)
 {
@@ -29,6 +29,8 @@ int main (int argc, char ** argv)
     fprintf (stderr, "Error. Unable to create pami context. result = %d\n", result);
     return 1;
   }
+
+  delayTest(1);
 
   result = PAMI_Context_destroyv(&context, 1);
   if (result != PAMI_SUCCESS)

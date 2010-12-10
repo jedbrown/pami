@@ -22,7 +22,7 @@
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 
 
-static double timer()
+double timer()
 {
   struct timeval tv;
   gettimeofday(&tv, NULL);
