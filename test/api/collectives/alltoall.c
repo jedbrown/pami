@@ -12,7 +12,7 @@
  */
 #include "../pami_util.h"
 
-#define MAX_COMM_SIZE 16
+#define MAX_COMM_SIZE 32
 #define MSGSIZE       4096
 #define BUFSIZE       (MSGSIZE * MAX_COMM_SIZE)
 
