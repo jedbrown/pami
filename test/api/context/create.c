@@ -5,7 +5,7 @@
 
 #include <pami.h>
 #include <stdio.h>
-#include "test/api/pami_util.h"
+#include "../pami_util.h"
 
 int main (int argc, char ** argv)
 {

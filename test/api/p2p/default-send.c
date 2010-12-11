@@ -392,7 +392,7 @@ int main (int argc, char ** argv)
 		  fprintf (stderr, "Error. Unable to advance pami context %zu. result = %d\n", xtalk, result);
 		  return 1;
 		}
-		//fprintf (stderr, "------ recv advance loop ... &recv_active = %p\n", &recv_active);
+		/*fprintf (stderr, "------ recv advance loop ... &recv_active = %p\n", &recv_active);*/
 	      }
 
 	      recv_active = 1;
@@ -422,7 +422,7 @@ int main (int argc, char ** argv)
 		  fprintf (stderr, "Error. Unable to advance pami context %zu. result = %d\n", xtalk, result);
 		  return 1;
 		}
-		//fprintf (stderr, "------ send advance loop ... &send_active = %p\n", &send_active);
+		/*fprintf (stderr, "------ send advance loop ... &send_active = %p\n", &send_active);*/
 	      }
 
 	      send_active = 1;

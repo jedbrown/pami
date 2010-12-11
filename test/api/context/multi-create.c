@@ -36,7 +36,7 @@ int main (int argc, char ** argv)
   if (getenv("NUM_CONTEXTS")) {
 	num = strtoul(getenv("NUM_CONTEXTS"), NULL, 0);
 	if (num > 128) num = 128;
-	// if (num > max) num = max;
+	/* if (num > max) num = max; */
   }
   fprintf (stderr, "PAMI_CLIENT_NUM_CONTEXTS = %zu, using %zu\n", max, num);
   size_t tmp = num;
