@@ -278,7 +278,7 @@ else
     then
 	if [ -e $testLog ]
 	then
-	    evalSignal=$( grep -a -m 1 'terminated with status' ${testLog} | awk '{print $NF}' )
+	    evalSignal=$( grep -a -m 1 'exited with status' ${testLog} | awk '{print $NF}' )
 	    if [ $? -ne 0 ] || [ "${evalSignal}" == "" ] || [[ ! "${evalSignal}" =~ ^[0-9] ]]
 	    then # This test didn't exit normally, check for timeout or boot fail
 		if [ $( tail ${testLog} | grep -a -i -c "timed out" ) -eq 1 ]
