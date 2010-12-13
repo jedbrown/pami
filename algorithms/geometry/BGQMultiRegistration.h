@@ -543,7 +543,7 @@ namespace PAMI
       memcpy (colors, _colors, ncolors * sizeof(int));
     }
 
-    typedef CCMI::Adaptor::Allgather::AllgatherOnBroadcastT<6, 15,
+    typedef CCMI::Adaptor::Allgather::AllgatherOnBroadcastT<1, 10,
       CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
       <10,
       CCMI::Schedule::TorusRect,
@@ -784,7 +784,7 @@ namespace PAMI
             else if (_mu_rectangle_dput_broadcast_factory)              
               geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_rectangle_dput_broadcast_factory, _context_id);
 
-#if 0  // allgatherv hangs 
+#if 1  // allgatherv hangs 
             if(((master_sub_topology->size() == 1) || (local_sub_topology->size() < 32)) && (_shmem_mu_rectangle_dput_allgather_factory))
               geometry->addCollective(PAMI_XFER_ALLGATHERV,  _shmem_mu_rectangle_dput_allgather_factory, _context_id);
             else if (_mu_rectangle_dput_allgather_factory)              

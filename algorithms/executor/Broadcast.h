@@ -159,7 +159,10 @@ namespace CCMI
           if (_buflen == 0) return; //we call callback in start
 
           pami_multicast_t mrecv;
-          memcpy (&mrecv, &_msend, sizeof(pami_multicast_t));
+          //memcpy (&mrecv, &_msend, sizeof(pami_multicast_t));
+	  mrecv.msginfo  = _msend.msginfo;
+	  mrecv.msgcount = _msend.msgcount;
+	  mrecv.connection_id = _msend.connection_id;
 
           TRACE_MSG((stderr, "<%p>Executor::BroadcastExec::postReceives ndest %zu, bytes %d, rank %u, root %u\n", this, _dsttopology.size(), _buflen, _selftopology.index2Rank(0),_roottopology.index2Rank(0)));
           mrecv.src_participants   = (pami_topology_t *) & _roottopology; 
