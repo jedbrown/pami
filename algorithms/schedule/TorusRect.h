@@ -391,7 +391,7 @@ CCMI::Schedule::TorusRect::getDstTopology(unsigned phase,
 
   int axis = -1;
   size_t ll = 0, ur = 0;
-  uint8_t toruslinks[PAMI_MAX_DIMS] = {0,0,0,0,0,0,0};
+  uint8_t toruslinks[PAMI_MAX_DIMS] = {0};
   uint8_t tlink = 0;
 
   getDstTopology_internal(phase, axis, ll, ur, tlink);
