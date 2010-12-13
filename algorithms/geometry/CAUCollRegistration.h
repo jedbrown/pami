@@ -141,7 +141,8 @@ namespace PAMI
                                Mapping                             &mapping,
                                lapi_handle_t                        lapi_handle,
                                int                                 *dispatch_id,
-                               std::map<unsigned, pami_geometry_t> *geometry_map):
+                               std::map<unsigned, pami_geometry_t> *geometry_map,
+                               Memory::MemoryManager               *mm):
           CollRegistration < PAMI::CollRegistration::CAU::CAURegistration < T_Geometry,
                                                                             T_Local_Device,
                                                                             T_Global_Device,
@@ -165,22 +166,31 @@ namespace PAMI
           _g_barrier_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
           _g_broadcast_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
           _g_allreduce_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
-          _g_reduce_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id)
+          _g_reduce_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
+          _csmm(mm)
           {
             if(getenv("MP_COLLECTIVE_GROUPS"))
               _enabled = true;
             else
               _enabled = false;
-
+            
             if(!_enabled) return;
 
+            if(_Lapi_env.use_mpi_shm == SHM_YES)
+              _enabled = true;
+            else
+              _enabled = false;
+            
+            if(!_enabled) return;
+            
             // To initialize shared memory, we need to provide the task offset into the
             // local nodes, and the total number of nodes we have locally
             size_t                         peer;
             size_t                         numpeers;
             mapping.task2peer(_global_task, peer);
             mapping.nodePeers(numpeers);
-            _csmm.init(peer,numpeers);
+            pami_result_t rc = _csmm.init(peer,numpeers);
+            PAMI_assertf(rc == PAMI_SUCCESS, "Collective shared memory allocation failed with error%d\n", rc);
           }
 
         inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry, int phase)

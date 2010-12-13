@@ -15,16 +15,16 @@
 #ifndef __common_lapiunix_Platform_h__
 #define __common_lapiunix_Platform_h__
 
-#define NUM_CORES 1
-#define NUM_SMT 1
+#include "Arch.h"
 
-#ifdef _COLLSHM
 #if defined(__64BIT__) && !defined(_LAPI_LINUX)
 extern "C" {
 #include "zcmem.h"
 }
 #endif
 
+
+// Collective shared memory settings
 #define CACHEBLOCKSZ 128
 #if defined(__64BIT__) && !defined(_LAPI_LINUX)
 // #define XMEM_THRESH  32768
@@ -35,23 +35,23 @@ extern "C" {
 
 #define COLLSHM_DEVICE_NUMSYNCS 2
 #define COLLSHM_DEVICE_SYNCCOUNT 16
-
 #define COLLSHM_SEGSZ 0x10000000
 #define COLLSHM_PAGESZ 4096
 #define COLLSHM_WINGROUPSZ ((COLLSHM_DEVICE_NUMSYNCS * COLLSHM_DEVICE_SYNCCOUNT + 1) * CACHEBLOCKSZ)
 #define COLLSHM_BUFSZ  32768
 #define COLLSHM_KEY 0x900dc0df
-
 #define COLLSHM_INIT_BUFCNT 128
 #define COLLSHM_INIT_CTLCNT 128
-#endif // _COLLSHM
 
-// somewhat arbitrary...
-#define PAMI_MAX_PROC_PER_NODE	32
-#define PAMI_MAX_THREAD_PER_PROC	32
-#define PAMI_DEF_SH_WORKSIZE   8192 // Default shared work queue worksize
-#define PAMI_DEF_SH_WORKUNITS  32   // Default shared work queue workunits
-
-#define _POSIX_SHM_OPEN
-
+// P2P Shared memory settings
+// This is a bit of magic to construct the shared memory window for p2p
+// We should have some interface to query the amount of shared memory required
+#define MAX_CONTEXTS        (64)  
+#define P2PSHM_HDRSIZE      (64)
+#define P2PSHM_PKTSIZE      (1024)
+#define P2PSHM_TOTALPKTSIZE (P2PSHM_PKTSIZE + P2PSHM_HDRSIZE)
+#define P2PSHM_FIFOSIZE     (128)
+#define P2PSHM_ALLOCATION   ((((P2PSHM_TOTALPKTSIZE + sizeof(size_t))*P2PSHM_FIFOSIZE) + (2*sizeof(size_t)))*MAX_CONTEXTS)
+#define P2PSHM_METADATA     (sizeof(size_t)*MAX_CONTEXTS)
+#define P2PSHM_MEMSIZE      (P2PSHM_ALLOCATION + P2PSHM_METADATA)
 #endif // __common_lapiunix_platform_h__

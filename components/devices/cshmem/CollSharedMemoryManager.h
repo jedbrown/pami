@@ -94,12 +94,13 @@ namespace PAMI
       } __attribute__ ((__aligned__ (CACHEBLOCKSZ)));
       typedef CollSharedMemory collshm_t;
 
-        CollSharedMemoryManager () :
+        CollSharedMemoryManager (Memory::MemoryManager *mm) :
           _nctrlstrs(0),
           _ndatabufs(0),
           _collshm (NULL),
           _localrank (__global.mapping.task()), // hacking for now, only support single node job
-          _localsize (__global.mapping.size())  // hacking for now, only support single node job
+          _localsize (__global.mapping.size()), // hacking for now, only support single node job
+          _mm(mm)
         { }
 
 	static void _collshminit(void *mem, size_t bytes, const char *key, unsigned attrs, void *cookie) {
@@ -152,25 +153,22 @@ namespace PAMI
                               _collshm->buffer_list      ));
 	}
 
-        int init(size_t rank, size_t size) {
-
+        pami_result_t init(size_t rank, size_t size) {
+          pami_result_t rc;
           _localrank = rank;
           _localsize = size;
-
-	  __global.mm.memalign((void **)&_collshm, 16, _size, "/pami-collshmem",
-					_collshminit, (void *)this);
-          return PAMI_SUCCESS;
+	  rc = _mm->memalign((void **)&_collshm, 16, _size, "/pami-collshmem",
+                             _collshminit, (void *)this);
+          return rc;
         }
 
 
         ~CollSharedMemoryManager()
         {
             // placeholder for other cleanup work
-
             if (_collshm != NULL)
             {
-              __global.mm.free(_collshm);
-
+               _mm->free(_collshm);
 		/// \todo this should be a barrier, if needed at all.
                _collshm->term_count.fetch_and_inc();
                //COLLSHM_FETCH_AND_ADD((atomic_p)&_collshm->term_count, 1);
@@ -507,14 +505,13 @@ namespace PAMI
         }
 
       protected:
-
-        size_t     _nctrlstrs;
-        size_t     _ndatabufs;
-        collshm_t *_collshm;       // base pointer of the shared memory segment
-        size_t     _localrank;      // rank in the local topology
-        size_t     _localsize;      // size of the local topology
-
-
+        size_t                    _nctrlstrs;
+        size_t                    _ndatabufs;
+        collshm_t                *_collshm;       // base pointer of the shared memory segment
+        size_t                    _localrank;      // rank in the local topology
+        size_t                    _localsize;      // size of the local topology
+        Memory::MemoryManager    *_mm;
+      
     };  // class CollSharedmemoryManager
   };  // namespace Memory
 };   // namespace PAMI

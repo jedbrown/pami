@@ -47,10 +47,8 @@ namespace PAMI
 	  if(getenv("MP_PARTITION"))
             jobid = atoi(getenv("MP_PARTITION"));
 	  shared_mm = new (_shared_mm) PAMI::Memory::SharedMemoryManager(jobid, heap_mm);
-          
           PAMI::Memory::MemoryManager::shared_mm = shared_mm;
-          PAMI::Memory::MemoryManager::shm_mm    = &mm;
-          mm.init(shared_mm, 0x10500000, 1, 1, 0, shmemfile);          
+          PAMI::Memory::MemoryManager::shm_mm    = shared_mm;
             {
               size_t min=0, max=0;
               mapping.init(min, max);
@@ -59,7 +57,6 @@ namespace PAMI
     inline ~Global () {};
   public:
     PAMI::Mapping		   mapping;
-    PAMI::Memory::GenMemoryManager mm;      
     std::map<lapi_handle_t,void*> _context_to_device_table;
     std::map<lapi_handle_t,void*> _id_to_device_table;    
   };   // class Global

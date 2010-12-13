@@ -186,10 +186,9 @@ namespace PAMI
 		lrc = shm_open(nkey, O_CREAT | O_EXCL | O_RDWR, 0600);
 		first = (lrc != -1); // must be the first...
 //fprintf(stderr,"   SharedMemoryManager::memalign(), lrc = %d, first = %d\n", lrc, first);
-
 		if (first) {
 			fd = lrc;
-			lrc = ftruncate(fd, max); // this zeroes memory...
+                        lrc = ftruncate(fd, max); // this zeroes memory...
 			if (lrc == -1) {
 				close(fd);
 				shm_unlink(nkey); // yes?

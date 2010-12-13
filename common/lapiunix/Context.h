@@ -58,12 +58,10 @@
 #include "algorithms/geometry/CAUCollRegistration.h"
 #include "algorithms/geometry/ClassRouteId.h"
 
-#ifdef _COLLSHM
 // Collective shmem device
 #include "components/devices/cshmem/CollSharedMemoryManager.h"
 #include "components/devices/cshmem/CollShmDevice.h"
 #include "algorithms/geometry/CCMICSMultiRegistration.h"
-#endif
 
 #include "components/devices/NativeInterface.h"
 
@@ -184,7 +182,7 @@ namespace PAMI
   typedef PAMI::Protocol::Send::SendPWQ < LAPISendBase >              LAPISend;
 
   // Shared Memory P2P Typedefs
-  typedef Fifo::FifoPacket <64, 1024>                                 ShmemPacket;
+  typedef Fifo::FifoPacket <P2PSHM_HDRSIZE,P2PSHM_PKTSIZE>            ShmemPacket;
   typedef Fifo::LinearFifo<ShmemPacket, Counter::Indirect<Counter::Native> > ShmemFifo;
   typedef Device::ShmemDevice<ShmemFifo>                              ShmemDevice;
   typedef Device::Shmem::PacketModel<ShmemDevice>                     ShmemPacketModel;
@@ -252,7 +250,6 @@ namespace PAMI
                                                   CompositeNI_AS> P2PCCMICollreg;
 
 
-#ifdef _COLLSHM
   // Collective Shmem Protocol Typedefs
   typedef Counter::Native                                                        LAPICSAtomic;
   typedef PAMI::Memory::CollSharedMemoryManager<LAPICSAtomic,COLLSHM_SEGSZ,COLLSHM_PAGESZ,
@@ -263,7 +260,6 @@ namespace PAMI
   typedef PAMI::Device::CSNativeInterface<LAPICollShmModel>                      LAPICSNativeInterface;
   typedef PAMI::CollRegistration::CCMICSMultiRegistration<LAPIGeometry,
                    LAPICSNativeInterface, LAPICSMemoryManager, LAPICollShmModel> LAPICollShmCollreg;
-#endif
 
   // "New" CCMI Protocol Typedefs
   typedef PAMI::Device::DeviceNativeInterface<CAUDevice,
@@ -408,7 +404,7 @@ namespace PAMI
           _lapi_handle = ((lapi_state_t*)_lapi_state)->my_hndl;
 
           // Initialize the lapi device for collectives
-          _lapi_device2.init((lapi_state_t*)_lapi_state);
+          _lapi_device.init((lapi_state_t*)_lapi_state);
           _cau_device.init((lapi_state_t*)_lapi_state,
                            _lapi_handle,
                            _client,
@@ -431,7 +427,7 @@ namespace PAMI
 	  rc = __global.heap_mm->memalign((void **)&_pgas_collreg, 0,
 								sizeof(*_pgas_collreg));
 	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PGASCollreg");
-          new(_pgas_collreg) PGASCollreg(_client,_context,_clientid,_contextid,_protocol,_lapi_device2,&_dispatch_id,_geometry_map);
+          new(_pgas_collreg) PGASCollreg(_client,_context,_clientid,_contextid,_protocol,_lapi_device,&_dispatch_id,_geometry_map);
           _world_geometry->resetUEBarrier(); // Reset so pgas will select the UE barrier
           _pgas_collreg->analyze(_contextid,_world_geometry);
           return PAMI_SUCCESS;
@@ -448,48 +444,28 @@ namespace PAMI
           // for cau classroute initialization
           invec[2]  = 0xFFFFFFFFFFFFFFFFULL;
           for (int i = 0; i < local_master_topo->size(); ++i)  invec[3+i] = 0ULL;
-
-	  //      rc = __global.heap_mm->memalign((void **)&_ccmi_collreg, 0,
-	  //                                           sizeof(*_ccmi_collreg));
-	  //      PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc CCMICollreg");
-	  //	  new(_ccmi_collreg) CCMICollreg(_client, (pami_context_t)this, _contextid ,_clientid,_lapi_device);
-	  //	  _ccmi_collreg->analyze(_contextid, _world_geometry);
-
+          
 	  rc = __global.heap_mm->memalign((void **)&_p2p_ccmi_collreg, 0,
 						sizeof(*_p2p_ccmi_collreg));
 	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc P2PCCMICollreg");
+          size_t numpeers=0, numtasks;
+          __global.mapping.nodePeers(numpeers);
+          numtasks = __global.mapping.size();
           new(_p2p_ccmi_collreg) P2PCCMICollreg(_client,
                                                 _context,
                                                 _contextid,
                                                 _clientid,
                                                 _devices->_shmem[_contextid],
-                                                _lapi_device2,
+                                                _lapi_device,
                                                 _protocol,
                                                 _mm?1:0,  //use shared memory
                                                 1,  //use "global" device
-                                                __global.topology_global.size(),
-                                                __global.topology_local.size(),
+                                                numtasks,
+                                                numpeers,
                                                 &_dispatch_id,
                                                 _geometry_map);
           _p2p_ccmi_collreg->analyze(_contextid, _world_geometry);
-#if 0
-//#ifdef _COLLSHM
-         // collshm registration can not be used togather with cau registration
-         // shared memory region would have conflicts
 
-         // only enable collshm for context 0
-          if (_contextid == 0)
-          {
-	    rc = __global.heap_mm->memalign((void **)&_coll_shm_collreg, 0,
-						sizeof(*_coll_shm_collreg));
-	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc LAPICollShmCollreg");
-            new(_coll_shm_collreg) LAPICollShmCollreg(_client, _clientid, _context, _contextid,
-                PAMI::Device::Generic::Device::Factory::getDevice(_devices->_generics, _clientid, _contextid));
-            _coll_shm_collreg->analyze_global(0, _world_geometry, &invec[3]);
-          }
-          else
-            _coll_shm_collreg = NULL;
-#endif // _COLLSHM
           _cau_device.setGenericDevices(_devices->_generics);
 	  rc = __global.heap_mm->memalign((void **)&_cau_collreg, 0,
 						sizeof(*_cau_collreg));
@@ -503,7 +479,8 @@ namespace PAMI
                                        __global.mapping,
                                        _lapi_handle,
                                        &_dispatch_id,
-                                       _geometry_map);
+                                       _geometry_map,
+                                       _mm);
           // We analyze global here to get the proper device specific info
           _cau_collreg->analyze_global(_contextid, _world_geometry, &invec[2]);
           _pgas_collreg->setGenericDevice(&_devices->_generics[_contextid]);
@@ -544,20 +521,6 @@ namespace PAMI
 
       inline size_t advance_impl (size_t maximum, pami_result_t & result)
         {
-#if 0
-          result = PAMI_SUCCESS;
-          size_t events = 0;
-          unsigned i;
-          for (i=0; i<maximum && events==0; i++)
-              {
-                // don't we want this advanced too?
-                // events += _work.advance ();
-                events += _devices->advance(_clientid, _contextid);
-              }
-          return events;
-#endif
-          // Todo:  Add collective devices
-          // Todo:  Fix number of iterations
           _devices->advance(_clientid, _contextid);
           LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
           internal_error_t rc = (cp->*(cp->pAdvance))(maximum);
@@ -1038,17 +1001,13 @@ namespace PAMI
       ProtocolAllocator                      _protocol;
 
       /*  The over lapi devices                                 */
-      DeviceWrapper                          _lapi_device2;
+      DeviceWrapper                          _lapi_device;
       CAUDevice                              _cau_device;
   public:
       /*  Collective Registrations                              */
       PGASCollreg                           *_pgas_collreg;
       P2PCCMICollreg                        *_p2p_ccmi_collreg;
       CAUCollreg                            *_cau_collreg;
-#if 0
-//#ifdef _COLLSHM
-      LAPICollShmCollreg                    *_coll_shm_collreg;
-#endif
 
       /*  World Geometry Pointer for this context               */
       LAPIGeometry                          *_world_geometry;

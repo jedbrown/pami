@@ -179,8 +179,11 @@ namespace PAMI
 	// mapping to correctly build (like shmem device, for example.  shmem
 	// device requires to know the "local" nodes, so a proper mapping
 	// must be built).
-        _platdevs.generate(_clientid, _maxctxts, _mm);
-	_platdevs.init(_clientid,0,_client,(pami_context_t)_contexts[0],&_mm);
+        bool disable_shm = true;
+        if(_Lapi_env.use_mpi_shm == SHM_YES)
+          disable_shm = false;
+        _platdevs.generate(_clientid, _maxctxts, _mm, disable_shm);
+	_platdevs.init(_clientid,0,_client,(pami_context_t)_contexts[0],&_mm, disable_shm);
 
         // Now that we have a new mapping, we want to regenerate the topologies
         // to use the optimized geometries
@@ -346,12 +349,18 @@ namespace PAMI
                                           int             index)
       {
         PAMI::Context *c = (PAMI::Context *) _contextAlloc.allocateObject();
+
+        Memory::GenMemoryManager *mm;
+        if(_Lapi_env.use_mpi_shm == SHM_YES)
+          mm = &_mm;
+        else
+          mm = NULL;
         new (c) PAMI::Context(this->getClient(),      /* Client ptr       */
                               _clientid,              /* Client  id       */
                               ((LapiImpl::Client*)&_lapiClient[0])->GetName(), /* Client String    */
                               index,                  /* Context id       */
                               &_platdevs,             /* Platform Devices */
-                              &_mm,                   /* Memory Manager   */
+                              mm,                     /* Memory Manager   */
                               &_geometry_map);  
         *ctxt = c;
         _ncontexts++;
@@ -789,20 +798,18 @@ namespace PAMI
   private:
     inline void initializeMemoryManager ()
       {
-        char   shmemfile[PAMI::Memory::MMKEYSIZE];
-        size_t bytes     = 8*1024*1024;
-        size_t pagesize  = 4096;
-	char *env = getenv("PAMI_CLIENT_SHMEMSIZE");
-	if (env) {
-		bytes = strtoull(env, NULL, 0) * 1024 * 1024;
-	}
-
-        snprintf (shmemfile, sizeof(shmemfile) - 1, "/pami-client-%s",
-		((LapiImpl::Client*)&_lapiClient[0])->GetName());
-        // Round up to the page size
-        size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
-	_mm.init(__global.shared_mm, size, 1, 1, 0, shmemfile);
-
+        if(_Lapi_env.use_mpi_shm == SHM_YES)
+          {
+            char   shmemfile[PAMI::Memory::MMKEYSIZE];
+            size_t bytes     = COLLSHM_SEGSZ +      // Shmem used by collshm
+              P2PSHM_MEMSIZE;      // Shmem used by p2pshm 
+            size_t pagesize  = COLLSHM_PAGESZ;
+            snprintf (shmemfile, sizeof(shmemfile) - 1, "/pami-client-%s",
+                      ((LapiImpl::Client*)&_lapiClient[0])->GetName());
+            // Round up to the page size
+            size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
+            _mm.init(__global.shared_mm, size, 1, 1, 0, shmemfile);
+          }
         return;
       }
 

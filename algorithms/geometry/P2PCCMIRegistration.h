@@ -132,8 +132,8 @@ namespace PAMI
             TRACE_INIT((stderr, "<%p>CCMIRegistration() use_shmem %s, use_p2p %s, local_size %zu, global_size %zu\n", this, use_shmem? "true":"false",use_p2p?"true":"false",local_size,global_size ));
             if ((use_shmem) && (local_size > 1) && (use_p2p))
               {
-    TRACE_INIT((stderr, "<%p>CCMIRegistration() use composite\n",this));
-    // Use composite P2P/Shmem if both enabled and > 1 process per node
+                TRACE_INIT((stderr, "<%p>CCMIRegistration() use composite\n",this));
+                // Use composite P2P/Shmem if both enabled and > 1 process per node
                 // Setup Composite P2p/Shmem factories
                 TRACE_INIT((stderr, "<%p>CCMIRegistration() register composite\n", this ));
                 setupFactories<T_CompositeNI_AM,
@@ -145,7 +145,7 @@ namespace PAMI
               }
             else if (use_p2p)
               {
-    TRACE_INIT((stderr, "<%p>CCMIRegistration() use p2p\n",this));
+                TRACE_INIT((stderr, "<%p>CCMIRegistration() use p2p\n",this));
                 // Use P2P if requested or only one process (some simple test scenario)
                 // Setup P2P factories
                 TRACE_INIT((stderr, "<%p>CCMIRegistration() register MU\n", this ));
@@ -156,7 +156,7 @@ namespace PAMI
               }
             else if ((use_shmem) && (local_size > 1))
               {
-    TRACE_INIT((stderr, "<%p>CCMIRegistration() use shmem\n",this));
+                TRACE_INIT((stderr, "<%p>CCMIRegistration() use shmem\n",this));
                 // Use Shmem if requested and available ( > 1 process per node)
                 // Setup Shmem factories
                 TRACE_INIT((stderr, "<%p>CCMIRegistration() register shmem\n", this ));
