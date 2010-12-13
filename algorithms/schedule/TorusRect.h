@@ -68,7 +68,7 @@ namespace CCMI
   {
 
 #define MY_TASK _map->task()
-#define MESH     PAMI::Interface::Mapping::MESH
+#define MESH     PAMI::Interface::Mapping::Mesh
 #define POSITIVE PAMI::Interface::Mapping::TorusPositive
 #define NEGATIVE PAMI::Interface::Mapping::TorusNegative
 
