@@ -23,7 +23,7 @@
 #include "components/devices/shmemcoll/McstMessage.h"
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) // fprintf x
+#define TRACE_ERR(x)  //fprintf x
 #endif
 
 namespace PAMI
@@ -49,7 +49,11 @@ namespace PAMI
             PAMI::PipeWorkQueue *rcv = (PAMI::PipeWorkQueue*) mcast_params->dst;
             unsigned bytes;
 
-            if (((PAMI::Topology*)mcast_params->dst_participants)->isRankMember(__global.mapping.task()))
+            if (((PAMI::Topology*)mcast_params->dst_participants)->isRankMember(__global.mapping.task()) && 
+                (mcast_params->src_participants == NULL ||
+                 !((PAMI::Topology*)mcast_params->src_participants)->isRankMember(__global.mapping.task())
+                 )
+                )
               {
                 TRACE_ERR((stderr, "I am dst participant\n" ));
 
