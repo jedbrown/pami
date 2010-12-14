@@ -993,6 +993,7 @@ runHWRoy ()
 # $5.4 - Variable name to hold final Threads value to be run with (in case we skip this test)
 # $5.5 - Variable to hold final opts string
 # $5.6 - Variable name to hold override status
+# $5.7 - Variable name to hold max NP value for this test
 #-------------------------------------------------------------------------------
 exe_preProcessing ()
 {
@@ -1009,6 +1010,7 @@ exe_preProcessing ()
     finalThreadsVar=$( echo $5 | awk '{print $4}' )
     finalOptsVar=$( echo $5 | awk '{print $5}' )
     overrideVar=$( echo $5 | awk '{print $6}' )
+    maxNPVar=$( echo $5 | awk '{print $7}' )
 
     eppNodes=$orgNodes
     eppMode=$orgMode
@@ -1016,6 +1018,7 @@ exe_preProcessing ()
     eppThreads=$orgThreads  
 
     OpenMP=0
+    eppmaxNP=0
     npOverride=0
     eppOverride='N'
 
@@ -1116,6 +1119,24 @@ exe_preProcessing ()
 				      # Final opts string with --ranks_per_node val removed
 				      if [[ "${temp_opts}" =~ '--' ]]
 				      then
+					  opts="${opts}--${temp_opts#*--}"
+				      fi
+
+				      shift
+				      ;;
+	    --maxnp    )              shift
+	                              eppMaxNP=$1
+
+                                      # Remove --maxnp from $opts
+				      # Save off everything after "--maxnp"
+				      temp_opts=${opts##*--maxnp}
+
+				      # Set opts = everything before "--maxnp"
+				      opts=${opts%%--maxnp*}
+
+				      # Final opts string with --maxnp val removed
+				      if [[ "${temp_opts}" =~ '--' ]]
+				      then					 
 					  opts="${opts}--${temp_opts#*--}"
 				      fi
 
@@ -1348,6 +1369,7 @@ exe_preProcessing ()
     eval $finalThreadsVar=$eppThreads
     eval $overrideVar=$eppOverride
     eval $finalOptsVar=\"$opts\"
+    eval $maxNPVar=$eppMaxNP
 
     return 0
 }
@@ -3357,7 +3379,7 @@ fi
 # EXECUTE
 # =========================================================
 if [ $run -eq 1 ]
-    then
+then
 
     echo -e "\n******************************" 
     echo "***                        ***"
@@ -3366,7 +3388,7 @@ if [ $run -eq 1 ]
     echo -e "******************************\n"
 
     if [ "${cur_floor}" == "${run_floor}" ]
-	then 
+    then 
 	echo "Running with floor:  ${cur_floor}"
     else
 	echo "WARNING (W): Floor mismatch:"
@@ -3376,20 +3398,20 @@ if [ $run -eq 1 ]
 
     # Verify the binary exists if we didn't copy it during this run
     if [ $copy -ne 1 ]
-	then
+    then
 	for ((test=0; test < ${#TEST_ARRAY[@]}; test++))
 	  do
 
           # Ensure test is enabled
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:exe" hashExe
 	  if [ $hashExe -eq 1 ]
-	      then
+	  then
 
 	      # Ensure file exists in exe dir
 	      hget $exeHash "${TEST_ARRAY[$test]}:$test:exeDir" exeDir
 
 	      if [ ! -e "${exeDir}/${TEST_ARRAY[$test]}" ]
-		  then
+	      then
 		  hput $exeHash "${TEST_ARRAY[$test]}:$test:status" 'Skipped (DNE)'
 		  hput $exeHash "${TEST_ARRAY[$test]}:$test:exe" 0
 		  echo -e "\nERROR (E): ${exeDir}/${TEST_ARRAY[$test]} DNE!!\n"
@@ -3401,12 +3423,12 @@ if [ $run -eq 1 ]
 
     # Convert overall status of enabled tests to a pass/total ratio
     for ((test=0; test < ${#TEST_ARRAY[@]}; test++))
-      do
+    do
 
       # Ensure test is enabled
       hget $exeHash "${TEST_ARRAY[$test]}:$test:exe" hashExe
       if [ $hashExe -eq 1 ]
-	  then # update overall status
+      then # update overall status
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:runPass" runPass
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:runTotal" runTotal
 	  
@@ -3416,11 +3438,11 @@ if [ $run -eq 1 ]
 
     # --- Run selected binaries ---
     for numNodes in ${nodeArray[@]}
-      do
+    do
       for mode in ${modeArray[@]}
-	do
+      do
 	for ((test=0; test < ${#TEST_ARRAY[@]}; test++))
-	  do
+	do
 
 	  preProcRC=0
 	  exeRC=0
@@ -3430,13 +3452,13 @@ if [ $run -eq 1 ]
 
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:status" overallStatus
 	  if [ "${overallStatus}" == 'Skipped (Bad run* Parm)' ] || [ "${overallStatus}" == 'Skipped (Compile Only)' ]
-	      then
+	  then
 	      continue # to next test
 	  fi
 
 	  # Determine NP
 	  if [ $forceNP -eq 0 ]
-	      then
+	  then
 	      numProcs=$(( $numNodes * $mode ))
 	  else
 	      numProcs=$forceNP
@@ -3450,6 +3472,8 @@ if [ $run -eq 1 ]
 	  exeNP=$numProcs    # Numeric value of # of procs sent to run* subroutine
 	  exeThreads=1       # Numeric value of # of threads used in run* subroutine
 	  exeRuntime=0       # Elapsed time of run command
+	  maxNP=0            # Maximum valid NP value for for this test
+
 	  if [[ "${TEST_ARRAY[$test]}" =~ 'threadTest_omp' ]]
 	  then
 	      exeThreads=16
@@ -3462,12 +3486,12 @@ if [ $run -eq 1 ]
 
           # Compare non-mpich binary floor with runtime floor
 	  if [ $mpich -eq 0 ] && [ "${codeFamily}" == 'sst' ]
-	      then
+	  then
               bin_floor=$( strings "${exeDir}/${TEST_ARRAY[$test]}" | grep -a -m 1 "SST_COMPILE_DRIVER" )
 	      bin_floor=${bin_floor##*=}
 
               if [ "${bin_floor}" != "${run_floor}" ]
-	          then
+	      then
 		  echo "WARNING (W): Floor mismatch:"
 		  echo "WARNING (W): Binary floor  => ${bin_floor}"
 		  echo "WARNING (W): Runtime floor => ${run_floor}"
@@ -3477,7 +3501,7 @@ if [ $run -eq 1 ]
 	  # Determine final values for nodes, mode & NP
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:standAlone" standAlone
 	  if [ $standAlone -eq 1 ]
-	      then
+	  then
 	      exeNodes=0
 	      eppInputMode=0
 	      exeNP=0
@@ -3486,10 +3510,10 @@ if [ $run -eq 1 ]
 	  else
  	      # Get text version of BGP mode
 	      if [ "${platform}" == 'bgp' ]
-	          then
+	      then
 		  bgp_mode_NumtoText $mode eppInputMode
 		  if [ $? -ne 0 ]
-		      then
+		  then
 		      echo "ERROR (E): bgp_mode_NumtoText subroutine FAILED!!"
 
 		      # Amend overall status
@@ -3501,12 +3525,12 @@ if [ $run -eq 1 ]
 		  fi
 	      fi
 
-	      exe_preProcessing "$numNodes $eppInputMode $numProcs $exeThreads" "${TEST_ARRAY[$test]##*/}" "${runOpts}" "${exeArgs}" "exeNodes exeMode exeNP exeThreads exeOpts exeOverride"
+	      exe_preProcessing "$numNodes $eppInputMode $numProcs $exeThreads" "${TEST_ARRAY[$test]##*/}" "${runOpts}" "${exeArgs}" "exeNodes exeMode exeNP exeThreads exeOpts exeOverride maxNP"
 
 	      preProcRC=$?
 
 	      if [ $preProcRC -ne 0 ]
-		  then
+	      then
 		  echo -e "\nERROR (E):  exe_preProcessing sub FAILED!! Disabling ${TEST_ARRAY[$test]} test ...\n"
 	      
 	          # Amend overall status
@@ -3521,10 +3545,10 @@ if [ $run -eq 1 ]
 	  exeInputMode=$exeMode
 	  # Get text version of BGP exe mode
 	  if [ "${platform}" == 'bgp' ]
-	      then
+	  then
 	      bgp_mode_NumtoText $exeMode exeInputMode
 	      if [ $? -ne 0 ]
-	          then
+	      then
 		  echo "ERROR (E): bgp_mode_NumtoText subroutine FAILED!!"
 
 		  # Amend overall status
@@ -3541,18 +3565,18 @@ if [ $run -eq 1 ]
 
 	  # Define output dir path
 	  if [ $user_outdir -eq 0 ] 
-	      then
+	  then
 	      # Use default output dir
 	      out_dir="${exeDir}/results"
 
               # Create output dir if it doesn't exist
 	      if [ ! -d "${out_dir}" ] 
-		  then
+	      then
 		  echo "Creating results dir: ${out_dir}"
 		  mkdir -p "${out_dir}"
 
 		  if [ $? -ne 0 ] || [ ! -d "${out_dir}" ]
-		      then
+		  then
 		      echo "Creation of ${out_dir} FAILED!!"
 		      cleanExit 1
 		  fi
@@ -3561,7 +3585,7 @@ if [ $run -eq 1 ]
 
           # Generate a unique logfile that contains the actual test scenario
 	  if [ $debug -eq 1 ]
-	      then
+	  then
 	      runLog="${out_dir}/${TEST_ARRAY[$test]%\.*}_$(date +%Y%m%d-%H%M%S).log.n${exeNodes}_m${exeMode}_p${exeNP}.$run_type.dummy"
 	  else
 	      runLog="${out_dir}/${TEST_ARRAY[$test]%\.*}_$(date +%Y%m%d-%H%M%S).log.n${exeNodes}_m${exeMode}_p${exeNP}.$run_type"
@@ -3569,7 +3593,7 @@ if [ $run -eq 1 ]
 
 	  while [ -e "${runLog}" ]; do
 	      if [ $debug -eq 1 ]
-		  then
+	      then
 		  runLog="${out_dir}/${TEST_ARRAY[$test]%\.*}_$(date +%Y%m%d-%H%M%S).log.n${exeNodes}_m${exeMode}_p${exeNP}.$run_type.dummy"
 	      else
 		  runLog="${out_dir}/${TEST_ARRAY[$test]%\.*}_$(date +%Y%m%d-%H%M%S).log.n${exeNodes}_m${exeMode}_p${exeNP}.$run_type"
@@ -3594,7 +3618,7 @@ if [ $run -eq 1 ]
 		  echo "THREADS = ${exeThreads}"
 		  echo "NODES = ${exeNodes}"
 		  if [ "${platform}" == 'bgp' ]
-		      then
+		  then
 		      echo "MODE = ${exeInputMode}"
 		  else
 		      echo "BG_PROCESSESPERNODE = ${exeInputMode}"
@@ -3605,12 +3629,37 @@ if [ $run -eq 1 ]
 	      continue # to next test
 	  fi
 
-	  # Skip runs with np that's not a power-of-2 (unimplemented)
+	  # Skip runs with NP > maxNP and user has not chosen to force scaling
+	  if [ $forceScaling -eq 0 ] && [ $maxNP -gt 0 ] && [ $exeNP -gt $maxNP ]
+	  then 
+	      echo -e "Skipping ${TEST_ARRAY[$test]} (nodes = ${exeNodes}, mode = ${exeInputMode}, NP = ${exeNP}). NP (${exeNP}) > max NP for this test (${maxNP})."
+                 
+	      # Set individual test status
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" 'Skipped (NP > maxNP)'
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:summary_n${numNodes}_m${mode}_p${numProcs}" 'Skipped (NP > maxNP)'
+
+	      # Ensure we report this right in the summary
+	      {
+		  echo "NP = ${exeNP}"
+		  echo "THREADS = ${exeThreads}"
+		  echo "NODES = ${exeNodes}"
+		  if [ "${platform}" == 'bgp' ]
+		  then
+		      echo "MODE = ${exeInputMode}"
+		  else
+		      echo "BG_PROCESSESPERNODE = ${exeInputMode}"
+		  fi
+	      } >> $runLog
+
+	      continue # to next test
+	  fi
+
+	  # Skip runs with NP that's not a power-of-2 (unimplemented)
 	  npMinus1=$(( $exeNP - 1 ))
 	  bitwiseNP=$(( $exeNP & $npMinus1 ? 1 : 0 ))
 
 	  if [ $bitwiseNP != 0 ] # np is not a power-of-2
-	      then
+	  then
 	      echo -e "Skipping ${TEST_ARRAY[$test]} (nodes = ${exeNodes}, mode = ${exeInputMode}, NP = ${exeNP}). NP value of ${exeNP} is not a power of 2."
                  
 	      # Set individual test status
@@ -3623,7 +3672,7 @@ if [ $run -eq 1 ]
 		  echo "THREADS = ${exeThreads}"
 		  echo "NODES = ${exeNodes}"
 		  if [ "${platform}" == 'bgp' ]
-		      then
+		  then
 		      echo "MODE = ${exeInputMode}"
 		  else
 		      echo "BG_PROCESSESPERNODE = ${exeInputMode}"
@@ -3637,7 +3686,7 @@ if [ $run -eq 1 ]
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:combo_n${exeNodes}_m${exeMode}_p${exeNP}" combo
 
 	  if [ "${combo}" == "1" ]
-	      then
+	  then
 	      echo -e "Skipping rerun of ${TEST_ARRAY[$test]} (nodes = ${exeNodes}, mode = ${exeInputMode}, NP = ${exeNP})"
                  
 	      # Set individual test status to 'Rerun'
@@ -3650,7 +3699,7 @@ if [ $run -eq 1 ]
 		  echo "THREADS = ${exeThreads}"
 		  echo "NODES = ${exeNodes}"
 		  if [ "${platform}" == 'bgp' ]
-		      then
+		  then
 		      echo "MODE = ${exeInputMode}"
 		  else
 		      echo "BG_PROCESSESPERNODE = ${exeInputMode}"
@@ -3665,7 +3714,7 @@ if [ $run -eq 1 ]
 
           # Print test scenario to screen
 	  if [ $exeOverride == 'Y' ]
-	      then
+	  then
 	      echo -e "\nWARNING (W): Command line value(s) have been over-written by input file values for ${TEST_ARRAY[$test]}:"
 	      echo "WARNING (W): Expected values: nodes = ${numNodes}, mode = ${eppInputMode}, NP = ${numProcs}"
 	      echo "WARNING (W):   Actual values: nodes = ${exeNodes}, mode = ${exeInputMode}, NP = ${exeNP}"
@@ -3675,10 +3724,10 @@ if [ $run -eq 1 ]
 
           # Call correct run script
 	  if [ $standAlone -eq 1 ]
-	      then
+	  then
 	      runSA "${exeDir}" "${TEST_ARRAY[$test]}" "${runLog}" exeSignal exeRuntime
 	  elif [ "${run_type}" != 'hw' ]
-	      then
+	  then
 	      runSim $run_type "${exeDir}" "${TEST_ARRAY[$test]}" "${exeNodes} ${exeInputMode} ${exeNP}" "${exeOpts}" "${exeArgs}" "${runLog}" exeSignal exeRuntime
 	  else 
 	      runHW "${exeDir}" "${TEST_ARRAY[$test]}" "${exeNodes} ${exeInputMode} ${exeNP}" "${exeOpts}" "${exeArgs}" "${runLog}" exeSignal exeRuntime
@@ -3688,7 +3737,7 @@ if [ $run -eq 1 ]
 	 
 	  # Document signal and elapsed time for this run
 	  if [ "${run_type}" != 'runFpga' ]
-	      then
+	  then
 	      hput $exeHash "${TEST_ARRAY[$test]}:$test:runtime_n${numNodes}_m${mode}_p${numProcs}" $exeRuntime
 
 	      # Append run time to log file
@@ -3698,7 +3747,7 @@ if [ $run -eq 1 ]
 
 	      # Also document dummy fctest dir for FPGA debug runs
 	      if [ $debug -eq 1 ]
-		  then
+	      then
 		  temp_fctest=$(fgrep -a "Test directory:" "${runLog}" | awk '{print $3}')
 		  hput $exeHash "${TEST_ARRAY[$test]}:$test:FPGAfctestDir_n${numNodes}_m${mode}_p${numProcs}" $temp_fctest
 	      fi
