@@ -7,6 +7,9 @@
 #define __pami_ext_pe_h__
 
 #include "pami.h"
+#ifndef PAMI_EXT_ATTR
+#define PAMI_EXT_ATTR 1000 /**< starting value for extended attributes */
+#endif
 
 #ifdef __cplusplus
 extern "C"

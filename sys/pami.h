@@ -200,8 +200,6 @@ extern "C"
     const char* chararray;
   } pami_attribute_value_t;
 
-#define PAMI_EXT_ATTR 1000 /**< starting value for extended attributes */
-
   /** \} */ /* end of "configuration" group */
 
   /**
