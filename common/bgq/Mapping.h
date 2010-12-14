@@ -51,7 +51,7 @@ namespace PAMI
     Interface::Mapping::Node<Mapping,BGQ_LDIMS> (),
     _pers(pers),
     _task((size_t)-1),
-    _a (_pers.aCoord()),
+    _a (_pers.aCoord()), // These are relative to the sub-block (job's lower-left).
     _b (_pers.bCoord()),
     _c (_pers.cCoord()),
     _d (_pers.dCoord()),
@@ -66,20 +66,40 @@ namespace PAMI
       // structure match
       COMPILE_TIME_ASSERT(sizeof(bgq_coords_t) == sizeof(MUHWI_Destination_t));
 
-      _coords.mapped.t        = _t;
-      _coords.mapped.a        = _a;
-      _coords.mapped.b        = _b;
-      _coords.mapped.c        = _c;
-      _coords.mapped.d        = _d;
-      _coords.mapped.e        = _e;
-      _coords.mapped.reserved =  0;
+      // _myCoords are relative to the job's lower-left corner.
+      _myCoords.mapped.t        = _t;
+      _myCoords.mapped.a        = _a;
+      _myCoords.mapped.b        = _b;
+      _myCoords.mapped.c        = _c;
+      _myCoords.mapped.d        = _d;
+      _myCoords.mapped.e        = _e;
+      _myCoords.mapped.reserved =  0;
 
-      _MUcoords.Destination.Reserved2     = 0;
-      _MUcoords.Destination.A_Destination = _a;
-      _MUcoords.Destination.B_Destination = _b;
-      _MUcoords.Destination.C_Destination = _c;
-      _MUcoords.Destination.D_Destination = _d;
-      _MUcoords.Destination.E_Destination = _e;
+      // Get the coordinates of the job relative to the block.
+      // The block lower-left (LL) coords are 0,0,0,0,0.
+      pami_coord_t jobLL, jobUR;
+      _pers.jobRectangle( jobLL, jobUR );
+
+      // Save the job's lower-left corner coords in map-cache format.
+      // This will be added to the map cache element to produce block-relative
+      // coordinates needed by the MU.
+      _jobLLcoords.mapped.reserved = 0;
+      _jobLLcoords.mapped.a        = jobLL.u.n_torus.coords[0];
+      _jobLLcoords.mapped.b        = jobLL.u.n_torus.coords[1];
+      _jobLLcoords.mapped.c        = jobLL.u.n_torus.coords[2];
+      _jobLLcoords.mapped.d        = jobLL.u.n_torus.coords[3];
+      _jobLLcoords.mapped.e        = jobLL.u.n_torus.coords[4];
+      _jobLLcoords.mapped.t        = 0;
+
+      // Save our MU coordinates relative to the block LL...that's what the MU needs.
+      _myMUcoords.Destination.Reserved2     = 0;
+      _myMUcoords.Destination.A_Destination = _a + jobLL.u.n_torus.coords[0];
+      _myMUcoords.Destination.B_Destination = _b + jobLL.u.n_torus.coords[1];
+      _myMUcoords.Destination.C_Destination = _c + jobLL.u.n_torus.coords[2];
+      _myMUcoords.Destination.D_Destination = _d + jobLL.u.n_torus.coords[3];
+      _myMUcoords.Destination.E_Destination = _e + jobLL.u.n_torus.coords[4];
+      
+      TRACE_ERR((stderr,"_myMUcoords=%u,%u,%u,%u,%u  _jobLLcoords=%u,%u,%u,%u,%u\n",_myMUcoords.Destination.A_Destination,_myMUcoords.Destination.B_Destination,_myMUcoords.Destination.C_Destination,_myMUcoords.Destination.D_Destination,_myMUcoords.Destination.E_Destination,_jobLLcoords.mapped.a,_jobLLcoords.mapped.b,_jobLLcoords.mapped.c,_jobLLcoords.mapped.d,_jobLLcoords.mapped.e));
 
       coord2node (_a, _b, _c, _d, _e, _t,      //fix?
                   _nodeaddr.global, _nodeaddr.local);
@@ -105,6 +125,7 @@ namespace PAMI
 //    size_t _nodes;
 //    size_t _peers;
 
+    // These are relative to the sub-block (job's lower-left).
     size_t _a;
     size_t _b;
     size_t _c;
@@ -114,9 +135,12 @@ namespace PAMI
 
     char _torusInfo[BGQ_TDIMS];
 
-    // The _coords do not match the _MUcoords.  So, we have two versions of it.
-    bgq_coords_t  _coords;
-    MUHWI_Destination_t _MUcoords;
+    // _myCoords are relative to the sub-block (job), while
+    // _jobLLcoords and _myMUcoords are relative to the block (as needed by the MU).
+    bgq_coords_t        _myCoords;
+    MUHWI_Destination_t _myMUcoords;
+    bgq_coords_t        _jobLLcoords;
+
     Interface::Mapping::nodeaddr_t _nodeaddr;
 
     bgq_mapcache_t _mapcache;
@@ -176,7 +200,7 @@ namespace PAMI
     ///
     inline MUHWI_Destination_t * getMuDestinationSelf ()
     {
-      return(MUHWI_Destination_t *) &_MUcoords;
+      return(MUHWI_Destination_t *) &_myMUcoords;
     };
 
     ///
@@ -193,6 +217,8 @@ namespace PAMI
                                       uint32_t            &fifoPin)
     {
       uint32_t raw = _mapcache.torus.task2coords[task].raw;
+      raw += _jobLLcoords.raw; // Add block origin to obtain MU coords.
+
       tcoord       = (size_t) raw & 0x0000003f; // 't' coordinate
 
       // raw & 0x1f7df7c0 turns off the e, reserved, and t coordinate bits, AND
@@ -212,6 +238,7 @@ namespace PAMI
                                       MUHWI_Destination_t &dest)
     {
       uint32_t raw = _mapcache.torus.task2coords[task].raw;
+      raw += _jobLLcoords.raw; // Add block origin to obtain MU coords.
 
       // raw & 0x1f7df7c0 turns off the e, reserved, and t coordinate bits, AND
       // the high bit of A, B, C, and D which are used for the fifoPin.
