@@ -73,11 +73,13 @@ namespace PAMI
       pami_result_t rc;
       rc = __global.heap_mm->memalign((void **) & __collectiveQ, 0, sizeof(*__collectiveQ));
       PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for __collectiveQ");
-      new (__collectiveQ) Shmem::SendQueue (Generic::Device::Factory::getDevice (progress, 0, contextid));
+      new (__collectiveQ) Shmem::SendQueue();
+      __collectiveQ->init(&Generic::Device::Factory::getDevice (progress, 0, contextid));
 
       rc = __global.heap_mm->memalign((void **) & __pending_descriptorQ, 0, sizeof(*__pending_descriptorQ));
       PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for __pending_descriptorQ");
-      new (__pending_descriptorQ) Shmem::SendQueue (Generic::Device::Factory::getDevice (progress, 0, contextid));
+      new (__pending_descriptorQ) Shmem::SendQueue();
+      __pending_descriptorQ->init(&Generic::Device::Factory::getDevice (progress, 0, contextid));
 
       for (i = 0; i < MATCH_DISPATCH_SIZE; i++)
         {
