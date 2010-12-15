@@ -171,10 +171,11 @@ namespace PAMI
   typedef PAMI::Device::AtomicBarrierMdl<Barrier_Type>                           ShmemMsyncModel;
 
 #ifdef ENABLE_NEW_SHMEM
-  typedef PAMI::Device::Shmem::ShmemCollDesc <Counter::Native> ShmemCollDesc;
+//  typedef PAMI::Device::Shmem::ShmemCollDesc <Counter::Native> ShmemCollDesc;
   typedef PAMI::Device::ShmemCollDevice<ShmemCollDesc> ShmemCollDevice;
   typedef PAMI::Device::Shmem::ShmemMcombModelWorld <ShmemCollDevice, ShmemCollDesc> ShmemMcombModel;
-  typedef PAMI::Device::Shmem::ShmemMcstModelWorld <ShmemCollDevice, ShmemCollDesc> ShmemMcstModel;
+//  typedef PAMI::Device::Shmem::ShmemMcstModelWorld <ShmemCollDevice, ShmemCollDesc> 
+  typedef ShaddrMcstModel ShmemMcstModel;
 #else
   typedef Device::LocalAllreduceWQModel ShmemMcombModel;
   typedef Device::LocalBcastWQModel ShmemMcstModel;

@@ -128,18 +128,14 @@ namespace PAMI
               {
                 if (dst_topo != NULL)
                   {
-                    PAMI_assert (dst_topo->type() == PAMI_AXIAL_TOPOLOGY);
-                    pami_coord_t *ll = NULL;
-                    pami_coord_t *ur = NULL;
-                    pami_coord_t *ref = NULL;
-                    unsigned char *isTorus = NULL;
-
-                    pami_result_t result = PAMI_SUCCESS;
-                    result = dst_topo->axial(&ll, &ur, &ref, &isTorus);
-                    PAMI_assert(result == PAMI_SUCCESS);
-                    num_dst_ranks =  ur->u.n_torus.coords[LOCAL_DIM] - ll->u.n_torus.coords[LOCAL_DIM];
-                    TRACE_FORMAT("num_dst_ranks:%zu", num_dst_ranks);
-                    my_desc->set_master(1);
+                  /// \todo We shouldn't have to pull out a subtopology.  This mcast should use
+                  /// the full dst topology (assuming the caller passes in the correct topology).
+                  PAMI::Topology local_topo;
+                  dst_topo->subTopologyLocalToMe(&local_topo);
+                  num_dst_ranks =  local_topo.size(); 
+                  if(local_topo.isRankMember(_mytask)) num_dst_ranks--; // don't count myself?
+                  TRACE_FORMAT("num_dst_ranks:%zu", num_dst_ranks);
+                  my_desc->set_master(1);
                   }
               }
             else

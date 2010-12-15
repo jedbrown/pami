@@ -103,6 +103,7 @@ namespace PAMI
                           {
                             void* buf = (void*) my_desc->get_buffer(local_root);
                             void* mybuf = ((PAMI::PipeWorkQueue *)mcast->src)->bufferToConsume();
+                            TRACE_ERR((stderr, "copy bytes:%zu/%zu from %p to %p \n", mcast->bytes, ((PAMI::PipeWorkQueue *)mcast->src)->bytesAvailableToConsume(), mybuf, buf));
                             memcpy(buf, mybuf, mcast->bytes);
                             TRACE_ERR((stderr, "copied bytes:%zu from %p to %p data[0]:%u\n", mcast->bytes, mybuf, buf, ((unsigned*)buf)[0]));
                             ((PAMI::PipeWorkQueue *)mcast->src)->consumeBytes(mcast->bytes);

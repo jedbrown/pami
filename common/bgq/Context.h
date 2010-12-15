@@ -445,7 +445,8 @@ namespace PAMI
                 new (_shmemMsyncModel_storage)        ShmemMsyncModel(PAMI::Device::AtomicBarrierDev::Factory::getDevice(_devices->_atombarr, _clientid, _contextid), _status);
 
 #ifdef ENABLE_NEW_SHMEM
-                new (_shmemMcastModel_storage)        ShmemMcstModel(ShmemCollDevice::Factory::getDevice(_devices->_shmemcoll, _clientid, _contextid), _status);
+                new (_shmemMcastModel_storage)        ShmemMcstModel(PAMI::Device::Generic::Device::Factory::getDevice(_devices->_generics,  _clientid, _contextid),_status);
+                                                                   //PAMI::Device::ShmemCollDevice::Factory::getDevice(_devices->_shmemcoll, _clientid, _contextid),_status);
                 new (_shmemMcombModel_storage)        ShmemMcombModel(ShmemCollDevice::Factory::getDevice(_devices->_shmemcoll, _clientid, _contextid), _status);
 #else
                 new (_shmemMcastModel_storage)        ShmemMcstModel(PAMI::Device::LocalBcastWQDevice::Factory::getDevice(_devices->_localbcast, _clientid, _contextid), _status);
