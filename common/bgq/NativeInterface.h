@@ -439,7 +439,8 @@ namespace PAMI
     req->_user_callback    = mcast->cb_done;
     req->done_count = 0;
     TRACE_FORMAT( "<%p> %p/%p connection id %u, msgcount %u, bytes %zu, devinfo %p", this, mcast, req, mcast->connection_id, mcast->msgcount, mcast->bytes, devinfo);
-    DO_DEBUG((templateName<T_Mcast>()));
+    DO_DEBUG((templateName<T_Mcast1>()));
+    DO_DEBUG((templateName<T_Mcast2>()));
 
 
     pami_multicast_t  m_local     = *mcast;

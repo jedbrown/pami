@@ -186,9 +186,9 @@ inline void CCMI::Executor::BarrierExec::sendNext()
   if (ndest > 0)
     {
 #ifdef CCMI_DEBUG
-      TRACE_FLOW((stderr, "<%p>Executor::BarrierExec::sendNext _phase %d, ndest %d,_connid %d, _clientdata %p\n", this, _phase, topology->size(), _connid, _clientdata));
-      for (int count = 0; count < topology->size(); count++)
-        TRACE_FLOW((stderr, "<%p>Executor::BarrierExec::sendNext _dstranks[%u] %u\n", this, count, topology->index2Rank(count)));
+      TRACE_FLOW((stderr, "<%p>Executor::BarrierExec::sendNext _phase %d, ndest %zd,_connid %d, _clientdata %p\n", this, _phase, topology->size(), _connid, _clientdata));
+      for (size_t count = 0; count < topology->size(); count++)
+        TRACE_FLOW((stderr, "<%p>Executor::BarrierExec::sendNext _dstranks[%zu] %u\n", this, count, topology->index2Rank(count)));
 
       CCMI_assert (topology->type() == PAMI_LIST_TOPOLOGY);
 #endif
