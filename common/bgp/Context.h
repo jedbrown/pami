@@ -32,8 +32,8 @@
 #include "components/devices/shmem/ShmemPacketModel.h"
 #include "components/devices/shmem/ShmemDmaModel.h"
 #include "components/devices/shmem/shaddr/BgpShaddr.h"
-#include "util/fifo/FifoPacket.h"
-#include "util/fifo/LinearFifo.h"
+#include "components/fifo/FifoPacket.h"
+#include "components/fifo/linear/LinearFifo.h"
 
 //#include "components/atomic/bgp/BgpAtomic.h"
 #include "components/atomic/bgp/LockBoxCounter.h"

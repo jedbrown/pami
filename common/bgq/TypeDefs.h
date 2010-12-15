@@ -21,8 +21,8 @@
 #include "components/devices/shmem/ShmemDmaModel.h"
 #include "components/devices/shmem/shaddr/BgqShaddrReadOnly.h"
 #include "components/devices/shmem/shaddr/BgqShaddrPacketModel.h"
-#include "util/fifo/FifoPacket.h"
-#include "util/fifo/LinearFifo.h"
+#include "components/fifo/FifoPacket.h"
+#include "components/fifo/linear/LinearFifo.h"
 
 #ifndef ENABLE_NEW_SHMEM
 #include "components/devices/workqueue/LocalBcastWQMessage.h"

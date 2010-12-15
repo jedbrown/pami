@@ -49,8 +49,8 @@
 #include "components/atomic/indirect/IndirectCounter.h"
 #include "components/atomic/counter/CounterMutex.h"
 #include "components/atomic/native/NativeCounter.h"
-#include "util/fifo/FifoPacket.h"
-#include "util/fifo/LinearFifo.h"
+#include "components/fifo/FifoPacket.h"
+#include "components/fifo/linear/LinearFifo.h"
 
 // Collective Protocols
 #include "algorithms/geometry/PGASCollRegistration.h"

@@ -31,8 +31,6 @@
 #include "components/devices/shmem/ShmemWork.h"
 #include "components/devices/shmem/shaddr/NoShaddr.h"
 #include "components/memory/MemoryAllocator.h"
-#include "util/fifo/LinearFifo.h"
-#include "util/fifo/FifoPacket.h"
 #include "util/queue/Queue.h"
 #include "util/queue/CircularQueue.h"
 

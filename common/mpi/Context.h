@@ -48,8 +48,8 @@
 #ifdef ENABLE_SHMEM_DEVICE
 #include "components/devices/shmem/ShmemDevice.h"
 #include "components/devices/shmem/ShmemPacketModel.h"
-#include "util/fifo/FifoPacket.h"
-#include "util/fifo/LinearFifo.h"
+#include "components/fifo/FifoPacket.h"
+#include "components/fifo/linear/LinearFifo.h"
 #endif
 
 #include "components/devices/mpi/mpimulticastprotocol.h"

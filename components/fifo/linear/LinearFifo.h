@@ -7,22 +7,22 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file util/fifo/LinearFifo.h
+ * \file components/fifo/linear/LinearFifo.h
  * \brief ???
  */
 
-#ifndef __util_fifo_LinearFifo_h__
-#define __util_fifo_LinearFifo_h__
+#ifndef __components_fifo_linear_LinearFifo_h__
+#define __components_fifo_linear_LinearFifo_h__
 
 #include <string.h>
 
 #include "Arch.h"
 
 #include "components/memory/MemoryManager.h"
-#include "components/atomic/CounterInterface.h"
 
-#include "util/fifo/Fifo.h"
-#include "util/fifo/Packet.h"
+#include "components/fifo/FifoInterface.h"
+#include "components/fifo/PacketInterface.h"
+#include "components/atomic/CounterInterface.h"
 
 #undef TRACE_ERR
 #ifndef TRACE_ERR
@@ -34,13 +34,18 @@ namespace PAMI
   namespace Fifo
   {
     template < class T_Packet, class T_Atomic, unsigned T_Size = 128 >
-    class LinearFifo : public Fifo <LinearFifo <T_Packet, T_Atomic, T_Size> >
+    class LinearFifo : public 
+    PAMI::Fifo::Interface::Fifo 
+    <PAMI::Fifo::LinearFifo
+     <T_Packet,
+     T_Atomic,
+     T_Size> >
     {
       public:
 
         typedef T_Packet Packet;
 
-        friend class Fifo <LinearFifo <T_Packet, T_Atomic, T_Size> >;
+        friend class Interface::Fifo <LinearFifo <T_Packet, T_Atomic, T_Size> >;
 
         static const size_t mask = T_Size - 1;
 
@@ -49,7 +54,7 @@ namespace PAMI
         static const size_t packet_payload_size = T_Packet::payload_size;
 
         inline LinearFifo () :
-            Fifo <LinearFifo <T_Packet, T_Atomic, T_Size> > (),
+            Interface::Fifo <LinearFifo <T_Packet, T_Atomic, T_Size> > (),
             _packet (NULL),
             _active (NULL),
             _head (NULL),
@@ -95,7 +100,7 @@ namespace PAMI
           TRACE_ERR((stderr, "   LinearFifo::initialize_impl() before sync memalign, key = '%s', total size to allocate = %zu\n", key, total_size));
 
           pami_result_t rc;
-          rc = mm->memalign ((void **)&_packet,
+          rc = mm->memalign ((void **) & _packet,
                              sizeof(T_Packet),
                              total_size,
                              key,
@@ -233,6 +238,7 @@ namespace PAMI
           size_t index = head & LinearFifo::mask;
 
           TRACE_ERR((stderr, "   LinearFifo::consumePacket_impl(T_Consumer &), head = %zu, index = %zu (LinearFifo::mask = %p)\n", head, index, (void *)LinearFifo::mask));
+
           if (_active[index] == 1)
             {
               //dumpPacket(head);
@@ -282,6 +288,7 @@ namespace PAMI
               new (&packet[i]) T_Packet();
               active[i] = 0;
             }
+
           TRACE_ERR((stderr, "<< LinearFifo::packet_initialize(%p, %zu, \"%s\", %d, %p)\n", memory, bytes, key, attributes, cookie));
         }
 
@@ -302,7 +309,7 @@ namespace PAMI
   };
 };
 #undef TRACE_ERR
-#endif // __util_fifo_linearfifo_h__
+#endif // __components_fifo_linear_LinearFifo_h__
 
 //
 // astyle info    http://astyle.sourceforge.net

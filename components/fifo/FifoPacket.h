@@ -18,7 +18,7 @@
 
 #include "Arch.h"
 
-#include "util/fifo/Packet.h"
+#include "components/fifo/PacketInterface.h"
 
 #ifndef TRACE
 #define TRACE(x) // fprintf x
@@ -38,18 +38,18 @@ namespace PAMI
     /// \tparam T_PacketSize Specifies the number of bytes in the entire packet
     ///
     template <unsigned T_HeaderSize, unsigned T_PacketSize>
-    class FifoPacket : public Packet<FifoPacket <T_HeaderSize, T_PacketSize> >
+    class FifoPacket : public Interface::Packet<FifoPacket <T_HeaderSize, T_PacketSize> >
     {
       public:
 
-        friend class Packet<FifoPacket <T_HeaderSize, T_PacketSize> >;
+        friend class Interface::Packet<FifoPacket <T_HeaderSize, T_PacketSize> >;
 
         static const size_t header_size  = T_HeaderSize;
 
         static const size_t payload_size = T_PacketSize - T_HeaderSize;
 
         inline FifoPacket () :
-            Packet<FifoPacket <T_HeaderSize, T_PacketSize> > ()
+            Interface::Packet<FifoPacket <T_HeaderSize, T_PacketSize> > ()
         {};
 
       protected:

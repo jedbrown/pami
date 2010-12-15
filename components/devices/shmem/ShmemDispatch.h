@@ -17,7 +17,7 @@
 #include <pami.h>
 
 #include "util/common.h"
-#include "util/fifo/Fifo.h"
+#include "components/fifo/FifoInterface.h"
 #include "util/queue/CircularQueue.h"
 
 
