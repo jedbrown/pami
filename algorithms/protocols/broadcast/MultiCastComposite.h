@@ -306,6 +306,7 @@ namespace CCMI
               _complete(false),
               _total_len(total_len)
           {
+            TRACE_ADAPTOR((stderr, "PWQBuffer total len %zu\n",_total_len));
           }
 
           inline void pwqCopy(PAMI::PipeWorkQueue *dst, PAMI::PipeWorkQueue *src)
@@ -345,23 +346,12 @@ namespace CCMI
                                      pami_result_t   result)
           {
             MultiCastComposite2Device *m = (MultiCastComposite2Device*) cookie;
-            m->_count++;
+            m->_count--;
             TRACE_ADAPTOR((stderr, "MultiCastComposite2Device:  composite done:  count=%ld\n", m->_count));
 
-            if (m->_count == 2)
+            if (m->_count == 0)
               m->_master_done.function(context, m->_master_done.clientdata, result);
           }
-
-
-          static void simple_done(pami_context_t  context,
-                                  void           *cookie,
-                                  pami_result_t   result)
-          {
-            TRACE_ADAPTOR((stderr, "MultiCastComposite2Device:  simple done\n"));
-            MultiCastComposite2Device *m = (MultiCastComposite2Device*) cookie;
-            m->_master_done.function(context, m->_master_done.clientdata, result);
-          }
-
 
 
           ~MultiCastComposite2Device()
@@ -481,7 +471,6 @@ namespace CCMI
 
                     _active_minfo[1]            = &_minfo_g;
                     _active_native[1]           = _native_g;
-                    _minfo_l.cb_done.function   = composite_done;
                     cb_count++;
                   }
               }
@@ -541,7 +530,6 @@ namespace CCMI
                   {
                     _minfo_g.client             = NULL;              // Not used by device
                     _minfo_g.context            = NULL;              // Not used by device
-                    _minfo_g.cb_done.function   = composite_done;
                     _minfo_g.cb_done.clientdata = this;
                     _minfo_g.connection_id      = _geometry->comm();
                     _minfo_g.roles              = -1U;
@@ -593,17 +581,16 @@ namespace CCMI
 
                 if (pwqBuf)
                   {
+                    TRACE_ADAPTOR((stderr, "MultiCastComposite2Device:  Found in UE queue queue:  target_pwq=%p\n",
+                                   &pwqBuf->_ue_pwq));
                     pwqBuf->_target_pwq           = &pwqBuf->_ue_pwq;
                     pwqBuf->_ue_pwq.configure(cmd->cmd.xfer_broadcast.buf, bytes, 0);
                     pwqBuf->_ue_pwq.reset();
                     _minfo_l.src                = (pami_pipeworkqueue_t*) & pwqBuf->_ue_pwq;
                     _activePwqBuf                 = pwqBuf;
 
-                    if (numLocal > 1)
-                      _activePwqBuf->_user_callback = composite_done;
-                    else
-                      _activePwqBuf->_user_callback = simple_done;
-
+                    cb_count++;
+                    _activePwqBuf->_user_callback = composite_done;
                     _activePwqBuf->_user_cookie   = this;
                   }
                 else
@@ -617,11 +604,8 @@ namespace CCMI
                     _pwqBuf._target_pwq           = &_pwq0;
                     _activePwqBuf                 = &_pwqBuf;
 
-                    if (numLocal > 1)
-                      _activePwqBuf->_user_callback = composite_done;
-                    else
-                      _activePwqBuf->_user_callback = simple_done;
-
+                    cb_count++;
+                    _activePwqBuf->_user_callback = composite_done;
                     _activePwqBuf->_user_cookie   = this;
                   }
               }
@@ -635,7 +619,6 @@ namespace CCMI
                   {
                     _minfo_l.client             = NULL;              // Not used by device
                     _minfo_l.context            = NULL;              // Not used by device
-                    _minfo_l.cb_done.function   = simple_done;
                     _minfo_l.cb_done.clientdata = this;
                     _minfo_l.connection_id      = _geometry->comm();
                     _minfo_l.roles              = -1U;
@@ -654,18 +637,10 @@ namespace CCMI
                 TRACE_ADAPTOR((stderr, "MultiCastComposite2Device:  Non-master, Non-root, numLocal=%zu, src %p, dst %p\n", numLocal, _minfo_l.src_participants, _minfo_l.dst_participants));
               }
 
-            if (cb_count == 1)
-              {
-                _minfo_g.cb_done.function   = simple_done;
-                _minfo_l.cb_done.function   = simple_done;
-              }
-            else
-              {
-                _minfo_g.cb_done.function   = composite_done;
-                _minfo_l.cb_done.function   = composite_done;
-              }
+            _minfo_g.cb_done.function   = composite_done;
+            _minfo_l.cb_done.function   = composite_done;
+            _count                      = cb_count;
 
-            _count                      = 0;
             _master_done.function       = fn;
             _master_done.clientdata     = cookie;
 
@@ -819,8 +794,8 @@ namespace CCMI
               {
                 // A message has been posted, and the PWQ has been set up
                 // So we can receive into this existing target PWQ
-                TRACE_ADAPTOR((stderr, "MultiCastComposite2DeviceFactoryT: cb_async_g, posted buffer, sndlen=%ld, pwq=%p\n",
-                               sndlen, pbuf->_target_pwq));
+                TRACE_ADAPTOR((stderr, "MultiCastComposite2DeviceFactoryT: cb_async_g, posted buffer, sndlen=%ld, pwq=%p, bytesAvailableToProduce %zu\n",
+                               sndlen, pbuf->_target_pwq, pbuf->_target_pwq->bytesAvailableToProduce()));
               }
             else
               {
