@@ -399,7 +399,7 @@ namespace PAMI
 
           LapiImpl::Context::Config config(lp_client->GetConfig(), NULL, 0);
 
-          pami_result_t rc;
+          pami_result_t rc = PAMI_SUCCESS;
 
           try {
             LapiImpl::Context::Create(config, (LapiImpl::Context *)_lapi_state);
