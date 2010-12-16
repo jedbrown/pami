@@ -579,6 +579,11 @@ namespace PAMI
         // dispatch_impl relies on the table being initialized to NULL's.
         memset(_dispatch, 0x00, sizeof(_dispatch));
 
+        // Initialize the event device for PAMI_Context_post()
+        char event_key[PAMI::Memory::MMKEYSIZE];
+        snprintf (event_key, PAMI::Memory::MMKEYSIZE - 1, "/dev/client-%zu/context-%zu/event", _clientid, _contextid);
+        _event.initialize(_context, __global.heap_mm, event_key);
+
         TRACE_ERR((stderr,  "<%p>Context:: exit\n", this));
       }
 
@@ -602,11 +607,7 @@ namespace PAMI
 
       inline pami_result_t post_impl (pami_work_t *state, pami_work_function work_fn, void * cookie)
       {
-        PAMI::Device::Generic::GenericThread *work;
-        COMPILE_TIME_ASSERT(sizeof(*state) >= sizeof(*work));
-        work = new (state) PAMI::Device::Generic::GenericThread(work_fn, cookie);
-        work->setStatus(PAMI::Device::OneShot);
-        _devices->_generics[_contextid].postThread(work);
+        _event.post(state, (pami_event_function) work_fn, cookie);
         return PAMI_SUCCESS;
       }
 
@@ -615,13 +616,13 @@ namespace PAMI
 //          result = PAMI_EAGAIN;
         result = PAMI_SUCCESS;
         size_t events = 0;
-        unsigned i;
 
+        unsigned i;
         for (i = 0; i < maximum && events == 0; i++)
           {
+            _event.poll();
             events += _devices->advance(_clientid, _contextid);
           }
-
         //if (events > 0) result = PAMI_SUCCESS;
 
         return events;
@@ -1178,6 +1179,9 @@ namespace PAMI
       bool _dummy_disable;
       bool _dummy_disabled;
       PAMI::Device::Generic::GenericThread _dummy_work;
+      
+      EventDevice                  _event;
+      
   }; // end PAMI::Context
 }; // end namespace PAMI
 

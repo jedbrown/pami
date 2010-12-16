@@ -80,6 +80,10 @@
 #include "components/devices/shmemcoll/ShmemCollDesc.h"
 #include "components/devices/shmemcoll/ShmemColorMcstModel.h"
 
+#include "components/atomic/native/NativeCounter.h"
+#include "components/event/EventDevice.h"
+#include "components/fifo/event/LinearEventFifo.h"
+
 namespace PAMI
 {
   typedef Geometry::Common                     BGQGeometry;
@@ -184,6 +188,10 @@ namespace PAMI
 
   typedef BGQNativeInterfaceAS <ShmemCollDevice, ShmemMcstModel, ShmemMsyncModel, ShmemMcombModel> AllSidedShmemNI;
 
+  typedef PAMI::Fifo::Event::Linear<PAMI::Counter::BGQ::IndirectL2,1024*8> EventFifo;
+  typedef PAMI::Event::Device<EventFifo> EventDevice;
+  //typedef PAMI::Device::Event<PAMI::Counter::Indirect<PAMI::Counter::Native>,1024*16> EventDevice;
+
 }
 
 //#define PAMI_COLL_MCAST_CLASS
@@ -192,3 +200,6 @@ namespace PAMI
 //#define PAMI_GEOMETRY_CLASS    PAMI::BGQGeometry
 
 #endif
+
+
+
