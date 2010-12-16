@@ -181,6 +181,31 @@ namespace PAMI {
           return;
         }
       } else {
+      if (__type == PAMI_AXIAL_TOPOLOGY) {
+        if (__isMemberCoord(MY_COORDS,
+                            mapping->torusDims())) {
+          _new->__type = PAMI_AXIAL_TOPOLOGY;
+          // this isn't quite right.. am I even in the axial? Are all local
+          // processes always on the axis?
+          _new->topo_axial_llcoord = *MY_COORDS; // topo_axial_center;
+          _new->topo_axial_urcoord = *MY_COORDS; // topo_axial_center;
+          // might be able to get better torus info from mapping
+          memset(_new->topo_axial_istorus, 0, mapping->torusDims());
+          size_t s = 0;
+          unsigned x;
+          for (x = mapping->torusDims(); x < mapping->globalDims(); ++x) {
+            _new->topo_axial_lldim(x) = topo_axial_lldim(x);
+            _new->topo_axial_urdim(x) = topo_axial_urdim(x);
+            _new->topo_axial_hastorus(x) = topo_axial_hastorus(x);
+            if(!s) s = 1;
+            s *= (topo_urdim(x) - topo_lldim(x) + 1);
+          }
+          if(!s) _new->__type = PAMI_EMPTY_TOPOLOGY;
+          _new->__size = s;
+          return;
+        }
+      } 
+      else 
         // the hard way...
         if (__type == PAMI_SINGLE_TOPOLOGY) {
           if (IS_LOCAL_PEER(topo_rank)) {
