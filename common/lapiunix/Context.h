@@ -399,7 +399,21 @@ namespace PAMI
 
           LapiImpl::Context::Config config(lp_client->GetConfig(), NULL, 0);
 
-          LapiImpl::Context::Create(config, (LapiImpl::Context *)_lapi_state);
+          pami_result_t rc;
+
+          try {
+            LapiImpl::Context::Create(config, (LapiImpl::Context *)_lapi_state);
+          } catch (int lapi_err) {
+            /* convert to general PAMI error */
+            rc = PAMI_ERROR;
+          } catch (internal_error_t int_err) {
+            rc = PAMI_RC(int_err);
+          } catch (std::bad_alloc) {
+            rc = PAMI_ENOMEM;
+          }
+
+          if (PAMI_SUCCESS != rc)
+            return rc;
 
           _lapi_handle = ((lapi_state_t*)_lapi_state)->my_hndl;
 
