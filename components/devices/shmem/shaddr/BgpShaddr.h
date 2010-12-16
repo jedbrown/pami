@@ -222,7 +222,7 @@ size_t PAMI::Device::Shmem::BgpShaddr::read_impl (void   * local,
       memcpy (local, paddr, bytes);
       mem_sync();
       TRACE_ERR((stderr, "<< BgpShaddr::read_impl()\n"));
-      return;
+      return bytes;
     }
 
 
@@ -272,7 +272,7 @@ size_t PAMI::Device::Shmem::BgpShaddr::write_impl (void   * remote,
       mem_sync();
       /* print_data (paddr, bytes); */
       TRACE_ERR((stderr, "<< BgpShaddr::write_impl()\n"));
-      return;
+      return bytes;
     }
 
   size_t bytes_to_copy = bytes - n;
@@ -322,7 +322,7 @@ size_t PAMI::Device::Shmem::BgpShaddr::read_impl (Memregion * local,
       memcpy (local_va, remote_va, bytes);
       mem_sync();
       TRACE_ERR((stderr, "<< BgpShaddr::read_impl('memregion')\n"));
-      return;
+      return bytes;
     }
 
 
@@ -373,7 +373,7 @@ size_t PAMI::Device::Shmem::BgpShaddr::write_impl (Memregion * remote,
       memcpy (remote_va, local_va, bytes);
       mem_sync();
       TRACE_ERR((stderr, "<< BgpShaddr::write_impl('memregion'):%d\n", __LINE__));
-      return;
+      return bytes;
     }
 
 
