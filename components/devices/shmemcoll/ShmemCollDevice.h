@@ -64,7 +64,6 @@ namespace PAMI
     {
       protected:
 
-
       public:
 
         // Inner factory class
@@ -89,7 +88,7 @@ namespace PAMI
               volatile size_t * ncontexts = NULL;
               size_t size = sizeof(size_t) * (2 * npeers + 1);
               char key[PAMI::Memory::MMKEYSIZE];
-              sprintf(key, "/ShmemCollDevice-ncontexts-client-%zu", clientid);
+              sprintf(key, "/ShmemCollDevice-ncontexts-client-%zu-%zu", clientid, gds->contextId());
               TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() size = %zu\n", size));
               mm.memalign ((void **)&ncontexts, 16, size, key, mm_initialize,&npeers);
               TRACE_ERR((stderr, "ShmemDevice::Factory::generate_impl() ncontexts = %p\n", ncontexts));
@@ -131,14 +130,14 @@ namespace PAMI
               //size = (sizeof(Shmem::ShmemCollDescFifo<T_Desc>)) * total_desc_fifos + 128;
               size = ((sizeof(Shmem::ShmemCollDescFifo<T_Desc>) + 128) & 0xffffff80 ) * total_desc_fifos ;
               TRACE_ERR((stderr, "ShmemCollDevice::Factory::allocating %zu bytes\n", size));
-              sprintf(key, "/ShmemCollDevice-all_desc_fifos-client-%zu", clientid);
+              sprintf(key, "/ShmemCollDevice-all_desc_fifos-client-%zu-%zu", clientid, gds->contextId());
               mm.memalign ((void **)&all_desc_fifos, 128, size, key);
               assert(all_desc_fifos != NULL);
 
               Shmem::ShmemCollDescFifo<T_Desc>* all_world_desc_fifos = NULL;
               //size = (sizeof(Shmem::ShmemCollDescFifo<T_Desc>)) * total_desc_fifos + 128;
               size = ((sizeof(Shmem::ShmemCollDescFifo<T_Desc>) + 128) & 0xffffff80 ) * total_desc_fifos ;
-              sprintf(key, "/ShmemCollDevice-all_world_desc_fifos-client-%zu", clientid);
+              sprintf(key, "/ShmemCollDevice-all_world_desc_fifos-client-%zu-%zu", clientid, gds->contextId());
               mm.memalign ((void **)&all_world_desc_fifos, 128, size, key);
               assert(all_world_desc_fifos != NULL);
 
