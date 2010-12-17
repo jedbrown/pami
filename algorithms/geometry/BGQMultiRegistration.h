@@ -158,7 +158,7 @@ namespace PAMI
 
         // The composite will ctor the connection manager and generate a unique connection id.
         collObj *cobj = (collObj*) _alloc.allocateObject();
-        TRACE_ADAPTOR((stderr, "<%p>CollectiveProtocolFactoryT::generate()\n", cobj));
+        TRACE_INIT((stderr, "<%p>CollectiveProtocolFactoryT::generate()\n", cobj));
         new(cobj) collObj(_native,          // Native interface
                           _cmgr,            // Connection Manager
                           geometry,         // Geometry Object
@@ -182,7 +182,7 @@ namespace PAMI
                           pami_result_t   res)
       {
         collObj *cobj = (collObj *)clientdata;
-        TRACE_ADAPTOR((stderr, "<%p>PAMI::CollRegistration::MUMultiCast2Factory::done_fn()\n", cobj));
+        TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::MUMultiCast2Factory::done_fn()\n", cobj));
         cobj->done_fn(context, res);
         MUMultiCast2Factory* factory = (MUMultiCast2Factory*) cobj->_factory;
         factory->_composite_map.erase(cobj->_connection_id);
@@ -193,7 +193,8 @@ namespace PAMI
       ///
       /// \brief multicast dispatch - call the factory notifyRecvHead
       ///
-      static void mu2_cb_async(const pami_quad_t      *msginfo,       // \param[in] msginfo    Metadata
+      static void mu2_cb_async(pami_context_t          ctxt,          // \param[in] ctxt       PAMI context
+                               const pami_quad_t      *msginfo,       // \param[in] msginfo    Metadata
                                unsigned                msgcount,      // \param[in] msgcount Count of metadata
                                unsigned                connection_id, // \param[in] connection_id  Stream ID of data
                                size_t                  root,          // \param[in] root        Sending task
@@ -203,7 +204,7 @@ namespace PAMI
                                pami_pipeworkqueue_t ** rcvpwq,        // \param[out] rcvpwq     Where to put recv data
                                pami_callback_t       * cb_done)       // \param[out] cb_done    Completion callback to invoke when data received
       {
-        TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::MUMultiCast2Factory::mu2_cb_async()\n", clientdata));
+        TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::MUMultiCast2Factory::mu2_cb_async(msginfo %p, msgcount %u, connection_id %u, root %zu, sndlen %zu, rcvlen %p, rcvpwq %p, cb_done %p)\n", clientdata, msginfo, msgcount, connection_id, root, sndlen, rcvlen, rcvpwq, cb_done));
         MUMultiCast2Factory* factory = (MUMultiCast2Factory*) clientdata;
         return factory->notifyRecvHead(msginfo, msgcount, connection_id, root, sndlen, rcvlen, rcvpwq, cb_done);
       }
@@ -271,7 +272,7 @@ namespace PAMI
 
         // The composite will ctor the connection manager and generate a unique connection id.
         collObj *cobj = (collObj*) _alloc.allocateObject();
-        TRACE_ADAPTOR((stderr, "<%p>CollectiveProtocolFactoryT::generate()\n", cobj));
+        TRACE_INIT((stderr, "<%p>CollectiveProtocolFactoryT::generate()\n", cobj));
         new(cobj) collObj(_native,          // Native interface
                           _cmgr,            // Connection Manager
                           geometry,         // Geometry Object
@@ -295,7 +296,7 @@ namespace PAMI
                           pami_result_t   res)
       {
         collObj *cobj = (collObj *)clientdata;
-        TRACE_ADAPTOR((stderr, "<%p>PAMI::CollRegistration::LineMultiCast2Factory::done_fn()\n", cobj));
+        TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::LineMultiCast2Factory::done_fn()\n", cobj));
         cobj->done_fn(context, res);
         LineMultiCast2Factory* factory = (LineMultiCast2Factory*) cobj->_factory;
         factory->_composite_map.erase(cobj->_connection_id);
@@ -306,15 +307,16 @@ namespace PAMI
       ///
       /// \brief multicast dispatch - call the factory notifyRecvHead
       ///
-      static void line2_cb_async(const pami_quad_t      *msginfo,       // \param[in] msginfo    Metadata
-                                  unsigned                msgcount,      // \param[in] msgcount Count of metadata
-                                  unsigned                connection_id, // \param[in] connection_id  Stream ID of data
-                                  size_t                  root,          // \param[in] root        Sending task
-                                  size_t                  sndlen,        // \param[in] sndlen      Length of data sent
-                                  void                  * clientdata,    // \param[in] clientdata  Opaque arg
-                                  size_t                * rcvlen,        // \param[out] rcvlen     Length of data to receive
-                                  pami_pipeworkqueue_t ** rcvpwq,        // \param[out] rcvpwq     Where to put recv data
-                                  pami_callback_t       * cb_done)       // \param[out] cb_done    Completion callback to invoke when data received
+      static void line2_cb_async(pami_context_t          ctxt,          // \param[in] ctxt       PAMI context
+                                 const pami_quad_t      *msginfo,       // \param[in] msginfo    Metadata
+                                 unsigned                msgcount,      // \param[in] msgcount Count of metadata
+                                 unsigned                connection_id, // \param[in] connection_id  Stream ID of data
+                                 size_t                  root,          // \param[in] root        Sending task
+                                 size_t                  sndlen,        // \param[in] sndlen      Length of data sent
+                                 void                  * clientdata,    // \param[in] clientdata  Opaque arg
+                                 size_t                * rcvlen,        // \param[out] rcvlen     Length of data to receive
+                                 pami_pipeworkqueue_t ** rcvpwq,        // \param[out] rcvpwq     Where to put recv data
+                                 pami_callback_t       * cb_done)       // \param[out] cb_done    Completion callback to invoke when data received
       {
         TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::LineMultiCast2Factory::line2_cb_async()\n", clientdata));
         LineMultiCast2Factory* factory = (LineMultiCast2Factory*) clientdata;
@@ -854,7 +856,7 @@ namespace PAMI
               {
                 TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU bcast\n", this));
                 // Add Broadcasts
-                //geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_mcast2_factory, _context_id);
+                geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_mcast2_factory, _context_id);
 
                 // 'Pure' Axial only makes sense on a line... useless but enabled here for testing
                 // Note, while axial doesn't use classroutes it does use msync and expects a classroute for that,

@@ -26,6 +26,9 @@
 #include "util/ccmi_util.h"
 #include "util/trace.h"
 
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
+
 #ifdef CCMI_TRACE_ALL
  #define DO_TRACE_ENTEREXIT 1
  #define DO_TRACE_DEBUG     1
@@ -173,6 +176,7 @@ namespace PAMI
               //        _connection (device)
           {
             TRACE_FN_ENTER();
+            TRACE_FORMAT( "this %p", this);
             // ----------------------------------------------------------------
             // Compile-time assertions
             // ----------------------------------------------------------------
@@ -214,7 +218,7 @@ namespace PAMI
         PAMI_assert(classRoute);
         classRoute -= 1; 
 
-        TRACE_FORMAT( "connection_id %#X, class route %#X\n", mcast->connection_id, classRoute);
+        TRACE_FORMAT( "connection_id %#X, class route %#X", mcast->connection_id, classRoute);
 
         // Get the source data buffer/length and validate (assert) inputs
         size_t length = mcast->bytes;
@@ -236,7 +240,7 @@ namespace PAMI
             PAMI_assert(mcast->msgcount == 0);
           }
 
-        TRACE_FORMAT( "dispatch %zu, connection_id %#X, msgcount %d/%p, bytes %zu/%p/%p\n",
+        TRACE_FORMAT( "dispatch %zu, connection_id %#X, msgcount %d/%p, bytes %zu/%p/%p",
                       mcast->dispatch, mcast->connection_id,
                       mcast->msgcount, mcast->msginfo,
                       mcast->bytes, pwq, pwq ? pwq->bufferToConsume() : NULL);
@@ -363,7 +367,7 @@ namespace PAMI
               } // T_Msgdata_support==true
           } // T_PWQ_support==false
 
-        TRACE_FORMAT( "dispatch %zu, connection_id %#X exit\n",
+        TRACE_FORMAT( "dispatch %zu, connection_id %#X exit",
                       mcast->dispatch, mcast->connection_id);
 
         TRACE_FN_EXIT();
@@ -394,6 +398,7 @@ namespace PAMI
         char * msg = p = (char*) payload;
 
         MulticastModel<T_Msgdata_support, T_PWQ_support> * model = (MulticastModel<T_Msgdata_support, T_PWQ_support> *) arg;
+        TRACE_FORMAT( "dispatch model %p, task id %u", model, model->_task_id);
 
         size_t data_length = m->sndlen;
 
@@ -413,11 +418,13 @@ namespace PAMI
         if (m->root == model->_task_id)
           {
             state_data = model->_connection[m->connection_id]; //model->_connection.get(m->connection_id);
+            TRACE_FORMAT( "state_data %p, m->connection_id %u",state_data,m->connection_id);
             PAMI_assert(state_data);
           }
         else //allocate one
           {
             state_data = model->allocateState ();
+            TRACE_FORMAT( "state_data %p, m->connection_id %u",state_data,m->connection_id);
             state_data->header_metadata.connection_id   = m->connection_id;
             state_data->header_metadata.msgcount        = m->msgcount;
             state_data->header_metadata.root            = m->root;
@@ -428,6 +435,7 @@ namespace PAMI
 //          model->_connection.set(connection_id, (void *)state_data);
             PAMI_assert(model->_connection[m->connection_id] == NULL);
             model->_connection[m->connection_id] = state_data;
+            TRACE_FORMAT( "dispatch state_data %p, model->_connection[m->connection_id %u] %p",state_data,m->connection_id,model->_connection[m->connection_id]);
 
             state_data->rcvpwq = NULL;
             state_data->cb_done.function = NULL;
@@ -447,11 +455,11 @@ namespace PAMI
                                      );
             state_data->buffer = state_data->rcvpwq ? (uint8_t*)state_data->rcvpwq->bufferToProduce() : NULL;
 
-            TRACE_FORMAT( "after dispatch remaining_length %zu, pwq %p\n", state_data->remaining_length, state_data->rcvpwq);
+            TRACE_FORMAT( "after dispatch remaining_length %zu, pwq %p", state_data->remaining_length, state_data->rcvpwq);
 
           }
 
-        TRACE_FORMAT( "cookie = %p, root = %d, bytes = %zu remaining = %zd, sndlen = %d, connection id %u/%#X\n", cookie, (m->root), bytes,  state_data->remaining_length, m->sndlen, m->connection_id, m->connection_id);
+        TRACE_FORMAT( "cookie = %p, root = %d, bytes = %zu remaining = %zd, sndlen = %d, connection id %u/%#X", cookie, (m->root), bytes,  state_data->remaining_length, m->sndlen, m->connection_id, m->connection_id);
 
         if (T_PWQ_support == false)
           {
@@ -486,7 +494,7 @@ namespace PAMI
 
         MulticastModel<T_Msgdata_support, T_PWQ_support> * model = (MulticastModel<T_Msgdata_support, T_PWQ_support> *) arg;
 
-        TRACE_FORMAT( "cookie = %p, bytes = %zu, connection id %u/%#X\n", cookie, bytes, m->connection_id, m->connection_id);
+        TRACE_FORMAT( "cookie = %p, bytes = %zu, connection id %u/%#X", cookie, bytes, m->connection_id, m->connection_id);
 
         // Retrieve a state object
         state_data_t *state_data = model->_connection[m->connection_id]; //model->_connection.get(connection_id);
@@ -505,7 +513,7 @@ namespace PAMI
       {
         TRACE_FN_ENTER();
         header_metadata_t   *  header = &state_data->header_metadata;
-        TRACE_FORMAT( "state_data %p, connection id %u, payload %p, bytes %zu, remaining length %zu, sndlen %u\n",
+        TRACE_FORMAT( "state_data %p, connection id %u, payload %p, bytes %zu, remaining length %zu, sndlen %u",
                       state_data, header->connection_id, payload, bytes, state_data->remaining_length, header->sndlen);
 
 
@@ -517,7 +525,7 @@ namespace PAMI
 
         if (nleft) // copy data and update receive state_data
           {
-            TRACE_FORMAT( "memcpy(%p,%p,%zu)\n", state_data->buffer, payload, nleft);
+            TRACE_FORMAT( "memcpy(%p,%p,%zu)", state_data->buffer, payload, nleft);
             memcpy (state_data->buffer, payload, nleft);
 
             // Update the receive state_data
@@ -534,7 +542,7 @@ namespace PAMI
 
         if (header->sndlen == 0)
           {
-            TRACE_FORMAT( "done cb_done function %p, clientdata %p\n", state_data->cb_done.function, state_data->cb_done.clientdata);
+            TRACE_FORMAT( "done cb_done function %p, clientdata %p", state_data->cb_done.function, state_data->cb_done.clientdata);
             _connection.erase(header->connection_id);
             //_connection.clear(header->connection_id);
 
@@ -558,25 +566,25 @@ namespace PAMI
           void                       *arg)
       {
         TRACE_FN_ENTER();
-        TRACE_FORMAT( "id %d, func %p, arg %p\n", dispatch_id, func, arg);
+        TRACE_FORMAT( "id %d, func %p, arg %p", dispatch_id, func, arg);
         PAMI_assert(multicast_model_active_message);
 
         _dispatch_function = func;
         _dispatch_arg = arg;
 
-        TRACE_FORMAT( "register data model dispatch %d\n", dispatch_id);
+        TRACE_FORMAT( "register data model dispatch %d", dispatch_id);
         pami_result_t status = _data_model.init (dispatch_id,
                                                  dispatch_data, this,
                                                  NULL, NULL);
-        TRACE_FORMAT( "data model status = %d\n", status);
+        TRACE_FORMAT( "data model status = %d", status);
 
         if (status == PAMI_SUCCESS)
           {
-            TRACE_FORMAT( "register header  model dispatch %d\n", dispatch_id);
+            TRACE_FORMAT( "register header  model dispatch %d", dispatch_id);
             status = _header_model.init (dispatch_id,
                                          dispatch_header, this,
                                          NULL, NULL);
-            TRACE_FORMAT( "header model status = %d\n", status);
+            TRACE_FORMAT( "header model status = %d", status);
           }
 
         TRACE_FN_EXIT();
@@ -585,6 +593,9 @@ namespace PAMI
     };
   };
 };
+
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
 
 #endif // __components_devices_bgq_mu2_model_Multicast_h__
 
