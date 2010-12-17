@@ -152,6 +152,14 @@ namespace PAMI {
       _boundAddress[3]   = NULL;
     }
 
+    static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+      return true;
+    }
+
+    static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+      return true; // no mm will be used in init()...
+    }
+
     inline void init(PAMI::Memory::MemoryManager *mm, const char *key)
       {
 	//_mutex.init(); // in-place mutex

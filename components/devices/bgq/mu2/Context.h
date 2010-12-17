@@ -844,34 +844,34 @@ namespace PAMI
             return _rm.getSharedCounterBatId();
           };
 
-          inline uint32_t getShortCollectiveBroadcastBatId ()
+          inline uint32_t getShortCollectiveBatId ()
 	  {
-	    return _rm.getShortCollectiveBroadcastBatId();
+	    return _rm.getShortCollectiveBatId();
           };
 
-	  inline int32_t setShortCollectiveBroadcastBatEntry ( uint64_t value )
+	  inline int32_t setShortCollectiveBatEntry ( uint64_t value )
 	  {
-	    return _rm.setShortCollectiveBroadcastBatEntry ( value );
+	    return _rm.setShortCollectiveBatEntry ( value );
 	  }
 
-          inline uint32_t getThroughputCollectiveBroadcastBufferBatId ()
+          inline uint32_t getThroughputCollectiveBufferBatId ()
 	  {
-	    return _rm.getThroughputCollectiveBroadcastBufferBatId();
+	    return _rm.getThroughputCollectiveBufferBatId();
           };
 
-	  inline int32_t setThroughputCollectiveBroadcastBufferBatEntry ( uint64_t value )
+	  inline int32_t setThroughputCollectiveBufferBatEntry ( uint64_t value )
 	  {
-	    return _rm.setThroughputCollectiveBroadcastBufferBatEntry ( value );
+	    return _rm.setThroughputCollectiveBufferBatEntry ( value );
 	  }
 
-          inline uint32_t getThroughputCollectiveBroadcastCounterBatId ()
+          inline uint32_t getThroughputCollectiveCounterBatId ()
 	  {
-	    return _rm.getThroughputCollectiveBroadcastCounterBatId();
+	    return _rm.getThroughputCollectiveCounterBatId();
           };
 
-	  inline int32_t setThroughputCollectiveBroadcastCounterBatEntry ( uint64_t value )
+	  inline int32_t setThroughputCollectiveCounterBatEntry ( uint64_t value )
 	  {
-	    return _rm.setThroughputCollectiveBroadcastCounterBatEntry ( value );
+	    return _rm.setThroughputCollectiveCounterBatEntry ( value );
 	  }
 
 	  /// \brief Query the Number of Free BAT IDs Within This Context

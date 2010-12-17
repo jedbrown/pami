@@ -533,7 +533,7 @@ if (rc) fprintf(stderr, "Kernel_AllocateGlobalInterruptClassRoute(%d) failed %d 
 	  allocateGlobalResources();
 	  TRACE((stderr,"MU ResourceManager: Done allocating global resources\n"));
 
-	  TRACE((stderr,"GlobalBatId=%u, SharedCounterBatId=%u, ShortCollectiveBroadcastBatId=%u, ThroughputCollectiveBroadcastBufferBatId=%u, ThroughputCollectiveBroadcastCounterBatId=%u\n",getGlobalBatId(),getSharedCounterBatId(),getShortCollectiveBroadcastBatId(),getThroughputCollectiveBroadcastBufferBatId(), getThroughputCollectiveBroadcastCounterBatId()));
+	  TRACE((stderr,"GlobalBatId=%u, SharedCounterBatId=%u, ShortCollectiveBatId=%u, ThroughputCollectiveBufferBatId=%u, ThroughputCollectiveCounterBatId=%u\n",getGlobalBatId(),getSharedCounterBatId(),getShortCollectiveBatId(),getThroughputCollectiveBufferBatId(), getThroughputCollectiveCounterBatId()));
 
 	  // might want more shmem here, to use for coordinating locals in VN.
 	  // possibly changing this to a structure.
@@ -1218,24 +1218,24 @@ fprintf(stderr, "%s\n", buf);
 	inline uint32_t getSharedCounterBatId ()
 	{ return _globalBatIds[1]; }
 
-	/// \brief Get Short Collective Broadcast Base Address Table Id
+	/// \brief Get Short Collective  Base Address Table Id
 	///
-	inline uint32_t getShortCollectiveBroadcastBatId ()
+	inline uint32_t getShortCollectiveBatId ()
 	{ return _globalBatIds[2]; }
 
-	/// \brief Get Throughput Collective Broadcast Buffer Base Address Table Id
+	/// \brief Get Throughput Collective  Buffer Base Address Table Id
 	///
-	inline uint32_t getThroughputCollectiveBroadcastBufferBatId ()
+	inline uint32_t getThroughputCollectiveBufferBatId ()
 	{ return _globalBatIds[3]; }
 
-	/// \brief Get Throughput Collective Broadcast Counter Base Address Table Id
+	/// \brief Get Throughput Collective  Counter Base Address Table Id
 	///
-	inline uint32_t getThroughputCollectiveBroadcastCounterBatId ()
+	inline uint32_t getThroughputCollectiveCounterBatId ()
 	{ return _globalBatIds[4]; }
 
-	/// \brief Set Short Collective Broadcast Base Address Table Entry
+	/// \brief Set Short Collective  Base Address Table Entry
 	///
-	inline int32_t setShortCollectiveBroadcastBatEntry ( uint64_t value )
+	inline int32_t setShortCollectiveBatEntry ( uint64_t value )
 	{
 	  uint32_t batSubgroup = ( _globalBatIds[2] / BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP ) - 64;
 	  uint8_t  batId       = _globalBatIds[2] % BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP;
@@ -1244,9 +1244,9 @@ fprintf(stderr, "%s\n", buf);
 					value );
 	}
 
-	/// \brief Set Throughput Collective Broadcast Buffer Base Address Table Entry
+	/// \brief Set Throughput Collective  Buffer Base Address Table Entry
 	///
-	inline int32_t setThroughputCollectiveBroadcastBufferBatEntry ( uint64_t value )
+	inline int32_t setThroughputCollectiveBufferBatEntry ( uint64_t value )
 	{
 	  uint32_t batSubgroup = ( _globalBatIds[3] / BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP ) - 64;
 	  uint8_t  batId       = _globalBatIds[3] % BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP;
@@ -1255,9 +1255,9 @@ fprintf(stderr, "%s\n", buf);
 					value );
 	}
 
-	/// \brief Set Throughput Collective Broadcast Counter Base Address Table Entry
+	/// \brief Set Throughput Collective  Counter Base Address Table Entry
 	///
-	inline int32_t setThroughputCollectiveBroadcastCounterBatEntry ( uint64_t value )
+	inline int32_t setThroughputCollectiveCounterBatEntry ( uint64_t value )
 	{
 	  uint32_t batSubgroup = ( _globalBatIds[4] / BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP ) - 64;
 	  uint8_t  batId       = _globalBatIds[4] % BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP;
