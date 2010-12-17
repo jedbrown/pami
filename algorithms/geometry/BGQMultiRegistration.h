@@ -899,7 +899,7 @@ namespace PAMI
               }
 
               // Add 2 device composite protocols
-              if ((local_sub_topology->size() > 1) && (master_sub_topology->size() > 1) && (__global.useshmem()))
+//            if ((local_sub_topology->size() > 1) && (master_sub_topology->size() > 1) && (__global.useshmem()))
               {
                 if (_mcast2d_composite_factory)
                 {
