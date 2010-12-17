@@ -1,0 +1,320 @@
+
+#ifndef __components_devices_bgq_mu2_model_CollectiveDmaModel_h__
+#define __components_devices_bgq_mu2_model_CollectiveDmaModel_h__
+
+#include "spi/include/mu/DescriptorBaseXX.h"
+#include "components/devices/MulticastModel.h"
+#include "components/devices/MulticombineModel.h"
+#include "components/memory/MemoryAllocator.h"
+#include "util/trace.h"
+#include "components/devices/bgq/mu2/Context.h"
+#include "components/devices/bgq/mu2/msg/CollectiveDPutMulticast.h"
+#include "sys/pami.h"
+
+namespace PAMI
+{
+  namespace Device
+  {
+    namespace MU
+    {
+#define TEMP_BUF_SIZE 1024
+
+      class CollectiveDmaModelBase {
+	class ShortCompletionMsg {
+	public:
+	  pami_event_function                        _cb_done;     /// Short message callback
+	  void                                     * _cookie;      /// Short message user client data
+	  char                                     * _dstBuf;      /// Short dstination buffer
+	  uint64_t                                   _bytes;       /// Short bytes
+	  char                                     * _tempBuf;     /// Temp buf where data comes in
+	  volatile uint64_t                        * _counterAddress; /// Counter address     
+
+	  ShortCompletionMsg () {}
+	};
+
+      public:
+	static const uint32_t sizeof_msg = sizeof(CollectiveDPutMulticast);
+
+	CollectiveDmaModelBase (): _mucontext(*(MU::Context *)NULL) {}
+
+	CollectiveDmaModelBase (MU::Context    & context,
+				pami_result_t  & status):
+	_mucontext(context)
+	{	  
+	  _tempSize = TEMP_BUF_SIZE;
+	  if (_tempBuf == NULL) 
+	    _tempBuf = (char *)malloc (_tempSize * sizeof(char));
+
+	  ///// Get the BAT IDS ///////////////
+	  //// Setup CounterVec in BAT 
+	  _tBatID = _mucontext.getShortCollectiveBatId();  
+	  if (_tBatID == -1)
+	    {
+	      status = PAMI_ERROR;
+	      return;
+	    }
+
+	  _pBatID = _mucontext.getThroughputCollectiveBufferBatId ();
+	  if (_pBatID == -1)
+	    {
+	      status = PAMI_ERROR;
+	      return;
+	    }
+
+	  _cBatID = _mucontext.getThroughputCollectiveCounterBatId ();
+	  if (_cBatID == -1)
+	    {
+	      status = PAMI_ERROR;
+	      return;
+	    }
+	  
+	  //printf ("Get Bat Ids %d %d %d\n", _tBatID, _pBatID, _cBatID);
+	  Kernel_MemoryRegion_t memRegion;
+	  int rc = 0;
+
+	  rc = Kernel_CreateMemoryRegion (&memRegion, (void *)_tempBuf, _tempSize);
+	  _tempPAddr = (uint64_t)memRegion.BasePa +
+	    ((uint64_t)(void *)_tempBuf - (uint64_t)memRegion.BaseVa);	  
+	  _mucontext.setShortCollectiveBatEntry (_tempPAddr);
+	  
+	  rc = Kernel_CreateMemoryRegion (&memRegion, (void *)&_colCounter, sizeof(_colCounter));
+	  PAMI_assert ( rc == 0 );
+	  uint64_t paddr = (uint64_t)memRegion.BasePa +
+	    ((uint64_t)(void *)&_colCounter - (uint64_t)memRegion.BaseVa);
+	  
+	  uint64_t atomic_address = MUSPI_GetAtomicAddress(paddr, MUHWI_ATOMIC_OPCODE_STORE_ADD);
+	  _mucontext.setThroughputCollectiveCounterBatEntry (atomic_address);
+	  
+	  initDescBase();	 	  
+	}
+
+	void initDescBase() {
+	  //TRACE_FN_ENTER();
+	  // Zero-out the descriptor models before initialization
+	  memset((void *)&_modeldesc, 0, sizeof(_modeldesc));
+	    
+	  // --------------------------------------------------------------------
+	  // Set the common base descriptor fields
+	  // 
+	  // For the remote get packet, send it using the high priority torus
+	  // fifo map.  Everything else uses non-priority torus fifos, pinned
+	  // later based on destination.  This is necessary to avoid deadlock
+	  // when the remote get fifo fills.  Note that this is in conjunction
+	  // with using the high priority virtual channel (set elsewhere).
+	  // --------------------------------------------------------------------
+	  MUSPI_BaseDescriptorInfoFields_t base;
+	  memset((void *)&base, 0, sizeof(base));
+	    
+	  base.Pre_Fetch_Only  = MUHWI_DESCRIPTOR_PRE_FETCH_ONLY_NO;
+	  base.Message_Length  = 0;
+	  base.Payload_Address = _tempPAddr;
+	  _modeldesc.setBaseFields (&base);
+	    
+	  // --------------------------------------------------------------------
+	  // Set the common point-to-point descriptor fields
+	  //
+	  // For the remote get packet, send it on the high priority virtual
+	  // channel.  Everything else is on the deterministic virtual channel.
+	  // This is necessary to avoid deadlock when the remote get fifo fills.
+	  // Note that this is in conjunction with setting the high priority
+	  // torus fifo map (set elsewhere).
+	  // --------------------------------------------------------------------
+	  MUSPI_CollectiveDescriptorInfoFields_t coll;
+	  memset((void *)&coll, 0, sizeof(coll));
+	  
+	  //Setup for broadcast
+	  coll.Op_Code = MUHWI_COLLECTIVE_OP_CODE_OR;
+	  coll.Word_Length = 4; //preset to doubles and uint8 operations
+	  coll.Misc =
+	    MUHWI_PACKET_VIRTUAL_CHANNEL_USER_SUB_COMM |
+	    MUHWI_COLLECTIVE_TYPE_ALLREDUCE;
+	  coll.Class_Route = 0;
+	  
+	  _modeldesc.setCollectiveFields (&coll);
+	  _modeldesc.setDataPacketType (MUHWI_COLLECTIVE_DATA_PACKET_TYPE);
+	  _modeldesc.PacketHeader.NetworkHeader.collective.Byte8.Size = 16;
+	  _modeldesc.setTorusInjectionFIFOMap(MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_CUSER);
+  
+	  // --------------------------------------------------------------------                                                      
+	  // Set the direct put descriptor fields                                                                                      
+	  // --------------------------------------------------------------------                                                      
+	  MUSPI_DirectPutDescriptorInfoFields dput;
+	  memset((void *)&dput, 0, sizeof(dput));
+	    
+	  dput.Rec_Payload_Base_Address_Id = _pBatID;
+	  dput.Rec_Payload_Offset          = 0;
+	  dput.Rec_Counter_Base_Address_Id = _cBatID;
+	  dput.Rec_Counter_Offset          = 0;
+	  dput.Pacing                      = MUHWI_PACKET_DIRECT_PUT_IS_NOT_PACED;
+	    
+	  _modeldesc.setDirectPutFields (&dput);
+	  _modeldesc.setMessageUnitPacketType (MUHWI_PACKET_TYPE_PUT);  
+	  //TRACE_FN_EXIT();		    
+	}
+
+	pami_result_t  postShortCollective (uint32_t        opcode,
+					    uint32_t        sizeoftype,
+					    uint32_t        bytes,
+					    char          * src,
+					    char          * dst,
+					    pami_event_function   cb_done,
+					    void          * cookie) 
+	{
+	  PAMI_assert (bytes <= _tempSize);
+	  memcpy(_tempBuf, src, bytes);	  
+
+	  int collchannel = 0;
+	  InjChannel & channel = _mucontext.injectionGroup.channel[collchannel];
+	  size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
+	  
+	  if (ndesc > 0) {
+	    _colCounter = bytes;
+	    // Clone the message descriptors directly into the injection fifo.
+	    MUSPI_DescriptorBase * d = (MUSPI_DescriptorBase *) channel.getNextDescriptor ();	    
+	    _modeldesc.clone (*d);	    	    
+	    d->setPayload (_tempPAddr, bytes);	      
+	    _mucontext.setThroughputCollectiveBufferBatEntry(_tempPAddr);
+	    //d->PacketHeader.messageUnitHeader.Packet_Types.Direct_Put.Rec_Payload_Base_Address_Id = _pBatID;
+
+	    //MUSPI_DescriptorDumpHex ((char *)"Coll Descriptor", (MUHWI_Descriptor_t *)d);
+	    channel.injFifoAdvanceDesc ();		
+	    
+	    _scompmsg._cb_done = cb_done;
+	    _scompmsg._cookie  = cookie;
+	    _scompmsg._dstBuf  = dst;
+	    _scompmsg._bytes   = bytes;
+	    _scompmsg._counterAddress = &_colCounter;
+	    _scompmsg._tempBuf    = _tempBuf;
+
+	    PAMI::Device::Generic::GenericThread *work = new (&_work) PAMI::Device::Generic::GenericThread(short_advance, &_scompmsg);
+	    _mucontext.getProgressDevice()->postThread(work);
+
+	    return PAMI_SUCCESS;
+	  }
+
+	  return PAMI_ERROR;	  
+	}
+
+	pami_result_t postCollective (uint8_t                    (&state)[sizeof_msg],
+				      uint32_t                   opcode,
+				      uint32_t                   sizeoftype,
+				      uint32_t                   bytes,
+				      PAMI::PipeWorkQueue      * src,
+				      PAMI::PipeWorkQueue      * dst,
+				      pami_event_function        cb_done,
+				      void                     * cookie) 
+	{
+#if 0
+	  new (state) InjecDPutCollective (&_mucontext,
+					   &_modelDesc,
+					   opcode,
+					   sizeoftype,
+					   bytes,
+					   src, 
+					   dst,
+					   cb_done,
+					   cookie);
+#endif
+
+	  return PAMI_SUCCESS;
+	}
+
+	
+	pami_result_t postBroadcast (uint8_t                    (&state)[sizeof_msg],
+				     uint32_t                   bytes,
+				     PAMI::PipeWorkQueue      * src,
+				     PAMI::PipeWorkQueue      * dst,
+				     pami_event_function        cb_done,
+				     void                     * cookie,
+				     char                     * zerobuf,
+				     uint32_t                   zbytes,
+				     bool                       isroot) 
+	{
+	  //Pin the buffer to the bat id. On the root the src buffer
+	  //is used to receive the broadcast message
+	  char *dstbuf = NULL;	  
+	  if (isroot) 
+	    dstbuf = src->bufferToConsume();
+	  else
+	    dstbuf = dst->bufferToProduce();
+	  
+	  Kernel_MemoryRegion_t memRegion;
+	  uint rc = 0;
+	  rc = Kernel_CreateMemoryRegion (&memRegion, dstbuf, bytes);
+	  PAMI_assert ( rc == 0 );
+	  uint64_t paddr = (uint64_t)memRegion.BasePa +
+	    ((uint64_t)dstbuf - (uint64_t)memRegion.BaseVa);
+	  _mucontext.setThroughputCollectiveBufferBatEntry(paddr);
+	    
+	  _colCounter = bytes;	  
+	  CollectiveDPutMulticast *msg = new (state) CollectiveDPutMulticast (_mucontext,
+									      cb_done,
+									      cookie,
+									      (isroot) ? src : dst,
+ 									      bytes,
+									      zerobuf,
+									      zbytes, 
+									      isroot,
+									      &_colCounter);	  
+	  _modeldesc.clone (msg->_desc);	  
+	  msg->_desc.PacketHeader.messageUnitHeader.Packet_Types.Direct_Put.Rec_Payload_Base_Address_Id = _pBatID;
+	  
+	  msg->init();
+	  bool flag = msg->advance();
+
+	  if (!flag) {
+	    PAMI::Device::Generic::GenericThread *work = new (&_work) PAMI::Device::Generic::GenericThread(advance, msg);
+	    _mucontext.getProgressDevice()->postThread(work);
+	  }
+	  
+	  return PAMI_SUCCESS;
+	}
+
+
+	static pami_result_t short_advance (pami_context_t     context,
+					    void             * cookie) 
+	{
+	  ShortCompletionMsg  *scmsg = (ShortCompletionMsg *) cookie;
+	  
+	  if (*scmsg->_counterAddress == 0) {
+	    mem_sync();
+	    if (scmsg->_dstBuf)
+	      memcpy (scmsg->_dstBuf, scmsg->_tempBuf, scmsg->_bytes);
+	    
+	    if (scmsg->_cb_done)
+	      scmsg->_cb_done (context, scmsg->_cookie, PAMI_SUCCESS);
+	    return PAMI_SUCCESS;
+	  }
+	    
+	  return PAMI_EAGAIN;
+	}
+
+	static pami_result_t advance (pami_context_t     context,
+				      void             * cookie)  
+	{
+	  MessageQueue::Element *msg = (MessageQueue::Element *) cookie;
+	  bool done = msg->advance();
+	  if (done)
+	    return PAMI_SUCCESS;	  
+	  return PAMI_EAGAIN;
+	}
+
+      protected:
+	static char                              * _tempBuf;           /// Temporary buffer for short collectives
+	static uint32_t                            _tempSize;          /// Size of temporary buffer	
+	
+	MU::Context                              & _mucontext;         /// Pointer to MU context
+	MUSPI_DescriptorBase                       _modeldesc;         /// Model descriptor
+	volatile uint64_t                          _colCounter;        /// Counter used in the collective op
+	uint64_t                                   _tempPAddr;         /// Physical address of the temp buf
+	int32_t                                    _tBatID;            /// Bat id of the temporary buffer
+	int32_t                                    _pBatID;            /// payload bat id
+	int32_t                                    _cBatID;            /// counter bat id
+	ShortCompletionMsg                         _scompmsg;
+	pami_work_t                                _work;
+      };      
+    };
+  };
+};
+
+#endif

@@ -36,7 +36,7 @@ namespace CCMI
           PAMI_GEOMETRY_CLASS                * _geometry;
           pami_broadcast_t                     _xfer_broadcast;
           PAMI::Topology                       _root;
-          PAMI::Topology                       _destinations;
+          PAMI::Topology                     * _destinations;
           PAMI::PipeWorkQueue                  _pwq;
           pami_multicast_t                     _minfo;
           void                               * _deviceInfo;
@@ -55,15 +55,19 @@ namespace CCMI
 
             _deviceInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
 
-            PAMI::Topology all;
-            all = *(PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
-            all.subtractTopology(&_destinations,  &_root);
+            //PAMI::Topology all;
+            //all = *(PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
+            //all.subtractTopology(&_destinations,  &_root);
 
+	    _destinations = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
+
+#if 0
             DO_DEBUG(for (unsigned j = 0; j < _root.size(); ++j) fprintf(stderr, "root[%u]=%zu, size %zu\n", j, (size_t)_root.index2Rank(j), _root.size()));
 
             DO_DEBUG(for (unsigned j = 0; j < _destinations.size(); ++j) fprintf(stderr, "destinations[%u]=%zu, size %zu\n", j, (size_t)_destinations.index2Rank(j), _destinations.size()));
 
             DO_DEBUG(for (unsigned j = 0; j < all.size(); ++j) fprintf(stderr, "all[%u]=%zu, size %zu\n", j, (size_t)all.index2Rank(j), all.size()));
+#endif
 
             /// \todo only supporting PAMI_BYTE right now
             PAMI_assertf(cmd->cmd.xfer_broadcast.type == PAMI_BYTE, "Not PAMI_BYTE? %#zX\n", (size_t)cmd->cmd.xfer_broadcast.type);

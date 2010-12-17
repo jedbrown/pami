@@ -120,6 +120,19 @@ namespace PAMI
     CCMI::ConnectionManager::SimpleConnMgr > MUMultiCombineFactory;
 
     //----------------------------------------------------------------------------
+    // 'Pure' MU allsided dput multicast
+    //----------------------------------------------------------------------------
+    void MUCollectiveDputMulticastMetaData(pami_metadata_t *m)
+    {
+      strncpy(&m->name[0], "MUCollectiveDputMulticombine", 32);
+    }
+
+    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite,
+    MUCollectiveDputMulticastMetaData,
+    CCMI::ConnectionManager::SimpleConnMgr > MUCollectiveDputMulticastFactory;
+
+
+    //----------------------------------------------------------------------------
     // 'Pure' MU allsided multicast built on active message multicast with an
     // synchronizing multisync
     //
@@ -680,6 +693,7 @@ namespace PAMI
 
               if (_axial_mu_dput_ni->status() != PAMI_SUCCESS) _axial_mu_dput_ni = NULL; // Not enough resources?
 
+              _mu_global_dput_ni    = new (_mu_global_dput_ni_storage) MUGlobalDputNI (_mu_device, client, context, context_id, client_id, _dispatch_id);
 //          if(__global.topology_local.size() < 64)
               {
                 _axial_shmem_mu_dput_ni     = new (_axial_shmem_mu_dput_ni_storage    ) T_AxialShmemDputNativeInterface(_mu_device, client, context, context_id, client_id, _dispatch_id);
@@ -691,6 +705,8 @@ namespace PAMI
               _sub_mu_msync_factory = new (_sub_mu_msync_factory_storage) SubMUMultiSyncFactory(&_sconnmgr, _mu_ni_sub_msync);
               _mu_mcomb_factory     = new (_mu_mcomb_factory_storage    ) MUMultiCombineFactory(&_sconnmgr, _mu_ni_mcomb);
 
+
+              _mucollectivedputmulticastfactory    = new (_mucollectivedputmulticaststorage ) MUCollectiveDputMulticastFactory(&_sconnmgr, _mu_global_dput_ni);
 
               if (_axial_shmem_mu_dput_ni)
                 {
@@ -721,6 +737,8 @@ namespace PAMI
               // Can't be ctor'd unless the NI was created
               _mu_mcast2_factory = new (_mu_mcast2_factory_storage) MUMultiCast2Factory(&_csconnmgr, _mu_ni_mcast2);
               _mu_mcast3_factory = new (_mu_mcast3_factory_storage) MUMultiCast3Factory(&_sconnmgr, _mu_ni_mcast3);
+
+
               _line_mcast2_factory = new (_line_mcast2_factory_storage) LineMultiCast2Factory(&_csconnmgr, _axial_mu_ni);
               //_line_dput_mcast2_factory = new (_line_dput_mcast2_factory_storage) LineMultiCast2Factory(&_csconnmgr, _axial_mu_dput_ni);
             }
@@ -808,6 +826,9 @@ namespace PAMI
                     geometry->addCollective(PAMI_XFER_BROADCAST,  _shmem_mu_rectangle_dput_broadcast_factory, _context_id);
                   else if (_mu_rectangle_dput_broadcast_factory)
                     geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_rectangle_dput_broadcast_factory, _context_id);
+
+                  if (_mucollectivedputmulticastfactory)
+                    geometry->addCollective(PAMI_XFER_BROADCAST,  _mucollectivedputmulticastfactory, _context_id);
 
 #if 0  // allgatherv hangs 
 
@@ -1084,6 +1105,9 @@ namespace PAMI
         T_AxialShmemDputNativeInterface                *_axial_shmem_mu_dput_ni;
         uint8_t                                         _axial_shmem_mu_dput_ni_storage[sizeof(T_AxialShmemDputNativeInterface)];
 
+        MUGlobalDputNI                                 *_mu_global_dput_ni;
+        uint8_t                                         _mu_global_dput_ni_storage [sizeof(MUGlobalDputNI)];
+
         // Barrier factories
         MUMultiSyncFactory                             *_mu_msync_factory;
         uint8_t                                         _mu_msync_factory_storage[sizeof(MUMultiSyncFactory)];
@@ -1120,6 +1144,9 @@ namespace PAMI
 
         MultiCombine2DeviceFactoryNP                   *_mcomb2dNP_composite_factory;
         uint8_t                                         _mcomb2dNP_composite_factory_storage[sizeof(MultiCombine2DeviceFactoryNP)];
+
+        MUCollectiveDputMulticastFactory               *_mucollectivedputmulticastfactory;
+        uint8_t                                         _mucollectivedputmulticaststorage[sizeof(MUCollectiveDputMulticastFactory)];
 
         RectangleDput1ColorBroadcastFactory            *_mu_rectangle_1color_dput_broadcast_factory;
         uint8_t                                         _mu_rectangle_1color_dput_broadcast_factory_storage[sizeof(RectangleDput1ColorBroadcastFactory)];
