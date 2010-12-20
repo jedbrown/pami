@@ -176,6 +176,7 @@ extern "C"
     PAMI_CLIENT_TASK_ID,            /**< Q : size_t : ID of this task (AKA "rank") */
     PAMI_CLIENT_WTIMEBASE_MHZ,      /**< Q : size_t : Frequency of the WTIMEBASE clock, in units of 10^6/seconds.  This can be used to convert from PAMI_Wtimebase to PAMI_Timer manually. */
     PAMI_CLIENT_WTICK,              /**< Q : double : This has the same definition as MPI_Wtick(). */
+    PAMI_CLIENT_ASYNC_GUARANTEE,    /**< Q : size_t : Asynchronous progress can not be \em guaranteed if zero; however asynchronous progress may still be available */
 
     PAMI_CONTEXT_DISPATCH_ID_MAX = 200, /**< Q : size_t : Maximum allowed dispatch id, see PAMI_Dispatch_set() */
 
@@ -3190,6 +3191,90 @@ extern "C"
    * \retval PAMI_INVAL    The context is invalid.
    */
   pami_result_t PAMI_Context_unlock (pami_context_t context);
+
+/**
+ * \brief Asynchronous progress event handler
+ * 
+ * This function is not a callback because it is not invoked as a result
+ * of PAMI_Context_advance() or PAMI_Context_advancev(). The context
+ * parameter is not the context that invoked the progress event handler, 
+ * but instead is the context that must be advanced.
+ * 
+ * \param[in] context Communication context that requires progress
+ * \param[in] cookie  Asynchronous progress event handler application argument
+ */
+typedef void (*pami_async_function) (pami_context_t   context,
+                                     void           * cookie);
+
+/**
+ * \brief Enable asynchronous progress for a context
+ *
+ * The \c progress_fn callback is invoked when an event occurs on the context
+ * that requires processing with the PAMI_Context_advance() function. The
+ * context is \b not locked when the progress callback is invoked. The
+ * application must guarantee thread safety when advancing the context as
+ * the progress function may be invoked by multiple asynchronous execution
+ * resources.
+ * 
+ * A non-`NULL` progress function will inform the application that a specific
+ * communication context must be advanced. It does \b not imply that an
+ * application callback will be invoked, nor that network traffic will not
+ * be processed by hardware or software. 
+ * 
+ * \note A \c NULL progress function will result in calls to the internal
+ *       implementation of the PAMI_Context_trylock(), PAMI_Context_advance(),
+ *       and PAMI_Context_unlock() functions. Applications that wish to use
+ *       an alternative mechanism than PAMI_Contex_[try]lock() to ensure
+ *       thread-safe access to communication contexts must provide a non-`NULL`
+ *       asynchronous progress function.
+ * 
+ * If the value of the \c PAMI_CLIENT_ASYNC_GUARANTEE client configuration
+ * attribute is \c true, then the user will know that the \c suspend_fn and
+ * \c resume_fn will never be invoked because the implementation can guarantee
+ * asynchronous progress at all times. If the value is \c false then the
+ * \c suspend_fn and \c resume_fn may be invoked due to resource constraints.
+ *
+ * For example, a boolean variable may be updated from within the \c suspend_fn
+ * and the \c resume_fn that will direct the main, or computation, thread
+ * to whether or not to actively advance the context using the
+ * PAMI_Context_advance() function.
+ *
+ * \note It is possible, due to resource constraints, that asynchronous progress
+ *       will be enabled and then the suspend function will be immediately
+ *       invoked.
+ *  
+ * \param [in] context     Communication context
+ * \param [in] progress_fn Event function invoked when the context must be
+ *                         advanced. May be \c NULL.
+ * \param [in] suspend_fn  Event function invoked when asynchronous progress
+ *                         on the context is suspended. A \c NULL callback
+ *                         will disable the suspend notification.
+ * \param [in] resume_fn   Event function invoked when asynchronous progress
+ *                         on the context is resumed after a previous
+ *                         suspension. A \c NULL callback will disable the
+ *                         resume notification.
+ * \param [in] cookie      Event cookie for all event callbacks
+ * 
+ * \retval PAMI_SUCCESS Asynchronous progress was enabled for the context
+ * \retval PAMI_ERROR   Asynchronous progress was not enabled for the context
+ **/
+pami_result_t PAMI_Context_async_progress_enable (pami_context_t        context,
+                                                  pami_async_function   progress_fn,
+                                                  pami_async_function   suspend_fn,
+                                                  pami_async_function   resume_fn,
+                                                  void                * cookie);
+
+/**
+ * \brief Disable asynchronous progress for a context
+ *
+ * \param [in] context Communication context
+ * 
+ * \retval PAMI_SUCCESS Asynchronous progress was disabled for the context
+ * \retval PAMI_ERROR   Asynchronous progress was not disabled for the context,
+ *                      or asynchronous progress on the context was never
+ *                      enabled
+ **/
+pami_result_t PAMI_Context_async_progress_disable (pami_context_t context);
 
   /** \} */ /* end of "context" group */
 
