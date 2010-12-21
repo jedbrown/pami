@@ -23,6 +23,7 @@
 #include "components/devices/shmem/shaddr/BgqShaddrPacketModel.h"
 #include "components/fifo/FifoPacket.h"
 #include "components/fifo/linear/LinearFifo.h"
+#include "components/fifo/wrap/WrapFifo.h"
 
 #ifndef ENABLE_NEW_SHMEM
 #include "components/devices/workqueue/LocalBcastWQMessage.h"
@@ -55,6 +56,7 @@
 #include "p2p/protocols/SendPWQ.h"
 
 #include "components/atomic/bgq/L2Counter.h"
+#include "components/atomic/bgq/L2CounterBounded.h"
 #include "components/atomic/native/NativeCounter.h"
 #include "components/atomic/counter/CounterBarrier.h"
 #include "components/atomic/indirect/IndirectBarrier.h"
@@ -134,7 +136,8 @@ namespace PAMI
 
   typedef Fifo::FifoPacket <32, 160> ShmemPacket;
   //typedef Fifo::LinearFifo<ShmemPacket, Counter::Indirect<Counter::Native> > ShmemFifo;
-  typedef Fifo::LinearFifo<ShmemPacket, PAMI::Counter::BGQ::IndirectL2> ShmemFifo;
+  //typedef Fifo::LinearFifo<ShmemPacket, PAMI::Counter::BGQ::IndirectL2> ShmemFifo;
+  typedef Fifo::WrapFifo<ShmemPacket, PAMI::Counter::BGQ::IndirectL2Bounded> ShmemFifo;
   typedef Device::ShmemDevice<ShmemFifo, Device::Shmem::BgqShaddrReadOnly> ShmemDevice;
   typedef Device::Shmem::PacketModel<ShmemDevice> ShmemPacketModel;
   //typedef Device::Shmem::BgqShaddrPacketModel<ShmemDevice> ShmemPacketModel;
