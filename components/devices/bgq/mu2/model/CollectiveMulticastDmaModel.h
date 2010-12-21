@@ -47,15 +47,15 @@ namespace PAMI
 	    ((Topology *)mcast->src_participants)->rankList(&ranks);
 	    bool isroot = (ranks[0] == __global.mapping.task());
 
-	    if (mcast->bytes <= CollectiveDmaModelBase::_tempSize) {	      
+	    if (mcast->bytes <= CollectiveDmaModelBase::_collstate._tempSize) {	      
 	      if (isroot) {
 		PipeWorkQueue *spwq = (PipeWorkQueue *) mcast->src;
 		char *src = spwq->bufferToConsume();
 		uint32_t sbytes = spwq->bytesAvailableToConsume();
 		
 		if (sbytes == mcast->bytes) {
-		  pami_result_t rc = CollectiveDmaModelBase::postShortCollective (MUHWI_COLLECTIVE_OP_CODE_UNSIGNED_ADD,
-										  8,
+		  pami_result_t rc = CollectiveDmaModelBase::postShortCollective (MUHWI_COLLECTIVE_OP_CODE_OR,
+										  4,
 										  mcast->bytes,
 										  src,
 										  NULL,
@@ -68,19 +68,19 @@ namespace PAMI
 	      else {
 		PipeWorkQueue *dpwq = (PipeWorkQueue *) mcast->dst;
 		char *dst = dpwq->bufferToProduce();
-		uint32_t dbytes = dpwq->bytesAvailableToProduce();
+		//uint32_t dbytes = dpwq->bytesAvailableToProduce();
 		
-		if (dbytes == mcast->bytes) {
-		  pami_result_t rc = CollectiveDmaModelBase::postShortCollective (MUHWI_COLLECTIVE_OP_CODE_UNSIGNED_ADD,
-										  8,
-										  mcast->bytes,
-										  _zeroBuf,
-										  dst,
-										  mcast->cb_done.function,	       
-										  mcast->cb_done.clientdata);
-		  if (rc == PAMI_SUCCESS)
+		//		if (dbytes == mcast->bytes) {
+		pami_result_t rc = CollectiveDmaModelBase::postShortCollective (MUHWI_COLLECTIVE_OP_CODE_OR,
+										4,
+										mcast->bytes,
+										_zeroBuf,
+										dst,
+										mcast->cb_done.function,	       
+										mcast->cb_done.clientdata);
+		if (rc == PAMI_SUCCESS)
 		    return PAMI_SUCCESS;
-		}
+		//}
 	      }
 	    }
 	    

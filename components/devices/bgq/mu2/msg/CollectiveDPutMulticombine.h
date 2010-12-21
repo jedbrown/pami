@@ -1,6 +1,6 @@
 
-#ifndef __components_devices_bgq_mu2_msg_collective_DPutMulticast_h__
-#define __components_devices_bgq_mu2_msg_collective_DPutMulticast_h__
+#ifndef __components_devices_bgq_mu2_msg_collective_DPutMulticombine_h__
+#define __components_devices_bgq_mu2_msg_collective_DPutMulticombine_h__
 
 #include "spi/include/mu/DescriptorBaseXX.h"
 #include "util/trace.h"
@@ -17,15 +17,10 @@ namespace PAMI
     {      
       ///
       /// \brief Inject one or more collective descriptors into an
-      /// inject fifo and wait for the collective to complete. This
-      /// code currently only works with linear FIFOs. For the
-      /// collective DMA when data is injected it must have buffers
-      /// posted to receive the data on the destinations. The root of
-      /// the broadcast injects data while the remaining nodes inject
-      /// zeroes. The data is bit ored and the result is accumulated on the non
-      /// root nodes.
+      /// injection fifo and wait for the collective to complete. This
+      /// code currently only works with linear PipeWorkQueues. 
       ///
-      class CollectiveDPutMulticast : public MessageQueue::Element
+      class CollectiveDPutMulticombine : public MessageQueue::Element
       {
       public:
 	///
@@ -34,31 +29,33 @@ namespace PAMI
 	/// \param[in] context the MU context for this message
 	/// \param[in] fn  completion event fn
 	/// \param[in] cookie callback cookie
-	/// \param[in] pwq pipeworkqueue that has data to be consumed
+	/// \param[in] spwq pipeworkqueue that has data to be consumed
+	/// \param[in] dpwq pipeworkqueue where data has to be produced
 	/// \param[in] length the totaly number of bytes to be transfered
-	/// \param[in] zerobuf buffer of zeros
-	/// \param[in] zsize size of zero buffer
-	/// \param[in] counterAddress address of the counter address
+	/// \param[in] op operation identifier
+	/// \param[in] sizeoftype the size of the datatype
+	/// \param[in] counterAddress address of the counter
 	///
-	CollectiveDPutMulticast (MU::Context         & context,
-				 pami_event_function   fn,
-				 void                * cookie,					  
-				 PipeWorkQueue       * pwq,
-				 uint32_t              length,
-				 char                * zerobuf,
-				 unsigned              zsize,
-				 bool                  isroot,
-				 volatile uint64_t   * counterAddress):
+	CollectiveDPutMulticombine (MU::Context         & context,
+				    pami_event_function   fn,
+				    void                * cookie,					  
+				    PipeWorkQueue       * spwq,
+				    PipeWorkQueue       * dpwq,
+				    uint32_t              length,
+				    uint32_t              op,
+				    uint32_t              sizeoftype,
+				    volatile uint64_t   * counterAddress):
 	_context (context),
 	  _injectedBytes (0),
 	  _length (length),	
-	  _pwq (pwq),
+	  _spwq (spwq),
+	  _dpwq (dpwq),
 	  _fn (fn),
 	  _cookie (cookie),
+	  //	  _isRoot (isroot),
+	  _op (op),
+	  _sizeoftype(sizeoftype),
 	  _doneInjecting (false),
-	  _zBuf (zerobuf),
-	  _zSize (zsize),
-	  _isRoot (isroot),
 	  _cc (length),
 	  _counterAddress (counterAddress)
 	  {
@@ -66,16 +63,13 @@ namespace PAMI
 	    //TRACE_FN_EXIT();
 	  };
 	
-	inline ~CollectiveDPutMulticast () {};
+	inline ~CollectiveDPutMulticombine () {};
 	
 	void init() {
-	  char * payload = NULL;
-	  if (_isRoot) {
-	    payload = (char*)_pwq->bufferToConsume();
-	    PAMI_assert (payload != NULL);
-	  }
-	  else 
-	    payload = _zBuf;
+	  char * payload = NULL;	  
+	  //Find the src buf
+	  payload = (char*)_spwq->bufferToConsume();
+	  PAMI_assert (payload != NULL);
 	  
 	  // Determine the physical address of the (temporary) payload
 	  // buffer from the model state memory.
@@ -87,6 +81,8 @@ namespace PAMI
 	    ((uint64_t)payload - (uint64_t)memRegion.BaseVa);
 	  
 	  _desc.setPayload (paddr, 0); 
+	  _desc.setOpCode (_op);
+	  _desc.setWordLength (_sizeoftype);
 	}
 
 	///
@@ -111,16 +107,9 @@ namespace PAMI
 	    return true;
 
 	  uint64_t bytes_available = 0;	  
-	  if (_isRoot) {
-	    bytes_available = _pwq->bytesAvailableToConsume() - _injectedBytes;
-	    if (bytes_available == 0)
-	      return false;
-	  }
-	  else {
-	    bytes_available = _length - _injectedBytes;
-	    if (bytes_available > _zSize)
-	      bytes_available = _zSize;
-	  }
+	  bytes_available = _spwq->bytesAvailableToConsume() - _injectedBytes;
+	  if (bytes_available == 0)
+	    return false;
 	  
 	  _desc.Message_Length = bytes_available;	  
 	  //The is computed when the first descriptor for this round is injected
@@ -144,8 +133,7 @@ namespace PAMI
 	  
 	  _injectedBytes  += bytes_available; 
 	  _desc.setRecPutOffset(_injectedBytes);
-	  if (_isRoot) 
-	    _desc.Pa_Payload  = _desc.Pa_Payload + bytes_available;
+	  _desc.Pa_Payload  = _desc.Pa_Payload + bytes_available;
 	  
 	  _doneInjecting = (_injectedBytes == _length); 
 	
@@ -158,16 +146,12 @@ namespace PAMI
 	  if (cval == _cc)
 	    return (cval == 0);
 	  
-	  mem_sync();
-	  
-	  if (!_isRoot) 
-	    _pwq->produceBytes(_cc - cval);
-	  
+	  mem_sync();	  
+	  _dpwq->produceBytes(_cc - cval);	  
 	  _cc = cval;
 	  
 	  if (cval == 0) {
-	    if (_isRoot) //Call consume bytes only once. 
-	      _pwq->consumeBytes(_length);
+	    _spwq->consumeBytes(_length);
 	    
 	    if (_fn)
 	      _fn (NULL, _cookie, PAMI_SUCCESS);
@@ -194,8 +178,6 @@ namespace PAMI
 	  return flag;
 	}
 
-	inline PipeWorkQueue *getPwq() { return _pwq; }
-
 	MUSPI_DescriptorBase     _desc; //The descriptor is setup externally and contains batids, sndbuffer base and msg length
 
       protected:
@@ -203,19 +185,20 @@ namespace PAMI
 	MU::Context            & _context;
 	uint32_t                 _injectedBytes;
 	uint32_t                 _length;        //Number of bytes to transfer
-	PipeWorkQueue          * _pwq;
+	PipeWorkQueue          * _spwq;
+	PipeWorkQueue          * _dpwq;
 	pami_event_function      _fn;
 	void                   * _cookie;
+	uint32_t                 _op;
+	uint32_t                 _sizeoftype;
 	bool                     _doneInjecting;
-	char                   * _zBuf;
-	unsigned                 _zSize;
-	bool                     _isRoot;
+	//bool                     _isRoot;
 	uint64_t                 _cc;
 	volatile uint64_t      * _counterAddress;
 
-      }; // class     PAMI::Device::MU::CollectiveDPutMulticast     
+      }; // class     PAMI::Device::MU::CollectiveDPutMulticombine     
     };   // namespace PAMI::Device::MU                          
   };     // namespace PAMI::Device           
 };       // namespace PAMI                                   
 
-#endif // __components_devices_bgq_mu2_msg_CollectiveDPutMulticast_h__                     
+#endif // __components_devices_bgq_mu2_msg_CollectiveDPutMulticombine_h__                     

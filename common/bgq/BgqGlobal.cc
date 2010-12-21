@@ -44,6 +44,15 @@ extern "C" unsigned __isMambo() {return __global.personality._is_mambo? 1:0;};
 PAMI::Device::CommThread::Factory __CommThreadGlobal(&__global.mm, &__global.l2atomicFactory.__nodescoped_mm);
 #endif // USE_COMMTHREADS
 
+
+#include "components/devices/bgq/mu2/model/CollectiveMulticastDmaModel.h"
+
+char *PAMI::Device::MU::CollectiveMulticastDmaModel::_zeroBuf;
+uint32_t PAMI::Device::MU::CollectiveMulticastDmaModel::_zeroBytes;
+
+PAMI::Device::MU::CollectiveDmaModelBase::CollState PAMI::Device::MU::CollectiveDmaModelBase::_collstate;
+
+
 //
 // astyle info    http://astyle.sourceforge.net
 //

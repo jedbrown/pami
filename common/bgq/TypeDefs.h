@@ -80,6 +80,8 @@
 #include "components/devices/shmemcoll/ShmemCollDesc.h"
 #include "components/devices/shmemcoll/ShmemColorMcstModel.h"
 #include "components/devices/bgq/mu2/model/CollectiveMulticastDmaModel.h"
+#include "components/devices/bgq/mu2/model/CollectiveMulticombineDmaModel.h"
+
 
 #include "components/atomic/native/NativeCounter.h"
 #include "components/event/EventDevice.h"
@@ -116,7 +118,9 @@ namespace PAMI
   typedef BGQNativeInterfaceAS < MUDevice,
   Device::MU::CollectiveMulticastDmaModel,
   Device::MU::MultisyncModel<false, false>,
-  Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false> > MUGlobalDputNI;
+  Device::MU::CollectiveMulticombineDmaModel
+  //Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false>
+  > MUGlobalDputNI;
   
   typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::Native> ShmemCollDesc;
   typedef PAMI::Device::Shmem::ShmemColorMcstModel<PAMI::Device::Generic::Device, ShmemCollDesc> ShaddrMcstModel;

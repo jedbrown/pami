@@ -40,13 +40,11 @@ void done_fn       (pami_context_t   context,
   (*((size_t *)cookie))--;
 }
 
-#define MAX_BUF_SIZE  16
-#define CHUNK_SIZE    16
-#define MSG_SIZE      1
+#define MAX_BUF_SIZE   1024*1024
+#define CHUNK_SIZE     1024
+#define SHORT_BUF_SIZE 1
 
 char bcastbuf [MAX_BUF_SIZE];
-
-
 
 
 int main(int argc, char ** argv)
@@ -125,6 +123,7 @@ int main(int argc, char ** argv)
     //ur.u.n_torus.coords[0] = 1;
     PAMI_Task2Network (1, &ur);
 
+#if 0
     printf ("Target coords %ld %ld %ld %ld %ld %ld\n", 
 	    ur.u.n_torus.coords[0],
 	    ur.u.n_torus.coords[1],
@@ -132,6 +131,7 @@ int main(int argc, char ** argv)
 	    ur.u.n_torus.coords[3],
 	    ur.u.n_torus.coords[4],
 	    ur.u.n_torus.coords[5]);
+#endif
 
     memset (&dstt, 0, sizeof(dstt));
     new (&dstt) PAMI::Topology (&ll, &ur, &ll, istorus); //Root is the ll node too
@@ -140,10 +140,9 @@ int main(int argc, char ** argv)
 
     srcp.produceBytes (MAX_BUF_SIZE);
     model.postMulticast (buf, &mcast, NULL);
-    Delay (1000);
   }
   else  {
-    fprintf (stderr, "Calling Post Multicast");
+    //fprintf (stderr, "Calling Post Multicast");
     model.postMulticast (buf, &mcast, NULL);
   }
   
@@ -155,20 +154,14 @@ int main(int argc, char ** argv)
     PAMI_Context_advancev(&context, 1, 1);
   }
   
-  Delay (1000);
-
   for (int i = 0; i < MAX_BUF_SIZE; i++)
     PAMI_assert (bcastbuf[i] == (i&0xff));
 
+  //Test Pipelining
   for (int i = 0; i < MAX_ITER; i++) {
     done_count = 1;
     srcp.reset();
-    if (myrank == 0) {
-      model.postMulticast (buf, &mcast, NULL);
-      Delay (1000);
-    }
-    else  
-      model.postMulticast (buf, &mcast, NULL);
+    model.postMulticast (buf, &mcast, NULL);
     
     while (done_count) {
       if (myrank == 0 && (srcp.getBytesProduced() < MAX_BUF_SIZE)) {
@@ -179,6 +172,44 @@ int main(int argc, char ** argv)
     }
   }
   
-  //test (mu0, model, eager, "completion array");
+  uint64_t s_start = GetTimeBase();
+
+  //Short Performance test
+  mcast.bytes = SHORT_BUF_SIZE;
+  for (int i = 0; i < MAX_ITER; i++) {
+    done_count = 1;
+    srcp.reset();
+    if (myrank == 0)
+      srcp.produceBytes (SHORT_BUF_SIZE);
+    
+    model.postMulticast (buf, &mcast, NULL);
+    
+    while (done_count) 
+      PAMI_Context_advancev(&context, 1, 1);
+  }
+
+  uint64_t s_end = GetTimeBase();
+
+  uint64_t l_start = GetTimeBase();
+  
+  //Large Performance test
+  mcast.bytes = MAX_BUF_SIZE;
+  for (int i = 0; i < MAX_ITER; i++) {
+    done_count = 1;
+    srcp.reset();
+    if (myrank == 0)
+      srcp.produceBytes (MAX_BUF_SIZE);
+    
+    model.postMulticast (buf, &mcast, NULL);
+    
+    while (done_count) 
+      PAMI_Context_advancev(&context, 1, 1);
+  }
+
+  uint64_t l_end = GetTimeBase();
+
+  printf ("Broadcast %d byte latency %ld cycles, %d byte latency %ld cycles", 
+	  SHORT_BUF_SIZE, (s_end - s_start)/MAX_ITER, MAX_BUF_SIZE, (l_end - l_start)/MAX_ITER);
+
   return 0;
 }

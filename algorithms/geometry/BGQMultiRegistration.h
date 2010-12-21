@@ -122,15 +122,19 @@ namespace PAMI
     //----------------------------------------------------------------------------
     // 'Pure' MU allsided dput multicast
     //----------------------------------------------------------------------------
-    void MUCollectiveDputMulticastMetaData(pami_metadata_t *m)
+    void MUCollectiveDputMetaData(pami_metadata_t *m)
     {
-      strncpy(&m->name[0], "MUCollectiveDputMulticombine", 32);
+      strncpy(&m->name[0], "MUCollectiveDput", 32);
     }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite,
-    MUCollectiveDputMulticastMetaData,
+    MUCollectiveDputMetaData,
     CCMI::ConnectionManager::SimpleConnMgr > MUCollectiveDputMulticastFactory;
 
+
+    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite,
+    MUCollectiveDputMetaData,
+    CCMI::ConnectionManager::SimpleConnMgr > MUCollectiveDputMulticombineFactory;
 
     //----------------------------------------------------------------------------
     // 'Pure' MU allsided multicast built on active message multicast with an
@@ -708,6 +712,8 @@ namespace PAMI
 
               _mucollectivedputmulticastfactory    = new (_mucollectivedputmulticaststorage ) MUCollectiveDputMulticastFactory(&_sconnmgr, _mu_global_dput_ni);
 
+	      _mucollectivedputmulticombinefactory    = new (_mucollectivedputmulticombinestorage ) MUCollectiveDputMulticombineFactory(&_sconnmgr, _mu_global_dput_ni);	      
+
               if (_axial_shmem_mu_dput_ni)
                 {
                   TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration()  RectangleDput1ColorBroadcastFactory\n", this));
@@ -827,8 +833,11 @@ namespace PAMI
                   else if (_mu_rectangle_dput_broadcast_factory)
                     geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_rectangle_dput_broadcast_factory, _context_id);
 
-                  if (_mucollectivedputmulticastfactory)
+                  if (_mucollectivedputmulticastfactory && __global.topology_local.size() == 1)
                     geometry->addCollective(PAMI_XFER_BROADCAST,  _mucollectivedputmulticastfactory, _context_id);
+
+		  if (_mucollectivedputmulticombinefactory && __global.topology_local.size() == 1)
+		    geometry->addCollective(PAMI_XFER_ALLREDUCE,  _mucollectivedputmulticombinefactory, _context_id);
 
 #if 0  // allgatherv hangs 
 
@@ -1147,6 +1156,9 @@ namespace PAMI
 
         MUCollectiveDputMulticastFactory               *_mucollectivedputmulticastfactory;
         uint8_t                                         _mucollectivedputmulticaststorage[sizeof(MUCollectiveDputMulticastFactory)];
+	
+	MUCollectiveDputMulticombineFactory            *_mucollectivedputmulticombinefactory;
+        uint8_t                                         _mucollectivedputmulticombinestorage[sizeof(MUCollectiveDputMulticombineFactory)];
 
         RectangleDput1ColorBroadcastFactory            *_mu_rectangle_1color_dput_broadcast_factory;
         uint8_t                                         _mu_rectangle_1color_dput_broadcast_factory_storage[sizeof(RectangleDput1ColorBroadcastFactory)];

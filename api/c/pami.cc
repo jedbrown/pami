@@ -13,14 +13,6 @@
 #include "util/common.h"
 #include "algorithms/protocols/allreduce/ReduceFunctions.h" // For dt_query
 
-#ifdef __bgq__
-char * PAMI::Device::MU::CollectiveMulticastDmaModel::_zeroBuf;
-uint32_t PAMI::Device::MU::CollectiveMulticastDmaModel::_zeroBytes;
-
-char * PAMI::Device::MU::CollectiveDmaModelBase::_tempBuf;
-uint32_t PAMI::Device::MU::CollectiveDmaModelBase::_tempSize;
-#endif
-
 extern "C"
 {
   pami_geometry_t PAMI_NULL_GEOMETRY = 0;
