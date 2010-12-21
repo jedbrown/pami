@@ -30,11 +30,11 @@
 #undef DO_TRACE_DEBUG
 
 #ifdef CCMI_TRACE_ALL
- #define DO_TRACE_ENTEREXIT 1
- #define DO_TRACE_DEBUG     1
+  #define DO_TRACE_ENTEREXIT 1
+  #define DO_TRACE_DEBUG     1
 #else
- #define DO_TRACE_ENTEREXIT 0
- #define DO_TRACE_DEBUG     0
+  #define DO_TRACE_ENTEREXIT 0
+  #define DO_TRACE_DEBUG     0
 #endif
 
 namespace PAMI
@@ -48,168 +48,160 @@ namespace PAMI
       // \class MulticastModel
       // \brief MU collective Multicast interface
       // \details
-      //   - active message model
+      //   - all-sided or active message model
       //   - uses MU memfifo
       //   - one destination task per node
       //   - does not fully support PipeWorkQueue (multicast_model_available_buffers_only)
       ///////////////////////////////////////////////////////////////////////////////
-      template <bool T_Msgdata_support, bool T_PWQ_support>
-      class MulticastModel : public Interface::AMMulticastModel < MulticastModel<T_Msgdata_support, T_PWQ_support>, MU::Context, 4096 /*sizeof(state_data_t)*/ >
+      template <bool T_Allsided, bool T_Msgdata_support = false, bool T_PWQ_support = false>
+      class MulticastModel : public Interface::AMMulticastModel < MulticastModel<T_Allsided, T_Msgdata_support, T_PWQ_support>, MU::Context, 4096 /*sizeof(state_data_t)*/ >
       {
 
-        protected:
+      protected:
 
-          typedef uint8_t packet_state_t[BroadcastPacketModel::packet_model_state_bytes];
+        typedef uint8_t packet_state_t[BroadcastPacketModel::packet_model_state_bytes];
 
-          // Metadata passed in the (single-packet) header
-          typedef struct __attribute__((__packed__))
-          {
-            uint32_t              connection_id;  ///< Collective connection id
-            uint32_t              root;           ///< Root of the collective
-            uint32_t              sndlen;         ///< Number of bytes of application data
-            uint32_t              msgcount;       ///< Count of msgdata quads
-          } header_metadata_t;
+        // Metadata passed in the (single-packet) header
+        typedef struct __attribute__((__packed__))
+        {
+          uint32_t              connection_id;  ///< Collective connection id
+          uint32_t              root;           ///< Root of the collective
+          uint32_t              sndlen;         ///< Number of bytes of application data
+          uint32_t              msgcount;       ///< Count of msgdata quads
+        } header_metadata_t;
 
-          // Metadata passed in the (multi-packet) data packet(s)
-          typedef struct __attribute__((__packed__))
-          {
-            uint32_t              connection_id;  ///< Collective connection id
-          } data_metadata_t;
+        // Metadata passed in the (multi-packet) data packet(s)
+        typedef struct __attribute__((__packed__))
+        {
+          uint32_t              connection_id;  ///< Collective connection id
+        } data_metadata_t;
 
-          // State (request) implementation.  Callers should use uint8_t[MU::MulticastModel::sizeof_msg]
-          typedef struct
-          {
-            packet_state_t          pkt[2];          ///< packet send state memory
+        // State (request) implementation.  Callers should use uint8_t[MU::MulticastModel::sizeof_msg]
+        typedef struct
+        {
+          packet_state_t          pkt[2];          ///< packet send state memory
 
-            header_metadata_t       header_metadata;
-            data_metadata_t         data_metadata;
+          header_metadata_t       header_metadata;
+          data_metadata_t         data_metadata;
 
-            size_t                  remaining_length;
-            PAMI::PipeWorkQueue   * rcvpwq;
-            uint8_t               * buffer;
-            pami_callback_t         cb_done;
-            struct                  iovec iov[2];
-          } state_data_t;
+          size_t                  remaining_length;
+          PAMI::PipeWorkQueue   * rcvpwq;
+          uint8_t               * buffer;
+          pami_callback_t         cb_done;
+          struct                  iovec iov[2];
+        } state_data_t;
 
 
-        public:
+      public:
 
-          /// \see PAMI::Device::Interface::MulticastModel::~MulticastModel
-          ~MulticastModel () {};
+        /// \see PAMI::Device::Interface::MulticastModel::~MulticastModel
+        ~MulticastModel ()
+        {
+        };
 
-          /// \brief Multicast model constants/attributes
-//      static const bool   multicast_model_all_sided               = false;
-          static const bool   multicast_model_active_message          = true;
-          static const bool   multicast_model_available_buffers_only  = true;
+        /// \brief Multicast model constants/attributes
+        static const bool   multicast_model_all_sided               = T_Allsided;
+        static const bool   multicast_model_active_message          = !T_Allsided;
+        static const bool   multicast_model_available_buffers_only  = !T_PWQ_support;
 
-          static const size_t sizeof_msg                              = 4096 /*sizeof(state_data_t)*/;
-          static const size_t packet_model_payload_bytes              = BroadcastPacketModel::packet_model_payload_bytes;
-          static const size_t packet_model_immediate_bytes              = BroadcastPacketModel::packet_model_immediate_bytes;
+        static const size_t sizeof_msg                              = 4096 /*sizeof(state_data_t)*/;
+        static const size_t packet_model_payload_bytes              = BroadcastPacketModel::packet_model_payload_bytes;
+        static const size_t packet_model_immediate_bytes            = BroadcastPacketModel::packet_model_immediate_bytes;
+        /* \todo use packet_model_payload_bytes or packet_model_immediate_bytes in code? */
 
-          static const size_t multicast_model_msgcount_max            = (packet_model_payload_bytes /*or packet_model_immediate_bytes*/ / sizeof(pami_quad_t));
-          static const size_t multicast_model_bytes_max               = (uint32_t) - 1; // protocol_metadata_t::sndlen
-          static const size_t multicast_model_connection_id_max       = (uint32_t) - 1; // protocol_metadata_t::connection_id \todo 64 bit?
+        static const size_t multicast_model_msgcount_max            = (packet_model_payload_bytes  / sizeof(pami_quad_t));
+        static const size_t multicast_model_bytes_max               = (uint32_t) - 1; // protocol_metadata_t::sndlen
+        static const size_t multicast_model_connection_id_max       = (uint32_t) - 1; // protocol_metadata_t::connection_id \todo 64 bit?
 
-          /// \see PAMI::Device::Interface::MulticastModel::registerMcastRecvFunction
-          pami_result_t registerMcastRecvFunction_impl(int                        dispatch_id,
-                                                       pami_dispatch_multicast_function func,
-                                                       void                      *arg);
-          /// \see PAMI::Device::Interface::MulticastModel::postMulticast
-          pami_result_t postMulticast_impl(uint8_t (&state)[MulticastModel<T_Msgdata_support, T_PWQ_support>::sizeof_msg],
-                                           pami_multicast_t *mcast,
-                                           void             *devinfo = NULL);
+        /// \see PAMI::Device::Interface::MulticastModel::registerMcastRecvFunction
+        pami_result_t registerMcastRecvFunction_impl(int                        dispatch_id,
+                                                     pami_dispatch_multicast_function func,
+                                                     void                      *arg);
+        /// \see PAMI::Device::Interface::MulticastModel::postMulticast
+        pami_result_t postMulticast_impl(uint8_t (&state)[MulticastModel<T_Allsided, T_Msgdata_support, T_PWQ_support>::sizeof_msg],
+                                         pami_multicast_t *mcast,
+                                         void             *devinfo = NULL);
 
-        protected:
-          /// \brief MU dispatch function
-          inline static int dispatch_header (void   * metadata,
-                                             void   * payload,
-                                             size_t   bytes,
-                                             void   * arg,
-                                             void   * cookie);
-          inline static int dispatch_data (void   * metadata,
+      protected:
+        /// \brief MU dispatch function
+        inline static int dispatch_header (void   * metadata,
                                            void   * payload,
                                            size_t   bytes,
                                            void   * arg,
                                            void   * cookie);
-          /// \brief Process user data packets
-          inline void processData   (state_data_t *state_data,
-                                     uint8_t      *payload,
-                                     size_t        bytes);
+        inline static int dispatch_data (void   * metadata,
+                                         void   * payload,
+                                         size_t   bytes,
+                                         void   * arg,
+                                         void   * cookie);
+        /// \brief Process user data packets
+        inline void processData   (state_data_t *state_data,
+                                   uint8_t      *payload,
+                                   size_t        bytes);
 
-          inline state_data_t * allocateState ()
-          {
-            return(state_data_t *) _allocator.allocateObject ();
-          }
+        inline state_data_t * allocateState ()
+        {
+          return(state_data_t *) _allocator.allocateObject ();
+        }
 
-          inline void freeState (state_data_t * object)
-          {
-            _allocator.returnObject ((void *) object);
-          }
+        inline void freeState (state_data_t * object)
+        {
+          _allocator.returnObject ((void *) object);
+        }
 
 
-        private:
-          MU::Context                                & _device;
-          pami_task_t                                  _task_id;
+      private:
+        MU::Context                                & _device;
+        pami_task_t                                  _task_id;
 
-          MemoryAllocator < sizeof(state_data_t), 16 > _allocator;
+        MemoryAllocator < sizeof(state_data_t), 16 > _allocator;
 
-          BroadcastPacketModel                         _header_model;
-          BroadcastPacketModel                         _data_model;
+        BroadcastPacketModel                         _header_model;
+        BroadcastPacketModel                         _data_model;
 
-          pami_dispatch_multicast_function             _dispatch_function;
-          void                                       * _dispatch_arg;
+        pami_dispatch_multicast_function             _dispatch_function;
+        void                                       * _dispatch_arg;
 
 //        T_Connection                                 _connection; ///\todo ConnectionArray isn't appropriate...
-          std::map<unsigned, state_data_t *>             _connection;
+        std::map<unsigned, state_data_t *>             _connection;
 
-        public:
+      public:
 
-          /// \see PAMI::Device::Interface::MulticastModel::MulticastModel
-          MulticastModel (MU::Context & device, pami_result_t &status) :
-              Interface::AMMulticastModel < MulticastModel<T_Msgdata_support, T_PWQ_support>, MU::Context, 4096 /*sizeof(state_data_t)*/ > (device, status),
-              _device (device),
-              _task_id(__global.mapping.task()),
-              _header_model (device),
-              _data_model (device),
-              _dispatch_function(NULL),
-              _dispatch_arg(NULL)
-              //        _connection (device)
-          {
-            TRACE_FN_ENTER();
-            TRACE_FORMAT( "this %p", this);
-            // ----------------------------------------------------------------
-            // Compile-time assertions
-            // ----------------------------------------------------------------
+        /// \see PAMI::Device::Interface::MulticastModel::MulticastModel
+        MulticastModel (MU::Context & device, pami_result_t &status) :
+        Interface::AMMulticastModel < MulticastModel<T_Allsided, T_Msgdata_support, T_PWQ_support>, MU::Context, 4096 /*sizeof(state_data_t)*/ > (device, status),
+        _device (device),
+        _task_id(__global.mapping.task()),
+        _header_model (device),
+        _data_model (device),
+        _dispatch_function(NULL),
+        _dispatch_arg(NULL)
+        //        _connection (device)
+        {
+          TRACE_FN_ENTER();
+          TRACE_FORMAT( "this %p", this);
+          // ----------------------------------------------------------------
+          // Compile-time assertions
+          // ----------------------------------------------------------------
 
-            // This protocol only works with reliable networks.
-            COMPILE_TIME_ASSERT(BroadcastPacketModel::reliable_packet_model == true);
+          // This protocol only works with reliable networks.
+          COMPILE_TIME_ASSERT(BroadcastPacketModel::reliable_packet_model == true);
 
-            // This protocol only works with deterministic models.
-            COMPILE_TIME_ASSERT(BroadcastPacketModel::deterministic_packet_model == true);
+          // This protocol only works with deterministic models.
+          COMPILE_TIME_ASSERT(BroadcastPacketModel::deterministic_packet_model == true);
 
-            // Assert that the size of the packet metadata area is large
-            // enough to transfer the eager match information. This is used in the
-            // various postMultiPacket() calls to transfer long header and data
-            // messages.
-            COMPILE_TIME_ASSERT(sizeof(pami_endpoint_t) <= BroadcastPacketModel::packet_model_multi_metadata_bytes);
-
-            // Assert that the size of the packet payload area is large
-            // enough to transfer a single virtual address. This is used in
-            // the postPacket() calls to transfer the ack information.
-            COMPILE_TIME_ASSERT(sizeof(void *) <= BroadcastPacketModel::packet_model_payload_bytes);
-
-            // ----------------------------------------------------------------
-            // Compile-time assertions (end)
-            // ----------------------------------------------------------------
-            status = PAMI_SUCCESS;
-            TRACE_FN_EXIT();
-          }
+          // ----------------------------------------------------------------
+          // Compile-time assertions (end)
+          // ----------------------------------------------------------------
+          status = PAMI_SUCCESS;
+          TRACE_FN_EXIT();
+        }
       };
 
-      template <bool T_Msgdata_support, bool T_PWQ_support>
-      inline pami_result_t MulticastModel<T_Msgdata_support, T_PWQ_support>::postMulticast_impl(uint8_t (&state)[MulticastModel::sizeof_msg],
-          pami_multicast_t *mcast,
-          void             *devinfo)
+      template <bool T_Allsided, bool T_Msgdata_support, bool T_PWQ_support>
+      inline pami_result_t MulticastModel<T_Allsided, T_Msgdata_support, T_PWQ_support>::postMulticast_impl(uint8_t (&state)[MulticastModel::sizeof_msg],
+                                                                                                            pami_multicast_t *mcast,
+                                                                                                            void             *devinfo)
       {
         TRACE_FN_ENTER();
 
@@ -222,28 +214,33 @@ namespace PAMI
 
         // Get the source data buffer/length and validate (assert) inputs
         size_t length = mcast->bytes;
-        PAMI::PipeWorkQueue *pwq = (PAMI::PipeWorkQueue *)mcast->src;
+
+        Topology* srcTopology = (Topology*) mcast->src_participants;
+        bool isSrc = srcTopology && srcTopology->isRankMember(_task_id);
+        PAMI::PipeWorkQueue *pwq = isSrc ? (PAMI::PipeWorkQueue *)mcast->src : (PAMI::PipeWorkQueue *)mcast->dst;
+        size_t bytesAvailable = pwq == NULL? 0 : (isSrc ? pwq->bytesAvailableToConsume() : pwq->bytesAvailableToProduce());
+        uint8_t * buffer = pwq == NULL? NULL : (isSrc ? (uint8_t *)pwq->bufferToConsume() : (uint8_t *)pwq->bufferToProduce());
 
         if (T_PWQ_support == false)
-          {
-            // If you're sending data, it must all be ready in the pwq.
-            PAMI_assert((length == 0) || (pwq && pwq->bytesAvailableToConsume() == length));
-          }
+        {
+          // If you're sending data, it must all be ready in the pwq.
+          PAMI_assertf(bytesAvailable == length, "bytesAvailable %zu == %zu length",bytesAvailable,length);
+        }
         else
-          {
-            PAMI_abortf("T_PWQ_support not supported yet\n");
-          }
+        {
+          PAMI_abortf("T_PWQ_support not supported yet\n");
+        }
 
         if (T_Msgdata_support == false)
-          {
-            // No msgdata expected
-            PAMI_assert(mcast->msgcount == 0);
-          }
+        {
+          // No msgdata expected
+          PAMI_assert(mcast->msgcount == 0);
+        }
 
         TRACE_FORMAT( "dispatch %zu, connection_id %#X, msgcount %d/%p, bytes %zu/%p/%p",
                       mcast->dispatch, mcast->connection_id,
                       mcast->msgcount, mcast->msginfo,
-                      mcast->bytes, pwq, pwq ? pwq->bufferToConsume() : NULL);
+                      mcast->bytes, pwq, buffer);
 
         state_data_t *state_data = (state_data_t*) & state;
 
@@ -258,11 +255,19 @@ namespace PAMI
 
         state_data->cb_done = mcast->cb_done;
 
-        /// \todo allow root to receive data too? unclear multicast semantics...
-        state_data->remaining_length = 0;  // root doesn't copy any data
-        state_data->rcvpwq = NULL;         //(PAMI::PipeWorkQueue*)mcomb->results;
-        state_data->buffer = NULL;              //state_data->rcvpwq?(uint8_t*)state_data->rcvpwq->bufferToProduce():NULL;
-
+        if (isSrc)
+        {
+          /// \todo allow root to receive data too? unclear multicast semantics...
+          state_data->remaining_length = 0;  // root doesn't copy any data
+          state_data->rcvpwq = NULL;         
+          state_data->buffer = NULL;         
+        }
+        else
+        {
+          state_data->remaining_length = bytesAvailable;
+          state_data->rcvpwq = pwq;   
+          state_data->buffer = buffer;
+        }
         // Set the connection state
 //        PAMI_assert(_connection.get(mcast->connection_id) == NULL);
 //        _connection.set(mcast->connection_id, (void *)state_data);
@@ -270,102 +275,107 @@ namespace PAMI
         _connection[mcast->connection_id] = state_data;
 
         if (T_PWQ_support == false)
+        {
+          if (length)
           {
-            if (length)
-              {
-                payload = (void*)pwq->bufferToConsume();
-                pwq->consumeBytes(length);
-              }
+            payload = (void*)buffer;
+            if (isSrc)
+              pwq->consumeBytes(length);
+          }
 
-            if (T_Msgdata_support == false)
-              {
-                // Post the multicast to the device in one or more packets
-                if (length <= packet_model_payload_bytes /*or packet_model_immediate_bytes*/) // one packet
-                  {
-                    _header_model.postCollectivePacket (state_data->pkt[0],
-                                                        NULL,
-                                                        NULL,
-                                                        classRoute,
-                                                        &state_data->header_metadata,
-                                                        sizeof(header_metadata_t),
-                                                        payload,
-                                                        length);
-                  }
-                else  // > one packet of payload
-                  {
-                    _header_model.postCollectivePacket (state_data->pkt[0],
-                                                        NULL,
-                                                        NULL,
-                                                        classRoute,
-                                                        &state_data->header_metadata,
-                                                        sizeof(header_metadata_t),
-                                                        payload,
-                                                        packet_model_payload_bytes /*or packet_model_immediate_bytes*/);
-                    _data_model.postMultiCollectivePacket (state_data->pkt[1],
-                                                           NULL,
-                                                           NULL,
-                                                           classRoute,
-                                                           &state_data->data_metadata,
-                                                           sizeof(data_metadata_t),
-                                                           ((char*)payload) + packet_model_payload_bytes /*or packet_model_immediate_bytes*/,
-                                                           length - packet_model_payload_bytes /*or packet_model_immediate_bytes*/);
-                  }
-              } // T_Msgdata_support==false
-            else //T_Msgdata_support==true
-              {
-                // Get the msginfo buffer/length and validate (assert) inputs
-                void* msgdata = (void*)mcast->msginfo;
+          if (T_Msgdata_support == false)
+          {
+            // Post the multicast to the device in one or more packets
+            if (length <= packet_model_payload_bytes ) // one packet
+            {
+              TRACE_HEXDATA(&state_data->header_metadata,sizeof(header_metadata_t));
+              TRACE_HEXDATA(payload,  length);
+              _header_model.postCollectivePacket (state_data->pkt[0],
+                                                  NULL,
+                                                  NULL,
+                                                  classRoute,
+                                                  &state_data->header_metadata,
+                                                  sizeof(header_metadata_t),
+                                                  isSrc? payload:NULL,
+                                                  length);
+            }
+            else  // > one packet of payload
+            {
+              TRACE_HEXDATA(&state_data->header_metadata,sizeof(header_metadata_t));
+              TRACE_HEXDATA(payload,  packet_model_payload_bytes);
+              _header_model.postCollectivePacket (state_data->pkt[0],
+                                                  NULL,
+                                                  NULL,
+                                                  classRoute,
+                                                  &state_data->header_metadata,
+                                                  sizeof(header_metadata_t),
+                                                  isSrc? payload:NULL,
+                                                  packet_model_payload_bytes );
+              _data_model.postMultiCollectivePacket (state_data->pkt[1],
+                                                     NULL,
+                                                     NULL,
+                                                     classRoute,
+                                                     &state_data->data_metadata,
+                                                     sizeof(data_metadata_t),
+                                                     isSrc? ((char*)payload) + packet_model_payload_bytes :NULL,
+                                                     length - packet_model_payload_bytes );
+            }
+          } // T_Msgdata_support==false
+          else //T_Msgdata_support==true
+          {
+/*
+            // Get the msginfo buffer/length and validate (assert) inputs
+            void* msgdata = (void*)mcast->msginfo;
 
-                PAMI_assert(multicast_model_msgcount_max >= mcast->msgcount);
+            PAMI_assert(multicast_model_msgcount_max >= mcast->msgcount);
 
-                size_t msglength = mcast->msgcount * sizeof(pami_quad_t);
-                size_t total = length + msglength;
+            size_t msglength = mcast->msgcount * sizeof(pami_quad_t);
+            size_t total = length + msglength;
+            // Post the multicast to the device in one or more packets
+            if (total <= packet_model_payload_bytes ) // one packet
+            {
+              // pack msginfo and payload into one (single) packet
 
-                // Post the multicast to the device in one or more packets
-                if (total <= packet_model_payload_bytes /*or packet_model_immediate_bytes*/) // one packet
-                  {
-                    // pack msginfo and payload into one (single) packet
+              state_data->iov[0].iov_base = msgdata;
+              state_data->iov[0].iov_len  = msglength;
+              state_data->iov[1].iov_base = payload;
+              state_data->iov[1].iov_len  = length;
 
-                    state_data->iov[0].iov_base = msgdata;
-                    state_data->iov[0].iov_len  = msglength;
-                    state_data->iov[1].iov_base = payload;
-                    state_data->iov[1].iov_len  = length;
+              _header_model.postCollectivePacket (state_data->pkt[0],
+                                                  NULL,
+                                                  NULL,
+                                                  classRoute,
+                                                  &state_data->header_metadata,
+                                                  sizeof(header_metadata_t),
+                                                  isSrc?state_data->iov:(iovec*)NULL);
+            }
+            else // > one packet
+            {
+              // first packet contains msgdata
+              state_data->iov[0].iov_base = msgdata;
+              state_data->iov[0].iov_len  = msglength;
+              state_data->iov[1].iov_base = payload;
+              state_data->iov[1].iov_len  = MIN(length, (packet_model_payload_bytes  - msglength));
+              _header_model.postCollectivePacket (state_data->pkt[0],
+                                                  NULL,
+                                                  NULL,
+                                                  classRoute,
+                                                  &state_data->header_metadata,
+                                                  sizeof(header_metadata_t),
+                                                  isSrc?state_data->iov:(iovec*)NULL);
 
-                    _header_model.postCollectivePacket (state_data->pkt[0],
-                                                        NULL,
-                                                        NULL,
-                                                        classRoute,
-                                                        &state_data->header_metadata,
-                                                        sizeof(header_metadata_t),
-                                                        state_data->iov);
-                  }
-                else // > one packet
-                  {
-                    // first packet contains msgdata
-                    state_data->iov[0].iov_base = msgdata;
-                    state_data->iov[0].iov_len  = msglength;
-                    state_data->iov[1].iov_base = payload;
-                    state_data->iov[1].iov_len  = MIN(length, (packet_model_payload_bytes /*or packet_model_immediate_bytes*/ - msglength));
-                    _header_model.postCollectivePacket (state_data->pkt[0],
-                                                        NULL,
-                                                        NULL,
-                                                        classRoute,
-                                                        &state_data->header_metadata,
-                                                        sizeof(header_metadata_t),
-                                                        state_data->iov);
-
-                    _data_model.postMultiCollectivePacket (state_data->pkt[1],
-                                                           NULL,
-                                                           NULL,
-                                                           classRoute,
-                                                           &state_data->data_metadata,
-                                                           sizeof(data_metadata_t),
-                                                           (char*)payload + state_data->iov[1].iov_len,
-                                                           length - state_data->iov[1].iov_len);
-                  }
-
-              } // T_Msgdata_support==true
-          } // T_PWQ_support==false
+              _data_model.postMultiCollectivePacket (state_data->pkt[1],
+                                                     NULL,
+                                                     NULL,
+                                                     classRoute,
+                                                     &state_data->data_metadata,
+                                                     sizeof(data_metadata_t),
+                                                     isSrc?(char*)payload + state_data->iov[1].iov_len:NULL,
+                                                     length - state_data->iov[1].iov_len);
+            }
+*/
+          } // T_Msgdata_support==true
+        } // T_PWQ_support==false
 
         TRACE_FORMAT( "dispatch %zu, connection_id %#X exit",
                       mcast->dispatch, mcast->connection_id);
@@ -382,12 +392,12 @@ namespace PAMI
       ///
       /// \see PAMI::Device::Interface::RecvFunction_t
       ///
-      template <bool T_Msgdata_support, bool T_PWQ_support>
-      int MulticastModel<T_Msgdata_support, T_PWQ_support>::dispatch_header (void   * metadata,
-                                                                             void   * payload,
-                                                                             size_t   bytes,
-                                                                             void   * arg,
-                                                                             void   * cookie)
+      template <bool T_Allsided, bool T_Msgdata_support, bool T_PWQ_support>
+      int MulticastModel<T_Allsided, T_Msgdata_support, T_PWQ_support>::dispatch_header (void   * metadata,
+                                                                                         void   * payload,
+                                                                                         size_t   bytes,
+                                                                                         void   * arg,
+                                                                                         void   * cookie)
       {
         TRACE_FN_ENTER();
         TRACE_HEXDATA(metadata, 16);
@@ -397,31 +407,39 @@ namespace PAMI
         char * p;
         char * msg = p = (char*) payload;
 
-        MulticastModel<T_Msgdata_support, T_PWQ_support> * model = (MulticastModel<T_Msgdata_support, T_PWQ_support> *) arg;
+        MulticastModel<T_Allsided, T_Msgdata_support, T_PWQ_support> * model = (MulticastModel<T_Allsided, T_Msgdata_support, T_PWQ_support> *) arg;
         TRACE_FORMAT( "dispatch model %p, task id %u", model, model->_task_id);
 
         size_t data_length = m->sndlen;
 
         if (T_Msgdata_support == true)
-          {
-            // Adjust the payload past the msgdata
-            size_t msglength = m->msgcount * sizeof(pami_quad_t);
-            data_length -= msglength;
-            bytes       -= msglength;
-            p += msglength;
-          }
+        {
+          // Adjust the payload past the msgdata
+          size_t msglength = m->msgcount * sizeof(pami_quad_t);
+          data_length -= msglength;
+          bytes       -= msglength;
+          p += msglength;
+        }
 
         // Allocate/retrieve a state object!
         state_data_t *state_data;
 
-        // The root already has a state object, retrieve it
-        if (m->root == model->_task_id)
+        if (T_Allsided) // all participants should have a saved state.
+        {
+          state_data = model->_connection[m->connection_id]; //model->_connection.get(m->connection_id);
+          TRACE_FORMAT( "state_data %p, m->connection_id %u",state_data,m->connection_id);
+          PAMI_assert(state_data);
+        }
+        else // active message, only the root has a state object, non-root will dispatch.
+        {
+          // The root already has a state object, retrieve it
+          if (m->root == model->_task_id)
           {
             state_data = model->_connection[m->connection_id]; //model->_connection.get(m->connection_id);
             TRACE_FORMAT( "state_data %p, m->connection_id %u",state_data,m->connection_id);
             PAMI_assert(state_data);
           }
-        else //allocate one
+          else //allocate one
           {
             state_data = model->allocateState ();
             TRACE_FORMAT( "state_data %p, m->connection_id %u",state_data,m->connection_id);
@@ -431,8 +449,8 @@ namespace PAMI
             state_data->header_metadata.sndlen          = m->sndlen;
 
             // Set the connection state
-//          PAMI_assert(model->_connection.get(connection_id) == NULL);
-//          model->_connection.set(connection_id, (void *)state_data);
+            //          PAMI_assert(model->_connection.get(connection_id) == NULL);
+            //          model->_connection.set(connection_id, (void *)state_data);
             PAMI_assert(model->_connection[m->connection_id] == NULL);
             model->_connection[m->connection_id] = state_data;
             TRACE_FORMAT( "dispatch state_data %p, model->_connection[m->connection_id %u] %p",state_data,m->connection_id,model->_connection[m->connection_id]);
@@ -458,14 +476,15 @@ namespace PAMI
             TRACE_FORMAT( "after dispatch remaining_length %zu, pwq %p", state_data->remaining_length, state_data->rcvpwq);
 
           }
+        }
 
         TRACE_FORMAT( "cookie = %p, root = %d, bytes = %zu remaining = %zd, sndlen = %d, connection id %u/%#X", cookie, (m->root), bytes,  state_data->remaining_length, m->sndlen, m->connection_id, m->connection_id);
 
         if (T_PWQ_support == false)
-          {
-            // If you're receiving data, it must all be ready in the pwq.
-            PAMI_assertf(((state_data->rcvpwq == NULL) && (state_data->remaining_length == 0)) || (state_data->rcvpwq && (state_data->rcvpwq->bytesAvailableToProduce() >= state_data->remaining_length)), "state_data->rcvpwq->bytesAvailableToProduce() %zd,state_data->remaining_length %zd\n", state_data->rcvpwq ? state_data->rcvpwq->bytesAvailableToProduce() : -1, state_data->remaining_length);
-          }
+        {
+          // If you're receiving data, it must all be ready in the pwq.
+          PAMI_assertf(((state_data->rcvpwq == NULL) && (state_data->remaining_length == 0)) || (state_data->rcvpwq && (state_data->rcvpwq->bytesAvailableToProduce() >= state_data->remaining_length)), "state_data->rcvpwq->bytesAvailableToProduce() %zd,state_data->remaining_length %zd\n", state_data->rcvpwq ? state_data->rcvpwq->bytesAvailableToProduce() : -1, state_data->remaining_length);
+        }
 
         model->processData(state_data, (uint8_t*) payload, bytes);
 
@@ -479,12 +498,12 @@ namespace PAMI
       ///
       /// \see PAMI::Device::Interface::RecvFunction_t
       ///
-      template <bool T_Msgdata_support, bool T_PWQ_support>
-      int MulticastModel<T_Msgdata_support, T_PWQ_support>::dispatch_data   (void   * metadata,
-                                                                             void   * payload,
-                                                                             size_t   bytes,
-                                                                             void   * arg,
-                                                                             void   * cookie)
+      template <bool T_Allsided, bool T_Msgdata_support, bool T_PWQ_support>
+      int MulticastModel<T_Allsided, T_Msgdata_support, T_PWQ_support>::dispatch_data   (void   * metadata,
+                                                                                         void   * payload,
+                                                                                         size_t   bytes,
+                                                                                         void   * arg,
+                                                                                         void   * cookie)
       {
         TRACE_FN_ENTER();
         TRACE_HEXDATA(metadata, 16);
@@ -492,7 +511,7 @@ namespace PAMI
 
         data_metadata_t * m = (data_metadata_t *)metadata;
 
-        MulticastModel<T_Msgdata_support, T_PWQ_support> * model = (MulticastModel<T_Msgdata_support, T_PWQ_support> *) arg;
+        MulticastModel<T_Allsided, T_Msgdata_support, T_PWQ_support> * model = (MulticastModel<T_Allsided, T_Msgdata_support, T_PWQ_support> *) arg;
 
         TRACE_FORMAT( "cookie = %p, bytes = %zu, connection id %u/%#X", cookie, bytes, m->connection_id, m->connection_id);
 
@@ -506,15 +525,17 @@ namespace PAMI
         return 0;
       }; // PAMI::Device::MU::MulticastModel::dispatch_data
 
-      template <bool T_Msgdata_support, bool T_PWQ_support>
-      inline void MulticastModel<T_Msgdata_support, T_PWQ_support>::processData   (state_data_t * state_data,
-                                                                                   uint8_t * payload,
-                                                                                   size_t    bytes)
+      template <bool T_Allsided, bool T_Msgdata_support, bool T_PWQ_support>
+      inline void MulticastModel<T_Allsided, T_Msgdata_support, T_PWQ_support>::processData   (state_data_t * state_data,
+                                                                                               uint8_t * payload,
+                                                                                               size_t    bytes)
       {
         TRACE_FN_ENTER();
         header_metadata_t   *  header = &state_data->header_metadata;
         TRACE_FORMAT( "state_data %p, connection id %u, payload %p, bytes %zu, remaining length %zu, sndlen %u",
                       state_data, header->connection_id, payload, bytes, state_data->remaining_length, header->sndlen);
+        TRACE_HEXDATA(header, sizeof(*header));
+        TRACE_HEXDATA(payload, bytes);
 
 
         // Number of bytes left to copy into the destination buffer
@@ -524,15 +545,15 @@ namespace PAMI
         if (nleft > bytes) nleft = bytes;
 
         if (nleft) // copy data and update receive state_data
-          {
-            TRACE_FORMAT( "memcpy(%p,%p,%zu)", state_data->buffer, payload, nleft);
-            memcpy (state_data->buffer, payload, nleft);
+        {
+          TRACE_FORMAT( "memcpy(%p,%p,%zu)", state_data->buffer, payload, nleft);
+          memcpy (state_data->buffer, payload, nleft);
 
-            // Update the receive state_data
-            state_data->buffer += nleft;
-            state_data->remaining_length -= nleft;
-            state_data->rcvpwq->produceBytes(nleft);
-          }
+          // Update the receive state_data
+          state_data->buffer += nleft;
+          state_data->remaining_length -= nleft;
+          state_data->rcvpwq->produceBytes(nleft);
+        }
         else ;  /// toss unwanted data?
 
         // Decrement the original bytes sent by the bytes just received...
@@ -541,44 +562,46 @@ namespace PAMI
         header->sndlen -= MIN(header->sndlen, (uint32_t)bytes);
 
         if (header->sndlen == 0)
-          {
-            TRACE_FORMAT( "done cb_done function %p, clientdata %p", state_data->cb_done.function, state_data->cb_done.clientdata);
-            _connection.erase(header->connection_id);
-            //_connection.clear(header->connection_id);
+        {
+          TRACE_FORMAT( "done cb_done function %p, clientdata %p", state_data->cb_done.function, state_data->cb_done.clientdata);
+          _connection.erase(header->connection_id);
+          //_connection.clear(header->connection_id);
 
-            // Invoke the receive done callback.
-            if (state_data->cb_done.function)
-              state_data->cb_done.function (0,//_device.getContext(), ///\todo why does this assert?
-                                            state_data->cb_done.clientdata,
-                                            PAMI_SUCCESS);
+          // Invoke the receive done callback.
+          if (state_data->cb_done.function)
+            state_data->cb_done.function (0,//_device.getContext(), ///\todo why does this assert?
+                                          state_data->cb_done.clientdata,
+                                          PAMI_SUCCESS);
 
-            if (_task_id != header->root) freeState(state_data);
-          }
+          if (_task_id != header->root) freeState(state_data);
+        }
 
         TRACE_FN_EXIT();
         return ;
       }; // PAMI::Device::MU::MulticastModel::processData
 
 
-      template <bool T_Msgdata_support, bool T_PWQ_support>
-      pami_result_t MulticastModel<T_Msgdata_support, T_PWQ_support>::registerMcastRecvFunction_impl(int                         dispatch_id,
-          pami_dispatch_multicast_function func,
-          void                       *arg)
+      template <bool T_Allsided, bool T_Msgdata_support, bool T_PWQ_support>
+      pami_result_t MulticastModel<T_Allsided, T_Msgdata_support, T_PWQ_support>::registerMcastRecvFunction_impl(int                         dispatch_id,
+                                                                                                                 pami_dispatch_multicast_function func,
+                                                                                                                 void                       *arg)
       {
         TRACE_FN_ENTER();
+        pami_result_t status = PAMI_SUCCESS;
         TRACE_FORMAT( "id %d, func %p, arg %p", dispatch_id, func, arg);
-        PAMI_assert(multicast_model_active_message);
+        // Even allsided MU gets dispatched (to dispatch_data()/dispatch_header()).  It just doesn't use _dispatch_function().
+        {
 
-        _dispatch_function = func;
-        _dispatch_arg = arg;
+          _dispatch_function = func;
+          _dispatch_arg = arg;
 
-        TRACE_FORMAT( "register data model dispatch %d", dispatch_id);
-        pami_result_t status = _data_model.init (dispatch_id,
-                                                 dispatch_data, this,
-                                                 NULL, NULL);
-        TRACE_FORMAT( "data model status = %d", status);
+          TRACE_FORMAT( "register data model dispatch %d", dispatch_id);
+          status = _data_model.init (dispatch_id,
+                                     dispatch_data, this,
+                                     NULL, NULL);
+          TRACE_FORMAT( "data model status = %d", status);
 
-        if (status == PAMI_SUCCESS)
+          if (status == PAMI_SUCCESS)
           {
             TRACE_FORMAT( "register header  model dispatch %d", dispatch_id);
             status = _header_model.init (dispatch_id,
@@ -587,6 +610,7 @@ namespace PAMI
             TRACE_FORMAT( "header model status = %d", status);
           }
 
+        }
         TRACE_FN_EXIT();
         return status;
       };

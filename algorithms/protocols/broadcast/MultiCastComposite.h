@@ -628,10 +628,14 @@ namespace CCMI
       };
 
       /// A composite for a 2 device multicast
+      /// 
       // The T_Sync boolean forces an msync before the global multicast.  This is for
       // devices that do not support buffering unexpected messages.
-      /// \todo BGQ/MU will use this until MU broadcast 'features' are resolved (Issue 1714)
-      template < class T_Geometry, bool T_Sync = false >
+      //  \todo BGQ/MU will use this until MU broadcast 'features' are resolved (Issue 1714)
+      // 
+      // The T_Allsided boolean indicates the global multicast is all-sided.
+      //
+      template < class T_Geometry, bool T_Allsided = false, bool T_Sync = false >
       class MultiCastComposite2Device : public CCMI::Executor::Composite
       {
         public:
@@ -848,7 +852,7 @@ namespace CCMI
                 // I am the master task, but root is on a different node
                 // I will recieve from the global multicast and forward
                 // to the local multicast
-                // Do not explicitly participate in the multicast because it is active
+                // If not allsided, do not explicitly participate in the multicast because it is active
                 if (numLocal > 1)
                   {
                     _minfo_l.client             = NULL;              // Not used by device
@@ -867,41 +871,67 @@ namespace CCMI
                     _active_native[0]           = _native_l;
                     cb_count++;
                   }
-
-                // This node will be receiving data from the master via an active message
-                // This means that I need to post this into a queue or find one that is UE
-                // 1)  Find in the UE queue
-                // 2)  If found, copy the data and complete the message
-                PWQBuffer *pwqBuf = (PWQBuffer*) ue->dequeue();
-
-                if (pwqBuf)
+                if(T_Allsided)
+                {
+                  // Allsided so participate in the global multicast and receive into target buffer
+                  // for the local multicast to use.
+                  if (numMasters > 1)
                   {
-                    TRACE_ADAPTOR((stderr, "MultiCastComposite2Device:  Found in UE queue queue:  target_pwq=%p\n",
-                                   &pwqBuf->_ue_pwq));
-                    pwqBuf->_target_pwq           = &pwqBuf->_ue_pwq;
-                    pwqBuf->_ue_pwq.configure(cmd->cmd.xfer_broadcast.buf, bytes, 0);
-                    pwqBuf->_ue_pwq.reset();
-                    _minfo_l.src                = (pami_pipeworkqueue_t*) & pwqBuf->_ue_pwq;
-                    _activePwqBuf                 = pwqBuf;
+                    _minfo_g.client             = NULL;              // Not used by device
+                    _minfo_g.context            = NULL;              // Not used by device
+                    _minfo_g.cb_done.clientdata = this;
+                    _minfo_g.connection_id      = _geometry->comm();
+                    _minfo_g.roles              = -1U;
+                    _minfo_g.bytes              = bytes;
+                    _minfo_g.src                = NULL;
+                    _minfo_g.src_participants   = (pami_topology_t*) & _root_topo;
+                    _minfo_g.dst                = (pami_pipeworkqueue_t*) & _pwq0;  // <--- target buffer
+                    _minfo_g.dst_participants   = (pami_topology_t*)t_master;
+                    _minfo_g.msginfo            = 0;
+                    _minfo_g.msgcount           = 0;
 
+                    _active_minfo[1]            = &_minfo_g;
+                    _active_native[1]           = _native_g;
                     cb_count++;
-                    _activePwqBuf->_user_callback = composite_done;
-                    _activePwqBuf->_user_cookie   = this;
                   }
+                }
                 else
                   {
-                    // No UE message
-                    // The completion action is to complete the message
-                    // and deliver the callback
-                    TRACE_ADAPTOR((stderr, "MultiCastComposite2Device:  Posting to posted queue:  _pwqBuf=%p\n",
-                                   &_pwqBuf));
-                    posted->enqueue((PAMI::Queue::Element*)&_pwqBuf);
-                    _pwqBuf._target_pwq           = &_pwq0;
-                    _activePwqBuf                 = &_pwqBuf;
-
-                    cb_count++;
-                    _activePwqBuf->_user_callback = composite_done;
-                    _activePwqBuf->_user_cookie   = this;
+                  // This node will be receiving data from the master via an active message
+                  // This means that I need to post this into a queue or find one that is UE
+                  // 1)  Find in the UE queue
+                  // 2)  If found, copy the data and complete the message
+                  PWQBuffer *pwqBuf = (PWQBuffer*) ue->dequeue();
+  
+                  if (pwqBuf)
+                    {
+                      TRACE_ADAPTOR((stderr, "MultiCastComposite2Device:  Found in UE queue queue:  target_pwq=%p\n",
+                                     &pwqBuf->_ue_pwq));
+                      pwqBuf->_target_pwq           = &pwqBuf->_ue_pwq;
+                      pwqBuf->_ue_pwq.configure(cmd->cmd.xfer_broadcast.buf, bytes, 0);
+                      pwqBuf->_ue_pwq.reset();
+                      _minfo_l.src                = (pami_pipeworkqueue_t*) & pwqBuf->_ue_pwq;
+                      _activePwqBuf                 = pwqBuf;
+  
+                      cb_count++;
+                      _activePwqBuf->_user_callback = composite_done;
+                      _activePwqBuf->_user_cookie   = this;
+                    }
+                  else
+                    {
+                      // No UE message
+                      // The completion action is to complete the message
+                      // and deliver the callback
+                      TRACE_ADAPTOR((stderr, "MultiCastComposite2Device:  Posting to posted queue:  _pwqBuf=%p\n",
+                                     &_pwqBuf));
+                      posted->enqueue((PAMI::Queue::Element*)&_pwqBuf);
+                      _pwqBuf._target_pwq           = &_pwq0;
+                      _activePwqBuf                 = &_pwqBuf;
+  
+                      cb_count++;
+                      _activePwqBuf->_user_callback = composite_done;
+                      _activePwqBuf->_user_cookie   = this;
+                    }
                   }
               }
             else

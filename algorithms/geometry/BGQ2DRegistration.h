@@ -53,7 +53,7 @@ namespace PAMI
           new(m) PAMI::Geometry::Metadata("I0:MultiCast2DeviceConverged:SHMEM:MU");
         }
         typedef CCMI::Adaptor::Broadcast::MultiCastComposite2DeviceFactoryT
-        < CCMI::Adaptor::Broadcast::MultiCastComposite2Device<PAMI_GEOMETRY_CLASS, true>,
+        < CCMI::Adaptor::Broadcast::MultiCastComposite2Device<PAMI_GEOMETRY_CLASS, false, true>,
         McastMetaData,
         CCMI::ConnectionManager::SimpleConnMgr>
         MultiCastFactory;

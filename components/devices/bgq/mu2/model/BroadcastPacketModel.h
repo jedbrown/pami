@@ -8,12 +8,12 @@
 /* end_generated_IBM_copyright_prolog                               */
 /**
  * \file components/devices/bgq/mu2/model/BroadcastPacketModel.h
- * \brief ???
+ * \brief A simple model for Broadcast MU collective packets
  */
 #ifndef __components_devices_bgq_mu2_model_BroadcastPacketModel_h__
 #define __components_devices_bgq_mu2_model_BroadcastPacketModel_h__
 
-#include "components/devices/bgq/mu2/model/CollectivePacketModelBase.h"
+#include "components/devices/bgq/mu2/model/BroadcastCollectivePacketModelBase.h"
 
 #include "util/ccmi_debug.h"
 #include "util/ccmi_util.h"
@@ -34,13 +34,13 @@ namespace PAMI
   {
     namespace MU
     {
-      class BroadcastPacketModel : public CollectivePacketModelBase<BroadcastPacketModel, MUHWI_COLLECTIVE_TYPE_BROADCAST, PAMI_MU_CR_PKT_VC>
+      class BroadcastPacketModel : public BroadcastCollectivePacketModelBase<BroadcastPacketModel, MUHWI_COLLECTIVE_TYPE_BROADCAST, PAMI_MU_CR_PKT_VC>
       {
         public :
 
           /// \see PAMI::Device::Interface::CollectivePacketModel::CollectivePacketModel
           inline BroadcastPacketModel (MU::Context & context) :
-              CollectivePacketModelBase<BroadcastPacketModel, MUHWI_COLLECTIVE_TYPE_BROADCAST, PAMI_MU_CR_PKT_VC> (context)
+              BroadcastCollectivePacketModelBase<BroadcastPacketModel, MUHWI_COLLECTIVE_TYPE_BROADCAST, PAMI_MU_CR_PKT_VC> (context)
           {
             TRACE_FN_ENTER();
             TRACE_FN_EXIT();

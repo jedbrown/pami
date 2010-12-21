@@ -98,7 +98,7 @@ namespace PAMI
   typedef Device::MU::Context MUDevice;
 
   typedef BGQNativeInterface < MUDevice,
-  Device::MU::MulticastModel<false, false>,
+  Device::MU::MulticastModel<true>, // all-sided
   Device::MU::MultisyncModel<false, false>,
   Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false> > MUGlobalNI;
 

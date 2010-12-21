@@ -434,7 +434,7 @@ namespace PAMI
     {
       strncpy(&m->name[0], "MultiCast2Device", 32);
     }
-    typedef CCMI::Adaptor::Broadcast::MultiCastComposite2DeviceFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite2Device<PAMI_GEOMETRY_CLASS, true>,
+    typedef CCMI::Adaptor::Broadcast::MultiCastComposite2DeviceFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite2Device<PAMI_GEOMETRY_CLASS, true, false>,
     Mcast2DMetaData, CCMI::ConnectionManager::SimpleConnMgr > MultiCast2DeviceFactory;
 
     //----------------------------------------------------------------------------
@@ -974,16 +974,18 @@ namespace PAMI
                         }
 
                       // Add 2 device composite protocols
-//            if ((local_sub_topology->size() > 1) && (master_sub_topology->size() > 1) && (__global.useshmem()))
+
+                      // DefaultShmem doesn't work with 2 device protocol right now
+#ifndef ENABLE_NEW_SHMEM
+                      if (local_sub_topology->size() == 1)
+#endif
                       {
                         if (_mcast2d_composite_factory)
                           {
                             TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register mcast 2D\n", this));
-// Doesn't work well enough to be a default protocol
-#ifdef ENABLE_NEW_SHMEM
                             geometry->addCollective(PAMI_XFER_BROADCAST, _mcast2d_composite_factory, _context_id);
                             geometry->addCollective(PAMI_XFER_BROADCAST, _mcast2d_dput_composite_factory, _context_id);
-#endif
+
                           }
                       }
                     }

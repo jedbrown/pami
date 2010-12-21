@@ -46,6 +46,7 @@ namespace PAMI
           inline InjectDescriptorMessage (InjChannel & channel) :
               _channel (channel),
               _next (0),
+              _nactive(T_Num),
               _fn (NULL),
               _cookie (NULL)
           {
@@ -97,7 +98,7 @@ namespace PAMI
             size_t i;
             uint64_t sequence = 0;
 
-            for (i = 0; i < ndesc && (_next + i) < T_Num; i++)
+            for (i = 0; i < ndesc && (_next + i) < _nactive; i++)
               {
                 desc[_next + i].clone (d[i]);
                 TRACE_FORMAT("inject descriptor (%p) from message (%p)", &desc[_next+i], this);
@@ -110,14 +111,14 @@ namespace PAMI
 
             _next += i;
 
-            bool done = (_next == T_Num);
+            bool done = (_next == _nactive);
 
             if ((T_Completion == true) && done && likely(_fn != NULL))
               {
                 _channel.addCompletionEvent (_state, _fn, _cookie, sequence);
               }
 
-            TRACE_FORMAT("success = %d, _next = %zu, T_Num = %d", (_next == T_Num), _next, T_Num);
+            TRACE_FORMAT("success = %d, _next = %zu, T_Num = %d, _nactive = %zu", (_next == T_Num), _next, T_Num, _nactive);
             TRACE_FN_EXIT();
             return done;
           }
@@ -129,12 +130,20 @@ namespace PAMI
           ///
           inline void reset () { _next = 0; };
 
+          ///
+          /// \brief Set the number of active descriptors
+          ///
+          /// \note T_Num is the max - but we can choose to use fewer
+          ///
+          inline void setNumberActiveDescriptors(size_t nactive) { PAMI_assert(nactive <= T_Num); _nactive = nactive; }
+
           MUSPI_DescriptorBase   desc[T_Num];
 
         protected:
 
           InjChannel          & _channel;
           size_t                _next;
+          size_t                _nactive; // number of active descriptors <= T_Num 
           pami_event_function   _fn;
           void                * _cookie;
           uint8_t               _state[InjChannel::completion_event_state_bytes];

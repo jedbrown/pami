@@ -7,11 +7,11 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/bgq/mu2/model/CollectivePacketModelBase.h
- * \brief A templated base model for MU collective packets
+ * \file components/devices/bgq/mu2/model/BroadcastCollectivePacketModelBase.h
+ * \brief A base model for Reduce/Broadcast/Reduce MU collective packets
  */
-#ifndef __components_devices_bgq_mu2_model_CollectivePacketModelBase_h__
-#define __components_devices_bgq_mu2_model_CollectivePacketModelBase_h__
+#ifndef __components_devices_bgq_mu2_model_BroadcastCollectivePacketModelBase_h__
+#define __components_devices_bgq_mu2_model_BroadcastCollectivePacketModelBase_h__
 
 #include "components/devices/bgq/mu2/CollectiveNetwork.h"
 
@@ -47,16 +47,17 @@ namespace PAMI
   {
     namespace MU
     {
+      // Don't really need the templates but maybe be consistent with CollectivePacketModelBase.
       template <class T_Model, unsigned T_Collective, unsigned T_Channel>
-      class CollectivePacketModelBase : public Interface::CollectivePacketModel < MU::CollectivePacketModelBase<T_Model, T_Collective, T_Channel>, MU::Context, 1024 + MU::InjChannel::completion_event_state_bytes, uint32_t, uint8_t, uint8_t >
+      class BroadcastCollectivePacketModelBase : public Interface::CollectivePacketModel < MU::BroadcastCollectivePacketModelBase<T_Model, T_Collective, T_Channel>, MU::Context, 1024 + MU::InjChannel::completion_event_state_bytes, uint32_t, uint8_t, uint8_t >
       {
         protected :
 
           /// \see PAMI::Device::Interface::CollectivePacketModel::CollectivePacketModel
-          CollectivePacketModelBase (MU::Context & context, void * cookie = NULL);
+          BroadcastCollectivePacketModelBase (MU::Context & context, void * cookie = NULL);
 
           /// \see PAMI::Device::Interface::CollectivePacketModel::~CollectivePacketModel
-          virtual ~CollectivePacketModelBase () /*PAMI_abort();*/
+          virtual ~BroadcastCollectivePacketModelBase () /*PAMI_abort();*/
           {
           }
 
@@ -186,6 +187,7 @@ namespace PAMI
 
         protected:
 
+          MUSPI_DescriptorBase            _reducepkt; // A reduce packet to bracket the broadcast packet
           MUSPI_DescriptorBase            _singlepkt;
           MUSPI_DescriptorBase            _multipkt;
           MU::Context                   & _context;
@@ -193,15 +195,16 @@ namespace PAMI
       };
 
       template <class T_Model, unsigned T_Collective, unsigned T_Channel>
-      CollectivePacketModelBase<T_Model, T_Collective, T_Channel>::CollectivePacketModelBase (MU::Context & context, void * cookie) :
-          Interface::CollectivePacketModel < MU::CollectivePacketModelBase<T_Model, T_Collective, T_Channel>, MU::Context, 1024 + MU::InjChannel::completion_event_state_bytes, uint32_t, uint8_t, uint8_t > (context),
+      BroadcastCollectivePacketModelBase<T_Model, T_Collective, T_Channel>::BroadcastCollectivePacketModelBase (MU::Context & context, void * cookie) :
+          Interface::CollectivePacketModel < MU::BroadcastCollectivePacketModelBase<T_Model, T_Collective, T_Channel>, MU::Context, 1024 + MU::InjChannel::completion_event_state_bytes, uint32_t, uint8_t, uint8_t > (context),
           _context (context),
           _cookie (cookie)
       {
         TRACE_FN_ENTER();
-        COMPILE_TIME_ASSERT(sizeof(InjectDescriptorMessage<1>) <= packet_model_state_bytes);
+        COMPILE_TIME_ASSERT(sizeof(InjectDescriptorMessage<3>) <= packet_model_state_bytes);
 
         // Zero-out the descriptor models before initialization
+        memset((void *)&_reducepkt, 0, sizeof(_reducepkt));
         memset((void *)&_singlepkt, 0, sizeof(_singlepkt));
         memset((void *)&_multipkt, 0, sizeof(_multipkt));
 
@@ -220,6 +223,9 @@ namespace PAMI
         _singlepkt.setBaseFields (&base);
         _multipkt.setBaseFields (&base);
 
+        base.Dest.Destination.E_Destination = 3; // bogus E dimension for reduce root
+        _reducepkt.setBaseFields (&base);
+
 
         // --------------------------------------------------------------------
         // Set the common point-to-point descriptor fields
@@ -228,7 +234,7 @@ namespace PAMI
         memset((void *)&collective, 0, sizeof(collective));
 
         collective.Op_Code = MUHWI_COLLECTIVE_OP_CODE_SIGNED_ADD;
-        collective.Word_Length = 4;
+        collective.Word_Length = 4; 
         collective.Class_Route = 0;
         collective.Misc = T_Channel | T_Collective;
         collective.Skip = 0;
@@ -240,6 +246,11 @@ namespace PAMI
         _multipkt.setDataPacketType (MUHWI_COLLECTIVE_DATA_PACKET_TYPE);
         _multipkt.PacketHeader.NetworkHeader.collective.Byte8.Size = 16;
         _multipkt.setCollectiveFields (&collective);
+
+        collective.Misc = T_Channel | MUHWI_COLLECTIVE_TYPE_REDUCE;
+        _reducepkt.setDataPacketType (MUHWI_COLLECTIVE_DATA_PACKET_TYPE);
+        _reducepkt.PacketHeader.NetworkHeader.collective.Byte8.Size = 16;
+        _reducepkt.setCollectiveFields (&collective);
 
 
         // --------------------------------------------------------------------
@@ -257,7 +268,12 @@ namespace PAMI
         _singlepkt.setMessageUnitPacketType (MUHWI_PACKET_TYPE_FIFO);
         _multipkt.setMemoryFIFOFields (&memfifo);
         _multipkt.setMessageUnitPacketType (MUHWI_PACKET_TYPE_FIFO);
+        _reducepkt.setMemoryFIFOFields (&memfifo);
+        _reducepkt.setMessageUnitPacketType (MUHWI_PACKET_TYPE_FIFO);
 
+        //_reducepkt.setRecFIFOId(id);
+        //_reducepkt.setClassRoute(0);
+        _reducepkt.setPayload(NULL, 0);
 
         // --------------------------------------------------------------------
         // Set the network header information in the descriptor models to
@@ -268,6 +284,10 @@ namespace PAMI
 
         hdr = (MemoryFifoPacketHeader *) & _singlepkt.PacketHeader;
         hdr->setSinglePacket (true);
+
+        hdr = (MemoryFifoPacketHeader *) & _reducepkt.PacketHeader;
+        hdr->setSinglePacket (true);
+        //hdr->setMetaData(metadata, metasize);
 
         hdr = (MemoryFifoPacketHeader *) & _multipkt.PacketHeader;
         hdr->setSinglePacket (false);
@@ -280,7 +300,7 @@ namespace PAMI
       };
 
       template <class T_Model, unsigned T_Collective, unsigned T_Channel>
-      pami_result_t CollectivePacketModelBase<T_Model, T_Collective, T_Channel>::init_impl (size_t                      dispatch,
+      pami_result_t BroadcastCollectivePacketModelBase<T_Model, T_Collective, T_Channel>::init_impl (size_t                      dispatch,
           Interface::RecvFunction_t   direct_recv_func,
           void                      * direct_recv_func_parm,
           Interface::RecvFunction_t   read_recv_func,
@@ -307,6 +327,9 @@ namespace PAMI
             hdr = (MemoryFifoPacketHeader *) & _multipkt.PacketHeader;
             hdr->setDispatchId (id);
 
+            hdr = (MemoryFifoPacketHeader *) & _reducepkt.PacketHeader;
+            hdr->setDispatchId (id);
+
             TRACE_FORMAT("<%u/%u> register packet handler success. dispatch id = %d", T_Collective, T_Channel, id);
 
             //MUSPI_DescriptorDumpHex((char *)"_singlepkt", &_singlepkt);
@@ -324,7 +347,7 @@ namespace PAMI
 
       template <class T_Model, unsigned T_Collective, unsigned T_Channel>
       template <unsigned T_Niov>
-      bool CollectivePacketModelBase<T_Model, T_Collective, T_Channel>::postCollectivePacket_impl (uint8_t               (&state)[packet_model_state_bytes],
+      bool BroadcastCollectivePacketModelBase<T_Model, T_Collective, T_Channel>::postCollectivePacket_impl (uint8_t               (&state)[packet_model_state_bytes],
           pami_event_function   fn,
           void                * cookie,
           uint32_t              route,
@@ -334,7 +357,7 @@ namespace PAMI
       {
         TRACE_FN_ENTER();
 
-        PAMI_assert(T_Collective == MUHWI_COLLECTIVE_TYPE_BROADCAST); 
+        PAMI_assert(T_Collective == MUHWI_COLLECTIVE_TYPE_BROADCAST);
 
         uint16_t              rfifo;
 
@@ -342,16 +365,21 @@ namespace PAMI
 
         InjChannel & channel = _context.injectionGroup.channel[fnum];
 
-        size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
 
-        TRACE_FORMAT("<%u/%u> rfifo = %u, fnum = %zu, ndesc = %zd", T_Collective, T_Channel, rfifo, fnum, ndesc);
+        MUHWI_Descriptor_t * desc_array[3];
 
-        if (likely(channel.isSendQueueEmpty() && ndesc > 0))
+        TRACE_FORMAT("<%u/%u> rfifo = %u, fnum = %zu", T_Collective, T_Channel, rfifo, fnum);
+
+        if (likely(channel.isSendQueueEmpty() && (channel.getNextDescriptorMultiple(3, &desc_array[0]) != -1ULL)))
           {
-            // There is at least one descriptor slot available in the injection
-            // fifo before a fifo-wrap event.
+            // Clone the reduce packet model descriptor into the injection channel
+            MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc_array[0];
+            _reducepkt.clone(*memfifo);
+            memfifo = (MUSPI_DescriptorBase *) desc_array[2];
+            _reducepkt.clone(*memfifo);
 
-            MUHWI_Descriptor_t * desc = channel.getNextDescriptor ();
+            // Prepare the broadcast packet descriptor
+            MUHWI_Descriptor_t * desc = desc_array[1];
 
             void * vaddr   = NULL;
             uint64_t paddr = 0;
@@ -359,8 +387,8 @@ namespace PAMI
             channel.getDescriptorPayload (desc, vaddr, paddr);
             TRACE_FORMAT("<%u/%u> desc = %p, vaddr = %p, paddr = %ld (%p)", T_Collective, T_Channel, desc, vaddr, paddr, (void *)paddr);
 
-            // Clone the single-packet model descriptor into the injection fifo
-            MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc;
+            // Clone the single-packet model descriptor into the injection channel
+            memfifo = (MUSPI_DescriptorBase *) desc;
             _singlepkt.clone (*memfifo);
 
             // Initialize the injection fifo descriptor in-place.
@@ -398,7 +426,7 @@ namespace PAMI
 
             // Finally, advance the injection fifo tail pointer. This action
             // completes the injection operation.
-            channel.injFifoAdvanceDesc ();
+            channel.injFifoAdvanceDescMultiple(3);
 
             // Invoke the completion callback function
             if (unlikely(fn != NULL))
@@ -412,8 +440,12 @@ namespace PAMI
               (InjectDescriptorMessage<1> *) state;
             new (msg) InjectDescriptorMessage<1> (channel, fn, cookie);
 
+            // Clone the reduce packets into the message (before and after the bcast)
+            _reducepkt.clone(msg->desc[0]);
+            _reducepkt.clone(msg->desc[2]);
+
             // Clone the single-packet descriptor model into the message
-            _singlepkt.clone (msg->desc[0]);
+            _singlepkt.clone (msg->desc[1]);
 
             // Copy the payload into the model state memory
             size_t i, tbytes = 0;
@@ -443,13 +475,13 @@ namespace PAMI
                              ((uint64_t)payload - (uint64_t)memRegion.BaseVa);
 
             // Initialize the injection fifo descriptor in-place.
-            msg->desc[0].setRecFIFOId (rfifo);
-            msg->desc[0].setClassRoute (route);
-            msg->desc[0].setPayload (paddr, tbytes);
+            msg->desc[1].setRecFIFOId (rfifo);
+            msg->desc[1].setClassRoute (route);
+            msg->desc[1].setPayload (paddr, tbytes);
 
             // Copy the metadata into the packet header.
             MemoryFifoPacketHeader * hdr =
-              (MemoryFifoPacketHeader*) & msg->desc[0].PacketHeader;
+              (MemoryFifoPacketHeader*) & msg->desc[1].PacketHeader;
 
             // Eliminated memcpy and an if branch
             hdr->setMetaData (metadata, metasize);
@@ -463,7 +495,7 @@ namespace PAMI
       };
 
       template <class T_Model, unsigned T_Collective, unsigned T_Channel>
-      bool CollectivePacketModelBase<T_Model, T_Collective, T_Channel>::postCollectivePacket_impl (uint8_t               (&state)[packet_model_state_bytes],
+      bool BroadcastCollectivePacketModelBase<T_Model, T_Collective, T_Channel>::postCollectivePacket_impl (uint8_t               (&state)[packet_model_state_bytes],
           pami_event_function   fn,
           void                * cookie,
           uint32_t              route,
@@ -482,16 +514,20 @@ namespace PAMI
 
         InjChannel & channel = _context.injectionGroup.channel[fnum];
 
-        size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
+        MUHWI_Descriptor_t * desc_array[3];
 
-        TRACE_FORMAT("<%u/%u> rfifo = %u, fnum = %zu, ndesc = %zd", T_Collective, T_Channel, rfifo, fnum, ndesc);
+        TRACE_FORMAT("<%u/%u> rfifo = %u, fnum = %zu", T_Collective, T_Channel, rfifo, fnum);
 
-        if (likely(channel.isSendQueueEmpty() && ndesc > 0))
+        if (likely(channel.isSendQueueEmpty() && (channel.getNextDescriptorMultiple(3, &desc_array[0]) != -1ULL)))
           {
-            // There is at least one descriptor slot available in the injection
-            // fifo before a fifo-wrap event.
+            // Clone the reduce packet model descriptor into the injection channel
+            MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc_array[0];
+            _reducepkt.clone(*memfifo);
+            memfifo = (MUSPI_DescriptorBase *) desc_array[2];
+            _reducepkt.clone(*memfifo);
 
-            MUHWI_Descriptor_t * desc = channel.getNextDescriptor ();
+            // Prepare the broadcast packet descriptor
+            MUHWI_Descriptor_t * desc = desc_array[1];
 
             void * vaddr;
             uint64_t paddr;
@@ -499,8 +535,8 @@ namespace PAMI
             channel.getDescriptorPayload (desc, vaddr, paddr);
             TRACE_FORMAT("<%u/%u> desc = %p, vaddr = %p, paddr = %ld (%p)", T_Collective, T_Channel, desc, vaddr, paddr, (void *)paddr);
 
-            // Clone the single-packet model descriptor into the injection fifo
-            MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc;
+            // Clone the single-packet model descriptor into the injection channel
+            memfifo = (MUSPI_DescriptorBase *) desc;
             _singlepkt.clone (*memfifo);
 
             // Initialize the injection fifo descriptor in-place.
@@ -534,7 +570,7 @@ namespace PAMI
 
             // Finally, advance the injection fifo tail pointer. This action
             // completes the injection operation.
-            channel.injFifoAdvanceDesc ();
+            channel.injFifoAdvanceDescMultiple(3);
 
             // Invoke the completion callback function
             if (unlikely(fn != NULL))
@@ -549,8 +585,12 @@ namespace PAMI
               (InjectDescriptorMessage<1> *) state;
             new (msg) InjectDescriptorMessage<1> (channel, fn, cookie);
 
+            // Clone the reduce packets into the message (before and after the bcast)
+            _reducepkt.clone(msg->desc[0]);
+            _reducepkt.clone(msg->desc[2]);
+
             // Clone the single-packet descriptor model into the message
-            _singlepkt.clone (msg->desc[0]);
+            _singlepkt.clone (msg->desc[1]);
 
             // Copy the payload into the model state memory
             size_t i, tbytes = 0;
@@ -579,13 +619,13 @@ namespace PAMI
                              ((uint64_t)payload - (uint64_t)memRegion.BaseVa);
 
             // Initialize the injection fifo descriptor in-place.
-            msg->desc[0].setRecFIFOId (rfifo);
-            msg->desc[0].setClassRoute (route);
-            msg->desc[0].setPayload (paddr, tbytes);
+            msg->desc[1].setRecFIFOId (rfifo);
+            msg->desc[1].setClassRoute (route);
+            msg->desc[1].setPayload (paddr, tbytes);
 
             // Copy the metadata into the packet header.
             MemoryFifoPacketHeader * hdr =
-              (MemoryFifoPacketHeader*) & msg->desc[0].PacketHeader;
+              (MemoryFifoPacketHeader*) & msg->desc[1].PacketHeader;
 
             // Eliminated memcpy and an if branch
             hdr->setMetaData (metadata, metasize);
@@ -599,7 +639,7 @@ namespace PAMI
       };
 
       template <class T_Model, unsigned T_Collective, unsigned T_Channel>
-      bool CollectivePacketModelBase<T_Model, T_Collective, T_Channel>::postCollectivePacket_impl (uint8_t               (&state)[packet_model_state_bytes],
+      bool BroadcastCollectivePacketModelBase<T_Model, T_Collective, T_Channel>::postCollectivePacket_impl (uint8_t               (&state)[packet_model_state_bytes],
           pami_event_function   fn,
           void                * cookie,
           uint32_t              route,
@@ -618,51 +658,65 @@ namespace PAMI
 
         InjChannel & channel = _context.injectionGroup.channel[fnum];
 
-        size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
+        MUHWI_Descriptor_t * desc_array[3];
 
-        TRACE_FORMAT("<%u/%u> rfifo = %u, fnum = %zu, ndesc = %zd", T_Collective, T_Channel, rfifo, fnum, ndesc);
+        // If we have a payload, then we have 3 packets: reduce, bcast(payload), reduce
+        // Otherwise we only have 2 packets: reduce, reduce
+        uint32_t ndesc = payload == NULL? 2:3;
 
-        if (likely(channel.isSendQueueEmpty() && ndesc > 0))
+        TRACE_FORMAT("<%u/%u> rfifo = %u, fnum = %zu", T_Collective, T_Channel, rfifo, fnum);
+
+        if (likely(channel.isSendQueueEmpty() && (channel.getNextDescriptorMultiple(ndesc, &desc_array[0]) != -1ULL)))
           {
-            // There is at least one descriptor slot available in the injection
-            // fifo before a fifo-wrap event.
+            // Clone the reduce packet model descriptors into the injection channel
+            MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc_array[0];
+            _reducepkt.clone(*memfifo);
+            TRACE_HEXDATA(memfifo,  sizeof(*memfifo));
+            memfifo = (MUSPI_DescriptorBase *) desc_array[ndesc-1];
+            _reducepkt.clone(*memfifo);
+            TRACE_HEXDATA(memfifo,  sizeof(*memfifo));
 
-            MUHWI_Descriptor_t * desc = channel.getNextDescriptor ();
-
-            void * vaddr;
-            uint64_t paddr;
-
-            channel.getDescriptorPayload (desc, vaddr, paddr);
-            TRACE_FORMAT("<%u/%u> desc = %p, vaddr = %p, paddr = %ld (%p)", T_Collective, T_Channel, desc, vaddr, paddr, (void *)paddr);
-            // Clone the single-packet model descriptor into the injection fifo
-            MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc;
-            _singlepkt.clone (*memfifo);
-
-            // Initialize the injection fifo descriptor in-place.
-            memfifo->setRecFIFOId (rfifo);
-            memfifo->setClassRoute (route);
-
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-
-            // Mambo does not support zero-byte packets
-            if (__global.personality._is_mambo)
-              memfifo->setPayload (paddr, MAX(1, length));
-            else
-#endif
-              memfifo->setPayload (paddr, length);
-
-            MemoryFifoPacketHeader *hdr = (MemoryFifoPacketHeader*)
-                                          & memfifo->PacketHeader;
-            //Eliminated memcpy and an if branch
-            hdr->setMetaData(metadata, metasize);
-
-            // Copy the payload into the immediate payload buffer.
-            memcpy (vaddr, payload, length);
-
-            //MUSPI_DescriptorDumpHex((char *)"desc", desc);
-            // Finally, advance the injection fifo tail pointer. This action
-            // completes the injection operation.
-            channel.injFifoAdvanceDesc ();
+            if(ndesc == 3)
+            {
+              // Prepare the broadcast packet descriptor
+              MUHWI_Descriptor_t * desc = desc_array[1];
+  
+              void * vaddr;
+              uint64_t paddr;
+  
+              channel.getDescriptorPayload (desc, vaddr, paddr);
+              TRACE_FORMAT("<%u/%u> desc = %p, vaddr = %p, paddr = %ld (%p)", T_Collective, T_Channel, desc, vaddr, paddr, (void *)paddr);
+              // Clone the single-packet model descriptor into the injection channel
+              memfifo = (MUSPI_DescriptorBase *) desc;
+              _singlepkt.clone (*memfifo);
+  
+              // Initialize the injection fifo descriptor in-place.
+              memfifo->setRecFIFOId (rfifo);
+              memfifo->setClassRoute (route);
+  
+  #ifdef ENABLE_MAMBO_WORKAROUNDS
+  
+              // Mambo does not support zero-byte packets
+              if (__global.personality._is_mambo)
+                memfifo->setPayload (paddr, MAX(1, length));
+              else
+  #endif
+                memfifo->setPayload (paddr, length);
+  
+              MemoryFifoPacketHeader *hdr = (MemoryFifoPacketHeader*)
+                                            & memfifo->PacketHeader;
+              //Eliminated memcpy and an if branch
+              hdr->setMetaData(metadata, metasize);
+  
+              // Copy the payload into the immediate payload buffer.
+              memcpy (vaddr, payload, length);
+  
+              //MUSPI_DescriptorDumpHex((char *)"desc", desc);
+              // Finally, advance the injection fifo tail pointer. This action
+              // completes the injection operation.
+              TRACE_HEXDATA(memfifo,  sizeof(*memfifo));
+            }
+            channel.injFifoAdvanceDescMultiple(ndesc);
 
             // Invoke the completion callback function
             if (unlikely(fn != NULL))
@@ -670,46 +724,56 @@ namespace PAMI
           }
         else
           {
-            // Create a simple single-descriptor message
-            InjectDescriptorMessage<1> * msg =
-              (InjectDescriptorMessage<1> *) state;
-            new (msg) InjectDescriptorMessage<1> (channel, fn, cookie);
+            // Create a simple injection message for (up to) 3 descriptors
+            InjectDescriptorMessage<3> * msg =
+              (InjectDescriptorMessage<3> *) state;
+            new (msg) InjectDescriptorMessage<3> (channel, fn, cookie);
 
-            // Clone the single-packet descriptor model into the message
-            _singlepkt.clone (msg->desc[0]);
+            // Clone the reduce packets into the message (before and after the bcast)
+            _reducepkt.clone(msg->desc[0]);
+            _reducepkt.clone(msg->desc[ndesc-1]);
 
-            // Copy the payload into the model state memory
-            memcpy ((void *)(msg + 1), payload, length);
-
-            // Determine the physical address of the (temporary) payload
-            // buffer from the model state memory.
-            Kernel_MemoryRegion_t memRegion;
-            uint32_t rc;
-            rc = Kernel_CreateMemoryRegion (&memRegion, (msg + 1), length);
-            PAMI_assert ( rc == 0 );
-            uint64_t paddr = (uint64_t)memRegion.BasePa +
-                             ((uint64_t)(msg + 1) - (uint64_t)memRegion.BaseVa);
-
-            // Initialize the injection fifo descriptor in-place.
-            msg->desc[0].setRecFIFOId (rfifo);/// \todo necessary? or always the same?
-            msg->desc[0].setClassRoute (route);
-
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-
-            // Mambo does not support zero-byte packets
-            if (__global.personality._is_mambo)
-              msg->desc[0].setPayload (paddr, MAX(1, length));
+            if(ndesc == 3)
+            {
+              // Clone the single-packet descriptor model into the message
+              _singlepkt.clone (msg->desc[1]);
+  
+              // Copy the payload into the model state memory
+              memcpy ((void *)(msg + 1), payload, length);
+  
+              // Determine the physical address of the (temporary) payload
+              // buffer from the model state memory.
+              Kernel_MemoryRegion_t memRegion;
+              uint32_t rc;
+              rc = Kernel_CreateMemoryRegion (&memRegion, (msg + 1), length);
+              PAMI_assert ( rc == 0 );
+              uint64_t paddr = (uint64_t)memRegion.BasePa +
+                               ((uint64_t)(msg + 1) - (uint64_t)memRegion.BaseVa);
+  
+              // Initialize the injection fifo descriptor in-place.
+              msg->desc[1].setRecFIFOId (rfifo);/// \todo necessary? or always the same?
+              msg->desc[1].setClassRoute (route);
+  
+  #ifdef ENABLE_MAMBO_WORKAROUNDS
+  
+              // Mambo does not support zero-byte packets
+              if (__global.personality._is_mambo)
+                msg->desc[1].setPayload (paddr, MAX(1, length));
+              else
+  #endif
+                msg->desc[1].setPayload (paddr, length);
+  
+              TRACE_FORMAT("<%u/%u> desc = %p, paddr = %ld, payload = %p, length = %zu", T_Collective, T_Channel, & msg->desc[1], paddr, payload, length);
+              // Copy the metadata into the packet header.
+              MemoryFifoPacketHeader * hdr =
+                (MemoryFifoPacketHeader*) & msg->desc[1].PacketHeader;
+  
+              // Eliminated memcpy and an if branch
+              hdr->setMetaData (metadata, metasize);
+  
+            }
             else
-#endif
-              msg->desc[0].setPayload (paddr, length);
-
-            TRACE_FORMAT("<%u/%u> desc = %p, paddr = %ld, payload = %p, length = %zu", T_Collective, T_Channel, & msg->desc[0], paddr, payload, length);
-            // Copy the metadata into the packet header.
-            MemoryFifoPacketHeader * hdr =
-              (MemoryFifoPacketHeader*) & msg->desc[0].PacketHeader;
-
-            // Eliminated memcpy and an if branch
-            hdr->setMetaData (metadata, metasize);
+              msg->setNumberActiveDescriptors(ndesc); // only use 2 of the 3 descriptors in the message
 
             // Post the message to the injection channel
             channel.post (msg);
@@ -720,7 +784,7 @@ namespace PAMI
       };
 
       template <class T_Model, unsigned T_Collective, unsigned T_Channel>
-      bool CollectivePacketModelBase<T_Model, T_Collective, T_Channel>::postMultiCollectivePacket_impl (uint8_t               (&state)[packet_model_state_bytes],
+      bool BroadcastCollectivePacketModelBase<T_Model, T_Collective, T_Channel>::postMultiCollectivePacket_impl (uint8_t               (&state)[packet_model_state_bytes],
           pami_event_function   fn,
           void                * cookie,
           uint32_t              route,
@@ -739,9 +803,9 @@ namespace PAMI
 
         InjChannel & channel = _context.injectionGroup.channel[fnum];
 
-        size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
+        MUHWI_Descriptor_t * desc_array[3];
 
-        TRACE_FORMAT("<%u/%u> rfifo = %u, fnum = %zu, ndesc = %zd", T_Collective, T_Channel, rfifo, fnum, ndesc);
+        TRACE_FORMAT("<%u/%u> rfifo = %u, fnum = %zu", T_Collective, T_Channel, rfifo, fnum);
 
         // Determine the physical address of the source data.
         Kernel_MemoryRegion_t memregion;
@@ -749,38 +813,52 @@ namespace PAMI
         uint64_t paddr = (uint64_t) memregion.BasePa +
                          ((uint64_t) payload - (uint64_t) memregion.BaseVa);
 
-        if (likely(channel.isSendQueueEmpty() && ndesc > 0))
+        // If we have a payload, then we have 3 packets: reduce, bcast(payload), reduce
+        // Otherwise we only have 2 packets: reduce, reduce
+        uint32_t ndesc = payload == NULL? 2:3;
+
+        TRACE_FORMAT("<%u/%u> rfifo = %u, fnum = %zu", T_Collective, T_Channel, rfifo, fnum);
+
+        if (likely(channel.isSendQueueEmpty() && (channel.getNextDescriptorMultiple(ndesc, &desc_array[0]) != -1ULL)))
           {
-            // There is at least one descriptor slot available in the injection
-            // fifo before a fifo-wrap event.
+            // Clone the reduce packet model descriptors into the injection channel
+            MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc_array[0];
+            _reducepkt.clone(*memfifo);
+            TRACE_HEXDATA(memfifo,  sizeof(*memfifo));
+            memfifo = (MUSPI_DescriptorBase *) desc_array[ndesc-1];
+            _reducepkt.clone(*memfifo);
+            TRACE_HEXDATA(memfifo,  sizeof(*memfifo));
 
-            MUHWI_Descriptor_t * desc = channel.getNextDescriptor ();
+            if(ndesc == 3)
+            {
+              // Prepare the broadcast packet descriptor
+              MUHWI_Descriptor_t * desc = desc_array[1];
 
-            // Clone the multi-packet model descriptor into the injection fifo
-            MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc;
-            _multipkt.clone (*memfifo);
+              // Clone the multi-packet model descriptor into the injection channel
+              memfifo = (MUSPI_DescriptorBase *) desc;
+              _multipkt.clone (*memfifo);
 
-            // Initialize the injection fifo descriptor in-place.
-            memfifo->setRecFIFOId (rfifo);/// \todo necessary? or always the same?
-            memfifo->setClassRoute (route);
+              // Initialize the injection fifo descriptor in-place.
+              memfifo->setRecFIFOId (rfifo);/// \todo necessary? or always the same?
+              memfifo->setClassRoute (route);
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
 
-            // Mambo does not support zero-byte packets
-            if (__global.personality._is_mambo)
-              memfifo->setPayload (paddr, MAX(1, length));
-            else
+              // Mambo does not support zero-byte packets
+              if (__global.personality._is_mambo)
+                memfifo->setPayload (paddr, MAX(1, length));
+              else
 #endif
-              memfifo->setPayload (paddr, length);
+                memfifo->setPayload (paddr, length);
 
-            MemoryFifoPacketHeader *hdr = (MemoryFifoPacketHeader*)
-                                          & memfifo->PacketHeader;
-            //Eliminated memcpy and an if branch
-            hdr->setMetaData(metadata, metasize);
+              MemoryFifoPacketHeader *hdr = (MemoryFifoPacketHeader*)& memfifo->PacketHeader;
 
+              //Eliminated memcpy and an if branch
+              hdr->setMetaData(metadata, metasize);
+            }
             // Advance the injection fifo tail pointer. This action
             // completes the injection operation.
-            uint64_t sequence = channel.injFifoAdvanceDesc ();
+            uint64_t sequence = channel.injFifoAdvanceDescMultiple(ndesc);
 
             // Add a completion event for the sequence number associated with
             // the descriptor that was injected.
@@ -790,33 +868,42 @@ namespace PAMI
           }
         else
           {
-            // Create a simple single-descriptor message
-            InjectDescriptorMessage<1> * msg =
-              (InjectDescriptorMessage<1> *) state;
-            new (msg) InjectDescriptorMessage<1> (channel, fn, cookie);
+            // Create a simple injection message for (up to) 3 descriptors
+            InjectDescriptorMessage<3> * msg =
+              (InjectDescriptorMessage<3> *) state;
+            new (msg) InjectDescriptorMessage<3> (channel, fn, cookie);
 
-            // Clone the multi-packet descriptor model into the message
-            _multipkt.clone (msg->desc[0]);
+            // Clone the reduce packets into the message (before and after the bcast)
+            _reducepkt.clone(msg->desc[0]);
+            _reducepkt.clone(msg->desc[ndesc-1]);
 
-            // Copy the metadata into the packet header.
-            MemoryFifoPacketHeader * hdr =
-              (MemoryFifoPacketHeader*) & msg->desc[0].PacketHeader;
+            if(ndesc == 3)
+            {
 
-            // Eliminated memcpy and an if branch
-            hdr->setMetaData (metadata, metasize);
+              // Clone the multi-packet descriptor model into the message
+              _multipkt.clone (msg->desc[1]);
 
-            // Initialize the injection fifo descriptor in-place.
-            msg->desc[0].setRecFIFOId (rfifo);/// \todo necessary? or always the same?
-            msg->desc[0].setClassRoute (route);
+              // Copy the metadata into the packet header.
+              MemoryFifoPacketHeader * hdr = (MemoryFifoPacketHeader*) & msg->desc[1].PacketHeader;
+
+              // Eliminated memcpy and an if branch
+              hdr->setMetaData (metadata, metasize);
+
+              // Initialize the injection fifo descriptor in-place.
+              msg->desc[1].setRecFIFOId (rfifo);/// \todo necessary? or always the same?
+              msg->desc[1].setClassRoute (route);
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
 
-            // Mambo does not support zero-byte packets
-            if (__global.personality._is_mambo)
-              msg->desc[0].setPayload (paddr, MAX(1, length));
-            else
+              // Mambo does not support zero-byte packets
+              if (__global.personality._is_mambo)
+                msg->desc[1].setPayload (paddr, MAX(1, length));
+              else
 #endif
-              msg->desc[0].setPayload (paddr, length);
+                msg->desc[1].setPayload (paddr, length);
+            }
+            else
+              msg->setNumberActiveDescriptors(ndesc); // only use 2 of the 3 descriptors in the message
 
             // Post the message to the injection channel
             channel.post (msg);
@@ -828,7 +915,7 @@ namespace PAMI
 
       template <class T_Model, unsigned T_Collective, unsigned T_Channel>
       template <unsigned T_Niov>
-      bool CollectivePacketModelBase<T_Model, T_Collective, T_Channel>::postCollectivePacket_impl (uint8_t               (&state)[packet_model_state_bytes],
+      bool BroadcastCollectivePacketModelBase<T_Model, T_Collective, T_Channel>::postCollectivePacket_impl (uint8_t               (&state)[packet_model_state_bytes],
           pami_event_function   fn,
           void                * cookie,
           uint32_t              route,
@@ -849,9 +936,9 @@ namespace PAMI
 
         InjChannel & channel = _context.injectionGroup.channel[fnum];
 
-        size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
+        MUHWI_Descriptor_t * desc_array[3];
 
-        TRACE_FORMAT("<%u/%u> rfifo = %u, fnum = %zu, ndesc = %zd", T_Collective, T_Channel, rfifo, fnum, ndesc);
+        TRACE_FORMAT("<%u/%u> rfifo = %u, fnum = %zu", T_Collective, T_Channel, rfifo, fnum);
 
         MUHWI_Destination_t dest;
         _context.getMuDestinationTask (root,
@@ -862,12 +949,16 @@ namespace PAMI
         TRACE_FORMAT("root %zd, op %u, dt %u, dest %u/%u/%u/%u/%u", root, op, dt,
                      dest.Destination.A_Destination,dest.Destination.B_Destination,dest.Destination.C_Destination,dest.Destination.D_Destination,dest.Destination.E_Destination);
 
-        if (likely(channel.isSendQueueEmpty() && ndesc > 0))
+        if (likely(channel.isSendQueueEmpty() && (channel.getNextDescriptorMultiple(3, &desc_array[0]) != -1ULL)))
           {
-            // There is at least one descriptor slot available in the injection
-            // fifo before a fifo-wrap event.
+            // Clone the reduce packet model descriptor into the injection channel
+            MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc_array[0];
+            _reducepkt.clone(*memfifo);
+            memfifo = (MUSPI_DescriptorBase *) desc_array[2];
+            _reducepkt.clone(*memfifo);
 
-            MUHWI_Descriptor_t * desc = channel.getNextDescriptor ();
+            // Prepare the broadcast packet descriptor
+            MUHWI_Descriptor_t * desc = desc_array[1];
 
             void * vaddr   = NULL;
             uint64_t paddr = 0;
@@ -875,8 +966,8 @@ namespace PAMI
             channel.getDescriptorPayload (desc, vaddr, paddr);
             TRACE_FORMAT("<%u/%u> desc = %p, vaddr = %p, paddr = %ld (%p)", T_Collective, T_Channel, desc, vaddr, paddr, (void *)paddr);
 
-            // Clone the single-packet model descriptor into the injection fifo
-            MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc;
+            // Clone the single-packet model descriptor into the injection channel
+            memfifo = (MUSPI_DescriptorBase *) desc;
             _singlepkt.clone (*memfifo);
 
             // Initialize the injection fifo descriptor in-place.
@@ -914,7 +1005,7 @@ namespace PAMI
 
             // Finally, advance the injection fifo tail pointer. This action
             // completes the injection operation.
-            channel.injFifoAdvanceDesc ();
+            channel.injFifoAdvanceDescMultiple(3);
 
             // Invoke the completion callback function
             if (unlikely(fn != NULL))
@@ -928,8 +1019,12 @@ namespace PAMI
               (InjectDescriptorMessage<1> *) state;
             new (msg) InjectDescriptorMessage<1> (channel, fn, cookie);
 
+            // Clone the reduce packets into the message (before and after the bcast)
+            _reducepkt.clone(msg->desc[0]);
+            _reducepkt.clone(msg->desc[2]);
+
             // Clone the single-packet descriptor model into the message
-            _singlepkt.clone (msg->desc[0]);
+            _singlepkt.clone (msg->desc[1]);
 
             // Copy the payload into the model state memory
             size_t i, tbytes = 0;
@@ -958,13 +1053,13 @@ namespace PAMI
                              ((uint64_t)payload - (uint64_t)memRegion.BaseVa);
 
             // Initialize the injection fifo descriptor in-place.
-            msg->desc[0].setRecFIFOId (rfifo);
-            msg->desc[0].setClassRoute (route);
-            msg->desc[0].setPayload (paddr, tbytes);
+            msg->desc[1].setRecFIFOId (rfifo);
+            msg->desc[1].setClassRoute (route);
+            msg->desc[1].setPayload (paddr, tbytes);
 
             // Copy the metadata into the packet header.
             MemoryFifoPacketHeader * hdr =
-              (MemoryFifoPacketHeader*) & msg->desc[0].PacketHeader;
+              (MemoryFifoPacketHeader*) & msg->desc[1].PacketHeader;
 
             // Eliminated memcpy and an if branch
             hdr->setMetaData (metadata, metasize);
@@ -978,7 +1073,7 @@ namespace PAMI
       };
 
       template <class T_Model, unsigned T_Collective, unsigned T_Channel>
-      bool CollectivePacketModelBase<T_Model, T_Collective, T_Channel>::postCollectivePacket_impl (uint8_t              (&state)[packet_model_state_bytes],
+      bool BroadcastCollectivePacketModelBase<T_Model, T_Collective, T_Channel>::postCollectivePacket_impl (uint8_t              (&state)[packet_model_state_bytes],
           pami_event_function   fn,
           void                * cookie,
           uint32_t              route,
@@ -1000,9 +1095,9 @@ namespace PAMI
 
         InjChannel & channel = _context.injectionGroup.channel[fnum];
 
-        size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
+        MUHWI_Descriptor_t * desc_array[3];
 
-        TRACE_FORMAT("<%u/%u> rfifo = %u, fnum = %zu, ndesc = %zd", T_Collective, T_Channel, rfifo, fnum, ndesc);
+        TRACE_FORMAT("<%u/%u> rfifo = %u, fnum = %zu", T_Collective, T_Channel, rfifo, fnum);
 
         MUHWI_Destination_t dest;
         _context.getMuDestinationTask (root,
@@ -1013,12 +1108,16 @@ namespace PAMI
         TRACE_FORMAT("root %zd, op %u, dt %u, dest %u/%u/%u/%u/%u", root, op, dt,
                      dest.Destination.A_Destination,dest.Destination.B_Destination,dest.Destination.C_Destination,dest.Destination.D_Destination,dest.Destination.E_Destination);
 
-        if (likely(channel.isSendQueueEmpty() && ndesc > 0))
+        if (likely(channel.isSendQueueEmpty() && (channel.getNextDescriptorMultiple(3, &desc_array[0]) != -1ULL)))
           {
-            // There is at least one descriptor slot available in the injection
-            // fifo before a fifo-wrap event.
+            // Clone the reduce packet model descriptor into the injection channel
+            MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc_array[0];
+            _reducepkt.clone(*memfifo);
+            memfifo = (MUSPI_DescriptorBase *) desc_array[2];
+            _reducepkt.clone(*memfifo);
 
-            MUHWI_Descriptor_t * desc = channel.getNextDescriptor ();
+            // Prepare the broadcast packet descriptor
+            MUHWI_Descriptor_t * desc = desc_array[1];
 
             void * vaddr;
             uint64_t paddr;
@@ -1026,8 +1125,8 @@ namespace PAMI
             channel.getDescriptorPayload (desc, vaddr, paddr);
             TRACE_FORMAT("<%u/%u> desc = %p, vaddr = %p, paddr = %ld (%p)", T_Collective, T_Channel, desc, vaddr, paddr, (void *)paddr);
 
-            // Clone the single-packet model descriptor into the injection fifo
-            MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc;
+            // Clone the single-packet model descriptor into the injection channel
+            memfifo = (MUSPI_DescriptorBase *) desc;
             _singlepkt.clone (*memfifo);
 
             // Initialize the injection fifo descriptor in-place.
@@ -1061,7 +1160,7 @@ namespace PAMI
 
             // Finally, advance the injection fifo tail pointer. This action
             // completes the injection operation.
-            channel.injFifoAdvanceDesc ();
+            channel.injFifoAdvanceDescMultiple(3);
 
             // Invoke the completion callback function
             if (unlikely(fn != NULL))
@@ -1076,8 +1175,12 @@ namespace PAMI
               (InjectDescriptorMessage<1> *) state;
             new (msg) InjectDescriptorMessage<1> (channel, fn, cookie);
 
+            // Clone the reduce packets into the message (before and after the bcast)
+            _reducepkt.clone(msg->desc[0]);
+            _reducepkt.clone(msg->desc[2]);
+
             // Clone the single-packet descriptor model into the message
-            _singlepkt.clone (msg->desc[0]);
+            _singlepkt.clone (msg->desc[1]);
 
             // Copy the payload into the model state memory
             size_t i, tbytes = 0;
@@ -1106,13 +1209,13 @@ namespace PAMI
                              ((uint64_t)payload - (uint64_t)memRegion.BaseVa);
 
             // Initialize the injection fifo descriptor in-place.
-            msg->desc[0].setRecFIFOId (rfifo);
-            msg->desc[0].setClassRoute (route);
-            msg->desc[0].setPayload (paddr, tbytes);
+            msg->desc[1].setRecFIFOId (rfifo);
+            msg->desc[1].setClassRoute (route);
+            msg->desc[1].setPayload (paddr, tbytes);
 
             // Copy the metadata into the packet header.
             MemoryFifoPacketHeader * hdr =
-              (MemoryFifoPacketHeader*) & msg->desc[0].PacketHeader;
+              (MemoryFifoPacketHeader*) & msg->desc[1].PacketHeader;
 
             // Eliminated memcpy and an if branch
             hdr->setMetaData (metadata, metasize);
@@ -1126,7 +1229,7 @@ namespace PAMI
       };
 
       template <class T_Model, unsigned T_Collective, unsigned T_Channel>
-      bool CollectivePacketModelBase<T_Model, T_Collective, T_Channel>::postCollectivePacket_impl (uint8_t              (&state)[packet_model_state_bytes],
+      bool BroadcastCollectivePacketModelBase<T_Model, T_Collective, T_Channel>::postCollectivePacket_impl (uint8_t              (&state)[packet_model_state_bytes],
           pami_event_function   fn,
           void                * cookie,
           uint32_t              route,
@@ -1148,9 +1251,9 @@ namespace PAMI
 
         InjChannel & channel = _context.injectionGroup.channel[fnum];
 
-        size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
+        MUHWI_Descriptor_t * desc_array[3];
 
-        TRACE_FORMAT("<%u/%u> rfifo = %u, fnum = %zu, ndesc = %zd", T_Collective, T_Channel, rfifo, fnum, ndesc);
+        TRACE_FORMAT("<%u/%u> rfifo = %u, fnum = %zu", T_Collective, T_Channel, rfifo, fnum);
 
         MUHWI_Destination_t dest;
         _context.getMuDestinationTask (root,
@@ -1161,20 +1264,24 @@ namespace PAMI
         TRACE_FORMAT("root %zd, op %u, dt %u, dest %u/%u/%u/%u/%u", root, op, dt,
                      dest.Destination.A_Destination,dest.Destination.B_Destination,dest.Destination.C_Destination,dest.Destination.D_Destination,dest.Destination.E_Destination);
 
-        if (likely(channel.isSendQueueEmpty() && ndesc > 0))
+        if (likely(channel.isSendQueueEmpty() && (channel.getNextDescriptorMultiple(3, &desc_array[0]) != -1ULL)))
           {
-            // There is at least one descriptor slot available in the injection
-            // fifo before a fifo-wrap event.
+            // Clone the reduce packet model descriptor into the injection channel
+            MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc_array[0];
+            _reducepkt.clone(*memfifo);
+            memfifo = (MUSPI_DescriptorBase *) desc_array[2];
+            _reducepkt.clone(*memfifo);
 
-            MUHWI_Descriptor_t * desc = channel.getNextDescriptor ();
+            // Prepare the broadcast packet descriptor
+            MUHWI_Descriptor_t * desc = desc_array[1];
 
             void * vaddr;
             uint64_t paddr;
 
             channel.getDescriptorPayload (desc, vaddr, paddr);
             TRACE_FORMAT("<%u/%u> desc = %p, vaddr = %p, paddr = %ld (%p)", T_Collective, T_Channel, desc, vaddr, paddr, (void *)paddr);
-            // Clone the single-packet model descriptor into the injection fifo
-            MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc;
+            // Clone the single-packet model descriptor into the injection channel
+            memfifo = (MUSPI_DescriptorBase *) desc;
             _singlepkt.clone (*memfifo);
 
             // Initialize the injection fifo descriptor in-place.
@@ -1201,7 +1308,7 @@ namespace PAMI
             //MUSPI_DescriptorDumpHex((char *)"desc", desc);
             // Finally, advance the injection fifo tail pointer. This action
             // completes the injection operation.
-            channel.injFifoAdvanceDesc ();
+            channel.injFifoAdvanceDescMultiple(3);
 
             // Invoke the completion callback function
             if (unlikely(fn != NULL))
@@ -1214,8 +1321,12 @@ namespace PAMI
               (InjectDescriptorMessage<1> *) state;
             new (msg) InjectDescriptorMessage<1> (channel, fn, cookie);
 
+            // Clone the reduce packets into the message (before and after the bcast)
+            _reducepkt.clone(msg->desc[0]);
+            _reducepkt.clone(msg->desc[2]);
+
             // Clone the single-packet descriptor model into the message
-            _singlepkt.clone (msg->desc[0]);
+            _singlepkt.clone (msg->desc[1]);
 
             // Copy the payload into the model state memory
             memcpy ((void *)(msg + 1), payload, length);
@@ -1230,22 +1341,22 @@ namespace PAMI
                              ((uint64_t)(msg + 1) - (uint64_t)memRegion.BaseVa);
 
             // Initialize the injection fifo descriptor in-place.
-            msg->desc[0].setRecFIFOId (rfifo);/// \todo necessary? or always the same?
-            msg->desc[0].setClassRoute (route);
+            msg->desc[1].setRecFIFOId (rfifo);/// \todo necessary? or always the same?
+            msg->desc[1].setClassRoute (route);
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
 
             // Mambo does not support zero-byte packets
             if (__global.personality._is_mambo)
-              msg->desc[0].setPayload (paddr, MAX(1, length));
+              msg->desc[1].setPayload (paddr, MAX(1, length));
             else
 #endif
-              msg->desc[0].setPayload (paddr, length);
+              msg->desc[1].setPayload (paddr, length);
 
-            TRACE_FORMAT("<%u/%u> desc = %p, paddr = %ld, payload = %p, length = %zu", T_Collective, T_Channel, & msg->desc[0], paddr, payload, length);
+            TRACE_FORMAT("<%u/%u> desc = %p, paddr = %ld, payload = %p, length = %zu", T_Collective, T_Channel, & msg->desc[1], paddr, payload, length);
             // Copy the metadata into the packet header.
             MemoryFifoPacketHeader * hdr =
-              (MemoryFifoPacketHeader*) & msg->desc[0].PacketHeader;
+              (MemoryFifoPacketHeader*) & msg->desc[1].PacketHeader;
 
             // Eliminated memcpy and an if branch
             hdr->setMetaData (metadata, metasize);
@@ -1259,7 +1370,7 @@ namespace PAMI
       };
 
       template <class T_Model, unsigned T_Collective, unsigned T_Channel>
-      bool CollectivePacketModelBase<T_Model, T_Collective, T_Channel>::postMultiCollectivePacket_impl (uint8_t               (&state)[packet_model_state_bytes],
+      bool BroadcastCollectivePacketModelBase<T_Model, T_Collective, T_Channel>::postMultiCollectivePacket_impl (uint8_t               (&state)[packet_model_state_bytes],
           pami_event_function   fn,
           void                * cookie,
           uint32_t              route,
@@ -1281,9 +1392,9 @@ namespace PAMI
 
         InjChannel & channel = _context.injectionGroup.channel[fnum];
 
-        size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
+        MUHWI_Descriptor_t * desc_array[3];
 
-        TRACE_FORMAT("<%u/%u> rfifo = %u, fnum = %zu, ndesc = %zd", T_Collective, T_Channel, rfifo, fnum, ndesc);
+        TRACE_FORMAT("<%u/%u> rfifo = %u, fnum = %zu", T_Collective, T_Channel, rfifo, fnum);
 
         MUHWI_Destination_t dest;
         _context.getMuDestinationTask (root,
@@ -1300,15 +1411,19 @@ namespace PAMI
         uint64_t paddr = (uint64_t) memregion.BasePa +
                          ((uint64_t) payload - (uint64_t) memregion.BaseVa);
 
-        if (likely(channel.isSendQueueEmpty() && ndesc > 0))
+        if (likely(channel.isSendQueueEmpty() && (channel.getNextDescriptorMultiple(3, &desc_array[0]) != -1ULL)))
           {
-            // There is at least one descriptor slot available in the injection
-            // fifo before a fifo-wrap event.
+            // Clone the reduce packet model descriptor into the injection channel
+            MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc_array[0];
+            _reducepkt.clone(*memfifo);
+            memfifo = (MUSPI_DescriptorBase *) desc_array[2];
+            _reducepkt.clone(*memfifo);
 
-            MUHWI_Descriptor_t * desc = channel.getNextDescriptor ();
+            // Prepare the broadcast packet descriptor
+            MUHWI_Descriptor_t * desc = desc_array[1];
 
-            // Clone the multi-packet model descriptor into the injection fifo
-            MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc;
+            // Clone the multi-packet model descriptor into the injection channel
+            memfifo = (MUSPI_DescriptorBase *) desc;
             _multipkt.clone (*memfifo);
 
             // Initialize the injection fifo descriptor in-place.
@@ -1331,7 +1446,7 @@ namespace PAMI
 
             // Advance the injection fifo tail pointer. This action
             // completes the injection operation.
-            uint64_t sequence = channel.injFifoAdvanceDesc ();
+            uint64_t sequence = channel.injFifoAdvanceDescMultiple(3);
 
             // Add a completion event for the sequence number associated with
             // the descriptor that was injected.
@@ -1346,28 +1461,32 @@ namespace PAMI
               (InjectDescriptorMessage<1> *) state;
             new (msg) InjectDescriptorMessage<1> (channel, fn, cookie);
 
+            // Clone the reduce packets into the message (before and after the bcast)
+            _reducepkt.clone(msg->desc[0]);
+            _reducepkt.clone(msg->desc[2]);
+
             // Clone the multi-packet descriptor model into the message
-            _multipkt.clone (msg->desc[0]);
+            _multipkt.clone (msg->desc[1]);
 
             // Copy the metadata into the packet header.
             MemoryFifoPacketHeader * hdr =
-              (MemoryFifoPacketHeader*) & msg->desc[0].PacketHeader;
+              (MemoryFifoPacketHeader*) & msg->desc[1].PacketHeader;
 
             // Eliminated memcpy and an if branch
             hdr->setMetaData (metadata, metasize);
 
             // Initialize the injection fifo descriptor in-place.
-            msg->desc[0].setRecFIFOId (rfifo);/// \todo necessary? or always the same?
-            msg->desc[0].setClassRoute (route);
+            msg->desc[1].setRecFIFOId (rfifo);/// \todo necessary? or always the same?
+            msg->desc[1].setClassRoute (route);
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
 
             // Mambo does not support zero-byte packets
             if (__global.personality._is_mambo)
-              msg->desc[0].setPayload (paddr, MAX(1, length));
+              msg->desc[1].setPayload (paddr, MAX(1, length));
             else
 #endif
-              msg->desc[0].setPayload (paddr, length);
+              msg->desc[1].setPayload (paddr, length);
 
             // Post the message to the injection channel
             channel.post (msg);
@@ -1386,7 +1505,8 @@ namespace PAMI
 #undef DO_TRACE_ENTEREXIT
 #undef DO_TRACE_DEBUG
 
-#endif // __components_devices_bgq_mu2_CollectivePacketModelBase_h__
+
+#endif // __components_devices_bgq_mu2_BroadcastCollectivePacketModelBase_h__
 //
 // astyle info    http://astyle.sourceforge.net
 //

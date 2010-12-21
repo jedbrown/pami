@@ -8,7 +8,7 @@
 /* end_generated_IBM_copyright_prolog                               */
 /**
  * \file components/devices/bgq/mu2/model/ReducePacketModel.h
- * \brief ???
+ * \brief A simple model for Reduce MU collective packets
  */
 #ifndef __components_devices_bgq_mu2_model_ReducePacketModel_h__
 #define __components_devices_bgq_mu2_model_ReducePacketModel_h__
