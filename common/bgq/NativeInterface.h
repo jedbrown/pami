@@ -34,7 +34,7 @@ namespace PAMI
 {
 
 
-  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
+  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, unsigned T_PREALLOC=1>
   class BGQNativeInterfaceAS : public CCMI::Interfaces::NativeInterface
   {
     public:
@@ -82,7 +82,7 @@ namespace PAMI
           BGQNativeInterfaceAS *_ni;
           pami_callback_t       _user_callback;
       };
-      PAMI::MemoryAllocator < sizeof(allocObj), 16 > _allocator;  // Allocator
+      PAMI::MemoryAllocator < sizeof(allocObj), 16, T_PREALLOC> _allocator;  // Allocator
 
       pami_result_t              _mcast_status;
       pami_result_t              _msync_status;
@@ -100,8 +100,8 @@ namespace PAMI
       int                    *_dispatch_id;
   }; // class BGQNativeInterfaceAS
 
-  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  class BGQNativeInterface : public BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>
+  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, unsigned T_PREALLOC=1>
+  class BGQNativeInterface : public BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb, T_PREALLOC>
   {
     public:
       /// \brief ctor that constructs multi* objects internally
@@ -121,8 +121,8 @@ namespace PAMI
   ///////////////////////////////////////////////////////////////////////////////
   // Inline implementations
   ///////////////////////////////////////////////////////////////////////////////
-  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>::BGQNativeInterfaceAS(T_Mcast *mcast, T_Msync *msync, T_Mcomb *mcomb, pami_client_t client, pami_context_t context, size_t context_id, size_t client_id, int *dispatch_id):
+  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, unsigned T_PREALLOC>
+  inline BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb, T_PREALLOC>::BGQNativeInterfaceAS(T_Mcast *mcast, T_Msync *msync, T_Mcomb *mcomb, pami_client_t client, pami_context_t context, size_t context_id, size_t client_id, int *dispatch_id):
       CCMI::Interfaces::NativeInterface(__global.mapping.task(),
                                         __global.mapping.size()),
       _allocator(),
@@ -140,8 +140,8 @@ namespace PAMI
     TRACE_FN_EXIT();
   };
 
-  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>::BGQNativeInterfaceAS(T_Device      &device,
+  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, unsigned T_PREALLOC>
+  BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb, T_PREALLOC>::BGQNativeInterfaceAS(T_Device      &device,
       pami_client_t  client,
       pami_context_t context,
       size_t         context_id,
@@ -175,14 +175,14 @@ namespace PAMI
     TRACE_FN_EXIT();
   };
 
-  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  BGQNativeInterface<T_Device, T_Mcast, T_Msync, T_Mcomb>::BGQNativeInterface(T_Device      &device,
+  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, unsigned T_PREALLOC>
+  BGQNativeInterface<T_Device, T_Mcast, T_Msync, T_Mcomb, T_PREALLOC>::BGQNativeInterface(T_Device      &device,
                                                                               pami_client_t  client,
                                                                               pami_context_t context,
                                                                               size_t         context_id,
                                                                               size_t         client_id,
                                                                               int           *dispatch_id) :
-      BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>(device, client, context, context_id, client_id, dispatch_id)
+      BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb, T_PREALLOC>(device, client, context, context_id, client_id, dispatch_id)
   {
     TRACE_FN_ENTER();
     DO_DEBUG((templateName<T_Device>()));
@@ -190,8 +190,8 @@ namespace PAMI
   }
 
 
-  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline void BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>::ni_client_done(pami_context_t  context,
+  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, unsigned T_PREALLOC>
+    inline void BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb, T_PREALLOC>::ni_client_done(pami_context_t  context,
       void          *rdata,
       pami_result_t   res)
   {
@@ -213,8 +213,8 @@ namespace PAMI
   }
 
   /// \brief this call is called when the native interface is initialized
-  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline pami_result_t BGQNativeInterface<T_Device, T_Mcast, T_Msync, T_Mcomb>::setMulticastDispatch (pami_dispatch_multicast_function fn, void *cookie)
+  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, unsigned T_PREALLOC>
+  inline pami_result_t BGQNativeInterface<T_Device, T_Mcast, T_Msync, T_Mcomb, T_PREALLOC>::setMulticastDispatch (pami_dispatch_multicast_function fn, void *cookie)
   {
     TRACE_FN_ENTER();
     this->_dispatch = (*this->_dispatch_id)--;
@@ -231,8 +231,8 @@ namespace PAMI
     return result;
   }
 
-  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline pami_result_t BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>::multicast (pami_multicast_t *mcast, void *devinfo)
+  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, unsigned T_PREALLOC>
+    inline pami_result_t BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb, T_PREALLOC>::multicast (pami_multicast_t *mcast, void *devinfo)
   {
     TRACE_FN_ENTER();
     allocObj *req          = (allocObj *)_allocator.allocateObject();
@@ -257,8 +257,8 @@ namespace PAMI
   }
 
 
-  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline pami_result_t BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>::multisync(pami_multisync_t *msync, void *devinfo)
+  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, unsigned T_PREALLOC>
+    inline pami_result_t BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb, T_PREALLOC>::multisync(pami_multisync_t *msync, void *devinfo)
   {
     TRACE_FN_ENTER();
     allocObj *req          = (allocObj *)_allocator.allocateObject();
@@ -280,8 +280,8 @@ namespace PAMI
   }
 
 
-  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline pami_result_t BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>::multicombine (pami_multicombine_t *mcomb, void *devinfo)
+  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, unsigned T_PREALLOC>
+    inline pami_result_t BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb, T_PREALLOC>::multicombine (pami_multicombine_t *mcomb, void *devinfo)
   {
     TRACE_FN_ENTER();
     allocObj *req          = (allocObj *)_allocator.allocateObject();
@@ -302,8 +302,8 @@ namespace PAMI
     return _mcomb.postMulticombine(req->_state._mcomb, &m, devinfo);
   }
 
-  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline pami_result_t BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>::multicast (uint8_t (&state)[T_Mcast::sizeof_msg],
+  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, unsigned T_PREALLOC>
+    inline pami_result_t BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb, T_PREALLOC>::multicast (uint8_t (&state)[T_Mcast::sizeof_msg],
       pami_multicast_t *mcast, void *devinfo)
   {
     TRACE_FN_ENTER();
@@ -316,8 +316,8 @@ namespace PAMI
     return _mcast.postMulticast_impl(state, mcast, devinfo);
   }
 
-  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline pami_result_t BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>::multisync (uint8_t (&state)[T_Msync::sizeof_msg],
+  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, unsigned T_PREALLOC>
+    inline pami_result_t BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb, T_PREALLOC>::multisync (uint8_t (&state)[T_Msync::sizeof_msg],
       pami_multisync_t *msync, void *devinfo)
   {
     TRACE_FN_ENTER();
@@ -328,8 +328,8 @@ namespace PAMI
     return _msync.postMultisync_impl(state, msync, devinfo);
   }
 
-  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
-  inline pami_result_t BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>::multicombine (uint8_t (&state)[T_Mcomb::sizeof_msg],
+  template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, unsigned T_PREALLOC>
+    inline pami_result_t BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb, T_PREALLOC>::multicombine (uint8_t (&state)[T_Mcomb::sizeof_msg],
       pami_multicombine_t *mcomb, void *devinfo)
   {
     TRACE_FN_ENTER();
@@ -341,8 +341,8 @@ namespace PAMI
   }
 
 
-  template <class T_Device1, class T_Device2, class T_Mcast1, class T_Mcast2, class T_Msync, class T_Mcomb>
-  class BGQNativeInterfaceASMultiDevice : public BGQNativeInterfaceAS <T_Device1, T_Mcast1, T_Msync, T_Mcomb>
+  template <class T_Device1, class T_Device2, class T_Mcast1, class T_Mcast2, class T_Msync, class T_Mcomb, unsigned T_PREALLOC=1>
+  class BGQNativeInterfaceASMultiDevice : public BGQNativeInterfaceAS <T_Device1, T_Mcast1, T_Msync, T_Mcomb, T_PREALLOC>
   {
 
       /// Allocation object to store state and user's callback
@@ -393,15 +393,15 @@ namespace PAMI
       virtual pami_result_t multicast (pami_multicast_t *mcast, void *devinfo);
   };
 
-  template <class T_Device1, class T_Device2, class T_Mcast1, class T_Mcast2, class T_Msync, class T_Mcomb>
-  BGQNativeInterfaceASMultiDevice<T_Device1, T_Device2, T_Mcast1, T_Mcast2, T_Msync, T_Mcomb>::
+  template <class T_Device1, class T_Device2, class T_Mcast1, class T_Mcast2, class T_Msync, class T_Mcomb, unsigned T_PREALLOC>
+  BGQNativeInterfaceASMultiDevice<T_Device1, T_Device2, T_Mcast1, T_Mcast2, T_Msync, T_Mcomb, T_PREALLOC>::
   BGQNativeInterfaceASMultiDevice(T_Device1      &device1,
                                   T_Device2    &device2,                                                 pami_client_t  client,
                                   pami_context_t context,
                                   size_t         context_id,
                                   size_t         client_id,
                                   int           *dispatch_id)
-      : BGQNativeInterfaceAS<T_Device1, T_Mcast1, T_Msync, T_Mcomb>(device1, client, context, context_id, client_id, dispatch_id),
+    : BGQNativeInterfaceAS<T_Device1, T_Mcast1, T_Msync, T_Mcomb, T_PREALLOC>(device1, client, context, context_id, client_id, dispatch_id),
       _mcast2_status(PAMI_SUCCESS),
       _mcast2(device2, _mcast2_status)
   {
@@ -411,15 +411,15 @@ namespace PAMI
     TRACE_FN_EXIT();
   }
 
-  template <class T_Device1, class T_Device2, class T_Mcast1, class T_Mcast2, class T_Msync, class T_Mcomb>
-  BGQNativeInterfaceASMultiDevice<T_Device1, T_Device2, T_Mcast1, T_Mcast2, T_Msync, T_Mcomb>::
+  template <class T_Device1, class T_Device2, class T_Mcast1, class T_Mcast2, class T_Msync, class T_Mcomb, unsigned T_PREALLOC>
+  BGQNativeInterfaceASMultiDevice<T_Device1, T_Device2, T_Mcast1, T_Mcast2, T_Msync, T_Mcomb, T_PREALLOC>::
   BGQNativeInterfaceASMultiDevice(T_Device1      &device1,
                                   pami_client_t  client,
                                   pami_context_t context,
                                   size_t         context_id,
                                   size_t         client_id,
                                   int           *dispatch_id)
-      : BGQNativeInterfaceAS<T_Device1, T_Mcast1, T_Msync, T_Mcomb>(device1, client, context, context_id, client_id, dispatch_id),
+    : BGQNativeInterfaceAS<T_Device1, T_Mcast1, T_Msync, T_Mcomb, T_PREALLOC>(device1, client, context, context_id, client_id, dispatch_id),
       _mcast2_status(PAMI_SUCCESS),
       _mcast2(*(device1.getProgressDevice()), _mcast2_status)
   {
@@ -429,8 +429,8 @@ namespace PAMI
     TRACE_FN_EXIT();
   }
 
-  template <class T_Device1, class T_Device2, class T_Mcast1, class T_Mcast2, class T_Msync, class T_Mcomb>
-  inline pami_result_t BGQNativeInterfaceASMultiDevice<T_Device1, T_Device2, T_Mcast1, T_Mcast2, T_Msync, T_Mcomb>::multicast (pami_multicast_t *mcast, void *devinfo)
+  template <class T_Device1, class T_Device2, class T_Mcast1, class T_Mcast2, class T_Msync, class T_Mcomb, unsigned T_PREALLOC>
+  inline pami_result_t BGQNativeInterfaceASMultiDevice<T_Device1, T_Device2, T_Mcast1, T_Mcast2, T_Msync, T_Mcomb, T_PREALLOC>::multicast (pami_multicast_t *mcast, void *devinfo)
   {
     TRACE_FN_ENTER();
     allocObjMD *req          = (allocObjMD *)(this->_allocator).allocateObject();
@@ -561,8 +561,8 @@ namespace PAMI
   }
 
 
-  template <class T_Device1, class T_Device2, class T_Mcast1, class T_Mcast2, class T_Msync, class T_Mcomb>
-  inline void BGQNativeInterfaceASMultiDevice<T_Device1, T_Device2, T_Mcast1, T_Mcast2, T_Msync, T_Mcomb>::ni_multi_client_done(pami_context_t  context,
+  template <class T_Device1, class T_Device2, class T_Mcast1, class T_Mcast2, class T_Msync, class T_Mcomb, unsigned T_PREALLOC>
+  inline void BGQNativeInterfaceASMultiDevice<T_Device1, T_Device2, T_Mcast1, T_Mcast2, T_Msync, T_Mcomb, T_PREALLOC>::ni_multi_client_done(pami_context_t  context,
       void          *rdata,
       pami_result_t   res)
   {

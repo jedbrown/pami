@@ -29,7 +29,7 @@
 namespace PAMI
 {
   /// \todo Update to use a memory manager template parameter.
-  template <unsigned T_ObjSize, unsigned T_ObjAlign, class T_Atomic = PAMI::Atomic::Noop>
+  template <unsigned T_ObjSize, unsigned T_ObjAlign, unsigned T_PREALLOC=8, class T_Atomic = PAMI::Atomic::Noop>
   class MemoryAllocator
   {
     protected:
@@ -67,10 +67,10 @@ namespace PAMI
           unsigned i;
           pami_result_t rc;
 	  rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
-			(void **)&object, T_ObjAlign, sizeof(memory_object_t) * 10);
+			(void **)&object, T_ObjAlign, sizeof(memory_object_t) * T_PREALLOC);
           PAMI_assertf(rc==PAMI_SUCCESS, "alloc failed for context\n");
           // "return" the newly allocated objects to the pool of free objects.
-          for (i=1; i<10; i++) returnObject ((void *) &object[i]);
+          for (i=1; i<T_PREALLOC; i++) returnObject ((void *) &object[i]);
         }
 
         unlock ();

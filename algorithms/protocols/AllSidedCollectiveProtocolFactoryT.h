@@ -121,9 +121,9 @@ namespace CCMI
         TRACE_FN_EXIT();
       }
     private:
-      C                                          * _cmgr;
-      Interfaces::NativeInterface                * _native;
-      PAMI::MemoryAllocator<sizeof(collObj), 16>   _alloc;
+      C                                            * _cmgr;
+      Interfaces::NativeInterface                  * _native;
+      PAMI::MemoryAllocator<sizeof(collObj), 16, 1>   _alloc;
     };//AllSidedCollectiveProtocolFactoryT
 
   };//Adaptor
