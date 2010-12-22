@@ -42,7 +42,6 @@ namespace CCMI
                 pami_event_function                       fn,
                 void                                    * cookie,
                 AllSidedCollectiveProtocolFactoryT      * factory):
-          _obj(native,cmgr,geometry,cmd,fn,cookie),
         _factory(factory),
         _user_done_fn(cmd->cb_done),
         _user_cookie(cmd->cookie)
@@ -50,9 +49,12 @@ namespace CCMI
           TRACE_FN_ENTER();
           TRACE_FORMAT("<%p>",this);
           DO_DEBUG((templateName<T>()));
+	  _obj = new (_objstorage) T(native,cmgr,geometry,cmd,fn,cookie);   
           TRACE_FN_EXIT();
         }
-        T                                    _obj;
+	
+	uint8_t                              _objstorage[sizeof(T)];
+	T                                  * _obj;
         AllSidedCollectiveProtocolFactoryT * _factory;
         pami_event_function                  _user_done_fn;
         void                               * _user_cookie;
@@ -108,7 +110,7 @@ namespace CCMI
                           cobj,             // Intercept cookie
                           this);            // Factory
         TRACE_FN_EXIT();
-        return(Executor::Composite *)&cobj->_obj;
+        return(Executor::Composite *)cobj->_obj;
       }
 
       virtual void metadata(pami_metadata_t *mdata)

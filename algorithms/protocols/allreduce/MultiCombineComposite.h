@@ -36,12 +36,37 @@ namespace CCMI
   {
     namespace Allreduce
     {
+      static const size_t _size_table[PAMI_DT_COUNT] =
+	{ 
+	  -1,                         //PAMI_UNDEFINED_DT
+          sizeof(signed char),        //PAMI_SIGNED_CHAR
+          sizeof(unsigned char),      //PAMI_UNSIGNED_CHAR
+          sizeof(signed short),       //PAMI_SIGNED_SHORT
+          sizeof(unsigned short),     //PAMI_UNSIGNED_SHORT
+          sizeof(signed int),         //PAMI_SIGNED_INT
+          sizeof(unsigned int),       //PAMI_UNSIGNED_INT
+          sizeof(signed long long),   //PAMI_SIGNED_LONG_LONG
+          sizeof(unsigned long long), //PAMI_UNSIGNED_LONG_LONG
+          sizeof(float),              //PAMI_FLOAT
+          sizeof(double),             //PAMI_DOUBLE
+          sizeof(long double),        //PAMI_LONG_DOUBLE
+          sizeof(bool),               //PAMI_LOGICAL
+          2*sizeof(float),            //PAMI_SINGLE_COMPLEX
+          2*sizeof(double),           //PAMI_DOUBLE_COMPLEX
+          sizeof(int32_int32_t),      //PAMI_LOC_2INT
+          sizeof(int16_int32_t),      //PAMI_LOC_SHORT_INT
+          sizeof(fp32_int32_t),       //PAMI_LOC_FLOAT_INT
+          sizeof(fp64_int32_t),       //PAMI_LOC_DOUBLE_INT
+          sizeof(fp32_fp32_t),        //PAMI_LOC_2FLOAT
+          sizeof(fp64_fp64_t),        //PAMI_LOC_2DOUBLE
+          -1                          //PAMI_USERDEFINED_DT
+        };
+
       class MultiCombineComposite : public CCMI::Executor::Composite
       {
         protected:
           Interfaces::NativeInterface        * _native;
           PAMI_GEOMETRY_CLASS                * _geometry;
-          pami_allreduce_t                     _xfer_allreduce;
           PAMI::PipeWorkQueue                  _srcPwq;
           PAMI::PipeWorkQueue                  _dstPwq;
           pami_multicombine_t                  _minfo;
@@ -54,7 +79,7 @@ namespace CCMI
                                  pami_xfer_t                          * cmd,
                                  pami_event_function                    fn,
                                  void                                 * cookie) :
-              Composite(), _native(mInterface), _geometry((PAMI_GEOMETRY_CLASS*)g), _xfer_allreduce(cmd->cmd.xfer_allreduce)
+              Composite(), _native(mInterface), _geometry((PAMI_GEOMETRY_CLASS*)g)
           {
             TRACE_ADAPTOR((stderr, "%s, type %#zX/%#zX, count %zu/%zu, op %#X, dt %#X\n", __PRETTY_FUNCTION__,
                            (size_t)cmd->cmd.xfer_allreduce.stype, (size_t)cmd->cmd.xfer_allreduce.rtype,
@@ -67,15 +92,8 @@ namespace CCMI
 //          PAMI_Type_sizeof(cmd->cmd.xfer_allreduce.stype); /// \todo PAMI_Type_sizeof() is PAMI_UNIMPL so use getReduceFunction for now?
 
             _deviceInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
+            unsigned        sizeOfType = _size_table[cmd->cmd.xfer_allreduce.dt];
 
-            unsigned        sizeOfType;
-            coremath        func;
-
-            getReduceFunction(cmd->cmd.xfer_allreduce.dt,
-                              cmd->cmd.xfer_allreduce.op,
-                              cmd->cmd.xfer_allreduce.stypecount,// this parm is unused
-                              sizeOfType,
-                              func );
             size_t size = cmd->cmd.xfer_allreduce.stypecount * 1; /// \todo presumed size of PAMI_BYTE is 1?
             _srcPwq.configure(cmd->cmd.xfer_allreduce.sndbuf, size, size);
             _srcPwq.reset();
@@ -91,8 +109,8 @@ namespace CCMI
 
             _minfo.client               = 0;
             _minfo.context              = 0; /// \todo ?
-            //_minfo.cb_done.function     = _cb_done;
-            //_minfo.cb_done.clientdata   = _clientdata;
+            _minfo.cb_done.function     = fn;
+            _minfo.cb_done.clientdata   = cookie;
             _minfo.connection_id        = 0;
             _minfo.roles                = -1U;
             _minfo.results_participants = _geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
@@ -102,15 +120,14 @@ namespace CCMI
             _minfo.optor                = cmd->cmd.xfer_allreduce.op;
             _minfo.dtype                = cmd->cmd.xfer_allreduce.dt;
             _minfo.count                = size / sizeOfType;
+	    
+	    _native->multicombine(&_minfo, _deviceInfo);
             TRACE_ADAPTOR((stderr, "%s, count %zu\n", __PRETTY_FUNCTION__, _minfo.count));
           }
 
-          virtual void start()
+	  virtual void start()
           {
             TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
-            _minfo.cb_done.function     = _cb_done;
-            _minfo.cb_done.clientdata   = _clientdata;
-            _native->multicombine(&_minfo, _deviceInfo);
           }
       };
 

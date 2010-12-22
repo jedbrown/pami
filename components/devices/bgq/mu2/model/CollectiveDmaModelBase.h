@@ -13,6 +13,8 @@
 #include "sys/pami.h"
 #include "math/a2qpx/Core_memcpy.h"
 
+//#define MU_SHORT_BLOCKING_COLLECTIVE 1
+
 namespace PAMI
 {
   namespace Device
@@ -108,7 +110,8 @@ namespace PAMI
 	  ShortCompletionMsg () {}
 	};
 
-	static const uint32_t sizeof_msg = sizeof(CollectiveDPutMulticast);
+	static const uint32_t sizeof_msg = (sizeof(CollectiveDPutMulticast) > sizeof(CollectiveDPutMulticombine)) ? 
+	  sizeof(CollectiveDPutMulticast) : sizeof(CollectiveDPutMulticombine);
 
 	CollectiveDmaModelBase (): 
 	_mucontext(*(MU::Context*)NULL), 
@@ -232,7 +235,7 @@ namespace PAMI
 	    while (_collstate._colCounter != 0);
 	    mem_sync();
 	    if (dst)
-	      _int64Cpy (dst, _collstae._tempBuf, bytes, true);
+	      _int64Cpy (dst, _collstate._tempBuf, bytes, true);
 	    cb_done (NULL, cookie, PAMI_SUCCESS);
 #endif	    
 	    

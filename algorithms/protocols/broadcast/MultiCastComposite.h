@@ -34,7 +34,6 @@ namespace CCMI
         protected:
           Interfaces::NativeInterface        * _native;
           PAMI_GEOMETRY_CLASS                * _geometry;
-          pami_broadcast_t                     _xfer_broadcast;
           PAMI::Topology                       _root;
           PAMI::Topology                     * _destinations;
           PAMI::PipeWorkQueue                  _pwq;
@@ -49,7 +48,7 @@ namespace CCMI
                               pami_event_function                    fn,
                               void                                 * cookie) :
               Composite(), _native(mInterface), _geometry((PAMI_GEOMETRY_CLASS*)g),
-              _xfer_broadcast(cmd->cmd.xfer_broadcast), _root(cmd->cmd.xfer_broadcast.root)
+              _root(cmd->cmd.xfer_broadcast.root)
           {
             TRACE_ADAPTOR((stderr, "<%p>%s type %#zX, count %zu, root %zu\n", this, __PRETTY_FUNCTION__, (size_t)cmd->cmd.xfer_broadcast.type, cmd->cmd.xfer_broadcast.typecount, cmd->cmd.xfer_broadcast.root));
 
@@ -86,22 +85,18 @@ namespace CCMI
 //        size_t bytes = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
 
             size_t bytes = cmd->cmd.xfer_broadcast.typecount * 1; /// \todo presumed size of PAMI_BYTE?
-
+	    size_t pbytes = 0;
+	    
             if (cmd->cmd.xfer_broadcast.root == __global.mapping.task())
-              {
-                _pwq.configure(cmd->cmd.xfer_broadcast.buf, bytes, bytes);
-              }
-            else
-              {
-                _pwq.configure(cmd->cmd.xfer_broadcast.buf, bytes, 0);
-              }
-
+	      pbytes = bytes;
+	    
+	    _pwq.configure(cmd->cmd.xfer_broadcast.buf, bytes, pbytes);
             _pwq.reset();
 
             _minfo.client             = 0;
-            _minfo.context            = 0; /// \todo ?
-            //_minfo.cb_done.function   = _cb_done;
-            //_minfo.cb_done.clientdata = _clientdata;
+            _minfo.context            = 0;      /// \todo ?
+            _minfo.cb_done.function   = fn;     //_cb_done;
+            _minfo.cb_done.clientdata = cookie; //_clientdata;
             _minfo.connection_id      = 0; /// \todo ?
             _minfo.roles              = -1U;
             _minfo.dst_participants   = (pami_topology_t *) & _destinations;
@@ -110,14 +105,13 @@ namespace CCMI
             _minfo.dst                = (pami_pipeworkqueue_t *) & _pwq;
             _minfo.msgcount           = 0;
             _minfo.bytes              = bytes;
+
+            _native->multicast(&_minfo, _deviceInfo);
           }
 
-          virtual void start()
+	  virtual void start()
           {
             TRACE_ADAPTOR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
-            _minfo.cb_done.function   = _cb_done;
-            _minfo.cb_done.clientdata = _clientdata;
-            _native->multicast(&_minfo, _deviceInfo);
           }
       };
 
