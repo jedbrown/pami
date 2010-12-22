@@ -211,7 +211,7 @@ namespace PAMI
   typedef PAMI::NativeInterfaceAllsided<ShmemEager>                   ShmemEagerNI_AS;
   typedef PAMI::NativeInterfaceActiveMessage< Protocol::Send::SendPWQ<Protocol::Send::Send> > CompositeNI_AM;
   typedef PAMI::NativeInterfaceAllsided< Protocol::Send::SendPWQ<Protocol::Send::Send> >      CompositeNI_AS;
-
+  
   // Geometry Typedefs
   typedef Geometry::Lapi                                              LAPIGeometry;
 
@@ -222,16 +222,15 @@ namespace PAMI
 
 
   // PGAS RT Typedefs/Coll Registration
-  typedef TSPColl::NBCollManager<LAPISendNI_AM> LAPINBCollManager;
+  typedef TSPColl::NBCollManager<CompositeNI_AM> LAPINBCollManager;
   typedef CollRegistration::PGASRegistration<LAPIGeometry,
-                                             LAPISendNI_AM,
+                                             CompositeNI_AM,
                                              ProtocolAllocator,
                                              LAPISend,
+                                             ShmemEager,
                                              DeviceWrapper,
+                                             ShmemDevice,
                                              LAPINBCollManager> PGASCollreg;
-
-
-
 
   // Over P2P CCMI Protocol Typedefs
   typedef CollRegistration::P2P::CCMIRegistration<LAPIGeometry,
@@ -441,7 +440,9 @@ namespace PAMI
 	  rc = __global.heap_mm->memalign((void **)&_pgas_collreg, 0,
 								sizeof(*_pgas_collreg));
 	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PGASCollreg");
-          new(_pgas_collreg) PGASCollreg(_client,_context,_clientid,_contextid,_protocol,_lapi_device,&_dispatch_id,_geometry_map);
+          new(_pgas_collreg) PGASCollreg(_client,_context,_clientid,_contextid,
+                                         _protocol,_lapi_device,_devices->_shmem[_contextid],
+                                         &_dispatch_id,_geometry_map);
           _world_geometry->resetUEBarrier(); // Reset so pgas will select the UE barrier
           _pgas_collreg->analyze(_contextid,_world_geometry);
           return PAMI_SUCCESS;

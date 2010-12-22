@@ -141,14 +141,16 @@ namespace PAMI
 
 
   // PGAS RT Typedefs/Coll Registration
-  typedef TSPColl::NBCollManager<MPIEagerNI_AM> MPINBCollManager;
+  typedef TSPColl::NBCollManager<CompositeNI_AM> MPINBCollManager;
   typedef CollRegistration::PGASRegistration<MPIGeometry,
-                                             MPIEagerNI_AM,
+                                             CompositeNI_AM,
                                              ProtocolAllocator,
                                              MPIEager,
+                                             ShmemEager,
                                              MPIDevice,
+                                             ShmemDevice,
                                              MPINBCollManager> PGASCollreg;
-
+  
   typedef Geometry::ClassRouteId<MPIGeometry> MPIClassRouteId;
 
 
@@ -331,7 +333,8 @@ namespace PAMI
 	  rc = __global.heap_mm->memalign((void **)&_pgas_collreg, 0,
 								sizeof(*_pgas_collreg));
 	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PGASCollreg");
-          new(_pgas_collreg) PGASCollreg(client,(pami_context_t)this,clientid,id,_protocol,*_mpi, &_dispatch_id, _geometry_map);
+          new(_pgas_collreg) PGASCollreg(client,(pami_context_t)this,clientid,id,_protocol,*_mpi,
+                                         _devices->_shmem[_contextid], &_dispatch_id, _geometry_map,false);
           _world_geometry->resetUEBarrier(); // Reset so pgas will select the UE barrier
           _pgas_collreg->analyze(_contextid,_world_geometry);
           _pgas_collreg->setGenericDevice(&_devices->_generics[_contextid]);

@@ -364,7 +364,7 @@ namespace PAMI
 
             if (result != PAMI_SUCCESS) rput_mu = NULL;
 
-            _pgas_mu_registration = new(_pgas_mu_registration_storage) MU_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _protocol, Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid), &_dispatch_id, _geometry_map);
+            _pgas_mu_registration = new(_pgas_mu_registration_storage) MU_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _protocol, Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid), _devices->_shmem[_contextid], &_dispatch_id, _geometry_map);
 
           }
 
@@ -469,7 +469,7 @@ namespace PAMI
 
                 if (result != PAMI_SUCCESS) rput_shmem = NULL;
 
-                _pgas_shmem_registration = new(_pgas_shmem_registration_storage) Shmem_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _protocol, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), & _dispatch_id, _geometry_map);
+                _pgas_shmem_registration = new(_pgas_shmem_registration_storage) Shmem_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _protocol, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), _devices->_shmem[_contextid],& _dispatch_id, _geometry_map);
               }
             else TRACE_ERR((stderr, "topology does not support shmem\n"));
           }
