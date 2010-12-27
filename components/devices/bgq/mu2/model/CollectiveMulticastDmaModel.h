@@ -12,7 +12,6 @@ namespace PAMI
   {
     namespace MU
     {
-
 #define ZERO_BYTES 65536
 
       class CollectiveMulticastDmaModel: public CollectiveDmaModelBase, 
@@ -47,6 +46,7 @@ namespace PAMI
 	    ((Topology *)mcast->src_participants)->rankList(&ranks);
 	    bool isroot = (ranks[0] == __global.mapping.task());
 
+#if 0
 	    if (mcast->bytes <= CollectiveDmaModelBase::_collstate._tempSize) {	      
 	      if (isroot) {
 		PipeWorkQueue *spwq = (PipeWorkQueue *) mcast->src;
@@ -83,7 +83,7 @@ namespace PAMI
 		//}
 	      }
 	    }
-	    
+#endif	    
 	    pami_result_t rc = CollectiveDmaModelBase::postBroadcast (state,
 								      mcast->bytes,
 								      (PipeWorkQueue *) mcast->src,

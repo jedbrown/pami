@@ -42,25 +42,25 @@ namespace CCMI
         virtual pami_result_t setMulticastDispatch(pami_dispatch_multicast_function fn,
                                                    void *cookie)
         {
-          PAMI_abort();
+          //PAMI_abort();
           return PAMI_ERROR;
         }
         virtual pami_result_t setManytomanyDispatch(pami_dispatch_manytomany_function fn,
                                                     void *cookie)
         {
-          PAMI_abort();
+          //PAMI_abort();
           return PAMI_ERROR;
         }
         virtual pami_result_t setSendDispatch(pami_dispatch_p2p_function fn,
                                               void *cookie)
         {
-          PAMI_abort();
+          //PAMI_abort();
           return PAMI_ERROR;
         }
         virtual pami_result_t setSendPWQDispatch(pami_dispatch_p2p_function fn,
                                                  void *cookie)
         {
-          PAMI_abort();
+          //PAMI_abort();
           return PAMI_ERROR;
         }
         virtual pami_result_t multicast(pami_multicast_t *mcast, void *devinfo = NULL) = 0;

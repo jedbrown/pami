@@ -438,6 +438,16 @@ namespace PAMI
     Mcast2DMetaData, CCMI::ConnectionManager::SimpleConnMgr > MultiCast2DeviceFactory;
 
     //----------------------------------------------------------------------------
+    // 'Composite' Shmem/MU-DPUT allsided 2 device multicast
+    //----------------------------------------------------------------------------
+    void Mcast2DDputMetaData(pami_metadata_t *m)
+    {
+      strncpy(&m->name[0], "MultiCast2DeviceDput", 32);
+    }
+    typedef CCMI::Adaptor::Broadcast::MultiCastComposite2DeviceFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite2DeviceAS<PAMI_GEOMETRY_CLASS>,
+    Mcast2DDputMetaData, CCMI::ConnectionManager::SimpleConnMgr > MultiCast2DeviceDputFactory;
+
+    //----------------------------------------------------------------------------
     // 'Composite' Shmem/MU allsided 2 device multicombine
     //----------------------------------------------------------------------------
     void Mcomb2DMetaData(pami_metadata_t *m)
@@ -760,6 +770,9 @@ namespace PAMI
             _msync2d_composite_factory = new (_msync2d_composite_factory_storage) MultiSync2DeviceFactory(&_sconnmgr, (CCMI::Interfaces::NativeInterface*)&_ni_array);
             _msync2d_composite_factory->setMapIdToGeometry(mapidtogeometry);
             _mcast2d_composite_factory = new (_mcast2d_composite_factory_storage) MultiCast2DeviceFactory(&_sconnmgr, _shmem_ni, false, _mu_ni_mcast2d,  _mu_ni_mcast2d ? true : false);
+
+	    _mcast2d_dput_composite_factory = new (_mcast2d_dput_composite_factory_storage) MultiCast2DeviceDputFactory(&_sconnmgr, _shmem_ni, false, _mu_global_dput_ni,  false);
+
             _mcomb2d_composite_factory = new (_mcomb2d_composite_factory_storage) MultiCombine2DeviceFactory(&_sconnmgr, _shmem_ni, _mu_ni_mcomb2d);
             _mcomb2dNP_composite_factory = new (_mcomb2dNP_composite_factory_storage) MultiCombine2DeviceFactoryNP(&_sconnmgr,  (CCMI::Interfaces::NativeInterface*)&_ni_array[2]);
           }
@@ -968,6 +981,7 @@ namespace PAMI
 // Doesn't work well enough to be a default protocol
 #ifdef ENABLE_NEW_SHMEM
                             geometry->addCollective(PAMI_XFER_BROADCAST, _mcast2d_composite_factory, _context_id);
+                            geometry->addCollective(PAMI_XFER_BROADCAST, _mcast2d_dput_composite_factory, _context_id);
 #endif
                           }
                       }
@@ -1149,6 +1163,9 @@ namespace PAMI
 
         MultiCast2DeviceFactory                        *_mcast2d_composite_factory;
         uint8_t                                         _mcast2d_composite_factory_storage[sizeof(MultiCast2DeviceFactory)];
+
+        MultiCast2DeviceDputFactory                    *_mcast2d_dput_composite_factory;
+        uint8_t                                         _mcast2d_dput_composite_factory_storage[sizeof(MultiCast2DeviceDputFactory)];
 
         MultiCombine2DeviceFactory                     *_mcomb2d_composite_factory;
         uint8_t                                         _mcomb2d_composite_factory_storage[sizeof(MultiCombine2DeviceFactory)];
