@@ -353,6 +353,8 @@ namespace CCMI
 	  TRACE_ADAPTOR((stderr, "MultiCastComposite2DeviceAS:  In Composite Constructor, setting up PWQ's %p %p, bytes=%ld buf=%p\n",
 			 &_pwq0, &_pwq1, bytes, cmd->cmd.xfer_broadcast.buf));
 	  
+	  TRACE_ADAPTOR((stderr, "Native Interfaces %lx %lx\n", (uint64_t)_native_g, (uint64_t)_native_l));
+
 	  if (bytes == 0)
             {
 	      fn(NULL,  cookie, PAMI_SUCCESS); /// \todo, deliver the context

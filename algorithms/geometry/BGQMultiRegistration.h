@@ -709,7 +709,8 @@ namespace PAMI
 
               if (_axial_mu_dput_ni->status() != PAMI_SUCCESS) _axial_mu_dput_ni = NULL; // Not enough resources?
 
-              _mu_global_dput_ni    = new (_mu_global_dput_ni_storage) MUGlobalDputNI (_mu_device, client, context, context_id, client_id, _dispatch_id);
+	      if (__global.mapping.t() == 0)
+		_mu_global_dput_ni    = new (_mu_global_dput_ni_storage) MUGlobalDputNI (_mu_device, client, context, context_id, client_id, _dispatch_id);
 //          if(__global.topology_local.size() < 64)
               {
                 _axial_shmem_mu_dput_ni     = new (_axial_shmem_mu_dput_ni_storage    ) T_AxialShmemDputNativeInterface(_mu_device, client, context, context_id, client_id, _dispatch_id);
