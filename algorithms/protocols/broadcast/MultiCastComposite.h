@@ -394,7 +394,7 @@ namespace CCMI
 		  minfo_l.client             = NULL;              // Not used by device
 		  minfo_l.context            = NULL;              // Not used by device
 		  minfo_l.cb_done.clientdata = this;
-		  minfo_l.connection_id      = geometry->comm();
+		  minfo_l.connection_id      = _geometry->comm();
 		  minfo_l.roles              = -1U;
 		  minfo_l.bytes              = bytes;
 		  minfo_l.src                = (pami_pipeworkqueue_t*) & _pwq0;
@@ -412,7 +412,7 @@ namespace CCMI
 		  minfo_g.client             = NULL;              // Not used by device
 		  minfo_g.context            = NULL;              // Not used by device
 		  minfo_g.cb_done.clientdata = this;
-		  minfo_g.connection_id      = geometry->comm();
+		  minfo_g.connection_id      = _geometry->comm();
 		  minfo_g.roles              = -1U;
 		  minfo_g.bytes              = bytes;
 		  minfo_g.src                = (pami_pipeworkqueue_t*) & _pwq1;
@@ -436,7 +436,7 @@ namespace CCMI
 		  minfo_l.client             = NULL;              // Not used by device
 		  minfo_l.context            = NULL;              // Not used by device
 		  minfo_l.cb_done.clientdata = this;
-		  minfo_l.connection_id      = geometry->comm();
+		  minfo_l.connection_id      = _geometry->comm();
 		  minfo_l.roles              = -1U;
 		  minfo_l.bytes              = bytes;
 		  minfo_l.src                = (pami_pipeworkqueue_t*) & _pwq0;
@@ -461,7 +461,7 @@ namespace CCMI
 		  minfo_l.client             = NULL;              // Not used by device
 		  minfo_l.context            = NULL;              // Not used by device
 		  minfo_l.cb_done.clientdata = this;
-		  minfo_l.connection_id      = geometry->comm();
+		  minfo_l.connection_id      = _geometry->comm();
 		  minfo_l.roles              = -1U;
 		  minfo_l.bytes              = bytes;
 		  minfo_l.src                = NULL;
@@ -479,7 +479,7 @@ namespace CCMI
 		  minfo_g.client             = NULL;              // Not used by device
 		  minfo_g.context            = NULL;              // Not used by device
 		  minfo_g.cb_done.clientdata = this;
-		  minfo_g.connection_id      = geometry->comm();
+		  minfo_g.connection_id      = _geometry->comm();
 		  minfo_g.roles              = -1U;
 		  minfo_g.bytes              = bytes;
 		  minfo_g.src                = (pami_pipeworkqueue_t*) & _pwq0;  // <--- src buffer
@@ -505,7 +505,7 @@ namespace CCMI
 		  minfo_l.client             = NULL;              // Not used by device
 		  minfo_l.context            = NULL;              // Not used by device
 		  minfo_l.cb_done.clientdata = this;
-		  minfo_l.connection_id      = geometry->comm();
+		  minfo_l.connection_id      = _geometry->comm();
 		  minfo_l.roles              = -1U;
 		  minfo_l.bytes              = bytes;
 		  minfo_l.src                = (pami_pipeworkqueue_t*) & _pwq0;
@@ -523,7 +523,7 @@ namespace CCMI
 		  minfo_g.client             = NULL;              // Not used by device
 		  minfo_g.context            = NULL;              // Not used by device
 		  minfo_g.cb_done.clientdata = this;
-		  minfo_g.connection_id      = geometry->comm();
+		  minfo_g.connection_id      = _geometry->comm();
 		  minfo_g.roles              = -1U;
 		  minfo_g.bytes              = bytes;
 		  minfo_g.src                = NULL;
@@ -547,7 +547,7 @@ namespace CCMI
 		  minfo_l.client             = NULL;              // Not used by device
 		  minfo_l.context            = NULL;              // Not used by device
 		  minfo_l.cb_done.clientdata = this;
-		  minfo_l.connection_id      = geometry->comm();
+		  minfo_l.connection_id      = _geometry->comm();
 		  minfo_l.roles              = -1U;
 		  minfo_l.bytes              = bytes;
 		  minfo_l.src                = NULL;
