@@ -328,15 +328,15 @@ namespace CCMI
 				     PAMI::Queue                       *ue,
 				     PAMI::Queue                       *posted):
 	Composite(),
-	_native_l(native_l),
-	_native_g(native_g),
-	_geometry((PAMI_GEOMETRY_CLASS*)g),
-	_deviceInfo(NULL),
+        _geometry((PAMI_GEOMETRY_CLASS*)g),
 	_root_topo(cmd->cmd.xfer_broadcast.root),
-	_justme_topo(_geometry->rank())
+        _justme_topo(((PAMI_GEOMETRY_CLASS*)g)->rank())
 	{
-	  _native[0] = NULL;
-	  _native[1] = NULL;
+	  pami_multicast_t                    minfo_l;
+	  pami_multicast_t                    minfo_g;	  
+	  Interfaces::NativeInterface *native_0 = NULL;
+	  Interfaces::NativeInterface *native_1 = NULL;
+
 	  PAMI::Topology  *t_master    = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
 	  PAMI::Topology  *t_local     = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
 	  PAMI::Topology  *t_my_master = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_MASTER_TOPOLOGY_INDEX);
@@ -346,14 +346,15 @@ namespace CCMI
 	  bool             amRoot      = (root == _geometry->rank());
 	  bool             amMaster    = _geometry->isLocalMasterParticipant();
 	  bool             isRootLocal = t_local->isRankMember(root);
-	  _deviceInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
+	  void *deviceInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
 	  size_t           bytes       = cmd->cmd.xfer_broadcast.typecount * 1; /// \todo presumed size of PAMI_BYTE?
 	  size_t           numMasters  = t_master->size();
 	  size_t           numLocal    = t_local->size();
+
 	  TRACE_ADAPTOR((stderr, "MultiCastComposite2DeviceAS:  In Composite Constructor, setting up PWQ's %p %p, bytes=%ld buf=%p\n",
 			 &_pwq0, &_pwq1, bytes, cmd->cmd.xfer_broadcast.buf));
 	  
-	  TRACE_ADAPTOR((stderr, "Native Interfaces %lx %lx\n", (uint64_t)_native_g, (uint64_t)_native_l));
+	  TRACE_ADAPTOR((stderr, "Native Interfaces %lx %lx\n", (uint64_t)native_g, (uint64_t)native_l));
 
 	  if (bytes == 0)
             {
@@ -361,8 +362,7 @@ namespace CCMI
 	      return;
 	    }
 	  
-	  size_t           initBytes;
-	  
+	  size_t           initBytes;	  
 	  if (amRoot)
 	    initBytes = bytes;
 	  else
@@ -391,39 +391,37 @@ namespace CCMI
 	      
 	      if (numLocal > 1)
 		{
-		  _minfo_l.client             = NULL;              // Not used by device
-		  _minfo_l.context            = NULL;              // Not used by device
-		  _minfo_l.cb_done.clientdata = this;
-		  _minfo_l.connection_id      = _geometry->comm();
-		  _minfo_l.roles              = -1U;
-		  _minfo_l.bytes              = bytes;
-		  _minfo_l.src                = (pami_pipeworkqueue_t*) & _pwq0;
-		  _minfo_l.src_participants   = (pami_topology_t*) & _root_topo;
-		  _minfo_l.dst                = NULL;
-		  _minfo_l.dst_participants   = (pami_topology_t*)t_local;
-		  _minfo_l.msginfo            = 0;
-		  _minfo_l.msgcount           = 0;
-		  _minfo[0]            = &_minfo_l;
-		  _native[0]           = _native_l;
+		  minfo_l.client             = NULL;              // Not used by device
+		  minfo_l.context            = NULL;              // Not used by device
+		  minfo_l.cb_done.clientdata = this;
+		  minfo_l.connection_id      = geometry->comm();
+		  minfo_l.roles              = -1U;
+		  minfo_l.bytes              = bytes;
+		  minfo_l.src                = (pami_pipeworkqueue_t*) & _pwq0;
+		  minfo_l.src_participants   = (pami_topology_t*) & _root_topo;
+		  minfo_l.dst                = NULL;
+		  minfo_l.dst_participants   = (pami_topology_t*)t_local;
+		  minfo_l.msginfo            = 0;
+		  minfo_l.msgcount           = 0;
+		  native_0           = native_l;
 		  cb_count++;
 		}
 	      
 	      if (numMasters > 1)
 		{
-		  _minfo_g.client             = NULL;              // Not used by device
-		  _minfo_g.context            = NULL;              // Not used by device
-		  _minfo_g.cb_done.clientdata = this;
-		  _minfo_g.connection_id      = _geometry->comm();
-		  _minfo_g.roles              = -1U;
-		  _minfo_g.bytes              = bytes;
-		  _minfo_g.src                = (pami_pipeworkqueue_t*) & _pwq1;
-		  _minfo_g.src_participants   = (pami_topology_t*) & _root_topo;
-		  _minfo_g.dst                = NULL;
-		  _minfo_g.dst_participants   = (pami_topology_t*)t_master;
-		  _minfo_g.msginfo            = 0;
-		  _minfo_g.msgcount           = 0;		  
-		  _minfo[1]            = &_minfo_g;
-		  _native[1]           = _native_g;
+		  minfo_g.client             = NULL;              // Not used by device
+		  minfo_g.context            = NULL;              // Not used by device
+		  minfo_g.cb_done.clientdata = this;
+		  minfo_g.connection_id      = geometry->comm();
+		  minfo_g.roles              = -1U;
+		  minfo_g.bytes              = bytes;
+		  minfo_g.src                = (pami_pipeworkqueue_t*) & _pwq1;
+		  minfo_g.src_participants   = (pami_topology_t*) & _root_topo;
+		  minfo_g.dst                = NULL;
+		  minfo_g.dst_participants   = (pami_topology_t*)t_master;
+		  minfo_g.msginfo            = 0;
+		  minfo_g.msgcount           = 0;		  
+		  native_1           = native_g;
 		  cb_count++;
 		}
 	    }
@@ -435,20 +433,19 @@ namespace CCMI
 	      // the local broadcast only, as the source
 	      if (numLocal > 1)
                 {
-		  _minfo_l.client             = NULL;              // Not used by device
-		  _minfo_l.context            = NULL;              // Not used by device
-		  _minfo_l.cb_done.clientdata = this;
-		  _minfo_l.connection_id      = _geometry->comm();
-		  _minfo_l.roles              = -1U;
-		  _minfo_l.bytes              = bytes;
-		  _minfo_l.src                = (pami_pipeworkqueue_t*) & _pwq0;
-		  _minfo_l.src_participants   = (pami_topology_t*) & _root_topo;
-		  _minfo_l.dst                = NULL;
-		  _minfo_l.dst_participants   = (pami_topology_t*)t_local;
-		  _minfo_l.msginfo            = 0;
-		  _minfo_l.msgcount           = 0;
-		  _minfo[0]            = &_minfo_l;
-		  _native[0]           = _native_l;
+		  minfo_l.client             = NULL;              // Not used by device
+		  minfo_l.context            = NULL;              // Not used by device
+		  minfo_l.cb_done.clientdata = this;
+		  minfo_l.connection_id      = geometry->comm();
+		  minfo_l.roles              = -1U;
+		  minfo_l.bytes              = bytes;
+		  minfo_l.src                = (pami_pipeworkqueue_t*) & _pwq0;
+		  minfo_l.src_participants   = (pami_topology_t*) & _root_topo;
+		  minfo_l.dst                = NULL;
+		  minfo_l.dst_participants   = (pami_topology_t*)t_local;
+		  minfo_l.msginfo            = 0;
+		  minfo_l.msgcount           = 0;
+		  native_0           = native_l;
 		  cb_count++;
 		}
               }
@@ -461,39 +458,37 @@ namespace CCMI
 	      // and I will participate in the global broadcast as a sender
 	      if (numLocal > 1)
                 {
-		  _minfo_l.client             = NULL;              // Not used by device
-		  _minfo_l.context            = NULL;              // Not used by device
-		  _minfo_l.cb_done.clientdata = this;
-		  _minfo_l.connection_id      = _geometry->comm();
-		  _minfo_l.roles              = -1U;
-		  _minfo_l.bytes              = bytes;
-		  _minfo_l.src                = NULL;
-		  _minfo_l.src_participants   = (pami_topology_t*) & _root_topo;
-		  _minfo_l.dst                = (pami_pipeworkqueue_t*) & _pwq0;  // <--- target buffer
-		  _minfo_l.dst_participants   = (pami_topology_t*)t_local;
-		  _minfo_l.msginfo            = 0;
-		  _minfo_l.msgcount           = 0;
-		  _minfo[0]            = &_minfo_l;
-		  _native[0]           = _native_l;
+		  minfo_l.client             = NULL;              // Not used by device
+		  minfo_l.context            = NULL;              // Not used by device
+		  minfo_l.cb_done.clientdata = this;
+		  minfo_l.connection_id      = geometry->comm();
+		  minfo_l.roles              = -1U;
+		  minfo_l.bytes              = bytes;
+		  minfo_l.src                = NULL;
+		  minfo_l.src_participants   = (pami_topology_t*) & _root_topo;
+		  minfo_l.dst                = (pami_pipeworkqueue_t*) & _pwq0;  // <--- target buffer
+		  minfo_l.dst_participants   = (pami_topology_t*)t_local;
+		  minfo_l.msginfo            = 0;
+		  minfo_l.msgcount           = 0;
+		  native_0           = native_l;
 		  cb_count++;
 		}
 		
 	      if (numMasters > 1)
                 {
-		  _minfo_g.client             = NULL;              // Not used by device
-		  _minfo_g.context            = NULL;              // Not used by device
-		  _minfo_g.cb_done.clientdata = this;
-		  _minfo_g.connection_id      = _geometry->comm();
-		  _minfo_g.roles              = -1U;
-		  _minfo_g.bytes              = bytes;
-		  _minfo_g.src                = (pami_pipeworkqueue_t*) & _pwq0;  // <--- src buffer
-		  _minfo_g.src_participants   = (pami_topology_t*) & _justme_topo;
-		  _minfo_g.dst                = NULL;
-		  _minfo_g.dst_participants   = (pami_topology_t*)t_master;
-		  _minfo_g.msginfo            = 0;
-		  _minfo_g.msgcount           = 0;
-		  _minfo[1]            = &_minfo_g;
-		  _native[1]           = _native_g;
+		  minfo_g.client             = NULL;              // Not used by device
+		  minfo_g.context            = NULL;              // Not used by device
+		  minfo_g.cb_done.clientdata = this;
+		  minfo_g.connection_id      = geometry->comm();
+		  minfo_g.roles              = -1U;
+		  minfo_g.bytes              = bytes;
+		  minfo_g.src                = (pami_pipeworkqueue_t*) & _pwq0;  // <--- src buffer
+		  minfo_g.src_participants   = (pami_topology_t*) & _justme_topo;
+		  minfo_g.dst                = NULL;
+		  minfo_g.dst_participants   = (pami_topology_t*)t_master;
+		  minfo_g.msginfo            = 0;
+		  minfo_g.msgcount           = 0;
+		  native_1           = native_g;
 		  cb_count++;
 		}
 	    }
@@ -507,39 +502,37 @@ namespace CCMI
 	      // Do not explicitly participate in the multicast because it is active
 	      if (numLocal > 1)
 		{
-		  _minfo_l.client             = NULL;              // Not used by device
-		  _minfo_l.context            = NULL;              // Not used by device
-		  _minfo_l.cb_done.clientdata = this;
-		  _minfo_l.connection_id      = _geometry->comm();
-		  _minfo_l.roles              = -1U;
-		  _minfo_l.bytes              = bytes;
-		  _minfo_l.src                = (pami_pipeworkqueue_t*) & _pwq0;
-		  _minfo_l.src_participants   = (pami_topology_t*)t_my_master;
-		  _minfo_l.dst                = NULL;
-		  _minfo_l.dst_participants   = (pami_topology_t*)t_local;
-		  _minfo_l.msginfo            = 0;
-		  _minfo_l.msgcount           = 0;
-		  _minfo[0]            = &_minfo_l;
-		  _native[0]           = _native_l;
+		  minfo_l.client             = NULL;              // Not used by device
+		  minfo_l.context            = NULL;              // Not used by device
+		  minfo_l.cb_done.clientdata = this;
+		  minfo_l.connection_id      = geometry->comm();
+		  minfo_l.roles              = -1U;
+		  minfo_l.bytes              = bytes;
+		  minfo_l.src                = (pami_pipeworkqueue_t*) & _pwq0;
+		  minfo_l.src_participants   = (pami_topology_t*)t_my_master;
+		  minfo_l.dst                = NULL;
+		  minfo_l.dst_participants   = (pami_topology_t*)t_local;
+		  minfo_l.msginfo            = 0;
+		  minfo_l.msgcount           = 0;
+		  native_0           = native_l;
 		  cb_count++;
 		}	 
 	      
 	      if (numMasters > 1)
                 {
-		  _minfo_g.client             = NULL;              // Not used by device
-		  _minfo_g.context            = NULL;              // Not used by device
-		  _minfo_g.cb_done.clientdata = this;
-		  _minfo_g.connection_id      = _geometry->comm();
-		  _minfo_g.roles              = -1U;
-		  _minfo_g.bytes              = bytes;
-		  _minfo_g.src                = NULL;
-		  _minfo_g.src_participants   = (pami_topology_t*) & _root_topo;
-		  _minfo_g.dst                = (pami_pipeworkqueue_t*) & _pwq0;  // <--- src buffer
-		  _minfo_g.dst_participants   = (pami_topology_t*)t_master;
-		  _minfo_g.msginfo            = 0;
-		  _minfo_g.msgcount           = 0;
-		  _minfo[1]            = &_minfo_g;
-		  _native[1]           = _native_g;
+		  minfo_g.client             = NULL;              // Not used by device
+		  minfo_g.context            = NULL;              // Not used by device
+		  minfo_g.cb_done.clientdata = this;
+		  minfo_g.connection_id      = geometry->comm();
+		  minfo_g.roles              = -1U;
+		  minfo_g.bytes              = bytes;
+		  minfo_g.src                = NULL;
+		  minfo_g.src_participants   = (pami_topology_t*) & _root_topo;
+		  minfo_g.dst                = (pami_pipeworkqueue_t*) & _pwq0;  // <--- src buffer
+		  minfo_g.dst_participants   = (pami_topology_t*)t_master;
+		  minfo_g.msginfo            = 0;
+		  minfo_g.msgcount           = 0;
+		  native_1           = native_g;
 		  cb_count++;
 		}
 	    }
@@ -551,63 +544,50 @@ namespace CCMI
 	      
 	      if (numLocal > 1)
 		{
-		  _minfo_l.client             = NULL;              // Not used by device
-		  _minfo_l.context            = NULL;              // Not used by device
-		  _minfo_l.cb_done.clientdata = this;
-		  _minfo_l.connection_id      = _geometry->comm();
-		  _minfo_l.roles              = -1U;
-		  _minfo_l.bytes              = bytes;
-		  _minfo_l.src                = NULL;
-		  _minfo_l.src_participants   = (pami_topology_t*)t_my_master;
-		  _minfo_l.dst                = (pami_pipeworkqueue_t*) & _pwq0;
-		  _minfo_l.dst_participants   = (pami_topology_t*)t_local;
-		  _minfo_l.msginfo            = 0;
-		  _minfo_l.msgcount           = 0;
-		  _minfo[0]            = &_minfo_l;
-		  _native[0]           = _native_l;
+		  minfo_l.client             = NULL;              // Not used by device
+		  minfo_l.context            = NULL;              // Not used by device
+		  minfo_l.cb_done.clientdata = this;
+		  minfo_l.connection_id      = geometry->comm();
+		  minfo_l.roles              = -1U;
+		  minfo_l.bytes              = bytes;
+		  minfo_l.src                = NULL;
+		  minfo_l.src_participants   = (pami_topology_t*)t_my_master;
+		  minfo_l.dst                = (pami_pipeworkqueue_t*) & _pwq0;
+		  minfo_l.dst_participants   = (pami_topology_t*)t_local;
+		  minfo_l.msginfo            = 0;
+		  minfo_l.msgcount           = 0;
+		  native_0           = native_l;
 		  cb_count++;
 		}
 	      
-	      TRACE_ADAPTOR((stderr, "MultiCastComposite2DeviceAS:  Non-master, Non-root, numLocal=%zu, src %p, dst %p\n", numLocal, _minfo_l.src_participants, _minfo_l.dst_participants));
+	      TRACE_ADAPTOR((stderr, "MultiCastComposite2DeviceAS:  Non-master, Non-root, numLocal=%zu, src %p, dst %p\n", numLocal, minfo_l.src_participants, minfo_l.dst_participants));
 	    }
 	  
-	  _minfo_g.cb_done.function   = composite_done;
-	  _minfo_l.cb_done.function   = composite_done;
+	  minfo_g.cb_done.function   = composite_done;
+	  minfo_l.cb_done.function   = composite_done;
 	  _count                      = cb_count;	  
 	  _master_done.function       = fn;
-	  _master_done.clientdata     = cookie;
+	  _master_done.clientdata     = cookie;	  
+	  if (native_1)
+	    {
+	      TRACE_ADAPTOR((stderr, "MultiCastComposite2Device:  Global NI, start multicast\n"));
+	      native_1->multicast(&minfo_g, deviceInfo);
+	    }
+	  
+	  if (native_0)
+	    {
+	      TRACE_ADAPTOR((stderr, "MultiCastComposite2Device:  Local NI, start multicast\n"));
+	      native_0->multicast(&minfo_l, deviceInfo);
+	    }	  
 	}
 	
 	virtual void start()
 	{
 	  TRACE_ADAPTOR((stderr, "MultiCastComposite2DeviceAS::start()\n"));
-	  startMcast();
 	}
-	void startMcast()
-	{
-	  TRACE_ADAPTOR((stderr, "MultiCastComposite2Device:  Multicast start()\n"));
-	  
-	  if (_native[0])
-	    {
-	      TRACE_ADAPTOR((stderr, "MultiCastComposite2Device:  Local NI, start multicast\n"));
-	      _native[0]->multicast(_minfo[0], _deviceInfo);
-	    }
-	  
-	  if (_native[1])
-	    {
-	      TRACE_ADAPTOR((stderr, "MultiCastComposite2Device:  Global NI, start multicast\n"));
-	      _native[1]->multicast(_minfo[1], _deviceInfo);
-	    }
-	}
+
       public:
-        Interfaces::NativeInterface        *_native_l;
-	Interfaces::NativeInterface        *_native_g;
-	Interfaces::NativeInterface        *_native[2];
-	PAMI_GEOMETRY_CLASS                *_geometry;
-	void                               *_deviceInfo;
-	pami_multicast_t                    _minfo_l;
-	pami_multicast_t                    _minfo_g;
-        pami_multicast_t                   *_minfo[2];      
+        PAMI_GEOMETRY_CLASS               * _geometry;
 	PAMI::PipeWorkQueue                 _pwq0;
 	PAMI::PipeWorkQueue                 _pwq1;
 	PAMI::Topology                      _root_topo;
