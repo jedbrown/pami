@@ -18,6 +18,7 @@
 #include <vector>
 #include "util/ccmi_debug.h"
 #include "TypeDefs.h"
+#include "algorithms/geometry/Metadata.h"
 #include "algorithms/interfaces/CollRegistrationInterface.h"
 #include "algorithms/schedule/MultinomialTree.h"
 #include "algorithms/schedule/RingSchedule.h"
@@ -56,8 +57,7 @@ namespace CCMI
     {
       void binomial_barrier_md(pami_metadata_t *m)
       {
-        // \todo:  fill in other metadata
-        strcpy(&m->name[0], "P2P_CCMI Binom_Bar");
+        new(m) PAMI::Geometry::Metadata("I0:Binomial:P2P:P2P");
       }
 
       bool binomial_analyze (PAMI_GEOMETRY_CLASS *geometry)
@@ -121,9 +121,8 @@ namespace CCMI
 
       void rectangle_broadcast_metadata(pami_metadata_t *m)
       {
-        // \todo:  fill in other metadata
         TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
-        strcpy(&m->name[0], "RectangleP2PBroadcast");
+        new(m) PAMI::Geometry::Metadata("I0:Rectangle:P2P:P2P");
       }
 
       typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
@@ -142,9 +141,8 @@ namespace CCMI
 
       void rectangle_1color_broadcast_metadata(pami_metadata_t *m)
       {
-        // \todo:  fill in other metadata
         TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
-        strcpy(&m->name[0], "RectangleP2P1ColorBroadcast");
+        new(m) PAMI::Geometry::Metadata("I0:Rectangle1Color:P2P:P2P");
       }
 
       typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
@@ -163,16 +161,14 @@ namespace CCMI
 
       void binomial_broadcast_metadata(pami_metadata_t *m)
       {
-        // \todo:  fill in other metadata
         TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
-        strcpy(&m->name[0], "P2P_CCMI Binom_Bcast");
+        new(m) PAMI::Geometry::Metadata("I0:Binomial:P2P:P2P");
       }
 
       void ring_broadcast_metadata(pami_metadata_t *m)
       {
-        // \todo:  fill in other metadata
         TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
-        strcpy(&m->name[0], "P2P_CCMI Ring_Bcast");
+        new(m) PAMI::Geometry::Metadata("I0:Ring:P2P:P2P");
       }
 
       typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
@@ -204,15 +200,13 @@ namespace CCMI
       void am_rb_broadcast_metadata(pami_metadata_t *m)
       {
         TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
-        // \todo:  fill in other metadata
-        strcpy(&m->name[0], "P2P_CCMI AS_RB_Binom_Bcast");
+        new(m) PAMI::Geometry::Metadata("I0:RankBased_Binomial:P2P:P2P");
       }
 
       void am_cs_broadcast_metadata(pami_metadata_t *m)
       {
         TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
-        // \todo:  fill in other metadata
-        strcpy(&m->name[0], "P2P_CCMI AS_CS_Binom_Bcast");
+        new(m) PAMI::Geometry::Metadata("I0:SequenceBased_Binomial:P2P:P2P");
       }
 
       void create_schedule(void                        * buf,
@@ -292,8 +286,7 @@ namespace CCMI
       void am_broadcast_metadata(pami_metadata_t *m)
       {
         TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
-        // \todo:  fill in other metadata
-        strcpy(&m->name[0], "P2P_CCMI Binom_AMBcast");
+        new(m) PAMI::Geometry::Metadata("I0:Binomial:P2P:P2P");
       }
 
       void create_schedule(void                        * buf,
@@ -343,8 +336,7 @@ namespace CCMI
 
         void binomial_allreduce_metadata(pami_metadata_t *m)
         {
-          // \todo:  fill in other metadata
-          strcpy(&m->name[0], "P2P_CCMI Binom_Allred");
+          new(m) PAMI::Geometry::Metadata("I0:Binomial:P2P:P2P");
         }
 
         typedef CCMI::Adaptor::Allreduce::MultiColorCompositeT
@@ -382,8 +374,7 @@ namespace CCMI
        ///
        void ascs_binomial_allreduce_metadata(pami_metadata_t *m)
        {
-          // \todo:  fill in other metadata
-          strcpy(&m->name[0],"CCMI_ASCS_BinomialAllreduce");
+         new(m) PAMI::Geometry::Metadata("I0:SequenceBased_Binomial:P2P:P2P");
        }
 
        typedef CCMI::Adaptor::Allreduce::AsyncAllreduceT<CCMI::Schedule::TopoMultinomial,
@@ -395,8 +386,7 @@ namespace CCMI
 
        void ascs_binomial_reduce_metadata(pami_metadata_t *m)
        {
-         // \todo:  fill in other metadata
-         strcpy(&m->name[0],"CCMI_ASCS_BinomialReduce");
+         new(m) PAMI::Geometry::Metadata("I0:RankBased_Binomial:P2P:P2P");
        }
 
        typedef CCMI::Adaptor::Allreduce::AsyncAllreduceT<CCMI::Schedule::TopoMultinomial,
@@ -441,8 +431,7 @@ namespace CCMI
 
         void binomial_scatter_metadata(pami_metadata_t *m)
         {
-          // \todo:  fill in other metadata
-          strcpy(&m->name[0], "P2P_CCMI Binomial Scatter");
+          new(m) PAMI::Geometry::Metadata("I0:Binomial:P2P:P2P");
         }
 
         typedef CCMI::Adaptor::Scatter::AsyncScatterT
@@ -473,8 +462,7 @@ namespace CCMI
 
         void flat_scatter_metadata(pami_metadata_t *m)
         {
-          // \todo:  fill in other metadata
-          strcpy(&m->name[0], "P2P_CCMI Flat Scatter");
+          new(m) PAMI::Geometry::Metadata("I0:Flat:P2P:P2P");
         }
 
         typedef CCMI::Adaptor::Scatter::AsyncScatterT
@@ -522,8 +510,7 @@ namespace CCMI
 
         void scatterv_metadata(pami_metadata_t *m)
         {
-          // \todo:  fill in other metadata
-          strcpy(&m->name[0], "P2P_CCMI Scatterv");
+          new(m) PAMI::Geometry::Metadata("I0:SoftwareTree:P2P:P2P");
         }
 
         typedef CCMI::Adaptor::Scatter::AsyncScatterT
@@ -540,8 +527,7 @@ namespace CCMI
 
         void scatterv_int_metadata(pami_metadata_t *m)
         {
-          // \todo:  fill in other metadata
-          strcpy(&m->name[0], "P2P_CCMI Scatterv_int");
+          new(m) PAMI::Geometry::Metadata("I0:SoftwareTree:P2P:P2P");
         }
 
         typedef CCMI::Adaptor::Scatter::AsyncScatterT
@@ -589,8 +575,7 @@ namespace CCMI
 
        void ascs_reduce_scatter_metadata(pami_metadata_t *m)
        {
-         // \todo:  fill in other metadata
-         strcpy(&m->name[0],"CCMI_ASCS_ReduceScatter");
+         new(m) PAMI::Geometry::Metadata("I0:Sequence_Tree:P2P:P2P");
        }
 
        typedef CCMI::Adaptor::Allreduce::AsyncReduceScatterT<CCMI::Schedule::TopoMultinomial,
@@ -636,8 +621,7 @@ namespace CCMI
 
         void binomial_gather_metadata(pami_metadata_t *m)
         {
-          // \todo:  fill in other metadata
-          strcpy(&m->name[0], "P2P_CCMI Binomial Gather");
+          new(m) PAMI::Geometry::Metadata("I0:Binomial:P2P:P2P");
         }
 
         typedef CCMI::Adaptor::Gather::AsyncGatherT
@@ -679,8 +663,7 @@ namespace CCMI
 
         void flat_gather_metadata(pami_metadata_t *m)
         {
-          // \todo:  fill in other metadata
-          strcpy(&m->name[0], "P2P_CCMI Flat Gather");
+          new(m) PAMI::Geometry::Metadata("I0:Flat:P2P:P2P");
         }
 
         typedef CCMI::Adaptor::Gather::AsyncLongGatherT
@@ -741,8 +724,7 @@ namespace CCMI
 
         void gatherv_metadata(pami_metadata_t *m)
         {
-          // \todo:  fill in other metadata
-          strcpy(&m->name[0], "P2P_CCMI Gatherv");
+          new(m) PAMI::Geometry::Metadata("I0:Tree:P2P:P2P");
         }
 
         typedef CCMI::Adaptor::Gather::AsyncLongGatherT
@@ -762,8 +744,7 @@ namespace CCMI
 
         void gatherv_int_metadata(pami_metadata_t *m)
         {
-          // \todo:  fill in other metadata
-          strcpy(&m->name[0], "P2P_CCMI Gatherv_int");
+          new(m) PAMI::Geometry::Metadata("I0:Tree:P2P:P2P");
         }
 
         typedef CCMI::Adaptor::Gather::AsyncLongGatherT
@@ -814,8 +795,7 @@ namespace CCMI
 
         void binomial_scan_metadata(pami_metadata_t *m)
         {
-          // \todo:  fill in other metadata
-          strcpy(&m->name[0], "P2P_CCMI Binomial Scan");
+          new(m) PAMI::Geometry::Metadata("I0:Binomial:P2P:P2P");
         }
 
         typedef CCMI::Adaptor::Scan::AsyncScanT
@@ -865,8 +845,7 @@ namespace CCMI
 
         void binomial_allgather_metadata(pami_metadata_t *m)
         {
-          // \todo:  fill in other metadata
-          strcpy(&m->name[0], "P2P_CCMI Binomial Allgather");
+          new(m) PAMI::Geometry::Metadata("I0:Binomial:P2P:P2P");
         }
 
         typedef CCMI::Adaptor::Allgather::AsyncAllgatherT
@@ -906,20 +885,17 @@ namespace CCMI
 
         void ring_allgather_metadata(pami_metadata_t *m)
         {
-          // \todo:  fill in other metadata
-          strcpy(&m->name[0], "P2P_CCMI Ring Allgather");
+          new(m) PAMI::Geometry::Metadata("I0:Ring:P2P:P2P");
         }
 
         void ring_allgatherv_int_metadata(pami_metadata_t *m)
         {
-          // \todo:  fill in other metadata
-          strcpy(&m->name[0], "P2P_CCMI Ring Allgatherv_int");
+          new(m) PAMI::Geometry::Metadata("I0:Ring:P2P:P2P");
         }
 
         void ring_allgatherv_metadata(pami_metadata_t *m)
         {
-          // \todo:  fill in other metadata
-          strcpy(&m->name[0], "P2P_CCMI Ring Allgatherv");
+          new(m) PAMI::Geometry::Metadata("I0:Ring:P2P:P2P");
         }
 
         typedef CCMI::Adaptor::Allgatherv::AsyncAllgathervT
@@ -984,14 +960,12 @@ namespace CCMI
 
         void pairwise_alltoall_metadata(pami_metadata_t *m)
         {
-          // \todo:  fill in other metadata
-          strcpy(&m->name[0], "P2P_CCMI Pairwise Alltoall");
+          new(m) PAMI::Geometry::Metadata("I0:Pairwise:P2P:P2P");
         }
 
         void pairwise_alltoallv_int_metadata(pami_metadata_t *m)
         {
-          // \todo:  fill in other metadata
-          strcpy(&m->name[0], "P2P_CCMI Pairwise Alltoallv_int");
+          new(m) PAMI::Geometry::Metadata("I0:Pairwise:P2P:P2P");
         }
 
         typedef CCMI::Adaptor::Alltoallv::AsyncAlltoallvT
@@ -1025,8 +999,7 @@ namespace CCMI
     {
       void getAlltoallMetaData(pami_metadata_t *m)
       {
-        // \todo:  fill in other metadata
-        strcpy(&m->name[0],"P2P Alltoall");
+        new(m) PAMI::Geometry::Metadata("I0:M2MComposite:P2P:P2P");
       }
       typedef CCMI::Adaptor::All2AllProtocol All2AllProtocol;
       typedef CCMI::Adaptor::All2AllFactoryT <All2AllProtocol, getAlltoallMetaData, CCMI::ConnectionManager::CommSeqConnMgr> All2AllFactory;
@@ -1036,8 +1009,7 @@ namespace CCMI
     {
       void getAlltoallvMetaData(pami_metadata_t *m)
       {
-        // \todo:  fill in other metadata
-        strcpy(&m->name[0],"P2P Alltoallv");
+        new(m) PAMI::Geometry::Metadata("I0:M2MComposite:P2P:P2P");
       }
       typedef CCMI::Adaptor::All2AllvProtocol All2AllProtocolv;
       typedef CCMI::Adaptor::All2AllvFactoryT <All2AllProtocolv, getAlltoallvMetaData, CCMI::ConnectionManager::CommSeqConnMgr> All2AllvFactory;

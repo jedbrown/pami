@@ -55,15 +55,15 @@ namespace PAMI
 {
   namespace CollRegistration
   {
-    char BarrierString[]        = "PGAS_Barrier";
-    char BarrierUEString[]      = "PGAS_UEBarrier";
-    char AllgatherString[]      = "PGAS_Allgather";
-    char AllgathervString[]     = "PGAS_Allgatherv";
-    char ScatterString[]        = "PGAS_Scatter";
-    char ScattervString[]       = "PGAS_Scatterv";
-    char AllreduceString[]      = "PGAS_Allreduce";
-    char ShortAllreduceString[] = "PGAS_ShortAllreduce";
-    char BroadcastString[]      = "PGAS_Broadcast";
+    char BarrierString[]        = "I1:Barrier:P2P:P2P";
+    char BarrierUEString[]      = "I1:UEBarrier:P2P:P2P";
+    char AllgatherString[]      = "I1:Allgather:P2P:P2P";
+    char AllgathervString[]     = "I1:Allgatherv:P2P:P2P";
+    char ScatterString[]        = "I1:Scatter:P2P:P2P";
+    char ScattervString[]       = "I1:Scatterv:P2P:P2P";
+    char AllreduceString[]      = "I1:Allreduce:P2P:P2P";
+    char ShortAllreduceString[] = "I1:ShortAllreduce:P2P:P2P";
+    char BroadcastString[]      = "I1:Broadcast:P2P:P2P";
 
     template <class T_Geometry,
               class T_NI,

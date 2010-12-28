@@ -18,6 +18,7 @@
 #include <vector>
 #include "algorithms/interfaces/CollRegistrationInterface.h"
 #include "TypeDefs.h"
+#include "algorithms/geometry/Metadata.h"
 #include "algorithms/connmgr/SimpleConnMgr.h"
 #include "algorithms/connmgr/CommSeqConnMgr.h"
 #include "algorithms/protocols/broadcast/MultiCastComposite.h"
@@ -63,7 +64,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void ShmemMsyncMetaData(pami_metadata_t *m)
     {
-      strncpy(&m->name[0], "ShmemMultiSync", 32);
+      new(m) PAMI::Geometry::Metadata("I0:ShmemMultiSync:SHMEM:-");
     }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSyncComposite<>,
@@ -75,7 +76,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void ShmemMcombMetaData(pami_metadata_t *m)
     {
-      strncpy(&m->name[0], "ShmemMultiComb", 32);
+      new(m) PAMI::Geometry::Metadata("I0:ShmemMultiCombine:SHMEM:-");
     }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite,
@@ -87,7 +88,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void ShmemMcastMetaData(pami_metadata_t *m)
     {
-      strncpy(&m->name[0], "ShmemMultiCast", 32);
+      new(m) PAMI::Geometry::Metadata("I0:ShmemMultiCast:SHMEM:-");
     }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite,
@@ -100,7 +101,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void MUMsyncMetaData(pami_metadata_t *m)
     {
-      strncpy(&m->name[0], "MUMultiSync", 32);
+      new(m) PAMI::Geometry::Metadata("I0:MUMultiSync:MU:MU");
     }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSyncComposite<>,
@@ -108,11 +109,11 @@ namespace PAMI
     CCMI::ConnectionManager::SimpleConnMgr > MUMultiSyncFactory;
 
     //----------------------------------------------------------------------------
-    // 'Pure' MU allsided multicast
+    // 'Pure' MU allsided multicombine
     //----------------------------------------------------------------------------
     void MUMcombMetaData(pami_metadata_t *m)
     {
-      strncpy(&m->name[0], "MUMultiComb", 32);
+      new(m) PAMI::Geometry::Metadata("I0:MUMultiCombine:MU:MU");
     }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite,
@@ -148,7 +149,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void MUMcast2MetaData(pami_metadata_t *m)
     {
-      strncpy(&m->name[0], "MUMultiCast_Msync", 32);
+      new(m) PAMI::Geometry::Metadata("I0:MUMultiCast_MultiSync:MU:MU");
     }
 
     // Define our base factory
@@ -255,6 +256,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void MUMcast3MetaData(pami_metadata_t *m)
     {
+      new(m) PAMI::Geometry::Metadata("I0:MUMultiCast_MultiCombine:MU:MU");
       strncpy(&m->name[0], "MUMultiCast_Mcomb", 32);
     }
 

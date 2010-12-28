@@ -16,6 +16,7 @@
 
 #include <map>
 #include <vector>
+#include "algorithms/geometry/Metadata.h"
 #include "algorithms/interfaces/NativeInterface.h"
 #include "algorithms/protocols/barrier/MultiSyncComposite.h"
 #include "algorithms/protocols/broadcast/MultiCastComposite.h"
@@ -37,7 +38,7 @@ namespace PAMI
       {
         void MsyncMetaData(pami_metadata_t *m)
         {
-          strncpy(&m->name[0], "MultiSync2DeviceConverged", 32);
+          new(m) PAMI::Geometry::Metadata("I0:MultiSync2DeviceConverged:SHMEM:MU");
         }
         typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSyncComposite2Device,
         MsyncMetaData,
@@ -49,7 +50,7 @@ namespace PAMI
       {
         void McastMetaData(pami_metadata_t *m)
         {
-          strncpy(&m->name[0], "MultiCast2DeviceConverged", 32);
+          new(m) PAMI::Geometry::Metadata("I0:MultiCast2DeviceConverged:SHMEM:MU");
         }
         typedef CCMI::Adaptor::Broadcast::MultiCastComposite2DeviceFactoryT
         < CCMI::Adaptor::Broadcast::MultiCastComposite2Device<PAMI_GEOMETRY_CLASS, true>,
@@ -62,7 +63,7 @@ namespace PAMI
       {
         void McombineMetaData(pami_metadata_t *m)
         {
-          strncpy(&m->name[0], "MultiCombine2DeviceConverged", 32);
+          new(m) PAMI::Geometry::Metadata("I0:MultiCombine2DeviceConverged:SHMEM:MU");
         }
         typedef CCMI::Adaptor::Allreduce::MultiCombineComposite2DeviceFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2Device,
         McombineMetaData,
@@ -74,7 +75,7 @@ namespace PAMI
         //----------------------------------------------------------------------------
         void Mcomb2DMetaDataNP(pami_metadata_t *m)
         {
-          strncpy(&m->name[0], "MultiCombine2DeviceNPConverged", 32);
+          new(m) PAMI::Geometry::Metadata("I0:MultiCombine2DeviceNPConverged:SHMEM:MU");
         }
         typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2DeviceNP,
           Mcomb2DMetaDataNP, CCMI::ConnectionManager::SimpleConnMgr > MultiCombineFactoryNP;

@@ -17,6 +17,7 @@
 #include <map>
 #include <vector>
 #include "algorithms/interfaces/NativeInterface.h"
+#include "algorithms/geometry/Metadata.h"
 #include "algorithms/protocols/barrier/MultiSyncComposite.h"
 #include "algorithms/protocols/broadcast/MultiCastComposite.h"
 #include "algorithms/protocols/allreduce/MultiCombineComposite.h"
@@ -38,7 +39,7 @@ namespace PAMI
       {
         void MsyncMetaData(pami_metadata_t *m)
         {
-          strncpy(&m->name[0], "CAU MultiSyncComposite", 32);
+          new(m) PAMI::Geometry::Metadata("I0:MultiSyncComposite:SHMEM:CAU");
         }
         typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSyncComposite2Device,
                                                                     MsyncMetaData,
@@ -50,7 +51,7 @@ namespace PAMI
       {
         void McastMetaData(pami_metadata_t *m)
         {
-          strncpy(&m->name[0], "CAU MultiCastComposite", 32);
+          new(m) PAMI::Geometry::Metadata("I0:MultiCastComposite:SHMEM:CAU");
         }
         typedef CCMI::Adaptor::Broadcast::MultiCastComposite2DeviceFactoryT
         < CCMI::Adaptor::Broadcast::MultiCastComposite2Device<PAMI_GEOMETRY_CLASS>,
@@ -63,7 +64,7 @@ namespace PAMI
       {
         void McombineMetaData(pami_metadata_t *m)
         {
-          strncpy(&m->name[0], "CAU MultiCombineComposite", 32);
+          new(m) PAMI::Geometry::Metadata("I0:MultiCombineComposite:SHMEM:CAU");
         }
         typedef CCMI::Adaptor::Allreduce::MultiCombineComposite2DeviceFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2Device<0>,
                                                                                  McombineMetaData,
@@ -75,7 +76,7 @@ namespace PAMI
       {
         void McombineMetaData(pami_metadata_t *m)
         {
-          strncpy(&m->name[0], "CAU MultiCombineComposite", 32);
+          new(m) PAMI::Geometry::Metadata("I0:MultiCombineComposite:SHMEM:CAU");
         }
         typedef CCMI::Adaptor::Allreduce::MultiCombineComposite2DeviceFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2Device<1>,
                                                                                  McombineMetaData,

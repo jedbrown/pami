@@ -18,6 +18,7 @@
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
 #include "algorithms/protocols/tspcoll/NBCollManager.h"
 #include "algorithms/composite/Composite.h"
+#include "algorithms/geometry/Metadata.h"
 
 namespace PAMI
 {
@@ -100,7 +101,7 @@ namespace PAMI
         }
       virtual void metadata(pami_metadata_t *mdata)
         {
-          strcpy(mdata->name, T_MDString);
+          new(mdata) PAMI::Geometry::Metadata(T_MDString);
         }
       T_Exec            _exec;
       T_TSPColl        *_coll;

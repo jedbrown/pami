@@ -259,7 +259,7 @@ extern "C"
    */
   typedef struct
   {
-    char                   name[32];     /**<  A character string describing the collective */
+    char                   name[64];     /**<  A character string describing the collective */
     unsigned               version;      /**<  A version number of the collective           */
     /* Correctness Parameters */
     pami_metadata_function check_fn;     /**<  A function pointer to validate parameters for
