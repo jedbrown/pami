@@ -14,6 +14,8 @@
 #ifndef __algorithms_geometry_Metadata_h__
 #define __algorithms_geometry_Metadata_h__
 
+#include <stdint.h>
+
 namespace PAMI
 {
   namespace Geometry
