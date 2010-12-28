@@ -102,9 +102,8 @@ namespace PAMI
 	public:
 	  pami_event_function                        _cb_done;     /// Short message callback
 	  void                                     * _cookie;      /// Short message user client data
-	  char                                     * _dstBuf;      /// Short dstination buffer
+	  PipeWorkQueue                            * _dpwq;        /// Short dstination PipeWorkQueue
 	  uint64_t                                   _bytes;       /// Short bytes
-	  char                                     * _tempBuf;     /// Temp buf where data comes in
 	  volatile uint64_t                        * _counterAddress; /// Counter address     
 
 	  ShortCompletionMsg () {}
@@ -127,7 +126,10 @@ namespace PAMI
 	_gdev(*context.getProgressDevice()) 
 	{	  	  
 	  _collstate.init(context, status);
-	  initDescBase();	 	  
+	  _scompmsg._counterAddress = &_collstate._colCounter;
+	  new (&_swork) PAMI::Device::Generic::GenericThread(short_advance, &_scompmsg);
+
+	  initDescBase();	 
 	}
 
 	void initDescBase() {
@@ -198,15 +200,14 @@ namespace PAMI
 					    uint32_t        sizeoftype,
 					    uint32_t        bytes,
 					    char          * src,
-					    char          * dst,
+					    PipeWorkQueue * dpwq,
 					    pami_event_function   cb_done,
 					    void          * cookie) 
 	{
 	  PAMI_assert (bytes <= _collstate._tempSize);
-	  _int64Cpy(_collstate._tempBuf, src, bytes, true);	  
+	  _int64Cpy(_collstate._tempBuf, src, bytes, (((uint64_t)src)&0x7) == 0);  
 
-	  size_t ndesc = _injChannel.getFreeDescriptorCountWithUpdate ();
-	  
+	  size_t ndesc = _injChannel.getFreeDescriptorCountWithUpdate();	  
 	  if (ndesc > 0) {
 	    _collstate._colCounter = bytes;
 	    // Clone the message descriptors directly into the injection fifo.
@@ -224,18 +225,19 @@ namespace PAMI
 #ifndef MU_SHORT_BLOCKING_COLLECTIVE
 	    _scompmsg._cb_done = cb_done;
 	    _scompmsg._cookie  = cookie;
-	    _scompmsg._dstBuf  = dst;
 	    _scompmsg._bytes   = bytes;
-	    _scompmsg._counterAddress = &_collstate._colCounter;
-	    _scompmsg._tempBuf    = _collstate._tempBuf;
+	    _scompmsg._dpwq    = dpwq;
 
-	    PAMI::Device::Generic::GenericThread *work = new (&_work) PAMI::Device::Generic::GenericThread(short_advance, &_scompmsg);
+	    PAMI::Device::Generic::GenericThread *work = (PAMI::Device::Generic::GenericThread *)&_swork;
 	    _gdev.postThread(work);
 #else
 	    while (_collstate._colCounter != 0);
 	    mem_sync();
-	    if (dst)
-	      _int64Cpy (dst, _collstate._tempBuf, bytes, true);
+	    if (dpwq) {
+	      char *dst = dpwq->byfferToProduce();
+	      _int64Cpy (dst, _collstate._tempBuf, bytes, (((uint64_t)dst)&0x7) == 0);	  
+	      dpwq->produceBytes(bytes);
+	    }
 	    cb_done (NULL, cookie, PAMI_SUCCESS);
 #endif	    
 	    
@@ -350,8 +352,11 @@ namespace PAMI
 	  
 	  if (*scmsg->_counterAddress == 0) {
 	    mem_sync();
-	    if (scmsg->_dstBuf)
-	      _int64Cpy (scmsg->_dstBuf, scmsg->_tempBuf, scmsg->_bytes, true);
+	    if (scmsg->_dpwq) {
+	      char *dst = scmsg->_dpwq->bufferToProduce();
+	      _int64Cpy (dst, _collstate._tempBuf, scmsg->_bytes, (((uint64_t)dst)&0x7) == 0);
+	      scmsg->_dpwq->produceBytes(scmsg->_bytes);
+	    }
 	    
 	    if (scmsg->_cb_done)
 	      scmsg->_cb_done (context, scmsg->_cookie, PAMI_SUCCESS);
@@ -379,6 +384,7 @@ namespace PAMI
 	Generic::Device                            & _gdev;
 	MUSPI_DescriptorBase                       _modeldesc;         /// Model descriptor
 	ShortCompletionMsg                         _scompmsg;
+	pami_work_t                                _swork;
 	pami_work_t                                _work;
       };      
     };

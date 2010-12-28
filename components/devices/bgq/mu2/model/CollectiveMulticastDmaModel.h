@@ -46,7 +46,6 @@ namespace PAMI
 	    ((Topology *)mcast->src_participants)->rankList(&ranks);
 	    bool isroot = (ranks[0] == __global.mapping.task());
 
-#if 0
 	    if (mcast->bytes <= CollectiveDmaModelBase::_collstate._tempSize) {	      
 	      if (isroot) {
 		PipeWorkQueue *spwq = (PipeWorkQueue *) mcast->src;
@@ -66,24 +65,18 @@ namespace PAMI
 		}
 	      }
 	      else {
-		PipeWorkQueue *dpwq = (PipeWorkQueue *) mcast->dst;
-		char *dst = dpwq->bufferToProduce();
-		//uint32_t dbytes = dpwq->bytesAvailableToProduce();
-		
-		//		if (dbytes == mcast->bytes) {
 		pami_result_t rc = CollectiveDmaModelBase::postShortCollective (MUHWI_COLLECTIVE_OP_CODE_OR,
 										4,
 										mcast->bytes,
 										_zeroBuf,
-										dst,
+										(PipeWorkQueue*) mcast->dst,
 										mcast->cb_done.function,	       
 										mcast->cb_done.clientdata);
 		if (rc == PAMI_SUCCESS)
-		    return PAMI_SUCCESS;
-		//}
+		  return PAMI_SUCCESS;
 	      }
 	    }
-#endif	    
+
 	    pami_result_t rc = CollectiveDmaModelBase::postBroadcast (state,
 								      mcast->bytes,
 								      (PipeWorkQueue *) mcast->src,

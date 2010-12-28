@@ -42,12 +42,10 @@ namespace PAMI
 	      return PAMI_ERROR; //Unsupported operation
 
 	    PipeWorkQueue *spwq = (PipeWorkQueue *) mcombine->data;
-	    PipeWorkQueue *dpwq = (PipeWorkQueue *) mcombine->results;
-
+	    PipeWorkQueue *dpwq = (PipeWorkQueue *) mcombine->results;	    
 	    if (bytes <= CollectiveDmaModelBase::_collstate._tempSize) {	      
 	      char *src = spwq->bufferToConsume();
 	      uint32_t sbytes = spwq->bytesAvailableToConsume();	      
-	      char *dst = dpwq->bufferToProduce();
 	      
 	      if (sbytes == bytes) {
 		pami_result_t rc = CollectiveDmaModelBase::postShortCollective 
@@ -55,7 +53,7 @@ namespace PAMI
 		   sizeoftype,
 		   bytes,
 		   src,
-		   dst,
+		   dpwq,
 		   mcombine->cb_done.function,	       
 		   mcombine->cb_done.clientdata);
 		if (rc == PAMI_SUCCESS)
