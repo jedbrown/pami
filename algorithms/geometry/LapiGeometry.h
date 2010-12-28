@@ -16,7 +16,6 @@
 
 #include "Topology.h"
 #include "Mapping.h"
-#include "algorithms/geometry/Attributes.h"
 #include "algorithms/interfaces/GeometryInterface.h"
 #include "algorithms/geometry/Algorithm.h"
 #include <map>
