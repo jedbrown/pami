@@ -29,7 +29,7 @@
 namespace PAMI
 {
   /// \todo Update to use a memory manager template parameter.
-  template <unsigned T_ObjSize, unsigned T_ObjAlign, unsigned T_PREALLOC=8, class T_Atomic = PAMI::Atomic::Noop>
+  template <unsigned T_ObjSize, unsigned T_ObjAlign, unsigned T_PREALLOC=10, class T_Atomic = PAMI::Atomic::Noop>
   class MemoryAllocator
   {
     protected:
