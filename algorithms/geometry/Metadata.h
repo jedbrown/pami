@@ -14,7 +14,6 @@
 #ifndef __algorithms_geometry_Metadata_h__
 #define __algorithms_geometry_Metadata_h__
 
-#include <stdint.h>
 
 namespace PAMI
 {
@@ -38,7 +37,7 @@ namespace PAMI
           this->version                           = 1;
           this->check_fn                          = NULL;
           this->range_lo                          = 0;
-          this->range_hi                          = 2>>31;
+          this->range_hi                          = MD_SIZE_MAX;
 
           // Correctness Check
           this->check_correct.bitmask_correct     = 0;
@@ -57,8 +56,11 @@ namespace PAMI
           this->check_perf.bitmask_perf           = 0;
           this->check_perf.values.hw_accel        = 0;
           this->range_lo_perf                     = 0;
-          this->range_hi_perf                     = 2>>31;
+          this->range_hi_perf                     = MD_SIZE_MAX;
         }
+    private:
+      static const size_t MD_SIZE_MAX = -1;
+
     };
   };
 };
