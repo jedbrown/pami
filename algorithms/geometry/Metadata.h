@@ -38,7 +38,7 @@ namespace PAMI
           this->version                           = 1;
           this->check_fn                          = NULL;
           this->range_lo                          = 0;
-          this->range_hi                          = SIZE_MAX;
+          this->range_hi                          = 2>>31;
 
           // Correctness Check
           this->check_correct.bitmask_correct     = 0;
@@ -57,7 +57,7 @@ namespace PAMI
           this->check_perf.bitmask_perf           = 0;
           this->check_perf.values.hw_accel        = 0;
           this->range_lo_perf                     = 0;
-          this->range_hi_perf                     = SIZE_MAX;
+          this->range_hi_perf                     = 2>>31;
         }
     };
   };
