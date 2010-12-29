@@ -13,7 +13,7 @@
 #include "sys/pami.h"
 #include "math/a2qpx/Core_memcpy.h"
 
-#define MU_SHORT_BLOCKING_COLLECTIVE 0
+//#define MU_SHORT_BLOCKING_COLLECTIVE 0
 
 namespace PAMI
 {
