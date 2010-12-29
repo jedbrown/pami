@@ -13,7 +13,7 @@
 #include "sys/pami.h"
 #include "math/a2qpx/Core_memcpy.h"
 
-//#define MU_SHORT_BLOCKING_COLLECTIVE 1
+#define MU_SHORT_BLOCKING_COLLECTIVE 0
 
 namespace PAMI
 {
@@ -234,7 +234,7 @@ namespace PAMI
 	    while (_collstate._colCounter != 0);
 	    mem_sync();
 	    if (dpwq) {
-	      char *dst = dpwq->byfferToProduce();
+	      char *dst = dpwq->bufferToProduce();
 	      _int64Cpy (dst, _collstate._tempBuf, bytes, (((uint64_t)dst)&0x7) == 0);	  
 	      dpwq->produceBytes(bytes);
 	    }
