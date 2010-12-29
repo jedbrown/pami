@@ -36,31 +36,6 @@ namespace CCMI
   {
     namespace Allreduce
     {
-      static const size_t _size_table[PAMI_DT_COUNT] =
-	{ 
-	  -1,                         //PAMI_UNDEFINED_DT
-          sizeof(signed char),        //PAMI_SIGNED_CHAR
-          sizeof(unsigned char),      //PAMI_UNSIGNED_CHAR
-          sizeof(signed short),       //PAMI_SIGNED_SHORT
-          sizeof(unsigned short),     //PAMI_UNSIGNED_SHORT
-          sizeof(signed int),         //PAMI_SIGNED_INT
-          sizeof(unsigned int),       //PAMI_UNSIGNED_INT
-          sizeof(signed long long),   //PAMI_SIGNED_LONG_LONG
-          sizeof(unsigned long long), //PAMI_UNSIGNED_LONG_LONG
-          sizeof(float),              //PAMI_FLOAT
-          sizeof(double),             //PAMI_DOUBLE
-          sizeof(long double),        //PAMI_LONG_DOUBLE
-          sizeof(bool),               //PAMI_LOGICAL
-          2*sizeof(float),            //PAMI_SINGLE_COMPLEX
-          2*sizeof(double),           //PAMI_DOUBLE_COMPLEX
-          sizeof(int32_int32_t),      //PAMI_LOC_2INT
-          sizeof(int16_int32_t),      //PAMI_LOC_SHORT_INT
-          sizeof(fp32_int32_t),       //PAMI_LOC_FLOAT_INT
-          sizeof(fp64_int32_t),       //PAMI_LOC_DOUBLE_INT
-          sizeof(fp32_fp32_t),        //PAMI_LOC_2FLOAT
-          sizeof(fp64_fp64_t),        //PAMI_LOC_2DOUBLE
-          -1                          //PAMI_USERDEFINED_DT
-        };
 
       class MultiCombineComposite : public CCMI::Executor::Composite
       {
