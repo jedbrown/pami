@@ -50,26 +50,28 @@ namespace PAMI
 
         private:
 
-          uint16_t        		_dispatch_id; 	/* Invoke the dispatch after match */
-          unsigned 				_master;		/* Master of the collective */
-          CollType_t				_type;
-          void*					_storage;
-          int						_connid;		/* Initialize with -1		*/
-          T_Atomic				_synch_counter;	/* Whether everyone has arrived */
-          T_Atomic				_done_counter; 	/* Whether everyone finished 	*/
-          DescState_t				_my_state;		/* Any of FREE, INIT, ACTIVE, DONE */
-          //T_Atomic				_seq_num;
-          volatile uint64_t		_seq_num __attribute__((__aligned__(8)));;
-          unsigned				_num_consumers;
-          volatile unsigned		_flag;
-          volatile unsigned       _master_done;
-          //union
-          //{
-          pami_multicast_t	_mcast;
-          pami_multicombine_t	_mcomb;
+          uint16_t     		_dispatch_id; 	/* Invoke the dispatch after match */
+          unsigned 		_master;	/* Master of the collective */
+          CollType_t		_type;
+          void*			_storage;
+          int			_connid;	/* Initialize with -1		*/
+          T_Atomic		_synch_counter;	/* Whether everyone has arrived */
+          T_Atomic		_done_counter; 	/* Whether everyone finished 	*/
+          DescState_t		_my_state;	/* Any of FREE, INIT, ACTIVE, DONE */
+          //T_Atomic		_seq_num;
+          unsigned		_num_consumers;
+          volatile uint64_t	_seq_num __attribute__((__aligned__(8)));;
+          volatile unsigned	_flag;
+          volatile unsigned     _master_done;
+          union
+          {
+            pami_multicast_t	mcast;
+            pami_multicombine_t	mcomb;
 
-          //}						_coll_params;
-          char					_buffer[NUM_LOCAL_TASKS*BUFFER_SIZE_PER_TASK] __attribute__((__aligned__(128)));
+          }			_coll_params;
+          /* pami_multicast_t	_mcast;
+            pami_multicombine_t	_mcomb;*/
+          char			_buffer[NUM_LOCAL_TASKS*BUFFER_SIZE_PER_TASK] __attribute__((__aligned__(128)));
 
         public:
 
@@ -103,8 +105,8 @@ namespace PAMI
 
           inline void set_mcast_params(pami_multicast_t* mcast)
           {
-            //memcpy((void*)&_coll_params.mcast, (void*)mcast, sizeof(pami_multicast_t));
-            memcpy((void*)&_mcast, (void*)mcast, sizeof(pami_multicast_t));
+            memcpy((void*)&_coll_params.mcast, (void*)mcast, sizeof(pami_multicast_t));
+            //memcpy((void*)&_mcast, (void*)mcast, sizeof(pami_multicast_t));
             //_connid = mcast->connection_id;
 
           }
@@ -112,21 +114,21 @@ namespace PAMI
           inline void set_mcomb_params(pami_multicombine_t* mcomb)
           {
             assert(mcomb != NULL);
-            //memcpy((void*)&_coll_params.mcomb, (void*)mcomb, sizeof(pami_multicombine_t));
-            memcpy((void*)&_mcomb, (void*)mcomb, sizeof(pami_multicombine_t));
+            memcpy((void*)&_coll_params.mcomb, (void*)mcomb, sizeof(pami_multicombine_t));
+            //memcpy((void*)&_mcomb, (void*)mcomb, sizeof(pami_multicombine_t));
             //_connid = mcomb->connection_id;
           }
 
           inline pami_multicast_t& get_mcast_params()
           {
-            //return _coll_params.mcast;
-            return _mcast;
+            return _coll_params.mcast;
+            //return _mcast;
           }
 
           inline pami_multicombine_t& get_mcomb_params()
           {
-            //return _coll_params.mcomb;
-            return _mcomb;
+            return _coll_params.mcomb;
+            //return _mcomb;
           }
 
           inline	void set_type(CollType_t type)

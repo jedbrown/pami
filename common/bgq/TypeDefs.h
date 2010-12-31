@@ -75,7 +75,8 @@
 #ifdef ENABLE_NEW_SHMEM
 #include "components/devices/shmemcoll/ShmemCollDevice.h"
 #include "components/devices/shmemcoll/ShmemCollDesc.h"
-#include "components/devices/shmemcoll/ShmemMcombModelWorld.h"
+//#include "components/devices/shmemcoll/ShmemMcombModelWorld.h"
+#include "components/devices/shmemcoll/mdls/ShmemMcombModelWorld.h"
 #include "components/devices/shmemcoll/ShmemMcstModelWorld.h"
 #endif
 
