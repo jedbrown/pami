@@ -36,15 +36,15 @@ namespace PAMI
     namespace Shmem
     {
 
-#define SHMEMBUF(x)	((double*) _master_desc->get_buffer(x))
-#define SHMEMBUF_SHORT(x)	((double*) master_desc->get_buffer(x))
+#define SHMEMBUF(x)	((double*) _my_desc->get_buffer(x))
+#define SHMEMBUF_SHORT(x)	((double*) my_desc->get_buffer(x))
 
       template <class T_Device, class T_Desc>
         class ShortMcombMessage
         {
           public:
             //currently optimized to a many-to-one combine
-            static inline pami_result_t short_msg_advance(T_Desc* master_desc, pami_multicombine_t* mcomb_params,
+            static inline pami_result_t short_msg_advance(T_Desc* my_desc, pami_multicombine_t* mcomb_params,
                 unsigned npeers, unsigned local_rank, unsigned task)
             {
 
@@ -52,7 +52,7 @@ namespace PAMI
               {
 
                 size_t num_src_ranks = ((PAMI::Topology*)mcomb_params->data_participants)->size();
-                while (master_desc->arrived_peers() != (unsigned)num_src_ranks) {};
+                while (my_desc->arrived_peers() != (unsigned)num_src_ranks) {};
                 TRACE_ERR((stderr, "all peers:%zu arrived, starting the blocking Shmem Mcomb protocol\n", num_src_ranks));
                 PAMI::PipeWorkQueue *rcv = (PAMI::PipeWorkQueue *)mcomb_params->results;
                 size_t bytes = mcomb_params->count << pami_dt_shift[mcomb_params->dtype];
@@ -85,12 +85,12 @@ namespace PAMI
                   fprintf(stderr, "sum not yet supported\n");
                 }
 
-                char* src = (char*) master_desc->get_buffer(0);
+                char* src = (char*) my_desc->get_buffer(0);
                 char* my_dst = (char*)(dst);
                 memcpy((void*)my_dst, (void*)src, bytes);
                 rcv->produceBytes(bytes);
                 TRACE_ERR((stderr, "Finished gathering results, signalling done\n"));
-                //master_desc->signal_flag();
+                my_desc->signal_done();
               }
 
               return PAMI_SUCCESS;
@@ -110,12 +110,11 @@ namespace PAMI
 
               T_Desc* _my_desc = this->_my_desc;
               pami_multicombine_t & mcomb_params = _my_desc->get_mcomb_params();
-              T_Desc* _master_desc = this->_master_desc;
               size_t num_src_ranks = ((PAMI::Topology*)mcomb_params.data_participants)->size();
 
-              if (_master_desc->arrived_peers() != (unsigned) num_src_ranks)
+              if (_my_desc->arrived_peers() != (unsigned) num_src_ranks)
                 return PAMI_EAGAIN;
-              //while (_master_desc->arrived_peers() != (unsigned)num_src_ranks) {};
+              //while (_my_desc->arrived_peers() != (unsigned)num_src_ranks) {};
               TRACE_ERR((stderr, "all peers:%zu arrived, starting the blocking Shmem Mcomb protocol\n", num_src_ranks));
 
               unsigned _npeers = __global.topology_local.size();
@@ -158,15 +157,15 @@ namespace PAMI
                   fprintf(stderr, "sum not yet supported\n");
                 }
 
-                _master_desc->signal_flag();
+                _my_desc->signal_flag();
               }
 
               /* Reduction over...start gathering the results */
 
               if (((PAMI::Topology*)mcomb_params.results_participants)->isRankMember(_task))
               {
-                while (_master_desc->get_flag() == 0) {}; //wait till reduction is done
-                char* src = (char*) _master_desc->get_buffer(0);
+                while (_my_desc->get_flag() == 0) {}; //wait till reduction is done
+                char* src = (char*) _my_desc->get_buffer(0);
                 char* my_dst = (char*)(dst);
                 memcpy((void*)my_dst, (void*)src, bytes);
                 rcv->produceBytes(bytes);
@@ -175,12 +174,13 @@ namespace PAMI
               }
 
               if (((PAMI::Topology*)mcomb_params.results_participants)->size() > 1){
-                _master_desc->signal_done();
-                while (_master_desc->in_use()) {}; //wait for everyone to signal done
+                _my_desc->signal_done();
+                //TODO..remove this??
+                //while (_my_desc->in_use()) {}; //wait for everyone to signal done
                 //this->setStatus (PAMI::Device::Done);
               }
 
-              _my_desc->set_state(Shmem::DONE);
+              _my_desc->set_my_state(Shmem::DONE);
               mcomb_params.cb_done.function(_context, mcomb_params.cb_done.clientdata, PAMI_SUCCESS);
               return PAMI_SUCCESS;
 
@@ -188,15 +188,15 @@ namespace PAMI
 
 
           public:
-            inline ShortMcombMessage (pami_context_t context, T_Desc* desc, T_Desc* master_desc):
-              _context(context), _my_desc(desc), _master_desc(master_desc), _work(ShortMcombMessage::__advance, this)
+            inline ShortMcombMessage (pami_context_t context, T_Desc* desc):
+              _context(context), _my_desc(desc), _work(ShortMcombMessage::__advance, this)
 
           {
             TRACE_ERR((stderr, "<> Shmem::ShortMcombMessage\n"));
           };
 
             pami_context_t                      _context;
-            T_Desc                *_my_desc, *_master_desc;
+            T_Desc                              *_my_desc;
             PAMI::Device::Generic::GenericThread _work;
 
         };  // PAMI::Device::McombMessageShmem class
