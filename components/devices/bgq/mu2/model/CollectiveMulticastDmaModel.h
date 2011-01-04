@@ -49,6 +49,10 @@ namespace PAMI
 	    ((Topology *)mcast->src_participants)->rankList(&ranks);
 	    bool isroot = (ranks[0] == __global.mapping.task());
 
+	    unsigned classroute = 0;
+	    if (devinfo) 
+	      classroute = ((uint32_t)(uint64_t)devinfo) - 1;
+
 	    if (mcast->bytes <= CollectiveDmaModelBase::_collstate._tempSize) {	      
 	      if (isroot) {
 		PipeWorkQueue *spwq = (PipeWorkQueue *) mcast->src;
@@ -62,7 +66,8 @@ namespace PAMI
 										  src,
 										  NULL,
 										  mcast->cb_done.function,	       
-										  mcast->cb_done.clientdata);
+										  mcast->cb_done.clientdata,
+										  classroute);
 		  if (rc == PAMI_SUCCESS)
 		    return PAMI_SUCCESS;
 		}
@@ -74,7 +79,8 @@ namespace PAMI
 										_zeroBuf,
 										(PipeWorkQueue*) mcast->dst,
 										mcast->cb_done.function,	       
-										mcast->cb_done.clientdata);
+										mcast->cb_done.clientdata,
+										classroute);
 		if (rc == PAMI_SUCCESS)
 		  return PAMI_SUCCESS;
 	      }
@@ -88,7 +94,8 @@ namespace PAMI
 								      mcast->cb_done.clientdata,
 								      _zeroBuf,
 								      _zeroBytes,
-								      isroot);	      
+								      isroot,
+								      classroute);	      
 	    return rc;
 	  }
 	};

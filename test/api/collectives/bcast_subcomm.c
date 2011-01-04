@@ -20,9 +20,45 @@
 
 #include <pami.h>
 
+#define CHECK_DATA  
+
 #define BUFSIZE 1048576
 #include "../pami_util.h"
 
+char *protocolName;
+
+void initialize_sndbuf (void *buf, int bytes, int root)
+{
+
+  unsigned char c = root;
+  int i = bytes;
+  unsigned char *cbuf = (unsigned char *)  buf;
+
+  for (; i; i--)
+    {
+      cbuf[i-1] = (c++);
+    }
+}
+
+int check_rcvbuf (void *buf, int bytes, int root)
+{
+  unsigned char c = root;
+  int i = bytes;
+  unsigned char *cbuf = (unsigned char *)  buf;
+
+  for (; i; i--)
+    {
+      if (cbuf[i-1] != c)
+        {
+          fprintf(stderr, "%s:Check(%d) failed <%p>buf[%d]=%.2u != %.2u \n", protocolName, bytes, buf, i - 1, cbuf[i-1], c);
+          return -1;
+        }
+
+      c++;
+    }
+
+  return 0;
+}
 
 int main(int argc, char*argv[])
 {
@@ -125,7 +161,6 @@ int main(int argc, char*argv[])
   if(!selected) selected = "";
 
   char *method = getenv("TEST_SPLIT_METHOD");
-
   if (!(method && !strcmp(method, "1")))
     {
       if (task_id >= 0 && task_id <= half - 1)
@@ -250,6 +285,8 @@ int main(int argc, char*argv[])
 
       int             i, j, k;
 
+      protocolName = newbcast_md[nalg].name;
+
       for (k = 1; k >= 0; k--)
         {
           if (set[k])
@@ -264,12 +301,19 @@ int main(int argc, char*argv[])
               fflush(stdout);
               if(strncmp(newbcast_md[nalg].name,selected, strlen(selected))) continue;
 
-              blocking_coll(context, &newbarrier, &newbar_poll_flag);
+	      blocking_coll(context, &newbarrier, &newbar_poll_flag);
 
               for (i = 1; i <= BUFSIZE; i *= 2)
                 {
                   long long dataSent = i;
                   int          niter = 100;
+#ifdef CHECK_DATA
+		  
+		  if (task_id == (size_t)root)
+		    initialize_sndbuf (buf, i, root);
+		  else
+		    memset(buf, 0xFF, i);	      
+#endif
                   blocking_coll(context, &newbarrier, &newbar_poll_flag);
                   ti = timer();
 
@@ -283,6 +327,9 @@ int main(int argc, char*argv[])
 
                   tf = timer();
                   blocking_coll(context, &newbarrier, &newbar_poll_flag);
+#ifdef CHECK_DATA
+		  check_rcvbuf (buf, i, root);
+#endif
                   usec = (tf - ti) / (double)niter;
 
                   if (task_id == root)

@@ -44,6 +44,10 @@ namespace PAMI
 	    if (op == unsupported_operation)
 	      return PAMI_ERROR; //Unsupported operation
 
+	    unsigned classroute = 0;
+	    if (devinfo) 
+	      classroute = ((uint32_t)(uint64_t)devinfo) - 1;
+
 	    PipeWorkQueue *spwq = (PipeWorkQueue *) mcombine->data;
 	    PipeWorkQueue *dpwq = (PipeWorkQueue *) mcombine->results;	    
 	    if (bytes <= CollectiveDmaModelBase::_collstate._tempSize) {	      
@@ -58,7 +62,8 @@ namespace PAMI
 		   src,
 		   dpwq,
 		   mcombine->cb_done.function,	       
-		   mcombine->cb_done.clientdata);
+		   mcombine->cb_done.clientdata,
+		   classroute);
 		if (rc == PAMI_SUCCESS)
 		  return PAMI_SUCCESS;
 	      }
@@ -71,8 +76,8 @@ namespace PAMI
 								       mcombine->cb_done.function,	       
 								       mcombine->cb_done.clientdata,
 								       op,
-								       sizeoftype
-								       );
+								       sizeoftype,
+								       classroute);
 	    return rc;
 	  }
 	};

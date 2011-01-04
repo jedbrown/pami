@@ -205,7 +205,8 @@ namespace PAMI
 					    char          * src,
 					    PipeWorkQueue * dpwq,
 					    pami_event_function   cb_done,
-					    void          * cookie) 
+					    void          * cookie,
+					    unsigned        classroute) 
 	{
 	  PAMI_assert (bytes <= _collstate._tempSize);
 	  _int64Cpy(_collstate._tempBuf, src, bytes, (((uint64_t)src)&0x7) == 0);  
@@ -216,12 +217,14 @@ namespace PAMI
 	    // Clone the message descriptors directly into the injection fifo.
 	    MUSPI_DescriptorBase *d = (MUSPI_DescriptorBase *) _injChannel.getNextDescriptor ();	    
 	    _modeldesc.clone (*d);	    	    
+	    d->setClassRoute (classroute);
 	    d->setPayload (_collstate._tempPAddr, bytes);	      
 	    d->setOpCode (opcode);
 	    d->setWordLength (sizeoftype);
 	    //d->PacketHeader.messageUnitHeader.Packet_Types.Direct_Put.Rec_Payload_Base_Address_Id = _pBatID;
 	    _mucontext.setThroughputCollectiveBufferBatEntry(_collstate._tempPAddr);
 
+	    //fprintf(stderr, "Collective on class route %d\n", classroute);		    
 	    //MUSPI_DescriptorDumpHex ((char *)"Coll Descriptor", (MUHWI_Descriptor_t *)d);
 	    _injChannel.injFifoAdvanceDesc ();		
 	    
@@ -257,7 +260,8 @@ namespace PAMI
 				      pami_event_function        cb_done,
 				      void                     * cookie,
 				      uint32_t                   op,
-				      uint32_t                   sizeoftype)
+				      uint32_t                   sizeoftype,
+				      unsigned                   classroute) 
 	{
 	  //Pin the buffer to the bat id. On the root the src buffer
 	  //is used to receive the allreduce message
@@ -284,7 +288,8 @@ namespace PAMI
 										    &_collstate._colCounter);	  
 	  _modeldesc.clone (msg->_desc);	  
 	  msg->_desc.PacketHeader.messageUnitHeader.Packet_Types.Direct_Put.Rec_Payload_Base_Address_Id = _collstate.payloadBatID();
-	  
+	  msg->_desc.setClassRoute (classroute);
+
 	  msg->init();
 	  bool flag = msg->advance();
 
@@ -305,7 +310,8 @@ namespace PAMI
 				     void                     * cookie,
 				     char                     * zerobuf,
 				     uint32_t                   zbytes,
-				     bool                       isroot) 
+				     bool                       isroot,
+				     unsigned                   classroute) 
 	{
 	  //Pin the buffer to the bat id. On the root the src buffer
 	  //is used to receive the broadcast message
@@ -335,7 +341,8 @@ namespace PAMI
 									      &_collstate._colCounter);	  
 	  _modeldesc.clone (msg->_desc);	  
 	  msg->_desc.PacketHeader.messageUnitHeader.Packet_Types.Direct_Put.Rec_Payload_Base_Address_Id = _collstate.payloadBatID();
-	  
+	  msg->_desc.setClassRoute (classroute);
+
 	  msg->init();
 	  bool flag = msg->advance();
 
