@@ -82,8 +82,8 @@ namespace PAMI
           template <class T_MemoryManager>
           inline void init_impl (T_MemoryManager * mm, const char * key)
           {
-            pami_result_t rc =
-              __global.l2atomicFactory.__nodescoped_mm.memalign ((void **) & _counter,
+            pami_result_t rc;
+            rc = __global.l2atomicFactory.__nodescoped_mm.memalign ((void **) & _counter,
                                                                  sizeof(*_counter),
                                                                  3*sizeof(*_counter),
                                                                  key,
