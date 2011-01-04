@@ -34,7 +34,7 @@ namespace PAMI
   namespace Fifo
   {
     template < class T_Packet, class T_Atomic, unsigned T_Size = 128 >
-    class WrapFifo : public PAMI::Fifo::Interface::Fifo <PAMI::Fifo::WrapFifo <T_Packet, T_Atomic,T_Size> >
+      class WrapFifo : public PAMI::Fifo::Interface::Fifo <PAMI::Fifo::WrapFifo <T_Packet, T_Atomic,T_Size> >
     {
       public:
 
@@ -47,18 +47,18 @@ namespace PAMI
         static const size_t packet_payload_size = T_Packet::payload_size;
 
         inline WrapFifo () :
-            Interface::Fifo <WrapFifo <T_Packet, T_Atomic, T_Size> > (),
-            _packet (NULL),
-            _active (NULL),
-            _head (NULL),
-            _bounded_counter (),
-            _last_packet_produced (0)
-        {
-          // How to compile-time-assert that the fifo length is a power of two?
-          //
-          // The following code is pretty lame .. but it works.
-          COMPILE_TIME_ASSERT((T_Size==1)||(T_Size==2)||(T_Size==4)||(T_Size==8)||(T_Size==16)||(T_Size==32)||(T_Size==64)||(T_Size==128)||(T_Size==256)||(T_Size==1024)||(T_Size==2048)||(T_Size==4096)||(T_Size==8192)||(T_Size==16384)||(T_Size==32768));
-        };
+          Interface::Fifo <WrapFifo <T_Packet, T_Atomic, T_Size> > (),
+          _packet (NULL),
+          _active (NULL),
+          _head (NULL),
+          _bounded_counter (),
+          _last_packet_produced (0)
+      {
+        // How to compile-time-assert that the fifo length is a power of two?
+        //
+        // The following code is pretty lame .. but it works.
+        COMPILE_TIME_ASSERT((T_Size==1)||(T_Size==2)||(T_Size==4)||(T_Size==8)||(T_Size==16)||(T_Size==32)||(T_Size==64)||(T_Size==128)||(T_Size==256)||(T_Size==1024)||(T_Size==2048)||(T_Size==4096)||(T_Size==8192)||(T_Size==16384)||(T_Size==32768));
+      };
 
         inline ~WrapFifo () {};
 
@@ -69,7 +69,7 @@ namespace PAMI
         // ---------------------------------------------------------------------
 
         inline void initialize_impl (PAMI::Memory::MemoryManager * mm,
-                                     char                        * key)
+            char                        * key)
         {
           TRACE_ERR((stderr, ">> WrapFifo::initialize_impl(%p, \"%s\")\n", mm, key));
 
@@ -77,7 +77,7 @@ namespace PAMI
           char atomic_key[PAMI::Memory::MMKEYSIZE];
           snprintf (atomic_key, PAMI::Memory::MMKEYSIZE - 1, "%s-counter", key);
           _bounded_counter.init (mm, atomic_key);
-		  _bounded_counter.set_fifo_bounds(0, T_Size);
+          _bounded_counter.set_fifo_bounds(0, T_Size);
 
           TRACE_ERR((stderr, "   WrapFifo::initialize_impl() after atomic init, before sync memalign\n"));
 
@@ -92,12 +92,12 @@ namespace PAMI
           // and 1 wrap counter.
 
           mm->memalign ((void **)&_packet,
-                        sizeof(T_Packet),
-                        (sizeof(T_Packet) + sizeof(size_t)) * T_Size +
-                        sizeof(size_t) * 2,
-                        key,
-                        WrapFifo::packet_initialize,
-                        NULL);
+              sizeof(T_Packet),
+              (sizeof(T_Packet) + sizeof(size_t)) * T_Size +
+              sizeof(size_t) * 2,
+              key,
+              WrapFifo::packet_initialize,
+              NULL);
 
           TRACE_ERR((stderr, "   WrapFifo::initialize_impl() after sync memalign\n"));
 
@@ -112,7 +112,7 @@ namespace PAMI
         {
 
 
-		 //PAMI_abortf("This type of initialization is not yet implemented\n");
+          //PAMI_abortf("This type of initialization is not yet implemented\n");
           TRACE_ERR((stderr, ">> WrapFifo::initialize_impl(WrapFifo &)\n"));
           _bounded_counter.clone (fifo._bounded_counter);
 
@@ -135,13 +135,13 @@ namespace PAMI
           size_t bytes = 0;
 
           while (bytes < packet_header_size_impl)
-            {
-              str += sprintf(str, "%08x ", hdr[i++]);
-              bytes += sizeof(uint32_t);
+          {
+            str += sprintf(str, "%08x ", hdr[i++]);
+            bytes += sizeof(uint32_t);
 
-              if (i % 4 == 0)
-                str += sprintf(str, "\nWrapFifo::dumpPacket.header  [%p]      ", &hdr[i]);
-            }
+            if (i % 4 == 0)
+              str += sprintf(str, "\nWrapFifo::dumpPacket.header  [%p]      ", &hdr[i]);
+          }
 
           fprintf(stderr, "%s\n", tmp);
 
@@ -152,13 +152,13 @@ namespace PAMI
           i = 0;
 
           while (bytes < packet_payload_size_impl)
-            {
-              str += sprintf(str, "%08x ", payload[i++]);
-              bytes += sizeof(uint32_t);
+          {
+            str += sprintf(str, "%08x ", payload[i++]);
+            bytes += sizeof(uint32_t);
 
-              if (i % 4 == 0)
-                str += sprintf(str, "\nWrapFifo::dumpPacket.payload [%p]      ", &payload[i]);
-            }
+            if (i % 4 == 0)
+              str += sprintf(str, "\nWrapFifo::dumpPacket.payload [%p]      ", &payload[i]);
+          }
 
           fprintf(stderr, "%s\n", tmp);
         };
@@ -183,18 +183,18 @@ namespace PAMI
         /// \see PAMI::Fifo::Interface::PacketProducer
         ///
         template <class T_Producer>
-        inline bool producePacket_impl (T_Producer & packet)
-        {
-          TRACE_ERR((stderr, ">> WrapFifo::producePacket_impl(T_Producer &)\n"));
+          inline bool producePacket_impl (T_Producer & packet)
+          {
+            TRACE_ERR((stderr, ">> WrapFifo::producePacket_impl(T_Producer &)\n"));
 
-          uint64_t tail = this->_bounded_counter.fetch_and_inc_bounded ();
+            uint64_t tail = this->_bounded_counter.fetch_and_inc_bounded ();
 
-          //TRACE_ERR((stderr, "   WrapFifo::producePacket_impl(T_Producer &), index = %zu\n", index));
+            //TRACE_ERR((stderr, "   WrapFifo::producePacket_impl(T_Producer &), index = %zu\n", index));
 
-          if (likely (tail != FIFO_FULL))
+            if (likely (tail != FIFO_FULL))
             {
-		  		
-			size_t  index =	tail & WrapFifo::mask;
+
+              size_t  index =	tail & WrapFifo::mask;
               //dumpPacket(index);
               packet.produce (_packet[index]);
               //dumpPacket(index);
@@ -221,9 +221,9 @@ namespace PAMI
               return true;
             }
 
-          TRACE_ERR((stderr, "<< WrapFifo::producePacket_impl(T_Producer &), return false\n"));
-          return false;
-        };
+            TRACE_ERR((stderr, "<< WrapFifo::producePacket_impl(T_Producer &), return false\n"));
+            return false;
+          };
 
         ///
         /// \param [in] packet Functor object that implements the PacketConsumer interface
@@ -231,15 +231,15 @@ namespace PAMI
         /// \see PAMI::Fifo::Interface::PacketConsumer
         ///
         template <class T_Consumer>
-        inline bool consumePacket_impl (T_Consumer & packet)
-        {
-          TRACE_ERR((stderr, ">> WrapFifo::consumePacket_impl(T_Consumer &)\n"));
+          inline bool consumePacket_impl (T_Consumer & packet)
+          {
+            TRACE_ERR((stderr, ">> WrapFifo::consumePacket_impl(T_Consumer &)\n"));
 
-          const size_t head = *(this->_head);
-          size_t index = head & WrapFifo::mask;
+            const size_t head = *(this->_head);
+            size_t index = head & WrapFifo::mask;
 
-          TRACE_ERR((stderr, "   WrapFifo::consumePacket_impl(T_Consumer &), head = %zu, index = %zu (WrapFifo::mask = %p)\n", head, index, (void *)WrapFifo::mask));
-          if (_active[index] == 1)
+            TRACE_ERR((stderr, "   WrapFifo::consumePacket_impl(T_Consumer &), head = %zu, index = %zu (WrapFifo::mask = %p)\n", head, index, (void *)WrapFifo::mask));
+            if (_active[index] == 1)
             {
               //dumpPacket(head);
               packet.consume (_packet[index]);
@@ -248,24 +248,24 @@ namespace PAMI
               _active[index] = 0;
               *(this->_head) = head + 1;
 
-			  //increment the upper bound everytime a packet is consumed..ok to be incremented in chunks
-			  this->_bounded_counter.fetch_and_inc_upper_bound();
+              //increment the upper bound everytime a packet is consumed..ok to be incremented in chunks
+              this->_bounded_counter.fetch_and_inc_upper_bound();
 #if 0
               // If this packet is the last packet in the fifo, reset the tail
               // to the start of the fifo.
               if (index == (T_Size - 1))
-                {
-                  mem_barrier();
-                  _bounded_counter.clear();
-                }
+              {
+                mem_barrier();
+                _bounded_counter.clear();
+              }
 #endif
               TRACE_ERR((stderr, "<< WrapFifo::consumePacket_impl(T_Consumer &), return true\n"));
               return true;
             }
 
-          TRACE_ERR((stderr, "<< WrapFifo::consumePacket_impl(T_Consumer &), return false\n"));
-          return false;
-        };
+            TRACE_ERR((stderr, "<< WrapFifo::consumePacket_impl(T_Consumer &), return false\n"));
+            return false;
+          };
 
       private:
 
@@ -275,10 +275,10 @@ namespace PAMI
         /// \see PAMI::Memory::MM_INIT_FN
         ///
         static void packet_initialize (void       * memory,
-                                       size_t       bytes,
-                                       const char * key,
-                                       unsigned     attributes,
-                                       void       * cookie)
+            size_t       bytes,
+            const char * key,
+            unsigned     attributes,
+            void       * cookie)
         {
           TRACE_ERR((stderr, ">> WrapFifo::packet_initialize(%p, %zu, \"%s\", %d, %p)\n", memory, bytes, key, attributes, cookie));
           T_Packet * packet = (T_Packet *) memory;
@@ -287,10 +287,10 @@ namespace PAMI
           size_t i;
 
           for (i = 0; i < T_Size; i++)
-            {
-              new (&packet[i]) T_Packet();
-              active[i] = 0;
-            }
+          {
+            new (&packet[i]) T_Packet();
+            active[i] = 0;
+          }
           TRACE_ERR((stderr, "<< WrapFifo::packet_initialize(%p, %zu, \"%s\", %d, %p)\n", memory, bytes, key, attributes, cookie));
         }
 

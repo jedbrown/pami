@@ -29,7 +29,7 @@ namespace PAMI
     {
 
       class IndirectL2Bounded : public PAMI::Counter::Interface<IndirectL2Bounded>,
-                         public PAMI::Atomic::Indirect<IndirectL2Bounded>
+      public PAMI::Atomic::Indirect<IndirectL2Bounded>
       {
         public:
 
@@ -41,29 +41,27 @@ namespace PAMI
           inline IndirectL2Bounded () :
             PAMI::Counter::Interface<IndirectL2Bounded> (),
             _counter(NULL)
-          {};
+        {};
 
           inline ~IndirectL2Bounded() {};
 
-		 inline void set_fifo_bounds(uint64_t lower_bound, uint64_t	upper_bound)
-		  {
-			*_counter = lower_bound;
-			*(_counter+2) = upper_bound;
+          inline void set_fifo_bounds(uint64_t lower_bound, uint64_t  upper_bound)
+          {
+            *_counter = lower_bound;
+            *(_counter+2) = upper_bound;
 
-		  };	
+          };	
 
           inline size_t fetch_and_inc_upper_bound()
           {
-			
-			//fprintf(stderr,"counter incremented:%p\n", _counter+2);
+
             return L2_AtomicLoadIncrement(_counter+2);
           }
 
           inline size_t fetch_and_inc_bounded()
           {
-			
-			//fprintf(stderr,"counter incremented:%p\n", _counter+1);
-            return L2_AtomicLoadIncrement(_counter+1);
+
+            return L2_AtomicLoadIncrementBounded(_counter+1);
           }
 
         protected:
@@ -80,25 +78,24 @@ namespace PAMI
           /// to allocate the memory.
           ///
           template <class T_MemoryManager>
-          inline void init_impl (T_MemoryManager * mm, const char * key)
-          {
-            pami_result_t rc;
-            rc = __global.l2atomicFactory.__nodescoped_mm.memalign ((void **) & _counter,
-                                                                 sizeof(*_counter),
-                                                                 3*sizeof(*_counter),
-                                                                 key,
-                                                                 IndirectL2Bounded::counter_initialize,
-                                                                 NULL);
+            inline void init_impl (T_MemoryManager * mm, const char * key)
+            {
+              pami_result_t rc;
+              rc = __global.l2atomicFactory.__nodescoped_mm.memalign ((void **) & _counter,
+                  sizeof(*_counter),
+                  3*sizeof(*_counter),
+                  key,
+                  IndirectL2Bounded::counter_initialize,
+                  NULL);
 
-            PAMI_assertf (rc == PAMI_SUCCESS, "Failed to allocate memory from memory manager (%p) with key (\"%s\")", mm, key);
-			fprintf(stderr,"counter:%p\n", _counter);
-          };
+              PAMI_assertf (rc == PAMI_SUCCESS, "Failed to allocate memory from memory manager (%p) with key (\"%s\")", mm, key);
+              fprintf(stderr,"counter:%p\n", _counter);
+            };
 
-		
+
           inline void clone_impl (IndirectL2Bounded & atomic)
           {
             _counter = atomic._counter;
-			//PAMI_abortf("clone not yet implemented\n");
           };
 
           // -------------------------------------------------------------------
@@ -131,13 +128,6 @@ namespace PAMI
             L2_AtomicLoadClear(_counter);
           }
 
-          /// Since BG/Q L2 Atomics don't implement compare-and-swap, we use
-          /// the GCC builtin and hope for the best.
-          inline bool compare_and_swap_impl(size_t compare, size_t swap)
-          {
-            return __sync_bool_compare_and_swap(_counter, compare, swap);
-          }
-
           // -------------------------------------------------------------------
           // Memory manager counter initialization function
           // -------------------------------------------------------------------
@@ -147,12 +137,12 @@ namespace PAMI
           ///
           /// \see PAMI::Memory::MM_INIT_FN
           ///
-		  /* Assuming that memory returned has three consecutive uint64_t locations */	
+          /* Assuming that memory returned has three consecutive uint64_t locations */	
           static void counter_initialize (void       * memory,
-                                          size_t       bytes,
-                                          const char * key,
-                                          unsigned     attributes,
-                                          void       * cookie)
+              size_t       bytes,
+              const char * key,
+              unsigned     attributes,
+              void       * cookie)
           {
             volatile uint64_t * counter = (volatile uint64_t *) memory;
             L2_AtomicLoadClear(counter);
