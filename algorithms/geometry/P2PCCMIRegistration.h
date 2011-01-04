@@ -214,7 +214,7 @@ namespace PAMI
                                       _binomial_barrier_factory,
                                       _context_id);
 
-              geometry->setUEBarrier((CCMI::Adaptor::CollectiveProtocolFactory*)&_binomial_barrier_factory);
+              geometry->setUEBarrier((CCMI::Adaptor::CollectiveProtocolFactory*)_binomial_barrier_factory);
 
               PAMI::Topology * rectangle = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX);
               if((rectangle->type() == PAMI_COORD_TOPOLOGY) &&   // could be EMPTY

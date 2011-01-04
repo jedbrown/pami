@@ -409,6 +409,7 @@ namespace CCMI
 		  minfo_g.msgcount           = 0;		  
 		  _count++;
 		  TRACE_ADAPTOR((stderr, "MultiCastComposite2Device:  Global NI, start multicast\n"));
+		  PAMI_assert (native_g != NULL);
 		  native_g->multicast(&minfo_g, deviceInfo);
 		}
 	      
@@ -427,6 +428,7 @@ namespace CCMI
 		  minfo_l.msginfo            = 0;
 		  minfo_l.msgcount           = 0;
 		  TRACE_ADAPTOR((stderr, "MultiCastComposite2Device:  Local NI, start multicast\n"));
+		  PAMI_assert (native_l != NULL);
 		  native_l->multicast(&minfo_l, deviceInfo);
 		}
 	    }
@@ -450,6 +452,7 @@ namespace CCMI
 		  minfo_l.msginfo            = 0;
 		  minfo_l.msgcount           = 0;
 		  TRACE_ADAPTOR((stderr, "MultiCastComposite2Device:  Local NI, start multicast\n"));
+		  PAMI_assert (native_l != NULL);
 		  native_l->multicast(&minfo_l, deviceInfo);
 		}
               }
@@ -476,6 +479,7 @@ namespace CCMI
 		  minfo_g.msgcount           = 0;
 		  _count ++;
 		  TRACE_ADAPTOR((stderr, "MultiCastComposite2Device:  Global NI, start multicast\n"));
+		  PAMI_assert (native_g != NULL);
 		  native_g->multicast(&minfo_g, deviceInfo);
 		}
 
@@ -494,6 +498,7 @@ namespace CCMI
 		  minfo_l.msginfo            = 0;
 		  minfo_l.msgcount           = 0;
 		  TRACE_ADAPTOR((stderr, "MultiCastComposite2Device:  Local NI, start multicast\n"));
+		  PAMI_assert (native_l != NULL);
 		  native_l->multicast(&minfo_l, deviceInfo);
 		}
 	    }
@@ -521,6 +526,7 @@ namespace CCMI
 		  minfo_g.msgcount           = 0;
 		  _count ++;
 		  TRACE_ADAPTOR((stderr, "MultiCastComposite2Device:  Global NI, start multicast\n"));
+		  PAMI_assert (native_g != NULL);
 		  native_g->multicast(&minfo_g, deviceInfo);
 		}
 
@@ -539,6 +545,7 @@ namespace CCMI
 		  minfo_l.msginfo            = 0;
 		  minfo_l.msgcount           = 0;
 		  TRACE_ADAPTOR((stderr, "MultiCastComposite2Device:  Local NI, start multicast\n"));
+		  PAMI_assert (native_l != NULL);
 		  native_l->multicast(&minfo_l, deviceInfo);
 		}	 	      
 	    }
@@ -562,6 +569,7 @@ namespace CCMI
 		  minfo_l.msginfo            = 0;
 		  minfo_l.msgcount           = 0;
 		  TRACE_ADAPTOR((stderr, "MultiCastComposite2Device:  Local NI, start multicast\n"));
+		  PAMI_assert (native_l != NULL);
 		  native_l->multicast(&minfo_l, deviceInfo);		  
 		}
 	      

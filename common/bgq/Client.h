@@ -826,12 +826,12 @@ namespace PAMI
             bargeom->default_barrier(_geom_newopt_finish, (void *)new_geometry, context_id, context);
         }
         //else PAMI_assert(bargeom); /// \todo? parentless/UE barrier support
-	//else {
-	//new_geometry->ue_barrier(_geom_newopt_finish, (void *)new_geometry, context_id, context);
-	//}
 	else {
-	  _geom_newopt_finish(context, (void *)new_geometry, PAMI_SUCCESS);
+	  new_geometry->ue_barrier(_geom_newopt_finish, (void *)new_geometry, context_id, context);
 	}
+	//else {
+	//_geom_newopt_finish(context, (void *)new_geometry, PAMI_SUCCESS);
+	//}
 #endif
       }
 
