@@ -30,8 +30,14 @@
 
 #include "util/trace.h"
 
-#define DO_TRACE_ENTEREXIT 0
-#define DO_TRACE_DEBUG     0
+#ifdef CCMI_TRACE_ALL
+ #define DO_TRACE_ENTEREXIT 1
+ #define DO_TRACE_DEBUG     1
+#else
+ #define DO_TRACE_ENTEREXIT 0
+ #define DO_TRACE_DEBUG     0
+#endif
+
 
 #define NUM_SHMEM_MCST_COLORS	16
 //#define NUM_LOCAL_DST_RANKS		3 //assuming that the model is run with 4 procs/node

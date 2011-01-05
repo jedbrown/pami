@@ -193,6 +193,14 @@ namespace PAMI
           // ----------------------------------------------------------------
           // Compile-time assertions (end)
           // ----------------------------------------------------------------
+          
+//        if(T_Allsided)
+//        {
+//          int                         dispatch_id = 514;  /// \todo constant for the max dispatch set?
+//          while(registerMcastRecvFunction_impl(--dispatch_id,(pami_dispatch_multicast_function)NULL,NULL) != PAMI_SUCCESS)
+//            TRACE_FORMAT( "dispatch_id %u", dispatch_id);
+//
+//        }
           status = PAMI_SUCCESS;
           TRACE_FN_EXIT();
         }
@@ -579,7 +587,6 @@ namespace PAMI
         TRACE_FN_EXIT();
         return ;
       }; // PAMI::Device::MU::MulticastModel::processData
-
 
       template <bool T_Allsided, bool T_Msgdata_support, bool T_PWQ_support>
       pami_result_t MulticastModel<T_Allsided, T_Msgdata_support, T_PWQ_support>::registerMcastRecvFunction_impl(int                         dispatch_id,

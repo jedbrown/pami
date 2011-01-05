@@ -97,6 +97,21 @@ namespace PAMI
 
 
     //----------------------------------------------------------------------------
+    // 'Pure' MU allsided multicast
+    //----------------------------------------------------------------------------
+    void MUMcastMetaData(pami_metadata_t *m)
+    {
+      new(m) PAMI::Geometry::Metadata("I0:MUMultiCast:-:MU");
+    }
+
+    // Even though MU Multicast is allsided, it still needs a register call with a dispatch id,
+    // so we use the CollectiveProtocolFactoryT instead of the AllSidedCollectiveProtocolFactoryT
+    typedef CCMI::Adaptor::CollectiveProtocolFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite,
+    MUMcastMetaData,
+    CCMI::ConnectionManager::SimpleConnMgr > MUMultiCastFactory;
+
+
+    //----------------------------------------------------------------------------
     // 'Pure' MU allsided multisync
     //----------------------------------------------------------------------------
     void MUMsyncMetaData(pami_metadata_t *m)
@@ -639,6 +654,7 @@ namespace PAMI
             _mu_ni_msync(NULL),
             _mu_ni_sub_msync(NULL),
             _mu_ni_mcomb(NULL),
+            _mu_ni_mcast(NULL),
             _mu_ni_mcast2(NULL),
             _mu_ni_mcast3(NULL),
             _mu_ni_msync2d(NULL),
@@ -651,6 +667,7 @@ namespace PAMI
             //_axial_dput_mu_1_ni(NULL),
             _mu_msync_factory(NULL),
             _sub_mu_msync_factory(NULL),
+            _mu_mcast_factory(NULL),
             _mu_mcast2_factory(NULL),
             _mu_mcast3_factory(NULL),
             _line_mcast2_factory(NULL),
@@ -691,6 +708,7 @@ namespace PAMI
               _mu_ni_msync          = new (_mu_ni_msync_storage         ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id, _dispatch_id);
               _mu_ni_sub_msync      = new (_mu_ni_sub_msync_storage     ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id, _dispatch_id);
               _mu_ni_mcomb          = new (_mu_ni_mcomb_storage         ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id, _dispatch_id);
+              _mu_ni_mcast          = new (_mu_ni_mcast_storage         ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id, _dispatch_id);
               _mu_ni_mcast2         = new (_mu_ni_mcast2_storage        ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id, _dispatch_id);
               _mu_ni_mcast3         = new (_mu_ni_mcast3_storage        ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id, _dispatch_id);
               _mu_ni_msync2d        = new (_mu_ni_msync2d_storage       ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id, _dispatch_id);
@@ -748,6 +766,7 @@ namespace PAMI
               _msync_composite_factory.setMapIdToGeometry(mapidtogeometry);
 
               // Can't be ctor'd unless the NI was created
+              _mu_mcast_factory  = new (_mu_mcast_factory_storage ) MUMultiCastFactory(&_sconnmgr, _mu_ni_mcast);
               _mu_mcast2_factory = new (_mu_mcast2_factory_storage) MUMultiCast2Factory(&_csconnmgr, _mu_ni_mcast2);
               _mu_mcast3_factory = new (_mu_mcast3_factory_storage) MUMultiCast3Factory(&_sconnmgr, _mu_ni_mcast3);
 
@@ -921,7 +940,8 @@ namespace PAMI
                         {
                           TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU bcast\n", this));
                           // Add Broadcasts
-                          geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_mcast2_factory, _context_id);
+                          geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_mcast_factory,  _context_id);
+                          //geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_mcast2_factory, _context_id);
                           geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_mcast3_factory, _context_id);
 
                           // 'Pure' Axial only makes sense on a line... useless but enabled here for testing
@@ -1047,6 +1067,7 @@ namespace PAMI
             {
 
               /// \todo remove MU collectives algorithms... TBD
+              geometry->rmCollective(PAMI_XFER_BROADCAST, _mu_mcast_factory,  _context_id);
               geometry->rmCollective(PAMI_XFER_BROADCAST, _mu_mcast2_factory, _context_id);
               geometry->rmCollective(PAMI_XFER_BROADCAST, _line_mcast2_factory, _context_id);
               //geometry->rmCollective(PAMI_XFER_BROADCAST, _line_dput_mcast2_factory, _context_id);
@@ -1104,6 +1125,8 @@ namespace PAMI
         uint8_t                                         _mu_ni_sub_msync_storage[sizeof(T_MUNativeInterface)];
         T_MUNativeInterface                            *_mu_ni_mcomb;
         uint8_t                                         _mu_ni_mcomb_storage[sizeof(T_MUNativeInterface)];
+        T_MUNativeInterface                            *_mu_ni_mcast;
+        uint8_t                                         _mu_ni_mcast_storage[sizeof(T_MUNativeInterface)];
         T_MUNativeInterface                            *_mu_ni_mcast2;
         uint8_t                                         _mu_ni_mcast2_storage[sizeof(T_MUNativeInterface)];
         T_MUNativeInterface                            *_mu_ni_mcast3;
@@ -1137,6 +1160,8 @@ namespace PAMI
         uint8_t                                         _sub_mu_msync_factory_storage[sizeof(SubMUMultiSyncFactory)];
 
         // Broadcast factories
+        MUMultiCastFactory                             *_mu_mcast_factory;
+        uint8_t                                         _mu_mcast_factory_storage[sizeof(MUMultiCastFactory)];
         MUMultiCast2Factory                            *_mu_mcast2_factory;
         uint8_t                                         _mu_mcast2_factory_storage[sizeof(MUMultiCast2Factory)];
         MUMultiCast3Factory                            *_mu_mcast3_factory;
