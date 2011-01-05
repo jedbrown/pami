@@ -274,7 +274,7 @@ namespace PAMI
                                   (CCMI::Adaptor::CollectiveProtocolFactory*)_broadcast_reg,
                                   _context_id);
 
-          //geometry->setUEBarrier(_barrier_ue_reg);
+          geometry->setUEBarrier(_barrier_ue_reg);
 
           return PAMI_SUCCESS;
         }
