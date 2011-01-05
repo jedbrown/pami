@@ -101,7 +101,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void MUMsyncMetaData(pami_metadata_t *m)
     {
-      new(m) PAMI::Geometry::Metadata("I0:MUMultiSync:MU:MU");
+      new(m) PAMI::Geometry::Metadata("I0:MUMultiSync:-:MU");
     }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSyncComposite<>,
@@ -113,7 +113,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void MUMcombMetaData(pami_metadata_t *m)
     {
-      new(m) PAMI::Geometry::Metadata("I0:MUMultiCombine:MU:MU");
+      new(m) PAMI::Geometry::Metadata("I0:MUMultiCombine:-:MU");
     }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite,
@@ -125,7 +125,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void MUCollectiveDputMetaData(pami_metadata_t *m)
     {
-      strncpy(&m->name[0], "MUCollectiveDput", 32);
+      new(m) PAMI::Geometry::Metadata("I0:MUCollectiveDput:-:MU");
     }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite,
@@ -149,7 +149,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void MUMcast2MetaData(pami_metadata_t *m)
     {
-      new(m) PAMI::Geometry::Metadata("I0:MUMultiCast_MultiSync:MU:MU");
+      new(m) PAMI::Geometry::Metadata("I0:MUMultiCast_MultiSync:-:MU");
     }
 
     // Define our base factory
@@ -256,8 +256,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void MUMcast3MetaData(pami_metadata_t *m)
     {
-      new(m) PAMI::Geometry::Metadata("I0:MUMultiCast_MultiCombine:MU:MU");
-      strncpy(&m->name[0], "MUMultiCast_Mcomb", 32);
+      new(m) PAMI::Geometry::Metadata("I0:MUMultiCast_MultiCombine:-:MU");
     }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite3,
@@ -277,7 +276,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void LineMcast2MetaData(pami_metadata_t *m)
     {
-      strncpy(&m->name[0], "LineMultiCast_Msync", 32);
+      new(m) PAMI::Geometry::Metadata("I0:LineMultiCast_Msync:-:MU");
     }
 
     // Define our base factory
@@ -385,7 +384,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void SubShmemMsyncMetaData(pami_metadata_t *m)
     {
-      strncpy(&m->name[0], "ShmemMultiSyncSubComposite", 32);
+      new(m) PAMI::Geometry::Metadata("I0:ShmemMultiSyncSubComposite:SHMEM:-");
     }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSyncComposite<PAMI::Geometry::LOCAL_TOPOLOGY_INDEX>,
@@ -398,7 +397,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void SubMUMsyncMetaData(pami_metadata_t *m)
     {
-      strncpy(&m->name[0], "MUMultiSyncSubComposite", 32);
+      new(m) PAMI::Geometry::Metadata("I0:MUMultiSyncSubComposite:-:MU");
     }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSyncComposite<PAMI::Geometry::LOCAL_MASTER_TOPOLOGY_INDEX>,
@@ -410,7 +409,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void Msync2MetaData(pami_metadata_t *m)
     {
-      strncpy(&m->name[0], "MultiSyncComposite", 32);
+      new(m) PAMI::Geometry::Metadata("I0:MultiSyncComposite:SHMEM:MU");
     }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSync2Composite,
@@ -422,7 +421,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void Msync2DMetaData(pami_metadata_t *m)
     {
-      strncpy(&m->name[0], "MultiSync2Device", 32);
+      new(m) PAMI::Geometry::Metadata("I0:MultiSync2Device:SHMEM:MU");
     }
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSyncComposite2Device,
     Msync2DMetaData, CCMI::ConnectionManager::SimpleConnMgr >  MultiSync2DeviceFactory;
@@ -432,7 +431,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void Mcast2DMetaData(pami_metadata_t *m)
     {
-      strncpy(&m->name[0], "MultiCast2Device", 32);
+      new(m) PAMI::Geometry::Metadata("I0:MultiCast2Device:SHMEM:MU");
     }
     typedef CCMI::Adaptor::Broadcast::MultiCastComposite2DeviceFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite2Device<PAMI_GEOMETRY_CLASS, true, false>,
     Mcast2DMetaData, CCMI::ConnectionManager::SimpleConnMgr > MultiCast2DeviceFactory;
@@ -442,7 +441,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void Mcast2DDputMetaData(pami_metadata_t *m)
     {
-      strncpy(&m->name[0], "MultiCast2DeviceDput", 32);
+      new(m) PAMI::Geometry::Metadata("I0:MultiCast2DeviceDput:SHMEM:MU");
     }
     typedef CCMI::Adaptor::Broadcast::MultiCastComposite2DeviceFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite2DeviceAS<PAMI_GEOMETRY_CLASS>,
     Mcast2DDputMetaData, CCMI::ConnectionManager::SimpleConnMgr > MultiCast2DeviceDputFactory;
@@ -452,7 +451,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void Mcomb2DMetaData(pami_metadata_t *m)
     {
-      strncpy(&m->name[0], "MultiCombine2Device", 32);
+      new(m) PAMI::Geometry::Metadata("I0:MultiCombine2Device:SHMEM:MU");
     }
     typedef CCMI::Adaptor::Allreduce::MultiCombineComposite2DeviceFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2Device<0>,
     Mcomb2DMetaData, CCMI::ConnectionManager::SimpleConnMgr >    MultiCombine2DeviceFactory;
@@ -463,7 +462,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void Mcomb2DMetaDataNP(pami_metadata_t *m)
     {
-      strncpy(&m->name[0], "MultiCombine2DeviceNP", 32);
+      new(m) PAMI::Geometry::Metadata("I0:MultiCombine2DeviceNP:SHMEM:MU");
     }
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2DeviceNP,
     Mcomb2DMetaDataNP, CCMI::ConnectionManager::SimpleConnMgr > MultiCombine2DeviceFactoryNP;
@@ -512,9 +511,7 @@ namespace PAMI
 
     void rectangle_dput_1color_broadcast_metadata(pami_metadata_t *m)
     {
-      // \todo:  fill in other metadata
-      TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
-      strcpy(&m->name[0], "RectangleDput1ColorBroadcast");
+      new(m) PAMI::Geometry::Metadata("I0:RectangleDput1ColorBroadcast:SHMEM:MU");
     }
 
     typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
@@ -533,9 +530,7 @@ namespace PAMI
 
     void rectangle_dput_broadcast_metadata(pami_metadata_t *m)
     {
-      // \todo:  fill in other metadata
-      TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
-      strcpy(&m->name[0], "RectangleDputBroadcast");
+      new(m) PAMI::Geometry::Metadata("I0:RectangleDputBroadcast:SHMEM:MU");
     }
 
     typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
@@ -554,8 +549,7 @@ namespace PAMI
 
     void rectangle_dput_allgather_metadata(pami_metadata_t *m)
     {
-      // \todo:  fill in other metadata
-      strcpy(&m->name[0], "RectangleDputAllgather");
+      new(m) PAMI::Geometry::Metadata("I0:RectangleDputAllgather:SHMEM:MU");
     }
 
     void get_rect_allgv_colors (PAMI::Topology             * t,
