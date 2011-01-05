@@ -106,6 +106,8 @@ namespace CCMI
                         this));//, geometry->comm()));
             _myexecutor.setCommSchedule (&_myschedule);
           }
+	  
+	  CCMI::Executor::BarrierExec *getExecutor() { return &_myexecutor; }
 
           static bool analyze (PAMI_GEOMETRY_CLASS *geometry)
           {

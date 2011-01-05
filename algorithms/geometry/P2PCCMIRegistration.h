@@ -184,7 +184,9 @@ namespace PAMI
             else
             {
               TRACE_INIT((stderr, "<%p>CCMIRegistration::analyze() add\n",this));
-              _binomial_barrier_composite = _binomial_barrier_factory->generate(geometry, &xfer);
+              _binomial_barrier_composite = (CCMI::Adaptor::P2PBarrier::BinomialBarrier *)
+		_binomial_barrier_factory->generate(geometry, &xfer);
+	      _binomial_barrier_composite->getExecutor()->setContext(_context);
 
               // Check if the full binomial barrier can act as a local or global sub-geometry barrier...
               // that is, we only have one or the other subtopology.
@@ -989,7 +991,7 @@ namespace PAMI
           T_Allocator                                                 &_allocator;
 
           // Barrier Storage and Native Interface
-          CCMI::Executor::Composite                                   *_binomial_barrier_composite;
+	  CCMI::Adaptor::P2PBarrier::BinomialBarrier                  *_binomial_barrier_composite;
 
           // CCMI Connection Manager Class
           CCMI::ConnectionManager::ColorGeometryConnMgr                _cg_connmgr;

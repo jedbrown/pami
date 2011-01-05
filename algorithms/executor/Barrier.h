@@ -31,8 +31,8 @@ namespace CCMI
         unsigned             _iteration: 1; ///The Red or black iteration
 
         CollHeaderData                 _cdata;
-        pami_multicast_t                _minfo;
-
+        pami_multicast_t               _minfo;
+	
         ///\brief A red/black vector for each neigbor which is incremented
         ///when the neighbor's message arrives
         char                 _phasevec[CCMI_BARRIER_MAXPHASES][2];
@@ -41,6 +41,8 @@ namespace CCMI
         ScheduleCache         _cache;
 
         PAMI::Topology         _srctopology;
+
+	pami_context_t                 _context; //Context id of the collective 
 
         ///
         /// \brief core internal function to initiate the next phase
@@ -95,7 +97,8 @@ namespace CCMI
             Interfaces::Executor(),
             _native(ninterface),
             _connid(connid),
-            _srctopology(ninterface->myrank())
+	      _srctopology(ninterface->myrank()),
+	      _context (NULL)
         {
           TRACE_FLOW((stderr, "<%p>Executor::BarrierExec::::ctor(comm %X,connid %d)\n",
                       this, comm, connid));
@@ -138,6 +141,8 @@ namespace CCMI
             }
         }
 
+	void setContext (pami_context_t context) { _context = context; }
+
         /**
          * \brief notify when a message has been recived
          * \param src : source of the message
@@ -170,7 +175,7 @@ inline void CCMI::Executor::BarrierExec::sendNext()
       TRACE_FLOW((stderr, "<%p>Executor::BarrierExec::sendNext DONE _cb_done %p, _phase %d, _clientdata %p\n",
                   this, _cb_done, _phase, _clientdata));
 
-      if (_cb_done) _cb_done(NULL, _clientdata, PAMI_SUCCESS);
+      if (_cb_done) _cb_done(_context, _clientdata, PAMI_SUCCESS);
 
       _senddone = false;
 
