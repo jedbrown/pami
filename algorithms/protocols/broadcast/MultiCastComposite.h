@@ -58,13 +58,13 @@ namespace CCMI
             //all = *(PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
             //all.subtractTopology(&_destinations,  &_root);
 
-	    _destinations = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
+            _destinations = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
 
-#if 0
             DO_DEBUG(for (unsigned j = 0; j < _root.size(); ++j) fprintf(stderr, "root[%u]=%zu, size %zu\n", j, (size_t)_root.index2Rank(j), _root.size()));
 
-            DO_DEBUG(for (unsigned j = 0; j < _destinations.size(); ++j) fprintf(stderr, "destinations[%u]=%zu, size %zu\n", j, (size_t)_destinations.index2Rank(j), _destinations.size()));
+            DO_DEBUG(for (unsigned j = 0; j < _destinations->size(); ++j) fprintf(stderr, "destinations[%u]=%zu, size %zu\n", j, (size_t)_destinations->index2Rank(j), _destinations->size()));
 
+#if 0
             DO_DEBUG(for (unsigned j = 0; j < all.size(); ++j) fprintf(stderr, "all[%u]=%zu, size %zu\n", j, (size_t)all.index2Rank(j), all.size()));
 #endif
 
@@ -99,7 +99,7 @@ namespace CCMI
             _minfo.cb_done.clientdata = cookie; //_clientdata;
             _minfo.connection_id      = 0; /// \todo ?
             _minfo.roles              = -1U;
-            _minfo.dst_participants   = (pami_topology_t *) & _destinations;
+            _minfo.dst_participants   = (pami_topology_t *)   _destinations;
             _minfo.src_participants   = (pami_topology_t *) & _root;
             _minfo.src                = (pami_pipeworkqueue_t *) & _pwq;
             _minfo.dst                = (pami_pipeworkqueue_t *) & _pwq;
