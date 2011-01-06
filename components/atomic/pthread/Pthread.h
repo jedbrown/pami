@@ -90,20 +90,6 @@ namespace PAMI
           pthread_mutex_unlock (&_mutex);
         };
 
-        inline bool compare_and_swap_impl (size_t compare, size_t swap)
-        {
-          bool did_swap = false;
-          pthread_mutex_lock (&_mutex);
-          if (_atom == compare)
-          {
-            _atom = swap;
-            did_swap = true;
-          }
-          pthread_mutex_unlock (&_mutex);
-
-          return did_swap;
-        }
-
       protected:
 
         size_t          _atom;

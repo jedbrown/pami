@@ -87,19 +87,6 @@ namespace PAMI
         ///
         inline void clear();
 
-        ///
-        /// \brief Atomic compare and swap operation
-        ///
-        /// If the current value of the atomic object is the \c compare value,
-        /// then write the \c swap value into the atomic object.
-        ///
-        /// \attention All atomic counter implementation classes \b must
-        ///            implement the compare_and_swap_impl() method.
-        ///
-        /// \retval true Comparison was successful and swap value was written.
-        ///
-        inline bool compare_and_swap(size_t compare, size_t swap);
-
     }; // PAMI::Counter::Interface class
 
     template <class T>
@@ -132,11 +119,6 @@ namespace PAMI
       static_cast<T*>(this)->clear_impl();
     }
 
-    template <class T>
-    inline bool Interface<T>::compare_and_swap(size_t compare, size_t swap)
-    {
-      return static_cast<T*>(this)->compare_and_swap_impl(compare, swap);
-    }
   };  // PAMI::Counter namespace
 };    // PAMI namespace
 

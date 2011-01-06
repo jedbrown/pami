@@ -14,7 +14,7 @@
 #ifndef __common_NativeAtomicsInterface_h__
 #define __common_NativeAtomicsInterface_h__
 
-#include "components/memory/MemoryManager.h"
+#include "util/common.h"
 
 namespace PAMI {
 namespace Interface {

@@ -56,7 +56,7 @@ namespace PAMI
     ///        T_WindowSz is the size of allocation unit for collective operation control structures
     ///        T_ShmBufSz is the size of shared memory data buffers
 
-    template <class T_Atomic, unsigned T_SegSz, unsigned T_PageSz, unsigned T_WindowSz, unsigned T_ShmBufSz>
+    template <class T_Atomic, class T_Mutex, class T_Counter, unsigned T_SegSz, unsigned T_PageSz, unsigned T_WindowSz, unsigned T_ShmBufSz>
     class CollSharedMemoryManager
     {
       public:
@@ -79,10 +79,10 @@ namespace PAMI
       typedef shm_data_buf_t databuf_t;
 
       struct CollSharedMemory {
-        T_Atomic       ready_count;
-        T_Atomic       term_count;
-        T_Atomic       ctlstr_pool_lock;
-        T_Atomic       buffer_pool_lock;
+        T_Counter       ready_count;
+        T_Counter       term_count;
+        T_Mutex        ctlstr_pool_lock;
+        T_Mutex        buffer_pool_lock;
         void           *ctlstr_memory;
         void           *buffer_memory;
         volatile ctlstr_t       *free_ctlstr_list;
@@ -157,6 +157,8 @@ namespace PAMI
           pami_result_t rc;
           _localrank = rank;
           _localsize = size;
+	  PAMI_assertf(T_Counter::checkCtorMm(_mm), "Memory type incorrect for T_Counter class");
+	  PAMI_assertf(T_Mutex::checkCtorMm(_mm), "Memory type incorrect for T_Mutex class");
 	  rc = _mm->memalign((void **)&_collshm, 16, _size, "/pami-collshmem",
                              _collshminit, (void *)this);
           return rc;
@@ -189,7 +191,7 @@ namespace PAMI
 
           // require a implementation of check_lock and clear_lock in atomic class
           //while(COLLSHM_CHECK_LOCK((atomic_p)&(_collshm->buffer_pool_lock), 0, 1));
-          while(!_collshm->buffer_pool_lock.compare_and_swap((size_t)0, (size_t)1)) yield();
+          _collshm->buffer_pool_lock.acquire();
           mem_isync();
           databuf_t *new_bufs = _collshm->buffer_pool;
           databuf_t *bufs     = _collshm->buffer_pool;
@@ -212,7 +214,7 @@ namespace PAMI
           _collshm->buffer_pool += COLLSHM_INIT_BUFCNT;
           //COLLSHM_CLEAR_LOCK((atomic_p)&(_collshm->buffer_pool_lock),0);
           mem_barrier();
-          _collshm->buffer_pool_lock.compare_and_swap((size_t)1,(size_t)0);
+          _collshm->buffer_pool_lock.release();
 
           return bufs;
         }
@@ -255,7 +257,7 @@ namespace PAMI
               // cur->next = (databuf_t *)_collshm->free_buffer_list;
               cur->next = (databuf_t *)_collshm->buffer_list->fetch();
               // while(!COLLSHM_COMPARE_AND_SWAPLP((atomic_l)&(_collshm->free_buffer_list), (long *)&(cur->next), (long)next));
-              while(!_collshm->buffer_list->compare_and_swap((size_t)cur->next, (size_t)next)) {
+              while(!_collshm->buffer_list->bool_compare_and_swap((size_t)cur->next, (size_t)next)) {
                  //cur->next = (databuf_t *)_collshm->free_buffer_list;
                  cur->next = (databuf_t *)_collshm->buffer_list->fetch();
               }
@@ -270,7 +272,7 @@ namespace PAMI
                         cur, next, _collshm->free_buffer_list));
 
             //while (!COLLSHM_COMPARE_AND_SWAPLP((atomic_l)&(_collshm->free_buffer_list),(long *)&cur, (long)next))
-            while (!_collshm->buffer_list->compare_and_swap((size_t)cur, (size_t)next))
+            while (!_collshm->buffer_list->bool_compare_and_swap((size_t)cur, (size_t)next))
             {
                TRACE_DBG((stderr,"entry cur = %p, cur->next = %p and _collshm->free_buffer_list = %p\n",
                      cur, next, _collshm->free_buffer_list));
@@ -321,7 +323,7 @@ namespace PAMI
           tmp->next = (databuf_t *)_collshm->buffer_list->fetch();
 
           //while(!COLLSHM_COMPARE_AND_SWAPLP((atomic_l)&(_collshm->free_buffer_list),(long *)&(tmp->next), (long)tmp));
-          while(!_collshm->buffer_list->compare_and_swap((size_t)tmp->next, (size_t)tmp)) {
+          while(!_collshm->buffer_list->bool_compare_and_swap((size_t)tmp->next, (size_t)tmp)) {
             //tmp->next = _collshm->free_buffer_list;
             tmp->next = (databuf_t *)_collshm->buffer_list->fetch();
           }
@@ -342,7 +344,7 @@ namespace PAMI
 
           // require implementation of check_lock and clear_lock in atomic class
           // while(COLLSHM_CHECK_LOCK((atomic_p)&(_collshm->ctlstr_pool_lock), 0, 1));
-          while(!_collshm->ctlstr_pool_lock.compare_and_swap((size_t)0, (size_t)1)) yield();
+          _collshm->ctlstr_pool_lock.acquire();
           // is mem_isync() equivalent to isync() on PERCS ?
           mem_isync();
           ctlstr_t *ctlstr   = _collshm->ctlstr_pool;
@@ -367,7 +369,7 @@ namespace PAMI
           _collshm->ctlstr_pool += COLLSHM_INIT_CTLCNT;
           //COLLSHM_CLEAR_LOCK((atomic_p)&(_collshm->ctlstr_pool_lock),0);
           mem_barrier();
-          _collshm->ctlstr_pool_lock.compare_and_swap((size_t)1,(size_t)0);
+          _collshm->ctlstr_pool_lock.release();
 
           return ctlstr;
         }
@@ -411,7 +413,7 @@ namespace PAMI
               cur->next = (ctlstr_t *)_collshm->ctlstr_list->fetch();
 
               // while(!COLLSHM_COMPARE_AND_SWAPLP((atomic_l)&(_collshm->free_ctlstr_list),(long *)&(cur->next), (long)next));
-              while(!_collshm->ctlstr_list->compare_and_swap((size_t)cur->next, (size_t)next)) {
+              while(!_collshm->ctlstr_list->bool_compare_and_swap((size_t)cur->next, (size_t)next)) {
                 // cur->next = (ctlstr_t *)_collshm->free_ctlstr_list;
                 cur->next = (ctlstr_t *)_collshm->ctlstr_list->fetch();
               }
@@ -422,7 +424,7 @@ namespace PAMI
 
             next = cur->next;
             //while (!COLLSHM_COMPARE_AND_SWAPLP((atomic_l)&(_collshm->free_ctlstr_list),(long *)&cur, (long)next))
-            while (!_collshm->ctlstr_list->compare_and_swap((size_t)cur, (size_t)next))
+            while (!_collshm->ctlstr_list->bool_compare_and_swap((size_t)cur, (size_t)next))
             {
                // cur = (ctlstr_t * )_collshm->free_ctlstr_list;
                cur = (ctlstr_t *)_collshm->ctlstr_list->fetch();
@@ -465,7 +467,7 @@ namespace PAMI
           tmp->next = (ctlstr_t *)_collshm->ctlstr_list->fetch();
 
           // while(!COLLSHM_COMPARE_AND_SWAPLP((atomic_l)&(_collshm->free_ctlstr_list),(long *)&(tmp->next), (long)tmp));
-          while(!_collshm->ctlstr_list->compare_and_swap((size_t)tmp->next, (size_t)tmp)) {
+          while(!_collshm->ctlstr_list->bool_compare_and_swap((size_t)tmp->next, (size_t)tmp)) {
             // tmp->next =  _collshm->free_ctlstr_list;
             tmp->next = (ctlstr_t *)_collshm->ctlstr_list->fetch();
           }

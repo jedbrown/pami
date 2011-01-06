@@ -88,13 +88,6 @@ namespace PAMI
             L2_AtomicLoadClear(&_counter);
           }
 
-          /// Since BG/Q L2 Atomics don't implement compare-and-swap, we use
-          /// the GCC builtin and hope for the best.
-          inline bool compare_and_swap_impl(size_t compare, size_t swap)
-          {
-            return __sync_bool_compare_and_swap(&_counter, compare, swap);
-          }
-
           volatile uint64_t _counter;
 
       }; // class PAMI::Counter::BGQ::L2
@@ -173,13 +166,6 @@ namespace PAMI
           inline void clear_impl()
           {
             L2_AtomicLoadClear(_counter);
-          }
-
-          /// Since BG/Q L2 Atomics don't implement compare-and-swap, we use
-          /// the GCC builtin and hope for the best.
-          inline bool compare_and_swap_impl(size_t compare, size_t swap)
-          {
-            return __sync_bool_compare_and_swap(_counter, compare, swap);
           }
 
           // -------------------------------------------------------------------

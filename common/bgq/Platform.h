@@ -30,8 +30,6 @@
 
 #ifdef _COLLSHM   // New Collective Shmem Protocol defines
 
-#define _POSIX_SHM_OPEN
-
 #include <sched.h>
 #include <limits.h>
 inline void yield()
@@ -53,6 +51,6 @@ inline void yield()
 
 #define COLLSHM_INIT_BUFCNT 64
 #define COLLSHM_INIT_CTLCNT 64
-#endif
+#endif // _COLLSHM
 
 #endif // __common_bgq_platform_h__

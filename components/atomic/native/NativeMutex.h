@@ -7,40 +7,40 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/atomic/native/NativeCounter.h
- * \brief "native" compiler builtin atomics implementation of the atomic counter interface
+ * \file components/atomic/native/NativeMutex.h
+ * \brief "native" compiler builtin atomics implementation of the mutex interface
  */
-#ifndef __components_atomic_native_NativeCounter_h__
-#define __components_atomic_native_NativeCounter_h__
+#ifndef __components_atomic_native_NativeMutex_h__
+#define __components_atomic_native_NativeMutex_h__
 
 #include <stdint.h>
 
 #include "Compiler.h"
-#include "components/atomic/CounterInterface.h"
+#include "components/atomic/MutexInterface.h"
 #include "components/memory/MemoryManager.h"
 #include "NativeAtomics.h"
 
 namespace PAMI
 {
-  namespace Counter
+  namespace Mutex
   {
     ///
-    /// \brief PAMI::Counter::Interface implementation using "native" compiler builtin atomics
+    /// \brief PAMI::Mutex::Interface implementation using "native" compiler builtin atomics
     ///
-    /// The PAMI::Counter::Native class is considered an "in place" implementation
+    /// The PAMI::Mutex::Native class is considered an "in place" implementation
     /// because the storage for the actual atomic resource is embedded within
     /// the class instance.
     ///
-    /// Any "in place" counter implementation may be converted to an "indirect"
-    /// counter implementation, where the atomic resource is located outside
-    /// of the class instance, by using the PAMI::Counter::Indirect<T> class
+    /// Any "in place" mutex implementation may be converted to an "indirect"
+    /// mutex implementation, where the atomic resource is located outside
+    /// of the class instance, by using the PAMI::Mutex::Indirect<T> class
     /// instead of the native "in place" implementation.
     ///
-    class Native : public PAMI::Counter::Interface<Native>
+    class Native : public PAMI::Mutex::Interface<Native>
     {
       public:
 
-        friend class PAMI::Counter::Interface<Native>;
+        friend class PAMI::Mutex::Interface<Native>;
 
         inline Native() {};
 
@@ -59,41 +59,36 @@ namespace PAMI
       protected:
 
         // -------------------------------------------------------------------
-        // PAMI::Counter::Interface<T> implementation
+        // PAMI::Mutex::Interface<T> implementation
         // -------------------------------------------------------------------
 
-        inline size_t fetch_impl ()
+        inline void acquire_impl()
         {
-          return _atom.fetch();
-        };
-
-        inline size_t fetch_and_inc_impl ()
-        {
-          return _atom.fetch_and_add (1);
-        };
-
-        inline size_t fetch_and_dec_impl ()
-        {
-          return _atom.fetch_and_sub (1);
-        };
-
-        inline size_t fetch_and_clear_impl ()
-        {
-          return _atom.fetch_and_and (0);
+          while (_atom.lock_test_and_set(1) != 0);
         }
 
-        inline void clear_impl ()
+        inline bool tryAcquire_impl()
         {
-          _atom.set(0);
+          return (_atom.lock_test_and_set(1) == 0);
+        }
+
+        inline void release_impl()
+        {
+          _atom.lock_release();
+        }
+
+        inline bool isLocked_impl()
+        {
+          return (_atom.fetch() != 0);
         }
 
         PAMI::Atomic::NativeAtomic _atom;
 
-    }; // PAMI::Counter::Native class
-  }; //   PAMI::Counter namespace
+    }; // PAMI::Mutex::Native class
+  }; //   PAMI::Mutex namespace
 }; //     PAMI namespace
 
-#endif // __components_atomic_native_NativeCounter_h__
+#endif // __components_atomic_native_NativeMutex_h__
 
 //
 // astyle info    http://astyle.sourceforge.net

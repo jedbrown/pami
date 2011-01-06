@@ -56,7 +56,7 @@ public:
 	}
 
 	inline size_t fetch_and_sub_impl(size_t val) {
-		return __sync_fetch_and_add(&_atom, val);
+		return __sync_fetch_and_sub(&_atom, val);
 	}
 	inline size_t fetch_and_or_impl(size_t val) {
 		return __sync_fetch_and_or(&_atom, val);

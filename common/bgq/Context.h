@@ -47,10 +47,12 @@
 
 #ifdef _COLLSHM
 // Collective shmem device
-#include "components/memory/shmem/CollSharedMemoryManager.h"
+#include "components/devices/cshmem/CollSharedMemoryManager.h"
 #include "components/devices/cshmem/CollShmDevice.h"
 #include "algorithms/geometry/CCMICSMultiRegistration.h"
 #include "algorithms/geometry/BGQ2DRegistration.h"
+#include "NativeAtomics.h"
+#include "components/atomic/native/NativeMutex.h"
 #endif
 
 
@@ -58,16 +60,14 @@ namespace PAMI
 {
 #ifdef _COLLSHM   // New Collective Shmem Protocol Typedefs
 
-#if 1
-  typedef Counter::Native                                       CSAtomic;
-#else
-  typedef Counter::Native                                       CSAtomic;
-#endif
+  typedef Atomic::NativeAtomic                CSAtomic;
+  typedef Counter::Native                     CSCounter;	// need to optimize for Q
+  typedef Mutex::Native                       CSMutex;	// need to optimize for Q
 
-  typedef Memory::CollSharedMemoryManager < CSAtomic, COLLSHM_SEGSZ,
-  COLLSHM_PAGESZ, COLLSHM_WINGROUPSZ, COLLSHM_BUFSZ >          CSMemoryManager;
+  typedef Memory::CollSharedMemoryManager < CSAtomic, CSMutex, CSCounter, COLLSHM_SEGSZ,
+      COLLSHM_PAGESZ, COLLSHM_WINGROUPSZ, COLLSHM_BUFSZ >          CSMemoryManager;
   typedef Device::CollShm::CollShmDevice < CSAtomic, CSMemoryManager,
-  COLLSHM_DEVICE_NUMSYNCS, COLLSHM_DEVICE_SYNCCOUNT >  CSDevice;
+      COLLSHM_DEVICE_NUMSYNCS, COLLSHM_DEVICE_SYNCCOUNT >  CSDevice;
   typedef Device::CollShm::CollShmModel<CSDevice, CSMemoryManager>         CollShmModel;
   typedef Device::CSNativeInterface<CollShmModel>                          CSNativeInterface;
   ;

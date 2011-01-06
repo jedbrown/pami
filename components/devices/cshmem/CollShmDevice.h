@@ -158,6 +158,7 @@ public:
                                                // data ready and reuse stage.
         volatile unsigned char    flags;       // flags reserved for active message collective,
                                                // non-blocking collective etc
+	// This should be a T_Counter, but for simplicity of template params...
         T_Atomic                  cmpl_cntr;   // for producer only, updated by
                                                // consumers through atomic operations
       } window_control_t;
@@ -245,7 +246,7 @@ public:
       {
         PAMI_ASSERT(_ctrl.cmpl_cntr.fetch() >= 1);
         // COLLSHM_FETCH_AND_ADD((atomic_p)&(_ctrl.cmpl_cntr), -1);
-        _ctrl.cmpl_cntr.fetch_and_dec();
+        _ctrl.cmpl_cntr.fetch_and_sub(1);
       }
 
       ///
@@ -264,7 +265,7 @@ public:
 
         // immediate satisfaction
         if (_ctrl.cmpl_cntr.fetch() == 1) {
-          _ctrl.cmpl_cntr.clear();
+          _ctrl.cmpl_cntr.set(0);
           if (_ctrl.content == XMEMATT) returnBuffer(NULL);
           TRACE_DBG((stderr, "<%p>CollShmWindow::setAvail() PAMI_SUCCESS\n", this));
           return PAMI_SUCCESS;
@@ -1147,7 +1148,7 @@ public:
               for (int j = 0; j < 2; ++j)
                 for (unsigned k = 0; k < _numsyncs; ++k) {
                   //_wgroups[i]->barrier[j][k] = 0;
-                  _wgroups[i]->barrier[i][j].clear();
+                  _wgroups[i]->barrier[i][j].set(0);
                 }
              }
 
@@ -1311,7 +1312,7 @@ public:
               mem_barrier();
             }
           } //while(!(COLLSHM_COMPARE_AND_SWAP((atomic_p)&(_wgroups[0]->barrier[round][idx]),&arrived, arrived+increment)))
-          while(!_wgroups[0]->barrier[round][idx].compare_and_swap(arrived, arrived+increment)) ;
+          while(!_wgroups[0]->barrier[round][idx].bool_compare_and_swap(arrived, arrived+increment)) ;
 
           // try to advance head index
           _advanceHead();

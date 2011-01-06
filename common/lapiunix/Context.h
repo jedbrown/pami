@@ -49,6 +49,8 @@
 #include "components/atomic/indirect/IndirectCounter.h"
 #include "components/atomic/counter/CounterMutex.h"
 #include "components/atomic/native/NativeCounter.h"
+#include "components/atomic/native/NativeMutex.h"
+#include "components/atomic/native/YieldingNativeMutex.h"
 #include "components/fifo/FifoPacket.h"
 #include "components/fifo/linear/LinearFifo.h"
 
@@ -250,8 +252,10 @@ namespace PAMI
 
 
   // Collective Shmem Protocol Typedefs
-  typedef Counter::Native                                                        LAPICSAtomic;
-  typedef PAMI::Memory::CollSharedMemoryManager<LAPICSAtomic,COLLSHM_SEGSZ,COLLSHM_PAGESZ,
+  typedef Atomic::NativeAtomic                                                   LAPICSAtomic;
+  typedef Counter::Native                                                        LAPICSCounter;
+  typedef Mutex::YieldingNative                                                  LAPICSMutex;
+  typedef PAMI::Memory::CollSharedMemoryManager<LAPICSAtomic,LAPICSMutex,LAPICSCounter,COLLSHM_SEGSZ,COLLSHM_PAGESZ,
                                     COLLSHM_WINGROUPSZ,COLLSHM_BUFSZ>            LAPICSMemoryManager;
   typedef PAMI::Device::CollShm::CollShmDevice<LAPICSAtomic, LAPICSMemoryManager,
                              COLLSHM_DEVICE_NUMSYNCS, COLLSHM_DEVICE_SYNCCOUNT>  LAPICSDevice;

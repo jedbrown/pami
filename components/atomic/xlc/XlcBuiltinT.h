@@ -85,29 +85,8 @@ namespace PAMI
           return __fetch_and_add((volatile int *)&_atom, val);
         }
 
-        inline bool compare_and_swap_impl (T compare, T swap);
-
-        // using Interface::Counter<XlcBuiltinT < T > >::compare_and_swap;
-
-        // inline int compare_and_swap (T *compare, T swap);
-
         volatile T _atom;
     };
-
-    template <class T>
-    inline bool XlcBuiltinT<T>::compare_and_swap_impl (T compare, T swap)
-    {
-      T compare_val = compare;
-      return __compare_and_swap ((volatile int *)&_atom, (int *)&compare_val, swap);
-    };
-
-    /*
-        template <class T>
-        inline int XlcBuiltinT<T>::compare_and_swap (T *compare, T swap)
-        {
-        return __compare_and_swap((volatile int *)&_atom, (int *)compare, swap);
-        }
-    */
 
 #ifdef __64BIT__
     template <>
@@ -135,21 +114,6 @@ namespace PAMI
       return __fetch_and_addlp(&_atom, val);
     }
 
-    template<>
-    inline bool XlcBuiltinT<long>::compare_and_swap_impl(long compare, long swap)
-    {
-      long compare_val = compare;
-
-      return __compare_and_swaplp (&_atom, &compare_val, swap);
-    }
-
-    /*
-        template<>
-        inline int XlcBuiltinT<long>::compare_and_swap(long *compare, long swap)
-        {
-        return __compare_and_swaplp(&_atom, compare, swap);
-        }
-    */
 #endif
   };
 };

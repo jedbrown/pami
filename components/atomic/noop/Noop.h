@@ -18,22 +18,19 @@
 
 namespace PAMI
 {
-  namespace Atomic
+  namespace Counter
   {
     ///
     /// \brief A "noop" atomic counter and mutex
     ///
-    class Noop : public PAMI::Counter::Interface <Noop>,
-                 public PAMI::Mutex::Interface <Noop>
+    class Noop : public PAMI::Counter::Interface <Noop>
     {
       public:
 
         friend class PAMI::Counter::Interface <Noop>;
-        friend class PAMI::Mutex::Interface <Noop>;
 
         Noop () :
-            PAMI::Counter::Interface <Noop> (),
-            PAMI::Mutex::Interface <Noop> ()
+            PAMI::Counter::Interface <Noop> ()
         {};
 
         ~Noop () {};
@@ -54,7 +51,26 @@ namespace PAMI
 
         inline void clear_impl () {};
 
-        inline bool compare_and_swap_impl (size_t compare, size_t swap) { return true; }
+    };
+  };
+  namespace Mutex
+  {
+    ///
+    /// \brief A "noop" atomic counter and mutex
+    ///
+    class Noop : public PAMI::Mutex::Interface <Noop>
+    {
+      public:
+
+        friend class PAMI::Mutex::Interface <Noop>;
+
+        Noop () :
+            PAMI::Mutex::Interface <Noop> ()
+        {};
+
+        ~Noop () {};
+
+      protected:
 
         // -------------------------------------------------------------------
         // PAMI::Mutex::Interface<T> implementation

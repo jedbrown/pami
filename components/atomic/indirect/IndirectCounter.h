@@ -101,11 +101,6 @@ namespace PAMI
           _counter->clear ();
         };
 
-        inline bool compare_and_swap_impl (size_t compare, size_t swap)
-        {
-          return _counter->compare_and_swap (compare, swap);
-        };
-
         // -------------------------------------------------------------------
         // Memory manager counter initialization function
         // -------------------------------------------------------------------

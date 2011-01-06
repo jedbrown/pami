@@ -29,7 +29,7 @@
 namespace PAMI
 {
   /// \todo Update to use a memory manager template parameter.
-  template <unsigned T_ObjSize, unsigned T_ObjAlign, unsigned T_PREALLOC=10, class T_Atomic = PAMI::Atomic::Noop>
+  template <unsigned T_ObjSize, unsigned T_ObjAlign, unsigned T_PREALLOC=10, class T_Mutex = PAMI::Mutex::Noop>
   class MemoryAllocator
   {
     protected:
@@ -100,15 +100,15 @@ namespace PAMI
 
       inline void lock ()
       {
-        while (!_mutex.compare_and_swap (0, 1));
+        _mutex.acquire();
       }
 
       inline void unlock ()
       {
-        _mutex.fetch_and_clear ();
+        _mutex.release();
       }
 
-      T_Atomic          _mutex;
+      T_Mutex          _mutex;
 
       memory_object_t * _head;
   };
