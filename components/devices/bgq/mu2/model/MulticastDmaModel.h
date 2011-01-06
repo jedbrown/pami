@@ -19,7 +19,6 @@
 #include "components/devices/bgq/mu2/Context.h"
 #include "components/devices/bgq/mu2/msg/InjectDPutMulticast.h"
 
-
 #define MAX_COUNTERS 15
 
 #ifndef L1_DCACHE_LINE_SIZE
