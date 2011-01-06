@@ -1,6 +1,9 @@
-
-#ifndef __components_devices_bgq_mu2_model_CollectiveDmaModel_h__
-#define __components_devices_bgq_mu2_model_CollectiveDmaModel_h__
+///
+/// \file components/devices/bgq/mu2/model/CollectiveDmaModelBase.h
+/// \brief ???
+///
+#ifndef __components_devices_bgq_mu2_model_CollectiveDmaModelBase_h__
+#define __components_devices_bgq_mu2_model_CollectiveDmaModelBase_h__
 
 #include "spi/include/mu/DescriptorBaseXX.h"
 #include "components/devices/MulticastModel.h"

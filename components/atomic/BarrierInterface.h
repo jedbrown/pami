@@ -10,7 +10,7 @@
 #define __components_atomic_BarrierInterface_h__
 
 ////////////////////////////////////////////////////////////////////////
-///  \file components/atomic/Barrier.h
+///  \file components/atomic/BarrierInterface.h
 ///  \brief Barrier Objects for Hardware and Software Barrieres
 ///
 ///  This object is a portability layer that abstracts local barriers

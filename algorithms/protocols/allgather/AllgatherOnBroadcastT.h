@@ -1,6 +1,9 @@
-
-#ifndef __algorithms_protocols_allgather_AllgathervOnBroadcastT_h__
-#define __algorithms_protocols_allgather_AllgathervOnBroadcastT_h__
+///
+/// \file algorithms/protocols/allgather/AllgatherOnBroadcastT.h
+/// \brief ???
+///
+#ifndef __algorithms_protocols_allgather_AllgatherOnBroadcastT_h__
+#define __algorithms_protocols_allgather_AllgatherOnBroadcastT_h__
 
 #include "algorithms/ccmi.h"
 #include "algorithms/protocols/CollectiveProtocolFactoryT.h"

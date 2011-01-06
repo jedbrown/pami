@@ -1,6 +1,9 @@
-
-#ifndef __components_devices_bgq_mu2_msg_collective_DPutMulticast_h__
-#define __components_devices_bgq_mu2_msg_collective_DPutMulticast_h__
+///
+/// \file components/devices/bgq/mu2/msg/CollectiveDPutMulticast.h
+/// \brief ???
+///
+#ifndef __components_devices_bgq_mu2_msg_CollectiveDPutMulticast_h__
+#define __components_devices_bgq_mu2_msg_CollectiveDPutMulticast_h__
 
 #include "spi/include/mu/DescriptorBaseXX.h"
 #include "util/trace.h"

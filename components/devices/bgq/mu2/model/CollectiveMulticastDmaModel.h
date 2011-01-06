@@ -1,6 +1,9 @@
-
-#ifndef __collective_multicast_dma_model__
-#define __collective_multicast_dma_model__
+///
+/// \file components/devices/bgq/mu2/model/CollectiveMulticastDmaModel.h
+/// \brief ???
+///
+#ifndef __components_devices_bgq_mu2_model_CollectiveMulticastDmaModel_h__
+#define __components_devices_bgq_mu2_model_CollectiveMulticastDmaModel_h__
 
 #include "components/devices/bgq/mu2/Context.h"
 #include "components/devices/bgq/mu2/model/CollectiveDmaModelBase.h"

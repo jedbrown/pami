@@ -1,3 +1,9 @@
+///
+/// \file components/devices/bgq/mu2/model/MU_Collective_OP_DT_Table.h
+/// \brief ???
+///
+#ifndef __components_devices_bgq_mu2_model_MU_Collective_OP_DT_Table_h__
+#define __components_devices_bgq_mu2_model_MU_Collective_OP_DT_Table_h__
 
 #include "sys/pami.h"
 #include "spi/include/mu/DescriptorBaseXX.h"
@@ -72,3 +78,5 @@ namespace PAMI {
     }; //MU
   };   //Device
 };     //PAMI
+
+#endif

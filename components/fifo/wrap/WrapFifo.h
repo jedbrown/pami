@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file util/fifo/WrapFifo.h
+ * \file components/fifo/wrap/WrapFifo.h
  * \brief ???
  */
 
-#ifndef __util_fifo_WrapFifo_h__
-#define __util_fifo_WrapFifo_h__
+#ifndef __components_fifo_wrap_WrapFifo_h__
+#define __components_fifo_wrap_WrapFifo_h__
 
 #include <string.h>
 

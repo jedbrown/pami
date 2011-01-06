@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file util/fifo/FifoPacket.h
+ * \file components/fifo/FifoPacket.h
  * \brief ???
  */
 
-#ifndef __util_fifo_FifoPacket_h__
-#define __util_fifo_FifoPacket_h__
+#ifndef __components_fifo_FifoPacket_h__
+#define __components_fifo_FifoPacket_h__
 
 #include <stdint.h>
 

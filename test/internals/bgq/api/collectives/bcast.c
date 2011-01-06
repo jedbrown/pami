@@ -1,5 +1,5 @@
 /**
- * \file test/api/collectives/bcast.c
+ * \file test/internals/bgq/api/collectives/bcast.c
  * \brief Simple Bcast test
  */
 

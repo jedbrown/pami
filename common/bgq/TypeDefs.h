@@ -217,6 +217,3 @@ namespace PAMI
 //#define PAMI_GEOMETRY_CLASS    PAMI::BGQGeometry
 
 #endif
-
-
-

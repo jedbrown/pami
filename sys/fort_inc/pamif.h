@@ -1,5 +1,5 @@
 !
-!   \file sys/fort_int/pamif.h
+!   \file sys/fort_inc/pamif.h
 !   \brief Common external 32-bit FORTRAN interface for IBM's PAMI message layer.
 !
 

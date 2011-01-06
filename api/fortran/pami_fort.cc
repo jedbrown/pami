@@ -1,5 +1,5 @@
 /**
- * \file api/c/pami.cc
+ * \file api/fortran/pami_fort.cc
  * \brief PAMI C interface common implementation
  */
 #ifndef pami_LAPI_IMPL

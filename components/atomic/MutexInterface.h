@@ -10,7 +10,7 @@
 #define __components_atomic_MutexInterface_h__
 
 ///
-///  \file components/atomic/Mutex.h
+///  \file components/atomic/MutexInterface.h
 ///  \brief Mutex Objects for Hardware and Software Mutexes
 ///
 ///  This object is a portability layer that abstracts atomic locking
@@ -99,5 +99,3 @@ namespace PAMI
 // astyle options --indent-switches --indent-namespaces --break-blocks
 // astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
 //
-
-

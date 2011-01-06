@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/shmem/ShaddrPacketModel.h
+ * \file components/devices/shmem/shaddr/BgqShaddrPacketModel.h
  * \brief ???
  */
 
