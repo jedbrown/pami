@@ -576,14 +576,61 @@ namespace PAMI
                                                          void                 * cookie)
       {
         TRACE_ERR((stderr, "<%p:%zu>BGQ::Client::geometry_create_tasklist_impl geometry %p/%p\n", this, _clientid, geometry, *geometry));
-        // simple for now: only PAMI_GEOMETRY_OPTIMIZE, and not allowed here.
-        if (num_configs)
+
+        // simple for now: only PAMI_GEOMETRY_OPTIMIZE
+        if (num_configs != 0 && (num_configs > 1 || configuration[0].name != PAMI_GEOMETRY_OPTIMIZE))
           {
             return PAMI_INVAL;
           }
 
-        // todo:  implement this routine
-        PAMI_abortf("geometry_create_tasklist_impl");
+        BGQGeometry *new_geometry;
+        BGQGeometry *bargeom = (BGQGeometry *)parent;
+        PAMI::Context *ctxt = (PAMI::Context *)context;
+
+        if (geometry != NULL)
+          {
+          pami_result_t rc;
+          rc = __global.heap_mm->memalign((void **)&new_geometry, 0,
+                                          sizeof(*new_geometry)); /// \todo use allocator
+          PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc new_geometry");
+            new (new_geometry) BGQGeometry(_client,
+                                           (PAMI::Geometry::Common *)parent,
+                                           &__global.mapping,
+                                           id,
+                                           task_count,
+                                           tasks,
+                                           &_geometry_map);
+
+            TRACE_ERR((stderr,  "%s analyze %zu geometry %p\n", __PRETTY_FUNCTION__, _ncontexts, new_geometry));
+
+            for (size_t n = 0; n < _ncontexts; n++)
+              {
+                TRACE_ERR((stderr,  "%s analyze %p geometry %p\n", __PRETTY_FUNCTION__, &_contexts[n], new_geometry));
+                _contexts[n].analyze(n, new_geometry, 0);
+              }
+
+            *geometry = (pami_geometry_t) new_geometry;
+
+            /// \todo  deliver completion to the appropriate context
+            new_geometry->setCompletion(fn, cookie);
+            new_geometry->addCompletion(); // ensure completion doesn't happen until
+                                           // all have been analyzed (_geom_opt_finish).
+
+            // Start the barrier (and then the global analyze and (maybe) the optimize ...
+            start_barrier(bargeom, new_geometry,
+                          ctxt->getId(), context,
+                          num_configs? PAMI_GEOMETRY_OPTIMIZE: (pami_attribute_name_t)-1);
+
+            new_geometry->processUnexpBarrier(&_ueb_queue,
+                                              &_ueb_allocator);
+          }
+        else
+          {
+            // non-participant members of parent won't know if new geom exists...
+            bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
+          }
+
+        TRACE_ERR((stderr,  "%s exit geometry %p/%p\n", __PRETTY_FUNCTION__, geometry, *geometry));
         return PAMI_SUCCESS;
       }
 
