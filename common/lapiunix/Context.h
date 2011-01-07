@@ -373,14 +373,12 @@ namespace PAMI
                     char                                *clientname,
                     size_t                               id,
                     PlatformDeviceList                  *devices,
-                    Memory::MemoryManager               *mm,
                     std::map<unsigned, pami_geometry_t> *geometry_map):
         Interface::Context<PAMI::Context> (client, id),
         _client (client),
         _clientid (clientid),
         _clientname(clientname),
         _dispatch_id(255),
-        _mm(mm),
         _context((pami_context_t) this),
         _contextid (id),
         _world_geometry(NULL),
@@ -452,8 +450,12 @@ namespace PAMI
           return PAMI_SUCCESS;
         }
 
-      inline pami_result_t initCollectives()
+      inline pami_result_t initCollectives(Memory::MemoryManager               *mm,
+                                           bool                                 disable_shm)
         {
+          Memory::MemoryManager               *mm_ptr;
+          if(disable_shm) mm_ptr = NULL;
+          else            mm_ptr = mm;
           PAMI::Topology *local_master_topo = (PAMI::Topology *) ((PAMI::Geometry::Lapi *)_world_geometry)->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
 	  pami_result_t rc;
           uint64_t *invec;
@@ -477,7 +479,7 @@ namespace PAMI
                                                 _devices->_shmem[_contextid],
                                                 _lapi_device,
                                                 _protocol,
-                                                _mm?1:0,  //use shared memory
+                                                mm_ptr?1:0,  //use shared memory
                                                 1,  //use "global" device
                                                 numtasks,
                                                 numpeers,
@@ -499,7 +501,7 @@ namespace PAMI
                                        _lapi_handle,
                                        &_dispatch_id,
                                        _geometry_map,
-                                       _mm);
+                                       mm_ptr);
           // We analyze global here to get the proper device specific info
           _cau_collreg->analyze_global(_contextid, _world_geometry, &invec[2]);
           _pgas_collreg->setGenericDevice(&_devices->_generics[_contextid]);
@@ -1013,9 +1015,6 @@ namespace PAMI
       /*  collectives, should start from 255 and decrease       */
       int                                    _dispatch_id;
       
-      /*  Memory Manager Pointer                                */
-      Memory::MemoryManager                 *_mm;
-
       /*  Protocol allocator                                    */
       ProtocolAllocator                      _protocol;
 

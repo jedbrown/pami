@@ -49,7 +49,8 @@ namespace PAMI
       _maxctxts(0),
       _ncontexts (0),
       _world_list(NULL),
-      _mm ()
+      _mm (),
+      _disable_shm(true)
       {
         pami_result_t   rc               = PAMI_SUCCESS;
         static size_t   next_client_id   = 0;
@@ -98,8 +99,9 @@ namespace PAMI
           }
 
         // Initialize the shared memory manager
-        initializeMemoryManager ();
-
+        pami_result_t shm_rc = initializeMemoryManager ();
+        if(shm_rc == PAMI_SUCCESS)
+          _disable_shm = false;
         
         // We do something slightly different for dynamic tasking
         // vs non-dynamic tasking.  In the dynamic tasking case,
@@ -179,18 +181,15 @@ namespace PAMI
 	// mapping to correctly build (like shmem device, for example.  shmem
 	// device requires to know the "local" nodes, so a proper mapping
 	// must be built).
-        bool disable_shm = true;
-        if(_Lapi_env.use_mpi_shm == SHM_YES)
-          disable_shm = false;
-        _platdevs.generate(_clientid, _maxctxts, _mm, disable_shm);
-	_platdevs.init(_clientid,0,_client,(pami_context_t)_contexts[0],&_mm, disable_shm);
+        _platdevs.generate(_clientid, _maxctxts, _mm, _disable_shm);
+	_platdevs.init(_clientid,0,_client,(pami_context_t)_contexts[0],&_mm, _disable_shm);
 
         // Now that we have a new mapping, we want to regenerate the topologies
         // to use the optimized geometries
         _world_geometry->regenTopo();
 
         // Initialize the optimized collectives
-        _contexts[0]->initCollectives();
+        _contexts[0]->initCollectives(&_mm, _disable_shm);
 
         // Return error code
         result                         = rc;
@@ -351,16 +350,11 @@ namespace PAMI
         PAMI::Context *c = (PAMI::Context *) _contextAlloc.allocateObject();
 
         Memory::GenMemoryManager *mm;
-        if(_Lapi_env.use_mpi_shm == SHM_YES)
-          mm = &_mm;
-        else
-          mm = NULL;
         new (c) PAMI::Context(this->getClient(),      /* Client ptr       */
                               _clientid,              /* Client  id       */
                               ((LapiImpl::Client*)&_lapiClient[0])->GetName(), /* Client String    */
                               index,                  /* Context id       */
                               &_platdevs,             /* Platform Devices */
-                              mm,                     /* Memory Manager   */
                               &_geometry_map);  
         *ctxt = c;
         _ncontexts++;
@@ -396,7 +390,7 @@ namespace PAMI
               if(rc) RETURN_ERR_PAMI(PAMI_ERROR, "createContext failed with rc %d\n", rc);
               _contexts[i]->setWorldGeometry(_world_geometry);
               _contexts[i]->initP2PCollectives();
-              _contexts[i]->initCollectives();
+              _contexts[0]->initCollectives(&_mm, _disable_shm);
             }
         return PAMI_SUCCESS;
       }
@@ -796,8 +790,9 @@ namespace PAMI
       }
 
   private:
-    inline void initializeMemoryManager ()
+    inline pami_result_t  initializeMemoryManager ()
       {
+        pami_result_t rc = PAMI_ERROR;
         if(_Lapi_env.use_mpi_shm == SHM_YES)
           {
             char   shmemfile[PAMI::Memory::MMKEYSIZE];
@@ -808,9 +803,9 @@ namespace PAMI
                       ((LapiImpl::Client*)&_lapiClient[0])->GetName());
             // Round up to the page size
             size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
-            _mm.init(__global.shared_mm, size, 1, 1, 0, shmemfile);
+            rc = _mm.init(__global.shared_mm, size, 1, 1, 0, shmemfile);
           }
-        return;
+        return rc;
       }
 
   private:
@@ -857,7 +852,10 @@ namespace PAMI
     std::map<unsigned, pami_geometry_t>          _geometry_map;
     
     // Shared Memory Manager for this Client
-    Memory::GenMemoryManager                        _mm;
+    Memory::GenMemoryManager                     _mm;
+
+    // Flag to disable shared memory
+    bool                                         _disable_shm;
 
     // Initial LAPI handle for building geometries,
     // fencing, and other comm needed for initialization
