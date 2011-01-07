@@ -392,8 +392,8 @@ int main(int argc, char*argv[])
 
                 for (i = 1; i <= COUNT; i *= 2)
                   {
-                    unsigned mustquery = allreduce_must_query_md[nalg].check_correct.values.mustquery; //must query every time
-                    assert(!mustquery || allreduce_must_query_md[nalg].check_fn); // must have function if mustquery.
+                    unsigned mustquery = allreduce_must_query_md[nalg].check_correct.values.mustquery; /*must query every time */
+                    assert(!mustquery || allreduce_must_query_md[nalg].check_fn); /* must have function if mustquery. */
                     size_t sz;
                     PAMI_Dt_query (dt_array[dt], &sz);
                     long long dataSent = i * sz;
@@ -425,7 +425,7 @@ int main(int argc, char*argv[])
 
                     for (j = 0; j < niter; j++)
                     {
-                      if(mustquery) // must query every time
+                      if(mustquery) /* must query every time */
                       {
                         result = allreduce_must_query_md[nalg].check_fn(&allreduce);
                         if(result.bitmask) continue;

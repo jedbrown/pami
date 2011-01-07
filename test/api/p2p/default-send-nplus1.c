@@ -1,7 +1,9 @@
-/** \file test/api/p2p/default-send-nplus1.c
-    \brief Simple point-topoint PAMI_send() test   
-    \validates that the n+1 byte remains unchanged 
-*/
+/**
+ * \file test/api/p2p/default-send-nplus1.c
+ * \brief Simple point-topoint PAMI_send() test
+ *
+ * Validates that the n+1 byte remains unchanged
+ */
 
 #include <pami.h>
 #include <stdio.h>
