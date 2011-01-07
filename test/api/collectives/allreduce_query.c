@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/api/collectives/allreduce.c
- * \brief simple allreduce on world geometry
+ * \file test/api/collectives/allreduce_query.c
+ * \brief simple allreduce on world geometry using "must query" algorithms
  */
 
 #include "../pami_util.h"
@@ -356,14 +356,17 @@ int main(int argc, char*argv[])
 
   for (nalg = 0; nalg < allreduce_num_algorithm[0]; nalg++)
     {
+      metadata_result_t result = {0};
       if (task_id == root)
         {
-          printf("# Allreduce Bandwidth Test -- root = %d protocol: %s\n", root, allreduce_always_works_md[nalg].name);
+          printf("# Allreduce Bandwidth Test -- root = %d protocol: %s, Metadata: range %zu <-> %zd, mask %#X\n", 
+                 root, allreduce_must_query_md[nalg].name,
+                 allreduce_must_query_md[nalg].range_lo,(ssize_t)allreduce_must_query_md[nalg].range_hi,
+                 allreduce_must_query_md[nalg].check_correct.bitmask_correct);
           printf("# Size(bytes)           cycles    bytes/sec    usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
         }
-      if(strncmp(allreduce_always_works_md[nalg].name,selected, strlen(selected))) continue;
-
+      if(strncmp(allreduce_must_query_md[nalg].name,selected, strlen(selected))) continue;
       barrier.cb_done   = cb_done;
       barrier.cookie    = (void*) & bar_poll_flag;
       barrier.algorithm = bar_always_works_algo[0];
@@ -371,15 +374,13 @@ int main(int argc, char*argv[])
 
       allreduce.cb_done   = cb_done;
       allreduce.cookie    = (void*) & allreduce_poll_flag;
-      allreduce.algorithm = allreduce_always_works_algo[nalg];
+      allreduce.algorithm = allreduce_must_query_algo[nalg];
       allreduce.cmd.xfer_allreduce.sndbuf    = sbuf;
       allreduce.cmd.xfer_allreduce.stype     = PAMI_BYTE;
       allreduce.cmd.xfer_allreduce.stypecount = 0;
       allreduce.cmd.xfer_allreduce.rcvbuf    = rbuf;
       allreduce.cmd.xfer_allreduce.rtype     = PAMI_BYTE;
       allreduce.cmd.xfer_allreduce.rtypecount = 0;
-
-
 
       for (dt = 0; dt < dt_count; dt++)
         for (op = 0; op < op_count; op++)
@@ -391,10 +392,25 @@ int main(int argc, char*argv[])
 
                 for (i = 1; i <= COUNT; i *= 2)
                   {
+                    unsigned mustquery = allreduce_must_query_md[nalg].check_correct.values.mustquery; //must query every time
+                    assert(!mustquery || allreduce_must_query_md[nalg].check_fn); // must have function if mustquery.
                     size_t sz;
                     PAMI_Dt_query (dt_array[dt], &sz);
                     long long dataSent = i * sz;
                     int niter;
+
+                    allreduce.cmd.xfer_allreduce.stypecount = dataSent;
+                    allreduce.cmd.xfer_allreduce.rtypecount = dataSent;
+                    allreduce.cmd.xfer_allreduce.dt = dt_array[dt];
+                    allreduce.cmd.xfer_allreduce.op = op_array[op];
+
+                    if(allreduce_must_query_md[nalg].check_fn) 
+                      result = allreduce_must_query_md[nalg].check_fn(&allreduce);
+                    if(result.bitmask) continue;
+
+                    if(!((dataSent < allreduce_must_query_md[nalg].range_hi) &&
+                         (dataSent > allreduce_must_query_md[nalg].range_lo)))
+                      continue;
 
                     if (dataSent < CUTOFF)
                       niter = NITERLAT;
@@ -408,13 +424,14 @@ int main(int argc, char*argv[])
                     ti = timer();
 
                     for (j = 0; j < niter; j++)
+                    {
+                      if(mustquery) // must query every time
                       {
-                        allreduce.cmd.xfer_allreduce.stypecount = dataSent;
-                        allreduce.cmd.xfer_allreduce.rtypecount = dataSent;
-                        allreduce.cmd.xfer_allreduce.dt = dt_array[dt];
-                        allreduce.cmd.xfer_allreduce.op = op_array[op];
-                        blocking_coll(context, &allreduce, &allreduce_poll_flag);
+                        result = allreduce_must_query_md[nalg].check_fn(&allreduce);
+                        if(result.bitmask) continue;
                       }
+                      blocking_coll(context, &allreduce, &allreduce_poll_flag);
+                    }
 
                     tf = timer();
                     blocking_coll(context, &barrier, &bar_poll_flag);

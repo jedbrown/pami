@@ -67,7 +67,7 @@ namespace CCMI
 //          PAMI_Type_sizeof(cmd->cmd.xfer_allreduce.stype); /// \todo PAMI_Type_sizeof() is PAMI_UNIMPL so use getReduceFunction for now?
 
             _deviceInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
-            unsigned        sizeOfType = _size_table[cmd->cmd.xfer_allreduce.dt];
+            unsigned        sizeOfType = _pami_size_table[cmd->cmd.xfer_allreduce.dt];
 
             size_t size = cmd->cmd.xfer_allreduce.stypecount * 1; /// \todo presumed size of PAMI_BYTE is 1?
             _srcPwq.configure(cmd->cmd.xfer_allreduce.sndbuf, size, size);

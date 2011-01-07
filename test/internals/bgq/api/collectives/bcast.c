@@ -9,7 +9,7 @@
 #define CHECK_DATA
 
 #define BUFSIZE (1048576*8)
-#define NITER 100
+#define NITER 1000
 
 char* protocolName;
 
@@ -79,8 +79,14 @@ int main (int argc, char ** argv)
   pami_xfer_t          barrier;
   pami_xfer_t          broadcast;
 
+  unsigned selector = 1;
   char* selected = getenv("TEST_PROTOCOL");
   if(!selected) selected = "";
+  else if(selected[0]=='-') 
+  {
+      selector = 0 ;
+      ++selected;
+  }
 
   /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
@@ -146,7 +152,8 @@ int main (int argc, char ** argv)
           printf("# Size(bytes)           cycles    bytes/sec    usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
         }
-      if(strncmp(bcast_always_works_md[nalg].name,selected, strlen(selected))) continue;
+      if(((strstr(bcast_always_works_md[nalg].name,selected) == NULL) && selector) ||
+         ((strstr(bcast_always_works_md[nalg].name,selected) != NULL) && !selector))  continue;
       int i, j;
 
       for (i = 1; i <= BUFSIZE; i *= 2)

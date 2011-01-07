@@ -46,9 +46,9 @@ namespace CCMI
         Core_fp32_sum(dst, srcs, nsrc, count*2);
       }
 
-      static const size_t _size_table[PAMI_DT_COUNT] =
-	{ 
-	  -1,                         //PAMI_UNDEFINED_DT
+      static const size_t _pami_size_table[PAMI_DT_COUNT] =
+        { 
+          -1,                         //PAMI_UNDEFINED_DT
           sizeof(signed char),        //PAMI_SIGNED_CHAR
           sizeof(unsigned char),      //PAMI_UNSIGNED_CHAR
           sizeof(signed short),       //PAMI_SIGNED_SHORT
@@ -74,7 +74,7 @@ namespace CCMI
 
 
       inline size_t dt_sizeoftype (size_t dt) {
-	return _size_table [dt]; 
+        return _pami_size_table [dt]; 
       }
 
 ///
