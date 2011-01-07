@@ -75,7 +75,7 @@ int main(int argc, char ** argv)
   uint8_t model_buf[sizeof(PAMI::Device::MU::MulticastDmaModel)] __attribute__((__aligned__(32)));
   pami_result_t status;
   uint8_t buf [PAMI::Device::MU::MulticastDmaModel::sizeof_msg];
-  PAMI::Device::MU::MulticastDmaModel &model = *(new (model_buf) PAMI::Device::MU::MulticastDmaModel(mu0, status));
+  PAMI::Device::MU::MulticastDmaModel &model = *(new (model_buf) PAMI::Device::MU::MulticastDmaModel(client, context, mu0, status));
 
   fprintf (stderr, "After model constructors\n");
 

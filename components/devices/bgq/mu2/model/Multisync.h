@@ -131,7 +131,7 @@ namespace PAMI
         public:
 
           /// \see PAMI::Device::Interface::MultisyncModel::MultisyncModel
-          MultisyncModel (MU::Context & device, pami_result_t &status) :
+          MultisyncModel (pami_client_t    client, pami_context_t   context, MU::Context & device, pami_result_t &status) :
               Interface::MultisyncModel < MultisyncModel<T_Msgdata_support, T_PWQ_support>, MU::Context, 2048 /*sizeof(state_data_t)*/ > (device, status),
               _device (device),
               _task_id(__global.mapping.task()),

@@ -29,6 +29,8 @@ namespace CCMI
         {
           TRACE_ADAPTOR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
           _cb_geometry = NULL;
+	  _cached_geometry = NULL;
+	  _cached_id = (unsigned) -1;
         }
 
         void setMapIdToGeometry(pami_mapidtogeometry_fn     cb_geometry)
@@ -40,9 +42,15 @@ namespace CCMI
 
         pami_geometry_t getGeometry(pami_context_t ctxt, unsigned id)
         {
+	  if (_cached_geometry && id == _cached_id)
+	    return _cached_geometry;
+
           TRACE_ADAPTOR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
           CCMI_assert (_cb_geometry != NULL);
-          return _cb_geometry (ctxt, id);  // -1, the function is scoped to the geometry
+          _cached_geometry = _cb_geometry (ctxt, id);  // -1, the function is scoped to the geometry
+	  _cached_id = id;
+
+	  return _cached_geometry;
         }
 
         virtual ~CollectiveProtocolFactory ()
@@ -76,6 +84,8 @@ namespace CCMI
 
       protected:
         pami_mapidtogeometry_fn              _cb_geometry;
+	unsigned                             _cached_id;
+	pami_geometry_t                      _cached_geometry;
     };
   };
 };

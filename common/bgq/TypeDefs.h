@@ -83,6 +83,7 @@
 #include "components/devices/shmemcoll/mdls/ShmemColorMcstModel.h"
 #include "components/devices/bgq/mu2/model/CollectiveMulticastDmaModel.h"
 #include "components/devices/bgq/mu2/model/CollectiveMulticombineDmaModel.h"
+#include "components/devices/bgq/mu2/model/AMMulticastModel.h"
 
 
 namespace PAMI
@@ -122,6 +123,13 @@ namespace PAMI
   
   //typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::Native> ShmemCollDesc;
   typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::BGQ::IndirectL2> ShmemCollDesc;
+
+  typedef BGQNativeInterface < MUDevice,
+    Device::MU::ShortAMMulticastModel,
+    Device::MU::MultisyncModel<false, false>,
+    Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false>
+    > MUAMMulticastNI;
+
   typedef PAMI::Device::Shmem::ShmemColorMcstModel<PAMI::Device::Generic::Device, ShmemCollDesc> ShaddrMcstModel;
   typedef PAMI::Device::Shmem::ShmemCollDescFifo  <PAMI::Counter::BGQ::IndirectL2> ShmemColorDesc;
 

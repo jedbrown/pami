@@ -35,6 +35,8 @@
 #include "common/NativeInterface.h"
 #include "algorithms/protocols/allgather/AllgatherOnBroadcastT.h"
 
+#include "algorithms/geometry/P2PCCMIRegInfo.h"
+
 #include "util/ccmi_debug.h" // tracing
 #include "util/ccmi_util.h"
 
@@ -107,6 +109,30 @@ namespace PAMI
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSyncComposite<>,
     ShmemMsyncMetaData,
     CCMI::ConnectionManager::SimpleConnMgr > ShmemMultiSyncFactory;
+
+    void OptBinomialMetaData(pami_metadata_t *m)
+    {
+      new(m) PAMI::Geometry::Metadata("I0:OptBinomial:P2P:P2P");
+    }
+
+    bool opt_binomial_analyze (PAMI_GEOMETRY_CLASS *geometry)
+    {
+      return true;
+    }
+    
+    typedef CCMI::Adaptor::Barrier::BarrierT
+      < CCMI::Schedule::TopoMultinomial,
+      opt_binomial_analyze,
+      PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX,
+      PAMI::Geometry::CKEY_BARRIERCOMPOSITE2>
+      OptBinomialBarrier;
+    
+    typedef CCMI::Adaptor::Barrier::BarrierFactoryT
+      < OptBinomialBarrier,
+      OptBinomialMetaData,
+      CCMI::ConnectionManager::SimpleConnMgr,
+      PAMI::Geometry::CKEY_BARRIERCOMPOSITE2>
+      OptBinomialBarrierFactory;
 
     //----------------------------------------------------------------------------
     // 'Pure' Shmem allsided multicombine
@@ -507,6 +533,11 @@ namespace PAMI
 
 	      if (__global.mapping.t() == 0)
 		_mu_global_dput_ni    = new (_mu_global_dput_ni_storage) MUGlobalDputNI (_mu_device, client, context, context_id, client_id, _dispatch_id);
+
+	      _mu_ammulticast_ni    = new (_mu_ammulticast_ni_storage) MUAMMulticastNI (_mu_device, client, context, context_id, client_id, _dispatch_id);
+
+	      if (_mu_ammulticast_ni->status() != PAMI_SUCCESS) _mu_ammulticast_ni = NULL;
+
 //          if(__global.topology_local.size() < 64)
               {
                 _axial_shmem_mu_dput_ni     = new (_axial_shmem_mu_dput_ni_storage    ) T_AxialShmemDputNativeInterface(_mu_device, client, context, context_id, client_id, _dispatch_id);
@@ -517,6 +548,11 @@ namespace PAMI
               _mu_msync_factory     = new (_mu_msync_factory_storage    ) MUMultiSyncFactory(&_sconnmgr, _mu_ni_msync);
               _mu_mcomb_factory     = new (_mu_mcomb_factory_storage    ) MUMultiCombineFactory(&_sconnmgr, _mu_ni_mcomb);
 
+	      _binomial_barrier_factory = NULL;
+	      if (_mu_ammulticast_ni) {
+		_binomial_barrier_factory = new (_binomial_barrier_factory_storage)  OptBinomialBarrierFactory (&_sconnmgr, _mu_ammulticast_ni, OptBinomialBarrier::cb_head);
+		_binomial_barrier_factory->setMapIdToGeometry(mapidtogeometry);
+	      }
 
               _mucollectivedputmulticastfactory    = new (_mucollectivedputmulticaststorage ) MUCollectiveDputMulticastFactory(&_sconnmgr, _mu_global_dput_ni);
               _mucollectivedputmulticombinefactory    = new (_mucollectivedputmulticombinestorage ) MUCollectiveDputMulticombineFactory(&_sconnmgr, _mu_global_dput_ni);	      
@@ -667,6 +703,9 @@ namespace PAMI
                   void *val;
                   val = geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
                   TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() GKEY_MSYNC_CLASSROUTEID %p\n", this, val));
+
+		  if (_binomial_barrier_factory)
+		    geometry->addCollective(PAMI_XFER_BARRIER, _binomial_barrier_factory, _context_id);
 
                   if (val && val != PAMI_CR_GKEY_FAIL)
                     {
@@ -847,9 +886,15 @@ namespace PAMI
         MUGlobalDputNI                                 *_mu_global_dput_ni;
         uint8_t                                         _mu_global_dput_ni_storage [sizeof(MUGlobalDputNI)];
 
+	MUAMMulticastNI                                 *_mu_ammulticast_ni;
+        uint8_t                                         _mu_ammulticast_ni_storage [sizeof(MUAMMulticastNI)];
+
         // Barrier factories
         MUMultiSyncFactory                             *_mu_msync_factory;
         uint8_t                                         _mu_msync_factory_storage[sizeof(MUMultiSyncFactory)];
+
+	OptBinomialBarrierFactory                      *_binomial_barrier_factory;
+	uint8_t           _binomial_barrier_factory_storage[sizeof(OptBinomialBarrierFactory)];
 
         // Broadcast factories
         MUMultiCastFactory                             *_mu_mcast_factory;

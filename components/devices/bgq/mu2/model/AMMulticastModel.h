@@ -12,6 +12,7 @@
 #include "components/devices/MulticastModel.h"
 #include "components/devices/bgq/mu2/Context.h"
 #include "components/devices/bgq/mu2/msg/InjectAMMulticast.h"
+#include "math/Memcpy.x.h"
 
 namespace PAMI {
   namespace Device {
@@ -29,11 +30,19 @@ namespace PAMI {
       public:
 
 	static const unsigned sizeof_msg = sizeof(InjectAMMulticast);
-
-	ShortAMMulticastModel (MU::Context    & context,
-			  pami_result_t  & status):
-	Interface::AMMulticastModel<ShortAMMulticastModel, MU::Context, sizeof(InjectAMMulticast)> (context, status),
-	_context(context)
+	static const unsigned channel_id = 0;
+	static const uint64_t alignment  = 32UL;
+	
+	ShortAMMulticastModel (pami_client_t    client,
+			       pami_context_t   context,
+			       MU::Context    & mucontext,
+			       pami_result_t  & status):
+	Interface::AMMulticastModel<ShortAMMulticastModel, MU::Context, sizeof(InjectAMMulticast)> (mucontext, status),
+	  _mucontext(mucontext),
+	  _channel(_mucontext.injectionGroup.channel[channel_id]),
+	  _myrank(__global.mapping.task()),
+	  _client (client),
+	  _ctxt (context)
 	  {
 	    status = init();
 	  }
@@ -43,7 +52,7 @@ namespace PAMI {
 	pami_result_t init () 
 	{
 	  // Zero-out the descriptor models before initialization
-	  memset((void *)&_singlepkt, 0, sizeof(_singlepkt));
+	  memset((void *)&_singlepkt, 0, sizeof(MUSPI_DescriptorBase));
 	  
 	  // --------------------------------------------------------------------
 	  // Set the common base descriptor fields
@@ -105,6 +114,31 @@ namespace PAMI {
 	  return PAMI_SUCCESS;
 	}
 	
+	pami_result_t registerMcastRecvFunction (int                                dispatch_id,
+						 pami_dispatch_multicast_function   recv_func,
+						 void                             * async_arg) 
+	{
+	  _dispatch        = dispatch_id;
+	  _recv_func       = recv_func;
+	  _async_arg       = async_arg;
+	  
+	  uint16_t id = 0;
+	  if (_mucontext.registerPacketHandler (_dispatch,
+					      dispatch_func,
+					      this,
+					      id))
+	    {
+	      MemoryFifoPacketHeader * hdr = NULL;	      
+	      hdr = (MemoryFifoPacketHeader *) & _singlepkt.PacketHeader;
+	      hdr->setDispatchId (id);	 
+	      return PAMI_SUCCESS;
+	    }
+	  
+	  fprintf (stderr, "Dispatch Failed\n");
+	  
+	  return PAMI_ERROR;
+	}
+
 	static int  dispatch_func (void   * metadata,
 				   void   * payload,
 				   size_t   bytes,
@@ -121,7 +155,7 @@ namespace PAMI {
 	  PAMI_assert (model != NULL);
 	  PAMI_assert (model->_recv_func != NULL);
 
-	  model->_recv_func (NULL,
+	  model->_recv_func (model->_ctxt,
 			     (const pami_quad_t *) payload,
 			     amhdr->metasize,
 			     amhdr->connection_id,
@@ -143,7 +177,7 @@ namespace PAMI {
 	  }
 
 	  if (cb_done.function)
-	    cb_done.function(NULL, cb_done.clientdata, PAMI_SUCCESS);
+	    cb_done.function(model->_ctxt, cb_done.clientdata, PAMI_SUCCESS);
 
 	  return PAMI_SUCCESS;
 	}
@@ -158,15 +192,14 @@ namespace PAMI {
 	  _singlepkt.clone(*desc);
 	  // Set the payload information.
 	  desc->setPayload (paddr, metasize*sizeof(pami_quad_t) + bytes);
-
-	  AMMulticastHdr amhdr;
-	  amhdr.root    = __global.mapping.task();
+	  
+	  MemoryFifoPacketHeader *hdr = (MemoryFifoPacketHeader*) &desc->PacketHeader;
+	  AMMulticastHdr amhdr; // = *(AMMulticastHdr*)hdr->getMetaData();
+	  amhdr.root    = _myrank;
 	  amhdr.bytes   = bytes;
 	  amhdr.metasize = metasize;
 	  amhdr.connection_id = connection_id;
-
-	  MemoryFifoPacketHeader *hdr = (MemoryFifoPacketHeader*) &desc->PacketHeader;
-	  hdr->setMetaData(&amhdr, sizeof(amhdr));	  
+	  hdr->setMetaData (&amhdr, sizeof(AMMulticastHdr));
 	}
 	
 	pami_result_t postImmediate (pami_task_t            * ranks,
@@ -183,20 +216,19 @@ namespace PAMI {
 	    return PAMI_ERROR;
 	  
 	  PAMI_assert (nranks > 0);	  	  
-	  InjChannel & channel = _context.injectionGroup.channel[0];
-	  size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
+	  size_t ndesc = _channel.getFreeDescriptorCountWithUpdate();
 	  
 	  if (ndesc < nranks)
 	    return PAMI_ERROR;
 	  
-	  MUSPI_DescriptorBase * desc = (MUSPI_DescriptorBase *)channel.getNextDescriptor ();	  
+	  MUSPI_DescriptorBase * desc = (MUSPI_DescriptorBase *)_channel.getNextDescriptor ();	  
 	  void * vaddr;
 	  uint64_t paddr;	  
 	  //get the payload of the last descriptor
-	  channel.getDescriptorPayload (desc + nranks - 1, vaddr, paddr);	  	  
+	  _channel.getDescriptorPayload (desc + nranks - 1, vaddr, paddr);	  	  
 	  prepareDesc (desc, paddr, bytes, metasize, connection_id);
 	  if (metasize > 0)
-	    memcpy (vaddr, metadata, metasize * sizeof(pami_quad_t));
+	    _int8Cpy (vaddr, metadata, metasize * sizeof(pami_quad_t));
 	  if (bytes > 0) 
 	    memcpy ((char*)vaddr + metasize*sizeof(pami_quad_t), src, bytes);	  
 
@@ -204,69 +236,54 @@ namespace PAMI {
 	  MUHWI_Destination_t   dest;
 	  uint16_t              rfifo;
 	  uint64_t              map;
-	  _context.pinFifo (ranks[0],
-			    0,
-			    dest,
-			    rfifo,
-			    map);	  
+	  _mucontext.pinFifo (ranks[0],
+			      0,
+			      dest,
+			      rfifo,
+			      map);	  
 	  
 	  // Initialize the injection fifo descriptor in-place.
 	  desc->setDestination (dest);
 	  desc->setRecFIFOId (rfifo);
 	  desc->setTorusInjectionFIFOMap (map);
-	  fprintf(stderr, "Sending msg from payload pa %lx\n", paddr);
-	  MUSPI_DescriptorDumpHex ((char *)"Immediate Multicast", desc);
+	  //fprintf(stderr, "Sending msg from payload pa %lx\n", paddr);
+	  //MUSPI_DescriptorDumpHex ((char *)"Immediate Multicast", desc);
 	  
 	  for (cidx = 1; cidx < nranks; cidx++) {
-	    MUSPI_DescriptorBase * memfifo = desc + cidx;
-	    _context.pinFifo (ranks[cidx],
-			      0,
-			      dest,
-			      rfifo,
-			      map);
+	    MUSPI_DescriptorBase * memfifo = desc + cidx;	    
+	    _mucontext.pinFifo (ranks[cidx],
+				0,
+				dest,
+				rfifo,
+				map);
 	    
 	    desc->clone(*memfifo);
-
-            // Initialize the injection fifo descriptor in-place.
+	    
+	    // Initialize the injection fifo descriptor in-place.
 	    memfifo->setDestination (dest);
-            memfifo->setRecFIFOId (rfifo);
+	    memfifo->setRecFIFOId (rfifo);
 	    memfifo->setTorusInjectionFIFOMap (map);
-	    MUSPI_DescriptorDumpHex ((char *)"Immediate Multicast", memfifo);
-	  } 
-	  
-	  //Advance all the descriptors
-	  channel.injFifoAdvanceDescMultiple (nranks);
+	    //MUSPI_DescriptorDumpHex ((char *)"Immediate Multicast", memfifo);
+	  }
 
+	  //Advance all the descriptors
+	  _channel.injFifoAdvanceDescMultiple (nranks);
 	  if (cb_done)
-	    cb_done (NULL, cookie, PAMI_SUCCESS);
+	    cb_done (_ctxt, cookie, PAMI_SUCCESS);
 	  
 	  return PAMI_SUCCESS;
 	}
 
-	pami_result_t registerMcastRecvFunction (int                         dispatch_id,
-						 pami_dispatch_multicast_function recv_func,
-						 void                       *async_arg) 
-	{
-	  _dispatch        = dispatch_id;
-	  _recv_func       = recv_func;
-	  _async_arg       = _async_arg;
-	  
-	  uint16_t id = 0;
-	  if (_context.registerPacketHandler (_dispatch,
-					      dispatch_func,
-					      this,
-					      id))
-	    {
-	      MemoryFifoPacketHeader * hdr = NULL;	      
-	      hdr = (MemoryFifoPacketHeader *) & _singlepkt.PacketHeader;
-	      hdr->setDispatchId (id);	 
-	      return PAMI_SUCCESS;
-	    }
-	  
-	  fprintf (stderr, "Dispatch Failed\n");
-	  
-	  return PAMI_ERROR;
-	}
+	pami_result_t postLong (uint8_t               (&state)[sizeof_msg],
+				pami_task_t            * ranks,
+				size_t                   nranks,
+				PipeWorkQueue          * src,
+				size_t                   bytes,
+				const pami_quad_t      * metadata,
+				size_t                   metasize,
+				pami_event_function      cb_done,
+				void                   * cookie,
+				unsigned                 connection_id);	
 	
 	pami_result_t postMulticast_impl(uint8_t               (&state)[sizeof_msg],
 					 pami_multicast_t    * mcast,
@@ -279,8 +296,13 @@ namespace PAMI {
 	  
 	  //PAMI_assert(ranks[0] == __global.mapping.task());	  
 	  PipeWorkQueue *spwq = (PipeWorkQueue *) mcast->src;
-	  char *src = spwq->bufferToConsume();
-	  uint32_t sbytes = spwq->bytesAvailableToConsume();
+	  char *src = NULL;
+	  unsigned sbytes = 0;
+	  
+	  if (spwq != NULL) {
+	    src = spwq->bufferToConsume();
+	    sbytes = spwq->bytesAvailableToConsume();
+	  }
 	  
 	  if (sbytes == mcast->bytes) {
 	    int rc = postImmediate (ranks,
@@ -297,40 +319,16 @@ namespace PAMI {
 	      return PAMI_SUCCESS;
 	  }
 
-	  if (mcast->msgcount*sizeof(pami_quad_t) + mcast->bytes > MU::Context::packet_payload_size)
-	    return PAMI_ERROR;
-
-	  fprintf (stderr, "Long Multicast\n");
-
-	  InjectAMMulticast *msg = new (state) InjectAMMulticast (_context,
-								  _context.injectionGroup.channel[0],
-								  ranks,
-								  nranks,
-								  spwq,
-								  mcast->bytes,
-								  mcast->msgcount,
-								  mcast->cb_done.function,	       
-								  mcast->cb_done.clientdata);
-
-	  MUSPI_DescriptorBase *desc = &msg->_desc;
-	  Kernel_MemoryRegion_t memRegion;
-	  int rc = Kernel_CreateMemoryRegion (&memRegion, msg->packetBuf(), mcast->bytes);
-	  PAMI_assert ( rc == 0 );
-	  uint64_t paddr = (uint64_t)memRegion.BasePa + ((uint64_t)src - (uint64_t)memRegion.BaseVa);
-
-	  prepareDesc (desc,  paddr, mcast->bytes, mcast->msgcount, mcast->connection_id);
-	  if (mcast->msgcount > 0)
-	    memcpy (msg->packetBuf(), mcast->msginfo, mcast->msgcount * sizeof(pami_quad_t));
-
-	  bool done = msg->advance();
-
-	  if (!done) {
-	    PAMI::Device::Generic::GenericThread *work = new (msg->workobj()) 
-	      PAMI::Device::Generic::GenericThread(advance, msg);
-	    _context.getProgressDevice()->postThread(work);
-	  }
-
-	  return PAMI_SUCCESS;
+	  return postLong (state,
+			   ranks,
+			   nranks,
+			   spwq,
+			   mcast->bytes,
+			   mcast->msginfo,
+			   mcast->msgcount,
+			   mcast->cb_done.function,	       
+			   mcast->cb_done.clientdata,
+			   mcast->connection_id);
 	}
 	
 	static pami_result_t advance (pami_context_t     context,
@@ -345,11 +343,63 @@ namespace PAMI {
 
       protected:
 	MUSPI_DescriptorBase                    _singlepkt;
-	MU::Context                           & _context;	
+	MU::Context                           & _mucontext;	
+	MU::InjChannel                        & _channel;
 	pami_dispatch_multicast_function        _recv_func;
 	void                                  * _async_arg;
 	uint32_t                                _dispatch;
+	uint32_t                                _myrank;
+	pami_client_t                           _client;
+	pami_context_t                          _ctxt;
       };
+
+      inline pami_result_t ShortAMMulticastModel::postLong (uint8_t               (&state)[sizeof_msg],
+							    pami_task_t            * ranks,
+							    size_t                   nranks,
+							    PipeWorkQueue          * spwq,
+							    size_t                   bytes,
+							    const pami_quad_t      * metadata,
+							    size_t                   metasize,
+							    pami_event_function      cb_done,
+							    void                   * cookie,
+							    unsigned                 connection_id) 
+	{
+	  if (metasize*sizeof(pami_quad_t) + bytes > MU::Context::packet_payload_size)
+	    return PAMI_ERROR;
+	
+	  //fprintf (stderr, "Long Multicast\n");
+	  InjectAMMulticast *msg = new (state) InjectAMMulticast (_mucontext,
+								  _channel,
+								  ranks,
+								  nranks,
+								  spwq,
+								  bytes,
+								  metasize,
+								  cb_done,	       
+								  cookie);
+	
+	  MUSPI_DescriptorBase *desc = &msg->_desc;
+	  Kernel_MemoryRegion_t memRegion;
+	  int rc = 0;
+	  rc = Kernel_CreateMemoryRegion (&memRegion, msg->packetBuf(), MU::Context::packet_payload_size);
+	  PAMI_assert ( rc == 0 );
+	  uint64_t paddr = (uint64_t)memRegion.BasePa + ((uint64_t)msg->packetBuf() - (uint64_t)memRegion.BaseVa);
+	  
+	  prepareDesc (desc,  paddr, bytes, metasize, connection_id);
+	  if (metasize > 0)
+	    memcpy (msg->packetBuf(), metadata, metasize * sizeof(pami_quad_t));
+	  
+	  bool done = msg->advance();
+	  
+	  if (!done) {
+	    PAMI::Device::Generic::GenericThread *work = new (msg->workobj()) 
+	      PAMI::Device::Generic::GenericThread(advance, msg);
+	    _mucontext.getProgressDevice()->postThread(work);
+	  }
+	  
+	  return PAMI_SUCCESS;
+	}
+    
     };
   };
 };

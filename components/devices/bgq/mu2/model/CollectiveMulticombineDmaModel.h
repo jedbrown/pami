@@ -22,8 +22,10 @@ namespace PAMI
 	public:
 	  static const uint32_t sizeof_msg = CollectiveDmaModelBase::sizeof_msg;
 	  
-	  CollectiveMulticombineDmaModel (MU::Context                 & device, 
-				       pami_result_t               & status) : 
+	  CollectiveMulticombineDmaModel (pami_client_t    client,
+					  pami_context_t   context,
+					  MU::Context                 & device, 
+					  pami_result_t               & status) : 
 	  CollectiveDmaModelBase(device, status),
 	    Interface::MulticombineModel<CollectiveMulticombineDmaModel, MU::Context, CollectiveDmaModelBase::sizeof_msg>  (device, status)
 	    {

@@ -47,6 +47,7 @@ namespace PAMI
       CKEY_COLLFACTORY     = 0,
       CKEY_BARRIERCOMPOSITE0,      // ?
       CKEY_BARRIERCOMPOSITE1,      // CCMI barrier cache
+      CKEY_BARRIERCOMPOSITE2,      // CCMI barrier cache
       CKEY_LOCALBARRIERCOMPOSITE,  // local sub-topologies only in the geometry
       CKEY_GLOBALBARRIERCOMPOSITE, // global sub-topologes only in the geometry
     } ckeys_t;                     // context keystore keys

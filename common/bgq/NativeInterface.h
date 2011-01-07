@@ -155,9 +155,9 @@ namespace PAMI
       _msync_status(PAMI_SUCCESS),
       _mcomb_status(PAMI_SUCCESS),
 
-      _mcast(device, _mcast_status),
-      _msync(device, _msync_status),
-      _mcomb(device, _mcomb_status),
+      _mcast(client, context, device, _mcast_status),
+      _msync(client, context, device, _msync_status),
+      _mcomb(client, context, device, _mcomb_status),
 
       _dispatch(-1U),
       _client(client),

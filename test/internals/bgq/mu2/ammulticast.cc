@@ -29,7 +29,7 @@ typedef PAMI::Device::MU::Context MuContext;
 
 extern void  *__mu_context_cache;
 
-#define MAX_ITER 1000
+#define MAX_ITER 100
 
 size_t done_count = 1;
 
@@ -54,7 +54,7 @@ void   dispatch_fn (pami_context_t        ctxt,
 		    pami_pipeworkqueue_t **rcvpwq,
 		    pami_callback_t       *cb_done)  
 {  
-  fprintf (stderr, "In Packet Dispatch\n");
+  //  fprintf (stderr, "In Packet Dispatch\n");
 
   srcp.reset();
   *rcvpwq = (pami_pipeworkqueue_t *) &srcp;
@@ -99,7 +99,7 @@ int main(int argc, char ** argv)
   uint8_t model_buf[sizeof(PAMI::Device::MU::ShortAMMulticastModel)] __attribute__((__aligned__(32)));
   pami_result_t status;
   uint8_t buf [PAMI::Device::MU::ShortAMMulticastModel::sizeof_msg];
-  PAMI::Device::MU::ShortAMMulticastModel &model = *(new (model_buf) PAMI::Device::MU::ShortAMMulticastModel(mu0, status));
+  PAMI::Device::MU::ShortAMMulticastModel &model = *(new (model_buf) PAMI::Device::MU::ShortAMMulticastModel(client, context, mu0, status));
   PAMI_assert (status == PAMI_SUCCESS);
 
   model.registerMcastRecvFunction (0, dispatch_fn, NULL);

@@ -142,7 +142,7 @@ namespace CCMI
               nph++;
             }
 
-#if 0  //Commenting out high radix till we have a fast packet M*
+#if 1  //Commenting out high radix till we have a fast packet M*
           //Capping the number of phases
           if ((nranks <= 4096) && (nph % 3) == 0)  //multiple of 3
             radix = 8;

@@ -76,7 +76,9 @@ namespace PAMI
 	static const unsigned LOCAL_MULTICAST = 0x2;
 	static const unsigned CALL_CONSUME_BYTES = 0x4;
 
-	MulticastDmaModel (MU::Context                 & device, 
+	MulticastDmaModel (pami_client_t    client,
+			   pami_context_t   context,
+			   MU::Context                 & device, 
 			   pami_result_t               & status) : 
 	  Interface::MulticastModel<MulticastDmaModel, MU::Context, sizeof(InjectDPutMulticast)> (device, status), 
 	  _mucontext(device),

@@ -174,7 +174,7 @@ namespace PAMI
       public:
 
         /// \see PAMI::Device::Interface::MulticastModel::MulticastModel
-        AxialMulticastModel (MU::Context & device, pami_result_t &status) :
+        AxialMulticastModel (pami_client_t client, pami_context_t context, MU::Context & device, pami_result_t &status) :
         Interface::AMMulticastModel < AxialMulticastModel<T_Msgdata_support, T_PWQ_support>, MU::Context, 4096 /*sizeof(state_data_t)*/ > (device, status),
         _device (device),
         _task_id(__global.mapping.task()),

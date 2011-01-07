@@ -80,12 +80,13 @@ namespace PAMI
             TRACE_FN_ENTER();
 
 	    //Wait for data to arrive in pipeworkqueue
-	    size_t bytes_available = _pwq->bytesAvailableToConsume();
-	    if (bytes_available != _bytes)
-	      return false;
-	    
-	    char *src = _pwq->bufferToConsume();
+	    size_t bytes_available = 0;
 	    if (_bytes > 0) {
+	      bytes_available = _pwq->bytesAvailableToConsume();
+	      if (bytes_available != _bytes)
+		return false;
+	      
+	      char *src = _pwq->bufferToConsume();
 	      memcpy (packetBuf() + _metasize*sizeof(pami_quad_t), src, _bytes);	  
 	    }
 
@@ -93,8 +94,7 @@ namespace PAMI
 	    TRACE_FORMAT("InjectAMMulticast:  advance:  ndesc=%zu\n",ndesc);
 
             // Clone the message descriptors directly into the injection fifo.
-            MUSPI_DescriptorBase * d =
-              (MUSPI_DescriptorBase *) _channel.getNextDescriptor ();
+            MUSPI_DescriptorBase * d = (MUSPI_DescriptorBase *) _channel.getNextDescriptor ();
 
             size_t i;
             uint64_t sequence = 0;

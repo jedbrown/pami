@@ -150,6 +150,7 @@ namespace CCMI
             cb_done->function   = NULL;
             cb_done->clientdata = NULL;
 
+            PAMI_assert (factory != NULL);
             PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry (ctxt, cdata->_comm);
 
             if (geometry == NULL)
