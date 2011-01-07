@@ -38,6 +38,10 @@
 #include "components/devices/MultisyncModel.h"
 #include "components/devices/MulticombineModel.h"
 
+//#include "components/devices/shmemcoll/msgs/ShortMcombMessage.h"
+//#include "components/devices/shmemcoll/msgs/ShortMcstMessage.h"
+#include "components/devices/shmemcoll/msgs/BaseMessage.h"
+
 
 #undef TRACE_ERR
 
@@ -70,7 +74,7 @@ namespace PAMI
         class Factory : public Interface::FactoryInterface<Factory, ShmemCollDevice, PAMI::Device::Generic::Device>
       {
         public:
-          static inline ShmemCollDevice * generate_impl (size_t clientid, size_t n, Memory::MemoryManager & mm, PAMI::Device::Generic::Device *gds)
+          static inline ShmemCollDevice * generate_impl (size_t clientid, size_t n, Memory::MemoryManager & mm, Generic::Device *gds)
           {
             ShmemCollDevice * devices;
             pami_result_t rc = __global.heap_mm->memalign((void **) & devices, 16, sizeof(*devices) * n);
@@ -91,7 +95,7 @@ namespace PAMI
               pami_client_t     client,
               pami_context_t    context,
               Memory::MemoryManager *mm,
-              PAMI::Device::Generic::Device * progress)
+              Generic::Device * progress)
           {
             return getDevice_impl(devices, clientid, contextid).init (clientid, contextid, client, context, mm, progress);
           };
@@ -136,7 +140,8 @@ namespace PAMI
           _ncontexts (ncontexts),
           _progress (progress),
           _local_progress_device (&(Generic::Device::Factory::getDevice (progress, 0, contextid))),
-          _desc_fifo(mm, clientid, contextid)
+          _desc_fifo(mm, clientid, contextid),
+          _adv_obj(NULL)
       {
         TRACE_ERR((stderr, "ShmemCollDevice() constructor\n"));
 
@@ -154,6 +159,7 @@ namespace PAMI
         inline size_t getLocalRank ();
 
         inline PAMI::Device::Generic::Device&  getProgressDevice();
+        inline PAMI::Device::Generic::Device*  getProgressDeviceNew();
 
         // ------------------------------------------
 
@@ -201,6 +207,13 @@ namespace PAMI
         PAMI::Device::Generic::Device * _local_progress_device;
         Shmem::ShmemCollDescFifo<T_Atomic>  _desc_fifo;
 
+        //Shmem::ShortMcombMessage<ShmemCollDevice<T_Atomic>, Shmem::ShmemCollDesc<T_Atomic> > *_adv_obj;
+        //inline void post_obj(Shmem::ShortMcombMessage<ShmemCollDevice<T_Atomic>, Shmem::ShmemCollDesc<T_Atomic> > *obj){_adv_obj = obj;};
+        /*Shmem::ShortMcstMessage<ShmemCollDevice<T_Atomic>, Shmem::ShmemCollDesc<T_Atomic> > *_adv_obj;
+        inline void post_obj(Shmem::ShortMcstMessage<ShmemCollDevice<T_Atomic>, Shmem::ShmemCollDesc<T_Atomic> > *obj){_adv_obj = obj;};*/
+        Shmem::BaseMessage<ShmemCollDevice<T_Atomic>, Shmem::ShmemCollDesc<T_Atomic> > *_adv_obj;
+        inline void post_obj(Shmem::BaseMessage<ShmemCollDevice<T_Atomic>, Shmem::ShmemCollDesc<T_Atomic> > *obj){_adv_obj = obj;};
+
         match_dispatch_t  _dispatch[MATCH_DISPATCH_SIZE];
 
         size_t            _num_procs;
@@ -219,6 +232,13 @@ namespace PAMI
       inline PAMI::Device::Generic::Device&  ShmemCollDevice<T_Atomic>::getProgressDevice()
       {
         return *_local_progress_device;
+        return *_progress;
+      }
+
+    template <class T_Atomic>
+      inline PAMI::Device::Generic::Device*  ShmemCollDevice<T_Atomic>::getProgressDeviceNew()
+      {
+        return _progress;
       }
 
     template <class T_Atomic>
@@ -249,6 +269,14 @@ namespace PAMI
       size_t ShmemCollDevice<T_Atomic>::advance ()
       {
         size_t events = 0;
+  
+        pami_result_t res = PAMI_EAGAIN;
+        if (_adv_obj != NULL)
+        {
+          res = _adv_obj->__advance(_context, (void*)_adv_obj);
+          if (res == PAMI_SUCCESS) _adv_obj = NULL;
+        }
+
 
         /* Releasing done descriptors for comm world communicators */
         if (!_desc_fifo.is_empty())

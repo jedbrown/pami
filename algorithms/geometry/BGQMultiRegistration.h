@@ -582,7 +582,7 @@ namespace PAMI
           if (phase == 0)
             {
 
-              if ((__global.useshmem()) && (__global.topology_local.size() > 1)
+              if ((__global.useshmem())  && (__global.topology_local.size() > 1)
                   && (__global.topology_local.size() == local_sub_topology->size())) /// \todo shmem doesn't seem to work on subnode topologies?
                 {
                   TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register Shmem local barrier\n", this));

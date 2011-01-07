@@ -242,6 +242,7 @@ namespace PAMI
       inline size_t advance(size_t clientid, size_t contextid)
       {
         size_t events = 0;
+        //unsigned long long t1 = PAMI_Wtimebase();
         events += PAMI::Device::Generic::Device::Factory::advance(_generics, clientid, contextid);
 
         if (__global.useshmem())
@@ -260,7 +261,9 @@ namespace PAMI
         events += PAMI::Device::AtomicBarrierDev::Factory::advance(_atombarr, clientid, contextid);
 
         if (__global.useMU())
-          events += Device::MU::Factory::advance(_mu, clientid, contextid);
+         events += Device::MU::Factory::advance(_mu, clientid, contextid);
+        //unsigned long long t2 = PAMI_Wtimebase() -t1;
+        //printf("overhead:%lld\n", t2);
 
         return events;
         events += Device::AtomicMutexDev::Factory::advance(_atmmtx, clientid, contextid);
@@ -1165,6 +1168,7 @@ namespace PAMI
 #endif
       uint8_t                      _multi_registration_storage[sizeof(CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI, MUAxialDputNI, MUShmemAxialDputNI >)];
       uint8_t                      _shmemMcastModel_storage[sizeof(ShmemMcstModel)];
+      //uint8_t                      _shmemMcastModel_storage[sizeof(ShmemMcstModel)];
       uint8_t                      _shmemMsyncModel_storage[sizeof(ShmemMsyncModel)];
       uint8_t                      _shmemMcombModel_storage[sizeof(ShmemMcombModel)];
       uint8_t                      _shmem_native_interface_storage[sizeof(AllSidedShmemNI)];

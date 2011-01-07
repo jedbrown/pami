@@ -11,7 +11,7 @@
 
 #include "Arch.h"
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) //fprintf x
+#define TRACE_ERR(x) // fprintf x
 #endif
 
 
@@ -23,7 +23,8 @@ namespace PAMI
     {
 
 //#define DESCRIPTOR_FIFO_SIZE    16
-#define DESCRIPTOR_FIFO_SIZE   64
+//#define DESCRIPTOR_FIFO_SIZE   64
+#define DESCRIPTOR_FIFO_SIZE  128
       //#define	BUFFER_SIZE_PER_TASK	256
 #define	BUFFER_SIZE_PER_TASK  64	
 #define NUM_LOCAL_TASKS		16
@@ -58,7 +59,8 @@ namespace PAMI
         inline ShmemRegion(uint64_t seq_id)
         { 
           seq_num = seq_id;
-          num_consumers = 0;
+          //num_consumers = 0;
+          num_consumers = __global.topology_local.size();
           flag = 0;
           master_done = 0;
           //state = FREE;
@@ -108,12 +110,12 @@ namespace PAMI
 
             inline ShmemCollDesc() {}
 
-            inline ShmemCollDesc(Memory::MemoryManager &mm, size_t clientid, size_t contextid, size_t index): _shared(NULL),_master(0), _storage(NULL), _my_seq_num(0),  _my_state(FREE)
+            inline ShmemCollDesc(Memory::MemoryManager &mm, size_t clientid, size_t contextid, size_t usageid, size_t index): _shared(NULL),_master(0), _storage(NULL), _my_seq_num(0),  _my_state(FREE)
           {
             char key[PAMI::Memory::MMKEYSIZE];
-            sprintf(key, "/ShmemCollDesc-synch-%zd-%zd-%zd", clientid, contextid,index);
+            sprintf(key, "/ShmemCollDesc-synch-%zd-%zd-%zd-%zd", clientid, contextid, usageid, index);
             _atomics.synch_counter.init(&mm, key);
-            sprintf(key, "/ShmemCollDesc-done-%zd-%zd-%zd", clientid, contextid,index);
+            sprintf(key, "/ShmemCollDesc-done-%zd-%zd-%zd-%zd", clientid, contextid, usageid, index);
             _atomics.done_counter.init(&mm, key);
 
             _shared = _shmem_region + index;
@@ -122,29 +124,12 @@ namespace PAMI
           };
             inline ~ShmemCollDesc() {}
 
-/*            inline void init(Memory::MemoryManager *mm, const char *key)
-            {
-              //char mmkey[PAMI::Memory::MMKEYSIZE];
-              //size_t keyl = sprintf(mmkey, "%s-x", key) - 1;
-              //mmkey[keyl] = 's';
-              //_synch_counter.init (); // in-place counter
-              _atomics.synch_counter.fetch_and_clear ();
-              //mmkey[keyl] = 'd';
-              //_done_counter.init (); // in-place counter
-              _atomics.done_counter.fetch_and_clear ();
-              //mmkey[keyl] = 'q';
-              //_seq_num.init (mm, mmkey);
-              //_seq_num.fetch_and_clear ();
-              //_num_consumers = 0;
-              _connid = -1;
-            }
-*/
             inline void reset()
             {
               _atomics.synch_counter.fetch_and_clear ();
               _atomics.done_counter.fetch_and_clear ();
               _shared->flag = 0;
-              _shared->num_consumers = 0;
+              _shared->num_consumers = __global.topology_local.size();;
             }
 
             inline void set_mcast_params(pami_multicast_t* mcast)
@@ -371,26 +356,12 @@ namespace PAMI
 
             for (size_t i = 0; i < DESCRIPTOR_FIFO_SIZE; i++)
             {
-              //_desc[i].init(mm, key);
-              //_desc[i].set_my_seq_id((uint64_t)i);
-              //new((void*)&_desc[i]) ShmemCollDesc<T_Atomic>(mm);
-              new (&_desc[i]) ShmemCollDesc<T_Atomic>(mm, clientid, contextid, i );
-              //_desc[i].set_shmem_region(_shmem_region + i);
-              //_desc[i].set_my_seq_id((uint64_t)i);
+              new (&_desc[i]) ShmemCollDesc<T_Atomic>(mm, clientid, contextid, 0, i );
             }
           }
 
             inline ~ShmemCollDescFifo()
-            {
-              //printf("releasing done descriptors\n");
-             /* while (_head < _tail)
-              {
-                if ((_desc[_head%DESCRIPTOR_FIFO_SIZE].get_my_state() == DONE) && !(_desc[_head%DESCRIPTOR_FIFO_SIZE].in_use()))
-                  _head++;
-              }
-              */
-              //printf("done releasing descriptors\n");
-            }
+            { }
 
             static void shmem_region_initialize (void       * memory,
                 size_t       bytes,
@@ -464,6 +435,7 @@ namespace PAMI
                     _head++;
                     _fifo_end++;
                     }
+                    else return;
                   }
                   else
                   {

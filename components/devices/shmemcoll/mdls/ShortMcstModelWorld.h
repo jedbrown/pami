@@ -24,14 +24,13 @@
 #include "components/devices/MulticastModel.h"
 #include "components/devices/ShmemCollInterface.h"
 #include "components/devices/shmemcoll/ShmemCollDevice.h"
-#include "components/devices/shmemcoll/msgs/BaseMessage.h"
 #include "components/devices/shmemcoll/msgs/ShortMcstMessage.h"
-#include "components/devices/shmemcoll/msgs/ShaddrMcstMessage.h"
+//#include "components/devices/shmemcoll/msgs/ShaddrMcstMessage.h"
 
 #undef TRACE_ERR
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) //fprintf x
+#define TRACE_ERR(x)  //fprintf x
 #endif
 
 //#define SHORT_MCST_OPT
@@ -44,27 +43,28 @@ namespace PAMI
     {
 
       template <class T_Device, class T_Desc>
-        class ShmemMcstModelWorld : public Interface::MulticastModel < ShmemMcstModelWorld<T_Device, T_Desc>, T_Device, sizeof(BaseMessage<T_Device, T_Desc>) >
+        class ShmemMcstModelWorld : public Interface::MulticastModel < ShmemMcstModelWorld<T_Device, T_Desc>, T_Device, sizeof(ShortMcstMessage<T_Device, T_Desc>) >
       {
 
         public:
           //Shmem Multicast Model
           ShmemMcstModelWorld (T_Device &device, pami_result_t &status) :
-            Interface::MulticastModel < ShmemMcstModelWorld<T_Device, T_Desc>, T_Device, sizeof(BaseMessage<T_Device, T_Desc>) > (device, status),
+            Interface::MulticastModel < ShmemMcstModelWorld<T_Device, T_Desc>, T_Device, sizeof(ShortMcstMessage<T_Device, T_Desc>) > (device, status),
             _device(device),
             _local_rank(__global.topology_local.rank2Index(__global.mapping.task())),
             _npeers(__global.topology_local.size())
 
-        { };
+        {
+          TRACE_ERR((stderr, "registering match dispatch function\n"));
+        };
 
-          static const size_t packet_model_state_bytes          = sizeof(BaseMessage<T_Device, T_Desc>);
-          static const size_t sizeof_msg                        = sizeof(BaseMessage<T_Device, T_Desc>);
+          static const size_t packet_model_state_bytes          = sizeof(ShortMcstMessage<T_Device, T_Desc>);
+          static const size_t sizeof_msg                        = sizeof(ShortMcstMessage<T_Device, T_Desc>);
           static const size_t short_msg_cutoff                  = 256;
-          //static const size_t short_msg_cutoff                  = 0;
           //static const size_t short_msg_cutoff                  = 512;
 
 
-          inline pami_result_t postMulticast_impl(uint8_t (&state)[sizeof(BaseMessage<T_Device, T_Desc>)],
+          inline pami_result_t postMulticast_impl(uint8_t (&state)[sizeof(ShortMcstMessage<T_Device, T_Desc>)],
               pami_multicast_t *mcast, void* devinfo)
           {
 
@@ -84,6 +84,17 @@ namespace PAMI
 
             if (mcast->bytes <= short_msg_cutoff)
             {
+              if (local_root == _local_rank)
+              {
+                void* buf = (void*) my_desc->get_buffer(local_root);
+                while (((PAMI::PipeWorkQueue *)mcast->src)->bytesAvailableToConsume() > 0) {} //spin wait for data to arrive
+                void* mybuf = ((PAMI::PipeWorkQueue *)mcast->src)->bufferToConsume();
+                memcpy(buf, mybuf, mcast->bytes);
+                TRACE_ERR((stderr, "copied bytes:%zu from %p to %p data[0]:%u\n", mcast->bytes, mybuf, buf, ((unsigned*)buf)[0]));
+                //my_desc->set_consumers(num_dst_ranks);
+                my_desc->signal_flag();
+              }
+              my_desc->set_my_state(Shmem::INIT);
 
 #ifdef SHORT_MCST_OPT
               res = ShortMcstMessage<T_Device, T_Desc>::short_msg_advance(my_desc, mcast, local_root, _local_rank);
@@ -97,54 +108,41 @@ namespace PAMI
 #else
               my_desc->set_mcast_params(mcast);
               my_desc->set_master(local_root);
-              my_desc->set_my_state(Shmem::INIT);
               ShortMcstMessage<T_Device, T_Desc> * obj = (ShortMcstMessage<T_Device, T_Desc> *) (&state[0]);
-              new (obj) ShortMcstMessage<T_Device, T_Desc> (_device.getContext(), my_desc,_local_rank);
-
-              _device.post_obj((BaseMessage<T_Device, T_Desc> *)obj);
-              /*PAMI::Device::Generic::Device &generic = _device.getProgressDevice();
-              generic.postThread(&(obj->_work));*/
+              new (obj) ShortMcstMessage<T_Device, T_Desc> (_device.getContext(), my_desc);
+              PAMI::Device::Generic::Device &generic = _device.getProgressDevice();
+              generic.postThread(&(obj->_work));
 #endif
             }
             else
             {
+#if 0
               my_desc->set_mcast_params(mcast);
               my_desc->set_master(local_root);
 
               if (local_root == _local_rank)
               {
-                my_desc->signal_done(); //master signals done earlier in this case
-                
                 Memregion memregion;
-                Shmem::McstControl* mcst_control = (Shmem::McstControl*) my_desc->get_buffer();
+                void* buf = (void*) my_desc->get_buffer(local_root);
                 void* mybuf = ((PAMI::PipeWorkQueue *)mcast->src)->bufferToConsume();
                 size_t bytes_out;
-
-                //? Have to create the entire memregion at once..does mcast->bytes include all the data bytes
                 memregion.createMemregion(&bytes_out, mcast->bytes, mybuf, 0);
-                PAMI_assert(bytes_out == mcast->bytes);
                 void* phy_addr = (void*)memregion.getBasePhysicalAddress();
                 void * global_vaddr = NULL;
                 uint32_t rc = 0;
                 rc = Kernel_Physical2GlobalVirtual (phy_addr, &global_vaddr);
-                PAMI_assert(rc == 0);
-                TRACE_FORMAT("buffer to consume:va:%p ga:%p", mybuf, global_vaddr);
+                assert(rc == 0);
 
-                mcst_control->glob_src_buffer = global_vaddr;
-                mcst_control->incoming_bytes = 0;
-                //my_desc->set_consumers(num_dst_ranks);
-                my_desc->reset_master_done();
-                mem_barrier();
-
-                my_desc->signal_flag();
+                memcpy(buf, &global_vaddr, sizeof(global_vaddr));
+                TRACE_ERR((stderr, "copied global_vaddr:%p to %p \n", global_vaddr, buf));
+                my_desc->set_consumers(num_dst_ranks);
+                my_desc->set_state(Shmem::INIT);
               }
 
-              ShaddrMcstMessage<T_Device, T_Desc> * obj = (ShaddrMcstMessage<T_Device, T_Desc> *) (&state[0]);
-              new (obj) ShaddrMcstMessage<T_Device, T_Desc> ( _device.getContext(), my_desc, _local_rank);
-              _device.post_obj((BaseMessage<T_Device, T_Desc> *)obj);
-              /*PAMI::Device::Generic::Device &generic = _device.getProgressDevice();
-              generic.postThread(&(obj->_work));*/
-
+              ShortMcstMessageShaddr<T_Device, T_Desc> * obj = (ShortMcstMessageShaddr<T_Device, T_Desc> *) (&state[0]);
+              new (obj) ShortMcstMessageShaddr<T_Device, T_Desc> (&_device, my_desc, my_desc);
+              _device.post(obj);
+#endif
             }
 
             return PAMI_SUCCESS;

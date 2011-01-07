@@ -40,7 +40,7 @@ namespace PAMI
 #define SHMEMBUF_SHORT(x)	((double*) my_desc->get_buffer(x))
 
       template <class T_Device, class T_Desc>
-        class ShortMcombMessage
+        class ShortMcombMessage: public BaseMessage<T_Device, T_Desc>
         {
           public:
             //currently optimized to a many-to-one combine
@@ -90,32 +90,33 @@ namespace PAMI
                 memcpy((void*)my_dst, (void*)src, bytes);
                 rcv->produceBytes(bytes);
                 TRACE_ERR((stderr, "Finished gathering results, signalling done\n"));
-                my_desc->signal_done();
               }
+                my_desc->signal_done();
 
               return PAMI_SUCCESS;
             }
 
-          protected:
+          //protected:
+            public:
             // invoked by the thread object
             /// \see SendQueue::Message::_work
             static pami_result_t __advance (pami_context_t context, void * cookie)
             {
               ShortMcombMessage * msg = (ShortMcombMessage *) cookie;
               return msg->advance();
-            };
+            }
 
-            inline pami_result_t advance ()
+            //This advance is for reduction to root locally in a node
+            inline virtual pami_result_t advance ()
             {
 
               T_Desc* _my_desc = this->_my_desc;
               pami_multicombine_t & mcomb_params = _my_desc->get_mcomb_params();
               size_t num_src_ranks = ((PAMI::Topology*)mcomb_params.data_participants)->size();
 
-              if (_my_desc->arrived_peers() != (unsigned) num_src_ranks)
-                return PAMI_EAGAIN;
+              //if (_my_desc->arrived_peers() != (unsigned) num_src_ranks)
+              //  return PAMI_EAGAIN;
               //while (_my_desc->arrived_peers() != (unsigned)num_src_ranks) {};
-              TRACE_ERR((stderr, "all peers:%zu arrived, starting the blocking Shmem Mcomb protocol\n", num_src_ranks));
 
               unsigned _npeers = __global.topology_local.size();
               unsigned _task = __global.mapping.task();
@@ -126,8 +127,13 @@ namespace PAMI
               size_t bytes = mcomb_params.count << pami_dt_shift[mcomb_params.dtype];
               double* dst = (double*)(rcv->bufferToConsume());
 
+
               if (_local_rank == 0)
               {
+
+                if (_my_desc->arrived_peers() != (unsigned) num_src_ranks)
+                  return PAMI_EAGAIN;
+
                 if (_npeers == 4)
                 {
 
@@ -161,7 +167,6 @@ namespace PAMI
               }
 
               /* Reduction over...start gathering the results */
-
               if (((PAMI::Topology*)mcomb_params.results_participants)->isRankMember(_task))
               {
                 while (_my_desc->get_flag() == 0) {}; //wait till reduction is done
@@ -173,31 +178,24 @@ namespace PAMI
                 TRACE_ERR((stderr, "Finished gathering results, signalling done\n"));
               }
 
-              if (((PAMI::Topology*)mcomb_params.results_participants)->size() > 1){
-                _my_desc->signal_done();
-                //TODO..remove this??
-                //while (_my_desc->in_use()) {}; //wait for everyone to signal done
-                //this->setStatus (PAMI::Device::Done);
-              }
-
+              _my_desc->signal_done();
               _my_desc->set_my_state(Shmem::DONE);
-              mcomb_params.cb_done.function(_context, mcomb_params.cb_done.clientdata, PAMI_SUCCESS);
+              mcomb_params.cb_done.function(this->_context, mcomb_params.cb_done.clientdata, PAMI_SUCCESS);
               return PAMI_SUCCESS;
 
             }
 
-
           public:
-            inline ShortMcombMessage (pami_context_t context, T_Desc* desc):
-              _context(context), _my_desc(desc), _work(ShortMcombMessage::__advance, this)
+            inline ShortMcombMessage (pami_context_t context, T_Desc* desc, unsigned local_rank):
+            BaseMessage<T_Device, T_Desc>(context, desc, ShortMcombMessage::__advance, (void*)this, local_rank)
 
           {
             TRACE_ERR((stderr, "<> Shmem::ShortMcombMessage\n"));
           };
 
-            pami_context_t                      _context;
+            /*pami_context_t                      _context;
             T_Desc                              *_my_desc;
-            PAMI::Device::Generic::GenericThread _work;
+            PAMI::Device::Generic::GenericThread _work;*/
 
         };  // PAMI::Device::McombMessageShmem class
 
