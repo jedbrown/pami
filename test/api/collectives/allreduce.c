@@ -13,7 +13,7 @@
 
 #include "../pami_util.h"
 
-/*define this if you want to validate the data for unsigned sums */
+/*define this if you want to validate the data */
 #define CHECK_DATA
 
 #define FULL_TEST
@@ -178,6 +178,15 @@ void initialize_sndbuf (void *buf, int count, int op, int dt, int task_id)
           ibuf[i] = i;
         }
     }
+  else if (op_array[op] == PAMI_SUM && dt_array[dt] == PAMI_DOUBLE)
+  {
+    double *dbuf = (double *)  buf;
+
+    for (i = 0; i < count; i++)
+    {
+      dbuf[i] = 1.0*i;
+    }
+  }
   else
     {
       size_t sz;
@@ -207,6 +216,23 @@ int check_rcvbuf (void *buf, int count, int op, int dt, int num_tasks)
             }
         }
     }
+  else if (op_array[op] == PAMI_SUM && dt_array[dt] == PAMI_DOUBLE)
+  {
+    double *rbuf = (double *)  buf;
+
+    for (i = 0; i < count; i++)
+    {
+      if (rbuf[i] != 1.0 * i * num_tasks)
+      {
+        fprintf(stderr, "Check(%d) failed rbuf[%d] %f != %f\n", count, i, rbuf[i], (double)1.0*num_tasks);
+        exit(0);
+        err = -1;
+#ifndef FULL_TEST
+        return err;
+#endif
+      }
+    }
+  }
 
   return err;
 }
@@ -350,7 +376,7 @@ int main(int argc, char*argv[])
     for (j = 0; j < dt_count; j++)
       validTable[i][j] = 0;
 
-  //validTable[OP_SUM][DT_UNSIGNED_INT] = 1;
+  validTable[OP_SUM][DT_UNSIGNED_INT] = 1;
   validTable[OP_SUM][DT_DOUBLE] = 1;
 
 #endif
@@ -380,9 +406,8 @@ int main(int argc, char*argv[])
       allreduce.cmd.xfer_allreduce.rtype     = PAMI_BYTE;
       allreduce.cmd.xfer_allreduce.rtypecount = 0;
 
-
-
       for (dt = 0; dt < dt_count; dt++)
+      {
         for (op = 0; op < op_count; op++)
           {
             if (validTable[op][dt])
@@ -397,6 +422,11 @@ int main(int argc, char*argv[])
                     long long dataSent = i * sz;
                     int niter;
 
+                    allreduce.cmd.xfer_allreduce.stypecount = dataSent;
+                    allreduce.cmd.xfer_allreduce.rtypecount = dataSent;
+                    allreduce.cmd.xfer_allreduce.dt = dt_array[dt];
+                    allreduce.cmd.xfer_allreduce.op = op_array[op];
+
                     if (dataSent < CUTOFF)
                       niter = NITERLAT;
                     else
@@ -410,10 +440,6 @@ int main(int argc, char*argv[])
 
                     for (j = 0; j < niter; j++)
                       {
-                        allreduce.cmd.xfer_allreduce.stypecount = dataSent;
-                        allreduce.cmd.xfer_allreduce.rtypecount = dataSent;
-                        allreduce.cmd.xfer_allreduce.dt = dt_array[dt];
-                        allreduce.cmd.xfer_allreduce.op = op_array[op];
                         blocking_coll(context, &allreduce, &allreduce_poll_flag);
                       }
 
@@ -422,10 +448,7 @@ int main(int argc, char*argv[])
 
 #ifdef CHECK_DATA
                     int rc = check_rcvbuf (rbuf, i, op, dt, num_tasks);
-
-                    /*assert (rc == 0); */
                     if (rc) fprintf(stderr, "FAILED validation\n");
-
 #endif
 
                     usec = (tf - ti) / (double)niter;
@@ -442,7 +465,8 @@ int main(int argc, char*argv[])
                   }
               }
           }
-        }
+      }
+  }
 
   rc = pami_shutdown(&client, &context, &num_contexts);
   free(bar_always_works_algo);

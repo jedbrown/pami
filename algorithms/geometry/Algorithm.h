@@ -139,7 +139,7 @@ namespace PAMI
         }
         inline pami_result_t lengths(size_t             *lists_lengths)
         {
-          TRACE_ERR((stderr, "<%p>AlgoLists::lengths()\n", this));
+          TRACE_ERR((stderr, "<%p>AlgoLists::lengths() _num_algo %d, _num_algo_check %d\n", this, _num_algo,_num_algo_check));
           lists_lengths[0] = _num_algo;
           lists_lengths[1] = _num_algo_check;
           return PAMI_SUCCESS;
