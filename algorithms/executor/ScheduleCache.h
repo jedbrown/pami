@@ -169,9 +169,8 @@ namespace CCMI
 
         PAMI::Topology  *getSrcTopology (unsigned phase)
         {
-          if ((phase < _start) || (phase >= _start + _nphases))
-            fprintf(stderr, "<%p>phase not in range %d, %d, %d\n", this, phase, _start, _start + _nphases);
-
+          //if ((phase < _start) || (phase >= _start + _nphases))
+	  //fprintf(stderr, "<%p>phase not in range %d, %d, %d\n", this, phase, _start, _start + _nphases);
           CCMI_assert ((phase >= _start) && (phase < _start + _nphases));
           return _srctopologies[phase];
         }

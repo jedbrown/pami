@@ -550,13 +550,16 @@ namespace PAMI
           TRACE_ERR((stderr, "<%p>Common::setKey(%d, %p)\n", this, key, value));
           _kvstore[key] = value;
         }
-        inline void                     *getKey_impl(gkeys_t key)
-        {
-          void * value = _kvstore[key];
-          TRACE_ERR((stderr, "<%p>Common::getKey(%d, %p)\n", this, key, value));
-          return value;
-        }
 
+	inline void  * getKey_impl(gkeys_t key)
+	{
+	  void * value = _kvstore[key];
+	  TRACE_ERR((stderr, "<%p>Common::getKey(%d, %p)\n", this, key, value));
+	  return value;
+	}
+	
+	void  * getKey_impl(size_t context_id, ckeys_t key) __attribute__((noinline, weak));
+	
         inline void                      setKey_impl(size_t context_id, ckeys_t key, void*value)
         {
           PAMI_assert(PAMI_GEOMETRY_NUMALGOLISTS > context_id);
@@ -564,13 +567,6 @@ namespace PAMI
           _kvcstore[context_id][key] = value;
         }
 
-        inline void                     *getKey_impl(size_t context_id, ckeys_t key)
-        {
-          PAMI_assert(PAMI_GEOMETRY_NUMALGOLISTS > context_id);
-          void * value = _kvcstore[context_id][key];
-          TRACE_ERR((stderr, "<%p>Common::getKey(%d, %p)\n", this, key, value));
-          return value;
-        }
 
         inline AlgoLists<Geometry<PAMI::Geometry::Common> > * algorithms_get_lists(size_t context_id,
                                                                                    pami_xfer_type_t  colltype)
@@ -894,7 +890,16 @@ namespace PAMI
             }
         }
 
-    }; // class Geometry
+    }; // class Geometry    
+
+    void  * Common::getKey_impl(size_t context_id, ckeys_t key)
+    {
+      PAMI_assert(PAMI_GEOMETRY_NUMALGOLISTS > context_id);
+      void * value = _kvcstore[context_id][key];
+      TRACE_ERR((stderr, "<%p>Common::getKey(%d, %p)\n", this, key, value));
+      return value;
+    }
+
   };  // namespace Geometry
 }; // namespace PAMI
 

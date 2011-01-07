@@ -550,7 +550,7 @@ namespace PAMI
 
 	      _binomial_barrier_factory = NULL;
 	      if (_mu_ammulticast_ni) {
-		_binomial_barrier_factory = new (_binomial_barrier_factory_storage)  OptBinomialBarrierFactory (&_sconnmgr, _mu_ammulticast_ni, OptBinomialBarrier::cb_head);
+		_binomial_barrier_factory = new (_binomial_barrier_factory_storage)  OptBinomialBarrierFactory (&_sconnmgr, _mu_ammulticast_ni, OptBinomialBarrierFactory::cb_head);
 		_binomial_barrier_factory->setMapIdToGeometry(mapidtogeometry);
 	      }
 

@@ -256,17 +256,15 @@ inline void  CCMI::Executor::BarrierExec::notifyRecv  (unsigned             src,
               hdr->_phase, _phase, _start, _nphases, _phasevec[hdr->_phase][hdr->_iteration],  _cache.getSrcTopology(hdr->_phase)->size()));
 
   //Start has not been called, just record recv and return
-  if (_phase == _start + _nphases)
+  if (unlikely(_phase == _start + _nphases))
     return;
 
   ///Check the current iteration's number of messages received. Have we received all messages
-  if ((size_t)_phasevec[_phase][_iteration] >= _cache.getSrcTopology(_phase)->size())
+  if ( ((size_t)_phasevec[_phase][_iteration] >= _cache.getSrcTopology(_phase)->size())
+       && _senddone )
     {
-      if (_senddone)
-        {
-          _phase ++;
-          sendNext();
-        }
+      _phase ++;
+      sendNext();
     }
 }
 

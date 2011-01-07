@@ -194,7 +194,6 @@ namespace PAMI
             return (*raw16)&0x0FFF; //Use 12 bits for dispatch id
           };
 
-
           ///
           /// \brief Set the Metadata correspoding to this
           /// packet. Metadata will be aligned to the input parameter

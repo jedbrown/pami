@@ -46,6 +46,8 @@ namespace CCMI
               CollectiveProtocolFactoryT<T, get_metadata, C>(cmgr, native, cb_head)
           {
             TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
+	    _cached_object = NULL;
+	    _cached_id     = (unsigned) -1;
           }
           virtual Executor::Composite * generate(pami_geometry_t              geometry,
                                                  void                      * cmd)
@@ -67,6 +69,70 @@ namespace CCMI
 
             return c;
           }
+
+	  ///
+	  ///  \brief Cache the barrier executor for the most recent geometry
+	  ///  \brief They pami context
+	  ///  \param[in] id communicator id of the geometry
+	  ///
+	  void * getGeometryObject (pami_context_t ctxt, unsigned id)
+	  {
+	    if (_cached_object && id  == _cached_id)
+	      return _cached_object;
+	    
+	    PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) this->getGeometry(ctxt, id); 
+	    _cached_object =  (geometry) ? (geometry->getKey(0, T_Key)) : NULL;
+	    _cached_id     =  id;
+	    
+	    return _cached_object;
+	  }
+
+	  static void    cb_head   (pami_context_t         ctxt,
+                                    const pami_quad_t    * info,
+                                    unsigned              count,
+                                    unsigned              conn_id,
+                                    size_t                peer,
+                                    size_t                sndlen,
+                                    void                * arg,
+                                    size_t              * rcvlen,
+                                    pami_pipeworkqueue_t **recvpwq,
+                                    PAMI_Callback_t  *     cb_done)
+	  {
+            TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
+            CollHeaderData  *cdata = (CollHeaderData *) info;
+            BarrierFactoryT *factory = (BarrierFactoryT *) arg;
+
+            *rcvlen    = 0;
+            *recvpwq   = 0;
+            cb_done->function   = NULL;
+            cb_done->clientdata = NULL;
+
+            PAMI_assert (factory != NULL);
+            //PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry (ctxt, cdata->_comm);
+	    void *object = factory->getGeometryObject(ctxt, cdata->_comm);
+
+            if (object == NULL)
+            {
+	      //Geoemtry doesnt exist
+	      registerunexpbarrier(ctxt,
+				   cdata->_comm,
+				   (pami_quad_t&)*info,
+				   peer,
+				   (unsigned) PAMI::Geometry::GKEY_UEBARRIERCOMPOSITE1);
+	      return;
+	    }
+
+            T *composite = (T*) object;
+            TRACE_INIT((stderr, "<%p>CCMI::Adaptor::Barrier::BarrierFactoryT::cb_head(%d,%p)\n",
+                        factory, cdata->_comm, composite));
+	    
+            //Override poly morphism
+            composite->_myexecutor.notifyRecv (peer, *info, NULL, 0);
+          }
+	
+        protected:
+	  unsigned                             _cached_id;
+	  void                               * _cached_object;
       };
 
       ///
@@ -75,6 +141,7 @@ namespace CCMI
       template < class T_Schedule, AnalyzeFn afn, PAMI::Geometry::topologyIndex_t T_Geometry_Index = PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX, PAMI::Geometry::ckeys_t T_Key = PAMI::Geometry::CKEY_BARRIERCOMPOSITE1 >
       class BarrierT : public CCMI::Executor::Composite
       {
+        public:
           ///
           /// \brief The executor for barrier protocol
           ///
@@ -84,7 +151,6 @@ namespace CCMI
           ///
           T_Schedule                          _myschedule;
 
-        public:
           ///
           /// \brief Constructor for non-blocking barrier protocols.
           ///
@@ -130,52 +196,6 @@ namespace CCMI
             _myexecutor.notifyRecv (src, metadata, NULL, NULL);
           }
 
-          static void    cb_head   (pami_context_t         ctxt,
-                                    const pami_quad_t    * info,
-                                    unsigned              count,
-                                    unsigned              conn_id,
-                                    size_t                peer,
-                                    size_t                sndlen,
-                                    void                * arg,
-                                    size_t              * rcvlen,
-                                    pami_pipeworkqueue_t **recvpwq,
-                                    PAMI_Callback_t  *     cb_done)
-          {
-            TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
-            CollHeaderData  *cdata = (CollHeaderData *) info;
-            CollectiveProtocolFactory *factory = (CollectiveProtocolFactory *) arg;
-
-            *rcvlen    = 0;
-            *recvpwq   = 0;
-            cb_done->function   = NULL;
-            cb_done->clientdata = NULL;
-
-            PAMI_assert (factory != NULL);
-            PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry (ctxt, cdata->_comm);
-
-            if (geometry == NULL)
-              {
-                //Geoemtry doesnt exist
-                registerunexpbarrier(ctxt,
-                                     cdata->_comm,
-                                     (pami_quad_t&)*info,
-                                     peer,
-                                     (unsigned) PAMI::Geometry::GKEY_UEBARRIERCOMPOSITE1);
-                return;
-              }
-
-            PAMI_assert(geometry != NULL);
-            BarrierT *composite = (BarrierT*) geometry->getKey((size_t)0, /// \todo does NOT support multicontext
-                                                               T_Key);
-            CCMI_assert (composite != NULL);
-            TRACE_INIT((stderr, "<%p>CCMI::Adaptor::Barrier::BarrierFactoryT::cb_head(%d,%p)\n",
-                        factory, cdata->_comm, composite));
-
-            //Override poly morphism
-            composite->_myexecutor.notifyRecv (peer, *info, NULL, 0);
-
-            return;
-          }
       }; //-BarrierT
 
 //////////////////////////////////////////////////////////////////////////////

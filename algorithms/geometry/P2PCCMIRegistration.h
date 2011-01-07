@@ -364,7 +364,7 @@ namespace PAMI
             // ----------------------------------------------------
             // Setup and Construct a binomial barrier factory from active message ni and p2p protocol
             setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PBarrier::BinomialBarrierFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device,_binomial_barrier_factory);
-            new ((void*)_binomial_barrier_factory) CCMI::Adaptor::P2PBarrier::BinomialBarrierFactory(&_sconnmgr, ni_am, CCMI::Adaptor::P2PBarrier::BinomialBarrier::cb_head);
+            new ((void*)_binomial_barrier_factory) CCMI::Adaptor::P2PBarrier::BinomialBarrierFactory(&_sconnmgr, ni_am, CCMI::Adaptor::P2PBarrier::BinomialBarrierFactory::cb_head);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
@@ -625,7 +625,7 @@ namespace PAMI
             new ((void*)_binomial_barrier_factory)
               CCMI::Adaptor::P2PBarrier::BinomialBarrierFactory(&_sconnmgr,
                                                                 ni_am,
-                                                                CCMI::Adaptor::P2PBarrier::BinomialBarrier::cb_head);
+                                                                CCMI::Adaptor::P2PBarrier::BinomialBarrierFactory::cb_head);
 
 
             // Setup Broadcasts

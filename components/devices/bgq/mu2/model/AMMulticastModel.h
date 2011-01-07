@@ -27,6 +27,7 @@ namespace PAMI {
 	  uint16_t     metasize;
 	  uint64_t     connection_id; /* Permit a 64 bit connection id */
 	};
+
       public:
 
 	static const unsigned sizeof_msg = sizeof(InjectAMMulticast);
@@ -152,8 +153,8 @@ namespace PAMI {
 	  size_t                  rcvlen;
 	  pami_pipeworkqueue_t  * pwqptr;
 	  
-	  PAMI_assert (model != NULL);
-	  PAMI_assert (model->_recv_func != NULL);
+	  //PAMI_assert (model != NULL);
+	  //PAMI_assert (model->_recv_func != NULL);
 
 	  model->_recv_func (model->_ctxt,
 			     (const pami_quad_t *) payload,
@@ -167,8 +168,8 @@ namespace PAMI {
 			     &cb_done);
 	  
 	  if (rcvlen > 0) {
-	    PAMI_assert (pwqptr != NULL);
-	    PAMI_assert (rcvlen <= amhdr->bytes);
+	    //PAMI_assert (pwqptr != NULL);
+	    //PAMI_assert (rcvlen <= amhdr->bytes);
 
 	    PipeWorkQueue *pwq = (PipeWorkQueue *)pwqptr;
 	    char *buf = pwq->bufferToProduce();
@@ -194,12 +195,12 @@ namespace PAMI {
 	  desc->setPayload (paddr, metasize*sizeof(pami_quad_t) + bytes);
 	  
 	  MemoryFifoPacketHeader *hdr = (MemoryFifoPacketHeader*) &desc->PacketHeader;
-	  AMMulticastHdr amhdr; // = *(AMMulticastHdr*)hdr->getMetaData();
-	  amhdr.root    = _myrank;
-	  amhdr.bytes   = bytes;
-	  amhdr.metasize = metasize;
+	  AMMulticastHdr amhdr;
+	  amhdr.root          = _myrank;
+	  amhdr.bytes         = bytes;
+	  amhdr.metasize      = metasize;
 	  amhdr.connection_id = connection_id;
-	  hdr->setMetaData (&amhdr, sizeof(AMMulticastHdr));
+	  hdr->setMetaData(&amhdr, sizeof(AMMulticastHdr));
 	}
 	
 	pami_result_t postImmediate (pami_task_t            * ranks,
@@ -210,70 +211,8 @@ namespace PAMI {
 				     size_t                   metasize,
 				     pami_event_function      cb_done,
 				     void                   * cookie,
-				     unsigned                 connection_id) 
-	{	  
-	  if (metasize*sizeof(pami_quad_t) + bytes > MU::Context::immediate_payload_size)
-	    return PAMI_ERROR;
-	  
-	  PAMI_assert (nranks > 0);	  	  
-	  size_t ndesc = _channel.getFreeDescriptorCountWithUpdate();
-	  
-	  if (ndesc < nranks)
-	    return PAMI_ERROR;
-	  
-	  MUSPI_DescriptorBase * desc = (MUSPI_DescriptorBase *)_channel.getNextDescriptor ();	  
-	  void * vaddr;
-	  uint64_t paddr;	  
-	  //get the payload of the last descriptor
-	  _channel.getDescriptorPayload (desc + nranks - 1, vaddr, paddr);	  	  
-	  prepareDesc (desc, paddr, bytes, metasize, connection_id);
-	  if (metasize > 0)
-	    _int8Cpy (vaddr, metadata, metasize * sizeof(pami_quad_t));
-	  if (bytes > 0) 
-	    memcpy ((char*)vaddr + metasize*sizeof(pami_quad_t), src, bytes);	  
-
-	  size_t cidx = 0;
-	  MUHWI_Destination_t   dest;
-	  uint16_t              rfifo;
-	  uint64_t              map;
-	  _mucontext.pinFifo (ranks[0],
-			      0,
-			      dest,
-			      rfifo,
-			      map);	  
-	  
-	  // Initialize the injection fifo descriptor in-place.
-	  desc->setDestination (dest);
-	  desc->setRecFIFOId (rfifo);
-	  desc->setTorusInjectionFIFOMap (map);
-	  //fprintf(stderr, "Sending msg from payload pa %lx\n", paddr);
-	  //MUSPI_DescriptorDumpHex ((char *)"Immediate Multicast", desc);
-	  
-	  for (cidx = 1; cidx < nranks; cidx++) {
-	    MUSPI_DescriptorBase * memfifo = desc + cidx;	    
-	    _mucontext.pinFifo (ranks[cidx],
-				0,
-				dest,
-				rfifo,
-				map);
-	    
-	    desc->clone(*memfifo);
-	    
-	    // Initialize the injection fifo descriptor in-place.
-	    memfifo->setDestination (dest);
-	    memfifo->setRecFIFOId (rfifo);
-	    memfifo->setTorusInjectionFIFOMap (map);
-	    //MUSPI_DescriptorDumpHex ((char *)"Immediate Multicast", memfifo);
-	  }
-
-	  //Advance all the descriptors
-	  _channel.injFifoAdvanceDescMultiple (nranks);
-	  if (cb_done)
-	    cb_done (_ctxt, cookie, PAMI_SUCCESS);
-	  
-	  return PAMI_SUCCESS;
-	}
-
+				     unsigned                 connection_id) __attribute__((noinline, weak)); 
+	
 	pami_result_t postLong (uint8_t               (&state)[sizeof_msg],
 				pami_task_t            * ranks,
 				size_t                   nranks,
@@ -283,7 +222,7 @@ namespace PAMI {
 				size_t                   metasize,
 				pami_event_function      cb_done,
 				void                   * cookie,
-				unsigned                 connection_id);	
+				unsigned                 connection_id) __attribute__((noinline, weak));	
 	
 	pami_result_t postMulticast_impl(uint8_t               (&state)[sizeof_msg],
 					 pami_multicast_t    * mcast,
@@ -353,16 +292,93 @@ namespace PAMI {
 	pami_context_t                          _ctxt;
       };
 
-      inline pami_result_t ShortAMMulticastModel::postLong (uint8_t               (&state)[sizeof_msg],
-							    pami_task_t            * ranks,
-							    size_t                   nranks,
-							    PipeWorkQueue          * spwq,
-							    size_t                   bytes,
-							    const pami_quad_t      * metadata,
-							    size_t                   metasize,
-							    pami_event_function      cb_done,
-							    void                   * cookie,
-							    unsigned                 connection_id) 
+      pami_result_t ShortAMMulticastModel::postImmediate (pami_task_t            * ranks,
+							  size_t                   nranks,
+							  char                   * src,
+							  size_t                   bytes,
+							  const pami_quad_t      * metadata,
+							  size_t                   metasize,
+							  pami_event_function      cb_done,
+							  void                   * cookie,
+							  unsigned                 connection_id) 
+      {	  
+	if (unlikely(metasize*sizeof(pami_quad_t) + bytes > MU::Context::immediate_payload_size))
+	  return PAMI_ERROR;
+	
+	//PAMI_assert (nranks > 0);	  	  
+	size_t ndesc = _channel.getFreeDescriptorCountWithUpdate();
+	
+	if (unlikely(ndesc < nranks))
+	  return PAMI_ERROR;
+	
+	MUSPI_DescriptorBase * desc = (MUSPI_DescriptorBase *)_channel.getNextDescriptor ();	  
+	void * vaddr;
+	uint64_t paddr;	  
+	//get the payload of the last descriptor
+	_channel.getDescriptorPayload (desc + nranks - 1, vaddr, paddr);	  	  
+	prepareDesc (desc, paddr, bytes, metasize, connection_id);
+	
+	if (likely(metasize > 0)) 
+	  _int8Cpy (vaddr, metadata, metasize * sizeof(pami_quad_t));
+	if (bytes > 0) 
+	  memcpy ((char*)vaddr + metasize*sizeof(pami_quad_t), src, bytes);	  
+	
+	size_t cidx = 0;
+	MUHWI_Destination_t   dest;
+	uint16_t              rfifo;
+	uint64_t              map;
+	_mucontext.pinFifo (ranks[cidx],
+			    0,
+			    dest,
+			    rfifo,
+			    map);	  
+	
+	// Initialize the injection fifo descriptor in-place.
+	desc->setDestination (dest);
+	desc->setRecFIFOId (rfifo);
+	desc->setTorusInjectionFIFOMap (map);
+	//fprintf(stderr, "Sending msg from payload pa %lx\n", paddr);
+	//MUSPI_DescriptorDumpHex ((char *)"Immediate Multicast", desc);
+
+	VECTOR_LOAD_NU (desc,  0, 0);
+	VECTOR_LOAD_NU (desc, 32, 1);	
+	for (cidx = 1; cidx < nranks; cidx++) {
+	  MUSPI_DescriptorBase * memfifo = desc + cidx;	    
+	  _mucontext.pinFifo (ranks[cidx],
+			      0,
+			      dest,
+			      rfifo,
+			      map);
+
+	  VECTOR_STORE_NU (memfifo,  0, 0);
+	  VECTOR_STORE_NU (memfifo, 32, 1);
+	  //desc->clone(*memfifo);	  
+	  // Initialize the injection fifo descriptor in-place.
+	  memfifo->setDestination (dest);
+	  memfifo->setRecFIFOId (rfifo);
+	  memfifo->setTorusInjectionFIFOMap (map);
+	  //MUSPI_DescriptorDumpHex ((char *)"Immediate Multicast", memfifo);
+	}
+	
+	//Advance all the descriptors
+	_channel.injFifoAdvanceDescMultiple (nranks);
+	if (cb_done)
+	  cb_done (_ctxt, cookie, PAMI_SUCCESS);
+	
+	return PAMI_SUCCESS;
+      }
+      
+
+      pami_result_t ShortAMMulticastModel::postLong (uint8_t               (&state)[sizeof_msg],
+						     pami_task_t            * ranks,
+						     size_t                   nranks,
+						     PipeWorkQueue          * spwq,
+						     size_t                   bytes,
+						     const pami_quad_t      * metadata,
+						     size_t                   metasize,
+						     pami_event_function      cb_done,
+						     void                   * cookie,
+						     unsigned                 connection_id) 
 	{
 	  if (metasize*sizeof(pami_quad_t) + bytes > MU::Context::packet_payload_size)
 	    return PAMI_ERROR;
