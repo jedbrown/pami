@@ -23,10 +23,12 @@
 #endif
 
 #define MAXTHREADS 64
-#define ITERATIONS 1000
+#define ITERATIONS 10000
 
 #define MIN(a,b)  (((a)<(b))?(a):(b))
 
+
+/*#define ITERATIONS 10 */
 
 pami_context_t   _context[MAXTHREADS];
 volatile size_t _value[MAXTHREADS];
@@ -177,9 +179,9 @@ int main (int argc, char ** argv)
 
   configuration.name = PAMI_CLIENT_NUM_CONTEXTS;
 
-/*  result = PAMI_Client_query(client, &configuration, 1);
+  result = PAMI_Client_query(client, &configuration, 1);
   size_t num = configuration.value.intval;
-  max_threads = MIN(max_threads, num);*/
+  max_threads = MIN(max_threads, num);
   
   if (max_threads == 0 || max_threads > MAXTHREADS)
     {

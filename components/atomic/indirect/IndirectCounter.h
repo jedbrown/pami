@@ -17,9 +17,6 @@
 #include "components/atomic/CounterInterface.h"
 #include "components/atomic/IndirectInterface.h"
 
-#include "components/memory/MemoryManager.h"
-
-
 namespace PAMI
 {
   namespace Counter

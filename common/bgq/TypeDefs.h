@@ -85,10 +85,6 @@
 #include "components/devices/bgq/mu2/model/CollectiveMulticombineDmaModel.h"
 
 
-#include "components/atomic/native/NativeCounter.h"
-#include "components/event/EventDevice.h"
-#include "components/fifo/event/LinearEventFifo.h"
-
 namespace PAMI
 {
   typedef Geometry::Common                     BGQGeometry;
@@ -204,10 +200,6 @@ namespace PAMI
 #endif
 
   typedef BGQNativeInterfaceAS <ShmemCollDevice, ShmemMcstModel, ShmemMsyncModel, ShmemMcombModel> AllSidedShmemNI;
-
-  typedef PAMI::Fifo::Event::Linear<PAMI::Counter::BGQ::IndirectL2,1024*8> EventFifo;
-  typedef PAMI::Event::Device<EventFifo> EventDevice;
-  //typedef PAMI::Device::Event<PAMI::Counter::Indirect<PAMI::Counter::Native>,1024*16> EventDevice;
 
 }
 
