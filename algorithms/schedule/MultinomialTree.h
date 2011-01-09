@@ -40,7 +40,7 @@ namespace CCMI
     //------ Supports a generic barrier and allreduce -------------
     //------ The number of phases is logrithmic with a max of 20 --
     //-------------------------------------------------------------
-    template <class M> class MultinomialTreeT : public Interfaces::Schedule
+    template <class M, int T_MaxRadix=2> class MultinomialTreeT : public Interfaces::Schedule
     {
       protected:
 
@@ -137,20 +137,15 @@ namespace CCMI
           int nph = 0;
           int radix = 2;
 
-          for (unsigned i = nranks; i > 1; i >>= 1)
-            {
-              nph++;
-            }
+          for (unsigned i = nranks; i > 1; i >>= 1) {
+	    nph++;
+	  }
 
-#if 1  //Commenting out high radix till we have a fast packet M*
-          //Capping the number of phases
-          if ((nranks <= 4096) && (nph % 3) == 0)  //multiple of 3
+          if ( (T_MaxRadix >= 8) && (nranks <= 4096) && ((nph % 3) == 0) )  //multiple of 3
             radix = 8;
-          else if ((nph & 1) == 0) //multiple of 2
+          else if ( (T_MaxRadix >= 4) && ((nph & 1) == 0) ) //multiple of 2
             radix = 4;
-
-#endif
-
+	  
           TRACE_SCHEDULE ((stderr, "<> getRadix() nranks %u, radiz %u\n", nranks, radix));
           return radix;
         }
@@ -428,6 +423,8 @@ namespace CCMI
     typedef MultinomialTreeT<LinearMap>  LinearMultinomial;
     typedef MultinomialTreeT<ListMap> ListMultinomial;
     typedef MultinomialTreeT<TopologyMap> TopoMultinomial;
+    typedef MultinomialTreeT<TopologyMap, 4> TopoMultinomial4;
+    typedef MultinomialTreeT<TopologyMap, 8> TopoMultinomial8;
   };   //Schedule
 }; //CCMI
 
@@ -442,8 +439,8 @@ namespace CCMI
  * \param[in] myrank  My rank in COMM_WORLD
  * \param[in] topology  topology across which the binomial must be performed
  */
-template <class M>
-inline CCMI::Schedule::MultinomialTreeT<M>::
+template <class M, int T_MaxRadix>
+  inline CCMI::Schedule::MultinomialTreeT<M, T_MaxRadix>::
 MultinomialTreeT(unsigned myrank, PAMI::Topology *topology, unsigned c): _map(topology->rank2Index(myrank), topology)
 {
   TRACE_SCHEDULE((stderr,  "<%p>MultinomialTreeT(unsigned myrank, PAMI::Topology *topology, unsigned c): _map(myrank, topology) myrank %u, nranks %zu, c %u\n", this, myrank, topology->size(), c));
@@ -461,8 +458,8 @@ MultinomialTreeT(unsigned myrank, PAMI::Topology *topology, unsigned c): _map(to
  * \param[in] nranks  Number of ranks in list
  * \param[in] ranks Ranks list
  */
-template <class M>
-inline CCMI::Schedule::MultinomialTreeT<M>::
+template <class M, int T_MaxRadix>
+  inline CCMI::Schedule::MultinomialTreeT<M, T_MaxRadix>::
 MultinomialTreeT(unsigned myrank, size_t *ranks, unsigned nranks): _topology(ranks, nranks), _map()
 {
   TRACE_SCHEDULE((stderr,  "<%p> MultinomialTreeT(unsigned myrank, size_t *ranks, unsigned nranks): _topology(ranks, nranks), _map() myrank %u, nranks %u\n", this, myrank, nranks));
@@ -487,8 +484,8 @@ MultinomialTreeT(unsigned myrank, size_t *ranks, unsigned nranks): _topology(ran
  * \param[in] node  Our node number (index) in ranks[] array,
  *      or position along line of nodes.
  */
-template <class M>
-void CCMI::Schedule::MultinomialTreeT<M>::
+template <class M, int T_MaxRadix>
+  void CCMI::Schedule::MultinomialTreeT<M, T_MaxRadix>::
 setupContext(unsigned &startph, unsigned &nph)
 {
   unsigned st, np;
@@ -644,8 +641,8 @@ setupContext(unsigned &startph, unsigned &nph)
  * \param[out] nph  The number of phases for this node
  * \param[out] nranks The largest number of steps per phase
  */
-template <class M>
-void CCMI::Schedule::MultinomialTreeT<M>::
+template <class M, int T_MaxRadix>
+  void CCMI::Schedule::MultinomialTreeT<M, T_MaxRadix>::
 init(int root, int comm_op, int &start, int &nph)
 {
   CCMI_assert(comm_op == BARRIER_OP ||

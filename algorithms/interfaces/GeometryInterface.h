@@ -50,6 +50,7 @@ namespace PAMI
       CKEY_BARRIERCOMPOSITE2,      // CCMI barrier cache
       CKEY_LOCALBARRIERCOMPOSITE,  // local sub-topologies only in the geometry
       CKEY_GLOBALBARRIERCOMPOSITE, // global sub-topologes only in the geometry
+      CKEY_OPTIMIZEDBARRIERCOMPOSITE,       // The optimized algorithm for this geometry
     } ckeys_t;                     // context keystore keys    
 
     typedef enum

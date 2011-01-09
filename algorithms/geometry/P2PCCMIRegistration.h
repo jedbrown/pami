@@ -187,7 +187,9 @@ namespace PAMI
               _binomial_barrier_composite = (CCMI::Adaptor::P2PBarrier::BinomialBarrier *)
 		_binomial_barrier_factory->generate(geometry, &xfer);
 	      _binomial_barrier_composite->getExecutor()->setContext(_context);
-
+	      geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
+			       (void*)_binomial_barrier_composite);
+	      
               // Check if the full binomial barrier can act as a local or global sub-geometry barrier...
               // that is, we only have one or the other subtopology.
               PAMI::Topology * local_sub_topology = (PAMI::Topology*) geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
