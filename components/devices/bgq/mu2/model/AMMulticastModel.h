@@ -242,22 +242,24 @@ namespace PAMI {
 	    src = spwq->bufferToConsume();
 	    sbytes = spwq->bytesAvailableToConsume();
 	  }
-	  
-	  if (sbytes == mcast->bytes) {
-	    int rc = postImmediate (ranks,
-				    nranks,
-				    src,
-				    mcast->bytes,
-				    mcast->msginfo,
-				    mcast->msgcount,
-				    mcast->cb_done.function,	       
-				    mcast->cb_done.clientdata,
-				    mcast->connection_id);
-	    
-	    if (rc == PAMI_SUCCESS)
-	      return PAMI_SUCCESS;
-	  }
 
+	  if (likely( (sbytes == mcast->bytes) && 
+		      (mcast->msgcount*sizeof(pami_quad_t) + mcast->bytes <= MU::Context::immediate_payload_size) ))
+	    {
+	      int rc = postImmediate (ranks,
+				      nranks,
+				      src,
+				      mcast->bytes,
+				      mcast->msginfo,
+				      mcast->msgcount,
+				      mcast->cb_done.function,	       
+				      mcast->cb_done.clientdata,
+				      mcast->connection_id);
+	      
+	      if (rc == PAMI_SUCCESS)
+		return PAMI_SUCCESS;
+	    }
+	  
 	  return postLong (state,
 			   ranks,
 			   nranks,
@@ -301,12 +303,9 @@ namespace PAMI {
 							  pami_event_function      cb_done,
 							  void                   * cookie,
 							  unsigned                 connection_id) 
-      {	  
-	if (unlikely(metasize*sizeof(pami_quad_t) + bytes > MU::Context::immediate_payload_size))
-	  return PAMI_ERROR;
-	
+      {	  	
 	//PAMI_assert (nranks > 0);	  	  
-	size_t ndesc = _channel.getFreeDescriptorCountWithUpdate();
+	size_t ndesc = _channel.getFreeDescriptorCount();
 	
 	if (unlikely(ndesc < nranks))
 	  return PAMI_ERROR;
