@@ -64,15 +64,16 @@ namespace CCMI
           if ( ((ph == _auxsendph) && !parent) ||
                ((ph == _auxrecvph) &&  parent) )
             {
-              if (_map.isAuxProc(_map.getMyRank()))
+              if (_map.isAuxProc())
                 {
-                  nodes[0] = _map.getPeerForAux(_map.getMyRank());
+                  nodes[0] = _map.getPeerForAux();
                   nranks = 1;
                 }
-              else if (_map.isPeerProc(_map.getMyRank()))
+              else if (_map.isPeerProc())
                 {
-                  nodes[0] = _map.getAuxForPeer(_map.getMyRank());
-                  nranks = 1;
+		  //There can be multiple aux processors that can point
+		  //to the same peer processor
+                  _map.getAuxForPeer(nodes, nranks);
                 }
             }
           else if (ph != _auxrecvph && ph != _auxsendph)
@@ -104,7 +105,7 @@ namespace CCMI
          */
         inline void initBinoSched()
         {
-          _nranks = _map.getNumRanks();
+	  _nranks = _map.getNumRanks();
           _op = -1;
 
           _radix = getRadix (_nranks);
@@ -116,6 +117,8 @@ namespace CCMI
             _logradix = 2;
 
           _maxphases = getMaxPhases(_nranks, &_nphbino);
+	  _maxphases += _map.hasAuxPhases();
+
           _hnranks = (1 << (_nphbino * _logradix)); // threshold for special handling
           TRACE_SCHEDULE((stderr, "<%p> initBinoSched()"
                           "_maxphases = %u, _nphbino   = %u, _op        = %u, _radix     = %u, _logradix  = %u, "
@@ -178,10 +181,12 @@ namespace CCMI
 
           nph += 1; // power of two starts on phase 1 anyway.
 
+#if 0 //Query map for this
           if ((nranks & (nranks - 1)) != 0)
             {
               nph += 1; // non-power of two adds phase 0 and phase N+1
             }
+#endif
 
           TRACE_SCHEDULE ((stderr, "<> getMaxPhases() nranks %u, nph %u\n", nranks, nph));
           return nph;
@@ -298,13 +303,13 @@ namespace CCMI
 
           CCMI_assert (ndst <= topology->size());
 
-          TRACE_SCHEDULE ((stderr, "<%p> getDstTopology() phase %u, ndst %u\n", this, phase, ndst));
+          TRACE_SCHEDULE((stderr, "<%p> getDstTopology() phase %u, ndst %u\n", this, phase, ndst));
 
           for (unsigned count = 0; count < ndst; count ++)
             {
-              TRACE_SCHEDULE ((stderr, "<%p> getDstTopology() dstranks %u/%u\n", this, dstranks[count], _map.getGlobalRank(dstranks[count])));
+              TRACE_SCHEDULE((stderr, "<%p> getDstTopology() dstranks %u/%u\n", this, dstranks[count], _map.getGlobalRank(dstranks[count])));
               dstranks[count]   = _map.getGlobalRank(dstranks[count]);
-              TRACE_SCHEDULE ((stderr, "%d: phase %d, index %d node %d\n", _map.getMyRank(), phase, count, dstranks[count]));
+              TRACE_SCHEDULE((stderr, "%d: phase %d, index %d node %d\n", _map.getMyRank(), phase, count, dstranks[count]));
             }
 
           //Convert to a list topology of the accurate size
@@ -420,11 +425,13 @@ namespace CCMI
 
     };    //Multinomial Tree Schedule
 
-    typedef MultinomialTreeT<LinearMap>  LinearMultinomial;
-    typedef MultinomialTreeT<ListMap> ListMultinomial;
+    //typedef MultinomialTreeT<LinearMap>  LinearMultinomial;
+    //typedef MultinomialTreeT<ListMap> ListMultinomial;
     typedef MultinomialTreeT<TopologyMap> TopoMultinomial;
     typedef MultinomialTreeT<TopologyMap, 4> TopoMultinomial4;
     typedef MultinomialTreeT<TopologyMap, 8> TopoMultinomial8;
+    typedef MultinomialTreeT<NodeOptTopoMap, 8> NodeOptTopoMultinomial;
+
   };   //Schedule
 }; //CCMI
 
@@ -499,10 +506,10 @@ setupContext(unsigned &startph, unsigned &nph)
   np = _nphbino;
   _auxrecvph = NO_PHASES;
   _auxsendph = NO_PHASES;
-  TRACE_SCHEDULE((stderr, "<%p> setupContext() _map.getMyRank() %u, _map.isPeerProc(_map.getMyRank()) %u,  _map.isAuxProc(_map.getMyRank()) %u\n", this,
-                  _map.getMyRank(), _map.isPeerProc(_map.getMyRank()), _map.isAuxProc(_map.getMyRank())));
+  TRACE_SCHEDULE((stderr, "<%p> setupContext() _map.getMyRank() %u, _map.isPeerProc() %u,  _map.isAuxProc() %u\n", this,
+                  _map.getMyRank(), _map.isPeerProc(), _map.isAuxProc() ));
 
-  if (_map.isPeerProc(_map.getMyRank()))
+  if (_map.isPeerProc())
     {
       /* non-power of two */
       switch (_op)
@@ -527,7 +534,7 @@ setupContext(unsigned &startph, unsigned &nph)
         }
     }
 
-  if (_map.isAuxProc(_map.getMyRank()))
+  if (_map.isAuxProc())
     {
       /* non-power of two */
       switch (_op)
@@ -623,13 +630,13 @@ setupContext(unsigned &startph, unsigned &nph)
   startph = st;
   nph = np;
   TRACE_SCHEDULE((stderr, "<%p> setupContext() startph %u, nph %u, "
-                  "_maxphases = %u, _nphbino   = %u, _op        = %u, _radix     = %u, _logradix  = %u, "
-                  "_nranks    = %u, _hnranks   = %u, _sendph    = %u, _recvph    = %u, _auxsendph = %u, "
-                  "_auxrecvph = %u, _startphase= %u, _nphases   = %u\n",
-                  this, startph, nph,
-                  _maxphases, _nphbino, _op, _radix, _logradix,
-                  _nranks, _hnranks, _sendph, _recvph, _auxsendph,
-                  _auxrecvph, _startphase, _nphases));
+	  "_maxphases = %u, _nphbino   = %u, _op        = %u, _radix     = %u, _logradix  = %u, "
+	  "_nranks    = %u, _hnranks   = %u, _sendph    = %u, _recvph    = %u, _auxsendph = %u, "
+	  "_auxrecvph = %u, _startphase= %u, _nphases   = %u\n",
+	  this, startph, nph,
+	  _maxphases, _nphbino, _op, _radix, _logradix,
+	  _nranks, _hnranks, _sendph, _recvph, _auxsendph,
+	  _auxrecvph, _startphase, _nphases));
 }
 
 /**

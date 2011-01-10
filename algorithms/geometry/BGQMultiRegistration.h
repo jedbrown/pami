@@ -121,7 +121,8 @@ namespace PAMI
     }
     
     typedef CCMI::Adaptor::Barrier::BarrierT
-      < CCMI::Schedule::TopoMultinomial8,
+      < //CCMI::Schedule::TopoMultinomial8,
+      CCMI::Schedule::NodeOptTopoMultinomial,
       opt_binomial_analyze,
       PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX,
       PAMI::Geometry::CKEY_BARRIERCOMPOSITE2>
@@ -131,6 +132,7 @@ namespace PAMI
       < OptBinomialBarrier,
       OptBinomialMetaData,
       CCMI::ConnectionManager::SimpleConnMgr,
+      false,
       PAMI::Geometry::CKEY_BARRIERCOMPOSITE2>
       OptBinomialBarrierFactory;
 

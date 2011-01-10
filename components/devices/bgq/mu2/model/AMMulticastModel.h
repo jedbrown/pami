@@ -166,20 +166,23 @@ namespace PAMI {
 			     &rcvlen,
 			     &pwqptr,
 			     &cb_done);
-	  
-	  if (rcvlen > 0) {
-	    //PAMI_assert (pwqptr != NULL);
-	    //PAMI_assert (rcvlen <= amhdr->bytes);
 
-	    PipeWorkQueue *pwq = (PipeWorkQueue *)pwqptr;
-	    char *buf = pwq->bufferToProduce();
-	    memcpy(buf, (char *)payload + amhdr->metasize*sizeof(pami_quad_t), rcvlen);
-	    pwq->produceBytes(rcvlen);
-	  }
+	  if (rcvlen == 0)
+	    return PAMI_SUCCESS;
+	  
+	  //	  if (rcvlen > 0) {
+	  //PAMI_assert (pwqptr != NULL);
+	  //PAMI_assert (rcvlen <= amhdr->bytes);
+	  
+	  PipeWorkQueue *pwq = (PipeWorkQueue *)pwqptr;
+	  char *buf = pwq->bufferToProduce();
+	  memcpy(buf, (char *)payload + amhdr->metasize*sizeof(pami_quad_t), rcvlen);
+	  pwq->produceBytes(rcvlen);
+	  //}
 
 	  if (cb_done.function)
 	    cb_done.function(model->_ctxt, cb_done.clientdata, PAMI_SUCCESS);
-
+	  
 	  return PAMI_SUCCESS;
 	}
 

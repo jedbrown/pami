@@ -36,7 +36,7 @@ namespace CCMI
       // Barrier Factory for generate routine
       // generate
       //
-      template < class T, MetaDataFn get_metadata, class C, PAMI::Geometry::ckeys_t T_Key = PAMI::Geometry::CKEY_BARRIERCOMPOSITE1 >
+      template < class T, MetaDataFn get_metadata, class C, bool T_Unexp=true, PAMI::Geometry::ckeys_t T_Key = PAMI::Geometry::CKEY_BARRIERCOMPOSITE1 >
       class BarrierFactoryT : public CollectiveProtocolFactoryT<T, get_metadata, C>
       {
         public:
@@ -77,7 +77,7 @@ namespace CCMI
 	  ///
 	  void * getGeometryObject (pami_context_t ctxt, unsigned id)
 	  {
-	    if (_cached_object && id  == _cached_id)
+	    if (likely(_cached_object && id  == _cached_id))
 	      return _cached_object;
 	    
 	    PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) this->getGeometry(ctxt, id); 
@@ -111,15 +111,17 @@ namespace CCMI
             //PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry (ctxt, cdata->_comm);
 	    void *object = factory->getGeometryObject(ctxt, cdata->_comm);
 
-            if (object == NULL)
-            {
-	      //Geoemtry doesnt exist
-	      registerunexpbarrier(ctxt,
-				   cdata->_comm,
-				   (pami_quad_t&)*info,
-				   peer,
-				   (unsigned) PAMI::Geometry::GKEY_UEBARRIERCOMPOSITE1);
-	      return;
+	    if (T_Unexp) {
+	      if (object == NULL)
+	      {
+		//Geoemtry doesnt exist
+		registerunexpbarrier(ctxt,
+				     cdata->_comm,
+				     (pami_quad_t&)*info,
+				     peer,
+				     (unsigned) PAMI::Geometry::GKEY_UEBARRIERCOMPOSITE1);
+		return;
+	      }
 	    }
 
             T *composite = (T*) object;
