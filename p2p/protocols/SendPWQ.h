@@ -40,7 +40,7 @@ namespace PAMI
       ///
       /// \brief Template class to extend point-to-point send with PWQ support.
       ///
-      /// \details Send side only.  Receive/dispatch still uses the protocol's
+      /// Send side only.  Receive/dispatch still uses the protocol's
       /// flat buffer dispatch.
       ///
       /// T_Protocol is assumed to be some send protocol:
@@ -60,7 +60,7 @@ namespace PAMI
       /// using the c function - PAMI_Context_post()?  Hard to do without
       /// member data. Could be passed on each call and stored in sendpwq_t?
       ///
-      /// \example of usage:
+      /// Example of usage:
       ///
       /// // Define a protocol
       /// typedef Protocol::Send::...<> MyProtocol;
