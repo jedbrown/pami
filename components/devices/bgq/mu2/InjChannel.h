@@ -21,6 +21,9 @@
 #include "components/devices/bgq/mu2/msg/CompletionEvent.h"
 
 #include "util/trace.h"
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
+
 #define DO_TRACE_ENTEREXIT 0
 #define DO_TRACE_DEBUG     0
 
@@ -421,7 +424,7 @@ namespace PAMI
             vaddr = (void *) & _immediate_vaddr[index];
             paddr = (uint64_t) (_immediate_paddr + offset);
 
-            TRACE_FORMAT("desc = %p, vaddr = %p, paddr = %p", desc, vaddr, (void *)paddr);
+            TRACE_FORMAT("start %zu, index %zu, offset %zu, size %zu, desc = %p, vaddr = %p, paddr = %p", start, index, offset, sizeof(immediate_payload_t), desc, vaddr, (void *)paddr);
             TRACE_FN_EXIT();
             return;
           };

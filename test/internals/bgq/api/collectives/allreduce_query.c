@@ -17,7 +17,7 @@
 #define CHECK_DATA
 
 #define FULL_TEST
-#define COUNT     1024
+#define COUNT      65536
 #define MAXBUFSIZE COUNT*16
 #define NITERLAT   1000
 #define NITERBW    10
@@ -316,7 +316,6 @@ int main(int argc, char*argv[])
                             &allreduce_must_query_algo,
                             &allreduce_must_query_md);
 
-  fprintf(stderr,"allreduce_num_algorithm %zu/%zu\n",allreduce_num_algorithm[0],allreduce_num_algorithm[1]);
   if (rc == 1)
     return 1;
 

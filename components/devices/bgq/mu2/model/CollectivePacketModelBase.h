@@ -1150,7 +1150,7 @@ namespace PAMI
 
         size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
 
-        TRACE_FORMAT("<%u/%u> rfifo = %u, fnum = %zu, ndesc = %zd", T_Collective, T_Channel, rfifo, fnum, ndesc);
+        TRACE_FORMAT("<%u/%u> rfifo = %u, fnum = %zu, ndesc = %zd, empty=%u", T_Collective, T_Channel, rfifo, fnum, ndesc, channel.isSendQueueEmpty());
 
         MUHWI_Destination_t dest;
         _context.getMuDestinationTask (root,
@@ -1160,6 +1160,8 @@ namespace PAMI
         _singlepkt.setWordLength(dt);
         TRACE_FORMAT("root %zd, op %u, dt %u, dest %u/%u/%u/%u/%u", root, op, dt,
                      dest.Destination.A_Destination,dest.Destination.B_Destination,dest.Destination.C_Destination,dest.Destination.D_Destination,dest.Destination.E_Destination);
+
+        TRACE_FORMAT("metadata %p, metasize %zu, payload %p, length %zu, route %u",metadata, metasize, payload, length, route);
 
         if (likely(channel.isSendQueueEmpty() && ndesc > 0))
           {

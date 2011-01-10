@@ -65,6 +65,7 @@ namespace CCMI
     inline void setAllgatherVec<pami_allgather_t> (pami_allgather_t *xfer,
                                                    int *buflen, char **sbuf, char **rbuf, void *rdisps, void *rcounts)
     {
+      TRACE_ADAPTOR((stderr, "Executor::AllgathervExec::setAllgatherVec(%p %p)\n", xfer->sndbuf, xfer->rcvbuf));
       *sbuf = xfer->sndbuf;
       *rbuf = xfer->rcvbuf;
       *buflen = xfer->rtypecount;
@@ -75,6 +76,7 @@ namespace CCMI
     inline void setAllgatherVec<pami_allgatherv_t> (pami_allgatherv_t *xfer,
                                                     int *buflen, char **sbuf, char **rbuf, void *rdisps, void *rcounts)
     {
+      TRACE_ADAPTOR((stderr, "Executor::AllgathervExec::setAllgatherVec(%p %p %p %p) size_t\n",xfer->sndbuf, xfer->rcvbuf,xfer->rdispls,xfer->rtypecounts));
       *sbuf = xfer->sndbuf;
       *rbuf = xfer->rcvbuf;
       *buflen = 0;
@@ -87,6 +89,7 @@ namespace CCMI
     inline void setAllgatherVec<pami_allgatherv_int_t> (pami_allgatherv_int_t *xfer,
                                                         int *buflen, char **sbuf, char **rbuf, void *rdisps, void *rcounts)
     {
+      TRACE_ADAPTOR((stderr, "Executor::AllgathervExec::setAllgatherVec(%p %p %p %p) int\n", xfer->sndbuf, xfer->rcvbuf,xfer->rdispls,xfer->rtypecounts));
       *sbuf = xfer->sndbuf;
       *rbuf = xfer->rcvbuf;
       *buflen = 0;
@@ -298,17 +301,20 @@ namespace CCMI
 
         void setVectors(int *disps, int *rcvcounts)
         {
+          TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::setVectors(int *disps %p, int *rcvcounts %p)\n", this, disps, rcvcounts));
           _disps     = disps;
           _rcvcounts = rcvcounts;
         }
 
         void setVectors(T_Type *xfer)
         {
+          TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::setVectors\n",this));
           setAllgatherVec<T_Type> (xfer, &_buflen, &_sbuf, &_rbuf, &_disps, &_rcvcounts);
         }
 
         void  updateVectors(T_Type *xfer)
         {
+          TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::updateVectors\n",this));
           setAllgatherVec<T_Type> (xfer, &_buflen, &_sbuf, &_rbuf, &_disps, &_rcvcounts);
         }
 
@@ -440,7 +446,7 @@ namespace CCMI
 template <class T_ConnMgr, class T_Type>
 inline void  CCMI::Executor::AllgathervExec<T_ConnMgr, T_Type>::start ()
 {
-  TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::start() count%d\n", this, _buflen));
+  TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::start() count %d\n", this, _buflen));
 
   _curphase  = _startphase;
 
@@ -449,6 +455,8 @@ inline void  CCMI::Executor::AllgathervExec<T_ConnMgr, T_Type>::start ()
   else
     _rphase ++;
 
+  TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::start()_rbuf %p,_disps %p, _sbuf %p, _rcvcounts %p\n", this,_rbuf,_disps,_sbuf, _rcvcounts));
+  TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::start()_rbuf %p,_disps[%zu] %zu, _rbuf + _disps[_myindex] %p, _sbuf %p, _rcvcounts[_myindex] %zu\n", this,_rbuf,(size_t)_myindex, (size_t)_disps[_myindex], _rbuf + _disps[_myindex], _sbuf, (size_t)_rcvcounts[_myindex]));
   memcpy(_rbuf + _disps[_myindex], _sbuf, _rcvcounts[_myindex]);
 
   sendNext ();
@@ -457,6 +465,7 @@ inline void  CCMI::Executor::AllgathervExec<T_ConnMgr, T_Type>::start ()
 template <class T_ConnMgr, class T_Type>
 inline void  CCMI::Executor::AllgathervExec<T_ConnMgr, T_Type>::sendNext ()
 {
+  TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::sendNext() _curphase %d,_startphase %d,_nphases %d\n", this, _curphase,_startphase,_nphases));
   if (_curphase == _startphase + _nphases)
     {
       if (_cb_done) _cb_done (NULL, _clientdata, PAMI_SUCCESS);
