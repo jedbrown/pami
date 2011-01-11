@@ -144,10 +144,7 @@ public:
   {
     if (T_Mutex::indirect) {
     	_mutex.init(mm, key);
-//    } else {
-  //  	_mutex.init();
     }
-    PAMI_assertf(!_mutex.isLocked(), "Mutex did not init unlocked\n");
   }
 
   /// \copydoc PAMI::Interface::QueueInterface::enqueue
