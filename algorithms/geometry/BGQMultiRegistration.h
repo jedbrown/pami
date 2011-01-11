@@ -171,7 +171,7 @@ namespace PAMI
 
     // Even though MU Multicast is allsided, it still needs a register call with a dispatch id,
     // so we use the CollectiveProtocolFactoryT instead of the AllSidedCollectiveProtocolFactoryT
-    typedef CCMI::Adaptor::CollectiveProtocolFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite,
+    typedef CCMI::Adaptor::CollectiveProtocolFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite<>,
     MUMcastMetaData,
     CCMI::ConnectionManager::SimpleConnMgr > MUMultiCastFactory;
 
@@ -215,13 +215,9 @@ namespace PAMI
 
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite<true, MUGlobalDputNI>,
-    MUCollectiveDputMetaData,
+    MUMcastCollectiveDputMetaData,
     CCMI::ConnectionManager::SimpleConnMgr > MUCollectiveDputMulticastFactory;
 
-
-    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite<true, MUGlobalDputNI>,
-    MUCollectiveDputMetaData,
-    CCMI::ConnectionManager::SimpleConnMgr > MUCollectiveDputMulticombineFactory;
 
     //----------------------------------------------------------------------------
     // 'Pure' MU allsided multicast built on active message multicast with an
@@ -243,10 +239,17 @@ namespace PAMI
       m->check_perf.values.hw_accel     = 1;
     }
 
-    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite,
+    //----------------------------------------------------------------------------
+    // 'Pure' MU allsided dput multicombine
+    //----------------------------------------------------------------------------
+    void MUMcombCollectiveDputMetaData(pami_metadata_t *m)
+    {
+      new(m) PAMI::Geometry::Metadata("I0:DirectPutMulticombine:-:MU");
+    }
+
+    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite<true, MUGlobalDputNI>,
     MUMcombCollectiveDputMetaData,
     CCMI::ConnectionManager::SimpleConnMgr > MUCollectiveDputMulticombineFactory;
-
 
     //----------------------------------------------------------------------------
     // MU allsided multicast built on multicombine (BOR)

@@ -126,7 +126,9 @@ namespace PAMI
 	  return PAMI_ERROR;
 	}
         /// \see PAMI::Device::Interface::MulticastModel::postMulticast
-        pami_result_t postMulticast_impl(uint8_t (&state)[MulticastModel<T_Allsided, T_Msgdata_support, T_PWQ_support>::sizeof_msg],
+        pami_result_t postMulticast_impl(uint8_t (&state)[MulticastModel<T_Allsided, T_Msgdata_support, T_PWQ_support>::sizeof_msg], 
+                                         size_t            client,
+					 size_t            context,
                                          pami_multicast_t *mcast,
                                          void             *devinfo = NULL);
 
@@ -176,7 +178,7 @@ namespace PAMI
       public:
 
         /// \see PAMI::Device::Interface::MulticastModel::MulticastModel
-        MulticastModel (MU::Context & device, pami_result_t &status) :
+        MulticastModel (pami_client_t  client, pami_context_t context, MU::Context & device, pami_result_t &status) :
         Interface::AMMulticastModel < MulticastModel<T_Allsided, T_Msgdata_support, T_PWQ_support>, MU::Context, 4096 /*sizeof(state_data_t)*/ > (device, status),
         _device (device),
         _task_id(__global.mapping.task()),

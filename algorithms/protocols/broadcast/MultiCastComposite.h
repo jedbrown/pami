@@ -869,8 +869,8 @@ namespace CCMI
                   // for the local multicast to use.
                   if (numMasters > 1)
                   {
-                    _minfo_g.client             = NULL;              // Not used by device
-                    _minfo_g.context            = NULL;              // Not used by device
+                    //_minfo_g.client             = NULL;              // Not used by device
+                    //_minfo_g.context            = NULL;              // Not used by device
                     _minfo_g.cb_done.clientdata = this;
                     _minfo_g.connection_id      = _geometry->comm();
                     _minfo_g.roles              = -1U;
