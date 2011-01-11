@@ -74,7 +74,6 @@ int main(int argc, char ** argv)
 
   uint8_t model_buf[sizeof(PAMI::Device::MU::CollectiveMulticastDmaModel)] __attribute__((__aligned__(32)));
   pami_result_t status;
-  uint8_t buf [PAMI::Device::MU::CollectiveMulticastDmaModel::sizeof_msg];
   PAMI::Device::MU::CollectiveMulticastDmaModel &model = *(new (model_buf) PAMI::Device::MU::CollectiveMulticastDmaModel(client, context, mu0, status));
 
   fprintf (stderr, "After model constructors\n");
@@ -100,8 +99,8 @@ int main(int argc, char ** argv)
 
   memset(&mcast, 0, sizeof(mcast));
 
-  mcast.client = (size_t) client;
-  mcast.context = (size_t) context;
+  //mcast.client = (size_t) client;
+  //mcast.context = (size_t) context;
   mcast.bytes   = MAX_BUF_SIZE;
   mcast.connection_id = 0;
   mcast.cb_done.function = done_fn;
@@ -139,11 +138,11 @@ int main(int argc, char ** argv)
     mcast.dst_participants = (pami_topology_t *)&dstt;
 
     srcp.produceBytes (MAX_BUF_SIZE);
-    model.postMulticast (buf, &mcast, NULL);
+    model.postMulticastImmediate (0, 0, &mcast, NULL);
   }
   else  {
     //fprintf (stderr, "Calling Post Multicast");
-    model.postMulticast (buf, &mcast, NULL);
+    model.postMulticastImmediate (0, 0, &mcast, NULL);
   }
   
   while (done_count) {
@@ -161,7 +160,7 @@ int main(int argc, char ** argv)
   for (int i = 0; i < MAX_ITER; i++) {
     done_count = 1;
     srcp.reset();
-    model.postMulticast (buf, &mcast, NULL);
+    model.postMulticastImmediate (0, 0, &mcast, NULL);
     
     while (done_count) {
       if (myrank == 0 && (srcp.getBytesProduced() < MAX_BUF_SIZE)) {
@@ -182,7 +181,7 @@ int main(int argc, char ** argv)
     if (myrank == 0)
       srcp.produceBytes (SHORT_BUF_SIZE);
     
-    model.postMulticast (buf, &mcast, NULL);
+    model.postMulticastImmediate (0, 0, &mcast, NULL);
     
     while (done_count) 
       PAMI_Context_advancev(&context, 1, 1);
@@ -200,7 +199,7 @@ int main(int argc, char ** argv)
     if (myrank == 0)
       srcp.produceBytes (MAX_BUF_SIZE);
     
-    model.postMulticast (buf, &mcast, NULL);
+    model.postMulticastImmediate (0, 0, &mcast, NULL);
     
     while (done_count) 
       PAMI_Context_advancev(&context, 1, 1);

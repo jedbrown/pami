@@ -51,6 +51,8 @@ namespace PAMI
         _head (NULL)
       {}
 
+      void *internalAllocate ();
+    
       inline void * allocateObject ()
       {
         TRACE_FN_ENTER();
@@ -63,14 +65,7 @@ namespace PAMI
         }
         else
         {
-          // Allocate and construct a new set of objects
-          unsigned i;
-          pami_result_t rc;
-	  rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
-			(void **)&object, T_ObjAlign, sizeof(memory_object_t) * T_PREALLOC);
-          PAMI_assertf(rc==PAMI_SUCCESS, "alloc failed for context\n");
-          // "return" the newly allocated objects to the pool of free objects.
-          for (i=1; i<T_PREALLOC; i++) returnObject ((void *) &object[i]);
+	  object = (memory_object_t*) internalAllocate();
         }
 
         unlock ();
@@ -112,6 +107,22 @@ namespace PAMI
 
       memory_object_t * _head;
   };
+
+  template <unsigned T_ObjSize, unsigned T_ObjAlign, unsigned T_PREALLOC, class T_Atomic>
+    inline void *MemoryAllocator<T_ObjSize, T_ObjAlign, T_PREALLOC, T_Atomic>::internalAllocate () 
+    {
+      memory_object_t *object; 
+      
+      // Allocate and construct a new set of objects
+      unsigned i;
+      pami_result_t rc;
+      rc = PAMI::Memory::MemoryManager::heap_mm->memalign((void **)&object, T_ObjAlign, sizeof(memory_object_t) * T_PREALLOC);
+      PAMI_assertf(rc==PAMI_SUCCESS, "alloc failed for context\n");
+      // "return" the newly allocated objects to the pool of free objects.
+      for (i=1; i<T_PREALLOC; i++) returnObject ((void *) &object[i]);
+      return  (void *)object;
+    }
+  
 };
 #undef  DO_TRACE_ENTEREXIT
 #define DO_TRACE_ENTEREXIT 0

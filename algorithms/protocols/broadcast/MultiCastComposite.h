@@ -29,45 +29,30 @@ namespace CCMI
       /// \brief An all-sided multicast composite built on an all-sided
       /// multicast.
       ///
+      template <bool T_inline=false, class T_Native=Interfaces::NativeInterface>
       class MultiCastComposite : public CCMI::Executor::Composite
       {
         protected:
-          Interfaces::NativeInterface        * _native;
-          PAMI_GEOMETRY_CLASS                * _geometry;
-          PAMI::Topology                       _root;
-          PAMI::Topology                     * _destinations;
-          PAMI::PipeWorkQueue                  _pwq;
-          pami_multicast_t                     _minfo;
-          void                               * _deviceInfo;
+	  PAMI::Topology                       _root;
+	  PAMI::PipeWorkQueue                  _pwq;
 
         public:
-          MultiCastComposite (Interfaces::NativeInterface          * mInterface,
-                              ConnectionManager::SimpleConnMgr     * cmgr,
-                              pami_geometry_t                        g,
-                              pami_xfer_t                          * cmd,
-                              pami_event_function                    fn,
-                              void                                 * cookie) :
-              Composite(), _native(mInterface), _geometry((PAMI_GEOMETRY_CLASS*)g),
-              _root(cmd->cmd.xfer_broadcast.root)
+	MultiCastComposite (Interfaces::NativeInterface            * native,
+			    ConnectionManager::SimpleConnMgr     * cmgr,
+			    pami_geometry_t                        g,
+			    pami_xfer_t                          * cmd,
+			    pami_event_function                    fn,
+			    void                                 * cookie) :
+	  Composite(), 
+	    _root(cmd->cmd.xfer_broadcast.root)
           {
             TRACE_ADAPTOR((stderr, "<%p>%s type %#zX, count %zu, root %zu\n", this, __PRETTY_FUNCTION__, (size_t)cmd->cmd.xfer_broadcast.type, cmd->cmd.xfer_broadcast.typecount, cmd->cmd.xfer_broadcast.root));
 
-            _deviceInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
-
-            //PAMI::Topology all;
-            //all = *(PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
-            //all.subtractTopology(&_destinations,  &_root);
-
-            _destinations = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
-
-            DO_DEBUG(for (unsigned j = 0; j < _root.size(); ++j) fprintf(stderr, "root[%u]=%zu, size %zu\n", j, (size_t)_root.index2Rank(j), _root.size()));
-
-            DO_DEBUG(for (unsigned j = 0; j < _destinations->size(); ++j) fprintf(stderr, "destinations[%u]=%zu, size %zu\n", j, (size_t)_destinations->index2Rank(j), _destinations->size()));
-
-#if 0
-            DO_DEBUG(for (unsigned j = 0; j < all.size(); ++j) fprintf(stderr, "all[%u]=%zu, size %zu\n", j, (size_t)all.index2Rank(j), all.size()));
-#endif
-
+	    PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)g;
+            void *deviceInfo                  = geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);	    
+	    PAMI::Topology *destinations = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
+	    
+	    
             /// \todo only supporting PAMI_BYTE right now
             PAMI_assertf(cmd->cmd.xfer_broadcast.type == PAMI_BYTE, "Not PAMI_BYTE? %#zX\n", (size_t)cmd->cmd.xfer_broadcast.type);
 
@@ -93,20 +78,27 @@ namespace CCMI
 	    _pwq.configure(cmd->cmd.xfer_broadcast.buf, bytes, pbytes);
             _pwq.reset();
 
-            _minfo.client             = 0;
-            _minfo.context            = 0;      /// \todo ?
-            _minfo.cb_done.function   = fn;     //_cb_done;
-            _minfo.cb_done.clientdata = cookie; //_clientdata;
-            _minfo.connection_id      = 0; /// \todo ?
-            _minfo.roles              = -1U;
-            _minfo.dst_participants   = (pami_topology_t *)   _destinations;
-            _minfo.src_participants   = (pami_topology_t *) & _root;
-            _minfo.src                = (pami_pipeworkqueue_t *) & _pwq;
-            _minfo.dst                = (pami_pipeworkqueue_t *) & _pwq;
-            _minfo.msgcount           = 0;
-            _minfo.bytes              = bytes;
+	    pami_multicast_t minfo;
+            minfo.cb_done.function   = fn;     //_cb_done;
+            minfo.cb_done.clientdata = cookie; //_clientdata;
+	    minfo.dispatch = 0;
+	    minfo.msginfo  = 0;
+            minfo.connection_id      = 0; /// \todo ?
+            minfo.roles              = -1U;
+            minfo.dst_participants   = (pami_topology_t *) destinations;
+            minfo.src_participants   = (pami_topology_t *) & _root;
+            minfo.src                = (pami_pipeworkqueue_t *) & _pwq;
+            minfo.dst                = (pami_pipeworkqueue_t *) & _pwq;
+            minfo.msgcount           = 0;
+            minfo.bytes              = bytes;
 
-            _native->multicast(&_minfo, _deviceInfo);
+	    if (T_inline) {
+	      T_Native *t_native = (T_Native *) native;
+	      t_native->T_Native::multicast(&minfo, deviceInfo);
+	    }
+	    else {
+	      native->multicast(&minfo, deviceInfo);
+	    }
           }
 
 	  virtual void start()
@@ -208,8 +200,8 @@ namespace CCMI
             _dst.reset();
 
             // Initialize the mcast
-            _minfo.client             = 0;
-            _minfo.context            = 0; /// \todo ?
+            //_minfo.client             = 0;
+            //_minfo.context            = 0; /// \todo ?
             //_minfo.cb_done.function   = _cb_done;
             //_minfo.cb_done.clientdata = _clientdata;
             T_Geometry *bgqGeometry = (T_Geometry *)g;
@@ -395,8 +387,8 @@ namespace CCMI
 	      
 	      if (numMasters > 1)
 		{
-		  minfo_g.client             = NULL;              // Not used by device
-		  minfo_g.context            = NULL;              // Not used by device
+		  //minfo_g.client             = NULL;              // Not used by device
+		  //minfo_g.context            = NULL;              // Not used by device
 		  minfo_g.cb_done.clientdata = this;
 		  minfo_g.connection_id      = _geometry->comm();
 		  minfo_g.roles              = -1U;
@@ -415,8 +407,8 @@ namespace CCMI
 	      
 	      if (numLocal > 1)
 		{
-		  minfo_l.client             = NULL;              // Not used by device
-		  minfo_l.context            = NULL;              // Not used by device
+		  //minfo_l.client             = NULL;              // Not used by device
+		  //minfo_l.context            = NULL;              // Not used by device
 		  minfo_l.cb_done.clientdata = this;
 		  minfo_l.connection_id      = _geometry->comm();
 		  minfo_l.roles              = -1U;
@@ -439,8 +431,8 @@ namespace CCMI
 	      // the local broadcast only, as the source
 	      if (numLocal > 1)
                 {
-		  minfo_l.client             = NULL;              // Not used by device
-		  minfo_l.context            = NULL;              // Not used by device
+		  //minfo_l.client             = NULL;              // Not used by device
+		  //minfo_l.context            = NULL;              // Not used by device
 		  minfo_l.cb_done.clientdata = this;
 		  minfo_l.connection_id      = _geometry->comm();
 		  minfo_l.roles              = -1U;
@@ -465,8 +457,8 @@ namespace CCMI
 	      // and I will participate in the global broadcast as a sender		
 	      if (numMasters > 1)
                 {
-		  minfo_g.client             = NULL;              // Not used by device
-		  minfo_g.context            = NULL;              // Not used by device
+		  //minfo_g.client             = NULL;              // Not used by device
+		  //minfo_g.context            = NULL;              // Not used by device
 		  minfo_g.cb_done.clientdata = this;
 		  minfo_g.connection_id      = _geometry->comm();
 		  minfo_g.roles              = -1U;
@@ -485,8 +477,8 @@ namespace CCMI
 
 	      if (numLocal > 1)
                 {
-		  minfo_l.client             = NULL;              // Not used by device
-		  minfo_l.context            = NULL;              // Not used by device
+		  //minfo_l.client             = NULL;              // Not used by device
+		  //minfo_l.context            = NULL;              // Not used by device
 		  minfo_l.cb_done.clientdata = this;
 		  minfo_l.connection_id      = _geometry->comm();
 		  minfo_l.roles              = -1U;
@@ -512,8 +504,8 @@ namespace CCMI
 	      // Do not explicitly participate in the multicast because it is active
 	      if (numMasters > 1)
                 {
-		  minfo_g.client             = NULL;              // Not used by device
-		  minfo_g.context            = NULL;              // Not used by device
+		  //minfo_g.client             = NULL;              // Not used by device
+		  //minfo_g.context            = NULL;              // Not used by device
 		  minfo_g.cb_done.clientdata = this;
 		  minfo_g.connection_id      = _geometry->comm();
 		  minfo_g.roles              = -1U;
@@ -532,8 +524,8 @@ namespace CCMI
 
 	      if (numLocal > 1)
 		{
-		  minfo_l.client             = NULL;              // Not used by device
-		  minfo_l.context            = NULL;              // Not used by device
+		  //minfo_l.client             = NULL;              // Not used by device
+		  //minfo_l.context            = NULL;              // Not used by device
 		  minfo_l.cb_done.clientdata = this;
 		  minfo_l.connection_id      = _geometry->comm();
 		  minfo_l.roles              = -1U;
@@ -556,8 +548,8 @@ namespace CCMI
 	      TRACE_ADAPTOR((stderr, "MultiCastComposite2DeviceAS:  Non-master, Non-root, numLocal=%zu\n", numLocal));	      
 	      if (numLocal > 1)
 		{
-		  minfo_l.client             = NULL;              // Not used by device
-		  minfo_l.context            = NULL;              // Not used by device
+		  //minfo_l.client             = NULL;              // Not used by device
+		  //minfo_l.context            = NULL;              // Not used by device
 		  minfo_l.cb_done.clientdata = this;
 		  minfo_l.connection_id      = _geometry->comm();
 		  minfo_l.roles              = -1U;
@@ -736,8 +728,8 @@ namespace CCMI
 
                 if (numLocal > 1)
                   {
-                    _minfo_l.client             = NULL;              // Not used by device
-                    _minfo_l.context            = NULL;              // Not used by device
+                    //_minfo_l.client             = NULL;              // Not used by device
+                    //_minfo_l.context            = NULL;              // Not used by device
                     _minfo_l.cb_done.clientdata = this;
                     _minfo_l.connection_id      = _geometry->comm();
                     _minfo_l.roles              = -1U;
@@ -755,8 +747,8 @@ namespace CCMI
 
                 if (numMasters > 1)
                   {
-                    _minfo_g.client             = NULL;              // Not used by device
-                    _minfo_g.context            = NULL;              // Not used by device
+                    //_minfo_g.client             = NULL;              // Not used by device
+                    //_minfo_g.context            = NULL;              // Not used by device
                     _minfo_g.cb_done.clientdata = this;
                     _minfo_g.connection_id      = _geometry->comm();
                     _minfo_g.roles              = -1U;
@@ -781,8 +773,8 @@ namespace CCMI
                 // the local broadcast only, as the source
                 if (numLocal > 1)
                   {
-                    _minfo_l.client             = NULL;              // Not used by device
-                    _minfo_l.context            = NULL;              // Not used by device
+                    //_minfo_l.client             = NULL;              // Not used by device
+                    //_minfo_l.context            = NULL;              // Not used by device
                     _minfo_l.cb_done.clientdata = this;
                     _minfo_l.connection_id      = _geometry->comm();
                     _minfo_l.roles              = -1U;
@@ -807,8 +799,8 @@ namespace CCMI
                 // and I will participate in the global broadcast as a sender
                 if (numLocal > 1)
                   {
-                    _minfo_l.client             = NULL;              // Not used by device
-                    _minfo_l.context            = NULL;              // Not used by device
+                    //_minfo_l.client             = NULL;              // Not used by device
+                    //_minfo_l.context            = NULL;              // Not used by device
                     _minfo_l.cb_done.clientdata = this;
                     _minfo_l.connection_id      = _geometry->comm();
                     _minfo_l.roles              = -1U;
@@ -827,8 +819,8 @@ namespace CCMI
 
                 if (numMasters > 1)
                   {
-                    _minfo_g.client             = NULL;              // Not used by device
-                    _minfo_g.context            = NULL;              // Not used by device
+                    //_minfo_g.client             = NULL;              // Not used by device
+		    //_minfo_g.context            = NULL;              // Not used by device
                     _minfo_g.cb_done.clientdata = this;
                     _minfo_g.connection_id      = _geometry->comm();
                     _minfo_g.roles              = -1U;
@@ -855,8 +847,8 @@ namespace CCMI
                 // If not allsided, do not explicitly participate in the multicast because it is active
                 if (numLocal > 1)
                   {
-                    _minfo_l.client             = NULL;              // Not used by device
-                    _minfo_l.context            = NULL;              // Not used by device
+                    //_minfo_l.client             = NULL;              // Not used by device
+                    //_minfo_l.context            = NULL;              // Not used by device
                     _minfo_l.cb_done.clientdata = this;
                     _minfo_l.connection_id      = _geometry->comm();
                     _minfo_l.roles              = -1U;
@@ -942,8 +934,8 @@ namespace CCMI
 
                 if (numLocal > 1)
                   {
-                    _minfo_l.client             = NULL;              // Not used by device
-                    _minfo_l.context            = NULL;              // Not used by device
+                    //_minfo_l.client             = NULL;              // Not used by device
+                    //_minfo_l.context            = NULL;              // Not used by device
                     _minfo_l.cb_done.clientdata = this;
                     _minfo_l.connection_id      = _geometry->comm();
                     _minfo_l.roles              = -1U;
@@ -1316,8 +1308,8 @@ namespace CCMI
             _data.reset();
             _results.reset();
 
-            _minfo.client             = 0;
-            _minfo.context            = 0; /// \todo ?
+            //_minfo.client             = 0;
+            //_minfo.context            = 0; /// \todo ?
             //_minfo.cb_done.function   = _cb_done;
             //_minfo.cb_done.clientdata = _clientdata;
             _minfo.connection_id      = 0; /// \todo ?
@@ -1387,8 +1379,8 @@ namespace CCMI
             _data.reset();
             _results.reset();
 
-            _minfo.client             = 0;
-            _minfo.context            = 0; /// \todo ?
+            //_minfo.client             = 0;
+            //_minfo.context            = 0; /// \todo ?
             //_minfo.cb_done.function   = _cb_done;
             //_minfo.cb_done.clientdata = _clientdata;
             _minfo.connection_id      = 0; /// \todo ?

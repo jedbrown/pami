@@ -31,6 +31,9 @@ namespace PAMI
       class CollectiveDPutMulticast : public MessageQueue::Element
       {
       public:
+	///Dummy default constructor
+	CollectiveDPutMulticast (): _context(*(MU::Context *)NULL) {}
+
 	///
 	/// \brief Inject descriptor(s) into a specific injection fifo
 	///

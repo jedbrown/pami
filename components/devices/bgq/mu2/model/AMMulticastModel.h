@@ -30,7 +30,8 @@ namespace PAMI {
 
       public:
 
-	static const unsigned sizeof_msg = sizeof(InjectAMMulticast);
+	static const unsigned sizeof_msg      = sizeof(InjectAMMulticast);
+	static const size_t   immediate_bytes = MU::Context::immediate_payload_size;
 	static const unsigned channel_id = 0;
 	static const uint64_t alignment  = 32UL;
 	
@@ -214,7 +215,7 @@ namespace PAMI {
 				     size_t                   metasize,
 				     pami_event_function      cb_done,
 				     void                   * cookie,
-				     unsigned                 connection_id) __attribute__((noinline, weak)); 
+				     unsigned                 connection_id) __attribute__((noinline, weak));	
 	
 	pami_result_t postLong (uint8_t               (&state)[sizeof_msg],
 				pami_task_t            * ranks,
@@ -227,9 +228,10 @@ namespace PAMI {
 				void                   * cookie,
 				unsigned                 connection_id) __attribute__((noinline, weak));	
 	
-	pami_result_t postMulticast_impl(uint8_t               (&state)[sizeof_msg],
-					 pami_multicast_t    * mcast,
-					 void                * devinfo=NULL) 
+	pami_result_t postMulticastImmediate_impl(size_t                client,
+						  size_t                context, 
+						  pami_multicast_t    * mcast,
+						  void                * devinfo=NULL) 
 	{
 	  pami_task_t *ranks = NULL;
 	  Topology *dst_topology = (Topology *)mcast->dst_participants;
@@ -246,22 +248,36 @@ namespace PAMI {
 	    sbytes = spwq->bytesAvailableToConsume();
 	  }
 
-	  if (likely( (sbytes == mcast->bytes) && 
-		      (mcast->msgcount*sizeof(pami_quad_t) + mcast->bytes <= MU::Context::immediate_payload_size) ))
-	    {
-	      int rc = postImmediate (ranks,
-				      nranks,
-				      src,
-				      mcast->bytes,
-				      mcast->msginfo,
-				      mcast->msgcount,
-				      mcast->cb_done.function,	       
-				      mcast->cb_done.clientdata,
-				      mcast->connection_id);
-	      
-	      if (rc == PAMI_SUCCESS)
-		return PAMI_SUCCESS;
-	    }
+	  pami_result_t rc = PAMI_ERROR;
+	  if (likely(sbytes == mcast->bytes && mcast->bytes <= immediate_bytes))
+	  {
+	    rc = postImmediate (ranks,
+				nranks,
+				src,
+				mcast->bytes,
+				mcast->msginfo,
+				mcast->msgcount,
+				mcast->cb_done.function,	       
+				mcast->cb_done.clientdata,
+				mcast->connection_id);	     
+	  }
+
+	  return rc;
+	}
+
+	pami_result_t postMulticast_impl(uint8_t               (&state)[sizeof_msg],
+					 size_t                client,
+					 size_t                context, 
+					 pami_multicast_t    * mcast,
+					 void                * devinfo=NULL) 
+	{
+	  pami_task_t *ranks = NULL;
+	  Topology *dst_topology = (Topology *)mcast->dst_participants;
+	  dst_topology->rankList(&ranks);
+	  size_t nranks = dst_topology->size();
+	  
+	  //PAMI_assert(ranks[0] == __global.mapping.task());	  
+	  PipeWorkQueue *spwq = (PipeWorkQueue *) mcast->src;
 	  
 	  return postLong (state,
 			   ranks,

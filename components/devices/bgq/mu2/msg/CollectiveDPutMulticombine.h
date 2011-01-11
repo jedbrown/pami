@@ -26,6 +26,10 @@ namespace PAMI
       class CollectiveDPutMulticombine : public MessageQueue::Element
       {
       public:
+
+	///Default dummy constructor
+	CollectiveDPutMulticombine (): _context(*(MU::Context*)NULL) {}
+
 	///
 	/// \brief Inject descriptor(s) into a specific injection fifo
 	///

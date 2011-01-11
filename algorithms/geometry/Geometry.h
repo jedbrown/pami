@@ -63,7 +63,7 @@ namespace PAMI
                                              comm,
                                              nranks,
                                              ranks),
-            _kvstore(),
+	  //_kvstore(),
             _commid(comm),
             _client(client),
             _rank(mapping->task()),
@@ -106,7 +106,7 @@ namespace PAMI
                                              comm,
                                              numranges,
                                              rangelist),
-            _kvstore(),
+	  //_kvstore(),
             _commid(comm),
             _client(client),
             _rank(mapping->task()),
@@ -234,7 +234,7 @@ namespace PAMI
                                              mapping,
                                              comm,
                                              topology),
-            _kvstore(),
+	  //_kvstore(),
             _commid(comm),
             _client(client),
             _rank(mapping->task()),
@@ -803,7 +803,7 @@ namespace PAMI
         AlgoLists<Geometry<PAMI::Geometry::Common> >  _barriers[PAMI_GEOMETRY_NUMALGOLISTS];
         Algorithm<PAMI::Geometry::Common>             _ue_barrier;
 
-        std::map <int, void*>                         _kvstore;                              // global/geometry key store
+        void *                                        _kvstore[NUM_GKEYS];  // global/geometry key store
         std::map <int, void*>                         _kvcstore[PAMI_GEOMETRY_NUMALGOLISTS]; // per context key store
         int                                           _commid;
         pami_client_t                                 _client;

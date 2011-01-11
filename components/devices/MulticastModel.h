@@ -54,10 +54,10 @@
    */
   typedef struct
   {
-    size_t               client;     /**< client to operate within */
-    size_t               context;    /**< primary context to operate within */
+    //size_t               client;     /**< client to operate within */
+    //size_t               context;    /**< primary context to operate within */
     size_t               dispatch;         /**< Dispatch identifier */
-    pami_callback_t       cb_done;          /**< Completion callback */
+    pami_callback_t      cb_done;          /**< Completion callback */
     unsigned             connection_id;    /**< A connection is a distinct stream of
                                               traffic. The connection id identifies the
                                               connection */
@@ -129,17 +129,36 @@ namespace PAMI
         ~MulticastModel ()
           {
           };
+
+	inline pami_result_t postMulticastImmediate(size_t            client,
+						    size_t            context, 
+						    pami_multicast_t *mcast,
+						    void             *devinfo=NULL);
+
         inline pami_result_t postMulticast(uint8_t (&state)[T_StateBytes],
+					   size_t            client,
+					   size_t            context, 
                                            pami_multicast_t *mcast,
                                            void             *devinfo=NULL);
       }; // class MulticastModel
 
       template <class T_Model,class T_Device,unsigned T_StateBytes>
+      pami_result_t MulticastModel<T_Model,T_Device, T_StateBytes>::postMulticastImmediate(size_t            client,
+											   size_t            context,
+											   pami_multicast_t *mcast,
+											   void             *devinfo)
+      {
+        return static_cast<T_Model*>(this)->postMulticastImmediate_impl(client, context, mcast, devinfo);
+      }
+
+      template <class T_Model,class T_Device,unsigned T_StateBytes>
       pami_result_t MulticastModel<T_Model,T_Device, T_StateBytes>::postMulticast(uint8_t (&state)[T_StateBytes],
+										  size_t            client,
+										  size_t            context,
                                                                                   pami_multicast_t *mcast,
                                                                                   void             *devinfo)
       {
-        return static_cast<T_Model*>(this)->postMulticast_impl(state, mcast, devinfo);
+        return static_cast<T_Model*>(this)->postMulticast_impl(state, client, context, mcast, devinfo);
       }
 
       ///

@@ -63,8 +63,8 @@
    */
   typedef struct
   {
-    size_t                client;               /**< client to operate within */
-    size_t                context;              /**< primary context to operate within */
+    //size_t                client;               /**< client to operate within */
+    //size_t                context;              /**< primary context to operate within */
     pami_callback_t       cb_done;              /**< User's completion callback */
     unsigned              connection_id;        /**< A connection is a distinct stream of
                                                    traffic. The connection id identifies the
@@ -104,16 +104,35 @@ namespace PAMI
                 };
                 ~MulticombineModel () {};
                 inline pami_result_t postMulticombine (uint8_t (&state)[T_StateBytes],
+						       size_t               client,
+						       size_t               context,
                                                        pami_multicombine_t *mcomb,
                                                        void                *devinfo=NULL);
+
+		inline pami_result_t postMulticombineImmediate (size_t               client,
+								size_t               context,
+								pami_multicombine_t *mcomb,
+								void                *devinfo=NULL);
             }; // class MulticombineModel
 
             template <class T_Model,class T_Device, unsigned T_StateBytes>
             pami_result_t MulticombineModel<T_Model,T_Device, T_StateBytes>::postMulticombine(uint8_t (&state)[T_StateBytes],
+											      size_t               client,
+											      size_t               context,
                                                                                               pami_multicombine_t *mcomb,
                                                                                               void                *devinfo)
             {
-              return static_cast<T_Model*>(this)->postMulticombine_impl(state, mcomb, devinfo);
+              return static_cast<T_Model*>(this)->postMulticombine_impl(state, client, context, mcomb, devinfo);
+            }
+
+	    template <class T_Model,class T_Device, unsigned T_StateBytes>
+            pami_result_t MulticombineModel<T_Model,T_Device, T_StateBytes>::postMulticombineImmediate
+	      (size_t               client,
+	       size_t               context,
+	       pami_multicombine_t *mcomb,
+	       void                *devinfo)
+            {
+              return static_cast<T_Model*>(this)->postMulticombineImmediate_impl(client, context, mcomb, devinfo);
             }
 
         }; // namespace Interface

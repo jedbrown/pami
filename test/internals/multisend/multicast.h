@@ -160,7 +160,7 @@ public:
                 }
                 _done = 0;
                 //fprintf(stderr, "... before %s.postMulticast\n", _name);
-                rc = _model->postMulticast(_msgbuf, mcast);
+                rc = _model->postMulticast(_msgbuf, 0, 0, mcast);
                 if (rc != PAMI_SUCCESS) {
                         fprintf(stderr, "Failed to post multicast \"%s\"\n", _name);
                         return PAMI_ERROR;
@@ -232,7 +232,7 @@ public:
                 _done = 0;
                 if (task_id == root) {
                         //fprintf(stderr, "... before %s.postMulticast\n", _name);
-                        rc = _model->postMulticast(_msgbuf,mcast);
+		  rc = _model->postMulticast(_msgbuf, 0, 0, mcast);
                         if (rc != PAMI_SUCCESS) {
                                 fprintf(stderr, "Failed to post multicast \"%s\"\n", _name);
                                 return PAMI_ERROR;

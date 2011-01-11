@@ -235,25 +235,34 @@ namespace PAMI
     inline pami_result_t BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb, T_PREALLOC>::multicast (pami_multicast_t *mcast, void *devinfo)
   {
     TRACE_FN_ENTER();
-    allocObj *req          = (allocObj *)_allocator.allocateObject();
-    req->_ni               = this;
-    req->_user_callback    = mcast->cb_done;
-    TRACE_FORMAT( "<%p> %p/%p connection id %u, msgcount %u, bytes %zu, devinfo %p", this, mcast, req, mcast->connection_id, mcast->msgcount, mcast->bytes, devinfo);
-    DO_DEBUG((templateName<T_Mcast>()));
 
-    //  \todo:  this copy will cause a latency hit, maybe we need to change postMultisync
-    //          interface so we don't need to copy
-    pami_multicast_t  m     = *mcast;
+    pami_result_t rc = PAMI_ERROR;
+    rc = _mcast.postMulticastImmediate (_clientid, _contextid, mcast, devinfo);
+    if (rc == PAMI_SUCCESS)
+      return rc;
 
-    m.dispatch =  _dispatch; // \todo ? Not really used in C++ objects?
-    m.client   =  _clientid;   // \todo ? Why doesn't caller set this?
-    m.context  =  _contextid;// \todo ? Why doesn't caller set this?
-
-    m.cb_done.function     =  ni_client_done;
-    m.cb_done.clientdata   =  req;
-
+    if (T_Mcast::sizeof_msg > 0) {
+      allocObj *req          = (allocObj *)_allocator.allocateObject();
+      req->_ni               = this;
+      req->_user_callback    = mcast->cb_done;
+      TRACE_FORMAT( "<%p> %p/%p connection id %u, msgcount %u, bytes %zu, devinfo %p", this, mcast, req, mcast->connection_id, mcast->msgcount, mcast->bytes, devinfo);
+      DO_DEBUG((templateName<T_Mcast>()));
+      
+      //  \todo:  this copy will cause a latency hit, maybe we need to change postMultisync
+      //          interface so we don't need to copy
+      
+      pami_multicast_t  m     = *mcast;
+      m.dispatch =  _dispatch; // \todo ? Not really used in C++ objects? /*dispatch must be set via register fn */
+      //m.client   =  _clientid;   // \todo ? Why doesn't caller set this?
+      //m.context  =  _contextid;// \todo ? Why doesn't caller set this?
+    
+      m.cb_done.function     =  ni_client_done;
+      m.cb_done.clientdata   =  req;
+      
+      return _mcast.postMulticast_impl(req->_state._mcast, _clientid, _contextid, &m, devinfo);
+    }
     TRACE_FN_EXIT();
-    return _mcast.postMulticast_impl(req->_state._mcast, &m, devinfo);
+    return PAMI_SUCCESS;
   }
 
 
@@ -284,22 +293,29 @@ namespace PAMI
     inline pami_result_t BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb, T_PREALLOC>::multicombine (pami_multicombine_t *mcomb, void *devinfo)
   {
     TRACE_FN_ENTER();
-    allocObj *req          = (allocObj *)_allocator.allocateObject();
-    req->_ni               = this;
-    req->_user_callback    = mcomb->cb_done;
-    TRACE_FORMAT( "<%p> %p/%p connection id %u, count %zu, dt %#X, op %#X, devinfo %p", this, mcomb, req, mcomb->connection_id, mcomb->count, mcomb->dtype, mcomb->optor, devinfo);
-    DO_DEBUG((templateName<T_Mcomb>()));
-
-    pami_multicombine_t  m     = *mcomb;
-
-    m.client   =  _clientid;
-    m.context  =  _contextid;
-
-    m.cb_done.function     =  ni_client_done;
-    m.cb_done.clientdata   =  req;
-
+    
+    pami_result_t rc = _mcomb.postMulticombineImmediate(_clientid, _contextid, mcomb, devinfo);
+    if (rc == PAMI_SUCCESS)
+      return rc;
+    
+    if (T_Mcomb::sizeof_msg > 0) {
+      allocObj *req          = (allocObj *)_allocator.allocateObject();
+      req->_ni               = this;
+      req->_user_callback    = mcomb->cb_done;
+      TRACE_FORMAT( "<%p> %p/%p connection id %u, count %zu, dt %#X, op %#X, devinfo %p", this, mcomb, req, mcomb->connection_id, mcomb->count, mcomb->dtype, mcomb->optor, devinfo);
+      DO_DEBUG((templateName<T_Mcomb>()));
+      
+      pami_multicombine_t  m     = *mcomb;
+      //m.client   =  _clientid;
+      //m.context  =  _contextid;
+      
+      m.cb_done.function     =  ni_client_done;
+      m.cb_done.clientdata   =  req;
+      
+      return _mcomb.postMulticombine(req->_state._mcomb, _clientid, _contextid, &m, devinfo);
+    }
     TRACE_FN_EXIT();
-    return _mcomb.postMulticombine(req->_state._mcomb, &m, devinfo);
+    return PAMI_SUCCESS;
   }
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, unsigned T_PREALLOC>
@@ -313,7 +329,7 @@ namespace PAMI
     mcast->dispatch =  _dispatch;
 
     TRACE_FN_EXIT();
-    return _mcast.postMulticast_impl(state, mcast, devinfo);
+    return _mcast.postMulticast_impl(state, _clientid, _contextid, mcast, devinfo);
   }
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, unsigned T_PREALLOC>
@@ -337,7 +353,7 @@ namespace PAMI
     DO_DEBUG((templateName<T_Mcomb>()));
 
     TRACE_FN_EXIT();
-    return _mcomb.postMulticombine_impl(state, mcomb, devinfo);
+    return _mcomb.postMulticombine_impl(state, this->_clientid, this->_contextid, mcomb, devinfo);
   }
 
 
@@ -446,8 +462,8 @@ namespace PAMI
     pami_multicast_t  m_local     = *mcast;
     pami_multicast_t  m_global    = *mcast;
     m_local.dispatch = m_global.dispatch =  this->_dispatch; // \todo ? Not really used in C++ objects?
-    m_local.client   = m_global.dispatch =  this->_clientid;   // \todo ? Why doesn't caller set this?
-    m_local.context  = m_global.context =   this->_contextid;// \todo ? Why doesn't caller set this?
+    //m_local.client   = m_global.dispatch =  this->_clientid;   // \todo ? Why doesn't caller set this?
+    //m_local.context  = m_global.context =   this->_contextid;// \todo ? Why doesn't caller set this?
 
     m_local.cb_done.function     = m_global.cb_done.function =  ni_multi_client_done;
     m_local.cb_done.clientdata   = m_global.cb_done.clientdata =  req;
@@ -518,7 +534,7 @@ namespace PAMI
           {
             //fprintf(stderr,"[%zu]master posting local multicast\n", __global.mapping.task());
             req->completion_count++;
-            _mcast2.postMulticast_impl(req->_state._mcast2, &m_local, devinfo);
+            _mcast2.postMulticast_impl(req->_state._mcast2, this->_clientid, this->_contextid, &m_local, devinfo);
           }
 
         if (any_nw_dst_procs)
@@ -526,7 +542,7 @@ namespace PAMI
             //fprintf(stderr,"[%zu] master posting nw multicast\n", __global.mapping.task());
             req->completion_count++;
             //this->_mcast.callConsumeBytesOnMaster(false);
-            this->_mcast.postMulticast_impl(req->_state._mcast1, &m_global, devinfo);
+            this->_mcast.postMulticast_impl(req->_state._mcast1, this->_clientid, this->_contextid, &m_global, devinfo);
           }
 
         //this->_mcast.setLocalMulticast(false);
@@ -546,13 +562,13 @@ namespace PAMI
         if (root_coord.u.n_torus.coords[5] == __global.mapping.t()) //network receiver is the same peer as root
           {
             //fprintf (stderr,"[%zu] non master posting MU Multicast \n", __global.mapping.task());
-            this->_mcast.postMulticast_impl(req->_state._mcast1, &m_global, devinfo);
+            this->_mcast.postMulticast_impl(req->_state._mcast1, this->_clientid, this->_contextid, &m_global, devinfo);
 
           }
         else //shmem
           {
             //fprintf (stderr,"[%zu] non master posting Local Multicast \n", __global.mapping.task());
-            _mcast2.postMulticast_impl(req->_state._mcast2, &m_local, devinfo);
+            _mcast2.postMulticast_impl(req->_state._mcast2, this->_clientid, this->_contextid, &m_local, devinfo);
           }
       }
 

@@ -58,6 +58,8 @@ public:
           /// \param[in] dtshift      Shift in byts of the elements for the reduction
           ///
           inline LocalAllreduceWQMessage (GenericDeviceMessageQueue      * device,
+					  size_t               client,
+					  size_t               context,					  
                                           pami_multicombine_t *mcomb,
                                           PAMI::Device::WorkQueue::SharedWorkQueue & workqueue,
                                           unsigned          peer,
@@ -65,7 +67,7 @@ public:
                                           coremath          func,
                                           int               dtshift) :
             PAMI::Device::Generic::GenericMessage (device, mcomb->cb_done,
-                                mcomb->client, mcomb->context),
+						   client, context),
             _peer (peer),
             _func (func),
             _dtshift (dtshift),
@@ -163,7 +165,15 @@ public:
                 }
         }
 
-        inline pami_result_t postMulticombine_impl(uint8_t (&state)[sizeof_msg], pami_multicombine_t *mcomb, void *devinfo=NULL);
+	  pami_result_t postMulticombineImmediate_impl(size_t                   client,
+						       size_t                   context, 
+						       pami_multicombine_t    * mcomb,
+						       void                   * devinfo=NULL) 
+	  {
+	    return PAMI_ERROR;
+	  }
+
+        inline pami_result_t postMulticombine_impl(uint8_t (&state)[sizeof_msg], size_t client, size_t context, pami_multicombine_t *mcomb, void *devinfo=NULL);
 
 private:
 	PAMI::Device::Generic::Device *_gd;
@@ -173,15 +183,16 @@ private:
 	LocalAllreduceWQPendQ _queue;
 }; // class LocalAllreduceWQModel
 
-inline pami_result_t LocalAllreduceWQModel::postMulticombine_impl(uint8_t (&state)[sizeof_msg], pami_multicombine_t *mcomb, void *devinfo) {
+ inline pami_result_t LocalAllreduceWQModel::postMulticombine_impl(uint8_t (&state)[sizeof_msg], size_t client, size_t context, pami_multicombine_t *mcomb, void *devinfo) {
         // assert((data_topo .U. results_topo).size() == _npeers);
         int dtshift = pami_dt_shift[mcomb->dtype];
         coremath func = MATH_OP_FUNCS(mcomb->dtype, mcomb->optor, 2);
 
         LocalAllreduceWQMessage *msg =
                 new (&state) LocalAllreduceWQMessage(_queue.getQS(),
-                                        mcomb, _shared, _peer, _npeers,
-                                        func, dtshift);
+						     client, context, 
+						     mcomb, _shared, _peer, _npeers,
+						     func, dtshift);
         _queue.__post<LocalAllreduceWQMessage>(msg);
         return PAMI_SUCCESS;
 }

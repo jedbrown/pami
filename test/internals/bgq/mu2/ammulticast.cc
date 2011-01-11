@@ -127,8 +127,8 @@ int main(int argc, char ** argv)
 
   memset(&mcast, 0, sizeof(mcast));
 
-  mcast.client = (size_t) client;
-  mcast.context = (size_t) context;
+  //  mcast.client = (size_t) client;
+  // mcast.context = (size_t) context;
   mcast.bytes   = MAX_BUF_SIZE;
   mcast.connection_id = 0;
   mcast.cb_done.function = done_fn;
@@ -146,7 +146,7 @@ int main(int argc, char ** argv)
     
     mcast.dst_participants = (pami_topology_t *)&dstt;
     srcp.produceBytes (bytes);
-    model.postMulticast (buf, &mcast, NULL);
+    model.postMulticast (buf, 0, 0 , &mcast, NULL);
   }
   
   while (done_count) {    
@@ -161,7 +161,7 @@ int main(int argc, char ** argv)
     if (myrank == 0) {
       srcp.reset();
       srcp.produceBytes (bytes);
-      model.postMulticast (buf, &mcast, NULL);
+      model.postMulticast (buf, 0, 0, &mcast, NULL);
     }
     
     while (done_count > 0) {

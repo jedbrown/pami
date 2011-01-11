@@ -16,29 +16,28 @@ namespace PAMI
   {
     namespace MU
     {
+      static const size_t mcomb_state_bytes = 0;
       class CollectiveMulticombineDmaModel: public CollectiveDmaModelBase, 
-	public Interface::MulticombineModel < CollectiveMulticombineDmaModel, MU::Context, CollectiveDmaModelBase::sizeof_msg > 
+	public Interface::MulticombineModel < CollectiveMulticombineDmaModel, MU::Context, mcomb_state_bytes > 
 	{
 	public:
-	  static const uint32_t sizeof_msg = CollectiveDmaModelBase::sizeof_msg;
+	  static const size_t sizeof_msg = mcomb_state_bytes; 
 	  
 	  CollectiveMulticombineDmaModel (pami_client_t    client,
 					  pami_context_t   context,
 					  MU::Context                 & device, 
 					  pami_result_t               & status) : 
 	  CollectiveDmaModelBase(device, status),
-	    Interface::MulticombineModel<CollectiveMulticombineDmaModel, MU::Context, CollectiveDmaModelBase::sizeof_msg>  (device, status)
+	    Interface::MulticombineModel<CollectiveMulticombineDmaModel, MU::Context, mcomb_state_bytes>  (device, status)
 	    {
 
 	    }
 	    
-	  /// \see PAMI::Device::Interface::MulticombineModel::postMulticombine
-	  pami_result_t postMulticombine_impl(uint8_t (&state)[CollectiveMulticombineDmaModel::sizeof_msg],
-					   pami_multicombine_t *mcombine,
-					   void             *devinfo = NULL) 
+	  pami_result_t postMulticombineImmediate_impl(size_t                   client,
+						       size_t                   context, 
+						       pami_multicombine_t    * mcombine,
+						       void                   * devinfo=NULL) 
 	  {
-	    //TRACE_FN_ENTER();
-	    // Get the source data buffer/length and validate (assert) inputs
 	    unsigned sizeoftype =  mu_collective_size_table[mcombine->dtype];
 	    unsigned bytes      =  mcombine->count * sizeoftype;
 	    unsigned op = mu_collective_op_table[mcombine->dtype][mcombine->optor];
@@ -52,35 +51,46 @@ namespace PAMI
 
 	    PipeWorkQueue *spwq = (PipeWorkQueue *) mcombine->data;
 	    PipeWorkQueue *dpwq = (PipeWorkQueue *) mcombine->results;	    
-	    if (bytes <= CollectiveDmaModelBase::_collstate._tempSize) {	      
-	      char *src = spwq->bufferToConsume();
-	      uint32_t sbytes = spwq->bytesAvailableToConsume();	      
-	      
-	      if (sbytes == bytes) {
-		pami_result_t rc = CollectiveDmaModelBase::postShortCollective 
-		  (op,
-		   sizeoftype,
-		   bytes,
-		   src,
-		   dpwq,
-		   mcombine->cb_done.function,	       
-		   mcombine->cb_done.clientdata,
-		   classroute);
-		if (rc == PAMI_SUCCESS)
-		  return PAMI_SUCCESS;
-	      }
+	    char *src = spwq->bufferToConsume();
+	    uint32_t sbytes = spwq->bytesAvailableToConsume();	      
+
+	    pami_result_t rc = PAMI_ERROR;
+	    if ( likely(bytes <= CollectiveDmaModelBase::_collstate._tempSize &&	      
+			sbytes == bytes) ) {
+	      rc = CollectiveDmaModelBase::postShortCollective (op,
+								sizeoftype,
+								bytes,
+								src,
+								dpwq,
+								mcombine->cb_done.function,	       
+								mcombine->cb_done.clientdata,
+								classroute);
 	    }
+
+	    if (rc == PAMI_SUCCESS)
+	      return rc;
 	    
-	    pami_result_t rc = CollectiveDmaModelBase::postCollective (state,
-								       bytes,
-								       spwq,
-								       dpwq, 
-								       mcombine->cb_done.function,	       
-								       mcombine->cb_done.clientdata,
-								       op,
-								       sizeoftype,
-								       classroute);
-	    return rc;
+	    return CollectiveDmaModelBase::postCollective (bytes,
+							   spwq,
+							   dpwq, 
+							   mcombine->cb_done.function,	       
+							   mcombine->cb_done.clientdata,
+							   op,
+							   sizeoftype,
+							   classroute);
+	  }
+
+
+	  /// \see PAMI::Device::Interface::MulticombineModel::postMulticombine
+	  pami_result_t postMulticombine_impl(uint8_t (&state)[mcomb_state_bytes],
+					      size_t               client,
+					      size_t               context,
+					      pami_multicombine_t *mcombine,
+					      void                *devinfo = NULL) 
+	  {
+	    //TRACE_FN_ENTER();
+	    // Get the source data buffer/length and validate (assert) inputs
+	    return PAMI_ERROR;
 	  }
 	};
     };

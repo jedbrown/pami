@@ -40,7 +40,8 @@ namespace PAMI
       GKEY_MCOMB_CLASSROUTEID,     // Multicombine class route id
       GKEY_MSYNC_CLASSROUTEID,     // Multisync class route id
       PAMI_GKEY_PLATEXTENSIONS
-      GKEY_GEOMETRYCSNI            // native interface for coll shm device
+      GKEY_GEOMETRYCSNI,            // native interface for coll shm device
+      NUM_GKEYS, 
     } gkeys_t;                     // global keystore keys
     typedef enum
     {

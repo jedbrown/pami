@@ -169,8 +169,8 @@ int main(int argc, char ** argv)
 
   memset(&mcast, 0, sizeof(mcast));
 
-  mcast.client = (size_t) client;
-  mcast.context = (size_t) context;
+  //  mcast.client = (size_t) client;
+  // mcast.context = (size_t) context;
   mcast.bytes   = MAX_BUF_SIZE;
   mcast.connection_id = 0;
   mcast.cb_done.function = done_fn;

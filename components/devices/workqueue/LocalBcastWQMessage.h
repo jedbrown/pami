@@ -50,11 +50,13 @@ public:
           ///                         broadcast buffer
           ///
           inline LocalBcastWQMessage(GenericDeviceMessageQueue *device,
-                                      pami_multicast_t *mcast,
-                                      PAMI::Device::WorkQueue::SharedWorkQueue & workqueue,
-                                      bool              isrootrole) :
+				     size_t             client,
+				     size_t             context, 
+				     pami_multicast_t *mcast,
+				     PAMI::Device::WorkQueue::SharedWorkQueue & workqueue,
+				     bool              isrootrole) :
             PAMI::Device::Generic::GenericMessage (device, mcast->cb_done,
-                                        mcast->client, mcast->context),
+                                        client, context),
             _isrootrole (isrootrole),
             _sbuffer (*(PAMI::PipeWorkQueue *)mcast->src),
             _rbuffer (*(PAMI::PipeWorkQueue *)mcast->dst),
@@ -153,6 +155,8 @@ public:
         }
 
         inline pami_result_t postMulticast_impl(uint8_t (&state)[sizeof_msg],
+						size_t            client,
+						size_t            context, 
                                                 pami_multicast_t *mcast,
                                                 void             *devinfo=NULL);
 private:
@@ -164,6 +168,8 @@ private:
 }; // class LocalBcastWQModel
 
 inline pami_result_t LocalBcastWQModel::postMulticast_impl(uint8_t (&state)[sizeof_msg],
+							   size_t            client,
+							   size_t            context,  
                                                            pami_multicast_t *mcast,
                                                            void *devinfo) {
         // PAMI_assert((src_topo .U. dst_topo).size() == _npeers);
@@ -175,8 +181,8 @@ inline pami_result_t LocalBcastWQModel::postMulticast_impl(uint8_t (&state)[size
         if (isrootrole) consumer = 0; // hack!
         _shared.setConsumers(_npeers - 1, consumer);
         LocalBcastWQMessage *msg =
-                new (&state) LocalBcastWQMessage(_queue.getQS(),
-                        mcast, _shared, isrootrole);
+	  new (&state) LocalBcastWQMessage(_queue.getQS(), client, context,
+					   mcast, _shared, isrootrole);
         _queue.__post<LocalBcastWQMessage>(msg);
         return PAMI_SUCCESS;
 }

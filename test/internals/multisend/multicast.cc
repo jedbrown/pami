@@ -93,8 +93,8 @@ int main(int argc, char ** argv) {
         memset(&mcast, 0x00, sizeof(mcast));
 
         // simple allreduce on the local ranks...
-        mcast.client = 0;
-        mcast.context = 0;
+        //mcast.client = 0;
+        //mcast.context = 0;
         mcast.roles = (unsigned)-1;
         mcast.src_participants = (pami_topology_t *)&itopo;
         mcast.dst_participants = (pami_topology_t *)&otopo;

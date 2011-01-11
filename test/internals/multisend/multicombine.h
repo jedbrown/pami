@@ -65,7 +65,7 @@ public:
         ~Multicombine() { }
 
         inline pami_result_t perform_test(size_t task_id, size_t num_tasks,
-                                        pami_context_t ctx, pami_multicombine_t *mcomb) {
+					  pami_context_t ctx, pami_multicombine_t *mcomb) {
                 pami_result_t rc;
                 size_t x;
 
@@ -97,7 +97,7 @@ public:
                 }
                 _done = 0;
                 //fprintf(stderr, "... before %s.postMulticombine\n", _name);
-                rc = _model->postMulticombine(_msgbuf, mcomb);
+                rc = _model->postMulticombine(_msgbuf, 0, 0, mcomb);
                 if (rc != PAMI_SUCCESS) {
                         fprintf(stderr, "Failed to post multicombine \"%s\"\n", _name);
                         return PAMI_ERROR;

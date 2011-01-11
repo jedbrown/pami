@@ -100,8 +100,8 @@ int main(int argc, char ** argv)
 
   memset(&mcast, 0, sizeof(mcast));
 
-  mcast.client = (size_t) client;
-  mcast.context = (size_t) context;
+  //  mcast.client = (size_t) client;
+  //  mcast.context = (size_t) context;
   mcast.bytes   = MAX_BUF_SIZE;
   mcast.connection_id = 0;
   mcast.cb_done.function = done_fn;
@@ -134,11 +134,11 @@ int main(int argc, char ** argv)
     new (&dstt) PAMI::Topology (&ll, &ur, &ll, istorus); //Root is the ll node too
     
     mcast.dst_participants = (pami_topology_t *)&dstt;
-    model.postMulticast (buf, &mcast, NULL);
+    model.postMulticast (buf, 0, 0, &mcast, NULL);
     Delay (1000);
   }
   else  
-    model.postMulticast (buf, &mcast, NULL);
+    model.postMulticast (buf, 0, 0, &mcast, NULL);
   
   while (done_count) {
     if (myrank == 0 && (srcp.getBytesProduced() < MAX_BUF_SIZE)) {
@@ -157,11 +157,11 @@ int main(int argc, char ** argv)
     done_count = 1;
     srcp.reset();
     if (myrank == 0) {
-      model.postMulticast (buf, &mcast, NULL);
+      model.postMulticast (buf, 0, 0, &mcast, NULL);
       Delay (1000);
     }
     else  
-      model.postMulticast (buf, &mcast, NULL);
+      model.postMulticast (buf, 0, 0, &mcast, NULL);
     
     while (done_count) {
       if (myrank == 0 && (srcp.getBytesProduced() < MAX_BUF_SIZE)) {

@@ -115,8 +115,19 @@ namespace PAMI
         pami_result_t registerMcastRecvFunction_impl(int                        dispatch_id,
                                                      pami_dispatch_multicast_function func,
                                                      void                      *arg);
+
+	pami_result_t postMulticastImmediate_impl(size_t                client,
+						  size_t                context, 
+						  pami_multicast_t    * mcast,
+						  void                * devinfo=NULL) 
+	{
+	  return PAMI_ERROR;
+	}
+	
         /// \see PAMI::Device::Interface::MulticastModel::postMulticast
         pami_result_t postMulticast_impl(uint8_t (&state)[AxialMulticastModel<T_Msgdata_support, T_PWQ_support>::sizeof_msg],
+					 size_t            client,
+					 size_t            context,
                                          pami_multicast_t *mcast,
                                          void             *devinfo = NULL);
 
@@ -280,6 +291,8 @@ namespace PAMI
 
       template <bool T_Msgdata_support, bool T_PWQ_support>
       inline pami_result_t AxialMulticastModel<T_Msgdata_support, T_PWQ_support>::postMulticast_impl(uint8_t (&state)[AxialMulticastModel::sizeof_msg],
+												     size_t            client,
+												     size_t            context,
                                                                                                      pami_multicast_t *mcast,
                                                                                                      void             *devinfo)
       {
@@ -451,7 +464,7 @@ namespace PAMI
                      ur->u.n_torus.coords[4]);                                
 
         pami_task_t   target_task_p=0, target_task_m=0; //target tasks (+) and (-) directions
-        size_t        target_offset = mcast->context;
+        size_t        target_offset = context;
         bool p, m; // send (+), send (-)
         if (T_PWQ_support == false)
         {

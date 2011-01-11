@@ -71,7 +71,7 @@ namespace PAMI
 	  char                  * _payload;
 	};
 
-	static const unsigned sizeof_msg = sizeof(InjectDPutMulticast);
+	static const size_t sizeof_msg = sizeof(InjectDPutMulticast);
 	static const unsigned POLLING = 0x1;
 	static const unsigned LOCAL_MULTICAST = 0x2;
 	static const unsigned CALL_CONSUME_BYTES = 0x4;
@@ -325,8 +325,18 @@ namespace PAMI
 	    TRACE_FN_EXIT();		    
 	  }
   
+	  pami_result_t postMulticastImmediate_impl(size_t                client,
+						    size_t                context, 
+						    pami_multicast_t    * mcast,
+						    void                * devinfo=NULL) 
+	  {
+	    return PAMI_ERROR;
+	  }
+
 	  /// \see PAMI::Device::Interface::MulticastModel::postMulticast
 	  pami_result_t postMulticast_impl(uint8_t (&state)[MulticastDmaModel::sizeof_msg],
+					   size_t            client,
+					   size_t            context,
 					   pami_multicast_t *mcast,
 					   void             *devinfo = NULL) 
 	  {

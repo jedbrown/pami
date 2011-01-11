@@ -36,37 +36,37 @@ namespace CCMI
   {
     namespace Allreduce
     {
-
+      template <bool T_inline=false, class T_Native=Interfaces::NativeInterface>
       class MultiCombineComposite : public CCMI::Executor::Composite
       {
         protected:
-          Interfaces::NativeInterface        * _native;
-          PAMI_GEOMETRY_CLASS                * _geometry;
+	  //Interfaces::NativeInterface        * _native;
+          //PAMI_GEOMETRY_CLASS                * _geometry;
           PAMI::PipeWorkQueue                  _srcPwq;
           PAMI::PipeWorkQueue                  _dstPwq;
-          pami_multicombine_t                  _minfo;
-          void                               * _deviceInfo;
+          //pami_multicombine_t                  _minfo;
+          //void                               * _deviceInfo;
 
         public:
-          MultiCombineComposite (Interfaces::NativeInterface          * mInterface,
+          MultiCombineComposite (Interfaces::NativeInterface          * native,
                                  ConnectionManager::SimpleConnMgr     * cmgr,
                                  pami_geometry_t                        g,
                                  pami_xfer_t                          * cmd,
                                  pami_event_function                    fn,
                                  void                                 * cookie) :
-              Composite(), _native(mInterface), _geometry((PAMI_GEOMETRY_CLASS*)g)
+	  Composite()//, _native(mInterface), _geometry((PAMI_GEOMETRY_CLASS*)g)
           {
             TRACE_ADAPTOR((stderr, "%s, type %#zX/%#zX, count %zu/%zu, op %#X, dt %#X\n", __PRETTY_FUNCTION__,
                            (size_t)cmd->cmd.xfer_allreduce.stype, (size_t)cmd->cmd.xfer_allreduce.rtype,
                            cmd->cmd.xfer_allreduce.stypecount, cmd->cmd.xfer_allreduce.rtypecount, cmd->cmd.xfer_allreduce.op, cmd->cmd.xfer_allreduce.dt));
-
 
             /// \todo only supporting PAMI_BYTE right now
             PAMI_assertf((cmd->cmd.xfer_allreduce.stype == PAMI_BYTE) && (cmd->cmd.xfer_allreduce.rtype == PAMI_BYTE), "Not PAMI_BYTE? %#zX %#zX\n", (size_t)cmd->cmd.xfer_allreduce.stype, (size_t)cmd->cmd.xfer_allreduce.rtype);
 
 //          PAMI_Type_sizeof(cmd->cmd.xfer_allreduce.stype); /// \todo PAMI_Type_sizeof() is PAMI_UNIMPL so use getReduceFunction for now?
 
-            _deviceInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
+	    PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS*)g;
+            void *deviceInfo                  = geometry->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
             unsigned        sizeOfType = _pami_size_table[cmd->cmd.xfer_allreduce.dt];
 
             size_t size = cmd->cmd.xfer_allreduce.stypecount * 1; /// \todo presumed size of PAMI_BYTE is 1?
@@ -78,25 +78,31 @@ namespace CCMI
             _dstPwq.reset();
 
             DO_DEBUG(PAMI::Topology all);
-            DO_DEBUG(all = *(PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
+            DO_DEBUG(all = *(PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
 
             DO_DEBUG(for (unsigned j = 0; j < all.size(); ++j) fprintf(stderr, "all[%u]=%zu, size %zu\n", j, (size_t)all.index2Rank(j), all.size()));
 
-            _minfo.client               = 0;
-            _minfo.context              = 0; /// \todo ?
-            _minfo.cb_done.function     = fn;
-            _minfo.cb_done.clientdata   = cookie;
-            _minfo.connection_id        = 0;
-            _minfo.roles                = -1U;
-            _minfo.results_participants = _geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
-            _minfo.data_participants    = _geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
-            _minfo.data                 = (pami_pipeworkqueue_t *) & _srcPwq;
-            _minfo.results              = (pami_pipeworkqueue_t *) & _dstPwq;
-            _minfo.optor                = cmd->cmd.xfer_allreduce.op;
-            _minfo.dtype                = cmd->cmd.xfer_allreduce.dt;
-            _minfo.count                = size / sizeOfType;
+	    pami_multicombine_t minfo;
+            minfo.cb_done.function     = fn;
+            minfo.cb_done.clientdata   = cookie;
+            minfo.connection_id        = 0;
+            minfo.roles                = -1U;
+            minfo.results_participants = geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
+            minfo.data_participants    = geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
+            minfo.data                 = (pami_pipeworkqueue_t *) & _srcPwq;
+            minfo.results              = (pami_pipeworkqueue_t *) & _dstPwq;
+            minfo.optor                = cmd->cmd.xfer_allreduce.op;
+            minfo.dtype                = cmd->cmd.xfer_allreduce.dt;
+            minfo.count                = size / sizeOfType;
 	    
-	    _native->multicombine(&_minfo, _deviceInfo);
+	    if (T_inline) {
+	      T_Native *t_native = (T_Native *) native;
+	      t_native->T_Native::multicombine(&minfo, deviceInfo);
+	    }
+	    else {
+	      native->multicombine(&minfo, deviceInfo);
+	    }
+
             TRACE_ADAPTOR((stderr, "%s, count %zu\n", __PRETTY_FUNCTION__, _minfo.count));
           }
 
@@ -263,8 +269,8 @@ namespace CCMI
                                       sbytes,                          // buffer bytes
                                       0);                              // amount initially in buffer
                 _pwq_inter0.reset();
-                _mcombine_l.client               = 0; /// \todo ?
-                _mcombine_l.context              = 0; /// \todo ?
+                //_mcombine_l.client               = 0; /// \todo ?
+                //_mcombine_l.context              = 0; /// \todo ?
                 _mcombine_l.cb_done.clientdata   = this;
                 _mcombine_l.cb_done.function     = composite_done;
                 _mcombine_l.connection_id        = _geometry->comm();
@@ -280,8 +286,8 @@ namespace CCMI
                 // Also, prepare the local multicast, with the root as the local master
                 // We are guaranteed to not have an early arrival with this multicast if we post
                 // it first.  This protocol expects the local multicast to be 2 sided
-                _mcast_l.client                  = 0; /// \todo ?
-                _mcast_l.context                 = 0; /// \todo ?
+                //_mcast_l.client                  = 0; /// \todo ?
+                //_mcast_l.context                 = 0; /// \todo ?
                 _mcast_l.cb_done.function        = composite_done;
                 _mcast_l.cb_done.clientdata      = this;
                 _mcast_l.connection_id           = _geometry->comm();
@@ -306,8 +312,8 @@ namespace CCMI
             // To detect this case, the local size will be only me
             if (t_local->size() == 1)
               {
-                _mcombine_g.client               = 0; /// \todo ?
-                _mcombine_g.context              = 0; /// \todo ?
+                //_mcombine_g.client               = 0; /// \todo ?
+                //_mcombine_g.context              = 0; /// \todo ?
                 _mcombine_g.cb_done.clientdata   = this;
                 _mcombine_g.cb_done.function     = composite_done;
                 _mcombine_g.connection_id        = _geometry->comm();
@@ -334,8 +340,8 @@ namespace CCMI
                 // The local multicombine
                 // Source is local topology
                 // Destination is the global master, a reduction
-                _mcombine_l.client               = 0; /// \todo ?
-                _mcombine_l.context              = 0; /// \todo ?
+                //_mcombine_l.client               = 0; /// \todo ?
+                //_mcombine_l.context              = 0; /// \todo ?
                 _mcombine_l.cb_done.clientdata   = this;
                 _mcombine_l.cb_done.function     = composite_done;
                 _mcombine_l.connection_id        = _geometry->comm();
@@ -351,8 +357,8 @@ namespace CCMI
                 // Also, prepare the local multicast, with the root as the local master
                 // We are guaranteed to not have an early arrival with this multicast if we post
                 // it first.  This protocol expects the local multicast to be 2 sided
-                _mcast_l.client                  = 0; /// \todo ?
-                _mcast_l.context                 = 0; /// \todo ?
+                //_mcast_l.client                  = 0; /// \todo ?
+                //_mcast_l.context                 = 0; /// \todo ?
                 _mcast_l.cb_done.function        = composite_done;
                 _mcast_l.cb_done.clientdata      = this;
                 _mcast_l.connection_id           = _geometry->comm();
@@ -389,8 +395,8 @@ namespace CCMI
             _pwq_inter0.reset();
             _pwq_inter1.reset();
 
-            _mcombine_l.client               = 0; /// \todo ?
-            _mcombine_l.context              = 0; /// \todo ?
+            //_mcombine_l.client               = 0; /// \todo ?
+            //_mcombine_l.context              = 0; /// \todo ?
             _mcombine_l.cb_done.clientdata   = this;
             _mcombine_l.cb_done.function     = composite_done;
             _mcombine_l.connection_id        = _geometry->comm();
@@ -403,8 +409,8 @@ namespace CCMI
             _mcombine_l.dtype                = cmd->cmd.xfer_allreduce.dt;
             _mcombine_l.count                = cmd->cmd.xfer_allreduce.stypecount; //todo!  get right count
 
-            _mcombine_g.client               = 0; /// \todo ?
-            _mcombine_g.context              = 0; /// \todo ?
+            //_mcombine_g.client               = 0; /// \todo ?
+            //_mcombine_g.context              = 0; /// \todo ?
             _mcombine_g.cb_done.clientdata   = this;
             _mcombine_g.cb_done.function     = composite_done;
             _mcombine_g.connection_id        = _geometry->comm();
@@ -417,8 +423,8 @@ namespace CCMI
             _mcombine_g.dtype                = cmd->cmd.xfer_allreduce.dt;
             _mcombine_g.count                = cmd->cmd.xfer_allreduce.stypecount; //todo!  get right count
 
-            _mcast_l.client                  = 0; /// \todo ?
-            _mcast_l.context                 = 0; /// \todo ?
+            //_mcast_l.client                  = 0; /// \todo ?
+            //_mcast_l.context                 = 0; /// \todo ?
             _mcast_l.cb_done.function        = composite_done;
             _mcast_l.cb_done.clientdata      = this;
             _mcast_l.connection_id           = _geometry->comm();
@@ -682,8 +688,8 @@ namespace CCMI
             _mcomb_l.results              = (pami_pipeworkqueue_t*) & _pwq_temp;
             _mcomb_l.cb_done.function     =  _amMaster ? local_master_done_fn : local_done_fn;
             _mcomb_l.cb_done.clientdata   =  this;
-            _mcomb_l.context              = 0; /// \todo ?
-            _mcomb_l.client               = 0; /// \todo ?
+            //_mcomb_l.context              = 0; /// \todo ?
+            //_mcomb_l.client               = 0; /// \todo ?
             _mcomb_l.count                = countDt;
             _mcomb_l.dtype                = cmd->cmd.xfer_allreduce.dt;
             _mcomb_l.optor                = cmd->cmd.xfer_allreduce.op;
@@ -696,8 +702,8 @@ namespace CCMI
             _mcomb_g.results              = (pami_pipeworkqueue_t*) & _pwq_dst;
             _mcomb_g.cb_done.function     = global_done_fn;
             _mcomb_g.cb_done.clientdata   = this;
-            _mcomb_g.context              = 0; /// \todo ?
-            _mcomb_g.client               = 0; /// \todo ?
+            //_mcomb_g.context              = 0; /// \todo ?
+            //_mcomb_g.client               = 0; /// \todo ?
             _mcomb_g.count                = countDt;
             _mcomb_g.dtype                = cmd->cmd.xfer_allreduce.dt;
             _mcomb_g.optor                = cmd->cmd.xfer_allreduce.op;
@@ -718,8 +724,8 @@ namespace CCMI
             _mcast_l.cb_done.function     =  fn;
             _mcast_l.cb_done.clientdata   =  cookie;
 #endif
-            _mcast_l.context              = 0; /// \todo ?
-            _mcast_l.client               = 0; /// \todo ?
+            //_mcast_l.context              = 0; /// \todo ?
+            //_mcast_l.client               = 0; /// \todo ?
             _mcast_l.bytes                = _bytes;
             _mcast_l.dispatch             = -1; /// \todo assuming all-sided?
             _mcast_l.msgcount             = 0;

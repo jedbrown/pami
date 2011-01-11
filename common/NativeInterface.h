@@ -602,6 +602,8 @@ namespace PAMI
       /// \brief common internal impl of postMulticast over p2p
       ///
       pami_result_t postMulticast_impl(uint8_t (&state)[NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::multicast_sizeof_msg],
+				       size_t            client,
+				       size_t            context,
                                        pami_multicast_t *mcast,
                                        void             *devinfo = NULL);
 
@@ -810,6 +812,8 @@ namespace PAMI
       /// \brief common internal impl of postMulticast over p2p
       ///
       pami_result_t postMulticast_impl(uint8_t (&state)[NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::multicast_sizeof_msg],
+				       size_t            client,
+				       size_t            context,
                                        pami_multicast_t *mcast,
                                        void             *devinfo = NULL);
       pami_result_t postManytomany_impl(uint8_t (&state)[NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::manytomany_sizeof_msg],
@@ -970,13 +974,13 @@ namespace PAMI
     pami_multicast_t  m     = *mcast;
 
     m.dispatch =  _mcast_dispatch; // \todo ? Not really used in C++ objects?
-    m.client   =  _clientid;   // \todo ? Why doesn't caller set this?
-    m.context  =  _contextid;// \todo ? Why doesn't caller set this?
+    //    m.client   =  _clientid;   // \todo ? Why doesn't caller set this?
+    //    m.context  =  _contextid;// \todo ? Why doesn't caller set this?
 
     m.cb_done.function     =  ni_client_done;
     m.cb_done.clientdata   =  req;
 
-    postMulticast_impl(req->_state._mcast, &m);
+    postMulticast_impl(req->_state._mcast, this->_clientid, this->_contextid, &m);
     TRACE_FN_EXIT();
     return PAMI_SUCCESS;
   }
@@ -1043,14 +1047,13 @@ namespace PAMI
     DO_DEBUG((templateName<T_Protocol>()));
 
     pami_multicombine_t  m     = *mcomb;
-
-    m.client   =  _clientid;
-    m.context  =  _contextid;
+    //m.client   =  _clientid;
+    //m.context  =  _contextid;
 
     m.cb_done.function     =  ni_client_done;
     m.cb_done.clientdata   =  req;
 
-    //_mcomb.postMulticombine(req->_state._mcomb, &m);
+    //_mcomb.postMulticombine(req->_state._mcomb, this->_clientid, this->_contextid, &m);
     TRACE_FN_EXIT();
     return PAMI_SUCCESS;
   }
@@ -1072,6 +1075,8 @@ namespace PAMI
 
   template <class T_Protocol, int T_Max_Msgcount>
   inline pami_result_t NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>::postMulticast_impl(uint8_t (&state)[NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::multicast_sizeof_msg],
+											       size_t            client,
+											       size_t            context,
       pami_multicast_t *mcast,
       void             *devinfo)
   {
@@ -1528,13 +1533,13 @@ namespace PAMI
     pami_multicast_t  m     = *mcast;
 
     m.dispatch =  this->_mcast_dispatch; // \todo ? Not really used in C++ objects?
-    m.client   =  this->_clientid;   // \todo ? Why doesn't caller set this?
-    m.context  =  this->_contextid;// \todo ? Why doesn't caller set this?
+    //m.client   =  this->_clientid;   // \todo ? Why doesn't caller set this?
+    //m.context  =  this->_contextid;// \todo ? Why doesn't caller set this?
 
     m.cb_done.function     =  ni_client_done;
     m.cb_done.clientdata   =  req;
 
-    postMulticast_impl(req->_state._mcast, &m);
+    postMulticast_impl(req->_state._mcast, this->_clientid, this->_contextid, &m);
     TRACE_FN_EXIT();
     return PAMI_SUCCESS;
   }
@@ -1607,13 +1612,13 @@ namespace PAMI
 
     pami_multicombine_t  m     = *mcomb;
 
-    m.client   =  this->_clientid;
-    m.context  =  this->_contextid;
+    //m.client   =  this->_clientid;
+    //m.context  =  this->_contextid;
 
     m.cb_done.function     =  ni_client_done;
     m.cb_done.clientdata   =  req;
 
-    //_mcomb.postMulticombine(req->_state._mcomb, &m);
+    //_mcomb.postMulticombine(req->_state._mcomb, this->_clientid, this->_contextid, &m);
     TRACE_FN_EXIT();
     return PAMI_SUCCESS;
 
@@ -1637,6 +1642,8 @@ namespace PAMI
 
   template <class T_Protocol, int T_Max_Msgcount>
   inline pami_result_t NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::postMulticast_impl(uint8_t (&state)[NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::multicast_sizeof_msg],
+      size_t            client,  
+      size_t            context,  
       pami_multicast_t *mcast,
       void             *devinfo)
   {

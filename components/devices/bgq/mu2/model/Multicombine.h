@@ -108,8 +108,19 @@ namespace PAMI
           pami_result_t registermcombRecvFunction_impl(int                        dispatch_id,
                                                        pami_dispatch_multicast_function func,
                                                        void                      *arg);
+
+	  pami_result_t postMulticombineImmediate_impl(size_t                   client,
+						       size_t                   context, 
+						       pami_multicombine_t    * mcomb,
+						       void                   * devinfo=NULL) 
+	  {
+	    return PAMI_ERROR;
+	  }
+
           /// \see PAMI::Device::Interface::MulticombineModel::postMulticombine
           pami_result_t postMulticombine_impl(uint8_t (&state)[MulticombineModel<T_PacketModel, T_Msgdata_support, T_PWQ_support>::sizeof_msg],
+					      size_t               client,
+					      size_t               context,					      
                                               pami_multicombine_t *mcomb,
                                               void                *devinfo = NULL);
 
@@ -195,6 +206,8 @@ namespace PAMI
 
       template <class T_PacketModel, bool T_Msgdata_support, bool T_PWQ_support>
       inline pami_result_t MulticombineModel<T_PacketModel, T_Msgdata_support, T_PWQ_support>::postMulticombine_impl(uint8_t (&state)[MulticombineModel::sizeof_msg],
+	  size_t               client,
+          size_t               context,
           pami_multicombine_t *mcomb,
           void                *devinfo)
       {

@@ -45,12 +45,14 @@ private:
         };
 public:
         WQRingBcastMsg(GenericDeviceMessageQueue *Generic_QS,
-                pami_multicast_t *mcast,
-                PAMI::PipeWorkQueue *iwq,
-                PAMI::PipeWorkQueue *swq,
-                PAMI::PipeWorkQueue *rwq) :
+		       size_t            context,
+		       size_t            client, 
+		       pami_multicast_t *mcast,
+		       PAMI::PipeWorkQueue *iwq,
+		       PAMI::PipeWorkQueue *swq,
+		       PAMI::PipeWorkQueue *rwq) :
         PAMI::Device::Generic::GenericMessage(Generic_QS, mcast->cb_done,
-                                mcast->client, mcast->context),
+                                client, context),
         _iwq(iwq),
         _swq(swq), // might be NULL
         _rwq(rwq), // might be NULL (but not both)
@@ -200,6 +202,8 @@ public:
         }
 
         inline pami_result_t postMulticast_impl(uint8_t (&state)[sizeof_msg],
+						size_t            client,
+						size_t            context, 
                                                 pami_multicast_t *mcast,
                                                 void *devinfo);
 
@@ -211,6 +215,8 @@ private:
 }; // class WQRingBcastMdl
 
 inline pami_result_t WQRingBcastMdl::postMulticast_impl(uint8_t (&state)[sizeof_msg],
+							size_t            client,
+							size_t            context,   
                                                         pami_multicast_t *mcast,
                                                         void * devinfo) {
         PAMI::Topology *dst_topo = (PAMI::Topology *)mcast->dst_participants;
@@ -249,13 +255,13 @@ inline pami_result_t WQRingBcastMdl::postMulticast_impl(uint8_t (&state)[sizeof_
 #ifdef USE_FLAT_BUFFER
                 _wq[meix_1].reset();
 #endif /* USE_FLAT_BUFFER */
-                msg = new (&state) WQRingBcastMsg(_queue.getQS(), mcast,
+                msg = new (&state) WQRingBcastMsg(_queue.getQS(), client, context, mcast,
                                         (PAMI::PipeWorkQueue *)mcast->src, &_wq[meix_1], NULL);
         } else if (iamlast) {
                 // I am tail of stream - no one is downstream from me.
                 // PAMI_assert(roles == NON_ROOT_ROLE);
                 // _wq[meix_1] ===> results
-                msg = new (&state) WQRingBcastMsg(_queue.getQS(), mcast,
+	  msg = new (&state) WQRingBcastMsg(_queue.getQS(), client, context, mcast,
                                         &_wq[meix], NULL, (PAMI::PipeWorkQueue *)mcast->dst);
         } else {
                 // PAMI_assert(roles == NON_ROOT_ROLE);
@@ -264,7 +270,7 @@ inline pami_result_t WQRingBcastMdl::postMulticast_impl(uint8_t (&state)[sizeof_
 #ifdef USE_FLAT_BUFFER
                 _wq[meix_1].reset();
 #endif /* USE_FLAT_BUFFER */
-                msg = new (&state) WQRingBcastMsg(_queue.getQS(), mcast,
+                msg = new (&state) WQRingBcastMsg(_queue.getQS(), client, context, mcast,
                                         &_wq[meix], &_wq[meix_1], (PAMI::PipeWorkQueue *)mcast->dst);
         }
         _queue.__post<WQRingBcastMsg>(msg);

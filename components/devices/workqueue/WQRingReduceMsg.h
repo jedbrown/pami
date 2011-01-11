@@ -46,12 +46,13 @@ private:
 
 public:
         WQRingReduceMsg(GenericDeviceMessageQueue *Generic_QS,
+	        size_t client, size_t context,
                 pami_multicombine_t *mcomb,
                 PAMI::PipeWorkQueue *iwq,
                 PAMI::PipeWorkQueue *swq,
                 PAMI::PipeWorkQueue *rwq) :
         PAMI::Device::Generic::GenericMessage(Generic_QS, mcomb->cb_done,
-                                mcomb->client, mcomb->context),
+					      client, context),
         _iwq(iwq),
         _swq(swq), // might be NULL
         _rwq(rwq),
@@ -209,7 +210,15 @@ public:
 
         inline void reset_impl() {}
 
-  inline pami_result_t postMulticombine_impl(uint8_t (&state)[sizeof_msg], pami_multicombine_t *mcomb, void *devinfo=NULL);
+	pami_result_t postMulticombineImmediate_impl(size_t                   client,
+						     size_t                   context, 
+						     pami_multicombine_t    * mcomb,
+						     void                   * devinfo=NULL) 
+	{
+	  return PAMI_ERROR;
+	}
+
+	inline pami_result_t postMulticombine_impl(uint8_t (&state)[sizeof_msg], size_t client, size_t context, pami_multicombine_t *mcomb, void *devinfo=NULL);
 
 private:
 	PAMI::Device::Generic::Device *_gd;
@@ -218,7 +227,7 @@ private:
         PAMI::PipeWorkQueue _wq[PAMI_MAX_PROC_PER_NODE];
 }; // class WQRingReduceMdl
 
-  inline pami_result_t WQRingReduceMdl::postMulticombine_impl(uint8_t (&state)[sizeof_msg], pami_multicombine_t *mcomb, void *devinfo) {
+ inline pami_result_t WQRingReduceMdl::postMulticombine_impl(uint8_t (&state)[sizeof_msg], size_t client, size_t context, pami_multicombine_t *mcomb, void *devinfo) {
         PAMI::Topology *data_topo = (PAMI::Topology *)mcomb->data_participants;
         PAMI::Topology *results_topo = (PAMI::Topology *)mcomb->results_participants;
         // data_participants will be all local nodes...
@@ -257,15 +266,15 @@ private:
                 // I am root - downstream from eveyone.
                 // _input (op) _wq[meix_1] => _output
                 // PAMI_assert(roles == ROOT_ROLE);
-                msg = new (&state) WQRingReduceMsg(_queue.getQS(), mcomb,
-                                        (PAMI::PipeWorkQueue *)mcomb->data, &_wq[meix_1], (PAMI::PipeWorkQueue *)mcomb->results);
+	  msg = new (&state) WQRingReduceMsg(_queue.getQS(), client, context, mcomb,
+					     (PAMI::PipeWorkQueue *)mcomb->data, &_wq[meix_1], (PAMI::PipeWorkQueue *)mcomb->results);
         } else if (results_topo->isRankMember(me_1)) {
                 // I am head of stream.
                 // PAMI_assert(roles == NON_ROOT_ROLE);
 #ifdef USE_FLAT_BUFFER
                 _wq[meix].reset();
 #endif /* USE_FLAT_BUFFER */
-                msg = new (&state) WQRingReduceMsg(_queue.getQS(), mcomb,
+                msg = new (&state) WQRingReduceMsg(_queue.getQS(), client, context, mcomb,
                                         (PAMI::PipeWorkQueue *)mcomb->data, NULL, &_wq[meix]);
         } else {
                 // I am upstream of root, but not head.
@@ -273,7 +282,7 @@ private:
 #ifdef USE_FLAT_BUFFER
                 _wq[meix].reset();
 #endif /* USE_FLAT_BUFFER */
-                msg = new (&state) WQRingReduceMsg(_queue.getQS(), mcomb,
+                msg = new (&state) WQRingReduceMsg(_queue.getQS(), client, context, mcomb,
                                         (PAMI::PipeWorkQueue *)mcomb->data, &_wq[meix_1], &_wq[meix]);
         }
         _queue.__post<WQRingReduceMsg>(msg);

@@ -89,8 +89,8 @@ int main(int argc, char ** argv) {
         pami_multicombine_t mcomb;
 
         // simple allreduce on the local ranks...
-        mcomb.client = 0;
-        mcomb.context = 0;
+        //mcomb.client = 0;
+        //mcomb.context = 0;
         mcomb.roles = (unsigned)-1;
         mcomb.data_participants = (pami_topology_t *)&__global.topology_local;
         mcomb.results_participants = (pami_topology_t *)&otopo;

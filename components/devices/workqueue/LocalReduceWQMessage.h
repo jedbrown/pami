@@ -55,7 +55,9 @@ public:
           /// \param[in] dtshift      Shift in byts of the elements for the reduction
           ///
           inline LocalReduceWQMessage (GenericDeviceMessageQueue *device,
-                                       pami_multicombine_t *mcomb,
+				       size_t               client,
+				       size_t               context,
+                                       pami_multicombine_t *mcomb,				       
                                        PAMI::Device::WorkQueue::SharedWorkQueue &workqueue,
                                        unsigned          peer,
                                        unsigned          peers,
@@ -63,7 +65,7 @@ public:
                                        coremath          func,
                                        int               dtshift) :
             PAMI::Device::Generic::GenericMessage (device, mcomb->cb_done,
-                                mcomb->client, mcomb->context),
+						   client, context),
             _isrootpeer (peer == rootpeer),
             //_iscopypeer (peer == ((rootpeer+1)%peers)),
             _iscopypeer (peer == ((rootpeer+1) >= peers ? (rootpeer+1) - peers : (rootpeer+1))),
@@ -187,7 +189,15 @@ public:
                 }
         }
 
-  inline pami_result_t postMulticombine_impl(uint8_t (&state)[sizeof_msg], pami_multicombine_t *mcomb, void *devinfo = NULL);
+	pami_result_t postMulticombineImmediate_impl(size_t                   client,
+						     size_t                   context, 
+						     pami_multicombine_t    * mcomb,
+						     void                   * devinfo=NULL) 
+	{
+	  return PAMI_ERROR;
+	}
+	
+	inline pami_result_t postMulticombine_impl(uint8_t (&state)[sizeof_msg], size_t client, size_t context, pami_multicombine_t *mcomb, void *devinfo = NULL);
 
 private:
 	PAMI::Device::Generic::Device *_gd;
@@ -197,7 +207,7 @@ private:
 	LocalReduceWQPendQ _queue;
 }; // class LocalReduceWQModel
 
-  inline pami_result_t LocalReduceWQModel::postMulticombine_impl(uint8_t (&state)[sizeof_msg], pami_multicombine_t *mcomb, void *devinfo) {
+ inline pami_result_t LocalReduceWQModel::postMulticombine_impl(uint8_t (&state)[sizeof_msg], size_t client, size_t context, pami_multicombine_t *mcomb, void *devinfo) {
         PAMI::Topology *results_topo = (PAMI::Topology *)mcomb->results_participants;
         // PAMI_assert((data_topo .U. results_topo).size() == _npeers);
         // This is a LOCAL reduce, results_topo must be a valid local rank!
@@ -207,8 +217,9 @@ private:
         unsigned rootpeer = __global.topology_local.rank2Index(results_topo->index2Rank(0));
         LocalReduceWQMessage *msg =
                 new (&state) LocalReduceWQMessage(_queue.getQS(),
-                                mcomb, _shared, _peer, _npeers, rootpeer,
-                                func, dtshift);
+						  client, context,
+						  mcomb, _shared, _peer, _npeers, rootpeer,
+						  func, dtshift);
         _queue.__post<LocalReduceWQMessage>(msg);
         return PAMI_SUCCESS;
 }

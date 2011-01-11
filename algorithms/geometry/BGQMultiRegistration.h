@@ -121,8 +121,8 @@ namespace PAMI
     }
     
     typedef CCMI::Adaptor::Barrier::BarrierT
-      < //CCMI::Schedule::TopoMultinomial8,
-      CCMI::Schedule::NodeOptTopoMultinomial,
+      < CCMI::Schedule::TopoMultinomial8,
+      //CCMI::Schedule::NodeOptTopoMultinomial,
       opt_binomial_analyze,
       PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX,
       PAMI::Geometry::CKEY_BARRIERCOMPOSITE2>
@@ -144,7 +144,7 @@ namespace PAMI
       new(m) PAMI::Geometry::Metadata("I0:MultiCombine:SHMEM:-");
     }
 
-    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite,
+    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite<>,
     ShmemMcombMetaData,
     CCMI::ConnectionManager::SimpleConnMgr > ShmemMultiCombineFactory;
 
@@ -156,7 +156,7 @@ namespace PAMI
       new(m) PAMI::Geometry::Metadata("I0:MultiCast:SHMEM:-");
     }
 
-    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite,
+    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite<>,
     ShmemMcastMetaData,
     CCMI::ConnectionManager::SimpleConnMgr > ShmemMultiCastFactory;
 
@@ -201,7 +201,7 @@ namespace PAMI
       m->check_perf.values.hw_accel     = 1;
     }
 
-    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite,
+    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite<>,
     MUMcombMetaData,
     CCMI::ConnectionManager::SimpleConnMgr > MUMultiCombineFactory;
 
@@ -213,11 +213,27 @@ namespace PAMI
       new(m) PAMI::Geometry::Metadata("I0:DirectPutMulticast:-:MU");
     }
 
-    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite,
-    MUMcastCollectiveDputMetaData,
+
+    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite<true, MUGlobalDputNI>,
+    MUCollectiveDputMetaData,
     CCMI::ConnectionManager::SimpleConnMgr > MUCollectiveDputMulticastFactory;
 
-    void MUMcombCollectiveDputMetaData(pami_metadata_t *m)
+
+    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite<true, MUGlobalDputNI>,
+    MUCollectiveDputMetaData,
+    CCMI::ConnectionManager::SimpleConnMgr > MUCollectiveDputMulticombineFactory;
+
+    //----------------------------------------------------------------------------
+    // 'Pure' MU allsided multicast built on active message multicast with an
+    // synchronizing multisync
+    //
+    // The necessary factory is defined here to implement the appropriate
+    // dispatch/notifyRecv.  We simply us a map<> to associate connection id's
+    // with composites.  Since it's all-sided, this should be fine.
+    //
+    // Connection id's are based on incrementing CommSeqConnMgr id's.
+    //----------------------------------------------------------------------------
+    void MUMcast2MetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:DirectPutMultiCombine:-:MU");
 //    m->check_correct.values.mustquery = 0;

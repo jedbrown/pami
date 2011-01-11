@@ -112,9 +112,6 @@ namespace PAMI
 	  ShortCompletionMsg () {}
 	};
 
-	static const uint32_t sizeof_msg = (sizeof(CollectiveDPutMulticast) > sizeof(CollectiveDPutMulticombine)) ? 
-	  sizeof(CollectiveDPutMulticast) : sizeof(CollectiveDPutMulticombine);
-
 	CollectiveDmaModelBase (): 
 	_mucontext(*(MU::Context*)NULL), 
 	_injChannel (*(InjChannel *)NULL), 
@@ -199,6 +196,20 @@ namespace PAMI
 	  //TRACE_FN_EXIT();		    
 	}
 
+	void postShortCompletion (pami_event_function      cb_done,
+				  void                   * cookie,
+				  size_t                   bytes,
+				  PipeWorkQueue          * pwq)
+	{
+	  _scompmsg._cb_done = cb_done;
+	  _scompmsg._cookie  = cookie;
+	  _scompmsg._bytes   = bytes;
+	  _scompmsg._dpwq    = pwq;
+	  
+	  PAMI::Device::Generic::GenericThread *work = (PAMI::Device::Generic::GenericThread *)&_swork;
+	  _gdev.postThread(work);
+	}
+
 	pami_result_t  postShortCollective (uint32_t        opcode,
 					    uint32_t        sizeoftype,
 					    uint32_t        bytes,
@@ -210,51 +221,44 @@ namespace PAMI
 	{
 	  PAMI_assert (bytes <= _collstate._tempSize);
 	  _int64Cpy(_collstate._tempBuf, src, bytes, (((uint64_t)src)&0x7) == 0);  
+	  //memcpy(_collstate._tempBuf, src, bytes);  
 
-	  size_t ndesc = _injChannel.getFreeDescriptorCountWithUpdate();	  
-	  if (ndesc > 0) {
-	    _collstate._colCounter = bytes;
-	    // Clone the message descriptors directly into the injection fifo.
-	    MUSPI_DescriptorBase *d = (MUSPI_DescriptorBase *) _injChannel.getNextDescriptor ();	    
-	    _modeldesc.clone (*d);	    	    
-	    d->setClassRoute (classroute);
-	    d->setPayload (_collstate._tempPAddr, bytes);	      
-	    d->setOpCode (opcode);
-	    d->setWordLength (sizeoftype);
-	    //d->PacketHeader.messageUnitHeader.Packet_Types.Direct_Put.Rec_Payload_Base_Address_Id = _pBatID;
-	    _mucontext.setThroughputCollectiveBufferBatEntry(_collstate._tempPAddr);
-
-	    //fprintf(stderr, "Collective on class route %d\n", classroute);		    
-	    //MUSPI_DescriptorDumpHex ((char *)"Coll Descriptor", (MUHWI_Descriptor_t *)d);
-	    _injChannel.injFifoAdvanceDesc ();		
-	    
+	  bool flag = _injChannel.hasFreeSpaceWithUpdate();  
+	  if (!flag) 
+	    return PAMI_ERROR;
+	  
+	  _collstate._colCounter = bytes;
+	  // Clone the message descriptors directly into the injection fifo.
+	  MUSPI_DescriptorBase *d = (MUSPI_DescriptorBase *) _injChannel.getNextDescriptor ();	    
+	  _modeldesc.clone (*d);	    	    
+	  d->setClassRoute (classroute);
+	  d->setPayload (_collstate._tempPAddr, bytes);	      
+	  d->setOpCode (opcode);
+	  d->setWordLength (sizeoftype);
+	  //d->PacketHeader.messageUnitHeader.Packet_Types.Direct_Put.Rec_Payload_Base_Address_Id = _pBatID;
+	  _mucontext.setThroughputCollectiveBufferBatEntry(_collstate._tempPAddr);
+	  
+	  //fprintf(stderr, "Collective on class route %d\n", classroute);		    
+	  //MUSPI_DescriptorDumpHex ((char *)"Coll Descriptor", (MUHWI_Descriptor_t *)d);
+	  _injChannel.injFifoAdvanceDesc ();		
+	  
 #ifndef MU_SHORT_BLOCKING_COLLECTIVE
-	    _scompmsg._cb_done = cb_done;
-	    _scompmsg._cookie  = cookie;
-	    _scompmsg._bytes   = bytes;
-	    _scompmsg._dpwq    = dpwq;
-
-	    PAMI::Device::Generic::GenericThread *work = (PAMI::Device::Generic::GenericThread *)&_swork;
-	    _gdev.postThread(work);
+	  postShortCompletion(cb_done, cookie, bytes, dpwq);
 #else
-	    while (_collstate._colCounter != 0);
-	    mem_sync();
-	    if (dpwq) {
-	      char *dst = dpwq->bufferToProduce();
-	      _int64Cpy (dst, _collstate._tempBuf, bytes, (((uint64_t)dst)&0x7) == 0);	  
-	      dpwq->produceBytes(bytes);
-	    }
-	    cb_done (NULL, cookie, PAMI_SUCCESS);
-#endif	    
-	    
-	    return PAMI_SUCCESS;
+	  while (_collstate._colCounter != 0);
+	  mem_sync();
+	  if (dpwq) {
+	    char *dst = dpwq->bufferToProduce();
+	    _int64Cpy (dst, _collstate._tempBuf, bytes, (((uint64_t)dst)&0x7) == 0);	  
+	    dpwq->produceBytes(bytes);
 	  }
-
-	  return PAMI_ERROR;	  
+	  cb_done (NULL, cookie, PAMI_SUCCESS);
+#endif	    
+	  
+	  return PAMI_SUCCESS;
 	}
-
-	pami_result_t postCollective (uint8_t                    (&state)[sizeof_msg],
-				      uint32_t                   bytes,
+	
+	pami_result_t postCollective (uint32_t                   bytes,
 				      PAMI::PipeWorkQueue      * src,
 				      PAMI::PipeWorkQueue      * dst,
 				      pami_event_function        cb_done,
@@ -277,15 +281,15 @@ namespace PAMI
 	  _mucontext.setThroughputCollectiveBufferBatEntry(paddr);
 	    
 	  _collstate._colCounter = bytes;	  
-	  CollectiveDPutMulticombine *msg = new (state) CollectiveDPutMulticombine (_mucontext,
-										    cb_done,
-										    cookie,
-										    src,
-										    dst,
-										    bytes,
-										    op,
-										    sizeoftype,
-										    &_collstate._colCounter);	  
+	  CollectiveDPutMulticombine *msg = new (&_mcomb_msg) CollectiveDPutMulticombine (_mucontext,
+											  cb_done,
+											  cookie,
+											  src,
+											  dst,
+											  bytes,
+											  op,
+											  sizeoftype,
+											  &_collstate._colCounter);	  
 	  _modeldesc.clone (msg->_desc);	  
 	  msg->_desc.PacketHeader.messageUnitHeader.Packet_Types.Direct_Put.Rec_Payload_Base_Address_Id = _collstate.payloadBatID();
 	  msg->_desc.setClassRoute (classroute);
@@ -302,8 +306,7 @@ namespace PAMI
 	}
 
 	
-	pami_result_t postBroadcast (uint8_t                    (&state)[sizeof_msg],
-				     uint32_t                   bytes,
+	pami_result_t postBroadcast (uint32_t                   bytes,
 				     PAMI::PipeWorkQueue      * src,
 				     PAMI::PipeWorkQueue      * dst,
 				     pami_event_function        cb_done,
@@ -311,50 +314,8 @@ namespace PAMI
 				     char                     * zerobuf,
 				     uint32_t                   zbytes,
 				     bool                       isroot,
-				     unsigned                   classroute) 
-	{
-	  //Pin the buffer to the bat id. On the root the src buffer
-	  //is used to receive the broadcast message
-	  char *dstbuf = NULL;	  
-	  if (isroot) 
-	    dstbuf = src->bufferToConsume();
-	  else
-	    dstbuf = dst->bufferToProduce();
-	  
-	  Kernel_MemoryRegion_t memRegion;
-	  uint rc = 0;
-	  rc = Kernel_CreateMemoryRegion (&memRegion, dstbuf, bytes);
-	  PAMI_assert ( rc == 0 );
-	  uint64_t paddr = (uint64_t)memRegion.BasePa +
-	    ((uint64_t)dstbuf - (uint64_t)memRegion.BaseVa);
-	  _mucontext.setThroughputCollectiveBufferBatEntry(paddr);
-	    
-	  _collstate._colCounter = bytes;	  
-	  CollectiveDPutMulticast *msg = new (state) CollectiveDPutMulticast (_mucontext,
-									      cb_done,
-									      cookie,
-									      (isroot) ? src : dst,
- 									      bytes,
-									      zerobuf,
-									      zbytes, 
-									      isroot,
-									      &_collstate._colCounter);	  
-	  _modeldesc.clone (msg->_desc);	  
-	  msg->_desc.PacketHeader.messageUnitHeader.Packet_Types.Direct_Put.Rec_Payload_Base_Address_Id = _collstate.payloadBatID();
-	  msg->_desc.setClassRoute (classroute);
-
-	  msg->init();
-	  bool flag = msg->advance();
-
-	  if (!flag) {
-	    PAMI::Device::Generic::GenericThread *work = new (&_work) PAMI::Device::Generic::GenericThread(advance, msg);
-	    _mucontext.getProgressDevice()->postThread(work);
-	  }
-	  
-	  return PAMI_SUCCESS;
-	}
-
-
+				     unsigned                   classroute) __attribute__((noinline, weak));
+	
 	static pami_result_t short_advance (pami_context_t     context,
 					    void             * cookie) 
 	{
@@ -396,7 +357,61 @@ namespace PAMI
 	ShortCompletionMsg                         _scompmsg;
 	pami_work_t                                _swork;
 	pami_work_t                                _work;
+	CollectiveDPutMulticast                    _mcast_msg;
+	CollectiveDPutMulticombine                 _mcomb_msg;
       };      
+
+      pami_result_t CollectiveDmaModelBase::postBroadcast (uint32_t                   bytes,
+							   PAMI::PipeWorkQueue      * src,
+							   PAMI::PipeWorkQueue      * dst,
+							   pami_event_function        cb_done,
+							   void                     * cookie,
+							   char                     * zerobuf,
+							   uint32_t                   zbytes,
+							   bool                       isroot,
+							   unsigned                   classroute) 
+	{
+	  //Pin the buffer to the bat id. On the root the src buffer
+	  //is used to receive the broadcast message
+	  char *dstbuf = NULL;	  
+	  if (isroot) 
+	    dstbuf = src->bufferToConsume();
+	  else
+	    dstbuf = dst->bufferToProduce();
+	  
+	  Kernel_MemoryRegion_t memRegion;
+	  uint rc = 0;
+	  rc = Kernel_CreateMemoryRegion (&memRegion, dstbuf, bytes);
+	  PAMI_assert ( rc == 0 );
+	  uint64_t paddr = (uint64_t)memRegion.BasePa +
+	    ((uint64_t)dstbuf - (uint64_t)memRegion.BaseVa);
+	  _mucontext.setThroughputCollectiveBufferBatEntry(paddr);
+	    
+	  _collstate._colCounter = bytes;	  
+	  CollectiveDPutMulticast *msg = new (&_mcast_msg) CollectiveDPutMulticast (_mucontext,
+										    cb_done,
+										    cookie,
+										    (isroot) ? src : dst,
+										    bytes,
+										    zerobuf,
+										    zbytes, 
+										    isroot,
+										    &_collstate._colCounter);	  
+	  _modeldesc.clone (msg->_desc);	  
+	  msg->_desc.PacketHeader.messageUnitHeader.Packet_Types.Direct_Put.Rec_Payload_Base_Address_Id = _collstate.payloadBatID();
+	  msg->_desc.setClassRoute (classroute);
+
+	  msg->init();
+	  bool flag = msg->advance();
+
+	  if (!flag) {
+	    PAMI::Device::Generic::GenericThread *work = new (&_work) PAMI::Device::Generic::GenericThread(advance, msg);
+	    _mucontext.getProgressDevice()->postThread(work);
+	  }
+	  
+	  return PAMI_SUCCESS;
+	}
+
     };
   };
 };
