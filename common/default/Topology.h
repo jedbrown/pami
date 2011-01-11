@@ -1234,18 +1234,6 @@ namespace PAMI {
       }
     }
 
-
-    /// \brief create topology from all Nth offsets locally
-    ///
-    /// DEPRECATED! Use subTopologyNthGlobal() !
-    ///
-    /// \param[out] _new	Where to build topology
-    ///
-    void subTopologyLocalMaster_impl(PAMI::Topology *_new) {
-	subTopologyNthGlobal_impl(_new, 0);
-    }
-
-
     /// \brief reduce dimensions of topology (cube -> plane, etc)
     ///
     /// The 'fmt' param is a pattern indicating which dimensions

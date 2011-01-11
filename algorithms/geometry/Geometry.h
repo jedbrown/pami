@@ -272,7 +272,7 @@ namespace PAMI
         void                             buildSpecialTopologies()
         {
           // build local and global topos
-          _topos[DEFAULT_TOPOLOGY_INDEX].subTopologyLocalMaster(&_topos[MASTER_TOPOLOGY_INDEX]);
+          _topos[DEFAULT_TOPOLOGY_INDEX].subTopologyNthGlobal(&_topos[MASTER_TOPOLOGY_INDEX], 0);
           _topos[DEFAULT_TOPOLOGY_INDEX].subTopologyLocalToMe(&_topos[LOCAL_TOPOLOGY_INDEX]);
           _topos[MASTER_TOPOLOGY_INDEX].subTopologyLocalToMe(&_topos[LOCAL_MASTER_TOPOLOGY_INDEX]);
           // Find master participant on the tree/cau network
