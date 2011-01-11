@@ -29,7 +29,7 @@
 namespace PAMI
 {
   /// \todo Update to use a memory manager template parameter.
-  template <unsigned T_ObjSize, unsigned T_ObjAlign, unsigned T_PREALLOC=10, class T_Mutex = PAMI::Mutex::Noop>
+  template <unsigned T_ObjSize, unsigned T_ObjAlign, unsigned T_PREALLOC=16, class T_Mutex = PAMI::Mutex::Noop>
   class MemoryAllocator
   {
     protected:
@@ -51,7 +51,7 @@ namespace PAMI
         _head (NULL)
       {}
 
-      void *internalAllocate ();
+      void *internalAllocate () __attribute__((noinline, weak));
     
       inline void * allocateObject ()
       {
@@ -109,7 +109,7 @@ namespace PAMI
   };
 
   template <unsigned T_ObjSize, unsigned T_ObjAlign, unsigned T_PREALLOC, class T_Atomic>
-    inline void *MemoryAllocator<T_ObjSize, T_ObjAlign, T_PREALLOC, T_Atomic>::internalAllocate () 
+    void *MemoryAllocator<T_ObjSize, T_ObjAlign, T_PREALLOC, T_Atomic>::internalAllocate () 
     {
       memory_object_t *object; 
       
