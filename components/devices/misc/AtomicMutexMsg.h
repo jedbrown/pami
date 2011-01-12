@@ -72,9 +72,11 @@ protected:
 
 	AtomicMutexMsg(GenericDeviceMessageQueue *Generic_QS,
 		T_Mutex *mutex,
+		size_t            client,
+		size_t            context,
 		pami_multisync_t *msync) :
 	PAMI::Device::Generic::GenericMessage(Generic_QS, msync->cb_done,
-					msync->client, msync->context),
+					      client, context),
 	_role(msync->roles),
 	_mutex(mutex)
 	{
@@ -162,6 +164,8 @@ public:
 	}
 
 	inline pami_result_t postMultisync_impl(uint8_t (&state)[sizeof_msg],
+						size_t          client,
+						size_t          context, 
 					       pami_multisync_t *msync);
 
 private:
@@ -197,7 +201,9 @@ public:
 	}
 
 	inline pami_result_t postMultisync_impl(uint8_t (&state)[sizeof_msg],
-					       pami_multisync_t *msync, void *devinfo);
+						size_t          client,
+						size_t          context, 
+						pami_multisync_t *msync, void *devinfo);
 
 private:
 	PAMI::Device::Generic::Device *_gd;
@@ -210,6 +216,8 @@ private:
 
 template <class T_Mutex>
 inline pami_result_t PAMI::Device::AtomicMutexMdl<T_Mutex>::postMultisync_impl(uint8_t (&state)[sizeof_msg],
+									       size_t          client,
+									       size_t          context, 
 										 pami_multisync_t *msync) {
 	if (msync->roles == LOCK_ROLE) {
 		if (_mutex.tryAcquire()) {
@@ -221,7 +229,7 @@ inline pami_result_t PAMI::Device::AtomicMutexMdl<T_Mutex>::postMultisync_impl(u
 		}
 		// must "continue" current mutex, not start new one!
 		AtomicMutexMsg<T_Mutex> *msg;
-		msg = new (&state) AtomicMutexMsg<T_Mutex>(_queue.getQS(), &_mutex, msync);
+		msg = new (&state) AtomicMutexMsg<T_Mutex>(_queue.getQS(), &_mutex, client, context, msync);
 		_queue.__post<AtomicMutexMsg<T_Mutex> >(msg);
 		return PAMI_SUCCESS;
 	}
@@ -235,6 +243,8 @@ inline pami_result_t PAMI::Device::AtomicMutexMdl<T_Mutex>::postMultisync_impl(u
 
 template <class T_Mutex>
 inline pami_result_t PAMI::Device::SharedAtomicMutexMdl<T_Mutex>::postMultisync_impl(uint8_t (&state)[sizeof_msg],
+										     size_t          client,
+										     size_t          context, 
 										 pami_multisync_t *msync, void *devinfo) {
 	if (msync->roles == LOCK_ROLE) {
 		if (_mutex->tryAcquire()) {
@@ -246,7 +256,7 @@ inline pami_result_t PAMI::Device::SharedAtomicMutexMdl<T_Mutex>::postMultisync_
 		}
 		// must "continue" current mutex, not start new one!
 		AtomicMutexMsg<T_Mutex> *msg;
-		msg = new (&state) AtomicMutexMsg<T_Mutex>(_queue.getQS(), _mutex, msync);
+		msg = new (&state) AtomicMutexMsg<T_Mutex>(_queue.getQS(), _mutex, client, context, msync);
 		_queue.__post<AtomicMutexMsg<T_Mutex> >(msg);
 		return PAMI_SUCCESS;
 	}

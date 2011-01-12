@@ -50,8 +50,8 @@
    */
   typedef struct
   {
-    size_t             client;	        /**< client to operate within */
-    size_t             context;	        /**< primary context to operate within */
+    //size_t             client;	        /**< client to operate within */
+    //size_t             context;	        /**< primary context to operate within */
     pami_callback_t     cb_done;		/**< User's completion callback */
     unsigned           connection_id;	/**< (remove?) differentiate data streams */
     unsigned           roles;		/**< bitmap of roles to perform */
@@ -85,17 +85,36 @@ namespace PAMI
           {
 
           };
+
+        inline pami_result_t postMultisyncImmediate(size_t            client,
+						    size_t            context,
+						    pami_multisync_t *msync,
+						    void             *devinfo = NULL);
+	
         inline pami_result_t postMultisync(uint8_t (&state)[T_StateBytes],
+					   size_t            client,
+					   size_t            context,
                                            pami_multisync_t *msync,
                                            void             *devinfo = NULL);
       }; // class MultisyncModel
 
       template <class T_Model,class T_Device, unsigned T_StateBytes>
       pami_result_t MultisyncModel<T_Model,T_Device,T_StateBytes>::postMultisync(uint8_t (&state)[T_StateBytes],
+										 size_t            client,
+										 size_t            context,
                                                                                  pami_multisync_t *msync,
                                                                                  void             *devinfo)
       {
-        return static_cast<T_Model*>(this)->postMultisync_impl(state, msync, devinfo);
+        return static_cast<T_Model*>(this)->postMultisync_impl(state, client, context, msync, devinfo);
+      }
+
+      template <class T_Model,class T_Device, unsigned T_StateBytes>
+      pami_result_t MultisyncModel<T_Model,T_Device,T_StateBytes>::postMultisyncImmediate(size_t            client,
+											  size_t            context,
+											  pami_multisync_t *msync,
+											  void             *devinfo)
+      {
+        return static_cast<T_Model*>(this)->postMultisyncImmediate_impl(client, context, msync, devinfo);
       }
 
     }; // namespace Interface

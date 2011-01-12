@@ -70,9 +70,11 @@ protected:
 
         AtomicBarrierMsg(GenericDeviceMessageQueue *Generic_QS,
                 T_Barrier *barrier,
+		size_t            client,
+		size_t            context,
                 pami_multisync_t *msync) :
         PAMI::Device::Generic::GenericMessage(Generic_QS, msync->cb_done,
-                                        msync->client, msync->context),
+                                        client, context),
         _barrier(barrier)
         {
                 // PAMI_assert(role == DEFAULT_ROLE);
@@ -159,6 +161,8 @@ public:
 	}
 
         inline pami_result_t postMultisync_impl(uint8_t (&state)[sizeof_msg],
+						size_t            client,
+						size_t            context,
                                                 pami_multisync_t *msync,
                                                 void *devinfo=NULL);
 
@@ -173,6 +177,8 @@ private:
 
 template <class T_Barrier>
 inline pami_result_t PAMI::Device::AtomicBarrierMdl<T_Barrier>::postMultisync_impl(uint8_t (&state)[sizeof_msg],
+										   size_t            client,
+										   size_t            context,  
                                                                                    pami_multisync_t *msync,
                                                                                    void *devinfo) {
         _barrier.begin();
@@ -189,7 +195,7 @@ inline pami_result_t PAMI::Device::AtomicBarrierMdl<T_Barrier>::postMultisync_im
         }
         // must "continue" current barrier, not start new one!
         AtomicBarrierMsg<T_Barrier> *msg;
-        msg = new (&state) AtomicBarrierMsg<T_Barrier>(_queue.getQS(), &_barrier, msync);
+        msg = new (&state) AtomicBarrierMsg<T_Barrier>(_queue.getQS(), &_barrier, client, context, msync);
         _queue.__post<AtomicBarrierMsg<T_Barrier> >(msg);
         return PAMI_SUCCESS;
 }

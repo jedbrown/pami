@@ -99,6 +99,8 @@ namespace PAMI
 
           /// \see PAMI::Device::Interface::MultisyncModel::postMultisync
           pami_result_t postMultisync_impl(uint8_t (&state)[MultisyncModel<T_Msgdata_support, T_PWQ_support>::sizeof_msg],
+					   size_t            client,
+					   size_t            context, 
                                            pami_multisync_t *msync,
                                            void             *devinfo = NULL);
 
@@ -175,6 +177,8 @@ namespace PAMI
 
       template <bool T_Msgdata_support, bool T_PWQ_support>
       inline pami_result_t MultisyncModel<T_Msgdata_support, T_PWQ_support>::postMultisync_impl(uint8_t (&state)[MultisyncModel::sizeof_msg],
+	  size_t           client,
+	  size_t           context,
           pami_multisync_t *msync,
           void             *devinfo)
       {
@@ -287,8 +291,10 @@ namespace PAMI
             PAMI_abort();
           }
           inline pami_result_t postMultisync_impl(uint8_t (&state)[NullMultisyncModel::sizeof_msg],
-          pami_multisync_t *msync,
-          void             *devinfo)
+						  size_t            client,
+						  size_t            context, 
+						  pami_multisync_t *msync,
+						  void             *devinfo)
           {
             PAMI_abort();
           }

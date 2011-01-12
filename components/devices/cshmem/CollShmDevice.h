@@ -1492,6 +1492,8 @@ public:
 						pami_multicast_t *mcast,
 						void             *devinfo=NULL);
         INLINE pami_result_t postMultisync_impl(uint8_t (&state)[sizeof_msg],
+						size_t           client,
+						size_t           context,
 						pami_multisync_t *msync,
 						void             *devinfo=NULL);
         INLINE pami_result_t postMulticombine_impl(uint8_t (&state)[sizeof_msg],
@@ -1525,6 +1527,8 @@ INLINE pami_result_t CollShmModel<T_CollShmDevice, T_MemoryManager> ::postMultic
 
 template <class T_CollShmDevice, class T_MemoryManager>
 INLINE pami_result_t CollShmModel<T_CollShmDevice, T_MemoryManager>::postMultisync_impl(uint8_t (&state)[sizeof_msg],
+						size_t           client,
+						size_t           context,
                                                   pami_multisync_t *msync,
                                                   void             *devinfo) {
         CollShmMessage<pami_multisync_t, T_CollShmDevice> *msg =

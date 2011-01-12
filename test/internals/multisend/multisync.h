@@ -257,8 +257,6 @@ private:
 		if (task_id == 0) fprintf(stderr, "SKIPPING: %s requires only 1 task per node\n", test);\
 	} else {								\
 		initializeMemoryManager("multisync test", 0, mm);		\
-		msync.client = 0;						\
-		msync.context = 0;						\
 		msync.roles = (unsigned)-1;					\
 		msync.participants = (pami_topology_t *)(islocal ?		\
 			 &__global.topology_local : &__global.topology_global);	\
@@ -288,8 +286,8 @@ private:
 		initializeMemoryManager("multisync test", 0, mm,		\
 			__global.topology_local.size(),				\
 			__global.topology_local.index2Rank(0) == task_id);	\
-		msync.client = 0;						\
-		msync.context = 0;						\
+		//msync.client = 0;					\
+		//msync.context = 0;					\
 		msync.roles = (unsigned)-1;					\
 		msync.participants = (pami_topology_t *)(islocal ?		\
 			 &__global.topology_local : &__global.topology_global);	\

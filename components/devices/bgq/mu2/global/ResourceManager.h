@@ -769,6 +769,8 @@ fprintf(stderr, "%s\n", buf);
 	  bool master;
 	  unsigned geom_id;
 	  PAMI::Topology topo;
+	  size_t   client;
+	  size_t   context;
 	  pami_multisync_t msync;
 	  MUCR_mutex_model_t *cr_mtx_mdl;
 	  uint8_t mbuf[MUCR_mutex_model_t::sizeof_msg];
@@ -879,8 +881,8 @@ fprintf(stderr, "%s\n", buf);
 	  cookie->cb_done = (pami_callback_t){fn, clientdata};
 	  cookie->topo = node_topo;
 	  cookie->cr_mtx_mdl = &_cr_mtx_mdls[clientid][contextid];
-	  cookie->msync.client = clientid;
-	  cookie->msync.context = contextid;
+	  cookie->client = clientid;
+	  cookie->context = contextid;
 	  cookie->geom = geom;
 	  cookie->geom_id = geom_id;
 	  cookie->abuf[1] = geom_id;
@@ -958,7 +960,7 @@ fprintf(stderr, "%s\n", buf);
 	  }
 	  crck->msync.cb_done = (pami_callback_t){ got_mutex, crck };
 	  crck->msync.roles = MUCR_mutex_model_t::LOCK_ROLE;
-	  pami_result_t rc = crck->cr_mtx_mdl->postMultisync(crck->mbuf, &crck->msync);
+	  pami_result_t rc = crck->cr_mtx_mdl->postMultisync(crck->mbuf, crck->client, crck->context, &crck->msync);
 	  if (rc != PAMI_SUCCESS)
 	  {
 	    // this frees 'cookie' if needed...
@@ -1084,7 +1086,7 @@ fprintf(stderr, "%s\n", buf);
 	  *crck->thus->_lowest_geom_id = 0xffffffff;
 	  crck->thus->release_mutex(ctx, cookie, PAMI_SUCCESS);
 	  pami_result_t rc = crck->geom->default_barrier(cr_barrier_done, cookie,
-							crck->msync.context, ctx);
+							crck->context, ctx);
 	  if (rc != PAMI_SUCCESS) {
 	    cr_barrier_done(ctx, cookie, rc);
 	  }
@@ -1104,7 +1106,7 @@ fprintf(stderr, "%s\n", buf);
 	  cr_cookie *crck = (cr_cookie *)cookie;
 	  crck->msync.cb_done = (pami_callback_t){ NULL, NULL };
 	  crck->msync.roles = MUCR_mutex_model_t::UNLOCK_ROLE;
-	  pami_result_t rc = crck->cr_mtx_mdl->postMultisync(crck->mbuf, &crck->msync);
+	  pami_result_t rc = crck->cr_mtx_mdl->postMultisync(crck->mbuf, crck->client, crck->context, &crck->msync);
 	  rc = rc;
 	  // no such thing as failure... nore is there any delay...
 	  // mutex is now unlocked, so we are "done" in every way that matters.

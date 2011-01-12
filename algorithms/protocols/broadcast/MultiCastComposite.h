@@ -216,8 +216,8 @@ namespace CCMI
             _minfo.bytes              = _bytes;
 
             // Initialize the msync
-            _msync.client             = 0;
-            _msync.context            = 0; /// \todo ?
+            //_msync.client             = 0;
+            //_msync.context            = 0; /// \todo ?
             _msync.cb_done.function   = cb_msync_done;
             _msync.cb_done.clientdata = this;
             _msync.connection_id      = 0; /// \todo ?
@@ -965,8 +965,8 @@ namespace CCMI
               {
                 _deviceMsyncInfo          = _geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID); /// \todo switch to GKEY_MSYNC_CLASSROUTEID
                 // Initialize the msync
-                _msync.client             = 0;
-                _msync.context            = 0; /// \todo ?
+                //_msync.client             = 0;
+                //_msync.context            = 0; /// \todo ?
                 _msync.cb_done.function   = cb_msync_done;
                 _msync.cb_done.clientdata = this;
                 _msync.connection_id      = 0; /// \todo ?

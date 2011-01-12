@@ -37,6 +37,8 @@ namespace PAMI
         }
 
       pami_result_t postMultisync (uint8_t         (&state)[msync_model_state_bytes],
+				   size_t           client,
+				   size_t           context,
                                    pami_multisync_t *msync,
                                    void             *devinfo=NULL)
         {

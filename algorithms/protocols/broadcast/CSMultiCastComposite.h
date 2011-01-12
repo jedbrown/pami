@@ -70,8 +70,8 @@ namespace CCMI
 
             _pwq.reset();
 
-            _minfo.client             = 0;
-            _minfo.context            = 0; /// \todo ?
+            //_minfo.client             = 0;
+            //_minfo.context            = 0; /// \todo ?
             _minfo.cb_done.function   = fn;
             _minfo.cb_done.clientdata = cookie;
             _minfo.connection_id      = 0;

@@ -278,12 +278,12 @@ namespace PAMI
 
     pami_multisync_t  m     = *msync;
 
-    m.client   =  _clientid;
-    m.context  =  _contextid;
+    //m.client   =  _clientid;
+    //m.context  =  _contextid;
 
     m.cb_done.function     =  ni_client_done;
     m.cb_done.clientdata   =  req;
-    _msync.postMultisync(req->_state._msync, &m, devinfo);
+    _msync.postMultisync(req->_state._msync, _clientid, _contextid, &m, devinfo);
     TRACE_FN_EXIT();
     return PAMI_SUCCESS;
   }
@@ -341,7 +341,7 @@ namespace PAMI
     DO_DEBUG((templateName<T_Msync>()));
 
     TRACE_FN_EXIT();
-    return _msync.postMultisync_impl(state, msync, devinfo);
+    return _msync.postMultisync_impl(state, _clientid, _contextid, msync, devinfo);
   }
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
