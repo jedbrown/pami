@@ -397,12 +397,12 @@ namespace PAMI
       // pami_multisync_t  m     = *msync;
       pami_multisync_t&  m     = *msync;
 
-      m.client   =  _clientid;
-      m.context  =  _contextid;
+      //m.client   =  _clientid;
+      //m.context  =  _contextid;
 
       m.cb_done.function     =  ni_client_done;
       m.cb_done.clientdata   =  req;
-      _model.postMultisync(req->_state._msync, &m, devinfo);
+      _model.postMultisync(req->_state._msync, _clientid, _contextid, &m, devinfo);
       return PAMI_SUCCESS;
     }
 
@@ -444,7 +444,7 @@ namespace PAMI
     {
       DO_DEBUG((templateName<T_Model>()));
 
-      return _model.postMultisync_impl(state, msync,devinfo);
+      return _model.postMultisync_impl(state, _clientid, _contextid, msync,devinfo);
     }
 
     template <class T_Model>

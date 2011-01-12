@@ -64,6 +64,8 @@ public:
 	}
 
 	inline pami_result_t postMultisync(uint8_t (&state)[sizeof_msg],
+					   size_t                 client,
+					   size_t                 context, 
 						pami_multisync_t *msync) {
 		pami_task_t me = __global.mapping.task();
 		PAMI::Topology *topo = (PAMI::Topology *)msync->participants;

@@ -89,7 +89,7 @@ public:
                 // first barrier: get everyone together
                 _done = 0;
                 //fprintf(stderr, "... before %s.postMultisync\n", _name);
-                rc = _model->postMultisync(_msgbuf,msync);
+                rc = _model->postMultisync(_msgbuf,0,0,msync);
                 if (rc != PAMI_SUCCESS) {
                         fprintf(stderr, "Failed to post first multisync \"%s\"\n", _name);
                         return PAMI_ERROR;
@@ -105,7 +105,7 @@ public:
                 ++msync->connection_id;
                 _done = 0;
                 t0 = __global.time.timebase();
-                rc = _model->postMultisync(_msgbuf,msync);
+                rc = _model->postMultisync(_msgbuf,0,0,msync);
                 if (rc != PAMI_SUCCESS) {
                         fprintf(stderr, "Failed to post second multisync \"%s\"\n", _name);
                         return PAMI_ERROR;
@@ -142,7 +142,7 @@ public:
                 _done = 0;
                 t0 = __global.time.timebase();
                 while ((t1 = __global.time.timebase()) - t0 < delay);
-                rc = _model->postMultisync(_msgbuf,msync);
+                rc = _model->postMultisync(_msgbuf,0,0,msync);
                 if (rc != PAMI_SUCCESS) {
                         fprintf(stderr, "Failed to post third multisync \"%s\"\n", _name);
                         return PAMI_ERROR;
@@ -220,7 +220,7 @@ public:
                 // first barrier: get everyone together
                 _done = 0;
                 fprintf(stderr, "... before %s.postMultisync\n", _name);
-                rc = _model->postMultisync(_msgbuf,msync);
+                rc = _model->postMultisync(_msgbuf,0,0,msync);
                 if (rc != PAMI_SUCCESS) {
                         fprintf(stderr, "Failed to post first multisync \"%s\"\n", _name);
                         return PAMI_ERROR;
@@ -234,7 +234,7 @@ public:
                 msync->cb_done = (pami_callback_t){NULL, NULL};
                 msync->roles = _model->UNLOCK_ROLE;
 		// we know this won't require completion... we're done now...
-                rc = _model->postMultisync(_msgbuf,msync);
+                rc = _model->postMultisync(_msgbuf,0,0,msync);
 
                 return PAMI_SUCCESS;
         }
@@ -286,8 +286,6 @@ private:
 		initializeMemoryManager("multisync test", 0, mm,		\
 			__global.topology_local.size(),				\
 			__global.topology_local.index2Rank(0) == task_id);	\
-		//msync.client = 0;					\
-		//msync.context = 0;					\
 		msync.roles = (unsigned)-1;					\
 		msync.participants = (pami_topology_t *)(islocal ?		\
 			 &__global.topology_local : &__global.topology_global);	\
