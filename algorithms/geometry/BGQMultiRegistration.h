@@ -245,6 +245,11 @@ namespace PAMI
     void MUMcombCollectiveDputMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:DirectPutMulticombine:-:MU");
+      //    m->check_correct.values.mustquery = 0;
+      m->check_correct.values.alldt     = 0;
+      m->check_correct.values.allop     = 0;
+      m->check_fn                       = MU::op_dt_metadata_function;
+      m->check_perf.values.hw_accel     = 1;
     }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite<true, MUGlobalDputNI>,

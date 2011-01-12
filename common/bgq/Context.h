@@ -1147,7 +1147,7 @@ namespace PAMI
       void *                       _dispatch[1024];
       Protocol::Get::RGet         *_rget;
       Protocol::Put::RPut         *_rput;
-      MemoryAllocator<1024, 16>    _request;
+      MemoryAllocator<1024,64,16> _request;
       ContextLock                  _lock;
 #ifdef _COLLSHM
       CollShmCollreg              *_coll_shm_registration;

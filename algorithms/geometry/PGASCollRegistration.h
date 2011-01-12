@@ -326,7 +326,7 @@ namespace PAMI
       T_NI                   *_barrier_ue;
 
 
-      PAMI::MemoryAllocator<sizeof(Factories),16>  _allocator;
+      PAMI::MemoryAllocator<sizeof(Factories),16,16>  _allocator;
       TSPColl::Barrier<T_NI>                  *_nb_barrier;
       TSPColl::BarrierUE<T_NI>                *_nb_ue_barrier;
       TSPColl::Allgather<T_NI>                *_nb_allgather;

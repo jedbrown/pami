@@ -29,19 +29,19 @@
 namespace PAMI
 {
   /// \todo Update to use a memory manager template parameter.
-  template <unsigned T_ObjSize, unsigned T_ObjAlign, unsigned T_PREALLOC=16, class T_Mutex = PAMI::Mutex::Noop>
+  template <unsigned T_ObjSize, unsigned T_ObjAlign, unsigned T_PREALLOC=4, class T_Mutex = PAMI::Mutex::Noop>
   class MemoryAllocator
   {
     protected:
 
       typedef struct memory_object
       {
-        uint8_t             object[T_ObjSize];
-        union
-        {
-          struct memory_object * next;
-          uint8_t                pad[T_ObjAlign];
-        };
+        uint8_t                object[T_ObjSize];
+	struct memory_object * next;
+	
+	//Correct padding assuming T_Objsize is not a multiple of T_ObjAlign. 
+	//T_ObjAlign - (objsize+sizeof(next))%T_ObjAlign
+	uint8_t                pad[T_ObjAlign - ((T_ObjSize+8) & (T_ObjAlign-1))];
       } memory_object_t;
 
     public:
