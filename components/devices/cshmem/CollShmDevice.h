@@ -1485,16 +1485,20 @@ public:
 
             _csdevice.getWindow(0,0,0); // just simple checking
         }
-
+	
         INLINE pami_result_t postMulticast_impl(uint8_t (&state)[sizeof_msg],
-                                               pami_multicast_t *mcast,
-                                               void             *devinfo=NULL);
+						size_t           client,
+						size_t           context,
+						pami_multicast_t *mcast,
+						void             *devinfo=NULL);
         INLINE pami_result_t postMultisync_impl(uint8_t (&state)[sizeof_msg],
-                                               pami_multisync_t *msync,
-                                               void             *devinfo=NULL);
+						pami_multisync_t *msync,
+						void             *devinfo=NULL);
         INLINE pami_result_t postMulticombine_impl(uint8_t (&state)[sizeof_msg],
-                                               pami_multicombine_t *mcombine,
-                                               void             *devinfo=NULL);
+						   size_t           client,
+						   size_t           context,
+						   pami_multicombine_t *mcombine,
+						   void             *devinfo=NULL);
 private:
         unsigned _peer;
         unsigned _npeers;
@@ -1507,9 +1511,11 @@ private:
 
 template <class T_CollShmDevice, class T_MemoryManager>
 INLINE pami_result_t CollShmModel<T_CollShmDevice, T_MemoryManager> ::postMulticast_impl(uint8_t (&state)[sizeof_msg],
-                                                  pami_multicast_t *mcast,
-                                                  void             *devinfo) {
-        // PAMI::Topology *src_topo = (PAMI::Topology *)mcast->src_participants;
+											 size_t           client,
+											 size_t           context,
+											 pami_multicast_t *mcast,
+											 void             *devinfo) {
+  // PAMI::Topology *src_topo = (PAMI::Topology *)mcast->src_participants;
         // unsigned rootpeer = __global.topology_local.rank2Index(src_topo->index2Rank(0));
         CollShmMessage<pami_multicast_t, T_CollShmDevice> *msg =
           new (&state) CollShmMessage<pami_multicast_t, T_CollShmDevice> (&_csdevice, mcast);
@@ -1529,6 +1535,8 @@ INLINE pami_result_t CollShmModel<T_CollShmDevice, T_MemoryManager>::postMultisy
 
 template <class T_CollShmDevice, class T_MemoryManager>
 INLINE pami_result_t CollShmModel<T_CollShmDevice, T_MemoryManager>::postMulticombine_impl(uint8_t (&state)[sizeof_msg],
+						  size_t           client,
+						  size_t           context,
                                                   pami_multicombine_t *mcombine,
                                                   void             *devinfo) {
         // PAMI::Topology *src_topo = (PAMI::Topology *)mcombine->data_participants;
