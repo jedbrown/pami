@@ -25,7 +25,8 @@
 #include "components/devices/ShmemCollInterface.h"
 #include "components/devices/shmemcoll/ShmemCollDevice.h"
 #include "components/devices/shmemcoll/msgs/ShortMcombMessage.h"
-#include "components/devices/shmemcoll/msgs/ShaddrMcombMessage.h"
+//#include "components/devices/shmemcoll/msgs/ShaddrMcombMessage.h"
+#include "components/devices/shmemcoll/msgs/ShaddrMcombMessagePipe.h"
 #include "components/devices/shmemcoll/msgs/BaseMessage.h"
 //#include "components/devices/shmemcoll/ShmemDescMessage.h"
 
@@ -162,12 +163,15 @@ namespace PAMI
 
               mcomb_control->chunks_done[_local_rank] = 0;
               mcomb_control->chunks_copied[_local_rank] = 0;
+              mcomb_control->current_iter=0;
               TRACE_ERR((stderr, "[%d]setting my chunks_done:%p to 0\n", _local_rank, &mcomb_control->chunks_done[_peer]));
               my_desc->set_my_state(Shmem::INIT);
               //src->consumeBytes(bytes);
 
-              Shmem::ShaddrMcombMessage<T_Device, T_Desc> * obj = (Shmem::ShaddrMcombMessage<T_Device, T_Desc> *) (&state[0]);
-              new (obj) Shmem::ShaddrMcombMessage<T_Device, T_Desc> (_device.getContext(), my_desc, _local_rank);
+              /*Shmem::ShaddrMcombMessage<T_Device, T_Desc> * obj = (Shmem::ShaddrMcombMessage<T_Device, T_Desc> *) (&state[0]);
+              new (obj) Shmem::ShaddrMcombMessage<T_Device, T_Desc> (_device.getContext(), my_desc, _local_rank);*/
+              Shmem::ShaddrMcombMessagePipe<T_Device, T_Desc> * obj = (Shmem::ShaddrMcombMessagePipe<T_Device, T_Desc> *) (&state[0]);
+              new (obj) Shmem::ShaddrMcombMessagePipe<T_Device, T_Desc> (_device.getContext(), my_desc, _local_rank);
 
               _device.post_obj(obj);
               my_desc->signal_arrived(); //signal that I have copied all my addresses/data
