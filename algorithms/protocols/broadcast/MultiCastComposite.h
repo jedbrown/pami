@@ -1329,15 +1329,6 @@ namespace CCMI
             _minfo.optor              = PAMI_BOR;
             _minfo.dtype              = PAMI_UNSIGNED_CHAR;
             _minfo.count              = _bytes;
-#ifdef __pami_target_bgq__  // doesn't support chars on MU
-            /// \todo this isn't 100%
-            if (!((PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->isLocal())
-              {
-                _minfo.dtype              = PAMI_UNSIGNED_INT;
-                _minfo.count              = _bytes / 4;
-              }
-
-#endif
           }
 
           virtual void start()
@@ -1409,15 +1400,6 @@ namespace CCMI
             _minfo.optor              = PAMI_BOR;
             _minfo.dtype              = PAMI_UNSIGNED_CHAR;
             _minfo.count              = _bytes;
-#ifdef __pami_target_bgq__  // doesn't support chars on MU
-            /// \todo this isn't 100%
-            if (!((PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->isLocal())
-              {
-                _minfo.dtype              = PAMI_UNSIGNED_INT;
-                _minfo.count              = _bytes / 4;
-              }
-
-#endif
             return 0;
           };
 

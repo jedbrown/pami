@@ -209,7 +209,9 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void MUMcast3MetaData(pami_metadata_t *m)
     {
-      new(m) PAMI::Geometry::Metadata("I0:MultiCast_MultiCombine:-:MU");
+      new(m) PAMI::Geometry::Metadata("X0:MultiCast_MultiCombine:-:MU");
+      m->range_hi = 1048577; /// \todo arbitrary hack for now - it core dumps > 1M
+
     }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite3,
@@ -706,7 +708,7 @@ namespace PAMI
                           TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU bcast\n", this));
                           // Add Broadcasts
                           geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_mcast_factory,  _context_id);
-                          geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_mcast3_factory, _context_id);
+                          geometry->addCollectiveCheck(PAMI_XFER_BROADCAST,  _mu_mcast3_factory, _context_id);
                         }
 
                       // Add 2 device composite protocols

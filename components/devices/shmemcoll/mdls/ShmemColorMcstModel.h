@@ -31,6 +31,9 @@
 
 #include "util/trace.h"
 
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
+
 #define DO_TRACE_ENTEREXIT 0
 #define DO_TRACE_DEBUG     0
 
