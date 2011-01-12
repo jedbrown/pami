@@ -95,8 +95,8 @@ class CollShmMessage : public BaseCollShmMessage {
         ///
         /// \brief Constructor for common collective shmem message
         ///
-        INLINE CollShmMessage(GenericDeviceMessageQueue *device, T_Multi *multi):
-          BaseCollShmMessage (device, multi->cb_done, multi->client, multi->context),
+  INLINE CollShmMessage(GenericDeviceMessageQueue *device, size_t client, size_t context, T_Multi *multi):
+          BaseCollShmMessage (device, multi->cb_done, client, context),
           _multi (multi)
         {
           TRACE_DBG((stderr, "<%p>CollShmMessage::\n", this));
@@ -1520,7 +1520,7 @@ INLINE pami_result_t CollShmModel<T_CollShmDevice, T_MemoryManager> ::postMultic
   // PAMI::Topology *src_topo = (PAMI::Topology *)mcast->src_participants;
         // unsigned rootpeer = __global.topology_local.rank2Index(src_topo->index2Rank(0));
         CollShmMessage<pami_multicast_t, T_CollShmDevice> *msg =
-          new (&state) CollShmMessage<pami_multicast_t, T_CollShmDevice> (&_csdevice, mcast);
+          new (&state) CollShmMessage<pami_multicast_t, T_CollShmDevice> (&_csdevice, client, context, mcast);
         _csdevice.postMsg(msg);
         return PAMI_SUCCESS;
 }
@@ -1532,7 +1532,7 @@ INLINE pami_result_t CollShmModel<T_CollShmDevice, T_MemoryManager>::postMultisy
                                                   pami_multisync_t *msync,
                                                   void             *devinfo) {
         CollShmMessage<pami_multisync_t, T_CollShmDevice> *msg =
-          new (&state) CollShmMessage<pami_multisync_t, T_CollShmDevice> (&_csdevice, msync);
+          new (&state) CollShmMessage<pami_multisync_t, T_CollShmDevice> (&_csdevice, client, context, msync);
         _csdevice.postMsg(msg);
         return PAMI_SUCCESS;
 }
@@ -1546,7 +1546,7 @@ INLINE pami_result_t CollShmModel<T_CollShmDevice, T_MemoryManager>::postMultico
         // PAMI::Topology *src_topo = (PAMI::Topology *)mcombine->data_participants;
         // unsigned rootpeer = __global.topology_local.rank2Index(src_topo->index2Rank(0));
         CollShmMessage<pami_multicombine_t, T_CollShmDevice> *msg =
-          new (&state) CollShmMessage<pami_multicombine_t, T_CollShmDevice> (&_csdevice,mcombine);
+          new (&state) CollShmMessage<pami_multicombine_t, T_CollShmDevice> (&_csdevice, client, context, mcombine);
         _csdevice.postMsg(msg);
         return PAMI_SUCCESS;
 }
