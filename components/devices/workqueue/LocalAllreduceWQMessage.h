@@ -164,14 +164,14 @@ public:
                         _shared.reset();
                 }
         }
-
-	  pami_result_t postMulticombineImmediate_impl(size_t                   client,
-						       size_t                   context, 
-						       pami_multicombine_t    * mcomb,
-						       void                   * devinfo=NULL) 
-	  {
-	    return PAMI_ERROR;
-	  }
+	
+	pami_result_t postMulticombineImmediate_impl(size_t                   client,
+						     size_t                   context, 
+						     pami_multicombine_t    * mcomb,
+						     void                   * devinfo=NULL) 
+	{
+	  return PAMI_ERROR;
+	}
 
         inline pami_result_t postMulticombine_impl(uint8_t (&state)[sizeof_msg], size_t client, size_t context, pami_multicombine_t *mcomb, void *devinfo=NULL);
 

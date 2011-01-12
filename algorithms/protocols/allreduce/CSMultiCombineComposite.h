@@ -71,8 +71,8 @@ namespace CCMI
 
             DO_DEBUG(for (unsigned j = 0; j < all.size(); ++j) fprintf(stderr, "all[%u]=%zu, size %zu\n", j, (size_t)all.index2Rank(j), all.size()));
 
-            _minfo.client               = 0;
-            _minfo.context              = 0; /// \todo ?
+            //_minfo.client               = 0;
+            //_minfo.context              = 0; /// \todo ?
             _minfo.cb_done.function     = fn;
             _minfo.cb_done.clientdata   = cookie;
             _minfo.connection_id        = 0;

@@ -154,6 +154,14 @@ public:
                 }
         }
 
+        inline pami_result_t postMulticastImmediate_impl(size_t            client,
+							 size_t            context, 
+							 pami_multicast_t *mcast,
+							 void             *devinfo=NULL)
+	{
+	  return PAMI_ERROR;
+	}
+
         inline pami_result_t postMulticast_impl(uint8_t (&state)[sizeof_msg],
 						size_t            client,
 						size_t            context, 

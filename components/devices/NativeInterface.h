@@ -193,12 +193,12 @@ namespace PAMI
 
       pami_multicast_t  m    = *mcast;
       m.dispatch             =  _my_dispatch_id;
-      m.client               =  _clientid;
-      m.context              =  _contextid;
+      //m.client               =  _clientid;
+      //m.context              =  _contextid;
 
       m.cb_done.function     =  ni_client_done;
       m.cb_done.clientdata   =  req;
-      return _mcast.postMulticast(req->_state._mcast, &m, devinfo);
+      return _mcast.postMulticast(req->_state._mcast, _clientid, _contextid, &m, devinfo);
     }
 
     template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, int T_Semantics>
@@ -236,11 +236,11 @@ namespace PAMI
       req->_user_callback      = mcomb->cb_done;
 
       pami_multicombine_t  m   = *mcomb;
-      m.client                 =  _clientid;
-      m.context                =  _contextid;
+      //m.client                 =  _clientid;
+      //m.context                =  _contextid;
       m.cb_done.function       =  ni_client_done;
       m.cb_done.clientdata     =  req;
-      return _mcomb.postMulticombine(req->_state._mcomb, &m, devinfo);
+      return _mcomb.postMulticombine(req->_state._mcomb, _clientid, _contextid, &m, devinfo);
     }
 
     template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, int T_Semantics>
@@ -249,7 +249,7 @@ namespace PAMI
                                                                                                            void             *devinfo)
     {
       mcast->dispatch =  _my_dispatch_id;
-      return _mcast.postMulticast_impl(state, mcast, devinfo);
+      return _mcast.postMulticast_impl(state, _clientid, _contextid, mcast, devinfo);
     }
 
     template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, int T_Semantics>
@@ -265,7 +265,7 @@ namespace PAMI
                                                                                                               pami_multicombine_t *mcomb,
                                                                                                               void                *devinfo)
     {
-      return _mcomb.postMulticombine_impl(state, mcomb, devinfo);
+      return _mcomb.postMulticombine_impl(state, _clientid, _contextid, mcomb, devinfo);
     }
 
 
@@ -375,13 +375,13 @@ namespace PAMI
       // pami_multicast_t  m     = *mcast;
       pami_multicast_t&  m     = *mcast;
 
-      m.client   =  _clientid;   // \todo ? Why doesn't caller set this?
-      m.context  =  _contextid;// \todo ? Why doesn't caller set this?
+      //m.client   =  _clientid;   // \todo ? Why doesn't caller set this?
+      //m.context  =  _contextid;// \todo ? Why doesn't caller set this?
 
       m.cb_done.function     =  ni_client_done;
       m.cb_done.clientdata   =  req;
 
-      return _model.postMulticast(req->_state._mcast, &m, devinfo);
+      return _model.postMulticast(req->_state._mcast, _clientid, _contextid, &m, devinfo);
     }
 
 
@@ -419,13 +419,13 @@ namespace PAMI
       // pami_multicombine_t&  m     = *mcomb;
       pami_multicombine_t&  m     = *mcomb;
 
-      m.client   =  _clientid;
-      m.context  =  _contextid;
+      //m.client   =  _clientid;
+      //m.context  =  _contextid;
 
       m.cb_done.function     =  ni_client_done;
       m.cb_done.clientdata   =  req;
 
-      return _model.postMulticombine(req->_state._mcomb, &m, devinfo);
+      return _model.postMulticombine(req->_state._mcomb, _clientid, _contextid, &m, devinfo);
     }
 
     template <class T_Model>
@@ -434,7 +434,7 @@ namespace PAMI
                                                                 void *devinfo)
     {
       DO_DEBUG((templateName<T_Model>()));
-      return _model.postMulticast_impl(state, mcast, devinfo);
+      return _model.postMulticast_impl(state, _clientid, _contextid, mcast, devinfo);
     }
 
     template <class T_Model>
@@ -454,7 +454,7 @@ namespace PAMI
     {
       DO_DEBUG((templateName<T_Model>()));
 
-      return _model.postMulticombine_impl(state, mcomb, devinfo);
+      return _model.postMulticombine_impl(state, _clientid, _contextid, mcomb, devinfo);
     }
   };
 };
