@@ -26,14 +26,14 @@
 
 #undef TRACE_ERR
 #ifndef TRACE_ERR
-#define TRACE_ERR(x)  //fprintf x
+#define TRACE_ERR(x)  fprintf x
 #endif
 #define FIFO_FULL 0x8000000000000000
 namespace PAMI
 {
   namespace Fifo
   {
-    template < class T_Packet, class T_Atomic, unsigned T_Size = 128 >
+    template < class T_Packet, class T_Atomic, unsigned T_Size = 16 >
       class WrapFifo : public PAMI::Fifo::Interface::Fifo <PAMI::Fifo::WrapFifo <T_Packet, T_Atomic,T_Size> >
     {
       public:
@@ -52,7 +52,8 @@ namespace PAMI
           _active (NULL),
           _head (NULL),
           _bounded_counter (),
-          _last_packet_produced (0)
+          _last_packet_produced (0),
+          _seq_num(0)
       {
         // How to compile-time-assert that the fifo length is a power of two?
         //
@@ -185,17 +186,20 @@ namespace PAMI
         template <class T_Producer>
           inline bool producePacket_impl (T_Producer & packet)
           {
-            TRACE_ERR((stderr, ">> WrapFifo::producePacket_impl(T_Producer &)\n"));
+            //TRACE_ERR((stderr, ">> WrapFifo::producePacket_impl(T_Producer &)\n"));
 
             uint64_t tail = this->_bounded_counter.fetch_and_inc_bounded ();
 
-            //TRACE_ERR((stderr, "   WrapFifo::producePacket_impl(T_Producer &), index = %zu\n", index));
+            //TRACE_ERR((stderr, "   WrapFifo::producePacket_impl(T_Producer &), tail = %zu\n", tail));
 
             if (likely (tail != FIFO_FULL))
             {
+              mem_barrier();
 
               size_t  index =	tail & WrapFifo::mask;
               //dumpPacket(index);
+              _packet[index].set_seq_num(_seq_num++); 
+              printf("producing packet, idx:%zd with seq_num:%d\n",index, _seq_num);
               packet.produce (_packet[index]);
               //dumpPacket(index);
 
@@ -214,14 +218,14 @@ namespace PAMI
               _active[index] = 1;
               //mem_barrier();
 
-              //_last_packet_produced = index;
-              _last_packet_produced = tail;
+              _last_packet_produced = index;
+              //_last_packet_produced = tail;
 
-              TRACE_ERR((stderr, "<< WrapFifo::producePacket_impl(T_Producer &), return true\n"));
+              //TRACE_ERR((stderr, "<< WrapFifo::producePacket_impl(T_Producer &), return true..tail:%lld\n",(unsigned long long)tail));
               return true;
             }
 
-            TRACE_ERR((stderr, "<< WrapFifo::producePacket_impl(T_Producer &), return false\n"));
+            //TRACE_ERR((stderr, "<< WrapFifo::producePacket_impl(T_Producer &), return false\n"));
             return false;
           };
 
@@ -233,20 +237,22 @@ namespace PAMI
         template <class T_Consumer>
           inline bool consumePacket_impl (T_Consumer & packet)
           {
-            TRACE_ERR((stderr, ">> WrapFifo::consumePacket_impl(T_Consumer &)\n"));
+            //TRACE_ERR((stderr, ">> WrapFifo::consumePacket_impl(T_Consumer &)\n"));
 
             const size_t head = *(this->_head);
             size_t index = head & WrapFifo::mask;
 
-            TRACE_ERR((stderr, "   WrapFifo::consumePacket_impl(T_Consumer &), head = %zu, index = %zu (WrapFifo::mask = %p)\n", head, index, (void *)WrapFifo::mask));
             if (_active[index] == 1)
             {
+              //TRACE_ERR((stderr, "   WrapFifo::consumePacket_impl(T_Consumer &), head = %zu, index = %zu (WrapFifo::mask = %p)\n", head, index, (void *)WrapFifo::mask));
               //dumpPacket(head);
+              TRACE_ERR((stderr,"got packet idx:%zd, seq_num:%u\n", index, (unsigned)_packet[index].get_seq_num()));
               packet.consume (_packet[index]);
               //dumpPacket(head);
 
               _active[index] = 0;
               *(this->_head) = head + 1;
+              mem_barrier();
 
               //increment the upper bound everytime a packet is consumed..ok to be incremented in chunks
               this->_bounded_counter.fetch_and_inc_upper_bound();
@@ -259,11 +265,11 @@ namespace PAMI
                 _bounded_counter.clear();
               }
 #endif
-              TRACE_ERR((stderr, "<< WrapFifo::consumePacket_impl(T_Consumer &), return true\n"));
+              //TRACE_ERR((stderr, "<< WrapFifo::consumePacket_impl(T_Consumer &), return true\n"));
               return true;
             }
 
-            TRACE_ERR((stderr, "<< WrapFifo::consumePacket_impl(T_Consumer &), return false\n"));
+            //TRACE_ERR((stderr, "<< WrapFifo::consumePacket_impl(T_Consumer &), return false\n"));
             return false;
           };
 
@@ -306,6 +312,7 @@ namespace PAMI
         // -----------------------------------------------------------------
         T_Atomic       _bounded_counter;
         size_t         _last_packet_produced;
+        uint8_t       _seq_num;
     };
 
   };

@@ -46,11 +46,23 @@ namespace PAMI
 
         static const size_t header_size  = T_HeaderSize;
 
-        static const size_t payload_size = T_PacketSize - T_HeaderSize;
+        //static const size_t payload_size = T_PacketSize - T_HeaderSize;
+        static const size_t payload_size = T_PacketSize - T_HeaderSize-1;
 
         inline FifoPacket () :
             Interface::Packet<FifoPacket <T_HeaderSize, T_PacketSize> > ()
         {};
+
+
+        inline void set_seq_num (uint8_t seq)
+        {
+          _data[T_PacketSize - 1] = seq;
+        }
+  
+        inline uint8_t get_seq_num ()
+        {
+          return _data[T_PacketSize - 1];
+        }
 
       protected:
 

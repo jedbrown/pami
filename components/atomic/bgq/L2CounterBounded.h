@@ -55,13 +55,19 @@ namespace PAMI
           inline size_t fetch_and_inc_upper_bound()
           {
 
-            return L2_AtomicLoadIncrement(_counter+2);
+            uint64_t val =  L2_AtomicLoadIncrement(_counter+2);
+            printf("upper_bound:%lld\n", (unsigned long long) val);
+            return (size_t) val;
+            //return L2_AtomicLoadIncrement(_counter+2);
           }
 
           inline size_t fetch_and_inc_bounded()
           {
-
-            return L2_AtomicLoadIncrementBounded(_counter+1);
+          
+            uint64_t val =  L2_AtomicLoadIncrementBounded(_counter+1);
+            //printf("tail:%lld\n", (unsigned long long) val);
+            return (size_t) val;
+            //return L2_AtomicLoadIncrementBounded(_counter+1);
           }
 
         protected:
