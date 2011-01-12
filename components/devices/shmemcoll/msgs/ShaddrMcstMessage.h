@@ -80,7 +80,6 @@ namespace PAMI
             unsigned bytes = mcast_params.bytes; 
 
             if (this->_local_rank == master){
-              TRACE_ERR((stderr,"bytes consumed:%u bytesAvailableToConsume:%zd\n", this->_bytes_consumed,src->bytesAvailableToConsume()));
               if (this->_bytes_consumed == bytes)
               {
                 if (_my_desc->in_use()) return PAMI_EAGAIN; //wait for everyone to signal done
@@ -88,7 +87,6 @@ namespace PAMI
 
                 mcst_control->incoming_bytes = 0;
                 mcst_control->glob_src_buffer = NULL;
-                //_my_desc->signal_master_done();
                 mem_barrier();
                 mcast_params.cb_done.function(this->_context, mcast_params.cb_done.clientdata, PAMI_SUCCESS);
                 _my_desc->set_my_state(Shmem::DONE);
@@ -113,10 +111,6 @@ namespace PAMI
               if (this->_bytes_consumed == bytes)
               {
                 _my_desc->signal_done();
-                //while (_my_desc->get_master_done() == 0) {}; //wait for the master to be done
-                //if (_my_desc->get_master_done() == 0) 
-                //  return PAMI_EAGAIN;
-
                 mcast_params.cb_done.function(this->_context, mcast_params.cb_done.clientdata, PAMI_SUCCESS);
                 _my_desc->set_my_state(Shmem::DONE);
                 return PAMI_SUCCESS;
@@ -187,7 +181,6 @@ namespace PAMI
             unsigned bytes = mcast_params.bytes; 
 
             if (master){
-              //TRACE_ERR((stderr,"bytes consumed:%u bytesAvailableToConsume:%zd\n", this->_bytes_consumed,src->bytesAvailableToConsume()));
               if (this->_bytes_consumed == bytes)
               {
                 if (_my_desc->in_use()) return PAMI_EAGAIN; //wait for everyone to signal done
@@ -195,8 +188,7 @@ namespace PAMI
                 _my_desc->reset();
                 mcst_control->incoming_bytes = 0;
                 mcst_control->glob_src_buffer = NULL;
-                //_my_desc->signal_master_done();
-                //mem_barrier();
+
                 mcast_params.cb_done.function(this->_context, mcast_params.cb_done.clientdata, PAMI_SUCCESS);
                 _my_desc->set_my_seq_id(_my_desc->get_my_seq_id()+1);
                 _my_desc->set_my_state(Shmem::DONE);
@@ -217,23 +209,17 @@ namespace PAMI
             }
             else
             {
-              //if (this->_my_desc->get_flag() == 0)
               if ((_my_desc->get_my_seq_id() + 1) != _my_desc->get_seq_id())
                 return PAMI_EAGAIN;
 
               if (this->_bytes_consumed == bytes)
               {
-                //while (_my_desc->get_master_done() == 0) {}; //wait for the master to be done
-                //if (_my_desc->get_master_done() == 0) 
-                //  return PAMI_EAGAIN;
-                TRACE_ERR((stderr,"Done waiting for the master master_done:%d\n",_my_desc->get_master_done()));
                 mcast_params.cb_done.function(this->_context, mcast_params.cb_done.clientdata, PAMI_SUCCESS);
                 _my_desc->set_my_seq_id(_my_desc->get_my_seq_id()+1);
                 _my_desc->set_my_state(Shmem::DONE);
                 return PAMI_SUCCESS;
               }
 
-              //TRACE_ERR((stderr,"incoming_bytes:%d, _bytes_consumed:%u\n", mcst_control->incoming_bytes, this->_bytes_consumed));
               if (mcst_control->incoming_bytes > this->_bytes_consumed)
               {
                 mem_sync();
@@ -300,11 +286,6 @@ namespace PAMI
           TRACE_ERR((stderr, "<> ShaddrMcstMessage::ShaddrMcstMessage()\n"));
         };
 
-          /*unsigned                            _local_rank;
-            unsigned                            _bytes_consumed;          
-            pami_context_t                      _context;
-            T_Desc                              *_my_desc;
-            PAMI::Device::Generic::GenericThread _work;*/
       };  // PAMI::Device::ShaddrMcstMessage class
 
     };

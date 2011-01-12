@@ -110,7 +110,7 @@ namespace PAMI
         {
           void* src_bufs[NUM_LOCAL_TASKS];
           void* dst_bufs[NUM_LOCAL_TASKS];
-        }GlobalAddressTable __attribute__((__aligned__(128)));
+        }GlobalAddressTable;// __attribute__((__aligned__(128)));
         volatile uint16_t	chunks_done[NUM_LOCAL_TASKS];
         volatile uint16_t	chunks_copied[NUM_LOCAL_TASKS];
       };

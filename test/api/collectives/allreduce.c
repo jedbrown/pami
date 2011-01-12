@@ -16,10 +16,12 @@
 /*define this if you want to validate the data for unsigned sums */
 #define CHECK_DATA
 
-#define FULL_TEST
+//#define FULL_TEST
 #define COUNT      65536
+//#define COUNT      1
 #define MAXBUFSIZE COUNT*16
 #define NITERLAT   1000
+//#define NITERLAT   100
 #define NITERBW    10
 #define CUTOFF     65536
 
@@ -245,8 +247,8 @@ int main(int argc, char*argv[])
   pami_xfer_t          allreduce;
 
 
-  char sbuf[MAXBUFSIZE];
-  char rbuf[MAXBUFSIZE];
+  char sbuf[MAXBUFSIZE] __attribute__((__aligned__(64)));
+  char rbuf[MAXBUFSIZE] __attribute__((__aligned__(64)));
   int op, dt;
 
   char* selected = getenv("TEST_PROTOCOL");
@@ -350,7 +352,8 @@ int main(int argc, char*argv[])
     for (j = 0; j < dt_count; j++)
       validTable[i][j] = 0;
 
-  validTable[OP_SUM][DT_UNSIGNED_INT] = 1;
+  //validTable[OP_SUM][DT_UNSIGNED_INT] = 1;
+  validTable[OP_SUM][DT_DOUBLE] = 1;
 
 #endif
 

@@ -60,8 +60,6 @@ namespace PAMI
           static const size_t packet_model_state_bytes          = sizeof(BaseMessage<T_Device, T_Desc>);
           static const size_t sizeof_msg                        = sizeof(BaseMessage<T_Device, T_Desc>);
           static const size_t short_msg_cutoff                  = 256;
-          //static const size_t short_msg_cutoff                  = 0;
-          //static const size_t short_msg_cutoff                  = 512;
 
 
           inline pami_result_t postMulticast_impl(uint8_t (&state)[sizeof(BaseMessage<T_Device, T_Desc>)],
@@ -71,7 +69,7 @@ namespace PAMI
             PAMI::Topology *src_topo = (PAMI::Topology *)mcast->src_participants;
             //PAMI::Topology *dst_topo = (PAMI::Topology *)mcast->dst_participants;
             //size_t num_dst_ranks = dst_topo->size();
-            //TRACE_ERR((stderr, "size of destination topology:%zu\n", num_dst_ranks));
+           
             unsigned local_root = __global.topology_local.rank2Index(src_topo->index2Rank(0));
 
             T_Desc *my_desc = NULL; 

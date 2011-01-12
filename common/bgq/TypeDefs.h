@@ -75,9 +75,7 @@
 #ifdef ENABLE_NEW_SHMEM
 #include "components/devices/shmemcoll/ShmemCollDevice.h"
 #include "components/devices/shmemcoll/ShmemCollDesc.h"
-//#include "components/devices/shmemcoll/ShmemMcombModelWorld.h"
 #include "components/devices/shmemcoll/mdls/ShmemMcombModelWorld.h"
-//#include "components/devices/shmemcoll/ShmemMcstModelWorld.h"
 #include "components/devices/shmemcoll/mdls/ShmemMcstModelWorld.h"
 #endif
 
@@ -133,10 +131,6 @@ namespace PAMI
   ShaddrMcstModel,
   Device::MU::MultisyncModel<false, false>,
   Device::MU::MulticombineModel<PAMI::Device::MU::AllreducePacketModel, false, false> > MUShmemAxialDputNI;
-  /*typedef BGQNativeInterfaceAS < MUDevice,
-  Device::MU::MulticastDmaModel,
-  Device::MU::MultisyncModel<false, false>,
-  Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false> > MUShmemAxialDputNI;*/
 
   typedef Fifo::FifoPacket <32, 160> ShmemPacket;
   //typedef Fifo::LinearFifo<ShmemPacket, Counter::Indirect<Counter::Native> > ShmemFifo;
@@ -197,14 +191,11 @@ namespace PAMI
 
 #ifdef ENABLE_NEW_SHMEM
   //typedef PAMI::Device::Shmem::ShmemCollDesc <Counter::Indirect<Counter::Native> > ShmemCollDesc;
-  //typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::BGQ::IndirectL2> ShmemCollDesc;
-  //typedef PAMI::Device::ShmemCollDevice<ShmemCollDesc> ShmemCollDevice;
   //typedef PAMI::Device::ShmemCollDevice<Counter::Indirect<Counter::Native> > ShmemCollDevice;
   typedef PAMI::Device::ShmemCollDevice<PAMI::Counter::BGQ::IndirectL2> ShmemCollDevice;
   typedef PAMI::Device::Shmem::ShmemMcombModelWorld <ShmemCollDevice, ShmemCollDesc> ShmemMcombModel;
   typedef PAMI::Device::Shmem::ShmemMcstModelWorld <ShmemCollDevice, ShmemCollDesc> ShmemMcstModel;
   typedef PAMI::Device::Shmem::ShortMcombMessage <ShmemCollDevice, ShmemCollDesc> ShmemMcombMessage;
-//  typedef ShaddrMcstModel ShmemMcstModel;
 #else
   typedef Device::LocalAllreduceWQModel ShmemMcombModel;
   typedef Device::LocalBcastWQModel ShmemMcstModel;

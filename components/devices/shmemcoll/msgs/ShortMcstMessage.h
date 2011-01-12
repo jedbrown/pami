@@ -64,15 +64,15 @@ namespace PAMI
             return PAMI_SUCCESS;
           }
 
-          //protected:
+        //protected:
         public:
           // invoked by the thread object
           /// \see SendQueue::Message::_work
-          /*static  pami_result_t __advance (pami_context_t context, void * cookie)
-            {
+          static  pami_result_t __advance (pami_context_t context, void * cookie)
+          {
             ShortMcstMessage * msg = (ShortMcstMessage *) cookie;
             return msg->advance();
-            };*/
+          };
 
           inline virtual pami_result_t advance ()
           {
@@ -124,15 +124,6 @@ namespace PAMI
           TRACE_ERR((stderr, "<> ShortMcstMessage::ShortMcstMessage()\n"));
         };
 
-          /*inline ShortMcstMessage (pami_context_t context, T_Desc* my_desc) :
-            _context(context), _my_desc(my_desc), _work(ShortMcstMessage::__advance, this)
-            {
-            TRACE_ERR((stderr, "<> ShortMcstMessage::ShortMcstMessage()\n"));
-            };*/
-
-          /*pami_context_t                      _context;
-            T_Desc                              *_my_desc;
-            PAMI::Device::Generic::GenericThread _work;*/
 
       };  // PAMI::Device::ShortMcstMessage class
 

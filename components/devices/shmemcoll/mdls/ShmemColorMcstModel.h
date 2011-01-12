@@ -151,8 +151,6 @@ namespace PAMI
               mem_barrier();
 
               my_desc->set_seq_id(my_desc->get_seq_id()+1);
-              //my_desc->signal_flag();
-              //my_desc->signal_done(); //master already signals his done, so have to wait for the rest in advance
             }
 
             Shmem::ShaddrMcstMessage<T_Device, T_Desc> * obj = (Shmem::ShaddrMcstMessage<T_Device, T_Desc> *) (&state[0]);
