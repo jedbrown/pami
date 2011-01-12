@@ -98,9 +98,9 @@ namespace PAMI
 
           static const size_t sizeof_msg                              = 2048 /*sizeof(state_data_t)*/;
           static const size_t packet_model_payload_bytes              = T_PacketModel::packet_model_payload_bytes;
-          static const size_t packet_model_immediate_bytes              = T_PacketModel::packet_model_immediate_bytes;
+          static const size_t packet_model_immediate_bytes              = T_PacketModel::packet_model_immediate_bytes; //\todo not supported yet
 
-          static const size_t Multicombine_model_msgcount_max            = (packet_model_payload_bytes /*or packet_model_immediate_bytes*/ / sizeof(pami_quad_t));
+          static const size_t Multicombine_model_msgcount_max            = (packet_model_payload_bytes / sizeof(pami_quad_t));
           static const size_t Multicombine_model_bytes_max               = (uint32_t) - 1; // protocol_metadata_t::sndlen
           static const size_t Multicombine_model_connection_id_max       = (uint32_t) - 1; // protocol_metadata_t::connection_id \todo 64 bit?
 
@@ -265,7 +265,7 @@ namespace PAMI
               }
 
             // Post the Multicombine to the device in one or more packets
-            if (length <= packet_model_payload_bytes /*or packet_model_immediate_bytes*/) // one packet
+            if (length <= packet_model_payload_bytes) // one packet
               {
                 _data_model.postCollectivePacket (state_data->pkt,
                                                   NULL,

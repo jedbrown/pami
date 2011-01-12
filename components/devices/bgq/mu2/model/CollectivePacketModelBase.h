@@ -69,12 +69,10 @@ namespace PAMI
           static const bool   reliable_packet_model              = true;
 
           /// \see PAMI::Device::Interface::CollectivePacketModel::getPacketMetadataBytes
-          static const size_t packet_model_metadata_bytes        =
-            MemoryFifoPacketHeader::packet_singlepacket_metadata_size;
+          static const size_t packet_model_metadata_bytes        = MemoryFifoPacketHeader::packet_singlepacket_metadata_size;
 
           /// \see PAMI::Device::Interface::CollectivePacketModel::getPacketMultiMetadataBytes
-          static const size_t packet_model_multi_metadata_bytes  =
-            MemoryFifoPacketHeader::packet_multipacket_metadata_size;
+          static const size_t packet_model_multi_metadata_bytes  = MemoryFifoPacketHeader::packet_multipacket_metadata_size;
 
           /// \see PAMI::Device::Interface::CollectivePacketModel::getPacketPayloadBytes
           static const size_t packet_model_payload_bytes         = MU::Context::packet_payload_size;
@@ -100,7 +98,11 @@ namespace PAMI
                                                  uint32_t              route,
                                                  void                * metadata,
                                                  size_t                metasize,
-                                                 struct iovec          (&iov)[T_Niov]);
+                                                 struct iovec          (&iov)[T_Niov])
+          {
+            PAMI_abort();
+            return false;
+          };
 
           /// \see PAMI::Device::Interface::CollectivePacketModel::postCollectivePacket
           inline bool postCollectivePacket_impl (uint8_t              (&state)[packet_model_state_bytes],
@@ -110,7 +112,12 @@ namespace PAMI
                                                  void                * metadata,
                                                  size_t                metasize,
                                                  struct iovec        * iov,
-                                                 size_t                niov);
+                                                 size_t                niov)
+          {
+            PAMI_abort();
+            return false;
+          };
+
 
           /// \see PAMI::Device::Interface::CollectivePacketModel::postCollectivePacket
           inline bool postCollectivePacket_impl (uint8_t              (&state)[packet_model_state_bytes],
@@ -120,7 +127,12 @@ namespace PAMI
                                                  void                * metadata,
                                                  size_t                metasize,
                                                  void                * payload,
-                                                 size_t                length);
+                                                 size_t                length)
+          {
+            PAMI_abort();
+            return false;
+          };
+
 
           /// \see PAMI::Device::Interface::CollectivePacketModel::postMultiCollectivePacket
           inline bool postMultiCollectivePacket_impl (uint8_t               (&state)[packet_model_state_bytes],
@@ -130,7 +142,12 @@ namespace PAMI
                                                       void                * metadata,
                                                       size_t                metasize,
                                                       void                * payload,
-                                                      size_t                length);
+                                                      size_t                length)
+          {
+            PAMI_abort();
+            return false;
+          };
+
 
           /// \see PAMI::Device::Interface::CollectivePacketModel::postCollectivePacket
           template <unsigned T_Niov>
@@ -143,7 +160,12 @@ namespace PAMI
                                                  uint8_t               dt,
                                                  void                * metadata,
                                                  size_t                metasize,
-                                                 struct iovec          (&iov)[T_Niov]);
+                                                 struct iovec          (&iov)[T_Niov])
+          {
+            PAMI_abort();
+            return false;
+          };
+
 
           /// \see PAMI::Device::Interface::CollectivePacketModel::postCollectivePacket
           inline bool postCollectivePacket_impl (uint8_t              (&state)[packet_model_state_bytes],
@@ -156,7 +178,12 @@ namespace PAMI
                                                  void                * metadata,
                                                  size_t                metasize,
                                                  struct iovec        * iov,
-                                                 size_t                niov);
+                                                 size_t                niov)
+          {
+            PAMI_abort();
+            return false;
+          };
+
 
           /// \see PAMI::Device::Interface::CollectivePacketModel::postCollectivePacket
           inline bool postCollectivePacket_impl (uint8_t              (&state)[packet_model_state_bytes],
@@ -323,809 +350,6 @@ namespace PAMI
       };
 
       template <class T_Model, unsigned T_Collective, unsigned T_Channel>
-      template <unsigned T_Niov>
-      bool CollectivePacketModelBase<T_Model, T_Collective, T_Channel>::postCollectivePacket_impl (uint8_t               (&state)[packet_model_state_bytes],
-          pami_event_function   fn,
-          void                * cookie,
-          uint32_t              route,
-          void                * metadata,
-          size_t                metasize,
-          struct iovec          (&iov)[T_Niov])
-      {
-        TRACE_FN_ENTER();
-
-        PAMI_assert(T_Collective == MUHWI_COLLECTIVE_TYPE_BROADCAST); 
-
-        uint16_t              rfifo;
-
-        size_t fnum = _context.pinBroadcastFifo(route, rfifo);
-
-        InjChannel & channel = _context.injectionGroup.channel[fnum];
-
-        size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
-
-        TRACE_FORMAT("<%u/%u> rfifo = %u, fnum = %zu, ndesc = %zd", T_Collective, T_Channel, rfifo, fnum, ndesc);
-
-        if (likely(channel.isSendQueueEmpty() && ndesc > 0))
-          {
-            // There is at least one descriptor slot available in the injection
-            // fifo before a fifo-wrap event.
-
-            MUHWI_Descriptor_t * desc = channel.getNextDescriptor ();
-
-            void * vaddr   = NULL;
-            uint64_t paddr = 0;
-
-            channel.getDescriptorPayload (desc, vaddr, paddr);
-            TRACE_FORMAT("<%u/%u> desc = %p, vaddr = %p, paddr = %ld (%p)", T_Collective, T_Channel, desc, vaddr, paddr, (void *)paddr);
-
-            // Clone the single-packet model descriptor into the injection fifo
-            MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc;
-            _singlepkt.clone (*memfifo);
-
-            // Initialize the injection fifo descriptor in-place.
-            memfifo->setRecFIFOId (rfifo);
-            memfifo->setClassRoute (route);
-
-            MemoryFifoPacketHeader *hdr = (MemoryFifoPacketHeader*)
-                                          & memfifo->PacketHeader;
-            //Eliminated memcpy and an if branch
-            hdr->setMetaData(metadata, metasize);
-
-            TRACE_HEXDATA(hdr, 32);
-
-            // Copy the payload into the immediate payload buffer.
-            size_t i, tbytes = 0;
-            uint8_t * dst = (uint8_t *) vaddr;
-
-            for (i = 0; i < T_Niov; i++)
-              {
-                memcpy ((dst + tbytes), iov[i].iov_base, iov[i].iov_len);
-                tbytes += iov[i].iov_len;
-              }
-
-            TRACE_HEXDATA(vaddr, 32);
-
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-
-            // Mambo does not support zero-byte packets
-            if (__global.personality._is_mambo)
-              tbytes = MAX(1, tbytes);
-
-#endif
-            // Set the payload information.
-            memfifo->setPayload (paddr, tbytes);
-
-            // Finally, advance the injection fifo tail pointer. This action
-            // completes the injection operation.
-            channel.injFifoAdvanceDesc ();
-
-            // Invoke the completion callback function
-            if (unlikely(fn != NULL))
-              fn (_cookie, cookie, PAMI_SUCCESS);
-
-          }
-        else
-          {
-            // Create a simple single-descriptor message
-            InjectDescriptorMessage<1> * msg =
-              (InjectDescriptorMessage<1> *) state;
-            new (msg) InjectDescriptorMessage<1> (channel, fn, cookie);
-
-            // Clone the single-packet descriptor model into the message
-            _singlepkt.clone (msg->desc[0]);
-
-            // Copy the payload into the model state memory
-            size_t i, tbytes = 0;
-            uint8_t * payload = (uint8_t *) (msg + 1);
-
-            for (i = 0; i < T_Niov; i++)
-              {
-                memcpy ((payload + tbytes), iov[i].iov_base, iov[i].iov_len);
-                tbytes += iov[i].iov_len;
-              }
-
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-
-            // Mambo does not support zero-byte packets
-            if (__global.personality._is_mambo)
-              tbytes = MAX(1, tbytes);
-
-#endif
-
-            // Determine the physical address of the (temporary) payload
-            // buffer from the model state memory.
-            Kernel_MemoryRegion_t memRegion;
-            uint32_t rc;
-            rc = Kernel_CreateMemoryRegion (&memRegion, payload, tbytes);
-            PAMI_assert ( rc == 0 );
-            uint64_t paddr = (uint64_t)memRegion.BasePa +
-                             ((uint64_t)payload - (uint64_t)memRegion.BaseVa);
-
-            // Initialize the injection fifo descriptor in-place.
-            msg->desc[0].setRecFIFOId (rfifo);
-            msg->desc[0].setClassRoute (route);
-            msg->desc[0].setPayload (paddr, tbytes);
-
-            // Copy the metadata into the packet header.
-            MemoryFifoPacketHeader * hdr =
-              (MemoryFifoPacketHeader*) & msg->desc[0].PacketHeader;
-
-            // Eliminated memcpy and an if branch
-            hdr->setMetaData (metadata, metasize);
-
-            // Post the message to the injection channel
-            channel.post (msg);
-          }
-
-        TRACE_FN_EXIT();
-        return true;
-      };
-
-      template <class T_Model, unsigned T_Collective, unsigned T_Channel>
-      bool CollectivePacketModelBase<T_Model, T_Collective, T_Channel>::postCollectivePacket_impl (uint8_t               (&state)[packet_model_state_bytes],
-          pami_event_function   fn,
-          void                * cookie,
-          uint32_t              route,
-          void                * metadata,
-          size_t                metasize,
-          struct iovec        * iov,
-          size_t                niov)
-      {
-        TRACE_FN_ENTER();
-
-        PAMI_assert(T_Collective == MUHWI_COLLECTIVE_TYPE_BROADCAST);
-
-        uint16_t              rfifo;
-
-        size_t fnum = _context.pinBroadcastFifo(route, rfifo);
-
-        InjChannel & channel = _context.injectionGroup.channel[fnum];
-
-        size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
-
-        TRACE_FORMAT("<%u/%u> rfifo = %u, fnum = %zu, ndesc = %zd", T_Collective, T_Channel, rfifo, fnum, ndesc);
-
-        if (likely(channel.isSendQueueEmpty() && ndesc > 0))
-          {
-            // There is at least one descriptor slot available in the injection
-            // fifo before a fifo-wrap event.
-
-            MUHWI_Descriptor_t * desc = channel.getNextDescriptor ();
-
-            void * vaddr;
-            uint64_t paddr;
-
-            channel.getDescriptorPayload (desc, vaddr, paddr);
-            TRACE_FORMAT("<%u/%u> desc = %p, vaddr = %p, paddr = %ld (%p)", T_Collective, T_Channel, desc, vaddr, paddr, (void *)paddr);
-
-            // Clone the single-packet model descriptor into the injection fifo
-            MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc;
-            _singlepkt.clone (*memfifo);
-
-            // Initialize the injection fifo descriptor in-place.
-            memfifo->setRecFIFOId (rfifo);
-            memfifo->setClassRoute (route);
-
-            MemoryFifoPacketHeader *hdr = (MemoryFifoPacketHeader*)
-                                          & memfifo->PacketHeader;
-            //Eliminated memcpy and an if branch
-            hdr->setMetaData(metadata, metasize);
-
-            // Copy the payload into the immediate payload buffer.
-            size_t i, tbytes = 0;
-            uint8_t * dst = (uint8_t *) vaddr;
-
-            for (i = 0; i < niov; i++)
-              {
-                memcpy ((dst + tbytes), iov[i].iov_base, iov[i].iov_len);
-                tbytes += iov[i].iov_len;
-              }
-
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-
-            // Mambo does not support zero-byte packets
-            if (__global.personality._is_mambo)
-              tbytes = MAX(1, tbytes);
-
-#endif
-            // Set the payload information.
-            memfifo->setPayload (paddr, tbytes);
-
-            // Finally, advance the injection fifo tail pointer. This action
-            // completes the injection operation.
-            channel.injFifoAdvanceDesc ();
-
-            // Invoke the completion callback function
-            if (unlikely(fn != NULL))
-              {
-                fn (_cookie, cookie, PAMI_SUCCESS); // Descriptor is done...notify.
-              }
-          }
-        else
-          {
-            // Create a simple single-descriptor message
-            InjectDescriptorMessage<1> * msg =
-              (InjectDescriptorMessage<1> *) state;
-            new (msg) InjectDescriptorMessage<1> (channel, fn, cookie);
-
-            // Clone the single-packet descriptor model into the message
-            _singlepkt.clone (msg->desc[0]);
-
-            // Copy the payload into the model state memory
-            size_t i, tbytes = 0;
-            uint8_t * payload = (uint8_t *) (msg + 1);
-
-            for (i = 0; i < niov; i++)
-              {
-                memcpy ((payload + tbytes), iov[i].iov_base, iov[i].iov_len);
-                tbytes += iov[i].iov_len;
-              }
-
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-
-            // Mambo does not support zero-byte packets
-            if (__global.personality._is_mambo)
-              tbytes = MAX(1, tbytes);
-
-#endif
-
-            // Determine the physical address of the (temporary) payload
-            // buffer from the model state memory.
-            Kernel_MemoryRegion_t memRegion;
-            uint32_t rc = Kernel_CreateMemoryRegion (&memRegion, payload, tbytes);
-            PAMI_assert ( rc == 0 );
-            uint64_t paddr = (uint64_t)memRegion.BasePa +
-                             ((uint64_t)payload - (uint64_t)memRegion.BaseVa);
-
-            // Initialize the injection fifo descriptor in-place.
-            msg->desc[0].setRecFIFOId (rfifo);
-            msg->desc[0].setClassRoute (route);
-            msg->desc[0].setPayload (paddr, tbytes);
-
-            // Copy the metadata into the packet header.
-            MemoryFifoPacketHeader * hdr =
-              (MemoryFifoPacketHeader*) & msg->desc[0].PacketHeader;
-
-            // Eliminated memcpy and an if branch
-            hdr->setMetaData (metadata, metasize);
-
-            // Post the message to the injection channel
-            channel.post (msg);
-          }
-
-        TRACE_FN_EXIT();
-        return true;
-      };
-
-      template <class T_Model, unsigned T_Collective, unsigned T_Channel>
-      bool CollectivePacketModelBase<T_Model, T_Collective, T_Channel>::postCollectivePacket_impl (uint8_t               (&state)[packet_model_state_bytes],
-          pami_event_function   fn,
-          void                * cookie,
-          uint32_t              route,
-          void                * metadata,
-          size_t                metasize,
-          void                * payload,
-          size_t                length)
-      {
-        TRACE_FN_ENTER();
-
-        PAMI_assert(T_Collective == MUHWI_COLLECTIVE_TYPE_BROADCAST);
-
-        uint16_t              rfifo;
-
-        size_t fnum = _context.pinBroadcastFifo(route, rfifo);
-
-        InjChannel & channel = _context.injectionGroup.channel[fnum];
-
-        size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
-
-        TRACE_FORMAT("<%u/%u> rfifo = %u, fnum = %zu, ndesc = %zd", T_Collective, T_Channel, rfifo, fnum, ndesc);
-
-        if (likely(channel.isSendQueueEmpty() && ndesc > 0))
-          {
-            // There is at least one descriptor slot available in the injection
-            // fifo before a fifo-wrap event.
-
-            MUHWI_Descriptor_t * desc = channel.getNextDescriptor ();
-
-            void * vaddr;
-            uint64_t paddr;
-
-            channel.getDescriptorPayload (desc, vaddr, paddr);
-            TRACE_FORMAT("<%u/%u> desc = %p, vaddr = %p, paddr = %ld (%p)", T_Collective, T_Channel, desc, vaddr, paddr, (void *)paddr);
-            // Clone the single-packet model descriptor into the injection fifo
-            MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc;
-            _singlepkt.clone (*memfifo);
-
-            // Initialize the injection fifo descriptor in-place.
-            memfifo->setRecFIFOId (rfifo);
-            memfifo->setClassRoute (route);
-
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-
-            // Mambo does not support zero-byte packets
-            if (__global.personality._is_mambo)
-              memfifo->setPayload (paddr, MAX(1, length));
-            else
-#endif
-              memfifo->setPayload (paddr, length);
-
-            MemoryFifoPacketHeader *hdr = (MemoryFifoPacketHeader*)
-                                          & memfifo->PacketHeader;
-            //Eliminated memcpy and an if branch
-            hdr->setMetaData(metadata, metasize);
-
-            // Copy the payload into the immediate payload buffer.
-            memcpy (vaddr, payload, length);
-
-            //MUSPI_DescriptorDumpHex((char *)"desc", desc);
-            // Finally, advance the injection fifo tail pointer. This action
-            // completes the injection operation.
-            channel.injFifoAdvanceDesc ();
-
-            // Invoke the completion callback function
-            if (unlikely(fn != NULL))
-              fn (_cookie, cookie, PAMI_SUCCESS);
-          }
-        else
-          {
-            // Create a simple single-descriptor message
-            InjectDescriptorMessage<1> * msg =
-              (InjectDescriptorMessage<1> *) state;
-            new (msg) InjectDescriptorMessage<1> (channel, fn, cookie);
-
-            // Clone the single-packet descriptor model into the message
-            _singlepkt.clone (msg->desc[0]);
-
-            // Copy the payload into the model state memory
-            memcpy ((void *)(msg + 1), payload, length);
-
-            // Determine the physical address of the (temporary) payload
-            // buffer from the model state memory.
-            Kernel_MemoryRegion_t memRegion;
-            uint32_t rc;
-            rc = Kernel_CreateMemoryRegion (&memRegion, (msg + 1), length);
-            PAMI_assert ( rc == 0 );
-            uint64_t paddr = (uint64_t)memRegion.BasePa +
-                             ((uint64_t)(msg + 1) - (uint64_t)memRegion.BaseVa);
-
-            // Initialize the injection fifo descriptor in-place.
-            msg->desc[0].setRecFIFOId (rfifo);/// \todo necessary? or always the same?
-            msg->desc[0].setClassRoute (route);
-
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-
-            // Mambo does not support zero-byte packets
-            if (__global.personality._is_mambo)
-              msg->desc[0].setPayload (paddr, MAX(1, length));
-            else
-#endif
-              msg->desc[0].setPayload (paddr, length);
-
-            TRACE_FORMAT("<%u/%u> desc = %p, paddr = %ld, payload = %p, length = %zu", T_Collective, T_Channel, & msg->desc[0], paddr, payload, length);
-            // Copy the metadata into the packet header.
-            MemoryFifoPacketHeader * hdr =
-              (MemoryFifoPacketHeader*) & msg->desc[0].PacketHeader;
-
-            // Eliminated memcpy and an if branch
-            hdr->setMetaData (metadata, metasize);
-
-            // Post the message to the injection channel
-            channel.post (msg);
-          }
-
-        TRACE_FN_EXIT();
-        return true;
-      };
-
-      template <class T_Model, unsigned T_Collective, unsigned T_Channel>
-      bool CollectivePacketModelBase<T_Model, T_Collective, T_Channel>::postMultiCollectivePacket_impl (uint8_t               (&state)[packet_model_state_bytes],
-          pami_event_function   fn,
-          void                * cookie,
-          uint32_t              route,
-          void                * metadata,
-          size_t                metasize,
-          void                * payload,
-          size_t                length)
-      {
-        TRACE_FN_ENTER();
-
-        PAMI_assert(T_Collective == MUHWI_COLLECTIVE_TYPE_BROADCAST);
-
-        uint16_t              rfifo;
-
-        size_t fnum = _context.pinBroadcastFifo(route, rfifo);
-
-        InjChannel & channel = _context.injectionGroup.channel[fnum];
-
-        size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
-
-        TRACE_FORMAT("<%u/%u> rfifo = %u, fnum = %zu, ndesc = %zd", T_Collective, T_Channel, rfifo, fnum, ndesc);
-
-        // Determine the physical address of the source data.
-        Kernel_MemoryRegion_t memregion;
-        Kernel_CreateMemoryRegion (&memregion, payload, length);
-        uint64_t paddr = (uint64_t) memregion.BasePa +
-                         ((uint64_t) payload - (uint64_t) memregion.BaseVa);
-
-        if (likely(channel.isSendQueueEmpty() && ndesc > 0))
-          {
-            // There is at least one descriptor slot available in the injection
-            // fifo before a fifo-wrap event.
-
-            MUHWI_Descriptor_t * desc = channel.getNextDescriptor ();
-
-            // Clone the multi-packet model descriptor into the injection fifo
-            MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc;
-            _multipkt.clone (*memfifo);
-
-            // Initialize the injection fifo descriptor in-place.
-            memfifo->setRecFIFOId (rfifo);/// \todo necessary? or always the same?
-            memfifo->setClassRoute (route);
-
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-
-            // Mambo does not support zero-byte packets
-            if (__global.personality._is_mambo)
-              memfifo->setPayload (paddr, MAX(1, length));
-            else
-#endif
-              memfifo->setPayload (paddr, length);
-
-            MemoryFifoPacketHeader *hdr = (MemoryFifoPacketHeader*)
-                                          & memfifo->PacketHeader;
-            //Eliminated memcpy and an if branch
-            hdr->setMetaData(metadata, metasize);
-
-            // Advance the injection fifo tail pointer. This action
-            // completes the injection operation.
-            uint64_t sequence = channel.injFifoAdvanceDesc ();
-
-            // Add a completion event for the sequence number associated with
-            // the descriptor that was injected.
-            // Invoke the completion callback function
-            if (unlikely(fn != NULL))
-              channel.addCompletionEvent (state, fn, cookie, sequence);
-          }
-        else
-          {
-            // Create a simple single-descriptor message
-            InjectDescriptorMessage<1> * msg =
-              (InjectDescriptorMessage<1> *) state;
-            new (msg) InjectDescriptorMessage<1> (channel, fn, cookie);
-
-            // Clone the multi-packet descriptor model into the message
-            _multipkt.clone (msg->desc[0]);
-
-            // Copy the metadata into the packet header.
-            MemoryFifoPacketHeader * hdr =
-              (MemoryFifoPacketHeader*) & msg->desc[0].PacketHeader;
-
-            // Eliminated memcpy and an if branch
-            hdr->setMetaData (metadata, metasize);
-
-            // Initialize the injection fifo descriptor in-place.
-            msg->desc[0].setRecFIFOId (rfifo);/// \todo necessary? or always the same?
-            msg->desc[0].setClassRoute (route);
-
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-
-            // Mambo does not support zero-byte packets
-            if (__global.personality._is_mambo)
-              msg->desc[0].setPayload (paddr, MAX(1, length));
-            else
-#endif
-              msg->desc[0].setPayload (paddr, length);
-
-            // Post the message to the injection channel
-            channel.post (msg);
-          }
-
-        TRACE_FN_EXIT();
-        return true;
-      };
-
-      template <class T_Model, unsigned T_Collective, unsigned T_Channel>
-      template <unsigned T_Niov>
-      bool CollectivePacketModelBase<T_Model, T_Collective, T_Channel>::postCollectivePacket_impl (uint8_t               (&state)[packet_model_state_bytes],
-          pami_event_function   fn,
-          void                * cookie,
-          uint32_t              route,
-          size_t                root,
-          uint8_t               op,
-          uint8_t               dt,
-          void                * metadata,
-          size_t                metasize,
-          struct iovec          (&iov)[T_Niov])
-      {
-        TRACE_FN_ENTER();
-
-        PAMI_assert(T_Collective == MUHWI_COLLECTIVE_TYPE_BROADCAST);
-
-        uint16_t              rfifo;
-
-        size_t fnum = _context.pinBroadcastFifo(route, rfifo);
-
-        InjChannel & channel = _context.injectionGroup.channel[fnum];
-
-        size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
-
-        TRACE_FORMAT("<%u/%u> rfifo = %u, fnum = %zu, ndesc = %zd", T_Collective, T_Channel, rfifo, fnum, ndesc);
-
-        MUHWI_Destination_t dest;
-        _context.getMuDestinationTask (root,
-                                       dest);
-        _singlepkt.setDestination(dest);
-        _singlepkt.setOpCode(op);
-        _singlepkt.setWordLength(dt);
-        TRACE_FORMAT("root %zd, op %u, dt %u, dest %u/%u/%u/%u/%u", root, op, dt,
-                     dest.Destination.A_Destination,dest.Destination.B_Destination,dest.Destination.C_Destination,dest.Destination.D_Destination,dest.Destination.E_Destination);
-
-        if (likely(channel.isSendQueueEmpty() && ndesc > 0))
-          {
-            // There is at least one descriptor slot available in the injection
-            // fifo before a fifo-wrap event.
-
-            MUHWI_Descriptor_t * desc = channel.getNextDescriptor ();
-
-            void * vaddr   = NULL;
-            uint64_t paddr = 0;
-
-            channel.getDescriptorPayload (desc, vaddr, paddr);
-            TRACE_FORMAT("<%u/%u> desc = %p, vaddr = %p, paddr = %ld (%p)", T_Collective, T_Channel, desc, vaddr, paddr, (void *)paddr);
-
-            // Clone the single-packet model descriptor into the injection fifo
-            MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc;
-            _singlepkt.clone (*memfifo);
-
-            // Initialize the injection fifo descriptor in-place.
-            memfifo->setRecFIFOId (rfifo);
-            memfifo->setClassRoute (route);
-
-            MemoryFifoPacketHeader *hdr = (MemoryFifoPacketHeader*)
-                                          & memfifo->PacketHeader;
-            //Eliminated memcpy and an if branch
-            hdr->setMetaData(metadata, metasize);
-
-            TRACE_HEXDATA(hdr, 32);
-
-            // Copy the payload into the immediate payload buffer.
-            size_t i, tbytes = 0;
-            uint8_t * dst = (uint8_t *) vaddr;
-
-            for (i = 0; i < T_Niov; i++)
-              {
-                memcpy ((dst + tbytes), iov[i].iov_base, iov[i].iov_len);
-                tbytes += iov[i].iov_len;
-              }
-
-            TRACE_HEXDATA(vaddr, 32);
-
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-
-            // Mambo does not support zero-byte packets
-            if (__global.personality._is_mambo)
-              tbytes = MAX(1, tbytes);
-
-#endif
-            // Set the payload information.
-            memfifo->setPayload (paddr, tbytes);
-
-            // Finally, advance the injection fifo tail pointer. This action
-            // completes the injection operation.
-            channel.injFifoAdvanceDesc ();
-
-            // Invoke the completion callback function
-            if (unlikely(fn != NULL))
-              fn (_cookie, cookie, PAMI_SUCCESS);
-
-          }
-        else
-          {
-            // Create a simple single-descriptor message
-            InjectDescriptorMessage<1> * msg =
-              (InjectDescriptorMessage<1> *) state;
-            new (msg) InjectDescriptorMessage<1> (channel, fn, cookie);
-
-            // Clone the single-packet descriptor model into the message
-            _singlepkt.clone (msg->desc[0]);
-
-            // Copy the payload into the model state memory
-            size_t i, tbytes = 0;
-            uint8_t * payload = (uint8_t *) (msg + 1);
-
-            for (i = 0; i < T_Niov; i++)
-              {
-                memcpy ((payload + tbytes), iov[i].iov_base, iov[i].iov_len);
-                tbytes += iov[i].iov_len;
-              }
-
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-
-            // Mambo does not support zero-byte packets
-            if (__global.personality._is_mambo)
-              tbytes = MAX(1, tbytes);
-
-#endif
-
-            // Determine the physical address of the (temporary) payload
-            // buffer from the model state memory.
-            Kernel_MemoryRegion_t memRegion;
-            uint32_t rc = Kernel_CreateMemoryRegion (&memRegion, payload, tbytes);
-            PAMI_assert ( rc == 0 );
-            uint64_t paddr = (uint64_t)memRegion.BasePa +
-                             ((uint64_t)payload - (uint64_t)memRegion.BaseVa);
-
-            // Initialize the injection fifo descriptor in-place.
-            msg->desc[0].setRecFIFOId (rfifo);
-            msg->desc[0].setClassRoute (route);
-            msg->desc[0].setPayload (paddr, tbytes);
-
-            // Copy the metadata into the packet header.
-            MemoryFifoPacketHeader * hdr =
-              (MemoryFifoPacketHeader*) & msg->desc[0].PacketHeader;
-
-            // Eliminated memcpy and an if branch
-            hdr->setMetaData (metadata, metasize);
-
-            // Post the message to the injection channel
-            channel.post (msg);
-          }
-
-        TRACE_FN_EXIT();
-        return true;
-      };
-
-      template <class T_Model, unsigned T_Collective, unsigned T_Channel>
-      bool CollectivePacketModelBase<T_Model, T_Collective, T_Channel>::postCollectivePacket_impl (uint8_t              (&state)[packet_model_state_bytes],
-          pami_event_function   fn,
-          void                * cookie,
-          uint32_t              route,
-          size_t                root,
-          uint8_t               op,
-          uint8_t               dt,
-          void                * metadata,
-          size_t                metasize,
-          struct iovec        * iov,
-          size_t                niov)
-      {
-        TRACE_FN_ENTER();
-
-        PAMI_assert(T_Collective != MUHWI_COLLECTIVE_TYPE_BROADCAST);
-
-        uint16_t              rfifo;
-
-        size_t fnum = _context.pinCombiningFifo(root, rfifo);
-
-        InjChannel & channel = _context.injectionGroup.channel[fnum];
-
-        size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
-
-        TRACE_FORMAT("<%u/%u> rfifo = %u, fnum = %zu, ndesc = %zd", T_Collective, T_Channel, rfifo, fnum, ndesc);
-
-        MUHWI_Destination_t dest;
-        _context.getMuDestinationTask (root,
-                                       dest);
-        _singlepkt.setDestination(dest);
-        _singlepkt.setOpCode(op);
-        _singlepkt.setWordLength(dt);
-        TRACE_FORMAT("root %zd, op %u, dt %u, dest %u/%u/%u/%u/%u", root, op, dt,
-                     dest.Destination.A_Destination,dest.Destination.B_Destination,dest.Destination.C_Destination,dest.Destination.D_Destination,dest.Destination.E_Destination);
-
-        if (likely(channel.isSendQueueEmpty() && ndesc > 0))
-          {
-            // There is at least one descriptor slot available in the injection
-            // fifo before a fifo-wrap event.
-
-            MUHWI_Descriptor_t * desc = channel.getNextDescriptor ();
-
-            void * vaddr;
-            uint64_t paddr;
-
-            channel.getDescriptorPayload (desc, vaddr, paddr);
-            TRACE_FORMAT("<%u/%u> desc = %p, vaddr = %p, paddr = %ld (%p)", T_Collective, T_Channel, desc, vaddr, paddr, (void *)paddr);
-
-            // Clone the single-packet model descriptor into the injection fifo
-            MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc;
-            _singlepkt.clone (*memfifo);
-
-            // Initialize the injection fifo descriptor in-place.
-            memfifo->setRecFIFOId (rfifo);
-            memfifo->setClassRoute (route);
-
-            MemoryFifoPacketHeader *hdr = (MemoryFifoPacketHeader*)
-                                          & memfifo->PacketHeader;
-            //Eliminated memcpy and an if branch
-            hdr->setMetaData(metadata, metasize);
-
-            // Copy the payload into the immediate payload buffer.
-            size_t i, tbytes = 0;
-            uint8_t * dst = (uint8_t *) vaddr;
-
-            for (i = 0; i < niov; i++)
-              {
-                memcpy ((dst + tbytes), iov[i].iov_base, iov[i].iov_len);
-                tbytes += iov[i].iov_len;
-              }
-
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-
-            // Mambo does not support zero-byte packets
-            if (__global.personality._is_mambo)
-              tbytes = MAX(1, tbytes);
-
-#endif
-            // Set the payload information.
-            memfifo->setPayload (paddr, tbytes);
-
-            // Finally, advance the injection fifo tail pointer. This action
-            // completes the injection operation.
-            channel.injFifoAdvanceDesc ();
-
-            // Invoke the completion callback function
-            if (unlikely(fn != NULL))
-              {
-                fn (_cookie, cookie, PAMI_SUCCESS); // Descriptor is done...notify.
-              }
-          }
-        else
-          {
-            // Create a simple single-descriptor message
-            InjectDescriptorMessage<1> * msg =
-              (InjectDescriptorMessage<1> *) state;
-            new (msg) InjectDescriptorMessage<1> (channel, fn, cookie);
-
-            // Clone the single-packet descriptor model into the message
-            _singlepkt.clone (msg->desc[0]);
-
-            // Copy the payload into the model state memory
-            size_t i, tbytes = 0;
-            uint8_t * payload = (uint8_t *) (msg + 1);
-
-            for (i = 0; i < niov; i++)
-              {
-                memcpy ((payload + tbytes), iov[i].iov_base, iov[i].iov_len);
-                tbytes += iov[i].iov_len;
-              }
-
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-
-            // Mambo does not support zero-byte packets
-            if (__global.personality._is_mambo)
-              tbytes = MAX(1, tbytes);
-
-#endif
-
-            // Determine the physical address of the (temporary) payload
-            // buffer from the model state memory.
-            Kernel_MemoryRegion_t memRegion;
-            uint32_t rc = Kernel_CreateMemoryRegion (&memRegion, payload, tbytes);
-            PAMI_assert ( rc == 0 );
-            uint64_t paddr = (uint64_t)memRegion.BasePa +
-                             ((uint64_t)payload - (uint64_t)memRegion.BaseVa);
-
-            // Initialize the injection fifo descriptor in-place.
-            msg->desc[0].setRecFIFOId (rfifo);
-            msg->desc[0].setClassRoute (route);
-            msg->desc[0].setPayload (paddr, tbytes);
-
-            // Copy the metadata into the packet header.
-            MemoryFifoPacketHeader * hdr =
-              (MemoryFifoPacketHeader*) & msg->desc[0].PacketHeader;
-
-            // Eliminated memcpy and an if branch
-            hdr->setMetaData (metadata, metasize);
-
-            // Post the message to the injection channel
-            channel.post (msg);
-          }
-
-        TRACE_FN_EXIT();
-        return true;
-      };
-
-      template <class T_Model, unsigned T_Collective, unsigned T_Channel>
       bool CollectivePacketModelBase<T_Model, T_Collective, T_Channel>::postCollectivePacket_impl (uint8_t              (&state)[packet_model_state_bytes],
           pami_event_function   fn,
           void                * cookie,
@@ -1140,6 +364,7 @@ namespace PAMI
       {
         TRACE_FN_ENTER();
 
+        PAMI_assert(fn == NULL); // \todo remove fn - we always complete in the dispatch, not on post()
         PAMI_assert(T_Collective != MUHWI_COLLECTIVE_TYPE_BROADCAST);
 
         uint16_t              rfifo;
@@ -1153,15 +378,24 @@ namespace PAMI
         TRACE_FORMAT("<%u/%u> rfifo = %u, fnum = %zu, ndesc = %zd, empty=%u", T_Collective, T_Channel, rfifo, fnum, ndesc, channel.isSendQueueEmpty());
 
         MUHWI_Destination_t dest;
-        _context.getMuDestinationTask (root,
-                                       dest);
+        _context.getMuDestinationTask (root, dest);
         _singlepkt.setDestination(dest);
+
         _singlepkt.setOpCode(op);
         _singlepkt.setWordLength(dt);
+
         TRACE_FORMAT("root %zd, op %u, dt %u, dest %u/%u/%u/%u/%u", root, op, dt,
                      dest.Destination.A_Destination,dest.Destination.B_Destination,dest.Destination.C_Destination,dest.Destination.D_Destination,dest.Destination.E_Destination);
 
-        TRACE_FORMAT("metadata %p, metasize %zu, payload %p, length %zu, route %u",metadata, metasize, payload, length, route);
+        // Determine the physical address of the payload
+        Kernel_MemoryRegion_t memRegion;
+        uint32_t rc;
+        rc = Kernel_CreateMemoryRegion (&memRegion, payload, length);
+        PAMI_assert ( rc == 0 );
+        uint64_t paddr = (uint64_t) memRegion.BasePa +
+                         ((uint64_t) payload - (uint64_t) memRegion.BaseVa);
+
+        TRACE_FORMAT("metadata %p, metasize %zu, payload %p, paddr = %ld (%p), length %zu, route %u",metadata, metasize, payload, paddr, (void *)paddr, length, route);
 
         if (likely(channel.isSendQueueEmpty() && ndesc > 0))
           {
@@ -1169,12 +403,8 @@ namespace PAMI
             // fifo before a fifo-wrap event.
 
             MUHWI_Descriptor_t * desc = channel.getNextDescriptor ();
+            TRACE_FORMAT("<%u/%u> desc = %p", T_Collective, T_Channel, desc);
 
-            void * vaddr;
-            uint64_t paddr;
-
-            channel.getDescriptorPayload (desc, vaddr, paddr);
-            TRACE_FORMAT("<%u/%u> desc = %p, vaddr = %p, paddr = %ld (%p)", T_Collective, T_Channel, desc, vaddr, paddr, (void *)paddr);
             // Clone the single-packet model descriptor into the injection fifo
             MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc;
             _singlepkt.clone (*memfifo);
@@ -1184,7 +414,6 @@ namespace PAMI
             memfifo->setClassRoute (route);
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
-
             // Mambo does not support zero-byte packets
             if (__global.personality._is_mambo)
               memfifo->setPayload (paddr, MAX(1, length));
@@ -1197,17 +426,9 @@ namespace PAMI
             //Eliminated memcpy and an if branch
             hdr->setMetaData(metadata, metasize);
 
-            // Copy the payload into the immediate payload buffer.
-            memcpy (vaddr, payload, length);
-
-            //MUSPI_DescriptorDumpHex((char *)"desc", desc);
             // Finally, advance the injection fifo tail pointer. This action
             // completes the injection operation.
             channel.injFifoAdvanceDesc ();
-
-            // Invoke the completion callback function
-            if (unlikely(fn != NULL))
-              fn (_cookie, cookie, PAMI_SUCCESS);
           }
         else
           {
@@ -1219,24 +440,11 @@ namespace PAMI
             // Clone the single-packet descriptor model into the message
             _singlepkt.clone (msg->desc[0]);
 
-            // Copy the payload into the model state memory
-            memcpy ((void *)(msg + 1), payload, length);
-
-            // Determine the physical address of the (temporary) payload
-            // buffer from the model state memory.
-            Kernel_MemoryRegion_t memRegion;
-            uint32_t rc;
-            rc = Kernel_CreateMemoryRegion (&memRegion, (msg + 1), length);
-            PAMI_assert ( rc == 0 );
-            uint64_t paddr = (uint64_t)memRegion.BasePa +
-                             ((uint64_t)(msg + 1) - (uint64_t)memRegion.BaseVa);
-
             // Initialize the injection fifo descriptor in-place.
             msg->desc[0].setRecFIFOId (rfifo);/// \todo necessary? or always the same?
             msg->desc[0].setClassRoute (route);
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
-
             // Mambo does not support zero-byte packets
             if (__global.personality._is_mambo)
               msg->desc[0].setPayload (paddr, MAX(1, length));
@@ -1275,6 +483,7 @@ namespace PAMI
       {
         TRACE_FN_ENTER();
 
+        PAMI_assert(fn == NULL); // \todo remove fn - we always complete in the dispatch, not on post()
         PAMI_assert(T_Collective != MUHWI_COLLECTIVE_TYPE_BROADCAST);
 
         uint16_t              rfifo;
@@ -1285,22 +494,27 @@ namespace PAMI
 
         size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
 
-        TRACE_FORMAT("<%u/%u> rfifo = %u, fnum = %zu, ndesc = %zd", T_Collective, T_Channel, rfifo, fnum, ndesc);
+        TRACE_FORMAT("<%u/%u> rfifo = %u, fnum = %zu, ndesc = %zd, empty=%u", T_Collective, T_Channel, rfifo, fnum, ndesc, channel.isSendQueueEmpty());
 
         MUHWI_Destination_t dest;
-        _context.getMuDestinationTask (root,
-                                       dest);
+        _context.getMuDestinationTask (root, dest);
         _multipkt.setDestination(dest);
+
         _multipkt.setOpCode(op);
         _multipkt.setWordLength(dt);
+
         TRACE_FORMAT("root %zd, op %u, dt %u, dest %u/%u/%u/%u/%u", root, op, dt,
                      dest.Destination.A_Destination,dest.Destination.B_Destination,dest.Destination.C_Destination,dest.Destination.D_Destination,dest.Destination.E_Destination);
 
-        // Determine the physical address of the source data.
-        Kernel_MemoryRegion_t memregion;
-        Kernel_CreateMemoryRegion (&memregion, payload, length);
-        uint64_t paddr = (uint64_t) memregion.BasePa +
-                         ((uint64_t) payload - (uint64_t) memregion.BaseVa);
+        // Determine the physical address of the payload
+        Kernel_MemoryRegion_t memRegion;
+        uint32_t rc;
+        rc = Kernel_CreateMemoryRegion (&memRegion, payload, length);
+        PAMI_assert ( rc == 0 );
+        uint64_t paddr = (uint64_t) memRegion.BasePa +
+                         ((uint64_t) payload - (uint64_t) memRegion.BaseVa);
+
+        TRACE_FORMAT("metadata %p, metasize %zu, payload %p, paddr = %ld (%p), length %zu, route %u",metadata, metasize, payload, paddr, (void *)paddr, length, route);
 
         if (likely(channel.isSendQueueEmpty() && ndesc > 0))
           {
@@ -1308,6 +522,7 @@ namespace PAMI
             // fifo before a fifo-wrap event.
 
             MUHWI_Descriptor_t * desc = channel.getNextDescriptor ();
+            TRACE_FORMAT("<%u/%u> desc = %p", T_Collective, T_Channel, desc);
 
             // Clone the multi-packet model descriptor into the injection fifo
             MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc;
@@ -1318,7 +533,6 @@ namespace PAMI
             memfifo->setClassRoute (route);
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
-
             // Mambo does not support zero-byte packets
             if (__global.personality._is_mambo)
               memfifo->setPayload (paddr, MAX(1, length));
@@ -1331,15 +545,9 @@ namespace PAMI
             //Eliminated memcpy and an if branch
             hdr->setMetaData(metadata, metasize);
 
-            // Advance the injection fifo tail pointer. This action
+            // Finally, advance the injection fifo tail pointer. This action
             // completes the injection operation.
-            uint64_t sequence = channel.injFifoAdvanceDesc ();
-
-            // Add a completion event for the sequence number associated with
-            // the descriptor that was injected.
-            // Invoke the completion callback function
-            if (unlikely(fn != NULL))
-              channel.addCompletionEvent (state, fn, cookie, sequence);
+            channel.injFifoAdvanceDesc ();
           }
         else
           {
@@ -1351,6 +559,10 @@ namespace PAMI
             // Clone the multi-packet descriptor model into the message
             _multipkt.clone (msg->desc[0]);
 
+            // Initialize the injection fifo descriptor in-place.
+            msg->desc[0].setRecFIFOId (rfifo);/// \todo necessary? or always the same?
+            msg->desc[0].setClassRoute (route);
+
             // Copy the metadata into the packet header.
             MemoryFifoPacketHeader * hdr =
               (MemoryFifoPacketHeader*) & msg->desc[0].PacketHeader;
@@ -1358,12 +570,7 @@ namespace PAMI
             // Eliminated memcpy and an if branch
             hdr->setMetaData (metadata, metasize);
 
-            // Initialize the injection fifo descriptor in-place.
-            msg->desc[0].setRecFIFOId (rfifo);/// \todo necessary? or always the same?
-            msg->desc[0].setClassRoute (route);
-
 #ifdef ENABLE_MAMBO_WORKAROUNDS
-
             // Mambo does not support zero-byte packets
             if (__global.personality._is_mambo)
               msg->desc[0].setPayload (paddr, MAX(1, length));
