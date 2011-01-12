@@ -17,10 +17,6 @@
 #include "math/a2qpx/Core_memcpy.h"
 
 //#define MU_SHORT_BLOCKING_COLLECTIVE 0
-#ifdef ENABLE_NEW_SHMEM
-#include "components/devices/shmemcoll/ShmemCollDesc.h"
-#endif
-
 
 namespace PAMI
 {
@@ -112,11 +108,6 @@ namespace PAMI
 	  PipeWorkQueue                            * _dpwq;        /// Short dstination PipeWorkQueue
 	  uint64_t                                   _bytes;       /// Short bytes
 	  volatile uint64_t                        * _counterAddress; /// Counter address     
-//#ifdef ENABLE_NEW_SHMEM
-#if 0
-          Shmem::ShmemCollDesc                      *_master_desc;
-          Shmem::ShmemCollDesc                      *_my_desc;
-#endif
 
 	  ShortCompletionMsg () {}
 	};
@@ -261,65 +252,6 @@ namespace PAMI
 
 	  return PAMI_ERROR;	  
 	}
-
-//#ifdef ENABLE_NEW_SHMEM
-#if 0
-	pami_result_t  postShortCollectiveShmem (uint32_t        opcode,
-					    uint32_t        sizeoftype,
-					    uint32_t        bytes,
-					    char          * src,
-					    PipeWorkQueue * dpwq,
-					    pami_event_function   cb_done,
-                                            Shmem::ShmemCollDesc* master_desc,
-                                            Shmem::ShmemCollDesc* my_desc,
-					    void          * cookie) 
-	{
-	  PAMI_assert (bytes <= _collstate._tempSize);
-	  _int64Cpy(_collstate._tempBuf, src, bytes, (((uint64_t)src)&0x7) == 0);  
-
-	  size_t ndesc = _injChannel.getFreeDescriptorCountWithUpdate();	  
-	  if (ndesc > 0) {
-	    _collstate._colCounter = bytes;
-	    // Clone the message descriptors directly into the injection fifo.
-	    MUSPI_DescriptorBase *d = (MUSPI_DescriptorBase *) _injChannel.getNextDescriptor ();	    
-	    _modeldesc.clone (*d);	    	    
-	    d->setPayload (_collstate._tempPAddr, bytes);	      
-	    d->setOpCode (opcode);
-	    d->setWordLength (sizeoftype);
-	    //d->PacketHeader.messageUnitHeader.Packet_Types.Direct_Put.Rec_Payload_Base_Address_Id = _pBatID;
-	    _mucontext.setThroughputCollectiveBufferBatEntry(_collstate._tempPAddr);
-
-	    //MUSPI_DescriptorDumpHex ((char *)"Coll Descriptor", (MUHWI_Descriptor_t *)d);
-	    _injChannel.injFifoAdvanceDesc ();		
-	    
-#ifndef MU_SHORT_BLOCKING_COLLECTIVE
-	    _scompmsg._cb_done = cb_done;
-	    _scompmsg._cookie  = cookie;
-	    _scompmsg._bytes   = bytes;
-	    _scompmsg._dpwq    = dpwq;
-	    _scompmsg._master_desc    = master_desc;
-	    _scompmsg._my_desc    = my_desc;
-      
-
-	    PAMI::Device::Generic::GenericThread *work = (PAMI::Device::Generic::GenericThread *)&_swork;
-	    _gdev.postThread(work);
-#else
-	    while (_collstate._colCounter != 0);
-	    mem_sync();
-	    if (dpwq) {
-	      char *dst = dpwq->bufferToProduce();
-	      _int64Cpy (dst, _collstate._tempBuf, bytes, (((uint64_t)dst)&0x7) == 0);	  
-	      dpwq->produceBytes(bytes);
-	    }
-	    cb_done (NULL, cookie, PAMI_SUCCESS);
-#endif	    
-	    
-	    return PAMI_SUCCESS;
-	  }
-
-	  return PAMI_ERROR;	  
-	}
-#endif
 
 	pami_result_t postCollective (uint8_t                    (&state)[sizeof_msg],
 				      uint32_t                   bytes,
