@@ -387,6 +387,7 @@ namespace PAMI
         TRACE_FORMAT("root %zd, op %u, dt %u, dest %u/%u/%u/%u/%u", root, op, dt,
                      dest.Destination.A_Destination,dest.Destination.B_Destination,dest.Destination.C_Destination,dest.Destination.D_Destination,dest.Destination.E_Destination);
 
+        TRACE_FORMAT("metadata %p, metasize %zu, payload %p, length %zu, route %u",metadata, metasize, payload, length, route);
         // Determine the physical address of the payload
         Kernel_MemoryRegion_t memRegion;
         uint32_t rc;
@@ -395,7 +396,7 @@ namespace PAMI
         uint64_t paddr = (uint64_t) memRegion.BasePa +
                          ((uint64_t) payload - (uint64_t) memRegion.BaseVa);
 
-        TRACE_FORMAT("metadata %p, metasize %zu, payload %p, paddr = %ld (%p), length %zu, route %u",metadata, metasize, payload, paddr, (void *)paddr, length, route);
+        TRACE_FORMAT("paddr = %ld (%p)",paddr, (void *)paddr);
 
         if (likely(channel.isSendQueueEmpty() && ndesc > 0))
           {
