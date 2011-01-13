@@ -76,8 +76,9 @@ namespace PAMI
         public:
           static inline ShmemCollDevice * generate_impl (size_t clientid, size_t n, Memory::MemoryManager & mm, Generic::Device *gds)
           {
-            ShmemCollDevice * devices;
-            pami_result_t rc = __global.heap_mm->memalign((void **) & devices, 16, sizeof(*devices) * n);
+            ShmemCollDevice * devices = NULL;
+            pami_result_t rc = PAMI_ERROR;
+	    rc = __global.heap_mm->memalign((void **) & devices, 16, sizeof(*devices) * n);
             PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for ShmemCollDevice[%zu], errno=%d\n", n, errno);
 
             for (unsigned i = 0; i < n; ++i)
