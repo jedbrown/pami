@@ -62,7 +62,7 @@ namespace PAMI
 
           inline pami_result_t postMulticombineImmediate_impl(size_t           client,
 							      size_t           context,
-							      pami_multicast_t *mcast, void* devinfo) {
+							      pami_multicombine_t *mcast, void* devinfo) {
 	    return PAMI_ERROR;
 	  }
 

@@ -198,9 +198,6 @@ namespace PAMI
 
   typedef PAMI::Device::AtomicBarrierMdl<Barrier_Type>                           ShmemMsyncModel;
 
-  //#include "components/atomic/bgq/L2Barrier.h"
-  //typedef PAMI::Device::AtomicBarrierMdl<PAMI::Barrier::BGQ::L2NodeProcBarrier>      ShmemMsyncModel;
-
 #ifdef ENABLE_NEW_SHMEM
   //typedef PAMI::Device::Shmem::ShmemCollDesc <Counter::Indirect<Counter::Native> > ShmemCollDesc;
   //typedef PAMI::Device::ShmemCollDevice<Counter::Indirect<Counter::Native> > ShmemCollDevice;
