@@ -15,41 +15,49 @@ namespace CCMI
     namespace Barrier
     {
 
-      template < PAMI::Geometry::topologyIndex_t T_Geometry_Index = PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX >
+      template < bool T_inline=false, class T_Native=Interfaces::NativeInterface, PAMI::Geometry::topologyIndex_t T_Geometry_Index = PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX>
+
       class MultiSyncComposite : public CCMI::Executor::Composite
       {
         protected:
-          Interfaces::NativeInterface        * _native;
-          PAMI_GEOMETRY_CLASS                * _geometry;
-          pami_multisync_t                     _minfo;
-          void                               * _deviceInfo;
+	Interfaces::NativeInterface        * _native;
+	//PAMI_GEOMETRY_CLASS                * _geometry;
+	pami_multisync_t                     _minfo;
+	void                               * _deviceInfo;
 
         public:
-          MultiSyncComposite (Interfaces::NativeInterface          * mInterface,
+          MultiSyncComposite (Interfaces::NativeInterface          * native,
                               ConnectionManager::SimpleConnMgr     * cmgr,
                               pami_geometry_t                         g,
                               void                                 * cmd,
                               pami_event_function                     fn,
                               void                                 * cookie) :
-              Composite(), _native(mInterface), _geometry((PAMI_GEOMETRY_CLASS*)g)
+	  Composite(), _native(native) //, _geometry((PAMI_GEOMETRY_CLASS*)g)
           {
             TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
 
-            _deviceInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
-            //_minfo.cb_done.function   = _cb_done;
-            //_minfo.cb_done.clientdata = _clientdata;
+	    PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)g;
+            _deviceInfo          = geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
+	    
+            _minfo.cb_done.function   = NULL;
+            _minfo.cb_done.clientdata = NULL;
             _minfo.connection_id      = 0;
             _minfo.roles              = -1U;
-            _minfo.participants       = _geometry->getTopology(T_Geometry_Index);
-
+            _minfo.participants       = geometry->getTopology(T_Geometry_Index);	                
           }
-
-          virtual void start()
-          {
+	
+	  ///Barrier composite is created and cached
+	  virtual void start()
+          {	    
             TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
-            _minfo.cb_done.function   = _cb_done;
+	    _minfo.cb_done.function   = _cb_done;
             _minfo.cb_done.clientdata = _clientdata;
-            _native->multisync(&_minfo, _deviceInfo);
+	    if (T_inline) {
+	      T_Native *t_native = (T_Native *)_native;
+	      t_native->T_Native::multisync (&_minfo, _deviceInfo);
+	    }
+	    else 	      
+	      _native->multisync(&_minfo, _deviceInfo);
           }
       };
 
@@ -91,6 +99,10 @@ namespace CCMI
             PAMI::Topology  *t_master    = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
             PAMI::Topology  *t_local     = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
 
+	    _g_reset_cb                   = false;
+	    _l0_reset_cb                  = false;
+	    _l1_reset_cb                  = false;
+
             _minfo_l0.connection_id      = 0;
             _minfo_l0.roles              = -1U;
             _minfo_l0.participants       = (pami_topology_t*)t_local;
@@ -107,11 +119,10 @@ namespace CCMI
             // suffice to implement the barrier
             if (t_master->size() == 1 && t_local->size() != 1)
               {
-                _minfo_l0.cb_done.function   =  fn;
-                _minfo_l0.cb_done.clientdata =  cookie;
+                _minfo_l0.cb_done.function   =  NULL; //fn;
+                _minfo_l0.cb_done.clientdata =  NULL; //cookie;
                 _active_native               =  _native_l;
                 _active_minfo                = &_minfo_l0;
-                return;
               }
 
             // If we have more than one master, but we are the only local process
@@ -121,11 +132,10 @@ namespace CCMI
 
             if (t_master->size() > 1 && t_local->size() == 1)
               {
-                _minfo_g.cb_done.function    =  fn;
-                _minfo_g.cb_done.clientdata  =  cookie;
+                _minfo_g.cb_done.function    =  NULL; //fn;
+                _minfo_g.cb_done.clientdata  =  NULL; //cookie;
                 _active_native               =  _native_g;
                 _active_minfo                = &_minfo_g;
-                return;
               }
 
             // We have a mix of both local nodes and master nodes
@@ -149,16 +159,37 @@ namespace CCMI
                     _minfo_l0.cb_done.clientdata = this;
                   }
 
-                _minfo_l1.cb_done.function   = fn;
-                _minfo_l1.cb_done.clientdata = cookie;
+                _minfo_l1.cb_done.function   = NULL; //fn;
+                _minfo_l1.cb_done.clientdata = NULL; //cookie;
                 _active_native               =  _native_l;
                 _active_minfo                = &_minfo_l0;
-                return;
               }
 
+	    if (_minfo_g.cb_done.function == NULL) 
+	      _g_reset_cb = true;
+	    
+	    if (_minfo_l0.cb_done.function == NULL) 
+	      _l0_reset_cb = true;
+
+	    if (_minfo_l1.cb_done.function == NULL) 
+	      _l1_reset_cb = true;
           }
+
           virtual void start()
           {
+	    if (_g_reset_cb) {
+	      _minfo_g.cb_done.function   = _cb_done;
+	      _minfo_g.cb_done.clientdata = _clientdata;
+	    }	    
+	    if (_l0_reset_cb) {
+	      _minfo_l0.cb_done.function   = _cb_done;
+	      _minfo_l0.cb_done.clientdata = _clientdata;
+	    }	    
+	    if (_l1_reset_cb) {
+	      _minfo_l1.cb_done.function   = _cb_done;
+	      _minfo_l1.cb_done.clientdata = _clientdata;
+	    }	    
+
             _active_native->multisync(_active_minfo, _deviceInfo);
           }
         protected:
@@ -170,6 +201,9 @@ namespace CCMI
           pami_multisync_t                    _minfo_l0;
           pami_multisync_t                    _minfo_g;
           pami_multisync_t                    _minfo_l1;
+	  bool                                _g_reset_cb;
+	  bool                                _l0_reset_cb;
+	  bool                                _l1_reset_cb;
           pami_multisync_t                   *_active_minfo;
       };
 

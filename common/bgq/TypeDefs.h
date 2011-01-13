@@ -84,6 +84,7 @@
 #include "components/devices/bgq/mu2/model/CollectiveMulticastDmaModel.h"
 #include "components/devices/bgq/mu2/model/CollectiveMulticombineDmaModel.h"
 #include "components/devices/bgq/mu2/model/AMMulticastModel.h"
+#include "components/devices/bgq/mu2/model/MUMultisync.h"
 
 
 namespace PAMI
@@ -116,7 +117,7 @@ namespace PAMI
 
   typedef BGQNativeInterfaceAS < MUDevice,
   Device::MU::CollectiveMulticastDmaModel,
-  Device::MU::MultisyncModel<false, false>,
+  Device::MU::MUMultisyncModel,
   Device::MU::CollectiveMulticombineDmaModel
   //Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false>
   > MUGlobalDputNI;
@@ -196,6 +197,9 @@ namespace PAMI
   //typedef PAMI::Barrier::Indirect<PAMI::Barrier::Counter<PAMI::Counter::BGQ::L2> > Barrier_Type;
 
   typedef PAMI::Device::AtomicBarrierMdl<Barrier_Type>                           ShmemMsyncModel;
+
+  //#include "components/atomic/bgq/L2Barrier.h"
+  //typedef PAMI::Device::AtomicBarrierMdl<PAMI::Barrier::BGQ::L2NodeProcBarrier>      ShmemMsyncModel;
 
 #ifdef ENABLE_NEW_SHMEM
   //typedef PAMI::Device::Shmem::ShmemCollDesc <Counter::Indirect<Counter::Native> > ShmemCollDesc;

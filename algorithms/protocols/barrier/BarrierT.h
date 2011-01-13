@@ -137,8 +137,45 @@ namespace CCMI
 	  void                               * _cached_object;
       };
 
+
       ///
-      /// \brief Binomial barrier
+      /// Barrier Factory All Sided for generate routine
+      ///
+      template < class T, MetaDataFn get_metadata, class C, PAMI::Geometry::ckeys_t T_Key >
+      class BarrierFactoryAllSidedT : public AllSidedCollectiveProtocolFactoryT<T, get_metadata, C>
+      {
+        public:
+        BarrierFactoryAllSidedT(C                           *cmgr,
+				Interfaces::NativeInterface *native):
+	AllSidedCollectiveProtocolFactoryT<T, get_metadata, C>(cmgr, native)
+          {
+            TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
+          }
+
+	virtual Executor::Composite * generate(pami_geometry_t              geometry,
+					       void                       * cmd)
+          {
+            // Use the cached barrier or generate a new one if the cached barrier doesn't exist
+            TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
+            PAMI_GEOMETRY_CLASS  *g = ( PAMI_GEOMETRY_CLASS *)geometry;
+	    /// \todo does NOT support multicontext
+            Executor::Composite *c = (Executor::Composite *) g->getKey((size_t)0, 
+                                                                       T_Key);
+	    
+            if (!c)
+              {
+                c = AllSidedCollectiveProtocolFactoryT<T, get_metadata, C>::generate(geometry, cmd);
+                g->setKey((size_t)0, /// \todo does NOT support multicontext
+                          T_Key,
+                          (void*)c);
+              }
+	    
+            return c;
+          }
+      };
+
+      ///
+      /// \brief barrier template
       ///
       template < class T_Schedule, AnalyzeFn afn, PAMI::Geometry::topologyIndex_t T_Geometry_Index = PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX, PAMI::Geometry::ckeys_t T_Key = PAMI::Geometry::CKEY_BARRIERCOMPOSITE1 >
       class BarrierT : public CCMI::Executor::Composite

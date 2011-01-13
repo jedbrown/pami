@@ -270,21 +270,27 @@ namespace PAMI
     inline pami_result_t BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>::multisync(pami_multisync_t *msync, void *devinfo)
   {
     TRACE_FN_ENTER();
-    allocObj *req          = (allocObj *)_allocator.allocateObject();
-    req->_ni               = this;
-    req->_user_callback    = msync->cb_done;
-    TRACE_FORMAT( "<%p> %p/%p connection id %u, devinfo %p", this, msync, req, msync->connection_id, devinfo);
-    DO_DEBUG((templateName<T_Msync>()));
+    int rc = _msync.postMultisyncImmediate(_clientid, _contextid, msync, devinfo);
+    if (rc == PAMI_SUCCESS)
+      return PAMI_SUCCESS;
 
-    pami_multisync_t  m     = *msync;
+    if (T_Msync::sizeof_msg > 0) {
+      allocObj *req          = (allocObj *)_allocator.allocateObject();
+      req->_ni               = this;
+      req->_user_callback    = msync->cb_done;
+      TRACE_FORMAT( "<%p> %p/%p connection id %u, devinfo %p", this, msync, req, msync->connection_id, devinfo);
+      DO_DEBUG((templateName<T_Msync>()));
+      
+      pami_multisync_t  m     = *msync;
 
-    //m.client   =  _clientid;
-    //m.context  =  _contextid;
+      //m.client   =  _clientid;
+      //m.context  =  _contextid;
 
-    m.cb_done.function     =  ni_client_done;
-    m.cb_done.clientdata   =  req;
-    _msync.postMultisync(req->_state._msync, _clientid, _contextid, &m, devinfo);
-    TRACE_FN_EXIT();
+      m.cb_done.function     =  ni_client_done;
+      m.cb_done.clientdata   =  req;
+      _msync.postMultisync(req->_state._msync, _clientid, _contextid, &m, devinfo);
+      TRACE_FN_EXIT();
+    }
     return PAMI_SUCCESS;
   }
 
@@ -334,7 +340,8 @@ namespace PAMI
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
     inline pami_result_t BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>::multisync (uint8_t (&state)[T_Msync::sizeof_msg],
-      pami_multisync_t *msync, void *devinfo)
+											       pami_multisync_t *msync, 
+											       void *devinfo)
   {
     TRACE_FN_ENTER();
     TRACE_FORMAT( "<%p> %p,%p connection id %u, devinfo %p", this, &state, msync, msync->connection_id, devinfo);

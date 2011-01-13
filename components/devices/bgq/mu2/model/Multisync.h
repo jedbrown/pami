@@ -97,6 +97,14 @@ namespace PAMI
           static const size_t Multisync_model_bytes_max               = (uint32_t) - 1; // protocol_metadata_t::sndlen
           static const size_t Multisync_model_connection_id_max       = (uint32_t) - 1; // protocol_metadata_t::connection_id \todo 64 bit?
 
+	  pami_result_t postMultisyncImmediate_impl(size_t            client,
+						    size_t            context, 
+						    pami_multisync_t *msync,
+						    void             *devinfo = NULL) 
+	  {
+	    return PAMI_ERROR;
+	  }
+
           /// \see PAMI::Device::Interface::MultisyncModel::postMultisync
           pami_result_t postMultisync_impl(uint8_t (&state)[MultisyncModel<T_Msgdata_support, T_PWQ_support>::sizeof_msg],
 					   size_t            client,

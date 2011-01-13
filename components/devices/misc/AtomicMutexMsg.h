@@ -163,6 +163,14 @@ public:
 		return T_Mutex::checkDataMm(mm);
 	}
 
+        inline pami_result_t postMultisyncImmediate_impl(size_t            client,
+							 size_t            context,
+							 pami_multisync_t *msync,
+							 void *devinfo=NULL) 
+	{
+	  return PAMI_ERROR;
+	}
+
 	inline pami_result_t postMultisync_impl(uint8_t (&state)[sizeof_msg],
 						size_t          client,
 						size_t          context, 

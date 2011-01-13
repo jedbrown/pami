@@ -124,11 +124,14 @@ namespace PAMI
 	_mucontext(context), 
 	_injChannel (context.injectionGroup.channel[0]), 
 	_gdev(*context.getProgressDevice()) 
-	{	  	  
-	  _collstate.init(context, status);
+	{
+	  //The collective state must be initialized by task 0 context 0
+	  if (__global.mapping.t() == 0) 
+	    _collstate.init(context, status);
+
 	  _scompmsg._counterAddress = &_collstate._colCounter;
 	  new (&_swork) PAMI::Device::Generic::GenericThread(short_advance, &_scompmsg);
-
+	    
 	  initDescBase();	 
 	}
 
