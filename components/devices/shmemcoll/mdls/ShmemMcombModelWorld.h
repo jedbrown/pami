@@ -60,8 +60,16 @@ namespace PAMI
           static const size_t sizeof_msg                        = sizeof(Shmem::BaseMessage<T_Device, T_Desc>);
           static const size_t short_msg_cutoff                  = 64;
 
+          inline pami_result_t postMulticombineImmediate_impl(size_t           client,
+							      size_t           context,
+							      pami_multicast_t *mcast, void* devinfo) {
+	    return PAMI_ERROR;
+	  }
+
           inline pami_result_t postMulticombine_impl(uint8_t (&state)[sizeof(Shmem::BaseMessage<T_Device, T_Desc>)],
-              pami_multicombine_t *mcomb, void* devinfo)
+						     size_t           client,
+						     size_t           context,
+						     pami_multicombine_t *mcomb, void* devinfo)
           {
 
             //PAMI::Topology *src_topo = (PAMI::Topology *)mcomb->data_participants;

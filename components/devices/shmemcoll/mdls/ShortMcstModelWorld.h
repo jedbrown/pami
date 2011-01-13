@@ -63,9 +63,16 @@ namespace PAMI
           static const size_t short_msg_cutoff                  = 256;
           //static const size_t short_msg_cutoff                  = 512;
 
+          inline pami_result_t postMulticastImmediate_impl(size_t           client,
+							   size_t           context,
+							   pami_multicast_t *mcast, void* devinfo) {
+	    return PAMI_ERROR;
+	  }
 
           inline pami_result_t postMulticast_impl(uint8_t (&state)[sizeof(ShortMcstMessage<T_Device, T_Desc>)],
-              pami_multicast_t *mcast, void* devinfo)
+						  size_t           client,
+						  size_t           context,
+						  pami_multicast_t *mcast, void* devinfo)
           {
 
             PAMI::Topology *src_topo = (PAMI::Topology *)mcast->src_participants;

@@ -86,9 +86,16 @@ namespace PAMI
           static const size_t sizeof_msg                        = sizeof(Shmem::BaseMessage<T_Device, T_Desc>);
           //static const size_t short_msg_cutoff                  = 512;
 
+          inline pami_result_t postMulticastImmediate_impl(size_t           client,
+							   size_t           context,
+							   pami_multicast_t *mcast, void* devinfo) {
+	    return PAMI_ERROR;
+	  }
 
           inline pami_result_t postMulticast_impl(uint8_t (&state)[sizeof(Shmem::BaseMessage<T_Device, T_Desc>)],
-              pami_multicast_t *mcast, void* devinfo)
+						  size_t           client,
+						  size_t           context,
+						  pami_multicast_t *mcast, void* devinfo)
           {
             TRACE_FN_ENTER();
 
