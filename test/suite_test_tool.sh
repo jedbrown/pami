@@ -1,5 +1,7 @@
 #!/bin/bash
 
+trap "cleanExit" EXIT
+
 #-------------------------------------------------------------------------------
 # Prerequisites:
 #-------------------------------------------------------------------------------
@@ -14,6 +16,7 @@
 # Additional bgtools documentation can be found at the following wiki:
 #    BGQ: https://bgweb.rchland.ibm.com/bgq/wiki/index.php/BlueGene_User_Utilities
 #-------------------------------------------------------------------------------
+
 # HASH TABLE INIT
 #hinit ()
 #{
@@ -27,32 +30,46 @@
 hput ()
 {
 
-    # $1 = file name
-    # $2 = key
-    # $3 = value
+    putHashFile=$1
+    putKey=$2
+    putValue=$3
 
-    hvalue=''
-
-    # If file exists, see if key already exists
-    if [ -e $1 ] 
-    then 
-#	hvalue=\"$( grep -a --max-count=1 "^${2} " $1 | awk '{ print substr($0, (index($0," ")+1)) }' )\"
-	hget $1 $2 hvalue
-	hvalue=$( echo $hvalue | sed 's/"//g' )
-
-    else # create new hash file
-	echo ${2} ${3} > $1
-	return 0
+    putLockFile="${putHashFile}.lock"
+    curValue=''
+ 
+    # Lock the hash for parallel processes
+    if [ $hashLock -eq 1 ]
+    then
+	while ( ! ( set -o noclobber; (echo -e $mypid > "${putLockFile}")  >/dev/null 2>&1 ) )
+	do
+	    usleep 100000
+	done
     fi
 
-    # Append or replace key/value pair
-    if [ "${hvalue}" == '' ] # key doesn't exist 
+    # If file exists, see if key already exists
+    if [ -e "${putHashFile}" ] 
     then 
-	echo ${2} ${3} >> $1
-    else
-	# replace old value with new one
-	# Use "," as the delimiter so we don't have to escape all "/"
-	sed -i "s,${2} ${hvalue},${2} ${3}," $1
+#	hvalue=\"$( grep -a --max-count=1 "^${2} " $1 | awk '{ print substr($0, (index($0," ")+1)) }' )\"
+	hget "${putHashFile}" "${putKey}" curValue
+	curValue=$( echo $curValue | sed 's/"//g' )
+
+        # Append or replace key/value pair
+	if [ "${curValue}" == '' ] # key doesn't exist 
+	then # append
+	    echo "${putKey}" "${putValue}" >> "${putHashFile}"
+	else 
+	    # replace old value with new one
+	    # Use "," as the delimiter so we don't have to escape all "/"
+	    sed -i "s,${putKey} ${curValue},${putKey} ${putValue}," $putHashFile
+	fi
+
+    else # create new hash file
+	echo "${putKey}" "${putValue}" > "${putHashFile}"
+    fi
+
+    if [ $hashLock -eq 1 ]
+    then
+	rm -f "${putLockFile}"
     fi
 
     return 0
@@ -61,58 +78,203 @@ hput ()
 # HASH GET VALUE 
 hget () 
 {
-    # $1 = file name
-    # $2 = key
-    # $3 = variable to hold value
+    getHashFile=$1
+    getKey=$2
+    getValueVar=$3
 
-    eval $3=\"$( grep -a --max-count=1 "^${2} " $1 | awk '{ print substr($0, (index($0, " ")+1)) }' )\"
+    getLockFile="${getHashFile}.lock"
+    nestedRead=0
+    rc=0
+
+    # Lock the hash for parallel processes
+    if [ $hashLock -eq 1 ]
+    then
+
+	grepAttempted=0
+
+	while ( ! ( set -o noclobber; (echo -e $mypid > "${getLockFile}")  >/dev/null 2>&1 ) )
+	do
+	    if [ $grepAttempted -eq 0 ]
+	    then
+	        # If my process ID = process ID in the lock file, then this is a nested read
+		$( grep -a -q $mypid $getLockFile )
+
+		if [ $? -eq 0 ]
+		then
+		    nestedRead=1
+		    break
+		fi
+	    else
+		usleep 100000
+	    fi
+	done
+    fi
+
+    eval $getValueVar=\"$( grep -a --max-count=1 "^${getKey} " $getHashFile | awk '{ print substr($0, (index($0, " ")+1)) }' )\"
 
     if [ $? -ne 0 ]
     then
-	echo "ERROR (E)::hget:  ${2} key DNE in ${1}"
-	return -1
+	echo "ERROR (E)::hget:  ${getKey} key DNE in ${getHashFile}"
+	rc=-1
     fi
+    
+    if [ $hashLock -eq 1 ] && [ $nestedRead -eq 0 ]
+    then
+	rm -f "${getLockFile}"
+    fi
+
+    return $rc
 }
 
 hdelete ()
 {
-    sed -i "/${2}/d" $1
+    delHashFile=$1
+    delKey=$2
+
+    delLockFile="${delHashFile}.lock"
+
+    # Lock the hash file for parallel processes
+    if [ $hashLock -eq 1 ]
+    then
+	while ( ! ( set -o noclobber; (echo -e $mypid > "${delLockFile}")  >/dev/null 2>&1 ) )
+	do
+	    usleep 100000
+	done
+    fi
+
+    sed -i "/${delKey}/d" $delHashFile
+	   
+    if [ $hashLock -eq 1 ]
+    then
+	rm -f $delLockFile
+    fi
 }
 
 hdestroy ()
 {
-    if [ -e $1 ]
+    destHashFile=$1
+
+    destLockFile="${destHashFile}.lock"
+    rc=0
+
+    # Lock the hash file
+    if [ $hashLock -eq 1 ]
     then
-	rm -f $1
-    else
-	echo "ERROR (E)::hdestroy: ${1} DNE !!"
-	return 1
+	while ( ! ( set -o noclobber; (echo -e $mypid > "${destLockFile}")  >/dev/null 2>&1 ) )
+	do
+	    usleep 100000
+	done
     fi
 
-    return 0
+    if [ -e $destHashFile ]
+    then
+	rm -f $destHashFile
+    else
+	echo "ERROR (E)::hdestroy: ${destHashFile} DNE !!"
+	rc=1
+    fi
+	
+    if [ $hashLock -eq 1 ]
+    then
+	rm -f $destLockFile
+    fi
+
+    return $rc
 }
 
+# Kill any existing child processes
+childKill ()
+{
+    # send SIGTERM (15) signal to all child processes
+    childProcesses="/tmp/$ppid.children"
+    pgrep -P $ppid > $childProcesses
+    children=$(wc -l < $childProcesses)
+    
+    if [ $children -gt 0 ]
+    then
+	echo -e "\nSending SIGTERM signal to ${children} child process(es) ..."
+	pkill -SIGTERM -P $ppid #>/dev/null 2>&1
+
+        # wait for all sub processes to exit
+	echo "Waiting for ${children} child processes to terminate ..."
+
+	while [ $children -gt 0 ]
+	do
+	    prevChildren=$children
+
+	    sleep 10
+
+	    pgrep -P $ppid > $childProcesses
+	    children=$(wc -l < $childProcesses)
+
+	    if [ $children -ne $prevChildren ] && [ $children -gt 0 ]
+	    then
+		echo "Waiting for ${children} child process(es) to terminate ..."
+	    fi
+	done
+    fi
+
+    if [ -e $childProcesses ]
+    then
+	rm -f $childProcesses
+    fi
+}
+
+# Cleanup all the hash files in /tmp dir
 cleanExit ()
 {
-    # Remove compile info hash
+
+    # Cancel any FPGA jobs
+    if [ "${run_type}" == 'runFpga' ]
+    then
+	llJobs 'cancel'
+    fi
+
+    # Remove compile info hash and lock file
     if [ -e $compileHash ]
     then
 	rm -f $compileHash
     fi
 
-    # Remove copy info hash
+    if [ -e "${compileHash}.lock" ]
+    then
+	rm -f "${compileHash}.lock"
+    fi
+
+    # Remove copy info hash and lock file
     if [ -e $copyHash ]
     then
 	rm -f $copyHash
     fi
 
-    # Remove exe info hash
+    if [ -e "${copyHash}.lock" ]
+    then
+	rm -f "${copyHash}.lock"
+    fi
+
+    # Remove exe info hash and lock file
     if [ -e $exeHash ]
     then
 	rm -f $exeHash
     fi
 
-    exit $1
+    if [ -e "${exeHash}.lock" ]
+    then
+	rm -f "${exeHash}.lock"
+    fi
+
+    # Remove block info hash and lock file
+    if [ -e $blockHash ]
+    then
+	rm -f $blockHash
+    fi
+
+    if [ -e "${blockHash}.lock" ]
+    then
+	rm -f "${blockHash}.lock"
+    fi
+
+    childKill
 }
 
 #-------------------------------------------------------------------------------
@@ -280,17 +442,23 @@ else
 	then
 	    evalSignal=$( grep -a -m 1 'exited with status' ${testLog} | awk '{print $NF}' )
 	    if [ $? -ne 0 ] || [ "${evalSignal}" == "" ] || [[ ! "${evalSignal}" =~ ^[0-9] ]]
-	    then # This test didn't exit normally, check for timeout or boot fail
-		if [ $( tail ${testLog} | grep -a -i -c "timed out" ) -eq 1 ]
-		then 
-		    evalSignal=9 # SIGKILL
-		    evalSummary="Timeout"
-		elif [ $( tail ${testLog} | grep -a -i -c "block is busy" ) -gt 0 ]
-		then 
-		    evalSignal=9 # SIGKILL
-		    evalSummary="Block is busy"
-		else # I give up
-		    evalSignal=10 # SIGUSR1
+	    then # check for termination
+
+		evalSignal=$( grep -a -m 1 'terminated by signal' ${testLog} | awk '{print $NF}' )
+		if [ $? -ne 0 ] || [ "${evalSignal}" == "" ] || [[ ! "${evalSignal}" =~ ^[0-9] ]]
+		then # This test didn't exit normally, check for timeout or boot fail
+
+		    if [ $( tail ${testLog} | grep -a -i -c "timed out" ) -eq 1 ]
+		    then 
+			evalSignal=9 # SIGKILL
+			evalSummary="Timeout"
+		    elif [ $( tail ${testLog} | grep -a -i -c "block is busy" ) -gt 0 ]
+		    then 
+			evalSignal=9 # SIGKILL
+			evalSummary="Block is busy"
+		    else # I give up
+			evalSignal=10 # SIGUSR1
+		    fi
 		fi
 	    fi
 
@@ -356,7 +524,7 @@ else
 fi
  
 eval $outLogSigVar=$evalSignal
-eval $outLogSumVar=$evalSummary
+eval $outLogSumVar=\"$evalSummary\"
 
 return 0
 
@@ -367,8 +535,8 @@ return 0
 # $1 - The working directory for the test
 # $2 - The executable/binary file to run
 # $3 - The log file
-# $4 - The variable to store the binary return code for this test
-# $5 - The variable to store the elapsed time for this test
+# $4.1 - Variable name to store the binary return code for this test
+# $4.2 - Variable name to store the elapsed time for this test
 #-------------------------------------------------------------------------------
 runSA ()
 {
@@ -376,8 +544,8 @@ runSA ()
     cwd=$1
     exe=$2
     logFile=$3
-    SASignalVar=$4
-    elapsed_time=$5
+    SASignalVar=$( echo $4 | awk '{print $1}' )
+    elapsed_time=$( echo $4 | awk '{print $2}' )
 
     runSA_rc=0
 
@@ -438,7 +606,7 @@ runSA ()
 	echo "ERROR (E)::runSA: Execution of ${exe} FAILED!!"
 	runSA_rc=${runStatus[0]}
     else # runCmd passed, let's check the logFile
-	if [ ${runStatus[1]} -ne 0 ] || [ ! -e $logFile ]
+	if [[ $quietly -eq 0 && ${runStatus[1]} -ne 0 ]] || [ ! -e $logFile ]
 	then
 	    echo "ERROR (E)::runSA: FAILED to redirect output into ${logFile}!!"
 	    echo "ERROR (E)::runSA: No way to verify test results!!"
@@ -452,7 +620,7 @@ runSA ()
     if [ $? -ne 0 ]
     then
 	echo "ERROR (E)::runSA: cd back to original dir FAILED!! Exiting."
-	cleanExit 1
+	exit 1
     fi
 
     # Return
@@ -465,10 +633,11 @@ runSA ()
 # $2 - The executable/binary file to run
 # $3 - Test scenario:  nodes, mode, NP
 # $4 - The options to pass to mpirun/runjob
-# $5 - The arguments to pass to the executable
-# $6 - The log file for this run
-# $7 - The variable to store the mpirun/runjob return code for this test
-# $8 - The variable to store the elapsed time for this test
+# $5 - block
+# $6 - The arguments to pass to the executable
+# $7 - The log file for this run
+# $8.1 - Variable name to store the runfctest return code for this test
+# $8.2 - Variable name to store the elapsed time for this test
 #-------------------------------------------------------------------------------
 runHW ()
 {
@@ -479,15 +648,15 @@ runHW ()
     HWMode=$( echo $3 | awk '{print $2}' )
     HWProcs=$( echo $3 | awk '{print $3}' )
     opts=$4
-    args=$5
-    logFile=$6
-    HWSignalVar=$7
-    elapsedTimeVar=$8
+    HWBlock=$5
+    args=$6
+    logFile=$7
+    HWSignalVar=$( echo $8 | awk '{print $1}' )
+    elapsedTimeVar=$( echo $8 | awk '{print $2}' )
 
     runjob="${run_floor}/hlcs/bin/runjob"
     runfctest="${run_floor}/scripts/runfctest.sh"
     type='MMCS'
-    HWBlock=$block
 
     runjobArgs=$( echo "${args}" | sed 's/ -/ --args -/g' | sed 's/"//g' ) # use "${args}" for when 1st arg is -n
 
@@ -501,7 +670,7 @@ runHW ()
     runHW_rc=0
 
     envs=""
-    runENVHash="/tmp/${USER}_${exe%%.*}_runenvhash.${timestamp}"       # temp hash of ENV vars to set
+    runENVHash="/tmp/${USER}_${exe%%.*}_runenvhash.$(date +%Y%m%d-%H%M%S)"       # temp hash of ENV vars to set
 
     # Put default ENV vars in a hash so they can be overwritten by testfile options (except for mode)
     if [ "${platform}" == 'bgq' ]
@@ -598,9 +767,38 @@ runHW ()
 	shift
     done
 
+    # Separate out individual block pieces
+    # BGP sub block
+    HWLocation=$( echo $HWBlock | sed "s|:| |" | awk '{print $2}' )    
+
+    # BGQ Shape
+    if [ "${shape}" == '' ]
+    then
+	HWShape=$( echo $HWBlock | sed "s|:| |g" | awk '{print $3}' )
+    else
+	HWShape=$shape
+    fi
+
+    # BGQ Corner
+    if [ "${corner}" == '' ]
+    then
+	HWCorner=$( echo $HWBlock | sed "s|:| |g" | awk '{print $2}' ) 
+    else
+	HWCorner=$corner
+    fi
+
+    # Block
+    HWBlock=$( echo $HWBlock | sed "s|:.*||g" )
+
     # Check for mpirun (BGP) parms that we don't want to fill the input file with: 
     if [ "${platform}" == 'bgp' ]
     then
+	# location
+	if [[ ! "${opts}" =~ '--location' ]] && [ "${HWLocation}" != "" ]
+	then
+	    HWBlock="${HWBlock} --location ${HWLocation}"
+	fi
+
         # nofree
 	if [[ ! "{$opts}" =~ '-nofree' ]]
 	then
@@ -619,15 +817,15 @@ runHW ()
     then    
 
 	# corner
-	if [[ ! "${opts}" =~ '--corner' ]] && [ "${corner}" != "" ]
+	if [[ ! "${opts}" =~ '--corner' ]] && [ "${HWCorner}" != "" ]
 	then
-	    HWBlock="${HWBlock} --corner ${corner}"
+	    HWBlock="${HWBlock} --corner ${HWCorner}"
 	fi
 
 	# shape
-	if [[ ! "${opts}" =~ '--shape' ]] && [ "${shape}" != "" ]
+	if [[ ! "${opts}" =~ '--shape' ]] && [ "${HWShape}" != "" ]
 	then
-	    HWBlock="${HWBlock} --shape ${shape}"
+	    HWBlock="${HWBlock} --shape ${HWShape}"
 	fi
 
         # label
@@ -781,7 +979,7 @@ runHW ()
 	runHW_rc=${runStatus[0]}
 
     else # runCmd passed, let's check the logFile
-	if [ ${runStatus[1]} -ne 0 ] || [ ! -e $logFile ]
+	if [[ $quietly -eq 0 && ${runStatus[1]} -ne 0 ]] || [ ! -e $logFile ]
 	then
 	    echo "ERROR (E)::runHW: FAILED to redirect output into ${logFile}!!"
 	    echo "ERROR (E)::runHW: No way to verify test results!!"
@@ -795,7 +993,7 @@ runHW ()
     if [ $? -ne 0 ]
     then
 	echo "ERROR (E)::runHW: cd back to original dir FAILED!! Exiting."
-	cleanExit 1
+	exit 1
     fi
 
     # Return
@@ -894,7 +1092,7 @@ runHWRoy ()
 	#ding, ding, ding
 	if [[ A1 = A$ding ]]; then echo -en "\007"; sleep 1; echo -en "\007"; sleep 1; echo -en "\007"; fi
 	
-	cleanExit 1
+	exit 1
     fi
 
     source bgutils
@@ -971,7 +1169,7 @@ runHWRoy ()
     if [ $? -ne 0 ]
 	then
 	echo "ERROR (E)::runHW: cd back to original dir FAILED!! Exiting."
-	cleanExit 1
+	exit 1
     fi
 
     # Return code
@@ -1018,7 +1216,7 @@ exe_preProcessing ()
     eppThreads=$orgThreads  
 
     OpenMP=0
-    eppmaxNP=0
+    eppMaxNP=0
     npOverride=0
     eppOverride='N'
 
@@ -1383,8 +1581,9 @@ exe_preProcessing ()
 # $5 - The options to pass to runjob
 # $6 - The arguments to pass to the executable
 # $7 - The log file for this run
-# $8 - The variable to store the runfctest return code for this test
-# $9 - The variable to store the elapsed time for this test
+# $8.1 - Variable name to store the runfctest return code for this test
+# $8.2 - Variable name to store the elapsed time for this test
+# $9 - block (last since not needed for FPGA)
 #-------------------------------------------------------------------------------
 runSim ()
 {
@@ -1398,8 +1597,9 @@ runSim ()
     opts=$5
     args=$6
     logFile=$7
-    simSignalVar=$8
-    elapsedTimeVar=$9
+    simSignalVar=$( echo $8 | awk '{print $1}' )
+    elapsedTimeVar=$( echo $8 | awk '{print $2}' )
+    simBlock=$9
 
     runfctest="${run_floor}/scripts/runfctest.sh"
 
@@ -1608,7 +1808,11 @@ runSim ()
 
     if [ "${type}" == 'runMmcsLite' ]
     then
-	runCmd="${runfctest} --script ${type} ${opts} --location ${block} --program ${exe} -- ${args}"
+	    
+	sub_block=$( echo $simBlock | sed "s|:| |" | cut -d " " -s -f2 )
+	simBlock=$( echo $simBlock | sed "s|:.*||g" )
+
+	runCmd="${runfctest} --script ${type} ${opts} --location ${simBlock} --program ${exe} -- ${args}"
     else # runMambo or runFpga
 	runCmd="${runfctest} --script ${type} ${opts} --program ${exe} -- ${args}"
     fi
@@ -1656,7 +1860,7 @@ runSim ()
 	    if [ $? -ne 0 ] || [ ! -d "${fctestDir}" ]
 	    then
 		echo "Creation of ${fctestDir} FAILED!!"
-		cleanExit 1
+		exit 1
 	    fi
 
 	    echo "Test directory: ${fctestDir}" >> $logFile	
@@ -1679,7 +1883,7 @@ runSim ()
 	echo "ERROR (E)::runSim: Execution of ${exe} FAILED!!"
 	runSim_rc=${runStatus[0]}
     else # runCmd passed, let's check the logFile	
-	if [ ${runStatus[1]} -ne 0 ] || [ ! -e $logFile ]
+	if [[ $quietly -eq 0 && ${runStatus[1]} -ne 0 ]] || [ ! -e $logFile ]
 	then
 	    echo "ERROR (E)::runSim: FAILED to redirect output into ${logFile}!!"
 	    echo "ERROR (E)::runSim: No way to verify test results!!"
@@ -1707,7 +1911,7 @@ runSim ()
     if [ $? -ne 0 ]
     then
 	echo "ERROR (E)::runSim: cd back to original dir FAILED!! Exiting."
-	cleanExit 1
+	exit 1
     fi
 
     # Return
@@ -1717,6 +1921,7 @@ runSim ()
 llJobs ()
 {
     action=$1
+    
     old_queue=$fpga_queue   # Use this to see if we've made any progress
 
     llJobs_rc=0
@@ -1754,11 +1959,11 @@ llJobs ()
       jobidArray[$jobid]=${jobidArray[$jobid]%.*}
 
       for ((test=0; test < ${#TEST_ARRAY[@]}; test++))
-	do
+      do
 	for numNodes in ${nodeArray[@]}
-	  do
+	do
 	  for mode in ${modeArray[@]}
-	    do
+	  do
 	    
 	    if [ $forceNP -eq 0 ]
 	    then
@@ -1774,7 +1979,7 @@ llJobs ()
 	    then 
 		if [ "${action}" == 'query' ]
 		then
-		    if [ "${jobSTArray[$jobid]}" == "H" ] || [ "${jobSTArray[$jobid]}" == "NR" ] || [ "${jobSTArray[$jobid]}" == "S" ] || [ "${jobSTArray[$jobid]}" == "SH" ] || [ "${jobSTArray[$jobid]}" == "V" ] || [ "${jobSTArray[$jobid]}" == "XP" ]
+		    if [ "${jobSTArray[$jobid]}" == "NR" ] || [ "${jobSTArray[$jobid]}" == "X" ]
 		    then
 		    
 		        # Cancel this job
@@ -1788,7 +1993,7 @@ llJobs ()
 		    fi
 		else # cancel
 		    hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" 'Cancelled'
-		    echo "Cancelling ${TEST_ARRAY[$test]} (jobid ${jobidArray[$jobid]})"
+		    echo -e "\nCancelling ${TEST_ARRAY[$test]} (jobid ${jobidArray[$jobid]})"
 		    llcancel ${jobidArray[$jobid]}
 		    continue
 		fi
@@ -1804,6 +2009,143 @@ llJobs ()
     fi
 
     return $llJobs_rc
+}
+
+# =========================================================  
+# Log to Web
+# =========================================================
+logToWeb ()
+{
+    ltwAbsPath=$( echo $1 | awk '{print $1}' ) # build or exe abs path
+    ltwRelPath=$( echo $1 | awk '{print $2}' ) 
+    ltwTest=$( echo $1 | awk '{print $3}' )
+    ltwNP=$( echo $2 | awk '{print $1}' )
+    ltwMode=$( echo $2 | awk '{print $2}' )
+    ltwThreads=$( echo $2 | awk '{print $3}' )
+    scaleNodes=$( echo $3 | awk '{print $1}' ) # Used for auto group name creation
+    scaleMode=$( echo $3 | awk '{print $2}' )  # Used for auto group name creation
+    ltwOverallStatus=$4 
+    ltwTestStatus=$5                           
+    ltwTestSignal=$6
+    ltwTestSummary=$7                          # individual summary of exe'd tests, else = overall status
+    ltwTestLog=$8                              # make or exe log 
+    xmlStatusVar=$9
+
+    echo -e "\nLogging results to ${upperFamily} Test History webpage ..."
+
+    logSummary=""
+    xmlStatus=""
+
+    # Create test name to be displayed in DB
+    testName=""
+
+    if [ "${testNameLength}" == 'short' ]
+    then # use name only
+	testName=$ltwTest
+    else # Use relative path and name
+	testName="${ltwRelPath}/${ltwTest}"
+    fi
+
+    # Determine compile driver level from binary if it exists
+    if [ "${codeFamily}" == 'sst' ] && [ $mpich -eq 0 ] && [ -e "${ltwAbsPath}/${ltwTest}" ]
+    then
+	comp_drv=$( strings "${ltwAbsPath}/${ltwTest}" | grep -a -m 1 "SST_COMPILE_DRIVER" )
+	comp_drv=${comp_drv##*=}
+    fi
+
+    # Overall status indicates this test reached the execution stage
+    if [[ "${ltwOverallStatus}" =~ ^[0-9] ]] 
+    then
+	# Determine run driver level (2nd to last dir in floor)
+	run_drv=${run_floor%/*} # Get rid of last dir
+	run_drv=${run_drv##*/} # Only keep newest last dir (driver)
+
+    fi
+
+    # Create logXML command
+    logCmd="${logXml} -e ${testName} -n ${ltwNP} -p ${ltwMode} -t ${ltwThreads} -r ${ltwTestSignal} -u ${USER} -m ${serverID}"
+
+    if [ "${ltwTestLog}" != "" ]
+    then
+	    logCmd="${logCmd} -o ${ltwTestLog}"
+    fi
+
+    if [ "${comp_drv}" != "" ]
+    then
+	    logCmd="${logCmd} -c ${comp_drv}"
+    fi
+    
+    if [ "${run_drv}" != "" ]
+    then
+	logCmd="${logCmd} -d ${run_drv}"
+    fi
+
+    if [ "${ltwTestSummary}" != "" ]
+    then
+	logCmd="${logCmd} -s \"${ltwTestSummary}\""
+    fi
+
+    # Format group name 
+    groupMode="${scaleMode}m" # Default
+
+    # Get text version of BGP mode
+    if [ "${platform}" == 'bgp' ]
+    then
+	bgp_mode_NumtoText $scaleMode groupMode
+	if [ $? -ne 0 ]
+	then
+	    echo "ERROR (E): bgp_mode_NumtoText subroutine FAILED!!"
+	    echo "ERROR (E): Using numeric mode value in group name."
+	fi
+    fi
+
+	# Group name was specified
+    if [ "${logGroup}" != "" ]
+    then
+	if [ $groupScale -eq 1 ] # Add scaling info to given group name
+	then
+	    tempGroup="${logGroup}_${scaleNodes}n_${groupMode}.${timestamp}"
+	else # Just use group name specified by user
+	    tempGroup="${logGroup}.${timestamp}"
+	fi
+	
+	logCmd="${logCmd} -g ${tempGroup}"
+
+    elif [ $autoGroup -eq 1 ] # Generate group name w/ scaling info
+    then
+	input=$( basename $file )
+	tempGroup="${input/.*/}_${groupDev}_${scaleNodes}n_${groupMode}.${timestamp}"
+	logCmd="${logCmd} -g ${tempGroup}"
+    fi
+
+    echo ${logCmd}
+    
+    # Execute logXML command
+    if [ $logDisabled -eq 0 ]
+    then
+	if [ $debug -ne 1 ]
+	then
+	    eval $logCmd
+	    if [ $? -ne 0 ]
+	    then
+		if [ $? -eq 2 ]
+		then
+		    logDisabled=1
+		fi
+
+		echo "ERROR (E): logXML.sh FAILED for ${ltwTest}"
+		xmlStatus='FAILED'
+	    else
+		xmlStatus='Logged'
+	    fi
+	else # debug mode
+	    xmlStatus='N/A'  
+	fi
+    else # Logging disabled
+	xmlStatus='Skipped' 
+    fi
+
+    eval $xmlStatusVar=$xmlStatus
 }
 
 changeDir ()
@@ -1935,7 +2277,13 @@ usage ()
     echo "                                    debug_MU_2n_4m"
     echo "                                    debug_MU_2n_8m"
     echo ""
-    echo "-b | --block <block>         Block name for runjob." 
+    echo "-b | --block <block>         Block name for runjob."
+    echo "                             To run multiple jobs in parallel, surround space separated block list with \"\":"
+    echo "                             ex:  -b \"<block 1> <block 2> ..<block n>\""
+    echo ""
+    echo "                             To run subblocks in BGQ:"
+    echo "                             --block <<block>:<corner>:<shape>>"
+    echo "                             ex:  -b \"R00-M0-N01:R00-M0-N01-J02:1x1x1x1x1 R00-M0-N01:R00-M0-N01-J03:1x1x1x1x1"
     echo ""
     echo "-c | --compile               Only compile binaries. Can be combined with -cp and/or -r."
     echo ""
@@ -2054,10 +2402,27 @@ usage ()
     echo "-v | --verbose               Enable extra info to be printed to output."
     echo ""
     echo "-h | --help                  This help text."
+    echo ""
+    echo " ******************************************************************************"
+    echo ""
+    echo " testlist features (inline options that can be set in the testlist file between each testname and its --args parm (if it exists)):"
+    echo""
+    echo " --compile-only              Tells script that this binary is to only be compiled.  This test will be skipped during copy and run phases"
+    echo "                             ex:  functional/se/microBenchmarks/hello_se.elf --compile-only"
+    echo ""
+    echo " --maxnp <NP limit>          Tells script that if NP of current test scenario > this value, skip this test"
+    echo "                             ex:  api/context/post-multithreaded-perf.cnk --maxnp 63 --timelimit 180 --args 1"
+    echo ""
+    echo " --standalone                Tells script that this binary is to be run natively without real or simulated hadware"
+    echo "                             ex:  scripts/hello.sh --standalone"
+
 }
 
 # --- Global variables ---
+ppid=$$
+mypid=$$
 codeFamily='sst'                             # sst or pami
+hashLock=0
 
 # common dirs
 abs_script_dir=$(dirname $(readlink -f $0))  # my dir ("scripts" dir for sst, "test" dir for pami)
@@ -2116,7 +2481,7 @@ forceNP=0               # force np to this value instead of ranks/node * nodes
 numProcs=0              # total num of ranks/tasks = ranks/node * nodes
 forceScaling=0
 needBlock=0             # 0 = can run w/out block, 1 = fail if no block given  
-block_name="missing"
+#block_name="missing"
 block=""
 corner=""
 shape=""
@@ -2126,10 +2491,12 @@ temp_jobid=""      # used to build common jobid between llsubmit and llq
 jobid=""           # used by FPGA and HW runs
 mpich=0
 ignoreSysFails=0
+blockHash="/tmp/${USER}_hashmap.blocks.${timestamp}"       # block status
 
 # Logging/Documenting vars
 summaryFile="sst_verif_summary.${timestamp}"
 web_update=1
+forceWeb=0
 logXml="${abs_script_dir}/logXML.sh"
 db_host=""
 platform='bgq'
@@ -2152,7 +2519,7 @@ while [ "${1}" != "" ]; do
         -ag | --autogroup )     autoGroup=1
                                 ;;
         -b | --block )          shift
-	                        block_name=$1
+	                        declare -a blockNameArray=($( echo $1 | sed 's/"//g' )) 
                                 ;;
         -c | --compile )        compile=1
 	                        if [ $copy -eq 2 ]; then copy=0; fi
@@ -2186,7 +2553,7 @@ while [ "${1}" != "" ]; do
 				then
 				    echo "ERROR (E):  Unknown display-name arg:  ${1}"
 				    usage
-				    cleanExit 1
+				    exit 1
 				fi
                                 ;;
         -e | --exebase )        shift
@@ -2268,11 +2635,11 @@ while [ "${1}" != "" ]; do
         -v | --verbose )        verbose=1
                                 ;;
         -h | --help )           usage
-                                cleanExit 0
+                                exit 0
                                 ;;
         * )                     echo "ERROR (E):  Unknown option ${1}"
                                 usage
-                                cleanExit 1
+                                exit 1
     esac
     shift
 done
@@ -2307,7 +2674,7 @@ case $codeFamily in
     * )                     
 	echo "ERROR (E):  Unrecognized code family: ${codeFamily}"
 	echo "ERROR (E):  Valid values are:  pami & sst"
-	cleanExit 1
+	exit 1
 esac 
 
 # Verify DB host
@@ -2324,7 +2691,7 @@ then
 	    echo "ERROR (E):  Unrecognizd DB host: ${db_host} !!"
 	    echo "ERROR (E):  Valid values are:  sst & msg"
 	    echo "ERROR (E):  Exiting."
-	    cleanExit 1
+	    exit 1
 	fi
     fi
 fi
@@ -2348,7 +2715,7 @@ fi
 if [ $mpich -eq 0 ] && [ ! -d "${comp_base}" ]
 then
     echo "ERROR (E): Compile dir: ${comp_base} DNE!! Exiting."
-    cleanExit 1
+    exit 1
 fi
 
 # Create absolute rules dir (holds Make.rules)
@@ -2371,7 +2738,7 @@ case $platform in
     * )                     
 	echo "ERROR (E):  Unrecognized platform: ${platform}"
 	echo "ERROR (E):  Valid values are:  bgp, bgq, linux, mpi & percs"
-	cleanExit 1
+	exit 1
 esac
 
 # Turn off case-insensitive matching (-u unset nocasematch)
@@ -2387,7 +2754,7 @@ then
 	if [ $? -ne 0 ] || [ "${target}" == "" ]
 	then
 	    echo "ERROR (E): FAILED to determine current Make.rules target. Exiting."
-	    cleanExit 1
+	    exit 1
 	else
 	    if [ "${platform}" != "${target}" ]
 	    then
@@ -2396,7 +2763,7 @@ then
 		echo "ERROR (E):    or"
 		echo "ERROR (E): Rerun sst_pami_verif.sh and append the -rc <floor> option."
 		echo "ERROR (E): Exiting."
-		cleanExit 1
+		exit 1
 	    fi
 	fi
     elif [ $reconfigure -eq 0 ]
@@ -2406,7 +2773,7 @@ then
 	echo "ERROR (E):    or"
 	echo "ERROR (E): Rerun sst_pami_verif.sh and append the -rc <floor> option."
 	echo "ERROR (E): Exiting."
-	cleanExit 1
+	exit 1
     fi
 fi
 
@@ -2437,7 +2804,7 @@ then
     #ding ding ding
     if [[ A1 = A$ding ]]; then echo -en "\007"; sleep 1; echo -en "\007"; sleep 1; echo -en "\007"; fi
 
-    cleanExit 1
+    exit 1
 else
     file=$(readlink -e "${file}" )
 fi
@@ -2494,12 +2861,12 @@ then
 	    if [ $? -ne 0 ] || [ ! -d "${exe_base}" ]
 	    then
 		echo "Creation of ${exe_base} FAILED!!"
-		cleanExit 1
+		exit 1
 	    fi
 	else # Fail if user only planned to run
 	    
 	    echo "ERROR (E): Runtime dir: ${exe_base} DNE!! Exiting."
-	    cleanExit 1
+	    exit 1
 	fi
     fi
 fi
@@ -2516,7 +2883,7 @@ then
 	if [ $? -ne 0 ] || [ ! -d "${out_dir}" ]
 	then
 	    echo "Creation of ${out_dir} FAILED!!"
-	    cleanExit 1
+	    exit 1
 	fi
     fi
 fi
@@ -2562,7 +2929,7 @@ else
 	    if [ $? -ne 0 ]
 	    then
 		echo "ERROR (E): bgp_mode_TexttoNum subroutine FAILED!!"
-		cleanExit 1
+		exit 1
 	    else
 		modeArray[$pmode]=$numMode
 	    fi
@@ -2635,7 +3002,7 @@ then
 	    else
 		echo "ERROR (E):  Unknown PAMI_DEVICE setting:  ${PAMI_DEVICE}"
 		echo "ERROR (E):  Valid options for PAMI_DEVICE are: B, M or S"
-		cleanExit 1
+		exit 1
 	    fi
 	fi
     fi
@@ -2654,14 +3021,14 @@ then
     cur_floor=$(readlink -e "${cur_base}/x86_64.floor" )
 else
     echo "ERROR (E): Unknown arch (${arch})!! Can't determine current floor. Exiting."
-    cleanExit 1
+    exit 1
 fi
 
 # Exit if readlink failed
 if [ $? -ne 0 ]
 then
     echo "ERROR (E): readlink command FAILED!! Can't determine current floor. Exiting."
-    cleanExit 1
+    exit 1
 fi
 
 # Reconfigure tree to desired floor if specified
@@ -2674,7 +3041,7 @@ then
 	if [ ! -e "${compile_floor}" ]
 	then
 	    echo "ERROR (E): ${compile_floor} DNE!! Exiting."
-	    cleanExit 1
+	    exit 1
 	fi
     fi
  
@@ -2682,7 +3049,7 @@ then
     if [ $? -ne 0 ]
     then
 	echo "ERROR (E): reConfig FAILED!! Exiting."
-	cleanExit 1
+	exit 1
     fi
 else # Set compile floor to existing floor in Make.rules
     if [ $mpich -eq 1 ] || [ "${codeFamily}" == 'sst' ]
@@ -2704,7 +3071,7 @@ then
 	    echo "ERROR (E):    or"
 	    echo "ERROR (E): Rerun sst_pami_verif.sh and append -rc <floor> option."
 	    echo "ERROR (E): Exiting."
-	    cleanExit 1
+	    exit 1
 	else
 	    compile_floor=$(fgrep -a 'BGQ_FLOOR_DIR=' "${abs_rules_dir}/Make.rules" | cut -d '=' -f2)
 	    if [ ! -e "${compile_floor}" ] 
@@ -2712,7 +3079,7 @@ then
 		if [ $compile -eq 1 ]
 		    then
 		    echo "ERROR (E): BGQ_FLOOR_DIR: ${compile_floor} DNE!! Exiting."
-		    cleanExit 1
+		    exit 1
 		else
 		    echo "WARNING (W): BGQ_FLOOR_DIR: ${compile_floor} DNE!!"
 		fi
@@ -2733,7 +3100,7 @@ then
 	if [ $? -ne 0 ]
 	then
 	    echo "ERROR (E): ${run_floor} DNE!! Exiting."
-	    cleanExit 1
+	    exit 1
 	fi
     fi
 fi
@@ -2817,7 +3184,10 @@ while read xtest xopts
       hput $exeHash "${TEST_ARRAY[$element]}:$element:standAlone" 1
   else
       hput $exeHash "${TEST_ARRAY[$element]}:$element:standAlone" 0
-      needBlock=1
+      if [ "${run_type}" == 'hw' ] || [ "${run_type}" == 'runMmcsLite' ]
+      then
+          needBlock=1
+      fi
   fi 
       
   # Disable mpich "io" runs for now:
@@ -2844,22 +3214,24 @@ while read xtest xopts
 done < $file
 
 # Ensure block was given if executing binaries on hw
-if [ $run -eq 1 ] && [ $needBlock -eq 1 ]     
+if [ $run -eq 1 ] && [ $needBlock -eq 1 ] && [[ "${run_type}" == "hw" || "${run_type}" == "runMmcsLite" ]] 
 then 
-    if [ "${run_type}" == "hw" ] || [ "${run_type}" == "runMmcsLite" ]
+    if [ ${#blockNameArray[@]} -eq 0 ]
     then
-	if [ "${block_name}" == "missing" ]
-	then
-	    echo -e "ERROR (E): Block parameter missing. Specify with -b <block> or --block <block>.\nExiting." 
+	echo -e "ERROR (E): Block parameter(s) missing. Specify with -b <block> or --block <block>.\nExiting." 
 
             #ding ding ding
-	    if [[ A1 = A$ding ]]; then echo -en "\007"; sleep 1; echo -en "\007"; sleep 1; echo -en "\007"; fi
+	if [[ A1 = A$ding ]]; then echo -en "\007"; sleep 1; echo -en "\007"; sleep 1; echo -en "\007"; fi
 
-	    cleanExit 1
-	else
-	    sub_block=`echo ${block_name} | sed "s|:| |" | cut -d " " -s -f2`
-	    block=`echo ${block_name} | sed "s|:.*||g"`
-	fi
+	exit 1
+    else
+	declare -a blockArray
+
+	for ((index=0; index < ${#blockNameArray[@]}; index++))
+	do
+	    blockArray[${#blockArray[@]}]=${blockNameArray[$index]}
+	    hput $blockHash ${blockNameArray[$index]} 'free'
+	done
     fi
 fi
 
@@ -2903,7 +3275,7 @@ then
 	if [ $? -ne 0 ]
 	then
 	    echo "ERROR (E): changeDir FAILED!! Exiting."
-	    cleanExit 1
+	    exit 1
 	fi
 
 	echo -e "\nINFO (I):  Performing make distclean in:  ${suiteSourceDir}\n"
@@ -2927,7 +3299,7 @@ then
 	if [ $? -ne 0 ]
 	then
 	    echo "ERROR (E): changeDir FAILED!! Exiting."
-	    cleanExit 1
+	    exit 1
 	fi
 
 	# Create make clean command
@@ -2956,7 +3328,7 @@ then
 	    if [ $? -ne 0 ]
 	    then
 		echo "ERROR (E): changeDir FAILED!! Exiting."
-		cleanExit 1
+		exit 1
 	    fi
 
 	    echo $makeCmd
@@ -2979,9 +3351,9 @@ then
 	do
 
             # Don't build disabled tests
-	    hget $exeHash "${TEST_ARRAY[$test]}:$test:exe" hashExe
+	    hget $exeHash "${TEST_ARRAY[$test]}:$test:exe" enabled
 
-	    if [ $hashExe -eq 0 ]
+	    if [ "${enabled}" == '0' ]
 	    then
 		echo "Skipping compile of ${TEST_ARRAY[$test]} ..."
 		continue
@@ -2990,7 +3362,7 @@ then
             # Don't rebuild tests
 	    hget $compileHash ${TEST_ARRAY[$test]} alreadyCompiled
 
-	    if [ "${alreadyCompiled}" != "0" ]
+	    if [ "${alreadyCompiled}" == "1" ]
 	    then
 		echo "Already compiled ${TEST_ARRAY[${test}]} ..."
 
@@ -3068,21 +3440,23 @@ then
 	    hput $exeHash "${TEST_ARRAY[$test]}:$test:compSignal" ${makeStatus[0]}
 
             # Check status of make
+	    overallStatus=""
 	    if [ ${makeStatus[0]} -ne 0 ] || [ ! -e "${TEST_ARRAY[$test]}" ]
 	    then
-		hput $exeHash "${TEST_ARRAY[$test]}:$test:status" 'Compile FAILED'
+		overallStatus='Compile FAILED'
+		hput $exeHash "${TEST_ARRAY[$test]}:$test:status" "${overallStatus}"
 		echo "ERROR (E): make of ${TEST_ARRAY[$test]} FAILED!!"
 
       	        # Disable this test for the rest of this run
 		hput $exeHash "${TEST_ARRAY[$test]}:$test:exe" 0
-		continue
 
 	    else # Make passed
-		hput $exeHash "${TEST_ARRAY[$test]}:$test:status" 'Compiled'
+		overallStatus='Compiled'
+		hput $exeHash "${TEST_ARRAY[$test]}:$test:status" "${overallStatus}"
 		hput $compileHash "${TEST_ARRAY[$test]}" "${compileLog}" # Don't build this test again
 
 		# Let's check the log
-		if [ ${makeStatus[1]} -ne 0 ] || [ ! -e "${compileLog}" ]
+		if [[ $quietly -eq 0 && ${makeStatus[1]} -ne 0 ]] || [ ! -e "${compileLog}" ]
 		then
 		    echo "WARNING (W): FAILED to redirect output into ${compileLog}!!"
 		fi
@@ -3090,11 +3464,45 @@ then
 
             # Disable this test if it was compile only
 	    hget $exeHash "${TEST_ARRAY[$test]}:$test:compileOnly" compileOnly
-	    if [ $compileOnly -eq 1 ]
+	    if [ "${compileOnly}" == '1' ]
 	    then
 		hput $exeHash "${TEST_ARRAY[$test]}:$test:exe" 0
-	    fi	  
-	done
+	    fi
+
+	    # Log to web if compile failed or user chose to force results to DB
+	    if [ "${overallStatus}" == 'Compile FAILED' ] || [ $forceWeb -eq 1 ]
+	    then
+
+		signal=999
+
+		if [ "${overallStatus}" == 'Compile FAILED' ]
+		then
+		    signal=$( tail $compileLog | grep -a -m 1 ' Error' | awk '{print $NF}')
+
+		    if [ $? -ne 0 ] || [ "${signal}" == "" ] || [[ ! "${signal}" =~ ^[0-9] ]] 
+		    then # This compile didn't exit normally
+			signal=10 # SIGUSR1
+		    fi
+		else
+		    signal=0
+		fi
+		
+		hget $exeHash "${TEST_ARRAY[$test]}:$test:stub" stub
+
+		logToWeb "${buildDir} ${stub} ${TEST_ARRAY[$test]}" "0 0 0" "${nodeArray[0]} ${modeArray[0]}" "${overallStatus}" "" $signal "${overallStatus}" "${compileLog}" xmlStat
+
+	      # Determine NP value for saving XML status
+		keyNP=0
+		if [ $forceNP -eq 0 ]
+		then
+		    keyNP=$(( ${nodeArray[0]} * ${modeArray[0]} ))
+		else
+		    keyNP=$forceNP
+		fi
+
+		hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${nodeArray[0]}_m${modeArray[0]}_p${keyNP}" $xmlStat
+	    fi # end log to web
+	done # end loop through tests
     else # --- mpich or pami compile ---
     
 	# Build source code for select test suites (MPICH)
@@ -3106,7 +3514,7 @@ then
 	    if [ $? -ne 0 ]
 	    then
 		echo "ERROR (E): changeDir FAILED!! Exiting."
-		cleanExit 1
+		exit 1
 	    fi
 
 	    #Remove existing log (That's what the DB is for)
@@ -3138,10 +3546,10 @@ then
 	    if [ ${makeStatus[0]} -ne 0 ]
 	    then
 		echo "ERROR (E): make FAILED!!"
-		cleanExit 1
+		exit 1
 
 	    else # make passed, let's check the log
-		if [ ${makeStatus[1]} -ne 0 ] || [ ! -e "${make_log}" ]
+		if [[ $quietly -eq 0 && ${makeStatus[1]} -ne 0 ]] || [ ! -e "${make_log}" ]
 		then
 		    echo "WARNING (W): FAILED to redirect output into ${make_log}!!"
 		fi
@@ -3154,7 +3562,7 @@ then
 	if [ $? -ne 0 ]
 	then
 	    echo "ERROR (E): changeDir FAILED!! Exiting."
-	    cleanExit 1
+	    exit 1
 	fi
 
 	#Remove existing log (That's what the DB is for)
@@ -3178,7 +3586,7 @@ then
 		if [ $? -ne 0 ] || [ ! -d $stagingDir ]
 		then
 		    echo "Creation of ${stagingDir} FAILED!!"
-		    cleanExit 1
+		    exit 1
 		fi
 	    fi
 
@@ -3240,20 +3648,24 @@ then
 	   
 	    hget $exeHash "${TEST_ARRAY[$test]}:$test:buildDir" buildDir
 
+	    overallStatus=""
+
 	    if [ ! -e "${buildDir}/${TEST_ARRAY[$test]}" ]
 	    then
-		hput $exeHash "${TEST_ARRAY[$test]}:$test:status" 'Compile FAILED'
+		overallStatus='Compile FAILED'
+		hput $exeHash "${TEST_ARRAY[$test]}:$test:status" "${overallStatus}"
 		echo "Compile of ${buildDir}/${TEST_ARRAY[$test]} FAILED!!"
 	 
       	        # Disable this test for the rest of this run
 		hput $exeHash "${TEST_ARRAY[$test]}:$test:exe" 0
 	    else # binary exists
+		overallStatus='Compiled'
+		hput $exeHash "${TEST_ARRAY[$test]}:$test:status" "${overallStatus}"
 		binaryCount=$(( $binaryCount + 1 ))
-		hput $exeHash "${TEST_ARRAY[$test]}:$test:status" 'Compiled'
             
                 # Disable this test if it was compile only
 		hget $exeHash "${TEST_ARRAY[$test]}:$test:compileOnly" compileOnly
-		if [ $compileOnly -eq 1 ]
+		if [ "${compileOnly}" == '1' ]
 		then
 		    hput $exeHash "${TEST_ARRAY[$test]}:$test:exe" 0
 		fi
@@ -3261,6 +3673,41 @@ then
 
 	    # Update compile log for this test
 	    hput $exeHash "${TEST_ARRAY[$test]}:$test:logCompile" "${make_log}"
+
+	    # Log to web if compile failed or user chose to force results to DB
+	    if [ "${overallStatus}" == 'Compile FAILED' ] || [ $forceWeb -eq 1 ]
+	    then
+
+		signal=999
+
+		if [ "${overallStatus}" == 'Compile FAILED' ]
+		then
+		    signal=$( tail $compileLog | grep -a -m 1 ' Error' | awk '{print $NF}')
+
+		    if [ $? -ne 0 ] || [ "${signal}" == "" ] || [[ ! "${signal}" =~ ^[0-9] ]] 
+		    then # This compile didn't exit normally
+			signal=10 # SIGUSR1
+		    fi
+		else
+		    signal=0
+		fi
+		
+		hget $exeHash "${TEST_ARRAY[$test]}:$test:stub" stub
+
+		logToWeb "${buildDir} ${stub} ${TEST_ARRAY[$test]}" "0 0 0" "${nodeArray[0]} ${modeArray[0]}" "${overallStatus}" "" $signal "${overallStatus}" "${make_log}" xmlStat
+
+	      # Determine NP value for saving XML status
+		keyNP=0
+		if [ $forceNP -eq 0 ]
+		then
+		    keyNP=$(( ${nodeArray[0]} * ${modeArray[0]} ))
+		else
+		    keyNP=$forceNP
+		fi
+
+		hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${nodeArray[0]}_m${modeArray[0]}_p${keyNP}" $xmlStat
+	    fi
+
 	done
 
         # Check status of make
@@ -3275,15 +3722,15 @@ then
 	        # Exit now if user didn't run make clean or didn't choose to ignore make fails
 		if [ $make_clean -eq 0 ] && [ $ignoreMakeFails -eq 0 ]
 		then
-		    cleanExit 1
+		    exit 1
 		elif [ $binaryCount -eq 0 ] # Could continue, but no good binaries
 		then
-		    cleanExit 1
+		    exit 1
 		fi
 	    fi
  
 	else # make passed, let's check the log
-	    if [ ${makeStatus[1]} -ne 0 ] || [ ! -e "${make_log}" ]
+	    if [[ $quietly -eq 0 &&  ${makeStatus[1]} -ne 0 ]] || [ ! -e "${make_log}" ]
 	    then
 		echo "WARNING (W): FAILED to redirect output into ${make_log}!!"
 	    fi
@@ -3324,8 +3771,8 @@ if [ $copy -eq 1 ]
       do
 
       # Don't bother copying tests that didn't compile or are compile only
-      hget $exeHash "${TEST_ARRAY[$test]}:$test:exe" hashExe
-      if [ ${hashExe} -eq 0 ]
+      hget $exeHash "${TEST_ARRAY[$test]}:$test:exe" enabled
+      if [ "${enabled}" == '0' ]
 	  then
 	  echo "Skipping copy of ${TEST_ARRAY[$test]} ..."
 	  continue
@@ -3333,7 +3780,7 @@ if [ $copy -eq 1 ]
 
       # Don't recopy tests
       hget $copyHash ${TEST_ARRAY[$test]} alreadyCopied
-      if [ $alreadyCopied -eq 1 ]
+      if [ "${alreadyCopied}" == '1' ]
 	  then
 	  echo "Already copied ${TEST_ARRAY[${test}]} ..."
 	  hput $exeHash "${TEST_ARRAY[$test]}:$test:status" 'Copied'
@@ -3352,20 +3799,43 @@ if [ $copy -eq 1 ]
 	  if [ $? -ne 0 ] || [ ! -d "${exeDir}" ]
 	      then
 	      echo "Creation of ${exeDir} FAILED!!"
-	      cleanExit 1
+	      exit 1
 	  fi
       fi
 
       cp "${buildDir}/${TEST_ARRAY[$test]}" "${exeDir}"
+      signal=$?
       if [ $? -ne 0 ] || [ ! -e "${exeDir}/${TEST_ARRAY[$test]}" ]
 	  then
-	  hput $exeHash "${TEST_ARRAY[$test]}:$test:status" 'Copy FAILED'
+	  overallStatus='Copy FAILED'
+	  hput $exeHash "${TEST_ARRAY[$test]}:$test:status" "${overallStatus}"
 	  echo "Copy of ${buildDir}/${TEST_ARRAY[$test]} to ${exeDir} FAILED!!"
 	  echo "Skipping to next test ..."
 
       	  # Disable this test for the rest of this run
 	  hput $exeHash "${TEST_ARRAY[$test]}:$test:exe" 0
-	  continue
+
+	  # Log to web if user planned to run this test
+	  if [ $run -eq 1 ]
+	  then
+	    
+	      hget $exeHash "${TEST_ARRAY[$test]}:$test:stub" stub
+
+	      logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "0 0 0" "${nodeArray[0]} ${modeArray[0]}" "${overallStatus}" "" $signal "${overallStatus}" "" xmlStat
+
+	      # Determine NP value for saving XML status
+	      keyNP=0
+	      if [ $forceNP -eq 0 ]
+	      then
+		  keyNP=$(( ${nodeArray[0]} * ${modeArray[0]} ))
+	      else
+		  keyNP=$forceNP
+	      fi
+
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${nodeArray[0]}_m${modeArray[0]}_p${keyNP}" $xmlStat	      
+	  fi
+
+	  continue # to next test
       else
 	  hput $exeHash "${TEST_ARRAY[$test]}:$test:status" 'Copied'
 	  hput $copyHash ${TEST_ARRAY[$test]} 1 # Don't copy this test again
@@ -3400,11 +3870,12 @@ then
     if [ $copy -ne 1 ]
     then
 	for ((test=0; test < ${#TEST_ARRAY[@]}; test++))
-	  do
+	do
 
           # Ensure test is enabled
-	  hget $exeHash "${TEST_ARRAY[$test]}:$test:exe" hashExe
-	  if [ $hashExe -eq 1 ]
+	  enabled=0
+	  hget $exeHash "${TEST_ARRAY[$test]}:$test:exe" enabled
+	  if [ "${enabled}" == '1' ]
 	  then
 
 	      # Ensure file exists in exe dir
@@ -3426,33 +3897,65 @@ then
     do
 
       # Ensure test is enabled
-      hget $exeHash "${TEST_ARRAY[$test]}:$test:exe" hashExe
-      if [ $hashExe -eq 1 ]
+      enabled=0
+      hget $exeHash "${TEST_ARRAY[$test]}:$test:exe" enabled
+      if [ "${enabled}" == '1' ]
       then # update overall status
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:runPass" runPass
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:runTotal" runTotal
 	  
 	  hput $exeHash "${TEST_ARRAY[$test]}:$test:status" "${runPass}/${runTotal} Passed"
+	  
+      else # This test is disabled
+	  # Log to web if this is a skipped test
+	  overallStatus=''
+	  hget $exeHash "${TEST_ARRAY[$test]}:$test:status" overallStatus
+
+	  if [[ "${overallStatus}" == 'Skipped (Compile Only)' && $compile -eq 0 ]] || [ "${overallStatus}" == 'Skipped (DNE)' ] || [ "${overallStatus}" == 'Skipped (I/O)' ]
+	  then
+
+	      hget $exeHash "${TEST_ARRAY[$test]}:$test:stub" stub
+	      hget $exeHash "${TEST_ARRAY[$test]}:$test:exeDir" exeDir
+
+	      logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "0 0 0" "${nodeArray[0]} ${modeArray[0]}" "${overallStatus}" "" 999 "${overallStatus}" "" xmlStat
+
+	      # Determine NP value for saving XML status
+	      keyNP=0
+	      if [ $forceNP -eq 0 ]
+	      then
+		  keyNP=$(( ${nodeArray[0]} * ${modeArray[0]} ))
+	      else
+		  keyNP=$forceNP
+	      fi
+
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${nodeArray[0]}_m${modeArray[0]}_p${keyNP}" $xmlStat
+	  fi
       fi
     done
 
     # --- Run selected binaries ---
+    if [ ${#blockArray[@]} -gt 1 ]
+    then
+	hashLock=1
+    fi
+
     for numNodes in ${nodeArray[@]}
     do
       for mode in ${modeArray[@]}
       do
+
+	lastTest=""
+
 	for ((test=0; test < ${#TEST_ARRAY[@]}; test++))
 	do
 
+	  block=""  
 	  preProcRC=0
 	  exeRC=0
 
-	  # "Clear" runtime 
-	  hput $exeHash "${TEST_ARRAY[$test]}:$test:runtime_n${numNodes}_m${mode}_p${numProcs}" ""
-
-	  hget $exeHash "${TEST_ARRAY[$test]}:$test:status" overallStatus
-	  if [ "${overallStatus}" == 'Skipped (Bad run* Parm)' ] || [ "${overallStatus}" == 'Skipped (Compile Only)' ]
-	  then
+	  hget $exeHash "${TEST_ARRAY[$test]}:$test:exe" enabled
+	  if [ "${enabled}" != '1' ]
+	  then # test is disabled
 	      continue # to next test
 	  fi
 
@@ -3481,26 +3984,13 @@ then
 
 	  # Get parms for this test
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:exeDir" exeDir
+	  hget $exeHash "${TEST_ARRAY[$test]}:$test:stub" stub
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:runOpts" runOpts
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:exeArgs" exeArgs
 
-          # Compare non-mpich binary floor with runtime floor
-	  if [ $mpich -eq 0 ] && [ "${codeFamily}" == 'sst' ]
-	  then
-              bin_floor=$( strings "${exeDir}/${TEST_ARRAY[$test]}" | grep -a -m 1 "SST_COMPILE_DRIVER" )
-	      bin_floor=${bin_floor##*=}
-
-              if [ "${bin_floor}" != "${run_floor}" ]
-	      then
-		  echo "WARNING (W): Floor mismatch:"
-		  echo "WARNING (W): Binary floor  => ${bin_floor}"
-		  echo "WARNING (W): Runtime floor => ${run_floor}"
-              fi
-	  fi
-
 	  # Determine final values for nodes, mode & NP
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:standAlone" standAlone
-	  if [ $standAlone -eq 1 ]
+	  if [ "${standAlone}" == '1' ]
 	  then
 	      exeNodes=0
 	      eppInputMode=0
@@ -3517,11 +4007,27 @@ then
 		      echo "ERROR (E): bgp_mode_NumtoText subroutine FAILED!!"
 
 		      # Amend overall status
-		      hput $exeHash "${TEST_ARRAY[$test]}:$test:status" 'Skipped (Bad run* Parm)'
+		      overallStatus='Skipped (Bad run* Parm)'
+		      hput $exeHash "${TEST_ARRAY[$test]}:$test:status" "${overallStatus}"
 
 	              # Disable test
 		      hput $exeHash "${TEST_ARRAY[$test]}:$test:exe" 0
-		      continue
+
+		      #Log to web		      
+		      logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "0 0 0" "${nodeArray[0]} ${modeArray[0]}" "${overallStatus}" "" 999 "${overallStatus}" "" xmlStat
+
+	              # Determine NP value for saving XML status
+		      keyNP=0
+		      if [ $forceNP -eq 0 ]
+		      then
+			  keyNP=$(( ${nodeArray[0]} * ${modeArray[0]} ))
+		      else
+			  keyNP=$forceNP
+		      fi
+
+		      hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${nodeArray[0]}_m${modeArray[0]}_p${keyNP}" $xmlStat
+
+		      continue # to next test
 		  fi
 	      fi
 
@@ -3534,11 +4040,27 @@ then
 		  echo -e "\nERROR (E):  exe_preProcessing sub FAILED!! Disabling ${TEST_ARRAY[$test]} test ...\n"
 	      
 	          # Amend overall status
-		  hput $exeHash "${TEST_ARRAY[$test]}:$test:status" 'Skipped (Bad run* Parm)'
+		  overallStatus='Skipped (Bad run* Parm)'
+		  hput $exeHash "${TEST_ARRAY[$test]}:$test:status" "${overallStatus}"
 
 	          # Disable test
 		  hput $exeHash "${TEST_ARRAY[$test]}:$test:exe" 0
-		  continue
+
+		  # Log to web	      
+		  logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "0 0 0" "${nodeArray[0]} ${modeArray[0]}" "${overallStatus}" "" 999 "${overallStatus}" "" xmlStat
+
+	          # Determine NP value for saving XML status
+		  keyNP=0
+		  if [ $forceNP -eq 0 ]
+		  then
+		      keyNP=$(( ${nodeArray[0]} * ${modeArray[0]} ))
+		  else
+		      keyNP=$forceNP
+		  fi
+
+		  hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${nodeArray[0]}_m${modeArray[0]}_p${keyNP}" $xmlStat
+
+		  continue # to next test
 	      fi
 	  fi
 
@@ -3552,11 +4074,27 @@ then
 		  echo "ERROR (E): bgp_mode_NumtoText subroutine FAILED!!"
 
 		  # Amend overall status
-		  hput $exeHash "${TEST_ARRAY[$test]}:$test:status" 'Skipped (Bad run* Parm)'
+		  overallStatus='Skipped (Bad run* Parm)'
+		  hput $exeHash "${TEST_ARRAY[$test]}:$test:status" "${overallStatus}"
 
 	          # Disable test
 		  hput $exeHash "${TEST_ARRAY[$test]}:$test:exe" 0
-		  continue
+
+		  # Log to web		      
+		  logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "0 0 0" "${nodeArray[0]} ${modeArray[0]}" "${overallStatus}" "" 999 "${overallStatus}" "" xmlStat
+
+	          # Determine NP value for saving XML status
+		  keyNP=0
+		  if [ $forceNP -eq 0 ]
+		  then
+		      keyNP=$(( ${nodeArray[0]} * ${modeArray[0]} ))
+		  else
+		      keyNP=$forceNP
+		  fi
+
+		  hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${nodeArray[0]}_m${modeArray[0]}_p${keyNP}" $xmlStat
+
+		  continue # to next test
 	      fi
 	  fi
 
@@ -3578,7 +4116,7 @@ then
 		  if [ $? -ne 0 ] || [ ! -d "${out_dir}" ]
 		  then
 		      echo "Creation of ${out_dir} FAILED!!"
-		      cleanExit 1
+		      exit 1
 		  fi
 	      fi
 	  fi
@@ -3591,27 +4129,31 @@ then
 	      runLog="${out_dir}/${TEST_ARRAY[$test]%\.*}_$(date +%Y%m%d-%H%M%S).log.n${exeNodes}_m${exeMode}_p${exeNP}.$run_type"
 	  fi
 
-	  while [ -e "${runLog}" ]; do
+	  # Ensure this logfile is unique
+	  while ( ! ( set -o noclobber; (echo -e "${runLog}\n" > "${runLog}")  >/dev/null 2>&1 ) )
+	  do
 	      if [ $debug -eq 1 ]
 	      then
 		  runLog="${out_dir}/${TEST_ARRAY[$test]%\.*}_$(date +%Y%m%d-%H%M%S).log.n${exeNodes}_m${exeMode}_p${exeNP}.$run_type.dummy"
 	      else
 		  runLog="${out_dir}/${TEST_ARRAY[$test]%\.*}_$(date +%Y%m%d-%H%M%S).log.n${exeNodes}_m${exeMode}_p${exeNP}.$run_type"
-	      fi
-	  done
+	      fi	      
+	  done  
 
 	  hput $exeHash "${TEST_ARRAY[$test]}:$test:log_n${numNodes}_m${mode}_p${numProcs}" $runLog
 
           # See if test has been disabled since we last checked
-	  hget $exeHash "${TEST_ARRAY[$test]}:$test:exe" hashExe
-	  if [ $hashExe -eq 0 ]
+	  hget $exeHash "${TEST_ARRAY[$test]}:$test:exe" enabled
+	  if [ "${enabled}" == '0' ]
 	  then
       
 	      echo "Skipping execution of disabled test: ${TEST_ARRAY[$test]} (nodes = ${exeNodes}, mode = ${exeInputMode}, np = ${exeNP}) ..."
 
-	      hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" 'Skipped (DOA)'
-	      hput $exeHash "${TEST_ARRAY[$test]}:$test:summary_n${numNodes}_m${mode}_p${numProcs}" 'Skipped (DOA)'
-
+	      # Set individual test status and summary
+	      testStatus=testSummary='Skipped (DOA)'
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" $testStatus
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:summary_n${numNodes}_m${mode}_p${numProcs}" $testSummary
+ 
 	      # Ensure we report this right in the summary
 	      {
 		  echo "NP = ${exeNP}"
@@ -3626,6 +4168,14 @@ then
  
 	      } >> $runLog
 
+
+	      # Log to web
+	      hget $exeHash "${TEST_ARRAY[$test]}:$test:status" overallStatus
+
+	      logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "${exeNP} ${exeInputMode} ${exeThreads}" "${numNodes} ${mode}" "${overallStatus}" "${testStatus}" 999 "${testSummary}" "${runLog}" xmlStat
+
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" $xmlStat
+
 	      continue # to next test
 	  fi
 
@@ -3634,9 +4184,10 @@ then
 	  then 
 	      echo -e "Skipping ${TEST_ARRAY[$test]} (nodes = ${exeNodes}, mode = ${exeInputMode}, NP = ${exeNP}). NP (${exeNP}) > max NP for this test (${maxNP})."
                  
-	      # Set individual test status
-	      hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" 'Skipped (NP > maxNP)'
-	      hput $exeHash "${TEST_ARRAY[$test]}:$test:summary_n${numNodes}_m${mode}_p${numProcs}" 'Skipped (NP > maxNP)'
+	      # Set individual test status and summary
+	      testStatus=testSummary='Skipped (NP > maxNP)'
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" $testStatus
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:summary_n${numNodes}_m${mode}_p${numProcs}" $testSummary
 
 	      # Ensure we report this right in the summary
 	      {
@@ -3650,6 +4201,13 @@ then
 		      echo "BG_PROCESSESPERNODE = ${exeInputMode}"
 		  fi
 	      } >> $runLog
+
+	      # Log to web
+	      hget $exeHash "${TEST_ARRAY[$test]}:$test:status" overallStatus
+
+	      logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "${exeNP} ${exeInputMode} ${exeThreads}" "${numNodes} ${mode}" "${overallStatus}" "${testStatus}" 999 "${testSummary}" "${runLog}" xmlStat
+
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" $xmlStat
 
 	      continue # to next test
 	  fi
@@ -3662,9 +4220,10 @@ then
 	  then
 	      echo -e "Skipping ${TEST_ARRAY[$test]} (nodes = ${exeNodes}, mode = ${exeInputMode}, NP = ${exeNP}). NP value of ${exeNP} is not a power of 2."
                  
-	      # Set individual test status
-	      hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" 'Skipped (! ^2)'
-	      hput $exeHash "${TEST_ARRAY[$test]}:$test:summary_n${numNodes}_m${mode}_p${numProcs}" 'Skipped (! ^2)'
+	      # Set individual test status and summary
+	      testStatus=testSummary='Skipped (! ^2)'
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" $testStatus
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:summary_n${numNodes}_m${mode}_p${numProcs}" $testSummary
 
 	      # Ensure we report this right in the summary
 	      {
@@ -3678,6 +4237,13 @@ then
 		      echo "BG_PROCESSESPERNODE = ${exeInputMode}"
 		  fi
 	      } >> $runLog
+
+	      # Log to web
+	      hget $exeHash "${TEST_ARRAY[$test]}:$test:status" overallStatus
+
+	      logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "${exeNP} ${exeInputMode} ${exeThreads}" "${numNodes} ${mode}" "${overallStatus}" "${testStatus}" 999 "${testSummary}" "${runLog}" xmlStat
+
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" $xmlStat
 
 	      continue # to next test
 	  fi
@@ -3689,9 +4255,10 @@ then
 	  then
 	      echo -e "Skipping rerun of ${TEST_ARRAY[$test]} (nodes = ${exeNodes}, mode = ${exeInputMode}, NP = ${exeNP})"
                  
-	      # Set individual test status to 'Rerun'
-	      hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" 'Skipped (Rerun)'
-	      hput $exeHash "${TEST_ARRAY[$test]}:$test:summary_n${numNodes}_m${mode}_p${numProcs}" 'Skipped (Rerun)'
+	      # Set individual test status and summary
+	      testStatus=testSummary='Skipped (Rerun)'
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" $testStatus
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:summary_n${numNodes}_m${mode}_p${numProcs}" $testSummary
 
 	      # Ensure we report this right in the summary
 	      {
@@ -3706,11 +4273,45 @@ then
 		  fi
 	      } >> $runLog
 
+	      # Log to web
+	      hget $exeHash "${TEST_ARRAY[$test]}:$test:status" overallStatus
+
+	      logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "${exeNP} ${exeInputMode} ${exeThreads}" "${numNodes} ${mode}" "${overallStatus}" "${testStatus}" 999 "${testSummary}" "${runLog}" xmlStat
+
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" $xmlStat
+
 	      continue # to next test
 	  fi
 
           # Update hash with final node, mode and NP values to compare with next iteration
 	  hput $exeHash "${TEST_ARRAY[$test]}:$test:combo_n${exeNodes}_m${exeMode}_p${exeNP}" 1
+
+	  # Wait for an available block if necessary
+	  if [ $needBlock -eq 1 ]
+	  then
+	      if [ ${#blockArray[@]} -gt 1 ]
+	      then
+		  echo -e "\nWaiting for a free block ..."
+	      fi
+	
+	      block=""
+
+	      while [ "${block}" == "" ]
+	      do
+		  # Look for a free block in the block hash
+		  for ((index=0; index < ${#blockArray[@]}; index++))
+		  do
+		      hget $blockHash ${blockArray[$index]} blockStatus
+
+		      if [ "${blockStatus}" == 'free' ]
+		      then
+			  block=${blockArray[$index]}
+			  hput $blockHash ${blockArray[$index]} 'in use'
+			  break
+		      fi
+		  done
+	      done
+	  fi
 
           # Print test scenario to screen
 	  if [ $exeOverride == 'Y' ]
@@ -3722,136 +4323,175 @@ then
 	      echo -e "\nRunning test ${TEST_ARRAY[$test]} (nodes = ${exeNodes}, mode = ${exeInputMode}, np = ${exeNP}) ..."
 	  fi
 
-          # Call correct run script
-	  if [ $standAlone -eq 1 ]
+          # Compare non-mpich binary floor with runtime floor
+	  if [ $mpich -eq 0 ] && [ "${codeFamily}" == 'sst' ]
 	  then
-	      runSA "${exeDir}" "${TEST_ARRAY[$test]}" "${runLog}" exeSignal exeRuntime
-	  elif [ "${run_type}" != 'hw' ]
-	  then
-	      runSim $run_type "${exeDir}" "${TEST_ARRAY[$test]}" "${exeNodes} ${exeInputMode} ${exeNP}" "${exeOpts}" "${exeArgs}" "${runLog}" exeSignal exeRuntime
-	  else 
-	      runHW "${exeDir}" "${TEST_ARRAY[$test]}" "${exeNodes} ${exeInputMode} ${exeNP}" "${exeOpts}" "${exeArgs}" "${runLog}" exeSignal exeRuntime
+              bin_floor=$( strings "${exeDir}/${TEST_ARRAY[$test]}" | grep -a -m 1 "SST_COMPILE_DRIVER" )
+	      bin_floor=${bin_floor##*=}
+
+              if [ "${bin_floor}" != "${run_floor}" ]
+	      then
+		  echo "WARNING (W): Floor mismatch:"
+		  echo "WARNING (W): Binary floor  => ${bin_floor}"
+		  echo "WARNING (W): Runtime floor => ${run_floor}"
+              fi
 	  fi
 
-	  exeRC=$?
-	 
-	  # Document signal and elapsed time for this run
-	  if [ "${run_type}" != 'runFpga' ]
+	  # runfctest creates exe dirs with "second" granularity
+	  # So when running the same test back-to-back, wait for 1 second, to avoid dir collisions
+	  if [ "${TEST_ARRAY[$test]}" == "${lastTest}" ] && [ "${run_type}" != 'hw' ]
 	  then
-	      hput $exeHash "${TEST_ARRAY[$test]}:$test:runtime_n${numNodes}_m${mode}_p${numProcs}" $exeRuntime
+	      sleep 1
+	  fi
 
-	      # Append run time to log file
-	      echo "Elapsed time:  ${exeRuntime}" >> $runLog
-	  else # FPGA run
-	      hput $exeHash "${TEST_ARRAY[$test]}:$test:runtime_n${numNodes}_m${mode}_p${numProcs}" 'Funknown' # Threw an 'F' in there since I cut off the first runtime character when printing summary to preserve tabs
+	  # Psuedo-fork by creating new subshell using ()&
+	  (
+	      mypid=$$
 
-	      # Also document dummy fctest dir for FPGA debug runs
-	      if [ $debug -eq 1 ]
+              # Call correct run script
+	      if [ $standAlone -eq 1 ]
 	      then
+		  runSA "${exeDir}" "${TEST_ARRAY[$test]}" "${runLog}" "exeSignal exeRuntime"
+	      elif [ "${run_type}" != 'hw' ]
+	      then
+		  runSim $run_type "${exeDir}" "${TEST_ARRAY[$test]}" "${exeNodes} ${exeInputMode} ${exeNP}" "${exeOpts}" "${exeArgs}" "${runLog}" "exeSignal exeRuntime" $block
+	      else 
+		  runHW "${exeDir}" "${TEST_ARRAY[$test]}" "${exeNodes} ${exeInputMode} ${exeNP}" "${exeOpts}" $block "${exeArgs}" "${runLog}" "exeSignal exeRuntime"
+	      fi
+
+	      exeRC=$?
+	      
+	      # "Free" block
+	      if [ $needBlock -eq 1 ]
+	      then
+		  hput $blockHash $block 'free'
+	      fi
+
+	      # Document signal and elapsed time for this run
+	      if [ "${run_type}" != 'runFpga' ]
+	      then
+		  hput $exeHash "${TEST_ARRAY[$test]}:$test:runtime_n${numNodes}_m${mode}_p${numProcs}" $exeRuntime
+
+	          # Append run time to log file
+		  echo "Elapsed time:  ${exeRuntime}" >> $runLog
+	      else # FPGA run
+		  hput $exeHash "${TEST_ARRAY[$test]}:$test:runtime_n${numNodes}_m${mode}_p${numProcs}" 'Funknown' # Threw an 'F' in there since I cut off the first runtime character when printing summary to preserve tabs
+
+	          # Also document fctest dir for FPGA runs
 		  temp_fctest=$(fgrep -a "Test directory:" "${runLog}" | awk '{print $3}')
 		  hput $exeHash "${TEST_ARRAY[$test]}:$test:FPGAfctestDir_n${numNodes}_m${mode}_p${numProcs}" $temp_fctest
 	      fi
-	  fi
 
-          # Verify that the test "passed"
-	  if [ $exeRC -eq 0 ] && [ "${run_type}" == 'runFpga' ]
-	  then 
-	      hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" 'Submitted'
-	      fpga_queue=$(( $fpga_queue + 1 )) # total number of jobs submitted
-	  else # run runEval
-	      runEval $standAlone $exeRC $exeSignal $runLog finalSignal exeSummary
-	      
-	      # Store signal & summary
-	      hput $exeHash "${TEST_ARRAY[$test]}:$test:signal_n${numNodes}_m${mode}_p${numProcs}" $finalSignal
-	      hput $exeHash "${TEST_ARRAY[$test]}:$test:summary_n${numNodes}_m${mode}_p${numProcs}" $exeSummary
-
-	      if [ $finalSignal -eq 0 ]
-	      then
-		  hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" 'Passed'
-		  hget $exeHash "${TEST_ARRAY[$test]}:$test:runPass" runPass
-		  hput $exeHash "${TEST_ARRAY[$test]}:$test:runPass" $(( $runPass + 1 ))
+              # Verify that the test "passed"
+	      if [ $exeRC -eq 0 ] && [ "${run_type}" == 'runFpga' ]
+	      then 
+		  hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" 'Submitted'
+	      else # run runEval
+		  runEval $standAlone $exeRC $exeSignal $runLog finalSignal exeSummary
 	  
-		  echo "${TEST_ARRAY[$test]} Passed."
-	      else
-		  hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" 'FAILED'
-	      
-	          # Disable this test if failure is NOT due to "block is not booted"
-		  if [[ ! $exeSummary =~ 'Boot' ]] || [[ ! $exeSummary =~ 'Block' ]] 
+	          # Store signal & summary
+		  hput $exeHash "${TEST_ARRAY[$test]}:$test:signal_n${numNodes}_m${mode}_p${numProcs}" $finalSignal
+		  hput $exeHash "${TEST_ARRAY[$test]}:$test:summary_n${numNodes}_m${mode}_p${numProcs}" "${exeSummary}"
+
+		  testStatus=""
+
+		  if [ $finalSignal -eq 0 ]
 		  then
-		      hput $exeHash "${TEST_ARRAY[$test]}:$test:exe" 0
+		      testStatus='Passed'
+
+		      hget $exeHash "${TEST_ARRAY[$test]}:$test:runPass" runPass
+		      hput $exeHash "${TEST_ARRAY[$test]}:$test:runPass" $(( $runPass + 1 ))
+
+		      echo "${TEST_ARRAY[$test]} ${testStatus}."
+		  else
+		      testStatus='FAILED'
+		      
+	              # Disable this test if failure is NOT due to "block is not booted"
+		      if [[ ! $exeSummary =~ 'Boot' ]] || [[ ! $exeSummary =~ 'Block' ]] 
+		      then
+			  hput $exeHash "${TEST_ARRAY[$test]}:$test:exe" 0
+		      fi
+
+		      echo "${TEST_ARRAY[$test]} ${testStatus}!!"
 		  fi
 
-		  echo "${TEST_ARRAY[$test]} FAILED!!"
-	      fi
-	  fi # end test verification
+		  # Update individual test status
+		  hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" $testStatus
+
+	          # Log to web
+		  hget $exeHash "${TEST_ARRAY[$test]}:$test:status" overallStatus
+
+		  logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "${exeNP} ${exeInputMode} ${exeThreads}" "${numNodes} ${mode}" "${overallStatus}" "${testStatus}" $finalSignal "${exeSummary}" "${runLog}" xmlStat
+
+		  hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" $xmlStat
+
+	      fi # end test verification
+	  ) & # end psuedo-fork subshell
+	
+	  lastTest=${TEST_ARRAY[$test]}
+      
 	done # end test loop
       done # end mode loop
     done # end node loop
+
+    # Wait for all children (subshells) to complete
+    wait
+    hashLock=0
 fi # end EXECUTE section
 
 # --- Monitor/Control FPGA Loadleveler Jobs ---
-if [ "${run_type}" == 'runFpga' ] && [ $fpga_queue -ne 0 ] && [ $debug -eq 0 ]
-    then
+if [ "${run_type}" == 'runFpga' ] && [ $debug -eq 0 ]
+then
 
-    # Gather job ids and FCTest dirs of submitted jobs
+    # Add up and gather job ids of submitted jobs
     for ((test=0; test < ${#TEST_ARRAY[@]}; test++))
-      do
+    do
       for numNodes in ${nodeArray[@]}
-	do
+      do
 	for mode in ${modeArray[@]}
-	  do
-
+	do    
 	  if [ $forceNP -eq 0 ]
-	      then
+	  then
 	      numProcs=$(( $numNodes * $mode ))
 	  else
 	      numProcs=$forceNP
 	  fi
 
-	  hget $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" hashStatus
-	  if [ "${hashStatus}" == 'Submitted' ]
-	      then
-	  
+	  hget $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" testStatus
+	  if [ "${testStatus}" == 'Submitted' ]
+	  then
+	      fpga_queue=$(( $fpga_queue + 1 )) # total number of jobs submitted
+
 	      hget $exeHash "${TEST_ARRAY[$test]}:$test:log_n${numNodes}_m${mode}_p${numProcs}" runLog
 
 	      jobLine=$(fgrep -a "llsubmit" "${runLog}" | cut -d '"' -f2)
 	      jobID=${jobLine%%.*} # set to everything up to first "."
 	      jobID="${jobID}.${jobLine##*.}" # add everything after last "."
 	      hput $exeHash "${TEST_ARRAY[$test]}:$test:FPGAjobID_n${numNodes}_m${mode}_p${numProcs}" $jobID
-
-
-	      temp_fctest=$(fgrep -a "Test directory:" "${runLog}" | awk '{print $3}')
-	      hput $exeHash "${TEST_ARRAY[$test]}:$test:FPGAfctestDir_n${numNodes}_m${mode}_p${numProcs}" $temp_fctest
 	  fi
+
 	done # end test loop
       done # end mode loop
     done # end node loop
 
-    # See if any submitted jobs are still in the queue
-    llJobs 'query'
-    if [ $? -ne 0 ]
-	then
-	echo -e "\nERROR (E):  ll jobs query FAILED!!\n"
-    fi
-
     # Wait for any remaining jobs to complete
     if [ $fpga_queue -gt 0 ]
-	then
+    then
 
 	echo -e -n "\nWaiting for ${fpga_queue} job(s) to complete "
 
 	while [ $fpga_queue -gt 0 ]
-	  do
-	  sleep 60
-	  echo -n '.'
-	  
-          # See if any jobs are still in the queue
-	  llJobs 'query'
-	  if [ $? -ne 0 ]
-	      then
-	      echo -e "\nERROR (E):  ll jobs query FAILED!!\n"
-	      break
-	  fi
+	do
+            # See if any jobs are still in the queue
+	    llJobs 'query'
+	    if [ $? -ne 0 ]
+	    then
+		echo -e "\nERROR (E):  ll jobs query FAILED!!\n"
+		break
+	    fi
+
+	    sleep 60
+	    echo -n '.'
 	done
 
 	echo -e "\n"
@@ -3871,21 +4511,27 @@ if [ $run -eq 1 ]
         # Append runtime data and determine results
 	for ((test=0; test < ${#TEST_ARRAY[@]}; test++))
 	  do
+
+	  # Get parms needed for logging to the web
+	  hget $exeHash "${TEST_ARRAY[$test]}:$test:exeDir" exeDir
+	  hget $exeHash "${TEST_ARRAY[$test]}:$test:stub" stub
+	  hget $exeHash "${TEST_ARRAY[$test]}:$test:status" overallStatus
+
 	  for numNodes in ${nodeArray[@]}
-	    do
+	  do
 	    for mode in ${modeArray[@]}
-	      do
+	    do
 
 	      if [ $forceNP -eq 0 ]
-		  then
+	      then
 		  numProcs=$(( $numNodes * $mode ))
 	      else
 		  numProcs=$forceNP
 	      fi  
 	      
-	      hget $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" hashStatus
-	      if [ "${hashStatus}" == 'Submitted' ] || [ "${hashStatus}" == 'Cancelled' ]
-		  then
+	      hget $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" testStatus
+	      if [ "${testStatus}" == 'Submitted' ] || [ "${testStatus}" == 'Cancelled' ]
+	      then
 		  hget $exeHash "${TEST_ARRAY[$test]}:$test:FPGAfctestDir_n${numNodes}_m${mode}_p${numProcs}" hashFctestDir
 		  outfile="${hashFctestDir}/std.out"
 	      else
@@ -3907,20 +4553,26 @@ if [ $run -eq 1 ]
 		      echo ""
 		      cat "${outfile}"
 		  } >> "${runLog}"
-		  
+	  
                   # Get rid of dummy output dir if it exists
 		  if [ $debug -eq 1 ] && [ -e ${hashFctestDir} ]
 		      then
 		      rm -fr ${hashFctestDir}
 		  fi
 	      else
-		  echo "ERROR (E): Runtime output file: ${outfile} DNE!! Skipping to the next test."
-		  hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" 'Output DNE'
+		  # print error msg and change status if previous status was Submitted, but not if Cancelled
+		  if [ "${testStatus}" == 'Submitted' ]
+		  then
+		      echo "ERROR (E): Runtime output file: ${outfile} DNE!! Skipping to the next test."
+
+		      hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" 'Output DNE'
+		  fi
+
 		  continue
 	      fi
 
               # Determine pass or fail of finished run
-	      if [ "${hashStatus}" == 'Submitted' ]
+	      if [ "${testStatus}" == 'Submitted' ]
 		  then
  
 		  runEval 0 0 0 $runLog finalSignal exeSummary
@@ -3929,124 +4581,36 @@ if [ $run -eq 1 ]
 		  hput $exeHash "${TEST_ARRAY[$test]}:$test:signal_n${numNodes}_m${mode}_p${numProcs}" $finalSignal
 		  hput $exeHash "${TEST_ARRAY[$test]}:$test:summary_n${numNodes}_m${mode}_p${numProcs}" $exeSummary
 
+		  testStatus=""
+
 		  if [ $finalSignal -eq 0 ]
 		  then
-		      hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" 'Passed'
+		      testStatus='Passed'
+
 		      hget $exeHash "${TEST_ARRAY[$test]}:$test:runPass" runPass
 		      hput $exeHash "${TEST_ARRAY[$test]}:$test:runPass" $(( $runPass + 1 ))
 		  else
-		      hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" 'FAILED'
+		      testStatus='FAILED'
 		  fi
-	      fi
-	    done # mode loop
-	  done # node loop
-	done # test loop
-    fi # end FPGA run eval
-   
-    # Update overall status of all executed tests
-    for ((test=0; test < ${#TEST_ARRAY[@]}; test++))
-      do
-  
-      hget $exeHash "${TEST_ARRAY[$test]}:$test:status" hashStatus
-      hget $exeHash "${TEST_ARRAY[$test]}:$test:runTotal" runTotal
-      hget $exeHash "${TEST_ARRAY[$test]}:$test:runPass" runPass
 
-      # Overall status indicates this test reached the execution stage
-      if [[ "${hashStatus}" =~ ^[0-9] ]]    
-	  then
-	  hput $exeHash "${TEST_ARRAY[$test]}:$test:status" "${runPass}/${runTotal} Passed"
-      fi
-    done
-fi
+		  # Update individual test status
+		  hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" $testStatus
 
-# =========================================================  
-# Log to Web
-# =========================================================
-if [ $web_update -eq 1 ]
-    then
-
-    echo -e "\nLogging results to ${upperFamily} Test History webpage ..."
-
-    for ((test=0; test < ${#TEST_ARRAY[@]}; test++))
-      do
-
-      logSummary=""
-
-      # Create test name to be displayed in DB
-      testName=""
-
-      # Grab rel and abs exe paths
-      hget $exeHash "${TEST_ARRAY[$test]}:$test:stub" relPath
-      hget $exeHash "${TEST_ARRAY[$test]}:$test:exeDir" exeDir
-
-      if [ "${testNameLength}" == 'short' ]
-	  then
-	  testName="${TEST_ARRAY[$test]}"
-      else
-	  testName="${relPath}/${TEST_ARRAY[$test]}"
-      fi
-
-      # Grab overall status of this test      
-      hget $exeHash "${TEST_ARRAY[$test]}:$test:status" hashStatus
-
-      # Overall status indicates this test reached the execution stage
-      if [[ "${hashStatus}" =~ ^[0-9] ]] 
-	  then # Determine exe parms
-
-	  # Determine compile driver level from binary in exe dir
-	  if [ "${codeFamily}" == 'sst' ] && [ $mpich -eq 0 ]
-	      then
-	      comp_drv=$( strings "${exeDir}/${TEST_ARRAY[$test]}" | grep -a -m 1 "SST_COMPILE_DRIVER" )
-	      comp_drv=${comp_drv##*=}
-	  fi
-
-	  # Determine run driver level (2nd to last dir in floor)
-	  run_drv=${run_floor%/*} # Get rid of last dir
-	  run_drv=${run_drv##*/} # Only keep newest last dir (driver)
-
-	  for numNodes in ${nodeArray[@]}
-	    do
-	    for mode in ${modeArray[@]}
-	      do
-
-	      if [ $forceNP -eq 0 ]
-		  then
-		  numProcs=$(( $numNodes * $mode ))
-	      else
-		  numProcs=$forceNP
-	      fi
-
-	      # Grab individual run status, signal & log
-
-	      hget $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" runStatus
-	      hget $exeHash "${TEST_ARRAY[$test]}:$test:signal_n${numNodes}_m${mode}_p${numProcs}" runSignal
-	      hget $exeHash "${TEST_ARRAY[$test]}:$test:summary_n${numNodes}_m${mode}_p${numProcs}" runSummary
-	      hget $exeHash "${TEST_ARRAY[$test]}:$test:log_n${numNodes}_m${mode}_p${numProcs}" runLog
-
-	      # Discover test scenario that we ran with
-	      # See if this is a standalone test
-	      hget $exeHash "${TEST_ARRAY[$test]}:$test:standAlone" standAlone
-
-	      if [ $standAlone -eq 1 ]
-		  then
-		  np=0
-		  ppn=0
-		  threads=0
-	      else
+	          # Log to web
 	          # Determine np
 		  np=$( grep -a "^NP =" ${runLog} | awk '{print $3}')
 
 
                   # Determine procs/node
 		  if [ "${platform}" == 'bgp' ]
-		      then
+		  then
 		      ppn=$( grep -a "^MODE =" ${runLog} | awk '{print $3}')
-		  	  
+		      
                       # Get numerical version of mode
 		      bgp_mode_TexttoNum $ppn ppn
 
 		      if [ $? -ne 0 ]
-		          then
+		      then
 			  echo "ERROR (E): bgp_mode_TexttoNum subroutine FAILED!!"
 			  hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" 'FAILED'
 			  continue # to next node/mode combo
@@ -4057,230 +4621,31 @@ if [ $web_update -eq 1 ]
 
                   # Determine number of threads
 		  threads=$( grep -a "^THREADS =" ${runLog} | awk '{print $3}')
-	      fi
 
-              # Determine signal for DB logging
-	      if [[ "${runStatus}" =~ 'Skipped' ]]
-	      then
-		  signal=999
-	      else
-		  signal=$runSignal
-	      fi 
+		  logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "${np} ${ppn} ${threads}" "${numNodes} ${mode}" "${overallStatus}" "${testStatus}" $finalSignal "${exeSummary}" "${runLog}" xmlStat
 
-	      # Create logXML command
-	      logCmd="${logXml} -e ${testName} -n ${np} -p ${ppn} -t ${threads} -r ${signal} -u ${USER} -m ${serverID} -o ${runLog}"
-
-	      if [ "${comp_drv}" != "" ]
-		  then
-		  logCmd="${logCmd} -c ${comp_drv}"
-	      fi
-
-	      if [ "${run_drv}" != "" ]
-		  then
-		  logCmd="${logCmd} -d ${run_drv}"
-	      fi
-
-	      if [ "${runSummary}" != "" ]
-		  then
-		  logCmd="${logCmd} -s \"${runSummary}\""
-	      fi
-
-	      # Format group name 
-	      groupMode="${mode}m" # Default
-
-	      # Get text version of BGP mode
-	      if [ "${platform}" == 'bgp' ]
-		  then
-		  bgp_mode_NumtoText $mode groupMode
-		  if [ $? -ne 0 ]
-		      then
-		      echo "ERROR (E): bgp_mode_NumtoText subroutine FAILED!!"
-		      echo "ERROR (E): Using numeric mode value in group name."
-		  fi
-	      fi
-
-	      # Group name was specified
-	      if [ "${logGroup}" != "" ]
-		  then
-		  if [ $groupScale -eq 1 ] # Add scaling info to given group name
-		      then
-		      tempGroup="${logGroup}_${numNodes}n_${groupMode}.${timestamp}"
-		  else # Just use group name specified by user
-		      tempGroup="${logGroup}.${timestamp}"
-		  fi
+		  hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" $xmlStat
 		  
-		  logCmd="${logCmd} -g ${tempGroup}"
-
-	      elif [ $autoGroup -eq 1 ] # Generate group name w/ scaling info
-		  then
-		  input=$( basename $file )
-		  tempGroup="${input/.*/}_${groupDev}_${numNodes}n_${groupMode}.${timestamp}"
-		  logCmd="${logCmd} -g ${tempGroup}"
 	      fi
+	    done # mode loop
+	  done # node loop
+	done # test loop
+    fi # end FPGA run eval
+   
+    # Update overall status of all executed tests
+    for ((test=0; test < ${#TEST_ARRAY[@]}; test++))
+      do
+  
+      hget $exeHash "${TEST_ARRAY[$test]}:$test:status" overallStatus
+      hget $exeHash "${TEST_ARRAY[$test]}:$test:runTotal" runTotal
+      hget $exeHash "${TEST_ARRAY[$test]}:$test:runPass" runPass
 
-	      echo ${logCmd}
-	      	      
-	      # Execute logXML command
-	      if [ $logDisabled -eq 0 ]
-		  then
-		  if [ $debug -ne 1 ]
-		      then
-		      eval $logCmd
-		      if [ $? -ne 0 ]
-			  then
-		      
-			  if [ $? -eq 2 ]
-			      then
-			      logDisabled=1
-			  fi
-
-			  echo "ERROR (E): logXML.sh FAILED for ${TEST_ARRAY[$test]}"
-			  hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" 'FAILED'
-		      else
-			  hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" 'Logged'
-		      fi
-		  else # debug mode
-		      hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" 'N/A'  
-		  fi
-	      else # Logging disabled
-		  hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" 'Skipped' 
-	      fi
-
-	    done # end mode loop
-	  done # end node loop
-      else # Scaling not a factor ...Didn't attempt to execute this test
-
-	  # Determine NP value for saving XML status
-	  if [ $forceNP -eq 0 ]
-	      then
-	      numProcs=$(( ${nodeArray[0]} * ${modeArray[0]} ))
-	  else
-	      numProcs=$forceNP
-	  fi
-
-	  # Log compile status
-	  if [ "${hashStatus}" == 'Compile FAILED' ] || [[ $compile -eq 1 && $forceWeb -eq 1 ]] || [[ "${hashStatus}" =~ 'Skipped' ]]
-	      then
-	      
-	      # Determine compile driver level from binary in build dir
-	      if [ "${codeFamily}" == 'sst' ] && [ $mpich -eq 0 ]
-	      then
-		  if [ -e "${BUILD_DIR_ARRAY[$test]}/${TEST_ARRAY[$test]}" ]
-		  then
-		      comp_drv=$( strings "${BUILD_DIR_ARRAY[$test]}/${TEST_ARRAY[$test]}" | grep -a -m 1 "SST_COMPILE_DRIVER" )
-		      comp_drv=${comp_drv##*=}
-		  fi
-	      fi
-
-	      np=0
-	      ppn=0
-	      threads=0  
-		
-	      if [[ "${hashStatus}" =~ 'Compile' ]]
-	      then
-		  hget $exeHash "${TEST_ARRAY[$test]}:$test:logCompile" compileLog
-	      fi
-
-	      if [[ "${hashStatus}" =~ 'Skipped' ]]
-		  then
-		  signal=999
-	      elif [ "${hashStatus}" == 'Compile FAILED' ]
-		  then
-		  signal=$( tail $compileLog | grep -a -m 1 ' Error' | awk '{print $NF}')
-
-		  if [ $? -ne 0 ] || [ "${signal}" == "" ] || [[ ! "${signal}" =~ ^[0-9] ]] 
-		      then # This compile didn't exit normally
-		      signal=10 # SIGUSR1
-		  fi
-	      else
-		  signal=0
-	      fi
-
-	      logSummary="${hashStatus}"
-
-	      logCmd="${logXml} -e ${testName} -n ${np} -p ${ppn} -t ${threads} -r ${signal} -u ${USER} -m ${serverID}"
-	      	      		
-	      if [[ "${hashStatus}" =~ 'Compile' ]]
-	      then
-		  logCmd="${logCmd} -o ${compileLog}"
-	      fi
-
-	      if [ "${comp_drv}" != "" ]
-		  then
-		  logCmd="${logCmd} -c ${comp_drv}"
-	      fi
-
-	      if [ "${logSummary}" != "" ]
-		  then
-		  logCmd="${logCmd} -s \"${logSummary}\""
-	      fi
-		  
-	      # Format group name 
-	      groupMode="${modeArray[0]}m" # Default
-
-	      # Get text version of BGP mode
-	      if [ "${platform}" == 'bgp' ]
-		  then
-		  bgp_mode_NumtoText ${modeArray[0]} groupMode
-		  if [ $? -ne 0 ]
-		      then
-		      echo "ERROR (E): bgp_mode_NumtoText subroutine FAILED!!"
-		      echo "ERROR (E): Using numeric mode value in group name."
-		  fi
-	      fi
-
-	      # Group name was specified
-	      if [ "${logGroup}" != "" ]
-		  then
-		  if [ $groupScale -eq 1 ] # Add scaling info to given group name
-		      then
-		      tempGroup="${logGroup}_${nodeArray[0]}n_${groupMode}.${timestamp}"
-		  else # Just use group name specified by user
-		      tempGroup="${logGroup}.${timestamp}"
-		  fi
-
-		  logCmd="${logCmd} -g ${tempGroup}"
-
-	      elif [ $autoGroup -eq 1 ] # Generate group name w/ scaling info
-		  then
-		  input=$( basename $file )
-		  tempGroup="${input/.*/}_${groupDev}_${nodeArray[0]}n_${groupMode}.${timestamp}"
-		  logCmd="${logCmd} -g ${tempGroup}"
-	      fi
-	      
-	      echo ${logCmd}
-	      
-	      # Execute logXML command
-	      if [ $logDisabled -eq 0 ]
-		  then
-		  if [ $debug -ne 1 ]
-		      then
-		      eval $logCmd
-		      if [ $? -ne 0 ]
-			  then
-			  
-			  if [ $? -eq 2 ]
-			      then
-			      logDisabled=1
-			  fi
-
-			  echo "ERROR (E): logXML.sh FAILED for ${TEST_ARRAY[$test]}"
-			  hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${nodeArray[0]}_m${modeArray[0]}_p${numProcs}" 'FAILED'
-		      else 
-			  hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${nodeArray[0]}_m${modeArray[0]}_p${numProcs}" 'Logged'
-		      fi
-		  else # debug mode
-		      hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${nodeArray[0]}_m${modeArray[0]}_p${numProcs}" 'N/A'  
-		  fi
-	      else # Logging disabled
-		  hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${nodeArray[0]}_m${modeArray[0]}_p${numProcs}" 'Skipped' 
-	      fi
-	  
-	  else # Overall status for this test = Compiled, Copied, Skipped, DNE, Rerun 
-	      hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${nodeArray[0]}_m${modeArray[0]}_p${numProcs}" 'N/A'
-	  fi # End compile fail or not compile fail
-      fi # End exe or not exe      
-    done # end test loop
+      # Overall status indicates this test reached the execution stage
+      if [[ "${overallStatus}" =~ ^[0-9] ]]    
+	  then
+	  hput $exeHash "${TEST_ARRAY[$test]}:$test:status" "${runPass}/${runTotal} Passed"
+      fi
+    done
 fi
 
 # =========================================================  
@@ -4391,7 +4756,7 @@ for ((test=0; test < ${#TEST_ARRAY[@]}; test++))
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:override_n${nodeArray[0]}_m${modeArray[0]}_p${numProcs}" override
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:log_n${nodeArray[0]}_m${modeArray[0]}_p${numProcs}" runLog
 
-	  if [ $standAlone -eq 1 ]
+	  if [ "${standAlone}" == '1' ]
 	      then 
 	      np=''
 	      ppn=''
@@ -4459,12 +4824,12 @@ for ((test=0; test < ${#TEST_ARRAY[@]}; test++))
 	  
 	  # Print individual stati to summary file
 	  for numNodes in ${nodeArray[@]}
-	    do
+	  do
 	    for mode in ${modeArray[@]}
-	      do
+	    do
 
 	      if [ $forceNP -eq 0 ]
-		  then
+	      then
 		  numProcs=$(( $numNodes * $mode ))
 	      else
 		  numProcs=$forceNP
@@ -4476,7 +4841,7 @@ for ((test=0; test < ${#TEST_ARRAY[@]}; test++))
 	      hget $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" xmlStatus
 	      hget $exeHash "${TEST_ARRAY[$test]}:$test:log_n${numNodes}_m${mode}_p${numProcs}" runLog
 
-	      if [ $standAlone -eq 1 ]
+	      if [ "${standAlone}" == '1' ]
 		  then 
 		  np=''
 		  ppn=''
@@ -4627,7 +4992,7 @@ if [ $? -ne 0 ]
     echo "ERROR (E): Attempt to delete summary file: ${summaryFile} FAILED with rc = $?!!"
 fi
 
-cleanExit 0
+exit 0
 
 # issue 2 beeps indicating test complete
 if [[ A1 = A$ding ]]; then echo -en "\007"; sleep 1; echo -en "\007"; fi
