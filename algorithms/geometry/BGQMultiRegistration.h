@@ -731,13 +731,15 @@ namespace PAMI
 
           if (phase == 0)
             {
-
-            //Set optimized barrier to binomial. May override optimized barrier later
-            pami_xfer_t xfer = {0};
-            OptBinomialBarrier *opt_binomial = (OptBinomialBarrier *)
-            _binomial_barrier_factory->generate(geometry, &xfer);
-            geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
-                             (void*)opt_binomial);
+	      
+	      if (_binomial_barrier_factory) {
+		//Set optimized barrier to binomial. May override optimized barrier later
+		pami_xfer_t xfer = {0};
+		OptBinomialBarrier *opt_binomial = (OptBinomialBarrier *)
+		  _binomial_barrier_factory->generate(geometry, &xfer);
+		geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
+				 (void*)opt_binomial);
+	      }
 
             if(_mu_msync_factory && __global.topology_local.size() == 1) 
             {       

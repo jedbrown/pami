@@ -46,7 +46,9 @@ namespace PAMI {
 	  _client (client),
 	  _ctxt (context)
 	  {
-	    status = init();
+	    status = PAMI_ERROR;
+	    if (__global.useMU())
+	      status = init();
 	  }
        
 	~ShortAMMulticastModel () {}
