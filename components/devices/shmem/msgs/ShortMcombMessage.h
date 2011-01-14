@@ -38,12 +38,12 @@ namespace PAMI
 #define SHMEMBUF(x)	((double*) _my_desc->get_buffer(x))
 #define SHMEMBUF_SHORT(x)	((double*) my_desc->get_buffer(x))
 
-      template <class T_Device, class T_Desc>
-        class ShortMcombMessage: public BaseMessage<T_Device, T_Desc>
+      template <class T_Device>
+        class ShortMcombMessage: public BaseMessage<T_Device>
         {
           public:
             //currently optimized to a many-to-one combine
-            static inline pami_result_t short_msg_advance(T_Desc* my_desc, pami_multicombine_t* mcomb_params,
+            static inline pami_result_t short_msg_advance(typename T_Device::CollectiveDescriptor* my_desc, pami_multicombine_t* mcomb_params,
                 unsigned npeers, unsigned local_rank, unsigned task)
             {
 
@@ -111,7 +111,7 @@ namespace PAMI
             inline virtual pami_result_t advance ()
             {
 
-              T_Desc* _my_desc = this->_my_desc;
+              typename T_Device::CollectiveDescriptor* _my_desc = this->_my_desc;
               pami_multicombine_t & mcomb_params = _my_desc->get_mcomb_params();
               size_t num_src_ranks = ((PAMI::Topology*)mcomb_params.data_participants)->size();
 
@@ -193,8 +193,8 @@ namespace PAMI
             }
 
           public:
-            inline ShortMcombMessage (pami_context_t context, T_Desc* desc, unsigned local_rank):
-            BaseMessage<T_Device, T_Desc>(context, desc, ShortMcombMessage::__advance, (void*)this, local_rank)
+            inline ShortMcombMessage (pami_context_t context, typename T_Device::CollectiveDescriptor* desc, unsigned local_rank):
+            BaseMessage<T_Device>(context, desc, ShortMcombMessage::__advance, (void*)this, local_rank)
 
           {
             TRACE_ERR((stderr, "<> Shmem::ShortMcombMessage\n"));

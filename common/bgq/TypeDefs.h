@@ -27,7 +27,7 @@
 #include "components/fifo/linear/LinearFifo.h"
 #include "components/fifo/wrap/WrapFifo.h"
 
-#ifndef ENABLE_NEW_SHMEM
+#if 0
 #include "components/devices/workqueue/LocalBcastWQMessage.h"
 #include "components/devices/workqueue/LocalAllreduceWQMessage.h"
 #include "components/devices/workqueue/LocalReduceWQMessage.h"
@@ -74,15 +74,11 @@
 
 #include "algorithms/geometry/PGASCollRegistration.h"
 
-#ifdef ENABLE_NEW_SHMEM
-#include "components/devices/shmemcoll/ShmemCollDevice.h"
-#include "components/devices/shmemcoll/ShmemCollDesc.h"
-#include "components/devices/shmemcoll/mdls/ShmemMcombModelWorld.h"
-#include "components/devices/shmemcoll/mdls/ShmemMcstModelWorld.h"
-#endif
+#include "components/devices/shmem/mdls/ShmemMcombModelWorld.h"
+#include "components/devices/shmem/mdls/ShmemMcstModelWorld.h"
+//#include "components/devices/shmem/ShmemCollDesc.h"
+#include "components/devices/shmem/mdls/ShmemColorMcstModel.h"
 
-#include "components/devices/shmemcoll/ShmemCollDesc.h"
-#include "components/devices/shmemcoll/mdls/ShmemColorMcstModel.h"
 #include "components/devices/bgq/mu2/model/CollectiveMulticastDmaModel.h"
 #include "components/devices/bgq/mu2/model/CollectiveMulticombineDmaModel.h"
 #include "components/devices/bgq/mu2/model/AMMulticastModel.h"
@@ -125,23 +121,13 @@ namespace PAMI
   > MUGlobalDputNI;
   
   //typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::Native> ShmemCollDesc;
-  typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::BGQ::IndirectL2> ShmemCollDesc;
+  //typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::BGQ::IndirectL2> ShmemCollDesc;
 
   typedef BGQNativeInterface < MUDevice,
     Device::MU::ShortAMMulticastModel,
     Device::MU::MultisyncModel<false, false>,
     Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false>
     > MUAMMulticastNI;
-
-  typedef PAMI::Device::Shmem::ShmemColorMcstModel<PAMI::Device::Generic::Device, ShmemCollDesc> ShaddrMcstModel;
-  typedef PAMI::Device::Shmem::ShmemCollDescFifo  <PAMI::Counter::BGQ::IndirectL2> ShmemColorDesc;
-
-  typedef  PAMI::BGQNativeInterfaceASMultiDevice < MUDevice,
-  MUDevice,
-  Device::MU::MulticastDmaModel,
-  ShaddrMcstModel,
-  Device::MU::MultisyncModel<false, false>,
-  Device::MU::MulticombineModel<PAMI::Device::MU::AllreducePacketModel, false, false> > MUShmemAxialDputNI;
 
   typedef Fifo::FifoPacket <32, 160> ShmemPacket;
   //typedef Fifo::LinearFifo<ShmemPacket, PAMI::Counter::BGQ::IndirectL2> ShmemFifo;
@@ -154,6 +140,17 @@ namespace PAMI
 
   typedef Protocol::Send::Eager <ShmemPacketModel, ShmemDevice> ShmemEagerBase;
   typedef PAMI::Protocol::Send::SendPWQ < ShmemEagerBase > ShmemEager;
+
+  typedef PAMI::Device::Shmem::ShmemColorMcstModel<ShmemDevice> ShaddrMcstModel;
+  typedef PAMI::Device::Shmem::ShmemCollDescFifo  <PAMI::Counter::BGQ::IndirectL2> ShmemColorDesc;
+
+  typedef  PAMI::BGQNativeInterfaceASMultiDevice < MUDevice,
+  ShmemDevice,
+  Device::MU::MulticastDmaModel,
+  ShaddrMcstModel,
+  Device::MU::MultisyncModel<false, false>,
+  Device::MU::MulticombineModel<PAMI::Device::MU::AllreducePacketModel, false, false> > MUShmemAxialDputNI;
+
 
   // shmem active message over p2p eager
   typedef PAMI::NativeInterfaceActiveMessage<ShmemEager> ShmemNI_AM;
@@ -200,20 +197,19 @@ namespace PAMI
 
   typedef PAMI::Device::AtomicBarrierMdl<Barrier_Type>                           ShmemMsyncModel;
 
-#ifdef ENABLE_NEW_SHMEM
   //typedef PAMI::Device::Shmem::ShmemCollDesc <Counter::Indirect<Counter::Native> > ShmemCollDesc;
   //typedef PAMI::Device::ShmemCollDevice<Counter::Indirect<Counter::Native> > ShmemCollDevice;
-  typedef PAMI::Device::ShmemCollDevice<PAMI::Counter::BGQ::IndirectL2> ShmemCollDevice;
-  typedef PAMI::Device::Shmem::ShmemMcombModelWorld <ShmemCollDevice, ShmemCollDesc> ShmemMcombModel;
-  typedef PAMI::Device::Shmem::ShmemMcstModelWorld <ShmemCollDevice, ShmemCollDesc> ShmemMcstModel;
-  typedef PAMI::Device::Shmem::ShortMcombMessage <ShmemCollDevice, ShmemCollDesc> ShmemMcombMessage;
-#else
+//  typedef PAMI::Device::ShmemCollDevice<PAMI::Counter::BGQ::IndirectL2> ShmemCollDevice;
+  typedef PAMI::Device::Shmem::ShmemMcombModelWorld <ShmemDevice> ShmemMcombModel;
+  typedef PAMI::Device::Shmem::ShmemMcstModelWorld <ShmemDevice> ShmemMcstModel;
+  typedef PAMI::Device::Shmem::ShortMcombMessage <ShmemDevice> ShmemMcombMessage;
+#if 0
   typedef Device::LocalAllreduceWQModel ShmemMcombModel;
   typedef Device::LocalBcastWQModel ShmemMcstModel;
   typedef ShmemDevice ShmemCollDevice;
 #endif
 
-  typedef BGQNativeInterfaceAS <ShmemCollDevice, ShmemMcstModel, ShmemMsyncModel, ShmemMcombModel> AllSidedShmemNI;
+  typedef BGQNativeInterfaceAS <ShmemDevice, ShmemMcstModel, ShmemMsyncModel, ShmemMcombModel> AllSidedShmemNI;
 
 }
 

@@ -24,10 +24,9 @@
 
 #include "components/devices/MulticastModel.h"
 #include "components/devices/ShmemCollInterface.h"
-//#include "components/devices/shmemcoll/ShmemCollDevice.h"
-#include "components/devices/shmemcoll/msgs/ShaddrMcstMessage.h"
-#include "components/devices/shmemcoll/msgs/BaseMessage.h"
-#include "components/devices/shmemcoll/ShmemCollDesc.h"
+#include "components/devices/shmem/msgs/ShaddrMcstMessage.h"
+#include "components/devices/shmem/msgs/BaseMessage.h"
+#include "components/devices/shmem/ShmemCollDesc.h"
 
 #include "util/trace.h"
 
@@ -46,14 +45,14 @@ namespace PAMI
     namespace Shmem
     {
 
-      template <class T_Device, class T_Desc>
-        class ShmemColorMcstModel : public Interface::MulticastModel < ShmemColorMcstModel<T_Device, T_Desc>, T_Device, sizeof(Shmem::BaseMessage<T_Device, T_Desc>) >
+      template <class T_Device>
+        class ShmemColorMcstModel : public Interface::MulticastModel < ShmemColorMcstModel<T_Device>, T_Device, sizeof(Shmem::BaseMessage<T_Device>) >
       {
 
         public:
           //Shmem Multicast Model
           ShmemColorMcstModel (T_Device &device, pami_result_t &status) :
-            Interface::MulticastModel < ShmemColorMcstModel<T_Device, T_Desc>, T_Device, sizeof(Shmem::BaseMessage<T_Device, T_Desc>) > (device, status),
+            Interface::MulticastModel < ShmemColorMcstModel<T_Device>, T_Device, sizeof(Shmem::BaseMessage<T_Device>) > (device, status),
             _device(device),
             _mytask(__global.mapping.task()),
             _local_rank(__global.topology_local.rank2Index(_mytask)),
@@ -64,7 +63,7 @@ namespace PAMI
           char key[PAMI::Memory::MMKEYSIZE];
 
           //create shared descriptors
-          sprintf(key, "/ShmemColorMcstModel-shared_desc_array-client-%2.2zu-context-%2.2zu", _device.clientId(), _device.contextId());
+          sprintf(key, "/ShmemColorMcstModel-shared_desc_array-%s", _device.getUniqueString());
 
           size_t total_size = sizeof(ShmemRegion)*NUM_SHMEM_MCST_COLORS ; 
           rc = __global.mm.memalign ((void **) & _shmem_region,
@@ -77,13 +76,13 @@ namespace PAMI
 
           for (size_t i = 0; i < NUM_SHMEM_MCST_COLORS; i++)
           {
-            new (&_desc[i]) T_Desc(__global.mm, _device.clientId(), _device.contextId(), 1, i );
+            new (&_desc[i]) typename T_Device::CollectiveDescriptor(__global.mm, _device.getUniqueString(), 1, i );
           }
 
         };
 
-          static const size_t packet_model_state_bytes          = sizeof(Shmem::BaseMessage<T_Device, T_Desc>);
-          static const size_t sizeof_msg                        = sizeof(Shmem::BaseMessage<T_Device, T_Desc>);
+          static const size_t packet_model_state_bytes          = sizeof(Shmem::BaseMessage<T_Device>);
+          static const size_t sizeof_msg                        = sizeof(Shmem::BaseMessage<T_Device>);
           //static const size_t short_msg_cutoff                  = 512;
 
           inline pami_result_t postMulticastImmediate_impl(size_t           client,
@@ -92,7 +91,7 @@ namespace PAMI
 	    return PAMI_ERROR;
 	  }
 
-          inline pami_result_t postMulticast_impl(uint8_t (&state)[sizeof(Shmem::BaseMessage<T_Device, T_Desc>)],
+          inline pami_result_t postMulticast_impl(uint8_t (&state)[sizeof(Shmem::BaseMessage<T_Device>)],
 						  size_t           client,
 						  size_t           context,
 						  pami_multicast_t *mcast, void* devinfo)
@@ -106,7 +105,7 @@ namespace PAMI
             unsigned conn_id = mcast->connection_id;
             TRACE_FORMAT("conn_id:%u", conn_id);
 
-            T_Desc *my_desc = NULL;
+            typename T_Device::CollectiveDescriptor *my_desc = NULL;
 
             my_desc = &_desc[conn_id];
             my_desc->set_mcast_params(mcast);
@@ -163,10 +162,9 @@ namespace PAMI
               my_desc->set_seq_id(my_desc->get_seq_id()+1);
             }
 
-            Shmem::ShaddrMcstMessage<T_Device, T_Desc> * obj = (Shmem::ShaddrMcstMessage<T_Device, T_Desc> *) (&state[0]);
-            new (obj) Shmem::ShaddrMcstMessage<T_Device, T_Desc> ( _device.getContext(), my_desc, Shmem::ShaddrMcstMessage<T_Device,T_Desc>::__advance_color, (void*)obj, _local_rank);
-            //PAMI::Device::Generic::Device &generic = _device.getProgressDevice();
-            _device.postThread(&(obj->_work));
+            Shmem::ShaddrMcstMessage<T_Device> * obj = (Shmem::ShaddrMcstMessage<T_Device> *) (&state[0]);
+            new (obj) Shmem::ShaddrMcstMessage<T_Device> ( _device.getContext(), my_desc, Shmem::ShaddrMcstMessage<T_Device>::__advance_color, (void*)obj, _local_rank);
+            _device.getLocalProgressDevice()->postThread(&(obj->_work));
 
             TRACE_FN_EXIT();
             return PAMI_SUCCESS;
@@ -182,7 +180,7 @@ namespace PAMI
           unsigned _local_rank;
           unsigned _npeers;
 
-          T_Desc	_desc[NUM_SHMEM_MCST_COLORS];
+          typename T_Device::CollectiveDescriptor	_desc[NUM_SHMEM_MCST_COLORS];
 
 
           static void shmem_region_initialize (void       * memory,

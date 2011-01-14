@@ -20,7 +20,7 @@
 #include "Arch.h"
 #include "sys/pami.h"
 //#include "components/devices/shmem/ShmemMessage.h"
-#include "components/devices/shmemcoll/McombMessage.h"
+#include "components/devices/shmem/McombMessage.h"
 //#include "components/devices/shmem/ShmemCollDesc.h"
 //#include "quad_sum.h"
 //#include "16way_sum.h"

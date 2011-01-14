@@ -23,11 +23,11 @@
 
 #include "components/devices/MulticombineModel.h"
 #include "components/devices/ShmemCollInterface.h"
-#include "components/devices/shmemcoll/ShmemCollDevice.h"
-#include "components/devices/shmemcoll/msgs/ShortMcombMessage.h"
+#include "components/devices/shmem/ShmemDevice.h"
+#include "components/devices/shmem/msgs/ShortMcombMessage.h"
 //#include "components/devices/shmemcoll/msgs/ShaddrMcombMessage.h"
-#include "components/devices/shmemcoll/msgs/ShaddrMcombMessagePipe.h"
-#include "components/devices/shmemcoll/msgs/BaseMessage.h"
+#include "components/devices/shmem/msgs/ShaddrMcombMessagePipe.h"
+#include "components/devices/shmem/msgs/BaseMessage.h"
 //#include "components/devices/shmemcoll/ShmemDescMessage.h"
 
 #ifndef TRACE_ERR
@@ -42,14 +42,14 @@ namespace PAMI
     namespace Shmem
     {
 
-      template <class T_Device, class T_Desc>
-        class ShmemMcombModelWorld : public Interface::MulticombineModel < ShmemMcombModelWorld<T_Device, T_Desc>, T_Device, sizeof(BaseMessage<T_Device, T_Desc>) >
+      template <class T_Device>
+        class ShmemMcombModelWorld : public Interface::MulticombineModel < ShmemMcombModelWorld<T_Device>, T_Device, sizeof(BaseMessage<T_Device>) >
       {
         public:
 
           //Shmem Multicombine Model
           ShmemMcombModelWorld (T_Device &device, pami_result_t &status) :
-            Interface::MulticombineModel < ShmemMcombModelWorld<T_Device, T_Desc>, T_Device, sizeof(Shmem::BaseMessage<T_Device, T_Desc>) > (device, status),
+            Interface::MulticombineModel < ShmemMcombModelWorld<T_Device>, T_Device, sizeof(Shmem::BaseMessage<T_Device>) > (device, status),
             _device(device),
             _local_rank(__global.topology_local.rank2Index(__global.mapping.task())),
             _npeers(__global.topology_local.size())
@@ -57,8 +57,8 @@ namespace PAMI
         { };
 
 
-          static const size_t packet_model_state_bytes          = sizeof(Shmem::BaseMessage<T_Device, T_Desc>);
-          static const size_t sizeof_msg                        = sizeof(Shmem::BaseMessage<T_Device, T_Desc>);
+          static const size_t packet_model_state_bytes          = sizeof(Shmem::BaseMessage<T_Device>);
+          static const size_t sizeof_msg                        = sizeof(Shmem::BaseMessage<T_Device>);
           static const size_t short_msg_cutoff                  = 64;
 
           inline pami_result_t postMulticombineImmediate_impl(size_t           client,
@@ -67,7 +67,7 @@ namespace PAMI
 	    return PAMI_ERROR;
 	  }
 
-          inline pami_result_t postMulticombine_impl(uint8_t (&state)[sizeof(Shmem::BaseMessage<T_Device, T_Desc>)],
+          inline pami_result_t postMulticombine_impl(uint8_t (&state)[sizeof(Shmem::BaseMessage<T_Device>)],
 						     size_t           client,
 						     size_t           context,
 						     pami_multicombine_t *mcomb, void* devinfo)
@@ -75,7 +75,7 @@ namespace PAMI
 
             TRACE_ERR((stderr, "entering postMulticomb\n"));
 
-            T_Desc *my_desc = NULL;
+            typename T_Device::CollectiveDescriptor *my_desc = NULL;
 
             pami_result_t res =	 _device.getShmemWorldDesc(&my_desc);
             while (res != PAMI_SUCCESS)
@@ -105,7 +105,7 @@ namespace PAMI
               my_desc->signal_arrived(); //signal that I have copied all my addresses/data
 
 #ifdef SHORT_MCOMB_BLOCKING
-              res = Shmem::ShortMcombMessage<T_Device, T_Desc>
+              res = Shmem::ShortMcombMessage<T_Device>
                 ::short_msg_advance(my_desc, mcomb, _npeers, _local_rank, __global.mapping.task());
 
               if (res == PAMI_SUCCESS)	//signal inline completion
@@ -116,8 +116,8 @@ namespace PAMI
 
               return PAMI_SUCCESS;
 #else
-              Shmem::ShortMcombMessage<T_Device, T_Desc> * obj = (Shmem::ShortMcombMessage<T_Device, T_Desc> *) (&state[0]);
-              new (obj) Shmem::ShortMcombMessage<T_Device, T_Desc> (_device.getContext(), my_desc, _local_rank);
+              Shmem::ShortMcombMessage<T_Device> * obj = (Shmem::ShortMcombMessage<T_Device> *) (&state[0]);
+              new (obj) Shmem::ShortMcombMessage<T_Device> (_device.getContext(), my_desc, _local_rank);
 
               _device.post_obj(obj);
 
@@ -176,8 +176,8 @@ namespace PAMI
               mem_sync();
               /*Shmem::ShaddrMcombMessage<T_Device, T_Desc> * obj = (Shmem::ShaddrMcombMessage<T_Device, T_Desc> *) (&state[0]);
               new (obj) Shmem::ShaddrMcombMessage<T_Device, T_Desc> (_device.getContext(), my_desc, _local_rank);*/
-              Shmem::ShaddrMcombMessagePipe<T_Device, T_Desc> * obj = (Shmem::ShaddrMcombMessagePipe<T_Device, T_Desc> *) (&state[0]);
-              new (obj) Shmem::ShaddrMcombMessagePipe<T_Device, T_Desc> (_device.getContext(), my_desc, _local_rank);
+              Shmem::ShaddrMcombMessagePipe<T_Device> * obj = (Shmem::ShaddrMcombMessagePipe<T_Device> *) (&state[0]);
+              new (obj) Shmem::ShaddrMcombMessagePipe<T_Device> (_device.getContext(), my_desc, _local_rank);
 
               _device.post_obj(obj);
               my_desc->signal_arrived(); //signal that I have copied all my addresses/data

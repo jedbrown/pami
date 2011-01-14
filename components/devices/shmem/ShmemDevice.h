@@ -35,6 +35,18 @@
 #include "util/queue/Queue.h"
 #include "util/queue/CircularQueue.h"
 
+#include "components/devices/shmem/ShmemCollDesc.h"
+#include "components/devices/shmem/msgs/BaseMessage.h"
+
+#include "common/default/PipeWorkQueue.h"
+
+#include "components/devices/ShmemCollInterface.h"
+#include "components/devices/MulticastModel.h"
+#include "components/devices/MultisyncModel.h"
+#include "components/devices/MulticombineModel.h"
+
+#include "components/atomic/indirect/IndirectCounter.h"
+
 //#define TRAP_ADVANCE_DEADLOCK
 #define ADVANCE_DEADLOCK_MAX_LOOP 10000
 
@@ -47,16 +59,27 @@
 #undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
 
+#define MATCH_DISPATCH_SIZE	256
+
 namespace PAMI
 {
   namespace Device
   {
+
+    typedef struct match_dispatch_t
+    {
+      Interface::MatchFunction_t   function;
+      void                      * clientdata;
+    } match_dispatch_t;
 
     template < class T_Fifo, class T_Shaddr = Shmem::NoShaddr, unsigned T_FifoCount = 64 >
     class ShmemDevice : public Interface::BaseDevice< ShmemDevice<T_Fifo, T_Shaddr, T_FifoCount> >,
         public Interface::PacketDevice<ShmemDevice<T_Fifo, T_Shaddr, T_FifoCount> >
     {
       public:
+
+        typedef Shmem::ShmemCollDescFifo<Counter::Indirect<Counter::Native> >  CollectiveFifo;
+        typedef Shmem::ShmemCollDesc< Counter::Indirect<Counter::Native> >     CollectiveDescriptor;
 
         // Inner factory class
         class Factory : public Interface::FactoryInterface<Factory, ShmemDevice, PAMI::Device::Generic::Device>
@@ -217,9 +240,15 @@ namespace PAMI
 #endif
             _progress (progress),
             _local_progress_device (&(Generic::Device::Factory::getDevice (progress, 0, contextid))),
-            shaddr ()
+            shaddr (),
+            _desc_fifo (),
+            _adv_obj (NULL)
+
         {
           TRACE_ERR((stderr, "ShmemDevice() constructor\n"));
+          
+          // Create a unique string, useful for memory manager alloaction, etc.
+          snprintf(_unique_str, 15, "%2.2zu-%2.2zu", _clientid, _contextid);
 
           // Get the peer information for this task
           _peer = 0;
@@ -259,6 +288,10 @@ namespace PAMI
           // Register system dispatch functions
           _dispatch.registerSystemDispatch (SystemShaddrInfo::system_shaddr_read,
                                             &shaddr, system_ro_put_dispatch);
+                                            
+                                            
+          // Initialize the collective descriptor fifo
+          _desc_fifo.init (mm, _unique_str);
         };
 
         inline ~ShmemDevice () {};
@@ -365,6 +398,13 @@ namespace PAMI
         inline size_t fnum (size_t peer, size_t offset);
 
         inline bool activePackets (size_t fnum);
+        
+        inline char * getUniqueString ();
+        
+        inline PAMI::Device::Generic::Device * getLocalProgressDevice ();
+
+        pami_result_t getShmemWorldDesc(CollectiveDescriptor **my_desc);
+        pami_result_t registerMatchDispatch (Interface::MatchFunction_t   match_func, void * recv_func_parm, uint16_t &id);
 
         T_Fifo _fifo[T_FifoCount];  //< Injection fifo array for all node contexts
         T_Fifo  _rfifo;             //< Fifo to use as the reception fifo
@@ -393,6 +433,19 @@ namespace PAMI
         size_t            _peer;
 
         Shmem::Dispatch<Shmem::Packet<typename T_Fifo::Packet> >  _dispatch;
+        
+        // -------------------------------------------------------------
+        // Collectives
+        // -------------------------------------------------------------
+        CollectiveFifo  _desc_fifo;
+        //Shmem::BaseMessage<ShmemDevice<T_Fifo,T_Shaddr,T_FifoCount>, Shmem::ShmemCollDesc<T_Atomic> > *_adv_obj;
+        //inline void post_obj(Shmem::BaseMessage<ShmemDevice<T_Fifo,T_Shaddr,T_FifoCount>, Shmem::ShmemCollDesc<T_Atomic> > *obj){_adv_obj = obj;};
+        Shmem::BaseMessage<ShmemDevice<T_Fifo,T_Shaddr,T_FifoCount> > *_adv_obj;
+        inline void post_obj(Shmem::BaseMessage<ShmemDevice<T_Fifo,T_Shaddr,T_FifoCount> > *obj){_adv_obj = obj;};
+
+        match_dispatch_t  _match_dispatch[MATCH_DISPATCH_SIZE];
+        
+        char _unique_str[16];
     };
 
     template <class T_Fifo, class T_Shaddr, unsigned T_FifoCount>
@@ -459,6 +512,24 @@ namespace PAMI
           events++;
         }
 
+      pami_result_t res = PAMI_EAGAIN;
+      if (_adv_obj != NULL)
+        {
+          res = _adv_obj->__advance(_context, (void*)_adv_obj);
+          if (res == PAMI_SUCCESS) _adv_obj = NULL;
+        }
+
+
+      /* Releasing done descriptors for comm world communicators */
+      if (!_desc_fifo.is_empty())
+        {
+          //printf("Calling shmem colldevice advance\n");
+          _desc_fifo.release_done_descriptors();
+          events++;
+        }
+
+        return events;
+
 #ifdef TRAP_ADVANCE_DEADLOCK
       static size_t iteration = 0;
       TRACE_ERR((stderr, "(%zu) ShmemDevice::advance() iteration %zu \n", __global.mapping.task(), iteration));
@@ -482,6 +553,13 @@ namespace PAMI
     {
       return (_fifo[fnum].lastPacketConsumed() < _fifo[fnum].lastPacketProduced());
     }
+
+    template <class T_Fifo, class T_Shaddr, unsigned T_FifoCount>
+    inline PAMI::Device::Generic::Device * ShmemDevice<T_Fifo, T_Shaddr, T_FifoCount>::getLocalProgressDevice ()
+    {
+      return _local_progress_device;
+    }
+
   };
 };
 #undef TRACE_ERR
@@ -489,7 +567,7 @@ namespace PAMI
 // Include the non-inline method definitions
 #include "components/devices/shmem/ShmemDevice_impl.h"
 
-#endif // __components_devices_shmem_shmembasedevice_h__
+#endif // __components_devices_shmem_ShmemDevice_h__
 
 //
 // astyle info    http://astyle.sourceforge.net

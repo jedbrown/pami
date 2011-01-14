@@ -44,8 +44,8 @@ namespace PAMI
         volatile uint32_t	incoming_bytes;	
       };
 
-      template <class T_Device, class T_Desc>
-        class ShaddrMcstMessage : public BaseMessage<T_Device, T_Desc>
+      template <class T_Device>
+        class ShaddrMcstMessage : public BaseMessage<T_Device>
       {
         public:
 
@@ -66,7 +66,7 @@ namespace PAMI
           inline virtual pami_result_t advance()
           {
 
-            T_Desc* _my_desc = this->_my_desc;
+            typename T_Device::CollectiveDescriptor* _my_desc = this->_my_desc;
 
             unsigned master = _my_desc->get_master();
             void* mybuf;
@@ -167,7 +167,7 @@ namespace PAMI
           inline pami_result_t advance_color()
           {
 
-            T_Desc* _my_desc = this->_my_desc;
+            typename T_Device::CollectiveDescriptor* _my_desc = this->_my_desc;
 
             unsigned master = _my_desc->get_master();
             void* mybuf;
@@ -271,16 +271,16 @@ namespace PAMI
 
 
         public:
-          inline ShaddrMcstMessage (pami_context_t context, T_Desc* my_desc, unsigned local_rank) :
-            BaseMessage <T_Device, T_Desc>(context, my_desc,ShaddrMcstMessage::__advance,(void*)this,local_rank)
+          inline ShaddrMcstMessage (pami_context_t context, typename T_Device::CollectiveDescriptor* my_desc, unsigned local_rank) :
+            BaseMessage <T_Device>(context, my_desc,ShaddrMcstMessage::__advance,(void*)this,local_rank)
 
         {
           TRACE_ERR((stderr, "<> ShaddrMcstMessage::ShaddrMcstMessage()\n"));
         };
 
 
-          inline ShaddrMcstMessage (pami_context_t context, T_Desc* my_desc, pami_work_function work_fn, void* cookie, unsigned local_rank) : 
-            BaseMessage <T_Device, T_Desc>(context, my_desc, work_fn, (void*)this, local_rank)
+          inline ShaddrMcstMessage (pami_context_t context, typename T_Device::CollectiveDescriptor* my_desc, pami_work_function work_fn, void* cookie, unsigned local_rank) : 
+            BaseMessage <T_Device>(context, my_desc, work_fn, (void*)this, local_rank)
 
         {
           TRACE_ERR((stderr, "<> ShaddrMcstMessage::ShaddrMcstMessage()\n"));

@@ -110,12 +110,12 @@ namespace PAMI
 
             inline ShmemCollDesc() {}
 
-            inline ShmemCollDesc(Memory::MemoryManager &mm, size_t clientid, size_t contextid, size_t usageid, size_t index): _shared(NULL),_master(0), _storage(NULL), _my_seq_num(0),  _my_state(FREE)
+            inline ShmemCollDesc(Memory::MemoryManager &mm, char * unique_device_string, size_t usageid, size_t index): _shared(NULL),_master(0), _storage(NULL), _my_seq_num(0),  _my_state(FREE)
           {
             char key[PAMI::Memory::MMKEYSIZE];
-            sprintf(key, "/ShmemCollDesc-synch-%zd-%zd-%zd-%zd", clientid, contextid, usageid, index);
+            sprintf(key, "/ShmemCollDesc-synch-%s-%zd-%zd", unique_device_string, usageid, index);
             _atomics.synch_counter.init(&mm, key);
-            sprintf(key, "/ShmemCollDesc-done-%zd-%zd-%zd-%zd", clientid, contextid, usageid, index);
+            sprintf(key, "/ShmemCollDesc-done-%s-%zd-%zd", unique_device_string, usageid, index);
             _atomics.done_counter.init(&mm, key);
 
             _shared = _shmem_region + index;
@@ -337,11 +337,16 @@ namespace PAMI
 
           public:
 
-            inline ShmemCollDescFifo(Memory::MemoryManager &mm, size_t clientid, size_t contextid): _head(0), _tail(0), _next_pending_match(0), _fifo_end(DESCRIPTOR_FIFO_SIZE), _local_rank(__global.topology_local.rank2Index(__global.mapping.task()))
+            inline ShmemCollDescFifo(): _head(0), _tail(0), _next_pending_match(0), _fifo_end(DESCRIPTOR_FIFO_SIZE), _local_rank(__global.topology_local.rank2Index(__global.mapping.task()))
           {
             TRACE_ERR((stderr, "ShmemCollDescFifo constructor called\n"));
+          }
+
+
+            void init (Memory::MemoryManager &mm, char * unique_device_string)
+            {
             char key[PAMI::Memory::MMKEYSIZE];
-            sprintf(key, "/ShmemCollDescFifo-%zd-%zd", clientid, contextid);
+            sprintf(key, "/ShmemCollDescFifo-%s", unique_device_string);
 
 
             size_t total_size = sizeof(ShmemRegion)*DESCRIPTOR_FIFO_SIZE ; 
@@ -356,9 +361,9 @@ namespace PAMI
 
             for (size_t i = 0; i < DESCRIPTOR_FIFO_SIZE; i++)
             {
-              new (&_desc[i]) ShmemCollDesc<T_Atomic>(mm, clientid, contextid, 0, i );
+              new (&_desc[i]) ShmemCollDesc<T_Atomic>(mm, unique_device_string, 0, i );
             }
-          }
+            };
 
             inline ~ShmemCollDescFifo()
             { }

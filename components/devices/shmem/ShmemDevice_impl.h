@@ -125,6 +125,40 @@ namespace PAMI
       TRACE_ERR((stderr, "<< (%zu) ShmemDevice::postCompletion(%p,%p,%p,%zu,%zu)\n", __global.mapping.task(), state, local_fn, cookie, fnum, sequence));
       return PAMI_SUCCESS;
     };
+
+    template <class T_Fifo, class T_Shaddr, unsigned T_FifoCount>
+    char * ShmemDevice<T_Fifo, T_Shaddr, T_FifoCount>::getUniqueString ()
+    {
+      return _unique_str;
+    };
+
+
+
+
+
+
+    template <class T_Fifo, class T_Shaddr, unsigned T_FifoCount>
+    pami_result_t ShmemDevice<T_Fifo, T_Shaddr, T_FifoCount>::getShmemWorldDesc
+    (CollectiveDescriptor ** desc)
+      {
+        unsigned desc_index;
+        CollectiveDescriptor* next_free_desc = _desc_fifo.next_free_descriptor(desc_index);
+
+        if (likely(next_free_desc != NULL))
+        {
+          if (likely(next_free_desc->get_my_seq_id()  == next_free_desc->get_seq_id()))
+          {
+            *desc = _desc_fifo.fetch_descriptor();
+            TRACE_ERR((stderr, "Found descriptor pair \n"));
+            return PAMI_SUCCESS;
+          }
+        }
+        return PAMI_EAGAIN;
+      };
+
+
+
+
   };
 };
 #undef TRACE_ERR

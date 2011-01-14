@@ -559,13 +559,14 @@ namespace PAMI
     //----------------------------------------------------------------------------
     /// \brief The BGQ Multi* registration class for Shmem and MU.
     //----------------------------------------------------------------------------
-    template <class T_Geometry, class T_ShmemNativeInterface, class T_MUDevice, class T_MUNativeInterface, class T_AxialNativeInterface, class T_AxialDputNativeInterface, class T_AxialShmemDputNativeInterface>
+    template <class T_Geometry, class T_ShmemDevice, class T_ShmemNativeInterface, class T_MUDevice, class T_MUNativeInterface, class T_AxialNativeInterface, class T_AxialDputNativeInterface, class T_AxialShmemDputNativeInterface>
     class BGQMultiRegistration :
-        public CollRegistration<PAMI::CollRegistration::BGQMultiRegistration<T_Geometry, T_ShmemNativeInterface, T_MUDevice, T_MUNativeInterface, T_AxialNativeInterface, T_AxialDputNativeInterface, T_AxialShmemDputNativeInterface>, T_Geometry>
+        public CollRegistration<PAMI::CollRegistration::BGQMultiRegistration<T_Geometry, T_ShmemDevice, T_ShmemNativeInterface, T_MUDevice, T_MUNativeInterface, T_AxialNativeInterface, T_AxialDputNativeInterface, T_AxialShmemDputNativeInterface>, T_Geometry>
     {
 
       public:
         inline BGQMultiRegistration(T_ShmemNativeInterface              *shmem_ni,
+                                    T_ShmemDevice                       &shmem_device,
                                     T_MUDevice                          &mu_device,
                                     pami_client_t                        client,
                                     pami_context_t                       context,
@@ -573,7 +574,7 @@ namespace PAMI
                                     size_t                               client_id,
                                     int                                 *dispatch_id,
                                     std::map<unsigned, pami_geometry_t> *geometry_map):
-            CollRegistration<PAMI::CollRegistration::BGQMultiRegistration<T_Geometry, T_ShmemNativeInterface, T_MUDevice, T_MUNativeInterface, T_AxialNativeInterface, T_AxialDputNativeInterface, T_AxialShmemDputNativeInterface>, T_Geometry> (),
+            CollRegistration<PAMI::CollRegistration::BGQMultiRegistration<T_Geometry, T_ShmemDevice, T_ShmemNativeInterface, T_MUDevice, T_MUNativeInterface, T_AxialNativeInterface, T_AxialDputNativeInterface, T_AxialShmemDputNativeInterface>, T_Geometry> (),
             _client(client),
             _context(context),
             _context_id(context_id),
@@ -588,6 +589,7 @@ namespace PAMI
             _msync_composite(NULL),
             _msync2d_composite(NULL),
             _msync2d_dput_composite(NULL),
+            _shmem_device(shmem_device),
             _shmem_ni(shmem_ni),
             _shmem_msync_factory(&_sconnmgr, _shmem_ni),
             _shmem_mcast_factory(&_sconnmgr, _shmem_ni),
@@ -667,7 +669,7 @@ namespace PAMI
 
 //          if(__global.topology_local.size() < 64)
               {
-                _axial_shmem_mu_dput_ni     = new (_axial_shmem_mu_dput_ni_storage    ) T_AxialShmemDputNativeInterface(_mu_device, client, context, context_id, client_id, _dispatch_id);
+                _axial_shmem_mu_dput_ni     = new (_axial_shmem_mu_dput_ni_storage    ) T_AxialShmemDputNativeInterface(_mu_device, _shmem_device, client, context, context_id, client_id, _dispatch_id);
 
                 if (_axial_shmem_mu_dput_ni->status() != PAMI_SUCCESS) _axial_shmem_mu_dput_ni = NULL; // Not enough resources?
               }
@@ -1030,6 +1032,9 @@ namespace PAMI
         CCMI::Executor::Composite                      *_msync2d_dput_composite;
 
         //* SHMEM interfaces:
+        // Shmem Device
+        T_ShmemDevice                                  &_shmem_device;
+        
         // Native Interface
         T_ShmemNativeInterface                         *_shmem_ni;
 

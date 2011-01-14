@@ -7,9 +7,9 @@
 #include <pami.h>
 
 #include "test/internals/multisend/local_multicombine.h"
-#include "components/devices/shmemcoll/ShmemCollDevice.h"
-#include "components/devices/shmemcoll/ShmemCollDesc.h"
-#include "components/devices/shmemcoll/ShmemMcombModelWorld.h"
+#include "components/devices/shmem/ShmemDevice.h"
+#include "components/devices/shmem/ShmemCollDesc.h"
+#include "components/devices/shmem/ShmemMcombModelWorld.h"
 #include "components/atomic/bgq/L2Counter.h"
 
 //#include "quad_sum.h"
@@ -30,7 +30,7 @@
 #define LONGITER	10
 typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::Native> ShmemCollDesc;
 //typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::BGQ::L2NodeCounter> ShmemCollDesc;
-typedef PAMI::Device::ShmemCollDevice <ShmemCollDesc> ShmemCollDevice;
+typedef PAMI::Device::ShmemDevice <ShmemCollDesc> ShmemCollDevice;
 typedef PAMI::Device::Shmem::ShmemMcombModelWorld <ShmemCollDevice, ShmemCollDesc> ShmemMcombModel;
 
 #define LOCAL_REDUCE_NAME	"PAMI::Device::ShmemMcombModel"

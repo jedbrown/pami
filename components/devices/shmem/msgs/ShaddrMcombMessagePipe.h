@@ -113,8 +113,8 @@ namespace PAMI
         volatile uint16_t	current_iter;
       };
 
-      template <class T_Device, class T_Desc>
-        class ShaddrMcombMessagePipe : public BaseMessage<T_Device, T_Desc>
+      template <class T_Device>
+        class ShaddrMcombMessagePipe : public BaseMessage<T_Device>
       {
         protected:
 
@@ -263,7 +263,7 @@ namespace PAMI
           inline virtual pami_result_t advance ()
           {
 
-            T_Desc* _my_desc = this->_my_desc;
+            typename T_Device::CollectiveDescriptor* _my_desc = this->_my_desc;
             unsigned _npeers = __global.topology_local.size();
 
             unsigned _local_rank = this->_local_rank;
@@ -283,7 +283,7 @@ namespace PAMI
 
             /* Start the protocol here..blocking version since everyone arrived */
 
-            TRACE_ERR((stderr,"size of desc:%ld sizeof mcomb_control:%ld", sizeof(T_Desc), sizeof(McombControl)));
+            TRACE_ERR((stderr,"size of desc:%ld sizeof mcomb_control:%ld", sizeof(typename T_Device::CollectiveDescriptor), sizeof(McombControl)));
 
             Shmem::McombControl* mcomb_control = (Shmem::McombControl*) _my_desc->get_buffer();
             assert(mcomb_control != NULL);
@@ -392,8 +392,8 @@ namespace PAMI
             }
 
             public:
-          inline ShaddrMcombMessagePipe (pami_context_t context, T_Desc* my_desc, unsigned local_rank) :
-            BaseMessage<T_Device, T_Desc>(context, my_desc, ShaddrMcombMessagePipe::__advance, (void*)this, local_rank)
+          inline ShaddrMcombMessagePipe (pami_context_t context, typename T_Device::CollectiveDescriptor* my_desc, unsigned local_rank) :
+            BaseMessage<T_Device>(context, my_desc, ShaddrMcombMessagePipe::__advance, (void*)this, local_rank)
             {
               TRACE_ERR((stderr, "<> ShaddrMcombMessagePipe::ShaddrMcombMessagePipe()\n"));
             };

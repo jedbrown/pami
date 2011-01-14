@@ -29,16 +29,16 @@
 #include "components/devices/bgq/mu2/model/Multisync.h"
 #include "components/devices/bgq/mu2/model/Multicombine.h"
 
-#include "components/devices/shmemcoll/ShmemCollDevice.h"
-#include "components/devices/shmemcoll/ShmemCollDesc.h"
-#include "components/devices/shmemcoll/ShmemMcstModelWorld.h"
+#include "components/devices/shmem/ShmemDevice.h"
+#include "components/devices/shmem/ShmemCollDesc.h"
+#include "components/devices/shmem/ShmemMcstModelWorld.h"
 #include "components/atomic/bgq/L2Counter.h"
 
 #include "common/bgq/NativeInterface.h"
 
 typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::Native> ShmemCollDesc;
 //typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::BGQ::L2NodeCounter> ShmemCollDesc;
-typedef PAMI::Device::ShmemCollDevice <ShmemCollDesc> ShmemCollDevice;
+typedef PAMI::Device::ShmemDevice <ShmemCollDesc> ShmemCollDevice;
 typedef PAMI::Device::Shmem::ShmemMcstModelWorld <ShmemCollDevice, ShmemCollDesc> ShmemMcstModel;
 
 

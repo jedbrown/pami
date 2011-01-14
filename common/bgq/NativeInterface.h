@@ -416,14 +416,14 @@ namespace PAMI
                                       size_t         context_id,
                                       size_t         client_id,
                                       int           *dispatch_id);
-
+#if 0
       BGQNativeInterfaceASMultiDevice(T_Device1      &device1,
                                       pami_client_t  client,
                                       pami_context_t context,
                                       size_t         context_id,
                                       size_t         client_id,
                                       int           *dispatch_id);
-
+#endif
       virtual pami_result_t multicast (pami_multicast_t *mcast, void *devinfo);
   };
 
@@ -445,6 +445,7 @@ namespace PAMI
     TRACE_FN_EXIT();
   }
 
+#if 0
   template <class T_Device1, class T_Device2, class T_Mcast1, class T_Mcast2, class T_Msync, class T_Mcomb>
   BGQNativeInterfaceASMultiDevice<T_Device1, T_Device2, T_Mcast1, T_Mcast2, T_Msync, T_Mcomb>::
   BGQNativeInterfaceASMultiDevice(T_Device1      &device1,
@@ -462,7 +463,7 @@ namespace PAMI
     this->CCMI::Interfaces::NativeInterface::_status = (pami_result_t) (this->CCMI::Interfaces::NativeInterface::_status | _mcast2_status);
     TRACE_FN_EXIT();
   }
-
+#endif
   template <class T_Device1, class T_Device2, class T_Mcast1, class T_Mcast2, class T_Msync, class T_Mcomb>
   inline pami_result_t BGQNativeInterfaceASMultiDevice<T_Device1, T_Device2, T_Mcast1, T_Mcast2, T_Msync, T_Mcomb>::multicast (pami_multicast_t *mcast, void *devinfo)
   {
