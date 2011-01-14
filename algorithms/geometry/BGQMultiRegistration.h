@@ -226,7 +226,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void MUMcastCollectiveDputMetaData(pami_metadata_t *m)
     {
-      new(m) PAMI::Geometry::Metadata("I0:DirectPutMulticast:-:MU");
+      new(m) PAMI::Geometry::Metadata("I0:MulticastDput:-:MU");
     }
 
 
@@ -234,33 +234,12 @@ namespace PAMI
     MUMcastCollectiveDputMetaData,
     CCMI::ConnectionManager::SimpleConnMgr > MUCollectiveDputMulticastFactory;
 
-
-    //----------------------------------------------------------------------------
-    // 'Pure' MU allsided multicast built on active message multicast with an
-    // synchronizing multisync
-    //
-    // The necessary factory is defined here to implement the appropriate
-    // dispatch/notifyRecv.  We simply us a map<> to associate connection id's
-    // with composites.  Since it's all-sided, this should be fine.
-    //
-    // Connection id's are based on incrementing CommSeqConnMgr id's.
-    //----------------------------------------------------------------------------
-    void MUMcast2MetaData(pami_metadata_t *m)
-    {
-      new(m) PAMI::Geometry::Metadata("I0:DirectPutMultiCombine:-:MU");
-//    m->check_correct.values.mustquery = 0;
-      m->check_correct.values.alldt     = 0;
-      m->check_correct.values.allop     = 0;
-      m->check_fn                       = MU::op_dt_metadata_function;
-      m->check_perf.values.hw_accel     = 1;
-    }
-
     //----------------------------------------------------------------------------
     // 'Pure' MU allsided dput multicombine
     //----------------------------------------------------------------------------
     void MUMcombCollectiveDputMetaData(pami_metadata_t *m)
     {
-      new(m) PAMI::Geometry::Metadata("I0:DirectPutMulticombine:-:MU");
+      new(m) PAMI::Geometry::Metadata("I0:MulticombineDput:-:MU");
       //    m->check_correct.values.mustquery = 0;
       m->check_correct.values.alldt     = 0;
       m->check_correct.values.allop     = 0;
@@ -300,17 +279,17 @@ namespace PAMI
     //----------------------------------------------------------------------------
     // 'Composite' Shmem/MU allsided 2 device multisync
     //----------------------------------------------------------------------------
-    void OptMsync2DMetaData(pami_metadata_t *m)
+    void Msync2DDputMetaData(pami_metadata_t *m)
     {
-      new(m) PAMI::Geometry::Metadata("I0:OptMultiSync2Device:SHMEM:MU");
+      new(m) PAMI::Geometry::Metadata("I0:MultiSync2DeviceDput:SHMEM:MU");
     }
 
     typedef CCMI::Adaptor::Barrier::BarrierFactoryAllSidedT
       <CCMI::Adaptor::Barrier::MultiSyncComposite2Device,
-      OptMsync2DMetaData,
+      Msync2DDputMetaData,
       CCMI::ConnectionManager::SimpleConnMgr,
       PAMI::Geometry::CKEY_GLOBALBARRIERCOMPOSITE>
-      OptMultiSync2DeviceFactory;
+      MultiSync2DeviceDputFactory;
 
 
     //----------------------------------------------------------------------------
@@ -354,6 +333,27 @@ namespace PAMI
     typedef CCMI::Adaptor::Allreduce::MultiCombineComposite2DeviceFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2Device<0>,
     Mcomb2DMetaData, CCMI::ConnectionManager::SimpleConnMgr >    MultiCombine2DeviceFactory;
 
+    //----------------------------------------------------------------------------
+    // 'Composite' Shmem/MU-DPUT allsided 2 device multicombine
+    //----------------------------------------------------------------------------
+    void Mcomb2DDputMetaData(pami_metadata_t *m)
+    {
+      new(m) PAMI::Geometry::Metadata("I0:MultiCombine2DeviceDput:SHMEM:MU");
+#ifdef ENABLE_NEW_SHMEM
+      m->check_correct.values.alldt     = 0;
+      m->check_correct.values.allop     = 0;
+      m->check_fn                       = Shmem::op_dt_metadata_function;
+      m->check_perf.values.hw_accel     = 1;
+#else
+      m->check_correct.values.alldt     = 0;
+      m->check_correct.values.allop     = 0;
+      m->check_fn                       = MU::op_dt_metadata_function;
+      m->check_perf.values.hw_accel     = 1;
+#endif
+    }
+    typedef CCMI::Adaptor::Allreduce::MultiCombineComposite2DeviceFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2Device<0>,
+    Mcomb2DDputMetaData, CCMI::ConnectionManager::SimpleConnMgr >    MultiCombine2DeviceDputFactory;
+
 
     //----------------------------------------------------------------------------
     // 'Composite' Shmem/MU allsided 2 device multicombine with no pipelining
@@ -375,6 +375,27 @@ namespace PAMI
     }
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2DeviceNP,
     Mcomb2DMetaDataNP, CCMI::ConnectionManager::SimpleConnMgr > MultiCombine2DeviceFactoryNP;
+
+    //----------------------------------------------------------------------------
+    // 'Composite' Shmem/MU-DPUT allsided 2 device multicombine with no pipelining
+    //----------------------------------------------------------------------------
+    void Mcomb2DDputMetaDataNP(pami_metadata_t *m)
+    {
+      new(m) PAMI::Geometry::Metadata("I0:MultiCombine2DeviceDputNP:SHMEM:MU");
+#ifdef ENABLE_NEW_SHMEM
+      m->check_correct.values.alldt     = 0;
+      m->check_correct.values.allop     = 0;
+      m->check_fn                       = Shmem::op_dt_metadata_function;
+      m->check_perf.values.hw_accel     = 1;
+#else
+      m->check_correct.values.alldt     = 0;
+      m->check_correct.values.allop     = 0;
+      m->check_fn                       = MU::op_dt_metadata_function;
+      m->check_perf.values.hw_accel     = 1;
+#endif
+    }
+    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2DeviceNP,
+    Mcomb2DDputMetaDataNP, CCMI::ConnectionManager::SimpleConnMgr > MultiCombine2DeviceDputFactoryNP;
 
     //----------------------------------------------------------------------------
     // Rectangle broadcast
@@ -565,7 +586,7 @@ namespace PAMI
             _mu_barrier_composite(NULL),
             _msync_composite(NULL),
             _msync2d_composite(NULL),
-            _opt_msync2d_composite(NULL),
+            _msync2d_dput_composite(NULL),
             _shmem_ni(shmem_ni),
             _shmem_msync_factory(&_sconnmgr, _shmem_ni),
             _shmem_mcast_factory(&_sconnmgr, _shmem_ni),
@@ -588,10 +609,12 @@ namespace PAMI
             _mu_mcast3_factory(NULL),
             _mu_mcomb_factory(NULL),
             _msync2d_composite_factory(NULL),
-            _opt_msync2d_composite_factory(NULL),
+            _msync2d_dput_composite_factory(NULL),
             _mcast2d_composite_factory(NULL),
             _mcomb2d_composite_factory(NULL),
             _mcomb2dNP_composite_factory(NULL),
+            _mcomb2d_dput_composite_factory(NULL),
+            _mcomb2dNP_dput_composite_factory(NULL),
             _mu_rectangle_1color_dput_broadcast_factory(NULL),
             _mu_rectangle_dput_broadcast_factory(NULL),
             _mu_rectangle_dput_allgather_factory(NULL),
@@ -684,8 +707,8 @@ namespace PAMI
                   _mu_rectangle_dput_allgather_factory = new (_mu_rectangle_dput_allgather_factory_storage) RectangleDputAllgatherFactory(&_color_connmgr, _axial_mu_dput_ni);
                 }
 
-	      if(_mu_msync_factory)
-		_mu_msync_factory->setMapIdToGeometry(mapidtogeometry);
+              if(_mu_msync_factory)
+                _mu_msync_factory->setMapIdToGeometry(mapidtogeometry);
 
               // Can't be ctor'd unless the NI was created
               _mu_mcast_factory  = new (_mu_mcast_factory_storage ) MUMultiCastFactory(&_sconnmgr, _mu_ni_mcast);
@@ -704,8 +727,11 @@ namespace PAMI
 
             _ni_array[4] = _shmem_ni;
             _ni_array[5] = _mu_global_dput_ni;
-            _opt_msync2d_composite_factory = new (_opt_msync2d_composite_factory_storage) OptMultiSync2DeviceFactory(&_sconnmgr, (CCMI::Interfaces::NativeInterface*)&_ni_array[4]);
-            _opt_msync2d_composite_factory->setMapIdToGeometry(mapidtogeometry);
+            _msync2d_dput_composite_factory = new (_msync2d_dput_composite_factory_storage) MultiSync2DeviceDputFactory(&_sconnmgr, (CCMI::Interfaces::NativeInterface*)&_ni_array[4]);
+            _msync2d_dput_composite_factory->setMapIdToGeometry(mapidtogeometry);
+
+            _mcomb2d_dput_composite_factory = new (_mcomb2d_dput_composite_factory_storage) MultiCombine2DeviceDputFactory(&_sconnmgr, _shmem_ni, _mu_global_dput_ni);
+            _mcomb2dNP_dput_composite_factory = new (_mcomb2dNP_dput_composite_factory_storage) MultiCombine2DeviceDputFactoryNP(&_sconnmgr,  (CCMI::Interfaces::NativeInterface*)&_ni_array[4]);
 
             _mcast2d_composite_factory = new (_mcast2d_composite_factory_storage) MultiCast2DeviceFactory(&_sconnmgr, _shmem_ni, false, _mu_ni_mcast2d,  _mu_ni_mcast2d ? true : false);
 
@@ -864,13 +890,13 @@ namespace PAMI
                               geometry->addCollective(PAMI_XFER_BARRIER, _msync2d_composite_factory, _context_id);
                             }
 
-                          if (_opt_msync2d_composite_factory) 
+                          if (_msync2d_dput_composite_factory) 
                             {
                             geometry->setKey(context_id, PAMI::Geometry::CKEY_GLOBALBARRIERCOMPOSITE, NULL);
-                            _opt_msync2d_composite = _opt_msync2d_composite_factory->generate(geometry, &xfer);
-                            geometry->addCollective(PAMI_XFER_BARRIER, _opt_msync2d_composite_factory, _context_id);
+                            _msync2d_dput_composite = _msync2d_dput_composite_factory->generate(geometry, &xfer);
+                            geometry->addCollective(PAMI_XFER_BARRIER, _msync2d_dput_composite_factory, _context_id);
                             geometry->setKey(context_id, PAMI::Geometry::CKEY_GLOBALBARRIERCOMPOSITE,
-                                             (void*)_opt_msync2d_composite);
+                                             (void*)_msync2d_dput_composite);
                             }
                         }
                     }
@@ -927,37 +953,39 @@ namespace PAMI
                         }
 
                       // Add 2 device composite protocols
-                      if ((local_sub_topology->size() > 1) && (master_sub_topology->size() > 1) && (__global.useshmem()))
-                        {
-                          if ((_mcomb2dNP_composite_factory)
 #ifdef ENABLE_NEW_SHMEM   // limited support - 4/8/16 processes only
-                              &&
-                              ((local_sub_topology->size() ==  4) ||  
-                               (local_sub_topology->size() ==  8) ||
-                               (local_sub_topology->size() == 16))
+                      if((local_sub_topology->size() ==  4) ||  
+                         (local_sub_topology->size() ==  8) ||
+                         (local_sub_topology->size() == 16))
 #endif
-                              )
+//                      if ((local_sub_topology->size() > 1) && (master_sub_topology->size() > 1) && (__global.useshmem()))
+                        {
+                          if (_mcomb2dNP_composite_factory)
                             {
-                              TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register mcomb 2DNP\n", this));
+                              TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register protocol: mcomb 2DNP\n", this));
                               geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2dNP_composite_factory, _context_id);
                             }
-
                           if (_mcomb2d_composite_factory)
                             {
-                              TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register mcomb 2D\n", this));
-                              // Doesn't work well enough to be a default protocol
+                              TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register protocol: mcomb 2D\n", this));
                               geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2d_composite_factory, _context_id);
                             }
-
+                          if (_mcomb2d_dput_composite_factory)
+                            {
+                              TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register protocol: mcomb dput 2D\n", this));
+                              geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2d_dput_composite_factory, _context_id);
+                            }
+                          if (_mcomb2dNP_dput_composite_factory)
+                            {
+                              TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register protocol: mcomb dput 2DNP\n", this));
+                              geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2dNP_dput_composite_factory, _context_id);
+                            }
                         }
                     }
-
                 }
-
             }
           else if (phase == -1)
             {
-
               /// \todo remove MU collectives algorithms... TBD
               geometry->rmCollective(PAMI_XFER_BROADCAST, _mu_mcast_factory,  _context_id);
               geometry->rmCollective(PAMI_XFER_ALLREDUCE, _mu_mcomb_factory, _context_id);
@@ -986,7 +1014,7 @@ namespace PAMI
         CCMI::Executor::Composite                      *_mu_barrier_composite;
         CCMI::Executor::Composite                      *_msync_composite;
         CCMI::Executor::Composite                      *_msync2d_composite;
-        CCMI::Executor::Composite                      *_opt_msync2d_composite;
+        CCMI::Executor::Composite                      *_msync2d_dput_composite;
 
         //* SHMEM interfaces:
         // Native Interface
@@ -1063,8 +1091,8 @@ namespace PAMI
         MultiSync2DeviceFactory                        *_msync2d_composite_factory;
         uint8_t                                         _msync2d_composite_factory_storage[sizeof(MultiSync2DeviceFactory)];
 
-        OptMultiSync2DeviceFactory                     *_opt_msync2d_composite_factory;
-        uint8_t                                         _opt_msync2d_composite_factory_storage[sizeof(MultiSync2DeviceFactory)];
+        MultiSync2DeviceDputFactory                    *_msync2d_dput_composite_factory;
+        uint8_t                                         _msync2d_dput_composite_factory_storage[sizeof(MultiSync2DeviceDputFactory)];
 
         MultiCast2DeviceFactory                        *_mcast2d_composite_factory;
         uint8_t                                         _mcast2d_composite_factory_storage[sizeof(MultiCast2DeviceFactory)];
@@ -1077,6 +1105,12 @@ namespace PAMI
 
         MultiCombine2DeviceFactoryNP                   *_mcomb2dNP_composite_factory;
         uint8_t                                         _mcomb2dNP_composite_factory_storage[sizeof(MultiCombine2DeviceFactoryNP)];
+
+        MultiCombine2DeviceDputFactory                 *_mcomb2d_dput_composite_factory;
+        uint8_t                                         _mcomb2d_dput_composite_factory_storage[sizeof(MultiCombine2DeviceDputFactory)];
+
+        MultiCombine2DeviceDputFactoryNP               *_mcomb2dNP_dput_composite_factory;
+        uint8_t                                         _mcomb2dNP_dput_composite_factory_storage[sizeof(MultiCombine2DeviceDputFactoryNP)];
 
         MUCollectiveDputMulticastFactory               *_mucollectivedputmulticastfactory;
         uint8_t                                         _mucollectivedputmulticaststorage[sizeof(MUCollectiveDputMulticastFactory)];
