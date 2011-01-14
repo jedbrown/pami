@@ -17,6 +17,11 @@
 extern "C" {
     void *pami_addr_null = NULL;
 #define PAMI_ADDR_NULL pami_addr_null
+    struct {
+        pami_type_t         PAMI_BYTE;
+        pami_data_function  PAMI_DATA_COPY; 
+        pami_geometry_t     PAMI_NULL_GEOMETRY;
+    } pami_fort_globals;
 }
 
 #define FIX_PAMI_ADDR_NULL(x, y) \
@@ -192,27 +197,11 @@ extern "C" void pami_geometry_destroy(pami_client_t*   client,
     *result = PAMI_Geometry_destroy(*client, geometry);
 }
 
-extern "C" typedef struct {
-    void* cb_done;
-    size_t* cookie;
-    size_t* algorithm;
-    size_t* options;
-    size_t  cmd[8];
-} pami_xfer_nobit_t;
-
 extern "C" void pami_collective (pami_context_t*  context,
                                  pami_xfer_t*     parameters,
                                  pami_result_t*   result)
 {
-    pami_xfer_nobit_t para_nobit = *(pami_xfer_nobit_t*)parameters;
-    pami_xfer_t pami_para;
-    pami_para.cb_done = (pami_event_function)(para_nobit.cb_done);
-    pami_para.cookie = &(para_nobit.cookie);
-    pami_para.algorithm = (pami_algorithm_t)(para_nobit.algorithm);
-    pami_para.options.multicontext = *(uint32_t*)(para_nobit.options);
-    memcpy(&(pami_para.cmd), para_nobit.cmd, sizeof(para_nobit.cmd));
-
-    *result = PAMI_Collective(*context, &pami_para);
+    *result = PAMI_Collective(*context, parameters);
 }
 
 extern "C" void pami_geometry_algorithms_num (pami_context_t*    context,
@@ -225,27 +214,6 @@ extern "C" void pami_geometry_algorithms_num (pami_context_t*    context,
             lists_lengths);
 }
 
-extern "C"  typedef struct {
-    char                   name[32];
-    unsigned               version;
-    pami_metadata_function check_fn;
-    size_t                 range_lo;
-    size_t                 range_hi;
-    unsigned               mustquery;
-    unsigned               nonlocal;
-    unsigned               sendminalign;
-    unsigned               recvminalign;
-    unsigned               alldt;
-    unsigned               allop;
-    unsigned               contigsflags;
-    unsigned               contigrflags;
-    unsigned               continsflags;
-    unsigned               continrflags;
-    unsigned               hw_accel;
-    size_t                 range_lo_perf;
-    size_t                 range_hi_perf;
-} pami_metadata_nobit_t;
-
 extern "C"  void pami_geometry_algorithms_query (pami_context_t*     context,
                                                  pami_geometry_t*    geometry,
                                                  pami_xfer_type_t*   colltype,
@@ -257,69 +225,13 @@ extern "C"  void pami_geometry_algorithms_query (pami_context_t*     context,
                                                  size_t*             num1,
                                                  pami_result_t*      result)
 {
-    pami_metadata_t         pami_mdata0;
-    pami_metadata_t         pami_mdata1;
-
-    if (mdata0 != PAMI_ADDR_NULL) {
-        pami_metadata_nobit_t   mdata0_nobit = *(pami_metadata_nobit_t*)mdata0;
-
-        strcpy(pami_mdata0.name, mdata0_nobit.name);
-        pami_mdata0.version         = mdata0_nobit.version;
-        pami_mdata0.check_fn        = mdata0_nobit.check_fn;
-        pami_mdata0.range_lo        = mdata0_nobit.range_lo;
-        pami_mdata0.range_hi        = mdata0_nobit.range_hi;
-        pami_mdata0.check_correct.values.mustquery       = mdata0_nobit.mustquery;
-        pami_mdata0.check_correct.values.nonlocal        = mdata0_nobit.nonlocal;
-        pami_mdata0.check_correct.values.sendminalign    = mdata0_nobit.sendminalign;
-        pami_mdata0.check_correct.values.recvminalign    = mdata0_nobit.recvminalign;
-        pami_mdata0.check_correct.values.alldt           = mdata0_nobit.alldt;
-        pami_mdata0.check_correct.values.allop           = mdata0_nobit.allop;
-        pami_mdata0.check_correct.values.contigsflags    = mdata0_nobit.contigsflags;
-        pami_mdata0.check_correct.values.contigrflags    = mdata0_nobit.contigrflags;
-        pami_mdata0.check_correct.values.continsflags    = mdata0_nobit.continsflags;
-        pami_mdata0.check_correct.values.continrflags    = mdata0_nobit.continrflags;
-        pami_mdata0.check_perf.values.hw_accel        = mdata0_nobit.hw_accel;
-        pami_mdata0.range_lo_perf   = mdata0_nobit.range_lo_perf;
-        pami_mdata0.range_hi_perf   = mdata0_nobit.range_hi_perf;
-    } else {
-        memset(&pami_mdata0, 0, sizeof(pami_mdata0));
-    }
-
-    if (mdata1 != PAMI_ADDR_NULL) {
-        pami_metadata_nobit_t   mdata1_nobit = *(pami_metadata_nobit_t*)mdata1;
-
-        strcpy(pami_mdata1.name, mdata1_nobit.name);
-        pami_mdata1.version         = mdata1_nobit.version;
-        pami_mdata1.check_fn        = mdata1_nobit.check_fn;
-        pami_mdata1.range_lo        = mdata1_nobit.range_lo;
-        pami_mdata1.range_hi        = mdata1_nobit.range_hi;
-        pami_mdata1.check_correct.values.mustquery       = mdata1_nobit.mustquery;
-        pami_mdata1.check_correct.values.nonlocal        = mdata1_nobit.nonlocal;
-        pami_mdata1.check_correct.values.sendminalign    = mdata1_nobit.sendminalign;
-        pami_mdata1.check_correct.values.recvminalign    = mdata1_nobit.recvminalign;
-        pami_mdata1.check_correct.values.alldt           = mdata1_nobit.alldt;
-        pami_mdata1.check_correct.values.allop           = mdata1_nobit.allop;
-        pami_mdata1.check_correct.values.contigsflags    = mdata1_nobit.contigsflags;
-        pami_mdata1.check_correct.values.contigrflags    = mdata1_nobit.contigrflags;
-        pami_mdata1.check_correct.values.continsflags    = mdata1_nobit.continsflags;
-        pami_mdata1.check_correct.values.continrflags    = mdata1_nobit.continrflags;
-        pami_mdata1.check_perf.values.hw_accel        = mdata1_nobit.hw_accel;
-        pami_mdata1.range_lo_perf   = mdata1_nobit.range_lo_perf;
-        pami_mdata1.range_hi_perf   = mdata1_nobit.range_hi_perf;
-    } else {
-        memset(&pami_mdata1, 0, sizeof(pami_mdata1));
-    }
-
     *result = PAMI_Geometry_algorithms_query(*context, *geometry, *colltype,
-            algs0, &pami_mdata0, *num0, algs1, &pami_mdata1, *num1);
+            algs0, mdata0, *num0, algs1, mdata1, *num1);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Functions from pami_dispatch.h                                              //
 ////////////////////////////////////////////////////////////////////////////////
-extern "C" typedef struct {
-    uint32_t multicontext;
-} pami_collective_hint_nobit_t;
 
 extern "C" void pami_amcollective_dispatch_set(pami_context_t*            context,
         pami_algorithm_t*          algorithm,
@@ -329,18 +241,8 @@ extern "C" void pami_amcollective_dispatch_set(pami_context_t*            contex
         pami_collective_hint_t*    options,
         pami_result_t*             result)
 {
-    pami_collective_hint_t          pami_options;
-    if (options != PAMI_ADDR_NULL) {
-        pami_collective_hint_nobit_t    options_nobit = 
-            *(pami_collective_hint_nobit_t*)options;
-        pami_options.multicontext = options_nobit.multicontext;
-
-    } else {
-        memset(&pami_options, 0, sizeof(pami_options));
-    }
-
     *result = PAMI_AMCollective_dispatch_set(*context, *algorithm, *dispatch,
-            fn, cookie, pami_options);
+            fn, cookie, *options);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -443,6 +345,12 @@ extern "C" void pami_client_create (const char*             name,
     pami_configuration_t*   conf;
     FIX_PAMI_ADDR_NULL(configuration, conf);
     *result = PAMI_Client_create(name, client, conf, *num_configs);
+
+    // initialize global variables in pami.h for FORTRAN
+    // TODO: pami_fort_globals need to be synchronized with these globals
+    pami_fort_globals.PAMI_BYTE             = PAMI_BYTE;
+    pami_fort_globals.PAMI_DATA_COPY        = PAMI_DATA_COPY;
+    pami_fort_globals.PAMI_NULL_GEOMETRY    = PAMI_NULL_GEOMETRY;
 }
 
 extern "C" void pami_client_destroy (pami_client_t*     client,
@@ -522,19 +430,6 @@ extern "C" void pami_context_update (pami_context_t*       context,
     *result = PAMI_Context_update(*context, configuration, *num_configs);
 }
 
-extern "C" typedef struct {
-    size_t* buffer_registered;
-    size_t* consistency;
-    size_t* interrupt_on_recv;
-    size_t* no_local_copy;
-    size_t* no_long_header;
-    size_t* recv_immediate;
-    /* The following hints use the PAMI_HINT3_* values */
-    size_t* use_rdma;
-    size_t* use_shmem;
-    size_t* multicontext;
-} pami_send_hint_nobit_t;
-
 extern "C" void pami_dispatch_set (pami_context_t*            context,
         size_t*                    dispatch,
         pami_dispatch_callback_function fn,
@@ -542,25 +437,7 @@ extern "C" void pami_dispatch_set (pami_context_t*            context,
         pami_send_hint_t*          options,
         pami_result_t*             result)
 {
-    pami_send_hint_t        pami_options;
-    if (options != PAMI_ADDR_NULL) {
-        pami_send_hint_nobit_t  options_nobit = *(pami_send_hint_nobit_t*)options;
-
-        pami_options.buffer_registered  = *(uint32_t*)options_nobit.buffer_registered;
-        pami_options.consistency        = *(uint32_t*)options_nobit.consistency;
-        pami_options.interrupt_on_recv  = *(uint32_t*)options_nobit.interrupt_on_recv;
-        pami_options.no_local_copy      = *(uint32_t*)options_nobit.no_local_copy;
-        pami_options.no_long_header     = *(uint32_t*)options_nobit.no_long_header;
-        pami_options.recv_immediate     = *(uint32_t*)options_nobit.recv_immediate;
-        pami_options.use_rdma           = *(uint32_t*)options_nobit.use_rdma;
-        pami_options.use_shmem          = *(uint32_t*)options_nobit.use_shmem;
-        pami_options.multicontext       = *(uint32_t*)options_nobit.multicontext;
-
-    } else {
-        memset(&pami_options, 0, sizeof(pami_options));
-    }
-    *result = PAMI_Dispatch_set(*context, *dispatch, fn, cookie, pami_options);
-
+    *result = PAMI_Dispatch_set(*context, *dispatch, fn, cookie, *options);
 }
 
 extern "C" void pami_context_lock(pami_context_t* context, pami_result_t* result) 
@@ -596,74 +473,11 @@ extern "C" void pami_context_advancev (pami_context_t context[],
 // Functions from pami_p2p.h                                                   //
 ////////////////////////////////////////////////////////////////////////////////
 
-extern "C" typedef struct {
-    // header
-    size_t* header_addr;
-    size_t* header_len;
-    // data
-    size_t* data_addr;
-    size_t* data_len;
-    // dispatch
-    size_t* dispatch;
-    // send hint
-    size_t* buffer_registered;
-    size_t* consistency;
-    size_t* interrupt_on_recv;
-    size_t* no_local_copy;
-    size_t* no_long_header;
-    size_t* recv_immediate;
-    size_t* use_rdma;
-    size_t* use_shmem;
-    size_t* multicontext;
-    // dest endpoint
-    size_t* dest;
-    // send_event
-    void*   cookie;
-    void*   local_fn;
-    void*   remote_fn;
-} pami_send_nobit_t;
-
 extern "C" void pami_send (pami_context_t*  context,
         pami_send_t*     parameters,
         pami_result_t*   result)
 {
-    pami_send_nobit_t para_nobit = *(pami_send_nobit_t*)parameters;
-    pami_send_t pami_para;
-    memset(&pami_para, 0, sizeof(pami_para));
-
-    pami_para.send.header.iov_base  = (void*)(para_nobit.header_addr);
-    pami_para.send.header.iov_len   = (size_t)(para_nobit.header_len);
-    pami_para.send.data.iov_base    = (void*)(para_nobit.data_addr);
-    pami_para.send.data.iov_len     = (size_t)(para_nobit.data_len);
-    
-    pami_para.send.dispatch = (size_t)(para_nobit.dispatch);
-
-    pami_para.send.hints.buffer_registered   =
-        (uint32_t)((size_t)para_nobit.buffer_registered);
-    pami_para.send.hints.consistency         =
-        (uint32_t)((size_t)para_nobit.consistency);
-    pami_para.send.hints.interrupt_on_recv   =
-        (uint32_t)((size_t)para_nobit.interrupt_on_recv);
-    pami_para.send.hints.no_local_copy       =
-        (uint32_t)((size_t)para_nobit.no_local_copy);
-    pami_para.send.hints.no_long_header      =
-        (uint32_t)((size_t)para_nobit.no_long_header);
-    pami_para.send.hints.recv_immediate      =
-        (uint32_t)((size_t)para_nobit.recv_immediate);
-    pami_para.send.hints.use_rdma            =
-        (uint32_t)((size_t)para_nobit.use_rdma);
-    pami_para.send.hints.use_shmem           =
-        (uint32_t)((size_t)para_nobit.use_shmem);
-    pami_para.send.hints.multicontext        =
-        (uint32_t)((size_t)para_nobit.multicontext);
-
-    pami_para.send.dest = (pami_endpoint_t)((size_t)para_nobit.dest);
-
-    pami_para.events.cookie = para_nobit.cookie;
-    pami_para.events.local_fn = (pami_event_function)(para_nobit.local_fn);
-    pami_para.events.remote_fn = (pami_event_function)(para_nobit.remote_fn);
-
-    *result = PAMI_Send(*context, &pami_para);
+    *result = PAMI_Send(*context, parameters);
 }
 
 extern "C" void pami_send_immediate (pami_context_t*         context,
@@ -824,10 +638,12 @@ extern "C" void pami_extension_function (pami_extension_t   extension,
 extern "C" pami_result_t PAMI_Address (void* addr_in, size_t* addr_out)
 {
     pami_result_t result = PAMI_SUCCESS;
-    if (addr_in == NULL || addr_out == NULL)
+    if (addr_in == NULL || addr_out == NULL) {
+        *addr_out = NULL;
         result = PAMI_INVAL;
-    else
+    } else {
         *addr_out = (size_t)addr_in;
+    }
 
     return result;
 }
@@ -839,12 +655,6 @@ extern "C" void pami_address (void* addr_in, size_t* addr_out, pami_result_t* re
 
 // include function translations
 // pami_*lowercase* <-- PAMI_*UPPERCASE*
-//
-//
-// Temporary! Move this someplace else!
-//
-//
-//#include "api/c/pami_ext_impl.h"
 
 #define ALIAS(FUNC2,FUNC,PARAMS) \
     void PAMI_##FUNC PARAMS __attribute__ ((weak,alias("pami_"#FUNC)));
