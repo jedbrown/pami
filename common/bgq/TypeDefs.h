@@ -193,9 +193,11 @@ namespace PAMI
   Shmem_NBCollManager > Shmem_PGASCollreg;
 
 
-  typedef PAMI::Barrier::IndirectCounter<PAMI::Counter::BGQ::IndirectL2> Barrier_Type;
+  //typedef PAMI::Barrier::IndirectCounter<PAMI::Counter::BGQ::IndirectL2> Barrier_Type;
   //typedef PAMI::Barrier::Indirect<PAMI::Barrier::Counter<PAMI::Counter::BGQ::L2> > Barrier_Type;
 
+#include "components/atomic/bgq/L2Barrier.h"
+  typedef PAMI::Barrier::BGQ::L2NodeProcBarrier Barrier_Type;
   typedef PAMI::Device::AtomicBarrierMdl<Barrier_Type>                           ShmemMsyncModel;
 
 #ifdef ENABLE_NEW_SHMEM
