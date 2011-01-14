@@ -26,14 +26,14 @@
 
 #undef TRACE_ERR
 #ifndef TRACE_ERR
-#define TRACE_ERR(x)  fprintf x
+#define TRACE_ERR(x) // fprintf x
 #endif
 #define FIFO_FULL 0x8000000000000000
 namespace PAMI
 {
   namespace Fifo
   {
-    template < class T_Packet, class T_Atomic, unsigned T_Size = 16 >
+    template < class T_Packet, class T_Atomic, unsigned T_Size = 128 >
       class WrapFifo : public PAMI::Fifo::Interface::Fifo <PAMI::Fifo::WrapFifo <T_Packet, T_Atomic,T_Size> >
     {
       public:
@@ -194,12 +194,9 @@ namespace PAMI
 
             if (likely (tail != FIFO_FULL))
             {
-              mem_barrier();
-
+              //mem_sync();
               size_t  index =	tail & WrapFifo::mask;
               //dumpPacket(index);
-              _packet[index].set_seq_num(_seq_num++); 
-              printf("producing packet, idx:%zd with seq_num:%d\n",index, _seq_num);
               packet.produce (_packet[index]);
               //dumpPacket(index);
 
@@ -214,7 +211,8 @@ namespace PAMI
               // any pending writes before the barrier, which could result in the
               // receiving process reading the 'active' attribute and then reading
               // stale packet header/payload data.
-              mem_barrier();
+              //mem_barrier();
+              mem_sync();
               _active[index] = 1;
               //mem_barrier();
 
@@ -246,16 +244,16 @@ namespace PAMI
             {
               //TRACE_ERR((stderr, "   WrapFifo::consumePacket_impl(T_Consumer &), head = %zu, index = %zu (WrapFifo::mask = %p)\n", head, index, (void *)WrapFifo::mask));
               //dumpPacket(head);
-              TRACE_ERR((stderr,"got packet idx:%zd, seq_num:%u\n", index, (unsigned)_packet[index].get_seq_num()));
               packet.consume (_packet[index]);
               //dumpPacket(head);
 
               _active[index] = 0;
               *(this->_head) = head + 1;
-              mem_barrier();
+             // mem_barrier();
 
               //increment the upper bound everytime a packet is consumed..ok to be incremented in chunks
               this->_bounded_counter.fetch_and_inc_upper_bound();
+              //mem_sync();
 #if 0
               // If this packet is the last packet in the fifo, reset the tail
               // to the start of the fifo.

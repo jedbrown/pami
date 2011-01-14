@@ -56,18 +56,14 @@ namespace PAMI
           {
 
             uint64_t val =  L2_AtomicLoadIncrement(_counter+2);
-            printf("upper_bound:%lld\n", (unsigned long long) val);
             return (size_t) val;
-            //return L2_AtomicLoadIncrement(_counter+2);
           }
 
           inline size_t fetch_and_inc_bounded()
           {
-          
+
             uint64_t val =  L2_AtomicLoadIncrementBounded(_counter+1);
-            //printf("tail:%lld\n", (unsigned long long) val);
             return (size_t) val;
-            //return L2_AtomicLoadIncrementBounded(_counter+1);
           }
 
         protected:
@@ -88,14 +84,13 @@ namespace PAMI
             {
               pami_result_t rc;
               rc = __global.l2atomicFactory.__nodescoped_mm.memalign ((void **) & _counter,
-                  sizeof(*_counter),
+                  32,                                                                      
                   3*sizeof(*_counter),
                   key,
                   IndirectL2Bounded::counter_initialize,
                   NULL);
 
               PAMI_assertf (rc == PAMI_SUCCESS, "Failed to allocate memory from memory manager (%p) with key (\"%s\")", mm, key);
-              fprintf(stderr,"counter:%p\n", _counter);
             };
 
 
