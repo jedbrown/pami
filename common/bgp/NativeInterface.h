@@ -212,8 +212,6 @@ namespace PAMI
     pami_multicast_t  m     = *mcast;
 
     m.dispatch =  _dispatch; // \todo ? Not really used in C++ objects?
-    m.client   =  _clientid;   // \todo ? Why doesn't caller set this?
-    m.context  =  _contextid;// \todo ? Why doesn't caller set this?
 
     m.cb_done.function     =  ni_client_done;
     m.cb_done.clientdata   =  req;
@@ -233,9 +231,6 @@ namespace PAMI
 
     pami_multisync_t  m     = *msync;
 
-    m.client   =  _clientid;
-    m.context  =  _contextid;
-
     m.cb_done.function     =  ni_client_done;
     m.cb_done.clientdata   =  req;
     _msync.postMultisync(req->_state._msync, &m);
@@ -253,9 +248,6 @@ namespace PAMI
     DO_DEBUG((templateName<T_Mcomb>()));
 
     pami_multicombine_t  m     = *mcomb;
-
-    m.client   =  _clientid;
-    m.context  =  _contextid;
 
     m.cb_done.function     =  ni_client_done;
     m.cb_done.clientdata   =  req;

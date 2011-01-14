@@ -95,9 +95,10 @@ protected:
         /// \param cb: A "done" callback structure to be executed
         //////////////////////////////////////////////////////////////////
         giMessage(GenericDeviceMessageQueue *GI_QS, pami_multisync_t *msync) :
-        PAMI::Device::Generic::GenericMessage(GI_QS, msync->cb_done,
-                                msync->client, msync->context)
+        PAMI::Device::Generic::GenericMessage(GI_QS, msync->cb_done, 0, 0)
         {
+          // Since the above args to the GenericMessage constructor are bogus, we shouldn't use this.
+          PAMI_abort();
         }
 
 protected:
