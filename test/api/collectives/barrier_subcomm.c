@@ -30,8 +30,17 @@ int main (int argc, char ** argv)
 
   int                  nalg;
 
+  /* \note Test environment variable" TEST_PROTOCOL={-}substring.       */
+  /* substring is used to select, or de-select (with -) test protocols */
+  unsigned selector = 1;
   char* selected = getenv("TEST_PROTOCOL");
   if(!selected) selected = "";
+  else if(selected[0]=='-') 
+  {
+      selector = 0 ;
+      ++selected;
+  }
+
 
   int rc = pami_init(&client,        /* Client             */
                      &context,       /* Context            */
@@ -193,7 +202,8 @@ int main (int argc, char ** argv)
           printf("# Barrier Test -- root = %d, protocol: %s\n", root, always_works_md[nalg].name);
           printf("# -------------------------------------------------------------------\n");
         }
-        if(strncmp(always_works_md[nalg].name,selected, strlen(selected))) continue;
+        if(((strstr(always_works_md[nalg].name,selected) == NULL) && selector) ||
+           ((strstr(always_works_md[nalg].name,selected) != NULL) && !selector))  continue;
 
         if (task_id == root)
         {

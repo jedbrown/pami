@@ -134,32 +134,49 @@ int main (int argc, char ** argv)
   barrier.algorithm = bar_always_works_algo[0];
   blocking_coll(context, &barrier, &bar_poll_flag);
 
-  for (nalg = 0; nalg < bcast_num_algorithm[0]; nalg++)
+  for (nalg = 0; nalg < bcast_num_algorithm[1]; nalg++)
     {
       int         root = 0;
       broadcast.cb_done                      = cb_done;
       broadcast.cookie                       = (void*) & bcast_poll_flag;
-      broadcast.algorithm                    = bcast_always_works_algo[nalg];
+      broadcast.algorithm                    = bcast_must_query_algo[nalg];
       broadcast.cmd.xfer_broadcast.root      = root;
       broadcast.cmd.xfer_broadcast.buf       = buf;
       broadcast.cmd.xfer_broadcast.type      = PAMI_BYTE;
       broadcast.cmd.xfer_broadcast.typecount = 0;
 
-      protocolName = bcast_always_works_md[nalg].name;
+      protocolName = bcast_must_query_md[nalg].name;
+      metadata_result_t result = {0};
       if (task_id == (size_t)root)
         {
-          printf("# Broadcast Bandwidth Test -- root = %d  protocol: %s\n", root, protocolName);
+          printf("# Broadcast Bandwidth Test -- root = %d  protocol: %s, Metadata: range %zu <-> %zd, mask %#X\n", 
+                 root, protocolName,
+                 bcast_must_query_md[nalg].range_lo, bcast_must_query_md[nalg].range_hi,
+                 bcast_must_query_md[nalg].check_correct.bitmask_correct);
           printf("# Size(bytes)           cycles    bytes/sec    usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
         }
-      if(((strstr(bcast_always_works_md[nalg].name,selected) == NULL) && selector) ||
-         ((strstr(bcast_always_works_md[nalg].name,selected) != NULL) && !selector))  continue;
+      if(((strstr(bcast_must_query_md[nalg].name,selected) == NULL) && selector) ||
+         ((strstr(bcast_must_query_md[nalg].name,selected) != NULL) && !selector))  continue;
       int i, j;
 
       for (i = 1; i <= BUFSIZE; i *= 2)
         {
           long long dataSent = i;
           int          niter = NITER;
+          unsigned mustquery = bcast_must_query_md[nalg].check_correct.values.mustquery; //must query every time
+          assert(!mustquery || bcast_must_query_md[nalg].check_fn); // must have function if mustquery.
+
+          broadcast.cmd.xfer_broadcast.typecount = i;
+
+          if(bcast_must_query_md[nalg].check_fn) 
+              result = bcast_must_query_md[nalg].check_fn(&broadcast);
+          if(result.bitmask) continue;
+
+          if(!((dataSent <= bcast_must_query_md[nalg].range_hi) &&
+               (dataSent >= bcast_must_query_md[nalg].range_lo)))
+              continue;
+
 #ifdef CHECK_DATA
 
           if (task_id == (size_t)root)
@@ -173,7 +190,11 @@ int main (int argc, char ** argv)
 
           for (j = 0; j < niter; j++)
             {
-              broadcast.cmd.xfer_broadcast.typecount = i;
+              if(mustquery) // must query every time
+              {
+                  result = bcast_must_query_md[nalg].check_fn(&broadcast);
+                  if(result.bitmask) continue;
+              }
               blocking_coll (context, &broadcast, &bcast_poll_flag);
             }
 

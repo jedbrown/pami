@@ -79,8 +79,17 @@ int main(int argc, char*argv[])
   char                 buf[BUFSIZE];
   char                 rbuf[BUFSIZE];
 
+  /* \note Test environment variable" TEST_PROTOCOL={-}substring.       */
+  /* substring is used to select, or de-select (with -) test protocols */
+  unsigned selector = 1;
   char* selected = getenv("TEST_PROTOCOL");
   if(!selected) selected = "";
+  else if(selected[0]=='-') 
+  {
+      selector = 0 ;
+      ++selected;
+  }
+
 
   /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
@@ -149,7 +158,8 @@ int main(int argc, char*argv[])
           printf("# Size(bytes)           cycles    bytes/sec    usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
         }
-      if(strncmp(ambcast_always_works_md[nalg].name,selected, strlen(selected))) continue;
+      if(((strstr(ambcast_always_works_md[nalg].name,selected) == NULL) && selector) ||
+         ((strstr(ambcast_always_works_md[nalg].name,selected) != NULL) && !selector))  continue;
 
       pami_collective_hint_t h = {0};
       pami_dispatch_callback_function fn;

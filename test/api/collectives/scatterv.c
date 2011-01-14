@@ -38,8 +38,17 @@ int main (int argc, char ** argv)
   pami_xfer_t          barrier;
   pami_xfer_t          scatterv;
 
+  /* \note Test environment variable" TEST_PROTOCOL={-}substring.       */
+  /* substring is used to select, or de-select (with -) test protocols */
+  unsigned selector = 1;
   char* selected = getenv("TEST_PROTOCOL");
   if(!selected) selected = "";
+  else if(selected[0]=='-') 
+  {
+      selector = 0 ;
+      ++selected;
+  }
+
 
   /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
@@ -105,7 +114,8 @@ int main (int argc, char ** argv)
             printf("# Size(bytes)           cycles    bytes/sec    usec\n");
             printf("# -----------      -----------    -----------    ---------\n");
           }
-        if(strncmp(scatterv_always_works_md[nalg].name,selected, strlen(selected))) continue;
+        if(((strstr(scatterv_always_works_md[nalg].name,selected) == NULL) && selector) ||
+           ((strstr(scatterv_always_works_md[nalg].name,selected) != NULL) && !selector))  continue;
 
         scatterv.cb_done                       = cb_done;
         scatterv.cookie                        = (void*) & scatterv_poll_flag;

@@ -120,8 +120,17 @@ int main(int argc, char*argv[])
   size_t                 half        = num_tasks / 2;
   range     = (pami_geometry_range_t *)malloc(((num_tasks + 1) / 2) * sizeof(pami_geometry_range_t));
 
+  /* \note Test environment variable" TEST_PROTOCOL={-}substring.       */
+  /* substring is used to select, or de-select (with -) test protocols */
+  unsigned selector = 1;
   char* selected = getenv("TEST_PROTOCOL");
   if(!selected) selected = "";
+  else if(selected[0]=='-') 
+  {
+      selector = 0 ;
+      ++selected;
+  }
+
 
   char *method = getenv("TEST_SPLIT_METHOD");
 
@@ -261,7 +270,8 @@ int main(int argc, char*argv[])
           printf("# Size(bytes)           cycles    bytes/sec    usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
         }
-      if(strncmp(newbcast_md[0].name,selected, strlen(selected))) continue;
+      if(((strstr(newbcast_md[0].name,selected) == NULL) && selector) ||
+         ((strstr(newbcast_md[0].name,selected) != NULL) && !selector))  continue;
 
       if (set[k])
         {

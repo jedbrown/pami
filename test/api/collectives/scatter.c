@@ -38,8 +38,17 @@ int main (int argc, char ** argv)
 
   double               ti, tf, usec;
 
+  /* \note Test environment variable" TEST_PROTOCOL={-}substring.       */
+  /* substring is used to select, or de-select (with -) test protocols */
+  unsigned selector = 1;
   char* selected = getenv("TEST_PROTOCOL");
   if(!selected) selected = "";
+  else if(selected[0]=='-') 
+  {
+      selector = 0 ;
+      ++selected;
+  }
+
 
   /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
@@ -103,7 +112,8 @@ int main (int argc, char ** argv)
             printf("# Size(bytes)           cycles    bytes/sec    usec\n");
             printf("# -----------      -----------    -----------    ---------\n");
           }
-        if(strncmp(scatter_always_works_md[nalg].name,selected, strlen(selected))) continue;
+        if(((strstr(scatter_always_works_md[nalg].name,selected) == NULL) && selector) ||
+           ((strstr(scatter_always_works_md[nalg].name,selected) != NULL) && !selector))  continue;
 
         scatter.cb_done    = cb_done;
         scatter.cookie     = (void*) & scatter_poll_flag;

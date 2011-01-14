@@ -35,9 +35,9 @@ void initialize_sndbuf (void *buf, int bytes, int root)
   unsigned char *cbuf = (unsigned char *)  buf;
 
   for (; i; i--)
-    {
-      cbuf[i-1] = (c++);
-    }
+  {
+    cbuf[i-1] = (c++);
+  }
 }
 
 int check_rcvbuf (void *buf, int bytes, int root)
@@ -47,15 +47,15 @@ int check_rcvbuf (void *buf, int bytes, int root)
   unsigned char *cbuf = (unsigned char *)  buf;
 
   for (; i; i--)
+  {
+    if (cbuf[i-1] != c)
     {
-      if (cbuf[i-1] != c)
-        {
-          fprintf(stderr, "%s:Check(%d) failed <%p>buf[%d]=%.2u != %.2u \n", protocolName, bytes, buf, i - 1, cbuf[i-1], c);
-          return -1;
-        }
-
-      c++;
+      fprintf(stderr, "%s:Check(%d) failed <%p>buf[%d]=%.2u != %.2u \n", protocolName, bytes, buf, i - 1, cbuf[i-1], c);
+      return -1;
     }
+
+    c++;
+  }
 
   return 0;
 }
@@ -157,76 +157,85 @@ int main(int argc, char*argv[])
   size_t                 half        = num_tasks / 2;
   range     = (pami_geometry_range_t *)malloc(((num_tasks + 1) / 2) * sizeof(pami_geometry_range_t));
 
+  /* \note Test environment variable" TEST_PROTOCOL={-}substring.       */
+  /* substring is used to select, or de-select (with -) test protocols */
+  unsigned selector = 1;
   char* selected = getenv("TEST_PROTOCOL");
-  if(!selected) selected = "";
+  if (!selected) selected = "";
+  else if (selected[0]=='-')
+  {
+    selector = 0 ;
+    ++selected;
+  }
+
 
   char *method = getenv("TEST_SPLIT_METHOD");
   if (!(method && !strcmp(method, "1")))
+  {
+    if (task_id >= 0 && task_id <= half - 1)
     {
-      if (task_id >= 0 && task_id <= half - 1)
-        {
-          range[0].lo = 0;
-          range[0].hi = half - 1;
-          set[0]   = 1;
-          set[1]   = 0;
-          id       = 1;
-          root     = 0;
-        }
-      else
-        {
-          range[0].lo = half;
-          range[0].hi = num_tasks - 1;
-          set[0]   = 0;
-          set[1]   = 1;
-          id       = 2;
-          root     = half;
-        }
-
-      rangecount = 1;
+      range[0].lo = 0;
+      range[0].hi = half - 1;
+      set[0]   = 1;
+      set[1]   = 0;
+      id       = 1;
+      root     = 0;
     }
+    else
+    {
+      range[0].lo = half;
+      range[0].hi = num_tasks - 1;
+      set[0]   = 0;
+      set[1]   = 1;
+      id       = 2;
+      root     = half;
+    }
+
+    rangecount = 1;
+  }
   else
+  {
+    int i = 0;
+    int iter = 0;;
+
+    if ((task_id % 2) == 0)
     {
-      int i = 0;
-      int iter = 0;;
-
-      if ((task_id % 2) == 0)
+      for (i = 0; i < num_tasks; i++)
+      {
+        if ((i % 2) == 0)
         {
-          for (i = 0; i < num_tasks; i++)
-            {
-              if ((i % 2) == 0)
-                {
-                  range[iter].lo = i;
-                  range[iter].hi = i;
-                  iter++;
-                }
-            }
-
-          set[0]   = 1;
-          set[1]   = 0;
-          id       = 2;
-          root     = 0;
-          rangecount = iter;
+          range[iter].lo = i;
+          range[iter].hi = i;
+          iter++;
         }
-      else
-        {
-          for (i = 0; i < num_tasks; i++)
-            {
-              if ((i % 2) != 0)
-                {
-                  range[iter].lo = i;
-                  range[iter].hi = i;
-                  iter++;
-                }
-            }
+      }
 
-          set[0]   = 0;
-          set[1]   = 1;
-          id       = 2;
-          root     = 1;
-          rangecount = iter;
-        }
-
+      set[0]   = 1;
+      set[1]   = 0;
+      id       = 2;
+      root     = 0;
+      rangecount = iter;
     }
+    else
+    {
+      for (i = 0; i < num_tasks; i++)
+      {
+        if ((i % 2) != 0)
+        {
+          range[iter].lo = i;
+          range[iter].hi = i;
+          iter++;
+        }
+      }
+
+      set[0]   = 0;
+      set[1]   = 1;
+      id       = 2;
+      root     = 1;
+      rangecount = iter;
+    }
+
+  }
 
   rc = create_and_query_geometry(client,
                                  context,
@@ -271,83 +280,84 @@ int main(int argc, char*argv[])
   int nalg;
 
   for (nalg = 0; nalg < newbcast_num_algo[0]; nalg++)
+  {
+
+    /*  Set up sub geometry bcast */
+    newbcast.cb_done                      = cb_done;
+    newbcast.cookie                       = (void*) & bcast_poll_flag;
+    newbcast.algorithm                    = newbcast_algo[nalg];
+    newbcast.cmd.xfer_broadcast.root      = root;
+    newbcast.cmd.xfer_broadcast.buf       = buf;
+    newbcast.cmd.xfer_broadcast.type      = PAMI_BYTE;
+    newbcast.cmd.xfer_broadcast.typecount = 0;
+
+
+    int             i, j, k;
+
+    protocolName = newbcast_md[nalg].name;
+
+    for (k = 1; k >= 0; k--)
     {
-
-      /*  Set up sub geometry bcast */
-      newbcast.cb_done                      = cb_done;
-      newbcast.cookie                       = (void*) & bcast_poll_flag;
-      newbcast.algorithm                    = newbcast_algo[nalg];
-      newbcast.cmd.xfer_broadcast.root      = root;
-      newbcast.cmd.xfer_broadcast.buf       = buf;
-      newbcast.cmd.xfer_broadcast.type      = PAMI_BYTE;
-      newbcast.cmd.xfer_broadcast.typecount = 0;
-
-
-      int             i, j, k;
-
-      protocolName = newbcast_md[nalg].name;
-
-      for (k = 1; k >= 0; k--)
+      if (set[k])
+      {
+        if (task_id == root)
         {
-          if (set[k])
-            {
-              if (task_id == root)
-                {
-                  printf("# Broadcast Bandwidth Test -- root = %d  protocol: %s\n", root, newbcast_md[nalg].name);
-                  printf("# Size(bytes)           cycles    bytes/sec    usec\n");
-                  printf("# -----------      -----------    -----------    ---------\n");
-                }
-
-              fflush(stdout);
-              if(strncmp(newbcast_md[nalg].name,selected, strlen(selected))) continue;
-
-	      blocking_coll(context, &newbarrier, &newbar_poll_flag);
-
-              for (i = 1; i <= BUFSIZE; i *= 2)
-                {
-                  long long dataSent = i;
-                  int          niter = 100;
-#ifdef CHECK_DATA
-		  
-		  if (task_id == (size_t)root)
-		    initialize_sndbuf (buf, i, root);
-		  else
-		    memset(buf, 0xFF, i);	      
-#endif
-                  blocking_coll(context, &newbarrier, &newbar_poll_flag);
-                  ti = timer();
-
-                  for (j = 0; j < niter; j++)
-                    {
-                      newbcast.cmd.xfer_broadcast.root      = root;
-                      newbcast.cmd.xfer_broadcast.buf       = buf;
-                      newbcast.cmd.xfer_broadcast.typecount = i;
-                      blocking_coll(context, &newbcast, &bcast_poll_flag);
-                    }
-
-                  tf = timer();
-                  blocking_coll(context, &newbarrier, &newbar_poll_flag);
-#ifdef CHECK_DATA
-		  check_rcvbuf (buf, i, root);
-#endif
-                  usec = (tf - ti) / (double)niter;
-
-                  if (task_id == root)
-                    {
-                      printf("  %11lld %16lld %14.1f %12.2f\n",
-                             dataSent,
-                             0LL,
-                             (double)1e6*(double)dataSent / (double)usec,
-                             usec);
-                      fflush(stdout);
-                    }
-                }
-            }
-
-          blocking_coll(context, &newbarrier, &newbar_poll_flag);
-          fflush(stderr);
+          printf("# Broadcast Bandwidth Test -- root = %d  protocol: %s\n", root, newbcast_md[nalg].name);
+          printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+          printf("# -----------      -----------    -----------    ---------\n");
         }
+
+        fflush(stdout);
+        if (((strstr(newbcast_md[nalg].name,selected) == NULL) && selector) ||
+            ((strstr(newbcast_md[nalg].name,selected) != NULL) && !selector))  continue;
+
+        blocking_coll(context, &newbarrier, &newbar_poll_flag);
+
+        for (i = 1; i <= BUFSIZE; i *= 2)
+        {
+          long long dataSent = i;
+          int          niter = 100;
+#ifdef CHECK_DATA
+
+          if (task_id == (size_t)root)
+            initialize_sndbuf (buf, i, root);
+          else
+            memset(buf, 0xFF, i);       
+#endif
+          blocking_coll(context, &newbarrier, &newbar_poll_flag);
+          ti = timer();
+
+          for (j = 0; j < niter; j++)
+          {
+            newbcast.cmd.xfer_broadcast.root      = root;
+            newbcast.cmd.xfer_broadcast.buf       = buf;
+            newbcast.cmd.xfer_broadcast.typecount = i;
+            blocking_coll(context, &newbcast, &bcast_poll_flag);
+          }
+
+          tf = timer();
+          blocking_coll(context, &newbarrier, &newbar_poll_flag);
+#ifdef CHECK_DATA
+          check_rcvbuf (buf, i, root);
+#endif
+          usec = (tf - ti) / (double)niter;
+
+          if (task_id == root)
+          {
+            printf("  %11lld %16lld %14.1f %12.2f\n",
+                   dataSent,
+                   0LL,
+                   (double)1e6*(double)dataSent / (double)usec,
+                   usec);
+            fflush(stdout);
+          }
+        }
+      }
+
+      blocking_coll(context, &newbarrier, &newbar_poll_flag);
+      fflush(stderr);
     }
+  }
 
   blocking_coll(context, &barrier, &bar_poll_flag);
 

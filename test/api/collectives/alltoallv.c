@@ -95,8 +95,17 @@ int main(int argc, char*argv[])
   pami_xfer_t          barrier;
   pami_xfer_t          alltoallv;
 
+  /* \note Test environment variable" TEST_PROTOCOL={-}substring.       */
+  /* substring is used to select, or de-select (with -) test protocols */
+  unsigned selector = 1;
   char* selected = getenv("TEST_PROTOCOL");
   if(!selected) selected = "";
+  else if(selected[0]=='-') 
+  {
+      selector = 0 ;
+      ++selected;
+  }
+
 
   /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
@@ -164,7 +173,8 @@ int main(int argc, char*argv[])
             printf("# Size(bytes)           cycles    bytes/sec      usec\n");
             printf("# -----------      -----------    -----------    ---------\n");
           }
-        if(strncmp(alltoallv_always_works_md[nalg].name,selected, strlen(selected))) continue;
+        if(((strstr(alltoallv_always_works_md[nalg].name,selected) == NULL) && selector) ||
+           ((strstr(alltoallv_always_works_md[nalg].name,selected) != NULL) && !selector))  continue;
 
         alltoallv.algorithm  = alltoallv_always_works_algo[nalg];
 

@@ -291,8 +291,17 @@ int main(int argc, char*argv[])
 
   int op, dt;
 
+  /* \note Test environment variable" TEST_PROTOCOL={-}substring.       */
+  /* substring is used to select, or de-select (with -) test protocols */
+  unsigned selector = 1;
   char* selected = getenv("TEST_PROTOCOL");
   if(!selected) selected = "";
+  else if(selected[0]=='-') 
+  {
+      selector = 0 ;
+      ++selected;
+  }
+
 
   /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
@@ -409,7 +418,8 @@ int main(int argc, char*argv[])
           printf("# Size(bytes)           cycles    bytes/sec    usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
         }
-      if(strncmp(allreduce_must_query_md[nalg].name,selected, strlen(selected))) continue;
+      if(((strstr(allreduce_must_query_md[nalg].name,selected) == NULL) && selector) ||
+         ((strstr(allreduce_must_query_md[nalg].name,selected) != NULL) && !selector))  continue;
 
       barrier.cb_done   = cb_done;
       barrier.cookie    = (void*) & bar_poll_flag;
