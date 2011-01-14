@@ -126,10 +126,11 @@ public:
         static const size_t sizeof_msg = sizeof(AtomicBarrierMsg<T_Barrier>);
 
         AtomicBarrierMdl(AtomicBarrierDev &device, pami_result_t &status) :
-          PAMI::Device::Interface::MultisyncModel<AtomicBarrierMdl<T_Barrier>,
+        PAMI::Device::Interface::MultisyncModel<AtomicBarrierMdl<T_Barrier>,
                         AtomicBarrierDev,sizeof(AtomicBarrierMsg<T_Barrier>) >(device, status),
 	_gd(&device),
-  _barrier (__global.topology_local.size(), (__global.topology_local.index2Rank(0) == __global.mapping.task()))
+	_barrier (__global.topology_local.size(),
+		(__global.topology_local.index2Rank(0) == __global.mapping.task()))
         {
 		char mmkey[PAMI::Memory::MMKEYSIZE];
 		sprintf(mmkey, "/pami-AtomicBarrierMdl-%zd-%zd",
@@ -146,10 +147,11 @@ public:
 			return;
 		}
 
-    COMPILE_TIME_ASSERT(T_Barrier::indirect);
-      _barrier.init(_gd->getMM(), mmkey);//, peers, (peer0 == me));
+		COMPILE_TIME_ASSERT(T_Barrier::indirect);
+		_barrier.init(_gd->getMM(), mmkey);
 
-		_queue.__init(_gd->clientId(), _gd->contextId(), NULL, _gd->getContext(), _gd->getMM(), _gd->getAllDevs());
+		_queue.__init(_gd->clientId(), _gd->contextId(), NULL, _gd->getContext(),
+						_gd->getMM(), _gd->getAllDevs());
         }
 
 	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
