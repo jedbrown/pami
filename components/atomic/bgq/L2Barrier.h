@@ -236,22 +236,28 @@ namespace PAMI
       }; // class    PAMI::Barrier::BGQ::L2NodeCoreBarrier
 
       class L2NodeProcBarrier :
-          public PAMI::Barrier::Interface<L2NodeCoreBarrier>,
-          public PAMI::Atomic::Indirect<L2NodeCoreBarrier>,
+          public PAMI::Barrier::Interface<L2NodeProcBarrier>,
+          public PAMI::Atomic::Indirect<L2NodeProcBarrier>,
           public _L2Barrier
       {
         public:
 
-          friend class PAMI::Barrier::Interface<L2NodeCoreBarrier>;
-          friend class PAMI::Atomic::Indirect<L2NodeCoreBarrier>;
+          friend class PAMI::Barrier::Interface<L2NodeProcBarrier>;
+          friend class PAMI::Atomic::Indirect<L2NodeProcBarrier>;
 
           static const bool indirect = true;
 
           inline L2NodeProcBarrier(size_t participants, bool master) :
-            PAMI::Barrier::Interface<L2NodeCoreBarrier> (0, false),
-            PAMI::Atomic::Indirect<L2NodeCoreBarrier> (),
+            PAMI::Barrier::Interface<L2NodeProcBarrier> (0, false),
+            PAMI::Atomic::Indirect<L2NodeProcBarrier> (),
             _L2Barrier ()
-          {};
+          {
+            	_barrier._coreshift = __global.l2atomicFactory.coreShift();
+		_barrier._nparties = participants;
+		_barrier._master = master ?
+			Kernel_PhysicalProcessorID() >> __global.l2atomicFactory.coreShift() :
+			(size_t)-1;
+	  }
 
           inline ~L2NodeProcBarrier() {};
 
@@ -276,9 +282,6 @@ namespace PAMI
             PAMI_assertf(rc == PAMI_SUCCESS, "Failed to get L2 Atomic NodeProcBarrier");
 
             // PAMI_assert(m .iff. me == masterProc());
-            _barrier._master = __global.l2atomicFactory.coreXlat(__global.l2atomicFactory.masterProc()) >> __global.l2atomicFactory.coreShift();
-            _barrier._coreshift = __global.l2atomicFactory.coreShift();
-            _barrier._nparties = __global.l2atomicFactory.numProc();
             _active = false;
             _initialized = true;
           }
