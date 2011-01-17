@@ -38,7 +38,7 @@ namespace PAMI
 
 
       template <class T_Device, class T_Desc>
-        class BaseMessage 
+        class BaseMessage : public PAMI::Queue::Element
       {
         public:
           static pami_result_t __advance (pami_context_t context, void * cookie)
@@ -51,13 +51,14 @@ namespace PAMI
           virtual pami_result_t advance() = 0;
 
         public:
-          inline BaseMessage () 
+          inline BaseMessage (): PAMI::Queue::Element() 
 
         {
           TRACE_ERR((stderr, "<> BaseMessage::BaseMessage()\n"));
         };
 
-          inline BaseMessage (pami_context_t context, T_Desc* my_desc, pami_work_function work_fn, void* cookie, unsigned local_rank) : _local_rank(local_rank), _bytes_consumed(0), _context(context), _my_desc(my_desc), _work(work_fn, cookie)
+          inline BaseMessage (pami_context_t context, T_Desc* my_desc, pami_work_function work_fn, void* cookie, unsigned local_rank) : PAMI::Queue::Element(),
+_local_rank(local_rank), _bytes_consumed(0), _context(context), _my_desc(my_desc), _work(work_fn, cookie)
 
         {
           TRACE_ERR((stderr, "<> BaseMessage::BaseMessage()\n"));

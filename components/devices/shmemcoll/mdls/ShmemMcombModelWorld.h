@@ -140,8 +140,8 @@ namespace PAMI
               my_desc->set_mcomb_params(mcomb);
               void* src_buf = ((PAMI::PipeWorkQueue *)mcomb->data)->bufferToConsume();
               void* dst_buf = ((PAMI::PipeWorkQueue *)mcomb->results)->bufferToProduce();
-              TRACE_ERR((stderr, "Taking shaddr path local_root%u my_local_rank:%u my_va_src_buf:%p my_va_dst_buf:%p\n",
-                    local_root, _local_rank, src_buf, dst_buf));
+              //TRACE_ERR((stderr, "Taking shaddr path local_root%u my_local_rank:%u my_va_src_buf:%p my_va_dst_buf:%p\n",
+              //      local_root, _local_rank, src_buf, dst_buf));
 
               Memregion memreg_src;
               Memregion memreg_dst;
@@ -172,7 +172,7 @@ namespace PAMI
               mcomb_control->chunks_done[_local_rank] = 0;
               mcomb_control->chunks_copied[_local_rank] = 0;
               mcomb_control->current_iter=0;
-              TRACE_ERR((stderr, "[%d]setting my chunks_done:%p to 0\n", _local_rank, &mcomb_control->chunks_done[_peer]));
+              //TRACE_ERR((stderr, "[%d]setting my chunks_done:%p to 0\n", _local_rank, &mcomb_control->chunks_done[_peer]));
               my_desc->set_my_state(Shmem::INIT);
               //src->consumeBytes(bytes);
 

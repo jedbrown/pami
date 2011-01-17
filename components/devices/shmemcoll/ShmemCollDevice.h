@@ -66,6 +66,9 @@ namespace PAMI
     template < class T_Atomic >
       class ShmemCollDevice : public Interface::BaseDevice< ShmemCollDevice<T_Atomic> >
     {
+
+      typedef Shmem::BaseMessage<ShmemCollDevice<T_Atomic>, Shmem::ShmemCollDesc<T_Atomic> > BaseMessage;
+
       protected:
 
       public:
@@ -141,8 +144,7 @@ namespace PAMI
           _ncontexts (ncontexts),
           _progress (progress),
           _local_progress_device (&(Generic::Device::Factory::getDevice (progress, 0, contextid))),
-          _desc_fifo(mm, clientid, contextid),
-          _adv_obj(NULL)
+          _desc_fifo(mm, clientid, contextid)//, _adv_obj(NULL)
       {
         TRACE_ERR((stderr, "ShmemCollDevice() constructor\n"));
 
@@ -212,8 +214,13 @@ namespace PAMI
         //inline void post_obj(Shmem::ShortMcombMessage<ShmemCollDevice<T_Atomic>, Shmem::ShmemCollDesc<T_Atomic> > *obj){_adv_obj = obj;};
         /*Shmem::ShortMcstMessage<ShmemCollDevice<T_Atomic>, Shmem::ShmemCollDesc<T_Atomic> > *_adv_obj;
         inline void post_obj(Shmem::ShortMcstMessage<ShmemCollDevice<T_Atomic>, Shmem::ShmemCollDesc<T_Atomic> > *obj){_adv_obj = obj;};*/
-        Shmem::BaseMessage<ShmemCollDevice<T_Atomic>, Shmem::ShmemCollDesc<T_Atomic> > *_adv_obj;
-        inline void post_obj(Shmem::BaseMessage<ShmemCollDevice<T_Atomic>, Shmem::ShmemCollDesc<T_Atomic> > *obj){_adv_obj = obj;};
+        /*Shmem::BaseMessage<ShmemCollDevice<T_Atomic>, Shmem::ShmemCollDesc<T_Atomic> > *_adv_obj;
+        inline void post_obj(Shmem::BaseMessage<ShmemCollDevice<T_Atomic>, Shmem::ShmemCollDesc<T_Atomic> > *obj){_adv_obj = obj;};*/
+
+        PAMI::Queue     _collectiveQ;
+        inline void post_obj(Shmem::BaseMessage<ShmemCollDevice<T_Atomic>, Shmem::ShmemCollDesc<T_Atomic> > *obj)
+            {_collectiveQ.enqueue(obj);}
+	PAMI::Queue::Iterator _Iter;
 
         match_dispatch_t  _dispatch[MATCH_DISPATCH_SIZE];
 
@@ -271,13 +278,24 @@ namespace PAMI
       {
         size_t events = 0;
   
-        pami_result_t res = PAMI_EAGAIN;
+        /*pami_result_t res = PAMI_EAGAIN;
         if (_adv_obj != NULL)
         {
           res = _adv_obj->__advance(_context, (void*)_adv_obj);
           if (res == PAMI_SUCCESS) _adv_obj = NULL;
-        }
+        }*/
 
+        pami_result_t res;
+        BaseMessage *msg;
+        _collectiveQ.iter_begin(&_Iter);
+        for (; _collectiveQ.iter_check(&_Iter); _collectiveQ.iter_end(&_Iter)) {
+          msg = (BaseMessage *)_collectiveQ.iter_current(&_Iter);
+          res = msg->__advance(_context,(void*)msg);
+          if (res != PAMI_EAGAIN){
+            _collectiveQ.iter_remove(&_Iter);
+            continue;
+          }
+        }
 
         /* Releasing done descriptors for comm world communicators */
         if (!_desc_fifo.is_empty())
