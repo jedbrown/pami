@@ -84,7 +84,7 @@ protected:
 
         DECL_ADVANCE_ROUTINE(advanceThread,AtomicBarrierMsg<T_Barrier>,AtomicBarrierThr);
         inline pami_result_t __advanceThread(AtomicBarrierThr *thr) {
-                for (int x = 0; x < 128; ++x) {
+                for (int x = 0; x < 32; ++x) {
                         if (_barrier->poll() == false) {
                                 _barrier->end();
                                 setStatus(PAMI::Device::Done);
@@ -194,7 +194,7 @@ inline pami_result_t PAMI::Device::AtomicBarrierMdl<T_Barrier>::postMultisync_im
                                                                                    void *devinfo) {
         _barrier.begin();
         // See if we can complete the barrier immediately...
-        for (int x = 0; x < 128; ++x) {
+        for (int x = 0; x < 32; ++x) {
                 if (_barrier.poll() == false) {
                         _barrier.end();
                         if (msync->cb_done.function) {
