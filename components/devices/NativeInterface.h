@@ -257,7 +257,7 @@ namespace PAMI
                                                                                                            pami_multisync_t *msync,
                                                                                                            void             *devinfo)
     {
-      return _msync.postMultisync_impl(state, _clientid, _contextd, msync, devinfo);
+      return _msync.postMultisync_impl(state, _clientid, _contextid, msync, devinfo);
     }
 
     template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, int T_Semantics>
