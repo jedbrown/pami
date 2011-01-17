@@ -16,6 +16,7 @@
 
 #include "algorithms/connmgr/SimpleConnMgr.h"
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
+#include "algorithms/protocols/AllSidedCollectiveProtocolFactoryT.h"
 #include "algorithms/executor/Barrier.h"
 
 extern void registerunexpbarrier(pami_context_t context,
