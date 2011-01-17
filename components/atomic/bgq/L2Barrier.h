@@ -278,7 +278,8 @@ namespace PAMI
             // and only one core per process will
             // participate.
 
-            pami_result_t rc = _barrier.__init(mm, key);
+            pami_result_t rc;
+	    rc = _barrier.__init(mm, key);
             PAMI_assertf(rc == PAMI_SUCCESS, "Failed to get L2 Atomic NodeProcBarrier");
 
             // PAMI_assert(m .iff. me == masterProc());
