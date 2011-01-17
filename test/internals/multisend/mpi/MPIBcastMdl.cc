@@ -14,6 +14,7 @@
 #endif // TEST_BUF_SIZE
 
 #define GLOBAL_BCAST_NAME	"PAMI::Device::MPIBcastMdl"
+#define GLOBAL_BCAST_MM		(&__global.mm)
 #define GLOBAL_BCAST_MODEL	PAMI::Device::MPIBcastMdl
 #define GLOBAL_BCAST_DEVICE	PAMI::Device::MPIBcastDev
 
@@ -64,8 +65,6 @@ int main(int argc, char ** argv) {
         task_id = __global.mapping.task();
         num_tasks = __global.mapping.size();
         context = NULL;
-        PAMI::Memory::GenMemoryManager mm;
-        initializeMemoryManager("mpi multicast test", 1024*1024, mm);
 #endif
         if (task_id == 0) fprintf(stderr, "Number of tasks = %zu\n", num_tasks);
         if (num_tasks < 2) {
@@ -88,8 +87,6 @@ int main(int argc, char ** argv) {
         pami_multicast_t mcast;
         memset(&mcast, 0x00, sizeof(mcast));
         // simple allreduce on the local ranks...
-        mcast.client = 0;
-        mcast.context = 0;
         mcast.roles = (unsigned)-1;
         mcast.src_participants = (pami_topology_t *)&itopo;
         mcast.dst_participants = (pami_topology_t *)&otopo;
@@ -98,7 +95,7 @@ int main(int argc, char ** argv) {
 
         const char *test = GLOBAL_BCAST_NAME;
         if (task_id == root) fprintf(stderr, "=== Testing %s...\n", test);
-        PAMI::Test::Multisend::Multicast<GLOBAL_BCAST_MODEL, GLOBAL_BCAST_DEVICE, TEST_BUF_SIZE> test1(test, mm);
+        PAMI::Test::Multisend::Multicast<GLOBAL_BCAST_MODEL, GLOBAL_BCAST_DEVICE, TEST_BUF_SIZE> test1(test, *GLOBAL_BCAST_MM);
 
         rc = test1.perform_test(task_id, num_tasks, context, &mcast);
         if (rc != PAMI_SUCCESS) {

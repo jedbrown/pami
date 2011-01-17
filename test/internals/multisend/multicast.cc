@@ -15,9 +15,11 @@
 #endif // TEST_BUF_SIZE
 
 #define LOCAL_BCAST_NAME	"PAMI::Device::LocalBcastWQModel"
+#define LOCAL_BCAST_MM		(&__global.mm)
 #define LOCAL_BCAST_MODEL	PAMI::Device::LocalBcastWQModel
 #define LOCAL_BCAST_DEVICE	PAMI::Device::LocalBcastWQDevice
 #define LOCAL_BCAST_NAME2	"PAMI::Device::WQRingBcastMdl"
+#define LOCAL_BCAST_MM2		(&__global.mm)
 #define LOCAL_BCAST_MODEL2	PAMI::Device::WQRingBcastMdl
 #define LOCAL_BCAST_DEVICE2	PAMI::Device::WQRingBcastDev
 
@@ -26,7 +28,7 @@ PAMI::Topology otopo;
 
 int main(int argc, char ** argv) {
         pami_context_t context;
-        size_t task_id;
+        pami_task_t task_id;
         size_t num_tasks;
 
 #if 0
@@ -66,8 +68,6 @@ int main(int argc, char ** argv) {
         task_id = __global.mapping.task();
         num_tasks = __global.mapping.size();
         context = (pami_context_t)1; // context must not be NULL
-        PAMI::Memory::GenMemoryManager mm;
-        initializeMemoryManager("multicast test", 512*1024, mm);
 #endif
         if (task_id == 0) fprintf(stderr, "Number of tasks = %zu\n", num_tasks);
         if (__global.topology_local.size() < 2) {
@@ -102,7 +102,7 @@ int main(int argc, char ** argv) {
 
         const char *test = LOCAL_BCAST_NAME;
         if (task_id == root) fprintf(stderr, "=== Testing %s...\n", test);
-        PAMI::Test::Multisend::Multicast<LOCAL_BCAST_MODEL, LOCAL_BCAST_DEVICE, TEST_BUF_SIZE> test1(test, mm);
+        PAMI::Test::Multisend::Multicast<LOCAL_BCAST_MODEL, LOCAL_BCAST_DEVICE, TEST_BUF_SIZE> test1(test, *LOCAL_BCAST_MM);
 
         rc = test1.perform_test(task_id, num_tasks, context, &mcast);
         if (rc != PAMI_SUCCESS) {
@@ -111,10 +111,9 @@ int main(int argc, char ** argv) {
         }
         fprintf(stderr, "PASS %s\n", test);
 
-        initializeMemoryManager("multicast test", 512*1024, mm);
         test = LOCAL_BCAST_NAME2;
         if (task_id == root) fprintf(stderr, "=== Testing %s...\n", test);
-        PAMI::Test::Multisend::Multicast<LOCAL_BCAST_MODEL2, LOCAL_BCAST_DEVICE2, TEST_BUF_SIZE> test2(test, mm);
+        PAMI::Test::Multisend::Multicast<LOCAL_BCAST_MODEL2, LOCAL_BCAST_DEVICE2, TEST_BUF_SIZE> test2(test, *LOCAL_BCAST_MM2);
 
         rc = test2.perform_test(task_id, num_tasks, context, &mcast);
         if (rc != PAMI_SUCCESS) {

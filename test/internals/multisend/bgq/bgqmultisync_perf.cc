@@ -1,20 +1,30 @@
-/**
- * \file test/internals/multisend/bgp/bgpmulticast.cc
- * \brief ???
- */
+///
+/// \file test/internals/multisend/bgq/bgqmultisync.cc
+/// \brief ???
+///
 
 #include <stdio.h>
 #include <pami.h>
 
-#include "test/internals/multisend/multicast.h"
-#include "components/devices/bgp/collective_network/CNBroadcastMsg.h"
+#include "test/internals/multisend/multisync.h"
+#include "components/devices/misc/AtomicBarrierMsg.h"
+#include "components/atomic/bgq/L2Barrier.h"
 
-#ifndef TEST_BUF_SIZE
-#define TEST_BUF_SIZE	1024
-#endif // TEST_BUF_SIZE
+#define BARRIER1_NAME	"PAMI::Barrier::BGQ::L2NodeProcBarrier"
+#define	BARRIER1_ISLOCAL	1
+#define	BARRIER1_MM		(&__global.l2atomicFactory.__nodescoped_mm)
+typedef PAMI::Barrier::BGQ::L2NodeProcBarrier Barrier_Type1;
+typedef PAMI::Device::AtomicBarrierMdl<Barrier_Type1> Barrier_Model1;
+typedef PAMI::Device::AtomicBarrierDev Barrier_Device1;
 
-PAMI::Topology itopo;
-PAMI::Topology otopo;
+#if 0 // future...
+#include "components/devices/.../GIBarrierMsg.h"
+#define BARRIER2_NAME	"PAMI::Device::BGQ::GIBarrierMdl"
+#define BARRIER2_ISLOCAL	0
+#define	BARRIER2_MM		__global.shm_mm
+typedef PAMI::Device::BGQ::GIBarrierMdl Barrier_Model2;
+typedef PAMI::Device::BGQ::GIBarrierDev Barrier_Device2;
+#endif
 
 int main(int argc, char ** argv) {
         pami_context_t context;
@@ -24,7 +34,7 @@ int main(int argc, char ** argv) {
 #if 0
         pami_client_t client;
         pami_result_t status = PAMI_ERROR;
-        status = PAMI_Client_create("multicast test", &client, NULL, 0);
+        status = PAMI_Client_create("multisync test", &client, NULL, 0);
         if (status != PAMI_SUCCESS) {
                 fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", status);
                 return 1;
@@ -39,7 +49,7 @@ int main(int argc, char ** argv) {
         pami_configuration_t configuration;
 
         configuration.name = PAMI_CLIENT_TASK_ID;
-        status = PAMI_Client_query(client, &configuration,1);
+        status = PAMI_Client_query(client, &configuration, 1);
         if (status != PAMI_SUCCESS) {
                 fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
                 return 1;
@@ -48,7 +58,7 @@ int main(int argc, char ** argv) {
         //fprintf(stderr, "My task id = %zu\n", task_id);
 
         configuration.name = PAMI_CLIENT_NUM_TASKS;
-        status = PAMI_Client_query(client, &configuration,1);
+        status = PAMI_Client_query(client, &configuration, 1);
         if (status != PAMI_SUCCESS) {
                 fprintf (stderr, "Error. Unable query configuration (%d). result = %d\n", configuration.name, status);
                 return 1;
@@ -58,45 +68,22 @@ int main(int argc, char ** argv) {
         task_id = __global.mapping.task();
         num_tasks = __global.mapping.size();
         context = (pami_context_t)1; // context must not be NULL
-        PAMI::Memory::GenMemoryManager mm;
-        initializeMemoryManager("bgp multicast test", TEST_DEF_SHMEM_SIZE, mm);
 #endif
         if (task_id == 0) fprintf(stderr, "Number of tasks = %zu\n", num_tasks);
 
 // END standard setup
 // ------------------------------------------------------------------------
 
-        pami_result_t rc;
-        // Register some multicasts, C++ style
+        // Register some multisyncs, C++ style
+#ifdef BARRIER1_NAME
+	DO_BARRIER_PERF_TEST(BARRIER1_NAME, Barrier_Model1, Barrier_Device1, BARRIER1_ISLOCAL,
+			BARRIER1_MM, task_id, num_tasks, context);
+#endif // BARRIER1_NAME
 
-        size_t root = 0;
-
-        new (&itopo) PAMI::Topology(root);
-        if (task_id != root) {
-                new (&otopo) PAMI::Topology(task_id);
-        }
-
-        pami_multicast_t mcast;
-
-        // simple allreduce on the tree... SMP mode (todo: check and error)
-        mcast.client = 0;
-        mcast.context = 0;
-        mcast.roles = (unsigned)-1;
-        mcast.src_participants = (pami_topology_t *)&itopo;
-        mcast.dst_participants = (pami_topology_t *)&otopo;
-        mcast.bytes = TEST_BUF_SIZE;
-
-        const char *test = "PAMI::Device::BGP::CNBroadcastModel";
-        if (task_id == 0) fprintf(stderr, "=== Testing %s...\n", test);
-        PAMI::Test::Multisend::Multicast<PAMI::Device::BGP::CNBroadcastModel,PAMI::Device::BGP::CNBroadcastDevice, TEST_BUF_SIZE> test1(test, mm);
-        rc = test1.perform_test(task_id, num_tasks, context, &mcast);
-
-
-        if (rc != PAMI_SUCCESS) {
-                fprintf(stderr, "Failed %s test\n", test);
-                exit(1);
-        }
-        fprintf(stderr, "PASS %s\n", test);
+#ifdef BARRIER2_NAME
+	DO_BARRIER_PERF_TEST(BARRIER2_NAME, Barrier_Model2, Barrier_Device2, BARRIER2_ISLOCAL,
+			BARRIER2_MM, task_id, num_tasks, context);
+#endif // BARRIER2_NAME
 
 // ------------------------------------------------------------------------
 #if 0

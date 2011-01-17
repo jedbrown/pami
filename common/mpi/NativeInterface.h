@@ -211,13 +211,11 @@ namespace PAMI
     pami_multicast_t  m     = *mcast;
 
     m.dispatch =  _dispatch; // \todo ? Not really used in C++ objects?
-    m.client   =  _clientid;   // \todo ? Why doesn't caller set this?
-    m.context  =  _contextid;// \todo ? Why doesn't caller set this?
 
     m.cb_done.function     =  ni_client_done;
     m.cb_done.clientdata   =  req;
 
-    return _mcast.postMulticast(req->_state._mcast, &m);
+    return _mcast.postMulticast(req->_state._mcast, _clientid, _contextid, &m, devinfo);
       }
 
 
@@ -233,12 +231,9 @@ namespace PAMI
 
         pami_multisync_t  m     = *msync;
 
-    m.client   =  _clientid;
-    m.context  =  _contextid;
-
     m.cb_done.function     =  ni_client_done;
         m.cb_done.clientdata   =  req;
-    _msync.postMultisync(req->_state._msync, &m);
+    _msync.postMultisync(req->_state._msync, _clientid, _contextid, &m, devinfo);
         return PAMI_SUCCESS;
       }
 
@@ -254,13 +249,10 @@ namespace PAMI
 
     pami_multicombine_t  m     = *mcomb;
 
-    m.client   =  _clientid;
-    m.context  =  _contextid;
-
     m.cb_done.function     =  ni_client_done;
     m.cb_done.clientdata   =  req;
 
-    return _mcomb.postMulticombine(req->_state._mcomb, &m);
+    return _mcomb.postMulticombine(req->_state._mcomb, _clientid, _contextid, &m, devinfo);
   }
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, int T_Semantics>
@@ -271,7 +263,7 @@ namespace PAMI
                this, &state, mcast));
     mcast->dispatch =  _dispatch;
 
-    return _mcast.postMulticast_impl(state, mcast);
+    return _mcast.postMulticast_impl(state, _clientid, _contextid, mcast, devinfo);
       }
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, int T_Semantics>
@@ -281,7 +273,7 @@ namespace PAMI
     TRACE_ERR((stderr, "<%p>MPINativeInterface::multisync(%p, %p)\n",
                this, &state, msync));
 
-    return _msync.postMultisync_impl(state, msync);
+    return _msync.postMultisync_impl(state, _clientid, _contextid, msync, devinfo);
   }
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, int T_Semantics>
@@ -291,7 +283,7 @@ namespace PAMI
     TRACE_ERR((stderr, "<%p>MPINativeInterface::multicombine(%p, %p)\n",
                this, &state, mcomb));
 
-    return _mcomb.postMulticombine_impl(state, mcomb);
+    return _mcomb.postMulticombine_impl(state, _clientid, _contextid, mcomb, devinfo);
   }
 
 

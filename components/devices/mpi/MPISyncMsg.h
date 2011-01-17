@@ -96,7 +96,7 @@ inline MPISyncDev & MPISyncDev::Factory::getDevice_impl(MPISyncDev *devs, size_t
       MPISyncMsg(GenericDeviceMessageQueue *Generic_QS,
                  pami_multisync_t *msync) :
       PAMI::Device::Generic::GenericMessage(Generic_QS, msync->cb_done,
-                                           msync->client, msync->context),
+                                           0,0), // hardcoded client/context ids
       _participants((PAMI::Topology *)msync->participants),
       _tag(msync->connection_id),
       _idx(0),
@@ -245,6 +245,7 @@ protected:
       }
 
       inline pami_result_t postMultisync_impl(uint8_t         (&state)[sizeof_msg],
+						size_t clientid, size_t contextid,
                                               pami_multisync_t *msync,
                                               void *devinfo = NULL);
 
@@ -252,6 +253,7 @@ protected:
     }; // class MPISyncMdl
 
     inline pami_result_t MPISyncMdl::postMultisync_impl(uint8_t         (&state)[sizeof_msg],
+						size_t clientid, size_t contextid,
                                                         pami_multisync_t *msync,
                                                         void             *devinfo)
     {

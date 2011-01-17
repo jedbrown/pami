@@ -100,8 +100,7 @@ inline MPIBcastDev & MPIBcastDev::Factory::getDevice_impl(MPIBcastDev *devs, siz
       MPIBcastMsg(GenericDeviceMessageQueue *Generic_QS,
                   pami_multicast_t *mcast) :
       PAMI::Device::Generic::GenericMessage(Generic_QS, mcast->cb_done,
-                                           0,/// \todo #warning Is mcast->client an id or pami_client_t?  GenericMessage wants an id so hardcode 0
-                                            mcast->context),
+                                           0,0), // hardcoded clientid,contextid
       _dst((PAMI::Topology *)mcast->dst_participants),
       _iwq((PAMI::PipeWorkQueue *)mcast->src),
       _rwq((PAMI::PipeWorkQueue *)mcast->dst),
@@ -351,6 +350,7 @@ inline MPIBcastDev & MPIBcastDev::Factory::getDevice_impl(MPIBcastDev *devs, siz
       }
 
       inline pami_result_t postMulticast_impl(uint8_t (&state)[sizeof_msg],
+						size_t clientid, size_t contextid,
                                               pami_multicast_t *mcast,
                                               void             *devinfo);
 
@@ -358,6 +358,7 @@ inline MPIBcastDev & MPIBcastDev::Factory::getDevice_impl(MPIBcastDev *devs, siz
     }; // class MPIBcastMdl
 
     inline pami_result_t MPIBcastMdl::postMulticast_impl(uint8_t (&state)[sizeof_msg],
+							size_t clientid, size_t contextid,
                                                          pami_multicast_t *mcast,
                                                          void *devinfo)
     {

@@ -34,35 +34,36 @@ typedef PAMI::Device::ShmemCollDevice <ShmemCollDesc> ShmemCollDevice;
 typedef PAMI::Device::Shmem::ShmemMcombModelWorld <ShmemCollDevice, ShmemCollDesc> ShmemMcombModel;
 
 #define LOCAL_REDUCE_NAME	"PAMI::Device::ShmemMcombModel"
+#define LOCAL_REDUCE_MM		(&__global.mm)
 #define LOCAL_REDUCE_MODEL ShmemMcombModel
 #define LOCAL_REDUCE_DEVICE ShmemCollDevice
 
 //#define SUM_PROCESS_SINGLE
 
-#define MEM_ALLOC_ALIGNED(x) 	{  myMemory = malloc ( TEST_BUF_SIZE + my_alignment );\
-									if ( !myMemory ) printf("malloc failed\n");\
-									x  = (double*)( ((uint64_t)myMemory + my_alignment)  & ~(my_alignment-1) );\
-								}
+#define MEM_ALLOC_ALIGNED(x) 	{	\
+	pami_result_t _rc;		\
+	_rc = __global.heap_mm->memalign((void **)&x, my_alignment, TEST_BUF_SIZE);	\
+	if (_rc != PAMI_SUCCESS) printf("malloc failed\n");\
+	}
+
 #define LOCAL_BARRIER	{ counter.fetch_and_inc();\
-							while (counter.fetch() < total_count+num_tasks){};\
-							total_count+=num_tasks;\
-						}
+			while (counter.fetch() < total_count+num_tasks){};\
+			total_count+=num_tasks;\
+			}
 
 PAMI::Topology otopo;
 
 int main(int argc, char ** argv) {
         pami_context_t context;
-        size_t task_id;
+        pami_task_t task_id;
         size_t num_tasks;
 
-		PAMI::Counter::BGQ::L2InPlaceCounter counter;
+	PAMI::Counter::BGQ::L2InPlaceCounter counter;
 
 
         task_id = __global.mapping.task();
         num_tasks = __global.mapping.size();
         context = (pami_context_t)1; // context must not be NULL
-        PAMI::Memory::GenMemoryManager mm;
-        initializeMemoryManager("multicombine test", 8192*1024, mm);
 
         if (task_id == 0) fprintf(stderr, "Number of tasks = %zu\n", num_tasks);
         if (__global.topology_local.size() < 2) {
@@ -91,7 +92,7 @@ int main(int argc, char ** argv) {
 
         const char *test = LOCAL_REDUCE_NAME;
         if (task_id == root) fprintf(stderr, "=== Testing %s...\n", test);
-        PAMI::Test::Multisend::Multicombine<LOCAL_REDUCE_MODEL,LOCAL_REDUCE_DEVICE,TEST_BUF_SIZE> test1(test, mm);
+        PAMI::Test::Multisend::Multicombine<LOCAL_REDUCE_MODEL,LOCAL_REDUCE_DEVICE,TEST_BUF_SIZE> test1(test, LOCAL_REDUCE_MM);
 #if 0
 		unsigned long long diff = 0, sum=0;
 		for (unsigned iter =0 ; iter < ITER+2; iter++)

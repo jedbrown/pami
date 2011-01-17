@@ -15,7 +15,6 @@
 #undef USE_COMMTHREADS
 #include "components/devices/generic/Device.h"
 
-#include "memorymanager.h"
 #include "components/devices/MulticastModel.h"
 
 //#define DATA_CHECK
@@ -100,19 +99,19 @@ public:
         Multicast(const char *test, PAMI::Memory::MemoryManager &mm) :
         _name(test)
         {
-				uint64_t my_alignment;
-				my_alignment = 128;
-				void* myMemory = malloc ( T_BufSize + my_alignment );
-				if ( !myMemory ) printf("malloc failed\n");
-				_source  = (char*)( ((uint64_t)myMemory + my_alignment)  & ~(my_alignment-1) );
+		pami_result_t rc;
+		uint64_t my_alignment;
+		my_alignment = 128;
+		rc = __global.heap_mm->memalign((void **)&_source, my_alignment, T_BufSize);
+		if (rc != PAMI_SUCCESS) printf("malloc failed\n");
 
-				myMemory = malloc ( T_BufSize + my_alignment );
-				if ( !myMemory ) printf("malloc failed\n");
-				_result  = (char*)( ((uint64_t)myMemory + my_alignment)  & ~(my_alignment-1) );
-                _generics = PAMI::Device::Generic::Device::Factory::generate(0, 1, mm, NULL);
+		rc = __global.heap_mm->memalign((void **)&_result, my_alignment, T_BufSize);
+		if (rc != PAMI_SUCCESS) printf("malloc failed\n");
+
+                _generics = PAMI::Device::Generic::Device::Factory::generate(0, 1, __global.mm, NULL);
                 _dev = T_MulticastDevice::Factory::generate(0, 1, mm, _generics);
 
-                PAMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, (pami_context_t)1, &mm, _generics);
+                PAMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, (pami_context_t)1, &__global.mm, _generics);
                 T_MulticastDevice::Factory::init(_dev, 0, 0, NULL, (pami_context_t)1, &mm, _generics);
                 _model = new (_mdlbuf) T_MulticastModel(T_MulticastDevice::Factory::getDevice(_dev, 0, 0), _status);
         }
@@ -122,10 +121,10 @@ public:
     _dispatch_id(dispatch_id)
         {
 
-                _generics = PAMI::Device::Generic::Device::Factory::generate(0, 1, mm, NULL);
+                _generics = PAMI::Device::Generic::Device::Factory::generate(0, 1, __global.mm, NULL);
                 _dev = T_MulticastDevice::Factory::generate(0, 1, mm, _generics);
 
-                PAMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, (pami_context_t)1, &mm, _generics);
+                PAMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, (pami_context_t)1, &__global.mm, _generics);
                 T_MulticastDevice::Factory::init(_dev, 0, 0, NULL, (pami_context_t)1, &mm, _generics);
                 _model = new (_mdlbuf) T_MulticastModel(T_MulticastDevice::Factory::getDevice(_dev, 0, 0), _status);
 

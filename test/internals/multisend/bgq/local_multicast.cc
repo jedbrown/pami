@@ -27,6 +27,7 @@ typedef PAMI::Device::ShmemCollDevice <ShmemCollDesc> ShmemCollDevice;
 typedef PAMI::Device::Shmem::ShmemMcstModelWorld <ShmemCollDevice, ShmemCollDesc> ShmemMcstModel;
 
 #define LOCAL_BCAST_NAME	"PAMI::Device::ShmemMcstModel"
+#define LOCAL_BCAST_MM		(&__global.mm)
 #define LOCAL_BCAST_MODEL 	ShmemMcstModel
 #define LOCAL_BCAST_DEVICE 	ShmemCollDevice
 
@@ -35,14 +36,12 @@ PAMI::Topology otopo;
 
 int main(int argc, char ** argv) {
         pami_context_t context;
-        size_t task_id;
+        pami_task_t task_id;
         size_t num_tasks;
 
         task_id = __global.mapping.task();
         num_tasks = __global.mapping.size();
         context = (pami_context_t)1; // context must not be NULL
-        PAMI::Memory::GenMemoryManager mm;
-        initializeMemoryManager("multicast test", 8192*1024, mm);
 
         if (task_id == 0) fprintf(stderr, "Number of tasks = %zu\n", num_tasks);
         if (__global.topology_local.size() < 2) {
@@ -75,7 +74,7 @@ int main(int argc, char ** argv) {
 
         const char *test = LOCAL_BCAST_NAME;
         if (task_id == root) fprintf(stderr, "=== Testing %s...\n", test);
-        PAMI::Test::Multisend::Multicast<LOCAL_BCAST_MODEL, LOCAL_BCAST_DEVICE, TEST_BUF_SIZE> test1(test, mm);
+        PAMI::Test::Multisend::Multicast<LOCAL_BCAST_MODEL, LOCAL_BCAST_DEVICE, TEST_BUF_SIZE> test1(test, LOCAL_BCAST_MM);
 
 		unsigned long long diff = 0, sum=0;
 		unsigned num_iter;

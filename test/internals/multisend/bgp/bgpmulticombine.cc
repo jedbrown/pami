@@ -17,7 +17,7 @@
 
 int main(int argc, char ** argv) {
         pami_context_t context;
-        size_t task_id;
+        pami_task_t task_id;
         size_t num_tasks;
 
 #if 0

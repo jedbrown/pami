@@ -15,8 +15,6 @@
 #undef USE_COMMTHREADS
 #include "components/devices/generic/Device.h"
 
-#include "memorymanager.h"
-
 #include "components/devices/MulticastModel.h"
 
 namespace PAMI {
@@ -99,10 +97,10 @@ public:
         Multicast(const char *test, PAMI::Memory::MemoryManager &mm) :
         _name(test)
         {
-                _generics = PAMI::Device::Generic::Device::Factory::generate(0, 1, mm, NULL);
+                _generics = PAMI::Device::Generic::Device::Factory::generate(0, 1, __global.mm, NULL);
                 _dev = T_MulticastDevice::Factory::generate(0, 1, mm, _generics);
 
-                PAMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, (pami_context_t)1, &mm, _generics);
+                PAMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, (pami_context_t)1, &__global.mm, _generics);
                 T_MulticastDevice::Factory::init(_dev, 0, 0, NULL, (pami_context_t)1, &mm, _generics);
                 _model = new (_mdlbuf) T_MulticastModel(T_MulticastDevice::Factory::getDevice(_dev, 0, 0), _status);
         }
@@ -112,10 +110,10 @@ public:
     _dispatch_id(dispatch_id)
         {
 
-                _generics = PAMI::Device::Generic::Device::Factory::generate(0, 1, mm, NULL);
+                _generics = PAMI::Device::Generic::Device::Factory::generate(0, 1, __global.mm, NULL);
                 _dev = T_MulticastDevice::Factory::generate(0, 1, mm, _generics);
 
-                PAMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, (pami_context_t)1, &mm, _generics);
+                PAMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, (pami_context_t)1, &__global.mm, _generics);
                 T_MulticastDevice::Factory::init(_dev, 0, 0, NULL, (pami_context_t)1, &mm, _generics);
                 _model = new (_mdlbuf) T_MulticastModel(T_MulticastDevice::Factory::getDevice(_dev, 0, 0), _status);
 

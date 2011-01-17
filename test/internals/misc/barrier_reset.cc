@@ -15,6 +15,7 @@
 #include "util/common.h"
 
 #define BARRIER1_NAME	"local_barriered_shmemzero()"
+#define BARRIER1_MM	(&__global.mm)
 #define BARRIER1_ISLOCAL	1
 
 class ShmemZeroDevice {
@@ -84,7 +85,7 @@ public:
 
 int main(int argc, char ** argv) {
         pami_context_t context;
-        size_t task_id;
+        pami_task_t task_id;
         size_t num_tasks;
 
 #if 0
@@ -124,8 +125,6 @@ int main(int argc, char ** argv) {
         task_id = __global.mapping.task();
         num_tasks = __global.mapping.size();
         context = (pami_context_t)1; // context must not be NULL
-        PAMI::Memory::GenMemoryManager mm;
-        initializeMemoryManager("multisync test", MEMMGR_SIZE, mm);
 #endif
         if (task_id == 0) fprintf(stderr, "Number of tasks = %zu\n", num_tasks);
 
@@ -136,11 +135,11 @@ int main(int argc, char ** argv) {
         // Register some multisyncs, C++ style
 #ifdef BARRIER1_NAME
 	DO_BARRIER_TEST(BARRIER1_NAME "<128>", ShmemZeroModel<128>, ShmemZeroDevice, BARRIER1_ISLOCAL,
-		mm, task_id, num_tasks, context);
+		BARRIER1_MM, task_id, num_tasks, context);
 	DO_BARRIER_TEST(BARRIER1_NAME "<4096>", ShmemZeroModel<4096>, ShmemZeroDevice, BARRIER1_ISLOCAL,
-		mm, task_id, num_tasks, context);
+		BARRIER1_MM, task_id, num_tasks, context);
 	DO_BARRIER_TEST(BARRIER1_NAME "<16>", ShmemZeroModel<16>, ShmemZeroDevice, BARRIER1_ISLOCAL,
-		mm, task_id, num_tasks, context);
+		BARRIER1_MM, task_id, num_tasks, context);
 #endif // BARRIER1_NAME;
 
 // ------------------------------------------------------------------------

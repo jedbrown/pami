@@ -39,7 +39,7 @@ static int          _failed = 0;
 
 PAMI::Topology dst_subtopology;
 
-size_t task_id;
+pami_task_t task_id;
 
 
 void dispatch_multicast_fn(const pami_quad_t     *msginfo,

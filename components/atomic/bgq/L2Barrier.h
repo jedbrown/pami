@@ -46,6 +46,11 @@ namespace PAMI
 
       class _L2_Barrier_s
       {
+	private:
+		static void static_counter_init(void *mem, size_t bytes, const char *key, unsigned attrs, void *cookie) {
+			// L2 Atomic-capable memory... just ensure it is zero.
+			memset(mem, 0, bytes);
+		}
         public:
           _L2_Barrier_s() :
               _counters(NULL)
@@ -56,7 +61,8 @@ namespace PAMI
           {
             PAMI_assert_debugf(!_counters, "Re-init or object is in shmem");
             return mm->memalign((void **)&_counters, sizeof(uint64_t),
-                                sizeof(*_counters), key);
+                                sizeof(*_counters), key,
+				static_counter_init, NULL);
           }
 
           inline uint64_t *controlPtr() { return &_counters->ctrl_lock; }

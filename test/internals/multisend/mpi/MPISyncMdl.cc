@@ -58,8 +58,6 @@ int main(int argc, char ** argv)
         task_id = __global.mapping.task();
         num_tasks = __global.mapping.size();
         context = NULL;
-        PAMI::Memory::GenMemoryManager mm;
-        initializeMemoryManager("bgp multicast test", 1024*1024, mm);
 #endif
   if(task_id == 0) fprintf(stderr, "Number of tasks = %zu\n", num_tasks);
 
@@ -73,15 +71,13 @@ int main(int argc, char ** argv)
   pami_multisync_t multisync;
 
   // simple barrier on the GI network... SMP mode
-  multisync.client = 0;
   multisync.connection_id = 0;
-  multisync.context = 0;
   multisync.roles = (unsigned)-1;
   multisync.participants = (pami_topology_t *)&__global.topology_global;
 
   const char *test = "PAMI::Device::MPISyncMsg";
   if(task_id == 0) fprintf(stderr, "=== Testing %s...\n", test);
-  PAMI::Test::Multisend::Multisync<PAMI::Device::MPISyncMdl,PAMI::Device::MPISyncDev> test1(test, mm);
+  PAMI::Test::Multisend::Multisync<PAMI::Device::MPISyncMdl,PAMI::Device::MPISyncDev> test1(test, __global.mm);
   rc = test1.perform_test(task_id, num_tasks, context, &multisync);
   if(rc != PAMI_SUCCESS)
   {

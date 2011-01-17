@@ -10,6 +10,7 @@
 #include "components/devices/misc/AtomicBarrierMsg.h"
 
 #define BARRIER1_NAME	"PAMI::Barrier::Indirect< PAMI::Barrier::Counter<PAMI::Counter::Native> >"
+#define BARRIER1_MM	(&__global.mm)
 #define BARRIER1_ISLOCAL	1
 #include "components/atomic/native/NativeCounter.h"
 #include "components/atomic/counter/CounterBarrier.h"
@@ -23,6 +24,7 @@ typedef PAMI::Device::AtomicBarrierDev Barrier_Device1;
 
 #if 0
 #define MUTEX1_NAME	"AtomicMutexMdl<PAMI::Counter::Native>"
+#define MUTEX1_MM	(&__global.mm)
 #define MUTEX1_ISLOCAL	1
 #include "components/devices/misc/AtomicMutexMsg.h"
 #include "components/atomic/counter/CounterMutex.h"
@@ -35,7 +37,7 @@ typedef PAMI::Device::SharedAtomicMutexDev Mutex_Device1;
 
 int main(int argc, char ** argv) {
         pami_context_t context;
-        size_t task_id;
+        pami_task_t task_id;
         size_t num_tasks;
 
 #if 0
@@ -75,8 +77,6 @@ int main(int argc, char ** argv) {
         task_id = __global.mapping.task();
         num_tasks = __global.mapping.size();
         context = (pami_context_t)1; // context must not be NULL
-        PAMI::Memory::GenMemoryManager mm;
-        initializeMemoryManager("multisync test", MEMMGR_SIZE, mm);
 #endif
         if (task_id == 0) fprintf(stderr, "Number of tasks = %zu\n", num_tasks);
 
@@ -87,17 +87,17 @@ int main(int argc, char ** argv) {
         // Register some multisyncs, C++ style
 #ifdef BARRIER1_NAME
 	DO_BARRIER_TEST(BARRIER1_NAME, Barrier_Model1, Barrier_Device1, BARRIER1_ISLOCAL,
-		mm, task_id, num_tasks, context);
+		BARRIER1_MM, task_id, num_tasks, context);
 #endif // BARRIER1_NAME;
 
 #ifdef BARRIER2_NAME
 	DO_BARRIER_TEST(BARRIER2_NAME, Barrier_Model2, Barrier_Device2, BARRIER2_ISLOCAL,
-		mm, task_id, num_tasks, context);
+		BARRIER2_MM, task_id, num_tasks, context);
 #endif // BARRIER2_NAME
 
 #ifdef MUTEX1_NAME
 	DO_MUTEX_TEST(MUTEX1_NAME, Mutex_Model1, Mutex_Device1, MUTEX1_ISLOCAL,
-		mm, task_id, num_tasks, context);
+		MUTEX1_MM, task_id, num_tasks, context);
 #endif // MUTEX1_NAME
 
 // ------------------------------------------------------------------------

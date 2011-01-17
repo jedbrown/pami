@@ -16,9 +16,11 @@
 #endif // TEST_BUF_SIZE
 
 #define LOCAL_REDUCE_NAME	"PAMI::Device::LocalReduceWQModel"
+#define LOCAL_REDUCE_MM		(&__global.mm)
 #define LOCAL_REDUCE_MODEL	PAMI::Device::LocalReduceWQModel
 #define LOCAL_REDUCE_DEVICE	PAMI::Device::LocalReduceWQDevice
 #define LOCAL_REDUCE_NAME2	"PAMI::Device::WQRingReduceMdl"
+#define LOCAL_REDUCE_MM2	(&__global.mm)
 #define LOCAL_REDUCE_MODEL2	PAMI::Device::WQRingReduceMdl
 #define LOCAL_REDUCE_DEVICE2	PAMI::Device::WQRingReduceDev
 
@@ -26,7 +28,7 @@ PAMI::Topology otopo;
 
 int main(int argc, char ** argv) {
         pami_context_t context;
-        size_t task_id;
+        pami_task_t task_id;
         size_t num_tasks;
 
 #if 0
@@ -66,8 +68,6 @@ int main(int argc, char ** argv) {
         task_id = __global.mapping.task();
         num_tasks = __global.mapping.size();
         context = (pami_context_t)1; // context must not be NULL
-        PAMI::Memory::GenMemoryManager mm;
-        initializeMemoryManager("multicombine test", 512*1024, mm);
 #endif
         if (task_id == 0) fprintf(stderr, "Number of tasks = %zu\n", num_tasks);
         if (__global.topology_local.size() < 2) {
@@ -100,7 +100,7 @@ int main(int argc, char ** argv) {
 
         const char *test = LOCAL_REDUCE_NAME;
         if (task_id == root) fprintf(stderr, "=== Testing %s...\n", test);
-        PAMI::Test::Multisend::Multicombine<LOCAL_REDUCE_MODEL,LOCAL_REDUCE_DEVICE,TEST_BUF_SIZE> test1(test, mm);
+        PAMI::Test::Multisend::Multicombine<LOCAL_REDUCE_MODEL,LOCAL_REDUCE_DEVICE,TEST_BUF_SIZE> test1(test, *LOCAL_REDUCE_MM);
 
         rc = test1.perform_test(task_id, num_tasks, context, &mcomb);
 
@@ -110,10 +110,9 @@ int main(int argc, char ** argv) {
         }
         fprintf(stderr, "PASS %s\n", test);
 
-        initializeMemoryManager("multicombine test", 512*1024, mm);
         test = LOCAL_REDUCE_NAME2;
         if (task_id == root) fprintf(stderr, "=== Testing %s...\n", test);
-        PAMI::Test::Multisend::Multicombine<LOCAL_REDUCE_MODEL2,LOCAL_REDUCE_DEVICE2,TEST_BUF_SIZE> test2(test, mm);
+        PAMI::Test::Multisend::Multicombine<LOCAL_REDUCE_MODEL2,LOCAL_REDUCE_DEVICE2,TEST_BUF_SIZE> test2(test, *LOCAL_REDUCE_MM2);
 
         rc = test2.perform_test(task_id, num_tasks, context, &mcomb);
 

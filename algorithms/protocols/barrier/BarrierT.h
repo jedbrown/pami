@@ -18,6 +18,7 @@
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
 #include "algorithms/protocols/AllSidedCollectiveProtocolFactoryT.h"
 #include "algorithms/executor/Barrier.h"
+#include "algorithms/protocols/AllSidedCollectiveProtocolFactoryT.h"
 
 extern void registerunexpbarrier(pami_context_t context,
                                  unsigned       comm,

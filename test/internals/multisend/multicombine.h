@@ -15,8 +15,6 @@
 #undef USE_COMMTHREADS
 #include "components/devices/generic/Device.h"
 
-#include "memorymanager.h"
-
 #include "components/devices/MulticombineModel.h"
 
 namespace PAMI {
@@ -54,10 +52,10 @@ public:
         Multicombine(const char *test, PAMI::Memory::MemoryManager &mm) :
         _name(test)
         {
-                _generics = PAMI::Device::Generic::Device::Factory::generate(0, 1, mm, NULL);
+                _generics = PAMI::Device::Generic::Device::Factory::generate(0, 1, __global.mm, NULL);
                 _dev = T_MulticombineDevice::Factory::generate(0, 1, mm, _generics);
 
-                PAMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, (pami_context_t)1, &mm, _generics);
+                PAMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, (pami_context_t)1, &__global.mm, _generics);
                 T_MulticombineDevice::Factory::init(_dev, 0, 0, NULL, (pami_context_t)1, &mm, _generics);
                 _model = new (_mdlbuf) T_MulticombineModel(T_MulticombineDevice::Factory::getDevice(_dev, 0, 0), _status);
         }

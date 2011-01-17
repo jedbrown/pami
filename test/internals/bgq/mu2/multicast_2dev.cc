@@ -36,8 +36,6 @@
 
 #include "common/bgq/NativeInterface.h"
 
-#include "test/internals/multisend/memorymanager.h"
-
 typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::Native> ShmemCollDesc;
 //typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::BGQ::L2NodeCounter> ShmemCollDesc;
 typedef PAMI::Device::ShmemCollDevice <ShmemCollDesc> ShmemCollDevice;
@@ -99,27 +97,19 @@ int main(int argc, char ** argv)
 	*/
   fprintf (stderr, "After model constructors\n");
 
-  PAMI::Memory::MemoryManager mm;
-  fprintf (stderr, "before initing memory manager\n");
-  initializeMemoryManager("multicast test", 8192*1024, mm);
-  fprintf (stderr, "after initing memory manager\n");
-
-
   PAMI::Device::Generic::Device* _generics;
   ShmemCollDevice* _shmem;
 
   fprintf (stderr, "before generating the generic device\n");
-  //_generics = PAMI::Device::Generic::Device::Factory::generate(0, 1, mm, NULL);
   _generics = PAMI::Device::Generic::Device::Factory::generate(0, 1, __global.mm, NULL);
   fprintf (stderr, "after generating the generic device\n");
-  //_shmem = ShmemCollDevice::Factory::generate(0, 1, mm, _generics);
   _shmem = ShmemCollDevice::Factory::generate(0, 1, __global.mm, _generics);
   fprintf (stderr, "after generating the shmem device\n");
 
   fprintf (stderr, "After generating the devices\n");
-  PAMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, (pami_context_t)1, &mm, _generics);
+  PAMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, (pami_context_t)1, &__global.mm, _generics);
   fprintf (stderr, "After initing the generic device\n");
-  ShmemCollDevice::Factory::init(_shmem, 0, 0, NULL, (pami_context_t)1, &mm, _generics);
+  ShmemCollDevice::Factory::init(_shmem, 0, 0, NULL, (pami_context_t)1, &__global.mm, _generics);
   fprintf (stderr, "After initing the shmem device\n");
 
   Delay (1000);

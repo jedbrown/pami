@@ -323,8 +323,6 @@ namespace PAMI
                 }
 
             // Allocate storage and call all-sided multicast.
-            mcast.client = _clientid;
-            mcast.context  = _contextid;
 
             allocation_t *allocation = (allocation_t *) _allocator.allocateObject();
             allocation->protocol = this; // so we can free it later

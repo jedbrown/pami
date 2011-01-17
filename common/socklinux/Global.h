@@ -62,7 +62,7 @@ namespace PAMI
 	  size_t jobid = 0;
 	  shared_mm = new (_shared_mm) PAMI::Memory::SharedMemoryManager(jobid, heap_mm);
 	PAMI::Memory::MemoryManager::shared_mm = shared_mm;
-	PAMI::Memory::MemoryManager::shm_mm = shared_mm;
+	PAMI::Memory::MemoryManager::shm_mm = &mm; // not initialized yet!
 
           char shmemfile[PAMI::Memory::MMKEYSIZE];
           snprintf (shmemfile, sizeof(shmemfile) - 1, "/unique-pami-global-shmem-file");
@@ -72,7 +72,7 @@ namespace PAMI
           // Round up to the page size
           size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
 
-          //mm.init(shared_mm, size, 1, 1, 0, shmemfile);
+          mm.init(shared_mm, size, 1, 1, 0, shmemfile);
 
           mapping.init(min, max, num, &ranks);
           PAMI::Topology::static_init(&mapping);
@@ -99,7 +99,7 @@ namespace PAMI
        public:
 
         PAMI::Mapping         mapping;
-	//PAMI::Memory::GenMemoryManager mm;
+	PAMI::Memory::GenMemoryManager mm;
 
     }; // PAMI::Global
 };     // PAMI

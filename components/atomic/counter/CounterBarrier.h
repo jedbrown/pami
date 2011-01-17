@@ -21,157 +21,6 @@ namespace PAMI
 {
   namespace Barrier
   {
-#if 0
-    ///
-    /// \brief Atomic counter barrier implementation
-    ///
-    /// \note There is (currently) no way to specify the participant id when
-    ///       entering the barrier - this makes an "in place" barrier implementation
-    ///       impossible.
-    ///
-    /// \tparam T PAMI::Counter::Interface implementation class
-    ///
-    template <class T>
-    class Counter : public PAMI::Barrier::Interface<PAMI::Barrier::Counter<T> >
-    {
-      public:
-
-        friend class PAMI::Barrier::Interface<PAMI::Barrier::Counter<T> >;
-
-        inline Counter (size_t participants, bool master) :
-          PAMI::Barrier::Interface<PAMI::Barrier::Counter<T> > (participants, master),
-          _participants (participants),
-          _master(master),
-          _data(0),
-          _active(false)
-        {};
-
-        inline ~Counter () {};
-
-      protected:
-
-        // -------------------------------------------------------------------
-        // PAMI::Barrier::Interface<T> implementation
-        // -------------------------------------------------------------------
-
-        inline void enter_impl ()
-        {
-          this->begin();
-          while (this->poll());
-          this->end();
-        };
-
-        template <class T_Functor>
-        inline void enter_impl (T_Functor & functor)
-        {
-          this->begin();
-          while (this->poll())
-            functor();
-          this->end();
-        };
-
-        inline void begin_impl ()
-        {
-          size_t phase = _control.fetch();
-          _lock[phase].fetch_and_inc(); // enter the barrier.
-          _data = phase;
-          _active = true;
-        };
-
-        inline bool poll_impl ()
-        {
-          PAMI_assert(_active == true);
-
-          size_t value;
-          size_t phase = _data;
-
-          if (_lock[phase].fetch() < _participants)
-            return true; // barrier is still active.
-
-          _lock[phase].fetch_and_inc();
-
-          const size_t test = 2 * _participants;
-          do
-            {
-              value = _lock[phase].fetch();
-            }
-          while (value > 0 && value < test);
-
-          if (_master)
-            {
-              if (phase)
-                {
-                  _control.fetch_and_dec();
-                }
-              else
-                {
-                  _control.fetch_and_inc();
-                }
-
-              _stat[phase].fetch_and_clear();
-              _lock[phase].fetch_and_clear();
-            }
-          else
-            {
-              // wait until master releases the barrier by clearing the lock
-              while (_lock[phase].fetch() > 0);
-            }
-
-          _active = false;
-
-          return false; // barrier is now complete
-        };
-
-        inline void end_impl ()
-        {
-          // _active is set at the end of the poll() method
-        };
-
-        inline void dump_impl (const char * string = NULL)
-        {
-          PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
-        };
-
-      private:
-
-        // -------------------------------------------------------------------
-        // Memory manager counter initialization function
-        // -------------------------------------------------------------------
-
-        ///
-        /// \brief Initialize the barrier resources
-        ///
-        /// \see PAMI::Memory::MM_INIT_FN
-        ///
-        static void barrier_initialize (void       * memory,
-                                        size_t       bytes,
-                                        const char * key,
-                                        unsigned     attributes,
-                                        void       * cookie)
-        {
-          size_t i, n = (size_t) cookie;
-          size_t * data = (size_t *) memory;
-          bool * active = (bool *) &data[n];
-          for (i=0; i<n; i++)
-          {
-            data[i]   = 0;
-            active[i] = false;
-          }
-        };
-
-        T _control;
-        T _lock[2];
-        T _stat[2];
-
-        size_t _participants;
-        bool   _master;
-
-        size_t * _data;    // one element for each participant
-        bool   * _active;  // one element for each participant
-
-
-    }; // PAMI::Barrier::Counter<T> class
-#endif
 
     ///
     /// \brief Barrier implementation using an "indirect" counter class
@@ -282,8 +131,9 @@ namespace PAMI
           size_t value;
           size_t phase = _data;
 
-          if (_lock[phase].fetch() < _participants)
+          if (_lock[phase].fetch() < _participants) {
             return true; // barrier is still active.
+	  }
 
           _lock[phase].fetch_and_inc();
 
@@ -313,7 +163,6 @@ namespace PAMI
               // wait until master releases the barrier by clearing the lock
               while (_lock[phase].fetch() > 0);
             }
-
           _active = false;
 
           return false; // barrier is now complete
@@ -326,7 +175,15 @@ namespace PAMI
 
         inline void dump_impl (const char * string = NULL)
         {
-          PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+          fprintf(stderr, "%s: PAMI::Barrier::IndirectCounter<T>: "
+		"%zd [%zd %zd] [%zd %zd] %zd %d %zd %d\n",
+		string,
+		_control.fetch(),
+		_lock[0].fetch(),
+		_lock[1].fetch(),
+		_stat[0].fetch(),
+		_stat[1].fetch(),
+		_participants, _master, _data, _active);
         };
 
       private:
