@@ -254,11 +254,9 @@ namespace PAMI
               geometry->addCollective(PAMI_XFER_ALLREDUCE,
                                       _binomial_allreduce_factory,
                                       _context_id);
-#ifndef __bgq__ // currently not working reliably on BGQ/MU
               geometry->addCollective(PAMI_XFER_ALLREDUCE,
                                       _ascs_binomial_allreduce_factory,
                                       _context_id);
-#endif
               geometry->addCollective(PAMI_XFER_REDUCE,
                                       _ascs_binomial_reduce_factory,
                                       _context_id);
@@ -304,11 +302,9 @@ namespace PAMI
               geometry->addCollective(PAMI_XFER_ALLGATHERV_INT,
                                       _ascs_ring_allgatherv_int_factory,
                                       _context_id);
-#ifndef __bgq__ // currently not working reliably on BGQ/MU
               geometry->addCollective(PAMI_XFER_ALLTOALL,
                                       _ascs_pairwise_alltoall_factory,
                                       _context_id);
-#endif
               geometry->addCollective(PAMI_XFER_ALLTOALLV_INT,
                                       _ascs_pairwise_alltoallv_int_factory,
                                       _context_id);
