@@ -390,7 +390,7 @@ namespace PAMI
               if(rc) RETURN_ERR_PAMI(PAMI_ERROR, "createContext failed with rc %d\n", rc);
               _contexts[i]->setWorldGeometry(_world_geometry);
               _contexts[i]->initP2PCollectives();
-              _contexts[0]->initCollectives(&_mm, _disable_shm);
+              _contexts[i]->initCollectives(&_mm, _disable_shm);
             }
         return PAMI_SUCCESS;
       }
