@@ -41,10 +41,16 @@ namespace PAMI
         protected:
           /// invoked by the thread object
           /// \see SendQueue::Message::_work
-          static pami_result_t __advance_mr (pami_context_t context, void * cookie)
+          static pami_result_t __advance_mr_read (pami_context_t context, void * cookie)
           {
             DmaMessage * msg = (DmaMessage *) cookie;
-            return msg->advance_mr();
+            return msg->advance_mr_read();
+          };
+
+          static pami_result_t __advance_mr_write (pami_context_t context, void * cookie)
+          {
+            DmaMessage * msg = (DmaMessage *) cookie;
+            return msg->advance_mr_write();
           };
 
           static pami_result_t __advance_va (pami_context_t context, void * cookie)
@@ -53,34 +59,75 @@ namespace PAMI
             return msg->advance_va();
           };
 
-          inline pami_result_t advance_mr ()
+          inline pami_result_t advance_mr_read ()
           {
-            TRACE_ERR((stderr, ">> DmaMessage<..,%d>::advance_mr()\n", T_Device::shaddr_write_supported));
+            TRACE_ERR((stderr, ">> DmaMessage<..,%d>::advance_mr_read()\n", T_Device::shaddr_write_supported));
 
             // Do not perform the shared address operation until all previous
             // packets from this origin context have been received.
             if (! _device->activePackets(_fnum))
               {
-                if (T_Device::shaddr_write_supported)
+                size_t bytes_copied =
+                  _device->shaddr.read(_local_mr, _local_offset,
+                                       _remote_mr, _remote_offset,
+                                       _bytes);
+
+                TRACE_ERR((stderr, ">> DmaMessage<..,%d>::advance_mr_read(), bytes_copied = %zu, _bytes = %zu\n", T_Device::shaddr_write_supported, bytes_copied, _bytes));
+
+                if (likely(bytes_copied == _bytes))
                   {
-                    _device->shaddr.write(_remote_mr, _remote_offset,
-                                          _local_mr, _local_offset,
-                                          _bytes);
-                  }
-                else
-                  {
-                    _device->shaddr.read(_local_mr, _local_offset,
-                                         _remote_mr, _remote_offset,
-                                         _bytes);
+                    // This removes the work from the generic device.
+                    this->setStatus (PAMI::Device::Done);
+
+                    // This causes the message completion callback to be invoked.
+                    TRACE_ERR((stderr, "<< DmaMessage<..,%d>::advance_mr_read(), return PAMI_SUCCESS\n", T_Device::shaddr_write_supported));
+                    return PAMI_SUCCESS;
                   }
 
-                TRACE_ERR((stderr, "<< DmaMessage<..,%d>::advance_mr(), return PAMI_SUCCESS\n", T_Device::shaddr_write_supported));
-                return PAMI_SUCCESS;
+                // Update the state
+                _local_offset += bytes_copied;
+                _remote_offset += bytes_copied;
+                _bytes -= bytes_copied;
               }
 
-            TRACE_ERR((stderr, "<< DmaMessage<..,%d>::advance_mr(), return PAMI_EAGAIN\n", T_Device::shaddr_write_supported));
+            TRACE_ERR((stderr, "<< DmaMessage<..,%d>::advance_mr_read(), return PAMI_EAGAIN\n", T_Device::shaddr_write_supported));
             return PAMI_EAGAIN;
           };
+
+          inline pami_result_t advance_mr_write ()
+          {
+            TRACE_ERR((stderr, ">> DmaMessage<..,%d>::advance_mr_write()\n", T_Device::shaddr_write_supported));
+
+            // Do not perform the shared address operation until all previous
+            // packets from this origin context have been received.
+            if (! _device->activePackets(_fnum))
+              {
+                PAMI_assert_debug(T_Device::shaddr_write_supported == true);
+                size_t bytes_copied =
+                  _device->shaddr.write(_remote_mr, _remote_offset,
+                                        _local_mr, _local_offset,
+                                        _bytes);
+
+                if (likely(bytes_copied == _bytes))
+                  {
+                    // This removes the work from the generic device.
+                    this->setStatus (PAMI::Device::Done);
+
+                    // This causes the message completion callback to be invoked.
+                    TRACE_ERR((stderr, "<< DmaMessage<..,%d>::advance_mr_write(), return PAMI_SUCCESS\n", T_Device::shaddr_write_supported));
+                    return PAMI_SUCCESS;
+                  }
+
+                // Update the state
+                _local_offset += bytes_copied;
+                _remote_offset += bytes_copied;
+                _bytes -= bytes_copied;
+              }
+
+            TRACE_ERR((stderr, "<< DmaMessage<..,%d>::advance_mr_write(), return PAMI_EAGAIN\n", T_Device::shaddr_write_supported));
+            return PAMI_EAGAIN;
+          };
+
 
           inline pami_result_t advance_va ()
           {
@@ -118,8 +165,9 @@ namespace PAMI
                              size_t                local_offset,
                              Memregion           * remote_mr,
                              size_t                remote_offset,
-                             size_t                bytes) :
-              SendQueue::Message (DmaMessage::__advance_mr, this, fn, cookie, device->getContextOffset()),
+                             size_t                bytes,
+                             bool                  shaddr_read_operation) :
+              SendQueue::Message (shaddr_read_operation ? DmaMessage::__advance_mr_read : DmaMessage::__advance_mr_write, this, fn, cookie, device->getContextOffset()),
               _device (device),
               _fnum (fnum),
               _local_mr (local_mr),
@@ -128,7 +176,7 @@ namespace PAMI
               _remote_offset (remote_offset),
               _bytes (bytes)
           {
-            TRACE_ERR((stderr, "<> DmaMessage<..,%d>::DmaMessage()\n", T_Device::shaddr_write_supported));
+            TRACE_ERR((stderr, "<> DmaMessage<..,%d>::DmaMessage(), fn = %p\n", T_Device::shaddr_write_supported, fn));
           };
 
         protected:

@@ -340,7 +340,8 @@ namespace PAMI
                                                     local_offset,
                                                     remote_memregion,
                                                     remote_offset,
-                                                    bytes);
+                                                    bytes,
+                                                    false);
                     _device.post (fnum, msg);
 
                     return false;
@@ -449,6 +450,10 @@ namespace PAMI
 
             size_t fnum = _device.fnum (_device.task2peer(target_task), target_offset);
 
+            // If ordering dosn't matter, or if ordering does matter and the
+            // send queue is empty and there are no active packets injected
+            // from this device ... then do an "immediate" shared address read.
+            //
             if ((T_Ordered == false) ||
                 ((_device.isSendQueueEmpty (fnum)) &&
                  (_device.activePackets(fnum) == false)))
@@ -463,6 +468,8 @@ namespace PAMI
                     return true;
                   }
               }
+
+            // Unable to do an "immediate" shared address read.
 
             TRACE_ERR((stderr, "<< Shmem::DmaModel::postDmaGet_impl('memregion'), return false\n"));
             return false;
@@ -488,6 +495,10 @@ namespace PAMI
             size_t fnum = _device.fnum (_device.task2peer(target_task), target_offset);
             size_t bytes_copied = 0;
 
+            // If ordering dosn't matter, or if ordering does matter and the
+            // send queue is empty and there are no active packets injected
+            // from this device ... then do an "immediate" shared address read.
+            //
             if ((T_Ordered == false) ||
                 ((_device.isSendQueueEmpty (fnum)) &&
                  (_device.activePackets(fnum) == false)))
@@ -508,7 +519,8 @@ namespace PAMI
 
             TRACE_ERR((stderr, "   Shmem::DmaModel<T_Ordered=%d>::postDmaGet_impl('non-blocking memregion'), do an 'ordered' shared address read.\n", T_Ordered));
 
-            // Block at head of send queue, then perform a shared
+            // Unable to read all bytes, or an ordering condition failed.
+            // Block at the head of the send queue, then perform a shared
             // address read operation.
             DmaMessage<T_Device> * msg =
               (DmaMessage<T_Device> *) state;
@@ -520,7 +532,8 @@ namespace PAMI
                                             local_offset + bytes_copied,
                                             remote_memregion,
                                             remote_offset + bytes_copied,
-                                            bytes - bytes_copied);
+                                            bytes - bytes_copied,
+                                            true);
             _device.post (fnum, msg);
 
             TRACE_ERR((stderr, "<< Shmem::DmaModel::postDmaGet_impl('non-blocking memregion'), return false\n"));
