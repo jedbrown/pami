@@ -125,7 +125,7 @@ namespace PAMI
               /* Start the protocol here..blocking version since everyone arrived */
               PAMI::PipeWorkQueue *rcv = (PAMI::PipeWorkQueue *)mcomb_params.results;
               size_t bytes = mcomb_params.count << pami_dt_shift[mcomb_params.dtype];
-              double* dst = (double*)(rcv->bufferToConsume());
+              double* dst = rcv?(double*)(rcv->bufferToConsume()):(double*)NULL;
 
 
               if (_local_rank == 0)
@@ -169,6 +169,7 @@ namespace PAMI
               /* Reduction over...start gathering the results */
               if (((PAMI::Topology*)mcomb_params.results_participants)->isRankMember(_task))
               {
+                PAMI_assert(dst);
                 while (_my_desc->get_flag() == 0) {}; //wait till reduction is done
                 char* src = (char*) _my_desc->get_buffer(0);
                 char* my_dst = (char*)(dst);
