@@ -271,10 +271,28 @@ int main(int argc, char*argv[])
   pami_xfer_t          allreduce;
 
 
-  char sbuf[MAXBUFSIZE+128]  __attribute__((__aligned__(128)));
-  char rbuf[MAXBUFSIZE+128] __attribute__((__aligned__(128)));
+
+  /*char sbuf[MAXBUFSIZE] __attribute__((__aligned__(64))); */
+  /*char rbuf[MAXBUFSIZE] __attribute__((__aligned__(64))); */
+
+  /* void* tmp = (void*)malloc(MAXBUFSIZE+128); */
+  /* char* sbuf = (char*) ( ((uint64_t)tmp + 128) & ~((uint64_t) 127)) ; */
+  /* tmp = (void*)malloc(MAXBUFSIZE+128); */
+  /* char* rbuf = (char*)( ((uint64_t)tmp + 128) & ~((uint64_t)127)) ; */
+
+  /* The above math caused warnings on 32-bit systems */
+  int err = 0;
+  void* sbuf = NULL;
+  err = posix_memalign(&sbuf, 128, MAXBUFSIZE);
+  assert(err == 0);
+  void* rbuf = NULL;
+  err = posix_memalign(&rbuf, 128, MAXBUFSIZE);
+  assert(err == 0);
+
   int op, dt;
 
+  /* \note Test environment variable" TEST_PROTOCOL={-}substring.       */
+  /* substring is used to select, or de-select (with -) test protocols */
   unsigned selector = 1;
   char* selected = getenv("TEST_PROTOCOL");
   if(!selected) selected = "";
@@ -390,7 +408,6 @@ int main(int argc, char*argv[])
 
   for (nalg = 0; nalg < allreduce_num_algorithm[1]; nalg++)
     {
-      char* tmp;
       metadata_result_t result = {0};
       if (task_id == root)
         {
@@ -412,12 +429,10 @@ int main(int argc, char*argv[])
       allreduce.cb_done   = cb_done;
       allreduce.cookie    = (void*) & allreduce_poll_flag;
       allreduce.algorithm = allreduce_must_query_algo[nalg];
-      tmp = (char*)(((uint64_t)sbuf + 127) & ~(uint64_t)127); /* align the buffer */
-      allreduce.cmd.xfer_allreduce.sndbuf    = tmp;
+      allreduce.cmd.xfer_allreduce.sndbuf    = sbuf;
       allreduce.cmd.xfer_allreduce.stype     = PAMI_BYTE;
       allreduce.cmd.xfer_allreduce.stypecount = 0;
-      tmp = (char*)(((uint64_t)rbuf + 127) & ~(uint64_t)127); /* align the buffer */
-      allreduce.cmd.xfer_allreduce.rcvbuf    = tmp;
+      allreduce.cmd.xfer_allreduce.rcvbuf    = rbuf;
       allreduce.cmd.xfer_allreduce.rtype     = PAMI_BYTE;
       allreduce.cmd.xfer_allreduce.rtypecount = 0;
 
@@ -458,7 +473,7 @@ int main(int argc, char*argv[])
                       niter = NITERBW;
 
 #ifdef CHECK_DATA
-            initialize_sndbuf (allreduce.cmd.xfer_allreduce.sndbuf, i, op, dt, task_id);
+                    initialize_sndbuf (sbuf, i, op, dt, task_id);
 #endif
                     blocking_coll(context, &barrier, &bar_poll_flag);
                     ti = timer();
@@ -477,7 +492,7 @@ int main(int argc, char*argv[])
                     blocking_coll(context, &barrier, &bar_poll_flag);
 
 #ifdef CHECK_DATA
-              int rc = check_rcvbuf (allreduce.cmd.xfer_allreduce.rcvbuf, i, op, dt, num_tasks);
+                    int rc = check_rcvbuf (rbuf, i, op, dt, num_tasks);
                     if (rc) fprintf(stderr, "FAILED validation\n");
 #endif
 

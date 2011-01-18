@@ -271,24 +271,8 @@ int main(int argc, char*argv[])
   pami_xfer_t          allreduce;
 
 
-
-  /*char sbuf[MAXBUFSIZE] __attribute__((__aligned__(64))); */
-  /*char rbuf[MAXBUFSIZE] __attribute__((__aligned__(64))); */
-
-  /* void* tmp = (void*)malloc(MAXBUFSIZE+128); */
-  /* char* sbuf = (char*) ( ((uint64_t)tmp + 128) & ~((uint64_t) 127)) ; */
-  /* tmp = (void*)malloc(MAXBUFSIZE+128); */
-  /* char* rbuf = (char*)( ((uint64_t)tmp + 128) & ~((uint64_t)127)) ; */
-
-  /* The above math caused warnings on 32-bit systems */
-  int err = 0;
-  void* sbuf = NULL;
-  err = posix_memalign(&sbuf, 128, MAXBUFSIZE);
-  assert(err == 0);
-  void* rbuf = NULL;
-  err = posix_memalign(&rbuf, 128, MAXBUFSIZE);
-  assert(err == 0);
-
+  char sbuf[MAXBUFSIZE];
+  char rbuf[MAXBUFSIZE];
   int op, dt;
 
   /* \note Test environment variable" TEST_PROTOCOL={-}substring.       */
