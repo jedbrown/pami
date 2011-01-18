@@ -64,8 +64,8 @@ namespace PAMI
 	  size_t jobid = 0;
 	  shared_mm = new (_shared_mm) PAMI::Memory::SharedMemoryManager(jobid, heap_mm);
 	PAMI::Memory::MemoryManager::shared_mm = shared_mm;
-	mm.init(shared_mm, 4*1024*1024, 1, 1, 0, "/pami-mpi-global-shmem");
 	PAMI::Memory::MemoryManager::shm_mm = &mm; // not initilized yet!
+	mm.init(shared_mm, 4*1024*1024, 1, 1, 0, "/pami-mpi-global-shmem");
 
           {
                 size_t min, max, num, *ranks;

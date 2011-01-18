@@ -48,8 +48,8 @@ namespace PAMI
             jobid = atoi(getenv("MP_PARTITION"));
 	  shared_mm = new (_shared_mm) PAMI::Memory::SharedMemoryManager(jobid, heap_mm);
           PAMI::Memory::MemoryManager::shared_mm = shared_mm;
+          PAMI::Memory::MemoryManager::shm_mm    = &mm; // not initialized yet!
 	  mm.init(shared_mm, 1*1024*1024, 1, 1, 0, "/pami-lapi-global-shmem");
-          PAMI::Memory::MemoryManager::shm_mm    = &mm;
             {
               size_t min=0, max=0;
               mapping.init(min, max);
