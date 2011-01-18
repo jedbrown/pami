@@ -73,8 +73,6 @@ namespace PAMI
           union
           {
             uint8_t   ro_put_state[sizeof(ReadOnlyPutMessage<T_Device>)];
-            uint8_t   read_msg_state[sizeof(DmaMessage<T_Device, true>)];
-            uint8_t   write_msg_state[sizeof(DmaMessage<T_Device, false>)];
           };
       };
 
@@ -332,9 +330,9 @@ namespace PAMI
 
                     size_t fnum = _device.fnum (_device.task2peer(target_task), target_offset);
 
-                    DmaMessage<T_Device, false> * msg =
-                      (DmaMessage<T_Device, false> *) state;
-                    new (msg) DmaMessage<T_Device, false> (local_fn,
+                    DmaMessage<T_Device> * msg =
+                      (DmaMessage<T_Device> *) state;
+                    new (msg) DmaMessage<T_Device> (local_fn,
                                                            cookie,
                                                            &_device,
                                                            fnum,
@@ -510,9 +508,9 @@ namespace PAMI
 
             // Block at head of send queue, then perform a shared
             // address read operation.
-            DmaMessage<T_Device, true> * msg =
-              (DmaMessage<T_Device, true> *) state;
-            new (msg) DmaMessage<T_Device, true> (local_fn,
+            DmaMessage<T_Device> * msg =
+              (DmaMessage<T_Device> *) state;
+            new (msg) DmaMessage<T_Device> (local_fn,
                                                   cookie,
                                                   &_device,
                                                   fnum,

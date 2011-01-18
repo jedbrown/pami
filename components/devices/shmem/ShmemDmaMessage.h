@@ -35,7 +35,7 @@ namespace PAMI
   {
     namespace Shmem
     {
-      template <class T_Device, bool T_Read>
+      template <class T_Device>
       class DmaMessage : public SendQueue::Message
       {
         protected:
@@ -55,13 +55,13 @@ namespace PAMI
 
           inline pami_result_t advance_mr ()
           {
-            TRACE_ERR((stderr, ">> DmaMessage<..,%d>::advance_mr()\n", T_Read));
+            TRACE_ERR((stderr, ">> DmaMessage<..,%d>::advance_mr()\n", T_Device::shaddr_write_supported));
 
             // Do not perform the shared address operation until all previous
             // packets from this origin context have been received.
             if (! _device->activePackets(_fnum))
               {
-                if (T_Read == true)
+                if (T_Device::shaddr_write_supported)
                   {
                     _device->shaddr.write(_remote_mr, _remote_offset,
                                           _local_mr, _local_offset,
@@ -74,17 +74,17 @@ namespace PAMI
                                          _bytes);
                   }
 
-                TRACE_ERR((stderr, "<< DmaMessage<..,%d>::advance_mr(), return PAMI_SUCCESS\n", T_Read));
+                TRACE_ERR((stderr, "<< DmaMessage<..,%d>::advance_mr(), return PAMI_SUCCESS\n", T_Device::shaddr_write_supported));
                 return PAMI_SUCCESS;
               }
 
-            TRACE_ERR((stderr, "<< DmaMessage<..,%d>::advance_mr(), return PAMI_EAGAIN\n", T_Read));
+            TRACE_ERR((stderr, "<< DmaMessage<..,%d>::advance_mr(), return PAMI_EAGAIN\n", T_Device::shaddr_write_supported));
             return PAMI_EAGAIN;
           };
 
           inline pami_result_t advance_va ()
           {
-            TRACE_ERR((stderr, ">> DmaMessage<..,%d>::advance_va()\n", T_Read));
+            TRACE_ERR((stderr, ">> DmaMessage<..,%d>::advance_va()\n", T_Device::shaddr_write_supported));
 
             // Do not perform the shared address operation until all previous
             // packets from this origin context have been received.
@@ -92,7 +92,7 @@ namespace PAMI
               {
                 PAMI_abortf("virtual address shaddr operations not currently supported.\n");
 
-                if (T_Read == true)
+                if (T_Device::shaddr_write_supported)
                   {
                     //_device->shaddr.write(...);
                   }
@@ -101,11 +101,11 @@ namespace PAMI
                     //_device->shaddr.read(...);
                   }
 
-                TRACE_ERR((stderr, "<< DmaMessage<..,%d>::advance_va(), return PAMI_SUCCESS\n", T_Read));
+                TRACE_ERR((stderr, "<< DmaMessage<..,%d>::advance_va(), return PAMI_SUCCESS\n", T_Device::shaddr_write_supported));
                 return PAMI_SUCCESS;
               }
 
-            TRACE_ERR((stderr, "<< DmaMessage<..,%d>::advance_va(), return PAMI_EAGAIN\n", T_Read));
+            TRACE_ERR((stderr, "<< DmaMessage<..,%d>::advance_va(), return PAMI_EAGAIN\n", T_Device::shaddr_write_supported));
             return PAMI_EAGAIN;
           };
 
@@ -128,7 +128,7 @@ namespace PAMI
               _remote_offset (remote_offset),
               _bytes (bytes)
           {
-            TRACE_ERR((stderr, "<> DmaMessage::DmaMessage()\n"));
+            TRACE_ERR((stderr, "<> DmaMessage<..,%d>::DmaMessage()\n", T_Device::shaddr_write_supported));
           };
 
         protected:
