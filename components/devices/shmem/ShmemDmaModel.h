@@ -333,14 +333,14 @@ namespace PAMI
                     DmaMessage<T_Device> * msg =
                       (DmaMessage<T_Device> *) state;
                     new (msg) DmaMessage<T_Device> (local_fn,
-                                                           cookie,
-                                                           &_device,
-                                                           fnum,
-                                                           local_memregion,
-                                                           local_offset,
-                                                           remote_memregion,
-                                                           remote_offset,
-                                                           bytes);
+                                                    cookie,
+                                                    &_device,
+                                                    fnum,
+                                                    local_memregion,
+                                                    local_offset,
+                                                    remote_memregion,
+                                                    remote_offset,
+                                                    bytes);
                     _device.post (fnum, msg);
 
                     return false;
@@ -456,11 +456,12 @@ namespace PAMI
                 TRACE_ERR((stderr, "   Shmem::DmaModel<T_Ordered=%d>::postDmaGet_impl('memregion'), do an 'unordered' shared address read.\n", T_Ordered));
                 size_t bytes_copied =
                   _device.shaddr.read (local_memregion, local_offset, remote_memregion, remote_offset, bytes);
+
                 if (likely(bytes_copied == bytes))
-                {
-                  TRACE_ERR((stderr, "<< Shmem::DmaModel::postDmaGet_impl('non-blocking memregion'), return true\n"));
-                  return true;
-                }
+                  {
+                    TRACE_ERR((stderr, "<< Shmem::DmaModel::postDmaGet_impl('non-blocking memregion'), return true\n"));
+                    return true;
+                  }
               }
 
             TRACE_ERR((stderr, "<< Shmem::DmaModel::postDmaGet_impl('memregion'), return false\n"));
@@ -497,11 +498,12 @@ namespace PAMI
                 TRACE_ERR((stderr, "   Shmem::DmaModel<T_Ordered=%d>::postDmaGet_impl('non-blocking memregion'), do an 'unordered' shared address read.\n", T_Ordered));
                 bytes_copied =
                   _device.shaddr.read (local_memregion, local_offset, remote_memregion, remote_offset, bytes);
+
                 if (likely(bytes_copied == bytes))
-                {
-                  TRACE_ERR((stderr, "<< Shmem::DmaModel::postDmaGet_impl('non-blocking memregion'), return true\n"));
-                  return true;
-                }
+                  {
+                    TRACE_ERR((stderr, "<< Shmem::DmaModel::postDmaGet_impl('non-blocking memregion'), return true\n"));
+                    return true;
+                  }
               }
 
             TRACE_ERR((stderr, "   Shmem::DmaModel<T_Ordered=%d>::postDmaGet_impl('non-blocking memregion'), do an 'ordered' shared address read.\n", T_Ordered));
@@ -511,14 +513,14 @@ namespace PAMI
             DmaMessage<T_Device> * msg =
               (DmaMessage<T_Device> *) state;
             new (msg) DmaMessage<T_Device> (local_fn,
-                                                  cookie,
-                                                  &_device,
-                                                  fnum,
-                                                  local_memregion,
-                                                  local_offset + bytes_copied,
-                                                  remote_memregion,
-                                                  remote_offset + bytes_copied,
-                                                  bytes - bytes_copied);
+                                            cookie,
+                                            &_device,
+                                            fnum,
+                                            local_memregion,
+                                            local_offset + bytes_copied,
+                                            remote_memregion,
+                                            remote_offset + bytes_copied,
+                                            bytes - bytes_copied);
             _device.post (fnum, msg);
 
             TRACE_ERR((stderr, "<< Shmem::DmaModel::postDmaGet_impl('non-blocking memregion'), return false\n"));
