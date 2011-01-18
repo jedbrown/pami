@@ -1,5 +1,5 @@
 /**
- * \file test/internals/bgq/api/collectives/bcast.c
+ * \file test/internals/bgq/api/collectives/bcast_query.c
  * \brief Simple Bcast test
  */
 
@@ -164,8 +164,8 @@ int main (int argc, char ** argv)
         {
           long long dataSent = i;
           int          niter = NITER;
-          unsigned mustquery = bcast_must_query_md[nalg].check_correct.values.mustquery; //must query every time
-          assert(!mustquery || bcast_must_query_md[nalg].check_fn); // must have function if mustquery.
+          unsigned mustquery = bcast_must_query_md[nalg].check_correct.values.mustquery; /*must query every time */
+          assert(!mustquery || bcast_must_query_md[nalg].check_fn); /* must have function if mustquery. */
 
           broadcast.cmd.xfer_broadcast.typecount = i;
 
@@ -190,7 +190,7 @@ int main (int argc, char ** argv)
 
           for (j = 0; j < niter; j++)
             {
-              if(mustquery) // must query every time
+              if(mustquery) /* must query every time */
               {
                   result = bcast_must_query_md[nalg].check_fn(&broadcast);
                   if(result.bitmask) continue;

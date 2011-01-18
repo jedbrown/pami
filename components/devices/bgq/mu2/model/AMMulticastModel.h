@@ -1,6 +1,10 @@
+///
+/// \file components/devices/bgq/mu2/model/AMMulticastModel.h
+/// \brief ???
+///
 
-#ifndef  __components_devices_bgq_mu2_ammulticast__
-#define  __components_devices_bgq_mu2_ammulticast__
+#ifndef __components_devices_bgq_mu2_model_AMMulticastModel_h__
+#define __components_devices_bgq_mu2_model_AMMulticastModel_h__
 
 #include <hwi/include/bqc/MU_PacketHeader.h>
 

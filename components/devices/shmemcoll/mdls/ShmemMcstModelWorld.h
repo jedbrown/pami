@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/shmemcoll/ShmemMcstModelWorld.h
+ * \file components/devices/shmemcoll/mdls/ShmemMcstModelWorld.h
  * \brief ???
  */
 

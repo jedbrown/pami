@@ -272,8 +272,8 @@ int main(int argc, char*argv[])
 
 
 
-  //char sbuf[MAXBUFSIZE] __attribute__((__aligned__(64)));
-  //char rbuf[MAXBUFSIZE] __attribute__((__aligned__(64)));
+  /*char sbuf[MAXBUFSIZE] __attribute__((__aligned__(64))); */
+  /*char rbuf[MAXBUFSIZE] __attribute__((__aligned__(64))); */
 
   void* tmp = (void*)malloc(MAXBUFSIZE+128);
   char* sbuf = (char*) ( ((uint64_t)tmp + 128) & ~((uint64_t) 127)) ;

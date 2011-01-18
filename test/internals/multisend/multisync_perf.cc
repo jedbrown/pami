@@ -1,5 +1,5 @@
 ///
-/// \file test/internals/multisend/multisync.cc
+/// \file test/internals/multisend/multisync_perf.cc
 /// \brief ???
 ///
 

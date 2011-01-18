@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/shmemcoll/ShortMcombMessage.h
+ * \file components/devices/shmemcoll/msgs/ShortMcombMessage.h
  * \brief ???
  */
 

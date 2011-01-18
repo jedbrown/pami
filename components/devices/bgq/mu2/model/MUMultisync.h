@@ -1,3 +1,7 @@
+///
+/// \file components/devices/bgq/mu2/model/MUMultisync.h
+/// \brief ???
+///
 
 #ifndef __components_devices_bgq_mu2_model_MUMultisync_h__
 #define __components_devices_bgq_mu2_model_MUMultisync_h__

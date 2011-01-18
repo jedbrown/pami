@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/shmemcoll/ShmemColorMcstModel.h
+ * \file components/devices/shmemcoll/mdls/ShmemColorMcstModel.h
  * \brief ???
  */
 

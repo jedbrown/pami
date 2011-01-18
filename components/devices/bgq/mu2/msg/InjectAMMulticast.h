@@ -1,3 +1,7 @@
+///
+/// \file components/devices/bgq/mu2/msg/InjectAMMulticast.h
+/// \brief ???
+///
 
 #ifndef __components_devices_bgq_mu2_msg_InjectAMMulticast_h__
 #define __components_devices_bgq_mu2_msg_InjectAMMulticast_h__
