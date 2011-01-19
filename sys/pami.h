@@ -337,7 +337,7 @@ extern "C"
   enum
     {
       PAMI_HINT2_OFF   = 0, /**< This turns the option off. */
-      PAMI_HINT2_ON    = 1, /**< This turns the option on. */
+      PAMI_HINT2_ON    = 1  /**< This turns the option on. */
     };
 
   /**
@@ -350,7 +350,7 @@ extern "C"
     {
       PAMI_HINT3_DEFAULT   = 0, /**< This hint leaves the option up to the PAMI implementation to choose. */
       PAMI_HINT3_FORCE_ON  = 1, /**< This allows the user to force an option to be used. */
-      PAMI_HINT3_FORCE_OFF = 2, /**< The user can force the implementation to not use this option. */
+      PAMI_HINT3_FORCE_OFF = 2  /**< The user can force the implementation to not use this option. */
     };
 
   /**
@@ -2574,7 +2574,7 @@ extern "C"
    */
   typedef enum
   {
-    PAMI_P2P_SEND,               /**< Point-to-point send         */
+    PAMI_P2P_SEND                /**< Point-to-point send         */
   } pami_dispatch_type_t;
 
   /**
