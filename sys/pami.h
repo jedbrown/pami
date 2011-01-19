@@ -3282,8 +3282,8 @@ pami_result_t PAMI_Context_async_progress_disable (pami_context_t context);
   /**
    * \defgroup extensions PAMI Extensions
    *
-   * A PAMI extension may contain one or more extended functions, using the
-   * PAMI_Extension_function() interface.
+   * A PAMI extension may contain one or more extended functions or variables,
+   * using the PAMI_Extension_symbol() interface.
    *
    * For example, extension-specific functions may provide a mechanism to query
    * and set configuration attributes, similar to PAMI_Context_query() and
@@ -3335,35 +3335,41 @@ pami_result_t PAMI_Context_async_progress_disable (pami_context_t context);
   pami_result_t PAMI_Extension_close (pami_extension_t extension);
 
   /**
-   * \brief Query an extension function
+   * \brief Query an extension symbol
    *
    * If the named extension is available and implemented by the PAMI runtime
-   * the function pointer to the extension function is returned. This
-   * function pointer can be used to invoke the extension operation.
+   * a pointer to the extension symbol is returned. This may be a function
+   * pointer which can be used to invoke an extension function, or it may be
+   * a pointer to an extension variable.
    *
    * \code
    * typedef void (*pami_extension_1234_foo_fn) (pami_context_t context, size_t foo);
    * typedef void (*pami_extension_1234_bar_fn) (pami_context_t context, struct iovec ** iov);
+   * typedef void pami_extension_1234_var_t;
    *
    * pami_extension_1234_foo_fn pami_1234_foo =
-   *   (pami_extension_1234_foo_fn) PAMI_Extension_function ("pami_extension_1234", "foo");
+   *   (pami_extension_1234_foo_fn) PAMI_Extension_symbol ("pami_extension_1234", "foo");
    * pami_extension_1234_bar_fn pami_1234_bar =
-   *   (pami_extension_1234_bar_fn) PAMI_Extension_function ("pami_extension_1234", "bar");
+   *   (pami_extension_1234_bar_fn) PAMI_Extension_symbol ("pami_extension_1234", "bar");
+   * pami_extension_1234_var_t * pami_1234_var =
+   *   (pami_extension_1234_var_t *) PAMI_Extension_symbol ("pami_extension_1234", "var");
    *
    * pami_context_t context = ...;
    * pami_extension_1234_foo (context, 0);
    *
    * struct iovec iov[1024];
    * pami_extension_1234_bar (context, &iov);
+   *
+   * *var = 1234;
    * \endcode
    *
    * \param [in] extension Extension handle
-   * \param [in] fn        Extension function name
+   * \param [in] fn        Extension symbol name
    *
    * \retval NULL Request PAMI extension is not available
-   * \return PAMI extension function pointer
+   * \return PAMI extension symbol pointer
    */
-  void * PAMI_Extension_function (pami_extension_t extension, const char * fn);
+  void * PAMI_Extension_symbol (pami_extension_t extension, const char * fn);
 
   /** \} */ /* end of "extensions" group */
 

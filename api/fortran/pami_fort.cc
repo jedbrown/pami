@@ -623,11 +623,11 @@ extern "C" void pami_extension_close (pami_extension_t  extension,
     *result = PAMI_Extension_close(extension);
 }
 
-extern "C" void pami_extension_function (pami_extension_t   extension,
+extern "C" void pami_extension_symbol (pami_extension_t   extension,
         const char*        fn,
         void*              result)
 {
-    result = PAMI_Extension_function(extension, fn);
+    result = PAMI_Extension_symbol(extension, fn);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

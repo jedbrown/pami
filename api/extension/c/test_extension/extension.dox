@@ -39,10 +39,10 @@
  * PAMI_Extension_open (client, "test", &extension);
  *
  * EXT_test_extension_foo_fn pamix_test_foo =
- *   (EXT_test_extension_foo_fn) PAMI_Extension_function (extension, "foo");
+ *   (EXT_test_extension_foo_fn) PAMI_Extension_symbol (extension, "foo");
  *
  * EXT_test_extension_bar_fn pamix_test_bar =
- *   (EXT_test_extension_bar_fn) PAMI_Extension_function (extension, "bar");
+ *   (EXT_test_extension_bar_fn) PAMI_Extension_symbol (extension, "bar");
  *
  * pamix_test_foo ();
  *

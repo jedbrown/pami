@@ -58,7 +58,7 @@ int main(int argc, char ** argv)
   }
 
   pami_extension_test_foo_fn pamix_test_foo =
-    (pami_extension_test_foo_fn) PAMI_Extension_function (extension, "foo");
+    (pami_extension_test_foo_fn) PAMI_Extension_symbol (extension, "foo");
   if (pamix_test_foo == (void *)NULL)
   {
     fprintf (stderr, "Error. The \"EXT_test_extension\" extension function \"foo\" is not implemented. result = %d\n", status);
@@ -68,7 +68,7 @@ int main(int argc, char ** argv)
   pamix_test_foo ();
 
   pami_extension_test_bar_fn pamix_test_bar =
-    (pami_extension_test_bar_fn) PAMI_Extension_function (extension, "bar");
+    (pami_extension_test_bar_fn) PAMI_Extension_symbol (extension, "bar");
   if (pamix_test_bar == (void *)NULL)
   {
     fprintf (stderr, "Error. The \"EXT_test_extension\" extension function \"bar\" is not implemented. result = %d\n", status);

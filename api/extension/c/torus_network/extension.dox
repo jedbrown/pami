@@ -45,11 +45,11 @@
  * PAMI_Extension_open (client, "torus_network", &extension);
  *
  * torus_information_fn pamix_torusinfo =
- *   (torus_information_fn) PAMI_Extension_function (extension, "information");
+ *   (torus_information_fn) PAMI_Extension_symbol (extension, "information");
  * task2torus_fn pamix_task2torus =
- *   (task2torus_fn) PAMI_Extension_function (extension, "task2torus");
+ *   (task2torus_fn) PAMI_Extension_symbol (extension, "task2torus");
  * torus2task_fn pamix_torus2task =
- *   (torus2task_fn) PAMI_Extension_function (extension, "torus2task");
+ *   (torus2task_fn) PAMI_Extension_symbol (extension, "torus2task");
  *
  * const torus_info_t * info = pamix_torusinfo ();
  *

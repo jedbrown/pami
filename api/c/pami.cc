@@ -636,7 +636,7 @@ extern "C" pami_result_t PAMI_Extension_close (pami_extension_t extension)
   return x->close();
 }
 
-extern "C" void * PAMI_Extension_function (pami_extension_t   extension,
+extern "C" void * PAMI_Extension_symbol (pami_extension_t   extension,
                                            const char       * fn)
 {
   PAMI::Extension * x = (PAMI::Extension *) extension;
