@@ -171,12 +171,12 @@ namespace PAMI
             pami_result_t status = PAMI_ERROR;
 
 //fprintf(stderr, "BgqShaddrPacketModel::init_impl(), _device.shaddr._shaddr_packet_dispatch = %d, &_device = %p\n", _device.shaddr._shaddr_packet_dispatch, &_device);
-            if (_device.shaddr._shaddr_packet_dispatch != (uint16_t) -1)
+            if (_device.system_ro_put_dispatch != (uint16_t) -1)
               status = PAMI_SUCCESS;
             else
               status = _device.registerSystemRecvFunction (PhysicalAddressMessage<T_Device>::intercept_function,
                                                            &_device,
-                                                           _device.shaddr._shaddr_packet_dispatch);
+                                                           _device.system_ro_put_dispatch);
             if (status == PAMI_SUCCESS)
               return _shmem_model.init (dispatch,
                                         direct_recv_func,
@@ -249,7 +249,7 @@ namespace PAMI
             COMPILE_TIME_ASSERT(sizeof(PhysicalAddressMessage<T_Device>) <= packet_model_state_bytes);
             PhysicalAddressMessage<T_Device> * msg = (PhysicalAddressMessage<T_Device> *) state;
             new (msg) PhysicalAddressMessage<T_Device> (fn, cookie, &_device, fnum,
-                                                        _device.shaddr._shaddr_packet_dispatch,
+                                                        _device.system_ro_put_dispatch,
                                                         metadata, metasize, payload, length,
                                                         _shmem_model.getDispatchId());
 
