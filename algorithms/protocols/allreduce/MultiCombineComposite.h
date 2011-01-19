@@ -356,6 +356,7 @@ namespace CCMI
                                   cmd->cmd.xfer_allreduce.rcvbuf,  // buffer
                                   sbytes,                          // buffer bytes
                                   0);                              // amount initially in buffer
+            _pwq_inter0.reset();
 
             if (!amMaster)
               {
@@ -415,7 +416,6 @@ namespace CCMI
                                   cmd->cmd.xfer_allreduce.rcvbuf,  // buffer
                                   sbytes,                          // buffer bytes
                                   0);                              // amount initially in buffer
-            _pwq_inter0.reset();
             _pwq_inter1.reset();
 
             //_mcombine_l.client               = 0; /// \todo ?
