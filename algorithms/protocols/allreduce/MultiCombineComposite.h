@@ -669,21 +669,6 @@ namespace CCMI
                               func );
 
             _bytes                       = cmd->cmd.xfer_allreduce.stypecount * 1; /// \todo presumed size of PAMI_BYTE?
-            if(_bytes > 2048)
-            {
-              pami_result_t rc;
-              /// \todo memory leaks?
-              rc = __global.heap_mm->memalign((void **)&_buffer, 0, _bytes + 128);
-              PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for _buffer %zd", _bytes + 128);
-              rc = __global.heap_mm->memalign((void **)&_buffer1, 0, _bytes + 128);
-              PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for _buffer1 %zd", _bytes + 128);
-            }
-            else
-              {
-                _buffer = _bufferb;
-                _buffer1 = _buffer1b;
-              }
-
             size_t countDt = _bytes / sizeOfType;
 
             // Discover the root node and intereesting topology information
@@ -715,21 +700,15 @@ namespace CCMI
                           this, _pwq_dst.bufferToProduce(),
                            _pwq_dst.bytesAvailableToConsume(), _pwq_dst.bytesAvailableToProduce());
 
-            char* tmp = (char*)(((uint64_t)_buffer + 127) & ~(uint64_t)127); // align the buffer
-            TRACE_FORMAT( "<%p> _buffer %p/%p", this, _buffer, tmp);
+            // This extra PWQ is pointing at the reception buffer.  This means that the
+            // reception buffers will be overwritten, maybe more than once
+            // \todo Do we need some scratch space if we want to do something like in place?
             _pwq_temp.configure(
-                                tmp,                            // buffer
-                                _bytes,                         // buffer bytes
-                                0);                             // amount initially in buffer
+                                  cmd->cmd.xfer_allreduce.rcvbuf,  // buffer
+                                  _bytes,                         // buffer bytes
+                                  0);                             // amount initially in buffer
             _pwq_temp.reset();
 
-            tmp = (char*)(((uint64_t)_buffer1 + 127) & ~(uint64_t)127); // align the buffer
-            TRACE_FORMAT( "<%p>_buffer1 %p/%p", this, _buffer1, tmp);
-            _pwq_temp1.configure(
-                                 tmp,                            // buffer
-                                 _bytes,                         // buffer bytes
-                                 0);                             // amount initially in buffer
-            _pwq_temp1.reset();
             _mcomb_l.connection_id        = 0;
             _mcomb_l.roles                = -1U;
             _mcomb_l.data_participants    = (pami_topology_t*)_topology_l;
@@ -763,7 +742,7 @@ namespace CCMI
             _mcast_l.src_participants     = (pami_topology_t*) & _topology_lm;
             _mcast_l.dst_participants     = (pami_topology_t*)_topology_l;
             _mcast_l.src                  = (pami_pipeworkqueue_t*) & _pwq_dst;
-            _mcast_l.dst                  = _amMaster ? (pami_pipeworkqueue_t*) & _pwq_temp1 : (pami_pipeworkqueue_t*) & _pwq_dst; // masters use a temp for mcast destination
+            _mcast_l.dst                  = (pami_pipeworkqueue_t*) & _pwq_temp;
 #ifdef LOCAL_TEST
             // Intercept the user's done for testing purposes.
             _cb_done.function   = fn;
@@ -801,7 +780,6 @@ namespace CCMI
           PAMI::PipeWorkQueue                 _pwq_src;
           PAMI::PipeWorkQueue                 _pwq_dst;
           PAMI::PipeWorkQueue                 _pwq_temp;
-          PAMI::PipeWorkQueue                 _pwq_temp1;
           PAMI::Topology                     *_topology_l;
           PAMI::Topology                      _topology_lm;
           PAMI::Topology                     *_topology_g;
