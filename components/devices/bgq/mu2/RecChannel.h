@@ -317,62 +317,77 @@ namespace PAMI
             return false;
           };
 
-          inline unsigned advance ()
+	  size_t process_wrap() __attribute__((noinline, weak));
+
+          inline size_t advance ()
           {
             TRACE_FN_ENTER();
 
-            unsigned packets = 0;
-            uint32_t wrap = 0;
+            size_t packets = 0;
             uint32_t cur_bytes = 0;
             uint32_t total_bytes = 0;
             uint32_t cumulative_bytes = 0;
             MemoryFifoPacketHeader *hdr = NULL;
 
             MUSPI_RecFifo_t * rfifo = _rfifo;
-	    TRACE_FORMAT("MUSPI_RecFifo_t * = %p", rfifo);
+	    //TRACE_FORMAT("MUSPI_RecFifo_t * = %p", rfifo);
 
-            while ((total_bytes = MUSPI_getAvailableBytes (rfifo, &wrap)) != 0)
-              {
-                if (wrap)   //Extra branch over older packet loop
-                  {
-                    hdr = (MemoryFifoPacketHeader *) MUSPI_getNextPacketWrap (rfifo, &cur_bytes);
-		    TRACE_HEXDATA(hdr, 64);
+            //total_bytes = MUSPI_getAvailableBytes (rfifo, &wrap);	    
+	    //PAMI::Context advance has a loop to poll when we have events
+	    //if (total_bytes == 0)
+	    // return packets;
 
-                    uint16_t id = 0;
-                    void *metadata;
-                    hdr->getHeaderInfo (id, &metadata);
+	    void        * va_tail;           /* Snapshot of the fifo's tail */
+	    void        * va_end;            /* Snapshot of the fifo's end */
+	    void        * va_head;           /* Snapshot of the fifo's head */
+	    volatile uint64_t  pa_tail;      /* Actual tail physical address */
 
-                    _dispatch[id].f(metadata, hdr + 1, cur_bytes - 32, _dispatch[id].p, hdr + 1);
-                    packets++;
+	    MUSPI_Fifo_t  *fifo_ptr = &rfifo->_fifo;
+	    va_head      = fifo_ptr->va_head;
+	    va_end       = fifo_ptr->va_end;
+	    pa_tail      = MUSPI_getHwTail (fifo_ptr);    /* Snapshot HW */
+	    va_tail      = (void*)(pa_tail - MUSPI_getStartPa (fifo_ptr) +
+				   (uint64_t)(MUSPI_getStartVa (fifo_ptr)));
 
-                    TRACE_FORMAT("Received packet wrap of size %d, total bytes %d", cur_bytes, total_bytes);
-                  }
-                else
-                  {
-                    cumulative_bytes = 0;
+	    MUSPI_setTailVa (fifo_ptr, va_tail); /** extra store over older poll loop*/
 
-                    while (cumulative_bytes < total_bytes )
-                      {
-                        hdr = (MemoryFifoPacketHeader *) MUSPI_getNextPacketOptimized (rfifo, &cur_bytes);
+	    if (va_tail == va_head) 
+	      return packets;
 
-                        TRACE_HEXDATA(hdr, 64);
-
-                        cumulative_bytes += cur_bytes;
-                        uint16_t id = 0;
-                        void *metadata;
-                        hdr->getHeaderInfo (id, &metadata);
-                        TRACE_FORMAT("dispatch = %d, metadata = %p, hdr+1 = %p, cur_bytes-32 = %d", id, metadata, hdr + 1, cur_bytes - 32);
-                        _dispatch[id].f(metadata, hdr + 1, cur_bytes - 32, _dispatch[id].p, hdr + 1);
-                        packets++;
-                        //Touch head for next packet
-                        TRACE_FORMAT("Received packet of size %d, cumulative bytes = %d, total bytes %d", cur_bytes, cumulative_bytes, total_bytes);
-                      }
-                  }
-
-                MUSPI_syncRecFifoHwHead (rfifo);
-              }
-
-            TRACE_FORMAT("Number of packets received: %d", packets);
+	    /** touch head for first packet */
+	    muspi_dcbt (va_head, 0);
+	    _bgq_msync();
+	    
+	    if (va_tail > va_head) /** one branch less over older poll loop */
+	      total_bytes = (uint64_t)va_tail - (uint64_t)va_head; /** No wrap and we can grab packets */
+	    else if ( va_head < (void*)((uint64_t)va_end - 544UL) )
+	      /** We wont process the wrap in this packet poll */
+	      total_bytes = (uint64_t)va_end - (uint64_t)va_head - 544UL;
+	    else {
+	      process_wrap();
+	    }
+	    
+	    cumulative_bytes = 0;       	
+	    while (cumulative_bytes < total_bytes ) 
+	      {
+		hdr = (MemoryFifoPacketHeader *) MUSPI_getNextPacketOptimized (rfifo, &cur_bytes);
+		
+		TRACE_HEXDATA(hdr, 64);
+		
+		cumulative_bytes += cur_bytes;
+		uint16_t id = 0;
+		void *metadata;
+		hdr->getHeaderInfo (id, &metadata);
+		TRACE_FORMAT("dispatch = %d, metadata = %p, hdr+1 = %p, cur_bytes-32 = %d", id, metadata, hdr + 1, cur_bytes - 32);
+		_dispatch[id].f(metadata, hdr + 1, cur_bytes - 32, _dispatch[id].p, hdr + 1);
+		packets++;
+		//Touch head for next packet
+		TRACE_FORMAT("Received packet of size %d, cumulative bytes = %d, total bytes %d", cur_bytes, cumulative_bytes, total_bytes);
+	      }
+	      
+	    MUSPI_syncRecFifoHwHead (rfifo);
+	    
+	    //TRACE_FORMAT("Number of packets received: %d", packets);
             TRACE_FN_EXIT();
             return packets;
           }
@@ -391,6 +406,26 @@ namespace PAMI
           mu_dispatch_t     _dispatch[dispatch_set_count * dispatch_set_size];
 
       }; // class     PAMI::Device::MU::RecChannel
+
+      size_t RecChannel::process_wrap (){
+	size_t packets = 0;
+	MemoryFifoPacketHeader *hdr = NULL;
+	unsigned cur_bytes = 0;
+	
+	hdr = (MemoryFifoPacketHeader *) MUSPI_getNextPacketWrap (_rfifo, &cur_bytes);
+	TRACE_HEXDATA(hdr, 64);
+	
+	uint16_t id = 0;
+	void *metadata;
+	hdr->getHeaderInfo (id, &metadata);
+	
+	_dispatch[id].f(metadata, hdr + 1, cur_bytes - 32, _dispatch[id].p, hdr + 1);
+	packets++;
+	
+	TRACE_FORMAT("Received packet wrap of size %d\n", cur_bytes);
+	return packets;
+      }
+
     };   // namespace PAMI::Device::MU
   };     // namespace PAMI::Device
 };       // namespace PAMI

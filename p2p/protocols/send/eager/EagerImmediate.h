@@ -52,7 +52,7 @@ namespace PAMI
           ///
           /// \brief Protocol metadata structure for immediate sends
           ///
-          typedef struct __attribute__((__packed__)) protocol_metadata
+          typedef struct protocol_metadata
           {
             uint16_t        databytes; ///< Number of bytes of data
             uint16_t        metabytes; ///< Number of bytes of metadata

@@ -21,7 +21,7 @@
 //#define ITERATIONS 10
 //#define ITERATIONS 1000
 //#define ITERATIONS 10000
-#define ITERATIONS 100
+#define ITERATIONS 10000
 
 #define WARMUP
 

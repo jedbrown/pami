@@ -552,7 +552,7 @@ namespace PAMI
 
 	    MUSPI_ClearInterruptsDirect( injectionGroup.getClearInterruptsStatusPtr(),
 					 injectionGroup.getInterruptMask() );
-	    unsigned events  = injectionGroup.advance ();
+	    size_t events  = injectionGroup.advance ();
 	    events += receptionChannel.advance ();
 
 //            TRACE_FN_EXIT();

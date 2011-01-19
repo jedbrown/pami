@@ -159,6 +159,9 @@ namespace PAMI
 	      return _clearInterruptStatusPtr;
 	    }
 
+	  size_t advanceCompletionQueues() __attribute__((noinline, weak));
+	  size_t advanceSendQueues() __attribute__((noinline, weak));
+
           ///
           /// \brief Advance the injection channels in this injection group
           ///
@@ -183,34 +186,14 @@ namespace PAMI
 
             size_t events = 0;
 
-            if (likely(_completion_status != 0))
+            if (_completion_status != 0)
               {
-                events += channel[0].advanceCompletion ();
-                events += channel[1].advanceCompletion ();
-                events += channel[2].advanceCompletion ();
-                events += channel[3].advanceCompletion ();
-                events += channel[4].advanceCompletion ();
-                events += channel[5].advanceCompletion ();
-                events += channel[6].advanceCompletion ();
-                events += channel[7].advanceCompletion ();
-                events += channel[8].advanceCompletion ();
-                events += channel[9].advanceCompletion ();
-                events += channel[10].advanceCompletion ();
+		events += advanceCompletionQueues();
               }
 
-            if (unlikely(_sendqueue_status != 0))
+            if (_sendqueue_status != 0)
               {
-                events += channel[0].advanceSendQueue ();
-                events += channel[1].advanceSendQueue ();
-                events += channel[2].advanceSendQueue ();
-                events += channel[3].advanceSendQueue ();
-                events += channel[4].advanceSendQueue ();
-                events += channel[5].advanceSendQueue ();
-                events += channel[6].advanceSendQueue ();
-                events += channel[7].advanceSendQueue ();
-                events += channel[8].advanceSendQueue ();
-                events += channel[9].advanceSendQueue ();
-                events += channel[10].advanceSendQueue ();
+		events += advanceSendQueues();
               }
 
             TRACE_FN_EXIT();
@@ -229,6 +212,43 @@ namespace PAMI
                                                         // clears interrupts.
 
       }; // class     PAMI::Device::MU::InjGroup
+
+      size_t InjGroup::advanceCompletionQueues() {
+	size_t events = 0;
+
+	events += channel[0].advanceCompletion ();
+	events += channel[1].advanceCompletion ();
+	events += channel[2].advanceCompletion ();
+	events += channel[3].advanceCompletion ();
+	events += channel[4].advanceCompletion ();
+	events += channel[5].advanceCompletion ();
+	events += channel[6].advanceCompletion ();
+	events += channel[7].advanceCompletion ();
+	events += channel[8].advanceCompletion ();
+	events += channel[9].advanceCompletion ();
+	events += channel[10].advanceCompletion ();
+	
+	return events;
+      }
+
+      size_t InjGroup::advanceSendQueues() {
+	size_t events = 0;
+      
+	events += channel[0].advanceSendQueue ();
+	events += channel[1].advanceSendQueue ();
+	events += channel[2].advanceSendQueue ();
+	events += channel[3].advanceSendQueue ();
+	events += channel[4].advanceSendQueue ();
+	events += channel[5].advanceSendQueue ();
+	events += channel[6].advanceSendQueue ();
+	events += channel[7].advanceSendQueue ();
+	events += channel[8].advanceSendQueue ();
+	events += channel[9].advanceSendQueue ();
+	events += channel[10].advanceSendQueue ();
+
+	return events;
+      }
+
     };   // namespace PAMI::Device::MU
   };     // namespace PAMI::Device
 };       // namespace PAMI
