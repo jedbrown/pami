@@ -38,7 +38,7 @@ void cb_bcast_recv  (pami_context_t         context,
                      void                ** cookie)
 {
   *rcvbuf                        = malloc(sndlen);
-  *rtype                         = PAMI_BYTE;
+  *rtype                         = PAMI_TYPE_CONTIGUOUS;
   *rtypecount                    = sndlen;
   *cb_info                       = cb_ambcast_done;
   *cookie                        = (void*) * rcvbuf;
@@ -147,7 +147,7 @@ int main(int argc, char*argv[])
   ambroadcast.cmd.xfer_ambroadcast.user_header  = NULL;
   ambroadcast.cmd.xfer_ambroadcast.headerlen    = 0;
   ambroadcast.cmd.xfer_ambroadcast.sndbuf       = buf;
-  ambroadcast.cmd.xfer_ambroadcast.stype        = PAMI_BYTE;
+  ambroadcast.cmd.xfer_ambroadcast.stype        = PAMI_TYPE_CONTIGUOUS;
   ambroadcast.cmd.xfer_ambroadcast.stypecount   = 0;
 
   for (nalg = 0; nalg < ambcast_num_algorithm[0]; nalg++)

@@ -578,7 +578,7 @@ namespace PAMI
 	    else
 	      {
                 // Only contiguous receives are implemented
-                PAMI_assertf(state->info.type == PAMI_BYTE, "[%5d:%s] %s() - Only contiguous receives are implemented.\n", __LINE__, __FILE__, __FUNCTION__);
+                PAMI_assertf(state->info.type == PAMI_TYPE_CONTIGUOUS, "[%5d:%s] %s() - Only contiguous receives are implemented.\n", __LINE__, __FILE__, __FUNCTION__);
               }
 
             TRACE_ERR((stderr, "<< EagerSimple::process_envelope()\n"));

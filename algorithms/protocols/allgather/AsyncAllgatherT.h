@@ -315,10 +315,10 @@ namespace CCMI
                               cb_exec_done,
                               geometry,
                               NULL,
-                              PAMI_BYTE,
+                              PAMI_TYPE_CONTIGUOUS,
                               cdata->_count,
                               NULL,
-                              PAMI_BYTE,
+                              PAMI_TYPE_CONTIGUOUS,
                               cdata->_count);
 
                 if (cmgr == NULL)

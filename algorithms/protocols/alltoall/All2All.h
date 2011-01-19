@@ -53,11 +53,11 @@ namespace CCMI
           _my_cb_done.clientdata = this;
           _donecount = 0;
 
-          /// \todo only supporting PAMI_BYTE right now
+          /// \todo only supporting PAMI_TYPE_CONTIGUOUS right now
           //PAMI_Type_sizeof(coll->cmd.xfer_alltoall.stype);
-          PAMI_assert(coll->cmd.xfer_alltoall.stype == PAMI_BYTE);
+          PAMI_assert(coll->cmd.xfer_alltoall.stype == PAMI_TYPE_CONTIGUOUS);
 
-          /// \todo presumed size of PAMI_BYTE?
+          /// \todo presumed size of PAMI_TYPE_CONTIGUOUS?
           //size_t bytes = topo_size * coll->cmd.xfer_alltoall.stypecount * 1;
 
 	  pami_result_t rc;
@@ -75,7 +75,7 @@ namespace CCMI
                                   coll->cmd.xfer_alltoall.sndbuf,
                                   topo_size,
                                   &coll->cmd.xfer_alltoall.stype,
-                                  coll->cmd.xfer_alltoall.stypecount,/// \todo only supporting PAMI_BYTE so offset=length
+                                  coll->cmd.xfer_alltoall.stypecount,/// \todo only supporting PAMI_TYPE_CONTIGUOUS so offset=length
                                   coll->cmd.xfer_alltoall.stypecount,
                                   _sendinit);
 
@@ -91,7 +91,7 @@ namespace CCMI
                                   coll->cmd.xfer_alltoall.rcvbuf,
                                   topo_size,
                                   &coll->cmd.xfer_alltoall.rtype,
-                                  coll->cmd.xfer_alltoall.rtypecount,/// \todo only supporting PAMI_BYTE so offset=length
+                                  coll->cmd.xfer_alltoall.rtypecount,/// \todo only supporting PAMI_TYPE_CONTIGUOUS so offset=length
                                   coll->cmd.xfer_alltoall.rtypecount,
                                   _recvinit);
 

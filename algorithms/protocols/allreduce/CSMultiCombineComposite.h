@@ -42,8 +42,8 @@ namespace CCMI
 
             _native = (Interfaces::NativeInterface  *)_geometry->getKey(PAMI::Geometry::GKEY_GEOMETRYCSNI);
 
-            /// \todo only supporting PAMI_BYTE right now
-            PAMI_assertf((cmd->cmd.xfer_reduce.stype == PAMI_BYTE) && (cmd->cmd.xfer_reduce.rtype == PAMI_BYTE), "Not PAMI_BYTE? %#zX %#zX\n", (size_t)cmd->cmd.xfer_reduce.stype, (size_t)cmd->cmd.xfer_reduce.rtype);
+            /// \todo only supporting PAMI_TYPE_CONTIGUOUS right now
+            PAMI_assertf((cmd->cmd.xfer_reduce.stype == PAMI_TYPE_CONTIGUOUS) && (cmd->cmd.xfer_reduce.rtype == PAMI_TYPE_CONTIGUOUS), "Not PAMI_TYPE_CONTIGUOUS? %#zX %#zX\n", (size_t)cmd->cmd.xfer_reduce.stype, (size_t)cmd->cmd.xfer_reduce.rtype);
 
             // PAMI_Type_sizeof(cmd->cmd.xfer_reduce.stype); /// \todo PAMI_Type_sizeof() is PAMI_UNIMPL so use getReduceFunction for now?
 
@@ -55,13 +55,13 @@ namespace CCMI
                               cmd->cmd.xfer_reduce.stypecount,// this parm is unused
                               sizeOfType,
                               func );
-            size_t size = cmd->cmd.xfer_reduce.stypecount * 1; /// \todo presumed size of PAMI_BYTE is 1?
+            size_t size = cmd->cmd.xfer_reduce.stypecount * 1; /// \todo presumed size of PAMI_TYPE_CONTIGUOUS is 1?
             _srcPwq.configure(cmd->cmd.xfer_reduce.sndbuf, size, size);
             _srcPwq.reset();
 
             if (cmd->cmd.xfer_reduce.root == __global.mapping.task())
               {
-                size = cmd->cmd.xfer_reduce.rtypecount * 1; /// \todo presumed size of PAMI_BYTE is 1?
+                size = cmd->cmd.xfer_reduce.rtypecount * 1; /// \todo presumed size of PAMI_TYPE_CONTIGUOUS is 1?
                 _dstPwq.configure(cmd->cmd.xfer_reduce.rcvbuf, size, 0);
                 _dstPwq.reset();
               }

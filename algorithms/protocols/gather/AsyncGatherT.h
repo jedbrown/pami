@@ -73,10 +73,10 @@ namespace CCMI
       {
         xfer->xfer_gather.root   = -1;
         xfer->xfer_gather.sndbuf = NULL;
-        xfer->xfer_gather.stype  = PAMI_BYTE;
+        xfer->xfer_gather.stype  = PAMI_TYPE_CONTIGUOUS;
         xfer->xfer_gather.stypecount = 0;
         xfer->xfer_gather.rcvbuf = NULL;
-        xfer->xfer_gather.rtype  = PAMI_BYTE;
+        xfer->xfer_gather.rtype  = PAMI_TYPE_CONTIGUOUS;
         xfer->xfer_gather.rtypecount = 0;
       }
 
@@ -85,10 +85,10 @@ namespace CCMI
       {
         xfer->xfer_gatherv.root    = -1;
         xfer->xfer_gatherv.sndbuf  = NULL;
-        xfer->xfer_gatherv.stype   = PAMI_BYTE;
+        xfer->xfer_gatherv.stype   = PAMI_TYPE_CONTIGUOUS;
         xfer->xfer_gatherv.stypecount = 0;
         xfer->xfer_gatherv.rcvbuf  = NULL;
-        xfer->xfer_gatherv.rtype   = PAMI_BYTE;
+        xfer->xfer_gatherv.rtype   = PAMI_TYPE_CONTIGUOUS;
         xfer->xfer_gatherv.rtypecounts = NULL;
         xfer->xfer_gatherv.rdispls = NULL;
       }
@@ -98,10 +98,10 @@ namespace CCMI
       {
         xfer->xfer_gatherv_int.root    = -1;
         xfer->xfer_gatherv_int.sndbuf  = NULL;
-        xfer->xfer_gatherv_int.stype   = PAMI_BYTE;
+        xfer->xfer_gatherv_int.stype   = PAMI_TYPE_CONTIGUOUS;
         xfer->xfer_gatherv_int.stypecount = 0;
         xfer->xfer_gatherv_int.rcvbuf  = NULL;
-        xfer->xfer_gatherv_int.rtype   = PAMI_BYTE;
+        xfer->xfer_gatherv_int.rtype   = PAMI_TYPE_CONTIGUOUS;
         xfer->xfer_gatherv_int.rtypecounts = NULL;
         xfer->xfer_gatherv_int.rdispls = NULL;
       }

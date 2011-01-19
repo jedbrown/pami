@@ -72,10 +72,10 @@ namespace CCMI
       {
         xfer->xfer_scatter.root   = -1;
         xfer->xfer_scatter.sndbuf = NULL;
-        xfer->xfer_scatter.stype  = PAMI_BYTE;
+        xfer->xfer_scatter.stype  = PAMI_TYPE_CONTIGUOUS;
         xfer->xfer_scatter.stypecount = 0;
         xfer->xfer_scatter.rcvbuf = NULL;
-        xfer->xfer_scatter.rtype  = PAMI_BYTE;
+        xfer->xfer_scatter.rtype  = PAMI_TYPE_CONTIGUOUS;
         xfer->xfer_scatter.rtypecount = 0;
       }
 
@@ -84,11 +84,11 @@ namespace CCMI
       {
         xfer->xfer_scatterv.root    = -1;
         xfer->xfer_scatterv.sndbuf  = NULL;
-        xfer->xfer_scatterv.stype   = PAMI_BYTE;
+        xfer->xfer_scatterv.stype   = PAMI_TYPE_CONTIGUOUS;
         xfer->xfer_scatterv.stypecounts = NULL;
         xfer->xfer_scatterv.sdispls = NULL;
         xfer->xfer_scatterv.rcvbuf  = NULL;
-        xfer->xfer_scatterv.rtype   = PAMI_BYTE;
+        xfer->xfer_scatterv.rtype   = PAMI_TYPE_CONTIGUOUS;
         xfer->xfer_scatterv.rtypecount = 0;
       }
 
@@ -97,11 +97,11 @@ namespace CCMI
       {
         xfer->xfer_scatterv_int.root    = -1;
         xfer->xfer_scatterv_int.sndbuf  = NULL;
-        xfer->xfer_scatterv_int.stype   = PAMI_BYTE;
+        xfer->xfer_scatterv_int.stype   = PAMI_TYPE_CONTIGUOUS;
         xfer->xfer_scatterv_int.stypecounts = NULL;
         xfer->xfer_scatterv_int.sdispls = NULL;
         xfer->xfer_scatterv_int.rcvbuf  = NULL;
-        xfer->xfer_scatterv_int.rtype   = PAMI_BYTE;
+        xfer->xfer_scatterv_int.rtype   = PAMI_TYPE_CONTIGUOUS;
         xfer->xfer_scatterv_int.rtypecount = 0;
       }
 
@@ -445,7 +445,7 @@ namespace CCMI
 
                 DEBUG((stderr, "AsyncScatter - cb_async for key %d: found posted call-in\n", key);)
                 // use type count for now, need datatype handling !!!
-                // CCMI_assert (co->getXfer()->type != PAMI_BYTE);
+                // CCMI_assert (co->getXfer()->type != PAMI_TYPE_CONTIGUOUS);
 
                 // received message length (sndlen) may be greater than rtypecount)
                 // CCMI_assert (co->getXfer()->cmd.xfer_scatter.rtypecount == cdata->_count);

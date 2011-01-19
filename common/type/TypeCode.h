@@ -262,7 +262,7 @@ namespace PAMI
     inline bool TypeCode::IsContiguous() const
     {
         // TODO: smarter way to check if contiguous?
-        return this == PAMI_BYTE;
+        return this == PAMI_TYPE_CONTIGUOUS;
     }
 
     inline void TypeCode::AddCodeSize(size_t inc_code_size)

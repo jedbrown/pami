@@ -311,7 +311,7 @@ int main(int argc, char*argv[])
     bottom_broadcast.algorithm = bottom_bcast_algorithm[0];
     bottom_broadcast.cmd.xfer_broadcast.root      = 0;
     bottom_broadcast.cmd.xfer_broadcast.buf       = NULL;
-    bottom_broadcast.cmd.xfer_broadcast.type      = PAMI_BYTE;
+    bottom_broadcast.cmd.xfer_broadcast.type      = PAMI_TYPE_CONTIGUOUS;
     bottom_broadcast.cmd.xfer_broadcast.typecount = 0;
 
 
@@ -420,7 +420,7 @@ int main(int argc, char*argv[])
     top_broadcast.algorithm = top_bcast_algorithm[0];
     top_broadcast.cmd.xfer_broadcast.root      = 0;
     top_broadcast.cmd.xfer_broadcast.buf       = NULL;
-    top_broadcast.cmd.xfer_broadcast.type      = PAMI_BYTE;
+    top_broadcast.cmd.xfer_broadcast.type      = PAMI_TYPE_CONTIGUOUS;
     top_broadcast.cmd.xfer_broadcast.typecount = 0;
 
 

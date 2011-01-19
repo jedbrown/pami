@@ -1015,10 +1015,10 @@ external PAMI_ADDR_NULL
 !
 !   \brief PAMI datatype that represents a contigous data layout
 !
-    integer(PAMI_TYPE_T) PAMI_BYTE
+    integer(PAMI_TYPE_T) PAMI_TYPE_CONTIGUOUS
     integer(PAMI_VOID_T) PAMI_DATA_COPY
     integer(PAMI_GEOMETRY_T) PAMI_NULL_GEOMETRY
-    common/PAMI_FORT_GLOBALS/ PAMI_BYTE, PAMI_DATA_COPY, PAMI_NULL_GEOMETRY
+    common/PAMI_FORT_GLOBALS/ PAMI_TYPE_CONTIGUOUS, PAMI_DATA_COPY, PAMI_NULL_GEOMETRY
 
 !
 !   \brief PAMI type of dispatch

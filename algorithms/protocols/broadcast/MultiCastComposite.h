@@ -53,8 +53,8 @@ namespace CCMI
 	    PAMI::Topology *destinations = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
 	    
 	    
-            /// \todo only supporting PAMI_BYTE right now
-            PAMI_assertf(cmd->cmd.xfer_broadcast.type == PAMI_BYTE, "Not PAMI_BYTE? %#zX\n", (size_t)cmd->cmd.xfer_broadcast.type);
+            /// \todo only supporting PAMI_TYPE_CONTIGUOUS right now
+            PAMI_assertf(cmd->cmd.xfer_broadcast.type == PAMI_TYPE_CONTIGUOUS, "Not PAMI_TYPE_CONTIGUOUS? %#zX\n", (size_t)cmd->cmd.xfer_broadcast.type);
 
 //            PAMI_Type_sizeof(cmd->cmd.xfer_broadcast.type); /// \todo PAMI_Type_sizeof() is PAMI_UNIMPL so use getReduceFunction for now?
 
@@ -69,7 +69,7 @@ namespace CCMI
 //                          func );
 //        size_t bytes = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
 
-            size_t bytes = cmd->cmd.xfer_broadcast.typecount * 1; /// \todo presumed size of PAMI_BYTE?
+            size_t bytes = cmd->cmd.xfer_broadcast.typecount * 1; /// \todo presumed size of PAMI_TYPE_CONTIGUOUS?
 	    size_t pbytes = 0;
 	    
             if (cmd->cmd.xfer_broadcast.root == __global.mapping.task())
@@ -147,7 +147,7 @@ namespace CCMI
                                void                                 * cookie) :
               Composite(), _native(mInterface), _geometry((PAMI_GEOMETRY_CLASS*)g),
               _xfer_broadcast(cmd->cmd.xfer_broadcast), _root(cmd->cmd.xfer_broadcast.root),
-              _bytes(cmd->cmd.xfer_broadcast.typecount * 1), /// \todo presumed size of PAMI_BYTE?
+              _bytes(cmd->cmd.xfer_broadcast.typecount * 1), /// \todo presumed size of PAMI_TYPE_CONTIGUOUS?
               _buffer(NULL)
           {
             TRACE_ADAPTOR((stderr, "<%p>%s type %#zX, count %zu, root %zu\n", this, __PRETTY_FUNCTION__, (size_t)cmd->cmd.xfer_broadcast.type, cmd->cmd.xfer_broadcast.typecount, cmd->cmd.xfer_broadcast.root));
@@ -164,8 +164,8 @@ namespace CCMI
 
             DO_DEBUG(for (unsigned j = 0; j < _all.size(); ++j) fprintf(stderr, "all[%u]=%zu, size %zu\n", j, (size_t)_all.index2Rank(j), _all.size()));
 
-            /// \todo only supporting PAMI_BYTE right now
-            PAMI_assertf(cmd->cmd.xfer_broadcast.type == PAMI_BYTE, "Not PAMI_BYTE? %#zX\n", (size_t)cmd->cmd.xfer_broadcast.type);
+            /// \todo only supporting PAMI_TYPE_CONTIGUOUS right now
+            PAMI_assertf(cmd->cmd.xfer_broadcast.type == PAMI_TYPE_CONTIGUOUS, "Not PAMI_TYPE_CONTIGUOUS? %#zX\n", (size_t)cmd->cmd.xfer_broadcast.type);
 
 //            PAMI_Type_sizeof(cmd->cmd.xfer_broadcast.type); /// \todo PAMI_Type_sizeof() is PAMI_UNIMPL so use getReduceFunction for now?
 
@@ -338,7 +338,7 @@ namespace CCMI
 	  bool             amMaster    = _geometry->isLocalMasterParticipant();
 	  bool             isRootLocal = t_local->isRankMember(root);
 	  void *deviceInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
-	  size_t           bytes       = cmd->cmd.xfer_broadcast.typecount * 1; /// \todo presumed size of PAMI_BYTE?
+	  size_t           bytes       = cmd->cmd.xfer_broadcast.typecount * 1; /// \todo presumed size of PAMI_TYPE_CONTIGUOUS?
 	  size_t           numMasters  = t_master->size();
 	  size_t           numLocal    = t_local->size();
 
@@ -679,7 +679,7 @@ namespace CCMI
             bool             amMaster    = _geometry->isLocalMasterParticipant();
             bool             isRootLocal = t_local->isRankMember(root);
             _deviceInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
-            size_t           bytes       = cmd->cmd.xfer_broadcast.typecount * 1; /// \todo presumed size of PAMI_BYTE?
+            size_t           bytes       = cmd->cmd.xfer_broadcast.typecount * 1; /// \todo presumed size of PAMI_TYPE_CONTIGUOUS?
             size_t           numMasters  = t_master->size();
             size_t           numLocal    = t_local->size();
             TRACE_ADAPTOR((stderr, "MultiCastComposite2Device:  In Composite Constructor, setting up PWQ's %p %p, bytes=%ld buf=%p\n",
@@ -1260,7 +1260,7 @@ namespace CCMI
                                void                                 * cookie) :
               Composite(), _native(mInterface), _geometry((PAMI_GEOMETRY_CLASS*)g),
               _xfer_broadcast(cmd->cmd.xfer_broadcast),
-              _bytes(cmd->cmd.xfer_broadcast.typecount * 1), /// \todo presumed size of PAMI_BYTE?
+              _bytes(cmd->cmd.xfer_broadcast.typecount * 1), /// \todo presumed size of PAMI_TYPE_CONTIGUOUS?
               _buffer_size(0),
               _buffer(NULL)
           {
@@ -1272,8 +1272,8 @@ namespace CCMI
 
             DO_DEBUG(for (unsigned j = 0; j < _all.size(); ++j) fprintf(stderr, "all[%u]=%zu, size %zu\n", j, (size_t)_all.index2Rank(j), _all.size()));
 
-            /// \todo only supporting PAMI_BYTE right now
-            PAMI_assertf(cmd->cmd.xfer_broadcast.type == PAMI_BYTE, "Not PAMI_BYTE? %#zX\n", (size_t)cmd->cmd.xfer_broadcast.type);
+            /// \todo only supporting PAMI_TYPE_CONTIGUOUS right now
+            PAMI_assertf(cmd->cmd.xfer_broadcast.type == PAMI_TYPE_CONTIGUOUS, "Not PAMI_TYPE_CONTIGUOUS? %#zX\n", (size_t)cmd->cmd.xfer_broadcast.type);
 
 //            PAMI_Type_sizeof(cmd->cmd.xfer_broadcast.type); /// \todo PAMI_Type_sizeof() is PAMI_UNIMPL so use getReduceFunction for now?
 
@@ -1338,8 +1338,8 @@ namespace CCMI
             _xfer_broadcast = cmd->cmd.xfer_broadcast;
             TRACE_ADAPTOR((stderr, "<%p>%s type %#zX, count %zu, root %zu\n", this, __PRETTY_FUNCTION__, (size_t)cmd->cmd.xfer_broadcast.type, cmd->cmd.xfer_broadcast.typecount, cmd->cmd.xfer_broadcast.root));
 
-            /// \todo only supporting PAMI_BYTE right now
-            PAMI_assertf(cmd->cmd.xfer_broadcast.type == PAMI_BYTE, "Not PAMI_BYTE? %#zX\n", (size_t)cmd->cmd.xfer_broadcast.type);
+            /// \todo only supporting PAMI_TYPE_CONTIGUOUS right now
+            PAMI_assertf(cmd->cmd.xfer_broadcast.type == PAMI_TYPE_CONTIGUOUS, "Not PAMI_TYPE_CONTIGUOUS? %#zX\n", (size_t)cmd->cmd.xfer_broadcast.type);
 
 //            PAMI_Type_sizeof(cmd->cmd.xfer_broadcast.type); /// \todo PAMI_Type_sizeof() is PAMI_UNIMPL so use getReduceFunction for now?
 
@@ -1354,7 +1354,7 @@ namespace CCMI
 //                          func );
 //        size_t bytes = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
 
-            _bytes = cmd->cmd.xfer_broadcast.typecount * 1; /// \todo presumed size of PAMI_BYTE?
+            _bytes = cmd->cmd.xfer_broadcast.typecount * 1; /// \todo presumed size of PAMI_TYPE_CONTIGUOUS?
 
             if (_buffer_size < _bytes)
               {

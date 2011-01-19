@@ -158,10 +158,10 @@ int main (int argc, char ** argv)
         gather.algorithm  = gather_always_works_algo[nalg];
         gather.cmd.xfer_gather.root       = root;
         gather.cmd.xfer_gather.sndbuf     = buf;
-        gather.cmd.xfer_gather.stype      = PAMI_BYTE;
+        gather.cmd.xfer_gather.stype      = PAMI_TYPE_CONTIGUOUS;
         gather.cmd.xfer_gather.stypecount = 0;
         gather.cmd.xfer_gather.rcvbuf     = rbuf;
-        gather.cmd.xfer_gather.rtype      = PAMI_BYTE;
+        gather.cmd.xfer_gather.rtype      = PAMI_TYPE_CONTIGUOUS;
         gather.cmd.xfer_gather.rtypecount = 0;
 
         int i, j;

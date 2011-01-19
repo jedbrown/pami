@@ -44,9 +44,9 @@ namespace PAMI
           _offsets(NULL),
           _bytes(NULL),
           _dgspCounts(NULL),
-          _dgsp(PAMI_BYTE), /// \assume PAMI_BYTE
+          _dgsp(PAMI_TYPE_CONTIGUOUS), /// \assume PAMI_TYPE_CONTIGUOUS
           _indexCount(0),
-          _sizeOfDgsp(1),    /// \assume PAMI_BYTE
+          _sizeOfDgsp(1),    /// \assume PAMI_TYPE_CONTIGUOUS
           _dgspCount(0),
           _single(false)
       {
@@ -83,9 +83,9 @@ namespace PAMI
       inline void configure_impl(char *buffer, size_t indexcount,
                                  pami_type_t *dgsp, size_t *offsets, size_t *dgspcounts, size_t *bufinit)
       {
-        /// \todo 'real' dgsp is unimplemented now, so assume PAMI_BYTE
+        /// \todo 'real' dgsp is unimplemented now, so assume PAMI_TYPE_CONTIGUOUS
         /// \todo why pami_type_t*? Copied from PAMI::PipeWorkQueue
-        PAMI_assert(*dgsp == PAMI_BYTE);
+        PAMI_assert(*dgsp == PAMI_TYPE_CONTIGUOUS);
         _sizeOfDgsp = 1;
 
         _indexCount = indexcount;
@@ -128,9 +128,9 @@ namespace PAMI
       inline void configure_impl(char *buffer, size_t indexcount,
                                  pami_type_t *dgsp, size_t offset, size_t dgspcount, size_t *bufinit)
       {
-        /// \todo 'real' dgsp is unimplemented now, so assume PAMI_BYTE
+        /// \todo 'real' dgsp is unimplemented now, so assume PAMI_TYPE_CONTIGUOUS
         /// \todo why pami_type_t*? Copied from PAMI::PipeWorkQueue
-        PAMI_assert(*dgsp == PAMI_BYTE);
+        PAMI_assert(*dgsp == PAMI_TYPE_CONTIGUOUS);
         _sizeOfDgsp = 1;
 
         _indexCount = indexcount;
@@ -291,7 +291,7 @@ namespace PAMI
         PAMI_assert(index < _indexCount);
         char *b;
         /// \todo Need 'real' dgsp support to find the byte offset in the dgsp type.
-        /// Assuming PAMI_BYTE now.
+        /// Assuming PAMI_TYPE_CONTIGUOUS now.
         size_t offset = _single?_dgspCounts[0]*_sizeOfDgsp*index:_offsets[index];
         b = (char *) & _buffer[offset+_bytes[index]];
         TRACE_ERR((stderr,  "<%p>M2MPipeWorkQueue::bufferToProduce() <%p>buffer\n",this, b));
@@ -322,7 +322,7 @@ namespace PAMI
         PAMI_assert(index < _indexCount);
         char *b;
         /// \todo Need 'real' dgsp support to find the byte offset in the dgsp type.
-        /// Assuming PAMI_BYTE now.
+        /// Assuming PAMI_TYPE_CONTIGUOUS now.
         size_t offset = _single?_dgspCounts[0]*_sizeOfDgsp*index:_offsets[index];
         TRACE_ERR((stderr,  "<%p>M2MPipeWorkQueue::bufferToConsume() index %zu, single %u, _indexcount %zu, offset %zu, dgspcount %zu, _sizeOfDgsp %zu, _bytes[index] %zu\n",this, index, (unsigned)_single, _indexCount,  offset,  _dgspCounts[_single?0:index],_sizeOfDgsp, _bytes[index]));
         b = (char *) & _buffer[offset+(_dgspCounts[_single?0:index] * _sizeOfDgsp - _bytes[index])];

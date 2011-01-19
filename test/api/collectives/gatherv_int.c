@@ -163,10 +163,10 @@ int main (int argc, char ** argv)
         gatherv.algorithm                     = gatherv_always_works_algo[nalg];
         gatherv.cmd.xfer_gatherv_int.root        = root;
         gatherv.cmd.xfer_gatherv_int.sndbuf      = buf;
-        gatherv.cmd.xfer_gatherv_int.stype       = PAMI_BYTE;
+        gatherv.cmd.xfer_gatherv_int.stype       = PAMI_TYPE_CONTIGUOUS;
         gatherv.cmd.xfer_gatherv_int.stypecount  = 0;
         gatherv.cmd.xfer_gatherv_int.rcvbuf      = rbuf;
-        gatherv.cmd.xfer_gatherv_int.rtype       = PAMI_BYTE;
+        gatherv.cmd.xfer_gatherv_int.rtype       = PAMI_TYPE_CONTIGUOUS;
         gatherv.cmd.xfer_gatherv_int.rtypecounts = lengths;
         gatherv.cmd.xfer_gatherv_int.rdispls     = displs;
 

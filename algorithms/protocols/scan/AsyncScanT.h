@@ -332,10 +332,10 @@ namespace CCMI
                               cb_exec_done,
                               geometry,
                               NULL,
-                              PAMI_BYTE,
+                              PAMI_TYPE_CONTIGUOUS,
                               cdata->_count,
                               NULL,
-                              PAMI_BYTE,
+                              PAMI_TYPE_CONTIGUOUS,
                               cdata->_count,
                               (pami_dt) cdata->_dt,
                               (pami_op) cdata->_op);

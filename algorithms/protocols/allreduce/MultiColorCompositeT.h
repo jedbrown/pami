@@ -62,8 +62,8 @@ namespace CCMI
           {
             TRACE_ADAPTOR((stderr, "<%p>Allreduce::MultiColorCompositeT::ctor() count %zu, dt %#X, op %#X\n", this, ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount,
                            ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.dt, ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.op));
-            /// \todo only supporting PAMI_BYTE right now
-            PAMI_assertf((((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype == PAMI_BYTE) && (((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rtype == PAMI_BYTE), "Not PAMI_BYTE? %#zX %#zX\n", (size_t)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype, (size_t)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rtype);
+            /// \todo only supporting PAMI_TYPE_CONTIGUOUS right now
+            PAMI_assertf((((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype == PAMI_TYPE_CONTIGUOUS) && (((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rtype == PAMI_TYPE_CONTIGUOUS), "Not PAMI_TYPE_CONTIGUOUS? %#zX %#zX\n", (size_t)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype, (size_t)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rtype);
 
 //            PAMI_Type_sizeof(((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype); /// \todo PAMI_Type_sizeof() is PAMI_UNIMPL
 
@@ -75,10 +75,10 @@ namespace CCMI
                                                         sizeOfType,
                                                         func);
             //For now assume stypecount == rtypecount
-            unsigned bytes = ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount * 1; /// \todo presumed size of PAMI_BYTE is 1?
+            unsigned bytes = ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount * 1; /// \todo presumed size of PAMI_TYPE_CONTIGUOUS is 1?
 
-            /// \todo only supporting PAMI_BYTE right now, so better be a valid count of dt's
-            PAMI_assertf(!(bytes % sizeOfType), "Not a valid PAMI_BYTE count of dt[%#X] bytes %u, sizeOfType %u\n", ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.dt, bytes, sizeOfType);
+            /// \todo only supporting PAMI_TYPE_CONTIGUOUS right now, so better be a valid count of dt's
+            PAMI_assertf(!(bytes % sizeOfType), "Not a valid PAMI_TYPE_CONTIGUOUS count of dt[%#X] bytes %u, sizeOfType %u\n", ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.dt, bytes, sizeOfType);
 
             Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::
             initialize (((PAMI_GEOMETRY_CLASS *)g)->comm(),
@@ -94,7 +94,7 @@ namespace CCMI
               {
                 T_Exec *allreduce = Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::getExecutor(c);
                 initialize(allreduce,
-                           ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount / sizeOfType, /// \todo presumed PAMI_BYTE count, convert to dt count
+                           ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount / sizeOfType, /// \todo presumed PAMI_TYPE_CONTIGUOUS count, convert to dt count
                            ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.dt,
                            ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.op);
                 allreduce->reset();

@@ -290,15 +290,15 @@ extern "C"
         unsigned               allop:1;        /**<  This protocol works for all operations for
                                                   reduction. 0: not for all op, 1:for all op   */
         unsigned               contigsflags:1; /**<  This protocol requires contiguous data(send)
-                                                  contiguous:  data type must be PAMI_BYTE     */
+                                                  contiguous:  data type must be PAMI_TYPE_CONTIGUOUS     */
         unsigned               contigrflags:1; /**<  This protocol requires contiguous data(recv)
-                                                  contiguous:  data type must be PAMI_BYTE     */
-        unsigned               continsflags:1; /**<  This protocol requires continuous data(send)
-                                                  continuous:  data type must be PAMI_BYTE and
+                                                  contiguous:  data type must be PAMI_TYPE_CONTIGUOUS     */
+        unsigned               continsflags:1; /**<  This protocol requires continuous data(send) 
+                                                  continuous:  data type must be PAMI_TYPE_CONTIGUOUS and
                                                   for vector collectives, the target buffers
                                                   of the vectors must be adjacent in memory    */
         unsigned               continrflags:1; /**<  This protocol requires continuous data(recv)
-                                                  continuous:  data type must be PAMI_BYTE and
+                                                  continuous:  data type must be PAMI_TYPE_CONTIGUOUS and
                                                   for vector collectives, the target buffers
                                                   of the vectors must be adjacent in memory    */
       }values;
@@ -366,7 +366,7 @@ extern "C"
     unsigned no_local_copy     : 1; /**< Disable PAMI making a local copy of data                */
     unsigned no_long_header    : 1; /**< Disable long header support                             */
     unsigned recv_contiguous   : 1; /**< Assert that receives on this dispatch will all be
-                                         contiguous using PAMI_BYTE.  If specified during
+                                         contiguous using PAMI_TYPE_CONTIGUOUS.  If specified during
                                          PAMI_Dispatch_set(), there is no need to set
                                          pami_recv_t::type for the receive.                      */
     unsigned recv_copy         : 1; /**< Assert that receives on this dispatch will all use
@@ -564,7 +564,7 @@ extern "C"
    * the active message dispatch callback to direct the pami runtime how to
    * receive the data stream.
    *
-   * When \c type is \c PAMI_BYTE, the receive buffer is contiguous and it
+   * When \c type is \c PAMI_TYPE_CONTIGUOUS, the receive buffer is contiguous and it
    * must be large enough to hold the entire message.
    *
    * With non-contiguous \c type, the receive buffer in general must be large
@@ -2369,7 +2369,7 @@ extern "C"
    *  bytes.  This can be used for both collective and point-to-point
    *  communication.
    */
-  extern pami_type_t PAMI_BYTE;
+  extern pami_type_t PAMI_TYPE_CONTIGUOUS;
   /**
    * \brief Create a new type for noncontiguous transfers
    *

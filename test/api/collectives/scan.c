@@ -415,10 +415,10 @@ int main(int argc, char*argv[])
     scan.cookie    = (void*)&scan_poll_flag;
     scan.algorithm = scan_always_works_algo[nalg];
     scan.cmd.xfer_scan.sndbuf    = sbuf;
-    scan.cmd.xfer_scan.stype     = PAMI_BYTE;
+    scan.cmd.xfer_scan.stype     = PAMI_TYPE_CONTIGUOUS;
     scan.cmd.xfer_scan.stypecount= 0;
     scan.cmd.xfer_scan.rcvbuf    = rbuf;
-    scan.cmd.xfer_scan.rtype     = PAMI_BYTE;
+    scan.cmd.xfer_scan.rtype     = PAMI_TYPE_CONTIGUOUS;
     scan.cmd.xfer_scan.rtypecount= 0;
     scan.cmd.xfer_scan.exclusive = 0;
 

@@ -65,8 +65,8 @@ namespace CCMI
                            (size_t)cmd->cmd.xfer_allreduce.stype, (size_t)cmd->cmd.xfer_allreduce.rtype,
                            cmd->cmd.xfer_allreduce.stypecount, cmd->cmd.xfer_allreduce.rtypecount, cmd->cmd.xfer_allreduce.op, cmd->cmd.xfer_allreduce.dt);
 
-            /// \todo only supporting PAMI_BYTE right now
-            PAMI_assertf((cmd->cmd.xfer_allreduce.stype == PAMI_BYTE) && (cmd->cmd.xfer_allreduce.rtype == PAMI_BYTE), "Not PAMI_BYTE? %#zX %#zX\n", (size_t)cmd->cmd.xfer_allreduce.stype, (size_t)cmd->cmd.xfer_allreduce.rtype);
+            /// \todo only supporting PAMI_TYPE_CONTIGUOUS right now
+            PAMI_assertf((cmd->cmd.xfer_allreduce.stype == PAMI_TYPE_CONTIGUOUS) && (cmd->cmd.xfer_allreduce.rtype == PAMI_TYPE_CONTIGUOUS), "Not PAMI_TYPE_CONTIGUOUS? %#zX %#zX\n", (size_t)cmd->cmd.xfer_allreduce.stype, (size_t)cmd->cmd.xfer_allreduce.rtype);
 
 //          PAMI_Type_sizeof(cmd->cmd.xfer_allreduce.stype); /// \todo PAMI_Type_sizeof() is PAMI_UNIMPL so use getReduceFunction for now?
 
@@ -74,11 +74,11 @@ namespace CCMI
             void *deviceInfo                  = geometry->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
             unsigned        sizeOfType = _pami_size_table[cmd->cmd.xfer_allreduce.dt];
 
-            size_t size = cmd->cmd.xfer_allreduce.stypecount * 1; /// \todo presumed size of PAMI_BYTE is 1?
+            size_t size = cmd->cmd.xfer_allreduce.stypecount * 1; /// \todo presumed size of PAMI_TYPE_CONTIGUOUS is 1?
             _srcPwq.configure(cmd->cmd.xfer_allreduce.sndbuf, size, size);
             _srcPwq.reset();
 
-            size = cmd->cmd.xfer_allreduce.rtypecount * 1; /// \todo presumed size of PAMI_BYTE is 1?
+            size = cmd->cmd.xfer_allreduce.rtypecount * 1; /// \todo presumed size of PAMI_TYPE_CONTIGUOUS is 1?
             _dstPwq.configure(cmd->cmd.xfer_allreduce.rcvbuf, size, 0);
             _dstPwq.reset();
 
@@ -641,8 +641,8 @@ namespace CCMI
 
             PAMI_assert(_topology_lm.index2Rank(0) != (unsigned) - 1); // no local master?
 
-            /// \todo only supporting PAMI_BYTE right now
-            PAMI_assertf((cmd->cmd.xfer_allreduce.stype == PAMI_BYTE) && (cmd->cmd.xfer_allreduce.rtype == PAMI_BYTE), "Not PAMI_BYTE? %#zX %#zX\n", (size_t)cmd->cmd.xfer_allreduce.stype, (size_t)cmd->cmd.xfer_allreduce.rtype);
+            /// \todo only supporting PAMI_TYPE_CONTIGUOUS right now
+            PAMI_assertf((cmd->cmd.xfer_allreduce.stype == PAMI_TYPE_CONTIGUOUS) && (cmd->cmd.xfer_allreduce.rtype == PAMI_TYPE_CONTIGUOUS), "Not PAMI_TYPE_CONTIGUOUS? %#zX %#zX\n", (size_t)cmd->cmd.xfer_allreduce.stype, (size_t)cmd->cmd.xfer_allreduce.rtype);
 
             //            PAMI_Type_sizeof(cmd->cmd.xfer_allreduce.stype); /// \todo PAMI_Type_sizeof() is PAMI_UNIMPL so use getReduceFunction for now?
 
@@ -655,7 +655,7 @@ namespace CCMI
                               sizeOfType,
                               func );
 
-            _bytes                       = cmd->cmd.xfer_allreduce.stypecount * 1; /// \todo presumed size of PAMI_BYTE?
+            _bytes                       = cmd->cmd.xfer_allreduce.stypecount * 1; /// \todo presumed size of PAMI_TYPE_CONTIGUOUS?
             size_t countDt = _bytes / sizeOfType;
 
             // Discover the root node and intereesting topology information

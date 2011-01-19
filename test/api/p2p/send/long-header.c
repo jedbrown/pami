@@ -37,7 +37,7 @@ pami_recv_t         * recv)        /**< OUT: receive message structure */
 
   recv->local_fn = recv_done;
   recv->cookie   = cookie;
-  recv->type     = PAMI_BYTE;
+  recv->type     = PAMI_TYPE_CONTIGUOUS;
   recv->addr     = NULL;
   recv->offset   = 0;
   TRACE((stderr, "... dispatch function.  recv->local_fn = %p\n", recv->local_fn));

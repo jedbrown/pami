@@ -122,7 +122,7 @@ pami_recv_t         * recv)        /**< OUT: receive message structure */
 
     recv->local_fn = rcvdecrement;
     recv->cookie   = cookie;
-    recv->type     = PAMI_BYTE;
+    recv->type     = PAMI_TYPE_CONTIGUOUS;
     recv->addr     = _recv_buffer;
     recv->offset   = 0;
 

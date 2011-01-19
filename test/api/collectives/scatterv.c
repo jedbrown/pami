@@ -122,11 +122,11 @@ int main (int argc, char ** argv)
         scatterv.algorithm                     = scatterv_always_works_algo[nalg];
         scatterv.cmd.xfer_scatterv.root        = root;
         scatterv.cmd.xfer_scatterv.sndbuf      = buf;
-        scatterv.cmd.xfer_scatterv.stype       = PAMI_BYTE;
+        scatterv.cmd.xfer_scatterv.stype       = PAMI_TYPE_CONTIGUOUS;
         scatterv.cmd.xfer_scatterv.stypecounts = lengths;
         scatterv.cmd.xfer_scatterv.sdispls     = displs;
         scatterv.cmd.xfer_scatterv.rcvbuf      = rbuf;
-        scatterv.cmd.xfer_scatterv.rtype       = PAMI_BYTE;
+        scatterv.cmd.xfer_scatterv.rtype       = PAMI_TYPE_CONTIGUOUS;
         scatterv.cmd.xfer_scatterv.rtypecount  = 0;
 
         size_t i, j;

@@ -18,7 +18,7 @@ extern "C" {
     void *pami_addr_null = NULL;
 #define PAMI_ADDR_NULL pami_addr_null
     struct {
-        pami_type_t         PAMI_BYTE;
+        pami_type_t         PAMI_TYPE_CONTIGUOUS;
         pami_data_function  PAMI_DATA_COPY; 
         pami_geometry_t     PAMI_NULL_GEOMETRY;
     } pami_fort_globals;
@@ -348,7 +348,7 @@ extern "C" void pami_client_create (const char*             name,
 
     // initialize global variables in pami.h for FORTRAN
     // TODO: pami_fort_globals need to be synchronized with these globals
-    pami_fort_globals.PAMI_BYTE             = PAMI_BYTE;
+    pami_fort_globals.PAMI_TYPE_CONTIGUOUS             = PAMI_TYPE_CONTIGUOUS;
     pami_fort_globals.PAMI_DATA_COPY        = PAMI_DATA_COPY;
     pami_fort_globals.PAMI_NULL_GEOMETRY    = PAMI_NULL_GEOMETRY;
 }

@@ -84,7 +84,7 @@ static void test_dispatch (
     TRACE_ERR((stderr, "(%zu) test_dispatch() async recv:  cookie = %p, pipe_size = %zu\n", _my_task, cookie, pipe_size));    
     recv->local_fn = decrement;
     recv->cookie   = cookie;
-    recv->type     = PAMI_BYTE;
+    recv->type     = PAMI_TYPE_CONTIGUOUS;
     recv->addr     = _recv_buffer;
     recv->offset   = 0;
     recv->data_fn  = PAMI_DATA_COPY;

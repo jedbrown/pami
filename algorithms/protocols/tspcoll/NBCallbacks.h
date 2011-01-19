@@ -213,7 +213,7 @@ inline void TSPColl::CollExchange<T_NI>::cb_incoming_ue(pami_context_t    contex
       recv->cookie        = &b->_cmplt[header->phase];
       recv->local_fn      = CollExchange<T_NI>::cb_recvcomplete;
       recv->addr          = (char*)b->_rbuf[header->phase];
-      recv->type          = PAMI_BYTE;
+      recv->type          = PAMI_TYPE_CONTIGUOUS;
       recv->offset        = 0;
       recv->data_fn       = PAMI_DATA_COPY;
       recv->data_cookie   = (void*)NULL;
@@ -269,7 +269,7 @@ inline void TSPColl::CollExchange<T_NI>::cb_incoming(pami_context_t    context,
       recv->cookie        = &b->_cmplt[header->phase];
       recv->local_fn      = CollExchange::cb_recvcomplete;
       recv->addr          = (char*)b->_rbuf[header->phase];
-      recv->type          = PAMI_BYTE;
+      recv->type          = PAMI_TYPE_CONTIGUOUS;
       recv->offset        = 0;
       recv->data_fn       = PAMI_DATA_COPY;
       recv->data_cookie   = (void*)NULL;
@@ -313,7 +313,7 @@ void TSPColl::Scatter<T_NI>::cb_incoming(pami_context_t    context,
       recv->cookie        = s;
       recv->local_fn      = Scatter::cb_recvcomplete;
       recv->addr          = s->_rbuf;
-      recv->type          = PAMI_BYTE;
+      recv->type          = PAMI_TYPE_CONTIGUOUS;
       recv->offset        = 0;
       recv->data_fn       = PAMI_DATA_COPY;
       recv->data_cookie   = (void*)NULL;

@@ -53,7 +53,7 @@ void pami_recv_handler(pami_context_t context, void *cookie,
         bzero(recv, sizeof(*recv));
         recv->local_fn = pami_am_complete;
         recv->addr     = recv_buf;
-        recv->type     = PAMI_BYTE;
+        recv->type     = PAMI_TYPE_CONTIGUOUS;
         recv->cookie   = NULL;
         recv->offset   = 0;
         recv->hints.inline_completion = 0;

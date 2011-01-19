@@ -109,7 +109,7 @@ static void RecvLongCB(pami_context_t    context,
   void* buf = malloc(size);
   recv->local_fn = RecvLongDoneCB;
   recv->cookie   = buf;
-  recv->type     = PAMI_BYTE;
+  recv->type     = PAMI_TYPE_CONTIGUOUS;
   recv->addr     = buf;
   recv->offset   = 0;
 

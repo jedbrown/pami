@@ -245,10 +245,10 @@ namespace PAMI
         xfer.cookie                         = (void*)&flag;
         xfer.algorithm                      = alg;
         xfer.cmd.xfer_allgather.sndbuf      = host;
-        xfer.cmd.xfer_allgather.stype       = &PAMI_BYTE;
+        xfer.cmd.xfer_allgather.stype       = &PAMI_TYPE_CONTIGUOUS;
         xfer.cmd.xfer_allgather.stypecount  = str_len;
         xfer.cmd.xfer_allgather.rcvbuf      = hosts;
-        xfer.cmd.xfer_allgather.rtype       = &PAMI_BYTE;
+        xfer.cmd.xfer_allgather.rtype       = &PAMI_TYPE_CONTIGUOUS;
         xfer.cmd.xfer_allgather.rtypecount  = str_len;
 
 	// We can only advance the lapi device here because our other devices

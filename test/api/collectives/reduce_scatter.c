@@ -417,10 +417,10 @@ int main(int argc, char*argv[])
     reduce_scatter.cookie    = (void*)&reduce_scatter_poll_flag;
     reduce_scatter.algorithm = reduce_scatter_always_works_algo[nalg];
     reduce_scatter.cmd.xfer_reduce_scatter.sndbuf    = sbuf;
-    reduce_scatter.cmd.xfer_reduce_scatter.stype     = PAMI_BYTE;
+    reduce_scatter.cmd.xfer_reduce_scatter.stype     = PAMI_TYPE_CONTIGUOUS;
     reduce_scatter.cmd.xfer_reduce_scatter.stypecount= 0;
     reduce_scatter.cmd.xfer_reduce_scatter.rcvbuf    = rbuf;
-    reduce_scatter.cmd.xfer_reduce_scatter.rtype     = PAMI_BYTE;
+    reduce_scatter.cmd.xfer_reduce_scatter.rtype     = PAMI_TYPE_CONTIGUOUS;
     reduce_scatter.cmd.xfer_reduce_scatter.rtypecount= 0;
 
 

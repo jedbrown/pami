@@ -533,10 +533,10 @@ int main(int argc, char*argv[])
         allreduce.cookie    = (void*) & allreduce_poll_flag;
         allreduce.algorithm = allreduce_always_works_algo[nalg];
         allreduce.cmd.xfer_allreduce.sndbuf    = sbuf;
-        allreduce.cmd.xfer_allreduce.stype     = PAMI_BYTE;
+        allreduce.cmd.xfer_allreduce.stype     = PAMI_TYPE_CONTIGUOUS;
         allreduce.cmd.xfer_allreduce.stypecount = 0;
         allreduce.cmd.xfer_allreduce.rcvbuf    = rbuf;
-        allreduce.cmd.xfer_allreduce.rtype     = PAMI_BYTE;
+        allreduce.cmd.xfer_allreduce.rtype     = PAMI_TYPE_CONTIGUOUS;
         allreduce.cmd.xfer_allreduce.rtypecount = 0;
 
 

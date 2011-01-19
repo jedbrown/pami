@@ -1341,7 +1341,7 @@ namespace PAMI
     recv->cookie   = cb_done.clientdata;
     recv->local_fn = cb_done.function;
     recv->addr     = rcvpwq->bufferToProduce();
-    recv->type     = PAMI_BYTE;
+    recv->type     = PAMI_TYPE_CONTIGUOUS;
     recv->offset   = 0;
     recv->data_fn  = PAMI_DATA_COPY;
     recv->data_cookie = (void*)NULL;
@@ -1980,7 +1980,7 @@ namespace PAMI
     recv->cookie   = req;
     recv->local_fn = ni_client_done;
     recv->addr     = rcvpwq->bufferToProduce();
-    recv->type     = PAMI_BYTE;
+    recv->type     = PAMI_TYPE_CONTIGUOUS;
     recv->offset   = 0;
     recv->data_fn  = PAMI_DATA_COPY;
     recv->data_cookie = (void*)NULL;
@@ -2086,7 +2086,7 @@ namespace PAMI
     recv->cookie   = state;
     recv->local_fn = recvM2mDone;
     recv->addr     = buffer;
-    recv->type     = PAMI_BYTE;
+    recv->type     = PAMI_TYPE_CONTIGUOUS;
     recv->offset   = 0;
     recv->data_fn  = PAMI_DATA_COPY;
     recv->data_cookie = (void*)NULL;

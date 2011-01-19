@@ -69,10 +69,10 @@ namespace CCMI
       inline void setTempAlltoallXfer<pami_alltoall_t> (pami_collective_t *xfer)
       {
         xfer->xfer_alltoall.sndbuf = NULL;
-        xfer->xfer_alltoall.stype  = PAMI_BYTE;
+        xfer->xfer_alltoall.stype  = PAMI_TYPE_CONTIGUOUS;
         xfer->xfer_alltoall.stypecount = 0;
         xfer->xfer_alltoall.rcvbuf = NULL;
-        xfer->xfer_alltoall.rtype  = PAMI_BYTE;
+        xfer->xfer_alltoall.rtype  = PAMI_TYPE_CONTIGUOUS;
         xfer->xfer_alltoall.rtypecount = 0;
       }
 
@@ -80,11 +80,11 @@ namespace CCMI
       inline void setTempAlltoallXfer<pami_alltoallv_t> (pami_collective_t *xfer)
       {
         xfer->xfer_alltoallv.sndbuf  = NULL;
-        xfer->xfer_alltoallv.stype   = PAMI_BYTE;
+        xfer->xfer_alltoallv.stype   = PAMI_TYPE_CONTIGUOUS;
         xfer->xfer_alltoallv.stypecounts = NULL;
         xfer->xfer_alltoallv.sdispls = NULL;
         xfer->xfer_alltoallv.rcvbuf  = NULL;
-        xfer->xfer_alltoallv.rtype   = PAMI_BYTE;
+        xfer->xfer_alltoallv.rtype   = PAMI_TYPE_CONTIGUOUS;
         xfer->xfer_alltoallv.rtypecounts = NULL;
         xfer->xfer_alltoallv.rdispls = NULL;
       }
@@ -93,11 +93,11 @@ namespace CCMI
       inline void setTempAlltoallXfer<pami_alltoallv_int_t> (pami_collective_t *xfer)
       {
         xfer->xfer_alltoallv_int.sndbuf  = NULL;
-        xfer->xfer_alltoallv_int.stype   = PAMI_BYTE;
+        xfer->xfer_alltoallv_int.stype   = PAMI_TYPE_CONTIGUOUS;
         xfer->xfer_alltoallv_int.stypecounts = NULL;
         xfer->xfer_alltoallv_int.sdispls = NULL;
         xfer->xfer_alltoallv_int.rcvbuf  = NULL;
-        xfer->xfer_alltoallv_int.rtype   = PAMI_BYTE;
+        xfer->xfer_alltoallv_int.rtype   = PAMI_TYPE_CONTIGUOUS;
         xfer->xfer_alltoallv_int.rtypecounts = NULL;
         xfer->xfer_alltoallv_int.rdispls = NULL;
       }

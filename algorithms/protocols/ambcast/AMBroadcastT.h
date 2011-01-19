@@ -156,7 +156,7 @@ namespace CCMI
             broadcast.algorithm = (size_t) - 1;  ///Not used by the protocols
             broadcast.cmd.xfer_ambroadcast.user_header  = NULL;
             broadcast.cmd.xfer_ambroadcast.headerlen    = 0;
-            pami_type_t pt = PAMI_BYTE;
+            pami_type_t pt = PAMI_TYPE_CONTIGUOUS;
             broadcast.cmd.xfer_ambroadcast.stype = &pt;
 
             //Assume send datatypes are the same as recv datatypes

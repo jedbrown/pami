@@ -10,7 +10,7 @@ using namespace PAMI::Type;
 #define RETURN_ERR_PAMI(code, ...) return (code)
 #endif
 
-pami_type_t        PAMI_BYTE = new TypeContig;
+pami_type_t        PAMI_TYPE_CONTIGUOUS = new TypeContig;
 pami_data_function PAMI_DATA_COPY = NULL;
 
 extern "C" {

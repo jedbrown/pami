@@ -84,7 +84,7 @@ pami_recv_t         * recv)        /**< OUT: receive message structure */
   TRACE_ERR((stderr, "(%zu) long recvn", _my_rank));
   recv->local_fn = decrement;
   recv->cookie   = cookie;
-  recv->type     = PAMI_BYTE;
+  recv->type     = PAMI_TYPE_CONTIGUOUS;
   recv->addr     = (void *)_tmpbuffer;
   recv->offset   = 0;;
 }
