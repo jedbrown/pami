@@ -73,7 +73,7 @@ inline int quad_double_sum_16way(double* dest, double* src0, double *src1, doubl
 }
 #endif
 #ifndef TRACE_ERR
-#define TRACE_ERR(x)  //fprintf x
+#define TRACE_ERR(x) //fprintf(stderr,"%s:%d\n",__FILE__,__LINE__); fprintf x
 #endif
 
 #ifndef PAMI_ASSERT
@@ -141,7 +141,7 @@ namespace PAMI
                     SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, NUM_DBLS_PER_CHUNK);
                 mcomb_control->chunks_done[_local_rank] += 1;
               }
-              TRACE_ERR((stderr,"dst[%u]:%f\n", iter*NUM_DBLS_PER_CHUNK, dst[iter*NUM_DBLS_PER_CHUNK]));
+              TRACE_ERR((stderr,"dst[%zu]:%f\n", iter*NUM_DBLS_PER_CHUNK, dst[iter*NUM_DBLS_PER_CHUNK]));
             }
 
             /* summing last chunk which can be of any size */
@@ -237,7 +237,7 @@ namespace PAMI
                     SHADDR_SRCBUF(15)+iter*NUM_DBLS_PER_CHUNK, NUM_DBLS_PER_CHUNK);
                 mcomb_control->chunks_done[_local_rank] += 1;
               }
-              TRACE_ERR((stderr,"dst[%u]:%f\n", iter*NUM_DBLS_PER_CHUNK, dst[iter*NUM_DBLS_PER_CHUNK]));
+              TRACE_ERR((stderr,"dst[%zu]:%f\n", iter*NUM_DBLS_PER_CHUNK, dst[iter*NUM_DBLS_PER_CHUNK]));
             }
 
             /* summing last chunk which can be of any size */

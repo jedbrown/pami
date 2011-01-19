@@ -22,7 +22,7 @@
 #include "BaseMessage.h"
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x)  //fprintf x
+#define TRACE_ERR(x) //fprintf(stderr,"%s:%d\n",__FILE__,__LINE__); fprintf x
 #endif
 
 namespace PAMI
@@ -76,10 +76,14 @@ namespace PAMI
 
           inline virtual pami_result_t advance ()
           {
+            static unsigned traceit = 1;
             unsigned master = this->_my_desc->get_master();
             void* mybuf;
             void* buf = (void*) this->_my_desc->get_buffer();
-            TRACE_ERR((stderr, "buf from master:%d address:%p\n", master, buf));
+            if(traceit)
+            {  
+              TRACE_ERR((stderr, "buf from master:%d address:%p\n", master, buf));
+            }
 
             pami_multicast_t & mcast_params = this->_my_desc->get_mcast_params();
             PAMI::PipeWorkQueue *rcv = (PAMI::PipeWorkQueue*) mcast_params.dst;
@@ -88,6 +92,11 @@ namespace PAMI
             bytes = mcast_params.bytes;
 
             if (this->_local_rank == master){
+              if(traceit)
+              {  
+                TRACE_ERR((stderr, "bytes %u, bytes available %zu\n", bytes,src->bytesAvailableToConsume()));
+              }
+              traceit = 0;
               if ((bytes > 0) && (src->bytesAvailableToConsume() == 0))  
                 return PAMI_EAGAIN; 
 
@@ -100,6 +109,11 @@ namespace PAMI
             }
             else
             {
+              if(traceit)
+              {  
+                TRACE_ERR((stderr, "bytes %u\n", bytes));
+              }
+              traceit = 0;
               if (this->_my_desc->get_flag() == 0) 
                 return PAMI_EAGAIN;
               //while (this->_my_desc->get_flag() == 0) {}
@@ -113,6 +127,7 @@ namespace PAMI
 
             this->_my_desc->set_my_state(Shmem::DONE);
             mcast_params.cb_done.function(this->_context, mcast_params.cb_done.clientdata, PAMI_SUCCESS);
+            traceit = 1;
             return PAMI_SUCCESS;
           }
 

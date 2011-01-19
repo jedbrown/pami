@@ -30,7 +30,7 @@
 #undef TRACE_ERR
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x)  //fprintf x
+#define TRACE_ERR(x) //fprintf(stderr,"%s:%d\n",__FILE__,__LINE__); fprintf x
 #endif
 
 //#define SHORT_MCST_OPT

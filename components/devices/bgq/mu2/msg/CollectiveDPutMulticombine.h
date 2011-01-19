@@ -12,6 +12,13 @@
 #include "common/bgq/Mapping.h"
 #include "components/memory/MemoryAllocator.h"
 
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
+
+#define DO_TRACE_ENTEREXIT 0
+#define DO_TRACE_DEBUG     0
+
+
 namespace PAMI
 {
   namespace Device
@@ -66,8 +73,8 @@ namespace PAMI
               _cc (length),
               _counterAddress (counterAddress)
           {
-            //TRACE_FN_ENTER();
-            //TRACE_FN_EXIT();
+            TRACE_FN_ENTER();
+            TRACE_FN_EXIT();
           };
 
           inline ~CollectiveDPutMulticombine () {};
@@ -109,16 +116,22 @@ namespace PAMI
           ///
           bool advanceSend ()
           {
-            //TRACE_FN_ENTER();
+            TRACE_FN_ENTER();
 
             if (_doneInjecting)
+              {
+              TRACE_FN_EXIT();
               return true;
+              }
 
             uint64_t bytes_available = 0;
             bytes_available = _spwq->bytesAvailableToConsume() - _injectedBytes;
 
             if (bytes_available == 0)
+              {
+              TRACE_FN_EXIT();
               return false;
+              }
 
             _desc.Message_Length = bytes_available;
             //The is computed when the first descriptor for this round is injected
@@ -139,7 +152,10 @@ namespace PAMI
               }
             //No descriptor slots available, so come back and try later
             else
+              {
+              TRACE_FN_EXIT();
               return false;
+              }
 
             _injectedBytes  += bytes_available;
             _desc.setRecPutOffset(_injectedBytes);
@@ -147,16 +163,20 @@ namespace PAMI
 
             _doneInjecting = (_injectedBytes == _length);
 
-            //TRACE_FN_EXIT();
+            TRACE_FN_EXIT();
             return _doneInjecting;
           }
 
           bool advanceRecv ()
           {
+            TRACE_FN_ENTER();
             uint64_t cval = *_counterAddress;
 
             if (cval == _cc)
+              {
+              TRACE_FN_EXIT();
               return (cval == 0);
+              }
 
             mem_sync();
             _dpwq->produceBytes(_cc - cval);
@@ -169,9 +189,11 @@ namespace PAMI
                 if (_fn)
                   _fn (NULL, _cookie, PAMI_SUCCESS);
 
+                TRACE_FN_EXIT();
                 return true;
               }
 
+            TRACE_FN_EXIT();
             return false;
           }
 
@@ -179,16 +201,20 @@ namespace PAMI
           {
             bool flag = advanceSend() && advanceRecv();
 
-#if 0
+#if DO_TRACE_DEBUG
+            TRACE_FN_ENTER();
 
             if (_doneInjecting)
-              printf ("Done Injecting\n");
+              TRACE_STRING("Done Injecting");
 
             if (*_counterAddress == 0)
-              printf ("Done Receiving\n");
+            {
+              TRACE_STRING("Done Receiving");
+            }
             else
-              printf ("Waiting for bytes %lu\n", *_counterAddress);
+              TRACE_FORMAT("Waiting for bytes, counterAdress = %lu", *_counterAddress);
 
+            TRACE_FN_EXIT();
 #endif
 
             return flag;
@@ -216,5 +242,8 @@ namespace PAMI
     };   // namespace PAMI::Device::MU
   };     // namespace PAMI::Device
 };       // namespace PAMI
+
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
 
 #endif // __components_devices_bgq_mu2_msg_CollectiveDPutMulticombine_h__                     

@@ -18,6 +18,13 @@
 
 //#define MU_SHORT_BLOCKING_COLLECTIVE 0
 
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
+
+#define DO_TRACE_ENTEREXIT 0
+#define DO_TRACE_DEBUG     0
+
+
 namespace PAMI
 {
   namespace Device
@@ -231,6 +238,7 @@ namespace PAMI
                                               void          * cookie,
                                               unsigned        classroute)
           {
+            TRACE_FN_ENTER();
             PAMI_assert (bytes <= _collstate._tempSize);
             _int64Cpy(_collstate._tempBuf, src, bytes, (((uint64_t)src)&0x7) == 0);
             //memcpy(_collstate._tempBuf, src, bytes);
@@ -238,7 +246,10 @@ namespace PAMI
             bool flag = _injChannel.hasFreeSpaceWithUpdate();
 
             if (!flag)
+              {
+              TRACE_FN_EXIT();
               return PAMI_ERROR;
+              }
 
             _collstate._colCounter = bytes;
             // Clone the message descriptors directly into the injection fifo.
@@ -273,6 +284,7 @@ namespace PAMI
             cb_done (NULL, cookie, PAMI_SUCCESS);
 #endif
 
+            TRACE_FN_EXIT();
             return PAMI_SUCCESS;
           }
 
@@ -285,6 +297,7 @@ namespace PAMI
                                         uint32_t                   sizeoftype,
                                         unsigned                   classroute)
           {
+            TRACE_FN_ENTER();
             //Pin the buffer to the bat id. On the root the src buffer
             //is used to receive the allreduce message
             char *dstbuf = NULL;
@@ -321,6 +334,7 @@ namespace PAMI
                 _mucontext.getProgressDevice()->postThread(work);
               }
 
+            TRACE_FN_EXIT();
             return PAMI_SUCCESS;
           }
 
@@ -338,6 +352,7 @@ namespace PAMI
           static pami_result_t short_advance (pami_context_t     context,
                                               void             * cookie)
           {
+            TRACE_FN_ENTER();
             ShortCompletionMsg  *scmsg = (ShortCompletionMsg *) cookie;
 
             if (*scmsg->_counterAddress == 0)
@@ -354,9 +369,11 @@ namespace PAMI
                 if (scmsg->_cb_done)
                   scmsg->_cb_done (context, scmsg->_cookie, PAMI_SUCCESS);
 
+                TRACE_FN_EXIT();
                 return PAMI_SUCCESS;
               }
 
+            TRACE_FN_EXIT();
             return PAMI_EAGAIN;
           }
 
@@ -396,6 +413,7 @@ namespace PAMI
                                                            bool                       isroot,
                                                            unsigned                   classroute)
       {
+        TRACE_FN_ENTER();
         //Pin the buffer to the bat id. On the root the src buffer
         //is used to receive the broadcast message
         char *dstbuf = NULL;
@@ -436,11 +454,14 @@ namespace PAMI
             _mucontext.getProgressDevice()->postThread(work);
           }
 
+        TRACE_FN_EXIT();
         return PAMI_SUCCESS;
       }
 
     };
   };
 };
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
 
 #endif

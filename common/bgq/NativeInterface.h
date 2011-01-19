@@ -239,7 +239,10 @@ namespace PAMI
     pami_result_t rc = PAMI_ERROR;
     rc = _mcast.postMulticastImmediate (_clientid, _contextid, mcast, devinfo);
     if (rc == PAMI_SUCCESS)
-      return rc;
+      {
+        TRACE_FN_EXIT();
+        return rc;
+      }
 
     if (T_Mcast::sizeof_msg > 0) {
       allocObj *req          = (allocObj *)_allocator.allocateObject();
@@ -259,6 +262,7 @@ namespace PAMI
       m.cb_done.function     =  ni_client_done;
       m.cb_done.clientdata   =  req;
       
+      TRACE_FN_EXIT();
       return _mcast.postMulticast_impl(req->_state._mcast, _clientid, _contextid, &m, devinfo);
     }
     TRACE_FN_EXIT();
@@ -272,7 +276,10 @@ namespace PAMI
     TRACE_FN_ENTER();
     int rc = _msync.postMultisyncImmediate(_clientid, _contextid, msync, devinfo);
     if (rc == PAMI_SUCCESS)
-      return PAMI_SUCCESS;
+      {
+        TRACE_FN_EXIT();
+        return PAMI_SUCCESS;
+      }
 
     if (T_Msync::sizeof_msg > 0) {
       allocObj *req          = (allocObj *)_allocator.allocateObject();
@@ -289,8 +296,8 @@ namespace PAMI
       m.cb_done.function     =  ni_client_done;
       m.cb_done.clientdata   =  req;
       _msync.postMultisync(req->_state._msync, _clientid, _contextid, &m, devinfo);
-      TRACE_FN_EXIT();
     }
+    TRACE_FN_EXIT();
     return PAMI_SUCCESS;
   }
 
@@ -302,7 +309,10 @@ namespace PAMI
     
     pami_result_t rc = _mcomb.postMulticombineImmediate(_clientid, _contextid, mcomb, devinfo);
     if (rc == PAMI_SUCCESS)
-      return rc;
+      {
+        TRACE_FN_EXIT();
+        return rc;
+      }
     
     if (T_Mcomb::sizeof_msg > 0) {
       allocObj *req          = (allocObj *)_allocator.allocateObject();
@@ -318,6 +328,7 @@ namespace PAMI
       m.cb_done.function     =  ni_client_done;
       m.cb_done.clientdata   =  req;
       
+      TRACE_FN_EXIT();
       return _mcomb.postMulticombine(req->_state._mcomb, _clientid, _contextid, &m, devinfo);
     }
     TRACE_FN_EXIT();
