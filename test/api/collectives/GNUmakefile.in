@@ -16,7 +16,7 @@ APPS            = barrier.${EXTENSION} barrier_subcomm.${EXTENSION} \
 		bcast.${EXTENSION}  bcast_query.${EXTENSION}  bcast_subcomm.${EXTENSION} bcast_subcomm2.${EXTENSION} \
 		bcast_subcomm_noparent.${EXTENSION} \
 		ambcast.${EXTENSION} \
-		allreduce.${EXTENSION} allreduce_query.${EXTENSION} allreduce_subcomm.${EXTENSION} \
+		allreduce.${EXTENSION} allreduce_query.${EXTENSION} allreduce_subcomm.${EXTENSION} allreduce_subcomm_query.${EXTENSION} \
 		reduce.${EXTENSION} reduce_subcomm.${EXTENSION} \
 		allgather.${EXTENSION} \
 		allgatherv.${EXTENSION} \

@@ -75,7 +75,7 @@ int main (int argc, char ** argv)
 
   int                  nalg= 0;
   double               ti, tf, usec;
-  char                 buf[BUFSIZE] __attribute__((__aligned__(64)));
+  char                 buf[BUFSIZE];
   pami_xfer_t          barrier;
   pami_xfer_t          broadcast;
 

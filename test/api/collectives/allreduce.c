@@ -271,8 +271,8 @@ int main(int argc, char*argv[])
   pami_xfer_t          allreduce;
 
 
-  char sbuf[MAXBUFSIZE] __attribute__((__aligned__(64)));
-  char rbuf[MAXBUFSIZE] __attribute__((__aligned__(64)));
+  char sbuf[MAXBUFSIZE];
+  char rbuf[MAXBUFSIZE];
   int op, dt;
 
   /* \note Test environment variable" TEST_PROTOCOL={-}substring.       */
@@ -432,15 +432,15 @@ int main(int argc, char*argv[])
                     long long dataSent = i * sz;
                     int niter;
 
-                    allreduce.cmd.xfer_allreduce.stypecount = dataSent;
-                    allreduce.cmd.xfer_allreduce.rtypecount = dataSent;
-                    allreduce.cmd.xfer_allreduce.dt = dt_array[dt];
-                    allreduce.cmd.xfer_allreduce.op = op_array[op];
-
                     if (dataSent < CUTOFF)
                       niter = NITERLAT;
                     else
                       niter = NITERBW;
+
+                    allreduce.cmd.xfer_allreduce.stypecount = dataSent;
+                    allreduce.cmd.xfer_allreduce.rtypecount = dataSent;
+                    allreduce.cmd.xfer_allreduce.dt = dt_array[dt];
+                    allreduce.cmd.xfer_allreduce.op = op_array[op];
 
 #ifdef CHECK_DATA
                     initialize_sndbuf (sbuf, i, op, dt, task_id);
@@ -458,7 +458,9 @@ int main(int argc, char*argv[])
 
 #ifdef CHECK_DATA
                     int rc = check_rcvbuf (rbuf, i, op, dt, num_tasks);
+
                     if (rc) fprintf(stderr, "FAILED validation\n");
+
 #endif
 
                     usec = (tf - ti) / (double)niter;

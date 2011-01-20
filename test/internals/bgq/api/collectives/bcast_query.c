@@ -75,9 +75,13 @@ int main (int argc, char ** argv)
 
   int                  nalg= 0;
   double               ti, tf, usec;
-  char                 buf[BUFSIZE] __attribute__((__aligned__(64)));
   pami_xfer_t          barrier;
   pami_xfer_t          broadcast;
+
+  int err = 0;
+  void* buf = NULL;
+  err = posix_memalign(&buf, 128, BUFSIZE);
+  assert(err == 0);
 
   unsigned selector = 1;
   char* selected = getenv("TEST_PROTOCOL");

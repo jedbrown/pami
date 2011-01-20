@@ -271,10 +271,18 @@ int main(int argc, char*argv[])
   pami_xfer_t          allreduce;
 
 
-  char sbuf[MAXBUFSIZE+128]  __attribute__((__aligned__(128)));
-  char rbuf[MAXBUFSIZE+128] __attribute__((__aligned__(128)));
+  int err = 0;
+  void* sbuf = NULL;
+  err = posix_memalign(&sbuf, 128, MAXBUFSIZE);
+  assert(err == 0);
+  void* rbuf = NULL;
+  err = posix_memalign(&rbuf, 128, MAXBUFSIZE);
+  assert(err == 0);
+
   int op, dt;
 
+  /* \note Test environment variable" TEST_PROTOCOL={-}substring.       */
+  /* substring is used to select, or de-select (with -) test protocols */
   unsigned selector = 1;
   char* selected = getenv("TEST_PROTOCOL");
   if(!selected) selected = "";
@@ -390,7 +398,6 @@ int main(int argc, char*argv[])
 
   for (nalg = 0; nalg < allreduce_num_algorithm[0]; nalg++)
   {
-    char* tmp;
     if (task_id == root)
     {
       printf("# Allreduce Bandwidth Test -- root = %d protocol: %s\n", root, allreduce_always_works_md[nalg].name);
@@ -408,12 +415,10 @@ int main(int argc, char*argv[])
     allreduce.cb_done   = cb_done;
     allreduce.cookie    = (void*) & allreduce_poll_flag;
     allreduce.algorithm = allreduce_always_works_algo[nalg];
-    tmp = (char*)(((uint64_t)sbuf + 127) & ~(uint64_t)127); /* align the buffer */
-    allreduce.cmd.xfer_allreduce.sndbuf    = tmp;
+    allreduce.cmd.xfer_allreduce.sndbuf    = sbuf;
     allreduce.cmd.xfer_allreduce.stype     = PAMI_BYTE;
     allreduce.cmd.xfer_allreduce.stypecount = 0;
-    tmp = (char*)(((uint64_t)rbuf + 127) & ~(uint64_t)127); /* align the buffer */
-    allreduce.cmd.xfer_allreduce.rcvbuf    = tmp;
+    allreduce.cmd.xfer_allreduce.rcvbuf    = rbuf;
     allreduce.cmd.xfer_allreduce.rtype     = PAMI_BYTE;
     allreduce.cmd.xfer_allreduce.rtypecount = 0;
 
@@ -433,18 +438,18 @@ int main(int argc, char*argv[])
             long long dataSent = i * sz;
             int niter;
 
+                    if (dataSent < CUTOFF)
+                      niter = NITERLAT;
+                    else
+                      niter = NITERBW;
+
                     allreduce.cmd.xfer_allreduce.stypecount = dataSent;
                     allreduce.cmd.xfer_allreduce.rtypecount = dataSent;
                     allreduce.cmd.xfer_allreduce.dt = dt_array[dt];
                     allreduce.cmd.xfer_allreduce.op = op_array[op];
 
-            if (dataSent < CUTOFF)
-              niter = NITERLAT;
-            else
-              niter = NITERBW;
-
 #ifdef CHECK_DATA
-            initialize_sndbuf (allreduce.cmd.xfer_allreduce.sndbuf, i, op, dt, task_id);
+            initialize_sndbuf (sbuf, i, op, dt, task_id);
 #endif
             blocking_coll(context, &barrier, &bar_poll_flag);
             ti = timer();
@@ -458,8 +463,10 @@ int main(int argc, char*argv[])
             blocking_coll(context, &barrier, &bar_poll_flag);
 
 #ifdef CHECK_DATA
-              int rc = check_rcvbuf (allreduce.cmd.xfer_allreduce.rcvbuf, i, op, dt, num_tasks);
+              int rc = check_rcvbuf (rbuf, i, op, dt, num_tasks);
+
               if (rc) fprintf(stderr, "FAILED validation\n");
+
 #endif
 
             usec = (tf - ti) / (double)niter;
