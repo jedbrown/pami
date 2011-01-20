@@ -317,7 +317,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void Mcomb2DMetaData(pami_metadata_t *m)
     {
-      new(m) PAMI::Geometry::Metadata("I0:MultiCombine2Device:SHMEM:MU");
+      new(m) PAMI::Geometry::Metadata("X0:MultiCombine2Device:SHMEM:MU");
 #ifdef ENABLE_NEW_SHMEM
       m->check_correct.values.alldt     = 0;
       m->check_correct.values.allop     = 0;
