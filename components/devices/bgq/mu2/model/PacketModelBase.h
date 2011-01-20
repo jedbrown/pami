@@ -134,12 +134,14 @@ namespace PAMI
                                             size_t                length);
 
 
-        protected:
+        protected:	  
+	  void short_copy (void *dst, void *src, int n);
 
           MUSPI_DescriptorBase            _singlepkt;
           MUSPI_DescriptorBase            _multipkt;
           MU::Context                   & _context;
           void                          * _cookie;
+	  
       };
 
       template <class T_Model>
@@ -327,7 +329,7 @@ namespace PAMI
             for (i = 0; i < T_Niov; i++)
               {
 		//Optimize 0byte message rate
-		memcpy ((dst + tbytes), iov[i].iov_base, iov[i].iov_len);
+		short_copy ((dst + tbytes), iov[i].iov_base, iov[i].iov_len);
                 tbytes += iov[i].iov_len;
               }
 
@@ -840,7 +842,39 @@ namespace PAMI
 
         TRACE_FN_EXIT();
         return true;
-      };
+      }
+
+      ///A copy routing for short messages that assumes destination is
+      ///aligned to 8 bytes. PPC64 hw can handle unaligned integer
+      ///loads/stores with few cycles of ovehread.
+      template <class T_Model>
+      void PacketModelBase<T_Model>::short_copy (void *dst, void *src, int n) {
+	if (n == 0)
+	  return;
+	
+	uint64_t *sp = (uint64_t *)src;
+	uint64_t *dp = (uint64_t  *)dst;
+
+	///For MPICH meta data
+	if (n == 24) {
+	  *dp ++ = *sp ++;
+	  *dp ++ = *sp ++;
+	  *dp ++ = *sp ++;
+	}
+	else 
+	{
+	  size_t dwords   = n >> 3;
+	  n  = n&0x7;
+	  
+	  while ( dwords-- )
+	      *dp ++ = *sp ++;
+
+	  uint8_t *sp8 = (uint8_t *)sp;
+	  uint8_t *dp8 = (uint8_t *)dp;	
+	  while (n--)
+	    *dp8 ++ = *sp8 ++;
+	}
+      }
 
     };   // PAMI::Device::MU namespace
   };     // PAMI::Device namespace
