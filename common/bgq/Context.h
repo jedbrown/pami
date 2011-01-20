@@ -265,8 +265,8 @@ namespace PAMI
         //unsigned long long t2 = PAMI_Wtimebase() -t1;
         //printf("overhead:%lld\n", t2);
 
-        return events;
         events += Device::AtomicMutexDev::Factory::advance(_atmmtx, clientid, contextid);
+        return events;
       }
 
       PAMI::Device::Generic::Device *_generics; // need better name...
