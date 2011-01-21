@@ -634,11 +634,6 @@ namespace PAMI
                                                                             void                * payload,
                                                                             size_t                length)
       {
-#ifdef ERROR_CHECKS
-        {
-          PAMI_assert((length+metasize) <= T_Model::packet_model_payload_bytes);
-        }
-#endif
         return static_cast<T_Model*>(this)->postPacket_impl (state, fn, cookie,
                                                              target_task, target_offset,
                                                              metadata, metasize,
