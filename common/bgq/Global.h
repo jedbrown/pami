@@ -444,14 +444,14 @@ size_t PAMI::Global::initializeMapCache (BgqJobPersonality  & personality,
           _ll.u.n_torus.coords[4] = _ur.u.n_torus.coords[4] = personality.eCoord();
           _ll.u.n_torus.coords[5] = _ur.u.n_torus.coords[5] = tCoord;
 
-          size_t numActiveRanksGlobal = fullSize;
+          size_t numActiveRanksGlobal = numentries;
           size_t numActiveNodesGlobal = 0;
 	  size_t lowestTCoordOnMyNode = 999999999;
 
-          max_rank = fullSize - 1;
+          max_rank = numentries - 1;
           min_rank = 0;
 
-          for (i = 0; i < fullSize; i++)
+          for (i = 0; i < numentries; i++)
             {
               a = mapcache->torus.task2coords[i].mapped.a;
               b = mapcache->torus.task2coords[i].mapped.b;
