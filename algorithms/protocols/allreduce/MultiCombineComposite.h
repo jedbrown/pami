@@ -587,18 +587,11 @@ namespace CCMI
           {
             TRACE_FN_ENTER();          
             MultiCombineComposite2DeviceNP *m = (MultiCombineComposite2DeviceNP*) cookie;
-            TRACE_FORMAT( "<%p>MultiCombineComposite2DeviceNP::test_local_done_fn() %p, %p", cookie, m->_buffer, m->_buffer1);
+            TRACE_FORMAT( "<%p>MultiCombineComposite2DeviceNP::test_local_done_fn() ", cookie);
             DO_DEBUG(dumpDbuf((double*)m->_pwq_dst.bufferToConsume() , m->_pwq_dst.bytesAvailableToConsume() / sizeof(double)));
 
             if (m->_cb_done.function)
                    m->_cb_done.function(context, m->_cb_done.clientdata, result);
-            if(m->_bytes > 2048)
-            {
-              __global.heap_mm->free(m->_buffer); 
-              __global.heap_mm->free(m->_buffer1); 
-            }
-            m->_buffer = NULL;
-            m->_buffer1 = NULL;
             TRACE_FN_EXIT();
           }
 #else
@@ -609,12 +602,6 @@ namespace CCMI
           ~MultiCombineComposite2DeviceNP ()
           {
             TRACE_FN_ENTER();          
-            TRACE_FORMAT( "<%p> %p, %p",this,_buffer,_buffer1);
-            if(_bytes > 2048)
-            {
-              __global.heap_mm->free(_buffer);
-              __global.heap_mm->free(_buffer1);
-            }
             TRACE_FN_EXIT();
           }
           MultiCombineComposite2DeviceNP (Interfaces::NativeInterface      *mInterface,
@@ -789,10 +776,6 @@ namespace CCMI
           pami_multicombine_t                 _mcomb_g;
           pami_multicast_t                    _mcast_l;
           pami_multicombine_t                *_active_mcomb;
-          char*                               _buffer;
-          char*                               _buffer1;
-          char                                _bufferb[2048+128];
-          char                                _buffer1b[2048+128];
           size_t                              _bytes;
 #ifdef LOCAL_TEST
           pami_callback_t                     _cb_done;   // User's completion callback
