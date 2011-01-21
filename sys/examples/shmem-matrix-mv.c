@@ -1,1 +1,0 @@
-../../test/api/p2p/send/shmem-matrix-mv.c

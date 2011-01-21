@@ -1,1 +1,0 @@
-../../test/api/collectives/bcast_advisor.c
