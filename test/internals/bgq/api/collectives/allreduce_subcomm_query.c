@@ -352,7 +352,6 @@ int main(int argc, char*argv[])
       set[1]   = 0;
       id       = 1;
       root     = 0;
-      fprintf(stderr,"task %zu, low %zu, high %zu, root %zu\n", (size_t)task_id,  (size_t)0, (size_t) half-1, (size_t)0);
     }
     else
     {
@@ -362,7 +361,6 @@ int main(int argc, char*argv[])
       set[1]   = 1;
       id       = 2;
       root     = half;
-      fprintf(stderr,"task %zu, low %zu, high %zu, root %zu\n", (size_t)task_id,  (size_t)half,  (size_t)num_tasks-1, (size_t) half);
     }
 
     rangecount = 1;
@@ -371,7 +369,6 @@ int main(int argc, char*argv[])
   {
     int i = 0;
     int iter = 0;;
-    fprintf(stderr,"task %zu\n", (size_t)task_id);
 
     if ((task_id % 2) == 0)
     {
