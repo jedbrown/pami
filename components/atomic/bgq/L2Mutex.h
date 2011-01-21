@@ -137,7 +137,7 @@ namespace PAMI
             	rc = mm->memalign((void **)&_counter, sizeof(*_counter),
                                    sizeof(*_counter), key);
 	    } else {
-		fprintf(stderr, "PAMI::Mutex::BGQ::IndirectL2: WARNING: using __global.l2atomicFactory.__nodescoped_mm\n");
+		//fprintf(stderr, "PAMI::Mutex::BGQ::IndirectL2: WARNING: using __global.l2atomicFactory.__nodescoped_mm\n");
             	rc = __global.l2atomicFactory.__nodescoped_mm.memalign((void **)&_counter,
                                                                     sizeof(*_counter),
                                                                     sizeof(*_counter),

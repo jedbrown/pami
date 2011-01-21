@@ -96,7 +96,7 @@ namespace PAMI
               	rc = mm->memalign((void **)&_counter, 32, 3 * sizeof(*_counter), key,
                   		IndirectL2Bounded::counter_initialize, NULL);
 	      } else {
-		fprintf(stderr, "PAMI::Counter::BGQ::IndirectL2Bounded: WARNING: using __global.l2atomicFactory.__nodescoped_mm\n");
+		//fprintf(stderr, "PAMI::Counter::BGQ::IndirectL2Bounded: WARNING: using __global.l2atomicFactory.__nodescoped_mm\n");
               	rc = __global.l2atomicFactory.__nodescoped_mm.memalign((void **)&_counter,
                   			32, 3 * sizeof(*_counter), key,
                   			IndirectL2Bounded::counter_initialize, NULL);
