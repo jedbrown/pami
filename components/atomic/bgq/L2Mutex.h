@@ -53,6 +53,14 @@ namespace PAMI
 
           inline ~L2() {};
 
+	static inline bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+		return ((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0);
+	}
+
+	static inline bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+		return true; // no mm used - no init.
+	}
+
         protected:
 
           // -------------------------------------------------------------------
@@ -99,6 +107,15 @@ namespace PAMI
 
           inline ~IndirectL2() {};
 
+	static inline bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+		// must not be shared memory.
+		return ((mm->attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) == 0);
+	}
+
+	static inline bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+		return ((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0);
+	}
+
         protected:
 
           // -------------------------------------------------------------------
@@ -113,15 +130,21 @@ namespace PAMI
           /// to allocate the memory.
           ///
           template <class T_MemoryManager>
-          inline void init_impl (T_MemoryManager * mm, const char * key)
+          inline void init_impl(T_MemoryManager *mm, const char *key)
           {
             pami_result_t rc;
-            rc = __global.l2atomicFactory.__nodescoped_mm.memalign ((void **) & _counter,
+	    if ((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0) {
+            	rc = mm->memalign((void **)&_counter, sizeof(*_counter),
+                                   sizeof(*_counter), key);
+	    } else {
+		fprintf(stderr, "PAMI::Mutex::BGQ::IndirectL2: WARNING: using __global.l2atomicFactory.__nodescoped_mm\n");
+            	rc = __global.l2atomicFactory.__nodescoped_mm.memalign((void **)&_counter,
                                                                     sizeof(*_counter),
                                                                     sizeof(*_counter),
                                                                     key);
+	    }
 
-            PAMI_assertf (rc == PAMI_SUCCESS, "Failed to allocate memory from memory manager (%p) with key (\"%s\")", mm, key);
+            PAMI_assertf(rc == PAMI_SUCCESS, "Failed to allocate memory from mm %p with key \"%s\"", mm, key);
           };
 
           inline void clone_impl (IndirectL2 & atomic)
