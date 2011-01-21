@@ -146,6 +146,7 @@ namespace PAMI
           /// \param[in] mu_context_cookie   MU context cookie delivered in callbacks
           ///
           inline pami_result_t init (size_t   id_client,
+          			     size_t   id_context,
                                      void   * mu_context_cookie,
 				     Generic::Device       * progress)
           {
@@ -436,6 +437,7 @@ namespace PAMI
 	    _interruptMask = _rm.getInterruptMask( _rm_id_client,
 						   _id_offset );
 #endif
+	    _rm.init(id_client, id_context, progress);
 
             TRACE_FN_EXIT();
             return PAMI_SUCCESS;

@@ -1301,6 +1301,7 @@ fprintf(stderr, "%s\n", buf);
 	inline void initializeContexts( size_t rmClientId,
 				 size_t numContexts,
                                  PAMI::Device::Generic::Device * devices );
+	inline void init(size_t rmClientId, size_t rmContextId, PAMI::Device::Generic::Device * devices);
 
 	inline void getNumResourcesPerContext( size_t  rmClientId,
 					       size_t *numInjFifos,
@@ -3548,17 +3549,20 @@ void PAMI::Device::MU::ResourceManager::initializeContexts( size_t rmClientId,
 	    }
 	}
     }
-    __global.heap_mm->memalign((void **)&_cr_mtx_mdls[rmClientId], sizeof(void *),
+    prc = __global.heap_mm->memalign((void **)&_cr_mtx_mdls[rmClientId], sizeof(void *),
 				numContexts * sizeof(*_cr_mtx_mdls[rmClientId]));
-    for (i = 0; i < numContexts; i++)
-    {
-	  pami_result_t status = PAMI_ERROR;
-	  AtomicMutexDev &device = PAMI::Device::AtomicMutexDev::Factory::getDevice((AtomicMutexDev *)devices, rmClientId, i);
-	  new (&_cr_mtx_mdls[rmClientId][i]) MUCR_mutex_model_t(device, &_cr_mtx, status);
-	  PAMI_assertf(status == PAMI_SUCCESS, "Failed to construct non-blocking mutex client %zd context %zd", rmClientId, i);
-    }
+    PAMI_assertf(prc == PAMI_SUCCESS, "Failed to allocate space for classroute mutex models");
 
 } // End: initializeContexts()
+
+void PAMI::Device::MU::ResourceManager::init(size_t rmClientId,
+			size_t rmContextId,
+			PAMI::Device::Generic::Device * devices) {
+    pami_result_t status = PAMI_ERROR;
+    AtomicMutexDev &device = PAMI::Device::AtomicMutexDev::Factory::getDevice((AtomicMutexDev *)devices, rmClientId, rmContextId);
+    new (&_cr_mtx_mdls[rmClientId][rmContextId]) MUCR_mutex_model_t(device, &_cr_mtx, status);
+    PAMI_assertf(status == PAMI_SUCCESS, "Failed to construct non-blocking mutex client %zd context %zd", rmClientId, rmContextId);
+}
 
 
 void PAMI::Device::MU::ResourceManager::getNumResourcesPerContext( size_t  rmClientId,
