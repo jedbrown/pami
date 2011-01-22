@@ -173,8 +173,8 @@ int create_and_query_geometry(pami_client_t           client,
   config.name = PAMI_GEOMETRY_OPTIMIZE;
   
   result = PAMI_Geometry_create_taskrange (client,
-                                           &config, //NULL,
-                                           1, //0,
+                                           &config, /*NULL*/
+                                           1, /*0, */
                                            new_geometry,
                                            parent_geometry,
                                            id,

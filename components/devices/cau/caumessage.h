@@ -213,6 +213,9 @@ namespace PAMI
       PipeWorkQueue       *_sndpwq;
       cau_reduce_op_t      _red;
       void                *_ue_buf;
+      size_t               _ue_bytes;
+      void                *_ue_hdr;
+      size_t               _ue_hdr_bytes;
       void                *_devinfo;
       void                *_device;
       coremath             _math_func;

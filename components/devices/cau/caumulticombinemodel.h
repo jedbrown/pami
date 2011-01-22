@@ -185,9 +185,13 @@ namespace PAMI
           TRACE((stderr, "CAUMulticombineModel: cau_red_handler: posted:  found and delete seqno=%d\n", seqno));
           if(m == NULL)
             {
-              PAMI_abort();
+              // In the case of an unposted message, we will increment the current sequence number
+              // and allocate a buffer for the packet size.  Since only one packet will be outstanding
+              // in this implementation, we don't need to allocate for the entire message
+              // We cannot do the math yet on this packet because the user hasn't posted their
+              // math operation.
               TRACE((stderr, "CAUMulticombineModel: cau_red_handler: NOT FOUND %d\n", seqno));
-              cau_reduce_op_t red = {CAU_SIGNED_INT, CAU_NOP};
+              cau_reduce_op_t red = {CAU_SIGNED_INT, CAU_NOP};              
               m = (CAUMcombineMessage *)mc->_msg_allocator.allocateObject();
               new(m) CAUMcombineMessage(0,                        // bytesToReduce
                                         0,                        // type size
@@ -199,6 +203,13 @@ namespace PAMI
                                         NULL,                     // user cookie
                                         gi->_seqnoRed++,          // ue search key
                                         mc);
+              m->_ue_buf        =  malloc(hdr->pktsize);
+              m->_ue_bytes      =  hdr->pktsize;
+              m->_ue_hdr        =  malloc(*uhdr_len);
+              m->_ue_hdr_bytes  = *uhdr_len;
+              memcpy(m->_ue_buf, ri->udata_one_pkt_ptr, hdr->pktsize);
+              memcpy(m->_ue_hdr, uhdr, *uhdr_len);
+
               gi->_ueRed.pushTail((MatchQueueElem*)m);
               r             = NULL;
               *comp_h       = NULL;
@@ -290,6 +301,11 @@ namespace PAMI
             CAUGeometryInfo        *gi       = (CAUGeometryInfo *)devinfo;
             topo_src->rankList(&tl);
             topo_dst->rankList(&tl_root);
+            bool                    handleUE    = false;
+            void                   *ueBuf       = NULL;
+            size_t                  ueBytes     = 0;
+            void                   *ueHdrBuf    = NULL;
+            size_t                  ueHdrBytes  = 0;
 
             if(tl_root[0] == _device.taskid())
             {
@@ -304,12 +320,17 @@ namespace PAMI
               m = (CAUMcombineMessage*)gi->_ueRed.findAndDelete(gi->_seqnoRed);
               if (m != NULL)
                 {
+                  // We found an unexpected message
+                  // We can construct this message as if it is a new lapi message
+                  // and call the reduction header handler handle this ue message.                  
                   TRACE((stderr, "CAUMulticombineModel: Root: postMulticombine ue message Found\n"));
-                  PAMI_abort();
-                  // Post work to generic device to perform math operations
-                  // on local data, and multicast to the destinations
-                  // Capture the state into a receive message and post this
-                  // message information to the generic device
+                  handleUE    = true;
+                  ueBuf       = m->_ue_buf;
+                  ueBytes     = m->_ue_bytes;
+                  ueHdrBuf    = m->_ue_hdr;
+                  ueHdrBytes  = m->_ue_hdr_bytes;
+                  _msg_allocator.returnObject(m);
+                  m        = NULL;
                 }
               TRACE((stderr, "CAUMulticombineModel: Root: postMulticombine ue message Not Found\n"));
             }
@@ -347,14 +368,15 @@ namespace PAMI
             unsigned        minsize =  MIN(source->bytesAvailableToConsume(), 64);
             char           *buf     =  source->bufferToConsume();
             m->_currentBytes        =  minsize;
-
+            
             // This node is not the root, start the reduction
+            lapi_handle_t hdl = _device.getHdl();
             if(tl_root[0] != _device.taskid())
               {
                 TRACE((stderr, "CAUMulticombineModel: Nonroot Calling Reduce and posting to posted broadcast queue seqno=%lu buf=%p\n",
                        m->_xfer_header.seqno, buf));
                 gi->_postedBcast.pushTail((MatchQueueElem*)m);
-                CheckLapiRC(lapi_cau_reduce(_device.getHdl(),         // lapi handle
+                CheckLapiRC(lapi_cau_reduce(hdl,                      // lapi handle
                                             gi->_cau_id,              // group id
                                             _dispatch_red_id,         // dispatch id
                                             &m->_xfer_header,         // header
@@ -368,6 +390,21 @@ namespace PAMI
               }
             TRACE((stderr, "CAUMulticombineModel: Root: postMulticombine: posting to posted queue\n"));
             gi->_postedRed.pushTail((MatchQueueElem*)m);
+            if(handleUE==true)
+              {
+                TRACE((stderr, "CAUMulticombineModel: Root: postMulticombine: handling UE message\n"));
+                lapi_return_info_t      ri;
+                ri.udata_one_pkt_ptr =  ueBuf;
+                compl_hndlr_t          *comp_h;
+                cau_red_handler(&hdl,
+                                ueHdrBuf,
+                                (unsigned int*)&ueHdrBytes,
+                                (ulong*)&ri,
+                                &comp_h,
+                                NULL);
+                free(ueHdrBuf);
+                free(ueBuf);
+              }
             return PAMI_SUCCESS;
           }
       public:
