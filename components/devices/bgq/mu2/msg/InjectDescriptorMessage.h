@@ -63,6 +63,7 @@ namespace PAMI
                                           void                * cookie) :
               _channel (channel),
               _next (0),
+              _nactive(T_Num),
               _fn (fn),
               _cookie (cookie)
           {
