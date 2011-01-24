@@ -285,7 +285,8 @@ namespace PAMI
 
             TRACE_ERR((stderr,"size of desc:%ld sizeof mcomb_control:%ld", sizeof(typename T_Device::CollectiveDescriptor), sizeof(McombControl)));
 
-            Shmem::McombControl* mcomb_control = (Shmem::McombControl*) _my_desc->get_buffer();
+            Shmem::McombControl* mcomb_control = NULL;
+            mcomb_control = (Shmem::McombControl*) _my_desc->get_buffer();
             assert(mcomb_control != NULL);
 
             PAMI::PipeWorkQueue *rcv = (PAMI::PipeWorkQueue *)mcomb_params.results;
