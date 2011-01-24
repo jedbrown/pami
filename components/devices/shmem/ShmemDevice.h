@@ -78,8 +78,12 @@ namespace PAMI
     {
       public:
 
-        typedef Shmem::ShmemCollDescFifo<Counter::Indirect<Counter::Native> >  CollectiveFifo;
-        typedef Shmem::ShmemCollDesc< Counter::Indirect<Counter::Native> >     CollectiveDescriptor;
+        /*typedef Shmem::ShmemCollDescFifo<Counter::Indirect<Counter::Native> >  CollectiveFifo;
+        typedef Shmem::ShmemCollDesc< Counter::Indirect<Counter::Native> >     CollectiveDescriptor;*/
+        typedef Shmem::ShmemCollDescFifo<PAMI::Counter::BGQ::IndirectL2>  CollectiveFifo;
+        typedef Shmem::ShmemCollDesc<PAMI::Counter::BGQ::IndirectL2>     CollectiveDescriptor;
+        typedef Shmem::BaseMessage<ShmemDevice<T_Fifo,T_Shaddr,T_FifoCount> > BaseMessage;
+
 
         // Inner factory class
         class Factory : public Interface::FactoryInterface<Factory, ShmemDevice, PAMI::Device::Generic::Device>
@@ -241,8 +245,7 @@ namespace PAMI
             _progress (progress),
             _local_progress_device (&(Generic::Device::Factory::getDevice (progress, 0, contextid))),
             shaddr (),
-            _desc_fifo (),
-            _adv_obj (NULL)
+            _desc_fifo ()//, _adv_obj (NULL)
 
         {
           TRACE_ERR((stderr, "ShmemDevice() constructor\n"));
@@ -440,8 +443,13 @@ namespace PAMI
         CollectiveFifo  _desc_fifo;
         //Shmem::BaseMessage<ShmemDevice<T_Fifo,T_Shaddr,T_FifoCount>, Shmem::ShmemCollDesc<T_Atomic> > *_adv_obj;
         //inline void post_obj(Shmem::BaseMessage<ShmemDevice<T_Fifo,T_Shaddr,T_FifoCount>, Shmem::ShmemCollDesc<T_Atomic> > *obj){_adv_obj = obj;};
-        Shmem::BaseMessage<ShmemDevice<T_Fifo,T_Shaddr,T_FifoCount> > *_adv_obj;
-        inline void post_obj(Shmem::BaseMessage<ShmemDevice<T_Fifo,T_Shaddr,T_FifoCount> > *obj){_adv_obj = obj;};
+        //Shmem::BaseMessage<ShmemDevice<T_Fifo,T_Shaddr,T_FifoCount> > *_adv_obj;
+        //inline void post_obj(Shmem::BaseMessage<ShmemDevice<T_Fifo,T_Shaddr,T_FifoCount> > *obj){_adv_obj = obj;};
+
+        PAMI::Queue     _collectiveQ;
+        inline void post_obj(BaseMessage *obj)
+            {_collectiveQ.enqueue(obj);}
+	PAMI::Queue::Iterator _Iter;
 
         match_dispatch_t  _match_dispatch[MATCH_DISPATCH_SIZE];
         
@@ -508,16 +516,29 @@ namespace PAMI
     {
       size_t events = 0;
       while (_rfifo.consumePacket(_dispatch))
-        {
-          events++;
-        }
+      {
+        events++;
+      }
 
-      pami_result_t res = PAMI_EAGAIN;
-      if (_adv_obj != NULL)
+      /*pami_result_t res = PAMI_EAGAIN;
+        if (_adv_obj != NULL)
         {
-          res = _adv_obj->__advance(_context, (void*)_adv_obj);
-          if (res == PAMI_SUCCESS) _adv_obj = NULL;
+        res = _adv_obj->__advance(_context, (void*)_adv_obj);
+        if (res == PAMI_SUCCESS) _adv_obj = NULL;
+        }*/
+
+      pami_result_t res;
+      BaseMessage *msg;
+      _collectiveQ.iter_begin(&_Iter);
+      for (; _collectiveQ.iter_check(&_Iter); _collectiveQ.iter_end(&_Iter)) {
+        events++;
+        msg = (BaseMessage *)_collectiveQ.iter_current(&_Iter);
+        res = msg->__advance(_context,(void*)msg);
+        if (res != PAMI_EAGAIN){
+          _collectiveQ.iter_remove(&_Iter);
+          continue;
         }
+      }
 
 
       /* Releasing done descriptors for comm world communicators */

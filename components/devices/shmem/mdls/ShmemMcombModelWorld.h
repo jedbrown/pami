@@ -123,8 +123,8 @@ namespace PAMI
 
               /*res = PAMI_EAGAIN;
               while (res != PAMI_SUCCESS) { res = obj->__advance(_context, obj); }*/
-              /*PAMI::Device::Generic::Device &generic = _device.getProgressDevice();
-              generic.postThread(&(obj->_work));*/
+              /*PAMI::Device::Generic::Device *generic = _device.getLocalProgressDevice();
+              generic->postThread(&(obj->_work));*/
               /*PAMI::Device::Generic::Device * generic = _device.getProgressDeviceNew();
               generic->postThread(&(obj->_work));*/
 #endif

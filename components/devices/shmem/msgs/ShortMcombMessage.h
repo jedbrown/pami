@@ -109,6 +109,7 @@ namespace PAMI
 
             //This advance is for reduction to root locally in a node
             inline virtual pami_result_t advance ()
+            //inline pami_result_t advance ()
             {
 
               typename T_Device::CollectiveDescriptor* _my_desc = this->_my_desc;
