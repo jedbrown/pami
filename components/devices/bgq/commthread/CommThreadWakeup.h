@@ -99,6 +99,7 @@ private:
 public:
         BgqCommThread() { }
         static size_t _maxActive;
+        static size_t _maxloops;
 
 #else // !COMMTHREAD_LAYOUT_TESTING
 
@@ -380,7 +381,7 @@ private:
 		// should/can this use the internal (C++) interface?
 		uint64_t new_ctx, old_ctx, lkd_ctx;
 		size_t n, events, ev_since_wu;
-		size_t max_loop = 100; // \todo need some heuristic or tunable for max loops
+		size_t max_loop = BgqCommThread::_maxloops;
 		size_t id; // our current commthread id, among active ones.
 		pthread_t self = pthread_self();
 		uint64_t wu_start, wu_mask;
@@ -503,6 +504,7 @@ DEBUG_WRITE('t','t');
 	static BgqCommThread *_comm_xlat[NUM_CORES][NUM_SMT];
 	static size_t _numActive;
 	static size_t _maxActive;
+        static size_t _maxloops;
 	static size_t _ptCore;
 	static size_t _ptThread;
 #endif // !COMMTHREAD_LAYOUT_TESTING
@@ -542,10 +544,19 @@ _commThreads(NULL)
 	/// Note: this must be based on number of processes per node.
 	/// Default: BG_PROCESSESPERNODE - 1
 	///
+	/// PAMI_COMMTHREAD_MAX_LOOPS - Number of loops through advance done by
+	/// a commthread before checking status for possible sleep or preemption.
+	/// Default: 100
+	///
 	char *env = getenv("PAMI_MAX_COMMTHREADS");
 	if (env) {
-		size_t v = strtoul(env, NULL, 0);
-		if (v < BgqCommThread::_maxActive) BgqCommThread::_maxActive = v;
+		x = strtoul(env, NULL, 0);
+		if (x < BgqCommThread::_maxActive) BgqCommThread::_maxActive = x;
+	}
+	env = getenv("PAMI_COMMTHREAD_MAX_LOOPS");
+	if (env) {
+		x = strtoul(env, NULL, 0);
+		BgqCommThread::_maxloops = x;
 	}
 
 	BgqCommThread::_ptCore = (NUM_CORES - 1) - (BgqCommThread::_maxActive % NUM_CORES);
@@ -684,6 +695,7 @@ if (fwu > 2) fprintf(stderr, "Commthreads saw %zd false wakeups\n", fwu);
 }; // namespace PAMI
 
 size_t PAMI::Device::CommThread::BgqCommThread::_maxActive = 0;
+size_t PAMI::Device::CommThread::BgqCommThread::_maxloops = 100;
 #ifndef COMMTHREAD_LAYOUT_TESTING
 size_t PAMI::Device::CommThread::BgqCommThread::_numActive = 0;
 size_t PAMI::Device::CommThread::BgqCommThread::_ptCore = 0;
