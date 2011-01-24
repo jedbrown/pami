@@ -859,7 +859,7 @@ namespace PAMI
 	if (n == 24) {
 	  *dp ++ = *sp ++;
 	  *dp ++ = *sp ++;
-	  *dp ++ = *sp ++;
+	  *dp    = *sp;
 	}
 	else 
 	{
