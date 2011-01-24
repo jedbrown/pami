@@ -242,10 +242,10 @@ extern "C"
         unsigned continuous_recv:1;         /*  Receive data must be continuous */
       }check;
     }metadata_result_t;
-  
+
   /*  Forward declaration of pami_xfer_t */
   typedef struct pami_xfer_t *xfer_p;
-  
+
   /**
    * \brief Function signature for metadata queries
    *
@@ -295,7 +295,7 @@ extern "C"
                                                   contiguous:  data type must be PAMI_BYTE     */
         unsigned               contigrflags:1; /**<  This protocol requires contiguous data(recv)
                                                   contiguous:  data type must be PAMI_BYTE     */
-        unsigned               continsflags:1; /**<  This protocol requires continuous data(send) 
+        unsigned               continsflags:1; /**<  This protocol requires continuous data(send)
                                                   continuous:  data type must be PAMI_BYTE and
                                                   for vector collectives, the target buffers
                                                   of the vectors must be adjacent in memory    */
@@ -3194,12 +3194,12 @@ extern "C"
 
 /**
  * \brief Asynchronous progress event handler
- * 
+ *
  * This function is not a callback because it is not invoked as a result
  * of PAMI_Context_advance() or PAMI_Context_advancev(). The context
- * parameter is not the context that invoked the progress event handler, 
+ * parameter is not the context that invoked the progress event handler,
  * but instead is the context that must be advanced.
- * 
+ *
  * \param[in] context Communication context that requires progress
  * \param[in] cookie  Asynchronous progress event handler application argument
  */
@@ -3215,19 +3215,19 @@ typedef void (*pami_async_function) (pami_context_t   context,
  * application must guarantee thread safety when advancing the context as
  * the progress function may be invoked by multiple asynchronous execution
  * resources.
- * 
+ *
  * A non-`NULL` progress function will inform the application that a specific
  * communication context must be advanced. It does \b not imply that an
  * application callback will be invoked, nor that network traffic will not
- * be processed by hardware or software. 
- * 
+ * be processed by hardware or software.
+ *
  * \note A \c NULL progress function will result in calls to the internal
  *       implementation of the PAMI_Context_trylock(), PAMI_Context_advance(),
  *       and PAMI_Context_unlock() functions. Applications that wish to use
  *       an alternative mechanism than PAMI_Contex_[try]lock() to ensure
  *       thread-safe access to communication contexts must provide a non-`NULL`
  *       asynchronous progress function.
- * 
+ *
  * If the value of the \c PAMI_CLIENT_ASYNC_GUARANTEE client configuration
  * attribute is \c true, then the user will know that the \c suspend_fn and
  * \c resume_fn will never be invoked because the implementation can guarantee
@@ -3242,7 +3242,7 @@ typedef void (*pami_async_function) (pami_context_t   context,
  * \note It is possible, due to resource constraints, that asynchronous progress
  *       will be enabled and then the suspend function will be immediately
  *       invoked.
- *  
+ *
  * \param [in] context     Communication context
  * \param [in] progress_fn Event function invoked when the context must be
  *                         advanced. May be \c NULL.
@@ -3254,7 +3254,7 @@ typedef void (*pami_async_function) (pami_context_t   context,
  *                         suspension. A \c NULL callback will disable the
  *                         resume notification.
  * \param [in] cookie      Event cookie for all event callbacks
- * 
+ *
  * \retval PAMI_SUCCESS Asynchronous progress was enabled for the context
  * \retval PAMI_ERROR   Asynchronous progress was not enabled for the context
  **/
@@ -3268,7 +3268,7 @@ pami_result_t PAMI_Context_async_progress_enable (pami_context_t        context,
  * \brief Disable asynchronous progress for a context
  *
  * \param [in] context Communication context
- * 
+ *
  * \retval PAMI_SUCCESS Asynchronous progress was disabled for the context
  * \retval PAMI_ERROR   Asynchronous progress was not disabled for the context,
  *                      or asynchronous progress on the context was never
