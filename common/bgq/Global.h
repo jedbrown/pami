@@ -250,7 +250,8 @@ namespace PAMI
       PAMI::Atomic::BGQ::L2AtomicFactory l2atomicFactory;
       PAMI::Memory::GenMemoryManager mm;
       PAMI::Memory::MemoryManager *_wuRegion_mm; // this process
-      PAMI::Memory::MemoryManager *_wuRegion_mms; // all processes on node
+      // This must be GenMemoryManager so that array arith works
+      PAMI::Memory::GenMemoryManager *_wuRegion_mms; // all processes on node
 
     private:
 

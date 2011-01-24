@@ -168,7 +168,7 @@ fprintf(stderr, "Kernel_CreateMemoryRegion failed for %p %zd (%d)\n",
 		return &_wu_mm[process];
 	}
 
-	inline PAMI::Memory::MemoryManager *getAllWUmm() {
+	inline PAMI::Memory::GenMemoryManager *getAllWUmm() {
 		return &_wu_mm[0];
 	}
 
