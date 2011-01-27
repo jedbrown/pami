@@ -82,6 +82,13 @@ public:
 	///
 	inline T_Element *iter_current(T_Iterator *iter);
 
+	/// \brief dump iterator and associated objects
+	///
+	/// \param[in] str	(optional) String to prefix to outout
+	/// \param[in] iter	Iterator data structure
+	///
+	inline void iter_dump(const char *str, T_Iterator *iter);
+
 }; // class QueueIterator
 
 }; // namespace PAMI::Interface
@@ -121,6 +128,11 @@ inline pami_result_t PAMI::Interface::QueueIterator<T_Queue,T_Element,T_Iterator
 template <class T_Queue, class T_Element, typename T_Iterator>
 inline T_Element *PAMI::Interface::QueueIterator<T_Queue,T_Element,T_Iterator>::iter_current(T_Iterator *iter) {
 	return static_cast<T_Queue *>(this)->iter_current_impl(iter);
+}
+
+template <class T_Queue, class T_Element, typename T_Iterator>
+inline void PAMI::Interface::QueueIterator<T_Queue,T_Element,T_Iterator>::iter_dump(const char *str, T_Iterator *iter) {
+	static_cast<T_Queue *>(this)->iter_dump_impl(str, iter);
 }
 
 #endif // __util_queue_QueueIteratorInterface_h__

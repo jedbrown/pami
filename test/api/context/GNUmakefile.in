@@ -12,7 +12,10 @@
 VPATH		= @abs_srcdir@
 SUBDIRS         = 
 NOTBUILT        = 
-APPS            = create.${EXTENSION} advance.${EXTENSION} multi-create.${EXTENSION} multi-advance.${EXTENSION} post.${EXTENSION} lock.${EXTENSION} post-multithreaded.${EXTENSION} post-multithreaded-perf.${EXTENSION} post-perf.${EXTENSION}
+APPS            = create.${EXTENSION} advance.${EXTENSION} multi-create.${EXTENSION} \
+		multi-advance.${EXTENSION} post.${EXTENSION} lock.${EXTENSION} \
+		post-multithreaded.${EXTENSION} post-multithreaded-perf.${EXTENSION} \
+		post-perf.${EXTENSION} post-stress.${EXTENSION} advance-perf.${EXTENSION}
 
 include @abs_top_builddir@/Build.rules
 

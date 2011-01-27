@@ -66,7 +66,7 @@ test(pami_context_t contexts[], size_t ncontexts, size_t iterations, uint64_t* _
   start_time = PAMI_Wtimebase();
 
   for (i=0; i<iterations; ++i) {
-    for (context = 1; context<ncontexts; ++context) {
+    for (context = 0; context<ncontexts; ++context) {
       rc = PAMI_Context_post(contexts[context],
                              &posted_request[context][i],
                              posted,
@@ -77,7 +77,7 @@ test(pami_context_t contexts[], size_t ncontexts, size_t iterations, uint64_t* _
 
   posted_time = PAMI_Wtimebase();
 
-  for (context = 1; context<ncontexts; ++context) {
+  for (context = 0; context<ncontexts; ++context) {
     rc = PAMI_Context_post(contexts[context],
                            &finish_request[context],
                            finish,
@@ -85,10 +85,8 @@ test(pami_context_t contexts[], size_t ncontexts, size_t iterations, uint64_t* _
     assert(rc == PAMI_SUCCESS);
   }
 
-  for (context = 1; context<ncontexts; ++context) {
+  for (context = 0; context<ncontexts; ++context) {
     while (!finish_list[context]) {
-      rc = PAMI_Context_advance(contexts[0], 1);
-      assert(rc == PAMI_SUCCESS);
     }
     assert(posted_list[context] == iterations);
   }
@@ -124,6 +122,11 @@ main(int argc, char **argv)
     assert(rc == PAMI_SUCCESS);
     assert(configuration.value.intval != 0);
 
+    char *s = getenv("PAMI_MAXCONTEXTS");
+    if (s) {
+	size_t n = strtoul(s, NULL, 0);
+	if (n < ncontexts) ncontexts = n;
+    }
     configuration.name = PAMI_CLIENT_NUM_CONTEXTS;
     rc = PAMI_Client_query(client, &configuration, 1);
     assert(rc == PAMI_SUCCESS);
@@ -151,7 +154,7 @@ main(int argc, char **argv)
 
   {
     size_t context;
-    for (context = 1; context<ncontexts; ++context) {
+    for (context = 0; context<ncontexts; ++context) {
 #ifdef __pami_target_bgq__
       rc = PAMI_Client_add_commthread_context(client, contexts[context]);
       assert(rc == PAMI_SUCCESS);
@@ -170,7 +173,7 @@ main(int argc, char **argv)
     uint64_t done_time_per   = done_time   / (ncontexts*ITERATIONS);
     printf("Posted %u functions on each of %zu contexts in %llu cycles (%llu cyclces per post).  The functions were called in %llu cycles (%llu cyclces per call).\n",
            ITERATIONS,
-           ncontexts-1,
+           ncontexts,
            (long long unsigned)posted_time,
            (long long unsigned)posted_time_per,
            (long long unsigned)done_time,

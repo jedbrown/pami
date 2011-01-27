@@ -325,6 +325,10 @@ namespace PAMI
 	return PAMI_SUCCESS;
     }
 
+		inline void iter_dump_impl(const char *str, Iterator *iter) {
+			PAMI_abortf("iter_dump not implemented");
+		}
+
     protected:
       Element * _head;
       Element * _tail;

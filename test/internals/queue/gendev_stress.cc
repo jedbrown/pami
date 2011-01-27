@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/internals/queue/gendev_perf.cc
+ * \file test/internals/queue/gendev_stress.cc
  * \brief ???
  */
 
@@ -23,9 +23,13 @@
 #include <sys/syscall.h>
 #include <sys/types.h>
 
+#ifndef MAX_PTHREADS
+#define MAX_PTHREADS    8
+#endif // MAX_PTHREADS
+
 #include "gendev_setup.h"
 
-// template <class T_GenDev, int T_NumCtx>
+template <int T_RandMask = 0, int T_BackoffNS = 0>
 class QueueTest {
 	static const size_t num_ctx = 1;
 public:
@@ -37,12 +41,14 @@ public:
 
 	double base_t;
 	const char *name;
+	int pthreads;
 	int elements;
 	int seed;
 	int done;
 
 	QueueTest(const char *n, int pth, int elem, int s) :
 	name(n),
+	pthreads(pth),
 	elements(elem),
 	seed(s)
 	{
@@ -69,8 +75,12 @@ public:
 
 	static pami_result_t work(pami_context_t ctx, void *cookie) {
 		QueueTest *thus = (QueueTest *)cookie;
-		++thus->done;
-		return PAMI_SUCCESS;
+		if ((rand() & T_RandMask) == 0) {
+			++thus->done;
+			return PAMI_SUCCESS;
+		} else {
+			return PAMI_EAGAIN;
+		}
 	}
 
 	static void *enqueuers(void *v) {
@@ -79,9 +89,11 @@ public:
 		int x;
 		element_t *e;
 		unsigned long long t0, t = 0;
+		// timespec tv = {0, T_BackoffNS};
 
 		fprintf(stderr, "%d: starting %d enqueues\n", gettid(), num);
 		for (x = 0; x < num; ++x) {
+			// if (T_BackoffNS) nanosleep(&tv, NULL);
 			e = (element_t *)malloc(sizeof(*e));
 			assert(e);
 			e->setStatus(PAMI::Device::Ready);
@@ -101,7 +113,7 @@ public:
 
 	static void *dequeuer(void *v) {
 		QueueTest *thus = (QueueTest *)v;
-		int num = thus->elements * thus->num_ctx;
+		int num = thus->elements * thus->num_ctx * (thus->pthreads - 1);
 		size_t x;
 		unsigned long long t0, t = 0;
 
@@ -120,12 +132,28 @@ public:
 		return NULL;
 	}
 
+	pthread_attr_t attr[MAX_PTHREADS];
+	pthread_t thread[MAX_PTHREADS];
+
 	int run_test(void) {
-		fprintf(stderr, "main: starting %s test with %d elements per run\n",
-				name, elements);
+		int x;
+		fprintf(stderr, "main: starting %s test with %d elements per run, %d pthreads enqueueing\n",
+				name, elements, pthreads);
 		done = 0;
-		(void)enqueuers((void *)this);
+		int status;
+		for (x = 1; x < pthreads; ++x) {
+			pthread_attr_init(&attr[x]);
+			pthread_attr_setscope(&attr[x], PTHREAD_SCOPE_SYSTEM);
+			status = pthread_create(&thread[x], &attr[x],
+						enqueuers, (void *)this);
+			/* don't care about status? just reap threads below? */
+		}
 		(void)dequeuer((void *)this);
+		for (x = 1; x < pthreads; ++x) {
+			pthread_join(thread[x], NULL);
+		}
+		fprintf(stderr, "test %s main done. (status unknown)\n",
+			name);
 		return 0;
 	}
 
@@ -133,16 +161,24 @@ public:
 
 int main(int argc, char **argv) {
 	int x;
-	int elements = 1000;
+	int pthreads = 4;
+	int elements = 100000;
 	int seed = 1;
 
 	//extern int optind;
 	extern char *optarg;
 
-	while ((x = getopt(argc, argv, "e:s:")) != EOF) {
+	while ((x = getopt(argc, argv, "e:p:s:")) != EOF) {
 		switch(x) {
 		case 'e':
 			elements = strtol(optarg, NULL, 0);
+			break;
+		case 'p':
+			pthreads = strtol(optarg, NULL, 0);
+			if (pthreads > MAX_PTHREADS) {
+				fprintf(stderr, "Max num pthreads is compiled as %d\n", MAX_PTHREADS);
+				exit(1);
+			}
 			break;
 		case 's':
 			seed = strtol(optarg, NULL, 0);
@@ -151,7 +187,7 @@ int main(int argc, char **argv) {
 		}
 	}
 	int ret = 0;
-	QueueTest test1(QUEUE_NAME, 0, elements, seed);
+	QueueTest<3> test1(QUEUE_NAME, pthreads, elements, seed);
 	ret = test1.run_test();
 	exit(ret);
 }

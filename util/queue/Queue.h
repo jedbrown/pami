@@ -321,7 +321,7 @@ namespace PAMI
       /// \copydoc PAMI::Interface::QueueInfoInterface::dump
       inline void dump_impl (const char * str, int n)
       {
-        PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+        fprintf(stderr, "%s: PAMI::Queue %p %p %zd\n", str, _head, _tail, _size);
       };
 
 #ifdef VALIDATE_ON
@@ -392,6 +392,12 @@ namespace PAMI
   inline pami_result_t iter_remove_impl(Iterator *iter) {
     remove(iter->curr);
     return PAMI_SUCCESS;
+  }
+
+  inline void iter_dump_impl(const char *str, Iterator *iter) {
+    fprintf(stderr, "%s: PAMI::Queue::Iterator %p %p [%p %p %zd]\n", str,
+		iter->curr, iter->next,
+		_head, _tail, _size);
   }
 
     private:

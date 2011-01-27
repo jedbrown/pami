@@ -55,6 +55,11 @@ namespace PAMI
 	{
 		return true;
 	}
+
+	inline void init(PAMI::Memory::MemoryManager *mm, const char *key)
+	{
+		PAMI_abortf("init() called for in-place mutex");
+	}
       
       protected:
 

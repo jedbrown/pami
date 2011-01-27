@@ -297,22 +297,30 @@ public:
 		qmm = __global.heap_mm;
 #endif // ! __pami_target_bgq__
 		PAMI_assertf(__queues->__Threads.checkCtorMm(qmm) &&
+				__queues->__Posted.checkCtorMm(qmm) &&
 				__queues->__GenericQueue.checkCtorMm(qmm),
 			"Queue memory incompatible with embedded atomics");
 		// process-private allocation...
-		rc = qmm->memalign((void **)&__queues, sizeof(void *), sizeof(*__queues));
+		rc = qmm->memalign((void **)&__queues,
+					GenericDevicePostingQueue::ALIGNMENT,
+					sizeof(*__queues));
 		PAMI_assertf(rc == PAMI_SUCCESS, "Out of memory allocating generic device queues");
 		new (&__queues->__Threads) GenericDeviceWorkQueue();
+		new (&__queues->__Posted) GenericDevicePostingQueue();
 		new (&__queues->__GenericQueue) GenericDeviceCompletionQueue();
 		key[n] = 't';
 		key[n + 1] = '\0';
 		PAMI_assertf(__queues->__Threads.checkDataMm(mm) &&
+				__queues->__Posted.checkDataMm(mm) &&
 				__queues->__GenericQueue.checkDataMm(mm),
 			"supplied MemoryManager incompatible with queue atomics");
 		__queues->__Threads.init(mm, key);
+		key[n] = 'p';
+		__queues->__Posted.init(mm, key);
 		key[n] = 'm';
 		__queues->__GenericQueue.init(mm, key);
 		__queues->__Threads.iter_init(&__ThrIter);
+		__queues->__Posted.iter_init(&__PstIter);
 		return PAMI_SUCCESS;
 	}
 
@@ -336,9 +344,18 @@ public:
 
 		//if (!__Threads.mutex()->tryAcquire()) continue;
 		GenericThread *thr;
+
+		// We do the persistent queue first to avoid calling new work twice.
+		// We want to avoid enqueueing onto persistent if it completes on
+		// the first call.
+
+		// This queue has a single produce/consumer - same thread does both.
+		// i.e. it is completely single-threaded.
 		__queues->__Threads.iter_begin(&__ThrIter);
 		for (; __queues->__Threads.iter_check(&__ThrIter); __queues->__Threads.iter_end(&__ThrIter)) {
 			thr = (GenericThread *)__queues->__Threads.iter_current(&__ThrIter);
+			PAMI_assert_debugf(thr->getStatus() != PAMI::Device::OneShot,
+				"One-shot posted to internal queue directly");
 			if (thr->getStatus() == PAMI::Device::Ready) {
 				++events;
 				pami_result_t rc = thr->executeThread(__context);
@@ -347,17 +364,36 @@ public:
 					__queues->__Threads.iter_remove(&__ThrIter);
 					continue;
 				}
-			} else if (thr->getStatus() == PAMI::Device::OneShot) {
-				++events;
-				// thread is like completion callback, dequeue first.
-				__queues->__Threads.iter_remove(&__ThrIter);
-				thr->executeThread(__context);
-				continue;
 			}
 			// This allows a thread to be "completed" by something else...
 			if (thr->getStatus() == PAMI::Device::Complete) {
 				__queues->__Threads.iter_remove(&__ThrIter);
 				continue;
+			}
+		}
+
+		// All work is removed from queue, by definition.
+		// The queue iterator implements this.
+		__queues->__Posted.iter_begin(&__PstIter);
+		for (; __queues->__Posted.iter_check(&__PstIter); __queues->__Posted.iter_end(&__PstIter)) {
+			thr = (GenericThread *)__queues->__Posted.iter_current(&__PstIter);
+			// By definition, a posting queue removes all elements as
+			// we work the iterator. In that case the following remove()
+			// is a NO-OP. However, a conventional queue might be useable
+			// in come cases and so we call remove() in an attempt to be
+			// compatible with both.
+			__queues->__Posted.iter_remove(&__PstIter);
+			if (thr->getStatus() == PAMI::Device::Ready) {
+				++events;
+				pami_result_t rc = thr->executeThread(__context);
+				if (rc == PAMI_EAGAIN) {
+					__queues->__Threads.enqueue((GenericDeviceWorkQueue::Element *)thr);
+				}
+			} else if (thr->getStatus() == PAMI::Device::OneShot) {
+				++events;
+				thr->executeThread(__context);
+			} else if (thr->getStatus() != PAMI::Device::Complete) {
+				__queues->__Threads.enqueue((GenericDeviceWorkQueue::Element *)thr);
 			}
 		}
 		//__queues->__Threads.mutex()->release();
@@ -398,7 +434,7 @@ public:
 	/// \param[in] thr  Thread object to post for advance work
 	///
 	inline void postThread(GenericThread *thr) {
-		__queues->__Threads.enqueue((GenericDeviceWorkQueue::Element *)thr);
+		__queues->__Posted.enqueue((GenericDevicePostingQueue::Element *)thr);
 	}
 
 	/// \brief Post a message to the generic-device queuing system
@@ -426,21 +462,28 @@ public:
 
 	inline PAMI::Device::Generic::Device *getAllDevs() { return __allGds; }
 
+	inline void dump(const char *str) {
+		__queues->__Posted.iter_dump(str, &__PstIter);
+		__queues->__Threads.iter_dump(str, &__ThrIter);
+	}
+
 private:
 	struct GenericDeviceQueues {
+		/// \brief Storage for the queue of threads (a.k.a. work units)
+		GenericDevicePostingQueue __Posted; // often alignment critical
+		GenericDeviceWorkQueue __Threads;
+
 		/// \brief Storage for the queue for message completion
 		///
 		/// Queue[1] is used by the Generic::Device to enqueue messages for completion.
 		/// By convention, queue[0] is used for attaching messages to a sub-device.
 		///
 		GenericDeviceCompletionQueue __GenericQueue;
-
-		/// \brief Storage for the queue of threads (a.k.a. work units)
-		GenericDeviceWorkQueue __Threads;
 	};
 
 	GenericDeviceQueues *__queues;
 	GenericDeviceWorkQueue::Iterator __ThrIter;
+	GenericDevicePostingQueue::Iterator __PstIter;
 
 	pami_context_t __context; ///< context handle for this generic device
 	size_t __clientId;    ///< client ID for context

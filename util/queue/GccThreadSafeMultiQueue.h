@@ -278,6 +278,10 @@ namespace PAMI {
 			return PAMI_SUCCESS;
 		}
 
+		inline void iter_dump_impl(const char *str, Iterator *iter) {
+			PAMI_abortf("iter_dump not implemented");
+		}
+
 	private:
 		inline bool __merge(GccThreadSafeMultiQueue<T_NumElems,T_ElemNum> *main,
 				GccThreadSafeMultiQueue<T_NumElems,T_ElemNum> *new_work) {
