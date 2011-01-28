@@ -43,7 +43,7 @@ typedef PAMI::MultiQueue<GENDEVMSG_NUM_QUEUES,GENDEVMSG_SEND_QNUM>	GenericDevice
 /// \brief Queue type to use for generic device threads (work) queue(s)
 #include "util/queue/GccThreadSafePostingQueue.h"
 #include "components/atomic/native/NativeMutex.h"
-typedef PAMI::GccThreadSafePostingQueue<PAMI::MutexedQueue<PAMI::Mutex::NativeMutex> >	GenericDevicePostingQueue;
+typedef PAMI::GccThreadSafePostingQueue<PAMI::MutexedQueue<PAMI::Mutex::Native> >	GenericDevicePostingQueue;
 typedef PAMI::Queue									GenericDeviceWorkQueue;
 
 #endif // __common_bgp_GenericDevicePlatform_h__
