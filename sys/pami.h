@@ -366,12 +366,14 @@ extern "C"
     unsigned no_local_copy     : 1; /**< Disable PAMI making a local copy of data                */
     unsigned no_long_header    : 1; /**< Disable long header support                             */
     unsigned recv_contiguous   : 1; /**< Assert that receives on this dispatch will all be
-                                         contiguous using PAMI_TYPE_CONTIGUOUS.  If specified during
-                                         PAMI_Dispatch_set(), there is no need to set
-                                         pami_recv_t::type for the receive.                      */
+                                         contiguous using PAMI_TYPE_CONTIGUOUS with a zero offset.
+                                         If specified during PAMI_Dispatch_set(), there is no need
+                                         to set pami_recv_t::type nor pami_recv_t::offset for the
+                                         receive.                                                */
     unsigned recv_copy         : 1; /**< Assert that receives on this dispatch will all use
-                                         PAMI_DATA_COPY. If specified during PAMI_Dispatch_set(),
-                                         there is no need set pami_recv_t::data_fn for the
+                                         PAMI_DATA_COPY and a \c NULL data cookie. If specified
+                                         during PAMI_Dispatch_set(), there is no need set
+                                         pami_recv_t::data_fn nor pami_recv_t::data_cookie for the
                                          receive                                                 */
     unsigned recv_immediate    : 1; /**< Assert that sends will result in an 'immediate' receive */
 
