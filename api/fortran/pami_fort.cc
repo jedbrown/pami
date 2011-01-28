@@ -839,6 +839,6 @@ ALIAS(EXTENSION_OPEN,extension_open,(pami_client_t* client,const char* name,pami
 
 ALIAS(EXTENSION_CLOSE,extension_close,(pami_extension_t extension,pami_result_t* result));
 
-ALIAS(EXTENSION_FUNCTION,extension_function,(pami_extension_t extension,const char* fn,void* result));
+ALIAS(EXTENSION_FUNCTION,extension_symbol,(pami_extension_t extension,const char* fn,void* result));
 
 ALIAS(ADDRESS,address,(void* addr_in, size_t* addr_out, pami_result_t* result));
