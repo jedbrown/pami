@@ -3166,6 +3166,10 @@ extern "C"
    * Context creation is a local operation and does not involve communication or
    * syncronization with other tasks.
    *
+   * \warning This function is \b not \b threadsafe and the application must
+   *          ensure that one, and only one thread creates the communication
+   *          contexts for a client.
+   *
    * \param[in]  client        Client handle
    * \param[in]  configuration List of configurable attributes and values
    * \param[in]  num_configs   Number of configurations, may be zero
@@ -3184,19 +3188,28 @@ extern "C"
 
 
   /**
-   * \brief Destroy the communication context
-   *
-   * \warning It is \b illegal to invoke any PAMI functions using the
-   *          communication context from any thread after the context is
-   *          destroyed.
-   *
-   * \param[in,out] contexts  PAMI communication context list
-   * \param[in]     ncontexts The number of contexts in the list.
-   * \retval PAMI_SUCCESS  The contexts have been destroyed.
-   * \retval PAMI_INVAL    Some context is invalid, e.g. already destroyed.
+   * \brief Destroy communication contexts for a client
    *
    * The context handles will be changed to an invalid value so that
    * they are clearly destroyed.
+   *
+   * \warning This function is \b not \b threadsafe and the application must
+   *          ensure that one, and only one, thread destroys the communication
+   *          context(s) for a client.
+   *
+   * It is \b illegal to invoke any PAMI functions using a communication
+   * context from any thread after the context is destroyed.
+   * 
+   * \note The PAMI_Context_lock(), PAMI_Context_trylock(), and
+   *       PAMI_Context_unlock(), functions must not be used to ensure
+   *       thread-safe access to the context destroy function as the lock
+   *       associated with each context will be destroyed.
+   *
+   * \param[in,out] contexts  PAMI communication context list
+   * \param[in]     ncontexts The number of contexts in the list.
+   *
+   * \retval PAMI_SUCCESS  The contexts have been destroyed.
+   * \retval PAMI_INVAL    Some context is invalid, e.g. already destroyed.
    */
   pami_result_t PAMI_Context_destroyv (pami_context_t * contexts,
                                        size_t           ncontexts);
@@ -3333,54 +3346,114 @@ extern "C"
 
 /**
  * \brief Asynchronous progress event handler
- *
+ * 
  * This function is not a callback because it is not invoked as a result
- * of PAMI_Context_advance() or PAMI_Context_advancev(). The context
- * parameter is not the context that invoked the progress event handler,
- * but instead is the context that must be advanced.
- *
+ * of PAMI_Context_advance() or PAMI_Context_advancev(). Consequently, the
+ * context parameter is not a context that invoked the progress event handler,
+ * but instead is the context associated with a particular asynchronous
+ * progress event.
+ * 
+ * The context is \b not locked internally, via PAMI_Context_lock(), by the
+ * internal asynchronous progress execution resource when the asynchronous
+ * progress event handler is invoked. The application retains the responsibility
+ * of accessing communication contexts in a thread-safe manner.
+ * 
  * \param[in] context Communication context that requires progress
  * \param[in] cookie  Asynchronous progress event handler application argument
  */
 typedef void (*pami_async_function) (pami_context_t   context,
                                      void           * cookie);
 
+  /**
+   * \brief Asynchronous progress event types
+   */
+  typedef enum
+  {
+    PAMI_ASYNC_ALL   =  0, /**< Enable all asynchronous event types */
+    PAMI_ASYNC_INT   =  1, /**< Enable only interrupt asynchronous event types */
+    PAMI_ASYNC_TIMER =  2, /**< Enable only timer asynchronous event types */
+    PAMI_ASYNC_EXT = 1000  /**< Begin extension-specific values */
+  } pami_async_t;
+
 /**
  * \brief Enable asynchronous progress for a context
  *
- * The \c progress_fn callback is invoked when an event occurs on the context
- * that requires processing with the PAMI_Context_advance() function. The
- * context is \b not locked when the progress callback is invoked. The
- * application must guarantee thread safety when advancing the context as
- * the progress function may be invoked by multiple asynchronous execution
- * resources.
- *
- * A non-`NULL` progress function will inform the application that a specific
- * communication context must be advanced. It does \b not imply that an
- * application callback will be invoked, nor that network traffic will not
- * be processed by hardware or software.
- *
- * \note A \c NULL progress function will result in calls to the internal
+ * This function is used to enable asynchronous progress for a specific
+ * communication context. An execution resource will provide the asynchronous
+ * progress by invoking either the PAMI_Context_advance() function, if the
+ * \c progress_fn parameter is \c NULL, or by invoking the user-provided
+ * progress function.
+ * 
+ * \note Because a \c NULL \c progress_fn will result in calls to the internal
  *       implementation of the PAMI_Context_trylock(), PAMI_Context_advance(),
- *       and PAMI_Context_unlock() functions. Applications that wish to use
- *       an alternative mechanism than PAMI_Contex_[try]lock() to ensure
- *       thread-safe access to communication contexts must provide a non-`NULL`
- *       asynchronous progress function.
+ *       and PAMI_Context_unlock() functions, applications that wish to use
+ *       an alternative mechanism than PAMI_Contex_lock() to ensure
+ *       thread-safe access to communication contexts \b must provide a non-
+ *       \c NULL asynchronous progress function.
+ * 
+ * The \c progress_fn event handler is invoked when an event occurs on the context
+ * that requires processing with the PAMI_Context_advance() function. It does
+ * \b not imply that any application callbacks will be invoked when the context
+ * is advanced, nor that network traffic will, or will not, be processed by
+ * hardware or software, nor that the \c progress_fn will be invoked periodically.
+ * The application must not assume any particular reason for the invokation of
+ * the \c progress_fn other than the implemention requires PAMI_Context_advance()
+ * for a particular communication context.
+ * 
+ * The application is not required to invoke PAMI_Context_advance() from within
+ * the \c progress_fn when it is invoked - only that the application must invoke
+ * PAMI_Context_advance() to make progress on communication associated with the
+ * context. For example, a different application thread may invoke
+ * PAMI_Context_advance() on behalf of the asynchronous progress execution
+ * resource that invoked the \c progress_fn.
  *
- * If the value of the \c PAMI_CLIENT_ASYNC_GUARANTEE client configuration
- * attribute is \c true, then the user will know that the \c suspend_fn and
- * \c resume_fn will never be invoked because the implementation can guarantee
- * asynchronous progress at all times. If the value is \c false then the
- * \c suspend_fn and \c resume_fn may be invoked due to resource constraints.
+ * The \c suspend_fn event handler is invoked by an asynchronous progress
+ * execution resource when the implementation is unable to continue to provide
+ * asynchronous progress due to some resource constraint. This is a notification
+ * to the application that asynchronous progress for a communication context is
+ * about to be suspended, not that the communication context requires progress.
+ * The only asynchronous progress event handler that may be invoked after a
+ * suspend event is the corresponding \c resume_fn event handler.
+ * 
+ * The \c resume_fn event handler is invoked by an asynchronous progress
+ * execution resource when the implementation is again able to provide
+ * asynchronous progress after previously suspending asynchronous progress
+ * due to some resource constraint. This is a notification to the application
+ * that asynchronous progress for a communication context is about to resume,
+ * not that the communication context requires progress.
+ * 
+ * \note The asynchronous progress event functions will not be simultaneously
+ *       invoked by multiple asynchronous execution resources for the \b same
+ *       communication context. Only one of the three event functions for a
+ *       particular communication context will ever be invoked at any time.
  *
- * For example, a boolean variable may be updated from within the \c suspend_fn
- * and the \c resume_fn that will direct the main, or computation, thread
- * to whether or not to actively advance the context using the
- * PAMI_Context_advance() function.
+ * \note It is possible, due to resource constraints, that when asynchronous
+ *       progress is enabled the \c suspend_fn will be invoked before the
+ *       asynchronous progress enable function returns, or that the \c suspend_fn
+ *       will be immediately invoked by an asynchronous progress execution
+ *       resource.
+ * 
+ * If the value of the pami_attribute_name_t::PAMI_CLIENT_ASYNC_GUARANTEE client
+ * configuration attribute is \c true, then the application can assume that the
+ * \c suspend_fn and \c resume_fn will never be invoked because the
+ * implementation can guarantee asynchronous progress at all times. If the value
+ * is \c false then the \c suspend_fn and \c resume_fn may be invoked due to
+ * resource constraints.
  *
- * \note It is possible, due to resource constraints, that asynchronous progress
- *       will be enabled and then the suspend function will be immediately
- *       invoked.
+ * \warning It is not recommended for an application to provide a non- \c NULL
+ *          \c suspend_fn and a \c NULL resume_fn, or a \c NULL suspend_fn and
+ *          a non- \c NULL resume_fn.
+ *
+ * \note It is \b not required that the communication context is locked, via
+ *       PAMI_Context_lock() or some other atomic mechanism, to enable
+ *       asynchronous progress. This function is thread-safe and the runtime
+ *       will internally perform any neccessary atomic operations in order to
+ *       enable asynchronous progress on the context.
+ *
+ * It is considered \b illegal to enable asynchronous progress on a context
+ * more than once. Asynchronous progress on a context must first be disabled
+ * with PAMI_Context_async_progress_disable() in order to invoke
+ * PAMI_Context_async_progress_enable () with different parameters.
  *
  * \param [in] context     Communication context
  * \param [in] progress_fn Event function invoked when the context must be
@@ -3393,7 +3466,8 @@ typedef void (*pami_async_function) (pami_context_t   context,
  *                         suspension. A \c NULL callback will disable the
  *                         resume notification.
  * \param [in] cookie      Event cookie for all event callbacks
- *
+ * \param [in] options     Asynchronous progress options
+ * 
  * \retval PAMI_SUCCESS Asynchronous progress was enabled for the context
  * \retval PAMI_ERROR   Asynchronous progress was not enabled for the context
  **/
@@ -3401,10 +3475,25 @@ pami_result_t PAMI_Context_async_progress_enable (pami_context_t        context,
                                                   pami_async_function   progress_fn,
                                                   pami_async_function   suspend_fn,
                                                   pami_async_function   resume_fn,
-                                                  void                * cookie);
+                                                  void                * cookie,
+                                                  pami_async_t          options);
 
 /**
  * \brief Disable asynchronous progress for a context
+ *
+ * If the application enabled asynchronous progress on the context with a
+ * \c NULL \c progress_fn event function then the asynchronous progress
+ * implementation will internally use the PAMI_Context_lock() to ensure
+ * thread-safe access to any internal implementation of PAMI_Context_advance().
+ * Consequently, the application must use an alternative to PAMI_Context_lock()
+ * to ensure that only a single thread invokes the PAMI_Context_destroyv()
+ * function.
+ *
+ * \note It is \b not required that the communication context is locked, via
+ *       PAMI_Context_lock() or some other atomic mechanism, to ensure thread
+ *       safety before invoking this function. The runtime will internally
+ *       perform any neccessary atomic operations in order to disable
+ *       asynchronous progress on the context.
  *
  * \param [in] context Communication context
  *
