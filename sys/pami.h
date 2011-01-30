@@ -81,16 +81,15 @@ extern "C"
    * When a data function is used with a typed transfer, one must make sure
    * the atom size of the data function divides the atom size of the type.
    *
-   * \param [in] target  The address of a contiguous target buffer
-   * \param [in] source  The address of a contiguous source buffer
-   * \param [in] bytes   The number of bytes to handle
-   * \param [in] cookie  A user-specified value
-   *
+   * \param [in,out] target  The address of a contiguous target buffer
+   * \param [in]     source  The address of a contiguous source buffer
+   * \param [in]     bytes   The number of bytes to handle
+   * \param [in]     cookie  A user-specified value
    */
-  typedef void (*pami_data_function) (void   * target,
-                                      void   * source,
-                                      size_t   bytes,
-                                      void   * cookie);
+  typedef void (*pami_data_function) (void       * target,
+                                      const void * source,
+                                      size_t       bytes,
+                                      void       * cookie);
 
   /**
    * \brief Function signature for work posted to a communication context
@@ -113,79 +112,6 @@ extern "C"
   typedef pami_result_t (*pami_work_function)(pami_context_t context, void *cookie);
 
   typedef uintptr_t pami_work_t[PAMI_WORK_SIZE_STATIC/sizeof(uintptr_t)]; /**< Context work opaque object */
-
-/**
- * \brief Message layer operation types
- */
-
-  typedef enum
-  {
-    PAMI_UNDEFINED_OP = 0,
-    PAMI_NOOP,
-    PAMI_MAX,
-    PAMI_MIN,
-    PAMI_SUM,
-    PAMI_PROD,
-    PAMI_LAND,
-    PAMI_LOR,
-    PAMI_LXOR,
-    PAMI_BAND,
-    PAMI_BOR,
-    PAMI_BXOR,
-    PAMI_MAXLOC,
-    PAMI_MINLOC,
-    PAMI_USERDEFINED_OP,
-    PAMI_OP_COUNT,
-    PAMI_OP_EXT = 1000 /**< Begin extension-specific values */
-  }
-    pami_op;
-
-  /**
-   * \brief Message layer data types
-   */
-
-  typedef enum
-  {
-    /* Standard/Primitive DT's */
-    PAMI_UNDEFINED_DT = 0,
-    PAMI_SIGNED_CHAR,
-    PAMI_UNSIGNED_CHAR,
-    PAMI_SIGNED_SHORT,
-    PAMI_UNSIGNED_SHORT,
-    PAMI_SIGNED_INT,
-    PAMI_UNSIGNED_INT,
-    PAMI_SIGNED_LONG_LONG,
-    PAMI_UNSIGNED_LONG_LONG,
-    PAMI_FLOAT,
-    PAMI_DOUBLE,
-    PAMI_LONG_DOUBLE,
-    PAMI_LOGICAL,
-    PAMI_SINGLE_COMPLEX,
-    PAMI_DOUBLE_COMPLEX,
-    /* Max/Minloc DT's */
-    PAMI_LOC_2INT,
-    PAMI_LOC_SHORT_INT,
-    PAMI_LOC_FLOAT_INT,
-    PAMI_LOC_DOUBLE_INT,
-    PAMI_LOC_2FLOAT,
-    PAMI_LOC_2DOUBLE,
-    PAMI_USERDEFINED_DT,
-    PAMI_DT_COUNT,
-    PAMI_DT_EXT = 1000 /**< Begin extension-specific values */
-  }
-    pami_dt;
-
-
-  /**
-   * \brief Query the data type
-   *
-   * \param[in]  dt   PAMI reduction data type
-   * \param[out] size The size of the data operand
-   *
-   * \retval PAMI_SUCCESS  The query was successful
-   * \retval PAMI_INVAL    The query was rejected due to invalid parameters.
-   */
-  pami_result_t PAMI_Dt_query (pami_dt dt, size_t *size);
 
 
   /*****************************************************************************/
@@ -382,15 +308,15 @@ extern "C"
                                                   operations for reduction/scan
                                                   0:not for all dt & op, 1:for all dt & op     */
         unsigned               contigsflags:1; /**<  This protocol requires contiguous data(send)
-                                                  contiguous:  data type must be PAMI_TYPE_CONTIGUOUS     */
+                                                  contiguous:  data type must be PAMI_TYPE_BYTE     */
         unsigned               contigrflags:1; /**<  This protocol requires contiguous data(recv)
-                                                  contiguous:  data type must be PAMI_TYPE_CONTIGUOUS     */
+                                                  contiguous:  data type must be PAMI_TYPE_BYTE     */
         unsigned               continsflags:1; /**<  This protocol requires continuous data(send)
-                                                  continuous:  data type must be PAMI_TYPE_CONTIGUOUS and
+                                                  continuous:  data type must be PAMI_TYPE_BYTE and
                                                   for vector collectives, the target buffers
                                                   of the vectors must be adjacent in memory    */
         unsigned               continrflags:1; /**<  This protocol requires continuous data(recv)
-                                                  continuous:  data type must be PAMI_TYPE_CONTIGUOUS and
+                                                  continuous:  data type must be PAMI_TYPE_BYTE and
                                                   for vector collectives, the target buffers
                                                   of the vectors must be adjacent in memory    */
       }values;
@@ -411,11 +337,6 @@ extern "C"
     unsigned               min_align_perf;/**<  Estimated performance minimum address alignment */
   } pami_metadata_t;
   /** \} */ /* end of "PAMI Collectives Metadata" group */
-
-
-
-
-
 
 
   /*****************************************************************************/
@@ -501,7 +422,7 @@ extern "C"
     
     /**
      * \brief All asynchronous receives will be contiguous using
-     *        PAMI_TYPE_CONTIGUOUS with a zero offset.
+     *        PAMI_TYPE_BYTE with a zero offset.
      * 
      * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
      * it is not required to set pami_recv_t::type nor pami_recv_t::offset for
@@ -927,7 +848,7 @@ extern "C"
    * the active message dispatch callback to direct the pami runtime how to
    * receive the data stream.
    *
-   * When pami_recv_t::type is ::PAMI_TYPE_CONTIGUOUS, the receive buffer is
+   * When pami_recv_t::type is ::PAMI_TYPE_BYTE, the receive buffer is
    * contiguous and it must be large enough to hold the entire message.
    *
    * With a non-contiguous pami_recv_t::type, the receive buffer in general must
@@ -1926,14 +1847,14 @@ extern "C"
    */
   typedef struct
   {
-    char                     * sndbuf;
-    pami_type_t                stype;
-    size_t                   * stypecounts;
-    size_t                   * sdispls;
-    char                     * rcvbuf;
-    pami_type_t                rtype;
-    size_t                   * rtypecounts;
-    size_t                   * rdispls;
+    char                      * sndbuf;
+    pami_type_t                 stype;
+    size_t                    * stypecounts;
+    size_t                    * sdispls;
+    char                      * rcvbuf;
+    pami_type_t                 rtype;
+    size_t                    * rtypecounts;
+    size_t                    * rdispls;
   } pami_alltoallv_t;
 
   /**
@@ -1957,14 +1878,14 @@ extern "C"
    */
   typedef struct
   {
-    char                    * sndbuf;
-    pami_type_t               stype;
-    int                     * stypecounts;
-    int                     * sdispls;
-    char                    * rcvbuf;
-    pami_type_t               rtype;
-    int                     * rtypecounts;
-    int                     * rdispls;
+    char                      * sndbuf;
+    pami_type_t                 stype;
+    int                       * stypecounts;
+    int                       * sdispls;
+    char                      * rcvbuf;
+    pami_type_t                 rtype;
+    int                       * rtypecounts;
+    int                       * rdispls;
   } pami_alltoallv_int_t;
 
 
@@ -2015,15 +1936,16 @@ extern "C"
    */
   typedef struct
   {
-    size_t                     root;
-    char                     * sndbuf;
-    pami_type_t                stype;
-    size_t                     stypecount;
-    char                     * rcvbuf;
-    pami_type_t                rtype;
-    size_t                     rtypecount;
-    pami_dt                    dt;
-    pami_op                    op;
+    size_t                      root;
+    char                      * sndbuf;
+    pami_type_t                 stype;
+    size_t                      stypecount;
+    char                      * rcvbuf;
+    pami_type_t                 rtype;
+    size_t                      rtypecount;
+    pami_data_function          op;          /**< Function to consume data */
+    void                      * data_cookie; /**< cookie for produce data function */
+    int                         commutative;
   } pami_reduce_t;
 
   /**
@@ -2048,15 +1970,16 @@ extern "C"
    */
   typedef struct
   {
-    char                    * sndbuf;
-    pami_type_t               stype;
-    size_t                    stypecount;
-    char                    * rcvbuf;
-    pami_type_t               rtype;
-    size_t                    rtypecount;
-    size_t                  * rcounts;
-    pami_dt                   dt;
-    pami_op                   op;
+    char                      * sndbuf;
+    pami_type_t                 stype;
+    size_t                      stypecount;
+    char                      * rcvbuf;
+    pami_type_t                 rtype;
+    size_t                      rtypecount;
+    size_t                    * rcounts;
+    pami_data_function          op;          /**< Function to consume data */
+    void                      * data_cookie; /**< cookie for produce data function */
+    int                         commutative;
   } pami_reduce_scatter_t;
 
   /**
@@ -2164,14 +2087,14 @@ extern "C"
    */
   typedef struct
   {
-    size_t                     root;
-    char                     * sndbuf;
-    pami_type_t                stype;
-    size_t                     stypecount;
-    char                     * rcvbuf;
-    pami_type_t                rtype;
-    size_t                   * rtypecounts;
-    size_t                   * rdispls;
+    size_t                      root;
+    char                      * sndbuf;
+    pami_type_t                 stype;
+    size_t                      stypecount;
+    char                      * rcvbuf;
+    pami_type_t                 rtype;
+    size_t                    * rtypecounts;
+    size_t                    * rdispls;
   } pami_gatherv_t;
 
   /**
@@ -2197,14 +2120,14 @@ extern "C"
    */
   typedef struct
   {
-    size_t                     root;
-    char                     * sndbuf;
-    pami_type_t                stype;
-    int                        stypecount;
-    char                     * rcvbuf;
-    pami_type_t                rtype;
-    int                      * rtypecounts;
-    int                      * rdispls;
+    size_t                      root;
+    char                      * sndbuf;
+    pami_type_t                 stype;
+    int                         stypecount;
+    char                      * rcvbuf;
+    pami_type_t                 rtype;
+    int                       * rtypecounts;
+    int                       * rdispls;
   } pami_gatherv_int_t;
 
 
@@ -2229,13 +2152,13 @@ extern "C"
    */
   typedef struct
   {
-    char                     * sndbuf;
-    pami_type_t                stype;
-    size_t                     stypecount;
-    char                     * rcvbuf;
-    pami_type_t                rtype;
-    size_t                   * rtypecounts;
-    size_t                   * rdispls;
+    char                      * sndbuf;
+    pami_type_t                 stype;
+    size_t                      stypecount;
+    char                      * rcvbuf;
+    pami_type_t                 rtype;
+    size_t                    * rtypecounts;
+    size_t                    * rdispls;
   } pami_allgatherv_t;
 
   /**
@@ -2259,13 +2182,13 @@ extern "C"
    */
   typedef struct
   {
-    char                     * sndbuf;
-    pami_type_t                stype;
-    int                        stypecount;
-    char                     * rcvbuf;
-    pami_type_t                rtype;
-    int                      * rtypecounts;
-    int                      * rdispls;
+    char                      * sndbuf;
+    pami_type_t                 stype;
+    int                         stypecount;
+    char                      * rcvbuf;
+    pami_type_t                 rtype;
+    int                       * rtypecounts;
+    int                       * rdispls;
   } pami_allgatherv_int_t;
 
 
@@ -2381,18 +2304,18 @@ extern "C"
    * \retval     0            Success
    *
    * \todo doxygen
-   * \todo discuss collapsing pami_dt into type type.
    */
   typedef struct
   {
-    char                     * sndbuf;
-    pami_type_t                stype;
-    size_t                     stypecount;
-    char                     * rcvbuf;
-    pami_type_t                rtype;
-    size_t                     rtypecount;
-    pami_dt                    dt;
-    pami_op                    op;
+    char                      * sndbuf;
+    pami_type_t                 stype;
+    size_t                      stypecount;
+    char                      * rcvbuf;
+    pami_type_t                 rtype;
+    size_t                      rtypecount;
+    pami_data_function          op;          /**< Function to consume data */
+    void                      * data_cookie; /**< cookie for produce data function */
+    int                         commutative;
   } pami_allreduce_t;
 
 
@@ -2416,19 +2339,18 @@ extern "C"
    * \retval     0            Success
    *
    * \todo doxygen
-   * \todo discuss collapsing pami_dt into type type.
    */
   typedef struct
   {
-    char                     * sndbuf;
-    pami_type_t                stype;
-    size_t                     stypecount;
-    char                     * rcvbuf;
-    pami_type_t                rtype;
-    size_t                     rtypecount;
-    pami_dt                    dt;
-    pami_op                    op;
-    int                        exclusive;
+    char                      * sndbuf;
+    pami_type_t                 stype;
+    size_t                      stypecount;
+    char                      * rcvbuf;
+    pami_type_t                 rtype;
+    size_t                      rtypecount;
+    pami_data_function          op;          /**< Function to consume data */
+    void                      * data_cookie; /**< cookie for produce data function */
+    int                         exclusive;
   } pami_scan_t;
 
   /**
@@ -2701,8 +2623,9 @@ extern "C"
     void                      * rcvbuf;
     pami_type_t                 rtype;
     size_t                      rtypecount;
-    pami_dt                     dt;
-    pami_op                     op;
+    pami_data_function          op;          /**< Function to consume data */
+    void                      * data_cookie; /**< cookie for produce data function */
+    int                         commutative;
   } pami_amreduce_t;
 
   /**
@@ -2730,8 +2653,6 @@ extern "C"
   typedef void (*pami_dispatch_amreduce_function) (size_t                 root,
                                              pami_geometry_t        geometry_id,
                                              const unsigned         sndlen,
-                                             pami_dt                dt,
-                                             pami_op                op,
                                              const void           * user_header,
                                              const size_t           headerlen,
                                              void                ** sndbuf,
@@ -2872,11 +2793,6 @@ extern "C"
    *           copy functions and user-defined copy functions.
    */
   /*****************************************************************************/
-
-  /**
-   * \var PAMI_TYPE_CONTIGUOUS
-   */
-  extern pami_type_t PAMI_TYPE_CONTIGUOUS;
 
   /**
    * \var PAMI_TYPE_BYTE
