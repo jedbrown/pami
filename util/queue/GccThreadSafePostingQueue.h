@@ -8,11 +8,11 @@
 /* end_generated_IBM_copyright_prolog                               */
 
 ///
-///  \file util/queue/GccThreadSafeQueue.h
+///  \file util/queue/GccThreadSafePostingQueue.h
 ///  \brief QueueElem and Queue Classes for multi-queue objects
 ///
-#ifndef __util_queue_GccThreadSafeQueue_h__
-#define __util_queue_GccThreadSafeQueue_h__
+#ifndef __util_queue_GccThreadSafePostingQueue_h__
+#define __util_queue_GccThreadSafePostingQueue_h__
 
 #include <stdio.h>
 #include "util/common.h"

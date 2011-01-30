@@ -293,7 +293,7 @@ extern "C"
                                                   contiguous:  data type must be PAMI_TYPE_CONTIGUOUS     */
         unsigned               contigrflags:1; /**<  This protocol requires contiguous data(recv)
                                                   contiguous:  data type must be PAMI_TYPE_CONTIGUOUS     */
-        unsigned               continsflags:1; /**<  This protocol requires continuous data(send) 
+        unsigned               continsflags:1; /**<  This protocol requires continuous data(send)
                                                   continuous:  data type must be PAMI_TYPE_CONTIGUOUS and
                                                   for vector collectives, the target buffers
                                                   of the vectors must be adjacent in memory    */
