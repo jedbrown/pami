@@ -430,7 +430,7 @@ extern "C"
    *
    * Unlike memory copy, a data function may not be able to handle byte data.
    * Atom size is defined as the minimum unit size that a data function
-   * can accepts. For example, a data function for summing up doubles may
+   * can accept. For example, a data function for summing up doubles may
    * require the input to be an integral number of doubles, thus the atom
    * size for this data function is sizeof(double).
    *
