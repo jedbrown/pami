@@ -313,11 +313,25 @@ namespace PAMI {
 				if (iter->head == iter->tail) {
 					_array_q.Consumer = iter->head; // bookmark my place
 					_ovf_mtx.acquire();
-					uint64_t n = iter->head + DEFAULT_SIZE;
-					L2_AtomicStore(&_array_q.UpperBound, n);
+					// must ensure enqueuers did not fill array
+					// while we processed this snapshot.
+					// Note, the important case is where an
+					// enqueuer *noticed* it full and used the
+					// overflow queue. Also note, cannot empty
+					// the overflow queue unless we emptied array!
+
+					
 					Element *t;
 					size_t s;
-					_overflow.removeAll(iter->curr, t, s);
+					t = _overflow.peek();
+					if (t == NULL || iter->head == _array_q.Producer) {
+						uint64_t n = iter->head + DEFAULT_SIZE;
+						// is atomic-store needed?
+						L2_AtomicStore(&_array_q.UpperBound, n);
+						if (t) {
+							_overflow.removeAll(iter->curr, t, s);
+						}
+					}
 					_ovf_mtx.release();
 				}
 			} else {
