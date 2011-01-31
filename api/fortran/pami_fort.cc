@@ -653,11 +653,12 @@ extern "C" void pami_address (void* addr_in, size_t* addr_out, pami_result_t* re
     *result = PAMI_Address(addr_in, addr_out);
 }
 
+extern "C" {
 // include function translations
 // pami_*lowercase* <-- PAMI_*UPPERCASE*
 
 #define ALIAS(FUNC2,FUNC,PARAMS) \
-    void PAMI_##FUNC PARAMS __attribute__ ((weak,alias("pami_"#FUNC)));
+    void PAMI_##FUNC2 PARAMS __attribute__ ((weak,alias("pami_"#FUNC)));
 
 ////////////////////////////////////////////////////////////////////////////////
 // Functions from pami_misc.h                                                  //
@@ -842,3 +843,5 @@ ALIAS(EXTENSION_CLOSE,extension_close,(pami_extension_t extension,pami_result_t*
 ALIAS(EXTENSION_FUNCTION,extension_symbol,(pami_extension_t extension,const char* fn,void* result));
 
 ALIAS(ADDRESS,address,(void* addr_in, size_t* addr_out, pami_result_t* result));
+
+} // extern "C"
