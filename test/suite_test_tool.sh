@@ -3011,7 +3011,7 @@ fi
 # --- Set and verify floor vars ---
 # Set cur_floor
 arch=$(uname -p)
-cur_base='/bgsys/bgq/drivers'
+cur_base='/bgsys/drivers'
 
 if [ "${arch}" == 'ppc64' ]
 then
