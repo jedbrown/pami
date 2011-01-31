@@ -31,7 +31,8 @@
 //#include "components/devices/shmemcoll/ShmemDescMessage.h"
 
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) //fprintf(stderr,"%s:%d\n",__FILE__,__LINE__); fprintf x
+//#define TRACE_ERR(x) //fprintf(stderr,"%s:%d\n",__FILE__,__LINE__); fprintf x
+#define TRACE_ERR(x) //fprintf x
 #endif
 //#define SHORT_MCOMB_BLOCKING
 namespace PAMI
@@ -72,10 +73,6 @@ namespace PAMI
 						     pami_multicombine_t *mcomb, void* devinfo)
           {
 
-            //PAMI::Topology *src_topo = (PAMI::Topology *)mcomb->data_participants;
-            //PAMI::Topology *dst_topo = (PAMI::Topology *)mcomb->results_participants;
-            //size_t num_src_ranks = src_topo->size();
-            //unsigned local_root = __global.topology_local.rank2Index(dst_topo->index2Rank(0));
             TRACE_ERR((stderr, "entering postMulticomb\n"));
 
             T_Desc *my_desc = NULL;
@@ -176,6 +173,7 @@ namespace PAMI
               my_desc->set_my_state(Shmem::INIT);
               //src->consumeBytes(bytes);
 
+              mem_sync();
               /*Shmem::ShaddrMcombMessage<T_Device, T_Desc> * obj = (Shmem::ShaddrMcombMessage<T_Device, T_Desc> *) (&state[0]);
               new (obj) Shmem::ShaddrMcombMessage<T_Device, T_Desc> (_device.getContext(), my_desc, _local_rank);*/
               Shmem::ShaddrMcombMessagePipe<T_Device, T_Desc> * obj = (Shmem::ShaddrMcombMessagePipe<T_Device, T_Desc> *) (&state[0]);
