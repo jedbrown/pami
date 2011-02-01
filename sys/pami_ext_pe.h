@@ -49,6 +49,8 @@ extern "C"
     PAMI_CLIENT_TRIGGER,           /**<   U: pami_trigger_t : N/A : add or remove a trigger */
     PAMI_ACTIVE_CLIENT,            /**<  Q : pami_active_client_t : N/A : retrieve all active clients */
     PAMI_CLIENT_ACTIVE_CONTEXT,    /**<  Q : pami_active_context_t : N/A : retrieve all active contexts in the client */
+    PAMI_CLIENT_PROTOCOL_NAME,     /**<  Q : string : N/A : retrieve protocol name of the client*/
+    PAMI_CONTEXT_NETWORK,          /**<  Q : string : N/A : retrieve network string */
   } pami_attribute_name_ext_t;
 
   /** \} */ /* end of "ext_attr" group */

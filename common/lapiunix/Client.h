@@ -455,6 +455,9 @@ namespace PAMI
                     _active_contexts.contexts[i] = (pami_context_t) _contexts[i];
                   configuration[i].value.chararray = (char*)&_active_contexts;
                   break;
+                case PAMI_CLIENT_PROTOCOL_NAME:
+                  configuration[i].value.chararray = getName_impl();
+                  break;
                 default:
                 {
                   internal_error_t rc;
