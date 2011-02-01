@@ -201,7 +201,7 @@ namespace PAMI
                                         mc->_device.getContext(), // Context
                                         NULL,                     // done function
                                         NULL,                     // user cookie
-                                        gi->_seqnoRed++,          // ue search key
+                                        gi->_seqnoRed,            // ue search key
                                         mc);
               m->_ue_buf        =  malloc(hdr->pktsize);
               m->_ue_bytes      =  hdr->pktsize;

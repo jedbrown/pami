@@ -32,6 +32,41 @@ namespace PAMI
   {
     namespace CAU
     {
+
+      inline metadata_result_t op_dt_metadata_function(struct pami_xfer_t *in)
+        {
+          const bool support[PAMI_DT_COUNT][PAMI_OP_COUNT] =
+          {
+        //  PAMI_UNDEFINED_OP, PAMI_NOOP, PAMI_MAX, PAMI_MIN, PAMI_SUM, PAMI_PROD, PAMI_LAND, PAMI_LOR, PAMI_LXOR, PAMI_BAND, PAMI_BOR, PAMI_BXOR, PAMI_MAXLOC, PAMI_MINLOC, PAMI_USERDEFINED_OP,
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_UNDEFINED_DT
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_SIGNED_CHAR
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_UNSIGNED_CHAR
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_SIGNED_SHORT
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_UNSIGNED_SHORT
+            {false,            false,     true,     true,     true,     false,     false,     false,    false,     true,      true,     true,      false,       false,       false},//PAMI_SIGNED_INT
+            {false,            false,     true,     true,     true,     false,     false,     false,    false,     true,      true,     true,      false,       false,       false},//PAMI_UNSIGNED_INT
+            {false,            false,     true,     true,     true,     false,     false,     false,    false,     true,      true,     true,      false,       false,       false},//PAMI_SIGNED_LONG_LONG
+            {false,            false,     true,     true,     true,     false,     false,     false,    false,     true,      true,     true,      false,       false,       false},//PAMI_UNSIGNED_LONG_LONG
+            {false,            false,     true,     true,     true,     false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_FLOAT
+            {false,            false,     true,     true,     true,     false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_DOUBLE
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LONG_DOUBLE
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOGICAL
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_SINGLE_COMPLEX
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_DOUBLE_COMPLEX
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_2INT
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_SHORT_INT
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_FLOAT_INT
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_DOUBLE_INT
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_2FLOAT
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_2DOUBLE
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false} //PAMI_USERDEFINED_DT
+          };
+          metadata_result_t result = {0};
+          result.check.datatype = support[in->cmd.xfer_allreduce.dt][in->cmd.xfer_allreduce.op]?0:1;
+          return(result);
+        }
+      
+    
       //  **********************************************************************
       //  Typedefs for template instantiations
       //  **********************************************************************
@@ -65,6 +100,12 @@ namespace PAMI
         void McombineMetaData(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("I0:MultiCombineComposite:SHMEM:CAU");
+          m->check_correct.values.alldt     = 0;
+          m->check_correct.values.allop     = 0;
+          m->check_fn                       = CAU::op_dt_metadata_function;
+          m->check_perf.values.hw_accel     = 1;
+          m->range_lo_perf                  = 0;
+          m->range_hi_perf                  = 64;          
         }
         typedef CCMI::Adaptor::Allreduce::MultiCombineComposite2DeviceFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2Device<0>,
                                                                                  McombineMetaData,
@@ -77,6 +118,12 @@ namespace PAMI
         void McombineMetaData(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("I0:MultiCombineComposite:SHMEM:CAU");
+          m->check_correct.values.alldt     = 0;
+          m->check_correct.values.allop     = 0;
+          m->check_fn                       = CAU::op_dt_metadata_function;
+          m->check_perf.values.hw_accel     = 1;
+          m->range_lo_perf                  = 0;
+          m->range_hi_perf                  = 64;          
         }
         typedef CCMI::Adaptor::Allreduce::MultiCombineComposite2DeviceFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2Device<1>,
                                                                                  McombineMetaData,
@@ -265,8 +312,8 @@ namespace PAMI
             geometry->setKey(PAMI::Geometry::GKEY_GEOMETRYCSNI, ni);
             geometry->addCollective(PAMI_XFER_BARRIER,barrier_reg,context_id);
             geometry->addCollective(PAMI_XFER_BROADCAST,broadcast_reg,context_id);
-            geometry->addCollective(PAMI_XFER_ALLREDUCE,allreduce_reg,context_id);
-            geometry->addCollective(PAMI_XFER_REDUCE,reduce_reg,context_id);
+            geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,allreduce_reg,context_id);
+            geometry->addCollectiveCheck(PAMI_XFER_REDUCE,reduce_reg,context_id);
 
             // Todo:  free the ginfo;
             return PAMI_SUCCESS;

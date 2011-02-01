@@ -472,21 +472,7 @@ namespace PAMI
           size_t numpeers=0, numtasks;
           __global.mapping.nodePeers(numpeers);
           numtasks = __global.mapping.size();
-          new(_p2p_ccmi_collreg) P2PCCMICollreg(_client,
-                                                _context,
-                                                _contextid,
-                                                _clientid,
-                                                _devices->_shmem[_contextid],
-                                                _lapi_device,
-                                                _protocol,
-                                                mm_ptr?1:0,  //use shared memory
-                                                1,  //use "global" device
-                                                numtasks,
-                                                numpeers,
-                                                &_dispatch_id,
-                                                _geometry_map);
-          _p2p_ccmi_collreg->analyze(_contextid, _world_geometry);
-
+          
           _cau_device.setGenericDevices(_devices->_generics);
 	  rc = __global.heap_mm->memalign((void **)&_cau_collreg, 0,
 						sizeof(*_cau_collreg));
@@ -504,6 +490,21 @@ namespace PAMI
                                        mm_ptr);
           // We analyze global here to get the proper device specific info
           _cau_collreg->analyze_global(_contextid, _world_geometry, &invec[2]);
+
+          new(_p2p_ccmi_collreg) P2PCCMICollreg(_client,
+                                                _context,
+                                                _contextid,
+                                                _clientid,
+                                                _devices->_shmem[_contextid],
+                                                _lapi_device,
+                                                _protocol,
+                                                mm_ptr?1:0,  //use shared memory
+                                                1,  //use "global" device
+                                                numtasks,
+                                                numpeers,
+                                                &_dispatch_id,
+                                                _geometry_map);
+          _p2p_ccmi_collreg->analyze(_contextid, _world_geometry);
           _pgas_collreg->setGenericDevice(&_devices->_generics[_contextid]);
 
           __global.heap_mm->free(invec);

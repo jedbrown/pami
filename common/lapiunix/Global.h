@@ -37,28 +37,29 @@ namespace PAMI
           Interface::Global<PAMI::Global>(),
           mapping()
         {
-          const char   * shmemfile = "/pami-global-shmem";
+          size_t min=0, max=0;
           // LAPI::Time gets its own clockMHz
           time.init(0);
-	  heap_mm = new (_heap_mm) PAMI::Memory::HeapMemoryManager();
+
+          // Initialize the heap Memory Manager
+          heap_mm = new (_heap_mm) PAMI::Memory::HeapMemoryManager();
           PAMI::Memory::MemoryManager::heap_mm = heap_mm;
-	  // get jobid from POE?
+
+          // Create the shared memory manager
+          // Including the unique job ID
 	  size_t jobid = 0;
 	  if(getenv("MP_PARTITION"))
             jobid = atoi(getenv("MP_PARTITION"));
 	  shared_mm = new (_shared_mm) PAMI::Memory::SharedMemoryManager(jobid, heap_mm);
           PAMI::Memory::MemoryManager::shared_mm = shared_mm;
-          PAMI::Memory::MemoryManager::shm_mm    = &mm; // not initialized yet!
-	  mm.init(shared_mm, 1*1024*1024, 1, 1, 0, "/pami-lapi-global-shmem");
-            {
-              size_t min=0, max=0;
-              mapping.init(min, max);
-            }
+          PAMI::Memory::MemoryManager::shm_mm    = shared_mm;
+
+          // Initialize the mapping
+          mapping.init(min, max);
       };
     inline ~Global () {};
   public:
     PAMI::Mapping		   mapping;
-    PAMI::Memory::GenMemoryManager mm;
     std::map<lapi_handle_t,void*> _context_to_device_table;
     std::map<lapi_handle_t,void*> _id_to_device_table;    
   };   // class Global
