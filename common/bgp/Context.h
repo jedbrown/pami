@@ -298,8 +298,6 @@ namespace PAMI
         TRACE_ERR((stderr, "   Context::post_impl(%p, %p, %p) .. 0\n", state, work_fn, cookie));
         work = new (state) PAMI::Device::Generic::GenericThread(work_fn, cookie);
         TRACE_ERR((stderr, "   Context::post_impl(%p, %p, %p) .. 1\n", state, work_fn, cookie));
-        work->setStatus(PAMI::Device::OneShot);
-        TRACE_ERR((stderr, "   Context::post_impl(%p, %p, %p) .. 2\n", state, work_fn, cookie));
         //_devices->_generics[_contextid].postThread(work);
         _local_generic_device->postThread(work);
         TRACE_ERR((stderr, "<< Context::post_impl(%p, %p, %p)\n", state, work_fn, cookie));

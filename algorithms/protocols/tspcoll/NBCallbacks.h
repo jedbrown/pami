@@ -74,14 +74,13 @@ class UnexpectedColl
       _ue_origin      = origin;
       _ue_recv        = NULL;
 
-      _work.setStatus(PAMI::Device::OneShot);
       _mc->postWork(&_work);
 
     }
 
     void repost()
     {
-      _work.setStatus(PAMI::Device::OneShot);
+      _work.setStatus(PAMI::Device::Ready); // needed?
       _mc->postWork(&_work);
     }
 

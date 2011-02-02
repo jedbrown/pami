@@ -354,8 +354,6 @@ public:
 		__queues->__Threads.iter_begin(&__ThrIter);
 		for (; __queues->__Threads.iter_check(&__ThrIter); __queues->__Threads.iter_end(&__ThrIter)) {
 			thr = (GenericThread *)__queues->__Threads.iter_current(&__ThrIter);
-			PAMI_assert_debugf(thr->getStatus() != PAMI::Device::OneShot,
-				"One-shot posted to internal queue directly");
 			if (thr->getStatus() == PAMI::Device::Ready) {
 				++events;
 				pami_result_t rc = thr->executeThread(__context);
@@ -389,9 +387,6 @@ public:
 				if (rc == PAMI_EAGAIN) {
 					__queues->__Threads.enqueue((GenericDeviceWorkQueue::Element *)thr);
 				}
-			} else if (thr->getStatus() == PAMI::Device::OneShot) {
-				++events;
-				thr->executeThread(__context);
 			} else if (thr->getStatus() != PAMI::Device::Complete) {
 				__queues->__Threads.enqueue((GenericDeviceWorkQueue::Element *)thr);
 			}
@@ -429,7 +424,12 @@ public:
 
 	/// \brief     Post a thread object on a generic device slice's queue
 	///
-	/// Used this to post a thread of work.
+	/// Used this to post a thread of work. The function must return
+	/// either PAMI_SUCCESS to indicate completion, or PAMI_EGAIN to
+	/// be called again on the next pass through advance. The function
+	/// must not re-queue itself using the same GenericThread object,
+	/// as it may already be queued and re-queueing would cause an
+	/// endless loop in a linked list queue.
 	///
 	/// \param[in] thr  Thread object to post for advance work
 	///
