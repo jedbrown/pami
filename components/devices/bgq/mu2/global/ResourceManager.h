@@ -834,6 +834,10 @@ fprintf(stderr, "%s\n", buf);
 	  // a more-exhaustive check for "comm-world" equivalent classroute...
 	  PAMI::Topology node_topo, local_topo;
  	  topo->subTopologyNthGlobal(&node_topo, 0);
+	  if (node_topo.size() < 2) {
+	    if (fn) fn(context, clientdata, PAMI_SUCCESS);
+	    return PAMI_SUCCESS; // not really failure, just won't do it.
+	  }
 	  topo->subTopologyLocalToMe(&local_topo);
 	  // assert(local_topo.size() > 0);
 	  bool master = (__global.mapping.task() == local_topo.index2Rank(0));
