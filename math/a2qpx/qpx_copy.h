@@ -120,16 +120,36 @@ static inline size_t quad_copy_512( char* dest, char* src ) {
     return 0;
 }
 
+//copying 'num' bytes. Assume 32b alignment
+static inline int quad_copy_128n( char* dest, char* src, size_t num ) 
+{
+  size_t b128 = num >> 7;
+  size_t nr = num & ~(0x7FL);
+  
+  while (b128 --) {
+    quad_copy_128(dest, src);
+    dest += 128;
+    src  += 128;
+  }
+  
+  return nr;
+}
+
 size_t quad_copy_1024n( char* dest, char* src, size_t num ) __attribute__((noinline,weak));
 
 //copying num bytes num >= 1024
 size_t quad_copy_1024n( char* dest, char* src, size_t num )
 {
+  size_t nb = 0; 
+  if (num < 1024)
+    goto short_msg;
+
+  nb = num & ~(1023L);
+
   double *fpp1_1, *fpp1_2;
   double *fpp2_1, *fpp2_2;
   size_t y;
 
-  size_t nb = (num >> 10) * 1024;
   register int inc asm("r7");
   
   fpp1_1 = (double *)src -8;  //offset by stride=0 bytes
@@ -240,6 +260,13 @@ size_t quad_copy_1024n( char* dest, char* src, size_t num )
   VECTOR_STORE(fpp2_2,inc,10);
   VECTOR_STORE(fpp2_2,inc,11);
 
+
+  src += nb;
+  dest += nb;
+  num -= nb;
+  
+ short_msg:
+  nb += quad_copy_128n (dest, src, num);
   return nb;
 }
 
