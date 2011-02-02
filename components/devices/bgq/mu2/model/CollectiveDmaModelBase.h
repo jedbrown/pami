@@ -240,7 +240,7 @@ namespace PAMI
           {
             TRACE_FN_ENTER();
             PAMI_assert (bytes <= _collstate._tempSize);
-            _int64Cpy(_collstate._tempBuf, src, bytes, (((uint64_t)src)&0x7) == 0);
+            _int64Cpy(_collstate._tempBuf, src, bytes);
             //memcpy(_collstate._tempBuf, src, bytes);
 
             bool flag = _injChannel.hasFreeSpaceWithUpdate();
@@ -277,7 +277,7 @@ namespace PAMI
             if (dpwq)
               {
                 char *dst = dpwq->bufferToProduce();
-                _int64Cpy (dst, _collstate._tempBuf, bytes, (((uint64_t)dst)&0x7) == 0);
+                _int64Cpy (dst, _collstate._tempBuf, bytes);
                 dpwq->produceBytes(bytes);
               }
 
@@ -362,7 +362,7 @@ namespace PAMI
                 if (scmsg->_dpwq)
                   {
                     char *dst = scmsg->_dpwq->bufferToProduce();
-                    _int64Cpy (dst, _collstate._tempBuf, scmsg->_bytes, (((uint64_t)dst)&0x7) == 0);
+                    _int64Cpy (dst, _collstate._tempBuf, scmsg->_bytes);
                     scmsg->_dpwq->produceBytes(scmsg->_bytes);
                   }
 
