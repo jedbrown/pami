@@ -281,7 +281,8 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void Msync2DDputMetaData(pami_metadata_t *m)
     {
-      new(m) PAMI::Geometry::Metadata("I0:MultiSync2DeviceDput:SHMEM:MU");
+      // Apparently MU dput actually uses GI for msync
+      new(m) PAMI::Geometry::Metadata("I0:MultiSync2Device:SHMEM:GI");
     }
 
     typedef CCMI::Adaptor::Barrier::BarrierFactoryAllSidedT
@@ -924,13 +925,17 @@ namespace PAMI
                       // DefaultShmem doesn't work with 2 device protocol right now
                       if (local_sub_topology->size() == 1)
 #endif
+                      if (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
                       {
                         if (_mcast2d_composite_factory)
                           {
                             TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register mcast 2D\n", this));
                             geometry->addCollective(PAMI_XFER_BROADCAST, _mcast2d_composite_factory, _context_id);
+                          }
+                        if (_mcast2d_dput_composite_factory)
+                          {
+                            TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register mcast dput 2D\n", this));
                             geometry->addCollective(PAMI_XFER_BROADCAST, _mcast2d_dput_composite_factory, _context_id);
-
                           }
                       }
                     }
@@ -958,9 +963,9 @@ namespace PAMI
                          (local_sub_topology->size() ==  8) ||
                          (local_sub_topology->size() == 16))
 #endif
-//                      if ((local_sub_topology->size() > 1) && (master_sub_topology->size() > 1) && (__global.useshmem()))
+                      if (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
                         {
-                          if (_mcomb2dNP_composite_factory)
+                          if ((_mcomb2dNP_composite_factory) && (master_sub_topology->size() > 1))  // \todo Simple NP protocol doesn't like 1 master - fix it
                             {
                               TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register protocol: mcomb 2DNP\n", this));
                               geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2dNP_composite_factory, _context_id);
@@ -975,7 +980,7 @@ namespace PAMI
                               TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register protocol: mcomb dput 2D\n", this));
                               geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2d_dput_composite_factory, _context_id);
                             }
-                          if (_mcomb2dNP_dput_composite_factory)
+                          if ((_mcomb2dNP_dput_composite_factory) && (master_sub_topology->size() > 1))  // \todo Simple NP protocol doesn't like 1 master - fix it
                             {
                               TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register protocol: mcomb dput 2DNP\n", this));
                               geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2dNP_dput_composite_factory, _context_id);
