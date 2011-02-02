@@ -126,19 +126,25 @@ namespace PAMI
     inline pami_result_t immediate(pami_send_immediate_t * send)
       {
         LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
+        send_hint_t  hints = null_send_hint;
+        hints.external = send->hints;
+        hints.internal.response_pending = 0;
         internal_error_t rc = (cp->*(cp->pSendSmall))(send->dest, send->dispatch,
                                                       send->header.iov_base, send->header.iov_len,
                                                       send->data.iov_base, send->data.iov_len,
-                                                      *(send_hint_t *)&send->hints);
+                                                      hints);
         return PAMI_RC(rc);
       }
     inline pami_result_t simple (pami_send_t * simple)
       {
         LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
+        send_hint_t  hints = null_send_hint;
+        hints.external = simple->send.hints;
+        hints.internal.response_pending = 0;
         internal_error_t rc = (cp->*(cp->pSend))(simple->send.dest, simple->send.dispatch,
                                                  simple->send.header.iov_base, simple->send.header.iov_len,
                                                  simple->send.data.iov_base, simple->send.data.iov_len,
-                                                 *(send_hint_t *)&simple->send.hints,
+                                                 hints,
                                                  simple->events.local_fn, simple->events.remote_fn,
                                                  simple->events.cookie,
                                                  NULL, NULL, NULL, NULL, NULL, INTERFACE_PAMI);
@@ -583,13 +589,16 @@ namespace PAMI
       inline pami_result_t send_impl (pami_send_t * parameters)
         {
           LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
+          send_hint_t  hints = null_send_hint;
+          hints.external = parameters->send.hints;
+          hints.internal.response_pending = 0;
           internal_error_t rc = (cp->*(cp->pSend))(parameters->send.dest,
                                                    parameters->send.dispatch,         // hdr_hdl
                                                    parameters->send.header.iov_base,  // uhdr
                                                    parameters->send.header.iov_len,   // uhdr_len
                                                    parameters->send.data.iov_base,    // udata
                                                    parameters->send.data.iov_len,     // udata_len
-                                                   *(send_hint_t*)&parameters->send.hints,   // send hints
+                                                   hints,                             // send hints
                                                    parameters->events.local_fn,       //
                                                    parameters->events.remote_fn,      //
                                                    parameters->events.cookie,         //
@@ -602,10 +611,13 @@ namespace PAMI
       inline pami_result_t send_impl (pami_send_immediate_t * send)
         {
           LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
+          send_hint_t  hints = null_send_hint;
+          hints.external = send->hints;
+          hints.internal.response_pending = 0;
           internal_error_t rc = (cp->*(cp->pSendSmall))(send->dest, send->dispatch,
                   send->header.iov_base, send->header.iov_len,
                   send->data.iov_base, send->data.iov_len,
-                  *(send_hint_t *)&send->hints);
+                  hints);
           return PAMI_RC(rc);
         }
 
