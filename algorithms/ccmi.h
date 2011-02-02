@@ -88,11 +88,11 @@ const unsigned ALLREDUCE_MIN_PIPELINE_WIDTH_TORUS = 1920;
 #define DECL_STATIC_MUTEX(x) \
 static pthread_mutex_t x = PTHREAD_MUTEX_INITIALIZER
 #define DECL_MUTEX(x)    pthread_mutex_t x
-#define MUTEX_INIT(x)    pthread_mutex_init(x,NULL)
-#define MUTEX_TRYLOCK(x) pthread_mutex_trylock(x)
-#define MUTEX_LOCK(x)    pthread_mutex_lock(x)
-#define MUTEX_UNLOCK(x)  pthread_mutex_unlock(x)
-#define MUTEX_DESTROY(x) pthread_mutex_destroy(x)
+#define MUTEX_INIT(x)    /*pthread_mutex_init(x,NULL)*/
+#define MUTEX_TRYLOCK(x) /*pthread_mutex_trylock(x)*/
+#define MUTEX_LOCK(x)    /*pthread_mutex_lock(x)*/
+#define MUTEX_UNLOCK(x)  /*pthread_mutex_unlock(x)*/
+#define MUTEX_DESTROY(x) /*pthread_mutex_destroy(x)*/
 
 #if (_XOPEN_SOURCE - 0) >= 500
 #define DECL_RW_MUTEX(x) \
