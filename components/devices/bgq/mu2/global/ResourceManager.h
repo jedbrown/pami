@@ -1335,10 +1335,26 @@ fprintf(stderr, "%s\n", buf);
 	    return _rgetPinInfo;
 	  }
 
-	inline uint16_t getPinRecFifo( size_t rmClientId,
-				       size_t contextOffset,
+	/// \brief Get Pin Rec Fifo Handle
+	///
+	/// The specified client ID and context offset are mapped to a pointer
+	/// to an internal data structure.  This is returned to the caller, who
+	/// is likely a context init routine, so it may be cached.
+	/// During runtime pinFifo, the context will pass this handle into
+	/// getPinRecFifo() so it can do a quick array lookup in this
+	/// internal structure.  This is all to save a few cycles by doing
+	/// the mapping at init time rather than at runtime.
+	inline void *getPinRecFifoHandle ( size_t rmClientId, 
+					   size_t contextOffset )
+	{ return (void*)&_clientResources[rmClientId].pinRecFifo[contextOffset*_tSize]; }
+	
+	inline uint16_t getPinRecFifo( void *handle,
 				       size_t t )
-	{ return _clientResources[rmClientId].pinRecFifo[(contextOffset*_tSize) + t]; }
+	{ 
+	  uint16_t *pinRecFifoPtr = (uint16_t*)handle;
+	  return pinRecFifoPtr[t]; 
+	}
+
 
 	inline uint16_t getPinBatId( size_t rmClientId,
 				     size_t contextOffset,

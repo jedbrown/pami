@@ -37,8 +37,6 @@
 #define DO_TRACE_ENTEREXIT 0
 #define DO_TRACE_DEBUG     0
 
-#define CONTEXT_ALLOCATES_RESOURCES   0
-
 extern PAMI::Device::MU::Global __MUGlobal;
 extern void *__mu_context_cache;
 
@@ -167,125 +165,6 @@ namespace PAMI
             //_client = client;
             //_context = context;
 
-#if CONTEXT_ALLOCATES_RESOURCES
-            uint32_t subgrpid = (64 / _mapping.tSize()) * _mapping.t() + _id_offset;
-            TRACE_FORMAT("_mapping.tSize() = %zu, _mapping.t() = %zu, _id_offset = %zu ==> subgrpid = %d", _mapping.tSize(), _mapping.t(), _id_offset, subgrpid);
-
-            _ififoid = 0;
-            Kernel_InjFifoAttributes_t injFifoAttrs;
-            injFifoAttrs.RemoteGet = 0;
-            injFifoAttrs.System    = 0;
-
-            //TRACE(("main(): allocate injection fifos\n"));
-            Kernel_AllocateInjFifos (subgrpid,
-                                     &_ififo_subgroup,
-                                     1,
-                                     &_ififoid,
-                                     &injFifoAttrs);
-
-            pami_result_t prc;
-            prc = __global.heap_mm->memalign((void **)&__injFifoBuf, 64,
-								INJ_MEMORY_FIFO_SIZE + 1);
-	    PAMI_assertf(prc == PAMI_SUCCESS, "alloc of __injFifoBuf failed");
-            PAMI_assert((((uint64_t)_injFifoBuf) % 64) == 0);
-	    pami_result_t prc;
-	    prc = __global.heap_mm->memalign((void **)&_lookAsideBuf, 0,
-			(INJ_MEMORY_FIFO_SIZE + 1) * sizeof(*_lookAsideBuf));
-	    PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _lookAsideBuf failed");
-
-            memset(_injFifoBuf, 0, INJ_MEMORY_FIFO_SIZE + 1);
-
-            Kernel_MemoryRegion_t  mregionInj, mregionRec;
-            Kernel_CreateMemoryRegion ( &mregionInj,
-                                        _injFifoBuf,
-                                        INJ_MEMORY_FIFO_SIZE + 1 );
-
-            Kernel_CreateMemoryRegion ( &_lookAsideMregion,
-                                        _lookAsideBuf,
-                                        INJ_MEMORY_FIFO_NDESC*sizeof(InjGroup::immediate_payload_t));
-
-
-            // ----------------------------------------------------------------
-            // Allocate and initialize the "lookaside completion" array
-            // ----------------------------------------------------------------
-	    prc = __global.heap_mm->memalign((void **)&_lookAsideCompletionFn, 0,
-			(INJ_MEMORY_FIFO_NDESC + 1) * sizeof(*_lookAsideCompletionFn));
-	    PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _lookAsideCompletionFn failed");
-            memset(_lookAsideCompletionFn, 0, (INJ_MEMORY_FIFO_NDESC + 1) * sizeof(pami_event_function));
-	    prc = __global.heap_mm->memalign((void **)&_lookAsideCompletionCookie, 0,
-			(INJ_MEMORY_FIFO_NDESC + 1) * sizeof(*_lookAsideCompletionCookie));
-	    PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _lookAsideCompletionCookie failed");
-            memset(_lookAsideCompletionCookie, 0, (INJ_MEMORY_FIFO_NDESC + 1) * sizeof(void *));
-
-
-
-            //TRACE(("main(): init injection fifo\n"));
-            Kernel_InjFifoInit (&_ififo_subgroup,
-                                _ififoid,
-                                &mregionInj,
-                                (uint64_t) _injFifoBuf -
-                                (uint64_t)mregionInj.BaseVa,
-                                INJ_MEMORY_FIFO_SIZE);
-
-            _rfifoid = 0;
-            Kernel_RecFifoAttributes_t recFifoAttrs[1];
-            recFifoAttrs[0].System = 0;
-
-
-            Kernel_AllocateRecFifos (subgrpid,
-                                     &_rfifo_subgroup,
-                                     1,
-                                     &_rfifoid,
-                                     recFifoAttrs);
-            TRACE_FORMAT("_rfifoid = %d", _rfifoid);
-
-	    prc = __global.heap_mm->memalign((void **)&_recFifoBuf, 32, REC_MEMORY_FIFO_SIZE + 1);
-	    PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _recFifoBuf failed");
-            PAMI_assert ((((uint64_t)_recFifoBuf) % 32) == 0);
-            memset(_recFifoBuf, 0, REC_MEMORY_FIFO_SIZE + 1);
-
-            Kernel_CreateMemoryRegion ( &mregionRec,
-                                        _recFifoBuf,
-                                        REC_MEMORY_FIFO_SIZE + 1 );
-
-            //TRACE(("main(): init reception fifo\n"));
-            Kernel_RecFifoInit    (& _rfifo_subgroup, _rfifoid,
-                                   &mregionRec,
-                                   (uint64_t)_recFifoBuf - (uint64_t)mregionRec.BaseVa,
-                                   REC_MEMORY_FIFO_SIZE);
-
-            //Activate fifos
-            Kernel_InjFifoActivate (&_ififo_subgroup, 1, &_ififoid, KERNEL_INJ_FIFO_ACTIVATE);
-
-            uint64_t recFifoEnableBits = 0;
-            recFifoEnableBits |= ( 0x0000000000000001ULL << (15 - ((subgrpid & 0x03) << 2)));
-            Kernel_RecFifoEnable ( subgrpid >> 2, //0, /* Group ID */
-                                   recFifoEnableBits );
-            TRACE_FORMAT("group = %d, recFifoEnableBits = 0x%016lx", subgrpid >> 2, recFifoEnableBits);
-
-            _rfifo = MUSPI_IdToRecFifo(_rfifoid, &_rfifo_subgroup);
-
-            // ----------------------------------------------------------------
-            // Initialize the reception channel
-            // ----------------------------------------------------------------
-            receptionChannel.initialize (subgrpid*4 + _rfifoid,
-                                         _rfifo,
-                                         _mapping.getMuDestinationSelf(),
-                                         NULL);  // \todo This should be the pami_context_t
-
-            // ----------------------------------------------------------------
-            // Initialize the injection channel(s)
-            // ----------------------------------------------------------------
-            injectionGroup.initialize (0,
-                                       MUSPI_IdToInjFifo(_ififoid, &_ififo_subgroup),
-                                       _lookAsideBuf,
-                                       ((uint64_t)_lookAsideBuf - (uint64_t)_lookAsideMregion.BaseVa) + (uint64_t)_lookAsideMregion.BasePa,
-                                       _lookAsideCompletionFn,
-                                       _lookAsideCompletionCookie,
-                                       INJ_MEMORY_FIFO_NDESC,
-                                       NULL);  // \todo This should be the pami_context_t
-
-#else
             // Resource Manager allocates the resources.
 
             // Construct arrays of Inj and Rec fifo pointers.
@@ -317,28 +196,6 @@ namespace PAMI
                                        _recFifos,
                                        _globalRecFifoIds );
 
-	    // The following ifdef'd out code is for testing only...
-#if 0
-	    prc = __global.heap_mm->memalign((void **)&_globalBatIds, 0,
-						_numBatIds * sizeof(uint16_t) );
-            PAMI_assertf( prc == PAMI_SUCCESS, "alloc of _globalBatIds failed");
-
-            fprintf(stderr,"Context.h: queryFreeBatIds returned %u\n",queryFreeBatIds());
-
-            int32_t rc = allocateBatIds( _numBatIds,
-					 _globalBatIds );
-	    
-	    fprintf(stderr,"Context.h: allocateBatIdsForContext for numBatIds=%zu returned %d\n",_numBatIds,rc);
-	    size_t i;
-	    for (i=0;i<_numBatIds;i++)
-	      fprintf(stderr,"Context.h: allocateBatIdsForContext returned id %u\n",_globalBatIds[i]);
-	    fprintf (stderr,"Context.h: setting BAT ID for context %zu\n",_id_offset);
-	    setBatId ( _globalBatIds[2], 501 );
-
-	    freeBatIds ( 1, &_globalBatIds[2]);
-            fprintf(stderr,"Context.h: queryFreeBatIds returned %u after freeing #2 with global BATid %u\n",queryFreeBatIds(),_globalBatIds[2]);
-#endif
-
             // Get arrays of the following:
             // 1. Lookaside payload buffers virtual addresses
             // 2. Lookaside payload buffers physical addresses
@@ -358,6 +215,10 @@ namespace PAMI
             _pinInfo = _rm.getPinInfo( _numInjFifos );
 
 	    _rgetPinInfo = _rm.getRgetPinInfo();
+
+	    _pinRecFifoHandle = _rm.getPinRecFifoHandle ( _rm_id_client, _id_offset );
+
+	    _pinRecFifoHandleForOffsetZero = _rm.getPinRecFifoHandle ( _rm_id_client, 0 );
 
             // Initialize the injection channel(s) inside the injection group
             size_t fifo;
@@ -436,7 +297,7 @@ namespace PAMI
 	    // - Bits 48 through 63 clear reception fifo packet arrival
 	    _interruptMask = _rm.getInterruptMask( _rm_id_client,
 						   _id_offset );
-#endif
+
 	    _rm.init(id_client, id_context, progress);
 
             TRACE_FN_EXIT();
@@ -663,9 +524,7 @@ namespace PAMI
 	      _mapping.task2global ((pami_task_t)task, addr);
 	      size_t tcoord = addr[5];
 
-	      rfifo = _rm.getPinRecFifo( _id_client,
-					 0,          /*offset*/
-					 tcoord );
+	      rfifo = _rm.getPinRecFifo( _pinRecFifoHandleForOffsetZero, tcoord );
 	      TRACE_FORMAT("client=%zu, context=%zu, tcoord=%zu, rfifo = %u", _id_client, (size_t)0, tcoord, rfifo);
 	      TRACE_FN_EXIT();
 
@@ -716,13 +575,8 @@ namespace PAMI
             uint32_t fifoPin = 0;
             _mapping.getMuDestinationTask( task, dest, tcoord, fifoPin );
 
-            rfifo = _rm.getPinRecFifo( _id_client, offset, tcoord );
+            rfifo = _rm.getPinRecFifo( _pinRecFifoHandle, tcoord );
             TRACE_FORMAT("client=%zu, context=%zu, tcoord=%zu, rfifo = %u", _id_client, offset, tcoord, rfifo);
-
-	    // The following ifdef'd out code is for testing only...
-#if 0
-	    fprintf(stderr,"Context.h: pinBatId t=0, globalBatId=%u returned %u, pinBatId t=1 returned %u\n",_globalBatIds[3],pinBatId(0,_globalBatIds[3]),pinBatId(1,_globalBatIds[3]));
-#endif
 
             map = _pinInfo->torusInjFifoMaps[fifoPin];
 
@@ -957,23 +811,6 @@ namespace PAMI
 
         protected:
 
-#if CONTEXT_ALLOCATES_RESOURCES
-          MUSPI_InjFifoSubGroup_t       _ififo_subgroup;
-          MUSPI_RecFifoSubGroup_t       _rfifo_subgroup;
-          char                        * _injFifoBuf;
-          char                        * _recFifoBuf;
-          InjGroup::immediate_payload_t * _lookAsideBuf;
-          Kernel_MemoryRegion_t         _lookAsideMregion;
-          pami_event_function         * _lookAsideCompletionFn;
-          void                       ** _lookAsideCompletionCookie;
-          unsigned                      _ififoid;
-          unsigned                      _rfifoid;
-          MUSPI_RecFifo_t             * _rfifo;
-
-          static const size_t INJ_MEMORY_FIFO_SIZE   = 0xFFFFUL;
-          static const size_t REC_MEMORY_FIFO_SIZE   = 0xFFFFUL;
-          static const size_t INJ_MEMORY_FIFO_NDESC  = 0x400;
-#else
           // Resource Manager allocates resources
           size_t                 _numInjFifos;
           size_t                 _numRecFifos;
@@ -981,17 +818,14 @@ namespace PAMI
           MUSPI_InjFifo_t      **_injFifos;
           MUSPI_RecFifo_t      **_recFifos;
           uint32_t              *_globalRecFifoIds;
-	  // The following ifdef'd out code is for testing only....
-#if 0
-	  uint16_t              *_globalBatIds;
-#endif
           char                 **_lookAsidePayloadVAs;
           uint64_t              *_lookAsidePayloadPAs;
           pami_event_function  **_lookAsideCompletionFnPtrs;
           void                ***_lookAsideCompletionCookiePtrs;
           pinInfoEntry_t        *_pinInfo;
 	  pinInfoEntry_t        *_rgetPinInfo;
-#endif
+	  void                  *_pinRecFifoHandle;
+	  void                  *_pinRecFifoHandleForOffsetZero;
 
 	  PAMI::ResourceManager & _pamiRM; // PAMI Resource Manager
 	  ResourceManager & _rm; // MU Global Resource Manager
