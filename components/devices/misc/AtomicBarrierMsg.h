@@ -72,10 +72,12 @@ protected:
                 T_Barrier *barrier,
 		size_t            client,
 		size_t            context,
-                pami_multisync_t *msync) :
+                pami_multisync_t *msync,
+		size_t loops) :
         PAMI::Device::Generic::GenericMessage(Generic_QS, msync->cb_done,
                                         client, context),
-        _barrier(barrier)
+        _barrier(barrier),
+	_loops(loops)
         {
                 // PAMI_assert(role == DEFAULT_ROLE);
         }
@@ -84,7 +86,7 @@ protected:
 
         DECL_ADVANCE_ROUTINE(advanceThread,AtomicBarrierMsg<T_Barrier>,AtomicBarrierThr);
         inline pami_result_t __advanceThread(AtomicBarrierThr *thr) {
-                for (int x = 0; x < 32; ++x) {
+                for (size_t x = 0; x < _loops; ++x) {
                         if (_barrier->poll() == false) {
                                 _barrier->end();
                                 setStatus(PAMI::Device::Done);
@@ -117,6 +119,7 @@ public:
 
 protected:
         T_Barrier *_barrier;
+	size_t _loops;
 }; //-- AtomicBarrierMsg
 
 template <class T_Barrier>
@@ -130,7 +133,8 @@ public:
                         AtomicBarrierDev,sizeof(AtomicBarrierMsg<T_Barrier>) >(device, status),
 	_gd(&device),
 	_barrier (__global.topology_local.size(),
-		(__global.topology_local.index2Rank(0) == __global.mapping.task()))
+		(__global.topology_local.index2Rank(0) == __global.mapping.task())),
+	_loops(32)
         {
 		char mmkey[PAMI::Memory::MMKEYSIZE];
 		sprintf(mmkey, "/pami-AtomicBarrierMdl-%zd-%zd",
@@ -152,6 +156,17 @@ public:
 
 		_queue.__init(_gd->clientId(), _gd->contextId(), NULL, _gd->getContext(),
 						_gd->getMM(), _gd->getAllDevs());
+
+		/// \page env_vars Environment Variables
+		///
+		/// PAMI_ATOMICBARRIER_LOOPS - Number of attempts to complete barrier
+		/// in each pass. Default: 32
+		///
+		char *s = getenv("PAMI_ATOMICBARRIER_LOOPS");
+		if (s) {
+			_loops = strtoul(s, NULL, 0);
+			if (!_loops) _loops = 1;
+		}
         }
 
 	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
@@ -181,6 +196,7 @@ private:
 	PAMI::Device::Generic::Device *_gd;
         T_Barrier _barrier;
 	AtomicBarrierQue _queue;
+	size_t _loops;
 }; // class AtomicBarrierMdl
 
 }; //-- Device
@@ -194,7 +210,7 @@ inline pami_result_t PAMI::Device::AtomicBarrierMdl<T_Barrier>::postMultisync_im
                                                                                    void *devinfo) {
         _barrier.begin();
         // See if we can complete the barrier immediately...
-        for (int x = 0; x < 32; ++x) {
+        for (size_t x = 0; x < _loops; ++x) {
                 if (_barrier.poll() == false) {
                         _barrier.end();
                         if (msync->cb_done.function) {
@@ -206,7 +222,7 @@ inline pami_result_t PAMI::Device::AtomicBarrierMdl<T_Barrier>::postMultisync_im
         }
         // must "continue" current barrier, not start new one!
         AtomicBarrierMsg<T_Barrier> *msg;
-        msg = new (&state) AtomicBarrierMsg<T_Barrier>(_queue.getQS(), &_barrier, client, context, msync);
+        msg = new (&state) AtomicBarrierMsg<T_Barrier>(_queue.getQS(), &_barrier, client, context, msync, _loops);
         _queue.__post<AtomicBarrierMsg<T_Barrier> >(msg);
         return PAMI_SUCCESS;
 }
