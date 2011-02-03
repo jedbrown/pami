@@ -16,6 +16,7 @@
 
 #include "components/devices/shmem/shaddr/BgqShaddr.h"
 #include "components/devices/shmem/shaddr/ShaddrInterface.h"
+#include "math/Memcpy.x.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) // fprintf x
@@ -103,7 +104,7 @@ size_t PAMI::Device::Shmem::BgqShaddrReadWrite::write_impl (Memregion * remote,
   if (unlikely(bytes_to_copy > SHMEM_COPY_BLOCK_SIZE))
     bytes_to_copy = SHMEM_COPY_BLOCK_SIZE;
 
-  memcpy (remote_vaddr, local_vaddr, bytes_to_copy);
+  Core_memcpy (remote_vaddr, local_vaddr, bytes_to_copy);
 
   TRACE_ERR((stderr, "<< Shmem::BgqShaddrReadWrite::write_impl(), bytes_to_copy = %zu\n", bytes_to_copy));
   return bytes_to_copy;

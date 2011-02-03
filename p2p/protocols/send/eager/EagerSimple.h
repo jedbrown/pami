@@ -19,6 +19,7 @@
 #define __p2p_protocols_send_eager_EagerSimple_h__
 
 #include "components/memory/MemoryAllocator.h"
+#include "math/Memcpy.x.h"
 
 #undef TRACE_ERR
 #define TRACE_ERR(x)  //fprintf x
@@ -50,7 +51,7 @@ namespace PAMI
 
           typedef uint8_t pkt_t[T_Model::packet_model_state_bytes];
 
-          typedef struct __attribute__((__packed__)) protocol_metadata
+          typedef struct protocol_metadata
           {
             size_t             bytes;     ///< Number of bytes of application data being sent
             size_t             metabytes; ///< Number of bytes of application metadata being sent
@@ -849,7 +850,7 @@ namespace PAMI
 
             // Copy data from the packet payload into the destination buffer
             size_t ncopy = MIN(nleft,bytes);
-            memcpy ((uint8_t *)(state->info.addr) + nbyte, payload, ncopy);
+            Core_memcpy ((uint8_t *)(state->info.addr) + nbyte, payload, ncopy);
             state->received += ncopy;
 
             TRACE_ERR((stderr, "   EagerSimple::dispatch_data_message(), nbyte = %zu, bytes = %zu, state->metadata.bytes = %zu\n", nbyte, bytes, state->metadata.bytes));

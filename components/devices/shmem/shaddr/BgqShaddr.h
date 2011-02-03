@@ -15,8 +15,9 @@
 #define __components_devices_shmem_shaddr_BgqShaddr_h__
 
 #include <pami.h>
+#include "math/Memcpy.x.h"
 
-#define SHMEM_COPY_BLOCK_SIZE	16384
+#define SHMEM_COPY_BLOCK_SIZE	65536
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) // fprintf x
@@ -106,7 +107,7 @@ size_t PAMI::Device::Shmem::BgqShaddr::read_impl (Memregion * local,
   if (unlikely(bytes_to_copy > SHMEM_COPY_BLOCK_SIZE))
     bytes_to_copy = SHMEM_COPY_BLOCK_SIZE;
 
-  memcpy (local_vaddr, remote_vaddr, bytes_to_copy);
+  Core_memcpy (local_vaddr, remote_vaddr, bytes_to_copy);
 
   TRACE_ERR((stderr, "<< Shmem::BgqShaddr::read_impl(), bytes_to_copy = %zu\n", bytes_to_copy));
   return bytes_to_copy;
