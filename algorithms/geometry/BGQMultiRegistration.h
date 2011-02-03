@@ -758,15 +758,16 @@ namespace PAMI
 
           if (phase == 0)
             {
-	      
-	      if (_binomial_barrier_factory) {
-		//Set optimized barrier to binomial. May override optimized barrier later
-		pami_xfer_t xfer = {0};
-		OptBinomialBarrier *opt_binomial = (OptBinomialBarrier *)
-		  _binomial_barrier_factory->generate(geometry, &xfer);
-		geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
-				 (void*)opt_binomial);
-	      }
+
+            if (_binomial_barrier_factory) 
+            {
+              //Set optimized barrier to binomial. May override optimized barrier later
+              pami_xfer_t xfer = {0};
+              OptBinomialBarrier *opt_binomial = (OptBinomialBarrier *)
+              _binomial_barrier_factory->generate(geometry, &xfer);
+              geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
+                               (void*)opt_binomial);
+            }
 
             if(_mu_msync_factory && __global.topology_local.size() == 1) 
             {       
@@ -925,7 +926,9 @@ namespace PAMI
                       // DefaultShmem doesn't work with 2 device protocol right now
                       if (local_sub_topology->size() == 1)
 #endif
+#ifndef ENABLE_NEW_SHMEM_SUBNODE
                       if (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
+#endif
                       {
                         if (_mcast2d_composite_factory)
                           {
@@ -963,29 +966,34 @@ namespace PAMI
                          (local_sub_topology->size() ==  8) ||
                          (local_sub_topology->size() == 16))
 #endif
+#ifndef ENABLE_NEW_SHMEM_SUBNODE
                       if (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
+#endif
+                      {
+                        // NP (non-pipelining) 2 device protocols
+                        if ((_mcomb2dNP_dput_composite_factory) && (master_sub_topology->size() > 1))  // \todo Simple NP protocol doesn't like 1 master - fix it later
                         {
-                          if ((_mcomb2dNP_composite_factory) && (master_sub_topology->size() > 1))  // \todo Simple NP protocol doesn't like 1 master - fix it
-                            {
-                              TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register protocol: mcomb 2DNP\n", this));
-                              geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2dNP_composite_factory, _context_id);
-                            }
-                          if (_mcomb2d_composite_factory)
-                            {
-                              TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register protocol: mcomb 2D\n", this));
-                              geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2d_composite_factory, _context_id);
-                            }
-                          if (_mcomb2d_dput_composite_factory)
-                            {
-                              TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register protocol: mcomb dput 2D\n", this));
-                              geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2d_dput_composite_factory, _context_id);
-                            }
-                          if ((_mcomb2dNP_dput_composite_factory) && (master_sub_topology->size() > 1))  // \todo Simple NP protocol doesn't like 1 master - fix it
-                            {
-                              TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register protocol: mcomb dput 2DNP\n", this));
-                              geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2dNP_dput_composite_factory, _context_id);
-                            }
+                          TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register protocol: mcomb dput 2DNP\n", this));
+                          geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2dNP_dput_composite_factory, _context_id);
                         }
+                        if ((_mcomb2dNP_composite_factory) && (master_sub_topology->size() > 1))  // \todo Simple NP protocol doesn't like 1 master - fix it later
+                        {
+                          TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register protocol: mcomb 2DNP\n", this));
+                          geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2dNP_composite_factory, _context_id);
+                        }
+
+                        //  2 device protocols
+                        if (_mcomb2d_dput_composite_factory)
+                        {
+                          TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register protocol: mcomb dput 2D\n", this));
+                          geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2d_dput_composite_factory, _context_id);
+                        }
+                        if (_mcomb2d_composite_factory)
+                        {
+                          TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register protocol: mcomb 2D\n", this));
+                          geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2d_composite_factory, _context_id);
+                        }
+                      }
                     }
                 }
             }

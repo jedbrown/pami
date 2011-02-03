@@ -27,6 +27,8 @@
 // New BGQ optimized shmem stack:
 #define ENABLE_NEW_SHMEM
 
+// Enable New BGQ optimized shmem stack on sub-node geometries
+//#define ENABLE_NEW_SHMEM_SUBNODE
 
 #ifdef _COLLSHM   // New Collective Shmem Protocol defines
 
