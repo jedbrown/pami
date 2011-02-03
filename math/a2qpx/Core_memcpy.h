@@ -106,17 +106,16 @@ inline void* Core_memcpy(void* dst, void* src, size_t bytes)
   uint64_t alignment = (uint64_t)dp | (uint64_t)sp;
   uint64_t align32 = alignment & 0x1f;
   
-  if (align32 == 0) {
+  if (align32 == 0 && bytes >= 256) {
     if (bytes == 512) {
       quad_copy_512 (dp, sp);
       return dst;
     }
-    else if (bytes > 512) {
-      nb = quad_copy_1024n(dp, sp, bytes);
-      bytes -=  nb;
-      sp += nb;
-      dp += nb;
-    }
+    
+    nb = quad_copy_1024n(dp, sp, bytes);
+    bytes -=  nb;
+    sp += nb;
+    dp += nb;
   }
   
   _int64Cpy( dp, sp, bytes);  
