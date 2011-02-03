@@ -2712,7 +2712,7 @@ fi
 
 # Verify compile base (default or user specified)
 # Don't check now for MPICH, because comm may not have been built yet
-if [ $mpich -eq 0 ] && [ ! -d "${comp_base}" ]
+if [ $mpich -eq 0 ] && [ ! -d "${comp_base}" ] && [ $compile -eq 1 ]
 then
     echo "ERROR (E): Compile dir: ${comp_base} DNE!! Exiting."
     exit 1
@@ -2745,7 +2745,7 @@ esac
 shopt -u nocasematch
 
 # Compare user platform with existing Make.rules target
-if [ "${codeFamily}" == "pami" ] && [ $mpich -eq 0 ]
+if [ "${codeFamily}" == "pami" ] && [ $mpich -eq 0 ] && [ $compile -eq 1 ]
 then
     if [ -e "${abs_rules_dir}/Make.rules" ]
     then 
