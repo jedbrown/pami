@@ -4,6 +4,10 @@
 # Creates a test execution XML for a particular test run.
 #-------------------------------------------------------------------------------
 
+# Make sure we're having safe scripting
+set -o nounset
+set -o errexit
+
 usage ()
 {
     echo "Logs a test execution to an XML file under /bglhome/sst/WWW/test/xml/"
@@ -22,7 +26,7 @@ usage ()
     echo "  -u <arg> | --user <arg>          User that ran the test"
     echo "  -m <arg> | --machineName <arg>   Hostname of where the test was run"
     echo "  -o <arg> | --outputFile <arg>    File containing the output from the test"
-    echo "  -l <arg> | --platform <arg>      Platform that the test is for (default is bgq)"
+    echo "  -l <arg> | --platform <arg>      Platform that the test is for (default is BGQ)"
     echo "             --messaging           Log the output to the Messaging team's directory (default is for SST)"
     echo "  -h       | --help                Print out this help information"
 }
@@ -41,12 +45,12 @@ returnCode=0
 summary=
 driver=""
 compileDriver=""
-platform="bgq"
+platform="BGQ"
 team="test"
 
 if [ -d "/bgsys/drivers/ppcfloor" ]
 then
-    driver=`readlink -e /bgsys/bgq/drivers/ppcfloor`
+    driver=`readlink -e /bgsys/drivers/ppcfloor`
 else
     if [ -d "/bgsys/bgq/drivers/x86_64.floor" ]
     then
@@ -55,9 +59,8 @@ else
 fi
 if [ "$driver" != "" ]
 then
-    # Chop off everything before driver, and then after the first slash behind driver
-    driver=${run_floor%/*} # Get rid of last dir
-    driver=${run_drv##*/} # only keep newest last dir (driver)
+    driver=${driver%/*} # Get rid of last dir
+    driver=${driver##*/} # Only keep newest last dir (driver)
 else
     driver="Unknown"
     echo "WARNING: Unknown floor driver location"
@@ -68,7 +71,7 @@ outputFile=/this_file_should_not_exist.log
 #-------------------------------------------------------------------------------
 # Parse the input parameters
 #-------------------------------------------------------------------------------
-
+set +o nounset
 while [ "$1" != "" ]; do
     case $1 in
         -g | --groupId )        shift
@@ -121,22 +124,7 @@ while [ "$1" != "" ]; do
     esac
     shift
 done
-
-#-------------------------------------------------------------------------------
-# Generate the XML filename based on the testName and current timestamp.  If
-# that file already exists (i.e. this script got called for the same test within
-# the same second, then wait and generate a new timestamp.
-#-------------------------------------------------------------------------------
-timestamp=`date "+%Y-%m-%d %H:%M:%S"`
-fileTimestamp=`echo "$timestamp" | sed s/:/./g | sed s/\ /_/`
-fileExe=`echo "$exe" | sed -e 's/\//~/g'`
-xmlFile="/bglhome/sst/WWW/$team/xml/$fileExe.$fileTimestamp.xml"
-while [ -e $xmlFile ]; do
-    usleep 100000
-    timestamp=`date "+%Y-%m-%d %H:%M:%S"`
-    fileTimestamp=`echo "$timestamp" | sed s/:/./g | sed s/\ /_/`
-    xmlFile="/bglhome/sst/WWW/$team/xml/$fileExe.$fileTimestamp.xml"
-done
+set -o nounset
 
 #-------------------------------------------------------------------------------
 # Validate parameters
@@ -154,6 +142,23 @@ else
     pass="fail"
 fi
 
+#-------------------------------------------------------------------------------
+# Generate the XML filename based on the testName and current timestamp.  If
+# that file already exists (i.e. this script got called for the same test within
+# the same second, then wait and generate a new timestamp.
+#-------------------------------------------------------------------------------
+timestamp=`date "+%Y-%m-%d %H:%M:%S"`
+fileTimestamp=`echo "$timestamp" | sed s/:/./g | sed s/\ /_/`
+fileExe=`echo "$exe" | sed -e 's/\//~/g'`
+xmlFile="/bglhome/sst/WWW/$team/xml/$fileExe.$fileTimestamp.xml"
+while (!(set -o noclobber; (echo "" > $xmlFile) 2>/dev/null;)); do
+    usleep 100000
+    timestamp=`date "+%Y-%m-%d %H:%M:%S"`
+    fileTimestamp=`echo "$timestamp" | sed s/:/./g | sed s/\ /_/`
+    xmlFile="/bglhome/sst/WWW/$team/xml/$fileExe.$fileTimestamp.xml"
+done
+
+# Make sure a groupId is set
 if [ "$groupId" == "" ]
 then
     groupId="$exe.$timestamp"
@@ -162,12 +167,6 @@ fi
 #-------------------------------------------------------------------------------
 # Create the XML file
 #-------------------------------------------------------------------------------
-echo "" > $xmlFile
-if [ $? != 0 ]
-then
-    echo "WARNING: Could not create XML file!"
-    exit 2
-fi
 echo "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>" > $xmlFile
 echo "<?xml-stylesheet type=\"text/xsl\" href=\"testExecution.xsl\"?>" >> $xmlFile
 echo "<TestExecution>" >> $xmlFile
