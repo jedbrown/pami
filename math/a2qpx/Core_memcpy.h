@@ -94,10 +94,10 @@ inline void* Core_memcpy_512(void* dst, void* src) {
   return dst;
 }
 
-void* Core_memcpy(void* dst, void* src, size_t bytes) __attribute__((__aligned__(32),noinline,weak));
+void* Core_memcpy(void* dst, void* src, size_t bytes);
 
 //Copying n bytes. All possible alignments
-void* Core_memcpy(void* dst, void* src, size_t bytes)
+inline void* Core_memcpy(void* dst, void* src, size_t bytes)
 {
   char *sp = (char *) src;
   char *dp = (char *) dst;
