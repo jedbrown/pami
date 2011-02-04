@@ -24,10 +24,6 @@
 /*#define ITERATIONS 1000 */
 /*#define ITERATIONS 100 */
 
-/* This should be an PAMI attribute, but until that is defined, here it is... */
-/* The limit is 512 for the MU device, but 488 for the shmem device. */
-/* So, until an attribute is available that programatically tells us this, */
-/* the shmem device test will fail after message size 314. */
 #define IMMEDIATE_SEND_LIMIT 512
 
 #ifndef BUFSIZE
@@ -40,6 +36,8 @@
 #define TRACE_ERR(x) /*fprintf x */
 
 size_t _my_rank;
+
+typedef size_t msginfo_t[4];
 
 uint8_t _rbuf[BUFSIZE];
 uint8_t _sbuf[BUFSIZE];
@@ -79,14 +77,12 @@ pami_recv_t         * recv)        /**< OUT: receive message structure */
 
 unsigned long long test (size_t sndlen, size_t myrank)
 {
-  typedef size_t quad_t[4];
-
-  quad_t msginfo;
+  msginfo_t msginfo;
   pami_result_t result = PAMI_ERROR;
   pami_send_immediate_t parameters;
   parameters.dispatch        = dispatch;
   parameters.header.iov_base = (void *)&msginfo; /* send *something* */
-  parameters.header.iov_len  = sizeof(msginfo);
+  parameters.header.iov_len  = sizeof(msginfo_t);
   parameters.data.iov_base   = (void *)_sbuf; /* send *something* */
   parameters.data.iov_len    = sndlen;
   PAMI_Endpoint_create (_g_client, _my_rank, 0, &parameters.dest);
@@ -229,7 +225,7 @@ int main ()
 
     size_t sndlen;
     for (sndlen = 0;
-         sndlen < BUFSIZE && sndlen<immediate_send_limit;
+         sndlen < BUFSIZE && sndlen<(immediate_send_limit-sizeof(msginfo_t));
          sndlen = sndlen*3/2+1)
     {
       int index = 0;
@@ -256,7 +252,7 @@ int main ()
 
       fprintf (stdout, "%s\n", str);
     }
-    sndlen = immediate_send_limit;
+    sndlen = immediate_send_limit-sizeof(msginfo_t);
     {
       int index = 0;
       index += sprintf (&str[index], "%10zd ", sndlen);
