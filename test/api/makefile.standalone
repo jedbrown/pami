@@ -60,6 +60,7 @@ build/collectives/allgather.exe \
 build/collectives/allgatherv.exe \
 build/collectives/allreduce.exe \
 build/collectives/allreduce_subcomm.exe \
+build/collectives/allreduce_query.exe \
 build/collectives/alltoall.exe \
 build/collectives/alltoallv.exe \
 build/collectives/ambcast.exe \
@@ -82,6 +83,7 @@ build/context/post-multithreaded-perf.exe \
 build/context/post-multithreaded.exe \
 build/context/post-perf.exe \
 build/context/post.exe \
+build/context/post-stress.exe \
 build/endpoint/endpoint_table.exe \
 build/p2p/send/send_immediate_pingpong_ring.exe \
 build/p2p/send_latency.exe \
