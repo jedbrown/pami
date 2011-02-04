@@ -28,7 +28,7 @@ size_t END;
 
 #undef TRACE_ERR
 #ifndef TRACE_ERR
-#define TRACE_ERR(x)  //fprintf x
+#define TRACE_ERR(x) // fprintf x
 #endif
 
 
@@ -66,6 +66,7 @@ static void dispatch_ping (pami_context_t    context,
                            pami_endpoint_t   origin,
                            pami_recv_t     * recv)
 {
+  TRACE_ERR((stderr, ">> dispatch_ping()\n"));
   /* Copy the data "somewhere" to simulate an application environment */
   memcpy (_recv_buffer, data, sndlen);
 
@@ -83,7 +84,9 @@ static void dispatch_ping (pami_context_t    context,
   PAMI_Send_immediate (context, &parameters);
 
   /* Increment the counter */
+  TRACE_ERR((stderr, "   dispatch_ping(), _dispatch[%zu].ping.counter = %zu -> %zu\n", n, _dispatch[n].ping.counter, _dispatch[n].ping.counter+1));
   _dispatch[n].ping.counter++;
+  TRACE_ERR((stderr, "<< dispatch_ping()\n"));
 }
 
 /* --------------------------------------------------------------- */
@@ -96,13 +99,16 @@ static void dispatch_pong (pami_context_t    context,
                            pami_endpoint_t   origin,
                            pami_recv_t     * recv)
 {
+  TRACE_ERR((stderr, ">> dispatch_pong()\n"));
   /* Copy the data "somewhere" to simulate an application environment */
   memcpy (_recv_buffer, data, sndlen);
 
   size_t n = (size_t) cookie;
 
   /* Increment the counter */
+  TRACE_ERR((stderr, "   dispatch_pong(), _dispatch[%zu].pong.counter = %zu -> %zu\n", n, _dispatch[n].pong.counter, _dispatch[n].pong.counter+1));
   _dispatch[n].pong.counter++;
+  TRACE_ERR((stderr, "<< dispatch_pong()\n"));
 }
 
 /**
@@ -186,7 +192,7 @@ unsigned long long test (pami_client_t  client,
 
 int main (int argc, char ** argv)
 {
-  ITERATIONS = 10;
+  ITERATIONS = 20;
   WARMUP     = 0;
   START      = 0;
   END        = 256;
@@ -246,6 +252,8 @@ int main (int argc, char ** argv)
   pami_send_hint_t options={};
   _dispatch_count = 0;
 
+  pami_configuration_t configuration;
+
   /* Register the protocols to test */
 
   /* --- test default dispatch, no hints --- */
@@ -263,6 +271,11 @@ int main (int argc, char ** argv)
     return 1;
   }
 
+  configuration.name = PAMI_DISPATCH_SEND_IMMEDIATE_MAX;
+  result = PAMI_Dispatch_query(context, _dispatch[_dispatch_count].ping.id, &configuration,1);
+  size_t send_max = configuration.value.intval;
+
+
   _dispatch[_dispatch_count].pong.id = START_DISPATCH_ID + _dispatch_count + 1;
   _dispatch[_dispatch_count].pong.counter = 0;
   fn.p2p = dispatch_pong;
@@ -277,11 +290,16 @@ int main (int argc, char ** argv)
     return 1;
   }
 
+  configuration.name = PAMI_DISPATCH_SEND_IMMEDIATE_MAX;
+  result = PAMI_Dispatch_query(context, _dispatch[_dispatch_count].pong.id, &configuration,1);
+  
+  if (configuration.value.intval < send_max)
+    send_max = configuration.value.intval;
+
   _dispatch_count += 2;
   /* --- test default dispatch, no hints --- */
 
 
-  pami_configuration_t configuration;
 
   configuration.name = PAMI_CLIENT_TASK_ID;
   result = PAMI_Client_query(client, &configuration,1);
@@ -294,6 +312,7 @@ int main (int argc, char ** argv)
   configuration.name = PAMI_CLIENT_WTICK;
   result = PAMI_Client_query(client, &configuration,1);
   double tick = configuration.value.doubleval;
+
 
 #if 0
   /* Display some test header information */
@@ -334,6 +353,9 @@ int main (int argc, char ** argv)
   double usec;
 
   char str[10240];
+
+  if (send_max < END)
+    END = send_max;
 
   size_t sndlen;
   for (sndlen = START; sndlen < END; sndlen = sndlen*3/2+1)
