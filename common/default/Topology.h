@@ -307,7 +307,7 @@ namespace PAMI {
       size_t s = 1;
       unsigned x;
       for (x = 0; x < mapping->globalDims(); ++x) {
-        if (fmt->net_coord(x) == (unsigned)-1) {
+        if (fmt->net_coord(x) == (size_t)-1) {
           _new->topo_lldim(x) = topo_lldim(x);
           _new->topo_urdim(x) = topo_urdim(x);
           _new->topo_hastorus(x) = topo_hastorus(x);
