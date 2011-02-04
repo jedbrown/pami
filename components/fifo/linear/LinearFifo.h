@@ -102,10 +102,11 @@ namespace PAMI
           // memalign until the first process has completed the memory
           // initialization.
           //
-          // Allocation is for N packets, N active flags, 1 head counter,
-          // and 1 wrap counter.
+          // Allocation is for N packets, 1 debug memory value, 1 head counter.
 
-          size_t total_size = (sizeof(T_Packet) + sizeof(size_t)) * T_Size + sizeof(size_t) * 2;
+          size_t total_size = sizeof(T_Packet) * T_Size +
+                              sizeof(uint32_t) * 2 +
+                              sizeof(size_t);
           TRACE_ERR((stderr, "   LinearFifo::initialize_impl() before sync memalign, key = '%s', total size to allocate = %zu\n", key, total_size));
 
           pami_result_t rc;
@@ -119,7 +120,12 @@ namespace PAMI
 
           TRACE_ERR((stderr, "   LinearFifo::initialize_impl() after sync memalign\n"));
 
-          _head = (size_t *) &_packet[T_Size];
+          // Debug value to catch fifo-overrun conditions.
+          _deadbeef = (uint32_t *) &_packet[T_Size];
+          _deadbeef[0] = 0xdeadbeef;
+          _deadbeef[1] = 0xdeadbeef;
+
+          _head = ((size_t *) &_packet[T_Size]) + 1;
           *(_head) = 0;
 
           TRACE_ERR((stderr, "<< LinearFifo::initialize_impl(%p, \"%s\"), _head = %p, *_head = %zu\n", mm, key, _head, *_head));
@@ -131,6 +137,7 @@ namespace PAMI
           _tail.clone (fifo._tail);
 
           _packet = fifo._packet;
+          _deadbeef = fifo._deadbeef;
           _head = fifo._head;
           _last_packet_produced = fifo._last_packet_produced;
 
@@ -201,11 +208,13 @@ namespace PAMI
 
           size_t index = _tail.fetch_and_inc ();
 
-          TRACE_ERR((stderr, "   LinearFifo::producePacket_impl(T_Producer &), index = %zu\n", index));
+          TRACE_ERR((stderr, ">> LinearFifo::producePacket_impl(T_Producer &), index = %zu\n", index));
 
           if (likely (index < T_Size))
             {
               packet.produce (_packet[index]);
+
+              PAMI_assert_debug(*_deadbeef == 0xdeadbeef);
 
               mem_barrier();
               // This memory barrier forces all previous memory operations to
@@ -222,12 +231,11 @@ namespace PAMI
 
               _active[index] = 1;
 
-              TRACE_ERR((stderr, "   LinearFifo::producePacket_impl(T_Producer &), _active[%zu] = %zu\n", index, _active[index]));
               mem_barrier();
 
               _last_packet_produced = index;
 
-              TRACE_ERR((stderr, "<< LinearFifo::producePacket_impl(T_Producer &), return true\n"));
+              TRACE_ERR((stderr, "<< LinearFifo::producePacket_impl(T_Producer &), _active[%zu] = %zu, return true\n", index, _active[index]));
               return true;
             }
 
@@ -247,10 +255,11 @@ namespace PAMI
 
           const size_t head  = *(this->_head);
           const size_t index = head & LinearFifo::mask;
+          const size_t active = _active[index];
 
-          TRACE_ERR((stderr, "   LinearFifo::consumePacket_impl(T_Consumer &), head = %zu, index = %zu (LinearFifo::mask = %p), _active[%zu] = %zu\n", head, index, (void *)LinearFifo::mask, index, (size_t) _active[index]));
+          TRACE_ERR((stderr, ">> LinearFifo::consumePacket_impl(T_Consumer &), this = %p, _head = %p, head = %zu, index = %zu (LinearFifo::mask = %p), _active[%zu] = %zu\n", this, _head, head, index, (void *)LinearFifo::mask, index, active));
 
-          if (_active[index])
+          if (active)
             {
               //dumpPacket(head);
               packet.consume (_packet[index]);
@@ -307,6 +316,7 @@ namespace PAMI
         // Located in shared memory
         // -----------------------------------------------------------------
         T_Packet     * _packet;
+        uint32_t     * _deadbeef;
         size_t       * _head;
 
         // -----------------------------------------------------------------
