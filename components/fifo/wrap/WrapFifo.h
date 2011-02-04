@@ -111,7 +111,7 @@ namespace PAMI
           _head = (size_t *) & _packet[T_Size];
           *(_head) = 0;
 
-          TRACE_ERR((stderr, "<< WrapFifo::initialize_impl(%p, \"%s\"), _active = %p, _head = %p, *_head = %zu\n", mm, key, _active, _head, *_head));
+          TRACE_ERR((stderr, "<< WrapFifo::initialize_impl(%p, \"%s\"), _head = %p, *_head = %zu\n", mm, key, _head, *_head));
         };
 
         inline void initialize_impl (WrapFifo & fifo)
@@ -128,7 +128,7 @@ namespace PAMI
           _active.init (fifo._active);
 
 
-          TRACE_ERR((stderr, "<< WrapFifo::initialize_impl(WrapFifo &), _packet = %p, _active = %p, _head = %p, *_head = %zu, _last_packet_produced = %zu\n", _packet, _active, _head, *_head, _last_packet_produced));
+          TRACE_ERR((stderr, "<< WrapFifo::initialize_impl(WrapFifo &), _packet = %p, _head = %p, *_head = %zu, _last_packet_produced = %zu\n", _packet, _head, *_head, _last_packet_produced));
         };
 
         inline void dumpPacket (size_t index)
