@@ -93,7 +93,7 @@ int pami_shutdown(pami_client_t        * client,          /* in/out:  client    
 {
   pami_result_t result;
   /* Docs07:  Destroy the client and contexts */
-  result = PAMI_Context_destroyv(context, 1);
+  result = PAMI_Context_destroyv(context, *num_contexts);
   if (result != PAMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to destroy pami context. result = %d\n", result);
