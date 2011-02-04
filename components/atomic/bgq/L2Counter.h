@@ -51,19 +51,21 @@ namespace PAMI
           friend class PAMI::Counter::Interface<L2>;
 
           inline L2 () :
-            PAMI::Counter::Interface<L2> (),
-            _counter()
+              PAMI::Counter::Interface<L2> (),
+              _counter()
           {};
 
           inline ~L2() {};
 
-	static inline bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
-		return ((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0);
-	}
+          static inline bool checkCtorMm(PAMI::Memory::MemoryManager *mm)
+          {
+            return ((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0);
+          }
 
-	static inline bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
-		return true; // no mm used - no init.
-	}
+          static inline bool checkDataMm(PAMI::Memory::MemoryManager *mm)
+          {
+            return true; // no mm used - no init.
+          }
 
         protected:
 
@@ -101,7 +103,7 @@ namespace PAMI
       }; // class PAMI::Counter::BGQ::L2
 
       class IndirectL2 : public PAMI::Counter::Interface<IndirectL2>,
-                         public PAMI::Atomic::Indirect<IndirectL2>
+          public PAMI::Atomic::Indirect<IndirectL2>
       {
         public:
 
@@ -111,20 +113,27 @@ namespace PAMI
           static const bool indirect = true;
 
           inline IndirectL2 () :
-            PAMI::Counter::Interface<IndirectL2> (),
-            _counter(NULL)
+              PAMI::Counter::Interface<IndirectL2> (),
+              _counter(NULL)
           {};
 
           inline ~IndirectL2() {};
 
-	static inline bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
-		// must not be shared memory.
-		return ((mm->attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) == 0);
-	}
+          static inline bool checkCtorMm(PAMI::Memory::MemoryManager *mm)
+          {
+            // must not be shared memory.
+            return ((mm->attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) == 0);
+          }
 
-	static inline bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
-		return ((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0);
-	}
+          static inline bool checkDataMm(PAMI::Memory::MemoryManager *mm)
+          {
+            return ((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0);
+          }
+
+          inline void set (volatile uint64_t * addr)
+          {
+            _counter = addr;
+          };
 
         protected:
 
@@ -143,16 +152,19 @@ namespace PAMI
           inline void init_impl(T_MemoryManager *mm, const char *key)
           {
             pami_result_t rc;
-	    if ((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0) {
-            	rc = mm->memalign((void **)&_counter, sizeof(*_counter),
-                                         sizeof(*_counter), key);
-	    } else {
-		//fprintf(stderr, "PAMI::Counter::BGQ::IndirectL2: WARNING: using __global.l2atomicFactory.__nodescoped_mm\n");
-            	rc = __global.l2atomicFactory.__nodescoped_mm.memalign((void **)&_counter,
-                                                                    sizeof(*_counter),
-                                                                    sizeof(*_counter),
-                                                                    key);
-	    }
+
+            if ((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0)
+              {
+                rc = mm->memalign((void **) & _counter, sizeof(*_counter),
+                                  sizeof(*_counter), key);
+              }
+            else
+              {
+                rc = __global.l2atomicFactory.__nodescoped_mm.memalign((void **) & _counter,
+                                                                       sizeof(*_counter),
+                                                                       sizeof(*_counter),
+                                                                       key);
+              }
 
             PAMI_assertf(rc == PAMI_SUCCESS, "Failed to allocate memory from mm %p with key \"%s\"", mm, key);
           };

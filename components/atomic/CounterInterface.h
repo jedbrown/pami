@@ -28,12 +28,72 @@ namespace PAMI
     template <class T>
     class Interface
     {
-    public:
+      protected:
 
         inline Interface() {}
         inline ~Interface() {}
 
       public:
+
+        template <class T_Counter>
+        class Bounded
+        {
+          public:
+
+            ///
+            /// \brief Fetch, then increment the atomic counter object value
+            ///
+            /// \attention All bounded atomic counter object derived classes
+            ///            \b must implement the fetch_and_inc_bounded_impl()
+            ///            method.
+            ///
+            /// \param [out] value Previous counter value
+            ///
+            /// \return true  Increment operation was not bounded; value is valid
+            /// \return false Increment operation was bounded; value is invalid
+            ///
+            inline bool fetch_and_inc_bounded (size_t & value)
+            {
+              return static_cast<T*>(this)->fetch_and_inc_bounded_impl(value);
+            };
+
+            ///
+            /// \brief Fetch, then decrement the atomic counter object value
+            ///
+            /// \attention All bounded atomic counter object derived classes
+            ///            \b must implement the fetch_and_dec_bounded_impl()
+            ///            method.
+            ///
+            /// \param [out] value Previous counter value
+            ///
+            /// \return true  Operation was not bounded; value is valid
+            /// \return false Operation was bounded; value is invalid
+            ///
+            inline bool fetch_and_dec_bounded (size_t & value)
+            {
+              return static_cast<T*>(this)->fetch_and_dec_bounded_impl(value);
+            };
+
+            ///
+            /// \brief Reference to the upper bound atomic
+            ///
+            /// \see fetch_and_inc_bounded()
+            ///
+            inline T_Counter & upper()
+            {
+              return static_cast<T*>(this)->upper_impl();
+            };
+
+            ///
+            /// \brief Reference to the lower bound atomic
+            ///
+            /// \see fetch_and_dec_bounded()
+            ///
+            inline T_Counter & lower()
+            {
+              return static_cast<T*>(this)->lower_impl();
+            };
+        };  // PAMI::Counter::Interface::Bounded class
 
         static const bool indirect = false;
 

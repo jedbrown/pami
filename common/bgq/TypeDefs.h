@@ -144,8 +144,9 @@ namespace PAMI
   Device::MU::MulticombineModel<PAMI::Device::MU::AllreducePacketModel, false, false> > MUShmemAxialDputNI;
 
   typedef Fifo::FifoPacket <32, 160> ShmemPacket;
-  typedef Fifo::LinearFifo<ShmemPacket, PAMI::Counter::BGQ::IndirectL2, 128, Wakeup::BGQ> ShmemFifo;
-  //typedef Fifo::WrapFifo<ShmemPacket, PAMI::Counter::BGQ::IndirectL2Bounded, 128, Wakeup::BGQ> ShmemFifo;
+  //typedef Fifo::LinearFifo<ShmemPacket, PAMI::Counter::BGQ::IndirectL2> ShmemFifo;
+  //typedef Fifo::LinearFifo<ShmemPacket, PAMI::Counter::BGQ::IndirectL2, 128, Wakeup::BGQ> ShmemFifo;
+  typedef Fifo::WrapFifo<ShmemPacket, PAMI::Counter::BGQ::IndirectL2Bounded, 128, Wakeup::BGQ> ShmemFifo;
   typedef Device::ShmemDevice<ShmemFifo, Device::Shmem::BgqShaddrReadOnly> ShmemDevice;
   typedef Device::Shmem::PacketModel<ShmemDevice> ShmemPacketModel;
   //typedef Device::Shmem::BgqShaddrPacketModel<ShmemDevice> ShmemPacketModel;
