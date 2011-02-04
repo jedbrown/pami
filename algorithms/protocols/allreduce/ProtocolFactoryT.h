@@ -62,6 +62,7 @@ namespace CCMI
               }
 
             T* obj = (T*)CollectiveProtocolFactoryT<T, get_metadata, C>::_alloc.allocateObject();
+            geometry->setAllreduceComposite(obj);
             new (obj) T(CollectiveProtocolFactoryT<T, get_metadata, C>::_native,  // Native interface
                         CollectiveProtocolFactoryT<T, get_metadata, C>::_cmgr,    // Connection Manager
                         geometry,          // Geometry Object
@@ -69,8 +70,6 @@ namespace CCMI
                         allreduce->cb_done,
                         allreduce->cookie);
 
-            //obj->setAlgorithmFactory(this); //Dont use restart just yet
-            geometry->setAllreduceComposite(obj);
             return NULL;
           }
       };

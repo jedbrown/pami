@@ -83,7 +83,7 @@ namespace PAMI
           (*_geometry_map)[_commid] = this;
 
           _allreduce_storage[0] = _allreduce_storage[1] = NULL;
-
+          _allreduce[0] = _allreduce[1] = NULL;
           _virtual_rank    =  (pami_task_t) _topos[DEFAULT_TOPOLOGY_INDEX].rank2Index(_rank);
           PAMI_assert(_virtual_rank != (pami_task_t)-1);
 
@@ -250,6 +250,7 @@ namespace PAMI
           (*_geometry_map)[_commid] = this;
 
           _allreduce_storage[0] = _allreduce_storage[1] = NULL;
+          _allreduce[0] = _allreduce[1] = NULL;
 
           _virtual_rank    =  (pami_task_t) _topos[DEFAULT_TOPOLOGY_INDEX].rank2Index(_rank);
           PAMI_assert(_virtual_rank != (pami_task_t)-1);
@@ -458,9 +459,13 @@ namespace PAMI
 
         inline CCMI_EXECUTOR_TYPE        getAllreduceCompositeStorage_impl(unsigned i)
         {
-          if (_allreduce_storage[i] == NULL)
-            _allreduce_storage[i] =  malloc (PAMI_REQUEST_NQUADS * 4);
-
+          if(_allreduce_storage[i] == NULL) {
+	    pami_result_t rc;
+	    rc = __global.heap_mm->memalign((void **)&_allreduce_storage[i],
+                                            sizeof(void *), PAMI_REQUEST_NQUADS*4);
+	    PAMI_assertf(rc == PAMI_SUCCESS,
+                         "Failed to alloc memory for _allreduce_storage[%d]", i);
+	  }
           return _allreduce_storage[i];
         }
         inline COMPOSITE_TYPE            getAllreduceComposite_impl(unsigned i)
@@ -480,9 +485,15 @@ namespace PAMI
         }
         inline CCMI_EXECUTOR_TYPE        getAllreduceCompositeStorage_impl()
         {
-          if (_allreduce_storage[_allreduce_iteration] == NULL)
-            _allreduce_storage[_allreduce_iteration] = malloc (PAMI_REQUEST_NQUADS * 4);
-
+          if(_allreduce_storage[_allreduce_iteration] == NULL) {
+            pami_result_t rc;
+	    rc = __global.heap_mm->memalign(
+              (void **)&_allreduce_storage[_allreduce_iteration],
+			sizeof(void *), PAMI_REQUEST_NQUADS*4);
+	    PAMI_assertf(rc == PAMI_SUCCESS,
+                         "Failed to alloc memory for _allreduce_storage[%d]",
+                         _allreduce_iteration);
+	  }
           return _allreduce_storage[_allreduce_iteration];
         }
 
