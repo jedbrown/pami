@@ -21,6 +21,9 @@
 /// \brief Constant used to specify alignment in declarations of lwarx/stwcx atomics.
 #define PAMI_NATIVE_ATOMIC_ALIGN	L1D_CACHE_LINE_SIZE
 
+// Enable multicontext collective registration.  Otherwise, only context 0 registers.
+// #define ENABLE_COLLECTIVE_MULTICONTEXT
+
 // New converged shmem stack:
 //#define _COLLSHM
 

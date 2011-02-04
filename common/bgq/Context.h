@@ -102,6 +102,13 @@ namespace PAMI
   CompositeNI_AM,
   CompositeNI_AS > CCMIRegistration;
 
+  typedef CollRegistration::BGQMultiRegistration < BGQGeometry, 
+      AllSidedShmemNI, 
+      MUDevice, 
+      MUGlobalNI, 
+      MUAxialNI, 
+      MUAxialDputNI, 
+      MUShmemAxialDputNI > BGQRegistration;
   /**
    * \brief Class containing all devices used on this platform.
    *
@@ -265,6 +272,7 @@ namespace PAMI
         //unsigned long long t2 = PAMI_Wtimebase() -t1;
         //printf("overhead:%lld\n", t2);
 
+
         events += Device::AtomicMutexDev::Factory::advance(_atmmtx, clientid, contextid);
         return events;
       }
@@ -305,8 +313,8 @@ namespace PAMI
           _coll_shm_registration(NULL),
           _bgq2d_registration(NULL),
 #endif
-          _multi_registration((CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI, MUAxialDputNI, MUShmemAxialDputNI >*) _multi_registration_storage),
-          _ccmi_registration((CCMIRegistration*)_ccmi_registration_storage),
+          _multi_registration(NULL),
+          _ccmi_registration(NULL),
           _world_geometry(world_geometry),
           _status(PAMI_SUCCESS),
           _shmemMcastModel(NULL),
@@ -351,6 +359,11 @@ namespace PAMI
         Protocol::Get::GetRdma <Device::Shmem::DmaModel<ShmemDevice, false>, ShmemDevice> * rget_shmem = NULL;
         Protocol::Put::PutRdma <Device::Shmem::DmaModel<ShmemDevice, false>, ShmemDevice> * rput_shmem = NULL;
 
+
+        ///////////////////////////////////////////////////////////////
+        // Setup rget/rput protocols
+        ///////////////////////////////////////////////////////////////
+
         if (__global.useMU())
           {
 
@@ -366,9 +379,6 @@ namespace PAMI
                       generate (_devices->_mu[_contextid], _context, _request, result);
 
             if (result != PAMI_SUCCESS) rput_mu = NULL;
-
-            _pgas_mu_registration = new(_pgas_mu_registration_storage) MU_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _protocol, Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid), _devices->_shmem[_contextid], &_dispatch_id, _geometry_map);
-
           }
 
 #if 0
@@ -432,7 +442,63 @@ namespace PAMI
             }
         }
 #endif
+        if (__global.useshmem())
+          {
+            // Can't construct these models on single process nodes (no shmem)
+            if (__global.topology_local.size() > 1)
+              {
+                // Initialize shmem rget and shmem rput protocols.
+                pami_result_t result = PAMI_ERROR;
 
+                rget_shmem = Protocol::Get::GetRdma <Device::Shmem::DmaModel<ShmemDevice, false>, ShmemDevice>::
+                             generate (_devices->_shmem[_contextid], _context, _request, result);
+
+                if (result != PAMI_SUCCESS) rget_shmem = NULL;
+
+                rput_shmem = Protocol::Put::PutRdma <Device::Shmem::DmaModel<ShmemDevice, false>, ShmemDevice>::
+                             generate (_devices->_shmem[_contextid], _context, _request, result);
+
+                if (result != PAMI_SUCCESS) rput_shmem = NULL;
+              }
+            else TRACE_ERR((stderr, "topology does not support shmem\n"));
+          }
+        // Complete rget and rput protocol initialization
+        if (((rget_mu != NULL) && (rget_shmem != NULL)) &&
+            ((rput_mu != NULL) && (rput_shmem != NULL)))
+          {
+            // Create "composite" protocols
+            pami_result_t result = PAMI_ERROR;
+            _rget = (Protocol::Get::RGet *) Protocol::Get::Factory::
+                    generate (rget_shmem, rget_mu, _request, result);
+            _rput = (Protocol::Put::RPut *) Protocol::Put::Factory::
+                    generate (rput_shmem, rput_mu, _request, result);
+          }
+        else if (((rget_mu != NULL) && (rget_shmem == NULL)) &&
+                 ((rput_mu != NULL) && (rput_shmem == NULL)))
+          {
+            _rget = rget_mu;
+            _rput = rput_mu;
+          }
+        else if (((rget_mu == NULL) && (rget_shmem != NULL)) &&
+                 ((rput_mu == NULL) && (rput_shmem != NULL)))
+          {
+            _rget = rget_shmem;
+            _rput = rput_shmem;
+          }
+        else
+          {
+            // No shmem or mu rget-rput protocols available
+            _rget = Protocol::Get::NoRGet::generate (_request);
+            _rput = Protocol::Put::NoRPut::generate (_request);
+          }
+
+        ///////////////////////////////////////////////////////////////
+        // Register collectives
+        ///////////////////////////////////////////////////////////////
+        if (__global.useMU())
+          {
+            _pgas_mu_registration = new(_pgas_mu_registration_storage) MU_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _protocol, Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid), _devices->_shmem[_contextid], &_dispatch_id, _geometry_map);
+          }
         if (__global.useshmem())
           {
             // Can't construct these models on single process nodes (no shmem)
@@ -458,19 +524,6 @@ namespace PAMI
 
                 _shmem_native_interface  = (AllSidedShmemNI*)_shmem_native_interface_storage;
                 new (_shmem_native_interface_storage) AllSidedShmemNI(_shmemMcastModel, _shmemMsyncModel, _shmemMcombModel, client, (pami_context_t)this, id, clientid, &_dispatch_id);
-
-                // Initialize shmem rget and shmem rput protocols.
-                pami_result_t result = PAMI_ERROR;
-
-                rget_shmem = Protocol::Get::GetRdma <Device::Shmem::DmaModel<ShmemDevice, false>, ShmemDevice>::
-                             generate (_devices->_shmem[_contextid], _context, _request, result);
-
-                if (result != PAMI_SUCCESS) rget_shmem = NULL;
-
-                rput_shmem = Protocol::Put::PutRdma <Device::Shmem::DmaModel<ShmemDevice, false>, ShmemDevice>::
-                             generate (_devices->_shmem[_contextid], _context, _request, result);
-
-                if (result != PAMI_SUCCESS) rput_shmem = NULL;
 
                 _pgas_shmem_registration = new(_pgas_shmem_registration_storage) Shmem_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _protocol, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), _devices->_shmem[_contextid],& _dispatch_id, _geometry_map);
               }
@@ -522,17 +575,28 @@ namespace PAMI
 
 #endif
 
-        _multi_registration       =  new (_multi_registration)
-        CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI, MUAxialDputNI, MUShmemAxialDputNI >(_shmem_native_interface,
-            PAMI::Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid),
-            client,
-            (pami_context_t)this,
-            id,
-            clientid,
-            &_dispatch_id,
-            _geometry_map);
+#ifndef ENABLE_COLLECTIVE_MULTICONTEXT
+        if (_contextid == 0)
+#endif
+            _multi_registration       =  new ((BGQRegistration*) _multi_registration_storage)
+               BGQRegistration(_shmem_native_interface,
+                               PAMI::Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid),
+                               client,
+                               (pami_context_t)this,
+                               id,
+                               clientid,
+                               &_dispatch_id,
+                               _geometry_map);
 
-        _ccmi_registration =  new(_ccmi_registration) CCMIRegistration(_client, _context, _contextid, _clientid, _devices->_shmem[_contextid], _devices->_mu[_contextid], _protocol, __global.useshmem(), __global.useMU(), __global.topology_global.size(), __global.topology_local.size(), &_dispatch_id, _geometry_map);
+#ifndef ENABLE_COLLECTIVE_MULTICONTEXT
+        if (_contextid == 0)
+#endif
+            _ccmi_registration =  new((CCMIRegistration*)_ccmi_registration_storage) 
+            CCMIRegistration(_client, _context, _contextid, _clientid, 
+                             _devices->_shmem[_contextid], _devices->_mu[_contextid], 
+                             _protocol, __global.useshmem(), __global.useMU(), __global.topology_global.size(), __global.topology_local.size(), 
+                             &_dispatch_id, 
+                             _geometry_map);
 
         // Can only use shmem pgas if the geometry is all local tasks, so check the topology
         if (_pgas_shmem_registration && ((PAMI::Topology*)_world_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->isLocal()) _pgas_shmem_registration->analyze(_contextid, _world_geometry, 0);
@@ -540,44 +604,20 @@ namespace PAMI
         // Can always use MU if it's available
         if (_pgas_mu_registration) _pgas_mu_registration->analyze(_contextid, _world_geometry, 0);
 
-        _world_geometry->resetUEBarrier(); // Reset so ccmi will select the UE barrier
-        _ccmi_registration->analyze(_contextid, _world_geometry, 0);
+        if(_ccmi_registration)
+        {
+            _world_geometry->resetUEBarrier(); // Reset so ccmi will select the UE barrier
+            _ccmi_registration->analyze(_contextid, _world_geometry, 0);
+         }
 
-        _multi_registration->analyze(_contextid, _world_geometry, 0);
+        if(_multi_registration) 
+        {
+           _multi_registration->analyze(_contextid, _world_geometry, 0);
 
-        // for now, this is the only registration that has a phase 1...
-        // We know that _world_geometry is always "optimized" at create time.
-        _multi_registration->analyze(_contextid, _world_geometry, 1);
-
-        // Complete rget and rput protocol initialization
-        if (((rget_mu != NULL) && (rget_shmem != NULL)) &&
-            ((rput_mu != NULL) && (rput_shmem != NULL)))
-          {
-            // Create "composite" protocols
-            pami_result_t result = PAMI_ERROR;
-            _rget = (Protocol::Get::RGet *) Protocol::Get::Factory::
-                    generate (rget_shmem, rget_mu, _request, result);
-            _rput = (Protocol::Put::RPut *) Protocol::Put::Factory::
-                    generate (rput_shmem, rput_mu, _request, result);
-          }
-        else if (((rget_mu != NULL) && (rget_shmem == NULL)) &&
-                 ((rput_mu != NULL) && (rput_shmem == NULL)))
-          {
-            _rget = rget_mu;
-            _rput = rput_mu;
-          }
-        else if (((rget_mu == NULL) && (rget_shmem != NULL)) &&
-                 ((rput_mu == NULL) && (rput_shmem != NULL)))
-          {
-            _rget = rget_shmem;
-            _rput = rput_shmem;
-          }
-        else
-          {
-            // No shmem or mu rget-rput protocols available
-            _rget = Protocol::Get::NoRGet::generate (_request);
-            _rput = Protocol::Put::NoRPut::generate (_request);
-          }
+           // for now, this is the only registration that has a phase 1...
+           // We know that _world_geometry is always "optimized" at create time.
+           _multi_registration->analyze(_contextid, _world_geometry, 1);
+         }
 
         // dispatch_impl relies on the table being initialized to NULL's.
         memset(_dispatch, 0x00, sizeof(_dispatch));
@@ -1084,10 +1124,13 @@ namespace PAMI
         // Can always use MU if it's available
         if (phase == 0 && _pgas_mu_registration) _pgas_mu_registration->analyze(_contextid, geometry, phase);
 
-        geometry->resetUEBarrier(); // Reset so ccmi will select the UE barrier
-        _ccmi_registration->analyze(context_id, geometry, phase);
+        if(_ccmi_registration)
+        {   
+          geometry->resetUEBarrier(); // Reset so ccmi will select the UE barrier
+          _ccmi_registration->analyze(context_id, geometry, phase);
+        }
 
-        _multi_registration->analyze(context_id, geometry, phase);
+        if(_multi_registration) _multi_registration->analyze(context_id, geometry, phase);
 
         return PAMI_SUCCESS;
       }
@@ -1152,7 +1195,7 @@ namespace PAMI
       CollShmCollreg              *_coll_shm_registration;
       BGQ2DCollreg                *_bgq2d_registration;
 #endif
-      CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI, MUAxialDputNI, MUShmemAxialDputNI >    *_multi_registration;
+      BGQRegistration             *_multi_registration;
       CCMIRegistration            *_ccmi_registration;
       BGQGeometry                 *_world_geometry;
       pami_result_t                _status;
@@ -1165,7 +1208,7 @@ namespace PAMI
       uint8_t                      _coll_shm_registration_storage[sizeof(CollShmCollreg)];
       uint8_t                      _bgq2d_registration_storage[sizeof(BGQ2DCollreg)];
 #endif
-      uint8_t                      _multi_registration_storage[sizeof(CollRegistration::BGQMultiRegistration < BGQGeometry, AllSidedShmemNI, MUDevice, MUGlobalNI, MUAxialNI, MUAxialDputNI, MUShmemAxialDputNI >)];
+      uint8_t                      _multi_registration_storage[sizeof(BGQRegistration)];
       uint8_t                      _shmemMcastModel_storage[sizeof(ShmemMcstModel)];
       //uint8_t                      _shmemMcastModel_storage[sizeof(ShmemMcstModel)];
       uint8_t                      _shmemMsyncModel_storage[sizeof(ShmemMsyncModel)];

@@ -48,7 +48,7 @@ namespace PAMI
 
         _world_range.lo = 0;
         _world_range.hi = __global.mapping.size() - 1;
-	/// \todo This should be using the global topology and NOT de-optimize to a range!
+        /// \todo This should be using the global topology and NOT de-optimize to a range!
         /// new(_world_geometry_storage) BGQGeometry(_client, NULL, &__global.mapping, 0, &__global.topology_global);
         new(_world_geometry_storage) BGQGeometry(_client, NULL, &__global.mapping, 0, 1, &_world_range, &_geometry_map);
         // This must return immediately (must not enqueue non-blocking ops).
@@ -61,7 +61,7 @@ namespace PAMI
 
       inline ~Client ()
       {
-	if (_contexts) (void)destroyContext_impl(NULL, _ncontexts);
+        if (_contexts) (void)destroyContext_impl(NULL, _ncontexts);
       }
 
       static pami_result_t generate_impl (const char * name, pami_client_t * client,
@@ -74,7 +74,7 @@ namespace PAMI
         // If a client with this name is not already initialized...
         PAMI::Client * clientp = NULL;
         result = __global.heap_mm->memalign((void **)&clientp, 16, sizeof(*clientp));
-	PAMI_assertf(result == PAMI_SUCCESS, "Failed to alloc PAMI::Client"); // just return?
+        PAMI_assertf(result == PAMI_SUCCESS, "Failed to alloc PAMI::Client"); // just return?
 
         memset ((void *)clientp, 0x00, sizeof(PAMI::Client));
         new (clientp) PAMI::Client (name, result);
@@ -85,9 +85,9 @@ namespace PAMI
       static void destroy_impl (pami_client_t client)
       {
         TRACE_ERR((stderr, "<%p>BGQ::Client::destroy_impl\n", client));
-	PAMI::Client *clt = (PAMI::Client *)client;
-	// ensure contexts are destroyed first???
-	clt->~Client();
+        PAMI::Client *clt = (PAMI::Client *)client;
+        // ensure contexts are destroyed first???
+        clt->~Client();
         __global.heap_mm->free((void *)client);
       }
 
@@ -122,7 +122,7 @@ namespace PAMI
         n = ncontexts;
 
         pami_result_t rc;
-	rc = __global.heap_mm->memalign((void **)&_contexts, 16, sizeof(*_contexts) * n);
+        rc = __global.heap_mm->memalign((void **)&_contexts, 16, sizeof(*_contexts) * n);
         PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for _contexts[%d], errno=%d\n", n, errno);
         int x;
         TRACE_ERR((stderr, "BGQ::Client::createContext mm available %zu\n", _mm.available()));
@@ -136,24 +136,24 @@ namespace PAMI
         //memset((void *)_contexts, 0, sizeof(PAMI::Context) * n);
         size_t bytes = 135 * 1024;
 
-	/// \page env_vars Environment Variables
-	///
-	/// PAMI_CONTEXT_SHMEMSIZE - Size, bytes, of each Context's shmem pool.
-	/// May use 'K' or 'M' suffix as multiplier. default: 135K
-	///
+        /// \page env_vars Environment Variables
+        ///
+        /// PAMI_CONTEXT_SHMEMSIZE - Size, bytes, of each Context's shmem pool.
+        /// May use 'K' or 'M' suffix as multiplier. default: 135K
+        ///
         char *env = getenv("PAMI_CONTEXT_SHMEMSIZE");
         if (env) {
-		char *s = NULL;
-		bytes = strtoull(env, &s, 0);
-		if (*s == 'm' || *s == 'M') bytes *= 1024 * 1024;
-		else if (*s == 'k' || *s == 'K') bytes *= 1024;
-        }
+          char *s = NULL;
+          bytes = strtoull(env, &s, 0);
+          if (*s == 'm' || *s == 'M') bytes *= 1024 * 1024;
+          else if (*s == 'k' || *s == 'K') bytes *= 1024;
+          }
         TRACE_ERR((stderr, "BGQ::Client::createContext mm bytes %zu\n", bytes));
         char key[PAMI::Memory::MMKEYSIZE];
-	sprintf(key, "/pami-clt%zd-ctx-mm", _clientid);
-	rc = _xmm.init(__global.shared_mm, bytes * n, 0, 0, 0, key);
-	PAMI_assertf(rc == PAMI_SUCCESS, "Failed to create \"%s\" mm for %zd bytes",
-									key, bytes * n);
+        sprintf(key, "/pami-clt%zd-ctx-mm", _clientid);
+        rc = _xmm.init(__global.shared_mm, bytes * n, 0, 0, 0, key);
+        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to create \"%s\" mm for %zd bytes",
+                     key, bytes * n);
 
         for (x = 0; x < n; ++x)
           {
@@ -201,7 +201,7 @@ namespace PAMI
               context[i] = NULL;
 
             PAMI::Context * ctx = &_contexts[i];
-	    ctx->~Context();
+            ctx->~Context();
             pami_result_t rc = ctx->destroy ();
 
             //_context_list->unlock ();
@@ -449,17 +449,17 @@ namespace PAMI
 
         if (geometry != NULL)
           {
-	    pami_result_t rc;
-	    rc = __global.heap_mm->memalign((void **)&new_geometry, 0,
-							sizeof(*new_geometry)); /// \todo use allocator
-	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc new_geometry");
+          pami_result_t rc;
+          rc = __global.heap_mm->memalign((void **)&new_geometry, 0,
+                                          sizeof(*new_geometry)); /// \todo use allocator
+          PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc new_geometry");
             new (new_geometry) BGQGeometry(_client,
                                            (PAMI::Geometry::Common *)parent,
                                            &__global.mapping,
                                            id,
                                            slice_count,
                                            rank_slices,
-					   &_geometry_map);
+                                           &_geometry_map);
 
             TRACE_ERR((stderr,  "%s analyze %zu geometry %p\n", __PRETTY_FUNCTION__, _ncontexts, new_geometry));
 
@@ -476,12 +476,12 @@ namespace PAMI
             new_geometry->addCompletion(); // ensure completion doesn't happen until
                                            // all have been analyzed (_geom_opt_finish).
 
-	    // Start the barrier (and then the global analyze and (maybe) the optimize ...
-	    start_barrier(bargeom, new_geometry,
-			  ctxt->getId(), context,
-			  num_configs? PAMI_GEOMETRY_OPTIMIZE: (pami_attribute_name_t)-1);
+            // Start the barrier (and then the global analyze and (maybe) the optimize ...
+            start_barrier(bargeom, new_geometry,
+                          ctxt->getId(), context,
+                          num_configs? PAMI_GEOMETRY_OPTIMIZE: (pami_attribute_name_t)-1);
 
-	    new_geometry->processUnexpBarrier(&_ueb_queue,
+            new_geometry->processUnexpBarrier(&_ueb_queue,
                                               &_ueb_allocator);
           }
         else
@@ -519,10 +519,10 @@ namespace PAMI
 
         if (geometry != NULL)
           {
-	    pami_result_t rc;
-	    rc = __global.heap_mm->memalign((void **)&new_geometry, 0,
-					sizeof(*new_geometry)); /// \todo use allocator
-	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc new_geometry");
+          pami_result_t rc;
+          rc = __global.heap_mm->memalign((void **)&new_geometry, 0,
+                                          sizeof(*new_geometry)); /// \todo use allocator
+          PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc new_geometry");
             new (new_geometry) BGQGeometry(_client,
                                            (PAMI::Geometry::Common *)parent,
                                            &__global.mapping,
@@ -545,12 +545,12 @@ namespace PAMI
             new_geometry->addCompletion(); // ensure completion doesn't happen until
                                            // all have been analyzed (_geom_opt_finish).
 
-	    // Start the barrier (and then the global analyze and (maybe) the optimize ...
-	    start_barrier(bargeom, new_geometry,
-			  ctxt->getId(), context,
-			  num_configs? PAMI_GEOMETRY_OPTIMIZE: (pami_attribute_name_t)-1);
+            // Start the barrier (and then the global analyze and (maybe) the optimize ...
+            start_barrier(bargeom, new_geometry,
+                          ctxt->getId(), context,
+                          num_configs? PAMI_GEOMETRY_OPTIMIZE: (pami_attribute_name_t)-1);
 
-	    new_geometry->processUnexpBarrier(&_ueb_queue,
+            new_geometry->processUnexpBarrier(&_ueb_queue,
                                               &_ueb_allocator);
           }
         else
@@ -767,11 +767,11 @@ namespace PAMI
       MatchQueue                                                             _ueb_queue;
 
 
-	/// \page env_vars Environment Variables
-	///
-	/// PAMI_CLIENT_SHMEMSIZE - Size, bytes, of each Client shmem pool.
-	/// May use 'K' or 'M' suffix as multiplier. default: 2MB
-	///
+      /// \page env_vars Environment Variables
+      ///
+      /// PAMI_CLIENT_SHMEMSIZE - Size, bytes, of each Client shmem pool.
+      /// May use 'K' or 'M' suffix as multiplier. default: 2MB
+      ///
 
       inline void initializeMemoryManager ()
       {
@@ -783,20 +783,20 @@ namespace PAMI
 #else
         size_t num_ctx = 64;
 #endif
-	// 18K * Ncontexts...
+        // 18K * Ncontexts...
         size_t bytes = (32*1024) * num_ctx; // 32k for each context in the client
 
-	/// \page env_vars Environment Variables
-	///
-	/// PAMI_CLIENT_SHMEMSIZE - Size, bytes, per-Client shared memory.
-	/// May use 'K' or 'M' suffix as multiplier. default: 8800 * maxnctx * nproc;
-	///
+        /// \page env_vars Environment Variables
+        ///
+        /// PAMI_CLIENT_SHMEMSIZE - Size, bytes, per-Client shared memory.
+        /// May use 'K' or 'M' suffix as multiplier. default: 8800 * maxnctx * nproc;
+        ///
         char *env = getenv("PAMI_CLIENT_SHMEMSIZE");
         if (env) {
-		char *s = NULL;
-		bytes = strtoull(env, &s, 0);
-		if (*s == 'm' || *s == 'M') bytes *= 1024 * 1024;
-		else if (*s == 'k' || *s == 'K') bytes *= 1024;
+          char *s = NULL;
+          bytes = strtoull(env, &s, 0);
+          if (*s == 'm' || *s == 'M') bytes *= 1024 * 1024;
+          else if (*s == 'k' || *s == 'K') bytes *= 1024;
         }
 
         snprintf (shmemfile, sizeof(shmemfile) - 1, "/pami-client-%s", _name);
@@ -804,10 +804,10 @@ namespace PAMI
         // Round up to the page size
         //size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
 
-	pami_result_t rc;
-	rc = _mm.init(__global.shared_mm, bytes, 1, 1, 0, shmemfile);
-	PAMI_assertf(rc == PAMI_SUCCESS, "Failed to create \"%s\" mm for %zd bytes",
-									shmemfile, bytes);
+        pami_result_t rc;
+        rc = _mm.init(__global.shared_mm, bytes, 1, 1, 0, shmemfile);
+        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to create \"%s\" mm for %zd bytes",
+                     shmemfile, bytes);
         return;
       }
 
@@ -825,8 +825,8 @@ namespace PAMI
         PAMI::Topology *local_master_topology  = (PAMI::Topology *)new_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
         to_reduce_count = local_master_topology->size();
 
-	rc = __global.heap_mm->memalign((void **)&to_reduce, 0, to_reduce_count * sizeof(uint64_t));
-	PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for to_reduce %zd", to_reduce_count * sizeof(uint64_t));
+        rc = __global.heap_mm->memalign((void **)&to_reduce, 0, to_reduce_count * sizeof(uint64_t));
+        PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for to_reduce %zd", to_reduce_count * sizeof(uint64_t));
 
         // analyze_local initializes the to_reduce array before the global analyze (reduction)
         for(size_t n=0; n<_ncontexts; n++)
@@ -848,8 +848,8 @@ namespace PAMI
 
         // Do a reduction and finish the global analyze and (maybe) start the optimization phase
         GlobalAnalyzer<BGQGeometry> *ga;
-	rc = __global.heap_mm->memalign((void **)&ga, 0, sizeof(*ga));
-	PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for GlobalAnalyzer<BGQGeometry> %zd", sizeof(*ga));
+        rc = __global.heap_mm->memalign((void **)&ga, 0, sizeof(*ga));
+        PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for GlobalAnalyzer<BGQGeometry> %zd", sizeof(*ga));
         new(ga)GlobalAnalyzer<BGQGeometry>(context,
                                            ar_algo,
                                            new_geometry,
@@ -873,15 +873,15 @@ namespace PAMI
             bargeom->default_barrier(_geom_newopt_finish, (void *)new_geometry, context_id, context);
         }
         //else PAMI_assert(bargeom); /// \todo? parentless/UE barrier support
-	else {
-	  if(optimize == PAMI_GEOMETRY_OPTIMIZE)
+        else {
+          if(optimize == PAMI_GEOMETRY_OPTIMIZE)
             new_geometry->ue_barrier(_geom_newopt_start, (void *)new_geometry, context_id, context);
           else
-	    new_geometry->ue_barrier(_geom_newopt_finish, (void *)new_geometry, context_id, context);
-	}
-	//else {
-	//_geom_newopt_finish(context, (void *)new_geometry, PAMI_SUCCESS);
-	//}
+            new_geometry->ue_barrier(_geom_newopt_finish, (void *)new_geometry, context_id, context);
+          }
+        //else {
+        //_geom_newopt_finish(context, (void *)new_geometry, PAMI_SUCCESS);
+        //}
 #endif
       }
 
@@ -913,8 +913,8 @@ namespace PAMI
           _result_cookie(result_cookie)
           {
             TRACE_ERR((stderr, "<%p>BGQ::Client::GlobalAnalyzer()()\n", this));
-	    rc = __global.heap_mm->memalign((void **)&_result, 0, count*2*sizeof(*_result));
-	    PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for _result %zd", count*2*sizeof(*_result));
+            rc = __global.heap_mm->memalign((void **)&_result, 0, count*2*sizeof(*_result));
+            PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for _result %zd", count*2*sizeof(*_result));
             _inval  = _result + count;
             memcpy(_inval,_bitmask,count*sizeof(uint64_t));
           }
