@@ -288,7 +288,7 @@ public:
 
 		__queues = NULL;
 		char key[PAMI::Memory::MMKEYSIZE];
-		int n = sprintf(key, "/proc%ld-clt%zd-ctx%zd-gd-",
+		int n = sprintf(key, "/proc%zd-clt%zd-ctx%zd-gd-",
 			__global.mapping.task(),
 			client, context);
 		pami_result_t rc;
