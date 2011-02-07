@@ -36,11 +36,12 @@ namespace PAMI
 
         friend class Wakeup::Interface <Semaphore<T_Key> >;
 
-        class Region : public Wakeup::Interface<Semaphore>::Region
+        template <typename T>
+        class Region : public Wakeup::Interface<Semaphore<T_Key> >::template Region<Region <T> >
         {
           public:
 
-            friend class Wakeup::Interface<Semaphore>::Region;
+            //friend class Wakeup::Interface<Semaphore<T_Key> >::template Region<Region <T> >;
 
             class Element
             {
@@ -90,7 +91,7 @@ namespace PAMI
                   return (bool) (this->value != rhs.value);
                 };
 
-                size_t value;
+                T           value;
                 Semaphore & wakeup;
             };
 

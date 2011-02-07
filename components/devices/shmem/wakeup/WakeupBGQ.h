@@ -27,11 +27,12 @@ namespace PAMI
 
         friend class Wakeup::Interface <Wakeup::BGQ>;
 
-        class Region : public Wakeup::Interface<BGQ>::Region
+        template <typename T>
+        class Region : public Wakeup::Interface<BGQ>::Region<Region <T> >
         {
           public:
 
-            friend class Wakeup::Interface<BGQ>::Region;
+            friend class Wakeup::Interface<BGQ>::Region<Region <T> >;
 #ifdef ELEMENT_ARRAY
             class Element
             {
@@ -92,7 +93,7 @@ namespace PAMI
 
               mmrc = wakeup->_mm->memalign ((void **) & _array,
                                             16,                         // align
-                                            count * sizeof(size_t),     // bytes
+                                            count * sizeof(T),          // bytes
                                             key,                        // unique
                                             Memory::MemoryManager::memzero,
                                             NULL);                      // cookie
@@ -109,14 +110,14 @@ namespace PAMI
 
             Element * _array;
 #else
-            inline size_t & operator[] (size_t position) volatile
+            inline T & operator[] (size_t position) volatile
             {
               return _array[position];
             };
 
           private:
 
-            size_t * _array;
+            T * _array;
 #endif
         };  // class PAMI::Wakeup::BGQ::Region
 

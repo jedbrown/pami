@@ -312,10 +312,10 @@ namespace PAMI
         // -----------------------------------------------------------------
         // Located in-place
         // -----------------------------------------------------------------
-        T_Wakeup * _wakeup;
-        typename T_Wakeup::Region _active;
-        T_Atomic                 _tail;
-        size_t                   _last_packet_produced;
+        T_Wakeup                                    * _wakeup;
+        typename T_Wakeup::template Region<uint8_t>   _active;
+        T_Atomic                                      _tail;
+        size_t                                        _last_packet_produced;
     };
 
   };

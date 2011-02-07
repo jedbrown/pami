@@ -19,13 +19,14 @@ namespace PAMI
 
         friend class Wakeup::Interface<Wakeup::Noop>;
 
-        class Region : public Wakeup::Interface<Wakeup::Noop>::Region
+        template <typename T>
+        class Region : public Wakeup::Interface<Wakeup::Noop>::Region<Region <T> >
         {
           public:
 
-            friend class Wakeup::Interface<Wakeup::Noop>::Region;
+            friend class Wakeup::Interface<Wakeup::Noop>::Region<Region <T> >;
 
-            inline size_t & operator[] (size_t position)
+            inline T & operator[] (size_t position)
             {
               return _array[position];
             };
@@ -47,7 +48,7 @@ namespace PAMI
 
               mmrc = mm->memalign ((void **) & _array,
                                    16,                      // align
-                                   count * sizeof(size_t),  // bytes
+                                   count * sizeof(T),       // bytes
                                    key,                     // unique
                                    Memory::MemoryManager::memzero,
                                    NULL);                   // cookie
@@ -55,8 +56,7 @@ namespace PAMI
               PAMI_assertf(mmrc == PAMI_SUCCESS, "memalign failed for noop wakeup resources, rc=%d\n", mmrc);
             };
 
-
-            size_t * _array;
+            T * _array;
 
         };
 

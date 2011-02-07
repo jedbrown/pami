@@ -52,8 +52,7 @@ namespace PAMI
             _head (NULL),
             _active (),
             _bounded_counter (),
-            _last_packet_produced (0),
-            _seq_num(0)
+            _last_packet_produced (0)
         {
           // Do a compile-time-assert that the fifo length is a power of two
           COMPILE_TIME_ASSERT(!(T_Size & (T_Size - 1)));
@@ -307,11 +306,10 @@ namespace PAMI
         // -----------------------------------------------------------------
         // Located in-place
         // -----------------------------------------------------------------
-        T_Wakeup * _wakeup;
-        typename T_Wakeup::Region _active;
-        T_Atomic       _bounded_counter;
-        size_t         _last_packet_produced;
-        uint8_t       _seq_num;
+        T_Wakeup                                    * _wakeup;
+        typename T_Wakeup::template Region<uint8_t>   _active;
+        T_Atomic                                      _bounded_counter;
+        size_t                                        _last_packet_produced;
     };
 
   };

@@ -31,6 +31,7 @@ namespace PAMI
 
       public:
 
+        template <class T_Region>
         class Region
         {
           protected:
@@ -38,7 +39,7 @@ namespace PAMI
             template <typename T>
             inline T & array (size_t position)
             {
-              return static_cast<typename T_Wakeup::Region*>(this)->operator[] (position);
+              return static_cast<T_Region*>(this)->operator[] (position);
             };
 
           public:
@@ -48,7 +49,7 @@ namespace PAMI
             ///
             /// \param [in] original Wakeup region to clone
             ///
-            inline void init (typename T_Wakeup::Region & original);
+            inline void init (T_Region & original);
 
             ///
             /// \brief Wakeup region allocation initializer interface
@@ -135,19 +136,21 @@ namespace PAMI
 #endif
 
     template <class T_Wakeup>
-    void Interface<T_Wakeup>::Region::init (typename T_Wakeup::Region & original)
+    template <class T_Region>
+    void Interface<T_Wakeup>::Region<T_Region>::init (T_Region & original)
     {
-      static_cast<typename T_Wakeup::Region*>(this)->init_impl(original);
+      static_cast<T_Region*>(this)->init_impl(original);
     };
 
     template <class T_Wakeup>
+    template <class T_Region>
     template <class T_MemoryManager>
-    void Interface<T_Wakeup>::Region::init (T_MemoryManager * mm,
-                                            char            * key,
-                                            size_t            count,
-                                            T_Wakeup        * wakeup)
+    void Interface<T_Wakeup>::Region<T_Region>::init (T_MemoryManager * mm,
+                                                      char            * key,
+                                                      size_t            count,
+                                                      T_Wakeup        * wakeup)
     {
-      static_cast<typename T_Wakeup::Region*>(this)->init_impl(mm, key, count, wakeup);
+      static_cast<T_Region*>(this)->init_impl(mm, key, count, wakeup);
     };
 
     template <class T_Wakeup>
