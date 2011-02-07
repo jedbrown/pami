@@ -84,8 +84,8 @@ namespace PAMI
               _doneShmemMcombLarge(0),
               _doneShmemMcastLarge(0),
               _shmsg(shmem_desc,  length),
-              _combineDone(false),
-              _phase(0)
+              _combineDone(false)
+//              _phase(0)
           {
             //TRACE_FN_ENTER();
             //TRACE_FN_EXIT();

@@ -153,7 +153,6 @@ namespace PAMI
                 if ((chunk%(_npeers-1) +1) == _local_rank){
 
                   quad_double_sum_16way(_rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, G_Srcs(0)+chunk*NumDblsPerChunk+offset_dbl,
-                  //quad_double_sum_16way_short(_rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, G_Srcs(0)+chunk*NumDblsPerChunk+offset_dbl,
                       G_Srcs(1)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(2)+chunk*NumDblsPerChunk+offset_dbl,
                       G_Srcs(3)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(4)+chunk*NumDblsPerChunk+offset_dbl,
                       G_Srcs(5)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(6)+chunk*NumDblsPerChunk+offset_dbl,
@@ -171,7 +170,6 @@ namespace PAMI
                 if (bytes%ChunkSize == 0)
                 {
                   quad_double_sum_16way(_rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, G_Srcs(0)+chunk*NumDblsPerChunk+offset_dbl,
-                  //quad_double_sum_16way_short(_rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, G_Srcs(0)+chunk*NumDblsPerChunk+offset_dbl,
                       G_Srcs(1)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(2)+chunk*NumDblsPerChunk+offset_dbl,
                       G_Srcs(3)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(4)+chunk*NumDblsPerChunk+offset_dbl,
                       G_Srcs(5)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(6)+chunk*NumDblsPerChunk+offset_dbl,
@@ -185,7 +183,6 @@ namespace PAMI
                 else
                 {
                   quad_double_sum_16way(_rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, G_Srcs(0)+chunk*NumDblsPerChunk+offset_dbl,
-                  //quad_double_sum_16way_short(_rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, G_Srcs(0)+chunk*NumDblsPerChunk+offset_dbl,
                       G_Srcs(1)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(2)+chunk*NumDblsPerChunk+offset_dbl,
                       G_Srcs(3)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(4)+chunk*NumDblsPerChunk+offset_dbl,
                       G_Srcs(5)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(6)+chunk*NumDblsPerChunk+offset_dbl,
@@ -203,7 +200,6 @@ namespace PAMI
             inline  bool  get_partition_info(unsigned npeers, unsigned local_rank, unsigned total_bytes, unsigned* offset_b,
                 unsigned* chunk_size_b)
             {
-              //for now assuming total_bytes is multiple of 64B
               unsigned num_min_chunks = total_bytes/MinChunkSize;
               unsigned end_bytes  = total_bytes%MinChunkSize;
               unsigned  rounds =  num_min_chunks/npeers; 
@@ -227,24 +223,7 @@ namespace PAMI
                   *chunk_size_b += end_bytes;
                 return true;
               }
-
               
-              /*if (rounds > 1)
-              {
-                *chunk_size_b = MinChunkSize*rounds;
-                *offset_b = MinChunkSize*rounds*local_rank;
-                return  true;
-              }
-              else
-              {
-                if (local_rank < num_min_chunks)
-                {
-                  *chunk_size_b = MinChunkSize;
-                  *offset_b = MinChunkSize*local_rank;
-                  return true;
-                }
-                return false;
-              }*/
             }
 
           public:
@@ -291,18 +270,16 @@ namespace PAMI
                 bytes_arrived = counter_curr - *counter_addr;
                 _controlB->bytes_incoming+= (unsigned)bytes_arrived;
 
-                memcpy((char*)_rcvbuf + bytes_so_far, (char*)buf + bytes_so_far, bytes_arrived);
-                //Core_memcpy_512(mybuf, buf);
-                //Core_memcpy(_rcvbuf, buf, _total_bytes);
-                //Core_memcpy((char*)_rcvbuf + bytes_so_far, (char*)buf + bytes_so_far, bytes_arrived);
+                //memcpy((char*)_rcvbuf + bytes_so_far, (char*)buf + bytes_so_far, bytes_arrived);
+                Core_memcpy((char*)_rcvbuf + bytes_so_far, (char*)buf + bytes_so_far, bytes_arrived);
               }
               else
               {
                 if (_controlB->bytes_incoming > bytes_so_far)
                 {
                   bytes_arrived = _controlB->bytes_incoming - bytes_so_far;
-                  memcpy((char*)_rcvbuf + bytes_so_far, (char*)buf + bytes_so_far, bytes_arrived);
-                  //Core_memcpy((char*)_rcvbuf + bytes_so_far, (char*)buf + bytes_so_far, bytes_arrived);
+                  //memcpy((char*)_rcvbuf + bytes_so_far, (char*)buf + bytes_so_far, bytes_arrived);
+                  Core_memcpy((char*)_rcvbuf + bytes_so_far, (char*)buf + bytes_so_far, bytes_arrived);
                 }
               }
 
@@ -329,7 +306,6 @@ namespace PAMI
                 bytes_arrived = counter_curr - *counter_addr;
                 _controlB->bytes_incoming+= (unsigned)bytes_arrived;
                 counter_curr -= bytes_arrived;
-                //printf("total bytes incoming:%d counter_current:%lu *counter_addr:%lu\n", _controlB->bytes_incoming, counter_curr, *counter_addr);
               }
               else
               {
@@ -337,19 +313,18 @@ namespace PAMI
                 
                 if (bytes_arrived > 0)
                 {
-                  //bytes_arrived = _controlB->bytes_incoming - bytes_so_far;
                   //memcpy((char*)_rcvbuf + bytes_so_far, (char*)buf + bytes_so_far, bytes_arrived);
                   Core_memcpy((char*)_rcvbuf + bytes_so_far, (char*)buf + bytes_so_far, bytes_arrived);
-                //printf("total bytes incoming:%d counter_current:%lu bytes_arrived:%lu ", _controlB->bytes_incoming, counter_curr, bytes_arrived);
-                //fflush(stdout);
-              
                   counter_curr -= bytes_arrived;
-                  //Core_memcpy_512((char*)_rcvbuf + bytes_so_far, (char*)buf + bytes_so_far);
                 }
               }
 
               if (counter_curr)
                 return PAMI_EAGAIN;
+      
+              _my_desc->signal_done();
+              if (local_rank == 0)
+                while (_my_desc->in_use()){};
 
               return PAMI_SUCCESS;
             }
@@ -411,7 +386,6 @@ namespace PAMI
 
                 }
 
-                //done_flag = true;
               }
                 done_flag = true;
               return PAMI_SUCCESS;
@@ -429,8 +403,6 @@ namespace PAMI
               offset_dbl  = offset_b >> 3;
               chunk_size_dbl = chunk_size_b >> 3;
 
-              //if (is_participant)
-              //printf("[%d]offset_dbl:%d chunk_size_dbl:%d\n", local_rank, offset_dbl, chunk_size_dbl);
               if (npeers == 4)
               {
                 if (is_participant)
@@ -453,11 +425,6 @@ namespace PAMI
                       G_Srcs(5)+offset_dbl, G_Srcs(6)+offset_dbl, G_Srcs(7)+offset_dbl, G_Srcs(8)+offset_dbl,
                       G_Srcs(9)+offset_dbl, G_Srcs(10)+offset_dbl, G_Srcs(11)+offset_dbl, G_Srcs(12)+offset_dbl,
                       G_Srcs(13)+offset_dbl, G_Srcs(14)+offset_dbl, G_Srcs(15)+offset_dbl, chunk_size_dbl);
-                  /*quad_double_sum_16way_short((double*)_controlB->buffer+ offset_dbl, G_Srcs(0)+offset_dbl, 
-                      G_Srcs(1)+offset_dbl, G_Srcs(2)+offset_dbl, G_Srcs(3)+offset_dbl, G_Srcs(4)+offset_dbl,
-                      G_Srcs(5)+offset_dbl, G_Srcs(6)+offset_dbl, G_Srcs(7)+offset_dbl, G_Srcs(8)+offset_dbl,
-                      G_Srcs(9)+offset_dbl, G_Srcs(10)+offset_dbl, G_Srcs(11)+offset_dbl, G_Srcs(12)+offset_dbl,
-                      G_Srcs(13)+offset_dbl, G_Srcs(14)+offset_dbl, G_Srcs(15)+offset_dbl, chunk_size_dbl);*/
                 }
               }
               else
@@ -467,10 +434,8 @@ namespace PAMI
 
               _my_desc->signal_done();
               while (_my_desc->in_use()){};
-              //if (local_rank == 0){
-                //_controlB->chunk_done[0] = 0;
+
               done_flag = true;
-              //}
               return PAMI_SUCCESS;
             }
 
@@ -499,16 +464,6 @@ namespace PAMI
               return PAMI_SUCCESS;
             }
 
-
-          /*  inline void* next_injection_buffer (uint64_t *bytes_available)
-            {
-              if (_controlB->chunk_done[0] == 0)
-              {
-                *bytes_available  = _total_bytes;
-                return  _shm_phy_addr;
-              }
-              return  NULL;  
-            }*/
 
             inline void* next_injection_buffer (uint64_t *bytes_available, unsigned total_bytes, unsigned npeers)
             {
@@ -549,12 +504,10 @@ namespace PAMI
 
               if (local_rank == 0)
               {
-                //_controlB->current_iter=0;
                 _controlB->bytes_incoming=0;
                 for (unsigned i=0; i < __global.mapping.tSize(); i++)
                 {
                   _controlB->chunk_done[i] = -1;
-                  //_controlB->chunks_copied[i] = 0;
                 }
               }
 

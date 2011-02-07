@@ -125,7 +125,6 @@ namespace PAMI
               _index(0),
               _gdev(*context.getProgressDevice())
           {
-            printf("Initializing Collective2DeviceBase index:%d\n", _index);
             //The collective state must be initialized by task 0 context 0
             if (__global.mapping.t() == 0)
             {
@@ -248,9 +247,6 @@ namespace PAMI
                                         unsigned                   classroute)
           {
 
-            printf("posting collective bytes:%u, src:%p dst:%p \n", bytes, src, dst);
-            printf("counter:%lu\n", _collstate._colCounter);
-
             CollectiveDputMcomb2Device *msg = new (&_mcomb_msg) CollectiveDputMcomb2Device (_mucontext,
                 cb_done,
                 cookie,
@@ -262,8 +258,6 @@ namespace PAMI
                 &_collstate._colCounter,
                 &_shmem_desc[_index]
                 );
-          
-
 
             _index = (++_index)%3;
 
