@@ -22,11 +22,11 @@ namespace PAMI
     namespace Shmem
     {
 
-//#define DESCRIPTOR_FIFO_SIZE    16
-#define DESCRIPTOR_FIFO_SIZE   64
+#define DESCRIPTOR_FIFO_SIZE    4 
+//#define DESCRIPTOR_FIFO_SIZE   64
 //#define DESCRIPTOR_FIFO_SIZE  128
 //#define	BUFFER_SIZE_PER_TASK	256
-#define	BUFFER_SIZE_PER_TASK  64	
+#define	BUFFER_SIZE_PER_TASK  1024	
 #define NUM_LOCAL_TASKS		16
 
 

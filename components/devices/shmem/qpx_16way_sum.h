@@ -917,7 +917,7 @@ inline unsigned quad_double_sum_16way(double* dst, double* src0, double *src1, d
   
   unsigned  dbls = 0;
 
-  if (num_dbls <= 32)
+  if (num_dbls <= 128)
    dbls = _quad_double_sum_16way_align32B_short(dst, src0, src1, src2, src3, src4, src5, src6, src7, src8, 
                                           src9, src10, src11, src12, src13, src14, src15, num_dbls);
   else

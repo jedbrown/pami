@@ -1,0 +1,84 @@
+///
+/// \file components/devices/bgq/mu2/model/CollectiveMcomb2Device.h
+/// \brief ???
+///
+#ifndef __components_devices_bgq_mu2_model_CollectiveMcomb2Device_h__
+#define __components_devices_bgq_mu2_model_CollectiveMcomb2Device_h__
+
+#include "components/devices/bgq/mu2/Context.h"
+#include "components/devices/bgq/mu2/model/Collective2DeviceBase.h"
+#include "components/devices/bgq/mu2/model/MU_Collective_OP_DT_Table.h"
+#include "sys/pami.h"
+
+namespace PAMI
+{
+  namespace Device
+  {
+    namespace MU
+    {
+      static const size_t mcomb_state_bytes_2dev = 0;
+      class CollectiveMcomb2Device: public Collective2DeviceBase,
+          public Interface::MulticombineModel < CollectiveMcomb2Device, MU::Context, mcomb_state_bytes_2dev >
+      {
+        public:
+          static const size_t sizeof_msg = mcomb_state_bytes_2dev;
+
+          CollectiveMcomb2Device (pami_client_t    client,
+                                          pami_context_t   context,
+                                          MU::Context                 & device,
+                                          pami_result_t               & status) :
+              Collective2DeviceBase(device, status),
+              Interface::MulticombineModel<CollectiveMcomb2Device, MU::Context, mcomb_state_bytes_2dev>  (device, status)
+          {
+
+          }
+
+          pami_result_t postMulticombineImmediate_impl(size_t                   client,
+                                                       size_t                   context,
+                                                       pami_multicombine_t    * mcombine,
+                                                       void                   * devinfo = NULL)
+          {
+            unsigned sizeoftype =  mu_collective_size_table[mcombine->dtype];
+            unsigned bytes      =  mcombine->count * sizeoftype;
+            unsigned op = mu_collective_op_table[mcombine->dtype][mcombine->optor];
+
+            if (op == unsupported_operation)
+              return PAMI_ERROR; //Unsupported operation
+
+            unsigned classroute = 0;
+
+            if (devinfo)
+              classroute = ((uint32_t)(uint64_t)devinfo) - 1;
+
+            PipeWorkQueue *spwq = (PipeWorkQueue *) mcombine->data;
+            PipeWorkQueue *dpwq = (PipeWorkQueue *) mcombine->results;
+            
+
+            return Collective2DeviceBase::postCollective (bytes,
+                                                           spwq,
+                                                           dpwq,
+                                                           mcombine->cb_done.function,
+                                                           mcombine->cb_done.clientdata,
+                                                           op,
+                                                           sizeoftype,
+                                                          classroute);
+          }
+
+
+          /// \see PAMI::Device::Interface::MulticombineModel::postMulticombine
+          pami_result_t postMulticombine_impl(uint8_t (&state)[mcomb_state_bytes_2dev],
+                                              size_t               client,
+                                              size_t               context,
+                                              pami_multicombine_t *mcombine,
+                                              void                *devinfo = NULL)
+          {
+            //TRACE_FN_ENTER();
+            // Get the source data buffer/length and validate (assert) inputs
+            return PAMI_ERROR;
+          }
+      };
+    };
+  };
+};
+
+#endif

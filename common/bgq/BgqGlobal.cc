@@ -46,11 +46,13 @@ PAMI::Device::CommThread::Factory __CommThreadGlobal(&__global.mm, &__global.l2a
 
 
 #include "components/devices/bgq/mu2/model/CollectiveMulticastDmaModel.h"
+#include "components/devices/bgq/mu2/model/Collective2DeviceBase.h"
 
 char *PAMI::Device::MU::CollectiveMulticastDmaModel::_zeroBuf;
 uint32_t PAMI::Device::MU::CollectiveMulticastDmaModel::_zeroBytes;
 
 PAMI::Device::MU::CollectiveDmaModelBase::CollState PAMI::Device::MU::CollectiveDmaModelBase::_collstate;
+PAMI::Device::MU::Collective2DeviceBase::CollState PAMI::Device::MU::Collective2DeviceBase::_collstate;
 
 
 //
