@@ -330,65 +330,196 @@ extern "C"
   /*****************************************************************************/
 
   /**
-   * \brief Options for bi-state dispatch hints
+   * \brief Options for dispatch and send hints
+   *
+   * \see pami_dispatch_hint_t
+   * \see pami_send_hint_t
    */
-  enum
+  typedef enum
     {
-      PAMI_HINT2_OFF   = 0, /**< This turns the option off. */
-      PAMI_HINT2_ON    = 1  /**< This turns the option on. */
-    };
+      PAMI_HINT_DEFAULT = 0, /**< This hint leaves the option up to the PAMI implementation to choose. */
+      PAMI_HINT_ENABLE  = 1, /**< A hint that the implementation should enable this option.  */
+      PAMI_HINT_DISABLE = 2, /**< A hint that the implementation should disable this option. */
+      PAMI_HINT_INVALID = 3  /**< An invalid hint value provided for 2 bit completeness.     */ 
+    } pami_hint_t;
 
   /**
-   * \brief Options for tri-state dispatch hints
+   * \brief "hard" hints for registering a send dispatch
    *
-   * Several dispatch hints accept have a yes/no/maybe sort of
-   * approach.
-   */
-  enum
-    {
-      PAMI_HINT3_DEFAULT   = 0, /**< This hint leaves the option up to the PAMI implementation to choose. */
-      PAMI_HINT3_FORCE_ON  = 1, /**< This allows the user to force an option to be used. */
-      PAMI_HINT3_FORCE_OFF = 2  /**< The user can force the implementation to not use this option. */
-    };
-
-  /**
-   * \brief Hints for sending a message
-   *
-   * \todo better names for the hints
-   * \todo better documentation for the hints
+   * These hints are considered 'hard' hints that must be honored by the
+   * implementation or the dispatch set must fail and return an error.
+   * 
+   * Alternatively, hints may be specified for each send operation. Hints
+   * specified in this way are considered 'soft' hints and may be silently
+   * ignored by the implementation during a send operation.
+   * 
+   * Hints are used to improve performance by allowing the send implementation
+   * to safely assume that certain use cases will not ever, or will always,
+   * be valid.
+   * 
+   * \note Hints should be specified with the pami_hint_t enum values.
+   * 
+   * \see pami_send_hint_t
+   * \see PAMI_Dispatch_set()
+   * 
    */
   typedef struct
   {
-    /* The following hints use the PAMI_HINT2_* values */
-    unsigned buffer_registered : 1; /**< Send and receive buffers are ready for RDMA operations  */
-    unsigned consistency       : 1; /**< Force match ordering semantics                          */
-    unsigned interrupt_on_recv : 1; /**< Interrupt the remote task when the first packet arrives */
-    unsigned no_local_copy     : 1; /**< Disable PAMI making a local copy of data                */
-    unsigned no_long_header    : 1; /**< Disable long header support                             */
-    unsigned recv_contiguous   : 1; /**< Assert that receives on this dispatch will all be
-                                         contiguous using PAMI_TYPE_CONTIGUOUS with a zero offset.
-                                         If specified during PAMI_Dispatch_set(), there is no need
-                                         to set pami_recv_t::type nor pami_recv_t::offset for the
-                                         receive.                                                */
-    unsigned recv_copy         : 1; /**< Assert that receives on this dispatch will all use
-                                         PAMI_DATA_COPY and a \c NULL data cookie. If specified
-                                         during PAMI_Dispatch_set(), there is no need set
-                                         pami_recv_t::data_fn nor pami_recv_t::data_cookie for the
-                                         receive                                                 */
-    unsigned recv_immediate    : 1; /**< Assert that sends will result in an 'immediate' receive */
+    /**
+     * \brief Parallelize communication across multiple contexts
+     * 
+     * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
+     * the send implementation will use other contexts to aid in the
+     * communication operation. It is required that all contexts be advanced.
+     * 
+     * If specified as pami_hint_t::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
+     * the send implementation will not use other contexts to aid in the
+     * communication operation. It is no long required that all contexts be
+     * advanced, only the contexts with active communication must be advanced.
+     * 
+     */
+    unsigned  multicontext      : 2;
+    
+    /**
+     * \brief Long (multi-packet) header support
+     * 
+     * If specified as pami_hint_t::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
+     * the send implementation will not attempt to send more than a "single
+     * packet" of header information.  This requires that that only up to
+     * pami_attribute_name_t::PAMI_DISPATCH_RECV_IMMEDIATE_MAX bytes of
+     * header information is sent. Failure to limit the number of header bytes
+     * sent will result in undefined behavior.
+     */
+    unsigned  long_header       : 2;
+    
+    /**
+     * \brief All asynchronous receives will be contiguous using
+     *        PAMI_TYPE_CONTIGUOUS with a zero offset.
+     * 
+     * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
+     * it is no longer required to set pami_recv_t::type nor
+     * pami_recv_t::offset for the receive.
+     */
+    unsigned  recv_contiguous   : 2; 
+                                        
+    /**
+     * \brief All asynchronous receives will use PAMI_DATA_COPY and a \c NULL data cookie
+     * 
+     * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
+     * it is no longer required to set pami_recv_t::data_fn nor
+     * pami_recv_t::data_cookie for the receive.
+     */                                
+    unsigned  recv_copy         : 2;
+                                      
+    /** 
+     * \brief All sends will result in an 'immediate' receive
+     * 
+     * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
+     * the dispatch function will always receive as 'immediate', and it is no
+     * longer required to ever initialize the pami_recv_t output parameters. It
+     * is also required that only up to
+     * pami_attribute_name_t::PAMI_DISPATCH_RECV_IMMEDIATE_MAX bytes of combined
+     * header and data is sent. Failure to limit the number of bytes sent will
+     * result in undefined behavior.
+     * 
+     * If specified as pami_hint_t::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
+     * the dispatch function will never receive as 'immediate', even for
+     * zero-byte messages, and it is now required to always initialize the
+     * pami_recv_t output parameters for every receive.
+     */                                  
+    unsigned  recv_immediate    : 2;
+    
+    /**
+     * \brief Force match ordering semantics
+     * 
+     * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
+     * the dispatch functions for all communication between a pair of endpoints
+     * will always be invoked in the same order as the send operations were
+     * invoked on the context associated with the origin endpoint.
+     */
+    unsigned  consistency       : 2;
+    
+    /**
+     * \brief Send and receive buffers are ready for RDMA operations
+     **/
+    unsigned  buffer_registered : 2;
+    
+    /**
+     * \brief Interrupt the remote task when the first packet arrives
+     **/
+    unsigned  interrupt_on_recv : 2; 
+    
+    /**
+     * \brief Communication uses rdma operations
+     */
+    unsigned  use_rdma          : 2;
+    
+    /**
+     * \brief Communication uses shared memory optimizations
+     */
+    unsigned  use_shmem         : 2;
 
-    /* The following hints use the PAMI_HINT3_* values */
-    unsigned use_rdma          : 2; /**< Enable/Disable rdma operations                          */
-    unsigned use_shmem         : 2; /**< Enable/Disable shared memory optimizations              */
-    unsigned multicontext      : 2; /**< Parallelize communication across multiple contexts      */
+  } __attribute__((__packed__)) pami_dispatch_hint_t;
+
+  /**
+   * \brief "Soft" hints for sending a message
+   *
+   * These hints are considered 'soft' hints that may be silently ignored
+   * by the implementation during a send operation.
+   * 
+   * Alternatively, hints may be specified when a send dispatch identifier
+   * is registered using PAMI_Dispatch_set().  Hints set in this way are
+   * considered 'hard' hints and must be honored by the implementation,
+   * or the dispatch set must fail and return an error.
+   * 
+   * \note Hints should be specified with the pami_hint_t enum values.
+   * 
+   * \see pami_dispatch_hint_t
+   * \see PAMI_Send()
+   * \see PAMI_Send_typed()
+   * \see PAMI_Send_immediate()
+   */
+  typedef struct
+  {
+    unsigned reserved          : 12; /**< \brief Reserved for future use. */
+    
+    /**
+     * \brief Send and receive buffers are ready for RDMA operations
+     * \see   pami_dispatch_hint_t::buffer_registered
+     **/
+    unsigned buffer_registered : 2;
+    
+    /**
+     * \brief Interrupt the remote task when the first packet arrives
+     * \see   pami_dispatch_hint_t::interrupt_on_recv
+     **/
+    unsigned interrupt_on_recv : 2;
+    
+    /**
+     * \brief Communication uses rdma operations
+     * \see   pami_dispatch_hint_t::use_rdma
+     **/
+    unsigned use_rdma          : 2;
+    
+    /**
+     * \brief Communication uses shared memory optimizations
+     * \see   pami_dispatch_hint_t::use_shmem
+     **/
+    unsigned use_shmem         : 2;
+
   } __attribute__((__packed__)) pami_send_hint_t;
 
   typedef struct
   {
-    unsigned multicontext      : 2; /**< Parallelize communication across multiple contexts      */
+    /**
+     * \brief Parallelize communication across multiple contexts
+     * \see   pami_dispatch_hint_t::multicontext
+     **/
+    unsigned multicontext      : 2;
+    
+    unsigned reserved          : 18; /**< \brief Reserved for future use. */
+    
   } __attribute__((__packed__)) pami_collective_hint_t;
-
-
 
   /**
    * \brief Active message send common parameters structure
@@ -2581,14 +2712,6 @@ extern "C"
 
   /** \} */ /* end of "datatype" group */
 
-  typedef union
-  {
-    pami_dispatch_p2p_function   p2p;
-    pami_dispatch_ambroadcast_function ambroadcast;
-    pami_dispatch_amscatter_function amscatter;
-    pami_dispatch_amreduce_function amreduce;
-  } pami_dispatch_callback_function;
-
   /*****************************************************************************/
   /**
    * \defgroup dispatch pami dispatch interface
@@ -2598,26 +2721,13 @@ extern "C"
    */
   /*****************************************************************************/
 
-  /**
-   * \brief PAMI type of dispatch
-   */
-  typedef enum
+  typedef union
   {
-    PAMI_P2P_SEND                /**< Point-to-point send         */
-  } pami_dispatch_type_t;
-
-  /**
-   * \brief Hints for dispatch
-   *
-   */
-  typedef struct
-  {
-    pami_dispatch_type_t    type;      /**< Type of dispatch reqistered    */
-    union{
-      pami_send_hint_t      send;
-    }                      hint;      /**< Type-specific hints            */
-    void*                  config;    /**< Type-specific additional config*/
-  } pami_dispatch_hint_t;
+    pami_dispatch_p2p_function         p2p;
+    pami_dispatch_ambroadcast_function ambroadcast;
+    pami_dispatch_amscatter_function   amscatter;
+    pami_dispatch_amreduce_function    amreduce;
+  } pami_dispatch_callback_function;
 
   /**
    * \brief Initialize the dispatch function for a dispatch identifier.
@@ -2647,7 +2757,7 @@ extern "C"
                                    size_t                      dispatch,
                                    pami_dispatch_callback_function fn,
                                    void                      * cookie,
-                                   pami_send_hint_t            options);
+                                   pami_dispatch_hint_t        options);
 
   /**
    * \brief Initialize the dispatch functions for a dispatch id.

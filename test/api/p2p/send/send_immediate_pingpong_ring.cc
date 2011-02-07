@@ -249,7 +249,7 @@ int main (int argc, char ** argv)
 
   pami_result_t result;
   pami_dispatch_callback_function fn;
-  pami_send_hint_t options={};
+  pami_dispatch_hint_t options={};
   _dispatch_count = 0;
 
   pami_configuration_t configuration;

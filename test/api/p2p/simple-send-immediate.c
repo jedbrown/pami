@@ -91,7 +91,7 @@ int main (int argc, char ** argv)
   size_t dispatch = 10;
   pami_dispatch_callback_function fn;
   fn.p2p = test_dispatch;
-  pami_send_hint_t options = {};
+  pami_dispatch_hint_t options = {};
 
   size_t i;
 

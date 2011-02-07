@@ -94,7 +94,8 @@ int main ()
 
   pami_dispatch_callback_function fn;
   fn.p2p = test_dispatch;
-  pami_send_hint_t options = {0};
+  pami_dispatch_hint_t options = {0};
+  pami_send_hint_t hints = {0};
   volatile size_t expect = 0;
 
   size_t i;
@@ -146,7 +147,7 @@ int main ()
   parameters.send.header.iov_len  = 16;
   parameters.send.data.iov_base   = data;
   parameters.send.data.iov_len    = 1024;
-  parameters.send.hints           = options;
+  parameters.send.hints           = hints;
   parameters.events.cookie        = (void *) &active;
   parameters.events.local_fn      = decrement;
   parameters.events.remote_fn     = NULL;

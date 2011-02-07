@@ -291,7 +291,7 @@ static void *advance(void* c)
 static void init()
 {
   pami_configuration_t query;
-  pami_send_hint_t options = {consistency:1};
+  pami_dispatch_hint_t options = {consistency:PAMI_HINT_ENABLE};
 
   PAMI_Client_create("TEST", &client, NULL, 0);
 

@@ -279,15 +279,15 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  pami_send_hint_t options=null_send_hint;
+  pami_dispatch_hint_t options={};
 
 #ifdef USE_SHMEM_OPTION
-  options.use_shmem = PAMI_HINT3_FORCE_ON;
+  options.use_shmem = PAMI_HINT_ENABLE;
   fprintf (stderr, "##########################################\n");
   fprintf (stderr, "shared memory optimizations forced ON\n");
   fprintf (stderr, "##########################################\n");
 #elif defined(NO_SHMEM_OPTION)
-  options.use_shmem = PAMI_HINT3_FORCE_OFF;
+  options.use_shmem = PAMI_HINT_DISABLE;
   fprintf (stderr, "##########################################\n");
   fprintf (stderr, "shared memory optimizations forced OFF\n");
   fprintf (stderr, "##########################################\n");

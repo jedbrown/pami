@@ -779,10 +779,10 @@ namespace PAMI
         return algo->dispatch_set(dispatch, fn, cookie, options);
       }
 
-      inline pami_result_t dispatch_impl (size_t                     id,
+      inline pami_result_t dispatch_impl (size_t                          id,
                                           pami_dispatch_callback_function fn,
-                                          void                      * cookie,
-                                          pami_send_hint_t            options)
+                                          void                          * cookie,
+                                          pami_dispatch_hint_t            options)
       {
         pami_result_t result = PAMI_ERROR;
         TRACE_ERR((stderr, "Context::dispatch_impl .. _dispatch[%zu] = %p, options = %#X\n", id, _dispatch[id], *(unsigned*)&options));
@@ -792,21 +792,21 @@ namespace PAMI
         if (_dispatch[id] == NULL)
           {
             // either runtime options OR user-specified device only so we have to look at both
-            bool no_shmem  = (options.use_shmem == PAMI_HINT3_FORCE_OFF) || (!__global.useshmem() && __global.useMU());
-            bool use_shmem = (options.use_shmem == PAMI_HINT3_FORCE_ON ) || (!__global.useMU() && __global.useshmem());
+            bool no_shmem  = (options.use_shmem == PAMI_HINT_DISABLE) || (!__global.useshmem() && __global.useMU());
+            bool use_shmem = (options.use_shmem == PAMI_HINT_ENABLE ) || (!__global.useMU() && __global.useshmem());
 
             TRACE_ERR((stderr, "global.useshmem: %d, global.useMU: %d\n",
                        (int)__global.useshmem(), (int)__global.useMU()));
             TRACE_ERR((stderr, "options.use_shmem: %d, no_shmem: %d, use_shmem: %d\n",
                        (int)options.use_shmem, (int)no_shmem, (int)use_shmem));
 
-            if (no_shmem == 1)
+            if (no_shmem == true)
               {
                 if (__global.useMU())
                   {
                     TRACE_ERR((stderr, "Only registering MU pt2pt protocols\n"));
 
-                    if (options.no_long_header == 1)
+                    if (options.long_header == PAMI_HINT_DISABLE)
                       {
                         _dispatch[id] = (Protocol::Send::Send *)
                                         Protocol::Send::Eager <Device::MU::PacketModel, MUDevice, false>::
@@ -824,14 +824,14 @@ namespace PAMI
                     PAMI_abortf("No non-shmem protocols available.");
                   }
               }
-            else if (use_shmem == 1)
+            else if (use_shmem == true)
               {
                 // Register only the "shmem" eager send protocol
                 if (__global.useshmem())
                   {
                     TRACE_ERR((stderr, "Only register shmem pt2pt protocols\n"));
 
-                    if (options.no_long_header == 1)
+                    if (options.long_header == PAMI_HINT_DISABLE)
                       {
                         _dispatch[id] = (Protocol::Send::Send *)
                                         Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false>::
@@ -854,7 +854,7 @@ namespace PAMI
                 // Register both the "mu" and "shmem" eager send protocols
                 if (__global.useshmem() && __global.useMU())
                   {
-                    if (options.no_long_header == 1)
+                    if (options.long_header == PAMI_HINT_DISABLE)
                       {
                         Protocol::Send::Eager <Device::MU::PacketModel, MUDevice, false> * eagermu =
                           Protocol::Send::Eager <Device::MU::PacketModel, MUDevice, false>::

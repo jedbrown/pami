@@ -537,10 +537,10 @@ namespace PAMI
       }
 
 
-      inline pami_result_t dispatch_impl (size_t                      id,
+      inline pami_result_t dispatch_impl (size_t                          id,
                                           pami_dispatch_callback_function fn,
-                                          void                      * cookie,
-                                          pami_send_hint_t            options)
+                                          void                          * cookie,
+                                          pami_dispatch_hint_t            options)
       {
         pami_result_t result = PAMI_ERROR;
         TRACE_ERR((stderr, ">> dispatch_impl(), _dispatch[%zu] = %p\n", id, _dispatch[id]));
@@ -551,7 +551,7 @@ namespace PAMI
           {
             TRACE_ERR((stderr, "   dispatch_impl(), before protocol init\n"));
 
-            if (options.no_long_header == 1)
+            if (options.long_header == PAMI_HINT_DISABLE)
               {
                 _dispatch[id] = _protocol.allocateObject ();
                 new (_dispatch[id])

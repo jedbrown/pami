@@ -411,11 +411,11 @@ extern "C" pami_result_t PAMI_Context_update (pami_context_t        context,
 
 
 
-extern "C" pami_result_t PAMI_Dispatch_set (pami_context_t              context,
-                                          size_t                     dispatch,
-                                          pami_dispatch_callback_function fn,
-                                          void                     * cookie,
-                                          pami_send_hint_t            options)
+extern "C" pami_result_t PAMI_Dispatch_set (pami_context_t             context,
+                                            size_t                     dispatch,
+                                            pami_dispatch_callback_function fn,
+                                            void                     * cookie,
+                                            pami_dispatch_hint_t       options)
 {
   PAMI::Context * ctx = (PAMI::Context *) context;
   return ctx->dispatch (dispatch, fn, cookie, options);

@@ -319,9 +319,9 @@ init()
 #endif
 
     pami_dispatch_callback_function _recv = {p2p:recv};
-    pami_send_hint_t options = {
-    consistency:    PAMI_HINT2_ON,
-    no_long_header: PAMI_HINT2_ON,
+    pami_dispatch_hint_t options = {
+    consistency: PAMI_HINT_ENABLE,
+    long_header: PAMI_HINT_DISABLE,
     };
     PAMI_Dispatch_set(contexts[i],
                       DISPATCH,

@@ -133,11 +133,11 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  pami_send_hint_t options;
+  pami_dispatch_hint_t options;
   pami_dispatch_callback_function fn;
   fn.p2p = test_dispatch;
 
-  options.no_long_header = 0;
+  options.long_header = PAMI_HINT_ENABLE;
   TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
   result = PAMI_Dispatch_set (context,
                              0,
@@ -150,7 +150,7 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  options.no_long_header = 1;
+  options.long_header = PAMI_HINT_DISABLE;
   TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
   result = PAMI_Dispatch_set (context,
                              3,
@@ -195,7 +195,7 @@ int main (int argc, char ** argv)
 
     /* Create task unique dispatch sets 1 & 2 */
     /* dispatch ID 1: task 0 no_long_header = 0, task n no_long_header = 1 */
-    options.no_long_header = 0;
+    options.long_header = PAMI_HINT_ENABLE;
     TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
     result = PAMI_Dispatch_set (context,
 				1,
@@ -209,7 +209,7 @@ int main (int argc, char ** argv)
     }
 
     /* dispatch ID 2: task 0 no_long_header = 1, task n no_long_header = 0 */
-    options.no_long_header = 1;
+    options.long_header = PAMI_HINT_DISABLE;
     TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
     result = PAMI_Dispatch_set (context,
 				2,
@@ -284,7 +284,7 @@ int main (int argc, char ** argv)
 
     /* Create task unique dispatch sets 1 & 2 */
     /* dispatch ID 1: task n no_long_header = 1, task 0 no_long_header = 0 */
-    options.no_long_header = 1;
+    options.long_header = PAMI_HINT_DISABLE;
     TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
     result = PAMI_Dispatch_set (context,
 				1,
@@ -298,7 +298,7 @@ int main (int argc, char ** argv)
     }
 
     /* dispatch ID 2: task n no_long_header = 0, task 0 no_long_header = 1 */
-    options.no_long_header = 0;
+    options.long_header = PAMI_HINT_ENABLE;
     TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
     result = PAMI_Dispatch_set (context,
 				2,

@@ -97,10 +97,11 @@ namespace PAMI
 
         inline pami_result_t collective (pami_xfer_t * parameters);
 
-        inline pami_result_t dispatch (size_t                     dispatch,
-                                      pami_dispatch_callback_function fn,
-                                      void                     * cookie,
-                                      pami_send_hint_t            options);
+        inline pami_result_t dispatch (size_t                          dispatch,
+                                       pami_dispatch_callback_function fn,
+                                       void                          * cookie,
+                                       pami_dispatch_hint_t            options);
+
         inline pami_result_t amcollective_dispatch(pami_algorithm_t            algorithm,
                                                   size_t                     dispatch,
                                                   pami_dispatch_callback_function fn,
@@ -336,10 +337,10 @@ namespace PAMI
     }
 
     template <class T_Context>
-    pami_result_t Context<T_Context>::dispatch (size_t                     dispatch,
-                                               pami_dispatch_callback_function fn,
-                                               void                     * cookie,
-                                               pami_send_hint_t            options)
+    pami_result_t Context<T_Context>::dispatch (size_t                          dispatch,
+                                                pami_dispatch_callback_function fn,
+                                                void                          * cookie,
+                                                pami_dispatch_hint_t            options)
     {
         return static_cast<T_Context*>(this)->dispatch_impl(dispatch,fn,cookie,options);
     }

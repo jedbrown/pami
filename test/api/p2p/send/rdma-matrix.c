@@ -219,11 +219,11 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  pami_send_hint_t options;
+  pami_dispatch_hint_t options;
   pami_dispatch_callback_function fn;
   fn.p2p = test_dispatch;
 
-  options.use_rdma = 0;
+  options.use_rdma = PAMI_HINT_DEFAULT;
   TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
   result = PAMI_Dispatch_set (context,
                              0,
@@ -236,7 +236,7 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  options.use_rdma = 1;
+  options.use_rdma = PAMI_HINT_ENABLE;
   TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
   result = PAMI_Dispatch_set (context,
                              5,
@@ -249,7 +249,7 @@ int main (int argc, char ** argv)
     return 1;
   }
 
-  options.use_rdma = 2;
+  options.use_rdma = PAMI_HINT_DISABLE;
   TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
   result = PAMI_Dispatch_set (context,
                              10,
@@ -264,7 +264,7 @@ int main (int argc, char ** argv)
 
 
 
-  options.use_rdma = 3;
+  options.use_rdma = PAMI_HINT_INVALID;
   TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
   result = PAMI_Dispatch_set (context,
                              3,
@@ -345,7 +345,7 @@ int main (int argc, char ** argv)
     fprintf(stderr, "======== Combinations of use_rdma hints that should pass  ========\n");
 
     /* Create task unique dispatch sets */
-    options.use_rdma = 0;
+    options.use_rdma = PAMI_HINT_DEFAULT;
     TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
     result = PAMI_Dispatch_set (context,
 				1,
@@ -358,7 +358,7 @@ int main (int argc, char ** argv)
       return 1;
     }
 
-    options.use_rdma = 0;
+    options.use_rdma = PAMI_HINT_DEFAULT;
     TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
     result = PAMI_Dispatch_set (context,
 				2,
@@ -371,7 +371,7 @@ int main (int argc, char ** argv)
       return 1;
     }
 
-    options.use_rdma = 1;
+    options.use_rdma = PAMI_HINT_ENABLE;
     TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
     result = PAMI_Dispatch_set (context,
 				4,
@@ -384,7 +384,7 @@ int main (int argc, char ** argv)
       return 1;
     }
 
-    options.use_rdma = 1;
+    options.use_rdma = PAMI_HINT_ENABLE;
     TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
     result = PAMI_Dispatch_set (context,
 				6,
@@ -397,7 +397,7 @@ int main (int argc, char ** argv)
       return 1;
     }
 
-    options.use_rdma = 2;
+    options.use_rdma = PAMI_HINT_DISABLE;
     TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
     result = PAMI_Dispatch_set (context,
 				8,
@@ -410,7 +410,7 @@ int main (int argc, char ** argv)
       return 1;
     }
 
-    options.use_rdma = 2;
+    options.use_rdma = PAMI_HINT_DISABLE;
     TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
     result = PAMI_Dispatch_set (context,
 				9,
@@ -499,7 +499,7 @@ int main (int argc, char ** argv)
   else { /* task id > 0 */
 
     /* Create task unique dispatch sets */
-    options.use_rdma = 1;
+    options.use_rdma = PAMI_HINT_ENABLE;
     TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
     result = PAMI_Dispatch_set (context,
 				1,
@@ -512,7 +512,7 @@ int main (int argc, char ** argv)
       return 1;
     }
 
-    options.use_rdma = 2;
+    options.use_rdma = PAMI_HINT_DISABLE;
     TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
     result = PAMI_Dispatch_set (context,
 				2,
@@ -525,7 +525,7 @@ int main (int argc, char ** argv)
       return 1;
     }
 
-    options.use_rdma = 0;
+    options.use_rdma = PAMI_HINT_DEFAULT;
     TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
     result = PAMI_Dispatch_set (context,
 				4,
@@ -538,7 +538,7 @@ int main (int argc, char ** argv)
       return 1;
     }
 
-    options.use_rdma = 2;
+    options.use_rdma = PAMI_HINT_DISABLE;
     TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
     result = PAMI_Dispatch_set (context,
 				6,
@@ -551,7 +551,7 @@ int main (int argc, char ** argv)
       return 1;
     }
 
-    options.use_rdma = 0;
+    options.use_rdma = PAMI_HINT_DEFAULT;
     TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
     result = PAMI_Dispatch_set (context,
 				8,
@@ -564,7 +564,7 @@ int main (int argc, char ** argv)
       return 1;
     }
 
-    options.use_rdma = 1;
+    options.use_rdma = PAMI_HINT_ENABLE;
     TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
     result = PAMI_Dispatch_set (context,
 				9,

@@ -182,7 +182,7 @@ static size_t disp_id[NUM_CONTEXTS];
 
 pami_result_t init_test_send(pami_client_t client, pami_context_t *ctx, size_t nctx) {
 	int x;
-	pami_send_hint_t h = {0};
+	pami_dispatch_hint_t h = {0};
 	test_init();
 	for (x = 0; x < nctx; ++x) {
 		disp_id[x] = 0;

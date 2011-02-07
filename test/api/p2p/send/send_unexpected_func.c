@@ -108,7 +108,7 @@ int main (int argc, char ** argv)
   size_t dispatch = 1;
   pami_dispatch_callback_function fn;
   fn.p2p = test_dispatch;
-  pami_send_hint_t options={};
+  pami_dispatch_hint_t options={};
   TRACE_ERR((stderr, "Before PAMI_Dispatch_set() .. &_recv_active = %p, recv_active = %u\n", &_recv_active, _recv_active));
   result = PAMI_Dispatch_set (context,
                               dispatch,
