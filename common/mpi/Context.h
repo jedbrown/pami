@@ -636,10 +636,10 @@ namespace PAMI
         return algo->dispatch_set(dispatch, fn, cookie, options);
       }
 
-      inline pami_result_t dispatch_impl (size_t                     id,
+      inline pami_result_t dispatch_impl (size_t                         id,
                                          pami_dispatch_callback_function fn,
-                                         void                      * cookie,
-                                         pami_send_hint_t            options)
+                                         void                          * cookie,
+                                         pami_dispatch_hint_t            options)
       {
         pami_result_t result = PAMI_ERROR;
         TRACE_ERR((stderr, ">> Context::dispatch_impl .. _dispatch[%zu][0] = %p, result = %d\n", id, _dispatch[id][0], result));
@@ -648,7 +648,7 @@ namespace PAMI
 
         if (_dispatch[id][0] == NULL)
           {
-            if (options.use_shmem == PAMI_HINT3_FORCE_OFF)
+            if (options.use_shmem == PAMI_HINT_DISABLE)
             {
               // Register only the "mpi" eager protocol
               //
@@ -658,10 +658,10 @@ namespace PAMI
               _dispatch[id][0] = (Protocol::Send::Send *)
                 MPIEagerBase::generate (id, fn.p2p, cookie, *_mpi, self, _context, _protocol, result);
             }
-            else if (options.use_shmem == PAMI_HINT3_FORCE_ON)
+            else if (options.use_shmem == PAMI_HINT_ENABLE)
             {
               // Register only the "shmem" eager protocol
-              if (options.no_long_header == 1)
+              if (options.long_header == PAMI_HINT_DISABLE)
                 {
                   _dispatch[id][0] = (Protocol::Send::Send *)
                     Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false>::
@@ -684,7 +684,7 @@ namespace PAMI
               MPIEagerBase * eagermpi =
                 MPIEagerBase::generate (id, fn.p2p, cookie, *_mpi, self, _context, _protocol, result);
 #ifdef ENABLE_SHMEM_DEVICE
-              if (options.no_long_header == 1)
+              if (options.long_header == PAMI_HINT_DISABLE)
                 {
                   Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false> * eagershmem =
                     Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false>::

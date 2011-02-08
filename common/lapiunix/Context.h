@@ -892,10 +892,10 @@ namespace PAMI
                                           _contextid);
         }
 
-      inline pami_result_t dispatch_impl (size_t                      id,
+      inline pami_result_t dispatch_impl (size_t                          id,
                                           pami_dispatch_callback_function fn,
-                                          void                      * cookie,
-                                          pami_send_hint_t            options)
+                                          void                          * cookie,
+                                          pami_dispatch_hint_t            options)
         {
           LapiImpl::Context  *cp = (LapiImpl::Context *)&_lapi_state[0];
           internal_error_t rc =

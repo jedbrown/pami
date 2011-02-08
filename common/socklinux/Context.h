@@ -218,10 +218,10 @@ namespace PAMI
         TRACE_ERR((stderr, "<< Context::Context()\n"));
       }
 
-      inline pami_result_t dispatch_impl (size_t                      id,
+      inline pami_result_t dispatch_impl (size_t                          id,
                                           pami_dispatch_callback_function fn,
-                                          void                      * cookie,
-                                          pami_send_hint_t            options)
+                                          void                          * cookie,
+                                          pami_dispatch_hint_t            options)
       {
         pami_result_t result = PAMI_ERROR;
         TRACE_ERR((stderr, ">> socklinux::dispatch_impl .. _dispatch[%zu] = %p, result = %d\n", id, _dispatch[id], result));
