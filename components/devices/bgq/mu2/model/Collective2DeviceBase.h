@@ -43,6 +43,7 @@ namespace PAMI
               int32_t                             _tBatID;            /// Bat id of the temporary buffer
               int32_t                             _pBatID;            /// payload bat id
               int32_t                             _cBatID;            /// counter bat id
+              uint64_t                            _counter_phy;
 
               CollState ()
               {

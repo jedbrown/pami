@@ -114,19 +114,24 @@ namespace PAMI
   Device::MU::MultisyncModel<false, false>,
   Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false> > MUAxialDputNI;
 
-  /*typedef BGQNativeInterfaceAS < MUDevice,
+  typedef BGQNativeInterfaceAS < MUDevice,
   Device::MU::CollectiveMulticastDmaModel,
   Device::MU::MUMultisyncModel,
   Device::MU::CollectiveMulticombineDmaModel
   //Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false>
+  > MUGlobalDputNI;
+
+/*  typedef BGQNativeInterfaceAS < MUDevice,
+  Device::MU::CollectiveMulticastDmaModel,
+  Device::MU::MUMultisyncModel,
+  Device::MU::CollectiveMcomb2Device
   > MUGlobalDputNI;*/
 
   typedef BGQNativeInterfaceAS < MUDevice,
   Device::MU::CollectiveMulticastDmaModel,
   Device::MU::MUMultisyncModel,
   Device::MU::CollectiveMcomb2Device
-  > MUGlobalDputNI;
-
+  > MUShmemGlobalDputNI;
   
   //typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::Native> ShmemCollDesc;
   //typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::BGQ::IndirectL2> ShmemCollDesc;

@@ -153,7 +153,7 @@ namespace PAMI
             {
               _desc.setOpCode (_op);
               _desc.setWordLength (_sizeoftype);
-              if (_length <= SHORT_MSG_CUTOFF)
+              if (_length <= SHORT_MSG_CUTOFF) 
                 _context.setThroughputCollectiveBufferBatEntry((uint64_t)_shmbuf_phy);
               else
                 _context.setThroughputCollectiveBufferBatEntry((uint64_t)rcvbuf_phy);

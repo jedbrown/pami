@@ -252,6 +252,23 @@ namespace PAMI
     CCMI::ConnectionManager::SimpleConnMgr > MUCollectiveDputMulticombineFactory;
 
     //----------------------------------------------------------------------------
+    // MU+Shmem allsided dput multicombine
+    //----------------------------------------------------------------------------
+    void MUShmemMcombCollectiveDputMetaData(pami_metadata_t *m)
+    {
+      new(m) PAMI::Geometry::Metadata("I0:MulticombineDput:-:MU:SHMEM");
+      //    m->check_correct.values.mustquery = 0;
+      m->check_correct.values.alldt     = 0;
+      m->check_correct.values.allop     = 0;
+      m->check_fn                       = MU::op_dt_metadata_function;
+      m->check_perf.values.hw_accel     = 1;
+    }
+
+    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite<true, MUShmemGlobalDputNI>,
+    MUShmemMcombCollectiveDputMetaData,
+    CCMI::ConnectionManager::SimpleConnMgr > MUShmemCollectiveDputMulticombineFactory;
+
+    //----------------------------------------------------------------------------
     // MU allsided multicast built on multicombine (BOR)
     //----------------------------------------------------------------------------
     void MUMcast3MetaData(pami_metadata_t *m)
@@ -661,7 +678,9 @@ namespace PAMI
               if (__global.mapping.t() == 0)
                 //We can now construct this on any process (as long as
                 //process 0 on each node in the job also calls it
-                _mu_global_dput_ni    = new (_mu_global_dput_ni_storage) MUGlobalDputNI (_mu_device, client, context, context_id, client_id, _dispatch_id);
+               _mu_global_dput_ni    = new (_mu_global_dput_ni_storage) MUGlobalDputNI (_mu_device, client, context, context_id, client_id, _dispatch_id);
+                
+                _mu_shmem_global_dput_ni    = new (_mu_shmem_global_dput_ni_storage) MUShmemGlobalDputNI (_mu_device, client, context, context_id, client_id, _dispatch_id);
 
               _mu_ammulticast_ni    = new (_mu_ammulticast_ni_storage) MUAMMulticastNI (_mu_device, client, context, context_id, client_id, _dispatch_id);
 
@@ -687,6 +706,8 @@ namespace PAMI
 
               _mucollectivedputmulticastfactory    = new (_mucollectivedputmulticaststorage ) MUCollectiveDputMulticastFactory(&_sconnmgr, _mu_global_dput_ni);
               _mucollectivedputmulticombinefactory    = new (_mucollectivedputmulticombinestorage ) MUCollectiveDputMulticombineFactory(&_sconnmgr, _mu_global_dput_ni);	      
+
+              _mushmemcollectivedputmulticombinefactory    = new (_mushmemcollectivedputmulticombinestorage ) MUShmemCollectiveDputMulticombineFactory(&_sconnmgr, _mu_shmem_global_dput_ni);	      
 
               if (_axial_shmem_mu_dput_ni)
                 {
@@ -833,8 +854,13 @@ namespace PAMI
                   if (_mucollectivedputmulticastfactory && __global.topology_local.size() == 1)
                     geometry->addCollective(PAMI_XFER_BROADCAST,  _mucollectivedputmulticastfactory, _context_id);
 
-                  //if (_mucollectivedputmulticombinefactory && __global.topology_local.size() == 1)
+                  if (_mucollectivedputmulticombinefactory && __global.topology_local.size() == 1)
                     geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,  _mucollectivedputmulticombinefactory, _context_id);
+
+                  if (_mushmemcollectivedputmulticombinefactory && ((__global.topology_local.size() == 4) || 
+                                                                    (__global.topology_local.size() == 8) ||
+                                                                    (__global.topology_local.size() == 16)))
+                    geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,  _mushmemcollectivedputmulticombinefactory, _context_id);
 
 #if 0  // allgatherv hangs 
 
@@ -1082,6 +1108,9 @@ namespace PAMI
         MUGlobalDputNI                                 *_mu_global_dput_ni;
         uint8_t                                         _mu_global_dput_ni_storage [sizeof(MUGlobalDputNI)];
 
+        MUShmemGlobalDputNI                            *_mu_shmem_global_dput_ni;
+        uint8_t                                         _mu_shmem_global_dput_ni_storage [sizeof(MUShmemGlobalDputNI)];
+
         MUAMMulticastNI                                 *_mu_ammulticast_ni;
         uint8_t                                         _mu_ammulticast_ni_storage [sizeof(MUAMMulticastNI)];
 
@@ -1135,6 +1164,9 @@ namespace PAMI
 
         MUCollectiveDputMulticombineFactory            *_mucollectivedputmulticombinefactory;
         uint8_t                                         _mucollectivedputmulticombinestorage[sizeof(MUCollectiveDputMulticombineFactory)];
+
+        MUShmemCollectiveDputMulticombineFactory            *_mushmemcollectivedputmulticombinefactory;
+        uint8_t                                         _mushmemcollectivedputmulticombinestorage[sizeof(MUShmemCollectiveDputMulticombineFactory)];
 
         MURectangleDput1ColorBroadcastFactory          *_mu_rectangle_1color_dput_broadcast_factory;
         uint8_t                                         _mu_rectangle_1color_dput_broadcast_factory_storage[sizeof(MURectangleDput1ColorBroadcastFactory)];
