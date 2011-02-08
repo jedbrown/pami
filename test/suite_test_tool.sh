@@ -225,7 +225,7 @@ cleanExit ()
 {
 
     # Cancel any FPGA jobs
-    if [ "${run_type}" == 'runFpga' ]
+    if [ "${run_type}" == 'runFpga' ] && [ $run -eq 1 ]
     then
 	llJobs 'cancel'
     fi
@@ -3011,14 +3011,16 @@ fi
 # --- Set and verify floor vars ---
 # Set cur_floor
 arch=$(uname -p)
-cur_base='/bgsys/drivers'
+#cur_base='/bgsys/drivers'  # until x86 systems are updated
 
 if [ "${arch}" == 'ppc64' ]
 then
-    cur_floor=$(readlink -e "${cur_base}/ppcfloor" )
-elif [ "$arch" == 'x86_64' ]
+#    cur_floor=$(readlink -e "${cur_base}/ppcfloor" ) 
+    cur_floor=$(readlink -e "/bgsys/drivers/ppcfloor" ) # until x86 systems are updated
+elif [ "${arch}" == 'x86_64' ]
 then
-    cur_floor=$(readlink -e "${cur_base}/x86_64.floor" )
+#    cur_floor=$(readlink -e "${cur_base}/x86_64.floor" ) 
+    cur_floor=$(readlink -e "/bgsys/bgq/drivers/x86_64.floor" ) # until x86 systems are updated
 else
     echo "ERROR (E): Unknown arch (${arch})!! Can't determine current floor. Exiting."
     exit 1
