@@ -77,6 +77,73 @@ namespace PAMI
             return PAMI_ERROR;
           }
       };
+
+      static const size_t mcast_state_bytes_2dev = 0;
+      class CollectiveMcast2Device: public Collective2DeviceBase,
+          public Interface::MulticastModel < CollectiveMcast2Device, MU::Context, mcast_state_bytes_2dev >
+      {
+        public:
+          static const size_t sizeof_msg = mcast_state_bytes_2dev;
+
+          CollectiveMcast2Device (pami_client_t    client,
+              pami_context_t   context,
+              MU::Context                 & device,
+              pami_result_t               & status) :
+            Interface::MulticastModel<CollectiveMcast2Device, MU::Context, mcast_state_bytes_2dev>  (device, status)
+        { }
+
+          pami_result_t postMulticastImmediate_impl(size_t                client,
+              size_t                context,
+              pami_multicast_t    * mcast,
+              void                * devinfo = NULL)
+          { 
+            return PAMI_ERROR; 
+          }
+          pami_result_t postMulticast_impl(uint8_t (&state)[mcast_state_bytes_2dev],
+              size_t            client,
+              size_t            context,
+              pami_multicast_t *mcast,
+              void             *devinfo = NULL)
+          {
+            //TRACE_FN_ENTER();
+            return PAMI_ERROR;
+            //TRACE_FN_EXIT();
+          }
+
+      };
+
+      class CollectiveMsync2Device : public Interface::MultisyncModel<CollectiveMsync2Device, MU::Context, 0>
+      {
+      public:
+	static const size_t sizeof_msg = 0;
+
+	CollectiveMsync2Device (pami_client_t     client,
+			  pami_context_t    context,
+			  MU::Context     & mucontext,
+			  pami_result_t   & status):
+	Interface::MultisyncModel<CollectiveMsync2Device, MU::Context, 0> (mucontext, status)
+	  {	    
+	  } 
+	
+	/// \see PAMI::Device::Interface::MultisyncModel::postMultisync
+	pami_result_t postMultisyncImmediate_impl(size_t            client,
+						  size_t            context, 
+						  pami_multisync_t *msync,
+						  void             *devinfo = NULL) 
+	{
+	  return PAMI_ERROR;
+	}
+
+	pami_result_t postMultisync_impl(uint8_t (&state)[0],
+					 size_t            client,
+					 size_t            context, 
+					 pami_multisync_t *msync,
+					 void             *devinfo = NULL) 
+	{
+	  return PAMI_ERROR;
+	}
+      };
+
     };
   };
 };

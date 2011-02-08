@@ -694,6 +694,26 @@ namespace PAMI
 	    return _rm.setThroughputCollectiveCounterBatEntry ( value );
 	  }
 
+          inline uint32_t getCNShmemCollectiveCounterBatId ()
+	  {
+	    return _rm.getCNShmemCollectiveCounterBatId();
+          };
+
+	  inline int32_t setCNShmemCollectiveCounterBatEntry ( uint64_t value )
+	  {
+	    return _rm.setCNShmemCollectiveCounterBatEntry ( value );
+	  }
+
+          inline uint32_t getCNShmemCollectiveBufferBatId ()
+	  {
+	    return _rm.getCNShmemCollectiveBufferBatId();
+          };
+
+	  inline int32_t setCNShmemCollectiveBufferBatEntry ( uint64_t value )
+	  {
+	    return _rm.setCNShmemCollectiveBufferBatEntry ( value );
+	  }
+
 	  /// \brief Query the Number of Free BAT IDs Within This Context
 	  ///
 	  /// \retval  numFree

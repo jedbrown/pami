@@ -1239,6 +1239,17 @@ fprintf(stderr, "%s\n", buf);
 	inline uint32_t getThroughputCollectiveCounterBatId ()
 	{ return _globalBatIds[4]; }
 
+	/// \brief Get Collective network +Shmem Buffer Base Address Table Id
+	///
+	inline uint32_t getCNShmemCollectiveBufferBatId ()
+	{ return _globalBatIds[5]; }
+
+	/// \brief Get Collective network +Shmem Counter Base Address Table Id
+	///
+	inline uint32_t getCNShmemCollectiveCounterBatId ()
+	{ return _globalBatIds[6]; }
+
+
 	/// \brief Set Short Collective  Base Address Table Entry
 	///
 	inline int32_t setShortCollectiveBatEntry ( uint64_t value )
@@ -1267,6 +1278,28 @@ fprintf(stderr, "%s\n", buf);
 	{
 	  uint32_t batSubgroup = ( _globalBatIds[4] / BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP ) - 64;
 	  uint8_t  batId       = _globalBatIds[4] % BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP;
+	  return MUSPI_SetBaseAddress ( &_globalBatSubGroups[batSubgroup],
+					batId,
+					value );
+	}
+
+	/// \brief Set CN+Shmem Collective  Buffer Base Address Table Entry
+	///
+	inline int32_t setCNShmemCollectiveBufferBatEntry ( uint64_t value )
+	{
+	  uint32_t batSubgroup = ( _globalBatIds[5] / BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP ) - 64;
+	  uint8_t  batId       = _globalBatIds[5] % BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP;
+	  return MUSPI_SetBaseAddress ( &_globalBatSubGroups[batSubgroup],
+					batId,
+					value );
+	}
+
+	/// \brief Set CN+Shmem Collective  Counter Base Address Table Entry
+	///
+	inline int32_t setCNShmemCollectiveCounterBatEntry ( uint64_t value )
+	{
+	  uint32_t batSubgroup = ( _globalBatIds[6] / BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP ) - 64;
+	  uint8_t  batId       = _globalBatIds[6] % BGQ_MU_NUM_DATA_COUNTERS_PER_SUBGROUP;
 	  return MUSPI_SetBaseAddress ( &_globalBatSubGroups[batSubgroup],
 					batId,
 					value );
@@ -2794,11 +2827,13 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalBaseAddressTableEntries()
 
   numBatIdsSetup = setupBatIds( 64, // Starting subgroup
 				65, // Ending subgroup
-				5,  // Number of BAT ids (see above list)
+				//5,  // Number of BAT ids (see above list)
+				7,  // Number of BAT ids (see above list)
 				"allocateGlobalBaseAddressTableEntries-_globalBatIds", // Use shared memory
 				&_globalBatSubGroups,
 				&_globalBatIds );
-  PAMI_assertf( (_calculateSizeOnly == 1) || (_allocateOnly == 1) || (numBatIdsSetup == 5), "Only %u base address Ids were set up.  Expected 5.\n",numBatIdsSetup );
+  //PAMI_assertf( (_calculateSizeOnly == 1) || (_allocateOnly == 1) || (numBatIdsSetup == 5), "Only %u base address Ids were set up.  Expected 5.\n",numBatIdsSetup );
+  PAMI_assertf( (_calculateSizeOnly == 1) || (_allocateOnly == 1) || (numBatIdsSetup == 7), "Only %u base address Ids were set up.  Expected 5.\n",numBatIdsSetup );
 
   // Incorporate the size of the shared counter into the shared memory space requirement.
   if ( _calculateSizeOnly == 1 )

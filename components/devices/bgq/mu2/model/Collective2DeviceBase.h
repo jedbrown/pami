@@ -74,7 +74,8 @@ namespace PAMI
                     return;
                   }
 
-                  _pBatID = mucontext.getThroughputCollectiveBufferBatId ();
+                  //_pBatID = mucontext.getThroughputCollectiveBufferBatId ();
+                  _pBatID = mucontext.getCNShmemCollectiveBufferBatId ();
 
                   if (_pBatID == -1)
                   {
@@ -82,7 +83,8 @@ namespace PAMI
                     return;
                   }
 
-                  _cBatID = mucontext.getThroughputCollectiveCounterBatId ();
+                  //_cBatID = mucontext.getThroughputCollectiveCounterBatId ();
+                  _cBatID = mucontext.getCNShmemCollectiveCounterBatId ();
 
                   if (_cBatID == -1)
                   {
@@ -100,7 +102,8 @@ namespace PAMI
                     ((uint64_t)(void *) & _collstate._colCounter - (uint64_t)memRegion.BaseVa);
 
                   uint64_t atomic_address = MUSPI_GetAtomicAddress(paddr, MUHWI_ATOMIC_OPCODE_STORE_ADD);
-                  mucontext.setThroughputCollectiveCounterBatEntry (atomic_address);
+                  //mucontext.setThroughputCollectiveCounterBatEntry (atomic_address);
+                  mucontext.setCNShmemCollectiveCounterBatEntry (atomic_address);
 
                   rc = Kernel_Physical2GlobalVirtual ((void*)paddr, &_collstate._counterGVa);  
                 

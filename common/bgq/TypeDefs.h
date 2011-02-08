@@ -128,8 +128,8 @@ namespace PAMI
   > MUGlobalDputNI;*/
 
   typedef BGQNativeInterfaceAS < MUDevice,
-  Device::MU::CollectiveMulticastDmaModel,
-  Device::MU::MUMultisyncModel,
+  Device::MU::CollectiveMcast2Device,
+  Device::MU::CollectiveMsync2Device,
   Device::MU::CollectiveMcomb2Device
   > MUShmemGlobalDputNI;
   

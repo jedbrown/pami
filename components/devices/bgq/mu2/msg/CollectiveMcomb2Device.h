@@ -154,9 +154,11 @@ namespace PAMI
               _desc.setOpCode (_op);
               _desc.setWordLength (_sizeoftype);
               if (_length <= SHORT_MSG_CUTOFF) 
-                _context.setThroughputCollectiveBufferBatEntry((uint64_t)_shmbuf_phy);
+                //_context.setThroughputCollectiveBufferBatEntry((uint64_t)_shmbuf_phy);
+                _context.setCNShmemCollectiveBufferBatEntry((uint64_t)_shmbuf_phy);
               else
-                _context.setThroughputCollectiveBufferBatEntry((uint64_t)rcvbuf_phy);
+               // _context.setThroughputCollectiveBufferBatEntry((uint64_t)rcvbuf_phy);
+                _context.setCNShmemCollectiveBufferBatEntry((uint64_t)rcvbuf_phy);
             }
             mem_sync();
             _shmem_desc->signal_arrived(); //signal that I have copied all my addresses/data
