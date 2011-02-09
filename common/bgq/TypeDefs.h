@@ -121,12 +121,6 @@ namespace PAMI
   //Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false>
   > MUGlobalDputNI;
 
-/*  typedef BGQNativeInterfaceAS < MUDevice,
-  Device::MU::CollectiveMulticastDmaModel,
-  Device::MU::MUMultisyncModel,
-  Device::MU::CollectiveMcomb2Device
-  > MUGlobalDputNI;*/
-
   typedef BGQNativeInterfaceAS < MUDevice,
   Device::MU::CollectiveMcast2Device,
   Device::MU::CollectiveMsync2Device,

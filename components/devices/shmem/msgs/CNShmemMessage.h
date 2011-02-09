@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/shmemcoll/msgs/CNShmemMessage.h
+ * \file components/devices/shmem/msgs/CNShmemMessage.h
  * \brief ???
  */
 
-#ifndef __components_devices_shmemcoll_msgs_CNShmemMessage_h__
-#define __components_devices_shmemcoll_msgs_CNShmemMessage_h__
+#ifndef __components_devices_shmem_msgs_CNShmemMessage_h__
+#define __components_devices_shmem_msgs_CNShmemMessage_h__
 
 //#include "ShaddrMcombMessagePipe.h"
 
@@ -23,7 +23,7 @@
 #endif
 #include "../a2qpx_nway_sum.h"
 
-#include "components/devices/shmemcoll/CNShmemDesc.h"
+#include "components/devices/shmem/CNShmemDesc.h"
 
 namespace PAMI
 {

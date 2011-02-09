@@ -11,7 +11,7 @@
 #include "components/devices/bgq/mu2/msg/MessageQueue.h"
 #include "common/bgq/Mapping.h"
 #include "components/memory/MemoryAllocator.h"
-#include "components/devices/shmemcoll/msgs/CNShmemMessage.h"
+#include "components/devices/shmem/msgs/CNShmemMessage.h"
 
 #include "math/a2qpx/Core_memcpy.h"
 

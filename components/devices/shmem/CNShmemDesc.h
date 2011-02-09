@@ -1,9 +1,9 @@
 /**
- * \file components/devices/shmemcoll/CNShmemDesc.h
+ * \file components/devices/shmem/CNShmemDesc.h
  * \brief ???
  */
-#ifndef __components_devices_shmemcoll_CNShmemDesc_h__
-#define __components_devices_shmemcoll_CNShmemDesc_h__
+#ifndef __components_devices_shmem_CNShmemDesc_h__
+#define __components_devices_shmem_CNShmemDesc_h__
 
 #include "Arch.h"
 #ifndef TRACE_ERR
