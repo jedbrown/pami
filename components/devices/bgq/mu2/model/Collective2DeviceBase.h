@@ -141,9 +141,8 @@ namespace PAMI
 
             sprintf(key, "/Collective2DeviceBase-shared_desc_array-client-%2.2zu-context-%2.2zu", _gdev.clientId(), _gdev.contextId());
 
-            size_t total_size = sizeof(PAMI::Device::Shmem::ShmemRegion)* 3; 
-            rc = __global.mm.memalign ((void **) & PAMI::Device::Shmem::_shmem_region,
-                //64,
+            size_t total_size = sizeof(PAMI::Device::Shmem::CNShmemRegion)* 3; 
+            rc = __global.mm.memalign ((void **) & PAMI::Device::Shmem::_cn_shmem_region,
                 128,
                 total_size,
                 key,
@@ -153,7 +152,7 @@ namespace PAMI
 
             for (size_t i = 0; i < 3; i++)
             {
-              new (&_shmem_desc[i]) ShmemCollDesc(__global.mm, _gdev.clientId(), _gdev.contextId(), 2, i );
+              new (&_shmem_desc[i]) PAMI::Device::Shmem::CNShmemDesc(__global.mm, _gdev.clientId(), _gdev.contextId(), 0, i );
             }
 
           }
@@ -164,12 +163,12 @@ namespace PAMI
               unsigned     attributes,
               void       * cookie)
           {
-            PAMI::Device::Shmem::ShmemRegion *shm_region = (PAMI::Device::Shmem::ShmemRegion*) memory;
+            PAMI::Device::Shmem::CNShmemRegion *shm_region = (PAMI::Device::Shmem::CNShmemRegion*) memory;
 
             size_t  i;
             for (i =0; i < 3;i++)
             {
-              new (&shm_region[i]) PAMI::Device::Shmem::ShmemRegion((uint64_t)i);
+              new (&shm_region[i]) PAMI::Device::Shmem::CNShmemRegion();
             }
           }
  
@@ -345,7 +344,7 @@ namespace PAMI
         protected:
           MU::Context                                & _mucontext;         /// Pointer to MU context
           InjChannel                                 & _injChannel;
-          ShmemCollDesc                            _shmem_desc[3];
+          PAMI::Device::Shmem::CNShmemDesc                            _shmem_desc[3];
           unsigned                                    _index;
           Generic::Device                            & _gdev;
           MUSPI_DescriptorBase                       _modeldesc;         /// Model descriptor

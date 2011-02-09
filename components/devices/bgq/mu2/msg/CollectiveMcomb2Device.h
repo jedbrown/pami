@@ -11,13 +11,13 @@
 #include "components/devices/bgq/mu2/msg/MessageQueue.h"
 #include "common/bgq/Mapping.h"
 #include "components/memory/MemoryAllocator.h"
-#include "components/devices/shmemcoll/ShmemCollDesc.h"
+//#include "components/devices/shmemcoll/CNShmemDesc.h"
 #include "components/devices/shmemcoll/ShmemCollDevice.h"
 #include "components/devices/shmemcoll/msgs/ShortMcombMessage.h"
 #include "components/devices/shmemcoll/msgs/CNShmemMessage.h"
 
-#include "components/atomic/bgq/L2Counter.h"
-#include "components/atomic/indirect/IndirectCounter.h"
+//#include "components/atomic/bgq/L2Counter.h"
+//#include "components/atomic/indirect/IndirectCounter.h"
 #include "math/a2qpx/Core_memcpy.h"
 
 
@@ -27,8 +27,8 @@ namespace PAMI
   {
     namespace MU
     {
-    typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::BGQ::IndirectL2> ShmemCollDesc;
-    typedef PAMI::Device::ShmemCollDevice <PAMI::Counter::BGQ::IndirectL2> ShmemCollDevice;
+    //typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::BGQ::IndirectL2> ShmemCollDesc;
+    //typedef PAMI::Device::ShmemCollDevice <PAMI::Counter::BGQ::IndirectL2> ShmemCollDevice;
     //typedef PAMI::Device::Shmem::ShmemCollDesc <Counter::Indirect<Counter::Native> > ShmemCollDesc;
     //typedef PAMI::Device::ShmemCollDevice <Counter::Indirect<Counter::Native> > ShmemCollDevice;
       ///
@@ -65,7 +65,7 @@ namespace PAMI
                                       uint32_t              op,
                                       uint32_t              sizeoftype,
                                       volatile uint64_t   * counterAddress,
-                                      ShmemCollDesc       *shmem_desc):
+                                      PAMI::Device::Shmem::CNShmemDesc       *shmem_desc):
               _context (context),
               _injectedBytes (0),
               _length (length),
@@ -240,7 +240,7 @@ namespace PAMI
             pami_result_t res;
 
             if (length < VERY_SHORT_MSG_CUTOFF)
-              res = PAMI::Device::Shmem::CNShmemMessage<ShmemCollDesc>::very_short_msg_combine(_shmem_desc, length, __global.mapping.tSize(), __global.mapping.t(), combineDone);
+              res = PAMI::Device::Shmem::CNShmemMessage::very_short_msg_combine(_shmem_desc, length, __global.mapping.tSize(), __global.mapping.t(), combineDone);
             else
               res = _shmsg.short_msg_combine(length, __global.mapping.tSize(), __global.mapping.t(), combineDone);
 
@@ -258,7 +258,7 @@ namespace PAMI
 
             pami_result_t res;
             if (_length < VERY_SHORT_MSG_CUTOFF)
-              res = PAMI::Device::Shmem::CNShmemMessage<ShmemCollDesc>::very_short_msg_multicast(_shmem_desc, _dpwq, _length, 
+              res = PAMI::Device::Shmem::CNShmemMessage::very_short_msg_multicast(_shmem_desc, _dpwq, _length, 
                   __global.mapping.tSize(), __global.mapping.t(), (uint64_t*)_counterAddress, _cc);
             else
               res = _shmsg.short_msg_multicast(_length, __global.mapping.tSize(), __global.mapping.t(),
@@ -435,11 +435,11 @@ namespace PAMI
           uint64_t                 _cc;
           volatile uint64_t      * _counterAddress;
 
-          ShmemCollDesc          * _shmem_desc;
+          PAMI::Device::Shmem::CNShmemDesc          * _shmem_desc;
           bool                     _doneShmemMcomb;
           bool                     _doneShmemMcombLarge;
           bool                     _doneShmemMcastLarge;
-          Shmem::CNShmemMessage<ShmemCollDesc>   _shmsg;
+          Shmem::CNShmemMessage   _shmsg;
           bool                      _combineDone;
           uint64_t                _shmbuf_phy;
           uint8_t                 _phase;

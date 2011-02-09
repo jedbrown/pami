@@ -23,10 +23,12 @@
 #endif
 //#include "../16way_sum.h"
 #include "../a2qpx_nway_sum.h"
-#define SHORT_MSG_CUTOFF      8192
+//#define SHORT_MSG_CUTOFF      8192
 //#define SHORT_MSG_CUTOFF      4096
 //#define SHORT_MSG_CUTOFF      16384
-#define VERY_SHORT_MSG_CUTOFF  128
+//#define VERY_SHORT_MSG_CUTOFF  128
+
+#include "components/devices/shmemcoll/CNShmemDesc.h"
 
 namespace PAMI
 {
@@ -34,7 +36,6 @@ namespace PAMI
   {
     namespace Shmem
     {
-      template <class T_Desc>
         class CNShmemMessage 
         {
           protected:
@@ -52,7 +53,7 @@ namespace PAMI
 #define MinChunkSize  64
 #define ShmBufSize  SHORT_MSG_CUTOFF
 
-            struct ControlBlock
+            /*struct ControlBlock
             {
               volatile char         buffer[ShmBufSize];
               struct
@@ -62,10 +63,8 @@ namespace PAMI
               }                     GAT;
               void*                 phybufs[NUM_LOCAL_TASKS];
               volatile int16_t     chunk_done[NUM_LOCAL_TASKS];
-              //volatile uint16_t     chunks_copied[NUM_LOCAL_TASKS];
               volatile uint32_t     bytes_incoming;
-              //volatile uint16_t     current_iter;
-            } __attribute__((__aligned__(128)));
+            } __attribute__((__aligned__(128)));*/
 
 
             inline void advance_4way_sum(unsigned _local_rank, unsigned _npeers, size_t bytes, unsigned offset_dbl)
@@ -229,9 +228,9 @@ namespace PAMI
           public:
 
             inline void setCounterAddrGVa(void* gva) 
-            { _controlB->GAT.counter_addr = gva;}
+            { }
 
-            inline static pami_result_t very_short_msg_multicast(T_Desc* my_desc, PipeWorkQueue *dpwq, unsigned total_bytes, unsigned npeers, unsigned local_rank,
+            inline static pami_result_t very_short_msg_multicast(CNShmemDesc* my_desc, PipeWorkQueue *dpwq, unsigned total_bytes, unsigned npeers, unsigned local_rank,
                                                                    uint64_t* counter_addr, uint64_t &counter_curr)
             {
               void* buf = (void*)my_desc->get_buffer();
@@ -329,7 +328,7 @@ namespace PAMI
               return PAMI_SUCCESS;
             }
 
-            inline static pami_result_t very_short_msg_combine(T_Desc *my_desc, unsigned total_bytes, unsigned npeers, unsigned local_rank,
+            inline static pami_result_t very_short_msg_combine(CNShmemDesc *my_desc, unsigned total_bytes, unsigned npeers, unsigned local_rank,
                                                               bool& done_flag)
             {
 
@@ -484,7 +483,7 @@ namespace PAMI
 
 
             inline CNShmemMessage () {};
-            inline CNShmemMessage (T_Desc* my_desc, uint32_t length):_my_desc(my_desc),_total_bytes(length),_chunk_for_injection(0) {};
+            inline CNShmemMessage (CNShmemDesc* my_desc, uint32_t length):_my_desc(my_desc),_total_bytes(length),_chunk_for_injection(0) {};
 
             inline ~CNShmemMessage() {};
 
@@ -516,7 +515,7 @@ namespace PAMI
             void*     _shm_phy_addr;
           private:
 
-            T_Desc    *_my_desc;
+            CNShmemDesc    *_my_desc;
             unsigned  _total_bytes;
             double*     _srcbuf;
             double*     _rcvbuf;
