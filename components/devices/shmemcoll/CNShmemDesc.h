@@ -25,6 +25,8 @@ namespace PAMI
     namespace Shmem
     {
 
+      //Control structure holding all the addreses and 
+      //state of the operation
       struct ControlBlock
       {
         volatile char         buffer[SHORT_MSG_CUTOFF];
@@ -58,6 +60,8 @@ namespace PAMI
 
       static CNShmemRegion*  _cn_shmem_region = NULL;
 
+      //This descriptor holds the shared and atomic regions and access methods
+      //to them during the operation
       class CNShmemDesc
       {
 
@@ -65,8 +69,8 @@ namespace PAMI
 
           struct  atomics_region
           {
-            PAMI::Counter::BGQ::IndirectL2		synch_counter;	/* Whether everyone has arrived */
-            PAMI::Counter::BGQ::IndirectL2		done_counter; 	/* Whether everyone finished 	*/
+            PAMI::Counter::BGQ::IndirectL2	synch_counter;	/* Whether everyone has arrived */
+            PAMI::Counter::BGQ::IndirectL2	done_counter; 	/* Whether everyone finished 	*/
           };
 
 

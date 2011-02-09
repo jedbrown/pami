@@ -21,12 +21,7 @@
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) // fprintf x
 #endif
-//#include "../16way_sum.h"
 #include "../a2qpx_nway_sum.h"
-//#define SHORT_MSG_CUTOFF      8192
-//#define SHORT_MSG_CUTOFF      4096
-//#define SHORT_MSG_CUTOFF      16384
-//#define VERY_SHORT_MSG_CUTOFF  128
 
 #include "components/devices/shmemcoll/CNShmemDesc.h"
 
@@ -36,11 +31,12 @@ namespace PAMI
   {
     namespace Shmem
     {
+        //This class has routines for advancing short/medium/long multicombines and multicasts
         class CNShmemMessage 
         {
           protected:
-            //#define	ChunkSize 	4096
-            //#define	ChunkSize 	512
+
+//#define	ChunkSize 	4096
 //#define	ChunkSize 	512
 #define	ChunkSize   1024
 #define NumDblsPerChunk (ChunkSize/sizeof(double))
@@ -52,20 +48,6 @@ namespace PAMI
 #define G_Counter 	((uint64_t*)(_controlB->GAT.counter_addr))
 #define MinChunkSize  64
 #define ShmBufSize  SHORT_MSG_CUTOFF
-
-            /*struct ControlBlock
-            {
-              volatile char         buffer[ShmBufSize];
-              struct
-              {
-                void* srcbufs[NUM_LOCAL_TASKS];
-                void* dstbufs[NUM_LOCAL_TASKS];
-              }                     GAT;
-              void*                 phybufs[NUM_LOCAL_TASKS];
-              volatile int16_t     chunk_done[NUM_LOCAL_TASKS];
-              volatile uint32_t     bytes_incoming;
-            } __attribute__((__aligned__(128)));*/
-
 
             inline void advance_4way_sum(unsigned _local_rank, unsigned _npeers, size_t bytes, unsigned offset_dbl)
             {
@@ -196,6 +178,9 @@ namespace PAMI
             }
 
 
+            //The buffer is partitioned among "npeers" in a balanced manner depending on the "MinChunkSize", total_bytes
+            // Used for short to medium messages
+
             inline  bool  get_partition_info(unsigned npeers, unsigned local_rank, unsigned total_bytes, unsigned* offset_b,
                 unsigned* chunk_size_b)
             {
@@ -227,9 +212,7 @@ namespace PAMI
 
           public:
 
-            inline void setCounterAddrGVa(void* gva) 
-            { }
-
+            //Very short multicast..synchronization is done via a flag
             inline static pami_result_t very_short_msg_multicast(CNShmemDesc* my_desc, PipeWorkQueue *dpwq, unsigned total_bytes, unsigned npeers, unsigned local_rank,
                                                                    uint64_t* counter_addr, uint64_t &counter_curr)
             {
@@ -254,6 +237,7 @@ namespace PAMI
               return PAMI_SUCCESS;
             }
 
+            //Short multicast..data is taken from a shared buffer after CN deposits into it, supports pipelining
             inline pami_result_t short_msg_multicast(unsigned total_bytes, unsigned npeers, unsigned local_rank, uint64_t* counter_addr, uint64_t &counter_curr)
             {
               uint64_t  bytes_arrived =0;
@@ -289,6 +273,7 @@ namespace PAMI
               return PAMI_SUCCESS;
             }
 
+            // Large message multicast..data is read directly from the master's receive buffer. supports pipelining
             inline pami_result_t large_msg_multicast(unsigned total_bytes, unsigned npeers, unsigned local_rank, volatile uint64_t* counter_addr, uint64_t &counter_curr)
             {
               uint64_t  bytes_arrived =0;
@@ -328,6 +313,7 @@ namespace PAMI
               return PAMI_SUCCESS;
             }
 
+            // Combining very short messages..the messages are fit into L2 cachelines to minimise the number of L2 loads
             inline static pami_result_t very_short_msg_combine(CNShmemDesc *my_desc, unsigned total_bytes, unsigned npeers, unsigned local_rank,
                                                               bool& done_flag)
             {
@@ -390,9 +376,12 @@ namespace PAMI
               return PAMI_SUCCESS;
             }
 
+            // multicombine with reads from the global virtual addresses of the buffers and writes to a shmem buffer
+            // which is then injected into the Collective network
             inline pami_result_t short_msg_combine(unsigned total_bytes, unsigned npeers, unsigned local_rank, bool& done_flag)
             {
 
+              /* Non blocking until all the peers arrive at the collective */
               if (_my_desc->arrived_peers() != npeers)
                 return PAMI_EAGAIN;
 
@@ -438,6 +427,8 @@ namespace PAMI
               return PAMI_SUCCESS;
             }
 
+            //Only the non-master peers participate in this..data is combined directly in chunks, from the peers' buffers using
+            //Global Virtual addresses on the node and each peer updates its chunk index once done
             inline pami_result_t large_msg_combine_peers (size_t total_bytes, unsigned npeers, unsigned local_rank, unsigned offset_dbl)
             {
               /* Non blocking until all the peers arrive at the collective */
@@ -464,6 +455,7 @@ namespace PAMI
             }
 
 
+            //The master process gets the next chunk to inject into Collective network
             inline void* next_injection_buffer (uint64_t *bytes_available, unsigned total_bytes, unsigned npeers)
             {
               unsigned  my_peer = (_chunk_for_injection)%(npeers-1)+1;
@@ -479,6 +471,7 @@ namespace PAMI
             }
 
 
+            //Update the chunk index once injection is complete
             inline  void  injection_complete() { ++_chunk_for_injection;  }
 
 
@@ -487,6 +480,8 @@ namespace PAMI
 
             inline ~CNShmemMessage() {};
 
+            //Initialize all the Virtual,Global and Physical addreses required in the operation
+            //Initialize the shmem descriptor used for staging data and synchronization
             inline void init (void* srcbuf, void* rcvbuf, void* srcbuf_gva, void* rcvbuf_gva, void* rcvbuf_phy, void* shmbuf_phy, unsigned local_rank)
             {
 

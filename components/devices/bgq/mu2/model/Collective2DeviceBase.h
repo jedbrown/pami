@@ -11,13 +11,10 @@
 #include "components/memory/MemoryAllocator.h"
 #include "util/trace.h"
 #include "components/devices/bgq/mu2/Context.h"
-#include "components/devices/bgq/mu2/msg/CollectiveDPutMulticast.h"
-//#include "components/devices/bgq/mu2/msg/CollectiveDPutMulticombine.h"
 #include "components/devices/bgq/mu2/msg/CollectiveMcomb2Device.h"
 #include "sys/pami.h"
 #include "math/a2qpx/Core_memcpy.h"
 
-//#define MU_SHORT_BLOCKING_COLLECTIVE 0
 
 namespace PAMI
 {
@@ -25,8 +22,9 @@ namespace PAMI
   {
     namespace MU
     {
-#define TEMP_BUF_SIZE 512
-
+      // Has all the intialization data structures including the model descriptors cloned into the
+      // injection fifos. Also contains the counters and BAT ids used in the operation
+      // Post methods construct the message and post to the generic device
       class Collective2DeviceBase
       {
 
@@ -35,12 +33,7 @@ namespace PAMI
           {
             public:
               bool                                _isInited;          /// Has this class been initialized?
-              char                              * _tempBuf;           /// Temporary buffer for short collectives
-              uint32_t                            _tempSize;          /// Size of temporary buffer
               volatile uint64_t                   _colCounter;        /// Counter used in the collective op
-              void*                               _counterGVa;
-              uint64_t                            _tempPAddr;         /// Physical address of the temp buf
-              int32_t                             _tBatID;            /// Bat id of the temporary buffer
               int32_t                             _pBatID;            /// payload bat id
               int32_t                             _cBatID;            /// counter bat id
               uint64_t                            _counter_phy;
@@ -48,13 +41,10 @@ namespace PAMI
               CollState ()
               {
                 _isInited = false;
-                _tempSize = TEMP_BUF_SIZE;
-                _tempBuf = (char *)malloc (_tempSize * sizeof(char));
               }
 
               bool isInited () { return _isInited; }
 
-              int tempBatID()    { return _tBatID; }
               int payloadBatID() { return _pBatID; }
               int counterBatID() { return _cBatID; }
 
@@ -64,17 +54,7 @@ namespace PAMI
 
                 if (__global.mapping.t()==0)
                 {
-                  ///// Get the BAT IDS ///////////////
-                  //// Setup CounterVec in BAT
-                  _tBatID = mucontext.getShortCollectiveBatId();
 
-                  if (_tBatID == -1)
-                  {
-                    status = PAMI_ERROR;
-                    return;
-                  }
-
-                  //_pBatID = mucontext.getThroughputCollectiveBufferBatId ();
                   _pBatID = mucontext.getCNShmemCollectiveBufferBatId ();
 
                   if (_pBatID == -1)
@@ -83,7 +63,6 @@ namespace PAMI
                     return;
                   }
 
-                  //_cBatID = mucontext.getThroughputCollectiveCounterBatId ();
                   _cBatID = mucontext.getCNShmemCollectiveCounterBatId ();
 
                   if (_cBatID == -1)
@@ -92,7 +71,6 @@ namespace PAMI
                     return;
                   }
 
-                  //printf ("Get Bat Ids %d %d %d\n", _tBatID, _pBatID, _cBatID);
                   Kernel_MemoryRegion_t memRegion;
                   int rc = 0;
 
@@ -102,10 +80,7 @@ namespace PAMI
                     ((uint64_t)(void *) & _collstate._colCounter - (uint64_t)memRegion.BaseVa);
 
                   uint64_t atomic_address = MUSPI_GetAtomicAddress(paddr, MUHWI_ATOMIC_OPCODE_STORE_ADD);
-                  //mucontext.setThroughputCollectiveCounterBatEntry (atomic_address);
                   mucontext.setCNShmemCollectiveCounterBatEntry (atomic_address);
-
-                  rc = Kernel_Physical2GlobalVirtual ((void*)paddr, &_collstate._counterGVa);  
                 
                 }
 
@@ -129,7 +104,7 @@ namespace PAMI
               _index(0),
               _gdev(*context.getProgressDevice())
           {
-            //The collective state must be initialized by task 0 context 0
+            //Only local task 0 initializes all the resources
             if (__global.mapping.t() == 0)
             {
               _collstate.init(context, status);
@@ -193,7 +168,6 @@ namespace PAMI
 
             base.Pre_Fetch_Only  = MUHWI_DESCRIPTOR_PRE_FETCH_ONLY_NO;
             base.Message_Length  = 0;
-            //base.Payload_Address = _collstate._tempPAddr;
             base.Payload_Address = NULL;
             _modeldesc.setBaseFields (&base);
 
@@ -239,7 +213,8 @@ namespace PAMI
             //TRACE_FN_EXIT();
           }
 
-
+          ///contructing the message and posting to the generice device
+          //Different advances are posted depending on the message size
           pami_result_t postCollective (uint32_t                   bytes,
                                         PAMI::PipeWorkQueue      * src,
                                         PAMI::PipeWorkQueue      * dst,
@@ -274,7 +249,7 @@ namespace PAMI
               msg->_desc.setClassRoute (classroute);
             }
 
-            msg->init(_collstate._counterGVa);
+            msg->init();
       
             bool flag;
             if (bytes <= SHORT_MSG_CUTOFF)
@@ -289,7 +264,6 @@ namespace PAMI
               return PAMI_SUCCESS;
             }
 
-            //flag = msg->advance_large_hybrid();
             flag = msg->advance_large();
 
             if (!flag)
@@ -302,21 +276,9 @@ namespace PAMI
           }
 
 
-          pami_result_t postBroadcast (uint32_t                   bytes,
-                                       PAMI::PipeWorkQueue      * src,
-                                       PAMI::PipeWorkQueue      * dst,
-                                       pami_event_function        cb_done,
-                                       void                     * cookie,
-                                       char                     * zerobuf,
-                                       uint32_t                   zbytes,
-                                       bool                       isroot,
-                                       unsigned                   classroute) __attribute__((noinline, weak));
-
-
           static pami_result_t advance (pami_context_t     context,
                                         void             * cookie)
           {
-            //MessageQueue::Element *msg = (MessageQueue::Element *) cookie;
             CollectiveDputMcomb2Device *msg = (CollectiveDputMcomb2Device *) cookie;
             bool done = msg->advance();
 
@@ -331,7 +293,6 @@ namespace PAMI
           {
             CollectiveDputMcomb2Device *msg = (CollectiveDputMcomb2Device *) cookie;
             bool done = msg->advance_large();
-            //bool done = msg->advance_large_hybrid();
 
             if (done)
               return PAMI_SUCCESS;
@@ -344,68 +305,15 @@ namespace PAMI
         protected:
           MU::Context                                & _mucontext;         /// Pointer to MU context
           InjChannel                                 & _injChannel;
-          PAMI::Device::Shmem::CNShmemDesc                            _shmem_desc[3];
+          PAMI::Device::Shmem::CNShmemDesc          _shmem_desc[3];
           unsigned                                    _index;
           Generic::Device                            & _gdev;
           MUSPI_DescriptorBase                       _modeldesc;         /// Model descriptor
           pami_work_t                                _swork;
           pami_work_t                                _work;
-          CollectiveDPutMulticast                    _mcast_msg;
           CollectiveDputMcomb2Device                 _mcomb_msg;
       };
 
-      pami_result_t Collective2DeviceBase::postBroadcast (uint32_t                   bytes,
-                                                           PAMI::PipeWorkQueue      * src,
-                                                           PAMI::PipeWorkQueue      * dst,
-                                                           pami_event_function        cb_done,
-                                                           void                     * cookie,
-                                                           char                     * zerobuf,
-                                                           uint32_t                   zbytes,
-                                                           bool                       isroot,
-                                                           unsigned                   classroute)
-      {
-        //Pin the buffer to the bat id. On the root the src buffer
-        //is used to receive the broadcast message
-        char *dstbuf = NULL;
-
-        if (isroot)
-          dstbuf = src->bufferToConsume();
-        else
-          dstbuf = dst->bufferToProduce();
-
-        Kernel_MemoryRegion_t memRegion;
-        uint rc = 0;
-        rc = Kernel_CreateMemoryRegion (&memRegion, dstbuf, bytes);
-        PAMI_assert ( rc == 0 );
-        uint64_t paddr = (uint64_t)memRegion.BasePa +
-                         ((uint64_t)dstbuf - (uint64_t)memRegion.BaseVa);
-        _mucontext.setThroughputCollectiveBufferBatEntry(paddr);
-
-        _collstate._colCounter = bytes;
-        CollectiveDPutMulticast *msg = new (&_mcast_msg) CollectiveDPutMulticast (_mucontext,
-                                                                                  cb_done,
-                                                                                  cookie,
-                                                                                  (isroot) ? src : dst,
-                                                                                  bytes,
-                                                                                  zerobuf,
-                                                                                  zbytes,
-                                                                                  isroot,
-                                                                                  &_collstate._colCounter);
-        _modeldesc.clone (msg->_desc);
-        msg->_desc.PacketHeader.messageUnitHeader.Packet_Types.Direct_Put.Rec_Payload_Base_Address_Id = _collstate.payloadBatID();
-        msg->_desc.setClassRoute (classroute);
-
-        msg->init();
-        bool flag = msg->advance();
-
-        if (!flag)
-          {
-            PAMI::Device::Generic::GenericThread *work = new (&_work) PAMI::Device::Generic::GenericThread(advance, msg);
-            _mucontext.getProgressDevice()->postThread(work);
-          }
-
-        return PAMI_SUCCESS;
-      }
 
     };
   };

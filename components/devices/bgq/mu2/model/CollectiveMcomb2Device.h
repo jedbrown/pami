@@ -16,6 +16,7 @@ namespace PAMI
   {
     namespace MU
     {
+      //Model classes to do the two device protocol..
       static const size_t mcomb_state_bytes_2dev = 0;
       class CollectiveMcomb2Device: public Collective2DeviceBase,
           public Interface::MulticombineModel < CollectiveMcomb2Device, MU::Context, mcomb_state_bytes_2dev >
@@ -65,19 +66,17 @@ namespace PAMI
           }
 
 
-          /// \see PAMI::Device::Interface::MulticombineModel::postMulticombine
           pami_result_t postMulticombine_impl(uint8_t (&state)[mcomb_state_bytes_2dev],
                                               size_t               client,
                                               size_t               context,
                                               pami_multicombine_t *mcombine,
                                               void                *devinfo = NULL)
           {
-            //TRACE_FN_ENTER();
-            // Get the source data buffer/length and validate (assert) inputs
             return PAMI_ERROR;
           }
       };
 
+      // This class is empty..
       static const size_t mcast_state_bytes_2dev = 0;
       class CollectiveMcast2Device: public Collective2DeviceBase,
           public Interface::MulticastModel < CollectiveMcast2Device, MU::Context, mcast_state_bytes_2dev >
@@ -112,6 +111,7 @@ namespace PAMI
 
       };
 
+      // This class is empty..
       class CollectiveMsync2Device : public Interface::MultisyncModel<CollectiveMsync2Device, MU::Context, 0>
       {
       public:

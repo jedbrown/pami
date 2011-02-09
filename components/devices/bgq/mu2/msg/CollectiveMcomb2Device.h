@@ -11,13 +11,8 @@
 #include "components/devices/bgq/mu2/msg/MessageQueue.h"
 #include "common/bgq/Mapping.h"
 #include "components/memory/MemoryAllocator.h"
-//#include "components/devices/shmemcoll/CNShmemDesc.h"
-#include "components/devices/shmemcoll/ShmemCollDevice.h"
-#include "components/devices/shmemcoll/msgs/ShortMcombMessage.h"
 #include "components/devices/shmemcoll/msgs/CNShmemMessage.h"
 
-//#include "components/atomic/bgq/L2Counter.h"
-//#include "components/atomic/indirect/IndirectCounter.h"
 #include "math/a2qpx/Core_memcpy.h"
 
 
@@ -27,15 +22,7 @@ namespace PAMI
   {
     namespace MU
     {
-    //typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::BGQ::IndirectL2> ShmemCollDesc;
-    //typedef PAMI::Device::ShmemCollDevice <PAMI::Counter::BGQ::IndirectL2> ShmemCollDevice;
-    //typedef PAMI::Device::Shmem::ShmemCollDesc <Counter::Indirect<Counter::Native> > ShmemCollDesc;
-    //typedef PAMI::Device::ShmemCollDevice <Counter::Indirect<Counter::Native> > ShmemCollDevice;
-      ///
-      /// \brief Inject one or more collective descriptors into an
-      /// injection fifo and wait for the collective to complete. This
-      /// code currently only works with linear PipeWorkQueues.
-      ///
+      //This message class advances both the network and shared memory communication
       class CollectiveDputMcomb2Device 
       {
         public:
@@ -85,15 +72,14 @@ namespace PAMI
               _doneShmemMcastLarge(0),
               _shmsg(shmem_desc,  length),
               _combineDone(false)
-//              _phase(0)
-          {
-            //TRACE_FN_ENTER();
-            //TRACE_FN_EXIT();
-          };
+          { };
 
           inline ~CollectiveDputMcomb2Device () {};
 
-          void init(void* counter_addr_gva)
+          // Create all the physical and global virtual addresses used
+          // for the operation
+
+          void init()
           {
             const uint64_t 	alignment = 64;
             uint64_t	mask	= 0;
@@ -154,16 +140,15 @@ namespace PAMI
               _desc.setOpCode (_op);
               _desc.setWordLength (_sizeoftype);
               if (_length <= SHORT_MSG_CUTOFF) 
-                //_context.setThroughputCollectiveBufferBatEntry((uint64_t)_shmbuf_phy);
                 _context.setCNShmemCollectiveBufferBatEntry((uint64_t)_shmbuf_phy);
               else
-               // _context.setThroughputCollectiveBufferBatEntry((uint64_t)rcvbuf_phy);
                 _context.setCNShmemCollectiveBufferBatEntry((uint64_t)rcvbuf_phy);
             }
             mem_sync();
             _shmem_desc->signal_arrived(); //signal that I have copied all my addresses/data
           }
 
+        //Short MU advance..gets done after a single injection
           bool advanceMUShort (void* next_inj_buf, uint64_t bytes_available)
           {
             if (_doneMUShort)
@@ -178,8 +163,7 @@ namespace PAMI
             size_t                fnum    = 0;
             InjChannel & channel = _context.injectionGroup.channel[fnum];
             size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
-            //printf("injecting short bytes:%lu counter:%lu\n", bytes_available, *_counterAddress);
-            //fflush(stdout);
+
             if (ndesc > 0)
             {
               MUSPI_DescriptorBase * d = (MUSPI_DescriptorBase *) channel.getNextDescriptor ();
@@ -196,9 +180,9 @@ namespace PAMI
             return true;
           }
 
+        //Large MU advance..updates state after each injection. 
           bool advanceMULarge (void* next_inj_buf, uint64_t bytes_available, uint64_t offset_b = 0)
           {
-            //TRACE_FN_ENTER();
 
             if (_doneMULarge)
               return true;
@@ -233,6 +217,7 @@ namespace PAMI
           }
 
 
+        //Short message Mcombine..uses shmem and shaddr protocols to access the data buffers
           bool advanceShmemMcombShort(unsigned length, bool &combineDone)
           {
             if (_doneShmemMcomb) return true;
@@ -276,6 +261,7 @@ namespace PAMI
             return false;
           }
 
+        //advance posted for short messages..calls all the short message combines and multicasts
           bool advance()
           {
             bool flag;
@@ -303,6 +289,7 @@ namespace PAMI
             return flag;
           }
 
+          //Large message combine..uses shaddr exclusively
           bool advanceShmemMcombLarge(unsigned length, unsigned offset_dbl=0)
           {
             if (_doneShmemMcombLarge) return true;
@@ -319,6 +306,7 @@ namespace PAMI
             return false;
           }
 
+          //Large message multicast..uses shaddr exclusively
           bool advanceShmemMcastLarge()
           {
 
@@ -340,6 +328,7 @@ namespace PAMI
             return false;
           }
 
+        //Large message advance..uses large message multicast/multicombine routines
           bool advance_large()
           {
             bool flag;
@@ -365,64 +354,13 @@ namespace PAMI
             return flag;
           }
 
-          bool advance_large_hybrid()
-          {
-            bool flag;
-            //static bool combineDone = false;
-            uint64_t  bytes_available =0;
-            void* next_inj_buf = NULL;
-            register  uint64_t  count = 0;
-            flag = false;
-
-            while ((flag == false) && (++count < 1e5))
-            {
-              next_inj_buf = NULL;
-
-              if (__global.mapping.t() == 0)
-              {
-                if (_phase == 0)
-                {
-                  flag = advanceShmemMcombShort(SHORT_MSG_CUTOFF, _combineDone);
-                  if (_combineDone)
-                    next_inj_buf = (void*)_shmbuf_phy;
-                  flag = flag && advanceMUShort(next_inj_buf, SHORT_MSG_CUTOFF);
-                  
-                  if (flag)
-                    _phase++;
-                }
-                else
-                {
-                  next_inj_buf = _shmsg.next_injection_buffer(&bytes_available, _length-SHORT_MSG_CUTOFF, __global.mapping.tSize());
-                  flag = advanceMULarge(next_inj_buf, bytes_available, SHORT_MSG_CUTOFF);
-                }
-              }
-              else
-              {
-                if (_phase == 0)
-                {
-                  flag =  advanceShmemMcombShort(SHORT_MSG_CUTOFF, _combineDone);
-                  if (flag)
-                    _phase++;
-                }
-                else
-                {
-                  flag =  advanceShmemMcombLarge(_length-SHORT_MSG_CUTOFF, SHORT_MSG_CUTOFF/sizeof(double));
-                }
-              }
-                
-              flag = flag && advanceShmemMcastLarge();
-            }
-            return flag;
-
-          }
-
-          MUSPI_DescriptorBase     _desc; //The descriptor is setup externally and contains batids, sndbuffer base and msg length
+          MUSPI_DescriptorBase     _desc; 
 
         protected:
 
           MU::Context            & _context;
           uint32_t                 _injectedBytes;
-          uint32_t                 _length;        //Number of bytes to transfer
+          uint32_t                 _length;        
           PipeWorkQueue          * _spwq;
           PipeWorkQueue          * _dpwq;
           pami_event_function      _fn;
@@ -431,7 +369,6 @@ namespace PAMI
           uint32_t                 _sizeoftype;
           bool                     _doneMULarge;
           bool                     _doneMUShort;
-          //bool                     _isRoot;
           uint64_t                 _cc;
           volatile uint64_t      * _counterAddress;
 
@@ -442,7 +379,6 @@ namespace PAMI
           Shmem::CNShmemMessage   _shmsg;
           bool                      _combineDone;
           uint64_t                _shmbuf_phy;
-          uint8_t                 _phase;
 
       }; // class     PAMI::Device::MU::CollectiveDputMcomb2Device
     };   // namespace PAMI::Device::MU
