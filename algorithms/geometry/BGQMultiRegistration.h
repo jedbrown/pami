@@ -256,12 +256,18 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void MUShmemMcombCollectiveDputMetaData(pami_metadata_t *m)
     {
-      new(m) PAMI::Geometry::Metadata("I0:MulticombineDput:-:MU:SHMEM");
-      //    m->check_correct.values.mustquery = 0;
+      new(m) PAMI::Geometry::Metadata("I0:MulticombineDput:SHMEM:MU");
+#ifdef ENABLE_NEW_SHMEM
+      m->check_correct.values.alldt     = 0;
+      m->check_correct.values.allop     = 0;
+      m->check_fn                       = Shmem::op_dt_metadata_function;
+      m->check_perf.values.hw_accel     = 1;
+#else
       m->check_correct.values.alldt     = 0;
       m->check_correct.values.allop     = 0;
       m->check_fn                       = MU::op_dt_metadata_function;
       m->check_perf.values.hw_accel     = 1;
+#endif
     }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite<true, MUShmemGlobalDputNI>,
@@ -857,11 +863,6 @@ namespace PAMI
                   if (_mucollectivedputmulticombinefactory && __global.topology_local.size() == 1)
                     geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,  _mucollectivedputmulticombinefactory, _context_id);
 
-                  if (_mushmemcollectivedputmulticombinefactory && ((__global.topology_local.size() == 4) || 
-                                                                    (__global.topology_local.size() == 8) ||
-                                                                    (__global.topology_local.size() == 16)))
-                    geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,  _mushmemcollectivedputmulticombinefactory, _context_id);
-
 #if 0  // allgatherv hangs 
 
                   if (((master_sub_topology->size() == 1) || (local_sub_topology->size() < 32)) && (_shmem_mu_rectangle_dput_allgather_factory))
@@ -990,14 +991,18 @@ namespace PAMI
 
                       // Add 2 device composite protocols
 #ifdef ENABLE_NEW_SHMEM   // limited support - 4/8/16 processes only
-                      if((local_sub_topology->size() ==  4) ||  
-                         (local_sub_topology->size() ==  8) ||
-                         (local_sub_topology->size() == 16))
+                      if((__global.topology_local.size() ==  4) ||  
+                         (__global.topology_local.size() ==  8) ||
+                         (__global.topology_local.size() == 16))
 #endif
 #ifndef ENABLE_NEW_SHMEM_SUBNODE
                       if (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
 #endif
                       {
+                        // New optimized MU+Shmem protocol
+                        if (_mushmemcollectivedputmulticombinefactory)
+                          geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,  _mushmemcollectivedputmulticombinefactory, _context_id);
+
                         // NP (non-pipelining) 2 device protocols
                         if ((_mcomb2dNP_dput_composite_factory) && (master_sub_topology->size() > 1))  // \todo Simple NP protocol doesn't like 1 master - fix it later
                         {
