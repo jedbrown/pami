@@ -38,8 +38,8 @@
 #include "components/devices/cau/caumulticombinemodel.h"
 
 // BSR Components
-#include "components/devices/bsr/bsrdevice.h"
-#include "components/devices/bsr/bsrmultisyncmodel.h"
+//#include "components/devices/bsr/bsrdevice.h"
+//#include "components/devices/bsr/bsrmultisyncmodel.h"
 
 // P2P Protocols
 #include "p2p/protocols/Send.h"
@@ -183,7 +183,7 @@ namespace PAMI
 
   // Device Typedefs
   typedef Device::CAUDevice                                           CAUDevice;
-  typedef Device::BSRDevice                                           BSRDevice;
+  //typedef Device::BSRDevice                                           BSRDevice;
 
   // P2P Message Typedefs
   typedef PAMI::SendWrapper                                           LAPISendBase;
@@ -433,7 +433,7 @@ namespace PAMI
                            _context,
                            _contextid,
                           &_dispatch_id);
-          _bsr_device.init(_client, _context, _contextid, _Lapi_env.MP_child);
+          //_bsr_device.init(_client, _context, _contextid, _Lapi_env.MP_child);
 
           *out_mysize        = _Lapi_env.MP_procs;
           *out_myrank        = _Lapi_env.MP_child;
@@ -479,7 +479,7 @@ namespace PAMI
           __global.mapping.nodePeers(numpeers);
           numtasks = __global.mapping.size();
 
-          _bsr_device.setGenericDevices(_devices->_generics);
+          //_bsr_device.setGenericDevices(_devices->_generics);
           _cau_device.setGenericDevices(_devices->_generics);
 	  rc = __global.heap_mm->memalign((void **)&_cau_collreg, 0,
 						sizeof(*_cau_collreg));
@@ -1029,7 +1029,7 @@ namespace PAMI
       /*  The over lapi devices                                 */
       DeviceWrapper                          _lapi_device;
       CAUDevice                              _cau_device;
-      BSRDevice                              _bsr_device;
+      //BSRDevice                              _bsr_device;
   public:
       /*  Collective Registrations                              */
       PGASCollreg                           *_pgas_collreg;
