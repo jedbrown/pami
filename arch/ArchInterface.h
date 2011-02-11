@@ -17,6 +17,7 @@
 #include <stdint.h>   // This may not be platform-independent.
 #include <stddef.h>   // This may not be platform-independent.
 
+#ifdef __cplusplus
 ///
 /// \brief Encapuslating class for static methods which allows partial template specialization
 ///
@@ -59,5 +60,6 @@ class Type
       for (i=0; i<N; i++) d[i] = s[i];
     };
 };
+#endif // __cplusplus
 
-#endif // __pami_arch_common_h__
+#endif // __arch_ArchInterface_h__

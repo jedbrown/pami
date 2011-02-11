@@ -21,9 +21,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <pami.h>
+#include "Arch.h"
 
-/** \brief The maximum number of sources based on the number of cores */
-#define MATH_MAX_NSRC	4
+/** \brief The maximum number of sources based on the number of cores (PEs) */
+#define MATH_MAX_NSRC	PAMI_MAX_PROC_PER_NODE
 
 #ifndef MAX
 #define MAX(a,b) (((a)>(b))?(a):(b))   /**< Maximum macro */
@@ -2336,4 +2337,4 @@ static inline void Core_fp64_fp64_cmplx_prod(fp64_fp64_t *dst, const fp64_fp64_t
 }; // extern "C"
 #endif
 
-#endif /* _math_coremath_h_ */
+#endif /* __math_math_coremath_h__ */
