@@ -78,10 +78,12 @@ namespace PAMI
     {
       public:
 
-        /*typedef Shmem::ShmemCollDescFifo<Counter::Indirect<Counter::Native> >  CollectiveFifo;
-        typedef Shmem::ShmemCollDesc< Counter::Indirect<Counter::Native> >     CollectiveDescriptor;*/
+        typedef Shmem::ShmemCollDescFifo<Counter::Indirect<Counter::Native> >  CollectiveFifo;
+        typedef Shmem::ShmemCollDesc< Counter::Indirect<Counter::Native> >     CollectiveDescriptor;
+#if 0  // Todo:  find platform agnostic way to enable BGQ::IndirectL2
         typedef Shmem::ShmemCollDescFifo<PAMI::Counter::BGQ::IndirectL2>  CollectiveFifo;
         typedef Shmem::ShmemCollDesc<PAMI::Counter::BGQ::IndirectL2>     CollectiveDescriptor;
+#endif      
         typedef Shmem::BaseMessage<ShmemDevice<T_Fifo,T_Shaddr,T_FifoCount> > BaseMessage;
 
 
