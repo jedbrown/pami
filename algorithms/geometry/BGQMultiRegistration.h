@@ -692,7 +692,7 @@ namespace PAMI
 
               if (_mu_ammulticast_ni->status() != PAMI_SUCCESS) _mu_ammulticast_ni = NULL;
 
-//          if(__global.topology_local.size() < 64)
+              if(__global.useshmem())
               {
                 _axial_shmem_mu_dput_ni     = new (_axial_shmem_mu_dput_ni_storage    ) T_AxialShmemDputNativeInterface(_mu_device, _shmem_device, client, context, context_id, client_id, _dispatch_id);
 
