@@ -248,7 +248,7 @@ namespace PAMI
             _progress (progress),
             _local_progress_device (&(Generic::Device::Factory::getDevice (progress, 0, contextid))),
             shaddr (),
-            _desc_fifo ()//, _adv_obj (NULL)
+            _desc_fifo ()
 
         {
           TRACE_ERR((stderr, "ShmemDevice() constructor\n"));
@@ -444,10 +444,6 @@ namespace PAMI
         // Collectives
         // -------------------------------------------------------------
         CollectiveFifo  _desc_fifo;
-        //Shmem::BaseMessage<ShmemDevice<T_Fifo,T_Shaddr,T_FifoCount>, Shmem::ShmemCollDesc<T_Atomic> > *_adv_obj;
-        //inline void post_obj(Shmem::BaseMessage<ShmemDevice<T_Fifo,T_Shaddr,T_FifoCount>, Shmem::ShmemCollDesc<T_Atomic> > *obj){_adv_obj = obj;};
-        //Shmem::BaseMessage<ShmemDevice<T_Fifo,T_Shaddr,T_FifoCount> > *_adv_obj;
-        //inline void post_obj(Shmem::BaseMessage<ShmemDevice<T_Fifo,T_Shaddr,T_FifoCount> > *obj){_adv_obj = obj;};
 
         PAMI::Queue     _collectiveQ;
         inline void post_obj(BaseMessage *obj)

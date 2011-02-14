@@ -25,10 +25,8 @@
 #include "components/devices/ShmemCollInterface.h"
 #include "components/devices/shmem/ShmemDevice.h"
 #include "components/devices/shmem/msgs/ShortMcombMessage.h"
-//#include "components/devices/shmemcoll/msgs/ShaddrMcombMessage.h"
 #include "components/devices/shmem/msgs/ShaddrMcombMessagePipe.h"
 #include "components/devices/shmem/msgs/BaseMessage.h"
-//#include "components/devices/shmemcoll/ShmemDescMessage.h"
 
 #ifndef TRACE_ERR
 //#define TRACE_ERR(x) //fprintf(stderr,"%s:%d\n",__FILE__,__LINE__); fprintf x
@@ -47,7 +45,6 @@ namespace PAMI
       {
         public:
 
-          //Shmem Multicombine Model
           ShmemMcombModelWorld (T_Device &device, pami_result_t &status) :
             Interface::MulticombineModel < ShmemMcombModelWorld<T_Device>, T_Device, sizeof(Shmem::BaseMessage<T_Device>) > (device, status),
             _device(device),
