@@ -18,10 +18,10 @@
 #include <vector>
 #include "algorithms/interfaces/NativeInterface.h"
 #include "algorithms/geometry/Metadata.h"
+#include "algorithms/protocols/barrier/BarrierT.h"
 #include "algorithms/protocols/barrier/MultiSyncComposite.h"
 #include "algorithms/protocols/broadcast/MultiCastComposite.h"
 #include "algorithms/protocols/allreduce/MultiCombineComposite.h"
-#include "algorithms/protocols/AllSidedCollectiveProtocolFactoryT.h"
 #include "algorithms/protocols/CollectiveProtocolFactoryT.h"
 #include "common/lapiunix/lapifunc.h"
 
@@ -76,10 +76,21 @@ namespace PAMI
         {
           new(m) PAMI::Geometry::Metadata("I0:MultiSyncComposite:SHMEM:CAU");
         }
-        typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSyncComposite2Device,
-                                                                    MsyncMetaData,
-                                                                    CCMI::ConnectionManager::SimpleConnMgr>
+        typedef CCMI::Adaptor::Barrier::BarrierFactory2DeviceMsync < CCMI::Adaptor::Barrier::MultiSyncComposite2Device,
+                                                                     MsyncMetaData,
+                                                                     CCMI::ConnectionManager::SimpleConnMgr>
         MultiSyncFactory;
+
+        void MsyncBSRMetaData(pami_metadata_t *m)
+        {
+          new(m) PAMI::Geometry::Metadata("I0:MultiSyncComposite:BSR:CAU");
+        }
+        typedef CCMI::Adaptor::Barrier::BarrierFactory2DeviceMsync < CCMI::Adaptor::Barrier::MultiSyncComposite2Device,
+                                                                     MsyncBSRMetaData,
+                                                                     CCMI::ConnectionManager::SimpleConnMgr>
+        MultiSyncBSRFactory;
+
+
       };
 
       namespace Broadcast
@@ -158,6 +169,7 @@ namespace PAMI
         typedef struct Factories
         {
           char barrier_blob[sizeof(Barrier::MultiSyncFactory)];
+          char barrierbsr_blob[sizeof(Barrier::MultiSyncBSRFactory)];
           char broadcast_blob[sizeof(Broadcast::MultiCastFactory)];
           char allreduce_blob[sizeof(Allreduce::MultiCombineFactory)];
           char reduce_blob[sizeof(Reduce::MultiCombineFactory)];
@@ -168,8 +180,9 @@ namespace PAMI
           // Currently, the _niPtr array is in front
           // These have to go at the front of the struct
           // because the protocols use the key.
-          CCMI::Interfaces::NativeInterface *_niPtr[5];
+          CCMI::Interfaces::NativeInterface *_niPtr[6];
           Barrier::MultiSyncFactory         *_barrier;
+          Barrier::MultiSyncBSRFactory      *_barrierbsr;
           Broadcast::MultiCastFactory       *_broadcast;
           Allreduce::MultiCombineFactory    *_allreduce;
           Reduce::MultiCombineFactory       *_reduce;
@@ -212,6 +225,7 @@ namespace PAMI
           _local_devs(ldev),
           _global_dev(gdev),
           _g_barrier_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
+          _g_barrierbsr_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
           _g_broadcast_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
           _g_allreduce_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
           _g_reduce_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
@@ -275,16 +289,27 @@ namespace PAMI
             geometryInfo->_ni                              = ni;
             geometryInfo->_niPtr[0]                        = ni;
             geometryInfo->_niPtr[1]                        = &_g_barrier_ni;
-            geometryInfo->_niPtr[2]                        = &_g_broadcast_ni;
-            geometryInfo->_niPtr[3]                        = &_g_allreduce_ni;
-            geometryInfo->_niPtr[4]                        = &_g_reduce_ni;
+            geometryInfo->_niPtr[2]                        = &_g_barrierbsr_ni;
+            geometryInfo->_niPtr[3]                        = &_g_broadcast_ni;
+            geometryInfo->_niPtr[4]                        = &_g_allreduce_ni;
+            geometryInfo->_niPtr[5]                        = &_g_reduce_ni;
 
             // Allocate the factories
             //  ----->  Barrier
             Barrier::MultiSyncFactory  *barrier_reg        = (Barrier::MultiSyncFactory*)_factory_allocator.allocateObject();
-            new(barrier_reg) Barrier::MultiSyncFactory(&_sconnmgr, (CCMI::Interfaces::NativeInterface *)&geometryInfo->_niPtr[0]);
+            new(barrier_reg) Barrier::MultiSyncFactory(&_sconnmgr,
+                                                       (CCMI::Interfaces::NativeInterface *)&geometryInfo->_niPtr[0],
+                                                       (CCMI::Interfaces::NativeInterface *)&geometryInfo->_niPtr[1]);
             geometryInfo->_barrier                         = barrier_reg;
 
+            //  ----->  BarrierBSR
+            Barrier::MultiSyncBSRFactory  *barrierbsr_reg  = (Barrier::MultiSyncBSRFactory*)_factory_allocator.allocateObject();
+            new(barrierbsr_reg) Barrier::MultiSyncBSRFactory(&_sconnmgr,
+                                                             (CCMI::Interfaces::NativeInterface *)&geometryInfo->_niPtr[0],
+                                                             (CCMI::Interfaces::NativeInterface *)&geometryInfo->_niPtr[2]);
+            geometryInfo->_barrierbsr                      = barrierbsr_reg;
+
+            
             //  ----->  Broadcast
             Broadcast::MultiCastFactory  *broadcast_reg    = (Broadcast::MultiCastFactory*)_factory_allocator.allocateObject();
             new(broadcast_reg) Broadcast::MultiCastFactory(&_sconnmgr,
@@ -311,6 +336,7 @@ namespace PAMI
             // Add the geometry info to the geometry
             geometry->setKey(PAMI::Geometry::GKEY_GEOMETRYCSNI, ni);
             geometry->addCollective(PAMI_XFER_BARRIER,barrier_reg,context_id);
+            geometry->addCollective(PAMI_XFER_BARRIER,barrierbsr_reg,context_id);
             geometry->addCollective(PAMI_XFER_BROADCAST,broadcast_reg,context_id);
             geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,allreduce_reg,context_id);
             geometry->addCollectiveCheck(PAMI_XFER_REDUCE,reduce_reg,context_id);
@@ -420,6 +446,7 @@ namespace PAMI
 
         // Global native interface
         T_GlobalNI_AM                                                   _g_barrier_ni;
+        T_GlobalNI_AM                                                   _g_barrierbsr_ni;
         T_GlobalNI_AM                                                   _g_broadcast_ni;
         T_GlobalNI_AM                                                   _g_allreduce_ni;
         T_GlobalNI_AM                                                   _g_reduce_ni;

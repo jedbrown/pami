@@ -96,6 +96,29 @@ namespace CCMI
               _geometry((PAMI_GEOMETRY_CLASS*)g),
               _deviceInfo(NULL)
           {
+            MultiSyncComposite2Device(_native_l,
+                                      _native_g,
+                                      cmgr,
+                                      g,
+                                      cmd,
+                                      fn,
+                                      cookie);
+          }
+
+
+        MultiSyncComposite2Device (Interfaces::NativeInterface      *mInterfaceL,
+                                   Interfaces::NativeInterface      *mInterfaceG,
+                                   ConnectionManager::SimpleConnMgr *cmgr,
+                                   pami_geometry_t                   g,
+                                   void                             *cmd,
+                                   pami_event_function               fn,
+                                   void                             *cookie) :
+              Composite(),
+              _native_l(mInterfaceL),
+              _native_g(mInterfaceG),
+              _geometry((PAMI_GEOMETRY_CLASS*)g),
+              _deviceInfo(NULL)
+          {
             PAMI::Topology  *t_master    = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
             PAMI::Topology  *t_local     = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
 

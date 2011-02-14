@@ -176,6 +176,113 @@ namespace CCMI
           }
       };
 
+
+
+      ///
+      /// Barrier Factory All Sided for generate routine
+      ///
+      template <class T, MetaDataFn get_metadata, class C>
+      class BarrierFactory2DeviceMsync: public CollectiveProtocolFactory
+      {
+        class collObj
+        {
+        public:
+          collObj(Interfaces::NativeInterface  * nativeL,
+                  Interfaces::NativeInterface  * nativeG,
+                  C                            * cmgr,
+                  pami_geometry_t                geometry,
+                  pami_xfer_t                  * cmd,
+                  pami_event_function            fn,
+                  void                         * cookie,
+                  BarrierFactory2DeviceMsync   * factory):
+            _factory(factory),
+            _user_done_fn(cmd->cb_done),
+            _user_cookie(cmd->cookie),
+            _obj(nativeL, nativeG,cmgr,geometry,cmd,fn,cookie)
+            {
+              TRACE_FN_ENTER();
+              TRACE_FORMAT("<%p>",this);
+              DO_DEBUG((templateName<T>()));
+              TRACE_FN_EXIT();
+            }
+	
+          BarrierFactory2DeviceMsync         * _factory;
+          pami_event_function                  _user_done_fn;
+          void                               * _user_cookie;
+          T                                    _obj;
+        };
+
+
+      public:
+        BarrierFactory2DeviceMsync (C                   * cmgr,
+                                    Interfaces::NativeInterface * nativeL,
+                                    Interfaces::NativeInterface * nativeG):
+          CollectiveProtocolFactory(),
+          _cmgr(cmgr),
+          _nativeL(nativeL),
+          _nativeG(nativeG)
+          {
+            TRACE_FN_ENTER();
+            TRACE_FORMAT("<%p>",this);
+            TRACE_FN_EXIT();
+          }
+
+        virtual ~BarrierFactory2DeviceMsync ()
+          {
+          }
+
+        /// NOTE: This is required to make "C" programs link successfully with virtual destructors
+        void operator delete(void * p)
+          {
+            CCMI_abort();
+          }
+
+        static void done_fn(pami_context_t  context,
+                            void          * clientdata,
+                            pami_result_t   res)
+          {
+            TRACE_FN_ENTER();
+            collObj *cobj = (collObj *)clientdata;
+            TRACE_FORMAT("<%p> cobj %p",cobj->_factory, cobj);
+            cobj->_user_done_fn(context, cobj->_user_cookie, res);
+            cobj->_factory->_alloc.returnObject(cobj);
+            TRACE_FN_EXIT();
+          }
+
+
+        virtual Executor::Composite * generate(pami_geometry_t             geometry,
+                                               void                      * cmd)
+          {
+            TRACE_FN_ENTER();
+            collObj *cobj = (collObj*)  _alloc.allocateObject();
+            TRACE_FORMAT("<%p> cobj %p",this, cobj);
+            new(cobj) collObj(_nativeL,         // Native interface
+                              _nativeG,         // Native interface
+                              _cmgr,            // Connection Manager
+                              geometry,         // Geometry Object
+                              (pami_xfer_t*)cmd,// Parameters
+                              done_fn,          // Intercept function
+                              cobj,             // Intercept cookie
+                              this);            // Factory
+            TRACE_FN_EXIT();
+            return(Executor::Composite *)(&cobj->_obj);
+          }
+
+        virtual void metadata(pami_metadata_t *mdata)
+          {
+            TRACE_FN_ENTER();
+            TRACE_FORMAT("mdata=%p",mdata);
+            get_metadata(mdata);
+            TRACE_FN_EXIT();
+          }
+      private:
+        C                                          * _cmgr;
+        Interfaces::NativeInterface                * _nativeL;
+        Interfaces::NativeInterface                * _nativeG;
+        PAMI::MemoryAllocator<sizeof(collObj), 16>   _alloc;
+      };
+
+      
       ///
       /// \brief barrier template
       ///
