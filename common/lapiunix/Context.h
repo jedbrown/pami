@@ -38,8 +38,10 @@
 #include "components/devices/cau/caumulticombinemodel.h"
 
 // BSR Components
-//#include "components/devices/bsr/bsrdevice.h"
-//#include "components/devices/bsr/bsrmultisyncmodel.h"
+#ifndef _LAPI_LINUX
+#include "components/devices/bsr/bsrdevice.h"
+#include "components/devices/bsr/bsrmultisyncmodel.h"
+#endif
 
 // P2P Protocols
 #include "p2p/protocols/Send.h"
@@ -183,8 +185,9 @@ namespace PAMI
 
   // Device Typedefs
   typedef Device::CAUDevice                                           CAUDevice;
-  //typedef Device::BSRDevice                                           BSRDevice;
-
+#ifndef _LAPI_LINUX
+  typedef Device::BSRDevice                                           BSRDevice;
+#endif
   // P2P Message Typedefs
   typedef PAMI::SendWrapper                                           LAPISendBase;
   typedef PAMI::Protocol::Send::SendPWQ < LAPISendBase >              LAPISend;
@@ -433,8 +436,9 @@ namespace PAMI
                            _context,
                            _contextid,
                           &_dispatch_id);
-          //_bsr_device.init(_client, _context, _contextid, _Lapi_env.MP_child);
-
+#ifndef _LAPI_LINUX
+          _bsr_device.init(_client, _context, _contextid, _Lapi_env.MP_child);
+#endif
           *out_mysize        = _Lapi_env.MP_procs;
           *out_myrank        = _Lapi_env.MP_child;
           *out_lapi_handle   = _lapi_handle;
@@ -479,7 +483,9 @@ namespace PAMI
           __global.mapping.nodePeers(numpeers);
           numtasks = __global.mapping.size();
 
-          //_bsr_device.setGenericDevices(_devices->_generics);
+#ifndef _LAPI_LINUX          
+          _bsr_device.setGenericDevices(_devices->_generics);
+#endif          
           _cau_device.setGenericDevices(_devices->_generics);
 	  rc = __global.heap_mm->memalign((void **)&_cau_collreg, 0,
 						sizeof(*_cau_collreg));
@@ -1029,7 +1035,9 @@ namespace PAMI
       /*  The over lapi devices                                 */
       DeviceWrapper                          _lapi_device;
       CAUDevice                              _cau_device;
-      //BSRDevice                              _bsr_device;
+#ifndef _LAPI_LINUX
+      BSRDevice                              _bsr_device;
+#endif      
   public:
       /*  Collective Registrations                              */
       PGASCollreg                           *_pgas_collreg;
