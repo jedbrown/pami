@@ -43,7 +43,7 @@ namespace PAMI
         {
           public:
             //currently optimized to a many-to-one combine
-            static inline pami_result_t short_msg_advance(typename T_Device::CollectiveDescriptor* my_desc, pami_multicombine_t* mcomb_params,
+            static inline pami_result_t short_msg_advance(typename T_Device::CollectiveFifo::Descriptor* my_desc, pami_multicombine_t* mcomb_params,
                 unsigned npeers, unsigned local_rank, unsigned task)
             {
 
@@ -112,7 +112,7 @@ namespace PAMI
             //inline pami_result_t advance ()
             {
 
-              typename T_Device::CollectiveDescriptor* _my_desc = this->_my_desc;
+              typename T_Device::CollectiveFifo::Descriptor* _my_desc = this->_my_desc;
               pami_multicombine_t & mcomb_params = _my_desc->get_mcomb_params();
               size_t num_src_ranks = ((PAMI::Topology*)mcomb_params.data_participants)->size();
 
@@ -194,7 +194,7 @@ namespace PAMI
             }
 
           public:
-            inline ShortMcombMessage (pami_context_t context, typename T_Device::CollectiveDescriptor* desc, unsigned local_rank):
+            inline ShortMcombMessage (pami_context_t context, typename T_Device::CollectiveFifo::Descriptor* desc, unsigned local_rank):
             BaseMessage<T_Device>(context, desc, ShortMcombMessage::__advance, (void*)this, local_rank)
 
           {

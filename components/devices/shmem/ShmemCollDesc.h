@@ -1,9 +1,9 @@
 /**
- * \file components/devices/shmemcoll/ShmemCollDesc.h
+ * \file components/devices/shmem/ShmemCollDesc.h
  * \brief ???
  */
-#ifndef __components_devices_shmemcoll_ShmemCollDesc_h__
-#define __components_devices_shmemcoll_ShmemCollDesc_h__
+#ifndef __components_devices_shmem_ShmemCollDesc_h__
+#define __components_devices_shmem_ShmemCollDesc_h__
 
 #include "components/devices/MulticastModel.h"
 #include "components/devices/MultisyncModel.h"
@@ -70,7 +70,11 @@ public:
       static ShmemRegion*  _shmem_region = NULL;
 
       template < class T_Atomic >
-      class ShmemCollDesc
+      class CollectiveFifo
+      {
+        public:
+
+      class Descriptor
       {
 
         public:
@@ -79,10 +83,7 @@ public:
           {
             T_Atomic		synch_counter;	/* Whether everyone has arrived */
             T_Atomic		done_counter; 	/* Whether everyone finished 	*/
-            //T_Atomic		_seq_num;
           };
-
-
 
         private:
 
@@ -106,56 +107,48 @@ public:
         public:
 
 
-          inline ShmemCollDesc() {}
+          inline Descriptor() {}
 
-          inline ShmemCollDesc(Memory::MemoryManager &mm, char * unique_device_string, size_t usageid, size_t index): _shared(NULL), _master(0), _storage(NULL), _my_seq_num(0),  _my_state(FREE)
+          inline Descriptor(Memory::MemoryManager &mm, char * unique_device_string, size_t usageid, size_t index): _shared(NULL), _master(0), _storage(NULL), _my_seq_num(0),  _my_state(FREE)
           {
             char key[PAMI::Memory::MMKEYSIZE];
-            sprintf(key, "/ShmemCollDesc-synch-%s-%zd-%zd", unique_device_string, usageid, index);
+            sprintf(key, "/ShmemCollectiveFifoDescriptor-synch-%s-%zd-%zd", unique_device_string, usageid, index);
             _atomics.synch_counter.init(&mm, key);
-            sprintf(key, "/ShmemCollDesc-done-%s-%zd-%zd", unique_device_string, usageid, index);
+            sprintf(key, "/ShmemCollectiveFifoDescriptor-done-%s-%zd-%zd", unique_device_string, usageid, index);
             _atomics.done_counter.init(&mm, key);
 
             _shared = _shmem_region + index;
             _my_seq_num = (uint64_t)index;
 
           };
-          inline ~ShmemCollDesc() {}
+          inline ~Descriptor() {}
 
           inline void reset()
           {
             _atomics.synch_counter.fetch_and_clear ();
             _atomics.done_counter.fetch_and_clear ();
             _shared->flag = 0;
-            _shared->num_consumers = __global.topology_local.size();;
+            _shared->num_consumers = __global.topology_local.size();
           }
 
           inline void set_mcast_params(pami_multicast_t* mcast)
           {
             memcpy((void*)&_coll_params.mcast, (void*)mcast, sizeof(pami_multicast_t));
-            //memcpy((void*)&_mcast, (void*)mcast, sizeof(pami_multicast_t));
-            //_connid = mcast->connection_id;
-
           }
 
           inline void set_mcomb_params(pami_multicombine_t* mcomb)
           {
-            //assert(mcomb != NULL);
             memcpy((void*)&_coll_params.mcomb, (void*)mcomb, sizeof(pami_multicombine_t));
-            //memcpy((void*)&_mcomb, (void*)mcomb, sizeof(pami_multicombine_t));
-            //_connid = mcomb->connection_id;
           }
 
           inline pami_multicast_t& get_mcast_params()
           {
             return _coll_params.mcast;
-            //return _mcast;
           }
 
           inline pami_multicombine_t& get_mcomb_params()
           {
             return _coll_params.mcomb;
-            //return _mcomb;
           }
 
           inline	void set_type(CollType_t type)
@@ -254,17 +247,6 @@ public:
             _master = master;
           }
 
-          /*
-                      inline void set_state(DescState_t state)
-                      {
-                        _shared.state = state;
-                      }
-
-                      inline DescState_t get_state()
-                      {
-                        return _shared.state;
-                      }
-          */
           inline void set_my_state(DescState_t state)
           {
             _my_state = state;
@@ -322,12 +304,9 @@ public:
 
       };
 
-      template < class T_Atomic >
-      class ShmemCollDescFifo
-      {
 
         private:
-          ShmemCollDesc<T_Atomic>      _desc[DESCRIPTOR_FIFO_SIZE];
+          Descriptor  _desc[DESCRIPTOR_FIFO_SIZE];
           uint64_t    _head;
           uint64_t    _tail;
           uint64_t    _next_pending_match;
@@ -336,16 +315,16 @@ public:
 
         public:
 
-          inline ShmemCollDescFifo(): _head(0), _tail(0), _next_pending_match(0), _fifo_end(DESCRIPTOR_FIFO_SIZE), _local_rank(__global.topology_local.rank2Index(__global.mapping.task()))
+          inline CollectiveFifo(): _head(0), _tail(0), _next_pending_match(0), _fifo_end(DESCRIPTOR_FIFO_SIZE), _local_rank(__global.topology_local.rank2Index(__global.mapping.task()))
           {
-            TRACE_ERR((stderr, "ShmemCollDescFifo constructor called\n"));
+            TRACE_ERR((stderr, "Shmem::CollectiveFifo constructor called\n"));
           }
 
 
           void init (Memory::MemoryManager &mm, char * unique_device_string)
           {
             char key[PAMI::Memory::MMKEYSIZE];
-            sprintf(key, "/ShmemCollDescFifo-%s", unique_device_string);
+            sprintf(key, "/ShmemCollectiveFifo-%s", unique_device_string);
 
 
             size_t total_size = sizeof(ShmemRegion) * DESCRIPTOR_FIFO_SIZE ;
@@ -354,17 +333,17 @@ public:
                               64,
                               total_size,
                               key,
-                              ShmemCollDescFifo::shmem_region_initialize,
+                              CollectiveFifo::shmem_region_initialize,
                               NULL);
             PAMI_assertf(rc == PAMI_SUCCESS, "Failed to allocate shared memory resources for collective descriptors");
 
             for (size_t i = 0; i < DESCRIPTOR_FIFO_SIZE; i++)
               {
-                new (&_desc[i]) ShmemCollDesc<T_Atomic>(mm, unique_device_string, 0, i );
+                new (&_desc[i]) Descriptor (mm, unique_device_string, 0, i );
               }
           };
 
-          inline ~ShmemCollDescFifo()
+          inline ~CollectiveFifo()
           { }
 
           static void shmem_region_initialize (void       * memory,
@@ -384,7 +363,7 @@ public:
 
           }
 
-          inline ShmemCollDesc<T_Atomic>* fetch_descriptor()
+          inline Descriptor * fetch_descriptor()
           {
             if (_tail < _fifo_end)
               {
@@ -397,7 +376,7 @@ public:
             return NULL;
           }
 
-          inline ShmemCollDesc<T_Atomic>* next_free_descriptor(unsigned &index)
+          inline Descriptor * next_free_descriptor(unsigned &index)
           {
             if (_tail < _fifo_end)
               {
@@ -409,7 +388,7 @@ public:
             return NULL;
           }
 
-          inline ShmemCollDesc<T_Atomic>* get_descriptor_by_idx(unsigned index)
+          inline Descriptor * get_descriptor_by_idx(unsigned index)
           {
             return &_desc[index];
           }
@@ -482,7 +461,7 @@ public:
           }
 
           //TODO..fix this
-          inline ShmemCollDesc<T_Atomic>* next_desc_pending_match()
+          inline Descriptor * next_desc_pending_match()
           {
             if (_desc[_next_pending_match % DESCRIPTOR_FIFO_SIZE].get_my_state() == INIT)
               {
@@ -493,7 +472,7 @@ public:
           }
 
           //TODO..fix this
-          inline ShmemCollDesc<T_Atomic>* match_descriptor(unsigned conn_id)
+          inline Descriptor * match_descriptor(unsigned conn_id)
           {
             while (_head < _tail)
               {
@@ -517,4 +496,4 @@ public:
   }
 }
 
-#endif
+#endif // __components_devices_shmem_ShmemCollDesc_h__

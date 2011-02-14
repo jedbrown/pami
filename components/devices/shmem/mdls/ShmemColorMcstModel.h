@@ -76,7 +76,7 @@ namespace PAMI
 
           for (size_t i = 0; i < NUM_SHMEM_MCST_COLORS; i++)
           {
-            new (&_desc[i]) typename T_Device::CollectiveDescriptor(__global.mm, _device.getUniqueString(), 1, i );
+            new (&_desc[i]) typename T_Device::CollectiveFifo::Descriptor(__global.mm, _device.getUniqueString(), 1, i );
           }
 
         };
@@ -105,7 +105,7 @@ namespace PAMI
             unsigned conn_id = mcast->connection_id;
             TRACE_FORMAT("conn_id:%u", conn_id);
 
-            typename T_Device::CollectiveDescriptor *my_desc = NULL;
+            typename T_Device::CollectiveFifo::Descriptor *my_desc = NULL;
 
             my_desc = &_desc[conn_id];
             my_desc->set_mcast_params(mcast);
@@ -180,7 +180,7 @@ namespace PAMI
           unsigned _local_rank;
           unsigned _npeers;
 
-          typename T_Device::CollectiveDescriptor	_desc[NUM_SHMEM_MCST_COLORS];
+          typename T_Device::CollectiveFifo::Descriptor	_desc[NUM_SHMEM_MCST_COLORS];
 
 
           static void shmem_region_initialize (void       * memory,

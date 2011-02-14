@@ -140,7 +140,7 @@ namespace PAMI
   //typedef Fifo::LinearFifo<ShmemPacket, PAMI::Counter::BGQ::IndirectL2> ShmemFifo;
   //typedef Fifo::LinearFifo<ShmemPacket, PAMI::Counter::BGQ::IndirectL2, 128, Wakeup::BGQ> ShmemFifo;
   typedef Fifo::WrapFifo<ShmemPacket, PAMI::Counter::BGQ::IndirectL2Bounded, 128, Wakeup::BGQ> ShmemFifo;
-  typedef Device::ShmemDevice<ShmemFifo, Device::Shmem::BgqShaddrReadOnly> ShmemDevice;
+  typedef Device::ShmemDevice<ShmemFifo, Counter::BGQ::IndirectL2, Device::Shmem::BgqShaddrReadOnly> ShmemDevice;
   typedef Device::Shmem::PacketModel<ShmemDevice> ShmemPacketModel;
   //typedef Device::Shmem::BgqShaddrPacketModel<ShmemDevice> ShmemPacketModel;
   typedef Device::Shmem::DmaModel<ShmemDevice> ShmemDmaModel;
@@ -149,7 +149,6 @@ namespace PAMI
   typedef PAMI::Protocol::Send::SendPWQ < ShmemEagerBase > ShmemEager;
 
   typedef PAMI::Device::Shmem::ShmemColorMcstModel<ShmemDevice> ShaddrMcstModel;
-  typedef PAMI::Device::Shmem::ShmemCollDescFifo  <PAMI::Counter::BGQ::IndirectL2> ShmemColorDesc;
 
   typedef  PAMI::BGQNativeInterfaceASMultiDevice < MUDevice,
   ShmemDevice,

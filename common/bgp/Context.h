@@ -63,7 +63,7 @@ namespace PAMI
 
   typedef Fifo::FifoPacket <sizeof(void*)*4, 256> ShmemPacket;
   typedef Fifo::LinearFifo<ShmemPacket, Counter::Indirect<Counter::Native> > ShmemFifo;
-  typedef Device::ShmemDevice<ShmemFifo,Device::Shmem::BgpShaddr> ShmemDevice;
+  typedef Device::ShmemDevice<ShmemFifo,Counter::Indirect<Counter::Native>,Device::Shmem::BgpShaddr> ShmemDevice;
   //typedef Device::ShmemDevice<ShmemFifo> ShmemDevice;
   typedef Device::Shmem::PacketModel<ShmemDevice> ShmemPacketModel;
 

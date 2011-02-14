@@ -72,7 +72,7 @@ namespace PAMI
 
             TRACE_ERR((stderr, "entering postMulticomb\n"));
 
-            typename T_Device::CollectiveDescriptor *my_desc = NULL;
+            typename T_Device::CollectiveFifo::Descriptor *my_desc = NULL;
 
             pami_result_t res =	 _device.getShmemWorldDesc(&my_desc);
             while (res != PAMI_SUCCESS)

@@ -72,20 +72,21 @@ namespace PAMI
       void                      * clientdata;
     } match_dispatch_t;
 
-    template < class T_Fifo, class T_Shaddr = Shmem::NoShaddr, unsigned T_FifoCount = 64 >
-    class ShmemDevice : public Interface::BaseDevice< ShmemDevice<T_Fifo, T_Shaddr, T_FifoCount> >,
-        public Interface::PacketDevice<ShmemDevice<T_Fifo, T_Shaddr, T_FifoCount> >
+    template < class T_Fifo, class T_Atomic = Counter::Indirect<Counter::Native>, class T_Shaddr = Shmem::NoShaddr, unsigned T_FifoCount = 64 >
+    class ShmemDevice : public Interface::BaseDevice< ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount> >,
+        public Interface::PacketDevice<ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount> >
     {
       public:
 
-#ifndef __pami_target_bgq__   // Todo:  find platform agnostic way to enable BGQ::IndirectL2
-        typedef Shmem::ShmemCollDescFifo<Counter::Indirect<Counter::Native> >  CollectiveFifo;
-        typedef Shmem::ShmemCollDesc< Counter::Indirect<Counter::Native> >     CollectiveDescriptor;
-#else
-        typedef Shmem::ShmemCollDescFifo<PAMI::Counter::BGQ::IndirectL2>  CollectiveFifo;
-        typedef Shmem::ShmemCollDesc<PAMI::Counter::BGQ::IndirectL2>     CollectiveDescriptor;
-#endif      
-        typedef Shmem::BaseMessage<ShmemDevice<T_Fifo,T_Shaddr,T_FifoCount> > BaseMessage;
+//#ifdef __pami_target_bgq__   // Todo:  find platform agnostic way to enable BGQ::IndirectL2
+//        typedef Shmem::CollectiveFifo<Counter::Indirect<Counter::Native> >  CollectiveFifo;
+//#else
+//        typedef Shmem::CollectiveFifo<PAMI::Counter::BGQ::IndirectL2>  CollectiveFifo;
+//#endif      
+
+        typedef Shmem::CollectiveFifo<T_Atomic> CollectiveFifo;
+
+        typedef Shmem::BaseMessage<ShmemDevice<T_Fifo,T_Atomic,T_Shaddr,T_FifoCount> > BaseMessage;
 
 
         // Inner factory class
@@ -235,8 +236,8 @@ namespace PAMI
         inline ShmemDevice (size_t clientid, size_t ncontexts,
                             Memory::MemoryManager & mm, size_t contextid,
                             PAMI::Device::Generic::Device * progress) :
-            Interface::BaseDevice< ShmemDevice<T_Fifo, T_Shaddr, T_FifoCount> > (),
-            Interface::PacketDevice< ShmemDevice<T_Fifo, T_Shaddr, T_FifoCount> > (),
+            Interface::BaseDevice< ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount> > (),
+            Interface::PacketDevice< ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount> > (),
             _clientid (clientid),
             _contextid (contextid),
             _ncontexts (ncontexts),
@@ -409,7 +410,7 @@ namespace PAMI
         
         inline PAMI::Device::Generic::Device * getLocalProgressDevice ();
 
-        pami_result_t getShmemWorldDesc(CollectiveDescriptor **my_desc);
+        pami_result_t getShmemWorldDesc(typename CollectiveFifo::Descriptor **my_desc);
         pami_result_t registerMatchDispatch (Interface::MatchFunction_t   match_func, void * recv_func_parm, uint16_t &id);
 
         T_Fifo _fifo[T_FifoCount];  //< Injection fifo array for all node contexts
@@ -455,31 +456,31 @@ namespace PAMI
         char _unique_str[16];
     };
 
-    template <class T_Fifo, class T_Shaddr, unsigned T_FifoCount>
-    inline size_t ShmemDevice<T_Fifo, T_Shaddr, T_FifoCount>::getLocalRank()
+    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount>
+    inline size_t ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount>::getLocalRank()
     {
       return _peer;
     }
 
-    template <class T_Fifo, class T_Shaddr, unsigned T_FifoCount>
-    inline pami_context_t ShmemDevice<T_Fifo, T_Shaddr, T_FifoCount>::getContext_impl()
+    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount>
+    inline pami_context_t ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount>::getContext_impl()
     {
       return _context;
     }
 
-    template <class T_Fifo, class T_Shaddr, unsigned T_FifoCount>
-    inline size_t ShmemDevice<T_Fifo, T_Shaddr, T_FifoCount>::getContextId_impl()
+    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount>
+    inline size_t ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount>::getContextId_impl()
     {
       return _contextid;
     }
-    template <class T_Fifo, class T_Shaddr, unsigned T_FifoCount>
-    inline size_t ShmemDevice<T_Fifo, T_Shaddr, T_FifoCount>::getContextOffset_impl()
+    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount>
+    inline size_t ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount>::getContextOffset_impl()
     {
       return getContextId_impl();
     }
 
-    template <class T_Fifo, class T_Shaddr, unsigned T_FifoCount>
-    inline size_t ShmemDevice<T_Fifo, T_Shaddr, T_FifoCount>::getContextCount_impl()
+    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount>
+    inline size_t ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount>::getContextCount_impl()
     {
       return _ncontexts;
     }
@@ -490,28 +491,28 @@ namespace PAMI
     /// \see fnum
     /// \param[in] fnum  Local injection fifo number
     ///
-    template <class T_Fifo, class T_Shaddr, unsigned T_FifoCount>
-    inline bool ShmemDevice<T_Fifo, T_Shaddr, T_FifoCount>::isSendQueueEmpty (size_t fnum)
+    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount>
+    inline bool ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount>::isSendQueueEmpty (size_t fnum)
     {
       return (_sendQ[fnum].size() == 0);
     }
 
-    template <class T_Fifo, class T_Shaddr, unsigned T_FifoCount>
-    inline Shmem::SendQueue * ShmemDevice<T_Fifo, T_Shaddr, T_FifoCount>::getQS (size_t fnum)
+    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount>
+    inline Shmem::SendQueue * ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount>::getQS (size_t fnum)
     {
       return &_sendQ[fnum];
     }
 
     /// \see PAMI::Device::Interface::PacketDevice::read()
-    template <class T_Fifo, class T_Shaddr, unsigned T_FifoCount>
-    int ShmemDevice<T_Fifo, T_Shaddr, T_FifoCount>::read_impl (void * dst, size_t length, void * cookie)
+    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount>
+    int ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount>::read_impl (void * dst, size_t length, void * cookie)
     {
       memcpy (dst, cookie, length);
       return 0;
     }
 
-    template <class T_Fifo, class T_Shaddr, unsigned T_FifoCount>
-    size_t ShmemDevice<T_Fifo, T_Shaddr, T_FifoCount>::advance ()
+    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount>
+    size_t ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount>::advance ()
     {
       size_t events = 0;
       while (_rfifo.consumePacket(_dispatch))
@@ -561,21 +562,21 @@ namespace PAMI
       return events;
     }
 
-    template <class T_Fifo, class T_Shaddr, unsigned T_FifoCount>
-    inline size_t ShmemDevice<T_Fifo, T_Shaddr, T_FifoCount>::fnum (size_t peer, size_t offset)
+    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount>
+    inline size_t ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount>::fnum (size_t peer, size_t offset)
     {
       TRACE_ERR((stderr, "(%zu) ShmemDevice::fnum(%zu,%zu) -> %zu \n", __global.mapping.task(), peer, offset, _ncontexts * peer + offset));
       return _ncontexts * peer + offset;
     }
 
-    template <class T_Fifo, class T_Shaddr, unsigned T_FifoCount>
-    inline bool ShmemDevice<T_Fifo, T_Shaddr, T_FifoCount>::activePackets (size_t fnum)
+    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount>
+    inline bool ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount>::activePackets (size_t fnum)
     {
       return (_fifo[fnum].lastPacketConsumed() < _fifo[fnum].lastPacketProduced());
     }
 
-    template <class T_Fifo, class T_Shaddr, unsigned T_FifoCount>
-    inline PAMI::Device::Generic::Device * ShmemDevice<T_Fifo, T_Shaddr, T_FifoCount>::getLocalProgressDevice ()
+    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount>
+    inline PAMI::Device::Generic::Device * ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount>::getLocalProgressDevice ()
     {
       return _local_progress_device;
     }

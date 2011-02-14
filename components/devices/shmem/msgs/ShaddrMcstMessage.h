@@ -66,7 +66,7 @@ namespace PAMI
           inline virtual pami_result_t advance()
           {
 
-            typename T_Device::CollectiveDescriptor* _my_desc = this->_my_desc;
+            typename T_Device::CollectiveFifo::Descriptor* _my_desc = this->_my_desc;
 
             unsigned master = _my_desc->get_master();
             void* mybuf;
@@ -167,7 +167,7 @@ namespace PAMI
           inline pami_result_t advance_color()
           {
 
-            typename T_Device::CollectiveDescriptor* _my_desc = this->_my_desc;
+            typename T_Device::CollectiveFifo::Descriptor* _my_desc = this->_my_desc;
 
             unsigned master = _my_desc->get_master();
             void* mybuf;
@@ -271,7 +271,7 @@ namespace PAMI
 
 
         public:
-          inline ShaddrMcstMessage (pami_context_t context, typename T_Device::CollectiveDescriptor* my_desc, unsigned local_rank) :
+          inline ShaddrMcstMessage (pami_context_t context, typename T_Device::CollectiveFifo::Descriptor* my_desc, unsigned local_rank) :
             BaseMessage <T_Device>(context, my_desc,ShaddrMcstMessage::__advance,(void*)this,local_rank)
 
         {
@@ -279,7 +279,7 @@ namespace PAMI
         };
 
 
-          inline ShaddrMcstMessage (pami_context_t context, typename T_Device::CollectiveDescriptor* my_desc, pami_work_function work_fn, void* cookie, unsigned local_rank) : 
+          inline ShaddrMcstMessage (pami_context_t context, typename T_Device::CollectiveFifo::Descriptor* my_desc, pami_work_function work_fn, void* cookie, unsigned local_rank) : 
             BaseMessage <T_Device>(context, my_desc, work_fn, (void*)this, local_rank)
 
         {

@@ -57,7 +57,7 @@ namespace PAMI
           TRACE_ERR((stderr, "<> BaseMessage::BaseMessage()\n"));
         };
 
-          inline BaseMessage (pami_context_t context, typename T_Device::CollectiveDescriptor* my_desc, pami_work_function work_fn, void* cookie, unsigned local_rank) : PAMI::Queue::Element(),
+          inline BaseMessage (pami_context_t context, typename T_Device::CollectiveFifo::Descriptor* my_desc, pami_work_function work_fn, void* cookie, unsigned local_rank) : PAMI::Queue::Element(),
 _local_rank(local_rank), _bytes_consumed(0), _context(context), _my_desc(my_desc), _work(work_fn, cookie)
 
         {
@@ -67,7 +67,7 @@ _local_rank(local_rank), _bytes_consumed(0), _context(context), _my_desc(my_desc
           unsigned                            _local_rank;
           unsigned                            _bytes_consumed;          
           pami_context_t                      _context;
-          typename T_Device::CollectiveDescriptor     *_my_desc;
+          typename T_Device::CollectiveFifo::Descriptor     *_my_desc;
           PAMI::Device::Generic::GenericThread _work;
 
       };  // PAMI::Device::BaseMessage class

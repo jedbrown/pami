@@ -263,7 +263,7 @@ namespace PAMI
           inline virtual pami_result_t advance ()
           {
 
-            typename T_Device::CollectiveDescriptor* _my_desc = this->_my_desc;
+            typename T_Device::CollectiveFifo::Descriptor* _my_desc = this->_my_desc;
             unsigned _npeers = __global.topology_local.size();
 
             unsigned _local_rank = this->_local_rank;
@@ -283,7 +283,7 @@ namespace PAMI
 
             /* Start the protocol here..blocking version since everyone arrived */
 
-            TRACE_ERR((stderr,"size of desc:%ld sizeof mcomb_control:%ld", sizeof(typename T_Device::CollectiveDescriptor), sizeof(McombControl)));
+            TRACE_ERR((stderr,"size of desc:%ld sizeof mcomb_control:%ld", sizeof(typename T_Device::CollectiveFifo::Descriptor), sizeof(McombControl)));
 
             Shmem::McombControl* mcomb_control = NULL;
             mcomb_control = (Shmem::McombControl*) _my_desc->get_buffer();
@@ -393,7 +393,7 @@ namespace PAMI
             }
 
             public:
-          inline ShaddrMcombMessagePipe (pami_context_t context, typename T_Device::CollectiveDescriptor* my_desc, unsigned local_rank) :
+          inline ShaddrMcombMessagePipe (pami_context_t context, typename T_Device::CollectiveFifo::Descriptor* my_desc, unsigned local_rank) :
             BaseMessage<T_Device>(context, my_desc, ShaddrMcombMessagePipe::__advance, (void*)this, local_rank)
             {
               TRACE_ERR((stderr, "<> ShaddrMcombMessagePipe::ShaddrMcombMessagePipe()\n"));

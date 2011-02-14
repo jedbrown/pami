@@ -37,7 +37,7 @@ namespace PAMI
       {
         public:
 
-          static inline pami_result_t short_msg_advance(typename T_Device::CollectiveDescriptor* my_desc, pami_multicast_t* mcast_params, unsigned master, unsigned local_rank)
+          static inline pami_result_t short_msg_advance(typename T_Device::CollectiveFifo::Descriptor* my_desc, pami_multicast_t* mcast_params, unsigned master, unsigned local_rank)
           {
             void* mybuf;
             void* buf = (void*)my_desc->get_buffer();
@@ -133,7 +133,7 @@ namespace PAMI
 
 
         public:
-          inline ShortMcstMessage (pami_context_t context, typename T_Device::CollectiveDescriptor* my_desc, unsigned local_rank) : 
+          inline ShortMcstMessage (pami_context_t context, typename T_Device::CollectiveFifo::Descriptor* my_desc, unsigned local_rank) : 
             BaseMessage<T_Device>(context, my_desc,ShortMcstMessage::__advance,(void*)this,local_rank)
         {
           TRACE_ERR((stderr, "<> ShortMcstMessage::ShortMcstMessage()\n"));
