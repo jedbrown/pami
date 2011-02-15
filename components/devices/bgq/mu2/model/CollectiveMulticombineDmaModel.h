@@ -10,6 +10,12 @@
 #include "components/devices/bgq/mu2/model/MU_Collective_OP_DT_Table.h"
 #include "sys/pami.h"
 
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
+
+#define DO_TRACE_ENTEREXIT 0
+#define DO_TRACE_DEBUG     0
+
 namespace PAMI
 {
   namespace Device
@@ -30,7 +36,8 @@ namespace PAMI
               CollectiveDmaModelBase(device, status),
               Interface::MulticombineModel<CollectiveMulticombineDmaModel, MU::Context, mcomb_state_bytes>  (device, status)
           {
-
+            TRACE_FN_ENTER();
+            TRACE_FN_EXIT();
           }
 
           pami_result_t postMulticombineImmediate_impl(size_t                   client,
@@ -41,6 +48,7 @@ namespace PAMI
             unsigned sizeoftype =  mu_collective_size_table[mcombine->dtype];
             unsigned bytes      =  mcombine->count * sizeoftype;
             unsigned op = mu_collective_op_table[mcombine->dtype][mcombine->optor];
+            TRACE_FN_ENTER();
 
             if (op == unsupported_operation)
               return PAMI_ERROR; //Unsupported operation
@@ -70,6 +78,7 @@ namespace PAMI
                                                                   classroute);
               }
 
+            TRACE_FN_EXIT();
             if (rc == PAMI_SUCCESS)
               return rc;
 
@@ -91,7 +100,8 @@ namespace PAMI
                                               pami_multicombine_t *mcombine,
                                               void                *devinfo = NULL)
           {
-            //TRACE_FN_ENTER();
+            TRACE_FN_ENTER();
+            TRACE_FN_EXIT();
             // Get the source data buffer/length and validate (assert) inputs
             return PAMI_ERROR;
           }
@@ -99,5 +109,8 @@ namespace PAMI
     };
   };
 };
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
+
 
 #endif

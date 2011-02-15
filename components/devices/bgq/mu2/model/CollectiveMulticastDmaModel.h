@@ -9,6 +9,12 @@
 #include "components/devices/bgq/mu2/model/CollectiveDmaModelBase.h"
 #include "sys/pami.h"
 
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
+
+#define DO_TRACE_ENTEREXIT 0
+#define DO_TRACE_DEBUG     0
+
 namespace PAMI
 {
   namespace Device
@@ -36,6 +42,7 @@ namespace PAMI
               CollectiveDmaModelBase(device, status),
               Interface::MulticastModel<CollectiveMulticastDmaModel, MU::Context, mcast_state_bytes >  (device, status), _myrank(__global.mapping.task())
           {
+            TRACE_FN_ENTER();
             _zeroBytes = ZERO_BYTES;
 
             if (_zeroBuf == NULL)
@@ -43,6 +50,7 @@ namespace PAMI
                 _zeroBuf = (char *) malloc (_zeroBytes * sizeof(char));
                 memset (_zeroBuf, 0, _zeroBytes);
               }
+            TRACE_FN_EXIT();
           }
 
           pami_result_t postMulticastImmediate_impl(size_t                client,
@@ -50,6 +58,7 @@ namespace PAMI
                                                     pami_multicast_t    * mcast,
                                                     void                * devinfo = NULL)
           {
+            TRACE_FN_ENTER();
             pami_result_t rc = PAMI_ERROR;
             pami_task_t *ranks = NULL;
             ((Topology *)mcast->src_participants)->rankList(&ranks);
@@ -91,6 +100,7 @@ namespace PAMI
                                                                   classroute);
               }
 
+            TRACE_FN_EXIT();
             if (rc == PAMI_SUCCESS)
               return rc;
 
@@ -113,13 +123,16 @@ longmsg:
                                            pami_multicast_t *mcast,
                                            void             *devinfo = NULL)
           {
-            //TRACE_FN_ENTER();
+            TRACE_FN_ENTER();
+            TRACE_FN_EXIT();
             return PAMI_ERROR;
-            //TRACE_FN_EXIT();
           }
       };
     };
   };
 };
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
+
 
 #endif

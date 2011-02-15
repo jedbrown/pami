@@ -122,6 +122,7 @@ namespace PAMI
     void OptBinomialMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:OptBinomial:P2P:P2P");
+      m->check_perf.values.hw_accel     = 1;
     }
 
     bool opt_binomial_analyze (PAMI_GEOMETRY_CLASS *geometry)
@@ -151,6 +152,11 @@ namespace PAMI
     void ShmemMcombMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiCombine:SHMEM:-");
+#ifdef ENABLE_NEW_SHMEM
+      m->check_correct.values.alldt     = 0;
+      m->check_correct.values.allop     = 0;
+      m->check_fn                       = Shmem::op_dt_metadata_function;
+#endif
     }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite<>,
@@ -176,6 +182,7 @@ namespace PAMI
     void MUMcastMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiCast:-:MU");
+      m->check_perf.values.hw_accel     = 1;
     }
 
     // Even though MU Multicast is allsided, it still needs a register call with a dispatch id,
@@ -191,6 +198,7 @@ namespace PAMI
     void MUMsyncMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiSync:-:MU");
+      m->check_perf.values.hw_accel     = 1;
     }
 
     //typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSyncComposite<true, MUGlobalDputNI>,
@@ -210,7 +218,6 @@ namespace PAMI
     void MUMcombMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiCombine:-:MU");
-//    m->check_correct.values.mustquery = 0;
       m->check_correct.values.alldt     = 0;
       m->check_correct.values.allop     = 0;
       m->check_fn                       = MU::op_dt_metadata_function;
@@ -227,6 +234,7 @@ namespace PAMI
     void MUMcastCollectiveDputMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:MulticastDput:-:MU");
+      m->check_perf.values.hw_accel     = 1;
     }
 
 
@@ -240,7 +248,6 @@ namespace PAMI
     void MUMcombCollectiveDputMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:MulticombineDput:-:MU");
-      //    m->check_correct.values.mustquery = 0;
       m->check_correct.values.alldt     = 0;
       m->check_correct.values.allop     = 0;
       m->check_fn                       = MU::op_dt_metadata_function;
@@ -281,6 +288,7 @@ namespace PAMI
     {
       new(m) PAMI::Geometry::Metadata("X0:MultiCast_MultiCombine:-:MU");
       m->range_hi = 1048577; /// \todo arbitrary hack for now - it core dumps > 1M
+      m->check_perf.values.hw_accel     = 1;
 
     }
 
@@ -294,6 +302,7 @@ namespace PAMI
     void Msync2DMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiSync2Device:SHMEM:MU");
+      m->check_perf.values.hw_accel     = 1;
     }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSyncComposite2Device,
@@ -306,6 +315,7 @@ namespace PAMI
     {
       // Apparently MU dput actually uses GI for msync
       new(m) PAMI::Geometry::Metadata("I0:MultiSync2Device:SHMEM:GI");
+      m->check_perf.values.hw_accel     = 1;
     }
 
     typedef CCMI::Adaptor::Barrier::BarrierFactoryAllSidedT
@@ -321,7 +331,8 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void Mcast2DMetaData(pami_metadata_t *m)
     {
-      new(m) PAMI::Geometry::Metadata("I0:MultiCast2Device:SHMEM:MU");
+      new(m) PAMI::Geometry::Metadata("X0:MultiCast2Device:SHMEM:MU");
+      m->check_perf.values.hw_accel     = 1;
     }
     typedef CCMI::Adaptor::Broadcast::MultiCastComposite2DeviceFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite2Device<PAMI_GEOMETRY_CLASS, true, false>,
     Mcast2DMetaData, CCMI::ConnectionManager::SimpleConnMgr > MultiCast2DeviceFactory;
@@ -332,6 +343,7 @@ namespace PAMI
     void Mcast2DDputMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiCast2DeviceDput:SHMEM:MU");
+      m->check_perf.values.hw_accel     = 1;
     }
     typedef CCMI::Adaptor::Broadcast::MultiCastComposite2DeviceFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite2DeviceAS<PAMI_GEOMETRY_CLASS>,
     Mcast2DDputMetaData, CCMI::ConnectionManager::SimpleConnMgr > MultiCast2DeviceDputFactory;
@@ -466,11 +478,13 @@ namespace PAMI
     void rectangle_dput_1color_broadcast_metadata(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:RectangleDput1Color:SHMEM:MU");
+      m->check_perf.values.hw_accel     = 1;
     }
 
     void mu_rectangle_dput_1color_broadcast_metadata(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:RectangleDput1Color:MU:MU");
+      m->check_perf.values.hw_accel     = 1;
     }
 
     typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
@@ -499,11 +513,13 @@ namespace PAMI
     void rectangle_dput_broadcast_metadata(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:RectangleDput:SHMEM:MU");
+      m->check_perf.values.hw_accel     = 1;
     }
 
     void mu_rectangle_dput_broadcast_metadata(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:RectangleDput:MU:MU");
+      m->check_perf.values.hw_accel     = 1;
     }
 
     typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
@@ -532,6 +548,7 @@ namespace PAMI
     void rectangle_dput_allgather_metadata(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:RectangleDput:SHMEM:MU");
+      m->check_perf.values.hw_accel     = 1;
     }
 
     void get_rect_allgv_colors (PAMI::Topology             * t,
@@ -775,7 +792,6 @@ namespace PAMI
 
         inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry, int phase)
         {
-          /// \todo These are really 'must query' protocols and should not be added to the regular protocol list
           TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() phase %d, context_id %zu, geometry %p, msync %p, mcast %p, mcomb %p\n", this, phase, context_id, geometry, &_shmem_msync_factory, &_shmem_mcast_factory, &_shmem_mcomb_factory));
           pami_xfer_t xfer = {0};
           PAMI::Topology * topology = (PAMI::Topology*) geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
@@ -829,7 +845,11 @@ namespace PAMI
                       geometry->addCollective(PAMI_XFER_BROADCAST, &_shmem_mcast_factory, _context_id);
 
                       // Add Allreduces
+#ifdef ENABLE_NEW_SHMEM
+                      geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, &_shmem_mcomb_factory, _context_id);
+#else
                       geometry->addCollective(PAMI_XFER_ALLREDUCE, &_shmem_mcomb_factory, _context_id);
+#endif
                     }
                 }
 
@@ -895,6 +915,11 @@ namespace PAMI
 
                   if (_binomial_barrier_factory)
                     geometry->addCollective(PAMI_XFER_BARRIER, _binomial_barrier_factory, _context_id);
+
+#if 0 // test a query barrier protocol
+                  if (_binomial_barrier_factory)
+                    geometry->addCollectiveCheck(PAMI_XFER_BARRIER, _binomial_barrier_factory, _context_id);
+#endif
 
                   if (val && val != PAMI_CR_GKEY_FAIL)
                     {
@@ -962,7 +987,7 @@ namespace PAMI
                         if (_mcast2d_composite_factory)
                           {
                             TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register mcast 2D\n", this));
-                            geometry->addCollective(PAMI_XFER_BROADCAST, _mcast2d_composite_factory, _context_id);
+                            geometry->addCollectiveCheck(PAMI_XFER_BROADCAST, _mcast2d_composite_factory, _context_id);
                           }
                         if (_mcast2d_dput_composite_factory)
                           {

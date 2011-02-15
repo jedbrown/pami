@@ -28,6 +28,8 @@
 #include "util/ccmi_debug.h"
 #include "util/ccmi_util.h"
 
+#undef DO_TRACE_ENTEREXIT 
+#undef DO_TRACE_DEBUG     
 #ifdef CCMI_TRACE_ALL
   #define DO_TRACE_ENTEREXIT 1
   #define DO_TRACE_DEBUG     1
@@ -459,5 +461,8 @@ namespace PAMI
     };
   };
 };
+
+#undef DO_TRACE_ENTEREXIT 
+#undef DO_TRACE_DEBUG     
 
 #endif

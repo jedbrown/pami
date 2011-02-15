@@ -380,12 +380,16 @@ namespace PAMI
           static pami_result_t advance (pami_context_t     context,
                                         void             * cookie)
           {
+            TRACE_FN_ENTER();
             MessageQueue::Element *msg = (MessageQueue::Element *) cookie;
             bool done = msg->advance();
 
             if (done)
+              {
+              TRACE_FN_EXIT();
               return PAMI_SUCCESS;
-
+              }
+            TRACE_FN_EXIT();
             return PAMI_EAGAIN;
           }
 

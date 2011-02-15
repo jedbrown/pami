@@ -18,6 +18,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
+#include <Arch.h>
 
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 

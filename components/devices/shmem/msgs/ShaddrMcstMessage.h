@@ -23,11 +23,12 @@
 #include "math/Memcpy.x.h"
 #include "BaseMessage.h"
 
-#undef TRACE_ERR
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
 
-#ifndef TRACE_ERR
-#define TRACE_ERR(x) //fprintf(stderr,"%s:%d\n",__FILE__,__LINE__); fprintf x
-#endif
+#define DO_TRACE_ENTEREXIT 0
+#define DO_TRACE_DEBUG     0
+
 //#define COPY_BY_CHUNKS
 
 namespace PAMI
@@ -51,13 +52,17 @@ namespace PAMI
 
           static pami_result_t __advance (pami_context_t context, void * cookie)
           {
+            TRACE_FN_ENTER();
             ShaddrMcstMessage * msg = (ShaddrMcstMessage *) cookie;
+            TRACE_FN_EXIT();
             return msg->advance();
           };
 
           static pami_result_t __advance_color (pami_context_t context, void * cookie)
           {
+            TRACE_FN_ENTER();
             ShaddrMcstMessage * msg = (ShaddrMcstMessage *) cookie;
+            TRACE_FN_EXIT();
             return msg->advance_color();
           };
 
@@ -66,6 +71,7 @@ namespace PAMI
           inline virtual pami_result_t advance()
           {
 
+            TRACE_FN_ENTER();
             typename T_Device::CollectiveFifo::Descriptor* _my_desc = this->_my_desc;
 
             unsigned master = _my_desc->get_master();
@@ -82,49 +88,59 @@ namespace PAMI
             if (this->_local_rank == master){
               if (this->_bytes_consumed == bytes)
               {
-                if (_my_desc->in_use()) return PAMI_EAGAIN; //wait for everyone to signal done
-                TRACE_ERR((stderr,"everyone arrived calling done\n"));
+                if (_my_desc->in_use()) 
+                { 
+                  TRACE_FN_EXIT();
+                  return PAMI_EAGAIN; //wait for everyone to signal done
+                }
+                TRACE_STRING("everyone arrived calling done");
 
                 mcst_control->incoming_bytes = 0;
                 mcst_control->glob_src_buffer = NULL;
                 mem_barrier();
                 mcast_params.cb_done.function(this->_context, mcast_params.cb_done.clientdata, PAMI_SUCCESS);
                 _my_desc->set_my_state(Shmem::DESCSTATE_DONE);
+                TRACE_FN_EXIT();
                 return PAMI_SUCCESS;
               }
 
               size_t bytes_to_consume = src->bytesAvailableToConsume() - this->_bytes_consumed;
               if (bytes_to_consume > 0) 
               {
-                TRACE_ERR((stderr,"bytes_to_consume:%zd\n", bytes_to_consume));
+                TRACE_FORMAT("bytes_to_consume:%zd", bytes_to_consume);
                 mcst_control->incoming_bytes += bytes_to_consume;
                 this->_bytes_consumed+= bytes_to_consume;
-                TRACE_ERR((stderr,"_bytes_consumed:%zd bytes:%u\n", bytes_to_consume, bytes));
+                TRACE_FORMAT("_bytes_consumed:%zd bytes:%u", bytes_to_consume, bytes);
+                TRACE_FN_EXIT();
                 return PAMI_EAGAIN;
               }
             }
             else
             {
               if (this->_my_desc->get_flag() == 0)
+              {  
+                TRACE_FN_EXIT();
                 return PAMI_EAGAIN;
+              }
 
               if (this->_bytes_consumed == bytes)
               {
                 _my_desc->signal_done();
                 mcast_params.cb_done.function(this->_context, mcast_params.cb_done.clientdata, PAMI_SUCCESS);
                 _my_desc->set_my_state(Shmem::DESCSTATE_DONE);
+                TRACE_FN_EXIT();
                 return PAMI_SUCCESS;
               }
 
-              TRACE_ERR((stderr,"incoming_bytes:%d, _bytes_consumed:%u\n", mcst_control->incoming_bytes, this->_bytes_consumed));
+              TRACE_FORMAT("incoming_bytes:%d, _bytes_consumed:%u", mcst_control->incoming_bytes, this->_bytes_consumed);
               if (mcst_control->incoming_bytes > this->_bytes_consumed)
               {
                 mem_sync();
-                TRACE_ERR((stderr,"incoming_bytes:%d, _bytes_consumed:%u\n", mcst_control->incoming_bytes, this->_bytes_consumed));
+                TRACE_FORMAT("incoming_bytes:%d, _bytes_consumed:%u", mcst_control->incoming_bytes, this->_bytes_consumed);
                 size_t	bytes_to_copy = mcst_control->incoming_bytes - this->_bytes_consumed;
                 mybuf = rcv->bufferToProduce();
                 volatile void*	glob_src_buf = mcst_control->glob_src_buffer;
-                TRACE_ERR((stderr,"copying from gva:%p bytes_consumed:%u incoming_bytes:%d bytes_to_copy:%zd\n", glob_src_buf,this->_bytes_consumed, mcst_control->incoming_bytes, bytes_to_copy));
+                TRACE_FORMAT("copying from gva:%p bytes_consumed:%u incoming_bytes:%d bytes_to_copy:%zd", glob_src_buf,this->_bytes_consumed, mcst_control->incoming_bytes, bytes_to_copy);
                 assert(glob_src_buf != NULL);
 
 #ifdef COPY_BY_CHUNKS
@@ -145,7 +161,7 @@ namespace PAMI
                   opt_bgq_memcpy((void*)((char*)mybuf), (void*)((char*)glob_src_buf+this->_bytes_consumed), bytes_to_copy);
                   //memcpy((void*)((char*)mybuf), (void*)((char*)glob_src_buf+this->_bytes_consumed), bytes_to_copy);
                   this->_bytes_consumed+= bytes_to_copy;
-                  TRACE_ERR((stderr,"incoming_bytes:%d, _bytes_consumed:%zd\n", mcst_control->incoming_bytes, this->_bytes_consumed));
+                  TRACE_FORMAT("incoming_bytes:%d, _bytes_consumed:%zd", mcst_control->incoming_bytes, this->_bytes_consumed);
                   rcv->produceBytes(bytes_to_copy);
                 }
 
@@ -154,18 +170,21 @@ namespace PAMI
                 //opt_bgq_memcpy((void*)((char*)mybuf), (void*)((char*)glob_src_buf+this->_bytes_consumed), bytes_to_copy);
                 //memcpy((void*)((char*)mybuf), (void*)((char*)glob_src_buf+this->_bytes_consumed), bytes_to_copy);
                 this->_bytes_consumed+= bytes_to_copy;
-                TRACE_ERR((stderr,"incoming_bytes:%d, _bytes_consumed:%u\n", mcst_control->incoming_bytes, this->_bytes_consumed));
+                TRACE_FORMAT("incoming_bytes:%d, _bytes_consumed:%u", mcst_control->incoming_bytes, this->_bytes_consumed);
                 rcv->produceBytes(bytes_to_copy);
 #endif
 
               }
+              TRACE_FN_EXIT();
               return PAMI_EAGAIN;
             }
+            TRACE_FN_EXIT();
             return PAMI_EAGAIN;
           }
 
           inline pami_result_t advance_color()
           {
+            TRACE_FN_ENTER();
 
             typename T_Device::CollectiveFifo::Descriptor* _my_desc = this->_my_desc;
 
@@ -183,8 +202,12 @@ namespace PAMI
             if (master){
               if (this->_bytes_consumed == bytes)
               {
-                if (_my_desc->in_use()) return PAMI_EAGAIN; //wait for everyone to signal done
-                TRACE_ERR((stderr,"everyone arrived calling done\n"));
+                if (_my_desc->in_use()) 
+                { 
+                  TRACE_FN_EXIT();
+                  return PAMI_EAGAIN; //wait for everyone to signal done
+                }
+                TRACE_STRING("everyone arrived calling done");
                 _my_desc->reset();
                 mcst_control->incoming_bytes = 0;
                 mcst_control->glob_src_buffer = NULL;
@@ -200,34 +223,39 @@ namespace PAMI
               {
                 mcst_control->incoming_bytes += bytes_to_consume;
                 this->_bytes_consumed+= bytes_to_consume;
-                TRACE_ERR((stderr,"bytes_to_consume:%zd total_bytes_consumed:%u bytes:%u\n", bytes_to_consume,this->_bytes_consumed, bytes));
+                TRACE_FORMAT("bytes_to_consume:%zd total_bytes_consumed:%u bytes:%u", bytes_to_consume,this->_bytes_consumed, bytes);
 
                 if (this->_bytes_consumed == bytes) 
                   _my_desc->signal_done();
+                TRACE_FN_EXIT();
                 return PAMI_EAGAIN;
               }
             }
             else
             {
               if ((_my_desc->get_my_seq_id() + 1) != _my_desc->get_seq_id())
+              {  
+                TRACE_FN_EXIT();
                 return PAMI_EAGAIN;
+              }
 
               if (this->_bytes_consumed == bytes)
               {
                 mcast_params.cb_done.function(this->_context, mcast_params.cb_done.clientdata, PAMI_SUCCESS);
                 _my_desc->set_my_seq_id(_my_desc->get_my_seq_id()+1);
                 _my_desc->set_my_state(Shmem::DESCSTATE_DONE);
+                TRACE_FN_EXIT();
                 return PAMI_SUCCESS;
               }
 
               if (mcst_control->incoming_bytes > this->_bytes_consumed)
               {
                 mem_sync();
-                TRACE_ERR((stderr,"incoming_bytes:%d, _bytes_consumed:%u\n", mcst_control->incoming_bytes, this->_bytes_consumed));
+                TRACE_FORMAT("incoming_bytes:%d, _bytes_consumed:%u", mcst_control->incoming_bytes, this->_bytes_consumed);
                 size_t	bytes_to_copy = mcst_control->incoming_bytes - this->_bytes_consumed;
                 mybuf = rcv->bufferToProduce();
                 volatile void*	glob_src_buf = mcst_control->glob_src_buffer;
-                TRACE_ERR((stderr,"copying from gva:%p bytes_consumed:%u incoming_bytes:%d bytes_to_copy:%zd\n", glob_src_buf,this->_bytes_consumed, mcst_control->incoming_bytes, bytes_to_copy));
+                TRACE_FORMAT("copying from gva:%p bytes_consumed:%u incoming_bytes:%d bytes_to_copy:%zd", glob_src_buf,this->_bytes_consumed, mcst_control->incoming_bytes, bytes_to_copy);
                 assert(glob_src_buf != NULL);
 
 #ifdef COPY_BY_CHUNKS
@@ -248,7 +276,7 @@ namespace PAMI
                   opt_bgq_memcpy((void*)((char*)mybuf), (void*)((char*)glob_src_buf+this->_bytes_consumed), bytes_to_copy);
                   //memcpy((void*)((char*)mybuf), (void*)((char*)glob_src_buf+this->_bytes_consumed), bytes_to_copy);
                   this->_bytes_consumed+= bytes_to_copy;
-                  TRACE_ERR((stderr,"incoming_bytes:%d, _bytes_consumed:%u\n", mcst_control->incoming_bytes, this->_bytes_consumed));
+                  TRACE_FORMAT("incoming_bytes:%d, _bytes_consumed:%u", mcst_control->incoming_bytes, this->_bytes_consumed);
                   rcv->produceBytes(bytes_to_copy);
                 }
 
@@ -257,15 +285,17 @@ namespace PAMI
                 //opt_bgq_memcpy((void*)((char*)mybuf), (void*)((char*)glob_src_buf+this->_bytes_consumed), bytes_to_copy);
                 //memcpy((void*)((char*)mybuf), (void*)((char*)glob_src_buf+this->_bytes_consumed), bytes_to_copy);
                 this->_bytes_consumed+= bytes_to_copy;
-                TRACE_ERR((stderr,"incoming_bytes:%d, _bytes_consumed:%u\n", mcst_control->incoming_bytes, this->_bytes_consumed));
+                TRACE_FORMAT("incoming_bytes:%d, _bytes_consumed:%u", mcst_control->incoming_bytes, this->_bytes_consumed);
                 rcv->produceBytes(bytes_to_copy);
 #endif
                 if (this->_bytes_consumed == bytes) 
                   _my_desc->signal_done();
 
               }
+              TRACE_FN_EXIT();
               return PAMI_EAGAIN;
             }
+            TRACE_FN_EXIT();
             return PAMI_EAGAIN;
           }
 
@@ -275,7 +305,8 @@ namespace PAMI
             BaseMessage <T_Device>(context, my_desc,ShaddrMcstMessage::__advance,(void*)this,local_rank)
 
         {
-          TRACE_ERR((stderr, "<> ShaddrMcstMessage::ShaddrMcstMessage()\n"));
+          TRACE_FN_ENTER();
+          TRACE_FN_EXIT();
         };
 
 
@@ -283,7 +314,8 @@ namespace PAMI
             BaseMessage <T_Device>(context, my_desc, work_fn, (void*)this, local_rank)
 
         {
-          TRACE_ERR((stderr, "<> ShaddrMcstMessage::ShaddrMcstMessage()\n"));
+          TRACE_FN_ENTER();
+          TRACE_FN_EXIT();
         };
 
       };  // PAMI::Device::ShaddrMcstMessage class
@@ -291,7 +323,8 @@ namespace PAMI
     };
   };    // PAMI::Device namespace
 };      // PAMI namespace
-#undef TRACE_ERR
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
 #endif  // __components_devices_shmem_ShaddrMcstMessage_h__
 
 //

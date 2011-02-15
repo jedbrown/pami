@@ -13,8 +13,9 @@ FRAMEWORK       = pami
 VPATH		= @abs_srcdir@
 SUBDIRS         =
 NOTBUILT        = 
-APPS            = allreduce-${FRAMEWORK}.${EXTENSION} allreduce_query-${FRAMEWORK}.${EXTENSION} allreduce_subcomm_query-${FRAMEWORK}.${EXTENSION} allreduce_subcomm-${FRAMEWORK}.${EXTENSION}
-APPS            +=bcast-${FRAMEWORK}.${EXTENSION} bcast_query-${FRAMEWORK}.${EXTENSION}
+APPS            = allreduce-${FRAMEWORK}.${EXTENSION} allreduce_query-${FRAMEWORK}.${EXTENSION} allreduce_subcomm-${FRAMEWORK}.${EXTENSION} allreduce_subcomm_query-${FRAMEWORK}.${EXTENSION}
+APPS            += bcast-${FRAMEWORK}.${EXTENSION} bcast_query-${FRAMEWORK}.${EXTENSION} bcast_subcomm-${FRAMEWORK}.${EXTENSION} bcast_subcomm_query-${FRAMEWORK}.${EXTENSION}
+APPS            += barrier-${FRAMEWORK}.${EXTENSION} barrier_query-${FRAMEWORK}.${EXTENSION} barrier_subcomm-${FRAMEWORK}.${EXTENSION} barrier_subcomm_query-${FRAMEWORK}.${EXTENSION}
 
 include @abs_top_builddir@/Build.rules
 

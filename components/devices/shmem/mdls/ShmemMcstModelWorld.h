@@ -28,11 +28,11 @@
 #include "components/devices/shmem/msgs/ShortMcstMessage.h"
 #include "components/devices/shmem/msgs/ShaddrMcstMessage.h"
 
-#undef TRACE_ERR
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
 
-#ifndef TRACE_ERR
-#define TRACE_ERR(x) //fprintf(stderr,"%s:%d\n",__FILE__,__LINE__); fprintf x
-#endif
+#define DO_TRACE_ENTEREXIT 0
+#define DO_TRACE_DEBUG     0
 
 //#define SHORT_MCST_OPT
 
@@ -54,8 +54,10 @@ namespace PAMI
             _device(device),
             _local_rank(__global.topology_local.rank2Index(__global.mapping.task())),
             _npeers(__global.topology_local.size())
-
-        { };
+        {
+          TRACE_FN_ENTER();
+          TRACE_FN_EXIT();
+        };
 
           static const size_t packet_model_state_bytes          = sizeof(BaseMessage<T_Device>);
           static const size_t sizeof_msg                        = sizeof(BaseMessage<T_Device>);
@@ -63,7 +65,10 @@ namespace PAMI
 
           inline pami_result_t postMulticastImmediate_impl(size_t           client,
 							   size_t           context,
-							   pami_multicast_t *mcast, void* devinfo) {
+							   pami_multicast_t *mcast, void* devinfo)
+        {
+          TRACE_FN_ENTER();
+          TRACE_FN_EXIT();
 	    return PAMI_ERROR;
 	  }
 
@@ -73,6 +78,7 @@ namespace PAMI
 						  pami_multicast_t *mcast, void* devinfo)
           {
 
+          TRACE_FN_ENTER();
             PAMI::Topology *src_topo = (PAMI::Topology *)mcast->src_participants;
             //PAMI::Topology *dst_topo = (PAMI::Topology *)mcast->dst_participants;
             //size_t num_dst_ranks = dst_topo->size();
@@ -98,6 +104,7 @@ namespace PAMI
                 my_desc->set_my_state(Shmem::DONE);
               }
               my_desc->signal_done();
+            TRACE_FN_EXIT();
               return PAMI_SUCCESS;
 #else
               my_desc->set_mcast_params(mcast);
@@ -152,6 +159,7 @@ namespace PAMI
 
             }
 
+          TRACE_FN_EXIT();
             return PAMI_SUCCESS;
 
           };
@@ -167,7 +175,7 @@ namespace PAMI
     };    // PAMI::Device::Shmem namespace
   };      // PAMI::Device namespace
 };        // PAMI namespace
-#undef TRACE_ERR
+#undef DO_TRACE_ENTEREXIT
 #endif // __components_devices_shmem_ShmemPacketModel_h__
 
 //
