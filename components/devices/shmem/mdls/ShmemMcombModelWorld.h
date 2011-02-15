@@ -93,7 +93,7 @@ namespace PAMI
               memcpy(buf, mybuf, bytes);
               TRACE_ERR((stderr, "copied bytes:%zu from %p to %p data[0]:%u\n", bytes, mybuf, buf, ((unsigned*)buf)[0]));
               ((PAMI::PipeWorkQueue *)mcomb->data)->consumeBytes(bytes);
-              my_desc->set_my_state(Shmem::INIT);
+              my_desc->set_my_state(Shmem::DESCSTATE_INIT);
 
               //if (local_root == _local_rank) //default is set to local ranks in desc
               //  my_desc->set_consumers(num_src_ranks);
@@ -167,7 +167,7 @@ namespace PAMI
               mcomb_control->chunks_copied[_local_rank] = 0;
               mcomb_control->current_iter=0;
               //TRACE_ERR((stderr, "[%d]setting my chunks_done:%p to 0\n", _local_rank, &mcomb_control->chunks_done[_peer]));
-              my_desc->set_my_state(Shmem::INIT);
+              my_desc->set_my_state(Shmem::DESCSTATE_INIT);
               //src->consumeBytes(bytes);
 
               mem_sync();

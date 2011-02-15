@@ -125,7 +125,7 @@ namespace PAMI
               this->_my_desc->signal_done();
             }
 
-            this->_my_desc->set_my_state(Shmem::DONE);
+            this->_my_desc->set_my_state(Shmem::DESCSTATE_DONE);
             mcast_params.cb_done.function(this->_context, mcast_params.cb_done.clientdata, PAMI_SUCCESS);
             traceit = 1;
             return PAMI_SUCCESS;

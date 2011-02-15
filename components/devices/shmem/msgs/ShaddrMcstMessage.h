@@ -89,7 +89,7 @@ namespace PAMI
                 mcst_control->glob_src_buffer = NULL;
                 mem_barrier();
                 mcast_params.cb_done.function(this->_context, mcast_params.cb_done.clientdata, PAMI_SUCCESS);
-                _my_desc->set_my_state(Shmem::DONE);
+                _my_desc->set_my_state(Shmem::DESCSTATE_DONE);
                 return PAMI_SUCCESS;
               }
 
@@ -112,7 +112,7 @@ namespace PAMI
               {
                 _my_desc->signal_done();
                 mcast_params.cb_done.function(this->_context, mcast_params.cb_done.clientdata, PAMI_SUCCESS);
-                _my_desc->set_my_state(Shmem::DONE);
+                _my_desc->set_my_state(Shmem::DESCSTATE_DONE);
                 return PAMI_SUCCESS;
               }
 
@@ -191,7 +191,7 @@ namespace PAMI
 
                 mcast_params.cb_done.function(this->_context, mcast_params.cb_done.clientdata, PAMI_SUCCESS);
                 _my_desc->set_my_seq_id(_my_desc->get_my_seq_id()+1);
-                _my_desc->set_my_state(Shmem::DONE);
+                _my_desc->set_my_state(Shmem::DESCSTATE_DONE);
                 return PAMI_SUCCESS;
               }
 
@@ -216,7 +216,7 @@ namespace PAMI
               {
                 mcast_params.cb_done.function(this->_context, mcast_params.cb_done.clientdata, PAMI_SUCCESS);
                 _my_desc->set_my_seq_id(_my_desc->get_my_seq_id()+1);
-                _my_desc->set_my_state(Shmem::DONE);
+                _my_desc->set_my_state(Shmem::DESCSTATE_DONE);
                 return PAMI_SUCCESS;
               }
 

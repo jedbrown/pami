@@ -386,7 +386,7 @@ namespace PAMI
 
             _my_desc->signal_done();
             while (_my_desc->in_use()){}; //wait for everyone to signal done
-            _my_desc->set_my_state(Shmem::DONE);
+            _my_desc->set_my_state(Shmem::DESCSTATE_DONE);
             mcomb_params.cb_done.function(this->_context, mcomb_params.cb_done.clientdata, PAMI_SUCCESS);
             return PAMI_SUCCESS;
 

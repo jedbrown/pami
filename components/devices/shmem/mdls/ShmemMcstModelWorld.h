@@ -102,7 +102,7 @@ namespace PAMI
 #else
               my_desc->set_mcast_params(mcast);
               my_desc->set_master(local_root);
-              my_desc->set_my_state(Shmem::INIT);
+              my_desc->set_my_state(Shmem::DESCSTATE_INIT);
               ShortMcstMessage<T_Device> * obj = (ShortMcstMessage<T_Device> *) (&state[0]);
               new (obj) ShortMcstMessage<T_Device> (_device.getContext(), my_desc,_local_rank);
 

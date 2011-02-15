@@ -27,20 +27,19 @@ namespace PAMI
 #define	BUFFER_SIZE_PER_TASK  	64
 #define NUM_LOCAL_TASKS		16
 
-
       typedef enum
       {
-        MULTICAST = 0,
-        MULTICOMBINE,
-        MULTISYNC
+        COLLTYPE_MULTICAST = 0,
+        COLLTYPE_MULTICOMBINE,
+        COLLTYPE_MULTISYNC
       } CollType_t;
 
       typedef enum
       {
-        FREE = 0,
-        INIT,
-        ACTIVE,
-        DONE
+        DESCSTATE_FREE = 0,
+        DESCSTATE_INIT,
+        DESCSTATE_ACTIVE,
+        DESCSTATE_DONE
       } DescState_t;
 
       struct  ShmemRegion //only master should initialize these fields
@@ -109,7 +108,7 @@ public:
 
           inline Descriptor() {}
 
-          inline Descriptor(Memory::MemoryManager &mm, char * unique_device_string, size_t usageid, size_t index): _shared(NULL), _master(0), _storage(NULL), _my_seq_num(0),  _my_state(FREE)
+          inline Descriptor(Memory::MemoryManager &mm, char * unique_device_string, size_t usageid, size_t index): _shared(NULL), _master(0), _storage(NULL), _my_seq_num(0),  _my_state(DESCSTATE_FREE)
           {
             char key[PAMI::Memory::MMKEYSIZE];
             sprintf(key, "/ShmemCollectiveFifoDescriptor-synch-%s-%zd-%zd", unique_device_string, usageid, index);
@@ -400,7 +399,7 @@ public:
 
             while (_head < _tail)
               {
-                if (_desc[_head%DESCRIPTOR_FIFO_SIZE].get_my_state() == DONE)
+                if (_desc[_head%DESCRIPTOR_FIFO_SIZE].get_my_state() == DESCSTATE_DONE)
                   {
 
                     //only the master sets the shared state and seq number
@@ -416,7 +415,7 @@ public:
                             seq_id = _desc[_head%DESCRIPTOR_FIFO_SIZE].get_my_seq_id();
                             _desc[_head%DESCRIPTOR_FIFO_SIZE].set_my_seq_id(seq_id + DESCRIPTOR_FIFO_SIZE);
                             _desc[_head%DESCRIPTOR_FIFO_SIZE].set_master(0); //default
-                            _desc[_head%DESCRIPTOR_FIFO_SIZE].set_my_state(FREE);
+                            _desc[_head%DESCRIPTOR_FIFO_SIZE].set_my_state(DESCSTATE_FREE);
                             _head++;
                             _fifo_end++;
                           }
@@ -429,7 +428,7 @@ public:
                         seq_id = _desc[_head%DESCRIPTOR_FIFO_SIZE].get_my_seq_id();
                         _desc[_head%DESCRIPTOR_FIFO_SIZE].set_my_seq_id(seq_id + DESCRIPTOR_FIFO_SIZE);
                         _desc[_head%DESCRIPTOR_FIFO_SIZE].set_master(0); //default
-                        _desc[_head%DESCRIPTOR_FIFO_SIZE].set_my_state(FREE);
+                        _desc[_head%DESCRIPTOR_FIFO_SIZE].set_my_state(DESCSTATE_FREE);
                         _head++;
                         _fifo_end++;
                       }
@@ -463,7 +462,7 @@ public:
           //TODO..fix this
           inline Descriptor * next_desc_pending_match()
           {
-            if (_desc[_next_pending_match % DESCRIPTOR_FIFO_SIZE].get_my_state() == INIT)
+            if (_desc[_next_pending_match % DESCRIPTOR_FIFO_SIZE].get_my_state() == DESCSTATE_INIT)
               {
                 return &_desc[_next_pending_match % DESCRIPTOR_FIFO_SIZE];
               }
@@ -477,7 +476,7 @@ public:
             while (_head < _tail)
               {
                 if ((_desc[_head%DESCRIPTOR_FIFO_SIZE].get_conn_id() == conn_id) &&
-                    (_desc[_head%DESCRIPTOR_FIFO_SIZE].get_my_state() == INIT))
+                    (_desc[_head%DESCRIPTOR_FIFO_SIZE].get_my_state() == DESCSTATE_INIT))
                   {
                     return &_desc[_head%DESCRIPTOR_FIFO_SIZE];
                   }

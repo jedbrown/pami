@@ -64,6 +64,8 @@ _local_rank(local_rank), _bytes_consumed(0), _context(context), _my_desc(my_desc
           TRACE_ERR((stderr, "<> BaseMessage::BaseMessage()\n"));
         };
 
+          virtual ~BaseMessage() {};
+
           unsigned                            _local_rank;
           unsigned                            _bytes_consumed;          
           pami_context_t                      _context;
