@@ -48,17 +48,17 @@ SharedArray::RC SharedArray::ShmSetup(const unsigned int shm_key,
     // create shared memory or retrieve the existing one
     shm_id = shmget(shm_key, t_size, IPC_CREAT|IPC_EXCL|0600);
     if (shm_id != -1) {
-        ITRC(IT_BAR, "SharedArray: as SHM master (key=0x%x, id=%d)\n", shm_key, shm_id);
+        ITRC(IT_BSR, "SharedArray: as SHM master (key=0x%x, id=%d)\n", shm_key, shm_id);
     } else {
         if (EEXIST == errno) {
-            ITRC(IT_BAR, "SharedArray: as SHM slave\n");
+            ITRC(IT_BSR, "SharedArray: as SHM slave\n");
             shm_id = shmget(shm_key, 0, 0);
         } else {
-            ITRC(IT_BAR, "SharedArray: shmget failed (errno=%d)\n", errno);
+            ITRC(IT_BSR, "SharedArray: shmget failed (errno=%d)\n", errno);
             return FAILED;
         }
         if (shm_id == -1) {
-            ITRC(IT_BAR, "SharedArray: shmget failed, (errno=%d)\n", errno);
+            ITRC(IT_BSR, "SharedArray: shmget failed, (errno=%d)\n", errno);
             return FAILED;
         }
     }
@@ -79,7 +79,7 @@ SharedArray::RC SharedArray::ShmSetup(const unsigned int shm_key,
                 ReadRealTime(&end_time);
                 unsigned int duration = TimeDiffInSec(end_time, start_time);
                 if (timeout < duration) {
-                    ITRC(IT_BAR, "SharedArray: ShmSetup timeout (dur:%d)\n", duration);
+                    ITRC(IT_BSR, "SharedArray: ShmSetup timeout (dur:%d)\n", duration);
                     break;
                 }
             }
@@ -88,7 +88,7 @@ SharedArray::RC SharedArray::ShmSetup(const unsigned int shm_key,
                 ReadRealTime(&end_time);
                 unsigned int duration = TimeDiffInSec(end_time, start_time);
                 if (timeout < duration) {
-                    ITRC(IT_BAR, "SharedArray: ShmSetup timeout (dur:%d)\n", duration);
+                    ITRC(IT_BSR, "SharedArray: ShmSetup timeout (dur:%d)\n", duration);
                     break;
                 }
             }
@@ -104,13 +104,13 @@ SharedArray::RC SharedArray::ShmSetup(const unsigned int shm_key,
             return FAILED;
         }
     } else {
-        ITRC(IT_BAR, "SharedArray: shmat failed, errno = %d\n", errno);
+        ITRC(IT_BSR, "SharedArray: shmat failed, errno = %d\n", errno);
         // we ignore the return code of shmctl
         shmctl(shm_id, IPC_RMID, NULL);
         return FAILED;
     }
 
-    ITRC(IT_BAR, "SharedArray: ShmSetup successed\n");
+    ITRC(IT_BSR, "SharedArray: ShmSetup successed\n");
     return SUCCESS;
 }
 
@@ -126,6 +126,6 @@ SharedArray::RC SharedArray::ShmDestory()
         shmctl(shm_id, IPC_RMID, NULL);
         ctrl_block = NULL;
     }
-    ITRC(IT_BAR, "SharedArray: ShmDestory finished\n");
+    ITRC(IT_BSR, "SharedArray: ShmDestory finished\n");
     return SUCCESS;
 }

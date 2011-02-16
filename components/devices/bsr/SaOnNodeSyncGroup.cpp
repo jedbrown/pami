@@ -1,20 +1,26 @@
 #include "SaOnNodeSyncGroup.h"
+#ifdef __BSR_P6__
 #include "BsrP6.h"
+#else
+#include "Bsr.h"
+#endif
+
 #include "ShmArray.h"
 #include <stdlib.h>
 #include <new>
 #include <string.h>
 #include "lapi_itrace.h"
+#include "util/common.h"
 
 SyncGroup::RC SaOnNodeSyncGroup::Init(
         const unsigned int member_cnt, const unsigned int group_id,
         const unsigned int member_id, void* param)
 {
-    ASSERT (param != NULL);
+    PAMI_assert (param != NULL);
     Param_t* in_param = (Param_t*) param;
     this->multi_load = in_param->multi_load;
     if(member_cnt == 0) {
-        ITRC(IT_SGRP, "SaOnNodeSyncGroup: Invalid member_cnt %d\n", member_cnt);
+        ITRC(IT_BSR, "SaOnNodeSyncGroup: Invalid member_cnt %d\n", member_cnt);
         return FAILED;
     }
 
@@ -35,7 +41,7 @@ SyncGroup::RC SaOnNodeSyncGroup::Init(
         mask[1][0] = 0;
     } catch (std::bad_alloc e) {
         // out of memory; should still work as long as multi-load is not used.
-        ITRC(IT_SGRP,
+        ITRC(IT_BSR,
                 "SaOnNodeSyncGroup: Warning!! "
                 "Out of memory. Multi-byte load is not allowed.\n");
         delete [] mask[0];
@@ -43,32 +49,37 @@ SyncGroup::RC SaOnNodeSyncGroup::Init(
     }
 
     // initialize SharedArray object
-    ///TODO: How do we distinguish the group_id for BsrP6, BsrP7, or ShmArray
+    ///TODO: How do we distinguish the group_id for Bsr and ShmArray
     // temporary fix start
-    const unsigned int BSRP6ID    = 0x00000096; //p6
+    const unsigned int BSRID      = 0x00000096; //BSR
     const unsigned int SHMARRAYID = 0x00000054; //SA
     const bool         is_leader  = (this->member_id == 0);
     // temporary fix end
     SharedArray::RC sa_rc;
     try {
+        // Started with BSR P7 first
+#ifdef __BSR_P6__
         sa = new BsrP6;
-        // we don't support checkpoint and BSR
+#else
+        sa = new Bsr;
+#endif
         if (!in_param->use_shm_only) {
-            sa_rc = sa->Init(member_cnt, (group_id + BSRP6ID), is_leader);
+            sa_rc = sa->Init(member_cnt, (group_id + BSRID), is_leader);
         } else {
             sa_rc = SharedArray::NOT_AVAILABLE;
         }
+
         if (SharedArray::SUCCESS == sa_rc) {
-            ITRC(IT_SGRP, "(%d)SaOnNodeSyncGroup: Using BsrP6\n", member_id);
-            this->group_desc = "SharedArray:BsrP6";
+            ITRC(IT_BSR, "(%d)SaOnNodeSyncGroup: Using Bsr\n", member_id);
+            this->group_desc = "SharedArray:Bsr";
         } else {
+            // If both BSRs failed, try shm
             delete sa;
             sa = NULL;
-            // Cannot create a BsrP6 object, then try a ShmArray object
             sa = new ShmArray;
             if (SharedArray::SUCCESS ==
                     sa->Init(member_cnt, (group_id + SHMARRAYID), is_leader)) {
-                ITRC(IT_SGRP, "(%d)SaOnNodeSyncGroup: Using ShmArray\n",
+                ITRC(IT_BSR, "(%d)SaOnNodeSyncGroup: Using ShmArray\n",
                         member_id);
                 this->group_desc = "SharedArray:ShmArray";
             } else {
@@ -76,7 +87,7 @@ SyncGroup::RC SaOnNodeSyncGroup::Init(
                 sa = NULL;
                 // Cannot create a ShmArray object. No SharedArray object
                 // available for using.
-                ITRC(IT_SGRP,
+                ITRC(IT_BSR,
                         "(%d)SaOnNodeSyncGroup: Cannot create SharedArray obj\n",
                         member_id);
                 delete [] mask[0];
@@ -86,18 +97,18 @@ SyncGroup::RC SaOnNodeSyncGroup::Init(
         }
     } catch (std::bad_alloc e) {
         sa = NULL;
-        // TODO: if both BsrP6 and ShmArray failed, we should set sa=NULL
+        // TODO: if both BsrP7 and ShmArray failed, we should set sa=NULL
         // and use on node FIFO flow instead.
-        ITRC(IT_SGRP, "(%d)SaOnNodeSyncGroup: Out of memory.\n", member_id);
+        ITRC(IT_BSR, "(%d)SaOnNodeSyncGroup: Out of memory.\n", member_id);
         return FAILED;
     } catch (...) {
         delete [] mask[0];
         delete [] mask[1];
-        ITRC(IT_SGRP, "SaOnNodeSyncGroup: Unexpected exception caught.\n");
+        ITRC(IT_BSR, "SaOnNodeSyncGroup: Unexpected exception caught.\n");
         return FAILED;
     }
 
-    ITRC(IT_SGRP, "SaOnNodeSyncGroup: Initialized with member_cnt=%d\n", member_cnt);
+    ITRC(IT_BSR, "SaOnNodeSyncGroup: Initialized with member_cnt=%d\n", member_cnt);
     initialized = true;
     return SUCCESS;
 }
@@ -114,11 +125,11 @@ SaOnNodeSyncGroup::~SaOnNodeSyncGroup()
 
 void SaOnNodeSyncGroup::BarrierEnter()
 {
-    ITRC(IT_SGRP, "SaOnNodeSyncGroup: Entering BarrierEnter()\n");
-    ASSERT(this->initialized);
+    ITRC(IT_BSR, "SaOnNodeSyncGroup: Entering BarrierEnter()\n");
+    PAMI_assert(this->initialized);
     // if only one member in group
     if (this->member_cnt == 1) {
-        ITRC(IT_SGRP, "SaOnNodeSyncGroup: Leaving BarrierEnter()\n");
+        ITRC(IT_BSR, "SaOnNodeSyncGroup: Leaving BarrierEnter()\n");
         return;
     }
 
@@ -126,7 +137,7 @@ void SaOnNodeSyncGroup::BarrierEnter()
     seq = !seq;
     if (member_id == 0) {
         if (multi_load) {
-            ITRC(IT_SGRP,
+            ITRC(IT_BSR,
                     "SaOnNodeSyncGroup: Wait respons from follower (multi_load)\n");
             // assume multi_load is always supported
             unsigned int i=0;
@@ -163,11 +174,11 @@ void SaOnNodeSyncGroup::BarrierEnter()
                 for (; i < member_cnt; i++)
                     while (sa->Load1(i) != seq);
             }
-            ITRC(IT_SGRP,
+            ITRC(IT_BSR,
                     "SaOnNodeSyncGroup: Got respons from follower (multi_load)\n");
         } else {
             // use 1 byte load
-            ITRC(IT_SGRP,
+            ITRC(IT_BSR,
                     "SaOnNodeSyncGroup: Wait respons from follower (single_load)\n");
             if (progress_cb) {
                 for (unsigned int i = 1; i < member_cnt; i++) {
@@ -179,43 +190,43 @@ void SaOnNodeSyncGroup::BarrierEnter()
                     while (sa->Load1(i) != seq);
                 }
             }
-            ITRC(IT_SGRP,
+            ITRC(IT_BSR,
                     "SaOnNodeSyncGroup: Got respons from follower (single_load)\n");
         }
     } else {
-        ITRC(IT_SGRP, "SaOnNodeSyncGroup: Store1(%d, %d) called\n",
+        ITRC(IT_BSR, "SaOnNodeSyncGroup: Store1(%d, %d) called\n",
                 member_id, seq);
         sa->Store1(member_id, seq);
     }
-    ITRC(IT_SGRP, "SaOnNodeSyncGroup: Leaving BarrierEnter()\n");
+    ITRC(IT_BSR, "SaOnNodeSyncGroup: Leaving BarrierEnter()\n");
 }
 
 void SaOnNodeSyncGroup::BarrierExit()
 {
-    ITRC(IT_SGRP, "SaOnNodeSyncGroup: Entering BarrierExit()\n");
-    ASSERT(this->initialized);
+    ITRC(IT_BSR, "SaOnNodeSyncGroup: Entering BarrierExit()\n");
+    PAMI_assert(this->initialized);
     // if only one member in group
     if (this->member_cnt == 1) {
-        ITRC(IT_SGRP, "SaOnNodeSyncGroup: Leaving BarrierExit()\n");
+        ITRC(IT_BSR, "SaOnNodeSyncGroup: Leaving BarrierExit()\n");
         return;
     }
     if (member_id == 0) {
         // notify others about barrier exit
         sa->Store1(member_id, seq);
-        ITRC(IT_SGRP, "SaOnNodeSyncGroup: Store1(%d, %d) called\n",
+        ITRC(IT_BSR, "SaOnNodeSyncGroup: Store1(%d, %d) called\n",
                 member_id, seq);
     } else {
         // wait for barrier exit
-        ITRC(IT_SGRP, "SaOnNodeSyncGroup: Wait response from leader\n");
+        ITRC(IT_BSR, "SaOnNodeSyncGroup: Wait response from leader\n");
         if (progress_cb) {
             while (sa->Load1(0) != seq)
                 (*progress_cb)(progress_cb_info);
         } else {
             while (sa->Load1(0) != seq);
         }
-        ITRC(IT_SGRP, "SaOnNodeSyncGroup: Got response from leader\n");
+        ITRC(IT_BSR, "SaOnNodeSyncGroup: Got response from leader\n");
     }
-    ITRC(IT_SGRP, "SaOnNodeSyncGroup: Leaving BarrierExit()\n");
+    ITRC(IT_BSR, "SaOnNodeSyncGroup: Leaving BarrierExit()\n");
 }
 
 bool SaOnNodeSyncGroup::IsNbBarrierDone()
@@ -275,6 +286,8 @@ bool SaOnNodeSyncGroup::IsNbBarrierDone()
 
     if (nb_barrier_stage == 2)
         return true;
+    else
+        return false;
 }
 
 void SaOnNodeSyncGroup::_Dump() const {

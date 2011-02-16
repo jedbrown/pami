@@ -17,7 +17,9 @@
 #include <pami.h>
 #include "components/devices/MultisyncModel.h"
 #include "components/devices/bsr/bsrmessage.h"
+#ifndef _LAPI_LINUX
 #include "components/devices/bsr/SaOnNodeSyncGroup.h"
+#endif
 #include <list>
 
 #ifdef TRACE
@@ -31,6 +33,72 @@ namespace PAMI
 {
   namespace Device
   {
+
+    template <class T_Device, class T_Message>
+    class BSRMulticastModel :
+      public Interface::MulticastModel<BSRMulticastModel<T_Device, T_Message>,T_Device,sizeof(T_Message)>
+    {
+      public:
+      static const size_t sizeof_msg              = sizeof(T_Message);
+      static const size_t msync_model_state_bytes = sizeof(T_Message);
+      BSRMulticastModel (T_Device &device, pami_result_t &status) :
+        Interface::MulticastModel<BSRMulticastModel<T_Device, T_Message>,T_Device,sizeof(T_Message)>(device,status)
+          {
+            status = PAMI_ERROR;
+          }
+      inline pami_result_t postMulticastImmediate_impl(size_t            client,
+                                                       size_t            context,
+                                                       pami_multicast_t *mcast,
+                                                       void             *devinfo=NULL)
+        {
+          PAMI_assertf(0, "postMulticast is not available on BSR Device");
+        }
+      inline pami_result_t postMulticast_impl(uint8_t (&state)[msync_model_state_bytes],
+                                              size_t            client,
+                                              size_t            context,
+                                              pami_multicast_t *mcast,
+                                              void             *devinfo=NULL)
+        {
+          PAMI_assertf(0, "postMulticast is not available on BSR Device");
+        }
+      inline pami_result_t registerMcastRecvFunction (int                         dispatch_id,
+                                                      pami_dispatch_multicast_function recv_func,
+                                                      void                       *async_arg)
+        {
+          PAMI_assertf(0, "registerMcastRecvFunction is not available on BSR Device");
+        }
+    };
+
+    template <class T_Device, class T_Message>
+    class BSRMulticombineModel :
+      public Interface::MulticombineModel<BSRMulticombineModel<T_Device, T_Message>,T_Device,sizeof(T_Message)>
+    {
+      public:
+      static const size_t sizeof_msg              = sizeof(T_Message);
+      static const size_t msync_model_state_bytes = sizeof(T_Message);
+      BSRMulticombineModel (T_Device &device, pami_result_t &status) :
+        Interface::MulticombineModel<BSRMulticombineModel<T_Device, T_Message>,T_Device,sizeof(T_Message)>(device,status)
+        {
+          status = PAMI_ERROR;
+        }
+      inline pami_result_t postMulticombine (uint8_t (&state)[msync_model_state_bytes],
+                                             size_t               client,
+                                             size_t               context,
+                                             pami_multicombine_t *mcomb,
+                                             void                *devinfo=NULL)
+        {
+          PAMI_assertf(0, "postMulticombine is not available on BSR Device");
+        }
+
+      inline pami_result_t postMulticombineImmediate (size_t               client,
+                                                      size_t               context,
+                                                      pami_multicombine_t *mcomb,
+                                                      void                *devinfo=NULL)
+        {
+          PAMI_assertf(0, "postMulticombine is not available on BSR Device");
+        }
+    };
+
     template <class T_Device, class T_Message>
     class BSRMultisyncModel :
       public Interface::MultisyncModel<BSRMultisyncModel<T_Device, T_Message>,T_Device,sizeof(T_Message)>
@@ -48,36 +116,39 @@ namespace PAMI
 
       static pami_result_t checkBSRIfDone(pami_context_t context, void* cookie)
       {
-        BSRMsyncMessage *m = (BSRMsyncMessage *) cookie;
+        T_Message *m = (T_Message *) cookie;
         PAMI::Device::BSRMultisyncModel<T_Device, T_Message>* model =
           (PAMI::Device::BSRMultisyncModel<T_Device, T_Message>*)(m->_multisyncmodel);
 
-        if(! model->_sync_group->IsNbBarrierDone())
+        if(! model->_sync_group.IsNbBarrierDone())
           return PAMI_EAGAIN;
 
         /* if the barrier has done */
 
         /* check waiter queue and issue new barrier if there is one */
-        if(!model->waiters_q.empty())
+        if(!model->_waiters_q.empty())
           {
-            BSRMsyncMessage *waiter = model->waiters_q.front();
-            m->waiters_q.pop();
+            T_Message *waiter = model->_waiters_q.front();
+            model->_waiters_q.pop_back();
             model->_sync_group.NbBarrier();
-            _device->postWork(waiter);
+            model->_device.postWork(waiter);
           }
         else
           model->_in_barrier = false;
 
         /* call user's callback */
-        m->cb_done.function(context, m->cb_done.clientdata, PAMI_SUCCESS);
+        m->_cb_done.function(context, m->_cb_done.clientdata, PAMI_SUCCESS);
 
         return PAMI_SUCCESS;
       }
 
       pami_result_t postMultisync_impl (uint8_t (&state)[msync_model_state_bytes],
-          pami_multisync_t *msync,
-          void             *devinfo)
+                                        size_t            client,
+                                        size_t            context,
+                                        pami_multisync_t *msync,
+                                        void             *devinfo)
       {
+#ifndef _LAPI_LINUX
         PAMI::Topology *topology = (PAMI::Topology*) msync->participants;
         if(topology->size() == 1)
         {
@@ -107,25 +178,30 @@ namespace PAMI
               return PAMI_SUCCESS;
             }
 
-            BSRMsyncMessage *m = new (state) BSRMsyncMessage
+            T_Message *m = new (state) T_Message
               (&checkBSRIfDone, (void*)state, msync->cb_done, (void*)this);
 
-            _device->postWork(m);
+            _device.postWork(m);
           }
         else
           {
-            BSRMsyncMessage *m = new (state) BSRMsyncMessage
+            T_Message *m = new (state) T_Message
               (&checkBSRIfDone, (void*)state, msync->cb_done, (void*)this);
-            _waiters_q.push(m);
+            _waiters_q.push_back(m);
           }
 
         return PAMI_SUCCESS;
+#else
+        PAMI_assertf(0, "postMultisync is not available on BSR Device for Linux");
+        return PAMI_ERROR;
+#endif
       }
-
+      std::vector <T_Message*>       _waiters_q;
+#ifndef _LAPI_LINUX
       SaOnNodeSyncGroup             _sync_group;
+#endif      
       T_Device                     &_device;
       bool                          _in_barrier;
-      queue<BSRMsyncMessage*>       _waiters_q;
     };
   };
 };

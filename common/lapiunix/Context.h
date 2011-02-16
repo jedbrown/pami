@@ -38,10 +38,8 @@
 #include "components/devices/cau/caumulticombinemodel.h"
 
 // BSR Components
-#ifndef _LAPI_LINUX
 #include "components/devices/bsr/bsrdevice.h"
 #include "components/devices/bsr/bsrmultisyncmodel.h"
-#endif
 
 // P2P Protocols
 #include "p2p/protocols/Send.h"
@@ -111,6 +109,7 @@ namespace PAMI
                 void                      * cookie,
                 DeviceWrapper             & device,
                 pami_endpoint_t             origin,
+                pami_dispatch_hint_t        hint,
                 pami_result_t             & result):
       Send()
       {
@@ -119,7 +118,7 @@ namespace PAMI
         internal_error_t rc = (cp->*(cp->pDispatchSet))(dispatch,
                                                         (void *)dispatch_fn,
                                                         cookie,
-                                                        null_dispatch_hint,
+                                                        hint,
                                                         INTERFACE_PAMI);
         result = PAMI_RC(rc);
         return;
@@ -164,12 +163,13 @@ namespace PAMI
                                            PAMI::DeviceWrapper       & device,
                                            pami_endpoint_t             origin,
                                            pami_context_t              context,
+                                           pami_dispatch_hint_t        hint,
                                            T_Allocator               & allocator,
                                            pami_result_t             & result)
       {
         COMPILE_TIME_ASSERT(sizeof(SendWrapper) <= T_Allocator::objsize);
         SendWrapper * sw = (SendWrapper *) allocator.allocateObject ();
-        new ((void *)sw) SendWrapper (dispatch, dispatch_fn, cookie, device, origin, result);
+        new ((void *)sw) SendWrapper (dispatch, dispatch_fn, cookie, device, origin, hint, result);
         if (result != PAMI_SUCCESS)
             {
               allocator.returnObject (sw);
@@ -183,9 +183,14 @@ namespace PAMI
 
   // Device Typedefs
   typedef Device::CAUDevice                                           CAUDevice;
-#ifndef _LAPI_LINUX
   typedef Device::BSRDevice                                           BSRDevice;
-#endif
+  typedef Device::BSRMsyncMessage                                     BSRMsyncMessage;
+  typedef Device::BSRMcastMessage                                     BSRMcastMessage;
+  typedef Device::BSRMcombineMessage                                  BSRMcombineMessage;
+  typedef Device::BSRMultisyncModel<BSRDevice,BSRMsyncMessage>        BSRMultisyncModel;
+  typedef Device::BSRMulticastModel<BSRDevice,BSRMcastMessage>        BSRMulticastModel;
+  typedef Device::BSRMulticombineModel<BSRDevice,BSRMcombineMessage>  BSRMulticombineModel;
+
   // P2P Message Typedefs
   typedef PAMI::SendWrapper                                           LAPISendBase;
   typedef PAMI::Protocol::Send::SendPWQ < LAPISendBase >              LAPISend;
@@ -277,11 +282,20 @@ namespace PAMI
                                               CAUMultisyncModel,
                                               CAUMulticombineModel>   CAUNativeInterface;
 
+
+  typedef PAMI::Device::DeviceNativeInterface<BSRDevice,
+                                              BSRMulticastModel,
+                                              BSRMultisyncModel,
+                                              BSRMulticombineModel>   BSRNativeInterface;
+
+
   typedef CollRegistration::CAU::CAURegistration<LAPIGeometry,
                                                  PAMI::Device::Generic::Device,
+                                                 BSRDevice,
                                                  CAUDevice,
                                                  LAPICSNativeInterface,
                                                  CAUNativeInterface,
+                                                 BSRNativeInterface,
                                                  LAPICollShmModel,
                                                  LAPICSMemoryManager>  CAUCollreg;
 
@@ -420,6 +434,10 @@ namespace PAMI
             rc = PAMI_ENOMEM;
           }
 
+          // This lock prevents any dispatches from happening
+          // before we can initialize the message layer
+          lock();
+
           if (PAMI_SUCCESS != rc)
             return rc;
 
@@ -493,6 +511,7 @@ namespace PAMI
                                        _contextid,
                                        _clientid,
                                        *_devices->_generics,
+                                       _bsr_device,
                                        _cau_device,
                                        __global.mapping,
                                        _lapi_handle,
@@ -1039,9 +1058,8 @@ namespace PAMI
       /*  The over lapi devices                                 */
       DeviceWrapper                          _lapi_device;
       CAUDevice                              _cau_device;
-#ifndef _LAPI_LINUX
+
       BSRDevice                              _bsr_device;
-#endif      
   public:
       /*  Collective Registrations                              */
       PGASCollreg                           *_pgas_collreg;

@@ -7,6 +7,7 @@
 
 #include "SyncGroup.h"
 #include "SharedArray.h"
+#include "lapi_assert.h"
 
 /*!
  * \brief SaOnNodeSyncGroup class

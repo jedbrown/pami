@@ -156,9 +156,6 @@ namespace PAMI
       _contextid(context_id),
       _clientid(client_id)
     {
-      PAMI_assert(_mcast_status == PAMI_SUCCESS);
-      PAMI_assert(_msync_status == PAMI_SUCCESS);
-      PAMI_assert(_mcomb_status == PAMI_SUCCESS);
     }
 
     template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, int T_Semantics>
@@ -248,6 +245,7 @@ namespace PAMI
                                                                                                            pami_multicast_t *mcast,
                                                                                                            void             *devinfo)
     {
+      PAMI_assert(_mcast_status == PAMI_SUCCESS);
       mcast->dispatch =  _my_dispatch_id;
       return _mcast.postMulticast_impl(state, _clientid, _contextid, mcast, devinfo);
     }
@@ -257,6 +255,7 @@ namespace PAMI
                                                                                                            pami_multisync_t *msync,
                                                                                                            void             *devinfo)
     {
+      PAMI_assert(_msync_status == PAMI_SUCCESS);      
       return _msync.postMultisync_impl(state, _clientid, _contextid, msync, devinfo);
     }
 
@@ -265,6 +264,7 @@ namespace PAMI
                                                                                                               pami_multicombine_t *mcomb,
                                                                                                               void                *devinfo)
     {
+      PAMI_assert(_mcomb_status == PAMI_SUCCESS);
       return _mcomb.postMulticombine_impl(state, _clientid, _contextid, mcomb, devinfo);
     }
 

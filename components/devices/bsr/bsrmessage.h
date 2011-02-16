@@ -37,6 +37,16 @@ namespace PAMI
       pami_callback_t    _cb_done;
       void              *_multisyncmodel;
     };
+
+    class BSRMcastMessage
+    {
+    };
+
+    class BSRMcombineMessage
+    {
+    };
+
+
   };
 };
 

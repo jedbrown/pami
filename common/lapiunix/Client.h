@@ -69,8 +69,9 @@ namespace PAMI
         // Initialize Point-to-Point Communication
         // This is used to build an initial "simple" mapping
         // Using rank and size
+        // This returns locked, so make sure to unlock before returning
         rc = _contexts[0]->initP2P(&myrank, &mysize, &_main_lapi_handle);
-        if(rc) {result=rc;  return;}
+        if(rc) {result=rc; _contexts[0]->unlock(); return;}
 
         // Initialize the mapping to be used for collectives
         __global.mapping.init(myrank, mysize);        
@@ -95,6 +96,7 @@ namespace PAMI
             _platdevs.generate(_clientid, _maxctxts, _mm, true);
             _platdevs.init(_clientid,0,_client,(pami_context_t)_contexts[0],&_mm,true);
             result=rc;
+            _contexts[0]->unlock();
             return;
           }
 
@@ -193,6 +195,8 @@ namespace PAMI
 
         // Return error code
         result                         = rc;
+        _contexts[0]->unlock();
+        return;
       }
 
     inline ~Client ()

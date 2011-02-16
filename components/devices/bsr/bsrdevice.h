@@ -46,7 +46,11 @@ namespace PAMI
           _context    = context;
           _my_task_id = my_task_id;
 
+#ifdef _LAPI_LINUX
+          _initialized = false;
+#else
           _initialized = true;
+#endif
         }
 
       pami_context_t getContext_impl()

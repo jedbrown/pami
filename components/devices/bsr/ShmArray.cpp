@@ -13,10 +13,9 @@
 #else
 #include <sys/atomic_op.h>
 #endif
-/*#include "lapi_macro.h"*/
 #include "ShmArray.h"
 #include "lapi_itrace.h"
-
+#include "Arch.h"
 /*!
  * \brief Default constructor.
  */
@@ -31,7 +30,7 @@ SharedArray::RC ShmArray::Init(const unsigned int member_cnt,
         const unsigned int key, const bool is_leader)
 {
 #ifndef __64BIT__
-    ITRC(IT_BAR, "ShmArray: Not supported on 32Bit applications\n");
+    ITRC(IT_BSR, "ShmArray: Not supported on 32Bit applications\n");
     return NOT_AVAILABLE;
 #endif
     // if it is already initialized, then do nothing.
@@ -42,13 +41,13 @@ SharedArray::RC ShmArray::Init(const unsigned int member_cnt,
     /// Main steps:
     this->is_leader  = is_leader;
     this->member_cnt = member_cnt;
-    ITRC(IT_BAR, "ShmArray: initializing with %d members\n", member_cnt);
+    ITRC(IT_BSR, "ShmArray: initializing with %d members\n", member_cnt);
 
     /// - create shared memory or retrieve the existing one
     unsigned int  num_bytes = sizeof(Shm) + sizeof(Cacheline) * member_cnt;
 
     if (FAILED == ShmSetup(key, num_bytes, 300)) {
-        ITRC(IT_BAR, "ShmArray: ShmSetup failed\n");
+        ITRC(IT_BSR, "ShmArray: ShmSetup failed\n");
         return FAILED;
     }
 
@@ -58,7 +57,7 @@ SharedArray::RC ShmArray::Init(const unsigned int member_cnt,
     /// - at the end, set the status to READY
     status = READY;
 
-    ITRC(IT_BAR, "ShmArray: initialized\n");
+    ITRC(IT_BSR, "ShmArray: initialized\n");
     return SUCCESS;
 }
 
@@ -74,7 +73,7 @@ ShmArray::~ShmArray()
     status = NOT_READY;
     ShmDestory();
 
-    ITRC(IT_BAR, "ShmArray: Destroyed\n");
+    ITRC(IT_BSR, "ShmArray: Destroyed\n");
 }
 
 unsigned char      ShmArray::Load1(const int offset) const
@@ -111,9 +110,11 @@ unsigned long long ShmArray::Load8(const int offset) const
 
 void ShmArray::Store1(const int offset, const unsigned char val)
 {
-    isync();
+  // LAPI code had  isync();
+    mem_isync();
     shm->line[offset].byte = val;
-    lwsync();
+    // LAPI Code had  lwsync();
+    mem_barrier();
 }
 
 void ShmArray::Store2(const int offset, const unsigned short val)

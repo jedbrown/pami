@@ -7,7 +7,7 @@
 
 #include <stdlib.h>
 #include <string>
-
+#include "util/common.h"
 using namespace std;
 /*!
  * \brief SyncGroup class
@@ -130,7 +130,7 @@ SyncGroup::~SyncGroup()
 inline
 void SyncGroup::Barrier()
 {
-    ASSERT(initialized && "SyncGroup: Object is not initialized");
+    PAMI_assert(initialized && "SyncGroup: Object is not initialized");
     BarrierEnter();
     BarrierExit();
 }

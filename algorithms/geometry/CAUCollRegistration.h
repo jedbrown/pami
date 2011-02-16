@@ -150,17 +150,21 @@ namespace PAMI
 
       template <class T_Geometry,
                 class T_Local_Device,
+                class T_Local_DeviceBSR,
                 class T_Global_Device,
                 class T_LocalNI_AM,
                 class T_GlobalNI_AM,
+                class T_LocalBSRNI,
                 class T_LocalModel,
                 class T_CSMemoryManager>
       class CAURegistration :
         public CollRegistration < PAMI::CollRegistration::CAU::CAURegistration < T_Geometry,
                                                                                  T_Local_Device,
+                                                                                 T_Local_DeviceBSR,
                                                                                  T_Global_Device,
                                                                                  T_LocalNI_AM,
                                                                                  T_GlobalNI_AM,
+                                                                                 T_LocalBSRNI,
                                                                                  T_LocalModel,
                                                                                  T_CSMemoryManager>,
                                   T_Geometry >
@@ -186,6 +190,9 @@ namespace PAMI
           Broadcast::MultiCastFactory       *_broadcast;
           Allreduce::MultiCombineFactory    *_allreduce;
           Reduce::MultiCombineFactory       *_reduce;
+
+          // We will want to free these models later
+          // So keep them in the geometryinfo for now
           T_LocalModel                      *_local_model;
           T_LocalNI_AM                      *_ni;
         }GeometryInfo;
@@ -198,6 +205,7 @@ namespace PAMI
                                size_t                               context_id,
                                size_t                               client_id,
                                T_Local_Device                      &ldev,
+                               T_Local_DeviceBSR                   &ldevbsr,
                                T_Global_Device                     &gdev,
                                Mapping                             &mapping,
                                lapi_handle_t                        lapi_handle,
@@ -206,9 +214,11 @@ namespace PAMI
                                Memory::MemoryManager               *mm):
           CollRegistration < PAMI::CollRegistration::CAU::CAURegistration < T_Geometry,
                                                                             T_Local_Device,
+                                                                            T_Local_DeviceBSR,
                                                                             T_Global_Device,
                                                                             T_LocalNI_AM,
                                                                             T_GlobalNI_AM,
+                                                                            T_LocalBSRNI,
                                                                             T_LocalModel,
                                                                             T_CSMemoryManager>,
                              T_Geometry > (),
@@ -223,9 +233,10 @@ namespace PAMI
           _lapi_handle(lapi_handle),
           _reduce_val((-1)&(~0x1)),
           _local_devs(ldev),
+          _local_devs_bsr(ldevbsr),
           _global_dev(gdev),
           _g_barrier_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
-          _g_barrierbsr_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
+          _l_barrierbsr_ni(_local_devs_bsr,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
           _g_broadcast_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
           _g_allreduce_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
           _g_reduce_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
@@ -267,10 +278,9 @@ namespace PAMI
             PAMI_assert(local_topo->size() != 0);
             PAMI_assert(local_master_topo->size() != 0);
 
-            // Allocate the local models
+            // Allocate the local models for shared memory
             T_LocalModel                     *local_model  = (T_LocalModel*)_model_allocator.allocateObject();
             void                             *csmm_ctrlstr = (void *) geometry->getKey(PAMI::Geometry::GKEY_GEOMETRYCSNI);
-            // fprintf(stderr, "CollShm control structure address, geometry %p - csmm_ctrlstr %p\n", geometry, csmm_ctrlstr);
             new(local_model)T_LocalModel(&_local_devs, geometry->comm(), local_topo, &_csmm, csmm_ctrlstr);
 
             // Allocate the local native interface
@@ -289,7 +299,7 @@ namespace PAMI
             geometryInfo->_ni                              = ni;
             geometryInfo->_niPtr[0]                        = ni;
             geometryInfo->_niPtr[1]                        = &_g_barrier_ni;
-            geometryInfo->_niPtr[2]                        = &_g_barrierbsr_ni;
+            geometryInfo->_niPtr[2]                        = &_l_barrierbsr_ni;
             geometryInfo->_niPtr[3]                        = &_g_broadcast_ni;
             geometryInfo->_niPtr[4]                        = &_g_allreduce_ni;
             geometryInfo->_niPtr[5]                        = &_g_reduce_ni;
@@ -331,12 +341,15 @@ namespace PAMI
             new(reduce_reg) Reduce::MultiCombineFactory(&_sconnmgr,
                                                               (CCMI::Interfaces::NativeInterface *)geometryInfo->_niPtr[0],
                                                               (CCMI::Interfaces::NativeInterface *)geometryInfo->_niPtr[3]);
-            geometryInfo->_reduce                       = reduce_reg;
+            geometryInfo->_reduce                          = reduce_reg;
 
             // Add the geometry info to the geometry
             geometry->setKey(PAMI::Geometry::GKEY_GEOMETRYCSNI, ni);
             geometry->addCollective(PAMI_XFER_BARRIER,barrier_reg,context_id);
-            geometry->addCollective(PAMI_XFER_BARRIER,barrierbsr_reg,context_id);
+
+            if(_local_devs_bsr.isInit())
+              geometry->addCollective(PAMI_XFER_BARRIER,barrierbsr_reg,context_id);
+
             geometry->addCollective(PAMI_XFER_BROADCAST,broadcast_reg,context_id);
             geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,allreduce_reg,context_id);
             geometry->addCollectiveCheck(PAMI_XFER_REDUCE,reduce_reg,context_id);
@@ -443,19 +456,23 @@ namespace PAMI
 
         // Devices
         T_Local_Device                                                 &_local_devs;
+        T_Local_DeviceBSR                                              &_local_devs_bsr;
         T_Global_Device                                                &_global_dev;
 
         // Global native interface
         T_GlobalNI_AM                                                   _g_barrier_ni;
-        T_GlobalNI_AM                                                   _g_barrierbsr_ni;
         T_GlobalNI_AM                                                   _g_broadcast_ni;
         T_GlobalNI_AM                                                   _g_allreduce_ni;
         T_GlobalNI_AM                                                   _g_reduce_ni;
+
+        // BSR Device
+        T_LocalBSRNI                                                    _l_barrierbsr_ni;
 
         // Factory Allocator
         // and Local NI allocator
         PAMI::MemoryAllocator<sizeof(Factories),16>                     _factory_allocator;
         PAMI::MemoryAllocator<sizeof(T_LocalModel),16>                  _model_allocator;
+        PAMI::MemoryAllocator<sizeof(T_LocalModel),16>                  _model_allocator_bsr;
         PAMI::MemoryAllocator<sizeof(T_LocalNI_AM),16>                  _ni_allocator;
         PAMI::MemoryAllocator<sizeof(GeometryInfo),16>                  _geom_allocator;
         PAMI::MemoryAllocator<sizeof(PAMI::Device::CAUGeometryInfo),16> _cau_geom_allocator;
