@@ -1271,44 +1271,39 @@ extern "C"
   /**
    * \brief Atomic read-modify-write operation to a remote memory location
    *
+   * The following data types are supported for read-modify-write operations:
+   *
+   * - PAMI_TYPE_SIGNED_INT
+   * - PAMI_TYPE_UNSIGNED_INT
+   * - PAMI_TYPE_SIGNED_LONG
+   * - PAMI_TYPE_UNSIGNED_LONG
+   * - PAMI_TYPE_SIGNED_LONG_LONG (only supported on 64-bit platforms)
+   * - PAMI_TYPE_UNSIGNED_LONG_LONG (only supported on 64-bit platforms)
+   *
    * \warning All read-modify-write operations are \b unordered relative
    *          to all other data transfer operations - including other
    *          read-modify-write operations.
    *
    * Example read-modify-write operations include:
    *
-   * \par \c rmw.type=PAMI_TYPE_BYTE; \c rmw.operation=PAMI_ATOMIC_FETCH
-   *      "8-bit signed integer fetch operation"
-   * \code
-   * int8_t *local, *remote, *value, *test;
-   * *local = *remote;
-   * \endcode
-   *
-   * \par \c rmw.type=PAMI_TYPE_SHORT; \c rmw.operation=PAMI_ATOMIC_ADD
-   *      "16-bit signed integer remote add operation"
-   * \code
-   * int16_t *local, *remote, *value, *test;
-   * *remote += *value;
-   * \endcode
-   *
-   * \par \c rmw.type=PAMI_TYPE_UNSIGNED; \c rmw.operation=PAMI_ATOMIC_FETCH_AND
+   * \par \c rmw.type=PAMI_TYPE_SIGNED_INT; \c rmw.operation=PAMI_ATOMIC_FETCH_AND
    *      "32-bit signed integer fetch-then-and operation"
    * \code
-   * int32_t *local, *remote, *value, *test;
+   * int *local, *remote, *value, *test;
    * *local = *remote; *remote &= *value;
    * \endcode
    *
-   * \par \c rmw.type=PAMI_TYPE_INT64; \c rmw.operation=PAMI_ATOMIC_COMPARE_XOR
-   *      "64-bit signed integer compare-and-xor operation"
+   * \par \c rmw.type=PAMI_TYPE_UNSIGNED_LONG; \c rmw.operation=PAMI_ATOMIC_COMPARE_XOR
+   *      "native word sized signed integer compare-and-xor operation"
    * \code
-   * int64_t *local, *remote, *value, *test;
+   * unsigned long *local, *remote, *value, *test;
    * (*remote == test) ? *remote ^= *value;
    * \endcode
    *
-   * \par \c rmw.type=PAMI_TYPE_INT64; \c rmw.operation=PAMI_ATOMIC_FETCH_COMPARE_OR
+   * \par \c rmw.type=PAMI_TYPE_SIGNED_LONG_LONG; \c rmw.operation=PAMI_ATOMIC_FETCH_COMPARE_OR
    *      "64-bit signed integer fetch-then-compare-and-or operation"
    * \code
-   * int64_t *local, *remote, *value, *test;
+   * long long *local, *remote, *value, *test;
    * *local = *remote; (*remote == *test) ? *remote |= *value;
    * \endcode
    *
