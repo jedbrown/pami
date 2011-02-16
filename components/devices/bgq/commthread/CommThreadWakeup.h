@@ -100,6 +100,7 @@ public:
         BgqCommThread() { }
         static size_t _maxActive;
         static size_t _maxloops;
+        static size_t _minloops;
 
 #else // !COMMTHREAD_LAYOUT_TESTING
 
@@ -382,6 +383,7 @@ private:
 		uint64_t new_ctx, old_ctx, lkd_ctx;
 		size_t n, events, ev_since_wu;
 		size_t max_loop = BgqCommThread::_maxloops;
+		size_t min_loop = BgqCommThread::_minloops;
 		size_t id; // our current commthread id, among active ones.
 		pthread_t self = pthread_self();
 		uint64_t wu_start, wu_mask;
@@ -425,7 +427,9 @@ more_work:		// lightweight enough.
 				mem_sync();
 				events += __advanceContextSet(lkd_ctx);
 				ev_since_wu += events;
-			} while (!_shutdown && lkd_ctx && events != 0 && ++n < max_loop);
+				++n;
+			} while (!_shutdown && lkd_ctx &&
+				(events != 0 || n < min_loop) && n < max_loop);
 			if (_shutdown) break;
 
 			// Snoop the scheduler to see if other threads are competing.
@@ -505,6 +509,7 @@ DEBUG_WRITE('t','t');
 	static size_t _numActive;
 	static size_t _maxActive;
         static size_t _maxloops;
+        static size_t _minloops;
 	static size_t _ptCore;
 	static size_t _ptThread;
 #endif // !COMMTHREAD_LAYOUT_TESTING
@@ -544,9 +549,15 @@ _commThreads(NULL)
 	/// Note: this must be based on number of processes per node.
 	/// Default: BG_PROCESSESPERNODE - 1
 	///
-	/// PAMI_COMMTHREAD_MAX_LOOPS - Number of loops through advance done by
+	/// PAMI_COMMTHREAD_MAX_LOOPS - Maximum number of loops through advance done by
 	/// a commthread before checking status for possible sleep or preemption.
+	/// Must be >= PAMI_COMMTHREAD_MIN_LOOPS.
 	/// Default: 100
+	///
+	/// PAMI_COMMTHREAD_MIN_LOOPS - Minimum number of loops through advance done by
+	/// a commthread before checking status for possible sleep or preemption.
+	/// Must be <= PAMI_COMMTHREAD_MAX_LOOPS.
+	/// Default: 1
 	///
 	char *env = getenv("PAMI_MAX_COMMTHREADS");
 	if (env) {
@@ -556,7 +567,14 @@ _commThreads(NULL)
 	env = getenv("PAMI_COMMTHREAD_MAX_LOOPS");
 	if (env) {
 		x = strtoul(env, NULL, 0);
+		if (x < BgqCommThread::_minloops) x = BgqCommThread::_minloops;
 		BgqCommThread::_maxloops = x;
+	}
+	env = getenv("PAMI_COMMTHREAD_MIN_LOOPS");
+	if (env) {
+		x = strtoul(env, NULL, 0);
+		if (x > BgqCommThread::_maxloops) x = BgqCommThread::_maxloops;
+		BgqCommThread::_minloops = x;
 	}
 
 	BgqCommThread::_ptCore = (NUM_CORES - 1) - (BgqCommThread::_maxActive % NUM_CORES);
@@ -696,6 +714,7 @@ if (fwu > 2) fprintf(stderr, "Commthreads saw %zd false wakeups\n", fwu);
 
 size_t PAMI::Device::CommThread::BgqCommThread::_maxActive = 0;
 size_t PAMI::Device::CommThread::BgqCommThread::_maxloops = 100;
+size_t PAMI::Device::CommThread::BgqCommThread::_minloops = 1;
 #ifndef COMMTHREAD_LAYOUT_TESTING
 size_t PAMI::Device::CommThread::BgqCommThread::_numActive = 0;
 size_t PAMI::Device::CommThread::BgqCommThread::_ptCore = 0;
