@@ -992,7 +992,7 @@ extern "C"
     pami_endpoint_t       dest;      /**< Destination endpoint */
     pami_send_hint_t      hints;     /**< Hints for sending the message */
     size_t                bytes;     /**< Data transfer size in bytes:  0 bytes disallowed*/
-    void                 *cookie;    /**< Argument to \b all event callbacks */
+    void                * cookie;    /**< Argument to \b all event callbacks */
     pami_event_function   done_fn;   /**< Local completion event */
   } pami_rma_t;
 
@@ -1202,64 +1202,74 @@ extern "C"
    */
   /*****************************************************************************/
 
-  /** \brief Atomic rmw data type */
+  /** \brief Atomic rmw operation */
   typedef enum
   {
-    PAMI_RMW_KIND_UINT32      = 0x0001, /**< 32-bit unsigned integer operation */
-    PAMI_RMW_KIND_UINT64      = 0x0002  /**< 64-bit unsigned integer operation */
-  } pami_rmw_kind_t;
+    /* fetch */
+    PAMI_ATOMIC_FETCH    = (0x1 << 0), /**< 'fetch' operation; replace 'local' with 'remote' */
 
-  /** \brief Atomic rmw assignment type */
-  typedef enum
-  {
-    PAMI_RMW_ASSIGNMENT_SET   = 0x0010, /**< =  operation */
-    PAMI_RMW_ASSIGNMENT_ADD   = 0x0020, /**< += operation */
-    PAMI_RMW_ASSIGNMENT_OR    = 0x0040, /**< |= operation */
-    PAMI_RMW_ASSIGNMENT_AND   = 0x0080  /**< &= operation */
-  } pami_rmw_assignment_t;
+    /* compare */
+    PAMI_ATOMIC_COMPARE  = (0x1 << 1), /**< 'compare' operation; requires a 'modify' operation */
 
-  /** \brief Atomic rmw comparison type */
-  typedef enum
-  {
-    PAMI_RMW_COMPARISON_NOOP  = 0x0100, /**< No comparison operation */
-    PAMI_RMW_COMPARISON_EQUAL = 0x0200  /**< Equality comparison operation */
-  } pami_rmw_comparison_t;
+    /* modify */
+    PAMI_ATOMIC_SET      = (0x1 << 2), /**< 'set' operation; replace 'remote' with 'value' */
+    PAMI_ATOMIC_ADD      = (0x2 << 2), /**< 'add' operation; add 'value' to 'remote' */
+    PAMI_ATOMIC_OR       = (0x3 << 2), /**< 'or'  operation; bitwise-or 'value' to 'remote' */
+    PAMI_ATOMIC_AND      = (0x4 << 2), /**< 'and' operation; bitwise-and 'value' to 'remote' */
+    PAMI_ATOMIC_XOR      = (0x5 << 2), /**< 'xor' operation; bitwise-xor 'value' to 'remote' */
+
+    /* fetch then modify */
+    PAMI_ATOMIC_FETCH_SET = (PAMI_ATOMIC_FETCH | PAMI_ATOMIC_SET), /**< 'fetch then set' operation */
+    PAMI_ATOMIC_FETCH_ADD = (PAMI_ATOMIC_FETCH | PAMI_ATOMIC_ADD), /**< 'fetch then add' operation */
+    PAMI_ATOMIC_FETCH_OR  = (PAMI_ATOMIC_FETCH | PAMI_ATOMIC_OR),  /**< 'fetch then or'  operation */
+    PAMI_ATOMIC_FETCH_AND = (PAMI_ATOMIC_FETCH | PAMI_ATOMIC_AND), /**< 'fetch then and' operation */
+    PAMI_ATOMIC_FETCH_XOR = (PAMI_ATOMIC_FETCH | PAMI_ATOMIC_XOR), /**< 'fetch then xor' operation */
+
+    /* compare and modify */
+    PAMI_ATOMIC_COMPARE_SET = (PAMI_ATOMIC_COMPARE | PAMI_ATOMIC_SET), /**< 'set if test equals remote' operation */
+    PAMI_ATOMIC_COMPARE_ADD = (PAMI_ATOMIC_COMPARE | PAMI_ATOMIC_ADD), /**< 'add if test equals remote' operation */
+    PAMI_ATOMIC_COMPARE_OR  = (PAMI_ATOMIC_COMPARE | PAMI_ATOMIC_OR),  /**< 'or if test equals remote' operation */
+    PAMI_ATOMIC_COMPARE_AND = (PAMI_ATOMIC_COMPARE | PAMI_ATOMIC_AND), /**< 'and if test equals remote' operation */
+    PAMI_ATOMIC_COMPARE_XOR = (PAMI_ATOMIC_COMPARE | PAMI_ATOMIC_XOR), /**< 'xor if test equals remote' operation */
+
+    /* fetch then compare and modify */
+    PAMI_ATOMIC_FETCH_COMPARE_SET = (PAMI_ATOMIC_FETCH | PAMI_ATOMIC_COMPARE_SET), /**< 'fetch then set if test equals remote' operation */
+    PAMI_ATOMIC_FETCH_COMPARE_ADD = (PAMI_ATOMIC_FETCH | PAMI_ATOMIC_COMPARE_ADD), /**< 'fetch then add if test equals remote' operation */
+    PAMI_ATOMIC_FETCH_COMPARE_OR  = (PAMI_ATOMIC_FETCH | PAMI_ATOMIC_COMPARE_OR),  /**< 'fetch then or if test equals remote' operation */
+    PAMI_ATOMIC_FETCH_COMPARE_AND = (PAMI_ATOMIC_FETCH | PAMI_ATOMIC_COMPARE_AND), /**< 'fetch then and if test equals remote' operation */
+    PAMI_ATOMIC_FETCH_COMPARE_XOR = (PAMI_ATOMIC_FETCH | PAMI_ATOMIC_COMPARE_XOR), /**< 'fetch then xor if test equals remote' operation */
+
+  } pami_atomic_t;
 
   typedef struct
   {
-    pami_rma_t               rma;       /**< Common rma parameters */
-    pami_rma_addr_t          addr;      /**< Rma addresses parameters */
-    struct
-    {
-      pami_rmw_comparison_t  compare;   /**< read-modify-write comparison type */
-      pami_rmw_assignment_t  assign;    /**< read-modify-write assignment type */
-      pami_rmw_kind_t        kind;      /**< read-modify-write variable type */
-      union
-      {
-        struct
-        {
-          int32_t            value;     /**< 32-bit data value */
-          int32_t            test;      /**< 32-bit test value */
-        } int32;                        /**< 32-bit rmw input parameters */
-        struct
-        {
-          int64_t            value;     /**< 64-bit data value */
-          int64_t            test;      /**< 64-bit test value */
-        } int64;                        /**< 64-bit rmw input parameters */
-      } input;
-    } rmw;                              /**< Parameters specific to rmw */
+    pami_endpoint_t       dest;      /**< Destination endpoint */
+    pami_send_hint_t      hints;     /**< Hints for sending the message */
+    void                * cookie;    /**< Argument to \b all event callbacks */
+    pami_event_function   done_fn;   /**< Local completion event */
+    void                * local;     /**< Local (fetch) transfer virtual address */
+    void                * remote;    /**< Remote (source) transfer virtual address */
+    void                * value;     /**< Operation input local data value location */
+    void                * test;      /**< Operation input local test value location */
+    pami_atomic_t         operation; /**< Read-modify-write operation */
+
+    /**
+     * \brief Read-modify-write data type
+     *
+     * Only the following `pami_type_t` types are valid for rmw operations:
+     *
+     * - PAMI_TYPE_SIGNED_INT
+     * - PAMI_TYPE_UNSIGNED_INT
+     * - PAMI_TYPE_SIGNED_LONG
+     * - PAMI_TYPE_UNSIGNED_LONG
+     * - PAMI_TYPE_SIGNED_LONG_LONG
+     * - PAMI_TYPE_UNSIGNED_LONG_LONG
+     */
+    pami_type_t           type;
   } pami_rmw_t;
 
   /**
    * \brief Atomic read-modify-write operation to a remote memory location
-   *
-   * The specific operation is determined by the combination of the three rmw
-   * identifier enumeration types. All operations will perform the same
-   * generic logical atomic operation:
-   *
-   * \code
-   * *local = *remote; (*remote COMPARISON test) ? *remote ASSIGNMENT value;
-   * \endcode
    *
    * \warning All read-modify-write operations are \b unordered relative
    *          to all other data transfer operations - including other
@@ -1267,39 +1277,39 @@ extern "C"
    *
    * Example read-modify-write operations include:
    *
-   * \par PAMI_RMW_KIND_UINT32 | PAMI_RMW_COMPARISON_NOOP | PAMI_RMW_ASSIGNMENT_ADD
-   *      "32-bit unsigned integer fetch-and-add operation"
+   * \par \c rmw.type=PAMI_TYPE_BYTE; \c rmw.operation=PAMI_ATOMIC_FETCH
+   *      "8-bit signed integer fetch operation"
    * \code
-   * uint32_t *local, *remote, value, test;
-   * *local = *remote; *remote += value;
+   * int8_t *local, *remote, *value, *test;
+   * *local = *remote;
    * \endcode
    *
-   * \par PAMI_RMW_KIND_UINT32 | PAMI_RMW_COMPARISON_NOOP | PAMI_RMW_ASSIGNMENT_OR
-   *      "32-bit unsigned integer fetch-and-or operation"
+   * \par \c rmw.type=PAMI_TYPE_SHORT; \c rmw.operation=PAMI_ATOMIC_ADD
+   *      "16-bit signed integer remote add operation"
    * \code
-   * uint32_t *local, *remote, value, test;
-   * *local = *remote; *remote |= value;
+   * int16_t *local, *remote, *value, *test;
+   * *remote += *value;
    * \endcode
    *
-   * \par PAMI_RMW_KIND_UINT32 | PAMI_RMW_COMPARISON_NOOP | PAMI_RMW_ASSIGNMENT_AND
-   *      "32-bit unsigned integer fetch-and-and operation"
+   * \par \c rmw.type=PAMI_TYPE_UNSIGNED; \c rmw.operation=PAMI_ATOMIC_FETCH_AND
+   *      "32-bit signed integer fetch-then-and operation"
    * \code
-   * uint32_t *local, *remote, value, test;
-   * *local = *remote; *remote &= value;
+   * int32_t *local, *remote, *value, *test;
+   * *local = *remote; *remote &= *value;
    * \endcode
    *
-   * \par PAMI_RMW_KIND_UINT64 | PAMI_RMW_COMPARISON_NOOP | PAMI_RMW_ASSIGNMENT_SET
-   *      "64-bit unsigned integer swap (fetch-and-set) operation"
+   * \par \c rmw.type=PAMI_TYPE_INT64; \c rmw.operation=PAMI_ATOMIC_COMPARE_XOR
+   *      "64-bit signed integer compare-and-xor operation"
    * \code
-   * uint64_t *local, *remote, value, test;
-   * *local = *remote; *remote = value;
+   * int64_t *local, *remote, *value, *test;
+   * (*remote == test) ? *remote ^= *value;
    * \endcode
    *
-   * \par PAMI_RMW_KIND_UINT64 | PAMI_RMW_COMPARISON_EQUAL | PAMI_RMW_ASSIGNMENT_SET
-   *      "64-bit unsigned integer compare-and-swap operation"
+   * \par \c rmw.type=PAMI_TYPE_INT64; \c rmw.operation=PAMI_ATOMIC_FETCH_COMPARE_OR
+   *      "64-bit signed integer fetch-then-compare-and-or operation"
    * \code
-   * uint64_t *local, *remote, value, test;
-   * *local = *remote; (*remote == test) ? *remote = value;
+   * int64_t *local, *remote, *value, *test;
+   * *local = *remote; (*remote == *test) ? *remote |= *value;
    * \endcode
    *
    * \note It is valid to specify the destination endpoint associated with the
@@ -2787,6 +2797,9 @@ extern "C"
    *  communication.
    */
   extern pami_type_t PAMI_TYPE_CONTIGUOUS;
+  extern pami_type_t PAMI_TYPE_SIGNED_LONG;
+  extern pami_type_t PAMI_TYPE_UNSIGNED_LONG;
+
   /**
    * \brief Create a new type for noncontiguous transfers
    *
