@@ -378,7 +378,7 @@ extern "C"
      * advanced, only the contexts with active communication must be advanced.
      * 
      */
-    unsigned  multicontext      : 2;
+    unsigned  multicontext          : 2;
     
     /**
      * \brief Long (multi-packet) header support
@@ -390,7 +390,7 @@ extern "C"
      * header information is sent. Failure to limit the number of header bytes
      * sent will result in undefined behavior.
      */
-    unsigned  long_header       : 2;
+    unsigned  long_header           : 2;
     
     /**
      * \brief All asynchronous receives will be contiguous using
@@ -400,7 +400,7 @@ extern "C"
      * it is no longer required to set pami_recv_t::type nor
      * pami_recv_t::offset for the receive.
      */
-    unsigned  recv_contiguous   : 2; 
+    unsigned  recv_contiguous       : 2; 
                                         
     /**
      * \brief All asynchronous receives will use PAMI_DATA_COPY and a \c NULL data cookie
@@ -409,7 +409,7 @@ extern "C"
      * it is no longer required to set pami_recv_t::data_fn nor
      * pami_recv_t::data_cookie for the receive.
      */                                
-    unsigned  recv_copy         : 2;
+    unsigned  recv_copy             : 2;
                                       
     /** 
      * \brief All sends will result in an 'immediate' receive
@@ -427,7 +427,7 @@ extern "C"
      * zero-byte messages, and it is now required to always initialize the
      * pami_recv_t output parameters for every receive.
      */                                  
-    unsigned  recv_immediate    : 2;
+    unsigned  recv_immediate        : 2;
     
     /**
      * \brief Force match ordering semantics
@@ -437,27 +437,31 @@ extern "C"
      * will always be invoked in the same order as the send operations were
      * invoked on the context associated with the origin endpoint.
      */
-    unsigned  consistency       : 2;
+    unsigned  consistency           : 2;
     
     /**
      * \brief Send and receive buffers are ready for RDMA operations
      **/
-    unsigned  buffer_registered : 2;
+    unsigned  buffer_registered     : 2;
     
     /**
-     * \brief Interrupt the remote task when the first packet arrives
+     * \brief Force the destination endpoint to make asynchronous progress
+     *
+     * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
+     * an execution resource on the destination endpoint will asynchronously
+     * process the receive operation when the context is not advanced.
      **/
-    unsigned  interrupt_on_recv : 2; 
+    unsigned  remote_async_progress : 2;
     
     /**
      * \brief Communication uses rdma operations
      */
-    unsigned  use_rdma          : 2;
+    unsigned  use_rdma              : 2;
     
     /**
      * \brief Communication uses shared memory optimizations
      */
-    unsigned  use_shmem         : 2;
+    unsigned  use_shmem             : 2;
 
   } pami_dispatch_hint_t;
 
@@ -481,31 +485,31 @@ extern "C"
    */
   typedef struct
   {
-    unsigned reserved          : 12; /**< \brief Reserved for future use. */
+    unsigned reserved              : 12; /**< \brief Reserved for future use. */
     
     /**
      * \brief Send and receive buffers are ready for RDMA operations
      * \see   pami_dispatch_hint_t::buffer_registered
      **/
-    unsigned buffer_registered : 2;
+    unsigned buffer_registered     : 2;
     
     /**
-     * \brief Interrupt the remote task when the first packet arrives
-     * \see   pami_dispatch_hint_t::interrupt_on_recv
+     * \brief Force the destination endpoint to make asynchronous progress
+     * \see   pami_dispatch_hint_t::remote_async_progress
      **/
-    unsigned interrupt_on_recv : 2;
+    unsigned remote_async_progress : 2;
     
     /**
      * \brief Communication uses rdma operations
      * \see   pami_dispatch_hint_t::use_rdma
      **/
-    unsigned use_rdma          : 2;
+    unsigned use_rdma              : 2;
     
     /**
      * \brief Communication uses shared memory optimizations
      * \see   pami_dispatch_hint_t::use_shmem
      **/
-    unsigned use_shmem         : 2;
+    unsigned use_shmem             : 2;
 
   } pami_send_hint_t;
 
@@ -515,9 +519,9 @@ extern "C"
      * \brief Parallelize communication across multiple contexts
      * \see   pami_dispatch_hint_t::multicontext
      **/
-    unsigned multicontext      : 2;
+    unsigned multicontext          : 2;
     
-    unsigned reserved          : 18; /**< \brief Reserved for future use. */
+    unsigned reserved              : 18; /**< \brief Reserved for future use. */
     
   } pami_collective_hint_t;
 
