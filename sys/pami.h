@@ -617,17 +617,20 @@ extern "C"
    * with a single dispatch callback. Typically this limit is associated with
    * a network resource attribute, such as a packet size.
    *
+   * \note It is valid to specify the destination endpoint associated with the
+   *       communication context used to issue the operation.
+   *
    * \see pami_send_hint_t
    * \see PAMI_Dispatch_query
    *
-   * \param[in] context    PAMI communication context
+   * \param[in] context    Communication context
    * \param[in] parameters Send simple parameter structure
    *
    * \retval PAMI_SUCCESS  The request has been accepted.
    * \retval PAMI_INVAL    The request has been rejected due to invalid parameters.
    */
   pami_result_t PAMI_Send (pami_context_t    context,
-                         pami_send_t     * parameters);
+                           pami_send_t     * parameters);
 
   /**
    * \brief Immediate active message send for small contiguous data
@@ -656,20 +659,23 @@ extern "C"
    * with a single dispatch callback. Typically this limit is associated with
    * a network resource attribute, such as a packet size.
    *
+   * \note It is valid to specify the destination endpoint associated with the
+   *       communication context used to issue the operation.
+   *
    * \see pami_send_hint_t
    * \see PAMI_Dispatch_query
    *
    * \todo Better define send parameter structure so done callback is not required
    * \todo Define configuration attribute for the size limit
    *
-   * \param[in] context    PAMI communication context
+   * \param[in] context    Communication context
    * \param[in] parameters Send parameter structure
    *
    * \retval PAMI_SUCCESS  The request has been accepted.
    * \retval PAMI_INVAL    The request has been rejected due to invalid parameters.
    */
   pami_result_t PAMI_Send_immediate (pami_context_t          context,
-                                   pami_send_immediate_t * parameters);
+                                     pami_send_immediate_t * parameters);
 
   /**
    * \brief Non-blocking active message send for non-contiguous typed data
@@ -681,14 +687,17 @@ extern "C"
    * received by the remote task into a different format, such as a contiguous
    * buffer or the same or different predefined type.
    *
-   * \param[in] context    PAMI communication context
+   * \note It is valid to specify the destination endpoint associated with the
+   *       communication context used to issue the operation.
+   *
+   * \param[in] context    Communication context
    * \param[in] parameters Send typed parameter structure
    *
    * \retval PAMI_SUCCESS  The request has been accepted.
    * \retval PAMI_INVAL    The request has been rejected due to invalid parameters.
    */
   pami_result_t PAMI_Send_typed (pami_context_t      context,
-                               pami_send_typed_t * parameters);
+                                 pami_send_typed_t * parameters);
 
   /**
    * \brief Receive message structure
@@ -842,14 +851,17 @@ extern "C"
   /**
    * \brief One-sided put operation for simple contiguous data transfer
    *
-   * \param[in] context    PAMI communication context
+   * \note It is valid to specify the destination endpoint associated with the
+   *       communication context used to issue the operation.
+   *
+   * \param[in] context    Communication context
    * \param[in] parameters Simple put input parameters
    *
    * \retval PAMI_SUCCESS  The request has been accepted.
    * \retval PAMI_INVAL    The request has been rejected due to invalid parameters.
    */
   pami_result_t PAMI_Put (pami_context_t      context,
-                        pami_put_simple_t * parameters);
+                          pami_put_simple_t * parameters);
 
   /**
    * \brief Input parameters for simple typed put transfers
@@ -878,14 +890,17 @@ extern "C"
   /**
    * \brief One-sided put operation for typed non-contiguous data transfer
    *
-   * \param[in] context    PAMI communication context
+   * \note It is valid to specify the destination endpoint associated with the
+   *       communication context used to issue the operation.
+   *
+   * \param[in] context    Communication context
    * \param[in] parameters Typed put input parameters
    *
    * \retval PAMI_SUCCESS  The request has been accepted.
    * \retval PAMI_INVAL    The request has been rejected due to invalid parameters.
    */
   pami_result_t PAMI_Put_typed (pami_context_t     context,
-                              pami_put_typed_t * parameters);
+                                pami_put_typed_t * parameters);
 
 
   /** \} */ /* end of "put" group */
@@ -921,14 +936,17 @@ extern "C"
   /**
    * \brief One-sided get operation for simple contiguous data transfer
    *
-   * \param[in] context    PAMI communication context
+   * \note It is valid to specify the destination endpoint associated with the
+   *       communication context used to issue the operation.
+   *
+   * \param[in] context    Communication context
    * \param[in] parameters Simple get input parameters
    *
    * \retval PAMI_SUCCESS  The request has been accepted.
    * \retval PAMI_INVAL    The request has been rejected due to invalid parameters.
    */
   pami_result_t PAMI_Get (pami_context_t      context,
-                        pami_get_simple_t * parameters);
+                          pami_get_simple_t * parameters);
 
   /**
    * \brief Input parameter structure for typed get transfers
@@ -955,14 +973,17 @@ extern "C"
   /**
    * \brief One-sided get operation for typed non-contiguous data transfer
    *
-   * \param[in] context    PAMI communication context
+   * \note It is valid to specify the destination endpoint associated with the
+   *       communication context used to issue the operation.
+   *
+   * \param[in] context    Communication context
    * \param[in] parameters Typed get input parameters
    *
    * \retval PAMI_SUCCESS  The request has been accepted.
    * \retval PAMI_INVAL    The request has been rejected due to invalid parameters.
    */
   pami_result_t PAMI_Get_typed (pami_context_t     context,
-                              pami_get_typed_t * parameters);
+                                pami_get_typed_t * parameters);
 
   /** \} */ /* end of "get" group */
 
@@ -1075,7 +1096,10 @@ extern "C"
    * *local = *remote; (*remote == test) ? *remote = value;
    * \endcode
    *
-   * \param[in] context    PAMI communication context
+   * \note It is valid to specify the destination endpoint associated with the
+   *       communication context used to issue the operation.
+   *
+   * \param[in] context    Communication context
    * \param[in] parameters read-modify-write input parameters
    *
    * \retval PAMI_SUCCESS  The request has been accepted.
@@ -1219,7 +1243,10 @@ extern "C"
   /**
    * \brief Simple put operation for one-sided contiguous data transfer.
    *
-   * \param[in] context    PAMI application context
+   * \note It is valid to specify the destination endpoint associated with the
+   *       communication context used to issue the operation.
+   *
+   * \param[in] context    Communication context
    * \param[in] parameters Input parameters structure
    */
   pami_result_t PAMI_Rput (pami_context_t context, pami_rput_simple_t * parameters);
@@ -1227,7 +1254,10 @@ extern "C"
   /**
    * \brief Put operation for data type specific one-sided data transfer.
    *
-   * \param[in] context    PAMI application context
+   * \note It is valid to specify the destination endpoint associated with the
+   *       communication context used to issue the operation.
+   *
+   * \param[in] context    Communication context
    * \param[in] parameters Input parameters structure
    */
   pami_result_t PAMI_Rput_typed (pami_context_t context, pami_rput_typed_t * parameters);
@@ -1256,7 +1286,10 @@ extern "C"
   /**
    * \brief Simple get operation for one-sided contiguous data transfer.
    *
-   * \param[in] context    PAMI application context
+   * \note It is valid to specify the destination endpoint associated with the
+   *       communication context used to issue the operation.
+   *
+   * \param[in] context    Communication context
    * \param[in] parameters Input parameters structure
    */
   pami_result_t PAMI_Rget (pami_context_t context, pami_rget_simple_t * parameters);
@@ -1288,7 +1321,10 @@ extern "C"
   /**
    * \brief Get operation for data type specific one-sided data transfer.
    *
-   * \param[in] context    PAMI application context
+   * \note It is valid to specify the destination endpoint associated with the
+   *       communication context used to issue the operation.
+   *
+   * \param[in] context    Communication context
    * \param[in] parameters Input parameters structure
    */
   pami_result_t PAMI_Rget_typed (pami_context_t context, pami_rget_typed_t * parameters);
@@ -1311,30 +1347,36 @@ extern "C"
    * \brief Clean up local resources to an endpoint in preparation for
    *        task shutdown or checkpoint
    *
-   *        It is the user of this API's responsibility to ensure
-   *        that all communication has been quiesced to and from
-   *        the destination via a fence call and synchronization
+   * It is the user of this API's responsibility to ensure that all
+   * communication has been quiesced to and from the destination via a fence
+   * call and synchronization.
    *
-   * \param[in] context    PAMI communication context
+   * \note It is \b not \b valid to specify the destination endpoint associated
+   *       with the communication context used to issue the operation.
+   *
+   * \param[in] context    Communication context
    * \param[in] dest       Array of destination endpoints to close connections to
    * \param[in] count      Number of endpoints in the array dest
    */
 
   pami_result_t PAMI_Purge (pami_context_t    context,
-                          pami_endpoint_t * dest,
-                          size_t           count);
+                            pami_endpoint_t * dest,
+                            size_t            count);
 
   /**
    * \brief Setup local resources to an endpoint in preparation for
    *        task restart or creation
    *
-   * \param[in] context    PAMI communication context
+   * \note It is \b not \b valid to specify the destination endpoint associated
+   *       with the communication context used to issue the operation.
+   *
+   * \param[in] context    Communication context
    * \param[in] dest       Array of destination endpoints to resume connections to
    * \param[in] count      Number of endpoints in the array dest
    */
   pami_result_t PAMI_Resume (pami_context_t    context,
-                           pami_endpoint_t * dest,
-                           size_t           count);
+                             pami_endpoint_t * dest,
+                             size_t            count);
 
   /** \} */ /* end of "dynamic tasks" group */
 
@@ -1395,15 +1437,18 @@ extern "C"
   /**
    * \brief Syncronize all transfers to an endpoints.
    *
-   * \param[in] context PAMI communication context
+   * \note It is valid to specify the destination endpoint associated with the
+   *       communication context used to issue the operation.
+   *
+   * \param[in] context Communication context
    * \param[in] done_fn Event callback to invoke when the fence is complete
    * \param[in] cookie  Event callback argument
    * \param[in] target  Endpoint to synchronize
    */
   pami_result_t PAMI_Fence_endpoint (pami_context_t        context,
-                                   pami_event_function   done_fn,
-                                   void               * cookie,
-                                   pami_endpoint_t       target);
+                                     pami_event_function   done_fn,
+                                     void                * cookie,
+                                     pami_endpoint_t       target);
 
   /** \} */ /* end of "sync" group */
 
