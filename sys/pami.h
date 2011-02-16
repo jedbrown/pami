@@ -785,8 +785,8 @@ extern "C"
   {
     pami_endpoint_t       dest;      /**< Destination endpoint */
     pami_send_hint_t      hints;     /**< Hints for sending the message */
-    size_t               bytes;     /**< Data transfer size in bytes */
-    void               * cookie;    /**< Argument to \b all event callbacks */
+    size_t                bytes;     /**< Data transfer size in bytes:  0 bytes disallowed*/
+    void                 *cookie;    /**< Argument to \b all event callbacks */
     pami_event_function   done_fn;   /**< Local completion event */
   } pami_rma_t;
 
