@@ -416,26 +416,35 @@ extern "C"
      * \brief Parallelize communication across multiple contexts
      * 
      * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
-     * the send implementation will use other contexts to aid in the
+     * the send implementation may use other contexts to aid in the
      * communication operation. It is required that all contexts be advanced.
      * 
      * If specified as pami_hint_t::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
      * the send implementation will not use other contexts to aid in the
-     * communication operation. It is no long required that all contexts be
+     * communication operation. It is not required that all contexts be
      * advanced, only the contexts with active communication must be advanced.
      * 
+     * If specified as pami_hint_t::PAMI_HINT_DEFAULT, the effect on the
+     * communication is equivalent to the effect of pami_hint_t::PAMI_HINT_ENABLE
      */
     unsigned  multicontext          : 2;
     
     /**
      * \brief Long (multi-packet) header support
-     * 
+     *
+     * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
+     * the send implementation will enable single- and multi-packet header
+     * support.
+     *
      * If specified as pami_hint_t::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
      * the send implementation will not attempt to send more than a "single
      * packet" of header information.  This requires that that only up to
      * pami_attribute_name_t::PAMI_DISPATCH_RECV_IMMEDIATE_MAX bytes of
      * header information is sent. Failure to limit the number of header bytes
      * sent will result in undefined behavior.
+     *
+     * If specified as pami_hint_t::PAMI_HINT_DEFAULT, the effect on the
+     * communication is equivalent to the effect of pami_hint_t::PAMI_HINT_ENABLE
      */
     unsigned  long_header           : 2;
     
@@ -444,8 +453,16 @@ extern "C"
      *        PAMI_TYPE_CONTIGUOUS with a zero offset.
      * 
      * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
-     * it is no longer required to set pami_recv_t::type nor
-     * pami_recv_t::offset for the receive.
+     * it is not required to set pami_recv_t::type nor pami_recv_t::offset for
+     * the receive.
+     *
+     * If specified as pami_hint_t::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
+     * the send implementation will enable application-specified typed receive
+     * support and it is required to set pami_recv_t::type and pami_recv_t::offset
+     * for the receive.
+     *
+     * If specified as pami_hint_t::PAMI_HINT_DEFAULT, the effect on the
+     * communication is equivalent to the effect of pami_hint_t::PAMI_HINT_DISABLE
      */
     unsigned  recv_contiguous       : 2; 
                                         
@@ -453,8 +470,16 @@ extern "C"
      * \brief All asynchronous receives will use PAMI_DATA_COPY and a \c NULL data cookie
      * 
      * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
-     * it is no longer required to set pami_recv_t::data_fn nor
-     * pami_recv_t::data_cookie for the receive.
+     * it is not required to set pami_recv_t::data_fn nor pami_recv_t::data_cookie
+     * for the receive.
+     *
+     * If specified as pami_hint_t::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
+     * the send implementation will enable application-specified data function
+     * typed receive support and it is required to set pami_recv_t::type and
+     * pami_recv_t::offset for the receive.
+     *
+     * If specified as pami_hint_t::PAMI_HINT_DEFAULT, the effect on the
+     * communication is equivalent to the effect of pami_hint_t::PAMI_HINT_DISABLE
      */                                
     unsigned  recv_copy             : 2;
                                       
@@ -462,17 +487,27 @@ extern "C"
      * \brief All sends will result in an 'immediate' receive
      * 
      * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
-     * the dispatch function will always receive as 'immediate', and it is no
-     * longer required to ever initialize the pami_recv_t output parameters. It
-     * is also required that only up to
-     * pami_attribute_name_t::PAMI_DISPATCH_RECV_IMMEDIATE_MAX bytes of combined
-     * header and data is sent. Failure to limit the number of bytes sent will
-     * result in undefined behavior.
+     * the dispatch function will always receive as 'immediate', and it is not
+     * required to initialize the pami_recv_t output parameters. It is also
+     * required that only up to pami_attribute_name_t::PAMI_DISPATCH_RECV_IMMEDIATE_MAX
+     * bytes of combined header and data is sent. Failure to limit the number of
+     * bytes sent will result in undefined behavior.
      * 
+     * \note It is not neccessary to set the pami_dispatch_hint_t::recv_contiguous
+     *       hint, nor the pami_dispatch_hint_t::recv_copy hint, when the
+     *       pami_dispatch_hint_t::recv_immediate hint is set to
+     *       pami_hint_t::PAMI_HINT_ENABLE
+     *
      * If specified as pami_hint_t::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
      * the dispatch function will never receive as 'immediate', even for
-     * zero-byte messages, and it is now required to always initialize the
+     * zero-byte messages, and it is required to always initialize all
      * pami_recv_t output parameters for every receive.
+     *
+     * If specified as pami_hint_t::PAMI_HINT_DEFAULT during PAMI_Dispatch_set(),
+     * the implementation may provide the source data as an 'immediate' receive
+     * or the implementation may provide the source data as an 'asynchronous'
+     * receive. The appropriate pami_recv_t output parameters must be initialized
+     * as required by the dispatch function input parameters.
      */                                  
     unsigned  recv_immediate        : 2;
     
@@ -482,12 +517,42 @@ extern "C"
      * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
      * the dispatch functions for all communication between a pair of endpoints
      * will always be invoked in the same order as the send operations were
-     * invoked on the context associated with the origin endpoint.
+     * invoked on the context associated with the origin endpoint. The
+     * completion callbacks for 'asycnhronous' receives may not be invoked in
+     * the same order as the dispatch functions were invoked.
+     *
+     * If specified as pami_hint_t::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
+     * the dispatch functions for all communication between a pair of endpoints
+     * may not be invoked in the same order as the send operations were
+     * invoked on the context associated with the origin endpoint. The
+     * completion callbacks for 'asynchronous' receives may not be invoked in
+     * the same order as the dispatch functions were invoked.
+     *
+     * If specified as pami_hint_t::PAMI_HINT_DEFAULT, the effect on the
+     * communication is equivalent to the effect of pami_hint_t::PAMI_HINT_DISABLE
      */
     unsigned  consistency           : 2;
     
     /**
      * \brief Send and receive buffers are ready for RDMA operations
+     *
+     * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
+     * the application asserts that the memory for the send and receive buffers
+     * has been previously registered for rdma transfers using the
+     * PAMI_Memregion_create() function.
+     *
+     * \note It is an error to specify pami_hint_t::PAMI_HINT_DISABLE for the
+     *       pami_dispatch_hint_t::use_rdma hint when the
+     *       pami_dispatch_hint_t::buffer_registered hint is set to
+     *       pami_hint_t::PAMI_HINT_ENABLE
+     *
+     * If specified as pami_hint_t::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
+     * the memory for the send and receive buffers may, or may not, have been
+     * previously registered for rdma transfers using the PAMI_Memregion_create()
+     * function.
+     *
+     * If specified as pami_hint_t::PAMI_HINT_DEFAULT, the effect on the
+     * communication is equivalent to the effect of pami_hint_t::PAMI_HINT_DISABLE
      **/
     unsigned  buffer_registered     : 2;
     
@@ -497,16 +562,47 @@ extern "C"
      * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
      * an execution resource on the destination endpoint will asynchronously
      * process the receive operation when the context is not advanced.
+     *
+     * If specified as pami_hint_t::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
+     * the destination endpoint will not asynchronously process the receive
+     * operation when the context is not advanced.
+     *
+     * If specified as pami_hint_t::PAMI_HINT_DEFAULT, the effect on the
+     * communication is equivalent to the effect of pami_hint_t::PAMI_HINT_DISABLE
      **/
     unsigned  remote_async_progress : 2;
     
     /**
      * \brief Communication uses rdma operations
+     *
+     * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
+     * the implementation must use rdma operations to aid in the communication
+     * operation.
+     *
+     * If specified as pami_hint_t::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
+     * the implementation must not use rdma operations to aid in the
+     * communication operation.
+     *
+     * If specified as pami_hint_t::PAMI_HINT_DEFAULT during PAMI_Dispatch_set(),
+     * the implementation may, or may not, use rdma operations to aid in the
+     * communication operation.
      */
     unsigned  use_rdma              : 2;
     
     /**
      * \brief Communication uses shared memory optimizations
+     *
+     * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
+     * the implementation must use shared memory optimizations to aid in the
+     * communication operation.
+     *
+     * If specified as pami_hint_t::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
+     * the implementation must not use shared memory optimizations to aid in the
+     * communication operation.
+     *
+     * If specified as pami_hint_t::PAMI_HINT_DEFAULT during PAMI_Dispatch_set(),
+     * the implementation may, or may not, use shared memory optimizations to
+     * aid in the communication operation.
      */
     unsigned  use_shmem             : 2;
 
