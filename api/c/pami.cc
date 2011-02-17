@@ -649,4 +649,4 @@ extern "C" void * PAMI_Extension_symbol (pami_extension_t   extension,
 // Temporary! Move this someplace else!
 //
 //
-#include "api/c/pami_ext_impl.h"
+//#include "api/c/pami_ext_impl.h"

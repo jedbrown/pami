@@ -10,7 +10,7 @@
 #include <string.h>
 
 #include <pami.h>
-#include "sys/pami_ext.h"
+#include "common/MultisendInterface.h"
 
 namespace PAMI
 {

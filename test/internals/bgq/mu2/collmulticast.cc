@@ -120,7 +120,7 @@ int main(int argc, char ** argv)
     memset(ur.u.n_torus.coords, 0, sizeof(ur.u.n_torus.coords));
     
     //ur.u.n_torus.coords[0] = 1;
-    PAMI_Task2Network (1, &ur);
+    __global.mapping.task2network(1, &ur, PAMI_N_TORUS_NETWORK);
 
 #if 0
     printf ("Target coords %ld %ld %ld %ld %ld %ld\n", 

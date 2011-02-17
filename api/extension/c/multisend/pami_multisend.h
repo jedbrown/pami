@@ -1,31 +1,16 @@
 /**
- * \file sys/pami_ext.h
+ * \file api/c/pami_ext.h
  * \brief platform-specific messaging interface
  */
 
 #include "pami.h"
 
-#ifndef __pami_ext_h__
-#define __pami_ext_h__
+#ifndef __api_c_pami_ext_h__
+#define __api_c_pami_ext_h__
 
 #ifndef PAMI_EXT_ATTR
 #define PAMI_EXT_ATTR 1000 /**< starting value for extended attributes */
 #endif
-
-typedef struct
-{
-  pami_event_function   function;
-  void                * clientdata;
-} pami_callback_t;
-
-typedef struct pami_quad_t
-{
-    unsigned w0; /**< Word[0] */
-    unsigned w1; /**< Word[1] */
-    unsigned w2; /**< Word[2] */
-    unsigned w3; /**< Word[3] */
-}
-pami_quad_t __attribute__ ((__aligned__ (16)));
 
 typedef struct {
   int x; /**< X value */
@@ -40,54 +25,6 @@ typedef enum {
 
 
 
-  /**
-   * \brief Network type
-   */
-  typedef enum
-  {
-    PAMI_DEFAULT_NETWORK = 0, /**< Default network type. \b Guaranteed to work. */
-    PAMI_N_TORUS_NETWORK,     /**< nD-Torus / nD-SMP network type.
-                              * mapping->torusDims() for torus dim,
-                              * mapping->globalDims() for all (torus+SMP) dim.
-                              */
-    PAMI_SOCKET_NETWORK,      /**< Unix socket network type. */
-    PAMI_SHMEM_NETWORK,       /**< local shared memory "network" for smp nodes. */
-    PAMI_NETWORK_COUNT        /**< Number of network types defined. */
-  }
-    pami_network;
-
-/** \todo Remove this platform-specific #define */
-#define PAMI_MAX_DIMS 7
-/* #define PAMI_MAX_DIMS  4 */
-
-  /**
-   * \brief A structure to describe a network coordinate
-   */
-  typedef struct
-  {
-    pami_network network; /**< Network type for the coordinates */
-    union
-    {
-      struct
-      {
-        size_t coords[PAMI_MAX_DIMS];
-      } n_torus;
-      struct
-      {
-        int recv_fd;   /**< Receive file descriptor */
-        int send_fd;   /**< Send file descriptor    */
-      } socket;   /**< PAMI_SOCKET_NETWORK coordinates */
-      struct
-      {
-        size_t rank;   /**< Global task id of process */
-        size_t peer;   /**< Local task id of process */
-      } shmem;    /**< PAMI_SHMEM_NETWORK coordinates */
-    } u;
-  } pami_coord_t;
-
-
-  typedef pami_quad_t pami_pipeworkqueue_t[8];
-  typedef pami_quad_t pami_pipeworkqueue_ext_t[2];
 
   /**
    * \brief Map a task to a network address expressed as coordinates.
@@ -433,21 +370,6 @@ typedef enum {
   int PAMI_PipeWorkQueue_available(pami_pipeworkqueue_t *wq);
 
 
-  /** \brief The various types a Topology can be */
-  typedef enum {
-    PAMI_EMPTY_TOPOLOGY = 0, /**< topology represents no (zero) tasks    */
-    PAMI_SINGLE_TOPOLOGY,    /**< topology is for one task               */
-    PAMI_RANGE_TOPOLOGY,     /**< topology is a simple range of tasks    */
-    PAMI_LIST_TOPOLOGY,      /**< topology is an unordered list of tasks */
-    PAMI_COORD_TOPOLOGY,     /**< topology is a rectangular segment
-                               represented by coordinates               */
-    PAMI_AXIAL_TOPOLOGY,     /**< topology is a axial neighborhood --
-                               represented by a rectangular seqment, a
-                               reference task, and optional torus flags */
-    PAMI_TOPOLOGY_COUNT
-  } pami_topology_type_t;
-
-  typedef pami_quad_t pami_topology_t[16];
 
   /**
    * \brief default constructor (PAMI_EMPTY_TOPOLOGY)
@@ -748,21 +670,6 @@ typedef enum {
    */
   void PAMI_Topology_subtract(pami_topology_t *_new, pami_topology_t *topo, pami_topology_t *other);
 
-  /**  Deprecated Multicast:  To be deleted soon!!! */
-  /**********************************************************************/
-  typedef enum
-  {
-    PAMI_UNDEFINED_CONSISTENCY = -1,
-    PAMI_RELAXED_CONSISTENCY,
-    PAMI_MATCH_CONSISTENCY,
-    PAMI_WEAK_CONSISTENCY,
-    PAMI_CONSISTENCY_COUNT
-  } pami_consistency_t;
-
-  /**********************************************************************/
-
-  extern int pami_dt_shift[PAMI_DT_COUNT]; /// \todo what is this and is it really an extension?
-
 
 #define PAMI_DISPATCH_EXTEND
 
@@ -801,4 +708,5 @@ typedef enum {
                                               pami_event_function     fn,
                                               void                   *cookie);
 
-#endif
+
+#endif // __api_c_pami_ext_h__

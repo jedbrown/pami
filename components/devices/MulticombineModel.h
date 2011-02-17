@@ -18,7 +18,7 @@
 
 #include <pami.h>
 #include "util/common.h"
-#include "sys/pami_ext.h"
+#include "common/MultisendInterface.h"
 
 /**
  * \brief Multisend interfaces.

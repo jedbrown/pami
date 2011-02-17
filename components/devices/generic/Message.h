@@ -16,7 +16,7 @@
 
 #include <pami.h>
 #include "GenericDevicePlatform.h"
-#include "sys/pami_ext.h"
+#include "common/MultisendInterface.h"
 
 namespace PAMI {
 namespace Device {

@@ -14,7 +14,7 @@
 #define __common_BaseMappingInterface_h__
 
 #include <pami.h>
-#include "sys/pami_ext.h"
+#include "common/MultisendInterface.h"
 
 namespace PAMI
 {

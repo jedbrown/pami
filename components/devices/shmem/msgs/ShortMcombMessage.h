@@ -21,6 +21,7 @@
 #include "sys/pami.h"
 #include "assert.h"
 #include "../a2qpx_nway_sum.h"
+#include "common/MultisendInterface.h"
 
 #undef TRACE_ERR
 

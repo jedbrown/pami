@@ -17,6 +17,8 @@
 #include "util/ccmi_util.h"
 #include "util/ccmi_debug.h"
 
+#include "common/MultisendInterface.h"
+
 namespace CCMI
 {
   namespace Executor

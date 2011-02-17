@@ -1,13 +1,13 @@
 /**
- * \file api/c/pami_ext_impl.h
- * \brief PAMI C interface extension-ish implementation
+ * \file api/extension/c/multisend/pami_multisend_impl.h
+ * \brief Multisend extension C interface implementation
  */
-#ifndef __api_c_pami_ext_impl_h__
-#define __api_c_pami_ext_impl_h__
+#ifndef __api_extension_c_multisend_pami_multisend_impl_h__
+#define __api_extension_c_multisend_pami_multisend_impl_h__
 
 #include "PipeWorkQueue.h"
 #include "Topology.h"
-#include "sys/pami_ext.h"
+#include "api/c/pami_ext.h"
 
 pami_result_t PAMI_Geometry_create_topology(pami_client_t           client,
                                                        pami_configuration_t    configuration[],
@@ -574,4 +574,4 @@ pami_result_t PAMI_Network2Task(pami_coord_t ntw,
 
 
 
-#endif // __api_c_pami_ext_impl_h__
+#endif // __api_extension_c_multisend_pami_multisend_impl_h__
