@@ -69,6 +69,8 @@ namespace CCMI
                           (void*)c);
               }
 
+	    pami_xfer_t *xfer = (pami_xfer_t *)cmd;
+	    c->setDoneCallback(xfer->cb_done, xfer->cookie);
             return c;
           }
 
@@ -171,7 +173,9 @@ namespace CCMI
                           T_Key,
                           (void*)c);
               }
-	    
+
+	    pami_xfer_t *xfer = (pami_xfer_t *)cmd;
+	    c->setDoneCallback(xfer->cb_done, xfer->cookie);
             return c;
           }
       };

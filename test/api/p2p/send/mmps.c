@@ -22,7 +22,7 @@
 /* #undef __pami_target_bgq__ */
 
 #define NCONTEXTS  64      /* The maximum number of contexts */
-#define ITERATIONS (1<<5)  /* The number of windows exectuted */
+#define ITERATIONS (1<<12)  /* The number of windows exectuted */
 #define WINDOW     (1<<4)  /* The number of sends/recvs before a "wait" */
 #define HEADER     16      /* Size of header */
 #define DATA       0       /* Size of data */
@@ -306,7 +306,7 @@ init()
   value : { intval : 1, },
   };
   rc = PAMI_Context_createv(client, &params, 1, contexts, ncontexts);
-  TRACE_ERR("%d = PAMI_Context_createv(client=%p, {PAMI_CLIENT_CONST_CONTEXTS = 1}, contexts=%p, ncontexts=%zu);\n", rc, client, contexts, ncontexts);
+  printf("%d = PAMI_Context_createv(client=%p, {PAMI_CLIENT_CONST_CONTEXTS = 1}, contexts=%p, ncontexts=%zu);\n", rc, client, contexts, ncontexts);
   assert(rc == PAMI_SUCCESS);
 
   for (i=0; i<ncontexts; ++i) {

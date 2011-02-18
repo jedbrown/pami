@@ -66,19 +66,44 @@ namespace CCMI
                       ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.typecount,
                       ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.buf,
                       ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.buf);
-
+	  
           SyncBcastPost();
-
           PAMI_GEOMETRY_CLASS *geometry = ((PAMI_GEOMETRY_CLASS *)g);
           CCMI::Executor::Composite  *barrier =  (CCMI::Executor::Composite *)
-                                                 geometry->getKey((size_t)0, /// \todo does NOT support multicontext
-                                                                  PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE);
+	  geometry->getKey((size_t)0, /// \todo does NOT support multicontext
+			   PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE);
           this->addBarrier(barrier);
           barrier->setDoneCallback(Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::cb_barrier_done, this);
 
+	  //	  printf("Starting barrier on %d for bytes %ld\n", this->_native->myrank(), ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.typecount);
           barrier->start();
           TRACE_FN_EXIT();
         }
+
+        void reset (pami_geometry_t                             g,
+		    void                                     * cmd) 
+        {
+	  pami_xfer_t *xfer = (pami_xfer_t *)cmd;
+	  Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::
+	  reset (_geometry->comm(),
+		 (PAMI::Topology*)_geometry->getTopology(T_Geometry_Index),
+		 xfer->cmd.xfer_broadcast.root,
+		 xfer->cmd.xfer_broadcast.typecount,
+		 xfer->cmd.xfer_broadcast.buf,
+		 xfer->cmd.xfer_broadcast.buf);
+	  
+	  SyncBcastPost();
+	  
+	  PAMI_GEOMETRY_CLASS *geometry = ((PAMI_GEOMETRY_CLASS *)g);
+	  CCMI::Executor::Composite  *barrier =  (CCMI::Executor::Composite *)
+	  geometry->getKey((size_t)0, /// \todo does NOT support multicontext
+			   PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE);
+	  this->addBarrier(barrier);
+	  barrier->setDoneCallback(Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::cb_barrier_done, this);
+	  
+	  //printf("Starting barrier on %d for bytes %ld\n", this->_native->myrank(), xfer->cmd.xfer_broadcast.typecount);
+	  barrier->start();
+	}
 
         /// \brief constructor for allgather/allgatherv
         BcastMultiColorCompositeT(Interfaces::NativeInterface              *  mf,
@@ -148,7 +173,7 @@ namespace CCMI
             if (Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, CCMI::Executor::BroadcastExec<T_Conn>, T_Sched, T_Conn, pwcfn>::_native->myrank() != root)
             {
               //fprintf(stderr, "<%p>BcastMultiColorCompositeT::SyncBcastPost() post receives for color %u, root %u\n", this,c,root);
-              exec->setPostReceives(true);
+              exec->setPostReceives();
               exec->postReceives();
             }
           }

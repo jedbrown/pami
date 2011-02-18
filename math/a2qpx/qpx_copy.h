@@ -266,6 +266,13 @@ size_t quad_copy_1024n( char* dest, char* src, size_t num )
   num -= nb;
   
  short_msg:
+  if (num >= 512) {
+    quad_copy_512(dest, src);
+    src  += 512;
+    dest += 512;
+    num  -= 512;
+  }
+
   nb += quad_copy_128n (dest, src, num);
   return nb;
 }

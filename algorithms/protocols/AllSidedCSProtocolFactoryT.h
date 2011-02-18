@@ -86,6 +86,8 @@ namespace CCMI
                           done_fn,          // Intercept function
                           cobj,             // Intercept cookie
                           this);            // Factory
+	//We do not override completion callbacks 
+	//as they must free memory
         return(Executor::Composite *)&cobj->_obj;
       }
 

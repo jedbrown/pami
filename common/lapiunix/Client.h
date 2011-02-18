@@ -508,9 +508,9 @@ namespace PAMI
         Client *c = (Client*)cookie;
         for(size_t n=0; n<c->_ncontexts; n++)
           {
-            c->_contexts[n]->_pgas_collreg->analyze_global(n,g,&reduce_result[0]);
-            c->_contexts[n]->_p2p_ccmi_collreg->analyze_global(n,g,&reduce_result[1]);
-            c->_contexts[n]->_cau_collreg->analyze_global(n,g,&reduce_result[2]);
+            c->_contexts[n]->_pgas_collreg->receive_global(n,g,&reduce_result[0],1);
+            c->_contexts[n]->_p2p_ccmi_collreg->receive_global(n,g,&reduce_result[1],1);
+            c->_contexts[n]->_cau_collreg->receive_global(n,g,&reduce_result[2],1);
           }
       }
 
@@ -558,9 +558,17 @@ namespace PAMI
             for(size_t n=0; n<_ncontexts; n++)
               {
                 new_geometry->resetUEBarrier(); // Reset so pgas will select the UE barrier
-                _contexts[n]->_pgas_collreg->analyze_local(n,new_geometry,&to_reduce[0]);
-                _contexts[n]->_p2p_ccmi_collreg->analyze_local(n,new_geometry,&to_reduce[1]);
-                _contexts[n]->_cau_collreg->analyze_local(n,new_geometry,&to_reduce[2]);
+		int nc = 0;
+		int ncur = 0;
+                _contexts[n]->_pgas_collreg->register_local(n,new_geometry,&to_reduce[0/*n*/], ncur);
+		nc+= ncur;
+		ncur = 0;
+                _contexts[n]->_p2p_ccmi_collreg->register_local(n,new_geometry,&to_reduce[1/*n*/], ncur);
+		nc+= ncur;
+		ncur=0;
+                _contexts[n]->_cau_collreg->register_local(n,new_geometry,&to_reduce[2/*n*/], ncur);
+		//nc+= ncur;
+		//ideally n should be used in the BAND reduction
               }
 	    new_geometry->processUnexpBarrier(&_ueb_queue,
                                               &_ueb_allocator);
@@ -679,9 +687,15 @@ namespace PAMI
             for(size_t n=0; n<_ncontexts; n++)
               {
                 new_geometry->resetUEBarrier(); // Reset so pgas will select the UE barrier
-                _contexts[n]->_pgas_collreg->analyze_local(n,new_geometry,&to_reduce[0]);
-                _contexts[n]->_p2p_ccmi_collreg->analyze_local(n,new_geometry,&to_reduce[1]);
-                _contexts[n]->_cau_collreg->analyze_local(n,new_geometry,&to_reduce[2]);
+		int nc = 0;
+		int ncur = 0;
+                _contexts[n]->_pgas_collreg->register_local(n,new_geometry,&to_reduce[0], ncur);
+		nc+=ncur;
+		ncur=0;
+                _contexts[n]->_p2p_ccmi_collreg->register_local(n,new_geometry,&to_reduce[1], ncur);
+		nc+=ncur;
+		ncur=0;
+                _contexts[n]->_cau_collreg->register_local(n,new_geometry,&to_reduce[2], ncur);
               }
             new_geometry->processUnexpBarrier(&_ueb_queue,
                                               &_ueb_allocator);

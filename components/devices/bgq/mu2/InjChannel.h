@@ -477,16 +477,16 @@ namespace PAMI
           /// \see injFifoAdvanceDesc
           /// \param[in] sequence Descriptor sequence number
           ///
-          /// \retval true  Descriptor has completed
-          /// \retval false Descriptor has not completed
+          /// \retval 1  Descriptor has completed
+          /// \retval 0 Descriptor has not completed
           ///
-          inline bool checkDescComplete (uint64_t sequence)
+          inline unsigned checkDescComplete (uint64_t sequence)
           {
             TRACE_FN_ENTER();
             uint32_t rc = MUSPI_CheckDescComplete (_ififo, sequence);
             TRACE_FORMAT("descriptor %ld complete = %d", sequence, (rc == 1));
             TRACE_FN_EXIT();
-            return (rc == 1);
+            return rc;
           }
 
           ///

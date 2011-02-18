@@ -39,6 +39,7 @@ namespace PAMI
       GKEY_MCAST_CLASSROUTEID,     // Multicast class route id
       GKEY_MCOMB_CLASSROUTEID,     // Multicombine class route id
       GKEY_MSYNC_CLASSROUTEID,     // Multisync class route id
+      GKEY_MSYNC_CLASSROUTEID1,    // Multisync class route id1 
       PAMI_GKEY_PLATEXTENSIONS
       GKEY_GEOMETRYCSNI,            // native interface for coll shm device
       NUM_GKEYS, 
@@ -51,7 +52,13 @@ namespace PAMI
       CKEY_BARRIERCOMPOSITE2,      // CCMI barrier cache
       CKEY_BARRIERCOMPOSITE3,      // CCMI barrier cache
       CKEY_BARRIERCOMPOSITE4,      // CCMI barrier cache
-      CKEY_OPTIMIZEDBARRIERCOMPOSITE,       // The optimized algorithm for this geometry
+      CKEY_BARRIERCOMPOSITE5,      // CCMI barrier cache
+      CKEY_BARRIERCOMPOSITE6,      // CCMI barrier cache
+      CKEY_OPTIMIZEDBARRIERCOMPOSITE, // The optimized algorithm for this geometry
+      CKEY_BCASTCOMPOSITE0,
+      CKEY_BCASTCOMPOSITE1,
+      CKEY_BCASTCOMPOSITE2,
+      CKEY_BCASTCOMPOSITE3,
     } ckeys_t;                     // context keystore keys    
 
     typedef enum

@@ -66,6 +66,8 @@ namespace PAMI
       static const size_t multisync_sizeof_msg     = T_Msync::sizeof_msg;
       static const size_t multicombine_sizeof_msg  = T_Mcomb::sizeof_msg;
 
+      inline T_Msync          & getMsyncModel () { return _msync; }
+
     protected:
       /// \brief NativeInterface done function - free allocation and call client's done
       static void ni_client_done(pami_context_t  context,
@@ -85,7 +87,7 @@ namespace PAMI
           BGQNativeInterfaceAS *_ni;
           pami_callback_t       _user_callback;
       };
-      PAMI::MemoryAllocator < sizeof(allocObj), 16> _allocator;  // Allocator
+      PAMI::MemoryAllocator < sizeof(allocObj), 16 > _allocator;  // Allocator
 
       pami_result_t              _mcast_status;
       pami_result_t              _msync_status;
@@ -565,7 +567,7 @@ namespace PAMI
             //fprintf(stderr,"[%zu] master posting nw multicast\n", __global.mapping.task());
             req->completion_count++;
             //this->_mcast.callConsumeBytesOnMaster(false);
-            this->_mcast.postMulticast_impl(req->_state._mcast1, this->_clientid, this->_contextid, &m_global, devinfo);
+            this->_mcast.postMulticastImmediate_impl(this->_clientid, this->_contextid, &m_global, devinfo);
           }
 
         //this->_mcast.setLocalMulticast(false);
@@ -585,7 +587,7 @@ namespace PAMI
         if (root_coord.u.n_torus.coords[5] == __global.mapping.t()) //network receiver is the same peer as root
           {
             //fprintf (stderr,"[%zu] non master posting MU Multicast \n", __global.mapping.task());
-            this->_mcast.postMulticast_impl(req->_state._mcast1, this->_clientid, this->_contextid, &m_global, devinfo);
+            this->_mcast.postMulticastImmediate_impl(this->_clientid, this->_contextid, &m_global, devinfo);
 
           }
         else //shmem

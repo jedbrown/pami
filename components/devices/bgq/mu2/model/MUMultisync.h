@@ -13,12 +13,16 @@
 #include "sys/pami.h"
 #include "components/devices/MultisyncModel.h"
 
-//#define MU_BLOCKING_BARRIER 1
 #undef DO_TRACE_ENTEREXIT
 #undef DO_TRACE_DEBUG
 
 #define DO_TRACE_ENTEREXIT 0
 #define DO_TRACE_DEBUG     0
+
+#define MU_BLOCKING_BARRIER   0 
+#define POST_TO_MUCONTEXT     0
+
+#define MUMULTISYNC_TIMEOUT 10000
 
 namespace PAMI
 {
@@ -34,11 +38,19 @@ namespace PAMI
       public:
         static const size_t sizeof_msg = msync_bytes;
 
-        struct CompletionMsg
+        class CompletionMsg : public MessageQueue::Element
         {
+        public:
+          pami_context_t        context;
           pami_event_function   cb_done;
           void                * cookie;
           MUSPI_GIBarrier_t   * barrier;
+
+          CompletionMsg () : MessageQueue::Element()
+          {
+          }
+
+          virtual bool advance ();
         };
 
         MUMultisyncModel (pami_client_t     client,
@@ -59,6 +71,7 @@ namespace PAMI
           _inited[cw_classroute] = 1;
 
           new (&_work) PAMI::Device::Generic::GenericThread(advance, &_completionmsg);
+          _completionmsg.context = context;
           TRACE_FN_EXIT();
         } 
 
@@ -80,16 +93,35 @@ namespace PAMI
             rc = MUSPI_GIBarrierInit ( &_giBarrier[classroute], classroute );
             PAMI_assert (rc == 0);
             _inited[classroute] = 1;
+            //fprintf (stderr, "Initialize class route %ld\n", classroute);
           }
 
-#ifdef MU_BLOCKING_BARRIER
+#if    MU_BLOCKING_BARRIER
           MUSPI_GIBarrierEnterAndWait (&_giBarrier[classroute]);
           if (msync->cb_done.function)
             msync->cb_done.function(_context, msync->cb_done.clientdata, PAMI_SUCCESS);
+#elif  POST_TO_MUCONTEXT
+          MUSPI_GIBarrierEnter (&_giBarrier[classroute]);
+          int rc = MUSPI_GIBarrierPollWithTimeout  (&_giBarrier[classroute], MUMULTISYNC_TIMEOUT);
+          if (rc==0 && msync->cb_done.function)
+          {
+            msync->cb_done.function(_context, msync->cb_done.clientdata, PAMI_SUCCESS);
+            return PAMI_SUCCESS;
+          }
+          //Post message to MU channel 0
+          _completionmsg.cb_done = msync->cb_done.function;
+          _completionmsg.cookie  = msync->cb_done.clientdata;
+          _completionmsg.barrier = &_giBarrier[classroute];       
+          _mucontext.injectionGroup.channel[0].post(&_completionmsg);
 #else	  
           MUSPI_GIBarrierEnter (&_giBarrier[classroute]);
-
-          //Crate a work object and post work to generic device
+          int rc = MUSPI_GIBarrierPollWithTimeout  (&_giBarrier[classroute], MUMULTISYNC_TIMEOUT);
+          if (rc==0 && msync->cb_done.function)
+          {
+            msync->cb_done.function(_context, msync->cb_done.clientdata, PAMI_SUCCESS);
+            return PAMI_SUCCESS;
+          }
+          //Create a work object and post work to generic device
           _completionmsg.cb_done = msync->cb_done.function;
           _completionmsg.cookie  = msync->cb_done.clientdata;
           _completionmsg.barrier = &_giBarrier[classroute];
@@ -117,29 +149,37 @@ namespace PAMI
                                       void             * cookie)
         {
           CompletionMsg *msg = (CompletionMsg *) cookie;    
-          int rc = MUSPI_GIBarrierPoll (msg->barrier);
+          bool flag = msg->CompletionMsg::advance();    
+          if (flag)
+            return PAMI_SUCCESS;
 
-          if (rc != 0)
-            return PAMI_EAGAIN;
-
-          TRACE_FN_ENTER();
-
-          if (msg->cb_done)
-            msg->cb_done(context, msg->cookie, PAMI_SUCCESS);
-
-          TRACE_FN_EXIT();
-          return PAMI_SUCCESS;
+          return PAMI_EAGAIN;
         }
 
       protected:
         pami_context_t             _context;
         MU::Context              & _mucontext;
         Generic::Device          & _gdev;
-        bool                       _inited [NumClassRoutes];
+        uint8_t                    _inited [NumClassRoutes];
         MUSPI_GIBarrier_t          _giBarrier[NumClassRoutes];  
         pami_work_t                _work;
         CompletionMsg              _completionmsg;
       };
+
+      bool  MUMultisyncModel::CompletionMsg::advance ()
+      {
+        int rc = MUSPI_GIBarrierPoll (barrier);
+
+        if (rc == 0)
+        {
+          if (cb_done)
+            cb_done(context, cookie, PAMI_SUCCESS);
+          return true;
+        }
+
+        return false;
+      }
+
     };
   };
 };

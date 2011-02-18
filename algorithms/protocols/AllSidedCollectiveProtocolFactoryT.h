@@ -108,8 +108,11 @@ namespace CCMI
                           done_fn,          // Intercept function
                           cobj,             // Intercept cookie
                           this);            // Factory
+
+	//We do not override completion callbacks 
+	//as they must free memory
         TRACE_FN_EXIT();
-        return(Executor::Composite *)(&cobj->_obj);
+        return (Executor::Composite *)(&cobj->_obj);
       }
 
       virtual void metadata(pami_metadata_t *mdata)

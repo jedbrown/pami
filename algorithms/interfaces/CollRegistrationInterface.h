@@ -36,21 +36,22 @@ namespace PAMI
        *  The local analyze may populate the geometry with some
        *  algorithms that aren't dependent on global knowledge
        */
-      inline pami_result_t analyze_local(size_t         context_id,
-                                         T_Geometry    *geometry,
-                                         uint64_t      *out_val);
-
+      inline pami_result_t register_local(size_t         context_id,
+					  T_Geometry    *geometry,
+					  uint64_t      *out_val,
+					  int            &nelem);
+      
       /**
        *  Once a global reduction or exchange has happened on the
        *  unsigned integer (array), the integer (array) is passed into
        *  the analyze_global routine.  The analyze_global routine
        *  will populate the list of algorithms with optimized routines
        */
-      inline pami_result_t analyze_global(size_t         context_id,
-                                          T_Geometry    *geometry,
-                                          uint64_t      *in_val);
-
-
+      inline pami_result_t receive_global(size_t         context_id,
+					  T_Geometry    *geometry,
+					  uint64_t      *in_val,
+					  int            nelem);
+            
       /** Can we deprecate/remove this? */
       inline pami_result_t analyze(size_t         context_id,
                                    T_Geometry    *geometry,
@@ -60,19 +61,21 @@ namespace PAMI
     };
 
     template <class T_Collregistration, class T_Geometry>
-    inline pami_result_t CollRegistration<T_Collregistration,T_Geometry>::analyze_local(size_t      context_id,
-                                                                                        T_Geometry *geometry,
-                                                                                        uint64_t   *out_val)
+    inline pami_result_t CollRegistration<T_Collregistration,T_Geometry>::register_local(size_t      context_id,
+											 T_Geometry *geometry,
+											 uint64_t   *out_val,
+											 int         &n)
     {
-      return static_cast<T_Collregistration*>(this)->analyze_local_impl(context_id, geometry, out_val);
+      return static_cast<T_Collregistration*>(this)->register_local_impl(context_id, geometry, out_val, n);
     }
 
     template <class T_Collregistration, class T_Geometry>
-    inline pami_result_t CollRegistration<T_Collregistration,T_Geometry>::analyze_global(size_t      context_id,
+    inline pami_result_t CollRegistration<T_Collregistration,T_Geometry>::receive_global(size_t      context_id,
                                                                                          T_Geometry *geometry,
-                                                                                         uint64_t   *in_val)
+                                                                                         uint64_t   *in_val,
+											 int         n)
     {
-      return static_cast<T_Collregistration*>(this)->analyze_global_impl(context_id, geometry, in_val);
+      return static_cast<T_Collregistration*>(this)->receive_global_impl(context_id, geometry, in_val, n);
     }
 
     template <class T_Collregistration, class T_Geometry>

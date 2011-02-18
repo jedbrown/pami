@@ -8,7 +8,7 @@
 /*define this if you want to validate the data */
 #define CHECK_DATA
 
-#define BUFSIZE (1048576*8)
+#define BUFSIZE (1048576 * 8)
 #define NITER 100
 
 char* protocolName;
@@ -75,7 +75,7 @@ int main (int argc, char ** argv)
 
   int                  nalg= 0;
   double               ti, tf, usec;
-  char                 buf[BUFSIZE];
+  char                 buf[BUFSIZE] __attribute__((__aligned__(64)));
   pami_xfer_t          barrier;
   pami_xfer_t          broadcast;
 
@@ -168,12 +168,14 @@ int main (int argc, char ** argv)
             memset(buf, 0xFF, i);
 
 #endif
-          blocking_coll(context, &barrier, &bar_poll_flag);
+          blocking_coll(context, &barrier, &bar_poll_flag);          
+	  broadcast.cmd.xfer_broadcast.typecount = i;
+	  blocking_coll (context, &broadcast, &bcast_poll_flag);
+          blocking_coll(context, &barrier, &bar_poll_flag);          
           ti = timer();
 
           for (j = 0; j < niter; j++)
             {
-              broadcast.cmd.xfer_broadcast.typecount = i;
               blocking_coll (context, &broadcast, &bcast_poll_flag);
             }
 

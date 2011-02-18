@@ -84,8 +84,6 @@ namespace CCMI
        * \param nphases : number of phases
        */
       virtual void
-      init(int root, int op, int &startphase, int &nphases, int &maxranks)=0;
-      virtual void
       init(int root, int op, int &startphase, int &nphases)=0 ;
 
       /**

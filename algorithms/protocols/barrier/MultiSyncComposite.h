@@ -15,7 +15,7 @@ namespace CCMI
     namespace Barrier
     {
 
-      template < bool T_inline=false, class T_Native=Interfaces::NativeInterface, PAMI::Geometry::topologyIndex_t T_Geometry_Index = PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX>
+      template < bool T_inline=false, class T_Native=Interfaces::NativeInterface, PAMI::Geometry::topologyIndex_t T_Geometry_Index = PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX, PAMI::Geometry::gkeys_t gkey=PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID>
 
       class MultiSyncComposite : public CCMI::Executor::Composite
       {
@@ -37,7 +37,7 @@ namespace CCMI
           TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
 
           PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)g;
-          _deviceInfo          = geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
+	  _deviceInfo          = geometry->getKey(gkey);
 
           _minfo.cb_done.function   = NULL;
           _minfo.cb_done.clientdata = NULL;
@@ -53,10 +53,10 @@ namespace CCMI
           _minfo.cb_done.function   = _cb_done;
           _minfo.cb_done.clientdata = _clientdata;
           if (T_inline)
-          {
-            T_Native *t_native = (T_Native *)_native;
-            t_native->T_Native::multisync (&_minfo, _deviceInfo);
-          }
+	  {
+	    T_Native *t_native = (T_Native *)_native;
+	    t_native->T_Native::multisync (&_minfo, _deviceInfo);
+	  }
           else
             _native->multisync(&_minfo, _deviceInfo);
         }

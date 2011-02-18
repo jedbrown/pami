@@ -97,7 +97,11 @@ namespace PAMI
                        _collbarrier,
                        geometry,
                        _barmodel);
-          return (CCMI::Executor::Composite*)&_exec;
+	  
+	  CCMI::Executor::Composite *composite = (CCMI::Executor::Composite*)&_exec;
+	  pami_xfer_t *xfer = (pami_xfer_t *)cmd;
+	  composite->setDoneCallback(xfer->cb_done, xfer->cookie);
+          return composite; 
         }
       virtual void metadata(pami_metadata_t *mdata)
         {

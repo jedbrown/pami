@@ -43,6 +43,8 @@
 #define TRACE_ERR(x) //fprintf x
 
 
+#include "algorithms/geometry/GeometryOptimizer.h"
+
 namespace PAMI
 {
 
@@ -478,21 +480,24 @@ namespace PAMI
         TRACE_ERR((stderr,  "<%p>Context::Context() Register collectives(%p,%p,%p,%zu,%zu\n", this, _shmem_native_interface, client, this, id, clientid));
         // The multi registration will use shmem/mu if they are ctor'd above.
 
-
 #ifndef ENABLE_COLLECTIVE_MULTICONTEXT
-        if (_contextid == 0)
+        if (_contextid == 0) 
 #endif
+	  {
             _multi_registration       =  new ((BGQRegistration*) _multi_registration_storage)
-               BGQRegistration(_shmem_native_interface,
-                               ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid),
-                               PAMI::Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid),
-                               client,
-                               (pami_context_t)this,
-                               id,
-                               clientid,
-                               &_dispatch_id,
-                               _geometry_map);
-
+	      BGQRegistration(_shmem_native_interface,
+			      ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid),
+			      PAMI::Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid),
+			      client,
+			      (pami_context_t)this,
+			      id,
+			      clientid,
+			      &_dispatch_id,
+			      _geometry_map);
+	    uint64_t inval = (uint64_t)-1;
+	    _multi_registration->receive_global (_contextid, _world_geometry, &inval, 1);
+	  }
+	
 #ifndef ENABLE_COLLECTIVE_MULTICONTEXT
         if (_contextid == 0)
 #endif
@@ -981,20 +986,33 @@ namespace PAMI
           }
       }
 
-      inline pami_result_t analyze_local (size_t         context_id,
-                                          BGQGeometry    *geometry,
-                                          uint64_t       *reduce_result)
+      inline pami_result_t registerWithOptimizer (Geometry::GeometryOptimizer<BGQGeometry>  *go)
       {
-        TRACE_ERR((stderr, "Context::analyze_local context id %zu, geometry %p\n", context_id, geometry));
-        return PAMI_SUCCESS;
+#ifndef ENABLE_COLLECTIVE_MULTICONTEXT
+        if (_contextid == 0) 
+#endif
+	{
+	  TRACE_ERR((stderr, "Context::registerWithOptimizer id %zu, geometry %p\n", _contextid, geometry));	
+	  uint64_t  reduce_result[16];
+	  int n_multi = 0;
+	  _multi_registration->register_local (_contextid, go->geometry(), reduce_result, n_multi);	
+	  go->registerWithOptimizer (_contextid, reduce_result, n_multi, receive_global, this );
+	  
+	}
+	return PAMI_SUCCESS;
       }
 
-      inline pami_result_t analyze_global(size_t         context_id,
-                                          BGQGeometry    *geometry,
-                                          uint64_t       *reduce_result)
+      
+      static void receive_global( size_t           context_id,
+				  void           * cookie,
+				  uint64_t       * reduce_result,
+				  size_t           n,
+				  BGQGeometry    * geometry,
+				  pami_result_t    result )
       {
         TRACE_ERR((stderr, "Context::analyze_global context id %zu, geometry %p\n", context_id, geometry));
-        return PAMI_SUCCESS;
+	Context *context = (Context *) cookie;
+	context->_multi_registration->receive_global(context_id, geometry, reduce_result, n);
       }
 
       inline pami_result_t analyze(size_t         context_id,
@@ -1002,7 +1020,7 @@ namespace PAMI
                                    int phase = 0)
       {
         TRACE_ERR((stderr, "Context::analyze context id %zu, registration %p, phase %d\n", context_id, geometry, phase));
-
+	
         // Can only use shmem pgas if the geometry is all local tasks, so check the topology
         if (_pgas_shmem_registration && ((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->isLocal())
           _pgas_shmem_registration->analyze(_contextid, geometry, phase);
@@ -1089,7 +1107,6 @@ namespace PAMI
       uint8_t                      _ccmi_registration_storage[sizeof(CCMIRegistration)];
       uint8_t                      _multi_registration_storage[sizeof(BGQRegistration)];
       uint8_t                      _shmemMcastModel_storage[sizeof(ShmemMcstModel)];
-      //uint8_t                      _shmemMcastModel_storage[sizeof(ShmemMcstModel)];
       uint8_t                      _shmemMsyncModel_storage[sizeof(ShmemMsyncModel)];
       uint8_t                      _shmemMcombModel_storage[sizeof(ShmemMcombModel)];
       uint8_t                      _shmem_native_interface_storage[sizeof(AllSidedShmemNI)];

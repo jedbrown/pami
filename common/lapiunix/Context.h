@@ -500,7 +500,7 @@ namespace PAMI
                                        _geometry_map,
                                        mm_ptr);
           // We analyze global here to get the proper device specific info
-          _cau_collreg->analyze_global(_contextid, _world_geometry, &invec[2]);
+          _cau_collreg->receive_global(_contextid, _world_geometry, &invec[2], 1);
 
           new(_p2p_ccmi_collreg) P2PCCMICollreg(_client,
                                                 _context,

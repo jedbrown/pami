@@ -509,7 +509,7 @@ namespace PAMI
               {
 #ifndef OPTIMIZE_AGGREGATE_LATENCY // replace with a template parameter?
                 // Check if the descriptor is done.
-                if (likely(channel.checkDescComplete (sequence) == true))
+                if (likely(channel.checkDescComplete (sequence)))
                   {
                     //local_fn (_context, cookie, PAMI_SUCCESS); // Descriptor is done...notify.
                     local_fn (NULL, cookie, PAMI_SUCCESS); // Descriptor is done...notify.

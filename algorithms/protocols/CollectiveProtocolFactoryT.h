@@ -99,7 +99,7 @@ namespace CCMI
                             (pami_xfer_t*)cmd, // Parameters
                             done_fn,          // Intercept function
                             cobj,             // Intercept cookie
-                            this);            // Factory
+                            this);            // Factory	  
           return (Executor::Composite *)&cobj->_obj;
         }
 

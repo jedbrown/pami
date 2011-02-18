@@ -28,22 +28,16 @@ namespace CCMI
       protected:
         Interfaces::Schedule           * _comm_schedule;
         Interfaces::NativeInterface    * _native;
+        T                              * _connmgr;
+        bool                             _postReceives;
+        CollHeaderData                   _mdata;
         pami_multicast_t                 _msend;
+        PAMI::PipeWorkQueue              _pwq;
 
-        int              _comm;
-        unsigned         _root;
-        int              _buflen;
-
-        PAMI::PipeWorkQueue     _pwq;
         pami_task_t             _dstranks [MAX_PARALLEL];
         PAMI::Topology          _dsttopology;
         PAMI::Topology          _selftopology;
         PAMI::Topology          _roottopology;
-
-        CollHeaderData                               _mdata;
-        T                                         *  _connmgr;
-        unsigned                                     _color;
-        bool                                         _postReceives;
 
         //Private method
         void             sendNext ();
@@ -51,42 +45,44 @@ namespace CCMI
       public:
         BroadcastExec () :
             Interfaces::Executor (),
-            _comm_schedule(NULL),
-            _comm(-1)
+            _comm_schedule(NULL)
+	      //_comm(-1)
         {
           TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec()\n", this));
         }
 
         BroadcastExec (Interfaces::NativeInterface  * mf,
                        T                            * connmgr,
-                       unsigned                       comm,
-                       bool                           post_recvs = false):
+                       unsigned                       comm):
             Interfaces::Executor(),
             _comm_schedule (NULL),
             _native(mf),
-            _comm(comm),
+	    _connmgr(connmgr),
+	    _postReceives (false),
             _dsttopology((pami_task_t *)&_dstranks, MAX_PARALLEL),
-            _selftopology(mf->myrank()),
-            _connmgr(connmgr),
-            _color((unsigned) - 1),
-            _postReceives (post_recvs)
+	    _selftopology(mf->myrank())
         {
           TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec(...)\n", this));
-          _clientdata        =  0;
-          _root              =  (unsigned) - 1;
-          _buflen            =  0;
-          pami_quad_t *info   =  (_postReceives) ? (NULL) : (pami_quad_t*)((void*) & _mdata);
+          //_root              =  (unsigned) - 1;
+          //_buflen            =  0;
+	  pami_quad_t *info   =  (pami_quad_t*)((void*) & _mdata);
           _msend.msginfo     =  info;
-          _msend.msgcount    =  (_postReceives) ? 0 : 1; // only async need metadata (no postReceive)
+          _msend.msgcount    =  1; 
           _msend.roles       = -1U;
+	  _msend.src_participants  = (pami_topology_t *) & _selftopology;
+	  _msend.dst_participants  = (pami_topology_t *) & _dsttopology;
+	  _msend.src               = (pami_pipeworkqueue_t *) & _pwq;
+	  _msend.dst               =   NULL;	  
+	  _mdata._comm       =  comm;
+	  _mdata._count = -1; // not used on broadcast
+	  _mdata._phase = 0;
         }
 
-        void setPostReceives (bool precv)
+        void setPostReceives ()
         {
-          _postReceives = precv;
-          pami_quad_t *info   =  (_postReceives) ? (NULL) : (pami_quad_t*)((void*) & _mdata);
-          _msend.msginfo     =  info;
-          _msend.msgcount    =  (_postReceives) ? 0 : 1;  // only async need metadata (no postReceive)
+          _postReceives    =  true;
+          _msend.msginfo   =  NULL;
+          _msend.msgcount  =  0; // only async exec needs metadata
         }
 
         //-----------------------------------------
@@ -96,15 +92,15 @@ namespace CCMI
         void setSchedule (Interfaces::Schedule *ct, unsigned color)
         {
           TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::setSchedule()\n", this));
-          _color = color;
+          //_color = color;
           _comm_schedule = ct;
           int nph, phase;
-          _comm_schedule->init (_root, BROADCAST_OP, phase, nph);
+          _comm_schedule->init (_mdata._root, BROADCAST_OP, phase, nph);
           CCMI_assert(_comm_schedule != NULL);
           _comm_schedule->getDstUnionTopology (&_dsttopology);
 
           if (_connmgr)
-            _msend.connection_id = _connmgr->getConnectionId(_comm, _root, _color, (unsigned) - 1, (unsigned) - 1);
+            _msend.connection_id = _connmgr->getConnectionId(_mdata._comm, _mdata._root, color, (unsigned) - 1, (unsigned) - 1);
         }
 
         void setConnectionID (unsigned cid)
@@ -116,16 +112,20 @@ namespace CCMI
         void setRoot(unsigned root)
         {
           TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::setRoot()\n", this));
-          _root = root;
+          _mdata._root = root;
           new (&_roottopology) PAMI::Topology(root);
         }
 
         void  setBuffers (char *src, char *dst, int len)
         {
           TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::setBuffers() src %p, dst %p, len %d, _pwq %p\n", this, src, dst, len, &_pwq));
-          _buflen = len;
+          _msend.bytes = len;
           //Setup pipework queue
-          _pwq.configure (src, len, 0);
+	  size_t bufinit = 0;
+	  if (_native->myrank() == _mdata._root)
+	    bufinit = len;
+
+          _pwq.configure (src, len, bufinit);
           _pwq.reset();
           TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::setBuffers() _pwq %p, bytes available %zu/%zu\n", this, &_pwq,
                          _pwq.bytesAvailableToConsume(), _pwq.bytesAvailableToProduce()));
@@ -145,18 +145,18 @@ namespace CCMI
         //-----------------------------------------
         unsigned       getRoot   ()
         {
-          return _root;
+          return _mdata._root;
         }
         unsigned       getComm   ()
         {
-          return _comm;
+          return _mdata._comm;
         }
 
         void postReceives ()
         {
-          if (_native->myrank() == _root) return;
+          if (_native->myrank() == _mdata._root) return;
 
-          if (_buflen == 0) return; //we call callback in start
+          if (_msend.bytes == 0) return; //we call callback in start
 
           pami_multicast_t mrecv;
           //memcpy (&mrecv, &_msend, sizeof(pami_multicast_t));
@@ -164,7 +164,7 @@ namespace CCMI
 	  mrecv.msgcount = _msend.msgcount;
 	  mrecv.connection_id = _msend.connection_id;
 
-          TRACE_MSG((stderr, "<%p>Executor::BroadcastExec::postReceives ndest %zu, bytes %d, rank %u, root %u\n", this, _dsttopology.size(), _buflen, _selftopology.index2Rank(0),_roottopology.index2Rank(0)));
+          TRACE_MSG((stderr, "<%p>Executor::BroadcastExec::postReceives ndest %zu, bytes %d, rank %u, root %u\n", this, _dsttopology.size(), _msend.bytes, _selftopology.index2Rank(0),_roottopology.index2Rank(0)));
           mrecv.src_participants   = (pami_topology_t *) & _roottopology; 
           mrecv.dst_participants   = (pami_topology_t *) & _selftopology;
 
@@ -181,7 +181,7 @@ namespace CCMI
 
           mrecv.dst    =  (pami_pipeworkqueue_t *) & _pwq;
           mrecv.src    =  NULL;
-          mrecv.bytes  = _buflen;
+          mrecv.bytes  = _msend.bytes;
           _native->multicast(&mrecv);
         }
         static void notifyRecvDone( pami_context_t   context,
@@ -204,24 +204,19 @@ namespace CCMI
 template <class T>
 inline void  CCMI::Executor::BroadcastExec<T>::start ()
 {
-  TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::start() count%d\n", this, _buflen));
+  TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::start() count%d\n", this, _msend.bytes));
 
   // Nothing to broadcast? We're done.
-  if ((_buflen == 0) && _cb_done)
+  if ((_msend.bytes == 0) && _cb_done)
     {
       _cb_done (NULL, _clientdata, PAMI_SUCCESS);
       return;
     }
 
-  if (_native->myrank() == _root)
+  if (_native->myrank() == _mdata._root || _postReceives)
     {
-      _pwq.produceBytes (_buflen);
       sendNext ();
     }
-  else if (_postReceives)  /// \todo TEMPORARY COMMENT OUT
-    //Protocol will call postReceives() and then start()
-    //With the async callback the notifyrecv will call sendNext
-    sendNext ();
 }
 
 template <class T>
@@ -231,7 +226,7 @@ inline void  CCMI::Executor::BroadcastExec<T>::sendNext ()
   if (_dsttopology.size() == 0)
     {
       TRACE_MSG((stderr, "<%p>Executor::BroadcastExec::sendNext() bytes %d, ndsts %zu bytes available to consume %zu\n",
-                 this, _buflen, _dsttopology.size(), _pwq.bytesAvailableToConsume()));
+                 this, _msend.bytes, _dsttopology.size(), _pwq.bytesAvailableToConsume()));
       //_cb_done(NULL, _clientdata, PAMI_SUCCESS);
       return;
     }
@@ -240,7 +235,7 @@ inline void  CCMI::Executor::BroadcastExec<T>::sendNext ()
   char tbuf[1024];
   char sbuf[16384];
   sprintf(sbuf, "<%p>Executor::BroadcastExec::sendNext() from %zu: bytes %d, ndsts %zu bytes available to consume %zu\n",
-          this,__global.mapping.task(), _buflen, _dsttopology.size(), _pwq.bytesAvailableToConsume());
+          this,__global.mapping.task(), _msend.bytes, _dsttopology.size(), _pwq.bytesAvailableToConsume());
 
   for (unsigned i = 0; i < _dsttopology.size(); ++i)
     {
@@ -252,20 +247,14 @@ inline void  CCMI::Executor::BroadcastExec<T>::sendNext ()
 #endif
 
   TRACE_MSG((stderr, "<%p>Executor::BroadcastExec::sendNext() bytes %d, ndsts %zu bytes available to consume %zu\n",
-             this, _buflen, _dsttopology.size(), _pwq.bytesAvailableToConsume()));
+             this, _msend.bytes, _dsttopology.size(), _pwq.bytesAvailableToConsume()));
 
   //Sending message header to setup receive of an async message
-  _mdata._comm  = _comm;
-  _mdata._root  = _root;
-  _mdata._count = -1; // not used on broadcast
-  _mdata._phase = 0;
-  _msend.src_participants  = (pami_topology_t *) & _selftopology;
-  _msend.dst_participants  = (pami_topology_t *) & _dsttopology;
+  //  _mdata._comm  = _comm;
+  //_mdata._root  = _root;
   _msend.cb_done.function   = _cb_done;
   _msend.cb_done.clientdata = _clientdata;
-  _msend.src    = (pami_pipeworkqueue_t *) & _pwq;
-  _msend.dst   =   NULL;
-  _msend.bytes  = _buflen;
+  //_msend.bytes  = _msend.bytes;
   _native->multicast(&_msend);
 }
 

@@ -21,6 +21,8 @@
 #define TRACE_ERR(x) //fprintf x
 #endif
 
+#include "algorithms/geometry/GeometryOptimizer.h"
+
 namespace PAMI
 {
   class Client : public Interface::Client<PAMI::Client>
@@ -56,12 +58,15 @@ namespace PAMI
         __MUGlobal.getMuRM().geomOptimize(_world_geometry, _clientid, 0, NULL, NULL, NULL);
         // Now, subsequent 'analyze' done on this geom will know that MU Coll is avail.
 
+	_geomopt = NULL;
+
         result = PAMI_SUCCESS;
       }
 
       inline ~Client ()
       {
         if (_contexts) (void)destroyContext_impl(NULL, _ncontexts);
+	if (_geomopt) __global.heap_mm->free(_geomopt);
       }
 
       static pami_result_t generate_impl (const char * name, pami_client_t * client,
@@ -730,14 +735,13 @@ namespace PAMI
       std::map<unsigned, pami_geometry_t>          _geometry_map;
 
 
-
       Memory::GenMemoryManager _mm;
       Memory::GenMemoryManager _xmm; // used to fill context mm, from single OS alloc.
       //  Unexpected Barrier allocator
       MemoryAllocator <sizeof(PAMI::Geometry::UnexpBarrierQueueElement), 16> _ueb_allocator;
       //  Unexpected Barrier match queue
       MatchQueue                                                             _ueb_queue;
-
+      Geometry::GeometryOptimizer<BGQGeometry>                             * _geomopt;
 
       /// \page env_vars Environment Variables
       ///
@@ -789,24 +793,50 @@ namespace PAMI
                          pami_context_t        context,
                          pami_attribute_name_t optimize)
       {
-        TRACE_ERR((stderr, "<%p:%zu>BGQ::Client::start_barrier() context %p  %s\n", this, _clientid, context, optimize == PAMI_GEOMETRY_OPTIMIZE? "Optimized":" "));
-        if(bargeom)
-        {
-          if(optimize == PAMI_GEOMETRY_OPTIMIZE)
-            bargeom->default_barrier(_geom_newopt_start, (void *)new_geometry, context_id, context);
-          else
-            bargeom->default_barrier(_geom_newopt_finish, (void *)new_geometry, context_id, context);
-        }
-        //else PAMI_assert(bargeom); /// \todo? parentless/UE barrier support
-        else {
-          if(optimize == PAMI_GEOMETRY_OPTIMIZE)
-            new_geometry->ue_barrier(_geom_newopt_start, (void *)new_geometry, context_id, context);
-          else
-            new_geometry->ue_barrier(_geom_newopt_finish, (void *)new_geometry, context_id, context);
-          }
-        //else {
-        //_geom_newopt_finish(context, (void *)new_geometry, PAMI_SUCCESS);
-        //}
+	//Assume algorithm 0 always works
+	pami_algorithm_t  alg;
+        new_geometry->algorithms_info(PAMI_XFER_ALLREDUCE,
+                                      &alg,
+                                      NULL,
+                                      1,
+                                      NULL,
+                                      NULL,
+                                      0,
+                                      context_id);
+	
+        Geometry::Algorithm<BGQGeometry> *ar_algo = (Geometry::Algorithm<BGQGeometry> *)alg;
+	
+
+	pami_event_function done_fn = _geom_newopt_finish;
+	if (optimize == PAMI_GEOMETRY_OPTIMIZE) 
+	  done_fn = _geom_newopt_start;
+	
+	
+	Geometry::GeometryOptimizer<BGQGeometry> *go = _geomopt;
+	int rc  = 0;
+	if (go == NULL) {
+	  rc = __global.heap_mm->memalign((void **)&go, 0, sizeof(*go));
+	  PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for GlobalAnalyzer<BGQGeometry> %zd", sizeof(*go));
+	  _geomopt = go;	
+	}
+
+	new (go) Geometry::GeometryOptimizer<BGQGeometry>(context,
+							  new_geometry,
+							  ar_algo,
+							  done_fn,
+							  (void*)new_geometry);	
+		
+	for (size_t i = 0; i < _ncontexts; ++i) 
+	{
+	  _contexts[i].registerWithOptimizer(go);
+	}
+	
+	TRACE_ERR((stderr, "<%p:%zu>BGQ::Client::start_barrier() context %p  %s\n", this, _clientid, context, optimize == PAMI_GEOMETRY_OPTIMIZE? "Optimized":" "));
+
+	if(bargeom)
+	  bargeom->default_barrier(Geometry::GeometryOptimizer<BGQGeometry>::optimizer_start, (void *)go, context_id, context);
+        else 
+	  new_geometry->ue_barrier(Geometry::GeometryOptimizer<BGQGeometry>::optimizer_start, (void *)go, context_id, context);
       }
 
   }; // end class PAMI::Client

@@ -88,7 +88,7 @@ namespace PAMI
             _context_id(context_id),
             _client_id(client_id),
             _geometry_map(geometry_map),
-            _reduce_val(0),
+	      //_reduce_val(0),
             _dispatch_id(dispatch_id),
             _local_dev(ldev),
             _global_dev(gdev),
@@ -307,13 +307,14 @@ namespace PAMI
             return PAMI_SUCCESS;
           }
 
-        inline pami_result_t analyze_local_impl(size_t context_id,T_Geometry *geometry, uint64_t *out)
+	  inline pami_result_t register_local_impl(size_t context_id,T_Geometry *geometry, uint64_t *out, int &n)
           {
-            *out = _reduce_val;
+	    n  = 0;
+            //*out = _reduce_val;
             return analyze(context_id, geometry, 0);
           }
 
-        inline pami_result_t analyze_global_impl(size_t context_id,T_Geometry *geometry, uint64_t *in)
+	  inline pami_result_t receive_global_impl(size_t context_id,T_Geometry *geometry, uint64_t *in, int n)
           {
             return PAMI_SUCCESS;
           }

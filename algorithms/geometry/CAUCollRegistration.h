@@ -345,12 +345,13 @@ namespace PAMI
             return PAMI_SUCCESS;
           }
 
-        inline pami_result_t analyze_local_impl(size_t context_id,T_Geometry *geometry, uint64_t *out)
+        inline pami_result_t register_local_impl(size_t context_id,T_Geometry *geometry, uint64_t *out, int &n)
           {
             // This is where we define our contribution to the allreduce
             // In this case, we allreduce the mast of available class route id's, which we pack
             // into a single 64 bit integer.  Later, we may want to increase the size from one integer
             // to an array to be reduced (if more than 64 class routes are desired).
+	    n = 1;
             *out = _reduce_val;
             if(!_enabled) return PAMI_SUCCESS;
 
@@ -359,7 +360,7 @@ namespace PAMI
             return PAMI_SUCCESS;
           }
 
-        inline pami_result_t analyze_global_impl(size_t context_id,T_Geometry *geometry, uint64_t *in)
+        inline pami_result_t receive_global_impl(size_t context_id,T_Geometry *geometry, uint64_t *in, int n)
           {
             if(!_enabled) return PAMI_SUCCESS;
 

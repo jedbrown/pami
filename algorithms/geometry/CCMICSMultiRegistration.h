@@ -113,9 +113,10 @@ namespace PAMI
         _csmm.init(peer,numpeers);
       }
 
-      inline pami_result_t analyze_local_impl(size_t context_id,T_Geometry *geometry, uint64_t *out)
+      inline pami_result_t register_local_impl(size_t context_id,T_Geometry *geometry, uint64_t *out, int &n)
       {
         TRACE_ERR((stderr, "<%p>CCMICSMultiRegistration::analyze_local_impl() context %zu, geometry %p, out %p\n", this, context_id, geometry, out));
+	n  = 0;
         // only support single context for now
         if (context_id != 0) return PAMI_SUCCESS;
 
@@ -124,7 +125,7 @@ namespace PAMI
          return PAMI_SUCCESS;
       }
 
-      inline pami_result_t analyze_global_impl(size_t context_id,T_Geometry *geometry, uint64_t *in)
+      inline pami_result_t receive_global_impl(size_t context_id,T_Geometry *geometry, uint64_t *in, int n)
       {
         TRACE_ERR((stderr, "<%p>CCMICSMultiRegistration::analyze_global_impl() context %zu, geometry %p, in %p\n", this, context_id, geometry, in));
         // only support single context for now

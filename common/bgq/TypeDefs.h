@@ -84,7 +84,7 @@
 #include "components/devices/bgq/mu2/model/CollectiveMcomb2Device.h"
 #include "components/devices/bgq/mu2/model/AMMulticastModel.h"
 #include "components/devices/bgq/mu2/model/MUMultisync.h"
-
+#include "components/devices/bgq/mu2/model/RectangleMultisyncModel.h"
 
 namespace PAMI
 {
@@ -111,8 +111,9 @@ namespace PAMI
   */
   typedef BGQNativeInterfaceAS < MUDevice,
   Device::MU::MulticastDmaModel,
-  Device::MU::MultisyncModel<false, false>,
-  Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false> > MUAxialDputNI;
+  Device::MU::Rectangle::MultisyncModel,
+  //Device::MU::MUMultisyncModel,
+  Device::MU::CollectiveMulticombineDmaModel > MUAxialDputNI;
 
   typedef BGQNativeInterfaceAS < MUDevice,
   Device::MU::CollectiveMulticastDmaModel,

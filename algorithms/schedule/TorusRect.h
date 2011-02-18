@@ -67,49 +67,53 @@ namespace CCMI
   namespace Schedule
   {
 
-#define MY_TASK _map->task()
+#define MY_TASK __global.mapping.task()
 #define MESH     PAMI::Interface::Mapping::Mesh
 #define POSITIVE PAMI::Interface::Mapping::TorusPositive
 #define NEGATIVE PAMI::Interface::Mapping::TorusNegative
-
+    
+    static const uint16_t torus_rect_mod5_table [16] = { 0, 1, 2, 3, 4, 
+							 0, 1, 2, 3, 4, 
+							 0, 1, 2, 3, 4, 
+							 0 };
+    
     class TorusRect: public CCMI::Interfaces::Schedule
     {
     public:
       static const unsigned NO_COLOR = 0; 
 
-      TorusRect(): _rect(*(PAMI::Topology*)NULL), _map(NULL)
+      TorusRect()
       {
       }
 
       TorusRect(unsigned myrank, 
                 PAMI::Topology *rect,
                 unsigned color):
-      _ndims(0),
       _color(color),
 //      _root(?),
 //      _root_coord(?),
-      _start_phase((unsigned)-1),
+      _start_phase((unsigned)-1)
 //      _nphases(?),
-      _rect(*rect),
-      _map(&__global.mapping)
       {
         TRACE_FN_ENTER();
-        unsigned int i;
-        _ndims = _map->torusDims();
-        _map->task2network(_map->task(), &_self_coord, PAMI_N_TORUS_NETWORK);
-        DO_DEBUG(for (unsigned j = 0; j < _map->torusDims(); ++j) TRACE_FORMAT("<%u:%p>TorusRect:: Rank %zu, coord[%u]=%zu",_color,this, _map->task(), j, _self_coord.u.n_torus.coords[j]));
-
-	PAMI_assertf(_rect.type() == PAMI_COORD_TOPOLOGY, "Type %u",_rect.type());
-        _rect.rectSeg(&_ll, &_ur, &_torus_link[0]);
-        DO_DEBUG(for (unsigned j = 0; j < _map->torusDims(); ++j) TRACE_FORMAT("<%u:%p>TorusRect:: Rank %zu, _ll coord[%u]=%zu",_color,this, _map->task(), j, _ll.u.n_torus.coords[j]));
-        DO_DEBUG(for (unsigned j = 0; j < _map->torusDims(); ++j) TRACE_FORMAT("<%u:%p>TorusRect:: Rank %zu, _ur coord[%u]=%zu",_color,this, _map->task(), j, _ur.u.n_torus.coords[j]));
+        _ndims = __global.mapping.torusDims();
+        __global.mapping.task2network(__global.mapping.task(), &_self_coord, PAMI_N_TORUS_NETWORK);
 	
-        for (i = 0; i < _ndims+1; i++)
-	  _dim_sizes[i] = _ur.net_coord(i) - _ll.net_coord(i) + 1;
+        DO_DEBUG(for (unsigned j = 0; j < __global.mapping.torusDims(); ++j) TRACE_FORMAT("<%u:%p>TorusRect:: Rank %zu, coord[%u]=%zu",_color,this, __global.mapping.task(), j, _self_coord.u.n_torus.coords[j]));
+
+	PAMI_assertf(rect->type() == PAMI_COORD_TOPOLOGY, "Type %u",rect->type());
+        rect->rectSeg(&_ll, &_ur, &_torus_link);
+        DO_DEBUG(for (unsigned j = 0; j < __global.mapping.torusDims(); ++j) TRACE_FORMAT("<%u:%p>TorusRect:: Rank %zu, _ll coord[%u]=%zu",_color,this, __global.mapping.task(), j, _ll->u.n_torus.coords[j]));
+        DO_DEBUG(for (unsigned j = 0; j < __global.mapping.torusDims(); ++j) TRACE_FORMAT("<%u:%p>TorusRect:: Rank %zu, _ur coord[%u]=%zu",_color,this, __global.mapping.task(), j, _ur->u.n_torus.coords[j]));
+	
+        //for (i = 0; i < _ndims+1; i++)
+	//_dim_sizes[i] = _ur->net_coord(i) - _ll->net_coord(i) + 1;
+	_peers = _ur->net_coord(_ndims) - _ll->net_coord(_ndims) + 1;
 
         TRACE_FORMAT("<%u:%p>_ndims %d, _color  %u",_color,this,_ndims, _color);
         TRACE_FN_EXIT();
       }
+
       TorusRect(PAMI_MAPPING_CLASS *map,
                 PAMI::Topology *rect,
                 pami_coord_t self,
@@ -118,50 +122,33 @@ namespace CCMI
       _color(color),
 //      _root(?),
 //      _root_coord(?),
-      _self_coord(self),
       _start_phase((unsigned)-1),
 //      _nphases(?),
-      _rect(*rect),
-      _map(map)
+      _self_coord(self)
       {
         TRACE_FN_ENTER();
-        unsigned int i;
-        DO_DEBUG(for (unsigned j = 0; j < _map->torusDims(); ++j) TRACE_FORMAT("<%u:%p>TorusRect:: Rank %zu, coord[%u]=%zu",_color,this, _map->task(), j, _self_coord.u.n_torus.coords[j]));
+        DO_DEBUG(for (unsigned j = 0; j < __global.mapping.torusDims(); ++j) TRACE_FORMAT("<%u:%p>TorusRect:: Rank %zu, coord[%u]=%zu",_color,this, __global.mapping.task(), j, _self_coord.u.n_torus.coords[j]));
 
-	PAMI_assertf(_rect.type() == PAMI_COORD_TOPOLOGY, "Type %u",_rect.type());
-        _rect.rectSeg(&_ll, &_ur, &_torus_link[0]);
-        DO_DEBUG(for (unsigned j = 0; j < _map->torusDims(); ++j) TRACE_FORMAT("<%u:%p>TorusRect:: Rank %zu, _ll coord[%u]=%zu",_color,this, _map->task(), j, _ll.u.n_torus.coords[j]));
-        DO_DEBUG(for (unsigned j = 0; j < _map->torusDims(); ++j) TRACE_FORMAT("<%u:%p>TorusRect:: Rank %zu, _ur coord[%u]=%zu",_color,this, _map->task(), j, _ur.u.n_torus.coords[j]));
+	PAMI_assertf(rect->type() == PAMI_COORD_TOPOLOGY, "Type %u",rect->type());
+        rect->rectSeg(&_ll, &_ur, &_torus_link);
+        DO_DEBUG(for (unsigned j = 0; j < __global.mapping.torusDims(); ++j) TRACE_FORMAT("<%u:%p>TorusRect:: Rank %zu, _ll coord[%u]=%zu",_color,this, __global.mapping.task(), j, _ll->u.n_torus.coords[j]));
+        DO_DEBUG(for (unsigned j = 0; j < __global.mapping.torusDims(); ++j) TRACE_FORMAT("<%u:%p>TorusRect:: Rank %zu, _ur coord[%u]=%zu",_color,this, __global.mapping.task(), j, _ur->u.n_torus.coords[j]));
 
 	//get the size of the t dimension as well
-        for (i = 0; i < _ndims+1; i++)
-	  _dim_sizes[i] = _ur.net_coord(i) - _ll.net_coord(i) + 1;
+        //for (i = 0; i < _ndims+1; i++)
+	//_dim_sizes[i] = _ur->net_coord(i) - _ll->net_coord(i) + 1;
+
+	_peers = _ur->net_coord(_ndims) - _ll->net_coord(_ndims) + 1;
 
         TRACE_FORMAT("<%u:%p>_ndims %d, _color  %u",_color,this,_ndims, _color);
         TRACE_FN_EXIT();
       }
-      void init(int root, int op, int &start, int &nphases);
-
+ 
+      virtual void init(int root, int op, int &start, int &nphases);
       virtual pami_result_t getSrcUnionTopology(PAMI::Topology *topo);
       virtual pami_result_t getDstUnionTopology(PAMI::Topology *topology);
       virtual void getSrcTopology(unsigned phase, PAMI::Topology *topology);
       virtual void getDstTopology(unsigned phase, PAMI::Topology *topology);
-      virtual void
-      init(int root, int op, int &startphase, int &nphases, int &maxranks)
-      {
-        PAMI_abort();
-      }
-      virtual void getSrcPeList (unsigned  phase, unsigned *srcpes,
-                                 unsigned  &nsrc, unsigned *subtasks=NULL)
-      {
-        PAMI_abort();
-      }
-      virtual void getDstPeList (unsigned  phase, unsigned *dstpes,
-                                 unsigned  &ndst, unsigned *subtasks)
-      {
-        PAMI_abort();
-      }
-
 
       unsigned color()
       {
@@ -223,19 +210,17 @@ namespace CCMI
         }
       }
     protected:
-      unsigned          _ndims;
-      unsigned          _color;
-      pami_task_t        _root;
-      pami_coord_t       _root_coord;
-      pami_coord_t       _self_coord;
-      pami_coord_t       _ll;
-      pami_coord_t       _ur;
-      unsigned          _start_phase;
-      unsigned int      _nphases;
-      unsigned char     _torus_link[PAMI_MAX_DIMS];
-      size_t            _dim_sizes[PAMI_MAX_DIMS];
-      PAMI::Topology    &_rect;
-      PAMI_MAPPING_CLASS *_map;
+      unsigned             _ndims;
+      unsigned             _color;
+      pami_task_t          _root;
+      unsigned             _nphases;
+      unsigned             _start_phase;
+      unsigned             _peers;
+      pami_coord_t       * _ll;
+      pami_coord_t       * _ur;
+      unsigned char      * _torus_link;
+      pami_coord_t         _self_coord;
+      pami_coord_t         _root_coord;
 
       void getDstTopology_internal(unsigned phase,  int &axis, size_t &ll, size_t &ur, uint8_t &tlink);
       void setupBroadcast(unsigned phase,  int &axis, size_t &ll, size_t &ur, uint8_t &tlink);
@@ -270,15 +255,16 @@ CCMI::Schedule::TorusRect::init(int root,
   CCMI_assert (op == CCMI::BROADCAST_OP);
 
   _root = root;
-  _map->task2network(root, &_root_coord, PAMI_N_TORUS_NETWORK);
+  __global.mapping.task2network(root, &_root_coord, PAMI_N_TORUS_NETWORK);
 
-  DO_DEBUG(for (unsigned j = 0; j < _map->torusDims(); ++j) TRACE_FORMAT("<%u:%p>TorusRect:: Root %d, coord[%u]=%zu",_color,this, root, j, _root_coord.u.n_torus.coords[j]));
+  DO_DEBUG(for (unsigned j = 0; j < __global.mapping.torusDims(); ++j) TRACE_FORMAT("<%u:%p>TorusRect:: Root %d, coord[%u]=%zu",_color,this, root, j, _root_coord.u.n_torus.coords[j]));
 
-  size_t peers, axes[PAMI_MAX_DIMS] = {0};
+  size_t axes[PAMI_MAX_DIMS] = {0};
   unsigned int i, myphase, axis, color = _color;
 
-  for (axis = 0; axis < _ndims; axis++)
-    axes[axis] = color++ % _ndims;
+  for (axis = 0; axis < _ndims; axis++) 
+    //axes[axis] = color++ % _ndims;
+    axes[axis] = torus_rect_mod5_table [color++];
 
   if (MY_TASK == (unsigned) root)
     _start_phase = 0;
@@ -306,8 +292,8 @@ CCMI::Schedule::TorusRect::init(int root,
 
   // 2: 1 for local comm if any, 1 for ghost
   _nphases = nphases = _ndims + 2 - start;
-  peers = _dim_sizes[_ndims];
-  if (peers == 1)
+  
+  if (_peers == 1)
     _nphases = --nphases;
 
   TRACE_FN_EXIT();
@@ -344,10 +330,9 @@ CCMI::Schedule::TorusRect::getDstTopology_internal(unsigned  phase,
 						   size_t  & ur, 
 						   uint8_t & tlink) 
 {
-  size_t core_dim, torus_dims, peers = 0;
-  torus_dims = _map->torusDims();
+  size_t core_dim, torus_dims;
+  torus_dims = _ndims;
   core_dim = torus_dims;
-  peers = _dim_sizes[torus_dims];
 
   if (_self_coord.net_coord(core_dim) == _root_coord.net_coord(core_dim))
   {
@@ -367,7 +352,7 @@ CCMI::Schedule::TorusRect::getDstTopology_internal(unsigned  phase,
     }
 
     ///Process local broadcasts
-    if ((phase == ( _ndims + 1)) && (peers > 1))
+    if ((phase == ( _ndims + 1)) && (_peers > 1))
       setupLocal(raxis, ll, ur, tlink);
   }
 }
@@ -400,7 +385,8 @@ CCMI::Schedule::TorusRect::getDstTopology(unsigned phase,
   if (axis >= 0) {
     pami_coord_t low, high;
     low  = _self_coord;
-    high = _self_coord;  low.net_coord(axis) = ll;
+    high = _self_coord;  
+    low.net_coord(axis) = ll;
     high.net_coord(axis) = ur; 
     toruslinks[axis] = tlink;
     new (topo) PAMI::Topology(&low, &high, &_self_coord,
@@ -409,7 +395,7 @@ CCMI::Schedule::TorusRect::getDstTopology(unsigned phase,
   //We have nothing to do, create dummy topo
   else  new (topo) PAMI::Topology();
 
-  if ((topo->size() == 1) && (topo->index2Rank(0) == _map->task()))
+  if ((topo->size() == 1) && (topo->index2Rank(0) == __global.mapping.task()))
     new (topo) PAMI::Topology();
 
   TRACE_FN_EXIT();
@@ -433,7 +419,9 @@ CCMI::Schedule::TorusRect::setupBroadcast(unsigned  phase,
 {
   TRACE_FN_ENTER();
   //Find the axis to do the line broadcast on
-  int axis = (phase + _color) % _ndims;
+  //int axis = (phase + _color) % _ndims;
+  int axis = torus_rect_mod5_table[(phase + _color)];
+  
   if (_torus_link[axis])
   {
     tlink = POSITIVE;
@@ -442,12 +430,12 @@ CCMI::Schedule::TorusRect::setupBroadcast(unsigned  phase,
   }
 
   raxis = (int) axis;
-  ll = MIN(_ll.net_coord(axis),
+  ll = MIN(_ll->net_coord(axis),
 	   _self_coord.net_coord(axis));
-  ur = MAX(_ur.net_coord(axis),
+  ur = MAX(_ur->net_coord(axis),
 	   _self_coord.net_coord(axis));
 
-  TRACE_FORMAT("<%u:%p>phase %u, axis %d, _self %zu, ll %zu, ur %zu \n",_color,this,phase, axis,_self_coord.net_coord(axis),_ll.net_coord(axis),_ur.net_coord(axis));
+  TRACE_FORMAT("<%u:%p>phase %u, axis %d, _self %zu, ll %zu, ur %zu \n",_color,this,phase, axis,_self_coord.net_coord(axis),_ll->net_coord(axis),_ur->net_coord(axis));
   
   TRACE_FN_EXIT();
 }
@@ -467,28 +455,32 @@ CCMI::Schedule::TorusRect::setupGhost(int     & raxis,
 				      uint8_t & tlink)
 {
   TRACE_FN_ENTER();
-  pami_coord_t dst;
+  //pami_coord_t dst;
+  size_t dst_coord;
   size_t ref;
 
-  size_t axis = _color % _ndims;
-  CCMI_assert(_dim_sizes[axis] > 1);
+  //size_t axis = _color % _ndims;
+  size_t axis = torus_rect_mod5_table[_color];
+  size_t dim_size = _ur->net_coord(axis) - _ll->net_coord(axis) + 1;
+
+  CCMI_assert(dim_size > 1);
 
   ref = _self_coord.net_coord(axis);
   if (_torus_link[axis]) // if this dim or axis is a torus
   {
     if (_color < _ndims) { //+ve colors
-      ref = (_root_coord.net_coord(axis) + 1) % _dim_sizes[axis];
+      ref = (_root_coord.net_coord(axis) + 1) % dim_size;
       tlink = NEGATIVE;
     }
     else {
-      ref = (_root_coord.net_coord(axis) + _dim_sizes[axis] - 1) % _dim_sizes[axis];
+      ref = (_root_coord.net_coord(axis) + dim_size - 1) % dim_size;
       tlink = POSITIVE;
     }
   }
   else
   {
     ref = _root_coord.net_coord(axis) + 1;
-    if (ref >= _dim_sizes[axis] + _ll.net_coord(axis))
+    if (ref >= dim_size + _ll->net_coord(axis))
     {
       ref = _root_coord.net_coord(axis) - 1;
     }
@@ -497,40 +489,41 @@ CCMI::Schedule::TorusRect::setupGhost(int     & raxis,
   //The nodes that are different from the root in one dimension (not
   //the leading dimension of the color) are the ghosts. The nodes
   //just before them have to send data to them
-  if (_self_coord.net_coord(axis) == ref)
+  if (_self_coord.net_coord(axis) == ref /*&& _start_phase > 0*/)
   {
-    dst = _self_coord;
+    pami_coord_t dst = _self_coord;
     dst.net_coord(axis) = _root_coord.net_coord(axis);
+     
+    if ( dst.u.n_torus.coords[0] == _root_coord.u.n_torus.coords[0] &&
+	 dst.u.n_torus.coords[1] == _root_coord.u.n_torus.coords[1] &&
+	 dst.u.n_torus.coords[2] == _root_coord.u.n_torus.coords[2] &&
+	 dst.u.n_torus.coords[3] == _root_coord.u.n_torus.coords[3] &&
+	 dst.u.n_torus.coords[4] == _root_coord.u.n_torus.coords[4] )
+      return;
     
-    if (!( dst.u.n_torus.coords[0] == _root_coord.u.n_torus.coords[0] &&
-           dst.u.n_torus.coords[1] == _root_coord.u.n_torus.coords[1] &&
-           dst.u.n_torus.coords[2] == _root_coord.u.n_torus.coords[2] &&
-           dst.u.n_torus.coords[3] == _root_coord.u.n_torus.coords[3] &&
-           dst.u.n_torus.coords[4] == _root_coord.u.n_torus.coords[4] ))
-    {
-      raxis = (int) axis;
-      ll = _self_coord.net_coord(axis);
-      ur = _self_coord.net_coord(axis);
-
-      if (tlink == MESH) {
-	ll  = MIN(dst.net_coord(axis),
-		  _self_coord.net_coord(axis));
-	ur = MAX(dst.net_coord(axis),
-		 _self_coord.net_coord(axis));
-      }
-      //Data must go from self to dst
-      else if (tlink == POSITIVE) {
-	//In the case of torus we may have a wrapped  (low is self)
-	ur = dst.net_coord(axis);
-      }
-      else if (tlink == NEGATIVE) {
-	//In the case of torus we may have a wrapped  (high is self)
-	ll = dst.net_coord(axis);
-      }
-
-      TRACE_FORMAT("<%u:%p>axis %zu, _self %zu, dst %zu tlink %d\n",_color,this,axis,_self_coord.net_coord(axis),dst.net_coord(axis), 
-		   tlink);      
+    dst_coord = _root_coord.net_coord(axis);
+    raxis = (int) axis;
+    ll = _self_coord.net_coord(axis);
+    ur = _self_coord.net_coord(axis);
+    
+    if (tlink == MESH) {
+      ll  = MIN(dst_coord,
+		_self_coord.net_coord(axis));
+      ur = MAX(dst_coord,
+	       _self_coord.net_coord(axis));
     }
+    //Data must go from self to dst
+    else if (tlink == POSITIVE) {
+      //In the case of torus we may have a wrapped  (low is self)
+      ur = dst_coord;
+    }
+    else if (tlink == NEGATIVE) {
+      //In the case of torus we may have a wrapped  (high is self)
+      ll = dst_coord;
+    }
+    
+    TRACE_FORMAT("<%u:%p>axis %zu, _self %zu, dst %zu tlink %d\n",_color,this,axis,_self_coord.net_coord(axis),dst_coord, 
+		 tlink);      
   }
   TRACE_FN_EXIT();
 }
@@ -554,10 +547,10 @@ CCMI::Schedule::TorusRect::setupLocal(int     & raxis,
   tlink = 0;
 
   // the cores dim is the first one after the physical torus dims
-  size_t core_dim = _map->torusDims();
+  size_t core_dim = _ndims;
   bool match = true; // matches the root local dims?
 
-  for (size_t i = core_dim; i < _map->globalDims() && match; i++)
+  for (size_t i = core_dim; i < __global.mapping.globalDims() && match; i++)
     if (_self_coord.net_coord(i) != _root_coord.net_coord(i))
       match = false;
 
@@ -565,12 +558,12 @@ CCMI::Schedule::TorusRect::setupLocal(int     & raxis,
   {
     raxis = (int) core_dim;
     ll = MIN(_self_coord.net_coord(core_dim),
-	     _ll.net_coord(core_dim));
+	     _ll->net_coord(core_dim));
     ur = MAX(_self_coord.net_coord(core_dim),
-	     _ur.net_coord(core_dim));
+	     _ur->net_coord(core_dim));
   }
 
-  TRACE_FORMAT("<%u:%p>match %u, core_dim %zu, global dims %zu",_color,this,match, core_dim, _map->globalDims());
+  TRACE_FORMAT("<%u:%p>match %u, core_dim %zu, global dims %zu",_color,this,match, core_dim, __global.mapping.globalDims());
   TRACE_FN_EXIT();
 }
 
@@ -609,7 +602,7 @@ CCMI::Schedule::TorusRect::getDstUnionTopology(PAMI::Topology *topology)
 
   // make an axial topology
   new (topology) PAMI::Topology(&low, &high, &_self_coord, torus_link);  
-  if((topology->size() == 1) /*&& (topology->index2Rank(0) == _map->task())*/)
+  if((topology->size() == 1) /*&& (topology->index2Rank(0) == __global.mapping.task())*/)
     new (topology) PAMI::Topology();
 
   TRACE_FN_EXIT();

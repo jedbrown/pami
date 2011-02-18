@@ -115,12 +115,7 @@ namespace CCMI
         CompositeT () : Composite()
         {
           TRACE_ADAPTOR((stderr, "<%p>Executor::CompositeT()\n", this));
-          _barrier = NULL;
-
-          for (int count = 0; count < NUM_EXECUTORS; count ++)
-            _executors[count] = NULL;
-
-          _numExecutors = 0;
+	  reset();
         }
 
         /// Default Destructor
@@ -163,8 +158,15 @@ namespace CCMI
           return _numExecutors;
         }
 
-        //virtual void start () = 0;
+	inline void reset () 
+	{
+          _barrier = NULL;
+	  for (int count = 0; count < NUM_EXECUTORS; count ++)
+            _executors[count] = NULL;	  
+          _numExecutors = 0;
+	}
 
+        //virtual void start () = 0;
     };  //-- end class Composite
 
   };  //-- end namespace Executor
