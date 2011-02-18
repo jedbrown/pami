@@ -193,9 +193,8 @@ namespace PAMI
         {
           TRACE_ERR((stderr, ">> WrapFifo::producePacket_impl(T_Producer &)\n"));
 
-          size_t tail = 0;
-
-          if (likely (_bounded_counter.fetch_and_inc_bounded(tail) == true))
+          size_t tail = _bounded_counter.fetch_and_inc_bounded ();
+          if (likely (tail != T_Atomic::bound_error))
             {
               TRACE_ERR((stderr, "   WrapFifo::producePacket_impl(T_Producer &), tail = %zu\n", tail));
               const size_t index = tail & WrapFifo::mask;
@@ -254,7 +253,7 @@ namespace PAMI
 
               // Increment the upper bound everytime a packet is consumed..ok
               // to be incremented in chunks
-              _bounded_counter.upper().fetch_and_inc();
+              _bounded_counter.bound_upper_fetch_and_inc();
 
               TRACE_ERR((stderr, "<< WrapFifo::consumePacket_impl(T_Consumer &), return true\n"));
               return true;
@@ -282,8 +281,8 @@ namespace PAMI
           T_Packet * packet = (T_Packet *) memory;
           size_t * active = (size_t *) & packet[T_Size];
 
-          fifo->_bounded_counter.lower().clear();
-          fifo->_bounded_counter.upper().clear();
+          fifo->_bounded_counter.bound_lower_clear();
+          fifo->_bounded_counter.bound_upper_clear();
 
           size_t i;
 
@@ -291,7 +290,7 @@ namespace PAMI
             {
               new (&packet[i]) T_Packet();
               active[i] = 0;
-              fifo->_bounded_counter.upper().fetch_and_inc();
+              fifo->_bounded_counter.bound_upper_fetch_and_inc();
             }
 
           TRACE_ERR((stderr, "<< WrapFifo::packet_initialize(%p, %zu, \"%s\", %d, %p)\n", memory, bytes, key, attributes, cookie));
