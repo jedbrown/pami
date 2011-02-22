@@ -65,7 +65,7 @@ namespace PAMI
           internal_error_t rc = (cp->*(cp->pDispatchSet))(my_dispatch_id,
                                                           (void*)hdr,
                                                           NULL,
-                                                          null_send_hint,
+                                                          null_dispatch_hint,
                                                           INTERFACE_LAPI);          
           if(rc != SUCCESS) return -1;
           __global._id_to_device_table[my_dispatch_id] = clientdata;
@@ -80,7 +80,7 @@ namespace PAMI
           internal_error_t rc = (cp->*(cp->pDispatchSet))(dispatch_id,
                                                           (void*)hdr,
                                                           NULL,
-                                                          null_send_hint,
+                                                          null_dispatch_hint,
                                                           INTERFACE_LAPI);          
           if(rc != SUCCESS) return -1;
           __global._id_to_device_table[dispatch_id]           =  clientdata;

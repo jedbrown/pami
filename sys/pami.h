@@ -459,7 +459,7 @@ extern "C"
      */
     unsigned  use_shmem         : 2;
 
-  } __attribute__((__packed__)) pami_dispatch_hint_t;
+  } pami_dispatch_hint_t;
 
   /**
    * \brief "Soft" hints for sending a message
@@ -507,7 +507,7 @@ extern "C"
      **/
     unsigned use_shmem         : 2;
 
-  } __attribute__((__packed__)) pami_send_hint_t;
+  } pami_send_hint_t;
 
   typedef struct
   {
@@ -519,7 +519,7 @@ extern "C"
     
     unsigned reserved          : 18; /**< \brief Reserved for future use. */
     
-  } __attribute__((__packed__)) pami_collective_hint_t;
+  } pami_collective_hint_t;
 
   /**
    * \brief Active message send common parameters structure

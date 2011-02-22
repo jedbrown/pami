@@ -116,12 +116,10 @@ namespace PAMI
       {
         _lapi_state                = device.getState();
         LapiImpl::Context *cp      = (LapiImpl::Context *)_lapi_state;
-        pami_send_hint_t   options;
-        memset(&options, 0, sizeof(options));
         internal_error_t rc = (cp->*(cp->pDispatchSet))(dispatch,
                                                         (void *)dispatch_fn,
                                                         cookie,
-                                                        options,
+                                                        null_dispatch_hint,
                                                         INTERFACE_PAMI);
         result = PAMI_RC(rc);
         return;

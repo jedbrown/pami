@@ -434,7 +434,7 @@ extern "C" void pami_dispatch_set (pami_context_t*            context,
         size_t*                    dispatch,
         pami_dispatch_callback_function fn,
         void*                      cookie,
-        pami_send_hint_t*          options,
+        pami_dispatch_hint_t*      options,
         pami_result_t*             result)
 {
     *result = PAMI_Dispatch_set(*context, *dispatch, fn, cookie, *options);
