@@ -82,7 +82,7 @@ namespace PAMI
                 }
                 else
                 {
-                  fprintf(stderr, "sum not yet supported\n");
+                  fprintf(stderr,"%s:%u npeers %u sum not yet supported\n",__FILE__,__LINE__,npeers);
                 }
 
                 char* src = (char*) master_desc->get_buffer(0);
@@ -155,7 +155,7 @@ namespace PAMI
                 }
                 else
                 {
-                  fprintf(stderr, "sum not yet supported\n");
+                  fprintf(stderr,"%s:%u npeers %u sum not yet supported\n",__FILE__,__LINE__,_npeers);
                 }
 
                 char* src = (char*) master_desc->get_buffer(0);

@@ -13,7 +13,7 @@
 
 #include "../../../../api/pami_util.h"
 
-#define NITERLAT   1000
+#define NITERLAT   1   
 
 #include <assert.h>
 
@@ -45,10 +45,10 @@ int main (int argc, char ** argv)
 
   if (!selected) selected = "";
   else if (selected[0] == '-')
-    {
-      selector = 0 ;
-      ++selected;
-    }
+  {
+    selector = 0 ;
+    ++selected;
+  }
 
   /* \note Test environment variable" TEST_NUM_CONTEXTS=N, defaults to 1.*/
   char* snum_contexts = getenv("TEST_NUM_CONTEXTS");
@@ -70,117 +70,122 @@ int main (int argc, char ** argv)
 
   if (rc == 1)
     return 1;
+  if (num_tasks == 1)
+  {
+    fprintf(stderr,"No barrier on 1 node\n");
+    return 0;
+  }
 
   unsigned iContext = 0;
 
   for (; iContext < num_contexts; ++iContext)
+  {
+
+    if (task_id == 0)
+      printf("# Context: %u\n", iContext);
+
+    rc |= query_geometry_world(client,
+                              context[iContext],
+                              &world_geometry,
+                              barrier_xfer,
+                              num_algorithm,
+                              &always_works_algo,
+                              &always_works_md,
+                              &must_query_algo,
+                              &must_query_md);
+
+    if (rc == 1)
+      return 1;
+
+    barrier.cb_done   = cb_done;
+    barrier.cookie    = (void*) & poll_flag;
+
+    for (nalg = 0; nalg < num_algorithm[1]; nalg++)
     {
+      metadata_result_t result = {0};
+      double ti, tf, usec;
+      barrier.algorithm = must_query_algo[nalg];
 
-      if (task_id == 0)
-        printf("# Context: %u\n", iContext);
+      if (!task_id)
+      {
+        printf("# Barrier Test context = %d, protocol: %s\n", iContext, must_query_md[nalg].name);
+        printf("# -------------------------------------------------------------------\n");
+      }
 
-      rc = query_geometry_world(client,
-                                context[iContext],
-                                &world_geometry,
-                                barrier_xfer,
-                                num_algorithm,
-                                &always_works_algo,
-                                &always_works_md,
-                                &must_query_algo,
-                                &must_query_md);
+      if (((strstr(must_query_md[nalg].name, selected) == NULL) && selector) ||
+          ((strstr(must_query_md[nalg].name, selected) != NULL) && !selector))  continue;
 
-      if (rc == 1)
-        return 1;
+      unsigned mustquery = must_query_md[nalg].check_correct.values.mustquery; /*must query every time */
+      assert(!mustquery || must_query_md[nalg].check_fn); /* must have function if mustquery. */
 
-      barrier.cb_done   = cb_done;
-      barrier.cookie    = (void*) & poll_flag;
+      if (must_query_md[nalg].check_fn)
+        result = must_query_md[nalg].check_fn(&barrier);
 
-      for (nalg = 0; nalg < num_algorithm[1]; nalg++)
+      if (result.bitmask) continue;
+
+      if (!task_id)
+      {
+        fprintf(stderr, "Test Barrier protocol(%s) Correctness (%d of %zd algorithms)\n",
+                must_query_md[nalg].name, nalg + 1, num_algorithm[1]);
+        ti = timer();
+        blocking_coll(context[iContext], &barrier, &poll_flag);
+        tf = timer();
+        usec = tf - ti;
+
+        if (usec < 1800000.0 || usec > 2200000.0)
+        {  
+          rc = 1;  
+          fprintf(stderr, "%s FAIL: usec=%f want between %f and %f!\n",must_query_md[nalg].name,
+                  usec, 1800000.0, 2200000.0);
+        }
+        else
+          fprintf(stderr, "Barrier correct!\n");
+      }
+      else
+      {
+        delayTest(2);
+        blocking_coll(context[iContext], &barrier, &poll_flag);
+      }
+
+      int niter = NITERLAT;
+      blocking_coll(context[iContext], &barrier, &poll_flag);
+
+      ti = timer();
+      int i;
+
+      for (i = 0; i < niter; i++)
+      {
+        if (mustquery) /* must query every time */
         {
-          metadata_result_t result = {0};
-          double ti, tf, usec;
-          barrier.algorithm = must_query_algo[nalg];
-
-          if (!task_id)
-            {
-              printf("# Barrier Test context = %d, protocol: %s\n", iContext, must_query_md[nalg].name);
-              printf("# -------------------------------------------------------------------\n");
-            }
-
-          if (((strstr(must_query_md[nalg].name, selected) == NULL) && selector) ||
-              ((strstr(must_query_md[nalg].name, selected) != NULL) && !selector))  continue;
-
-          unsigned mustquery = must_query_md[nalg].check_correct.values.mustquery; /*must query every time */
-          assert(!mustquery || must_query_md[nalg].check_fn); /* must have function if mustquery. */
-
-          if (must_query_md[nalg].check_fn)
-            result = must_query_md[nalg].check_fn(&barrier);
+          result = must_query_md[nalg].check_fn(&barrier);
 
           if (result.bitmask) continue;
-
-          if (!task_id)
-            {
-              fprintf(stderr, "Test Barrier protocol(%s) Correctness (%d of %zd algorithms)\n",
-                      must_query_md[nalg].name, nalg + 1, num_algorithm[1]);
-              ti = timer();
-              blocking_coll(context[iContext], &barrier, &poll_flag);
-              tf = timer();
-              usec = tf - ti;
-
-              if (usec < 1800000.0 || usec > 2200000.0)
-                fprintf(stderr, "Barrier error: usec=%f want between %f and %f!\n",
-                        usec, 1800000.0, 2200000.0);
-              else
-                fprintf(stderr, "Barrier correct!\n");
-            }
-          else
-            {
-              delayTest(2);
-              blocking_coll(context[iContext], &barrier, &poll_flag);
-            }
-
-          int niter = NITERLAT;
-          blocking_coll(context[iContext], &barrier, &poll_flag);
-
-          ti = timer();
-          int i;
-
-          for (i = 0; i < niter; i++)
-            {
-              if (mustquery) /* must query every time */
-                {
-                  result = must_query_md[nalg].check_fn(&barrier);
-
-                  if (result.bitmask) continue;
-                }
-
-              blocking_coll(context[iContext], &barrier, &poll_flag);
-            }
-
-          tf = timer();
-          usec = tf - ti;
-
-          if (!task_id)
-            {
-              fprintf(stderr, "Test Barrier protocol(%s) Performance: time=%f usec\n",
-                      must_query_md[nalg].name, usec / (double)niter);
-              delayTest(2);
-            }
-
-          blocking_coll(context[iContext], &barrier, &poll_flag);
         }
 
-      free(always_works_algo);
-      free(always_works_md);
-      free(must_query_algo);
-      free(must_query_md);
+        blocking_coll(context[iContext], &barrier, &poll_flag);
+      }
 
-    } /*for(unsigned iContext = 0; iContext < num_contexts; ++iContexts)*/
+      tf = timer();
+      usec = tf - ti;
 
-  rc = pami_shutdown(&client, context, &num_contexts);
+      if (!task_id)
+      {
+        fprintf(stderr, "Test Barrier protocol(%s) Performance: time=%f usec\n",
+                must_query_md[nalg].name, usec / (double)niter);
+        delayTest(2);
+      }
 
-  if (rc == 1)
-    return 1;
+      blocking_coll(context[iContext], &barrier, &poll_flag);
+    }
 
-  return 0;
+    free(always_works_algo);
+    free(always_works_md);
+    free(must_query_algo);
+    free(must_query_md);
+
+  } /*for(unsigned iContext = 0; iContext < num_contexts; ++iContexts)*/
+
+  rc |= pami_shutdown(&client, context, &num_contexts);
+
+  return rc;
 };

@@ -333,7 +333,7 @@ namespace PAMI
               }
               else{
 
-                fprintf(stderr,"sum not yet supported\n");
+                fprintf(stderr,"%s:%u npeers %u sum not yet supported\n",__FILE__,__LINE__,_npeers);
                 exit(0);
 
               }

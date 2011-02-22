@@ -48,8 +48,8 @@ namespace PAMI
 
             unsigned classroute = 0;
 
-            if (devinfo)
-              classroute = ((uint32_t)(uint64_t)devinfo) - 1;
+            PAMI_assert(devinfo);
+            classroute = ((uint32_t)(uint64_t)devinfo) - 1;
 
             PipeWorkQueue *spwq = (PipeWorkQueue *) mcombine->data;
             PipeWorkQueue *dpwq = (PipeWorkQueue *) mcombine->results;

@@ -102,7 +102,7 @@ namespace PAMI
       virtual void metadata(pami_metadata_t *mdata)
         {
           new(mdata) PAMI::Geometry::Metadata(T_MDString);
-          if(strstr(T_MDString,"Short")) mdata->range_hi = 513; /// \todo arbitrary hack for now
+          if(strstr(T_MDString,"Short")) mdata->range_hi = 512; /// \todo arbitrary hack for now
         }
       T_Exec            _exec;
       T_TSPColl        *_coll;

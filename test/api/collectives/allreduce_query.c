@@ -452,8 +452,8 @@ int main(int argc, char*argv[])
                       result = allreduce_must_query_md[nalg].check_fn(&allreduce);
                     if(result.bitmask) continue;
 
-                    if(!((dataSent < allreduce_must_query_md[nalg].range_hi) &&
-                         (dataSent > allreduce_must_query_md[nalg].range_lo)))
+                    if(!((dataSent <= allreduce_must_query_md[nalg].range_hi) &&
+                         (dataSent >= allreduce_must_query_md[nalg].range_lo)))
                       continue;
 
 #ifdef CHECK_DATA
