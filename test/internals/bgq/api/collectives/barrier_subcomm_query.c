@@ -119,7 +119,7 @@ int main (int argc, char ** argv)
     pami_xfer_t            newbarrier;
 
     size_t                 set[2];
-    int                    id, root = 0;
+    int                    id, root = 0, timeDelay = 0;
     size_t                 half        = num_tasks / 2;
     range     = (pami_geometry_range_t *)malloc(((num_tasks + 1) / 2) * sizeof(pami_geometry_range_t));
 
@@ -224,6 +224,11 @@ int main (int argc, char ** argv)
       rangecount = 1;
     }
 
+    if(root)
+    {
+      timeDelay = 2; // Need to stagger barriers between subcomm's
+    }
+
     /* Delay root tasks, and emulate that he's doing "other"
        message passing.  This will cause the geometry_create
        request from other nodes to be unexpected when doing
@@ -302,6 +307,7 @@ int main (int argc, char ** argv)
 
           if (task_id == root)
           {
+            delayTest(timeDelay*nalg);
             fprintf(stderr, "Test set(%u):  Barrier protocol(%s) Correctness (%d of %zd algorithms)\n", k,
                     q_newbar_md[nalg].name, nalg + 1, newbar_num_algo[1]);
             ti = timer();
@@ -320,7 +326,7 @@ int main (int argc, char ** argv)
           }
           else
           {
-            delayTest(2);
+            delayTest(2+timeDelay*nalg);
             blocking_coll(context[iContext], &newbarrier, &poll_flag);
           }
 
