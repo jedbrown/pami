@@ -1246,7 +1246,7 @@ extern "C"
     pami_endpoint_t       dest;      /**< Destination endpoint */
     pami_send_hint_t      hints;     /**< Hints for sending the message */
     void                * cookie;    /**< Argument to \b all event callbacks */
-    pami_event_function   done_fn;   /**< Local completion event */
+    pami_event_function   done_fn;   /**< Atomic operation completion event */
     void                * local;     /**< Local (fetch) transfer virtual address */
     void                * remote;    /**< Remote (source) transfer virtual address */
     void                * value;     /**< Operation input local data value location */
