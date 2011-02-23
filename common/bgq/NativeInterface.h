@@ -19,6 +19,9 @@
 
 #include "util/trace.h"
 
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
+
 #ifdef CCMI_TRACE_ALL
 #define DO_TRACE_ENTEREXIT 1
 #define DO_TRACE_DEBUG     1
@@ -274,6 +277,7 @@ namespace PAMI
     inline pami_result_t BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>::multisync(pami_multisync_t *msync, void *devinfo)
   {
     TRACE_FN_ENTER();
+    TRACE_FORMAT( "<%p> %msync %p, connection id %u, devinfo %p", this, msync, msync->connection_id, devinfo);
     int rc = _msync.postMultisyncImmediate(_clientid, _contextid, msync, devinfo);
     if (rc == PAMI_SUCCESS)
       {
@@ -285,7 +289,7 @@ namespace PAMI
       allocObj *req          = (allocObj *)_allocator.allocateObject();
       req->_ni               = this;
       req->_user_callback    = msync->cb_done;
-      TRACE_FORMAT( "<%p> %p/%p connection id %u, devinfo %p", this, msync, req, msync->connection_id, devinfo);
+      TRACE_FORMAT( "<%p> %p", this, req);
       DO_DEBUG((templateName<T_Msync>()));
       
       pami_multisync_t  m     = *msync;
@@ -630,6 +634,9 @@ namespace PAMI
 
 
 };
+
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
 
 #endif
 //

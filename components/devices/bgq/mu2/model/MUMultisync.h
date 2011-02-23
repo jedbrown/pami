@@ -14,6 +14,11 @@
 #include "components/devices/MultisyncModel.h"
 
 //#define MU_BLOCKING_BARRIER 1
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
+
+#define DO_TRACE_ENTEREXIT 0
+#define DO_TRACE_DEBUG     0
 
 namespace PAMI
 {
@@ -45,6 +50,7 @@ namespace PAMI
         _mucontext (mucontext),
         _gdev(*_mucontext.getProgressDevice())
         {
+          TRACE_FN_ENTER();
           //Initialize comm world
           memset (_inited, 0, sizeof(_inited));
           int rc = 0;
@@ -53,6 +59,7 @@ namespace PAMI
           _inited[cw_classroute] = 1;
 
           new (&_work) PAMI::Device::Generic::GenericThread(advance, &_completionmsg);
+          TRACE_FN_EXIT();
         } 
 
         /// \see PAMI::Device::Interface::MultisyncModel::postMultisync
@@ -61,12 +68,14 @@ namespace PAMI
                                                   pami_multisync_t *msync,
                                                   void             *devinfo = NULL) 
         {
+          TRACE_FN_ENTER();
           size_t classroute = 0;
           PAMI_assert(devinfo);
           classroute = (size_t)devinfo - 1;
 
           if (!_inited[classroute])
           {
+            TRACE_FORMAT( "<%p> %p connection id %u, devinfo %p", this, msync, msync->connection_id, devinfo);
             int rc = 0;
             rc = MUSPI_GIBarrierInit ( &_giBarrier[classroute], classroute );
             PAMI_assert (rc == 0);
@@ -89,6 +98,7 @@ namespace PAMI
           _gdev.postThread(work);
 #endif
 
+          TRACE_FN_EXIT();
           return PAMI_SUCCESS;
         }
 
@@ -98,6 +108,8 @@ namespace PAMI
                                          pami_multisync_t *msync,
                                          void             *devinfo = NULL) 
         {
+          TRACE_FN_ENTER();
+          TRACE_FN_EXIT();
           return PAMI_ERROR;
         }
 
@@ -110,9 +122,12 @@ namespace PAMI
           if (rc != 0)
             return PAMI_EAGAIN;
 
+          TRACE_FN_ENTER();
+
           if (msg->cb_done)
             msg->cb_done(context, msg->cookie, PAMI_SUCCESS);
 
+          TRACE_FN_EXIT();
           return PAMI_SUCCESS;
         }
 
@@ -128,5 +143,8 @@ namespace PAMI
     };
   };
 };
+
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
 
 #endif

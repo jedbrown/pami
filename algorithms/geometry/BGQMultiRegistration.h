@@ -958,7 +958,9 @@ namespace PAMI
               }
 
               // Add 2 device composite protocols
-/// \todo necessary?                      if ((local_sub_topology->size() > 1) && (master_sub_topology->size() > 1) && (__global.useshmem()))
+#ifndef ENABLE_NEW_SHMEM_SUBNODE
+              if (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
+#endif
               {
                 if (_msync2d_composite_factory)
                 {
