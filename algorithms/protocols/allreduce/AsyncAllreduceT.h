@@ -41,8 +41,10 @@ namespace CCMI
       {
         pami_reduce_t *lxfer   = &(coll->xfer_reduce);
 
-        if (root == (unsigned) - 1) root = lxfer->root; // in case coll is not initialized
-        else lxfer->root = root;
+        if (root == (unsigned) - 1)
+          root = lxfer->root; // in case coll is not initialized
+        else
+          lxfer->root = root;
 
         *xfer = lxfer;
       }
@@ -334,6 +336,7 @@ namespace CCMI
             unsigned key;
             unsigned root = cdata->_root;
             pami_collective_t cmd;
+            cmd.xfer_reduce.root = (unsigned)-1;
             T_reduce_type *a_xfer;
             // a_xfer->root gets updated by the call if the operation is reduce
             _get_xfer_and_root(&a_xfer, &cmd, root);

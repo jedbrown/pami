@@ -20,10 +20,10 @@ int main (int argc, char ** argv)
 
   /* Barrier variables */
   size_t               num_algorithm[2];
-  pami_algorithm_t    *always_works_algo;
-  pami_metadata_t     *always_works_md;
-  pami_algorithm_t    *must_query_algo;
-  pami_metadata_t     *must_query_md;
+  pami_algorithm_t    *always_works_algo = NULL;
+  pami_metadata_t     *always_works_md = NULL;
+  pami_algorithm_t    *must_query_algo = NULL;
+  pami_metadata_t     *must_query_md = NULL;
   pami_xfer_type_t     barrier_xfer = PAMI_XFER_BARRIER;
   pami_xfer_t          barrier;
   volatile unsigned    poll_flag = 0;

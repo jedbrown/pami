@@ -610,7 +610,7 @@ fprintf(stderr, "%s\n", buf);
 	  i = 0;
 	  if (s)
 	  {
-	    char *x;
+	    const char *x;
 	    const char *m = CR_DIM_NAMES;
 	    for (; *s && i < CR_NUM_DIMS; ++s)
 	    {

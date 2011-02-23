@@ -77,19 +77,19 @@ int main(int argc, char*argv[])
 
   /* Barrier variables */
   size_t               barrier_num_algorithm[2];
-  pami_algorithm_t    *bar_always_works_algo;
-  pami_metadata_t     *bar_always_works_md;
-  pami_algorithm_t    *bar_must_query_algo;
-  pami_metadata_t     *bar_must_query_md;
+  pami_algorithm_t    *bar_always_works_algo = NULL;
+  pami_metadata_t     *bar_always_works_md   = NULL;
+  pami_algorithm_t    *bar_must_query_algo   = NULL;
+  pami_metadata_t     *bar_must_query_md     = NULL;
   pami_xfer_type_t     barrier_xfer = PAMI_XFER_BARRIER;
   volatile unsigned    bar_poll_flag = 0;
 
   /* Alltoall variables */
   size_t               alltoall_num_algorithm[2];
-  pami_algorithm_t    *alltoall_always_works_algo;
-  pami_metadata_t     *alltoall_always_works_md;
-  pami_algorithm_t    *alltoall_must_query_algo;
-  pami_metadata_t     *alltoall_must_query_md;
+  pami_algorithm_t    *alltoall_always_works_algo = NULL;
+  pami_metadata_t     *alltoall_always_works_md = NULL;
+  pami_algorithm_t    *alltoall_must_query_algo = NULL;
+  pami_metadata_t     *alltoall_must_query_md = NULL;
   pami_xfer_type_t     alltoall_xfer = PAMI_XFER_ALLTOALL;
   volatile unsigned    alltoall_poll_flag = 0;
 

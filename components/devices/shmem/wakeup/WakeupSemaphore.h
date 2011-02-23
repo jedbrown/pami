@@ -112,7 +112,7 @@ namespace PAMI
                                    16,                                  // align
                                    count * sizeof(Element),             // bytes
                                    key,                                 // unique
-                                   Semaphore::Region::array_initialize,
+                                   Semaphore<T_Key>::Region<T>::array_initialize,
                                    (void *)wakeup);                     // cookie
 
               PAMI_assertf(mmrc == PAMI_SUCCESS, "memalign failed for semaphore wakeup resources, rc=%d\n", mmrc);

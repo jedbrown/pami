@@ -15,6 +15,12 @@ pami_data_function PAMI_DATA_COPY = NULL;
 
 extern "C" {
 
+  // BGQ does not use exceptions
+#ifdef __pami_target_bgq__
+#define try
+#define catch(a) if(0)
+#endif
+
 pami_result_t PAMI_Type_create (pami_type_t * type)
 {
     TypeCode * type_obj;
