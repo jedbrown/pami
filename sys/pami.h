@@ -463,6 +463,22 @@ extern "C"
      */
     unsigned  use_shmem             : 2;
 
+    /**
+     * \brief Return an error if PAMI_Send_immediate() resources are not available
+     *
+     * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
+     * the PAMI_Send_immediate() implementation will internally queue the send
+     * operation until network resource become available.
+     *
+     * If specified as pami_hint_t::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
+     * the PAMI_Send_immediate() implementation will return PAMI_EAGAIN when
+     * network resources are unavailable.
+     *
+     * If specified as pami_hint_t::PAMI_HINT_DEFAULT, the effect on the
+     * communication is equivalent to the effect of pami_hint_t::PAMI_HINT_ENABLE
+     **/
+    unsigned  queue_immediate       : 2;
+
   } pami_dispatch_hint_t;
 
   /**
@@ -485,7 +501,7 @@ extern "C"
    */
   typedef struct
   {
-    unsigned reserved              : 12; /**< \brief Reserved for future use. */
+    unsigned reserved0             : 12; /**< \brief Reserved for future use. */
     
     /**
      * \brief Send and receive buffers are ready for RDMA operations
@@ -511,6 +527,8 @@ extern "C"
      **/
     unsigned use_shmem             : 2;
 
+    unsigned reserved1             : 2; /**< \brief Reserved for future use. */
+
   } pami_send_hint_t;
 
   typedef struct
@@ -521,7 +539,7 @@ extern "C"
      **/
     unsigned multicontext          : 2;
     
-    unsigned reserved              : 18; /**< \brief Reserved for future use. */
+    unsigned reserved0             : 20; /**< \brief Reserved for future use. */
     
   } pami_collective_hint_t;
 
@@ -677,6 +695,11 @@ extern "C"
    *
    * \retval PAMI_SUCCESS  The request has been accepted.
    * \retval PAMI_INVAL    The request has been rejected due to invalid parameters.
+   * \retval PAMI_EAGAIN   The request could not be satisfied due to unavailable
+   *                       network resources and the request data could not be
+   *                       queued for later processing due to the value of the
+   *                       pami_dispatch_hint_t::queue_immediate hint for this
+   *                       dispatch identifier.
    */
   pami_result_t PAMI_Send_immediate (pami_context_t          context,
                                      pami_send_immediate_t * parameters);
