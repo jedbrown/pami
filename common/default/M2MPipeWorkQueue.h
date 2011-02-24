@@ -15,7 +15,7 @@
 #define __common_default_M2MPipeWorkQueue_h__
 
 #include "Arch.h"
-#include "common/PipeWorkQueueInterface.h"
+#include "common/M2MPipeWorkQueueInterface.h"
 #include "util/common.h"
 
 #undef TRACE_ERR
@@ -25,7 +25,7 @@
 namespace PAMI
 {
 
-  class M2MPipeWorkQueue : public Interface::PipeWorkQueue<PAMI::M2MPipeWorkQueue>
+  class M2MPipeWorkQueue : public Interface::M2MPipeWorkQueue<PAMI::M2MPipeWorkQueue>
   {
 ///
 /// \brief Work queue implementation of a flat many2manyshared indexed memory buffer.
@@ -39,7 +39,7 @@ namespace PAMI
 
     public:
       M2MPipeWorkQueue() :
-          Interface::PipeWorkQueue<PAMI::M2MPipeWorkQueue>(),
+          Interface::M2MPipeWorkQueue<PAMI::M2MPipeWorkQueue>(),
           _buffer(NULL),
           _offsets(NULL),
           _bytes(NULL),
@@ -164,7 +164,7 @@ namespace PAMI
       /// \param[in] obj     Shared work queue object
       ///
       M2MPipeWorkQueue(M2MPipeWorkQueue &obj) :
-          Interface::PipeWorkQueue<PAMI::M2MPipeWorkQueue>(),
+          Interface::M2MPipeWorkQueue<PAMI::M2MPipeWorkQueue>(),
           _buffer(obj._buffer),
           _offsets(obj._offsets),
           _bytes(obj._bytes),
@@ -357,13 +357,6 @@ namespace PAMI
       }
 
     private:
-//      PAMI::Memory::MemoryManager *_mm;
-//      unsigned _qsize;
-//      unsigned _isize;
-//      unsigned _pmask;
-//      workqueue_t *_sharedqueue;
-//      workqueue_t __sq;
-
       volatile char *_buffer;     /**< flat buffer */
       size_t        *_offsets;    /**< array of byte offsets to start of each access point */
       size_t        *_bytes;      /**< array of byte counts (available to consume) */
@@ -377,4 +370,4 @@ namespace PAMI
 
 }; /* namespace PAMI */
 
-#endif // __components_pipeworkqueue_default_pipeworkqueue_h__
+#endif // __common_default_M2MPipeWorkQueue_h__
