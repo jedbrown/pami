@@ -17,7 +17,13 @@ extern "C" {
 
   // BGQ does not use exceptions
 #ifdef __pami_target_bgq__
+#ifdef try
+#undef try
+#endif
 #define try
+#ifdef catch
+#undef catch
+#endif
 #define catch(a) if(0)
 #endif
 
