@@ -129,6 +129,7 @@ int main(int argc, char ** argv)
                  mu,           // "packet" device reference
                  self,         // origin endpoint
                  NULL,         // pami_context_t
+                 (pami_dispatch_hint_t){0}, // hints
                  result);
   fprintf (stderr, "After MuEager protocol constructor\n");
 #endif

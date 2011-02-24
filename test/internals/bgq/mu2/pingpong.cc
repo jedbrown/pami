@@ -258,6 +258,7 @@ int main(int argc, char ** argv)
                  mu0,      // "packet" device reference
                  (pami_endpoint_t) 0,       // origin endpoint
                  (pami_context_t) NULL,
+                 (pami_dispatch_hint_t){0}, // hints
                  result);
 
   fprintf (stderr, "After eager constructor\n");

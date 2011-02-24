@@ -57,6 +57,7 @@ namespace PAMI
                                    T_Device             & device,
                                    pami_endpoint_t        origin,
                                    pami_context_t         context,
+                                   pami_dispatch_hint_t   hint,
                                    T_Allocator          & allocator,
                                    pami_result_t        & result)
           {
@@ -64,7 +65,7 @@ namespace PAMI
             COMPILE_TIME_ASSERT(sizeof(Eager) <= T_Allocator::objsize);
 
             Eager * eager = (Eager *) allocator.allocateObject ();
-            new ((void *)eager) Eager (dispatch, dispatch_fn, cookie, device, origin, context, result);
+            new ((void *)eager) Eager (dispatch, dispatch_fn, cookie, device, origin, context, hint, result);
 
             if (result != PAMI_SUCCESS)
               {
@@ -96,6 +97,7 @@ namespace PAMI
                         T_Device             & device,
                         pami_endpoint_t        origin,
                         pami_context_t         context,
+                        pami_dispatch_hint_t   hint,
                         pami_result_t        & status) :
               PAMI::Protocol::Send::Send (),
               EagerImmediate<T_Model, T_Device> (dispatch,
@@ -112,6 +114,7 @@ namespace PAMI
                                             device,
                                             origin,
                                             context,
+                                            hint,
                                             status)
           {
           };
@@ -139,7 +142,7 @@ namespace PAMI
                 switch (configuration[i].name)
                   {
                     case PAMI_DISPATCH_RECV_IMMEDIATE_MAX:
-                      configuration[i].value.intval = T_Model::packet_model_payload_bytes;
+                      configuration[i].value.intval = Eager::recv_immediate_max;
                       break;
                     case PAMI_DISPATCH_SEND_IMMEDIATE_MAX:
                       configuration[i].value.intval = T_Model::packet_model_immediate_bytes;

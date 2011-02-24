@@ -140,6 +140,7 @@ namespace PAMI
                                                                                  device,
                                                                                  origin,
                                                                                  context,
+                                                                                 (pami_dispatch_hint_t){0},
                                                                                  allocator,
                                                                                  result);
         ni->setMcastProtocol(dispatch, protocol);
@@ -156,6 +157,7 @@ namespace PAMI
                                                        device,
                                                        origin,
                                                        context,
+                                                       (pami_dispatch_hint_t){0},
                                                        allocator,
                                                        result);
         ni->setM2mProtocol(dispatch, protocol);
@@ -173,6 +175,7 @@ namespace PAMI
                                                        device,
                                                        origin,
                                                        context,
+                                                       (pami_dispatch_hint_t){0},
                                                        allocator,
                                                        result);
         ni->setSendProtocol(dispatch, protocol);
@@ -251,6 +254,7 @@ namespace PAMI
                                               device1,
                                               origin,
                                               context,
+                                              (pami_dispatch_hint_t){0},
                                               allocator,
                                               result);
         protocol2 = (T_Protocol2*) T_Protocol2::generate(dispatch,
@@ -259,6 +263,7 @@ namespace PAMI
                                               device2,
                                               origin,
                                               context,
+                                              (pami_dispatch_hint_t){0},
                                               allocator,
                                               result);
 
@@ -283,6 +288,7 @@ namespace PAMI
                                                                                     device1,
                                                                                     origin,
                                                                                     context,
+                                                                                    (pami_dispatch_hint_t){0},
                                                                                     allocator,
                                                                                     result);
         protocol2 = (T_Protocol2*) T_Protocol2::generate(dispatch,
@@ -291,6 +297,7 @@ namespace PAMI
                                                                                     device2,
                                                                                     origin,
                                                                                     context,
+                                                                                    (pami_dispatch_hint_t){0},
                                                                                     allocator,
                                                                                     result);
         // Construct the composite from the two protocols
@@ -314,6 +321,7 @@ namespace PAMI
                                                                                     device1,
                                                                                     origin,
                                                                                     context,
+                                                                                    (pami_dispatch_hint_t){0},
                                                                                     allocator,
                                                                                     result);
         protocol2 = (T_Protocol2*) T_Protocol2::generate(dispatch,
@@ -322,6 +330,7 @@ namespace PAMI
                                                                                     device2,
                                                                                     origin,
                                                                                     context,
+                                                                                    (pami_dispatch_hint_t){0},
                                                                                     allocator,
                                                                                     result);
         // Construct the composite from the two protocols

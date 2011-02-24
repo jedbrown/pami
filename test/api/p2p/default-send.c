@@ -59,7 +59,7 @@ static void test_dispatch (
 pami_recv_t         * recv)        /**< OUT: receive message structure */
 {
   volatile size_t * active = (volatile size_t *) cookie;
-  fprintf (stderr, "Called dispatch function.  cookie = %p, active: %zu, header_size = %zu, pipe_size = %zu\n", cookie, *active, header_size, pipe_size);
+  fprintf (stderr, "Called dispatch function.  cookie = %p, active: %zu, header_size = %zu, pipe_size = %zu, recv = %p\n", cookie, *active, header_size, pipe_size, recv);
   /*(*active)--; */
   /*fprintf (stderr, "... dispatch function.  active = %zu\n", *active); */
 
@@ -79,8 +79,18 @@ pami_recv_t         * recv)        /**< OUT: receive message structure */
     (*active)--;
     fprintf (stdout, ">>> Skipping payload validation (payload size = %zu).\n", pipe_size);
   }
+  else if (recv == NULL)
+  {
+    // This is an 'immediate' receive
+
+    __recv_size = pipe_size;
+    memcpy(__recv_buffer, pipe_addr, pipe_size);
+    recv_done (context, cookie, PAMI_SUCCESS);
+  }
   else
   {
+    // This is an 'asynchronous' receive
+
     __recv_size = pipe_size;
 
     recv->local_fn = recv_done;
@@ -222,26 +232,8 @@ int main (int argc, char ** argv)
   pami_dispatch_hint_t options={0};
   size_t i, dev = 0;
 
-  for (i = 0; i < num_contexts; i++) {
-    /* For each context: */
-    /* Set up dispatch ID 0 for MU (use_shmem = 2) */
-    /* set up dispatch ID 1 for SHMem (use_shmem = 1) */
-
-    for (dev = initial_device; dev < device_limit; dev++) {
-      fprintf (stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active);
-      options.use_shmem = PAMI_HINT_DISABLE - dev;
-      result = PAMI_Dispatch_set (context[i],
-				  dev,
-				  fn,
-				  (void *)&recv_active,
-				  options);
-      if (result != PAMI_SUCCESS) {
-	fprintf (stderr, "Error. Unable to register pami dispatch %zu on context %zu. result = %d\n", dev, i, result);
-	return 1;
-      }
-    }
-  }
-
+  size_t dispatch_recv_immediate_max[8];
+  
   uint8_t header[1024];
   uint8_t data[1024];
   for (i=0; i<1024; i++)
@@ -267,6 +259,39 @@ int main (int argc, char ** argv)
   data_bytes[psize++] = 512;
   data_bytes[psize++] = 1024;
 
+
+  for (i = 0; i < num_contexts; i++) {
+    /* For each context: */
+    /* Set up dispatch ID 0 for MU (use_shmem = 2) */
+    /* set up dispatch ID 1 for SHMem (use_shmem = 1) */
+
+    for (dev = initial_device; dev < device_limit; dev++) {
+      fprintf (stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active);
+      options.use_shmem = PAMI_HINT_DISABLE - dev;
+      result = PAMI_Dispatch_set (context[i],
+				  dev,
+				  fn,
+				  (void *)&recv_active,
+				  options);
+      if (result != PAMI_SUCCESS) {
+	fprintf (stderr, "Error. Unable to register pami dispatch %zu on context %zu. result = %d\n", dev, i, result);
+	return 1;
+      }
+      
+  configuration.name = PAMI_DISPATCH_RECV_IMMEDIATE_MAX;
+  result = PAMI_Dispatch_query(context[i], dev, &configuration,1);
+  if (result != PAMI_SUCCESS)
+  {
+    fprintf (stderr, "Error. Unable to query configuration (%d). result = %d\n", configuration.name, result);
+    return 1;
+  }
+  dispatch_recv_immediate_max[i] = configuration.value.intval;
+  fprintf (stderr, "receive immediate maximum for dispatch %zu = %zu\n", dev, dispatch_recv_immediate_max[dev]);
+  header_bytes[hsize++] = dispatch_recv_immediate_max[i];
+  header_bytes[hsize++] = dispatch_recv_immediate_max[i] + 32;
+    }
+  }
+
   pami_send_t parameters;
   parameters.send.header.iov_base = header;
   parameters.send.data.iov_base   = data;
@@ -280,6 +305,7 @@ int main (int argc, char ** argv)
   char device_str[2][50] = {"MU", "SHMem"};
   char xtalk_str[2][50] = {"no crosstalk", "crosstalk"};
   char callback_str[2][50] = {"no callback", "callback"};
+  char longheader_str[2][50] = {"no long header", "long header"};
 
   if (task_id == 0)
   {
@@ -315,7 +341,7 @@ int main (int argc, char ** argv)
 		  return 1;
 		}
 
-		fprintf (stderr, "===== PAMI_Send() functional test [%s][%s][%s] %zu %zu (%d, 0) -> (%zu, %zu) =====\n\n", &device_str[dev][0], &xtalk_str[xtalk][0], &callback_str[remote_cb][0], header_bytes[h], data_bytes[p], task_id, n, xtalk);
+		fprintf (stderr, "===== PAMI_Send() functional test [%s][%s][%s][%s] %zu %zu (%d, 0) -> (%zu, %zu) =====\n\n", &device_str[dev][0], &xtalk_str[xtalk][0], &callback_str[remote_cb][0], &longheader_str[header_bytes[h]>(dispatch_recv_immediate_max[dev])][0], header_bytes[h], data_bytes[p], task_id, n, xtalk);
 
 		if (remote_cb) {
 		  send_active++;
@@ -399,7 +425,7 @@ int main (int argc, char ** argv)
 	      recv_active = 1;
 	      fprintf (stderr, "... after recv advance loop\n");
 
-	      fprintf (stderr, "===== PAMI_Send() functional test [%s][%s][%s] %zu %zu (%d, %zu) -> (0, 0) =====\n\n", &device_str[dev][0], &xtalk_str[xtalk][0], &callback_str[remote_cb][0], header_bytes[h], data_bytes[p], task_id, xtalk);
+	      fprintf (stderr, "===== PAMI_Send() functional test [%s][%s][%s][%s] %zu %zu (%d, %zu) -> (0, 0) =====\n\n", &device_str[dev][0], &xtalk_str[xtalk][0], &callback_str[remote_cb][0], &longheader_str[header_bytes[h]>dispatch_recv_immediate_max[dev]][0], header_bytes[h], data_bytes[p], task_id, xtalk);
 
 	      if (remote_cb) {
 		send_active++;

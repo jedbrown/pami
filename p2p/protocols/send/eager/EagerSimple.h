@@ -18,6 +18,7 @@
 #ifndef __p2p_protocols_send_eager_EagerSimple_h__
 #define __p2p_protocols_send_eager_EagerSimple_h__
 
+#include "components/devices/PacketInterface.h"
 #include "components/memory/MemoryAllocator.h"
 #include "math/Memcpy.x.h"
 
@@ -42,39 +43,94 @@ namespace PAMI
       /// \see PAMI::Device::Interface::PacketModel
       /// \see PAMI::Device::Interface::PacketDevice
       ///
-      template <class T_Model, class T_Device, bool T_LongHeader, class T_Connection>
+      template < class T_Model, class T_Device, bool T_LongHeader, class T_Connection, bool T_RecvImmediate = false >
       class EagerSimple
       {
         protected:
 
-          typedef EagerSimple<T_Model,T_Device,T_LongHeader,T_Connection> EagerSimpleProtocol;
+          typedef EagerSimple<T_Model, T_Device, T_LongHeader, T_Connection, T_RecvImmediate> EagerSimpleProtocol;
 
           typedef uint8_t pkt_t[T_Model::packet_model_state_bytes];
 
-          typedef struct protocol_metadata
+          typedef struct
+          {
+            pami_event_function   remote_fn;
+            void                * cookie;
+            pami_context_t        context;
+            bool                  invoke;
+          } ack_protocol_t;
+
+          ///
+          /// \note The 'short' protocol metadata limits the maximum size of
+          ///       the application header + application data to \c USHRT_MAX
+          ///       bytes. The effective maximum application header + application
+          ///       data size for the short protocol is the minimum of \c USHRT_MAX and
+          ///       \c T_Model::packet_model_payload_bytes less the size of the
+          ///       \c short_protocol_t metadata structure \em if the size of the
+          ///       \c short_protocol_t metadata structure is greater than
+          ///       \c T_Model::packet_model_metadata_bytes
+          ///
+          typedef struct
+          {
+            uint16_t           bytes;     ///< Number of bytes of application data being sent
+            uint16_t           metabytes; ///< Number of bytes of application metadata being sent
+            pami_endpoint_t    origin;    ///< Endpoint that originated the transfer
+          } short_protocol_t;
+
+          typedef struct
           {
             size_t             bytes;     ///< Number of bytes of application data being sent
             size_t             metabytes; ///< Number of bytes of application metadata being sent
-            void             * va_send;   ///< Virtual address of the send_state_t on the origin
             pami_endpoint_t    origin;    ///< Endpoint that originated the transfer
-          } protocol_metadata_t;
+          } longheader_protocol_t;
+
+          ///
+          /// \note The 'eager' protocol metadata structure limits the maximum
+          ///       size of the application header to \c USHRT_MAX bytes. The
+          ///       effective maximum application header size for the eager
+          ///       protocol is the minimum of \c USHRT_MAX and
+          ///       \c T_Model::packet_model_payload_bytes less the size of the
+          ///       \c eager_protocol_t metadata structure \em if the size of the
+          ///       \c eager_protocol_t metadata structure is greater than
+          ///       \c T_Model::packet_model_metadata_bytes
+          ///
+          typedef struct
+          {
+            size_t             bytes;     ///< Number of bytes of application data being sent
+            uint16_t           metabytes; ///< Number of bytes of application metadata being sent
+            pami_endpoint_t    origin;    ///< Endpoint that originated the transfer
+          } eager_protocol_t;
 
 
           typedef struct send_state
           {
             pkt_t                   pkt[3];
-            protocol_metadata_t      metadata;  ///< Eager protocol envelope metadata
+            union
+            {
+              ack_protocol_t        ack_protocol;
+              short_protocol_t      short_protocol;
+              longheader_protocol_t longheader_protocol;
+              eager_protocol_t      eager_protocol;
+            };
             pami_event_function     local_fn;  ///< Application send injection completion callback
             pami_event_function     remote_fn; ///< Application remote receive acknowledgement callback
             void                  * cookie;    ///< Application callback cookie
-            struct iovec            v[2];      ///< Iovec array used for transfers
-            EagerSimpleProtocol   * eager;    ///< Eager protocol object
+            union
+            {
+              struct iovec          v[2];      ///< Iovec array used for transfers
+              struct iovec          v3[2];     ///< Iovec array used for transfers
+            };
+            EagerSimpleProtocol   * eager;     ///< Eager protocol object
           } send_state_t;
 
           typedef struct recv_state
           {
             pkt_t                   pkt;      ///< packet send state memory
             pami_recv_t             info;     ///< Application receive information.
+            pami_endpoint_t         origin;
+            size_t                  data_size;
+            size_t                  header_size;
+
             size_t                  received; ///< Number of bytes received.
             struct
             {
@@ -82,11 +138,20 @@ namespace PAMI
               size_t                bytes;
               size_t                offset;
             } longheader;
-            protocol_metadata_t      metadata; ///< Original eager protocol envelope metadata
             EagerSimpleProtocol   * eager;   ///< Eager protocol object
           } recv_state_t;
 
+          static const size_t maximum_short_packet_payload =
+            T_Model::packet_model_payload_bytes -
+            (sizeof(short_protocol_t) > T_Model::packet_model_metadata_bytes) * sizeof(short_protocol_t);
+
+          static const size_t maximum_eager_packet_payload =
+            T_Model::packet_model_payload_bytes -
+            (sizeof(eager_protocol_t) > T_Model::packet_model_metadata_bytes) * sizeof(eager_protocol_t);
+
         public:
+
+          static const size_t recv_immediate_max = MIN(maximum_short_packet_payload, maximum_eager_packet_payload);
 
           ///
           /// \brief Eager simple send protocol constructor.
@@ -105,11 +170,14 @@ namespace PAMI
                               T_Device             & device,
                               pami_endpoint_t        origin,
                               pami_context_t         context,
+                              pami_dispatch_hint_t   hint,
                               pami_result_t        & status) :
               _envelope_model (device),
-              _longheader_model (device),
+              _longheader_envelope_model (device),
+              _longheader_message_model (device),
               _data_model (device),
               _ack_model (device),
+              _short_model (device),
               _device (device),
               _origin (origin),
               _context (context),
@@ -145,49 +213,63 @@ namespace PAMI
             // The models must be registered in reverse order of use in case
             // the remote side is delayed in it's registrations and must save
             // unexpected packets until dispatch registration.
-            TRACE_ERR((stderr, "EagerSimple() register ack model dispatch %zu\n",dispatch));
+            TRACE_ERR((stderr, "EagerSimple() register ack model dispatch %zu\n", dispatch));
             status = _ack_model.init (dispatch,
                                       dispatch_ack_direct, this,
-                                      dispatch_ack_read, this);
+                                      dispatch_read<&EagerSimpleProtocol::dispatch_ack_direct>, this);
             TRACE_ERR((stderr, "EagerSimple() ack model status = %d\n", status));
+
             if (status == PAMI_SUCCESS)
               {
-                TRACE_ERR((stderr, "EagerSimple() register data model dispatch %zu\n",dispatch));
-                status = _data_model.init (dispatch,
-                                           dispatch_data_message, this,
-                                           dispatch_data_message, this);
-                TRACE_ERR((stderr, "EagerSimple() data model status = %d\n", status));
+                TRACE_ERR((stderr, "EagerSimple() register short model dispatch %zu\n", dispatch));
+                status = _short_model.init (dispatch,
+                                            dispatch_short_direct, this,
+                                            dispatch_read<&EagerSimpleProtocol::dispatch_short_direct>, this);
+                TRACE_ERR((stderr, "EagerSimple() short model status = %d\n", status));
+
                 if (status == PAMI_SUCCESS)
                   {
-                    TRACE_ERR((stderr, "EagerSimple() register envelope  model dispatch %zu\n",dispatch));
-                    status = _envelope_model.init (dispatch,
-                                                   dispatch_envelope_direct, this,
-                                                   dispatch_envelope_read, this);
-                    TRACE_ERR((stderr, "EagerSimple() envelope model status = %d\n", status));
+                    TRACE_ERR((stderr, "EagerSimple() register data model dispatch %zu\n", dispatch));
+                    status = _data_model.init (dispatch,
+                                               dispatch_data_message, this,
+                                               dispatch_read<&EagerSimpleProtocol::dispatch_data_message>, this);
+                    TRACE_ERR((stderr, "EagerSimple() data model status = %d\n", status));
 
-                    TRACE_ERR((stderr, "EagerSimple() 'long header' support enabled = %d\n", T_LongHeader));
-                    if (T_LongHeader == true)
+                    if (status == PAMI_SUCCESS)
                       {
-                        TRACE_ERR((stderr, "EagerSimple() register 'long header'  model dispatch %zu\n",dispatch));
-                        status = _longheader_model.init (dispatch,
-                                                         dispatch_longheader_message, this,
-                                                         dispatch_longheader_message, this);
-                        TRACE_ERR((stderr, "EagerSimple() 'long header' model status = %d\n", status));
+                        TRACE_ERR((stderr, "EagerSimple() register envelope model dispatch %zu, T_LongHeader = %d\n", dispatch, T_LongHeader));
+
+                        status = _envelope_model.init (dispatch,
+                                                       dispatch_eager_envelope, this,
+                                                       dispatch_read<&EagerSimpleProtocol::dispatch_eager_envelope>, this);
+                        TRACE_ERR((stderr, "EagerSimple() envelope model status = %d\n", status));
+
+                        if (status == PAMI_SUCCESS && T_LongHeader == true)
+                          {
+                            TRACE_ERR((stderr, "EagerSimple() register 'long header' envelope model dispatch %zu\n", dispatch));
+                            status = _longheader_envelope_model.init (dispatch,
+                                                                      dispatch_longheader_envelope, this,
+                                                                      dispatch_read<&EagerSimpleProtocol::dispatch_longheader_envelope>, this);
+                            TRACE_ERR((stderr, "EagerSimple() 'long header' envelope model status = %d\n", status));
+
+                            if (status == PAMI_SUCCESS)
+                              {
+
+                                TRACE_ERR((stderr, "EagerSimple() register 'long header' message model dispatch %zu\n", dispatch));
+                                status = _longheader_message_model.init (dispatch,
+                                                                         dispatch_longheader_message, this,
+                                                                         dispatch_read<&EagerSimpleProtocol::dispatch_longheader_message>, this);
+                                TRACE_ERR((stderr, "EagerSimple() 'long header' message model status = %d\n", status));
+                              }
+                          }
                       }
                   }
               }
           }
 
-          inline pami_result_t simple_impl (pami_send_t * parameters)
+          inline pami_result_t short_send (pami_send_t * parameters, pami_task_t task, size_t offset)
           {
-            TRACE_ERR((stderr, ">> EagerSimple::simple_impl() .. sizeof(protocol_metadata_t) = %zu, T_Model::packet_model_metadata_bytes = %zu\n", sizeof(protocol_metadata_t), T_Model::packet_model_metadata_bytes));
-
-            pami_task_t task;
-            size_t offset;
-            PAMI_ENDPOINT_INFO(parameters->send.dest,task,offset);
-
-            // Verify that this task is addressable by this packet device
-            if (unlikely(_device.isPeer (task) == false)) return PAMI_ERROR;
+            TRACE_ERR((stderr, ">> EagerSimple::short_send() .. sizeof(short_protocol_t) = %zu\n", sizeof(short_protocol_t)));
 
             // Allocate memory to maintain the state of the send.
             send_state_t * state = allocateSendState ();
@@ -198,289 +280,276 @@ namespace PAMI
 
             // Specify the protocol metadata to send with the application
             // metadata in the envelope packet.
-            state->metadata.bytes        = parameters->send.data.iov_len;
-            state->metadata.metabytes    = parameters->send.header.iov_len;
-            state->metadata.origin       = _origin;
+            state->short_protocol.bytes        = parameters->send.data.iov_len;
+            state->short_protocol.metabytes    = parameters->send.header.iov_len;
+            state->short_protocol.origin       = _origin;
 
-            // Set the acknowledgement information to the virtual address of
-            // send state object on the origin task if a local callback of the
-            // remote receive completion event is requested. If this is set to
-            // NULL no acknowledgement will be received by the origin task.
-            if (parameters->events.remote_fn != NULL)
+            TRACE_ERR((stderr, "   EagerSimple::short_send() .. 'short' protocol special case\n"));
+
+            // This branch should be resolved at compile time and optimized out.
+            if (sizeof(short_protocol_t) <= T_Model::packet_model_metadata_bytes)
               {
-                state->metadata.va_send = state;
-                state->remote_fn = parameters->events.remote_fn;
+                TRACE_ERR((stderr, "   EagerSimple::short_send() .. 'short' protocol special case, protocol metadata fits in the packet metadata\n"));
+
+                array_t<iovec, 2> * resized = (array_t<iovec, 2> *) & (parameters->send.header);
+
+                _short_model.postPacket (state->pkt[0],
+                                         send_complete, (void *) state,
+                                         task, offset,
+                                         (void *) &(state->short_protocol),
+                                         sizeof (short_protocol_t),
+                                         resized->array);
+                //reinterpret_cast<iovec_t[2]>());
+                //(iovec *) &(parameters->send.header),
+                //2);
               }
             else
               {
-                state->metadata.va_send = NULL;
-                state->remote_fn = NULL;
+                TRACE_ERR((stderr, "   EagerSimple::short_send() .. 'short' protocol special case, protocol metadata does not fit in the packet metadata\n"));
+
+                state->v3[0].iov_base = (void *) & (state->short_protocol);
+                state->v3[0].iov_len  = sizeof (short_protocol_t);
+                state->v3[1].iov_base = parameters->send.header.iov_base;
+                state->v3[1].iov_len  = parameters->send.header.iov_len;
+                state->v3[2].iov_base = parameters->send.data.iov_base;
+                state->v3[2].iov_len  = parameters->send.data.iov_len;
+
+                _short_model.postPacket (state->pkt[0],
+                                         send_complete, (void *) state,
+                                         task, offset,
+                                         NULL, 0,
+                                         // state->v3);
+                                         &state->v3, 3);
               }
 
+
+            if (unlikely(parameters->events.remote_fn != NULL))
+              {
+                send_ack_request (task, offset, parameters->events.remote_fn, parameters->events.cookie);
+              }
+
+
+            TRACE_ERR((stderr, "<< EagerSimple::short_send() .. 'short' protocol special case\n"));
+            return PAMI_SUCCESS;
+          }
+
+
+          pami_result_t longheader_send (pami_send_t * parameters, pami_task_t task, size_t offset) __attribute__((noinline))
+          {
+            TRACE_ERR((stderr, ">> EagerSimple::longheader_send() .. sizeof(longheader_protocol_t) = %zu\n", sizeof(longheader_protocol_t)));
+
+            // Allocate memory to maintain the state of the send.
+            send_state_t * state = allocateSendState ();
+
+            state->cookie   = parameters->events.cookie;
+            state->local_fn = parameters->events.local_fn;
+            state->eager    = this;
+
+            // Specify the protocol metadata to send with the application
+            // metadata in the envelope packet.
+            state->longheader_protocol.bytes        = parameters->send.data.iov_len;
+            state->longheader_protocol.metabytes    = parameters->send.header.iov_len;
+            state->longheader_protocol.origin       = _origin;
+#if 0
+
+            //
+            // Send only the protocol metadata in the envelope packet
+            //
+            // This branch should be resolved at compile time and optimized out.
+            if (sizeof(longheader_protocol_t) <= T_Model::packet_model_metadata_bytes)
+              {
+                TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. long header special case, protocol metadata fits in the packet metadata\n"));
+                _envelope_model.postPacket (state->pkt[0],
+                                            NULL, NULL,
+                                            task, offset,
+                                            (void *) longheader_protocol,
+                                            sizeof (longheader_protocol_t),
+                                            (void *) NULL, 0);
+              }
+            else
+#endif
+              {
+                TRACE_ERR((stderr, "   EagerSimple::longheader_send() .. long header special case, protocol metadata does not fit in the packet metadata\n"));
+                _longheader_envelope_model.postPacket (state->pkt[0],
+                                                       NULL, NULL,
+                                                       task, offset,
+                                                       (void *) NULL, 0,
+                                                       (void *) &(state->longheader_protocol),
+                                                       sizeof (longheader_protocol_t));
+              }
+
+            //
+            // Send the multi-packet header. Check for the unlikely case of
+            // a multi-packet application header and zero bytes of
+            // application data.
+            //
             if (unlikely(parameters->send.data.iov_len == 0))
               {
-                // In the unlikely event that this eager (i.e., multi-packet)
-                // protocol is being used to send zero bytes of application
-                // data, the envelope message completion must clean up the
-                // protocol resources and invoke the application local done
-                // callback function, as there will be no data message.
-                TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. zero-byte data special case\n"));
-
-                // This branch should be resolved at compile time and optimized out.
-                if (sizeof(protocol_metadata_t) <= T_Model::packet_model_metadata_bytes)
-                  {
-                    TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata fits in the packet metadata\n"));
-
-#ifdef ERROR_CHECKS
-                    if (T_LongHeader==false && unlikely(parameters->send.header.iov_len > T_Model::packet_model_payload_bytes))
-                    {
-                      // "'long header' support is disabled.\n"
-                      return PAMI_INVAL;
-                    }
-#endif
-
-                    // Short circuit evaluation of the constant expression will
-                    // allow the compiler to optimize out this branch when long
-                    // header support is disabled.
-                    //
-                    // When long header support is enabled the compiler should
-                    // respect the 'unlikely if' conditional.
-                    if (T_LongHeader == true && unlikely(parameters->send.header.iov_len > T_Model::packet_model_payload_bytes))
-                      {
-                        TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata fits in the packet metadata, application metadata does not fit in a single packet payload\n"));
-
-                        // "long header" with zero bytes of application data ? Weird.
-                        _envelope_model.postPacket (state->pkt[0],
-                                                    NULL,
-                                                    NULL,
-                                                    task,
-                                                    offset,
-                                                    (void *) &(state->metadata),
-                                                    sizeof (protocol_metadata_t),
-                                                    (void *) NULL, 0);
-
-                        _longheader_model.postMultiPacket (state->pkt[1],
+                TRACE_ERR((stderr, "   EagerSimple::longheader_send() .. long header special case, zero-byte application data\n"));
+                _longheader_message_model.postMultiPacket (state->pkt[1],
                                                            send_complete,
                                                            (void *) state,
                                                            task,
                                                            offset,
-                                                           (void *) &(state->metadata.origin),
+                                                           (void *) &(state->longheader_protocol.origin),
                                                            sizeof (pami_endpoint_t),
                                                            parameters->send.header.iov_base,
                                                            parameters->send.header.iov_len);
-                      }
-                    else
-                      {
-                        TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata fits in the packet metadata, application metadata does fit in a single packet payload\n"));
-
-                        // Single packet header with zero bytes of application data.
-                        _envelope_model.postPacket (state->pkt[0],
-                                                    send_complete,
-                                                    (void *) state,
-                                                    task,
-                                                    offset,
-                                                    (void *) &(state->metadata),
-                                                    sizeof (protocol_metadata_t),
-                                                    parameters->send.header.iov_base,
-                                                    parameters->send.header.iov_len);
-                      }
-                  }
-                else
-                  {
-                    TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata does not fit in the packet metadata\n"));
-                    //PAMI_assertf((parameters->send.header.bytes + sizeof(protocol_metadata_t)) <= T_Model::packet_model_payload_bytes, "Unable to fit protocol metadata (%zu) and application metadata (%zu) within the payload of a single packet (%zu)\n", sizeof(protocol_metadata_t), parameters->send.header.bytes, T_Model::packet_model_payload_bytes);
-
-#ifdef ERROR_CHECKS
-                    if (T_LongHeader==false && unlikely(parameters->send.header.iov_len > (T_Model::packet_model_payload_bytes - sizeof(protocol_metadata_t))))
-                    {
-                      // "'long header' support is disabled.\n"
-                      TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. error .. 'long header' support is disabled.\n"));
-                      return PAMI_INVAL;
-                    }
-#endif
-
-                    // Short circuit evaluation of the constant expression will
-                    // allow the compiler to optimize out this branch when long
-                    // header support is disabled.
-                    //
-                    // When long header support is enabled the compiler should
-                    // respect the 'unlikely if' conditional.
-                    if (T_LongHeader == true && unlikely(parameters->send.header.iov_len > (T_Model::packet_model_payload_bytes - sizeof(protocol_metadata_t))))
-                      {
-                        TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata does not fit in the packet metadata, protocol + application metadata does not fit in a single packet payload\n"));
-
-                        // "long header" with zero bytes of application data ? Weird.
-                        _envelope_model.postPacket (state->pkt[0],
-                                                    NULL,
-                                                    NULL,
-                                                    task,
-                                                    offset,
-                                                    NULL, 0,
-                                                    (void *) &(state->metadata),
-                                                    sizeof (protocol_metadata_t));
-
-                        _longheader_model.postMultiPacket (state->pkt[1],
-                                                           send_complete,
-                                                           (void *) state,
-                                                           task,
-                                                           offset,
-                                                           (void *) &(state->metadata.origin),
-                                                           sizeof (pami_endpoint_t),
-                                                           parameters->send.header.iov_base,
-                                                           parameters->send.header.iov_len);
-                      }
-                    else
-                      {
-                        TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. zero-byte data special case, protocol metadata does not fit in the packet metadata, protocol + application metadata does fit in a single packet payload\n"));
-
-                        // Single packet header with zero bytes of application data.
-                        state->v[0].iov_base = (void *) &(state->metadata);
-                        state->v[0].iov_len  = sizeof (protocol_metadata_t);
-                        state->v[1].iov_base = parameters->send.header.iov_base;
-                        state->v[1].iov_len  = parameters->send.header.iov_len;
-                        _envelope_model.postPacket (state->pkt[0],
-                                                    send_complete,
-                                                    (void *) state,
-                                                    task,
-                                                    offset,
-                                                    NULL, 0,
-                                                    state->v);
-                      }
-                  }
               }
             else
               {
-                TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. parameters->send.header.iov_len = %zu, parameters->send.data.iov_len = %zu\n", parameters->send.header.iov_len, parameters->send.data.iov_len));
 
-                // This branch should be resolved at compile time and optimized out.
-                if (sizeof(protocol_metadata_t) <= T_Model::packet_model_metadata_bytes)
-                  {
-                    TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. protocol metadata (%zu bytes) sent in the packet metadata (%zu bytes available).\n", sizeof(protocol_metadata_t), T_Model::packet_model_metadata_bytes));
-#ifdef ERROR_CHECKS
-                    if (T_LongHeader==false && unlikely(parameters->send.header.iov_len > T_Model::packet_model_payload_bytes))
-                    {
-                      // "'long header' support is disabled.\n"
-                      TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. ERROR. 'long header' support is disabled.\n"));
-                      return PAMI_INVAL;
-                    }
-#endif
-
-                    // Short circuit evaluation of the constant expression will
-                    // allow the compiler to optimize out this branch when long
-                    // header support is disabled.
-                    //
-                    // When long header support is enabled the compiler should
-                    // respect the 'unlikely if' conditional.
-                    if (T_LongHeader == true && unlikely(parameters->send.header.iov_len > T_Model::packet_model_payload_bytes))
-                      {
-                        // Application metadata does not fit in a single packet.
-                        // Send a "long header" message.
-                        TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. application metadata (%zu bytes) is too large for a single packet (%zu bytes of payload). Send a 'long header'.\n", parameters->send.header.iov_len, T_Model::packet_model_payload_bytes));
-
-                        _envelope_model.postPacket (state->pkt[0],
-                                                    NULL,
-                                                    NULL,
-                                                    task,
-                                                    offset,
-                                                    (void *) &(state->metadata),
-                                                    sizeof (protocol_metadata_t),
-                                                    (void *) NULL, 0);
-
-                        _longheader_model.postMultiPacket (state->pkt[1],
-                                                           NULL,
-                                                           NULL,
-                                                           task,
-                                                           offset,
-                                                           (void *) &(state->metadata.origin),
+                TRACE_ERR((stderr, "   EagerSimple::longheader_send() .. long header special case, non-zero application data\n"));
+                _longheader_message_model.postMultiPacket (state->pkt[1],
+                                                           NULL, NULL,
+                                                           task, offset,
+                                                           (void *) &(state->longheader_protocol.origin),
                                                            sizeof (pami_endpoint_t),
                                                            parameters->send.header.iov_base,
                                                            parameters->send.header.iov_len);
-                      }
-                    else
-                      {
-                        TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. application metadata (%zu bytes) sent in a single packet (%zu bytes of payload).\n", parameters->send.header.iov_len, T_Model::packet_model_payload_bytes));
-                        _envelope_model.postPacket (state->pkt[0],
-                                                    NULL,
-                                                    NULL,
-                                                    task,
-                                                    offset,
-                                                    (void *) &(state->metadata),
-                                                    sizeof (protocol_metadata_t),
-                                                    parameters->send.header.iov_base,
-                                                    parameters->send.header.iov_len);
-                      }
-                  }
-                else
-                  {
-                    TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. protocol metadata (%zu bytes) is too large for the packet metadata (%zu bytes available). Protocol metadata will be sent in the packet payload.\n", sizeof(protocol_metadata_t), T_Model::packet_model_metadata_bytes));
-#ifdef ERROR_CHECKS
-                    if (T_LongHeader==false && unlikely(parameters->send.header.iov_len > (T_Model::packet_model_payload_bytes - sizeof(protocol_metadata_t))))
-                    {
-                      // "'long header' support is disabled.\n"
-                      TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. ERROR. 'long header' support is disabled.\n"));
-                      return PAMI_INVAL;
-                    }
-#endif
-
-                    // Short circuit evaluation of the constant expression will
-                    // allow the compiler to optimize out this branch when long
-                    // header support is disabled.
-                    //
-                    // When long header support is enabled the compiler should
-                    // respect the 'unlikely if' conditional.
-                    if (T_LongHeader == true && unlikely(parameters->send.header.iov_len > (T_Model::packet_model_payload_bytes - sizeof(protocol_metadata_t))))
-                      {
-                        // Protocol metadata + application metadata does not fit in
-                        // a single packet. Send a "long header" message.
-                        TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. protocol metadata (%zu bytes) + application metadata (%zu bytes) is too large for a single packet (%zu bytes of payload). Send a 'long header'.\n", sizeof(protocol_metadata_t), parameters->send.header.iov_len, T_Model::packet_model_payload_bytes));
-
-                        _envelope_model.postPacket (state->pkt[0],
-                                                    NULL,
-                                                    NULL,
-                                                    task,
-                                                    offset,
-                                                    NULL,
-                                                    0,
-                                                    (void *) &(state->metadata),
-                                                    sizeof (protocol_metadata_t));
-
-                        _longheader_model.postMultiPacket (state->pkt[1],
-                                                           NULL,
-                                                           NULL,
-                                                           task,
-                                                           offset,
-                                                           (void *) &(state->metadata.origin),
-                                                           sizeof (pami_endpoint_t),
-                                                           parameters->send.header.iov_base,
-                                                           parameters->send.header.iov_len);
-                      }
-                    else
-                      {
-                        TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. protocol metadata (%zu bytes) + application metadata (%zu bytes) sent in a single packet (%zu bytes of payload).\n", sizeof(protocol_metadata_t), parameters->send.header.iov_len, T_Model::packet_model_payload_bytes));
-
-                        state->v[0].iov_base = (void *) &(state->metadata);
-                        state->v[0].iov_len  = sizeof (protocol_metadata_t);
-                        state->v[1].iov_base = parameters->send.header.iov_base;
-                        state->v[1].iov_len  = parameters->send.header.iov_len;
-
-                        _envelope_model.postPacket (state->pkt[0],
-                                                    NULL, NULL,
-                                                    task, offset,
-                                                    NULL, 0,
-                                                    state->v);
-                      }
-                  }
-
-                TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. send the application data.\n"));
+                TRACE_ERR((stderr, "   EagerSimple::longheader_send() .. send the application data.\n"));
                 _data_model.postMultiPacket (state->pkt[2],
                                              send_complete,
                                              (void *) state,
                                              task,
                                              offset,
-                                             (void *) &(state->metadata.origin),
+                                             (void *) &(state->longheader_protocol.origin),
                                              sizeof (pami_endpoint_t),
                                              parameters->send.data.iov_base,
                                              parameters->send.data.iov_len);
+              }
+
+            if (unlikely(parameters->events.remote_fn != NULL))
+              {
+                send_ack_request (task, offset, parameters->events.remote_fn, parameters->events.cookie);
+              }
+
+            TRACE_ERR((stderr, "<< EagerSimple::longheader_send()\n"));
+            return PAMI_SUCCESS;
+          }
+
+
+
+          inline pami_result_t simple_impl (pami_send_t * parameters)
+          {
+            TRACE_ERR((stderr, ">> EagerSimple::simple_impl() .. T_Model::packet_model_metadata_bytes = %zu\n", T_Model::packet_model_metadata_bytes));
+
+            pami_task_t task;
+            size_t offset;
+            PAMI_ENDPOINT_INFO(parameters->send.dest, task, offset);
+
+            // Verify that this task is addressable by this packet device
+            if (unlikely(_device.isPeer (task) == false)) return PAMI_ERROR;
+
+
+            // ----------------------------------------------------------------
+            // Check for a "short" send protocol
+            // ----------------------------------------------------------------
+#ifdef ERROR_CHECKS
+
+            if (T_RecvImmediate == true &&
+                (parameters->send.data.iov_len + parameters->send.header.iov_len) > maximum_short_packet_payload)
+              {
+                // 'receive immediate' is forced ON, yet the application
+                // header+data size will not fit in a single packet.
+                TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. Application error: 'recv immediate' forced on.\n"));
+                return PAMI_INVAL;
+              }
+
+#endif
+
+            if (T_RecvImmediate == true ||
+                (parameters->send.data.iov_len + parameters->send.header.iov_len) <= maximum_short_packet_payload)
+              {
+                return short_send (parameters, task, offset);
+              }
+
+
+            // ----------------------------------------------------------------
+            // Check for a "long header" send protocol
+            // ----------------------------------------------------------------
+#ifdef ERROR_CHECKS
+
+            if (T_LongHeader == false && parameters->send.header.iov_len > maximum_eager_packet_payload)
+              {
+                // 'long header' support is disabled."
+                TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. Application error: 'long header' support is disabled.\n"));
+                return PAMI_INVAL;
+              }
+
+#endif
+
+            if (T_LongHeader == true &&
+                parameters->send.header.iov_len > maximum_eager_packet_payload)
+              {
+                return longheader_send (parameters, task, offset);
+              }
+
+
+            // ----------------------------------------------------------------
+            // Send a single-packet envelope eager message
+            // ----------------------------------------------------------------
+
+            // Allocate memory to maintain the state of the send.
+            send_state_t * state = allocateSendState ();
+
+            state->cookie   = parameters->events.cookie;
+            state->local_fn = parameters->events.local_fn;
+            state->eager    = this;
+
+            // Specify the protocol metadata to send with the application
+            // metadata in the envelope packet.
+            state->eager_protocol.bytes        = parameters->send.data.iov_len;
+            state->eager_protocol.metabytes    = parameters->send.header.iov_len;
+            state->eager_protocol.origin       = _origin;
+
+            TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. parameters->send.header.iov_len = %zu, parameters->send.data.iov_len = %zu\n", parameters->send.header.iov_len, parameters->send.data.iov_len));
+
+            //
+            // Send the protocol metadata and the application metadata in the envelope packet
+            //
+            // This branch should be resolved at compile time and optimized out.
+            if (sizeof(eager_protocol_t) <= T_Model::packet_model_metadata_bytes)
+              {
+                TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. protocol metadata fits in the packet metadata\n"));
+                _envelope_model.postPacket (state->pkt[0],
+                                            NULL, NULL,
+                                            task, offset,
+                                            (void *) &(state->eager_protocol),
+                                            sizeof (eager_protocol_t),
+                                            parameters->send.header.iov_base,
+                                            parameters->send.header.iov_len);
+              }
+            else
+              {
+                TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. protocol metadata does not fit in the packet metadata\n"));
+
+                state->v[0].iov_base = (void *) & (state->eager_protocol);
+                state->v[0].iov_len  = sizeof (eager_protocol_t);
+                state->v[1].iov_base = parameters->send.header.iov_base;
+                state->v[1].iov_len  = parameters->send.header.iov_len;
+
+                _envelope_model.postPacket (state->pkt[0],
+                                            NULL, NULL,
+                                            task, offset,
+                                            NULL, 0,
+                                            state->v);
+              }
+
+            TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. send the application data.\n"));
+            _data_model.postMultiPacket (state->pkt[2],
+                                         send_complete,
+                                         (void *) state,
+                                         task,
+                                         offset,
+                                         (void *) &(state->eager_protocol.origin),
+                                         sizeof (pami_endpoint_t),
+                                         parameters->send.data.iov_base,
+                                         parameters->send.data.iov_len);
+
+            if (unlikely(parameters->events.remote_fn != NULL))
+              {
+                send_ack_request (task, offset, parameters->events.remote_fn, parameters->events.cookie);
               }
 
             TRACE_ERR((stderr, "<< EagerSimple::simple_impl()\n"));
@@ -493,9 +562,11 @@ namespace PAMI
           MemoryAllocator < sizeof(recv_state_t), 16 > _recv_allocator;
 
           T_Model          _envelope_model;
-          T_Model          _longheader_model;
+          T_Model          _longheader_envelope_model;
+          T_Model          _longheader_message_model;
           T_Model          _data_model;
           T_Model          _ack_model;
+          T_Model          _short_model;
           T_Device       & _device;
           pami_endpoint_t  _origin;
           pami_context_t   _context;
@@ -525,23 +596,26 @@ namespace PAMI
             _recv_allocator.returnObject ((void *) object);
           }
 
-          inline void process_envelope (protocol_metadata_t * metadata,
-                                        uint8_t            * header,
+          inline void process_envelope (uint8_t            * header,
+                                        size_t               header_bytes,
+                                        size_t               data_bytes,
+                                        pami_endpoint_t      origin,
                                         recv_state_t       * state)
           {
-            TRACE_ERR((stderr, ">> EagerSimple::process_envelope() .. origin = 0x%08x, header = %p, header bytes = %zu\n", metadata->origin, header, metadata->metabytes));
+            TRACE_ERR((stderr, ">> EagerSimple::process_envelope() .. origin = 0x%08x, header = %p, header bytes = %zu\n", origin, header, header_bytes));
 
             // Invoke the registered dispatch function.
             _dispatch_fn (_context,            // Communication context
-                              _cookie,             // Dispatch cookie
-                              header,              // Application metadata
-                              metadata->metabytes, // Application metadata bytes
-                              NULL,                // No payload data
-                              metadata->bytes,     // Number of msg bytes
-                              metadata->origin,    // Origin endpoint for the transfer
-                              (pami_recv_t *) &(state->info));
+                          _cookie,             // Dispatch cookie
+                          header,              // Application metadata
+                          header_bytes,        // Application metadata bytes
+                          NULL,                // No payload data
+                          data_bytes,          // Number of msg bytes
+                          origin,              // Origin endpoint for the transfer
+                          (pami_recv_t *) &(state->info));
 
-            TRACE_ERR((stderr, "   EagerSimple::process_envelope() .. metadata->bytes = %zu, state->info.type = %p\n", metadata->bytes, state->info.type));
+            TRACE_ERR((stderr, "   EagerSimple::process_envelope() .. data bytes = %zu, state->info.type = %p\n", data_bytes, state->info.type));
+#if 0
 
             if (unlikely(metadata->bytes == 0))
               {
@@ -557,7 +631,7 @@ namespace PAMI
                 TRACE_ERR((stderr, "   EagerSimple::process_envelope() .. state->metadata.va_send = %p\n", state->metadata.va_send));
                 pami_task_t task;
                 size_t offset;
-                PAMI_ENDPOINT_INFO(metadata->origin,task,offset);
+                PAMI_ENDPOINT_INFO(metadata->origin, task, offset);
 
                 if (unlikely(state->metadata.va_send != NULL))
                   {
@@ -575,15 +649,64 @@ namespace PAMI
                     _connection.clear (metadata->origin);
                     freeRecvState (state);
                   }
-	      }
-	    else
-	      {
+              }
+            else
+#endif
+              {
                 // Only contiguous receives are implemented
                 PAMI_assertf(state->info.type == PAMI_TYPE_CONTIGUOUS, "[%5d:%s] %s() - Only contiguous receives are implemented.\n", __LINE__, __FILE__, __FUNCTION__);
               }
 
             TRACE_ERR((stderr, "<< EagerSimple::process_envelope()\n"));
             return;
+          }
+
+          // ##################################################################
+          // 'acknowledgment' code which provides the 'remote callback'
+          // functionality without impacting the normal, performance-critical
+          // code path.
+          // ##################################################################
+
+          inline void send_ack_request (pami_task_t task, size_t offset, pami_event_function fn, void * cookie)
+          {
+            ack_protocol_t ack_protocol;
+            ack_protocol.remote_fn = fn;
+            ack_protocol.cookie = cookie;
+            ack_protocol.context = _context;
+            ack_protocol.invoke = false;
+
+            struct iovec iov[1] = {{&ack_protocol, sizeof(ack_protocol_t)}};
+            bool result =
+              _ack_model.postPacket (task, offset, &_origin, sizeof(pami_endpoint_t), iov);
+
+            if (result != true)
+              {
+                // Allocate memory to maintain the state of the send.
+                send_state_t * state = allocateSendState ();
+
+                state->eager = this;
+                state->ack_protocol = ack_protocol;
+
+                _ack_model.postPacket (state->pkt[0],
+                                       ack_done, (void *) state,
+                                       task, offset,
+                                       &_origin, sizeof(pami_endpoint_t),
+                                       (void *) &(state->ack_protocol),
+                                       sizeof(ack_protocol_t));
+              }
+          }
+
+          static void ack_done (pami_context_t   context,
+                                void           * cookie,
+                                pami_result_t    result)
+          {
+            TRACE_ERR((stderr, "EagerSimple::ack_done() >> \n"));
+
+            send_state_t * state = (send_state_t *) cookie;
+            EagerSimpleProtocol * eager = (EagerSimpleProtocol *) state->eager;
+            eager->freeSendState (state);
+
+            TRACE_ERR((stderr, "EagerSimple::ack_done() << \n"));
           }
 
           static int dispatch_ack_direct (void   * metadata,
@@ -593,46 +716,143 @@ namespace PAMI
                                           void   * cookie)
           {
             TRACE_ERR((stderr, ">> EagerSimple::dispatch_ack_direct()\n"));
-            send_state_t * state = *((send_state_t **) payload);
+            ack_protocol_t * ack = (ack_protocol_t *) payload;
 
-            pami_event_function   remote_fn = state->remote_fn;
-            void               * fn_cookie = state->cookie;
-            TRACE_ERR((stderr, "   EagerSimple::dispatch_ack_direct() .. state = %p, remote_fn = %p\n", state, remote_fn));
+            if (ack->invoke)
+              {
+                // This is a 'pong' ack message .. invoke the callback function
+                // and return.
+                ack->remote_fn (ack->context, ack->cookie, PAMI_SUCCESS);
+                return 0;
+              }
 
             EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
 
-            eager->freeSendState (state);
+            pami_task_t task;
+            size_t offset;
+            PAMI_ENDPOINT_INFO(*((pami_endpoint_t*)metadata), task, offset);
 
-            if (remote_fn) remote_fn (eager->_context, fn_cookie, PAMI_SUCCESS);
+            // Attempt an 'immediate' packet post. If this fails, then a send
+            // state must be allocated for this 'pong' ack message.
+            ack->invoke = true;
+            struct iovec iov[1] = {{payload, sizeof(ack_protocol_t)}};
+            bool result = eager->_ack_model.postPacket(task, offset, NULL, 0, iov);
+
+            if (result != true)
+              {
+                // Allocate memory to maintain the state of the send.
+                send_state_t * state = eager->allocateSendState ();
+
+                state->eager = eager;
+                state->ack_protocol.remote_fn = ack->remote_fn;
+                state->ack_protocol.cookie  = ack->cookie;
+                state->ack_protocol.context = ack->context;
+                state->ack_protocol.invoke  = true;
+
+                eager->_ack_model.postPacket (state->pkt[0],
+                                              ack_done, (void *) state,
+                                              task, offset,
+                                              NULL, 0,
+                                              payload,
+                                              sizeof(ack_protocol_t));
+              }
 
             TRACE_ERR((stderr, "<< EagerSimple::dispatch_ack_direct()\n"));
             return 0;
           }
 
-          static int dispatch_ack_read (void   * metadata,
-                                        void   * payload,
-                                        size_t   bytes,
-                                        void   * recv_func_parm,
-                                        void   * cookie)
+          // ##################################################################
+          // end 'acknowledgement' code section
+          // ##################################################################
+
+
+          ///
+          /// \brief Direct single-packet 'short' send packet dispatch.
+          ///
+          /// The eager simple send protocol will register this dispatch
+          /// function if and only if the device \b does provide direct access
+          /// to data which has already been read from the network by the
+          /// device.
+          ///
+          /// The short dispatch function is invoked by the message device
+          /// to process a single-packet message. The eager simple send protocol
+          /// transfers protocol metadata, application metadata, and application
+          /// data in a single packet.
+          ///
+          /// \see PAMI::Device::Interface::RecvFunction_t
+          ///
+          static int dispatch_short_direct (void   * metadata,
+                                            void   * payload,
+                                            size_t   bytes,
+                                            void   * recv_func_parm,
+                                            void   * cookie)
           {
-            TRACE_ERR((stderr, ">> EagerSimple::dispatch_ack_read()\n"));
+            short_protocol_t * short_protocol;
+            void * header;
 
-            EagerSimpleProtocol * pf = (EagerSimpleProtocol *) recv_func_parm;
+            // This branch should be resolved at compile time and optimized out.
+            if (sizeof(short_protocol_t) > T_Model::packet_model_metadata_bytes)
+              {
+                short_protocol = (short_protocol_t *) payload;
+                header = (void *) (short_protocol + 1);
+              }
+            else
+              {
+                short_protocol = (short_protocol_t *) metadata;
+                header = payload;
+              }
 
-            // This packet device DOES NOT provide the data buffer(s) for the
-            // message and the data must be read on to the stack before the
-            // recv callback is invoked.
-            PAMI_assert_debugf(payload == NULL, "The 'read only' packet device did not invoke dispatch with payload == NULL (%p)\n", payload);
+            void * data = (void *) (((uint8_t *) header) + short_protocol->metabytes);
 
-            uint8_t stackData[T_Model::packet_model_payload_bytes];
-            void * p = (void *) & stackData[0];
-            pf->_device.read (p, bytes, cookie);
+            TRACE_ERR ((stderr, ">> EagerSimple::dispatch_short_direct(), origin = 0x%08x, bytes = %d\n", short_protocol->origin, short_protocol->bytes));
 
-            dispatch_ack_direct (metadata, p, bytes, recv_func_parm, cookie);
+            EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
 
-            TRACE_ERR((stderr, "<< EagerSimple::dispatch_ack_read()\n"));
+            // Invoke the registered dispatch function.
+            eager->_dispatch_fn (eager->_context,           // Communication context
+                                 eager->_cookie,            // Dispatch cookie
+                                 header,                    // Application metadata
+                                 short_protocol->metabytes, // Application metadata bytes
+                                 data,                      // Application data
+                                 short_protocol->bytes,     // Application data bytes
+                                 short_protocol->origin,    // Origin endpoint for the transfer
+                                 (pami_recv_t *) NULL);
+#if 0
+            // If an acknowledgement packet was requested, allocate a recv state
+            // and send the acknowledgement. The recv state will be free'd in
+            // the short_receive_complete callback.
+            //
+            // NOTE: The allocated recv state is never set in the connection,
+            //       and therefore does not need to be cleared in the completion
+            //       callback
+            //
+            TRACE_ERR((stderr, "   EagerSimple::dispatch_short_direct() .. protocol_metadata->va_send = %p\n", protocol_metadata->va_send));
+
+            if (unlikely(protocol_metadata->va_send != NULL))
+              {
+                pami_task_t task;
+                size_t offset;
+                PAMI_ENDPOINT_INFO(protocol_metadata->origin, task, offset);
+
+                // Allocate a recv state object!
+                recv_state_t * state = eager->allocateRecvState ();
+                state->eager = eager;
+
+                eager->_ack_model.postPacket (state->pkt,
+                                              short_receive_complete,
+                                              (void *) state,
+                                              task,
+                                              offset,
+                                              NULL, 0,
+                                              (void *) &(protocol_metadata->va_send),
+                                              sizeof (send_state_t *));
+              }
+
+#endif
+            TRACE_ERR ((stderr, "<< EagerSimple::dispatch_short_direct()\n"));
             return 0;
-          }
+          };
+
 
           ///
           /// \brief Direct multi-packet send envelope packet dispatch.
@@ -651,121 +871,122 @@ namespace PAMI
           ///
           /// \see PAMI::Device::Interface::RecvFunction_t
           ///
-          static int dispatch_envelope_direct (void   * metadata,
-                                               void   * payload,
-                                               size_t   bytes,
-                                               void   * recv_func_parm,
-                                               void   * cookie)
+          static int dispatch_longheader_envelope (void   * metadata,
+                                                   void   * payload,
+                                                   size_t   bytes,
+                                                   void   * recv_func_parm,
+                                                   void   * cookie)
           {
-            protocol_metadata_t * m;
+            longheader_protocol_t * m = (longheader_protocol_t *) payload;
+#if 0
             void * p;
 
             // This branch should be resolved at compile time and optimized out.
-            if (sizeof(protocol_metadata_t) > T_Model::packet_model_metadata_bytes)
+            if (sizeof(eager_protocol_t) > T_Model::packet_model_metadata_bytes)
               {
-                m = (protocol_metadata_t *) payload;
+                m = (eager_protocol_t *) payload;
                 p = (void *) (m + 1);
               }
             else
               {
-                m = (protocol_metadata_t *) metadata;
+                m = (eager_protocol_t *) metadata;
                 p = payload;
               }
 
-            TRACE_ERR ((stderr, ">> EagerSimple::dispatch_envelope_direct(), origin = 0x%08x, m->bytes = %zu, m->va_send = %p\n", m->origin, m->bytes, m->va_send));
+#endif
+            TRACE_ERR ((stderr, ">> EagerSimple::dispatch_longheader_envelope(), origin = 0x%08x, m->bytes = %zu\n", m->origin, m->bytes));
 
             EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
 
             // Allocate a recv state object!
             recv_state_t * state = eager->allocateRecvState ();
-            state->eager              = eager;
-            state->received           = 0;
-            state->metadata.va_send   = m->va_send;
-            state->metadata.bytes     = m->bytes;
-            state->metadata.metabytes = m->metabytes;
-            state->metadata.origin    = m->origin;
+            state->eager         = eager;
+            state->received      = 0;
+            state->data_size     = m->bytes;
+            state->header_size   = m->metabytes;
+            state->origin        = m->origin;
+            state->longheader.offset = 0;
 
             // Set the eager connection.
             eager->_connection.set (m->origin, (void *)state);
+#if 0
+            const size_t maximum_eager_packet_payload =
+              T_Model::packet_model_payload_bytes -
+              (sizeof(eager_protocol_t) > T_Model::packet_model_metadata_bytes) *
+              sizeof(eager_protocol_t);
 
-            // The compiler will optimize out this constant expression
-            // conditional and include this code block only when the long
-            // header support is enabled.
-            if (T_LongHeader == true)
+            // Check for long header
+            if (T_LongHeader == true &&
+                state->header_size > maximum_eager_packet_payload)
               {
-                // Check for long header
-                size_t header_bytes = m->metabytes;
-
-                size_t pbytes = (sizeof(protocol_metadata_t) > T_Model::packet_model_metadata_bytes) ? sizeof(protocol_metadata_t) : 0;
-
-                TRACE_ERR ((stderr, "   EagerSimple::dispatch_envelope_direct() .. header_bytes = %zu, T_Model::packet_model_payload_bytes = %zu, pbytes = %zu\n", header_bytes, T_Model::packet_model_payload_bytes, pbytes));
-
-                if (unlikely((header_bytes) > (T_Model::packet_model_payload_bytes - pbytes)))
-                  {
-		    pami_result_t prc;
-		    prc = __global.heap_mm->memalign((void **)&state->longheader.addr, 0,
-								header_bytes);
-		    PAMI_assertf(prc == PAMI_SUCCESS, "alloc of state->longheader.addr failed");
-                    state->longheader.bytes  = header_bytes;
-                    state->longheader.offset = 0;
-                    TRACE_ERR ((stderr, "<< EagerSimple::dispatch_envelope_direct() .. long header\n"));
-                    return 0;
-                  }
+#endif
+                pami_result_t prc;
+                prc = __global.heap_mm->memalign((void **) & state->longheader.addr, 0,
+                                                 state->header_size);
+                PAMI_assertf(prc == PAMI_SUCCESS, "alloc of state->longheader.addr failed");
+                //state->longheader.offset = 0;
+                TRACE_ERR ((stderr, "<< EagerSimple::dispatch_longheader_envelope() .. long header\n"));
+                return 0;
+#if 0
               }
 
-            // This is a short header envelope .. all application metadata
+            // This is a single-packet envelope .. all application metadata
             // has been received.
-            eager->process_envelope (m, (uint8_t *)p, state);
+            eager->process_envelope ((uint8_t *)p, state->header_size, state->data_size, state->origin, state);
 
             TRACE_ERR ((stderr, "<< EagerSimple::dispatch_envelope_direct()\n"));
+#endif
             return 0;
           };
 
           ///
-          /// \brief Read-access multi-packet send envelope packet callback.
+          /// \note The zero-byte application data case is handled by the
+          ///       'short' protocol, if the application header will fit in a
+          ///       single packet, or by the 'long header' protocol.
           ///
-          /// Reads incoming bytes from the device to a temporary buffer and
-          /// invokes the registered receive callback.
+          /// \see dispatch_envelope_direct
           ///
-          /// The eager packet factory will register this dispatch function
-          /// if and only if the device \b does \b not provide access to
-          /// data which has already been read from the network by the device.
-          ///
-          /// The dispatch function must read the data onto the stack and
-          /// then provide 16-byte (CMQuad) aligned data pointer(s) to the
-          /// registered user callback.
-          ///
-          /// The envelope dispatch function is invoked by the packet device
-          /// to process the first packet of a multi-packet message. The CDI
-          /// eager protocol sends two iovec elements in the first packet for
-          /// the number of data bytes to follow and the msginfo metadata.
-          ///
-          /// \note The iov_base fields in the iovec structure will be \c NULL
-          ///
-          /// \see dispatch_data_read
-          ///
-          static int dispatch_envelope_read (void   * metadata,
-                                             void   * payload,
-                                             size_t   bytes,
-                                             void   * recv_func_parm,
-                                             void   * cookie)
+          static int dispatch_eager_envelope (void   * metadata,
+                                              void   * payload,
+                                              size_t   bytes,
+                                              void   * recv_func_parm,
+                                              void   * cookie)
           {
-            TRACE_ERR((stderr, ">> EagerSimple::dispatch_envelope_read()\n"));
+            eager_protocol_t * m;
+            void * p;
 
-            EagerSimpleProtocol * pf = (EagerSimpleProtocol *) recv_func_parm;
+            // This branch should be resolved at compile time and optimized out.
+            if (sizeof(eager_protocol_t) > T_Model::packet_model_metadata_bytes)
+              {
+                m = (eager_protocol_t *) payload;
+                p = (void *) (m + 1);
+              }
+            else
+              {
+                m = (eager_protocol_t *) metadata;
+                p = payload;
+              }
 
-            // This packet device DOES NOT provide the data buffer(s) for the
-            // message and the data must be read on to the stack before the
-            // recv callback is invoked.
-            PAMI_assert_debugf(payload == NULL, "The 'read only' packet device did not invoke dispatch with payload == NULL (%p)\n", payload);
+            TRACE_ERR ((stderr, ">> EagerSimple::dispatch_eager_envelope(), origin = 0x%08x, m->bytes = %zu\n", m->origin, m->bytes));
 
-            uint8_t stackData[T_Model::packet_model_payload_bytes];
-            void * p = (void *) & stackData[0];
-            pf->_device.read (p, bytes, cookie);
+            EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
 
-            dispatch_envelope_direct (metadata, p, bytes, recv_func_parm, cookie);
+            // Allocate a recv state object!
+            recv_state_t * state = eager->allocateRecvState ();
+            state->eager         = eager;
+            state->received      = 0;
+            state->data_size     = m->bytes;
+            state->header_size   = m->metabytes;
+            state->origin        = m->origin;
 
-            TRACE_ERR((stderr, "<< EagerSimple::dispatch_envelope_read()\n"));
+            // Set the eager connection.
+            eager->_connection.set (m->origin, (void *)state);
+
+            // This is a short header envelope .. all application metadata
+            // has been received.
+            eager->process_envelope ((uint8_t *)p, state->header_size, state->data_size, state->origin, state);
+
+            TRACE_ERR ((stderr, "<< EagerSimple::dispatch_eager_envelope()\n"));
             return 0;
           };
 
@@ -775,29 +996,48 @@ namespace PAMI
                                                   void   * recv_func_parm,
                                                   void   * cookie)
           {
-            // This assertion of a constant expression should be optimized out
-            // by the compiler when long header support is enabled.
-            PAMI_assertf(T_LongHeader == true, "'long header' support is not enabled.");
-
-            EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
-
             pami_endpoint_t origin = *((pami_endpoint_t *) metadata);
 
             TRACE_ERR((stderr, ">> EagerSimple::dispatch_longheader_message(), origin = 0x%08x, bytes = %zu\n", origin, bytes));
 
+            EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
             recv_state_t * state = (recv_state_t *) eager->_connection.get (origin);
 
-            size_t n = MIN(bytes, state->longheader.bytes - state->longheader.offset);
+            size_t n = MIN(bytes, state->header_size - state->longheader.offset);
 
             eager->_device.read ((void *)(state->longheader.addr + state->longheader.offset), n, cookie);
             state->longheader.offset += n;
 
-            if (state->longheader.bytes == state->longheader.offset)
+            if (state->header_size == state->longheader.offset)
               {
                 // The entire application metadata has been received. Invoke the
                 // registered pami point-to-point dispatch function.
 
-                eager->process_envelope (&state->metadata, state->longheader.addr, state);
+                if (state->data_size == 0)
+                  {
+                    // No data packets will follow this 'long header' message.
+                    // Invoke the dispatch function as an 'immediate' receive.
+                    eager->_dispatch_fn (eager->_context,            // Communication context
+                                         eager->_cookie,             // Dispatch cookie
+                                         state->longheader.addr,     // Application header
+                                         state->header_size,         // Application header bytes
+                                         NULL,                       // No application data
+                                         0,                          // Number of msg bytes
+                                         origin,                     // Origin endpoint for the transfer
+                                         (pami_recv_t *) NULL);
+
+                    // No data packets will be received on this connection.
+                    // Clear the connection data and prepare for the next message.
+                    eager->_connection.clear (origin);
+                  }
+                else
+                  {
+                    eager->process_envelope (state->longheader.addr,
+                                             state->header_size,
+                                             state->data_size,
+                                             origin,
+                                             state);
+                  }
 
                 // Free the malloc'd longheader buffer now that it has been
                 // delivered to the application.
@@ -829,33 +1069,32 @@ namespace PAMI
                                               void   * recv_func_parm,
                                               void   * cookie)
           {
-            EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
-
             pami_endpoint_t origin = *((pami_endpoint_t *) metadata);
             pami_task_t task;
             size_t offset;
-            PAMI_ENDPOINT_INFO(origin,task,offset);
+            PAMI_ENDPOINT_INFO(origin, task, offset);
 
             TRACE_ERR((stderr, ">> EagerSimple::dispatch_data_message(), origin task = %d, origin offset = %zu, bytes = %zu\n", task, offset, bytes));
 
+            EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
             recv_state_t * state = (recv_state_t *) eager->_connection.get (origin);
 
             // Number of bytes received so far.
             size_t nbyte = state->received;
 
             // Number of bytes left to copy into the destination buffer
-            size_t nleft = state->metadata.bytes - nbyte;
+            size_t nleft = state->data_size - nbyte;
 
-            TRACE_ERR((stderr, "   EagerSimple::dispatch_data_message(), bytes received so far = %zu, bytes yet to receive = %zu, total bytes to receive = %zu, total bytes being sent = %zu\n", state->received, nleft, state->longheader.bytes, state->metadata.bytes));
+            TRACE_ERR((stderr, "   EagerSimple::dispatch_data_message(), bytes received so far = %zu, bytes yet to receive = %zu, total bytes to receive = %zu\n", state->received, nleft, state->data_size));
 
             // Copy data from the packet payload into the destination buffer
-            size_t ncopy = MIN(nleft,bytes);
+            size_t ncopy = MIN(nleft, bytes);
             Core_memcpy ((uint8_t *)(state->info.addr) + nbyte, payload, ncopy);
             state->received += ncopy;
 
-            TRACE_ERR((stderr, "   EagerSimple::dispatch_data_message(), nbyte = %zu, bytes = %zu, state->metadata.bytes = %zu\n", nbyte, bytes, state->metadata.bytes));
+            TRACE_ERR((stderr, "   EagerSimple::dispatch_data_message(), nbyte = %zu, bytes = %zu, state->data_bytes = %zu\n", nbyte, bytes, state->data_size));
 
-            if (nbyte + bytes >= state->metadata.bytes)
+            if (nbyte + bytes >= state->data_size)
               {
                 // No more data packets will be received on this connection.
                 // Clear the connection data and prepare for the next message.
@@ -868,24 +1107,8 @@ namespace PAMI
                                         state->info.cookie,
                                         PAMI_SUCCESS);
 
-                if (state->metadata.va_send != NULL)
-                  {
-                    eager->_ack_model.postPacket (state->pkt,
-                                                  receive_complete,
-                                                  (void *) state,
-                                                  task,
-                                                  offset,
-                                                  (void *) NULL,
-                                                  0,
-                                                  (void *) &(state->metadata.va_send),
-                                                  sizeof (send_state_t *));
-                  }
-                else
-                  {
-                    // Otherwise, return the receive state object memory to
-                    // the memory pool.
-                    eager->freeRecvState (state);
-                  }
+                // Return the receive state object memory to the memory pool.
+                eager->freeRecvState (state);
 
                 TRACE_ERR((stderr, "<< EagerSimple::dispatch_data_message(), origin task = %d ... receive completed\n", task));
                 return 0;
@@ -907,8 +1130,8 @@ namespace PAMI
                                      pami_result_t    result)
           {
             TRACE_ERR((stderr, "EagerSimple::send_complete() >> \n"));
-            send_state_t * state = (send_state_t *) cookie;
 
+            send_state_t * state = (send_state_t *) cookie;
             EagerSimpleProtocol * eager = (EagerSimpleProtocol *) state->eager;
 
             if (state->local_fn != NULL)
@@ -916,15 +1139,12 @@ namespace PAMI
                 state->local_fn (eager->_context, state->cookie, PAMI_SUCCESS);
               }
 
-            if (state->remote_fn == NULL)
-              {
-                eager->freeSendState (state);
-              }
+            eager->freeSendState (state);
 
             TRACE_ERR((stderr, "EagerSimple::send_complete() << \n"));
             return;
           }
-
+#if 0
           ///
           /// \brief Local receive completion event callback.
           ///
@@ -946,6 +1166,66 @@ namespace PAMI
             TRACE_ERR((stderr, "EagerSimple::receive_complete() << \n"));
             return;
           };
+
+          ///
+          /// \brief Local 'short' receive completion event callback.
+          ///
+          /// This callback will free the receive state object memory.
+          ///
+          static void short_receive_complete (pami_context_t   context,
+                                              void           * cookie,
+                                              pami_result_t    result)
+          {
+            TRACE_ERR((stderr, "EagerSimple::short_receive_complete() >> \n"));
+            recv_state_t * state = (recv_state_t *) cookie;
+            EagerSimpleProtocol * eager = (EagerSimpleProtocol *) state->eager;
+            eager->freeRecvState (state);
+            TRACE_ERR((stderr, "EagerSimple::short_receive_complete() << \n"));
+            return;
+          };
+#endif
+          ///
+          /// \brief Read-access packet dispatch wrapper.
+          ///
+          /// Reads incoming bytes from the device to a temporary buffer and
+          /// invokes the registered receive callback.
+          ///
+          /// The packet device will utilize this dispatch function
+          /// if and only if the device \b does \b not provide access to
+          /// data which has already been read from the network by the device.
+          ///
+          /// The dispatch function must read the data onto the stack, aligned
+          /// to 16 bytes, and then invoke the dispatch function as specified
+          /// by the template parameter.
+          ///
+          /// \see PAMI::Device::Interface::RecvFunction_t
+          ///
+          template <PAMI::Device::Interface::RecvFunction_t T_DispatchFn>
+          static int dispatch_read (void   * metadata,
+                                    void   * payload,
+                                    size_t   bytes,
+                                    void   * recv_func_parm,
+                                    void   * cookie)
+          {
+            TRACE_ERR((stderr, ">> EagerSimple::dispatch_read<T>()\n"));
+
+            EagerSimpleProtocol * pf = (EagerSimpleProtocol *) recv_func_parm;
+
+            // This packet device DOES NOT provide the data buffer(s) for the
+            // message and the data must be read on to the stack before the
+            // recv callback is invoked.
+            PAMI_assert_debugf(payload == NULL, "The 'read only' packet device did not invoke dispatch with payload == NULL (%p)\n", payload);
+
+            uint8_t stackData[T_Model::packet_model_payload_bytes];
+            void * p = (void *) & stackData[0];
+            pf->_device.read (p, bytes, cookie);
+
+            T_DispatchFn (metadata, p, bytes, recv_func_parm, cookie);
+
+            TRACE_ERR((stderr, "<< EagerSimple::dispatch_read<T>()\n"));
+            return 0;
+          };
+
       };
     };
   };
