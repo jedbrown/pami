@@ -92,7 +92,7 @@ namespace PAMI
     inline int advance_impl()
       {
         LapiImpl::Context *cp      = (LapiImpl::Context *)_lapi_state;
-        return (cp->*(cp->pAdvance))(1);
+        return (cp->*(cp->pAdvance))(1, NULL);
       }
   private:
     lapi_state_t                          *_lapi_state;
@@ -553,17 +553,23 @@ namespace PAMI
 
       inline size_t advance_impl (size_t maximum, pami_result_t & result)
         {
-          _devices->advance(_clientid, _contextid);
+          size_t events = 0;
           LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
-          internal_error_t rc = (cp->*(cp->pAdvance))(maximum);
-          result = PAMI_RC(rc);
+          while (events == 0 && --maximum >= 0)
+           {
+             size_t e;
+             events += _devices->advance(_clientid, _contextid);
+             internal_error_t rc = (cp->*(cp->pAdvance))(1, &e);
+             events += e;
+             result = PAMI_RC(rc);
+           }
           return 1;
         }
 
       inline size_t advance_only_lapi (size_t maximum, pami_result_t & result)
         {
           LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
-          internal_error_t rc = (cp->*(cp->pAdvance))(maximum);
+          internal_error_t rc = (cp->*(cp->pAdvance))(maximum, NULL);
           result = PAMI_RC(rc);
           return 0;
         }
