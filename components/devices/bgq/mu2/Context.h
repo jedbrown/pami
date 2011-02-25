@@ -427,7 +427,7 @@ namespace PAMI
           ///
           inline int read_impl (void * dst, size_t bytes, void * cookie)
           {
-            PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+            memcpy(dst, cookie, bytes);
             return 0;
           }
 

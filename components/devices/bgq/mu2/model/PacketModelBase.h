@@ -380,6 +380,19 @@ namespace PAMI
         InjChannel & channel = _context.injectionGroup.channel[fnum];
         size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
 
+        size_t i, tbytes = 0;
+
+        for (i = 0; i < T_Niov; i++)
+          {
+            tbytes += iov[i].iov_len;
+          }
+
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+        // Mambo does not support zero-byte packets
+        if (__global.personality._is_mambo) /// \todo mambo hack
+          tbytes = MAX(1, tbytes);
+#endif
+
         if (likely(channel.isSendQueueEmpty() && ndesc > 0))
           {
             // There is at least one descriptor slot available in the injection
@@ -389,9 +402,6 @@ namespace PAMI
 
             void * vaddr   = NULL;
             uint64_t paddr = 0;
-
-            channel.getDescriptorPayload (desc, vaddr, paddr);
-            TRACE_FORMAT("desc = %p, vaddr = %p, paddr = %ld (%p)", desc, vaddr, paddr, (void *)paddr);
 
             // Clone the single-packet model descriptor into the injection fifo
             MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc;
@@ -409,34 +419,73 @@ namespace PAMI
 
             TRACE_HEXDATA(hdr, 32);
 
-            // Copy the payload into the immediate payload buffer.
-            size_t i, tbytes = 0;
-            uint8_t * dst = (uint8_t *) vaddr;
-
-            for (i = 0; i < T_Niov; i++)
+            if (unlikely(tbytes > packet_model_immediate_bytes))
               {
-                memcpy ((dst + tbytes), iov[i].iov_base, iov[i].iov_len);
-                tbytes += iov[i].iov_len;
+                // Determine the physical address of the (temporary) payload
+                // buffer from the model state memory.
+                vaddr = ((uint8_t *) state) + InjChannel::completion_event_state_bytes;
+                Kernel_MemoryRegion_t memRegion;
+                uint32_t rc;
+                rc = Kernel_CreateMemoryRegion (&memRegion, vaddr, tbytes);
+                PAMI_assert_debug ( rc == 0 );
+                paddr = (uint64_t)memRegion.BasePa +
+                        ((uint64_t)vaddr - (uint64_t)memRegion.BaseVa);
+
+                TRACE_FORMAT("desc = %p, vaddr = %p, paddr = %ld (%p)", desc, vaddr, paddr, (void *)paddr);
+
+                // Set the payload information.
+                memfifo->setPayload (paddr, tbytes);
+
+                // Copy the payload into the model state memory
+                uint8_t * dst = (uint8_t *) vaddr;
+
+                for (i = 0; i < T_Niov; i++)
+                  {
+                    memcpy (dst, iov[i].iov_base, iov[i].iov_len);
+                    dst += iov[i].iov_len;
+                  }
+
+                TRACE_HEXDATA(vaddr, 32);
+
+                // Advance the injection fifo tail pointer. This action
+                // completes the injection operation.
+                uint64_t sequence = channel.injFifoAdvanceDesc ();
+
+                // Add a completion event for the sequence number associated with
+                // the descriptor that was injected.
+                if (likely(fn != NULL))
+                  channel.addCompletionEvent (state, fn, cookie, sequence);
               }
+            else
+              {
+                // Determine the physical address of the (immediate) payload
+                // buffer associated with this descriptor slot.
+                channel.getDescriptorPayload (desc, vaddr, paddr);
 
-            TRACE_HEXDATA(vaddr, 32);
+                TRACE_FORMAT("desc = %p, vaddr = %p, paddr = %ld (%p)", desc, vaddr, paddr, (void *)paddr);
 
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-            // Mambo does not support zero-byte packets
-            if (__global.personality._is_mambo) /// \todo mambo hack
-              tbytes = MAX(1, tbytes);
-#endif
-            // Set the payload information.
-            memfifo->setPayload (paddr, tbytes);
+                // Set the payload information.
+                memfifo->setPayload (paddr, tbytes);
 
-            // Finally, advance the injection fifo tail pointer. This action
-            // completes the injection operation.
-            channel.injFifoAdvanceDesc ();
+                // Copy the payload into the immediate payload buffer.
+                uint8_t * dst = (uint8_t *) vaddr;
 
-            // Invoke the completion callback function
-            if (likely(fn != NULL))
-              fn (_cookie, cookie, PAMI_SUCCESS);
+                for (i = 0; i < T_Niov; i++)
+                  {
+                    memcpy (dst, iov[i].iov_base, iov[i].iov_len);
+                    dst += iov[i].iov_len;
+                  }
 
+                TRACE_HEXDATA(vaddr, 32);
+
+                // Advance the injection fifo tail pointer. This action
+                // completes the injection operation.
+                channel.injFifoAdvanceDesc ();
+
+                // Invoke the completion callback function
+                if (likely(fn != NULL))
+                  fn (_cookie, cookie, PAMI_SUCCESS);
+              }
           }
         else
           {
@@ -445,24 +494,19 @@ namespace PAMI
               (InjectDescriptorMessage<1> *) state;
             new (msg) InjectDescriptorMessage<1> (channel, fn, cookie);
 
+            uint8_t * payload = (uint8_t *) (msg + 1);
+
             // Clone the single-packet descriptor model into the message
             _singlepkt.clone (msg->desc[0]);
 
             // Copy the payload into the model state memory
-            size_t i, tbytes = 0;
-            uint8_t * payload = (uint8_t *) (msg + 1);
+            uint8_t * dst = payload;
 
             for (i = 0; i < T_Niov; i++)
               {
-                memcpy ((payload + tbytes), iov[i].iov_base, iov[i].iov_len);
-                tbytes += iov[i].iov_len;
+                memcpy (dst, iov[i].iov_base, iov[i].iov_len);
+                dst += iov[i].iov_len;
               }
-
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-            // Mambo does not support zero-byte packets
-            if (__global.personality._is_mambo) /// \todo mambo hack
-              tbytes = MAX(1, tbytes);
-#endif
 
             // Determine the physical address of the (temporary) payload
             // buffer from the model state memory.
@@ -517,6 +561,21 @@ namespace PAMI
         InjChannel & channel = _context.injectionGroup.channel[fnum];
         size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
 
+        // Determine the amount of data to write into the packet payload.
+        size_t i, tbytes = 0;
+
+        for (i = 0; i < niov; i++)
+          {
+            tbytes += iov[i].iov_len;
+          }
+
+#ifdef ENABLE_MAMBO_WORKAROUNDS
+        // Mambo does not support zero-byte packets
+
+       if (__global.personality._is_mambo) /// \todo mambo hack
+          tbytes = MAX(1, tbytes);
+#endif
+
         if (likely(channel.isSendQueueEmpty() && ndesc > 0))
           {
             // There is at least one descriptor slot available in the injection
@@ -524,10 +583,8 @@ namespace PAMI
 
             MUHWI_Descriptor_t * desc = channel.getNextDescriptor ();
 
-            void * vaddr;
-            uint64_t paddr;
-
-            channel.getDescriptorPayload (desc, vaddr, paddr);
+            void * vaddr   = NULL;
+            uint64_t paddr = 0;
 
             // Clone the single-packet model descriptor into the injection fifo
             MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc;
@@ -543,32 +600,74 @@ namespace PAMI
             //Eliminated memcpy and an if branch
             hdr->setMetaData(metadata, metasize);
 
-            // Copy the payload into the immediate payload buffer.
-            size_t i, tbytes = 0;
-            uint8_t * dst = (uint8_t *) vaddr;
+            TRACE_HEXDATA(hdr, 32);
 
-            for (i = 0; i < niov; i++)
+            if (unlikely(tbytes > packet_model_immediate_bytes))
               {
-                memcpy ((dst + tbytes), iov[i].iov_base, iov[i].iov_len);
-                tbytes += iov[i].iov_len;
+                // Determine the physical address of the (temporary) payload
+                // buffer from the model state memory.
+                vaddr = ((uint8_t *) state) + InjChannel::completion_event_state_bytes;
+                Kernel_MemoryRegion_t memRegion;
+                uint32_t rc;
+                rc = Kernel_CreateMemoryRegion (&memRegion, vaddr, tbytes);
+                PAMI_assert_debug ( rc == 0 );
+                paddr = (uint64_t)memRegion.BasePa +
+                        ((uint64_t)vaddr - (uint64_t)memRegion.BaseVa);
+
+                TRACE_FORMAT("desc = %p, vaddr = %p, paddr = %ld (%p)", desc, vaddr, paddr, (void *)paddr);
+
+                // Set the payload information.
+                memfifo->setPayload (paddr, tbytes);
+
+                // Copy the payload into the model state memory
+                uint8_t * dst = (uint8_t *) vaddr;
+
+                for (i = 0; i < niov; i++)
+                  {
+                    memcpy (dst, iov[i].iov_base, iov[i].iov_len);
+                    dst += iov[i].iov_len;
+                  }
+
+                TRACE_HEXDATA(vaddr, 32);
+
+                // Advance the injection fifo tail pointer. This action
+                // completes the injection operation.
+                uint64_t sequence = channel.injFifoAdvanceDesc ();
+
+                // Add a completion event for the sequence number associated with
+                // the descriptor that was injected.
+                if (likely(fn != NULL))
+                  channel.addCompletionEvent (state, fn, cookie, sequence);
               }
-
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-            // Mambo does not support zero-byte packets
-            if (__global.personality._is_mambo) /// \todo mambo hack
-              tbytes = MAX(1, tbytes);
-#endif
-            // Set the payload information.
-            memfifo->setPayload (paddr, tbytes);
-
-            // Finally, advance the injection fifo tail pointer. This action
-            // completes the injection operation.
-            channel.injFifoAdvanceDesc ();
-
-            // Invoke the completion callback function
-            if (likely(fn != NULL))
+            else
               {
-                fn (_cookie, cookie, PAMI_SUCCESS); // Descriptor is done...notify.
+                // Determine the physical address of the (immediate) payload
+                // buffer associated with this descriptor slot.
+                channel.getDescriptorPayload (desc, vaddr, paddr);
+
+                TRACE_FORMAT("desc = %p, vaddr = %p, paddr = %ld (%p)", desc, vaddr, paddr, (void *)paddr);
+
+                // Set the payload information.
+                memfifo->setPayload (paddr, tbytes);
+
+                // Copy the payload into the immediate payload buffer.
+                uint8_t * dst = (uint8_t *) vaddr;
+
+                for (i = 0; i < niov; i++)
+                  {
+                    memcpy (dst, iov[i].iov_base, iov[i].iov_len);
+                    dst += iov[i].iov_len;
+                  }
+
+                TRACE_HEXDATA(vaddr, 32);
+
+                // Advance the injection fifo tail pointer. This action
+                // completes the injection operation.
+                channel.injFifoAdvanceDesc ();
+
+                // Invoke the completion callback function
+                if (likely(fn != NULL))
+                  fn (_cookie, cookie, PAMI_SUCCESS);
               }
           }
         else
@@ -578,24 +677,19 @@ namespace PAMI
               (InjectDescriptorMessage<1> *) state;
             new (msg) InjectDescriptorMessage<1> (channel, fn, cookie);
 
+            uint8_t * payload = (uint8_t *) (msg + 1);
+
             // Clone the single-packet descriptor model into the message
             _singlepkt.clone (msg->desc[0]);
 
             // Copy the payload into the model state memory
-            size_t i, tbytes = 0;
-            uint8_t * payload = (uint8_t *) (msg + 1);
+            uint8_t * dst = payload;
 
             for (i = 0; i < niov; i++)
               {
-                memcpy ((payload + tbytes), iov[i].iov_base, iov[i].iov_len);
-                tbytes += iov[i].iov_len;
+                memcpy (dst, iov[i].iov_base, iov[i].iov_len);
+                dst += iov[i].iov_len;
               }
-
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-            // Mambo does not support zero-byte packets
-            if (__global.personality._is_mambo) /// \todo mambo hack
-              tbytes = MAX(1, tbytes);
-#endif
 
             // Determine the physical address of the (temporary) payload
             // buffer from the model state memory.
@@ -639,6 +733,13 @@ namespace PAMI
       {
         TRACE_FN_ENTER();
 
+        register iovec iov[1] = {{payload, length}};
+
+        postPacket_impl (state, fn, cookie, target_task, target_offset,
+                         metadata, metasize, iov);
+
+
+#if 0
         MUHWI_Destination_t   dest;
         uint16_t              rfifo;
         uint64_t              map;
@@ -651,6 +752,10 @@ namespace PAMI
 
         if (likely(channel.isSendQueueEmpty() && ndesc > 0))
           {
+
+
+
+
             // There is at least one descriptor slot available in the injection
             // fifo before a fifo-wrap event.
 
@@ -737,7 +842,7 @@ namespace PAMI
             // Post the message to the injection channel
             channel.post (msg);
           }
-
+#endif
         TRACE_FN_EXIT();
         return true;
       };
@@ -805,7 +910,8 @@ namespace PAMI
 
             // Add a completion event for the sequence number associated with
             // the descriptor that was injected.
-            channel.addCompletionEvent (state, fn, cookie, sequence);
+            if (likely(fn != NULL))
+              channel.addCompletionEvent (state, fn, cookie, sequence);
           }
         else
           {
