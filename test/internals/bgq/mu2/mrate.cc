@@ -256,7 +256,7 @@ int main (int argc, char ** argv)
 
   pami_geometry_t world_geometry;
   size_t               num_algorithm[2];
-  pami_algorithm_t    *always_works_algo;
+  pami_algorithm_t    *always_works_algo = NULL;
   pami_metadata_t     *always_works_md;
   pami_algorithm_t    *must_query_algo;
   pami_metadata_t     *must_query_md;
