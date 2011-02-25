@@ -20,6 +20,8 @@
 #ifndef __components_devices_bgq_mu2_global_ResourceManager_h__
 #define __components_devices_bgq_mu2_global_ResourceManager_h__
 
+#undef TRACE_CLASSROUTES
+
 #ifdef __FWEXT__
 
 #include <firmware/include/fwext/fwext.h>
@@ -58,6 +60,10 @@ typedef PAMI::Device::SharedAtomicMutexMdl<MUCR_mutex_t> MUCR_mutex_model_t;
 #include <spi/include/kernel/collective.h>
 #include <spi/include/mu/Classroute_inlines.h>
 #include <spi/include/kernel/gi.h>
+
+#ifdef TRACE_CLASSROUTES
+#include "trace_classroutes.h"
+#endif // TRACE_CLASSROUTES
 
 #ifdef TRACE
 #undef TRACE
@@ -751,6 +757,26 @@ fprintf(stderr, "%s\n", buf);
 	  // or any such thing.
 	  MUSPI_SetClassrouteId(0, PAMI_MU_CR_SPI_VC, &_commworld, &_cncrdata);
 	  MUSPI_SetClassrouteId(0, PAMI_MU_CR_SPI_VC, &_commworld, &_gicrdata);
+#ifdef TRACE_CLASSROUTES
+	  _digraph = 0;
+	  _trace_cr = 0;
+	  s = getenv("PAMI_TRACE_CLASSROUTES");
+	  if (s) {
+		_trace_cw.rect = _refcomm;
+		_trace_cw.root = _refroot;
+		_trace_cw.map = _map;
+		_trace_cw.pri_dim = _pri_dim;
+		_trace_cr = 1;
+		while (*s) {
+			switch(*s) {
+			case 'B': _digraph |= (CRTEST_GRAPH | CRTEST_GRAPH_BI_DIR); break;
+			case 'R': _digraph |= (CRTEST_GRAPH | CRTEST_GRAPH_RANKS); break;
+			case 'g': _digraph |= CRTEST_GRAPH; break;
+			}
+			++s;
+		}
+	  }
+#endif // TRACE_CLASSROUTES
 	  // do we need to place this rectangle someplace? like the "world geom" topology?
 
 	  // Now, we should be ready to get requests for classroutes...
@@ -915,6 +941,11 @@ fprintf(stderr, "%s\n", buf);
 	    int id = (int)((uintptr_t)val & 0xffffffff) - 1;
 	    if (id != 0) // never free classroute 0 - a.k.a. comm-world
 	    {
+#ifdef TRACE_CLASSROUTES
+		if (_trace_cr) {
+			fprintf(stderr, "Giving back CN classroute ID %d\n", id);
+		}
+#endif // TRACE_CLASSROUTES
 	      int last = MUSPI_ReleaseClassrouteId(id, PAMI_MU_CR_SPI_VC,
 	                                                        NULL, &_cncrdata);
 	      if (last)
@@ -937,6 +968,11 @@ fprintf(stderr, "%s\n", buf);
 	    int id = (int)((uintptr_t)val & 0xffffffff) - 1;
 	    if (id != 0) // never free classroute 0 - a.k.a. comm-world
 	    {
+#ifdef TRACE_CLASSROUTES
+		if (_trace_cr) {
+			fprintf(stderr, "Giving back GI classroute ID %d\n", id);
+		}
+#endif // TRACE_CLASSROUTES
 	      int last = MUSPI_ReleaseClassrouteId(id, PAMI_MU_CR_SPI_VC,
 	                                                        NULL, &_gicrdata);
 	      if (last)
@@ -1029,6 +1065,12 @@ fprintf(stderr, "%s\n", buf);
 	    return;
 	  }
 #endif
+#ifdef TRACE_CLASSROUTES
+	if (crck->thus->_trace_cr && __global.mapping.task() == 0) {
+		digraph = crck->thus->_digraph;
+		print_prefix(&crck->thus->_trace_cw, &rect);
+	}
+#endif // TRACE_CLASSROUTES
 	  // Now, must perform an "allreduce(&mask, 1, PAMI_LONGLONG, PAMI_AND)"
 	  pami_algorithm_t algo = 0;
 	  PAMI_Geometry_algorithms_query(ctx, crck->geom, PAMI_XFER_ALLREDUCE,
@@ -1086,6 +1128,15 @@ fprintf(stderr, "%s\n", buf);
 					PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
 	  crck->thus->set_classroute((crck->bbuf[0] >> 32) & 0x0000ffff, crck, &cr,
 					PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
+#ifdef TRACE_CLASSROUTES
+	if (crck->thus->_trace_cr) {
+		CR_RECT_T rect;
+		crck->topo.rectSeg(CR_RECT_LL(&rect), CR_RECT_UR(&rect));
+		digraph = crck->thus->_digraph;
+		print_classroute(&crck->thus->_trace_cw, &rect, &crck->thus->_mycoord,
+						&cr, (int)__global.mapping.task());
+	}
+#endif // TRACE_CLASSROUTES
 	  // we got the answer we needed... no more trying...
 	  *crck->thus->_lowest_geom_id = 0xffffffff;
 	  crck->thus->release_mutex(ctx, cookie, PAMI_SUCCESS);
@@ -1100,6 +1151,12 @@ fprintf(stderr, "%s\n", buf);
 	{
 	  cr_cookie *crck = (cr_cookie *)cookie;
 	  if (crck->cb_done.function) crck->cb_done.function(ctx, crck->cb_done.clientdata, result);
+#ifdef TRACE_CLASSROUTES
+	if (crck->thus->_trace_cr && __global.mapping.task() == 0) {
+		digraph = crck->thus->_digraph;
+		print_suffix(&crck->thus->_trace_cw, NULL);
+	}
+#endif // TRACE_CLASSROUTES
 	  // tell geometry completion "we're done"...
 	  crck->geom->rmCompletion(ctx, result);
 	  __global.heap_mm->free(cookie);
@@ -1139,8 +1196,18 @@ fprintf(stderr, "%s\n", buf);
 	      }
 	      int rc;
 	      if (gi) {
+#ifdef TRACE_CLASSROUTES
+		if (_trace_cr) {
+			fprintf(stderr, "Taking GI classroute ID %d\n", id);
+		}
+#endif // TRACE_CLASSROUTES
 	        rc = Kernel_SetGlobalInterruptClassRoute(id, cr);
 	      } else {
+#ifdef TRACE_CLASSROUTES
+		if (_trace_cr) {
+			fprintf(stderr, "Taking CN classroute ID %d\n", id);
+		}
+#endif // TRACE_CLASSROUTES
 	        rc = Kernel_SetCollectiveClassRoute(id, cr);
 	      }
 	      rc = rc; // until error checking
@@ -1549,6 +1616,11 @@ fprintf(stderr, "%s\n", buf);
 	CR_RECT_T _commworld;
 	CR_COORD_T *_excluded;
 	int _nexcl;
+#ifdef TRACE_CLASSROUTES
+	size_t _trace_cr;
+	commworld_t _trace_cw;
+	unsigned _digraph;
+#endif // TRACE_CLASSROUTES
 	unsigned *_lowest_geom_id; // in shared memory! (protected by _cr_mtx)
 	void *_cncrdata; // used by MUSPI routines to keep track of
 	               // classroute assignments - persistent!
