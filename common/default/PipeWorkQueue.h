@@ -16,6 +16,7 @@
 
 #include "Arch.h"
 #include "common/PipeWorkQueueInterface.h"
+#include "common/type/TypeMachine.h"
 #include "util/common.h"
 
 #undef TRACE_ERR
@@ -82,7 +83,9 @@ public:
 		_isize(0),
 		_pmask(0),
 		_buffer(NULL),
-		_sharedqueue(NULL) {
+		_sharedqueue(NULL),
+		_prod_tm(NULL),
+		_cons_tm(NULL) {
 	}
 
 #ifdef USE_FLAT_BUFFER
@@ -158,8 +161,12 @@ public:
 	/// \param[in] buffer	Buffer to use
 	/// \param[in] bufsize	Size of buffer - physical (unpacked)
 	/// \param[in] bufinit	Amount of data initially in buffer - physical (unpacked)
+	/// \param[in] prod_dt	Datatype for non-contig producer view
+	/// \param[in] cons_dt	Datatype for non-contig consumer view
 	///
-	inline void configure_impl(char *buffer, size_t bufsize, size_t bufinit) {
+	inline void configure_impl(char *buffer, size_t bufsize, size_t bufinit,
+					PAMI::Type::TypeCode *prod_dt,
+					PAMI::Type::TypeCode *cons_dt) {
 		_qsize = bufsize;
 		_isize = bufinit;
 		_buffer = buffer;
@@ -169,6 +176,31 @@ public:
 #else /* !OPTIMIZE_FOR_FLAT_WORKQUEUE */
 		_pmask = (unsigned)-1; // nil mask
 #endif /* !OPTIMIZE_FOR_FLAT_WORKQUEUE */
+		_prod_tm = _cons_tm = NULL;
+		if (prod_dt && !prod_dt->IsContiguous()) {
+			PAMI_assert_debugf(bufsize ==
+				(bufsize / prod_dt->GetExtent()) * prod_dt->GetExtent(),
+				"bufsize is not multiple of producer datatype extent");
+			PAMI_assert_debugf(bufinit ==
+				(bufinit / prod_dt->GetExtent()) * prod_dt->GetExtent(),
+				"bufinit is not multiple of producer datatype extent");
+			_prod_tm = new PAMI::Type::TypeMachine(prod_dt);
+			_pmask = (unsigned)-1; // nil mask meaning non-contiguous
+			_qsize = (bufsize / prod_dt->GetExtent()) * prod_dt->GetDataSize();
+			_isize = (bufinit / prod_dt->GetExtent()) * prod_dt->GetDataSize();
+		}
+		if (cons_dt && !cons_dt->IsContiguous()) {
+			PAMI_assert_debugf(bufsize ==
+				(bufsize / cons_dt->GetExtent()) * cons_dt->GetExtent(),
+				"bufsize is not multiple of consumer datatype extent");
+			PAMI_assert_debugf(bufinit ==
+				(bufinit / cons_dt->GetExtent()) * cons_dt->GetExtent(),
+				"bufinit is not multiple of consumer datatype extent");
+			_cons_tm = new PAMI::Type::TypeMachine(cons_dt);
+			_pmask = (unsigned)-1; // nil mask meaning non-contiguous
+			_qsize = (bufsize / cons_dt->GetExtent()) * cons_dt->GetDataSize();
+			_isize = (bufinit / cons_dt->GetExtent()) * cons_dt->GetDataSize();
+		}
 	}
 
 	///
@@ -186,7 +218,9 @@ public:
 		_qsize(obj._qsize),
 		_pmask(obj._pmask),
 		_buffer(obj._buffer),
-		_sharedqueue(obj._sharedqueue) {
+		_sharedqueue(obj._sharedqueue),
+		_prod_tm(obj._prod_tm),		// or should this get new?
+		_cons_tm(obj._cons_tm) {	// or should this get new?
 		// need ref count so we know when to free...
 		reset();
 	}
@@ -199,6 +233,8 @@ public:
 		if (_sharedqueue != &this->__sq) {
 			FREE_SHMEM(_sharedqueue);
 		}
+		if (_prod_tm) delete _prod_tm;
+		if (_cons_tm) delete _cons_tm;
 	}
 
 	///
@@ -212,6 +248,8 @@ public:
 		_sharedqueue->_u._s.consumedBytes = 0;
 		_sharedqueue->_u._s.producerWakeVec = NULL;
 		_sharedqueue->_u._s.consumerWakeVec = NULL;
+		if (_prod_tm) _prod_tm->MoveCursor(_isize);
+		if (_cons_tm) _cons_tm->MoveCursor(0);
 		mem_sync();
 	}
 
@@ -225,6 +263,8 @@ public:
 		// PAMI_assert(_isize == 0);
 		local_barriered_shmemzero((void *)_sharedqueue, sizeof(*_sharedqueue),
 					participants, master);
+		if (_prod_tm) _prod_tm->MoveCursor(0); // need _isize...
+		if (_cons_tm) _cons_tm->MoveCursor(0);
 	}
 
 	///
@@ -244,14 +284,18 @@ public:
 		fprintf(stderr, "%s dump(%p) _sharedqueue = %p, "
 			"size = %u, init size = %u, mask = 0x%08x, "
 			"wake p=%p c=%p, "
-			"produced bytes = %zu (%zu), "
-			"consumed bytes = %zu (%zu)\n",
+			"produced bytes = %zu (%zu) {tm: %zu %zu}, "
+			"consumed bytes = %zu (%zu) {tm: %zu %zu}\n",
 			prefix, this, _sharedqueue,
 			_qsize, _isize, _pmask,
 			_sharedqueue->_u._s.producerWakeVec,
 			_sharedqueue->_u._s.consumerWakeVec,
 			pbytes0, bytesAvailableToProduce(),
-			cbytes0, bytesAvailableToConsume());
+			_prod_tm ? _prod_tm->GetCursor() : 0,
+			_prod_tm ? _prod_tm->GetCursorDisp() : 0,
+			cbytes0, bytesAvailableToConsume(),
+			_cons_tm ? _cons_tm->GetCursor() : 0,
+			_cons_tm ? _cons_tm->GetCursorDisp() : 0);
 	}
 
 	///
@@ -367,6 +411,10 @@ public:
 
 		if (likely(!_pmask)) {
 			a = _qsize - p;
+		} else if (unlikely(_prod_tm != NULL)) {
+			a = _qsize - p;
+			p = _prod_tm->GetContigBytes();
+			if (p < a) a = p;
 		} else {
 #else /* !OPTIMIZE_FOR_FLAT_WORKQUEUE */
 		{
@@ -409,6 +457,10 @@ public:
 
 		if (likely(!_pmask)) {
 			a = p - c;
+		} else if (unlikely(_cons_tm != NULL)) {
+			a = p - c;
+			p = _cons_tm->GetContigBytes();
+			if (p < a) a = p;
 		} else {
 #else /* !OPTIMIZE_FOR_FLAT_WORKQUEUE */
 		{
@@ -473,6 +525,8 @@ public:
 
 		if (likely(!_pmask)) {
 			b = (char *)&_buffer[p];
+		} else if (unlikely(_prod_tm != NULL)) {
+			b = (char *)_buffer + _prod_tm->GetCursorDisp();
 		} else {
 #else /* !OPTIMIZE_FOR_FLAT_WORKQUEUE */
 		{
@@ -489,6 +543,9 @@ public:
 	///
 	inline void produceBytes_impl(size_t bytes) {
 		_sharedqueue->_u._s.producedBytes += bytes;
+		if (unlikely(_prod_tm != NULL)) {
+			_prod_tm->MoveCursor(_sharedqueue->_u._s.consumedBytes);
+		}
 		// cast undoes "volatile"...
 		void *v = (void *)_sharedqueue->_u._s.consumerWakeVec;
 
@@ -508,6 +565,8 @@ public:
 
 		if (likely(!_pmask)) {
 			b = (char *)&_buffer[c];
+		} else if (unlikely(_cons_tm != NULL)) {
+			b = (char *)_buffer + _cons_tm->GetCursorDisp();
 		} else {
 #else /* !OPTIMIZE_FOR_FLAT_WORKQUEUE */
 		{
@@ -524,6 +583,9 @@ public:
 	///
 	inline void consumeBytes_impl(size_t bytes) {
 		_sharedqueue->_u._s.consumedBytes += bytes;
+		if (unlikely(_cons_tm != NULL)) {
+			_cons_tm->MoveCursor(_sharedqueue->_u._s.consumedBytes);
+		}
 		// cast undoes "volatile"...
 		void *v = (void *)_sharedqueue->_u._s.producerWakeVec;
 		if (unlikely((long)v != 0)) {
@@ -550,6 +612,8 @@ private:
 	unsigned _pmask;
 	volatile char *_buffer;	///< physical data - unpacked if flat, packed if circ
 	workqueue_t *_sharedqueue;
+	PAMI::Type::TypeMachine *_prod_tm;	///< how to unpack producer data
+	PAMI::Type::TypeMachine *_cons_tm;	///< how to pack consumer data
 	workqueue_t __sq;
 }; // class PipeWorkQueue
 

@@ -7,6 +7,7 @@
 
 #include <pami.h>
 #include "components/memory/MemoryManager.h"
+#include "common/type/TypeCode.h"
 #include "common/MultisendInterface.h"
 
 namespace PAMI {
@@ -74,7 +75,9 @@ public:
 	/// \param[in] bufsize	Size of buffer
 	/// \param[in] bufinit	Amount of data initially in buffer
 	///
-	inline void configure(char *buffer, size_t bufsize, size_t bufinit);
+	inline void configure(char *buffer, size_t bufsize, size_t bufinit,
+				PAMI::Type::TypeCode *prod_dt = NULL,
+				PAMI::Type::TypeCode *cons_dt = NULL);
 
 
 	///
@@ -271,8 +274,10 @@ void PipeWorkQueue<T_PipeWorkQueue>::configure(char *buffer, size_t bufsize) {
 }
 
 template <class T_PipeWorkQueue>
-void PipeWorkQueue<T_PipeWorkQueue>::configure(char *buffer, size_t bufsize, size_t bufinit) {
-	return static_cast<T_PipeWorkQueue *>(this)->configure_impl(buffer, bufsize, bufinit);
+void PipeWorkQueue<T_PipeWorkQueue>::configure(char *buffer, size_t bufsize, size_t bufinit,
+				PAMI::Type::TypeCode *prod_dt,
+				PAMI::Type::TypeCode *cons_dt) {
+	return static_cast<T_PipeWorkQueue *>(this)->configure_impl(buffer, bufsize, bufinit, prod_dt, cons_dt);
 }
 
 template <class T_PipeWorkQueue>

@@ -40,11 +40,13 @@ namespace PAMI
             void SetCopyFunc(TypeMachineCopyFunc new_copy_func, void *new_cookie);
             TypeCode * GetType() const;
             size_t GetCursor() const;
+            size_t GetCursorDisp() const;
 
             void MoveCursor(size_t offset);
             void EnumerateBlocks(size_t disp[], size_t bytes[], size_t count);
             void Pack(void *target, void *origin, size_t bytes);
             void Unpack(void *target, void *origin, size_t bytes);
+            size_t GetContigBytes();
 
         private:
             TypeCode  *type;
@@ -151,6 +153,11 @@ namespace PAMI
     inline size_t TypeMachine::GetCursor() const
     {
         return stack[top].offset;
+    }
+
+    inline size_t TypeMachine::GetCursorDisp() const
+    {
+        return stack[top].disp;
     }
 
     inline void TypeMachine::MoveCursor(size_t new_offset)
@@ -381,6 +388,32 @@ namespace PAMI
                             bytes -= bytes_to_copy;
                             if (bytes == 0)
                                 return;
+                            break;
+                        }
+                    case TypeCode::CALL:  ExecuteCall(op); continue;
+                    case TypeCode::SHIFT: ExecuteShift(op); break;
+                    case TypeCode::END:   ExecuteEnd(); continue;
+                    case TypeCode::BEGIN: assert(!"Not executable");
+                    default:          assert(!"Bogus opcode");
+                }
+            }
+        }
+
+	// same as Run() but return as soon as we local some contiguous bytes.
+        inline size_t TypeMachine::GetContigBytes()
+        {
+            for (;;) {
+                Cursor &cursor = stack[top];
+                TypeCode::Op *op = (TypeCode::Op *)(type->code + cursor.pc);
+                switch (op->opcode) {
+                    case TypeCode::COPY:
+                        {
+                            TypeCode::Copy &copy = *(TypeCode::Copy *)op;
+                            size_t bytes_left = copy.bytes *
+                                (copy.reps - cursor.rep_num) - cursor.rep_bytes;
+                            assert(bytes_left > 0);
+
+                            return bytes_left;
                             break;
                         }
                     case TypeCode::CALL:  ExecuteCall(op); continue;
