@@ -198,7 +198,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     void MUMsyncMetaData(pami_metadata_t *m)
     {
-      new(m) PAMI::Geometry::Metadata("I0:MultiSync:-:MU");
+      new(m) PAMI::Geometry::Metadata("I0:MultiSync:-:GI");
       m->check_perf.values.hw_accel     = 1;
     }
 
@@ -807,6 +807,9 @@ namespace PAMI
       {
         TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() phase %d, context_id %zu, geometry %p, msync %p, mcast %p, mcomb %p\n", this, phase, context_id, geometry, &_shmem_msync_factory, &_shmem_mcast_factory, &_shmem_mcomb_factory));
         pami_xfer_t xfer = {0};
+        // BE CAREFUL! It's not ok to make registration decisions based on local topology unless you know that all nodes will make the same decision.
+        // We use local_sub_topology on single node registrations 
+        // and on MU/Classroute registrations (because they are rectangular so all nodes have the same local subtopology).
         PAMI::Topology * topology = (PAMI::Topology*) geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
         PAMI::Topology * local_sub_topology = (PAMI::Topology*) geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
         PAMI::Topology * master_sub_topology = (PAMI::Topology*) geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
@@ -828,8 +831,8 @@ namespace PAMI
           }
 
           if ((__global.useshmem())  && (__global.topology_local.size() > 1)
-#ifndef ENABLE_NEW_SHMEM
-              && (__global.topology_local.size() == local_sub_topology->size()) /// \todo shmem doesn't seem to work on subnode topologies?
+#ifndef ENABLE_SHMEM_SUBNODE
+              && (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
 #endif
              )
           {
@@ -840,15 +843,10 @@ namespace PAMI
             {
               TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register Local Shmem factories\n", this));
               _shmem_barrier_composite = _shmem_msync_factory.generate(geometry, &xfer);
-
-
               // Add Barriers
               geometry->addCollective(PAMI_XFER_BARRIER, &_shmem_msync_factory, _context_id);
 
               // Add Broadcasts
-#ifndef ENABLE_NEW_SHMEM_SUBNODE
-              if (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
-#endif
                 geometry->addCollective(PAMI_XFER_BROADCAST, &_shmem_mcast_factory, _context_id);
 
               // Add Allreduces
@@ -856,9 +854,6 @@ namespace PAMI
               if ((__global.topology_local.size() ==  4) ||  
                   (__global.topology_local.size() ==  8) ||
                   (__global.topology_local.size() == 16))
-#ifndef ENABLE_NEW_SHMEM_SUBNODE
-                if (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
-#endif
                   geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, &_shmem_mcomb_factory, _context_id);
 #else
               geometry->addCollective(PAMI_XFER_ALLREDUCE, &_shmem_mcomb_factory, _context_id);
@@ -881,7 +876,7 @@ namespace PAMI
 
             // Add rectangle protocols:
             if ((_shmem_mu_rectangle_1color_dput_broadcast_factory)
-#ifndef ENABLE_NEW_SHMEM_SUBNODE
+#ifndef ENABLE_SHMEM_SUBNODE
                 && (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
 #endif
                 )
@@ -890,7 +885,7 @@ namespace PAMI
               geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_rectangle_1color_dput_broadcast_factory, _context_id);
 
             if ((_shmem_mu_rectangle_dput_broadcast_factory) 
-#ifndef ENABLE_NEW_SHMEM_SUBNODE
+#ifndef ENABLE_SHMEM_SUBNODE
                 && (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
 #endif
                 )
@@ -917,158 +912,153 @@ namespace PAMI
         }
         else if (phase == 1)
         {
+          /// A simple check (of sizes) to see if this subgeometry is all global,
+          /// then the geometry topology is usable by 'pure' MU protocols
+          bool usePureMu = topology->size() == master_sub_topology->size() ? true : false;
+          usePureMu = usePureMu && !topology->isLocalToMe();
+          TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() usePureMu = %u (size %zu/%zu)\n", this, usePureMu, topology->size(), master_sub_topology->size()));
 
-          // If MU is enabled
-/// \todo necessary?              if (__global.useMU())
-          {
-            /// A simple check (of sizes) to see if this subgeometry is all global,
-            /// then the geometry topology is usable by 'pure' MU protocols
-            bool usePureMu = topology->size() == master_sub_topology->size() ? true : false;
-            usePureMu = usePureMu && !topology->isLocalToMe();
-            TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() usePureMu = %u (size %zu/%zu)\n", this, usePureMu, topology->size(), master_sub_topology->size()));
-
-            // Add optimized binomial barrier
-            if (_binomial_barrier_factory)
-              geometry->addCollective(PAMI_XFER_BARRIER, _binomial_barrier_factory, _context_id);
+          // Add optimized binomial barrier
+          if (_binomial_barrier_factory)
+            geometry->addCollective(PAMI_XFER_BARRIER, _binomial_barrier_factory, _context_id);
 
 #if 0 // test a query barrier protocol
-            if (_binomial_barrier_factory)
-              geometry->addCollectiveCheck(PAMI_XFER_BARRIER, _binomial_barrier_factory, _context_id);
+          if (_binomial_barrier_factory)
+            geometry->addCollectiveCheck(PAMI_XFER_BARRIER, _binomial_barrier_factory, _context_id);
 #endif
 
-            // Check for class routes before enabling MU collective network protocols
-            void *val;
-            val = geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
-            TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() GKEY_MSYNC_CLASSROUTEID %p\n", this, val));
+          // Check for class routes before enabling MU collective network protocols
+          void *val;
+          val = geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
+          TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() GKEY_MSYNC_CLASSROUTEID %p\n", this, val));
 
-            if ((val && val != PAMI_CR_GKEY_FAIL) || // We have a class route or
-                (topology->isLocalToMe()))           // It's all local - we might use 2 device protocol in shmem-only mode
+          if ((val && val != PAMI_CR_GKEY_FAIL) || // We have a class route or
+              (topology->isLocalToMe()))           // It's all local - we might use 2 device protocol in shmem-only mode
+          {
+            // If we can use pure MU composites, add them
+            if (usePureMu && _mu_msync_factory)
             {
-              // If we can use pure MU composites, add them
-              if (usePureMu && _mu_msync_factory)
-              {
-                TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU barrier\n", this));
-                geometry->setKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE3, NULL);
-                _mu_barrier_composite = _mu_msync_factory->generate(geometry, &xfer);
-                geometry->setKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE3,
-                                 (void*)_mu_barrier_composite);
+              TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU barrier\n", this));
+              geometry->setKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE3, NULL);
+              _mu_barrier_composite = _mu_msync_factory->generate(geometry, &xfer);
+              geometry->setKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE3,
+                               (void*)_mu_barrier_composite);
 
-                // Add Barriers
-                geometry->addCollective(PAMI_XFER_BARRIER, _mu_msync_factory, _context_id);
-              }
-
-              // Add 2 device composite protocols
-#ifndef ENABLE_NEW_SHMEM_SUBNODE
-              if (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
-#endif
-              {
-                if (_msync2d_composite_factory)
-                {
-                  TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register msync 2D\n", this));
-                  _msync2d_composite = _msync2d_composite_factory->generate(geometry, &xfer);
-                  geometry->addCollective(PAMI_XFER_BARRIER, _msync2d_composite_factory, _context_id);
-                }
-
-                if (_msync2d_dput_composite_factory)
-                {
-                  geometry->setKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE4, NULL);
-                  _msync2d_dput_composite = _msync2d_dput_composite_factory->generate(geometry, &xfer);
-                  geometry->addCollective(PAMI_XFER_BARRIER, _msync2d_dput_composite_factory, _context_id);
-                  geometry->setKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE4,
-                                   (void*)_msync2d_dput_composite);
-                }
-              }
+              // Add Barriers
+              geometry->addCollective(PAMI_XFER_BARRIER, _mu_msync_factory, _context_id);
             }
 
-            val = geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
-            TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() GKEY_MCAST_CLASSROUTEID %p\n", this, val));
-
-            if ((val && val != PAMI_CR_GKEY_FAIL) || // We have a class route or
-                (topology->isLocalToMe()))           // It's all local - we might use 2 device protocol in shmem-only mode
-            {
-              // If we can use pure MU composites, add them
-              if (usePureMu)
-              {
-                TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU bcast\n", this));
-                // Add Broadcasts
-                geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_mcast_factory,  _context_id);
-#ifdef ENABLE_X0_PROTOCOLS
-                geometry->addCollectiveCheck(PAMI_XFER_BROADCAST,  _mu_mcast3_factory, _context_id);
+            // Add 2 device composite protocols
+#ifndef ENABLE_SHMEM_SUBNODE
+            if (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
 #endif
+            {
+              if (_msync2d_composite_factory)
+              {
+                TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register msync 2D\n", this));
+                _msync2d_composite = _msync2d_composite_factory->generate(geometry, &xfer);
+                geometry->addCollective(PAMI_XFER_BARRIER, _msync2d_composite_factory, _context_id);
               }
 
-              // Add 2 device composite protocols
+              if (_msync2d_dput_composite_factory)
+              {
+                geometry->setKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE4, NULL);
+                _msync2d_dput_composite = _msync2d_dput_composite_factory->generate(geometry, &xfer);
+                geometry->addCollective(PAMI_XFER_BARRIER, _msync2d_dput_composite_factory, _context_id);
+                geometry->setKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE4,
+                                 (void*)_msync2d_dput_composite);
+              }
+            }
+          }
+
+          val = geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
+          TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() GKEY_MCAST_CLASSROUTEID %p\n", this, val));
+
+          if ((val && val != PAMI_CR_GKEY_FAIL) || // We have a class route or
+              (topology->isLocalToMe()))           // It's all local - we might use 2 device protocol in shmem-only mode
+          {
+            // If we can use pure MU composites, add them
+            if (usePureMu)
+            {
+              TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU bcast\n", this));
+              // Add Broadcasts
+              geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_mcast_factory,  _context_id);
+#ifdef ENABLE_X0_PROTOCOLS
+              geometry->addCollectiveCheck(PAMI_XFER_BROADCAST,  _mu_mcast3_factory, _context_id);
+#endif
+            }
+
+            // Add 2 device composite protocols
 #ifndef ENABLE_NEW_SHMEM
-              // Default Shmem doesn't work with 2 device protocol right now
-              if (local_sub_topology->size() == 1)
+            // Default Shmem doesn't work with 2 device protocol right now
+            if (local_sub_topology->size() == 1)
 #endif
-#ifndef ENABLE_NEW_SHMEM_SUBNODE
-                if (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
+#ifndef ENABLE_SHMEM_SUBNODE
+            if (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
 #endif
-                {
+            {
 #ifdef ENABLE_X0_PROTOCOLS
-                  if (_mcast2d_composite_factory)
-                  {
-                    TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register mcast 2D\n", this));
-                    geometry->addCollectiveCheck(PAMI_XFER_BROADCAST, _mcast2d_composite_factory, _context_id);
-                  }
+              if (_mcast2d_composite_factory)
+              {
+                TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register mcast 2D\n", this));
+                geometry->addCollectiveCheck(PAMI_XFER_BROADCAST, _mcast2d_composite_factory, _context_id);
+              }
 #endif
-                  if (_mcast2d_dput_composite_factory)
-                  {
-                    TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register mcast dput 2D\n", this));
-                    geometry->addCollective(PAMI_XFER_BROADCAST, _mcast2d_dput_composite_factory, _context_id);
-                  }
-                }
+              if (_mcast2d_dput_composite_factory)
+              {
+                TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register mcast dput 2D\n", this));
+                geometry->addCollective(PAMI_XFER_BROADCAST, _mcast2d_dput_composite_factory, _context_id);
+              }
+            }
+          }
+
+          val = geometry->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
+          TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() GKEY_MCOMB_CLASSROUTEID %p\n", this, val));
+
+          if ((val && val != PAMI_CR_GKEY_FAIL) || // We have a class route or
+              (topology->isLocalToMe()))           // It's all local - we might use 2 device protocol in shmem-only mode
+          {
+            // If we can use pure MU composites, add them
+            if (usePureMu)
+            {
+              // Direct MU allreduce only on one context per node (lowest T, context 0)
+              if ((__global.mapping.isLowestT()) && (_context_id == 0))
+              {
+                // Add Allreduces
+                TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU allreduce\n", this));
+                geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mu_mcomb_factory, _context_id);
+              }
             }
 
-            val = geometry->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
-            TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() GKEY_MCOMB_CLASSROUTEID %p\n", this, val));
-
-            if ((val && val != PAMI_CR_GKEY_FAIL) || // We have a class route or
-                (topology->isLocalToMe()))           // It's all local - we might use 2 device protocol in shmem-only mode
-            {
-              // If we can use pure MU composites, add them
-              if (usePureMu)
-              {
-                // Direct MU allreduce only on one context per node (lowest T, context 0)
-                if ((__global.mapping.isLowestT()) && (_context_id == 0))
-                {
-                  // Add Allreduces
-                  TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU allreduce\n", this));
-                  geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mu_mcomb_factory, _context_id);
-                }
-              }
-
-              // Add 2 device composite protocols
+            // Add 2 device composite protocols
 #ifdef ENABLE_NEW_SHMEM   // limited support - 4/8/16 processes only
-              if ((__global.topology_local.size() ==  4) ||  
-                  (__global.topology_local.size() ==  8) ||
-                  (__global.topology_local.size() == 16))
+            if ((__global.topology_local.size() ==  4) ||  
+                (__global.topology_local.size() ==  8) ||
+                (__global.topology_local.size() == 16))
 #endif
-#ifndef ENABLE_NEW_SHMEM_SUBNODE
-                if (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
+#ifndef ENABLE_SHMEM_SUBNODE
+            if (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
 #endif
-                {
-                  // New optimized MU+Shmem protocol requires a class route
-                  if ((_mushmemcollectivedputmulticombinefactory) && (val && val != PAMI_CR_GKEY_FAIL))
-                    geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,  _mushmemcollectivedputmulticombinefactory, _context_id);
+            {
+              // New optimized MU+Shmem protocol requires a class route
+              if ((_mushmemcollectivedputmulticombinefactory) && (val && val != PAMI_CR_GKEY_FAIL))
+                geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,  _mushmemcollectivedputmulticombinefactory, _context_id);
 
-                  // NP (non-pipelining) 2 device protocols
-                  if ((_mcomb2dNP_dput_composite_factory) && (master_sub_topology->size() > 1))  // \todo Simple NP protocol doesn't like 1 master - fix it later
-                    geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2dNP_dput_composite_factory, _context_id);
+              // NP (non-pipelining) 2 device protocols
+              if ((_mcomb2dNP_dput_composite_factory) && (master_sub_topology->size() > 1))  // \todo Simple NP protocol doesn't like 1 master - fix it later
+                geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2dNP_dput_composite_factory, _context_id);
 
-                  if ((_mcomb2dNP_composite_factory) && (master_sub_topology->size() > 1))  // \todo Simple NP protocol doesn't like 1 master - fix it later
-                    geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2dNP_composite_factory, _context_id);
+              if ((_mcomb2dNP_composite_factory) && (master_sub_topology->size() > 1))  // \todo Simple NP protocol doesn't like 1 master - fix it later
+                geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2dNP_composite_factory, _context_id);
 
-                  //  2 device protocols
-                  if (_mcomb2d_dput_composite_factory)
-                    geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2d_dput_composite_factory, _context_id);
+              //  2 device protocols
+              if (_mcomb2d_dput_composite_factory)
+                geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2d_dput_composite_factory, _context_id);
 
 #ifdef ENABLE_X0_PROTOCOLS
-                  if (_mcomb2d_composite_factory)
-                    geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2d_composite_factory, _context_id);
+              if (_mcomb2d_composite_factory)
+                geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2d_composite_factory, _context_id);
 #endif
-                }
             }
           }
         }

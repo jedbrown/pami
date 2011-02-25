@@ -11,10 +11,12 @@
  * \brief Simple Barrier test on sub-geometries using "must query" algorithms
  */
 
-
 #include "../../../../api/pami_util.h"
+#include <Arch.h> /* Don't use PAMI_MAX_PROC_PER_NODE in 'real' api test*/
 
 #define NITERLAT   1   
+#define NUM_NON_ROOT_DELAYS 2
+
 #include <assert.h>
 
 int main (int argc, char ** argv)
@@ -84,6 +86,8 @@ int main (int argc, char ** argv)
     fprintf(stderr,"No barrier subcomms on 1 node\n");
     return 0;
   }
+  assert(task_id >=0);
+  assert(task_id < num_tasks);
 
   unsigned iContext = 0;
 
@@ -119,16 +123,16 @@ int main (int argc, char ** argv)
     pami_xfer_t            newbarrier;
 
     size_t                 set[2];
-    int                    id, root = 0, timeDelay = 0;
+    int                    id, root = 0, non_root[NUM_NON_ROOT_DELAYS], timeDelay = 0;
     size_t                 half        = num_tasks / 2;
     range     = (pami_geometry_range_t *)malloc(((num_tasks + 1) / 2) * sizeof(pami_geometry_range_t));
 
     char *method = getenv("TEST_SPLIT_METHOD");
 
-    // Default or TEST_SPLIT_METHOD=0 : divide in half
+    /* Default or TEST_SPLIT_METHOD=0 : divide in half */
     if ((!method || !strcmp(method, "0")))
     {
-      if (task_id >= 0 && task_id <= half - 1)
+      if (task_id < half)
       {
         range[0].lo = 0;
         range[0].hi = half - 1;
@@ -136,6 +140,8 @@ int main (int argc, char ** argv)
         set[1]   = 0;
         id       = 1;
         root     = 0;
+        non_root[0]  = root +1;       /* first non-root rank in the subcomm  */
+        non_root[1]  = half-1;        /* last rank in the subcomm  */
       }
       else
       {
@@ -145,11 +151,13 @@ int main (int argc, char ** argv)
         set[1]   = 1;
         id       = 2;
         root     = half;
+        non_root[0] = root +1;       /* first non-root rank in the subcomm  */
+        non_root[1] = num_tasks-1;   /* last rank in the subcomm  */
       }
 
       rangecount = 1;
     }
-    // TEST_SPLIT_METHOD=-1 : alternate ranks
+    /* TEST_SPLIT_METHOD=-1 : alternate ranks  */
     else if ((method && !strcmp(method, "-1")))
     {
       int i = 0;
@@ -166,12 +174,19 @@ int main (int argc, char ** argv)
             iter++;
           }
         }
+        if (iter == 1)
+        {
+          fprintf(stderr,"No barrier subcomms on 1 node\n");
+          return 0;
+        }
 
         set[0]   = 1;
         set[1]   = 0;
         id       = 2;
         root     = 0;
         rangecount = iter;
+        non_root[0] = range[1].lo;      /* first non-root rank in the subcomm  */
+        non_root[1] = range[iter-1].lo; /* last rank in the subcomm  */
       }
       else
       {
@@ -184,16 +199,23 @@ int main (int argc, char ** argv)
             iter++;
           }
         }
+        if (iter == 1)
+        {
+          fprintf(stderr,"No barrier subcomms on 1 node\n");
+          return 0;
+        }
 
         set[0]   = 0;
         set[1]   = 1;
         id       = 2;
         root     = 1;
         rangecount = iter;
+        non_root[0] = range[1].lo;      /* first non-root rank in the subcomm  */
+        non_root[1] = range[iter-1].lo; /* last rank in the subcomm  */
       }
 
     }
-    // TEST_SPLIT_METHOD=N : Split the first "N" processes into a communicator
+    /* TEST_SPLIT_METHOD=N : Split the first "N" processes into a communicator */
     else
     {
       half = atoi(method);
@@ -202,7 +224,7 @@ int main (int argc, char ** argv)
         fprintf(stderr,"No barrier subcomms on 1 node\n");
         return 0;
       }
-      if (task_id >= 0 && task_id <= half - 1)
+      if (task_id < half)
       {
         range[0].lo = 0;
         range[0].hi = half - 1;
@@ -210,6 +232,8 @@ int main (int argc, char ** argv)
         set[1]   = 0;
         id       = 1;
         root     = 0;
+        non_root[0] = root +1;       /* first non-root rank in the subcomm  */
+        non_root[1] = half-1;        /* last rank in the subcomm  */
       }
       else
       {
@@ -219,6 +243,8 @@ int main (int argc, char ** argv)
         set[1]   = 1;
         id       = 2;
         root     = half;
+        non_root[0] = root +1;       /* first non-root rank in the subcomm  */
+        non_root[1] = num_tasks-1;   /* last rank in the subcomm  */
       }
 
       rangecount = 1;
@@ -226,7 +252,7 @@ int main (int argc, char ** argv)
 
     if(root)
     {
-      timeDelay = 2; // Need to stagger barriers between subcomm's
+      timeDelay = 1; /* Need to stagger barriers between subcomm's */
     }
 
     /* Delay root tasks, and emulate that he's doing "other"
@@ -248,7 +274,7 @@ int main (int argc, char ** argv)
                                    &newgeometry,
                                    range,
                                    rangecount,
-                                   id + iContext, // Unique id for each context
+                                   id + iContext, /* Unique id for each context */
                                    barrier_xfer,
                                    newbar_num_algo,
                                    &newbar_algo,
@@ -305,29 +331,38 @@ int main (int argc, char ** argv)
 
           if (result.bitmask) continue;
 
-          if (task_id == root)
+          /* Do two functional runs with different delaying ranks*/
+          int j;
+          for(j = 0; j < NUM_NON_ROOT_DELAYS; ++j)
           {
-            delayTest(timeDelay*nalg);
-            fprintf(stderr, "Test set(%u):  Barrier protocol(%s) Correctness (%d of %zd algorithms)\n", k,
-                    q_newbar_md[nalg].name, nalg + 1, newbar_num_algo[1]);
-            ti = timer();
-            blocking_coll(context[iContext], &newbarrier, &poll_flag);
-            tf = timer();
-            usec = tf - ti;
-
-            if (usec < 1800000.0 || usec > 2200000.0)
-            {  
-              rc = 1;  
-              fprintf(stderr, "%s FAIL: usec=%f want between %f and %f!\n",q_newbar_md[nalg].name,
-                      usec, 1800000.0, 2200000.0);
+            if (task_id == root)
+            {
+              delayTest(timeDelay*nalg);
+              fprintf(stderr, "Test set(%u):  Barrier protocol(%s) Correctness (%d of %zd algorithms)\n", k,
+                      q_newbar_md[nalg].name, nalg + 1, newbar_num_algo[1]);
+              ti = timer();
+              blocking_coll(context[iContext], &newbarrier, &poll_flag);
+              tf = timer();
+              usec = tf - ti;
+  
+              if (usec < 1800000.0 || usec > 2200000.0)
+              {  
+                rc = 1;  
+                fprintf(stderr, "%s FAIL: usec=%f want between %f and %f!\n",q_newbar_md[nalg].name,
+                        usec, 1800000.0, 2200000.0);
+              }
+              else
+                fprintf(stderr, "%s Barrier correct!\n",q_newbar_md[nalg].name);
             }
             else
-              fprintf(stderr, "Barrier correct!\n");
-          }
-          else
-          {
-            delayTest(2+timeDelay*nalg);
-            blocking_coll(context[iContext], &newbarrier, &poll_flag);
+            {
+              /* Try to vary where the delay comes from... by picking first and last (non-roots) we
+                 *might* be getting same node/different node delays.
+              */
+              if (task_id == non_root[j])
+                delayTest(2+timeDelay*nalg);
+              blocking_coll(context[iContext], &newbarrier, &poll_flag);
+            }
           }
 
           int niter = NITERLAT;

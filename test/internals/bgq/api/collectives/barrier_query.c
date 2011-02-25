@@ -12,8 +12,10 @@
  */
 
 #include "../../../../api/pami_util.h"
+#include <Arch.h> /* Don't use PAMI_MAX_PROC_PER_NODE in 'real' api test*/
 
 #define NITERLAT   1   
+#define NUM_NON_ROOT_DELAYS 2
 
 #include <assert.h>
 
@@ -22,7 +24,7 @@ int main (int argc, char ** argv)
   pami_client_t        client;
   pami_context_t       context[PAMI_MAX_PROC_PER_NODE]; /* arbitrary max */
   size_t               num_contexts = 1;
-  pami_task_t          task_id;
+  pami_task_t          task_id, non_root[NUM_NON_ROOT_DELAYS];
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
 
@@ -75,6 +77,8 @@ int main (int argc, char ** argv)
     fprintf(stderr,"No barrier on 1 node\n");
     return 0;
   }
+  non_root[0] = 1;            /* first non-root rank in the comm  */
+  non_root[1] = num_tasks -1;/* last rank in the comm  */
 
   unsigned iContext = 0;
 
@@ -123,28 +127,37 @@ int main (int argc, char ** argv)
 
       if (result.bitmask) continue;
 
-      if (!task_id)
+      /* Do two functional runs with different delaying ranks*/
+      int j;
+      for(j = 0; j < NUM_NON_ROOT_DELAYS; ++j)
       {
-        fprintf(stderr, "Test Barrier protocol(%s) Correctness (%d of %zd algorithms)\n",
-                must_query_md[nalg].name, nalg + 1, num_algorithm[1]);
-        ti = timer();
-        blocking_coll(context[iContext], &barrier, &poll_flag);
-        tf = timer();
-        usec = tf - ti;
-
-        if (usec < 1800000.0 || usec > 2200000.0)
-        {  
-          rc = 1;  
-          fprintf(stderr, "%s FAIL: usec=%f want between %f and %f!\n",must_query_md[nalg].name,
-                  usec, 1800000.0, 2200000.0);
+        if (!task_id)
+        {
+          fprintf(stderr, "Test Barrier protocol(%s) Correctness (%d of %zd algorithms)\n",
+                  must_query_md[nalg].name, nalg + 1, num_algorithm[1]);
+          ti = timer();
+          blocking_coll(context[iContext], &barrier, &poll_flag);
+          tf = timer();
+          usec = tf - ti;
+  
+          if (usec < 1800000.0 || usec > 2200000.0)
+          {  
+            rc = 1;  
+            fprintf(stderr, "%s FAIL: usec=%f want between %f and %f!\n",must_query_md[nalg].name,
+                    usec, 1800000.0, 2200000.0);
+          }
+          else
+            fprintf(stderr, "%s Barrier correct!\n",must_query_md[nalg].name);
         }
         else
-          fprintf(stderr, "Barrier correct!\n");
-      }
-      else
-      {
-        delayTest(2);
-        blocking_coll(context[iContext], &barrier, &poll_flag);
+        {
+          /* Try to vary where the delay comes from... by picking first and last (non-roots) we
+             *might* be getting same node/different node delays.
+          */
+          if (task_id == non_root[j])
+            delayTest(2);
+          blocking_coll(context[iContext], &barrier, &poll_flag);
+        }
       }
 
       int niter = NITERLAT;

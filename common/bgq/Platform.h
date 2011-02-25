@@ -27,8 +27,8 @@
 // New BGQ optimized shmem stack:
 #define ENABLE_NEW_SHMEM
 
-// Enable New BGQ optimized shmem stack on sub-node geometries
-//#define ENABLE_NEW_SHMEM_SUBNODE
+// Enable BGQ shmem stack on sub-node geometries
+//#define ENABLE_SHMEM_SUBNODE
 
 // Enable experimental (X0) collective protocols
 //#define ENABLE_X0_PROTOCOLS

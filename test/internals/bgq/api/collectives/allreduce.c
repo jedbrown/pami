@@ -12,22 +12,23 @@
  */
 
 #include "../../../../api/pami_util.h"
+#include <Arch.h> /* Don't use PAMI_MAX_PROC_PER_NODE in 'real' api test*/
 
 /*define this if you want to validate the data */
 #define CHECK_DATA
 
-#define FULL_TEST 0 // see envvar TEST_DT/TEST_OP for overrides
+#define FULL_TEST 0 /* see envvar TEST_DT/TEST_OP for overrides */
 unsigned full_test = FULL_TEST;
 
-#define COUNT      65536        // see envvar TEST_COUNT for overrides
+#define COUNT      65536        /* see envvar TEST_COUNT for overrides */
 unsigned max_count = COUNT;
 
-#define OFFSET     0            // see envvar TEST_OFFSET for overrides
+#define OFFSET     0            /* see envvar TEST_OFFSET for overrides */
 unsigned buffer_offset = OFFSET;
 
 #define MAXBUFSIZE max_count*16
 
-#define NITERLAT   1            // see envvar TEST_ITER for overrides
+#define NITERLAT   1            /* see envvar TEST_ITER for overrides */
 unsigned niterlat  = NITERLAT;
 
 #define NITERBW    MIN(10, niterlat/100+1)
@@ -207,7 +208,6 @@ void initialize_sndbuf (void *buf, int count, int op, int dt, int task_id, int n
     for (i = 0; i < count; i += num_tasks)
     {
       dbuf[i+task_id] = 1.0 * task_id;
-//      fprintf(stderr, "Init(%d) buf[%u]=%f\n",count,i+task_id, dbuf[i+task_id]);
     }
   }
   else
@@ -257,7 +257,6 @@ int check_rcvbuf (void *buf, int count, int op, int dt, int task_id, int num_tas
 
     for (i = 0; i < count; i++)
     {
-//      fprintf(stderr, "Check(%d) buf[%u]=%f\n",count, i, rcvbuf[i]);
       if (rcvbuf[i] != 0.0)
       {
         fprintf(stderr, "%s:Check %s/%s(%d) failed rcvbuf[%d] %f != %f\n", protocolName, dt_array_str[dt], op_array_str[op], count, i, rcvbuf[i], (double)0.0);
@@ -272,7 +271,6 @@ int check_rcvbuf (void *buf, int count, int op, int dt, int task_id, int num_tas
 
     for (i = 0; i < count; i++)
     {
-//      fprintf(stderr, "Check(%d) buf[%u]=%f\n",count, i, rcvbuf[i]);
       if (rcvbuf[i] != 1.0 * (i % num_tasks))
       {
         fprintf(stderr, "%s:Check %s/%s(%d) failed rcvbuf[%d] %f != %f\n", protocolName, dt_array_str[dt], op_array_str[op], count, i, rcvbuf[i], (double)1.0*(i % num_tasks));
@@ -339,25 +337,25 @@ int main (int argc, char ** argv)
   /* \note Test environment variable" TEST_OP=pami operation string      */
   char* sOp = getenv("TEST_OP");
 
-  // Override FULL_TEST with 'ALL'
+  /* Override FULL_TEST with 'ALL' */
   if ((sDt && !strcmp(sDt, "ALL")) || (sOp && !strcmp(sOp, "ALL"))) full_test = 1;
 
   /* \note Test environment variable" TEST_COUNT=N max count     */
   char* sCount = getenv("TEST_COUNT");
 
-  // Override COUNT
+  /* Override COUNT */
   if (sCount) max_count = atoi(sCount);
 
   /* \note Test environment variable" TEST_OFFSET=N buffer offset/alignment*/
   char* sOffset = getenv("TEST_OFFSET");
 
-  // Override OFFSET
+  /* Override OFFSET */
   if (sOffset) buffer_offset = atoi(sOffset);
 
   /* \note Test environment variable" TEST_ITER=N iterations      */
   char* sIter = getenv("TEST_ITER");
 
-  // Override NITERLAT
+  /* Override NITERLAT */
   if (sIter) niterlat = atoi(sIter);
 
   /* \note Test environment variable" TEST_NUM_CONTEXTS=N, defaults to 1.*/
@@ -511,7 +509,7 @@ int main (int argc, char ** argv)
           else
             validTable[i][j] = 0;
     }
-    else  // minimal/default test
+    else  /* minimal/default test */
     {
 
       for (i = 0; i < op_count; i++)

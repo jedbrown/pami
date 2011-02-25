@@ -12,17 +12,18 @@
  */
 
 #include "../../../../api/pami_util.h"
+#include <Arch.h> /* Don't use PAMI_MAX_PROC_PER_NODE in 'real' api test*/
 
 /*define this if you want to validate the data */
 #define CHECK_DATA
 
-#define COUNT     (1048576*8)   // see envvar TEST_COUNT for overrides
+#define COUNT     (1048576*8)   /* see envvar TEST_COUNT for overrides */
 unsigned max_count = COUNT;
 
-#define OFFSET     0            // see envvar TEST_OFFSET for overrides
+#define OFFSET     0            /* see envvar TEST_OFFSET for overrides */
 unsigned buffer_offset = OFFSET;
 
-#define NITERLAT   1            // see envvar TEST_ITER for overrides
+#define NITERLAT   1            /* see envvar TEST_ITER for overrides */
 unsigned niterlat  = NITERLAT;
 
 #define NITERBW    MIN(10, niterlat/100+1)
@@ -103,19 +104,19 @@ int main (int argc, char ** argv)
   /* \note Test environment variable" TEST_COUNT=N max count     */
   char* sCount = getenv("TEST_COUNT");
 
-  // Override COUNT
+  /* Override COUNT */
   if (sCount) max_count = atoi(sCount);
 
   /* \note Test environment variable" TEST_OFFSET=N buffer offset/alignment*/
   char* sOffset = getenv("TEST_OFFSET");
 
-  // Override OFFSET
+  /* Override OFFSET */
   if (sOffset) buffer_offset = atoi(sOffset);
 
   /* \note Test environment variable" TEST_ITER=N iterations      */
   char* sIter = getenv("TEST_ITER");
 
-  // Override NITERLAT
+  /* Override NITERLAT */
   if (sIter) niterlat = atoi(sIter);
 
   /* \note Test environment variable" TEST_PARENTLESS=0 or 1, defaults to 0.
@@ -158,6 +159,8 @@ int main (int argc, char ** argv)
     fprintf(stderr,"No subcomms on 1 node\n");
     return 0;
   }
+  assert(task_id >=0);
+  assert(task_id < num_tasks);
 
   unsigned iContext = 0;
 
@@ -206,10 +209,10 @@ int main (int argc, char ** argv)
 
     char *method = getenv("TEST_SPLIT_METHOD");
 
-    // Default or TEST_SPLIT_METHOD=0 : divide in half
+    /* Default or TEST_SPLIT_METHOD=0 : divide in half */
     if ((!method || !strcmp(method, "0")))
     {
-      if (task_id >= 0 && task_id <= half - 1)
+      if (task_id < half)
       {
         range[0].lo = 0;
         range[0].hi = half - 1;
@@ -230,7 +233,7 @@ int main (int argc, char ** argv)
 
       rangecount = 1;
     }
-    // TEST_SPLIT_METHOD=-1 : alternate ranks
+    /* TEST_SPLIT_METHOD=-1 : alternate ranks  */
     else if ((method && !strcmp(method, "-1")))
     {
       int i = 0;
@@ -274,11 +277,11 @@ int main (int argc, char ** argv)
       }
 
     }
-    // TEST_SPLIT_METHOD=N : Split the first "N" processes into a communicator
+    /* TEST_SPLIT_METHOD=N : Split the first "N" processes into a communicator */
     else
     {
       half = atoi(method);
-      if (task_id >= 0 && task_id <= half - 1)
+      if (task_id < half)
       {
         range[0].lo = 0;
         range[0].hi = half - 1;
@@ -319,7 +322,7 @@ int main (int argc, char ** argv)
                                    &newgeometry,
                                    range,
                                    rangecount,
-                                   id + iContext, // Unique id for each context
+                                   id + iContext, /* Unique id for each context */
                                    barrier_xfer,
                                    newbar_num_algo,
                                    &newbar_algo,

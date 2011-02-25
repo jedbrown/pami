@@ -12,17 +12,18 @@
  */
 
 #include "../../../../api/pami_util.h"
+#include <Arch.h> /* Don't use PAMI_MAX_PROC_PER_NODE in 'real' api test*/
 
 /*define this if you want to validate the data */
 #define CHECK_DATA
 
-#define COUNT     (1048576*8)   // see envvar TEST_COUNT for overrides
+#define COUNT     (1048576*8)   /* see envvar TEST_COUNT for overrides */
 unsigned max_count = COUNT;
 
-#define OFFSET     0            // see envvar TEST_OFFSET for overrides
+#define OFFSET     0            /* see envvar TEST_OFFSET for overrides */
 unsigned buffer_offset = OFFSET;
 
-#define NITERLAT   1            // see envvar TEST_ITER for overrides
+#define NITERLAT   1            /* see envvar TEST_ITER for overrides */
 unsigned niterlat  = NITERLAT;
 
 #define NITERBW    MIN(10, niterlat/100+1)
@@ -109,19 +110,19 @@ int main (int argc, char ** argv)
   /* \note Test environment variable" TEST_COUNT=N max count     */
   char* sCount = getenv("TEST_COUNT");
 
-  // Override COUNT
+  /* Override COUNT */
   if (sCount) max_count = atoi(sCount);
 
   /* \note Test environment variable" TEST_OFFSET=N buffer offset/alignment*/
   char* sOffset = getenv("TEST_OFFSET");
 
-  // Override OFFSET
+  /* Override OFFSET */
   if (sOffset) buffer_offset = atoi(sOffset);
 
   /* \note Test environment variable" TEST_ITER=N iterations      */
   char* sIter = getenv("TEST_ITER");
 
-  // Override NITERLAT
+  /* Override NITERLAT */
   if (sIter) niterlat = atoi(sIter);
 
   /* \note Test environment variable" TEST_NUM_CONTEXTS=N, defaults to 1.*/
