@@ -499,7 +499,7 @@ namespace CCMI
             new(&_t_root) PAMI::Topology(cmd->cmd.xfer_reduce.root);
             new(&_t_me)   PAMI::Topology(_geometry->rank());
           
-            TRACE_FORMAT( "setting up PWQ's %p %p, sbytes=%ld buf=%p:  root=%ld, me=%ld, amRoot=%d",
+            TRACE_FORMAT( "setting up PWQ's %p %p, sbytes=%ld buf=%p:  root=%ld, me=%u, amRoot=%d",
                           &_pwq_src, &_pwq_dest, sbytes, cmd->cmd.xfer_reduce.sndbuf,
                           cmd->cmd.xfer_reduce.root, _geometry->rank(), amRoot);
 
