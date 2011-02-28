@@ -238,7 +238,9 @@ namespace TSPColl
 //    int nextID = _taglist[tag]->size();
     int nextID = id;
     NBColl<T_NI> * retval = _factory.create (comm, tag, nextID);
-    PAMI_assert((*_taglist[tag])[nextID] == NULL);
+    if((*_taglist[tag])[nextID] != NULL)
+      free((*_taglist[tag])[nextID]);
+// PAMI_assert((*_taglist[tag])[nextID] == NULL);
     (*_taglist[tag])[nextID] = retval;
     return retval;
   }

@@ -140,6 +140,9 @@ namespace CCMI
           PAMI::Topology  *t_master    = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
           PAMI::Topology  *t_local     = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
 
+          _cb_done                     = ((pami_xfer_t*)cmd)->cb_done;
+          _clientdata                  = ((pami_xfer_t*)cmd)->cookie;
+          
           _g_reset_cb                   = false;
           _l0_reset_cb                  = false;
           _l1_reset_cb                  = false;

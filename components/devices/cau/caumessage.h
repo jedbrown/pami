@@ -195,7 +195,8 @@ namespace PAMI
         _red(red),
         _context(context),
         _devinfo(NULL),
-        _device(NULL)
+        _device(NULL),
+        _workfcn(NULL)
         {
         }
       pami_event_function  _user_done_fn;
@@ -219,6 +220,8 @@ namespace PAMI
       void                *_devinfo;
       void                *_device;
       coremath             _math_func;
+      bool                 _reduceOnly;
+      Generic::GenericThread *_workfcn;
       struct               xfer_header
       {
         unsigned           dispatch_id:16;

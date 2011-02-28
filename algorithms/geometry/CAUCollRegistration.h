@@ -298,15 +298,15 @@ namespace PAMI
             //  ----->  Barrier
             Barrier::MultiSyncFactory  *barrier_reg        = (Barrier::MultiSyncFactory*)_factory_allocator.allocateObject();
             new(barrier_reg) Barrier::MultiSyncFactory(&_sconnmgr,
-                                                       (CCMI::Interfaces::NativeInterface *)&geometryInfo->_niPtr[0],
-                                                       (CCMI::Interfaces::NativeInterface *)&geometryInfo->_niPtr[1]);
+                                                       (CCMI::Interfaces::NativeInterface *)geometryInfo->_niPtr[0],
+                                                       (CCMI::Interfaces::NativeInterface *)geometryInfo->_niPtr[1]);
             geometryInfo->_barrier                         = barrier_reg;
 
             //  ----->  BarrierBSR
             Barrier::MultiSyncBSRFactory  *barrierbsr_reg  = (Barrier::MultiSyncBSRFactory*)_factory_allocator.allocateObject();
             new(barrierbsr_reg) Barrier::MultiSyncBSRFactory(&_sconnmgr,
-                                                             (CCMI::Interfaces::NativeInterface *)&geometryInfo->_niPtr[0],
-                                                             (CCMI::Interfaces::NativeInterface *)&geometryInfo->_niPtr[2]);
+                                                             (CCMI::Interfaces::NativeInterface *)geometryInfo->_niPtr[0],
+                                                             (CCMI::Interfaces::NativeInterface *)geometryInfo->_niPtr[2]);
             geometryInfo->_barrierbsr                      = barrierbsr_reg;
 
             

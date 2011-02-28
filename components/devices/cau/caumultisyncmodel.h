@@ -20,9 +20,9 @@
 
 #ifdef TRACE
 #undef TRACE
-#define TRACE(x)// fprintf x
+#define TRACE(x)//fprintf x
 #else
-#define TRACE(x)// fprintf x
+#define TRACE(x)//fprintf x
 #endif
 
 namespace PAMI
@@ -75,6 +75,7 @@ namespace PAMI
           void               *r   = NULL;
           lapi_return_info_t *ri  = (lapi_return_info_t *) retinfo;
 
+          TRACE((stderr, "cau_mcast_handler 3\n"));
           if(m == NULL)
             PAMI_abort();
 
@@ -137,7 +138,7 @@ namespace PAMI
                                      ms->_device.getContext(),
                                      NULL,
                                      NULL,
-                                     gi->_seqno++,
+                                     gi->_seqno,
                                      ms);
               gi->_ue.pushTail((MatchQueueElem*)m);
               r             = NULL;
@@ -227,11 +228,19 @@ namespace PAMI
 
           if(tl[0] == _device.taskid())
             {
-              TRACE((stderr, "CAU:  FindAndDelete\n"));
               m = (CAUMsyncMessage*)gi->_ue.findAndDelete(gi->_seqno);
               if (m != NULL)
                 {
                   TRACE((stderr, "CAU:  Multicast\n"));
+                  new(m) CAUMsyncMessage(0.0,
+                                         _device.getContext(),
+                                         msync->cb_done.function,
+                                         msync->cb_done.clientdata,
+                                         gi->_seqno++,
+                                         this);
+                  m->_xfer_data[0]     = _dispatch_red_id;
+                  m->_xfer_data[1]     = gi->_geometry_id;
+                  m->_xfer_data[2]     = gi->_seqno-1;
                   CheckLapiRC(lapi_cau_multicast(_device.getHdl(),            // lapi handle
                                                  gi->_cau_id,                 // group id
                                                  _dispatch_mcast_id,          // dispatch id
