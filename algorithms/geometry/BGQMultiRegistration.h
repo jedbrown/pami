@@ -50,6 +50,23 @@ namespace PAMI
 {
   namespace CollRegistration
   {
+
+    /// 
+    /// Metadata functions
+    /// 
+    // The protocol requires T_Aligned buffers.  Call some other T_Function (maybe check dt/op?), then check the alignment.
+    template <unsigned T_Alignment, pami_metadata_function T_Function>
+    inline metadata_result_t align_metadata_function(struct pami_xfer_t *in)
+    {
+        metadata_result_t result = T_Function(in);
+        uint64_t  mask  = T_Alignment - 1; 
+        result.check.align_send_buffer      |= (((uint64_t)in->cmd.xfer_allreduce.sndbuf & (uint64_t)mask) == 0) ? 0:1;
+        result.check.align_send_recv_buffer |= (((uint64_t)in->cmd.xfer_allreduce.rcvbuf & (uint64_t)mask) == 0) ? 0:1;
+        return result;
+    }
+
+    // The protocol only supports some dt/op's.  
+    // Two functions - one for MU dt/ops, one for current SHMEM dt/ops
     namespace MU
     {
       inline metadata_result_t op_dt_metadata_function(struct pami_xfer_t *in)
@@ -280,12 +297,14 @@ namespace PAMI
 #ifdef ENABLE_NEW_SHMEM
       m->check_correct.values.alldt     = 0;
       m->check_correct.values.allop     = 0;
-      m->check_fn                       = Shmem::op_dt_metadata_function;
+      m->check_fn                       = align_metadata_function<64,Shmem::op_dt_metadata_function>;
       m->check_perf.values.hw_accel     = 1;
+      /// \todo m->check_correct.values.sendminalign = ?   // Need ticket #380 clarification
+      /// \todo m->check_correct.values.sendminalign = ?
 #else
       m->check_correct.values.alldt     = 0;
       m->check_correct.values.allop     = 0;
-      m->check_fn                       = MU::op_dt_metadata_function;
+      m->check_fn                       = align_metadata_function<64,MU::op_dt_metadata_function>;
       m->check_perf.values.hw_accel     = 1;
 #endif
     }
@@ -410,12 +429,12 @@ namespace PAMI
 #ifdef ENABLE_NEW_SHMEM
       m->check_correct.values.alldt     = 0;
       m->check_correct.values.allop     = 0;
-      m->check_fn                       = Shmem::op_dt_metadata_function;
+      m->check_fn                       = align_metadata_function<32,Shmem::op_dt_metadata_function>;
       m->check_perf.values.hw_accel     = 1;
 #else
       m->check_correct.values.alldt     = 0;
       m->check_correct.values.allop     = 0;
-      m->check_fn                       = MU::op_dt_metadata_function;
+      m->check_fn                       = align_metadata_function<32,MU::op_dt_metadata_function>;
       m->check_perf.values.hw_accel     = 1;
 #endif
     }
@@ -432,12 +451,12 @@ namespace PAMI
 #ifdef ENABLE_NEW_SHMEM
       m->check_correct.values.alldt     = 0;
       m->check_correct.values.allop     = 0;
-      m->check_fn                       = Shmem::op_dt_metadata_function;
+      m->check_fn                       = align_metadata_function<32,Shmem::op_dt_metadata_function>;
       m->check_perf.values.hw_accel     = 1;
 #else
       m->check_correct.values.alldt     = 0;
       m->check_correct.values.allop     = 0;
-      m->check_fn                       = MU::op_dt_metadata_function;
+      m->check_fn                       = align_metadata_function<32,MU::op_dt_metadata_function>;
       m->check_perf.values.hw_accel     = 1;
 #endif
     }
@@ -453,12 +472,12 @@ namespace PAMI
 #ifdef ENABLE_NEW_SHMEM
       m->check_correct.values.alldt     = 0;
       m->check_correct.values.allop     = 0;
-      m->check_fn                       = Shmem::op_dt_metadata_function;
+      m->check_fn                       = align_metadata_function<32,Shmem::op_dt_metadata_function>;
       m->check_perf.values.hw_accel     = 1;
 #else
       m->check_correct.values.alldt     = 0;
       m->check_correct.values.allop     = 0;
-      m->check_fn                       = MU::op_dt_metadata_function;
+      m->check_fn                       = align_metadata_function<32,MU::op_dt_metadata_function>;
       m->check_perf.values.hw_accel     = 1;
 #endif
     }

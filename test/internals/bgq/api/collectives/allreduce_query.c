@@ -652,9 +652,9 @@ int main (int argc, char ** argv)
   } /*for(unsigned iContext = 0; iContext < num_contexts; ++iContexts)*/
 
   sbuf = (char*)sbuf - buffer_offset;
-  free(rbuf);
-  rbuf = (char*)rbuf - buffer_offset;
   free(sbuf);
+  rbuf = (char*)rbuf - buffer_offset;
+  free(rbuf);
 
   rc |= pami_shutdown(&client, context, &num_contexts);
   return rc;
