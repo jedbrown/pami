@@ -59,6 +59,7 @@ typedef PAMI::Mutex::BGQ::IndirectL2 MUCR_mutex_t;
 typedef PAMI::Device::SharedAtomicMutexMdl<MUCR_mutex_t> MUCR_mutex_model_t;
 #include <spi/include/kernel/collective.h>
 #include <spi/include/mu/Classroute_inlines.h>
+#include <spi/include/mu/GIBarrier.h>
 #include <spi/include/kernel/gi.h>
 
 #ifdef TRACE_CLASSROUTES
@@ -805,6 +806,7 @@ fprintf(stderr, "%s\n", buf);
 	  uint64_t bbuf[CR_ALLREDUCE_DT_CT];
 	  pami_work_t post;
 	  pami_callback_t cb_done;
+	  uint32_t id; // only used by GI classroute hw init
 	};
 
 	// this code should be very similar to classroute_test.c,
@@ -1123,10 +1125,11 @@ fprintf(stderr, "%s\n", buf);
 	    return;
 	  }
 
+	  pami_event_function fn = cr_barrier_done;
 	  ClassRoute_t cr = {0};
-	  crck->thus->set_classroute(crck->bbuf[0] & 0x0000ffff, crck, &cr,
+	  crck->thus->set_classroute(crck->bbuf[0] & 0x0000ffff, crck, NULL, &cr,
 					PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
-	  crck->thus->set_classroute((crck->bbuf[0] >> 32) & 0x0000ffff, crck, &cr,
+	  crck->thus->set_classroute((crck->bbuf[0] >> 32) & 0x0000ffff, crck, &fn, &cr,
 					PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
 #ifdef TRACE_CLASSROUTES
 	if (crck->thus->_trace_cr) {
@@ -1140,6 +1143,18 @@ fprintf(stderr, "%s\n", buf);
 	  // we got the answer we needed... no more trying...
 	  *crck->thus->_lowest_geom_id = 0xffffffff;
 	  crck->thus->release_mutex(ctx, cookie, PAMI_SUCCESS);
+	  pami_result_t rc = crck->geom->default_barrier(fn, cookie,
+							crck->context, ctx);
+	  if (rc != PAMI_SUCCESS) {
+	    fn(ctx, cookie, rc);
+	  }
+	}
+
+	static void cr_gi_init_barrier_done(pami_context_t ctx, void *cookie, pami_result_t result)
+	{
+	  cr_cookie *crck = (cr_cookie *)cookie;
+	  if (crck->cb_done.function) crck->cb_done.function(ctx, crck->cb_done.clientdata, result);
+	  MUSPI_GIBarrierInitMU2(crck->id, 1000);
 	  pami_result_t rc = crck->geom->default_barrier(cr_barrier_done, cookie,
 							crck->context, ctx);
 	  if (rc != PAMI_SUCCESS) {
@@ -1174,7 +1189,8 @@ fprintf(stderr, "%s\n", buf);
 	}
 
 	// Only holder of mutex calls this... thread safe in process.
-	inline void set_classroute(uint32_t mask, cr_cookie *crck, ClassRoute_t *cr, PAMI::Geometry::gkeys_t key) {
+	inline void set_classroute(uint32_t mask, cr_cookie *crck, pami_event_function *fn,
+					ClassRoute_t *cr, PAMI::Geometry::gkeys_t key) {
 	  uint32_t id = ffs(mask);
 	  bool gi = (key == PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
 	  void **envpp = (gi ? &_gicrdata : &_cncrdata);
@@ -1202,6 +1218,9 @@ fprintf(stderr, "%s\n", buf);
 		}
 #endif // TRACE_CLASSROUTES
 	        rc = Kernel_SetGlobalInterruptClassRoute(id, cr);
+		rc = MUSPI_GIBarrierInitMU1(id);
+		crck->id = id;
+		*fn = cr_gi_init_barrier_done;
 	      } else {
 #ifdef TRACE_CLASSROUTES
 		if (_trace_cr) {
