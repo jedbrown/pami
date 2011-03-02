@@ -678,13 +678,22 @@ extern "C"
    * \brief Non-blocking active message send for contiguous data
    *
    * A low-latency send operation may be enhanced by using a dispatch id which
-   * was set with the \c recv_immediate hint bit enabled. This hint asserts
-   * that all receives with the dispatch id will not exceed a certain limit.
+   * was set with the pami_dispatch_hint_t::recv_immediate hint bit enabled.
+   * This hint asserts that all receives with the dispatch id will not exceed
+   * a certain limit.
    *
-   * The implementation configuration attribute \c PAMI_DISPATCH_RECV_IMMEDIATE_MAX
+   * The implementation configuration attribute ::PAMI_DISPATCH_RECV_IMMEDIATE_MAX
    * defines the maximum size of data buffers that can be completely received
    * with a single dispatch callback. Typically this limit is associated with
    * a network resource attribute, such as a packet size.
+   *
+   * It is safe for the application to deallocate, or otherwise alter, the
+   * pami_send_t parameter structure after this function returns.
+   *
+   * It is \b not safe for the application to deallocate, or otherwise alter,
+   * the memory locations specified by pami_send_immediate_t::header and
+   * pami_send_immediate_t::data until the pami_send_event_t::local_fn is
+   * invoked.
    *
    * \attention The pami_send_immediate_t::dispatch identifier must be
    *            registered on the sending context, using PAMI_Dispatch_set(),
@@ -710,10 +719,10 @@ extern "C"
    * \brief Immediate active message send for small contiguous data
    *
    * The blocking send is only valid for small data buffers. The implementation
-   * configuration attribute \c PAMI_DISPATCH_SEND_IMMEDIATE_MAX defines the upper
+   * configuration attribute ::PAMI_DISPATCH_SEND_IMMEDIATE_MAX defines the upper
    * bounds for the size of data buffers, including header data, that can be
    * sent with this function. This function will return an error if a data
-   * buffer larger than the \c PAMI_DISPATCH_SEND_IMMEDIATE_MAX is attempted.
+   * buffer larger than the ::PAMI_DISPATCH_SEND_IMMEDIATE_MAX is attempted.
    *
    * This function provides a low-latency send that can be optimized by the
    * specific pami implementation. If network resources are immediately
@@ -724,14 +733,19 @@ extern "C"
    * no done callback is invoked, and is considered complete.
    *
    * The low-latency send operation may be further enhanced by using a dispatch
-   * id which was set with the \c recv_immediate hint bit enabled. This hint
-   * asserts that all receives with the dispatch id will not exceed a certain
-   * limit.
+   * id which was set with the pami_dispatch_hint_t::recv_immediate hint bit
+   * enabled. This hint asserts that all receives with the dispatch id will not
+   * exceed a certain limit.
    *
-   * The implementation configuration attribute \c PAMI_DISPATCH_RECV_IMMEDIATE_MAX
+   * The implementation configuration attribute ::PAMI_DISPATCH_RECV_IMMEDIATE_MAX
    * defines the maximum size of data buffers that can be completely received
    * with a single dispatch callback. Typically this limit is associated with
    * a network resource attribute, such as a packet size.
+   *
+   * It is safe for the application to deallocate, or otherwise alter, the send
+   * parameter structure and the memory locations specified by
+   * pami_send_immediate_t::header and pami_send_immediate_t::data after this
+   * function returns.
    *
    * \attention The pami_send_immediate_t::dispatch identifier must be
    *            registered on the sending context, using PAMI_Dispatch_set(),
@@ -771,6 +785,14 @@ extern "C"
    * received by the remote task into a different format, such as a contiguous
    * buffer or the same or different predefined type.
    *
+   * It is safe for the application to deallocate, or otherwise alter, the send
+   * parameter structure after this function returns.
+   *
+   * It is \b not safe for the application to deallocate, or otherwise alter,
+   * the memory locations specified by pami_send_immediate_t::header and
+   * pami_send_immediate_t::data until the pami_send_event_t::local_fn is
+   * invoked.
+   *
    * \attention The pami_send_immediate_t::dispatch identifier must be
    *            registered on the sending context, using PAMI_Dispatch_set(),
    *            prior to the send operation.
@@ -795,13 +817,13 @@ extern "C"
    * the active message dispatch callback to direct the pami runtime how to
    * receive the data stream.
    *
-   * When \c type is \c PAMI_TYPE_CONTIGUOUS, the receive buffer is contiguous and it
-   * must be large enough to hold the entire message.
+   * When pami_recv_t::type is ::PAMI_TYPE_CONTIGUOUS, the receive buffer is
+   * contiguous and it must be large enough to hold the entire message.
    *
-   * With non-contiguous \c type, the receive buffer in general must be large
-   * enough for the incoming message as well but \c type can be constructed
-   * in such a way that unwanted portions of the incoming are disposed into
-   * a circular junk buffer.
+   * With a non-contiguous pami_recv_t::type, the receive buffer in general must
+   * be large enough for the incoming message as well. However, pami_recv_t::type
+   * can be constructed in such a way that unwanted portions of the incoming are
+   * disposed into a circular junk buffer.
    *
    * \see pami_dispatch_p2p_function
    */
@@ -835,19 +857,24 @@ extern "C"
    * The \c data_size parameter will contain the number of bytes that are being
    * sent from the remote endpoint.
    *
+   * The memory location, specified by pami_recv_t::addr, for an asynchronous
+   * receive must not be deallocated, or otherwise altered, until the
+   * pami_recv_t::local_fn is invoked.
+   *
    * \note The maximum number of bytes that may be immediately received can be
-   *       queried with the \c PAMI_RECV_IMMEDIATE configuration attribute.
+   *       queried with the ::PAMI_DISPATCH_RECV_IMMEDIATE_MAX  configuration
+   *       attribute.
    *
    * \see PAMI_Dispatch_query
    */
   typedef void (*pami_dispatch_p2p_function) (pami_context_t    context,      /**< IN:  communication context which invoked the dispatch function */
-                                        void            * cookie,       /**< IN:  dispatch cookie */
-                                        const void      * header_addr,  /**< IN:  header address  */
-                                        size_t            header_size,  /**< IN:  header size     */
-                                        const void      * pipe_addr,    /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
-                                        size_t            data_size,    /**< IN:  number of bytes of message data, valid regardless of message type */
-                                        pami_endpoint_t   origin,       /**< IN:  Endpoint that originated the transfer */
-                                        pami_recv_t     * recv);        /**< OUT: receive message structure, only needed if addr is non-NULL */
+                                              void            * cookie,       /**< IN:  dispatch cookie */
+                                              const void      * header_addr,  /**< IN:  header address  */
+                                              size_t            header_size,  /**< IN:  header size     */
+                                              const void      * pipe_addr,    /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
+                                              size_t            data_size,    /**< IN:  number of bytes of message data, valid regardless of message type */
+                                              pami_endpoint_t   origin,       /**< IN:  Endpoint that originated the transfer */
+                                              pami_recv_t     * recv);        /**< OUT: receive message structure, only needed if addr is non-NULL */
 
   /** \} */ /* end of "active message" group */
 
@@ -2654,6 +2681,7 @@ extern "C"
   /*****************************************************************************/
 
   /**
+   * \var PAMI_TYPE_CONTIGUOUS
    * \brief A PAMI Datatype that represents a contiguous data layout
    *
    *  This is a contiguous type object that does not need to be
