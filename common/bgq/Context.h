@@ -824,10 +824,6 @@ namespace PAMI
                                         generate (id, fn.p2p, cookie, _devices->_mu[_contextid], self, _context, _protocol, result);
                       }
                   }
-                else
-                  {
-                    PAMI_abortf("No non-shmem protocols available.");
-                  }
               }
             else if (use_shmem == true)
               {
@@ -848,10 +844,6 @@ namespace PAMI
                                         Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true>::
                                         generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, _protocol, result);
                       }
-                  }
-                else
-                  {
-                    PAMI_abortf("No shmem protocols available.");
                   }
               }
             else
