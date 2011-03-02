@@ -617,62 +617,54 @@ fprintf(stderr, "%s\n", buf);
 	  i = 0;
 	  if (s)
 	  {
+	    char *t = s + strlen(s) - 1;
 	    const char *x;
 	    const char *m = CR_DIM_NAMES;
-	    for (; *s && i < CR_NUM_DIMS; ++s)
+	    for (; t >= s && i < CR_NUM_DIMS; --t)
 	    {
-	      if (*s == 'T') continue;
-	      x = strchr(m, *s);
+	      if (*t == 'T') continue;
+	      x = strchr(m, *t);
 	      if (!x) break;
 	      _map[i++] = (x - m);
 	    }
 	  }
-	  // if the map string has trailing characters, or we did not
-	  // get all dimensions set, punt.
-	  if ((s && *s) || i != CR_NUM_DIMS)
+	  // if we did not get all dimensions set, punt.
+	  if (i != CR_NUM_DIMS)
 	  {
 	    // error - invalid map string, or an actual map file...
 	    // no classroutes supported (no MU collectives at all?)
 	    // \todo #warning need to handle "usable" mapfiles somehow
 
 	    // for now, just use simple 1:1 mapping
-	    for (i = 0; i < CR_NUM_DIMS; ++i) _map[i] = i;
+	    for (i = 0; i < CR_NUM_DIMS; ++i) _map[i] = (CR_NUM_DIMS - i - 1);
 	  }
 
 	  _pers.jobRectangle(*CR_RECT_LL(&_communiv), *CR_RECT_UR(&_communiv));
 
 	  size_t univz = __MUSPI_rect_size(&_communiv);
 	  // now, factor in any -np...
+	  _np = __global.mapping.numActiveNodes();
 	  s = getenv("BG_NP");
 	  if (s)
 	  {
 	    int n = strtoul(s, NULL, 0);
+	    size_t v;
+	    __global.mapping.nodePeers(v);
 	    s = getenv("BG_PROCESSESPERNODE");
 	    if (s)
 	    {
-	      int v = strtoul(s, NULL, 0);
-	      n = (n + v - 1) / v;
+	      v = strtoul(s, NULL, 0);
 	    }
+	    n = (n + v - 1) / v;
 	    _np = n;
 	  }
-	  else
-	  {
-	    _np = __MUSPI_rect_size(&_communiv);
-	  }
-	  if (_np < univz) { // must exclude some nodes...
-	    prc = __global.heap_mm->memalign((void **)&_excluded, 0,
-					(univz - _np) * sizeof(CR_COORD_T));
-	    PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _excluded failed");
+	  prc = __global.heap_mm->memalign((void **)&_excluded, 0,
+					(univz - _np + 1) * sizeof(CR_COORD_T));
+	  PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _excluded failed");
 
-	    // Note, this discards previous _pri_dim... is that ok?
-	    MUSPI_MakeNpRectMap(&_communiv, _np, _map,
+	  // Note, this discards previous _pri_dim... is that ok?
+	  MUSPI_MakeNpRectMap(&_communiv, _np, _map,
 	            &_commworld, _excluded, &_nexcl, &_pri_dim);
-	  }
-	  else
-	  {
-	    // do we really need so many rectangles?
-	    _commworld = _communiv;
-	  }
 #ifdef MU_CR_DEBUG
 s = buf;
 s += sprintf(s, "Block rectangle (%zd,%zd,%zd,%zd,%zd):(%zd,%zd,%zd,%zd,%zd)",
@@ -730,7 +722,7 @@ fprintf(stderr, "World rectangle (%zd,%zd,%zd,%zd,%zd):(%zd,%zd,%zd,%zd,%zd)\n",
 			CR_COORD_DIM(CR_RECT_UR(&_commworld),4));
 s = buf;
 s += sprintf(s, "NP=%zd", _np);
-if (_excluded) {
+if (_nexcl) {
 	s += sprintf(s, " Excluding nodes:");
 	for (i = 0; i < _nexcl; ++i) {
 		bool exclude_me = __MUSPI_eq_coords(&_mycoord, &_excluded[i]);
@@ -1125,7 +1117,7 @@ fprintf(stderr, "%s\n", buf);
 	    return;
 	  }
 
-	  pami_event_function fn = cr_barrier_done;
+	  pami_event_function fn = cr_gi_init_dummy_barrier_done;
 	  ClassRoute_t cr = {0};
 	  crck->thus->set_classroute(crck->bbuf[0] & 0x0000ffff, crck, NULL, &cr,
 					PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
@@ -1147,6 +1139,17 @@ fprintf(stderr, "%s\n", buf);
 							crck->context, ctx);
 	  if (rc != PAMI_SUCCESS) {
 	    fn(ctx, cookie, rc);
+	  }
+	}
+
+	static void cr_gi_init_dummy_barrier_done(pami_context_t ctx, void *cookie, pami_result_t result)
+	{
+	  cr_cookie *crck = (cr_cookie *)cookie;
+	  if (crck->cb_done.function) crck->cb_done.function(ctx, crck->cb_done.clientdata, result);
+	  pami_result_t rc = crck->geom->default_barrier(cr_barrier_done, cookie,
+							crck->context, ctx);
+	  if (rc != PAMI_SUCCESS) {
+	    cr_barrier_done(ctx, cookie, rc);
 	  }
 	}
 
