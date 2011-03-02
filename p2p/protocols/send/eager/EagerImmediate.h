@@ -114,9 +114,6 @@ namespace PAMI
             // This protcol only works with deterministic models.
             COMPILE_TIME_ASSERT(T_Model::deterministic_packet_model == true);
 
-            // Ensure there is enough space in the packet metadata
-            COMPILE_TIME_ASSERT(sizeof(protocol_metadata_t) <= T_Model::packet_model_metadata_bytes);
-
             // ----------------------------------------------------------------
             // Compile-time assertions
             // ----------------------------------------------------------------
@@ -161,16 +158,35 @@ namespace PAMI
 
             TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. before _send_model.postPacket() .. task = %d, offset = %zu\n", task, offset));
 
-            // This allows the header+data iovec elements to be treated as a
-            // two-element array of iovec structures, and therefore allows the
-            // packet model to implement template specialization.
-            array_t<struct iovec, 2> * iov = (array_t<struct iovec, 2> *) parameters;
+            bool posted = false;
 
-            bool posted =
-              _send_model.postPacket (task, offset,
-                                      (void *) & metadata,
-                                      sizeof (protocol_metadata_t),
-                                      iov->array);
+            // This branch should be resolved at compile time and optimized out.
+            if (sizeof(protocol_metadata_t) <= T_Model::packet_model_metadata_bytes)
+              {
+                // This allows the header+data iovec elements to be treated as a
+                // two-element array of iovec structures, and therefore allows the
+                // packet model to implement template specialization.
+                array_t<struct iovec, 2> * iov = (array_t<struct iovec, 2> *) parameters;
+
+                posted = _send_model.postPacket (task, offset,
+                                                 (void *) & metadata,
+                                                 sizeof (protocol_metadata_t),
+                                                 iov->array);
+              }
+            else
+              {
+                iovec iov[3];
+                iov[0].iov_base = (void *) & metadata;
+                iov[0].iov_len  = sizeof (protocol_metadata_t);
+                iov[1].iov_base = parameters->header.iov_base;
+                iov[1].iov_len  = parameters->header.iov_len;
+                iov[2].iov_base = parameters->data.iov_base;
+                iov[2].iov_len  = parameters->data.iov_len;
+
+                posted = _send_model.postPacket (task, offset,
+                                                 NULL, 0,
+                                                 iov);
+              }
 
             if (unlikely(!posted))
               {
@@ -203,15 +219,37 @@ namespace PAMI
                 // Do the send!
                 TRACE_ERR((stderr, "EagerImmediate::immediate_impl() .. post packet after failure, dest:0x%08x \n", parameters->dest));
 
-                _send_model.postPacket (send->pkt,
-                                        send_complete,
-                                        send,
-                                        task,
-                                        offset,
-                                        (void *) &(send->metadata),
-                                        sizeof (protocol_metadata_t),
-                                        (void *) &(send->data[0]),
-                                        metadata.databytes + metadata.metabytes);
+                // This branch should be resolved at compile time and optimized out.
+                if (sizeof(protocol_metadata_t) <= T_Model::packet_model_metadata_bytes)
+                  {
+                    // This allows the header+data iovec elements to be treated as a
+                    // two-element array of iovec structures, and therefore allows the
+                    // packet model to implement template specialization.
+                    array_t<struct iovec, 2> * iov = (array_t<struct iovec, 2> *) parameters;
+
+                    _send_model.postPacket (send->pkt,
+                                            send_complete, send,
+                                            task, offset,
+                                            (void *) &(send->metadata),
+                                            sizeof (protocol_metadata_t),
+                                            iov->array);
+                  }
+                else
+                  {
+                    iovec iov[3];
+                    iov[0].iov_base = (void *) & metadata;
+                    iov[0].iov_len  = sizeof (protocol_metadata_t);
+                    iov[1].iov_base = parameters->header.iov_base;
+                    iov[1].iov_len  = parameters->header.iov_len;
+                    iov[2].iov_base = parameters->data.iov_base;
+                    iov[2].iov_len  = parameters->data.iov_len;
+
+                    posted = _send_model.postPacket (send->pkt,
+                                                     send_complete, send,
+                                                     task, offset,
+                                                     NULL, 0,
+                                                     iov);
+                  }
               }
             else
               {
@@ -257,22 +295,35 @@ namespace PAMI
                                            void   * recv_func_parm,
                                            void   * cookie)
           {
-            protocol_metadata_t * const m = (protocol_metadata_t *) metadata;
+            protocol_metadata_t * m = NULL;
+            void * h;
+            void * d;
+
+            if (sizeof(protocol_metadata_t) <= T_Model::packet_model_metadata_bytes)
+              {
+                m = (protocol_metadata_t *) metadata;
+                h = payload;
+                d = ((uint8_t *)h + m->metabytes);
+              }
+            else
+              {
+                m = (protocol_metadata_t *) payload;
+                h = ((uint8_t *)m + sizeof(protocol_metadata_t));
+                d = ((uint8_t *)h + m->metabytes);
+              }
 
             TRACE_ERR ((stderr, ">> EagerImmediate::dispatch_send_direct(), m->databytes = %d, m->metabytes = %d\n", m->databytes, m->metabytes));
 
             EagerImmediate<T_Model, T_Device> * const send =
               (EagerImmediate<T_Model, T_Device> *) recv_func_parm;
 
-            uint8_t * data = (uint8_t *)payload;
-
             // Invoke the registered dispatch function.
             send->_dispatch_fn (send->_context,   // Communication context
                                 send->_cookie,    // Dispatch cookie
-                                (void *) data,    // Application metadata
-                                m->metabytes,     // Metadata bytes
-                                (void *) (data + m->metabytes),  // payload data
-                                m->databytes,     // Total number of bytes
+                                h,                // Application header
+                                m->metabytes,     // Application header bytes
+                                d,                // Application data
+                                m->databytes,     // Application data bytes
                                 m->origin,        // Origin endpoint for the transfer
                                 (pami_recv_t *) NULL);
 

@@ -31,17 +31,15 @@ namespace PAMI
       {
         public:
 
-          inline  Packet ()
-          {
-            // Packet payload size must be a multiple of 8. See writePayload()
-            // methods below.
-            COMPILE_TIME_ASSERT(T_Packet::payload_size & 0x07 == 0);
-          };
+          inline  Packet () {};
 
           inline ~Packet () {};
 
           static void setDispatch (T_Packet & packet, uint16_t dispatch)
           {
+            // Packet header must be large enough to store the dispatch id.
+            COMPILE_TIME_ASSERT(sizeof(uint16_t) <= T_Packet::header_size);
+
             uint16_t * hdr = (uint16_t *) packet.getHeader ();
             hdr[(T_Packet::header_size>>1)-1] = dispatch;
           };
@@ -85,7 +83,7 @@ namespace PAMI
           /// \param [in] header  Array of T_Niov source header bytes
           ///
           template <unsigned T_Bytes>
-          inline void writeHeader (uint8_t (&header)[T_Bytes])
+          static void writeHeader (uint8_t (&header)[T_Bytes])
           {
             writeHeader (header, T_Bytes);
           };
@@ -98,6 +96,9 @@ namespace PAMI
           ///
           static void writePayload (T_Packet & packet, struct iovec * iov, size_t niov)
           {
+            // Packet payload size must be a multiple of 8.
+            COMPILE_TIME_ASSERT((T_Packet::payload_size & 0x07) == 0);
+
             unsigned i, j, n;
 
             uint8_t  * payload = (uint8_t *) packet.getPayload ();
@@ -151,6 +152,9 @@ namespace PAMI
           ///
           static void writePayload (T_Packet & packet, void * payload, size_t bytes)
           {
+            // Packet payload size must be a multiple of 8.
+            COMPILE_TIME_ASSERT((T_Packet::payload_size & 0x07) == 0);
+
             //fprintf(stderr,"Shmem::Packet::writePayload<void>(.., %p, %zu) >>\n", payload, bytes);
             uint64_t * dst = (uint64_t *) packet.getPayload ();
             uint64_t * src = (uint64_t *) payload;
