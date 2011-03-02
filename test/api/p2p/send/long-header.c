@@ -5,6 +5,7 @@
 
 #include <pami.h>
 #include <stdio.h>
+#include <string.h>
 
 /*#define ENABLE_TRACE */
 
@@ -13,6 +14,8 @@
 #else
 #define TRACE(x)
 #endif
+
+uint8_t _garbage[1024];
 
 static void recv_done (pami_context_t   context,
                        void          * cookie,
@@ -35,12 +38,34 @@ pami_recv_t         * recv)        /**< OUT: receive message structure */
 {
   TRACE((stderr, "Called dispatch function.  cookie = %p, active: %zu, header_addr = %p, header_size = %zu\n", cookie,  *((volatile size_t *) cookie), header_addr, header_size));
 
-  recv->local_fn = recv_done;
-  recv->cookie   = cookie;
-  recv->type     = PAMI_TYPE_CONTIGUOUS;
-  recv->addr     = NULL;
-  recv->offset   = 0;
-  TRACE((stderr, "... dispatch function.  recv->local_fn = %p\n", recv->local_fn));
+  if (pipe_size == 0)
+  {
+    recv_done (context, cookie, PAMI_SUCCESS);
+    return;
+  }
+  else if (pipe_size > 1024)
+  {
+    TRACE((stderr, "... dispatch function.  Too much data! pipe_size = %zu\n", pipe_size));
+    exit(1);
+  }
+  else if (recv == NULL)
+  {
+    // This is an 'immediate' receive
+
+    memcpy(_garbage, pipe_addr, pipe_size);
+    recv_done (context, cookie, PAMI_SUCCESS);
+  }
+  else
+  {
+    // This is an 'asynchronous' receive
+
+    recv->local_fn = recv_done;
+    recv->cookie   = cookie;
+    recv->type     = PAMI_TYPE_CONTIGUOUS;
+    recv->addr     = _garbage;
+    recv->offset   = 0;
+    TRACE((stderr, "... dispatch function.  recv->local_fn = %p\n", recv->local_fn));
+  }
 
   return;
 }
