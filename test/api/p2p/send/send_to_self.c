@@ -4,6 +4,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 
 #include <pami.h>
 
@@ -33,12 +34,24 @@ pami_recv_t         * recv)        /**< OUT: receive message structure */
 
   if (pipe_size > 1024) exit(1);
 
-  recv->local_fn = recv_done;
-  recv->cookie   = cookie;
-  recv->type     = PAMI_TYPE_CONTIGUOUS;
-  recv->addr     = _garbage;
-  recv->offset   = 0;
-  fprintf (stderr, "... dispatch function.  recv->local_fn = %p\n", recv->local_fn);
+  else if (recv == NULL)
+  {
+    // This is an 'immediate' receive
+
+    memcpy(_garbage, pipe_addr, pipe_size);
+    recv_done (context, cookie, PAMI_SUCCESS);
+  }
+  else
+  {
+    // This is an 'asynchronous' receive
+
+    recv->local_fn = recv_done;
+    recv->cookie   = cookie;
+    recv->type     = PAMI_TYPE_CONTIGUOUS;
+    recv->addr     = _garbage;
+    recv->offset   = 0;
+    fprintf (stderr, "... dispatch function.  recv->local_fn = %p\n", recv->local_fn);
+  }
 
   return;
 }
