@@ -115,23 +115,33 @@ namespace PAMI {
 	    rc = __global.heap_mm->memalign((void **)&_input, 16, _total_nelem *sizeof(uint64_t));
 	    PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for _input %zd", _total_nelem*sizeof(*_result));
 	    
-	    for (size_t i = 0; i < _vector_elem.size(); ++i)
-	      _input[i] = _vector_elem[i];
-	    
-	    pami_xfer_t          ar; // allreduce        
-	    ar.cb_done           = optimizer_notify;
-	    ar.cookie            = this;
-	    // algorithm not needed here       
-	    memset(&ar.options,0,sizeof(ar.options));
-	    ar.cmd.xfer_allreduce.sndbuf            = (char*) _input;
-	    ar.cmd.xfer_allreduce.stype             = PAMI_TYPE_CONTIGUOUS;
-	    ar.cmd.xfer_allreduce.stypecount        = _total_nelem * sizeof(uint64_t);
-	    ar.cmd.xfer_allreduce.rcvbuf            = (char*) _result;
-	    ar.cmd.xfer_allreduce.rtype             = PAMI_TYPE_CONTIGUOUS;
-	    ar.cmd.xfer_allreduce.rtypecount        = _total_nelem * sizeof(uint64_t);
-	    ar.cmd.xfer_allreduce.dt                = PAMI_UNSIGNED_LONG_LONG;
-	    ar.cmd.xfer_allreduce.op                = PAMI_BAND;
-	    _ar_algo->generate(&ar);	  
+			if(this->geometry()->nranks() == 1) 
+			{
+				for (size_t i = 0; i < _vector_elem.size(); ++i)
+					_result[i] = _vector_elem[i];
+				
+				optimizer_notify(_context, (void *)this, PAMI_SUCCESS);
+			}
+			else
+			{
+				for (size_t i = 0; i < _vector_elem.size(); ++i)
+					_input[i] = _vector_elem[i];
+				
+				pami_xfer_t          ar; // allreduce        
+				ar.cb_done           = optimizer_notify;
+				ar.cookie            = this;
+				// algorithm not needed here       
+				memset(&ar.options,0,sizeof(ar.options));
+				ar.cmd.xfer_allreduce.sndbuf            = (char*) _input;
+				ar.cmd.xfer_allreduce.stype             = PAMI_TYPE_CONTIGUOUS;
+				ar.cmd.xfer_allreduce.stypecount        = _total_nelem * sizeof(uint64_t);
+				ar.cmd.xfer_allreduce.rcvbuf            = (char*) _result;
+				ar.cmd.xfer_allreduce.rtype             = PAMI_TYPE_CONTIGUOUS;
+				ar.cmd.xfer_allreduce.rtypecount        = _total_nelem * sizeof(uint64_t);
+				ar.cmd.xfer_allreduce.dt                = PAMI_UNSIGNED_LONG_LONG;
+				ar.cmd.xfer_allreduce.op                = PAMI_BAND;
+				_ar_algo->generate(&ar);	  
+			}
 	  }
 	  else if (_cb_done)
 	    _cb_done (_context, _cookie, PAMI_SUCCESS);
