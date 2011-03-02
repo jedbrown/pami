@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/api/p2p/send_latency.cc
+ * \file test/api/p2p/send_latency.c
  * \brief ???
  */
 #include <stdio.h>
@@ -19,14 +19,9 @@
 #include <pami.h>
 
 #define ITERATIONS 100
-//#define ITERATIONS 1000
-//#define ITERATIONS 1
 
 #ifndef BUFSIZE
-#define BUFSIZE 262144
-//#define BUFSIZE 1024*256
-//#define BUFSIZE 16
-//#define BUFSIZE 1024
+#define BUFSIZE 256*1024
 #endif
 
 #define WARMUP
@@ -34,10 +29,6 @@
 #undef TRACE_ERR
 #ifndef TRACE_ERR
 #define TRACE_ERR(x)  // fprintf x
-#endif
-
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-extern "C" unsigned __isMambo();
 #endif
 
 
@@ -80,7 +71,6 @@ static void test_dispatch (
 {
   if (recv)
     {
-      //header_t * header = (header_t *) header_addr;
       TRACE_ERR((stderr, "(%zu) test_dispatch() async recv:  cookie = %p, pipe_size = %zu\n", _my_task, cookie, pipe_size));
       recv->local_fn = decrement;
       recv->cookie   = cookie;
@@ -91,7 +81,6 @@ static void test_dispatch (
     }
   else
     {
-      //memcpy (_recv_buffer, pipe_addr, pipe_size);
       unsigned * value = (unsigned *) cookie;
       TRACE_ERR((stderr, "(%zu) test_dispatch() short recv:  cookie = %p, decrement: %d => %d\n", _my_task, cookie, *value, *value - 1));
       --*value;
@@ -102,7 +91,6 @@ static void test_dispatch (
 
 void send_once (pami_context_t context, pami_send_t * parameters)
 {
-  //pami_result_t result =
   PAMI_Send (context, parameters);
   TRACE_ERR((stderr, "(%zu) send_once() Before advance\n", _my_task));
 
@@ -143,10 +131,6 @@ unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrsize
   parameters.events.local_fn      = decrement;
   parameters.events.remote_fn     = NULL;
   memset(&parameters.send.hints, 0, sizeof(parameters.send.hints));
-
-//  parameters.send.hints.use_rdma = 0;
-
-//  barrier ();
 
   unsigned i;
   unsigned long long t1 = PAMI_Wtimebase();
@@ -204,11 +188,6 @@ int main (int argc, char ** argv)
   { size_t _n = 1; PAMI_Context_createv (client, NULL, 0, &context, _n); }
   TRACE_ERR((stderr, "...  after PAMI_Context_createv()\n"));
 
-//  TRACE_ERR((stderr, "... before barrier_init()\n"));
-//  barrier_init (client, context, 0);
-//  TRACE_ERR((stderr, "...  after barrier_init()\n"));
-
-
   /* Register the protocols to test */
   _dispatch_count = 0;
 
@@ -218,6 +197,7 @@ int main (int argc, char ** argv)
   fn.p2p = test_dispatch;
   pami_dispatch_hint_t options = {0};
   TRACE_ERR((stderr, "Before PAMI_Dispatch_set() .. &_recv_active = %p, recv_active = %u\n", &_recv_active, _recv_active));
+
   pami_result_t result = PAMI_Dispatch_set (context,
                                             _dispatch[_dispatch_count++],
                                             fn,
@@ -244,7 +224,7 @@ int main (int argc, char ** argv)
   result = PAMI_Client_query(client, &configuration, 1);
   double tick = configuration.value.doubleval;
 
-  // Use task 0 to last task (arbitrary)
+  /* Use task 0 to last task (arbitrary) */
   pami_task_t origin_task = 0;
   pami_task_t target_task = num_tasks - 1;
 
@@ -280,8 +260,6 @@ int main (int argc, char ** argv)
       fflush (stdout);
     }
 
-//  barrier ();
-
   unsigned long long cycles;
   double usec;
 
@@ -291,11 +269,7 @@ int main (int argc, char ** argv)
   PAMI_Endpoint_create (client, origin_task, 0, &origin);
   PAMI_Endpoint_create (client, target_task, 0, &target);
 
-#ifdef ENABLE_MAMBO_WORKAROUNDS
-  size_t sndlen = __isMambo() ? 1 : 0;
-#else
   size_t sndlen = 0;
-#endif
 
   for (; sndlen < BUFSIZE; sndlen = sndlen * 3 / 2 + 1)
     {
