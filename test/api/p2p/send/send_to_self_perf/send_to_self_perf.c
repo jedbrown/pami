@@ -118,12 +118,24 @@ static void test_dispatch (
   T_DISPATCH = PAMI_Wtimebase();
   TRACE_ERR((stderr, "Called dispatch function.  cookie = %p, active: %zu, header_addr = %p, pipe_addr = %p\n", cookie,  *((volatile size_t *) cookie), header_addr, pipe_addr));
 
-  recv->local_fn = recv_done;
-  recv->cookie   = cookie;
-  recv->type     = PAMI_TYPE_CONTIGUOUS;
-  recv->addr     = _rbuf;
-  recv->offset   = 0;
-  TRACE_ERR((stderr, "... dispatch function.  recv->local_fn = %p\n", recv->local_fn));
+  if (recv == NULL)
+  {
+    // This is an 'immediate' receive
+
+    memcpy(_rbuf, pipe_addr, pipe_size);
+    recv_done (context, cookie, PAMI_SUCCESS);
+  }
+  else
+  {
+    // This is an 'asynchronous' receive
+
+    recv->local_fn = recv_done;
+    recv->cookie   = cookie;
+    recv->type     = PAMI_TYPE_CONTIGUOUS;
+    recv->addr     = _rbuf;
+    recv->offset   = 0;
+    TRACE_ERR((stderr, "... dispatch function.  recv->local_fn = %p\n", recv->local_fn));
+  }
 
   return;
 }
