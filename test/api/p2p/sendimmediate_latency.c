@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/api/p2p/sendimmediate_latency.cc
+ * \file test/api/p2p/sendimmediate_latency.c
  * \brief ???
  */
 #include <stdio.h>
@@ -18,24 +18,16 @@
 
 #include <pami.h>
 
-//#define ITERATIONS 10
-//#define ITERATIONS 1000
-//#define ITERATIONS 10000
 #define ITERATIONS 10000
 
 #define WARMUP
 
 #ifndef BUFSIZE
-//#define BUFSIZE 2048
-//#define BUFSIZE 1024*256
 #define BUFSIZE 256
-//#define BUFSIZE 64
-//#define BUFSIZE 2
-//#define BUFSIZE 1024
 #endif
 
 #ifndef MAX_BUFSIZE
-#define MAX_BUFSIZE 2048
+#define MAX_BUFSIZE 1024*16
 #endif
 
 
@@ -90,8 +82,7 @@ pami_recv_t         * recv)        /**< OUT: receive message structure */
 void send_once (pami_context_t context, pami_send_immediate_t * parameters)
 {
   TRACE_ERR((stderr, "(%zu) before send_immediate()  \n", _my_rank));
-  //pami_result_t result =
-    PAMI_Send_immediate (context, parameters);
+  PAMI_Send_immediate (context, parameters);
   TRACE_ERR((stderr, "(%zu) after send_immediate()  \n", _my_rank));
 }
 
@@ -123,8 +114,6 @@ unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrlen,
   parameters.header.iov_len = hdrlen;
   parameters.data.iov_base  = buffer;
   parameters.data.iov_len = sndlen;
-
-//  barrier ();
 
   unsigned i;
   unsigned long long t1 = PAMI_Wtimebase();
@@ -160,7 +149,6 @@ unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrlen,
 int main (int argc, char ** argv)
 {
   TRACE_ERR((stderr, "Start test ...\n"));
-//	printf("sizeof size_t:%d\n", sizeof(size_t));
   size_t hdrcnt = argc;
   size_t hdrsize[1024];
   hdrsize[0] = 0;
@@ -181,11 +169,6 @@ int main (int argc, char ** argv)
   { size_t _n = 1; PAMI_Context_createv (client, NULL, 0, &context, _n); }
   TRACE_ERR((stderr, "...  after PAMI_Context_createv()\n"));
 
-//  TRACE_ERR((stderr, "... before barrier_init()\n"));
-//  barrier_init (client, context, 0);
-//  TRACE_ERR((stderr, "...  after barrier_init()\n"));
-
-//  printf("size of size_t:%d\n", sizeof(size_t));
 
   /* Register the protocols to test */
   _dispatch_count = 0;
@@ -263,9 +246,8 @@ int main (int argc, char ** argv)
     fflush (stdout);
   }
 
-//  barrier ();
-
-  for (unsigned i = 0; i < 10000000;i++){};
+  unsigned i = 0;
+  for (i = 0; i < 10000000;i++){};
 
   unsigned long long cycles;
   double usec;
@@ -275,23 +257,21 @@ int main (int argc, char ** argv)
   PAMI_Endpoint_create (client, 1, 0, &target);
 
   char str[10240];
-//	fprintf(stdout,"starting the test\n") ;
   size_t sndlen;
   for (sndlen = 0; sndlen < send_immediate_max; sndlen = sndlen*3/2+1)
-  //sndlen = 40;
   {
-    //if (_my_rank == 0)
     int index = 0;
     index += sprintf (&str[index], "%10zd ", sndlen);
 
-    for (unsigned i=0; i<hdrcnt; i++)
+    unsigned i = 0;
+    for (i=0; i<hdrcnt; i++)
     {
 #ifdef WARMUP
       test (context, _dispatch[0], hdrsize[i], sndlen, _my_rank, origin, target);
 #endif
       cycles = test (context, _dispatch[0], hdrsize[i], sndlen, _my_rank, origin, target);
       usec   = cycles * tick * 1000000.0;
-      //index += sprintf (&str[index], "%7lld %7.4f  ", cycles, usec);
+      /*index += sprintf (&str[index], "%7lld %7.4f  ", cycles, usec);*/
       index += sprintf (&str[index], "%7lld  ", cycles);
     }
 
