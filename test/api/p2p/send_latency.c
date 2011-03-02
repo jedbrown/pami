@@ -15,6 +15,7 @@
 #include <string.h>
 #include <math.h>
 #include <assert.h>
+#include <unistd.h>
 
 #include <pami.h>
 
@@ -28,7 +29,7 @@
 
 #undef TRACE_ERR
 #ifndef TRACE_ERR
-#define TRACE_ERR(x)  // fprintf x
+#define TRACE_ERR(x) //  fprintf x
 #endif
 
 
@@ -46,14 +47,29 @@ typedef struct
 {
   size_t sndlen;
 } header_t;
-
+#if 0
+/* ---------------------------------------------------------------*/
+static void decrement_dispatch (
+  pami_context_t        context,      /**< IN: PAMI context */
+  void               * cookie,       /**< IN: dispatch cookie */
+  const void         * header_addr,  /**< IN: header address */
+  size_t               header_size,  /**< IN: header size */
+  const void         * pipe_addr,    /**< IN: address of PAMI pipe buffer */
+  size_t               pipe_size,    /**< IN: size of PAMI pipe buffer */
+  pami_endpoint_t      origin,
+  pami_recv_t         * recv)        /**< OUT: receive message structure */
+{
+  size_t * var = (size_t *) cookie;
+  (*var)--;
+}
+#endif
 /* --------------------------------------------------------------- */
 
 static void decrement (pami_context_t   context,
                        void          * cookie,
                        pami_result_t    result)
 {
-  unsigned * value = (unsigned *) cookie;
+  volatile unsigned * value = (volatile unsigned *) cookie;
   TRACE_ERR((stderr, "(%zu) decrement() cookie = %p, %d => %d\n", _my_task, cookie, *value, *value - 1));
   --*value;
 }
@@ -81,7 +97,7 @@ static void test_dispatch (
     }
   else
     {
-      unsigned * value = (unsigned *) cookie;
+      volatile unsigned * value = (volatile unsigned *) cookie;
       TRACE_ERR((stderr, "(%zu) test_dispatch() short recv:  cookie = %p, decrement: %d => %d\n", _my_task, cookie, *value, *value - 1));
       --*value;
     }
@@ -191,26 +207,9 @@ int main (int argc, char ** argv)
   /* Register the protocols to test */
   _dispatch_count = 0;
 
-  _dispatch[_dispatch_count] = _dispatch_count + 1;
-
-  pami_dispatch_callback_function fn;
-  fn.p2p = test_dispatch;
-  pami_dispatch_hint_t options = {0};
-  TRACE_ERR((stderr, "Before PAMI_Dispatch_set() .. &_recv_active = %p, recv_active = %u\n", &_recv_active, _recv_active));
-
-  pami_result_t result = PAMI_Dispatch_set (context,
-                                            _dispatch[_dispatch_count++],
-                                            fn,
-                                            (void *) & _recv_active,
-                                            options);
-
-  if (result != PAMI_SUCCESS)
-    {
-      fprintf (stderr, "Error. Unable register pami dispatch. result = %d\n", result);
-      return 1;
-    }
 
   pami_configuration_t configuration;
+  pami_result_t result;
 
   configuration.name = PAMI_CLIENT_TASK_ID;
   result = PAMI_Client_query(client, &configuration, 1);
@@ -228,16 +227,96 @@ int main (int argc, char ** argv)
   pami_task_t origin_task = 0;
   pami_task_t target_task = num_tasks - 1;
 
+  pami_endpoint_t origin, target;
+  PAMI_Endpoint_create (client, origin_task, 0, &origin);
+  PAMI_Endpoint_create (client, target_task, 0, &target);
+
+  typedef struct
+  {
+    size_t                 id;
+    pami_dispatch_hint_t   options;
+    char                 * name;
+    pami_result_t          result;
+  } dispatch_info_t;
+
+  dispatch_info_t dispatch[3];
+
+  dispatch[0].id = 10;
+  dispatch[0].options = (pami_dispatch_hint_t) {0};
+  dispatch[0].name = "  default ";
+
+  dispatch[1].id = 11;
+  dispatch[1].options = (pami_dispatch_hint_t) {0};
+  dispatch[1].name = "only shmem";
+  dispatch[1].options.use_shmem = PAMI_HINT_ENABLE;
+  dispatch[0].name = "  default ";
+
+  dispatch[2].id = 12;
+  dispatch[2].options = (pami_dispatch_hint_t) {0};
+  dispatch[2].name = " no shmem ";
+  dispatch[2].options.use_shmem = PAMI_HINT_DISABLE;
+
+  pami_dispatch_callback_function fn;
+  fn.p2p = test_dispatch;
+  TRACE_ERR((stderr, "Before PAMI_Dispatch_set() .. &_recv_active = %p, recv_active = %u\n", &_recv_active, _recv_active));
+
+  size_t i;
+
+  for (i = 0; i < 3; i++)
+    {
+      dispatch[i].result = PAMI_Dispatch_set (context,
+                                              dispatch[i].id,
+                                              fn,
+                                              (void *) & _recv_active,
+                                              dispatch[i].options);
+
+    }
+
+  sleep(1); /* work-around for ticket #385 */
+
+  for (i = 0; i < 3; i++)
+    {
+      if ((dispatch[i].result == PAMI_SUCCESS) &&
+          (_my_task == origin_task || _my_task == target_task))
+        {
+
+          volatile unsigned pretest_active = 1;
+
+          pami_send_t parameters;
+          parameters.send.dispatch        = dispatch[i].id;
+          parameters.send.dest            = (_my_task == origin_task) ? target : origin;
+          parameters.send.header.iov_base = (void *) & parameters;
+          parameters.send.header.iov_len  = 8;
+          parameters.send.data.iov_base   = (void *) & parameters;
+          parameters.send.data.iov_len    = sizeof(pami_send_t);
+          parameters.events.cookie        = (void *) & pretest_active;
+          parameters.events.local_fn      = decrement;
+          parameters.events.remote_fn     = NULL;
+          memset(&parameters.send.hints, 0, sizeof(parameters.send.hints));
+
+          dispatch[i].result = PAMI_Send (context, &parameters);
+
+          if (dispatch[i].result == PAMI_SUCCESS)
+            {
+              _recv_active++;
+
+              while (pretest_active) PAMI_Context_advance (context, 100);
+            }
+        }
+    }
+
   /* Display some test header information */
   if (_my_task == origin_task)
     {
-      char str[2][1024];
-      int index[2];
+      char str[3][1024];
+      int index[3];
       index[0] = 0;
       index[1] = 0;
+      index[2] = 0;
 
       index[0] += sprintf (&str[0][index[0]], "#          ");
-      index[1] += sprintf (&str[1][index[1]], "#    bytes ");
+      index[1] += sprintf (&str[1][index[1]], "#          ");
+      index[2] += sprintf (&str[2][index[2]], "#    bytes ");
 
       fprintf (stdout, "# PAMI_Send() nearest-neighor half-pingpong blocking latency performance test\n");
       fprintf (stdout, "#\n");
@@ -250,13 +329,15 @@ int main (int argc, char ** argv)
           else
             fprintf (stdout, "# testcase %d : header bytes = %3zd (argv[%d])\n", i, hdrsize[i], i);
 
-          index[0] += sprintf (&str[0][index[0]], "[-- testcase %d --] ", i);
-          index[1] += sprintf (&str[1][index[1]], "  cycles     usec  ");
+          index[0] += sprintf (&str[0][index[0]], "[-- testcase %d --] [-- testcase %d --] [-- testcase %d --] ", i, i, i);
+          index[1] += sprintf (&str[1][index[1]], "[-- %s --] [-- %s --] [-- %s --] ", dispatch[0].name, dispatch[1].name, dispatch[2].name);
+          index[2] += sprintf (&str[2][index[2]], "  cycles     usec    cycles     usec    cycles     usec  ");
         }
 
       fprintf (stdout, "#\n");
       fprintf (stdout, "%s\n", str[0]);
       fprintf (stdout, "%s\n", str[1]);
+      fprintf (stdout, "%s\n", str[2]);
       fflush (stdout);
     }
 
@@ -265,9 +346,6 @@ int main (int argc, char ** argv)
 
   char str[10240];
 
-  pami_endpoint_t origin, target;
-  PAMI_Endpoint_create (client, origin_task, 0, &origin);
-  PAMI_Endpoint_create (client, target_task, 0, &target);
 
   size_t sndlen = 0;
 
@@ -280,12 +358,24 @@ int main (int argc, char ** argv)
 
       for (i = 0; i < hdrcnt; i++)
         {
+          unsigned j;
+
+          for (j = 0; j < 3; j++)
+            {
+              if (dispatch[j].result == PAMI_SUCCESS)
+                {
 #ifdef WARMUP
-          test (context, _dispatch[0], hdrsize[i], sndlen, _my_task, origin_task, origin, target_task, target);
+                  test (context, dispatch[j].id, hdrsize[i], sndlen, _my_task, origin_task, origin, target_task, target);
 #endif
-          cycles = test (context, _dispatch[0], hdrsize[i], sndlen, _my_task, origin_task, origin, target_task, target);
-          usec   = cycles * tick * 1000000.0;
-          index += sprintf (&str[index], "%8lld %8.4f  ", cycles, usec);
+                  cycles = test (context, dispatch[j].id, hdrsize[i], sndlen, _my_task, origin_task, origin, target_task, target);
+                  usec   = cycles * tick * 1000000.0;
+                  index += sprintf (&str[index], "%8lld %8.4f  ", cycles, usec);
+                }
+              else
+                {
+                  index += sprintf (&str[index], "    ----     ----  ");
+                }
+            }
         }
 
       if (_my_task == origin_task)
