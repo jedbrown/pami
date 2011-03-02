@@ -880,16 +880,20 @@ namespace PAMI
       inline pami_result_t receive_global_impl (size_t context_id, T_Geometry *geometry, uint64_t *in, int n) 
       {
         PAMI_assert (n == 1);
-        if ((_mu_rectangle_msync_factory && __global.topology_local.size() == 1) ||
-            (_msync2d_rectangle_composite_factory && __global.topology_local.size() > 1 && 
-             __global.useMU() && __global.useshmem()))
+        if ((((PAMI::Topology *)geometry->getTopology(PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX))->type() == PAMI_COORD_TOPOLOGY)
+            &&
+            ((_mu_rectangle_msync_factory && __global.topology_local.size() == 1) ||
+             (_msync2d_rectangle_composite_factory && __global.topology_local.size() > 1 && 
+             __global.useMU() && __global.useshmem())
+             )
+            )
         {
           uint64_t result = *in;
           for (size_t i = 0; i < 64; ++i)
             if ((result & (0x1 << i)) != 0)
             {
               //fprintf (stderr, "Calling configure with class route %ld, in 0x%lx\n", i, result);
-              _axial_mu_dput_ni->getMsyncModel().configureClassRoute(i, (PAMI::Topology *)geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX));
+              _axial_mu_dput_ni->getMsyncModel().configureClassRoute(i, (PAMI::Topology *)geometry->getTopology(PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX));
               geometry->setKey (PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID1, (void*)(i+1));
               break;
             }
