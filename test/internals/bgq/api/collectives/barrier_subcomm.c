@@ -252,7 +252,7 @@ int main (int argc, char ** argv)
 
     if(root)
     {
-      timeDelay = 1; /* Need to stagger barriers between subcomm's */
+      timeDelay = 3; /* Need to stagger barriers between subcomm's */
     }
 
     /* Delay root tasks, and emulate that he's doing "other"
@@ -329,7 +329,7 @@ int main (int argc, char ** argv)
           {
             if (task_id == root)
             {
-              delayTest(timeDelay*nalg);
+              delayTest(timeDelay);
               fprintf(stderr, "Test set(%u):  Barrier protocol(%s) Correctness (%d of %zd algorithms)\n", k,
                       newbar_md[nalg].name, nalg + 1, newbar_num_algo[0]);
               ti = timer();
@@ -352,7 +352,7 @@ int main (int argc, char ** argv)
                  *might* be getting same node/different node delays.
               */
               if (task_id == non_root[j])
-                delayTest(2+timeDelay*nalg);
+                delayTest(2+timeDelay);
               blocking_coll(context[iContext], &newbarrier, &poll_flag);
             }
           }
