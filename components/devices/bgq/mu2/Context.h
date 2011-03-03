@@ -216,8 +216,11 @@ namespace PAMI
 
 	    _rgetPinInfo = _rm.getRgetPinInfo();
 
-	    _pinRecFifoHandle = _rm.getPinRecFifoHandle ( _rm_id_client, _id_offset );
+	    // Get a handle to the RecFifo info for this client.  Perf optimization.
+	    _pinRecFifoHandle = _rm.getPinRecFifoHandle ( _rm_id_client );
 
+	    // Get a handle to the RecFifo info for this client's first context.  
+	    // Perf optimization.
 	    _pinRecFifoHandleForOffsetZero = _rm.getPinRecFifoHandle ( _rm_id_client, 0 );
 
             // Initialize the injection channel(s) inside the injection group
@@ -524,6 +527,8 @@ namespace PAMI
 	      _mapping.task2global ((pami_task_t)task, addr);
 	      size_t tcoord = addr[5];
 
+	      // Get the recFifo to use, for this client's first context, offset by
+	      // the destination's T coord.
 	      rfifo = _rm.getPinRecFifo( _pinRecFifoHandleForOffsetZero, tcoord );
 	      TRACE_FORMAT("client=%zu, context=%zu, tcoord=%zu, rfifo = %u", _id_client, (size_t)0, tcoord, rfifo);
 	      TRACE_FN_EXIT();
@@ -575,7 +580,9 @@ namespace PAMI
             uint32_t fifoPin = 0;
             _mapping.getMuDestinationTask( task, dest, tcoord, fifoPin );
 
-            rfifo = _rm.getPinRecFifo( _pinRecFifoHandle, tcoord );
+	    // Get the recFifo to use for this client, and the destination's
+	    // context and T coord.
+            rfifo = _rm.getPinRecFifo( _pinRecFifoHandle, offset, tcoord );
             TRACE_FORMAT("client=%zu, context=%zu, tcoord=%zu, rfifo = %u", _id_client, offset, tcoord, rfifo);
 
             map = _pinInfo->torusInjFifoMaps[fifoPin];

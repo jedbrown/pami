@@ -425,6 +425,9 @@ namespace PAMI
 	batResources_t     *batResources;        // One entry per context
 	uint16_t           *pinRecFifo;          // 2D array [tcoord][ctxOffset] containing
 	                                         // globalRecFifoId.
+	uint16_t          **pinRecFifoPtrs;      // Pointers into the context-specific
+                                                 // section of the pinRecFifo array,
+	                                         // one pointer per context.
 	uint16_t           *pinBatId;            // 2D array [tcoord][ctxOffset] containing
 	                                         // globalBatId of first BatId in the group.
       } clientResources_t;
@@ -1457,7 +1460,19 @@ fprintf(stderr, "%s\n", buf);
 	    return _rgetPinInfo;
 	  }
 
-	/// \brief Get Pin Rec Fifo Handle
+	/// \brief Get Pin Rec Fifo Handle for a Client
+	///
+	/// The specified client ID is mapped to a pointer
+	/// to an internal data structure.  This is returned to the caller, who
+	/// is likely a context init routine, so it may be cached.
+	/// During runtime pinFifo, the context will pass this handle into
+	/// getPinRecFifo() so it can do a quick array lookup in this
+	/// internal structure.  This is all to save a few cycles by doing
+	/// the mapping at init time rather than at runtime.
+	inline void *getPinRecFifoHandle ( size_t rmClientId )
+	{ return (void*)&_clientResources[rmClientId]; }
+
+	/// \brief Get Pin Rec Fifo Handle for a Client and Context
 	///
 	/// The specified client ID and context offset are mapped to a pointer
 	/// to an internal data structure.  This is returned to the caller, who
@@ -1470,11 +1485,34 @@ fprintf(stderr, "%s\n", buf);
 					   size_t contextOffset )
 	{ return (void*)&_clientResources[rmClientId].pinRecFifo[contextOffset*_tSize]; }
 	
+	/// \brief Get Rec Fifo Number, given a handle for a client and context.
+	///
+	/// \param[in]  handle  Pointer to the recFifo info for a given client
+	///                     and context.  Obtained from calling 
+	///                     getPinRecFifoHandle ( size_t rmClientId,
+	///  				              size_t contextOffset )
+	/// \param[in]  t       The destination's T coord.
 	inline uint16_t getPinRecFifo( void *handle,
 				       size_t t )
 	{ 
 	  uint16_t *pinRecFifoPtr = (uint16_t*)handle;
 	  return pinRecFifoPtr[t]; 
+	}
+
+	/// \brief Get Rec Fifo Number, given a handle for a client.
+	///
+	/// \param[in]  handle  Pointer to the recFifo info for a given client.
+	///                     Obtained from calling 
+	///                     getPinRecFifoHandle ( size_t rmClientId )
+	/// \param[in]  contextOffset  The destination's context.
+	/// \param[in]  t              The destination's T coord.
+	inline uint16_t getPinRecFifo( void  *handle,
+				       size_t contextOffset,
+				       size_t t )
+	{ 
+	  clientResources_t *clientResourcesPtr = (clientResources_t*)handle;
+	  uint16_t *pinRecFifoPtr = clientResourcesPtr->pinRecFifoPtrs[contextOffset];
+	  return pinRecFifoPtr[t];
 	}
 
 
@@ -3583,6 +3621,10 @@ void PAMI::Device::MU::ResourceManager::initializeContexts( size_t rmClientId,
 		_mapping.tSize() * numContexts * sizeof(uint16_t));
   PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _clientResources[%zd].pinRecFifo failed", rmClientId);
 
+  prc = __global.heap_mm->memalign((void **)&_clientResources[rmClientId].pinRecFifoPtrs, 0,
+		numContexts * sizeof(uint16_t*));
+  PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _clientResources[%zd].pinRecFifoPtrs failed", rmClientId);
+
   prc = __global.heap_mm->memalign((void **)&_clientResources[rmClientId].startingSubgroupIds, 0,
 	numContexts * sizeof(*_clientResources[rmClientId].startingSubgroupIds));
   PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _clientResources[%zd].startingSubgroupIds failed", rmClientId);
@@ -3649,6 +3691,12 @@ void PAMI::Device::MU::ResourceManager::initializeContexts( size_t rmClientId,
 
   for ( i=0; i<numContexts; i++ )
     {
+      // Save away the pointer to the pinRecFifo array for each context.
+      // This will improve performance during fifo pin so these calculations
+      // don't need to be done at runtime.
+      _clientResources[rmClientId].pinRecFifoPtrs[i] = 
+	&_clientResources[rmClientId].pinRecFifo[i*_tSize];
+
       // Find the next subgroup where the context is to be created.
       while ( ( threadMask & subgroupMask ) == 0 )
 	{
