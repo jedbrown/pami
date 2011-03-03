@@ -508,7 +508,7 @@ namespace PAMI
             // Verify that this task is addressable by this packet device
             if (unlikely(_device.isPeer (task) == false)) return PAMI_ERROR;
 
-
+#if 0
             // ----------------------------------------------------------------
             // Check for a "short" send protocol
             // ----------------------------------------------------------------
@@ -525,12 +525,17 @@ namespace PAMI
 
 #endif
 
-            if (T_RecvImmediate == true ||
-                (parameters->send.data.iov_len + parameters->send.header.iov_len) <= maximum_short_packet_payload)
+            // If:
+            //   'immediate receives' are forced on,
+            //      OR
+            //   'immediate receives' are enabled AND the header+data fit in a single packet
+            // 
+            if ((T_RecvImmediate == PAMI_HINT_ENABLE) || // == "force on"
+                (T_RecvImmediate == PAMI_HINT_DEFAULT && ((parameters->send.data.iov_len + parameters->send.header.iov_len) <= maximum_short_packet_payload)))
               {
                 return short_send (&parameters->send, &parameters->events, task, offset);
               }
-
+#endif
 
             // ----------------------------------------------------------------
             // Check for a "long header" send protocol
