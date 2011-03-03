@@ -558,7 +558,7 @@ namespace PAMI
 //                Protocol::Send::Datagram <ShmemModel, ShmemDevice, false>
 //                Protocol::Send::Adaptive <ShmemModel, ShmemDevice, false>
                 Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false>
-                (id, fn.p2p, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), self, _context, result);
+                (id, fn.p2p, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), self, _context, options, result);
               }
             else
               {
@@ -567,7 +567,7 @@ namespace PAMI
                 Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true>
 //                Protocol::Send::Adaptive <ShmemModel, ShmemDevice, true>
 //                Protocol::Send::Datagram <ShmemModel, ShmemDevice, true>
-                (id, fn.p2p, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), self, _context, result);
+                (id, fn.p2p, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), self, _context, options, result);
               }
 
             TRACE_ERR((stderr, "   dispatch_impl(),  after protocol init, result = %zu\n", result));

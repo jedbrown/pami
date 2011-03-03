@@ -656,7 +656,7 @@ namespace PAMI
               // "long header" option
               //
               _dispatch[id][0] = (Protocol::Send::Send *)
-                MPIEagerBase::generate (id, fn.p2p, cookie, *_mpi, self, _context, _protocol, result);
+                MPIEagerBase::generate (id, fn.p2p, cookie, *_mpi, self, _context, options, _protocol, result);
             }
             else if (options.use_shmem == PAMI_HINT_ENABLE)
             {
@@ -665,13 +665,13 @@ namespace PAMI
                 {
                   _dispatch[id][0] = (Protocol::Send::Send *)
                     Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false>::
-                      generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, _protocol, result);
+                      generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
                 }
               else
                 {
                   _dispatch[id][0] = (Protocol::Send::Send *)
                     Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true>::
-                      generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, _protocol, result);
+                      generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
                 }
             }
             else
@@ -682,13 +682,13 @@ namespace PAMI
               // "long header" option
               //
               MPIEagerBase * eagermpi =
-                MPIEagerBase::generate (id, fn.p2p, cookie, *_mpi, self, _context, _protocol, result);
+                MPIEagerBase::generate (id, fn.p2p, cookie, *_mpi, self, _context, options, _protocol, result);
 #ifdef ENABLE_SHMEM_DEVICE
               if (options.long_header == PAMI_HINT_DISABLE)
                 {
                   Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false> * eagershmem =
                     Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false>::
-                      generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, _protocol, result);
+                      generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
 
                   _dispatch[id][0] = (Protocol::Send::Send *) Protocol::Send::Factory::
                       generate (eagershmem, eagermpi, _protocol, result);
@@ -697,7 +697,7 @@ namespace PAMI
                 {
                   Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true> * eagershmem =
                     Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true>::
-                      generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, _protocol, result);
+                      generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
 
                   _dispatch[id][0] = (Protocol::Send::Send *) Protocol::Send::Factory::
                       generate (eagershmem, eagermpi, _protocol, result);

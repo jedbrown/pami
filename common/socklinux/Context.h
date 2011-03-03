@@ -231,7 +231,7 @@ namespace PAMI
         Protocol::Send::Send * send =
           Protocol::Send::Eager <ShmemModel, ShmemDevice, true>::
             generate (id, fn.p2p, cookie,
-                      ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), self, _context, _protocol, result);
+                      ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), self, _context, options, _protocol, result);
 
         _dispatch.set (id, send, send);
 /*

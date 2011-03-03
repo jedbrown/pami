@@ -13,8 +13,6 @@
 #include "components/devices/mpi/mpimessage.h"
 //#include "p2p/protocols/send/adaptive/Adaptive.h"
 #include "p2p/protocols/send/eager/Eager.h"
-#include "p2p/protocols/send/eager/EagerSimple.h"
-#include "p2p/protocols/send/eager/EagerImmediate.h"
 
 typedef PAMI::Device::MPIDevice MPIDevice;
 typedef PAMI::Device::MPIMessage MPIMessage;
