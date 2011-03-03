@@ -312,6 +312,8 @@ namespace PAMI
                   }
               }
 
+            PAMI_abortf("Unable to find a free dispatch slot. Was this dispatch set (%zu) previously registered?", set);
+
             TRACE_FORMAT("registration failure. set = %zu, fn = %p, cookie = %p", set, fn, cookie);
             TRACE_FN_EXIT();
             return false;

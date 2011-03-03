@@ -105,15 +105,21 @@ namespace PAMI
                                               void                      * clientdata,
                                               uint16_t                  & id)
           {
-            if (set >= T_SetCount) return PAMI_ERROR;
+            TRACE_ERR((stderr, ">> (%zu,%p) ShmemDevice::registerUserDispatch(%zu, %p, %p)\n", __global.mapping.task(), this, set, function, clientdata));
+            if (set >= T_SetCount)
+              {
+                TRACE_ERR((stderr, "<< (%zu,%p) ShmemDevice::registerUserDispatch(%zu, %p, %p), T_SetCount = %d, return PAMI_ERROR\n", __global.mapping.task(), this, set, function, clientdata, T_SetCount));
+                return PAMI_ERROR;
+              }
 
 
             // Find the next available id for this dispatch set.
             bool found_free_slot = false;
-            size_t n = set * T_SetSize + T_SetCount;
+            size_t n = set * T_SetSize + T_SetSize;
 
             for (id = set * T_SetSize; id < n; id++)
               {
+                TRACE_ERR((stderr, "   (%zu,%p) ShmemDevice::registerUserDispatch(%zu, %p, %p), unexpected = %p, n = %zu, _function[%d] = %p\n", __global.mapping.task(), this, set, function, clientdata, UnexpectedPacket::unexpected, n, id, _function[id]));
                 if (_function[id] == (Interface::RecvFunction_t) UnexpectedPacket::unexpected)
                   {
                     found_free_slot = true;
@@ -121,7 +127,12 @@ namespace PAMI
                   }
               }
 
-            if (!found_free_slot) return PAMI_ERROR;
+            PAMI_assert_debugf(found_free_slot == true, "(%zu,%p) ShmemDevice::registerUserDispatch(%zu, %p, %p), Unable to find a free dispatch slot. Was this dispatch set (%zu) previously registered?", __global.mapping.task(), this, set, function, clientdata, set);
+            if (!found_free_slot)
+              {
+                TRACE_ERR((stderr, "<< (%zu,%p) ShmemDevice::registerUserDispatch(%zu, %p, %p), found_free_slot = %d, return PAMI_ERROR\n", __global.mapping.task(), this, set, function, clientdata, found_free_slot));
+                return PAMI_ERROR;
+              }
 
             _function[id]   = function;
             _clientdata[id] = clientdata;
@@ -135,7 +146,7 @@ namespace PAMI
                 if (_function[uepkt->id] != UnexpectedPacket::unexpected)
                   {
                     // Invoke the registered dispatch function
-                    TRACE_ERR((stderr, "   (%zu) ShmemDevice::registerRecvFunction() uepkt = %p, uepkt->id = %u\n", __global.mapping.task(), uepkt, uepkt->id));
+                    TRACE_ERR((stderr, "   (%zu,%p) ShmemDevice::registerUserDispatch() uepkt = %p, uepkt->id = %u\n", __global.mapping.task(), this, uepkt, uepkt->id));
                     _function[uepkt->id] (uepkt->meta,
                                           uepkt->data,
                                           uepkt->bytes,
@@ -154,8 +165,7 @@ namespace PAMI
                   }
               }
 
-//fprintf(stderr,"ShmemDispatch::registerUserDispatch(%zu, %p, %p, ...) .. done\n", set, function, clientdata);
-            TRACE_ERR((stderr, "<< (%zu) ShmemDevice::registerRecvFunction() => %d\n", __global.mapping.task(), id));
+            TRACE_ERR((stderr, "<< (%zu,%p) ShmemDevice::registerUserDispatch(%zu) => %d\n", __global.mapping.task(), this, set, id));
             return PAMI_SUCCESS;
           };
 
