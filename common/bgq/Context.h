@@ -792,91 +792,82 @@ namespace PAMI
         pami_result_t result = PAMI_ERROR;
         TRACE_ERR((stderr, "Context::dispatch_impl .. _dispatch[%zu] = %p, options = %#X\n", id, _dispatch[id], *(unsigned*)&options));
 
+        // Return an error for invalid / unimplemented 'hard' hints.
+        if (
+            options.recv_contiguous       == PAMI_HINT_ENABLE  ||
+            options.recv_copy             == PAMI_HINT_ENABLE  ||
+            options.recv_immediate        == PAMI_HINT_ENABLE  ||
+            options.recv_immediate        == PAMI_HINT_DISABLE ||
+            options.remote_async_progress == PAMI_HINT_ENABLE  ||
+            options.use_rdma              == PAMI_HINT_ENABLE  ||
+            (options.use_shmem            == PAMI_HINT_ENABLE  && !__global.useshmem()) ||
+            (options.use_shmem            == PAMI_HINT_DISABLE && !__global.useMU())    ||
+            false)
+          {
+            return PAMI_ERROR;
+          }
+
         pami_endpoint_t self = PAMI_ENDPOINT_INIT(_clientid, __global.mapping.task(), _contextid);
 
         if (_dispatch[id] == NULL)
           {
-            // either runtime options OR user-specified device only so we have to look at both
-            bool no_shmem  = (options.use_shmem == PAMI_HINT_DISABLE) || (!__global.useshmem() && __global.useMU());
-            bool use_shmem = (options.use_shmem == PAMI_HINT_ENABLE ) || (!__global.useMU() && __global.useshmem());
-
-            TRACE_ERR((stderr, "global.useshmem: %d, global.useMU: %d\n",
-                       (int)__global.useshmem(), (int)__global.useMU()));
-            TRACE_ERR((stderr, "options.use_shmem: %d, no_shmem: %d, use_shmem: %d\n",
-                       (int)options.use_shmem, (int)no_shmem, (int)use_shmem));
-
-            if (no_shmem == true)
+            if (options.use_shmem == PAMI_HINT_DISABLE)
               {
-                if (__global.useMU())
+                if (options.long_header == PAMI_HINT_DISABLE)
                   {
-                    TRACE_ERR((stderr, "Only registering MU pt2pt protocols\n"));
-
-                    if (options.long_header == PAMI_HINT_DISABLE)
-                      {
-                        _dispatch[id] = (Protocol::Send::Send *)
-                                        Protocol::Send::Eager <Device::MU::PacketModel, MUDevice, false>::
-                                        generate (id, fn.p2p, cookie, _devices->_mu[_contextid], self, _context, options, _protocol, result);
-                      }
-                    else
-                      {
-                        _dispatch[id] = (Protocol::Send::Send *)
-                                        Protocol::Send::Eager <Device::MU::PacketModel, MUDevice, true>::
-                                        generate (id, fn.p2p, cookie, _devices->_mu[_contextid], self, _context, options, _protocol, result);
-                      }
+                    _dispatch[id] = (Protocol::Send::Send *)
+                                    Protocol::Send::Eager <Device::MU::PacketModel, MUDevice, false>::
+                                    generate (id, fn.p2p, cookie, _devices->_mu[_contextid], self, _context, options, _protocol, result);
+                  }
+                else
+                  {
+                    _dispatch[id] = (Protocol::Send::Send *)
+                                    Protocol::Send::Eager <Device::MU::PacketModel, MUDevice, true>::
+                                    generate (id, fn.p2p, cookie, _devices->_mu[_contextid], self, _context, options, _protocol, result);
                   }
               }
-            else if (use_shmem == true)
+            else if (options.use_shmem == PAMI_HINT_ENABLE)
               {
-                // Register only the "shmem" eager send protocol
-                if (__global.useshmem())
+                if (options.long_header == PAMI_HINT_DISABLE)
                   {
-                    TRACE_ERR((stderr, "Only register shmem pt2pt protocols\n"));
-
-                    if (options.long_header == PAMI_HINT_DISABLE)
-                      {
-                        _dispatch[id] = (Protocol::Send::Send *)
-                                        Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false>::
-                                        generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
-                      }
-                    else
-                      {
-                        _dispatch[id] = (Protocol::Send::Send *)
-                                        Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true>::
-                                        generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
-                      }
+                    _dispatch[id] = (Protocol::Send::Send *)
+                                    Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false>::
+                                    generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
+                  }
+                else
+                  {
+                    _dispatch[id] = (Protocol::Send::Send *)
+                                    Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true>::
+                                    generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
                   }
               }
             else
               {
-                // Register both the "mu" and "shmem" eager send protocols
-                if (__global.useshmem() && __global.useMU())
+                if (options.long_header == PAMI_HINT_DISABLE)
                   {
-                    if (options.long_header == PAMI_HINT_DISABLE)
-                      {
-                        Protocol::Send::Eager <Device::MU::PacketModel, MUDevice, false> * eagermu =
-                          Protocol::Send::Eager <Device::MU::PacketModel, MUDevice, false>::
-                          generate (id, fn.p2p, cookie, _devices->_mu[_contextid], self, _context, options, _protocol, result);
+                    Protocol::Send::Eager <Device::MU::PacketModel, MUDevice, false> * eagermu =
+                      Protocol::Send::Eager <Device::MU::PacketModel, MUDevice, false>::
+                      generate (id, fn.p2p, cookie, _devices->_mu[_contextid], self, _context, options, _protocol, result);
 
-                        Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false> * eagershmem =
-                          Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false>::
-                          generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
+                    Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false> * eagershmem =
+                      Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false>::
+                      generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
 
-                        _dispatch[id] = (Protocol::Send::Send *) Protocol::Send::Factory::
-                                        generate (eagershmem, eagermu, _protocol, result);
-                      }
-                    else
-                      {
-                        Protocol::Send::Eager <Device::MU::PacketModel, MUDevice, true> * eagermu =
-                          Protocol::Send::Eager <Device::MU::PacketModel, MUDevice, true>::
-                          generate (id, fn.p2p, cookie, _devices->_mu[_contextid], self, _context, options, _protocol, result);
+                    _dispatch[id] = (Protocol::Send::Send *) Protocol::Send::Factory::
+                                    generate (eagershmem, eagermu, _protocol, result);
+                  }
+                else
+                  {
+                    Protocol::Send::Eager <Device::MU::PacketModel, MUDevice, true> * eagermu =
+                      Protocol::Send::Eager <Device::MU::PacketModel, MUDevice, true>::
+                      generate (id, fn.p2p, cookie, _devices->_mu[_contextid], self, _context, options, _protocol, result);
 
-                        Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true> * eagershmem =
-                          Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true>::
-                          generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
+                    Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true> * eagershmem =
+                      Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true>::
+                      generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
 
-                        _dispatch[id] = (Protocol::Send::Send *) Protocol::Send::Factory::
-                                        generate (eagershmem, eagermu, _protocol, result);
-                      }
+                    _dispatch[id] = (Protocol::Send::Send *) Protocol::Send::Factory::
+                                    generate (eagershmem, eagermu, _protocol, result);
                   }
               }
           } // end dispatch[id]==null
