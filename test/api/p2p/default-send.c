@@ -98,6 +98,8 @@ pami_recv_t         * recv)        /**< OUT: receive message structure */
     recv->type     = PAMI_TYPE_CONTIGUOUS;
     recv->addr     = __recv_buffer;
     recv->offset   = 0;
+    recv->data_fn  = PAMI_DATA_COPY;
+    recv->data_cookie = NULL;
     /*fprintf (stderr, "... dispatch function.  recv->local_fn = %p\n", recv->local_fn); */
   }
 

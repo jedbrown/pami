@@ -22,6 +22,12 @@
 #include "components/memory/MemoryAllocator.h"
 #include "math/Memcpy.x.h"
 
+#include "common/type/TypeMachine.h"
+
+#ifndef RETURN_ERR_PAMI
+#define RETURN_ERR_PAMI(code, ...) return (code)
+#endif
+
 #undef TRACE_ERR
 #define TRACE_ERR(x) // fprintf x
 
@@ -139,6 +145,8 @@ namespace PAMI
               size_t                offset;
             } longheader;
             EagerSimpleProtocol   * eager;   ///< Eager protocol object
+            Type::TypeMachine       machine;
+            bool                    is_typed_recv;
           } recv_state_t;
 
           static const size_t maximum_short_packet_payload =
@@ -408,12 +416,14 @@ namespace PAMI
             TRACE_ERR((stderr, "EagerSimple::immediate_impl() >>\n"));
 
 #ifdef ERROR_CHECKS
+
             if (T_Model::packet_model_immediate_bytes <
                 (parameters->data.iov_len + parameters->header.iov_len))
-            {
-              TRACE_ERR((stderr,"Oops! ... %zu < (%zu+%zu) ???\n", T_Model::packet_model_immediate_bytes, parameters->data.iov_len, parameters->header.iov_len));
-              return PAMI_INVAL;
-            }
+              {
+                TRACE_ERR((stderr, "Oops! ... %zu < (%zu+%zu) ???\n", T_Model::packet_model_immediate_bytes, parameters->data.iov_len, parameters->header.iov_len));
+                return PAMI_INVAL;
+              }
+
 #endif
 
             pami_task_t task;
@@ -673,8 +683,34 @@ namespace PAMI
 
             TRACE_ERR((stderr, "   EagerSimple::process_envelope() .. data bytes = %zu, state->info.type = %p\n", data_bytes, state->info.type));
 
+            Type::TypeCode * type = (Type::TypeCode *) state->info.type;
+#ifdef ERROR_CHECKS
+
+            if (! type->IsCompleted())
+              {
+                //RETURN_ERR_PAMI(PAMI_INVAL, "Using an incompleted type.\n");
+                if (state->info.local_fn != NULL)
+                  state->info.local_fn (_context, state->info.cookie, PAMI_INVAL);
+
+                return;
+              }
+
+#endif
+            state->is_typed_recv =
+              (state->info.type != PAMI_TYPE_CONTIGUOUS) ||
+              (state->info.data_fn != PAMI_DATA_COPY);
+
+            if (unlikely(state->is_typed_recv))
+              {
+                // Construct a type machine for this transfer.
+                new (&(state->machine)) Type::TypeMachine (type);
+                state->machine.SetCopyFunc (state->info.data_fn, state->info.data_cookie);
+                state->machine.MoveCursor (state->info.offset);
+              }
+
+
             // Only contiguous receives are implemented
-            PAMI_assertf(state->info.type == PAMI_TYPE_CONTIGUOUS, "[%5d:%s] %s() - Only contiguous receives are implemented.\n", __LINE__, __FILE__, __FUNCTION__);
+            //PAMI_assertf(state->info.type == PAMI_TYPE_CONTIGUOUS, "[%5d:%s] %s() - Only contiguous receives are implemented.\n", __LINE__, __FILE__, __FUNCTION__);
 
             TRACE_ERR((stderr, "<< EagerSimple::process_envelope()\n"));
             return;
@@ -1042,7 +1078,12 @@ namespace PAMI
 
             // Copy data from the packet payload into the destination buffer
             size_t ncopy = MIN(nleft, bytes);
-            Core_memcpy ((uint8_t *)(state->info.addr) + nbyte, payload, ncopy);
+
+            if (unlikely(state->is_typed_recv))
+              state->machine.Unpack (state->info.addr, payload, ncopy);
+            else
+              Core_memcpy ((uint8_t *)(state->info.addr) + nbyte, payload, ncopy);
+
             state->received += ncopy;
 
             TRACE_ERR((stderr, "   EagerSimple::dispatch_data_message(), nbyte = %zu, bytes = %zu, state->data_bytes = %zu\n", nbyte, bytes, state->data_size));

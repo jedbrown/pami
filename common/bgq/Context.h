@@ -984,7 +984,7 @@ namespace PAMI
         if (_contextid == 0) 
 #endif
 	{
-	  TRACE_ERR((stderr, "Context::registerWithOptimizer id %zu, geometry %p\n", _contextid, geometry));	
+	  TRACE_ERR((stderr, "Context::registerWithOptimizer id %zu, geometry %p\n", _contextid, go->geometry()));
 	  uint64_t  reduce_result[16];
 	  int n_multi = 0;
 	  _multi_registration->register_local (_contextid, go->geometry(), reduce_result, n_multi);	
