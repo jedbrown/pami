@@ -304,6 +304,7 @@ namespace PAMI
                 if (bytes_arrived > 0)
                 {
                   Core_memcpy((char*)_rcvbuf + bytes_so_far, (char*)buf + bytes_so_far, bytes_arrived);
+                  //quad_double_copy((double*)((char*)_rcvbuf + bytes_so_far), (double*)((char*)buf + bytes_so_far), bytes_arrived/sizeof(double));
                   counter_curr -= bytes_arrived;
                 }
               }

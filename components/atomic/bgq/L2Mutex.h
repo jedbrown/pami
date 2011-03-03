@@ -147,6 +147,34 @@ namespace PAMI
             PAMI_assertf(rc == PAMI_SUCCESS, "Failed to allocate memory from mm %p with key \"%s\"", mm, key);
           };
 
+          template <class T_MemoryManager, unsigned T_Num>
+          inline static void init_impl(T_MemoryManager *mm, const char *key, IndirectL2 (&atomic)[T_Num])
+          {
+          
+            volatile uint64_t * array;
+
+              pami_result_t rc;
+	    if ((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0) {
+            	rc = mm->memalign((void **)&array, sizeof(volatile uint64_t),
+                                   sizeof(volatile uint64_t)*T_Num, key);
+	    } else {
+              rc = __global.l2atomicFactory.__nodescoped_mm.memalign ((void **) & array,
+                  sizeof(volatile uint64_t),
+                  sizeof(volatile uint64_t)*T_Num,
+                  key);
+              }
+
+              PAMI_assertf (rc == PAMI_SUCCESS, "Failed to allocate memory from l2 atomic node-scoped memory manager with key (\"%s\")", key);
+
+              unsigned i;
+              for (i=0; i<T_Num; i++)
+              {
+                atomic[i]._counter = (volatile uint64_t *) &array[i];
+              }
+
+
+          }
+          
           inline void clone_impl (IndirectL2 & atomic)
           {
             _counter = atomic._counter;

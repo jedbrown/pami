@@ -64,6 +64,14 @@ namespace PAMI
           PAMI_assertf (rc == PAMI_SUCCESS, "Failed to allocate memory from memory manager (%p) with key (\"%s\")", mm, key);
         };
 
+        template <class T_MemoryManager, unsigned T_Num>
+        static void init_impl (T_MemoryManager * mm,
+                const char      * key,
+                Indirect       (&atomic)[T_Num])
+        {
+          PAMI_abortf("This functionality is not yet implemented\n");
+        }
+
         inline void clone_impl (Indirect & atomic)
         {
           _mutex = atomic._mutex;

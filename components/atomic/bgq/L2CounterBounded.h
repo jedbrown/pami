@@ -72,22 +72,49 @@ protected:
 	/// the BGQ-specific L2 Atomic Factory to access the L2 Memory Manager
 	/// to allocate the memory.
 	///
-	template <class T_MemoryManager>
-	inline void init_impl(T_MemoryManager *mm, const char *key) {
-		pami_result_t rc;
+        template <class T_MemoryManager>
+          inline void init_impl(T_MemoryManager *mm, const char *key) {
+            pami_result_t rc;
 
-		if ((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0) {
-			rc = mm->memalign((void **)&_counter, 32, sizeof(*_counter), key,
-					  IndirectL2Bounded::counter_initialize, NULL);
-		} else {
-			rc = __global.l2atomicFactory.__nodescoped_mm.memalign(
-					(void **)&_counter, 32, sizeof(*_counter), key,
-					IndirectL2Bounded::counter_initialize, NULL);
-		}
+            if ((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0) {
+              rc = mm->memalign((void **)&_counter, 32, sizeof(*_counter), key,
+                  IndirectL2Bounded::counter_initialize, NULL);
+            } else {
+              rc = __global.l2atomicFactory.__nodescoped_mm.memalign(
+                  (void **)&_counter, 32, sizeof(*_counter), key,
+                  IndirectL2Bounded::counter_initialize, NULL);
+            }
 
-		PAMI_assertf(rc == PAMI_SUCCESS,
-			"Failed to allocate memory from mm %p with key \"%s\"", mm, key);
-	}
+            PAMI_assertf(rc == PAMI_SUCCESS,
+                "Failed to allocate memory from mm %p with key \"%s\"", mm, key);
+          }
+
+        template <class T_MemoryManager, unsigned T_Num>
+          static void init_impl (T_MemoryManager * mm,
+              const char      * key,
+              IndirectL2Bounded        (&atomic)[T_Num])
+          {
+            volatile uint64_t * array;
+            pami_result_t rc;
+
+            if ((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0) {
+              rc = mm->memalign((void **)&array, 32, sizeof(L2BoundedCounter_t)*T_Num, key,
+                  IndirectL2Bounded::counter_initialize, NULL);
+            } else {
+              rc = __global.l2atomicFactory.__nodescoped_mm.memalign(
+                  (void **)&array, 32, sizeof(L2BoundedCounter_t)*T_Num, key,
+                  IndirectL2Bounded::counter_initialize, NULL);
+            }
+
+            PAMI_assertf (rc == PAMI_SUCCESS, "Failed to allocate memory from l2 atomic node-scoped memory manager with key (\"%s\")", key);
+
+            unsigned i;
+            for (i=0; i<T_Num; i++)
+            {
+              atomic[i]._counter =  (L2BoundedCounter_t *)&array[i];
+            }
+          };
+
 
 
 	inline void clone_impl(IndirectL2Bounded &atomic) {
