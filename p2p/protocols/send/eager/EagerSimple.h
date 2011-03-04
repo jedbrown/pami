@@ -42,19 +42,17 @@ namespace PAMI
       /// \brief Eager simple send protocol class for reliable network devices.
       ///
       /// \tparam T_Model      Packet model class
-      /// \tparam T_Device     Packet device class
       /// \tparam T_LongHeader Enable/disable long header support
-      /// \tparam T_Connection Connection class
       ///
       /// \see PAMI::Device::Interface::PacketModel
       /// \see PAMI::Device::Interface::PacketDevice
       ///
-      template < class T_Model, class T_Device, bool T_LongHeader, class T_Connection, bool T_RecvImmediate = false >
+      template < class T_Model, bool T_LongHeader, bool T_RecvImmediate = false >
       class EagerSimple
       {
         protected:
 
-          typedef EagerSimple<T_Model, T_Device, T_LongHeader, T_Connection, T_RecvImmediate> EagerSimpleProtocol;
+          typedef EagerSimple<T_Model, T_LongHeader, T_RecvImmediate> EagerSimpleProtocol;
 
           typedef uint8_t pkt_t[T_Model::packet_model_state_bytes];
 
@@ -172,6 +170,7 @@ namespace PAMI
           /// \param[in]  context      Origin communcation context
           /// \param[out] status       Constructor status
           ///
+          template <class T_Device>
           inline EagerSimple (size_t                 dispatch,
                               pami_dispatch_p2p_function dispatch_fn,
                               void                 * cookie,
@@ -186,12 +185,10 @@ namespace PAMI
               _data_model (device),
               _ack_model (device),
               _short_model (device),
-              _device (device),
               _origin (origin),
               _context (context),
               _dispatch_fn (dispatch_fn),
-              _cookie (cookie),
-              _connection (device)
+              _cookie (cookie)
           {
             // ----------------------------------------------------------------
             // Compile-time assertions
@@ -431,7 +428,7 @@ namespace PAMI
             PAMI_ENDPOINT_INFO(parameters->dest, task, offset);
 
             // Verify that this task is addressable by this packet device
-            if (unlikely(_device.isPeer(task) == false)) return PAMI_ERROR;
+            if (unlikely(_short_model.device.isPeer(task) == false)) return PAMI_ERROR;
 
             // Specify the protocol metadata to send with the application
             // metadata in the packet. This metadata is copied
@@ -506,7 +503,7 @@ namespace PAMI
             PAMI_ENDPOINT_INFO(parameters->send.dest, task, offset);
 
             // Verify that this task is addressable by this packet device
-            if (unlikely(_device.isPeer (task) == false)) return PAMI_ERROR;
+            if (unlikely(_short_model.device.isPeer (task) == false)) return PAMI_ERROR;
 
 #if 0
             // ----------------------------------------------------------------
@@ -639,14 +636,11 @@ namespace PAMI
           T_Model          _data_model;
           T_Model          _ack_model;
           T_Model          _short_model;
-          T_Device       & _device;
           pami_endpoint_t  _origin;
           pami_context_t   _context;
 
           pami_dispatch_p2p_function _dispatch_fn;
           void                     * _cookie;
-
-          T_Connection              _connection;
 
           inline send_state_t * allocateSendState ()
           {
@@ -922,7 +916,10 @@ namespace PAMI
             state->longheader.offset = 0;
 
             // Set the eager connection.
-            eager->_connection.set (m->origin, (void *)state);
+            pami_task_t task;
+            size_t offset;
+            PAMI_ENDPOINT_INFO(m->origin, task, offset);
+            eager->_longheader_envelope_model.device.setConnection ((void *)state, task, offset);
 
             pami_result_t prc;
             prc = __global.heap_mm->memalign((void **) & state->longheader.addr, 0,
@@ -974,7 +971,10 @@ namespace PAMI
             state->origin        = m->origin;
 
             // Set the eager connection.
-            eager->_connection.set (m->origin, (void *)state);
+            pami_task_t task;
+            size_t offset;
+            PAMI_ENDPOINT_INFO(m->origin, task, offset);
+            eager->_envelope_model.device.setConnection ((void *)state, task, offset);
 
             // This is a short header envelope .. all application metadata
             // has been received.
@@ -995,11 +995,14 @@ namespace PAMI
             TRACE_ERR((stderr, ">> EagerSimple::dispatch_longheader_message(), origin = 0x%08x, bytes = %zu\n", origin, bytes));
 
             EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
-            recv_state_t * state = (recv_state_t *) eager->_connection.get (origin);
+            pami_task_t task;
+            size_t offset;
+            PAMI_ENDPOINT_INFO(origin, task, offset);
+            recv_state_t * state = (recv_state_t *) eager->_longheader_message_model.device.getConnection (task, offset);
 
             size_t n = MIN(bytes, state->header_size - state->longheader.offset);
 
-            eager->_device.read ((void *)(state->longheader.addr + state->longheader.offset), n, cookie);
+            eager->_longheader_message_model.device.read ((void *)(state->longheader.addr + state->longheader.offset), n, cookie);
             state->longheader.offset += n;
 
             if (state->header_size == state->longheader.offset)
@@ -1022,7 +1025,7 @@ namespace PAMI
 
                     // No data packets will be received on this connection.
                     // Clear the connection data and prepare for the next message.
-                    eager->_connection.clear (origin);
+                    eager->_longheader_message_model.device.clearConnection (task, offset);
                   }
                 else
                   {
@@ -1071,7 +1074,7 @@ namespace PAMI
             TRACE_ERR((stderr, ">> EagerSimple::dispatch_data_message(), origin task = %d, origin offset = %zu, bytes = %zu\n", task, offset, bytes));
 
             EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
-            recv_state_t * state = (recv_state_t *) eager->_connection.get (origin);
+            recv_state_t * state = (recv_state_t *) eager->_data_model.device.getConnection (task, offset);
 
             // Number of bytes received so far.
             size_t nbyte = state->received;
@@ -1097,7 +1100,7 @@ namespace PAMI
               {
                 // No more data packets will be received on this connection.
                 // Clear the connection data and prepare for the next message.
-                eager->_connection.clear (origin);
+                eager->_data_model.device.clearConnection (task, offset);
 
                 // No more data is to be written to the receive buffer.
                 // Invoke the receive done callback.
@@ -1178,7 +1181,7 @@ namespace PAMI
 
             uint8_t stackData[T_Model::packet_model_payload_bytes];
             void * p = (void *) & stackData[0];
-            pf->_device.read (p, bytes, cookie);
+            pf->_short_model.device.read (p, bytes, cookie);
 
             T_DispatchFn (metadata, p, bytes, recv_func_parm, cookie);
 

@@ -39,7 +39,7 @@ namespace PAMI
     namespace MU
     {
       template <class T_Model>
-      class PacketModelBase : public Interface::PacketModel < MU::PacketModelBase<T_Model>, MU::Context, 1024 + MU::InjChannel::completion_event_state_bytes >
+      class PacketModelBase : public Interface::PacketModel < MU::PacketModelBase<T_Model> >
       {
         protected :
 
@@ -90,8 +90,8 @@ namespace PAMI
                                        struct iovec   (&iov)[T_Niov]);
 
           /// \see PAMI::Device::Interface::PacketModel::postPacket
-          template <unsigned T_Niov>
-          inline bool postPacket_impl (uint8_t               (&state)[packet_model_state_bytes],
+          template <unsigned T_StateBytes, unsigned T_Niov>
+          inline bool postPacket_impl (uint8_t               (&state)[T_StateBytes],
                                        pami_event_function   fn,
                                        void                * cookie,
                                        size_t                target_task,
@@ -101,7 +101,8 @@ namespace PAMI
                                        struct iovec          (&iov)[T_Niov]);
 
           /// \see PAMI::Device::Interface::PacketModel::postPacket
-          inline bool postPacket_impl (uint8_t              (&state)[packet_model_state_bytes],
+          template <unsigned T_StateBytes>
+          inline bool postPacket_impl (uint8_t              (&state)[T_StateBytes],
                                        pami_event_function   fn,
                                        void                * cookie,
                                        size_t                target_task,
@@ -112,7 +113,8 @@ namespace PAMI
                                        size_t                niov);
 
           /// \see PAMI::Device::Interface::PacketModel::postPacket
-          inline bool postPacket_impl (uint8_t              (&state)[packet_model_state_bytes],
+          template <unsigned T_StateBytes>
+          inline bool postPacket_impl (uint8_t              (&state)[T_StateBytes],
                                        pami_event_function   fn,
                                        void                * cookie,
                                        size_t                target_task,
@@ -123,7 +125,8 @@ namespace PAMI
                                        size_t                length);
 
           /// \see PAMI::Device::Interface::PacketModel::postMultiPacket
-          inline bool postMultiPacket_impl (uint8_t               (&state)[packet_model_state_bytes],
+          template <unsigned T_StateBytes>
+          inline bool postMultiPacket_impl (uint8_t               (&state)[T_StateBytes],
                                             pami_event_function   fn,
                                             void                * cookie,
                                             size_t                target_task,
@@ -139,16 +142,18 @@ namespace PAMI
 
           MUSPI_DescriptorBase            _singlepkt;
           MUSPI_DescriptorBase            _multipkt;
-          MU::Context                   & _context;
           void                          * _cookie;
 
+        public:
+        
+          MU::Context                   & device;
       };
 
       template <class T_Model>
       PacketModelBase<T_Model>::PacketModelBase (MU::Context & context, void * cookie) :
-          Interface::PacketModel < MU::PacketModelBase<T_Model>, MU::Context, 1024 + MU::InjChannel::completion_event_state_bytes > (context),
-          _context (context),
-          _cookie (cookie)
+          Interface::PacketModel < MU::PacketModelBase<T_Model> > (context),
+          _cookie (cookie),
+          device (context)
       {
         TRACE_FN_ENTER();
         COMPILE_TIME_ASSERT(sizeof(InjectDescriptorMessage<1>) <= packet_model_state_bytes);
@@ -244,7 +249,7 @@ namespace PAMI
         // payload.
         uint16_t id = 0;
 
-        if (_context.registerPacketHandler (dispatch,
+        if (device.registerPacketHandler (dispatch,
                                             direct_recv_func,
                                             direct_recv_func_parm,
                                             id))
@@ -283,13 +288,13 @@ namespace PAMI
         uint16_t              rfifo;
         uint64_t              map;
 
-        size_t fnum = _context.pinFifo (target_task,
+        size_t fnum = device.pinFifo (target_task,
                                         target_offset,
                                         dest,
                                         rfifo,
                                         map);
 
-        InjChannel & channel = _context.injectionGroup.channel[fnum];
+        InjChannel & channel = device.injectionGroup.channel[fnum];
         bool isfree = channel.hasFreeSpaceWithUpdate ();
         VECTOR_LOAD_NU (&_singlepkt,  0, 0);  /* Load first 32 bytes to reg 0*/
         VECTOR_LOAD_NU (&_singlepkt, 32, 1);  /* Load second 32 bytes to reg 1*/
@@ -360,8 +365,8 @@ namespace PAMI
       };
 
       template <class T_Model>
-      template <unsigned T_Niov>
-      bool PacketModelBase<T_Model>::postPacket_impl (uint8_t               (&state)[packet_model_state_bytes],
+      template <unsigned T_StateBytes, unsigned T_Niov>
+      bool PacketModelBase<T_Model>::postPacket_impl (uint8_t               (&state)[T_StateBytes],
                                                       pami_event_function   fn,
                                                       void                * cookie,
                                                       size_t           target_task,
@@ -376,10 +381,10 @@ namespace PAMI
         uint16_t              rfifo;
         uint64_t              map;
 
-        size_t fnum = _context.pinFifo (target_task, target_offset, dest,
+        size_t fnum = device.pinFifo (target_task, target_offset, dest,
                                         rfifo, map);
 
-        InjChannel & channel = _context.injectionGroup.channel[fnum];
+        InjChannel & channel = device.injectionGroup.channel[fnum];
         size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
 
         size_t i, tbytes = 0;
@@ -543,7 +548,8 @@ namespace PAMI
       };
 
       template <class T_Model>
-      bool PacketModelBase<T_Model>::postPacket_impl (uint8_t               (&state)[packet_model_state_bytes],
+      template <unsigned T_StateBytes>
+      bool PacketModelBase<T_Model>::postPacket_impl (uint8_t               (&state)[T_StateBytes],
                                                       pami_event_function   fn,
                                                       void                * cookie,
                                                       size_t                target_task,
@@ -559,10 +565,10 @@ namespace PAMI
         uint16_t              rfifo;
         uint64_t              map;
 
-        size_t fnum = _context.pinFifo (target_task, target_offset, dest,
+        size_t fnum = device.pinFifo (target_task, target_offset, dest,
                                         rfifo, map);
 
-        InjChannel & channel = _context.injectionGroup.channel[fnum];
+        InjChannel & channel = device.injectionGroup.channel[fnum];
         size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
 
         // Determine the amount of data to write into the packet payload.
@@ -726,7 +732,8 @@ namespace PAMI
       };
 
       template <class T_Model>
-      bool PacketModelBase<T_Model>::postPacket_impl (uint8_t               (&state)[packet_model_state_bytes],
+      template <unsigned T_StateBytes>
+      bool PacketModelBase<T_Model>::postPacket_impl (uint8_t               (&state)[T_StateBytes],
                                                       pami_event_function   fn,
                                                       void                * cookie,
                                                       size_t                target_task,
@@ -748,7 +755,8 @@ namespace PAMI
       };
 
       template <class T_Model>
-      bool PacketModelBase<T_Model>::postMultiPacket_impl (uint8_t               (&state)[packet_model_state_bytes],
+      template <unsigned T_StateBytes>
+      bool PacketModelBase<T_Model>::postMultiPacket_impl (uint8_t               (&state)[T_StateBytes],
                                                            pami_event_function   fn,
                                                            void                * cookie,
                                                            size_t                target_task,
@@ -770,10 +778,10 @@ namespace PAMI
         uint64_t paddr = (uint64_t) memregion.BasePa +
                          ((uint64_t) payload - (uint64_t) memregion.BaseVa);
 
-        size_t fnum = _context.pinFifo (target_task, target_offset, dest,
+        size_t fnum = device.pinFifo (target_task, target_offset, dest,
                                         rfifo, map);
 
-        InjChannel & channel = _context.injectionGroup.channel[fnum];
+        InjChannel & channel = device.injectionGroup.channel[fnum];
         size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
 
         if (likely(channel.isSendQueueEmpty() && ndesc > 0))

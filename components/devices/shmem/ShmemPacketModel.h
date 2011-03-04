@@ -49,7 +49,7 @@ namespace PAMI
       /// \see ShmemPacketDevice
       ///
       template <class T_Device>
-      class PacketModel : public Interface::PacketModel < PacketModel<T_Device>, T_Device, 512 >
+      class PacketModel : public Interface::PacketModel < PacketModel<T_Device> >
       {
         public:
           ///
@@ -57,9 +57,9 @@ namespace PAMI
           ///
           /// \param [in] device  Shared memory device
           ///
-          PacketModel (T_Device & device) :
-              Interface::PacketModel < PacketModel<T_Device>, T_Device, 512 > (device),
-              _device (device)
+          PacketModel (T_Device & d) :
+              Interface::PacketModel < PacketModel<T_Device> > (d),
+              device (d)
           {
             //COMPILE_TIME_ASSERT(sizeof(Shmem::PacketMessage<T_Device>) == sizeof(MultiPacketMessage<T_Device>));
           };
@@ -79,10 +79,11 @@ namespace PAMI
                                    Interface::RecvFunction_t   read_recv_func,
                                    void                      * read_recv_func_parm)
           {
-            return _device.registerRecvFunction (dispatch, direct_recv_func, direct_recv_func_parm, _dispatch_id);
+            return device.registerRecvFunction (dispatch, direct_recv_func, direct_recv_func_parm, _dispatch_id);
           };
 
-          inline bool postPacket_impl (uint8_t               (&state)[512],
+          template <unsigned T_StateBytes>
+          inline bool postPacket_impl (uint8_t               (&state)[T_StateBytes],
                                        pami_event_function   fn,
                                        void                * cookie,
                                        size_t                target_task,
@@ -93,13 +94,13 @@ namespace PAMI
                                        size_t                niov)
           {
             TRACE_ERR((stderr, ">> PacketModel::postPacket_impl(1)\n"));
-            size_t fnum = _device.fnum (_device.task2peer(target_task), target_offset);
+            size_t fnum = device.fnum (device.task2peer(target_task), target_offset);
             PacketWriter<struct iovec_t> writer (_dispatch_id);
             writer.init (metadata, metasize, iov, niov);
 
-            if (_device.isSendQueueEmpty (fnum))
+            if (device.isSendQueueEmpty (fnum))
               {
-                if (_device._fifo[fnum].producePacket(writer))
+                if (device._fifo[fnum].producePacket(writer))
                   {
                     if (fn) fn (_context, cookie, PAMI_SUCCESS);
 
@@ -115,15 +116,15 @@ namespace PAMI
 
             PacketMessage<T_Device, PacketWriter<struct iovec_t> > * msg =
             (PacketMessage<T_Device, PacketWriter<struct iovec_t> > *) & state[0];
-            new (msg) PacketMessage<T_Device, PacketWriter<struct iovec_t> > (fn, cookie, &_device, fnum, writer);
-            _device.post (fnum, msg);
+            new (msg) PacketMessage<T_Device, PacketWriter<struct iovec_t> > (fn, cookie, &device, fnum, writer);
+            device.post (fnum, msg);
 
             TRACE_ERR((stderr, "<< PacketModel::postPacket_impl(1), return false\n"));
             return false;
           };
 
-          template <unsigned T_Niov>
-          inline bool postPacket_impl (uint8_t               (&state)[512],
+          template <unsigned T_StateBytes, unsigned T_Niov>
+          inline bool postPacket_impl (uint8_t               (&state)[T_StateBytes],
                                        pami_event_function   fn,
                                        void                * cookie,
                                        size_t                target_task,
@@ -133,13 +134,13 @@ namespace PAMI
                                        struct iovec          (&iov)[T_Niov])
           {
             TRACE_ERR((stderr, ">> PacketModel::postPacket_impl(2), T_Niov = %d\n", T_Niov));
-            size_t fnum = _device.fnum (_device.task2peer(target_task), target_offset);
+            size_t fnum = device.fnum (device.task2peer(target_task), target_offset);
             PacketIovecWriter<T_Niov> writer (_dispatch_id);
             writer.init (metadata, metasize, iov);
 
-            if (_device.isSendQueueEmpty (fnum))
+            if (device.isSendQueueEmpty (fnum))
               {
-                if (_device._fifo[fnum].producePacket(writer))
+                if (device._fifo[fnum].producePacket(writer))
                   {
                     if (fn) fn (_context, cookie, PAMI_SUCCESS);
 
@@ -154,14 +155,15 @@ namespace PAMI
 
             PacketMessage<T_Device, PacketIovecWriter<T_Niov> > * msg =
               (PacketMessage<T_Device, PacketIovecWriter<T_Niov> > *) & state[0];
-            new (msg) PacketMessage<T_Device, PacketIovecWriter<T_Niov> > (fn, cookie, &_device, fnum, writer);
-            _device.post (fnum, msg);
+            new (msg) PacketMessage<T_Device, PacketIovecWriter<T_Niov> > (fn, cookie, &device, fnum, writer);
+            device.post (fnum, msg);
 
             TRACE_ERR((stderr, "<< PacketModel::postPacket_impl(2), return false\n"));
             return false;
           };
 
-          inline bool postPacket_impl (uint8_t              (&state)[512],
+          template <unsigned T_StateBytes>
+          inline bool postPacket_impl (uint8_t              (&state)[T_StateBytes],
                                        pami_event_function  fn,
                                        void               * cookie,
                                        size_t               target_task,
@@ -172,13 +174,13 @@ namespace PAMI
                                        size_t               length)
           {
             TRACE_ERR((stderr, ">> PacketModel::postPacket_impl(0)\n"));
-            size_t fnum = _device.fnum (_device.task2peer(target_task), target_offset);
+            size_t fnum = device.fnum (device.task2peer(target_task), target_offset);
             PacketWriter<void> writer (_dispatch_id);
             writer.init (metadata, metasize, payload, length);
 
-            if (_device.isSendQueueEmpty (fnum))
+            if (device.isSendQueueEmpty (fnum))
               {
-                if (_device._fifo[fnum].producePacket(writer))
+                if (device._fifo[fnum].producePacket(writer))
                   {
                     if (fn) fn (_context, cookie, PAMI_SUCCESS);
 
@@ -194,8 +196,8 @@ namespace PAMI
 
             PacketMessage<T_Device, PacketWriter<void> > * msg =
               (PacketMessage<T_Device, PacketWriter<void> > *) & state[0];
-            new (msg) PacketMessage<T_Device, PacketWriter<void> > (fn, cookie, &_device, fnum, writer);
-            _device.post (fnum, msg);
+            new (msg) PacketMessage<T_Device, PacketWriter<void> > (fn, cookie, &device, fnum, writer);
+            device.post (fnum, msg);
 
             TRACE_ERR((stderr, "<< PacketModel::postPacket_impl(0), return false\n"));
             return false;
@@ -209,13 +211,13 @@ namespace PAMI
                                        struct iovec   (&iov)[T_Niov])
           {
             TRACE_ERR((stderr, ">> PacketModel::postPacket_impl(\"immediate\")\n"));
-            size_t fnum = _device.fnum (_device.task2peer(target_task), target_offset);
+            size_t fnum = device.fnum (device.task2peer(target_task), target_offset);
 
-            if (_device.isSendQueueEmpty (fnum))
+            if (device.isSendQueueEmpty (fnum))
               {
                 PacketIovecWriter<T_Niov> writer (_dispatch_id);
                 writer.init (metadata, metasize, iov);
-                bool result = _device._fifo[fnum].producePacket(writer);
+                bool result = device._fifo[fnum].producePacket(writer);
                 
                 TRACE_ERR((stderr, ">> PacketModel::postPacket_impl(\"immediate\"), return %d\n", result));
                 return result;
@@ -225,7 +227,8 @@ namespace PAMI
             return false;
           };
 
-          inline bool postMultiPacket_impl (uint8_t               (&state)[512],
+          template <unsigned T_StateBytes>
+          inline bool postMultiPacket_impl (uint8_t               (&state)[T_StateBytes],
                                             pami_event_function   fn,
                                             void                * cookie,
                                             size_t                target_task,
@@ -236,16 +239,16 @@ namespace PAMI
                                             size_t                length)
           {
             TRACE_ERR((stderr, ">> PacketModel::postMultiPacket_impl()\n"));
-            size_t fnum = _device.fnum (_device.task2peer(target_task), target_offset);
+            size_t fnum = device.fnum (device.task2peer(target_task), target_offset);
             MultiPacketWriter<void> writer (_dispatch_id);
             writer.init (metadata, metasize, payload, length);
 
-            if (_device.isSendQueueEmpty (fnum))
+            if (device.isSendQueueEmpty (fnum))
               {
                 bool packet_was_produced = false;
                 do
                 {
-                  packet_was_produced = _device._fifo[fnum].producePacket(writer);
+                  packet_was_produced = device._fifo[fnum].producePacket(writer);
                   TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), packet_was_produced = %d\n", packet_was_produced));
                   TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), &writer = %p, writer.isDone() = %d\n", &writer, writer.isDone()));
 
@@ -267,8 +270,8 @@ namespace PAMI
 
             PacketMessage<T_Device, MultiPacketWriter<void> > * msg =
               (PacketMessage<T_Device, MultiPacketWriter<void> > *) & state[0];
-            new (msg) PacketMessage<T_Device, MultiPacketWriter<void> > (fn, cookie, &_device, fnum, writer);
-            _device.post (fnum, msg);
+            new (msg) PacketMessage<T_Device, MultiPacketWriter<void> > (fn, cookie, &device, fnum, writer);
+            device.post (fnum, msg);
 
             TRACE_ERR((stderr, "<< PacketModel::postMultiPacket_impl(), return false\n"));
             return false;
@@ -282,9 +285,10 @@ namespace PAMI
             return _dispatch_id;
           }
 
+          T_Device       & device;
+
         protected:
 
-          T_Device       & _device;
           uint16_t         _dispatch_id;
           pami_context_t   _context;
 

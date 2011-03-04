@@ -55,13 +55,13 @@ namespace PAMI
     }mpi_m2m_dispatch_info_t;
 
     class MPIDevice : public Interface::BaseDevice<MPIDevice>,
-                      public Interface::PacketDevice<MPIDevice>
+                      public Interface::PacketDevice<MPIDevice>::Deterministic
     {
     public:
       static const size_t packet_payload_size = 224;
       inline MPIDevice (size_t ncontext = 1) :
       Interface::BaseDevice<MPIDevice> (),
-      Interface::PacketDevice<MPIDevice>(),
+      Interface::PacketDevice<MPIDevice>()::Deterministic,
       _dispatch_id(0),
       _curMcastTag(MULTISYNC_TAG),
       _ncontexts (ncontext)
@@ -70,6 +70,15 @@ namespace PAMI
         MPI_Comm_dup(MPI_COMM_WORLD,&_communicator);
         MPI_Comm_size(_communicator, (int*)&_peers);
         TRACE_DEVICE((stderr,"<%p>MPIDevice()\n",this));
+        
+        // Initialize the deterministic packet connection array.
+        unsigned i, num_endpoints = ncontext * _peers;
+        pami_result_t mmrc;
+	      mmrc = __global.heap_mm->memalign((void **) & _connection, 16, sizeof(void *) * num_endpoints);
+        PAMI_assertf(mmrc == PAMI_SUCCESS, "memalign failed for packet connection array, rc=%d\n", mmrc);
+
+        for (i = 0; i < num_endpoints; i++) _connection[i] = NULL;
+        
       };
 
         class Factory : public Interface::FactoryInterface<Factory,MPIDevice,Generic::Device> {
@@ -410,6 +419,38 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
         return -1;
       }
 
+          /// \see PAMI::Device::Interface::PacketDevice::Deterministic::clearConnection()
+          inline void clearConnection_impl (size_t task, size_t offset)
+          {
+            size_t index = _peers + offset * _ncontexts;
+      
+            PAMI_assert_debugf(_connection[index] != NULL, "Error. _connection[%zu] was not previously set.\n", index);
+
+            _connection[index] = NULL;
+          }
+              
+          /// \see PAMI::Device::Interface::PacketDevice::Deterministic::getConnection()
+          inline void * getConnection_impl (size_t task, size_t offset)
+          {
+            size_t index = _peers + offset * _ncontexts;
+      
+            PAMI_assert_debugf(_connection[index] != NULL, "Error. _connection[%zu] was not previously set.\n", index);
+
+            return _connection[index];
+          }
+
+          /// \see PAMI::Device::Interface::PacketDevice::Deterministic::setConnection()
+          inline void setConnection_impl (void * value, size_t task, size_t offset)
+          {
+            size_t index = _peers + offset * _ncontexts;
+      
+            PAMI_assert_debugf(_connection[index] != NULL, "Error. _connection[%zu] was previously set.\n", index);
+
+            _connection[index] = value;
+          }
+
+
+
       inline size_t peers_impl ()
       {
         return _peers;
@@ -524,6 +565,12 @@ static inline MPIDevice & getDevice_impl(MPIDevice *devs, size_t client, size_t 
       pami_context_t                             _context;
       size_t                                    _contextid;
       size_t                                    _ncontexts;
+      
+      // -------------------------------------------------------------
+      // Deterministic packet interface connection array
+      // -------------------------------------------------------------
+        
+      void ** _connection;
     };
 #undef DISPATCH_SET_SIZE
   };

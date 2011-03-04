@@ -136,7 +136,7 @@ namespace PAMI
       /// \see ShmemPacketDevice
       ///
       template <class T_Device>
-      class BgqShaddrPacketModel : public Interface::PacketModel < BgqShaddrPacketModel<T_Device>, T_Device, 512 >
+      class BgqShaddrPacketModel : public Interface::PacketModel < BgqShaddrPacketModel<T_Device> >
       {
         public:
           ///
@@ -145,9 +145,9 @@ namespace PAMI
           /// \param [in] device  Shared memory device
           ///
           BgqShaddrPacketModel (T_Device & device) :
-              Interface::PacketModel < BgqShaddrPacketModel<T_Device>, T_Device, 512 > (device),
+              Interface::PacketModel < BgqShaddrPacketModel<T_Device> > (device),
               _shmem_model (device),
-              _device (device)
+              device (device)
           {
             //COMPILE_TIME_ASSERT(sizeof(Shmem::PacketMessage<T_Device>) == sizeof(MultiPacketMessage<T_Device>));
           };
@@ -170,13 +170,13 @@ namespace PAMI
 //fprintf(stderr, "BgqShaddrPacketModel::init_impl(%zu, %p, %p, %p, %p)\n", dispatch, direct_recv_func, direct_recv_func_parm, read_recv_func, read_recv_func_parm);
             pami_result_t status = PAMI_ERROR;
 
-//fprintf(stderr, "BgqShaddrPacketModel::init_impl(), _device.shaddr._shaddr_packet_dispatch = %d, &_device = %p\n", _device.shaddr._shaddr_packet_dispatch, &_device);
-            if (_device.system_ro_put_dispatch != (uint16_t) -1)
+//fprintf(stderr, "BgqShaddrPacketModel::init_impl(), device.shaddr._shaddr_packet_dispatch = %d, &device = %p\n", device.shaddr._shaddr_packet_dispatch, &device);
+            if (device.system_ro_put_dispatch != (uint16_t) -1)
               status = PAMI_SUCCESS;
             else
-              status = _device.registerSystemRecvFunction (PhysicalAddressMessage<T_Device>::intercept_function,
-                                                           &_device,
-                                                           _device.system_ro_put_dispatch);
+              status = device.registerSystemRecvFunction (PhysicalAddressMessage<T_Device>::intercept_function,
+                                                           &device,
+                                                           device.system_ro_put_dispatch);
             if (status == PAMI_SUCCESS)
               return _shmem_model.init (dispatch,
                                         direct_recv_func,
@@ -187,7 +187,8 @@ namespace PAMI
             return status;
           };
 
-          inline bool postPacket_impl (uint8_t               (&state)[512],
+          template <unsigned T_StateBytes>
+          inline bool postPacket_impl (uint8_t               (&state)[T_StateBytes],
                                        pami_event_function   fn,
                                        void                * cookie,
                                        size_t                target_task,
@@ -209,8 +210,8 @@ namespace PAMI
             return result;
           };
 
-          template <unsigned T_Niov>
-          inline bool postPacket_impl (uint8_t               (&state)[512],
+          template <unsigned T_StateBytes, unsigned T_Niov>
+          inline bool postPacket_impl (uint8_t               (&state)[T_StateBytes],
                                        pami_event_function   fn,
                                        void                * cookie,
                                        size_t                target_task,
@@ -230,7 +231,8 @@ namespace PAMI
             return result;
           };
 
-          inline bool postPacket_impl (uint8_t              (&state)[512],
+          template <unsigned T_StateBytes>
+          inline bool postPacket_impl (uint8_t              (&state)[T_StateBytes],
                                        pami_event_function  fn,
                                        void               * cookie,
                                        size_t               target_task,
@@ -244,18 +246,18 @@ namespace PAMI
 
             COMPILE_TIME_ASSERT(sizeof(PhysicalAddressMessage<T_Device>) <= packet_model_state_bytes);
 
-            size_t fnum = _device.fnum (_device.task2peer(target_task), target_offset);
+            size_t fnum = device.fnum (device.task2peer(target_task), target_offset);
 
             COMPILE_TIME_ASSERT(sizeof(PhysicalAddressMessage<T_Device>) <= packet_model_state_bytes);
             PhysicalAddressMessage<T_Device> * msg = (PhysicalAddressMessage<T_Device> *) state;
-            new (msg) PhysicalAddressMessage<T_Device> (fn, cookie, &_device, fnum,
-                                                        _device.system_ro_put_dispatch,
+            new (msg) PhysicalAddressMessage<T_Device> (fn, cookie, &device, fnum,
+                                                        device.system_ro_put_dispatch,
                                                         metadata, metasize, payload, length,
                                                         _shmem_model.getDispatchId());
 
-            if (unlikely(_device.isSendQueueEmpty (fnum)))
+            if (unlikely(device.isSendQueueEmpty (fnum)))
               {
-                if (likely(_device._fifo[fnum].producePacket(msg->_writer)))
+                if (likely(device._fifo[fnum].producePacket(msg->_writer)))
                   {
                     if (unlikely(fn == NULL)) return false;
 
@@ -263,11 +265,11 @@ namespace PAMI
                     // until the target task has completed the put operation.
                     COMPILE_TIME_ASSERT(T_Device::completion_work_size <= packet_model_state_bytes);
 
-                    size_t sequence = _device._fifo[fnum].lastPacketProduced();
+                    size_t sequence = device._fifo[fnum].lastPacketProduced();
                     array_t<uint8_t, T_Device::completion_work_size> * resized =
                       (array_t<uint8_t, T_Device::completion_work_size> *) state;
 
-                    _device.postCompletion (resized->array, fn, cookie, fnum, sequence);
+                    device.postCompletion (resized->array, fn, cookie, fnum, sequence);
 
                     TRACE_ERR((stderr, "<< PacketModel::postPacket_impl(0), return false\n"));
                     return false;
@@ -278,7 +280,7 @@ namespace PAMI
             // fifo. Construct a message and post to device
             TRACE_ERR((stderr, "   PacketModel::postPacket_impl(0), post message to device\n"));
 
-            _device.post (fnum, msg);
+            device.post (fnum, msg);
 
             TRACE_ERR((stderr, "<< PacketModel::postPacket_impl(0), return false\n"));
             return false;
@@ -301,7 +303,8 @@ namespace PAMI
             return result;
           };
 
-          inline bool postMultiPacket_impl (uint8_t               (&state)[512],
+          template <unsigned T_StateBytes>
+          inline bool postMultiPacket_impl (uint8_t               (&state)[T_StateBytes],
                                             pami_event_function   fn,
                                             void                * cookie,
                                             size_t                target_task,
@@ -324,7 +327,10 @@ namespace PAMI
         protected:
 
           PAMI::Device::Shmem::PacketModel<T_Device>   _shmem_model;
-          T_Device                                   & _device;
+          
+        public:
+        
+          T_Device                                   & device;
 
       };  // PAMI::Device::Shmem::BgqShaddrPacketModel class
     };    // PAMI::Device::Shmem namespace

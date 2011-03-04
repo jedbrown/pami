@@ -146,7 +146,7 @@ namespace PAMI
   //typedef Device::Shmem::BgqShaddrPacketModel<ShmemDevice> ShmemPacketModel;
   typedef Device::Shmem::DmaModel<ShmemDevice> ShmemDmaModel;
 
-  typedef Protocol::Send::Eager <ShmemPacketModel, ShmemDevice> ShmemEagerBase;
+  typedef Protocol::Send::Eager <ShmemPacketModel> ShmemEagerBase;
   typedef PAMI::Protocol::Send::SendPWQ < ShmemEagerBase > ShmemEager;
 
   typedef PAMI::Device::Shmem::ShmemColorMcstModel<ShmemDevice> ShaddrMcstModel;
@@ -164,7 +164,7 @@ namespace PAMI
   // shmem allsided over p2p eager
   typedef PAMI::NativeInterfaceAllsided<ShmemEager> ShmemNI_AS;
 
-  typedef Protocol::Send::Eager <Device::MU::PacketModel, MUDevice, true> MUEagerBase;
+  typedef Protocol::Send::Eager <Device::MU::PacketModel, true> MUEagerBase;
   typedef PAMI::Protocol::Send::SendPWQ < MUEagerBase > MUEager;
 
   // MU active message over p2p eager

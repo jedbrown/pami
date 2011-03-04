@@ -74,7 +74,7 @@ namespace PAMI
 
     template < class T_Fifo, class T_Atomic = Counter::Indirect<Counter::Native>, class T_Shaddr = Shmem::NoShaddr, unsigned T_FifoCount = 64 >
     class ShmemDevice : public Interface::BaseDevice< ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount> >,
-        public Interface::PacketDevice<ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount> >
+        public Interface::PacketDevice<ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount> >::Deterministic
     {
       public:
 
@@ -237,7 +237,7 @@ namespace PAMI
                             Memory::MemoryManager & mm, size_t contextid,
                             PAMI::Device::Generic::Device * progress) :
             Interface::BaseDevice< ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount> > (),
-            Interface::PacketDevice< ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount> > (),
+            Interface::PacketDevice< ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount> >::Deterministic (),
             _clientid (clientid),
             _contextid (contextid),
             _ncontexts (ncontexts),
@@ -299,6 +299,13 @@ namespace PAMI
                                             
           // Initialize the collective descriptor fifo
           _desc_fifo.init (mm, _unique_str);
+          
+          // Initialize the deterministic packet connection array.
+          pami_result_t mmrc;
+  	      mmrc = __global.heap_mm->memalign((void **) & _connection, 16, sizeof(void *) * _nfifos);
+          PAMI_assertf(mmrc == PAMI_SUCCESS, "memalign failed for shared memory devices, rc=%d\n", mmrc);
+
+          for (i = 0; i < _nfifos; i++) _connection[i] = NULL;
         };
 
         inline ~ShmemDevice () {};
@@ -329,6 +336,15 @@ namespace PAMI
 
         /// \see PAMI::Device::Interface::PacketDevice::read()
         inline int read_impl (void * buf, size_t length, void * cookie);
+        
+        /// \see PAMI::Device::Interface::PacketDevice::Deterministic::clearConnection()
+        inline void clearConnection_impl (size_t task, size_t offset);
+              
+        /// \see PAMI::Device::Interface::PacketDevice::Deterministic::getConnection()
+        inline void * getConnection_impl (size_t task, size_t offset);
+
+        /// \see PAMI::Device::Interface::PacketDevice::Deterministic::setConnection()
+        inline void setConnection_impl (void * value, size_t task, size_t offset);
 
         static const bool reliable      = true;
         static const bool deterministic = true;
@@ -454,6 +470,12 @@ namespace PAMI
         match_dispatch_t  _match_dispatch[MATCH_DISPATCH_SIZE];
         
         char _unique_str[16];
+        
+        // -------------------------------------------------------------
+        // Deterministic packet interface connection array
+        // -------------------------------------------------------------
+        
+        void ** _connection;
     };
 
     template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount>
@@ -509,6 +531,39 @@ namespace PAMI
     {
       memcpy (dst, cookie, length);
       return 0;
+    }
+
+    /// \see PAMI::Device::Interface::PacketDevice::Deterministic::clearConnection()
+    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount>
+    void ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount>::clearConnection_impl (size_t task, size_t offset)
+    {
+      size_t index = task2peer_impl (task) + offset * _npeers;
+      
+      PAMI_assert_debugf(_connection[index] != NULL, "Error. _connection[%zu] was not previously set.\n", index);
+
+      _connection[index] = NULL;
+    }
+              
+    /// \see PAMI::Device::Interface::PacketDevice::Deterministic::getConnection()
+    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount>
+    void * ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount>::getConnection_impl (size_t task, size_t offset)
+    {
+      size_t index = task2peer_impl (task) + offset * _npeers;
+      
+      PAMI_assert_debugf(_connection[index] != NULL, "Error. _connection[%zu] was not previously set.\n", index);
+
+      return _connection[index];
+    }
+
+    /// \see PAMI::Device::Interface::PacketDevice::Deterministic::setConnection()
+    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount>
+    void ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount>::setConnection_impl (void * value, size_t task, size_t offset)
+    {
+      size_t index = task2peer_impl (task) + offset * _npeers;
+      
+      PAMI_assert_debugf(_connection[index] != NULL, "Error. _connection[%zu] was previously set.\n", index);
+
+      _connection[index] = value;
     }
 
     template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount>

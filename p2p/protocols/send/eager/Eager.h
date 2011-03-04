@@ -21,8 +21,6 @@
 #include "p2p/protocols/Send.h"
 #include "p2p/protocols/send/eager/EagerSimple.h"
 
-#include "components/connection/ConnectionArray.h"
-
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) // fprintf x
 #endif
@@ -37,18 +35,16 @@ namespace PAMI
       /// \brief Eager simple send protocol class for reliable network devices.
       ///
       /// \tparam T_Model   Template packet model class
-      /// \tparam T_Device  Template packet device class
       ///
       /// \see PAMI::Device::Interface::PacketModel
-      /// \see PAMI::Device::Interface::PacketDevice
       ///
-      template < class T_Model, class T_Device, bool T_LongHeader = true, class T_Connection = Connection::Array<T_Device> >
+      template < class T_Model, bool T_LongHeader = true>
       class Eager : public PAMI::Protocol::Send::Send,
-          public EagerSimple<T_Model, T_Device, T_LongHeader, T_Connection>
+          public EagerSimple<T_Model, T_LongHeader>
       {
         public:
 
-          template <class T_Allocator>
+          template <class T_Allocator, class T_Device>
           static Eager * generate (size_t                 dispatch,
                                    pami_dispatch_p2p_function dispatch_fn,
                                    void                 * cookie,
@@ -89,6 +85,7 @@ namespace PAMI
           /// \param[in]  origin      Origin endpoint
           /// \param[out] status      Constructor status
           ///
+          template <class T_Device>
           inline Eager (size_t                 dispatch,
                         pami_dispatch_p2p_function dispatch_fn,
                         void                 * cookie,
@@ -98,8 +95,8 @@ namespace PAMI
                         pami_dispatch_hint_t   hint,
                         pami_result_t        & status) :
               PAMI::Protocol::Send::Send (),
-              EagerSimple < T_Model, T_Device,
-              T_LongHeader, T_Connection > (dispatch,
+              EagerSimple < T_Model,
+              T_LongHeader > (dispatch,
                                             dispatch_fn,
                                             cookie,
                                             device,

@@ -44,14 +44,23 @@ namespace PAMI
     }lapi_m2m_dispatch_info_t;
 
     class LAPIDevice : public Interface::BaseDevice<LAPIDevice>,
-                       public Interface::PacketDevice<LAPIDevice>
+                       public Interface::PacketDevice<LAPIDevice>::Deterministic
     {
     public:
       inline LAPIDevice () :
         Interface::BaseDevice<LAPIDevice> (),
-        Interface::PacketDevice<LAPIDevice>(),
-        _dispatch_id(0)
+        Interface::PacketDevice<LAPIDevice>::Deterministic(),
+        _dispatch_id(0),
+        _peers (__global.mapping.size())
         {
+          // Initialize the deterministic packet connection array.
+          // LAPI only supports single-context mode
+          pami_result_t mmrc;
+	        mmrc = __global.heap_mm->memalign((void **) & _connection, 16, sizeof(void *) * _peers);
+          PAMI_assertf(mmrc == PAMI_SUCCESS, "memalign failed for packet connection array, rc=%d\n", mmrc);
+
+          unsigned i;
+          for (i = 0; i < _peers; i++) _connection[i] = NULL;
         };
 
       // Implement BaseDevice Routines
@@ -172,6 +181,39 @@ namespace PAMI
           PAMI_abort();
           return -1;
         }
+        
+          /// \see PAMI::Device::Interface::PacketDevice::Deterministic::clearConnection()
+          inline void clearConnection_impl (size_t task, size_t offset)
+          {
+            // LAPI only supports single-contexts
+            size_t index = _peers * _ncontexts;
+      
+            PAMI_assert_debugf(_connection[index] != NULL, "Error. _connection[%zu] was not previously set.\n", index);
+
+            _connection[index] = NULL;
+          }
+              
+          /// \see PAMI::Device::Interface::PacketDevice::Deterministic::getConnection()
+          inline void * getConnection_impl (size_t task, size_t offset)
+          {
+            // LAPI only supports single-contexts
+            size_t index = _peers * _ncontexts;
+      
+            PAMI_assert_debugf(_connection[index] != NULL, "Error. _connection[%zu] was not previously set.\n", index);
+
+            return _connection[index];
+          }
+
+          /// \see PAMI::Device::Interface::PacketDevice::Deterministic::setConnection()
+          inline void setConnection_impl (void * value, size_t task, size_t offset)
+          {
+            // LAPI only supports single-contexts
+            size_t index = _peers * _ncontexts;
+      
+            PAMI_assert_debugf(_connection[index] != NULL, "Error. _connection[%zu] was previously set.\n", index);
+
+            _connection[index] = value;
+          }
 
       inline size_t peers_impl ()
         {
@@ -586,6 +628,12 @@ namespace PAMI
       lapi_dispatch_info_t                       _dispatch_table[256];
       lapi_mcast_dispatch_info_t                 _mcast_dispatch_table[256];
       lapi_m2m_dispatch_info_t                   _m2m_dispatch_table[256];
+      
+      // -------------------------------------------------------------
+      // Deterministic packet interface connection array
+      // -------------------------------------------------------------
+        
+      void ** _connection;
     };
 
 

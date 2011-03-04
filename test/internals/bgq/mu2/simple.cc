@@ -49,7 +49,7 @@ typedef PAMI::Device::MU::PacketModel MuPacketModel;
 //typedef PAMI::Device::MU::DmaModel MuDmaModel;
 typedef PAMI::Device::MU::DmaModelMemoryFifoCompletion MuDmaModel;
 
-typedef PAMI::Protocol::Send::Eager<MuPacketModel, MuContext> MuEager;
+typedef PAMI::Protocol::Send::Eager<MuPacketModel> MuEager;
 typedef PAMI::Protocol::Put::PutRdma<MuDmaModel, MuContext> MuPut;
 typedef PAMI::Protocol::Get::GetRdma<MuDmaModel, MuContext> MuGet;
 

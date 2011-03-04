@@ -50,7 +50,7 @@ namespace PAMI
       /// \todo Eliminate the need for this class to implement
       ///       Interface::BaseDevice and Interface::PacketDevice
       ///
-      class Context : public Interface::BaseDevice<Context>, public Interface::PacketDevice<Context>
+      class Context : public Interface::BaseDevice<Context>, public Interface::PacketDevice<Context>::Deterministic
       {
         public:
 
@@ -100,7 +100,7 @@ namespace PAMI
                           size_t            id_offset,
                           size_t            id_count) :
               Interface::BaseDevice<Context> (),
-              Interface::PacketDevice<Context> (),
+              Interface::PacketDevice<Context>::Deterministic (),
 	      _pamiRM ( __MUGlobal.getPamiRM() ),
               _rm ( __MUGlobal.getMuRM() ),
               _mapping (mapping),
@@ -286,7 +286,7 @@ namespace PAMI
                                          mu_context_cookie);
 
 	    // Store a pointer in the injectionGroup that points to the MU MMIO
-	    /// field for clearing interrupts.  This will be used later during
+	    // field for clearing interrupts.  This will be used later during
 	    // advance() to clear the MU interrrupts.
 	    MUSPI_RecFifoSubGroup_t *_recFifoSubgroup =
 	      _rm.getRecFifoSubgroup( _rm_id_client,
@@ -302,6 +302,17 @@ namespace PAMI
 						   _id_offset );
 
 	    _rm.init(id_client, id_context, progress);
+
+            // ----------------------------------------------------------------
+            // Initialize the deterministic packet connection array.
+            // ----------------------------------------------------------------
+            size_t i, num_endpoints = _mapping.size() * _id_count;
+            
+            pami_result_t mmrc;
+  	        mmrc = __global.heap_mm->memalign((void **) & _connection, 16, sizeof(void *) * num_endpoints);
+            PAMI_assertf(mmrc == PAMI_SUCCESS, "memalign failed for mu connection array, rc=%d\n", mmrc);
+
+            for (i = 0; i < num_endpoints; i++) _connection[i] = NULL;
 
             TRACE_FN_EXIT();
             return PAMI_SUCCESS;
@@ -432,6 +443,36 @@ namespace PAMI
           {
             memcpy(dst, cookie, bytes);
             return 0;
+          }
+
+          /// \see PAMI::Device::Interface::PacketDevice::Deterministic::clearConnection()
+          inline void clearConnection_impl (size_t task, size_t offset)
+          {
+            size_t index = _mapping.size() + offset * _id_count;
+      
+            PAMI_assert_debugf(_connection[index] != NULL, "Error. _connection[%zu] was not previously set.\n", index);
+
+            _connection[index] = NULL;
+          }
+              
+          /// \see PAMI::Device::Interface::PacketDevice::Deterministic::getConnection()
+          inline void * getConnection_impl (size_t task, size_t offset)
+          {
+            size_t index = _mapping.size() + offset * _id_count;
+      
+            PAMI_assert_debugf(_connection[index] != NULL, "Error. _connection[%zu] was not previously set.\n", index);
+
+            return _connection[index];
+          }
+
+          /// \see PAMI::Device::Interface::PacketDevice::Deterministic::setConnection()
+          inline void setConnection_impl (void * value, size_t task, size_t offset)
+          {
+            size_t index = _mapping.size() + offset * _id_count;
+      
+            PAMI_assert_debugf(_connection[index] != NULL, "Error. _connection[%zu] was previously set.\n", index);
+
+            _connection[index] = value;
           }
 
           // ------------------------------------------------------------------
@@ -868,6 +909,12 @@ namespace PAMI
 	  uint64_t                 _interruptMask;
 
 	  Generic::Device         *_progressDevice;
+    
+        // -------------------------------------------------------------
+        // Deterministic packet interface connection array
+        // -------------------------------------------------------------
+        
+        void ** _connection;
       }; // class     PAMI::Device::MU::Context
     };   // namespace PAMI::Device::MU
   };     // namespace PAMI::Device
