@@ -347,35 +347,6 @@ namespace PAMI
 	    MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1 } // torus inj fifo map array
 	};
 
-      ///
-      /// \brief Point-to-Point Broadcast Fifo Pin Map Values
-      ///
-      /// There are 10 arrays of 16 elements each.
-      /// The 1st array is for when there is 1 inj fifo in the context.
-      /// The 2nd array is for when there are 2 inj fifos in the context.
-      /// ...
-      /// The 10th array is for when there are 10 inj fifos in the context.
-      ///
-      /// The second dimension is indexed by the collective class route Id (0..15)
-      /// to select the injection fifo to use for this class route.
-      ///
-      /// Note that the values in the slots beyond the actual number of fifos
-      /// are adjusted during runtime initialization based on our T coordinate,
-      /// in order to more evenly distribute the impact of these broadcasts across
-      /// the imFifos.
-      ///
-      static const uint16_t pinBroadcastFifoMap[numTorusDirections][BGQ_COLL_CLASS_MAX_CLASSROUTES] =
-	{ { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },   // 1 Inj fifo in the context
-	  { 0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1 },   // 2 Inj fifo in the context
-	  { 0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0 },   // 3 Inj fifo in the context
-	  { 0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3 },   // 4 Inj fifo in the context
-	  { 0,1,2,3,4,0,1,2,3,4,0,1,2,3,4,0 },   // 5 Inj fifo in the context
-	  { 0,1,2,3,4,5,0,1,2,3,4,5,0,1,2,3 },   // 6 Inj fifo in the context
-	  { 0,1,2,3,4,5,6,0,1,2,3,4,5,6,0,1 },   // 7 Inj fifo in the context
-	  { 0,1,2,3,4,5,6,7,0,1,2,3,4,5,6,7 },   // 8 Inj fifo in the context
-	  { 0,1,2,3,4,5,6,7,8,0,1,2,3,4,5,6 },   // 9 Inj fifo in the context
-	  { 0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5 } }; // 10 Inj fifos in the context
-
       typedef struct muResources
       {
 	size_t numInjFifos;
@@ -1435,9 +1406,6 @@ fprintf(stderr, "%s\n", buf);
 					       size_t *numRecFifos,
 					       size_t *numBatIds );
 
-	inline uint16_t *getPinBroadcastFifoMap( size_t numInjFifos )
-	  { return &(_pinBroadcastFifoMap[numInjFifos-1][0]); }
-
 	inline pinInfoEntry_t *getPinInfo( size_t numInjFifos )
 	  { return &(_pinInfo[numInjFifos-1]); }
 
@@ -1693,8 +1661,6 @@ fprintf(stderr, "%s\n", buf);
 	// The last 6 are for local transfers.
 	pinInfoEntry_t *_rgetPinInfo;
 
-	uint16_t _pinBroadcastFifoMap[numTorusDirections][BGQ_COLL_CLASS_MAX_CLASSROUTES];
-
 	size_t  _tSize;
 	size_t  _myT;
 	ssize_t _aSizeHalved;
@@ -1921,9 +1887,8 @@ uint16_t PAMI::Device::MU::ResourceManager::pinFifo( size_t task )
 ///   (ran out of bits, or it would also be 10 values).
 ///
 /// In addition to calculating the above "fifoPin" value for the mapcache,
-/// adjust the pinInjFifoMap and pinBroadcastFifoMap arrays based on our
-/// T coordinate.  Refer to the details in the comments where each
-/// of these arrays is delcared.
+/// adjust the pinInjFifoMap array based on our T coordinate.  Refer to the
+/// details in the comments where each of these arrays is delcared.
 ///
 void PAMI::Device::MU::ResourceManager::initFifoPin()
 {
@@ -1965,7 +1930,6 @@ void PAMI::Device::MU::ResourceManager::initFifoPin()
   PAMI_assertf(rc == PAMI_SUCCESS, "The heap is full.\n" );
 
   memcpy ( _pinInfo, pinInfo, numTorusDirections * sizeof(pinInfoEntry_t) );
-  memcpy ( _pinBroadcastFifoMap, pinBroadcastFifoMap, sizeof(_pinBroadcastFifoMap) );
 
   // Adjust the local injFifoIds (array elements 10-15) based on our T coordinate.
   // This is an attempt to spread the local traffic among all of the inj fifos.
@@ -2020,51 +1984,6 @@ void PAMI::Device::MU::ResourceManager::initFifoPin()
 	     _pinInfo[numFifos-1].injFifoIds[14],
 	     _pinInfo[numFifos-1].injFifoIds[15]));
     }
-
-  // Adjust the torus pinBroadcastFifoMap values so the class routes that don't have
-  // their own inj fifo map to one of the other fifos based on our T coordinate.
-  // Refer to comments where pinBroadcastFifoMap is declared.
-  TRACE((stderr,"MU ResourceManager: initFifoPin: Adjusted pinBroadcastFifoMap values:\n"));
-  for ( numFifos=1; numFifos <= numTorusDirections; numFifos++ )
-    {
-      // Only adjust the class routes that are unbalanced.
-      // For example, if there are 5 inj fifos, the first 15 values are
-      // balanced (0,1,2,3,4,0,1,2,3,4,0,1,2,3,4) but the last 1 is not, and it needs to be
-      // adjusted.  T=0 will set it to 0, T=1 will set it to 1,
-      // T=2 will set it to 2, and so on.  In this case, the
-      // startingAdjustmentIndex is 15, so that only index 15 is adjusted.
-      startingAdjustmentIndex =
-	BGQ_COLL_CLASS_MAX_CLASSROUTES -
-	( BGQ_COLL_CLASS_MAX_CLASSROUTES -
-	  ( (BGQ_COLL_CLASS_MAX_CLASSROUTES / numFifos) * numFifos ) );
-      for ( i=startingAdjustmentIndex; i<BGQ_COLL_CLASS_MAX_CLASSROUTES; i++ )
-	{
-	  // Note:  BGQ_COLL_CLASS_MAX_CLASSROUTES-startingAdjustmentIndex is the
-	  //        number of overstressed fifos.
-	  _pinBroadcastFifoMap[numFifos-1][i] =
-	    ( _pinBroadcastFifoMap[numFifos-1][i] +
-	      ( (BGQ_COLL_CLASS_MAX_CLASSROUTES-startingAdjustmentIndex)*tcoord ) ) % numFifos;
-	}
-      TRACE((stderr,"For %zu fifos: %u,%u,%u,%u,%u,%u,%u,%u,%u,%u, %u,%u,%u,%u,%u,%u\n",
-	     numFifos,
-	     _pinBroadcastFifoMap[numFifos-1][0],
-	     _pinBroadcastFifoMap[numFifos-1][1],
-	     _pinBroadcastFifoMap[numFifos-1][2],
-	     _pinBroadcastFifoMap[numFifos-1][3],
-	     _pinBroadcastFifoMap[numFifos-1][4],
-	     _pinBroadcastFifoMap[numFifos-1][5],
-	     _pinBroadcastFifoMap[numFifos-1][6],
-	     _pinBroadcastFifoMap[numFifos-1][7],
-	     _pinBroadcastFifoMap[numFifos-1][8],
-	     _pinBroadcastFifoMap[numFifos-1][9],
-	     _pinBroadcastFifoMap[numFifos-1][10],
-	     _pinBroadcastFifoMap[numFifos-1][11],
-	     _pinBroadcastFifoMap[numFifos-1][12],
-	     _pinBroadcastFifoMap[numFifos-1][13],
-	     _pinBroadcastFifoMap[numFifos-1][14],
-	     _pinBroadcastFifoMap[numFifos-1][15]));
-    }
-
 
 } // End: initFifoPin()
 
