@@ -22,7 +22,6 @@
 #define TRACE_ERR(x) // fprintf x
 #endif
 #include "../a2qpx_nway_sum.h"
-
 #include "components/devices/shmem/CNShmemDesc.h"
 
 namespace PAMI
@@ -249,8 +248,8 @@ namespace PAMI
                 if (*counter_addr == counter_curr)
                   return PAMI_EAGAIN;
 
-                mem_sync();
                 bytes_arrived = counter_curr - *counter_addr;
+                mem_sync();
                 _controlB->bytes_incoming+= (unsigned)bytes_arrived;
 
                 //memcpy((char*)_rcvbuf + bytes_so_far, (char*)buf + bytes_so_far, bytes_arrived);
@@ -280,14 +279,21 @@ namespace PAMI
               void* buf = (void*)G_Dsts(0);
               unsigned bytes_so_far = total_bytes - counter_curr;
 
+              /* Non blocking until all the peers arrive at the collective */
+              if (_my_desc->arrived_peers() != (unsigned) npeers)
+              {
+                TRACE_ERR((stderr,"arrived_peers:%u waiting for:%u\n", _my_desc->arrived_peers(), (unsigned) npeers));
+                return PAMI_EAGAIN;
+              }
+
               if (local_rank == 0)
               {
                 if (*counter_addr == counter_curr)
                   if (counter_curr != 0) 
                     return PAMI_EAGAIN;
 
-                mem_sync();
                 bytes_arrived = counter_curr - *counter_addr;
+                mem_sync();
                 _controlB->bytes_incoming+= (unsigned)bytes_arrived;
                 counter_curr -= bytes_arrived;
               }
@@ -297,7 +303,6 @@ namespace PAMI
                 
                 if (bytes_arrived > 0)
                 {
-                  //memcpy((char*)_rcvbuf + bytes_so_far, (char*)buf + bytes_so_far, bytes_arrived);
                   Core_memcpy((char*)_rcvbuf + bytes_so_far, (char*)buf + bytes_so_far, bytes_arrived);
                   counter_curr -= bytes_arrived;
                 }
@@ -305,7 +310,7 @@ namespace PAMI
 
               if (counter_curr)
                 return PAMI_EAGAIN;
-      
+     
               _my_desc->signal_done();
               if (local_rank == 0)
                 while (_my_desc->in_use()){};
@@ -438,6 +443,7 @@ namespace PAMI
                 return PAMI_EAGAIN;
               }
 
+
               /* All nodes except master(local rank 0), do the math */
               if (npeers == 4)
                 advance_4way_sum(local_rank, npeers, total_bytes, offset_dbl);
@@ -504,7 +510,6 @@ namespace PAMI
                   _controlB->chunk_done[i] = -1;
                 }
               }
-
             };
 
             void*     _shm_phy_addr;
