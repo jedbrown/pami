@@ -1148,7 +1148,6 @@ fprintf(stderr, "%s\n", buf);
 	static void cr_gi_init_dummy_barrier_done(pami_context_t ctx, void *cookie, pami_result_t result)
 	{
 	  cr_cookie *crck = (cr_cookie *)cookie;
-	  if (crck->cb_done.function) crck->cb_done.function(ctx, crck->cb_done.clientdata, result);
 	  pami_result_t rc = crck->geom->default_barrier(cr_barrier_done, cookie,
 							crck->context, ctx);
 	  if (rc != PAMI_SUCCESS) {
@@ -1159,7 +1158,6 @@ fprintf(stderr, "%s\n", buf);
 	static void cr_gi_init_barrier_done(pami_context_t ctx, void *cookie, pami_result_t result)
 	{
 	  cr_cookie *crck = (cr_cookie *)cookie;
-	  if (crck->cb_done.function) crck->cb_done.function(ctx, crck->cb_done.clientdata, result);
 	  MUSPI_GIBarrierInitMU2(crck->id, 1000);
 	  pami_result_t rc = crck->geom->default_barrier(cr_barrier_done, cookie,
 							crck->context, ctx);
