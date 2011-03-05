@@ -23,6 +23,8 @@ size_t initial_device = 0;
 size_t device_limit = 0;
 size_t create_dpids = 1;
 
+uint8_t __junk[1024*16];
+
 static void recv_done (pami_context_t   context,
                        void          * cookie,
                        pami_result_t    result)
@@ -43,13 +45,31 @@ static void test_dispatch (
 pami_recv_t         * recv)        /**< OUT: receive message structure */
 {
   TRACE((stderr, "Called dispatch function.  cookie = %p, active: %zu\n", cookie, *((volatile size_t *) cookie)));
+  volatile size_t * active = (volatile size_t *) cookie;
 
-  recv->local_fn = recv_done;
-  recv->cookie   = cookie;
-  recv->type     = PAMI_TYPE_CONTIGUOUS;
-  recv->addr     = NULL;
-  recv->offset   = 0;
-  TRACE((stderr, "... dispatch function.  recv->local_fn = %p\n", recv->local_fn));
+  if (pipe_size == 0)
+  {
+    (*active)--;
+  }
+  else if (recv == NULL)
+  {
+    // This is an 'immediate' receive
+    memcpy(__junk, pipe_addr, pipe_size);
+    (*active)--;
+  }
+  else
+  {
+    // This is an 'asynchronous' receive
+
+    recv->local_fn = recv_done;
+    recv->cookie   = cookie;
+    recv->type     = PAMI_TYPE_CONTIGUOUS;
+    recv->addr     = __junk;
+    recv->offset   = 0;
+    recv->data_fn  = PAMI_DATA_COPY;
+    recv->data_cookie = NULL;
+    TRACE((stderr, "... dispatch function.  recv->local_fn = %p\n", recv->local_fn));
+  }
 
   return;
 }
