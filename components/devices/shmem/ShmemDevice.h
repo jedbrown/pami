@@ -538,6 +538,7 @@ namespace PAMI
     void ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount>::clearConnection_impl (size_t task, size_t offset)
     {
       size_t index = task2peer_impl (task) + offset * _npeers;
+      TRACE_ERR((stderr, "ShmemDevice::clearConnection_impl(%zu, %zu), _connection[%zu] = %p -> %p\n", task, offset, index, _connection[index], (void *) NULL));
       
       PAMI_assert_debugf(_connection[index] != NULL, "Error. _connection[%zu] was not previously set.\n", index);
 
@@ -549,6 +550,7 @@ namespace PAMI
     void * ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount>::getConnection_impl (size_t task, size_t offset)
     {
       size_t index = task2peer_impl (task) + offset * _npeers;
+      TRACE_ERR((stderr, "ShmemDevice::getConnection_impl(%zu, %zu), _connection[%zu] = %p\n", task, offset, index, _connection[index]));
       
       PAMI_assert_debugf(_connection[index] != NULL, "Error. _connection[%zu] was not previously set.\n", index);
 
@@ -560,8 +562,9 @@ namespace PAMI
     void ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount>::setConnection_impl (void * value, size_t task, size_t offset)
     {
       size_t index = task2peer_impl (task) + offset * _npeers;
+      TRACE_ERR((stderr, "ShmemDevice::setConnection_impl(%zu, %zu), _connection[%zu] = %p -> %p\n", task, offset, index, _connection[index], value));
       
-      PAMI_assert_debugf(_connection[index] != NULL, "Error. _connection[%zu] was previously set.\n", index);
+      PAMI_assert_debugf(_connection[index] == NULL, "Error. _connection[%zu] was previously set.\n", index);
 
       _connection[index] = value;
     }

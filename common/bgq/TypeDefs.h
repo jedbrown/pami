@@ -164,7 +164,7 @@ namespace PAMI
   // shmem allsided over p2p eager
   typedef PAMI::NativeInterfaceAllsided<ShmemEager> ShmemNI_AS;
 
-  typedef Protocol::Send::Eager <Device::MU::PacketModel, true> MUEagerBase;
+  typedef Protocol::Send::Eager <Device::MU::PacketModel> MUEagerBase;
   typedef PAMI::Protocol::Send::SendPWQ < MUEagerBase > MUEager;
 
   // MU active message over p2p eager

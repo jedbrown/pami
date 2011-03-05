@@ -21,6 +21,17 @@ namespace PAMI
   {
     namespace Send
     {
+      typedef enum
+        {
+          UNSET                   = 0x00,
+          LONG_HEADER_ENABLE      = 0x01,
+          LONG_HEADER_DISABLE     = 0x01 << 1,
+
+          RECV_IMMEDIATE_DEFAULT  = 0x01 << 2,
+          RECV_IMMEDIATE_FORCEON  = 0x01 << 3,
+          RECV_IMMEDIATE_FORCEOFF = 0x01 << 4
+        } configuration_t;
+
       ///
       /// \brief Base class for point-to-point send implementations.
       ///

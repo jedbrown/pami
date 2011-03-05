@@ -448,8 +448,9 @@ namespace PAMI
           /// \see PAMI::Device::Interface::PacketDevice::Deterministic::clearConnection()
           inline void clearConnection_impl (size_t task, size_t offset)
           {
-            size_t index = _mapping.size() + offset * _id_count;
-      
+            size_t index = task * _id_count + offset;
+
+            TRACE_FORMAT("(%zu,%zu) .. _connection[%zu] = %p -> %p", task, offset, index, _connection[index], (void *) NULL);      
             PAMI_assert_debugf(_connection[index] != NULL, "Error. _connection[%zu] was not previously set.\n", index);
 
             _connection[index] = NULL;
@@ -458,8 +459,9 @@ namespace PAMI
           /// \see PAMI::Device::Interface::PacketDevice::Deterministic::getConnection()
           inline void * getConnection_impl (size_t task, size_t offset)
           {
-            size_t index = _mapping.size() + offset * _id_count;
-      
+            size_t index = task * _id_count + offset;
+
+            TRACE_FORMAT("(%zu,%zu) .. _connection[%zu] = %p", task, offset, index, _connection[index]);      
             PAMI_assert_debugf(_connection[index] != NULL, "Error. _connection[%zu] was not previously set.\n", index);
 
             return _connection[index];
@@ -468,9 +470,10 @@ namespace PAMI
           /// \see PAMI::Device::Interface::PacketDevice::Deterministic::setConnection()
           inline void setConnection_impl (void * value, size_t task, size_t offset)
           {
-            size_t index = _mapping.size() + offset * _id_count;
-      
-            PAMI_assert_debugf(_connection[index] != NULL, "Error. _connection[%zu] was previously set.\n", index);
+            size_t index = task * _id_count + offset;
+
+            TRACE_FORMAT("(%zu,%zu) .. _connection[%zu] = %p -> %p", task, offset, index, _connection[index], value);      
+            PAMI_assert_debugf(_connection[index] == NULL, "Error. _connection[%zu] was previously set.\n", index);
 
             _connection[index] = value;
           }

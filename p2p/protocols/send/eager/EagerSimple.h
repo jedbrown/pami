@@ -21,6 +21,7 @@
 #include "components/devices/PacketInterface.h"
 #include "components/memory/MemoryAllocator.h"
 #include "math/Memcpy.x.h"
+#include "p2p/protocols/Send.h"
 
 #include "common/type/TypeMachine.h"
 
@@ -42,17 +43,16 @@ namespace PAMI
       /// \brief Eager simple send protocol class for reliable network devices.
       ///
       /// \tparam T_Model      Packet model class
-      /// \tparam T_LongHeader Enable/disable long header support
+      /// \tparam T_Option     Send options
       ///
       /// \see PAMI::Device::Interface::PacketModel
-      /// \see PAMI::Device::Interface::PacketDevice
       ///
-      template < class T_Model, bool T_LongHeader, bool T_RecvImmediate = false >
+      template < class T_Model, configuration_t T_Option >
       class EagerSimple
       {
         protected:
 
-          typedef EagerSimple<T_Model, T_LongHeader, T_RecvImmediate> EagerSimpleProtocol;
+          typedef EagerSimple<T_Model, T_Option> EagerSimpleProtocol;
 
           typedef uint8_t pkt_t[T_Model::packet_model_state_bytes];
 
@@ -242,14 +242,14 @@ namespace PAMI
 
                     if (status == PAMI_SUCCESS)
                       {
-                        TRACE_ERR((stderr, "EagerSimple() register envelope model dispatch %zu, T_LongHeader = %d\n", dispatch, T_LongHeader));
+                        TRACE_ERR((stderr, "EagerSimple() register envelope model dispatch %zu\n", dispatch));
 
                         status = _envelope_model.init (dispatch,
                                                        dispatch_eager_envelope, this,
                                                        dispatch_read<&EagerSimpleProtocol::dispatch_eager_envelope>, this);
                         TRACE_ERR((stderr, "EagerSimple() envelope model status = %d\n", status));
 
-                        if (status == PAMI_SUCCESS && T_LongHeader == true)
+                        if (status == PAMI_SUCCESS && (T_Option & LONG_HEADER_ENABLE))
                           {
                             TRACE_ERR((stderr, "EagerSimple() register 'long header' envelope model dispatch %zu\n", dispatch));
                             status = _longheader_envelope_model.init (dispatch,
@@ -505,51 +505,56 @@ namespace PAMI
             // Verify that this task is addressable by this packet device
             if (unlikely(_short_model.device.isPeer (task) == false)) return PAMI_ERROR;
 
-#if 0
+
             // ----------------------------------------------------------------
             // Check for a "short" send protocol
             // ----------------------------------------------------------------
 #ifdef ERROR_CHECKS
 
-            if (T_RecvImmediate == true &&
-                (parameters->send.data.iov_len + parameters->send.header.iov_len) > maximum_short_packet_payload)
+            if ((T_Option & RECV_IMMEDIATE_FORCEON) && ((parameters->send.data.iov_len + parameters->send.header.iov_len) > maximum_short_packet_payload))
               {
                 // 'receive immediate' is forced ON, yet the application
-                // header+data size will not fit in a single packet.
+                // header + data will not fit in a single packet.
                 TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. Application error: 'recv immediate' forced on.\n"));
                 return PAMI_INVAL;
               }
 
 #endif
 
-            // If:
-            //   'immediate receives' are forced on,
+            //
+            //   'immediate receives' are forced on ('long header' is irrelevant),
             //      OR
-            //   'immediate receives' are enabled AND the header+data fit in a single packet
-            // 
-            if ((T_RecvImmediate == PAMI_HINT_ENABLE) || // == "force on"
-                (T_RecvImmediate == PAMI_HINT_DEFAULT && ((parameters->send.data.iov_len + parameters->send.header.iov_len) <= maximum_short_packet_payload)))
+            //   'immediate receives' are enabled AND the header + data fit in a single packet
+            //      OR
+            //   'immediate receives' are forced off AND 'long header' is disabled AND data size is zero
+            //
+            if ((T_Option & RECV_IMMEDIATE_FORCEON) ||
+                ((T_Option & RECV_IMMEDIATE_DEFAULT) && ((parameters->send.data.iov_len + parameters->send.header.iov_len) <= maximum_short_packet_payload)) ||
+                ((T_Option & RECV_IMMEDIATE_FORCEOFF) && (T_Option & LONG_HEADER_DISABLE) && (parameters->send.data.iov_len == 0)))
               {
                 return short_send (&parameters->send, &parameters->events, task, offset);
               }
-#endif
+
 
             // ----------------------------------------------------------------
             // Check for a "long header" send protocol
             // ----------------------------------------------------------------
 #ifdef ERROR_CHECKS
 
-            if (T_LongHeader == false && parameters->send.header.iov_len > maximum_eager_packet_payload)
+            if ((T_Option & LONG_HEADER_DISABLE) && (parameters->send.header.iov_len > maximum_eager_packet_payload))
               {
-                // 'long header' support is disabled."
+                // 'long header' support is disabled, yet the application
+                // header will not fit in a single packet.
                 TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. Application error: 'long header' support is disabled.\n"));
                 return PAMI_INVAL;
               }
 
 #endif
 
-            if (T_LongHeader == true &&
-                parameters->send.header.iov_len > maximum_eager_packet_payload)
+            //
+            // 'long header' not disabled AND the header does not fit in a single packet
+            //
+            if ((T_Option & LONG_HEADER_ENABLE) && (parameters->send.header.iov_len > maximum_eager_packet_payload))
               {
                 return longheader_send (parameters, task, offset);
               }
@@ -670,6 +675,8 @@ namespace PAMI
           {
             TRACE_ERR((stderr, ">> EagerSimple::process_envelope() .. origin = 0x%08x, header = %p, header bytes = %zu\n", origin, header, header_bytes));
 
+            state->info.type = (pami_type_t) PAMI_TYPE_CONTIGUOUS;
+
             // Invoke the registered dispatch function.
             _dispatch_fn (_context,            // Communication context
                           _cookie,             // Dispatch cookie
@@ -683,6 +690,7 @@ namespace PAMI
             TRACE_ERR((stderr, "   EagerSimple::process_envelope() .. data bytes = %zu, state->info.type = %p\n", data_bytes, state->info.type));
 
             Type::TypeCode * type = (Type::TypeCode *) state->info.type;
+            PAMI_assert_debugf(type != NULL, "state->info.type == NULL !\n");
 #ifdef ERROR_CHECKS
 
             if (! type->IsCompleted())

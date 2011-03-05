@@ -38,9 +38,9 @@ namespace PAMI
       ///
       /// \see PAMI::Device::Interface::PacketModel
       ///
-      template < class T_Model, bool T_LongHeader = true>
+      template < class T_Model, configuration_t T_Option = UNSET >
       class Eager : public PAMI::Protocol::Send::Send,
-          public EagerSimple<T_Model, T_LongHeader>
+          public EagerSimple<T_Model, T_Option>
       {
         public:
 
@@ -96,7 +96,7 @@ namespace PAMI
                         pami_result_t        & status) :
               PAMI::Protocol::Send::Send (),
               EagerSimple < T_Model,
-              T_LongHeader > (dispatch,
+              T_Option > (dispatch,
                                             dispatch_fn,
                                             cookie,
                                             device,
