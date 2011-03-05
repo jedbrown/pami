@@ -112,7 +112,8 @@ int main (int argc, char ** argv)
 
       if (!task_id)
       {
-        printf("# Barrier Test context = %d, protocol: %s\n", iContext, must_query_md[nalg].name);
+        printf("# Barrier Test -- context = %d, protocol: %s (%d of %zd algorithms)\n",
+               iContext, must_query_md[nalg].name, nalg + 1, num_algorithm[1]);
         printf("# -------------------------------------------------------------------\n");
       }
 
@@ -147,7 +148,7 @@ int main (int argc, char ** argv)
                     usec, 1800000.0, 2200000.0);
           }
           else
-            fprintf(stderr, "%s Barrier correct!\n",must_query_md[nalg].name);
+            fprintf(stderr, "%s PASS: Barrier correct!\n",must_query_md[nalg].name);
         }
         else
         {

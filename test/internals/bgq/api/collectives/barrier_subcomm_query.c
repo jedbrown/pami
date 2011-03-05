@@ -315,8 +315,8 @@ int main (int argc, char ** argv)
 
           if (task_id == root)
           {
-            printf("# Barrier Test -- context = %d, root = %d, protocol: %s\n",
-                   iContext, root, q_newbar_md[nalg].name);
+            printf("# Test set(%u):  Barrier Test -- context = %d, root = %d, protocol: %s (%d of %zd algorithms)\n",
+                   k,iContext, root, q_newbar_md[nalg].name,nalg + 1, newbar_num_algo[1]);
             printf("# -------------------------------------------------------------------\n");
           }
 
@@ -352,7 +352,7 @@ int main (int argc, char ** argv)
                         usec, 1800000.0, 2200000.0);
               }
               else
-                fprintf(stderr, "%s Barrier correct!\n",q_newbar_md[nalg].name);
+                fprintf(stderr, "%s PASS: Barrier correct!\n",q_newbar_md[nalg].name);
             }
             else
             {
