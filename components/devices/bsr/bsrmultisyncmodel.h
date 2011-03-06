@@ -52,6 +52,7 @@ namespace PAMI
                                                        void             *devinfo=NULL)
         {
           PAMI_assertf(0, "postMulticast is not available on BSR Device");
+          return PAMI_SUCCESS;
         }
       inline pami_result_t postMulticast_impl(uint8_t (&state)[msync_model_state_bytes],
                                               size_t            client,
@@ -60,12 +61,14 @@ namespace PAMI
                                               void             *devinfo=NULL)
         {
           PAMI_assertf(0, "postMulticast is not available on BSR Device");
+          return PAMI_SUCCESS;
         }
       inline pami_result_t registerMcastRecvFunction (int                         dispatch_id,
                                                       pami_dispatch_multicast_function recv_func,
                                                       void                       *async_arg)
         {
           PAMI_assertf(0, "registerMcastRecvFunction is not available on BSR Device");
+          return PAMI_SUCCESS;
         }
     };
 
@@ -88,6 +91,7 @@ namespace PAMI
                                              void                *devinfo=NULL)
         {
           PAMI_assertf(0, "postMulticombine is not available on BSR Device");
+          return PAMI_SUCCESS;
         }
 
       inline pami_result_t postMulticombineImmediate (size_t               client,
@@ -96,6 +100,7 @@ namespace PAMI
                                                       void                *devinfo=NULL)
         {
           PAMI_assertf(0, "postMulticombine is not available on BSR Device");
+          return PAMI_SUCCESS;
         }
     };
 

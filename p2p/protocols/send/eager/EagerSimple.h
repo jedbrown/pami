@@ -336,7 +336,7 @@ namespace PAMI
           }
 
 
-          pami_result_t longheader_send (pami_send_t * parameters, pami_task_t task, size_t offset) __attribute__((noinline))
+          pami_result_t longheader_send (pami_send_t * parameters, pami_task_t task, size_t offset) 
           {
             TRACE_ERR((stderr, ">> EagerSimple::longheader_send() .. sizeof(longheader_protocol_t) = %zu\n", sizeof(longheader_protocol_t)));
 
