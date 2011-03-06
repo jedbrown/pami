@@ -200,7 +200,7 @@ namespace PAMI
   typedef Fifo::LinearFifo<ShmemPacket, Counter::Indirect<Counter::Native> > ShmemFifo;
   typedef Device::ShmemDevice<ShmemFifo, Counter::Indirect<Counter::Native> > ShmemDevice;
   typedef Device::Shmem::PacketModel<ShmemDevice>                     ShmemPacketModel;
-  typedef Protocol::Send::Eager <ShmemPacketModel, ShmemDevice>       ShmemEagerBase;
+  typedef Protocol::Send::Eager <ShmemPacketModel>                    ShmemEagerBase;
   typedef PAMI::Protocol::Send::SendPWQ < ShmemEagerBase >            ShmemEager;
 
   // "New" Collective Message Typedefs
