@@ -50,7 +50,7 @@ namespace PAMI
       /// \todo Eliminate the need for this class to implement
       ///       Interface::BaseDevice and Interface::PacketDevice
       ///
-      class Context : public Interface::BaseDevice<Context>, public Interface::PacketDevice<Context>::Deterministic
+      class Context : public Interface::BaseDevice<Context>, public Interface::PacketDevice<Context>
       {
         public:
 
@@ -100,7 +100,7 @@ namespace PAMI
                           size_t            id_offset,
                           size_t            id_count) :
               Interface::BaseDevice<Context> (),
-              Interface::PacketDevice<Context>::Deterministic (),
+              Interface::PacketDevice<Context> (),
 	      _pamiRM ( __MUGlobal.getPamiRM() ),
               _rm ( __MUGlobal.getMuRM() ),
               _mapping (mapping),

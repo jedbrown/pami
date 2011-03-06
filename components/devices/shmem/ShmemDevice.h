@@ -74,7 +74,7 @@ namespace PAMI
 
     template < class T_Fifo, class T_Atomic = Counter::Indirect<Counter::Native>, class T_Shaddr = Shmem::NoShaddr, unsigned T_FifoCount = 64 >
     class ShmemDevice : public Interface::BaseDevice< ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount> >,
-        public Interface::PacketDevice<ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount> >::Deterministic
+        public Interface::PacketDevice<ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount> >
     {
       public:
 
@@ -237,7 +237,7 @@ namespace PAMI
                             Memory::MemoryManager & mm, size_t contextid,
                             PAMI::Device::Generic::Device * progress) :
             Interface::BaseDevice< ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount> > (),
-            Interface::PacketDevice< ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount> >::Deterministic (),
+            Interface::PacketDevice< ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount> > (),
             _clientid (clientid),
             _contextid (contextid),
             _ncontexts (ncontexts),

@@ -55,13 +55,13 @@ namespace PAMI
     }mpi_m2m_dispatch_info_t;
 
     class MPIDevice : public Interface::BaseDevice<MPIDevice>,
-                      public Interface::PacketDevice<MPIDevice>::Deterministic
+                      public Interface::PacketDevice<MPIDevice>
     {
     public:
       static const size_t packet_payload_size = 224;
       inline MPIDevice (size_t ncontext = 1) :
       Interface::BaseDevice<MPIDevice> (),
-      Interface::PacketDevice<MPIDevice>()::Deterministic,
+      Interface::PacketDevice<MPIDevice>(),
       _dispatch_id(0),
       _curMcastTag(MULTISYNC_TAG),
       _ncontexts (ncontext)

@@ -44,12 +44,12 @@ namespace PAMI
     }lapi_m2m_dispatch_info_t;
 
     class LAPIDevice : public Interface::BaseDevice<LAPIDevice>,
-                       public Interface::PacketDevice<LAPIDevice>::Deterministic
+                       public Interface::PacketDevice<LAPIDevice>
     {
     public:
       inline LAPIDevice () :
         Interface::BaseDevice<LAPIDevice> (),
-        Interface::PacketDevice<LAPIDevice>::Deterministic(),
+        Interface::PacketDevice<LAPIDevice>(),
         _dispatch_id(0),
         _peers (__global.mapping.size())
         {
