@@ -124,7 +124,7 @@ namespace PAMI
             union
             {
               struct iovec          v[2];      ///< Iovec array used for transfers
-              struct iovec          v3[2];     ///< Iovec array used for transfers
+              struct iovec          v3[3];     ///< Iovec array used for transfers
             };
             EagerSimpleProtocol   * eager;     ///< Eager protocol object
           } send_state_t;
