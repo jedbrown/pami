@@ -10,9 +10,9 @@
 # end_generated_IBM_copyright_prolog                               #
 
 VPATH		= @abs_srcdir@
-SUBDIRS         = use_shmem long_header recv_immediate 
+SUBDIRS         =  
 NOTBUILT        =
-APPS            = 
+APPS            = recv_immediate_perf.${EXTENSION} 
 
 include @abs_top_builddir@/Build.rules
 

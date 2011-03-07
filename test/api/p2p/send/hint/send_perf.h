@@ -48,6 +48,8 @@ typedef struct
   pami_task_t            task;
   volatile unsigned      recv_active;
   void                 * recv_buffer;
+  size_t                 sndlen_min;
+  size_t                 sndlen_max;
 } dispatch_info_t;
 
 
@@ -234,6 +236,8 @@ void initialize (dispatch_info_t dispatch[], size_t n)
       dispatch[i].context = context;
       dispatch[i].task = task;
       dispatch[i].recv_buffer = (void *) malloc (sizeof(uint8_t) * BUFSIZE);
+      dispatch[i].sndlen_min = 0;
+      dispatch[i].sndlen_max = BUFSIZE;
       dispatch[i].result = PAMI_Dispatch_set (dispatch[i].context,
                                               dispatch[i].id,
                                               fn,
@@ -318,9 +322,27 @@ void test (dispatch_info_t dispatch[], size_t n, size_t header_size[], size_t he
         {
           fprintf (stdout, "# testcase %d : header bytes = %3zd\n", h, header_size[h]);
 
-          for (i=0; i<n; i++)
+          if (n == 1)
           {
             index[0] += sprintf (&str[0][index[0]], "[-- testcase %d --] ", h);
+          }
+          else
+          {
+            size_t num_dashes = (n-1)*24;
+            
+            index[0] += sprintf (&str[0][index[0]], "[");
+            for (i=0; i<(num_dashes/2); i++)
+              index[0] += sprintf (&str[0][index[0]], "-");
+            
+            index[0] += sprintf (&str[0][index[0]], " testcase %d ", h);
+            
+            for (i=0; i<(num_dashes/2); i++)
+              index[0] += sprintf (&str[0][index[0]], "-");
+            index[0] += sprintf (&str[0][index[0]], "] ");
+          }
+          
+          for (i=0; i<n; i++)
+          {
             index[1] += sprintf (&str[1][index[1]], "[-- %s --] ", dispatch[i].name);
             index[2] += sprintf (&str[2][index[2]], "  cycles     usec  ");
           }
@@ -360,7 +382,9 @@ void test (dispatch_info_t dispatch[], size_t n, size_t header_size[], size_t he
 
           for (j = 0; j < n; j++)
             {
-              if (dispatch[j].result == PAMI_SUCCESS)
+              if ((dispatch[j].result == PAMI_SUCCESS) &&
+                  (sndlen <= dispatch[j].sndlen_max) &&
+                  (sndlen >= dispatch[j].sndlen_min))
                 {
 #ifdef WARMUP
                   test_single (&dispatch[j], header_size[i], sndlen);
