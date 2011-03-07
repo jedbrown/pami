@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/api/p2p/send/hint/long_header_perf.c
+ * \file test/api/p2p/send/hint/long_header/long_header_perf.c
  * \brief ???
  */
 
@@ -51,7 +51,7 @@ int main (int argc, char ** argv)
   pami_result_t result;  
   for (i=0; i<3; i++)
   {
-    configuration.name = PAMI_DISPATCH_SEND_IMMEDIATE_MAX;
+    configuration.name = PAMI_DISPATCH_RECV_IMMEDIATE_MAX;
     result = PAMI_Dispatch_query(dispatch[i].context, dispatch[i].id, &configuration, 1);
     if (result == PAMI_SUCCESS)
       {
