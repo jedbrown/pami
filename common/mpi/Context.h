@@ -70,7 +70,7 @@ namespace PAMI
     typedef Device::MPIMessage MPIMessage;
     typedef Device::MPIDevice MPIDevice;
     typedef Device::MPIPacketModel<MPIDevice,MPIMessage> MPIPacketModel;
-    typedef PAMI::Protocol::Send::Eager <MPIPacketModel,MPIDevice> MPIEagerBase;
+    typedef PAMI::Protocol::Send::Eager <MPIPacketModel> MPIEagerBase;
     typedef PAMI::Protocol::Send::SendPWQ < MPIEagerBase >       MPIEager;
 
     // \todo #warning I do not distinguish local vs non-local so no eager shmem protocol here... just MPIEagerBase
@@ -84,7 +84,7 @@ namespace PAMI
     typedef Fifo::LinearFifo<ShmemPacket, Counter::Indirect<Counter::Native> > ShmemFifo;
     typedef Device::ShmemDevice<ShmemFifo, Counter::Indirect<Counter::Native> >                         ShmemDevice;
     typedef Device::Shmem::PacketModel<ShmemDevice>                ShmemPacketModel;
-    typedef Protocol::Send::Eager <ShmemPacketModel, ShmemDevice>  ShmemEagerBase;
+    typedef Protocol::Send::Eager <ShmemPacketModel>               ShmemEagerBase;
     typedef PAMI::Protocol::Send::SendPWQ < ShmemEagerBase >       ShmemEager;
 #endif
 
@@ -664,13 +664,13 @@ namespace PAMI
               if (options.long_header == PAMI_HINT_DISABLE)
                 {
                   _dispatch[id][0] = (Protocol::Send::Send *)
-                    Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false>::
+                    Protocol::Send::Eager <ShmemPacketModel>::
                       generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
                 }
               else
                 {
                   _dispatch[id][0] = (Protocol::Send::Send *)
-                    Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true>::
+                    Protocol::Send::Eager <ShmemPacketModel>::
                       generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
                 }
             }
@@ -686,8 +686,8 @@ namespace PAMI
 #ifdef ENABLE_SHMEM_DEVICE
               if (options.long_header == PAMI_HINT_DISABLE)
                 {
-                  Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false> * eagershmem =
-                    Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false>::
+                  Protocol::Send::Eager <ShmemPacketModel> * eagershmem =
+                    Protocol::Send::Eager <ShmemPacketModel>::
                       generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
 
                   _dispatch[id][0] = (Protocol::Send::Send *) Protocol::Send::Factory::
@@ -695,8 +695,8 @@ namespace PAMI
                 }
               else
                 {
-                  Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true> * eagershmem =
-                    Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true>::
+                  Protocol::Send::Eager <ShmemPacketModel> * eagershmem =
+                    Protocol::Send::Eager <ShmemPacketModel>::
                       generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
 
                   _dispatch[id][0] = (Protocol::Send::Send *) Protocol::Send::Factory::

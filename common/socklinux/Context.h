@@ -229,7 +229,7 @@ namespace PAMI
         pami_endpoint_t self = PAMI_ENDPOINT_INIT(_clientid,__global.mapping.task(),_contextid);
 
         Protocol::Send::Send * send =
-          Protocol::Send::Eager <ShmemModel, ShmemDevice, true>::
+          Protocol::Send::Eager <ShmemModel>::
             generate (id, fn.p2p, cookie,
                       ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), self, _context, options, _protocol, result);
 

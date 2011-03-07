@@ -557,14 +557,14 @@ namespace PAMI
                 new (_dispatch[id])
 //                Protocol::Send::Datagram <ShmemModel, ShmemDevice, false>
 //                Protocol::Send::Adaptive <ShmemModel, ShmemDevice, false>
-                Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, false>
+                Protocol::Send::Eager <ShmemPacketModel>
                 (id, fn.p2p, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), self, _context, options, result);
               }
             else
               {
                 _dispatch[id] = _protocol.allocateObject ();
                 new (_dispatch[id])
-                Protocol::Send::Eager <ShmemPacketModel, ShmemDevice, true>
+                Protocol::Send::Eager <ShmemPacketModel>
 //                Protocol::Send::Adaptive <ShmemModel, ShmemDevice, true>
 //                Protocol::Send::Datagram <ShmemModel, ShmemDevice, true>
                 (id, fn.p2p, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), self, _context, options, result);

@@ -17,7 +17,7 @@
 typedef PAMI::Device::MPIDevice MPIDevice;
 typedef PAMI::Device::MPIMessage MPIMessage;
 typedef PAMI::Device::MPIPacketModel<MPIDevice,MPIMessage> MPIPacketModel;
-typedef PAMI::Protocol::Send::Eager <MPIPacketModel,MPIDevice> EagerMPI;
+typedef PAMI::Protocol::Send::Eager <MPIPacketModel> EagerMPI;
 typedef PAMI::Protocol::MPI::P2PMcastProto<MPIDevice,EagerMPI,PAMI::Device::MPIBcastMdl,PAMI::Device::MPIBcastDev> P2PMcastProto;
 
 #include "test/internals/multisend/multicast.h"

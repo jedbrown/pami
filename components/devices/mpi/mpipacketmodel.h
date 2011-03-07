@@ -30,19 +30,19 @@ namespace PAMI
   {
     template <class T_Device, class T_Message>
 #ifdef USE_GCC_ICE_WORKAROUND
-    class MPIPacketModel : public Interface::PacketModel<MPIPacketModel<T_Device, T_Message>, T_Device, 512>
+    class MPIPacketModel : public Interface::PacketModel<MPIPacketModel<T_Device, T_Message> >
 #else // USE_GCC_ICE_WORKAROUND
-    class MPIPacketModel : public Interface::PacketModel<MPIPacketModel<T_Device, T_Message>, T_Device, sizeof(T_Message)>
+    class MPIPacketModel : public Interface::PacketModel<MPIPacketModel<T_Device, T_Message> >
 #endif // USE_GCC_ICE_WORKAROUND
     {
     public:
-      MPIPacketModel (T_Device & device) :
+      MPIPacketModel (T_Device & dev) :
 #ifdef USE_GCC_ICE_WORKAROUND
-        Interface::PacketModel < MPIPacketModel<T_Device, T_Message>, T_Device, 512 > (device),
+        Interface::PacketModel < MPIPacketModel<T_Device, T_Message> > (device),
 #else // USE_GCC_ICE_WORKAROUND
-        Interface::PacketModel < MPIPacketModel<T_Device, T_Message>, T_Device, sizeof(T_Message) > (device),
+        Interface::PacketModel < MPIPacketModel<T_Device, T_Message> > (device),
 #endif // USE_GCC_ICE_WORKAROUND
-        _device (device),
+        device (dev),
 //        _client(client),
         _context (device.getContext()),
         _contextid (device.getContextOffset())
@@ -82,7 +82,7 @@ namespace PAMI
 #ifdef USE_GCC_ICE_WORKAROUND
           COMPILE_TIME_ASSERT(sizeof(T_Message) <= 512);
 #endif // USE_GCC_ICE_WORKAROUND
-          _dispatch_id = _device.registerRecvFunction (dispatch, direct_recv_func, direct_recv_func_parm);
+          _dispatch_id = device.registerRecvFunction (dispatch, direct_recv_func, direct_recv_func_parm);
          TRACE_DEVICE((stderr,"<%p>MPIModel::init_impl %d \n",this, _dispatch_id));
          return PAMI_SUCCESS;
         };
@@ -146,16 +146,16 @@ namespace PAMI
                          sizeof(msg->_p2p_msg),target_task));
 #ifdef EMULATE_NONDETERMINISTIC_DEVICE
           msg->_target_task = (pami_task_t) target_task;
-          _device.addToNonDeterministicQueue (msg,__global.time.timebase());
+          device.addToNonDeterministicQueue (msg,__global.time.timebase());
 #else
           rc = MPI_Isend (&msg->_p2p_msg,
                           sizeof(msg->_p2p_msg),
                           MPI_CHAR,
                           target_task,
                           0,
-                          _device._communicator,
+                          device._communicator,
                           &msg->_request);
-          _device.enqueue(msg);
+          device.enqueue(msg);
           PAMI_assert(rc == MPI_SUCCESS);
 #endif
           return true;
@@ -192,16 +192,16 @@ namespace PAMI
                          sizeof(msg->_p2p_msg),target_task));
 #ifdef EMULATE_NONDETERMINISTIC_DEVICE
           msg->_target_task = (pami_task_t) target_task;
-          _device.addToNonDeterministicQueue (msg,__global.time.timebase());
+          device.addToNonDeterministicQueue (msg,__global.time.timebase());
 #else
           rc = MPI_Isend (&msg->_p2p_msg,
                           sizeof(msg->_p2p_msg),
                           MPI_CHAR,
                           target_task,
                           0,
-                          _device._communicator,
+                          device._communicator,
                           &msg->_request);
-          _device.enqueue(msg);
+          device.enqueue(msg);
           PAMI_assert(rc == MPI_SUCCESS);
 #endif
           return true;
@@ -238,16 +238,16 @@ namespace PAMI
                          sizeof(msg->_p2p_msg),target_task));
 #ifdef EMULATE_NONDETERMINISTIC_DEVICE
           msg->_target_task = (pami_task_t) target_task;
-          _device.addToNonDeterministicQueue (msg,__global.time.timebase());
+          device.addToNonDeterministicQueue (msg,__global.time.timebase());
 #else
           rc = MPI_Isend (&msg->_p2p_msg,
                           sizeof(msg->_p2p_msg),
                           MPI_CHAR,
                           target_task,
                           0,
-                          _device._communicator,
+                          device._communicator,
                           &msg->_request);
-          _device.enqueue(msg);
+          device.enqueue(msg);
           PAMI_assert(rc == MPI_SUCCESS);
 #endif
           return true;
@@ -300,16 +300,16 @@ namespace PAMI
                          sizeof(msg->_p2p_msg),target_task));
 #ifdef EMULATE_NONDETERMINISTIC_DEVICE
           msg->_target_task = (pami_task_t) target_task;
-          _device.addToNonDeterministicQueue (msg,__global.time.timebase());
+          device.addToNonDeterministicQueue (msg,__global.time.timebase());
 #else
           rc = MPI_Isend (&msg->_p2p_msg,
                           sizeof(msg->_p2p_msg),
                           MPI_CHAR,
                           target_task,
                           0,
-                          _device._communicator,
+                          device._communicator,
                           &msg->_request);
-          _device.enqueue(msg);
+          device.enqueue(msg);
           PAMI_assert(rc == MPI_SUCCESS);
 #endif
           return true;
@@ -351,23 +351,24 @@ namespace PAMI
                          sizeof(msg->_p2p_msg),metasize,(sizeof(msg->_p2p_msg)+metasize+length-128-224),target_task));
 #ifdef EMULATE_NONDETERMINISTIC_DEVICE
           msg->_target_task = (pami_task_t) target_task;
-          _device.addToNonDeterministicQueue (msg,__global.time.timebase());
+          device.addToNonDeterministicQueue (msg,__global.time.timebase());
 #else
           rc = MPI_Isend (&msg->_p2p_msg,
                           sizeof(msg->_p2p_msg)+metasize+length-128-224,
                           MPI_CHAR,
                           target_task,
                           1,
-                          _device._communicator,
+                          device._communicator,
                           &msg->_request);
-          _device.enqueue(msg);
+          device.enqueue(msg);
           PAMI_assert(rc == MPI_SUCCESS);
 #endif
           return true;
         };
 
+      T_Device                    & device;
+
     protected:
-      T_Device                    & _device;
       pami_client_t                  _client;
       pami_context_t                 _context;
       size_t                        _contextid;
