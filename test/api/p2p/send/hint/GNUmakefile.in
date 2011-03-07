@@ -10,9 +10,9 @@
 # end_generated_IBM_copyright_prolog                               #
 
 VPATH		= @abs_srcdir@
-SUBDIRS         = send_to_self_perf send_to_self_immed type hint
+SUBDIRS         = use_shmem 
 NOTBUILT        =
-APPS            = send_to_self.${EXTENSION} long-header.${EXTENSION} long-header-matrix.${EXTENSION} shmem-matrix.${EXTENSION} rdma-matrix.${EXTENSION} default-send-1.${EXTENSION} send_flood_perf.${EXTENSION} send_unexpected_func.${EXTENSION} send_immediate_pingpong_ring.${EXTENSION} mmps.${EXTENSION} sqmr.${EXTENSION}
+APPS            = 
 
 include @abs_top_builddir@/Build.rules
 
