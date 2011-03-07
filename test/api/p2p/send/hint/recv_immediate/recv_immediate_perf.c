@@ -18,7 +18,7 @@ int main (int argc, char ** argv)
   size_t header_count = argc+1;
   size_t header_size[header_count+2];
   header_size[0] = 0;
-  header_size[1] = 16; // mpich2 msginfo size
+  header_size[1] = MPI_MSGINFO_SIZE;
 
   int arg;
 
@@ -30,16 +30,16 @@ int main (int argc, char ** argv)
   dispatch_info_t dispatch[3];
   
   dispatch[0].id = 10;
-  dispatch[0].name = "  default ";
+  dispatch[0].name = "default";
   dispatch[0].options = (pami_dispatch_hint_t) {0};
 
   dispatch[1].id = 11;
-  dispatch[1].name = " +rcvimmed";
+  dispatch[1].name = "+ recv_immediate";
   dispatch[1].options = (pami_dispatch_hint_t) {0};
   dispatch[1].options.recv_immediate = PAMI_HINT_ENABLE;
 
   dispatch[2].id = 12;
-  dispatch[2].name = " -rcvimmed";
+  dispatch[2].name = "- recv_immediate";
   dispatch[2].options = (pami_dispatch_hint_t) {0};
   dispatch[2].options.recv_immediate = PAMI_HINT_DISABLE;
 

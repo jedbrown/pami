@@ -30,16 +30,16 @@ int main (int argc, char ** argv)
   dispatch_info_t dispatch[3];
   
   dispatch[0].id = 10;
-  dispatch[0].name = "  default ";
+  dispatch[0].name = "default";
   dispatch[0].options = (pami_dispatch_hint_t) {0};
 
   dispatch[1].id = 11;
-  dispatch[1].name = " +longhdr ";
+  dispatch[1].name = "+ long_header";
   dispatch[1].options = (pami_dispatch_hint_t) {0};
   dispatch[1].options.long_header = PAMI_HINT_ENABLE;
 
   dispatch[2].id = 12;
-  dispatch[2].name = " -longhdr ";
+  dispatch[2].name = "- long_header";
   dispatch[2].options = (pami_dispatch_hint_t) {0};
   dispatch[2].options.long_header = PAMI_HINT_DISABLE;
 

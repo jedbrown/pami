@@ -23,6 +23,8 @@
 
 #include <pami.h>
 
+#define MPI_MSGINFO_SIZE 16
+
 #define ITERATIONS 100
 
 #ifndef BUFSIZE
@@ -328,13 +330,13 @@ void test (dispatch_info_t dispatch[], size_t n, size_t header_size[], size_t he
           }
           else
           {
-            size_t num_dashes = (n-1)*24;
+            size_t num_dashes = (n-1)*18;
             
             index[0] += sprintf (&str[0][index[0]], "[");
             for (i=0; i<(num_dashes/2); i++)
               index[0] += sprintf (&str[0][index[0]], "-");
             
-            index[0] += sprintf (&str[0][index[0]], " testcase %d ", h);
+            index[0] += sprintf (&str[0][index[0]], "--- testcase %d ---", h);
             
             for (i=0; i<(num_dashes/2); i++)
               index[0] += sprintf (&str[0][index[0]], "-");
@@ -343,7 +345,7 @@ void test (dispatch_info_t dispatch[], size_t n, size_t header_size[], size_t he
           
           for (i=0; i<n; i++)
           {
-            index[1] += sprintf (&str[1][index[1]], "[-- %s --] ", dispatch[i].name);
+            index[1] += sprintf (&str[1][index[1]], "[%16.16s] ", dispatch[i].name);
             index[2] += sprintf (&str[2][index[2]], "  cycles     usec  ");
           }
         }
