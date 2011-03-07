@@ -316,10 +316,7 @@ void test (dispatch_info_t dispatch[], size_t n, size_t header_size[], size_t he
 
       for (h = 0; h < header_count; h++)
         {
-          if (h == 0)
-            fprintf (stdout, "# testcase %d : header bytes = %3zd\n", h, header_size[h]);
-          else
-            fprintf (stdout, "# testcase %d : header bytes = %3zd (argv[%d])\n", h, header_size[h], h);
+          fprintf (stdout, "# testcase %d : header bytes = %3zd\n", h, header_size[h]);
 
           for (i=0; i<n; i++)
           {
