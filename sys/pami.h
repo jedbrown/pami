@@ -1162,9 +1162,12 @@ extern "C"
    *
    * The local memregion may be transfered, via a send message, to a remote task
    * to allow the remote task to perform one-sided operations with this local
-   * task
+   * task.
    *
-   * \param[in]  context   PAMI application context
+   * \note Memory regions may overlap. When one of the overlapping regions is
+   *       destroyed any remaining overlapping memory regions are still usable.
+   *
+   * \param[in]  context   Communcation context
    * \param[in]  address   Base virtual address of the memory region
    * \param[in]  bytes_in  Number of bytes requested
    * \param[out] bytes_out Number of bytes granted
@@ -1197,7 +1200,7 @@ extern "C"
   /**
    * \brief Destroy a local memory region for one sided operations
    *
-   * \param[in] context   PAMI application context
+   * \param[in] context   Communication context
    * \param[in] memregion Memory region object
    *
    * The memregion object will be changed to an invalid value so that
