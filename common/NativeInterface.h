@@ -1146,30 +1146,24 @@ namespace PAMI
       TRACE_FN_EXIT();
       return PAMI_SUCCESS;
     }
-    TRACE_FORMAT( "<%p> here i am", this);
 
     void* payload = NULL;
 
     if (length)
       payload = (void*)pwq->bufferToConsume();
-    TRACE_FORMAT( "<%p> here i am", this);
 
     // calc how big our msginfo needs to be
     size_t msgsize =  sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t::metadata_t().connection_id) + sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t::metadata_t().root) + sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t::metadata_t().sndlen) +
                       sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t::metadata_t().msgcount) + (mcast->msgcount * sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t::metadata_t().msginfo));
 
-    TRACE_FORMAT( "<%p> here i am", this);
     // Send the multicast to each destination
     state_data->sendpwq.dst_participants = *((PAMI::Topology*)mcast->dst_participants);
 
-    TRACE_FORMAT( "<%p> here i am", this);
     state_data->doneCountDown = state_data->sendpwq.dst_participants.size();
 
-    TRACE_FORMAT( "<%p> here i am", this);
     // Am I a destination?  Handle it.
     if (state_data->sendpwq.dst_participants.isRankMember(this->myrank())) /// \todo change semantics here? ticket #31
       {
-    TRACE_FORMAT( "<%p> here i am", this);
         state_data->doneCountDown--;// don't send to myself
         PAMI::PipeWorkQueue *rcvpwq = (PAMI::PipeWorkQueue *)mcast->dst;
 
@@ -1182,7 +1176,6 @@ namespace PAMI
         else; /// \todo now what??? Move this to completion?
       }
 
-    TRACE_FORMAT( "<%p> here i am", this);
     state_data->sendpwq.send.simple.send.hints = (pami_send_hint_t)
     {
       0
@@ -1334,9 +1327,13 @@ namespace PAMI
           (cb_done.function)(context_hdl,
                              cb_done.clientdata, PAMI_SUCCESS);
 
-// #warning \todo if it's 0 byte, no recv structure should be delivered
+// #warning \todo if it's 0 byte, no recv structure should be delivered 
         if (recv != NULL)
+        {  
           memset(recv, 0, sizeof(*recv));
+          recv->type = PAMI_TYPE_CONTIGUOUS;
+          recv->data_fn = PAMI_DATA_COPY;
+        }
 
         TRACE_FN_EXIT();
         return;
@@ -1965,9 +1962,13 @@ namespace PAMI
           (cb_done.function)(context_hdl,
                              cb_done.clientdata, PAMI_SUCCESS);
 
-// #warning \todo if it's 0 byte, no recv structure should be delivered
+// #warning \todo if it's 0 byte, no recv structure should be delivered 
         if (recv != NULL)
+        {  
           memset(recv, 0, sizeof(*recv));
+          recv->type = PAMI_TYPE_CONTIGUOUS;
+          recv->data_fn = PAMI_DATA_COPY;
+        }
         TRACE_FN_EXIT();
         return;
       }
@@ -2083,9 +2084,13 @@ namespace PAMI
                     state,
                     PAMI_SUCCESS);
 
-        // #warning \todo if it's 0 byte, no recv structure should be delivered
+        // #warning \todo if it's 0 byte, no recv structure should be delivered 
         if (recv != NULL)
+        {  
           memset(recv, 0, sizeof(*recv));
+          recv->type = PAMI_TYPE_CONTIGUOUS;
+          recv->data_fn = PAMI_DATA_COPY;
+        }
         TRACE_FN_EXIT();
         return;
       }
