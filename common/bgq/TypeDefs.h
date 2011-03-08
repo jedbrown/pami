@@ -90,7 +90,7 @@ namespace PAMI
 {
   typedef Geometry::Common                     BGQGeometry;
 
-  typedef MemoryAllocator<2048, 64, 16> ProtocolAllocator; /// \todo How much do we really need?  Is there a better way?
+  typedef MemoryAllocator<4096, 64, 16> ProtocolAllocator; /// \todo How much do we really need?  Is there a better way?
 
   typedef Device::MU::Context MUDevice;
 
