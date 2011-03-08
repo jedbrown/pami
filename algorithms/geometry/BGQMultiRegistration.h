@@ -867,6 +867,9 @@ namespace PAMI
 
       inline pami_result_t register_local_impl (size_t context_id, T_Geometry *geometry, uint64_t *in, int &n) 
       {
+	if (_axial_mu_dput_ni == NULL)
+	  return PAMI_SUCCESS;
+	
         if ((_mu_rectangle_msync_factory && __global.topology_local.size() == 1) || 
             (_msync2d_rectangle_composite_factory && __global.topology_local.size() > 1 &&
              __global.useMU() && __global.useshmem()))
@@ -880,6 +883,9 @@ namespace PAMI
       inline pami_result_t receive_global_impl (size_t context_id, T_Geometry *geometry, uint64_t *in, int n) 
       {
         PAMI_assert (n == 1);
+	if (_axial_mu_dput_ni == NULL)
+	  return PAMI_SUCCESS;
+
         if ((((PAMI::Topology *)geometry->getTopology(PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX))->type() == PAMI_COORD_TOPOLOGY)
             &&
             ((_mu_rectangle_msync_factory && __global.topology_local.size() == 1) ||
