@@ -272,6 +272,7 @@ namespace PAMI
           _devices(devices),
           _pgas_mu_registration(NULL),
           _pgas_shmem_registration(NULL),
+          _pgas_composite_registration(NULL),
           _dummy_disable(false),
           _dummy_disabled(false)
       {
@@ -445,7 +446,7 @@ namespace PAMI
         ///////////////////////////////////////////////////////////////
         if (__global.useMU())
           {
-            _pgas_mu_registration = new(_pgas_mu_registration_storage) MU_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _protocol, Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid), _devices->_shmem[_contextid], &_dispatch_id, _geometry_map);
+            _pgas_mu_registration = new(_pgas_mu_registration_storage) MU_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _protocol, Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid),ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), &_dispatch_id, _geometry_map);
           }
         if (__global.useshmem())
           {
@@ -472,10 +473,12 @@ namespace PAMI
                 _shmem_native_interface  = (AllSidedShmemNI*)_shmem_native_interface_storage;
                 new (_shmem_native_interface_storage) AllSidedShmemNI(_shmemMcastModel, _shmemMsyncModel, _shmemMcombModel, client, (pami_context_t)this, id, clientid, &_dispatch_id);
 
-                _pgas_shmem_registration = new(_pgas_shmem_registration_storage) Shmem_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _protocol, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), _devices->_shmem[_contextid],& _dispatch_id, _geometry_map);
+                _pgas_shmem_registration = new(_pgas_shmem_registration_storage) Shmem_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _protocol, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), & _dispatch_id, _geometry_map);
               }
             else TRACE_ERR((stderr, "topology does not support shmem\n"));
           }
+        if ((__global.useMU()) && (__global.useshmem()))
+            _pgas_composite_registration = new(_pgas_composite_registration_storage) Composite_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _protocol, Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid), _devices->_shmem[_contextid], &_dispatch_id, _geometry_map, true);
 
         TRACE_ERR((stderr,  "<%p>Context::Context() Register collectives(%p,%p,%p,%zu,%zu\n", this, _shmem_native_interface, client, this, id, clientid));
         // The multi registration will use shmem/mu if they are ctor'd above.
@@ -513,6 +516,9 @@ namespace PAMI
 
         // Can always use MU if it's available
         if (_pgas_mu_registration) _pgas_mu_registration->analyze(_contextid, _world_geometry, 0);
+
+        // Can always use composite if it's available
+        if (_pgas_composite_registration) _pgas_composite_registration->analyze(_contextid, _world_geometry, 0);
 
         if(_ccmi_registration && (((PAMI::Topology*)_world_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
         {
@@ -1186,6 +1192,9 @@ namespace PAMI
         // Can always use MU if it's available
         if (phase == 0 && _pgas_mu_registration) _pgas_mu_registration->analyze(_contextid, geometry, phase);
 
+        // Can always use composite if it's available
+        if (_pgas_composite_registration) _pgas_composite_registration->analyze(_contextid, geometry, phase);
+
         if(_ccmi_registration && (((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
         {   
           geometry->resetUEBarrier(); // Reset so ccmi will select the UE barrier
@@ -1274,6 +1283,8 @@ namespace PAMI
       uint8_t                      _pgas_mu_registration_storage[sizeof(MU_PGASCollreg)];
       Shmem_PGASCollreg           *_pgas_shmem_registration;
       uint8_t                      _pgas_shmem_registration_storage[sizeof(Shmem_PGASCollreg)];
+      Composite_PGASCollreg       *_pgas_composite_registration;
+      uint8_t                      _pgas_composite_registration_storage[sizeof(Composite_PGASCollreg)];
 
       bool _dummy_disable;
       bool _dummy_disabled;

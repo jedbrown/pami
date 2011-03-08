@@ -471,7 +471,7 @@ namespace PAMI
 	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PGASCollreg");
           new(_pgas_collreg) PGASCollreg(_client,_context,_clientid,_contextid,
                                          _protocol,_lapi_device,_devices->_shmem[_contextid],
-                                         &_dispatch_id,_geometry_map);
+                                         &_dispatch_id,_geometry_map, false);
           _world_geometry->resetUEBarrier(); // Reset so pgas will select the UE barrier
           _pgas_collreg->analyze(_contextid,_world_geometry);
           return PAMI_SUCCESS;

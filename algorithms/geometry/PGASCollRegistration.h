@@ -51,6 +51,20 @@
                                          _dispatch_id)
 
 
+#define SETUPNI_P2P(NI_PTR) result =                                            \
+  NativeInterfaceCommon::constructNativeInterface                               \
+  <T_Allocator, T_NI, T_Protocol1, T_Device_P2P,                                \
+   NativeInterfaceCommon::P2P_ONLY>(                                            \
+                                         _proto_alloc,                          \
+                                         _dev_p2p,                              \
+                                         NI_PTR,                                \
+                                         _client,                               \
+                                         _context,                              \
+                                         _context_id,                           \
+                                         _client_id,                            \
+                                         _dispatch_id)
+
+
 namespace PAMI
 {
   namespace CollRegistration
@@ -118,6 +132,80 @@ namespace PAMI
         }Factories;
 
       public:
+      /// \brief The one device (p2p) pgas constructor.
+      /// 
+      /// It takes two devices because this class uses references to the device so *something* has
+      /// to be passed in even if it's ignored.
+      ///
+      inline PGASRegistration(pami_client_t                        client,
+                              pami_context_t                       context,
+                              size_t                               client_id,
+                              size_t                               context_id,
+                              T_Allocator                         &proto_alloc,
+                              T_Device_P2P                        &dev_p2p,
+                              T_Device_SHMEM                      &dev_shmem,
+                              int                                 *dispatch_id,
+                              std::map<unsigned, pami_geometry_t> *geometry_map):
+        CollRegistration<PAMI::CollRegistration::PGASRegistration<T_Geometry,
+                                                                  T_NI,
+                                                                  T_Allocator,
+                                                                  T_Protocol1,
+                                                                  T_Protocol2,
+                                                                  T_Device_P2P,
+                                                                  T_Device_SHMEM,
+                                                                  T_NBCollMgr>,
+                         T_Geometry> (),
+        _client(client),
+        _context(context),
+        _client_id(client_id),
+        _context_id(context_id),
+        _reduce_val(0),
+        _dispatch_id(dispatch_id),
+        _geometry_map(geometry_map),
+        _dev_p2p(dev_p2p),
+        _dev_shmem(dev_shmem),
+        _proto_alloc(proto_alloc),
+        _bcast(NULL),
+        _allgather(NULL),
+        _allgatherv(NULL),
+        _scatter_s(NULL),
+        _scatter_b(NULL),
+        _scatterv_s(NULL),
+        _scatterv_b(NULL),
+        _allreduce(NULL),
+        _shortallreduce(NULL),
+        _barrier(NULL),
+        _barrier_ue(NULL)
+          {
+            pami_result_t       result   = PAMI_SUCCESS;
+
+            SETUPNI_P2P(_bcast);
+            SETUPNI_P2P(_allgather);
+            SETUPNI_P2P(_allgatherv);
+            SETUPNI_P2P(_scatter_s);
+            SETUPNI_P2P(_scatter_b);
+            SETUPNI_P2P(_scatterv_s);
+            SETUPNI_P2P(_scatterv_b);
+            SETUPNI_P2P(_allreduce);
+            SETUPNI_P2P(_shortallreduce);
+            SETUPNI_P2P(_barrier);
+            SETUPNI_P2P(_barrier_ue);
+            
+            _mgr.initialize();
+            _mgr.multisend_reg(TSPColl::BcastTag,          _bcast);
+            _mgr.multisend_reg(TSPColl::AllgatherTag,      _allgather);
+            _mgr.multisend_reg(TSPColl::AllgathervTag,     _allgatherv);
+            _mgr.multisend_reg(TSPColl::ScatterTag,        _scatter_s);
+            _mgr.multisend_reg(TSPColl::BarrierTag,        _scatter_b);
+            _mgr.multisend_reg(TSPColl::ScattervTag,       _scatterv_s);
+            _mgr.multisend_reg(TSPColl::BarrierTag,        _scatterv_b);
+            _mgr.multisend_reg(TSPColl::LongAllreduceTag,  _allreduce);
+            _mgr.multisend_reg(TSPColl::ShortAllreduceTag, _shortallreduce);
+            _mgr.multisend_reg(TSPColl::BarrierTag,        _barrier);
+            _mgr.multisend_reg(TSPColl::BarrierUETag,      _barrier_ue);
+          }
+
+      /// \brief The two device (p2p+shmem) pgas constructor with a bool flag to enable it.
       inline PGASRegistration(pami_client_t                        client,
                               pami_context_t                       context,
                               size_t                               client_id,
@@ -127,7 +215,7 @@ namespace PAMI
                               T_Device_SHMEM                      &dev_shmem,
                               int                                 *dispatch_id,
                               std::map<unsigned, pami_geometry_t> *geometry_map,
-                              bool                                 use_shmem=false):
+                              bool                                 use_shmem):
         CollRegistration<PAMI::CollRegistration::PGASRegistration<T_Geometry,
                                                                   T_NI,
                                                                   T_Allocator,

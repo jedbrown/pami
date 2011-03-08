@@ -178,7 +178,29 @@ namespace PAMI
   typedef PAMI::NativeInterfaceAllsided< PAMI::Protocol::Send::SendPWQ< Protocol::Send::Send> > CompositeNI_AS;
 
   // PGAS over MU
-  typedef TSPColl::NBCollManager<CompositeNI_AM> MU_NBCollManager;
+  typedef TSPColl::NBCollManager<MUNI_AM> MU_NBCollManager;
+  typedef CollRegistration::PGASRegistration < BGQGeometry,
+  MUNI_AM,
+  ProtocolAllocator,
+  MUEager,
+  ShmemEager,
+  MUDevice,
+  ShmemDevice,
+  MU_NBCollManager > MU_PGASCollreg;
+
+  // PGAS over Shmem
+  typedef TSPColl::NBCollManager<ShmemNI_AM> Shmem_NBCollManager;
+  typedef CollRegistration::PGASRegistration < BGQGeometry,
+  ShmemNI_AM,
+  ProtocolAllocator,
+  ShmemEager,
+  ShmemEager,
+  ShmemDevice,
+  ShmemDevice,
+  Shmem_NBCollManager > Shmem_PGASCollreg;
+
+  // PGAS over Composite Shmem+MU
+  typedef TSPColl::NBCollManager<CompositeNI_AM> Composite_NBCollManager;
   typedef CollRegistration::PGASRegistration < BGQGeometry,
   CompositeNI_AM,
   ProtocolAllocator,
@@ -186,17 +208,7 @@ namespace PAMI
   ShmemEager,
   MUDevice,
   ShmemDevice,
-  MU_NBCollManager > MU_PGASCollreg;
-  // PGAS over Shmem
-  typedef TSPColl::NBCollManager<CompositeNI_AM> Shmem_NBCollManager;
-  typedef CollRegistration::PGASRegistration < BGQGeometry,
-  CompositeNI_AM,
-  ProtocolAllocator,
-  ShmemEager,
-  ShmemEager,
-  ShmemDevice,
-  ShmemDevice,
-  Shmem_NBCollManager > Shmem_PGASCollreg;
+  Composite_NBCollManager > Composite_PGASCollreg;
 
 
   typedef PAMI::Barrier::IndirectCounter<PAMI::Counter::BGQ::IndirectL2> Barrier_Type;
