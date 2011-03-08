@@ -226,12 +226,24 @@ namespace PAMI
         pami_result_t result = PAMI_ERROR;
         TRACE_ERR((stderr, ">> socklinux::dispatch_impl .. _dispatch[%zu] = %p, result = %d\n", id, _dispatch[id], result));
 
-        pami_endpoint_t self = PAMI_ENDPOINT_INIT(_clientid,__global.mapping.task(),_contextid);
+        // Return an error for invalid / unimplemented 'hard' hints.
+        if (
+            options.use_rdma             == PAMI_HINT_ENABLE  ||
+            options.use_shmem            == PAMI_HINT_DISABLE ||
+            false)
+          {
+            return PAMI_ERROR;
+          }
 
-        Protocol::Send::Send * send =
-          Protocol::Send::Eager <ShmemModel>::
-            generate (id, fn.p2p, cookie,
-                      ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), self, _context, options, _protocol, result);
+        pami_endpoint_t self = PAMI_ENDPOINT_INIT(_clientid, __global.mapping.task(), _contextid);
+
+        using namespace Protocol::Send;
+
+        Send * send =
+          Eager <ShmemModel>::generate (id, fn.p2p, cookie,
+                                        ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid),
+                                        self, _context, options,
+                                        _protocol, result);
 
         _dispatch.set (id, send, send);
 /*

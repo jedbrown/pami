@@ -171,24 +171,13 @@ namespace PAMI
           /// \param[out] status       Constructor status
           ///
           template <class T_Device>
-          inline EagerSimple (size_t                 dispatch,
-                              pami_dispatch_p2p_function dispatch_fn,
-                              void                 * cookie,
-                              T_Device             & device,
-                              pami_endpoint_t        origin,
-                              pami_context_t         context,
-                              pami_dispatch_hint_t   hint,
-                              pami_result_t        & status) :
+          inline EagerSimple (T_Device & device) :
               _envelope_model (device),
               _longheader_envelope_model (device),
               _longheader_message_model (device),
               _data_model (device),
               _ack_model (device),
-              _short_model (device),
-              _origin (origin),
-              _context (context),
-              _dispatch_fn (dispatch_fn),
-              _cookie (cookie)
+              _short_model (device)
           {
             // ----------------------------------------------------------------
             // Compile-time assertions
@@ -214,7 +203,23 @@ namespace PAMI
             // ----------------------------------------------------------------
             // Compile-time assertions (end)
             // ----------------------------------------------------------------
-
+          }
+          
+          
+          pami_result_t initialize (size_t                       dispatch,
+                                    pami_dispatch_p2p_function   dispatch_fn,
+                                    void                       * cookie,
+                                    pami_endpoint_t              origin,
+                                    pami_context_t               context,
+                                    pami_dispatch_hint_t         hint)
+          {
+            _dispatch_fn = dispatch_fn;
+            _cookie      = cookie;
+            _origin      = origin;
+            _context     = context;
+            
+            pami_result_t status = PAMI_ERROR;
+            
             // The models must be registered in reverse order of use in case
             // the remote side is delayed in it's registrations and must save
             // unexpected packets until dispatch registration.
@@ -270,6 +275,8 @@ namespace PAMI
                       }
                   }
               }
+              
+            return status;
           }
 
           inline pami_result_t short_send (pami_send_immediate_t * send, pami_send_event_t * events, pami_task_t task, size_t offset)
