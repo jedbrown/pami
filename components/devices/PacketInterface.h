@@ -492,6 +492,11 @@ namespace PAMI
           /// may be constructed at the location specified to maintain the
           /// operation state until the completion callback is invoked.
           ///
+          /// \attention It is \em illegal to send zero bytes of data with the
+          ///            postMultiPacket() interface. Zero byte transfers must
+          ///            use one of the postPacket() interfaces for single-packet
+          ///            transfers.
+          ///
           /// \note The size of the metadata to be copied into the packet
           ///       is an attribute of the specific packet device associated
           ///       with this packet model.
@@ -503,9 +508,10 @@ namespace PAMI
           /// \param[in] cookie          Opaque data to provide as the cookie parameter of the event function.
           /// \param[in] target_task     Global identifier of the packet destination task
           /// \param[in] target_offset   Identifier of the packet destination context
-          /// \param[in] metadata        Virtual address of metadata buffer
-          /// \param[in] metasize        Number of metadata bytes
-          /// \param[in] iov             Array of iovec elements to transfer
+          /// \param[in] metadata        Virtual address of metadata buffer to transfer
+          /// \param[in] metasize        Number of metadata bytes to transfer
+          /// \param[in] payload         Virtual address of data buffer to transfer
+          /// \param[in] length          Number of data bytes to transfer
           ///
           /// \retval true  Transfer operation completed and the completion
           ///               callback was invoked
@@ -706,6 +712,9 @@ namespace PAMI
         // This compile time assert verifies that sufficient memory was provided
         // to maintain the state of the post operation.
         COMPILE_TIME_ASSERT(T::packet_model_state_bytes <= T_StateBytes);
+
+        PAMI_assert_debugf(payload!=NULL, "payload must not be NULL for PacketModel<T>::postMultiPacket()\n");
+        PAMI_assert_debugf(length>0, "length must not be zero for PacketModel<T>::postMultiPacket()\n");
 
         return static_cast<T*>(this)->postMultiPacket_impl (state, fn, cookie,
                                                             target_task, target_offset,

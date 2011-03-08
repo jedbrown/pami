@@ -249,7 +249,7 @@ namespace PAMI
                                                        dispatch_read<&EagerSimpleProtocol::dispatch_eager_envelope>, this);
                         TRACE_ERR((stderr, "EagerSimple() envelope model status = %d\n", status));
 
-                        if (status == PAMI_SUCCESS && (T_Option & LONG_HEADER_ENABLE))
+                        if (status == PAMI_SUCCESS && !(T_Option & LONG_HEADER_DISABLE))
                           {
                             TRACE_ERR((stderr, "EagerSimple() register 'long header' envelope model dispatch %zu\n", dispatch));
                             status = _longheader_envelope_model.init (dispatch,
@@ -529,7 +529,7 @@ namespace PAMI
             //   'immediate receives' are forced off AND 'long header' is disabled AND data size is zero
             //
             if ((T_Option & RECV_IMMEDIATE_FORCEON) ||
-                ((T_Option & RECV_IMMEDIATE_DEFAULT) && ((parameters->send.data.iov_len + parameters->send.header.iov_len) <= maximum_short_packet_payload)) ||
+                (!(T_Option & RECV_IMMEDIATE_FORCEOFF) && ((parameters->send.data.iov_len + parameters->send.header.iov_len) <= maximum_short_packet_payload)) ||
                 ((T_Option & RECV_IMMEDIATE_FORCEOFF) && (T_Option & LONG_HEADER_DISABLE) && (parameters->send.data.iov_len == 0)))
               {
                 return short_send (&parameters->send, &parameters->events, task, offset);
@@ -554,7 +554,7 @@ namespace PAMI
             //
             // 'long header' not disabled AND the header does not fit in a single packet
             //
-            if ((T_Option & LONG_HEADER_ENABLE) && (parameters->send.header.iov_len > maximum_eager_packet_payload))
+            if (!(T_Option & LONG_HEADER_DISABLE) && (parameters->send.header.iov_len > maximum_eager_packet_payload))
               {
                 return longheader_send (parameters, task, offset);
               }
@@ -609,6 +609,16 @@ namespace PAMI
                                             NULL, 0,
                                             state->v);
               }
+
+#if ASSERT_LEVEL==2 // only "debug" asserts
+
+            if ((parameters->send.data.iov_base == NULL) ||
+                (parameters->send.data.iov_len  == 0))
+              {
+                PAMI_abortf("header: (%p,%zu), data: (%p, %zu), maximum_short_packet_payload = %zu, maximum_eager_packet_payload = %zu\n", parameters->send.header.iov_base, parameters->send.header.iov_len, parameters->send.data.iov_base, parameters->send.data.iov_len, maximum_short_packet_payload, maximum_eager_packet_payload);
+              }
+
+#endif
 
             TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. send the application data.\n"));
             _data_model.postMultiPacket (state->pkt[2],

@@ -38,7 +38,7 @@ namespace PAMI
       ///
       /// \see PAMI::Device::Interface::PacketModel
       ///
-      template < class T_Model, configuration_t T_Option = UNSET >
+      template < class T_Model, configuration_t T_Option = DEFAULT >
       class Eager : public PAMI::Protocol::Send::Send,
           public EagerSimple<T_Model, T_Option>
       {
