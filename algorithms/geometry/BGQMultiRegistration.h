@@ -882,9 +882,10 @@ namespace PAMI
 
       inline pami_result_t receive_global_impl (size_t context_id, T_Geometry *geometry, uint64_t *in, int n) 
       {
-        PAMI_assert (n == 1);
 	if (_axial_mu_dput_ni == NULL)
 	  return PAMI_SUCCESS;
+
+        PAMI_assert (n == 1);
 
         if ((((PAMI::Topology *)geometry->getTopology(PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX))->type() == PAMI_COORD_TOPOLOGY)
             &&
