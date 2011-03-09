@@ -1063,7 +1063,9 @@ namespace PAMI
             // If we can use pure MU composites, add them
             if (usePureMu)
             {
-              if (_gi_msync_factory)
+              // Direct MU/GI only on one context per node (lowest T, context 0) lowest T is guaranteed by classroute code
+              if ((_context_id == 0) // (__global.mapping.isLowestT())
+                  && (_gi_msync_factory))
               {
                 TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU barrier\n", this));
                 geometry->setKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE3, NULL);
@@ -1125,12 +1127,16 @@ namespace PAMI
             // If we can use pure MU composites, add them
             if (usePureMu)
             {
-              TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU bcast\n", this));
-              // Add Broadcasts
-              geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_mcast_factory,  _context_id);
+              // Direct MU only on one context per node (lowest T, context 0) lowest T is guaranteed by classroute code
+              if (_context_id == 0) // (__global.mapping.isLowestT())
+              {
+                TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU bcast\n", this));
+                // Add Broadcasts
+                geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_mcast_factory,  _context_id);
 #ifdef ENABLE_X0_PROTOCOLS
-              geometry->addCollectiveCheck(PAMI_XFER_BROADCAST,  _mu_mcast3_factory, _context_id);
+                geometry->addCollectiveCheck(PAMI_XFER_BROADCAST,  _mu_mcast3_factory, _context_id);
 #endif
+              }
             }
 
             // Add 2 device composite protocols
@@ -1166,8 +1172,8 @@ namespace PAMI
             // If we can use pure MU composites, add them
             if (usePureMu)
             {
-              // Direct MU allreduce only on one context per node (lowest T, context 0)
-              if ((__global.mapping.isLowestT()) && (_context_id == 0))
+              // Direct MU allreduce only on one context per node (lowest T, context 0) lowest T is guaranteed by classroute code
+              if (_context_id == 0) // (__global.mapping.isLowestT())
               {
                 // Add Allreduces
                 TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU allreduce\n", this));
