@@ -557,7 +557,7 @@ _commThreads(NULL)
 	/// PAMI_COMMTHREAD_MIN_LOOPS - Minimum number of loops through advance done by
 	/// a commthread before checking status for possible sleep or preemption.
 	/// Must be <= PAMI_COMMTHREAD_MAX_LOOPS.
-	/// Default: 1
+	/// Default: 10
 	///
 	char *env = getenv("PAMI_MAX_COMMTHREADS");
 	if (env) {
@@ -714,7 +714,7 @@ if (fwu > 2) fprintf(stderr, "Commthreads saw %zd false wakeups\n", fwu);
 
 size_t PAMI::Device::CommThread::BgqCommThread::_maxActive = 0;
 size_t PAMI::Device::CommThread::BgqCommThread::_maxloops = 100;
-size_t PAMI::Device::CommThread::BgqCommThread::_minloops = 1;
+size_t PAMI::Device::CommThread::BgqCommThread::_minloops = 10;
 #ifndef COMMTHREAD_LAYOUT_TESTING
 size_t PAMI::Device::CommThread::BgqCommThread::_numActive = 0;
 size_t PAMI::Device::CommThread::BgqCommThread::_ptCore = 0;
