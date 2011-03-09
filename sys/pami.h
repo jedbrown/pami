@@ -40,6 +40,16 @@ extern "C"
   typedef void*    pami_type_t;     /**< \ingroup datatype Description for data layout  */
   typedef uint32_t pami_task_t;     /**< Identity of a process            */
   typedef uint32_t pami_endpoint_t; /**< Identity of a context            */
+  typedef void*    pami_geometry_t; /**< Geometry object handle           */
+  typedef size_t   pami_algorithm_t;/**< Algorithm object handle          */
+
+  /* The following are setters for various object handles                           */
+  /* These allow PAMI users to set and test values for uninitialized object handles */
+  extern pami_client_t    PAMI_CLIENT_NULL;
+  extern pami_type_t      PAMI_TYPE_NULL;
+  extern pami_context_t   PAMI_CONTEXT_NULL;
+  extern pami_geometry_t  PAMI_GEOMETRY_NULL;
+  extern pami_algorithm_t PAMI_ALGORITHM_NULL;
 
   /**
    * \brief Callback to handle message events
@@ -301,7 +311,7 @@ extern "C"
    */
   typedef struct
   {
-    char                   name[64];     /**<  A character string describing the protocol   */
+    char                  *name;     /**<  A character string describing the protocol   */
     unsigned               version;      /**<  A version number for the protocol            */
     /* Correctness Parameters                                          
      *
@@ -315,9 +325,9 @@ extern "C"
      *
      * The semantics for when the user must call the check_fn function are as follows:
      * * If check_fn is NULL, and checkrequired is 0, the user cannot and is not required
-     *   to call the check_fn function.  The user is still required to check the other bits 
-     *   in the bitmask_correct to determine if the collective parameters satisfy the 
-     *   requirements. 
+     *   to call the check_fn function.  The user is still required to check the other bits
+     *   in the bitmask_correct to determine if the collective parameters satisfy the
+     *   requirements.
      *
      * * check_fn will never be NULL when checkrequired is set to 1
      *
@@ -1707,14 +1717,10 @@ extern "C"
   /* **************     Geometry (like groups/communicators)  **************** */
   /* ************************************************************************* */
 
-  typedef void*   pami_geometry_t;
-  typedef size_t  pami_algorithm_t;
-
   typedef struct
   {
-    size_t lo, hi;
-  }
-    pami_geometry_range_t;
+    pami_task_t lo, hi;
+  } pami_geometry_range_t;
 
 
   extern pami_geometry_t PAMI_NULL_GEOMETRY;
@@ -1733,12 +1739,18 @@ extern "C"
    *        from the parent in the creation of the new geometry.  This kind of
    *        geometry create may not be as optimal as when a parent has been provided
    *
+   *        A unique geometry id is required to give each task described by
+   *        a geometry a unique communication context/channel to the other tasks in
+   *        that geometry.  Many higher level api's have code to manage the creation of
+   *        unique geometry id's.  PAMI defers the unique geometry id assignment to these
+   *        higher level API's
+   *
    * \param[in]  client          pami client
    * \param[in]  configuration   List of configurable attributes and values
    * \param[in]  num_configs     The number of configuration elements
    * \param[out] geometry        Opaque geometry object to initialize
    * \param[in]  parent          Parent geometry containing all the nodes in the task list
-   * \param[in]  id              Identifier for this geometry
+   * \param[in]  id              Identifier for this geometry(must be > 0)
    *                             which uniquely represents this geometry(if tasks overlap)
    * \param[in]  task_slices     Array of node slices participating in the geometry
    *                             User must keep the array of slices in memory for the
@@ -1775,13 +1787,18 @@ extern "C"
    *        from the parent in the creation of the new geometry.  This kind of
    *        geometry create may not be as optimal as when a parent has been provided
    *
+   *        A unique geometry id is required to give each task described by
+   *        a geometry a unique communication context/channel to the other tasks in
+   *        that geometry.  Many higher level api's have code to manage the creation of
+   *        unique geometry id's.  PAMI defers the unique geometry id assignment to these
+   *        higher level API's
    *
    * \param[in]  client          pami client
    * \param[in]  configuration   List of configurable attributes and values
    * \param[in]  num_configs     The number of configuration elements
    * \param[out] geometry        Opaque geometry object to initialize
    * \param[in]  parent          Parent geometry containing all the nodes in the task list
-   * \param[in]  id              Identifier for this geometry
+   * \param[in]  id              Identifier for this geometry(must be > 0)
    *                             which uniquely represents this geometry(if tasks overlap)
    * \param[in]  tasks           Array of tasks to build the geometry list
    *                             User must keep the task list in memory
@@ -1805,13 +1822,27 @@ extern "C"
                                                void                      * cookie);
 
   /**
-   * \brief Initialize the geometry
+   * \brief Return a pointer to the world geometry
+   *
+   * This routine returns a pointer to the "world geometry"
+   * The world geometry is created at client create time as a convenience
+   * to the PAMI user.  It contains a representation of all the tasks associated with the
+   * client.
+   *
+   * The world geometry cannot be destroyed by the user, and is cleaned up at
+   * PAMI_Client_destroy time.
+   *
+   * The world geometry is scoped to the client object, meaning each client geometry
+   * will have a world geometry associated with it.
+   *
+   * The world_geometry has geometry_id 0, which means that the PAMI user should not
+   * create any new geometries using id 0.
    *
    * \param[in]  client          pami client
-   * \param[in]  world_geometry  world geometry object
+   * \param[out]  world_geometry  world geometry object
    */
   pami_result_t PAMI_Geometry_world (pami_client_t                client,
-                                   pami_geometry_t            * world_geometry);
+				     pami_geometry_t            * world_geometry);
 
   /**
    * \brief determines the number of algorithms available for a given op
