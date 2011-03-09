@@ -71,7 +71,7 @@ namespace PAMI
     typedef Device::MPIDevice MPIDevice;
     typedef Device::MPIPacketModel<MPIDevice,MPIMessage> MPIPacketModel;
     typedef PAMI::Protocol::Send::Eager <MPIPacketModel> MPIEagerBase;
-    typedef PAMI::Protocol::Send::SendPWQ < MPIEagerBase >       MPIEager;
+    typedef PAMI::Protocol::Send::SendWrapperPWQ < MPIEagerBase >       MPIEager;
 
     // \todo #warning I do not distinguish local vs non-local so no eager shmem protocol here... just MPIEagerBase
   typedef PAMI::Protocol::MPI::P2PMcastProto<MPIDevice,
@@ -85,7 +85,7 @@ namespace PAMI
     typedef Device::ShmemDevice<ShmemFifo, Counter::Indirect<Counter::Native> >                         ShmemDevice;
     typedef Device::Shmem::PacketModel<ShmemDevice>                ShmemPacketModel;
     typedef Protocol::Send::Eager <ShmemPacketModel>               ShmemEagerBase;
-    typedef PAMI::Protocol::Send::SendPWQ < ShmemEagerBase >       ShmemEager;
+    typedef PAMI::Protocol::Send::SendWrapperPWQ < ShmemEagerBase >       ShmemEager;
 #endif
 
     typedef MemoryAllocator<1024, 16> ProtocolAllocator;
