@@ -57,6 +57,7 @@
 #include "components/atomic/native/YieldingNativeMutex.h"
 #include "components/fifo/FifoPacket.h"
 #include "components/fifo/linear/LinearFifo.h"
+#include "components/devices/shmem/shaddr/NoShaddr.h"
 
 // Collective Protocols
 #include "algorithms/geometry/PGASCollRegistration.h"
@@ -198,7 +199,7 @@ namespace PAMI
   // Shared Memory P2P Typedefs
   typedef Fifo::FifoPacket <P2PSHM_HDRSIZE,P2PSHM_PKTSIZE>            ShmemPacket;
   typedef Fifo::LinearFifo<ShmemPacket, Counter::Indirect<Counter::Native> > ShmemFifo;
-  typedef Device::ShmemDevice<ShmemFifo, Counter::Indirect<Counter::Native> > ShmemDevice;
+  typedef Device::ShmemDevice<ShmemFifo, Counter::Indirect<Counter::Native>, Device::Shmem::NoShaddr, 128 > ShmemDevice;
   typedef Device::Shmem::PacketModel<ShmemDevice>                     ShmemPacketModel;
   typedef Protocol::Send::Eager <ShmemPacketModel>                    ShmemEagerBase;
   typedef PAMI::Protocol::Send::SendPWQ < ShmemEagerBase >            ShmemEager;

@@ -46,7 +46,7 @@ extern "C" {
 // P2P Shared memory settings
 // This is a bit of magic to construct the shared memory window for p2p
 // We should have some interface to query the amount of shared memory required
-#define MAX_CONTEXTS        (64)  
+#define MAX_CONTEXTS        (128)  
 #define P2PSHM_HDRSIZE      (64)
 #define P2PSHM_PKTSIZE      (1024)
 #define P2PSHM_TOTALPKTSIZE (P2PSHM_PKTSIZE + P2PSHM_HDRSIZE)
