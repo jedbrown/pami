@@ -279,6 +279,12 @@ namespace PAMI
         }
 
       }; // PAMI::Protocol::SendPWQ class
+
+      template < class T_Protocol >
+      class SendWrapperPWQ : public T_Protocol, public SendPWQ<PAMI::Protocol::Send::Send>
+      {
+      };
+
     }; // PAMI::Protocol::Send namespace
   };   // PAMI::Protocol namespace
 };     // PAMI namespace
