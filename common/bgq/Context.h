@@ -274,7 +274,8 @@ namespace PAMI
           _pgas_shmem_registration(NULL),
           _pgas_composite_registration(NULL),
           _dummy_disable(false),
-          _dummy_disabled(false)
+          _dummy_disabled(false),
+          _senderror()
       {
         char mmkey[PAMI::Memory::MMKEYSIZE];
         char *mms;
@@ -536,7 +537,9 @@ namespace PAMI
          }
 
         // dispatch_impl relies on the table being initialized to NULL's.
-        memset(_dispatch, 0x00, sizeof(_dispatch));
+        size_t i, n = sizeof(_dispatch) / sizeof(Protocol::Send::Send *);
+        for (i=0; i<n; i++)
+          _dispatch[i] = (Protocol::Send::Send *) & _senderror;
 
         TRACE_ERR((stderr,  "<%p>Context:: exit\n", this));
       }
@@ -609,13 +612,10 @@ namespace PAMI
 
       inline pami_result_t send_impl (pami_send_t * parameters)
       {
-        size_t id = (size_t)(parameters->send.dispatch);
+        size_t id = (size_t) (parameters->send.dispatch);
         TRACE_ERR((stderr, "Context::send_impl('simple'), _dispatch[%zu] = %p\n", id, _dispatch[id]));
-        PAMI_assert_debug (_dispatch[id] != NULL);
 
-        PAMI::Protocol::Send::Send * send =
-          (PAMI::Protocol::Send::Send *) _dispatch[id];
-        pami_result_t rc = send->simple (parameters);
+        pami_result_t rc = _dispatch[id]->simple (parameters);
 
         TRACE_ERR((stderr, "Context::send_impl('simple') rc = %d\n", rc));
         return rc;
@@ -623,13 +623,10 @@ namespace PAMI
 
       inline pami_result_t send_impl (pami_send_immediate_t * parameters)
       {
-        size_t id = (size_t)(parameters->dispatch);
+        size_t id = (size_t) (parameters->dispatch);
         TRACE_ERR((stderr, "Context::send_impl('immediate'), _dispatch[%zu] = %p\n", id, _dispatch[id]));
-        PAMI_assert_debug (_dispatch[id] != NULL);
 
-        PAMI::Protocol::Send::Send * send =
-          (PAMI::Protocol::Send::Send *) _dispatch[id];
-        pami_result_t rc = send->immediate (parameters);
+        pami_result_t rc = _dispatch[id]->immediate (parameters);
 
         TRACE_ERR((stderr, "Context::send_impl('immediate') rc = %d\n", rc));
         return rc;
@@ -813,7 +810,7 @@ namespace PAMI
         using namespace Protocol::Send;
 
 
-        if (_dispatch[id] == NULL)
+        if (_dispatch[id] == (Send *) & _senderror)
           {
             if ((options.use_shmem == PAMI_HINT_DISABLE) || (__global.useMU() && !__global.useshmem()))
               {
@@ -1047,7 +1044,7 @@ namespace PAMI
 
       PAMI::Memory::GenMemoryManager  _mm;
 
-      void *                       _dispatch[1024];
+      PAMI::Protocol::Send::Send  *_dispatch[1024];
       Protocol::Get::RGet         *_rget;
       Protocol::Put::RPut         *_rput;
       MemoryAllocator<1024,64,16> _request;
@@ -1078,6 +1075,7 @@ namespace PAMI
       bool _dummy_disable;
       bool _dummy_disabled;
       PAMI::Device::Generic::GenericThread _dummy_work;
+      PAMI::Protocol::Send::Error  _senderror;
   }; // end PAMI::Context
 }; // end namespace PAMI
 

@@ -686,8 +686,13 @@ extern "C"
    * with a single dispatch callback. Typically this limit is associated with
    * a network resource attribute, such as a packet size.
    *
-   * \note It is valid to specify the destination endpoint associated with the
-   *       communication context used to issue the operation.
+   * \attention The pami_send_immediate_t::dispatch identifier must be
+   *            registered on the sending context, using PAMI_Dispatch_set(),
+   *            prior to the send operation.
+   *
+   * \note It is valid to specify the endpoint associated with the
+   *       communication context used to issue the operation as the
+   *       destination for the transfer.
    *
    * \see pami_send_hint_t
    * \see PAMI_Dispatch_query
@@ -728,8 +733,13 @@ extern "C"
    * with a single dispatch callback. Typically this limit is associated with
    * a network resource attribute, such as a packet size.
    *
-   * \note It is valid to specify the destination endpoint associated with the
-   *       communication context used to issue the operation.
+   * \attention The pami_send_immediate_t::dispatch identifier must be
+   *            registered on the sending context, using PAMI_Dispatch_set(),
+   *            prior to the send operation.
+   *
+   * \note It is valid to specify the endpoint associated with the
+   *       communication context used to issue the operation as the
+   *       destination for the transfer.
    *
    * \see pami_send_hint_t
    * \see PAMI_Dispatch_query
@@ -761,8 +771,13 @@ extern "C"
    * received by the remote task into a different format, such as a contiguous
    * buffer or the same or different predefined type.
    *
-   * \note It is valid to specify the destination endpoint associated with the
-   *       communication context used to issue the operation.
+   * \attention The pami_send_immediate_t::dispatch identifier must be
+   *            registered on the sending context, using PAMI_Dispatch_set(),
+   *            prior to the send operation.
+   *
+   * \note It is valid to specify the endpoint associated with the
+   *       communication context used to issue the operation as the
+   *       destination for the transfer.
    *
    * \param[in] context    Communication context
    * \param[in] parameters Send typed parameter structure
