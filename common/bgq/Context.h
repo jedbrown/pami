@@ -805,6 +805,7 @@ namespace PAMI
             //options.recv_immediate        == PAMI_HINT_ENABLE  ||
             //options.recv_immediate        == PAMI_HINT_DISABLE ||
             options.remote_async_progress == PAMI_HINT_ENABLE  ||
+            options.queue_immediate       == PAMI_HINT_DISABLE ||
             options.use_rdma              == PAMI_HINT_ENABLE  ||
             (options.use_shmem            == PAMI_HINT_ENABLE  && !__global.useshmem()) ||
             (options.use_shmem            == PAMI_HINT_DISABLE && !__global.useMU())    ||
