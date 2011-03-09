@@ -644,69 +644,55 @@ namespace PAMI
         pami_result_t result = PAMI_ERROR;
         TRACE_ERR((stderr, ">> Context::dispatch_impl .. _dispatch[%zu][0] = %p, result = %d\n", id, _dispatch[id][0], result));
 
-        pami_endpoint_t self = PAMI_ENDPOINT_INIT(_clientid,__global.mapping.task(),_contextid);
+        // Return an error for invalid / unimplemented 'hard' hints.
+        if (
+            options.use_rdma              == PAMI_HINT_ENABLE  ||
+            false)
+          {
+            return PAMI_ERROR;
+          }
 
-        if (_dispatch[id][0] == NULL)
+        pami_endpoint_t self = PAMI_ENDPOINT_INIT(_clientid, __global.mapping.task(), _contextid);
+
+        using namespace Protocol::Send;
+
+        if (_dispatch[id] == NULL)
           {
             if (options.use_shmem == PAMI_HINT_DISABLE)
-            {
-              // Register only the "mpi" eager protocol
-              //
-              // This mpi eager protocol code should be changed to respect the
-              // "long header" option
-              //
-              _dispatch[id][0] = (Protocol::Send::Send *)
-                MPIEagerBase::generate (id, fn.p2p, cookie, *_mpi, self, _context, options, _protocol, result);
-            }
-            else if (options.use_shmem == PAMI_HINT_ENABLE)
-            {
-              // Register only the "shmem" eager protocol
-              if (options.long_header == PAMI_HINT_DISABLE)
-                {
-                  _dispatch[id][0] = (Protocol::Send::Send *)
-                    Protocol::Send::Eager <ShmemPacketModel>::
-                      generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
-                }
-              else
-                {
-                  _dispatch[id][0] = (Protocol::Send::Send *)
-                    Protocol::Send::Eager <ShmemPacketModel>::
-                      generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
-                }
-            }
-            else
-            {
-              // Register both the "mpi" and "shmem" eager protocols
-              //
-              // This mpi eager protocol code should be changed to respect the
-              // "long header" option
-              //
-              MPIEagerBase * eagermpi =
-                MPIEagerBase::generate (id, fn.p2p, cookie, *_mpi, self, _context, options, _protocol, result);
+              {
+                _dispatch[id][0] =
+                  Eager <MPIPacketModel>::generate (id, fn.p2p, cookie,
+                                                    *_mpi,
+                                                    self, _context, options,
+                                                    _protocol, result);
+              }
 #ifdef ENABLE_SHMEM_DEVICE
-              if (options.long_header == PAMI_HINT_DISABLE)
-                {
-                  Protocol::Send::Eager <ShmemPacketModel> * eagershmem =
-                    Protocol::Send::Eager <ShmemPacketModel>::
-                      generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
-
-                  _dispatch[id][0] = (Protocol::Send::Send *) Protocol::Send::Factory::
-                      generate (eagershmem, eagermpi, _protocol, result);
-                }
-              else
-                {
-                  Protocol::Send::Eager <ShmemPacketModel> * eagershmem =
-                    Protocol::Send::Eager <ShmemPacketModel>::
-                      generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
-
-                  _dispatch[id][0] = (Protocol::Send::Send *) Protocol::Send::Factory::
-                      generate (eagershmem, eagermpi, _protocol, result);
-                }
-#else
-              _dispatch[id][0] = eagermpi;
+            else if (options.use_shmem == PAMI_HINT_ENABLE)
+              {
+                _dispatch[id][0] =
+                  Eager <ShmemPacketModel>::generate (id, fn.p2p, cookie,
+                                                             _devices->_shmem[_contextid],
+                                                             self, _context, options,
+                                                             _protocol, result);
+              }
 #endif
-            }
-          }
+            else
+              {
+                _dispatch[id][0] =
+#ifdef ENABLE_SHMEM_DEVICE
+                  Eager <ShmemPacketModel, MPIPacketModel>::generate (id, fn.p2p, cookie,
+                                                             _devices->_shmem[_contextid],
+                                                             *_mpi,
+                                                             self, _context, options,
+                                                             _protocol, result);
+#else
+                  Eager <MPIPacketModel>::generate (id, fn.p2p, cookie,
+                                                    *_mpi,
+                                                    self, _context, options,
+                                                    _protocol, result);
+#endif
+              }
+          } // end dispatch[id][0]==null
 
         TRACE_ERR((stderr, "<< Context::dispatch_impl .. result = %d\n", result));
         return result;
