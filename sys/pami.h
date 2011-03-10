@@ -230,14 +230,21 @@ extern "C"
       unsigned bitmask;
       struct
       {
+        unsigned unspecified:1;             /*  Unspecified failure              */
+        unsigned range:1;                   /*  Send/Recv bytes are out of range */
         unsigned align_send_buffer:1;       /*  Send buffer must be aligned     */
-        unsigned align_send_recv_buffer:1;  /*  Receive buffer must be aligned  */
-        unsigned datatype:1;                /*  Datatype not valid for this op  */
-        unsigned op:1;                      /*  Operation not valid for this op */
+        unsigned align_recv_buffer:1;       /*  Receive buffer must be aligned  */
+        unsigned datatype_op:1;             /*  Datatype/operation not valid    */
         unsigned contiguous_send:1;         /*  Send data must be contiguous    */
         unsigned contiguous_recv:1;         /*  Receive data must be contiguous  */
         unsigned continuous_send:1;         /*  Send data must be continuous    */
         unsigned continuous_recv:1;         /*  Receive data must be continuous */
+        unsigned nonlocal:1;                /**<The protocol associated with this metadata
+				                requires "nonlocal" knowledge, meaning that
+                                                the result code from the check_fn must be
+                                                allreduced to determine if the operation
+                                                will work 0:no, >0:  requires nonlocal data  */
+
       }check;
     }metadata_result_t;
 
@@ -258,9 +265,41 @@ extern "C"
    */
   typedef struct
   {
-    char                   name[64];     /**<  A character string describing the collective */
-    unsigned               version;      /**<  A version number of the collective           */
-    /* Correctness Parameters */
+    char                   name[64];     /**<  A character string describing the protocol   */
+    unsigned               version;      /**<  A version number for the protocol            */
+    /* Correctness Parameters                                          
+     *
+     * If an algorithm is placed on the "must query list", then the user must use the metadata
+     * to determine if the protocol can be issued given the call site parameters of the 
+     * collective operation.
+     * 
+     * This may include calling the check_fn function, which takes as input a pami_xfer_t
+     * corresponding to the call site parameters.  The call site is defined as the code location
+     * where the user will call the PAMI_Collective function.
+     *
+     * The semantics for when the user must call the check_fn function are as follows:
+     * * If check_fn is NULL, and checkrequired is 0, the user cannot and is not required
+     *   to call the check_fn function.  The user is still required to check the other bits 
+     *   in the bitmask_correct to determine if the collective parameters satisfy the 
+     *   requirements. 
+     *
+     * * check_fn will never be NULL when checkrequired is set to 1
+     *
+     * * When check_fn is non-NULL and checkrequired is 1, the user must call the check_fn
+     *   function for each call to PAMI_Collective to determine if the collective is valid.
+     *   check_fn will return local validity of the parameters, and no other bits in the struct
+     *   need to be checked. If the nonlocal bit is set in the return code, a reduction will
+     *   be required to determine the validity of the protocol across tasks.
+     *
+     * * When check_fn is non-NULL and checkrequired is 0, the user must call the check_fn
+     *   for each set of parameters.  For a given pami_xfer_t structure with a given set of
+     *   correctness bits set in the metadata, if the values of the parameters will change
+     *   and are effected by the associated bits in the metadata, check_fn must be called.
+     *   For example, if the alldtop bit is set, the user can cache that the protocol will work
+     *   for all datatypes and operations. The user might still need to test a given message
+     *   size however.
+     *
+     */
     pami_metadata_function check_fn;     /**<  A function pointer to validate parameters for
                                                the collective operation.  Can be NULL if
                                                no correctness check is required             */
@@ -268,10 +307,14 @@ extern "C"
                                                requirements                                 */
     size_t                 range_hi;     /**<  This protocol has maximum bytes to send/recv
                                                requirements                                 */
+    unsigned               send_min_align; /**<  This protocol requires a minimum address
+                                                  alignment       */
+    unsigned               recv_min_align; /**<  This protocol requires a minimum address
+                                                  alignment      */
     union {
       unsigned bitmask_correct;
       struct {
-        unsigned               mustquery:1;    /**<  A flag indicating whether or not the user MUST
+        unsigned               checkrequired:1;    /**<  A flag indicating whether or not the user MUST
                                                   query the metadata or not.  0:query is not
                                                   necessary.  >0: the user must call the check_fn
                                                   to determine if the call site parameters are
@@ -281,14 +324,15 @@ extern "C"
                                                   the result code from the check_fn must be
                                                   allreduced to determine if the operation
                                                   will work 0:no, >0:  requires nonlocal data  */
+        unsigned               rangeminmax:1;  /**<  This protocol only supports a range of bytes
+                                                  sent/received. 0: no min/max, >1: check range_lo/range_hi */                                   
         unsigned               sendminalign:1; /**<  This protocol requires a minimum address
-                                                  alignment of sendminalign bytes              */
+                                                  alignment of send_min_align bytes              */
         unsigned               recvminalign:1; /**<  This protocol requires a minimum address
-                                                  alignment of recvminalign bytes              */
-        unsigned               alldt:1;        /**<  This protocol works for all datatypes for
-                                                  reduction. 0:not for all dt 1:for all dt     */
-        unsigned               allop:1;        /**<  This protocol works for all operations for
-                                                  reduction. 0: not for all op, 1:for all op   */
+                                                  alignment of recv_min_align bytes              */
+        unsigned               alldtop:1;      /**<  This protocol works for all datatypes and
+                                                  operations for reduction/scan
+                                                  0:not for all dt & op, 1:for all dt & op     */
         unsigned               contigsflags:1; /**<  This protocol requires contiguous data(send)
                                                   contiguous:  data type must be PAMI_TYPE_CONTIGUOUS     */
         unsigned               contigrflags:1; /**<  This protocol requires contiguous data(recv)
