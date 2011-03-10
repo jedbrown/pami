@@ -2563,7 +2563,36 @@ extern "C"
   /**
    * \defgroup datatype pami datatype interface
    *
-   * Some brief documentation on datatype stuff ...
+   * A type is a set of contiguous buffers with a signature
+   *    { ( bytes_i, disp_i ) | i = 1..n }
+   * where bytes_i is the size and disp_i is the displacement of the i-th buffer.
+   * The size of a buffer is greater or equal to 0 and the displacement of a
+   * buffer can be negative, 0 or positive.
+   *
+   * The data size of a type is the sum of all sizes of its buffers, i.e.
+   *    bytes_1 + bytes_2 + ... + bytes_n.
+   *
+   * The extent of a type is the difference between the end of the last buffer
+   * and the beginning of the first buffer, i.e.
+   *    disp_n + bytes_n - disp_1.
+   * The order of the buffers matters in calculating the extent.
+   *
+   * An atom size can be associated with a type as long as the atom size is a
+   * common divisor of all the buffer sizes. Refer to ::pami_data_function for
+   * the relation between the atom size of a data function and the atom size of
+   * a type.
+   *
+   * When a type is applied to an address, the type is repeated infinitely with
+   * a stride that's equal to the extent of the type, in a way similar to
+   * declaring a pointer in C.
+   *
+   * Once a type is created with PAMI_Type_create(), buffers can be added into
+   * it in two ways. PAMI_Type_add_simple() adds contiguous buffers of the same
+   * size repeatedly with a stride. PAMI_Type_add_typed() adds buffers of a
+   * defined type repeatedly with a stride. After a type is completed by
+   * PAMI_Type_complete(), it can be shared among concurrent transfers but
+   * cannot be modified.
+   *
    * \{
    */
   /*****************************************************************************/
