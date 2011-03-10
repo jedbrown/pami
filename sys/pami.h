@@ -27,7 +27,7 @@ extern "C"
     PAMI_ERROR   =  1, /**< Generic error (+1)          */
     PAMI_INVAL,        /**< Invalid argument            */
     PAMI_UNIMPL,       /**< Function is not implemented */
-    PAMI_EAGAIN,       /**< Not currently availible     */
+    PAMI_EAGAIN,       /**< Not currently available     */
     PAMI_ENOMEM,       /**< Out of memory               */
     PAMI_SHUTDOWN,     /**< Task has shutdown           */
     PAMI_CHECK_ERRNO,  /**< Check the errno val         */
@@ -100,7 +100,7 @@ extern "C"
 
   typedef enum
   {
-    /* Standard/Primative DT's */
+    /* Standard/Primitive DT's */
     PAMI_UNDEFINED_DT = 0,
     PAMI_SIGNED_CHAR,
     PAMI_UNSIGNED_CHAR,
@@ -235,7 +235,7 @@ extern "C"
         unsigned datatype:1;                /*  Datatype not valid for this op  */
         unsigned op:1;                      /*  Operation not valid for this op */
         unsigned contiguous_send:1;         /*  Send data must be contiguous    */
-        unsigned contiguous_recv:1;         /*  Receive data must be contigous  */
+        unsigned contiguous_recv:1;         /*  Receive data must be contiguous  */
         unsigned continuous_send:1;         /*  Send data must be continuous    */
         unsigned continuous_recv:1;         /*  Receive data must be continuous */
       }check;
@@ -247,8 +247,8 @@ extern "C"
   /**
    * \brief Function signature for metadata queries
    *
-   * \param[in] in A "call-site"   collecitive query parameters
-   * \retval    pami_metata_check  failure code, 0=success, nonzero
+   * \param[in] in A "call-site"   collective query parameters
+   * \retval    pami_metadata_check  failure code, 0=success, nonzero
    *                               bits are OR'd from pami_metadata_check_t
    */
   typedef metadata_result_t (*pami_metadata_function) (struct pami_xfer_t *in);
@@ -264,7 +264,7 @@ extern "C"
     pami_metadata_function check_fn;     /**<  A function pointer to validate parameters for
                                                the collective operation.  Can be NULL if
                                                no correctness check is required             */
-    size_t                 range_lo;     /**<  This protocol has minumum bytes to send/recv
+    size_t                 range_lo;     /**<  This protocol has minimum bytes to send/recv
                                                requirements                                 */
     size_t                 range_hi;     /**<  This protocol has maximum bytes to send/recv
                                                requirements                                 */
@@ -669,7 +669,7 @@ extern "C"
    * resources are not available the specific pami implementation may internally
    * buffer the send parameters and data until network resource are available
    * to complete the transfer. In either case the send will immediately return,
-   * no doce callback is invoked, and is considered complete.
+   * no done callback is invoked, and is considered complete.
    *
    * The low-latency send operation may be further enhanced by using a dispatch
    * id which was set with the \c recv_immediate hint bit enabled. This hint
@@ -789,7 +789,7 @@ extern "C"
                                         const void      * header_addr,  /**< IN:  header address  */
                                         size_t            header_size,  /**< IN:  header size     */
                                         const void      * pipe_addr,    /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
-                                        size_t            data_size,    /**< IN:  number of byts of message data, valid regardless of message type */
+                                        size_t            data_size,    /**< IN:  number of bytes of message data, valid regardless of message type */
                                         pami_endpoint_t   origin,       /**< IN:  Endpoint that originated the transfer */
                                         pami_recv_t     * recv);        /**< OUT: receive message structure, only needed if addr is non-NULL */
 
@@ -1167,7 +1167,7 @@ extern "C"
    * \note Memory regions may overlap. When one of the overlapping regions is
    *       destroyed any remaining overlapping memory regions are still usable.
    *
-   * \param[in]  context   Communcation context
+   * \param[in]  context   Communication context
    * \param[in]  address   Base virtual address of the memory region
    * \param[in]  bytes_in  Number of bytes requested
    * \param[out] bytes_out Number of bytes granted
@@ -1177,19 +1177,19 @@ extern "C"
    *                      the memory region was pinned. The actual
    *                      number of bytes pinned from the start of the
    *                      buffer is returned in the \c bytes_out
-   *                      parameter. The memory region must be free'd with
+   *                      parameter. The memory region must be freed with
    *                      with PAMI_Memregion_destroy().
    *
    * \retval PAMI_EAGAIN  The memory region was not pinned due to an
    *                      unavailable resource. The memory region does not
-   *                      need to be free'd with PAMI_Memregion_destroy().
+   *                      need to be freed with PAMI_Memregion_destroy().
    *
    * \retval PAMI_INVAL   An invalid parameter value was specified. The memory
-   *                      region does not need to be free'd with
+   *                      region does not need to be freed with
    *                      PAMI_Memregion_destroy().
    *
    * \retval PAMI_ERROR   The memory region was not pinned and does not need to
-   *                      be free'd with PAMI_Memregion_destroy().
+   *                      be freed with PAMI_Memregion_destroy().
    */
   pami_result_t PAMI_Memregion_create (pami_context_t     context,
                                        void             * address,
@@ -1454,7 +1454,7 @@ extern "C"
 
 
   /**
-   * \brief Syncronize all transfers between all endpoints on a context.
+   * \brief Synchronize all transfers between all endpoints on a context.
    *
    * \param[in] context PAMI communication context
    * \param[in] done_fn Event callback to invoke when the fence is complete
@@ -1465,7 +1465,7 @@ extern "C"
                               void               * cookie);
 
   /**
-   * \brief Syncronize all transfers to an endpoints.
+   * \brief Synchronize all transfers to an endpoints.
    *
    * \note It is valid to specify the destination endpoint associated with the
    *       communication context used to issue the operation.
@@ -1628,7 +1628,7 @@ extern "C"
   /**
    * \brief determines the number of algorithms available for a given op
    *        in the two different lists (always work list,
-   *        under-cetain conditions list).
+   *        under-certain conditions list).
    *
    * \param[in]     context       pami context
    * \param[in]     geometry      An input geometry to be analyzed.
@@ -1647,7 +1647,7 @@ extern "C"
   /**
    * \brief fills in the protocols and attributes for a set of algorithms
    *        The first lists are used to populate collectives that work under
-   *        any condidtion.  The second lists are used to populate
+   *        any condition.  The second lists are used to populate
    *        collectives that the metadata must be checked before use
    *
    * \param[in]     context        pami context
@@ -2569,7 +2569,7 @@ extern "C"
   /*****************************************************************************/
 
   /**
-   * \brief A PAMI Datatype that represents a contigous data layout
+   * \brief A PAMI Datatype that represents a contiguous data layout
    *
    *  This is a contiguous type object that does not need to be
    *  explicitly created using PAMI_Type_create.  It can be used
@@ -2966,7 +2966,7 @@ extern "C"
    * \brief Update the value of an attribute
    *
    * WARNING - Changing a Geometry configuration attribute may fundamentally
-   * alter the Geometry. Any saved knownledge (for example, algorithm lists)
+   * alter the Geometry. Any saved knowledge (for example, algorithm lists)
    * must be discarded and re-queried after a call to PAMI_Geometry_update().
    *
    * \param [in] geometry      The PAMI geometry
@@ -3046,7 +3046,7 @@ extern "C"
    * \brief Initialize the PAMI runtime for a client program
    *
    * An PAMI client represents a collection of resources to enable network
-   * communications. Each PAMI client that is initialized is unque and does not
+   * communications. Each PAMI client that is initialized is unique and does not
    * directly communicate with other clients. This allows middleware to be
    * developed independently and each middleware can be used concurrently by an
    * application. Resources are allocated and assigned at client creation time.
@@ -3056,7 +3056,7 @@ extern "C"
    * client names may include: "MPI", "UPC", "OpenSHMEM", and "ARMCI"
    *
    * \note Client creation may be a synchronizing event, but is not required
-   *       to be implemented as a synchonizing event. Application code must
+   *       to be implemented as a synchronizing event. Application code must
    *       not make any assumption about synchronization during client
    *       creation, and therefore must create clients in the same order in
    *       all processes of the job.
@@ -3183,7 +3183,7 @@ extern "C"
    * \brief Create new independent communication contexts for a client
    *
    * Contexts are local "threading points" that an application may use to
-   * optimize concurrent communcation operations. A context handle is an
+   * optimize concurrent communication operations. A context handle is an
    * opaque object type that the application must not directly read or write
    * the value of the object.
    *
@@ -3192,10 +3192,10 @@ extern "C"
    *   client object for each task
    * - Every context within a client has equivalent functionality and
    *   semantics
-   * - Communcation operations initiated by the local task will use the
+   * - Communication operations initiated by the local task will use the
    *   opaque context object to identify the specific threading point that
    *   will be used to issue the communication independent of communication
-   *   occuring in other contexts
+   *   occurring in other contexts
    * - All local event callbacks(s) associated with a communication operation
    *   will be invoked by the thread which advances the context that was used
    *   to initiate the operation
@@ -3223,7 +3223,7 @@ extern "C"
    * - The task based geometry constructor implies all contexts are included
    *   in the geometry, with a single participant per task. All contexts must
    *   be advanced during a collective operation.  However, the user can specify
-   *   special hints to disable "horizontal", or cross context parallelsm.
+   *   special hints to disable "horizontal", or cross context parallelism.
    *   Refer to pami_collective_hint_t, and the
    *   "multicontext" option.  This option must be switched "off" to disable
    *   parallelization and the "all advance rule".
@@ -3239,9 +3239,9 @@ extern "C"
    * - Context optimizations, such as shared memory, collective acceleration, etc
    *
    * Context creation is a local operation and does not involve communication or
-   * syncronization with other tasks.
+   * synchronization with other tasks.
    *
-   * \warning This function is \b not \b threadsafe and the application must
+   * \warning This function is \b not \b thread-safe and the application must
    *          ensure that one, and only one thread creates the communication
    *          contexts for a client.
    *
@@ -3252,7 +3252,7 @@ extern "C"
    * \param[in]  ncontexts     Number of contexts to be created
    *
    * \retval PAMI_SUCCESS  Contexts have been created.
-   * \retval PAMI_INVAL    Configuration could not be satisified or there were
+   * \retval PAMI_INVAL    Configuration could not be satisfied or there were
    *                       errors in other parameters.
    */
   pami_result_t PAMI_Context_createv (pami_client_t          client,
@@ -3268,7 +3268,7 @@ extern "C"
    * The context handles will be changed to an invalid value so that
    * they are clearly destroyed.
    *
-   * \warning This function is \b not \b threadsafe and the application must
+   * \warning This function is \b not \b thread-safe and the application must
    *          ensure that one, and only one, thread destroys the communication
    *          context(s) for a client.
    *
@@ -3294,7 +3294,7 @@ extern "C"
    *
    * It is \b not required that the target context is locked, or otherwise
    * reserved, by an external atomic operation to ensure thread safety. The PAMI
-   * runtime will internally perform any neccessary atomic operations in order
+   * runtime will internally perform any necessary atomic operations in order
    * to post the work to the context.
    *
    * The callback function will be invoked in the thread that advances the
@@ -3306,7 +3306,7 @@ extern "C"
    * origin thread
    *
    * \todo Needs some opaque storage to enqueue on to the work queue. This is
-   *       neccesary to improve the performance for the MMPS benchmark. In
+   *       necessary to improve the performance for the MMPS benchmark. In
    *       other words, latency may degrade if the internal implementation
    *       must allocate memory.
    *
@@ -3334,7 +3334,7 @@ extern "C"
    * that results in a processed event or if, no events are processed, after
    * polling for the maximum number of iterations.
    *
-   * \warning This function is \b not \b threadsafe and the application must
+   * \warning This function is \b not \b thread-safe and the application must
    *          ensure that only one thread advances a context at any time.
    *
    * \see PAMI_Context_lock
@@ -3361,7 +3361,7 @@ extern "C"
    * that results in a processed event on any context, or if, no events are
    * processed, after polling for the maximum number of iterations.
    *
-   * \warning This function is \b not \b threadsafe and the application must
+   * \warning This function is \b not \b thread-safe and the application must
    *          ensure that only one thread advances the contexts at any time.
    *
    * \note It is possible to define a set of communication contexts that are
@@ -3389,7 +3389,7 @@ extern "C"
   /**
    * \brief Acquire an atomic lock on a communication context
    *
-   * \warning This function will block until the lock is aquired.
+   * \warning This function will block until the lock is acquired.
    *
    * \param[in] context PAMI communication context
    *
@@ -3462,7 +3462,7 @@ typedef void (*pami_async_function) (pami_context_t   context,
  * \note Because a \c NULL \c progress_fn will result in calls to the internal
  *       implementation of the PAMI_Context_trylock(), PAMI_Context_advance(),
  *       and PAMI_Context_unlock() functions, applications that wish to use
- *       an alternative mechanism than PAMI_Contex_lock() to ensure
+ *       an alternative mechanism than PAMI_Context_lock() to ensure
  *       thread-safe access to communication contexts \b must provide a non-
  *       \c NULL asynchronous progress function.
  * 
@@ -3471,8 +3471,8 @@ typedef void (*pami_async_function) (pami_context_t   context,
  * \b not imply that any application callbacks will be invoked when the context
  * is advanced, nor that network traffic will, or will not, be processed by
  * hardware or software, nor that the \c progress_fn will be invoked periodically.
- * The application must not assume any particular reason for the invokation of
- * the \c progress_fn other than the implemention requires PAMI_Context_advance()
+ * The application must not assume any particular reason for the invocation of
+ * the \c progress_fn other than the implementation requires PAMI_Context_advance()
  * for a particular communication context.
  * 
  * The application is not required to invoke PAMI_Context_advance() from within
@@ -3522,7 +3522,7 @@ typedef void (*pami_async_function) (pami_context_t   context,
  * \note It is \b not required that the communication context is locked, via
  *       PAMI_Context_lock() or some other atomic mechanism, to enable
  *       asynchronous progress. This function is thread-safe and the runtime
- *       will internally perform any neccessary atomic operations in order to
+ *       will internally perform any necessary atomic operations in order to
  *       enable asynchronous progress on the context.
  *
  * It is considered \b illegal to enable asynchronous progress on a context
@@ -3567,7 +3567,7 @@ pami_result_t PAMI_Context_async_progress_enable (pami_context_t        context,
  * \note It is \b not required that the communication context is locked, via
  *       PAMI_Context_lock() or some other atomic mechanism, to ensure thread
  *       safety before invoking this function. The runtime will internally
- *       perform any neccessary atomic operations in order to disable
+ *       perform any necessary atomic operations in order to disable
  *       asynchronous progress on the context.
  *
  * \param [in] context Communication context
