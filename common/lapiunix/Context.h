@@ -194,7 +194,7 @@ namespace PAMI
 
   // P2P Message Typedefs
   typedef PAMI::SendWrapper                                           LAPISendBase;
-  typedef PAMI::Protocol::Send::SendWrapperPWQ < LAPISendBase >              LAPISend;
+  typedef PAMI::Protocol::Send::SendPWQ < LAPISendBase >              LAPISend;
 
   // Shared Memory P2P Typedefs
   typedef Fifo::FifoPacket <P2PSHM_HDRSIZE,P2PSHM_PKTSIZE>            ShmemPacket;
