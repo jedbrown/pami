@@ -3412,8 +3412,41 @@ extern "C"
    * \retval PAMI_EAGAIN   No event has occurred.
    */
   pami_result_t PAMI_Context_advancev (pami_context_t context[],
-                                         size_t        count,
-                                         size_t        maximum);
+                                       size_t         count,
+                                       size_t         maximum);
+
+  /**
+   * \brief Thread-safe Advance the progress engine for multiple communication contexts
+   *
+   * May complete zero, one, or more outbound transfers. May invoke dispatch
+   * handlers for incoming transfers. May invoke work event callbacks previously
+   * posted to a communication context.
+   *
+   * This polling advance function will return after the first poll iteration
+   * that results in a processed event on any context, or if, no events are
+   * processed, after polling for the maximum number of iterations.
+   *
+   * \warning This function uses Context Locks for mutual exclusion.
+   *          If you are using a different system, this will not be
+   *          thread-safe.
+   *
+   * \todo Define return code
+   *
+   * \see PAMI_Context_lock
+   * \see PAMI_Context_trylock
+   *
+   * \param[in] context Array of PAMI communication contexts
+   * \param[in] count   Number of communication contexts
+   * \param[in] maximum Maximum number of internal poll iterations.
+   *            Users cannot assume that events processed by other
+   *            threads will cause this thread to return before
+   *            "maximum" loop iterations.
+   * \retval PAMI_SUCCESS  An event has occurred and been processed.
+   * \retval PAMI_EAGAIN   No event has occurred.
+   */
+  pami_result_t PAMI_Context_trylock_advancev (pami_context_t context[],
+                                               size_t         count,
+                                               size_t         maximum);
 
   /**
    * \brief Acquire an atomic lock on a communication context

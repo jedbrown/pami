@@ -470,8 +470,8 @@ extern "C" pami_result_t PAMI_Context_advance (pami_context_t context, size_t ma
 }
 
 extern "C" pami_result_t PAMI_Context_advancev (pami_context_t context[],
-                                                  size_t        count,
-                                                  size_t        maximum)
+                                                size_t         count,
+                                                size_t         maximum)
 {
   unsigned m, c;
   PAMI::Context * ctx;
@@ -485,6 +485,32 @@ extern "C" pami_result_t PAMI_Context_advancev (pami_context_t context[],
     {
       ctx = (PAMI::Context *) context[c];
       events += ctx->advance (1, result);
+    }
+  }
+
+  return result;
+}
+
+extern "C" pami_result_t PAMI_Context_trylock_advancev (pami_context_t context[],
+                                                        size_t         count,
+                                                        size_t         maximum)
+{
+  unsigned m, c;
+  PAMI::Context * ctx;
+
+  pami_result_t result = PAMI_SUCCESS;
+  size_t events = 0;
+
+  for (m=0; m<maximum && events==0 && result==PAMI_SUCCESS; m++)
+  {
+    for (c=0; c<count && result==PAMI_SUCCESS; c++)
+    {
+      ctx = (PAMI::Context *)context[c];
+      if (unlikely(ctx->trylock() == PAMI_SUCCESS))
+        {
+          events += ctx->advance(1, result);
+          ctx->unlock();
+        }
     }
   }
 
