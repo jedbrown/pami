@@ -34,11 +34,8 @@
  * contexts (in this case 4). This allows the endpoint table to be created
  * without communication with any other endpoints.
  *
- * The PAMI_Endpoint_createv() function is used to initialize the endpoint
- * table in a loop over all tasks in the system.  The pointer to the next
- * location in the endpoint table to initialized is incremented by the number
- * of endpoints created for each task.  This allows for the case when the
- * tasks in the client may create different number of contexts.
+ * The PAMI_Endpoint_create() function is used to initialize the endpoint
+ * table in a loop over all tasks in the system.
  *
  * \par
  * \skip _endpoint;

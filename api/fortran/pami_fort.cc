@@ -61,15 +61,6 @@ extern "C" void pami_endpoint_create (pami_client_t*    client,
     *result = PAMI_Endpoint_create(*client, *task, *offset, endpoint);
 }
 
-extern "C" void pami_endpoint_createv (pami_client_t*    client,
-                                       pami_task_t*      task,
-                                       pami_endpoint_t*  endpoints,
-                                       size_t*           count,
-                                       pami_result_t*    result)
-{
-    *result = PAMI_Endpoint_createv(*client, *task, endpoints, count);
-}
-
 extern "C" void pami_endpoint_query (pami_endpoint_t*  endpoint,
                                      pami_task_t*      task,
                                      size_t*           offset,

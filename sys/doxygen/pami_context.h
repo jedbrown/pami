@@ -50,15 +50,12 @@
  *
  * - The application must invoke PAMI_Endpoint_create() to obtain an endpoint to
  *   address a specific context on a destination task.
- * - The application must invoke PAMI_Endpoint_createv() to initialize an array
- *   of endpoint opaque objects that address the local contexts on a destination task.
  *
  * <b>Endpoint identification</b>
  * Applications may prefer to use a unique integer to identify all endpoints
  * for a client. This can be accomplished by creating an array of
  * endpoint opaque objects and using the index into the array as the endpoint
- * identifier. The PAMI_Endpoint_createv() function can be used to create the
- * array.
+ * identifier.
  *
  * \dontinclude examples/endpoint_table.c
  * \until }

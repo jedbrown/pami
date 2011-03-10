@@ -69,14 +69,6 @@ extern "C" pami_result_t PAMI_Endpoint_create (pami_client_t     client,
   return PAMI_SUCCESS;
 }
 
-extern "C" pami_result_t PAMI_Endpoint_createv (pami_client_t     client,
-                                                pami_task_t       task,
-                                                pami_endpoint_t * endpoints,
-                                                size_t          * count)
-{
-  return PAMI_UNIMPL;
-}
-
 extern "C" pami_result_t PAMI_Endpoint_query (pami_endpoint_t   endpoint,
                                               pami_task_t     * task,
                                               size_t          * offset)

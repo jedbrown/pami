@@ -3255,32 +3255,14 @@ extern "C"
                                       pami_endpoint_t * endpoint);
 
   /**
-   * \brief Construct an endpoint for each context in a task
-   *
-   * This function may be used to initialize an array of all endpoints for a
-   * client by looping over all tasks.
-   *
-   * \param[in]     client    Opaque destination client object
-   * \param[in]     task      Opaque destination task object
-   * \param[out]    endpoints Array of opaque endpoint objects to initialize
-   * \param[in,out] count     Length of the endpoint array available/initialized
-   *
-   * \retval PAMI_INVAL The number endpoints on the task is larger than the
-   *                    size of endpoint array
-   */
-  pami_result_t PAMI_Endpoint_createv (pami_client_t     client,
-                                       pami_task_t       task,
-                                       pami_endpoint_t * endpoints,
-                                       size_t          * count);
-
-  /**
    * \brief Retrieve the client, task, and context offset associated with an endpoint
    *
-   * The endpoint must have been previously initialized with the
-   * PAMI_Endpoint_create or PAMI_Endpoint_createv function.
+   * The endpoint must have been previously initialized.
    *
    * \note This function may be replaced with a generated macro specific to the
    *       install platform if needed for performance reasons.
+   *
+   * \see PAMI_Endpoint_create()
    *
    * \param[in]  endpoint Opaque endpoint object
    * \param[out] task     Opaque destination task object
