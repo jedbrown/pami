@@ -820,16 +820,10 @@ extern "C"
    * The \c data_size parameter will contain the number of bytes that are being
    * sent from the remote endpoint.
    *
-   * \note A zero-byte send will \b always result in an immediate receive.
-   *
-   * \note A zero-byte receive does not require any changes to \c recv in the dispatch fn
-   *
    * \note The maximum number of bytes that may be immediately received can be
    *       queried with the \c PAMI_RECV_IMMEDIATE configuration attribute.
    *
    * \see PAMI_Dispatch_query
-   *
-   * "pipe" has nothing to do with "PipeWorkQueue"s
    */
   typedef void (*pami_dispatch_p2p_function) (pami_context_t    context,      /**< IN:  communication context which invoked the dispatch function */
                                         void            * cookie,       /**< IN:  dispatch cookie */
