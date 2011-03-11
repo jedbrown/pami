@@ -53,13 +53,13 @@ pami_recv_t         * recv)        /**< OUT: receive message structure */
   }
   else if (recv == NULL)
   {
-    // This is an 'immediate' receive
+    /* This is an 'immediate' receive*/
     memcpy(__junk, pipe_addr, pipe_size);
     (*active)--;
   }
   else
   {
-    // This is an 'asynchronous' receive
+    /* This is an 'asynchronous' receive */
 
     recv->local_fn = recv_done;
     recv->cookie   = cookie;
