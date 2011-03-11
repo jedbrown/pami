@@ -198,8 +198,6 @@ namespace PAMI
 
             // Return an error for invalid / unimplemented 'hard' hints.
             if (
-              options.recv_contiguous       == PAMI_HINT_ENABLE  ||
-              options.recv_copy             == PAMI_HINT_ENABLE  ||
               options.remote_async_progress == PAMI_HINT_ENABLE  ||
               options.use_rdma              == PAMI_HINT_ENABLE  ||
               false)
