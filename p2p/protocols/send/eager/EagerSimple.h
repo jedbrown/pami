@@ -551,6 +551,12 @@ namespace PAMI
                                                   iov);
               }
 
+            if ((T_Option & QUEUE_IMMEDIATE_DISABLE) && !posted)
+              {
+                TRACE_ERR((stderr, "EagerSimple::immediate_impl() <<\n"));
+                return PAMI_EAGAIN;
+              }
+
             if (unlikely(!posted))
               {
                 // For some reason the packet could not be immediately posted.

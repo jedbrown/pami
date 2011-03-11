@@ -208,81 +208,169 @@ namespace PAMI
 
             void * eager = allocator.allocateObject ();
 
-            if (options.long_header == PAMI_HINT_DISABLE)
+            if (options.queue_immediate == PAMI_HINT_DISABLE)
               {
-                const configuration_t long_header = (configuration_t) (LONG_HEADER_DISABLE);
+                const configuration_t queue_immediate = (configuration_t) (QUEUE_IMMEDIATE_DISABLE);
 
-                if (options.recv_immediate == PAMI_HINT_ENABLE)
+                if (options.long_header == PAMI_HINT_DISABLE)
                   {
-                    const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEON);
-                    COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, true>) <= T_Allocator::objsize);
-                    COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, false>) <= T_Allocator::objsize);
+                    const configuration_t long_header = (configuration_t) (queue_immediate | LONG_HEADER_DISABLE);
 
-                    if (composite)
-                      new (eager) EagerImpl<hint, true> (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
-                    else
-                      new (eager) EagerImpl<hint, false>(dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
-                  }
-                else if (options.recv_immediate == PAMI_HINT_DISABLE)
-                  {
-                    const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEOFF);
-                    COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, true>) <= T_Allocator::objsize);
-                    COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, false>) <= T_Allocator::objsize);
+                    if (options.recv_immediate == PAMI_HINT_ENABLE)
+                      {
+                        const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEON);
+                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, true>) <= T_Allocator::objsize);
+                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, false>) <= T_Allocator::objsize);
 
-                    if (composite)
-                      new (eager) EagerImpl<hint, true> (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        if (composite)
+                          new (eager) EagerImpl<hint, true> (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        else
+                          new (eager) EagerImpl<hint, false>(dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                      }
+                    else if (options.recv_immediate == PAMI_HINT_DISABLE)
+                      {
+                        const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEOFF);
+                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, true>) <= T_Allocator::objsize);
+                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, false>) <= T_Allocator::objsize);
+
+                        if (composite)
+                          new (eager) EagerImpl<hint, true> (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        else
+                          new (eager) EagerImpl<hint, false>(dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                      }
                     else
-                      new (eager) EagerImpl<hint, false>(dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                      {
+                        const configuration_t hint = (configuration_t) (long_header);
+                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, true>) <= T_Allocator::objsize);
+                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, false>) <= T_Allocator::objsize);
+
+                        if (composite)
+                          new (eager) EagerImpl<hint, true> (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        else
+                          new (eager) EagerImpl<hint, false>(dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                      }
                   }
                 else
                   {
-                    const configuration_t hint = (configuration_t) (long_header);
-                    COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, true>) <= T_Allocator::objsize);
-                    COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, false>) <= T_Allocator::objsize);
+                    const configuration_t long_header = (configuration_t) (DEFAULT);
 
-                    if (composite)
-                      new (eager) EagerImpl<hint, true> (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                    if (options.recv_immediate == PAMI_HINT_ENABLE)
+                      {
+                        const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEON);
+                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, true>) <= T_Allocator::objsize);
+                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, false>) <= T_Allocator::objsize);
+
+                        if (composite)
+                          new (eager) EagerImpl<hint, true> (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        else
+                          new (eager) EagerImpl<hint, false>(dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                      }
+                    else if (options.recv_immediate == PAMI_HINT_DISABLE)
+                      {
+                        const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEOFF);
+                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, true>) <= T_Allocator::objsize);
+                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, false>) <= T_Allocator::objsize);
+
+                        if (composite)
+                          new (eager) EagerImpl<hint, true> (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        else
+                          new (eager) EagerImpl<hint, false>(dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                      }
                     else
-                      new (eager) EagerImpl<hint, false>(dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                      {
+                        const configuration_t hint = (configuration_t) (long_header);
+                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, true>) <= T_Allocator::objsize);
+                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, false>) <= T_Allocator::objsize);
+
+                        if (composite)
+                          new (eager) EagerImpl<hint, true> (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        else
+                          new (eager) EagerImpl<hint, false>(dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                      }
                   }
+
               }
             else
               {
-                const configuration_t long_header = (configuration_t) (DEFAULT);
+                const configuration_t queue_immediate = (configuration_t) (DEFAULT);
 
-                if (options.recv_immediate == PAMI_HINT_ENABLE)
+                if (options.long_header == PAMI_HINT_DISABLE)
                   {
-                    const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEON);
-                    COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, true>) <= T_Allocator::objsize);
-                    COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, false>) <= T_Allocator::objsize);
+                    const configuration_t long_header = (configuration_t) (queue_immediate | LONG_HEADER_DISABLE);
 
-                    if (composite)
-                      new (eager) EagerImpl<hint, true> (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
-                    else
-                      new (eager) EagerImpl<hint, false>(dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
-                  }
-                else if (options.recv_immediate == PAMI_HINT_DISABLE)
-                  {
-                    const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEOFF);
-                    COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, true>) <= T_Allocator::objsize);
-                    COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, false>) <= T_Allocator::objsize);
+                    if (options.recv_immediate == PAMI_HINT_ENABLE)
+                      {
+                        const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEON);
+                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, true>) <= T_Allocator::objsize);
+                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, false>) <= T_Allocator::objsize);
 
-                    if (composite)
-                      new (eager) EagerImpl<hint, true> (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        if (composite)
+                          new (eager) EagerImpl<hint, true> (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        else
+                          new (eager) EagerImpl<hint, false>(dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                      }
+                    else if (options.recv_immediate == PAMI_HINT_DISABLE)
+                      {
+                        const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEOFF);
+                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, true>) <= T_Allocator::objsize);
+                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, false>) <= T_Allocator::objsize);
+
+                        if (composite)
+                          new (eager) EagerImpl<hint, true> (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        else
+                          new (eager) EagerImpl<hint, false>(dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                      }
                     else
-                      new (eager) EagerImpl<hint, false>(dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                      {
+                        const configuration_t hint = (configuration_t) (long_header);
+                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, true>) <= T_Allocator::objsize);
+                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, false>) <= T_Allocator::objsize);
+
+                        if (composite)
+                          new (eager) EagerImpl<hint, true> (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        else
+                          new (eager) EagerImpl<hint, false>(dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                      }
                   }
                 else
                   {
-                    const configuration_t hint = (configuration_t) (long_header);
-                    COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, true>) <= T_Allocator::objsize);
-                    COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, false>) <= T_Allocator::objsize);
+                    const configuration_t long_header = (configuration_t) (DEFAULT);
 
-                    if (composite)
-                      new (eager) EagerImpl<hint, true> (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                    if (options.recv_immediate == PAMI_HINT_ENABLE)
+                      {
+                        const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEON);
+                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, true>) <= T_Allocator::objsize);
+                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, false>) <= T_Allocator::objsize);
+
+                        if (composite)
+                          new (eager) EagerImpl<hint, true> (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        else
+                          new (eager) EagerImpl<hint, false>(dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                      }
+                    else if (options.recv_immediate == PAMI_HINT_DISABLE)
+                      {
+                        const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEOFF);
+                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, true>) <= T_Allocator::objsize);
+                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, false>) <= T_Allocator::objsize);
+
+                        if (composite)
+                          new (eager) EagerImpl<hint, true> (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        else
+                          new (eager) EagerImpl<hint, false>(dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                      }
                     else
-                      new (eager) EagerImpl<hint, false>(dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                      {
+                        const configuration_t hint = (configuration_t) (long_header);
+                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, true>) <= T_Allocator::objsize);
+                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, false>) <= T_Allocator::objsize);
+
+                        if (composite)
+                          new (eager) EagerImpl<hint, true> (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        else
+                          new (eager) EagerImpl<hint, false>(dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                      }
                   }
+
               }
 
             if (result != PAMI_SUCCESS)
