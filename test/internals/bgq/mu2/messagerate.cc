@@ -40,7 +40,7 @@ typedef PAMI::Device::MU::PacketModel MuPacketModel;
 //typedef PAMI::Device::MU::DmaModel MuDmaModel;
 typedef PAMI::Device::MU::DmaModelMemoryFifoCompletion MuDmaModel;
 
-typedef PAMI::Protocol::Send::Eager<MuPacketModel> MuEager;
+typedef PAMI::Protocol::Send::Eager<MuPacketModel>::EagerImpl<PAMI::Protocol::Send::DEFAULT, false> MuEager;
 
 #define MAX_ITER 10
 int npackets = 0;
@@ -237,6 +237,7 @@ int main(int argc, char ** argv)
   MuEager eager (10,      // dispatch set id
                  recv,    //dispatch function
                  NULL,    // dispatch cookie
+                 mu0,      // "packet" device reference
                  mu0,      // "packet" device reference
                  (pami_endpoint_t) 0,       // origin endpoint
                  (pami_context_t) NULL,
