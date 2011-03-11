@@ -34,7 +34,7 @@
 
 #undef TRACE_ERR
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) // fprintf x
+#define TRACE_ERR(x) /* fprintf x */
 #endif
 
 volatile unsigned _send_active;
@@ -292,11 +292,12 @@ int main (int argc, char ** argv)
         }
     }
 
-//fprintf (stderr, "_recv_active = %d, & _recv_active = %p >>\n", _recv_active, &_recv_active);
-//_recv_active = 1;
+/*fprintf (stderr, "_recv_active = %d, & _recv_active = %p >>\n", _recv_active, &_recv_active);
+ *_recv_active = 1;
+*/
   while (_recv_active) PAMI_Context_advance (context, 100);
 
-//fprintf (stderr, "_recv_active = %d, & _recv_active = %p <<\n", _recv_active, &_recv_active);
+/*fprintf (stderr, "_recv_active = %d, & _recv_active = %p <<\n", _recv_active, &_recv_active);*/
 
   /* Display some test header information */
   if (_my_task == origin_task)

@@ -81,7 +81,7 @@ pami_recv_t         * recv)        /**< OUT: receive message structure */
   }
   else if (recv == NULL)
   {
-    // This is an 'immediate' receive
+    /* This is an 'immediate' receive*/
 
     __recv_size = pipe_size;
     memcpy(__recv_buffer, pipe_addr, pipe_size);
@@ -89,7 +89,7 @@ pami_recv_t         * recv)        /**< OUT: receive message structure */
   }
   else
   {
-    // This is an 'asynchronous' receive
+    /* This is an 'asynchronous' receive*/
 
     __recv_size = pipe_size;
 
