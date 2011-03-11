@@ -1100,6 +1100,9 @@ namespace PAMI
                   state->info.local_fn (eager->_context, state->info.cookie, PAMI_SUCCESS);
 
                 eager->freeRecvState (state);
+
+                TRACE_ERR ((stderr, "<< EagerSimple::dispatch_eager_envelope()\n"));
+                return 0;
               }
 
             // Complete the receive state initialization
