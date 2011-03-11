@@ -144,7 +144,7 @@ namespace PAMI
             } longheader;
             EagerSimpleProtocol   * eager;   ///< Eager protocol object
             Type::TypeMachine       machine;
-            bool                    is_typed_recv;
+            bool                    is_contiguous_copy_recv;
           } recv_state_t;
 
           static const size_t maximum_short_packet_payload =
@@ -240,18 +240,60 @@ namespace PAMI
                 if (status == PAMI_SUCCESS)
                   {
                     TRACE_ERR((stderr, "EagerSimple() register data model dispatch %zu\n", dispatch));
-                    status = _data_model.init (dispatch,
-                                               dispatch_data_message, this,
-                                               dispatch_read<&EagerSimpleProtocol::dispatch_data_message>, this);
+
+                    if (hint.recv_contiguous == PAMI_HINT_ENABLE &&
+                        hint.recv_copy       == PAMI_HINT_ENABLE)
+                      {
+                        // Only allow contiguous copy receives
+                        status = _data_model.init (dispatch,
+                                                   dispatch_data_message<true>, this,
+                                                   dispatch_read<&EagerSimpleProtocol::dispatch_data_message<true> >, this);
+                      }
+                    else
+                      {
+                        // Allow all typed receives
+                        status = _data_model.init (dispatch,
+                                                   dispatch_data_message<false>, this,
+                                                   dispatch_read<&EagerSimpleProtocol::dispatch_data_message<false> >, this);
+                      }
+
                     TRACE_ERR((stderr, "EagerSimple() data model status = %d\n", status));
 
                     if (status == PAMI_SUCCESS)
                       {
                         TRACE_ERR((stderr, "EagerSimple() register envelope model dispatch %zu\n", dispatch));
 
-                        status = _envelope_model.init (dispatch,
-                                                       dispatch_eager_envelope, this,
-                                                       dispatch_read<&EagerSimpleProtocol::dispatch_eager_envelope>, this);
+                        if (hint.recv_contiguous == PAMI_HINT_ENABLE)
+                          {
+                            if (hint.recv_copy == PAMI_HINT_ENABLE)
+                              {
+                                status = _envelope_model.init (dispatch,
+                                                               dispatch_eager_envelope<true, true>, this,
+                                                               dispatch_read<&EagerSimpleProtocol::dispatch_eager_envelope<true, true> >, this);
+                              }
+                            else
+                              {
+                                status = _envelope_model.init (dispatch,
+                                                               dispatch_eager_envelope<true, false>, this,
+                                                               dispatch_read<&EagerSimpleProtocol::dispatch_eager_envelope<true, false> >, this);
+                              }
+                          }
+                        else
+                          {
+                            if (hint.recv_copy == PAMI_HINT_ENABLE)
+                              {
+                                status = _envelope_model.init (dispatch,
+                                                               dispatch_eager_envelope<false, true>, this,
+                                                               dispatch_read<&EagerSimpleProtocol::dispatch_eager_envelope<false, true> >, this);
+                              }
+                            else
+                              {
+                                status = _envelope_model.init (dispatch,
+                                                               dispatch_eager_envelope<false, false>, this,
+                                                               dispatch_read<&EagerSimpleProtocol::dispatch_eager_envelope<false, false> >, this);
+                              }
+                          }
+
                         TRACE_ERR((stderr, "EagerSimple() envelope model status = %d\n", status));
 
                         if (status == PAMI_SUCCESS && !(T_Option & LONG_HEADER_DISABLE))
@@ -266,9 +308,38 @@ namespace PAMI
                               {
 
                                 TRACE_ERR((stderr, "EagerSimple() register 'long header' message model dispatch %zu\n", dispatch));
-                                status = _longheader_message_model.init (dispatch,
-                                                                         dispatch_longheader_message, this,
-                                                                         dispatch_read<&EagerSimpleProtocol::dispatch_longheader_message>, this);
+
+                                if (hint.recv_contiguous == PAMI_HINT_ENABLE)
+                                  {
+                                    if (hint.recv_copy == PAMI_HINT_ENABLE)
+                                      {
+                                        status = _longheader_message_model.init (dispatch,
+                                                                                 dispatch_longheader_message<true, true>, this,
+                                                                                 dispatch_read<&EagerSimpleProtocol::dispatch_longheader_message<true, true> >, this);
+                                      }
+                                    else
+                                      {
+                                        status = _longheader_message_model.init (dispatch,
+                                                                                 dispatch_longheader_message<true, false>, this,
+                                                                                 dispatch_read<&EagerSimpleProtocol::dispatch_longheader_message<true, false> >, this);
+                                      }
+                                  }
+                                else
+                                  {
+                                    if (hint.recv_copy == PAMI_HINT_ENABLE)
+                                      {
+                                        status = _longheader_message_model.init (dispatch,
+                                                                                 dispatch_longheader_message<false, true>, this,
+                                                                                 dispatch_read<&EagerSimpleProtocol::dispatch_longheader_message<false, true> >, this);
+                                      }
+                                    else
+                                      {
+                                        status = _longheader_message_model.init (dispatch,
+                                                                                 dispatch_longheader_message<false, false>, this,
+                                                                                 dispatch_read<&EagerSimpleProtocol::dispatch_longheader_message<false, false> >, this);
+                                      }
+                                  }
+
                                 TRACE_ERR((stderr, "EagerSimple() 'long header' message model status = %d\n", status));
                               }
                           }
@@ -689,6 +760,7 @@ namespace PAMI
             _recv_allocator.returnObject ((void *) object);
           }
 
+          template <bool T_Contiguous, bool T_Copy>
           inline void process_envelope (uint8_t            * header,
                                         size_t               header_bytes,
                                         size_t               data_bytes,
@@ -711,8 +783,25 @@ namespace PAMI
 
             TRACE_ERR((stderr, "   EagerSimple::process_envelope() .. data bytes = %zu, state->info.type = %p\n", data_bytes, state->info.type));
 
+            if (T_Contiguous && T_Copy)
+              {
+                TRACE_ERR((stderr, "<< EagerSimple::process_envelope() .. 'contiguous copy' receive only.\n"));
+                return;
+              }
+            else if (T_Contiguous)
+              {
+                state->info.type   = (pami_type_t) PAMI_TYPE_CONTIGUOUS;
+                state->info.offset = 0;
+              }
+            else if (T_Copy)
+              {
+                state->info.data_fn     = PAMI_DATA_COPY;
+                state->info.data_cookie = NULL;
+              }
+
             Type::TypeCode * type = (Type::TypeCode *) state->info.type;
             PAMI_assert_debugf(type != NULL, "state->info.type == NULL !\n");
+
 #ifdef ERROR_CHECKS
 
             if (! type->IsCompleted())
@@ -725,21 +814,17 @@ namespace PAMI
               }
 
 #endif
-            state->is_typed_recv =
-              (state->info.type != PAMI_TYPE_CONTIGUOUS) ||
-              (state->info.data_fn != PAMI_DATA_COPY);
+            state->is_contiguous_copy_recv =
+              (state->info.type == PAMI_TYPE_CONTIGUOUS) &&
+              (state->info.data_fn == PAMI_DATA_COPY);
 
-            if (unlikely(state->is_typed_recv))
+            if (unlikely(!state->is_contiguous_copy_recv))
               {
                 // Construct a type machine for this transfer.
                 new (&(state->machine)) Type::TypeMachine (type);
                 state->machine.SetCopyFunc (state->info.data_fn, state->info.data_cookie);
                 state->machine.MoveCursor (state->info.offset);
               }
-
-
-            // Only contiguous receives are implemented
-            //PAMI_assertf(state->info.type == PAMI_TYPE_CONTIGUOUS, "[%5d:%s] %s() - Only contiguous receives are implemented.\n", __LINE__, __FILE__, __FUNCTION__);
 
             TRACE_ERR((stderr, "<< EagerSimple::process_envelope()\n"));
             return;
@@ -967,6 +1052,7 @@ namespace PAMI
           ///
           /// \see dispatch_envelope_direct
           ///
+          template <bool T_Contiguous, bool T_Copy>
           static int dispatch_eager_envelope (void   * metadata,
                                               void   * payload,
                                               size_t   bytes,
@@ -994,6 +1080,23 @@ namespace PAMI
 
             // Allocate a recv state object!
             recv_state_t * state = eager->allocateRecvState ();
+
+            // This is a short header envelope .. all application metadata
+            // has been received.
+            eager->process_envelope<T_Contiguous, T_Copy> ((uint8_t *)p, m->metabytes, m->bytes, m->origin, state);
+
+            if (unlikely(m->bytes == 0))
+              {
+                // No data packets will be received. Invoke the receive
+                // completion callback function and return the receive state.
+
+                if (state->info.local_fn)
+                  state->info.local_fn (eager->_context, state->info.cookie, PAMI_SUCCESS);
+
+                eager->freeRecvState (state);
+              }
+
+            // Complete the receive state initialization
             state->eager         = eager;
             state->received      = 0;
             state->data_size     = m->bytes;
@@ -1006,26 +1109,11 @@ namespace PAMI
             PAMI_ENDPOINT_INFO(m->origin, task, offset);
             eager->_envelope_model.device.setConnection ((void *)state, task, offset);
 
-            // This is a short header envelope .. all application metadata
-            // has been received.
-            eager->process_envelope ((uint8_t *)p, state->header_size, state->data_size, state->origin, state);
-
-            if (unlikely(m->bytes == 0))
-              {
-                // No data packets will be received. Return the receive state
-                // and invoke the receive completion callback function.
-                eager->_envelope_model.device.clearConnection (task, offset);
-
-                if (state->info.local_fn)
-                  state->info.local_fn (eager->_context, state->info.cookie, PAMI_SUCCESS);
-
-                eager->freeRecvState (state);
-              }
-
             TRACE_ERR ((stderr, "<< EagerSimple::dispatch_eager_envelope()\n"));
             return 0;
           };
 
+          template <bool T_Contiguous, bool T_Copy>
           static int dispatch_longheader_message (void   * metadata,
                                                   void   * payload,
                                                   size_t   bytes,
@@ -1077,11 +1165,11 @@ namespace PAMI
                   }
                 else
                   {
-                    eager->process_envelope (state->longheader.addr,
-                                             state->header_size,
-                                             state->data_size,
-                                             origin,
-                                             state);
+                    eager->process_envelope<T_Contiguous, T_Copy> (state->longheader.addr,
+                                                                   state->header_size,
+                                                                   state->data_size,
+                                                                   origin,
+                                                                   state);
 
                     // Free the malloc'd longheader buffer now that it has been
                     // delivered to the application.
@@ -1108,6 +1196,7 @@ namespace PAMI
           ///
           /// \see PAMI::Device::Interface::RecvFunction_t
           ///
+          template <bool T_ContiguousCopy>
           static int dispatch_data_message   (void   * metadata,
                                               void   * payload,
                                               size_t   bytes,
@@ -1125,20 +1214,20 @@ namespace PAMI
             recv_state_t * state = (recv_state_t *) eager->_data_model.device.getConnection (task, offset);
 
             // Number of bytes received so far.
-            size_t nbyte = state->received;
+            const size_t nbyte = state->received;
 
             // Number of bytes left to copy into the destination buffer
-            size_t nleft = state->data_size - nbyte;
+            const size_t nleft = state->data_size - nbyte;
 
             TRACE_ERR((stderr, "   EagerSimple::dispatch_data_message(), bytes received so far = %zu, bytes yet to receive = %zu, total bytes to receive = %zu\n", state->received, nleft, state->data_size));
 
             // Copy data from the packet payload into the destination buffer
             size_t ncopy = MIN(nleft, bytes);
 
-            if (unlikely(state->is_typed_recv))
-              state->machine.Unpack (state->info.addr, payload, ncopy);
-            else
+            if (T_ContiguousCopy || likely(state->is_contiguous_copy_recv))
               Core_memcpy ((uint8_t *)(state->info.addr) + nbyte, payload, ncopy);
+            else
+              state->machine.Unpack (state->info.addr, payload, ncopy);
 
             state->received += ncopy;
 
