@@ -81,6 +81,24 @@ namespace PAMI
           _stat[1].init (mm, newkey);
         };
 
+        template <class T_MemoryManager, unsigned T_Num>
+        static void init_impl (T_MemoryManager * mm,
+                const char      * key,
+                IndirectCounter  (&atomic)[T_Num])
+        {
+          unsigned i;
+          char mykey[PAMI::Memory::MMKEYSIZE];
+
+           for (i=0; i<T_Num; i++)
+           {
+             sprintf(mykey, "%s-%u", key, i);
+             atomic[i].init (mm, mykey);
+           }
+
+        }
+
+
+
         inline void clone_impl (IndirectCounter & atomic)
         {
           _control.clone (atomic._control);

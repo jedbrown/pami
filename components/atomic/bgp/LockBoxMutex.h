@@ -71,6 +71,23 @@ namespace PAMI
             __global.lockboxFactory.lbx_alloc(&this->_addr, 1,
                                               key ? PAMI::Atomic::BGP::LBX_NODE_SCOPE : PAMI::Atomic::BGP::LBX_PROC_SCOPE);
           }
+      
+          template <class T_MemoryManager, unsigned T_Num>
+          static void init_impl (T_MemoryManager * mm,
+                const char      * key,
+                LockBoxMutex       (&atomic)[T_Num])
+          {
+          unsigned i;
+          char mykey[PAMI::Memory::MMKEYSIZE];
+
+           for (i=0; i<T_Num; i++)
+           {
+             sprintf(mykey, "%s-%u", key, i);
+             atomic[i].init (mm, mykey);
+           }
+
+          }
+
 
           inline void clone_impl (LockBoxMutex & atomic)
           {

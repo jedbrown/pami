@@ -62,6 +62,23 @@ namespace PAMI
                                               key ? PAMI::Atomic::BGP::LBX_NODE_SCOPE : PAMI::Atomic::BGP::LBX_PROC_SCOPE);
           }
 
+          template <class T_MemoryManager, unsigned T_Num>
+           static void init_impl (T_MemoryManager * mm,
+                const char      * key,
+                LockBoxCounter       (&atomic)[T_Num])
+            {
+              unsigned i;
+              char mykey[PAMI::Memory::MMKEYSIZE];
+
+              for (i=0; i<T_Num; i++)
+              {
+                sprintf(mykey, "%s-%u", key, i);
+                atomic[i].init (mm, mykey);
+              }
+
+            }
+
+
           inline void clone_impl (LockBoxCounter & atomic)
           {
             PAMI_abortf("how do we clone the lockbox objects?\n");

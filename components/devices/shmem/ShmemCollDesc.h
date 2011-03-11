@@ -120,6 +120,18 @@ public:
             _my_seq_num = (uint64_t)index;
 
           };
+
+          inline Descriptor(Memory::MemoryManager &mm, T_Atomic (&atomic)[2*DESCRIPTOR_FIFO_SIZE], size_t index): _shared(NULL), _master(0), _storage(NULL), _my_seq_num(0),  _my_state(DESCSTATE_FREE) 
+          {
+            _atomics.synch_counter.clone(atomic[2*index]);
+            _atomics.done_counter.clone(atomic[2*index+1]);
+             _shared = _shmem_region + index;
+             _my_seq_num = (uint64_t)index;
+
+           };
+
+
+
           inline ~Descriptor() {}
 
           inline void reset()
@@ -306,6 +318,7 @@ public:
 
         private:
           Descriptor  _desc[DESCRIPTOR_FIFO_SIZE];
+          T_Atomic    _atomic[2*DESCRIPTOR_FIFO_SIZE];
           uint64_t    _head;
           uint64_t    _tail;
           uint64_t    _next_pending_match;
@@ -323,7 +336,8 @@ public:
           void init (Memory::MemoryManager &mm, char * unique_device_string)
           {
             char key[PAMI::Memory::MMKEYSIZE];
-            sprintf(key, "/ShmemCollectiveFifo-%s", unique_device_string);
+            sprintf(key, "/ShmemCollectiveFifoDescriptor-atomic-%s", unique_device_string);
+            T_Atomic::init(&mm, key, _atomic);
 
 
             size_t total_size = sizeof(ShmemRegion) * DESCRIPTOR_FIFO_SIZE ;
@@ -339,6 +353,7 @@ public:
             for (size_t i = 0; i < DESCRIPTOR_FIFO_SIZE; i++)
               {
                 new (&_desc[i]) Descriptor (mm, unique_device_string, 0, i );
+                //new (&_desc[i]) Descriptor (mm, _atomic, i );
               }
           };
 

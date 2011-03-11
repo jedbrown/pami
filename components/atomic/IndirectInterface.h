@@ -41,6 +41,9 @@ namespace PAMI
         template <class T_MemoryManager>
         inline void init (T_MemoryManager * mm, const char * key);
 
+        template <class T_MemoryManager, unsigned T_Num>
+        static void init(T_MemoryManager * mm, const char* key, T (&atomic)[T_Num]);
+
         inline void clone (T & atomic);
 
     }; // class PAMI::Atomic::Indirect
@@ -50,6 +53,14 @@ namespace PAMI
     inline void Indirect<T>::init(T_MemoryManager * mm, const char * key)
     {
       static_cast<T*>(this)->init_impl(mm, key);
+    }
+
+    template <class T>
+    template <class T_MemoryManager, unsigned T_Num>
+     void Indirect<T>::init(T_MemoryManager * mm, const char* key,
+                T (&atomic)[T_Num])
+    {
+      T::init_impl(mm, key, atomic);
     }
 
     template <class T>

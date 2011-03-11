@@ -69,7 +69,15 @@ namespace PAMI
                 const char      * key,
                 Indirect       (&atomic)[T_Num])
         {
-          PAMI_abortf("This functionality is not yet implemented\n");
+          unsigned i;
+          char mykey[PAMI::Memory::MMKEYSIZE];
+
+           for (i=0; i<T_Num; i++)
+           {
+             sprintf(mykey, "%s-%u", key, i);
+             atomic[i].init (mm, mykey);
+           }
+
         }
 
         inline void clone_impl (Indirect & atomic)
