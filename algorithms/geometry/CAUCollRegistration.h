@@ -325,7 +325,7 @@ namespace PAMI
             new(broadcast_reg) Broadcast::MultiCastFactory(&_sconnmgr,
                                                            (CCMI::Interfaces::NativeInterface *)geometryInfo->_niPtr[0],
                                                            false,  // local protocols are not active message (2 sided), will not register
-                                                           (CCMI::Interfaces::NativeInterface *)geometryInfo->_niPtr[2],
+                                                           (CCMI::Interfaces::NativeInterface *)geometryInfo->_niPtr[1],
                                                            true);  // global protocols ARE active message, will register async
             geometryInfo->_broadcast                       = broadcast_reg;
 
