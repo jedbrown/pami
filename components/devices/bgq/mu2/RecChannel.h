@@ -17,6 +17,7 @@
 #include <spi/include/mu/RecFifo.h>
 
 #include "components/devices/bgq/mu2/MemoryFifoPacketHeader.h"
+#include "components/devices/bgq/mu2/UnexpectedPacketQueue.h"
 
 #include "util/trace.h"
 #define DO_TRACE_ENTEREXIT 0
@@ -78,18 +79,6 @@ namespace PAMI
             void                      * p;
           } mu_dispatch_t;
 
-          /// \see PAMI::Device::Interface::RecvFunction_t
-          static int error (void   * metadata,
-                            void   * payload,
-                            size_t   bytes,
-                            void   * recv_func_parm,
-                            void   * cookie)
-          {
-            fprintf (stderr, "Error. Dispatch to unregistered id (%zu).\n", (size_t) recv_func_parm);
-            PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
-            return 0;
-          };
-
         public:
 
           ///
@@ -99,7 +88,8 @@ namespace PAMI
               self (),
               _channel_id (id),
               _channel_cookie (NULL),
-              _rfifo (NULL)
+              _rfifo (NULL),
+              _unexpected_packet_queue (dispatch_set_count * dispatch_set_size, MemoryFifoPacketHeader::packet_singlepacket_metadata_size)
           {
             TRACE_FN_ENTER();
             COMPILE_TIME_ASSERT(sizeof(notify_t) <= MemoryFifoPacketHeader::packet_singlepacket_metadata_size);
@@ -167,14 +157,16 @@ namespace PAMI
             TRACE_HEXDATA(&self, 64);
 
 #ifdef ENABLE_MAMBO_WORKAROUNDS
+
             if (__global.personality._is_mambo) /// \todo mambo hack
-            {
-              // mambo does not process zero byte memfifo packets.
-              TRACE_STRING("mambo workaround!");
-              Kernel_MemoryRegion_t  mregion;
-              Kernel_CreateMemoryRegion ( &mregion, this, 1 );
-              self.setPayload ((uint64_t)mregion.BasePa, 1);
-            }
+              {
+                // mambo does not process zero byte memfifo packets.
+                TRACE_STRING("mambo workaround!");
+                Kernel_MemoryRegion_t  mregion;
+                Kernel_CreateMemoryRegion ( &mregion, this, 1 );
+                self.setPayload ((uint64_t)mregion.BasePa, 1);
+              }
+
 #endif
 
             TRACE_STRING("construct 'notify self' descriptor");
@@ -209,18 +201,17 @@ namespace PAMI
             TRACE_FN_ENTER();
 
             TRACE_FORMAT("rfifo_id = %d, rfifo = %p, dest = 0x%08x, channel_cookie = %p", rfifo_id, rfifo, *((uint32_t *)dest), channel_cookie);
-	    TRACE_FORMAT("startva=%p, startpa=0x%lx, size-1 = %lx\n",rfifo->_fifo.va_start,rfifo->_fifo.pa_start,rfifo->_fifo.size_1);
+            TRACE_FORMAT("startva=%p, startpa=0x%lx, size-1 = %lx\n", rfifo->_fifo.va_start, rfifo->_fifo.pa_start, rfifo->_fifo.size_1);
             _rfifo_id = rfifo_id;
             _rfifo    = rfifo;
 
-            // Initialize the dispatch table. This 'error' function will be
-            // replaced with an 'unexpected packet' function and queue.
+            // Initialize the dispatch table
             size_t i, n = dispatch_set_count * dispatch_set_size;
 
             for (i = 0; i < n; i++)
               {
-                _dispatch[i].f = error;
-                _dispatch[i].p = (void *) i;
+                _dispatch[i].f = UnexpectedPacketQueue<uint16_t>::dispatch_fn;
+                _dispatch[i].p = _unexpected_packet_queue.getCookie(i);
               }
 
             // Initialize any mu "system" dispatch functions
@@ -295,16 +286,18 @@ namespace PAMI
 
             if (set >= dispatch_set_count) return false;
 
-            unsigned i;
+            uint16_t i;
 
             for (i = 0; i < dispatch_set_size; i++)
               {
                 id = set * dispatch_set_size + i;
 
-                if (_dispatch[id].f == error)
+                if (_dispatch[id].f == UnexpectedPacketQueue<uint16_t>::dispatch_fn)
                   {
                     _dispatch[id].f = fn;
                     _dispatch[id].p = cookie;
+
+                    _unexpected_packet_queue.dispatch (id, fn, cookie);
 
                     TRACE_FORMAT("registration success. set = %zu, fn = %p, cookie = %p --> id = %d", set, fn, cookie, id);
                     TRACE_FN_EXIT();
@@ -319,7 +312,7 @@ namespace PAMI
             return false;
           };
 
-	  size_t process_wrap() __attribute__((noinline, weak));
+          size_t process_wrap() __attribute__((noinline, weak));
 
           inline size_t advance ()
           {
@@ -328,70 +321,71 @@ namespace PAMI
             size_t packets = 0;
             MUSPI_RecFifo_t * rfifo = _rfifo;
 
-	    void        * va_tail;           /* Snapshot of the fifo's tail */
-	    void        * va_end;            /* Snapshot of the fifo's end */
-	    void        * va_head;           /* Snapshot of the fifo's head */
-	    volatile uint64_t  pa_tail;      /* Actual tail physical address */
+            void        * va_tail;           /* Snapshot of the fifo's tail */
+            void        * va_end;            /* Snapshot of the fifo's end */
+            void        * va_head;           /* Snapshot of the fifo's head */
+            volatile uint64_t  pa_tail;      /* Actual tail physical address */
 
-	    MUSPI_Fifo_t  *fifo_ptr = &rfifo->_fifo;
-	    va_head      = fifo_ptr->va_head;
-	    va_end       = fifo_ptr->va_end;
-	    
-	    pa_tail      = MUSPI_getHwTail (fifo_ptr);    /* Snapshot HW */
-	    va_tail      = (void*)(pa_tail - MUSPI_getStartPa (fifo_ptr) +
-				   (uint64_t)(MUSPI_getStartVa (fifo_ptr)));
-	    
-	    if (va_tail == va_head) 
-	      return packets;
-	    
-	    uint32_t total_bytes = 0;
-	    uint32_t cumulative_bytes = 0;
-	    MemoryFifoPacketHeader *hdr = NULL;
-	    
-	    MUSPI_setTailVa (fifo_ptr, va_tail); /** extra store over older poll loop*/
-	    
-	    /** touch head for first packet */
-	    muspi_dcbt (va_head, 0);
-	    _bgq_msync();
-	    
-	    if (va_tail > va_head) /** one branch less over older poll loop */
-	      total_bytes = (uint64_t)va_tail - (uint64_t)va_head; /** No wrap and we can grab packets */
-	    else if ( va_head < (void*)((uint64_t)va_end - 544UL) )
-	      /** We wont process the wrap in this packet poll */
-	      total_bytes = (uint64_t)va_end - (uint64_t)va_head - 544UL;
-	    else {
-	      packets = process_wrap();
-	      va_head = fifo_ptr->va_head;
-	    }
-	    
-	    while (cumulative_bytes < total_bytes ) 
-	    { 
-	      MUHWI_PacketHeader_t *phdr = (MUHWI_PacketHeader_t *) va_head;
-	      uint32_t pbytes   = (phdr->NetworkHeader.pt2pt.Byte8.Size + 1) << 5;
-	      va_head = (void *)((char *)va_head + pbytes);
-	      
-	      hdr = (MemoryFifoPacketHeader *) phdr;
-	      TRACE_HEXDATA(hdr, 64);
-	      
-	      cumulative_bytes += pbytes;
-	      uint16_t id = 0;
-	      void *metadata;
-	      hdr->getHeaderInfo (id, &metadata);
-	      TRACE_FORMAT("dispatch = %d, metadata = %p, hdr+1 = %p, cur_bytes-32 = %d", id, metadata, hdr + 1, pbytes - 32);
-	      _dispatch[id].f(metadata, hdr + 1, pbytes - 32, _dispatch[id].p, hdr + 1);
-	      packets++;
-	      //Touch head for next packet
-	      TRACE_FORMAT("Received packet of size %d, cumulative bytes = %d, total bytes %d", pbytes, cumulative_bytes, total_bytes);
-	    }
-	    
-	    fifo_ptr->va_head = va_head;
-	    //MUSPI_syncRecFifoHwHead (rfifo);
-	    MUSPI_setHwHead (fifo_ptr, (uint64_t)va_head - (uint64_t)(fifo_ptr->va_start));
-	  
-	    //TRACE_FORMAT("Number of packets received: %d", packets);
-	    TRACE_FN_EXIT();
-	    return packets;
-	  }
+            MUSPI_Fifo_t  *fifo_ptr = &rfifo->_fifo;
+            va_head      = fifo_ptr->va_head;
+            va_end       = fifo_ptr->va_end;
+
+            pa_tail      = MUSPI_getHwTail (fifo_ptr);    /* Snapshot HW */
+            va_tail      = (void*)(pa_tail - MUSPI_getStartPa (fifo_ptr) +
+                                   (uint64_t)(MUSPI_getStartVa (fifo_ptr)));
+
+            if (va_tail == va_head)
+              return packets;
+
+            uint32_t total_bytes = 0;
+            uint32_t cumulative_bytes = 0;
+            MemoryFifoPacketHeader *hdr = NULL;
+
+            MUSPI_setTailVa (fifo_ptr, va_tail); /** extra store over older poll loop*/
+
+            /** touch head for first packet */
+            muspi_dcbt (va_head, 0);
+            _bgq_msync();
+
+            if (va_tail > va_head) /** one branch less over older poll loop */
+              total_bytes = (uint64_t)va_tail - (uint64_t)va_head; /** No wrap and we can grab packets */
+            else if ( va_head < (void*)((uint64_t)va_end - 544UL) )
+              /** We wont process the wrap in this packet poll */
+              total_bytes = (uint64_t)va_end - (uint64_t)va_head - 544UL;
+            else
+              {
+                packets = process_wrap();
+                va_head = fifo_ptr->va_head;
+              }
+
+            while (cumulative_bytes < total_bytes )
+              {
+                MUHWI_PacketHeader_t *phdr = (MUHWI_PacketHeader_t *) va_head;
+                uint32_t pbytes   = (phdr->NetworkHeader.pt2pt.Byte8.Size + 1) << 5;
+                va_head = (void *)((char *)va_head + pbytes);
+
+                hdr = (MemoryFifoPacketHeader *) phdr;
+                TRACE_HEXDATA(hdr, 64);
+
+                cumulative_bytes += pbytes;
+                uint16_t id = 0;
+                void *metadata;
+                hdr->getHeaderInfo (id, &metadata);
+                TRACE_FORMAT("dispatch = %d, metadata = %p, hdr+1 = %p, cur_bytes-32 = %d", id, metadata, hdr + 1, pbytes - 32);
+                _dispatch[id].f(metadata, hdr + 1, pbytes - 32, _dispatch[id].p, hdr + 1);
+                packets++;
+                //Touch head for next packet
+                TRACE_FORMAT("Received packet of size %d, cumulative bytes = %d, total bytes %d", pbytes, cumulative_bytes, total_bytes);
+              }
+
+            fifo_ptr->va_head = va_head;
+            //MUSPI_syncRecFifoHwHead (rfifo);
+            MUSPI_setHwHead (fifo_ptr, (uint64_t)va_head - (uint64_t)(fifo_ptr->va_start));
+
+            //TRACE_FORMAT("Number of packets received: %d", packets);
+            TRACE_FN_EXIT();
+            return packets;
+          }
 
           // Memory fifo descriptor initialized to send to the reception
           // fifo in this reception channel
@@ -406,30 +400,34 @@ namespace PAMI
 
           mu_dispatch_t     _dispatch[dispatch_set_count * dispatch_set_size];
 
+          UnexpectedPacketQueue<uint16_t> _unexpected_packet_queue;
+
       }; // class     PAMI::Device::MU::RecChannel
 
-      size_t RecChannel::process_wrap () { 
-	size_t packets = 0;
-	MemoryFifoPacketHeader *hdr = NULL;
-	uint32_t cur_bytes = 0;
-	uint64_t cumulative_bytes = 0;
-	uint64_t total_bytes = (uint64_t)_rfifo->_fifo.va_end - (uint64_t)_rfifo->_fifo.va_head;
-	
-	while (cumulative_bytes < total_bytes ) {
-	  hdr = (MemoryFifoPacketHeader *) MUSPI_getNextPacketWrap (_rfifo, &cur_bytes);
-	  TRACE_HEXDATA(hdr, 64);
-	  
-	  uint16_t id = 0;
-	  void *metadata;
-	  cumulative_bytes += cur_bytes;
-	  hdr->getHeaderInfo (id, &metadata);
-	  
-	  _dispatch[id].f(metadata, hdr + 1, cur_bytes - 32, _dispatch[id].p, hdr + 1);
-	  packets++;
-	}
+      size_t RecChannel::process_wrap ()
+      {
+        size_t packets = 0;
+        MemoryFifoPacketHeader *hdr = NULL;
+        uint32_t cur_bytes = 0;
+        uint64_t cumulative_bytes = 0;
+        uint64_t total_bytes = (uint64_t)_rfifo->_fifo.va_end - (uint64_t)_rfifo->_fifo.va_head;
 
-	TRACE_FORMAT("Received packet wrap of size %d\n", cur_bytes);
-	return packets;
+        while (cumulative_bytes < total_bytes )
+          {
+            hdr = (MemoryFifoPacketHeader *) MUSPI_getNextPacketWrap (_rfifo, &cur_bytes);
+            TRACE_HEXDATA(hdr, 64);
+
+            uint16_t id = 0;
+            void *metadata;
+            cumulative_bytes += cur_bytes;
+            hdr->getHeaderInfo (id, &metadata);
+
+            _dispatch[id].f(metadata, hdr + 1, cur_bytes - 32, _dispatch[id].p, hdr + 1);
+            packets++;
+          }
+
+        TRACE_FORMAT("Received packet wrap of size %d\n", cur_bytes);
+        return packets;
       }
 
     };   // namespace PAMI::Device::MU

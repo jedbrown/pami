@@ -248,8 +248,6 @@ void initialize (dispatch_info_t dispatch[], size_t n)
 
     }
 
-  sleep(1); /* work-around for ticket #385 */
-
   /* Use task 0 to last task (arbitrary) */
   pami_task_t origin_task = 0;
   pami_task_t target_task = size - 1;
