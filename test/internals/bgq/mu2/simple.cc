@@ -49,7 +49,7 @@ typedef PAMI::Device::MU::PacketModel MuPacketModel;
 //typedef PAMI::Device::MU::DmaModel MuDmaModel;
 typedef PAMI::Device::MU::DmaModelMemoryFifoCompletion MuDmaModel;
 
-typedef PAMI::Protocol::Send::Eager<MuPacketModel>::EagerImpl<PAMI::Protocol::Send::DEFAULT, false> MuEager;
+typedef PAMI::Protocol::Send::Eager<MuPacketModel> MuEager;
 typedef PAMI::Protocol::Put::PutRdma<MuDmaModel, MuContext> MuPut;
 typedef PAMI::Protocol::Get::GetRdma<MuDmaModel, MuContext> MuGet;
 
@@ -126,7 +126,6 @@ int main(int argc, char ** argv)
   MuEager eager ((size_t) 10,  // dispatch set id
                  recv_fn,      // dispatch function
                  (void *)NULL, // dispatch cookie
-                 mu,           // "packet" device reference
                  mu,           // "packet" device reference
                  self,         // origin endpoint
                  NULL,         // pami_context_t

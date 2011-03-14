@@ -202,7 +202,7 @@ namespace PAMI
   typedef Device::ShmemDevice<ShmemFifo, Counter::Indirect<Counter::Native>, Device::Shmem::NoShaddr, 128 > ShmemDevice;
   typedef Device::Shmem::PacketModel<ShmemDevice>                     ShmemPacketModel;
   typedef Protocol::Send::Eager <ShmemPacketModel>                    ShmemEagerBase;
-  typedef PAMI::Protocol::Send::SendWrapperPWQ < ShmemEagerBase >            ShmemEager;
+  typedef PAMI::Protocol::Send::SendPWQ < ShmemEagerBase >            ShmemEager;
 
   // "New" Collective Message Typedefs
   typedef Device::CAUMsyncMessage                                     CAUMsyncMessage;

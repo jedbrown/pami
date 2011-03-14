@@ -545,27 +545,37 @@ namespace PAMI
         pami_result_t result = PAMI_ERROR;
         TRACE_ERR((stderr, ">> dispatch_impl(), _dispatch[%zu] = %p\n", id, _dispatch[id]));
 
-        // Return an error for invalid / unimplemented 'hard' hints.
-        if (
-            options.use_rdma              == PAMI_HINT_ENABLE  ||
-            false)
-          {
-            return PAMI_ERROR;
-          }
-
-        pami_endpoint_t self = PAMI_ENDPOINT_INIT(_clientid, __global.mapping.task(), _contextid);
-
-        using namespace Protocol::Send;
+        pami_endpoint_t self = PAMI_ENDPOINT_INIT(_clientid,__global.mapping.task(),_contextid);
 
         if (_dispatch[id] == NULL)
           {
-            if (options.use_shmem != PAMI_HINT_DISABLE)
+            TRACE_ERR((stderr, "   dispatch_impl(), before protocol init\n"));
+
+            if (options.long_header == PAMI_HINT_DISABLE)
               {
-                _dispatch[id] =
-                  Eager <ShmemPacketModel>::generate (id, fn.p2p, cookie,
-                                                             ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid),
-                                                             self, _context, options,
-                                                             _protocol, result);
+                _dispatch[id] = _protocol.allocateObject ();
+                new (_dispatch[id])
+//                Protocol::Send::Datagram <ShmemModel, ShmemDevice, false>
+//                Protocol::Send::Adaptive <ShmemModel, ShmemDevice, false>
+                Protocol::Send::Eager <ShmemPacketModel>
+                (id, fn.p2p, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), self, _context, options, result);
+              }
+            else
+              {
+                _dispatch[id] = _protocol.allocateObject ();
+                new (_dispatch[id])
+                Protocol::Send::Eager <ShmemPacketModel>
+//                Protocol::Send::Adaptive <ShmemModel, ShmemDevice, true>
+//                Protocol::Send::Datagram <ShmemModel, ShmemDevice, true>
+                (id, fn.p2p, cookie, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), self, _context, options, result);
+              }
+
+            TRACE_ERR((stderr, "   dispatch_impl(),  after protocol init, result = %zu\n", result));
+
+            if (result != PAMI_SUCCESS)
+              {
+                _protocol.returnObject (_dispatch[id]);
+                _dispatch[id] = NULL;
               }
           }
 

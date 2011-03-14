@@ -800,6 +800,12 @@ namespace PAMI
 
         // Return an error for invalid / unimplemented 'hard' hints.
         if (
+            options.recv_contiguous       == PAMI_HINT_ENABLE  ||
+            options.recv_copy             == PAMI_HINT_ENABLE  ||
+            //options.recv_immediate        == PAMI_HINT_ENABLE  ||
+            //options.recv_immediate        == PAMI_HINT_DISABLE ||
+            options.remote_async_progress == PAMI_HINT_ENABLE  ||
+            options.queue_immediate       == PAMI_HINT_DISABLE ||
             options.use_rdma              == PAMI_HINT_ENABLE  ||
             (options.use_shmem            == PAMI_HINT_ENABLE  && !__global.useshmem()) ||
             (options.use_shmem            == PAMI_HINT_DISABLE && !__global.useMU())    ||
@@ -812,33 +818,239 @@ namespace PAMI
 
         using namespace Protocol::Send;
 
+        
 
         if (_dispatch[id] == NULL)
           {
+//fprintf(stderr, "got here:  0 .. useMU = %d, useshmem = %d\n", __global.useMU(), __global.useshmem());
+            const configuration_t use_shmem = DEFAULT;
             if ((options.use_shmem == PAMI_HINT_DISABLE) || (__global.useMU() && !__global.useshmem()))
               {
-                _dispatch[id] =
-                  Eager <Device::MU::PacketModel>::generate (id, fn.p2p, cookie,
-                                                             _devices->_mu[_contextid],
-                                                             self, _context, options,
-                                                             _protocol, result);
+//fprintf(stderr, "got here:  1\n");
+                if (options.long_header == PAMI_HINT_DISABLE)
+                  {
+//fprintf(stderr, "got here:  2\n");
+                    const configuration_t long_header = (configuration_t) (use_shmem | LONG_HEADER_DISABLE);
+                    if (options.recv_immediate == PAMI_HINT_ENABLE)
+                      {
+//fprintf(stderr, "got here:  3\n");
+                        const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEON);
+                        _dispatch[id] = (Send *)
+                                        Eager <Device::MU::PacketModel, hint>::
+                                        generate (id, fn.p2p, cookie, _devices->_mu[_contextid], self, _context, options, _protocol, result);
+                      }
+                    else if (options.recv_immediate == PAMI_HINT_DISABLE)
+                      {
+//fprintf(stderr, "got here:  4\n");
+                        const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEOFF);
+                        _dispatch[id] = (Send *)
+                                        Eager <Device::MU::PacketModel, hint>::
+                                        generate (id, fn.p2p, cookie, _devices->_mu[_contextid], self, _context, options, _protocol, result);
+                      }
+                    else
+                      {
+//fprintf(stderr, "got here:  5\n");
+                        const configuration_t hint = (configuration_t) (long_header);
+                        _dispatch[id] = (Send *)
+                                        Eager <Device::MU::PacketModel, hint>::
+                                        generate (id, fn.p2p, cookie, _devices->_mu[_contextid], self, _context, options, _protocol, result);
+                      }
+                  }
+                else
+                  {
+//fprintf(stderr, "got here:  6\n");
+                    const configuration_t long_header = (configuration_t) (use_shmem);
+                    if (options.recv_immediate == PAMI_HINT_ENABLE)
+                      {
+//fprintf(stderr, "got here:  7\n");
+                        const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEON);
+                        _dispatch[id] = (Send *)
+                                        Eager <Device::MU::PacketModel, hint>::
+                                        generate (id, fn.p2p, cookie, _devices->_mu[_contextid], self, _context, options, _protocol, result);
+                      }
+                    else if (options.recv_immediate == PAMI_HINT_DISABLE)
+                      {
+//fprintf(stderr, "got here:  8\n");
+                        const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEOFF);
+                        _dispatch[id] = (Send *)
+                                        Eager <Device::MU::PacketModel, hint>::
+                                        generate (id, fn.p2p, cookie, _devices->_mu[_contextid], self, _context, options, _protocol, result);
+                      }
+                    else
+                      {
+//fprintf(stderr, "got here:  9\n");
+                        const configuration_t hint = (configuration_t) (long_header);
+                        _dispatch[id] = (Send *)
+                                        Eager <Device::MU::PacketModel, hint>::
+                                        generate (id, fn.p2p, cookie, _devices->_mu[_contextid], self, _context, options, _protocol, result);
+                      }
+                  }
               }
             else if ((options.use_shmem == PAMI_HINT_ENABLE) || (!__global.useMU() && __global.useshmem()))
               {
-                _dispatch[id] =
-                  Eager <ShmemPacketModel>::generate (id, fn.p2p, cookie,
-                                                             _devices->_shmem[_contextid],
-                                                             self, _context, options,
-                                                             _protocol, result);
+//fprintf(stderr, "got here: 10\n");
+                if (options.long_header == PAMI_HINT_DISABLE)
+                  {
+//fprintf(stderr, "got here: 11\n");
+                    const configuration_t long_header = (configuration_t) (use_shmem | LONG_HEADER_DISABLE);
+                    if (options.recv_immediate == PAMI_HINT_ENABLE)
+                      {
+//fprintf(stderr, "got here: 12\n");
+                        const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEON);
+                        _dispatch[id] = (Send *)
+                                        Eager <ShmemPacketModel, hint>::
+                                        generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
+                      }
+                    else if (options.recv_immediate == PAMI_HINT_DISABLE)
+                      {
+//fprintf(stderr, "got here: 13\n");
+                        const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEOFF);
+                        _dispatch[id] = (Send *)
+                                        Eager <ShmemPacketModel, hint>::
+                                        generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
+                      }
+                    else
+                      {
+//fprintf(stderr, "got here: 14\n");
+                        const configuration_t hint = (configuration_t) (long_header);
+                        _dispatch[id] = (Send *)
+                                        Eager <ShmemPacketModel, hint>::
+                                        generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
+                      }
+                  }
+                else
+                  {
+//fprintf(stderr, "got here: 15\n");
+                    const configuration_t long_header = (configuration_t) (use_shmem);
+                    if (options.recv_immediate == PAMI_HINT_ENABLE)
+                      {
+//fprintf(stderr, "got here: 16\n");
+                        const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEON);
+                        _dispatch[id] = (Send *)
+                                        Eager <ShmemPacketModel, hint>::
+                                        generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
+                      }
+                    else if (options.recv_immediate == PAMI_HINT_DISABLE)
+                      {
+//fprintf(stderr, "got here: 17\n");
+                        const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEOFF);
+                        _dispatch[id] = (Send *)
+                                        Eager <ShmemPacketModel, hint>::
+                                        generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
+                      }
+                    else
+                      {
+//fprintf(stderr, "got here: 18\n");
+                        const configuration_t hint = (configuration_t) (long_header);
+                        _dispatch[id] = (Send *)
+                                        Eager <ShmemPacketModel, hint>::
+                                        generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
+                      }
+                  }
               }
             else
               {
-                _dispatch[id] =
-                  Eager <ShmemPacketModel, Device::MU::PacketModel>::generate (id, fn.p2p, cookie,
-                                                             _devices->_shmem[_contextid],
-                                                             _devices->_mu[_contextid],
-                                                             self, _context, options,
-                                                             _protocol, result);
+//fprintf(stderr, "got here: 19\n");
+                if (options.long_header == PAMI_HINT_DISABLE)
+                  {
+//fprintf(stderr, "got here: 20\n");
+                    const configuration_t long_header = (configuration_t) (use_shmem | LONG_HEADER_DISABLE);
+                    if (options.recv_immediate == PAMI_HINT_ENABLE)
+                      {
+//fprintf(stderr, "got here: 21\n");
+                        const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEON);
+                        Eager <Device::MU::PacketModel, hint> * eagermu =
+                          Eager <Device::MU::PacketModel, hint>::
+                          generate (id, fn.p2p, cookie, _devices->_mu[_contextid], self, _context, options, _protocol, result);
+
+                        Eager <ShmemPacketModel, hint> * eagershmem =
+                          Eager <ShmemPacketModel, hint>::
+                          generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
+
+                        _dispatch[id] = (Send *) Factory::
+                                        generate (eagershmem, eagermu, _protocol, result);
+                      }
+                    else if (options.recv_immediate == PAMI_HINT_DISABLE)
+                      {
+//fprintf(stderr, "got here: 22\n");
+                        const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEOFF);
+                        Eager <Device::MU::PacketModel, hint> * eagermu =
+                          Eager <Device::MU::PacketModel, hint>::
+                          generate (id, fn.p2p, cookie, _devices->_mu[_contextid], self, _context, options, _protocol, result);
+
+                        Eager <ShmemPacketModel, hint> * eagershmem =
+                          Eager <ShmemPacketModel, hint>::
+                          generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
+
+                        _dispatch[id] = (Send *) Factory::
+                                        generate (eagershmem, eagermu, _protocol, result);
+                      }
+                    else
+                      {
+//fprintf(stderr, "got here: 23\n");
+                        const configuration_t hint = (configuration_t) (long_header);
+                        Eager <Device::MU::PacketModel, hint> * eagermu =
+                          Eager <Device::MU::PacketModel, hint>::
+                          generate (id, fn.p2p, cookie, _devices->_mu[_contextid], self, _context, options, _protocol, result);
+
+                        Eager <ShmemPacketModel, hint> * eagershmem =
+                          Eager <ShmemPacketModel, hint>::
+                          generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
+
+                        _dispatch[id] = (Send *) Factory::
+                                        generate (eagershmem, eagermu, _protocol, result);
+                      }
+                  }
+                else
+                  {
+//fprintf(stderr, "got here: 24\n");
+                    const configuration_t long_header = (configuration_t) (use_shmem);
+                    if (options.recv_immediate == PAMI_HINT_ENABLE)
+                      {
+//fprintf(stderr, "got here: 25\n");
+                        const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEON);
+                        Eager <Device::MU::PacketModel, hint> * eagermu =
+                          Eager <Device::MU::PacketModel, hint>::
+                          generate (id, fn.p2p, cookie, _devices->_mu[_contextid], self, _context, options, _protocol, result);
+
+                        Eager <ShmemPacketModel, hint> * eagershmem =
+                          Eager <ShmemPacketModel, hint>::
+                          generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
+
+                        _dispatch[id] = (Send *) Factory::
+                                        generate (eagershmem, eagermu, _protocol, result);
+                      }
+                    else if (options.recv_immediate == PAMI_HINT_DISABLE)
+                      {
+//fprintf(stderr, "got here: 26\n");
+                        const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEOFF);
+                        Eager <Device::MU::PacketModel, hint> * eagermu =
+                          Eager <Device::MU::PacketModel, hint>::
+                          generate (id, fn.p2p, cookie, _devices->_mu[_contextid], self, _context, options, _protocol, result);
+
+                        Eager <ShmemPacketModel, hint> * eagershmem =
+                          Eager <ShmemPacketModel, hint>::
+                          generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
+
+                        _dispatch[id] = (Send *) Factory::
+                                        generate (eagershmem, eagermu, _protocol, result);
+                      }
+                    else
+                      {
+//fprintf(stderr, "got here: 27\n");
+                        const configuration_t hint = (configuration_t) (long_header);
+                        Eager <Device::MU::PacketModel, hint> * eagermu =
+                          Eager <Device::MU::PacketModel, hint>::
+                          generate (id, fn.p2p, cookie, _devices->_mu[_contextid], self, _context, options, _protocol, result);
+
+                        Eager <ShmemPacketModel, hint> * eagershmem =
+                          Eager <ShmemPacketModel, hint>::
+                          generate (id, fn.p2p, cookie, _devices->_shmem[_contextid], self, _context, options, _protocol, result);
+
+                        _dispatch[id] = (Send *) Factory::
+                                        generate (eagershmem, eagermu, _protocol, result);
+                      }
+                  }
               }
           } // end dispatch[id]==null
 

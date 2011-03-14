@@ -45,7 +45,6 @@ else
 	${CROSS_CXX} \
 	-I @abs_top_srcdir@/pami \
 	-I @abs_top_srcdir@/pami/sys \
-	-I @abs_top_srcdir@/pami/sys/bgq \
 	-I @abs_top_srcdir@/pami/arch/a2qpx \
 	-I @abs_top_srcdir@/pami/compiler/gnu \
 	-I @abs_top_srcdir@/pami/common/bgq \
@@ -53,8 +52,6 @@ else
 	-I @BGFLOOR@ \
 	-I @BGFLOOR@/spi \
 	-I @BGFLOOR@/spi/include \
-	-I @BGFLOOR@/spi/include/mu \
-	-I @BGFLOOR@/spi/include/mu/pami \
 	-I @BGFLOOR@/spi/include/kernel/cnk \
 	$< -o $@ \
 	-L @BGFLOOR@/spi/lib -lSPI -lSPI_cnk -lpthread -lrt -ldl

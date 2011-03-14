@@ -120,14 +120,14 @@ static void test_dispatch (
 
   if (recv == NULL)
   {
-    /* This is an 'immediate' receive */
+    // This is an 'immediate' receive
 
     memcpy(_rbuf, pipe_addr, pipe_size);
     recv_done (context, cookie, PAMI_SUCCESS);
   }
   else
   {
-    /* This is an 'asynchronous' receive */
+    // This is an 'asynchronous' receive
 
     recv->local_fn = recv_done;
     recv->cookie   = cookie;
