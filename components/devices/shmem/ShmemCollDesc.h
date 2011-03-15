@@ -352,8 +352,8 @@ public:
 
             for (size_t i = 0; i < DESCRIPTOR_FIFO_SIZE; i++)
               {
-                //new (&_desc[i]) Descriptor (mm, unique_device_string, 0, i );
-                new (&_desc[i]) Descriptor (mm, _atomic, i );
+                new (&_desc[i]) Descriptor (mm, unique_device_string, 0, i );
+                //new (&_desc[i]) Descriptor (mm, _atomic, i );
               }
           };
 
