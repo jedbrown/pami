@@ -316,20 +316,22 @@ extern "C"
       struct {
         unsigned               checkrequired:1;    /**<  A flag indicating whether or not the user MUST
                                                   query the metadata or not.  0:query is not
-                                                  necessary.  >0: the user must call the check_fn
+                                                  necessary.  1: the user must call the check_fn
                                                   to determine if the call site parameters are
                                                   correct.                                     */
         unsigned               nonlocal:1;     /**<  The protocol associated with this metadata
                                                   requires "nonlocal" knowledge, meaning that
                                                   the result code from the check_fn must be
                                                   allreduced to determine if the operation
-                                                  will work 0:no, >0:  requires nonlocal data  */
+                                                  will work 0:no, 1:  requires nonlocal data  */
         unsigned               rangeminmax:1;  /**<  This protocol only supports a range of bytes
-                                                  sent/received. 0: no min/max, >1: check range_lo/range_hi */                                   
+                                                  sent/received. 0: no min/max, 1: check range_lo/range_hi */                                   
         unsigned               sendminalign:1; /**<  This protocol requires a minimum address
-                                                  alignment of send_min_align bytes              */
+                                                  alignment of send_min_align bytes.
+                                                  0: no min alignment, 1: check send_min_align */                                   
         unsigned               recvminalign:1; /**<  This protocol requires a minimum address
-                                                  alignment of recv_min_align bytes              */
+                                                  alignment of recv_min_align bytes              
+                                                  0: no min alignment, 1: check recv_min_align */                                   
         unsigned               alldtop:1;      /**<  This protocol works for all datatypes and
                                                   operations for reduction/scan
                                                   0:not for all dt & op, 1:for all dt & op     */
@@ -360,6 +362,7 @@ extern "C"
     }check_perf;
     size_t                 range_lo_perf;/**<  Estimated performance range in bytes(low)    */
     size_t                 range_hi_perf;/**<  Estimated performance range in bytes(high)   */
+    unsigned               min_align_perf;/**<  Estimated performance minimum address alignment */
   } pami_metadata_t;
   /** \} */ /* end of "PAMI Collectives Metadata" group */
 
