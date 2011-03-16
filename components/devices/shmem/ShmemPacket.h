@@ -191,9 +191,12 @@ namespace PAMI
               _dispatch (writer._dispatch),
               _metadata (writer._metadata),
               _metasize (writer._metasize),
-              _iov (writer._iov),
               _done (false)
-          {};
+          {
+            unsigned i;
+            for (i=0; i<T_Niov; i++)
+              _iov[i] = writer._iov[i];
+          };
 
           inline PacketIovecWriter (uint16_t dispatch) :
               PAMI::Fifo::Interface::PacketProducer< PacketIovecWriter<T_Niov> > (),
@@ -206,7 +209,9 @@ namespace PAMI
           {
             _metadata = metadata;
             _metasize = metasize;
-            _iov = iov;
+            unsigned i;
+            for (i=0; i<T_Niov; i++)
+              _iov[i] = iov[i];
           };
 
           inline bool isDone ()
@@ -236,7 +241,7 @@ namespace PAMI
           uint16_t       _dispatch;
           void         * _metadata;
           size_t         _metasize;
-          struct iovec * _iov;
+          struct iovec   _iov[T_Niov];
           bool           _done;
       };
 
