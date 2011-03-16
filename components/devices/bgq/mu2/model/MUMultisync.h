@@ -166,7 +166,7 @@ namespace PAMI
         CompletionMsg              _completionmsg;
       };
 
-      bool  MUMultisyncModel::CompletionMsg::advance ()
+      extern inline bool  MUMultisyncModel::CompletionMsg::advance ()
       {
         int rc = MUSPI_GIBarrierPoll (barrier);
 

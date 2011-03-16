@@ -55,12 +55,12 @@ namespace CCMI
   {
     namespace P2PBarrier
     {
-      void binomial_barrier_md(pami_metadata_t *m)
+      extern inline void binomial_barrier_md(pami_metadata_t *m)
       {
         new(m) PAMI::Geometry::Metadata("I0:Binomial:P2P:P2P");
       }
 
-      bool binomial_analyze (PAMI_GEOMETRY_CLASS *geometry)
+      extern inline bool binomial_analyze (PAMI_GEOMETRY_CLASS *geometry)
       {
         return true;
       }
@@ -79,7 +79,7 @@ namespace CCMI
 
     namespace P2PBroadcast
     {
-      void get_colors (PAMI::Topology             * t,
+      extern inline void get_colors (PAMI::Topology             * t,
                        unsigned                    bytes,
                        unsigned                  * colors,
                        unsigned                  & ncolors)
@@ -88,7 +88,7 @@ namespace CCMI
         ncolors = 1;
         colors[0] = CCMI::Schedule::TorusRect::NO_COLOR;
       }
-    void get_rect_colors (PAMI::Topology             * t,
+    extern inline void get_rect_colors (PAMI::Topology             * t,
                           unsigned                    bytes,
                           unsigned                  * colors,
                           unsigned                  & ncolors)
@@ -119,7 +119,7 @@ namespace CCMI
     }
 
 
-      void rectangle_broadcast_metadata(pami_metadata_t *m)
+      extern inline void rectangle_broadcast_metadata(pami_metadata_t *m)
       {
         TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
         new(m) PAMI::Geometry::Metadata("I0:Rectangle:P2P:P2P");
@@ -139,7 +139,7 @@ namespace CCMI
         CCMI::ConnectionManager::ColorConnMgr>
       RectangleBroadcastFactory;
 
-      void rectangle_1color_broadcast_metadata(pami_metadata_t *m)
+      extern inline void rectangle_1color_broadcast_metadata(pami_metadata_t *m)
       {
         TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
         new(m) PAMI::Geometry::Metadata("I0:Rectangle1Color:P2P:P2P");
@@ -159,13 +159,13 @@ namespace CCMI
         CCMI::ConnectionManager::ColorConnMgr>
       Rectangle1ColorBroadcastFactory;
 
-      void binomial_broadcast_metadata(pami_metadata_t *m)
+      extern inline void binomial_broadcast_metadata(pami_metadata_t *m)
       {
         TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
         new(m) PAMI::Geometry::Metadata("I0:Binomial:P2P:P2P");
       }
 
-      void ring_broadcast_metadata(pami_metadata_t *m)
+      extern inline void ring_broadcast_metadata(pami_metadata_t *m)
       {
         TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
         new(m) PAMI::Geometry::Metadata("I0:Ring:P2P:P2P");
@@ -197,19 +197,19 @@ namespace CCMI
         CCMI::ConnectionManager::ColorGeometryConnMgr>
       RingBroadcastFactory;
 
-      void am_rb_broadcast_metadata(pami_metadata_t *m)
+      extern inline void am_rb_broadcast_metadata(pami_metadata_t *m)
       {
         TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
         new(m) PAMI::Geometry::Metadata("I0:RankBased_Binomial:P2P:P2P");
       }
 
-      void am_cs_broadcast_metadata(pami_metadata_t *m)
+      extern inline void am_cs_broadcast_metadata(pami_metadata_t *m)
       {
         TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
         new(m) PAMI::Geometry::Metadata("I0:SequenceBased_Binomial:P2P:P2P");
       }
 
-      void create_schedule(void                        * buf,
+      extern inline void create_schedule(void                        * buf,
                            unsigned                      size,
                            unsigned                      root,
                            Interfaces::NativeInterface * native,
@@ -219,7 +219,7 @@ namespace CCMI
         new (buf) CCMI::Schedule::TopoMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0);
       }
 
-      unsigned getKey(unsigned                                                root,
+      extern inline unsigned getKey(unsigned                                                root,
                       unsigned                                                connid,
                       PAMI_GEOMETRY_CLASS                                    *geometry,
                       ConnectionManager::BaseConnectionManager              **connmgr)
@@ -228,7 +228,7 @@ namespace CCMI
         return root;
       }
 
-      void create_schedule_as(void                        * buf,
+      extern inline void create_schedule_as(void                        * buf,
                               unsigned                      size,
                               unsigned                      root,
                               Interfaces::NativeInterface * native,
@@ -238,7 +238,7 @@ namespace CCMI
         new (buf) CCMI::Schedule::TopoMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0);
       }
 
-      unsigned getKey_as(unsigned                                   root,
+      extern inline unsigned getKey_as(unsigned                                   root,
                          unsigned                                   connid,
                          PAMI_GEOMETRY_CLASS                      * geometry,
                          ConnectionManager::BaseConnectionManager **connmgr)
@@ -283,13 +283,13 @@ namespace CCMI
 
     namespace P2PAMBroadcast
     {
-      void am_broadcast_metadata(pami_metadata_t *m)
+      extern inline void am_broadcast_metadata(pami_metadata_t *m)
       {
         TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
         new(m) PAMI::Geometry::Metadata("I0:Binomial:P2P:P2P");
       }
 
-      void create_schedule(void                        * buf,
+      extern inline void create_schedule(void                        * buf,
                            unsigned                      size,
                            unsigned                      root,
                            Interfaces::NativeInterface * native,
@@ -325,7 +325,7 @@ namespace CCMI
       ///
       namespace Binomial
       {
-        void get_colors (PAMI::Topology             * t,
+        extern inline void get_colors (PAMI::Topology             * t,
                          unsigned                    bytes,
                          unsigned                  * colors,
                          unsigned                  & ncolors)
@@ -334,7 +334,7 @@ namespace CCMI
           colors[0] = CCMI::Schedule::TorusRect::NO_COLOR;
         }
 
-        void binomial_allreduce_metadata(pami_metadata_t *m)
+        extern inline void binomial_allreduce_metadata(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("I0:Binomial:P2P:P2P");
         }
@@ -351,7 +351,7 @@ namespace CCMI
           CCMI::ConnectionManager::RankBasedConnMgr>
         Factory;
 
-       unsigned getKey(unsigned                                   root,
+       extern inline unsigned getKey(unsigned                                   root,
                        unsigned                                   connid,
                        PAMI_GEOMETRY_CLASS                      * geometry,
                        ConnectionManager::BaseConnectionManager **connmgr)
@@ -372,7 +372,7 @@ namespace CCMI
        ///
        /// Use the BinomialTreeSchedule
        ///
-       void ascs_binomial_allreduce_metadata(pami_metadata_t *m)
+       extern inline void ascs_binomial_allreduce_metadata(pami_metadata_t *m)
        {
          new(m) PAMI::Geometry::Metadata("I0:SequenceBased_Binomial:P2P:P2P");
        }
@@ -384,7 +384,7 @@ namespace CCMI
          ascs_binomial_allreduce_metadata, CCMI::ConnectionManager::CommSeqConnMgr,
          pami_allreduce_t, getKey> AsyncCSBinomAllreduceFactory;
 
-       void ascs_binomial_reduce_metadata(pami_metadata_t *m)
+       extern inline void ascs_binomial_reduce_metadata(pami_metadata_t *m)
        {
          new(m) PAMI::Geometry::Metadata("I0:RankBased_Binomial:P2P:P2P");
        }
@@ -402,7 +402,7 @@ namespace CCMI
     namespace P2PScatter
     {
 
-      unsigned getKey(unsigned                                   root,
+      extern inline unsigned getKey(unsigned                                   root,
                       unsigned                                   connid,
                       PAMI_GEOMETRY_CLASS                      * geometry,
                       ConnectionManager::BaseConnectionManager **connmgr)
@@ -419,7 +419,7 @@ namespace CCMI
       namespace Binomial
       {
 
-        void create_schedule(void                        * buf,
+        extern inline void create_schedule(void                        * buf,
                              unsigned                      size,
                              unsigned                      root,
                              Interfaces::NativeInterface * native,
@@ -429,7 +429,7 @@ namespace CCMI
           new (buf) CCMI::Schedule::GenericTreeSchedule<>(native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
-        void binomial_scatter_metadata(pami_metadata_t *m)
+        extern inline void binomial_scatter_metadata(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("I0:Binomial:P2P:P2P");
         }
@@ -450,7 +450,7 @@ namespace CCMI
       namespace Flat
       {
 
-        void create_schedule(void                        * buf,
+        extern inline void create_schedule(void                        * buf,
                              unsigned                      size,
                              unsigned                      root,
                              Interfaces::NativeInterface * native,
@@ -460,7 +460,7 @@ namespace CCMI
           new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
-        void flat_scatter_metadata(pami_metadata_t *m)
+        extern inline void flat_scatter_metadata(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("I0:Flat:P2P:P2P");
         }
@@ -483,7 +483,7 @@ namespace CCMI
     namespace P2PScatterv
       {
 
-      unsigned getKey(unsigned                                   root,
+      extern inline unsigned getKey(unsigned                                   root,
                       unsigned                                   connid,
                       PAMI_GEOMETRY_CLASS                      * geometry,
                       ConnectionManager::BaseConnectionManager **connmgr)
@@ -498,7 +498,7 @@ namespace CCMI
       }
 
 
-        void create_schedule(void                        * buf,
+        extern inline void create_schedule(void                        * buf,
                              unsigned                      size,
                              unsigned                      root,
                              Interfaces::NativeInterface * native,
@@ -508,7 +508,7 @@ namespace CCMI
           new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
-        void scatterv_metadata(pami_metadata_t *m)
+        extern inline void scatterv_metadata(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("I0:SoftwareTree:P2P:P2P");
         }
@@ -525,7 +525,7 @@ namespace CCMI
           getKey >
         Factory;
 
-        void scatterv_int_metadata(pami_metadata_t *m)
+        extern inline void scatterv_int_metadata(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("I0:SoftwareTree:P2P:P2P");
         }
@@ -547,7 +547,7 @@ namespace CCMI
     namespace P2PReduceScatter
     {
 
-      unsigned getKey(unsigned                                   root,
+      extern inline unsigned getKey(unsigned                                   root,
                       unsigned                                   connid,
                       PAMI_GEOMETRY_CLASS                      * geometry,
                       ConnectionManager::BaseConnectionManager **connmgr)
@@ -562,7 +562,7 @@ namespace CCMI
       }
 
 
-      void create_schedule(void                        * buf,
+      extern inline void create_schedule(void                        * buf,
                            unsigned                      size,
                            unsigned                      root,
                            Interfaces::NativeInterface * native,
@@ -573,7 +573,7 @@ namespace CCMI
       }
 
 
-       void ascs_reduce_scatter_metadata(pami_metadata_t *m)
+       extern inline void ascs_reduce_scatter_metadata(pami_metadata_t *m)
        {
          new(m) PAMI::Geometry::Metadata("I0:Sequence_Tree:P2P:P2P");
        }
@@ -592,7 +592,7 @@ namespace CCMI
     namespace P2PGather
     {
 
-      unsigned getKey(unsigned                                   root,
+      extern inline unsigned getKey(unsigned                                   root,
                       unsigned                                   connid,
                       PAMI_GEOMETRY_CLASS                      * geometry,
                       ConnectionManager::BaseConnectionManager **connmgr)
@@ -609,7 +609,7 @@ namespace CCMI
       namespace Binomial
       {
 
-        void create_schedule(void                        * buf,
+        extern inline void create_schedule(void                        * buf,
                              unsigned                      size,
                              unsigned                      root,
                              Interfaces::NativeInterface * native,
@@ -619,7 +619,7 @@ namespace CCMI
           new (buf) CCMI::Schedule::GenericTreeSchedule<> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
-        void binomial_gather_metadata(pami_metadata_t *m)
+        extern inline void binomial_gather_metadata(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("I0:Binomial:P2P:P2P");
         }
@@ -641,7 +641,7 @@ namespace CCMI
       namespace Flat
       {
 
-        void create_gather_schedule(void                        * buf,
+        extern inline void create_gather_schedule(void                        * buf,
                                     unsigned                      size,
                                     unsigned                      root,
                                     Interfaces::NativeInterface * native,
@@ -651,7 +651,7 @@ namespace CCMI
           new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
-        void create_bcast_schedule(void                        * buf,
+        extern inline void create_bcast_schedule(void                        * buf,
                                    unsigned                      size,
                                    unsigned                      root,
                                    Interfaces::NativeInterface * native,
@@ -661,7 +661,7 @@ namespace CCMI
           new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,2> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
-        void flat_gather_metadata(pami_metadata_t *m)
+        extern inline void flat_gather_metadata(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("I0:Flat:P2P:P2P");
         }
@@ -687,7 +687,7 @@ namespace CCMI
     namespace P2PGatherv
     {
 
-      unsigned getKey(unsigned                                   root,
+      extern inline unsigned getKey(unsigned                                   root,
                       unsigned                                   connid,
                       PAMI_GEOMETRY_CLASS                      * geometry,
                       ConnectionManager::BaseConnectionManager **connmgr)
@@ -702,7 +702,7 @@ namespace CCMI
       }
 
 
-        void create_gatherv_schedule(void                        * buf,
+        extern inline void create_gatherv_schedule(void                        * buf,
                                      unsigned                      size,
                                      unsigned                      root,
                                      Interfaces::NativeInterface * native,
@@ -712,7 +712,7 @@ namespace CCMI
           new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
-        void create_bcast_schedule(void                        * buf,
+        extern inline void create_bcast_schedule(void                        * buf,
                                    unsigned                      size,
                                    unsigned                      root,
                                    Interfaces::NativeInterface * native,
@@ -722,7 +722,7 @@ namespace CCMI
           new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,2> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
-        void gatherv_metadata(pami_metadata_t *m)
+        extern inline void gatherv_metadata(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("I0:Tree:P2P:P2P");
         }
@@ -742,7 +742,7 @@ namespace CCMI
           getKey >
         Factory;
 
-        void gatherv_int_metadata(pami_metadata_t *m)
+        extern inline void gatherv_int_metadata(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("I0:Tree:P2P:P2P");
         }
@@ -769,7 +769,7 @@ namespace CCMI
       namespace Binomial
       {
 
-        unsigned getKey(unsigned                                   root,
+        extern inline unsigned getKey(unsigned                                   root,
                         unsigned                                   connid,
                         PAMI_GEOMETRY_CLASS                      * geometry,
                         ConnectionManager::BaseConnectionManager **connmgr)
@@ -783,7 +783,7 @@ namespace CCMI
           return cm->updateConnectionId( geometry->comm() );
         }
 
-        void create_schedule(void                        * buf,
+        extern inline void create_schedule(void                        * buf,
                              unsigned                      size,
                              unsigned                      root,
                              Interfaces::NativeInterface * native,
@@ -793,7 +793,7 @@ namespace CCMI
           new (buf) CCMI::Schedule::GenericTreeSchedule<> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
-        void binomial_scan_metadata(pami_metadata_t *m)
+        extern inline void binomial_scan_metadata(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("I0:Binomial:P2P:P2P");
         }
@@ -819,7 +819,7 @@ namespace CCMI
       namespace Binomial
       {
 
-        unsigned getKey(unsigned                                   root,
+        extern inline unsigned getKey(unsigned                                   root,
                         unsigned                                   connid,
                         PAMI_GEOMETRY_CLASS                      * geometry,
                         ConnectionManager::BaseConnectionManager **connmgr)
@@ -833,7 +833,7 @@ namespace CCMI
           return cm->updateConnectionId( geometry->comm() );
         }
 
-        void create_schedule(void                        * buf,
+        extern inline void create_schedule(void                        * buf,
                              unsigned                      size,
                              unsigned                      root,
                              Interfaces::NativeInterface * native,
@@ -843,7 +843,7 @@ namespace CCMI
           new (buf) CCMI::Schedule::GenericTreeSchedule<> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
-        void binomial_allgather_metadata(pami_metadata_t *m)
+        extern inline void binomial_allgather_metadata(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("I0:Binomial:P2P:P2P");
         }
@@ -869,7 +869,7 @@ namespace CCMI
       namespace Ring
       {
 
-        unsigned getKey(unsigned                                   root,
+        extern inline unsigned getKey(unsigned                                   root,
                         unsigned                                   connid,
                         PAMI_GEOMETRY_CLASS                      * geometry,
                         ConnectionManager::BaseConnectionManager **connmgr)
@@ -883,17 +883,17 @@ namespace CCMI
           return cm->updateConnectionId( geometry->comm() );
         }
 
-        void ring_allgather_metadata(pami_metadata_t *m)
+        extern inline void ring_allgather_metadata(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("I0:Ring:P2P:P2P");
         }
 
-        void ring_allgatherv_int_metadata(pami_metadata_t *m)
+        extern inline void ring_allgatherv_int_metadata(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("I0:Ring:P2P:P2P");
         }
 
-        void ring_allgatherv_metadata(pami_metadata_t *m)
+        extern inline void ring_allgatherv_metadata(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("I0:Ring:P2P:P2P");
         }
@@ -944,7 +944,7 @@ namespace CCMI
       namespace Pairwise
       {
 
-        unsigned getKey(unsigned                                   root,
+        extern inline unsigned getKey(unsigned                                   root,
                         unsigned                                   connid,
                         PAMI_GEOMETRY_CLASS                      * geometry,
                         ConnectionManager::BaseConnectionManager **connmgr)
@@ -958,12 +958,12 @@ namespace CCMI
           return cm->updateConnectionId( geometry->comm() );
         }
 
-        void pairwise_alltoall_metadata(pami_metadata_t *m)
+        extern inline void pairwise_alltoall_metadata(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("I0:Pairwise:P2P:P2P");
         }
 
-        void pairwise_alltoallv_int_metadata(pami_metadata_t *m)
+        extern inline void pairwise_alltoallv_int_metadata(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("I0:Pairwise:P2P:P2P");
         }
@@ -997,7 +997,7 @@ namespace CCMI
 
     namespace P2PAlltoall
     {
-      void getAlltoallMetaData(pami_metadata_t *m)
+      extern inline void getAlltoallMetaData(pami_metadata_t *m)
       {
         new(m) PAMI::Geometry::Metadata("I0:M2MComposite:P2P:P2P");
       }
@@ -1007,7 +1007,7 @@ namespace CCMI
     };//P2PAlltoall
     namespace P2PAlltoallv
     {
-      void getAlltoallvMetaData(pami_metadata_t *m)
+      extern inline void getAlltoallvMetaData(pami_metadata_t *m)
       {
         new(m) PAMI::Geometry::Metadata("I0:M2MComposite:P2P:P2P");
       }

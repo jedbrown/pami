@@ -49,24 +49,24 @@ namespace CCMI
     };
 
     template <class T_Gather_type>
-    void setGatherVectors(T_Gather_type *xfer, void *disps, void *sndcounts)
+    extern inline void setGatherVectors(T_Gather_type *xfer, void *disps, void *sndcounts)
     {
     }
 
     template<>
-    void setGatherVectors<pami_gather_t> (pami_gather_t *xfer, void *disps, void * rcvcounts)
+    inline void setGatherVectors<pami_gather_t> (pami_gather_t *xfer, void *disps, void * rcvcounts)
     {
     }
 
     template<>
-    void setGatherVectors<pami_gatherv_t> (pami_gatherv_t *xfer, void *disps, void *rcvcounts)
+    inline void setGatherVectors<pami_gatherv_t> (pami_gatherv_t *xfer, void *disps, void *rcvcounts)
     {
       *((size_t **)disps)     = xfer->rdispls;
       *((size_t **)rcvcounts) = xfer->rtypecounts;
     }
 
     template<>
-    void setGatherVectors<pami_gatherv_int_t> (pami_gatherv_int_t *xfer, void *disps, void *rcvcounts)
+    inline void setGatherVectors<pami_gatherv_int_t> (pami_gatherv_int_t *xfer, void *disps, void *rcvcounts)
     {
       *((int **)disps)     = xfer->rdispls;
       *((int **)rcvcounts) = xfer->rtypecounts;

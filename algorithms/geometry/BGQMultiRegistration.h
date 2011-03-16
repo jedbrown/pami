@@ -69,7 +69,7 @@ namespace PAMI
     // Two functions - one for MU dt/ops, one for current SHMEM dt/ops
     namespace MU
     {
-      inline metadata_result_t op_dt_metadata_function(struct pami_xfer_t *in)
+      extern inline metadata_result_t op_dt_metadata_function(struct pami_xfer_t *in)
       {
         const bool support[PAMI_DT_COUNT][PAMI_OP_COUNT] =
         {
@@ -107,7 +107,7 @@ namespace PAMI
 #ifdef ENABLE_NEW_SHMEM
     namespace Shmem
     {
-      inline metadata_result_t op_dt_metadata_function(struct pami_xfer_t *in)
+      extern inline metadata_result_t op_dt_metadata_function(struct pami_xfer_t *in)
       {
         TRACE((stderr, "Shmem::op_dt_metadata_function(dt %d,op %d) = %s\n", dt, op, support[dt][op] ? "true" : "false"));
         metadata_result_t result = {0};
@@ -128,7 +128,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     // 'Pure' Shmem allsided multisync
     //----------------------------------------------------------------------------
-    void ShmemMsyncMetaData(pami_metadata_t *m)
+    extern inline void ShmemMsyncMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiSync:SHMEM:-");
     }
@@ -137,13 +137,13 @@ namespace PAMI
     ShmemMsyncMetaData,
     CCMI::ConnectionManager::SimpleConnMgr > ShmemMultiSyncFactory;
 
-    void OptBinomialMetaData(pami_metadata_t *m)
+    extern inline void OptBinomialMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:OptBinomial:P2P:P2P");
       m->check_perf.values.hw_accel     = 1;
     }
 
-    bool opt_binomial_analyze (PAMI_GEOMETRY_CLASS *geometry)
+    extern inline bool opt_binomial_analyze (PAMI_GEOMETRY_CLASS *geometry)
     {
       return true;
     }
@@ -167,7 +167,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     // 'Pure' Shmem allsided multicombine
     //----------------------------------------------------------------------------
-    void ShmemMcombMetaData(pami_metadata_t *m)
+    extern inline void ShmemMcombMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiCombine:SHMEM:-");
 #ifdef ENABLE_NEW_SHMEM
@@ -185,7 +185,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     // 'Pure' Shmem allsided multicast
     //----------------------------------------------------------------------------
-    void ShmemMcastMetaData(pami_metadata_t *m)
+    extern inline void ShmemMcastMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiCast:SHMEM:-");
     }
@@ -198,7 +198,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     // 'Pure' MU allsided multicast
     //----------------------------------------------------------------------------
-    void MUMcastMetaData(pami_metadata_t *m)
+    extern inline void MUMcastMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiCast:-:MU");
       m->check_perf.values.hw_accel     = 1;
@@ -214,7 +214,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     // 'Pure' MU allsided multisync
     //----------------------------------------------------------------------------
-    void GIMsyncMetaData(pami_metadata_t *m)
+    extern inline void GIMsyncMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiSync:-:GI");
       m->check_perf.values.hw_accel     = 1;
@@ -230,7 +230,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     // MU rectangle multisync
     //----------------------------------------------------------------------------
-    void MURectangleMsyncMetaData(pami_metadata_t *m)
+    extern inline void MURectangleMsyncMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:RectangleMultiSync:-:MU");
     }
@@ -245,7 +245,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     // 'Pure' MU allsided multicombine
     //----------------------------------------------------------------------------
-    void MUMcombMetaData(pami_metadata_t *m)
+    extern inline void MUMcombMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiCombine:-:MU");
       m->check_correct.values.alldt     = 0;
@@ -261,7 +261,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     // 'Pure' MU allsided dput multicast
     //----------------------------------------------------------------------------
-    void MUMcastCollectiveDputMetaData(pami_metadata_t *m)
+    extern inline void MUMcastCollectiveDputMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:MulticastDput:-:MU");
       m->check_perf.values.hw_accel     = 1;
@@ -275,7 +275,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     // 'Pure' MU allsided dput multicombine
     //----------------------------------------------------------------------------
-    void MUMcombCollectiveDputMetaData(pami_metadata_t *m)
+    extern inline void MUMcombCollectiveDputMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiCombineDput:-:MU");
       m->check_correct.values.alldt     = 0;
@@ -291,7 +291,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     // MU+Shmem allsided dput multicombine
     //----------------------------------------------------------------------------
-    void MUShmemMcombCollectiveDputMetaData(pami_metadata_t *m)
+    extern inline void MUShmemMcombCollectiveDputMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiCombineDput:SHMEM:MU");
 #ifdef ENABLE_NEW_SHMEM
@@ -317,7 +317,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     // MU allsided multicast built on multicombine (BOR)
     //----------------------------------------------------------------------------
-    void MUMcast3MetaData(pami_metadata_t *m)
+    extern inline void MUMcast3MetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("X0:MultiCast_MultiCombine:-:MU");
       m->range_hi = 1024*1024; /// \todo arbitrary hack for now - it core dumps > 1M
@@ -332,7 +332,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     // 'Composite' Shmem/MU allsided 2 device multisync
     //----------------------------------------------------------------------------
-    void Msync2DMetaData(pami_metadata_t *m)
+    extern inline void Msync2DMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiSync2Device:SHMEM:MU");
       m->check_perf.values.hw_accel     = 1;
@@ -344,7 +344,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     // 'Composite' Shmem/MU allsided 2 device multisync
     //----------------------------------------------------------------------------
-    void Msync2DGIShmemMetaData(pami_metadata_t *m)
+    extern inline void Msync2DGIShmemMetaData(pami_metadata_t *m)
     {
       // Apparently MU dput actually uses GI for msync
       new(m) PAMI::Geometry::Metadata("I0:MultiSync2Device:SHMEM:GI");
@@ -361,7 +361,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     // 'Composite' Shmem/MU allsided 2 device multisync
     //----------------------------------------------------------------------------
-    void Msync2DRectangleDputMetaData(pami_metadata_t *m)
+    extern inline void Msync2DRectangleDputMetaData(pami_metadata_t *m)
     {
       // Apparently MU dput actually uses GI for msync
       new(m) PAMI::Geometry::Metadata("I0:RectangleMultiSync2Device:SHMEM:MU");
@@ -379,7 +379,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     // 'Composite' Shmem/MU allsided 2 device multicast
     //----------------------------------------------------------------------------
-    void Mcast2DMetaData(pami_metadata_t *m)
+    extern inline void Mcast2DMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("X0:MultiCast2Device:SHMEM:MU");
       m->check_perf.values.hw_accel     = 1;
@@ -390,7 +390,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     // 'Composite' Shmem/MU-DPUT allsided 2 device multicast
     //----------------------------------------------------------------------------
-    void Mcast2DDputMetaData(pami_metadata_t *m)
+    extern inline void Mcast2DDputMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiCast2DeviceDput:SHMEM:MU");
       m->check_perf.values.hw_accel     = 1;
@@ -402,7 +402,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     // 'Composite' Shmem/MU allsided 2 device multicombine
     //----------------------------------------------------------------------------
-    void Mcomb2DMetaData(pami_metadata_t *m)
+    extern inline void Mcomb2DMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("X0:MultiCombine2Device:SHMEM:MU");
 #ifdef ENABLE_NEW_SHMEM
@@ -423,7 +423,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     // 'Composite' Shmem/MU-DPUT allsided 2 device multicombine
     //----------------------------------------------------------------------------
-    void Mcomb2DDputMetaData(pami_metadata_t *m)
+    extern inline void Mcomb2DDputMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiCombine2DeviceDput:SHMEM:MU");
 #ifdef ENABLE_NEW_SHMEM
@@ -445,7 +445,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     // 'Composite' Shmem/MU allsided 2 device multicombine with no pipelining
     //----------------------------------------------------------------------------
-    void Mcomb2DMetaDataNP(pami_metadata_t *m)
+    extern inline void Mcomb2DMetaDataNP(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiCombine2DeviceNP:SHMEM:MU");
 #ifdef ENABLE_NEW_SHMEM
@@ -466,7 +466,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     // 'Composite' Shmem/MU-DPUT allsided 2 device multicombine with no pipelining
     //----------------------------------------------------------------------------
-    void Mcomb2DDputMetaDataNP(pami_metadata_t *m)
+    extern inline void Mcomb2DDputMetaDataNP(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiCombine2DeviceDputNP:SHMEM:MU");
 #ifdef ENABLE_NEW_SHMEM
@@ -487,7 +487,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     // Rectangle broadcast
     //----------------------------------------------------------------------------
-    void get_colors (PAMI::Topology             * t,
+    extern inline void get_colors (PAMI::Topology             * t,
                      unsigned                    bytes,
                      unsigned                  * colors,
                      unsigned                  & ncolors)
@@ -497,7 +497,7 @@ namespace PAMI
       colors[0] = CCMI::Schedule::TorusRect::NO_COLOR;
     }
 
-    void get_rect_colors (PAMI::Topology             * t,
+    extern inline void get_rect_colors (PAMI::Topology             * t,
                           unsigned                    bytes,
                           unsigned                  * colors,
                           unsigned                  & ncolors)
@@ -526,13 +526,13 @@ namespace PAMI
       memcpy (colors, _colors, ncolors * sizeof(int));
     }
 
-    void rectangle_dput_1color_broadcast_metadata(pami_metadata_t *m)
+    extern inline void rectangle_dput_1color_broadcast_metadata(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:RectangleDput1Color:SHMEM:MU");
       m->check_perf.values.hw_accel     = 1;
     }
 
-    void mu_rectangle_dput_1color_broadcast_metadata(pami_metadata_t *m)
+    extern inline void mu_rectangle_dput_1color_broadcast_metadata(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:RectangleDput1Color:MU:MU");
       m->check_perf.values.hw_accel     = 1;
@@ -563,13 +563,13 @@ namespace PAMI
     PAMI::Geometry::CKEY_BCASTCOMPOSITE3 >
     MURectangleDput1ColorBroadcastFactory;
 
-    void rectangle_dput_broadcast_metadata(pami_metadata_t *m)
+    extern inline void rectangle_dput_broadcast_metadata(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:RectangleDput:SHMEM:MU");
       m->check_perf.values.hw_accel     = 1;
     }
 
-    void mu_rectangle_dput_broadcast_metadata(pami_metadata_t *m)
+    extern inline void mu_rectangle_dput_broadcast_metadata(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:RectangleDput:MU:MU");
       m->check_perf.values.hw_accel     = 1;
@@ -600,13 +600,13 @@ namespace PAMI
     PAMI::Geometry::CKEY_BCASTCOMPOSITE1 >
     MURectangleDputBroadcastFactory;
 
-    void rectangle_dput_allgather_metadata(pami_metadata_t *m)
+    extern inline void rectangle_dput_allgather_metadata(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:RectangleDput:SHMEM:MU");
       m->check_perf.values.hw_accel     = 1;
     }
 
-    void get_rect_allgv_colors (PAMI::Topology             * t,
+    extern inline void get_rect_allgv_colors (PAMI::Topology             * t,
                                 unsigned                    bytes,
                                 unsigned                  * colors,
                                 unsigned                  & ncolors)

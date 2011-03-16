@@ -69,15 +69,15 @@ namespace PAMI
 {
   namespace CollRegistration
   {
-    char BarrierString[]        = "I1:Barrier:P2P:P2P";
-    char BarrierUEString[]      = "I1:UEBarrier:P2P:P2P";
-    char AllgatherString[]      = "I1:Allgather:P2P:P2P";
-    char AllgathervString[]     = "I1:Allgatherv:P2P:P2P";
-    char ScatterString[]        = "I1:Scatter:P2P:P2P";
-    char ScattervString[]       = "I1:Scatterv:P2P:P2P";
-    char AllreduceString[]      = "I1:Allreduce:P2P:P2P";
-    char ShortAllreduceString[] = "I1:ShortAllreduce:P2P:P2P";
-    char BroadcastString[]      = "I1:Broadcast:P2P:P2P";
+    static const char BarrierString[]        = "I1:Barrier:P2P:P2P";
+    static const char BarrierUEString[]      = "I1:UEBarrier:P2P:P2P";
+    static const char AllgatherString[]      = "I1:Allgather:P2P:P2P";
+    static const char AllgathervString[]     = "I1:Allgatherv:P2P:P2P";
+    static const char ScatterString[]        = "I1:Scatter:P2P:P2P";
+    static const char ScattervString[]       = "I1:Scatterv:P2P:P2P";
+    static const char AllreduceString[]      = "I1:Allreduce:P2P:P2P";
+    static const char ShortAllreduceString[] = "I1:ShortAllreduce:P2P:P2P";
+    static const char BroadcastString[]      = "I1:Broadcast:P2P:P2P";
 
     template <class T_Geometry,
               class T_NI,
@@ -108,15 +108,15 @@ namespace PAMI
         typedef PGAllreduceExec<T_Geometry,TSPColl::Allreduce::Short<T_NI>, T_NI, T_Device_P2P> ShortAllreduceExec;
         typedef PGBroadcastExec<T_Geometry,TSPColl::BinomBcast<T_NI>, T_NI, T_Device_P2P> BroadcastExec;
 
-        typedef PGFactory<TSPColl::Barrier<T_NI>,T_NI,T_Device_P2P,BarExec,BarrierString> BarrierFactory;
-        typedef PGFactory<TSPColl::BarrierUE<T_NI>,T_NI,T_Device_P2P,BarUEExec,BarrierUEString> BarrierUEFactory;
-        typedef PGFactory<TSPColl::Allgather<T_NI>,T_NI,T_Device_P2P,AllgatherExec,AllgatherString>  AllgatherFactory;
-        typedef PGFactory<TSPColl::Allgatherv<T_NI>,T_NI,T_Device_P2P,AllgathervExec,AllgathervString> AllgathervFactory;
-        typedef PGFactory<TSPColl::Scatter<T_NI>,T_NI,T_Device_P2P,ScatterExec,ScatterString, TSPColl::Barrier<T_NI> > ScatterFactory;
-        typedef PGFactory<TSPColl::Scatterv<T_NI>,T_NI,T_Device_P2P,ScattervExec,ScattervString, TSPColl::Barrier<T_NI> > ScattervFactory;
-        typedef PGFactory<TSPColl::Allreduce::Long<T_NI>,T_NI,T_Device_P2P,AllreduceExec,AllreduceString>  AllreduceFactory;
-        typedef PGFactory<TSPColl::Allreduce::Short<T_NI>,T_NI,T_Device_P2P,ShortAllreduceExec,ShortAllreduceString> ShortAllreduceFactory;
-        typedef PGFactory<TSPColl::BinomBcast<T_NI>,T_NI,T_Device_P2P,BroadcastExec,BroadcastString> BroadcastFactory;
+        typedef PGFactory<TSPColl::Barrier<T_NI>,T_NI,T_Device_P2P,BarExec> BarrierFactory;
+        typedef PGFactory<TSPColl::BarrierUE<T_NI>,T_NI,T_Device_P2P,BarUEExec> BarrierUEFactory;
+        typedef PGFactory<TSPColl::Allgather<T_NI>,T_NI,T_Device_P2P,AllgatherExec>  AllgatherFactory;
+        typedef PGFactory<TSPColl::Allgatherv<T_NI>,T_NI,T_Device_P2P,AllgathervExec> AllgathervFactory;
+        typedef PGFactory<TSPColl::Scatter<T_NI>,T_NI,T_Device_P2P,ScatterExec, TSPColl::Barrier<T_NI> > ScatterFactory;
+        typedef PGFactory<TSPColl::Scatterv<T_NI>,T_NI,T_Device_P2P,ScattervExec, TSPColl::Barrier<T_NI> > ScattervFactory;
+        typedef PGFactory<TSPColl::Allreduce::Long<T_NI>,T_NI,T_Device_P2P,AllreduceExec>  AllreduceFactory;
+        typedef PGFactory<TSPColl::Allreduce::Short<T_NI>,T_NI,T_Device_P2P,ShortAllreduceExec> ShortAllreduceFactory;
+        typedef PGFactory<TSPColl::BinomBcast<T_NI>,T_NI,T_Device_P2P,BroadcastExec> BroadcastFactory;
 
         typedef union Factories
         {
@@ -316,15 +316,15 @@ namespace PAMI
           ShortAllreduceFactory *_shortallreduce_reg = (ShortAllreduceFactory*)_allocator.allocateObject();
           BroadcastFactory      *_broadcast_reg      = (BroadcastFactory*)_allocator.allocateObject();
 
-          new(_barrier_reg)        BarrierFactory(&_dev_p2p, _barrier, _nb_barrier);
-          new(_barrier_ue_reg)     BarrierUEFactory(&_dev_p2p, _barrier_ue, _nb_ue_barrier);
-          new(_allgather_reg)      AllgatherFactory(&_dev_p2p, _allgather, _nb_allgather);
-          new(_allgatherv_reg)     AllgathervFactory(&_dev_p2p, _allgatherv, _nb_allgatherv);
-          new(_scatter_reg)        ScatterFactory(&_dev_p2p, _scatter_s, _nb_sct,_nb_barrier, _scatter_b);
-          new(_scatterv_reg)       ScattervFactory(&_dev_p2p, _scatterv_s, _nb_sctv,_nb_barrier, _scatter_b);
-          new(_allreduce_reg)      AllreduceFactory(&_dev_p2p, _allreduce, _nb_lar);
-          new(_shortallreduce_reg) ShortAllreduceFactory(&_dev_p2p, _shortallreduce,_nb_sar);
-          new(_broadcast_reg)      BroadcastFactory(&_dev_p2p, _bcast, _nb_bcast);
+          new(_barrier_reg)        BarrierFactory(&_dev_p2p, _barrier, _nb_barrier, BarrierString);
+          new(_barrier_ue_reg)     BarrierUEFactory(&_dev_p2p, _barrier_ue, _nb_ue_barrier, BarrierUEString);
+          new(_allgather_reg)      AllgatherFactory(&_dev_p2p, _allgather, _nb_allgather, AllgatherString);
+          new(_allgatherv_reg)     AllgathervFactory(&_dev_p2p, _allgatherv, _nb_allgatherv, AllgathervString);
+          new(_scatter_reg)        ScatterFactory(&_dev_p2p, _scatter_s, _nb_sct, ScatterString, _nb_barrier, _scatter_b);
+          new(_scatterv_reg)       ScattervFactory(&_dev_p2p, _scatterv_s, _nb_sctv, ScattervString, _nb_barrier, _scatter_b);
+          new(_allreduce_reg)      AllreduceFactory(&_dev_p2p, _allreduce, _nb_lar, AllreduceString);
+          new(_shortallreduce_reg) ShortAllreduceFactory(&_dev_p2p, _shortallreduce,_nb_sar, ShortAllreduceString);
+          new(_broadcast_reg)      BroadcastFactory(&_dev_p2p, _bcast, _nb_bcast, BroadcastString);
 
 
           geometry->addCollective(PAMI_XFER_BARRIER,

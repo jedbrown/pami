@@ -48,24 +48,24 @@ namespace CCMI
     };
 
     template <class T_Scatter_type>
-    void setScatterVectors(T_Scatter_type *xfer, void *disps, void *sndcounts)
+    extern inline void setScatterVectors(T_Scatter_type *xfer, void *disps, void *sndcounts)
     {
     }
 
     template<>
-    void setScatterVectors<pami_scatter_t> (pami_scatter_t *xfer, void *disps, void * sndcounts)
+    inline void setScatterVectors<pami_scatter_t> (pami_scatter_t *xfer, void *disps, void * sndcounts)
     {
     }
 
     template<>
-    void setScatterVectors<pami_scatterv_t> (pami_scatterv_t *xfer, void *disps, void * sndcounts)
+    inline void setScatterVectors<pami_scatterv_t> (pami_scatterv_t *xfer, void *disps, void * sndcounts)
     {
       *((size_t **)disps)     = xfer->sdispls;
       *((size_t **)sndcounts) = xfer->stypecounts;
     }
 
     template<>
-    void setScatterVectors<pami_scatterv_int_t> (pami_scatterv_int_t *xfer, void *disps, void * sndcounts)
+    inline void setScatterVectors<pami_scatterv_int_t> (pami_scatterv_int_t *xfer, void *disps, void * sndcounts)
     {
       *((int **)disps)     = xfer->sdispls;
       *((int **)sndcounts) = xfer->stypecounts;

@@ -65,7 +65,6 @@ namespace PAMI
               class       T_P2P_NI,
               class       T_Device,
               class       T_Exec,
-              const char *T_MDString,
               class       T_TSPCollBarrier = void*>
     class PGFactory : public CCMI::Adaptor::CollectiveProtocolFactory
     {
@@ -74,15 +73,16 @@ namespace PAMI
                 T_P2P_NI,
                 T_Device,
                 T_Exec,
-                T_MDString,
                 T_TSPCollBarrier>(T_Device         *dev,
                                   T_P2P_NI          *model,
                                   T_TSPColl        *coll,
+				  const char *string,
                                   T_TSPCollBarrier *collbarrier = NULL,
                                   T_P2P_NI          *barmodel    = NULL  ):
         _coll(coll),
         _dev(dev),
         _model(model),
+	_string(string),
         _barmodel(barmodel),
         _collbarrier(collbarrier)
         {
@@ -105,13 +105,14 @@ namespace PAMI
         }
       virtual void metadata(pami_metadata_t *mdata)
         {
-          new(mdata) PAMI::Geometry::Metadata(T_MDString);
-          if(strstr(T_MDString,"Short")) mdata->range_hi = 512; /// \todo arbitrary hack for now
+          new(mdata) PAMI::Geometry::Metadata(_string);
+          if(strstr(_string,"Short")) mdata->range_hi = 512; /// \todo arbitrary hack for now
         }
       T_Exec            _exec;
       T_TSPColl        *_coll;
       T_Device         *_dev;
       T_P2P_NI          *_model;
+      const char        *_string;
       T_P2P_NI          *_barmodel;
       T_TSPCollBarrier *_collbarrier;
     };
