@@ -84,7 +84,7 @@ namespace PAMI
         size_t   bytes;
         size_t   pagesize  = 4096;
         char *envopts;
-        envopts = getenv("PAMI_DEVICE");
+        envopts = getenv("PAMI_DEVICE_1");
         _useshmem = true;
         _useMU = true;
 
