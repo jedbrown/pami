@@ -24,7 +24,26 @@ extern "C"
 
 extern "C" size_t PAMI_Error_text (char * string, size_t length)
 {
-  return 0; // unimplemented
+#ifdef PAMI_LAPI_IMPL
+    if (length == 0)
+        return 0;
+
+    char *err_msg = ReturnErr::_get_err_msg();
+    if (err_msg == NULL) {
+        string[0] = '\0';
+        return 0;
+    }
+
+    size_t msg_len = strlen(err_msg);
+    strncpy(string, err_msg, length - 1);
+    string[length - 1] = '\0';
+
+    if (msg_len > length - 1)
+        msg_len = length - 1;
+    return msg_len;
+#else
+    return 0; // unimplemented
+#endif
 }
 
 extern "C" double PAMI_Wtime ()
