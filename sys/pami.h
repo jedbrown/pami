@@ -240,7 +240,7 @@ extern "C"
         unsigned continuous_send:1;         /*  Send data must be continuous    */
         unsigned continuous_recv:1;         /*  Receive data must be continuous */
         unsigned nonlocal:1;                /**<The protocol associated with this metadata
-				                requires "nonlocal" knowledge, meaning that
+                                                requires "nonlocal" knowledge, meaning that
                                                 the result code from the check_fn must be
                                                 allreduced to determine if the operation
                                                 will work 0:no, >0:  requires nonlocal data  */

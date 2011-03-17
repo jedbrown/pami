@@ -62,7 +62,7 @@ namespace PAMI
             {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false} //PAMI_USERDEFINED_DT
           };
           metadata_result_t result = {0};
-          result.check.datatype = support[in->cmd.xfer_allreduce.dt][in->cmd.xfer_allreduce.op]?0:1;
+          result.check.datatype_op = support[in->cmd.xfer_allreduce.dt][in->cmd.xfer_allreduce.op]?0:1;
           return(result);
         }
       
@@ -111,8 +111,7 @@ namespace PAMI
         void McombineMetaData(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("I0:MultiCombineComposite:SHMEM:CAU");
-          m->check_correct.values.alldt     = 0;
-          m->check_correct.values.allop     = 0;
+          m->check_correct.values.alldtop   = 0;
           m->check_fn                       = CAU::op_dt_metadata_function;
           m->check_perf.values.hw_accel     = 1;
           m->range_lo_perf                  = 0;
@@ -129,8 +128,7 @@ namespace PAMI
         void McombineMetaData(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("I0:MultiCombineComposite:SHMEM:CAU");
-          m->check_correct.values.alldt     = 0;
-          m->check_correct.values.allop     = 0;
+          m->check_correct.values.alldtop   = 0;
           m->check_fn                       = CAU::op_dt_metadata_function;
           m->check_perf.values.hw_accel     = 1;
           m->range_lo_perf                  = 0;

@@ -55,13 +55,42 @@ namespace PAMI
     /// Metadata functions
     /// 
     // The protocol requires T_Aligned buffers.  Call some other T_Function (maybe check dt/op?), then check the alignment.
-    template <unsigned T_Alignment, pami_metadata_function T_Function>
+    template <unsigned T_Send_Alignment_Required, unsigned T_Send_Alignment, unsigned T_Recv_Alignment_Required, unsigned T_Recv_Alignment, pami_metadata_function T_Function>
     inline metadata_result_t align_metadata_function(struct pami_xfer_t *in)
     {
         metadata_result_t result = T_Function(in);
-        uint64_t  mask  = T_Alignment - 1; 
-        result.check.align_send_buffer      |= (((uint64_t)in->cmd.xfer_allreduce.sndbuf & (uint64_t)mask) == 0) ? 0:1;
-        result.check.align_send_recv_buffer |= (((uint64_t)in->cmd.xfer_allreduce.rcvbuf & (uint64_t)mask) == 0) ? 0:1;
+        uint64_t  mask;
+        if(T_Send_Alignment_Required)
+        {
+          mask  = T_Send_Alignment - 1; 
+          result.check.align_send_buffer      |= (((uint64_t)in->cmd.xfer_allreduce.sndbuf & (uint64_t)mask) == 0) ? 0:1;
+        }
+        if(T_Recv_Alignment_Required)
+        {
+          mask  = T_Recv_Alignment - 1; 
+          result.check.align_recv_buffer      |= (((uint64_t)in->cmd.xfer_allreduce.rcvbuf & (uint64_t)mask) == 0) ? 0:1;
+        }
+        return result;
+    }
+
+    // The protocol supports a limited T_Range_Low->T_Range_High.  Call some other T_Function (maybe check dt/op?), then check the range.
+    template <size_t T_Range_Low,size_t T_Range_High, pami_metadata_function T_Function>
+    inline metadata_result_t range_metadata_function(struct pami_xfer_t *in)
+    {
+        metadata_result_t result = T_Function(in);
+        size_t sz = 0;
+
+        /// \todo Support non-contiguous
+        assert((in->cmd.xfer_allreduce.stype == PAMI_TYPE_CONTIGUOUS) && (in->cmd.xfer_allreduce.rtype == PAMI_TYPE_CONTIGUOUS));
+        PAMI_Dt_query (in->cmd.xfer_allreduce.dt, &sz);
+
+        size_t dataSent = in->cmd.xfer_allreduce.stypecount * sz;
+        result.check.range   |= !((dataSent <= T_Range_High) && (dataSent >= T_Range_Low));
+
+        // Is this really necessary? Eh, why not..
+        dataSent = in->cmd.xfer_allreduce.rtypecount * sz;
+        result.check.range   |= !((dataSent <= T_Range_High) && (dataSent >= T_Range_Low));
+
         return result;
     }
 
@@ -99,7 +128,7 @@ namespace PAMI
         };
         TRACE((stderr, "MU::op_dt_metadata_function(dt %d,op %d) = %s\n", dt, op, support[dt][op] ? "true" : "false"));
         metadata_result_t result = {0};
-        result.check.datatype = support[in->cmd.xfer_allreduce.dt][in->cmd.xfer_allreduce.op]?0:1;
+        result.check.datatype_op = support[in->cmd.xfer_allreduce.dt][in->cmd.xfer_allreduce.op]?0:1;
         return(result);
       }
     }
@@ -111,7 +140,7 @@ namespace PAMI
       {
         TRACE((stderr, "Shmem::op_dt_metadata_function(dt %d,op %d) = %s\n", dt, op, support[dt][op] ? "true" : "false"));
         metadata_result_t result = {0};
-        result.check.datatype = ((in->cmd.xfer_allreduce.dt == PAMI_DOUBLE) && (in->cmd.xfer_allreduce.op == PAMI_SUM))?0:1;
+        result.check.datatype_op = ((in->cmd.xfer_allreduce.dt == PAMI_DOUBLE) && (in->cmd.xfer_allreduce.op == PAMI_SUM))?0:1;
         return(result);
       }
     }
@@ -171,10 +200,10 @@ namespace PAMI
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiCombine:SHMEM:-");
 #ifdef ENABLE_NEW_SHMEM
-      m->check_correct.values.alldt     = 0;
-      m->check_correct.values.allop     = 0;
-      m->range_hi                       = 64; // Msgs > 64 are pseudo-reduce-only, not allreduce
-      m->check_fn                       = Shmem::op_dt_metadata_function;
+      m->check_correct.values.alldtop     = 0;
+      m->check_correct.values.rangeminmax = 1;
+      m->range_hi                         = 64; // Msgs > 64 are pseudo-reduce-only, not allreduce
+      m->check_fn                         = range_metadata_function<0,64,Shmem::op_dt_metadata_function>;
 #endif
     }
 
@@ -248,8 +277,7 @@ namespace PAMI
     extern inline void MUMcombMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiCombine:-:MU");
-      m->check_correct.values.alldt     = 0;
-      m->check_correct.values.allop     = 0;
+      m->check_correct.values.alldtop   = 0;
       m->check_fn                       = MU::op_dt_metadata_function;
       m->check_perf.values.hw_accel     = 1;
     }
@@ -278,8 +306,7 @@ namespace PAMI
     extern inline void MUMcombCollectiveDputMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiCombineDput:-:MU");
-      m->check_correct.values.alldt     = 0;
-      m->check_correct.values.allop     = 0;
+      m->check_correct.values.alldtop   = 0;
       m->check_fn                       = MU::op_dt_metadata_function;
       m->check_perf.values.hw_accel     = 1;
     }
@@ -295,17 +322,21 @@ namespace PAMI
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiCombineDput:SHMEM:MU");
 #ifdef ENABLE_NEW_SHMEM
-      m->check_correct.values.alldt     = 0;
-      m->check_correct.values.allop     = 0;
-      m->check_fn                       = align_metadata_function<64,Shmem::op_dt_metadata_function>;
-      m->check_perf.values.hw_accel     = 1;
-      /// \todo m->check_correct.values.sendminalign = ?   // Need ticket #380 clarification
-      /// \todo m->check_correct.values.sendminalign = ?
+      m->check_correct.values.alldtop       = 0;
+      m->check_correct.values.sendminalign  = 1;
+      m->check_correct.values.recvminalign  = 1;
+      m->send_min_align                     = 64; 
+      m->recv_min_align                     = 64; 
+      m->check_fn                           = align_metadata_function<1,64,1,64,Shmem::op_dt_metadata_function>;
+      m->check_perf.values.hw_accel         = 1;
 #else
-      m->check_correct.values.alldt     = 0;
-      m->check_correct.values.allop     = 0;
-      m->check_fn                       = align_metadata_function<64,MU::op_dt_metadata_function>;
-      m->check_perf.values.hw_accel     = 1;
+      m->check_correct.values.alldtop       = 0;
+      m->check_correct.values.sendminalign  = 1;
+      m->check_correct.values.recvminalign  = 1;
+      m->send_min_align                     = 64; 
+      m->recv_min_align                     = 64; 
+      m->check_fn                           = align_metadata_function<1,64,1,64,MU::op_dt_metadata_function>;
+      m->check_perf.values.hw_accel         = 1;
 #endif
     }
 
@@ -320,6 +351,7 @@ namespace PAMI
     extern inline void MUMcast3MetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("X0:MultiCast_MultiCombine:-:MU");
+      m->check_correct.values.rangeminmax = 1;
       m->range_hi = 1024*1024; /// \todo arbitrary hack for now - it core dumps > 1M
       m->check_perf.values.hw_accel     = 1;
 
@@ -406,13 +438,11 @@ namespace PAMI
     {
       new(m) PAMI::Geometry::Metadata("X0:MultiCombine2Device:SHMEM:MU");
 #ifdef ENABLE_NEW_SHMEM
-      m->check_correct.values.alldt     = 0;
-      m->check_correct.values.allop     = 0;
+      m->check_correct.values.alldtop   = 0;
       m->check_fn                       = Shmem::op_dt_metadata_function;
       m->check_perf.values.hw_accel     = 1;
 #else
-      m->check_correct.values.alldt     = 0;
-      m->check_correct.values.allop     = 0;
+      m->check_correct.values.alldtop   = 0;
       m->check_fn                       = MU::op_dt_metadata_function;
       m->check_perf.values.hw_accel     = 1;
 #endif
@@ -427,15 +457,21 @@ namespace PAMI
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiCombine2DeviceDput:SHMEM:MU");
 #ifdef ENABLE_NEW_SHMEM
-      m->check_correct.values.alldt     = 0;
-      m->check_correct.values.allop     = 0;
-      m->check_fn                       = align_metadata_function<32,Shmem::op_dt_metadata_function>;
-      m->check_perf.values.hw_accel     = 1;
+      m->check_correct.values.alldtop       = 0;
+      m->check_correct.values.sendminalign  = 1;
+      m->check_correct.values.recvminalign  = 1;
+      m->send_min_align                     = 32; 
+      m->recv_min_align                     = 32; 
+      m->check_fn                           = align_metadata_function<1,32,1,32,Shmem::op_dt_metadata_function>;
+      m->check_perf.values.hw_accel         = 1;
 #else
-      m->check_correct.values.alldt     = 0;
-      m->check_correct.values.allop     = 0;
-      m->check_fn                       = align_metadata_function<32,MU::op_dt_metadata_function>;
-      m->check_perf.values.hw_accel     = 1;
+      m->check_correct.values.alldtop       = 0;
+      m->check_correct.values.sendminalign  = 1;
+      m->check_correct.values.recvminalign  = 1;
+      m->send_min_align                     = 32; 
+      m->recv_min_align                     = 32; 
+      m->check_fn                           = align_metadata_function<1,32,1,32,MU::op_dt_metadata_function>;
+      m->check_perf.values.hw_accel         = 1;
 #endif
     }
     typedef CCMI::Adaptor::Allreduce::MultiCombineComposite2DeviceFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2Device<0>,
@@ -449,15 +485,21 @@ namespace PAMI
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiCombine2DeviceNP:SHMEM:MU");
 #ifdef ENABLE_NEW_SHMEM
-      m->check_correct.values.alldt     = 0;
-      m->check_correct.values.allop     = 0;
-      m->check_fn                       = align_metadata_function<32,Shmem::op_dt_metadata_function>;
-      m->check_perf.values.hw_accel     = 1;
+      m->check_correct.values.alldtop       = 0;
+      m->check_correct.values.sendminalign  = 1;
+      m->check_correct.values.recvminalign  = 1;
+      m->send_min_align                     = 32; 
+      m->recv_min_align                     = 32; 
+      m->check_fn                           = align_metadata_function<1,32,1,32,Shmem::op_dt_metadata_function>;
+      m->check_perf.values.hw_accel         = 1;
 #else
-      m->check_correct.values.alldt     = 0;
-      m->check_correct.values.allop     = 0;
-      m->check_fn                       = align_metadata_function<32,MU::op_dt_metadata_function>;
-      m->check_perf.values.hw_accel     = 1;
+      m->check_correct.values.alldtop       = 0;
+      m->check_correct.values.sendminalign  = 1;
+      m->check_correct.values.recvminalign  = 1;
+      m->send_min_align                     = 32; 
+      m->recv_min_align                     = 32; 
+      m->check_fn                           = align_metadata_function<1,32,1,32,MU::op_dt_metadata_function>;
+      m->check_perf.values.hw_accel         = 1;
 #endif
     }
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2DeviceNP,
@@ -470,15 +512,21 @@ namespace PAMI
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiCombine2DeviceDputNP:SHMEM:MU");
 #ifdef ENABLE_NEW_SHMEM
-      m->check_correct.values.alldt     = 0;
-      m->check_correct.values.allop     = 0;
-      m->check_fn                       = align_metadata_function<32,Shmem::op_dt_metadata_function>;
-      m->check_perf.values.hw_accel     = 1;
+      m->check_correct.values.alldtop       = 0;
+      m->check_correct.values.sendminalign  = 1;
+      m->check_correct.values.recvminalign  = 1;
+      m->send_min_align                     = 32; 
+      m->recv_min_align                     = 32; 
+      m->check_fn                           = align_metadata_function<1,32,1,32,Shmem::op_dt_metadata_function>;
+      m->check_perf.values.hw_accel         = 1;
 #else
-      m->check_correct.values.alldt     = 0;
-      m->check_correct.values.allop     = 0;
-      m->check_fn                       = align_metadata_function<32,MU::op_dt_metadata_function>;
-      m->check_perf.values.hw_accel     = 1;
+      m->check_correct.values.alldtop       = 0;
+      m->check_correct.values.sendminalign  = 1;
+      m->check_correct.values.recvminalign  = 1;
+      m->send_min_align                     = 32; 
+      m->recv_min_align                     = 32; 
+      m->check_fn                           = align_metadata_function<1,32,1,32,MU::op_dt_metadata_function>;
+      m->check_perf.values.hw_accel         = 1;
 #endif
     }
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2DeviceNP,

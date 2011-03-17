@@ -38,15 +38,16 @@ namespace PAMI
           this->check_fn                          = NULL;
           this->range_lo                          = 0;
           this->range_hi                          = MD_SIZE_MAX;
+          this->send_min_align                    = 1;
+          this->recv_min_align                    = 1;
 
           // Correctness Check
           this->check_correct.bitmask_correct     = 0;
-          this->check_correct.values.mustquery    = 0;
+          this->check_correct.values.checkrequired = 0;
           this->check_correct.values.nonlocal     = 0;
           this->check_correct.values.sendminalign = 1;
           this->check_correct.values.recvminalign = 1;
-          this->check_correct.values.alldt        = 1;
-          this->check_correct.values.allop        = 1;
+          this->check_correct.values.alldtop      = 1;
           this->check_correct.values.contigsflags = 1;
           this->check_correct.values.contigrflags = 1;
           this->check_correct.values.continsflags = 0;
@@ -64,9 +65,6 @@ namespace PAMI
     };
   };
 };
-
-
-
 
 #endif
 //
