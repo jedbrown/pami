@@ -820,8 +820,13 @@ namespace PAMI
             size_t bytes     = COLLSHM_SEGSZ +      // Shmem used by collshm
               P2PSHM_MEMSIZE;      // Shmem used by p2pshm 
             size_t pagesize  = COLLSHM_PAGESZ;
-            snprintf (shmemfile, sizeof(shmemfile) - 1, "/pami-client-%s",
-                      ((LapiImpl::Client*)&_lapiClient[0])->GetName());
+
+            // Convert string to lower case so the string can be found by
+            // external cleanup tools
+            std::string s = ((LapiImpl::Client*)&_lapiClient[0])->GetName();
+            std::transform(s.begin(),s.end(),s.begin(), ::tolower);
+            snprintf(shmemfile, sizeof(shmemfile) - 1, "/pami-client-%s",s.c_str());
+
             // Round up to the page size
             size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
             rc = _mm.init(__global.shared_mm, size, 1, 1, 0, shmemfile);
