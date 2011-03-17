@@ -336,8 +336,7 @@ public:
           void init (Memory::MemoryManager &mm, char * unique_device_string)
           {
             char key[PAMI::Memory::MMKEYSIZE];
-            sprintf(key, "/ShmemCollectiveFifoDescriptor-atomic-%s", unique_device_string);
-            T_Atomic::init(&mm, key, _atomic);
+            sprintf(key, "/ShmemCollectiveFifo-%s", unique_device_string);
 
 
             size_t total_size = sizeof(ShmemRegion) * DESCRIPTOR_FIFO_SIZE ;
@@ -349,6 +348,9 @@ public:
                               CollectiveFifo::shmem_region_initialize,
                               NULL);
             PAMI_assertf(rc == PAMI_SUCCESS, "Failed to allocate shared memory resources for collective descriptors");
+
+            sprintf(key, "/ShmemCollectiveFifoDescriptor-atomic-%s", unique_device_string);
+            T_Atomic::init(&mm, key, _atomic);
 
             for (size_t i = 0; i < DESCRIPTOR_FIFO_SIZE; i++)
               {
