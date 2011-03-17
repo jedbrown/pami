@@ -221,8 +221,8 @@ int main (int argc, char ** argv)
       if (((strstr(bcast_must_query_md[nalg].name, selected) == NULL) && selector) ||
           ((strstr(bcast_must_query_md[nalg].name, selected) != NULL) && !selector))  continue;
 
-      unsigned mustquery = bcast_must_query_md[nalg].check_correct.values.mustquery; /*must query every time */
-      assert(!mustquery || bcast_must_query_md[nalg].check_fn); /* must have function if mustquery. */
+      unsigned checkrequired = bcast_must_query_md[nalg].check_correct.values.checkrequired; /*must query every time */
+      assert(!checkrequired || bcast_must_query_md[nalg].check_fn); /* must have function if checkrequired. */
 
       int i, j;
 
@@ -239,13 +239,45 @@ int main (int argc, char ** argv)
         broadcast.cmd.xfer_broadcast.typecount = i;
 
         if (bcast_must_query_md[nalg].check_fn)
+        {  
           result = bcast_must_query_md[nalg].check_fn(&broadcast);
-
+        }
+        else // Must check parameters ourselves...
+        {
+          uint64_t  mask=0;
+          result.bitmask = 0;
+          if(bcast_must_query_md[nalg].check_correct.values.sendminalign)
+          {
+            mask  = bcast_must_query_md[nalg].send_min_align - 1; 
+            result.check.align_send_buffer = (((uint64_t)broadcast.cmd.xfer_broadcast.buf & (uint64_t)mask) == 0) ? 0:1;
+          }
+          if(bcast_must_query_md[nalg].check_correct.values.recvminalign)
+          {
+            mask  = bcast_must_query_md[nalg].recv_min_align - 1; 
+            result.check.align_recv_buffer = (((uint64_t)broadcast.cmd.xfer_broadcast.buf & (uint64_t)mask) == 0) ? 0:1;
+          }
+          if(bcast_must_query_md[nalg].check_correct.values.rangeminmax)
+          {
+            result.check.range = !((dataSent <= bcast_must_query_md[nalg].range_hi) &&
+                                   (dataSent >= bcast_must_query_md[nalg].range_lo));
+          }   
+          if(bcast_must_query_md[nalg].check_correct.values.contigsflags)
+            ; //   This test is always PAMI_TYPE_CONTIGUOUS
+          if(bcast_must_query_md[nalg].check_correct.values.contigrflags)
+            ; // This test is always PAMI_TYPE_CONTIGUOUS
+          if(bcast_must_query_md[nalg].check_correct.values.continsflags)
+            ; // This test is always PAMI_TYPE_CONTIGUOUS and continuous
+          if(bcast_must_query_md[nalg].check_correct.values.continrflags)
+              ; // This test is always PAMI_TYPE_CONTIGUOUS and continuous
+        }
+            //fprintf(stderr,"result.bitmask = %.8X\n",result.bitmask);
         if (result.bitmask) continue;
 
-        if (!((dataSent <= bcast_must_query_md[nalg].range_hi) &&
-              (dataSent >= bcast_must_query_md[nalg].range_lo)))
+        if(bcast_must_query_md[nalg].check_correct.values.nonlocal)
+        {
+          fprintf(stderr,"Test does not support protocols with nonlocal metadata\n");
           continue;
+        }
 
 #ifdef CHECK_DATA
 
@@ -260,10 +292,9 @@ int main (int argc, char ** argv)
 
         for (j = 0; j < niter; j++)
         {
-          if (mustquery) /* must query every time */
+          if (checkrequired) /* must query every time */
           {
             result = bcast_must_query_md[nalg].check_fn(&broadcast);
-
             if (result.bitmask) continue;
           }
 

@@ -323,13 +323,19 @@ int main (int argc, char ** argv)
           if (((strstr(q_newbar_md[nalg].name, selected) == NULL) && selector) ||
               ((strstr(q_newbar_md[nalg].name, selected) != NULL) && !selector))  continue;
 
-          unsigned mustquery = q_newbar_md[nalg].check_correct.values.mustquery; /*must query every time */
-          assert(!mustquery || q_newbar_md[nalg].check_fn); /* must have function if mustquery. */
+          unsigned checkrequired = q_newbar_md[nalg].check_correct.values.checkrequired; /*must query every time */
+          assert(!checkrequired || q_newbar_md[nalg].check_fn); /* must have function if checkrequired. */
 
           if (q_newbar_md[nalg].check_fn)
             result = q_newbar_md[nalg].check_fn(&newbarrier);
 
           if (result.bitmask) continue;
+
+          if(q_newbar_md[nalg].check_correct.values.nonlocal)
+          {
+            fprintf(stderr,"Test does not support protocols with nonlocal metadata\n");
+            continue; 
+          }
 
           /* Do two functional runs with different delaying ranks*/
           int j;
@@ -373,7 +379,7 @@ int main (int argc, char ** argv)
 
           for (i = 0; i < niter; i++)
           {
-            if (mustquery) /* must query every time */
+            if (checkrequired) /* must query every time */
             {
               result = q_newbar_md[nalg].check_fn(&newbarrier);
 

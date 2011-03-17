@@ -610,60 +610,19 @@ int main (int argc, char ** argv)
     unsigned** validTable =
     alloc2DContig(op_count, dt_count);
 
+
+    /* Setup operation and datatype tables*/
+    unsigned force = 0; /* don't force the dt/op selected */
     if (full_test)
     {
-      /* Setup operation and datatype tables*/
-
       for (i = 0; i < op_count; i++)
         for (j = 0; j < dt_count; j++)
           validTable[i][j] = 1;
 
-      /* Not testing minloc/maxloc/logical,etc */
-      for (i = OP_MINLOC, j = 0; j < DT_COUNT; j++)validTable[i][j] = 0;
-
-      for (i = OP_MAXLOC, j = 0; j < DT_COUNT; j++)validTable[i][j] = 0;
-
-      for (i = 0, j = DT_LOGICAL; i < OP_COUNT; i++)validTable[i][j] = 0;
-
-      for (i = 0, j = DT_SINGLE_COMPLEX; i < OP_COUNT; i++)validTable[i][j] = 0;
-
-      for (i = 0, j = DT_LONG_DOUBLE; i < OP_COUNT; i++)validTable[i][j] = 0;
-
-      for (i = 0, j = DT_DOUBLE_COMPLEX; i < OP_COUNT; i++)validTable[i][j] = 0;
-
-      for (i = 0, j = DT_LOC_2INT; i < OP_COUNT; i++)validTable[i][j] = 0;
-
-      for (i = 0, j = DT_LOC_SHORT_INT; i < OP_COUNT; i++)validTable[i][j] = 0;
-
-      for (i = 0, j = DT_LOC_FLOAT_INT; i < OP_COUNT; i++)validTable[i][j] = 0;
-
-      for (i = 0, j = DT_LOC_DOUBLE_INT; i < OP_COUNT; i++)validTable[i][j] = 0;
-
-      for (i = 0, j = DT_LOC_2FLOAT; i < OP_COUNT; i++)validTable[i][j] = 0;
-
-      for (i = 0, j = DT_LOC_2DOUBLE; i < OP_COUNT; i++)validTable[i][j] = 0;
-
-
-      validTable[OP_MAX][DT_DOUBLE_COMPLEX] = 0;
-      validTable[OP_MIN][DT_DOUBLE_COMPLEX] = 0;
-      validTable[OP_PROD][DT_DOUBLE_COMPLEX] = 0;
-
-      /* Now add back the minloc/maxloc stuff */
-      for (i = OP_MAXLOC; i <= OP_MINLOC; i++)
-        for (j = DT_LOC_2INT; j <= DT_LOC_2DOUBLE; j++)
-          validTable[i][j] = 1;
-
-      /** \todo These long long types reportedly fail in pgas, so disable for now.
-      for (i = 0, j = DT_SIGNED_LONG_LONG; i < OP_COUNT; i++)validTable[i][j] = 0;*/
-
-      for (i = 0, j = DT_UNSIGNED_LONG_LONG; i < OP_COUNT; i++)validTable[i][j] = 0;
-
-      /** \todo These fail using core math...we should find this bug.
-      validTable[OP_BAND][DT_DOUBLE] = 0;*/
-
     }
     else if (sDt && sOp)
     {
+      force = 1; /* force the dt/op*/
       for (i = 0; i < op_count; i++)
         for (j = 0; j < dt_count; j++)
           if (!strcmp(sDt, dt_array_str[j]) &&
@@ -703,6 +662,39 @@ int main (int argc, char ** argv)
       validTable[OP_MIN][DT_DOUBLE] = 1;
 
     }
+    if(!force) /* not forcing the op/dt*/
+    {
+        /*--------------------------------------*/
+        /* Disable unsupported ops on complex   */
+        /* Only sum, prod                       */
+        for (i = 0, j = DT_SINGLE_COMPLEX; i < OP_COUNT; i++)if(i!=OP_SUM && i!=OP_PROD) validTable[i][j] = 0;
+        for (i = 0, j = DT_DOUBLE_COMPLEX; i < OP_COUNT; i++)if(i!=OP_SUM && i!=OP_PROD) validTable[i][j] = 0; 
+  
+        /*--------------------------------------*/
+        /* Disable non-LOC ops on LOC dt's      */
+        for (i = 0, j = DT_LOC_2INT      ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
+        for (i = 0, j = DT_LOC_SHORT_INT ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
+        for (i = 0, j = DT_LOC_FLOAT_INT ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
+        for (i = 0, j = DT_LOC_DOUBLE_INT; i < OP_MAXLOC; i++)validTable[i][j] = 0;
+        for (i = 0, j = DT_LOC_2FLOAT    ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
+        for (i = 0, j = DT_LOC_2DOUBLE   ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
+  
+        /*--------------------------------------*/
+        /* Disable LOC ops on non-LOC dt's      */
+        for (j = 0, i = OP_MAXLOC; j < DT_LOC_2INT; j++) validTable[i][j] = 0;
+        for (j = 0, i = OP_MINLOC; j < DT_LOC_2INT; j++) validTable[i][j] = 0;
+  
+        /*---------------------------------------*/
+        /* Disable unsupported ops on logical dt */
+        /* Only land, lor, lxor, band, bor, bxor */
+        for (i = 0,         j = DT_LOGICAL; i < OP_LAND ; i++) validTable[i][j] = 0;
+        for (i = OP_BXOR+1, j = DT_LOGICAL; i < OP_COUNT; i++) validTable[i][j] = 0;
+
+        /*---------------------------------------*/
+        /* Disable unsupported ops on long double*/
+        /* Only max,min,sum,prod                 */
+        for (i = OP_PROD+1, j = DT_LONG_DOUBLE; i < OP_COUNT; i++) validTable[i][j] = 0;
+    }
 
     for (nalg = 0; nalg < allreduce_num_algorithm[1]; nalg++)
     {
@@ -728,8 +720,8 @@ int main (int argc, char ** argv)
 
           protocolName = allreduce_must_query_md[nalg].name;
 
-          unsigned mustquery = allreduce_must_query_md[nalg].check_correct.values.mustquery; /*must query every time */
-          assert(!mustquery || allreduce_must_query_md[nalg].check_fn); /* must have function if mustquery. */
+          unsigned checkrequired = allreduce_must_query_md[nalg].check_correct.values.checkrequired; /*must query every time */
+          assert(!checkrequired || allreduce_must_query_md[nalg].check_fn); /* must have function if checkrequired. */
 
           blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
 
@@ -769,13 +761,45 @@ int main (int argc, char ** argv)
                   allreduce.cmd.xfer_allreduce.op = op_array[op];
 
                   if (allreduce_must_query_md[nalg].check_fn)
+                  {  
                     result = allreduce_must_query_md[nalg].check_fn(&allreduce);
-
+                  }
+                  else // Must check parameters ourselves...
+                  {
+                    uint64_t  mask=0;
+                    result.bitmask = 0;
+                    if(allreduce_must_query_md[nalg].check_correct.values.sendminalign)
+                    {
+                      mask  = allreduce_must_query_md[nalg].send_min_align - 1; 
+                      result.check.align_send_buffer = (((uint64_t)allreduce.cmd.xfer_allreduce.sndbuf & (uint64_t)mask) == 0) ? 0:1;
+                    }
+                    if(allreduce_must_query_md[nalg].check_correct.values.recvminalign)
+                    {
+                      mask  = allreduce_must_query_md[nalg].recv_min_align - 1; 
+                      result.check.align_recv_buffer = (((uint64_t)allreduce.cmd.xfer_allreduce.rcvbuf & (uint64_t)mask) == 0) ? 0:1;
+                    }
+                    if(allreduce_must_query_md[nalg].check_correct.values.rangeminmax)
+                    {
+                      result.check.range = !((dataSent <= allreduce_must_query_md[nalg].range_hi) &&
+                                             (dataSent >= allreduce_must_query_md[nalg].range_lo));
+                    }
+                    if(allreduce_must_query_md[nalg].check_correct.values.contigsflags)
+                      ; // This test is always PAMI_TYPE_CONTIGUOUS
+                    if(allreduce_must_query_md[nalg].check_correct.values.contigrflags)
+                      ; // This test is always PAMI_TYPE_CONTIGUOUS
+                    if(allreduce_must_query_md[nalg].check_correct.values.continsflags)
+                      ; // This test is always PAMI_TYPE_CONTIGUOUS and continuous
+                    if(allreduce_must_query_md[nalg].check_correct.values.continrflags)
+                      ; // This test is always PAMI_TYPE_CONTIGUOUS and continuous
+                  }
+                  //fprintf(stderr,"result.bitmask = %.8X\n",result.bitmask);
                   if (result.bitmask) continue;
 
-                  if (!((dataSent <= allreduce_must_query_md[nalg].range_hi) &&
-                        (dataSent >= allreduce_must_query_md[nalg].range_lo)))
+                  if(allreduce_must_query_md[nalg].check_correct.values.nonlocal)
+                  {
+                    fprintf(stderr,"Test does not support protocols with nonlocal metadata\n");
                     continue;
+                  }
 
 #ifdef CHECK_DATA
                   initialize_sndbuf (sbuf, i, op, dt, local_task_id, num_tasks);
@@ -785,10 +809,9 @@ int main (int argc, char ** argv)
 
                   for (j = 0; j < niter; j++)
                   {
-                    if (mustquery) /* must query every time */
+                    if (checkrequired) /* must query every time */
                     {
                       result = allreduce_must_query_md[nalg].check_fn(&allreduce);
-
                       if (result.bitmask) continue;
                     }
 
@@ -799,7 +822,7 @@ int main (int argc, char ** argv)
                   blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
 
 #ifdef CHECK_DATA
-                  int rc = check_rcvbuf (rbuf, i, op, dt, local_task_id, num_tasks);
+                  rc = check_rcvbuf (rbuf, i, op, dt, local_task_id, num_tasks);
 
                   if (rc) fprintf(stderr, "%s FAILED validation\n", protocolName);
 

@@ -164,8 +164,8 @@ int main (int argc, char ** argv)
         {
           long long dataSent = i;
           int          niter = NITER;
-          unsigned mustquery = bcast_must_query_md[nalg].check_correct.values.mustquery; /*must query every time */
-          assert(!mustquery || bcast_must_query_md[nalg].check_fn); /* must have function if mustquery. */
+          unsigned checkrequired = bcast_must_query_md[nalg].check_correct.values.checkrequired; /*must query every time */
+          assert(!checkrequired || bcast_must_query_md[nalg].check_fn); /* must have function if checkrequired. */
 
           broadcast.cmd.xfer_broadcast.typecount = i;
 
@@ -190,7 +190,7 @@ int main (int argc, char ** argv)
 
           for (j = 0; j < niter; j++)
             {
-              if(mustquery) /* must query every time */
+              if(checkrequired) /* must query every time */
               {
                   result = bcast_must_query_md[nalg].check_fn(&broadcast);
                   if(result.bitmask) continue;

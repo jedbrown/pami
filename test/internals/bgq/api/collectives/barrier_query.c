@@ -120,13 +120,19 @@ int main (int argc, char ** argv)
       if (((strstr(must_query_md[nalg].name, selected) == NULL) && selector) ||
           ((strstr(must_query_md[nalg].name, selected) != NULL) && !selector))  continue;
 
-      unsigned mustquery = must_query_md[nalg].check_correct.values.mustquery; /*must query every time */
-      assert(!mustquery || must_query_md[nalg].check_fn); /* must have function if mustquery. */
+      unsigned checkrequired = must_query_md[nalg].check_correct.values.checkrequired; /*must query every time */
+      assert(!checkrequired || must_query_md[nalg].check_fn); /* must have function if checkrequired. */
 
       if (must_query_md[nalg].check_fn)
         result = must_query_md[nalg].check_fn(&barrier);
 
       if (result.bitmask) continue;
+
+      if(must_query_md[nalg].check_correct.values.nonlocal)
+      {
+        fprintf(stderr,"Test does not support protocols with nonlocal metadata\n");
+        continue; 
+      }
 
       /* Do two functional runs with different delaying ranks*/
       int j;
@@ -169,7 +175,7 @@ int main (int argc, char ** argv)
 
       for (i = 0; i < niter; i++)
       {
-        if (mustquery) /* must query every time */
+        if (checkrequired) /* must query every time */
         {
           result = must_query_md[nalg].check_fn(&barrier);
 
