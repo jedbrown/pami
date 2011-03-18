@@ -1011,7 +1011,7 @@ namespace CCMI
       {
         new(m) PAMI::Geometry::Metadata("I0:M2MComposite:P2P:P2P");
       }
-      typedef CCMI::Adaptor::All2AllvProtocol All2AllProtocolv;
+      typedef CCMI::Adaptor::All2AllvProtocolLong All2AllProtocolv;
       typedef CCMI::Adaptor::All2AllvFactoryT <All2AllProtocolv, getAlltoallvMetaData, CCMI::ConnectionManager::CommSeqConnMgr> All2AllvFactory;
 
     };//P2PAlltoallv
