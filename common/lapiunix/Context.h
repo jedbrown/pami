@@ -116,7 +116,7 @@ namespace PAMI
       {
         _lapi_state                = device.getState();
         LapiImpl::Context *cp      = (LapiImpl::Context *)_lapi_state;
-        internal_error_t rc = (cp->*(cp->pDispatchSet))(dispatch,
+        internal_rc_t rc = (cp->*(cp->pDispatchSet))(dispatch,
                                                         (void *)dispatch_fn,
                                                         cookie,
                                                         hint,
@@ -130,7 +130,7 @@ namespace PAMI
     inline pami_result_t immediate(pami_send_immediate_t * send)
       {
         LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
-        internal_error_t rc = (cp->*(cp->pSendSmall))(send->dest, send->dispatch,
+        internal_rc_t rc = (cp->*(cp->pSendSmall))(send->dest, send->dispatch,
                                                       send->header.iov_base, send->header.iov_len,
                                                       send->data.iov_base, send->data.iov_len,
                                                       send->hints, FLAG_NULL);
@@ -139,7 +139,7 @@ namespace PAMI
     inline pami_result_t simple (pami_send_t * simple)
       {
         LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
-        internal_error_t rc = (cp->*(cp->pSend))(simple->send.dest, simple->send.dispatch,
+        internal_rc_t rc = (cp->*(cp->pSend))(simple->send.dest, simple->send.dispatch,
                                                  simple->send.header.iov_base, simple->send.header.iov_len,
                                                  simple->send.data.iov_base, simple->send.data.iov_len,
                                                  simple->send.hints,
@@ -429,7 +429,7 @@ namespace PAMI
           } catch (int lapi_err) {
             /* convert to general PAMI error */
             rc = PAMI_ERROR;
-          } catch (internal_error_t int_err) {
+          } catch (internal_rc_t int_err) {
             rc = PAMI_RC(int_err);
           } catch (std::bad_alloc) {
             rc = PAMI_ENOMEM;
@@ -578,7 +578,7 @@ namespace PAMI
           while (maximum --)
            {
              size_t events = _devices->advance(_clientid, _contextid);
-             internal_error_t rc = (cp->*(cp->pAdvance))(1);
+             internal_rc_t rc = (cp->*(cp->pAdvance))(1);
              if (rc == 0 || events > 0) {
                result = PAMI_SUCCESS;
                (cp->*(cp->pUnlock))();
@@ -593,7 +593,7 @@ namespace PAMI
       inline size_t advance_only_lapi (size_t maximum, pami_result_t & result)
         {
           LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
-          internal_error_t rc = (cp->*(cp->pAdvance))(maximum);
+          internal_rc_t rc = (cp->*(cp->pAdvance))(maximum);
           result = PAMI_RC(rc);
           return 0;
         }
@@ -623,7 +623,7 @@ namespace PAMI
       inline pami_result_t send_impl (pami_send_t * parameters)
         {
           LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
-          internal_error_t rc = (cp->*(cp->pSend))(parameters->send.dest,
+          internal_rc_t rc = (cp->*(cp->pSend))(parameters->send.dest,
                                                    parameters->send.dispatch,         // hdr_hdl
                                                    parameters->send.header.iov_base,  // uhdr
                                                    parameters->send.header.iov_len,   // uhdr_len
@@ -643,7 +643,7 @@ namespace PAMI
       inline pami_result_t send_impl (pami_send_immediate_t * send)
         {
           LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
-          internal_error_t rc = (cp->*(cp->pSendSmall))(send->dest, send->dispatch,
+          internal_rc_t rc = (cp->*(cp->pSendSmall))(send->dest, send->dispatch,
                   send->header.iov_base, send->header.iov_len,
                   send->data.iov_base, send->data.iov_len, send->hints, FLAG_NULL);
           return PAMI_RC(rc);
@@ -658,7 +658,7 @@ namespace PAMI
       inline pami_result_t put_impl (pami_put_simple_t * put)
         {
           LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
-          internal_error_t rc = (cp->*(cp->pPut))
+          internal_rc_t rc = (cp->*(cp->pPut))
               (put->rma.dest, put->addr.local, NULL,
                put->addr.remote, NULL, put->rma.bytes,
                put->rma.hints, INTERFACE_PAMI,
@@ -676,7 +676,7 @@ namespace PAMI
       inline pami_result_t get_impl (pami_get_simple_t * get)
         {
           LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
-          internal_error_t rc = (cp->*(cp->pGet))(get->rma.dest, get->addr.local, NULL,
+          internal_rc_t rc = (cp->*(cp->pGet))(get->rma.dest, get->addr.local, NULL,
                   get->addr.remote, NULL, get->rma.bytes,
                   get->rma.hints, INTERFACE_PAMI,
                   (void *)get->rma.done_fn, get->rma.cookie, NULL, NULL);
@@ -724,7 +724,7 @@ namespace PAMI
             input.int64.test_val = parameters->rmw.input.int64.test;
           }
 
-          internal_error_t rc = 
+          internal_rc_t rc = 
             (cp->*(cp->pRmw))(parameters->rma.dest, parameters->addr.local,
                 parameters->addr.remote, len, 
                 op, input, parameters->rma.hints, INTERFACE_PAMI,
@@ -739,7 +739,7 @@ namespace PAMI
                                                   pami_memregion_t * memregion)
         {
           LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
-          internal_error_t rc =
+          internal_rc_t rc =
               (cp->*(cp->pRegisterMem))(address, bytes_in, bytes_out,
                       (void*)memregion, PAMI_CLIENT_MEMREGION_SIZE_STATIC);
           return PAMI_RC(rc);
@@ -762,7 +762,7 @@ namespace PAMI
           void      *remote_buf = (void*)(remote_mr->basic.user_ptr + parameters->rdma.remote.offset);
           /* pass both local_mr and remote_mr will enable eager rdma 
            * if hint.use_rdma != force_off */
-          internal_error_t rc = (cp->*(cp->pPut))
+          internal_rc_t rc = (cp->*(cp->pPut))
               (parameters->rma.dest, local_buf, local_mr,
                remote_buf, remote_mr, parameters->rma.bytes,
                parameters->rma.hints, INTERFACE_PAMI,
@@ -799,7 +799,7 @@ namespace PAMI
           void      *remote_buf = (void*)(remote_mr->basic.user_ptr + parameters->rdma.remote.offset);
           /* pass both local_mr and remote_mr will enable eager rdma 
            * if hint.use_rdma != force_off */
-          internal_error_t rc = 
+          internal_rc_t rc = 
               (cp->*(cp->pGet))(parameters->rma.dest,
                       local_buf, local_mr, remote_buf, remote_mr, parameters->rma.bytes,
                       parameters->rma.hints, INTERFACE_PAMI,
@@ -828,7 +828,7 @@ namespace PAMI
       inline pami_result_t purge_totask_impl (pami_endpoint_t * dest, size_t count)
         {
           LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
-          internal_error_t rc;
+          internal_rc_t rc;
           for (int i=0; i<count; i++) {
               pami_endpoint_t *tgt = (pami_endpoint_t *)dest + i;
               rc = (cp->*(cp->pPurge))(*tgt, INTERFACE_PAMI);
@@ -839,7 +839,7 @@ namespace PAMI
       inline pami_result_t resume_totask_impl (pami_endpoint_t * dest, size_t count)
         {
           LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
-          internal_error_t rc;
+          internal_rc_t rc;
           for (int i=0; i<count; i++) {
               pami_endpoint_t *tgt = (pami_endpoint_t *)dest + i;
               rc = (cp->*(cp->pResume))(*tgt, INTERFACE_PAMI);
@@ -926,7 +926,7 @@ namespace PAMI
                                           pami_dispatch_hint_t            options)
         {
           LapiImpl::Context  *cp = (LapiImpl::Context *)&_lapi_state[0];
-          internal_error_t rc =
+          internal_rc_t rc =
               (cp->*(cp->pDispatchSet))(id, (void *)fn.p2p, cookie,
                       options, INTERFACE_PAMI);
           return PAMI_RC(rc);
@@ -949,7 +949,7 @@ namespace PAMI
                 {
                   default:
                   {
-                    internal_error_t rc;
+                    internal_rc_t rc;
                     lapi_state_t *lp      = getLapiState();
                     LapiImpl::Context *cp = (LapiImpl::Context *)lp;
                     rc = (cp->*(cp->pConfigQuery))(configuration);
@@ -973,7 +973,7 @@ namespace PAMI
                 {
                   default:
                   {
-                    internal_error_t rc;
+                    internal_rc_t rc;
                     lapi_state_t *lp      = getLapiState();
                     LapiImpl::Context *cp = (LapiImpl::Context *)lp;
                     rc = (cp->*(cp->pConfigUpdate))(configuration);
@@ -996,7 +996,7 @@ namespace PAMI
                 {
                   default:
                   {
-                    internal_error_t rc;
+                    internal_rc_t rc;
                     lapi_state_t *lp      = getLapiState();
                     LapiImpl::Context *cp = (LapiImpl::Context *)lp;
                     rc = (cp->*(cp->pConfigQuery))(configuration);
@@ -1019,7 +1019,7 @@ namespace PAMI
                 {
                   default:
                   {
-                    internal_error_t rc;
+                    internal_rc_t rc;
                     lapi_state_t *lp      = getLapiState();
                     LapiImpl::Context *cp = (LapiImpl::Context *)lp;
                     rc = (cp->*(cp->pConfigUpdate))(configuration);

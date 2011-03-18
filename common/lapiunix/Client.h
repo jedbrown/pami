@@ -464,7 +464,7 @@ namespace PAMI
                   break;
                 default:
                 {
-                  internal_error_t rc;
+                  internal_rc_t rc;
                   lapi_state_t *lp = _contexts[0]->getLapiState();
                   LapiImpl::Context *cp = (LapiImpl::Context *)lp;
                   rc = (cp->*(cp->pConfigQuery))(configuration);
@@ -487,7 +487,7 @@ namespace PAMI
         // context at client create time
         lapi_state_t *lp = _contexts[0]->getLapiState();
         LapiImpl::Context *cp = (LapiImpl::Context *)lp;
-        internal_error_t rc = (cp->*(cp->pConfigUpdate))(configuration);
+        internal_rc_t rc = (cp->*(cp->pConfigUpdate))(configuration);
         return PAMI_RC(rc);
       }
 

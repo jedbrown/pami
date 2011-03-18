@@ -62,7 +62,7 @@ namespace PAMI
         {
           int my_dispatch_id = (*_dispatch_id)--;
           LapiImpl::Context *cp = (LapiImpl::Context *)_Lapi_port[_lapi_handle];
-          internal_error_t rc = (cp->*(cp->pDispatchSet))(my_dispatch_id,
+          internal_rc_t rc = (cp->*(cp->pDispatchSet))(my_dispatch_id,
                                                           (void*)hdr,
                                                           NULL,
                                                           null_dispatch_hint,
@@ -77,7 +77,7 @@ namespace PAMI
                                                   void        *clientdata)
         {
           LapiImpl::Context *cp = (LapiImpl::Context *)_Lapi_port[_lapi_handle];
-          internal_error_t rc = (cp->*(cp->pDispatchSet))(dispatch_id,
+          internal_rc_t rc = (cp->*(cp->pDispatchSet))(dispatch_id,
                                                           (void*)hdr,
                                                           NULL,
                                                           null_dispatch_hint,

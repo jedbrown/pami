@@ -5,7 +5,7 @@
 #include "HfiExtension.h"
 #include "pami.h"
 
-extern internal_error_t _dbg_hfi_perf_counters(lapi_handle_t hndl, lapi_pkt_counter_t* cnt,
+extern internal_rc_t _dbg_hfi_perf_counters(lapi_handle_t hndl, lapi_pkt_counter_t* cnt,
         bool is_dump);
 extern int LAPI__Remote_update(lapi_handle_t ghndl, uint count,
         lapi_remote_update_t *info);
@@ -15,7 +15,7 @@ PAMI::HfiExtension::hfi_pkt_counters (pami_context_t context,
         hfi_pkt_counter_t *counters)
 {
 
-  internal_error_t rst =  _dbg_hfi_perf_counters( ((Context*)context)->my_hndl,
+  internal_rc_t rst =  _dbg_hfi_perf_counters( ((Context*)context)->my_hndl,
           (lapi_pkt_counter_t*)counters, false);
 
   return PAMI_RC( rst );
