@@ -375,6 +375,95 @@ int main (int argc, char ** argv)
   assert(num_contexts > 0);
   assert(num_contexts <= PAMI_MAX_PROC_PER_NODE);
 
+  unsigned** validTable =
+  alloc2DContig(op_count, dt_count);
+
+
+  /* Setup operation and datatype tables*/
+  unsigned force = 0; /* don't force the dt/op selected */
+  if (full_test)
+  {
+    for (i = 0; i < op_count; i++)
+      for (j = 0; j < dt_count; j++)
+        validTable[i][j] = 1;
+
+  }
+  else if (sDt && sOp)
+  {
+    force = 1; /* force the dt/op*/
+    for (i = 0; i < op_count; i++)
+      for (j = 0; j < dt_count; j++)
+        if (!strcmp(sDt, dt_array_str[j]) &&
+            !strcmp(sOp, op_array_str[i]))
+          validTable[i][j] = 1;
+        else
+          validTable[i][j] = 0;
+  }
+  else if (sOp)
+  {
+    for (i = 0; i < op_count; i++)
+      for (j = 0; j < dt_count; j++)
+        if (!strcmp(sOp, op_array_str[i]))
+          validTable[i][j] = 1;
+        else
+          validTable[i][j] = 0;
+  }
+  else if (sDt)
+  {
+    for (i = 0; i < op_count; i++)
+      for (j = 0; j < dt_count; j++)
+        if (!strcmp(sDt, dt_array_str[j]))
+          validTable[i][j] = 1;
+        else
+          validTable[i][j] = 0;
+  }
+  else  /* minimal/default test */
+  {
+
+    for (i = 0; i < op_count; i++)
+      for (j = 0; j < dt_count; j++)
+        validTable[i][j] = 0;
+
+    validTable[OP_SUM][DT_UNSIGNED_INT] = 1;
+    validTable[OP_SUM][DT_DOUBLE] = 1;
+    validTable[OP_MAX][DT_DOUBLE] = 1;
+    validTable[OP_MIN][DT_DOUBLE] = 1;
+
+  }
+  if (!force) /* not forcing the op/dt*/
+  {
+    /*--------------------------------------*/
+    /* Disable unsupported ops on complex   */
+    /* Only sum, prod                       */
+    for (i = 0, j = DT_SINGLE_COMPLEX; i < OP_COUNT; i++)if (i!=OP_SUM && i!=OP_PROD) validTable[i][j] = 0;
+    for (i = 0, j = DT_DOUBLE_COMPLEX; i < OP_COUNT; i++)if (i!=OP_SUM && i!=OP_PROD) validTable[i][j] = 0;
+
+      /*--------------------------------------*/
+      /* Disable non-LOC ops on LOC dt's      */
+    for (i = 0, j = DT_LOC_2INT      ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
+    for (i = 0, j = DT_LOC_SHORT_INT ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
+    for (i = 0, j = DT_LOC_FLOAT_INT ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
+    for (i = 0, j = DT_LOC_DOUBLE_INT; i < OP_MAXLOC; i++)validTable[i][j] = 0;
+    for (i = 0, j = DT_LOC_2FLOAT    ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
+    for (i = 0, j = DT_LOC_2DOUBLE   ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
+
+    /*--------------------------------------*/
+    /* Disable LOC ops on non-LOC dt's      */
+    for (j = 0, i = OP_MAXLOC; j < DT_LOC_2INT; j++) validTable[i][j] = 0;
+    for (j = 0, i = OP_MINLOC; j < DT_LOC_2INT; j++) validTable[i][j] = 0;
+
+    /*---------------------------------------*/
+    /* Disable unsupported ops on logical dt */
+    /* Only land, lor, lxor, band, bor, bxor */
+    for (i = 0,         j = DT_LOGICAL; i < OP_LAND ; i++) validTable[i][j] = 0;
+    for (i = OP_BXOR+1, j = DT_LOGICAL; i < OP_COUNT; i++) validTable[i][j] = 0;
+
+    /*---------------------------------------*/
+    /* Disable unsupported ops on long double*/
+    /* Only max,min,sum,prod                 */
+    for (i = OP_PROD+1, j = DT_LONG_DOUBLE; i < OP_COUNT; i++) validTable[i][j] = 0;
+  }
+
   /*  Allocate buffer(s) */
   int err = 0;
   void* sbuf = NULL;
@@ -408,149 +497,155 @@ int main (int argc, char ** argv)
 
   unsigned iContext = 0;
 
+  /*  Query the world geometry for barrier algorithms */
+  rc |= query_geometry_world(client,
+                             context[0],
+                             &world_geometry,
+                             barrier_xfer,
+                             barrier_num_algorithm,
+                             &bar_always_works_algo,
+                             &bar_always_works_md,
+                             &bar_must_query_algo,
+                             &bar_must_query_md);
+
+  if (rc == 1)
+    return 1;
+
+  /*  Set up world barrier */
+  barrier.cb_done   = cb_done;
+  barrier.cookie    = (void*) & bar_poll_flag;
+  barrier.algorithm = bar_always_works_algo[0];
+
+
+  /*  Create the subgeometry */
+  pami_geometry_range_t *range;
+  int                    rangecount;
+  pami_geometry_t        newgeometry;
+  size_t                 newbar_num_algo[2];
+  pami_algorithm_t      *newbar_algo        = NULL;
+  pami_metadata_t       *newbar_md          = NULL;
+  pami_algorithm_t      *q_newbar_algo      = NULL;
+  pami_metadata_t       *q_newbar_md        = NULL;
+
+  pami_xfer_t            newbarrier;
+
+  size_t                 set[2];
+  int                    id;
+  size_t                 half        = num_tasks / 2;
+  range     = (pami_geometry_range_t *)malloc(((num_tasks + 1) / 2) * sizeof(pami_geometry_range_t));
+
+
+  char *method = getenv("TEST_SPLIT_METHOD");
+
+  /* Default or TEST_SPLIT_METHOD=0 : divide in half */
+  if ((!method || !strcmp(method, "0")))
+  {
+    if (task_id < half)
+    {
+      range[0].lo = 0;
+      range[0].hi = half - 1;
+      set[0]   = 1;
+      set[1]   = 0;
+      id       = 1;
+      root     = 0;
+      num_tasks = half;
+      local_task_id = task_id;
+    }
+    else
+    {
+      range[0].lo = half;
+      range[0].hi = num_tasks - 1;
+      set[0]   = 0;
+      set[1]   = 1;
+      id       = 2;
+      root     = half;
+      num_tasks = num_tasks - half;
+      local_task_id = task_id - root;
+    }
+
+    rangecount = 1;
+  }
+  /* TEST_SPLIT_METHOD=-1 : alternate ranks  */
+  else if ((method && !strcmp(method, "-1")))
+  {
+    int i = 0;
+    int iter = 0;;
+
+    if ((task_id % 2) == 0)
+    {
+      for (i = 0; i < num_tasks; i++)
+      {
+        if ((i % 2) == 0)
+        {
+          range[iter].lo = i;
+          range[iter].hi = i;
+          iter++;
+        }
+      }
+
+      set[0]   = 1;
+      set[1]   = 0;
+      id       = 2;
+      root     = 0;
+      rangecount = iter;
+    }
+    else
+    {
+      for (i = 0; i < num_tasks; i++)
+      {
+        if ((i % 2) != 0)
+        {
+          range[iter].lo = i;
+          range[iter].hi = i;
+          iter++;
+        }
+      }
+
+      set[0]   = 0;
+      set[1]   = 1;
+      id       = 2;
+      root     = 1;
+      rangecount = iter;
+    }
+
+    num_tasks = iter;
+    local_task_id = task_id/2;
+  }
+  /* TEST_SPLIT_METHOD=N : Split the first "N" processes into a communicator */
+  else
+  {
+    half = atoi(method);
+    if (task_id < half)
+    {
+      range[0].lo = 0;
+      range[0].hi = half - 1;
+      set[0]   = 1;
+      set[1]   = 0;
+      id       = 1;
+      root     = 0;
+      num_tasks = half;
+      local_task_id = task_id;
+    }
+    else
+    {
+      range[0].lo = half;
+      range[0].hi = num_tasks - 1;
+      set[0]   = 0;
+      set[1]   = 1;
+      id       = 2;
+      root     = half;
+      num_tasks = num_tasks - half;
+      local_task_id = task_id - root;
+    }
+
+    rangecount = 1;
+  }
+
   for (; iContext < num_contexts; ++iContext)
   {
 
-    if (task_id == 0)
+    if (task_id == root)
       printf("# Context: %u\n", iContext);
-
-    /*  Query the world geometry for barrier algorithms */
-    rc |= query_geometry_world(client,
-                              context[iContext],
-                              &world_geometry,
-                              barrier_xfer,
-                              barrier_num_algorithm,
-                              &bar_always_works_algo,
-                              &bar_always_works_md,
-                              &bar_must_query_algo,
-                              &bar_must_query_md);
-
-    if (rc == 1)
-      return 1;
-
-    /*  Create the subgeometry */
-    pami_geometry_range_t *range;
-    int                    rangecount;
-    pami_geometry_t        newgeometry;
-    size_t                 newbar_num_algo[2];
-    pami_algorithm_t      *newbar_algo        = NULL;
-    pami_metadata_t       *newbar_md          = NULL;
-    pami_algorithm_t      *q_newbar_algo      = NULL;
-    pami_metadata_t       *q_newbar_md        = NULL;
-
-    pami_xfer_t            newbarrier;
-
-    size_t                 set[2];
-    int                    id;
-    size_t                 half        = num_tasks / 2;
-    range     = (pami_geometry_range_t *)malloc(((num_tasks + 1) / 2) * sizeof(pami_geometry_range_t));
-
-
-    char *method = getenv("TEST_SPLIT_METHOD");
-
-    /* Default or TEST_SPLIT_METHOD=0 : divide in half */
-    if ((!method || !strcmp(method, "0")))
-    {
-      if (task_id < half)
-      {
-        range[0].lo = 0;
-        range[0].hi = half - 1;
-        set[0]   = 1;
-        set[1]   = 0;
-        id       = 1;
-        root     = 0;
-        num_tasks = half;
-        local_task_id = task_id;
-      }
-      else
-      {
-        range[0].lo = half;
-        range[0].hi = num_tasks - 1;
-        set[0]   = 0;
-        set[1]   = 1;
-        id       = 2;
-        root     = half;
-        num_tasks = num_tasks - half;
-        local_task_id = task_id - root;
-      }
-
-      rangecount = 1;
-    }
-    /* TEST_SPLIT_METHOD=-1 : alternate ranks  */
-    else if ((method && !strcmp(method, "-1")))
-    {
-      int i = 0;
-      int iter = 0;;
-
-      if ((task_id % 2) == 0)
-      {
-        for (i = 0; i < num_tasks; i++)
-        {
-          if ((i % 2) == 0)
-          {
-            range[iter].lo = i;
-            range[iter].hi = i;
-            iter++;
-          }
-        }
-
-        set[0]   = 1;
-        set[1]   = 0;
-        id       = 2;
-        root     = 0;
-        rangecount = iter;
-      }
-      else
-      {
-        for (i = 0; i < num_tasks; i++)
-        {
-          if ((i % 2) != 0)
-          {
-            range[iter].lo = i;
-            range[iter].hi = i;
-            iter++;
-          }
-        }
-
-        set[0]   = 0;
-        set[1]   = 1;
-        id       = 2;
-        root     = 1;
-        rangecount = iter;
-      }
-
-      num_tasks = iter;
-      local_task_id = task_id/2;
-    }
-    /* TEST_SPLIT_METHOD=N : Split the first "N" processes into a communicator */
-    else
-    {
-      half = atoi(method);
-      if (task_id < half)
-      {
-        range[0].lo = 0;
-        range[0].hi = half - 1;
-        set[0]   = 1;
-        set[1]   = 0;
-        id       = 1;
-        root     = 0;
-        num_tasks = half;
-        local_task_id = task_id;
-      }
-      else
-      {
-        range[0].lo = half;
-        range[0].hi = num_tasks - 1;
-        set[0]   = 0;
-        set[1]   = 1;
-        id       = 2;
-        root     = half;
-        num_tasks = num_tasks - half;
-        local_task_id = task_id - root;
-      }
-
-      rangecount = 1;
-    }
 
     /* Delay root tasks, and emulate that he's doing "other"
        message passing.  This will cause the geometry_create
@@ -564,137 +659,43 @@ int main (int argc, char ** argv)
       for (; ii < num_contexts; ++ii)
         PAMI_Context_advance (context[ii], 1000);
     }
-
     rc |= create_and_query_geometry(client,
-                                   context[iContext],
-                                   parentless ? PAMI_NULL_GEOMETRY : world_geometry,
-                                   &newgeometry,
-                                   range,
-                                   rangecount,
-                                   id + iContext, /* Unique id for each context */
-                                   barrier_xfer,
-                                   newbar_num_algo,
-                                   &newbar_algo,
-                                   &newbar_md,
-                                   &q_newbar_algo,
-                                   &q_newbar_md);
+                                    context[0],
+                                    context[iContext],
+                                    parentless ? PAMI_NULL_GEOMETRY : world_geometry,
+                                    &newgeometry,
+                                    range,
+                                    rangecount,
+                                    id + iContext, /* Unique id for each context */
+                                    barrier_xfer,
+                                    newbar_num_algo,
+                                    &newbar_algo,
+                                    &newbar_md,
+                                    &q_newbar_algo,
+                                    &q_newbar_md);
 
     if (rc == 1)
       return 1;
 
     /*  Query the sub geometry for reduce algorithms */
     rc |= query_geometry(client,
-                        context[iContext],
-                        newgeometry,
-                        allreduce_xfer,
-                        allreduce_num_algorithm,
-                        &allreduce_always_works_algo,
-                        &allreduce_always_works_md,
-                        &allreduce_must_query_algo,
-                        &allreduce_must_query_md);
+                         context[iContext],
+                         newgeometry,
+                         allreduce_xfer,
+                         allreduce_num_algorithm,
+                         &allreduce_always_works_algo,
+                         &allreduce_always_works_md,
+                         &allreduce_must_query_algo,
+                         &allreduce_must_query_md);
 
     if (rc == 1)
       return 1;
-
-    /*  Set up world barrier */
-    barrier.cb_done   = cb_done;
-    barrier.cookie    = (void*) & bar_poll_flag;
-    barrier.algorithm = bar_always_works_algo[0];
 
     /*  Set up sub geometry barrier */
     newbarrier.cb_done   = cb_done;
     newbarrier.cookie    = (void*) & newbar_poll_flag;
     newbarrier.algorithm = newbar_algo[0];
 
-
-    unsigned** validTable =
-    alloc2DContig(op_count, dt_count);
-
-
-    /* Setup operation and datatype tables*/
-    unsigned force = 0; /* don't force the dt/op selected */
-    if (full_test)
-    {
-      for (i = 0; i < op_count; i++)
-        for (j = 0; j < dt_count; j++)
-          validTable[i][j] = 1;
-
-    }
-    else if (sDt && sOp)
-    {
-      force = 1; /* force the dt/op*/
-      for (i = 0; i < op_count; i++)
-        for (j = 0; j < dt_count; j++)
-          if (!strcmp(sDt, dt_array_str[j]) &&
-              !strcmp(sOp, op_array_str[i]))
-            validTable[i][j] = 1;
-          else
-            validTable[i][j] = 0;
-    }
-    else if (sOp)
-    {
-      for (i = 0; i < op_count; i++)
-        for (j = 0; j < dt_count; j++)
-          if (!strcmp(sOp, op_array_str[i]))
-            validTable[i][j] = 1;
-          else
-            validTable[i][j] = 0;
-    }
-    else if (sDt)
-    {
-      for (i = 0; i < op_count; i++)
-        for (j = 0; j < dt_count; j++)
-          if (!strcmp(sDt, dt_array_str[j]))
-            validTable[i][j] = 1;
-          else
-            validTable[i][j] = 0;
-    }
-    else  /* minimal/default test */
-    {
-
-      for (i = 0; i < op_count; i++)
-        for (j = 0; j < dt_count; j++)
-          validTable[i][j] = 0;
-
-      validTable[OP_SUM][DT_UNSIGNED_INT] = 1;
-      validTable[OP_SUM][DT_DOUBLE] = 1;
-      validTable[OP_MAX][DT_DOUBLE] = 1;
-      validTable[OP_MIN][DT_DOUBLE] = 1;
-
-    }
-    if(!force) /* not forcing the op/dt*/
-    {
-        /*--------------------------------------*/
-        /* Disable unsupported ops on complex   */
-        /* Only sum, prod                       */
-        for (i = 0, j = DT_SINGLE_COMPLEX; i < OP_COUNT; i++)if(i!=OP_SUM && i!=OP_PROD) validTable[i][j] = 0;
-        for (i = 0, j = DT_DOUBLE_COMPLEX; i < OP_COUNT; i++)if(i!=OP_SUM && i!=OP_PROD) validTable[i][j] = 0; 
-  
-        /*--------------------------------------*/
-        /* Disable non-LOC ops on LOC dt's      */
-        for (i = 0, j = DT_LOC_2INT      ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
-        for (i = 0, j = DT_LOC_SHORT_INT ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
-        for (i = 0, j = DT_LOC_FLOAT_INT ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
-        for (i = 0, j = DT_LOC_DOUBLE_INT; i < OP_MAXLOC; i++)validTable[i][j] = 0;
-        for (i = 0, j = DT_LOC_2FLOAT    ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
-        for (i = 0, j = DT_LOC_2DOUBLE   ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
-  
-        /*--------------------------------------*/
-        /* Disable LOC ops on non-LOC dt's      */
-        for (j = 0, i = OP_MAXLOC; j < DT_LOC_2INT; j++) validTable[i][j] = 0;
-        for (j = 0, i = OP_MINLOC; j < DT_LOC_2INT; j++) validTable[i][j] = 0;
-  
-        /*---------------------------------------*/
-        /* Disable unsupported ops on logical dt */
-        /* Only land, lor, lxor, band, bor, bxor */
-        for (i = 0,         j = DT_LOGICAL; i < OP_LAND ; i++) validTable[i][j] = 0;
-        for (i = OP_BXOR+1, j = DT_LOGICAL; i < OP_COUNT; i++) validTable[i][j] = 0;
-
-        /*---------------------------------------*/
-        /* Disable unsupported ops on long double*/
-        /* Only max,min,sum,prod                 */
-        for (i = OP_PROD+1, j = DT_LONG_DOUBLE; i < OP_COUNT; i++) validTable[i][j] = 0;
-    }
 
     for (nalg = 0; nalg < allreduce_num_algorithm[0]; nalg++)
     {
@@ -716,8 +717,6 @@ int main (int argc, char ** argv)
               ((strstr(allreduce_always_works_md[nalg].name, selected) != NULL) && !selector))  continue;
 
           protocolName = allreduce_always_works_md[nalg].name;
-
-          blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
 
           allreduce.cb_done   = cb_done;
           allreduce.cookie    = (void*) & allreduce_poll_flag;
@@ -793,19 +792,24 @@ int main (int argc, char ** argv)
       }
     }
 
-    blocking_coll(context[iContext], &barrier, &bar_poll_flag);
+    /* We aren't testing world barrier itself, so use context 0.*/
+    blocking_coll(context[0], &barrier, &bar_poll_flag);
 
-
-    free(bar_always_works_algo);
-    free(bar_always_works_md);
-    free(bar_must_query_algo);
-    free(bar_must_query_md);
+    free(newbar_algo);
+    free(newbar_md);
+    free(q_newbar_algo);
+    free(q_newbar_md);
     free(allreduce_always_works_algo);
     free(allreduce_always_works_md);
     free(allreduce_must_query_algo);
     free(allreduce_must_query_md);
 
   } /*for(unsigned iContext = 0; iContext < num_contexts; ++iContexts)*/
+
+  free(bar_always_works_algo);
+  free(bar_always_works_md);
+  free(bar_must_query_algo);
+  free(bar_must_query_md);
 
   sbuf = (char*)sbuf - buffer_offset;
   free(sbuf);

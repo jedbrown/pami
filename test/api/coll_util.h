@@ -155,7 +155,8 @@ int query_geometry(pami_client_t       client,
 
 
 int create_and_query_geometry(pami_client_t           client,
-                              pami_context_t          context,
+                              pami_context_t          context,  /* context for create callback */
+                              pami_context_t          contextq, /* context for query */
                               pami_geometry_t         parent_geometry,
                               pami_geometry_t        *new_geometry,
                               pami_geometry_range_t  *range,
@@ -194,7 +195,7 @@ int create_and_query_geometry(pami_client_t           client,
       result = PAMI_Context_advance (context, 1);
 
     return query_geometry(client,
-                          context,
+                          contextq,
                           *new_geometry,
                           xfer_type,
                           num_algorithm,

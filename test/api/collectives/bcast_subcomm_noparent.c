@@ -212,6 +212,7 @@ int main(int argc, char*argv[])
 
   rc = create_and_query_geometry(client,
                                  context,
+                                 context,
                                  PAMI_NULL_GEOMETRY,
                                  &newgeometry,
                                  range,

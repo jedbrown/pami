@@ -317,6 +317,7 @@ int main (int argc, char ** argv)
     }
 
     rc |= create_and_query_geometry(client,
+                                    context[0],
                                    context[iContext],
                                    parentless ? PAMI_NULL_GEOMETRY : world_geometry,
                                    &newgeometry,
@@ -417,7 +418,7 @@ int main (int argc, char ** argv)
             {  
               result = q_newbcast_md[nalg].check_fn(&newbcast);
             }
-            else // Must check parameters ourselves...
+            else /* Must check parameters ourselves... */
             {
               uint64_t  mask=0;
               result.bitmask = 0;
@@ -437,15 +438,15 @@ int main (int argc, char ** argv)
                                        (dataSent >= q_newbcast_md[nalg].range_lo));
               } 
               if  (q_newbcast_md[nalg].check_correct.values.contigsflags)
-                ; // This test is always PAMI_TYPE_CONTIGUOUS
+                ; /* This test is always PAMI_TYPE_CONTIGUOUS */
               if(q_newbcast_md[nalg].check_correct.values.contigrflags)
-                ; // This test is always PAMI_TYPE_CONTIGUOUS
+                ; /* This test is always PAMI_TYPE_CONTIGUOUS */
               if(q_newbcast_md[nalg].check_correct.values.continsflags)
-                ; // This test is always PAMI_TYPE_CONTIGUOUS and continuous
+                ; /* This test is always PAMI_TYPE_CONTIGUOUS and continuous */
               if(q_newbcast_md[nalg].check_correct.values.continrflags)
-                ; // This test is always PAMI_TYPE_CONTIGUOUS and continuous
+                ; /* This test is always PAMI_TYPE_CONTIGUOUS and continuous */
             }
-            //fprintf(stderr,"result.bitmask = %.8X\n",result.bitmask);
+            /*fprintf(stderr,"result.bitmask = %.8X\n",result.bitmask); */
             if (result.bitmask) continue;
 
             if(q_newbcast_md[nalg].check_correct.values.nonlocal)

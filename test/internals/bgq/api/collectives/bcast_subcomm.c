@@ -317,6 +317,7 @@ int main (int argc, char ** argv)
     }
 
     rc |= create_and_query_geometry(client,
+                                    context[0],
                                    context[iContext],
                                    parentless ? PAMI_NULL_GEOMETRY : world_geometry,
                                    &newgeometry,

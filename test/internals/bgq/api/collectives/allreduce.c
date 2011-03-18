@@ -390,6 +390,24 @@ int main (int argc, char ** argv)
   if (rc == 1)
     return 1;
 
+  /*  Query the world geometry for barrier algorithms */
+  rc |= query_geometry_world(client,
+                             context[0],
+                             &world_geometry,
+                             barrier_xfer,
+                             barrier_num_algorithm,
+                             &bar_always_works_algo,
+                             &bar_always_works_md,
+                             &bar_must_query_algo,
+                             &bar_must_query_md);
+
+  if (rc == 1)
+    return 1;
+
+  barrier.cb_done   = cb_done;
+  barrier.cookie    = (void*) & bar_poll_flag;
+  barrier.algorithm = bar_always_works_algo[0];
+
   unsigned iContext = 0;
 
   for (; iContext < num_contexts; ++iContext)
@@ -397,20 +415,6 @@ int main (int argc, char ** argv)
 
     if (task_id == 0)
       printf("# Context: %u\n", iContext);
-
-    /*  Query the world geometry for barrier algorithms */
-    rc |= query_geometry_world(client,
-                              context[iContext],
-                              &world_geometry,
-                              barrier_xfer,
-                              barrier_num_algorithm,
-                              &bar_always_works_algo,
-                              &bar_always_works_md,
-                              &bar_must_query_algo,
-                              &bar_must_query_md);
-
-    if (rc == 1)
-      return 1;
 
     /*  Query the world geometry for allreduce algorithms */
     rc |= query_geometry_world(client,
@@ -530,11 +534,6 @@ int main (int argc, char ** argv)
 
       protocolName = allreduce_always_works_md[nalg].name;
 
-      barrier.cb_done   = cb_done;
-      barrier.cookie    = (void*) & bar_poll_flag;
-      barrier.algorithm = bar_always_works_algo[0];
-      blocking_coll(context[iContext], &barrier, &bar_poll_flag);
-
       allreduce.cb_done   = cb_done;
       allreduce.cookie    = (void*) & allreduce_poll_flag;
       allreduce.algorithm = allreduce_always_works_algo[nalg];
@@ -574,7 +573,8 @@ int main (int argc, char ** argv)
 #ifdef CHECK_DATA
               initialize_sndbuf (sbuf, i, op, dt, task_id, num_tasks);
 #endif
-              blocking_coll(context[iContext], &barrier, &bar_poll_flag);
+              /* We aren't testing barrier itself, so use context 0. */
+              blocking_coll(context[0], &barrier, &bar_poll_flag);
               ti = timer();
 
               for (j = 0; j < niter; j++)
@@ -583,7 +583,8 @@ int main (int argc, char ** argv)
               }
 
               tf = timer();
-              blocking_coll(context[iContext], &barrier, &bar_poll_flag);
+              /* We aren't testing barrier itself, so use context 0. */
+              blocking_coll(context[0], &barrier, &bar_poll_flag);
 
 #ifdef CHECK_DATA
               rc |= check_rcvbuf (rbuf, i, op, dt, task_id, num_tasks);
@@ -609,16 +610,17 @@ int main (int argc, char ** argv)
       }
     }
 
-    free(bar_always_works_algo);
-    free(bar_always_works_md);
-    free(bar_must_query_algo);
-    free(bar_must_query_md);
     free(allreduce_always_works_algo);
     free(allreduce_always_works_md);
     free(allreduce_must_query_algo);
     free(allreduce_must_query_md);
 
   } /*for(unsigned iContext = 0; iContext < num_contexts; ++iContexts)*/
+
+  free(bar_always_works_algo);
+  free(bar_always_works_md);
+  free(bar_must_query_algo);
+  free(bar_must_query_md);
 
   sbuf = (char*)sbuf - buffer_offset;
   free(sbuf);

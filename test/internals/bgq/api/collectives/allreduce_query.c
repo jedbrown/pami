@@ -390,17 +390,9 @@ int main (int argc, char ** argv)
   if (rc == 1)
     return 1;
 
-  unsigned iContext = 0;
-
-  for (; iContext < num_contexts; ++iContext)
-  {
-
-    if (task_id == 0)
-      printf("# Context: %u\n", iContext);
-
     /*  Query the world geometry for barrier algorithms */
     rc |= query_geometry_world(client,
-                              context[iContext],
+                             context[0],
                               &world_geometry,
                               barrier_xfer,
                               barrier_num_algorithm,
@@ -411,6 +403,18 @@ int main (int argc, char ** argv)
 
     if (rc == 1)
       return 1;
+
+  barrier.cb_done   = cb_done;
+  barrier.cookie    = (void*) & bar_poll_flag;
+  barrier.algorithm = bar_always_works_algo[0];
+
+  unsigned iContext = 0;
+
+  for (; iContext < num_contexts; ++iContext)
+  {
+
+    if (task_id == 0)
+      printf("# Context: %u\n", iContext);
 
     /*  Query the world geometry for allreduce algorithms */
     rc |= query_geometry_world(client,
@@ -537,11 +541,6 @@ int main (int argc, char ** argv)
       unsigned checkrequired = allreduce_must_query_md[nalg].check_correct.values.checkrequired; /*must query every time */
       assert(!checkrequired || allreduce_must_query_md[nalg].check_fn); /* must have function if checkrequired. */
 
-      barrier.cb_done   = cb_done;
-      barrier.cookie    = (void*) & bar_poll_flag;
-      barrier.algorithm = bar_always_works_algo[0];
-      blocking_coll(context[iContext], &barrier, &bar_poll_flag);
-
       allreduce.cb_done   = cb_done;
       allreduce.cookie    = (void*) & allreduce_poll_flag;
       allreduce.algorithm = allreduce_must_query_algo[nalg];
@@ -582,7 +581,7 @@ int main (int argc, char ** argv)
                   {  
                 result = allreduce_must_query_md[nalg].check_fn(&allreduce);
                   }
-                  else // Must check parameters ourselves...
+                  else /* Must check parameters ourselves... */
                   {
                     uint64_t  mask=0;
                     result.bitmask = 0;
@@ -602,15 +601,15 @@ int main (int argc, char ** argv)
                                              (dataSent >= allreduce_must_query_md[nalg].range_lo));
                     }
                     if(allreduce_must_query_md[nalg].check_correct.values.contigsflags)
-                      ; // This test is always PAMI_TYPE_CONTIGUOUS
+                      ; /* This test is always PAMI_TYPE_CONTIGUOUS */
                     if(allreduce_must_query_md[nalg].check_correct.values.contigrflags)
-                      ; // This test is always PAMI_TYPE_CONTIGUOUS
+                      ; /* This test is always PAMI_TYPE_CONTIGUOUS */
                     if(allreduce_must_query_md[nalg].check_correct.values.continsflags)
-                      ; // This test is always PAMI_TYPE_CONTIGUOUS and continuous
+                      ; /* This test is always PAMI_TYPE_CONTIGUOUS and continuous */
                     if(allreduce_must_query_md[nalg].check_correct.values.continrflags)
-                      ; // This test is always PAMI_TYPE_CONTIGUOUS and continuous
+                      ; /* This test is always PAMI_TYPE_CONTIGUOUS and continuous */
                   }
-                  //fprintf(stderr,"result.bitmask = %.8X\n",result.bitmask);
+                  /*fprintf(stderr,"result.bitmask = %.8X\n",result.bitmask); */
               if (result.bitmask) continue;
 
                   if(allreduce_must_query_md[nalg].check_correct.values.nonlocal)
@@ -622,7 +621,8 @@ int main (int argc, char ** argv)
 #ifdef CHECK_DATA
               initialize_sndbuf (sbuf, i, op, dt, task_id, num_tasks);
 #endif
-              blocking_coll(context[iContext], &barrier, &bar_poll_flag);
+              /* We aren't testing barrier itself, so use context 0. */
+              blocking_coll(context[0], &barrier, &bar_poll_flag);
               ti = timer();
 
               for (j = 0; j < niter; j++)
@@ -637,10 +637,11 @@ int main (int argc, char ** argv)
               }
 
               tf = timer();
-              blocking_coll(context[iContext], &barrier, &bar_poll_flag);
+              /* We aren't testing barrier itself, so use context 0. */
+              blocking_coll(context[0], &barrier, &bar_poll_flag);
 
 #ifdef CHECK_DATA
-              rc = check_rcvbuf (rbuf, i, op, dt, task_id, num_tasks);
+              rc |= check_rcvbuf (rbuf, i, op, dt, task_id, num_tasks);
 
               if (rc) fprintf(stderr, "%s FAILED validation\n", protocolName);
 
@@ -663,16 +664,17 @@ int main (int argc, char ** argv)
       }
     }
 
-    free(bar_always_works_algo);
-    free(bar_always_works_md);
-    free(bar_must_query_algo);
-    free(bar_must_query_md);
     free(allreduce_always_works_algo);
     free(allreduce_always_works_md);
     free(allreduce_must_query_algo);
     free(allreduce_must_query_md);
 
   } /*for(unsigned iContext = 0; iContext < num_contexts; ++iContexts)*/
+
+  free(bar_always_works_algo);
+  free(bar_always_works_md);
+  free(bar_must_query_algo);
+  free(bar_must_query_md);
 
   sbuf = (char*)sbuf - buffer_offset;
   free(sbuf);
