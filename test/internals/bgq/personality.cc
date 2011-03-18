@@ -50,9 +50,6 @@ int main(int argc, char ** argv)
   var = getenv("BG_MEMSIZE");
   fprintf(stderr,"BG_MEMSIZE %s\n",var? var: "NULL");
 
-  var = getenv("PAMI_DEVICE");
-  fprintf(stderr,"PAMI_DEVICE %s\n",var? var: "NULL");
-
   fprintf(stderr,"BGQ Personality A coord %zu\n",__global.personality.aCoord());
   fprintf(stderr,"BGQ Personality B coord %zu\n",__global.personality.bCoord());
   fprintf(stderr,"BGQ Personality C coord %zu\n",__global.personality.cCoord());

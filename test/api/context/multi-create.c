@@ -28,11 +28,7 @@ int main (int argc, char ** argv)
   size_t max = configuration.value.intval;
 
   size_t num = max;
-  if (getenv("PAMI_DEVICE")) {
-	fprintf(stderr, "PAMI_DEVICE = %s\n", getenv("PAMI_DEVICE"));
-  } else {
-	fprintf(stderr, "PAMI_DEVICE = D\n");
-  }
+
   if (getenv("NUM_CONTEXTS")) {
 	num = strtoul(getenv("NUM_CONTEXTS"), NULL, 0);
 	if (num > 128) num = 128;

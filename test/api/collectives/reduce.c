@@ -310,97 +310,36 @@ int main(int argc, char*argv[])
     for (j = 0; j < dt_count; j++)
       validTable[i][j] = 1;
 
-  /* Not testing minloc/maxloc/logical,etc */
-  for (i = OP_MINLOC, j = 0; j < DT_COUNT; j++)validTable[i][j] = 0;
+  /*--------------------------------------*/
+  /* Disable unsupported ops on complex   */
+  /* Only sum, prod                       */
+  for (i = 0, j = DT_SINGLE_COMPLEX; i < OP_COUNT; i++)if(i!=OP_SUM && i!=OP_PROD) validTable[i][j] = 0;
+  for (i = 0, j = DT_DOUBLE_COMPLEX; i < OP_COUNT; i++)if(i!=OP_SUM && i!=OP_PROD) validTable[i][j] = 0; 
 
-  for (i = OP_MAXLOC, j = 0; j < DT_COUNT; j++)validTable[i][j] = 0;
+  /*--------------------------------------*/
+  /* Disable non-LOC ops on LOC dt's      */
+  for (i = 0, j = DT_LOC_2INT      ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
+  for (i = 0, j = DT_LOC_SHORT_INT ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
+  for (i = 0, j = DT_LOC_FLOAT_INT ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
+  for (i = 0, j = DT_LOC_DOUBLE_INT; i < OP_MAXLOC; i++)validTable[i][j] = 0;
+  for (i = 0, j = DT_LOC_2FLOAT    ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
+  for (i = 0, j = DT_LOC_2DOUBLE   ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
 
-  for (i = 0, j = DT_LOGICAL; i < OP_COUNT; i++)validTable[i][j] = 0;
+  /*--------------------------------------*/
+  /* Disable LOC ops on non-LOC dt's      */
+  for (j = 0, i = OP_MAXLOC; j < DT_LOC_2INT; j++) validTable[i][j] = 0;
+  for (j = 0, i = OP_MINLOC; j < DT_LOC_2INT; j++) validTable[i][j] = 0;
 
-  for (i = 0, j = DT_SINGLE_COMPLEX; i < OP_COUNT; i++)validTable[i][j] = 0;
+  /*---------------------------------------*/
+  /* Disable unsupported ops on logical dt */
+  /* Only land, lor, lxor, band, bor, bxor */
+  for (i = 0,         j = DT_LOGICAL; i < OP_LAND ; i++) validTable[i][j] = 0;
+  for (i = OP_BXOR+1, j = DT_LOGICAL; i < OP_COUNT; i++) validTable[i][j] = 0;
 
-  for (i = 0, j = DT_LONG_DOUBLE; i < OP_COUNT; i++)validTable[i][j] = 0;
-
-  for (i = 0, j = DT_DOUBLE_COMPLEX; i < OP_COUNT; i++)validTable[i][j] = 0;
-
-  for (i = 0, j = DT_LOC_2INT; i < OP_COUNT; i++)validTable[i][j] = 0;
-
-  for (i = 0, j = DT_LOC_SHORT_INT; i < OP_COUNT; i++)validTable[i][j] = 0;
-
-  for (i = 0, j = DT_LOC_FLOAT_INT; i < OP_COUNT; i++)validTable[i][j] = 0;
-
-  for (i = 0, j = DT_LOC_DOUBLE_INT; i < OP_COUNT; i++)validTable[i][j] = 0;
-
-  for (i = 0, j = DT_LOC_2FLOAT; i < OP_COUNT; i++)validTable[i][j] = 0;
-
-  for (i = 0, j = DT_LOC_2DOUBLE; i < OP_COUNT; i++)validTable[i][j] = 0;
-
-
-  validTable[OP_MAX][DT_DOUBLE_COMPLEX] = 0;
-  validTable[OP_MIN][DT_DOUBLE_COMPLEX] = 0;
-  validTable[OP_PROD][DT_DOUBLE_COMPLEX] = 0;
-
-  /* Now add back the minloc/maxloc stuff */
-  for (i = OP_MAXLOC; i <= OP_MINLOC; i++)
-    for (j = DT_LOC_2INT; j <= DT_LOC_2DOUBLE; j++)
-      validTable[i][j] = 1;
-
-  /** \todo These long long types reportedly fail in pgas, so disable for now. */
-  for (i = 0, j = DT_SIGNED_LONG_LONG; i < OP_COUNT; i++)validTable[i][j] = 0;
-
-  for (i = 0, j = DT_UNSIGNED_LONG_LONG; i < OP_COUNT; i++)validTable[i][j] = 0;
-
-  /** \todo These fail using core math...we should find this bug. */
-  validTable[OP_BAND][DT_DOUBLE] = 0;
-
-#if defined(__pami_target_bgq__) || defined(__pami_target_bgp__)
-
-  char* env = getenv("PAMI_DEVICE");
-  fprintf(stderr, "PAMI_DEVICE=%c\n", env ? *env : ' ');
-
-  if ((env == NULL) || ((*env == 'M') || (*env == 'B')))
-    {
-      /* These are unsupported on MU */
-      for (i = 0, j = DT_SIGNED_CHAR;    i < OP_COUNT; i++)validTable[i][j] = 0;
-
-      for (i = 0, j = DT_UNSIGNED_CHAR;  i < OP_COUNT; i++)validTable[i][j] = 0;
-
-      for (i = 0, j = DT_SIGNED_SHORT;   i < OP_COUNT; i++)validTable[i][j] = 0;
-
-      for (i = 0, j = DT_UNSIGNED_SHORT; i < OP_COUNT; i++)validTable[i][j] = 0;
-
-      for (i = 0, j = DT_FLOAT;          i < OP_COUNT; i++)validTable[i][j] = 0;
-
-      for (i = 0, j = DT_LOGICAL;        i < OP_COUNT; i++)validTable[i][j] = 0;
-
-      for (i = 0, j = DT_SINGLE_COMPLEX; i < OP_COUNT; i++)validTable[i][j] = 0;
-
-      for (i = 0, j = DT_DOUBLE_COMPLEX; i < OP_COUNT; i++)validTable[i][j] = 0;
-
-      for (i = 0, j = DT_LOC_2INT;       i < OP_COUNT; i++)validTable[i][j] = 0;
-
-      for (i = 0, j = DT_LOC_SHORT_INT;  i < OP_COUNT; i++)validTable[i][j] = 0;
-
-      for (i = 0, j = DT_LOC_FLOAT_INT;  i < OP_COUNT; i++)validTable[i][j] = 0;
-
-      for (i = 0, j = DT_LOC_DOUBLE_INT; i < OP_COUNT; i++)validTable[i][j] = 0;
-
-      for (i = 0, j = DT_LOC_2FLOAT;     i < OP_COUNT; i++)validTable[i][j] = 0;
-
-      for (i = 0, j = DT_LOC_2FLOAT;     i < OP_COUNT; i++)validTable[i][j] = 0;
-
-      for (i = OP_PROD,   j = 0; j < DT_COUNT; j++)validTable[i][j] = 0;
-
-      for (i = OP_MAXLOC, j = 0; j < DT_COUNT; j++)validTable[i][j] = 0;
-
-      for (i = OP_MINLOC, j = 0; j < DT_COUNT; j++)validTable[i][j] = 0;
-    }
-
-  /* This works on bgq so re-enable it */
-  if ((env) && (*env == 'M'))
-    validTable[OP_BAND][DT_DOUBLE] = 1;
-
-#endif
+  /*---------------------------------------*/
+  /* Disable unsupported ops on long double*/
+  /* Only max,min,sum,prod                 */
+  for (i = OP_PROD+1, j = DT_LONG_DOUBLE; i < OP_COUNT; i++) validTable[i][j] = 0;
 
 #else
 
