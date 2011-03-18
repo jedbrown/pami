@@ -234,6 +234,40 @@ namespace PAMI
                   ( (raw & 0x00020000) >> 16 ) |
                   ( (raw & 0x00000800) >> 11 ) );
     };
+
+        ///
+    /// \brief Retrieve mu destination structure for a specific task
+    ///
+    /// The intent here is to provide access to a mu destination structure
+    /// initialized to the coordinates of the destination node.
+    ///
+    /// \note Does not provide process, core, or hardware thread addressing.
+    ///
+    inline void getMuDestinationTask (size_t               task,
+                                      uint32_t            &dest,
+                                      size_t              &tcoord,
+                                      uint32_t            &fifoPin)
+    {
+      uint32_t raw = _mapcache.torus.task2coords[task].raw;
+      raw += _jobLLcoords.raw; // Add block origin to obtain MU coords.
+
+      tcoord       = (size_t) raw & 0x0000003f; // 't' coordinate
+
+      // raw & 0x1f7df7c0 turns off the e, reserved, and t coordinate bits, AND
+      // the high bit of A, B, C, and D which are used for the fifoPin.
+      // OR in the e coord at the LSB.
+      dest = (raw & 0x1f7df7c0) | (raw >> 31);
+
+      // Extract the MSB from each of A, B, C, and D, and construct the
+      // number used for fifo pinning.  Should be a number between 0 and 9,
+      // inclusive.
+      fifoPin = ( ( (raw & 0x20000000) >> 26 ) |
+                  ( (raw & 0x00800000) >> 21 ) |
+                  ( (raw & 0x00020000) >> 16 ) |
+                  ( (raw & 0x00000800) >> 11 ) );
+    };
+
+
     inline void getMuDestinationTask (size_t               task,
                                       MUHWI_Destination_t &dest)
     {

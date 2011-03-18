@@ -637,6 +637,64 @@ namespace PAMI
             return  _pinInfo->injFifoIds[fifoPin];
           }
 
+
+          ///
+          /// \brief Pin Fifo (from Self to Destination)
+          ///
+          /// The pinFifo method is used for two purposes: to retrieve the
+          /// context-relative injection fifo identification number of the
+          /// injection fifo to which communication with the destination
+          /// task+offset is pinned, and to provide MUSPI information needed
+          /// to initialize and inject a descriptor.
+          ///
+          /// This is a "pinFromSelf" direction.  The data is assumed to
+          /// be travelling from ourself to the task/offset destination.
+          ///
+          ///
+          /// \see MUHWI_MessageUnitHeader.Memory_FIFO.Rec_FIFO_Id
+          /// \see MUHWI_Descriptor_t.Torus_FIFO_Map
+          ///
+          /// \param[in]  task    Destination task identifier
+          /// \param[in]  offset  Destination task context offset identifier
+          /// \param[out] dest    Destination task node coordinates
+          /// \param[out] rfifo   Reception fifo id to address the task+offset
+          ///                     This is a global id that can be put into
+          ///                     the descriptor.
+          /// \param[out] map     Pinned MUSPI torus injection fifo map
+          ///
+          /// \return Context-relative injection fifo number pinned to the
+          ///         task+offset destination
+          ///
+          //template <pinfifo_algorithm_t T>
+          inline size_t pinFifo (size_t                task,
+                                 size_t                offset,
+                                 uint32_t            & dest,
+                                 uint16_t            & rfifo,
+                                 uint64_t            & map)
+          {
+            TRACE_FN_ENTER();
+
+            // Calculate the destination recpetion fifo identifier based on
+            // the destination task+offset.  This is important for
+            // multi-context support.
+            size_t tcoord = 0;
+            uint32_t fifoPin = 0;
+            _mapping.getMuDestinationTask( task, dest, tcoord, fifoPin );
+
+	    // Get the recFifo to use for this client, and the destination's
+	    // context and T coord.
+            rfifo = _rm.getPinRecFifo( _pinRecFifoHandle, offset, tcoord );
+            TRACE_FORMAT("client=%zu, context=%zu, tcoord=%zu, rfifo = %u", _id_client, offset, tcoord, rfifo);
+
+            map = _pinInfo->torusInjFifoMaps[fifoPin];
+
+            TRACE_FORMAT("(destTask %zu, destOffset %zu) -> dest = %08x, rfifo = %d, optimalFifoPin = %u, actualFifoPin = %u, map = %016lx, injFifoIds[]=%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u", task, offset, *((uint32_t *) &dest), rfifo, fifoPin, _pinInfo->injFifoIds[fifoPin], map, _pinInfo->injFifoIds[0], _pinInfo->injFifoIds[1], _pinInfo->injFifoIds[2], _pinInfo->injFifoIds[3], _pinInfo->injFifoIds[4], _pinInfo->injFifoIds[5], _pinInfo->injFifoIds[6], _pinInfo->injFifoIds[7], _pinInfo->injFifoIds[8], _pinInfo->injFifoIds[9], _pinInfo->injFifoIds[10], _pinInfo->injFifoIds[11], _pinInfo->injFifoIds[12], _pinInfo->injFifoIds[13], _pinInfo->injFifoIds[14], _pinInfo->injFifoIds[15] );
+            TRACE_FN_EXIT();
+
+            return  _pinInfo->injFifoIds[fifoPin];
+          }
+
+
           ///
           /// \brief Pin Fifo (to Self from Remote)
           ///

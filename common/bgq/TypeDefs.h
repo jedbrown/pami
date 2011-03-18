@@ -85,6 +85,7 @@
 #include "components/devices/bgq/mu2/model/AMMulticastModel.h"
 #include "components/devices/bgq/mu2/model/MUMultisync.h"
 #include "components/devices/bgq/mu2/model/RectangleMultisyncModel.h"
+#include "components/devices/bgq/mu2/model/ManytomanyModel.h"
 
 namespace PAMI
 {
@@ -229,6 +230,10 @@ namespace PAMI
 #endif
 
   typedef BGQNativeInterfaceAS <ShmemDevice, ShmemMcstModel, ShmemMsyncModel, ShmemMcombModel> AllSidedShmemNI;
+
+  typedef BGQNativeInterfaceM2M <MUDevice, Device::MU::ManytomanyModel<size_t, 1> > M2MNISingle;
+  typedef BGQNativeInterfaceM2M <MUDevice, Device::MU::ManytomanyModel<size_t, 0> > M2MNIVectorLong;
+  typedef BGQNativeInterfaceM2M <MUDevice, Device::MU::ManytomanyModel<int,    0> > M2MNIVectorInt;
 
 }
 

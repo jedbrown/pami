@@ -634,7 +634,107 @@ namespace PAMI
     TRACE_FN_EXIT();
   }
 
+  template <class T_Device, class T_Model>
+  class BGQNativeInterfaceM2M : public CCMI::Interfaces::NativeInterface {
+  protected:
+    pami_result_t              _m2m_status;
+    
+    T_Model                 _model;
+    int                     _dispatch;
+    pami_client_t           _client;
+    pami_context_t          _context;
+    size_t                  _contextid;
+    size_t                  _clientid;
+    int                   * _dispatch_id;
 
+    /// Allocation object to store state and user's callback
+    struct allocObj
+    {
+      uint8_t                 _m2mstate[T_Model::sizeof_msg];
+      BGQNativeInterfaceM2M * _ni;
+      pami_callback_t         _user_callback;
+    };
+    PAMI::MemoryAllocator < sizeof(allocObj), 16 > _allocator;  // Allocator    
+
+  public:
+
+    BGQNativeInterfaceM2M<T_Device, T_Model> (T_Device &device, pami_client_t client, pami_context_t context, size_t context_id, size_t client_id, int *dispatch_id):
+    CCMI::Interfaces::NativeInterface(__global.mapping.task(),
+				      __global.mapping.size()),
+      _m2m_status(PAMI_SUCCESS),
+      _model(client, context, device, _m2m_status),
+      _dispatch(-1U),
+      _client(client),
+      _context(context),
+      _contextid(context_id),
+      _clientid(client_id),
+      _dispatch_id(dispatch_id),
+      _allocator()
+    {
+      TRACE_FN_ENTER();
+      TRACE_FN_EXIT();
+    };
+
+    /// Virtual interfaces (from base \see CCMI::Interfaces::NativeInterface)
+    virtual pami_result_t setMulticastDispatch (pami_dispatch_multicast_function fn, void *cookie)
+    {
+      PAMI_abort();
+      return PAMI_ERROR;
+    }
+
+    //Set the dispatch
+    virtual pami_result_t setManytomanyDispatch(pami_dispatch_manytomany_function fn, void *cookie)
+    {
+      this->_dispatch = (*this->_dispatch_id)--;
+      return _model.registerManytomanyRecvFunction_impl(_dispatch, fn, cookie);
+    } 
+       
+    virtual pami_result_t multicast    (pami_multicast_t    *, void *devinfo = NULL)
+    {
+      PAMI_abort();
+      return PAMI_ERROR;
+    }    
+    
+    virtual pami_result_t multisync    (pami_multisync_t    *, void *devinfo = NULL)
+    {
+      PAMI_abort();
+      return PAMI_ERROR;
+    }    
+    virtual pami_result_t multicombine (pami_multicombine_t *, void *devinfo = NULL)
+    {
+      PAMI_abort();
+      return PAMI_ERROR;
+    }        
+
+    virtual pami_result_t manytomany (pami_manytomany_t *m2m, void *devinfo = NULL)
+    {
+      allocObj *req          = (allocObj *)_allocator.allocateObject();
+      req->_ni               = this;
+      req->_user_callback    = m2m->cb_done;
+      pami_manytomany_t  m   = *m2m;
+      m.cb_done.function     =  ni_client_done;
+      m.cb_done.clientdata   =  req;
+
+      return _model.postManytomany_impl(req->_m2mstate, &m, devinfo);
+    }    
+
+    static void ni_client_done(pami_context_t      context,
+			       void              * rdata,
+			       pami_result_t       res)
+    {
+      TRACE_FN_ENTER();
+      allocObj             *obj = (allocObj*)rdata;
+      BGQNativeInterfaceM2M *ni   = obj->_ni;
+      
+      if (obj->_user_callback.function)
+	obj->_user_callback.function(context,
+				     obj->_user_callback.clientdata,
+				     res);
+      
+      ni->_allocator.returnObject(obj);
+      TRACE_FN_EXIT();
+    }
+  };
 };
 
 #undef DO_TRACE_ENTEREXIT

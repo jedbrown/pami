@@ -44,7 +44,8 @@
  */
 typedef struct
 {
-  PAMI::M2MPipeWorkQueue *buffer;       /**< M2M PWQ used for data                    */
+  PAMI::M2MType           type;
+  void                   *buffer;       /**< M2M PWQ used for data                    */
   PAMI::Topology         *participants; /**< Tasks that are vectored in buffer        */
 } pami_manytomanybuf_t;
 

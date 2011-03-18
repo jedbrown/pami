@@ -329,9 +329,9 @@ namespace PAMI
             result = NativeInterfaceCommon::constructNativeInterface<T_Allocator,
                                                                      T_NI,
                                                                      T_Protocol,
-                                                                     T_Device,
-                                                                     T_Select>(_allocator,
-                                                                               device,
+	                                                             T_Device,
+	                                                             T_Select>(_allocator,
+									       device,
                                                                                ni,
                                                                                _client,
                                                                                _context,
@@ -555,7 +555,7 @@ namespace PAMI
                    class T_Protocol2,
                    class T_Device2,
                    class T_Factory,
-                   NativeInterfaceCommon::select_interface T_Select>
+	           NativeInterfaceCommon::select_interface T_Select>
           void setupFactory(T_NI        *&ni,
                             T_Device1    &device1,
                             T_Device2    &device2,
@@ -570,7 +570,7 @@ namespace PAMI
                T_Device1,
                T_Protocol2,
                T_Device2,
-               T_Select>(_allocator,
+	       T_Select>(_allocator,
                          device1,
                          device2,
                          ni,
@@ -914,9 +914,9 @@ namespace PAMI
                          T_Device2,
                          CCMI::Adaptor::P2PAlltoall::All2AllFactory,
                          NativeInterfaceCommon::MANYTOMANY_ONLY>(ni_am,
-                                                                     device1,
-                                                                     device2,
-                                                                     _alltoall_factory);
+								 device1,
+								 device2,
+								 _alltoall_factory);
             new ((void*)_alltoall_factory) CCMI::Adaptor::P2PAlltoall::All2AllFactory(&_csconnmgr, ni_am);
 
             // Setup Alltoallv
@@ -926,10 +926,10 @@ namespace PAMI
                          T_Protocol2,
                          T_Device2,
                          CCMI::Adaptor::P2PAlltoallv::All2AllvFactory,
-                         NativeInterfaceCommon::MANYTOMANY_ONLY>(ni_am,
-                                                                     device1,
-                                                                     device2,
-                                                                     _alltoallv_factory);
+	                 NativeInterfaceCommon::MANYTOMANY_ONLY>(ni_am,
+								 device1,
+								 device2,
+								 _alltoallv_factory);
             new ((void*)_alltoallv_factory) CCMI::Adaptor::P2PAlltoallv::All2AllvFactory(&_csconnmgr, ni_am);
 
             //set the mapid functions

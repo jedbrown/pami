@@ -65,7 +65,7 @@ public:
 	/// \note bufinit must be empty (0) for producer PWQ or full (size of dgsp type * dsgpcounts[index]) for consumer PWQ.
 	///
 	inline void configure(char *buffer, size_t indexcount,
-			      pami_type_t *dgsp, size_t *offsets, size_t *dgspcounts, size_t *bufinit);
+			      pami_type_t *dgsp, void *offsets, void *dgspcounts, size_t *bufinit);
 
 	/// \brief Configure for Many to Many (indexed flat buffer) access.
 	///
@@ -272,6 +272,19 @@ public:
 	///
 	inline bool available();
 
+	/// \brief Number of indices
+	///
+	///  \return number of indices
+	inline 	size_t numIndices ();
+
+	/// \brief In an alltoallv for example several indices can be
+	///  zero. Number of active indices is the number of nonzero indices. In an
+	///  alltoall or a fixed sized M2mPipeWorkQueue this is the same as the
+	///  index count.
+	///
+	///  \return number of active indices
+	inline 	size_t numActive ();
+
 }; // end class PAMI::Pipeworkqueue::M2MPipeworkqueue
 
 template <class T_PipeWorkQueue>
@@ -286,8 +299,8 @@ void M2MPipeWorkQueue<T_PipeWorkQueue>::barrier_reset(unsigned participants, boo
 
 template <class T_PipeWorkQueue>
 void M2MPipeWorkQueue<T_PipeWorkQueue>::configure(char *buffer, size_t indexcount,
-						pami_type_t *dgsp, size_t *offsets,
-						size_t *dgspcounts, size_t *bufinit) {
+						pami_type_t *dgsp, void *offsets,
+						void *dgspcounts, size_t *bufinit) {
 	return static_cast<T_PipeWorkQueue *>(this)->configure_impl(buffer, indexcount, dgsp, offsets,
 								    dgspcounts, bufinit);
 }
@@ -388,6 +401,16 @@ void M2MPipeWorkQueue<T_PipeWorkQueue>::consumeBytes(size_t index, size_t bytes)
 template <class T_PipeWorkQueue>
 bool M2MPipeWorkQueue<T_PipeWorkQueue>::available() {
 	return static_cast<T_PipeWorkQueue *>(this)->available_impl();
+}
+
+template <class T_PipeWorkQueue>
+size_t M2MPipeWorkQueue<T_PipeWorkQueue>::numIndices() {
+	return static_cast<T_PipeWorkQueue *>(this)->numIndices_impl();
+}
+
+template <class T_PipeWorkQueue>
+size_t M2MPipeWorkQueue<T_PipeWorkQueue>::numActive() {
+	return static_cast<T_PipeWorkQueue *>(this)->numActive_impl();
 }
 
 }; // end namespace Interface

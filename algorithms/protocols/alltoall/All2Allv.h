@@ -28,8 +28,8 @@ namespace CCMI
         size_t                * _sendinit;
         size_t                * _recvinit;
         unsigned                _donecount;
-        PAMI::M2MPipeWorkQueue  _sendpwq;
-        PAMI::M2MPipeWorkQueue  _recvpwq;
+        PAMI::M2MPipeWorkQueueT<size_t, 0>  _sendpwq;
+        PAMI::M2MPipeWorkQueueT<size_t, 0>  _recvpwq;
         CollHeaderData          _metadata;
       public:
         All2AllvProtocol() {};
@@ -71,14 +71,15 @@ namespace CCMI
               _sendinit[i] = coll->cmd.xfer_alltoallv.stypecounts[i];
             }
 
+	  _send.type   = PAMI::M2M_VECTOR_LONG;
           _send.buffer = &_sendpwq;
-          _send.buffer->configure(
-                                  coll->cmd.xfer_alltoallv.sndbuf,
-                                  topo_size,
-                                  &coll->cmd.xfer_alltoallv.stype,
-                                  coll->cmd.xfer_alltoallv.sdispls,
-                                  coll->cmd.xfer_alltoallv.stypecounts,
-                                  _sendinit);
+          _sendpwq.configure(
+			     coll->cmd.xfer_alltoallv.sndbuf,
+			     topo_size,
+			     &coll->cmd.xfer_alltoallv.stype,
+			     coll->cmd.xfer_alltoallv.sdispls,
+			     coll->cmd.xfer_alltoallv.stypecounts,
+			     _sendinit);
 
           _send.participants = all;
 
@@ -87,14 +88,16 @@ namespace CCMI
           PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _recvinit");
           memset(_recvinit, 0x00, sizeof(size_t)*topo_size);
 
+
+	  _recv.type   = PAMI::M2M_VECTOR_LONG;
           _recv.buffer = &_recvpwq;
-          _recv.buffer->configure(
-                                  coll->cmd.xfer_alltoallv.rcvbuf,
-                                  topo_size,
-                                  &coll->cmd.xfer_alltoallv.rtype,
-                                  coll->cmd.xfer_alltoallv.rdispls,
-                                  coll->cmd.xfer_alltoallv.rtypecounts,
-                                  _recvinit);
+          _recvpwq.configure(
+			     coll->cmd.xfer_alltoallv.rcvbuf,
+			     topo_size,
+			     &coll->cmd.xfer_alltoallv.rtype,
+			     coll->cmd.xfer_alltoallv.rdispls,
+			     coll->cmd.xfer_alltoallv.rtypecounts,
+			     _recvinit);
 
           _recv.participants = all;
 

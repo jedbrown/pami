@@ -18,7 +18,8 @@ APPS            = simple-${FRAMEWORK}.${EXTENSION} pingpong-${FRAMEWORK}.${EXTEN
 		geom_classroutes-${FRAMEWORK}.${EXTENSION} \
 		collmulticast-${FRAMEWORK}.${EXTENSION} \
 		ammulticast-${FRAMEWORK}.${EXTENSION}  \
-		mrate-${FRAMEWORK}.${EXTENSION}  
+		mrate-${FRAMEWORK}.${EXTENSION}  \
+		manytomany-${FRAMEWORK}.${EXTENSION}  
 
 include @abs_top_builddir@/Build.rules
 

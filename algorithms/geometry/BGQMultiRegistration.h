@@ -193,6 +193,14 @@ namespace PAMI
     PAMI::Geometry::CKEY_BARRIERCOMPOSITE2>
     OptBinomialBarrierFactory;
 
+
+    void getAlltoallMetaData(pami_metadata_t *m)
+    {
+      new(m) PAMI::Geometry::Metadata("I0:MUOptM2MComposite:MU:MU");
+    }
+    typedef CCMI::Adaptor::All2AllProtocol All2AllProtocol;
+    typedef CCMI::Adaptor::All2AllFactoryT <All2AllProtocol, getAlltoallMetaData, CCMI::ConnectionManager::CommSeqConnMgr> All2AllFactory;
+
     //----------------------------------------------------------------------------
     // 'Pure' Shmem allsided multicombine
     //----------------------------------------------------------------------------
@@ -816,7 +824,15 @@ namespace PAMI
 
           _mu_ammulticast_ni    = new (_mu_ammulticast_ni_storage) MUAMMulticastNI (_mu_device, client, context, context_id, client_id, _dispatch_id);
 
+	  _mu_m2m_single_ni      = new (_mu_m2m_single_ni_storage) M2MNISingle (_mu_device, client, context, context_id, client_id, _dispatch_id);
+
+	  _mu_m2m_vector_long_ni = new (_mu_m2m_vector_long_ni_storage) M2MNIVectorLong (_mu_device, client, context, context_id, client_id, _dispatch_id);
+
+	  
           if (_mu_ammulticast_ni->status() != PAMI_SUCCESS) _mu_ammulticast_ni = NULL;
+
+          if (_mu_m2m_single_ni->status() != PAMI_SUCCESS)      _mu_m2m_single_ni = NULL;
+          if (_mu_m2m_vector_long_ni->status() != PAMI_SUCCESS) _mu_m2m_vector_long_ni = NULL;
 
           if (__global.useshmem())
           {
@@ -840,6 +856,13 @@ namespace PAMI
             _binomial_barrier_factory = new (_binomial_barrier_factory_storage)  OptBinomialBarrierFactory (&_sconnmgr, _mu_ammulticast_ni, OptBinomialBarrierFactory::cb_head);
             _binomial_barrier_factory->setMapIdToGeometry(mapidtogeometry);
           }
+
+	  _alltoall_factory = NULL;
+	  if (_mu_m2m_single_ni) 
+	  {
+	    _alltoall_factory = new (_alltoall_factory_storage) All2AllFactory(&_csconnmgr, _mu_m2m_single_ni);
+	    _alltoall_factory->setMapIdToGeometry(mapidtogeometry);
+	  }
 
           _mucollectivedputmulticastfactory    = new (_mucollectivedputmulticaststorage ) MUCollectiveDputMulticastFactory(&_sconnmgr, _mu_global_dput_ni);
           _mucollectivedputmulticombinefactory    = new (_mucollectivedputmulticombinestorage ) MUCollectiveDputMulticombineFactory(&_sconnmgr, _mu_global_dput_ni);        
@@ -983,6 +1006,7 @@ namespace PAMI
             geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
                              (void*)opt_binomial);
           }
+	 
 
           if ((__global.useshmem())  && (__global.topology_local.size() > 1)
 #ifndef ENABLE_SHMEM_SUBNODE
@@ -1099,6 +1123,9 @@ namespace PAMI
           if (_binomial_barrier_factory)
             geometry->addCollectiveCheck(PAMI_XFER_BARRIER, _binomial_barrier_factory, _context_id);
 #endif
+
+	  if (_alltoall_factory)
+	    geometry->addCollective(PAMI_XFER_ALLTOALL, _alltoall_factory, _context_id);
 
           // Check for class routes before enabling MU collective network protocols
           void *val;
@@ -1352,6 +1379,12 @@ namespace PAMI
       MUAMMulticastNI                                 *_mu_ammulticast_ni;
       uint8_t                                         _mu_ammulticast_ni_storage [sizeof(MUAMMulticastNI)];
 
+      M2MNISingle                                    *_mu_m2m_single_ni;
+      uint8_t                                         _mu_m2m_single_ni_storage [sizeof(M2MNISingle)];
+
+      M2MNIVectorLong                                *_mu_m2m_vector_long_ni;
+      uint8_t                                         _mu_m2m_vector_long_ni_storage [sizeof(M2MNIVectorLong)];
+      
       // Barrier factories
       GIMultiSyncFactory                             *_gi_msync_factory;
       uint8_t                                         _gi_msync_factory_storage[sizeof(GIMultiSyncFactory)];
@@ -1432,6 +1465,13 @@ namespace PAMI
 
       RectangleDputAllgatherFactory                  *_shmem_mu_rectangle_dput_allgather_factory;
       uint8_t                                         _shmem_mu_rectangle_dput_allgather_factory_storage[sizeof(RectangleDputAllgatherFactory)];
+
+      // Alltoall
+      All2AllFactory                                *_alltoall_factory;
+      uint8_t                                        _alltoall_factory_storage[sizeof(CCMI::Adaptor::P2PAlltoall::All2AllFactory)];
+
+      CCMI::Adaptor::P2PAlltoallv::All2AllvFactory   *_alltoallv_factory;
+      uint8_t                                        _alltoallv_factory_storage[sizeof(CCMI::Adaptor::P2PAlltoallv::All2AllvFactory)];
     };
 
 

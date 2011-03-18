@@ -18,8 +18,8 @@
 /* Docs09:  Done/Decrement call */
 void cb_done (void *ctxt, void * clientdata, pami_result_t err)
 {
-  if(!ctxt)
-    fprintf(stderr, "Error. Null context received on cb_done");
+  //if(!ctxt)
+  //fprintf(stderr, "Error. Null context received on cb_done");
   int * active = (int *) clientdata;
   (*active)--;
 }

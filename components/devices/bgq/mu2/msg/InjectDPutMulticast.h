@@ -34,9 +34,6 @@ namespace PAMI
   {
     namespace MU
     {      
-      static const uint64_t UNDEFINED_SEQ_NO = 0xffffffffffffffffUL;	
-      static const uint64_t seqno_table[2] = {0, UNDEFINED_SEQ_NO};
-
       ///
       /// \brief Inject one or more descriptors into an inject fifo
       ///

@@ -9,9 +9,10 @@ namespace PAMI
   namespace Device
   {
     namespace MU
-    {
-      
+    {      
       static const size_t NumTorusDims = BGQ_TDIMS;
+      static const uint64_t UNDEFINED_SEQ_NO = 0xffffffffffffffffUL;	
+      static const uint64_t seqno_table[2] = {0, UNDEFINED_SEQ_NO};
 
       static const uint64_t    _mu_fifomaps[NumTorusDims * 2]  =  
 	{

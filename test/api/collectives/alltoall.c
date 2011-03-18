@@ -12,7 +12,7 @@
  */
 #include "../pami_util.h"
 
-#define MAX_COMM_SIZE 32
+#define MAX_COMM_SIZE 128
 #define MSGSIZE       4096
 #define BUFSIZE       (MSGSIZE * MAX_COMM_SIZE)
 
@@ -24,8 +24,8 @@
 #define CHCK_BUFS(s,r)    check_bufs(s,r)
 
 
-char sbuf[BUFSIZE];
-char rbuf[BUFSIZE];
+char sbuf[BUFSIZE] __attribute__((__aligned__(64)));
+char rbuf[BUFSIZE] __attribute__((__aligned__(64)));
 
 /** \todo #warning remove alltoallv code... */
 size_t sndlens[ MAX_COMM_SIZE ];
@@ -194,6 +194,17 @@ int main(int argc, char*argv[])
 
             blocking_coll(context, &barrier, &bar_poll_flag);
 
+	    //Warmup
+	    alltoall.cmd.xfer_alltoall.sndbuf        = sbuf;
+	    alltoall.cmd.xfer_alltoall.stype         = PAMI_TYPE_CONTIGUOUS;
+	    alltoall.cmd.xfer_alltoall.stypecount    = i;
+	    alltoall.cmd.xfer_alltoall.rcvbuf        = rbuf;
+	    alltoall.cmd.xfer_alltoall.rtype         = PAMI_TYPE_CONTIGUOUS;
+	    alltoall.cmd.xfer_alltoall.rtypecount    = i;
+	    blocking_coll(context, &alltoall, &alltoall_poll_flag);
+
+            blocking_coll(context, &barrier, &bar_poll_flag);
+
             ti = timer();
 
             for (j = 0; j < niter; j++)
@@ -207,9 +218,10 @@ int main(int argc, char*argv[])
                 blocking_coll(context, &alltoall, &alltoall_poll_flag);
               }
 
-            tf = timer();
 
-            CHCK_BUFS(num_tasks, task_id);
+            tf = timer();
+	    
+	    CHCK_BUFS(num_tasks, task_id);
 
             blocking_coll(context, &barrier, &bar_poll_flag);
 

@@ -96,7 +96,7 @@ namespace PAMI
     ///
     ///  Finally, the P2P protocol is set into the native interface.
     ///
-    template<class T_Allocator, class T_NativeInterface, class T_Protocol, class T_Device, select_interface T_Select>
+    template <class T_Allocator, class T_NativeInterface, class T_Protocol, class T_Device, select_interface T_Select>
     inline pami_result_t constructNativeInterface(T_Allocator        &allocator,
                                                   T_Device           &device,
                                                   T_NativeInterface *&ni,
@@ -105,7 +105,6 @@ namespace PAMI
                                                   size_t              context_id,
                                                   size_t              client_id,
                                                   int                *dispatch_id)
-
     {
       TRACE_FN_ENTER();
       DO_DEBUG((templateName<T_NativeInterface>()));
@@ -135,14 +134,14 @@ namespace PAMI
         dispatch = (*dispatch_id)--;
 
         protocol = (T_Protocol*) T_Protocol::generate(dispatch,
-                                                                                 fn,
-                                                                                 (void*) ni,
-                                                                                 device,
-                                                                                 origin,
-                                                                                 context,
-                                                                                 (pami_dispatch_hint_t){0},
-                                                                                 allocator,
-                                                                                 result);
+						      fn,
+						      (void*) ni,
+						      device,
+						      origin,
+						      context,
+						      (pami_dispatch_hint_t){0},
+						      allocator,
+						      result);
         ni->setMcastProtocol(dispatch, protocol);
       }
 
@@ -162,7 +161,6 @@ namespace PAMI
                                                        result);
         ni->setM2mProtocol(dispatch, protocol);
       }
-
 
       if(T_Select == ALL || T_Select == P2P_ONLY)
       {
@@ -204,7 +202,7 @@ namespace PAMI
     ///
     ///  Finally, the composite protocol is set into the native interface.
     ///
-    template<class T_Allocator, class T_NativeInterface, class T_Protocol1, class T_Device1, class T_Protocol2, class T_Device2, select_interface T_Select>
+    template <class T_Allocator, class T_NativeInterface, class T_Protocol1, class T_Device1, class T_Protocol2, class T_Device2, select_interface T_Select>
     inline pami_result_t constructNativeInterface(T_Allocator        &allocator,
                                                   T_Device1           &device1,
                                                   T_Device2           &device2,
@@ -283,23 +281,23 @@ namespace PAMI
         dispatch = (*dispatch_id)--;
         fn        = T_NativeInterface::dispatch_m2m;
         protocol1 = (T_Protocol1*) T_Protocol1::generate(dispatch,
-                                                                                    fn,
-                                                                                    (void*) ni,
-                                                                                    device1,
-                                                                                    origin,
-                                                                                    context,
-                                                                                    (pami_dispatch_hint_t){0},
-                                                                                    allocator,
-                                                                                    result);
+							 fn,
+							 (void*) ni,
+							 device1,
+							 origin,
+							 context,
+							 (pami_dispatch_hint_t){0},
+							 allocator,
+							 result);
         protocol2 = (T_Protocol2*) T_Protocol2::generate(dispatch,
-                                                                                    fn,
-                                                                                    (void*) ni,
-                                                                                    device2,
-                                                                                    origin,
-                                                                                    context,
-                                                                                    (pami_dispatch_hint_t){0},
-                                                                                    allocator,
-                                                                                    result);
+							 fn,
+							 (void*) ni,
+							 device2,
+							 origin,
+							 context,
+							 (pami_dispatch_hint_t){0},
+							 allocator,
+							 result);
         // Construct the composite from the two protocols
         composite = (Protocol::Send::SendPWQ<Protocol::Send::Send>*)
           Protocol::Send::Factory::generate(protocol1,
@@ -615,7 +613,6 @@ namespace PAMI
 				       size_t            context,
                                        pami_multicast_t *mcast,
                                        void             *devinfo = NULL);
-
       pami_result_t postManytomany_impl(uint8_t (&state)[NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::manytomany_sizeof_msg],
                                         pami_manytomany_t *m2m,
                                         void             *devinfo = NULL)
@@ -765,7 +762,6 @@ namespace PAMI
                                  size_t               data_size,
                                  pami_endpoint_t      origin,
                                  pami_recv_t        * recv);
-
       static void dispatch_m2m(  pami_context_t     context_hdl,
                                  void               * cookie,
                                  const void         * header,
@@ -839,7 +835,6 @@ namespace PAMI
                         size_t               data_size,
                         pami_endpoint_t      origin,
                         pami_recv_t        * recv);
-
       void handle_m2m  (pami_context_t       context_hdl,
                         const void         * header,
                         size_t               header_size,
@@ -1576,6 +1571,7 @@ namespace PAMI
     m.cb_done.clientdata   =  req;
 
     postManytomany_impl(req->_state._m2m, &m);
+      
     TRACE_FN_EXIT();
     return PAMI_SUCCESS;
   }
@@ -1758,13 +1754,15 @@ namespace PAMI
     typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_send_statedata_t *state_data = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_send_statedata_t*) & state;
 
     // Get the source data and participants
-    PAMI::M2MPipeWorkQueue *pwq = m2m->send.buffer;
+    PAMI::M2MPipeWorkQueueT<size_t, 1> *spwq = (PAMI::M2MPipeWorkQueueT<size_t, 1> *)m2m->send.buffer;
+    PAMI::M2MPipeWorkQueueT<size_t, 0> *lpwq = (PAMI::M2MPipeWorkQueueT<size_t, 0> *)m2m->send.buffer;
+    PAMI::M2MPipeWorkQueueT<int, 0>    *ipwq = (PAMI::M2MPipeWorkQueueT<int, 0> *)m2m->send.buffer;
     PAMI::Topology    *topology = m2m->send.participants;
 
-    TRACE_FORMAT( "<%p> dispatch %zu, connection_id %#X, msgcount %d/%p, pwq %p",
-               this, this->_m2m_dispatch, m2m->connection_id,
-               m2m->msgcount, m2m->msginfo,
-               pwq);
+    TRACE_FORMAT("<%p> dispatch %zu, connection_id %#X, msgcount %d/%p, pwq %p",
+		 this, this->_m2m_dispatch, m2m->connection_id,
+		 m2m->msgcount, m2m->msginfo,
+		 spwq);
 
     // Get the msginfo buffer/length and validate (assert) inputs
     void* msgdata             = (void*)m2m->msginfo;
@@ -1806,8 +1804,18 @@ namespace PAMI
         size_t index = topology->index2PermutedIndex(i);
         pami_task_t task = topology->index2Rank(index);
 
-        parameters.send.data.iov_base = pwq->bufferToConsume(index);
-        parameters.send.data.iov_len  = pwq->bytesAvailableToConsume(index);
+	if (m2m->send.type == M2M_SINGLE) {
+	  parameters.send.data.iov_base = spwq->bufferToConsume(index);
+	  parameters.send.data.iov_len  = spwq->bytesAvailableToConsume(index);
+	}
+	else if (m2m->send.type == M2M_VECTOR_INT) {
+	  parameters.send.data.iov_base = ipwq->bufferToConsume(index);
+	  parameters.send.data.iov_len  = ipwq->bytesAvailableToConsume(index);
+	}
+	else {
+	  parameters.send.data.iov_base = lpwq->bufferToConsume(index);
+	  parameters.send.data.iov_len  = lpwq->bytesAvailableToConsume(index);
+	}
 
         pami_result_t result = PAMI_SUCCESS;
 
@@ -1867,13 +1875,13 @@ namespace PAMI
     TRACE_FN_ENTER();
     TRACE_FORMAT( "<%p> context %p, header/size %p/%zu, data/size %p/%zu, origin %u, recv %p", cookie, context_hdl, header, header_size, data, data_size, origin, recv);
     NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount> *p = (NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount> *)cookie;
-    p->handle_m2m(  context_hdl,
-                    header,
-                    header_size,
-                    data,
-                    data_size,
-                    origin,
-                    recv);
+    p->handle_m2m (  context_hdl,
+		     header,
+		     header_size,
+		     data,
+		     data_size,
+		     origin,
+		     recv);
     TRACE_FN_EXIT();
   }
 
@@ -2053,15 +2061,26 @@ namespace PAMI
         TRACE_FORMAT( "<%p> connection_id %u, doneCountDown %u", this, state->connection_id, state->doneCountDown);
       }
 
-    PAMI::M2MPipeWorkQueue   *pwq      = state->recv->buffer;
+    PAMI::M2MPipeWorkQueueT<size_t, 1> *spwq = (PAMI::M2MPipeWorkQueueT<size_t, 1> *)state->recv->buffer;
+    PAMI::M2MPipeWorkQueueT<size_t, 0> *lpwq = (PAMI::M2MPipeWorkQueueT<size_t, 0> *)state->recv->buffer;
+    PAMI::M2MPipeWorkQueueT<int, 0>    *ipwq = (PAMI::M2MPipeWorkQueueT<int, 0> *)   state->recv->buffer;
+
     PAMI::Topology           *topology = state->recv->participants;
     pami_task_t               originTask;
     PAMI_ENDPOINT_INFO(origin, originTask, this->_contextid);
     size_t                    originIndex  = topology->rank2Index(originTask);
 
-    size_t                    bytesToProduce = pwq->bytesAvailableToProduce(originIndex);
+    size_t                    bytesToProduce = lpwq->bytesAvailableToProduce(originIndex);
+    char                     *buffer = lpwq->bufferToProduce(originIndex);
 
-    char                     *buffer = pwq->bufferToProduce(originIndex);
+    if (state->recv->type == M2M_SINGLE) {
+      buffer = spwq->bufferToProduce(originIndex);
+      bytesToProduce  = spwq->bytesAvailableToProduce(originIndex);
+    }
+    else if (state->recv->type == M2M_VECTOR_INT) {
+      buffer          = ipwq->bufferToProduce(originIndex);
+      bytesToProduce  = ipwq->bytesAvailableToProduce(originIndex);
+    }
 
     // Assert they gave us enough buffer for the recv
     PAMI_assertf(data_size == bytesToProduce, "data_size %zu == %zu bytesToProduce(%zu)\n", data_size, bytesToProduce, originIndex);
@@ -2074,7 +2093,7 @@ namespace PAMI
         if (data && data_size)
           {
             /// \todo An assertion probably isn't the best choice...
-          TRACE_FORMAT( "<%p>NativeInterfaceActiveMessage<%d>::handle_m2m()  pwq<%p>", this, __LINE__, pwq);
+          TRACE_FORMAT( "<%p>NativeInterfaceActiveMessage<%d>::handle_m2m()  pwq<%p>", this, __LINE__, spwq);
             memcpy(buffer, data, data_size);
             //pwq->produceBytes(originTask,data_size); \todo don't care about pipelining on M2M pwq's
           }
