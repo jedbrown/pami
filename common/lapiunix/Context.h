@@ -689,46 +689,31 @@ namespace PAMI
           return (cp->*(cp->pGetTyped))(get_typed);
         }
 
-      inline pami_result_t rmw_impl (pami_rmw_t * parameters)
+      inline pami_result_t rmw_impl (pami_rmw_t * rmw)
         {
           LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
-          size_t            len = (PAMI_RMW_KIND_UINT32 == parameters->rmw.kind)?4:8;
-          AtomicOps         op;
+          size_t            len = ((TypeCode *)rmw->type)->GetDataSize();
           RMW_input_t       input;
 
-          switch (parameters->rmw.compare | parameters->rmw.assign) {
-            case (PAMI_RMW_COMPARISON_EQUAL | PAMI_RMW_ASSIGNMENT_SET):
-              op = _OP_FETCH_COMPARE_SET;
-              break;
-            case (PAMI_RMW_COMPARISON_NOOP | PAMI_RMW_ASSIGNMENT_SET):
-              op = _OP_FETCH_SET;
-              break;
-            case (PAMI_RMW_COMPARISON_NOOP | PAMI_RMW_ASSIGNMENT_ADD):
-              op = _OP_FETCH_ADD;
-              break;
-            case (PAMI_RMW_COMPARISON_NOOP | PAMI_RMW_ASSIGNMENT_OR):
-              op = _OP_FETCH_OR;
-              break;
-            case (PAMI_RMW_COMPARISON_NOOP | PAMI_RMW_ASSIGNMENT_AND):
-              op = _OP_FETCH_AND;
-              break;
-            default:
-              RETURN_ERR_PAMI(PAMI_INVAL, "Invalid combination of 'compare' and 'assign'\n");
+          if (4 == len) {
+            if (rmw->operation & ~(_OP_FETCH_COMPARE))
+                input.int32.in_val   = *(int32_t *)(rmw->value);
+            if (rmw->operation & _OP_COMPARE)
+                input.int32.test_val = *(int32_t *)(rmw->test);
+          } else {
+            if (rmw->operation & ~(_OP_FETCH_COMPARE))
+                input.int64.in_val   = *(int64_t *)(rmw->value);
+            if (rmw->operation & _OP_COMPARE)
+                input.int64.test_val = *(int64_t *)(rmw->test);
           }
 
-          if (4 == len) {
-            input.int32.in_val = parameters->rmw.input.int32.value;
-            input.int32.test_val = parameters->rmw.input.int32.test;
-          } else {
-            input.int64.in_val = parameters->rmw.input.int64.value;
-            input.int64.test_val = parameters->rmw.input.int64.test;
-          }
+          // disable fetching compare result on PAMI flow
+          void *local = (rmw->operation & _OP_FETCH) ? rmw->local : NULL;
 
           internal_rc_t rc = 
-            (cp->*(cp->pRmw))(parameters->rma.dest, parameters->addr.local,
-                parameters->addr.remote, len, 
-                op, input, parameters->rma.hints, INTERFACE_PAMI,
-                (void*)parameters->rma.done_fn, parameters->rma.cookie, NULL);
+            (cp->*(cp->pRmw))(rmw->dest, local, rmw->remote, len,
+                (AtomicOps)rmw->operation, input, rmw->hints, INTERFACE_PAMI,
+                (void*)rmw->done_fn, rmw->cookie, NULL);
 
           return PAMI_RC(rc);
         }

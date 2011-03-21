@@ -10,7 +10,14 @@ using namespace PAMI::Type;
 #define RETURN_ERR_PAMI(code, ...) return (code)
 #endif
 
-pami_type_t        PAMI_TYPE_CONTIGUOUS = new TypeContig;
+pami_type_t PAMI_TYPE_CONTIGUOUS         = new TypeContig;
+pami_type_t PAMI_TYPE_SIGNED_INT         = new TypeContig(sizeof(signed int));
+pami_type_t PAMI_TYPE_SIGNED_LONG        = new TypeContig(sizeof(signed long));
+pami_type_t PAMI_TYPE_SIGNED_LONG_LONG   = new TypeContig(sizeof(signed long long));
+pami_type_t PAMI_TYPE_UNSIGNED_INT       = new TypeContig(sizeof(unsigned int));
+pami_type_t PAMI_TYPE_UNSIGNED_LONG      = new TypeContig(sizeof(unsigned long));
+pami_type_t PAMI_TYPE_UNSIGNED_LONG_LONG = new TypeContig(sizeof(unsigned long long));
+
 pami_data_function PAMI_DATA_COPY = NULL;
 
 extern "C" {

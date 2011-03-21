@@ -420,13 +420,13 @@ namespace PAMI
     class TypeContig : public TypeCode
     {
         public:
-            TypeContig();
+            TypeContig(size_t size = ULONG_MAX);
             ~TypeContig();
     };
 
-    inline TypeContig::TypeContig()
+    inline TypeContig::TypeContig(size_t size)
     {
-        AddSimple(ULONG_MAX, ULONG_MAX, 1);
+        AddSimple(size, size, 1);
         Complete();
         SetAtomSize(1);
         AcquireReference();

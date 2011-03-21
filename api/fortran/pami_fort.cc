@@ -19,6 +19,12 @@ extern "C" {
 #define PAMI_ADDR_NULL pami_addr_null
     struct {
         pami_type_t         PAMI_TYPE_CONTIGUOUS;
+        pami_type_t         PAMI_TYPE_SIGNED_INT;
+        pami_type_t         PAMI_TYPE_SIGNED_LONG;
+        pami_type_t         PAMI_TYPE_SIGNED_LONG_LONG;
+        pami_type_t         PAMI_TYPE_UNSIGNED_INT;
+        pami_type_t         PAMI_TYPE_UNSIGNED_LONG;
+        pami_type_t         PAMI_TYPE_UNSIGNED_LONG_LONG;
         pami_data_function  PAMI_DATA_COPY; 
         pami_geometry_t     PAMI_NULL_GEOMETRY;
     } pami_fort_globals;

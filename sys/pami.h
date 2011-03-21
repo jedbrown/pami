@@ -2792,8 +2792,12 @@ extern "C"
    *  communication.
    */
   extern pami_type_t PAMI_TYPE_CONTIGUOUS;
+  extern pami_type_t PAMI_TYPE_SIGNED_INT;
+  extern pami_type_t PAMI_TYPE_UNSIGNED_INT;
   extern pami_type_t PAMI_TYPE_SIGNED_LONG;
   extern pami_type_t PAMI_TYPE_UNSIGNED_LONG;
+  extern pami_type_t PAMI_TYPE_SIGNED_LONG_LONG;
+  extern pami_type_t PAMI_TYPE_UNSIGNED_LONG_LONG;
 
   /**
    * \brief Create a new type for noncontiguous transfers
