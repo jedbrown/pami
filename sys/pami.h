@@ -53,20 +53,26 @@ extern "C"
                                        pami_result_t    result );
 
   /**
-   * \brief Prototype for function used for context-queued work (post)
+   * \brief Function signature for work posted to a communication context
    *
-   * Posted function will continue to run or stop according to the return value
-   * described below.
+   * This work function, with the associated cookie, will continue to be invoked
+   * during communication context advance until this function does not return
+   * ::PAMI_EAGAIN.
    *
-   * \param[in] context   PAMI communication context running function
-   * \param[in] cookie    Application argument
-   * \return PAMI_SUCCESS causes function to dequeue (stop running)
-   *         PAMI_EAGAIN causes function to remain queued and is called on next advance
-   *         (any other value) causes function to dequeue and (optionally) report error
+   * \see PAMI_Context_post()
+   *
+   * \param [in] context   The communication context that invoked this function
+   * \param [in] cookie    Opaque data pointer to pass to the work function
+   *
+   * \return ::PAMI_SUCCESS  The work function will dequeue and stop running
+   *
+   * \return ::PAMI_EAGAIN   The work function will remain queued and will be
+   *                         invoked on the next advance of the communication
+   *                         context.
    */
   typedef pami_result_t (*pami_work_function)(pami_context_t context, void *cookie);
 
-  typedef uintptr_t pami_work_t[8];
+  typedef uintptr_t pami_work_t[8]; /**< Context work opaque object */
 
 /**
  * \brief Message layer operation types
@@ -3496,29 +3502,35 @@ extern "C"
    * \brief Post work to a context, thread-safe
    *
    * It is \b not required that the target context is locked, or otherwise
-   * reserved, by an external atomic operation to ensure thread safety. The PAMI
+   * reserved, by an external atomic operation to ensure thread safety. The
    * runtime will internally perform any necessary atomic operations in order
    * to post the work to the context.
    *
-   * The callback function will be invoked in the thread that advances the
-   * \em work context. There is no implicit completion notification provided
-   * to the \em posting thread when the thread advancing the \em work context
-   * returns from the callback event function.  If the posting thread desires
+   * The work function will be invoked in the thread that advances the
+   * target context. There is no explicit completion notification provided
+   * to the \em posting thread when a thread advancing the target context
+   * returns from the work function.  If the posting thread desires
    * a completion notification it must explicitly program such notifications,
-   * via the PAMI_Context_post() interface, from the target thread back to the
-   * origin thread
+   * via the PAMI_Context_post() interface or other mechanism.
    *
-   * \todo Needs some opaque storage to enqueue on to the work queue. This is
-   *       necessary to improve the performance for the MMPS benchmark. In
-   *       other words, latency may degrade if the internal implementation
-   *       must allocate memory.
+   * \see pami_work_function
    *
-   * \param[in] context PAMI communication context
-   * \param[in] work_fn Event callback function to post to the context
-   * \param[in] cookie  Opaque data pointer to pass to the event function
+   * If the function is returning ::PAMI_SUCCESS then it may dispose of the
+   * pami_work_t object (including re-posting) if it so chooses, provided
+   * arrangements were made to pass the address of the pami_work_t into the
+   * work function (e.g. via the cookie).
    *
-   * \retval PAMI_SUCCESS  The work has been posted.
-   * \retval PAMI_INVAL    There were errors in the parameters.
+   * If the function is returning ::PAMI_EAGAIN then it must \b not have altered
+   * the pami_work_t object in anyway.
+   *
+   * \param [in] context Communication context
+   * \param [in] work    Opaque storage for the work, used internally
+   * \param [in] fn      Event work function to invoke on the context
+   * \param [in] cookie  Opaque data pointer to pass to the work function
+   *
+   * \return ::PAMI_SUCCESS  The work has been posted.
+   *
+   * \return ::PAMI_INVAL    The post operation was rejected due to invalid parameters.
    */
   pami_result_t PAMI_Context_post (pami_context_t       context,
                                    pami_work_t        * work,
