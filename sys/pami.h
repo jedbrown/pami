@@ -3589,6 +3589,13 @@ extern "C"
                                        size_t         count,
                                        size_t         maximum);
 
+  /*****************************************************************************/
+  /**
+   * \defgroup locks Context lock functions
+   * \{
+   */
+  /*****************************************************************************/
+
   /**
    * \brief Thread-safe Advance the progress engine for multiple communication contexts
    *
@@ -3625,36 +3632,43 @@ extern "C"
   /**
    * \brief Acquire an atomic lock on a communication context
    *
-   * \warning This function will block until the lock is acquired.
+   * This function will block until the lock is acquired.
    *
-   * \param[in] context PAMI communication context
+   * \note The lock cannot be assumed to be recursive or non-recursive
    *
-   * \retval PAMI_SUCCESS  The lock has been acquired.
-   * \retval PAMI_INVAL    The context is invalid.
+   * \param [in] context Communication context associate with the lock
+   *
+   * \return ::PAMI_SUCCESS  The lock has been acquired.
+   * \return ::PAMI_INVAL    The context is invalid.
    */
   pami_result_t PAMI_Context_lock (pami_context_t context);
 
   /**
    * \brief Attempt to acquire an atomic lock on a communication context
    *
-   * \param[in] context PAMI communication context
+   * \note The lock cannot be assumed to be recursive or non-recursive
    *
-   * \retval PAMI_SUCCESS  The lock has been acquired.
-   * \retval PAMI_EAGAIN   The lock has not been acquired. Try again later.
-   * \retval PAMI_INVAL    The context is invalid.
+   * \param [in] context Communication context associate with the lock
+   *
+   * \return ::PAMI_SUCCESS  The lock has been acquired.
+   * \return ::PAMI_EAGAIN   The lock has not been acquired. Try again later.
+   * \return ::PAMI_INVAL    The context is invalid.
    */
   pami_result_t PAMI_Context_trylock (pami_context_t context);
 
   /**
    * \brief Release an atomic lock on a communication context
    *
-   * \param[in] context PAMI communication context
+   * \note The lock cannot be assumed to be recursive or non-recursive
    *
-   * \retval PAMI_SUCCESS  The lock has been released.
-   * \retval PAMI_INVAL    The context is invalid.
+   * \param [in] context Communication context associate with the lock
+   *
+   * \return ::PAMI_SUCCESS  The lock has been released.
+   * \return ::PAMI_INVAL    The context is invalid.
    */
   pami_result_t PAMI_Context_unlock (pami_context_t context);
 
+  /** \} */ /* end of "lock" group */
   /** \} */ /* end of "context" group */
 
   /*****************************************************************************/
