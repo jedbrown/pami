@@ -15,7 +15,7 @@
 
 #include "common/bgq/Global.h"
 //#include "components/memory/MemoryManager.h"
-//#include "components/devices/generic/Device.h"
+#include "components/devices/generic/Device.h"
 
 #include "common/bgq/BgqPersonality.h"
 #include "common/bgq/Mapping.h"
@@ -37,7 +37,7 @@
 #include "p2p/protocols/rput/PutRdma.h"
 #include "p2p/protocols/rget/GetRdma.h"
 
-//typedef PAMI::Device::Generic::Device ProgressDevice;
+typedef PAMI::Device::Generic::Device ProgressDevice;
 
 typedef PAMI::Device::MU::Context MuContext;
 
@@ -96,18 +96,18 @@ int main(int argc, char ** argv)
 
 //   fprintf (stderr, "After mapping init\n");
 
-//  ProgressDevice progress (0, 0, 1);
-//  progress.init (NULL,       // pami_context_t
-//                 0,          // id_client
-//                 0,          // id_offset
-//                 NULL,//&mm,        // not used ???
-//                 &progress); // "all generic devices"
+ ProgressDevice progress (0, 0, 1);
+ progress.init (NULL,       // pami_context_t
+                0,          // id_client
+                0,          // id_offset
+                __global.heap_mm,//&mm,        // not used ???
+                &progress); // "all generic devices"
 
   // Initialize the MU resources for all contexts for this client
-  __MUGlobal.getMuRM().initializeContexts( 0 /*id_client*/, 1 /*id_count*/, NULL /* generic::Devices */ );
+  __MUGlobal.getMuRM().initializeContexts( 0 /*id_client*/, 1 /*id_count*/, &progress /* generic::Devices */ );
 
   MuContext mu (__global.mapping, 0, 0, 1);
-  mu.init (0, 0, NULL, NULL); // id_client, mu context "cookie" (usually pami_context_t)
+  mu.init (0, 0, NULL, &progress); // id_client, mu context "cookie" (usually pami_context_t)
   fprintf (stderr, "After mu init\n");
 
   pami_endpoint_t self = PAMI_ENDPOINT_INIT(0,__global.mapping.task(),0);
