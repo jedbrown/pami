@@ -202,7 +202,9 @@ namespace PAMI {
 //
 // astyle info    http://astyle.sourceforge.net
 //
-// astyle options --style=gnu --indent=spaces=2 --indent-classes
-// astyle options --indent-switches --indent-namespaces --break-blocks
-// astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
+// astyle options --style=java --indent=force-tab=8 --indent-preprocessor
+// astyle options --indent-col1-comments --max-instatement-indent=79
+// astyle options --min-conditional-indent=2 --pad-oper --unpad-paren
+// astyle options --pad-header --add-brackets --keep-one-line-blocks
+// astyle options --keep-one-line-statements --align-pointer=name --lineend=linux
 //

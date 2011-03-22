@@ -43,6 +43,7 @@ namespace PAMI {
 
 class Queue;
 namespace Interface {
+
 template <>
 class QueueElement<Queue> {
 public:
@@ -72,14 +73,15 @@ public:
 	}
 
 protected:
-
 	QueueElement *_prev;
 	QueueElement *_next;
 }; // class QueueElement<Queue>
+
 }; // namespace Interface
 
 template <class T_Queue, class T_Element>
 struct BasicQueueIterator {
+	T_Element *parent;
 	T_Element *curr;
 	T_Element *next;
 };
@@ -91,7 +93,6 @@ class Queue : public PAMI::Interface::DequeInterface<Queue>,
 	BasicQueueIterator<Queue, Interface::QueueElement<Queue> >
 		> {
 public:
-
 	typedef Interface::QueueElement<Queue>  Element;
 	typedef BasicQueueIterator<Queue, Interface::QueueElement<Queue> > Iterator;
 
@@ -281,8 +282,20 @@ public:
 		}
 
 		_size--;
+	}
 
-		return;
+	inline void safe_remove(Queue::Element *parent, Queue::Element *next) {
+		if (!parent) {
+			_head = next;
+		} else {
+			parent->setNext(next);
+		}
+		if (!next) {
+			_tail = parent;
+		} else {
+			next->setPrev(parent);
+		}
+		_size--;
 	}
 
 	/// \copydoc PAMI::Interface::QueueInfoInterface::size
@@ -331,10 +344,11 @@ public:
 	// all others only append new work.
 
 	inline void iter_init_impl(Iterator *iter) {
-		iter->curr = iter->next = NULL;
+		iter->parent = iter->curr = iter->next = NULL;
 	}
 
 	inline bool iter_begin_impl(Iterator *iter) {
+		iter->parent = NULL;
 		iter->curr = peek();
 		return false; // did not alter queue
 	}
@@ -349,6 +363,7 @@ public:
 	}
 
 	inline void iter_end_impl(Iterator *iter) {
+		iter->parent = iter->curr;
 		iter->curr = iter->next;
 	}
 
@@ -357,21 +372,21 @@ public:
 	}
 
 	inline pami_result_t iter_remove_impl(Iterator *iter) {
-		remove(iter->curr);
+		iter->curr = iter->parent; // back-step
+		safe_remove(iter->parent, iter->next);
 		return PAMI_SUCCESS;
 	}
 
 	inline void iter_dump_impl(const char *str, Iterator *iter) {
 		fprintf(stderr, "%s: PAMI::Queue::Iterator %p %p [%p %p %zd]\n", str,
-			iter->curr, iter->next,
-			_head, _tail, _size);
+				iter->curr, iter->next, _head, _tail, _size);
 	}
 
 private:
 
 	Queue::Element *_head;
 	Queue::Element *_tail;
-	size_t           _size;
+	size_t _size;
 
 }; // class PAMI::Queue
 }; // namespace PAMI

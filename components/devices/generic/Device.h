@@ -282,6 +282,9 @@ public:
 	/// \param[in] context  Context ID
 	/// \return Error code
 	inline pami_result_t init(pami_context_t ctx, size_t client, size_t context, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices) {
+		// GenericThread must be able to enqueue on both Queues...
+		COMPILE_TIME_ASSERT(sizeof(PAMI::Queue::Element) >=
+					sizeof(GenericDevicePostingQueue::Element));
 		__context = ctx;
 		__mm = mm;
 		__allGds = devices;
@@ -307,7 +310,7 @@ public:
 					GenericDevicePostingQueue::ALIGNMENT,
 					sizeof(*__queues));
 		PAMI_assertf(rc == PAMI_SUCCESS, "Out of memory allocating generic device queues");
-		new (&__queues->__Threads) GenericDeviceWorkQueue();
+		new (&__queues->__Threads) PAMI::Queue();
 		new (&__queues->__Posted) GenericDevicePostingQueue();
 		new (&__queues->__GenericQueue) GenericDeviceCompletionQueue();
 		key[n] = 't';
@@ -352,23 +355,21 @@ public:
 		// the first call.
 
 		// This queue has a single produce/consumer - same thread does both.
-		// i.e. it is completely single-threaded.
-		__queues->__Threads.iter_begin(&__ThrIter);
-		for (; __queues->__Threads.iter_check(&__ThrIter); __queues->__Threads.iter_end(&__ThrIter)) {
+		// i.e. it is completely single-threaded and private.
+		for (__queues->__Threads.iter_begin(&__ThrIter);
+				__queues->__Threads.iter_check(&__ThrIter);
+				__queues->__Threads.iter_end(&__ThrIter)) {
 			thr = (GenericThread *)__queues->__Threads.iter_current(&__ThrIter);
-			if (thr->getStatus() == PAMI::Device::Ready) {
+			if (likely(thr->getStatus() == PAMI::Device::Ready)) {
 				++events;
 				pami_result_t rc = thr->executeThread(__context);
-				if (rc != PAMI_EAGAIN) {
+				if (unlikely(rc != PAMI_EAGAIN)) {
+					// thr must not be accessed - it might be re-used
+					// or freed!
 					// thr->setStatus(PAMI::Device::Complete);
 					__queues->__Threads.iter_remove(&__ThrIter);
 					continue;
 				}
-			}
-			// This allows a thread to be "completed" by something else...
-			if (thr->getStatus() == PAMI::Device::Complete) {
-				__queues->__Threads.iter_remove(&__ThrIter);
-				continue;
 			}
 		}
 
@@ -387,10 +388,10 @@ public:
 				++events;
 				pami_result_t rc = thr->executeThread(__context);
 				if (rc == PAMI_EAGAIN) {
-					__queues->__Threads.enqueue((GenericDeviceWorkQueue::Element *)thr);
+					__queues->__Threads.enqueue((PAMI::Queue::Element *)thr);
 				}
 			} else if (thr->getStatus() != PAMI::Device::Complete) {
-				__queues->__Threads.enqueue((GenericDeviceWorkQueue::Element *)thr);
+				__queues->__Threads.enqueue((PAMI::Queue::Element *)thr);
 			}
 		}
 		//__queues->__Threads.mutex()->release();
@@ -473,7 +474,7 @@ private:
 	struct GenericDeviceQueues {
 		/// \brief Storage for the queue of threads (a.k.a. work units)
 		GenericDevicePostingQueue __Posted; // often alignment critical
-		GenericDeviceWorkQueue __Threads;
+		PAMI::Queue __Threads;
 
 		/// \brief Storage for the queue for message completion
 		///
@@ -484,7 +485,7 @@ private:
 	};
 
 	GenericDeviceQueues *__queues;
-	GenericDeviceWorkQueue::Iterator __ThrIter;
+	PAMI::Queue::Iterator __ThrIter;
 	GenericDevicePostingQueue::Iterator __PstIter;
 
 	pami_context_t __context; ///< context handle for this generic device
@@ -500,3 +501,13 @@ private:
 }; /* namespace PAMI */
 
 #endif /* __components_devices_generic_device_h__ */
+
+//
+// astyle info    http://astyle.sourceforge.net
+//
+// astyle options --style=java --indent=force-tab=8 --indent-preprocessor
+// astyle options --indent-col1-comments --max-instatement-indent=79
+// astyle options --min-conditional-indent=2 --pad-oper --unpad-paren
+// astyle options --pad-header --add-brackets --keep-one-line-blocks
+// astyle options --keep-one-line-statements --align-pointer=name --lineend=linux
+//

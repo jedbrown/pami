@@ -51,7 +51,7 @@ namespace Generic {
 /// during advance. Ctors allow thread to be created empty/idle or
 /// with a function and ready to run.
 ///
-class GenericThread : public GenericDeviceWorkQueue::Element {
+class GenericThread : public PAMI::Queue::Element {
 public:
         /// \brief Default constructor for thread
         /// \ingroup use_gendev
@@ -59,7 +59,7 @@ public:
         /// Constructs a thread object that is not ready to run.
         ///
         GenericThread() :
-        GenericDeviceWorkQueue::Element(),
+        PAMI::Queue::Element(),
         _func(NULL),
         _cookie(NULL),
         _status(New)
@@ -75,7 +75,7 @@ public:
         /// \param[in] cookie Opaque data for work function
         ///
         GenericThread(pami_work_function func, void *cookie) :
-        GenericDeviceWorkQueue::Element(),
+        PAMI::Queue::Element(),
         _func(func),
         _cookie(cookie),
         _status(Ready)
@@ -127,3 +127,13 @@ protected:
 }; /* namespace PAMI */
 
 #endif /* __components_devices_generic_thread_h__ */
+
+//
+// astyle info    http://astyle.sourceforge.net
+//
+// astyle options --style=java --indent=force-tab=8 --indent-preprocessor
+// astyle options --indent-col1-comments --max-instatement-indent=79
+// astyle options --min-conditional-indent=2 --pad-oper --unpad-paren
+// astyle options --pad-header --add-brackets --keep-one-line-blocks
+// astyle options --keep-one-line-statements --align-pointer=name --lineend=linux
+//
