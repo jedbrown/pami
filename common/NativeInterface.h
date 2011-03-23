@@ -19,6 +19,9 @@
 
 #include "util/trace.h"
 
+#undef DO_TRACE_ENTEREXIT 
+#undef DO_TRACE_DEBUG     
+
 #ifdef CCMI_TRACE_ALL
  #define DO_TRACE_ENTEREXIT 1
  #define DO_TRACE_DEBUG     1
@@ -1804,18 +1807,18 @@ namespace PAMI
         size_t index = topology->index2PermutedIndex(i);
         pami_task_t task = topology->index2Rank(index);
 
-	if (m2m->send.type == M2M_SINGLE) {
-	  parameters.send.data.iov_base = spwq->bufferToConsume(index);
-	  parameters.send.data.iov_len  = spwq->bytesAvailableToConsume(index);
-	}
-	else if (m2m->send.type == M2M_VECTOR_INT) {
-	  parameters.send.data.iov_base = ipwq->bufferToConsume(index);
-	  parameters.send.data.iov_len  = ipwq->bytesAvailableToConsume(index);
-	}
-	else {
-	  parameters.send.data.iov_base = lpwq->bufferToConsume(index);
-	  parameters.send.data.iov_len  = lpwq->bytesAvailableToConsume(index);
-	}
+        if (m2m->send.type == M2M_SINGLE) {
+          parameters.send.data.iov_base = spwq->bufferToConsume(index);
+          parameters.send.data.iov_len  = spwq->bytesAvailableToConsume(index);
+        }
+        else if (m2m->send.type == M2M_VECTOR_INT) {
+          parameters.send.data.iov_base = ipwq->bufferToConsume(index);
+          parameters.send.data.iov_len  = ipwq->bytesAvailableToConsume(index);
+        }
+        else {
+          parameters.send.data.iov_base = lpwq->bufferToConsume(index);
+          parameters.send.data.iov_len  = lpwq->bytesAvailableToConsume(index);
+        }
 
         pami_result_t result = PAMI_SUCCESS;
 
@@ -2060,6 +2063,8 @@ namespace PAMI
         this->_m2mRecvQ.pushTail(state); // queue this m2m state
         TRACE_FORMAT( "<%p> connection_id %u, doneCountDown %u", this, state->connection_id, state->doneCountDown);
       }
+    TRACE_FORMAT( "<%p> state %p, state->recv %p", this, state, state->recv);
+    TRACE_FORMAT( "<%p> state->recv->type %u, state->recv->buffer %p, state->recv->participants %p", this, state->recv->type, state->recv->buffer, state->recv->participants);
 
     PAMI::M2MPipeWorkQueueT<size_t, 1> *spwq = (PAMI::M2MPipeWorkQueueT<size_t, 1> *)state->recv->buffer;
     PAMI::M2MPipeWorkQueueT<size_t, 0> *lpwq = (PAMI::M2MPipeWorkQueueT<size_t, 0> *)state->recv->buffer;
@@ -2070,17 +2075,29 @@ namespace PAMI
     PAMI_ENDPOINT_INFO(origin, originTask, this->_contextid);
     size_t                    originIndex  = topology->rank2Index(originTask);
 
-    size_t                    bytesToProduce = lpwq->bytesAvailableToProduce(originIndex);
-    char                     *buffer = lpwq->bufferToProduce(originIndex);
+    size_t                    bytesToProduce;
+    char                     *buffer; 
 
-    if (state->recv->type == M2M_SINGLE) {
-      buffer = spwq->bufferToProduce(originIndex);
+    if (state->recv->type == M2M_VECTOR_LONG) {
+      buffer          = lpwq->bufferToProduce(originIndex);                
+      bytesToProduce  = lpwq->bytesAvailableToProduce(originIndex);
+    }
+    else if (state->recv->type == M2M_SINGLE) {
+      buffer          = spwq->bufferToProduce(originIndex);
       bytesToProduce  = spwq->bytesAvailableToProduce(originIndex);
     }
-    else if (state->recv->type == M2M_VECTOR_INT) {
+    else if (state->recv->type == M2M_VECTOR_INT) 
+    {
       buffer          = ipwq->bufferToProduce(originIndex);
       bytesToProduce  = ipwq->bytesAvailableToProduce(originIndex);
     }
+    else // avoid uninitialized error
+    {
+      PAMI_abort();
+      buffer          = NULL;
+      bytesToProduce  = 0;
+    }
+    TRACE_FORMAT( "<%p> bytesToProduce %zu, buffer %p", this,bytesToProduce, buffer);
 
     // Assert they gave us enough buffer for the recv
     PAMI_assertf(data_size == bytesToProduce, "data_size %zu == %zu bytesToProduce(%zu)\n", data_size, bytesToProduce, originIndex);
@@ -2191,6 +2208,9 @@ namespace PAMI
   }
 
 };
+
+#undef DO_TRACE_ENTEREXIT 
+#undef DO_TRACE_DEBUG     
 
 #endif
 //
