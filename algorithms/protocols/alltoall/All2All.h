@@ -60,42 +60,45 @@ namespace CCMI
           /// \todo presumed size of PAMI_TYPE_CONTIGUOUS?
           //size_t bytes = topo_size * coll->cmd.xfer_alltoall.stypecount * 1;
 
-	  pami_result_t rc;
-	  rc = __global.heap_mm->memalign(&_initbuf, 0, 2 * sizeof(size_t) * topo_size);
-	  _sendinit =  (size_t *) _initbuf;
-	  _recvinit =  (size_t *) ((char *)_initbuf + sizeof(size_t) * topo_size);
+          pami_result_t rc;
+          rc = __global.heap_mm->memalign(&_initbuf, 0, 2 * sizeof(size_t) * topo_size);
+          _sendinit =  (size_t *) _initbuf;
+          _recvinit =  (size_t *) ((char *)_initbuf + sizeof(size_t) * topo_size);
 
           PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _sendinit");
 
           for (size_t i = 0; i < topo_size; ++i)
           {
-	    _sendinit[i] = coll->cmd.xfer_alltoall.stypecount;
-	    _recvinit[i] = 0;
-	  }
-	  
-	  _send.type   = PAMI::M2M_SINGLE;
+            _sendinit[i] = coll->cmd.xfer_alltoall.stypecount;
+            _recvinit[i] = 0;
+          }
+
+          _send.type   = PAMI::M2M_SINGLE;
           _send.buffer = &_sendpwq;
           _sendpwq.configure(
-			     coll->cmd.xfer_alltoall.sndbuf,
-			     topo_size,
-			     &coll->cmd.xfer_alltoall.stype,
-			     coll->cmd.xfer_alltoall.stypecount,/// \todo only supporting PAMI_TYPE_CONTIGUOUS so offset=length
-			     coll->cmd.xfer_alltoall.stypecount,
-			     _sendinit);
+          coll->cmd.xfer_alltoall.sndbuf,
+          topo_size,
+          &coll->cmd.xfer_alltoall.stype,
+          coll->cmd.xfer_alltoall.stypecount,/// \todo only supporting PAMI_TYPE_CONTIGUOUS so offset=length
+          coll->cmd.xfer_alltoall.stypecount,
+          _sendinit);
 
           _send.participants = all;
 
-	  _recv.type   = PAMI::M2M_SINGLE;
+          TRACE_ADAPTOR((stderr, "<%p>All2AllProtocol rcvbuf %p,topo_size %zu,_recvinit %p/%zu\n", this,coll->cmd.xfer_alltoall.rcvbuf,topo_size,_recvinit,_recvinit[0]));
+
+          _recv.type   = PAMI::M2M_SINGLE;
           _recv.buffer = &_recvpwq;
           _recvpwq.configure(
-			     coll->cmd.xfer_alltoall.rcvbuf,
-			     topo_size,
-			     &coll->cmd.xfer_alltoall.rtype,
-			     coll->cmd.xfer_alltoall.rtypecount,/// \todo only supporting PAMI_TYPE_CONTIGUOUS so offset=length
-			     coll->cmd.xfer_alltoall.rtypecount,
-			     _recvinit);
-	  
+                            coll->cmd.xfer_alltoall.rcvbuf,
+                            topo_size,
+                            &coll->cmd.xfer_alltoall.rtype,
+                            coll->cmd.xfer_alltoall.rtypecount,/// \todo only supporting PAMI_TYPE_CONTIGUOUS so offset=length
+                            coll->cmd.xfer_alltoall.rtypecount,
+                            _recvinit);
+
           _recv.participants = all;
+          TRACE_ADAPTOR((stderr, "<%p>All2AllProtocol _recv %p, _recv.buffer %p, _recv.participants %p\n", this,&_recv, _recv.buffer, _recv.participants));
 
           _m2m_info.send = _send;
 
@@ -323,5 +326,4 @@ namespace CCMI
 
   };
 };
-
 #endif

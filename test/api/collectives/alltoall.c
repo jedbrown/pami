@@ -24,8 +24,8 @@
 #define CHCK_BUFS(s,r)    check_bufs(s,r)
 
 
-char sbuf[BUFSIZE] __attribute__((__aligned__(64)));
-char rbuf[BUFSIZE] __attribute__((__aligned__(64)));
+char sbuf[BUFSIZE];
+char rbuf[BUFSIZE];
 
 /** \todo #warning remove alltoallv code... */
 size_t sndlens[ MAX_COMM_SIZE ];
