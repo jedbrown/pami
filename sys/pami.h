@@ -150,7 +150,6 @@ extern "C"
     PAMI_CLIENT_TASK_ID,            /**< Q : size_t : ID of this task (AKA "rank") */
     PAMI_CLIENT_WTIMEBASE_MHZ,      /**< Q : size_t : Frequency of the WTIMEBASE clock, in units of 10^6/seconds.  This can be used to convert from PAMI_Wtimebase to PAMI_Timer manually. */
     PAMI_CLIENT_WTICK,              /**< Q : double : This has the same definition as MPI_Wtick(). */
-    PAMI_CLIENT_ASYNC_GUARANTEE,    /**< Q : size_t : Asynchronous progress can not be \em guaranteed if zero; however asynchronous progress may still be available */
 
     PAMI_CONTEXT_DISPATCH_ID_MAX = 200, /**< Q : size_t : Maximum allowed dispatch id, see PAMI_Dispatch_set() */
 
