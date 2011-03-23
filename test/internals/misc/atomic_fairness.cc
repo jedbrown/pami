@@ -147,7 +147,7 @@ int main(int argc, char **argv) {
 	size_t num_tasks = __global.mapping.size();
 
 	if (num_tasks != 1) {
-		fprintf(stderr, "Must be run with 1 task per node\n");
+		fprintf(stderr, "Must be run with 1 task\n");
 		exit(1);
 	}
 
