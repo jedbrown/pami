@@ -101,12 +101,13 @@ int main(int argc, char*argv[])
   /* substring is used to select, or de-select (with -) test protocols */
   unsigned selector = 1;
   char* selected = getenv("TEST_PROTOCOL");
-  if(!selected) selected = "";
-  else if(selected[0]=='-') 
-  {
+
+  if (!selected) selected = "";
+  else if (selected[0] == '-')
+    {
       selector = 0 ;
       ++selected;
-  }
+    }
 
 
   /*  Initialize PAMI */
@@ -121,11 +122,12 @@ int main(int argc, char*argv[])
 
   if (rc == 1)
     return 1;
-  if(num_tasks > MAX_COMM_SIZE )
-  {
-    fprintf(stderr, "Number of tasks (%zu) > MAX_COMM_SIZE (%zu)\n",num_tasks, (size_t)MAX_COMM_SIZE);
-    return 1;
-  }
+
+  if (num_tasks > MAX_COMM_SIZE )
+    {
+      fprintf(stderr, "Number of tasks (%zu) > MAX_COMM_SIZE (%zu)\n", num_tasks, (size_t)MAX_COMM_SIZE);
+      return 1;
+    }
 
   /*  Query the world geometry for barrier algorithms */
   rc = query_geometry_world(client,
@@ -175,8 +177,9 @@ int main(int argc, char*argv[])
             printf("# Size(bytes)           cycles    bytes/sec      usec\n");
             printf("# -----------      -----------    -----------    ---------\n");
           }
-        if(((strstr(alltoall_always_works_md[nalg].name,selected) == NULL) && selector) ||
-           ((strstr(alltoall_always_works_md[nalg].name,selected) != NULL) && !selector))  continue;
+
+        if (((strstr(alltoall_always_works_md[nalg].name, selected) == NULL) && selector) ||
+            ((strstr(alltoall_always_works_md[nalg].name, selected) != NULL) && !selector))  continue;
 
         alltoall.algorithm  = alltoall_always_works_algo[nalg];
 
@@ -194,14 +197,14 @@ int main(int argc, char*argv[])
 
             blocking_coll(context, &barrier, &bar_poll_flag);
 
-	    //Warmup
-	    alltoall.cmd.xfer_alltoall.sndbuf        = sbuf;
-	    alltoall.cmd.xfer_alltoall.stype         = PAMI_TYPE_CONTIGUOUS;
-	    alltoall.cmd.xfer_alltoall.stypecount    = i;
-	    alltoall.cmd.xfer_alltoall.rcvbuf        = rbuf;
-	    alltoall.cmd.xfer_alltoall.rtype         = PAMI_TYPE_CONTIGUOUS;
-	    alltoall.cmd.xfer_alltoall.rtypecount    = i;
-	    blocking_coll(context, &alltoall, &alltoall_poll_flag);
+            //Warmup
+            alltoall.cmd.xfer_alltoall.sndbuf        = sbuf;
+            alltoall.cmd.xfer_alltoall.stype         = PAMI_TYPE_CONTIGUOUS;
+            alltoall.cmd.xfer_alltoall.stypecount    = i;
+            alltoall.cmd.xfer_alltoall.rcvbuf        = rbuf;
+            alltoall.cmd.xfer_alltoall.rtype         = PAMI_TYPE_CONTIGUOUS;
+            alltoall.cmd.xfer_alltoall.rtypecount    = i;
+            blocking_coll(context, &alltoall, &alltoall_poll_flag);
 
             blocking_coll(context, &barrier, &bar_poll_flag);
 
@@ -220,8 +223,8 @@ int main(int argc, char*argv[])
 
 
             tf = timer();
-	    
-	    CHCK_BUFS(num_tasks, task_id);
+
+            CHCK_BUFS(num_tasks, task_id);
 
             blocking_coll(context, &barrier, &bar_poll_flag);
 

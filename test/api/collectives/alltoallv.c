@@ -99,12 +99,13 @@ int main(int argc, char*argv[])
   /* substring is used to select, or de-select (with -) test protocols */
   unsigned selector = 1;
   char* selected = getenv("TEST_PROTOCOL");
-  if(!selected) selected = "";
-  else if(selected[0]=='-') 
-  {
+
+  if (!selected) selected = "";
+  else if (selected[0] == '-')
+    {
       selector = 0 ;
       ++selected;
-  }
+    }
 
 
   /*  Initialize PAMI */
@@ -119,11 +120,12 @@ int main(int argc, char*argv[])
 
   if (rc == 1)
     return 1;
-  if(num_tasks > MAX_COMM_SIZE )
-  {
-    fprintf(stderr, "Number of tasks (%zu) > MAX_COMM_SIZE (%zu)\n",num_tasks, (size_t)MAX_COMM_SIZE);
-    return 1;
-  }
+
+  if (num_tasks > MAX_COMM_SIZE )
+    {
+      fprintf(stderr, "Number of tasks (%zu) > MAX_COMM_SIZE (%zu)\n", num_tasks, (size_t)MAX_COMM_SIZE);
+      return 1;
+    }
 
   /*  Query the world geometry for barrier algorithms */
   rc = query_geometry_world(client,
@@ -173,8 +175,9 @@ int main(int argc, char*argv[])
             printf("# Size(bytes)           cycles    bytes/sec      usec\n");
             printf("# -----------      -----------    -----------    ---------\n");
           }
-        if(((strstr(alltoallv_always_works_md[nalg].name,selected) == NULL) && selector) ||
-           ((strstr(alltoallv_always_works_md[nalg].name,selected) != NULL) && !selector))  continue;
+
+        if (((strstr(alltoallv_always_works_md[nalg].name, selected) == NULL) && selector) ||
+            ((strstr(alltoallv_always_works_md[nalg].name, selected) != NULL) && !selector))  continue;
 
         alltoallv.algorithm  = alltoallv_always_works_algo[nalg];
 
