@@ -327,6 +327,9 @@ int main (int argc, char ** argv)
           unsigned checkrequired = q_newbar_md[nalg].check_correct.values.checkrequired; /*must query every time */
           assert(!checkrequired || q_newbar_md[nalg].check_fn); /* must have function if checkrequired. */
 
+          /* \note We currently ignore check_correct.values.nonlocal
+             because these tests should not have nonlocal differences (so far). */
+
           if (q_newbar_md[nalg].check_fn)
             result = q_newbar_md[nalg].check_fn(&newbarrier);
 

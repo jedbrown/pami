@@ -398,6 +398,9 @@ int main (int argc, char ** argv)
           unsigned checkrequired = q_newbcast_md[nalg].check_correct.values.checkrequired; /*must query every time */
           assert(!checkrequired || q_newbcast_md[nalg].check_fn); /* must have function if checkrequired. */
 
+          /* \note We currently ignore check_correct.values.nonlocal
+             because these tests should not have nonlocal differences (so far). */
+
           blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
 
           for (i = 1; i <= max_count; i *= 2)
