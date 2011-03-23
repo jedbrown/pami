@@ -39,6 +39,12 @@ namespace PAMI
   template <>
   void * Extension::queryExtension<2000> (const char * name, void * cookie)
   {
+    if (strcasecmp (name, "itrace") == 0)
+      return (void *) PAMI::PeExtension::itrace;
+
+    if (strcasecmp (name, "itrace_read_masks") == 0)
+      return (void *) PAMI::PeExtension::itrace_read_masks;
+
     if (strcasecmp (name, "global_query") == 0)
       return (void *) PAMI::PeExtension::global_query;
 

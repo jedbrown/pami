@@ -24,3 +24,25 @@ PAMI::PeExtension::global_query(pami_configuration_t    configs[],
   }
   return result;
 }
+
+/* defined in lapi_itrace.c */
+#include "lapi_itrace.h"
+
+unsigned PAMI::PeExtension::trace_mask = (unsigned)-1; /* initialize trace_mask to show every thing */
+
+void PAMI::PeExtension::itrace(unsigned type, char* fmt, ...)
+{
+#ifdef USE_ITRACE
+    if ((type & trace_mask) == 0)
+       return; 
+    va_list ap;
+    va_start( ap, fmt );
+    _itrace(IT_USER, fmt, ap); /* it is user's trace */
+    va_end(ap);
+#endif /* USE_ITRACE */
+}
+
+void PAMI::PeExtension::itrace_read_masks(pe_extension_itrace_mask_t* masks, unsigned masks_cnt, char* mask_env)
+{
+    trace_mask = _trace_read_mask((trc_mask_t*) masks, masks_cnt, mask_env);
+}

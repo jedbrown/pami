@@ -11,6 +11,11 @@
 #define PAMI_MAX_CLIENT_NUM   128 /**< max number of clients allowed */
 #define PAMI_MAX_CONTEXT_NUM    1 /**< max number of contexts allowed in a client */
 
+typedef struct {
+    unsigned mask; // mask of a trace type
+    char     *str; // string of a trace type
+} pe_extension_itrace_mask_t;
+
 namespace PAMI
 {
   // internal structure for pami_active_context_t  
@@ -79,6 +84,10 @@ namespace PAMI
       */
       static pami_result_t global_query(pami_configuration_t  configs[], 
                                  size_t                num_configs);  
+
+      static unsigned trace_mask;
+      static void itrace_read_masks(pe_extension_itrace_mask_t* masks, unsigned masks_cnt, char* mask_env);
+      static void itrace(unsigned type, char* fmt, ...);
   };
 };
 
