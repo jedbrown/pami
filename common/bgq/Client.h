@@ -231,17 +231,43 @@ namespace PAMI
                                        size_t               num_configs)
       {
         pami_result_t result = PAMI_SUCCESS;
-        size_t i, peers = 0;
+        size_t i;
 
         for (i = 0; i < num_configs; i++)
           {
             switch (configuration[i].name)
               {
                 case PAMI_CLIENT_NUM_CONTEXTS:
-                  /// \todo #99 Remove this hack and replace with a device interface
-                  __global.mapping.nodePeers (peers);
-                  configuration[i].value.intval = MIN(4, (64 / peers));
-                  break;
+                  {
+                    /// \todo #99 Remove this hack and replace with a device interface
+                    unsigned tSize = __global.mapping.tSize();
+                    switch (tSize)
+                      {
+                        // The following values are based on tests just running MPI_Init():
+                        //    Date:      24 Mar 2011
+                        //    Num nodes: 32
+                        //    BG_SHAREDMEMSIZE=32
+                        case 1:
+                          configuration[i].value.intval = 16;
+                          break;
+                        case 2:
+                          configuration[i].value.intval = 16;
+                          break;
+                        case 4:
+                          configuration[i].value.intval = 8;
+                          break;
+                        case 8:
+                        case 16:
+                        case 32:
+                        case 64:
+                          configuration[i].value.intval = 64/tSize;
+                          break;
+                        default:
+                          fprintf(stderr, "%s:%u  Error: Do not know how to handle tSize=%u\n", __FILE__, __LINE__, tSize);
+                          abort();
+                      }
+                    break;
+                  }
                 case PAMI_CLIENT_CONST_CONTEXTS:
                   configuration[i].value.intval = true;
                   break;
