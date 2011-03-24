@@ -12,10 +12,18 @@
  */
 #include "../pami_util.h"
 
-#define MAX_COMM_SIZE 128
-#define MSGSIZE       4096
-#define BUFSIZE       (MSGSIZE * MAX_COMM_SIZE)
+#define COUNT     4096          /* see envvar TEST_COUNT for overrides */
+unsigned max_count = COUNT;
 
+#define OFFSET     0            /* see envvar TEST_OFFSET for overrides */
+unsigned buffer_offset = OFFSET;
+
+#define NITERLAT   100          /* see envvar TEST_ITER for overrides */
+unsigned niterlat  = NITERLAT;
+
+#define NITERBW    MIN(10, niterlat/100+1)
+
+#define CUTOFF     1024
 
 /*#define INIT_BUFS(r) */
 #define INIT_BUFS(r) init_bufs(r)
@@ -24,12 +32,13 @@
 #define CHCK_BUFS(s,r)    check_bufs(s,r)
 
 
-char sbuf[BUFSIZE];
-char rbuf[BUFSIZE];
-size_t sndlens[ MAX_COMM_SIZE ];
-size_t sdispls[ MAX_COMM_SIZE ];
-size_t rcvlens[ MAX_COMM_SIZE ];
-size_t rdispls[ MAX_COMM_SIZE ];
+char *sbuf = NULL;
+char *rbuf = NULL;
+
+size_t *sndlens = NULL;
+size_t *sdispls = NULL;
+size_t *rcvlens = NULL;
+size_t *rdispls = NULL;
 
 void init_bufs(size_t r)
 {
@@ -75,12 +84,12 @@ int main(int argc, char*argv[])
 
   /* Barrier variables */
   size_t               barrier_num_algorithm[2];
-  volatile unsigned    bar_poll_flag = 0;
   pami_algorithm_t    *bar_always_works_algo = NULL;
   pami_metadata_t     *bar_always_works_md   = NULL;
   pami_algorithm_t    *bar_must_query_algo   = NULL;
   pami_metadata_t     *bar_must_query_md     = NULL;
   pami_xfer_type_t     barrier_xfer = PAMI_XFER_BARRIER;
+  volatile unsigned    bar_poll_flag = 0;
 
   /* Alltoallv variables */
   size_t               alltoallv_num_algorithm[2];
@@ -89,11 +98,16 @@ int main(int argc, char*argv[])
   pami_algorithm_t    *alltoallv_must_query_algo = NULL;
   pami_metadata_t     *alltoallv_must_query_md = NULL;
   pami_xfer_type_t     alltoallv_xfer = PAMI_XFER_ALLTOALLV;
-
   volatile unsigned    alltoallv_poll_flag = 0;
+
   double               ti, tf, usec;
   pami_xfer_t          barrier;
   pami_xfer_t          alltoallv;
+
+  /* \note Test environment variable" TEST_VERBOSE=N     */
+  char* sVerbose = getenv("TEST_VERBOSE");
+
+  if(sVerbose) gVerbose=atoi(sVerbose); /* set the global defined in coll_util.h */
 
   /* \note Test environment variable" TEST_PROTOCOL={-}substring.       */
   /* substring is used to select, or de-select (with -) test protocols */
@@ -107,6 +121,23 @@ int main(int argc, char*argv[])
       ++selected;
     }
 
+  /* \note Test environment variable" TEST_COUNT=N max count     */
+  char* sCount = getenv("TEST_COUNT");
+
+  /* Override COUNT */
+  if (sCount) max_count = atoi(sCount);
+
+  /* \note Test environment variable" TEST_OFFSET=N buffer offset/alignment*/
+  char* sOffset = getenv("TEST_OFFSET");
+
+  /* Override OFFSET */
+  if (sOffset) buffer_offset = atoi(sOffset);
+
+  /* \note Test environment variable" TEST_ITER=N iterations      */
+  char* sIter = getenv("TEST_ITER");
+
+  /* Override NITERLAT */
+  if (sIter) niterlat = atoi(sIter);
 
   /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
@@ -121,11 +152,24 @@ int main(int argc, char*argv[])
   if (rc == 1)
     return 1;
 
-  if (num_tasks > MAX_COMM_SIZE )
-    {
-      fprintf(stderr, "Number of tasks (%zu) > MAX_COMM_SIZE (%zu)\n", num_tasks, (size_t)MAX_COMM_SIZE);
-      return 1;
-    }
+  /*  Allocate buffer(s) */
+  int err = 0;
+  err = posix_memalign((void*)&sbuf, 128, (max_count*num_tasks)+buffer_offset);
+  assert(err == 0);
+  sbuf = (char*)sbuf + buffer_offset;
+
+  err = posix_memalign((void*)&rbuf, 128, (max_count*num_tasks)+buffer_offset);
+  assert(err == 0);
+  rbuf = (char*)rbuf + buffer_offset;
+
+  sndlens = (size_t*) malloc(num_tasks * sizeof(size_t));
+  assert(sndlens);
+  sdispls = (size_t*) malloc(num_tasks * sizeof(size_t));
+  assert(sdispls);
+  rcvlens = (size_t*) malloc(num_tasks * sizeof(size_t));
+  assert(rcvlens);
+  rdispls = (size_t*) malloc(num_tasks * sizeof(size_t));
+  assert(rdispls);
 
   /*  Query the world geometry for barrier algorithms */
   rc = query_geometry_world(client,
@@ -181,10 +225,15 @@ int main(int argc, char*argv[])
 
         alltoallv.algorithm  = alltoallv_always_works_algo[nalg];
 
-        for (i = 1; i <= MSGSIZE; i *= 2)
+        for (i = 1; i <= max_count; i *= 2)
           {
             long long dataSent = i;
-            size_t niter = (i < 1024 ? 100 : 10);
+            int          niter;
+
+            if (dataSent < CUTOFF)
+                niter = niterlat;
+            else
+                niter = NITERBW;
 
             for ( j = 0; j < num_tasks; j++ )
               {
@@ -192,6 +241,19 @@ int main(int argc, char*argv[])
                 sdispls[j] = rdispls[j] = i * j;
                 INIT_BUFS( j );
               }
+
+            blocking_coll(context, &barrier, &bar_poll_flag);
+
+            /* Warmup */
+            alltoallv.cmd.xfer_alltoallv.sndbuf        = sbuf;
+            alltoallv.cmd.xfer_alltoallv.stype         = PAMI_TYPE_CONTIGUOUS;
+            alltoallv.cmd.xfer_alltoallv.stypecounts   = sndlens;
+            alltoallv.cmd.xfer_alltoallv.sdispls       = sdispls;
+            alltoallv.cmd.xfer_alltoallv.rcvbuf        = rbuf;
+            alltoallv.cmd.xfer_alltoallv.rtype         = PAMI_TYPE_CONTIGUOUS;
+            alltoallv.cmd.xfer_alltoallv.rtypecounts   = rcvlens;
+            alltoallv.cmd.xfer_alltoallv.rdispls       = rdispls;
+            blocking_coll(context, &alltoallv, &alltoallv_poll_flag);
 
             blocking_coll(context, &barrier, &bar_poll_flag);
 
@@ -240,6 +302,17 @@ int main(int argc, char*argv[])
   free(alltoallv_always_works_md);
   free(alltoallv_must_query_algo);
   free(alltoallv_must_query_md);
+
+  sbuf = (char*)sbuf - buffer_offset;
+  free(sbuf);
+
+  rbuf = (char*)rbuf - buffer_offset;
+  free(rbuf);
+
+  free(sndlens);
+  free(sdispls);
+  free(rcvlens);
+  free(rdispls);
 
   return 0;
 }

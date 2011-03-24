@@ -12,55 +12,62 @@
  */
 #include "../pami_util.h"
 
-#define MAX_COMM_SIZE 128
-#define MSGSIZE       4096
-#define BUFSIZE       (MSGSIZE * MAX_COMM_SIZE)
+#define COUNT     4096          /* see envvar TEST_COUNT for overrides */
+unsigned max_count = COUNT;
 
+#define OFFSET     0            /* see envvar TEST_OFFSET for overrides */
+unsigned buffer_offset = OFFSET;
 
-/*#define INIT_BUFS(r) */
-#define INIT_BUFS(r) init_bufs(r)
+#define NITERLAT   100          /* see envvar TEST_ITER for overrides */
+unsigned niterlat  = NITERLAT;
+
+#define NITERBW    MIN(10, niterlat/100+1)
+
+#define CUTOFF     1024
+
+/*#define INIT_BUFS(l,r) */
+#define INIT_BUFS(l,r) init_bufs(l,r)
 
 /*#define CHCK_BUFS */
-#define CHCK_BUFS(s,r)    check_bufs(s,r)
+#define CHCK_BUFS(l,s,r)    check_bufs(l,s,r)
 
 
-char sbuf[BUFSIZE];
-char rbuf[BUFSIZE];
+char *sbuf = NULL;
+char *rbuf = NULL;
 
-/** \todo #warning remove alltoallv code... */
-size_t sndlens[ MAX_COMM_SIZE ];
-size_t sdispls[ MAX_COMM_SIZE ];
-size_t rcvlens[ MAX_COMM_SIZE ];
-size_t rdispls[ MAX_COMM_SIZE ];
 
-void init_bufs(size_t r)
+void init_bufs(size_t l, size_t r)
 {
   size_t k;
+  size_t d = l * r;
 
-  for ( k = 0; k < sndlens[r]; k++ )
+  for ( k = 0; k < l; k++ )
     {
-      sbuf[ sdispls[r] + k ] = ((r + k) & 0xff);
-      rbuf[ rdispls[r] + k ] = 0xff;
+      sbuf[ d + k ] = ((r + k) & 0xff);
+      rbuf[ d + k ] = 0xff;
     }
 }
 
 
-void check_bufs(size_t sz, size_t myrank)
+void check_bufs(size_t l, size_t nranks, size_t myrank)
 {
   size_t r, k;
 
-  for ( r = 0; r < sz; r++ )
-    for ( k = 0; k < rcvlens[r]; k++ )
+  for ( r = 0; r < nranks; r++ )
       {
-        if ( rbuf[ rdispls[r] + k ] != (char)((myrank + k) & 0xff) )
+        size_t d = l * r;
+        for ( k = 0; k < l; k++ )
           {
-            printf("%zu: (E) rbuf[%zu]:%02x instead of %02zx (r:%zu)\n",
-                   myrank,
-                   rdispls[r] + k,
-                   rbuf[ rdispls[r] + k ],
-                   ((r + k) & 0xff),
-                   r );
-            exit(1);
+            if ( rbuf[ d + k ] != (char)((myrank + k) & 0xff) )
+              {
+                printf("%zu: (E) rbuf[%zu]:%02x instead of %02zx (r:%zu)\n",
+                       myrank,
+                       d + k,
+                       rbuf[ d + k ],
+                       ((r + k) & 0xff),
+                       r );
+                exit(1);
+              }
           }
       }
 }
@@ -97,6 +104,11 @@ int main(int argc, char*argv[])
   pami_xfer_t          barrier;
   pami_xfer_t          alltoall;
 
+  /* \note Test environment variable" TEST_VERBOSE=N     */
+  char* sVerbose = getenv("TEST_VERBOSE");
+
+  if(sVerbose) gVerbose=atoi(sVerbose); /* set the global defined in coll_util.h */
+
   /* \note Test environment variable" TEST_PROTOCOL={-}substring.       */
   /* substring is used to select, or de-select (with -) test protocols */
   unsigned selector = 1;
@@ -109,6 +121,23 @@ int main(int argc, char*argv[])
       ++selected;
     }
 
+  /* \note Test environment variable" TEST_COUNT=N max count     */
+  char* sCount = getenv("TEST_COUNT");
+
+  /* Override COUNT */
+  if (sCount) max_count = atoi(sCount);
+
+  /* \note Test environment variable" TEST_OFFSET=N buffer offset/alignment*/
+  char* sOffset = getenv("TEST_OFFSET");
+
+  /* Override OFFSET */
+  if (sOffset) buffer_offset = atoi(sOffset);
+
+  /* \note Test environment variable" TEST_ITER=N iterations      */
+  char* sIter = getenv("TEST_ITER");
+
+  /* Override NITERLAT */
+  if (sIter) niterlat = atoi(sIter);
 
   /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
@@ -123,11 +152,15 @@ int main(int argc, char*argv[])
   if (rc == 1)
     return 1;
 
-  if (num_tasks > MAX_COMM_SIZE )
-    {
-      fprintf(stderr, "Number of tasks (%zu) > MAX_COMM_SIZE (%zu)\n", num_tasks, (size_t)MAX_COMM_SIZE);
-      return 1;
-    }
+  /*  Allocate buffer(s) */
+  int err = 0;
+  err = posix_memalign((void*)&sbuf, 128, (max_count*num_tasks)+buffer_offset);
+  assert(err == 0);
+  sbuf = (char*)sbuf + buffer_offset;
+
+  err = posix_memalign((void*)&rbuf, 128, (max_count*num_tasks)+buffer_offset);
+  assert(err == 0);
+  rbuf = (char*)rbuf + buffer_offset;
 
   /*  Query the world geometry for barrier algorithms */
   rc = query_geometry_world(client,
@@ -174,7 +207,7 @@ int main(int argc, char*argv[])
         if (task_id == 0)
           {
             printf("# Alltoall Bandwidth Test(size:%zu) %p, protocol: %s\n", num_tasks, cb_done, alltoall_always_works_md[nalg].name);
-            printf("# Size(bytes)           cycles    bytes/sec      usec\n");
+            printf("# Size(bytes)       iterations    bytes/sec      usec\n");
             printf("# -----------      -----------    -----------    ---------\n");
           }
 
@@ -183,27 +216,31 @@ int main(int argc, char*argv[])
 
         alltoall.algorithm  = alltoall_always_works_algo[nalg];
 
-        for (i = 1; i <= MSGSIZE; i *= 2)
+        for (i = 1; i <= max_count; i *= 2)
           {
             long long dataSent = i;
-            size_t niter = (i < 1024 ? 100 : 10);
+            int          niter;
+
+            if (dataSent < CUTOFF)
+                niter = niterlat;
+            else
+                niter = NITERBW;
 
             for ( j = 0; j < num_tasks; j++ )
               {
-                sndlens[j] = rcvlens[j] = i;
-                sdispls[j] = rdispls[j] = i * j;
-                INIT_BUFS( j );
+                INIT_BUFS(i, j );
               }
 
             blocking_coll(context, &barrier, &bar_poll_flag);
 
-            //Warmup
+            /* Warmup */
             alltoall.cmd.xfer_alltoall.sndbuf        = sbuf;
             alltoall.cmd.xfer_alltoall.stype         = PAMI_TYPE_CONTIGUOUS;
             alltoall.cmd.xfer_alltoall.stypecount    = i;
             alltoall.cmd.xfer_alltoall.rcvbuf        = rbuf;
             alltoall.cmd.xfer_alltoall.rtype         = PAMI_TYPE_CONTIGUOUS;
             alltoall.cmd.xfer_alltoall.rtypecount    = i;
+
             blocking_coll(context, &alltoall, &alltoall_poll_flag);
 
             blocking_coll(context, &barrier, &bar_poll_flag);
@@ -221,10 +258,9 @@ int main(int argc, char*argv[])
                 blocking_coll(context, &alltoall, &alltoall_poll_flag);
               }
 
-
             tf = timer();
 
-            CHCK_BUFS(num_tasks, task_id);
+            CHCK_BUFS(i, num_tasks, task_id);
 
             blocking_coll(context, &barrier, &bar_poll_flag);
 
@@ -233,9 +269,9 @@ int main(int argc, char*argv[])
             if (task_id == 0)
               {
 
-                printf("  %11lld %16lld %14.1f %12.2f\n",
+                printf("  %11lld %16d %14.1f %12.2f\n",
                        dataSent,
-                       0LL,
+                       niter,
                        (double)1e6*(double)dataSent / (double)usec,
                        usec);
                 fflush(stdout);
@@ -252,6 +288,12 @@ int main(int argc, char*argv[])
   free(alltoall_always_works_md);
   free(alltoall_must_query_algo);
   free(alltoall_must_query_md);
+
+  sbuf = (char*)sbuf - buffer_offset;
+  free(sbuf);
+
+  rbuf = (char*)rbuf - buffer_offset;
+  free(rbuf);
 
   return 0;
 }

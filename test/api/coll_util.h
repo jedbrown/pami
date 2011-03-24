@@ -14,11 +14,12 @@
 #ifndef __test_api_coll_util_h__
 #define __test_api_coll_util_h__
 
+unsigned gVerbose = 1; /* Global verbose flag, some tests set with TEST_VERBOSE=n */
 
 /* Docs09:  Done/Decrement call */
 void cb_done (void *ctxt, void * clientdata, pami_result_t err)
 {
-  if(!ctxt)
+  if(gVerbose && !ctxt)
     fprintf(stderr, "Error. Null context received on cb_done");
   int * active = (int *) clientdata;
   (*active)--;

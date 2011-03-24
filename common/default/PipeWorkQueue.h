@@ -185,6 +185,7 @@ public:
 				(bufinit / prod_dt->GetExtent()) * prod_dt->GetExtent(),
 				"bufinit is not multiple of producer datatype extent");
 			_prod_tm = new PAMI::Type::TypeMachine(prod_dt);
+			PAMI_assert(_prod_tm);
 			_pmask = (unsigned)-1; // nil mask meaning non-contiguous
 			_qsize = (bufsize / prod_dt->GetExtent()) * prod_dt->GetDataSize();
 			_isize = (bufinit / prod_dt->GetExtent()) * prod_dt->GetDataSize();
@@ -197,6 +198,7 @@ public:
 				(bufinit / cons_dt->GetExtent()) * cons_dt->GetExtent(),
 				"bufinit is not multiple of consumer datatype extent");
 			_cons_tm = new PAMI::Type::TypeMachine(cons_dt);
+			PAMI_assert(_cons_tm);
 			_pmask = (unsigned)-1; // nil mask meaning non-contiguous
 			_qsize = (bufsize / cons_dt->GetExtent()) * cons_dt->GetDataSize();
 			_isize = (bufinit / cons_dt->GetExtent()) * cons_dt->GetDataSize();

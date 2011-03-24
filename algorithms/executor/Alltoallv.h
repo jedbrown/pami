@@ -21,7 +21,8 @@
 #define MAX_CONCURRENT 32
 #define MAX_PARALLEL 20
 
-#define EXECUTOR_DEBUG(x) // fprintf x
+#undef  EXECUTOR_DEBUG
+#define EXECUTOR_DEBUG(x) //fprintf x
 
 namespace CCMI
 {
@@ -291,13 +292,13 @@ namespace CCMI
         void setVectors(T_Type *xfer)
         {
           setAlltoallVec<T_Type> (xfer, &_buflen, &_sbuf, &_scounts, &_sdisps, &_rbuf, &_rcounts,  &_rdisps);
-          EXECUTOR_DEBUG((stderr, "setVector gets called, rbuf = %x, rdisp = %x, _rounts = %x\n", _rbuf, _rdisps, _rcounts);)
+          EXECUTOR_DEBUG((stderr, "setVector gets called, rbuf = %p, rdisp = %p, _rounts = %zu\n", _rbuf, _rdisps,(size_t) _rcounts);)
         }
 
         void  updateVectors(T_Type *xfer)
         {
           setAlltoallVec<T_Type> (xfer, &_buflen, &_sbuf, &_scounts, &_sdisps, &_rbuf, &_rcounts,  &_rdisps);
-          EXECUTOR_DEBUG((stderr, "updateVector gets called, rbuf = %x, rdisp = %x, _rounts = %x\n", _rbuf, _rdisps, _rcounts);)
+          EXECUTOR_DEBUG((stderr, "updateVector gets called, rbuf = %p, rdisp = %p, _rounts = %zu\n", _rbuf, _rdisps, (size_t)_rcounts);)
         }
 
         /// \todo: this should be moved to the schedule
@@ -362,7 +363,7 @@ namespace CCMI
           _pwq.configure (_sbuf + sdisp, sleng, 0);
           _pwq.reset();
           _pwq.produceBytes(sleng);
-          EXECUTOR_DEBUG((stderr, "send index = %d, disp = %d, leng = %d\n", index, sdisp, sleng);)
+          EXECUTOR_DEBUG((stderr, "send index = %u, disp = %zu, leng = %zu\n", index, sdisp, sleng);)
           return &_pwq;
         }
 
@@ -372,7 +373,7 @@ namespace CCMI
           size_t rdisp = getRecvDisp(index);
           _rpwq[phase % MAX_PARALLEL].configure (_rbuf + rdisp, rleng, 0);
           _rpwq[phase % MAX_PARALLEL].reset();
-          EXECUTOR_DEBUG((stderr, "receive index = %d, phase = %d, disp = %d, leng = %d\n", index, phase, rdisp, rleng);)
+          EXECUTOR_DEBUG((stderr, "receive index = %u, phase = %d, disp = %zu, leng = %zu\n", index, phase, rdisp, rleng);)
           return &_rpwq[phase % MAX_PARALLEL];
         }
 
@@ -561,6 +562,7 @@ inline void  CCMI::Executor::AlltoallvExec<T_ConnMgr, T_Type>::notifyRecv
 
   if ((int)cdata->_count == -1)
     {
+      EXECUTOR_DEBUG((stderr, "CCMI_assert(cdata->_phase(%u) - _curphase(%d) %d  <  %d MAX_PARALLEL)\n",cdata->_phase,_curphase,cdata->_phase - _curphase,MAX_PARALLEL);)
       CCMI_assert(cdata->_phase - _curphase < MAX_PARALLEL);
 #if ASSERT_LEVEL > 0
       unsigned pindex  = getPartnerIndex(cdata->_phase - 1, _native->numranks(), _myindex);
@@ -584,6 +586,9 @@ inline void  CCMI::Executor::AlltoallvExec<T_ConnMgr, T_Type>::notifyRecv
 
   return;
 }
+
+#undef  EXECUTOR_DEBUG
+#define EXECUTOR_DEBUG(x) 
 
 #endif
 //

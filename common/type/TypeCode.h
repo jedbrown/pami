@@ -191,6 +191,7 @@ namespace PAMI
             return;
 
         char *new_code = new char[new_size];
+        PAMI_assert(new_code);
         if (code) {
             memcpy(new_code, code, code_cursor);
             delete[] code;
