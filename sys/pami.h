@@ -757,6 +757,19 @@ extern "C"
    *
    */
   extern pami_data_function PAMI_DATA_COPY;
+  extern pami_data_function PAMI_DATA_NOOP;
+  extern pami_data_function PAMI_DATA_MAX;
+  extern pami_data_function PAMI_DATA_MIN;
+  extern pami_data_function PAMI_DATA_SUM;
+  extern pami_data_function PAMI_DATA_PROD;
+  extern pami_data_function PAMI_DATA_LAND;
+  extern pami_data_function PAMI_DATA_LOR;
+  extern pami_data_function PAMI_DATA_LXOR;
+  extern pami_data_function PAMI_DATA_BAND;
+  extern pami_data_function PAMI_DATA_BOR;
+  extern pami_data_function PAMI_DATA_BXOR;
+  extern pami_data_function PAMI_DATA_MAXLOC;
+  extern pami_data_function PAMI_DATA_MINLOC;
 
   /**
    * \brief Structure for send parameters of a typed active message send
@@ -2798,12 +2811,35 @@ extern "C"
    *  communication.
    */
   extern pami_type_t PAMI_TYPE_CONTIGUOUS;
+
+  extern pami_type_t PAMI_TYPE_BYTE;
+
+  extern pami_type_t PAMI_TYPE_SIGNED_CHAR;
+  extern pami_type_t PAMI_TYPE_UNSIGNED_CHAR;
+  extern pami_type_t PAMI_TYPE_SIGNED_SHORT;
+  extern pami_type_t PAMI_TYPE_UNSIGNED_SHORT;
   extern pami_type_t PAMI_TYPE_SIGNED_INT;
   extern pami_type_t PAMI_TYPE_UNSIGNED_INT;
   extern pami_type_t PAMI_TYPE_SIGNED_LONG;
   extern pami_type_t PAMI_TYPE_UNSIGNED_LONG;
   extern pami_type_t PAMI_TYPE_SIGNED_LONG_LONG;
   extern pami_type_t PAMI_TYPE_UNSIGNED_LONG_LONG;
+
+  extern pami_type_t PAMI_TYPE_FLOAT;
+  extern pami_type_t PAMI_TYPE_DOUBLE;
+  extern pami_type_t PAMI_TYPE_LONG_DOUBLE;
+
+  extern pami_type_t PAMI_TYPE_LOGICAL;
+
+  extern pami_type_t PAMI_TYPE_SINGLE_COMPLEX;
+  extern pami_type_t PAMI_TYPE_DOUBLE_COMPLEX;
+
+  extern pami_type_t PAMI_TYPE_LOC_2INT;
+  extern pami_type_t PAMI_TYPE_LOC_2FLOAT;
+  extern pami_type_t PAMI_TYPE_LOC_2DOUBLE;
+  extern pami_type_t PAMI_TYPE_LOC_SHORT_INT;
+  extern pami_type_t PAMI_TYPE_LOC_FLOAT_INT;
+  extern pami_type_t PAMI_TYPE_LOC_DOUBLE_INT;
 
   /**
    * \brief Create a new type for noncontiguous transfers

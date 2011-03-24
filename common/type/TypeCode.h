@@ -33,9 +33,76 @@ namespace PAMI
     class TypeCode : public ReferenceCount
     {
         public:
+
+            typedef enum
+            {
+              PRIMITIVE_TYPE_CONTIGUOUS = 0,
+              PRIMITIVE_TYPE_BYTE,
+
+              PRIMITIVE_TYPE_SIGNED_CHAR,
+              PRIMITIVE_TYPE_SIGNED_SHORT,
+              PRIMITIVE_TYPE_SIGNED_INT,
+              PRIMITIVE_TYPE_SIGNED_LONG,
+              PRIMITIVE_TYPE_SIGNED_LONG_LONG,
+
+              PRIMITIVE_TYPE_UNSIGNED_CHAR,
+              PRIMITIVE_TYPE_UNSIGNED_SHORT,
+              PRIMITIVE_TYPE_UNSIGNED_INT,
+              PRIMITIVE_TYPE_UNSIGNED_LONG,
+              PRIMITIVE_TYPE_UNSIGNED_LONG_LONG,
+
+              PRIMITIVE_TYPE_FLOAT,
+              PRIMITIVE_TYPE_DOUBLE,
+              PRIMITIVE_TYPE_LONG_DOUBLE,
+
+              PRIMITIVE_TYPE_LOGICAL,
+
+              PRIMITIVE_TYPE_SINGLE_COMPLEX,
+              PRIMITIVE_TYPE_DOUBLE_COMPLEX,
+
+              PRIMITIVE_TYPE_LOC_2INT,
+              PRIMITIVE_TYPE_LOC_2FLOAT,
+              PRIMITIVE_TYPE_LOC_2DOUBLE,
+              PRIMITIVE_TYPE_LOC_SHORT_INT,
+              PRIMITIVE_TYPE_LOC_FLOAT_INT,
+              PRIMITIVE_TYPE_LOC_DOUBLE_INT,
+
+              PRIMITIVE_TYPE_COUNT,
+              PRIMITIVE_TYPE_USERDEFINED
+
+            } primitive_type_t;
+
+            typedef unsigned primitive_logical_t; // PRIMITIVE_TYPE_LOGICAL
+
+            //
+            // primitive_complex_t<float> ..... PRIMITIVE_TYPE_SINGLE_COMPLEX
+            // primitive_complex_t<double> .... PRIMITIVE_TYPE_DOUBLE_COMPLEX
+            //
+            template <typename T>
+            struct primitive_complex_t
+            {
+              T real;
+              T imaginary;
+            };
+
+            //
+            // primitive_loc_t<int,int> ....... PRIMITIVE_TYPE_LOC_2INT
+            // primitive_loc_t<float,float> ... PRIMITIVE_TYPE_LOC_2FLOAT
+            // primitive_loc_t<double,double> . PRIMITIVE_TYPE_LOC_2DOUBLE
+            // primitive_loc_t<short,int> ..... PRIMITIVE_TYPE_LOC_SHORT_INT
+            // primitive_loc_t<float,int> ..... PRIMITIVE_TYPE_LOC_FLOAT_INT
+            // primitive_loc_t<double,int> .... PRIMITIVE_TYPE_LOC_DOUBLE_INT
+            //
+            template <typename T_Value, typename T_Index>
+            struct primitive_loc_t
+            {
+              T_Value value;
+              T_Index index;
+            };
+
             TypeCode(bool to_optimize);
             TypeCode(void *code_addr, size_t code_size);
-            TypeCode(size_t code_size);
+            TypeCode(size_t code_size, primitive_type_t primitive = PRIMITIVE_TYPE_USERDEFINED);
             ~TypeCode();
 
             void AddShift(size_t shift);
@@ -45,6 +112,7 @@ namespace PAMI
 
             bool IsCompleted() const;
             bool IsContiguous() const;
+            bool IsPrimitive() const;
 
             void * GetCodeAddr() const;
             size_t GetCodeSize() const;
@@ -152,11 +220,14 @@ namespace PAMI
             void AddNumBlocks(size_t inc_num_blocks);
             void UpdateUnit(size_t new_unit);
             void CopySubTypes();
+
+          protected:
+            primitive_type_t   primitive;
     };
 
     inline TypeCode::TypeCode(bool to_optimize = false)
         : code(NULL), code_buf_size(0), code_cursor(0), completed(false),
-        to_optimize(to_optimize)
+        to_optimize(to_optimize), primitive(PRIMITIVE_TYPE_USERDEFINED)
     {
         ResizeCodeBuffer(sizeof(Begin) + sizeof(Copy)*4);
         *(Begin *)code = Begin();
@@ -167,15 +238,15 @@ namespace PAMI
 
     inline TypeCode::TypeCode(void *code_addr, size_t code_size)
         : code(NULL), code_buf_size(0), code_cursor(0), completed(true),
-        to_optimize(false)
+        to_optimize(false), primitive(PRIMITIVE_TYPE_USERDEFINED)
     {
         ResizeCodeBuffer(code_size);
         memcpy(code, code_addr, code_size);
     }
 
-    inline TypeCode::TypeCode(size_t code_size)
+    inline TypeCode::TypeCode(size_t code_size, primitive_type_t primitive_type)
         : code(NULL), code_buf_size(0), code_cursor(0), completed(true),
-        to_optimize(false)
+        to_optimize(false), primitive(primitive_type)
     {
         ResizeCodeBuffer(code_size);
     }
@@ -250,7 +321,9 @@ namespace PAMI
 
     inline void   TypeCode::SetAtomSize(size_t atom_size)
     {
-        assert(GetUnit() % atom_size == 0);
+        if (!IsContiguous())
+          assert(GetUnit() % atom_size == 0);
+
         ((Begin *)code)->atom_size = atom_size;
     }
 
@@ -261,8 +334,12 @@ namespace PAMI
 
     inline bool TypeCode::IsContiguous() const
     {
-        // TODO: smarter way to check if contiguous?
-        return this == PAMI_TYPE_CONTIGUOUS;
+        return (primitive < PRIMITIVE_TYPE_COUNT);
+    }
+
+    inline bool TypeCode::IsPrimitive() const
+    {
+        return primitive;
     }
 
     inline void TypeCode::AddCodeSize(size_t inc_code_size)
@@ -420,15 +497,125 @@ namespace PAMI
     class TypeContig : public TypeCode
     {
         public:
-            TypeContig(size_t size = ULONG_MAX);
+            TypeContig(primitive_type_t primitive);
             ~TypeContig();
     };
 
-    inline TypeContig::TypeContig(size_t size)
+    inline TypeContig::TypeContig(primitive_type_t primitive_type)
     {
-        AddSimple(size, size, 1);
+      primitive = primitive_type;
+
+      size_t primitive_size = ULONG_MAX;
+      size_t primitive_atom = 0;
+
+      switch (primitive_type)
+      {
+        case PRIMITIVE_TYPE_CONTIGUOUS:
+          primitive_atom = 1;
+          break;
+
+        case PRIMITIVE_TYPE_BYTE:
+          primitive_atom = sizeof(uint8_t);
+          break;
+
+        case PRIMITIVE_TYPE_SIGNED_CHAR:
+          primitive_atom = sizeof(signed char);
+          break;
+
+        case PRIMITIVE_TYPE_SIGNED_SHORT:
+          primitive_atom = sizeof(signed short);
+          break;
+
+        case PRIMITIVE_TYPE_SIGNED_INT:
+          primitive_atom = sizeof(signed int);
+          break;
+
+        case PRIMITIVE_TYPE_SIGNED_LONG:
+          primitive_atom = sizeof(signed long);
+          break;
+
+        case PRIMITIVE_TYPE_SIGNED_LONG_LONG:
+          primitive_atom = sizeof(signed long);
+          break;
+
+        case PRIMITIVE_TYPE_UNSIGNED_CHAR:
+          primitive_atom = sizeof(unsigned char);
+          break;
+
+        case PRIMITIVE_TYPE_UNSIGNED_SHORT:
+          primitive_atom = sizeof(unsigned short);
+          break;
+
+        case PRIMITIVE_TYPE_UNSIGNED_INT:
+          primitive_atom = sizeof(unsigned int);
+          break;
+
+        case PRIMITIVE_TYPE_UNSIGNED_LONG:
+          primitive_atom = sizeof(unsigned long);
+          break;
+
+        case PRIMITIVE_TYPE_UNSIGNED_LONG_LONG:
+          primitive_atom = sizeof(unsigned long);
+          break;
+
+        case PRIMITIVE_TYPE_FLOAT:
+          primitive_atom = sizeof(float);
+          break;
+
+        case PRIMITIVE_TYPE_DOUBLE:
+          primitive_atom = sizeof(double);
+          break;
+
+        case PRIMITIVE_TYPE_LONG_DOUBLE:
+          primitive_atom = sizeof(long double);
+          break;
+
+        case PRIMITIVE_TYPE_LOGICAL:
+          primitive_atom = sizeof(primitive_logical_t);
+          break;
+
+        case PRIMITIVE_TYPE_SINGLE_COMPLEX:
+          primitive_atom = sizeof(primitive_complex_t<float>);
+          break;
+
+        case PRIMITIVE_TYPE_DOUBLE_COMPLEX:
+          primitive_atom = sizeof(primitive_complex_t<double>);
+          break;
+
+        case PRIMITIVE_TYPE_LOC_2INT:
+          primitive_atom = sizeof(primitive_loc_t<int,int>);
+          break;
+
+        case PRIMITIVE_TYPE_LOC_2FLOAT:
+          primitive_atom = sizeof(primitive_loc_t<float,float>);
+          break;
+
+        case PRIMITIVE_TYPE_LOC_2DOUBLE:
+          primitive_atom = sizeof(primitive_loc_t<double,double>);
+          break;
+
+        case PRIMITIVE_TYPE_LOC_SHORT_INT:
+          primitive_atom = sizeof(primitive_loc_t<short,int>);
+          break;
+
+        case PRIMITIVE_TYPE_LOC_FLOAT_INT:
+          primitive_atom = sizeof(primitive_loc_t<float,int>);
+          break;
+
+        case PRIMITIVE_TYPE_LOC_DOUBLE_INT:
+          primitive_atom = sizeof(primitive_loc_t<double,int>);
+          break;
+
+        default:
+          // Bad!!!
+          abort();
+          break;
+      };
+
+
+        AddSimple(primitive_size, primitive_size, 1);
         Complete();
-        SetAtomSize(1);
+        SetAtomSize(primitive_atom);
         AcquireReference();
     }
 

@@ -10,15 +10,52 @@ using namespace PAMI::Type;
 #define RETURN_ERR_PAMI(code, ...) return (code)
 #endif
 
-pami_type_t PAMI_TYPE_CONTIGUOUS         = new TypeContig;
-pami_type_t PAMI_TYPE_SIGNED_INT         = new TypeContig(sizeof(signed int));
-pami_type_t PAMI_TYPE_SIGNED_LONG        = new TypeContig(sizeof(signed long));
-pami_type_t PAMI_TYPE_SIGNED_LONG_LONG   = new TypeContig(sizeof(signed long long));
-pami_type_t PAMI_TYPE_UNSIGNED_INT       = new TypeContig(sizeof(unsigned int));
-pami_type_t PAMI_TYPE_UNSIGNED_LONG      = new TypeContig(sizeof(unsigned long));
-pami_type_t PAMI_TYPE_UNSIGNED_LONG_LONG = new TypeContig(sizeof(unsigned long long));
+pami_type_t PAMI_TYPE_CONTIGUOUS         = new TypeContig(TypeCode::PRIMITIVE_TYPE_CONTIGUOUS);
+pami_type_t PAMI_TYPE_BYTE               = new TypeContig(TypeCode::PRIMITIVE_TYPE_BYTE);         // ----------------------???
 
-pami_data_function PAMI_DATA_COPY = NULL;
+pami_type_t PAMI_TYPE_SIGNED_CHAR        = new TypeContig(TypeCode::PRIMITIVE_TYPE_SIGNED_CHAR);
+pami_type_t PAMI_TYPE_SIGNED_SHORT       = new TypeContig(TypeCode::PRIMITIVE_TYPE_SIGNED_SHORT);
+pami_type_t PAMI_TYPE_SIGNED_INT         = new TypeContig(TypeCode::PRIMITIVE_TYPE_SIGNED_INT);
+pami_type_t PAMI_TYPE_SIGNED_LONG        = new TypeContig(TypeCode::PRIMITIVE_TYPE_SIGNED_LONG);
+pami_type_t PAMI_TYPE_SIGNED_LONG_LONG   = new TypeContig(TypeCode::PRIMITIVE_TYPE_SIGNED_LONG_LONG);
+
+pami_type_t PAMI_TYPE_UNSIGNED_CHAR      = new TypeContig(TypeCode::PRIMITIVE_TYPE_UNSIGNED_CHAR);
+pami_type_t PAMI_TYPE_UNSIGNED_SHORT     = new TypeContig(TypeCode::PRIMITIVE_TYPE_UNSIGNED_SHORT);
+pami_type_t PAMI_TYPE_UNSIGNED_INT       = new TypeContig(TypeCode::PRIMITIVE_TYPE_UNSIGNED_INT);
+pami_type_t PAMI_TYPE_UNSIGNED_LONG      = new TypeContig(TypeCode::PRIMITIVE_TYPE_UNSIGNED_LONG);
+pami_type_t PAMI_TYPE_UNSIGNED_LONG_LONG = new TypeContig(TypeCode::PRIMITIVE_TYPE_UNSIGNED_LONG_LONG);
+
+pami_type_t PAMI_TYPE_FLOAT              = new TypeContig(TypeCode::PRIMITIVE_TYPE_FLOAT);
+pami_type_t PAMI_TYPE_DOUBLE             = new TypeContig(TypeCode::PRIMITIVE_TYPE_DOUBLE);
+pami_type_t PAMI_TYPE_LONG_DOUBLE        = new TypeContig(TypeCode::PRIMITIVE_TYPE_LONG_DOUBLE);
+
+pami_type_t PAMI_TYPE_LOGICAL            = new TypeContig(TypeCode::PRIMITIVE_TYPE_LOGICAL);
+
+pami_type_t PAMI_TYPE_SINGLE_COMPLEX     = new TypeContig(TypeCode::PRIMITIVE_TYPE_SINGLE_COMPLEX);
+pami_type_t PAMI_TYPE_DOUBLE_COMPLEX     = new TypeContig(TypeCode::PRIMITIVE_TYPE_DOUBLE_COMPLEX);
+
+pami_type_t PAMI_TYPE_LOC_2INT           = new TypeContig(TypeCode::PRIMITIVE_TYPE_LOC_2INT);
+pami_type_t PAMI_TYPE_LOC_2FLOAT         = new TypeContig(TypeCode::PRIMITIVE_TYPE_LOC_2FLOAT);
+pami_type_t PAMI_TYPE_LOC_2DOUBLE        = new TypeContig(TypeCode::PRIMITIVE_TYPE_LOC_2DOUBLE);
+pami_type_t PAMI_TYPE_LOC_SHORT_INT      = new TypeContig(TypeCode::PRIMITIVE_TYPE_LOC_SHORT_INT);
+pami_type_t PAMI_TYPE_LOC_FLOAT_INT      = new TypeContig(TypeCode::PRIMITIVE_TYPE_LOC_FLOAT_INT);
+pami_type_t PAMI_TYPE_LOC_DOUBLE_INT     = new TypeContig(TypeCode::PRIMITIVE_TYPE_LOC_DOUBLE_INT);
+
+
+pami_data_function PAMI_DATA_COPY        = (pami_data_function) TypeFunc::PRIMITIVE_FUNC_COPY;
+pami_data_function PAMI_DATA_NOOP        = (pami_data_function) TypeFunc::PRIMITIVE_FUNC_NOOP;
+pami_data_function PAMI_DATA_MAX         = (pami_data_function) TypeFunc::PRIMITIVE_FUNC_MAX;
+pami_data_function PAMI_DATA_MIN         = (pami_data_function) TypeFunc::PRIMITIVE_FUNC_MIN;
+pami_data_function PAMI_DATA_SUM         = (pami_data_function) TypeFunc::PRIMITIVE_FUNC_SUM;
+pami_data_function PAMI_DATA_PROD        = (pami_data_function) TypeFunc::PRIMITIVE_FUNC_PROD;
+pami_data_function PAMI_DATA_LAND        = (pami_data_function) TypeFunc::PRIMITIVE_FUNC_LAND;
+pami_data_function PAMI_DATA_LOR         = (pami_data_function) TypeFunc::PRIMITIVE_FUNC_LOR;
+pami_data_function PAMI_DATA_LXOR        = (pami_data_function) TypeFunc::PRIMITIVE_FUNC_LXOR;
+pami_data_function PAMI_DATA_BAND        = (pami_data_function) TypeFunc::PRIMITIVE_FUNC_BAND;
+pami_data_function PAMI_DATA_BOR         = (pami_data_function) TypeFunc::PRIMITIVE_FUNC_BOR;
+pami_data_function PAMI_DATA_BXOR        = (pami_data_function) TypeFunc::PRIMITIVE_FUNC_BXOR;
+pami_data_function PAMI_DATA_MAXLOC      = (pami_data_function) TypeFunc::PRIMITIVE_FUNC_MAXLOC;
+pami_data_function PAMI_DATA_MINLOC      = (pami_data_function) TypeFunc::PRIMITIVE_FUNC_MINLOC;
 
 extern "C" {
 
@@ -205,19 +242,21 @@ pami_result_t PAMI_Type_transform_data (void               * src_addr,
         RETURN_ERR_PAMI(PAMI_INVAL, "Using incomplete type.\n");
     }
 
-    if (dst_type_obj->IsContiguous()) {
-        // packing: non-contiguous to contiguous
-        TypeMachine packer(src_type_obj);
-        packer.SetCopyFunc(data_fn, cookie);
-        packer.MoveCursor(src_offset);
-        packer.Pack((char *)dst_addr + dst_offset, src_addr, size);
-
-    } else if (src_type_obj->IsContiguous()) {
-        // unpacking: contiguous to non-contiguous
+    if (src_type_obj->IsContiguous()) {
+        // unpacking: contiguous to non-contiguous (or contiguous)
         TypeMachine unpacker(dst_type_obj);
-        unpacker.SetCopyFunc(data_fn, cookie);
+        if (!unpacker.SetCopyFunc(data_fn, cookie))
+          return PAMI_INVAL;
         unpacker.MoveCursor(dst_offset);
         unpacker.Unpack(dst_addr, (char *)src_addr + src_offset, size);
+
+    } else if (dst_type_obj->IsContiguous()) {
+        // packing: non-contiguous to contiguous
+        TypeMachine packer(src_type_obj);
+        if (!packer.SetCopyFunc(data_fn, cookie))
+          return PAMI_INVAL;
+        packer.MoveCursor(src_offset);
+        packer.Pack((char *)dst_addr + dst_offset, src_addr, size);
 
     } else {
         // generic: non-contiguous to non-contiguous
@@ -225,7 +264,8 @@ pami_result_t PAMI_Type_transform_data (void               * src_addr,
         packer.MoveCursor(src_offset);
 
         TypeMachine unpacker(dst_type_obj);
-        unpacker.SetCopyFunc(data_fn, cookie);
+        if (!unpacker.SetCopyFunc(data_fn, cookie))
+          return PAMI_INVAL;
         unpacker.MoveCursor(dst_offset);
 
         // use a temporary buffer to copy in and out data
@@ -234,8 +274,8 @@ pami_result_t PAMI_Type_transform_data (void               * src_addr,
 
         for (size_t offset = 0; offset < size; offset += TMP_BUF_SIZE) {
             size_t bytes_to_copy = std::min(size - offset, TMP_BUF_SIZE);
-            packer.Pack(tmp_buf, src_addr, bytes_to_copy);
-            unpacker.Unpack(dst_addr, tmp_buf, bytes_to_copy);
+            packer.Pack(tmp_buf, (char *)src_addr + offset, bytes_to_copy);
+            unpacker.Unpack((char *)dst_addr + offset, tmp_buf, bytes_to_copy);
         }
     }
 

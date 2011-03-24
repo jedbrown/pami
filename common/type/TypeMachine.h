@@ -6,6 +6,7 @@
 #define __common_type_TypeMachine_h__
 
 #include "TypeCode.h"
+#include "TypeFunc.h"
 
 /*
    0         1         2         3
@@ -25,9 +26,6 @@ namespace PAMI
 {
   namespace Type
   {
-
-    typedef void (*TypeMachineCopyFunc)(void *to, void *from, size_t size, void *cookie);
-
     class TypeMachine
     {
         public:
@@ -37,7 +35,7 @@ namespace PAMI
 
             void Show() const;
 
-            void SetCopyFunc(TypeMachineCopyFunc new_copy_func, void *new_cookie);
+            bool SetCopyFunc(TypeFunc::CopyFunction new_copy_func, void *new_cookie);
             TypeCode * GetType() const;
             size_t GetCursor() const;
             size_t GetCursorDisp() const;
@@ -51,7 +49,7 @@ namespace PAMI
         private:
             TypeCode  *type;
             void  *cookie;
-            TypeMachineCopyFunc  copy_func;
+            TypeFunc::CopyFunction  copy_func;
 
             struct Cursor {
                 size_t  pc;        // program counter for code
@@ -89,6 +87,7 @@ namespace PAMI
             void ExecuteCall(TypeCode::Op *op);
             void ExecuteShift(TypeCode::Op *op);
             void ExecuteEnd();
+
     };
 
     inline TypeMachine::TypeMachine(TypeCode *type)
@@ -144,10 +143,27 @@ namespace PAMI
         return type;
     }
 
-    inline void TypeMachine::SetCopyFunc(TypeMachineCopyFunc new_copy_func, void *new_cookie)
+    inline bool TypeMachine::SetCopyFunc(TypeFunc::CopyFunction new_copy_func, void *new_cookie)
     {
-        copy_func = new_copy_func;
-        cookie    = new_cookie;
+        const uintptr_t fn = (const uintptr_t) new_copy_func;
+
+        if ((type->primitive == TypeCode::PRIMITIVE_TYPE_USERDEFINED) ||
+            (fn >= TypeFunc::PRIMITIVE_FUNC_COUNT))
+        {
+          copy_func = new_copy_func;
+          cookie    = new_cookie;
+        }
+        else
+        {
+          copy_func = TypeFunc::GetCopyFunction (type->primitive, (TypeFunc::primitive_func_t) fn);
+          if (copy_func == Type::Func::error)
+          {
+            // Unsupported primitive type / primitive operation combination
+            return false;
+          }
+        }
+
+        return true;
     }
 
     inline size_t TypeMachine::GetCursor() const
