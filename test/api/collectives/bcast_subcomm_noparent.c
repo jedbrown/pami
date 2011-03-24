@@ -120,6 +120,11 @@ int main(int argc, char*argv[])
   size_t                 half        = num_tasks / 2;
   range     = (pami_geometry_range_t *)malloc(((num_tasks + 1) / 2) * sizeof(pami_geometry_range_t));
 
+  /* \note Test environment variable" TEST_VERBOSE=N     */
+  char* sVerbose = getenv("TEST_VERBOSE");
+
+  if(sVerbose) gVerbose=atoi(sVerbose); /* set the global defined in coll_util.h */
+
   /* \note Test environment variable" TEST_PROTOCOL={-}substring.       */
   /* substring is used to select, or de-select (with -) test protocols */
   unsigned selector = 1;

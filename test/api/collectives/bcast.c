@@ -79,6 +79,13 @@ int main (int argc, char ** argv)
   pami_xfer_t          barrier;
   pami_xfer_t          broadcast;
 
+  /* \note Test environment variable" TEST_VERBOSE=N     */
+  char* sVerbose = getenv("TEST_VERBOSE");
+
+  if(sVerbose) gVerbose=atoi(sVerbose); /* set the global defined in coll_util.h */
+
+  /* \note Test environment variable" TEST_PROTOCOL={-}substring.       */
+  /* substring is used to select, or de-select (with -) test protocols */
   unsigned selector = 1;
   char* selected = getenv("TEST_PROTOCOL");
   if(!selected) selected = "";
