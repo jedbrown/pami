@@ -506,7 +506,11 @@ namespace PAMI
             PAMI_ENDPOINT_INFO(parameters->dest, task, offset);
 
             // Verify that this task is addressable by this packet device
-            if (unlikely(_short_model.device.isPeer(task) == false)) return PAMI_ERROR;
+            if (unlikely(_short_model.device.isPeer(task) == false))
+            {
+              errno = EHOSTUNREACH;
+              return PAMI_CHECK_ERRNO;
+            }
 
             // Specify the protocol metadata to send with the application
             // metadata in the packet. This metadata is copied
@@ -587,7 +591,11 @@ namespace PAMI
             PAMI_ENDPOINT_INFO(parameters->send.dest, task, offset);
 
             // Verify that this task is addressable by this packet device
-            if (unlikely(_short_model.device.isPeer (task) == false)) return PAMI_ERROR;
+            if (unlikely(_short_model.device.isPeer (task) == false))
+            {
+              errno = EHOSTUNREACH;
+              return PAMI_CHECK_ERRNO;
+            }
 
             const size_t header_bytes = parameters->send.header.iov_len;
             const size_t data_bytes   = parameters->send.data.iov_len;
