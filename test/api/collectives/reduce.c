@@ -13,7 +13,7 @@
 
 #include "../pami_util.h"
 
-/*define this if you want to validate the data for unsigned sums */
+/*define this if you want to validate the data */
 #define CHECK_DATA
 
 #define FULL_TEST
@@ -178,6 +178,15 @@ void initialize_sndbuf (void *buf, int count, int op, int dt, int task_id)
           ibuf[i] = i;
         }
     }
+  else if (op_array[op] == PAMI_SUM && dt_array[dt] == PAMI_DOUBLE)
+  {
+    double *dbuf = (double *)  buf;
+
+    for (i = 0; i < count; i++)
+    {
+      dbuf[i] = 1.0*i;
+    }
+  }
   else
     {
       size_t sz;
@@ -207,6 +216,23 @@ int check_rcvbuf (void *buf, int count, int op, int dt, int num_tasks)
             }
         }
     }
+  else if (op_array[op] == PAMI_SUM && dt_array[dt] == PAMI_DOUBLE)
+  {
+    double *rbuf = (double *)  buf;
+
+    for (i = 0; i < count; i++)
+    {
+      if (rbuf[i] != 1.0 * i * num_tasks)
+      {
+        fprintf(stderr, "Check(%d) failed rbuf[%d] %f != %f\n", count, i, rbuf[i], (double)1.0*num_tasks);
+        exit(0);
+        err = -1;
+#ifndef FULL_TEST
+        return err;
+#endif
+      }
+    }
+  }
 
   return err;
 }
@@ -314,7 +340,6 @@ int main(int argc, char*argv[])
   for (i = 0; i < op_count; i++)
     for (j = 0; j < dt_count; j++)
       validTable[i][j] = 1;
-
   /*--------------------------------------*/
   /* Disable unsupported ops on complex   */
   /* Only sum, prod                       */
@@ -353,14 +378,16 @@ int main(int argc, char*argv[])
       validTable[i][j] = 0;
 
   validTable[OP_SUM][DT_UNSIGNED_INT] = 1;
+  validTable[OP_SUM][DT_DOUBLE] = 1;
 
 #endif
 
   for (nalg = 0; nalg < reduce_num_algorithm[0]; nalg++)
     {
-      if (task_id == 0)
+      if (task_id == 0) // root not set yet
         {
-          printf("# Reduce Bandwidth Test -- root = %d protocol: %s\n", root, reduce_always_works_md[nalg].name);
+          printf("# Reduce Bandwidth Test -- root varies, protocol: %s\n", 
+                 reduce_always_works_md[nalg].name);
           printf("# Size(bytes)           cycles    bytes/sec    usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
         }
@@ -388,7 +415,7 @@ int main(int argc, char*argv[])
           {
             if (validTable[op][dt])
               {
-                if (task_id == root)
+                if (task_id == 0) // root not set yet
                   printf("Running Reduce: %s, %s\n", dt_array_str[dt], op_array_str[op]);
 
                 for (i = 1; i <= COUNT; i *= 2)
@@ -403,44 +430,44 @@ int main(int argc, char*argv[])
                     else
                       niter = NITERBW;
 
+                    root = 0;
+
+
+                    reduce.cmd.xfer_reduce.stypecount = dataSent;
+                    reduce.cmd.xfer_reduce.rtypecount = dataSent;
+                    reduce.cmd.xfer_reduce.dt = dt_array[dt];
+                    reduce.cmd.xfer_reduce.op = op_array[op];
+
 #ifdef CHECK_DATA
                     initialize_sndbuf (sbuf, i, op, dt, task_id);
 #endif
                     blocking_coll(context, &barrier, &bar_poll_flag);
                     ti = timer();
-                    root = 0;
 
                     for (j = 0; j < niter; j++)
-                      {
-                        reduce.cmd.xfer_reduce.root    = root;
+                    {
+                      reduce.cmd.xfer_reduce.root    = root;
 
-                        if (task_id == root)
-                          reduce.cmd.xfer_reduce.rcvbuf    = rbuf;
-                        else
-                          reduce.cmd.xfer_reduce.rcvbuf    = NULL;
+                      if (task_id == root)
+                        reduce.cmd.xfer_reduce.rcvbuf    = rbuf;
+                      else
+                        reduce.cmd.xfer_reduce.rcvbuf    = NULL;
+                      blocking_coll(context, &reduce, &reduce_poll_flag);
 
-                        reduce.cmd.xfer_reduce.stypecount = dataSent;
-                        reduce.cmd.xfer_reduce.rtypecount = dataSent;
-                        reduce.cmd.xfer_reduce.dt = dt_array[dt];
-                        reduce.cmd.xfer_reduce.op = op_array[op];
-                        blocking_coll(context, &reduce, &reduce_poll_flag);
-
-                        if (j < niter - 1)
-                          root = (root + 1) % num_tasks;
-                      }
+                      root = (root + 1) % num_tasks;
+                    }
 
                     tf = timer();
                     blocking_coll(context, &barrier, &bar_poll_flag);
 
 #ifdef CHECK_DATA
 
-                    if (task_id == root)
-                      {
-                        int rc = check_rcvbuf (rbuf, i, op, dt, num_tasks);
+                    if (task_id < niter) // was root at least once in niter loop
+                    {
+                      int rc = check_rcvbuf (rbuf, i, op, dt, num_tasks);
 
-                        /*assert (rc == 0); */
-                        if (rc) fprintf(stderr, "FAILED validation\n");
-                      }
+                      if (rc) fprintf(stderr, "FAILED validation\n");
+                    }
 
 #endif
 
