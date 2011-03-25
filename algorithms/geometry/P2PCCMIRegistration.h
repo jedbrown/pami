@@ -107,6 +107,8 @@ namespace PAMI
             _ascs_binomial_broadcast_factory(),
             _active_binomial_broadcast_factory(),
             _binomial_allreduce_factory(),
+            _binomial4_allreduce_factory(),
+            _binomial8_allreduce_factory(),
             _ascs_binomial_allreduce_factory(),
             _ascs_binomial_reduce_factory(),
             _ascs_binomial_scatter_factory(),
@@ -242,6 +244,12 @@ namespace PAMI
                                       _context_id);
               geometry->addCollective(PAMI_XFER_ALLREDUCE,
                                       _binomial_allreduce_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_ALLREDUCE,
+                                      _binomial4_allreduce_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_ALLREDUCE,
+                                      _binomial8_allreduce_factory,
                                       _context_id);
               geometry->addCollective(PAMI_XFER_ALLREDUCE,
                                       _ascs_binomial_allreduce_factory,
@@ -401,6 +409,12 @@ namespace PAMI
             setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAllreduce::Binomial::Factory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device,  _binomial_allreduce_factory);
             new ((void*)_binomial_allreduce_factory) CCMI::Adaptor::P2PAllreduce::Binomial::Factory(&_rbconnmgr, ni_am, CCMI::Adaptor::P2PAllreduce::Binomial::Composite::cb_receiveHead);
             // ----------------------------------------------------
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAllreduce::Binomial::Factory4,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device,  _binomial4_allreduce_factory);
+            new ((void*)_binomial4_allreduce_factory) CCMI::Adaptor::P2PAllreduce::Binomial::Factory4(&_rbconnmgr, ni_am, CCMI::Adaptor::P2PAllreduce::Binomial::Composite4::cb_receiveHead);
+            // ----------------------------------------------------
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PAllreduce::Binomial::Factory8,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device,  _binomial8_allreduce_factory);
+            new ((void*)_binomial8_allreduce_factory) CCMI::Adaptor::P2PAllreduce::Binomial::Factory8(&_rbconnmgr, ni_am, CCMI::Adaptor::P2PAllreduce::Binomial::Composite8::cb_receiveHead);
+            // ----------------------------------------------------
 
             // ----------------------------------------------------
             // Setup and Construct an asynchronous, comm_id/seq_num binomial  allreduce factory from active message ni and p2p protocol
@@ -527,6 +541,8 @@ namespace PAMI
             _ascs_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
             _active_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
             _binomial_allreduce_factory->setMapIdToGeometry(mapidtogeometry);
+            _binomial4_allreduce_factory->setMapIdToGeometry(mapidtogeometry);
+            _binomial8_allreduce_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_binomial_allreduce_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_binomial_reduce_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_binomial_scatter_factory->setMapIdToGeometry(mapidtogeometry);
@@ -672,6 +688,16 @@ namespace PAMI
                          CCMI::Adaptor::P2PAllreduce::Binomial::Factory,
                          _binomial_allreduce_factory,
                          _rbconnmgr);
+            SETUPFACTORY(T_NI_ActiveMessage,
+                         ni_am,
+                         CCMI::Adaptor::P2PAllreduce::Binomial::Factory4,
+                         _binomial4_allreduce_factory,
+                         _rbconnmgr);
+            SETUPFACTORY(T_NI_ActiveMessage,
+                         ni_am,
+                         CCMI::Adaptor::P2PAllreduce::Binomial::Factory8,
+                         _binomial8_allreduce_factory,
+                         _rbconnmgr);
 #undef SETUPFACTORY
 
             // Setup Allreduce
@@ -689,6 +715,36 @@ namespace PAMI
               CCMI::Adaptor::P2PAllreduce::Binomial::Factory(&_rbconnmgr,
                                                              ni_am,
                                                              CCMI::Adaptor::P2PAllreduce::Binomial::Composite::cb_receiveHead);
+
+            setupFactory<T_NI_ActiveMessage,
+                         T_Protocol1,
+                         T_Device1,
+                         T_Protocol2,
+                         T_Device2,
+                         CCMI::Adaptor::P2PAllreduce::Binomial::Factory4,
+                         NativeInterfaceCommon::MULTICAST_ONLY>(ni_am,
+                                                                         device1,
+                                                                         device2,
+                                                                         _binomial4_allreduce_factory);
+            new ((void*)_binomial4_allreduce_factory)
+              CCMI::Adaptor::P2PAllreduce::Binomial::Factory4(&_rbconnmgr,
+                                                             ni_am,
+                                                             CCMI::Adaptor::P2PAllreduce::Binomial::Composite4::cb_receiveHead);
+
+            setupFactory<T_NI_ActiveMessage,
+                         T_Protocol1,
+                         T_Device1,
+                         T_Protocol2,
+                         T_Device2,
+                         CCMI::Adaptor::P2PAllreduce::Binomial::Factory8,
+                         NativeInterfaceCommon::MULTICAST_ONLY>(ni_am,
+                                                                         device1,
+                                                                         device2,
+                                                                         _binomial8_allreduce_factory);
+            new ((void*)_binomial8_allreduce_factory)
+              CCMI::Adaptor::P2PAllreduce::Binomial::Factory8(&_rbconnmgr,
+                                                             ni_am,
+                                                             CCMI::Adaptor::P2PAllreduce::Binomial::Composite8::cb_receiveHead);
 
             // Setup and Construct an asynchronous, comm_id/seq_num binomial  allreduce factory from active message ni and p2p protocol
             setupFactory<T_NI_ActiveMessage,
@@ -938,6 +994,8 @@ namespace PAMI
             _ascs_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
             _active_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
             _binomial_allreduce_factory->setMapIdToGeometry(mapidtogeometry);
+            _binomial4_allreduce_factory->setMapIdToGeometry(mapidtogeometry);
+            _binomial8_allreduce_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_binomial_allreduce_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_binomial_reduce_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_binomial_scatter_factory->setMapIdToGeometry(mapidtogeometry);
@@ -1002,6 +1060,8 @@ namespace PAMI
 
           // CCMI Binomial Allreduce
           CCMI::Adaptor::P2PAllreduce::Binomial::Factory                  *_binomial_allreduce_factory;
+          CCMI::Adaptor::P2PAllreduce::Binomial::Factory4                 *_binomial4_allreduce_factory;
+          CCMI::Adaptor::P2PAllreduce::Binomial::Factory8                 *_binomial8_allreduce_factory;
 
           // CCMI Async [All]Reduce
           CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomAllreduceFactory  *_ascs_binomial_allreduce_factory;

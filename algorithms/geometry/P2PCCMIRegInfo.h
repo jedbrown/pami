@@ -351,6 +351,40 @@ namespace CCMI
           CCMI::ConnectionManager::RankBasedConnMgr>
         Factory;
 
+        extern inline void binomial4_allreduce_metadata(pami_metadata_t *m)
+        {
+          new(m) PAMI::Geometry::Metadata("X0:MultinomialRadix4:P2P:P2P");
+        }
+
+        typedef CCMI::Adaptor::Allreduce::MultiColorCompositeT
+        < 1, CCMI::Executor::AllreduceBaseExec<CCMI::ConnectionManager::RankBasedConnMgr>,
+          CCMI::Schedule::TopoMultinomial4,
+          CCMI::ConnectionManager::RankBasedConnMgr,
+          get_colors > Composite4;
+
+        typedef CCMI::Adaptor::Allreduce::ProtocolFactoryT
+        < Composite4,
+          binomial4_allreduce_metadata,
+          CCMI::ConnectionManager::RankBasedConnMgr>
+        Factory4;
+
+        extern inline void binomial8_allreduce_metadata(pami_metadata_t *m)
+        {
+          new(m) PAMI::Geometry::Metadata("X0:MultinomialRadix8:P2P:P2P");
+        }
+
+        typedef CCMI::Adaptor::Allreduce::MultiColorCompositeT
+        < 1, CCMI::Executor::AllreduceBaseExec<CCMI::ConnectionManager::RankBasedConnMgr>,
+          CCMI::Schedule::TopoMultinomial8,
+          CCMI::ConnectionManager::RankBasedConnMgr,
+          get_colors > Composite8;
+
+        typedef CCMI::Adaptor::Allreduce::ProtocolFactoryT
+        < Composite8,
+          binomial8_allreduce_metadata,
+          CCMI::ConnectionManager::RankBasedConnMgr>
+        Factory8;
+
        extern inline unsigned getKey(unsigned                                   root,
                        unsigned                                   connid,
                        PAMI_GEOMETRY_CLASS                      * geometry,
