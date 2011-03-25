@@ -19,13 +19,11 @@
 #include "components/memory/MemoryManager.h"
 #include "components/memory/shmem/SharedMemoryManager.h"
 
-namespace PAMI
-{
-  namespace Memory
-  {
-    class HeapMemoryManager : public MemoryManager
-    {
-    private:
+namespace PAMI {
+namespace Memory {
+
+class HeapMemoryManager : public MemoryManager {
+private:
 	inline void MM_RESET_STATS() {
 		_num_allocs = 0;
 		_num_frees = 0;
@@ -33,45 +31,48 @@ namespace PAMI
 		_freed_bytes = 0;
 	}
 	inline void MM_DUMP_STATS() {
-		fprintf(stderr, "HeapMemoryManager: "
-					"%zd allocs, %zd frees, total %zd, freed %zd\n",
-			_num_allocs, _num_frees,
+		fprintf(stderr, "%s: "
+			"%zd allocs, %zd frees, total %zd, freed %zd\n",
+			getName(), _num_allocs, _num_frees,
 			_total_bytes, _freed_bytes);
 	}
-    public:
+public:
 
-      inline HeapMemoryManager () :
-        MemoryManager ()
-        {
+	inline HeapMemoryManager() :
+	MemoryManager() {
 		COMPILE_TIME_ASSERT(sizeof(HeapMemoryManager) <= sizeof(SharedMemoryManager));
 		_attrs = PAMI_MM_PROCSCOPE;
 #ifdef MM_DEBUG // set/unset in MemoryManager.h
-		_debug = (getenv("PAMI_MM_DEBUG") != NULL);
+		_debug = setup_debug();
 		MM_RESET_STATS();
 		// since currently this can't track number of bytes freed,
 		// don't bother trying to track current/max bytes.
-#endif // MM_DEBUG
-        }
+#else // !MM_DEBUG
+		if (__global.mapping.task() == 0 && getenv("PAMI_MM_DEBUG")) {
+			fprintf(stderr, "WARNING: env PAMI_MM_DEBUG is set "
+				"but MM_DEBUG support was not compiled-in\n");
+		}
+#endif // !MM_DEBUG
+	}
 
-      ~HeapMemoryManager()
-	{
+	~HeapMemoryManager() {
 		// this is only called from process exit,
 		// so no need to actually free - the memory
 		// is all being reclaimed by the OS.
 #ifdef MM_DEBUG
 		if (_debug) {
 			MM_DUMP_STATS();
+			// if (_debug > 1) _meta.dump(getName()); // no meta data to dump
 		}
 #endif // MM_DEBUG
 	}
 
-	inline const char *getName() { return "HeapMemoryManager"; }
+	inline const char *getName() { return "/HeapMemoryManager"; }
 
-	inline pami_result_t init (MemoryManager *mm, size_t bytes,
-			size_t alignment, size_t new_align,
-			unsigned attrs = 0, const char *key = NULL,
-			MM_INIT_FN *init_fn = NULL, void *cookie = NULL)
-	{
+	inline pami_result_t init(MemoryManager *mm, size_t bytes,
+				  size_t alignment, size_t new_align,
+				  unsigned attrs = 0, const char *key = NULL,
+				  MM_INIT_FN *init_fn = NULL, void *cookie = NULL) {
 		PAMI_abortf("HeapMemoryManager cannot be init()");
 		return PAMI_ERROR;
 	}
@@ -87,11 +88,10 @@ namespace PAMI
 		return PAMI_SUCCESS;
 	}
 
-	inline pami_result_t memalign (void ** memptr, size_t alignment, size_t bytes,
-			const char *key = NULL,
-			MM_INIT_FN *init_fn = NULL, void *cookie = NULL)
-	{
-		if (alignment < _alignment) alignment = _alignment;
+	inline pami_result_t memalign(void **memptr, size_t alignment, size_t bytes,
+				      const char *key = NULL,
+				      MM_INIT_FN *init_fn = NULL, void *cookie = NULL) {
+		if (alignment < _alignment) { alignment = _alignment; }
 #ifdef USE_MEMALIGN
 		int rc = posix_memalign(memptr, alignment, bytes);
 		if (rc != 0) {
@@ -99,15 +99,14 @@ namespace PAMI
 		}
 #else
 		void *ptr = malloc(bytes + alignment);
-		if (!ptr) return PAMI_ERROR;
+		if (!ptr) { return PAMI_ERROR; }
 		*memptr = (void *)(((uintptr_t)ptr + alignment - 1) &
-						~(alignment - 1));
+				   ~(alignment - 1));
 		// can't free this! users ptr is not the one malloc knows about...
 #endif
 		memset(*memptr, 0, bytes);	// needed for 1 proc/node, when
-						// simulating shared_mm...
-		if (init_fn)
-		{
+		// simulating shared_mm...
+		if (init_fn) {
 			init_fn(*memptr, bytes, key, _attrs, cookie);
 		}
 #ifdef MM_DEBUG
@@ -117,10 +116,9 @@ namespace PAMI
 		}
 #endif // MM_DEBUG
 		return PAMI_SUCCESS;
-        }
+	}
 
-	inline void free(void *mem)
-	{
+	inline void free(void *mem) {
 #ifdef MM_DEBUG
 		if (_debug) {
 			++_num_frees;
@@ -139,24 +137,38 @@ namespace PAMI
 
 	inline void dump(const char *str) {
 		if (str) {
-			fprintf(stderr, "%s: HeapMemoryManager %x\n", str,
-					_attrs);
+			fprintf(stderr, "%s: %s %x\n", str, getName(), _attrs);
 		} else {
-			fprintf(stderr, "HeapMemoryManager %x\n",
-					_attrs);
+			fprintf(stderr, "%s %x\n", getName(), _attrs);
 		}
+#ifdef MM_DEBUG
+		if (_debug) {
+			MM_DUMP_STATS();
+		}
+#endif // MM_DEBUG
 	}
 
-    protected:
+protected:
 #ifdef MM_DEBUG
-	bool _debug;
+	long _debug;
 	size_t _num_allocs;
 	size_t _num_frees;
 	size_t _total_bytes;
 	size_t _freed_bytes;
 #endif // MM_DEBUG
-    };
-  };
-};
+}; // class HeapMemoryManager
+
+}; // namespace Memory
+}; // namespace PAMI
 
 #endif // __pami_components_memory_heap_heapmemorymanager_h__
+
+//
+// astyle info    http://astyle.sourceforge.net
+//
+// astyle options --style=java --indent=force-tab=8 --indent-preprocessor
+// astyle options --indent-col1-comments --max-instatement-indent=79
+// astyle options --min-conditional-indent=2 --pad-oper --unpad-paren
+// astyle options --pad-header --add-brackets --keep-one-line-blocks
+// astyle options --keep-one-line-statements --align-pointer=name --lineend=linux
+//

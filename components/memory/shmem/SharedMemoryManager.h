@@ -30,29 +30,27 @@
 #define TRACE_ERR(x)  //fprintf x
 #endif
 
-namespace PAMI
-{
-  namespace Memory
-  {
-    class SharedMemoryManager : public MemoryManager
-    {
-	private:
+namespace PAMI {
+namespace Memory {
+
+class SharedMemoryManager : public MemoryManager {
+private:
 #ifdef MM_DEBUG // set/unset in MemoryManager.h
-		inline void MM_RESET_STATS() {
-			_num_allocs = 0;
-			_num_frees = 0;
-			_loc_bytes = 0;
-			_rep_bytes = 0;
-			_fre_bytes = 0;
-		}
-		inline void MM_DUMP_STATS() {
-			fprintf(stderr, "SharedMemoryManager: %zd allocs, %zd frees, "
-					"local %zd, repeat %zd, freed %zd\n",
-				_num_allocs, _num_frees,
-				_loc_bytes, _rep_bytes, _fre_bytes);
-		}
+	inline void MM_RESET_STATS() {
+		_num_allocs = 0;
+		_num_frees = 0;
+		_loc_bytes = 0;
+		_rep_bytes = 0;
+		_fre_bytes = 0;
+	}
+	inline void MM_DUMP_STATS() {
+		fprintf(stderr, "%s: %zd allocs, %zd frees, "
+			"local %zd, repeat %zd, freed %zd\n",
+			getName(), _num_allocs, _num_frees,
+			_loc_bytes, _rep_bytes, _fre_bytes);
+	}
 #endif // MM_DEBUG
-      public:
+public:
 
 	/// \brief This class is a wrapper for the shm_open/ftruncate/mmap sequence
 	///
@@ -66,11 +64,10 @@ namespace PAMI
 	/// Support for free() is not provided yet, but allocations must still be
 	/// tracked for the afore mentioned reason.
 	///
-        inline SharedMemoryManager(size_t jobid, MemoryManager *mm) :
-          MemoryManager(),
-	  _meta(),
-	  _jobid(jobid)
-        {
+	inline SharedMemoryManager(size_t jobid, MemoryManager *mm) :
+	MemoryManager(),
+	_meta(),
+	_jobid(jobid) {
 		// This could be better decided based on number of processes
 		// per node, but can't get that from __global because of
 		// circular dependencies. Instead, Global could check and
@@ -80,16 +77,16 @@ namespace PAMI
 		_meta.init(mm, "/pami-shmemmgr");
 		_enabled = true;
 #ifdef MM_DEBUG
-		_debug = (getenv("PAMI_MM_DEBUG") != NULL);
+		_debug = setup_debug();
 		MM_RESET_STATS();
 #endif // MM_DEBUG
-        }
+	}
 
-        ~SharedMemoryManager ()
-        {
+	~SharedMemoryManager() {
 #ifdef MM_DEBUG
 		if (_debug) {
 			MM_DUMP_STATS();
+			if (_debug > 1) _meta.dump(getName());
 		}
 #endif // MM_DEBUG
 		// if this only happens at program exit, just unlink all keys...
@@ -100,15 +97,14 @@ namespace PAMI
 		// could free up all the meta data, but it is in heap and
 		// about to be freed by _exit().
 		// _meta.~MemoryManagerMeta<MemoryManagerOSShmAlloc>(); // already called!?
-        }
+	}
 
-	inline const char *getName() { return "SharedMemoryManager"; }
+	inline const char *getName() { return "/SharedMemoryManager"; }
 
-	inline pami_result_t init (MemoryManager *mm, size_t bytes,
-			size_t alignment, size_t new_align,
-			unsigned attrs = 0, const char *key = NULL,
-			MM_INIT_FN *init_fn = NULL, void *cookie = NULL)
-	{
+	inline pami_result_t init(MemoryManager *mm, size_t bytes,
+				  size_t alignment, size_t new_align,
+				  unsigned attrs = 0, const char *key = NULL,
+				  MM_INIT_FN *init_fn = NULL, void *cookie = NULL) {
 		PAMI_abortf("SharedMemoryManager cannot be init()");
 		return PAMI_ERROR;
 	}
@@ -122,16 +118,15 @@ namespace PAMI
 #endif // MM_DEBUG
 		pami_result_t rc = PAMI_SUCCESS;
 		// does the OS ensure that memory is zeroed when re-used???
-		if (force) rc = _meta.reset(); // acquires lock...
+		if (force) { rc = _meta.reset(); } // acquires lock...
 		return rc;
 	}
 
 	/// \todo How to enforce alignment?
-	inline pami_result_t memalign (void ** memptr, size_t alignment, size_t bytes,
-			const char *key = NULL,
-			MM_INIT_FN *init_fn = NULL, void *cookie = NULL)
-	{
-//fprintf(stderr,">> SharedMemoryManager::memalign(), this = %p\n", this);
+	inline pami_result_t memalign(void **memptr, size_t alignment, size_t bytes,
+				      const char *key = NULL,
+				      MM_INIT_FN *init_fn = NULL, void *cookie = NULL) {
+		//fprintf(stderr,">> SharedMemoryManager::memalign(), this = %p\n", this);
 		PAMI_assert_debugf(_attrs == PAMI_MM_NODESCOPE, "SharedMemoryManager not shared");
 		// May need to enforce uniquness at a higher level than just this
 		// PAMI job. May need to acquire a unique prefix from, say, Mapping
@@ -140,12 +135,12 @@ namespace PAMI
 		//
 		char nkey[MMKEYSIZE];
 		if (key && key[0]) {
-			if (*key == '/') ++key; // or... allow "relative" vs. "absolute" keys?
+			if (*key == '/') { ++key; } // or... allow "relative" vs. "absolute" keys?
 			snprintf(nkey, sizeof(nkey), "/job%zd-%s", _jobid, key);
 		} else {
 			// this should be unique... or not? memptr might not be...
 			snprintf(nkey, sizeof(nkey), "/job%zd-pid%d-%lx", _jobid,
-						getpid(), (unsigned long)memptr);
+				 getpid(), (unsigned long)memptr);
 			if (key) {
 				// callers wants to know the unique key we chose...
 				strcpy((char *)key, nkey);
@@ -153,10 +148,10 @@ namespace PAMI
 		}
 		// ... use 'nkey' here-after...
 		//
-//fprintf(stderr,"   SharedMemoryManager::memalign(), key = '%s', nkey = '%s'\n", key, nkey);
+		//fprintf(stderr,"   SharedMemoryManager::memalign(), key = '%s', nkey = '%s'\n", key, nkey);
 
 
-		if (alignment < _alignment) alignment = _alignment;
+		if (alignment < _alignment) { alignment = _alignment; }
 		void *ptr = NULL;
 		bool first = false;
 		// note, inital (worst-case) padding now set, when
@@ -185,10 +180,10 @@ namespace PAMI
 
 		lrc = shm_open(nkey, O_CREAT | O_EXCL | O_RDWR, 0600);
 		first = (lrc != -1); // must be the first...
-//fprintf(stderr,"   SharedMemoryManager::memalign(), lrc = %d, first = %d\n", lrc, first);
+		//fprintf(stderr,"   SharedMemoryManager::memalign(), lrc = %d, first = %d\n", lrc, first);
 		if (first) {
 			fd = lrc;
-                        lrc = ftruncate(fd, max); // this zeroes memory...
+			lrc = ftruncate(fd, max); // this zeroes memory...
 			if (lrc == -1) {
 				close(fd);
 				shm_unlink(nkey); // yes?
@@ -203,10 +198,9 @@ namespace PAMI
 		}
 		ptr = mmap(NULL, max, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 		close(fd); // no longer needed
-		if (ptr == NULL || ptr == MAP_FAILED)
-		{
+		if (ptr == NULL || ptr == MAP_FAILED) {
 			// segment is not mapped...
-			if (first) shm_unlink(nkey); // yes?
+			if (first) { shm_unlink(nkey); } // yes?
 			return PAMI_ERROR;
 		}
 		// shared segment acquired and mapped, now sync and init.
@@ -220,12 +214,12 @@ namespace PAMI
 
 		_meta.release();
 
-//fprintf(stderr,"memalign(), init_fn = %p, first = %d, nkey = '%s'\n", init_fn, first, nkey);
+		//fprintf(stderr,"memalign(), init_fn = %p, first = %d, nkey = '%s'\n", init_fn, first, nkey);
 
 		if (init_fn) {
 			if (first) {
 				init_fn(alloc->userMem(), alloc->userSize(),
-						alloc->key(), _attrs, cookie);
+					alloc->key(), _attrs, cookie);
 				alloc->initDone();
 			} else {
 				alloc->waitDone();
@@ -274,20 +268,24 @@ namespace PAMI
 
 	inline void dump(const char *str) {
 		if (str) {
-			fprintf(stderr, "%s: SharedMemoryManager %x\n", str,
-					_attrs);
+			fprintf(stderr, "%s: %s %x\n", str, getName(), _attrs);
 		} else {
-			fprintf(stderr, "SharedMemoryManager %x\n",
-					_attrs);
+			fprintf(stderr, "%s %x\n", getName(), _attrs);
 		}
+#ifdef MM_DEBUG
+		if (_debug) {
+			MM_DUMP_STATS();
+		}
+#endif // MM_DEBUG
+		_meta.dump(getName());
 	}
 
-    protected:
+protected:
 
 	MemoryManagerMeta<MemoryManagerOSShmAlloc> _meta;
 	size_t _jobid;
 #ifdef MM_DEBUG
-	bool _debug;
+	long _debug;
 	size_t _num_allocs;
 	size_t _num_frees;
 	size_t _loc_bytes;
@@ -295,8 +293,19 @@ namespace PAMI
 	size_t _fre_bytes;
 #endif // MM_DEBUG
 
-    }; // class SharedMemoryManager
-  }; // namespace Memory
+}; // class SharedMemoryManager
+
+}; // namespace Memory
 }; // namespace PAMI
 #undef TRACE_ERR
 #endif // __pami_components_memory_shmem_sharedmemorymanager_h__
+
+//
+// astyle info    http://astyle.sourceforge.net
+//
+// astyle options --style=java --indent=force-tab=8 --indent-preprocessor
+// astyle options --indent-col1-comments --max-instatement-indent=79
+// astyle options --min-conditional-indent=2 --pad-oper --unpad-paren
+// astyle options --pad-header --add-brackets --keep-one-line-blocks
+// astyle options --keep-one-line-statements --align-pointer=name --lineend=linux
+//
