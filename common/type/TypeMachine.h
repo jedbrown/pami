@@ -99,11 +99,7 @@ namespace PAMI
         if (type->GetDepth() <= (unsigned)SMALL_STACK_DEPTH)
             stack = small_stack;
         else
-        {
-                stack = new Cursor[type->GetDepth()];
-                PAMI_assert(stack);
-        }
-
+            stack = new Cursor[type->GetDepth()];
 
         stack[top] = Cursor(sizeof(TypeCode::Begin), 0, 0, 0, 0);
     }
@@ -125,7 +121,6 @@ namespace PAMI
             if (stack != small_stack)
                 delete[] stack;
             stack = new Cursor[new_depth];
-            PAMI_assert(stack);
         }
 
         assert(new_type->IsCompleted());
