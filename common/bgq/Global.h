@@ -543,15 +543,27 @@ size_t PAMI::Global::initializeMapCache (BgqJobPersonality  & personality,
 
       for (t = 0; t < tSize; t++)
         {
-          hash = ESTIMATED_TASK(a, b, c, d, e, t, aSize, bSize, cSize, dSize, eSize, tSize);
-          mapcache->node.peer2task[peer] = mapcache->torus.coords2task[hash];
+          hash = ESTIMATED_TASK(aCoord, bCoord, cCoord, dCoord, eCoord, t, 
+				aSize, bSize, cSize, dSize, eSize, tSize);
 
-          hash = ESTIMATED_TASK(0, 0, 0, 0, 0, t, 1, 1, 1, 1, 1, tSize);
-          mapcache->node.local2peer[hash] = peer++;
+	  // Extract the task for this t.
+	  // If there is actually a task here, process it, otherwise ignore it.
+	  // This can happen if --np is less than the block size.
 
-          numRanks++; // increment local variable
+	  uint32_t task = mapcache->torus.coords2task[hash];
+	  if ( task != (uint32_t) -1 )
+	    {
+	      mapcache->node.peer2task[peer] = task;
 
-          TRACE_ERR((stderr, "Global::initializeMapCache() .. peer2task[%zu]=%zu, local2peer[%d]=%zu\n", peer - 1, mapcache->node.peer2task[peer-1], hash, peer - 1));
+	      hash = ESTIMATED_TASK(0, 0, 0, 0, 0, t, 1, 1, 1, 1, 1, tSize);
+	      mapcache->node.local2peer[hash] = peer++;
+	      
+	      numRanks++; // increment local variable
+	      
+	      TRACE_ERR((stderr, "Global::initializeMapCache() .. t=%zu, peer2task[%zu]=%zu, local2peer[%d]=%zu\n", t, peer - 1, mapcache->node.peer2task[peer-1], hash, peer - 1));
+	    }
+	  else
+	    TRACE_ERR((stderr, "Global::initializeMapCache() .. No task at t=%zu, hash=%u, coords2task=0x%08x\n",t,hash,task));
         }
 
       cacheAnchorsPtr->numActiveRanksLocal = numRanks; // update global from local variable
