@@ -164,7 +164,7 @@ namespace CCMI
 	  mrecv.msgcount = _msend.msgcount;
 	  mrecv.connection_id = _msend.connection_id;
 
-          TRACE_MSG((stderr, "<%p>Executor::BroadcastExec::postReceives ndest %zu, bytes %d, rank %u, root %u\n", this, _dsttopology.size(), _msend.bytes, _selftopology.index2Rank(0),_roottopology.index2Rank(0)));
+          TRACE_MSG((stderr, "<%p>Executor::BroadcastExec::postReceives ndest %zu, bytes %zu, rank %u, root %u\n", this, _dsttopology.size(), _msend.bytes, _selftopology.index2Rank(0),_roottopology.index2Rank(0)));
           mrecv.src_participants   = (pami_topology_t *) & _roottopology; 
           mrecv.dst_participants   = (pami_topology_t *) & _selftopology;
 
@@ -204,7 +204,7 @@ namespace CCMI
 template <class T>
 inline void  CCMI::Executor::BroadcastExec<T>::start ()
 {
-  TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::start() count%d\n", this, _msend.bytes));
+  TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::start() count %zu\n", this, _msend.bytes));
 
   // Nothing to broadcast? We're done.
   if ((_msend.bytes == 0) && _cb_done)
@@ -225,7 +225,7 @@ inline void  CCMI::Executor::BroadcastExec<T>::sendNext ()
   //CCMI_assert (_dsttopology.size() != 0); //We have nothing to send
   if (_dsttopology.size() == 0)
     {
-      TRACE_MSG((stderr, "<%p>Executor::BroadcastExec::sendNext() bytes %d, ndsts %zu bytes available to consume %zu\n",
+      TRACE_MSG((stderr, "<%p>Executor::BroadcastExec::sendNext() bytes %zu, ndsts %zu bytes available to consume %zu\n",
                  this, _msend.bytes, _dsttopology.size(), _pwq.bytesAvailableToConsume()));
       //_cb_done(NULL, _clientdata, PAMI_SUCCESS);
       return;
@@ -234,7 +234,7 @@ inline void  CCMI::Executor::BroadcastExec<T>::sendNext ()
 #ifdef CCMI_DEBUG
   char tbuf[1024];
   char sbuf[16384];
-  sprintf(sbuf, "<%p>Executor::BroadcastExec::sendNext() from %zu: bytes %d, ndsts %zu bytes available to consume %zu\n",
+  sprintf(sbuf, "<%p>Executor::BroadcastExec::sendNext() from %zu: bytes %zu, ndsts %zu bytes available to consume %zu\n",
           this,__global.mapping.task(), _msend.bytes, _dsttopology.size(), _pwq.bytesAvailableToConsume());
 
   for (unsigned i = 0; i < _dsttopology.size(); ++i)
@@ -246,7 +246,7 @@ inline void  CCMI::Executor::BroadcastExec<T>::sendNext ()
   fprintf (stderr, " %s\n", sbuf);
 #endif
 
-  TRACE_MSG((stderr, "<%p>Executor::BroadcastExec::sendNext() bytes %d, ndsts %zu bytes available to consume %zu\n",
+  TRACE_MSG((stderr, "<%p>Executor::BroadcastExec::sendNext() bytes %zu, ndsts %zu bytes available to consume %zu\n",
              this, _msend.bytes, _dsttopology.size(), _pwq.bytesAvailableToConsume()));
 
   //Sending message header to setup receive of an async message

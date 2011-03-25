@@ -45,6 +45,10 @@ namespace CCMI
       protected:
 
         void setupContext(unsigned &start, unsigned &nphases);
+        unsigned  getLastReducePhase()
+        {
+          return _lastrdcph;
+        }
 
         /**
          * \brief Get next node in schedule
@@ -123,11 +127,11 @@ namespace CCMI
           TRACE_SCHEDULE((stderr, "<%p> initBinoSched()"
                           "_maxphases = %u, _nphbino   = %u, _op        = %u, _radix     = %u, _logradix  = %u, "
                           "_nranks    = %u, _hnranks   = %u, _sendph    = %u, _recvph    = %u, _auxsendph = %u, "
-                          "_auxrecvph = %u, _startphase= %u, _nphases   = %u\n",
+                          "_lastrdcph = %u, _auxrecvph = %u, _startphase= %u, _nphases   = %u\n",
                           this,
                           _maxphases, _nphbino, _op, _radix, _logradix,
                           _nranks, _hnranks, _sendph, _recvph, _auxsendph,
-                          _auxrecvph, _startphase, _nphases));
+                          _lastrdcph, _auxrecvph, _startphase, _nphases));
         }
 
       public:
@@ -416,6 +420,7 @@ namespace CCMI
         unsigned     _auxrecvph;  /// \brief outside recv phase
         unsigned     _startphase; /// \brief the start phase after init is called
         unsigned     _nphases;    /// \brief the total number of phases after init is called
+        unsigned     _lastrdcph;  /// \brief last reduce phase
 
         PAMI::Topology     _topology;  /// \brief goes away when geoemetries store topologies
         M            _map;
@@ -504,6 +509,7 @@ setupContext(unsigned &startph, unsigned &nph)
   // power-of-two (standard binomial).
   st = 1;
   np = _nphbino;
+  _lastrdcph = UNDEFINED_PHASE;
   _auxrecvph = NO_PHASES;
   _auxsendph = NO_PHASES;
   TRACE_SCHEDULE((stderr, "<%p> setupContext() _map.getMyRank() %u, _map.isPeerProc() %u,  _map.isAuxProc() %u\n", this,
@@ -539,8 +545,9 @@ setupContext(unsigned &startph, unsigned &nph)
       /* non-power of two */
       switch (_op)
         {
-          case BARRIER_OP:
           case ALLREDUCE_OP:
+            _lastrdcph = _maxphases - 2;//_auxrecvph -1;
+          case BARRIER_OP:
             st = 0;
             np += 2;
             _auxsendph = 0;
@@ -632,11 +639,11 @@ setupContext(unsigned &startph, unsigned &nph)
   TRACE_SCHEDULE((stderr, "<%p> setupContext() startph %u, nph %u, "
 	  "_maxphases = %u, _nphbino   = %u, _op        = %u, _radix     = %u, _logradix  = %u, "
 	  "_nranks    = %u, _hnranks   = %u, _sendph    = %u, _recvph    = %u, _auxsendph = %u, "
-	  "_auxrecvph = %u, _startphase= %u, _nphases   = %u\n",
+	  "_lastrdcph = %u, _auxrecvph = %u, _startphase= %u, _nphases   = %u\n",
 	  this, startph, nph,
 	  _maxphases, _nphbino, _op, _radix, _logradix,
 	  _nranks, _hnranks, _sendph, _recvph, _auxsendph,
-	  _auxrecvph, _startphase, _nphases));
+	  _lastrdcph, _auxrecvph, _startphase, _nphases));
 }
 
 /**

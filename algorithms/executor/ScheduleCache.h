@@ -9,9 +9,6 @@
 #include "algorithms/interfaces/Schedule.h"
 #include "Topology.h"
 
-#undef TRACE_SCACHE
-#define TRACE_SCACHE(x)
-
 namespace CCMI
 {
   namespace Executor
@@ -89,8 +86,8 @@ namespace CCMI
           _start = start;
           _nphases = nph;
 
-          TRACE_SCACHE((stderr, "<%X>Executor::Barrier::ScheduleCache::init _start %d, nph %d\n",
-                        (int) this, _start, _nphases));
+          TRACE_SCHEDULE((stderr, "<%p>Executor::Barrier::ScheduleCache::init _start %d, nph %d\n",
+                        this, _start, _nphases));
 
           CCMI_assert(_start + _nphases  <=  SC_MAXPHASES);
 
@@ -198,8 +195,9 @@ namespace CCMI
 
         unsigned  getLastReducePhase()
         {
-          //Curently hardcode to end phase
-          return _start + _nphases - 1;
+          unsigned p = _schedule->getLastReducePhase();
+          // If the schedule doesn't support it (-1), hardcode to end phase
+          return p==-1U?_start + _nphases - 1:p;
         }
 
         void setRoot(int root)

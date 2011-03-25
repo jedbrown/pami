@@ -117,6 +117,15 @@ namespace CCMI
       virtual pami_result_t
       getDstUnionTopology (PAMI::Topology *topology)=0;
 
+      /**
+       * \brief Get the last reduce phase
+       * 
+       */
+      virtual unsigned  
+      getLastReducePhase()
+      {
+          return -1;
+      }
 
     };  //-- Schedule
   };  //-- Schedule

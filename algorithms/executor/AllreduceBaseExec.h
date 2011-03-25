@@ -494,8 +494,8 @@ namespace CCMI
 template <class T_Conn>
 inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::advance ()
 {
-  TRACE_ADVANCE ((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::advance _curPhase %d,_endPhase %d,_curIdx %d\n", this,
-                  _curPhase, _scache.getEndPhase(), _curIdx));
+  TRACE_ADVANCE ((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::advance _curPhase %d,_endPhase %d, lastReducePhase %d, _curIdx %d, nsrcranks %u\n", this,
+                  _curPhase, _scache.getEndPhase(),_scache.getLastReducePhase(), _curIdx, _scache.getNumSrcRanks(_curPhase)));
 
   CCMI_assert_debug (_initialized);
   CCMI_assert_debug (_sState.sndClientData.isDone == true);
@@ -518,6 +518,8 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::advance ()
       pami_op op = _acache.getOp();
       pami_dt dt = _acache.getDt();
       unsigned count = _acache.getCount();
+      TRACE_ADVANCE ((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::advance op %u, dt %u, count %u\n", this,
+                      op, dt, count));
 
       if (_curPhase <= _scache.getLastReducePhase())
         {
@@ -575,8 +577,18 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::advance ()
                 }
             }
         }
+      else if ((_curIdx < nsrcranks) && (_acache.getPhaseChunksRcvd(_curPhase, _curIdx) > 0))
+      {
+        CCMI_assert(nsrcranks == 1);
+        src2 =  _acache.getPhaseRecvBufs (_curPhase, _curIdx);
+        TRACE_DATA(("localbuf ", (char*)src1,      count*_acache.getSizeOfType()));
+        TRACE_DATA(("input buf", (char*)src2,      count*_acache.getSizeOfType()));
+        TRACE_DATA(("reduceBuf", (char*)reducebuf, count*_acache.getSizeOfType()));
+        memcpy(reducebuf, src2, count*_acache.getSizeOfType());
+        _curIdx = nsrcranks;
+      }
 
-      TRACE_ADVANCE ((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::advance_loop _curPhase %d,_endPhase %d,_curIdx %d nsrcranks %d phase chunks rcvd %d\n", this, _curPhase, _scache.getEndPhase(), _curIdx, nsrcranks, _acache.getPhaseChunksRcvd(_curPhase, _curIdx)));
+      TRACE_ADVANCE ((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::advance_loop _curPhase %d,_endPhase %d,_curIdx %d nsrcranks %d phase chunks rcvd %d\n", this, _curPhase, _scache.getEndPhase(), _curIdx, nsrcranks, (_curIdx < nsrcranks)?_acache.getPhaseChunksRcvd(_curPhase, _curIdx):-1));
 
       if (_curIdx != nsrcranks) //we are waiting for more data
         break;
