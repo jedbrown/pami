@@ -283,7 +283,7 @@ namespace CCMI
                     func = (coremath) Core_int32_band;
                     break;
                   case PAMI_DOUBLE:
-                    sizeOfType = sizeof(float);
+                    sizeOfType = sizeof(double);
                     func = (coremath) Core_uint64_band;
                     break;
                   case PAMI_SIGNED_LONG_LONG:

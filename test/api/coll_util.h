@@ -20,7 +20,7 @@ unsigned gVerbose = 1; /* Global verbose flag, some tests set with TEST_VERBOSE=
 void cb_done (void *ctxt, void * clientdata, pami_result_t err)
 {
   if(gVerbose && !ctxt)
-    fprintf(stderr, "Error. Null context received on cb_done");
+    fprintf(stderr, "Error. Null context received on cb_done.\n");
   int * active = (int *) clientdata;
   (*active)--;
 }
