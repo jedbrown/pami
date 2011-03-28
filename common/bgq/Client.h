@@ -96,6 +96,38 @@ namespace PAMI
         __global.heap_mm->free((void *)client);
       }
 
+      inline size_t maxContexts_impl ()
+      {
+        /// \todo #99 Remove this hack and replace with a device interface
+        size_t result;
+        unsigned tSize = __global.mapping.tSize();
+        switch (tSize)
+          {
+            // The following values are based on tests just running MPI_Init():
+            //    Date:      24 Mar 2011
+            //    Num nodes: 32
+            //    BG_SHAREDMEMSIZE=32
+            case 1:
+              result = 16;
+              break;
+            case 2:
+              result = 16;
+              break;
+            case 4:
+              result = 8;
+              break;
+            case 8:
+            case 16:
+            case 32:
+            case 64:
+              result = 64/tSize;
+              break;
+            default:
+              PAMI_abortf("Error: Do not know how to handle tSize=%u\n", tSize);
+          }
+        return result;
+      }
+
       inline char * getName_impl ()
       {
         return _name;
@@ -108,28 +140,21 @@ namespace PAMI
       {
         TRACE_ERR((stderr, "<%p:%zu>BGQ::Client::createContext_impl\n", this, _clientid));
         //_context_list->lock ();
-        int n = ncontexts;
+        size_t n = ncontexts;
 
         if (_ncontexts != 0)
           {
             return PAMI_ERROR;
           }
 
-        /// \todo #99 Remove this hack and replace with a device interface
-        size_t peers;
-        __global.mapping.nodePeers (peers);
-
-        if (ncontexts > (256 / peers))
+        if (ncontexts > maxContexts_impl())
           {
             return PAMI_INVAL;
           }
 
-        n = ncontexts;
-
         pami_result_t rc;
         rc = __global.heap_mm->memalign((void **)&_contexts, 16, sizeof(*_contexts) * n);
-        PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for _contexts[%d], errno=%d\n", n, errno);
-        int x;
+        PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for _contexts[%zu], errno=%d\n", n, errno);
         TRACE_ERR((stderr, "BGQ::Client::createContext mm available %zu\n", _mm.available()));
         _platdevs.generate(_clientid, n, _mm); // _mm is the client-scoped shared memory manager
         // _platdevs.generate(_clientid, n, _mm, __global._wuRegion[_clientid]->_wu_mm);
@@ -160,7 +185,7 @@ namespace PAMI
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to create \"%s\" mm for %zd bytes",
                      key, bytes * n);
 
-        for (x = 0; x < n; ++x)
+        for (size_t x = 0; x < n; ++x)
           {
             context[x] = (pami_context_t) & _contexts[x];
 #ifdef USE_COMMTHREADS
@@ -238,36 +263,8 @@ namespace PAMI
             switch (configuration[i].name)
               {
                 case PAMI_CLIENT_NUM_CONTEXTS:
-                  {
-                    /// \todo #99 Remove this hack and replace with a device interface
-                    unsigned tSize = __global.mapping.tSize();
-                    switch (tSize)
-                      {
-                        // The following values are based on tests just running MPI_Init():
-                        //    Date:      24 Mar 2011
-                        //    Num nodes: 32
-                        //    BG_SHAREDMEMSIZE=32
-                        case 1:
-                          configuration[i].value.intval = 16;
-                          break;
-                        case 2:
-                          configuration[i].value.intval = 16;
-                          break;
-                        case 4:
-                          configuration[i].value.intval = 8;
-                          break;
-                        case 8:
-                        case 16:
-                        case 32:
-                        case 64:
-                          configuration[i].value.intval = 64/tSize;
-                          break;
-                        default:
-                          fprintf(stderr, "%s:%u  Error: Do not know how to handle tSize=%u\n", __FILE__, __LINE__, tSize);
-                          abort();
-                      }
-                    break;
-                  }
+                  configuration[i].value.intval = maxContexts_impl();
+                  break;
                 case PAMI_CLIENT_CONST_CONTEXTS:
                   configuration[i].value.intval = true;
                   break;
