@@ -205,9 +205,9 @@ void initialize_sndbuf (void *buf, int count, int op, int dt, int task_id, int n
     memset(buf,  0,  count * sizeof(double));
     double *dbuf = (double *)  buf;
 
-    for (i = 0; i < count; i += num_tasks)
+    for (i = task_id; i < count; i += num_tasks)
     {
-      dbuf[i+task_id] = 1.0 * task_id;
+      dbuf[i] = 1.0 * task_id;
     }
   }
   else

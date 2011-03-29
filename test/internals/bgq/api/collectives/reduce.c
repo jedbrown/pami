@@ -205,9 +205,9 @@ void initialize_sndbuf (void *buf, int count, int op, int dt, int task_id, int n
     memset(buf,  0,  count * sizeof(double));
     double *dbuf = (double *)  buf;
 
-    for (i = 0; i < count; i += num_tasks)
+    for (i = task_id; i < count; i += num_tasks)
     {
-      dbuf[i+task_id] = 1.0 * task_id;
+      dbuf[i] = 1.0 * task_id;
     }
   }
   else
@@ -526,7 +526,7 @@ int main (int argc, char ** argv)
 
     for (nalg = 0; nalg < reduce_num_algorithm[0]; nalg++)
     {
-      if (task_id == 0) // root not set yet
+      if (task_id == 0) /* root not set yet */
       {
         printf("# Reduce Bandwidth Test -- context = %d, root varies, protocol: %s\n", 
                iContext, reduce_always_works_md[nalg].name);
@@ -554,7 +554,7 @@ int main (int argc, char ** argv)
         {
           if (validTable[op][dt])
           {
-            if (task_id == 0) // root not set yet
+            if (task_id == 0) /* root not set yet */
               printf("Running Reduce: %s, %s\n", dt_array_str[dt], op_array_str[op]);
 
             for (i = 1; i <= max_count; i *= 2)
@@ -603,7 +603,7 @@ int main (int argc, char ** argv)
 
 #ifdef CHECK_DATA
 
-              if (task_id < niter) // was root at least once in niter loop
+              if (task_id < niter) /* was root at least once in niter loop */
               {
                 rc |= check_rcvbuf (rbuf, i, op, dt, task_id, num_tasks);
 
