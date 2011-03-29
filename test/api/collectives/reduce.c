@@ -384,7 +384,7 @@ int main(int argc, char*argv[])
 
   for (nalg = 0; nalg < reduce_num_algorithm[0]; nalg++)
     {
-      if (task_id == 0) // root not set yet
+      if (task_id == 0) /* root not set yet */
         {
           printf("# Reduce Bandwidth Test -- root varies, protocol: %s\n", 
                  reduce_always_works_md[nalg].name);
@@ -415,7 +415,7 @@ int main(int argc, char*argv[])
           {
             if (validTable[op][dt])
               {
-                if (task_id == 0) // root not set yet
+                if (task_id == 0) /* root not set yet */
                   printf("Running Reduce: %s, %s\n", dt_array_str[dt], op_array_str[op]);
 
                 for (i = 1; i <= COUNT; i *= 2)
@@ -462,7 +462,7 @@ int main(int argc, char*argv[])
 
 #ifdef CHECK_DATA
 
-                    if (task_id < niter) // was root at least once in niter loop
+                    if (task_id < niter) /* was root at least once in niter loop */
                     {
                       int rc = check_rcvbuf (rbuf, i, op, dt, num_tasks);
 
