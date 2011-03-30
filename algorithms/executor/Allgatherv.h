@@ -80,8 +80,8 @@ namespace CCMI
       *sbuf = xfer->sndbuf;
       *rbuf = xfer->rcvbuf;
       *buflen = 0;
-      *((size_t **)rdisps)   = xfer->rdispls;
-      *((size_t **)rcounts)  = xfer->rtypecounts;
+      rdisps   = xfer->rdispls;
+      rcounts  = xfer->rtypecounts;
       return;
     }
 
