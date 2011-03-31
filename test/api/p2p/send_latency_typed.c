@@ -26,6 +26,10 @@
 #define BUFSIZE 256*1024
 #endif
 
+
+#define TYPESIZE 8UL
+#define BUFCOUNT BUFSIZE/TYPESIZE
+
 #define WARMUP
 
 #undef TRACE_ERR
@@ -43,6 +47,9 @@ size_t         _dispatch[100];
 unsigned       _dispatch_count;
 
 size_t _my_task;
+
+pami_type_t send_datatype;
+
 
 typedef struct
 {
@@ -106,9 +113,9 @@ static void test_dispatch (
   _recv_iteration++;
 }
 
-void send_once (pami_context_t context, pami_send_t * parameters)
+void send_once (pami_context_t context, pami_send_typed_t * parameters)
 {
-  PAMI_Send (context, parameters);
+  PAMI_Send_typed (context, parameters);
   TRACE_ERR((stderr, "(%zu) send_once() Before advance\n", _my_task));
 
   while (_send_active) PAMI_Context_advance (context, POLL_CNT);
@@ -127,26 +134,32 @@ void recv_once (pami_context_t context)
   TRACE_ERR((stderr, "(%zu) recv_once()  After advance\n", _my_task));
 }
 
-unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrsize, size_t sndlen, pami_task_t mytask, pami_task_t origintask, pami_endpoint_t origin, pami_task_t targettask, pami_endpoint_t target)
+unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrsize,
+                         size_t sndcount, pami_task_t mytask, pami_task_t origintask,
+                         pami_endpoint_t origin, pami_task_t targettask, pami_endpoint_t target)
 {
-  TRACE_ERR((stderr, "(%u) Do test ... sndlen = %zu\n", mytask, sndlen));
+  TRACE_ERR((stderr, "(%u) Do test ... sndcount = %zu\n", mytask, sndcount));
   _recv_iteration = 0;
 
   char metadata[BUFSIZE];
   char buffer[BUFSIZE];
 
   header_t header;
-  header.sndlen = sndlen;
+  header.sndlen = sndcount * TYPESIZE;
 
-  pami_send_t parameters;
+  pami_send_typed_t parameters;
   parameters.send.dispatch        = dispatch;
   parameters.send.header.iov_base = metadata;
   parameters.send.header.iov_len  = hdrsize;
   parameters.send.data.iov_base   = buffer;
-  parameters.send.data.iov_len    = sndlen;
+  parameters.send.data.iov_len    = sndcount*TYPESIZE;
   parameters.events.cookie        = (void *) & _send_active;
   parameters.events.local_fn      = decrement;
   parameters.events.remote_fn     = NULL;
+  parameters.typed.type           = send_datatype;
+  parameters.typed.offset         = 0;
+  parameters.typed.data_fn        = PAMI_DATA_COPY;
+  parameters.typed.data_cookie    = NULL;
   memset(&parameters.send.hints, 0, sizeof(parameters.send.hints));
 
   unsigned i;
@@ -158,7 +171,7 @@ unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrsize
 
       for (i = 0; i < ITERATIONS; i++)
         {
-          TRACE_ERR((stderr, "(%u) Starting Iteration %d of size %zu\n", mytask, i, sndlen));
+          TRACE_ERR((stderr, "(%u) Starting Iteration %d of size %zu\n", mytask, i, sndlen*TYPESIZE));
           send_once (context, &parameters);
           recv_once (context);
         }
@@ -169,7 +182,7 @@ unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrsize
 
       for (i = 0; i < ITERATIONS; i++)
         {
-          TRACE_ERR((stderr, "(%u) Starting Iteration %d of size %zu\n", mytask, i, sndlen));
+          TRACE_ERR((stderr, "(%u) Starting Iteration %d of size %zu\n", mytask, i, sndlen*TYPESIZE));
           recv_once (context);
           send_once (context, &parameters);
         }
@@ -275,6 +288,12 @@ int main (int argc, char ** argv)
 
   sleep(1); /* work-around for ticket #385 */
 
+
+  PAMI_Type_create(&send_datatype);
+  PAMI_Type_add_simple(send_datatype,TYPESIZE,0UL,1,0);
+  PAMI_Type_complete(send_datatype, TYPESIZE);
+
+
   for (i = 0; i < 3; i++)
     {
       if ((dispatch[i].result == PAMI_SUCCESS) &&
@@ -283,19 +302,24 @@ int main (int argc, char ** argv)
 
           volatile unsigned pretest_active = 1;
 
-          pami_send_t parameters;
+          pami_send_typed_t parameters;
           parameters.send.dispatch        = dispatch[i].id;
           parameters.send.dest            = (_my_task == origin_task) ? target : origin;
           parameters.send.header.iov_base = (void *) & parameters;
           parameters.send.header.iov_len  = 8;
           parameters.send.data.iov_base   = (void *) & parameters;
-          parameters.send.data.iov_len    = sizeof(pami_send_t);
+          parameters.send.data.iov_len    = sizeof(pami_send_typed_t);
           parameters.events.cookie        = (void *) & pretest_active;
           parameters.events.local_fn      = decrement;
           parameters.events.remote_fn     = NULL;
+          parameters.typed.type           = PAMI_TYPE_CONTIGUOUS;
+          parameters.typed.offset         = 0;
+          parameters.typed.data_fn        = PAMI_DATA_COPY;
+          parameters.typed.data_cookie    = NULL;
+
           memset(&parameters.send.hints, 0, sizeof(parameters.send.hints));
 
-          dispatch[i].result = PAMI_Send (context, &parameters);
+          dispatch[i].result = PAMI_Send_typed (context, &parameters);
 
           if (dispatch[i].result == PAMI_SUCCESS)
             {
@@ -319,7 +343,7 @@ int main (int argc, char ** argv)
       index[1] += sprintf (&str[1][index[1]], "#          ");
       index[2] += sprintf (&str[2][index[2]], "#    bytes ");
 
-      fprintf (stdout, "# PAMI_Send() nearest-neighor half-pingpong blocking latency performance test\n");
+      fprintf (stdout, "# PAMI_Send_typed() nearest-neighor half-pingpong blocking latency performance test\n");
       fprintf (stdout, "#\n");
       unsigned i;
 
@@ -348,12 +372,12 @@ int main (int argc, char ** argv)
   char str[10240];
 
 
-  size_t sndlen = 0;
+  size_t sndcount = 0;
 
-  for (; sndlen < BUFSIZE; sndlen = sndlen * 3 / 2 + 1)
+  for (; sndcount < BUFCOUNT; sndcount = sndcount * 3 / 2 + 1)
     {
       int index = 0;
-      index += sprintf (&str[index], "%10zd ", sndlen);
+      index += sprintf (&str[index], "%10zd ", sndcount*TYPESIZE);
 
       unsigned i;
 
@@ -366,9 +390,9 @@ int main (int argc, char ** argv)
               if (dispatch[j].result == PAMI_SUCCESS)
                 {
 #ifdef WARMUP
-                  test (context, dispatch[j].id, hdrsize[i], sndlen, _my_task, origin_task, origin, target_task, target);
+                  test (context, dispatch[j].id, hdrsize[i], sndcount, _my_task, origin_task, origin, target_task, target);
 #endif
-                  cycles = test (context, dispatch[j].id, hdrsize[i], sndlen, _my_task, origin_task, origin, target_task, target);
+                  cycles = test (context, dispatch[j].id, hdrsize[i], sndcount, _my_task, origin_task, origin, target_task, target);
                   usec   = cycles * tick * 1000000.0;
                   index += sprintf (&str[index], "%8lld %8.4f  ", cycles, usec);
                 }
