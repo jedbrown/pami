@@ -53,6 +53,18 @@ extern "C"
     PAMI_CONTEXT_STATISTICS,       /**<  Q : pami_statistics_t : N/A : retrieve communication statistics */
     PAMI_CONTEXT_TRIGGER,          /**<   U: pami_trigger_t : N/A : add or remove a trigger */
     PAMI_CONTEXT_NETWORK,          /**<  Q : string : N/A : retrieve network string */
+    PAMI_CONTEXT_MAX_PKT_SZ,       /**<  Q : size_t : N/A : payload size of 1 packet */
+    PAMI_CONTEXT_RFIFO_SZ,         /**<  Q : size_t : N/A : receiving fifo size */
+    PAMI_CONTEXT_BULK_MIN_MSG_SZ,  /**<  Q : size_t : N/A : size of smallest RDMA message*/
+    PAMI_CONTEXT_BULK_XFER,        /**<  Q : bool   : N/A : run in RDMA mode */
+    PAMI_CONTEXT_SHM_NUM_TASKS,    /**<  Q : size_t : N/A : number of tasks that uses SHM */
+    PAMI_CONTEXT_SHM_TASKS,        /**<  Q : pami_tasks_t* : N/A : list of task ids that make up SHM*/
+    PAMI_CONTEXT_SHM_ENABLED,      /**<  Q : bool   : N/A : run in SHM mode*/
+    PAMI_CONTEXT_ACK_THRESH,       /**<  Q : size_t : N/A : threshold of ACKs sent back to src */
+    PAMI_CONTEXT_REXMIT_BUF_CNT,   /**<  Q : size_t : N/A : number of retransmission buffers */
+    PAMI_CONTEXT_REXMIT_BUF_SZ,    /**<  Q : size_t : N/A : retransmission buffer  size */
+    PAMI_CONTEXT_RC_MAX_QP,        /**<  Q : size_t : N/A : max number of RC QPs */
+    PAMI_CONTEXT_RC_USE_LMC,       /**<  Q : bool   : N/A : run with one RC QP per path */
   } pami_attribute_name_ext_t;
 
   /** \} */ /* end of "ext_attr" group */
@@ -132,6 +144,15 @@ extern "C"
     int                count;       /**< Number of counters */
     pami_counter_t     counters[1]; /**< Array of counters  */
   } pami_statistics_t;
+
+  /**
+   * \brief List of SHM tasks
+   */
+  typedef struct
+  {
+    int                count;       /**< Number of counters */
+    pami_task_t        shm_tasks[1];/**< List of SHM tasks  */
+  } pami_shm_tasks_t;
 
   /** \} */ /* end of "comm_stat" group */
 
