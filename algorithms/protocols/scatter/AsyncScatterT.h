@@ -119,6 +119,9 @@ namespace CCMI
           AsyncScatterT ()
           {
           };
+          ~AsyncScatterT ()
+          {
+          };
           AsyncScatterT (Interfaces::NativeInterface   * native,
                          T_Conn                        * cmgr,
                          pami_callback_t                  cb_done,
@@ -132,7 +135,6 @@ namespace CCMI
               Executor::Composite(),
               _executor (native, cmgr, geometry->comm(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))
           {
-            TRACE_ADAPTOR ((stderr, "<%p>Scatter::AsyncScatterT() \n", this));
 
             T_Scatter_type *s_xfer;
             getScatterXfer<T_Scatter_type>(&s_xfer, &((pami_xfer_t *)cmd)->cmd);
@@ -323,7 +325,6 @@ namespace CCMI
                             ((pami_xfer_t *)cmd)->cb_done(NULL, ((pami_xfer_t *)cmd)->cookie, PAMI_SUCCESS);
                           }
 
-                        co->getComposite()->~T_Composite();
                         _free_pool.free(co);
                       }
                     else

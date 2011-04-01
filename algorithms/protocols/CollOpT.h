@@ -58,6 +58,9 @@ namespace CCMI
         ///
         /// \brief Default constructor
         ///
+        ~CollOpT()
+        {
+        }
         CollOpT(unsigned key) : PAMI::MatchQueueElem (key),
         _composite(),
         _ntokens(0),
@@ -176,7 +179,9 @@ namespace CCMI
               CollOpT<T_xfer, T_composite> *co = (CollOpT<T_xfer, T_composite> *) popHead();
               return ( new (co) CollOpT<T_xfer, T_composite>(connid) );
             } else {
-              return( new CollOpT<T_xfer, T_composite>(connid) );
+              CollOpT<T_xfer, T_composite>* co = NULL;
+              __global.heap_mm->memalign((void **)&co, 0, sizeof(CollOpT<T_xfer, T_composite>));
+              return( new (co) CollOpT<T_xfer, T_composite>(connid) );
             }
           }
 
@@ -187,10 +192,14 @@ namespace CCMI
           ///
           void free (CollOpT<T_xfer, T_composite> *co)
           {
+            co->~CollOpT<T_xfer, T_composite>();
             if (size() < MAX_NUM_PREALLOCATED)
               pushHead (co);
             else
-              delete co;
+            {  
+              __global.heap_mm->free(co);
+            }
+             
           }
 
         };
