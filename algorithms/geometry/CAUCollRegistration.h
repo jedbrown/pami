@@ -325,9 +325,9 @@ namespace PAMI
                   _csmm.getSGCtrlStrVec(geometry, &inout_val[1]);
                   bool            participant       = geometry->isLocalMasterParticipant();
                   if(participant)
-                    inout_val[0] = _csmm.getAndSetKey(0x0000000000000000);
+                    inout_val[0] = _csmm.getAndSetKey(0x0ULL);
                   else
-                    inout_val[0] = 0xFFFFFFFFFFFFFFFF;
+                    inout_val[0] = 0xFFFFFFFFFFFFFFFFULL;
 
                   // Construct the geometry info object, so we can free our allocated objects later
                   GeometryInfo                     *geometryInfo = (GeometryInfo*)_geom_allocator.allocateObject();
@@ -347,7 +347,7 @@ namespace PAMI
 
                   inout_nelem[0]    = inout_nelem[0];
                   if(numtasks == 1)
-                    inout_val[0] = 0x0000000000000000;
+                    inout_val[0] = 0x0ULL;
                   
                   return PAMI_SUCCESS;
                 }
@@ -521,6 +521,7 @@ namespace PAMI
                 default:
                   PAMI_assertf(0, "Unknown Analyze Phase\n");
             }
+            return PAMI_SUCCESS;
           }
 
         inline void freeGroup(T_Geometry *g, int cau_group)
