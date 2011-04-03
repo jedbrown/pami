@@ -486,13 +486,6 @@ namespace PAMI
           else            mm_ptr = mm;
           PAMI::Topology *local_master_topo = (PAMI::Topology *) ((PAMI::Geometry::Lapi *)_world_geometry)->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
 	  pami_result_t rc;
-          uint64_t *invec;
-	  rc = __global.heap_mm->memalign((void **)&invec, 0,
-                                          (3 + local_master_topo->size()) * sizeof(uint64_t));
-	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc invec");
-          // for cau classroute initialization
-          invec[2]  = 0xFFFFFFFFFFFFFFFFULL;
-          for (int i = 0; i < local_master_topo->size(); ++i)  invec[3+i] = 0ULL;
 	  rc = __global.heap_mm->memalign((void **)&_p2p_ccmi_collreg, 0,
 						sizeof(*_p2p_ccmi_collreg));
 	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc P2PCCMICollreg");
@@ -520,8 +513,28 @@ namespace PAMI
                                        _geometry_map,
                                        mm_ptr);
           // We analyze global here to get the proper device specific info
-          _cau_collreg->receive_global(_contextid, _world_geometry, &invec[2], 1);
+          uint64_t invec[PAMI_MAX_PROC_PER_NODE];
+          int      count = 3+local_master_topo->size();
 
+          invec[2]  = 0x0ULL;
+
+
+          _cau_collreg->analyze(_contextid,_world_geometry,
+                                &invec[2],&count,0);
+
+          count = 3+local_master_topo->size();
+          // We should be doing reductions
+          // after each phase of geometry creation.  However, we
+          // control initialization, so we can populate the allreduce
+          // values with known values
+          for (int i = 0; i < count; ++i)
+            invec[3+i] = 0x0ULL;
+          
+          _cau_collreg->analyze(_contextid,_world_geometry,
+                                &invec[2],&count,1);
+          _cau_collreg->analyze(_contextid,_world_geometry,
+                                &invec[2],&count,2);
+          
           new(_p2p_ccmi_collreg) P2PCCMICollreg(_client,
                                                 _context,
                                                 _contextid,
@@ -538,7 +551,6 @@ namespace PAMI
           _p2p_ccmi_collreg->analyze(_contextid, _world_geometry);
           _pgas_collreg->setGenericDevice(&_devices->_generics[_contextid]);
 
-          __global.heap_mm->free(invec);
           return PAMI_SUCCESS;
         }
 
@@ -575,6 +587,7 @@ namespace PAMI
         {
           LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
           (cp->*(cp->pLock))();
+          size_t max_orig = maximum;
           while (maximum --)
            {
              size_t events = _devices->advance(_clientid, _contextid);

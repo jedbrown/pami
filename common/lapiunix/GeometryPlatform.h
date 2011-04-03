@@ -6,25 +6,15 @@
 /* ---------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
-/**
- * \file arch/power7/Arch.h
- * \brief ???
- */
 
-#ifndef __arch_power7_Arch_h__
-#define __arch_power7_Arch_h__
+/// \file common/default/GeometryPlatform.h
+/// Default (empty) platform extensions to Geometry class
 
-#include "arch/ArchInterface.h"
+#ifndef __common_lapiunix_GeometryPlatform_h__
+#define __common_lapiunix_GeometryPlatform_h__
 
-#error BROKEN
-// Here go things specific to this processor architecture
+/// \brief Extensions to enum keys_t
+#define PAMI_GKEY_PLATEXTENSIONS \
+PAMI_GKEY_GEOMETRYINFO,
 
-//#define mem_sync() __sync()
-//#define mem_isync() __isync()
-//#define mem_barrier() __lwsync()
-
-#define mem_sync() { asm volatile ("sync"); }
-#define mem_isync() { asm volatile ("isync"); }
-#define mem_barrier() { asm volatile ("lwsync"); }
-
-#endif // __pami_arch_power7_h__
+#endif // __common_default_GeometryPlatform_h__

@@ -25,6 +25,7 @@
 #include "components/devices/FactoryInterface.h"
 #include "components/devices/cshmem/CollSharedMemoryManager.h"
 #include "common/default/PipeWorkQueue.h"
+#include "algorithms/protocols/allreduce/ReduceFunctions.h"
 
 #undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
@@ -207,13 +208,14 @@ public:
       {
         TRACE_DBG((stderr, "<%p>CollShmWindow::combineData()\n", this));
         if (flag) {
-          coremath func = MATH_OP_FUNCS(dt, op, 2);
-          int dtshift  = pami_dt_shift[dt];
-          void * buf[] = { dst, src };
+          coremath func;
+          int dtshift    = pami_dt_shift[dt];
+          void * buf[]   = { dst, src };
           unsigned count = len >> dtshift;
-
+          unsigned sizeOfType;
+          CCMI::Adaptor::Allreduce::getReduceFunction(dt,op,count,sizeOfType,func);
+          TRACE_DBG((stderr, "Reducing Data\n"));
           func (dst, buf, 2, count);
-
         } else {
           memcpy (dst, src, len);
         }
@@ -280,11 +282,11 @@ public:
       INLINE pami_result_t isAvail(unsigned value)
       {
         if (_ctrl.avail_flag != value) {
-          TRACE_DBG((stderr, "<%p>CollShmWindow::isAvail() value %u PAMI_EAGAIN\n", this, value));
+          TRACE_DBG((stderr, "<%p>CollShmWindow::isAvail() value %u cmpflag=%u PAMI_EAGAIN\n", this, value, cmpflag));
           return PAMI_EAGAIN;
           }
         mem_isync(); //isync();
-        TRACE_DBG((stderr, "<%p>CollShmWindow::isAvail() value %u PAMI_SUCCESS\n", this, value));
+        TRACE_DBG((stderr, "<%p>CollShmWindow::isAvail() value %u cmpflag=%u PAMI_SUCCESS\n", this, value, cmpflag));
         return PAMI_SUCCESS;
       }
 
@@ -303,7 +305,8 @@ public:
 
       INLINE size_t produceData(PAMI::PipeWorkQueue &src, size_t length, T_MemoryManager *csmm)
       {
-        TRACE_DBG((stderr, "<%p>CollShmWindow::produceData() src %p/%p, length %zu\n",this, &src,src.bufferToConsume(), length));
+        TRACE_DBG((stderr, "<%p>CollShmWindow::produceData() src %p/%p, trying length %zu :avail=%lu\n",
+                   this, &src,src.bufferToConsume(), length, src.bytesAvailableToConsume()));
 
         if (src.bytesAvailableToConsume() < MIN(length, COLLSHM_BUFSZ) ) return 0;
 
@@ -718,6 +721,7 @@ public:
                   if (_partners & (0x1 <<partner))
                   {
                      window = _device->getWindow(0,partner,_idx);
+                     TRACE_DBG((stderr, "<%p>Calling isAvail %p HERE, partner=%d partners=%lx\n", this, msg, partner, _partners));
                     if (window->isAvail(_target_cntr) == PAMI_SUCCESS)
                       _partners = _partners & (~(0x1 << partner)) ;
                     else
@@ -737,7 +741,6 @@ public:
             if (msg) { // if there is still valid message pointer, then more progress must be needed
               switch ( msg->getMsgType() ) {
                 case MultiCast:
-                  TRACE_DBG((stderr, "<%p>CollShmThread::_advanceThread() msg %p\n", this, msg));
                   rc = progressMulticast(static_cast< CollShmMessage<pami_multicast_t, CollShmDevice> *>(msg));
                   break;
                 case MultiSync:
@@ -745,6 +748,7 @@ public:
                   break;
                 case MultiCombine:
                   rc = progressMulticombine(static_cast< CollShmMessage<pami_multicombine_t, CollShmDevice> *>(msg));
+                  TRACE_DBG((stderr, "<%p>Progress Multicombine CollShmThread::_advanceThread() msg %p rc=%d\n", this, msg, rc));
                   break;
                 default:
                   PAMI_ASSERT(0);
@@ -813,6 +817,12 @@ public:
                  root     = _device->getTopo()->rank2Index(topo->index2Rank(0));
                  _len     = mcombine->count << pami_dt_shift[mcombine->dtype] ;
                  _wlen    = 0;
+
+                 TRACE_DBG((stderr, "CollShmThread::initThread, Multicombine() topo=%p topo->index2Rank(0) %d size=%ld:\n",
+                            mcombine->results_participants,
+                            (int)topo->index2Rank(0),
+                            (int)topo->size()));
+
                  /// \todo need to handle (_len > XMEM_THRESH) case
                  break;
                case MultiSync:
@@ -826,12 +836,12 @@ public:
 
              _rrank = (_arank + _nranks - root) % _nranks;
 
-             TRACE_DBG((stderr,"root = %d, _root = %d\n", (int)root, (int)_root));
-
-             if (root != _root)
+             uint8_t rootcast = (uint8_t)root;
+             TRACE_DBG((stderr,"rootcast = %d, _root = %d\n", (int)rootcast, (int)_root));
+             if (rootcast != _root)
              {
                // recalculate tree structure
-               _root = root;
+               _root = rootcast;
                getchildren_knary(_rrank, MIN(k, MAX(1,_nranks-1)), _nranks, &_children[0], &(_nchildren), &(_parent));
              }
              _setRole(); // _role may change even if _root does not change
@@ -910,6 +920,7 @@ public:
                 _wlen = window->produceData(*(PAMI::PipeWorkQueue *)mcombine->data, _len, _device->getSysdep());
                 if (_wlen == 0) {
                   _action = NOACTION;
+                  TRACE_DBG((stderr,"<%p>progressMulticombine msg %p, idx %d EAGAIN 1\n",this,msg, _idx));
                   return PAMI_EAGAIN;
                 }
                 PAMI_ASSERT(_wlen != -1ULL);
@@ -917,6 +928,7 @@ public:
                 ++_step ;
                 rc = window->setAvail(_step, 2);
                 if (rc != PAMI_SUCCESS) {
+                  TRACE_DBG((stderr,"<%p>progressMulticombine msg %p, idx %d EAGAIN 2\n",this,msg, _idx));
                   _action = SHAREWITH;
                   break;
                 }
@@ -936,11 +948,16 @@ public:
                   if (_role == BOTH) {
                     _action = SHAREWITH;
                     rc = window->setAvail(_step, 2);
-                    if (rc != PAMI_SUCCESS) break;
+                    if (rc != PAMI_SUCCESS)
+                    {
+                      TRACE_DBG((stderr,"<%p>progressMulticombine msg %p, idx %d EAGAIN 3\n",this,msg, _idx));
+                      break;
+                    }
                   } else { // PARENT
                     size_t len = window->consumeData(*(PAMI::PipeWorkQueue *)mcombine->results, _wlen, 0, PAMI_UNDEFINED_OP, PAMI_UNDEFINED_DT);
                     if (len == 0) {
                       _wlen = len;
+                      TRACE_DBG((stderr,"<%p>progressMulticombine msg %p, idx %d EAGAIN 4\n",this,msg, _idx));
                       return PAMI_EAGAIN;
                     }
                   }
@@ -952,6 +969,7 @@ public:
                 _wlen = window->produceData(*(PAMI::PipeWorkQueue *)mcombine->data, _len, _device->getSysdep());
                 if (_wlen == 0) {
                   _action = NOACTION;
+                  TRACE_DBG((stderr,"<%p>progressMulticombine msg %p, idx %d EAGAIN 5\n",this,msg, _idx));
                   return PAMI_EAGAIN;
                 }
                 PAMI_ASSERT(_wlen != -1ULL);
@@ -961,19 +979,29 @@ public:
                 _setPartners();
                 collshm_mask_t partner = 0x1;
                 for (int i=0 ; i < _nranks; ++i, partner <<= 1) {
+                  TRACE_DBG((stderr,"<%p>progressMulticombine msg %p, idx %d: _partners=%lX partner=%lX\n",
+                             this,msg, _idx,
+                             _partners,
+                             partner));
+
                   if (_partners & partner) {
                     CollShmWindow *pwindow = _device->getWindow(0, i, _idx);
+                     TRACE_DBG((stderr, "<%p>Calling isAvail %p HERE1\n", this, msg));
                     if (pwindow->isAvail(_step) == PAMI_SUCCESS) {
                       _partners ^= partner;
                     } else {
                       _target_cntr = _step;
+                      TRACE_DBG((stderr,"<%p>progressMulticombine msg %p, idx %d EAGAIN 6 _partners=%lX partner=%lX\n",
+                                 this,msg, _idx,
+                                 _partners,
+                                 partner));
                       return PAMI_EAGAIN;
                     }
                   }
                 }
               }
             }
-
+            TRACE_DBG((stderr,"<%p>progressMulticombine msg %p, _len=%lu rc=%p wlen=%lu\n",this,msg,_len,rc,_wlen));
             if (_len == 0) {
               if (rc == PAMI_SUCCESS || _wlen <= XMEM_THRESH) {
                 msg->setStatus(PAMI::Device::Done);
@@ -1365,7 +1393,7 @@ public:
 
             g[x].postMsg(msg);
             g[x].postThread(thr);
-            TRACE_DBG((stderr,"message posted\n"));
+            TRACE_DBG((stderr,"message posted %p\n", this));
           } else {
             msg->setStatus(PAMI::Device::Initialized);
 
@@ -1373,7 +1401,7 @@ public:
               _threadm.setStatus(PAMI::Device::Ready);
               g[x].postThread(&_threadm);
             }
-            TRACE_DBG((stderr,"%d message initalized\n", _nactive));
+            TRACE_DBG((stderr,"%d message initalized %p\n", _nactive, this));
           }
 
           enqueue(msg);
@@ -1390,7 +1418,7 @@ public:
              TRACE_DBG((stderr,"postNextMsg %p\n",msg));
 
              nextmsg = (BaseCollShmMessage *)next(msg);
-             if (msg->getStatus() != PAMI::Device::Initialized) continue;
+             if (msg->getStatus() != PAMI::Device::Initialized)continue;
 
              if (_isThreadAvailable()) {
                size_t x = msg->getContextId();
@@ -1412,7 +1440,6 @@ public:
                  if (rc == PAMI_EAGAIN) g[x].postThread(thr);
                  continue;
                }
-
                g[x].postMsg(msg);
                g[x].postThread(thr);
              } else {
@@ -1545,6 +1572,7 @@ INLINE pami_result_t CollShmModel<T_CollShmDevice, T_MemoryManager>::postMultico
                                                   void             *devinfo) {
         // PAMI::Topology *src_topo = (PAMI::Topology *)mcombine->data_participants;
         // unsigned rootpeer = __global.topology_local.rank2Index(src_topo->index2Rank(0));
+        TRACE_DBG((stderr, "POSTING MULTICOMBINE\n"));
         CollShmMessage<pami_multicombine_t, T_CollShmDevice> *msg =
           new (&state) CollShmMessage<pami_multicombine_t, T_CollShmDevice> (&_csdevice, client, context, mcombine);
         _csdevice.postMsg(msg);

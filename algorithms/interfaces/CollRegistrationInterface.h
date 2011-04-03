@@ -57,7 +57,11 @@ namespace PAMI
                                    T_Geometry    *geometry,
                                    int            phase=0);
 
-
+      inline pami_result_t analyze(size_t         context_id,
+                                   T_Geometry    *geometry,
+                                   uint64_t      *inout_val,
+                                   int           *inout_nelem,
+                                   int            phase=0);
     };
 
     template <class T_Collregistration, class T_Geometry>
@@ -85,6 +89,20 @@ namespace PAMI
     {
       return static_cast<T_Collregistration*>(this)->analyze_impl(context_id, geometry, phase);
     }
+
+    template <class T_Collregistration, class T_Geometry>
+    inline pami_result_t CollRegistration<T_Collregistration,T_Geometry>::analyze(size_t         context_id,
+                                                                                  T_Geometry    *geometry,
+                                                                                  uint64_t      *inout_val,
+                                                                                  int           *inout_nelem,
+                                                                                  int            phase)
+    {
+      return static_cast<T_Collregistration*>(this)->analyze_impl(context_id, geometry,
+                                                                  inout_val,inout_nelem,
+                                                                  phase);
+    }
+
+
   }; // namespace CollRegistration
 }; // namespace PAMI
 

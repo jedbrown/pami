@@ -1048,7 +1048,7 @@ namespace CCMI
       /// \brief This is a factory for a 2 device multicast
       /// The two device multicast takes two native interfaces, the first is
       /// the local interface, and the second is the global interface
-      template <class T_Composite, MetaDataFn get_metadata, class T_Connmgr>
+      template <class T_Composite, MetaDataFn get_metadata, class T_Connmgr, int LookupNI = 0>
       class MultiCastComposite2DeviceFactoryT: public CollectiveProtocolFactory
       {
           class collObj
@@ -1196,6 +1196,15 @@ namespace CCMI
           virtual Executor::Composite * generate(pami_geometry_t  geometry,
                                                  void            *cmd)
           {
+            // This should compile out if native interfaces are scoped
+            // globally.
+            if(LookupNI)
+            {
+              PAMI_GEOMETRY_CLASS *g = (PAMI_GEOMETRY_CLASS*)geometry;
+              _native_l = _ni_local_map[g->comm()];
+              _native_g = _ni_global_map[g->comm()];
+            }
+            
             collObj *cobj = (collObj*) _alloc.allocateObject();
             TRACE_ADAPTOR((stderr, "<%p>MultiCastComposite2DeviceFactoryT::generate()\n", cobj));
             new(cobj) collObj(_native_l,          // Native interface local
@@ -1212,6 +1221,18 @@ namespace CCMI
 
           }
 
+        inline void setNI(pami_geometry_t geometry,
+                          Interfaces::NativeInterface *nativeL,
+                          Interfaces::NativeInterface *nativeG)
+          {
+            PAMI_assert(LookupNI == 1); // no local master?
+            PAMI_GEOMETRY_CLASS *g = (PAMI_GEOMETRY_CLASS*)geometry;
+            _ni_local_map[g->comm()]  = nativeL;
+            _ni_global_map[g->comm()] = nativeG;
+            _native_l = NULL;
+            _native_g = NULL;
+          }
+        
         protected:
           T_Connmgr                                       *_cmgr;
           Interfaces::NativeInterface                     *_native_l;
@@ -1220,6 +1241,8 @@ namespace CCMI
           PAMI::MemoryAllocator < sizeof(PWQBuffer), 16 >  _alloc_pbuf;
           PAMI::Queue                                      _ue;
           PAMI::Queue                                      _posted;
+          std::map<size_t,Interfaces::NativeInterface *>   _ni_local_map;
+          std::map<size_t,Interfaces::NativeInterface *>   _ni_global_map;
       };
 
 

@@ -213,6 +213,7 @@ namespace PAMI
         *flag = 0;
       }
 
+
     pami_result_t generateMapCache(size_t   myrank,
                                    size_t   mysize,
                                    size_t  &min_rank,
@@ -249,10 +250,10 @@ namespace PAMI
         xfer.cookie                         = (void*)&flag;
         xfer.algorithm                      = alg;
         xfer.cmd.xfer_allgather.sndbuf      = host;
-        xfer.cmd.xfer_allgather.stype       = &PAMI_TYPE_CONTIGUOUS;
+        xfer.cmd.xfer_allgather.stype       = PAMI_TYPE_CONTIGUOUS;
         xfer.cmd.xfer_allgather.stypecount  = str_len;
         xfer.cmd.xfer_allgather.rcvbuf      = hosts;
-        xfer.cmd.xfer_allgather.rtype       = &PAMI_TYPE_CONTIGUOUS;
+        xfer.cmd.xfer_allgather.rtype       = PAMI_TYPE_CONTIGUOUS;
         xfer.cmd.xfer_allgather.rtypecount  = str_len;
 
 	// We can only advance the lapi device here because our other devices
@@ -286,6 +287,8 @@ namespace PAMI
         }
         __global.heap_mm->free(host);
         __global.heap_mm->free(hosts);
+
+        PAMI_assertf(_npeers != 0, "Peers is 0"); // or return?
 
         // local ranks could be represented as rectangle...
         // but, let Global.h use Topology analyze if it wants.
@@ -512,12 +515,28 @@ namespace PAMI
         Client *c = (Client*)cookie;
         for(size_t n=0; n<c->_ncontexts; n++)
           {
+            int count=1;
             c->_contexts[n]->_pgas_collreg->receive_global(n,g,&reduce_result[0],1);
             c->_contexts[n]->_p2p_ccmi_collreg->receive_global(n,g,&reduce_result[1],1);
-            c->_contexts[n]->_cau_collreg->receive_global(n,g,&reduce_result[2],1);
+            c->_contexts[n]->_cau_collreg->analyze(n,g,&reduce_result[2],&count,1);
           }
       }
 
+    static void cr_func2(pami_context_t  context,
+                        void            *cookie,
+                        uint64_t        *reduce_result,
+                        LAPIGeometry    *g,
+                        pami_result_t    result )
+      {
+        Client *c = (Client*)cookie;
+        for(size_t n=0; n<c->_ncontexts; n++)
+          {
+            int count=1;
+            c->_contexts[n]->_cau_collreg->analyze(n,g,&reduce_result[2],&count,2);
+          }
+      }
+
+    
     inline pami_result_t geometry_create_taskrange_impl(pami_geometry_t       * geometry,
                                                         pami_configuration_t    configuration[],
                                                         size_t                  num_configs,
@@ -530,7 +549,6 @@ namespace PAMI
                                                         void                  * cookie)
       {
         LAPIGeometry              *new_geometry = NULL;
-        uint64_t                  to_reduce_vec[16];
         uint64_t                  *to_reduce;
         uint                      to_reduce_count;
 	pami_result_t rc;
@@ -552,27 +570,21 @@ namespace PAMI
             
             PAMI::Topology *local_master_topology  = (PAMI::Topology *)new_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
             to_reduce_count = 3 + local_master_topology->size();
-            if (to_reduce_count >16) {
-	       rc = __global.heap_mm->memalign((void **)&to_reduce, 0,
-               					to_reduce_count * sizeof(uint64_t));
-	       PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc to_reduce");
-            } else {
-               to_reduce = &(to_reduce_vec[0]);
-            }
+            rc = __global.heap_mm->memalign((void **)&to_reduce, 0,
+                                            to_reduce_count * sizeof(uint64_t));
+            PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc to_reduce");
             for(size_t n=0; n<_ncontexts; n++)
               {
                 new_geometry->resetUEBarrier(); // Reset so pgas will select the UE barrier
 		int nc = 0;
 		int ncur = 0;
-                _contexts[n]->_pgas_collreg->register_local(n,new_geometry,&to_reduce[0/*n*/], ncur);
+                _contexts[n]->_pgas_collreg->register_local(n,new_geometry,&to_reduce[0], ncur);
 		nc+= ncur;
 		ncur = 0;
-                _contexts[n]->_p2p_ccmi_collreg->register_local(n,new_geometry,&to_reduce[1/*n*/], ncur);
+                _contexts[n]->_p2p_ccmi_collreg->register_local(n,new_geometry,&to_reduce[1], ncur);
 		nc+= ncur;
 		ncur=0;
-                _contexts[n]->_cau_collreg->register_local(n,new_geometry,&to_reduce[2/*n*/], ncur);
-		//nc+= ncur;
-		//ideally n should be used in the BAND reduction
+                _contexts[n]->_cau_collreg->analyze(n,new_geometry,&to_reduce[2],&ncur, 0);
               }
 	    new_geometry->processUnexpBarrier(&_ueb_queue,
                                               &_ueb_allocator);
@@ -604,21 +616,32 @@ namespace PAMI
                                           0,
                                           ctxt->getId());
             Geometry::Algorithm<LAPIGeometry> *ar_algo = (Geometry::Algorithm<LAPIGeometry> *)alg;
-            LAPIClassRouteId *cr;
-	    rc = __global.heap_mm->memalign((void **)&cr, 0, sizeof(LAPIClassRouteId));
+            LAPIClassRouteId *cr[2];
+	    rc = __global.heap_mm->memalign((void **)&cr[0], 0, sizeof(LAPIClassRouteId));
 	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc LAPIClassRouteId");
-            new(cr)LAPIClassRouteId(ar_algo,
-                                   new_geometry,
-                                   to_reduce,
-                                   to_reduce_count,
-                                   cr_func,
-                                   (void*)this,
-                                   fn,
-                                   cookie);
+            rc = __global.heap_mm->memalign((void **)&cr[1], 0, sizeof(LAPIClassRouteId));
+	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc LAPIClassRouteId");
+            
+            new(cr[0])LAPIClassRouteId(ar_algo,
+                                       new_geometry,
+                                       to_reduce,
+                                       to_reduce_count,
+                                       cr_func,
+                                       (void*)this,
+                                       LAPIClassRouteId::get_classroute,
+                                       cr[1]);
+            new(cr[1])LAPIClassRouteId(ar_algo,
+                                       new_geometry,
+                                       to_reduce,
+                                       to_reduce_count,
+                                       cr_func2,
+                                       (void*)this,
+                                       fn,
+                                       cookie);
             if(bargeom)
-              bargeom->default_barrier(LAPIClassRouteId::get_classroute, cr, ctxt->getId(), context);
+              bargeom->default_barrier(LAPIClassRouteId::get_classroute, cr[0], ctxt->getId(), context);
             else
-              new_geometry->ue_barrier(LAPIClassRouteId::get_classroute, cr, ctxt->getId(), context);
+              new_geometry->ue_barrier(LAPIClassRouteId::get_classroute, cr[0], ctxt->getId(), context);
           }
         else
           {
@@ -630,8 +653,6 @@ namespace PAMI
                 return PAMI_INVAL;
               }
           }
-
-        if (to_reduce_count > 16) __global.heap_mm->free(to_reduce);
         return PAMI_SUCCESS;
       }
 
@@ -664,9 +685,9 @@ namespace PAMI
       {
         // todo:  implement this routine
         LAPIGeometry              *new_geometry = NULL;
-        uint64_t                  to_reduce_vec[16];
         uint64_t                  *to_reduce;
         uint                      to_reduce_count;
+        pami_result_t             rc; 
         // If our new geometry is NOT NULL, we will create a new geometry
         // for this client.  This new geometry will be populated with a
         // set of algorithms.
@@ -683,11 +704,9 @@ namespace PAMI
 
             PAMI::Topology *local_master_topology  = (PAMI::Topology *)new_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
             to_reduce_count = 3 + local_master_topology->size();
-            if (to_reduce_count >16) {
-              to_reduce = (uint64_t *)malloc(to_reduce_count * sizeof(uint64_t));
-            } else {
-              to_reduce = &(to_reduce_vec[0]);
-            }
+            rc = __global.heap_mm->memalign((void **)&to_reduce, 0,
+                                            to_reduce_count * sizeof(uint64_t));
+            PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc to_reduce");
             for(size_t n=0; n<_ncontexts; n++)
               {
                 new_geometry->resetUEBarrier(); // Reset so pgas will select the UE barrier
@@ -699,7 +718,7 @@ namespace PAMI
                 _contexts[n]->_p2p_ccmi_collreg->register_local(n,new_geometry,&to_reduce[1], ncur);
 		nc+=ncur;
 		ncur=0;
-                _contexts[n]->_cau_collreg->register_local(n,new_geometry,&to_reduce[2], ncur);
+                _contexts[n]->_cau_collreg->analyze(n,new_geometry,&to_reduce[2], &ncur, 0);
               }
             new_geometry->processUnexpBarrier(&_ueb_queue,
                                               &_ueb_allocator);
@@ -719,31 +738,50 @@ namespace PAMI
         // The "done" event is delivered to the user.
         LAPIGeometry      *bargeom = (LAPIGeometry*)parent;
         PAMI::Context    *ctxt    = (PAMI::Context *)context;
+
         if(new_geometry)
           {
             pami_algorithm_t  alg;
+            pami_metadata_t   md;
+            pami_result_t     rc;
             new_geometry->algorithms_info(PAMI_XFER_ALLREDUCE,
                                           &alg,
-                                          NULL,
+                                          &md,
                                           1,
                                           NULL,
                                           NULL,
                                           0,
                                           ctxt->getId());
             Geometry::Algorithm<LAPIGeometry> *ar_algo = (Geometry::Algorithm<LAPIGeometry> *)alg;
-            LAPIClassRouteId *cr = (LAPIClassRouteId *)malloc(sizeof(LAPIClassRouteId));
-            new(cr)LAPIClassRouteId(ar_algo,
-                                    new_geometry,
-                                    to_reduce,
-                                    to_reduce_count,
-                                    cr_func,
-                                    (void*)this,
-                                    fn,
-                                    cookie);
+            LAPIClassRouteId *cr[2];
+            rc = __global.heap_mm->memalign((void **)&cr[0], 0, sizeof(LAPIClassRouteId));
+            PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc LAPIClassRouteId");
+            rc = __global.heap_mm->memalign((void **)&cr[1], 0, sizeof(LAPIClassRouteId));
+            PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc LAPIClassRouteId");
+            to_reduce[0] = 0;
+            to_reduce[1] = 0;
+
+            new(cr[0])LAPIClassRouteId(ar_algo,
+                                       new_geometry,
+                                       to_reduce,
+                                       to_reduce_count,
+                                       cr_func,
+                                       (void*)this,
+                                       LAPIClassRouteId::get_classroute,
+                                       cr[1]);
+            new(cr[1])LAPIClassRouteId(ar_algo,
+                                       new_geometry,
+                                       to_reduce,
+                                       to_reduce_count,
+                                       cr_func2,
+                                       (void*)this,
+                                       fn,
+                                       cookie);
+            
             if(bargeom)
-              bargeom->default_barrier(LAPIClassRouteId::get_classroute, cr, ctxt->getId(), context);
+              bargeom->default_barrier(LAPIClassRouteId::get_classroute, cr[0], ctxt->getId(), context);
             else
-              new_geometry->ue_barrier(LAPIClassRouteId::get_classroute, cr, ctxt->getId(), context);
+              new_geometry->ue_barrier(LAPIClassRouteId::get_classroute, cr[0], ctxt->getId(), context);
           }
         else
           {
@@ -755,8 +793,6 @@ namespace PAMI
                 return PAMI_INVAL;
               }
           }
-
-        if (to_reduce_count > 16) free(to_reduce);
         return PAMI_SUCCESS;
       }
 

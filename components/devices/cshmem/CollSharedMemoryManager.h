@@ -29,12 +29,12 @@
 
 #undef TRACE_ERR
 #ifndef TRACE_ERR
-#define TRACE_ERR(x)   //fprintf x
+#define TRACE_ERR(x)   // fprintf x
 #endif
 
 #undef TRACE_DBG
 #ifndef TRACE_DBG
-#define TRACE_DBG(x)   //fprintf x
+#define TRACE_DBG(x)   // fprintf x
 #endif
 
 #ifndef PAMI_ASSERT
@@ -79,18 +79,20 @@ namespace PAMI
       typedef shm_data_buf_t databuf_t;
 
       struct CollSharedMemory {
-        T_Counter       ready_count;
-        T_Counter       term_count;
-        T_Mutex        ctlstr_pool_lock;
-        T_Mutex        buffer_pool_lock;
-        void           *ctlstr_memory;
-        void           *buffer_memory;
-        volatile ctlstr_t       *free_ctlstr_list;
-        T_Atomic       *ctlstr_list;
-        ctlstr_t       *ctlstr_pool;
-        volatile databuf_t      *free_buffer_list;
-        T_Atomic       *buffer_list;
-        databuf_t      *buffer_pool;
+        T_Counter           ready_count;
+        T_Counter           term_count;
+        T_Mutex             ctlstr_pool_lock;
+        T_Mutex             buffer_pool_lock;
+        volatile uint64_t   clientdata_key;
+        void               *ctlstr_memory;
+        void               *buffer_memory;
+        volatile ctlstr_t  *free_ctlstr_list;
+        T_Atomic           *ctlstr_list;
+        ctlstr_t           *ctlstr_pool;
+        volatile databuf_t *free_buffer_list;
+        T_Atomic           *buffer_list;
+        databuf_t          *buffer_pool;        
+        
       } __attribute__ ((__aligned__ (CACHEBLOCKSZ)));
       typedef CollSharedMemory collshm_t;
 
@@ -100,6 +102,7 @@ namespace PAMI
           _collshm (NULL),
           _localrank (__global.mapping.task()), // hacking for now, only support single node job
           _localsize (__global.mapping.size()), // hacking for now, only support single node job
+          _key(0),
           _mm(mm)
         { }
 
@@ -120,6 +123,7 @@ namespace PAMI
             _collshm->ctlstr_pool = (ctlstr_t *)((char  *)_collshm + sizeof(collshm_t));
             _collshm->buffer_pool = (databuf_t *)((char *)(_collshm->ctlstr_pool) + (_size - sizeof(collshm_t))/2);
 
+            _collshm->clientdata_key = _key;
             _collshm->ctlstr_memory  = _collshm->ctlstr_pool;
             _collshm->buffer_memory  = _collshm->buffer_pool;
 
@@ -132,7 +136,8 @@ namespace PAMI
             // Todo:  remove the following getCtrlStr()
             // Todo:  add the per geometry shared memory information to allreduce in analyze().
             getCtrlStr(_localsize);
-            TRACE_DBG((stderr,"getSGCtrlStrVec() _localsize %zu, "
+            TRACE_DBG((stderr,"_collshm                   %p,    "
+                              "getSGCtrlStrVec() _localsize %zu, "
                               "_collshm->ctlstr_pool      %p, "
                               "_collshm->buffer_pool      %p, "
                               "_collshm->ctlstr_memory    %p, "
@@ -142,6 +147,7 @@ namespace PAMI
                               "_collshm->free_buffer_list %p, "
                               "_collshm->buffer_list      %p  "
                                                            "\n",
+                              _collshm,
                               _localsize,
                               _collshm->ctlstr_pool      ,
                               _collshm->buffer_pool      ,
@@ -164,6 +170,11 @@ namespace PAMI
           return rc;
         }
 
+      pami_result_t init(size_t rank, size_t size, uint64_t key) {
+        _key = key;
+        return init(rank, size);
+        }
+
 
         ~CollSharedMemoryManager()
         {
@@ -179,6 +190,51 @@ namespace PAMI
 
         }
 
+      uint64_t getKey()
+        {
+          uint64_t returnKey;
+          _collshm->buffer_pool_lock.acquire();
+          returnKey = _collshm->clientdata_key;
+          _collshm->buffer_pool_lock.release();
+          return returnKey;
+        }
+      uint64_t getAndSetKey(uint64_t in)
+        {
+          uint64_t returnKey;
+          _collshm->buffer_pool_lock.acquire();
+          returnKey = _collshm->clientdata_key;
+          _collshm->clientdata_key = in;
+          _collshm->buffer_pool_lock.release();
+          return returnKey;
+        }
+
+      void setKeyBit(int index)
+        {
+          _collshm->buffer_pool_lock.acquire();
+          _collshm->clientdata_key |= (1ULL<<(index));
+          _collshm->buffer_pool_lock.release();
+          return;
+        }
+
+      
+      void setKey(uint64_t in)
+        {
+          _collshm->buffer_pool_lock.acquire();
+          _collshm->clientdata_key = in;
+          _collshm->buffer_pool_lock.release();
+          return;
+        }
+
+      void setKeyOR(uint64_t in)
+        {
+          _collshm->buffer_pool_lock.acquire();
+          _collshm->clientdata_key |= in;
+          _collshm->buffer_pool_lock.release();
+          return;
+        }
+
+      
+      
         ///
         /// \brief Get a whole chunk of INIT_BUFCNT new data buffers from the pool
         ///        Hold buffer pool lock.
@@ -344,6 +400,7 @@ namespace PAMI
 
           // require implementation of check_lock and clear_lock in atomic class
           // while(COLLSHM_CHECK_LOCK((atomic_p)&(_collshm->ctlstr_pool_lock), 0, 1));
+          PAMI_ASSERT(&_collshm->ctlstr_pool_lock != NULL);
           _collshm->ctlstr_pool_lock.acquire();
           // is mem_isync() equivalent to isync() on PERCS ?
           mem_isync();
@@ -386,7 +443,6 @@ namespace PAMI
 
         ctlstr_t *getCtrlStr (unsigned count)
         {
-
           PAMI_ASSERT(count <= COLLSHM_INIT_CTLCNT);
 
           unsigned ctlstr_count = 0;
@@ -397,6 +453,8 @@ namespace PAMI
           while (ctlstr_count < count)
           {
             // cur = (ctlstr_t * )_collshm->free_ctlstr_list;
+            PAMI_ASSERT(_collshm != NULL);
+            PAMI_ASSERT(_collshm->ctlstr_list != NULL);
             cur = (ctlstr_t *)_collshm->ctlstr_list->fetch();
             if (cur == NULL)
             {
@@ -512,6 +570,7 @@ namespace PAMI
         collshm_t                *_collshm;       // base pointer of the shared memory segment
         size_t                    _localrank;      // rank in the local topology
         size_t                    _localsize;      // size of the local topology
+        uint64_t                  _key;
         Memory::MemoryManager    *_mm;
       
     };  // class CollSharedmemoryManager

@@ -185,7 +185,7 @@ namespace CCMI
       ///
       /// Barrier Factory All Sided for generate routine
       ///
-      template <class T, MetaDataFn get_metadata, class C>
+      template <class T, MetaDataFn get_metadata, class C, int LookupNI=0>
       class BarrierFactory2DeviceMsync: public CollectiveProtocolFactory
       {
         class collObj
@@ -209,7 +209,7 @@ namespace CCMI
               DO_DEBUG((templateName<T>()));
               TRACE_FN_EXIT();
             }
-	
+          
           BarrierFactory2DeviceMsync         * _factory;
           pami_event_function                  _user_done_fn;
           void                               * _user_cookie;
@@ -258,6 +258,17 @@ namespace CCMI
                                                void                      * cmd)
           {
             TRACE_FN_ENTER();
+
+
+            // This should compile out if native interfaces are scoped
+            // globally.
+            if(LookupNI)
+            {
+              PAMI_GEOMETRY_CLASS *g = (PAMI_GEOMETRY_CLASS*)geometry;
+              _nativeL = _ni_local_map[g->comm()];
+              _nativeG = _ni_global_map[g->comm()];
+            }
+
             collObj *cobj = (collObj*)  _alloc.allocateObject();
             TRACE_FORMAT("<%p> cobj %p",this, cobj);
             new(cobj) collObj(_nativeL,         // Native interface
@@ -279,11 +290,26 @@ namespace CCMI
             get_metadata(mdata);
             TRACE_FN_EXIT();
           }
+
+        inline void setNI(pami_geometry_t geometry,
+                          Interfaces::NativeInterface *nativeL,
+                          Interfaces::NativeInterface *nativeG)
+          {
+            PAMI_assert(LookupNI == 1); // no local master?
+            PAMI_GEOMETRY_CLASS *g = (PAMI_GEOMETRY_CLASS*)geometry;
+            _ni_local_map[g->comm()]  = nativeL;
+            _ni_global_map[g->comm()] = nativeG;
+            _nativeL = NULL;
+            _nativeG = NULL;
+          }
+
       private:
         C                                          * _cmgr;
         Interfaces::NativeInterface                * _nativeL;
         Interfaces::NativeInterface                * _nativeG;
         PAMI::MemoryAllocator<sizeof(collObj), 16>   _alloc;
+        std::map<size_t,Interfaces::NativeInterface *>   _ni_local_map;
+        std::map<size_t,Interfaces::NativeInterface *>   _ni_global_map;
       };
 
       

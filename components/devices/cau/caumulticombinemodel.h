@@ -20,7 +20,7 @@
 
 #ifdef TRACE
 #undef TRACE
-#define TRACE(x) // fprintf x
+#define TRACE(x)  // fprintf x
 #else
 #define TRACE(x) // fprintf x
 #endif
@@ -74,10 +74,11 @@ namespace PAMI
           {
             char            *redbuf  = m->_sndpwq->bufferToConsume();
             unsigned         minsize = MIN(m->_sndpwq->bytesAvailableToConsume(), 64);
-            TRACE((stderr, "CAUMulticombineModel: NonRoot(cau_red_send_done): More data to reduce: redbuf=%p toReduce=%lu\n",
-                   redbuf, minsize));
+            TRACE((stderr, "CAUMulticombineModel: NonRoot(cau_red_send_done): More data to reduce: redbuf=%p toReduce=%lu dispatch_id=%d\n",
+                   redbuf, minsize, m->_xfer_header.dispatch_id));
+            CAUGeometryInfo        *gi       = (CAUGeometryInfo *)m->_devinfo;
             CheckLapiRC(lapi_cau_reduce(device->getHdl(),             // lapi handle
-                                        m->_xfer_header.geometry_id,  // group id
+                                        gi->_cau_id,                  // group id
                                         m->_xfer_header.dispatch_id,  // dispatch id
                                         &m->_xfer_header,             // header
                                         sizeof(m->_xfer_header),      // header_len
@@ -163,8 +164,8 @@ namespace PAMI
                   T_Device        *device  = (T_Device *)m->_device;
                   char            *redbuf  = m->_sndpwq->bufferToConsume();
                   unsigned         minsize = MIN(m->_sndpwq->bytesAvailableToConsume(), 64);
-                  TRACE((stderr, "CAUMulticombineModel: NonRoot(cau_mcast_handler): More data to reduce: redbuf=%p toReduce=%lu\n",
-                         redbuf, minsize));
+                  TRACE((stderr, "CAUMulticombineModel: NonRoot(cau_mcast_handler): More data to reduce: redbuf=%p toReduce=%lu did=%d\n",
+                         redbuf, minsize, m->_xfer_header.dispatch_id));
                   CheckLapiRC(lapi_cau_reduce(device->getHdl(),             // lapi handle
                                               gi->_cau_id,                  // group id
                                               m->_xfer_header.dispatch_id,  // dispatch id
@@ -257,10 +258,15 @@ namespace PAMI
             {
               TRACE((stderr, "CAUMulticombineModel: cau_red_handler: seqno=%d key=%d\n",
                      seqno, m->key()));
-              size_t bytesLeft       = m->_bytesToReduce - m->_bytesReduced;
-              size_t bytesAvail      = m->_rcvpwq->bytesAvailableToProduce();
-              size_t bytesToCopy     = MIN(MIN(bytesLeft, bytesAvail),64);
-              void * buf             = m->_rcvpwq->bufferToProduce();
+              size_t bytesLeft            = m->_bytesToReduce - m->_bytesReduced;
+              size_t bytesAvailToProduce  = m->_rcvpwq->bytesAvailableToProduce();
+              size_t bytesAvailToConsume  = m->_sndpwq->bytesAvailableToConsume();
+//              size_t bytesToCopy          = MIN(bytesAvailToConsume,MIN(MIN(bytesLeft, bytesAvailToProduce),64));
+              size_t bytesToCopy          = MIN(MIN(bytesLeft, bytesAvailToProduce),64);
+              void * buf                  = m->_rcvpwq->bufferToProduce();
+
+              TRACE((stderr, "CAUMulticombineModel:  bytesLeft=%ld, bytesAvailToProduce=%ld, bytesAvailToConsume=%ld, bytesToCopy=%ld, buf=%p rcvpwq=%p, sndpwq=%p\n",
+                     bytesLeft, bytesAvailToProduce, bytesAvailToConsume, bytesToCopy, buf, m->_rcvpwq, m->_sndpwq));
               if(bytesToCopy>0)
                 {
                   char *sbuf      =  m->_sndpwq->bufferToConsume();
@@ -278,7 +284,7 @@ namespace PAMI
               m->_xfer_header_b.msgsize     = m->_bytesToReduce;
               m->_bytesBroadcasted         += bytesToCopy;
 
-              TRACE((stderr, "CAUMulticombineModel: cau_red_handler: lapi_cau_multicast:  buf=%p bytes=%ld\n",
+              TRACE((stderr, "CAUMulticombineModel: cau_red_handler: buf=%p bytes=%ld\n",
                      buf, bytesToCopy));
 
               lapi_handle_t hdl = mc->_device.getHdl();
@@ -322,17 +328,18 @@ namespace PAMI
 
       static pami_result_t defer_reduce (pami_context_t context, void *cookie)
         {
-          CAUMcombineMessage     *m = (CAUMcombineMessage*) cookie;
-          unsigned        minsize   =  MIN(m->_sndpwq->bytesAvailableToConsume(), 64);
-          char           *buf       =  m->_sndpwq->bufferToConsume();
+          CAUMcombineMessage *m       = (CAUMcombineMessage*) cookie;
+          unsigned            minsize =  MIN(m->_sndpwq->bytesAvailableToConsume(), 64);
+          char               *buf     =  m->_sndpwq->bufferToConsume();
+          T_Device           *device  = (T_Device *)m->_device;
+          lapi_handle_t       hdl     = device->getHdl();
+          CAUGeometryInfo    *gi      = (CAUGeometryInfo *)m->_devinfo;
           m->_currentBytes         +=  minsize;
-          T_Device        *device   = (T_Device *)m->_device;
-          lapi_handle_t hdl         = device->getHdl();
           
           if(minsize)
           {
             CheckLapiRC(lapi_cau_reduce(hdl,                         // lapi handle
-                                        m->_xfer_header.geometry_id, // group id
+                                        gi->_cau_id,                 // group id
                                         m->_xfer_header.dispatch_id, // dispatch id
                                         &m->_xfer_header,            // header
                                         sizeof(m->_xfer_header),     // header_len
@@ -356,6 +363,7 @@ namespace PAMI
             TRACE((stderr, "CAUMulticombineModel:  Registering Dispatch Handler:  %p %p\n", cau_red_handler, cau_mcast_handler));
             _dispatch_red_id   = _device.registerSyncDispatch(cau_red_handler, this);
             _dispatch_mcast_id = _device.registerSyncDispatch(cau_mcast_handler, this);
+            TRACE((stderr, "CAUMulticombineModel:  reduction dispatch id/bcast dispatch id:  %d %d\n", _dispatch_red_id, _dispatch_mcast_id));
             status             = PAMI_SUCCESS;
           };
         inline pami_result_t postMulticombine_impl (uint8_t (&state)[multicombine_model_state_bytes],
@@ -388,9 +396,8 @@ namespace PAMI
             if(topo_dst->size()==1)
               isReduceOnly=true;
 
-            TRACE((stderr, "CAUMulticombineModel: ReduceOnly=%d, %ld, %ld\n", 
-                   isReduceOnly, tl_root[0], _device.taskid()));
-
+            TRACE((stderr, "CAUMulticombineModel: ReduceOnly=%d, tl_root=%ld, taskid=%ld dst_topo_size=%d src_topo_size=%d\n", 
+                   isReduceOnly, tl_root[0], _device.taskid(), topo_dst->size(), topo_src->size()));
             
             if(tl_root[0] == _device.taskid())
             {
@@ -446,7 +453,8 @@ namespace PAMI
                 m->_xfer_header.pktsize            =  64;
                 m->_xfer_header.msgsize            =  mcombine->count;
                 m->_math_func                      =  mathfunc;
-                m->_device                         = &_device; 
+                m->_device                         = &_device;
+                m->_devinfo = devinfo;
                 TRACE((stderr, "CAUMulticombineModel: Created New Message=%p (%lu)to post to expected queue\n",
                        m, m->_xfer_header.seqno));
               }
@@ -459,8 +467,8 @@ namespace PAMI
             lapi_handle_t hdl = _device.getHdl();
             if(tl_root[0] != _device.taskid())
               {
-                TRACE((stderr, "CAUMulticombineModel: Nonroot Calling Reduce and posting to posted broadcast queue seqno=%lu buf=%p\n",
-                       m->_xfer_header.seqno, buf));
+                TRACE((stderr, "CAUMulticombineModel: Nonroot Calling Reduce and posting to posted broadcast queue seqno=%lu buf=%p dispatch_red_id=%d\n",
+                       m->_xfer_header.seqno, buf, _dispatch_red_id));
                 gi->_postedBcast.pushTail((MatchQueueElem*)m);
 
                 if(minsize>0)

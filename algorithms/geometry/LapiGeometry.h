@@ -70,14 +70,15 @@ namespace PAMI
             _geometry_map(geometry_map),
             _allreduce_async_mode(0),
             _allreduce_iteration(0),
-            _masterRank(-1)
+            _masterRank(-1),
+            _cleanupFcn(NULL)          
         {
           TRACE_ERR((stderr, "<%p>Lapi(ranklist)\n", this));
           // this creates the topology including all subtopologies
           new(&_topos[DEFAULT_TOPOLOGY_INDEX]) PAMI::Topology(_ranks, nranks);
           if(gen_topo)
             buildSpecialTopologies();
-
+          
           // Initialize remaining members
 
           (*_geometry_map)[_commid] = this;
@@ -112,7 +113,8 @@ namespace PAMI
             _geometry_map(geometry_map),
             _allreduce_async_mode(0),
             _allreduce_iteration(0),
-            _masterRank(-1)
+            _masterRank(-1),
+            _cleanupFcn(NULL)
         {
           TRACE_ERR((stderr, "<%p>Lapi(ranges)\n", this));
 
@@ -234,7 +236,8 @@ namespace PAMI
             _geometry_map(geometry_map),
             _allreduce_async_mode(0),
             _allreduce_iteration(0),
-            _masterRank(-1)
+            _masterRank(-1),
+            _cleanupFcn(NULL)
         {
           TRACE_ERR((stderr, "<%p>Lapi(topology)\n", this));
 
@@ -277,7 +280,7 @@ namespace PAMI
             for (size_t j = 0; j < num_local_tasks; j++)
               if (_topos[MASTER_TOPOLOGY_INDEX].index2Rank(k) == _topos[LOCAL_TOPOLOGY_INDEX].index2Rank(j))
                 {
-                  _masterRank = _topos[LOCAL_TOPOLOGY_INDEX].index2Rank(j);
+                  _masterRank= _topos[LOCAL_TOPOLOGY_INDEX].index2Rank(j);
                   break;
                 };
 
@@ -429,13 +432,17 @@ namespace PAMI
         }
         inline void                      freeAllocations_impl()
         {
+          if(_cleanupFcn)
+            _cleanupFcn(NULL, _cleanupData, PAMI_SUCCESS);
+
+
           if (_ranks_malloc) __global.heap_mm->free(_ranks);
 
           _ranks = NULL;
           _ranks_malloc = false;
           free(_allreduce_storage[0]);
           free(_allreduce_storage[1]);
-
+          
           return;
         }
         inline void                      setGlobalContext_impl(bool context)
@@ -767,7 +774,14 @@ namespace PAMI
           return _client;
         }
 
+      
+      void setCleanupCallback(pami_event_function fcn, void *data)
+        {
+          _cleanupFcn  = fcn;
+          _cleanupData = data;
+        }
 
+      
       private:
         AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _allreduces[PAMI_GEOMETRY_NUMALGOLISTS];
         AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _broadcasts[PAMI_GEOMETRY_NUMALGOLISTS];
@@ -815,7 +829,8 @@ namespace PAMI
         PAMI::Topology                              _topos[MAX_NUM_TOPOLOGIES];
         pami_task_t                                 _virtual_rank;
         pami_task_t                                 _masterRank;
-
+        pami_event_function                         _cleanupFcn;
+        void                                       *_cleanupData;
     }; // class Geometry
   };  // namespace Geometry
 }; // namespace PAMI

@@ -32,19 +32,19 @@
 #define __sync_fetch_and_add(x,y)	__fetch_and_addlp((volatile long *)x,y)
 #define __sync_fetch_and_sub(x,y)	__fetch_and_addlp((volatile long *)x,-(y))
 #define __sync_fetch_and_xor(x,y)	({		\
-	unsigned long _v;				\
+	unsigned long _v,_y;				\
 	do {						\
-		_v = __ldarx((volatile long *)x);\
-		unsigned long _y = _v ^ (unsigned long)y;\
-	} while (!__stdcx((volatile long *)x, _v));\
+		_v = __ldarx((volatile long *)x);       \
+	        _y = _v ^ (unsigned long)y;             \
+	} while (!__stdcx((volatile long *)x, _y));     \
 	_v;						\
 })
 #define __sync_fetch_and_nand(x,y)	({		\
-	unsigned long _v;				\
+	unsigned long _v, _y;				\
 	do {						\
-		_v = __ldarx((volatile long *)x);\
-		unsigned long _y = ~_v & (unsigned long)y;\
-	} while (!__stdcx((volatile long *)x, _v));\
+		_v = __ldarx((volatile long *)x);       \
+		_y = ~_v & (unsigned long)y;            \
+	} while (!__stdcx((volatile long *)x, _v));     \
 	_v;						\
 })
 #define __sync_fetch_and_swap(x,y)	__fetch_and_swaplp((volatile unsigned long *)x,y)
@@ -118,19 +118,19 @@
 #define __sync_fetch_and_add(x,y)	__fetch_and_add((volatile int *)x,y)
 #define __sync_fetch_and_sub(x,y)	__fetch_and_add((volatile int *)x,-(y))
 #define __sync_fetch_and_xor(x,y)	({		\
-	unsigned int _v;				\
+	unsigned int _v,_y;				\
 	do {						\
-		_v = __lwarx((volatile int *)x);\
-		unsigned int _y = _v ^ (unsigned int)y;	\
-	} while (!__stwcx((volatile int *)x, _v));\
+		_v = __lwarx((volatile int *)x);        \
+		_y = _v ^ (unsigned int)y;	        \
+	} while (!__stwcx((volatile int *)x, _y));      \
 	_v;						\
 })
 #define __sync_fetch_and_nand(x,y)	({		\
-	unsigned int _v;				\
+	unsigned int _v,_y;				\
 	do {						\
-		_v = __lwarx((volatile int *)x);\
-		unsigned int _y = ~_v & (unsigned int)y;\
-	} while (!__stwcx((volatile int *)x, _v));\
+		_v = __lwarx((volatile int *)x);        \
+		_y = ~_v & (unsigned int)y;             \
+	} while (!__stwcx((volatile int *)x, _v));      \
 	_v;						\
 })
 #define __sync_fetch_and_swap(x,y)	__fetch_and_swap((volatile int *)x,y)

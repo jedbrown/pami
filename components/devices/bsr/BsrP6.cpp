@@ -42,13 +42,13 @@ BsrP6::BsrP6() {
  * \brief Default destructor.
  */
 BsrP6::~BsrP6() {
-    ITRC(IT_BAR, "BsrP6: In ~BsrP6()\n");
+    ITRC(IT_BSR, "BsrP6: In ~BsrP6()\n");
     CleanUp();
 }
 
 void BsrP6::CleanUp()
 {
-    ITRC(IT_BAR, "BsrP6: In CleanUp()\n");
+    ITRC(IT_BSR, "BsrP6: In CleanUp()\n");
     // set status
     status = NOT_READY;
 
@@ -66,7 +66,7 @@ void BsrP6::CleanUp()
             // detach from bsr, if attached before
             for (int i = 0; i < bsr_att_cnt; ++i) {
                 (*(bsr_func.bsr_detach))(bsr_fd, (void*)(bsr_addr[i]));
-                ITRC(IT_BAR,
+                ITRC(IT_BSR,
                         "BsrP6: bsr_detach is done for bsr_addr[%d]=0x%p\n",
                         i, bsr_addr[i]);
             }
@@ -85,7 +85,7 @@ void BsrP6::CleanUp()
 
                 for (int i = 0; i < bsr_id_cnt; ++i) {
                     (*(bsr_func.bsr_unallocate))(bsr_fd, shm->bsr_ids[i]);
-                    ITRC(IT_BAR,
+                    ITRC(IT_BSR,
                             "BsrP6: bsr_unallocate is done for bsr_id=%d\n",
                             shm->bsr_ids[i]);
                 }
@@ -99,7 +99,7 @@ void BsrP6::CleanUp()
     }
 
     (*(bsr_func.bsr_close))(bsr_fd);
-    ITRC(IT_BAR, "BsrP6: bsr_close is done for bsr_fd=%d\n", bsr_fd);
+    ITRC(IT_BSR, "BsrP6: bsr_close is done for bsr_fd=%d\n", bsr_fd);
     bsr_fd = -1;
 }
 
@@ -110,44 +110,44 @@ SharedArray::RC BsrP6::Init(const unsigned int member_cnt,
     BSR_SETUP_STATE state;
 
 #ifndef __64BIT__
-    ITRC(IT_BAR, "BsrP6: Not supported on 32Bit applications\n");
+    ITRC(IT_BSR, "BsrP6: Not supported on 32Bit applications\n");
     return NOT_AVAILABLE;
 #endif
 #ifdef _LAPI_LINUX
-    ITRC(IT_BAR, "BsrP6: BSR is not supported on LINUX\n");
+    ITRC(IT_BSR, "BsrP6: BSR is not supported on LINUX\n");
     return NOT_AVAILABLE;
 #endif
 
     // if it is already initialized, then do nothing.
     if (status == READY) {
-        ITRC(IT_BAR, "BsrP6: Already initialized with %d members\n",
+        ITRC(IT_BSR, "BsrP6: Already initialized with %d members\n",
                 member_cnt);
         return SUCCESS;
     }
 
     this->is_leader  = is_leader;
     this->member_cnt = member_cnt;
-    ITRC(IT_BAR, "BsrP6: initializing with %d members\n", member_cnt);
+    ITRC(IT_BSR, "BsrP6: initializing with %d members\n", member_cnt);
 
     // Check availability of BSR hardware.
     ///\TODO Do we have other way to check BSR hardware availabity?
     rc = LoadDriverFunc();
     if (SUCCESS != rc) {
-        ITRC(IT_BAR, "BsrP6: LoadDriverFunc() failed\n");
+        ITRC(IT_BSR, "BsrP6: LoadDriverFunc() failed\n");
         return rc;
     }
 
     // open BSR device
     bsr_fd = (*(bsr_func.bsr_open))();
     if (bsr_fd < 0) {
-        ITRC(IT_BAR, "BsrP6: bsr_open failed\n");
+        ITRC(IT_BSR, "BsrP6: bsr_open failed\n");
         return FAILED;
     }
 
     // Query the granuity
     bsr_granule = (*(bsr_func.bsr_query_granule))(bsr_fd);
     if (bsr_granule <= 0) {
-        ITRC(IT_BAR, "BsrP6: bsr_granule failed (%d returned)\n",
+        ITRC(IT_BSR, "BsrP6: bsr_granule failed (%d returned)\n",
                 bsr_granule);
         return FAILED;
     }
@@ -155,7 +155,7 @@ SharedArray::RC BsrP6::Init(const unsigned int member_cnt,
     // calculate the number of BSR IDs needed
     bsr_id_cnt = (member_cnt + bsr_granule - 1)/bsr_granule;
     if (bsr_id_cnt <= 0) {
-        ITRC(IT_BAR, "BsrP6: got invalid bsr_id_cnt=%d\n", bsr_id_cnt);
+        ITRC(IT_BSR, "BsrP6: got invalid bsr_id_cnt=%d\n", bsr_id_cnt);
         return FAILED;
     }
 
@@ -164,7 +164,7 @@ SharedArray::RC BsrP6::Init(const unsigned int member_cnt,
         bsr_addr = new volatile unsigned char * [bsr_id_cnt];
     } catch (std::bad_alloc) {
         bsr_addr = NULL;
-        ITRC(IT_BAR, "BsrP6: Out of memory\n");
+        ITRC(IT_BSR, "BsrP6: Out of memory\n");
         CleanUp();
         return FAILED;
     }
@@ -178,7 +178,7 @@ SharedArray::RC BsrP6::Init(const unsigned int member_cnt,
 
     rc = ShmSetup(key, num_bytes, 300);
     if (SUCCESS != rc) {
-        ITRC(IT_BAR, "BsrP6: ShmSetup failed\n");
+        ITRC(IT_BSR, "BsrP6: ShmSetup failed\n");
         CleanUp();
         return rc;
     }
@@ -197,14 +197,14 @@ SharedArray::RC BsrP6::Init(const unsigned int member_cnt,
                 bsr_addr[i] = (volatile unsigned char*)
                     (*(bsr_func.bsr_attach))(bsr_fd, shm->bsr_ids[i]);
                 if (NULL == bsr_addr[i]) {
-                    ITRC(IT_BAR,
+                    ITRC(IT_BSR,
                             "BsrP6: bsr_attach failed for bsr_id[%d]=%d\n",
                             i, shm->bsr_ids[i]);
                     shm->bsr_setup_state = ST_FAIL;
                     CleanUp();
                     return FAILED;
                 }
-                ITRC(IT_BAR,
+                ITRC(IT_BSR,
                         "BsrP6: bsr_attach successed for bsr_id[%d]=%d "
                         "bsr_addr[%d]=%p\n",
                         i, shm->bsr_ids[i], i, bsr_addr[i]);
@@ -217,7 +217,7 @@ SharedArray::RC BsrP6::Init(const unsigned int member_cnt,
                 // CleanUp function needs this to unallocate the BSR IDs.
                 bsr_id_cnt = allocated_id_cnt;
 
-                ITRC(IT_BAR, "BsrP6: Failed to get BSR ID\n");
+                ITRC(IT_BSR, "BsrP6: Failed to get BSR ID\n");
                 shm->bsr_setup_state = ST_FAIL;
                 CleanUp();
                 return FAILED;
@@ -230,7 +230,7 @@ SharedArray::RC BsrP6::Init(const unsigned int member_cnt,
 
         // move to next state; notify the others that BSR IDs are available
         shm->bsr_setup_state = ST_ATTACHED;
-        ITRC(IT_BAR, "BsrP6: leader bsr_setup is done (bsr_setup_ref=%d)\n",
+        ITRC(IT_BSR, "BsrP6: leader bsr_setup is done (bsr_setup_ref=%d)\n",
                 shm->bsr_setup_ref);
     } else {
         // waiting for leader to change the setup_state to ST_ATTACHED or
@@ -247,7 +247,7 @@ SharedArray::RC BsrP6::Init(const unsigned int member_cnt,
             }
         }
         if (ST_FAIL == state) {
-            ITRC(IT_BAR, "BsrP6: bsr setup failed; abording ...\n");
+            ITRC(IT_BSR, "BsrP6: bsr setup failed; abording ...\n");
             CleanUp();
             return FAILED;
         }
@@ -260,13 +260,13 @@ SharedArray::RC BsrP6::Init(const unsigned int member_cnt,
             bsr_addr[i] = (volatile unsigned char*)
                 (*(bsr_func.bsr_attach))(bsr_fd, shm->bsr_ids[i]);
             if (NULL == bsr_addr[i]) {
-                ITRC(IT_BAR, "BsrP6: bsr_attach failed for bsr_id[%d]=%d\n",
+                ITRC(IT_BSR, "BsrP6: bsr_attach failed for bsr_id[%d]=%d\n",
                         i, shm->bsr_ids[i]);
                 shm->bsr_setup_state = ST_FAIL;
                 CleanUp();
                 return FAILED;
             }
-            ITRC(IT_BAR,
+            ITRC(IT_BSR,
                     "BsrP6: bsr_attach successed for bsr_id[%d]=%d "
                     "bsr_addr[%d]=%p\n",
                     i, shm->bsr_ids[i], i, bsr_addr[i]);
@@ -274,7 +274,7 @@ SharedArray::RC BsrP6::Init(const unsigned int member_cnt,
         }
         // increase the count
         fetch_and_add ((atomic_p)&shm->bsr_setup_ref, 1);
-        ITRC(IT_BAR, "BsrP6: follower bsr_setup is done (bsr_setup_ref=%d)\n",
+        ITRC(IT_BSR, "BsrP6: follower bsr_setup is done (bsr_setup_ref=%d)\n",
                 shm->bsr_setup_ref);
     }
 
@@ -294,12 +294,12 @@ SharedArray::RC BsrP6::Init(const unsigned int member_cnt,
         }
     }
     if (state == ST_FAIL) {
-        ITRC(IT_BAR, "BsrP6: bsr setup failed; abording ...\n");
+        ITRC(IT_BSR, "BsrP6: bsr setup failed; abording ...\n");
         CleanUp();
         return FAILED;
     }
 
-    ITRC(IT_BAR, "BsrP6: initialied successfully\n");
+    ITRC(IT_BSR, "BsrP6: initialied successfully\n");
     status = READY;
     return SUCCESS;
 }
@@ -409,7 +409,7 @@ void BsrP6::Store8(const int offset, const unsigned long long val)
 static void show_dlerror(const char* msg) {
     const char* msg_to_use = (msg == NULL)?"Dynamic linking error":msg;
     char* err_str = dlerror();
-    ITRC(IT_BAR, "%s (%s)\n", msg_to_use, (err_str == NULL)?"unknown":err_str);
+    ITRC(IT_BSR, "%s (%s)\n", msg_to_use, (err_str == NULL)?"unknown":err_str);
 }
 
 /*!
