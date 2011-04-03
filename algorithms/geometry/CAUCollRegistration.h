@@ -527,7 +527,7 @@ namespace PAMI
           {
             _csmm.setKeyBit(cau_group);
             int rc = lapi_cau_group_destroy(_lapi_handle, cau_group);
-            PAMI_assertf(rc == 0, "CAU Group Destory Failed on geometry=%d index=%d with rc=%d\n", g->comm(), index, rc);
+            PAMI_assertf(rc == 0, "CAU Group Destory Failed on geometry=%d index=%d with rc=%d\n", g->comm(), cau_group, rc);
           }
         inline void freeLocalModel(T_LocalModel *m)
           {
