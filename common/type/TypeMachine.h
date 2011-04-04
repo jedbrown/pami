@@ -35,7 +35,7 @@ namespace PAMI
 
             void Show() const;
 
-            bool SetCopyFunc(TypeFunc::CopyFunction new_copy_func, void *new_cookie);
+            void SetCopyFunc(TypeFunc::CopyFunction new_copy_func, void *new_cookie);
             TypeCode * GetType() const;
             size_t GetCursor() const;
             size_t GetCursorDisp() const;
@@ -143,7 +143,7 @@ namespace PAMI
         return type;
     }
 
-    inline bool TypeMachine::SetCopyFunc(TypeFunc::CopyFunction new_copy_func, void *new_cookie)
+    inline void TypeMachine::SetCopyFunc(TypeFunc::CopyFunction new_copy_func, void *new_cookie)
     {
         const uintptr_t fn = (const uintptr_t) new_copy_func;
 
@@ -156,14 +156,7 @@ namespace PAMI
         else
         {
           copy_func = TypeFunc::GetCopyFunction (type->primitive, (TypeFunc::primitive_func_t) fn);
-          if (copy_func == Type::Func::error)
-          {
-            // Unsupported primitive type / primitive operation combination
-            return false;
-          }
         }
-
-        return true;
     }
 
     inline size_t TypeMachine::GetCursor() const

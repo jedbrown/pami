@@ -53,6 +53,36 @@ extern "C"
                                        pami_result_t    result );
 
   /**
+   * \brief Function to produce data at send side or consume data at receive side
+   *
+   * \ingroup datatype
+   *
+   * The default operation with a typed transfer is to copy data. A data
+   * function, when associated with a type, allows a different way of handling
+   * data. For example, one can write a data function to perform data reduction
+   * instead of data copy.
+   *
+   * Unlike memory copy, a data function may not be able to handle byte data.
+   * Atom size is defined as the minimum unit size that a data function
+   * can accept. For example, a data function for summing up doubles may
+   * require the input to be an integral number of doubles, thus the atom
+   * size for this data function is sizeof(double).
+   *
+   * When a data function is used with a typed transfer, one must make sure
+   * the atom size of the data function divides the atom size of the type.
+   *
+   * \param [in] target  The address of a contiguous target buffer
+   * \param [in] source  The address of a contiguous source buffer
+   * \param [in] bytes   The number of bytes to handle
+   * \param [in] cookie  A user-specified value
+   *
+   */
+  typedef void (*pami_data_function) (void   * target,
+                                      void   * source,
+                                      size_t   bytes,
+                                      void   * cookie);
+
+  /**
    * \brief Function signature for work posted to a communication context
    *
    * This work function, with the associated cookie, will continue to be invoked
@@ -371,6 +401,11 @@ extern "C"
     unsigned               min_align_perf;/**<  Estimated performance minimum address alignment */
   } pami_metadata_t;
   /** \} */ /* end of "PAMI Collectives Metadata" group */
+
+
+
+
+
 
 
   /*****************************************************************************/
@@ -723,58 +758,8 @@ extern "C"
     pami_send_event_t     events;   /**< Non-blocking event parameters */
   } pami_send_t;
 
-
-  /**
-   * \brief Function to produce data at send side or consume data at receive side
-   *
-   * The default operation with a typed transfer is to copy data. A data
-   * function, when associated with a type, allows a different way of handling
-   * data. For example, one can write a data function to perform data reduction
-   * instead of data copy.
-   *
-   * Unlike memory copy, a data function may not be able to handle byte data.
-   * Atom size is defined as the minimum unit size that a data function
-   * can accept. For example, a data function for summing up doubles may
-   * require the input to be an integral number of doubles, thus the atom
-   * size for this data function is sizeof(double).
-   *
-   * When a data function is used with a typed transfer, one must make sure
-   * the atom size of the data function divides the atom size of the type.
-   *
-   * \param [in] target  The address of a contiguous target buffer
-   * \param [in] source  The address of a contiguous source buffer
-   * \param [in] bytes   The number of bytes to handle
-   * \param [in] cookie  A user-specified value
-   *
-   */
-  typedef void (*pami_data_function) (void   * target,
-                                      void   * source,
-                                      size_t   bytes,
-                                      void   * cookie);
-
-  /**
-   * \brief Data function that performs data copy
-   *
-   */
-  extern pami_data_function PAMI_DATA_COPY;
-  extern pami_data_function PAMI_DATA_NOOP;
-  extern pami_data_function PAMI_DATA_MAX;
-  extern pami_data_function PAMI_DATA_MIN;
-  extern pami_data_function PAMI_DATA_SUM;
-  extern pami_data_function PAMI_DATA_PROD;
-  extern pami_data_function PAMI_DATA_LAND;
-  extern pami_data_function PAMI_DATA_LOR;
-  extern pami_data_function PAMI_DATA_LXOR;
-  extern pami_data_function PAMI_DATA_BAND;
-  extern pami_data_function PAMI_DATA_BOR;
-  extern pami_data_function PAMI_DATA_BXOR;
-  extern pami_data_function PAMI_DATA_MAXLOC;
-  extern pami_data_function PAMI_DATA_MINLOC;
-
   /**
    * \brief Structure for send parameters of a typed active message send
-   *
-   * \c data_fn takes the same cookie for events
    */
   typedef struct
   {
@@ -2800,46 +2785,376 @@ extern "C"
    */
   /*****************************************************************************/
 
+  /*****************************************************************************/
+  /**
+   * \defgroup datatype_and_datacopy_predefines Predefined data types and copy functions
+   *
+   * \ref datatype_predefines can be used in operations where a ::pami_type_t
+   * is provided to specify a contiguous data layout of a known type.
+   *
+   * \ref datacopy_predefines, for specific combinations of predefined data copy
+   * functions and predefined data types, as well as all user-defined data copy
+   * functions, can be used with the predefined data types.
+   *
+   * The predefined data types and copy functions can be used for both
+   * collective and point-to-point communication.
+   * \{
+   */
+  /*****************************************************************************/
+
+  /*****************************************************************************/
+  /**
+   * \defgroup datatype_predefines Predefined data types
+   *
+   * \{
+   */
+  /*****************************************************************************/
+
+  /*****************************************************************************/
+  /**
+   * \defgroup datatype_predefines_integer Integer
+   *           Only valid for \ref datacopy_predefines_copy,
+   *           \ref datacopy_predefines_minmax,
+   *           \ref datacopy_predefines_sumprod, \ref datacopy_predefines_logical,
+   *           and \ref datacopy_predefines_bitwise predefined copy functions
+   *           and user-defined copy functions.
+   *
+   * \defgroup datatype_predefines_floatingpoint Floating point
+   *           Only valid for \ref datacopy_predefines_copy,
+   *           \ref datacopy_predefines_minmax and
+   *           \ref datacopy_predefines_sumprod predefined copy functions
+   *           and user-defined copy functions.
+   *
+   * \defgroup datatype_predefines_logical Logical
+   *           Only valid for \ref datacopy_predefines_copy and
+   *           \ref datacopy_predefines_logical predefined
+   *           copy functions and user-defined copy functions.
+   *
+   * \defgroup datatype_predefines_complex Complex number
+   *           Only valid for \ref datacopy_predefines_copy and
+   *           \ref datacopy_predefines_sumprod predefined
+   *           copy functions and user-defined copy functions.
+   *
+   * \defgroup datatype_predefines_maxloc_minloc Maxloc and minloc
+   *           Only valid for \ref datacopy_predefines_copy and
+   *           \ref datacopy_predefines_maxloc_minloc predefined
+   *           copy functions and user-defined copy functions.
+   */
+  /*****************************************************************************/
+
   /**
    * \var PAMI_TYPE_CONTIGUOUS
-   * \brief A PAMI Datatype that represents a contiguous data layout
-   *
-   *  This is a contiguous type object that does not need to be
-   *  explicitly created using PAMI_Type_create.  It can be used
-   *  in transfers where a pami_type_t is accepted to specify contiguous
-   *  bytes.  This can be used for both collective and point-to-point
-   *  communication.
    */
   extern pami_type_t PAMI_TYPE_CONTIGUOUS;
 
+  /**
+   * \var PAMI_TYPE_BYTE
+   * \brief Predefined data type for a contiguous data layout of bytes.
+   * \ingroup datatype_predefines_integer
+   */
   extern pami_type_t PAMI_TYPE_BYTE;
 
+  /**
+   * \var PAMI_TYPE_SIGNED_CHAR
+   * \brief Predefined data type for a contiguous data layout of signed char types.
+   * \ingroup datatype_predefines_integer
+   */
   extern pami_type_t PAMI_TYPE_SIGNED_CHAR;
+
+  /**
+   * \var PAMI_TYPE_UNSIGNED_CHAR
+   * \brief Predefined data type for a contiguous data layout of unsigned char types.
+   * \ingroup datatype_predefines_integer
+   */
   extern pami_type_t PAMI_TYPE_UNSIGNED_CHAR;
+
+  /**
+   * \var PAMI_TYPE_SIGNED_SHORT
+   * \brief Predefined data type for a contiguous data layout of signed short types.
+   * \ingroup datatype_predefines_integer
+   */
   extern pami_type_t PAMI_TYPE_SIGNED_SHORT;
+
+  /**
+   * \var PAMI_TYPE_UNSIGNED_SHORT
+   * \brief Predefined data type for a contiguous data layout of unsigned short types.
+   * \ingroup datatype_predefines_integer
+   */
   extern pami_type_t PAMI_TYPE_UNSIGNED_SHORT;
+
+  /**
+   * \var PAMI_TYPE_SIGNED_INT
+   * \brief Predefined data type for a contiguous data layout of signed int types.
+   * \ingroup datatype_predefines_integer
+   */
   extern pami_type_t PAMI_TYPE_SIGNED_INT;
+
+  /**
+   * \var PAMI_TYPE_UNSIGNED_INT
+   * \brief Predefined data type for a contiguous data layout of unsigned int types.
+   * \ingroup datatype_predefines_integer
+   */
   extern pami_type_t PAMI_TYPE_UNSIGNED_INT;
+
+  /**
+   * \var PAMI_TYPE_SIGNED_LONG
+   * \brief Predefined data type for a contiguous data layout of signed long types.
+   * \ingroup datatype_predefines_integer
+   */
   extern pami_type_t PAMI_TYPE_SIGNED_LONG;
+
+  /**
+   * \var PAMI_TYPE_UNSIGNED_LONG
+   * \brief Predefined data type for a contiguous data layout of unsigned long types.
+   * \ingroup datatype_predefines_integer
+   */
   extern pami_type_t PAMI_TYPE_UNSIGNED_LONG;
+
+  /**
+   * \var PAMI_TYPE_SIGNED_LONG_LONG
+   * \brief Predefined data type for a contiguous data layout of signed long long types.
+   * \ingroup datatype_predefines_integer
+   */
   extern pami_type_t PAMI_TYPE_SIGNED_LONG_LONG;
+
+  /**
+   * \var PAMI_TYPE_UNSIGNED_LONG_LONG
+   * \brief Predefined data type for a contiguous data layout of unsigned long long types.
+   * \ingroup datatype_predefines_integer
+   */
   extern pami_type_t PAMI_TYPE_UNSIGNED_LONG_LONG;
 
+  /**
+   * \var PAMI_TYPE_FLOAT
+   * \brief Predefined data type for a contiguous data layout of float types.
+   * \ingroup datatype_predefines_floatingpoint
+   */
   extern pami_type_t PAMI_TYPE_FLOAT;
+
+  /**
+   * \var PAMI_TYPE_DOUBLE
+   * \brief Predefined data type for a contiguous data layout of double types.
+   * \ingroup datatype_predefines_floatingpoint
+   */
   extern pami_type_t PAMI_TYPE_DOUBLE;
+
+  /**
+   * \var PAMI_TYPE_LONG_DOUBLE
+   * \brief Predefined data type for a contiguous data layout of long double types.
+   * \ingroup datatype_predefines_floatingpoint
+   */
   extern pami_type_t PAMI_TYPE_LONG_DOUBLE;
 
+  /**
+   * \var PAMI_TYPE_LOGICAL
+   * \brief Predefined data type for a contiguous data layout of logical types.
+   * \ingroup datatype_predefines_logical
+   */
   extern pami_type_t PAMI_TYPE_LOGICAL;
 
+  /**
+   * \var PAMI_TYPE_SINGLE_COMPLEX
+   * \brief Predefined data type for a contiguous data layout of single-precision complex types.
+   * \ingroup datatype_predefines_complex
+   */
   extern pami_type_t PAMI_TYPE_SINGLE_COMPLEX;
+
+  /**
+   * \var PAMI_TYPE_DOUBLE_COMPLEX
+   * \brief Predefined data type for a contiguous data layout of double-precision complex types.
+   * \ingroup datatype_predefines_complex
+   */
   extern pami_type_t PAMI_TYPE_DOUBLE_COMPLEX;
 
+  /**
+   * \var PAMI_TYPE_LOC_2INT
+   * \brief Predefined data type for a contiguous data layout of 2 int types.
+   * \ingroup datatype_predefines_maxloc_minloc
+   */
   extern pami_type_t PAMI_TYPE_LOC_2INT;
+
+  /**
+   * \var PAMI_TYPE_LOC_2FLOAT
+   * \brief Predefined data type for a contiguous data layout of 2 float types.
+   * \ingroup datatype_predefines_maxloc_minloc
+   */
   extern pami_type_t PAMI_TYPE_LOC_2FLOAT;
+
+  /**
+   * \var PAMI_TYPE_LOC_2DOUBLE
+   * \brief Predefined data type for a contiguous data layout of 2 double types.
+   * \ingroup datatype_predefines_maxloc_minloc
+   */
   extern pami_type_t PAMI_TYPE_LOC_2DOUBLE;
+
+  /**
+   * \var PAMI_TYPE_LOC_SHORT_INT
+   * \brief Predefined data type for a contiguous data layout of (short,int) types.
+   * \ingroup datatype_predefines_maxloc_minloc
+   */
   extern pami_type_t PAMI_TYPE_LOC_SHORT_INT;
+
+  /**
+   * \var PAMI_TYPE_LOC_FLOAT_INT
+   * \brief Predefined data type for a contiguous data layout of (float,int) types.
+   * \ingroup datatype_predefines_maxloc_minloc
+   */
   extern pami_type_t PAMI_TYPE_LOC_FLOAT_INT;
+
+  /**
+   * \var PAMI_TYPE_LOC_DOUBLE_INT
+   * \brief Predefined data type for a contiguous data layout of (double,int) types.
+   * \ingroup datatype_predefines_maxloc_minloc
+   */
   extern pami_type_t PAMI_TYPE_LOC_DOUBLE_INT;
+
+  /** \} */ /* end of "datatype_predefines" group */
+
+
+  /*****************************************************************************/
+  /**
+   * \defgroup datacopy_predefines Predefined data copy functions
+   *
+   * The predefined copy functions provide data type operations optimized for
+   * the runtime implementation and can \b only be used with \ref datatype_predefines.
+   * Certain predefined copy functions are only valid to be used with specific
+   * predefined data types.
+   *
+   * The predefined data types and copy functions can be used for both
+   * collective and point-to-point communication.
+   *
+   * \{
+   */
+  /*****************************************************************************/
+
+  /*****************************************************************************/
+  /**
+   * \defgroup datacopy_predefines_minmax Minimum and maximum
+   *           Only valid for predefined \ref datatype_predefines_integer and
+   *           \ref datatype_predefines_floatingpoint data types.
+   *
+   * \defgroup datacopy_predefines_sumprod Sum and product
+   *           Only valid for predefined \ref datatype_predefines_integer,
+   *           \ref datatype_predefines_floatingpoint, and \ref datatype_predefines_complex
+   *           data types.
+   *
+   * \defgroup datacopy_predefines_logical Logical
+   *           Only valid for predefined \ref datatype_predefines_integer and
+   *           \ref datatype_predefines_logical data types.
+   *
+   * \defgroup datacopy_predefines_bitwise Bitwise
+   *           Only valid for predefined \ref datatype_predefines_integer
+   *           data types.
+   *
+   * \defgroup datacopy_predefines_copy Copy
+   *           Valid for all \ref datatype_predefines.
+   *
+   * \defgroup datacopy_predefines_maxloc_minloc Maxloc and minloc
+   *           Only valid for predefined \ref datatype_predefines_maxloc_minloc
+   *           data types.
+   *
+   */
+  /*****************************************************************************/
+
+  /**
+   * \var PAMI_DATA_COPY
+   * \brief Set each destination element to the corresponding source element.
+   * \ingroup datacopy_predefines_copy
+   */
+  extern pami_data_function PAMI_DATA_COPY;
+
+  /**
+   * \var PAMI_DATA_NOOP
+   * \brief Do nothing.
+   */
+  extern pami_data_function PAMI_DATA_NOOP;
+
+  /**
+   * \var PAMI_DATA_MAX
+   * \brief Set the destination element to the maximum of the source and destination elements.
+   * \ingroup datacopy_predefines_minmax
+   */
+  extern pami_data_function PAMI_DATA_MAX;
+
+  /**
+   * \var PAMI_DATA_MIN
+   * \brief Set the destination element to the minimum of the source and destination elements.
+   * \ingroup datacopy_predefines_minmax
+   */
+  extern pami_data_function PAMI_DATA_MIN;
+
+  /**
+   * \var PAMI_DATA_SUM
+   * \brief Set the destination element to the sum of the source and destination elements.
+   * \ingroup datacopy_predefines_sumprod
+   */
+  extern pami_data_function PAMI_DATA_SUM;
+
+  /**
+   * \var PAMI_DATA_PROD
+   * \brief Set the destination element to the product of the source and destination elements.
+   * \ingroup datacopy_predefines_sumprod
+   */
+  extern pami_data_function PAMI_DATA_PROD;
+
+  /**
+   * \var PAMI_DATA_LAND
+   * \brief Set the destination element to the "logical and" of the source and destination elements.
+   * \ingroup datacopy_predefines_logical
+   */
+  extern pami_data_function PAMI_DATA_LAND;
+
+  /**
+   * \var PAMI_DATA_LOR
+   * \brief Set the destination element to the "logical or" of the source and destination elements.
+   * \ingroup datacopy_predefines_logical
+   */
+  extern pami_data_function PAMI_DATA_LOR;
+
+  /**
+   * \var PAMI_DATA_LXOR
+   * \brief Set the destination element to the "logical exclusive-or" of the source and destination elements.
+   * \ingroup datacopy_predefines_logical
+   */
+  extern pami_data_function PAMI_DATA_LXOR;
+
+  /**
+   * \var PAMI_DATA_BAND
+   * \brief Set the destination element to the "bitwise and" of the source and destination elements.
+   * \ingroup datacopy_predefines_bitwise
+   */
+  extern pami_data_function PAMI_DATA_BAND;
+
+  /**
+   * \var PAMI_DATA_BOR
+   * \brief Set the destination element to the "bitwise or" of the source and destination elements.
+   * \ingroup datacopy_predefines_bitwise
+   */
+  extern pami_data_function PAMI_DATA_BOR;
+
+  /**
+   * \var PAMI_DATA_BXOR
+   * \brief Set the destination element to the "bitwise exclusive-or" of the source and destination elements.
+   * \ingroup datacopy_predefines_bitwise
+   */
+  extern pami_data_function PAMI_DATA_BXOR;
+
+  /**
+   * \var PAMI_DATA_MAXLOC
+   * \brief Set the destination element to ...
+   * \ingroup datacopy_predefines_maxloc_minloc
+   */
+  extern pami_data_function PAMI_DATA_MAXLOC;
+
+  /**
+   * \var PAMI_DATA_MINLOC
+   * \brief Set the destination element to ...
+   * \ingroup datacopy_predefines_maxloc_minloc
+   */
+  extern pami_data_function PAMI_DATA_MINLOC;
+
+  /** \} */ /* end of "datacopy_predefines" group */
+  /** \} */ /* end of "datatype_and_datacopy_predefines" group */
 
   /**
    * \brief Create a new type for noncontiguous transfers

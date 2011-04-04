@@ -321,9 +321,7 @@ namespace PAMI
 
     inline void   TypeCode::SetAtomSize(size_t atom_size)
     {
-        if (!IsContiguous())
-          assert(GetUnit() % atom_size == 0);
-
+        assert(GetUnit() % atom_size == 0);
         ((Begin *)code)->atom_size = atom_size;
     }
 
@@ -339,7 +337,7 @@ namespace PAMI
 
     inline bool TypeCode::IsPrimitive() const
     {
-        return primitive;
+        return (primitive < PRIMITIVE_TYPE_COUNT);
     }
 
     inline void TypeCode::AddCodeSize(size_t inc_code_size)
@@ -535,7 +533,7 @@ namespace PAMI
           break;
 
         case PRIMITIVE_TYPE_SIGNED_LONG_LONG:
-          primitive_atom = sizeof(signed long);
+          primitive_atom = sizeof(signed long long);
           break;
 
         case PRIMITIVE_TYPE_UNSIGNED_CHAR:
@@ -555,7 +553,7 @@ namespace PAMI
           break;
 
         case PRIMITIVE_TYPE_UNSIGNED_LONG_LONG:
-          primitive_atom = sizeof(unsigned long);
+          primitive_atom = sizeof(unsigned long long);
           break;
 
         case PRIMITIVE_TYPE_FLOAT:
@@ -613,7 +611,7 @@ namespace PAMI
       };
 
 
-        AddSimple(primitive_size, primitive_size, 1);
+        AddSimple(primitive_atom, primitive_atom, 1);
         Complete();
         SetAtomSize(primitive_atom);
         AcquireReference();

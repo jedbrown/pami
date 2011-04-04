@@ -245,16 +245,14 @@ pami_result_t PAMI_Type_transform_data (void               * src_addr,
     if (src_type_obj->IsContiguous()) {
         // unpacking: contiguous to non-contiguous (or contiguous)
         TypeMachine unpacker(dst_type_obj);
-        if (!unpacker.SetCopyFunc(data_fn, cookie))
-          return PAMI_INVAL;
+        unpacker.SetCopyFunc(data_fn, cookie);
         unpacker.MoveCursor(dst_offset);
         unpacker.Unpack(dst_addr, (char *)src_addr + src_offset, size);
 
     } else if (dst_type_obj->IsContiguous()) {
         // packing: non-contiguous to contiguous
         TypeMachine packer(src_type_obj);
-        if (!packer.SetCopyFunc(data_fn, cookie))
-          return PAMI_INVAL;
+        packer.SetCopyFunc(data_fn, cookie);
         packer.MoveCursor(src_offset);
         packer.Pack((char *)dst_addr + dst_offset, src_addr, size);
 
@@ -264,8 +262,7 @@ pami_result_t PAMI_Type_transform_data (void               * src_addr,
         packer.MoveCursor(src_offset);
 
         TypeMachine unpacker(dst_type_obj);
-        if (!unpacker.SetCopyFunc(data_fn, cookie))
-          return PAMI_INVAL;
+        unpacker.SetCopyFunc(data_fn, cookie);
         unpacker.MoveCursor(dst_offset);
 
         // use a temporary buffer to copy in and out data
