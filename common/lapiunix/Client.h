@@ -506,20 +506,78 @@ namespace PAMI
       }
 
 
+    template <class T_Geometry>
+    class PostedClassRoute : public PAMI::Geometry::ClassRouteId<T_Geometry>
+    {
+    public:
+      typedef  PAMI::Geometry::ClassRouteId<T_Geometry> ClassRouteId;
+      typedef  typename ClassRouteId::cr_event_function cr_event_function;
+      typedef  PAMI::Geometry::Algorithm<T_Geometry>    Algorithm;
+      typedef  PAMI::Device::Generic::GenericThread     GenericThread;
+
+      static void _allreduce_done(pami_context_t context, void *cookie, pami_result_t result)
+        {
+          TRACE((stderr, "%p  Allreduce is Done!\n", cookie));
+          PostedClassRoute  *classroute = (PostedClassRoute *)cookie;
+          classroute->_done               = true;
+        }
+
+      static pami_result_t _do_classroute(pami_context_t context, void *cookie)
+        {
+          PostedClassRoute *classroute = (PostedClassRoute*)cookie;
+          if(classroute->_started == false)
+          {
+            // Start the Allreduce
+            TRACE((stderr, "%p Starting Allreduce\n", cookie));
+            classroute->startAllreduce(_allreduce_done, classroute);
+            classroute->_started = true;
+          }
+          if(classroute->_done == true)
+          {
+              classroute->_result_cb_done(context,
+                                          classroute->_result_cookie,
+                                          classroute->_bitmask,
+                                          classroute->_geometry,
+                                          PAMI_SUCCESS);
+              classroute->_user_cb_done(context,
+                                        classroute->_user_cookie,
+                                        PAMI_SUCCESS);
+              TRACE((stderr, "%p Classroute is done, Dequeueing\n", classroute));
+              if(classroute->_free_bitmask)
+                __global.heap_mm->free(classroute->_bitmask);
+              __global.heap_mm->free(cookie);
+              return PAMI_SUCCESS;
+          }
+          else
+          {
+            TRACE((stderr, "%p classroute allreduce busy: %d %d\n",
+                    classroute, classroute->_started, classroute->_done));
+            return PAMI_EAGAIN;
+          }
+        }
+      static void phase_done(pami_context_t context, void *cookie, pami_result_t result)
+        {
+          TRACE((stderr, "%p phase_done\n", cookie));
+          PostedClassRoute<LAPIGeometry> *classroute = (PostedClassRoute<LAPIGeometry> *)cookie;
+          classroute->start();
+        }
+
+
     static void cr_func(pami_context_t  context,
                         void           *cookie,
                         uint64_t       *reduce_result,
                         LAPIGeometry   *g,
                         pami_result_t   result )
       {
-        Client *c = (Client*)cookie;
-        for(size_t n=0; n<c->_ncontexts; n++)
-          {
-            int count=1;
-            c->_contexts[n]->_pgas_collreg->receive_global(n,g,&reduce_result[0],1);
-            c->_contexts[n]->_p2p_ccmi_collreg->receive_global(n,g,&reduce_result[1],1);
-            c->_contexts[n]->_cau_collreg->analyze(n,g,&reduce_result[2],&count,1);
-          }
+        TRACE((stderr, "%p CR FUNC 1\n", cookie));
+        int count = 1;
+        PostedClassRoute<LAPIGeometry> *classroute = (PostedClassRoute<LAPIGeometry> *)cookie;
+        classroute->_context->_pgas_collreg->receive_global(0,classroute->_geometry,
+                                                            &reduce_result[0],1);
+        classroute->_context->_p2p_ccmi_collreg->receive_global(0,classroute->_geometry,
+                                                                &reduce_result[1],1);
+        classroute->_context->_cau_collreg->analyze(0,classroute->_geometry,
+                                                    &reduce_result[2],&count,1);
       }
 
     static void cr_func2(pami_context_t  context,
@@ -528,14 +586,51 @@ namespace PAMI
                         LAPIGeometry    *g,
                         pami_result_t    result )
       {
-        Client *c = (Client*)cookie;
-        for(size_t n=0; n<c->_ncontexts; n++)
-          {
-            int count=1;
-            c->_contexts[n]->_cau_collreg->analyze(n,g,&reduce_result[2],&count,2);
-          }
+        TRACE((stderr, "%p CR FUNC 2\n", cookie));
+        int count=1;
+        PostedClassRoute<LAPIGeometry> *classroute = (PostedClassRoute<LAPIGeometry> *)cookie;
+        classroute->_context->_cau_collreg->analyze(0,g,&reduce_result[2],&count,2);
       }
 
+    static void create_classroute(pami_context_t context, void *cookie, pami_result_t result)
+      {
+        // Barrier is done, start phase 1
+        TRACE((stderr, "%p create_classroute\n", cookie));
+        PostedClassRoute<LAPIGeometry> *classroute = (PostedClassRoute<LAPIGeometry>*)cookie;
+        classroute->start();
+      }
+    public:
+      PostedClassRoute(Context             *context,
+                       Algorithm           *ar_algo,
+                       T_Geometry          *geometry,
+                       uint64_t            *bitmask,
+                       size_t               count,
+                       cr_event_function    result_cb_done,
+                       void                *result_cookie,
+                       pami_event_function  user_cb_done,
+                       void                *user_cookie,
+                       bool                 free_bitmask = false):
+        ClassRouteId(ar_algo, geometry, bitmask, count,
+                     result_cb_done, result_cookie, user_cb_done,
+                     user_cookie),
+        _context(context),
+        _started(false),
+        _done(false),
+        _free_bitmask(free_bitmask),
+        _work(_do_classroute, this)
+        {
+        }
+      inline void start()
+        {
+          TRACE((stderr, "%p Posting work to GD id=%d work=%p\n", this, _context->getId(), &_work))
+          _context->_devices->_generics[_context->getId()].postThread(&_work);
+        }
+      Context        *_context;
+      volatile bool   _started;
+      volatile bool   _done;
+      bool            _free_bitmask;
+      GenericThread   _work;
+    };
     
     inline pami_result_t geometry_create_taskrange_impl(pami_geometry_t       * geometry,
                                                         pami_configuration_t    configuration[],
@@ -557,9 +652,10 @@ namespace PAMI
         // set of algorithms.
         if(geometry != NULL)
           {
-	    rc = __global.heap_mm->memalign((void **)&new_geometry, 0,
-							sizeof(*new_geometry));
+            rc = __global.heap_mm->memalign((void **)&new_geometry, 0,
+                                            sizeof(*new_geometry));
 	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc new_geometry");
+
             new(new_geometry)LAPIGeometry((pami_client_t)this,
                                           (LAPIGeometry*)parent,
                                           &__global.mapping,
@@ -616,32 +712,22 @@ namespace PAMI
                                           0,
                                           ctxt->getId());
             Geometry::Algorithm<LAPIGeometry> *ar_algo = (Geometry::Algorithm<LAPIGeometry> *)alg;
-            LAPIClassRouteId *cr[2];
-	    rc = __global.heap_mm->memalign((void **)&cr[0], 0, sizeof(LAPIClassRouteId));
-	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc LAPIClassRouteId");
-            rc = __global.heap_mm->memalign((void **)&cr[1], 0, sizeof(LAPIClassRouteId));
-	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc LAPIClassRouteId");
-            
-            new(cr[0])LAPIClassRouteId(ar_algo,
-                                       new_geometry,
-                                       to_reduce,
-                                       to_reduce_count,
-                                       cr_func,
-                                       (void*)this,
-                                       LAPIClassRouteId::get_classroute,
-                                       cr[1]);
-            new(cr[1])LAPIClassRouteId(ar_algo,
-                                       new_geometry,
-                                       to_reduce,
-                                       to_reduce_count,
-                                       cr_func2,
-                                       (void*)this,
-                                       fn,
-                                       cookie);
+            PostedClassRoute<LAPIGeometry> *cr[2];
+	    rc = __global.heap_mm->memalign((void **)&cr[0], 0, sizeof(PostedClassRoute<LAPIGeometry>));
+	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PostedClassRoute<LAPIGeometry>");
+            rc = __global.heap_mm->memalign((void **)&cr[1], 0, sizeof(PostedClassRoute<LAPIGeometry>));
+	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PostedClassRoute<LAPIGeometry>");
+            new(cr[0])PostedClassRoute<LAPIGeometry>(ctxt,ar_algo,new_geometry,to_reduce,
+                                                     to_reduce_count,PostedClassRoute<LAPIGeometry>::cr_func,
+                                                     cr[0],PostedClassRoute<LAPIGeometry>::phase_done,cr[1]);
+            new(cr[1])PostedClassRoute<LAPIGeometry>(ctxt,ar_algo,new_geometry,to_reduce,
+                                                     to_reduce_count,PostedClassRoute<LAPIGeometry>::cr_func2,
+                                                     cr[1],fn,cookie, true);
+            TRACE((stderr, "Allocated Classroutes:  %p %p\n", cr[0], cr[1]));
             if(bargeom)
-              bargeom->default_barrier(LAPIClassRouteId::get_classroute, cr[0], ctxt->getId(), context);
+              bargeom->default_barrier(PostedClassRoute<LAPIGeometry>::create_classroute, cr[0], ctxt->getId(), context);
             else
-              new_geometry->ue_barrier(LAPIClassRouteId::get_classroute, cr[0], ctxt->getId(), context);
+              new_geometry->ue_barrier(PostedClassRoute<LAPIGeometry>::create_classroute, cr[0], ctxt->getId(), context);
           }
         else
           {
@@ -693,7 +779,9 @@ namespace PAMI
         // set of algorithms.
         if(geometry != NULL)
           {
-            new_geometry=(LAPIGeometry*) malloc(sizeof(*new_geometry));
+	    rc = __global.heap_mm->memalign((void **)&new_geometry, 0,
+                                            sizeof(*new_geometry));
+	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc new_geometry");
             new(new_geometry)LAPIGeometry((pami_client_t)this,
                                           (LAPIGeometry*)parent,
                                           &__global.mapping,
@@ -753,35 +841,23 @@ namespace PAMI
                                           0,
                                           ctxt->getId());
             Geometry::Algorithm<LAPIGeometry> *ar_algo = (Geometry::Algorithm<LAPIGeometry> *)alg;
-            LAPIClassRouteId *cr[2];
-            rc = __global.heap_mm->memalign((void **)&cr[0], 0, sizeof(LAPIClassRouteId));
-            PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc LAPIClassRouteId");
-            rc = __global.heap_mm->memalign((void **)&cr[1], 0, sizeof(LAPIClassRouteId));
-            PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc LAPIClassRouteId");
+            PostedClassRoute<LAPIGeometry> *cr[2];
+            rc = __global.heap_mm->memalign((void **)&cr[0], 0, sizeof(PostedClassRoute<LAPIGeometry>));
+            PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PostedClassRoute<LAPIGeometry>");
+            rc = __global.heap_mm->memalign((void **)&cr[1], 0, sizeof(PostedClassRoute<LAPIGeometry>));
+            PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PostedClassRoute<LAPIGeometry>");
             to_reduce[0] = 0;
             to_reduce[1] = 0;
-
-            new(cr[0])LAPIClassRouteId(ar_algo,
-                                       new_geometry,
-                                       to_reduce,
-                                       to_reduce_count,
-                                       cr_func,
-                                       (void*)this,
-                                       LAPIClassRouteId::get_classroute,
-                                       cr[1]);
-            new(cr[1])LAPIClassRouteId(ar_algo,
-                                       new_geometry,
-                                       to_reduce,
-                                       to_reduce_count,
-                                       cr_func2,
-                                       (void*)this,
-                                       fn,
-                                       cookie);
-            
+            new(cr[0])PostedClassRoute<LAPIGeometry>(ctxt,ar_algo,new_geometry,to_reduce,
+                                                     to_reduce_count,PostedClassRoute<LAPIGeometry>::cr_func,
+                                                     cr[0],PostedClassRoute<LAPIGeometry>::phase_done,cr[1]);
+            new(cr[1])PostedClassRoute<LAPIGeometry>(ctxt,ar_algo,new_geometry,to_reduce,
+                                                     to_reduce_count,PostedClassRoute<LAPIGeometry>::cr_func2,
+                                                     cr[1],fn,cookie, true);
             if(bargeom)
-              bargeom->default_barrier(LAPIClassRouteId::get_classroute, cr[0], ctxt->getId(), context);
+              bargeom->default_barrier(PostedClassRoute<LAPIGeometry>::create_classroute, cr[0], ctxt->getId(), context);
             else
-              new_geometry->ue_barrier(LAPIClassRouteId::get_classroute, cr[0], ctxt->getId(), context);
+              new_geometry->ue_barrier(PostedClassRoute<LAPIGeometry>::create_classroute, cr[0], ctxt->getId(), context);
           }
         else
           {

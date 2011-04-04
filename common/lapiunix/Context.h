@@ -1074,10 +1074,9 @@ namespace PAMI
 
       /*  Client scoped comm id to geomtry map                  */
       std::map<unsigned, pami_geometry_t>   *_geometry_map;
-      
-  private:
       lapi_handle_t                          _lapi_handle;
       PlatformDeviceList                    *_devices;
+  private:
     }; // end PAMI::Context
 }; // end namespace PAMI
 
