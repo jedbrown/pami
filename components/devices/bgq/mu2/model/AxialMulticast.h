@@ -927,25 +927,17 @@ namespace PAMI
         _dispatch_arg = arg;
         pami_result_t status = PAMI_SUCCESS;
         TRACE_FORMAT( "register data model dispatch %d", dispatch_id);
-        status = _data_model_p.init (dispatch_id,
-                                     dispatch_data, this,
-                                     NULL, NULL);
+        status = _data_model_p.init (dispatch_id, dispatch_data, this);
         TRACE_FORMAT( "data model status = %d", status);
-        status = _data_model_m.init (dispatch_id,
-                                     dispatch_data, this,
-                                     NULL, NULL);
+        status = _data_model_m.init (dispatch_id, dispatch_data, this);
         TRACE_FORMAT( "data model status = %d", status);
 
         if (status == PAMI_SUCCESS)
         {
           TRACE_FORMAT( "register header  model dispatch %d", dispatch_id);
-          status = _header_model_p.init (dispatch_id,
-                                         dispatch_header, this,
-                                         NULL, NULL);
+          status = _header_model_p.init (dispatch_id, dispatch_header, this);
           TRACE_FORMAT( "header model status = %d", status);
-          status = _header_model_m.init (dispatch_id,
-                                         dispatch_header, this,
-                                         NULL, NULL);
+          status = _header_model_m.init (dispatch_id, dispatch_header, this);
           TRACE_FORMAT( "header model status = %d", status);
         }
         PAMI_assert(status == PAMI_SUCCESS);

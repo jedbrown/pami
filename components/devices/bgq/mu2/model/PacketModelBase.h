@@ -57,6 +57,9 @@ namespace PAMI
           /// \see PAMI::Device::Interface::PacketModel::isPacketReliable
           static const bool   reliable_packet_model              = true;
 
+          /// \see PAMI::Device::Interface::PacketModel::isReadRequired
+          static const bool   read_is_required_packet_model      = false;
+
           /// \see PAMI::Device::Interface::PacketModel::getPacketMetadataBytes
           static const size_t packet_model_metadata_bytes        =
             MemoryFifoPacketHeader::packet_singlepacket_metadata_size;
@@ -76,10 +79,8 @@ namespace PAMI
 
           /// \see PAMI::Device::Interface::PacketModel::init
           pami_result_t init_impl (size_t                      dispatch,
-                                   Interface::RecvFunction_t   direct_recv_func,
-                                   void                      * direct_recv_func_parm,
-                                   Interface::RecvFunction_t   read_recv_func,
-                                   void                      * read_recv_func_parm);
+                                   Interface::RecvFunction_t   recv_func,
+                                   void                      * recv_func_parm);
 
           /// \see PAMI::Device::Interface::PacketModel::postPacket
           template <unsigned T_Niov>
@@ -236,10 +237,8 @@ namespace PAMI
 
       template <class T_Model>
       pami_result_t PacketModelBase<T_Model>::init_impl (size_t                      dispatch,
-                                                         Interface::RecvFunction_t   direct_recv_func,
-                                                         void                      * direct_recv_func_parm,
-                                                         Interface::RecvFunction_t   read_recv_func,
-                                                         void                      * read_recv_func_parm)
+                                                         Interface::RecvFunction_t   recv_func,
+                                                         void                      * recv_func_parm)
       {
         TRACE_FN_ENTER();
 
@@ -250,9 +249,9 @@ namespace PAMI
         uint16_t id = 0;
 
         if (device.registerPacketHandler (dispatch,
-                                            direct_recv_func,
-                                            direct_recv_func_parm,
-                                            id))
+                                          recv_func,
+                                          recv_func_parm,
+                                          id))
           {
             MemoryFifoPacketHeader * hdr = NULL;
 

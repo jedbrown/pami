@@ -52,6 +52,7 @@ namespace PAMI
       static const bool   deterministic_message_model  = true;
       static const bool   reliable_packet_model        = true;
       static const bool   reliable_message_model       = true;
+      static const bool   read_is_required_packet_model = false;
       static const size_t packet_model_metadata_bytes       = T_Device::metadata_size;
       static const size_t packet_model_multi_metadata_bytes = T_Device::metadata_size;
       static const size_t packet_model_payload_bytes        = T_Device::payload_size;
@@ -63,11 +64,9 @@ namespace PAMI
       static const size_t packet_model_state_bytes          = sizeof(T_Message);
 #endif // USE_GCC_ICE_WORKAROUND
 
-      pami_result_t init_impl (size_t                      dispatch,
-                              Interface::RecvFunction_t   direct_recv_func,
-                              void                      * direct_recv_func_parm,
-                              Interface::RecvFunction_t   read_recv_func,
-                              void                      * read_recv_func_parm)
+      pami_result_t init_impl (size_t                     dispatch,
+                              Interface::RecvFunction_t   recv_func,
+                              void                      * recv_func_parm)
         {
 #ifdef USE_GCC_ICE_WORKAROUND
           COMPILE_TIME_ASSERT(sizeof(T_Message) <= 512);

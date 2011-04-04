@@ -154,6 +154,7 @@ namespace PAMI
 
           static const bool   reliable_packet_model             = T_Device::reliable;
           static const bool   deterministic_packet_model        = T_Device::deterministic;
+          static const bool   read_is_required_packet_model     = false;
 
           static const size_t packet_model_metadata_bytes       = T_Device::metadata_size;
           static const size_t packet_model_multi_metadata_bytes = T_Device::metadata_size;
@@ -162,10 +163,8 @@ namespace PAMI
           static const size_t packet_model_state_bytes          = PacketModel<T_Device>::packet_model_state_bytes;
 
           pami_result_t init_impl (size_t                      dispatch,
-                                   Interface::RecvFunction_t   direct_recv_func,
-                                   void                      * direct_recv_func_parm,
-                                   Interface::RecvFunction_t   read_recv_func,
-                                   void                      * read_recv_func_parm)
+                                   Interface::RecvFunction_t   recv_func,
+                                   void                      * recv_func_parm)
           {
 //fprintf(stderr, "BgqShaddrPacketModel::init_impl(%zu, %p, %p, %p, %p)\n", dispatch, direct_recv_func, direct_recv_func_parm, read_recv_func, read_recv_func_parm);
             pami_result_t status = PAMI_ERROR;
@@ -179,10 +178,8 @@ namespace PAMI
                                                            device.system_ro_put_dispatch);
             if (status == PAMI_SUCCESS)
               return _shmem_model.init (dispatch,
-                                        direct_recv_func,
-                                        direct_recv_func_parm,
-                                        read_recv_func,
-                                        read_recv_func_parm);
+                                        recv_func,
+                                        recv_func_parm);
 
             return status;
           };

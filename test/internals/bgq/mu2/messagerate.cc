@@ -227,8 +227,8 @@ int main(int argc, char ** argv)
 //  model00.init (100, dispatch_fn, (void *) 100, NULL, NULL);
 //  model01.init (100, dispatch_fn, (void *) 101, NULL, NULL);
 
-  model10.init (101, dispatch_fn, (void *) 100, NULL, NULL);
-  model11.init (101, dispatch_fn, (void *) 101, NULL, NULL);
+  model10.init (101, dispatch_fn, (void *) 100);
+  model11.init (101, dispatch_fn, (void *) 101);
 
   fprintf (stderr, "After model init\n");
 

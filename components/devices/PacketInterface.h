@@ -163,6 +163,24 @@ namespace PAMI
           static const bool isPacketReliable ();
 
           ///
+          /// \brief Returns the 'read() required' attribute of this model
+          ///
+          /// \attention All packet model interface derived classes \b must
+          ///            contain a public static const data member named
+          ///            'bool read_is_required_packet_model'.
+          ///
+          /// C++ code using templates to specify the model may statically
+          /// access the 'read_is_required_packet_model' constant.
+          ///
+          /// \retval true  The packet device 'read()' method must be used to
+          ///               access the packet payload from within the packet
+          ///               model dispatch function.
+          /// \retval false The packet payload data may be directly accessed
+          ///               from within the packet model dispatch function.
+          ///
+          static const bool isReadRequired ();
+
+          ///
           /// \brief Returns the maximum metadata bytes attribute of this model for single-packet transfers.
           ///
           /// Certain packet-based hardware may provide a contiguous area in
@@ -268,29 +286,16 @@ namespace PAMI
           ///
           static const size_t getPacketTransferStateBytes ();
 
-
-//          template <class T_Device>
-//          T_Device & getDevice ();
-
           ///
-          /// \brief Base packet model initializer
+          /// \brief Initialize the packet model
           ///
-          /// The packet device implementation will use the appropriate receive
-          /// function depending on the packet device "requires read" attribute.
-          ///
-          /// \see PAMI::Device::Interface::PacketDevice::readData()
-          ///
-          /// \param[in] dispatch              Dispatch set identifier
-          /// \param[in] direct_recv_func      Receive function for direct-access packet devices
-          /// \param[in] direct_recv_func_parm Receive function clientdata for direct-access packet devices
-          /// \param[in] read_recv_func        Receive function for read-access packet devices
-          /// \param[in] read_recv_func_parm   Receive function clientdata for read-access packet devices
+          /// \param [in] dispatch       Dispatch set identifier
+          /// \param [in] recv_func      Receive function to register in the dispatch set
+          /// \param [in] recv_func_parm Receive function clientdata to register in the dispatch set
           ///
           pami_result_t init (size_t           dispatch,
-                              RecvFunction_t   direct_recv_func,
-                              void           * direct_recv_func_parm,
-                              RecvFunction_t   read_recv_func,
-                              void           * read_recv_func_parm);
+                              RecvFunction_t   recv_func,
+                              void           * recv_func_parm);
 
           ///
           /// \brief Immediate post of a single packet transfer operation.
@@ -545,6 +550,12 @@ namespace PAMI
       }
 
       template <class T>
+      const bool PacketModel<T>::isReadRequired ()
+      {
+        return T::read_is_required_packet_model;
+      }
+
+      template <class T>
       const size_t PacketModel<T>::getPacketMetadataBytes ()
       {
         return T::packet_model_metadata_bytes;
@@ -574,25 +585,14 @@ namespace PAMI
         return T::packet_model_state_bytes;
       }
 
-//      template <class T>
-//      template <class T_Device>
-//      T_Device & getDevice ()
-//      {
-//        return static_cast<T*>(this)->device;
-//      }
-
       template <class T>
       pami_result_t PacketModel<T>::init (size_t           dispatch,
-                                          RecvFunction_t   direct_recv_func,
-                                          void           * direct_recv_func_parm,
-                                          RecvFunction_t   read_recv_func,
-                                          void           * read_recv_func_parm)
+                                          RecvFunction_t   recv_func,
+                                          void           * recv_func_parm)
       {
         return static_cast<T*>(this)->init_impl (dispatch,
-                                                 direct_recv_func,
-                                                 direct_recv_func_parm,
-                                                 read_recv_func,
-                                                 read_recv_func_parm);
+                                                 recv_func,
+                                                 recv_func_parm);
       }
 
       template <class T>

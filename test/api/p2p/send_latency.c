@@ -20,7 +20,7 @@
 #include <pami.h>
 
 #define ITERATIONS 100
-#define POLL_CNT 2147483648
+#define POLL_CNT ((size_t)-1)
 
 #ifndef BUFSIZE
 #define BUFSIZE 256*1024

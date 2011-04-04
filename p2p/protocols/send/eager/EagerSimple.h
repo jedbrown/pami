@@ -224,17 +224,14 @@ namespace PAMI
             // the remote side is delayed in it's registrations and must save
             // unexpected packets until dispatch registration.
             TRACE_ERR((stderr, "EagerSimple() register ack model dispatch %zu\n", dispatch));
-            status = _ack_model.init (dispatch,
-                                      dispatch_ack_direct, this,
-                                      dispatch_read<&EagerSimpleProtocol::dispatch_ack_direct>, this);
+
+            status = _ack_model.init (dispatch, dispatch_ack, this);
             TRACE_ERR((stderr, "EagerSimple() ack model status = %d\n", status));
 
             if (status == PAMI_SUCCESS)
               {
                 TRACE_ERR((stderr, "EagerSimple() register short model dispatch %zu\n", dispatch));
-                status = _short_model.init (dispatch,
-                                            dispatch_short_direct, this,
-                                            dispatch_read<&EagerSimpleProtocol::dispatch_short_direct>, this);
+                status = _short_model.init (dispatch, dispatch_short, this);
                 TRACE_ERR((stderr, "EagerSimple() short model status = %d\n", status));
 
                 if (status == PAMI_SUCCESS)
@@ -245,16 +242,12 @@ namespace PAMI
                         hint.recv_copy       == PAMI_HINT_ENABLE)
                       {
                         // Only allow contiguous copy receives
-                        status = _data_model.init (dispatch,
-                                                   dispatch_data_message<true>, this,
-                                                   dispatch_read<&EagerSimpleProtocol::dispatch_data_message<true> >, this);
+                        status = _data_model.init (dispatch, dispatch_data_message<true>, this);
                       }
                     else
                       {
                         // Allow all typed receives
-                        status = _data_model.init (dispatch,
-                                                   dispatch_data_message<false>, this,
-                                                   dispatch_read<&EagerSimpleProtocol::dispatch_data_message<false> >, this);
+                        status = _data_model.init (dispatch, dispatch_data_message<false>, this);
                       }
 
                     TRACE_ERR((stderr, "EagerSimple() data model status = %d\n", status));
@@ -267,30 +260,22 @@ namespace PAMI
                           {
                             if (hint.recv_copy == PAMI_HINT_ENABLE)
                               {
-                                status = _envelope_model.init (dispatch,
-                                                               dispatch_eager_envelope<true, true>, this,
-                                                               dispatch_read<&EagerSimpleProtocol::dispatch_eager_envelope<true, true> >, this);
+                                status = _envelope_model.init (dispatch, dispatch_eager_envelope<true, true>, this);
                               }
                             else
                               {
-                                status = _envelope_model.init (dispatch,
-                                                               dispatch_eager_envelope<true, false>, this,
-                                                               dispatch_read<&EagerSimpleProtocol::dispatch_eager_envelope<true, false> >, this);
+                                status = _envelope_model.init (dispatch, dispatch_eager_envelope<true, false>, this);
                               }
                           }
                         else
                           {
                             if (hint.recv_copy == PAMI_HINT_ENABLE)
                               {
-                                status = _envelope_model.init (dispatch,
-                                                               dispatch_eager_envelope<false, true>, this,
-                                                               dispatch_read<&EagerSimpleProtocol::dispatch_eager_envelope<false, true> >, this);
+                                status = _envelope_model.init (dispatch, dispatch_eager_envelope<false, true>, this);
                               }
                             else
                               {
-                                status = _envelope_model.init (dispatch,
-                                                               dispatch_eager_envelope<false, false>, this,
-                                                               dispatch_read<&EagerSimpleProtocol::dispatch_eager_envelope<false, false> >, this);
+                                status = _envelope_model.init (dispatch, dispatch_eager_envelope<false, false>, this);
                               }
                           }
 
@@ -299,9 +284,7 @@ namespace PAMI
                         if (status == PAMI_SUCCESS && !(T_Option & LONG_HEADER_DISABLE))
                           {
                             TRACE_ERR((stderr, "EagerSimple() register 'long header' envelope model dispatch %zu\n", dispatch));
-                            status = _longheader_envelope_model.init (dispatch,
-                                                                      dispatch_longheader_envelope, this,
-                                                                      dispatch_read<&EagerSimpleProtocol::dispatch_longheader_envelope>, this);
+                            status = _longheader_envelope_model.init (dispatch, dispatch_longheader_envelope, this);
                             TRACE_ERR((stderr, "EagerSimple() 'long header' envelope model status = %d\n", status));
 
                             if (status == PAMI_SUCCESS)
@@ -313,30 +296,22 @@ namespace PAMI
                                   {
                                     if (hint.recv_copy == PAMI_HINT_ENABLE)
                                       {
-                                        status = _longheader_message_model.init (dispatch,
-                                                                                 dispatch_longheader_message<true, true>, this,
-                                                                                 dispatch_read<&EagerSimpleProtocol::dispatch_longheader_message<true, true> >, this);
+                                        status = _longheader_message_model.init (dispatch, dispatch_longheader_message<true, true>, this);
                                       }
                                     else
                                       {
-                                        status = _longheader_message_model.init (dispatch,
-                                                                                 dispatch_longheader_message<true, false>, this,
-                                                                                 dispatch_read<&EagerSimpleProtocol::dispatch_longheader_message<true, false> >, this);
+                                        status = _longheader_message_model.init (dispatch, dispatch_longheader_message<true, false>, this);
                                       }
                                   }
                                 else
                                   {
                                     if (hint.recv_copy == PAMI_HINT_ENABLE)
                                       {
-                                        status = _longheader_message_model.init (dispatch,
-                                                                                 dispatch_longheader_message<false, true>, this,
-                                                                                 dispatch_read<&EagerSimpleProtocol::dispatch_longheader_message<false, true> >, this);
+                                        status = _longheader_message_model.init (dispatch, dispatch_longheader_message<false, true>, this);
                                       }
                                     else
                                       {
-                                        status = _longheader_message_model.init (dispatch,
-                                                                                 dispatch_longheader_message<false, false>, this,
-                                                                                 dispatch_read<&EagerSimpleProtocol::dispatch_longheader_message<false, false> >, this);
+                                        status = _longheader_message_model.init (dispatch, dispatch_longheader_message<false, false>, this);
                                       }
                                   }
 
@@ -507,10 +482,10 @@ namespace PAMI
 
             // Verify that this task is addressable by this packet device
             if (unlikely(_short_model.device.isPeer(task) == false))
-            {
-              errno = EHOSTUNREACH;
-              return PAMI_CHECK_ERRNO;
-            }
+              {
+                errno = EHOSTUNREACH;
+                return PAMI_CHECK_ERRNO;
+              }
 
             // Specify the protocol metadata to send with the application
             // metadata in the packet. This metadata is copied
@@ -592,13 +567,15 @@ namespace PAMI
 
             // Verify that this task is addressable by this packet device
             if (unlikely(_short_model.device.isPeer (task) == false))
-            {
-              errno = EHOSTUNREACH;
-              return PAMI_CHECK_ERRNO;
-            }
+              {
+                errno = EHOSTUNREACH;
+                return PAMI_CHECK_ERRNO;
+              }
 
             const size_t header_bytes = parameters->send.header.iov_len;
+
             const size_t data_bytes   = parameters->send.data.iov_len;
+
             const size_t total_bytes  = header_bytes + data_bytes;
 
             // ----------------------------------------------------------------
@@ -892,13 +869,22 @@ namespace PAMI
             TRACE_ERR((stderr, "EagerSimple::ack_done() << \n"));
           }
 
-          static int dispatch_ack_direct (void   * metadata,
-                                          void   * payload,
-                                          size_t   bytes,
-                                          void   * recv_func_parm,
-                                          void   * cookie)
+          static int dispatch_ack (void   * metadata,
+                                   void   * payload,
+                                   size_t   bytes,
+                                   void   * recv_func_parm,
+                                   void   * cookie)
           {
-            TRACE_ERR((stderr, ">> EagerSimple::dispatch_ack_direct()\n"));
+            TRACE_ERR((stderr, ">> EagerSimple::dispatch_ack()\n"));
+            EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
+            uint8_t stack[T_Model::packet_model_payload_bytes];
+
+            if (T_Model::read_is_required_packet_model)
+              {
+                payload = (void *) & stack[0];
+                eager->_short_model.device.read (payload, bytes, cookie);
+              }
+
             ack_protocol_t * ack = (ack_protocol_t *) payload;
 
             if (ack->invoke)
@@ -908,8 +894,6 @@ namespace PAMI
                 ack->remote_fn (ack->context, ack->cookie, PAMI_SUCCESS);
                 return 0;
               }
-
-            EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
 
             pami_task_t task;
             size_t offset;
@@ -940,7 +924,7 @@ namespace PAMI
                                               sizeof(ack_protocol_t));
               }
 
-            TRACE_ERR((stderr, "<< EagerSimple::dispatch_ack_direct()\n"));
+            TRACE_ERR((stderr, "<< EagerSimple::dispatch_ack()\n"));
             return 0;
           }
 
@@ -950,12 +934,7 @@ namespace PAMI
 
 
           ///
-          /// \brief Direct single-packet 'short' send packet dispatch.
-          ///
-          /// The eager simple send protocol will register this dispatch
-          /// function if and only if the device \b does provide direct access
-          /// to data which has already been read from the network by the
-          /// device.
+          /// \brief Single-packet 'short' send packet dispatch.
           ///
           /// The short dispatch function is invoked by the message device
           /// to process a single-packet message. The eager simple send protocol
@@ -964,12 +943,21 @@ namespace PAMI
           ///
           /// \see PAMI::Device::Interface::RecvFunction_t
           ///
-          static int dispatch_short_direct (void   * metadata,
-                                            void   * payload,
-                                            size_t   bytes,
-                                            void   * recv_func_parm,
-                                            void   * cookie)
+          static int dispatch_short (void   * metadata,
+                                     void   * payload,
+                                     size_t   bytes,
+                                     void   * recv_func_parm,
+                                     void   * cookie)
           {
+            EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
+            uint8_t stack[T_Model::packet_model_payload_bytes];
+
+            if (T_Model::read_is_required_packet_model)
+              {
+                payload = (void *) & stack[0];
+                eager->_short_model.device.read (payload, bytes, cookie);
+              }
+
             short_protocol_t * short_protocol;
             void * header;
 
@@ -987,9 +975,7 @@ namespace PAMI
 
             void * data = (void *) (((uint8_t *) header) + short_protocol->metabytes);
 
-            TRACE_ERR ((stderr, ">> EagerSimple::dispatch_short_direct(), origin = 0x%08x, bytes = %d\n", short_protocol->origin, short_protocol->bytes));
-
-            EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
+            TRACE_ERR ((stderr, ">> EagerSimple::dispatch_short(), origin = 0x%08x, bytes = %d\n", short_protocol->origin, short_protocol->bytes));
 
             // Invoke the registered dispatch function.
             eager->_dispatch_fn (eager->_context,           // Communication context
@@ -1001,7 +987,7 @@ namespace PAMI
                                  short_protocol->origin,    // Origin endpoint for the transfer
                                  (pami_recv_t *) NULL);
 
-            TRACE_ERR ((stderr, "<< EagerSimple::dispatch_short_direct()\n"));
+            TRACE_ERR ((stderr, "<< EagerSimple::dispatch_short()\n"));
             return 0;
           };
 
@@ -1029,11 +1015,18 @@ namespace PAMI
                                                    void   * recv_func_parm,
                                                    void   * cookie)
           {
+            EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
+            uint8_t stack[T_Model::packet_model_payload_bytes];
+
+            if (T_Model::read_is_required_packet_model)
+              {
+                payload = (void *) & stack[0];
+                eager->_short_model.device.read (payload, bytes, cookie);
+              }
+
             longheader_protocol_t * m = (longheader_protocol_t *) payload;
 
             TRACE_ERR ((stderr, ">> EagerSimple::dispatch_longheader_envelope(), origin = 0x%08x, m->bytes = %zu\n", m->origin, m->bytes));
-
-            EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
 
             // Allocate a recv state object!
             recv_state_t * state = eager->allocateRecvState ();
@@ -1073,6 +1066,15 @@ namespace PAMI
                                               void   * recv_func_parm,
                                               void   * cookie)
           {
+            EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
+            uint8_t stack[T_Model::packet_model_payload_bytes];
+
+            if (T_Model::read_is_required_packet_model)
+              {
+                payload = (void *) & stack[0];
+                eager->_short_model.device.read (payload, bytes, cookie);
+              }
+
             eager_protocol_t * m;
             void * p;
 
@@ -1089,8 +1091,6 @@ namespace PAMI
               }
 
             TRACE_ERR ((stderr, ">> EagerSimple::dispatch_eager_envelope(), origin = 0x%08x, m->bytes = %zu\n", m->origin, m->bytes));
-
-            EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
 
             // Allocate a recv state object!
             recv_state_t * state = eager->allocateRecvState ();
@@ -1137,11 +1137,19 @@ namespace PAMI
                                                   void   * recv_func_parm,
                                                   void   * cookie)
           {
+            EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
+            uint8_t stack[T_Model::packet_model_payload_bytes];
+
+            if (T_Model::read_is_required_packet_model)
+              {
+                payload = (void *) & stack[0];
+                eager->_short_model.device.read (payload, bytes, cookie);
+              }
+
             pami_endpoint_t origin = *((pami_endpoint_t *) metadata);
 
             TRACE_ERR((stderr, ">> EagerSimple::dispatch_longheader_message(), origin = 0x%08x, bytes = %zu\n", origin, bytes));
 
-            EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
             pami_task_t task;
             size_t offset;
             PAMI_ENDPOINT_INFO(origin, task, offset);
@@ -1220,6 +1228,15 @@ namespace PAMI
                                               void   * recv_func_parm,
                                               void   * cookie)
           {
+            EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
+            uint8_t stack[T_Model::packet_model_payload_bytes];
+
+            if (T_Model::read_is_required_packet_model)
+              {
+                payload = (void *) & stack[0];
+                eager->_short_model.device.read (payload, bytes, cookie);
+              }
+
             pami_endpoint_t origin = *((pami_endpoint_t *) metadata);
             pami_task_t task;
             size_t offset;
@@ -1227,7 +1244,6 @@ namespace PAMI
 
             TRACE_ERR((stderr, ">> EagerSimple::dispatch_data_message(), origin task = %d, origin offset = %zu, bytes = %zu\n", task, offset, bytes));
 
-            EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
             recv_state_t * state = (recv_state_t *) eager->_data_model.device.getConnection (task, offset);
 
             // Number of bytes received so far.
@@ -1300,48 +1316,6 @@ namespace PAMI
             TRACE_ERR((stderr, "EagerSimple::send_complete() << \n"));
             return;
           }
-
-          ///
-          /// \brief Read-access packet dispatch wrapper.
-          ///
-          /// Reads incoming bytes from the device to a temporary buffer and
-          /// invokes the registered receive callback.
-          ///
-          /// The packet device will utilize this dispatch function
-          /// if and only if the device \b does \b not provide access to
-          /// data which has already been read from the network by the device.
-          ///
-          /// The dispatch function must read the data onto the stack, aligned
-          /// to 16 bytes, and then invoke the dispatch function as specified
-          /// by the template parameter.
-          ///
-          /// \see PAMI::Device::Interface::RecvFunction_t
-          ///
-          template <PAMI::Device::Interface::RecvFunction_t T_DispatchFn>
-          static int dispatch_read (void   * metadata,
-                                    void   * payload,
-                                    size_t   bytes,
-                                    void   * recv_func_parm,
-                                    void   * cookie)
-          {
-            TRACE_ERR((stderr, ">> EagerSimple::dispatch_read<T>()\n"));
-
-            EagerSimpleProtocol * pf = (EagerSimpleProtocol *) recv_func_parm;
-
-            // This packet device DOES NOT provide the data buffer(s) for the
-            // message and the data must be read on to the stack before the
-            // recv callback is invoked.
-            PAMI_assert_debugf(payload == NULL, "The 'read only' packet device did not invoke dispatch with payload == NULL (%p)\n", payload);
-
-            uint8_t stackData[T_Model::packet_model_payload_bytes];
-            void * p = (void *) & stackData[0];
-            pf->_short_model.device.read (p, bytes, cookie);
-
-            T_DispatchFn (metadata, p, bytes, recv_func_parm, cookie);
-
-            TRACE_ERR((stderr, "<< EagerSimple::dispatch_read<T>()\n"));
-            return 0;
-          };
 
       };
     };

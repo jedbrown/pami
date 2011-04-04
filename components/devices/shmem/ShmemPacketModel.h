@@ -66,6 +66,7 @@ namespace PAMI
 
           static const bool   reliable_packet_model             = T_Device::reliable;
           static const bool   deterministic_packet_model        = T_Device::deterministic;
+          static const bool   read_is_required_packet_model     = false;
 
           static const size_t packet_model_metadata_bytes       = T_Device::metadata_size;
           static const size_t packet_model_multi_metadata_bytes = T_Device::metadata_size;
@@ -74,12 +75,10 @@ namespace PAMI
           static const size_t packet_model_state_bytes          = 512;
 
           pami_result_t init_impl (size_t                      dispatch,
-                                   Interface::RecvFunction_t   direct_recv_func,
-                                   void                      * direct_recv_func_parm,
-                                   Interface::RecvFunction_t   read_recv_func,
-                                   void                      * read_recv_func_parm)
+                                   Interface::RecvFunction_t   recv_func,
+                                   void                      * recv_func_parm)
           {
-            return device.registerRecvFunction (dispatch, direct_recv_func, direct_recv_func_parm, _dispatch_id);
+            return device.registerRecvFunction (dispatch, recv_func, recv_func_parm, _dispatch_id);
           };
 
           template <unsigned T_StateBytes>

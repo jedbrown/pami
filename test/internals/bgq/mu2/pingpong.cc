@@ -246,7 +246,7 @@ int main(int argc, char ** argv)
 //  model01.init (100, dispatch_fn, (void *) 101, NULL, NULL);
 
   bool rc  = 0 ;
-  rc = model10.init (0, dispatch_fn, (void *) 0, NULL, NULL);
+  rc = model10.init (0, dispatch_fn, (void *) 0);
   PAMI_assert (rc == PAMI_SUCCESS);
 
   fprintf (stderr, "After model init\n");

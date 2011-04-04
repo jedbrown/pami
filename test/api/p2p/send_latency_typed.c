@@ -20,7 +20,7 @@
 #include <pami.h>
 
 #define ITERATIONS 100
-#define POLL_CNT 2147483648
+#define POLL_CNT ((size_t)-1)
 
 #ifndef BUFSIZE
 #define BUFSIZE 256*1024
@@ -377,7 +377,7 @@ int main (int argc, char ** argv)
   for (; sndcount < BUFCOUNT; sndcount = sndcount * 3 / 2 + 1)
     {
       int index = 0;
-      index += sprintf (&str[index], "%10zd ", sndcount*TYPESIZE);
+      index += sprintf (&str[index], "%10zu ", (size_t)(sndcount*TYPESIZE));
 
       unsigned i;
 
