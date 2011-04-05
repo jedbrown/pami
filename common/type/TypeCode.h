@@ -503,7 +503,6 @@ namespace PAMI
     {
       primitive = primitive_type;
 
-      size_t primitive_size = ULONG_MAX;
       size_t primitive_atom = 0;
 
       switch (primitive_type)
