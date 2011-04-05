@@ -3141,14 +3141,14 @@ extern "C"
 
   /**
    * \var PAMI_DATA_MAXLOC
-   * \brief Set the destination element to ...
+   * \brief Set the destination element to the maximum of the source and destination elements.
    * \ingroup datacopy_predefines_maxloc_minloc
    */
   extern pami_data_function PAMI_DATA_MAXLOC;
 
   /**
    * \var PAMI_DATA_MINLOC
-   * \brief Set the destination element to ...
+   * \brief Set the destination element to the minimum of the source and destination elements.
    * \ingroup datacopy_predefines_maxloc_minloc
    */
   extern pami_data_function PAMI_DATA_MINLOC;
