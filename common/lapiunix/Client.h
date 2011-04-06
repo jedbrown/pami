@@ -345,12 +345,6 @@ namespace PAMI
         __global.heap_mm->free(client);
       }
 
-    inline char * getName_impl ()
-      {
-        return ((LapiImpl::Client*)&_lapiClient[0])->GetName();
-      }
-
-
     inline pami_result_t createOneContext(PAMI::Context **ctxt,
                                           int             index)
       {
@@ -462,17 +456,12 @@ namespace PAMI
                     _active_contexts.contexts[i] = (pami_context_t) _contexts[i];
                   configuration[i].value.chararray = (char*)&_active_contexts;
                   break;
-                case PAMI_CLIENT_PROTOCOL_NAME:
-                  configuration[i].value.chararray = getName_impl();
-                  break;
                 default:
                 {
-                  internal_rc_t rc;
-                  lapi_state_t *lp = _contexts[0]->getLapiState();
-                  LapiImpl::Context *cp = (LapiImpl::Context *)lp;
-                  rc = (cp->*(cp->pConfigQuery))(configuration);
-                  if(rc != SUCCESS)
-                    result = PAMI_UNIMPL;
+                  LapiImpl::Client *lapi_client = (LapiImpl::Client *)_lapiClient;
+                  pami_result_t rc = lapi_client->Query(configuration[i]);
+                  if(rc != PAMI_SUCCESS)
+                    result = rc;
                 }
               }
           }
@@ -482,16 +471,22 @@ namespace PAMI
     inline pami_result_t update_impl (pami_configuration_t configuration[],
                                       size_t               num_configs)
       {
-        // Todo:  Change if we have client and context queries
-
-        // Lapi stores the configuration off the context
-        // Use context 0 to query.  It should be created in the
-        // current implementation because we create the
-        // context at client create time
-        lapi_state_t *lp = _contexts[0]->getLapiState();
-        LapiImpl::Context *cp = (LapiImpl::Context *)lp;
-        internal_rc_t rc = (cp->*(cp->pConfigUpdate))(configuration);
-        return PAMI_RC(rc);
+        pami_result_t result = PAMI_SUCCESS;
+        size_t i;
+        for(i=0; i<num_configs; i++)
+          {
+            switch (configuration[i].name)
+              {
+                default:
+                {
+                  LapiImpl::Client *lapi_client = (LapiImpl::Client *)_lapiClient;
+                  pami_result_t rc = lapi_client->Update(configuration[i]);
+                  if(rc != PAMI_SUCCESS)
+                    result = rc;
+                }
+              }
+          }
+        return result;
       }
 
     inline PAMI::Context *getContext(size_t ctx)

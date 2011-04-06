@@ -36,20 +36,25 @@ extern "C"
    */
 
   typedef enum {
-    /* Attribute             usage : type : default : description   */
-    PAMI_PERCS_ATTR = PAMI_EXT_ATTR,
-    PAMI_CLIENT_CHECK_PARAM,       /**< CQU: bool : true : check function parameters */
-    PAMI_CLIENT_RELIABLE,          /**< CQ : bool : true : run in reliable mode */
+    /* Attribute                     usage : type : default : description   */
+
+    PAMI_ACTIVE_CLIENT             /**<  Q : pami_active_client_t : N/A : retrieve all active clients */
+        = PAMI_EXT_ATTR,
+
+    PAMI_CLIENT_RELIABLE           /**< CQ : bool : true : run in reliable mode */
+        = PAMI_EXT_ATTR + 100,
     PAMI_CLIENT_THREAD_SAFE,       /**< CQ : bool : true : run in thread-safe mode */
-    PAMI_CLIENT_RECEIVE_INTERRUPT, /**< CQU: bool : false: enable receive interrupt */
-    PAMI_CLIENT_PROGRESS_HANDLER,  /**< CQ : pami_event_function : NULL : asynchronous progress handler */
-    PAMI_CLIENT_PROGRESS_COOKIE,   /**< CQ : void * : NULL : cookie to asynchronous progress handler */
-    PAMI_CLIENT_ERROR_HANDLER,     /**< CQ : pami_error_handler_t : NULL : asynchronous error handler */
-    PAMI_CONTEXT_STATISTICS,        /**<  Q : pami_statistics_t : N/A : retrieve communication statistics */
-    PAMI_CLIENT_TRIGGER,           /**<   U: pami_trigger_t : N/A : add or remove a trigger */
-    PAMI_ACTIVE_CLIENT,            /**<  Q : pami_active_client_t : N/A : retrieve all active clients */
-    PAMI_CLIENT_ACTIVE_CONTEXT,    /**<  Q : pami_active_context_t : N/A : retrieve all active contexts in the client */
     PAMI_CLIENT_PROTOCOL_NAME,     /**<  Q : string : N/A : retrieve protocol name of the client*/
+    PAMI_CLIENT_ACTIVE_CONTEXT,    /**<  Q : pami_active_context_t : N/A : retrieve all active contexts in the client */
+
+    PAMI_CONTEXT_CHECK_PARAM       /**< CQU: bool : true : check function parameters */
+        = PAMI_EXT_ATTR + 200,
+    PAMI_CONTEXT_RECEIVE_INTERRUPT,/**< CQU: bool : false: enable receive interrupt */
+    PAMI_CONTEXT_PROGRESS_HANDLER, /**< CQ : pami_event_function : NULL : asynchronous progress handler */
+    PAMI_CONTEXT_PROGRESS_COOKIE,  /**< CQ : void * : NULL : cookie to asynchronous progress handler */
+    PAMI_CONTEXT_ERROR_HANDLER,    /**< CQ : pami_error_handler_t : NULL : asynchronous error handler */
+    PAMI_CONTEXT_STATISTICS,       /**<  Q : pami_statistics_t : N/A : retrieve communication statistics */
+    PAMI_CONTEXT_TRIGGER,          /**<   U: pami_trigger_t : N/A : add or remove a trigger */
     PAMI_CONTEXT_NETWORK,          /**<  Q : string : N/A : retrieve network string */
   } pami_attribute_name_ext_t;
 
