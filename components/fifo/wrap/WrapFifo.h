@@ -203,7 +203,6 @@ namespace PAMI
               packet.produce (_packet[index]);
               //dumpPacket(index);
 
-              mem_barrier();
               // This memory barrier forces all previous memory operations to
               // complete (header writes, payload write, etc) before the packet is
               // marked 'active'.  As soon as the receiving process sees that the
@@ -215,8 +214,9 @@ namespace PAMI
               // any pending writes before the barrier, which could result in the
               // receiving process reading the 'active' attribute and then reading
               // stale packet header/payload data.
-              _active[index] = 1;
               mem_barrier();
+
+              _active[index] = 1;
 
               _last_packet_produced = index;
 
@@ -240,6 +240,10 @@ namespace PAMI
 
           const size_t head = *(this->_head);
           size_t index = head & WrapFifo::mask;
+
+          // This memory barrier forces all previous memory operations to
+          // complete, including any pending updates to the 'active' status.
+          mem_barrier();
 
           if (_active[index])
             {
