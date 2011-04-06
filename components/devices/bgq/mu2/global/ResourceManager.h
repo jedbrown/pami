@@ -62,6 +62,10 @@ typedef PAMI::Device::SharedAtomicMutexMdl<MUCR_mutex_t> MUCR_mutex_model_t;
 #include <spi/include/mu/GIBarrier.h>
 #include <spi/include/kernel/gi.h>
 
+#include <agents/include/comm/commagent.h>
+#include <agents/include/comm/rgetpacing.h>
+#include <agents/include/comm/fence.h>
+
 #ifdef TRACE_CLASSROUTES
 #include "trace_classroutes.h"
 #endif // TRACE_CLASSROUTES
@@ -1249,6 +1253,16 @@ fprintf(stderr, "%s\n", buf);
 	  return totalNumContexts;
 	}
 
+	inline uint32_t getGlobalCommAgentRecFifoId()
+	{
+	  return _globalCommAgentRecFifoId;
+	}
+
+	inline bool isCommAgentActive()
+	{
+	  return _commAgentActive;
+	}
+
 	inline MUSPI_InjFifo_t * getGlobalCombiningInjFifoPtr ()
 	{
 	  uint32_t subgroup = (_globalCombiningInjFifo.globalFifoIds[0] / BGQ_MU_NUM_INJ_FIFOS_PER_SUBGROUP) - 64;
@@ -1609,6 +1623,7 @@ fprintf(stderr, "%s\n", buf);
 	inline void allocateGlobalInjFifos();
 	inline void allocateGlobalBaseAddressTableEntries();
 	inline void allocateGlobalRecFifos();
+	inline void allocateGlobalCommAgent();
 	inline void allocateContextResources( size_t rmClientId,
 					      size_t contextOffset );
 	inline void allocateLookasideResources(
@@ -1708,6 +1723,12 @@ fprintf(stderr, "%s\n", buf);
 
 	MUSPI_BaseAddressTableSubGroup_t  *_globalBatSubGroups;     // BAT Subgroups 64 and 64.
 	uint32_t                          *_globalBatIds;           // BAT ids.
+
+	CommAgent_Control_t                _commAgentControl;       // Comm Agent control struct.
+	bool                               _commAgentActive;        // Indicates whether the comm
+                                                                    // agent is active.
+	uint32_t                           _globalCommAgentRecFifoId; // Comm Agent's global
+                                                                      // rec fifo ID.
 
 	// Process-wide resources
 	MUSPI_RecFifoSubGroup_t           *_globalRecSubGroups;     // Subgroups for cores 0..15.
@@ -3147,8 +3168,7 @@ uint32_t PAMI::Device::MU::ResourceManager::setupRecFifos(
 // \brief Allocate Global Reception Fifos
 //
 // Allocate resources needed before main().  These include:
-// -  N reception fifos, where N is in the range 1..256.  All available reception
-//    fifos will be allocated at this time.
+// - Configuring the reception fifo threshold, which is global across the node.
 //
 void PAMI::Device::MU::ResourceManager::allocateGlobalRecFifos()
 {
@@ -3287,6 +3307,37 @@ TRACE((stderr,"MU ResourceManager: allocateLookasideResources: lookAsidePayloadM
 } // End: allocateLookasideResources()
 
 
+/// \brief Initialize the Comm Agent
+void PAMI::Device::MU::ResourceManager::allocateGlobalCommAgent()
+{
+  int rc;
+  char *envVarString;
+
+  envVarString = getenv( "BG_APPAGENT1" );
+  if ( envVarString ) // Is App agent specified?
+    {
+      rc = CommAgent_Init ( &_commAgentControl );
+      PAMI_assertf(rc == 0, "CommAgent_Init failed with rc=%d\n",rc);
+      
+      rc = CommAgent_RemoteGetPacing_Init ( _commAgentControl,
+					    (CommAgent_RemoteGetPacing_SharedMemoryInfo_t *)NULL );
+      PAMI_assertf(rc == 0, "CommAgent_RemoteGetPacing_Init failed with rc=%d\n",rc);
+      
+      rc = CommAgent_Fence_Init ( _commAgentControl );
+      PAMI_assertf(rc == 0, "CommAgent_Fence_Init failed with rc=%d\n",rc);
+      
+      // Save away the comm agent's reception fifo ID.
+      _globalCommAgentRecFifoId = CommAgent_GetRecFifoId( _commAgentControl );
+      _commAgentActive = true;
+    }
+  else
+    {
+      TRACE((stderr,"Warning:  The Messaging App Agent is not running.  Specify environment variable 'BG_APPAGENT1=/bgsys/drivers/ppcfloor/agents/bin/comm.elf' to run it.  Messaging will continue to run, but has the following limitations:  1) Remote Get Pacing is not available (potentially causing network congestion, reducing performance), and 2) One-sided-put-fence operations will abort.\n"));
+      _commAgentActive = false;
+    }
+}
+
+
 // \brief Allocate Global Resources
 //
 // Allocate resources needed before main().  These include:
@@ -3299,6 +3350,7 @@ TRACE((stderr,"MU ResourceManager: allocateLookasideResources: lookAsidePayloadM
 // -  N reception fifos, where N is in the range 1..256.  All available reception
 //    fifos will be allocated at this time.
 // -  Array of clientResources_t structures, one per client.
+// -  Comm Agent
 //
 void PAMI::Device::MU::ResourceManager::allocateGlobalResources()
 {
@@ -3331,6 +3383,12 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalResources()
   else
     _allocateOnly = 1;
 
+  // Initialize the comm agent.  Do this before allocating PAMI global resources
+  // so the comm agent's inj fifos and rec fifos get allocated first on all
+  // nodes.  This way, the comm agent's fifos get the same IDs on all nodes,
+  // so we can target them.
+  allocateGlobalCommAgent();
+
   allocateGlobalInjFifos();
   allocateGlobalBaseAddressTableEntries();
 
@@ -3355,35 +3413,59 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalResources()
 		numClients * sizeof(*_perContextMUResources));
   PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _perContextMUResources failed");
 
+  // If we are the master process, set the inj and rec fifo thresholds.
+  // Do this after waiting for the comm agent to initialize so both of us are not
+  // trying to set these at the same time.
+
+  if ( _mapping.t() == _mapping.lowestT() ) // Master?
+    {
+      // If the MU Inj Fifo Interrupt Threshold has not been set yet (by a non-PAMI user),
+      // then set it.  We want the setting to be 95% of the fifo's size so the interrupt
+      // only fires when the fifo is nearly empty.  The interrupt will fire when the 
+      // fifo head or tail is moved AND the free space exceeds this threshold.
+      uint64_t threshold;
+      int32_t  rc;
+      rc = Kernel_GetInjFifoThresholds( &threshold,
+					NULL /* remoteGetThreshold */ );
+      PAMI_assertf( rc == 0, "Kernel_GetInjFifoThresholds failed with rc=%d\n",rc);
+      
+      if ( threshold == 0 ) // Not set yet?
+	{
+	  // Calculate threshold in terms of number of descriptors.
+	  threshold = _pamiRM.getInjFifoSize() * 0.95 / sizeof(MUHWI_Descriptor_t);
+	  rc = Kernel_ConfigureInjFifoThresholds( &threshold,
+						  NULL /* remoteGetThreshold */ );
+	  PAMI_assertf( rc == 0, "Kernel_ConfigureInjFifoThresholds failed with rc=%d\n",rc);
+	}
+      TRACE((stderr,"MU ResourceManager: allocateGlobalResources: InjFifoThreshold is set to %lu\n",threshold));
+      
+      // If the MU Rec Fifo Interrupt Threshold has not been set yet (by a non-PAMI user),
+      // then set it.  We want it such that if the free space drops below this
+      // threshold, an interrupt will fire so the packets can be processed.
+      // Set it to two-thirds the size of the rec fifo (in units of number of descriptors).
+
+      rc = Kernel_GetRecFifoThreshold( &threshold );
+      PAMI_assertf( rc == 0, "Kernel_GetRecFifoThresholds failed with rc=%d\n",rc);
+      
+      if ( threshold == 0 ) // Not set yet?
+	{
+	  threshold = (_pamiRM.getRecFifoSize() * 2) / (3 * sizeof(MUHWI_Descriptor_t));
+	  rc = Kernel_ConfigureRecFifoThreshold( threshold );
+	  PAMI_assertf( rc == 0, "Kernel_ConfigureRecFifoThreshold failed with rc=%d\n",rc);
+	}
+      TRACE((stderr,"MU ResourceManager: allocateGlobalResources:  RecFifoThreshold is set to %lu\n",threshold));
+    }
 } // End: allocateGlobalResources()
 
 
 void PAMI::Device::MU::ResourceManager::allocateContextResources( size_t rmClientId,
 								  size_t contextOffset )
 {
-  int32_t  rc;
   uint32_t numFifosSetup;
   size_t   numInjFifos = _perContextMUResources[rmClientId].numInjFifos;
   size_t   numRecFifos = _perContextMUResources[rmClientId].numRecFifos;
   size_t   numBatIds   = _perContextMUResources[rmClientId].numBatIds;
   Kernel_InjFifoAttributes_t  injFifoAttr;
-
-  // Set the MU Inj Fifo Interrupt Threshold such that if an inj fifo fills, and then
-  // the free space increases above zero, an interrupt will fire so additional
-  // descriptors can be injected.
-  uint64_t threshold = 0;
-  rc = Kernel_ConfigureInjFifoThresholds( &threshold,
-					  NULL /* remoteGetThreshold */ );
-  PAMI_assertf( rc == 0, "Kernel_ConfigureInjFifoThresholds failed with rc=%d\n",rc);
-
-  // Set the MU Rec Fifo Interrupt Threshold such that if the free space drops below this
-  // threshold, an interrupt will fire so the packets can be processed.
-  // Set it to two-thirds the size of the rec fifo (in units of number of descriptors).
-  threshold = (_pamiRM.getRecFifoSize() * 2) / (3 * sizeof(MUHWI_Descriptor_t));
-  rc = Kernel_ConfigureRecFifoThreshold( threshold );
-  PAMI_assertf( rc == 0, "Kernel_ConfigureRecFifoThreshold failed with rc=%d\n",rc);
-
-  TRACE_ERR((stderr,"MU ResourceManager: allocateContextResources: Setting Inj Fifo Threshold to 0, and Rec Fifo Threshold to %lu\n",threshold));
 
   // Set up the injection fifos for this context
 

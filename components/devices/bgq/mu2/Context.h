@@ -903,6 +903,16 @@ namespace PAMI
             return _rm.getRgetInjFifoIds();
           };
 
+	  inline uint32_t getGlobalCommAgentRecFifoId()
+	  {
+	    return _rm.getGlobalCommAgentRecFifoId();
+	  }
+
+	  inline bool isCommAgentActive()
+	  {
+	    return _rm.isCommAgentActive();
+	  }
+
 	  /// \brief Get the Progress device to post pami work to
 	  ///
 	  /// \retval generic device pointer

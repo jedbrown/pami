@@ -81,14 +81,14 @@
 ///   weights must sum to 100.
 ///   - Default is that all clients get an equal amount of resources.
 ///
-/// - PAMI_RECFIFOSIZE - The size, in bytes, of each reception FIFO.  Incoming
-///   torus packets are stored in this fifo until PAMI Messaging can process
+/// - MUSPI_RECFIFOSIZE - The size, in bytes, of each reception FIFO.  Incoming
+///   torus packets are stored in this fifo until software can process
 ///   them.  Making this larger can reduce torus network congestion.  Making this
 ///   smaller leaves more memory available to the application.
 ///   PAMI Messaging uses one reception FIFO per context.
 ///   - Default is 1048576 bytes (1 megabyte).
 ///
-/// - PAMI_INJFIFOSIZE - The size, in bytes, of each injection FIFO.  These
+/// - MUSPI_INJFIFOSIZE - The size, in bytes, of each injection FIFO.  These
 ///   FIFOs store 64-byte descriptors, each describing a memory buffer to be
 ///   sent on the torus.  Making this larger can reduce overhead when there are
 ///   many outstanding messages.  Making this smaller can increase that overhead.
@@ -524,12 +524,12 @@ void PAMI::ResourceManager::getConfig()
   _rgetInjFifoSize = getConfigValueSize_t( "PAMI_RGETINJFIFOSIZE",
 					   rgetInjFifoSizeDefault );
 
-  // Get PAMI_INJFIFOSIZE
-  _injFifoSize = getConfigValueSize_t( "PAMI_INJFIFOSIZE",
+  // Get MUSPI_INJFIFOSIZE
+  _injFifoSize = getConfigValueSize_t( "MUSPI_INJFIFOSIZE",
 				       injFifoSizeDefault );
 
-  // Get PAMI_RECFIFOSIZE
-  _recFifoSize = getConfigValueSize_t( "PAMI_RECFIFOSIZE",
+  // Get MUSPI_RECFIFOSIZE
+  _recFifoSize = getConfigValueSize_t( "MUSPI_RECFIFOSIZE",
 				       recFifoSizeDefault );
 
   // Get Process Info

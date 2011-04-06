@@ -18,6 +18,7 @@
 #include "Global.h"
 #include "components/devices/DmaInterface.h"
 #include "components/devices/bgq/mu2/Context.h"
+#include "components/devices/bgq/mu2/model/MemoryFifoRemoteCompletion.h"
 
 #include "util/trace.h"
 #include "components/memory/MemoryAllocator.h"
@@ -36,7 +37,7 @@ namespace PAMI
     namespace MU
     {
       template <class T_Model>
-      class DmaModelBase : public Interface::DmaModel < MU::DmaModelBase<T_Model>, MU::Context, 128 >
+      class DmaModelBase : public Interface::DmaModel < MU::DmaModelBase<T_Model>, MU::Context, 256 >
       {
         protected :
 
@@ -66,7 +67,13 @@ namespace PAMI
           static const size_t dma_model_mr_supported = true;
 
           /// \see Device::Interface::DmaModel::getDmaTransferStateBytes
-          static const size_t dma_model_state_bytes  = 128;
+	  ///
+	  /// One usage is to store a descriptor message and its payload (1 descriptor)
+	  /// in the "state" array, which dictates its size to be:
+	  ///   256 = sizeof(InjectDescriptorMessage) + sizeof(MUHWI_Descriptor_t)
+	  /// Prior to this size, it was 128.
+	  /// 
+          static const size_t dma_model_state_bytes  = 256;
 
 
           inline bool postDmaPut_impl (size_t                target_task,
@@ -142,6 +149,9 @@ namespace PAMI
           MUSPI_DescriptorBase   _dput; // "direct put" used for postDmaPut_impl()
           MUSPI_DescriptorBase   _rget; // "remote get" used for postDmaGet_impl()
           MUSPI_DescriptorBase   _rput; // "remote put" _rget payload descriptor
+	  MemoryFifoRemoteCompletion _remoteCompletion; // Class that does a
+	                                                // memory fifo completion
+                                                        // ping pong.
 
           MU::Context          & _context;
 	  MUHWI_Destination_t  * _myCoords;
@@ -233,8 +243,9 @@ namespace PAMI
 
       template <class T_Model>
       DmaModelBase<T_Model>::DmaModelBase (MU::Context & device, pami_result_t & status) :
-          Interface::DmaModel < MU::DmaModelBase<T_Model>, MU::Context, 128 > (device, status),
-          _context (device)
+          Interface::DmaModel < MU::DmaModelBase<T_Model>, MU::Context, 256 > (device, status),
+	  _remoteCompletion (device),
+	  _context (device)
       {
         COMPILE_TIME_ASSERT(sizeof(MUSPI_DescriptorBase) <= MU::Context::immediate_payload_size);
 
@@ -450,15 +461,53 @@ namespace PAMI
 
         if (unlikely(bytes == 0)) // eliminate this branch with a template parameter?
           {
+#if 0
             // A zero-byte put is defined to be complete after a dma pingpong. This
             // is accomplished via a zero-byte get operation.
-#if 0
             return postDmaGet_impl (state, local_fn, cookie, target_task, target_offset, 0,
                                     local_memregion, local_offset,
                                     remote_memregion, remote_offset);
+	    // Note: This technique is turned-off because it won't work with the MU.
+	    // The postDmaGet() implementation is to send a remote-get to the remote
+	    // node.  When that DmaGet completes, we know the previous put operations
+	    // have been received at the remote node.  This remote get must be
+	    // deterministically routed on the same virtual channel as the previous
+	    // put operations so it flows after the put operations.  But, to avoid
+	    // deadlocks, the MU requires the remote get to flow on the high-priority
+	    // virtual channel, which is different from the virtual channel that the
+	    // data flows on.  Thus, we can't use this remote get tecnhique.
 #else
+	    // A zero-byte put is defined to be complete after a memory fifo pingpong
+	    // with the remote node.  The ping must be injected into the same injection
+	    // fifo and torus injection fifo, and must be deterministically routed so it 
+	    // follows behind the previous deterministically-routed put operations.
+	    // When the ping is received at the remote node, it sends a pong back to our
+	    // node, causing the local_fn callback to be invoked, indicating completion.
+
+	    // Before injecting the ping descriptor, determine the destination,
+	    // torus fifo map, and injection channel to use to get to the
+	    // destination.
+	    MUHWI_Destination_t   dest;
+	    uint16_t              rfifo;
+	    uint64_t              map;
+	    
+	    size_t fnum = _context.pinFifo (target_task,
+					    target_offset,
+					    dest,
+					    rfifo,
+					    map);
+	    
+	    InjChannel & channel = _context.injectionGroup.channel[fnum];
+
+	    _remoteCompletion.inject( state,
+				      channel,
+				      local_fn,
+				      cookie,
+				      map,
+				      dest.Destination.Destination);
+
             TRACE_FN_EXIT();
-            return false;
+	    return true;
 #endif
           }
 
