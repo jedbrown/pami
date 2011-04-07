@@ -114,7 +114,7 @@ namespace PAMI
      size_t                fnum,
      size_t                sequence)
     {
-      TRACE_ERR((stderr, ">> (%zu) ShmemDevice::postCompletion(%p,%p,%p,%zu,%zu)\n", __global.mapping.task(), state, local_fn, cookie, fnum, sequence));
+      TRACE_ERR((stderr, ">> (%zu) ShmemDevice::postCompletion(%p,%p,%p,%zu,%zu), _local_progress_device = %p\n", __global.mapping.task(), state, local_fn, cookie, fnum, sequence, _local_progress_device));
 
       COMPILE_TIME_ASSERT(sizeof(Shmem::RecPacketWork<T_Fifo>) <= completion_work_size);
 

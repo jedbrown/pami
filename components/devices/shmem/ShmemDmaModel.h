@@ -28,6 +28,7 @@
 #include "components/devices/shmem/ShmemPacket.h"
 #include "components/devices/shmem/ShmemPacketMessage.h"
 #include "components/devices/shmem/shaddr/ShaddrInterface.h"
+#include "components/devices/shmem/shaddr/SystemShaddr.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
@@ -54,8 +55,8 @@ namespace PAMI
                                      size_t                remote_offset,
                                      size_t                bytes) :
               PacketMessage<T_Device, PacketWriter<void>, true, false>
-              (local_fn, cookie, device, fnum, device->system_ro_put_dispatch,
-               NULL, 0, (void *) &_info, sizeof(typename T_Device::SystemShaddrInfo)),
+              (local_fn, cookie, device, fnum, device->shaddr.system_ro_put_dispatch,
+               NULL, 0, (void *) &_info, sizeof(Shaddr::SystemShaddrInfo)),
               _info (local_memregion, remote_memregion,
                      local_offset, remote_offset, bytes)
           {
@@ -63,7 +64,7 @@ namespace PAMI
 
           inline ~ReadOnlyPutMessage () {};
 
-          typename T_Device::SystemShaddrInfo _info;
+          Shaddr::SystemShaddrInfo _info;
       };
 
       template <class T_Device>
@@ -270,10 +271,10 @@ namespace PAMI
                     // object is no longer needed after the "write single packet"
                     // returns true.  If the packet could not be written the
                     // object will be copied into a pending send message.
-                    COMPILE_TIME_ASSERT(sizeof(typename T_Device::SystemShaddrInfo) <= T_Device::payload_size);
-                    typename T_Device::SystemShaddrInfo info(local_memregion, remote_memregion, local_offset, remote_offset, bytes);
-                    PacketWriter<void> writer (_device.system_ro_put_dispatch);
-                    writer.init (NULL, 0, (void *)&info, sizeof(typename T_Device::SystemShaddrInfo));
+                    COMPILE_TIME_ASSERT(sizeof(Shaddr::SystemShaddrInfo) <= T_Device::payload_size);
+                    Shaddr::SystemShaddrInfo info(local_memregion, remote_memregion, local_offset, remote_offset, bytes);
+                    PacketWriter<void> writer (_device.shaddr.system_ro_put_dispatch);
+                    writer.init (NULL, 0, (void *)&info, sizeof(Shaddr::SystemShaddrInfo));
 
                     if (_device._fifo[fnum].producePacket(writer))
                       {

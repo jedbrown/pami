@@ -30,6 +30,9 @@ namespace PAMI
       {
         public:
 
+          template <class T_Device>
+          inline void initialize (T_Device * device);
+
           inline bool isEnabled ();
 
           ///
@@ -166,11 +169,17 @@ namespace PAMI
 };        // PAMI namespace
 
 template <class T>
+template <class T_Device>
+void PAMI::Device::Shmem::ShaddrInterface<T>::initialize (T_Device * device)
+{
+  static_cast<T*>(this)->initialize_impl (device);
+};
+
+template <class T>
 bool PAMI::Device::Shmem::ShaddrInterface<T>::isEnabled ()
 {
   return static_cast<T*>(this)->isEnabled_impl ();
 };
-
 
 template <class T>
 const bool PAMI::Device::Shmem::ShaddrInterface<T>::isVirtualAddressSupported ()

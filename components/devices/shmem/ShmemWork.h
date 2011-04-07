@@ -55,15 +55,18 @@ namespace PAMI
 
           inline pami_result_t advance_with_callback (pami_context_t context)
           {
+            TRACE_ERR((stderr, ">> RecPacketWork::advance_with_callback(%p), _sequence = %zu, _fifo.lastPacketConsumed() = %zu\n", context, _sequence, _fifo.lastPacketConsumed()));
             if (_sequence <= _fifo.lastPacketConsumed())
             {
               // Invoke the work completion callback
               _done_fn (context, _done_cookie, PAMI_SUCCESS);
 
               // return 'success' which will remove the work object from the work queue.
+              TRACE_ERR((stderr, "<< RecPacketWork::advance_with_callback(%p), return PAMI_SUCCESS\n", context));
               return PAMI_SUCCESS;
             }
 
+            TRACE_ERR((stderr, "<< RecPacketWork::advance_with_callback(%p), return PAMI_EAGAIN\n", context));
             return PAMI_EAGAIN;
           };
 
@@ -75,6 +78,7 @@ namespace PAMI
 
           inline pami_result_t advance_with_status (pami_context_t context)
           {
+            TRACE_ERR((stderr, ">> RecPacketWork::advance_with_status(%p), _sequence = %zu, _fifo.lastPacketConsumed() = %zu\n", context, _sequence, _fifo.lastPacketConsumed()));
             if (_sequence <= _fifo.lastPacketConsumed())
             {
               // Set the associated message status to "done". This will remove
@@ -83,9 +87,11 @@ namespace PAMI
               _msg->setStatus (PAMI::Device::Done);
 
               // Return 'success' which will remove the work object from the work queue.
+              TRACE_ERR((stderr, "<< RecPacketWork::advance_with_status(%p), return PAMI_SUCCESS\n", context));
               return PAMI_SUCCESS;
             }
 
+            TRACE_ERR((stderr, "<< RecPacketWork::advance_with_status(%p), return PAMI_EAGAIN\n", context));
             return PAMI_EAGAIN;
           };
 

@@ -95,32 +95,36 @@ namespace PAMI
             //
             //
             //
-            if (minslot>=0 && maxslot>=0)
-            {
-              size_t nslots = maxslot - minslot + 1;
-              _enabled = (nslots >= (npeers - 1));
-              TRACE_ERR((stderr, "BgpShaddr(), _enabled = %d, nslots = %d\n", _enabled, nslots));
-            }
+            if (minslot >= 0 && maxslot >= 0)
+              {
+                size_t nslots = maxslot - minslot + 1;
+                _enabled = (nslots >= (npeers - 1));
+                TRACE_ERR((stderr, "BgpShaddr(), _enabled = %d, nslots = %d\n", _enabled, nslots));
+              }
+
             //
             //
             //
 
             TRACE_ERR((stderr, "BgpShaddr(), _enabled = %d, npeers = %zu, thispeer = %zu, this = %p\n", _enabled, npeers, thispeer, this));
+
             if (_enabled)
-            {
-              size_t i, j = 0;
-              for (i = 0; i < npeers; i++)
-                {
-                  if (thispeer != i)
-                    {
-                      _window[i].last_vaddr = (uint32_t) - 1;
-                      _window[i].last_paddr = (uint32_t) - 1;
-                      _window[i].tlbslot    = minslot + j++;
-                      TRACE_ERR((stderr, "BgpShaddr(), _window[%zu].tlbslot = %d\n", i, _window[i].tlbslot));
-                    }
-                  TRACE_ERR((stderr, "BgpShaddr(), & _window[%zu] = %p\n", i, & _window[i]));
-                }
-            }
+              {
+                size_t i, j = 0;
+
+                for (i = 0; i < npeers; i++)
+                  {
+                    if (thispeer != i)
+                      {
+                        _window[i].last_vaddr = (uint32_t) - 1;
+                        _window[i].last_paddr = (uint32_t) - 1;
+                        _window[i].tlbslot    = minslot + j++;
+                        TRACE_ERR((stderr, "BgpShaddr(), _window[%zu].tlbslot = %d\n", i, _window[i].tlbslot));
+                      }
+
+                    TRACE_ERR((stderr, "BgpShaddr(), & _window[%zu] = %p\n", i, & _window[i]));
+                  }
+              }
           }
 
           inline ~BgpShaddr () {};
@@ -416,15 +420,16 @@ void * PAMI::Device::Shmem::BgpShaddr::p2v (size_t     peer,
   TRACE_ERR((stderr, "   BgpShaddr::p2v():%d .. window_size = %d, paddr_round_down = 0x%08x, paddr_offset = %d, actualsize = %u\n", __LINE__, window_size, paddr_round_down, paddr_offset, actualsize));
 
   TRACE_ERR((stderr, "   BgpShaddr::p2v():%d .. & _window[%zu] = %p .. _window[%zu].tlbslot = %d, _window[%zu].last_vaddr = %p, _window[%zu].last_paddr = %p\n", __LINE__, peer, &_window[peer], peer, _window[peer].tlbslot, peer, (void *) _window[peer].last_vaddr, peer, (void *) _window[peer].last_paddr));
+
   if (paddr_round_down != _window[peer].last_paddr)
     {
       // Map a new process window for this physical address
       TRACE_ERR((stderr, "   BgpShaddr::p2v():%d .. _window[%zu].tlbslot = %d, paddr_round_down = %d, window_size = %d\n", __LINE__, peer, _window[peer].tlbslot, paddr_round_down, window_size));
       int rc;
       rc = Kernel_SetProcessWindow (_window[peer].tlbslot, paddr_round_down,
-                                        window_size,
-                                        PROT_READ | PROT_WRITE,
-                                        &_window[peer].last_vaddr, &_window[peer].last_paddr, &actualsize);
+                                    window_size,
+                                    PROT_READ | PROT_WRITE,
+                                    &_window[peer].last_vaddr, &_window[peer].last_paddr, &actualsize);
 
       PAMI_assertf(rc == 0, "%s<%d> Bad return code from Kernel_SetProcessWindow: %d\n", __FILE__, __LINE__, rc);
       PAMI_assert_debug (_window[peer].last_paddr == paddr_round_down);

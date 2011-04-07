@@ -90,17 +90,18 @@ size_t PAMI::Device::Shmem::BgqShaddrReadWrite::write_impl (Memregion * remote,
   void * local_paddr = (void *) (local->getBasePhysicalAddress() + local_offset);
   void * local_vaddr = NULL;
   rc = Kernel_Physical2Virtual (local_paddr, &local_vaddr);
-  PAMI_assert_debugf(rc==0, "%s<%d> .. Kernel_Physical2Virtual(), rc = %d\n", __FILE__, __LINE__, rc);
+  PAMI_assert_debugf(rc == 0, "%s<%d> .. Kernel_Physical2Virtual(), rc = %d\n", __FILE__, __LINE__, rc);
 
   void * remote_paddr = (void *) (remote->getBasePhysicalAddress() + remote_offset);
   void * remote_vaddr = NULL;
   rc = Kernel_Physical2GlobalVirtual (remote_paddr, &remote_vaddr);
-  PAMI_assert_debugf(rc==0, "%s<%d> .. Kernel_Physical2GlobalVirtual(), rc = %d\n", __FILE__, __LINE__, rc);
+  PAMI_assert_debugf(rc == 0, "%s<%d> .. Kernel_Physical2GlobalVirtual(), rc = %d\n", __FILE__, __LINE__, rc);
 
 
   TRACE_ERR((stderr, "   Shmem::BgqShaddrReadWrite::write_impl(), local_vaddr = %p, remote_vaddr = %p\n", local_vaddr, remote_vaddr));
 
   size_t bytes_to_copy = bytes;
+
   if (unlikely(bytes_to_copy > SHMEM_COPY_BLOCK_SIZE))
     bytes_to_copy = SHMEM_COPY_BLOCK_SIZE;
 

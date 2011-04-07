@@ -29,6 +29,7 @@
 #include "components/devices/shmem/ShmemMessage.h"
 #include "components/devices/shmem/ShmemPacket.h"
 #include "components/devices/shmem/ShmemWork.h"
+#include "components/devices/shmem/shaddr/SystemShaddr.h"
 #include "components/devices/shmem/shaddr/NoShaddr.h"
 #include "components/devices/shmem/wakeup/WakeupNoop.h"
 #include "components/memory/MemoryAllocator.h"
@@ -145,94 +146,6 @@ namespace PAMI
             };
         };
 
-        // Inner system shared address information class
-        class SystemShaddrInfo
-        {
-          public:
-            inline SystemShaddrInfo (Memregion * origin_mr,
-                                     Memregion * target_mr,
-                                     size_t      origin_offset,
-                                     size_t      target_offset,
-                                     size_t      bytes) :
-                _origin_mr (*origin_mr),
-                _target_mr (*target_mr),
-                _origin_offset (origin_offset),
-                _target_offset (target_offset),
-                _bytes (bytes)
-            {
-            }
-
-            ///
-            /// \see PAMI::Device::Interface::RecvFunction_t
-            ///
-            static int system_shaddr_read (void   * metadata,
-                                           void   * payload,
-                                           size_t   bytes,
-                                           void   * recv_func_parm,
-                                           void   * cookie)
-            {
-              TRACE_ERR((stderr, ">> SystemShaddrInfo::system_shaddr_read():%d .. recv_func_parm = %p\n", __LINE__, recv_func_parm));
-
-              T_Shaddr * shaddr = (T_Shaddr *) recv_func_parm;
-
-              SystemShaddrInfo * info = (SystemShaddrInfo *) payload;
-              size_t total_bytes = info->_bytes;
-              size_t bytes_copied = 0;
-              size_t target_offset = info->_target_offset;
-              size_t origin_offset = info->_origin_offset;
-
-              while (bytes_copied < total_bytes)
-              {
-                bytes_copied += shaddr->read (&(info->_target_mr),
-                                              target_offset + bytes_copied,
-                                              &(info->_origin_mr),
-                                              origin_offset + bytes_copied,
-                                              total_bytes - bytes_copied);
-              }
-
-              TRACE_ERR((stderr, "<< SystemShaddrInfo::system_shaddr_read():%d\n", __LINE__));
-              return 0;
-            }
-
-            ///
-            /// \see PAMI::Device::Interface::RecvFunction_t
-            ///
-            static int system_shaddr_write (void   * metadata,
-                                            void   * payload,
-                                            size_t   bytes,
-                                            void   * recv_func_parm,
-                                            void   * cookie)
-            {
-              TRACE_ERR((stderr, ">> SystemShaddrInfo::system_shaddr_write():%d\n", __LINE__));
-
-              T_Shaddr * shaddr = (T_Shaddr *) recv_func_parm;
-
-              SystemShaddrInfo * info = (SystemShaddrInfo *) payload;
-              size_t total_bytes = info->_bytes;
-              size_t bytes_copied = 0;
-              size_t target_offset = info->_target_offset;
-              size_t origin_offset = info->_origin_offset;
-
-              while (bytes_copied < total_bytes)
-              {
-                bytes_copied += shaddr->read (&(info->_origin_mr),
-                                              origin_offset + bytes_copied,
-                                              &(info->_target_mr),
-                                              target_offset + bytes_copied,
-                                              total_bytes - bytes_copied);
-              }
-
-              TRACE_ERR((stderr, "<< SystemShaddrInfo::system_shaddr_write():%d\n", __LINE__));
-              return 0;
-            }
-
-            Memregion _origin_mr;
-            Memregion _target_mr;
-            size_t    _origin_offset;
-            size_t    _target_offset;
-            size_t    _bytes;
-        };
-
         inline ShmemDevice (size_t clientid, size_t ncontexts,
                             Memory::MemoryManager & mm, size_t contextid,
                             PAMI::Device::Generic::Device * progress) :
@@ -248,7 +161,8 @@ namespace PAMI
 #endif
             _progress (progress),
             _local_progress_device (&(Generic::Device::Factory::getDevice (progress, 0, contextid))),
-            shaddr (),
+            _dispatch (),
+            shaddr (this),
             _desc_fifo ()
 
         {
@@ -292,11 +206,6 @@ namespace PAMI
               _sendQ[i].init(_local_progress_device);
             }
 
-          // Register system dispatch functions
-          _dispatch.registerSystemDispatch (SystemShaddrInfo::system_shaddr_read,
-                                            &shaddr, system_ro_put_dispatch);
-                                            
-                                            
           // Initialize the collective descriptor fifo
           _desc_fifo.init (mm, _unique_str);
           
@@ -363,8 +272,6 @@ namespace PAMI
         // ------------------------------------------
 
         static const size_t completion_work_size = sizeof(Shmem::RecPacketWork<T_Fifo>);
-
-        uint16_t system_ro_put_dispatch;
 
         ///
         /// \brief Register the receive function to dispatch when a packet arrives.
@@ -449,13 +356,12 @@ namespace PAMI
         PAMI::Device::Generic::Device * _progress;
         PAMI::Device::Generic::Device * _local_progress_device;
 
-        T_Shaddr          shaddr;
-
         size_t            _npeers;
         size_t            _task;
         size_t            _peer;
 
         Shmem::Dispatch<Shmem::Packet<typename T_Fifo::Packet> >  _dispatch;
+        Shmem::Shaddr::System<T_Shaddr>                           shaddr;
         
         // -------------------------------------------------------------
         // Collectives
@@ -606,8 +512,6 @@ namespace PAMI
           _desc_fifo.release_done_descriptors();
           events++;
         }
-
-        return events;
 
 #ifdef TRAP_ADVANCE_DEADLOCK
       static size_t iteration = 0;
