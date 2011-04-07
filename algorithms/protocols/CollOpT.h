@@ -208,3 +208,10 @@ namespace CCMI
 };  //- CCMI
 
 #endif /* __algorithms_protocols_CollOpT_h__ */
+//
+// astyle info    http://astyle.sourceforge.net
+//
+// astyle options --style=gnu --indent=spaces=2 --indent-classes
+// astyle options --indent-switches --indent-namespaces --break-blocks
+// astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
+//

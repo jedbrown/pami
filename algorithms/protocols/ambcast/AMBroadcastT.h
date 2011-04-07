@@ -22,183 +22,183 @@
 
 namespace CCMI
 {
-  namespace Adaptor
-  {
-    namespace AMBroadcast
+namespace Adaptor
+{
+namespace AMBroadcast
+{
+///
+/// \brief Asyc Broadcast Composite. It is single color right now
+///
+template <class T_Schedule, class T_Conn, SFunc<PAMI_GEOMETRY_CLASS>::ScheduleFn create_schedule>
+class AMBroadcastT : public CCMI::Executor::Composite
+{
+protected:
+    CCMI::Executor::BroadcastExec<T_Conn>  _executor __attribute__((__aligned__(16)));
+    T_Schedule                             _schedule;
+    unsigned                               _root;
+    Interfaces::NativeInterface           *_native;
+    PAMI_GEOMETRY_CLASS                   *_geometry;
+
+public:
+    ///
+    /// \brief Constructor
+    ///
+    AMBroadcastT (Interfaces::NativeInterface              * native,
+                  T_Conn                                   * cmgr,
+                  pami_geometry_t                            g,
+                  pami_xfer_t                              * cmd,
+                  pami_event_function                        fn,
+                  void                                     * cookie):
+        Executor::Composite(),
+        _executor (native, cmgr, ((PAMI_GEOMETRY_CLASS *)g)->comm()),
+        _root(native->myrank()), //On the initiating node
+        _native(native),
+        _geometry((PAMI_GEOMETRY_CLASS *)g)
     {
-      ///
-      /// \brief Asyc Broadcast Composite. It is single color right now
-      ///
-      template <class T_Schedule, class T_Conn, SFunc<PAMI_GEOMETRY_CLASS>::ScheduleFn create_schedule>
-      class AMBroadcastT : public CCMI::Executor::Composite
-      {
-        protected:
-          CCMI::Executor::BroadcastExec<T_Conn>  _executor __attribute__((__aligned__(16)));
-          T_Schedule                             _schedule;
-          unsigned                               _root;
-          Interfaces::NativeInterface           *_native;
-          PAMI_GEOMETRY_CLASS                   *_geometry;
+        TRACE_ADAPTOR ((stderr, "<%p>Broadcast::AMBroadcastT() \n", this));
+        _executor.setBuffers ((char *)cmd->cmd.xfer_ambroadcast.sndbuf,
+                              (char *)cmd->cmd.xfer_ambroadcast.sndbuf,
+                              cmd->cmd.xfer_ambroadcast.stypecount);
+        _executor.setDoneCallback (cmd->cb_done, cmd->cookie);
+    }
 
-        public:
-          ///
-          /// \brief Constructor
-          ///
-          AMBroadcastT (Interfaces::NativeInterface              * native,
-                        T_Conn                                   * cmgr,
-                        pami_geometry_t                            g,
-                        pami_xfer_t                              * cmd,
-                        pami_event_function                        fn,
-                        void                                     * cookie):
-              Executor::Composite(),
-              _executor (native, cmgr, ((PAMI_GEOMETRY_CLASS *)g)->comm()),
-              _root(native->myrank()), //On the initiating node
-              _native(native),
-              _geometry((PAMI_GEOMETRY_CLASS *)g)
-          {
-            TRACE_ADAPTOR ((stderr, "<%p>Broadcast::AMBroadcastT() \n", this));
-            _executor.setBuffers ((char *)cmd->cmd.xfer_ambroadcast.sndbuf,
-                                  (char *)cmd->cmd.xfer_ambroadcast.sndbuf,
-                                  cmd->cmd.xfer_ambroadcast.stypecount);
-            _executor.setDoneCallback (cmd->cb_done, cmd->cookie);
-          }
+    void setRoot (unsigned root)
+    {
+        _root = root;
+    }
 
-          void setRoot (unsigned root)
-          {
-            _root = root;
-          }
+    void start()
+    {
+        _executor.setRoot (_root);
+        COMPILE_TIME_ASSERT(sizeof(_schedule) >= sizeof(T_Schedule));
+        create_schedule(&_schedule, sizeof(_schedule), _root, _native, _geometry);
+        _executor.setSchedule(&_schedule, 0);
+        _executor.start();
+    }
 
-          void start()
-          {
-            _executor.setRoot (_root);
-            COMPILE_TIME_ASSERT(sizeof(_schedule) >= sizeof(T_Schedule));
-            create_schedule(&_schedule, sizeof(_schedule), _root, _native, _geometry);
-            _executor.setSchedule(&_schedule, 0);
-            _executor.start();
-          }
+    CCMI::Executor::BroadcastExec<T_Conn> &executor()
+    {
+        return _executor;
+    }
+};
 
-          CCMI::Executor::BroadcastExec<T_Conn> &executor()
-          {
-            return _executor;
-          }
-      };
+template <class T_Composite, MetaDataFn get_metadata, class T_Conn>
+class AMBroadcastFactoryT: public CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>
+{
+protected:
+    pami_dispatch_ambroadcast_function _cb_ambcast;
 
-      template <class T, MetaDataFn get_metadata, class C>
-      class AMBroadcastFactoryT: public CollectiveProtocolFactoryT<T, get_metadata, C>
-      {
-        protected:
-          pami_dispatch_ambroadcast_function _cb_ambcast;
+public:
+    AMBroadcastFactoryT (T_Conn                      *cmgr,
+                         Interfaces::NativeInterface *native):
+        CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>(cmgr, native, cb_head)
+    {
+    }
 
-        public:
-          AMBroadcastFactoryT (C                           *cmgr,
-                               Interfaces::NativeInterface *native):
-              CollectiveProtocolFactoryT<T, get_metadata, C>(cmgr, native, cb_head)
-          {
-          }
+    virtual ~AMBroadcastFactoryT ()
+    {
+    }
 
-          virtual ~AMBroadcastFactoryT ()
-          {
-          }
+    /// NOTE: This is required to make "C" programs link successfully with virtual destructors
+    void operator delete(void * p)
+    {
+        CCMI_abort();
+    }
 
-          /// NOTE: This is required to make "C" programs link successfully with virtual destructors
-          void operator delete(void * p)
-          {
-            CCMI_abort();
-          }
+    virtual Executor::Composite * generate(pami_geometry_t              g,
+                                           void                      * cmd)
+    {
+        TRACE_ADAPTOR((stderr, "AMBroadcastFactoryT::generate()\n"));
+        typename CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::collObj *cobj =
+            (typename CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::collObj *)
+            CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_alloc.allocateObject();
 
-          virtual Executor::Composite * generate(pami_geometry_t              g,
-                                                 void                      * cmd)
-          {
-            TRACE_ADAPTOR((stderr, "AMBroadcastFactoryT::generate()\n"));
-            typename CollectiveProtocolFactoryT<T, get_metadata, C>::collObj *cobj =
-              (typename CollectiveProtocolFactoryT<T, get_metadata, C>::collObj *)
-              CollectiveProtocolFactoryT<T, get_metadata, C>::_alloc.allocateObject();
+        new (cobj) typename CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::collObj
+        (CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_native,  // Native interface
+         CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_cmgr,    // Connection Manager
+         g,                 // Geometry Object
+         (pami_xfer_t*)cmd, // Parameters
+         CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::done_fn,  // Intercept function
+         cobj,              // Intercept cookie
+         this);             // Factory
 
-            new (cobj) typename CollectiveProtocolFactoryT<T, get_metadata, C>::collObj
-            (CollectiveProtocolFactoryT<T, get_metadata, C>::_native,  // Native interface
-             CollectiveProtocolFactoryT<T, get_metadata, C>::_cmgr,    // Connection Manager
-             g,                 // Geometry Object
-             (pami_xfer_t*)cmd, // Parameters
-             CollectiveProtocolFactoryT<T, get_metadata, C>::done_fn,  // Intercept function
-             cobj,              // Intercept cookie
-             this);             // Factory
+        cobj->_obj.start();
+        return NULL;
+    }
 
-            cobj->_obj.start();
-            return NULL;
-          }
-
-          virtual void setAsyncInfo (bool                          is_buffered,
-                                     pami_dispatch_callback_function cb_async,
-                                     pami_mapidtogeometry_fn        cb_geometry)
-          {
-            _cb_ambcast = cb_async.ambroadcast;
-          };
+    virtual void setAsyncInfo (bool                          is_buffered,
+                               pami_dispatch_callback_function cb_async,
+                               pami_mapidtogeometry_fn        cb_geometry)
+    {
+        _cb_ambcast = cb_async.ambroadcast;
+    };
 
 
-          static void   cb_head
-          (pami_context_t         ctxt,
-           const pami_quad_t     * info,
-           unsigned               count,
-           unsigned               conn_id,
-           size_t                 peer,
-           size_t                 sndlen,
-           void                 * arg,
-           size_t               * rcvlen,
-           pami_pipeworkqueue_t ** rcvpwq,
-           pami_callback_t       * cb_done)
-          {
-            AMBroadcastFactoryT *factory = (AMBroadcastFactoryT *) arg;
-            CollHeaderData *cdata = (CollHeaderData *) info;
+    static void   cb_head
+    (pami_context_t         ctxt,
+     const pami_quad_t     * info,
+     unsigned               count,
+     unsigned               conn_id,
+     size_t                 peer,
+     size_t                 sndlen,
+     void                 * arg,
+     size_t               * rcvlen,
+     pami_pipeworkqueue_t ** rcvpwq,
+     pami_callback_t       * cb_done)
+    {
+        AMBroadcastFactoryT *factory = (AMBroadcastFactoryT *) arg;
+        CollHeaderData *cdata = (CollHeaderData *) info;
 
-            int comm = cdata->_comm;
-            PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry (ctxt, comm);
+        int comm = cdata->_comm;
+        PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry (ctxt, comm);
 
-            pami_xfer_t broadcast;
-            broadcast.algorithm = (size_t) - 1;  ///Not used by the protocols
-            broadcast.cmd.xfer_ambroadcast.user_header  = NULL;
-            broadcast.cmd.xfer_ambroadcast.headerlen    = 0;
-            pami_type_t pt = PAMI_TYPE_CONTIGUOUS;
-            broadcast.cmd.xfer_ambroadcast.stype = &pt;
+        pami_xfer_t broadcast;
+        broadcast.algorithm = (size_t) - 1;  ///Not used by the protocols
+        broadcast.cmd.xfer_ambroadcast.user_header  = NULL;
+        broadcast.cmd.xfer_ambroadcast.headerlen    = 0;
+        pami_type_t pt = PAMI_TYPE_CONTIGUOUS;
+        broadcast.cmd.xfer_ambroadcast.stype = &pt;
 
-            //Assume send datatypes are the same as recv datatypes
-            factory->_cb_ambcast
-            (NULL,                 // Context: NULL for now, until we can get the context
-             cdata->_root,         // Root
-             (pami_geometry_t)geometry,  // Geometry
-             sndlen,               // sndlen
-             NULL,                 // User header, NULL for now
-             0,                    // 0 sized for now
-             &broadcast.cmd.xfer_ambroadcast.sndbuf,
-             &broadcast.cmd.xfer_ambroadcast.stype,
-             &broadcast.cmd.xfer_ambroadcast.stypecount,
-             &broadcast.cb_done,
-             &broadcast.cookie);
+        //Assume send datatypes are the same as recv datatypes
+        factory->_cb_ambcast
+        (NULL,                 // Context: NULL for now, until we can get the context
+         cdata->_root,         // Root
+         (pami_geometry_t)geometry,  // Geometry
+         sndlen,               // sndlen
+         NULL,                 // User header, NULL for now
+         0,                    // 0 sized for now
+         &broadcast.cmd.xfer_ambroadcast.sndbuf,
+         &broadcast.cmd.xfer_ambroadcast.stype,
+         &broadcast.cmd.xfer_ambroadcast.stypecount,
+         &broadcast.cb_done,
+         &broadcast.cookie);
 
-            typename CollectiveProtocolFactoryT<T, get_metadata, C>::collObj *cobj =
-              (typename CollectiveProtocolFactoryT<T, get_metadata, C>::collObj *)
-              factory->CollectiveProtocolFactoryT<T, get_metadata, C>::_alloc.allocateObject();
+        typename CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::collObj *cobj =
+            (typename CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::collObj *)
+            factory->CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_alloc.allocateObject();
 
-            new (cobj) typename CollectiveProtocolFactoryT<T, get_metadata, C>::collObj
-            (factory->CollectiveProtocolFactoryT<T, get_metadata, C>::_native,  // Native interface
-             factory->CollectiveProtocolFactoryT<T, get_metadata, C>::_cmgr,    // Connection Manager
-             (pami_geometry_t)geometry,  // Geometry
-             &broadcast, // Parameters
-             CollectiveProtocolFactoryT<T, get_metadata, C>::done_fn,  // Intercept function
-             cobj,              // Intercept cookie
-             factory);             // Factory
+        new (cobj) typename CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::collObj
+        (factory->CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_native,  // Native interface
+         factory->CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_cmgr,    // Connection Manager
+         (pami_geometry_t)geometry,  // Geometry
+         &broadcast, // Parameters
+         CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::done_fn,  // Intercept function
+         cobj,              // Intercept cookie
+         factory);             // Factory
 
-            //Correct the root to what was passed in
-            //T *ambcast = (T *) factory->generate ((pami_geometry_t)geometry, &broadcast);
-            cobj->_obj.setRoot (cdata->_root);
-            cobj->_obj.start();
-            cobj->_obj.executor().notifyRecv(peer, *info, (PAMI::PipeWorkQueue **)rcvpwq, cb_done);
+        //Correct the root to what was passed in
+        //T_Composite *ambcast = (T_Composite *) factory->generate ((pami_geometry_t)geometry, &broadcast);
+        cobj->_obj.setRoot (cdata->_root);
+        cobj->_obj.start();
+        cobj->_obj.executor().notifyRecv(peer, *info, (PAMI::PipeWorkQueue **)rcvpwq, cb_done);
 
-            //We only support sndlen == rcvlen
-            * rcvlen  = sndlen;
-          }
+        //We only support sndlen == rcvlen
+        * rcvlen  = sndlen;
+    }
 
-      }; //- AMBroadcastFactoryT
-    };  //- end namespace AMBroadcast
-  };  //- end namespace Adaptor
+}; //- AMBroadcastFactoryT
+};  //- end namespace AMBroadcast
+};  //- end namespace Adaptor
 };  //- end CCMI
 
 

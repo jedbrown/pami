@@ -1,3 +1,11 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
 /**
  * \file algorithms/protocols/AllSidedCollectiveProtocolFactoryT.h
  * \brief ???
@@ -13,91 +21,91 @@
 #include "util/trace.h"
 
 #ifdef CCMI_TRACE_ALL
- #define DO_TRACE_ENTEREXIT 1
- #define DO_TRACE_DEBUG     1
+#define DO_TRACE_ENTEREXIT 1
+#define DO_TRACE_DEBUG     1
 #else
- #define DO_TRACE_ENTEREXIT 0
- #define DO_TRACE_DEBUG     0
+#define DO_TRACE_ENTEREXIT 0
+#define DO_TRACE_DEBUG     0
 #endif
 
 namespace CCMI
 {
-  namespace Adaptor
-  {
-    ///
-    /// \brief choose if this protocol is supports the input geometry
-    ///
-    typedef void      (*MetaDataFn)   (pami_metadata_t *m);
+namespace Adaptor
+{
+///
+/// \brief choose if this protocol is supports the input geometry
+///
+typedef void      (*MetaDataFn)   (pami_metadata_t *m);
 
-    template <class T, MetaDataFn get_metadata, class C>
-    class AllSidedCollectiveProtocolFactoryT: public CollectiveProtocolFactory
+template <class T_Composite, MetaDataFn get_metadata, class T_Conn>
+class AllSidedCollectiveProtocolFactoryT: public CollectiveProtocolFactory
+{
+    class collObj
     {
-      class collObj
-      {
-      public:
+    public:
         collObj(Interfaces::NativeInterface             * native,
-                C                                       * cmgr,
+                T_Conn                                  * cmgr,
                 pami_geometry_t                           geometry,
                 pami_xfer_t                             * cmd,
                 pami_event_function                       fn,
                 void                                    * cookie,
                 AllSidedCollectiveProtocolFactoryT      * factory):
-        _factory(factory),
-        _user_done_fn(cmd->cb_done),
-	_user_cookie(cmd->cookie),
-	_obj(native,cmgr,geometry,cmd,fn,cookie)
+            _factory(factory),
+            _user_done_fn(cmd->cb_done),
+            _user_cookie(cmd->cookie),
+            _obj(native,cmgr,geometry,cmd,fn,cookie)
         {
-          TRACE_FN_ENTER();
-          TRACE_FORMAT("<%p>",this);
-          DO_DEBUG((templateName<T>()));
-          TRACE_FN_EXIT();
+            TRACE_FN_ENTER();
+            TRACE_FORMAT("<%p>",this);
+            DO_DEBUG((templateName<T_Composite>()));
+            TRACE_FN_EXIT();
         }
-	
+
         AllSidedCollectiveProtocolFactoryT * _factory;
         pami_event_function                  _user_done_fn;
         void                               * _user_cookie;
-	T                                    _obj;
-      };
+        T_Composite                                    _obj;
+    };
 
 
-    public:
-      AllSidedCollectiveProtocolFactoryT (C                   * cmgr,
-                                  Interfaces::NativeInterface * native):
-      CollectiveProtocolFactory(),
-      _cmgr(cmgr),
-      _native(native)
-      {
+public:
+    AllSidedCollectiveProtocolFactoryT (T_Conn              * cmgr,
+                                        Interfaces::NativeInterface * native):
+        CollectiveProtocolFactory(),
+        _cmgr(cmgr),
+        _native(native)
+    {
         TRACE_FN_ENTER();
         TRACE_FORMAT("<%p>",this);
         TRACE_FN_EXIT();
-      }
+    }
 
-      virtual ~AllSidedCollectiveProtocolFactoryT ()
-      {
-      }
+    virtual ~AllSidedCollectiveProtocolFactoryT ()
+    {
+    }
 
-      /// NOTE: This is required to make "C" programs link successfully with virtual destructors
-      void operator delete(void * p)
-      {
+    /// NOTE: This is required to make "C" programs link successfully with virtual destructors
+    void operator delete(void * p)
+    {
         CCMI_abort();
-      }
+    }
 
-      static void done_fn(pami_context_t  context,
-                          void          * clientdata,
-                          pami_result_t   res)
-      {
+    static void done_fn(pami_context_t  context,
+                        void          * clientdata,
+                        pami_result_t   res)
+    {
         TRACE_FN_ENTER();
         collObj *cobj = (collObj *)clientdata;
         TRACE_FORMAT("<%p> cobj %p",cobj->_factory, cobj);
         cobj->_user_done_fn(context, cobj->_user_cookie, res);
         cobj->_factory->_alloc.returnObject(cobj);
         TRACE_FN_EXIT();
-      }
+    }
 
 
-      virtual Executor::Composite * generate(pami_geometry_t             geometry,
-                                             void                      * cmd)
-      {
+    virtual Executor::Composite * generate(pami_geometry_t             geometry,
+                                           void                      * cmd)
+    {
         TRACE_FN_ENTER();
         collObj *cobj = (collObj*)  _alloc.allocateObject();
         TRACE_FORMAT("<%p> cobj %p",this, cobj);
@@ -109,26 +117,26 @@ namespace CCMI
                           cobj,             // Intercept cookie
                           this);            // Factory
 
-	//We do not override completion callbacks 
-	//as they must free memory
+        //We do not override completion callbacks
+        //as they must free memory
         TRACE_FN_EXIT();
         return (Executor::Composite *)(&cobj->_obj);
-      }
+    }
 
-      virtual void metadata(pami_metadata_t *mdata)
-      {
+    virtual void metadata(pami_metadata_t *mdata)
+    {
         TRACE_FN_ENTER();
         TRACE_FORMAT("mdata=%p",mdata);
         get_metadata(mdata);
         TRACE_FN_EXIT();
-      }
-    private:
-      C                                          * _cmgr;
-      Interfaces::NativeInterface                * _native;
-      PAMI::MemoryAllocator<sizeof(collObj), 16>   _alloc;
-    };//AllSidedCollectiveProtocolFactoryT
+    }
+private:
+    T_Conn                                     * _cmgr;
+    Interfaces::NativeInterface                * _native;
+    PAMI::MemoryAllocator<sizeof(collObj), 16>   _alloc;
+};//AllSidedCollectiveProtocolFactoryT
 
-  };//Adaptor
+};//Adaptor
 };//CCMI
 
 #endif
