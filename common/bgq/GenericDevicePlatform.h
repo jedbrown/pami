@@ -49,7 +49,7 @@ typedef PAMI::MultiQueue<GENDEVMSG_NUM_QUEUES,GENDEVMSG_SEND_QNUM>	GenericDevice
 /// \brief Queue type to use for generic device threads (work) queue(s)
 typedef PAMI::Queue		GenericDeviceWorkQueue;
 #include "components/atomic/bgq/L2Mutex.h"
-#ifdef NOT_YET
+#if 1
 
 #include "util/queue/bgq/ArrayBasedPostingQueue.h"
 typedef PAMI::ArrayBasedPostingQueue<PAMI::Mutex::BGQ::L2, PAMI::Queue>	GenericDevicePostingQueue;
