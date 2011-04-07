@@ -253,6 +253,7 @@ namespace PAMI
               //dumpPacket(head);
 
               _active[index] = 0;
+	      mem_barrier();
               *(this->_head) = head + 1;
 
               // Increment the upper bound everytime a packet is consumed..ok
