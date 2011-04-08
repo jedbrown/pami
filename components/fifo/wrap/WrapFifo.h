@@ -218,7 +218,7 @@ namespace PAMI
 
               _active[index] = 1;
 
-              _last_packet_produced = index;
+              _last_packet_produced = tail;
 
               TRACE_ERR((stderr, "<< WrapFifo::producePacket_impl(T_Producer &), return true..tail:%lld\n", (unsigned long long)tail));
               return true;
