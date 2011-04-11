@@ -6,6 +6,9 @@
 #define __common_type_ReferenceCount_h__
 
 #include <assert.h>
+#ifdef _AIX
+#include "compiler/xl/Compiler.h"
+#endif
 
 namespace PAMI
 {
@@ -34,14 +37,14 @@ namespace PAMI
 
     inline void ReferenceCount::AcquireReference()
     {
-        ref_cnt++;
+        __sync_fetch_and_add(&ref_cnt, 1);
     }
 
     inline void ReferenceCount::ReleaseReference()
     {
         assert(ref_cnt > 0);
-        ref_cnt--;
-        if (ref_cnt == 0)
+        ssize_t old_cnt = __sync_fetch_and_add(&ref_cnt, -1);
+        if (old_cnt == 1)
             delete this;
 
         // NOTE: The reference-counted object must always be from the heap.
