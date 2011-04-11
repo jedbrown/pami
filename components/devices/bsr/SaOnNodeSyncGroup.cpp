@@ -13,47 +13,45 @@
 #include "util/common.h"
 
 SyncGroup::RC SaOnNodeSyncGroup::Init(
-        const unsigned int member_cnt, const unsigned int group_id,
-        const unsigned int member_id, void* param)
+        const unsigned int mem_cnt, const unsigned int g_id,
+        const unsigned int mem_id, void* param)
 {
     PAMI_assert (param != NULL);
     Param_t* in_param = (Param_t*) param;
     this->multi_load = in_param->multi_load;
-    if(member_cnt == 0) {
+    if(mem_cnt == 0) {
         ITRC(IT_BSR, "SaOnNodeSyncGroup: Invalid member_cnt %d\n", member_cnt);
         return FAILED;
     }
 
-    this->member_cnt = member_cnt;
-    this->group_id   = group_id;
-    this->member_id  = member_id;
+    this->member_cnt = mem_cnt;
+    this->group_id   = g_id;
+    this->member_id  = mem_id;
     /* if there is only one member in the group, we do nothing. */
-    if (member_cnt == 1) {
+    if (mem_cnt == 1) {
         initialized = true;
         return SUCCESS;
     }
-    try {
-        mask[0] = new unsigned char[member_cnt];
-        memset(mask[0], 0, member_cnt);
-        mask[0][0] = 1;
-        mask[1] = new unsigned char[member_cnt];
-        memset(mask[1], (unsigned char)0x1, member_cnt);
-        mask[1][0] = 0;
-    } catch (std::bad_alloc e) {
-        // out of memory; should still work as long as multi-load is not used.
-        ITRC(IT_BSR,
-                "SaOnNodeSyncGroup: Warning!! "
-                "Out of memory. Multi-byte load is not allowed.\n");
-        delete [] mask[0];
-        delete [] mask[1];
-    }
+
+    // Initialize masks: 
+    //      seq = 0, use mask[0] 
+    //      seq = 1, use mask[1]
+    memset(mask[0], 0, 8);
+    memset(mask[1], (unsigned char)0x01, 8);
 
     // initialize SharedArray object
     ///TODO: How do we distinguish the group_id for Bsr and ShmArray
     // temporary fix start
     const unsigned int BSRID      = 0x00000096; //BSR
     const unsigned int SHMARRAYID = 0x00000054; //SA
-    const bool         is_leader  = (this->member_id == 0);
+    const bool         is_leader  = (mem_id == 0);
+
+    // modify seq, the init value is 0 for all tasks
+    // seq of leader remains 0 with seq of the rest of tasks turned to 1
+    if (!is_leader) {
+        seq = !seq;
+    }
+
     // temporary fix end
     SharedArray::RC sa_rc;
     try {
@@ -64,24 +62,53 @@ SyncGroup::RC SaOnNodeSyncGroup::Init(
         sa = new Bsr;
 #endif
         if (!in_param->use_shm_only) {
-            sa_rc = sa->Init(member_cnt, (group_id + BSRID), is_leader);
+            sa_rc = sa->Init(mem_cnt, (g_id + BSRID), is_leader);
         } else {
             sa_rc = SharedArray::NOT_AVAILABLE;
         }
 
+        bool priming_done = false;
         if (SharedArray::SUCCESS == sa_rc) {
-            ITRC(IT_BSR, "(%d)SaOnNodeSyncGroup: Using Bsr\n", member_id);
+            ITRC(IT_BSR, "(%d)SaOnNodeSyncGroup: Using Bsr\n", mem_id);
             this->group_desc = "SharedArray:Bsr";
+            
+            // Initialize and prime BSR region with seq
+            // has to be a blocking operation ***
+            // show_bsr("After BSR Init "); 
+            sa->Store1(mem_id, seq);
+            char tmp = sa->Load1(mem_id);
+            ITRC(IT_BSR, "(%d)SaOnNodeSyncGroup-Bsr: Init seq = %d\n", mem_id, seq);
+            assert(tmp == seq);
+            /*
+            while (!priming_done) {
+                if (sa->Load1(0) == 0) {
+                    bool non_leader_done = true;
+                    for (int z = 1; z < mem_cnt; z ++) {
+                        if (sa->Load1(z) !=  1)
+                            non_leader_done = false;
+                    }
+                    if (non_leader_done)
+                        priming_done = true;
+                    else
+                        priming_done = false;
+                }
+            }
+            show_bsr("After BSR prime "); 
+            */
+
         } else {
             // If both BSRs failed, try shm
             delete sa;
             sa = NULL;
             sa = new ShmArray;
             if (SharedArray::SUCCESS ==
-                    sa->Init(member_cnt, (group_id + SHMARRAYID), is_leader)) {
+                    sa->Init(mem_cnt, (g_id + SHMARRAYID), is_leader)) {
                 ITRC(IT_BSR, "(%d)SaOnNodeSyncGroup: Using ShmArray\n",
-                        member_id);
+                        mem_id);
                 this->group_desc = "SharedArray:ShmArray";
+
+                // Initialize SHM region with seq
+                sa->Store1(mem_id, seq);
             } else {
                 delete sa;
                 sa = NULL;
@@ -89,9 +116,7 @@ SyncGroup::RC SaOnNodeSyncGroup::Init(
                 // available for using.
                 ITRC(IT_BSR,
                         "(%d)SaOnNodeSyncGroup: Cannot create SharedArray obj\n",
-                        member_id);
-                delete [] mask[0];
-                delete [] mask[1];
+                        mem_id);
                 return FAILED;
             }
         }
@@ -99,16 +124,14 @@ SyncGroup::RC SaOnNodeSyncGroup::Init(
         sa = NULL;
         // TODO: if both BsrP7 and ShmArray failed, we should set sa=NULL
         // and use on node FIFO flow instead.
-        ITRC(IT_BSR, "(%d)SaOnNodeSyncGroup: Out of memory.\n", member_id);
+        ITRC(IT_BSR, "(%d)SaOnNodeSyncGroup: Out of memory.\n", mem_id);
         return FAILED;
     } catch (...) {
-        delete [] mask[0];
-        delete [] mask[1];
         ITRC(IT_BSR, "SaOnNodeSyncGroup: Unexpected exception caught.\n");
         return FAILED;
     }
 
-    ITRC(IT_BSR, "SaOnNodeSyncGroup: Initialized with member_cnt=%d\n", member_cnt);
+    ITRC(IT_BSR, "SaOnNodeSyncGroup: Initialized with member_cnt=%d\n", mem_cnt);
     initialized = true;
     return SUCCESS;
 }
@@ -118,8 +141,6 @@ SyncGroup::RC SaOnNodeSyncGroup::Init(
  */
 SaOnNodeSyncGroup::~SaOnNodeSyncGroup()
 {
-    delete [] mask[0];
-    delete [] mask[1];
     delete sa;
 }
 
@@ -133,8 +154,6 @@ void SaOnNodeSyncGroup::BarrierEnter()
         return;
     }
 
-    // flip the sequence number
-    seq = !seq;
     if (member_id == 0) {
         if (multi_load) {
             ITRC(IT_BSR,
@@ -143,15 +162,15 @@ void SaOnNodeSyncGroup::BarrierEnter()
             unsigned int i=0;
             if (progress_cb) {
                 for (i = 0; i + 8 <= member_cnt; i += 8)
-                    while (sa->Load8(i) != *(unsigned long long*)(mask[seq]+i))
+                    while (sa->Load8(i) != *(unsigned long long*)(mask[seq]))
                         (*progress_cb)(progress_cb_info);
 
                 for (; i + 4 <= member_cnt; i+= 4)
-                    while (sa->Load4(i) != *(unsigned int*)(mask[seq]+i))
+                    while (sa->Load4(i) != *(unsigned int*)(mask[seq]))
                         (*progress_cb)(progress_cb_info);
 
                 for (; i + 2 <= member_cnt; i+= 2)
-                    while (sa->Load2(i) != *(unsigned short*)(mask[seq]+i))
+                    while (sa->Load2(i) != *(unsigned short*)(mask[seq]))
                         (*progress_cb)(progress_cb_info);
 
                 // use 1-byte loads to finish the rest
@@ -161,13 +180,13 @@ void SaOnNodeSyncGroup::BarrierEnter()
                         (*progress_cb)(progress_cb_info);
             } else {
                 for (i = 0; i + 8 <= member_cnt; i += 8)
-                    while (sa->Load8(i) != *(unsigned long long*)(mask[seq]+i));
+                    while (sa->Load8(i) != *(unsigned long long*)(mask[seq]));
 
                 for (; i + 4 <= member_cnt; i+= 4)
-                    while (sa->Load4(i) != *(unsigned int*)(mask[seq]+i));
+                    while (sa->Load4(i) != *(unsigned int*)(mask[seq]));
 
                 for (; i + 2 <= member_cnt; i+= 2)
-                    while (sa->Load2(i) != *(unsigned short*)(mask[seq]+i));
+                    while (sa->Load2(i) != *(unsigned short*)(mask[seq]));
 
                 // use 1-byte loads to finish the rest
                 if (i == 0) i = 1;
@@ -196,7 +215,7 @@ void SaOnNodeSyncGroup::BarrierEnter()
     } else {
         ITRC(IT_BSR, "SaOnNodeSyncGroup: Store1(%d, %d) called\n",
                 member_id, seq);
-        sa->Store1(member_id, seq);
+        sa->Store1(member_id, !seq);
     }
     ITRC(IT_BSR, "SaOnNodeSyncGroup: Leaving BarrierEnter()\n");
 }
@@ -212,7 +231,7 @@ void SaOnNodeSyncGroup::BarrierExit()
     }
     if (member_id == 0) {
         // notify others about barrier exit
-        sa->Store1(member_id, seq);
+        sa->Store1(member_id, !seq);
         ITRC(IT_BSR, "SaOnNodeSyncGroup: Store1(%d, %d) called\n",
                 member_id, seq);
     } else {
@@ -226,32 +245,47 @@ void SaOnNodeSyncGroup::BarrierExit()
         }
         ITRC(IT_BSR, "SaOnNodeSyncGroup: Got response from leader\n");
     }
+
+    // flip seq after barrier is done
+    seq = !seq;
     ITRC(IT_BSR, "SaOnNodeSyncGroup: Leaving BarrierExit()\n");
+}
+
+void SaOnNodeSyncGroup::show_bsr(char* msg) {
+    printf("BSR MEM at %s <", msg);
+    for (int i = 0; i < member_cnt; i ++) {
+        if (i == member_cnt - 1)
+            printf("%d", sa->Load1(i));
+        else
+            printf("%d ", sa->Load1(i));
+    }
+    printf("> with seq %d \n", seq);
 }
 
 bool SaOnNodeSyncGroup::IsNbBarrierDone()
 {
     // if only one member in group
     if (this->member_cnt == 1) {
+        ITRC(IT_BSR, "SaOnNodeSyncGroup::IsNbBarrierDone() returns with member id: %d of %d, seq: %d\n", 
+                member_id, member_cnt, seq);
         return true;
     }
 
     if(nb_barrier_stage == 0) { /* entering reduce stage */
-        // flip the sequence number
-        seq = !seq;
+//        show_bsr("stage 0");
         if (member_id == 0) {
             if (multi_load) {
                 unsigned int i=0;
                 for (i = 0; i + 8 <= member_cnt; i += 8)
-                    if (sa->Load8(i) != *(unsigned long long*)(mask[seq]+i))
+                    if (sa->Load8(i) != *(unsigned long long*)(mask[seq]))
                         return false;
 
                 for (; i + 4 <= member_cnt; i+= 4)
-                    if (sa->Load4(i) != *(unsigned int*)(mask[seq]+i))
+                    if (sa->Load4(i) != *(unsigned int*)(mask[seq]))
                         return false;
 
                 for (; i + 2 <= member_cnt; i+= 2)
-                    if (sa->Load2(i) != *(unsigned short*)(mask[seq]+i))
+                    if (sa->Load2(i) != *(unsigned short*)(mask[seq]))
                         return false;
 
                 // use 1-byte loads to finish the rest
@@ -267,27 +301,27 @@ bool SaOnNodeSyncGroup::IsNbBarrierDone()
                 }
             }
         } else {
-            sa->Store1(member_id, seq);
+            sa->Store1(member_id, !seq);
         }
         nb_barrier_stage = 1; /* reduce done */
     }
 
     if (nb_barrier_stage == 1) { /* enter broadcast stage */
+//        show_bsr("stage 1");
         if (member_id == 0) {
             // notify others about barrier exit
-            sa->Store1(member_id, seq);
+            sa->Store1(member_id, !seq);
         } else {
             // wait for barrier exit
             if (sa->Load1(0) != seq)
                 return false;
         }
         nb_barrier_stage = 2;
+//        show_bsr("stage 2");
+        seq = !seq;
     }
 
-    if (nb_barrier_stage == 2)
-        return true;
-    else
-        return false;
+    return true;
 }
 
 void SaOnNodeSyncGroup::_Dump() const {

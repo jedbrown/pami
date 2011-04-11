@@ -114,7 +114,8 @@ namespace PAMI
       static const bool   isLocalOnly             = true;
       BSRMultisyncModel (T_Device &device, pami_result_t &status) :
         Interface::MultisyncModel<BSRMultisyncModel<T_Device, T_Message>,T_Device,sizeof(T_Message)>(device,status),
-        _device(device)
+        _device(device),
+        _in_barrier(false)
           {
             status = PAMI_SUCCESS;
           }
@@ -126,7 +127,9 @@ namespace PAMI
           (PAMI::Device::BSRMultisyncModel<T_Device, T_Message>*)(m->_multisyncmodel);
 
         if(! model->_sync_group.IsNbBarrierDone())
+        {
           return PAMI_EAGAIN;
+        } 
 
         /* if the barrier has done */
 
@@ -139,11 +142,15 @@ namespace PAMI
             model->_device.postWork(waiter);
           }
         else
+        {
+          //printf("checkBSRIfDone: No barrier in the waiter queue, return.\n");
           model->_in_barrier = false;
+        }
 
         /* call user's callback */
         m->_cb_done.function(context, m->_cb_done.clientdata, PAMI_SUCCESS);
 
+        //printf("checkBSRIfDone: Current barrier is done, return.\n");
         return PAMI_SUCCESS;
       }
 
@@ -154,10 +161,12 @@ namespace PAMI
                                         void             *devinfo)
       {
 #ifndef _LAPI_LINUX
+          int bar_status = 99;
         PAMI::Topology *topology = (PAMI::Topology*) msync->participants;
         if(topology->size() == 1)
         {
           msync->cb_done.function(_device.getContext(), msync->cb_done.clientdata, PAMI_SUCCESS);
+          //printf("postMultisync_impl: topology size is 1, return.\n");
           return PAMI_SUCCESS;
         }
 
@@ -167,7 +176,11 @@ namespace PAMI
           size_t unique_id = (size_t)0x99;/* TODO:an unique id that is used to create shared memory segment */
           size_t member_id = topology->rank2Index(_device.taskid());
           if (SyncGroup::SUCCESS != _sync_group.Init(topology->size(), unique_id, member_id, &param))
+          {
+            ITRC(IT_BSR, "postMultisync_impl: initialize sync group failed.\n");
             return PAMI_ERROR;
+          }
+          ITRC(IT_BSR, "postMultisync_impl: initialize sync group passed.\n");
         }
 
         /* Check if we need to queue up */
@@ -176,12 +189,14 @@ namespace PAMI
             /* entering barrier */
             _in_barrier = true;
             _sync_group.NbBarrier();
+
+            bar_status = (_sync_group.IsNbBarrierDone());
             if (_sync_group.IsNbBarrierDone())
             {
               msync->cb_done.function(_device.getContext(), msync->cb_done.clientdata, PAMI_SUCCESS);
               _in_barrier = false;
               return PAMI_SUCCESS;
-            }
+            } 
 
             T_Message *m = new (state) T_Message
               (&checkBSRIfDone, (void*)state, msync->cb_done, (void*)this);

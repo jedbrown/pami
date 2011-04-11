@@ -53,13 +53,15 @@ class SaOnNodeSyncGroup : public SyncGroup {
         void BarrierEnter();
         void BarrierExit();
         bool IsNbBarrierDone();/* to check if the non-blocking Barrier finishes */
+        //bool IsNbBarrierDone();/* to check if the non-blocking Barrier finishes */
         void NbBarrier();     /* issue non-blocking barrier */
         void _Dump() const;
+        void show_bsr(char*); /* for debugging purpose */
 
     private:
         int           seq;
         SharedArray   *sa;      // could be BSRs, ShmArray
-        unsigned char *mask[2];
+        unsigned char mask[2][8];
         bool          multi_load;
         int           nb_barrier_stage; /* stages for non-blocking barrier.
                                          * (0) init stage
@@ -71,6 +73,7 @@ class SaOnNodeSyncGroup : public SyncGroup {
 inline
 void SaOnNodeSyncGroup::NbBarrier()
 {
+    assert(nb_barrier_stage == 2);
     nb_barrier_stage = 0;
 }
 
@@ -79,9 +82,7 @@ SaOnNodeSyncGroup::SaOnNodeSyncGroup():
     seq(0),
     sa(NULL),
     multi_load(false),
-    nb_barrier_stage(0)
+    nb_barrier_stage(2)
 {
-    mask[0] = NULL;
-    mask[1] = NULL;
 };
 #endif /* _SAONNODESYNCGROUP_H_ */
