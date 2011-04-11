@@ -187,18 +187,18 @@ namespace PAMI
 
             // --------------------------------- TypeCode::PRIMITIVE_TYPE_CONTIGUOUS
             {
-              Type::Func::error,                // TypeFunc::PRIMITIVE_FUNC_COPY
-              Type::Func::error,                // TypeFunc::PRIMITIVE_FUNC_NOOP
-              Type::Func::error,                // TypeFunc::PRIMITIVE_FUNC_MAX
-              Type::Func::error,                // TypeFunc::PRIMITIVE_FUNC_MIN
-              Type::Func::error,                // TypeFunc::PRIMITIVE_FUNC_SUM
-              Type::Func::error,                // TypeFunc::PRIMITIVE_FUNC_PROD
-              Type::Func::error,                // TypeFunc::PRIMITIVE_FUNC_LAND
-              Type::Func::error,                // TypeFunc::PRIMITIVE_FUNC_LOR
-              Type::Func::error,                // TypeFunc::PRIMITIVE_FUNC_LXOR
-              Type::Func::error,                // TypeFunc::PRIMITIVE_FUNC_BAND
-              Type::Func::error,                // TypeFunc::PRIMITIVE_FUNC_BOR
-              Type::Func::error,                // TypeFunc::PRIMITIVE_FUNC_BXOR
+              Type::Func::copy<uint8_t>,        // TypeFunc::PRIMITIVE_FUNC_COPY
+              Type::Func::noop,                 // TypeFunc::PRIMITIVE_FUNC_NOOP
+              Type::Func::max<uint8_t>,         // TypeFunc::PRIMITIVE_FUNC_MAX
+              Type::Func::min<uint8_t>,         // TypeFunc::PRIMITIVE_FUNC_MIN
+              Type::Func::sum<uint8_t>,         // TypeFunc::PRIMITIVE_FUNC_SUM
+              Type::Func::prod<uint8_t>,        // TypeFunc::PRIMITIVE_FUNC_PROD
+              Type::Func::land<uint8_t>,        // TypeFunc::PRIMITIVE_FUNC_LAND
+              Type::Func::lor<uint8_t>,         // TypeFunc::PRIMITIVE_FUNC_LOR
+              Type::Func::lxor<uint8_t>,        // TypeFunc::PRIMITIVE_FUNC_LXOR
+              Type::Func::band<uint8_t>,        // TypeFunc::PRIMITIVE_FUNC_BAND
+              Type::Func::bor<uint8_t>,         // TypeFunc::PRIMITIVE_FUNC_BOR
+              Type::Func::bxor<uint8_t>,        // TypeFunc::PRIMITIVE_FUNC_BXOR
               Type::Func::error,                // TypeFunc::PRIMITIVE_FUNC_MAXLOC
               Type::Func::error                 // TypeFunc::PRIMITIVE_FUNC_MINLOC
             },
