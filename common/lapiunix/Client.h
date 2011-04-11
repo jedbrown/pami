@@ -70,12 +70,23 @@ namespace PAMI
         size_t          myrank=0, mysize = 0;
         _clientid                        = next_client_id++;
 
-        // Todo:  Support more contexts
-        _maxctxts = 1;
-
         // Initialize a LAPI Client Object
-        new(&_lapiClient[0]) LapiImpl::Client(name, configuration, num_configs);\
-                                                                                  
+        LapiImpl::Client::Config config(name, configuration, num_configs);
+        try {
+            new(&_lapiClient[0]) LapiImpl::Client(config);
+        } catch (internal_rc_t int_err) {
+            result = PAMI_RC(int_err);
+            return;
+        } catch (std::bad_alloc) {
+            result = PAMI_ENOMEM;
+            return;
+        }
+
+        // Support more contexts
+        pami_configuration_t query = { PAMI_CLIENT_NUM_CONTEXTS };
+        query_impl(&query, 1);
+        _maxctxts = query.value.intval;
+
         // Create an initial context for initialization
         rc = createOneContext(&_contexts[0],0);
         if(rc) {result=rc;  return;}
@@ -88,6 +99,15 @@ namespace PAMI
 
         // Initialize the mapping to be used for collectives
         __global.mapping.init(myrank, mysize);        
+
+        // TODO: remove this return for collectives supporting multiple endpoints
+        if (_Lapi_env.endpoints > 1) {
+            _platdevs.generate(_clientid, _maxctxts, _mm, _disable_shm);
+            _platdevs.init(_clientid,0,_client,(pami_context_t)_contexts[0],&_mm, _disable_shm);
+            result = rc;
+            _contexts[0]->unlock();
+            return;
+        }
 
         // Get number of tasks for this world
         // Get list of tasks for this world (colon separated string)
@@ -413,11 +433,23 @@ namespace PAMI
               contexts[i] = (pami_context_t*)_contexts[i];
               rc = createOneContext(&_contexts[i],i);
               rc = _contexts[i]->initP2P(&t_myrank, &t_mysize, &t_lhandle);
-	      _platdevs.init(_clientid,i,_client,(pami_context_t)_contexts[i],&_mm);
+	      _platdevs.init(_clientid,i,_client,(pami_context_t)_contexts[i],&_mm, _disable_shm);
               if(rc) RETURN_ERR_PAMI(PAMI_ERROR, "createContext failed with rc %d\n", rc);
+
+              // TODO: remove this check for collectives supporting multiple endpoints
+              if (_Lapi_env.endpoints > 1) {
+                  _contexts[i]->unlock();
+                  contexts[i] = (pami_context_t) _contexts[i];
+                  continue;
+              }
+
               _contexts[i]->setWorldGeometry(_world_geometry);
               _contexts[i]->initP2PCollectives();
               _contexts[i]->initCollectives(&_mm, _disable_shm);
+              _contexts[i]->unlock();
+
+              // Setup return for other contexts
+              contexts[i] = (pami_context_t) _contexts[i];
             }
         return PAMI_SUCCESS;
       }
@@ -458,9 +490,6 @@ namespace PAMI
           {
             switch ((pami_attribute_name_ext_t)configuration[i].name)
               {
-                case PAMI_CLIENT_NUM_CONTEXTS:
-                  configuration[i].value.intval = 1;  // will change when multi-endpoint support is available
-                  break;
                 case PAMI_CLIENT_CONST_CONTEXTS:
                   configuration[i].value.intval = 1;
                   break;
@@ -1054,7 +1083,7 @@ namespace PAMI
     char                    _lapiClient[sizeof(LapiImpl::Client)];
 
     // Array of PAMI Contexts associated with this Client
-    PAMI::Context                               *_contexts[64];
+    PAMI::Context                               *_contexts[128];
 
     // The rank map cache
     uint32_t                                     *_mapcache;

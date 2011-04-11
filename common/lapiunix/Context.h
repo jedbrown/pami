@@ -418,12 +418,13 @@ namespace PAMI
         {
           LapiImpl::Client* lp_client = (LapiImpl::Client*)_client;
 
+          //TODO: need to get context configuration
           LapiImpl::Context::Config config(lp_client->GetConfig(), NULL, 0);
 
           pami_result_t rc = PAMI_SUCCESS;
 
           try {
-            LapiImpl::Context::Create(config, (LapiImpl::Context *)_lapi_state);
+            LapiImpl::Context::Create(lp_client, config, (LapiImpl::Context *)_lapi_state);
           } catch (int lapi_err) {
             /* convert to general PAMI error */
             rc = PAMI_ERROR;
