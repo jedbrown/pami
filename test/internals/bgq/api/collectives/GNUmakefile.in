@@ -17,6 +17,7 @@ APPS            = allreduce-${FRAMEWORK}.${EXTENSION} allreduce_query-${FRAMEWOR
 APPS            += bcast-${FRAMEWORK}.${EXTENSION} bcast_query-${FRAMEWORK}.${EXTENSION} bcast_subcomm-${FRAMEWORK}.${EXTENSION} bcast_subcomm_query-${FRAMEWORK}.${EXTENSION}
 APPS            += barrier-${FRAMEWORK}.${EXTENSION} barrier_query-${FRAMEWORK}.${EXTENSION} barrier_subcomm-${FRAMEWORK}.${EXTENSION} barrier_subcomm_query-${FRAMEWORK}.${EXTENSION}
 APPS            += reduce-${FRAMEWORK}.${EXTENSION}
+APPS            += scatter-${FRAMEWORK}.${EXTENSION} scatter_subcomm-${FRAMEWORK}.${EXTENSION}
 
 include @abs_top_builddir@/Build.rules
 
