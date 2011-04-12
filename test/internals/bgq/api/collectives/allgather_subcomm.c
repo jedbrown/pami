@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/internals/bgq/api/collectives/scatter_subcomm.c
- * \brief Simple Scatter test on sub-geometries (only scatters bytes)
+ * \file test/internals/bgq/api/collectives/allgather_subcomm.c
+ * \brief Simple Allgather test on sub-geometries (only gathers bytes)
  */
 
 #include "../../../../api/pami_util.h"
@@ -32,30 +32,27 @@ unsigned niterlat  = NITERLAT;
 
 char* protocolName;
 
-void initialize_sndbuf (void *sbuf, int bytes, size_t ntasks)
+void initialize_sndbuf (void *sbuf, int bytes, pami_task_t task)
 {
-  size_t i;
-  unsigned char *cbuf = (unsigned char *)  sbuf;
-
-  for (i=0; i<ntasks; i++)
-  {
-    unsigned char c = 0xFF & i;
-    memset(cbuf+(i*bytes),c,bytes);
-  }
+  unsigned char c = 0xFF & task;
+  memset(sbuf,c,bytes);
 }
 
-int check_rcvbuf (void *rbuf, int bytes, pami_task_t task)
+int check_rcvbuf (void *rbuf, int bytes, size_t ntasks)
 {
-  int i;
+  int i,j;
   unsigned char *cbuf = (unsigned char *)  rbuf;
 
-  unsigned char c = 0xFF & task;
-  for (i=0; i<bytes; i++)
-    if (cbuf[i] != c)
-    {
-      fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2u != %.2u \n", protocolName, bytes, cbuf,i,cbuf[i], c);
-      return 1;
-    }
+  for (j=0; j<ntasks; j++)
+  {
+    unsigned char c = 0xFF & j;
+    for (i=j*bytes; i<bytes; i++)
+      if (cbuf[i] != c)
+      {
+        fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2u != %.2u \n", protocolName, bytes, cbuf,i,cbuf[i], c);
+        return 1;
+      }
+  }
   return 0;
 }
 
@@ -78,19 +75,19 @@ int main (int argc, char ** argv)
   volatile unsigned    bar_poll_flag = 0;
   volatile unsigned    newbar_poll_flag = 0;
 
-  /* Scatter variables */
-  size_t               scatter_num_algorithm[2];
-  pami_algorithm_t    *scatter_always_works_algo = NULL;
-  pami_metadata_t     *scatter_always_works_md = NULL;
-  pami_algorithm_t    *scatter_must_query_algo = NULL;
-  pami_metadata_t     *scatter_must_query_md = NULL;
-  pami_xfer_type_t     scatter_xfer = PAMI_XFER_SCATTER;
-  volatile unsigned    scatter_poll_flag = 0;
+  /* Allgather variables */
+  size_t               allgather_num_algorithm[2];
+  pami_algorithm_t    *allgather_always_works_algo = NULL;
+  pami_metadata_t     *allgather_always_works_md = NULL;
+  pami_algorithm_t    *allgather_must_query_algo = NULL;
+  pami_metadata_t     *allgather_must_query_md = NULL;
+  pami_xfer_type_t     allgather_xfer = PAMI_XFER_ALLGATHER;
+  volatile unsigned    allgather_poll_flag = 0;
 
   int                  nalg = 0;
   double               ti, tf, usec;
   pami_xfer_t          barrier;
-  pami_xfer_t          scatter;
+  pami_xfer_t          allgather;
 
   /* \note Test environment variable" TEST_VERBOSE=N     */
   char* sVerbose = getenv("TEST_VERBOSE");
@@ -281,14 +278,12 @@ int main (int argc, char ** argv)
   /*  Allocate buffer(s) */
   int err = 0;
   void* buf = NULL;
-  if (task_id == root)
-  {
-    err = posix_memalign(&buf, 128, (max_count*num_tasks)+buffer_offset);
-    assert(err == 0);
-    buf = (char*)buf + buffer_offset;
-  }
+  err = posix_memalign(&buf, 128, (max_count)+buffer_offset);
+  assert(err == 0);
+  buf = (char*)buf + buffer_offset;
+
   void* rbuf = NULL;
-  err = posix_memalign(&rbuf, 128, max_count+buffer_offset);
+  err = posix_memalign(&rbuf, 128, (max_count*num_tasks)+buffer_offset);
   assert(err == 0);
   rbuf = (char*)rbuf + buffer_offset;
 
@@ -356,16 +351,16 @@ int main (int argc, char ** argv)
     if (rc == 1)
       return 1;
 
-    /*  Query the geometry for scatter algorithms */
+    /*  Query the world geometry for allgather algorithms */
     rc |= query_geometry(client,
                          context[iContext],
                          newgeometry,
-                         scatter_xfer,
-                         scatter_num_algorithm,
-                         &scatter_always_works_algo,
-                         &scatter_always_works_md,
-                         &scatter_must_query_algo,
-                         &scatter_must_query_md);
+                         allgather_xfer,
+                         allgather_num_algorithm,
+                         &allgather_always_works_algo,
+                         &allgather_always_works_md,
+                         &allgather_must_query_algo,
+                         &allgather_must_query_md);
     if (rc == 1)
       return 1;
 
@@ -379,22 +374,21 @@ int main (int argc, char ** argv)
     newbarrier.cookie    = (void*) & newbar_poll_flag;
     newbarrier.algorithm = newbar_algo[0];
 
-    for (nalg = 0; nalg < scatter_num_algorithm[0]; nalg++)
+    for (nalg = 0; nalg < allgather_num_algorithm[0]; nalg++)
     {
-      scatter.cb_done    = cb_done;
-      scatter.cookie     = (void*) & scatter_poll_flag;
-      scatter.algorithm  = scatter_always_works_algo[nalg];
-      scatter.cmd.xfer_scatter.root       = root;
-      scatter.cmd.xfer_scatter.sndbuf     = buf;
-      scatter.cmd.xfer_scatter.stype      = PAMI_TYPE_CONTIGUOUS;
-      scatter.cmd.xfer_scatter.stypecount = 0;
-      scatter.cmd.xfer_scatter.rcvbuf     = rbuf;
-      scatter.cmd.xfer_scatter.rtype      = PAMI_TYPE_CONTIGUOUS;
-      scatter.cmd.xfer_scatter.rtypecount = 0;
+      allgather.cb_done    = cb_done;
+      allgather.cookie     = (void*) & allgather_poll_flag;
+      allgather.algorithm  = allgather_always_works_algo[nalg];
+      allgather.cmd.xfer_allgather.sndbuf     = buf;
+      allgather.cmd.xfer_allgather.stype      = PAMI_TYPE_CONTIGUOUS;
+      allgather.cmd.xfer_allgather.stypecount = 0;
+      allgather.cmd.xfer_allgather.rcvbuf     = rbuf;
+      allgather.cmd.xfer_allgather.rtype      = PAMI_TYPE_CONTIGUOUS;
+      allgather.cmd.xfer_allgather.rtypecount = 0;
 
       int             i, j, k;
 
-      protocolName = scatter_always_works_md[nalg].name;
+      protocolName = allgather_always_works_md[nalg].name;
 
       for (k = 1; k >= 0; k--)
       {
@@ -402,14 +396,13 @@ int main (int argc, char ** argv)
         {
           if (task_id == root)
           {
-            printf("# Scatter Bandwidth Test -- context = %d, root = %d, protocol: %s\n", 
+            printf("# Allgather Bandwidth Test -- context = %d, root = %d, protocol: %s\n", 
                    iContext,root,protocolName);
             printf("# Size(bytes)           cycles    bytes/sec    usec\n");
             printf("# -----------      -----------    -----------    ---------\n");
           }
-
-          if (((strstr(scatter_always_works_md[nalg].name,selected) == NULL) && selector) ||
-              ((strstr(scatter_always_works_md[nalg].name,selected) != NULL) && !selector))  continue;
+          if (((strstr(allgather_always_works_md[nalg].name,selected) == NULL) && selector) ||
+              ((strstr(allgather_always_works_md[nalg].name,selected) != NULL) && !selector))  continue;
 
           blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
 
@@ -423,12 +416,11 @@ int main (int argc, char ** argv)
             else
               niter = NITERBW;
 
-            scatter.cmd.xfer_scatter.stypecount = i;
-            scatter.cmd.xfer_scatter.rtypecount = i;
+            allgather.cmd.xfer_allgather.stypecount = i;
+            allgather.cmd.xfer_allgather.rtypecount = i;
 
 #ifdef CHECK_DATA
-            if (task_id == root)
-              initialize_sndbuf (buf, i, num_tasks);
+            initialize_sndbuf (buf, i, local_task_id);
             memset(rbuf, 0xFF, i);
 
 #endif
@@ -437,14 +429,14 @@ int main (int argc, char ** argv)
 
             for (j = 0; j < niter; j++)
             {
-              blocking_coll(context[iContext], &scatter, &scatter_poll_flag);
+              blocking_coll (context[iContext], &allgather, &allgather_poll_flag);
             }
 
             tf = timer();
             blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
 
 #ifdef CHECK_DATA
-            rc |= check_rcvbuf (rbuf, i, local_task_id);
+            rc |= check_rcvbuf (rbuf, i, num_tasks);
 #endif
             usec = (tf - ti) / (double)niter;
 
@@ -471,18 +463,14 @@ int main (int argc, char ** argv)
     free(bar_always_works_md);
     free(bar_must_query_algo);
     free(bar_must_query_md);
-    free(scatter_always_works_algo);
-    free(scatter_always_works_md);
-    free(scatter_must_query_algo);
-    free(scatter_must_query_md);
-
+    free(allgather_always_works_algo);
+    free(allgather_always_works_md);
+    free(allgather_must_query_algo);
+    free(allgather_must_query_md);
   } /*for(unsigned iContext = 0; iContext < num_contexts; ++iContexts)*/
+  buf = (char*)buf - buffer_offset;
+  free(buf);
 
-  if (task_id == root)
-  {
-    buf = (char*)buf - buffer_offset;
-    free(buf);
-  }
   rbuf = (char*)rbuf - buffer_offset;
   free(rbuf);
 
