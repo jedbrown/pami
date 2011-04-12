@@ -224,56 +224,176 @@ namespace PAMI
         return PAMI_SUCCESS;
       }
 
+        template <class T_Geometry>
+    class PostedClassRoute : public PAMI::Geometry::ClassRouteId<T_Geometry>
+    {
+    public:
+      typedef  PAMI::Geometry::ClassRouteId<T_Geometry> ClassRouteId;
+      typedef  typename ClassRouteId::cr_event_function cr_event_function;
+      typedef  PAMI::Geometry::Algorithm<T_Geometry>    Algorithm;
+      typedef  PAMI::Device::Generic::GenericThread     GenericThread;
+
+      static void _allreduce_done(pami_context_t context, void *cookie, pami_result_t result)
+        {
+          TRACE((stderr, "%p  Allreduce is Done!\n", cookie));
+          PostedClassRoute  *classroute = (PostedClassRoute *)cookie;
+          classroute->_done               = true;
+        }
+
+      static pami_result_t _do_classroute(pami_context_t context, void *cookie)
+        {
+          PostedClassRoute *classroute = (PostedClassRoute*)cookie;
+          if(classroute->_started == false)
+          {
+            // Start the Allreduce
+            TRACE((stderr, "%p Starting Allreduce\n", cookie));
+            classroute->startAllreduce(_allreduce_done, classroute);
+            classroute->_started = true;
+          }
+          if(classroute->_done == true)
+          {
+              classroute->_result_cb_done(context,
+                                          classroute->_result_cookie,
+                                          classroute->_bitmask,
+                                          classroute->_geometry,
+                                          PAMI_SUCCESS);
+              classroute->_user_cb_done(context,
+                                        classroute->_user_cookie,
+                                        PAMI_SUCCESS);
+              TRACE((stderr, "%p Classroute is done, Dequeueing\n", classroute));
+              if(classroute->_free_bitmask)
+                __global.heap_mm->free(classroute->_bitmask);
+              __global.heap_mm->free(cookie);
+              return PAMI_SUCCESS;
+          }
+          else
+          {
+            TRACE((stderr, "%p classroute allreduce busy: %d %d\n",
+                    classroute, classroute->_started, classroute->_done));
+            return PAMI_EAGAIN;
+          }
+        }
+      static void phase_done(pami_context_t context, void *cookie, pami_result_t result)
+        {
+          TRACE((stderr, "%p phase_done\n", cookie));
+          PostedClassRoute<MPIGeometry> *classroute = (PostedClassRoute<MPIGeometry> *)cookie;
+          classroute->start();
+        }
+
+
     static void cr_func(pami_context_t  context,
                         void           *cookie,
                         uint64_t       *reduce_result,
-                        MPIGeometry    *g,
+                        MPIGeometry   *g,
                         pami_result_t   result )
       {
-        Client *c = (Client*)cookie;
-        for(size_t n=0; n<c->_ncontexts; n++)
-          {
-            c->_contexts[n]._pgas_collreg->receive_global(n,g,&reduce_result[0], 1);
-            c->_contexts[n]._p2p_ccmi_collreg->receive_global(n,g,&reduce_result[1], 1);
-          }
+        TRACE((stderr, "%p CR FUNC 1\n", cookie));
+        int count = 1;
+        PostedClassRoute<MPIGeometry> *classroute = (PostedClassRoute<MPIGeometry> *)cookie;
+        classroute->_context->_pgas_collreg->receive_global(0,classroute->_geometry,
+                                                            &reduce_result[0],1);
+        classroute->_context->_p2p_ccmi_collreg->receive_global(0,classroute->_geometry,
+                                                                &reduce_result[1],1);
       }
 
+    static void cr_func2(pami_context_t  context,
+                        void            *cookie,
+                        uint64_t        *reduce_result,
+                        MPIGeometry    *g,
+                        pami_result_t    result )
+      {
+        TRACE((stderr, "%p CR FUNC 2\n", cookie));
+        int count=1;
+        PostedClassRoute<MPIGeometry> *classroute = (PostedClassRoute<MPIGeometry> *)cookie;
+      }
 
-    inline pami_result_t geometry_create_taskrange_impl(pami_geometry_t       *geometry,
-                                                        pami_configuration_t   configuration[],
-                                                        size_t                 num_configs,
-                                                        pami_geometry_t        parent,
-                                                        unsigned               id,
-                                                        pami_geometry_range_t *rank_slices,
-                                                        size_t                 slice_count,
-                                                        pami_context_t         context,
-                                                        pami_event_function    fn,
-                                                        void                  *cookie)
+    static void create_classroute(pami_context_t context, void *cookie, pami_result_t result)
+      {
+        // Barrier is done, start phase 1
+        TRACE((stderr, "%p create_classroute\n", cookie));
+        PostedClassRoute<MPIGeometry> *classroute = (PostedClassRoute<MPIGeometry>*)cookie;
+        classroute->start();
+      }
+    public:
+      PostedClassRoute(Context             *context,
+                       Algorithm           *ar_algo,
+                       T_Geometry          *geometry,
+                       uint64_t            *bitmask,
+                       size_t               count,
+                       cr_event_function    result_cb_done,
+                       void                *result_cookie,
+                       pami_event_function  user_cb_done,
+                       void                *user_cookie,
+                       bool                 free_bitmask = false):
+        ClassRouteId(ar_algo, geometry, bitmask, count,
+                     result_cb_done, result_cookie, user_cb_done,
+                     user_cookie),
+        _context(context),
+        _started(false),
+        _done(false),
+        _free_bitmask(free_bitmask),
+        _work(_do_classroute, this)
+        {
+        }
+      inline void start()
+        {
+          TRACE((stderr, "%p Posting work to GD id=%d work=%p\n", this, _context->getId(), &_work))
+          _context->_devices->_generics[_context->getId()].postThread(&_work);
+        }
+      Context        *_context;
+      volatile bool   _started;
+      volatile bool   _done;
+      bool            _free_bitmask;
+      GenericThread   _work;
+    };
+
+
+    
+    inline pami_result_t geometry_create_taskrange_impl(pami_geometry_t       * geometry,
+                                                        pami_configuration_t    configuration[],
+                                                        size_t                  num_configs,
+                                                        pami_geometry_t         parent,
+                                                        unsigned                id,
+                                                        pami_geometry_range_t * rank_slices,
+                                                        size_t                  slice_count,
+                                                        pami_context_t          context,
+                                                        pami_event_function     fn,
+                                                        void                  * cookie)
       {
         MPIGeometry              *new_geometry = NULL;
-        uint64_t                  to_reduce[4];
+        uint64_t                  *to_reduce;
+        uint                      to_reduce_count;
+	pami_result_t rc;
         // If our new geometry is NOT NULL, we will create a new geometry
         // for this client.  This new geometry will be populated with a
         // set of algorithms.
         if(geometry != NULL)
           {
-	    pami_result_t rc;
-	    rc = __global.heap_mm->memalign((void **)&new_geometry, 0,
-							sizeof(*new_geometry));
+            rc = __global.heap_mm->memalign((void **)&new_geometry, 0,
+                                            sizeof(*new_geometry));
 	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc new_geometry");
-            new(new_geometry)MPIGeometry(_client,
-					 (MPIGeometry*)parent,
-                                         &__global.mapping,
-                                         id,
-                                         slice_count,
-                                         rank_slices,
-                                         &_geometry_map);
+
+            new(new_geometry)MPIGeometry((pami_client_t)this,
+                                          (MPIGeometry*)parent,
+                                          &__global.mapping,
+                                          id,
+                                          slice_count,
+                                          rank_slices,
+                                          &_geometry_map);
+            
+            PAMI::Topology *local_master_topology  = (PAMI::Topology *)new_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
+            to_reduce_count = 3 + local_master_topology->size();
+            rc = __global.heap_mm->memalign((void **)&to_reduce, 0,
+                                            to_reduce_count * sizeof(uint64_t));
+            PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc to_reduce");
             for(size_t n=0; n<_ncontexts; n++)
               {
                 new_geometry->resetUEBarrier(); // Reset so pgas will select the UE barrier
+		int nc = 0;
 		int ncur = 0;
                 _contexts[n]._pgas_collreg->register_local(n,new_geometry,&to_reduce[0], ncur);
-		ncur =0;
+		nc+= ncur;
+		ncur = 0;
                 _contexts[n]._p2p_ccmi_collreg->register_local(n,new_geometry,&to_reduce[1], ncur);
               }
 	    new_geometry->processUnexpBarrier(&_ueb_queue,
@@ -306,22 +426,22 @@ namespace PAMI
                                           0,
                                           ctxt->getId());
             Geometry::Algorithm<MPIGeometry> *ar_algo = (Geometry::Algorithm<MPIGeometry> *)alg;
-            MPIClassRouteId *cr;
-	    pami_result_t rc;
-	    rc = __global.heap_mm->memalign((void **)&cr, 0, sizeof(*cr));
-	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc MPIClassRouteId");
-            new(cr)MPIClassRouteId(ar_algo,
-                                   new_geometry,
-                                   to_reduce,
-                                   4,
-                                   cr_func,
-                                   (void*)this,
-                                   fn,
-                                   cookie);
+            PostedClassRoute<MPIGeometry> *cr[2];
+	    rc = __global.heap_mm->memalign((void **)&cr[0], 0, sizeof(PostedClassRoute<MPIGeometry>));
+	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PostedClassRoute<MPIGeometry>");
+            rc = __global.heap_mm->memalign((void **)&cr[1], 0, sizeof(PostedClassRoute<MPIGeometry>));
+	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PostedClassRoute<MPIGeometry>");
+            new(cr[0])PostedClassRoute<MPIGeometry>(ctxt,ar_algo,new_geometry,to_reduce,
+                                                     to_reduce_count,PostedClassRoute<MPIGeometry>::cr_func,
+                                                     cr[0],PostedClassRoute<MPIGeometry>::phase_done,cr[1]);
+            new(cr[1])PostedClassRoute<MPIGeometry>(ctxt,ar_algo,new_geometry,to_reduce,
+                                                     to_reduce_count,PostedClassRoute<MPIGeometry>::cr_func2,
+                                                     cr[1],fn,cookie, true);
+            TRACE((stderr, "Allocated Classroutes:  %p %p\n", cr[0], cr[1]));
             if(bargeom)
-              bargeom->default_barrier(MPIClassRouteId::get_classroute, cr, ctxt->getId(), context);
+              bargeom->default_barrier(PostedClassRoute<MPIGeometry>::create_classroute, cr[0], ctxt->getId(), context);
             else
-              new_geometry->ue_barrier(MPIClassRouteId::get_classroute, cr, ctxt->getId(), context);
+              new_geometry->ue_barrier(PostedClassRoute<MPIGeometry>::create_classroute, cr[0], ctxt->getId(), context);
           }
         else
           {
@@ -336,15 +456,15 @@ namespace PAMI
         return PAMI_SUCCESS;
       }
 
-    inline pami_result_t geometry_create_topology_impl(pami_geometry_t       *geometry,
-                                                       pami_configuration_t   configuration[],
-                                                       size_t                 num_configs,
-                                                       pami_geometry_t        parent,
-                                                       unsigned               id,
-                                                       pami_topology_t       *topology,
-                                                       pami_context_t         context,
-                                                       pami_event_function    fn,
-                                                       void                  *cookie)
+    inline pami_result_t geometry_create_topology_impl(pami_geometry_t       * geometry,
+                                                       pami_configuration_t    configuration[],
+                                                       size_t                  num_configs,
+                                                       pami_geometry_t         parent,
+                                                       unsigned                id,
+                                                       pami_topology_t       * topology,
+                                                       pami_context_t          context,
+                                                       pami_event_function     fn,
+                                                       void                  * cookie)
       {
         // todo:  implement this routine
         PAMI_abort();
@@ -352,22 +472,117 @@ namespace PAMI
         return PAMI_SUCCESS;
       }
 
-    inline pami_result_t geometry_create_tasklist_impl(pami_geometry_t       *geometry,
-                                                       pami_configuration_t   configuration[],
-                                                       size_t                 num_configs,
-                                                       pami_geometry_t        parent,
-                                                       unsigned               id,
-                                                       pami_task_t           *tasks,
-                                                       size_t                 task_count,
-                                                       pami_context_t         context,
-                                                       pami_event_function    fn,
-                                                       void                  *cookie)
+    inline pami_result_t geometry_create_tasklist_impl(pami_geometry_t       * geometry,
+                                                       pami_configuration_t    configuration[],
+                                                       size_t                  num_configs,
+                                                       pami_geometry_t         parent,
+                                                       unsigned                id,
+                                                       pami_task_t           * tasks,
+                                                       size_t                  task_count,
+                                                       pami_context_t          context,
+                                                       pami_event_function     fn,
+                                                       void                  * cookie)
       {
         // todo:  implement this routine
-        PAMI_abort();
+        MPIGeometry              *new_geometry = NULL;
+        uint64_t                  *to_reduce;
+        uint                      to_reduce_count;
+        pami_result_t             rc; 
+        // If our new geometry is NOT NULL, we will create a new geometry
+        // for this client.  This new geometry will be populated with a
+        // set of algorithms.
+        if(geometry != NULL)
+          {
+	    rc = __global.heap_mm->memalign((void **)&new_geometry, 0,
+                                            sizeof(*new_geometry));
+	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc new_geometry");
+            new(new_geometry)MPIGeometry((pami_client_t)this,
+                                          (MPIGeometry*)parent,
+                                          &__global.mapping,
+                                          id,
+                                          task_count,
+                                          tasks,
+                                          &_geometry_map);
 
+            PAMI::Topology *local_master_topology  = (PAMI::Topology *)new_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
+            to_reduce_count = 3 + local_master_topology->size();
+            rc = __global.heap_mm->memalign((void **)&to_reduce, 0,
+                                            to_reduce_count * sizeof(uint64_t));
+            PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc to_reduce");
+            for(size_t n=0; n<_ncontexts; n++)
+              {
+                new_geometry->resetUEBarrier(); // Reset so pgas will select the UE barrier
+		int nc = 0;
+		int ncur = 0;
+                _contexts[n]._pgas_collreg->register_local(n,new_geometry,&to_reduce[0], ncur);
+		nc+=ncur;
+		ncur=0;
+                _contexts[n]._p2p_ccmi_collreg->register_local(n,new_geometry,&to_reduce[1], ncur);
+              }
+            new_geometry->processUnexpBarrier(&_ueb_queue,
+                                              &_ueb_allocator);
+            *geometry=(MPIGeometry*) new_geometry;
+          }
+
+        // Now we must take care of the synchronization of this new geometry
+        // First, if a new geometry is created, we will perform an allreduce
+        // on the new geometry.
+        // If we have a parent geometry, we perform synchronization on that
+        // geometry.  If we don't have a parent geometry, we perform an
+        // "unexpected" barrier on only the new geometry.  In either case,
+        // any node creating a new geometry will allocate a class route.
+        // When the synchronization is completed (barrier or uebarrier), it
+        // will chain into an allreduce operation, which performs the allocation
+        // of the classroute.  When the classroute has been allocated,
+        // The "done" event is delivered to the user.
+        MPIGeometry      *bargeom = (MPIGeometry*)parent;
+        PAMI::Context    *ctxt    = (PAMI::Context *)context;
+
+        if(new_geometry)
+          {
+            pami_algorithm_t  alg;
+            pami_metadata_t   md;
+            pami_result_t     rc;
+            new_geometry->algorithms_info(PAMI_XFER_ALLREDUCE,
+                                          &alg,
+                                          &md,
+                                          1,
+                                          NULL,
+                                          NULL,
+                                          0,
+                                          ctxt->getId());
+            Geometry::Algorithm<MPIGeometry> *ar_algo = (Geometry::Algorithm<MPIGeometry> *)alg;
+            PostedClassRoute<MPIGeometry> *cr[2];
+            rc = __global.heap_mm->memalign((void **)&cr[0], 0, sizeof(PostedClassRoute<MPIGeometry>));
+            PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PostedClassRoute<MPIGeometry>");
+            rc = __global.heap_mm->memalign((void **)&cr[1], 0, sizeof(PostedClassRoute<MPIGeometry>));
+            PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PostedClassRoute<MPIGeometry>");
+            to_reduce[0] = 0;
+            to_reduce[1] = 0;
+            new(cr[0])PostedClassRoute<MPIGeometry>(ctxt,ar_algo,new_geometry,to_reduce,
+                                                     to_reduce_count,PostedClassRoute<MPIGeometry>::cr_func,
+                                                     cr[0],PostedClassRoute<MPIGeometry>::phase_done,cr[1]);
+            new(cr[1])PostedClassRoute<MPIGeometry>(ctxt,ar_algo,new_geometry,to_reduce,
+                                                     to_reduce_count,PostedClassRoute<MPIGeometry>::cr_func2,
+                                                     cr[1],fn,cookie, true);
+            if(bargeom)
+              bargeom->default_barrier(PostedClassRoute<MPIGeometry>::create_classroute, cr[0], ctxt->getId(), context);
+            else
+              new_geometry->ue_barrier(PostedClassRoute<MPIGeometry>::create_classroute, cr[0], ctxt->getId(), context);
+          }
+        else
+          {
+            if(bargeom)
+              bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
+            else
+              {
+                // Null parent and null new geometry?  Why are you here?
+                return PAMI_INVAL;
+              }
+          }
         return PAMI_SUCCESS;
       }
+
 
     inline pami_result_t geometry_query_impl (pami_geometry_t        geometry,
 					      pami_configuration_t   configuration[],
