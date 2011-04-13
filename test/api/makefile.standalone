@@ -2,13 +2,13 @@
 PAMI_INCLUDE   := /usr/include
 PAMI_LIB       := /usr/lib
 PAMI_LIBNAME   := -lpami_r
-C_COMPILER     := mpicc
-CXX_COMPILER   := mpic++
-LINKER         := gcc
+C_COMPILER     := mpcc -q32
+CXX_COMPILER   := mpCC -q32
+LINKER         := mpcc -q32
 
 ##### You shouldn't have to edit under this line ######
-CC        := ${C_COMPILER}  -O2 -g -I${PAMI_INCLUDE} 
-CXX       := ${CXX_COMPILER} -O2 -g -I${PAMI_INCLUDE} 
+CC        := ${C_COMPILER}  -O0 -g -I${PAMI_INCLUDE}  
+CXX       := ${CXX_COMPILER} -O0 -g -I${PAMI_INCLUDE} 
 LD        := ${LINKER}    -L${PAMI_LIB} ${PAMI_LIBNAME}
 ECHO      := echo
 
@@ -71,7 +71,9 @@ build/collectives/bcast_subcomm.exe \
 build/collectives/bcast_subcomm2.exe \
 build/collectives/bcast_subcomm_noparent.exe \
 build/collectives/reduce.exe \
+build/collectives/reduce_scatter.exe \
 build/collectives/reduce_subcomm.exe \
+build/collectives/scan.exe \
 build/collectives/scatter.exe \
 build/collectives/scatterv.exe \
 build/context/advance.exe \
@@ -87,12 +89,11 @@ build/context/post-stress.exe \
 build/endpoint/endpoint_table.exe \
 build/p2p/send/send_immediate_pingpong_ring.exe \
 build/p2p/send_latency.exe \
+build/p2p/send_latency_typed.exe \
 build/p2p/sendimmediate_latency.exe \
-build/p2p/udp_simple_send.exe \
 build/p2p/adi.exe \
 build/p2p/default-send-nplus1.exe \
 build/p2p/default-send.exe \
-build/p2p/dispatch.exe \
 build/p2p/get/simple_get_func.exe \
 build/p2p/immediate_send.exe \
 build/p2p/immediate_send_overflow.exe \
