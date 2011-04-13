@@ -54,20 +54,18 @@ api/endpoint/endpoint_table.cnk --timelimit 180
 #api/extensions/multisend/multisync_global.cnk --timelimit 360    +++ REMOVED FROM MAKEFILE +++
 # +++ adi.cnk is INTERACTIVE +++
 api/p2p/adi.cnk --compile-only                               
-api/p2p/default-send-nplus1.cnk --numnodes 2 --ranks-per-node 1 --maxnp 2     
+api/p2p/default-send-nplus-minus1.cnk --numnodes 2 --ranks-per-node 1 --maxnp 2 
 api/p2p/default-send.cnk --numnodes 2 --ranks-per-node 1 --maxnp 2            
 api/p2p/dispatch.cnk
 api/p2p/immediate_send.cnk --numnodes 2 --ranks-per-node 1 --maxnp 2          
 api/p2p/immediate_send_overflow.cnk --numnodes 2 --ranks-per-node 1 --maxnp 2
-api/p2p/MU-send.cnk --numnodes 2 --ranks-per-node 1 --maxnp 2 
 api/p2p/send_latency.cnk --timelimit 360
 api/p2p/sendimmediate_latency.cnk --timelimit 360
-api/p2p/SHMem-send.cnk --numnodes 1 --ranks-per-node 2 --maxnp 2
 api/p2p/simple-send-immediate.cnk
 # +++ udp_simple_send.cnk is INTERACTIVE +++
 api/p2p/udp_simple_send.cnk --compile-only
-api/p2p/get/simple_get_func.cnk --numnodes 2 --ranks-per-node 1 --maxnp 2                                 
-api/p2p/put/simple_put_func.cnk --numnodes 2 --ranks-per-node 1 --maxnp 2                       
+api/p2p/get/simple_get_func.cnk --numnodes 2 --ranks-per-node 1 --maxnp 2       
+api/p2p/put/simple_put_func.cnk --numnodes 2 --ranks-per-node 1 --maxnp 2
 api/p2p/rget/simple_rget_func.cnk
 api/p2p/rput/simple_rput_func.cnk
 api/p2p/send/default-send-1.cnk
@@ -83,6 +81,10 @@ api/p2p/send/send_to_self_perf/send_to_self_perf.cnk
 api/p2p/send/send_unexpected_func.cnk
 api/p2p/send/shmem-matrix.cnk --timelimit 480
 api/p2p/send/sqmr.cnk
+api/p2p/send/hint/long_header/long_header_perf.cnk
+api/p2p/send/hint/recv_immediate/recv_immediate_func.cnk
+api/p2p/send/hint/recv_immediate/recv_immediate_perf.cnk
+api/p2p/send/hint/use_shmem/use_shmem_perf.cnk
 api/time/tick.cnk
 api/time/time.cnk
 api/time/timebase.cnk
