@@ -22,6 +22,8 @@ APPS            = barrier.${EXTENSION} barrier_subcomm.${EXTENSION} \
 		allgatherv.${EXTENSION} \
 		scatter.${EXTENSION} \
 		scatterv.${EXTENSION} \
+		scan.${EXTENSION} \
+		reduce_scatter.${EXTENSION} \
 		alltoall.${EXTENSION} \
 		alltoallv.${EXTENSION} 
 
