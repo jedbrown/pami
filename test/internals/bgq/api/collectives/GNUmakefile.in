@@ -19,6 +19,8 @@ APPS            += barrier-${FRAMEWORK}.${EXTENSION} barrier_query-${FRAMEWORK}.
 APPS            += reduce-${FRAMEWORK}.${EXTENSION}
 APPS            += scatter-${FRAMEWORK}.${EXTENSION} scatter_subcomm-${FRAMEWORK}.${EXTENSION}
 APPS            += allgather-${FRAMEWORK}.${EXTENSION} allgather_subcomm-${FRAMEWORK}.${EXTENSION}
+APPS            += alltoallv-${FRAMEWORK}.${EXTENSION} alltoallv_subcomm-${FRAMEWORK}.${EXTENSION}
+APPS            += alltoallv_int-${FRAMEWORK}.${EXTENSION} alltoallv_int_subcomm-${FRAMEWORK}.${EXTENSION}
 
 include @abs_top_builddir@/Build.rules
 
