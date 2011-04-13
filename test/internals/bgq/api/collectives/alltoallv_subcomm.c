@@ -57,11 +57,11 @@ int check_rcvbuf(size_t sz, size_t myrank,char *rbuf)
     {
       if (rbuf[ rdispls[r] + k ] != (char)((myrank + k) & 0xff))
       {
-        fprintf(stderr,"%s:Check(%zu) failed rbuf[%zu+%zu]:%02x instead of %02zx (rank:%zu)\n",
+        fprintf(stderr,"%s:Check(%zu) failed rbuf[%zu+%zu]:%02x instead of %02x (rank:%zu)\n",
                 protocolName,sndlens[r],
                 rdispls[r],k,
                 rbuf[ rdispls[r] + k ],
-                ((r + k) & 0xff),
+                (char)((myrank + k) & 0xff),
                 r );
         return 1;
       }
@@ -373,15 +373,15 @@ int main (int argc, char ** argv)
       return 1;
 
     /*  Query the world geometry for alltoallv algorithms */
-    rc |= query_geometry_world(client,
-                               context[iContext],
-                               &world_geometry,
-                               alltoallv_xfer,
-                               alltoallv_num_algorithm,
-                               &alltoallv_always_works_algo,
-                               &alltoallv_always_works_md,
-                               &alltoallv_must_query_algo,
-                               &alltoallv_must_query_md);
+    rc |= query_geometry(client,
+                         context[iContext],
+                         newgeometry,
+                         alltoallv_xfer,
+                         alltoallv_num_algorithm,
+                         &alltoallv_always_works_algo,
+                         &alltoallv_always_works_md,
+                         &alltoallv_must_query_algo,
+                         &alltoallv_must_query_md);
     if (rc == 1)
       return 1;
 
@@ -417,9 +417,9 @@ int main (int argc, char ** argv)
       {
         if (set[k])
         {
-          if (task_id == 0)
+          if (task_id == root)
           {
-            printf("# Alltoallv Bandwidth Test(size:%zu) -- context = %d, root - %d,protocol: %s\n", 
+            printf("# Alltoallv Bandwidth Test(size:%zu) -- context = %d, root = %d, protocol: %s\n", 
                    num_tasks, iContext,root,protocolName);
             printf("# Size(bytes)           cycles    bytes/sec      usec\n");
             printf("# -----------      -----------    -----------    ---------\n");
@@ -466,7 +466,7 @@ int main (int argc, char ** argv)
             blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
 
 #ifdef CHECK_DATA
-            rc |= check_rcvbuf(num_tasks, task_id, rbuf);
+            rc |= check_rcvbuf(num_tasks, local_task_id, rbuf);
 #endif
             usec = (tf - ti) / (double)niter;
 
