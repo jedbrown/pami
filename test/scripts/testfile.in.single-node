@@ -80,6 +80,10 @@ api/p2p/send/send_to_self_perf/send_to_self_perf.cnk
 api/p2p/send/send_unexpected_func.cnk
 api/p2p/send/shmem-matrix.cnk --timelimit 360
 api/p2p/send/sqmr.cnk
+api/p2p/send/hint/long_header/long_header_perf.cnk
+api/p2p/send/hint/recv_immediate/recv_immediate_func.cnk
+api/p2p/send/hint/recv_immediate/recv_immediate_perf.cnk
+api/p2p/send/hint/use_shmem/use_shmem_perf.cnk
 api/time/tick.cnk
 api/time/time.cnk
 api/time/timebase.cnk
