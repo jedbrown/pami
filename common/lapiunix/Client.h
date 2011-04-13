@@ -430,7 +430,7 @@ namespace PAMI
         size_t i;
         for(i=0; i<num_configs; i++)
           {
-            switch (configuration[i].name)
+            switch ((pami_attribute_name_ext_t)configuration[i].name)
               {
                 case PAMI_CLIENT_NUM_CONTEXTS:
                   configuration[i].value.intval = 1;  // will change when multi-endpoint support is available
