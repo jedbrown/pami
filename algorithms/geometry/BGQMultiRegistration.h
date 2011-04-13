@@ -197,17 +197,22 @@ namespace PAMI
 
     void getAlltoallMetaData(pami_metadata_t *m)
     {
-      new(m) PAMI::Geometry::Metadata("I0:MUOptM2MComposite:MU:MU");
+      new(m) PAMI::Geometry::Metadata("I0:M2MComposite:MU:MU");
+      m->check_perf.values.hw_accel     = 1;
     }
     typedef CCMI::Adaptor::All2AllProtocol All2AllProtocol;
     typedef CCMI::Adaptor::All2AllFactoryT <All2AllProtocol, getAlltoallMetaData, CCMI::ConnectionManager::CommSeqConnMgr> All2AllFactory;
 
     extern inline void getAlltoallvMetaData(pami_metadata_t *m)
     {
-      new(m) PAMI::Geometry::Metadata("I0:MUOptM2MComposite:MU:MU");
+      new(m) PAMI::Geometry::Metadata("I0:M2MComposite:MU:MU");
+      m->check_perf.values.hw_accel     = 1;
     }
     typedef CCMI::Adaptor::All2AllvProtocolLong All2AllProtocolv;
     typedef CCMI::Adaptor::All2AllvFactoryT <All2AllProtocolv, getAlltoallvMetaData, CCMI::ConnectionManager::CommSeqConnMgr> All2AllvFactory;
+
+    typedef CCMI::Adaptor::All2AllvProtocolInt All2AllProtocolv_int;
+    typedef CCMI::Adaptor::All2AllvFactoryT <All2AllProtocolv_int, getAlltoallvMetaData, CCMI::ConnectionManager::CommSeqConnMgr> All2AllvFactory_int;
 
     //----------------------------------------------------------------------------
     // 'Pure' Shmem allsided multicombine
@@ -844,11 +849,14 @@ namespace PAMI
 
 	  _mu_m2m_vector_long_ni = new (_mu_m2m_vector_long_ni_storage) M2MNIVectorLong (_mu_device, client, context, context_id, client_id, _dispatch_id);
 
+	  _mu_m2m_vector_int_ni = new (_mu_m2m_vector_int_ni_storage) M2MNIVectorInt (_mu_device, client, context, context_id, client_id, _dispatch_id);
+
 	  
           if (_mu_ammulticast_ni->status() != PAMI_SUCCESS) _mu_ammulticast_ni = NULL;
 
           if (_mu_m2m_single_ni->status() != PAMI_SUCCESS)      _mu_m2m_single_ni = NULL;
           if (_mu_m2m_vector_long_ni->status() != PAMI_SUCCESS) _mu_m2m_vector_long_ni = NULL;
+          if (_mu_m2m_vector_int_ni->status() != PAMI_SUCCESS) _mu_m2m_vector_int_ni = NULL;
 
           if (__global.useshmem())
           {
@@ -885,6 +893,13 @@ namespace PAMI
 	  {
 	    _alltoallv_factory = new (_alltoallv_factory_storage) All2AllvFactory(&_csconnmgr, _mu_m2m_vector_long_ni);
 	    _alltoallv_factory->setMapIdToGeometry(mapidtogeometry);
+	  }
+
+	  _alltoallv_int_factory = NULL;
+	  if (_mu_m2m_vector_int_ni) 
+	  {
+	    _alltoallv_int_factory = new (_alltoallv_int_factory_storage) All2AllvFactory_int(&_csconnmgr, _mu_m2m_vector_int_ni);
+	    _alltoallv_int_factory->setMapIdToGeometry(mapidtogeometry);
 	  }
 
           _mucollectivedputmulticastfactory    = new (_mucollectivedputmulticaststorage ) MUCollectiveDputMulticastFactory(&_sconnmgr, _mu_global_dput_ni);
@@ -1150,8 +1165,11 @@ namespace PAMI
 	  if (_alltoall_factory)
 	    geometry->addCollective(PAMI_XFER_ALLTOALL, _alltoall_factory, _context_id);
 	  
-	  if (_alltoallv_factory)
-	    geometry->addCollective(PAMI_XFER_ALLTOALLV, _alltoallv_factory, _context_id);
+    if (_alltoallv_factory)
+      geometry->addCollective(PAMI_XFER_ALLTOALLV, _alltoallv_factory, _context_id);
+
+	  if (_alltoallv_int_factory)
+	    geometry->addCollective(PAMI_XFER_ALLTOALLV_INT, _alltoallv_int_factory, _context_id);
 
           // Check for class routes before enabling MU collective network protocols
           void *val;
@@ -1411,6 +1429,9 @@ namespace PAMI
       M2MNIVectorLong                                *_mu_m2m_vector_long_ni;
       uint8_t                                         _mu_m2m_vector_long_ni_storage [sizeof(M2MNIVectorLong)];
       
+      M2MNIVectorInt                                 *_mu_m2m_vector_int_ni;
+      uint8_t                                         _mu_m2m_vector_int_ni_storage [sizeof(M2MNIVectorInt)];
+      
       // Barrier factories
       GIMultiSyncFactory                             *_gi_msync_factory;
       uint8_t                                         _gi_msync_factory_storage[sizeof(GIMultiSyncFactory)];
@@ -1494,10 +1515,13 @@ namespace PAMI
 
       // Alltoall
       All2AllFactory                                *_alltoall_factory;
-      uint8_t                                        _alltoall_factory_storage[sizeof(CCMI::Adaptor::P2PAlltoall::All2AllFactory)];
+      uint8_t                                        _alltoall_factory_storage[sizeof(All2AllFactory)];
 
       All2AllvFactory                               *_alltoallv_factory;
-      uint8_t                                        _alltoallv_factory_storage[sizeof(CCMI::Adaptor::P2PAlltoallv::All2AllvFactory)];
+      uint8_t                                        _alltoallv_factory_storage[sizeof(All2AllvFactory)];
+
+      All2AllvFactory_int                           *_alltoallv_int_factory;
+      uint8_t                                        _alltoallv_int_factory_storage[sizeof(All2AllvFactory_int)];
     };
 
 

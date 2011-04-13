@@ -84,7 +84,7 @@ namespace PAMI
 	    int rc = 0;
 	    Kernel_MemoryRegion_t memRegion;
 	    rc = Kernel_CreateMemoryRegion (&memRegion, (void *) _src_base, bytes);
-	    PAMI_assert ( rc == 0 );
+	    PAMI_assertf ( rc == 0,"_src_base %p, bytes %zu, rc %d",_src_base, bytes, rc );
 	    _paddr_base = (uint64_t)memRegion.BasePa +
 	      ((uint64_t)(void *)_src_base - (uint64_t)memRegion.BaseVa);
 	    

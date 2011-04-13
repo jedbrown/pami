@@ -87,7 +87,7 @@ namespace PAMI
       /// \note bufinit must be empty (0) for producer PWQ or full (size of dgsp type * dsgpcounts[index]) for consumer PWQ.
       ///
       inline void configure_impl(char *buffer, size_t indexcount,
-                                 pami_type_t *dgsp, void *offsets, void *dgspcounts, size_t *bufinit)
+                                 pami_type_t *dgsp, void *offsets, void *dgspcounts, void *bufinit)
       {
         /// \todo 'real' dgsp is unimplemented now, so assume PAMI_TYPE_CONTIGUOUS
         /// \todo why pami_type_t*? Copied from PAMI::PipeWorkQueue
@@ -97,7 +97,7 @@ namespace PAMI
         _indexCount = indexcount;
         _buffer     = buffer;
         _offsets    = (T_Int *) offsets;
-        _bytes      = bufinit;
+        _bytes      = (T_Int *) bufinit;
         _dgspCounts = (T_Int *) dgspcounts;
         _dgsp       = *dgsp;
 
@@ -381,7 +381,7 @@ namespace PAMI
       volatile char *_buffer;     /**< flat buffer */
       T_Int         *_offsets;    /**< array of byte offsets to start of each access point */
       T_Int         *_bytes;      /**< array of byte counts (available to consume) */
-      size_t        *_dgspCounts; /**< array of dgsp count size */
+      T_Int         *_dgspCounts; /**< array of dgsp count size */
       pami_type_t    _dgsp;       /**< dgsp data type */
       size_t         _indexCount; /**< number of indexed access points to the buffer(size of arrays) */
       size_t         _sizeOfDgsp; /**< byte size of the dgsp data type */

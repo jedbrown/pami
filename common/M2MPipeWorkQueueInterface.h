@@ -65,7 +65,7 @@ public:
 	/// \note bufinit must be empty (0) for producer PWQ or full (size of dgsp type * dsgpcounts[index]) for consumer PWQ.
 	///
 	inline void configure(char *buffer, size_t indexcount,
-			      pami_type_t *dgsp, void *offsets, void *dgspcounts, size_t *bufinit);
+			      pami_type_t *dgsp, void *offsets, void *dgspcounts, void *bufinit);
 
 	/// \brief Configure for Many to Many (indexed flat buffer) access.
 	///
@@ -300,7 +300,7 @@ void M2MPipeWorkQueue<T_PipeWorkQueue>::barrier_reset(unsigned participants, boo
 template <class T_PipeWorkQueue>
 void M2MPipeWorkQueue<T_PipeWorkQueue>::configure(char *buffer, size_t indexcount,
 						pami_type_t *dgsp, void *offsets,
-						void *dgspcounts, size_t *bufinit) {
+						void *dgspcounts, void *bufinit) {
 	return static_cast<T_PipeWorkQueue *>(this)->configure_impl(buffer, indexcount, dgsp, offsets,
 								    dgspcounts, bufinit);
 }
