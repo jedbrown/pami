@@ -12,7 +12,7 @@
 VPATH		= @abs_srcdir@
 SUBDIRS         = send get put rget rput
 NOTBUILT        = 
-APPS            = adi.${EXTENSION} default-send.${EXTENSION} default-send-nplus1.${EXTENSION} immediate_send.${EXTENSION} immediate_send_overflow.${EXTENSION} send_latency.${EXTENSION} sendimmediate_latency.${EXTENSION} udp_simple_send.${EXTENSION} simple-send-immediate.${EXTENSION} send_latency_typed.${EXTENSION}
+APPS            = adi.${EXTENSION} default-send.${EXTENSION} default-send-nplus-minus1.${EXTENSION} immediate_send.${EXTENSION} immediate_send_overflow.${EXTENSION} send_latency.${EXTENSION} sendimmediate_latency.${EXTENSION} udp_simple_send.${EXTENSION} simple-send-immediate.${EXTENSION} send_latency_typed.${EXTENSION}
 
 include @abs_top_builddir@/Build.rules
 
