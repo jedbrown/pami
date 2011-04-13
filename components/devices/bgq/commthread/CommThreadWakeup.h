@@ -701,7 +701,7 @@ Factory::~Factory() {
 		fwu += _commThreads[x]._falseWU;
 		_commThreads[x].~BgqCommThread();
 	}
-if (fwu > 2) fprintf(stderr, "Commthreads saw %zd false wakeups\n", fwu);
+// if (fwu > 2) fprintf(stderr, "Commthreads saw %zd false wakeups\n", fwu);
 #endif // !COMMTHREAD_LAYOUT_TESTING
 	for (;x < BgqCommThread::_maxActive; ++x) {
 		_commThreads[x].~BgqCommThread();
