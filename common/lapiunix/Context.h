@@ -633,6 +633,23 @@ namespace PAMI
           ep->mutex.Unlock<true>();
           return PAMI_SUCCESS;
         }
+
+
+      inline pami_result_t plock ()
+        {
+          LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
+          (cp->*(cp->pLock))();
+          return PAMI_SUCCESS;
+        }
+
+      inline pami_result_t punlock ()
+        {
+          LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
+          (cp->*(cp->pUnlock))();
+          return PAMI_SUCCESS;
+        }
+
+
       inline pami_result_t send_impl (pami_send_t * parameters)
         {
           LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
@@ -875,8 +892,12 @@ namespace PAMI
 
     inline pami_result_t collective_impl (pami_xfer_t * parameters)
         {
-        Geometry::Algorithm<LAPIGeometry> *algo = (Geometry::Algorithm<LAPIGeometry> *)parameters->algorithm;
-        return algo->generate(parameters);
+          pami_result_t rc;
+          Geometry::Algorithm<LAPIGeometry> *algo = (Geometry::Algorithm<LAPIGeometry> *)parameters->algorithm;
+          plock();
+          rc = algo->generate(parameters);
+          punlock();
+          return rc;
         }
 
     inline pami_result_t amcollective_dispatch_impl (pami_algorithm_t            algorithm,
