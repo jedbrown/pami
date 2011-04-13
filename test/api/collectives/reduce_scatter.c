@@ -397,8 +397,8 @@ int main(int argc, char*argv[])
               niter = NITERLAT;
             else
               niter = NITERBW;
-
-            for (int ind =0; ind < num_tasks; ++ind) rcounts[ind] = i / num_tasks;
+	    int ind;
+            for (ind =0; ind < num_tasks; ++ind) rcounts[ind] = i / num_tasks;
 
 #ifdef CHECK_DATA
             /* initialize_sndbuf (sbuf, i, op_array[op], dt_array[dt], task_id); */
