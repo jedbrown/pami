@@ -25,7 +25,9 @@ api/collectives/bcast_subcomm2.cnk --timelimit 480 --compile-only
 api/collectives/bcast_subcomm_noparent.cnk --timelimit 120
 #api/collectives/multisync.cnk                              +++ REMOVED FROM MAKEFILE +++
 api/collectives/reduce.cnk --timelimit 420
+api/collectives/reduce_scatter.cnk
 api/collectives/reduce_subcomm.cnk --timelimit 120
+api/collectives/scan.cnk
 api/collectives/scatter.cnk
 api/collectives/scatterv.cnk
 api/context/advance-perf.cnk
