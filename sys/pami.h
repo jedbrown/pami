@@ -3714,6 +3714,8 @@ extern "C"
    * \param[in]  offset   Destination context offset
    * \param[out] endpoint Opaque endpoint object
    */
+/** \todo set the client information in the endpoint opaque type */
+#define PAMI_ENDPOINT_CREATE(__client,__task,__offset,__endpoint) ({ *(__endpoint) = (((__offset) << 23) | (__task)); PAMI_SUCCESS; })
   pami_result_t PAMI_Endpoint_create (pami_client_t     client,
                                       pami_task_t       task,
                                       size_t            offset,
@@ -3733,6 +3735,7 @@ extern "C"
    * \param[out] task     Opaque destination task object
    * \param[out] offset   Destination context offset
    */
+#define PAMI_ENDPOINT_QUERY(__endpoint,__task,__offset) ({ *(__task) = (__endpoint) & 0x007fffff; *(__offset) = ((__endpoint) >> 23) & 0x03f; PAMI_SUCCESS; })
   pami_result_t PAMI_Endpoint_query (pami_endpoint_t   endpoint,
                                      pami_task_t     * task,
                                      size_t          * offset);
