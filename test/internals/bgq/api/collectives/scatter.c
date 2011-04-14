@@ -12,7 +12,7 @@
  */
 
 #include "../../../../api/pami_util.h"
-#include <Arch.h> /* Don't use PAMI_MAX_PROC_PER_NODE in 'real' api test*/
+
 
 /*define this if you want to validate the data */
 #define CHECK_DATA
@@ -66,7 +66,7 @@ int check_rcvbuf (void *rbuf, int bytes, pami_task_t task)
 int main (int argc, char ** argv)
 {
   pami_client_t        client;
-  pami_context_t       context[PAMI_MAX_PROC_PER_NODE]; /* arbitrary max */
+  pami_context_t      *context;
   size_t               num_contexts = 1;
   pami_task_t          task_id;
   size_t               num_tasks;
@@ -136,7 +136,7 @@ int main (int argc, char ** argv)
   if (snum_contexts) num_contexts = atoi(snum_contexts);
 
   assert(num_contexts > 0);
-  assert(num_contexts <= PAMI_MAX_PROC_PER_NODE);
+  context = (pami_context_t*)malloc(sizeof(pami_context_t)*num_contexts);
 
   /* \note Test environment variable" TEST_ROOT=N, defaults to 0.*/
   char* sRoot = getenv("TEST_ROOT");

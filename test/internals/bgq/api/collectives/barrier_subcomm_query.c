@@ -12,7 +12,7 @@
  */
 
 #include "../../../../api/pami_util.h"
-#include <Arch.h> /* Don't use PAMI_MAX_PROC_PER_NODE in 'real' api test*/
+
 
 #define NITERLAT   1   
 #define NUM_NON_ROOT_DELAYS 2
@@ -22,7 +22,7 @@
 int main (int argc, char ** argv)
 {
   pami_client_t        client;
-  pami_context_t       context[PAMI_MAX_PROC_PER_NODE]; /* arbitrary max */
+  pami_context_t      *context;
   size_t               num_contexts = 1;
   pami_task_t          task_id;
   size_t               num_tasks;
@@ -72,7 +72,7 @@ int main (int argc, char ** argv)
   if (snum_contexts) num_contexts = atoi(snum_contexts);
 
   assert(num_contexts > 0);
-  assert(num_contexts <= PAMI_MAX_PROC_PER_NODE);
+  context = (pami_context_t*)malloc(sizeof(pami_context_t)*num_contexts);
 
   /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
