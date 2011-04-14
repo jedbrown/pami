@@ -210,6 +210,7 @@ namespace PAMI
             size_t code_cursor;
             bool   completed;
             bool   to_optimize;
+            bool   is_contiguous;
 
             void CheckCodeBuffer(size_t inc_code_size);
             void ResizeCodeBuffer(size_t new_size);
@@ -225,9 +226,9 @@ namespace PAMI
             primitive_type_t   primitive;
     };
 
-    inline TypeCode::TypeCode(bool to_optimize = false)
+    inline TypeCode::TypeCode(bool to_optimize = true)
         : code(NULL), code_buf_size(0), code_cursor(0), completed(false),
-        to_optimize(to_optimize), primitive(PRIMITIVE_TYPE_USERDEFINED)
+        to_optimize(to_optimize), is_contiguous(true), primitive(PRIMITIVE_TYPE_USERDEFINED)
     {
         ResizeCodeBuffer(sizeof(Begin) + sizeof(Copy)*4);
         *(Begin *)code = Begin();
@@ -238,7 +239,7 @@ namespace PAMI
 
     inline TypeCode::TypeCode(void *code_addr, size_t code_size)
         : code(NULL), code_buf_size(0), code_cursor(0), completed(true),
-        to_optimize(false), primitive(PRIMITIVE_TYPE_USERDEFINED)
+        to_optimize(true), is_contiguous(true), primitive(PRIMITIVE_TYPE_USERDEFINED)
     {
         ResizeCodeBuffer(code_size);
         memcpy(code, code_addr, code_size);
@@ -246,7 +247,7 @@ namespace PAMI
 
     inline TypeCode::TypeCode(size_t code_size, primitive_type_t primitive_type)
         : code(NULL), code_buf_size(0), code_cursor(0), completed(true),
-        to_optimize(false), primitive(primitive_type)
+        to_optimize(true), is_contiguous(true), primitive(primitive_type)
     {
         ResizeCodeBuffer(code_size);
     }
@@ -332,7 +333,7 @@ namespace PAMI
 
     inline bool TypeCode::IsContiguous() const
     {
-        return (primitive < PRIMITIVE_TYPE_COUNT);
+        return is_contiguous;
     }
 
     inline bool TypeCode::IsPrimitive() const
@@ -381,6 +382,8 @@ namespace PAMI
         assert(!IsCompleted());
 
         if (shift != 0) {
+            // any shift break contiguity
+            is_contiguous = false;
             CheckCodeBuffer(sizeof(Shift));
             *(Shift *)(code + code_cursor) = Shift(shift);
             code_cursor += sizeof(Shift);
@@ -394,9 +397,14 @@ namespace PAMI
         assert(!IsCompleted());
 
         if (reps > 0) {
-            if (to_optimize && bytes == stride) {
-                stride  = bytes *= reps;
-                reps    = 1;
+            if ( bytes != stride) {
+                // breaks contiguity
+                is_contiguous = false;
+            } else {
+                if (to_optimize) {
+                    stride  = bytes *= reps;
+                    reps    = 1;
+                }
             }
             CheckCodeBuffer(sizeof(Copy));
             *(Copy *)(code + code_cursor) = Copy(bytes, stride, reps);
@@ -416,6 +424,10 @@ namespace PAMI
         assert(sub_type->IsCompleted());
 
         if (reps > 0) {
+            if (is_contiguous == true) {
+                if (stride != sub_type->GetDataSize()) is_contiguous = false;
+                else is_contiguous = sub_type->IsContiguous();
+            }
             CheckCodeBuffer(sizeof(Call));
             *(Call *)(code + code_cursor) = Call((size_t)sub_type, stride, reps);
             code_cursor += sizeof(Call);
