@@ -231,9 +231,6 @@ int main (int argc, char ** argv)
       unsigned checkrequired = bcast_must_query_md[nalg].check_correct.values.checkrequired; /*must query every time */
       assert(!checkrequired || bcast_must_query_md[nalg].check_fn); /* must have function if checkrequired. */
 
-      /* \note We currently ignore check_correct.values.nonlocal
-          because these tests should not have nonlocal differences (so far). */
-
       int i, j;
 
       for (i = 1; i <= max_count; i *= 2)
@@ -280,14 +277,20 @@ int main (int argc, char ** argv)
           if(bcast_must_query_md[nalg].check_correct.values.continrflags)
               ; /* This test is always PAMI_TYPE_CONTIGUOUS and continuous */
         }
-            /*fprintf(stderr,"result.bitmask = %.8X\n",result.bitmask); */
+
+        if (bcast_must_query_md[nalg].check_correct.values.nonlocal)
+        {
+          /* \note We currently ignore check_correct.values.nonlocal
+             because these tests should not have nonlocal differences (so far). */
+
+          /*fprintf(stderr,"Test does not support protocols with nonlocal metadata\n");
+            continue;*/
+          result.check.nonlocal = 0;
+        }
+
+        /*fprintf(stderr,"result.bitmask = %.8X\n",result.bitmask); */
         if (result.bitmask) continue;
 
-        if(bcast_must_query_md[nalg].check_correct.values.nonlocal)
-        {
-          fprintf(stderr,"Test does not support protocols with nonlocal metadata\n");
-          continue;
-        }
 
 #ifdef CHECK_DATA
 

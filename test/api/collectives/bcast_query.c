@@ -174,9 +174,6 @@ int main (int argc, char ** argv)
           unsigned checkrequired = bcast_must_query_md[nalg].check_correct.values.checkrequired; /*must query every time */
           assert(!checkrequired || bcast_must_query_md[nalg].check_fn); /* must have function if checkrequired. */
 
-          /* \note We currently ignore check_correct.values.nonlocal
-             because these tests should not have nonlocal differences (so far). */
-
           broadcast.cmd.xfer_broadcast.typecount = i;
 
           if(bcast_must_query_md[nalg].check_fn) 

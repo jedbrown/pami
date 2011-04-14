@@ -550,8 +550,6 @@ int main(int argc, char*argv[])
               {
                 unsigned checkrequired = allreduce_must_query_md[nalg].check_correct.values.checkrequired; /*must query every time */
                 assert(!checkrequired || allreduce_must_query_md[nalg].check_fn); /* must have function if checkrequired. */
-                /* \note We currently ignore check_correct.values.nonlocal
-                    because these tests should not have nonlocal differences (so far). */
 
                 size_t sz;
                 PAMI_Dt_query (dt_array[dt], &sz);

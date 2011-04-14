@@ -730,9 +730,6 @@ int main (int argc, char ** argv)
           unsigned checkrequired = allreduce_must_query_md[nalg].check_correct.values.checkrequired; /*must query every time */
           assert(!checkrequired || allreduce_must_query_md[nalg].check_fn); /* must have function if checkrequired. */
 
-          /* \note We currently ignore check_correct.values.nonlocal
-             because these tests should not have nonlocal differences (so far). */
-
           allreduce.cb_done   = cb_done;
           allreduce.cookie    = (void*) & allreduce_poll_flag;
           allreduce.algorithm = allreduce_must_query_algo[nalg];
@@ -800,14 +797,20 @@ int main (int argc, char ** argv)
                     if (allreduce_must_query_md[nalg].check_correct.values.continrflags)
                       ; /* This test is always PAMI_TYPE_CONTIGUOUS and continuous */
                   }
-                  /*fprintf(stderr,"result.bitmask = %.8X\n",result.bitmask); */
-                  if (result.bitmask) continue;
 
                   if (allreduce_must_query_md[nalg].check_correct.values.nonlocal)
                   {
-                    fprintf(stderr,"Test does not support protocols with nonlocal metadata\n");
-                    continue;
+                    /* \note We currently ignore check_correct.values.nonlocal
+                       because these tests should not have nonlocal differences (so far). */
+
+                    /*fprintf(stderr,"Test does not support protocols with nonlocal metadata\n");
+                    continue;*/
+                    result.check.nonlocal = 0;
                   }
+
+                  /*fprintf(stderr,"result.bitmask = %.8X\n",result.bitmask); */
+                  if (result.bitmask) continue;
+
 
 #ifdef CHECK_DATA
                   initialize_sndbuf (sbuf, i, op, dt, local_task_id, num_tasks);

@@ -332,19 +332,22 @@ int main (int argc, char ** argv)
           unsigned checkrequired = q_newbar_md[nalg].check_correct.values.checkrequired; /*must query every time */
           assert(!checkrequired || q_newbar_md[nalg].check_fn); /* must have function if checkrequired. */
 
-          /* \note We currently ignore check_correct.values.nonlocal
-             because these tests should not have nonlocal differences (so far). */
-
           if (q_newbar_md[nalg].check_fn)
             result = q_newbar_md[nalg].check_fn(&newbarrier);
 
+          if (q_newbar_md[nalg].check_correct.values.nonlocal)
+          {
+            /* \note We currently ignore check_correct.values.nonlocal
+               because these tests should not have nonlocal differences (so far). */
+
+            /*fprintf(stderr,"Test does not support protocols with nonlocal metadata\n");
+            continue;*/
+            result.check.nonlocal = 0;
+          }
+
+          /*fprintf(stderr,"result.bitmask = %.8X\n",result.bitmask); */
           if (result.bitmask) continue;
 
-          if(q_newbar_md[nalg].check_correct.values.nonlocal)
-          {
-            fprintf(stderr,"Test does not support protocols with nonlocal metadata\n");
-            continue; 
-          }
 
           /* Do two functional runs with different delaying ranks*/
           int j;
