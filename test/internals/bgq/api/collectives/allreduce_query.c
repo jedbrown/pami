@@ -550,10 +550,10 @@ int main (int argc, char ** argv)
       allreduce.cookie    = (void*) & allreduce_poll_flag;
       allreduce.algorithm = allreduce_must_query_algo[nalg];
       allreduce.cmd.xfer_allreduce.sndbuf    = sbuf;
-      allreduce.cmd.xfer_allreduce.stype     = PAMI_TYPE_CONTIGUOUS;
+      allreduce.cmd.xfer_allreduce.stype     = PAMI_TYPE_BYTE;
       allreduce.cmd.xfer_allreduce.stypecount = 0;
       allreduce.cmd.xfer_allreduce.rcvbuf    = rbuf;
-      allreduce.cmd.xfer_allreduce.rtype     = PAMI_TYPE_CONTIGUOUS;
+      allreduce.cmd.xfer_allreduce.rtype     = PAMI_TYPE_BYTE;
       allreduce.cmd.xfer_allreduce.rtypecount = 0;
 
       for (dt = 0; dt < dt_count; dt++)
@@ -606,13 +606,13 @@ int main (int argc, char ** argv)
                                              (dataSent >= allreduce_must_query_md[nalg].range_lo));
                     }
                     if(allreduce_must_query_md[nalg].check_correct.values.contigsflags)
-                      ; /* This test is always PAMI_TYPE_CONTIGUOUS */
+                      ; /* This test is always PAMI_TYPE_BYTE */
                     if(allreduce_must_query_md[nalg].check_correct.values.contigrflags)
-                      ; /* This test is always PAMI_TYPE_CONTIGUOUS */
+                      ; /* This test is always PAMI_TYPE_BYTE */
                     if(allreduce_must_query_md[nalg].check_correct.values.continsflags)
-                      ; /* This test is always PAMI_TYPE_CONTIGUOUS and continuous */
+                      ; /* This test is always PAMI_TYPE_BYTE and continuous */
                     if(allreduce_must_query_md[nalg].check_correct.values.continrflags)
-                      ; /* This test is always PAMI_TYPE_CONTIGUOUS and continuous */
+                      ; /* This test is always PAMI_TYPE_BYTE and continuous */
                   }
 
                   if (allreduce_must_query_md[nalg].check_correct.values.nonlocal)

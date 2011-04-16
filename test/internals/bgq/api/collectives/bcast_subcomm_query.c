@@ -326,7 +326,7 @@ int main (int argc, char ** argv)
     rc |= create_and_query_geometry(client,
                                     context[0],
                                    context[iContext],
-                                   parentless ? PAMI_NULL_GEOMETRY : world_geometry,
+                                   parentless ? PAMI_GEOMETRY_NULL : world_geometry,
                                    &newgeometry,
                                    range,
                                    rangecount,
@@ -375,7 +375,7 @@ int main (int argc, char ** argv)
       newbcast.algorithm                    = q_newbcast_algo[nalg];
       newbcast.cmd.xfer_broadcast.root      = root;
       newbcast.cmd.xfer_broadcast.buf       = buf;
-      newbcast.cmd.xfer_broadcast.type      = PAMI_TYPE_CONTIGUOUS;
+      newbcast.cmd.xfer_broadcast.type      = PAMI_TYPE_BYTE;
       newbcast.cmd.xfer_broadcast.typecount = 0;
 
 
@@ -445,13 +445,13 @@ int main (int argc, char ** argv)
                                        (dataSent >= q_newbcast_md[nalg].range_lo));
               } 
               if  (q_newbcast_md[nalg].check_correct.values.contigsflags)
-                ; /* This test is always PAMI_TYPE_CONTIGUOUS */
+                ; /* This test is always PAMI_TYPE_BYTE */
               if(q_newbcast_md[nalg].check_correct.values.contigrflags)
-                ; /* This test is always PAMI_TYPE_CONTIGUOUS */
+                ; /* This test is always PAMI_TYPE_BYTE */
               if(q_newbcast_md[nalg].check_correct.values.continsflags)
-                ; /* This test is always PAMI_TYPE_CONTIGUOUS and continuous */
+                ; /* This test is always PAMI_TYPE_BYTE and continuous */
               if(q_newbcast_md[nalg].check_correct.values.continrflags)
-                ; /* This test is always PAMI_TYPE_CONTIGUOUS and continuous */
+                ; /* This test is always PAMI_TYPE_BYTE and continuous */
             }
 
             if (q_newbcast_md[nalg].check_correct.values.nonlocal)

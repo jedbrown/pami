@@ -120,51 +120,29 @@ namespace PAMI
         {
           _work_alloc.returnObject(work);
         }
-
-
-      inline const bool   multicombine_model_op_support(pami_dt dt, pami_op op)
-        {
-          const bool support[PAMI_DT_COUNT][PAMI_OP_COUNT] =
-          {
-            //  PAMI_UNDEFINED_OP, PAMI_NOOP, PAMI_MAX, PAMI_MIN, PAMI_SUM, PAMI_PROD, PAMI_LAND, PAMI_LOR, PAMI_LXOR, PAMI_BAND, PAMI_BOR, PAMI_BXOR, PAMI_MAXLOC, PAMI_MINLOC, PAMI_USERDEFINED_OP,
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_UNDEFINED_DT
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_SIGNED_CHAR
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_UNSIGNED_CHAR
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_SIGNED_SHORT
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_UNSIGNED_SHORT
-            {false,            false,     true,     true,     true,     false,     false,     false,    false,     true,      true,     true,      false,       false,       false},//PAMI_SIGNED_INT
-            {false,            false,     true,     true,     true,     false,     false,     false,    false,     true,      true,     true,      false,       false,       false},//PAMI_UNSIGNED_INT
-            {false,            false,     true,     true,     true,     false,     false,     false,    false,     true,      true,     true,      false,       false,       false},//PAMI_SIGNED_LONG_LONG
-            {false,            false,     true,     true,     true,     false,     false,     false,    false,     true,      true,     true,      false,       false,       false},//PAMI_UNSIGNED_LONG_LONG
-            {false,            false,     true,     true,     true,     false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_FLOAT
-            {false,            false,     true,     true,     true,     false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_DOUBLE
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LONG_DOUBLE
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOGICAL
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_SINGLE_COMPLEX
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_DOUBLE_COMPLEX
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_2INT
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_SHORT_INT
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_FLOAT_INT
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_DOUBLE_INT
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_2FLOAT
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_2DOUBLE
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false} //PAMI_USERDEFINED_DT
-          };
-          TRACE((stderr, "Multicombine::multicombine_model_op_support(%d, %d) = %s\n", dt, op, support[dt][op] ? "true" : "false"));
-          return(support[dt][op]);
-        }
-
-
-
       inline int pami_to_lapi_dt(pami_dt dt)
         {
           switch(dt)
-            {
+          {
               case PAMI_SIGNED_INT:
                 return CAU_SIGNED_INT;
                 break;
+              case PAMI_SIGNED_LONG:
+#if defined(__64BIT__)
+                return CAU_SIGNED_LONGLONG;
+#else
+                return CAU_SIGNED_INT;
+#endif
+                break;
               case PAMI_UNSIGNED_INT:
                 return CAU_UNSIGNED_INT;
+                break;
+              case PAMI_UNSIGNED_LONG:
+#if defined(__64BIT__)
+                return CAU_UNSIGNED_LONGLONG;
+#else
+                return CAU_UNSIGNED_INT;
+#endif
                 break;
               case PAMI_SIGNED_LONG_LONG:
                 return CAU_SIGNED_LONGLONG;
@@ -181,14 +159,14 @@ namespace PAMI
               default:
                 return -1;
                 break;
-            }
+          }
           return -1;
         }
 
       inline int pami_to_lapi_op(pami_op op)
         {
           switch(op)
-            {
+          {
               case PAMI_SUM:
                 return CAU_SUM;
                 break;
@@ -210,9 +188,10 @@ namespace PAMI
               default:
                 return -1;
                 break;
-            }
+          }
           return -1;
         }
+
       static inline void         *getClientData(int id)
         {
           return __global._id_to_device_table[id];

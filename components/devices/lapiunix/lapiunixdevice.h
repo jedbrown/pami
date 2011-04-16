@@ -515,8 +515,8 @@ namespace PAMI
                 mcast->_size        = rcvlen;
                 mcast->_pwidth      = pwidth;
                 mcast->_hint        = PAMI_PT_TO_PT_SUBTASK;
-                mcast->_op          = PAMI_UNDEFINED_OP;
-                mcast->_dtype       = PAMI_UNDEFINED_DT;
+                mcast->_op          = PAMI_OP_COUNT;
+                mcast->_dtype       = PAMI_DT_COUNT;
                 mcast->_counter     = 0;
                 mcast->_dispatch_id = dispatch_id;
                 it = _dev->_mcastrecvQ.insert(it,mcast);

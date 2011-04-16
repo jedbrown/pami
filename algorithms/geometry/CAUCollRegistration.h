@@ -64,33 +64,44 @@ namespace PAMI
       inline metadata_result_t op_dt_metadata_function(struct pami_xfer_t *in)
         {
           const bool support[PAMI_DT_COUNT][PAMI_OP_COUNT] =
-          {
-        //  PAMI_UNDEFINED_OP, PAMI_NOOP, PAMI_MAX, PAMI_MIN, PAMI_SUM, PAMI_PROD, PAMI_LAND, PAMI_LOR, PAMI_LXOR, PAMI_BAND, PAMI_BOR, PAMI_BXOR, PAMI_MAXLOC, PAMI_MINLOC, PAMI_USERDEFINED_OP,
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_UNDEFINED_DT
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_SIGNED_CHAR
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_UNSIGNED_CHAR
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_SIGNED_SHORT
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_UNSIGNED_SHORT
-            {false,            false,     true,     true,     true,     false,     false,     false,    false,     true,      true,     true,      false,       false,       false},//PAMI_SIGNED_INT
-            {false,            false,     true,     true,     true,     false,     false,     false,    false,     true,      true,     true,      false,       false,       false},//PAMI_UNSIGNED_INT
-            {false,            false,     true,     true,     true,     false,     false,     false,    false,     true,      true,     true,      false,       false,       false},//PAMI_SIGNED_LONG_LONG
-            {false,            false,     true,     true,     true,     false,     false,     false,    false,     true,      true,     true,      false,       false,       false},//PAMI_UNSIGNED_LONG_LONG
-            {false,            false,     true,     true,     true,     false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_FLOAT
-            {false,            false,     true,     true,     true,     false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_DOUBLE
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LONG_DOUBLE
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOGICAL
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_SINGLE_COMPLEX
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_DOUBLE_COMPLEX
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_2INT
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_SHORT_INT
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_FLOAT_INT
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_DOUBLE_INT
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_2FLOAT
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_2DOUBLE
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false} //PAMI_USERDEFINED_DT
-          };
+            {
+         //  COPY,             NOOP,      MAX,      MIN,      SUM,      PROD,      LAND,      LOR,      LXOR,      BAND,      BOR,      BXOR,      MAXLOC,      MINLOC
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_BYTE
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_SIGNED_CHAR
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_SIGNED_SHORT
+            {false,            false,     true,     true,     true,     false,     false,     false,    false,     true,      true,     true,      false,       false},//PRIMITIVE_TYPE_SIGNED_INT
+            {false,            false,     true,     true,     true,     false,     false,     false,    false,     true,      true,     true,      false,       false},//PRIMITIVE_TYPE_SIGNED_LONG
+            {false,            false,     true,     true,     true,     false,     false,     false,    false,     true,      true,     true,      false,       false},//PRIMITIVE_TYPE_SIGNED_LONG_LONG
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_UNSIGNED_CHAR
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_UNSIGNED_SHORT
+            {false,            false,     true,     true,     true,     false,     false,     false,    false,     true,      true,     true,      false,       false},//PRIMITIVE_TYPE_UNSIGNED_INT
+            {false,            false,     true,     true,     true,     false,     false,     false,    false,     true,      true,     true,      false,       false},//PRIMITIVE_TYPE_UNSIGNED_LONG
+            {false,            false,     true,     true,     true,     false,     false,     false,    false,     true,      true,     true,      false,       false},//PRIMITIVE_TYPE_UNSIGNED_LONG_LONG
+            {false,            false,     true,     true,     true,     false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_FLOAT
+            {false,            false,     true,     true,     true,     false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_DOUBLE
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_LONG_DOUBLE
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_LOGICAL
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_SINGLE_COMPLEX
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_DOUBLE_COMPLEX
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_LOC_2INT
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_LOC_2FLOAT
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_LOC_2DOUBLE
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_LOC_SHORT_INT
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_LOC_FLOAT_INT
+            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false} //PRIMITIVE_TYPE_LOC_DOUBLE_INT
+            };
           metadata_result_t result = {0};
-          result.check.datatype_op = support[in->cmd.xfer_allreduce.dt][in->cmd.xfer_allreduce.op]?0:1;
+          uintptr_t op;
+          uintptr_t dt;
+          PAMI::Type::TypeFunc::GetEnums(in->cmd.xfer_allreduce.stype,
+                                         in->cmd.xfer_allreduce.op,
+                                         dt,
+                                         op);
+          if(op < PAMI_OP_COUNT && dt < PAMI_DT_COUNT)
+            result.check.datatype_op = support[dt][op]?0:1;
+          else
+            result.check.datatype_op = false;
+
           return(result);
         }
 
@@ -259,13 +270,6 @@ namespace PAMI
           _reduce_reg(&_sconnmgr,NULL, &_g_reduce_ni),
           _csmm(mm)
           {
-            if(getenv("MP_COLLECTIVE_GROUPS"))
-              _enabled = true;
-            else
-              _enabled = false;
-
-            if(!_enabled) return;
-
             if(_Lapi_env.use_mpi_shm == SHM_YES)
               _enabled = true;
             else
@@ -294,7 +298,10 @@ namespace PAMI
             TRACE((stderr, "Initial Bitmask:  %lX, numbits=%d\n", bitmask, numbits));
             
             pami_result_t rc = _csmm.init(peer,numpeers,bitmask);
-            PAMI_assertf(rc == PAMI_SUCCESS, "Collective shared memory allocation failed with error %d\n", rc);
+            if(rc == PAMI_SUCCESS)
+              _enabled = true;
+            else
+              _enabled = false;
           }
 
         inline pami_result_t analyze_impl(size_t         context_id,
@@ -303,7 +310,10 @@ namespace PAMI
                                           int           *inout_nelem,
                                           int            phase)
           {
-            if(!_enabled) return PAMI_SUCCESS;
+            if(!_enabled)
+            {
+              return PAMI_SUCCESS;
+            }
             switch(phase)
             {
                 case 0:
@@ -374,6 +384,12 @@ namespace PAMI
                   TRACE((stderr, "Phase 1:  Geometry: %d size=%d reduction_val=%llx num_master_tasks=%d\n",
                           geometry->comm(), geometry->size(), inout_val[0], num_master_tasks));
 
+                  uint master_rank   = ((PAMI::Topology *)geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX))->index2Rank(0);
+                  uint master_index  = local_master_topo->rank2Index(master_rank);
+                  void *ctrlstr      = (void *)inout_val[master_index+1];
+                  if (ctrlstr == NULL)
+                    ctrlstr = _csmm.getWGCtrlStr();
+                  geometry->setKey(Geometry::GKEY_GEOMETRYCSNI,ctrlstr);
                   
                   if(inout_val[0] == 0)
                   {
@@ -390,17 +406,17 @@ namespace PAMI
                     return PAMI_SUCCESS;
                   }
                   
-                  uint master_rank   = ((PAMI::Topology *)geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX))->index2Rank(0);
-                  uint master_index  = local_master_topo->rank2Index(master_rank);
-                  void *ctrlstr      = (void *)inout_val[master_index+1];
-                  if (ctrlstr == NULL)
-                    ctrlstr = _csmm.getWGCtrlStr();
-                  geometry->setKey(Geometry::GKEY_GEOMETRYCSNI,ctrlstr);
-
                   if(participant)
                   {
                     index = find_first_bit(inout_val[0])-1;
-                    if(index != -1 && num_master_tasks > 1)
+                    if(num_master_tasks == 1)
+                    {
+                      TRACE((stderr, "Using SHM Only on Geometry %d 0\n", geometry->comm()));
+                      _csmm.setKeyOR(geometryInfo->_cau_mask);
+                      inout_val[0] = 0xFFFFFFFFFFFFFFFFULL;
+                      return PAMI_SUCCESS;
+                    }
+                    else if(index != -1 && num_master_tasks > 1)
                     {
                       myrc = lapi_cau_group_create(_lapi_handle,index,num_master_tasks,tasks);
                       geometryInfo->_cau_mask      &= ~(1ULL<<(index));
@@ -411,13 +427,6 @@ namespace PAMI
                       TRACE((stderr, "Group Creation %d rc=%d, set key to %llx\n",
                               geometry->comm(), myrc, geometryInfo->_cau_group));
                       
-                    }
-                    else if(num_master_tasks == 1)
-                    {
-                      TRACE((stderr, "Using SHM Only on Geometry %d 0\n", geometry->comm()));
-                      _csmm.setKeyOR(geometryInfo->_cau_mask);
-                      inout_val[0] = 0xFFFFFFFFFFFFFFFFULL;
-                      return PAMI_SUCCESS;
                     }
                     else
                     {
@@ -437,8 +446,15 @@ namespace PAMI
                 {
                   PAMI_assert(context_id == 0);
                   TRACE((stderr, "Phase 2:  Geometry: %d size=%d inout_vec=%llx\n",
-                          geometry->comm(), geometry->size(), inout_val[0]));
-                  if(inout_val[0]==0)
+                         geometry->comm(), geometry->size(), inout_val[0]));
+                  PAMI::Topology *local_master_topo = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX));
+                  PAMI::Topology *local_topo        = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX));
+                  GeometryInfo   *geometryInfo      = (GeometryInfo*)geometry->getKey(Geometry::PAMI_GKEY_GEOMETRYINFO);
+                  PAMI_assert(local_topo->size() != 0);
+                  PAMI_assert(local_master_topo->size() != 0);
+                  PAMI::Device::CAUGeometryInfo *cau_gi = NULL;
+
+                  if(inout_val[0]==0 && local_master_topo->size()>1)
                   {
                     TRACE((stderr, "CAU collectives disabled in phase 2  Geometry: %d size=%d:\n", geometry->comm(), geometry->size()));
                     return PAMI_SUCCESS;
@@ -448,13 +464,6 @@ namespace PAMI
                   // We populate this device specific information into the geometry
                   // The protocol will query for the device specific information,
                   // and pass this into the M-* api during communication
-                  PAMI::Topology *local_master_topo = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX));
-                  PAMI::Topology *local_topo        = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX));
-                  GeometryInfo   *geometryInfo      = (GeometryInfo*)geometry->getKey(Geometry::PAMI_GKEY_GEOMETRYINFO);
-                  PAMI_assert(local_topo->size() != 0);
-                  PAMI_assert(local_master_topo->size() != 0);
-                  PAMI::Device::CAUGeometryInfo *cau_gi = NULL;
-
                   if(local_master_topo->size() > 1)
                   {
                     cau_gi = (PAMI::Device::CAUGeometryInfo *)_cau_geom_allocator.allocateObject();
@@ -498,7 +507,6 @@ namespace PAMI
                   _allreduce_reg.setNI(geometry, ni,&_g_allreduce_ni);
                   _reduce_reg.setNI(geometry, ni, &_g_reduce_ni);
 
-
                   TRACE((stderr, "Phase 2:  Enabling Collective on Geometry: %d cau_group=%d size=%d inout_vec=%llx\n",
                           geometry->comm(),geometryInfo->_cau_group ,geometry->size(), inout_val[0]));
 
@@ -510,9 +518,16 @@ namespace PAMI
                     geometry->addCollective(PAMI_XFER_BARRIER,&_barrierbsr_reg,context_id);
 
                   geometry->addCollective(PAMI_XFER_BROADCAST,&_broadcast_reg,context_id);
-                  geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,&_allreduce_reg,context_id);
-                  geometry->addCollectiveCheck(PAMI_XFER_REDUCE,&_reduce_reg,context_id);
-
+                  if(local_master_topo->size()>1)
+                  {
+                    geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,&_allreduce_reg,context_id);
+                    geometry->addCollectiveCheck(PAMI_XFER_REDUCE,&_reduce_reg,context_id);
+                  }
+                  else
+                  {
+                    geometry->addCollective(PAMI_XFER_ALLREDUCE,&_allreduce_reg,context_id);
+                    geometry->addCollective(PAMI_XFER_REDUCE,&_reduce_reg,context_id);
+                  }
                   // Todo:  free the ginfo;
                   return PAMI_SUCCESS;
 

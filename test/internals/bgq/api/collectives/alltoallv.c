@@ -227,11 +227,11 @@ int main (int argc, char ** argv)
       alltoallv.cookie     = (void*) & alltoallv_poll_flag;
       alltoallv.algorithm  = alltoallv_always_works_algo[nalg];
       alltoallv.cmd.xfer_alltoallv.sndbuf        = sbuf;
-      alltoallv.cmd.xfer_alltoallv.stype         = PAMI_TYPE_CONTIGUOUS;
+      alltoallv.cmd.xfer_alltoallv.stype         = PAMI_TYPE_BYTE;
       alltoallv.cmd.xfer_alltoallv.stypecounts   = sndlens;
       alltoallv.cmd.xfer_alltoallv.sdispls       = sdispls;
       alltoallv.cmd.xfer_alltoallv.rcvbuf        = rbuf;
-      alltoallv.cmd.xfer_alltoallv.rtype         = PAMI_TYPE_CONTIGUOUS;
+      alltoallv.cmd.xfer_alltoallv.rtype         = PAMI_TYPE_BYTE;
       alltoallv.cmd.xfer_alltoallv.rtypecounts   = rcvlens;
       alltoallv.cmd.xfer_alltoallv.rdispls       = rdispls;
 

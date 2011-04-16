@@ -225,7 +225,7 @@ static void test_dispatch (
 
     recv->local_fn = recv_done;
     recv->cookie   = cookie;
-    recv->type     = PAMI_TYPE_CONTIGUOUS;
+    recv->type     = PAMI_TYPE_BYTE;
     recv->addr     = __recv_buffer;
     recv->offset   = 0;
     recv->data_fn  = PAMI_DATA_COPY;

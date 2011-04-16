@@ -79,22 +79,23 @@ namespace PAMI
     inline metadata_result_t range_metadata_function(struct pami_xfer_t *in)
     {
         metadata_result_t result = T_Function(in);
-        size_t sz = 0;
+
+        PAMI::Type::TypeCode * type_obj = (PAMI::Type::TypeCode *)in->cmd.xfer_allreduce.stype;
 
         /// \todo Support non-contiguous
-        assert((in->cmd.xfer_allreduce.stype == PAMI_TYPE_CONTIGUOUS) && (in->cmd.xfer_allreduce.rtype == PAMI_TYPE_CONTIGUOUS));
-        //PAMI_Dt_query (in->cmd.xfer_allreduce.dt, &sz);
-	//PAMI_Dt_query (in->cmd.xfer_allreduce.stype, &sz); non-contig is bytes
-	sz = 1;
+        assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
 
-        size_t dataSent = in->cmd.xfer_allreduce.stypecount * sz;
+        size_t dataSent = type_obj->GetAtomSize() * in->cmd.xfer_allreduce.stypecount;
         result.check.range   |= !((dataSent <= T_Range_High) && (dataSent >= T_Range_Low));
-	//fprintf(stderr,"sz %zu, dataSent %zu, count %zu (%zu<->%zu) flag %u\n",sz,dataSent, in->cmd.xfer_allreduce.stypecount,T_Range_Low, T_Range_High,result.check.range);
-        // Is this really necessary? Eh, why not..
-	//PAMI_Dt_query (in->cmd.xfer_allreduce.rtype, &sz);
-        dataSent = in->cmd.xfer_allreduce.rtypecount * sz;
+
+        // Is checking rtype really necessary? Eh, why not..
+        type_obj = (PAMI::Type::TypeCode *)in->cmd.xfer_allreduce.rtype;
+
+        /// \todo Support non-contiguous
+        assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
+
+        dataSent = type_obj->GetAtomSize() * in->cmd.xfer_allreduce.rtypecount;
         result.check.range   |= !((dataSent <= T_Range_High) && (dataSent >= T_Range_Low));
-	//fprintf(stderr,"sz %zu, dataSent %zu, count %zu (%zu<->%zu) flag %u\n",sz,dataSent, in->cmd.xfer_allreduce.stypecount,T_Range_Low, T_Range_High,result.check.range);
 
         return result;
     }
@@ -107,33 +108,40 @@ namespace PAMI
       {
         const bool support[PAMI_DT_COUNT][PAMI_OP_COUNT] =
         {
-          //  PAMI_UNDEFINED_OP, PAMI_NOOP, PAMI_MAX, PAMI_MIN, PAMI_SUM, PAMI_PROD, PAMI_LAND, PAMI_LOR, PAMI_LXOR, PAMI_BAND, PAMI_BOR, PAMI_BXOR, PAMI_MAXLOC, PAMI_MINLOC, PAMI_USERDEFINED_OP,
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_UNDEFINED_DT
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_SIGNED_CHAR
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_UNSIGNED_CHAR
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_SIGNED_SHORT
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_UNSIGNED_SHORT
-          {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false,       false},//PAMI_SIGNED_INT
-          {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false,       false},//PAMI_UNSIGNED_INT
-          {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false,       false},//PAMI_SIGNED_LONG_LONG
-          {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false,       false},//PAMI_UNSIGNED_LONG_LONG
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_FLOAT
-          {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false,       false},//PAMI_DOUBLE
-          {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false,       false},//PAMI_LONG_DOUBLE
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOGICAL
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_SINGLE_COMPLEX
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_DOUBLE_COMPLEX
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_2INT
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_SHORT_INT
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_FLOAT_INT
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_DOUBLE_INT
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_2FLOAT
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false},//PAMI_LOC_2DOUBLE
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false,       false} //PAMI_USERDEFINED_DT
+       //  PAMI_COPY,    PAMI_NOOP,  PAMI_MAX, PAMI_MIN, PAMI_SUM, PAMI_PROD, PAMI_LAND, PAMI_LOR, PAMI_LXOR, PAMI_BAND, PAMI_BOR, PAMI_BXOR, PAMI_MAXLOC, PAMI_MINLOC,
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false    },//  PAMI_BYTE
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false    },//  PAMI_SIGNED_CHAR
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false    },//  PAMI_SIGNED_SHORT
+          {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false    },//  PAMI_SIGNED_INT
+          {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false    },//  PAMI_SIGNED_LONG
+          {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false    },//  PAMI_SIGNED_LONG_LONG
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false    },//  PAMI_UNSIGNED_CHAR
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false    },//  PAMI_UNSIGNED_SHORT
+          {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false    },//  PAMI_UNSIGNED_INT
+          {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false    },//  PAMI_UNSIGNED_LONG
+          {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false    },//  PAMI_UNSIGNED_LONG_LONG
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false    },//  PAMI_FLOAT
+          {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false    },//  PAMI_DOUBLE
+          {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false    },//  PAMI_LONG_DOUBLE
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false    },//  PAMI_LOGICAL
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false    },//  PAMI_SINGLE_COMPLEX
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false    },//  PAMI_DOUBLE_COMPLEX
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false    },//  PAMI_LOC_2INT
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false    },//  PAMI_LOC_2FLOAT
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false    },//  PAMI_LOC_2DOUBLE
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false    },//  PAMI_LOC_SHORT_INT
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false    },//  PAMI_LOC_FLOAT_INT
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false    } //  PAMI_LOC_DOUBLE_INT
         };
         TRACE((stderr, "MU::op_dt_metadata_function(dt %d,op %d) = %s\n", dt, op, support[dt][op] ? "true" : "false"));
         metadata_result_t result = {0};
-        result.check.datatype_op = support[in->cmd.xfer_allreduce.dt][in->cmd.xfer_allreduce.op]?0:1;
+        uintptr_t op;
+        uintptr_t dt;
+        PAMI::Type::TypeFunc::GetEnums(in->cmd.xfer_allreduce.stype,
+                                       in->cmd.xfer_allreduce.op,
+                                       dt,
+                                       op);
+        result.check.datatype_op = support[dt][op]?0:1;
         return(result);
       }
     }
@@ -141,24 +149,20 @@ namespace PAMI
 #ifdef ENABLE_NEW_SHMEM
     namespace Shmem
     {
-      extern inline metadata_result_t op_dt_optimized_metadata_function(struct pami_xfer_t *in)
-      {
-        TRACE((stderr, "Shmem::op_dt_metadata_function(dt %d,op %d) = %s\n", dt, op, support[dt][op] ? "true" : "false"));
-        metadata_result_t result = {0};
-        result.check.datatype_op = ((in->cmd.xfer_allreduce.dt == PAMI_DOUBLE) && 
-				    ((in->cmd.xfer_allreduce.op == PAMI_MIN) ||
-				     (in->cmd.xfer_allreduce.op == PAMI_MAX) ||
-				     (in->cmd.xfer_allreduce.op == PAMI_SUM)))	  ?0:1;
-        return(result);
-      }
-    }
-    namespace Shmem
-    {
       extern inline metadata_result_t op_dt_metadata_function(struct pami_xfer_t *in)
       {
         TRACE((stderr, "Shmem::op_dt_metadata_function(dt %d,op %d) = %s\n", dt, op, support[dt][op] ? "true" : "false"));
         metadata_result_t result = {0};
-        result.check.datatype_op = ((in->cmd.xfer_allreduce.dt == PAMI_DOUBLE) && (in->cmd.xfer_allreduce.op == PAMI_SUM))?0:1;
+        uintptr_t op;
+        uintptr_t dt;
+        PAMI::Type::TypeFunc::GetEnums(in->cmd.xfer_allreduce.stype,
+                                       in->cmd.xfer_allreduce.op,
+                                       dt,
+                                       op);
+        result.check.datatype_op = ((dt == PAMI_DOUBLE) &&
+                                    ((op == PAMI_MIN) ||
+                                     (op == PAMI_MAX) ||
+                                     (op == PAMI_SUM))) ?0:1;
         return(result);
       }
     }
@@ -241,7 +245,7 @@ namespace PAMI
       m->check_correct.values.alldtop     = 0;
       m->check_correct.values.rangeminmax = 1;
       m->range_hi                         = 64; // Msgs > 64 are pseudo-reduce-only, not allreduce
-      m->check_fn                         = range_metadata_function<0,64,Shmem::op_dt_optimized_metadata_function>;
+      m->check_fn                         = range_metadata_function<0,64,Shmem::op_dt_metadata_function>;
 #endif
     }
 
@@ -366,7 +370,7 @@ namespace PAMI
       m->check_correct.values.nonlocal      = 1;
       m->send_min_align                     = 64; 
       m->recv_min_align                     = 64; 
-      m->check_fn                           = align_metadata_function<1,64,1,64,Shmem::op_dt_optimized_metadata_function>;
+      m->check_fn                           = align_metadata_function<1,64,1,64,Shmem::op_dt_metadata_function>;
       m->check_perf.values.hw_accel         = 1;
 #else
       m->check_correct.values.alldtop       = 0;
@@ -479,7 +483,7 @@ namespace PAMI
       new(m) PAMI::Geometry::Metadata("X0:MultiCombine2Device:SHMEM:MU");
 #ifdef ENABLE_NEW_SHMEM
       m->check_correct.values.alldtop   = 0;
-      m->check_fn                       = Shmem::op_dt_optimized_metadata_function;
+      m->check_fn                       = Shmem::op_dt_metadata_function;
       m->check_perf.values.hw_accel     = 1;
 #else
       m->check_correct.values.alldtop   = 0;
@@ -503,7 +507,7 @@ namespace PAMI
       m->check_correct.values.nonlocal      = 1;
       m->send_min_align                     = 32; 
       m->recv_min_align                     = 32; 
-      m->check_fn                           = align_metadata_function<1,32,1,32,Shmem::op_dt_optimized_metadata_function>;
+      m->check_fn                           = align_metadata_function<1,32,1,32,Shmem::op_dt_metadata_function>;
       m->check_perf.values.hw_accel         = 1;
 #else
       m->check_correct.values.alldtop       = 0;
@@ -533,7 +537,7 @@ namespace PAMI
       m->check_correct.values.nonlocal      = 1;
       m->send_min_align                     = 32; 
       m->recv_min_align                     = 32; 
-      m->check_fn                           = align_metadata_function<1,32,1,32,Shmem::op_dt_optimized_metadata_function>;
+      m->check_fn                           = align_metadata_function<1,32,1,32,Shmem::op_dt_metadata_function>;
       m->check_perf.values.hw_accel         = 1;
 #else
       m->check_correct.values.alldtop       = 0;
@@ -562,7 +566,7 @@ namespace PAMI
       m->check_correct.values.nonlocal      = 1;
       m->send_min_align                     = 32; 
       m->recv_min_align                     = 32; 
-      m->check_fn                           = align_metadata_function<1,32,1,32,Shmem::op_dt_optimized_metadata_function>;
+      m->check_fn                           = align_metadata_function<1,32,1,32,Shmem::op_dt_metadata_function>;
       m->check_perf.values.hw_accel         = 1;
 #else
       m->check_correct.values.alldtop       = 0;

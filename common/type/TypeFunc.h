@@ -181,31 +181,20 @@ namespace PAMI
 
         } primitive_func_t;
 
+        static void GetEnums(pami_type_t  dt,     pami_data_function op,
+                             uintptr_t   &out_dt, uintptr_t          &out_op)
+        {
+          TypeCode *stype = (TypeCode *)dt;
+          out_dt          = stype->GetPrimitive();
+          out_op          = (uintptr_t)op;
+        }
+
         static CopyFunction GetCopyFunction (TypeCode::primitive_type_t type,
                                              TypeFunc::primitive_func_t func)
         {
 
           CopyFunction array[TypeCode::PRIMITIVE_TYPE_COUNT][TypeFunc::PRIMITIVE_FUNC_COUNT] =
           {
-
-            // --------------------------------- TypeCode::PRIMITIVE_TYPE_CONTIGUOUS
-            {
-              Type::Func::copy<uint8_t>,        // TypeFunc::PRIMITIVE_FUNC_COPY
-              Type::Func::noop,                 // TypeFunc::PRIMITIVE_FUNC_NOOP
-              Type::Func::max<uint8_t>,         // TypeFunc::PRIMITIVE_FUNC_MAX
-              Type::Func::min<uint8_t>,         // TypeFunc::PRIMITIVE_FUNC_MIN
-              Type::Func::sum<uint8_t>,         // TypeFunc::PRIMITIVE_FUNC_SUM
-              Type::Func::prod<uint8_t>,        // TypeFunc::PRIMITIVE_FUNC_PROD
-              Type::Func::land<uint8_t>,        // TypeFunc::PRIMITIVE_FUNC_LAND
-              Type::Func::lor<uint8_t>,         // TypeFunc::PRIMITIVE_FUNC_LOR
-              Type::Func::lxor<uint8_t>,        // TypeFunc::PRIMITIVE_FUNC_LXOR
-              Type::Func::band<uint8_t>,        // TypeFunc::PRIMITIVE_FUNC_BAND
-              Type::Func::bor<uint8_t>,         // TypeFunc::PRIMITIVE_FUNC_BOR
-              Type::Func::bxor<uint8_t>,        // TypeFunc::PRIMITIVE_FUNC_BXOR
-              Type::Func::error,                // TypeFunc::PRIMITIVE_FUNC_MAXLOC
-              Type::Func::error                 // TypeFunc::PRIMITIVE_FUNC_MINLOC
-            },
-
             // --------------------------------- TypeCode::PRIMITIVE_TYPE_BYTE
             {
               Type::Func::copy<uint8_t>,            // TypeFunc::PRIMITIVE_FUNC_COPY
@@ -632,6 +621,28 @@ namespace PAMI
     };
   };
 };
+
+
+typedef enum
+{
+  PAMI_COPY   = PAMI::Type::TypeFunc::PRIMITIVE_FUNC_COPY,
+  PAMI_NOOP   = PAMI::Type::TypeFunc::PRIMITIVE_FUNC_NOOP,
+  PAMI_MAX    = PAMI::Type::TypeFunc::PRIMITIVE_FUNC_MAX,
+  PAMI_MIN    = PAMI::Type::TypeFunc::PRIMITIVE_FUNC_MIN,
+  PAMI_SUM    = PAMI::Type::TypeFunc::PRIMITIVE_FUNC_SUM,
+  PAMI_PROD   = PAMI::Type::TypeFunc::PRIMITIVE_FUNC_PROD,
+  PAMI_LAND   = PAMI::Type::TypeFunc::PRIMITIVE_FUNC_LAND,
+  PAMI_LOR    = PAMI::Type::TypeFunc::PRIMITIVE_FUNC_LOR,
+  PAMI_LXOR   = PAMI::Type::TypeFunc::PRIMITIVE_FUNC_LXOR,
+  PAMI_BAND   = PAMI::Type::TypeFunc::PRIMITIVE_FUNC_BAND,
+  PAMI_BOR    = PAMI::Type::TypeFunc::PRIMITIVE_FUNC_BOR,
+  PAMI_BXOR   = PAMI::Type::TypeFunc::PRIMITIVE_FUNC_BXOR,
+  PAMI_MAXLOC = PAMI::Type::TypeFunc::PRIMITIVE_FUNC_MAXLOC,
+  PAMI_MINLOC = PAMI::Type::TypeFunc::PRIMITIVE_FUNC_MINLOC,
+
+  PAMI_OP_COUNT=PAMI::Type::TypeFunc::PRIMITIVE_FUNC_COUNT
+} pami_op;
+
 
 #endif // __common_type_TypeFunc_h__
 

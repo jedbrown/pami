@@ -22,9 +22,15 @@
 #include <stdlib.h>
 #include <pami.h>
 #include "Arch.h"
+#include "util/common.h"
+#include "common/type/TypeCode.h"
+#include "common/type/TypeFunc.h"
+
 
 /** \brief The maximum number of sources based on the number of cores (PEs) */
+#ifndef MATH_MAX_NSRC
 #define MATH_MAX_NSRC	PAMI_MAX_PROC_PER_NODE
+#endif
 
 #ifndef MAX
 #define MAX(a,b) (((a)>(b))?(a):(b))   /**< Maximum macro */
@@ -165,7 +171,7 @@ extern void *math_op_funcs[PAMI_OP_COUNT][PAMI_DT_COUNT][MATH_MAX_NSRC];
  * \return	Pointer to coremath function
  */
 static inline coremath MATH_OP_FUNCS(pami_dt dt, pami_op op, int nsrc) {
-        /* PAMI_assert(nsrc >= 2); */
+        PAMI_assert(nsrc < MATH_MAX_NSRC);
         int n = nsrc - 1;
         return (coremath)(math_op_funcs[op][dt][n] ?
                         math_op_funcs[op][dt][n] :

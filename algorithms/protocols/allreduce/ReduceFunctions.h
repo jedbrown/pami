@@ -45,44 +45,11 @@ namespace CCMI
       {
         Core_fp32_sum(dst, srcs, nsrc, count*2);
       }
-
-      static const size_t _pami_size_table[PAMI_DT_COUNT] =
-        { 
-          -1,                         //PAMI_UNDEFINED_DT
-          sizeof(signed char),        //PAMI_SIGNED_CHAR
-          sizeof(unsigned char),      //PAMI_UNSIGNED_CHAR
-          sizeof(signed short),       //PAMI_SIGNED_SHORT
-          sizeof(unsigned short),     //PAMI_UNSIGNED_SHORT
-          sizeof(signed int),         //PAMI_SIGNED_INT
-          sizeof(unsigned int),       //PAMI_UNSIGNED_INT
-          sizeof(signed long long),   //PAMI_SIGNED_LONG_LONG
-          sizeof(unsigned long long), //PAMI_UNSIGNED_LONG_LONG
-          sizeof(float),              //PAMI_FLOAT
-          sizeof(double),             //PAMI_DOUBLE
-          sizeof(long double),        //PAMI_LONG_DOUBLE
-          sizeof(bool),               //PAMI_LOGICAL
-          2*sizeof(float),            //PAMI_SINGLE_COMPLEX
-          2*sizeof(double),           //PAMI_DOUBLE_COMPLEX
-          sizeof(int32_int32_t),      //PAMI_LOC_2INT
-          sizeof(int16_int32_t),      //PAMI_LOC_SHORT_INT
-          sizeof(fp32_int32_t),       //PAMI_LOC_FLOAT_INT
-          sizeof(fp64_int32_t),       //PAMI_LOC_DOUBLE_INT
-          sizeof(fp32_fp32_t),        //PAMI_LOC_2FLOAT
-          sizeof(fp64_fp64_t),        //PAMI_LOC_2DOUBLE
-          -1                          //PAMI_USERDEFINED_DT
-        };
-
-
-      inline size_t dt_sizeoftype (size_t dt) {
-        return _pami_size_table [dt]; 
-      }
-
 ///
 /// \brief Get the reduce function and datatype size
 ///
       inline void getReduceFunction(pami_dt           dtype,
                                     pami_op           op,
-                                    unsigned          count,
                                     unsigned        & sizeOfType,
                                     coremath        & func )
       {
@@ -102,6 +69,20 @@ namespace CCMI
                   case PAMI_UNSIGNED_INT:
                     sizeOfType = sizeof(unsigned int);
                     func = (coremath) Core_uint32_sum;
+                    break;
+                  case PAMI_SIGNED_LONG:
+                    sizeOfType = sizeof(signed long);
+                    if(sizeOfType == 4)
+                      func = (coremath) Core_int32_sum;
+                    else
+                      func = (coremath) Core_int64_sum;
+                    break;
+                  case PAMI_UNSIGNED_LONG:
+                    sizeOfType = sizeof(unsigned long);
+                    if(sizeOfType == 4)
+                      func = (coremath) Core_uint32_sum;
+                    else
+                      func = (coremath) Core_uint64_sum;
                     break;
                   case PAMI_SIGNED_LONG_LONG:
                     sizeOfType = sizeof(long long);
@@ -149,8 +130,8 @@ namespace CCMI
                     func = (coremath) Core_uint8_sum;
                     break;
                   default:
-                    fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
-                            dtype, op, count);
+                    fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X)\n",
+                            dtype, op);
                     PAMI_abort();
                 }
 
@@ -166,6 +147,20 @@ namespace CCMI
                   case PAMI_SIGNED_LONG_LONG:
                     sizeOfType = sizeof(long long);
                     func = (coremath) Core_int64_max;
+                    break;
+                  case PAMI_SIGNED_LONG:
+                    sizeOfType = sizeof(signed long);
+                    if(sizeOfType == 4)
+                      func = (coremath) Core_int32_max;
+                    else
+                      func = (coremath) Core_int64_max;
+                    break;
+                  case PAMI_UNSIGNED_LONG:
+                    sizeOfType = sizeof(unsigned long);
+                    if(sizeOfType == 4)
+                      func = (coremath) Core_uint32_max;
+                    else
+                      func = (coremath) Core_uint64_max;
                     break;
                   case PAMI_UNSIGNED_LONG_LONG:
                     sizeOfType = sizeof(long long);
@@ -204,8 +199,8 @@ namespace CCMI
                     func = (coremath) Core_uint8_max;
                     break;
                   default:
-                    fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
-                            dtype, op, count);
+                    fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X)\n",
+                            dtype, op);
                     PAMI_abort();
                 }
 
@@ -217,6 +212,20 @@ namespace CCMI
                   case PAMI_SIGNED_INT:
                     sizeOfType = sizeof(int);
                     func = (coremath) Core_int32_min;
+                    break;
+                  case PAMI_SIGNED_LONG:
+                    sizeOfType = sizeof(signed long);
+                    if(sizeOfType == 4)
+                      func = (coremath) Core_int32_min;
+                    else
+                      func = (coremath) Core_int64_min;
+                    break;
+                  case PAMI_UNSIGNED_LONG:
+                    sizeOfType = sizeof(unsigned long);
+                    if(sizeOfType == 4)
+                      func = (coremath) Core_uint32_min;
+                    else
+                      func = (coremath) Core_uint64_min;
                     break;
                   case PAMI_SIGNED_LONG_LONG:
                     sizeOfType = sizeof(long long);
@@ -259,8 +268,8 @@ namespace CCMI
                     func = (coremath) Core_int8_min;
                     break;
                   default:
-                    fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
-                            dtype, op, count);
+                    fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X)\n",
+                            dtype, op);
                     PAMI_abort();
                 }
 
@@ -277,6 +286,20 @@ namespace CCMI
                   case PAMI_UNSIGNED_INT:
                     sizeOfType = sizeof(unsigned int);
                     func = (coremath) Core_uint32_band;
+                    break;
+                  case PAMI_SIGNED_LONG:
+                    sizeOfType = sizeof(signed long);
+                    if(sizeOfType == 4)
+                      func = (coremath) Core_int32_band;
+                    else
+                      func = (coremath) Core_int64_band;
+                    break;
+                  case PAMI_UNSIGNED_LONG:
+                    sizeOfType = sizeof(unsigned long);
+                    if(sizeOfType == 4)
+                      func = (coremath) Core_uint32_band;
+                    else
+                      func = (coremath) Core_uint64_band;
                     break;
                   case PAMI_SIGNED_INT:
                     sizeOfType = sizeof(int);
@@ -311,8 +334,8 @@ namespace CCMI
                     func = (coremath) Core_int8_band;
                     break;
                   default:
-                    fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
-                            dtype, op, count);
+                    fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X)\n",
+                            dtype, op);
                     PAMI_abort();
                 }
 
@@ -333,6 +356,20 @@ namespace CCMI
                   case PAMI_SIGNED_INT:
                     sizeOfType = sizeof(int);
                     func = (coremath) Core_int32_bor;
+                    break;
+                  case PAMI_SIGNED_LONG:
+                    sizeOfType = sizeof(signed long);
+                    if(sizeOfType == 4)
+                      func = (coremath) Core_int32_bor;
+                    else
+                      func = (coremath) Core_int64_bor;
+                    break;
+                  case PAMI_UNSIGNED_LONG:
+                    sizeOfType = sizeof(unsigned long);
+                    if(sizeOfType == 4)
+                      func = (coremath) Core_uint32_bor;
+                    else
+                      func = (coremath) Core_uint64_bor;
                     break;
                   case PAMI_DOUBLE:
                     sizeOfType = sizeof(double);
@@ -363,8 +400,8 @@ namespace CCMI
                     func = (coremath) Core_int8_bor;
                     break;
                   default:
-                    fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
-                            dtype, op, count);
+                    fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X)\n",
+                            dtype, op);
                     PAMI_abort();
                 }
 
@@ -385,6 +422,20 @@ namespace CCMI
                   case PAMI_SIGNED_INT:
                     sizeOfType = sizeof(int);
                     func = (coremath) Core_int32_bxor;
+                    break;
+                  case PAMI_SIGNED_LONG:
+                    sizeOfType = sizeof(signed long);
+                    if(sizeOfType == 4)
+                      func = (coremath) Core_int32_bxor;
+                    else
+                      func = (coremath) Core_int64_bxor;
+                    break;
+                  case PAMI_UNSIGNED_LONG:
+                    sizeOfType = sizeof(unsigned long);
+                    if(sizeOfType == 4)
+                      func = (coremath) Core_uint32_bxor;
+                    else
+                      func = (coremath) Core_uint64_bxor;
                     break;
                   case PAMI_DOUBLE:
                     sizeOfType = sizeof(double);
@@ -415,8 +466,8 @@ namespace CCMI
                     func = (coremath) Core_int8_bxor;
                     break;
                   default:
-                    fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
-                            dtype, op, count);
+                    fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X)\n",
+                            dtype, op);
                     PAMI_abort();
                 }
 
@@ -437,6 +488,20 @@ namespace CCMI
                   case PAMI_SIGNED_INT:
                     sizeOfType = sizeof(int);
                     func = (coremath) Core_int32_land;
+                    break;
+                  case PAMI_SIGNED_LONG:
+                    sizeOfType = sizeof(signed long);
+                    if(sizeOfType == 4)
+                      func = (coremath) Core_int32_land;
+                    else
+                      func = (coremath) Core_int64_land;
+                    break;
+                  case PAMI_UNSIGNED_LONG:
+                    sizeOfType = sizeof(unsigned long);
+                    if(sizeOfType == 4)
+                      func = (coremath) Core_uint32_land;
+                    else
+                      func = (coremath) Core_uint64_land;
                     break;
                   case PAMI_DOUBLE:
                     sizeOfType = sizeof(double);
@@ -467,8 +532,8 @@ namespace CCMI
                     func = (coremath) Core_int8_land;
                     break;
                   default:
-                    fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
-                            dtype, op, count);
+                    fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X)\n",
+                            dtype, op);
                     PAMI_abort();
                 }
 
@@ -489,6 +554,20 @@ namespace CCMI
                   case PAMI_SIGNED_INT:
                     sizeOfType = sizeof(int);
                     func = (coremath) Core_int32_lor;
+                    break;
+                  case PAMI_SIGNED_LONG:
+                    sizeOfType = sizeof(signed long);
+                    if(sizeOfType == 4)
+                      func = (coremath) Core_int32_lor;
+                    else
+                      func = (coremath) Core_int64_lor;
+                    break;
+                  case PAMI_UNSIGNED_LONG:
+                    sizeOfType = sizeof(unsigned long);
+                    if(sizeOfType == 4)
+                      func = (coremath) Core_uint32_lor;
+                    else
+                      func = (coremath) Core_uint64_lor;
                     break;
                   case PAMI_DOUBLE:
                     sizeOfType = sizeof(double);
@@ -519,8 +598,8 @@ namespace CCMI
                     func = (coremath) Core_int8_lor;
                     break;
                   default:
-                    fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
-                            dtype, op, count);
+                    fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X)\n",
+                            dtype, op);
                     PAMI_abort();
                 }
 
@@ -541,6 +620,20 @@ namespace CCMI
                   case PAMI_SIGNED_INT:
                     sizeOfType = sizeof(int);
                     func = (coremath) Core_int32_lxor;
+                    break;
+                  case PAMI_SIGNED_LONG:
+                    sizeOfType = sizeof(signed long);
+                    if(sizeOfType == 4)
+                      func = (coremath) Core_int32_lxor;
+                    else
+                      func = (coremath) Core_int64_lxor;
+                    break;
+                  case PAMI_UNSIGNED_LONG:
+                    sizeOfType = sizeof(unsigned long);
+                    if(sizeOfType == 4)
+                      func = (coremath) Core_uint32_lxor;
+                    else
+                      func = (coremath) Core_uint64_lxor;
                     break;
                   case PAMI_DOUBLE:
                     sizeOfType = sizeof(double);
@@ -571,8 +664,8 @@ namespace CCMI
                     func = (coremath) Core_int8_lxor;
                     break;
                   default:
-                    fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
-                            dtype, op, count);
+                    fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X)\n",
+                            dtype, op);
                     PAMI_abort();
                 }
 
@@ -606,8 +699,8 @@ namespace CCMI
                     sizeOfType = sizeof(fp64_fp64_t);
                     break;
                   default:
-                    fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
-                            dtype, op, count);
+                    fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X)\n",
+                            dtype, op);
                     PAMI_abort();
                 }
 
@@ -641,8 +734,8 @@ namespace CCMI
                     sizeOfType = sizeof(fp64_fp64_t);
                     break;
                   default:
-                    fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
-                            dtype, op, count);
+                    fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X)\n",
+                            dtype, op);
                     PAMI_abort();
                 }
 
@@ -654,6 +747,20 @@ namespace CCMI
                   case PAMI_SIGNED_INT:
                     sizeOfType = sizeof(int);
                     func = (coremath) Core_int32_prod;
+                    break;
+                  case PAMI_SIGNED_LONG:
+                    sizeOfType = sizeof(signed long);
+                    if(sizeOfType == 4)
+                      func = (coremath) Core_int32_prod;
+                    else
+                      func = (coremath) Core_int64_prod;
+                    break;
+                  case PAMI_UNSIGNED_LONG:
+                    sizeOfType = sizeof(unsigned long);
+                    if(sizeOfType == 4)
+                      func = (coremath) Core_uint32_prod;
+                    else
+                      func = (coremath) Core_uint64_prod;
                     break;
                   case PAMI_UNSIGNED_INT:
                     sizeOfType = sizeof(unsigned int);
@@ -704,8 +811,8 @@ namespace CCMI
                     func = (coremath) Core_fp64_fp64_cmplx_prod;
                     break;
                   default:
-                    fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
-                            dtype, op, count);
+                    fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X)\n",
+                            dtype, op);
                     PAMI_abort();
                 }
 
@@ -732,6 +839,12 @@ namespace CCMI
                     break;
                   case PAMI_UNSIGNED_INT:
                     sizeOfType = sizeof(unsigned int);
+                    break;
+                  case PAMI_SIGNED_LONG:
+                    sizeOfType = sizeof(signed long);
+                    break;
+                  case PAMI_UNSIGNED_LONG:
+                    sizeOfType = sizeof(unsigned long);
                     break;
                   case PAMI_SIGNED_LONG_LONG:
                     sizeOfType = sizeof(long long);
@@ -776,21 +889,21 @@ namespace CCMI
                     sizeOfType = sizeof(fp64_fp64_t);
                     break;
                   default:
-                    fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
-                            dtype, op, count);
+                    fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X)\n",
+                            dtype, op);
                     PAMI_abort();
                 }
 
               break;
             default:
-              fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X, count %#X)\n",
-                      dtype, op, count);
+              fprintf(stderr, "<          >CCMI::Adaptor::getReduceFunction(dtype %#X,op %#X)\n",
+                      dtype, op);
               PAMI_abort();
           }
 
         TRACE_ADAPTOR ((stderr, "<          >CCMI::Adaptor::getReduceFunction()"
-                        " count %#X, size %#X, function %p)\n",
-                        count, sizeOfType, func));
+                        " size %#X, function %p)\n",
+                        sizeOfType, func));
       }
     }
   }

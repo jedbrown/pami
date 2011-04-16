@@ -66,13 +66,18 @@ public:
 
         coremath func;
         unsigned sizeOfType;
-        CCMI::Adaptor::Allreduce::getReduceFunction(a_xfer->dt, a_xfer->op, a_xfer->stypecount, sizeOfType, func);
+        uintptr_t op, dt;
+        PAMI::Type::TypeFunc::GetEnums(a_xfer->stype,
+                                       a_xfer->op,
+                                       dt,op);
+
+        CCMI::Adaptor::Allreduce::getReduceFunction((pami_dt)dt, (pami_op)op, sizeOfType, func);
 
         COMPILE_TIME_ASSERT(sizeof(_schedule) >= sizeof(T_Schedule));
         create_schedule(&_schedule, sizeof(_schedule), (unsigned) - 1, native, geometry);
         _executor.setSchedule (&_schedule);
         _executor.setBuffers (a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount);
-        _executor.setReduceInfo(a_xfer->stypecount / sizeOfType, sizeOfType, func, a_xfer->op, a_xfer->dt);
+        _executor.setReduceInfo(a_xfer->stypecount / sizeOfType, sizeOfType, func, (pami_op)op, (pami_dt)dt);
         _executor.setDoneCallback (cb_done.function, cb_done.clientdata);
     }
 
@@ -97,7 +102,8 @@ public:
 
         coremath func;
         unsigned sizeOfType;
-        CCMI::Adaptor::Allreduce::getReduceFunction(dt, op, stypecount, sizeOfType, func);
+
+        CCMI::Adaptor::Allreduce::getReduceFunction(dt, op, sizeOfType, func);
 
         COMPILE_TIME_ASSERT(sizeof(_schedule) >= sizeof(T_Schedule));
         create_schedule(&_schedule, sizeof(_schedule), (unsigned) - 1, native, geometry);
@@ -243,8 +249,13 @@ public:
 
             coremath func;
             unsigned sizeOfType;
-            CCMI::Adaptor::Allreduce::getReduceFunction(a_xfer->dt, a_xfer->op, a_xfer->stypecount, sizeOfType, func);
-            a_composite->executor().updateReduceInfo(a_xfer->stypecount / sizeOfType, sizeOfType, func, a_xfer->op, a_xfer->dt);
+            uintptr_t op, dt;
+            PAMI::Type::TypeFunc::GetEnums(a_xfer->stype,
+                                           a_xfer->op,
+                                           dt,op);
+
+            CCMI::Adaptor::Allreduce::getReduceFunction((pami_dt)dt, (pami_op)op, sizeOfType, func);
+            a_composite->executor().updateReduceInfo(a_xfer->stypecount / sizeOfType, sizeOfType, func, (pami_op)op, (pami_dt)dt);
         }
         /// not found posted CollOp object, create a new one and
         /// queue it in active queue
@@ -333,10 +344,10 @@ public:
                           cb_exec_done,
                           geometry,
                           NULL,
-                          PAMI_TYPE_CONTIGUOUS,
+                          PAMI_TYPE_BYTE,
                           cdata->_count,
                           NULL,
-                          PAMI_TYPE_CONTIGUOUS,
+                          PAMI_TYPE_BYTE,
                           cdata->_count,
                           (pami_dt) cdata->_dt,
                           (pami_op) cdata->_op);

@@ -316,10 +316,10 @@ public:
                           cb_exec_done,
                           geometry,
                           NULL,
-                          PAMI_TYPE_CONTIGUOUS,
+                          PAMI_TYPE_BYTE,
                           cdata->_count,
                           NULL,
-                          PAMI_TYPE_CONTIGUOUS,
+                          PAMI_TYPE_BYTE,
                           cdata->_count);
 
             if (cmgr == NULL)

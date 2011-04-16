@@ -114,7 +114,7 @@ static void test_dispatch (
       TRACE_ERR((stderr, "(%zu) test_dispatch() async recv:  cookie = %p, pipe_size = %zu\n", dispatch->task, cookie, pipe_size));
       recv->local_fn    = decrement;
       recv->cookie      = (void *) & dispatch->recv_active;
-      recv->type        = PAMI_TYPE_CONTIGUOUS;
+      recv->type        = PAMI_TYPE_BYTE;
       recv->addr        = dispatch->recv_buffer;
       recv->offset      = 0;
       recv->data_fn     = PAMI_DATA_COPY;
@@ -160,7 +160,7 @@ unsigned long long test_single (dispatch_info_t * dispatch, size_t hdrsize, size
 
   unsigned i;
   pami_context_t context = dispatch->context;
-  unsigned long long t1 = PAMI_Wtimebase();
+  unsigned long long t1 = PAMI_Wtimebase(dispatch->client);
 
 
   if (task == origin_task)
@@ -204,7 +204,7 @@ unsigned long long test_single (dispatch_info_t * dispatch, size_t hdrsize, size
         }
     }
 
-  unsigned long long t2 = PAMI_Wtimebase();
+  unsigned long long t2 = PAMI_Wtimebase(dispatch->client);
 
   return ((t2 - t1) / ITERATIONS) / 2;
 }

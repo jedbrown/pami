@@ -41,8 +41,8 @@ namespace CCMI
 
             _native = (Interfaces::NativeInterface *)_geometry->getKey(PAMI::Geometry::GKEY_GEOMETRYCSNI);
 
-            /// \todo only supporting PAMI_TYPE_CONTIGUOUS right now
-            PAMI_assertf(cmd->cmd.xfer_broadcast.type == PAMI_TYPE_CONTIGUOUS, "Not PAMI_TYPE_CONTIGUOUS? %#zX\n", (size_t)cmd->cmd.xfer_broadcast.type);
+            /// \todo only supporting PAMI_TYPE_BYTE right now
+            PAMI_assertf(cmd->cmd.xfer_broadcast.type == PAMI_TYPE_BYTE, "Not PAMI_TYPE_BYTE? %#zX\n", (size_t)cmd->cmd.xfer_broadcast.type);
 
             // PAMI_Type_sizeof(cmd->cmd.xfer_broadcast.type); /// \todo PAMI_Type_sizeof() is PAMI_UNIMPL so use getReduceFunction for now?
 
@@ -57,7 +57,7 @@ namespace CCMI
 //                          func );
 //        size_t bytes = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
 
-            size_t bytes = cmd->cmd.xfer_broadcast.typecount * 1; /// \todo presumed size of PAMI_TYPE_CONTIGUOUS?
+            size_t bytes = cmd->cmd.xfer_broadcast.typecount * 1; /// \todo presumed size of PAMI_TYPE_BYTE?
 
             if (cmd->cmd.xfer_broadcast.root == __global.mapping.task())
               {

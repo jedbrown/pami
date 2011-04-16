@@ -379,8 +379,7 @@ inline void  CCMI::Executor::AllgatherExec<T_ConnMgr, T_Schedule>::sendNext ()
 
       return;
     }
-
-  memcpy (_rbuf + ((_myindex + 1) % _native->numranks()) * _buflen, _tmpbuf, (_native->numranks() - _myindex - 1)* _buflen);
+  memcpy (_rbuf + (_myindex * _buflen), _tmpbuf, (_native->numranks() - _myindex) * _buflen);
   memcpy (_rbuf, _tmpbuf + (_native->numranks() - _myindex)*_buflen, _myindex * _buflen);
 
   if (_cb_done) _cb_done (NULL, _clientdata, PAMI_SUCCESS);

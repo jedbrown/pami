@@ -84,12 +84,12 @@ pami_recv_t         * recv)        /**< OUT: receive message structure */
   TRACE_ERR((stderr, "(%zu) long recvn", _my_rank));
   recv->local_fn = decrement;
   recv->cookie   = cookie;
-  recv->type     = PAMI_TYPE_CONTIGUOUS;
+  recv->type     = PAMI_TYPE_BYTE;
   recv->addr     = (void *)_tmpbuffer;
   recv->offset   = 0;;
 }
 
-unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrlen, size_t sndlen, size_t myrank, size_t ntasks)
+unsigned long long test (pami_client_t client,pami_context_t context, size_t dispatch, size_t hdrlen, size_t sndlen, size_t myrank, size_t ntasks)
 {
   TRACE_ERR((stderr, "(%zu) Do test ... sndlen = %zu\n", myrank, sndlen));
 
@@ -97,7 +97,6 @@ unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrlen,
   char buffer[BUFSIZE];
   unsigned i, j;
 
-  pami_client_t client = 0;
   if (myrank == 0)
     _recv_active = (ntasks - 1) * MSGCOUNT * ITERATIONS;
   else
@@ -130,7 +129,7 @@ unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrlen,
   /*barrier (); */
   usleep(1000);
 
-  unsigned long long t1 = PAMI_Wtimebase();
+  unsigned long long t1 = PAMI_Wtimebase(client);
   if (myrank == 0)
   {
     while (_recv_active) PAMI_Context_advance (context, 100);
@@ -155,7 +154,7 @@ unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrlen,
     }
     while (_recv_active > 0) PAMI_Context_advance (context, 100);
   }
-  unsigned long long t2 = PAMI_Wtimebase();
+  unsigned long long t2 = PAMI_Wtimebase(client);
 
   return ((t2-t1)/ITERATIONS)/MSGCOUNT;
 }
@@ -276,9 +275,9 @@ int main (int argc, char ** argv)
     for (i=0; i<hdrcnt; i++)
     {
 #ifdef WARMUP
-      test (context, dispatch, hdrsize[i], sndlen, _my_rank, num_tasks);
+      test (client, context, dispatch, hdrsize[i], sndlen, _my_rank, num_tasks);
 #endif
-      cycles = test (context, dispatch, hdrsize[i], sndlen, _my_rank, num_tasks);
+      cycles = test (client, context, dispatch, hdrsize[i], sndlen, _my_rank, num_tasks);
       usec   = cycles * tick * 1000000.0;
       index += sprintf (&str[index], "%7lld %7.4f  ", cycles, usec);
     }

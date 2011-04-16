@@ -29,6 +29,8 @@
 
 #define MAX_NCONTEXTS	16
 
+pami_client_t _g_client;
+
 template <int T_RandMask = 0, int T_BackoffNS = 0>
 class QueueTest {
 public:
@@ -63,11 +65,11 @@ public:
 	seed(s)
 	{
 		size_t x;
-		unsigned long long t1, t0 = PAMI_Wtimebase();
+		unsigned long long t1, t0 = PAMI_Wtimebase(_g_client);
 		for (x = 0; x < 10000; ++x) {
-			t1 = PAMI_Wtimebase() - t0;
+			t1 = PAMI_Wtimebase(_g_client) - t0;
 		}
-		t1 = PAMI_Wtimebase() - t0;
+		t1 = PAMI_Wtimebase(_g_client) - t0;
 		double d = t1;
 		base_t = d / x;
 	}
@@ -104,9 +106,9 @@ public:
 			e = &ti->elem_mem[x];
 			e->thus = thus;
 			e->run_count = (rand() & T_RandMask);
-			t0 = PAMI_Wtimebase();
+			t0 = PAMI_Wtimebase(_g_client);
 			PAMI_Context_post(thus->contexts[0], &e->state, work, e);
-			t += PAMI_Wtimebase() - t0;
+			t += PAMI_Wtimebase(_g_client) - t0;
 		}
 		double d = t;
 		fprintf(stderr, "%d: finished %d enqueues (%g cycles each)\n",
@@ -125,12 +127,12 @@ public:
 		fprintf(stderr, "%d: looking for %d dequeues\n", ti->tid, num);
 		while (thus->done < num) {
 			int did = thus->done;
-			t0 = PAMI_Wtimebase();
+			t0 = PAMI_Wtimebase(_g_client);
 			for (x = 0; x < thus->num_ctx; ++x) {
 				PAMI_Context_advance(thus->contexts[x], 1);
 			}
 			if (did != thus->done) {
-				t += PAMI_Wtimebase() - t0;
+				t += PAMI_Wtimebase(_g_client) - t0;
 				++wkcnt;
 			}
 		}
@@ -212,6 +214,7 @@ int main(int argc, char **argv) {
 
 	rc = PAMI_Client_create("TEST", &client, NULL, 0);
 	assert(rc == PAMI_SUCCESS);
+        _g_client=client;
 	rc = PAMI_Context_createv(client, NULL, 0, contexts, QueueTest<>::num_ctx);
 	assert(rc == PAMI_SUCCESS);
 

@@ -69,10 +69,10 @@ template <>
 inline void setTempAllgatherXfer<pami_allgather_t> (pami_collective_t *xfer)
 {
     xfer->xfer_allgather.sndbuf = NULL;
-    xfer->xfer_allgather.stype  = PAMI_TYPE_CONTIGUOUS;
+    xfer->xfer_allgather.stype  = PAMI_TYPE_BYTE;
     xfer->xfer_allgather.stypecount = 0;
     xfer->xfer_allgather.rcvbuf = NULL;
-    xfer->xfer_allgather.rtype  = PAMI_TYPE_CONTIGUOUS;
+    xfer->xfer_allgather.rtype  = PAMI_TYPE_BYTE;
     xfer->xfer_allgather.rtypecount = 0;
 }
 
@@ -80,10 +80,10 @@ template <>
 inline void setTempAllgatherXfer<pami_allgatherv_t> (pami_collective_t *xfer)
 {
     xfer->xfer_allgatherv.sndbuf  = NULL;
-    xfer->xfer_allgatherv.stype   = PAMI_TYPE_CONTIGUOUS;
+    xfer->xfer_allgatherv.stype   = PAMI_TYPE_BYTE;
     xfer->xfer_allgatherv.stypecount = 0;
     xfer->xfer_allgatherv.rcvbuf  = NULL;
-    xfer->xfer_allgatherv.rtype   = PAMI_TYPE_CONTIGUOUS;
+    xfer->xfer_allgatherv.rtype   = PAMI_TYPE_BYTE;
     xfer->xfer_allgatherv.rtypecounts = NULL;
     xfer->xfer_allgatherv.rdispls = NULL;
 }
@@ -92,10 +92,10 @@ template <>
 inline void setTempAllgatherXfer<pami_allgatherv_int_t> (pami_collective_t *xfer)
 {
     xfer->xfer_allgatherv_int.sndbuf  = NULL;
-    xfer->xfer_allgatherv_int.stype   = PAMI_TYPE_CONTIGUOUS;
+    xfer->xfer_allgatherv_int.stype   = PAMI_TYPE_BYTE;
     xfer->xfer_allgatherv_int.stypecount = 0;
     xfer->xfer_allgatherv_int.rcvbuf  = NULL;
-    xfer->xfer_allgatherv_int.rtype   = PAMI_TYPE_CONTIGUOUS;
+    xfer->xfer_allgatherv_int.rtype   = PAMI_TYPE_BYTE;
     xfer->xfer_allgatherv_int.rtypecounts = NULL;
     xfer->xfer_allgatherv_int.rdispls = NULL;
 }

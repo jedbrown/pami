@@ -22,7 +22,7 @@
 #define TRACE(x)
 #endif
 
-#define MAXTHREADS 64
+#define TEST_MAX_THREADS 64
 #define ITERATIONS 10000
 
 #define MIN(a,b)  (((a)<(b))?(a):(b))
@@ -30,12 +30,12 @@
 
 /*#define ITERATIONS 10 */
 
-pami_context_t   _context[MAXTHREADS];
-volatile size_t _value[MAXTHREADS];
-pami_work_t      _work[ITERATIONS*MAXTHREADS];
+pami_context_t   _context[TEST_MAX_THREADS];
+volatile size_t _value[TEST_MAX_THREADS];
+pami_work_t      _work[ITERATIONS*TEST_MAX_THREADS];
 
 volatile size_t _recv;
-volatile size_t _thread_state[MAXTHREADS];
+volatile size_t _thread_state[TEST_MAX_THREADS];
 volatile size_t _main_state;
 
 pami_result_t do_work (pami_context_t   context,
@@ -183,12 +183,12 @@ int main (int argc, char ** argv)
   size_t num = configuration.value.intval;
   max_threads = MIN(max_threads, num);
   
-  if (max_threads == 0 || max_threads > MAXTHREADS)
+  if (max_threads == 0 || max_threads > TEST_MAX_THREADS)
     {
       if (task == 0)
         {
           fprintf (stdout, "\n");
-          fprintf (stdout, "  Error: Number of peer threads must be [1..%d], got %lld\n", MAXTHREADS, max_threads);
+          fprintf (stdout, "  Error: Number of peer threads must be [1..%d], got %lld\n", TEST_MAX_THREADS, max_threads);
           fprintf (stdout, "\n");
           fprintf (stdout, "  Usage: %s threads\n", argv[0]);
           fprintf (stdout, "\n");
@@ -229,7 +229,7 @@ int main (int argc, char ** argv)
         }
 
       /* Create the "helper" or "endpoint" threads */
-      pthread_t thread[MAXTHREADS];
+      pthread_t thread[TEST_MAX_THREADS];
       int rc = 0;
       size_t t, num_threads = 0;
 
@@ -267,7 +267,7 @@ int main (int argc, char ** argv)
           /* signal main thread is ready */
           _main_state = 1;
 
-          unsigned long long t0 = PAMI_Wtimebase();
+          unsigned long long t0 = PAMI_Wtimebase(client);
 
           /* post all of the work */
           for (i = 0; i < ITERATIONS; i++)
@@ -294,7 +294,7 @@ int main (int argc, char ** argv)
               while (_value[t] > 0);
             }
 
-          unsigned long long t1 = PAMI_Wtimebase();
+          unsigned long long t1 = PAMI_Wtimebase(client);
           unsigned long long cycles = ((t1 - t0) / ITERATIONS) / num_threads;
           fprintf (stdout, "  Average number of cycles to post:    %8lld\n", cycles);
 
@@ -319,7 +319,7 @@ int main (int argc, char ** argv)
 
           /* wait until all of the work is done */
           TRACE((stderr, "   main (), wait for all work to be received, _recv = %zu\n", _recv));
-          t0 = PAMI_Wtimebase();
+          t0 = PAMI_Wtimebase(client);
 
           while (_recv > 0)
             {
@@ -336,7 +336,7 @@ int main (int argc, char ** argv)
 #endif
             }
 
-          t1 = PAMI_Wtimebase();
+          t1 = PAMI_Wtimebase(client);
 
           /* Unlock this context */
           result = PAMI_Context_unlock (_context[0]);

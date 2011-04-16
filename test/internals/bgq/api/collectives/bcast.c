@@ -209,7 +209,7 @@ int main (int argc, char ** argv)
       broadcast.algorithm                    = bcast_always_works_algo[nalg];
       broadcast.cmd.xfer_broadcast.root      = root;
       broadcast.cmd.xfer_broadcast.buf       = buf;
-      broadcast.cmd.xfer_broadcast.type      = PAMI_TYPE_CONTIGUOUS;
+      broadcast.cmd.xfer_broadcast.type      = PAMI_TYPE_BYTE;
       broadcast.cmd.xfer_broadcast.typecount = 0;
 
       protocolName = bcast_always_works_md[nalg].name;

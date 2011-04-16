@@ -74,7 +74,7 @@ external PAMI_ADDR_NULL
 !
 !   \brief Message layer operation types
 !
-    integer PAMI_UNDEFINED_OP
+    integer PAMI_OP_COUNT
     integer PAMI_NOOP
     integer PAMI_MAX
     integer PAMI_MIN
@@ -89,7 +89,7 @@ external PAMI_ADDR_NULL
     integer PAMI_USERDEFINED_OP
     integer PAMI_OP_COUNT
     integer PAMI_OP_EXT
-    parameter (PAMI_UNDEFINED_OP=0)
+    parameter (PAMI_OP_COUNT=0)
     parameter (PAMI_NOOP=1)
     parameter (PAMI_MAX=2)
     parameter (PAMI_MIN=3)
@@ -108,7 +108,7 @@ external PAMI_ADDR_NULL
 !
 !   \brief Message layer data types
 !
-    integer PAMI_UNDEFINED_DT
+    integer PAMI_DT_COUNT
     integer PAMI_SIGNED_CHAR
     integer PAMI_UNSIGNED_CHAR
     integer PAMI_SIGNED_SHORT
@@ -132,7 +132,7 @@ external PAMI_ADDR_NULL
     integer PAMI_USERDEFINED_DT
     integer PAMI_DT_COUNT
     integer PAMI_DT_EXT
-    parameter (PAMI_UNDEFINED_DT=0)
+    parameter (PAMI_DT_COUNT=0)
     parameter (PAMI_SIGNED_CHAR=1)
     parameter (PAMI_UNSIGNED_CHAR=2)
     parameter (PAMI_SIGNED_SHORT=3)
@@ -1010,10 +1010,10 @@ external PAMI_ADDR_NULL
 !
 !   \brief PAMI datatype that represents a contigous data layout
 !
-    integer(PAMI_TYPE_T) PAMI_TYPE_CONTIGUOUS
+    integer(PAMI_TYPE_T) PAMI_TYPE_BYTE
     integer(PAMI_VOID_T) PAMI_DATA_COPY
-    integer(PAMI_GEOMETRY_T) PAMI_NULL_GEOMETRY
-    common/PAMI_FORT_GLOBALS/ PAMI_TYPE_CONTIGUOUS, PAMI_DATA_COPY, PAMI_NULL_GEOMETRY
+    integer(PAMI_GEOMETRY_T) PAMI_GEOMETRY_NULL
+    common/PAMI_FORT_GLOBALS/ PAMI_TYPE_BYTE, PAMI_DATA_COPY, PAMI_GEOMETRY_NULL
 
 !
 !   \brief PAMI type of dispatch

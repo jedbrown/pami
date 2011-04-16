@@ -38,7 +38,7 @@ void do_one_geometry(pami_client_t client, pami_task_t my_task,
 		gp = &geom;
 	}
 	// HACK: don't optimize in create to avoid callbacks with NULL context (Trac #240)
-	status = PAMI_Geometry_create_taskrange(client, NULL, 0, gp,
+	status = PAMI_Geometry_create_taskrange(client,0, NULL, 0, gp,
 				parent, id, range, 1, contexts[0], g_done_fn, &g_done);
 	++id;
 	if (status != PAMI_SUCCESS) {
@@ -50,7 +50,7 @@ void do_one_geometry(pami_client_t client, pami_task_t my_task,
 		PAMI_Context_advance(contexts[0], 100);
 	}
 	if (g_done < 0) {
-		fprintf(stderr, "Failed to create geometry %u [%zd..%zd] %d\n",
+		fprintf(stderr, "Failed to create geometry %u [%d..%d] %d\n",
 						id, range->lo, range->hi, -g_done);
 		return;
 	}
@@ -70,7 +70,7 @@ void do_one_geometry(pami_client_t client, pami_task_t my_task,
 		PAMI_Context_advance(contexts[0], 100);
 	}
 	if (g_done < 0) {
-		fprintf(stderr, "Failed to optimize geometry %u [%zd..%zd] %d\n",
+		fprintf(stderr, "Failed to optimize geometry %u [%d..%d] %d\n",
 						id, range->lo, range->hi, -g_done);
 		return;
 	}
@@ -81,7 +81,7 @@ void do_one_geometry(pami_client_t client, pami_task_t my_task,
 		return;
 	}
 	if (my_task == range->lo) {
-		printf("Geometry %d [%zd..%zd] is%s optimized (%zx)\n",
+		printf("Geometry %d [%d..%d] is%s optimized (%zx)\n",
 					id, range->lo, range->hi,
 					configuration.value.intval ? "" : " not",
 					configuration.value.intval);

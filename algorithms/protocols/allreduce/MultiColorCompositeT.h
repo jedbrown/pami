@@ -60,25 +60,26 @@ namespace CCMI
                mf,
                NUMCOLORS)
           {
-            TRACE_ADAPTOR((stderr, "<%p>Allreduce::MultiColorCompositeT::ctor() count %zu, dt %#X, op %#X\n", this, ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount,
-                           ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.dt, ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.op));
-            /// \todo only supporting PAMI_TYPE_CONTIGUOUS right now
-            PAMI_assertf((((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype == PAMI_TYPE_CONTIGUOUS) && (((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rtype == PAMI_TYPE_CONTIGUOUS), "Not PAMI_TYPE_CONTIGUOUS? %#zX %#zX\n", (size_t)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype, (size_t)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rtype);
-
-//            PAMI_Type_sizeof(((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype); /// \todo PAMI_Type_sizeof() is PAMI_UNIMPL
-
             coremath func;
             unsigned sizeOfType;
-            CCMI::Adaptor::Allreduce::getReduceFunction(((pami_xfer_t *)cmd)->cmd.xfer_allreduce.dt,
-                                                        ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.op,
-                                                        ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount,
+            uintptr_t op, dt;
+            PAMI::Type::TypeFunc::GetEnums(((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype,
+                                           ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.op,
+                                           dt,op);
+            TRACE_ADAPTOR((stderr, "<%p>Allreduce::MultiColorCompositeT::ctor() count %zu, dt %#X, op %#X\n", this, ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount,
+                           (pami_dt)dt, (pami_op)op));
+
+
+            CCMI::Adaptor::Allreduce::getReduceFunction((pami_dt)dt,(pami_op)op,
                                                         sizeOfType,
                                                         func);
             //For now assume stypecount == rtypecount
-            unsigned bytes = ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount * 1; /// \todo presumed size of PAMI_TYPE_CONTIGUOUS is 1?
+            unsigned bytes = ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount * sizeOfType;
 
-            /// \todo only supporting PAMI_TYPE_CONTIGUOUS right now, so better be a valid count of dt's
-            PAMI_assertf(!(bytes % sizeOfType), "Not a valid PAMI_TYPE_CONTIGUOUS count of dt[%#X] bytes %u, sizeOfType %u\n", ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.dt, bytes, sizeOfType);
+            /// \todo only supporting PAMI_TYPE_BYTE right now, so better be a valid count of dt's
+            PAMI_assertf(!(bytes % sizeOfType),
+                         "Not a valid PAMI_TYPE_BYTE count of dt[%#X] bytes %u, sizeOfType %u\n",
+                         (pami_dt)dt, bytes, sizeOfType);
 
             Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::
             initialize (((PAMI_GEOMETRY_CLASS *)g)->comm(),
@@ -94,9 +95,8 @@ namespace CCMI
               {
                 T_Exec *allreduce = Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::getExecutor(c);
                 initialize(allreduce,
-                           ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount / sizeOfType, /// \todo presumed PAMI_TYPE_CONTIGUOUS count, convert to dt count
-                           ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.dt,
-                           ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.op);
+                           ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount,
+                           (pami_dt)dt,(pami_op)op);
                 allreduce->reset();
                 allreduce->setIteration(iteration);
               }
@@ -142,7 +142,7 @@ namespace CCMI
               {
                 coremath func;
                 unsigned sizeOfType;
-                CCMI::Adaptor::Allreduce::getReduceFunction(dtype, op, count, sizeOfType, func);
+                CCMI::Adaptor::Allreduce::getReduceFunction(dtype, op, sizeOfType, func);
 
                 unsigned min_pwidth = MIN_PIPELINE_WIDTH;
 
@@ -202,11 +202,14 @@ namespace CCMI
             for (unsigned c = 0; c <  Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::_numColors; c++)
               {
                 T_Exec *allreduce = Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::getExecutor(c);
-
+                uintptr_t op, dt;
+                PAMI::Type::TypeFunc::GetEnums(((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype,
+                                               ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.op,
+                                               dt,op);
                 initialize(allreduce,
                            ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount,
-                           ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.dt,
-                           ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.op);
+                           (pami_dt)dt,
+                           (pami_op)op);
 
                 allreduce->reset();
               }

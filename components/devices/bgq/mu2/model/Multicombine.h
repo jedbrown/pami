@@ -22,6 +22,7 @@
 #include "components/devices/bgq/mu2/model/AllreducePacketModel.h"
 #include "components/devices/bgq/mu2/model/ReducePacketModel.h"
 #include "components/memory/MemoryAllocator.h"
+#include "components/devices/bgq/mu2/model/MU_Collective_OP_DT_Table.h"
 
 #include "util/ccmi_debug.h"
 #include "util/ccmi_util.h"
@@ -433,28 +434,29 @@ namespace PAMI
       {
         const char* string[PAMI_DT_COUNT] =
         {
-          "PAMI_UNDEFINED_DT",       //PAMI_UNDEFINED_DT
-          "PAMI_SIGNED_CHAR",        //PAMI_SIGNED_CHAR
-          "PAMI_UNSIGNED_CHAR",      //PAMI_UNSIGNED_CHAR
-          "PAMI_SIGNED_SHORT",       //PAMI_SIGNED_SHORT
-          "PAMI_UNSIGNED_SHORT",     //PAMI_UNSIGNED_SHORT
-          "PAMI_SIGNED_INT",         //PAMI_SIGNED_INT
-          "PAMI_UNSIGNED_INT",       //PAMI_UNSIGNED_INT
-          "PAMI_SIGNED_LONG_LONG",   //PAMI_SIGNED_LONG_LONG
-          "PAMI_UNSIGNED_LONG_LONG", //PAMI_UNSIGNED_LONG_LONG
-          "PAMI_FLOAT",              //PAMI_FLOAT
-          "PAMI_DOUBLE",             //PAMI_DOUBLE
-          "PAMI_LONG_DOUBLE",        //PAMI_LONG_DOUBLE
-          "PAMI_LOGICAL",            //PAMI_LOGICAL
-          "PAMI_SINGLE_COMPLEX",     //PAMI_SINGLE_COMPLEX
-          "PAMI_DOUBLE_COMPLEX",     //PAMI_DOUBLE_COMPLEX
-          "PAMI_LOC_2INT",           //PAMI_LOC_2INT
-          "PAMI_LOC_SHORT_INT",      //PAMI_LOC_SHORT_INT
-          "PAMI_LOC_FLOAT_INT",      //PAMI_LOC_FLOAT_INT
-          "PAMI_LOC_DOUBLE_INT",     //PAMI_LOC_DOUBLE_INT
-          "PAMI_LOC_2FLOAT",         //PAMI_LOC_2FLOAT
-          "PAMI_LOC_2DOUBLE",        //PAMI_LOC_2DOUBLE
-          "PAMI_USERDEFINED_DT"      //PAMI_USERDEFINED_DT
+         "PAMI_BYTE              " ,
+         "PAMI_SIGNED_CHAR       " ,
+         "PAMI_SIGNED_SHORT      " ,
+         "PAMI_SIGNED_INT        " ,
+         "PAMI_SIGNED_LONG       " ,
+         "PAMI_SIGNED_LONG_LONG  " ,
+         "PAMI_UNSIGNED_CHAR     " ,
+         "PAMI_UNSIGNED_SHORT    " ,
+         "PAMI_UNSIGNED_INT      " ,
+         "PAMI_UNSIGNED_LONG     " ,
+         "PAMI_UNSIGNED_LONG_LONG" ,
+         "PAMI_FLOAT             " ,
+         "PAMI_DOUBLE            " ,
+         "PAMI_LONG_DOUBLE       " ,
+         "PAMI_LOGICAL           " ,
+         "PAMI_SINGLE_COMPLEX    " ,
+         "PAMI_DOUBLE_COMPLEX    " ,
+         "PAMI_LOC_2INT          " ,
+         "PAMI_LOC_2FLOAT        " ,
+         "PAMI_LOC_2DOUBLE       " ,
+         "PAMI_LOC_SHORT_INT     " ,
+         "PAMI_LOC_FLOAT_INT     " ,
+         "PAMI_LOC_DOUBLE_INT    "
         };
         return string[index];
       }
@@ -462,21 +464,20 @@ namespace PAMI
       {
         const char* string[PAMI_OP_COUNT] =
         {
-          "PAMI_UNDEFINED_OP",    // PAMI_UNDEFINED_OP
-          "PAMI_NOOP",            // PAMI_NOOP
-          "PAMI_MAX",             // PAMI_MAX
-          "PAMI_MIN",             // PAMI_MIN
-          "PAMI_SUM",             // PAMI_SUM
-          "PAMI_PROD",            // PAMI_PROD
-          "PAMI_LAND",            // PAMI_LAND
-          "PAMI_LOR",             // PAMI_LOR
-          "PAMI_LXOR",            // PAMI_LXOR
-          "PAMI_BAND",            // PAMI_BAND
-          "PAMI_BOR",             // PAMI_BOR
-          "PAMI_BXOR",            // PAMI_BXOR
-          "PAMI_MAXLOC",          // PAMI_MAXLOC
-          "PAMI_MINLOC",          // PAMI_MINLOC
-          "PAMI_USERDEFINED_OP"   // PAMI_USERDEFINED_OP
+          "PAMI_COPY  ",        // PAMI_COPY
+          "PAMI_NOOP  ",        // PAMI_NOOP
+          "PAMI_MAX   ",        // PAMI_MAX
+          "PAMI_MIN   ",        // PAMI_MIN
+          "PAMI_SUM   ",        // PAMI_SUM
+          "PAMI_PROD  ",        // PAMI_PROD
+          "PAMI_LAND  ",        // PAMI_LAND
+          "PAMI_LOR   ",        // PAMI_LOR
+          "PAMI_LXOR  ",        // PAMI_LXOR
+          "PAMI_BAND  ",        // PAMI_BAND
+          "PAMI_BOR   ",        // PAMI_BOR
+          "PAMI_BXOR  ",        // PAMI_BXOR
+          "PAMI_MAXLOC",        // PAMI_MAXLOC
+          "PAMI_MINLOC",        // PAMI_MINLOC
         };
         return string[index];
       }
@@ -495,58 +496,29 @@ namespace PAMI
       inline const uint8_t   MulticombineModel<T_PacketModel, T_Msgdata_support, T_PWQ_support>::mu_op(pami_dt dt, pami_op op)
       {
 #if ASSERT_LEVEL > 0
+        // This table validates our assumptions about the layout of pami_op
         const pami_op op_check[PAMI_OP_COUNT] =
         {
-          PAMI_UNDEFINED_OP,    // PAMI_UNDEFINED_OP
-          PAMI_NOOP,            // PAMI_NOOP
-          PAMI_MAX,             // PAMI_MAX
-          PAMI_MIN,             // PAMI_MIN
-          PAMI_SUM,             // PAMI_SUM
-          PAMI_PROD,            // PAMI_PROD
-          PAMI_LAND,            // PAMI_LAND
-          PAMI_LOR,             // PAMI_LOR
-          PAMI_LXOR,            // PAMI_LXOR
-          PAMI_BAND,            // PAMI_BAND
-          PAMI_BOR,             // PAMI_BOR
-          PAMI_BXOR,            // PAMI_BXOR
-          PAMI_MAXLOC,          // PAMI_MAXLOC
-          PAMI_MINLOC,          // PAMI_MINLOC
-          PAMI_USERDEFINED_OP   // PAMI_USERDEFINED_OP
+          PAMI_COPY   ,
+          PAMI_NOOP   ,
+          PAMI_MAX    ,
+          PAMI_MIN    ,
+          PAMI_SUM    ,
+          PAMI_PROD   ,
+          PAMI_LAND   ,
+          PAMI_LOR    ,
+          PAMI_LXOR   ,
+          PAMI_BAND   ,
+          PAMI_BOR    ,
+          PAMI_BXOR   ,
+          PAMI_MAXLOC ,
+          PAMI_MINLOC
         };
 #endif
 
-
-        // The MU opcode - 0xF0 is invalid
-        const uint8_t mu_op_table[PAMI_DT_COUNT][PAMI_OP_COUNT] =
-        {
-//  PAMI_UNDEFINED_OP PAMI_NOOP, PAMI_MAX,                                        PAMI_MIN,                                        PAMI_SUM,                                        PAMI_PROD, PAMI_LAND,                         PAMI_LOR,                        PAMI_LXOR,                         PAMI_BAND,                         PAMI_BOR,                        PAMI_BXOR,                         PAMI_MAXLOC, PAMI_MINLOC, PAMI_USERDEFINED_OP,
-          {0xF0,            0xF0,      0xF0                                       ,     0xF0                                       ,     0xF0                                       ,     0xF0,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0,        0xF0,        0xF0},//PAMI_UNDEFINED_DT
-          {0xF0,            0xF0,      0xF0                                       ,     0xF0                                       ,     0xF0                                       ,     0xF0,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0,        0xF0,        0xF0},//PAMI_SIGNED_CHAR
-          {0xF0,            0xF0,      0xF0                                       ,     0xF0                                       ,     0xF0                                       ,     0xF0,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0                        ,      MUHWI_COLLECTIVE_OP_CODE_OR,     0xF0                        ,      0xF0,        0xF0,        0xF0},//PAMI_UNSIGNED_CHAR only BOR supported for bcast (using unsigned int size)
-          {0xF0,            0xF0,      0xF0                                       ,     0xF0                                       ,     0xF0                                       ,     0xF0,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0,        0xF0,        0xF0},//PAMI_SIGNED_SHORT
-          {0xF0,            0xF0,      0xF0                                       ,     0xF0                                       ,     0xF0                                       ,     0xF0,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0,        0xF0,        0xF0},//PAMI_UNSIGNED_SHORT
-          {0xF0,            0xF0,      MUHWI_COLLECTIVE_OP_CODE_SIGNED_MAX        ,     MUHWI_COLLECTIVE_OP_CODE_SIGNED_MIN        ,     MUHWI_COLLECTIVE_OP_CODE_SIGNED_ADD        ,     0xF0,      MUHWI_COLLECTIVE_OP_CODE_AND,      MUHWI_COLLECTIVE_OP_CODE_OR,     MUHWI_COLLECTIVE_OP_CODE_XOR,      MUHWI_COLLECTIVE_OP_CODE_AND,      MUHWI_COLLECTIVE_OP_CODE_OR,     MUHWI_COLLECTIVE_OP_CODE_XOR,      0xF0,        0xF0,        0xF0},//PAMI_SIGNED_INT
-          {0xF0,            0xF0,      MUHWI_COLLECTIVE_OP_CODE_UNSIGNED_MAX      ,     MUHWI_COLLECTIVE_OP_CODE_UNSIGNED_MIN      ,     MUHWI_COLLECTIVE_OP_CODE_UNSIGNED_ADD      ,     0xF0,      MUHWI_COLLECTIVE_OP_CODE_AND,      MUHWI_COLLECTIVE_OP_CODE_OR,     MUHWI_COLLECTIVE_OP_CODE_XOR,      MUHWI_COLLECTIVE_OP_CODE_AND,      MUHWI_COLLECTIVE_OP_CODE_OR,     MUHWI_COLLECTIVE_OP_CODE_XOR,      0xF0,        0xF0,        0xF0},//PAMI_UNSIGNED_INT
-          {0xF0,            0xF0,      MUHWI_COLLECTIVE_OP_CODE_SIGNED_MAX        ,     MUHWI_COLLECTIVE_OP_CODE_SIGNED_MIN        ,     MUHWI_COLLECTIVE_OP_CODE_SIGNED_ADD        ,     0xF0,      MUHWI_COLLECTIVE_OP_CODE_AND,      MUHWI_COLLECTIVE_OP_CODE_OR,     MUHWI_COLLECTIVE_OP_CODE_XOR,      MUHWI_COLLECTIVE_OP_CODE_AND,      MUHWI_COLLECTIVE_OP_CODE_OR,     MUHWI_COLLECTIVE_OP_CODE_XOR,      0xF0,        0xF0,        0xF0},//PAMI_SIGNED_LONG_LONG
-          {0xF0,            0xF0,      MUHWI_COLLECTIVE_OP_CODE_UNSIGNED_MAX      ,     MUHWI_COLLECTIVE_OP_CODE_UNSIGNED_MIN      ,     MUHWI_COLLECTIVE_OP_CODE_UNSIGNED_ADD      ,     0xF0,      MUHWI_COLLECTIVE_OP_CODE_AND,      MUHWI_COLLECTIVE_OP_CODE_OR,     MUHWI_COLLECTIVE_OP_CODE_XOR,      MUHWI_COLLECTIVE_OP_CODE_AND,      MUHWI_COLLECTIVE_OP_CODE_OR,     MUHWI_COLLECTIVE_OP_CODE_XOR,      0xF0,        0xF0,        0xF0},//PAMI_UNSIGNED_LONG_LONG
-//        {0xF0,            0xF0,      MUHWI_COLLECTIVE_OP_CODE_FLOATING_POINT_MAX,     MUHWI_COLLECTIVE_OP_CODE_FLOATING_POINT_MIN,     MUHWI_COLLECTIVE_OP_CODE_FLOATING_POINT_ADD,     0xF0,      MUHWI_COLLECTIVE_OP_CODE_AND,      MUHWI_COLLECTIVE_OP_CODE_OR,     MUHWI_COLLECTIVE_OP_CODE_XOR,      MUHWI_COLLECTIVE_OP_CODE_AND,      MUHWI_COLLECTIVE_OP_CODE_OR,     MUHWI_COLLECTIVE_OP_CODE_XOR,      0xF0,        0xF0,        0xF0},//PAMI_FLOAT
-          {0xF0,            0xF0,      0xF0                                       ,     0xF0                                       ,     0xF0                                       ,     0xF0,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0,        0xF0,        0xF0},//PAMI_FLOAT
-          {0xF0,            0xF0,      MUHWI_COLLECTIVE_OP_CODE_FLOATING_POINT_MAX,     MUHWI_COLLECTIVE_OP_CODE_FLOATING_POINT_MIN,     MUHWI_COLLECTIVE_OP_CODE_FLOATING_POINT_ADD,     0xF0,      MUHWI_COLLECTIVE_OP_CODE_AND,      MUHWI_COLLECTIVE_OP_CODE_OR,     MUHWI_COLLECTIVE_OP_CODE_XOR,      MUHWI_COLLECTIVE_OP_CODE_AND,      MUHWI_COLLECTIVE_OP_CODE_OR,     MUHWI_COLLECTIVE_OP_CODE_XOR,      0xF0,        0xF0,        0xF0},//PAMI_DOUBLE
-          {0xF0,            0xF0,      MUHWI_COLLECTIVE_OP_CODE_FLOATING_POINT_MAX,     MUHWI_COLLECTIVE_OP_CODE_FLOATING_POINT_MIN,     MUHWI_COLLECTIVE_OP_CODE_FLOATING_POINT_ADD,     0xF0,      MUHWI_COLLECTIVE_OP_CODE_AND,      MUHWI_COLLECTIVE_OP_CODE_OR,     MUHWI_COLLECTIVE_OP_CODE_XOR,      MUHWI_COLLECTIVE_OP_CODE_AND,      MUHWI_COLLECTIVE_OP_CODE_OR,     MUHWI_COLLECTIVE_OP_CODE_XOR,      0xF0,        0xF0,        0xF0},//PAMI_LONG_DOUBLE
-          {0xF0,            0xF0,      0xF0                                       ,     0xF0                                       ,     0xF0                                       ,     0xF0,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0,        0xF0,        0xF0},//PAMI_LOGICAL
-          {0xF0,            0xF0,      0xF0                                       ,     0xF0                                       ,     0xF0                                       ,     0xF0,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0,        0xF0,        0xF0},//PAMI_SINGLE_COMPLEX
-          {0xF0,            0xF0,      0xF0                                       ,     0xF0                                       ,     0xF0                                       ,     0xF0,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0,        0xF0,        0xF0},//PAMI_DOUBLE_COMPLEX
-          {0xF0,            0xF0,      0xF0                                       ,     0xF0                                       ,     0xF0                                       ,     0xF0,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0,        0xF0,        0xF0},//PAMI_LOC_2INT
-          {0xF0,            0xF0,      0xF0                                       ,     0xF0                                       ,     0xF0                                       ,     0xF0,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0,        0xF0,        0xF0},//PAMI_LOC_SHORT_INT
-          {0xF0,            0xF0,      0xF0                                       ,     0xF0                                       ,     0xF0                                       ,     0xF0,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0,        0xF0,        0xF0},//PAMI_LOC_FLOAT_INT
-          {0xF0,            0xF0,      0xF0                                       ,     0xF0                                       ,     0xF0                                       ,     0xF0,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0,        0xF0,        0xF0},//PAMI_LOC_DOUBLE_INT
-          {0xF0,            0xF0,      0xF0                                       ,     0xF0                                       ,     0xF0                                       ,     0xF0,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0,        0xF0,        0xF0},//PAMI_LOC_2FLOAT
-          {0xF0,            0xF0,      0xF0                                       ,     0xF0                                       ,     0xF0                                       ,     0xF0,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0,        0xF0,        0xF0},//PAMI_LOC_2DOUBLE
-          {0xF0,            0xF0,      0xF0                                       ,     0xF0                                       ,     0xF0                                       ,     0xF0,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0                        ,      0xF0                       ,     0xF0                        ,      0xF0,        0xF0,        0xF0} //PAMI_USERDEFINED_DT
-        };
-        TRACE((stderr, "Multicombine::mu_op(%d, %d) = %#X, %s->%s\n", dt, op, mu_op_table[dt][op], op_string(op), mu_op_string((mu_op_table[dt][op]) >> 4)));
+        TRACE((stderr, "Multicombine::mu_op(%d, %d) = %#X, %s->%s\n", dt, op, mu_collective_op_table[dt][op], op_string(op), mu_op_string((mu_collective_op_table[dt][op]) >> 4)));
         PAMI_assert_debugf(op_check[op] == op, "op_check[op] %u == op %u\n", op_check[op], op);
-        return(mu_op_table[dt][op]);
+        return(mu_collective_op_table[dt][op]);
       }
 
       template <class T_PacketModel, bool T_Msgdata_support, bool T_PWQ_support>
@@ -555,59 +527,42 @@ namespace PAMI
 #if ASSERT_LEVEL > 0
         const pami_dt dt_check[PAMI_DT_COUNT] =
         {
-          PAMI_UNDEFINED_DT,       //PAMI_UNDEFINED_DT
-          PAMI_SIGNED_CHAR,        //PAMI_SIGNED_CHAR
-          PAMI_UNSIGNED_CHAR,      //PAMI_UNSIGNED_CHAR
-          PAMI_SIGNED_SHORT,       //PAMI_SIGNED_SHORT
-          PAMI_UNSIGNED_SHORT,     //PAMI_UNSIGNED_SHORT
-          PAMI_SIGNED_INT,         //PAMI_SIGNED_INT
-          PAMI_UNSIGNED_INT,       //PAMI_UNSIGNED_INT
-          PAMI_SIGNED_LONG_LONG,   //PAMI_SIGNED_LONG_LONG
-          PAMI_UNSIGNED_LONG_LONG, //PAMI_UNSIGNED_LONG_LONG
-          PAMI_FLOAT,              //PAMI_FLOAT
-          PAMI_DOUBLE,             //PAMI_DOUBLE
-          PAMI_LONG_DOUBLE,        //PAMI_LONG_DOUBLE
-          PAMI_LOGICAL,            //PAMI_LOGICAL
-          PAMI_SINGLE_COMPLEX,     //PAMI_SINGLE_COMPLEX
-          PAMI_DOUBLE_COMPLEX,     //PAMI_DOUBLE_COMPLEX
-          PAMI_LOC_2INT,           //PAMI_LOC_2INT
-          PAMI_LOC_SHORT_INT,      //PAMI_LOC_SHORT_INT
-          PAMI_LOC_FLOAT_INT,      //PAMI_LOC_FLOAT_INT
-          PAMI_LOC_DOUBLE_INT,     //PAMI_LOC_DOUBLE_INT
-          PAMI_LOC_2FLOAT,         //PAMI_LOC_2FLOAT
-          PAMI_LOC_2DOUBLE,        //PAMI_LOC_2DOUBLE
-          PAMI_USERDEFINED_DT      //PAMI_USERDEFINED_DT
+        // This table validates our assumptions about the layout of pami_dt
+          PAMI_BYTE               ,
+
+          PAMI_SIGNED_CHAR        ,
+          PAMI_SIGNED_SHORT       ,
+          PAMI_SIGNED_INT         ,
+          PAMI_SIGNED_LONG        ,
+          PAMI_SIGNED_LONG_LONG   ,
+
+          PAMI_UNSIGNED_CHAR      ,
+          PAMI_UNSIGNED_SHORT     ,
+          PAMI_UNSIGNED_INT       ,
+          PAMI_UNSIGNED_LONG      ,
+          PAMI_UNSIGNED_LONG_LONG ,
+
+          PAMI_FLOAT              ,
+          PAMI_DOUBLE             ,
+          PAMI_LONG_DOUBLE        ,
+
+          PAMI_LOGICAL            ,
+
+          PAMI_SINGLE_COMPLEX     ,
+          PAMI_DOUBLE_COMPLEX     ,
+
+          PAMI_LOC_2INT           ,
+          PAMI_LOC_2FLOAT         ,
+          PAMI_LOC_2DOUBLE        ,
+          PAMI_LOC_SHORT_INT      ,
+          PAMI_LOC_FLOAT_INT      ,
+          PAMI_LOC_DOUBLE_INT
         };
 #endif
 
-        const size_t mu_size_table[PAMI_DT_COUNT] =
-        {
-          -1,                         //PAMI_UNDEFINED_DT
-          sizeof(signed char),        //PAMI_SIGNED_CHAR
-          sizeof(unsigned int), //sizeof(unsigned char),      //some PAMI_UNSIGNED_CHAR is supported using UNSIGNED INT's and padding
-          sizeof(signed short),       //PAMI_SIGNED_SHORT
-          sizeof(unsigned short),     //PAMI_UNSIGNED_SHORT
-          sizeof(signed int),         //PAMI_SIGNED_INT
-          sizeof(unsigned int),       //PAMI_UNSIGNED_INT
-          sizeof(signed long long),   //PAMI_SIGNED_LONG_LONG
-          sizeof(unsigned long long), //PAMI_UNSIGNED_LONG_LONG
-          sizeof(float),              //PAMI_FLOAT
-          sizeof(double),             //PAMI_DOUBLE
-          sizeof(long double),        //PAMI_LONG_DOUBLE
-          sizeof(bool),               //PAMI_LOGICAL
-          -1,                         //PAMI_SINGLE_COMPLEX
-          -1,                         //PAMI_DOUBLE_COMPLEX
-          -1,                         //PAMI_LOC_2INT
-          -1,                         //PAMI_LOC_SHORT_INT
-          -1,                         //PAMI_LOC_FLOAT_INT
-          -1,                         //PAMI_LOC_DOUBLE_INT
-          -1,                         //PAMI_LOC_2FLOAT
-          -1,                         //PAMI_LOC_2DOUBLE
-          -1                          //PAMI_USERDEFINED_DT
-        };
-        TRACE((stderr, "Multicombine::mu_size(%d) = %zu %s\n", dt, mu_size_table[dt], dt_string(dt)));
+        TRACE((stderr, "Multicombine::mu_size(%d) = %zu %s\n", dt, mu_collective_size_table[dt], dt_string(dt)));
         PAMI_assert_debugf(dt_check[dt] == dt, "dt_check[dt] %u == dt %u\n", dt_check[dt], dt);
-        return(mu_size_table[dt]);
+        return(mu_collective_size_table[dt]);
       }
 #undef TRACE
     };

@@ -206,10 +206,10 @@ int main (int argc, char ** argv)
       allgather.cookie     = (void*) & allgather_poll_flag;
       allgather.algorithm  = allgather_always_works_algo[nalg];
       allgather.cmd.xfer_allgather.sndbuf     = buf;
-      allgather.cmd.xfer_allgather.stype      = PAMI_TYPE_CONTIGUOUS;
+      allgather.cmd.xfer_allgather.stype      = PAMI_TYPE_BYTE;
       allgather.cmd.xfer_allgather.stypecount = 0;
       allgather.cmd.xfer_allgather.rcvbuf     = rbuf;
-      allgather.cmd.xfer_allgather.rtype      = PAMI_TYPE_CONTIGUOUS;
+      allgather.cmd.xfer_allgather.rtype      = PAMI_TYPE_BYTE;
       allgather.cmd.xfer_allgather.rtypecount = 0;
 
       protocolName = allgather_always_works_md[nalg].name;

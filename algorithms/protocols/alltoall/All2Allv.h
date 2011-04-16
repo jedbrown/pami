@@ -94,11 +94,11 @@ namespace CCMI
         _my_cb_done.clientdata = this;
         _donecount = 0;
 
-        /// \todo only supporting PAMI_TYPE_CONTIGUOUS right now
+        /// \todo only supporting PAMI_TYPE_BYTE right now
         //PAMI_Type_sizeof(xfer_union->stype);
-        PAMI_assert(xfer_union->stype == PAMI_TYPE_CONTIGUOUS);
+        PAMI_assert(xfer_union->stype == PAMI_TYPE_BYTE);
 
-        /// \todo presumed size of PAMI_TYPE_CONTIGUOUS?
+        /// \todo presumed size of PAMI_TYPE_BYTE?
         //size_t bytes = topo_size * xfer_union->stypecount * 1;
 
         pami_result_t rc;

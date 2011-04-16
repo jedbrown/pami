@@ -36,8 +36,7 @@ namespace PAMI
 
             typedef enum
             {
-              PRIMITIVE_TYPE_CONTIGUOUS = 0,
-              PRIMITIVE_TYPE_BYTE,
+              PRIMITIVE_TYPE_BYTE=0,
 
               PRIMITIVE_TYPE_SIGNED_CHAR,
               PRIMITIVE_TYPE_SIGNED_SHORT,
@@ -68,8 +67,6 @@ namespace PAMI
               PRIMITIVE_TYPE_LOC_DOUBLE_INT,
 
               PRIMITIVE_TYPE_COUNT,
-              PRIMITIVE_TYPE_USERDEFINED
-
             } primitive_type_t;
 
             typedef unsigned primitive_logical_t; // PRIMITIVE_TYPE_LOGICAL
@@ -102,7 +99,7 @@ namespace PAMI
 
             TypeCode(bool to_optimize);
             TypeCode(void *code_addr, size_t code_size);
-            TypeCode(size_t code_size, primitive_type_t primitive = PRIMITIVE_TYPE_USERDEFINED);
+            TypeCode(size_t code_size, primitive_type_t primitive = PRIMITIVE_TYPE_COUNT);
             ~TypeCode();
 
             void AddShift(size_t shift);
@@ -121,6 +118,7 @@ namespace PAMI
             size_t GetDepth() const;
             size_t GetNumBlocks() const;
             size_t GetUnit() const;
+            primitive_type_t GetPrimitive() const;
             size_t GetAtomSize() const;
 
             void   SetAtomSize(size_t atom_size);
@@ -228,7 +226,7 @@ namespace PAMI
 
     inline TypeCode::TypeCode(bool to_optimize = true)
         : code(NULL), code_buf_size(0), code_cursor(0), completed(false),
-        to_optimize(to_optimize), is_contiguous(true), primitive(PRIMITIVE_TYPE_USERDEFINED)
+        to_optimize(to_optimize), is_contiguous(true), primitive(PRIMITIVE_TYPE_COUNT)
     {
         ResizeCodeBuffer(sizeof(Begin) + sizeof(Copy)*4);
         *(Begin *)code = Begin();
@@ -239,7 +237,7 @@ namespace PAMI
 
     inline TypeCode::TypeCode(void *code_addr, size_t code_size)
         : code(NULL), code_buf_size(0), code_cursor(0), completed(true),
-        to_optimize(true), is_contiguous(true), primitive(PRIMITIVE_TYPE_USERDEFINED)
+        to_optimize(true), is_contiguous(true), primitive(PRIMITIVE_TYPE_COUNT)
     {
         ResizeCodeBuffer(code_size);
         memcpy(code, code_addr, code_size);
@@ -318,6 +316,11 @@ namespace PAMI
     inline size_t TypeCode::GetAtomSize() const
     {
         return ((Begin *)code)->atom_size;
+    }
+
+    inline TypeCode::primitive_type_t TypeCode::GetPrimitive() const
+    {
+      return primitive;
     }
 
     inline void   TypeCode::SetAtomSize(size_t atom_size)
@@ -516,7 +519,7 @@ namespace PAMI
         : TypeCode(true)
     {
         assert(0<atom_size);
-        primitive = PRIMITIVE_TYPE_CONTIGUOUS;
+        primitive = PRIMITIVE_TYPE_BYTE;
         size_t prim_size = ULONG_MAX - ULONG_MAX%atom_size;
         AddSimple(prim_size, prim_size, 1);
         Complete();
@@ -532,10 +535,6 @@ namespace PAMI
 
       switch (primitive_type)
       {
-        case PRIMITIVE_TYPE_CONTIGUOUS:
-          primitive_atom = 1;
-          break;
-
         case PRIMITIVE_TYPE_BYTE:
           primitive_atom = sizeof(uint8_t);
           break;
@@ -653,5 +652,38 @@ namespace PAMI
 // and unit size of ULONG_MAX
 extern PAMI::Type::TypeContig *PAMI_TYPE_CONTIG_MAX;
 
+typedef enum
+{
+  PAMI_BYTE               = PAMI::Type::TypeCode::PRIMITIVE_TYPE_BYTE,
+
+  PAMI_SIGNED_CHAR        = PAMI::Type::TypeCode::PRIMITIVE_TYPE_SIGNED_CHAR,
+  PAMI_SIGNED_SHORT       = PAMI::Type::TypeCode::PRIMITIVE_TYPE_SIGNED_SHORT,
+  PAMI_SIGNED_INT         = PAMI::Type::TypeCode::PRIMITIVE_TYPE_SIGNED_INT,
+  PAMI_SIGNED_LONG        = PAMI::Type::TypeCode::PRIMITIVE_TYPE_SIGNED_LONG,
+  PAMI_SIGNED_LONG_LONG   = PAMI::Type::TypeCode::PRIMITIVE_TYPE_SIGNED_LONG_LONG,
+
+  PAMI_UNSIGNED_CHAR      = PAMI::Type::TypeCode::PRIMITIVE_TYPE_UNSIGNED_CHAR,
+  PAMI_UNSIGNED_SHORT     = PAMI::Type::TypeCode::PRIMITIVE_TYPE_UNSIGNED_SHORT,
+  PAMI_UNSIGNED_INT       = PAMI::Type::TypeCode::PRIMITIVE_TYPE_UNSIGNED_INT,
+  PAMI_UNSIGNED_LONG      = PAMI::Type::TypeCode::PRIMITIVE_TYPE_UNSIGNED_LONG,
+  PAMI_UNSIGNED_LONG_LONG = PAMI::Type::TypeCode::PRIMITIVE_TYPE_UNSIGNED_LONG_LONG,
+
+  PAMI_FLOAT              = PAMI::Type::TypeCode::PRIMITIVE_TYPE_FLOAT,
+  PAMI_DOUBLE             = PAMI::Type::TypeCode::PRIMITIVE_TYPE_DOUBLE,
+  PAMI_LONG_DOUBLE        = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LONG_DOUBLE,
+
+  PAMI_LOGICAL            = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LOGICAL,
+
+  PAMI_SINGLE_COMPLEX     = PAMI::Type::TypeCode::PRIMITIVE_TYPE_SINGLE_COMPLEX,
+  PAMI_DOUBLE_COMPLEX     = PAMI::Type::TypeCode::PRIMITIVE_TYPE_DOUBLE_COMPLEX,
+
+  PAMI_LOC_2INT           = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LOC_2INT,
+  PAMI_LOC_2FLOAT         = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LOC_2FLOAT,
+  PAMI_LOC_2DOUBLE        = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LOC_2DOUBLE,
+  PAMI_LOC_SHORT_INT      = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LOC_SHORT_INT,
+  PAMI_LOC_FLOAT_INT      = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LOC_FLOAT_INT,
+  PAMI_LOC_DOUBLE_INT     = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LOC_DOUBLE_INT,
+  PAMI_DT_COUNT           = PAMI::Type::TypeCode::PRIMITIVE_TYPE_COUNT
+} pami_dt;
 
 #endif // _PAMI_TYPE_CODE_H

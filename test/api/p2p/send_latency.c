@@ -91,7 +91,7 @@ static void test_dispatch (
       TRACE_ERR((stderr, "(%zu) test_dispatch() async recv:  cookie = %p, pipe_size = %zu\n", _my_task, cookie, pipe_size));
       recv->local_fn = decrement;
       recv->cookie   = cookie;
-      recv->type     = PAMI_TYPE_CONTIGUOUS;
+      recv->type     = PAMI_TYPE_BYTE;
       recv->addr     = _recv_buffer;
       recv->offset   = 0;
       recv->data_fn  = PAMI_DATA_COPY;
@@ -127,7 +127,10 @@ void recv_once (pami_context_t context)
   TRACE_ERR((stderr, "(%zu) recv_once()  After advance\n", _my_task));
 }
 
-unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrsize, size_t sndlen, pami_task_t mytask, pami_task_t origintask, pami_endpoint_t origin, pami_task_t targettask, pami_endpoint_t target)
+unsigned long long test (pami_client_t client,
+                         pami_context_t context, size_t dispatch, size_t hdrsize,
+                         size_t sndlen, pami_task_t mytask, pami_task_t origintask,
+                         pami_endpoint_t origin, pami_task_t targettask, pami_endpoint_t target)
 {
   TRACE_ERR((stderr, "(%u) Do test ... sndlen = %zu\n", mytask, sndlen));
   _recv_iteration = 0;
@@ -150,7 +153,7 @@ unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrsize
   memset(&parameters.send.hints, 0, sizeof(parameters.send.hints));
 
   unsigned i;
-  unsigned long long t1 = PAMI_Wtimebase();
+  unsigned long long t1 = PAMI_Wtimebase(client);
 
   if (mytask == origintask)
     {
@@ -175,7 +178,7 @@ unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrsize
         }
     }
 
-  unsigned long long t2 = PAMI_Wtimebase();
+  unsigned long long t2 = PAMI_Wtimebase(client);
 
   return ((t2 - t1) / ITERATIONS) / 2;
 }
@@ -366,9 +369,9 @@ int main (int argc, char ** argv)
               if (dispatch[j].result == PAMI_SUCCESS)
                 {
 #ifdef WARMUP
-                  test (context, dispatch[j].id, hdrsize[i], sndlen, _my_task, origin_task, origin, target_task, target);
+                  test (client,context, dispatch[j].id, hdrsize[i], sndlen, _my_task, origin_task, origin, target_task, target);
 #endif
-                  cycles = test (context, dispatch[j].id, hdrsize[i], sndlen, _my_task, origin_task, origin, target_task, target);
+                  cycles = test (client, context, dispatch[j].id, hdrsize[i], sndlen, _my_task, origin_task, origin, target_task, target);
                   usec   = cycles * tick * 1000000.0;
                   index += sprintf (&str[index], "%8lld %8.4f  ", cycles, usec);
                 }

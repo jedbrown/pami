@@ -341,7 +341,7 @@ int main (int argc, char ** argv)
     rc |= create_and_query_geometry(client,
                                     context[0],
                                     context[iContext],
-                                    parentless ? PAMI_NULL_GEOMETRY : world_geometry,
+                                    parentless ? PAMI_GEOMETRY_NULL : world_geometry,
                                     &newgeometry,
                                     range,
                                     rangecount,
@@ -386,10 +386,10 @@ int main (int argc, char ** argv)
       scatter.algorithm  = scatter_always_works_algo[nalg];
       scatter.cmd.xfer_scatter.root       = root;
       scatter.cmd.xfer_scatter.sndbuf     = buf;
-      scatter.cmd.xfer_scatter.stype      = PAMI_TYPE_CONTIGUOUS;
+      scatter.cmd.xfer_scatter.stype      = PAMI_TYPE_BYTE;
       scatter.cmd.xfer_scatter.stypecount = 0;
       scatter.cmd.xfer_scatter.rcvbuf     = rbuf;
-      scatter.cmd.xfer_scatter.rtype      = PAMI_TYPE_CONTIGUOUS;
+      scatter.cmd.xfer_scatter.rtype      = PAMI_TYPE_BYTE;
       scatter.cmd.xfer_scatter.rtypecount = 0;
 
       int             i, j, k;

@@ -6,6 +6,8 @@
 #ifndef __common_MultisendInterface_h__
 #define __common_MultisendInterface_h__
 
+#include "common/type/TypeCode.h"
+#include "common/type/TypeFunc.h"
 
 typedef struct
 {

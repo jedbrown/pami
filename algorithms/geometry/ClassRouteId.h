@@ -61,13 +61,12 @@ namespace PAMI
           ar.cookie                               = cookie;
           memset(&ar.options,0,sizeof(ar.options));
           ar.cmd.xfer_allreduce.sndbuf            = (char*)_bitmask;
-          ar.cmd.xfer_allreduce.stype             = PAMI_TYPE_CONTIGUOUS;
-          ar.cmd.xfer_allreduce.stypecount        = sizeof(uint64_t)*_count;
+          ar.cmd.xfer_allreduce.stype             = PAMI_TYPE_UNSIGNED_LONG_LONG;
+          ar.cmd.xfer_allreduce.stypecount        = _count;
           ar.cmd.xfer_allreduce.rcvbuf            = (char*)_bitmask;
-          ar.cmd.xfer_allreduce.rtype             = PAMI_TYPE_CONTIGUOUS;
-          ar.cmd.xfer_allreduce.rtypecount        = sizeof(uint64_t)*_count;
-          ar.cmd.xfer_allreduce.dt                = PAMI_UNSIGNED_LONG_LONG;
-          ar.cmd.xfer_allreduce.op                = PAMI_BAND;
+          ar.cmd.xfer_allreduce.rtype             = PAMI_TYPE_UNSIGNED_LONG_LONG;
+          ar.cmd.xfer_allreduce.rtypecount        = _count;
+          ar.cmd.xfer_allreduce.op                = PAMI_DATA_BAND;
           _ar_algo->generate(&ar);
         }
     protected:

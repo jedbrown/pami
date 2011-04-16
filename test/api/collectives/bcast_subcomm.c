@@ -294,7 +294,7 @@ int main(int argc, char*argv[])
     newbcast.algorithm                    = newbcast_algo[nalg];
     newbcast.cmd.xfer_broadcast.root      = root;
     newbcast.cmd.xfer_broadcast.buf       = buf;
-    newbcast.cmd.xfer_broadcast.type      = PAMI_TYPE_CONTIGUOUS;
+    newbcast.cmd.xfer_broadcast.type      = PAMI_TYPE_BYTE;
     newbcast.cmd.xfer_broadcast.typecount = 0;
 
 

@@ -93,15 +93,23 @@ public:
         _get_xfer_and_root(&a_xfer, (pami_collective_t *)cmd, root);
         _executor.setRoot(root);
 
-        // ??? Why would getReduceFunction need data size ? use stypecount for now
-        CCMI::Adaptor::Allreduce::getReduceFunction(a_xfer->dt, a_xfer->op, a_xfer->stypecount, sizeOfType, func);
+        uintptr_t op, dt;
+        PAMI::Type::TypeFunc::GetEnums(a_xfer->stype,
+                                       a_xfer->op,
+                                       dt,op);
+
+        CCMI::Adaptor::Allreduce::getReduceFunction((pami_dt)dt, (pami_op)op, sizeOfType, func);
+        unsigned bytes = a_xfer->stypecount * sizeOfType;
         // unsigned bytes = sizeOfType * a_xfer->stypecount;
         _executor.setBuffers (a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount);
         _executor.setDoneCallback (cb_done.function, cb_done.clientdata);
 
         COMPILE_TIME_ASSERT(sizeof(_schedule) >= sizeof(T_Schedule));
         _executor.setSchedule (&_schedule, 0);
-        _executor.setReduceInfo(a_xfer->stypecount / sizeOfType, a_xfer->stypecount, sizeOfType, func, a_xfer->op, a_xfer->dt);
+        _executor.setReduceInfo(a_xfer->stypecount,
+                                bytes,
+                                sizeOfType, func,
+                                (pami_op)op, (pami_dt)dt);
 
         _executor.reset();
     }
@@ -128,7 +136,7 @@ public:
         _executor.setRoot(root);
 
         // ??? Why would getReduceFunction need data size ? use dt_count for now
-        CCMI::Adaptor::Allreduce::getReduceFunction(dt, op, dt_count, sizeOfType, func);
+        CCMI::Adaptor::Allreduce::getReduceFunction(dt, op, sizeOfType, func);
         unsigned bytes = dt_count * sizeOfType;
         _executor.setBuffers (sndbuf, rcvbuf, bytes);
         _executor.setDoneCallback (cb_done.function, cb_done.clientdata);

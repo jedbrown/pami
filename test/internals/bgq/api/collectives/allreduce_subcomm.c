@@ -667,7 +667,7 @@ int main (int argc, char ** argv)
     rc |= create_and_query_geometry(client,
                                     context[0],
                                     context[iContext],
-                                    parentless ? PAMI_NULL_GEOMETRY : world_geometry,
+                                    parentless ? PAMI_GEOMETRY_NULL : world_geometry,
                                     &newgeometry,
                                     range,
                                     rangecount,
@@ -727,10 +727,10 @@ int main (int argc, char ** argv)
           allreduce.cookie    = (void*) & allreduce_poll_flag;
           allreduce.algorithm = allreduce_always_works_algo[nalg];
           allreduce.cmd.xfer_allreduce.sndbuf    = sbuf;
-          allreduce.cmd.xfer_allreduce.stype     = PAMI_TYPE_CONTIGUOUS;
+          allreduce.cmd.xfer_allreduce.stype     = PAMI_TYPE_BYTE;
           allreduce.cmd.xfer_allreduce.stypecount = 0;
           allreduce.cmd.xfer_allreduce.rcvbuf    = rbuf;
-          allreduce.cmd.xfer_allreduce.rtype     = PAMI_TYPE_CONTIGUOUS;
+          allreduce.cmd.xfer_allreduce.rtype     = PAMI_TYPE_BYTE;
           allreduce.cmd.xfer_allreduce.rtypecount = 0;
 
           for (dt = 0; dt < dt_count; dt++)

@@ -12,7 +12,6 @@ using namespace PAMI::Type;
 
 TypeContig *PAMI_TYPE_CONTIG_MAX         = new TypeContig(1);
 
-pami_type_t PAMI_TYPE_CONTIGUOUS         = new TypeContig(TypeCode::PRIMITIVE_TYPE_CONTIGUOUS);
 pami_type_t PAMI_TYPE_BYTE               = new TypeContig(TypeCode::PRIMITIVE_TYPE_BYTE);         // ----------------------???
 
 pami_type_t PAMI_TYPE_SIGNED_CHAR        = new TypeContig(TypeCode::PRIMITIVE_TYPE_SIGNED_CHAR);

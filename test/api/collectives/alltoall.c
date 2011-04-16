@@ -235,10 +235,10 @@ int main(int argc, char*argv[])
 
             /* Warmup */
             alltoall.cmd.xfer_alltoall.sndbuf        = sbuf;
-            alltoall.cmd.xfer_alltoall.stype         = PAMI_TYPE_CONTIGUOUS;
+            alltoall.cmd.xfer_alltoall.stype         = PAMI_TYPE_BYTE;
             alltoall.cmd.xfer_alltoall.stypecount    = i;
             alltoall.cmd.xfer_alltoall.rcvbuf        = rbuf;
-            alltoall.cmd.xfer_alltoall.rtype         = PAMI_TYPE_CONTIGUOUS;
+            alltoall.cmd.xfer_alltoall.rtype         = PAMI_TYPE_BYTE;
             alltoall.cmd.xfer_alltoall.rtypecount    = i;
 
             blocking_coll(context, &alltoall, &alltoall_poll_flag);
@@ -250,10 +250,10 @@ int main(int argc, char*argv[])
             for (j = 0; j < niter; j++)
               {
                 alltoall.cmd.xfer_alltoall.sndbuf        = sbuf;
-                alltoall.cmd.xfer_alltoall.stype         = PAMI_TYPE_CONTIGUOUS;
+                alltoall.cmd.xfer_alltoall.stype         = PAMI_TYPE_BYTE;
                 alltoall.cmd.xfer_alltoall.stypecount    = i;
                 alltoall.cmd.xfer_alltoall.rcvbuf        = rbuf;
-                alltoall.cmd.xfer_alltoall.rtype         = PAMI_TYPE_CONTIGUOUS;
+                alltoall.cmd.xfer_alltoall.rtype         = PAMI_TYPE_BYTE;
                 alltoall.cmd.xfer_alltoall.rtypecount    = i;
                 blocking_coll(context, &alltoall, &alltoall_poll_flag);
               }

@@ -362,8 +362,8 @@ namespace CCMI
                             unsigned         pipelineWidth,
                             unsigned         sizeOfType,
                             coremath         func,
-                            pami_op          op = PAMI_UNDEFINED_OP,
-                            pami_dt          dt = PAMI_UNDEFINED_DT)
+                            pami_op          op = PAMI_OP_COUNT,
+                            pami_dt          dt = PAMI_DT_COUNT)
         {
           TRACE_INIT((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::setReduceInfo() "
                       "count %#X, pipelineWidth %#X, sizeOfType %#X, func %p, op %#X, dt %#X\n",

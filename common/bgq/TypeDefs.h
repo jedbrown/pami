@@ -87,6 +87,8 @@
 #include "components/devices/bgq/mu2/model/RectangleMultisyncModel.h"
 #include "components/devices/bgq/mu2/model/ManytomanyModel.h"
 
+#include "common/type/TypeMachine.h"
+
 namespace PAMI
 {
   typedef Geometry::Common                     BGQGeometry;

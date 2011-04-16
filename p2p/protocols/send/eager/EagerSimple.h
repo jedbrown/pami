@@ -760,7 +760,7 @@ namespace PAMI
           {
             TRACE_ERR((stderr, ">> EagerSimple::process_envelope() .. origin = 0x%08x, header = %p, header bytes = %zu\n", origin, header, header_bytes));
 
-            state->info.type = (pami_type_t) PAMI_TYPE_CONTIGUOUS;
+            state->info.type = (pami_type_t) PAMI_TYPE_BYTE;
 
             // Invoke the registered dispatch function.
             _dispatch_fn (_context,            // Communication context
@@ -781,7 +781,7 @@ namespace PAMI
               }
             else if (T_Contiguous)
               {
-                state->info.type   = (pami_type_t) PAMI_TYPE_CONTIGUOUS;
+                state->info.type   = (pami_type_t) PAMI_TYPE_BYTE;
                 state->info.offset = 0;
               }
             else if (T_Copy)
@@ -806,7 +806,7 @@ namespace PAMI
 
 #endif
             state->is_contiguous_copy_recv =
-              (state->info.type == PAMI_TYPE_CONTIGUOUS) &&
+              (state->info.type == PAMI_TYPE_BYTE) &&
               (state->info.data_fn == PAMI_DATA_COPY);
 
             if (unlikely(!state->is_contiguous_copy_recv))

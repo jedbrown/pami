@@ -750,33 +750,6 @@ namespace PAMI
         return PAMI_UNIMPL;
       }
 
-      inline pami_result_t geometry_algorithms_num_impl (pami_geometry_t geometry,
-                                                         pami_xfer_type_t colltype,
-                                                         size_t *lists_lengths)
-      {
-        BGQGeometry *_geometry = (BGQGeometry*) geometry;
-        return _geometry->algorithms_num(colltype, lists_lengths, _contextid);
-      }
-
-      inline pami_result_t geometry_algorithms_info_impl (pami_geometry_t geometry,
-                                                          pami_xfer_type_t colltype,
-                                                          pami_algorithm_t  *algs0,
-                                                          pami_metadata_t   *mdata0,
-                                                          size_t               num0,
-                                                          pami_algorithm_t  *algs1,
-                                                          pami_metadata_t   *mdata1,
-                                                          size_t               num1)
-      {
-        BGQGeometry *_geometry = (BGQGeometry*) geometry;
-        return _geometry->algorithms_info(colltype,
-                                          algs0,
-                                          mdata0,
-                                          num0,
-                                          algs1,
-                                          mdata1,
-                                          num1,
-                                          _contextid);
-      }
 
       inline pami_result_t collective_impl (pami_xfer_t * parameters)
       {

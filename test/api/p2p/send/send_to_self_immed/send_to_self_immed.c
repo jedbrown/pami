@@ -94,7 +94,7 @@ unsigned long long test (size_t sndlen, size_t myrank)
   {
     TRACE_ERR((stderr, "(%zu)\n(%zu) Starting Iteration %d of size %zu\n", _my_rank, _my_rank, i, sndlen));
     if (i == 1)
-      t1 = PAMI_Wtimebase();
+      t1 = PAMI_Wtimebase(_g_client);
 
     _recv_active = 1;
     TRACE_ERR((stderr,"test():  Calling PAMI_Send_immediate\n"));
@@ -109,7 +109,7 @@ unsigned long long test (size_t sndlen, size_t myrank)
         TRACE_ERR((stderr,"test():  Back from Advance\n"));
       }
   }
-  unsigned long long t2 = PAMI_Wtimebase();
+  unsigned long long t2 = PAMI_Wtimebase(_g_client);
 
   return ((t2-t1)/ITERATIONS);
 }

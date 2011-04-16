@@ -39,9 +39,22 @@ simplesplit(vector<string> &vec,
 
 namespace PAMI
 {
+
   class Client : public Interface::Client<PAMI::Client>
   {
   public:
+
+    static void barrier_done_fn(pami_context_t   context,
+                                void           * cookie,
+                                pami_result_t    result)
+      {
+        volatile int* var = (volatile int*) cookie;
+        (*var)--;
+        return;
+      }
+
+
+
     inline Client (const char * name, pami_configuration_t configuration[],
             size_t num_configs, pami_result_t & result) :
       Interface::Client<PAMI::Client>(name, result),
@@ -193,6 +206,14 @@ namespace PAMI
         // Initialize the optimized collectives
         _contexts[0]->initCollectives(&_mm, _disable_shm);
 
+        volatile int flag = 1;
+        _world_geometry->default_barrier(barrier_done_fn,
+                                         (void*)&flag,
+                                         _contexts[0]->getId(),
+                                         &_contexts[0]);
+        while(flag)
+          _contexts[0]->advance(10,rc);
+
         // Return error code
         result                         = rc;
         _contexts[0]->unlock();
@@ -250,10 +271,10 @@ namespace PAMI
         xfer.cookie                         = (void*)&flag;
         xfer.algorithm                      = alg;
         xfer.cmd.xfer_allgather.sndbuf      = host;
-        xfer.cmd.xfer_allgather.stype       = PAMI_TYPE_CONTIGUOUS;
+        xfer.cmd.xfer_allgather.stype       = PAMI_TYPE_BYTE;
         xfer.cmd.xfer_allgather.stypecount  = str_len;
         xfer.cmd.xfer_allgather.rcvbuf      = hosts;
-        xfer.cmd.xfer_allgather.rtype       = PAMI_TYPE_CONTIGUOUS;
+        xfer.cmd.xfer_allgather.rtype       = PAMI_TYPE_BYTE;
         xfer.cmd.xfer_allgather.rtypecount  = str_len;
 
 	// We can only advance the lapi device here because our other devices
@@ -620,7 +641,6 @@ namespace PAMI
         }
       inline void start()
         {
-          TRACE((stderr, "%p Posting work to GD id=%d work=%p\n", this, _context->getId(), &_work))
           _context->_devices->_generics[_context->getId()].postThread(&_work);
         }
       Context        *_context;
@@ -886,6 +906,35 @@ namespace PAMI
       {
 	return PAMI_UNIMPL;
       }
+
+      inline pami_result_t geometry_algorithms_num_impl (pami_geometry_t geometry,
+                                                        pami_xfer_type_t colltype,
+                                                        size_t *lists_lengths)
+        {
+          LAPIGeometry *_geometry = (LAPIGeometry*) geometry;
+          return _geometry->algorithms_num(colltype, lists_lengths, 0);
+        }
+
+      inline pami_result_t geometry_algorithms_info_impl (pami_geometry_t    geometry,
+                                                          pami_xfer_type_t   colltype,
+                                                          pami_algorithm_t  *algs0,
+                                                          pami_metadata_t   *mdata0,
+                                                          size_t                num0,
+                                                          pami_algorithm_t  *algs1,
+                                                          pami_metadata_t   *mdata1,
+                                                          size_t                num1)
+      {
+        LAPIGeometry *_geometry = (LAPIGeometry*) geometry;
+        return _geometry->algorithms_info(colltype,
+                                          algs0,
+                                          mdata0,
+                                          num0,
+                                          algs1,
+                                          mdata1,
+                                          num1,
+                                          0);
+      }
+
 
     inline pami_result_t geometry_destroy_impl (pami_geometry_t geometry)
       {

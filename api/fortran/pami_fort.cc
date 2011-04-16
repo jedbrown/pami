@@ -18,15 +18,50 @@ extern "C" {
     void *pami_addr_null = NULL;
 #define PAMI_ADDR_NULL pami_addr_null
     struct {
-        pami_type_t         PAMI_TYPE_CONTIGUOUS;
-        pami_type_t         PAMI_TYPE_SIGNED_INT;
-        pami_type_t         PAMI_TYPE_SIGNED_LONG;
-        pami_type_t         PAMI_TYPE_SIGNED_LONG_LONG;
-        pami_type_t         PAMI_TYPE_UNSIGNED_INT;
-        pami_type_t         PAMI_TYPE_UNSIGNED_LONG;
-        pami_type_t         PAMI_TYPE_UNSIGNED_LONG_LONG;
-        pami_data_function  PAMI_DATA_COPY; 
-        pami_geometry_t     PAMI_NULL_GEOMETRY;
+      pami_type_t PAMI_TYPE_NULL;
+      pami_type_t PAMI_TYPE_BYTE;
+      pami_type_t PAMI_TYPE_SIGNED_CHAR;
+      pami_type_t PAMI_TYPE_UNSIGNED_CHAR;
+      pami_type_t PAMI_TYPE_SIGNED_SHORT;
+      pami_type_t PAMI_TYPE_UNSIGNED_SHORT;
+      pami_type_t PAMI_TYPE_SIGNED_INT;
+      pami_type_t PAMI_TYPE_UNSIGNED_INT;
+      pami_type_t PAMI_TYPE_SIGNED_LONG;
+      pami_type_t PAMI_TYPE_UNSIGNED_LONG;
+      pami_type_t PAMI_TYPE_SIGNED_LONG_LONG;
+      pami_type_t PAMI_TYPE_UNSIGNED_LONG_LONG;
+      pami_type_t PAMI_TYPE_FLOAT;
+      pami_type_t PAMI_TYPE_DOUBLE;
+      pami_type_t PAMI_TYPE_LONG_DOUBLE;
+      pami_type_t PAMI_TYPE_LOGICAL;
+      pami_type_t PAMI_TYPE_SINGLE_COMPLEX;
+      pami_type_t PAMI_TYPE_DOUBLE_COMPLEX;
+      pami_type_t PAMI_TYPE_LOC_2INT;
+      pami_type_t PAMI_TYPE_LOC_2FLOAT;
+      pami_type_t PAMI_TYPE_LOC_2DOUBLE;
+      pami_type_t PAMI_TYPE_LOC_SHORT_INT;
+      pami_type_t PAMI_TYPE_LOC_FLOAT_INT;
+      pami_type_t PAMI_TYPE_LOC_DOUBLE_INT;
+
+      pami_data_function PAMI_DATA_COPY;
+      pami_data_function PAMI_DATA_NOOP;
+      pami_data_function PAMI_DATA_MAX;
+      pami_data_function PAMI_DATA_MIN;
+      pami_data_function PAMI_DATA_SUM;
+      pami_data_function PAMI_DATA_PROD;
+      pami_data_function PAMI_DATA_LAND;
+      pami_data_function PAMI_DATA_LOR;
+      pami_data_function PAMI_DATA_LXOR;
+      pami_data_function PAMI_DATA_BAND;
+      pami_data_function PAMI_DATA_BOR;
+      pami_data_function PAMI_DATA_BXOR;
+      pami_data_function PAMI_DATA_MAXLOC;
+      pami_data_function PAMI_DATA_MINLOC;
+
+      pami_client_t       PAMI_CLIENT_NULL;
+      pami_context_t      PAMI_CONTEXT_NULL;
+      pami_geometry_t     PAMI_GEOMETRY_NULL;
+
     } pami_fort_globals;
 }
 
@@ -48,14 +83,14 @@ extern "C" void pami_error_text (char* string, size_t* length, size_t* result)
     *result = PAMI_Error_text(string, *length);
 }
 
-extern "C" void pami_wtime (double* result)
+extern "C" void pami_wtime (pami_client_t* client, double* result)
 {
-    *result = PAMI_Wtime();
+    *result = PAMI_Wtime(*client);
 }
 
-extern "C" void pami_wtimebase(unsigned long long *result)
+extern "C" void pami_wtimebase(pami_client_t* client, unsigned long long *result)
 {
-    *result = PAMI_Wtimebase();
+    *result = PAMI_Wtimebase(*client);
 }
 
 extern "C" void pami_endpoint_create (pami_client_t*    client,
@@ -124,6 +159,7 @@ extern "C" void pami_fence_endpoint (pami_context_t*       context,
 
 
 extern "C" void pami_geometry_create_taskrange (pami_client_t*          client,
+                                                size_t                  context_offset,
                                                 pami_configuration_t    configuration[],
                                                 size_t*                 num_configs,
                                                 pami_geometry_t*        geometry,
@@ -136,12 +172,13 @@ extern "C" void pami_geometry_create_taskrange (pami_client_t*          client,
                                                 void*                   cookie,
                                                 pami_result_t*          result)
 {
-    *result = PAMI_Geometry_create_taskrange(*client, configuration,
+    *result = PAMI_Geometry_create_taskrange(*client, context_offset,configuration,
             *num_configs, geometry, *parent, *id, task_slices, *slice_count,
             *context, fn, cookie);
 }
 
 extern "C" void pami_geometry_create_tasklist (pami_client_t*              client,
+                                               size_t                      context_offset,
                                                pami_configuration_t        configuration[],
                                                size_t*                     num_configs,
                                                pami_geometry_t*            geometry,
@@ -154,7 +191,7 @@ extern "C" void pami_geometry_create_tasklist (pami_client_t*              clien
                                                void*                       cookie,
                                                pami_result_t*              result)
 {
-    *result = PAMI_Geometry_create_tasklist(*client, configuration,
+    *result = PAMI_Geometry_create_tasklist(*client, context_offset, configuration,
             *num_configs, geometry, *parent, *id, tasks, *task_count, *context,
             fn, cookie);
 }
@@ -201,18 +238,16 @@ extern "C" void pami_collective (pami_context_t*  context,
     *result = PAMI_Collective(*context, parameters);
 }
 
-extern "C" void pami_geometry_algorithms_num (pami_context_t*    context,
-                                              pami_geometry_t*   geometry,
+extern "C" void pami_geometry_algorithms_num (pami_geometry_t*   geometry,
                                               pami_xfer_type_t*  coll_type,
                                               size_t             lists_lengths[2],
                                               pami_result_t*     result)
 {
-    *result = PAMI_Geometry_algorithms_num(*context, *geometry, *coll_type,
+    *result = PAMI_Geometry_algorithms_num(*geometry, *coll_type,
             lists_lengths);
 }
 
-extern "C"  void pami_geometry_algorithms_query (pami_context_t*     context,
-                                                 pami_geometry_t*    geometry,
+extern "C"  void pami_geometry_algorithms_query (pami_geometry_t*    geometry,
                                                  pami_xfer_type_t*   colltype,
                                                  pami_algorithm_t*   algs0,
                                                  pami_metadata_t*    mdata0,
@@ -222,7 +257,7 @@ extern "C"  void pami_geometry_algorithms_query (pami_context_t*     context,
                                                  size_t*             num1,
                                                  pami_result_t*      result)
 {
-    *result = PAMI_Geometry_algorithms_query(*context, *geometry, *colltype,
+    *result = PAMI_Geometry_algorithms_query(*geometry, *colltype,
             algs0, mdata0, *num0, algs1, mdata1, *num1);
 }
 
@@ -345,9 +380,9 @@ extern "C" void pami_client_create (const char*             name,
 
     // initialize global variables in pami.h for FORTRAN
     // TODO: pami_fort_globals need to be synchronized with these globals
-    pami_fort_globals.PAMI_TYPE_CONTIGUOUS             = PAMI_TYPE_CONTIGUOUS;
+    pami_fort_globals.PAMI_TYPE_BYTE             = PAMI_TYPE_BYTE;
     pami_fort_globals.PAMI_DATA_COPY        = PAMI_DATA_COPY;
-    pami_fort_globals.PAMI_NULL_GEOMETRY    = PAMI_NULL_GEOMETRY;
+    pami_fort_globals.PAMI_GEOMETRY_NULL    = PAMI_GEOMETRY_NULL;
 }
 
 extern "C" void pami_client_destroy (pami_client_t*     client,
@@ -594,13 +629,6 @@ extern "C"   void pami_resume (pami_context_t*   context,
         pami_result_t*    result)
 {
     *result = PAMI_Resume(*context, dest, *count);
-}
-
-extern "C" void pami_dt_query (pami_dt*          dt, 
-        size_t*           size,
-        pami_result_t*    result)
-{
-    *result = PAMI_Dt_query(*dt, size);
 }
 
 //#include "api/extension/Extension.h"

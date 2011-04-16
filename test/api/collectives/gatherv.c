@@ -25,8 +25,8 @@ void initialize_sndbuf (pami_task_t task_id, void *buf, int bytes )
 int check_rcvbuf (size_t num_tasks, void *buf, int bytes)
 {
 
-
-  for (int j = 0; j < num_tasks-1; j++)
+  int j;
+  for (j = 0; j < num_tasks-1; j++)
   {
   unsigned char c = 0x00 + j;
   unsigned char *cbuf = (unsigned char *)  buf + j * bytes;
@@ -168,10 +168,10 @@ int main (int argc, char ** argv)
         gatherv.algorithm                     = gatherv_always_works_algo[nalg];
         gatherv.cmd.xfer_gatherv.root        = root;
         gatherv.cmd.xfer_gatherv.sndbuf      = buf;
-        gatherv.cmd.xfer_gatherv.stype       = PAMI_TYPE_CONTIGUOUS;
+        gatherv.cmd.xfer_gatherv.stype       = PAMI_TYPE_BYTE;
         gatherv.cmd.xfer_gatherv.stypecount  = 0;
         gatherv.cmd.xfer_gatherv.rcvbuf      = rbuf;
-        gatherv.cmd.xfer_gatherv.rtype       = PAMI_TYPE_CONTIGUOUS;
+        gatherv.cmd.xfer_gatherv.rtype       = PAMI_TYPE_BYTE;
         gatherv.cmd.xfer_gatherv.rtypecounts = lengths;
         gatherv.cmd.xfer_gatherv.rdispls     = displs;
 

@@ -60,11 +60,11 @@ int main(int argc, char ** argv) {
 
 		if (y + 1 < NUM_TESTRUNS) {
 			fprintf(stderr, "Sleeping...\n");
-			do_sleep(buf, bufl, "Wa", 5);
+			do_sleep(client, buf, bufl, "Wa", 5);
 		}
 	}
 
-	do_sleep(buf, bufl, "Fi", 5);
+	do_sleep(client, buf, bufl, "Fi", 5);
 
 	result = PAMI_Context_destroyv(context, NUM_CONTEXTS);
 	result = PAMI_Client_destroy(&client);

@@ -25,15 +25,14 @@ namespace PAMI
     // fields for every collective
     // This sets the fields to "always works" and "not hw accelerated"
     // Any code that uses this must set the appropriate fields
+    // The input name must have storage for the lifetime of the metadata object
     class Metadata: public pami_metadata_t
     {
     public:
       inline Metadata(const char *in_name)
         {
-          // Copy the name field into the metadata struct
-          strncpy(this->name, in_name, sizeof(this->name));
-          
           // Misc info
+          this->name                              = (char*)in_name;
           this->version                           = 1;
           this->check_fn                          = NULL;
           this->range_lo                          = 0;

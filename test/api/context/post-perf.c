@@ -52,7 +52,8 @@ finish(pami_context_t context, void *cookie)
 
 
 static void
-test(pami_context_t contexts[], size_t ncontexts, size_t iterations, uint64_t* _posted_time, uint64_t* _done_time)
+test(pami_client_t client, pami_context_t contexts[], size_t ncontexts,
+     size_t iterations, uint64_t* _posted_time, uint64_t* _done_time)
 {
   pami_result_t rc;
   size_t context, i;
@@ -63,7 +64,7 @@ test(pami_context_t contexts[], size_t ncontexts, size_t iterations, uint64_t* _
   volatile size_t finish_list   [NCONTEXTS];             memset((void*)finish_list, 0, NCONTEXTS*sizeof(size_t));
   pami_work_t     finish_request[NCONTEXTS];             memset(finish_request,     0, NCONTEXTS*sizeof(pami_work_t));
 
-  start_time = PAMI_Wtimebase();
+  start_time = PAMI_Wtimebase(client);
 
   for (i=0; i<iterations; ++i) {
     for (context = 0; context<ncontexts; ++context) {
@@ -75,7 +76,7 @@ test(pami_context_t contexts[], size_t ncontexts, size_t iterations, uint64_t* _
     }
   }
 
-  posted_time = PAMI_Wtimebase();
+  posted_time = PAMI_Wtimebase(client);
 
   for (context = 0; context<ncontexts; ++context) {
     rc = PAMI_Context_post(contexts[context],
@@ -91,7 +92,7 @@ test(pami_context_t contexts[], size_t ncontexts, size_t iterations, uint64_t* _
     assert(posted_list[context] == iterations);
   }
 
-  done_time = PAMI_Wtimebase();
+  done_time = PAMI_Wtimebase(client);
 
 
   *_posted_time = posted_time - start_time;
@@ -166,8 +167,8 @@ main(int argc, char **argv)
     }
 
     uint64_t posted_time, done_time;
-    test(contexts, ncontexts, ITERATIONS>>4, &posted_time, &done_time);
-    test(contexts, ncontexts, ITERATIONS,    &posted_time, &done_time);
+    test(client, contexts, ncontexts, ITERATIONS>>4, &posted_time, &done_time);
+    test(client, contexts, ncontexts, ITERATIONS,    &posted_time, &done_time);
 
     uint64_t posted_time_per = posted_time / (ncontexts*ITERATIONS);
     uint64_t done_time_per   = done_time   / (ncontexts*ITERATIONS);

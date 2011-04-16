@@ -117,7 +117,7 @@ int main(int argc, char ** argv)
   
   memset (&spwq, 0, sizeof(spwq));
   new (&spwq) PAMI::M2MPipeWorkQueueT<size_t, 0>();
-  pami_type_t dgsp = PAMI_TYPE_CONTIGUOUS;
+  pami_type_t dgsp = PAMI_TYPE_BYTE;
   spwq.configure(sm2mbuf, num_tasks, &dgsp, indices, sizes, sendinit);
 
   memset (&rpwq, 0, sizeof(rpwq));

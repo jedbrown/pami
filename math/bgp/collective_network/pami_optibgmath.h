@@ -295,7 +295,7 @@ extern void _pami_core_uint8_pre_min_o(uint8_t *dst, const uint8_t *src, int cou
  *
  * Note, many of these routines do not relate to PAMI_Op operations and thus
  * cannot be selected by "op". These defines will work in a Core_<type>_<oper>
- * function but not in a table/selector function. Look for PAMI_UNDEFINED_OP.
+ * function but not in a table/selector function. Look for PAMI_OP_COUNT.
  * At present, it seems none of the functions are actually used.
  */
 #define OPTIMIZED_int8_pre_all(op)

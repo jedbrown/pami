@@ -68,8 +68,6 @@
 // Collective shmem device
 #include "components/devices/cshmem/CollSharedMemoryManager.h"
 #include "components/devices/cshmem/CollShmDevice.h"
-#include "algorithms/geometry/CCMICSMultiRegistration.h"
-
 #include "components/devices/NativeInterface.h"
 
 
@@ -270,12 +268,12 @@ namespace PAMI
   typedef Mutex::YieldingNative                                                  LAPICSMutex;
   typedef PAMI::Memory::CollSharedMemoryManager<LAPICSAtomic,LAPICSMutex,LAPICSCounter,COLLSHM_SEGSZ,COLLSHM_PAGESZ,
                                     COLLSHM_WINGROUPSZ,COLLSHM_BUFSZ>            LAPICSMemoryManager;
-  typedef PAMI::Device::CollShm::CollShmDevice<LAPICSAtomic, LAPICSMemoryManager,
-                             COLLSHM_DEVICE_NUMSYNCS, COLLSHM_DEVICE_SYNCCOUNT>  LAPICSDevice;
+  typedef PAMI::Device::CollShm::CollShmDevice<LAPICSAtomic,
+                                               LAPICSMemoryManager,
+                                               COLLSHM_DEVICE_NUMSYNCS,
+                                               COLLSHM_DEVICE_SYNCCOUNT>  LAPICSDevice;
   typedef PAMI::Device::CollShm::CollShmModel<LAPICSDevice, LAPICSMemoryManager> LAPICollShmModel;
   typedef PAMI::Device::CSNativeInterface<LAPICollShmModel>                      LAPICSNativeInterface;
-  typedef PAMI::CollRegistration::CCMICSMultiRegistration<LAPIGeometry,
-                   LAPICSNativeInterface, LAPICSMemoryManager, LAPICollShmModel> LAPICollShmCollreg;
 
   // "New" CCMI Protocol Typedefs
   typedef PAMI::Device::DeviceNativeInterface<CAUDevice,
@@ -516,9 +514,9 @@ namespace PAMI
           uint64_t invec[PAMI_MAX_PROC_PER_NODE];
           int      count = 3+local_master_topo->size();
 
-          invec[2]  = 0x0ULL;
-
-
+          LapiImpl::Context *cp      = (LapiImpl::Context *)_Lapi_port[_lapi_handle];
+          size_t             cau_val = cp->nrt[0]->table_info.cau_index_resources;
+          invec[2] = cau_val;
           _cau_collreg->analyze(_contextid,_world_geometry,
                                 &invec[2],&count,0);
 
@@ -529,9 +527,11 @@ namespace PAMI
           // values with known values
           for (int i = 0; i < count; ++i)
             invec[3+i] = 0x0ULL;
-          
+
+          invec[2] = cau_val;
           _cau_collreg->analyze(_contextid,_world_geometry,
                                 &invec[2],&count,1);
+
           _cau_collreg->analyze(_contextid,_world_geometry,
                                 &invec[2],&count,2);
           
@@ -911,33 +911,6 @@ namespace PAMI
         }
 
 
-      inline pami_result_t geometry_algorithms_num_impl (pami_geometry_t geometry,
-                                                        pami_xfer_type_t colltype,
-                                                        size_t *lists_lengths)
-        {
-        LAPIGeometry *_geometry = (LAPIGeometry*) geometry;
-        return _geometry->algorithms_num(colltype, lists_lengths, _contextid);
-        }
-
-      inline pami_result_t geometry_algorithms_info_impl (pami_geometry_t    geometry,
-                                                          pami_xfer_type_t   colltype,
-                                                          pami_algorithm_t  *algs0,
-                                                          pami_metadata_t   *mdata0,
-                                                          size_t                num0,
-                                                          pami_algorithm_t  *algs1,
-                                                          pami_metadata_t   *mdata1,
-                                                          size_t                num1)
-      {
-        LAPIGeometry *_geometry = (LAPIGeometry*) geometry;
-        return _geometry->algorithms_info(colltype,
-                                          algs0,
-                                          mdata0,
-                                          num0,
-                                          algs1,
-                                          mdata1,
-                                          num1,
-                                          _contextid);
-        }
 
       inline pami_result_t dispatch_impl (size_t                          id,
                                           pami_dispatch_callback_function fn,

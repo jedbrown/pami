@@ -220,10 +220,15 @@ namespace PAMI
       virtual void start()
         {
           if (!this->_collexch->isdone()) this->_dev->advance();
+          uintptr_t op, dt;
+          PAMI::Type::TypeFunc::GetEnums(this->_cmd->cmd.xfer_allreduce.stype,
+                                         this->_cmd->cmd.xfer_allreduce.op,
+                                         dt,op);
+
           this->_collexch->reset (this->_cmd->cmd.xfer_allreduce.sndbuf,
                                   this->_cmd->cmd.xfer_allreduce.rcvbuf,
-                                  this->_cmd->cmd.xfer_allreduce.op,
-                                  this->_cmd->cmd.xfer_allreduce.dt,
+                                  (pami_op)op,
+                                  (pami_dt)dt,
                                   this->_cmd->cmd.xfer_allreduce.stypecount);
           this->_collexch->setComplete(this->_cmd->cb_done, this->_cmd->cookie);
           this->_collexch->kick(this->_model);

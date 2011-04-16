@@ -218,7 +218,7 @@ int main(int argc, char*argv[])
   rc = create_and_query_geometry(client,
                                  context,
                                  context,
-                                 PAMI_NULL_GEOMETRY,
+                                 PAMI_GEOMETRY_NULL,
                                  &newgeometry,
                                  range,
                                  rangecount,
@@ -262,7 +262,7 @@ int main(int argc, char*argv[])
   newbcast.algorithm                    = newbcast_algo[0];
   newbcast.cmd.xfer_broadcast.root      = root;
   newbcast.cmd.xfer_broadcast.buf       = buf;
-  newbcast.cmd.xfer_broadcast.type      = PAMI_TYPE_CONTIGUOUS;
+  newbcast.cmd.xfer_broadcast.type      = PAMI_TYPE_BYTE;
   newbcast.cmd.xfer_broadcast.typecount = 0;
 
 

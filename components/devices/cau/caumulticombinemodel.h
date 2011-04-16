@@ -433,7 +433,6 @@ namespace PAMI
                 coremath        mathfunc;
                 CCMI::Adaptor::Allreduce::getReduceFunction(mcombine->dtype,
                                                             mcombine->optor,
-                                                            0, //unused
                                                             sizeOfType,
                                                             mathfunc);
                 m  = new(state) CAUMcombineMessage(mcombine->count,               // count

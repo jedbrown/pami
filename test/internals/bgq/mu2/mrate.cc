@@ -97,7 +97,7 @@ void recv (pami_context_t context)
   TRACE_ERR((stderr, "(%zu) recv_once()  After advance\n", _my_rank));
 }
 
-unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrlen, size_t sndlen, pami_task_t myrank, pami_endpoint_t target)
+unsigned long long test (pami_client_t client, pami_context_t context, size_t dispatch, size_t hdrlen, size_t sndlen, pami_task_t myrank, pami_endpoint_t target)
 {
   TRACE_ERR((stderr, "(%u) Do test ... sndlen = %zu\n", myrank, sndlen));
   char metadata[MAX_BUFSIZE];
@@ -116,7 +116,7 @@ unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrlen,
 //  barrier ();
 
   unsigned i;
-  unsigned long long t1 = PAMI_Wtimebase();
+  unsigned long long t1 = PAMI_Wtimebase(client);
 
   parameters.dest = target;
   for (i = 0; i < ITERATIONS; i++)
@@ -128,7 +128,7 @@ unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrlen,
     }
 
   blocking_coll(context, &barrier, &poll_flag);
-  unsigned long long t2 = PAMI_Wtimebase();
+  unsigned long long t2 = PAMI_Wtimebase(client);
   
   return ((t2-t1)/ITERATIONS)/2;
 }
@@ -371,12 +371,12 @@ int main (int argc, char ** argv)
     {
 #ifdef WARMUP
       if (do_test)
-	test (context, _dispatch[0], hdrsize[i], sndlen, _my_rank, target);
+	test (client, context, _dispatch[0], hdrsize[i], sndlen, _my_rank, target);
       else
 	blocking_coll(context, &barrier, &poll_flag);
 #endif
       if (do_test)
-	cycles = test (context, _dispatch[0], hdrsize[i], sndlen, _my_rank, target);
+	cycles = test (client, context, _dispatch[0], hdrsize[i], sndlen, _my_rank, target);
       else
 	blocking_coll(context, &barrier, &poll_flag);
       blocking_coll(context, &barrier, &poll_flag);

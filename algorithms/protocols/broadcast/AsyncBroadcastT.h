@@ -346,7 +346,7 @@ public:
         else
         {
             // use type count for now, need datatype handling !!!
-            // CCMI_assert (co->getXfer()->type != PAMI_TYPE_CONTIGUOUS);
+            // CCMI_assert (co->getXfer()->type != PAMI_TYPE_BYTE);
             CCMI_assert (co->getXfer()->cmd.xfer_broadcast.typecount == sndlen);
             a_bcast = (T_Composite *) co->getComposite();
         }

@@ -97,7 +97,9 @@ void recv_once (pami_context_t context)
   TRACE_ERR((stderr, "(%zu) recv_once()  After advance\n", _my_task));
 }
 
-unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrlen, size_t sndlen, pami_task_t myrank, pami_endpoint_t origin, pami_endpoint_t target)
+unsigned long long test (pami_client_t client, pami_context_t context,
+                         size_t dispatch, size_t hdrlen, size_t sndlen,
+                         pami_task_t myrank, pami_endpoint_t origin, pami_endpoint_t target)
 {
   TRACE_ERR((stderr, "(%zu) Do test ... sndlen = %zu\n", _my_task, sndlen));
   _recv_active = 1;
@@ -118,7 +120,7 @@ unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrlen,
   parameters.data.iov_len = sndlen;
 
   unsigned i;
-  unsigned long long t1 = PAMI_Wtimebase();
+  unsigned long long t1 = PAMI_Wtimebase(client);
 
   if (myrank == 0)
     {
@@ -147,7 +149,7 @@ unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrlen,
         }
     }
 
-  unsigned long long t2 = PAMI_Wtimebase();
+  unsigned long long t2 = PAMI_Wtimebase(client);
 
   return ((t2 - t1) / ITERATIONS) / 2;
 }
@@ -367,9 +369,9 @@ int main (int argc, char ** argv)
                   sndlen <= dispatch[j].send_immediate_max)
                 {
 #ifdef WARMUP
-                  test (context,  dispatch[j].id, hdrsize[i], sndlen, _my_task, origin, target);
+                  test (client, context,  dispatch[j].id, hdrsize[i], sndlen, _my_task, origin, target);
 #endif
-                  unsigned long long cycles = test (context,  dispatch[j].id, hdrsize[i], sndlen, _my_task, origin, target);
+                  unsigned long long cycles = test (client, context,  dispatch[j].id, hdrsize[i], sndlen, _my_task, origin, target);
                   double usec   = cycles * tick * 1000000.0;
                   index += sprintf (&str[index], "%8lld %8.4f  ", cycles, usec);
                 }

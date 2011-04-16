@@ -336,7 +336,7 @@ int main (int argc, char ** argv)
     rc |= create_and_query_geometry(client,
                                     context[0],
                                     context[iContext],
-                                    parentless ? PAMI_NULL_GEOMETRY : world_geometry,
+                                    parentless ? PAMI_GEOMETRY_NULL : world_geometry,
                                     &newgeometry,
                                     range,
                                     rangecount,
@@ -380,10 +380,10 @@ int main (int argc, char ** argv)
       allgather.cookie     = (void*) & allgather_poll_flag;
       allgather.algorithm  = allgather_always_works_algo[nalg];
       allgather.cmd.xfer_allgather.sndbuf     = buf;
-      allgather.cmd.xfer_allgather.stype      = PAMI_TYPE_CONTIGUOUS;
+      allgather.cmd.xfer_allgather.stype      = PAMI_TYPE_BYTE;
       allgather.cmd.xfer_allgather.stypecount = 0;
       allgather.cmd.xfer_allgather.rcvbuf     = rbuf;
-      allgather.cmd.xfer_allgather.rtype      = PAMI_TYPE_CONTIGUOUS;
+      allgather.cmd.xfer_allgather.rtype      = PAMI_TYPE_BYTE;
       allgather.cmd.xfer_allgather.rtypecount = 0;
 
       int             i, j, k;

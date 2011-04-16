@@ -202,7 +202,7 @@ static void test_dispatch (
 
     __recv_size = pipe_size;
     
-    PAMI_Type_transform_data ((void *) pipe_addr, PAMI_TYPE_CONTIGUOUS, 0, __recv_buffer, __recv_type, 0, pipe_size, PAMI_DATA_COPY, NULL);
+    PAMI_Type_transform_data ((void *) pipe_addr, PAMI_TYPE_BYTE, 0, __recv_buffer, __recv_type, 0, pipe_size, PAMI_DATA_COPY, NULL);
 
     recv_done (context, cookie, PAMI_SUCCESS);
   } else {

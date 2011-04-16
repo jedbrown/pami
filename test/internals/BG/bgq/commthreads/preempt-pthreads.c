@@ -159,12 +159,12 @@ fprintf(stderr, "++ %ld %d:%d\n", thr_data[x].thread, i / 4, i % 4);
 
 		if (y + 1 < NUM_TESTRUNS) {
 			fprintf(stderr, "Sleeping...\n");
-			do_sleep(buf, bufl, "Wa", 5);
+			do_sleep(client, buf, bufl, "Wa", 5);
 		}
 	}
 	run = 0;
 
-	do_sleep(buf, bufl, "Fi", 5);
+	do_sleep(client, buf, bufl, "Fi", 5);
 
 	for (x = 0; x < NUM_CONTEXTS; ++x) {
 		pthread_mutex_unlock(&thr_data[x].mutex);

@@ -58,15 +58,15 @@ void test_init() {
 #endif // EVICT_BUF_SIZE
 }
 
-void do_sleep(char *buf, int bufl, char *end, size_t number) {
+void do_sleep(pami_client_t client, char *buf, int bufl, char *end, size_t number) {
 	buf[0] = 'S'; buf[1] = 'p';
 	write(2, buf, bufl);
 #ifdef EVICT_BUF_SIZE
 	static int evx = 0;
 #endif // EVICT_BUF_SIZE
-	{unsigned long long t0 = PAMI_Wtimebase();
+	{unsigned long long t0 = PAMI_Wtimebase(client);
 	unsigned long long some_num = number * 100000;
-	while (PAMI_Wtimebase() - t0 < some_num) {
+	while (PAMI_Wtimebase(client) - t0 < some_num) {
 #ifdef EVICT_BUF_SIZE
 		int evz = evx;
 		int evy = evz + EVICT_ITER_SIZE;
@@ -153,7 +153,7 @@ pami_result_t run_test(pami_client_t client, pami_context_t *ctx, size_t nctx) {
 
 	const unsigned long long timeout = 500000; // abort after 10x of these, cycles
 	unsigned long long t0, t1, t2;
-	t0 = t1 = PAMI_Wtimebase();
+	t0 = t1 = PAMI_Wtimebase(client);
 	int busy;
 	int stuck = 0;
 	do {
@@ -161,7 +161,7 @@ pami_result_t run_test(pami_client_t client, pami_context_t *ctx, size_t nctx) {
 		if (!busy) break;
 
 		// should complete without ever calling advance...
-		t2 = PAMI_Wtimebase();
+		t2 = PAMI_Wtimebase(client);
 		if (t2 - t1 >= timeout) {
 			static char buf[1024];
 			char *s = buf;
@@ -249,7 +249,7 @@ pami_result_t run_test_send(pami_client_t client, pami_context_t *ctx, size_t nc
 
 	const unsigned long long timeout = 50000000; // abort after 10x of these, cycles
 	unsigned long long t0, t1, t2;
-	t0 = t1 = PAMI_Wtimebase();
+	t0 = t1 = PAMI_Wtimebase(client);
 	int busy;
 	int stuck = 0;
 	do {
@@ -257,7 +257,7 @@ pami_result_t run_test_send(pami_client_t client, pami_context_t *ctx, size_t nc
 		if (!busy) break;
 
 		// should complete without ever calling advance...
-		t2 = PAMI_Wtimebase();
+		t2 = PAMI_Wtimebase(client);
 		if (t2 - t1 >= timeout) {
 			static char buf[1024];
 			char *s = buf;

@@ -133,13 +133,12 @@ namespace PAMI {
 				// algorithm not needed here       
 				memset(&ar.options,0,sizeof(ar.options));
 				ar.cmd.xfer_allreduce.sndbuf            = (char*) _input;
-				ar.cmd.xfer_allreduce.stype             = PAMI_TYPE_CONTIGUOUS;
-				ar.cmd.xfer_allreduce.stypecount        = _total_nelem * sizeof(uint64_t);
+				ar.cmd.xfer_allreduce.stype             = PAMI_TYPE_UNSIGNED_LONG_LONG;
+				ar.cmd.xfer_allreduce.stypecount        = _total_nelem;
 				ar.cmd.xfer_allreduce.rcvbuf            = (char*) _result;
-				ar.cmd.xfer_allreduce.rtype             = PAMI_TYPE_CONTIGUOUS;
-				ar.cmd.xfer_allreduce.rtypecount        = _total_nelem * sizeof(uint64_t);
-				ar.cmd.xfer_allreduce.dt                = PAMI_UNSIGNED_LONG_LONG;
-				ar.cmd.xfer_allreduce.op                = PAMI_BAND;
+				ar.cmd.xfer_allreduce.rtype             = PAMI_TYPE_UNSIGNED_LONG_LONG;
+				ar.cmd.xfer_allreduce.rtypecount        = _total_nelem;
+				ar.cmd.xfer_allreduce.op                = PAMI_DATA_BAND;
 				_ar_algo->generate(&ar);	  
 			}
 	  }

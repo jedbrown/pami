@@ -99,7 +99,7 @@ static void recv_done (pami_context_t   context,
                        void          * cookie,
                        pami_result_t    result)
 {
-  T_RECV_DONE = PAMI_Wtimebase();
+  T_RECV_DONE = PAMI_Wtimebase(_g_client);
   volatile size_t * active = (volatile size_t *) cookie;
   TRACE_ERR((stderr, "Called recv_done function.  cookie=%p, active: %zu -> %zu\n", cookie, *active, *active-1));
   (*active)--;
@@ -115,7 +115,7 @@ static void test_dispatch (
     pami_endpoint_t      origin,       /**< IN:  Endpoint that originated the transfer */
     pami_recv_t        * recv)         /**< OUT: receive message structure */
 {
-  T_DISPATCH = PAMI_Wtimebase();
+  T_DISPATCH = PAMI_Wtimebase(_g_client);
   TRACE_ERR((stderr, "Called dispatch function.  cookie = %p, active: %zu, header_addr = %p, pipe_addr = %p\n", cookie,  *((volatile size_t *) cookie), header_addr, pipe_addr));
 
   if (recv == NULL)
@@ -131,7 +131,7 @@ static void test_dispatch (
 
     recv->local_fn = recv_done;
     recv->cookie   = cookie;
-    recv->type     = PAMI_TYPE_CONTIGUOUS;
+    recv->type     = PAMI_TYPE_BYTE;
     recv->addr     = _rbuf;
     recv->offset   = 0;
     TRACE_ERR((stderr, "... dispatch function.  recv->local_fn = %p\n", recv->local_fn));
@@ -144,7 +144,7 @@ static void send_done_local (pami_context_t   context,
                              void          * cookie,
                              pami_result_t    result)
 {
-  T_SEND_DONE_LOCAL = PAMI_Wtimebase();
+  T_SEND_DONE_LOCAL = PAMI_Wtimebase(_g_client);
   volatile size_t * active = (volatile size_t *) cookie;
   TRACE_ERR((stderr, "Called send_done_local function.  cookie=%p, active: %zu -> %zu\n", cookie, *active, *active-1));
   (*active)--;
@@ -154,7 +154,7 @@ static void send_done_remote (pami_context_t   context,
                               void          * cookie,
                               pami_result_t    result)
 {
-  T_SEND_DONE_REMOTE = PAMI_Wtimebase();
+  T_SEND_DONE_REMOTE = PAMI_Wtimebase(_g_client);
   volatile size_t * active = (volatile size_t *) cookie;
   TRACE_ERR((stderr, "Called send_done_remote function.  cookie=%p, active: %zu -> %zu\n", cookie, *active, *active-1));
   (*active)--;
@@ -184,13 +184,13 @@ unsigned long long test (size_t sndlen, size_t myrank)
     PAMI_Endpoint_create (_g_client, myrank, 0, &parameters.send.dest);
     TRACE_ERR((stderr, "(%zu)\n(%zu) Starting Iteration %d of size %zu\n", _my_rank, _my_rank, i, sndlen));
     if (i == 1)
-      t1 = PAMI_Wtimebase();
+      t1 = PAMI_Wtimebase(_g_client);
 
     _send_active = 2;
     _recv_active = 1;
     TRACE_ERR((stderr,"test():  Calling PAMI_Send\n"));
 
-    T_SEND_START = PAMI_Wtimebase();
+    T_SEND_START = PAMI_Wtimebase(_g_client);
     result = PAMI_Send (_g_context, &parameters);
     TRACE_ERR((stderr,"test():  Back from PAMI_Send\n"));
 
@@ -200,9 +200,9 @@ unsigned long long test (size_t sndlen, size_t myrank)
         result = PAMI_Context_advance (_g_context, 100);
         TRACE_ERR((stderr,"test():  Back from Advance\n"));
       }
-    T_ADVANCE_DONE = PAMI_Wtimebase();
+    T_ADVANCE_DONE = PAMI_Wtimebase(_g_client);
   }
-  unsigned long long t2 = PAMI_Wtimebase();
+  unsigned long long t2 = PAMI_Wtimebase(_g_client);
 
   return ((t2-t1)/ITERATIONS);
 }

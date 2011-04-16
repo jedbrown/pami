@@ -206,7 +206,7 @@ void TSPColl::Allreduce::Short<T_NI>::reset (const void         * sbuf,
                                              void               * dbuf,
                                              pami_op              op,
                                              pami_dt              dt,
-                                             unsigned             bytes)
+                                             unsigned             count)
 {
   PAMI_assert(sbuf != NULL);
   PAMI_assert(dbuf != NULL);
@@ -217,8 +217,10 @@ void TSPColl::Allreduce::Short<T_NI>::reset (const void         * sbuf,
   _dbuf   = dbuf;
   unsigned datawidth;
   //  size_t datawidth = datawidthof (dt);
-  CCMI::Adaptor::Allreduce::getReduceFunction(dt, op, _nelems, datawidth, _cb_allreduce);
-  _nelems = bytes / datawidth;
+  CCMI::Adaptor::Allreduce::getReduceFunction(dt, op,datawidth, _cb_allreduce);
+  _nelems = count;
+  unsigned bytes = count * datawidth;
+
   PAMI_assert(bytes < sizeof(PhaseBufType));
 
   if (sbuf != dbuf) memcpy (dbuf, sbuf, bytes);
@@ -411,7 +413,7 @@ void TSPColl::Allreduce::Long<T_NI>::reset (const void         * sbuf,
                                             void               * dbuf,
                                             pami_op              op,
                                             pami_dt              dt,
-                                            unsigned             bytes)
+                                            unsigned             count)
 {
   PAMI_assert(sbuf != NULL);
   PAMI_assert(dbuf != NULL);
@@ -424,8 +426,9 @@ void TSPColl::Allreduce::Long<T_NI>::reset (const void         * sbuf,
   _nelems = 0;
   //  size_t datawidth = datawidthof (dt);
   unsigned datawidth;
-  CCMI::Adaptor::Allreduce::getReduceFunction(dt, op, _nelems, datawidth, _cb_allreduce);
-  _nelems = bytes / datawidth;
+  CCMI::Adaptor::Allreduce::getReduceFunction(dt, op, datawidth, _cb_allreduce);
+  _nelems = count;
+  unsigned bytes = count * datawidth;
 
   if (sbuf != dbuf) memcpy (dbuf, sbuf, bytes);
   pami_result_t prc;

@@ -276,7 +276,7 @@ int main (int argc, char ** argv)
     rc |= create_and_query_geometry(client,
                                     context[0],
                                    context[iContext],
-                                   parentless ? PAMI_NULL_GEOMETRY : world_geometry,
+                                   parentless ? PAMI_GEOMETRY_NULL : world_geometry,
                                    &newgeometry,
                                    range,
                                    rangecount,

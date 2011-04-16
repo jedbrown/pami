@@ -1329,7 +1329,7 @@ namespace PAMI
         if (recv != NULL)
         {  
           memset(recv, 0, sizeof(*recv));
-          recv->type = PAMI_TYPE_CONTIGUOUS;
+          recv->type = PAMI_TYPE_BYTE;
           recv->data_fn = PAMI_DATA_COPY;
         }
 
@@ -1345,7 +1345,7 @@ namespace PAMI
     recv->cookie   = cb_done.clientdata;
     recv->local_fn = cb_done.function;
     recv->addr     = rcvpwq->bufferToProduce();
-    recv->type     = PAMI_TYPE_CONTIGUOUS;
+    recv->type     = PAMI_TYPE_BYTE;
     recv->offset   = 0;
     recv->data_fn  = PAMI_DATA_COPY;
     recv->data_cookie = (void*)NULL;
@@ -1977,7 +1977,7 @@ namespace PAMI
         if (recv != NULL)
         {  
           memset(recv, 0, sizeof(*recv));
-          recv->type = PAMI_TYPE_CONTIGUOUS;
+          recv->type = PAMI_TYPE_BYTE;
           recv->data_fn = PAMI_DATA_COPY;
         }
         TRACE_FN_EXIT();
@@ -2001,7 +2001,7 @@ namespace PAMI
     recv->cookie   = req;
     recv->local_fn = ni_client_done;
     recv->addr     = rcvpwq->bufferToProduce();
-    recv->type     = PAMI_TYPE_CONTIGUOUS;
+    recv->type     = PAMI_TYPE_BYTE;
     recv->offset   = 0;
     recv->data_fn  = PAMI_DATA_COPY;
     recv->data_cookie = (void*)NULL;
@@ -2124,7 +2124,7 @@ namespace PAMI
         if (recv != NULL)
         {  
           memset(recv, 0, sizeof(*recv));
-          recv->type = PAMI_TYPE_CONTIGUOUS;
+          recv->type = PAMI_TYPE_BYTE;
           recv->data_fn = PAMI_DATA_COPY;
         }
         TRACE_FN_EXIT();
@@ -2136,7 +2136,7 @@ namespace PAMI
     recv->cookie   = state;
     recv->local_fn = recvM2mDone;
     recv->addr     = buffer;
-    recv->type     = PAMI_TYPE_CONTIGUOUS;
+    recv->type     = PAMI_TYPE_BYTE;
     recv->offset   = 0;
     recv->data_fn  = PAMI_DATA_COPY;
     recv->data_cookie = (void*)NULL;

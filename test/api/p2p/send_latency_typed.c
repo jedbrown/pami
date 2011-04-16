@@ -98,7 +98,7 @@ static void test_dispatch (
       TRACE_ERR((stderr, "(%zu) test_dispatch() async recv:  cookie = %p, pipe_size = %zu\n", _my_task, cookie, pipe_size));
       recv->local_fn = decrement;
       recv->cookie   = cookie;
-      recv->type     = PAMI_TYPE_CONTIGUOUS;
+      recv->type     = PAMI_TYPE_BYTE;
       recv->addr     = _recv_buffer;
       recv->offset   = 0;
       recv->data_fn  = PAMI_DATA_COPY;
@@ -134,7 +134,8 @@ void recv_once (pami_context_t context)
   TRACE_ERR((stderr, "(%zu) recv_once()  After advance\n", _my_task));
 }
 
-unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrsize,
+unsigned long long test (pami_client_t client,
+                         pami_context_t context, size_t dispatch, size_t hdrsize,
                          size_t sndcount, pami_task_t mytask, pami_task_t origintask,
                          pami_endpoint_t origin, pami_task_t targettask, pami_endpoint_t target)
 {
@@ -163,7 +164,7 @@ unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrsize
   memset(&parameters.send.hints, 0, sizeof(parameters.send.hints));
 
   unsigned i;
-  unsigned long long t1 = PAMI_Wtimebase();
+  unsigned long long t1 = PAMI_Wtimebase(client);
 
   if (mytask == origintask)
     {
@@ -188,7 +189,7 @@ unsigned long long test (pami_context_t context, size_t dispatch, size_t hdrsize
         }
     }
 
-  unsigned long long t2 = PAMI_Wtimebase();
+  unsigned long long t2 = PAMI_Wtimebase(client);
 
   return ((t2 - t1) / ITERATIONS) / 2;
 }
@@ -288,10 +289,30 @@ int main (int argc, char ** argv)
 
   sleep(1); /* work-around for ticket #385 */
 
-
-  PAMI_Type_create(&send_datatype);
-  PAMI_Type_add_simple(send_datatype,TYPESIZE,0UL,1,0);
-  PAMI_Type_complete(send_datatype, TYPESIZE);
+  char *data = getenv ("MPI_DATATYPE");
+  if (data && !strcmp(data, "PAMI"))
+  {
+    send_datatype = PAMI_TYPE_DOUBLE;
+    if (_my_task == origin_task)
+      fprintf (stdout, "Using PAMI Builtin Datatype\n");
+  }
+  else if (data)
+  {
+    PAMI_Type_create(&send_datatype);
+    PAMI_Type_add_simple(send_datatype,TYPESIZE,0UL,1,0);
+    PAMI_Type_add_simple(send_datatype,0,TYPESIZE,0,0);
+    PAMI_Type_complete(send_datatype, TYPESIZE);
+    if (_my_task == origin_task)
+      fprintf (stdout, "Using PE MPI Style Builtin Datatype\n");
+  }
+  else
+  {
+    PAMI_Type_create(&send_datatype);
+    PAMI_Type_add_simple(send_datatype,TYPESIZE,0UL,1,TYPESIZE);
+    PAMI_Type_complete(send_datatype, TYPESIZE);
+    if (_my_task == origin_task)
+      fprintf (stdout, "Using Standard Derived Datatype\n");
+  }
 
 
   for (i = 0; i < 3; i++)
@@ -312,7 +333,7 @@ int main (int argc, char ** argv)
           parameters.events.cookie        = (void *) & pretest_active;
           parameters.events.local_fn      = decrement;
           parameters.events.remote_fn     = NULL;
-          parameters.typed.type           = PAMI_TYPE_CONTIGUOUS;
+          parameters.typed.type           = PAMI_TYPE_BYTE;
           parameters.typed.offset         = 0;
           parameters.typed.data_fn        = PAMI_DATA_COPY;
           parameters.typed.data_cookie    = NULL;
@@ -390,9 +411,9 @@ int main (int argc, char ** argv)
               if (dispatch[j].result == PAMI_SUCCESS)
                 {
 #ifdef WARMUP
-                  test (context, dispatch[j].id, hdrsize[i], sndcount, _my_task, origin_task, origin, target_task, target);
+                  test (client,context, dispatch[j].id, hdrsize[i], sndcount, _my_task, origin_task, origin, target_task, target);
 #endif
-                  cycles = test (context, dispatch[j].id, hdrsize[i], sndcount, _my_task, origin_task, origin, target_task, target);
+                  cycles = test (client, context, dispatch[j].id, hdrsize[i], sndcount, _my_task, origin_task, origin, target_task, target);
                   usec   = cycles * tick * 1000000.0;
                   index += sprintf (&str[index], "%8lld %8.4f  ", cycles, usec);
                 }

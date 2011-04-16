@@ -54,8 +54,8 @@ namespace CCMI
               _count(0),
               _bytes(0),
               _sizeOfType(0),
-              _op(PAMI_UNDEFINED_OP),
-              _dt(PAMI_UNDEFINED_DT),
+              _op(PAMI_OP_COUNT),
+              _dt(PAMI_DT_COUNT),
               _pipewidth(0)
           {
           }

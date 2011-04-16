@@ -357,7 +357,7 @@ int main (int argc, char ** argv)
     rc |= create_and_query_geometry(client,
                                     context[0],
                                     context[iContext],
-                                    parentless ? PAMI_NULL_GEOMETRY : world_geometry,
+                                    parentless ? PAMI_GEOMETRY_NULL : world_geometry,
                                     &newgeometry,
                                     range,
                                     rangecount,
@@ -401,11 +401,11 @@ int main (int argc, char ** argv)
       alltoallv_int.cookie     = (void*) & alltoallv_int_poll_flag;
       alltoallv_int.algorithm  = alltoallv_int_always_works_algo[nalg];
       alltoallv_int.cmd.xfer_alltoallv_int.sndbuf        = sbuf;
-      alltoallv_int.cmd.xfer_alltoallv_int.stype         = PAMI_TYPE_CONTIGUOUS;
+      alltoallv_int.cmd.xfer_alltoallv_int.stype         = PAMI_TYPE_BYTE;
       alltoallv_int.cmd.xfer_alltoallv_int.stypecounts   = sndlens;
       alltoallv_int.cmd.xfer_alltoallv_int.sdispls       = sdispls;
       alltoallv_int.cmd.xfer_alltoallv_int.rcvbuf        = rbuf;
-      alltoallv_int.cmd.xfer_alltoallv_int.rtype         = PAMI_TYPE_CONTIGUOUS;
+      alltoallv_int.cmd.xfer_alltoallv_int.rtype         = PAMI_TYPE_BYTE;
       alltoallv_int.cmd.xfer_alltoallv_int.rtypecounts   = rcvlens;
       alltoallv_int.cmd.xfer_alltoallv_int.rdispls       = rdispls;
 

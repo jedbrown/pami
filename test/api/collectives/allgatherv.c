@@ -123,10 +123,10 @@ int main (int argc, char ** argv)
         allgatherv.cookie     = (void*) & allgatherv_poll_flag;
         allgatherv.algorithm  = allgatherv_always_works_algo[nalg];
         allgatherv.cmd.xfer_allgatherv.sndbuf     = buf;
-        allgatherv.cmd.xfer_allgatherv.stype      = PAMI_TYPE_CONTIGUOUS;
+        allgatherv.cmd.xfer_allgatherv.stype      = PAMI_TYPE_BYTE;
         allgatherv.cmd.xfer_allgatherv.stypecount = 0;
         allgatherv.cmd.xfer_allgatherv.rcvbuf     = rbuf;
-        allgatherv.cmd.xfer_allgatherv.rtype      = PAMI_TYPE_CONTIGUOUS;
+        allgatherv.cmd.xfer_allgatherv.rtype      = PAMI_TYPE_BYTE;
         allgatherv.cmd.xfer_allgatherv.rtypecounts = lengths;
         allgatherv.cmd.xfer_allgatherv.rdispls    = displs;
 

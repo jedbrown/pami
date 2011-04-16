@@ -543,9 +543,9 @@ int main (int argc, char ** argv)
       reduce.cookie    = (void*) & reduce_poll_flag;
       reduce.algorithm = reduce_always_works_algo[nalg];
       reduce.cmd.xfer_reduce.sndbuf    = sbuf;
-      reduce.cmd.xfer_reduce.stype     = PAMI_TYPE_CONTIGUOUS;
+      reduce.cmd.xfer_reduce.stype     = PAMI_TYPE_BYTE;
       reduce.cmd.xfer_reduce.stypecount = 0;
-      reduce.cmd.xfer_reduce.rtype     = PAMI_TYPE_CONTIGUOUS;
+      reduce.cmd.xfer_reduce.rtype     = PAMI_TYPE_BYTE;
       reduce.cmd.xfer_reduce.rtypecount = 0;
 
       for (dt = 0; dt < dt_count; dt++)

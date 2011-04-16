@@ -246,11 +246,11 @@ int main(int argc, char*argv[])
 
             /* Warmup */
             alltoallv.cmd.xfer_alltoallv.sndbuf        = sbuf;
-            alltoallv.cmd.xfer_alltoallv.stype         = PAMI_TYPE_CONTIGUOUS;
+            alltoallv.cmd.xfer_alltoallv.stype         = PAMI_TYPE_BYTE;
             alltoallv.cmd.xfer_alltoallv.stypecounts   = sndlens;
             alltoallv.cmd.xfer_alltoallv.sdispls       = sdispls;
             alltoallv.cmd.xfer_alltoallv.rcvbuf        = rbuf;
-            alltoallv.cmd.xfer_alltoallv.rtype         = PAMI_TYPE_CONTIGUOUS;
+            alltoallv.cmd.xfer_alltoallv.rtype         = PAMI_TYPE_BYTE;
             alltoallv.cmd.xfer_alltoallv.rtypecounts   = rcvlens;
             alltoallv.cmd.xfer_alltoallv.rdispls       = rdispls;
             blocking_coll(context, &alltoallv, &alltoallv_poll_flag);
@@ -262,11 +262,11 @@ int main(int argc, char*argv[])
             for (j = 0; j < niter; j++)
               {
                 alltoallv.cmd.xfer_alltoallv.sndbuf        = sbuf;
-                alltoallv.cmd.xfer_alltoallv.stype         = PAMI_TYPE_CONTIGUOUS;
+                alltoallv.cmd.xfer_alltoallv.stype         = PAMI_TYPE_BYTE;
                 alltoallv.cmd.xfer_alltoallv.stypecounts   = sndlens;
                 alltoallv.cmd.xfer_alltoallv.sdispls       = sdispls;
                 alltoallv.cmd.xfer_alltoallv.rcvbuf        = rbuf;
-                alltoallv.cmd.xfer_alltoallv.rtype         = PAMI_TYPE_CONTIGUOUS;
+                alltoallv.cmd.xfer_alltoallv.rtype         = PAMI_TYPE_BYTE;
                 alltoallv.cmd.xfer_alltoallv.rtypecounts   = rcvlens;
                 alltoallv.cmd.xfer_alltoallv.rdispls       = rdispls;
                 blocking_coll(context, &alltoallv, &alltoallv_poll_flag);

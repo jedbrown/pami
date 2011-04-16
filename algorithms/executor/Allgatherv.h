@@ -455,9 +455,23 @@ inline void  CCMI::Executor::AllgathervExec<T_ConnMgr, T_Type>::start ()
   else
     _rphase ++;
 
-  TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::start()_rbuf %p,_disps %p, _sbuf %p, _rcvcounts %p\n", this,_rbuf,_disps,_sbuf, _rcvcounts));
-  TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::start()_rbuf %p,_disps[%zu] %zu, _rbuf + _disps[_myindex] %p, _sbuf %p, _rcvcounts[_myindex] %zu\n", this,_rbuf,(size_t)_myindex, (size_t)_disps[_myindex], _rbuf + _disps[_myindex], _sbuf, (size_t)_rcvcounts[_myindex]));
-  memcpy(_rbuf + _disps[_myindex], _sbuf, _rcvcounts[_myindex]);
+  if(isTypeSame<T_Type, pami_allgatherv_t>::result)
+    {
+      TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::start()_rbuf %p,_disps %p, _sbuf %p, _rcvcounts %p\n", this,_rbuf,_disps,_sbuf, _rcvcounts));
+      TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::start()_rbuf %p,_disps[%zu] %zu, _rbuf + _disps[_myindex] %p, _sbuf %p, _rcvcounts[_myindex] %zu\n", this,_rbuf,(size_t)_myindex, (size_t)_disps[_myindex], _rbuf + _disps[_myindex], _sbuf, (size_t)_rcvcounts[_myindex]));
+      memcpy(_rbuf + _disps[_myindex], _sbuf, _rcvcounts[_myindex]);
+    }
+  else
+    { // We are in Allgather
+      // Nothing to gather? Invoke the callback and return
+      if ((_buflen == 0) && _cb_done)
+        {
+          _cb_done (NULL, _clientdata, PAMI_SUCCESS);
+          return;
+        }
+       TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::start() _rbuf %p,_sbuf %p\n", this,_rbuf,_sbuf));
+       memcpy(_rbuf, _sbuf, _buflen);
+    }
 
   sendNext ();
 }

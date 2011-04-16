@@ -890,13 +890,12 @@ fprintf(stderr, "%s\n", buf);
 	  cookie->abuf[1] = geom_id;
 	  cookie->abuf[2] = ~geom_id;
 	  cookie->xfer.cmd.xfer_allreduce.sndbuf = (char *)&cookie->abuf[0];
-	  cookie->xfer.cmd.xfer_allreduce.stype = PAMI_TYPE_CONTIGUOUS;
-	  cookie->xfer.cmd.xfer_allreduce.stypecount = sizeof(cookie->abuf);
+	  cookie->xfer.cmd.xfer_allreduce.stype = PAMI_TYPE_UNSIGNED_LONG_LONG;
+	  cookie->xfer.cmd.xfer_allreduce.stypecount = sizeof(cookie->abuf)/8;
 	  cookie->xfer.cmd.xfer_allreduce.rcvbuf = (char *)&cookie->bbuf[0];
-	  cookie->xfer.cmd.xfer_allreduce.rtype = PAMI_TYPE_CONTIGUOUS;
-	  cookie->xfer.cmd.xfer_allreduce.rtypecount = sizeof(cookie->bbuf);
-	  cookie->xfer.cmd.xfer_allreduce.dt = PAMI_UNSIGNED_LONG_LONG;
-	  cookie->xfer.cmd.xfer_allreduce.op = PAMI_BAND;
+	  cookie->xfer.cmd.xfer_allreduce.rtype =  PAMI_TYPE_UNSIGNED_LONG_LONG;
+	  cookie->xfer.cmd.xfer_allreduce.rtypecount = sizeof(cookie->bbuf)/8;
+	  cookie->xfer.cmd.xfer_allreduce.op = PAMI_DATA_BAND;
 	  // tell geometry completion to wait for us...
 	  geom->addCompletion();
 	  start_over(context, cookie, PAMI_SUCCESS);
@@ -1045,8 +1044,8 @@ fprintf(stderr, "%s\n", buf);
 #endif // TRACE_CLASSROUTES
 	  // Now, must perform an "allreduce(&mask, 1, PAMI_LONGLONG, PAMI_AND)"
 	  pami_algorithm_t algo = 0;
-	  PAMI_Geometry_algorithms_query(ctx, crck->geom, PAMI_XFER_ALLREDUCE,
-	                                        &algo, NULL, 1, NULL, NULL, 0);
+	  PAMI_Geometry_algorithms_query(crck->geom, PAMI_XFER_ALLREDUCE,
+					 &algo, NULL, 1, NULL, NULL, 0);
 	  if (!algo)
 	  {
 	    cr_allreduce_done(ctx, cookie, PAMI_ERROR);

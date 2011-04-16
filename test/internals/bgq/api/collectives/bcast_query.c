@@ -209,7 +209,7 @@ int main (int argc, char ** argv)
       broadcast.algorithm                    = bcast_must_query_algo[nalg];
       broadcast.cmd.xfer_broadcast.root      = root;
       broadcast.cmd.xfer_broadcast.buf       = buf;
-      broadcast.cmd.xfer_broadcast.type      = PAMI_TYPE_CONTIGUOUS;
+      broadcast.cmd.xfer_broadcast.type      = PAMI_TYPE_BYTE;
       broadcast.cmd.xfer_broadcast.typecount = 0;
 
       protocolName = bcast_must_query_md[nalg].name;
@@ -269,13 +269,13 @@ int main (int argc, char ** argv)
                                    (dataSent >= bcast_must_query_md[nalg].range_lo));
           }   
           if(bcast_must_query_md[nalg].check_correct.values.contigsflags)
-            ; /* This test is always PAMI_TYPE_CONTIGUOUS */
+            ; /* This test is always PAMI_TYPE_BYTE */
           if(bcast_must_query_md[nalg].check_correct.values.contigrflags)
-            ; /* This test is always PAMI_TYPE_CONTIGUOUS */
+            ; /* This test is always PAMI_TYPE_BYTE */
           if(bcast_must_query_md[nalg].check_correct.values.continsflags)
-            ; /* This test is always PAMI_TYPE_CONTIGUOUS and continuous */
+            ; /* This test is always PAMI_TYPE_BYTE and continuous */
           if(bcast_must_query_md[nalg].check_correct.values.continrflags)
-              ; /* This test is always PAMI_TYPE_CONTIGUOUS and continuous */
+              ; /* This test is always PAMI_TYPE_BYTE and continuous */
         }
 
         if (bcast_must_query_md[nalg].check_correct.values.nonlocal)

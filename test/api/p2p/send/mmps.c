@@ -188,7 +188,7 @@ master()
   printf(">>> Test: ITERATIONS=%u  WINDOW=%u  Remotes=%zu  Bi-Dir Msgs=%zu  HEADER=%u  DATA=%u\n",
          ITERATIONS, WINDOW, size-1, msgs, HEADER, DATA);
   double start, time;
-  start = PAMI_Wtime();
+  start = PAMI_Wtime(client);
 
   size_t dest;
   size_t iteration, i;
@@ -209,7 +209,7 @@ master()
     }
   }
 
-  time = PAMI_Wtime()-start;
+  time = PAMI_Wtime(client)-start;
   printf("::: Communication complete on process %zu (%g seconds)\n", rank, time);
   printf(">>> Results: %zu bi-directional messages in %g seconds is %g MMPS\n",
          msgs, time, msgs/(time*1e6));
@@ -221,7 +221,7 @@ worker()
 {
   TRACE_ERR("Starting worker\n");
   double start, time;
-  start = PAMI_Wtime();
+  start = PAMI_Wtime(client);
 
   const size_t dest = 0;
   size_t iteration, i;
@@ -242,7 +242,7 @@ worker()
     }
   }
 
-  time = PAMI_Wtime() - start;
+  time = PAMI_Wtime(client) - start;
   printf("::: Communication complete on process %zu (%g seconds)\n", rank, time);
 }
 

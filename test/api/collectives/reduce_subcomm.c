@@ -15,7 +15,6 @@
 
 /*define this if you want to validate the data for unsigned sums */
 #define CHECK_DATA
-
 #define FULL_TEST
 #define COUNT      65536
 #define MAXBUFSIZE COUNT*16
@@ -23,194 +22,6 @@
 #define NITERBW    10
 #define CUTOFF     65536
 
-pami_op op_array[] =
-{
-  PAMI_SUM,
-  PAMI_MAX,
-  PAMI_MIN,
-  PAMI_PROD,
-  PAMI_LAND,
-  PAMI_LOR,
-  PAMI_LXOR,
-  PAMI_BAND,
-  PAMI_BOR,
-  PAMI_BXOR,
-  PAMI_MAXLOC,
-  PAMI_MINLOC,
-};
-enum opNum
-{
-  OP_SUM,
-  OP_MAX,
-  OP_MIN,
-  OP_PROD,
-  OP_LAND,
-  OP_LOR,
-  OP_LXOR,
-  OP_BAND,
-  OP_BOR,
-  OP_BXOR,
-  OP_MAXLOC,
-  OP_MINLOC,
-  OP_COUNT
-};
-int op_count = OP_COUNT;
-
-pami_dt dt_array[] =
-{
-  PAMI_UNSIGNED_INT,
-  PAMI_DOUBLE,
-  PAMI_SIGNED_CHAR,
-  PAMI_UNSIGNED_CHAR,
-  PAMI_SIGNED_SHORT,
-  PAMI_UNSIGNED_SHORT,
-  PAMI_SIGNED_INT,
-  PAMI_SIGNED_LONG_LONG,
-  PAMI_UNSIGNED_LONG_LONG,
-  PAMI_FLOAT,
-  PAMI_LONG_DOUBLE,
-  PAMI_LOGICAL,
-  PAMI_SINGLE_COMPLEX,
-  PAMI_DOUBLE_COMPLEX,
-  PAMI_LOC_2INT,
-  PAMI_LOC_SHORT_INT,
-  PAMI_LOC_FLOAT_INT,
-  PAMI_LOC_DOUBLE_INT,
-  PAMI_LOC_2FLOAT,
-  PAMI_LOC_2DOUBLE,
-};
-
-enum dtNum
-{
-  DT_UNSIGNED_INT,
-  DT_DOUBLE,
-  DT_SIGNED_CHAR,
-  DT_UNSIGNED_CHAR,
-  DT_SIGNED_SHORT,
-  DT_UNSIGNED_SHORT,
-  DT_SIGNED_INT,
-  DT_SIGNED_LONG_LONG,
-  DT_UNSIGNED_LONG_LONG,
-  DT_FLOAT,
-  DT_LONG_DOUBLE,
-  DT_LOGICAL,
-  DT_SINGLE_COMPLEX,
-  DT_DOUBLE_COMPLEX,
-  DT_LOC_2INT,
-  DT_LOC_SHORT_INT,
-  DT_LOC_FLOAT_INT,
-  DT_LOC_DOUBLE_INT,
-  DT_LOC_2FLOAT,
-  DT_LOC_2DOUBLE,
-  DT_COUNT
-};
-int dt_count = DT_COUNT;
-
-
-const char * op_array_str[] =
-{
-  "PAMI_SUM",
-  "PAMI_MAX",
-  "PAMI_MIN",
-  "PAMI_PROD",
-  "PAMI_LAND",
-  "PAMI_LOR",
-  "PAMI_LXOR",
-  "PAMI_BAND",
-  "PAMI_BOR",
-  "PAMI_BXOR",
-  "PAMI_MAXLOC",
-  "PAMI_MINLOC"
-};
-
-
-const char * dt_array_str[] =
-{
-  "PAMI_UNSIGNED_INT",
-  "PAMI_DOUBLE",
-  "PAMI_SIGNED_CHAR",
-  "PAMI_UNSIGNED_CHAR",
-  "PAMI_SIGNED_SHORT",
-  "PAMI_UNSIGNED_SHORT",
-  "PAMI_SIGNED_INT",
-  "PAMI_SIGNED_LONG_LONG",
-  "PAMI_UNSIGNED_LONG_LONG",
-  "PAMI_FLOAT",
-  "PAMI_LONG_DOUBLE",
-  "PAMI_LOGICAL",
-  "PAMI_SINGLE_COMPLEX",
-  "PAMI_DOUBLE_COMPLEX",
-  "PAMI_LOC_2INT",
-  "PAMI_LOC_SHORT_INT",
-  "PAMI_LOC_FLOAT_INT",
-  "PAMI_LOC_DOUBLE_INT",
-  "PAMI_LOC_2FLOAT",
-  "PAMI_LOC_2DOUBLE"
-};
-
-
-unsigned ** alloc2DContig(int nrows, int ncols)
-{
-  int i;
-  unsigned **array;
-
-  array        = (unsigned**)malloc(nrows * sizeof(unsigned*));
-  array[0]     = (unsigned *)calloc(sizeof(unsigned), nrows * ncols);
-
-  for (i = 1; i < nrows; i++)
-    array[i]   = array[0] + i * ncols;
-
-  return array;
-}
-
-#ifdef CHECK_DATA
-void initialize_sndbuf (void *buf, int count, int op, int dt, int task_id)
-{
-
-  int i;
-
-  if (op_array[op] == PAMI_SUM && dt_array[dt] == PAMI_UNSIGNED_INT)
-    {
-      unsigned int *ibuf = (unsigned int *)  buf;
-
-      for (i = 0; i < count; i++)
-        {
-          ibuf[i] = i;
-        }
-    }
-  else
-    {
-      size_t sz;
-      PAMI_Dt_query (dt_array[dt], &sz);
-      memset(buf,  task_id,  count * sz);
-    }
-}
-
-int check_rcvbuf (void *buf, int count, int op, int dt, int num_tasks)
-{
-
-  int i, err = 0;
-
-  if (op_array[op] == PAMI_SUM && dt_array[dt] == PAMI_UNSIGNED_INT)
-    {
-      unsigned int *rbuf = (unsigned int *)  buf;
-
-      for (i = 0; i < count; i++)
-        {
-          if (rbuf[i] != i * num_tasks)
-            {
-              fprintf(stderr, "Check(%d) failed rbuf[%d] %u != %u\n", count, i, rbuf[1], i*num_tasks);
-              err = -1;
-#ifndef FULL_TEST
-              return err;
-#endif
-            }
-        }
-    }
-
-  return err;
-}
-#endif
 
 int main(int argc, char*argv[])
 {
@@ -423,7 +234,7 @@ int main(int argc, char*argv[])
   newbarrier.algorithm = newbar_algo[0];
 
 
-  unsigned** validTable =
+  size_t** validTable =
     alloc2DContig(op_count, dt_count);
 
 #ifdef FULL_TEST
@@ -497,9 +308,9 @@ int main(int argc, char*argv[])
       reduce.cookie    = (void*) & reduce_poll_flag;
       reduce.algorithm = reduce_always_works_algo[nalg];
       reduce.cmd.xfer_reduce.sndbuf    = sbuf;
-      reduce.cmd.xfer_reduce.stype     = PAMI_TYPE_CONTIGUOUS;
+      reduce.cmd.xfer_reduce.stype     = PAMI_TYPE_BYTE;
       reduce.cmd.xfer_reduce.stypecount = 0;
-      reduce.cmd.xfer_reduce.rtype     = PAMI_TYPE_CONTIGUOUS;
+      reduce.cmd.xfer_reduce.rtype     = PAMI_TYPE_BYTE;
       reduce.cmd.xfer_reduce.rtypecount = 0;
 
 
@@ -514,8 +325,7 @@ int main(int argc, char*argv[])
 
                 for (i = 1; i <= COUNT; i *= 2)
                   {
-                    size_t sz;
-                    PAMI_Dt_query (dt_array[dt], &sz);
+                    size_t sz=get_type_size(dt_array[dt]);
                     long long dataSent = i * sz;
                     int niter;
 
@@ -525,7 +335,7 @@ int main(int argc, char*argv[])
                       niter = NITERBW;
 
 #ifdef CHECK_DATA
-                    initialize_sndbuf (sbuf, i, op, dt, task_id);
+                    reduce_initialize_sndbuf (sbuf, i, op, dt, task_id);
 #endif
                     blocking_coll(context, &newbarrier, &newbar_poll_flag);
                     ti = timer();
@@ -542,8 +352,8 @@ int main(int argc, char*argv[])
 
                         reduce.cmd.xfer_reduce.stypecount = dataSent;
                         reduce.cmd.xfer_reduce.rtypecount = dataSent;
-                        reduce.cmd.xfer_reduce.dt = dt_array[dt];
-                        reduce.cmd.xfer_reduce.op = op_array[op];
+                        reduce.cmd.xfer_reduce.stype      = dt_array[dt];
+                        reduce.cmd.xfer_reduce.op         = op_array[op];
                         blocking_coll(context, &reduce, &reduce_poll_flag);
 
 /*                        if (j < niter - 1) */
@@ -557,7 +367,7 @@ int main(int argc, char*argv[])
 
                     if (task_id == root)
                       {
-                        int rc = check_rcvbuf (rbuf, i, op, dt, num_tasks);
+                        int rc = reduce_check_rcvbuf (rbuf, i, op, dt, num_tasks);
 
                         /*assert (rc == 0); */
                         if (rc) fprintf(stderr, "FAILED validation\n");

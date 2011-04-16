@@ -15,7 +15,11 @@
 
 extern "C"
 {
-  pami_geometry_t PAMI_NULL_GEOMETRY = 0;
+  pami_client_t    PAMI_CLIENT_NULL   =0;
+  pami_type_t      PAMI_TYPE_NULL     =0;
+  pami_context_t   PAMI_CONTEXT_NULL  =0;
+  pami_geometry_t  PAMI_GEOMETRY_NULL =0;
+  pami_algorithm_t PAMI_ALGORITHM_NULL=0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -46,12 +50,12 @@ extern "C" size_t PAMI_Error_text (char * string, size_t length)
 #endif
 }
 
-extern "C" double PAMI_Wtime ()
+extern "C" double PAMI_Wtime (pami_client_t client)
 {
   return __global.time.time();
 }
 
-extern "C" unsigned long long PAMI_Wtimebase()
+extern "C" unsigned long long PAMI_Wtimebase(pami_client_t client)
 {
   return __global.time.timebase();
 }
@@ -136,6 +140,7 @@ extern "C" pami_result_t PAMI_Fence_endpoint (pami_context_t        context,
 
 
 extern "C" pami_result_t PAMI_Geometry_create_taskrange (pami_client_t           client,
+                                                         size_t                  context_offset,
                                                          pami_configuration_t    configuration[],
                                                          size_t                  num_configs,
                                                          pami_geometry_t       * geometry,
@@ -161,6 +166,7 @@ extern "C" pami_result_t PAMI_Geometry_create_taskrange (pami_client_t          
 }
 
 extern "C" pami_result_t PAMI_Geometry_create_tasklist (pami_client_t               client,
+                                                        size_t                      context_offset,
                                                         pami_configuration_t        configuration[],
                                                         size_t                      num_configs,
                                                         pami_geometry_t           * geometry,
@@ -230,36 +236,36 @@ extern "C" pami_result_t PAMI_Collective (pami_context_t   context,
   return ctx->collective (parameters);
 }
 
-extern "C" pami_result_t PAMI_Geometry_algorithms_num (pami_context_t context,
-                                                     pami_geometry_t geometry,
-                                                     pami_xfer_type_t coll_type,
-                                                     size_t              lists_lengths[2])
+extern "C" pami_result_t PAMI_Geometry_algorithms_num (pami_geometry_t  geometry,
+                                                       pami_xfer_type_t coll_type,
+                                                       size_t           lists_lengths[2])
 {
-  PAMI::Context * ctx = (PAMI::Context *) context;
-  return ctx->geometry_algorithms_num (geometry,
-                                      coll_type,
-                                      lists_lengths);
+  PAMI_GEOMETRY_CLASS *_geometry = (PAMI_GEOMETRY_CLASS *) geometry;
+  PAMI::Client        *_client   = (PAMI::Client*)         _geometry->getClient ();
+  return _client->geometry_algorithms_num (geometry,
+                                           coll_type,
+                                           lists_lengths);
 }
 
-extern "C"  pami_result_t PAMI_Geometry_algorithms_query (pami_context_t context,
-                                                       pami_geometry_t geometry,
-                                                       pami_xfer_type_t   colltype,
-                                                       pami_algorithm_t  *algs0,
-                                                       pami_metadata_t   *mdata0,
-                                                       size_t             num0,
-                                                       pami_algorithm_t  *algs1,
-                                                       pami_metadata_t   *mdata1,
-                                                       size_t               num1)
+extern "C"  pami_result_t PAMI_Geometry_algorithms_query (pami_geometry_t geometry,
+                                                          pami_xfer_type_t   colltype,
+                                                          pami_algorithm_t  *algs0,
+                                                          pami_metadata_t   *mdata0,
+                                                          size_t             num0,
+                                                          pami_algorithm_t  *algs1,
+                                                          pami_metadata_t   *mdata1,
+                                                          size_t               num1)
 {
-  PAMI::Context * ctx = (PAMI::Context *) context;
-  return ctx->geometry_algorithms_info (geometry,
-                                        colltype,
-                                        algs0,
-                                        mdata0,
-                                        num0,
-                                        algs1,
-                                        mdata1,
-                                        num1);
+  PAMI_GEOMETRY_CLASS *_geometry = (PAMI_GEOMETRY_CLASS *) geometry;
+  PAMI::Client        *_client   = (PAMI::Client*)         _geometry->getClient ();
+  return _client->geometry_algorithms_info (geometry,
+                                            colltype,
+                                            algs0,
+                                            mdata0,
+                                            num0,
+                                            algs1,
+                                            mdata1,
+                                            num1);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -638,17 +644,6 @@ extern "C"   pami_result_t PAMI_Resume (pami_context_t    context,
 {
   PAMI::Context * ctx = (PAMI::Context *) context;
   return ctx->resume_totask (dest, count);
-}
-
-extern "C" pami_result_t PAMI_Dt_query (pami_dt dt, size_t *size)
-{
-  coremath cb_allreduce  = NULL;
-  pami_op  op            = PAMI_NOOP;
-  unsigned nelems        = 0;
-  unsigned sz            = 0;
-  CCMI::Adaptor::Allreduce::getReduceFunction(dt,op,nelems,sz,cb_allreduce);
-  *size = sz;
-  return PAMI_SUCCESS;
 }
 
 #include "api/extension/Extension.h"

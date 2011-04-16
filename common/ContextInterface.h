@@ -82,19 +82,6 @@ namespace PAMI
                                              void                * cookie,
                                              pami_endpoint_t       endpoint);
 
-      inline pami_result_t geometry_algorithms_num (pami_geometry_t geometry,
-                                                   pami_xfer_type_t ctype,
-                                                   size_t *lists_lengths);
-
-      inline pami_result_t geometry_algorithms_info (pami_geometry_t geometry,
-                                                     pami_xfer_type_t   colltype,
-                                                     pami_algorithm_t  *algs0,
-                                                     pami_metadata_t   *mdata0,
-                                                     size_t               num0,
-                                                     pami_algorithm_t  *algs1,
-                                                     pami_metadata_t   *mdata1,
-                                                     size_t               num1);
-
         inline pami_result_t collective (pami_xfer_t * parameters);
 
         inline pami_result_t dispatch (size_t                          dispatch,
@@ -300,35 +287,6 @@ namespace PAMI
       return static_cast<T_Context*>(this)->fence_endpoint_impl(done_fn, cookie, endpoint);
     }
 
-    template <class T_Context>
-    pami_result_t Context<T_Context>::geometry_algorithms_num (pami_geometry_t geometry,
-                                                              pami_xfer_type_t coll_type,
-                                                              size_t *lists_lengths)
-    {
-      return static_cast<T_Context*>(this)->geometry_algorithms_num_impl(geometry,
-                                                                         coll_type,
-                                                                         lists_lengths);
-    }
-
-    template <class T_Context>
-    pami_result_t Context<T_Context>::geometry_algorithms_info (pami_geometry_t geometry,
-                                                              pami_xfer_type_t   colltype,
-                                                              pami_algorithm_t  *algs0,
-                                                              pami_metadata_t   *mdata0,
-                                                              size_t             num0,
-                                                              pami_algorithm_t  *algs1,
-                                                              pami_metadata_t   *mdata1,
-                                                              size_t             num1)
-    {
-      return static_cast<T_Context*>(this)->geometry_algorithms_info_impl(geometry,
-                                                                          colltype,
-                                                                          algs0,
-                                                                          mdata0,
-                                                                          num0,
-                                                                          algs1,
-                                                                          mdata1,
-                                                                          num1);
-    }
 
     template <class T_Context>
     pami_result_t Context<T_Context>::collective(pami_xfer_t * parameters)

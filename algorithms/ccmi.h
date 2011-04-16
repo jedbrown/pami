@@ -176,5 +176,11 @@ typedef void * (*CCMI_RecvAsyncBroadcast) (unsigned           root,
  *  between geometry id's and geometry structures.
  */
 
+// Compile time check to see if two types are the same
+template< typename T1, typename T2>
+struct isTypeSame { static const bool result = false; };
+
+template< typename T >
+struct isTypeSame<T,T> { static const bool result = true; };
 
 #endif

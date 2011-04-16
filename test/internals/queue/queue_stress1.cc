@@ -132,11 +132,11 @@ public:
 		queue.init(&mm, NULL);
 
 		int x;
-		unsigned long long t1, t0 = PAMI_Wtimebase();
+		unsigned long long t1, t0 = __global.time.timebase();
 		for (x = 0; x < 10000; ++x) {
-			t1 = PAMI_Wtimebase() - t0;
+			t1 = __global.time.timebase() - t0;
 		}
-		t1 = PAMI_Wtimebase() - t0;
+		t1 = __global.time.timebase() - t0;
 		double d = t1;
 		base_t = d / x;
 	}
@@ -158,9 +158,9 @@ public:
 			e->pid = gettid();
 			e->seq = x;
 			e->val = 1;	// debug
-			t0 = PAMI_Wtimebase();
+			t0 = __global.time.timebase();
 			q->enqueue(&e->elem);
-			t += PAMI_Wtimebase() - t0;
+			t += __global.time.timebase() - t0;
 		}
 		double d = t;
 		fprintf(stderr, "%d: test %d finished %d enqueues (%g cycles each)\n",
@@ -185,24 +185,24 @@ public:
 		q->iter_init(&qi);
 		while (x < num) {
 			if (!q->head()) sched_yield();
-			t0 = PAMI_Wtimebase();
+			t0 = __global.time.timebase();
 			bool b = q->iter_begin(&qi);
-			t1 = PAMI_Wtimebase();
+			t1 = __global.time.timebase();
 			if (b) {
 				tb += t1 - t0;
 				++z;
 			}
 			xx = yy = 0;
-			t0 = PAMI_Wtimebase();
+			t0 = __global.time.timebase();
 			for (; q->iter_check(&qi); q->iter_end(&qi)) {
 				++yy;
 				e = (element_t *)q->iter_current(&qi);
 				if (e->val == (unsigned)-1 || (rand() & T_RandMask) == 0) {
 					e->val = -1;
-					t += PAMI_Wtimebase() - t0;
-					t0 = PAMI_Wtimebase();
+					t += __global.time.timebase() - t0;
+					t0 = __global.time.timebase();
 					if (q->iter_remove(&qi) == PAMI_SUCCESS) {
-						tr += PAMI_Wtimebase() - t0;
+						tr += __global.time.timebase() - t0;
 #ifdef DEBUG
 						dbg = 0;
 #endif // DEBUG
@@ -210,12 +210,12 @@ public:
 						e = NULL; // just in case we try to access it
 						++xx;
 					} else {
-						tr += PAMI_Wtimebase() - t0;
+						tr += __global.time.timebase() - t0;
 					}
-					t0 = PAMI_Wtimebase();
+					t0 = __global.time.timebase();
 				}
 			}
-			t += PAMI_Wtimebase() - t0;
+			t += __global.time.timebase() - t0;
 			y += yy;
 			x += xx;
 #ifdef DEBUG
@@ -248,7 +248,7 @@ public:
 
 	int run_test(void) {
 		int x;
-		unsigned long long t0 = PAMI_Wtimebase();
+		unsigned long long t0 = __global.time.timebase();
 		fprintf(stderr, "main: test %d starting %s test with %d threads "
 				"and %d elements per enqueuer (seed %d)\n",
 				testnum, name, pthreads, elements, seed);
@@ -268,7 +268,7 @@ public:
 		for (x = 1; x < pthreads; ++x) {
 			pthread_join(thread[x], NULL);
 		}
-		t0 = PAMI_Wtimebase() - t0;
+		t0 = __global.time.timebase() - t0;
 		fprintf(stderr, "test %d main done. queue = { %p %p %zu } (%lld cy)\n"
 				"----------------------------------------------------\n",
 				testnum, queue.head(), queue.tail(), queue.size(), t0);

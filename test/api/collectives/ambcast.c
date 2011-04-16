@@ -1,14 +1,6 @@
-/* begin_generated_IBM_copyright_prolog                             */
-/*                                                                  */
-/* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2009, 2010                               */
-/* IBM CPL License                                                  */
-/* ---------------------------------------------------------------- */
-/*                                                                  */
-/* end_generated_IBM_copyright_prolog                               */
 /**
  * \file test/api/collectives/ambcast.c
- * \brief ???
+ * \brief Simple AMBcast test
  */
 
 #include "../pami_util.h"
@@ -25,23 +17,34 @@ void cb_ambcast_done (void *context, void * clientdata, pami_result_t err)
   free(clientdata);
 }
 
-void cb_bcast_recv  (pami_context_t         context,
-                     size_t                root,
-                     pami_geometry_t        geometry,
-                     const size_t          sndlen,
-                     const void          * user_header,
-                     const size_t          headerlen,
-                     void               ** rcvbuf,
-                     pami_type_t          * rtype,
-                     size_t              * rtypecount,
-                     pami_event_function  * const cb_info,
-                     void                ** cookie)
+void cb_bcast_recv  (pami_context_t         context,      /**< IN:  communication context which invoked the dispatch function */
+                     void                 * cookie,       /**< IN:  dispatch cookie */
+                     const void           * header_addr,  /**< IN:  header address  */
+                     size_t                 header_size,  /**< IN:  header size     */
+                     const void           * pipe_addr,    /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
+                     size_t                 data_size,    /**< IN:  number of bytes of message data */
+                     pami_endpoint_t        origin,       /**< IN:  root initiating endpoint */
+                     pami_geometry_t        geometry,     /**< IN:  Geometry */
+                     pami_recv_t          * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
 {
-  *rcvbuf                        = malloc(sndlen);
-  *rtype                         = PAMI_TYPE_CONTIGUOUS;
-  *rtypecount                    = sndlen;
-  *cb_info                       = cb_ambcast_done;
-  *cookie                        = (void*) * rcvbuf;
+  if(gVerbose && !context)
+    fprintf(stderr, "Error. Null context received on cb_done.\n");
+
+  void *rcvbuf =  malloc(data_size);
+
+  if(!recv)
+  {
+    memcpy(rcvbuf, pipe_addr, data_size);
+    return;
+  }
+
+  recv->cookie      = (void*)rcvbuf;
+  recv->local_fn    = cb_ambcast_done;
+  recv->addr        = rcvbuf;
+  recv->type        = PAMI_TYPE_BYTE;
+  recv->offset      = 0;
+  recv->data_fn     = PAMI_DATA_COPY;
+  recv->data_cookie = NULL;
 }
 
 int main(int argc, char*argv[])
@@ -89,7 +92,7 @@ int main(int argc, char*argv[])
   unsigned selector = 1;
   char* selected = getenv("TEST_PROTOCOL");
   if(!selected) selected = "";
-  else if(selected[0]=='-') 
+  else if(selected[0]=='-')
   {
       selector = 0 ;
       ++selected;
@@ -152,7 +155,7 @@ int main(int argc, char*argv[])
   ambroadcast.cmd.xfer_ambroadcast.user_header  = NULL;
   ambroadcast.cmd.xfer_ambroadcast.headerlen    = 0;
   ambroadcast.cmd.xfer_ambroadcast.sndbuf       = buf;
-  ambroadcast.cmd.xfer_ambroadcast.stype        = PAMI_TYPE_CONTIGUOUS;
+  ambroadcast.cmd.xfer_ambroadcast.stype        = PAMI_TYPE_BYTE;
   ambroadcast.cmd.xfer_ambroadcast.stypecount   = 0;
 
   for (nalg = 0; nalg < ambcast_num_algorithm[0]; nalg++)

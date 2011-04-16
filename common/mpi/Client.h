@@ -601,6 +601,36 @@ namespace PAMI
 	return PAMI_UNIMPL;
       }
 
+
+    inline pami_result_t geometry_algorithms_num_impl (pami_geometry_t geometry,
+						       pami_xfer_type_t colltype,
+						       size_t *lists_lengths)
+    {
+      MPIGeometry *_geometry = (MPIGeometry*) geometry;
+      return _geometry->algorithms_num(colltype, lists_lengths, 0);
+    }
+
+    inline pami_result_t geometry_algorithms_info_impl (pami_geometry_t geometry,
+							pami_xfer_type_t colltype,
+							pami_algorithm_t  *algs0,
+							pami_metadata_t   *mdata0,
+							size_t               num0,
+							pami_algorithm_t  *algs1,
+							pami_metadata_t   *mdata1,
+							size_t               num1)
+      {
+        MPIGeometry *_geometry = (MPIGeometry*) geometry;
+        return _geometry->algorithms_info(colltype,
+                                          algs0,
+                                          mdata0,
+                                          num0,
+                                          algs1,
+                                          mdata1,
+                                          num1,
+                                          0);
+      }
+
+
     inline pami_result_t geometry_destroy_impl (pami_geometry_t geometry)
       {
         PAMI_abort();

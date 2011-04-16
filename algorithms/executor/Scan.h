@@ -218,8 +218,8 @@ namespace CCMI
         void updateReduceInfo(unsigned         count,
                               unsigned         sizeOfType,
                               coremath         func,
-                              pami_op          op = PAMI_UNDEFINED_OP,
-                              pami_dt          dt = PAMI_UNDEFINED_DT)
+                              pami_op          op = PAMI_OP_COUNT,
+                              pami_dt          dt = PAMI_DT_COUNT)
         {
 
           CCMI_assert(count * sizeOfType == (unsigned)_buflen);
@@ -238,8 +238,8 @@ namespace CCMI
         void setReduceInfo( unsigned         count,
                             unsigned         sizeOfType,
                             coremath         func,
-                            pami_op          op = PAMI_UNDEFINED_OP,
-                            pami_dt          dt = PAMI_UNDEFINED_DT)
+                            pami_op          op = PAMI_OP_COUNT,
+                            pami_dt          dt = PAMI_DT_COUNT)
         {
 
           CCMI_assert(count * sizeOfType == (unsigned)_buflen);

@@ -156,22 +156,27 @@ public:
         broadcast.algorithm = (size_t) - 1;  ///Not used by the protocols
         broadcast.cmd.xfer_ambroadcast.user_header  = NULL;
         broadcast.cmd.xfer_ambroadcast.headerlen    = 0;
-        pami_type_t pt = PAMI_TYPE_CONTIGUOUS;
+        pami_type_t pt = PAMI_TYPE_BYTE;
         broadcast.cmd.xfer_ambroadcast.stype = &pt;
 
-        //Assume send datatypes are the same as recv datatypes
+        pami_recv_t recv = {0};
         factory->_cb_ambcast
-        (NULL,                 // Context: NULL for now, until we can get the context
-         cdata->_root,         // Root
-         (pami_geometry_t)geometry,  // Geometry
-         sndlen,               // sndlen
-         NULL,                 // User header, NULL for now
-         0,                    // 0 sized for now
-         &broadcast.cmd.xfer_ambroadcast.sndbuf,
-         &broadcast.cmd.xfer_ambroadcast.stype,
-         &broadcast.cmd.xfer_ambroadcast.stypecount,
-         &broadcast.cb_done,
-         &broadcast.cookie);
+          (ctxt,                      // context
+           NULL,                      // user cookie:  todo, NULL for now
+           NULL,                      // User header, NULL for now
+           0,                         // 0 sized for now
+           NULL,                      // Pipe ADDR, NULL for now
+           sndlen,                    // sndlen
+           cdata->_root,              // origin (root)
+           (pami_geometry_t)geometry, // Geometry
+           &recv);                    // recv info
+
+        // Todo:  data_fn, offset handling
+        broadcast.cmd.xfer_ambroadcast.sndbuf     = recv.addr;
+        broadcast.cmd.xfer_ambroadcast.stype      = recv.type;
+        broadcast.cmd.xfer_ambroadcast.stypecount = sndlen;
+        broadcast.cb_done                         = recv.local_fn;
+        broadcast.cookie                          = recv.cookie;
 
         typename CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::collObj *cobj =
             (typename CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::collObj *)

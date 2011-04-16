@@ -15,228 +15,12 @@
 
 /*define this if you want to validate the data */
 #define CHECK_DATA
-
 #define FULL_TEST
 #define COUNT      65536
 #define MAXBUFSIZE COUNT*16
 #define NITERLAT   1000
 #define NITERBW    10
 #define CUTOFF     65536
-
-pami_op op_array[] =
-{
-  PAMI_SUM,
-  PAMI_MAX,
-  PAMI_MIN,
-  PAMI_PROD,
-  PAMI_LAND,
-  PAMI_LOR,
-  PAMI_LXOR,
-  PAMI_BAND,
-  PAMI_BOR,
-  PAMI_BXOR,
-  PAMI_MAXLOC,
-  PAMI_MINLOC,
-};
-enum opNum
-{
-  OP_SUM,
-  OP_MAX,
-  OP_MIN,
-  OP_PROD,
-  OP_LAND,
-  OP_LOR,
-  OP_LXOR,
-  OP_BAND,
-  OP_BOR,
-  OP_BXOR,
-  OP_MAXLOC,
-  OP_MINLOC,
-  OP_COUNT
-};
-int op_count = OP_COUNT;
-
-pami_dt dt_array[] =
-{
-  PAMI_UNSIGNED_INT,
-  PAMI_DOUBLE,
-  PAMI_SIGNED_CHAR,
-  PAMI_UNSIGNED_CHAR,
-  PAMI_SIGNED_SHORT,
-  PAMI_UNSIGNED_SHORT,
-  PAMI_SIGNED_INT,
-  PAMI_SIGNED_LONG_LONG,
-  PAMI_UNSIGNED_LONG_LONG,
-  PAMI_FLOAT,
-  PAMI_LONG_DOUBLE,
-  PAMI_LOGICAL,
-  PAMI_SINGLE_COMPLEX,
-  PAMI_DOUBLE_COMPLEX,
-  PAMI_LOC_2INT,
-  PAMI_LOC_SHORT_INT,
-  PAMI_LOC_FLOAT_INT,
-  PAMI_LOC_DOUBLE_INT,
-  PAMI_LOC_2FLOAT,
-  PAMI_LOC_2DOUBLE,
-};
-
-enum dtNum
-{
-  DT_UNSIGNED_INT,
-  DT_DOUBLE,
-  DT_SIGNED_CHAR,
-  DT_UNSIGNED_CHAR,
-  DT_SIGNED_SHORT,
-  DT_UNSIGNED_SHORT,
-  DT_SIGNED_INT,
-  DT_SIGNED_LONG_LONG,
-  DT_UNSIGNED_LONG_LONG,
-  DT_FLOAT,
-  DT_LONG_DOUBLE,
-  DT_LOGICAL,
-  DT_SINGLE_COMPLEX,
-  DT_DOUBLE_COMPLEX,
-  DT_LOC_2INT,
-  DT_LOC_SHORT_INT,
-  DT_LOC_FLOAT_INT,
-  DT_LOC_DOUBLE_INT,
-  DT_LOC_2FLOAT,
-  DT_LOC_2DOUBLE,
-  DT_COUNT
-};
-int dt_count = DT_COUNT;
-
-
-const char * op_array_str[] =
-{
-  "PAMI_SUM",
-  "PAMI_MAX",
-  "PAMI_MIN",
-  "PAMI_PROD",
-  "PAMI_LAND",
-  "PAMI_LOR",
-  "PAMI_LXOR",
-  "PAMI_BAND",
-  "PAMI_BOR",
-  "PAMI_BXOR",
-  "PAMI_MAXLOC",
-  "PAMI_MINLOC"
-};
-
-
-const char * dt_array_str[] =
-{
-  "PAMI_UNSIGNED_INT",
-  "PAMI_DOUBLE",
-  "PAMI_SIGNED_CHAR",
-  "PAMI_UNSIGNED_CHAR",
-  "PAMI_SIGNED_SHORT",
-  "PAMI_UNSIGNED_SHORT",
-  "PAMI_SIGNED_INT",
-  "PAMI_SIGNED_LONG_LONG",
-  "PAMI_UNSIGNED_LONG_LONG",
-  "PAMI_FLOAT",
-  "PAMI_LONG_DOUBLE",
-  "PAMI_LOGICAL",
-  "PAMI_SINGLE_COMPLEX",
-  "PAMI_DOUBLE_COMPLEX",
-  "PAMI_LOC_2INT",
-  "PAMI_LOC_SHORT_INT",
-  "PAMI_LOC_FLOAT_INT",
-  "PAMI_LOC_DOUBLE_INT",
-  "PAMI_LOC_2FLOAT",
-  "PAMI_LOC_2DOUBLE"
-};
-
-
-unsigned ** alloc2DContig(int nrows, int ncols)
-{
-  int i;
-  unsigned **array;
-
-  array        = (unsigned**)malloc(nrows * sizeof(unsigned*));
-  array[0]     = (unsigned *)calloc(sizeof(unsigned), nrows * ncols);
-
-  for (i = 1; i < nrows; i++)
-    array[i]   = array[0] + i * ncols;
-
-  return array;
-}
-
-#ifdef CHECK_DATA
-void initialize_sndbuf (void *buf, int count, int op, int dt, int task_id)
-{
-
-  int i;
-
-  if (op_array[op] == PAMI_SUM && dt_array[dt] == PAMI_UNSIGNED_INT)
-    {
-      unsigned int *ibuf = (unsigned int *)  buf;
-
-      for (i = 0; i < count; i++)
-        {
-          ibuf[i] = i;
-        }
-    }
-  else if (op_array[op] == PAMI_SUM && dt_array[dt] == PAMI_DOUBLE)
-  {
-    double *dbuf = (double *)  buf;
-
-    for (i = 0; i < count; i++)
-    {
-      dbuf[i] = 1.0*i;
-    }
-  }
-  else
-    {
-      size_t sz;
-      PAMI_Dt_query (dt_array[dt], &sz);
-      memset(buf,  task_id,  count * sz);
-    }
-}
-
-int check_rcvbuf (void *buf, int count, int op, int dt, int num_tasks)
-{
-
-  int i, err = 0;
-
-  if (op_array[op] == PAMI_SUM && dt_array[dt] == PAMI_UNSIGNED_INT)
-    {
-      unsigned int *rbuf = (unsigned int *)  buf;
-
-      for (i = 0; i < count; i++)
-        {
-          if (rbuf[i] != i * num_tasks)
-            {
-              fprintf(stderr, "Check(%d) failed rbuf[%d] %u != %u\n", count, i, rbuf[1], i*num_tasks);
-              err = -1;
-#ifndef FULL_TEST
-              return err;
-#endif
-            }
-        }
-    }
-  else if (op_array[op] == PAMI_SUM && dt_array[dt] == PAMI_DOUBLE)
-  {
-    double *rbuf = (double *)  buf;
-
-    for (i = 0; i < count; i++)
-    {
-      if (rbuf[i] != 1.0 * i * num_tasks)
-      {
-        fprintf(stderr, "Check(%d) failed rbuf[%d] %f != %f\n", count, i, rbuf[i], (double)1.0*num_tasks);
-        exit(0);
-        err = -1;
-#ifndef FULL_TEST
-        return err;
-#endif
-      }
-    }
-  }
-
-  return err;
-}
-#endif
 
 int main(int argc, char*argv[])
 {
@@ -333,7 +117,7 @@ int main(int argc, char*argv[])
   if (rc == 1)
     return 1;
 
-  unsigned** validTable =
+  size_t** validTable =
     alloc2DContig(op_count, dt_count);
 #ifdef FULL_TEST
 
@@ -345,6 +129,13 @@ int main(int argc, char*argv[])
   /* Only sum, prod                       */
   for (i = 0, j = DT_SINGLE_COMPLEX; i < OP_COUNT; i++)if(i!=OP_SUM && i!=OP_PROD) validTable[i][j] = 0;
   for (i = 0, j = DT_DOUBLE_COMPLEX; i < OP_COUNT; i++)if(i!=OP_SUM && i!=OP_PROD) validTable[i][j] = 0; 
+
+  /*--------------------------------------*/
+  /* Disable NULL and byte operations     */
+  for (i = 0, j = DT_NULL; i < OP_COUNT; i++)validTable[i][j] = 0;
+  for (i = 0, j = DT_BYTE; i < OP_COUNT; i++)validTable[i][j] = 0;
+  for (j = 0, i = OP_COPY; j < DT_COUNT; j++) validTable[i][j] = 0;
+  for (j = 0, i = OP_NOOP; j < DT_COUNT; j++) validTable[i][j] = 0;
 
   /*--------------------------------------*/
   /* Disable non-LOC ops on LOC dt's      */
@@ -402,10 +193,10 @@ int main(int argc, char*argv[])
       allreduce.cookie    = (void*) & allreduce_poll_flag;
       allreduce.algorithm = allreduce_always_works_algo[nalg];
       allreduce.cmd.xfer_allreduce.sndbuf    = sbuf;
-      allreduce.cmd.xfer_allreduce.stype     = PAMI_TYPE_CONTIGUOUS;
+      allreduce.cmd.xfer_allreduce.stype     = PAMI_TYPE_BYTE;
       allreduce.cmd.xfer_allreduce.stypecount = 0;
       allreduce.cmd.xfer_allreduce.rcvbuf    = rbuf;
-      allreduce.cmd.xfer_allreduce.rtype     = PAMI_TYPE_CONTIGUOUS;
+      allreduce.cmd.xfer_allreduce.rtype     = PAMI_TYPE_BYTE;
       allreduce.cmd.xfer_allreduce.rtypecount = 0;
 
       for (dt = 0; dt < dt_count; dt++)
@@ -419,8 +210,7 @@ int main(int argc, char*argv[])
 
                 for (i = 1; i <= COUNT; i *= 2)
                   {
-                    size_t sz;
-                    PAMI_Dt_query (dt_array[dt], &sz);
+                    size_t sz=get_type_size(dt_array[dt]);
                     long long dataSent = i * sz;
                     int niter;
 
@@ -429,13 +219,13 @@ int main(int argc, char*argv[])
                     else
                       niter = NITERBW;
 
-                    allreduce.cmd.xfer_allreduce.stypecount = dataSent;
+                    allreduce.cmd.xfer_allreduce.stypecount = i;
                     allreduce.cmd.xfer_allreduce.rtypecount = dataSent;
-                    allreduce.cmd.xfer_allreduce.dt = dt_array[dt];
-                    allreduce.cmd.xfer_allreduce.op = op_array[op];
+                    allreduce.cmd.xfer_allreduce.stype = dt_array[dt];
+                    allreduce.cmd.xfer_allreduce.op    = op_array[op];
 
 #ifdef CHECK_DATA
-                    initialize_sndbuf (sbuf, i, op, dt, task_id);
+                    reduce_initialize_sndbuf (sbuf, i, op, dt, task_id);
 #endif
                     blocking_coll(context, &barrier, &bar_poll_flag);
                     ti = timer();
@@ -449,7 +239,7 @@ int main(int argc, char*argv[])
                     blocking_coll(context, &barrier, &bar_poll_flag);
 
 #ifdef CHECK_DATA
-                    int rc = check_rcvbuf (rbuf, i, op, dt, num_tasks);
+                    int rc = reduce_check_rcvbuf (rbuf, i, op, dt, num_tasks);
 
                     if (rc) fprintf(stderr, "FAILED validation\n");
 

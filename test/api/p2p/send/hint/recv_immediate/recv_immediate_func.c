@@ -154,7 +154,7 @@ static void dispatch_fn (
     {
       recv->local_fn    = NULL;
       recv->cookie      = NULL;
-      recv->type        = PAMI_TYPE_CONTIGUOUS;
+      recv->type        = PAMI_TYPE_BYTE;
       recv->addr        = __junk;
       recv->offset      = 0;
       recv->data_fn     = PAMI_DATA_COPY;

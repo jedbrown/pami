@@ -151,7 +151,7 @@ unsigned long long test (pami_client_t  client,
   {
     /* Initiate send pingpong test to the next task, then block until
      * this task receives all "pings" from a remote task */
-    t0 = PAMI_Wtimebase();
+    t0 = PAMI_Wtimebase(client);
     for (sent = 1; sent <= ITERATIONS; sent++)
     {
       PAMI_Send_immediate (context, &parameters);
@@ -160,7 +160,7 @@ unsigned long long test (pami_client_t  client,
         PAMI_Context_advance (context, 100);
       }
     }
-    t1 = PAMI_Wtimebase();
+    t1 = PAMI_Wtimebase(client);
 
     while (_dispatch[n].ping.counter < ITERATIONS)
       PAMI_Context_advance (context, 100);
@@ -172,7 +172,7 @@ unsigned long long test (pami_client_t  client,
     while (_dispatch[n].ping.counter < ITERATIONS)
       PAMI_Context_advance (context, 100);
 
-    t0 = PAMI_Wtimebase();
+    t0 = PAMI_Wtimebase(client);
     for (sent = 1; sent <= ITERATIONS; sent++)
     {
       PAMI_Send_immediate (context, &parameters);
@@ -181,7 +181,7 @@ unsigned long long test (pami_client_t  client,
         PAMI_Context_advance (context, 100);
       }
     }
-    t1 = PAMI_Wtimebase();
+    t1 = PAMI_Wtimebase(client);
   }
 
   _dispatch[n].pong.counter = 0;
@@ -249,7 +249,7 @@ int main (int argc, char ** argv)
 
   pami_result_t result;
   pami_dispatch_callback_function fn;
-  pami_dispatch_hint_t options={};
+  pami_dispatch_hint_t options={0};
   _dispatch_count = 0;
 
   pami_configuration_t configuration;
