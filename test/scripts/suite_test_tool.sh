@@ -111,7 +111,7 @@ hget ()
 	done
     fi
 
-    eval $getValueVar=\"$( grep -a --max-count=1 "^${getKey} " $getHashFile | awk '{ print substr($0, (index($0, " ")+1)) }' )\"
+    eval $getValueVar=\"$( grep -a --max-count=1 "^${getKey} " $getHashFile | awk '{ print substr($0, (index($0, " ")+1)) }'  | sed 's/"/\\"/g' )\"
 
     if [ $? -ne 0 ]
     then
@@ -793,7 +793,7 @@ then
 fi 
 
 eval $outLogSigVar=$evalSignal
-eval $outLogSumVar=\"$evalSummary\"
+eval $outLogSumVar=\"$( echo $evalSummary | sed 's/"/\\"/g')\"
 
 return 0
 
@@ -989,9 +989,8 @@ runHW ()
 					      then
 						  threads=$env_val
 					      fi
-                                      
-					      shift # to next option
 					  fi
+					  shift # to next option
 				      done
 
                                       # Remove -envs/--envs from $opts (we'll make our own)
@@ -1509,6 +1508,7 @@ exe_preProcessing ()
 
     # Parse "runjob" options
     # Replace command-line positional parameters with $opts values
+
     set -- $(echo "${opts}")
 #if [ "${opts}" != "" ]
 #then
@@ -1757,7 +1757,6 @@ exe_preProcessing ()
 #	shift
     done
 #fi
-
     # Parse exe args looking for number of threads
     set -- $(echo "${args}" | sed -e 's/"//g') # use "${args}" for when 1st arg is -n
 
@@ -1814,7 +1813,7 @@ exe_preProcessing ()
     eval $finalNPVar=$eppNP
     eval $finalThreadsVar=$eppThreads
     eval $overrideVar=$eppOverride
-    eval $finalOptsVar=\"$opts\"
+    eval $finalOptsVar=\"$( echo $opts | sed 's/"/\\"/g' )\"
     eval $maxNPVar=$eppMaxNP
 
     return 0
@@ -2628,6 +2627,8 @@ usage ()
     echo "-g | --group <name>          Provide group name for logXml.sh. Time stamp will atomatically be appended by this script."
     echo "                                      ex: -g foo"
     echo "" 
+    echo "-gpfs | --gpfs               Use gpfs file server (/gpfs/bgq0) for copy and run sections instead of default file server (/bgusr)."
+    echo ""
     echo "-gs | --group-scale          Appends nodes and mode to group name provided with -g | --group parm.  For scaling runs, multiple groups will be created and populated"
     echo "                                      ex: -g foo --group-scale -nn 2"
     echo "                                          passes -g foo_2n_1m to logXML.sh"
@@ -2650,6 +2651,8 @@ usage ()
     echo "-iob | --ioblock <ioblock>   I/O Block name for runjob."
     echo "                             To specify multiple I/O blocks, surround space separated block list with \"\":"
     echo "                             ex:  -iob \"<ioblock 1> <ioblock 2> ..<ioblock n>\""
+    echo ""
+    echo "-iorb | --ioreboot           Force I/O block reboot when CN is rebooted due to failure."
     echo ""
     echo "-l | --lite                  Directs copies to bgusr exe dir and runs from bgusr exe dir on hw using MMCS-Lite."
     echo ""
@@ -2799,6 +2802,8 @@ copyHash="/tmp/${USER}_hashmap.copy.${timestamp}"       # avoid recopies
 # Exe vars
 gsa_base="/gsa/rchgsa/home/${USER:0:1}/${USER:1:1}/${USER}"
 bgusr_base="/bgusr/${USER}"
+gpfs_base="/gpfs/bgq0/${USER}"
+gpfs=0                           # 0 = default file server (bgusr_base), 1 = gpfs server (gpfs_base)
 sandbox=""
 common_exe_dir=""
 exe_base=""
@@ -2823,6 +2828,7 @@ shape=""
 sub_block=""
 freeBlock=0             # 1 = Free block after each test
 noFree=0                # 1 = Don't free blocks after execution phase (default is to free them)
+ioReboot=0              # 1 = Reboot I/O blocks on CN fail
 fpga_queue=0
 temp_jobid=""      # used to build common jobid between llsubmit and llq
 jobid=""           # used by FPGA and HW runs
@@ -2926,6 +2932,9 @@ while [ "${1}" != "" ]; do
         -g | --group )          shift
 	                        logGroup=$1
                                 ;;
+        -gpfs | --gpfs )        shift
+	                        gpfs=1
+                                ;;
         -gs | --group-scale )   groupScale=1
                                 ;;
         -i | --input )          shift
@@ -2935,6 +2944,8 @@ while [ "${1}" != "" ]; do
 #	                        ;;
         -iob | --ioblock )      shift
 	                        declare -a ioblockNameArray=($( echo $1 | sed 's/"//g' )) 
+                                ;;
+        -iorb | --ioreboot )    ioReboot=1
                                 ;;
 	-l | --lite )           run_type='runMmcsLite'
 	                        ;;
@@ -3254,7 +3265,12 @@ then
     then
 	exe_base="${gsa_base}/${sandbox}/${common_exe_dir}"
     else
-	exe_base="${bgusr_base}/${sandbox}/${common_exe_dir}"
+	if [ $gpfs -eq 1 ]
+	then
+	    exe_base="${gpfs_base}/${sandbox}/${common_exe_dir}"
+	else
+	    exe_base="${bgusr_base}/${sandbox}/${common_exe_dir}"
+	fi
     fi
 fi
 
@@ -4946,7 +4962,7 @@ then
 				      freeRC=0
 				  fi
 
-				  if [ $freeRC -eq 0 ]
+				  if [ $freeRC -eq 0 ] && [ $ioReboot -eq 1 ]
 				  then
 				      #hdelete $bootBlockHash $bootBlock
 
@@ -5016,7 +5032,8 @@ then
 				  fi
 
                                   # Set all subblocks to "free" or "dead"
-				  echo "WARNING (W): ${bootBlock} reset (step 4): Reset (sub)block status ..."
+				  step=$(( $ioReboot + 3 ))
+				  echo "WARNING (W): ${bootBlock} reset (step ${step}): Reset (sub)block status ..."
 
 				  hget $bootBlockHash $bootBlock bootBlockStatus
 				  
@@ -5209,24 +5226,27 @@ then
 		  then
 
 		      # Have to get I/O block info while compute block is still booted (get rid of this later)
-		      ioBlocks=`${blockInfoScript} -ioBlocks $bootBlock`
-		      
-		      if [ $? -eq 0 ] && [ "${ioBlocks}" != "" ]
+		      if [ $ioReboot -eq 1 ]
 		      then
+			  ioBlocks=`${blockInfoScript} -ioBlocks $bootBlock`
+			  
+			  if [ $? -eq 0 ] && [ "${ioBlocks}" != "" ]
+			  then
 
-			  for ((index=0; index < ${#ioblockArray[@]}; index++))
-			  do
-			      curIOBlock=$( echo $ioBlocks | awk -F, -v N=$index '{ print $(N+1) }' )
+			      for ((index=0; index < ${#ioblockArray[@]}; index++))
+			      do
+				  curIOBlock=$( echo $ioBlocks | awk -F, -v N=$index '{ print $(N+1) }' )
 				  if [ "${curIOBlock}" != "" ] && (( $( grep -a -i -c $curIOBlock $ioblockHash ) > 0 ))
 				  then # associate I/O block with this boot block
 				      hput $ioblockHash $curIOBlock $bootBlock
 				  else
 				      break
 				  fi
-			  done
-		      else
-			  echo "ERROR (E): No I/O blocks associated with ${bootBlock}. Exiting ..."
-			  exit 1
+			      done
+			  else
+			      echo "ERROR (E): No I/O blocks associated with ${bootBlock}. Exiting ..."
+			      exit 1
+			  fi
 		      fi
 
 		      # Mark this bootBlock in error so that it gets rebooted
