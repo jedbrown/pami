@@ -83,7 +83,22 @@ namespace PAMI
       * \retval PAMI_INVAL    The queries are not recognized.
       */
       static pami_result_t global_query(pami_configuration_t  configs[], 
-                                 size_t                num_configs);  
+                                        size_t                num_configs);  
+
+      static pami_result_t async_progress_register (
+                    pami_context_t          context,
+                    pami_async_function     progress_fn,
+                    pami_async_function     suspend_fn,
+                    pami_async_function     resume_fn,
+                    void*                   cookie);
+
+      static pami_result_t async_progress_enable (
+                    pami_context_t          context,
+                    pami_async_t            event_type);
+
+      static pami_result_t async_progress_disable (
+                    pami_context_t          context,
+                    pami_async_t            event_type);
 
       static unsigned trace_mask;
       static void itrace_read_masks(pe_extension_itrace_mask_t* masks, unsigned masks_cnt, char* mask_env);

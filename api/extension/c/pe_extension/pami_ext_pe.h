@@ -49,9 +49,6 @@ extern "C"
 
     PAMI_CONTEXT_CHECK_PARAM       /**< CQU: bool : true : check function parameters */
         = PAMI_EXT_ATTR + 200,
-    PAMI_CONTEXT_RECEIVE_INTERRUPT,/**< CQU: bool : false: enable receive interrupt */
-    PAMI_CONTEXT_PROGRESS_HANDLER, /**< CQ : pami_event_function : NULL : asynchronous progress handler */
-    PAMI_CONTEXT_PROGRESS_COOKIE,  /**< CQ : void * : NULL : cookie to asynchronous progress handler */
     PAMI_CONTEXT_ERROR_HANDLER,    /**< CQ : pami_error_handler_t : NULL : asynchronous error handler */
     PAMI_CONTEXT_STATISTICS,       /**<  Q : pami_statistics_t : N/A : retrieve communication statistics */
     PAMI_CONTEXT_TRIGGER,          /**<   U: pami_trigger_t : N/A : add or remove a trigger */
@@ -64,6 +61,32 @@ extern "C"
    * \defgroup error_handler Asynchronous error handler
    * \{
    */
+
+  typedef void (*pami_async_function) (pami_context_t  context, 
+                                       void *          cookie);
+
+  typedef enum {
+      PAMI_ASYNC_ALL                = 0,
+      PAMI_ASYNC_RECV_INTERRUPT     = 1,
+      PAMI_ASYNC_TIMER              = 2,
+      PAMI_ASYNC_EXT                = 1000
+  } pami_async_t;
+
+  typedef pami_result_t (*async_progress_register_fn) (
+          pami_context_t          context,
+          pami_async_function     progress_fn,
+          pami_async_function     suspend_fn,
+          pami_async_function     resume_fn,
+          void*                   cookie);
+
+  typedef pami_result_t (*async_progress_enable_fn) (
+          pami_context_t          context,
+          pami_async_t            event_type);
+
+  typedef pami_result_t (*async_progress_disable_fn) (
+          pami_context_t          context,
+          pami_async_t            event_type);
+
   /**
    * \brief PAMI asynchronous error handler
    *
