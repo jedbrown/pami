@@ -145,7 +145,8 @@ namespace PAMI
         TRACE((stderr, "Shmem::op_dt_metadata_function(dt %d,op %d) = %s\n", dt, op, support[dt][op] ? "true" : "false"));
         metadata_result_t result = {0};
         //result.check.datatype_op = ((in->cmd.xfer_allreduce.dt == PAMI_DOUBLE) && (in->cmd.xfer_allreduce.op == PAMI_SUM))?0:1;
-        result.check.datatype_op = ((in->cmd.xfer_allreduce.dt == PAMI_DOUBLE) && (in->cmd.xfer_allreduce.op == PAMI_MAX))?0:1;
+        //result.check.datatype_op = ((in->cmd.xfer_allreduce.dt == PAMI_DOUBLE) && (in->cmd.xfer_allreduce.op == PAMI_MAX))?0:1;
+        result.check.datatype_op = ((in->cmd.xfer_allreduce.dt == PAMI_DOUBLE) && (in->cmd.xfer_allreduce.op == PAMI_MIN))?0:1;
         return(result);
       }
     }

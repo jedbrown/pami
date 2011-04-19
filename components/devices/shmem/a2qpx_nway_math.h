@@ -9,6 +9,10 @@
 #include "components/devices/shmem/qpx_4way_max.h"
 #include "components/devices/shmem/qpx_8way_max.h"
 #include "components/devices/shmem/qpx_16way_max.h"
+#include "components/devices/shmem/qpx_2way_min.h"
+#include "components/devices/shmem/qpx_4way_min.h"
+#include "components/devices/shmem/qpx_8way_min.h"
+#include "components/devices/shmem/qpx_16way_min.h"
 
 
 inline unsigned quad_double_math_2way(double* dst, double* src0, double *src1, unsigned num_dbls, pami_op opcode)
@@ -24,6 +28,7 @@ inline unsigned quad_double_math_2way(double* dst, double* src0, double *src1, u
       break;
 
     case PAMI_MIN:
+  quad_double_min_2way( dst,  src0,  src1, num_dbls );
       break;
 
     case PAMI_UNDEFINED_OP:
@@ -60,6 +65,7 @@ inline unsigned quad_double_math_4way(double* dst, double* src0, double *src1, d
       break;
 
     case PAMI_MIN:
+   quad_double_min_4way( dst,  src0,  src1, src2,  src3, num_dbls );
       break;
 
     case PAMI_UNDEFINED_OP:
@@ -98,6 +104,7 @@ inline unsigned quad_double_math_8way(double* dst, double* src0, double *src1, d
       break;
 
     case PAMI_MIN:
+   quad_double_min_8way( dst,  src0,  src1, src2,  src3, src4, src5, src6, src7,  num_dbls );
       break;
 
     case PAMI_UNDEFINED_OP:
@@ -138,6 +145,7 @@ inline unsigned quad_double_math_16way(double* dst, double* src0, double *src1, 
       break;
 
     case PAMI_MIN:
+   quad_double_min_16way( dst,  src0,  src1, src2,  src3, src4, src5, src6, src7, src8, src9, src10, src11, src12, src13, src14, src15,  num_dbls );
       break;
 
     case PAMI_UNDEFINED_OP:
