@@ -15,5 +15,6 @@
 #include "api/extension/c/torus_network/Extension.h"
 #include "api/extension/c/pe_extension/Extension.h"
 #include "api/extension/c/hfi_extension/Extension.h"
+#include "api/extension/c/bgq_l2atomic/Extension.h"
 
 #endif
