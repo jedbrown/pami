@@ -772,18 +772,18 @@ inline unsigned _quad_double_max_16way_align32B_short(double* dst, double* src0,
   VECTOR_LOAD(src4_1,inc,4);
 
   //ASM("qvfadd 29, 29, 5" ::  );
-    ASM("qvfcmpgt 16, 29, 5" :: );
-    ASM("qvfsel 29, 16, 29, 5" :: );
+  ASM("qvfcmpgt 16, 29, 5" :: );
+  ASM("qvfsel 29, 16, 29, 5" :: );
   VECTOR_LOAD(src5_1,inc,5);
 
   //ASM("qvfadd 30, 30, 6" ::  );
-    ASM("qvfcmpgt 16, 30, 6" :: );
-    ASM("qvfsel 30, 16, 30, 6" :: );
+  ASM("qvfcmpgt 16, 30, 6" :: );
+  ASM("qvfsel 30, 16, 30, 6" :: );
   VECTOR_LOAD(src6_1,inc,6);
 
   //ASM("qvfadd 31, 31, 7" ::  );
-    ASM("qvfcmpgt 16, 31, 7" :: );
-    ASM("qvfsel 31, 16, 31, 7" :: );
+  ASM("qvfcmpgt 16, 31, 7" :: );
+  ASM("qvfsel 31, 16, 31, 7" :: );
   VECTOR_LOAD(src7_1,inc,7);
 
   while (1){
@@ -956,14 +956,14 @@ inline unsigned _quad_double_max_16way_single(double* dst, double* src0, double 
     dst[i] = (dst[i] > src5[i])? dst[i]:src5[i];
     dst[i] = (dst[i] > src6[i])? dst[i]:src6[i];
     dst[i] = (dst[i] > src7[i])? dst[i]:src7[i];
-    dst[i] = (dst[i] > src8[i])? dst[i]:src2[i];
-    dst[i] = (dst[i] > src9[i])? dst[i]:src3[i];
-    dst[i] = (dst[i] > src10[i])? dst[i]:src4[i];
-    dst[i] = (dst[i] > src11[i])? dst[i]:src5[i];
-    dst[i] = (dst[i] > src12[i])? dst[i]:src6[i];
-    dst[i] = (dst[i] > src13[i])? dst[i]:src7[i];
-    dst[i] = (dst[i] > src14[i])? dst[i]:src7[i];
-    dst[i] = (dst[i] > src15[i])? dst[i]:src7[i];
+    dst[i] = (dst[i] > src8[i])? dst[i]:src8[i];
+    dst[i] = (dst[i] > src9[i])? dst[i]:src9[i];
+    dst[i] = (dst[i] > src10[i])? dst[i]:src10[i];
+    dst[i] = (dst[i] > src11[i])? dst[i]:src11[i];
+    dst[i] = (dst[i] > src12[i])? dst[i]:src12[i];
+    dst[i] = (dst[i] > src13[i])? dst[i]:src13[i];
+    dst[i] = (dst[i] > src14[i])? dst[i]:src14[i];
+    dst[i] = (dst[i] > src15[i])? dst[i]:src15[i];
   }
   return num_dbls;
 
