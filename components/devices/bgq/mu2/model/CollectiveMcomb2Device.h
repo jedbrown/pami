@@ -42,7 +42,9 @@ namespace PAMI
             unsigned sizeoftype =  mu_collective_size_table[mcombine->dtype];
             unsigned bytes      =  mcombine->count * sizeoftype;
             unsigned op = mu_collective_op_table[mcombine->dtype][mcombine->optor];
+            pami_op opcode = mcombine->optor;
 
+            //op = mu_collective_op_table[PAMI_DOUBLE][PAMI_MAX];
             if (op == unsupported_operation)
               return PAMI_ERROR; //Unsupported operation
 
@@ -61,6 +63,7 @@ namespace PAMI
                                                            mcombine->cb_done.function,
                                                            mcombine->cb_done.clientdata,
                                                            op,
+                                                           opcode,                                    
                                                            sizeoftype,
                                                           classroute);
           }

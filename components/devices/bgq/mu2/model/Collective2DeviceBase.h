@@ -221,6 +221,7 @@ namespace PAMI
                                         pami_event_function        cb_done,
                                         void                     * cookie,
                                         uint32_t                   op,
+                                        pami_op                   opcode,
                                         uint32_t                   sizeoftype,
                                         unsigned                   classroute)
           {
@@ -232,6 +233,7 @@ namespace PAMI
                 dst,
                 bytes,
                 op,
+                opcode,
                 sizeoftype,
                 &_collstate._colCounter,
                 &_shmem_desc[_index]

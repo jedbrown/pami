@@ -50,6 +50,7 @@ namespace PAMI
                                       PipeWorkQueue       * dpwq,
                                       uint32_t              length,
                                       uint32_t              op,
+                                      pami_op               opcode,
                                       uint32_t              sizeoftype,
                                       volatile uint64_t   * counterAddress,
                                       PAMI::Device::Shmem::CNShmemDesc       *shmem_desc):
@@ -61,6 +62,7 @@ namespace PAMI
               _fn (fn),
               _cookie (cookie),
               _op (op),
+              _opcode(opcode),
               _sizeoftype(sizeoftype),
               _doneMULarge (false),
               _doneMUShort (false),
@@ -132,7 +134,7 @@ namespace PAMI
               void *srcbuf_gva = NULL;
               rc = Kernel_Physical2GlobalVirtual ((void*)srcbuf_phy, &srcbuf_gva);
 
-              _shmsg.init((void*)srcbuf, (void*)rcvbuf, (void*)srcbuf_gva, (void*)rcvbuf_gva, (void*)rcvbuf_phy, (void*)_shmbuf_phy, __global.mapping.t());
+              _shmsg.init((void*)srcbuf, (void*)rcvbuf, (void*)srcbuf_gva, (void*)rcvbuf_gva, (void*)rcvbuf_phy, (void*)_shmbuf_phy, __global.mapping.t(), _opcode);
             }
 
             if (__global.mapping.t() == 0)
@@ -225,7 +227,7 @@ namespace PAMI
             pami_result_t res;
 
             if (length < VERY_SHORT_MSG_CUTOFF)
-              res = PAMI::Device::Shmem::CNShmemMessage::very_short_msg_combine(_shmem_desc, length, __global.mapping.tSize(), __global.mapping.t(), combineDone);
+              res = PAMI::Device::Shmem::CNShmemMessage::very_short_msg_combine(_shmem_desc, length, _opcode, __global.mapping.tSize(), __global.mapping.t(), combineDone);
             else
               res = _shmsg.short_msg_combine(length, __global.mapping.tSize(), __global.mapping.t(), combineDone);
 
@@ -366,6 +368,7 @@ namespace PAMI
           pami_event_function      _fn;
           void                   * _cookie;
           uint32_t                 _op;
+          pami_op                 _opcode;
           uint32_t                 _sizeoftype;
           bool                     _doneMULarge;
           bool                     _doneMUShort;
