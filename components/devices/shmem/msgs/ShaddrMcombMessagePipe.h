@@ -20,7 +20,8 @@
 #include "Arch.h"
 #include "sys/pami.h"
 #include "../opt_copy_a2.h"
-#include "../a2qpx_nway_sum.h"
+//#include "../a2qpx_nway_sum.h"
+#include "../a2qpx_nway_math.h"
 #include "assert.h"
 #include "BaseMessage.h"
 
@@ -124,8 +125,8 @@ namespace PAMI
             return msg->advance();
           };
 
-          inline void advance_4way_sum(Shmem::McombControl* mcomb_control, unsigned _local_rank, unsigned _npeers,
-              double* dst, size_t bytes)
+          inline void advance_4way_math(Shmem::McombControl* mcomb_control, unsigned _local_rank, unsigned _npeers,
+              double* dst, size_t bytes, pami_op opcode)
           {
             /* local ranks other than 0 do the following quad sum */
             unsigned iter;
@@ -133,9 +134,9 @@ namespace PAMI
             for (iter=0; iter < NUM_CHUNKS(bytes)-1; iter++){
               if ((iter%(_npeers-1) +1) == _local_rank){
 
-                quad_double_sum_4way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
+                quad_double_math_4way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
                     SHADDR_SRCBUF(1)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(2)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, NUM_DBLS_PER_CHUNK);
+                    SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, NUM_DBLS_PER_CHUNK, opcode);
                 mcomb_control->chunks_done[_local_rank] += 1;
               }
               TRACE_ERR((stderr,"dst[%zu]:%f\n", iter*NUM_DBLS_PER_CHUNK, dst[iter*NUM_DBLS_PER_CHUNK]));
@@ -145,35 +146,35 @@ namespace PAMI
             if ((iter%(_npeers-1) +1) == _local_rank){
               if (bytes%CHUNK_SIZE == 0)
               {
-                quad_double_sum_4way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
+                quad_double_math_4way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
                     SHADDR_SRCBUF(1)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(2)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, NUM_DBLS_PER_CHUNK);
+                    SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, NUM_DBLS_PER_CHUNK, opcode);
 
               }
               else
               {
-                quad_double_sum_4way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
+                quad_double_math_4way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
                     SHADDR_SRCBUF(1)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(2)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, (bytes%CHUNK_SIZE)/sizeof(double));
+                    SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, (bytes%CHUNK_SIZE)/sizeof(double), opcode);
               }
               mcomb_control->chunks_done[_local_rank] += 1;
             }
 
           }
 
-          inline void advance_8way_sum(Shmem::McombControl* mcomb_control, unsigned _local_rank, unsigned _npeers,
-              double* dst, size_t bytes)
+          inline void advance_8way_math(Shmem::McombControl* mcomb_control, unsigned _local_rank, unsigned _npeers,
+              double* dst, size_t bytes, pami_op opcode)
           {
             /* local ranks other than 0 do the following quad sum */
             unsigned iter;
 
             for (iter=0; iter < NUM_CHUNKS(bytes)-1; iter++){
               if ((iter%(_npeers-1) +1) == _local_rank){
-                quad_double_sum_8way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
+                quad_double_math_8way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
                     SHADDR_SRCBUF(1)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(2)+iter*NUM_DBLS_PER_CHUNK,
                     SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(4)+iter*NUM_DBLS_PER_CHUNK,
                     SHADDR_SRCBUF(5)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(6)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(7)+iter*NUM_DBLS_PER_CHUNK, NUM_DBLS_PER_CHUNK);
+                    SHADDR_SRCBUF(7)+iter*NUM_DBLS_PER_CHUNK, NUM_DBLS_PER_CHUNK, opcode);
                 mcomb_control->chunks_done[_local_rank] += 1;
               }
             }
@@ -182,20 +183,20 @@ namespace PAMI
             if ((iter%(_npeers-1) +1) == _local_rank){
               if (bytes%CHUNK_SIZE == 0)
               {
-                quad_double_sum_8way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
+                quad_double_math_8way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
                     SHADDR_SRCBUF(1)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(2)+iter*NUM_DBLS_PER_CHUNK,
                     SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(4)+iter*NUM_DBLS_PER_CHUNK,
                     SHADDR_SRCBUF(5)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(6)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(7)+iter*NUM_DBLS_PER_CHUNK, NUM_DBLS_PER_CHUNK);
+                    SHADDR_SRCBUF(7)+iter*NUM_DBLS_PER_CHUNK, NUM_DBLS_PER_CHUNK, opcode);
 
               }
               else
               {
-                quad_double_sum_8way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
+                quad_double_math_8way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
                     SHADDR_SRCBUF(1)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(2)+iter*NUM_DBLS_PER_CHUNK,
                     SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(4)+iter*NUM_DBLS_PER_CHUNK,
                     SHADDR_SRCBUF(5)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(6)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(7)+iter*NUM_DBLS_PER_CHUNK, (bytes%CHUNK_SIZE)/sizeof(double));
+                    SHADDR_SRCBUF(7)+iter*NUM_DBLS_PER_CHUNK, (bytes%CHUNK_SIZE)/sizeof(double), opcode);
               }
 
               mbar();
@@ -204,8 +205,8 @@ namespace PAMI
 
           }
 
-          inline void advance_16way_sum(Shmem::McombControl* mcomb_control, unsigned _local_rank, unsigned _npeers,
-              double* dst, size_t bytes)
+          inline void advance_16way_math(Shmem::McombControl* mcomb_control, unsigned _local_rank, unsigned _npeers,
+              double* dst, size_t bytes, pami_op opcode)
           {
             /* local ranks other than 0 do the following quad sum */
             unsigned iter;
@@ -213,7 +214,7 @@ namespace PAMI
             for (iter=0; iter < NUM_CHUNKS(bytes)-1; iter++){
               if ((iter%(_npeers-1) +1) == _local_rank){
 
-                quad_double_sum_16way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
+                quad_double_math_16way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
                     SHADDR_SRCBUF(1)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(2)+iter*NUM_DBLS_PER_CHUNK,
                     SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(4)+iter*NUM_DBLS_PER_CHUNK,
                     SHADDR_SRCBUF(5)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(6)+iter*NUM_DBLS_PER_CHUNK,
@@ -221,7 +222,7 @@ namespace PAMI
                     SHADDR_SRCBUF(9)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(10)+iter*NUM_DBLS_PER_CHUNK,
                     SHADDR_SRCBUF(11)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(12)+iter*NUM_DBLS_PER_CHUNK,
                     SHADDR_SRCBUF(13)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(14)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(15)+iter*NUM_DBLS_PER_CHUNK, NUM_DBLS_PER_CHUNK);
+                    SHADDR_SRCBUF(15)+iter*NUM_DBLS_PER_CHUNK, NUM_DBLS_PER_CHUNK, opcode);
                 mcomb_control->chunks_done[_local_rank] += 1;
               }
               TRACE_ERR((stderr,"dst[%zu]:%f\n", iter*NUM_DBLS_PER_CHUNK, dst[iter*NUM_DBLS_PER_CHUNK]));
@@ -231,7 +232,7 @@ namespace PAMI
             if ((iter%(_npeers-1) +1) == _local_rank){
               if (bytes%CHUNK_SIZE == 0)
               {
-                quad_double_sum_16way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
+                quad_double_math_16way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
                     SHADDR_SRCBUF(1)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(2)+iter*NUM_DBLS_PER_CHUNK,
                     SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(4)+iter*NUM_DBLS_PER_CHUNK,
                     SHADDR_SRCBUF(5)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(6)+iter*NUM_DBLS_PER_CHUNK,
@@ -239,12 +240,12 @@ namespace PAMI
                     SHADDR_SRCBUF(9)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(10)+iter*NUM_DBLS_PER_CHUNK,
                     SHADDR_SRCBUF(11)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(12)+iter*NUM_DBLS_PER_CHUNK,
                     SHADDR_SRCBUF(13)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(14)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(15)+iter*NUM_DBLS_PER_CHUNK, NUM_DBLS_PER_CHUNK);
+                    SHADDR_SRCBUF(15)+iter*NUM_DBLS_PER_CHUNK, NUM_DBLS_PER_CHUNK, opcode);
 
               }
               else
               {
-                quad_double_sum_16way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
+                quad_double_math_16way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
                     SHADDR_SRCBUF(1)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(2)+iter*NUM_DBLS_PER_CHUNK,
                     SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(4)+iter*NUM_DBLS_PER_CHUNK,
                     SHADDR_SRCBUF(5)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(6)+iter*NUM_DBLS_PER_CHUNK,
@@ -252,7 +253,7 @@ namespace PAMI
                     SHADDR_SRCBUF(9)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(10)+iter*NUM_DBLS_PER_CHUNK,
                     SHADDR_SRCBUF(11)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(12)+iter*NUM_DBLS_PER_CHUNK,
                     SHADDR_SRCBUF(13)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(14)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(15)+iter*NUM_DBLS_PER_CHUNK, (bytes%CHUNK_SIZE)/sizeof(double));
+                    SHADDR_SRCBUF(15)+iter*NUM_DBLS_PER_CHUNK, (bytes%CHUNK_SIZE)/sizeof(double), opcode);
               }
               mcomb_control->chunks_done[_local_rank] += 1;
             }
@@ -299,6 +300,8 @@ namespace PAMI
             uint64_t	mask1	= 0;
 	    mask1 = (alignment - 1);
 
+            pami_op opcode = mcomb_params.optor;
+
             /* All nodes except master(local rank 0), do the math */
 
             if (_local_rank != 0){
@@ -309,7 +312,7 @@ namespace PAMI
                 /* Check for the alignment..Assuming L1 cache line alignment for now */
                 //PAMI_ASSERT(ALIGNED_SRCBUF(0,mask1) && ALIGNED_SRCBUF(1,mask1) &&ALIGNED_SRCBUF(2,mask1) &&ALIGNED_SRCBUF(3,mask1)) ;
 
-                advance_4way_sum(mcomb_control, _local_rank, _npeers, dst, bytes);
+                advance_4way_math(mcomb_control, _local_rank, _npeers, dst, bytes, opcode);
 
               }
               else if (_npeers == 8){
@@ -318,7 +321,7 @@ namespace PAMI
                 /*PAMI_ASSERT(ALIGNED_SRCBUF(0,mask1) && ALIGNED_SRCBUF(1,mask1) &&ALIGNED_SRCBUF(2,mask1) &&ALIGNED_SRCBUF(3,mask1)) ;
                 PAMI_ASSERT(ALIGNED_SRCBUF(4,mask1) && ALIGNED_SRCBUF(5,mask1) &&ALIGNED_SRCBUF(6,mask1) &&ALIGNED_SRCBUF(7,mask1)) ;*/
 
-                advance_8way_sum(mcomb_control, _local_rank, _npeers, dst, bytes);
+                advance_8way_math(mcomb_control, _local_rank, _npeers, dst, bytes, opcode);
               }
               else if (_npeers == 16){
 
@@ -328,7 +331,7 @@ namespace PAMI
                 PAMI_ASSERT(ALIGNED_SRCBUF(8,mask1) && ALIGNED_SRCBUF(9,mask1) &&ALIGNED_SRCBUF(10,mask1) &&ALIGNED_SRCBUF(11,mask1)) ;
                 PAMI_ASSERT(ALIGNED_SRCBUF(12,mask1) && ALIGNED_SRCBUF(13,mask1) &&ALIGNED_SRCBUF(14,mask1) &&ALIGNED_SRCBUF(15,mask1)) ;*/
 
-                advance_16way_sum(mcomb_control, _local_rank, _npeers, dst, bytes);
+                advance_16way_math(mcomb_control, _local_rank, _npeers, dst, bytes, opcode);
 
               }
               else{

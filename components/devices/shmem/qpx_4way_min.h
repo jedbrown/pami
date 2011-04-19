@@ -317,9 +317,9 @@ inline unsigned _quad_double_min_4way_single(double* dst, double* src0, double *
   unsigned i;
   for (i = 0; i < num_dbls; i++)
   {
-    dst[i] = (src0[i] > src1[i])? src0[i]:src1[i];
-    dst[i] = (dst[i] > src2[i])? dst[i]:src2[i];
-    dst[i] = (dst[i] > src3[i])? dst[i]:src3[i];
+    dst[i] = (src0[i] < src1[i])? src0[i]:src1[i];
+    dst[i] = (dst[i] < src2[i])? dst[i]:src2[i];
+    dst[i] = (dst[i] < src3[i])? dst[i]:src3[i];
   }
 
   return num_dbls;

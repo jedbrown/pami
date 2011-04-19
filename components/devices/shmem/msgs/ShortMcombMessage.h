@@ -20,7 +20,8 @@
 #include "Arch.h"
 #include "sys/pami.h"
 #include "assert.h"
-#include "../a2qpx_nway_sum.h"
+//#include "../a2qpx_nway_sum.h"
+#include "../a2qpx_nway_math.h"
 #include "common/MultisendInterface.h"
 
 #undef TRACE_ERR
@@ -130,6 +131,7 @@ namespace PAMI
               size_t bytes = mcomb_params.count << pami_dt_shift[mcomb_params.dtype];
               double* dst = rcv?(double*)(rcv->bufferToConsume()):(double*)NULL;
 
+              pami_op opcode = mcomb_params.optor;
 
               if (_local_rank == 0)
               {
@@ -142,7 +144,7 @@ namespace PAMI
 
                   /*for (unsigned i = 0; i < mcomb_params.count; i++)
                     SHMEMBUF(0)[i] = SHMEMBUF(0)[i] + SHMEMBUF(1)[i] + SHMEMBUF(2)[i] + SHMEMBUF(3)[i];*/
-                  quad_double_sum_4way(SHMEMBUF(0),  SHMEMBUF(0), SHMEMBUF(1), SHMEMBUF(2), SHMEMBUF(3), mcomb_params.count);
+                  quad_double_math_4way(SHMEMBUF(0),  SHMEMBUF(0), SHMEMBUF(1), SHMEMBUF(2), SHMEMBUF(3), mcomb_params.count, opcode);
 
                 }
                 else if (_npeers == 8)
@@ -150,8 +152,8 @@ namespace PAMI
                   /*for (unsigned i = 0; i < mcomb_params.count; i++)
                     SHMEMBUF(0)[i] = SHMEMBUF(0)[i] + SHMEMBUF(1)[i] + SHMEMBUF(2)[i] + SHMEMBUF(3)[i] +
                     SHMEMBUF(4)[i] + SHMEMBUF(5)[i] + SHMEMBUF(6)[i] + SHMEMBUF(7)[i] ;*/
-                  quad_double_sum_8way(SHMEMBUF(0),  SHMEMBUF(0), SHMEMBUF(1), SHMEMBUF(2), SHMEMBUF(3),
-                                        SHMEMBUF(4), SHMEMBUF(5), SHMEMBUF(6), SHMEMBUF(7), mcomb_params.count);
+                  quad_double_math_8way(SHMEMBUF(0),  SHMEMBUF(0), SHMEMBUF(1), SHMEMBUF(2), SHMEMBUF(3),
+                                        SHMEMBUF(4), SHMEMBUF(5), SHMEMBUF(6), SHMEMBUF(7), mcomb_params.count, opcode);
 
                 }
                 else if (_npeers == 16)
@@ -161,9 +163,9 @@ namespace PAMI
                       SHMEMBUF(4)[i] + SHMEMBUF(5)[i] + SHMEMBUF(6)[i] + SHMEMBUF(7)[i] +
                       SHMEMBUF(8)[i] + SHMEMBUF(9)[i] + SHMEMBUF(10)[i] + SHMEMBUF(11)[i] +
                       SHMEMBUF(12)[i] + SHMEMBUF(13)[i] + SHMEMBUF(14)[i] + SHMEMBUF(15)[i];*/
-                  quad_double_sum_16way(SHMEMBUF(0), SHMEMBUF(0), SHMEMBUF(1), SHMEMBUF(2), SHMEMBUF(3),
+                  quad_double_math_16way(SHMEMBUF(0), SHMEMBUF(0), SHMEMBUF(1), SHMEMBUF(2), SHMEMBUF(3),
                       SHMEMBUF(4), SHMEMBUF(5), SHMEMBUF(6), SHMEMBUF(7), SHMEMBUF(8), SHMEMBUF(9), SHMEMBUF(10),
-                      SHMEMBUF(11), SHMEMBUF(12), SHMEMBUF(13), SHMEMBUF(14), SHMEMBUF(15), mcomb_params.count);
+                      SHMEMBUF(11), SHMEMBUF(12), SHMEMBUF(13), SHMEMBUF(14), SHMEMBUF(15), mcomb_params.count, opcode);
 
                 }
                 else

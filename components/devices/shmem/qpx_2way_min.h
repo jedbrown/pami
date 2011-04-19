@@ -279,7 +279,7 @@ inline unsigned _quad_double_min_2way_single(double* dst, double* src0, double *
   for (i = 0; i < num_dbls; i++)
   {
     //printf("src0[%d]:%f,src1[%d]:%f\n", i,src0[i],i, src1[i]);
-    dst[i] = (src0[i] > src1[i]) ? src0[i]:src1[i];
+    dst[i] = (src0[i] < src1[i]) ? src0[i]:src1[i];
   }
 
   return num_dbls;
