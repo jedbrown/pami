@@ -86,14 +86,18 @@ namespace PAMI
 
         /// \todo Support non-contiguous
         assert((in->cmd.xfer_allreduce.stype == PAMI_TYPE_CONTIGUOUS) && (in->cmd.xfer_allreduce.rtype == PAMI_TYPE_CONTIGUOUS));
-        PAMI_Dt_query (in->cmd.xfer_allreduce.dt, &sz);
+        //PAMI_Dt_query (in->cmd.xfer_allreduce.dt, &sz);
+	//PAMI_Dt_query (in->cmd.xfer_allreduce.stype, &sz); non-contig is bytes
+	sz = 1;
 
         size_t dataSent = in->cmd.xfer_allreduce.stypecount * sz;
         result.check.range   |= !((dataSent <= T_Range_High) && (dataSent >= T_Range_Low));
-
+	//fprintf(stderr,"sz %zu, dataSent %zu, count %zu (%zu<->%zu) flag %u\n",sz,dataSent, in->cmd.xfer_allreduce.stypecount,T_Range_Low, T_Range_High,result.check.range);
         // Is this really necessary? Eh, why not..
+	//PAMI_Dt_query (in->cmd.xfer_allreduce.rtype, &sz);
         dataSent = in->cmd.xfer_allreduce.rtypecount * sz;
         result.check.range   |= !((dataSent <= T_Range_High) && (dataSent >= T_Range_Low));
+	//fprintf(stderr,"sz %zu, dataSent %zu, count %zu (%zu<->%zu) flag %u\n",sz,dataSent, in->cmd.xfer_allreduce.stypecount,T_Range_Low, T_Range_High,result.check.range);
 
         return result;
     }
@@ -140,13 +144,24 @@ namespace PAMI
 #ifdef ENABLE_NEW_SHMEM
     namespace Shmem
     {
+      extern inline metadata_result_t op_dt_optimized_metadata_function(struct pami_xfer_t *in)
+      {
+        TRACE((stderr, "Shmem::op_dt_metadata_function(dt %d,op %d) = %s\n", dt, op, support[dt][op] ? "true" : "false"));
+        metadata_result_t result = {0};
+        result.check.datatype_op = ((in->cmd.xfer_allreduce.dt == PAMI_DOUBLE) && 
+				    ((in->cmd.xfer_allreduce.op == PAMI_MIN) ||
+				     (in->cmd.xfer_allreduce.op == PAMI_MAX) ||
+				     (in->cmd.xfer_allreduce.op == PAMI_SUM)))	  ?0:1;
+        return(result);
+      }
+    }
+    namespace Shmem
+    {
       extern inline metadata_result_t op_dt_metadata_function(struct pami_xfer_t *in)
       {
         TRACE((stderr, "Shmem::op_dt_metadata_function(dt %d,op %d) = %s\n", dt, op, support[dt][op] ? "true" : "false"));
         metadata_result_t result = {0};
-        //result.check.datatype_op = ((in->cmd.xfer_allreduce.dt == PAMI_DOUBLE) && (in->cmd.xfer_allreduce.op == PAMI_SUM))?0:1;
-        //result.check.datatype_op = ((in->cmd.xfer_allreduce.dt == PAMI_DOUBLE) && (in->cmd.xfer_allreduce.op == PAMI_MAX))?0:1;
-        result.check.datatype_op = ((in->cmd.xfer_allreduce.dt == PAMI_DOUBLE) && (in->cmd.xfer_allreduce.op == PAMI_MIN))?0:1;
+        result.check.datatype_op = ((in->cmd.xfer_allreduce.dt == PAMI_DOUBLE) && (in->cmd.xfer_allreduce.op == PAMI_SUM))?0:1;
         return(result);
       }
     }
@@ -229,7 +244,7 @@ namespace PAMI
       m->check_correct.values.alldtop     = 0;
       m->check_correct.values.rangeminmax = 1;
       m->range_hi                         = 64; // Msgs > 64 are pseudo-reduce-only, not allreduce
-      m->check_fn                         = range_metadata_function<0,64,Shmem::op_dt_metadata_function>;
+      m->check_fn                         = range_metadata_function<0,64,Shmem::op_dt_optimized_metadata_function>;
 #endif
     }
 
@@ -354,7 +369,7 @@ namespace PAMI
       m->check_correct.values.nonlocal      = 1;
       m->send_min_align                     = 64; 
       m->recv_min_align                     = 64; 
-      m->check_fn                           = align_metadata_function<1,64,1,64,Shmem::op_dt_metadata_function>;
+      m->check_fn                           = align_metadata_function<1,64,1,64,Shmem::op_dt_optimized_metadata_function>;
       m->check_perf.values.hw_accel         = 1;
 #else
       m->check_correct.values.alldtop       = 0;
@@ -467,7 +482,7 @@ namespace PAMI
       new(m) PAMI::Geometry::Metadata("X0:MultiCombine2Device:SHMEM:MU");
 #ifdef ENABLE_NEW_SHMEM
       m->check_correct.values.alldtop   = 0;
-      m->check_fn                       = Shmem::op_dt_metadata_function;
+      m->check_fn                       = Shmem::op_dt_optimized_metadata_function;
       m->check_perf.values.hw_accel     = 1;
 #else
       m->check_correct.values.alldtop   = 0;
@@ -494,7 +509,7 @@ namespace PAMI
 >>>>>>> Trac #182: Collectives metadata implementation
       m->send_min_align                     = 32; 
       m->recv_min_align                     = 32; 
-      m->check_fn                           = align_metadata_function<1,32,1,32,Shmem::op_dt_metadata_function>;
+      m->check_fn                           = align_metadata_function<1,32,1,32,Shmem::op_dt_optimized_metadata_function>;
       m->check_perf.values.hw_accel         = 1;
 #else
       m->check_correct.values.alldtop       = 0;
@@ -530,7 +545,7 @@ namespace PAMI
 >>>>>>> Trac #182: Collectives metadata implementation
       m->send_min_align                     = 32; 
       m->recv_min_align                     = 32; 
-      m->check_fn                           = align_metadata_function<1,32,1,32,Shmem::op_dt_metadata_function>;
+      m->check_fn                           = align_metadata_function<1,32,1,32,Shmem::op_dt_optimized_metadata_function>;
       m->check_perf.values.hw_accel         = 1;
 #else
       m->check_correct.values.alldtop       = 0;
@@ -565,7 +580,7 @@ namespace PAMI
 >>>>>>> Trac #182: Collectives metadata implementation
       m->send_min_align                     = 32; 
       m->recv_min_align                     = 32; 
-      m->check_fn                           = align_metadata_function<1,32,1,32,Shmem::op_dt_metadata_function>;
+      m->check_fn                           = align_metadata_function<1,32,1,32,Shmem::op_dt_optimized_metadata_function>;
       m->check_perf.values.hw_accel         = 1;
 #else
       m->check_correct.values.alldtop       = 0;
