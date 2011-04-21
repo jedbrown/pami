@@ -102,7 +102,7 @@ extern "C"
    */
   typedef pami_result_t (*pami_work_function)(pami_context_t context, void *cookie);
 
-  typedef uintptr_t pami_work_t[8]; /**< Context work opaque object */
+  typedef uintptr_t pami_work_t[PAMI_WORK_SIZE_STATIC/sizeof(uintptr_t)]; /**< Context work opaque object */
 
 /**
  * \brief Message layer operation types
