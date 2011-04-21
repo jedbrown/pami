@@ -31,6 +31,7 @@
 #include "p2p/protocols/RGet.h"
 #include "p2p/protocols/rget/GetRdma.h"
 #include "p2p/protocols/rput/PutRdma.h"
+#include "p2p/protocols/put/PutOverSend.h"
 #include "p2p/protocols/send/eager/Eager.h"
 #include "p2p/protocols/send/composite/Composite.h"
 
@@ -275,7 +276,8 @@ namespace PAMI
           _pgas_composite_registration(NULL),
           _dummy_disable(false),
           _dummy_disabled(false),
-          _senderror()
+          _senderror(),
+          _put(devices->_mu[_contextid])
       {
         char mmkey[PAMI::Memory::MMKEYSIZE];
         char *mms;
@@ -302,6 +304,8 @@ namespace PAMI
 
         _devices->init(_clientid, _contextid, _client, _context, &_mm);
 
+        pami_endpoint_t self = PAMI_ENDPOINT_INIT(_clientid, __global.mapping.task(), _contextid);
+        _put.initialize (110, self, _context);
 
         Protocol::Get::GetRdma <Device::MU::DmaModelMemoryFifoCompletion, MUDevice> * rget_mu = NULL;
         Protocol::Put::PutRdma <Device::MU::DmaModelMemoryFifoCompletion, MUDevice> * rput_mu = NULL;
@@ -639,7 +643,7 @@ namespace PAMI
 
       inline pami_result_t put_impl (pami_put_simple_t * parameters)
       {
-        return PAMI_UNIMPL;
+        return _put.simple (parameters);
       }
 
       inline pami_result_t put_typed (pami_put_typed_t * parameters)
@@ -1076,6 +1080,9 @@ namespace PAMI
       bool _dummy_disabled;
       PAMI::Device::Generic::GenericThread _dummy_work;
       PAMI::Protocol::Send::Error  _senderror;
+      
+      Protocol::Put::PutOverSend<Device::MU::PacketModel> _put;
+      
   }; // end PAMI::Context
 }; // end namespace PAMI
 
