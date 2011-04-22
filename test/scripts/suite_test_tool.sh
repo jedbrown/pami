@@ -1407,8 +1407,27 @@ runHW ()
 		fi
 	    done
 	fi
-
     fi # end use Roy's tools
+   
+    # Use Tom's snapbug tool if run exited with an error and I'm running from a BG/Q SN
+    if (( ${runStatus[0]} > 0 )) && [ $serviceNode -eq 1 ] && [ "${platform}" == 'bgq' ]
+    then
+	
+	# Get jobid if necessary
+	if [ $roysTools -ne 1 ]
+	then
+	    jobid=`grep -a -i "ibm.runjob.client.job: job" $logFile | head -1 | sed "s|  *$||" | sed -e "s|.*job ||g" | cut -d " " -f1`
+	fi
+
+	echo "Gathering debug information for ${exe} using snapbug.pl ..." 2>&1 | tee -a $logFile
+	sbCmd="${snapbugScript} -jobid=${jobid} -output=${cwd}"
+
+	echo $sbCmd 2>&1 | tee -a $logFile
+	if [ $debug -eq 0 ]
+	then
+	    eval $sbCmd
+	fi
+    fi
 
     # Switch back to the previous directory
     changeDir $curDir
@@ -2750,6 +2769,11 @@ usage ()
     echo " --maxnp <NP limit>          Tells script that if NP of current test scenario > this value, skip this test"
     echo "                             ex:  api/context/post-multithreaded-perf.cnk --maxnp 63 --timelimit 180 --args 1"
     echo ""
+    echo " --skip <reason>             Tells script that this binary is to be skipped (compile, copy and run) and why"
+    echo "                             <reason> must be a quoted string"
+    echo "                             ex:  scripts/hello.sh --skip \"Unimplemented\""
+    echo "                             ex:  scripts/hello.sh --skip \"BGQ Issue 1234\""
+    echo ""
     echo " --standalone                Tells script that this binary is to be run natively without real or simulated hadware"
     echo "                             ex:  scripts/hello.sh --standalone"
 
@@ -2840,6 +2864,7 @@ runBlockHash="/tmp/${USER}_hashmap.subblocks.${timestamp}" # block status of sub
 allocateScript="${abs_script_dir}/allocateBlock.pl"        # perl script to allocate I/O and CN blocks
 freeScript="${abs_script_dir}/freeBlock.pl"                # perl script to free I/O and CN blocks
 blockInfoScript="${abs_script_dir}/getBlockInfo.pl"        # perl script to get block info
+snapbugScript="/bgsys/drivers/ppcfloor/scripts/snapbug.pl" # Tom Gooding's first failure data capture tool
 bgtoolsDir=""                                              # Roy's tools 
 bgutils=""                                                 # Roy's MMCS goodies
 bgutils_lite=""                                            # Roy's MMCS-Lite goodies
@@ -3584,6 +3609,17 @@ while read xtest xopts
       hput $exeHash "${TEST_ARRAY[$element]}:$element:runOpts" "${tempOpts}"
   fi
 
+  # Did user want to communicate skip reason rather than just comment out?
+  if [[ "${tempOpts}" =~ '-skip ' ]]
+  then      
+      # Get reason
+      skipText=$( echo ${tempOpts##*-skip} | awk -F\" '{ print $2 }' ) 
+
+      # Disable this test (for copy and/or exe) and tell user why
+      hput $exeHash "${TEST_ARRAY[$element]}:$element:exe" 0
+      hput $exeHash "${TEST_ARRAY[$element]}:$element:status" 'Skipped (${skipText})'
+  fi
+
   # Is this a standalone/native test?
   if [[ "${tempOpts}" =~ 'standalone' ]]
   then 
@@ -3596,6 +3632,8 @@ while read xtest xopts
       fi
   fi 
       
+  
+
   # Disable mpich "io" runs for now:
   if [ $mpich -eq 1 ]
   then
@@ -3790,7 +3828,7 @@ then
 	fi
 
 	echo -e "\nINFO (I):  Performing make distclean in:  ${suiteSourceDir}\n"
-	makeCmd='make distclean'
+	makeCmd='make -s distclean'
 	echo $makeCmd
 
 	if [ $debug -eq 0 ]
@@ -3830,7 +3868,7 @@ then
 	fi
 
 	# Clean tree
-	echo -e "\nINFO (I):  Performing make ${cleanType} in:  ${comp_base}\n"
+	echo -e "\nINFO (I):  Performing make -s ${cleanType} in:  ${comp_base}\n"
 
 	changeDir $comp_base
 	if [ $? -ne 0 ]
@@ -3843,9 +3881,9 @@ then
 	makeCmd=""
 	if [ $mpich -eq 1 ] || [ "${codeFamily}" == 'sst' ]
 	then
-	    makeCmd="make ${cleanType}"
+	    makeCmd="make -s ${cleanType}"
 	else # pami
-	    makeCmd="/bglhome/jratt/install-sles10/bin/make ${cleanType}"
+	    makeCmd="/bglhome/jratt/install-sles10/bin/make -s ${cleanType}"
 	fi
 
 	echo $makeCmd
@@ -3859,7 +3897,7 @@ then
 	appExists=$( grep -a -m 1 -c "^../applications" $inputFile ) 
 	if (( $appExists > 0 )) && [ "${codeFamily}" == 'sst' ]
 	then 
-	    echo -e "\nINFO (I):  Performing make ${cleanType} in:  ${abs_systest_dir}/applications\n"
+	    echo -e "\nINFO (I):  Performing make -s ${cleanType} in:  ${abs_systest_dir}/applications\n"
 	    
 	    changeDir "${abs_systest_dir}/applications"
 	    if [ $? -ne 0 ]
@@ -4110,26 +4148,32 @@ then
 
 	if [ $mpich -eq 1 ]
 	then
-	    export COMPILEONLY=1
-	    export VERBOSE=1
-		
-	    # Create dummy stagingdir to avoid MPICH runtests hang ...will erase later
-	    stagingDir="${exe_base}/dummy_mpich_bin"
-
-	    if [ ! -d $stagingDir ]
+	    if [ "${platform}" == 'bgp' ]
 	    then
-		mkdir -p $stagingDir
+		export COMPILEONLY=1
+		export VERBOSE=1
 
-		if [ $? -ne 0 ] || [ ! -d $stagingDir ]
+	        # Create dummy stagingdir to avoid MPICH runtests hang ...will erase later
+		stagingDir="${exe_base}/dummy_mpich_bin"
+	    
+
+		if [ ! -d $stagingDir ]
 		then
-		    echo "Creation of ${stagingDir} FAILED!!"
-		    exit 1
+		    mkdir -p $stagingDir
+
+		    if [ $? -ne 0 ] || [ ! -d $stagingDir ]
+		    then
+			echo "Creation of ${stagingDir} FAILED!!"
+			exit 1
+		    fi
 		fi
+
+		export STAGINGDIR=$stagingDir
+
+		makeCmd="make testing"
+	    else # bgq (see http://git01.rchland.ibm.com/trac/messaging/wiki/BGQ/BVT)
+		makeCmd="make -j ${MAKECPUS}"
 	    fi
-
-	    export STAGINGDIR=$stagingDir
-
-	    makeCmd="make testing"
 	else # pami
 	    makeCmd="/bglhome/jratt/install-sles10/bin/make -j ${MAKECPUS}"
 	fi
