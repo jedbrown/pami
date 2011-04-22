@@ -109,7 +109,7 @@ public:
 					lsize * wu_proc_discount) * sizeof(uint64_t);
 		esize = _nextPowerOfTwo(esize);
 		if (lsize >= PAMI_MAX_PROC_PER_NODE) {
-			esize = wu_baseline; // never actually used for wakeup...
+			esize = wu_baseline + 256; // never actually used for wakeup...
 		}
 
 		char key[PAMI::Memory::MMKEYSIZE];
