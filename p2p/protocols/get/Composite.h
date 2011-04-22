@@ -18,7 +18,7 @@
 #ifndef __p2p_protocols_get_Composite_h__
 #define __p2p_protocols_get_Composite_h__
 
-#include "p2p/protocols/GetInterface.h"
+#include "p2p/protocols/Get.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) // fprintf x
@@ -71,7 +71,7 @@ namespace PAMI
       /// \see PAMI::Protocol::Send::Send
       ///
       template <class T_Primary, class T_Secondary>
-      class Composite : public PAMI::Protocol::Get::GetInterface
+      class Composite : public PAMI::Protocol::Get::Get
       {
         public:
           ///
@@ -84,7 +84,7 @@ namespace PAMI
           inline Composite (T_Primary    * primary,
                             T_Secondary  * secondary,
                             pami_result_t & status) :
-              PAMI::Protocol::Get::GetInterface (),
+              PAMI::Protocol::Get::Get (),
               _primary (primary),
               _secondary (secondary)
           {

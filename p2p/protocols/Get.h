@@ -7,11 +7,11 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 ///
-/// \file p2p/protocols/GetInterface.h
+/// \file p2p/protocols/Get.h
 /// \brief Defines base class interface for virtual address get operations.
 ///
-#ifndef __p2p_protocols_GetInterface_h__
-#define __p2p_protocols_GetInterface_h__
+#ifndef __p2p_protocols_Get_h__
+#define __p2p_protocols_Get_h__
 
 #include <pami.h>
 
@@ -28,14 +28,14 @@ namespace PAMI
       ///
       /// \brief Base class for point-to-point get implementations.
       ///
-      class GetInterface
+      class Get
       {
         public:
 
           ///
           /// \brief Base class constructor for point-to-point get implementations.
           ///
-          inline GetInterface () {};
+          inline Get () {};
 
           ///
           /// \brief Base class destructor.
@@ -43,7 +43,7 @@ namespace PAMI
           /// \note Any class with virtual functions must define a virtual
           ///       destructor.
           ///
-          virtual ~GetInterface () {};
+          virtual ~Get () {};
 
           ///
           /// \note This is required to make "C" programs link successfully
@@ -64,19 +64,19 @@ namespace PAMI
           ///
           //virtual pami_result_t get (pami_get_typed_t * parameters) = 0;
 
-      }; // PAMI::Protocol::GetInterface class
+      }; // PAMI::Protocol::Get class
 
 
-      class NoGet : public GetInterface
+      class NoGet : public Get
       {
         public:
           template <class T_Allocator>
-          static GetInterface * generate (pami_context_t context, T_Allocator & allocator)
+          static Get * generate (pami_context_t context, T_Allocator & allocator)
           {
             TRACE_ERR((stderr, ">> NoGet::generate()\n"));
             COMPILE_TIME_ASSERT(sizeof(NoGet) <= T_Allocator::objsize);
 
-            GetInterface * get = (GetInterface *) allocator.allocateObject ();
+            Get * get = (Get *) allocator.allocateObject ();
             new ((void *)get) NoGet (context);
 
             TRACE_ERR((stderr, "<< NoGet::generate(), get = %p\n", get));
@@ -84,7 +84,7 @@ namespace PAMI
           }
 
           inline NoGet (pami_context_t context) :
-            GetInterface (),
+            Get (),
             _context (context)
           {}
 
@@ -115,7 +115,7 @@ namespace PAMI
   };     // PAMI::Protocol namespace
 };       // PAMI namespace
 
-#endif // __p2p_protocols_GetInterface_h__
+#endif // __p2p_protocols_Get_h__
 
 //
 // astyle info    http://astyle.sourceforge.net

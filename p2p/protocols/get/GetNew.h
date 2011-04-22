@@ -21,7 +21,7 @@
 
 #include <string.h>
 
-#include "p2p/protocols/GetInterface.h"
+#include "p2p/protocols/Get.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
@@ -34,7 +34,7 @@ namespace PAMI
     namespace Get
     {
       template <class T_Model, class T_Device>
-      class Get : public GetInterface
+      class Get : public Get
       {
         protected:
 

@@ -64,7 +64,7 @@ namespace PAMI
           ///
           //virtual pami_result_t typed (pami_get_typed_t * parameters) = 0;
 
-      }; // PAMI::Protocol::GetInterface class
+      }; // PAMI::Protocol::Put::Put class
 
 
       class NoPut : public Put

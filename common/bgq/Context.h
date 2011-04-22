@@ -31,6 +31,7 @@
 #include "p2p/protocols/RGet.h"
 #include "p2p/protocols/rget/GetRdma.h"
 #include "p2p/protocols/rput/PutRdma.h"
+#include "p2p/protocols/get/GetOverSend.h"
 #include "p2p/protocols/put/PutOverSend.h"
 #include "p2p/protocols/send/eager/Eager.h"
 #include "p2p/protocols/send/composite/Composite.h"
@@ -277,6 +278,7 @@ namespace PAMI
           _dummy_disable(false),
           _dummy_disabled(false),
           _senderror(),
+          _get(devices->_mu[_contextid]),
           _put(devices->_mu[_contextid])
       {
         char mmkey[PAMI::Memory::MMKEYSIZE];
@@ -305,7 +307,8 @@ namespace PAMI
         _devices->init(_clientid, _contextid, _client, _context, &_mm);
 
         pami_endpoint_t self = PAMI_ENDPOINT_INIT(_clientid, __global.mapping.task(), _contextid);
-        _put.initialize (110, self, _context);
+        _get.initialize (110, self, _context);
+        _put.initialize (111, self, _context);
 
         Protocol::Get::GetRdma <Device::MU::DmaModelMemoryFifoCompletion, MUDevice> * rget_mu = NULL;
         Protocol::Put::PutRdma <Device::MU::DmaModelMemoryFifoCompletion, MUDevice> * rput_mu = NULL;
@@ -654,7 +657,7 @@ namespace PAMI
       inline pami_result_t get_impl (pami_get_simple_t * parameters)
       {
 
-        return PAMI_UNIMPL;
+        return _get.get (parameters);
       }
 
       inline pami_result_t get_typed (pami_get_typed_t * parameters)
@@ -1081,6 +1084,7 @@ namespace PAMI
       PAMI::Device::Generic::GenericThread _dummy_work;
       PAMI::Protocol::Send::Error  _senderror;
       
+      Protocol::Get::GetOverSend<Device::MU::PacketModel> _get;
       Protocol::Put::PutOverSend<Device::MU::PacketModel> _put;
       
   }; // end PAMI::Context

@@ -18,7 +18,7 @@
 
 #include "p2p/protocols/Send.h"
 #include "p2p/protocols/Put.h"
-#include "p2p/protocols/GetInterface.h"
+#include "p2p/protocols/Get.h"
 #include "p2p/protocols/RPut.h"
 #include "p2p/protocols/RGet.h"
 
@@ -59,8 +59,8 @@ namespace PAMI
       /// use this to set the fence protocol pointer, or is it just a data member?
       inline void init (Protocol::Put::Put * fence_supported_put,
                         Protocol::Put::Put * fence_unsupported_put,
-                        Protocol::Get::GetInterface * fence_supported_get,
-                        Protocol::Get::GetInterface * fence_unsupported_get,
+                        Protocol::Get::Get * fence_supported_get,
+                        Protocol::Get::Get * fence_unsupported_get,
                         Protocol::Put::RPut * fence_supported_rput,
                         Protocol::Put::RPut * fence_unsupported_rput,
                         Protocol::Get::RGet * fence_supported_rget,
