@@ -1420,7 +1420,7 @@ runHW ()
 	fi
 
 	echo "Gathering debug information for ${exe} using snapbug.pl ..." 2>&1 | tee -a $logFile
-	sbCmd="${snapbugScript} -jobid=${jobid} -output=${cwd}"
+	sbCmd="${snapbugScript} --jobid=${jobid} --output=${cwd}"
 
 	echo $sbCmd 2>&1 | tee -a $logFile
 	if [ $debug -eq 0 ]
