@@ -7,10 +7,8 @@
 #include <sys/time.h>
 #ifdef _LAPI_LINUX
 #include "lapi_linux.h"
-#else
-#include <sys/atomic_op.h>
 #endif
-
+#include "atomics.h"
 #include "SharedArray.h"
 #include "lapi_itrace.h"
 

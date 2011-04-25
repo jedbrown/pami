@@ -10,15 +10,80 @@
 #include <dlfcn.h>
 #include <string.h>
 #include <new>
+#include <limits.h>
 #ifdef _LAPI_LINUX
 #include "lapi_linux.h"
-#else
-#include <sys/atomic_op.h>
-#endif
+#endif /* _LAPI_LINUX */
+#include "atomics.h"
 #include "Bsr.h"
 #include "lapi_itrace.h"
 #include "Arch.h"
 
+
+#ifdef _LAPI_LINUX
+const char BSR_LIB_NAME[] = "libbsr.so";
+typedef int   (*bsr_query_t) (unsigned*, uint32_t*, unsigned*, uint32_t*);
+typedef int   (*bsr_alloc_t) (unsigned, unsigned*, unsigned*);
+typedef int   (*bsr_free_t)  (unsigned);
+typedef void* (*bsr_map_t)   (void*, unsigned, int, int, unsigned*);
+
+// Internal helper function to display dynamic linking errors.
+static void show_dlerror(const char* msg) {
+    const char* msg_to_use = (msg == NULL)?"Dynamic linking error":msg;
+    char* err_str = dlerror();
+    ITRC(IT_BSR, "%s (%s)\n", msg_to_use, (err_str == NULL)?"unknown":err_str);
+}
+
+class BsrFunc {
+    public:
+        static bool loaded;
+        BsrFunc() {
+            bsr_query_t bsr_query = NULL;
+            bsr_alloc_t bsr_alloc = NULL;
+            bsr_free_t  bsr_free  = NULL;
+            bsr_map_t   bsr_map   = NULL;
+        };
+        bool LoadFunc() {
+            if (BsrFunc::loaded) return true;
+            void* hndl = dlopen(BSR_LIB_NAME, RTLD_NOW|RTLD_GLOBAL);
+            if (hndl == NULL) {
+                show_dlerror("BsrFunc: dlopen failed");
+                return false;
+            }
+            bsr_query = (bsr_query_t) dlsym(hndl, "bsr_query");
+            if (NULL == bsr_query) {
+                show_dlerror("BsrFunc: dlsym bsr_query failed");
+                dlclose(hndl);
+                return false;
+            }
+            bsr_alloc = (bsr_alloc_t) dlsym(hndl, "bsr_alloc");
+            if (NULL == bsr_alloc) {
+                show_dlerror("BsrFunc: dlsym bsr_alloc failed");
+                dlclose(hndl);
+                return false;
+            }
+            bsr_free = (bsr_free_t) dlsym(hndl, "bsr_free");
+            if (NULL == bsr_free) {
+                show_dlerror("BsrFunc: dlsym bsr_free failed");
+                dlclose(hndl);
+                return false;
+            }
+            bsr_map = (bsr_map_t) dlsym(hndl, "bsr_map");
+            if (NULL == bsr_map) {
+                show_dlerror("BsrFunc: dlsym bsr_map failed");
+                dlclose(hndl);
+                return false;
+            }
+            loaded = true;
+            return true;
+        };
+        bsr_query_t bsr_query;
+        bsr_alloc_t bsr_alloc;
+        bsr_free_t  bsr_free;
+        bsr_map_t   bsr_map;
+} __bsr_func;
+bool BsrFunc::loaded = false;
+#endif /* _LAPI_LINUX */
 /*!
  * \brief Default constructor.
  */
@@ -44,6 +109,28 @@ void Bsr::CleanUp()
     // set status
     status = NOT_READY;
 
+#ifdef _LAPI_LINUX
+    if (bsr_addr) {
+        assert(shm != NULL);
+        // decrease the bsr_setup_ref from shm
+        fetch_and_add((atomic_p)&shm->bsr_setup_ref, -1);
+
+        if (is_leader) {
+            // leader has to wait to unallocate BSR IDs before
+            // free the SHM segment
+            if (progress_cb) {
+                while (shm->bsr_setup_ref > 0) {
+                    (*progress_cb)(progress_cb_info);
+                }
+            } else while (shm->bsr_setup_ref > 0);
+            (*__bsr_func.bsr_free)(bsr_id);
+        }
+        is_bsr_attached = false;
+        bsr_addr = NULL;
+    }
+    ShmDestory();
+    shm = NULL;
+#else
     if (bsr_id != -1) {
         if (shm) {
             // do we need synchronize here?
@@ -79,20 +166,20 @@ void Bsr::CleanUp()
         }
         bsr_addr = NULL;
     }
+#endif
     bsr_key = -1;
     bsr_id = -1;
 }
 
 SharedArray::RC Bsr::Init(const unsigned int mem_cnt,
-        const unsigned int key, const bool leader)
+        const unsigned int key, const bool leader,
+        const int mem_id, const unsigned char init_val)
 {
-#ifdef _LAPI_LINUX
-    ITRC(IT_BSR, "Bsr: BSR is not supported on LINUX\n");
-    return NOT_AVAILABLE;
-#endif
-
     RC              rc;
     BSR_SETUP_STATE state;
+
+    this->is_leader  = leader;
+    this->member_cnt = mem_cnt;
 
     // if it is already initialized, then do nothing.
     if (status == READY) {
@@ -100,17 +187,32 @@ SharedArray::RC Bsr::Init(const unsigned int mem_cnt,
                 mem_cnt);
         return SUCCESS;
     }
+#ifdef _LAPI_LINUX 
+    if (! __bsr_func.LoadFunc())
+        return NOT_AVAILABLE;
 
+    unsigned avail, total;
+    uint32_t smask, fmask;
+    int      libbsr_rc = 0;
+
+    libbsr_rc = (*(__bsr_func.bsr_query))(&total, &smask, &avail, &fmask);
+    if (0 != libbsr_rc || !fmask || total == 0 || avail < mem_cnt) {
+        ITRC(IT_BSR, "BSR: no free BSRs total=%u smask=0x%x, avail=%u, fmask=0x%x, libbsr_rc=%d\n",
+                total, smask, avail, fmask, libbsr_rc);
+        return FAILED;
+    } else {
+        ITRC(IT_BSR, "BSR: bsr_query total=%u smask=0x%x, avail=%u, fmask=0x%x, libbsr_rc=%d\n",
+                total, smask, avail, fmask, libbsr_rc);
+    }
+#else 
     // Check availability of BSR hardware.
     struct vminfo bsr_info = {0};
     if (vmgetinfo(&bsr_info, VMINFO, sizeof(bsr_info)) != 0) {
         perror("vmgetinfo() unexpectedly failed");
         return FAILED;
     }
-
     // determine BSR region size to allocate
     bsr_size = (mem_cnt%PAGESIZE) ? (mem_cnt/PAGE_SIZE)*PAGE_SIZE+PAGE_SIZE : mem_cnt;
-
     // Check availability of BSR memory and number of tasks
     if (bsr_info.bsr_mem_free < bsr_size) { 
         ITRC(IT_BSR, "Bsr: request %d bytes with %d members %lu bytes available BSR memory\n", 
@@ -120,19 +222,16 @@ SharedArray::RC Bsr::Init(const unsigned int mem_cnt,
         ITRC(IT_BSR, "Bsr: request %d bytes with %d members %lu bytes available BSR memory\n",
                 bsr_size, mem_cnt, bsr_info.bsr_mem_free);
     }
-
-    this->is_leader  = leader;
-    this->member_cnt = mem_cnt;
-
+#endif /* _LAPI_LINUX */
     // Allocate and setup one shared memory block for communicating
     // among the tasks on the same node.
     rc = ShmSetup(key, sizeof(Shm), 300);
     if (rc != SUCCESS) {
-        if (leader)
+        if (leader) {
             ITRC(IT_BSR, "Bsr: leader ShmSetup with key %u failed rc %d\n", key, rc);
-        else
+        } else {
             ITRC(IT_BSR, "Bsr: non-leader ShmSetup with key %u failed\n", key);
-
+        }
         CleanUp();
         return rc;
     }
@@ -140,6 +239,77 @@ SharedArray::RC Bsr::Init(const unsigned int mem_cnt,
     // attach the shared memory
     shm = (Shm *)shm_seg;
 
+#ifdef _LAPI_LINUX
+    if (leader) {
+        unsigned alloc_sz = 0;
+        /* find the smallest BSR that larger than mem_cnt */
+        for (int i = 0; i < (sizeof(fmask) * CHAR_BIT); ++i) {
+            unsigned cur_sz = 1 << i;
+            if (cur_sz & fmask && mem_cnt <= cur_sz) {
+                alloc_sz = cur_sz;
+                break;
+            }
+        }
+        unsigned bsr_stride;
+        libbsr_rc = (*(__bsr_func.bsr_alloc))(alloc_sz, &bsr_stride, (unsigned*)&bsr_id);
+        if (libbsr_rc) {
+            ITRC(IT_BSR, "BSR: bsr_alloc failed with rc = %d\n", libbsr_rc);
+            shm->bsr_setup_state = ST_FAIL;
+            return FAILED;
+        }
+        ITRC(IT_BSR, "BSR: (leader) bsr_alloc got bsr_id=%u stride=%u\n",
+                bsr_id, bsr_stride);
+        unsigned bsr_length;
+        bsr_addr = (unsigned char *)(*(__bsr_func.bsr_map))(NULL, (unsigned)bsr_id, 0, 0, &bsr_length);
+        if (NULL == bsr_addr || bsr_length < mem_cnt) {
+            shm->bsr_setup_state = ST_FAIL;
+            ITRC(IT_BSR, "BSR: (leader) bsr_map failed with bsr_id=%u bsr_length=%u\n",
+                    bsr_id, bsr_length);
+            /* clean up */
+            (*(__bsr_func.bsr_free))((unsigned)bsr_id);
+            return FAILED;
+        }
+        ITRC(IT_BSR, "BSR: (leader) bsr_map returns bsr_addr=%p bsr_length=%u\n",
+                bsr_addr, bsr_length);
+        // update BSR state
+        shm->bsr_id = bsr_id;
+        shm->bsr_setup_state = ST_ATTACHED;
+    } else {
+        // waiting for leader to change the setup_state to ST_ATTACHED or
+        // ST_FAILE
+        state = shm->bsr_setup_state;
+        if (progress_cb) {
+            while (ST_ATTACHED != state && ST_FAIL != state) {
+                (*progress_cb)(progress_cb_info);
+                state = shm->bsr_setup_state;
+            }
+        } else {
+            while (ST_ATTACHED != state && ST_FAIL != state) {
+                state = shm->bsr_setup_state;
+            }
+        }
+        if (ST_FAIL == state) {
+            ITRC(IT_BSR, "Bsr: non-leader BSR setup failed, aborting ...\n");
+            // nothing need to be cleaned
+            return FAILED;
+        }
+
+        bsr_id = shm->bsr_id;
+
+        unsigned bsr_length;
+        bsr_addr = (unsigned char *)(*(__bsr_func.bsr_map))(NULL, (unsigned)bsr_id, 0, 0, &bsr_length);
+        if (NULL == bsr_addr || bsr_length < mem_cnt) {
+            shm->bsr_setup_state = ST_FAIL;
+            ITRC(IT_BSR, "BSR: (non-leader) bsr_map failed with bsr_id=%u bsr_length=%u\n",
+                    bsr_id, bsr_length);
+            /* nothing need to be cleaned here */
+            /* bsr_id will be freed by leader */
+            return FAILED;
+        }
+        ITRC(IT_BSR, "BSR: (non-leader) bsr_map returns bsr_addr=%p bsr_length=%u\n",
+                bsr_addr, bsr_length);
+    }
+#else  /* AIX flow */
     if (leader) {
         // generate a unique key for BSR region
         FILE *pf;
@@ -205,31 +375,9 @@ SharedArray::RC Bsr::Init(const unsigned int mem_cnt,
             return FAILED;
         }
 
-        // Init BSR shm region properly, ready to do barrier
-        Store1(0, 0);
-        for (int z = 1; z < mem_cnt; z++)
-            Store1(z, 1);
-        /*
-        bsr_addr[0] = (unsigned char)0x00;
-        memset(&bsr_addr[1], (unsigned char)0x01, mem_cnt-1);
-        printf("BSR leader Init mem with %d tasks [", mem_cnt);
-        for (int z = 0; z < mem_cnt; z++)
-        {
-            if(z == mem_cnt-1)
-                printf("%d", bsr_addr[z]);
-            else
-                printf("%d ", bsr_addr[z]);
-        }
-        printf("]\n");
-        */
-
-        // update reference count and BSR state
-        is_bsr_attached = true;
+        // update BSR state
         shm->bsr_id = bsr_id;
-        shm->bsr_setup_ref = 1;
         shm->bsr_setup_state = ST_ATTACHED;
-        ITRC(IT_BSR, "Bsr: leader BSR setup passed (bsr_setup_ref=%d)\n",
-                shm->bsr_setup_ref);
     } else {
         // waiting for leader to change the setup_state to ST_ATTACHED or
         // ST_FAILE
@@ -265,13 +413,19 @@ SharedArray::RC Bsr::Init(const unsigned int mem_cnt,
             CleanUp();
             return FAILED;
         }
-
-        // increase the count
-        is_bsr_attached = true;
-        fetch_and_add ((atomic_p)&shm->bsr_setup_ref, 1);
-        ITRC(IT_BSR, "Bsr: non-leader BSR setup passed (bsr_setup_ref=%d)\n",
-                shm->bsr_setup_ref);
     }
+#endif /* _LAPI_LINUX */
+
+    // Init and priming BSR shm region properly, ready to do barrier
+    Store1(mem_id, init_val);
+    unsigned char tmp_val = Load1(mem_id);
+    assert(init_val == tmp_val);
+
+    // increase ref count
+    is_bsr_attached = true;
+    fetch_and_add ((atomic_p)&shm->bsr_setup_ref, 1);
+    ITRC(IT_BSR, "Bsr: %s BSR setup passed (bsr_setup_ref=%d)\n",
+            (is_leader)?"(master)":"(slave)", shm->bsr_setup_ref);
 
     // wait everyone reaches here; also check if there is any task failed
     unsigned int cnt = shm->bsr_setup_ref;
@@ -295,8 +449,10 @@ SharedArray::RC Bsr::Init(const unsigned int mem_cnt,
         return FAILED;
     }
 
+#ifndef _LAPI_LINUX
     if (leader) 
         shmctl(bsr_id, IPC_RMID, 0); 
+#endif /* _LAPI_LINUX */
     ITRC(IT_BSR, "Bsr: initialied successfully\n");
     status = READY;
     return SUCCESS;

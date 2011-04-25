@@ -59,19 +59,21 @@ class SharedArray
         /*!
          * \brief Initialization function.
          *
-         * If this call returns Bsr::SUCCESS, then the object's status should
+         * If this call returns SharedArray::SUCCESS, then the object's status should
          * be SharedArray::READY. Otherwise, the status is
          * SharedArray::NOT_READY.
          *
          * \param member_cnt Number of members on the local node
          * \param key An unique key that will be used to establish a shared
          *            memory segment for internal data exchange.
-         * \param is_leader Specifies if this is a leader on member.
+         * \param is_leader Specifies if this is a leader member.
+         * \param member_id Specifies the unique id (0 based) within the group
+         *                  This is used by BSR priming only
          *
          * \return SharedArray::SUCCESS, SharedArray::FAILED
          */
         virtual RC Init(const unsigned int member_cnt, const unsigned int key,
-                const bool is_leader)=0;
+                const bool is_leader, const int member_id, const unsigned char init_val)=0;
 
         /*!
          * \brief Loads one byte data from the array.

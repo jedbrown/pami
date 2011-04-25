@@ -10,9 +10,8 @@
 #include <sys/ipc.h>
 #ifdef _LAPI_LINUX
 #include "lapi_linux.h"
-#else
-#include <sys/atomic_op.h>
 #endif
+#include "atomics.h"
 #include "ShmArray.h"
 #include "lapi_itrace.h"
 #include "Arch.h"
@@ -27,7 +26,8 @@ ShmArray::ShmArray():shm(NULL) {};
  * \TODO distinguish member count and byte count
  */
 SharedArray::RC ShmArray::Init(const unsigned int member_cnt,
-        const unsigned int key, const bool is_leader)
+        const unsigned int key, const bool is_leader,
+        const int member_id, const unsigned char init_val)
 {
 #ifndef __64BIT__
     ITRC(IT_BSR, "ShmArray: Not supported on 32Bit applications\n");
@@ -53,6 +53,23 @@ SharedArray::RC ShmArray::Init(const unsigned int member_cnt,
 
     /// - attach to shared memory
     shm = (Shm *)shm_seg;
+
+    /// Initialize SHM region with init_val
+    Store1(member_id, init_val);
+
+    fetch_and_add((atomic_p)&(shm->ready_cnt), 1);
+    // wait everyone reaches here;
+    volatile unsigned int cnt = shm->ready_cnt;
+    if (progress_cb) {
+        while (cnt < member_cnt) {
+            (*progress_cb)(progress_cb_info);
+            cnt = shm->ready_cnt;
+        }
+    } else {
+        while (cnt < member_cnt) {
+            cnt = shm->ready_cnt;
+        }
+    }
 
     /// - at the end, set the status to READY
     status = READY;

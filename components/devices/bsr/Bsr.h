@@ -9,7 +9,9 @@
  */
 
 #include <sys/shm.h>
+#ifndef _LAPI_LINUX
 #include <sys/vminfo.h>
+#endif
 #include "SharedArray.h"
 
 /*!
@@ -34,7 +36,7 @@ class Bsr : public SharedArray
         Bsr();
         ~Bsr();
         RC Init(const unsigned int member_cnt, const unsigned int key,
-                const bool is_leader);
+                const bool is_leader, const int member_id, const unsigned char init_val);
         unsigned char      Load1(const int offset) const;
         unsigned short     Load2(const int offset) const;
         unsigned int       Load4(const int offset) const;

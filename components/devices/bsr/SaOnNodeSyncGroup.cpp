@@ -62,7 +62,7 @@ SyncGroup::RC SaOnNodeSyncGroup::Init(
         sa = new Bsr;
 #endif
         if (!in_param->use_shm_only) {
-            sa_rc = sa->Init(mem_cnt, (g_id + BSRID), is_leader);
+            sa_rc = sa->Init(mem_cnt, (g_id + BSRID), is_leader, mem_id, seq);
         } else {
             sa_rc = SharedArray::NOT_AVAILABLE;
         }
@@ -72,43 +72,18 @@ SyncGroup::RC SaOnNodeSyncGroup::Init(
             ITRC(IT_BSR, "(%d)SaOnNodeSyncGroup: Using Bsr\n", mem_id);
             this->group_desc = "SharedArray:Bsr";
             
-            // Initialize and prime BSR region with seq
-            // has to be a blocking operation ***
             // show_bsr("After BSR Init "); 
-            sa->Store1(mem_id, seq);
-            char tmp = sa->Load1(mem_id);
-            ITRC(IT_BSR, "(%d)SaOnNodeSyncGroup-Bsr: Init seq = %d\n", mem_id, seq);
-            assert(tmp == seq);
-            /*
-            while (!priming_done) {
-                if (sa->Load1(0) == 0) {
-                    bool non_leader_done = true;
-                    for (int z = 1; z < mem_cnt; z ++) {
-                        if (sa->Load1(z) !=  1)
-                            non_leader_done = false;
-                    }
-                    if (non_leader_done)
-                        priming_done = true;
-                    else
-                        priming_done = false;
-                }
-            }
-            show_bsr("After BSR prime "); 
-            */
-
         } else {
             // If both BSRs failed, try shm
             delete sa;
             sa = NULL;
             sa = new ShmArray;
             if (SharedArray::SUCCESS ==
-                    sa->Init(mem_cnt, (g_id + SHMARRAYID), is_leader)) {
+                    sa->Init(mem_cnt, (g_id + SHMARRAYID), is_leader, mem_id, seq)) {
                 ITRC(IT_BSR, "(%d)SaOnNodeSyncGroup: Using ShmArray\n",
                         mem_id);
                 this->group_desc = "SharedArray:ShmArray";
 
-                // Initialize SHM region with seq
-                sa->Store1(mem_id, seq);
             } else {
                 delete sa;
                 sa = NULL;
