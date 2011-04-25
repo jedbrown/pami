@@ -18,7 +18,7 @@
  * machines.
  *
  * \note The progress callback function is only used in Init(), ShmSetup(),
- *       and ShmDestory() functions.
+ *       and ShmDestroy() functions.
  *
  */
 class BsrP6 : public SharedArray
@@ -26,8 +26,9 @@ class BsrP6 : public SharedArray
     public:
         BsrP6();
         ~BsrP6();
-        RC Init(const unsigned int member_cnt, const unsigned int key,
-                const bool is_leader);
+        RC Init(const unsigned int member_cnt,
+                const unsigned int group_id, const unsigned int job_key,
+                const bool is_leader, const int member_id, const unsigned char init_val);
         unsigned char      Load1(const int offset) const;
         unsigned short     Load2(const int offset) const;
         unsigned int       Load4(const int offset) const;

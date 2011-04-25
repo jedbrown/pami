@@ -26,8 +26,8 @@ ShmArray::ShmArray():shm(NULL) {};
  * \TODO distinguish member count and byte count
  */
 SharedArray::RC ShmArray::Init(const unsigned int member_cnt,
-        const unsigned int key, const bool is_leader,
-        const int member_id, const unsigned char init_val)
+        const unsigned int group_id, const unsigned int job_key, 
+        const bool is_leader, const int member_id, const unsigned char init_val)
 {
 #ifndef __64BIT__
     ITRC(IT_BSR, "ShmArray: Not supported on 32Bit applications\n");
@@ -38,6 +38,11 @@ SharedArray::RC ShmArray::Init(const unsigned int member_cnt,
         return SUCCESS;
     }
 
+    // Workaround before PNSD could provide unique keys
+    char key_str[64];
+    sprintf(key_str, "/SHM_%d_%d", job_key, group_id);
+    printf("ShmArray::Init Unique key string for POSIX shm setup <%s>\n", key_str);
+
     /// Main steps:
     this->is_leader  = is_leader;
     this->member_cnt = member_cnt;
@@ -46,7 +51,11 @@ SharedArray::RC ShmArray::Init(const unsigned int member_cnt,
     /// - create shared memory or retrieve the existing one
     unsigned int  num_bytes = sizeof(Shm) + sizeof(Cacheline) * member_cnt;
 
+#if 0
     if (FAILED == ShmSetup(key, num_bytes, 300)) {
+#else
+    if (FAILED == PosixShmSetup(key_str, num_bytes, 300)) {
+#endif
         ITRC(IT_BSR, "ShmArray: ShmSetup failed\n");
         return FAILED;
     }
@@ -88,7 +97,11 @@ SharedArray::RC ShmArray::Init(const unsigned int member_cnt,
 ShmArray::~ShmArray()
 {
     status = NOT_READY;
-    ShmDestory();
+#if 0
+    ShmDestroy();
+#else
+    PosixShmDestroy();
+#endif
 
     ITRC(IT_BSR, "ShmArray: Destroyed\n");
 }

@@ -31,7 +31,8 @@ class SyncGroup {
 
         SyncGroup();
         virtual      ~SyncGroup();
-        virtual RC   Init(const unsigned int member_cnt, unsigned const int group_id,
+        virtual RC   Init(const unsigned int member_cnt, const unsigned int group_id,
+                          const unsigned int job_key,
                           const unsigned int member_id, void* extra_arg) =0;
         virtual void BarrierEnter() =0;
         virtual void BarrierExit()  =0;

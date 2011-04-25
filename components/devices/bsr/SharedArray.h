@@ -72,7 +72,8 @@ class SharedArray
          *
          * \return SharedArray::SUCCESS, SharedArray::FAILED
          */
-        virtual RC Init(const unsigned int member_cnt, const unsigned int key,
+        virtual RC Init(const unsigned int member_cnt,
+                const unsigned int group_id, const unsigned int job_key,
                 const bool is_leader, const int member_id, const unsigned char init_val)=0;
 
         /*!
@@ -189,21 +190,27 @@ class SharedArray
         RC ShmSetup(const unsigned int shm_key, const unsigned int size,
                 const unsigned int timeout);
 
+        RC PosixShmSetup(const char* shm_key, const unsigned int size,
+                const unsigned int timeout);
+
         /*!
-         * \brief Destory the internal SHM segment
+         * \brief Destroy the internal SHM segment
          *
          * This function detachs from the SHM segment and then remove the
          * SHM id from system if it is called by SHM master.
          *
          * \return SharedArray::SUCCESS
          */
-        RC ShmDestory();
+        RC ShmDestroy();
+        RC PosixShmDestroy();
 
         // Member variables
         STATUS        status;     ///< Current object status.
         unsigned int  member_cnt; ///< Number of members on the local node.
         bool          is_leader;  ///< Indicates if this is a leader task.
         int           shm_id;     ///< The shm id for the created segment.
+        char          shm_str[64];///< The shm string for POSIX shm
+        int           shm_size;   ///< The POSIX shm size
         void*         shm_seg;    ///< Pointer to the SHM segment.
         ProgressCb_t  progress_cb;  ///< Function pointer to idle processing.
         void*         progress_cb_info; ///< Pointer be passed into idel_proc.

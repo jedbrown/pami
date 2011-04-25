@@ -49,6 +49,7 @@ class SaOnNodeSyncGroup : public SyncGroup {
          * \return SyncGroup::SUCCESS SyncGroup::FAILED
          */
         RC   Init(const unsigned int member_cnt, const unsigned int group_id,
+                const unsigned int job_key,
                 const unsigned int member_id, void* param);
         void BarrierEnter();
         void BarrierExit();

@@ -60,7 +60,7 @@ void BsrP6::CleanUp()
         if (shm) {
             // do we need synchronize here?
             // to make sure the state update to SHM is done before
-            // we destory the SHM.
+            // we destroy the SHM.
             mem_barrier();
             mem_isync();
             // detach from bsr, if attached before
@@ -91,7 +91,7 @@ void BsrP6::CleanUp()
                 }
             }
             bsr_att_cnt = bsr_id_cnt = 0;
-            ShmDestory();
+            ShmDestroy();
             shm = NULL;
         }
         delete [] bsr_addr;
@@ -104,7 +104,8 @@ void BsrP6::CleanUp()
 }
 
 SharedArray::RC BsrP6::Init(const unsigned int member_cnt,
-        const unsigned int key, const bool is_leader)
+        const unsigned int key, const unsigned int job_key,
+        const bool is_leader, const int member_id, const unsigned char init_val);
 {
     RC              rc;
     BSR_SETUP_STATE state;

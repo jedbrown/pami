@@ -11,12 +11,14 @@
 #include <string.h>
 #include <new>
 #include <limits.h>
+#include <time.h>
 #ifdef _LAPI_LINUX
 #include "lapi_linux.h"
 #endif /* _LAPI_LINUX */
 #include "atomics.h"
 #include "Bsr.h"
 #include "lapi_itrace.h"
+#include "lapi_assert.h"
 #include "Arch.h"
 
 
@@ -128,58 +130,59 @@ void Bsr::CleanUp()
         is_bsr_attached = false;
         bsr_addr = NULL;
     }
-    ShmDestory();
+    ShmDestroy();
     shm = NULL;
 #else
-    if (bsr_id != -1) {
-        if (shm) {
-            // do we need synchronize here?
-            // to make sure the state update to SHM is done before
-            // we destory the SHM.
-            mem_barrier();
-            mem_isync();
-            // detach from bsr, if attached before
-            if (is_bsr_attached) {
-                shmdt(bsr_addr);
-            }
-            // decrease the bsr_setup_ref from shm
-            fetch_and_add((atomic_p)&shm->bsr_setup_ref, -1);
-
-            if (is_leader) {
-                // leader has to wait to unallocate BSR IDs before
-                // free the SHM segment
-                if (progress_cb) {
-                    while (shm->bsr_setup_ref > 0) {
-                        (*progress_cb)(progress_cb_info);
-                    }
-                } else while (shm->bsr_setup_ref > 0);
-
-                shmctl(bsr_id, IPC_RMID, 0);
-
-                ITRC(IT_BSR, "Bsr: bsr_unallocate is done for bsr_id=%d\n",
-                        shm->bsr_id);
-            }
-
-            is_bsr_attached = false;
-            ShmDestory();
-            shm = NULL;
+    if (bsr_addr) {
+        // do we need synchronize here?
+        // to make sure the state update to SHM is done before
+        // we destroy the SHM.
+        mem_barrier();
+        mem_isync();
+        // detach from bsr, if attached before
+        if (is_bsr_attached) {
+            shmdt(bsr_addr);
         }
+        // decrease the bsr_setup_ref from shm
+        fetch_and_add((atomic_p)&shm->bsr_setup_ref, -1);
+
         bsr_addr = NULL;
+        is_bsr_attached = false;
     }
+
+    if (bsr_id != -1) {
+        if (is_leader) {
+            // leader has to wait to unallocate BSR IDs before
+            // free the SHM segment
+            if (progress_cb) {
+                while (shm->bsr_setup_ref > 0) {
+                    (*progress_cb)(progress_cb_info);
+                }
+            } else while (shm->bsr_setup_ref > 0);
+
+            shmctl(bsr_id, IPC_RMID, 0);
+
+            ITRC(IT_BSR, "Bsr: bsr_unallocate is done for bsr_id=%d\n",
+                    shm->bsr_id);
+        }
+    }
+#if 0
+    ShmDestroy();
+#else
+    PosixShmDestroy();
+#endif
+    shm = NULL;
 #endif
     bsr_key = -1;
     bsr_id = -1;
 }
 
 SharedArray::RC Bsr::Init(const unsigned int mem_cnt,
-        const unsigned int key, const bool leader,
-        const int mem_id, const unsigned char init_val)
+        const unsigned int group_id, const unsigned int job_key,
+        const bool leader, const int mem_id, const unsigned char init_val)
 {
     RC              rc;
     BSR_SETUP_STATE state;
-
-    this->is_leader  = leader;
-    this->member_cnt = mem_cnt;
 
     // if it is already initialized, then do nothing.
     if (status == READY) {
@@ -187,6 +190,15 @@ SharedArray::RC Bsr::Init(const unsigned int mem_cnt,
                 mem_cnt);
         return SUCCESS;
     }
+
+    this->is_leader  = leader;
+    this->member_cnt = mem_cnt;
+
+    // Workaround before PNSD could provide unique keys
+    char key_str[64];
+    sprintf(key_str, "/BSR_shm_%d_%d", job_key, group_id);
+    ITRC(IT_BSR, "Bsr::Init Unique key string for BSR bootstrap <%s>\n", key_str);
+
 #ifdef _LAPI_LINUX 
     if (! __bsr_func.LoadFunc())
         return NOT_AVAILABLE;
@@ -211,8 +223,10 @@ SharedArray::RC Bsr::Init(const unsigned int mem_cnt,
         perror("vmgetinfo() unexpectedly failed");
         return FAILED;
     }
+
     // determine BSR region size to allocate
-    bsr_size = (mem_cnt%PAGESIZE) ? (mem_cnt/PAGE_SIZE)*PAGE_SIZE+PAGE_SIZE : mem_cnt;
+    bsr_size = (mem_cnt%PAGESIZE) ? (mem_cnt/PAGESIZE)*PAGESIZE+PAGESIZE : mem_cnt;
+
     // Check availability of BSR memory and number of tasks
     if (bsr_info.bsr_mem_free < bsr_size) { 
         ITRC(IT_BSR, "Bsr: request %d bytes with %d members %lu bytes available BSR memory\n", 
@@ -223,15 +237,24 @@ SharedArray::RC Bsr::Init(const unsigned int mem_cnt,
                 bsr_size, mem_cnt, bsr_info.bsr_mem_free);
     }
 #endif /* _LAPI_LINUX */
+
     // Allocate and setup one shared memory block for communicating
     // among the tasks on the same node.
+    // Workaround before PNSD could provide unique keys
+#if 0
     rc = ShmSetup(key, sizeof(Shm), 300);
+#else
+    rc = PosixShmSetup(key_str, sizeof(Shm), 300);
+#endif
     if (rc != SUCCESS) {
         if (leader) {
-            ITRC(IT_BSR, "Bsr: leader ShmSetup with key %u failed rc %d\n", key, rc);
+            ITRC(IT_BSR, "Bsr: leader ShmSetup with key %s failed rc %d\n",
+                    key_str, rc);
         } else {
-            ITRC(IT_BSR, "Bsr: non-leader ShmSetup with key %u failed\n", key);
+            ITRC(IT_BSR, "Bsr: non-leader ShmSetup with key %s failed\n",
+                    key_str);
         }
+
         CleanUp();
         return rc;
     }
@@ -312,39 +335,20 @@ SharedArray::RC Bsr::Init(const unsigned int mem_cnt,
 #else  /* AIX flow */
     if (leader) {
         // generate a unique key for BSR region
-        FILE *pf;
-        char tok_path[64];
-        sprintf(tok_path, "/tmp/bsr_%u\0", key);
-        pf = fopen(tok_path, "w");
-        if (pf != NULL) {
-            ITRC(IT_BSR, "Bsr: BSR create token file passed at /tmp/bsr_%u\n", key);
-            fclose(pf);
-        } else {
-            ITRC(IT_BSR, "Bsr: BSR create token file failed at /tmp/bsr_%u\n", key);
-            shm->bsr_setup_state = ST_FAIL;
-            CleanUp();
-            return FAILED;
-        }
+        int num_try = 0;
+        do {
+            srand( time(NULL) );
+            bsr_key = rand();
+            bsr_id = shmget(bsr_key, bsr_size, IPC_CREAT|IPC_EXCL|0600);
+            num_try ++;
+        } while (bsr_id == -1 && num_try < 100);
 
-        bsr_key = ftok(tok_path, key);
-        remove(tok_path);
-        if (bsr_key != -1) {
-            ITRC(IT_BSR, "Bsr: create BSR key from token file passed at /tmp/bsr_%u\n", key);
+        if (bsr_id != -1) {
+            ITRC(IT_BSR, "Bsr: BSR master (BSR key=0x%x, BSR id=%d) allocation passed after %d tries.\n",
+                    bsr_key, bsr_id, num_try);
         } else {
-            ITRC(IT_BSR, "Bsr: create BSR key from token file failed at /tmp/bsr_%u\n", key);
-            shm->bsr_setup_state = ST_FAIL;
-            CleanUp();
-            return FAILED;
-        }
-
-        // create shared memory
-        bsr_id = shmget(bsr_key, bsr_size, IPC_CREAT|IPC_EXCL|0600);
-        if (bsr_id != -1) { // allocation succeeded
-            ITRC(IT_BSR, "Bsr: BSR master (BSR key=0x%x, BSR id=%d) allocation passed.\n",
-                    bsr_key, bsr_id);
-        } else { // allocation failed
-            ITRC(IT_BSR, "Bsr: shmget to allocate BSR region failed with errno %d.\n",
-                    errno);
+            ITRC(IT_BSR, "Bsr: shmget to allocate BSR region failed with errno %d after %d tries.\n",
+                    errno, num_try);
             shm->bsr_setup_state = ST_FAIL;
             CleanUp();
             return FAILED;
@@ -450,8 +454,10 @@ SharedArray::RC Bsr::Init(const unsigned int mem_cnt,
     }
 
 #ifndef _LAPI_LINUX
-    if (leader) 
+    if (leader) {
         shmctl(bsr_id, IPC_RMID, 0); 
+        PosixShmDestroy();
+    }
 #endif /* _LAPI_LINUX */
     ITRC(IT_BSR, "Bsr: initialied successfully\n");
     status = READY;

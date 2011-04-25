@@ -161,7 +161,10 @@ namespace PAMI
                                         void             *devinfo)
       {
 #ifndef _LAPI_LINUX
-          int bar_status = 99;
+        // get g_id for workaround unique key issue
+        CAUGeometryInfo* gi = (CAUGeometryInfo*)devinfo;
+        int geo_id = gi->_geometry_id;
+
         PAMI::Topology *topology = (PAMI::Topology*) msync->participants;
         if(topology->size() == 1)
         {
@@ -173,9 +176,9 @@ namespace PAMI
         if(!_sync_group.IsInitialized())
         {
           SaOnNodeSyncGroup::Param_t param = { false, false };
-          size_t unique_id = (size_t)0x99;/* TODO:an unique id that is used to create shared memory segment */
           size_t member_id = topology->rank2Index(_device.taskid());
-          if (SyncGroup::SUCCESS != _sync_group.Init(topology->size(), unique_id, member_id, &param))
+          if (SyncGroup::SUCCESS != _sync_group.Init(topology->size(), geo_id,
+                      _Lapi_env.MP_partition, member_id, &param))
           {
             ITRC(IT_BSR, "postMultisync_impl: initialize sync group failed.\n");
             return PAMI_ERROR;
@@ -190,11 +193,10 @@ namespace PAMI
             _in_barrier = true;
             _sync_group.NbBarrier();
 
-            bar_status = (_sync_group.IsNbBarrierDone());
             if (_sync_group.IsNbBarrierDone())
             {
-              msync->cb_done.function(_device.getContext(), msync->cb_done.clientdata, PAMI_SUCCESS);
               _in_barrier = false;
+              msync->cb_done.function(_device.getContext(), msync->cb_done.clientdata, PAMI_SUCCESS);
               return PAMI_SUCCESS;
             } 
 

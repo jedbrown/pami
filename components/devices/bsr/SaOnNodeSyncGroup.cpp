@@ -14,6 +14,7 @@
 
 SyncGroup::RC SaOnNodeSyncGroup::Init(
         const unsigned int mem_cnt, const unsigned int g_id,
+        const unsigned int job_key,
         const unsigned int mem_id, void* param)
 {
     PAMI_assert (param != NULL);
@@ -40,10 +41,7 @@ SyncGroup::RC SaOnNodeSyncGroup::Init(
     memset(mask[1], (unsigned char)0x01, 8);
 
     // initialize SharedArray object
-    ///TODO: How do we distinguish the group_id for Bsr and ShmArray
-    // temporary fix start
-    const unsigned int BSRID      = 0x00000096; //BSR
-    const unsigned int SHMARRAYID = 0x00000054; //SA
+
     const bool         is_leader  = (mem_id == 0);
 
     // modify seq, the init value is 0 for all tasks
@@ -62,7 +60,7 @@ SyncGroup::RC SaOnNodeSyncGroup::Init(
         sa = new Bsr;
 #endif
         if (!in_param->use_shm_only) {
-            sa_rc = sa->Init(mem_cnt, (g_id + BSRID), is_leader, mem_id, seq);
+            sa_rc = sa->Init(mem_cnt, g_id, job_key, is_leader, mem_id, seq);
         } else {
             sa_rc = SharedArray::NOT_AVAILABLE;
         }
@@ -71,7 +69,7 @@ SyncGroup::RC SaOnNodeSyncGroup::Init(
         if (SharedArray::SUCCESS == sa_rc) {
             ITRC(IT_BSR, "(%d)SaOnNodeSyncGroup: Using Bsr\n", mem_id);
             this->group_desc = "SharedArray:Bsr";
-            
+
             // show_bsr("After BSR Init "); 
         } else {
             // If both BSRs failed, try shm
@@ -79,11 +77,10 @@ SyncGroup::RC SaOnNodeSyncGroup::Init(
             sa = NULL;
             sa = new ShmArray;
             if (SharedArray::SUCCESS ==
-                    sa->Init(mem_cnt, (g_id + SHMARRAYID), is_leader, mem_id, seq)) {
+                    sa->Init(mem_cnt, g_id, job_key, is_leader, mem_id, seq)) {
                 ITRC(IT_BSR, "(%d)SaOnNodeSyncGroup: Using ShmArray\n",
                         mem_id);
                 this->group_desc = "SharedArray:ShmArray";
-
             } else {
                 delete sa;
                 sa = NULL;
