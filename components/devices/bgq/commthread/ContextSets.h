@@ -259,13 +259,13 @@ public:
 	}
 
 	inline uint64_t getContextSet(size_t threadid) {
-		_mutex.acquire();
+//		_mutex.acquire();  Not needed...removed because it slows performance.
 		uint64_t m = _sets[threadid];
 #if 0
 		// should we check "_sets[_nsets]" and possibly pick up more contexts?
 		// or just trigger a "rejoin"?
 #endif
-		_mutex.release();
+//		_mutex.release();  Not needed...removed because it slows performance.
 		return m;
 	}
 
