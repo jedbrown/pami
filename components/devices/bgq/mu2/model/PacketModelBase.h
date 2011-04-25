@@ -876,9 +876,8 @@ namespace PAMI
         uint64_t *dp = (uint64_t  *)dst;
 
         ///For MPICH meta data
-        if (n == 24)
+        if (n == 16)
           {
-            *dp ++ = *sp ++;
             *dp ++ = *sp ++;
             *dp    = *sp;
           }
