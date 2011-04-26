@@ -319,7 +319,7 @@ inline unsigned _quad_double_min_2way_align32B(double* dst, double* src0, double
 inline unsigned quad_double_min_2way(double* dst, double* src0, double *src1, unsigned num_dbls)
 {
   
-  assert(0);
+  //assert(0);
   unsigned  dbls = 0;
 
   if (num_dbls >= 36)
