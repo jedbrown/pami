@@ -139,7 +139,7 @@ int main (int argc, char ** argv)
     {
       result = PAMI_Context_advance (context, 1000);
 
-      if (result != PAMI_SUCCESS)
+      if ( (result != PAMI_SUCCESS) && (result != PAMI_EAGAIN) )
         {
           fprintf (stderr, "Error. Unable to advance pami context. result = %d\n", result);
           return 1;
@@ -150,7 +150,7 @@ int main (int argc, char ** argv)
     {
       result = PAMI_Context_advance (context, 1000);
 
-      if (result != PAMI_SUCCESS)
+      if ( (result != PAMI_SUCCESS) && (result != PAMI_EAGAIN) )
         {
           fprintf (stderr, "Error. Unable to advance pami context. result = %d\n", result);
           return 1;
@@ -165,7 +165,7 @@ int main (int argc, char ** argv)
     {
       result = PAMI_Context_advance (context, 1000);
 
-      if (result != PAMI_SUCCESS)
+      if ( (result != PAMI_SUCCESS) && (result != PAMI_EAGAIN) )
         {
           fprintf (stderr, "Error. Unable to advance pami context. result = %d\n", result);
           return 1;
@@ -183,7 +183,7 @@ int main (int argc, char ** argv)
     {
       result = PAMI_Context_advance (context, 1000);
 
-      if (result != PAMI_SUCCESS)
+      if ( (result != PAMI_SUCCESS) && (result != PAMI_EAGAIN) )
         {
           fprintf (stderr, "Error. Unable to advance pami context. result = %d\n", result);
           return 1;
