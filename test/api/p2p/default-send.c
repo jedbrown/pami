@@ -27,13 +27,19 @@ size_t __data_errors = 0;
 
 unsigned validate (const void * addr, size_t bytes)
 {
-  unsigned status = 1;
+  unsigned status = 0;
   uint8_t * byte = (uint8_t *) addr;
   size_t i;
+
+  /* Skip validation if buffer size is 0 */
+  if (bytes == 0) {
+    return 2;
+  }
+
   for (i=0; i<bytes; i++) {
     if (byte[i] != (uint8_t)i) {
       fprintf (stderr, "ERROR (E):validate(%p,%zu):  byte[%zu] != %d (&byte[%zu] = %p, value is %d)\n", addr, bytes, i, (uint8_t)i, i, &byte[i], byte[i]);
-      status = 0;
+      status = 1;
     }
   }
 
@@ -46,17 +52,31 @@ static void recv_done (pami_context_t   context,
                        pami_result_t    result)
 {
   volatile size_t * active = (volatile size_t *) cookie;
+  unsigned validateRC = 0;
+
   if (debug) {
     fprintf (stderr, "Called recv_done function.  active(%p): %zu -> %zu, __recv_size = %zu\n", active, *active, *active-1, __recv_size);
   }
 
-  if (!validate(__recv_buffer, __recv_size)) {
+   /* Check payload data integrity */
+  validateRC = validate(__recv_buffer, __recv_size);
+
+  switch (validateRC) {
+
+  case 0: /* Validation passed */
+    if (debug) {
+      fprintf (stderr, ">>> Payload validated.\n");
+    }
+    break;
+  case 1: /* Validation FAILED */
     __data_errors++;
     fprintf (stderr, ">>> ERROR (E):recv_done:  Validate payload FAILED!\n");
-  } else {
+    break;
+  case 2: /* Validation skipped */
     if (debug) {
-      fprintf (stderr, ">>> payload validated.\n");
+      fprintf (stderr, ">>> Skipping payload validation (payload size = %zu).\n", __recv_size);
     }
+    break;
   }
 
   (*active)--;
@@ -103,41 +123,44 @@ static void test_dispatch (
 			   pami_recv_t         * recv)        /**< OUT: receive message structure */
 {
   volatile size_t * active = (volatile size_t *) cookie;
+  unsigned validateRC = 0;
+
   if (debug) {
     fprintf (stderr, "Called dispatch function.  cookie = %p, active: %zu, header_size = %zu, pipe_size = %zu, recv = %p\n", cookie, *active, header_size, pipe_size, recv);
   }
   /*(*active)--; */
   /*fprintf (stderr, "... dispatch function.  active = %zu\n", *active); */
 
-  if (header_size > 0) {
-    if (!validate(header_addr, header_size)) {
-      __header_errors++;
-      fprintf (stderr, ">>> ERROR (E):test_dispatch:  Validate header FAILED!\n");
-    } else {
-      if (debug) {
-	fprintf (stderr, ">>> header validated.\n");
-      }
+  /* Check header data integrity */
+  validateRC = validate(header_addr, header_size);
+
+  switch (validateRC) {
+
+  case 0: /* Validation passed */
+    if (debug) {
+      fprintf (stderr, ">>> Header validated.\n");
     }
-  } else {
+    break;
+  case 1: /* Validation FAILED */
+    __data_errors++;
+    fprintf (stderr, ">>> ERROR (E):test_dispatch:  Validate header FAILED!\n");
+    break;
+  case 2: /* Validation skipped */
     if (debug) {
       fprintf (stderr, ">>> Skipping header validation (header size = %zu).\n", header_size);
     }
+    break;
   }
-
-  if (pipe_size == 0) {
-    (*active)--;
-    if (debug) {
-      fprintf (stderr, ">>> Skipping payload validation (payload size = %zu).\n", pipe_size);
-    }
-  }
-  else if (recv == NULL) {
-    /* This is an 'immediate' receive*/
+ 
+  /* Check payload data integrity */
+  if (recv == NULL) { 
+    /* This is an 'immediate' receive */
+    /* header + payload < receive immediate max for this context and dispatch ID */
 
     __recv_size = pipe_size;
     memcpy(__recv_buffer, pipe_addr, pipe_size);
     recv_done (context, cookie, PAMI_SUCCESS);
-  }
-  else {
+  } else {
     /* This is an 'asynchronous' receive */
 
     __recv_size = pipe_size;
@@ -685,7 +708,7 @@ int main (int argc, char ** argv)
 		while (send_active || recv_active) {
 		  result = PAMI_Context_advance (context[0], 100);
 
-		  if (result != PAMI_SUCCESS) {
+		  if ( (result != PAMI_SUCCESS) && (result != PAMI_EAGAIN) ) {
 		    fprintf (stderr, "ERROR (E):  Unable to advance pami context 0. result = %d\n", result);
 		    return 1;
 		  }
@@ -748,7 +771,7 @@ int main (int argc, char ** argv)
 
 	      while (recv_active != 0) {
 		result = PAMI_Context_advance (context[xtalk], 100);
-		if (result != PAMI_SUCCESS) {
+		if ( (result != PAMI_SUCCESS) && (result != PAMI_EAGAIN) ) {
 		  fprintf (stderr, "ERROR (E):  Unable to advance pami context %zu. result = %d\n", xtalk, result);
 		  return 1;
 		}
@@ -789,7 +812,7 @@ int main (int argc, char ** argv)
 
 	      while (send_active) {
 		result = PAMI_Context_advance (context[xtalk], 100);
-		if (result != PAMI_SUCCESS) {
+		if ( (result != PAMI_SUCCESS) && (result != PAMI_EAGAIN) ) {
 		  fprintf (stderr, "ERROR (E):  Unable to advance pami context %zu. result = %d\n", xtalk, result);
 		  return 1;
 		}
