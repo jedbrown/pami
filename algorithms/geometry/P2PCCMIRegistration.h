@@ -132,7 +132,7 @@ namespace PAMI
             _composite_ni()
           {
             TRACE_INIT((stderr, "<%p>CCMIRegistration() use_shmem %s, use_p2p %s, local_size %zu, global_size %zu\n", this, use_shmem? "true":"false",use_p2p?"true":"false",local_size,global_size ));
-            if ((use_shmem) && (local_size > 1) && (use_p2p))
+            if ((use_shmem) && (use_p2p))
               {
                 TRACE_INIT((stderr, "<%p>CCMIRegistration() use composite\n",this));
                 // Use composite P2P/Shmem if both enabled and > 1 process per node
@@ -156,7 +156,7 @@ namespace PAMI
                                T_P2PEager,
                                T_P2PDevice>(_global_dev);
               }
-            else if ((use_shmem) && (local_size > 1))
+            else if ((use_shmem))
               {
                 TRACE_INIT((stderr, "<%p>CCMIRegistration() use shmem\n",this));
                 // Use Shmem if requested and available ( > 1 process per node)
