@@ -525,7 +525,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     extern inline void Mcomb2DMetaDataNP(pami_metadata_t *m)
     {
-      new(m) PAMI::Geometry::Metadata("I0:MultiCombine2DeviceNP:SHMEM:MU");
+      new(m) PAMI::Geometry::Metadata("X0:MultiCombine2DeviceNP:SHMEM:MU");
 #ifdef ENABLE_NEW_SHMEM
       m->check_correct.values.alldtop       = 0;
       m->check_correct.values.sendminalign  = 1;
@@ -554,7 +554,7 @@ namespace PAMI
     //----------------------------------------------------------------------------
     extern inline void Mcomb2DDputMetaDataNP(pami_metadata_t *m)
     {
-      new(m) PAMI::Geometry::Metadata("I0:MultiCombine2DeviceDputNP:SHMEM:MU");
+      new(m) PAMI::Geometry::Metadata("X0:MultiCombine2DeviceDputNP:SHMEM:MU");
 #ifdef ENABLE_NEW_SHMEM
       m->check_correct.values.alldtop       = 0;
       m->check_correct.values.sendminalign  = 1;
