@@ -218,6 +218,48 @@ namespace PAMI
             return _doneMULarge;
           }
 
+         bool advanceMULarge ()
+          {
+            void* next_inj_buf = NULL;
+            uint64_t  bytes_available;
+
+            if (_doneMULarge)
+              return true;
+
+            next_inj_buf = _shmsg.next_injection_buffer(&bytes_available, _length, __global.mapping.tSize());
+
+            while (next_inj_buf != NULL)
+            {
+              _desc.Pa_Payload  = (uint64_t)next_inj_buf;
+              _desc.Message_Length = bytes_available;
+
+              size_t                fnum    = 0;
+              InjChannel & channel = _context.injectionGroup.channel[fnum];
+              size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
+
+              if (ndesc > 0)
+              {
+                MUSPI_DescriptorBase * d = (MUSPI_DescriptorBase *) channel.getNextDescriptor ();
+                _desc.clone (*d);
+
+                channel.injFifoAdvanceDesc ();
+                _shmsg.injection_complete();
+                _injectedBytes  += bytes_available;
+                _desc.setRecPutOffset(_injectedBytes);
+              }
+              else
+                break;
+
+              next_inj_buf = _shmsg.next_injection_buffer(&bytes_available, _length, __global.mapping.tSize());
+            }
+
+            _doneMULarge = (_injectedBytes == _length);
+
+            return _doneMULarge;
+          }
+
+
+
 
         //Short message Mcombine..uses shmem and shaddr protocols to access the data buffers
           bool advanceShmemMcombShort(unsigned length, bool &combineDone)
@@ -336,15 +378,18 @@ namespace PAMI
             bool flag;
 
             flag = false;
-            uint64_t  bytes_available =0;
+            //uint64_t  bytes_available =0;
             register  uint64_t  count = 0;
 
             while ((flag == false) && (++count < 1e5)){
               if (__global.mapping.t() == 0)
               {
-                void* next_inj_buf = _shmsg.next_injection_buffer(&bytes_available, _length, __global.mapping.tSize());
-                flag = advanceMULarge(next_inj_buf, bytes_available);
-                flag = flag && advanceShmemMcastLarge();
+                //void* next_inj_buf = _shmsg.next_injection_buffer(&bytes_available, _length, __global.mapping.tSize());
+                //flag = advanceMULarge(next_inj_buf, bytes_available);
+                //flag = flag && advanceShmemMcastLarge();
+                advanceMULarge();
+                flag = advanceShmemMcastLarge() ;
+
               }
               else
               {
