@@ -41,7 +41,7 @@ SharedArray::RC ShmArray::Init(const unsigned int member_cnt,
     // Workaround before PNSD could provide unique keys
     char key_str[64];
     sprintf(key_str, "/SHM_%d_%d", job_key, group_id);
-    printf("ShmArray::Init Unique key string for POSIX shm setup <%s>\n", key_str);
+    ITRC(IT_BSR, "ShmArray::Init Unique key string for POSIX shm setup <%s>\n", key_str);
 
     /// Main steps:
     this->is_leader  = is_leader;
