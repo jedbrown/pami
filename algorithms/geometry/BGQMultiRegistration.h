@@ -70,10 +70,7 @@ namespace PAMI
           mask  = T_Recv_Alignment - 1; 
           result.check.align_recv_buffer      |= (((uint64_t)in->cmd.xfer_allreduce.rcvbuf & (uint64_t)mask) == 0) ? 0:1;
         }
-<<<<<<< HEAD
         result.check.nonlocal = 1; // because of alignment, this is a non-local result.
-=======
->>>>>>> Trac #182: Collectives metadata implementation
         return result;
     }
 
@@ -503,10 +500,7 @@ namespace PAMI
       m->check_correct.values.alldtop       = 0;
       m->check_correct.values.sendminalign  = 1;
       m->check_correct.values.recvminalign  = 1;
-<<<<<<< HEAD
       m->check_correct.values.nonlocal      = 1;
-=======
->>>>>>> Trac #182: Collectives metadata implementation
       m->send_min_align                     = 32; 
       m->recv_min_align                     = 32; 
       m->check_fn                           = align_metadata_function<1,32,1,32,Shmem::op_dt_optimized_metadata_function>;
@@ -515,10 +509,7 @@ namespace PAMI
       m->check_correct.values.alldtop       = 0;
       m->check_correct.values.sendminalign  = 1;
       m->check_correct.values.recvminalign  = 1;
-<<<<<<< HEAD
       m->check_correct.values.nonlocal      = 1;
-=======
->>>>>>> Trac #182: Collectives metadata implementation
       m->send_min_align                     = 32; 
       m->recv_min_align                     = 32; 
       m->check_fn                           = align_metadata_function<1,32,1,32,MU::op_dt_metadata_function>;
@@ -539,10 +530,7 @@ namespace PAMI
       m->check_correct.values.alldtop       = 0;
       m->check_correct.values.sendminalign  = 1;
       m->check_correct.values.recvminalign  = 1;
-<<<<<<< HEAD
       m->check_correct.values.nonlocal      = 1;
-=======
->>>>>>> Trac #182: Collectives metadata implementation
       m->send_min_align                     = 32; 
       m->recv_min_align                     = 32; 
       m->check_fn                           = align_metadata_function<1,32,1,32,Shmem::op_dt_optimized_metadata_function>;
@@ -551,10 +539,7 @@ namespace PAMI
       m->check_correct.values.alldtop       = 0;
       m->check_correct.values.sendminalign  = 1;
       m->check_correct.values.recvminalign  = 1;
-<<<<<<< HEAD
       m->check_correct.values.nonlocal      = 1;
-=======
->>>>>>> Trac #182: Collectives metadata implementation
       m->send_min_align                     = 32; 
       m->recv_min_align                     = 32; 
       m->check_fn                           = align_metadata_function<1,32,1,32,MU::op_dt_metadata_function>;
@@ -574,10 +559,7 @@ namespace PAMI
       m->check_correct.values.alldtop       = 0;
       m->check_correct.values.sendminalign  = 1;
       m->check_correct.values.recvminalign  = 1;
-<<<<<<< HEAD
       m->check_correct.values.nonlocal      = 1;
-=======
->>>>>>> Trac #182: Collectives metadata implementation
       m->send_min_align                     = 32; 
       m->recv_min_align                     = 32; 
       m->check_fn                           = align_metadata_function<1,32,1,32,Shmem::op_dt_optimized_metadata_function>;
@@ -586,10 +568,7 @@ namespace PAMI
       m->check_correct.values.alldtop       = 0;
       m->check_correct.values.sendminalign  = 1;
       m->check_correct.values.recvminalign  = 1;
-<<<<<<< HEAD
       m->check_correct.values.nonlocal      = 1;
-=======
->>>>>>> Trac #182: Collectives metadata implementation
       m->send_min_align                     = 32; 
       m->recv_min_align                     = 32; 
       m->check_fn                           = align_metadata_function<1,32,1,32,MU::op_dt_metadata_function>;
