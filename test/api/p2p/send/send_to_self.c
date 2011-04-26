@@ -165,7 +165,7 @@ int main (int argc, char ** argv)
     while (send_active || recv_active)
     {
       result = PAMI_Context_advance (context, 100);
-      if (result != PAMI_SUCCESS)
+      if ( (result != PAMI_SUCCESS) && (result != PAMI_EAGAIN) )
       {
         fprintf (stderr, "Error. Unable to advance pami context. result = %d\n", result);
         return 1;
