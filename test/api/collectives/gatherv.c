@@ -197,7 +197,7 @@ int main (int argc, char ** argv)
               {
                 root = (root + num_tasks - 1) % num_tasks;
 #ifdef CHECK_DATA
-                initialize_sndbuf(num_tasks, buf, i);
+                initialize_sndbuf(task_id, buf, i);
                 if (task_id == root) 
                   memset(rbuf, 0xFF, i*num_tasks);                              
 #endif
