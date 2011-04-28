@@ -427,7 +427,7 @@ namespace PAMI
 			uint32_t N;
 			rc = Kernel_QueryCollectiveClassRoutes(&sh_crs->ncncr,
 						sh_crs->cn_crs, sizeof(sh_crs->cn_crs));
-			PAMI_assertf(rc == 0, "Kernel_QueryCollectiveClassRoutes failed %d", rc);
+			PAMI_assert_alwaysf(rc == 0, "Kernel_QueryCollectiveClassRoutes failed %d", rc);
 			// we take the "last" N ids, where "N" is some number we get from a
 			// resource manager - TBD.
 			N = sh_crs->ncncr; // take all, until we know otherwise...
@@ -441,14 +441,14 @@ namespace PAMI
 #ifdef MU_CR_DEBUG
 if (rc) fprintf(stderr, "Kernel_AllocateCollectiveClassRoute(%d) failed %d %d\n", sh_crs->cn_crs[x], rc, errno);
 #else // !MU_CR_DEBUG
-				PAMI_assertf(rc == 0, "Kernel_AllocateCollectiveClassRoute(%d) failed %d %d", sh_crs->cn_crs[x], rc, errno);
+				PAMI_assert_alwaysf(rc == 0, "Kernel_AllocateCollectiveClassRoute(%d) failed %d %d", sh_crs->cn_crs[x], rc, errno);
 #endif // !MU_CR_DEBUG
 			}
 
 
 			rc = Kernel_QueryGlobalInterruptClassRoutes(&sh_crs->ngicr,
 						sh_crs->gi_crs, sizeof(sh_crs->gi_crs));
-			PAMI_assertf(rc == 0, "Kernel_QueryCollectiveClassRoutes failed %d", rc);
+			PAMI_assert_alwaysf(rc == 0, "Kernel_QueryCollectiveClassRoutes failed %d", rc);
 
 			// we take the "last" N ids, where "N" is some number we get from a
 			// resource manager - TBD.
@@ -464,7 +464,7 @@ if (rc) fprintf(stderr, "Kernel_AllocateCollectiveClassRoute(%d) failed %d %d\n"
 #ifdef MU_CR_DEBUG
 if (rc) fprintf(stderr, "Kernel_AllocateGlobalInterruptClassRoute(%d) failed %d %d\n", sh_crs->gi_crs[x], rc, errno);
 #else // !MU_CR_DEBUG
-				PAMI_assertf(rc == 0, "Kernel_AllocateGlobalInterruptClassRoute(%d) failed %d %d", sh_crs->gi_crs[x], rc, errno);
+				PAMI_assert_alwaysf(rc == 0, "Kernel_AllocateGlobalInterruptClassRoute(%d) failed %d %d", sh_crs->gi_crs[x], rc, errno);
 #endif // !MU_CR_DEBUG
 			}
 		}
@@ -525,7 +525,7 @@ if (rc) fprintf(stderr, "Kernel_AllocateGlobalInterruptClassRoute(%d) failed %d 
 	  pami_result_t prc;
 	  prc = mm.memalign((void **)&_lowest_geom_id, sizeof(void *), 1 * sizeof(void *),
 				"/pami-mu-rm-cr-_lowest_geom_id");
-	  PAMI_assertf(prc == PAMI_SUCCESS, "Failed to get shmem for _lowest_geom_id");
+	  PAMI_assert_alwaysf(prc == PAMI_SUCCESS, "Failed to get shmem for _lowest_geom_id");
 	  *_lowest_geom_id = 0xffffffff;
 
 	  TRACE((stderr,"MU ResourceManager: Inside ENABLE_MU_CLASSROUTES code\n"));
@@ -541,13 +541,13 @@ if (rc) fprintf(stderr, "Kernel_AllocateGlobalInterruptClassRoute(%d) failed %d 
 	  _cr_mtx.init(mxmm, "/pami-mu-rm-cr-lk");
 	  prc = __global.heap_mm->memalign((void **)&_cr_mtx_mdls,
 			sizeof(void *), _pamiRM.getNumClients() * sizeof(*_cr_mtx_mdls));
-	  PAMI_assertf(prc == PAMI_SUCCESS, "Failed to alloc mem for CR mutex models");
+	  PAMI_assert_alwaysf(prc == PAMI_SUCCESS, "Failed to alloc mem for CR mutex models");
 
 	  // Note, we NEVER use BGQ_CLASS_INPUT_VC_USER. Only BGQ_CLASS_INPUT_VC_SUBCOMM.
 	  struct cr_shared *sh_crs;
 	  prc = mm.memalign((void **)&sh_crs, sizeof(void *), sizeof(*sh_crs),
 			"/pami-mu-rm-cr-shm", cr_init_shm, this);
-	  PAMI_assertf(prc == PAMI_SUCCESS, "Failed to alloc mem for CR shared init");
+	  PAMI_assert_alwaysf(prc == PAMI_SUCCESS, "Failed to alloc mem for CR shared init");
 
 	  int i;
 	  char *s;
@@ -638,7 +638,7 @@ fprintf(stderr, "%s\n", buf);
 	  }
 	  prc = __global.heap_mm->memalign((void **)&_excluded, 0,
 					(univz - _np + 1) * sizeof(CR_COORD_T));
-	  PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _excluded failed");
+	  PAMI_assert_alwaysf(prc == PAMI_SUCCESS, "alloc of _excluded failed");
 
 	  // Note, this discards previous _pri_dim... is that ok?
 	  MUSPI_MakeNpRectMap(&_communiv, _np, _map,
@@ -870,14 +870,14 @@ fprintf(stderr, "%s\n", buf);
 	  unsigned geom_id = geom->comm();
 
 	  // from this point, we must have a valid context.
-	  PAMI_assertf(context != NULL, "geomOptimize called on non-world w/o context");
+	  PAMI_assert_alwaysf(context != NULL, "geomOptimize called on non-world w/o context");
 
 	  // This topology is part of the geometry, so we know it won't
 	  // "go away" after this method returns...
 	  cr_cookie *cookie;
 	  pami_result_t prc;
 	  prc = __global.heap_mm->memalign((void **)&cookie, 0, sizeof(*cookie));
-	  PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _excluded failed");
+	  PAMI_assert_alwaysf(prc == PAMI_SUCCESS, "alloc of _excluded failed");
 	  cookie->thus = this;
 	  cookie->master = master;
 	  cookie->cb_done = (pami_callback_t){fn, clientdata};
@@ -3747,7 +3747,7 @@ void PAMI::Device::MU::ResourceManager::initializeContexts( size_t rmClientId,
     }
     prc = __global.heap_mm->memalign((void **)&_cr_mtx_mdls[rmClientId], sizeof(void *),
 				numContexts * sizeof(*_cr_mtx_mdls[rmClientId]));
-    PAMI_assertf(prc == PAMI_SUCCESS, "Failed to allocate space for classroute mutex models");
+    PAMI_assert_alwaysf(prc == PAMI_SUCCESS, "Failed to allocate space for classroute mutex models");
 
 } // End: initializeContexts()
 
@@ -3757,7 +3757,7 @@ void PAMI::Device::MU::ResourceManager::init(size_t rmClientId,
     pami_result_t status = PAMI_ERROR;
     AtomicMutexDev &device = PAMI::Device::AtomicMutexDev::Factory::getDevice((AtomicMutexDev *)devices, rmClientId, rmContextId);
     new (&_cr_mtx_mdls[rmClientId][rmContextId]) MUCR_mutex_model_t(device, &_cr_mtx, status);
-    PAMI_assertf(status == PAMI_SUCCESS, "Failed to construct non-blocking mutex client %zd context %zd", rmClientId, rmContextId);
+    PAMI_assert_alwaysf(status == PAMI_SUCCESS, "Failed to construct non-blocking mutex client %zd context %zd", rmClientId, rmContextId);
 }
 
 

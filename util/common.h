@@ -95,6 +95,8 @@
 
 #endif // ASSERT_LEVEL
 
+#define PAMI_assert_alwaysf(expr, fmt...)	{ if (!(expr)) PAMI_abortf(fmt); }
+#define PAMI_assert_always(expr)		assert(expr)
 
 static inline int64_t min_nb64(int64_t x, int64_t y)
 {

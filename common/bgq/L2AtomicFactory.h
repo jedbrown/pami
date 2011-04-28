@@ -138,12 +138,12 @@ namespace BGQ {
 					PAMI::Memory::PAMI_MM_L2ATOMIC,
 					"/L2AtomicFactory-priv",
 					PAMI::Memory::MemoryManager::memzero, NULL);
-			PAMI_assertf(rc == PAMI_SUCCESS,
+			PAMI_assert_alwaysf(rc == PAMI_SUCCESS,
 				"Failed to get memory for _l2proc, asked size %zu",
 				sizeof(uint64_t) * size);
 			krc = Kernel_L2AtomicsAllocate(__procscoped_mm.base(),
 							__procscoped_mm.size());
-                        PAMI_assertf(krc == 0,
+                        PAMI_assert_alwaysf(krc == 0,
 				"Failed to map process L2 Atomic region %p (%zd): %ld",
 				__procscoped_mm.base(), __procscoped_mm.size(), krc);
 
@@ -168,12 +168,12 @@ namespace BGQ {
 					PAMI::Memory::PAMI_MM_L2ATOMIC,
 					"/L2AtomicFactory-shared",
 					PAMI::Memory::MemoryManager::memzero, NULL);
-                        PAMI_assertf(rc == PAMI_SUCCESS,
+                        PAMI_assert_alwaysf(rc == PAMI_SUCCESS,
                                 "Failed to get shmem for _l2node, asked size %zu",
                                 sizeof(uint64_t) * size);
 			krc = Kernel_L2AtomicsAllocate(__nodescoped_mm.base(),
 							__nodescoped_mm.size());
-                        PAMI_assertf(krc == 0,
+                        PAMI_assert_alwaysf(krc == 0,
 				"Failed to map shared L2 Atomic region %p (%zd): %ld",
 				__nodescoped_mm.base(), __nodescoped_mm.size(), krc);
 
@@ -216,7 +216,7 @@ __procscoped_mm.available());
                         //
                         // PAMI_assert((ncores & (ncores - 1) == 0);
                         int shift = ffs(ncores);
-                        PAMI_assertf(shift > 0, "Internal error: no cores in process?");
+                        PAMI_assert_alwaysf(shift > 0, "Internal error: no cores in process?");
                         --shift;
                         _factory.coreShift = shift;
                         for (i = 0; i < t; ++i) {
@@ -224,10 +224,10 @@ __procscoped_mm.available());
                                         _factory.numCore += ncores;
                                         ++_factory.numProc;
                                         rc = mapping->task2node(ranks[i], addr);
-                                        PAMI_assertf(rc == PAMI_SUCCESS, "[%zu] task2node(%d, addr) failed\n", i, ranks[i]);
+                                        PAMI_assert_alwaysf(rc == PAMI_SUCCESS, "[%zu] task2node(%d, addr) failed\n", i, ranks[i]);
                                         size_t p;
                                         rc = mapping->node2peer(addr, p);
-                                        PAMI_assertf(rc == PAMI_SUCCESS, "[%zu] node2peer(addr, p) failed\n", i);
+                                        PAMI_assert_alwaysf(rc == PAMI_SUCCESS, "[%zu] node2peer(addr, p) failed\n", i);
                                         _factory.coreXlat[i] = p << shift;
                                         if (ranks[i] == mapping->task()) {
                                                 _factory.myProc = i;
@@ -316,7 +316,7 @@ __procscoped_mm.available());
                         case L2A_NODE_SMT_SCOPE:	// barrier only
                                 // Node-scoped L2Atomics...
                                 // barrier... ??
-				PAMI_assertf(mmscope == L2A_NODE_SCOPE,
+				PAMI_assert_alwaysf(mmscope == L2A_NODE_SCOPE,
 					"l2x_mm_alloc called with incompatible mm");
                                 break;
                         case L2A_PROC_SCOPE:

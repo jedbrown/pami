@@ -165,7 +165,9 @@ namespace PAMI
         size_t size = ((bytes + pagesize - 1) & ~(pagesize - 1));
 
         TRACE_ERR((stderr, "Global() .. size = %zu\n", size));
-	mm.init(shared_mm, size, 1, 1, 0, shmemfile);
+	pami_result_t rc = mm.init(shared_mm, size, 1, 1, 0, shmemfile);
+	PAMI_assert_alwaysf(rc == PAMI_SUCCESS, "Failed to create shm mm %zd bytes \"%s\"",
+					size, shmemfile);
         (void)initializeMapCache(personality, &mm, ll, ur, min, max,
               ((mm.attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) != 0)); //shared initialization
 
@@ -194,7 +196,7 @@ namespace PAMI
           }
 
         topology_global.subTopologyLocalToMe(&topology_local);
-        PAMI_assertf(topology_local.size() >= 1, "Failed to create valid (non-zero) local topology\n");
+        PAMI_assert_alwaysf(topology_local.size() >= 1, "Failed to create valid (non-zero) local topology\n");
         l2atomicFactory.init(shared_mm, heap_mm, &mapping, &topology_local);
 
         TRACE_ERR((stderr, "Global() <<\n"));
@@ -334,7 +336,7 @@ size_t PAMI::Global::initializeMapCache (BgqJobPersonality  & personality,
   volatile cacheAnchors_t *cacheAnchorsPtr;
   res = mm->memalign((void **)&cacheAnchorsPtr, 16, sizeof(*cacheAnchorsPtr),
 						"/pami-global-cacheAnchorsPtr");
-  PAMI_assertf(res == PAMI_SUCCESS, "Failed to get memory for cacheAnchorsPtr");
+  PAMI_assert_alwaysf(res == PAMI_SUCCESS, "Failed to get memory for cacheAnchorsPtr");
 
   TRACE_ERR( (stderr, "Global::initializeMapCache() .. mapcache = %p, size = %zu, cacheAnchorsPtr = %p, sizeof(cacheAnchors_t) = %zu, fullSize = %zu, peerSize = %zu\n", mapcache, mm->size(), cacheAnchorsPtr, sizeof(cacheAnchors_t), fullSize, peerSize));
 
@@ -356,19 +358,19 @@ size_t PAMI::Global::initializeMapCache (BgqJobPersonality  & personality,
 
   res = mm->memalign((void **)&mapcache->torus.task2coords, 16, fullSize * sizeof(*mapcache->torus.task2coords),
 						"/pami-global-task2coords");
-  PAMI_assertf(res == PAMI_SUCCESS, "Failed to get memory for task2coords");
+  PAMI_assert_alwaysf(res == PAMI_SUCCESS, "Failed to get memory for task2coords");
   res = mm->memalign((void **)&mapcache->torus.coords2task, 16, fullSize * sizeof(*mapcache->torus.coords2task),
 						"/pami-global-coords2task");
-  PAMI_assertf(res == PAMI_SUCCESS, "Failed to get memory for coords2task");
+  PAMI_assert_alwaysf(res == PAMI_SUCCESS, "Failed to get memory for coords2task");
   TRACE_ERR( (stderr, "Global::initializeMapCache() .. mapcache->torus.task2coords = %p mapcache->torus.coords2task = %p\n", mapcache->torus.task2coords, mapcache->torus.coords2task));
   TRACE_ERR( (stderr, "Global::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->torus.coords2task = %p\n", mapcache->node.local2peer, mapcache->torus.coords2task));
 
   res = mm->memalign((void **)&mapcache->node.local2peer, 16, peerSize * sizeof(*mapcache->node.local2peer),
 						"/pami-global-local2peer");
-  PAMI_assertf(res == PAMI_SUCCESS, "Failed to get memory for local2peer");
+  PAMI_assert_alwaysf(res == PAMI_SUCCESS, "Failed to get memory for local2peer");
   res = mm->memalign((void **)&mapcache->node.peer2task, 16, peerSize * sizeof(*mapcache->node.peer2task),
 						"/pami-global-peer2task");
-  PAMI_assertf(res == PAMI_SUCCESS, "Failed to get memory for peer2task");
+  PAMI_assert_alwaysf(res == PAMI_SUCCESS, "Failed to get memory for peer2task");
   TRACE_ERR( (stderr, "Global::initializeMapCache() .. mapcache->node.local2peer = %p mapcache->node.peer2task = %p\n", mapcache->node.local2peer, mapcache->node.peer2task));
 
   pami_task_t max_rank = 0, min_rank = (pami_task_t) - 1;
@@ -392,7 +394,7 @@ size_t PAMI::Global::initializeMapCache (BgqJobPersonality  & personality,
       uint64_t narraySize = (numNodes + 63) >> 6; // Divide by 64 bits.
       uint64_t *narray;
       res = heap_mm->memalign((void **)&narray, 0, narraySize * sizeof(uint64_t));
-      PAMI_assertf(res == PAMI_SUCCESS, "Failed to alloc narray");
+      PAMI_assert_alwaysf(res == PAMI_SUCCESS, "Failed to alloc narray");
       memset(narray, 0, narraySize*sizeof(uint64_t));
 
       // Initialize the task and peer mappings to -1 (== "not mapped")
