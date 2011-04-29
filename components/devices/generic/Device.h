@@ -285,6 +285,7 @@ public:
 		// GenericThread must be able to enqueue on both Queues...
 		COMPILE_TIME_ASSERT(sizeof(PAMI::Queue::Element) >=
 					sizeof(GenericDevicePostingQueue::Element));
+		COMPILE_TIME_ASSERT(sizeof(pami_work_t) >= sizeof(GenericThread));
 		__context = ctx;
 		__mm = mm;
 		__allGds = devices;
