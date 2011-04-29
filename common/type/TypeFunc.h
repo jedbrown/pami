@@ -21,7 +21,10 @@ namespace PAMI
       };
 
       template <typename T>
-      static void copy (void *to, void *from, size_t bytes, void *cookie) { Math::copy<T>((T*)to, (T*)from, bytes/sizeof(T)); }
+      static void copy (void *to, void *from, size_t bytes, void *cookie) {
+        // just use memcpy
+        memcpy(to, from, bytes);
+      }
 
       static void noop (void *to, void *from, size_t bytes, void *cookie) {};
 

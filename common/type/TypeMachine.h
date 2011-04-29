@@ -48,6 +48,8 @@ namespace PAMI
 
         private:
             TypeCode  *type;
+            TypeCode  *orig_type;
+            bool optimized;
             void  *cookie;
             TypeFunc::CopyFunction  copy_func;
 
@@ -90,11 +92,20 @@ namespace PAMI
 
     };
 
-    inline TypeMachine::TypeMachine(TypeCode *type)
-      : type(type),  cookie(NULL),copy_func(NULL), top(0)
+    inline TypeMachine::TypeMachine(TypeCode *atype)
+      : type(atype), optimized(false), cookie(NULL), copy_func(NULL), top(0)
     {
         assert(type->IsCompleted());
         type->AcquireReference();
+
+        // Check the type and, if contiguous, change it to
+        // a max contiguous type
+        if (type->IsContiguous()) {
+            orig_type = type;
+            optimized = true;
+            type = PAMI_TYPE_CONTIG_MAX;
+        }
+
         if (type->GetDepth() <= (unsigned)SMALL_STACK_DEPTH)
             stack = small_stack;
         else
@@ -105,6 +116,11 @@ namespace PAMI
 
     inline TypeMachine::~TypeMachine()
     {
+        // recover the original type if optimized
+        if (optimized) {
+            assert(orig_type);
+            type = orig_type;
+        }
         type->ReleaseReference();
         if (stack != small_stack)
             delete[] stack;
@@ -112,8 +128,27 @@ namespace PAMI
 
     inline void TypeMachine::SetType(TypeCode *new_type)
     {
+        assert(new_type->IsCompleted()&&(new_type!=PAMI_TYPE_CONTIG_MAX));
+
+        new_type->AcquireReference();
+
+        // recover the initial object if optimized
+        if (optimized) {
+            type = orig_type;
+            orig_type = (TypeCode *)NULL;
+            optimized = false;
+        }
+
         type->ReleaseReference();
 
+        // Check the new type and, if contiguous, change it to
+        // the max contiguous type
+        if (new_type->IsContiguous()) {
+            orig_type = new_type;
+            optimized = true;
+            new_type = PAMI_TYPE_CONTIG_MAX;
+        }
+		
         // adjust stack if new_type requires more
         size_t new_depth = new_type->GetDepth();
         if (new_depth > type->GetDepth() && new_depth > (unsigned)SMALL_STACK_DEPTH) {
@@ -122,8 +157,6 @@ namespace PAMI
             stack = new Cursor[new_depth];
         }
 
-        assert(new_type->IsCompleted());
-        new_type->AcquireReference();
         type = new_type;
 
         top  = 0;
@@ -140,6 +173,10 @@ namespace PAMI
 
     inline TypeCode *TypeMachine::GetType() const
     {
+        if (optimized) {
+            assert(orig_type);
+            return orig_type;
+        }
         return type;
     }
 

@@ -10,6 +10,8 @@ using namespace PAMI::Type;
 #define RETURN_ERR_PAMI(code, ...) return (code)
 #endif
 
+TypeContig *PAMI_TYPE_CONTIG_MAX         = new TypeContig(1);
+
 pami_type_t PAMI_TYPE_CONTIGUOUS         = new TypeContig(TypeCode::PRIMITIVE_TYPE_CONTIGUOUS);
 pami_type_t PAMI_TYPE_BYTE               = new TypeContig(TypeCode::PRIMITIVE_TYPE_BYTE);         // ----------------------???
 

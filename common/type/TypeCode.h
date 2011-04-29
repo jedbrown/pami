@@ -382,7 +382,7 @@ namespace PAMI
         assert(!IsCompleted());
 
         if (shift != 0) {
-            // any shift break contiguity
+            // any shift breaks contiguity
             is_contiguous = false;
             CheckCodeBuffer(sizeof(Shift));
             *(Shift *)(code + code_cursor) = Shift(shift);
@@ -507,9 +507,22 @@ namespace PAMI
     class TypeContig : public TypeCode
     {
         public:
+            TypeContig(size_t atom_size);
             TypeContig(primitive_type_t primitive);
             ~TypeContig();
     };
+
+    inline TypeContig::TypeContig(size_t atom_size)
+        : TypeCode(true)
+    {
+        assert(0<atom_size);
+        primitive = PRIMITIVE_TYPE_CONTIGUOUS;
+        size_t prim_size = ULONG_MAX - ULONG_MAX%atom_size;
+        AddSimple(prim_size, prim_size, 1);
+        Complete();
+        SetAtomSize(atom_size);
+        AcquireReference();
+    }
 
     inline TypeContig::TypeContig(primitive_type_t primitive_type)
     {
@@ -635,5 +648,10 @@ namespace PAMI
 
   }
 }
+
+// Object of primitive PAMI_TYPE_CONTIGOUS with an atom size of 1
+// and unit size of ULONG_MAX
+extern PAMI::Type::TypeContig *PAMI_TYPE_CONTIG_MAX;
+
 
 #endif // _PAMI_TYPE_CODE_H
