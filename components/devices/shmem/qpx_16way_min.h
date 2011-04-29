@@ -15,9 +15,9 @@ inline unsigned _quad_double_min_16way_align64B(double* dst, double* src0, doubl
     double* src12, double* src13, double* src14, double* src15, unsigned num_dbls)
 {
 
-  double *src0_1, *src1_1, *src2_1, *src3_1, *src4_1, *src5_1, *src6_1, *src7_1;
-  double *src8_1, *src9_1, *src10_1, *src11_1, *src12_1, *src13_1, *src14_1, *src15_1;
-  double *dst_1, *dst_2;
+  register double *src0_1, *src1_1, *src2_1, *src3_1, *src4_1, *src5_1, *src6_1, *src7_1;
+  register double *src8_1, *src9_1, *src10_1, *src11_1, *src12_1, *src13_1, *src14_1, *src15_1;
+ register  double *dst_1, *dst_2;
   //register int inc __MYASM__("r7");
   //register int inc __MYASM__("r7");
   register int inc ;
@@ -649,9 +649,9 @@ inline unsigned _quad_double_min_16way_align32B_short(double* dst, double* src0,
     double* src4, double* src5, double* src6, double* src7, double* src8, double *src9, double* src10, double* src11,
     double* src12, double* src13, double* src14, double* src15, unsigned num_dbls)
 {
-  double *src0_1, *src1_1, *src2_1, *src3_1, *src4_1, *src5_1, *src6_1, *src7_1;
-  double *src8_1, *src9_1, *src10_1, *src11_1, *src12_1, *src13_1, *src14_1, *src15_1;
-  double *dst_1;
+  register double *src0_1, *src1_1, *src2_1, *src3_1, *src4_1, *src5_1, *src6_1, *src7_1;
+  register double *src8_1, *src9_1, *src10_1, *src11_1, *src12_1, *src13_1, *src14_1, *src15_1;
+  register double *dst_1;
   register int inc ;
   register int	y;
 

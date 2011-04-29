@@ -49,6 +49,9 @@ namespace PAMI
 #define G_Counter 	((uint64_t*)(_controlB->GAT.counter_addr))
 #define MinChunkSize  64
 #define ShmBufSize  SHORT_MSG_CUTOFF
+//#define Num16kChunks  18
+//#define Num16kChunks  19
+#define Num16kChunks  21
 
             inline void advance_4way_math(unsigned _local_rank, unsigned _npeers, size_t bytes, unsigned offset_dbl)
             {
@@ -177,6 +180,32 @@ namespace PAMI
                 _controlB->chunk_done[_local_rank] = chunk;
               }
             }
+
+            inline void advance_16way_math_16k(unsigned _local_rank, unsigned _npeers)
+            {
+              /* local ranks other than 0 do the following quad sum */
+              unsigned chunk, numDbls, dblsSoFar =0, bytesSoFar=0;
+
+              for (chunk=0; chunk < Num16kChunks; chunk++){
+                if ((chunk%(_npeers-1) +1) == _local_rank){
+                  numDbls = _chunk_array[chunk] >>3;            
+                  dblsSoFar = bytesSoFar >> 3;
+                  //printf("chunk:%d dblsSoFar:%d\n", chunk, dblsSoFar); 
+                  quad_double_math_16way(_rcvbuf+ dblsSoFar, G_Srcs(0)+dblsSoFar,
+                      G_Srcs(1)+dblsSoFar, G_Srcs(2)+dblsSoFar,
+                      G_Srcs(3)+dblsSoFar, G_Srcs(4)+dblsSoFar,
+                      G_Srcs(5)+dblsSoFar, G_Srcs(6)+dblsSoFar,
+                      G_Srcs(7)+dblsSoFar, G_Srcs(8)+dblsSoFar,
+                      G_Srcs(9)+dblsSoFar, G_Srcs(10)+dblsSoFar,
+                      G_Srcs(11)+dblsSoFar, G_Srcs(12)+dblsSoFar,
+                      G_Srcs(13)+dblsSoFar, G_Srcs(14)+dblsSoFar,
+                      G_Srcs(15)+dblsSoFar, numDbls, _opcode);
+                  _controlB->chunk_done[_local_rank] = chunk;
+                }
+                bytesSoFar+= _chunk_array[chunk];
+              }
+            }
+
 
 
             //The buffer is partitioned among "npeers" in a balanced manner depending on the "MinChunkSize", total_bytes
@@ -467,7 +496,8 @@ namespace PAMI
               else if (npeers == 8)
                 advance_8way_math(local_rank, npeers, total_bytes, offset_dbl);
               else if (npeers == 16)
-                advance_16way_math(local_rank, npeers, total_bytes, offset_dbl);
+                (total_bytes == 16384) ?  advance_16way_math_16k(local_rank, npeers):
+                                        advance_16way_math(local_rank, npeers, total_bytes, offset_dbl);
               else
               {
                 fprintf(stderr,"%s:%u npeers %u math not yet supported\n",__FILE__,__LINE__,npeers);
@@ -477,7 +507,7 @@ namespace PAMI
               return PAMI_SUCCESS;
             }
 
-
+#if 0
             //The master process gets the next chunk to inject into Collective network
             inline void* next_injection_buffer (uint64_t *bytes_available, unsigned total_bytes, unsigned npeers)
             {
@@ -492,7 +522,46 @@ namespace PAMI
               }
               return  NULL;  
             }
+            //The master process gets the next chunk to inject into Collective network
+            inline void* next_injection_buffer (uint64_t *bytes_available, unsigned total_bytes, unsigned npeers)
+            {
+              unsigned  my_peer = (_chunk_for_injection)%(npeers-1)+1;
+              char* rbuf = (char*) P_Dsts(my_peer) + _cur_offset;
 
+              if (_controlB->chunk_done[my_peer] >= _chunk_for_injection)
+              { 
+                //printf("_cur_offset:%d\n", _cur_offset);
+                *bytes_available  = _chunk_array[_chunk_for_injection];
+                _cur_offset+= *bytes_available;
+                return (void*)(rbuf);
+              }
+              return  NULL;  
+            }
+#endif
+            //The master process gets the next chunk to inject into Collective network
+            inline void* next_injection_buffer (uint64_t *bytes_available, unsigned total_bytes, unsigned npeers)
+            {
+              unsigned  my_peer = (_chunk_for_injection)%(npeers-1)+1;
+              char* rbuf = (char*) P_Dsts(my_peer) + _cur_offset;
+
+              if (_controlB->chunk_done[my_peer] >= _chunk_for_injection)
+              { 
+                //printf("_cur_offset:%d\n", _cur_offset);
+                if (total_bytes == 16384)
+                {  
+                  *bytes_available  = _chunk_array[_chunk_for_injection];
+                  _cur_offset+= *bytes_available;
+                  return (void*)(rbuf);
+                }
+                else
+                {
+                  *bytes_available  = (_chunk_for_injection < (NumChunks(total_bytes)-1)) ? (ChunkSize):
+                    (total_bytes - ChunkSize*(NumChunks(total_bytes)-1));
+                  return (void*)(rbuf + _chunk_for_injection*ChunkSize);
+                }
+              }
+              return  NULL;  
+            }
 
             //Update the chunk index once injection is complete
             inline  void  injection_complete() { ++_chunk_for_injection;  }
@@ -528,6 +597,35 @@ namespace PAMI
                   _controlB->chunk_done[i] = -1;
                 }
               }
+#if 1
+              _chunk_array[0] = 256;
+              _chunk_array[1] = 256;
+              _chunk_array[2] = 512;
+              _chunk_array[3] = 512;
+              _chunk_array[4] = 512;
+              _chunk_array[5] = 512;
+              _chunk_array[6] = 512;
+              _chunk_array[7] = 512;
+              _chunk_array[8] = 512;
+              _chunk_array[9] = 1024;
+              _chunk_array[10] = 1024;
+              _chunk_array[11] = 1024;
+              _chunk_array[12] = 1024;
+              _chunk_array[13] = 1024;
+              _chunk_array[14] = 1024;
+              _chunk_array[15] = 1024;
+              _chunk_array[16] = 1024;
+              _chunk_array[17] = 1024;
+              _chunk_array[18] = 1024;
+              _chunk_array[19] = 1024;
+              _chunk_array[20] = 1024;
+#endif
+              /*unsigned total_buf;
+                for (unsigned i=0; i< Num16kChunks; i++)
+                  total_buf+=_chunk_array[i];
+              assert(total_buf == 16384);*/
+              _cur_offset = 0;
+
             };
 
             void*     _shm_phy_addr;
@@ -540,13 +638,15 @@ namespace PAMI
             uint16_t _chunk_for_injection;
             ControlBlock* _controlB;
             pami_op _opcode;
+            unsigned  _chunk_array[Num16kChunks];
+            unsigned  _cur_offset;
 
 
         };  // PAMI::Device::CNShmemMessage class
-
     };
   };    // PAMI::Device namespace
 };      // PAMI namespace
+
 #undef TRACE_ERR
 #endif  // __components_devices_shmem_CNShmemMessage_h__
 
