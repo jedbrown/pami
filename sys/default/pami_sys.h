@@ -1,6 +1,6 @@
 /**
  * \file sys/default/pami_sys.h
- * \brief Default type definitions for IBM's PAMI message layer.
+ * \brief "Default" platform specifc type definitions for IBM's PAMI message layer.
  */
 
 #ifndef __default_pami_sys_h__

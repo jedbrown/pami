@@ -349,7 +349,7 @@ int main (int argc, char ** argv)
     }
   }
 
-  pami_endpoint_t target;    
+  pami_endpoint_t target = PAMI_ENDPOINT_NULL;
   if (do_test) {
     int targetrank = neighbor;
     PAMI_Endpoint_create (client, targetrank, 0, &target);

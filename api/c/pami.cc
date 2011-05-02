@@ -20,6 +20,9 @@ extern "C"
   pami_context_t   PAMI_CONTEXT_NULL  =0;
   pami_geometry_t  PAMI_GEOMETRY_NULL =0;
   pami_algorithm_t PAMI_ALGORITHM_NULL=0;
+#ifndef PAMI_ENDPOINT_NULL
+  pami_endpoint_t PAMI_ENDPOINT_NULL = (size_t) -1;
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -60,6 +63,7 @@ extern "C" unsigned long long PAMI_Wtimebase(pami_client_t client)
   return __global.time.timebase();
 }
 
+#ifndef PAMI_Endpoint_create
 extern "C" pami_result_t PAMI_Endpoint_create (pami_client_t     client,
                                                pami_task_t       task,
                                                size_t            offset,
@@ -69,11 +73,13 @@ extern "C" pami_result_t PAMI_Endpoint_create (pami_client_t     client,
 #ifdef PAMI_LAPI_IMPL
   *endpoint = task;
 #else
-  rc = PAMI_ENDPOINT_CREATE(client,task,offset,endpoint);
+  PAMI_ENDPOINT_INIT(client,task,offset);
 #endif
   return rc;
 }
+#endif
 
+#ifndef PAMI_Endpoint_query
 extern "C" pami_result_t PAMI_Endpoint_query (pami_endpoint_t   endpoint,
                                               pami_task_t     * task,
                                               size_t          * offset)
@@ -83,11 +89,11 @@ extern "C" pami_result_t PAMI_Endpoint_query (pami_endpoint_t   endpoint,
   *task   = endpoint;
   *offset = 0;
 #else
-  rc = PAMI_ENDPOINT_QUERY(endpoint,task,offset);
+  PAMI_ENDPOINT_INFO(endpoint,task,offset);
 #endif
   return rc;
 }
-
+#endif
 
 extern "C" pami_result_t PAMI_Context_post (pami_context_t        context,
                                           pami_work_t         * work,

@@ -89,7 +89,7 @@ pami_recv_t         * recv)        /**< OUT: receive message structure */
   recv->offset   = 0;;
 }
 
-unsigned long long test (pami_client_t client,pami_context_t context, size_t dispatch, size_t hdrlen, size_t sndlen, size_t myrank, size_t ntasks)
+unsigned long long test (pami_client_t client, pami_context_t context, size_t dispatch, size_t hdrlen, size_t sndlen, size_t myrank, size_t ntasks)
 {
   TRACE_ERR((stderr, "(%zu) Do test ... sndlen = %zu\n", myrank, sndlen));
 

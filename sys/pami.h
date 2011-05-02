@@ -50,6 +50,7 @@ extern "C"
   extern pami_context_t   PAMI_CONTEXT_NULL;
   extern pami_geometry_t  PAMI_GEOMETRY_NULL;
   extern pami_algorithm_t PAMI_ALGORITHM_NULL;
+  extern pami_endpoint_t  PAMI_ENDPOINT_NULL;
 
   /**
    * \brief Callback to handle message events
@@ -3565,8 +3566,6 @@ extern "C"
    * \param[in]  offset   Destination context offset
    * \param[out] endpoint Opaque endpoint object
    */
-/** \todo set the client information in the endpoint opaque type */
-#define PAMI_ENDPOINT_CREATE(__client,__task,__offset,__endpoint) ({ *(__endpoint) = (((__offset) << 23) | (__task)); PAMI_SUCCESS; })
   pami_result_t PAMI_Endpoint_create (pami_client_t     client,
                                       pami_task_t       task,
                                       size_t            offset,
@@ -3586,7 +3585,6 @@ extern "C"
    * \param[out] task     Opaque destination task object
    * \param[out] offset   Destination context offset
    */
-#define PAMI_ENDPOINT_QUERY(__endpoint,__task,__offset) ({ *(__task) = (__endpoint) & 0x007fffff; *(__offset) = ((__endpoint) >> 23) & 0x03f; PAMI_SUCCESS; })
   pami_result_t PAMI_Endpoint_query (pami_endpoint_t   endpoint,
                                      pami_task_t     * task,
                                      size_t          * offset);
@@ -3688,7 +3686,7 @@ extern "C"
    *
    * It is \b illegal to invoke any PAMI functions using a communication
    * context from any thread after the context is destroyed.
-   *
+   * 
    * \note The PAMI_Context_lock(), PAMI_Context_trylock(), and
    *       PAMI_Context_unlock(), functions must not be used to ensure
    *       thread-safe access to the context destroy function as the lock
@@ -3987,5 +3985,7 @@ extern "C"
 #ifdef __cplusplus
 };
 #endif
+
+#include "pami_sys.h"
 
 #endif /* __pami_h__ */
