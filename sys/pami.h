@@ -142,6 +142,8 @@ extern "C"
     PAMI_CLIENT_MEMREGION_SIZE,     /**< Q : size_t : Size of the pami_memregion_t handle in this implementation, in units of Bytes. */
     PAMI_CLIENT_MEM_SIZE,           /**< Q : size_t : Size of the core main memory, in units of 1024^2 Bytes    */
     PAMI_CLIENT_NUM_TASKS,          /**< Q : size_t : Total number of tasks        */
+    PAMI_CLIENT_NUM_LOCAL_TASKS,    /**< Q : size_t : Number of tasks located on the same node as this task */
+    PAMI_CLIENT_LOCAL_TASKS,        /**< Q : size_t[] : Array of all tasks located on the same node as this task */
     PAMI_CLIENT_NUM_CONTEXTS,       /**< Q : size_t : The maximum number of contexts allowed on this process */
     PAMI_CLIENT_PROCESSOR_NAME,     /**< Q : char[] : A unique name string for the calling process, and should be suitable for use by
                                               MPI_Get_processor_name(). The storage should *not* be freed by the caller. */
@@ -167,9 +169,10 @@ extern "C"
 
   typedef union
   {
-    size_t      intval;
-    double      doubleval;
-    const char* chararray;
+    size_t         intval;
+    double         doubleval;
+    const char *   chararray;
+    const size_t * intarray;
   } pami_attribute_value_t;
 
   /** \} */ /* end of "configuration" group */
@@ -575,6 +578,14 @@ extern "C"
      * If specified as pami_hint_t::PAMI_HINT_DEFAULT during PAMI_Dispatch_set(),
      * the implementation may, or may not, use shared memory optimizations to
      * aid in the communication operation.
+     *
+     * Certain transfer operations, such as PAMI_Send_immediate() and others,
+     * may return ::PAMI_INVAL if shared memory is forced on and the destination
+     * endpoint is located on a different node. The number and the list of tasks
+     * located on the same node may be queried using PAMI_Client_query() and the
+     * pami_attribute_name_t::PAMI_CLIENT_NUM_LOCAL_TASKS and
+     * pami_attribute_name_t::PAMI_CLIENT_LOCAL_TASKS configuration attributes.
+     *
      */
     unsigned  use_shmem             : 2;
 
