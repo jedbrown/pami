@@ -203,7 +203,7 @@ public:
                             lrc = fstat(fd, &st);
                             if (lrc == -1)
                                 return PAMI_ERROR;
-                        } while (st.st_size != max);
+                        } while ((size_t)st.st_size != max);
 		}
 		ptr = mmap(NULL, max, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 		close(fd); // no longer needed
