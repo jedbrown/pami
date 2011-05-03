@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <semaphore.h>
@@ -195,6 +196,14 @@ public:
 				return PAMI_ERROR;
 			}
 			fd = lrc;
+
+                        // wait for the shm size to be increased before mmap
+                        struct stat st;
+                        do {
+                            lrc = fstat(fd, &st);
+                            if (lrc == -1)
+                                return PAMI_ERROR;
+                        } while (st.st_size != max);
 		}
 		ptr = mmap(NULL, max, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 		close(fd); // no longer needed
