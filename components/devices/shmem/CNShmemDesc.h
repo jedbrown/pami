@@ -12,8 +12,9 @@
 
 #include "components/atomic/bgq/L2Counter.h"
 
-#define SHORT_MSG_CUTOFF      8192
-//#define SHORT_MSG_CUTOFF      4096
+//#define SHORT_MSG_CUTOFF      8192
+#define SHORT_MSG_CUTOFF      4096
+//#define SHORT_MSG_CUTOFF      2048
 ////#define SHORT_MSG_CUTOFF      16384
 #define VERY_SHORT_MSG_CUTOFF   128
 #define CN_SHMEM_TASKS_PER_NODE 16

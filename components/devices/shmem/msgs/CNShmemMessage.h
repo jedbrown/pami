@@ -49,9 +49,9 @@ namespace PAMI
 #define G_Counter 	((uint64_t*)(_controlB->GAT.counter_addr))
 #define MinChunkSize  64
 #define ShmBufSize  SHORT_MSG_CUTOFF
-//#define Num16kChunks  18
-//#define Num16kChunks  19
+#define Num32kChunks  37
 #define Num16kChunks  21
+#define Num8kChunks  13
 
             inline void advance_4way_math(unsigned _local_rank, unsigned _npeers, size_t bytes, unsigned offset_dbl)
             {
@@ -181,12 +181,16 @@ namespace PAMI
               }
             }
 
-            inline void advance_16way_math_16k(unsigned _local_rank, unsigned _npeers)
+            inline void advance_16way_math_16k(unsigned _local_rank, unsigned _npeers, unsigned num_chunks)
             {
               /* local ranks other than 0 do the following quad sum */
               unsigned chunk, numDbls, dblsSoFar =0, bytesSoFar=0;
+            
 
-              for (chunk=0; chunk < Num16kChunks; chunk++){
+              //for (chunk=0; chunk < Num16kChunks; chunk++){
+              //for (chunk=0; chunk < Num8kChunks; chunk++){
+              //for (chunk=0; chunk < Num32kChunks; chunk++){
+              for (chunk=0; chunk < num_chunks; chunk++){
                 if ((chunk%(_npeers-1) +1) == _local_rank){
                   numDbls = _chunk_array[chunk] >>3;            
                   dblsSoFar = bytesSoFar >> 3;
@@ -496,7 +500,10 @@ namespace PAMI
               else if (npeers == 8)
                 advance_8way_math(local_rank, npeers, total_bytes, offset_dbl);
               else if (npeers == 16)
-                (total_bytes == 16384) ?  advance_16way_math_16k(local_rank, npeers):
+                //(total_bytes == 16384) ?  advance_16way_math_16k(local_rank, npeers):
+                //(total_bytes == 8192) ?  advance_16way_math_16k(local_rank, npeers):
+                ((total_bytes == 32768)||(total_bytes == 16384)||(total_bytes == 8192))
+                                         ?  advance_16way_math_16k(local_rank, npeers, ((total_bytes-4096) >> 10)+9):
                                         advance_16way_math(local_rank, npeers, total_bytes, offset_dbl);
               else
               {
@@ -547,7 +554,9 @@ namespace PAMI
               if (_controlB->chunk_done[my_peer] >= _chunk_for_injection)
               { 
                 //printf("_cur_offset:%d\n", _cur_offset);
-                if (total_bytes == 16384)
+                //if (total_bytes == 16384)
+                //if (total_bytes == 8192)
+                if ((total_bytes == 32768) || (total_bytes == 16384) || (total_bytes == 8192))
                 {  
                   *bytes_available  = _chunk_array[_chunk_for_injection];
                   _cur_offset+= *bytes_available;
@@ -607,7 +616,7 @@ namespace PAMI
               _chunk_array[6] = 512;
               _chunk_array[7] = 512;
               _chunk_array[8] = 512;
-              _chunk_array[9] = 1024;
+              /*_chunk_array[9] = 1024;
               _chunk_array[10] = 1024;
               _chunk_array[11] = 1024;
               _chunk_array[12] = 1024;
@@ -618,7 +627,10 @@ namespace PAMI
               _chunk_array[17] = 1024;
               _chunk_array[18] = 1024;
               _chunk_array[19] = 1024;
-              _chunk_array[20] = 1024;
+              _chunk_array[20] = 1024;*/
+            
+                for (unsigned i=9; i< Num32kChunks; i++)
+                  _chunk_array[i] = 1024;
 #endif
               /*unsigned total_buf;
                 for (unsigned i=0; i< Num16kChunks; i++)
@@ -638,7 +650,8 @@ namespace PAMI
             uint16_t _chunk_for_injection;
             ControlBlock* _controlB;
             pami_op _opcode;
-            unsigned  _chunk_array[Num16kChunks];
+            //unsigned  _chunk_array[Num16kChunks];
+            unsigned  _chunk_array[Num32kChunks];
             unsigned  _cur_offset;
 
 
