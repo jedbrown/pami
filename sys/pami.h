@@ -1274,7 +1274,7 @@ extern "C"
    * \see PAMI_Memregion_create
    * \see PAMI_Memregion_destroy
    */
-  typedef uint8_t pami_memregion_t[PAMI_CLIENT_MEMREGION_SIZE_STATIC];
+  typedef uintptr_t pami_memregion_t[PAMI_CLIENT_MEMREGION_SIZE_STATIC/sizeof(uintptr_t)];
 
   /**
    * \brief Create a local memory region for one sided operations
