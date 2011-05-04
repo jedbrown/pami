@@ -22,7 +22,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <semaphore.h>
@@ -182,28 +181,18 @@ public:
 		lrc = shm_open(nkey, O_CREAT | O_EXCL | O_RDWR, 0600);
 		first = (lrc != -1); // must be the first...
 		//fprintf(stderr,"   SharedMemoryManager::memalign(), lrc = %d, first = %d\n", lrc, first);
-		if (first) {
-			fd = lrc;
-			lrc = ftruncate(fd, max); // this zeroes memory...
-			if (lrc == -1) {
-				close(fd);
-				shm_unlink(nkey); // yes?
-				return PAMI_ERROR;
-			}
-		} else {
+		if (!first) {
 			lrc = shm_open(nkey, O_RDWR, 0);
 			if (lrc == -1) {
 				return PAMI_ERROR;
 			}
-			fd = lrc;
-
-                        // wait for the shm size to be increased before mmap
-                        struct stat st;
-                        do {
-                            lrc = fstat(fd, &st);
-                            if (lrc == -1)
-                                return PAMI_ERROR;
-                        } while ((size_t)st.st_size != max);
+		}
+		fd = lrc;
+		lrc = ftruncate(fd, max); // this zeroes memory...
+		if (lrc == -1) {
+			close(fd);
+			if (first) { shm_unlink(nkey); } // yes?
+			return PAMI_ERROR;
 		}
 		ptr = mmap(NULL, max, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 		close(fd); // no longer needed
