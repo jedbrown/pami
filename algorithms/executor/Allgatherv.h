@@ -321,25 +321,25 @@ namespace CCMI
 
         size_t getSendLength(int phase)
         {
-          int index = (_myindex + _native->numranks() - phase - 1) % _native->numranks();
+          int index = (_myindex + _native->numranks() - phase) % _native->numranks();
           return (_rcvcounts) ? _rcvcounts[index] : _buflen;
         }
 
         size_t getRecvLength(int phase)
         {
-          int index = (_myindex +  phase + 1) % _native->numranks();
+          int index = (_myindex + _native->numranks() -  phase - 1) % _native->numranks();
           return (_rcvcounts) ? _rcvcounts[index] : _buflen;
         }
 
         size_t getSendDisp(int phase)
         {
-          int index = (_myindex + _native->numranks() - phase - 1) % _native->numranks();
+          int index = (_myindex + _native->numranks() - phase) % _native->numranks();
           return (_disps) ? _disps[index] : index * _buflen;
         }
 
         size_t getRecvDisp(int phase)
         {
-          int index = (_myindex +  phase + 1) % _native->numranks();
+          int index = (_myindex + _native->numranks() -  phase - 1) % _native->numranks();
           return (_disps) ? _disps[index] : index * _buflen;
         }
 
@@ -347,7 +347,7 @@ namespace CCMI
         {
           size_t sleng = getSendLength(phase);
           size_t sdisp = getSendDisp(phase);
-          _pwq.configure (_sbuf + sdisp, sleng, 0);
+          _pwq.configure (_rbuf + sdisp, sleng, 0);
           _pwq.reset();
           _pwq.produceBytes(sleng);
           return &_pwq;
@@ -455,22 +455,23 @@ inline void  CCMI::Executor::AllgathervExec<T_ConnMgr, T_Type>::start ()
   else
     _rphase ++;
 
-  if(isTypeSame<T_Type, pami_allgatherv_t>::result)
+  if(isTypeSame<T_Type, pami_allgather_t>::result)
     {
-      TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::start()_rbuf %p,_disps %p, _sbuf %p, _rcvcounts %p\n", this,_rbuf,_disps,_sbuf, _rcvcounts));
-      TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::start()_rbuf %p,_disps[%zu] %zu, _rbuf + _disps[_myindex] %p, _sbuf %p, _rcvcounts[_myindex] %zu\n", this,_rbuf,(size_t)_myindex, (size_t)_disps[_myindex], _rbuf + _disps[_myindex], _sbuf, (size_t)_rcvcounts[_myindex]));
-      memcpy(_rbuf + _disps[_myindex], _sbuf, _rcvcounts[_myindex]);
-    }
-  else
-    { // We are in Allgather
+      // We are in Allgather
       // Nothing to gather? Invoke the callback and return
       if ((_buflen == 0) && _cb_done)
         {
           _cb_done (NULL, _clientdata, PAMI_SUCCESS);
           return;
         }
-       TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::start() _rbuf %p,_sbuf %p\n", this,_rbuf,_sbuf));
-       memcpy(_rbuf, _sbuf, _buflen);
+      TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::start() _rbuf %p,_sbuf %p,_buflen %d\n", this,_rbuf,_sbuf,_buflen));
+      memcpy(_rbuf + _myindex * _buflen, _sbuf, _buflen);
+    }
+  else
+    {
+      TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::start()_rbuf %p,_disps %p, _sbuf %p, _rcvcounts %p\n", this,_rbuf,_disps,_sbuf, _rcvcounts));
+      TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::start()_rbuf %p,_disps[%zu] %zu, _rbuf + _disps[_myindex] %p, _sbuf %p, _rcvcounts[_myindex] %zu\n", this,_rbuf,(size_t)_myindex, (size_t)_disps[_myindex], _rbuf + _disps[_myindex], _sbuf, (size_t)_rcvcounts[_myindex]));
+      memcpy(_rbuf + _disps[_myindex], _sbuf, _rcvcounts[_myindex]);
     }
 
   sendNext ();
