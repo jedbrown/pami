@@ -20,6 +20,7 @@ APPS            = barrier.${EXTENSION} barrier_subcomm.${EXTENSION} \
 		reduce.${EXTENSION} reduce_subcomm.${EXTENSION} \
 		allgather.${EXTENSION} \
 		allgatherv.${EXTENSION} \
+		allgatherv_int.${EXTENSION} \
 		gather.${EXTENSION} \
 		gatherv.${EXTENSION} \
 		gatherv_int.${EXTENSION} \

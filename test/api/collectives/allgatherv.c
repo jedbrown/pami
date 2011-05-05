@@ -5,6 +5,30 @@
 #include "../pami_util.h"
 
 #define BUFSIZE 524288
+#define CHECK_DATA
+
+void initialize_sndbuf (void *sbuf, int bytes, pami_task_t task)
+{
+  unsigned char c = 0xFF & task;
+  memset(sbuf,c,bytes);
+}
+
+int check_rcvbuf (void *rbuf, int bytes, size_t ntasks)
+{
+  int i,j;
+  unsigned char *cbuf = (unsigned char *)  rbuf;
+  for (j=0; j<ntasks; j++)
+  {
+    unsigned char c = 0xFF & j;
+    for (i=j*bytes; i<(j+1)*bytes; i++)
+      if (cbuf[i] != c)
+      {
+        fprintf(stderr, "Check(%d) failed <%p>rbuf[%d]=%.2u != %.2u \n", bytes, cbuf,i,cbuf[i], c);
+        return 1;
+      }
+  }
+  return 0;
+}
 
 int main (int argc, char ** argv)
 {
@@ -31,6 +55,7 @@ int main (int argc, char ** argv)
   pami_algorithm_t    *allgatherv_must_query_algo = NULL;
   pami_metadata_t     *allgatherv_must_query_md = NULL;
   pami_xfer_type_t     allgatherv_xfer = PAMI_XFER_ALLGATHERV;
+  
   volatile unsigned    allgatherv_poll_flag = 0;
 
   double               ti, tf, usec;
@@ -128,7 +153,7 @@ int main (int argc, char ** argv)
         allgatherv.cmd.xfer_allgatherv.rcvbuf     = rbuf;
         allgatherv.cmd.xfer_allgatherv.rtype      = PAMI_TYPE_BYTE;
         allgatherv.cmd.xfer_allgatherv.rtypecounts = lengths;
-        allgatherv.cmd.xfer_allgatherv.rdispls    = displs;
+        allgatherv.cmd.xfer_allgatherv.rdispls     = displs;
 
         unsigned i, j, k;
 
@@ -138,13 +163,16 @@ int main (int argc, char ** argv)
             unsigned  niter    = 100;
 
             for (k = 0; k < num_tasks; k++)lengths[k] = i;
-
-            for (k = 0; k < num_tasks; k++)displs[k]  = 0;
+            for (k = 0; k < num_tasks; k++)displs[k]  = k*i;
 
             allgatherv.cmd.xfer_allgatherv.stypecount       = i;
+#ifdef CHECK_DATA
+            initialize_sndbuf (buf, i, task_id);
+            memset(rbuf, 0xFF, i);
+#endif
+
             blocking_coll(context, &barrier, &bar_poll_flag);
             ti = timer();
-
             for (j = 0; j < niter; j++)
               {
                 blocking_coll(context, &allgatherv, &allgatherv_poll_flag);
@@ -152,6 +180,9 @@ int main (int argc, char ** argv)
 
             tf = timer();
             blocking_coll(context, &barrier, &bar_poll_flag);
+#ifdef CHECK_DATA
+            rc |= check_rcvbuf (rbuf, i, num_tasks);
+#endif
             usec = (tf - ti) / (double)niter;
 
             if (task_id == 0)

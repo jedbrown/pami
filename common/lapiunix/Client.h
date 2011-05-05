@@ -546,9 +546,7 @@ namespace PAMI
             // Start the Allreduce
             TRACE((stderr, "%p Starting Allreduce\n", cookie));
             Context             *ctxt = (Context*) context;
-            ctxt->plock();
             classroute->startAllreduce(_allreduce_done, classroute);
-            ctxt->punlock();
             classroute->_started = true;
           }
           if(classroute->_done == true)
