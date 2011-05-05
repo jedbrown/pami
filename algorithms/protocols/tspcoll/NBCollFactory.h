@@ -66,15 +66,6 @@ TSPColl::NBCollFactory<T_NI>::create (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int
         new (b) Barrier<T_NI> (comm, tag, instID, 0);
         return b;
       }
-      case BarrierUETag:
-      {
-        NBColl<T_NI> * b;
-	prc = __global.heap_mm->memalign((void **)&b, 0, sizeof(BarrierUE<T_NI>));
-        PAMI_assertf(prc == PAMI_SUCCESS, "alloc of NBColl<T_NI> BarrierUE<T_NI> failed");
-        memset (b, 0, sizeof(BarrierUE<T_NI>));
-        new (b) BarrierUE<T_NI> (comm, tag, instID, 0);
-        return b;
-      }
       case AllgatherTag:
       {
         NBColl<T_NI> * b;

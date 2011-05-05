@@ -70,7 +70,6 @@ namespace PAMI
   namespace CollRegistration
   {
     static const char BarrierString[]        = "I1:Barrier:P2P:P2P";
-    static const char BarrierUEString[]      = "I1:UEBarrier:P2P:P2P";
     static const char AllgatherString[]      = "I1:Allgather:P2P:P2P";
     static const char AllgathervString[]     = "I1:Allgatherv:P2P:P2P";
     static const char ScatterString[]        = "I1:Scatter:P2P:P2P";
@@ -99,7 +98,6 @@ namespace PAMI
                               T_Geometry>
       {
         typedef PGBarrierExec<T_Geometry,TSPColl::Barrier<T_NI>, T_NI, T_Device_P2P> BarExec;
-        typedef PGBarrierExec<T_Geometry,TSPColl::BarrierUE<T_NI>, T_NI, T_Device_P2P> BarUEExec;
         typedef PGAllgatherExec<T_Geometry,TSPColl::Allgather<T_NI>, T_NI, T_Device_P2P> AllgatherExec;
         typedef PGAllgathervExec<T_Geometry,TSPColl::Allgatherv<T_NI>, T_NI, T_Device_P2P> AllgathervExec;
         typedef PGScatterExec<T_Geometry,TSPColl::Scatter<T_NI>, T_NI, T_Device_P2P,TSPColl::Barrier<T_NI> > ScatterExec;
@@ -109,7 +107,6 @@ namespace PAMI
         typedef PGBroadcastExec<T_Geometry,TSPColl::BinomBcast<T_NI>, T_NI, T_Device_P2P> BroadcastExec;
 
         typedef PGFactory<TSPColl::Barrier<T_NI>,T_NI,T_Device_P2P,BarExec> BarrierFactory;
-        typedef PGFactory<TSPColl::BarrierUE<T_NI>,T_NI,T_Device_P2P,BarUEExec> BarrierUEFactory;
         typedef PGFactory<TSPColl::Allgather<T_NI>,T_NI,T_Device_P2P,AllgatherExec>  AllgatherFactory;
         typedef PGFactory<TSPColl::Allgatherv<T_NI>,T_NI,T_Device_P2P,AllgathervExec> AllgathervFactory;
         typedef PGFactory<TSPColl::Scatter<T_NI>,T_NI,T_Device_P2P,ScatterExec, TSPColl::Barrier<T_NI> > ScatterFactory;
@@ -121,7 +118,6 @@ namespace PAMI
         typedef union Factories
         {
           char barrier_blob[sizeof(BarrierFactory)];
-          char barrier_ue_blob[sizeof(BarrierUEFactory)];
           char allgather_blob[sizeof(AllgatherFactory)];
           char allgatherv_blob[sizeof(AllgathervFactory)];
           char scatter_blob[sizeof(ScatterFactory)];
@@ -174,8 +170,7 @@ namespace PAMI
         _scatterv_b(NULL),
         _allreduce(NULL),
         _shortallreduce(NULL),
-        _barrier(NULL),
-        _barrier_ue(NULL)
+        _barrier(NULL)
           {
             pami_result_t       result   = PAMI_SUCCESS;
 
@@ -189,7 +184,6 @@ namespace PAMI
             SETUPNI_P2P(_allreduce);
             SETUPNI_P2P(_shortallreduce);
             SETUPNI_P2P(_barrier);
-            SETUPNI_P2P(_barrier_ue);
             
             _mgr.initialize();
             _mgr.multisend_reg(TSPColl::BcastTag,          _bcast);
@@ -202,7 +196,6 @@ namespace PAMI
             _mgr.multisend_reg(TSPColl::LongAllreduceTag,  _allreduce);
             _mgr.multisend_reg(TSPColl::ShortAllreduceTag, _shortallreduce);
             _mgr.multisend_reg(TSPColl::BarrierTag,        _barrier);
-            _mgr.multisend_reg(TSPColl::BarrierUETag,      _barrier_ue);
           }
 
       /// \brief The two device (p2p+shmem) pgas constructor with a bool flag to enable it.
@@ -244,8 +237,7 @@ namespace PAMI
         _scatterv_b(NULL),
         _allreduce(NULL),
         _shortallreduce(NULL),
-        _barrier(NULL),
-        _barrier_ue(NULL)
+        _barrier(NULL)
           {
             pami_result_t       result   = PAMI_SUCCESS;
 
@@ -261,7 +253,6 @@ namespace PAMI
                 SETUPNI_P2P_SHMEM(_allreduce);
                 SETUPNI_P2P_SHMEM(_shortallreduce);
                 SETUPNI_P2P_SHMEM(_barrier);
-                SETUPNI_P2P_SHMEM(_barrier_ue);
               }
             else
               {
@@ -275,7 +266,6 @@ namespace PAMI
                 SETUPNI_P2P_P2P(_allreduce);
                 SETUPNI_P2P_P2P(_shortallreduce);
                 SETUPNI_P2P_P2P(_barrier);
-                SETUPNI_P2P_P2P(_barrier_ue);
               }
             
             _mgr.initialize();
@@ -289,7 +279,6 @@ namespace PAMI
             _mgr.multisend_reg(TSPColl::LongAllreduceTag,  _allreduce);
             _mgr.multisend_reg(TSPColl::ShortAllreduceTag, _shortallreduce);
             _mgr.multisend_reg(TSPColl::BarrierTag,        _barrier);
-            _mgr.multisend_reg(TSPColl::BarrierUETag,      _barrier_ue);
           }
 
       inline pami_result_t analyze_impl(size_t context_id,T_Geometry *geometry, int phase)
@@ -297,7 +286,6 @@ namespace PAMI
     if (phase != 0) return PAMI_SUCCESS;
 
           _nb_barrier    = (TSPColl::Barrier<T_NI>*)_mgr.allocate (geometry, TSPColl::BarrierTag, geometry->comm());
-          _nb_ue_barrier = (TSPColl::BarrierUE<T_NI>*)_mgr.allocate (geometry, TSPColl::BarrierUETag, geometry->comm());
           _nb_allgather  = (TSPColl::Allgather<T_NI>*)_mgr.allocate (geometry, TSPColl::AllgatherTag, geometry->comm());
           _nb_allgatherv = (TSPColl::Allgatherv<T_NI>*)_mgr.allocate (geometry, TSPColl::AllgathervTag, geometry->comm());
           _nb_bcast      = (TSPColl::BinomBcast<T_NI>*)_mgr.allocate (geometry, TSPColl::BcastTag, geometry->comm());
@@ -307,7 +295,6 @@ namespace PAMI
           _nb_sctv       = (TSPColl::Scatterv<T_NI>*)_mgr.allocate (geometry, TSPColl::ScattervTag, geometry->comm());
           // todo:  free these on geometry destroy, maybe use KVS
           BarrierFactory        *_barrier_reg        = (BarrierFactory*)_allocator.allocateObject();
-          BarrierUEFactory      *_barrier_ue_reg     = (BarrierUEFactory*)_allocator.allocateObject();
           AllgatherFactory      *_allgather_reg      = (AllgatherFactory*)_allocator.allocateObject();
           AllgathervFactory     *_allgatherv_reg     = (AllgathervFactory*)_allocator.allocateObject();
           ScatterFactory        *_scatter_reg        = (ScatterFactory*)_allocator.allocateObject();
@@ -317,7 +304,6 @@ namespace PAMI
           BroadcastFactory      *_broadcast_reg      = (BroadcastFactory*)_allocator.allocateObject();
 
           new(_barrier_reg)        BarrierFactory(&_dev_p2p, _barrier, _nb_barrier, BarrierString);
-          new(_barrier_ue_reg)     BarrierUEFactory(&_dev_p2p, _barrier_ue, _nb_ue_barrier, BarrierUEString);
           new(_allgather_reg)      AllgatherFactory(&_dev_p2p, _allgather, _nb_allgather, AllgatherString);
           new(_allgatherv_reg)     AllgathervFactory(&_dev_p2p, _allgatherv, _nb_allgatherv, AllgathervString);
           new(_scatter_reg)        ScatterFactory(&_dev_p2p, _scatter_s, _nb_sct, ScatterString, _nb_barrier, _scatter_b);
@@ -329,9 +315,6 @@ namespace PAMI
 
           geometry->addCollective(PAMI_XFER_BARRIER,
                                   (CCMI::Adaptor::CollectiveProtocolFactory*)_barrier_reg,
-                                  _context_id);
-          geometry->addCollective(PAMI_XFER_BARRIER,
-                                  (CCMI::Adaptor::CollectiveProtocolFactory*)_barrier_ue_reg,
                                   _context_id);
 
           geometry->addCollective(PAMI_XFER_ALLGATHER,
@@ -361,8 +344,6 @@ namespace PAMI
           geometry->addCollective(PAMI_XFER_BROADCAST,
                                   (CCMI::Adaptor::CollectiveProtocolFactory*)_broadcast_reg,
                                   _context_id);
-
-          geometry->setUEBarrier(_barrier_ue_reg);
 
           return PAMI_SUCCESS;
         }
@@ -412,12 +393,9 @@ namespace PAMI
       T_NI                   *_allreduce;
       T_NI                   *_shortallreduce;
       T_NI                   *_barrier;
-      T_NI                   *_barrier_ue;
-
 
       PAMI::MemoryAllocator<sizeof(Factories),16,16>  _allocator;
       TSPColl::Barrier<T_NI>                  *_nb_barrier;
-      TSPColl::BarrierUE<T_NI>                *_nb_ue_barrier;
       TSPColl::Allgather<T_NI>                *_nb_allgather;
       TSPColl::Allgatherv<T_NI>               *_nb_allgatherv;
       TSPColl::BinomBcast<T_NI>               *_nb_bcast;

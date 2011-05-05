@@ -43,27 +43,7 @@ namespace TSPColl
     private:
       char _dummy;
   };
-
-
-  template <class T_NI>
-  class BarrierUE: public Barrier<T_NI>
-  {
-    public:
-      void * operator new (size_t, void * addr)    { return addr; }
-      BarrierUE (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset):
-          Barrier<T_NI>(comm, tag, instID, offset) {}
-      void reset () { CollExchange<T_NI>::reset(); }
-      static void   amsend_reg       (T_NI *p2p_iface, void *cd);
-    private:
-      char _dummy;
-  };
 };
-
-template <class T_NI>
-inline void TSPColl::BarrierUE<T_NI>::amsend_reg  (T_NI *p2p_iface, void* cd)
-{
-  p2p_iface->setSendDispatch(CollExchange<T_NI>::cb_incoming_ue, cd);
-}
 
 
 /* *********************************************************************** */

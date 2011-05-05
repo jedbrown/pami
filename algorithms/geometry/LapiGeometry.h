@@ -762,11 +762,8 @@ namespace PAMI
 
       void setUEBarrier_impl(CCMI::Adaptor::CollectiveProtocolFactory *f)
         {
-          if(_ue_barrier._factory == (CCMI::Adaptor::CollectiveProtocolFactory*)NULL)
-          {
-            _ue_barrier._factory  =f;
-            _ue_barrier._geometry =this;
-          }
+          _ue_barrier._factory  =f;
+          _ue_barrier._geometry =this;
         }
 
         pami_client_t getClient_impl()

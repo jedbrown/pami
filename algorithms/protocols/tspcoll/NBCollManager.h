@@ -88,12 +88,6 @@ namespace TSPColl
           TSPColl::Barrier<T_NI>::amsend_reg(p2p_iface, this);
           break;
         }
-        case BarrierUETag:
-        {
-          TSPColl::BarrierUE<T_NI>::amsend_reg(p2p_iface, this);
-          break;
-        }
-
         case AllgatherTag:
         {
           TSPColl::Allgather<T_NI>::amsend_reg(p2p_iface, this);

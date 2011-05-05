@@ -661,6 +661,9 @@ namespace PAMI
                                                         pami_event_function     fn,
                                                         void                  * cookie)
       {
+        PAMI::Context * ctxt = (PAMI::Context*) context;
+        ctxt->plock();
+
         LAPIGeometry              *new_geometry = NULL;
         uint64_t                  *to_reduce;
         uint                      to_reduce_count;
@@ -717,7 +720,6 @@ namespace PAMI
         // of the classroute.  When the classroute has been allocated,
         // The "done" event is delivered to the user.
         LAPIGeometry      *bargeom = (LAPIGeometry*)parent;
-        PAMI::Context    *ctxt    = (PAMI::Context *)context;
         if(new_geometry)
           {
             pami_algorithm_t  alg;
@@ -754,9 +756,11 @@ namespace PAMI
             else
               {
                 // Null parent and null new geometry?  Why are you here?
+                ctxt->punlock();
                 return PAMI_INVAL;
               }
           }
+        ctxt->punlock();
         return PAMI_SUCCESS;
       }
 
@@ -787,6 +791,8 @@ namespace PAMI
                                                        pami_event_function     fn,
                                                        void                  * cookie)
       {
+        PAMI::Context    *ctxt    = (PAMI::Context *)context;
+        ctxt->plock();
         // todo:  implement this routine
         LAPIGeometry              *new_geometry = NULL;
         uint64_t                  *to_reduce;
@@ -843,8 +849,6 @@ namespace PAMI
         // of the classroute.  When the classroute has been allocated,
         // The "done" event is delivered to the user.
         LAPIGeometry      *bargeom = (LAPIGeometry*)parent;
-        PAMI::Context    *ctxt    = (PAMI::Context *)context;
-
         if(new_geometry)
           {
             pami_algorithm_t  alg;
@@ -884,9 +888,11 @@ namespace PAMI
             else
               {
                 // Null parent and null new geometry?  Why are you here?
+                ctxt->punlock();
                 return PAMI_INVAL;
               }
           }
+        ctxt->punlock();
         return PAMI_SUCCESS;
       }
 
