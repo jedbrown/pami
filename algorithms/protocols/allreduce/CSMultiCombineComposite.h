@@ -42,29 +42,30 @@ namespace CCMI
 
             _native = (Interfaces::NativeInterface  *)_geometry->getKey(PAMI::Geometry::GKEY_GEOMETRYCSNI);
 
-            /// \todo only supporting PAMI_TYPE_BYTE right now
-            PAMI_assertf((cmd->cmd.xfer_reduce.stype == PAMI_TYPE_BYTE) && (cmd->cmd.xfer_reduce.rtype == PAMI_TYPE_BYTE), "Not PAMI_TYPE_BYTE? %#zX %#zX\n", (size_t)cmd->cmd.xfer_reduce.stype, (size_t)cmd->cmd.xfer_reduce.rtype);
+            PAMI::Type::TypeCode * type_obj = (PAMI::Type::TypeCode *)cmd->cmd.xfer_reduce.stype;
 
-            // PAMI_Type_sizeof(cmd->cmd.xfer_reduce.stype); /// \todo PAMI_Type_sizeof() is PAMI_UNIMPL so use getReduceFunction for now?
+            /// \todo Support non-contiguous
+            assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
 
-            unsigned        sizeOfType;
-            coremath        func;
+            unsigned        sizeOfType = type_obj->GetAtomSize();
 
-            getReduceFunction(cmd->cmd.xfer_reduce.dt,
-                              cmd->cmd.xfer_reduce.op,
-                              cmd->cmd.xfer_reduce.stypecount,// this parm is unused
-                              sizeOfType,
-                              func );
-            size_t size = cmd->cmd.xfer_reduce.stypecount * 1; /// \todo presumed size of PAMI_TYPE_BYTE is 1?
+            size_t size = cmd->cmd.xfer_reduce.stypecount * sizeOfType;
             _srcPwq.configure(cmd->cmd.xfer_reduce.sndbuf, size, size);
             _srcPwq.reset();
 
             if (cmd->cmd.xfer_reduce.root == __global.mapping.task())
-              {
-                size = cmd->cmd.xfer_reduce.rtypecount * 1; /// \todo presumed size of PAMI_TYPE_BYTE is 1?
-                _dstPwq.configure(cmd->cmd.xfer_reduce.rcvbuf, size, 0);
-                _dstPwq.reset();
-              }
+            {
+              PAMI::Type::TypeCode * type_obj = (PAMI::Type::TypeCode *)cmd->cmd.xfer_reduce.stype;
+
+              /// \todo Support non-contiguous
+              assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
+
+              sizeOfType = type_obj->GetAtomSize();
+
+              size = cmd->cmd.xfer_reduce.rtypecount * sizeOfType;
+              _dstPwq.configure(cmd->cmd.xfer_reduce.rcvbuf, size, 0);
+              _dstPwq.reset();
+            }
 
             DO_DEBUG(PAMI::Topology all);
             DO_DEBUG(all = *(PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));

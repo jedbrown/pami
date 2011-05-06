@@ -86,7 +86,14 @@ namespace CCMI
             _srcPwq.configure(cmd->cmd.xfer_allreduce.sndbuf, size, size);
             _srcPwq.reset();
 
-            size = cmd->cmd.xfer_allreduce.rtypecount * 1; /// \todo presumed size of PAMI_TYPE_BYTE is 1?
+            type_obj = (PAMI::Type::TypeCode *)cmd->cmd.xfer_allreduce.rtype;
+
+            /// \todo Support non-contiguous
+            assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
+
+            sizeOfType = type_obj->GetAtomSize();
+
+            size = cmd->cmd.xfer_allreduce.rtypecount * sizeOfType;
             _dstPwq.configure(cmd->cmd.xfer_allreduce.rcvbuf, size, 0);
             _dstPwq.reset();
 
@@ -1043,17 +1050,12 @@ namespace CCMI
 
             PAMI_assert(_topology_lm.index2Rank(0) != (unsigned) - 1); // no local master?
 
-            /// \todo only supporting PAMI_TYPE_BYTE right now
-            PAMI_assertf((cmd->cmd.xfer_allreduce.stype == PAMI_TYPE_BYTE) && (cmd->cmd.xfer_allreduce.rtype == PAMI_TYPE_BYTE), "Not PAMI_TYPE_BYTE? %#zX %#zX\n", (size_t)cmd->cmd.xfer_allreduce.stype, (size_t)cmd->cmd.xfer_allreduce.rtype);
+            PAMI::Type::TypeCode * type_obj = (PAMI::Type::TypeCode *)cmd->cmd.xfer_allreduce.stype;
 
-            //            PAMI_Type_sizeof(cmd->cmd.xfer_allreduce.stype); /// \todo PAMI_Type_sizeof() is PAMI_UNIMPL so use getReduceFunction for now?
+            /// \todo Support non-contiguous
+            assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
 
-            unsigned        sizeOfType;
-            coremath        func;
-            getReduceFunction((pami_dt)dt,
-                              (pami_op)op,
-                              sizeOfType,
-                              func );
+            unsigned        sizeOfType = type_obj->GetAtomSize();
 
             _bytes                       = cmd->cmd.xfer_allreduce.stypecount * sizeOfType;
             size_t countDt = cmd->cmd.xfer_allreduce.stypecount;
@@ -1077,6 +1079,15 @@ namespace CCMI
                          this, _pwq_src.bufferToConsume(),
                            _pwq_src.bytesAvailableToConsume(), _pwq_src.bytesAvailableToProduce());
             DO_DEBUG(dumpDbuf((double*)_pwq_src.bufferToConsume() , _pwq_src.bytesAvailableToConsume() / sizeof(double)));
+
+            type_obj = (PAMI::Type::TypeCode *)cmd->cmd.xfer_allreduce.rtype;
+
+            /// \todo Support non-contiguous
+            assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
+
+            sizeOfType = type_obj->GetAtomSize();
+
+            PAMI_assert(_bytes <= cmd->cmd.xfer_allreduce.rtypecount * sizeOfType);
 
             _pwq_dst.configure(
                                cmd->cmd.xfer_allreduce.rcvbuf,  // buffer

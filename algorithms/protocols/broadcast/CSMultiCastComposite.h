@@ -41,23 +41,14 @@ namespace CCMI
 
             _native = (Interfaces::NativeInterface *)_geometry->getKey(PAMI::Geometry::GKEY_GEOMETRYCSNI);
 
-            /// \todo only supporting PAMI_TYPE_BYTE right now
-            PAMI_assertf(cmd->cmd.xfer_broadcast.type == PAMI_TYPE_BYTE, "Not PAMI_TYPE_BYTE? %#zX\n", (size_t)cmd->cmd.xfer_broadcast.type);
+            PAMI::Type::TypeCode * type_obj = (PAMI::Type::TypeCode *)cmd->cmd.xfer_broadcast.stype;
 
-            // PAMI_Type_sizeof(cmd->cmd.xfer_broadcast.type); /// \todo PAMI_Type_sizeof() is PAMI_UNIMPL so use getReduceFunction for now?
+            /// \todo Support non-contiguous
+            assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
 
-//        unsigned        sizeOfType;
-//        coremath        func;
-//        pami_op         bogusOp = PAMI_NOOP;
-//
-//        getReduceFunction(PAMI_UNSIGNED_CHAR, //cmd->cmd.xfer_broadcast.type,/// \todo pami_type_t is not == pami_dt so this doesn't work either
-//                          bogusOp,
-//                          cmd->cmd.xfer_broadcast.typecount,
-//                          sizeOfType,
-//                          func );
-//        size_t bytes = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
+            unsigned        sizeOfType = type_obj->GetAtomSize();
 
-            size_t bytes = cmd->cmd.xfer_broadcast.typecount * 1; /// \todo presumed size of PAMI_TYPE_BYTE?
+            unsigned bytes = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
 
             if (cmd->cmd.xfer_broadcast.root == __global.mapping.task())
               {

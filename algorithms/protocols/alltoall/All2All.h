@@ -62,11 +62,7 @@ public:
         _donecount = 0;
 
         /// \todo only supporting PAMI_TYPE_BYTE right now
-        //PAMI_Type_sizeof(coll->cmd.xfer_alltoall.stype);
         PAMI_assert(coll->cmd.xfer_alltoall.stype == PAMI_TYPE_BYTE);
-
-        /// \todo presumed size of PAMI_TYPE_BYTE?
-        //size_t bytes = topo_size * coll->cmd.xfer_alltoall.stypecount * 1;
 
         pami_result_t rc;
         rc = __global.heap_mm->memalign(&_initbuf, 0, 2 * sizeof(size_t) * topo_size);

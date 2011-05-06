@@ -58,46 +58,45 @@ namespace PAMI
     template <unsigned T_Send_Alignment_Required, unsigned T_Send_Alignment, unsigned T_Recv_Alignment_Required, unsigned T_Recv_Alignment, pami_metadata_function T_Function>
     inline metadata_result_t align_metadata_function(struct pami_xfer_t *in)
     {
-        metadata_result_t result = T_Function(in);
-        uint64_t  mask;
-        if(T_Send_Alignment_Required)
-        {
-          mask  = T_Send_Alignment - 1; 
-          result.check.align_send_buffer      |= (((uint64_t)in->cmd.xfer_allreduce.sndbuf & (uint64_t)mask) == 0) ? 0:1;
-        }
-        if(T_Recv_Alignment_Required)
-        {
-          mask  = T_Recv_Alignment - 1; 
-          result.check.align_recv_buffer      |= (((uint64_t)in->cmd.xfer_allreduce.rcvbuf & (uint64_t)mask) == 0) ? 0:1;
-        }
-        result.check.nonlocal = 1; // because of alignment, this is a non-local result.
-        return result;
+      metadata_result_t result = T_Function(in);
+      uint64_t  mask;
+      if (T_Send_Alignment_Required)
+      {
+        mask  = T_Send_Alignment - 1; 
+        result.check.align_send_buffer      |= (((uint64_t)in->cmd.xfer_allreduce.sndbuf & (uint64_t)mask) == 0) ? 0:1;
+      }
+      if (T_Recv_Alignment_Required)
+      {
+        mask  = T_Recv_Alignment - 1; 
+        result.check.align_recv_buffer      |= (((uint64_t)in->cmd.xfer_allreduce.rcvbuf & (uint64_t)mask) == 0) ? 0:1;
+      }
+      result.check.nonlocal = 1; // because of alignment, this is a non-local result.
+      return result;
     }
 
     // The protocol supports a limited T_Range_Low->T_Range_High.  Call some other T_Function (maybe check dt/op?), then check the range.
     template <size_t T_Range_Low,size_t T_Range_High, pami_metadata_function T_Function>
     inline metadata_result_t range_metadata_function(struct pami_xfer_t *in)
     {
-        metadata_result_t result = T_Function(in);
+      metadata_result_t result = T_Function(in);
 
-        PAMI::Type::TypeCode * type_obj = (PAMI::Type::TypeCode *)in->cmd.xfer_allreduce.stype;
+      PAMI::Type::TypeCode * type_obj = (PAMI::Type::TypeCode *)in->cmd.xfer_allreduce.stype;
 
-        /// \todo Support non-contiguous
-        assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
+      /// \todo Support non-contiguous
+      assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
 
-        size_t dataSent = type_obj->GetAtomSize() * in->cmd.xfer_allreduce.stypecount;
-        result.check.range   |= !((dataSent <= T_Range_High) && (dataSent >= T_Range_Low));
+      size_t dataSent = type_obj->GetAtomSize() * in->cmd.xfer_allreduce.stypecount;
+      result.check.range   |= !((dataSent <= T_Range_High) && (dataSent >= T_Range_Low));
+      // Is checking rtype really necessary? Eh, why not..
+      type_obj = (PAMI::Type::TypeCode *)in->cmd.xfer_allreduce.rtype;
 
-        // Is checking rtype really necessary? Eh, why not..
-        type_obj = (PAMI::Type::TypeCode *)in->cmd.xfer_allreduce.rtype;
+      /// \todo Support non-contiguous
+      assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
 
-        /// \todo Support non-contiguous
-        assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
+      dataSent = type_obj->GetAtomSize() * in->cmd.xfer_allreduce.rtypecount;
+      result.check.range   |= !((dataSent <= T_Range_High) && (dataSent >= T_Range_Low));
 
-        dataSent = type_obj->GetAtomSize() * in->cmd.xfer_allreduce.rtypecount;
-        result.check.range   |= !((dataSent <= T_Range_High) && (dataSent >= T_Range_Low));
-
-        return result;
+      return result;
     }
 
     // The protocol only supports some dt/op's.  
@@ -108,39 +107,42 @@ namespace PAMI
       {
         const bool support[PAMI_DT_COUNT][PAMI_OP_COUNT] =
         {
-       //  PAMI_COPY,    PAMI_NOOP,  PAMI_MAX, PAMI_MIN, PAMI_SUM, PAMI_PROD, PAMI_LAND, PAMI_LOR, PAMI_LXOR, PAMI_BAND, PAMI_BOR, PAMI_BXOR, PAMI_MAXLOC, PAMI_MINLOC,
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false    },//  PAMI_BYTE
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false    },//  PAMI_SIGNED_CHAR
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false    },//  PAMI_SIGNED_SHORT
-          {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false    },//  PAMI_SIGNED_INT
-          {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false    },//  PAMI_SIGNED_LONG
-          {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false    },//  PAMI_SIGNED_LONG_LONG
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false    },//  PAMI_UNSIGNED_CHAR
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false    },//  PAMI_UNSIGNED_SHORT
-          {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false    },//  PAMI_UNSIGNED_INT
-          {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false    },//  PAMI_UNSIGNED_LONG
-          {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false    },//  PAMI_UNSIGNED_LONG_LONG
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false    },//  PAMI_FLOAT
-          {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false    },//  PAMI_DOUBLE
-          {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false    },//  PAMI_LONG_DOUBLE
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false    },//  PAMI_LOGICAL
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false    },//  PAMI_SINGLE_COMPLEX
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false    },//  PAMI_DOUBLE_COMPLEX
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false    },//  PAMI_LOC_2INT
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false    },//  PAMI_LOC_2FLOAT
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false    },//  PAMI_LOC_2DOUBLE
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false    },//  PAMI_LOC_SHORT_INT
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false    },//  PAMI_LOC_FLOAT_INT
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false    } //  PAMI_LOC_DOUBLE_INT
+          //  PAMI_COPY,    PAMI_NOOP,  PAMI_MAX, PAMI_MIN, PAMI_SUM, PAMI_PROD, PAMI_LAND, PAMI_LOR, PAMI_LXOR, PAMI_BAND, PAMI_BOR, PAMI_BXOR, PAMI_MAXLOC, PAMI_MINLOC,                              
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_BYTE                                     
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_SIGNED_CHAR       
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_SIGNED_SHORT      
+          {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false},//  PAMI_SIGNED_INT        
+          {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false},//  PAMI_SIGNED_LONG       
+          {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false},//  PAMI_SIGNED_LONG_LONG  
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_UNSIGNED_CHAR                             
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_UNSIGNED_SHORT     
+          {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false},//  PAMI_UNSIGNED_INT       
+          {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false},//  PAMI_UNSIGNED_LONG      
+          {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false},//  PAMI_UNSIGNED_LONG_LONG 
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_FLOAT      
+          {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false},//  PAMI_DOUBLE                            
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_LONG_DOUBLE       
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_LOGICAL                  
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_SINGLE_COMPLEX       
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_DOUBLE_COMPLEX                       
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_LOC_2INT       
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_LOC_2FLOAT                            
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_LOC_2DOUBLE        
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_LOC_SHORT_INT      
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_LOC_FLOAT_INT     
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false} //  PAMI_LOC_DOUBLE_INT    
         };
-        TRACE((stderr, "MU::op_dt_metadata_function(dt %d,op %d) = %s\n", dt, op, support[dt][op] ? "true" : "false"));
         metadata_result_t result = {0};
         uintptr_t op;
         uintptr_t dt;
+        if(((uintptr_t)in->cmd.xfer_allreduce.stype >= PAMI::Type::TypeCode::PRIMITIVE_TYPE_COUNT) || ((uintptr_t)in->cmd.xfer_allreduce.op >= PAMI::Type::TypeFunc::PRIMITIVE_FUNC_COUNT))
+          result.check.datatype_op = 1; // No user-defined dt/op's
+
         PAMI::Type::TypeFunc::GetEnums(in->cmd.xfer_allreduce.stype,
                                        in->cmd.xfer_allreduce.op,
                                        dt,
                                        op);
+        TRACE((stderr, "MU::op_dt_metadata_function(dt %p/%d,op %p/%d) = %s\n", in->cmd.xfer_allreduce.stype,(pami_dt)dt, in->cmd.xfer_allreduce.op,(pami_op)op, support[dt][op] ? "true" : "false"));
         result.check.datatype_op = support[dt][op]?0:1;
         return(result);
       }
@@ -155,14 +157,19 @@ namespace PAMI
         metadata_result_t result = {0};
         uintptr_t op;
         uintptr_t dt;
+        if(((uintptr_t)in->cmd.xfer_allreduce.stype >= PAMI::Type::TypeCode::PRIMITIVE_TYPE_COUNT) || ((uintptr_t)in->cmd.xfer_allreduce.op >= PAMI::Type::TypeFunc::PRIMITIVE_FUNC_COUNT))
+          result.check.datatype_op = 1; // No user-defined dt/op's
+
         PAMI::Type::TypeFunc::GetEnums(in->cmd.xfer_allreduce.stype,
                                        in->cmd.xfer_allreduce.op,
                                        dt,
                                        op);
-        result.check.datatype_op = ((dt == PAMI_DOUBLE) &&
-                                    ((op == PAMI_MIN) ||
-                                     (op == PAMI_MAX) ||
-                                     (op == PAMI_SUM))) ?0:1;
+        pami_dt pdt = (pami_dt) dt;
+        pami_op pop = (pami_op) op;
+        result.check.datatype_op = ((pdt == PAMI_DOUBLE) && 
+                                    ((pop == PAMI_MIN) ||
+                                     (pop == PAMI_MAX) ||
+                                     (pop == PAMI_SUM))) ?0:1;
         return(result);
       }
     }
@@ -586,9 +593,9 @@ namespace PAMI
     // Rectangle broadcast
     //----------------------------------------------------------------------------
     extern inline void get_colors (PAMI::Topology             * t,
-                     unsigned                    bytes,
-                     unsigned                  * colors,
-                     unsigned                  & ncolors)
+                                   unsigned                    bytes,
+                                   unsigned                  * colors,
+                                   unsigned                  & ncolors)
     {
       TRACE_INIT((stderr, "get_colors\n"));
       ncolors = 1;
@@ -596,9 +603,9 @@ namespace PAMI
     }
 
     extern inline void get_rect_colors (PAMI::Topology             * t,
-                          unsigned                    bytes,
-                          unsigned                  * colors,
-                          unsigned                  & ncolors)
+                                        unsigned                    bytes,
+                                        unsigned                  * colors,
+                                        unsigned                  & ncolors)
     {
 
       unsigned max = 0, ideal = 0;
@@ -705,9 +712,9 @@ namespace PAMI
     }
 
     extern inline void get_rect_allgv_colors (PAMI::Topology             * t,
-                                unsigned                    bytes,
-                                unsigned                  * colors,
-                                unsigned                  & ncolors)
+                                              unsigned                    bytes,
+                                              unsigned                  * colors,
+                                              unsigned                  & ncolors)
     {
       unsigned max = 0, ideal = 0;
       unsigned _colors[10];
@@ -866,13 +873,13 @@ namespace PAMI
 
           _mu_ammulticast_ni    = new (_mu_ammulticast_ni_storage) MUAMMulticastNI (_mu_device, client, context, context_id, client_id, _dispatch_id);
 
-	  _mu_m2m_single_ni      = new (_mu_m2m_single_ni_storage) M2MNISingle (_mu_device, client, context, context_id, client_id, _dispatch_id);
+          _mu_m2m_single_ni      = new (_mu_m2m_single_ni_storage) M2MNISingle (_mu_device, client, context, context_id, client_id, _dispatch_id);
 
-	  _mu_m2m_vector_long_ni = new (_mu_m2m_vector_long_ni_storage) M2MNIVectorLong (_mu_device, client, context, context_id, client_id, _dispatch_id);
+          _mu_m2m_vector_long_ni = new (_mu_m2m_vector_long_ni_storage) M2MNIVectorLong (_mu_device, client, context, context_id, client_id, _dispatch_id);
 
-	  _mu_m2m_vector_int_ni = new (_mu_m2m_vector_int_ni_storage) M2MNIVectorInt (_mu_device, client, context, context_id, client_id, _dispatch_id);
+          _mu_m2m_vector_int_ni = new (_mu_m2m_vector_int_ni_storage) M2MNIVectorInt (_mu_device, client, context, context_id, client_id, _dispatch_id);
 
-	  
+
           if (_mu_ammulticast_ni->status() != PAMI_SUCCESS) _mu_ammulticast_ni = NULL;
 
           if (_mu_m2m_single_ni->status() != PAMI_SUCCESS)      _mu_m2m_single_ni = NULL;
@@ -902,26 +909,26 @@ namespace PAMI
             _binomial_barrier_factory->setMapIdToGeometry(mapidtogeometry);
           }
 
-	  _alltoall_factory = NULL;
-	  if (_mu_m2m_single_ni) 
-	  {
-	    _alltoall_factory = new (_alltoall_factory_storage) All2AllFactory(&_csconnmgr, _mu_m2m_single_ni);
-	    _alltoall_factory->setMapIdToGeometry(mapidtogeometry);
-	  }
+          _alltoall_factory = NULL;
+          if (_mu_m2m_single_ni)
+          {
+            _alltoall_factory = new (_alltoall_factory_storage) All2AllFactory(&_csconnmgr, _mu_m2m_single_ni);
+            _alltoall_factory->setMapIdToGeometry(mapidtogeometry);
+          }
 
-	  _alltoallv_factory = NULL;
-	  if (_mu_m2m_vector_long_ni) 
-	  {
-	    _alltoallv_factory = new (_alltoallv_factory_storage) All2AllvFactory(&_csconnmgr, _mu_m2m_vector_long_ni);
-	    _alltoallv_factory->setMapIdToGeometry(mapidtogeometry);
-	  }
+          _alltoallv_factory = NULL;
+          if (_mu_m2m_vector_long_ni)
+          {
+            _alltoallv_factory = new (_alltoallv_factory_storage) All2AllvFactory(&_csconnmgr, _mu_m2m_vector_long_ni);
+            _alltoallv_factory->setMapIdToGeometry(mapidtogeometry);
+          }
 
-	  _alltoallv_int_factory = NULL;
-	  if (_mu_m2m_vector_int_ni) 
-	  {
-	    _alltoallv_int_factory = new (_alltoallv_int_factory_storage) All2AllvFactory_int(&_csconnmgr, _mu_m2m_vector_int_ni);
-	    _alltoallv_int_factory->setMapIdToGeometry(mapidtogeometry);
-	  }
+          _alltoallv_int_factory = NULL;
+          if (_mu_m2m_vector_int_ni)
+          {
+            _alltoallv_int_factory = new (_alltoallv_int_factory_storage) All2AllvFactory_int(&_csconnmgr, _mu_m2m_vector_int_ni);
+            _alltoallv_int_factory->setMapIdToGeometry(mapidtogeometry);
+          }
 
           _mucollectivedputmulticastfactory    = new (_mucollectivedputmulticaststorage ) MUCollectiveDputMulticastFactory(&_sconnmgr, _mu_global_dput_ni);
           _mucollectivedputmulticombinefactory    = new (_mucollectivedputmulticombinestorage ) MUCollectiveDputMulticombineFactory(&_sconnmgr, _mu_global_dput_ni);        
@@ -997,9 +1004,9 @@ namespace PAMI
 
       inline pami_result_t register_local_impl (size_t context_id, T_Geometry *geometry, uint64_t *in, int &n) 
       {
-	if (_axial_mu_dput_ni == NULL)
-	  return PAMI_SUCCESS;
-	
+        if (_axial_mu_dput_ni == NULL)
+          return PAMI_SUCCESS;
+
         if ((_mu_rectangle_msync_factory && __global.topology_local.size() == 1) || 
             (_msync2d_rectangle_composite_factory && __global.topology_local.size() > 1 &&
              __global.useMU() && __global.useshmem()))
@@ -1012,8 +1019,8 @@ namespace PAMI
 
       inline pami_result_t receive_global_impl (size_t context_id, T_Geometry *geometry, uint64_t *in, int n) 
       {
-	if (_axial_mu_dput_ni == NULL)
-	  return PAMI_SUCCESS;
+        if (_axial_mu_dput_ni == NULL)
+          return PAMI_SUCCESS;
 
         PAMI_assert (n == 1);
 
@@ -1021,9 +1028,9 @@ namespace PAMI
             &&
             ((_mu_rectangle_msync_factory && __global.topology_local.size() == 1) ||
              (_msync2d_rectangle_composite_factory && __global.topology_local.size() > 1 && 
-             __global.useMU() && __global.useshmem())
-             )
+              __global.useMU() && __global.useshmem())
             )
+           )
         {
           uint64_t result = *in;
           for (size_t i = 0; i < 64; ++i)
@@ -1065,7 +1072,7 @@ namespace PAMI
             geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
                              (void*)opt_binomial);
           }
-	 
+
 
           if ((__global.useshmem())  && (__global.topology_local.size() > 1)
 #ifndef ENABLE_SHMEM_SUBNODE
@@ -1084,14 +1091,14 @@ namespace PAMI
               geometry->addCollective(PAMI_XFER_BARRIER, &_shmem_msync_factory, _context_id);
 
               // Add Broadcasts
-                geometry->addCollective(PAMI_XFER_BROADCAST, &_shmem_mcast_factory, _context_id);
+              geometry->addCollective(PAMI_XFER_BROADCAST, &_shmem_mcast_factory, _context_id);
 
               // Add Allreduces
 #ifdef ENABLE_NEW_SHMEM   // limited support - 4/8/16 processes only
               if ((__global.topology_local.size() ==  4) ||  
                   (__global.topology_local.size() ==  8) ||
                   (__global.topology_local.size() == 16))
-                  geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, &_shmem_mcomb_factory, _context_id);
+                geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, &_shmem_mcomb_factory, _context_id);
 #else
               geometry->addCollective(PAMI_XFER_ALLREDUCE, &_shmem_mcomb_factory, _context_id);
 #endif
@@ -1183,14 +1190,14 @@ namespace PAMI
             geometry->addCollectiveCheck(PAMI_XFER_BARRIER, _binomial_barrier_factory, _context_id);
 #endif
 
-	  if (_alltoall_factory)
-	    geometry->addCollective(PAMI_XFER_ALLTOALL, _alltoall_factory, _context_id);
-	  
-    if (_alltoallv_factory)
-      geometry->addCollective(PAMI_XFER_ALLTOALLV, _alltoallv_factory, _context_id);
+          if (_alltoall_factory)
+            geometry->addCollective(PAMI_XFER_ALLTOALL, _alltoall_factory, _context_id);
 
-	  if (_alltoallv_int_factory)
-	    geometry->addCollective(PAMI_XFER_ALLTOALLV_INT, _alltoallv_int_factory, _context_id);
+          if (_alltoallv_factory)
+            geometry->addCollective(PAMI_XFER_ALLTOALLV, _alltoallv_factory, _context_id);
+
+          if (_alltoallv_int_factory)
+            geometry->addCollective(PAMI_XFER_ALLTOALLV_INT, _alltoallv_int_factory, _context_id);
 
           // Check for class routes before enabling MU collective network protocols
           void *val;
@@ -1250,7 +1257,7 @@ namespace PAMI
               if ((master.type() == PAMI_COORD_TOPOLOGY) && 
                   (_msync2d_rectangle_composite_factory) && 
                   (geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID1)) // \todo PAMI_CR_GKEY_FAIL?
-                  )
+                 )
               {
                 _msync2d_rectangle_composite = _msync2d_rectangle_composite_factory->generate(geometry, &xfer);
                 geometry->addCollective(PAMI_XFER_BARRIER, _msync2d_rectangle_composite_factory, _context_id);
@@ -1285,22 +1292,22 @@ namespace PAMI
             if (local_sub_topology->size() == 1)
 #endif
 #ifndef ENABLE_SHMEM_SUBNODE
-            if (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
+              if (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
 #endif
-            {
+              {
 #ifdef ENABLE_X0_PROTOCOLS
-              if (_mcast2d_composite_factory)
-              {
-                TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register mcast 2D\n", this));
-                geometry->addCollectiveCheck(PAMI_XFER_BROADCAST, _mcast2d_composite_factory, _context_id);
-              }
+                if (_mcast2d_composite_factory)
+                {
+                  TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register mcast 2D\n", this));
+                  geometry->addCollectiveCheck(PAMI_XFER_BROADCAST, _mcast2d_composite_factory, _context_id);
+                }
 #endif
-              if (_mcast2d_dput_composite_factory)
-              {
-                TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register mcast dput 2D\n", this));
-                geometry->addCollective(PAMI_XFER_BROADCAST, _mcast2d_dput_composite_factory, _context_id);
+                if (_mcast2d_dput_composite_factory)
+                {
+                  TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register mcast dput 2D\n", this));
+                  geometry->addCollective(PAMI_XFER_BROADCAST, _mcast2d_dput_composite_factory, _context_id);
+                }
               }
-            }
           }
 
           val = geometry->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
@@ -1328,29 +1335,29 @@ namespace PAMI
                 (__global.topology_local.size() == 16))
 #endif
 #ifndef ENABLE_SHMEM_SUBNODE
-            if (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
+              if (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
 #endif
-            {
-              // New optimized MU+Shmem protocol requires a class route
-              if ((_mushmemcollectivedputmulticombinefactory) && (val && val != PAMI_CR_GKEY_FAIL))
-                geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,  _mushmemcollectivedputmulticombinefactory, _context_id);
+              {
+                // New optimized MU+Shmem protocol requires a class route
+                if ((_mushmemcollectivedputmulticombinefactory) && (val && val != PAMI_CR_GKEY_FAIL))
+                  geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,  _mushmemcollectivedputmulticombinefactory, _context_id);
 
-              // NP (non-pipelining) 2 device protocols
-              if ((_mcomb2dNP_dput_composite_factory) && (master_sub_topology->size() > 1))  // \todo Simple NP protocol doesn't like 1 master - fix it later
-                geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2dNP_dput_composite_factory, _context_id);
+                // NP (non-pipelining) 2 device protocols
+                if ((_mcomb2dNP_dput_composite_factory) && (master_sub_topology->size() > 1))  // \todo Simple NP protocol doesn't like 1 master - fix it later
+                  geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2dNP_dput_composite_factory, _context_id);
 
-              if ((_mcomb2dNP_composite_factory) && (master_sub_topology->size() > 1))  // \todo Simple NP protocol doesn't like 1 master - fix it later
-                geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2dNP_composite_factory, _context_id);
+                if ((_mcomb2dNP_composite_factory) && (master_sub_topology->size() > 1))  // \todo Simple NP protocol doesn't like 1 master - fix it later
+                  geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2dNP_composite_factory, _context_id);
 
-              //  2 device protocols
-              if (_mcomb2d_dput_composite_factory)
-                geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2d_dput_composite_factory, _context_id);
+                //  2 device protocols
+                if (_mcomb2d_dput_composite_factory)
+                  geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2d_dput_composite_factory, _context_id);
 
 #ifdef ENABLE_X0_PROTOCOLS
-              if (_mcomb2d_composite_factory)
-                geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2d_composite_factory, _context_id);
+                if (_mcomb2d_composite_factory)
+                  geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2d_composite_factory, _context_id);
 #endif
-            }
+              }
           }
         }
         else if (phase == -1)
@@ -1449,10 +1456,10 @@ namespace PAMI
 
       M2MNIVectorLong                                *_mu_m2m_vector_long_ni;
       uint8_t                                         _mu_m2m_vector_long_ni_storage [sizeof(M2MNIVectorLong)];
-      
+
       M2MNIVectorInt                                 *_mu_m2m_vector_int_ni;
       uint8_t                                         _mu_m2m_vector_int_ni_storage [sizeof(M2MNIVectorInt)];
-      
+
       // Barrier factories
       GIMultiSyncFactory                             *_gi_msync_factory;
       uint8_t                                         _gi_msync_factory_storage[sizeof(GIMultiSyncFactory)];

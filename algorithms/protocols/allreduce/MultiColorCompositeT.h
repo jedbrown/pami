@@ -60,8 +60,6 @@ namespace CCMI
                mf,
                NUMCOLORS)
           {
-            coremath func;
-            unsigned sizeOfType;
             uintptr_t op, dt;
             PAMI::Type::TypeFunc::GetEnums(((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype,
                                            ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.op,
@@ -70,16 +68,15 @@ namespace CCMI
                            (pami_dt)dt, (pami_op)op));
 
 
-            CCMI::Adaptor::Allreduce::getReduceFunction((pami_dt)dt,(pami_op)op,
-                                                        sizeOfType,
-                                                        func);
+            PAMI::Type::TypeCode * type_obj = (PAMI::Type::TypeCode *)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype;
+
+            /// \todo Support non-contiguous
+            assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
+
+            unsigned        sizeOfType = type_obj->GetAtomSize();
+
             //For now assume stypecount == rtypecount
             unsigned bytes = ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount * sizeOfType;
-
-            /// \todo only supporting PAMI_TYPE_BYTE right now, so better be a valid count of dt's
-            PAMI_assertf(!(bytes % sizeOfType),
-                         "Not a valid PAMI_TYPE_BYTE count of dt[%#X] bytes %u, sizeOfType %u\n",
-                         (pami_dt)dt, bytes, sizeOfType);
 
             Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::
             initialize (((PAMI_GEOMETRY_CLASS *)g)->comm(),
