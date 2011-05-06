@@ -21,8 +21,8 @@
 #include <pami.h>
 
 #define BUFSIZE 1048576
-#include "../pami_util.h"
 
+#include "../pami_util.h"
 
 int main(int argc, char*argv[])
 {

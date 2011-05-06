@@ -11,17 +11,16 @@
  * \brief ???
  */
 
-#include "../pami_util.h"
-
 /*define this if you want to validate the data for unsigned sums */
 #define CHECK_DATA
-#define FULL_TEST
+#define FULL_TEST  1
 #define COUNT      65536
 #define MAXBUFSIZE COUNT*16
 #define NITERLAT   100
 #define NITERBW    10
 #define CUTOFF     65536
 
+#include "../pami_util.h"
 
 #ifdef CHECK_DATA
 void initialize_sndbuf (void *buf, int count, int op, int dt, int task_id) {
@@ -156,7 +155,7 @@ int main(int argc, char*argv[])
 
   size_t** validTable=
     alloc2DContig(op_count,dt_count);
-#ifdef FULL_TEST
+#if FULL_TEST
   for(i=0;i<op_count;i++)
     for(j=0;j<dt_count;j++)
       validTable[i][j]=1;

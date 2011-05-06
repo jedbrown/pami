@@ -11,17 +11,16 @@
  * \brief simple allreduce on world geometry using "must query" algorithms
  */
 
-#include "../pami_util.h"
-
 /*define this if you want to validate the data */
 #define CHECK_DATA
-#define FULL_TEST
+#define FULL_TEST  1
 #define COUNT      65536
 #define MAXBUFSIZE COUNT*16
 #define NITERLAT   1000
 #define NITERBW    10
 #define CUTOFF     65536
 
+#include "../pami_util.h"
 
 int main(int argc, char*argv[])
 {
@@ -120,7 +119,7 @@ int main(int argc, char*argv[])
 
   size_t** validTable =
     alloc2DContig(op_count, dt_count);
-#ifdef FULL_TEST
+#if FULL_TEST
 
   for (i = 0; i < op_count; i++)
     for (j = 0; j < dt_count; j++)
@@ -232,16 +231,55 @@ int main(int argc, char*argv[])
                     allreduce.cmd.xfer_allreduce.stype      = dt_array[dt];
                     allreduce.cmd.xfer_allreduce.op         = op_array[op];
 
-                    if(allreduce_must_query_md[nalg].check_fn) 
-                      result = allreduce_must_query_md[nalg].check_fn(&allreduce);
-                    if(result.bitmask) continue;
 
-                    if(!((dataSent <= allreduce_must_query_md[nalg].range_hi) &&
-                         (dataSent >= allreduce_must_query_md[nalg].range_lo)))
-                      continue;
+                    if (allreduce_must_query_md[nalg].check_fn)
+                    {  
+                      result = allreduce_must_query_md[nalg].check_fn(&allreduce);
+                    }
+                    else /* Must check parameters ourselves... */
+                    {
+                      uint64_t  mask=0;
+                      result.bitmask = 0;
+                      if(allreduce_must_query_md[nalg].check_correct.values.sendminalign)
+                      {
+                        mask  = allreduce_must_query_md[nalg].send_min_align - 1; 
+                        result.check.align_send_buffer = (((uint64_t)allreduce.cmd.xfer_allreduce.sndbuf & (uint64_t)mask) == 0) ? 0:1;
+                      }
+                      if(allreduce_must_query_md[nalg].check_correct.values.recvminalign)
+                      {
+                        mask  = allreduce_must_query_md[nalg].recv_min_align - 1; 
+                        result.check.align_recv_buffer = (((uint64_t)allreduce.cmd.xfer_allreduce.rcvbuf & (uint64_t)mask) == 0) ? 0:1;
+                      }
+                      if(allreduce_must_query_md[nalg].check_correct.values.rangeminmax)
+                      {
+                        result.check.range = !((dataSent <= allreduce_must_query_md[nalg].range_hi) &&
+                                               (dataSent >= allreduce_must_query_md[nalg].range_lo));
+                      }
+                      if(allreduce_must_query_md[nalg].check_correct.values.contigsflags)
+                        ; /* This test is always contiguous */
+                      if(allreduce_must_query_md[nalg].check_correct.values.contigrflags)
+                        ; /* This test is always contiguous */
+                      if(allreduce_must_query_md[nalg].check_correct.values.continsflags)
+                        ; /* This test is always contiguous and continuous */
+                      if(allreduce_must_query_md[nalg].check_correct.values.continrflags)
+                        ; /* This test is always contiguous and continuous */
+                    }
+
+                    if (allreduce_must_query_md[nalg].check_correct.values.nonlocal)
+                    {
+                      /* \note We currently ignore check_correct.values.nonlocal
+                         because these tests should not have nonlocal differences (so far). */
+                      
+                      /*fprintf(stderr,"Test does not support protocols with nonlocal metadata\n");
+                      continue;*/
+                      result.check.nonlocal = 0;
+                    }
+
+                    /*fprintf(stderr,"result.bitmask = %.8X\n",result.bitmask); */
+                    if (result.bitmask) continue;
 
 #ifdef CHECK_DATA
-                    reduce_initialize_sndbuf (sbuf, i, op, dt, task_id);
+                    reduce_initialize_sndbuf (sbuf, i, op, dt, task_id, num_tasks);
 #endif
                     blocking_coll(context, &barrier, &bar_poll_flag);
                     ti = timer();
@@ -260,7 +298,7 @@ int main(int argc, char*argv[])
                     blocking_coll(context, &barrier, &bar_poll_flag);
 
 #ifdef CHECK_DATA
-                    rc = reduce_check_rcvbuf (rbuf, i, op, dt, num_tasks);
+                    rc = reduce_check_rcvbuf (rbuf, i, op, dt, task_id, num_tasks);
 
                     if (rc) fprintf(stderr, "FAILED validation\n");
 

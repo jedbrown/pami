@@ -2,8 +2,6 @@
  * \file test/api/collectives/allgatherv.c
  */
 
-#include "../pami_util.h"
-
 #define BUFSIZE 524288
 #define CHECK_DATA
 
@@ -29,6 +27,8 @@ int check_rcvbuf (void *rbuf, int bytes, size_t ntasks)
   }
   return 0;
 }
+
+#include "../pami_util.h"
 
 int main (int argc, char ** argv)
 {

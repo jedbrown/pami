@@ -3,10 +3,10 @@
  * \brief Simple AMBcast test
  */
 
-#include "../pami_util.h"
-
 #define BUFSIZE 262144
 #define NITER   100
+
+#include "../pami_util.h"
 
 volatile unsigned       _g_total_broadcasts;
 char                   *_g_recv_buffer;

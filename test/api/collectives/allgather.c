@@ -1,8 +1,6 @@
 /**
  * \file test/api/collectives/allgather.c
  */
-#include "../pami_util.h"
-
 /*define this if you want to validate the data */
 #define CHECK_DATA
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
@@ -11,6 +9,8 @@
 #define NITERLAT   1            /* see envvar TEST_ITER for overrides */
 #define NITERBW    MIN(10, niterlat/100+1)
 #define CUTOFF     65536
+
+#include "../pami_util.h"
 
 unsigned  max_count     = COUNT;
 unsigned  buffer_offset = OFFSET;

@@ -3,10 +3,10 @@
  * \brief Simple Barrier test
  */
 
+#define NITER 100
 
 #include "../pami_util.h"
 
-#define NITER 100
 #include <assert.h>
 
 int main (int argc, char ** argv)

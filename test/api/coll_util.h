@@ -14,8 +14,12 @@
 #ifndef __test_api_coll_util_h__
 #define __test_api_coll_util_h__
 
+unsigned gVerbose = 1;    /* Global verbose flag, some tests set with TEST_VERBOSE=n */
+
+#include<assert.h>
 #include "init_util.h"
-unsigned gVerbose = 1; /* Global verbose flag, some tests set with TEST_VERBOSE=n */
+
+char *gProtocolName = ""; /* Global protocol name, some tests set it for error msgs   */
 static size_t get_type_size(pami_type_t intype);
 
 /* Docs09:  Done/Decrement call */
@@ -47,7 +51,6 @@ int blocking_coll (pami_context_t      context,
 }
 /* Docs08:  Blocking Collective Call */
 
-#include<assert.h>
 int query_geometry_world(pami_client_t       client,
                          pami_context_t      context,
                          pami_geometry_t    *world_geometry,
@@ -205,65 +208,102 @@ int create_and_query_geometry(pami_client_t           client,
                           must_query_md);
 }
 
-
-void reduce_initialize_sndbuf (void *buf, int count, int op, int dt, int task_id)
+void reduce_initialize_sndbuf(void *buf, int count, int op, int dt, int task_id, int num_tasks)
 {
+
   int i;
 
   if (op_array[op] == PAMI_DATA_SUM && dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
-    {
-      unsigned int *ibuf = (unsigned int *)  buf;
+  {
+    unsigned int *ibuf = (unsigned int *)  buf;
 
-      for (i = 0; i < count; i++)
-        {
-          ibuf[i] = i;
-        }
+    for (i = 0; i < count; i++)
+    {
+      ibuf[i] = i;
     }
+  }
   else if (op_array[op] == PAMI_DATA_SUM && dt_array[dt] == PAMI_TYPE_DOUBLE)
   {
     double *dbuf = (double *)  buf;
 
     for (i = 0; i < count; i++)
     {
-      dbuf[i] = 1.0*i;
+      dbuf[i] = 1.0 * i;
+    }
+  }
+  else if ((op_array[op] == PAMI_DATA_MAX || op_array[op] == PAMI_DATA_MIN) && dt_array[dt] == PAMI_TYPE_DOUBLE)
+  {
+    memset(buf,  0,  count * sizeof(double));
+    double *dbuf = (double *)  buf;
+
+    for (i = task_id; i < count; i += num_tasks)
+    {
+      dbuf[i] = 1.0 * task_id;
     }
   }
   else
-    {
-      size_t sz=get_type_size(dt_array[dt]);
-      memset(buf,  task_id,  count * sz);
-    }
+  {
+    size_t sz=get_type_size(dt_array[dt]);
+    memset(buf,  task_id,  count * sz);
+  }
 }
 
-
-int reduce_check_rcvbuf (void *buf, int count, int op, int dt, int num_tasks)
+int reduce_check_rcvbuf(void *buf, int count, int op, int dt, int task_id, int num_tasks)
 {
 
   int i, err = 0;
 
   if (op_array[op] == PAMI_DATA_SUM && dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
-    {
-      unsigned int *rbuf = (unsigned int *)  buf;
-
-      for (i = 0; i < count; i++)
-        {
-          if (rbuf[i] != (unsigned)i * num_tasks)
-            {
-              fprintf(stderr, "Check(%d) failed rbuf[%d] %u != %u\n", count, i, rbuf[1], i*num_tasks);
-              err = -1;
-              return err;
-            }
-        }
-    }
-  else if (op_array[op] == PAMI_DATA_SUM && dt_array[dt] == PAMI_TYPE_DOUBLE)
   {
-    double *rbuf = (double *)  buf;
+    unsigned int *rcvbuf = (unsigned int *)  buf;
 
     for (i = 0; i < count; i++)
     {
-      if (rbuf[i] != 1.0 * i * num_tasks)
+      if (rcvbuf[i] != i * num_tasks)
       {
-        fprintf(stderr, "Check(%d) failed rbuf[%d] %f != %f\n", count, i, rbuf[i], (double)1.0*num_tasks);
+        fprintf(stderr, "%s:Check %s/%s(%d) failed rcvbuf[%d] %u != %u\n", gProtocolName, dt_array_str[dt], op_array_str[op], count, i, rcvbuf[1], i*num_tasks);
+        err = -1;
+        return err;
+      }
+    }
+  }
+  else if (op_array[op] == PAMI_DATA_SUM && dt_array[dt] == PAMI_TYPE_DOUBLE)
+  {
+    double *rcvbuf = (double *)  buf;
+
+    for (i = 0; i < count; i++)
+    {
+      if (rcvbuf[i] != 1.0 * i * num_tasks)
+      {
+        fprintf(stderr, "%s:Check %s/%s(%d) failed rcvbuf[%d] %f != %f\n", gProtocolName, dt_array_str[dt], op_array_str[op], count, i, rcvbuf[i], (double)1.0*i*num_tasks);
+        err = -1;
+        return err;
+      }
+    }
+  }
+  else if (op_array[op] == PAMI_DATA_MIN && dt_array[dt] == PAMI_TYPE_DOUBLE)
+  {
+    double *rcvbuf = (double *)  buf;
+
+    for (i = 0; i < count; i++)
+    {
+      if (rcvbuf[i] != 0.0)
+      {
+        fprintf(stderr, "%s:Check %s/%s(%d) failed rcvbuf[%d] %f != %f\n", gProtocolName, dt_array_str[dt], op_array_str[op], count, i, rcvbuf[i], (double)0.0);
+        err = -1;
+        return err;
+      }
+    }
+  }
+  else if (op_array[op] == PAMI_DATA_MAX && dt_array[dt] == PAMI_TYPE_DOUBLE)
+  {
+    double *rcvbuf = (double *)  buf;
+
+    for (i = 0; i < count; i++)
+    {
+      if (rcvbuf[i] != 1.0 * (i % num_tasks))
+      {
+        fprintf(stderr, "%s:Check %s/%s(%d) failed rcvbuf[%d] %f != %f\n", gProtocolName, dt_array_str[dt], op_array_str[op], count, i, rcvbuf[i], (double)1.0*(i % num_tasks));
         err = -1;
         return err;
       }
@@ -291,5 +331,59 @@ static size_t get_type_size(pami_type_t intype)
   return sz;
 }
 
+unsigned primitive_dt(pami_type_t dt)
+{
+  unsigned found = 0,i;
+  for(i = 0; i < DT_COUNT; ++i)
+  {
+    if(dt_array[i] == dt) found = 1;
+  }
+  return found;
+}
+
+metadata_result_t check_metadata(pami_metadata_t md,
+                                 pami_xfer_t xfer,
+                                 pami_type_t s_dt, size_t s_size, char* s_buffer,
+                                 pami_type_t r_dt, size_t r_size, char* r_buffer
+                                 )
+{
+  metadata_result_t result;
+  if (md.check_fn)
+  {  
+    result = md.check_fn(&xfer);
+  }
+  else /* Must check parameters ourselves... */
+  {
+    uint64_t  mask=0;
+    result.bitmask = 0;
+    if(md.check_correct.values.sendminalign)
+    {
+      mask  = md.send_min_align - 1; 
+      result.check.align_send_buffer = (((uint64_t)s_buffer & (uint64_t)mask) == 0) ? 0:1;
+    }
+    if(md.check_correct.values.recvminalign)
+    {
+      mask  = md.recv_min_align - 1; 
+      result.check.align_recv_buffer = (((uint64_t)r_buffer & (uint64_t)mask) == 0) ? 0:1;
+    }
+    if(md.check_correct.values.rangeminmax)
+    {
+      result.check.range  = !((s_size <= md.range_hi) &&
+                              (s_size >= md.range_lo));
+      result.check.range |= !((r_size <= md.range_hi) &&
+                              (r_size >= md.range_lo));
+    }   
+    /* Very basic checks (primitives only) for continuous/contiguous */
+    if(md.check_correct.values.contigsflags)
+      result.check.contiguous_send = !primitive_dt(s_dt);
+    if(md.check_correct.values.contigrflags)
+      result.check.contiguous_recv = !primitive_dt(r_dt);
+    if(md.check_correct.values.continsflags)
+      result.check.continuous_send = !primitive_dt(s_dt);
+    if(md.check_correct.values.continrflags)
+      result.check.continuous_recv = !primitive_dt(r_dt);
+  }
+  return result;
+}
 
 #endif /* __test_api_coll_util_h__*/

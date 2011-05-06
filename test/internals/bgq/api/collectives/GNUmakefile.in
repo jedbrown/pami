@@ -13,15 +13,15 @@ FRAMEWORK       = pami
 VPATH		= @abs_srcdir@
 SUBDIRS         =
 NOTBUILT        = 
-APPS            =
-#APPS            = allreduce-${FRAMEWORK}.${EXTENSION} allreduce_query-${FRAMEWORK}.${EXTENSION} allreduce_subcomm-${FRAMEWORK}.${EXTENSION} allreduce_subcomm_query-${FRAMEWORK}.${EXTENSION}
-#APPS            += bcast-${FRAMEWORK}.${EXTENSION} bcast_query-${FRAMEWORK}.${EXTENSION} bcast_subcomm-${FRAMEWORK}.${EXTENSION} bcast_subcomm_query-${FRAMEWORK}.${EXTENSION}
-#APPS            += barrier-${FRAMEWORK}.${EXTENSION} barrier_query-${FRAMEWORK}.${EXTENSION} barrier_subcomm-${FRAMEWORK}.${EXTENSION} barrier_subcomm_query-${FRAMEWORK}.${EXTENSION}
-#APPS            += reduce-${FRAMEWORK}.${EXTENSION}
-#APPS            += scatter-${FRAMEWORK}.${EXTENSION} scatter_subcomm-${FRAMEWORK}.${EXTENSION}
-#APPS            += allgather-${FRAMEWORK}.${EXTENSION} allgather_subcomm-${FRAMEWORK}.${EXTENSION}
-#APPS            += alltoallv-${FRAMEWORK}.${EXTENSION} alltoallv_subcomm-${FRAMEWORK}.${EXTENSION}
-#APPS            += alltoallv_int-${FRAMEWORK}.${EXTENSION} alltoallv_int_subcomm-${FRAMEWORK}.${EXTENSION}
+APPS            = 
+APPS            += allgather-${FRAMEWORK}.${EXTENSION} allgather_subcomm-${FRAMEWORK}.${EXTENSION}
+APPS            += allreduce-${FRAMEWORK}.${EXTENSION} allreduce_query-${FRAMEWORK}.${EXTENSION} allreduce_subcomm-${FRAMEWORK}.${EXTENSION} allreduce_subcomm_query-${FRAMEWORK}.${EXTENSION}
+APPS            += alltoallv-${FRAMEWORK}.${EXTENSION} alltoallv_subcomm-${FRAMEWORK}.${EXTENSION}
+APPS            += alltoallv_int-${FRAMEWORK}.${EXTENSION} alltoallv_int_subcomm-${FRAMEWORK}.${EXTENSION}
+APPS            += barrier-${FRAMEWORK}.${EXTENSION} barrier_query-${FRAMEWORK}.${EXTENSION} barrier_subcomm-${FRAMEWORK}.${EXTENSION} barrier_subcomm_query-${FRAMEWORK}.${EXTENSION}
+APPS            += bcast-${FRAMEWORK}.${EXTENSION} bcast_query-${FRAMEWORK}.${EXTENSION} bcast_subcomm-${FRAMEWORK}.${EXTENSION} bcast_subcomm_query-${FRAMEWORK}.${EXTENSION}
+APPS            += reduce-${FRAMEWORK}.${EXTENSION}
+APPS            += scatter-${FRAMEWORK}.${EXTENSION} scatter_subcomm-${FRAMEWORK}.${EXTENSION}
 
 include @abs_top_builddir@/Build.rules
 

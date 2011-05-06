@@ -11,57 +11,46 @@
  * \brief Simple Allgather test on world geometry (only gathers bytes)
  */
 
-#include "../../../../api/pami_util.h"
-
-
-/*define this if you want to validate the data */
-#define CHECK_DATA
-
-
-#define COUNT     (524288)   /* see envvar TEST_COUNT for overrides */
-unsigned max_count = COUNT;
-
-#define OFFSET     0            /* see envvar TEST_OFFSET for overrides */
-unsigned buffer_offset = OFFSET;
-
-#define NITERLAT   1            /* see envvar TEST_ITER for overrides */
-unsigned niterlat  = NITERLAT;
-
+#define COUNT     (524288)
+/*
+#define OFFSET     0
+#define NITERLAT   1
 #define NITERBW    MIN(10, niterlat/100+1)
-
 #define CUTOFF     65536
+*/
 
-char* protocolName;
+#include "../../../../api/pami_util.h"
 
 void initialize_sndbuf (void *sbuf, int bytes, pami_task_t task)
 {
   unsigned char c = 0xFF & task;
-  memset(sbuf,c,bytes);
+  memset(sbuf, c, bytes);
 }
 
 int check_rcvbuf (void *rbuf, int bytes, size_t ntasks)
 {
-  int i,j;
+  int i, j;
   unsigned char *cbuf = (unsigned char *)  rbuf;
 
-  for (j=0; j<ntasks; j++)
+  for (j = 0; j < ntasks; j++)
   {
     unsigned char c = 0xFF & j;
-    for (i=j*bytes; i<bytes; i++)
+
+    for (i = j * bytes; i < (j + 1)*bytes; i++)
       if (cbuf[i] != c)
       {
-        fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2u != %.2u \n", protocolName, bytes, cbuf,i,cbuf[i], c);
+        fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2u != %.2u \n", gProtocolName, bytes, cbuf, i, cbuf[i], c);
         return 1;
       }
   }
+
   return 0;
 }
 
-int main (int argc, char ** argv)
+int main(int argc, char*argv[])
 {
   pami_client_t        client;
   pami_context_t      *context;
-  size_t               num_contexts = 1;
   pami_task_t          task_id;
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
@@ -89,55 +78,18 @@ int main (int argc, char ** argv)
   pami_xfer_t          barrier;
   pami_xfer_t          allgather;
 
-  /* \note Test environment variable" TEST_VERBOSE=N     */
-  char* sVerbose = getenv("TEST_VERBOSE");
+  /* Process environment variables and setup globals */
+  setup_env();
 
-  if (sVerbose) gVerbose=atoi(sVerbose); /* set the global defined in coll_util.h */
-
-  /* \note Test environment variable" TEST_PROTOCOL={-}substring.       */
-  /* substring is used to select, or de-select (with -) test protocols */
-  unsigned selector = 1;
-  char* selected = getenv("TEST_PROTOCOL");
-
-  if (!selected) selected = "";
-  else if (selected[0]=='-')
-  {
-    selector = 0 ;
-    ++selected;
-  }
-
-  /* \note Test environment variable" TEST_COUNT=N max count     */
-  char* sCount = getenv("TEST_COUNT");
-
-  /* Override COUNT */
-  if (sCount) max_count = atoi(sCount);
-
-  /* \note Test environment variable" TEST_OFFSET=N buffer offset/alignment*/
-  char* sOffset = getenv("TEST_OFFSET");
-
-  /* Override OFFSET */
-  if (sOffset) buffer_offset = atoi(sOffset);
-
-  /* \note Test environment variable" TEST_ITER=N iterations      */
-  char* sIter = getenv("TEST_ITER");
-
-  /* Override NITERLAT */
-  if (sIter) niterlat = atoi(sIter);
-
-  /* \note Test environment variable" TEST_NUM_CONTEXTS=N, defaults to 1.*/
-  char* snum_contexts = getenv("TEST_NUM_CONTEXTS");
-
-  if (snum_contexts) num_contexts = atoi(snum_contexts);
-
-  assert(num_contexts > 0);
-  context = (pami_context_t*)malloc(sizeof(pami_context_t)*num_contexts);
+  assert(gNum_contexts > 0);
+  context = (pami_context_t*)malloc(sizeof(pami_context_t) * gNum_contexts);
 
 
   /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
                      context,        /* Context            */
                      NULL,           /* Clientname=default */
-                     &num_contexts,  /* num_contexts       */
+                     &gNum_contexts, /* gNum_contexts       */
                      NULL,           /* null configuration */
                      0,              /* no configuration   */
                      &task_id,       /* task id            */
@@ -149,19 +101,19 @@ int main (int argc, char ** argv)
   /*  Allocate buffer(s) */
   int err = 0;
   void* buf = NULL;
-  err = posix_memalign(&buf, 128, (max_count)+buffer_offset);
+  err = posix_memalign(&buf, 128, (gMax_count) + gBuffer_offset);
   assert(err == 0);
-  buf = (char*)buf + buffer_offset;
+  buf = (char*)buf + gBuffer_offset;
 
   void* rbuf = NULL;
-  err = posix_memalign(&rbuf, 128, (max_count*num_tasks)+buffer_offset);
+  err = posix_memalign(&rbuf, 128, (gMax_count * num_tasks) + gBuffer_offset);
   assert(err == 0);
-  rbuf = (char*)rbuf + buffer_offset;
+  rbuf = (char*)rbuf + gBuffer_offset;
 
 
   unsigned iContext = 0;
 
-  for (; iContext < num_contexts; ++iContext)
+  for (; iContext < gNum_contexts; ++iContext)
   {
 
     if (task_id == 0)
@@ -212,38 +164,37 @@ int main (int argc, char ** argv)
       allgather.cmd.xfer_allgather.rtype      = PAMI_TYPE_BYTE;
       allgather.cmd.xfer_allgather.rtypecount = 0;
 
-      protocolName = allgather_always_works_md[nalg].name;
+      gProtocolName = allgather_always_works_md[nalg].name;
 
       if (task_id == 0)
       {
-        printf("# Allgather Bandwidth Test -- context = %d, protocol: %s\n", 
-               iContext, protocolName);
+        printf("# Allgather Bandwidth Test -- context = %d, protocol: %s\n",
+               iContext, gProtocolName);
         printf("# Size(bytes)           cycles    bytes/sec    usec\n");
         printf("# -----------      -----------    -----------    ---------\n");
       }
-      if (((strstr(allgather_always_works_md[nalg].name,selected) == NULL) && selector) ||
-          ((strstr(allgather_always_works_md[nalg].name,selected) != NULL) && !selector))  continue;
+
+      if (((strstr(allgather_always_works_md[nalg].name,gSelected) == NULL) && gSelector) ||
+          ((strstr(allgather_always_works_md[nalg].name,gSelected) != NULL) && !gSelector))  continue;
 
       int i, j;
 
-      for (i = 1; i <= max_count; i *= 2)
+      for (i = 1; i <= gMax_count; i *= 2)
       {
-        long long dataSent = i;
+        size_t  dataSent = i;
         int          niter;
 
         if (dataSent < CUTOFF)
-          niter = niterlat;
+          niter = gNiterlat;
         else
           niter = NITERBW;
 
         allgather.cmd.xfer_allgather.stypecount = i;
         allgather.cmd.xfer_allgather.rtypecount = i;
 
-#ifdef CHECK_DATA
         initialize_sndbuf (buf, i, task_id);
         memset(rbuf, 0xFF, i);
 
-#endif
         blocking_coll(context[iContext], &barrier, &bar_poll_flag);
         ti = timer();
 
@@ -255,16 +206,18 @@ int main (int argc, char ** argv)
         tf = timer();
         blocking_coll(context[iContext], &barrier, &bar_poll_flag);
 
-#ifdef CHECK_DATA
-        rc |= check_rcvbuf (rbuf, i, num_tasks);
-#endif
+        int rc_check;
+        rc |= rc_check = check_rcvbuf (rbuf, i, num_tasks);
+
+        if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
+
         usec = (tf - ti) / (double)niter;
 
         if (task_id == 0)
         {
-          printf("  %11lld %16lld %14.1f %12.2f\n",
-                 dataSent,
-                 0LL,
+          printf("  %11lld %16d %14.1f %12.2f\n",
+                 (long long)dataSent,
+                 niter,
                  (double)1e6*(double)dataSent / (double)usec,
                  usec);
           fflush(stdout);
@@ -280,13 +233,14 @@ int main (int argc, char ** argv)
     free(allgather_always_works_md);
     free(allgather_must_query_algo);
     free(allgather_must_query_md);
-  } /*for(unsigned iContext = 0; iContext < num_contexts; ++iContexts)*/
-  buf = (char*)buf - buffer_offset;
+  } /*for(unsigned iContext = 0; iContext < gNum_contexts; ++iContexts)*/
+
+  buf = (char*)buf - gBuffer_offset;
   free(buf);
 
-  rbuf = (char*)rbuf - buffer_offset;
+  rbuf = (char*)rbuf - gBuffer_offset;
   free(rbuf);
 
-  rc |= pami_shutdown(&client, context, &num_contexts);
+  rc |= pami_shutdown(&client, context, &gNum_contexts);
   return rc;
 }

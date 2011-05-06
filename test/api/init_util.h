@@ -16,6 +16,7 @@
 
 #include <pami.h>
 #include <stdio.h>
+#include <stdlib.h>
 enum opNum
 {
   OP_COPY,
@@ -74,86 +75,19 @@ size_t ** alloc2DContig(int nrows, int ncols)
 {
   int i;
   size_t **array;
-
   array        = (size_t**)malloc(nrows * sizeof(size_t*));
-  array[0]     = (size_t *)calloc(sizeof(size_t), nrows * ncols);
+  assert(array);
+  array[0]     = (size_t *)calloc(nrows * ncols, sizeof(size_t));
+  assert(array[0]);
 
   for (i = 1; i < nrows; i++)
-    array[i]   = array[0] + i * ncols;
+      array[i]   = array[0] + i * ncols;
 
   return array;
 }
 
-
-int pami_init(pami_client_t        * client,          /* in/out:  client      */
-              pami_context_t       * context,         /* in/out:  context     */
-              char                 * clientname,      /* in/out:  clientname  */
-              size_t               * num_contexts,    /* in/out:  num_contexts*/
-              pami_configuration_t * configuration,   /* in:      config      */
-              size_t                 num_config,      /* in:      num configs */
-              pami_task_t          * task_id,         /* out:     task id     */
-              size_t               * num_tasks)       /* out:     num tasks   */
+void init_tables()
 {
-  pami_result_t        result        = PAMI_ERROR;
-  char                 cl_string[]   = "TEST";
-  pami_configuration_t l_configuration;
-  size_t               max_contexts;
-
-  if(clientname == NULL)
-    clientname = cl_string;
-
-  /* Docs01:  Create the client */
-  result = PAMI_Client_create (clientname, client, NULL, 0);
-  if (result != PAMI_SUCCESS)
-      {
-        fprintf (stderr, "Error. Unable to initialize pami client %s: result = %d\n",
-                 clientname,result);
-        return 1;
-      }
-  /* Docs02:  Create the client */
-
-  /* Docs03:  Create the client */
-  l_configuration.name = PAMI_CLIENT_NUM_CONTEXTS;
-  result = PAMI_Client_query(*client, &l_configuration,1);
-  if (result != PAMI_SUCCESS)
-      {
-        fprintf (stderr, "Error. Unable to query configuration.name=(%d): result = %d\n",
-                 l_configuration.name, result);
-        return 1;
-      }
-  max_contexts = l_configuration.value.intval;
-  *num_tasks = (*num_tasks<max_contexts)?*num_tasks:max_contexts;
-
-  l_configuration.name = PAMI_CLIENT_TASK_ID;
-  result = PAMI_Client_query(*client, &l_configuration,1);
-  if (result != PAMI_SUCCESS)
-      {
-        fprintf (stderr, "Error. Unable to query configuration.name=(%d): result = %d\n",
-                 l_configuration.name, result);
-        return 1;
-      }
-  *task_id = l_configuration.value.intval;
-
-  l_configuration.name = PAMI_CLIENT_NUM_TASKS;
-  result = PAMI_Client_query(*client, &l_configuration,1);
-  if (result != PAMI_SUCCESS)
-      {
-        fprintf (stderr, "Error. Unable to query configuration.name=(%d): result = %d\n",
-                 l_configuration.name, result);
-        return 1;
-      }
-  *num_tasks = l_configuration.value.intval;
-  /* Docs04:  Create the client */
-
-  /* Docs05:  Create the client */
-  result = PAMI_Context_createv(*client, configuration, num_config, context, *num_contexts);
-  if (result != PAMI_SUCCESS)
-      {
-        fprintf (stderr, "Error. Unable to create pami context: result = %d\n",
-                 result);
-        return 1;
-      }
-
   op_array[0]=PAMI_DATA_COPY;
   op_array[1]=PAMI_DATA_NOOP;
   op_array[2]=PAMI_DATA_MAX;
@@ -233,6 +167,79 @@ int pami_init(pami_client_t        * client,          /* in/out:  client      */
   dt_array_str[21]="PAMI_TYPE_LOC_SHORT_INT";
   dt_array_str[22]="PAMI_TYPE_LOC_FLOAT_INT";
   dt_array_str[23]="PAMI_TYPE_LOC_DOUBLE_INT";
+}
+
+int pami_init(pami_client_t        * client,          /* in/out:  client      */
+              pami_context_t       * context,         /* in/out:  context     */
+              char                 * clientname,      /* in/out:  clientname  */
+              size_t               * num_contexts,    /* in/out:  num_contexts*/
+              pami_configuration_t * configuration,   /* in:      config      */
+              size_t                 num_config,      /* in:      num configs */
+              pami_task_t          * task_id,         /* out:     task id     */
+              size_t               * num_tasks)       /* out:     num tasks   */
+{
+  pami_result_t        result        = PAMI_ERROR;
+  char                 cl_string[]   = "TEST";
+  pami_configuration_t l_configuration;
+  size_t               max_contexts;
+
+  init_tables();
+
+  if(clientname == NULL)
+    clientname = cl_string;
+
+  /* Docs01:  Create the client */
+  result = PAMI_Client_create (clientname, client, NULL, 0);
+  if (result != PAMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to initialize pami client %s: result = %d\n",
+                 clientname,result);
+        return 1;
+      }
+  /* Docs02:  Create the client */
+
+  /* Docs03:  Create the client */
+  l_configuration.name = PAMI_CLIENT_NUM_CONTEXTS;
+  result = PAMI_Client_query(*client, &l_configuration,1);
+  if (result != PAMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to query configuration.name=(%d): result = %d\n",
+                 l_configuration.name, result);
+        return 1;
+      }
+  max_contexts = l_configuration.value.intval;
+  *num_tasks = (*num_tasks<max_contexts)?*num_tasks:max_contexts;
+
+  l_configuration.name = PAMI_CLIENT_TASK_ID;
+  result = PAMI_Client_query(*client, &l_configuration,1);
+  if (result != PAMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to query configuration.name=(%d): result = %d\n",
+                 l_configuration.name, result);
+        return 1;
+      }
+  *task_id = l_configuration.value.intval;
+
+  l_configuration.name = PAMI_CLIENT_NUM_TASKS;
+  result = PAMI_Client_query(*client, &l_configuration,1);
+  if (result != PAMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to query configuration.name=(%d): result = %d\n",
+                 l_configuration.name, result);
+        return 1;
+      }
+  *num_tasks = l_configuration.value.intval;
+  /* Docs04:  Create the client */
+
+  /* Docs05:  Create the client */
+  result = PAMI_Context_createv(*client, configuration, num_config, context, *num_contexts);
+  if (result != PAMI_SUCCESS)
+      {
+        fprintf (stderr, "Error. Unable to create pami context: result = %d\n",
+                 result);
+        return 1;
+      }
+
   /* Docs06:  Create the client */
   return 0;
 }
@@ -258,6 +265,322 @@ int pami_shutdown(pami_client_t        * client,          /* in/out:  client    
     }
   /* Docs08:  Destroy the client and contexts*/
   return 0;
+}
+
+
+#ifndef FULL_TEST
+  #define FULL_TEST 0
+#endif
+#ifndef COUNT
+  #define COUNT      65536
+#endif
+#ifndef OFFSET
+  #define OFFSET     0    
+#endif
+#ifndef NITERLAT
+  #define NITERLAT   1    
+#endif
+#ifndef NITERBW
+  #define NITERBW    MIN(10, gNiterlat/100+1)
+#endif
+#ifndef CUTOFF
+  #define CUTOFF     65536
+#endif
+
+#ifndef MAXBUFSIZE
+  #define MAXBUFSIZE        gMax_count*16
+#endif
+
+
+unsigned gFull_test      = FULL_TEST;
+unsigned gMax_count      = COUNT;
+unsigned gBuffer_offset  = OFFSET;
+unsigned gNiterlat       = NITERLAT;
+size_t   gNum_contexts   = 1;
+size_t** gValidTable     = NULL;
+unsigned gSelector       = 1;
+char*    gSelected       ;
+unsigned gParentless     = 0; /*Not parentless*/
+
+void setup_op_dt(size_t ** validTable,char* sDt, char* sOp);
+
+void setup_env()
+{
+
+
+  /* \note Test environment variable" TEST_VERBOSE=N     */
+  char* sVerbose = getenv("TEST_VERBOSE");
+
+  if(sVerbose) gVerbose=atoi(sVerbose); /* set the global defined in coll_util.h */
+
+  /* \note Test environment variable" TEST_PROTOCOL={-}substring.       */
+  /* substring is used to select, or de-select (with -) test protocols */
+  gSelected = getenv("TEST_PROTOCOL");
+
+  if (!gSelected) gSelected = "";
+  else if (gSelected[0] == '-')
+  {
+    gSelector = 0 ;
+    ++gSelected;
+  }
+
+  /* \note Test environment variable" TEST_DT=pami datatype string or 'ALL' or 'SHORT' */
+  char* sDt = getenv("TEST_DT");
+
+  /* \note Test environment variable" TEST_OP=pami operation string or 'ALL' or 'SHORT'*/
+  char* sOp = getenv("TEST_OP");
+
+  /* Override FULL_TEST with 'ALL' */
+  if ((sDt && !strcmp(sDt, "ALL")) || (sOp && !strcmp(sOp, "ALL"))) gFull_test = 1;
+  if ((sDt && !strcmp(sDt, "SHORT")) || (sOp && !strcmp(sOp, "SHORT"))) 
+  {
+    sDt = sOp = NULL; /* no selection will select default/minimal */
+    gFull_test = 0;
+  }
+
+  /* \note Test environment variable" TEST_COUNT=N max count     */
+  char* sCount = getenv("TEST_COUNT");
+
+  /* Override COUNT */
+  if (sCount) gMax_count = atoi(sCount);
+
+  /* \note Test environment variable" TEST_OFFSET=N buffer offset/alignment*/
+  char* sOffset = getenv("TEST_OFFSET");
+
+  /* Override OFFSET */
+  if (sOffset) gBuffer_offset = atoi(sOffset);
+
+  /* \note Test environment variable" TEST_ITER=N iterations      */
+  char* sIter = getenv("TEST_ITER");
+
+  /* Override NITERLAT */
+  if (sIter) gNiterlat = atoi(sIter);
+
+  /* \note Test environment variable" TEST_NUM_CONTEXTS=N, defaults to 1.*/
+  char* snum_contexts = getenv("TEST_NUM_CONTEXTS");
+
+  if (snum_contexts) gNum_contexts = atoi(snum_contexts);
+
+  /* Setup operation and datatype tables*/
+  gValidTable = alloc2DContig(op_count, dt_count);
+  setup_op_dt(gValidTable,sDt,sOp);
+
+  /* \note Test environment variable" TEST_PARENTLESS=0 or 1, defaults to 0.
+     0 - world_geometry is the parent
+     1 - parentless                                                      */
+  char* sParentless = getenv("TEST_PARENTLESS");
+
+  if (sParentless) gParentless = atoi(sParentless);
+
+
+}
+
+void setup_op_dt(size_t ** validTable,char* sDt, char* sOp)
+{
+  int i,j;
+  unsigned force = 0; /* don't force the dt/op selected */
+
+  init_tables();
+
+  if (gFull_test)
+  {
+    for (i = 0; i < op_count; i++)
+      for (j = 0; j < dt_count; j++)
+        validTable[i][j] = 1;
+      
+  }
+  else if (sDt && sOp)
+  {
+    force = 1; /* force the dt/op*/
+    for (i = 0; i < op_count; i++)
+      for (j = 0; j < dt_count; j++)
+          if (!strcmp(sDt, dt_array_str[j]) &&
+              !strcmp(sOp, op_array_str[i]))
+            validTable[i][j] = 1;
+          else
+            validTable[i][j] = 0;
+  } 
+  else if (sOp)
+  {
+    for (i = 0; i < op_count; i++)
+      for (j = 0; j < dt_count; j++)
+        if (!strcmp(sOp, op_array_str[i]))
+          validTable[i][j] = 1;
+        else
+          validTable[i][j] = 0;
+  }
+  else if (sDt)
+  {
+    for (i = 0; i < op_count; i++)
+      for (j = 0; j < dt_count; j++)
+        if (!strcmp(sDt, dt_array_str[j]))
+          validTable[i][j] = 1;
+        else
+          validTable[i][j] = 0;
+  }
+  else  /* minimal/default test */
+  {
+    for (i = 0; i < op_count; i++)
+      for (j = 0; j < dt_count; j++)
+        validTable[i][j] = 0;
+  
+      validTable[OP_SUM][DT_UNSIGNED_INT] = 1;
+      validTable[OP_SUM][DT_DOUBLE] = 1;
+      validTable[OP_MAX][DT_DOUBLE] = 1;
+      validTable[OP_MIN][DT_DOUBLE] = 1;
+  
+  }
+  if(!force) /* not forcing the op/dt*/
+  {
+    /*--------------------------------------*/
+    /* Disable unsupported ops on complex   */
+    /* Only sum, prod                       */
+    for (i = 0, j = DT_SINGLE_COMPLEX; i < OP_COUNT; i++)if(i!=OP_SUM && i!=OP_PROD) validTable[i][j] = 0;
+    for (i = 0, j = DT_DOUBLE_COMPLEX; i < OP_COUNT; i++)if(i!=OP_SUM && i!=OP_PROD) validTable[i][j] = 0; 
+      
+    /*--------------------------------------*/
+    /* Disable NULL and byte operations     */
+    for (i = 0, j = DT_NULL; i < OP_COUNT; i++) validTable[i][j] = 0;
+    for (i = 0, j = DT_BYTE; i < OP_COUNT; i++) validTable[i][j] = 0;
+    for (j = 0, i = OP_COPY; j < DT_COUNT; j++) validTable[i][j] = 0;
+    for (j = 0, i = OP_NOOP; j < DT_COUNT; j++) validTable[i][j] = 0;
+    
+    /*--------------------------------------*/
+    /* Disable non-LOC ops on LOC dt's      */
+    for (i = 0, j = DT_LOC_2INT      ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
+    for (i = 0, j = DT_LOC_SHORT_INT ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
+    for (i = 0, j = DT_LOC_FLOAT_INT ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
+    for (i = 0, j = DT_LOC_DOUBLE_INT; i < OP_MAXLOC; i++)validTable[i][j] = 0;
+    for (i = 0, j = DT_LOC_2FLOAT    ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
+    for (i = 0, j = DT_LOC_2DOUBLE   ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
+      
+    /*--------------------------------------*/
+    /* Disable LOC ops on non-LOC dt's      */
+    for (j = 0, i = OP_MAXLOC; j < DT_LOC_2INT; j++) validTable[i][j] = 0;
+    for (j = 0, i = OP_MINLOC; j < DT_LOC_2INT; j++) validTable[i][j] = 0;
+      
+    /*---------------------------------------*/
+    /* Disable unsupported ops on logical dt */
+    /* Only land, lor, lxor, band, bor, bxor */
+    for (i = 0,         j = DT_LOGICAL; i < OP_LAND ; i++) validTable[i][j] = 0;
+    for (i = OP_BXOR+1, j = DT_LOGICAL; i < OP_COUNT; i++) validTable[i][j] = 0;
+    
+    /*---------------------------------------*/
+    /* Disable unsupported ops on long double*/
+    /* Only max,min,sum,prod                 */
+    for (i = OP_PROD+1, j = DT_LONG_DOUBLE; i < OP_COUNT; i++) validTable[i][j] = 0;
+  }
+}
+
+void get_split_method(size_t *num_tasks,pami_task_t task_id, int *rangecount, pami_geometry_range_t *range, pami_task_t *local_task_id,
+                      size_t set[2],int *id,  int *root)
+{
+  size_t                 half        = *num_tasks / 2;
+  char *method = getenv("TEST_SPLIT_METHOD");
+    
+  /* Default or TEST_SPLIT_METHOD=0 : divide in half */
+  if ((!method || !strcmp(method, "0")))
+  {
+    if (task_id < half)
+    {
+      range[0].lo = 0;
+      range[0].hi = half - 1;
+      set[0]   = 1;
+      set[1]   = 0;
+      *id       = 1;
+      *root     = 0;
+      *num_tasks = half;
+      *local_task_id = task_id;
+    }
+    else
+    {
+      range[0].lo = half;
+      range[0].hi = *num_tasks - 1;
+      set[0]   = 0;
+      set[1]   = 1;
+      *id       = 2;
+      *root     = half;
+      *num_tasks = *num_tasks - half;
+      *local_task_id = task_id - *root;
+    }
+  
+    *rangecount = 1;
+  }
+  /* TEST_SPLIT_METHOD=-1 : alternate ranks  */
+  else if ((method && !strcmp(method, "-1")))
+  {
+    int i = 0;
+    int iter = 0;;
+    
+    if ((task_id % 2) == 0)
+    {
+      for (i = 0; i < *num_tasks; i++)
+      {
+        if ((i % 2) == 0)
+        {
+          range[iter].lo = i;
+          range[iter].hi = i;
+          iter++;
+        }
+     }
+  
+      set[0]   = 1;
+      set[1]   = 0;
+      *id       = 2;
+      *root     = 0;
+      *rangecount = iter;
+    }
+    else
+    {
+      for (i = 0; i < *num_tasks; i++)
+      {
+        if ((i % 2) != 0)
+        {
+          range[iter].lo = i;
+          range[iter].hi = i;
+          iter++;
+        }
+      }
+      
+      set[0]   = 0;
+      set[1]   = 1;
+      *id       = 2;
+      *root     = 1;
+      *rangecount = iter;
+    }
+  
+    *num_tasks = iter;
+    *local_task_id = task_id/2;
+  }
+  /* TEST_SPLIT_METHOD=N : Split the first "N" processes into a communicator */
+  else
+  {
+    half = atoi(method);
+    if (task_id < half)
+    {
+      range[0].lo = 0;
+      range[0].hi = half - 1;
+      set[0]   = 1;
+      set[1]   = 0;
+      *id       = 1;
+      *root     = 0;
+      *num_tasks = half;
+      *local_task_id = task_id;
+    }
+    else
+    {
+      range[0].lo = half;
+      range[0].hi = *num_tasks - 1;
+      set[0]   = 0;
+      set[1]   = 1;
+      *id       = 2;
+      *root     = half;
+      *num_tasks = *num_tasks - half;
+      *local_task_id = task_id - *root;
+    }
+  
+    *rangecount = 1;
+  }
 }
 
 #endif /* __test_api_init_h__ */

@@ -29,8 +29,6 @@ double timer()
   return 1e6*(double)tv.tv_sec + (double)tv.tv_usec;
 }
 
-
-#include "init_util.h"
 #include "coll_util.h"
 
 #ifndef TRACE_ERR

@@ -3,9 +3,9 @@
  * \brief Simple Barrier test
  */
 
-#include "../pami_util.h"
-
 #define BUFSIZE 524288
+
+#include "../pami_util.h"
 
 int main (int argc, char ** argv)
 {

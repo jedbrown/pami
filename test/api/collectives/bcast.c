@@ -3,13 +3,13 @@
  * \brief Simple Bcast test
  */
 
-#include "../pami_util.h"
-
 /*define this if you want to validate the data */
 #define CHECK_DATA
 
 #define BUFSIZE (1048576 * 8)
 #define NITER 100
+
+#include "../pami_util.h"
 
 char* protocolName;
 

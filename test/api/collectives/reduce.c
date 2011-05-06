@@ -11,17 +11,16 @@
  * \brief simple reduce on world geometry
  */
 
-#include "../pami_util.h"
-
 /*define this if you want to validate the data */
 #define CHECK_DATA
-#define FULL_TEST
+#define FULL_TEST  1
 #define COUNT      65536
 #define MAXBUFSIZE COUNT*16
 #define NITERLAT   10
 #define NITERBW    1
 #define CUTOFF     65536
 
+#include "../pami_util.h"
 
 int main(int argc, char*argv[])
 {
@@ -120,7 +119,7 @@ int main(int argc, char*argv[])
 
   size_t** validTable =
     alloc2DContig(op_count, dt_count);
-#ifdef FULL_TEST
+#if FULL_TEST
 
   for (i = 0; i < op_count; i++)
     for (j = 0; j < dt_count; j++)
@@ -231,7 +230,7 @@ int main(int argc, char*argv[])
                     reduce.cmd.xfer_reduce.op         = op_array[op];
 
 #ifdef CHECK_DATA
-                    reduce_initialize_sndbuf (sbuf, i, op, dt, task_id);
+                    reduce_initialize_sndbuf (sbuf, i, op, dt, task_id, num_tasks);
 #endif
                     blocking_coll(context, &barrier, &bar_poll_flag);
                     ti = timer();
@@ -256,7 +255,7 @@ int main(int argc, char*argv[])
 
                     if (task_id < niter) /* was root at least once in niter loop */
                     {
-                      int rc = reduce_check_rcvbuf (rbuf, i, op, dt, num_tasks);
+                      int rc = reduce_check_rcvbuf (rbuf, i, op, dt, task_id, num_tasks);
 
                       if (rc) fprintf(stderr, "FAILED validation\n");
                     }

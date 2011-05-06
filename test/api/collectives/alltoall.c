@@ -10,8 +10,6 @@
  * \file test/api/collectives/alltoall.c
  * \brief ???
  */
-#include "../pami_util.h"
-
 #define COUNT     4096          /* see envvar TEST_COUNT for overrides */
 unsigned max_count = COUNT;
 
@@ -24,6 +22,8 @@ unsigned niterlat  = NITERLAT;
 #define NITERBW    MIN(10, niterlat/100+1)
 
 #define CUTOFF     1024
+
+#include "../pami_util.h"
 
 /*#define INIT_BUFS(l,r) */
 #define INIT_BUFS(l,r) init_bufs(l,r)

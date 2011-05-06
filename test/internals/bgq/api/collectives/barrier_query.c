@@ -11,19 +11,18 @@
  * \brief Simple Barrier test on world geometry using "must query" algorithms
  */
 
+
+#define NUM_NON_ROOT_DELAYS 2
+/*
+#define NITERLAT   1
+*/
+
 #include "../../../../api/pami_util.h"
 
-
-#define NITERLAT   1   
-#define NUM_NON_ROOT_DELAYS 2
-
-#include <assert.h>
-
-int main (int argc, char ** argv)
+int main(int argc, char*argv[])
 {
   pami_client_t        client;
   pami_context_t      *context;
-  size_t               num_contexts = 1;
   pami_task_t          task_id, non_root[NUM_NON_ROOT_DELAYS];
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
@@ -40,36 +39,18 @@ int main (int argc, char ** argv)
 
   int                  nalg;
 
-  /* \note Test environment variable" TEST_VERBOSE=N     */
-  char* sVerbose = getenv("TEST_VERBOSE");
+  /* Process environment variables and setup globals */
+  setup_env();
 
-  if(sVerbose) gVerbose=atoi(sVerbose); /* set the global defined in coll_util.h */
+  assert(gNum_contexts > 0);
+  context = (pami_context_t*)malloc(sizeof(pami_context_t) * gNum_contexts);
 
-  /* \note Test environment variable" TEST_PROTOCOL={-}substring.       */
-  /* substring is used to select, or de-select (with -) test protocols */
-  unsigned selector = 1;
-  char* selected = getenv("TEST_PROTOCOL");
-
-  if (!selected) selected = "";
-  else if (selected[0] == '-')
-  {
-    selector = 0 ;
-    ++selected;
-  }
-
-  /* \note Test environment variable" TEST_NUM_CONTEXTS=N, defaults to 1.*/
-  char* snum_contexts = getenv("TEST_NUM_CONTEXTS");
-
-  if (snum_contexts) num_contexts = atoi(snum_contexts);
-
-  assert(num_contexts > 0);
-  context = (pami_context_t*)malloc(sizeof(pami_context_t)*num_contexts);
 
   /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
                      context,        /* Context            */
                      NULL,           /* Clientname=default */
-                     &num_contexts,  /* num_contexts       */
+                     &gNum_contexts, /* gNum_contexts       */
                      NULL,           /* null configuration */
                      0,              /* no configuration   */
                      &task_id,       /* task id            */
@@ -77,31 +58,34 @@ int main (int argc, char ** argv)
 
   if (rc == 1)
     return 1;
+
   if (num_tasks == 1)
   {
-    fprintf(stderr,"No barrier on 1 node\n");
+    fprintf(stderr, "No barrier on 1 node\n");
     return 0;
   }
+
   non_root[0] = 1;            /* first non-root rank in the comm  */
-  non_root[1] = num_tasks -1;/* last rank in the comm  */
+  non_root[1] = num_tasks - 1;/* last rank in the comm  */
 
   unsigned iContext = 0;
 
-  for (; iContext < num_contexts; ++iContext)
+  for (; iContext < gNum_contexts; ++iContext)
   {
 
     if (task_id == 0)
       printf("# Context: %u\n", iContext);
 
+    /*  Query the world geometry for barrier algorithms */
     rc |= query_geometry_world(client,
-                              context[iContext],
-                              &world_geometry,
-                              barrier_xfer,
-                              num_algorithm,
-                              &always_works_algo,
-                              &always_works_md,
-                              &must_query_algo,
-                              &must_query_md);
+                               context[iContext],
+                               &world_geometry,
+                               barrier_xfer,
+                               num_algorithm,
+                               &always_works_algo,
+                               &always_works_md,
+                               &must_query_algo,
+                               &must_query_md);
 
     if (rc == 1)
       return 1;
@@ -122,8 +106,8 @@ int main (int argc, char ** argv)
         printf("# -------------------------------------------------------------------\n");
       }
 
-      if (((strstr(must_query_md[nalg].name, selected) == NULL) && selector) ||
-          ((strstr(must_query_md[nalg].name, selected) != NULL) && !selector))  continue;
+      if (((strstr(must_query_md[nalg].name,gSelected) == NULL) && gSelector) ||
+          ((strstr(must_query_md[nalg].name,gSelected) != NULL) && !gSelector))  continue;
 
       unsigned checkrequired = must_query_md[nalg].check_correct.values.checkrequired; /*must query every time */
       assert(!checkrequired || must_query_md[nalg].check_fn); /* must have function if checkrequired. */
@@ -132,23 +116,19 @@ int main (int argc, char ** argv)
         result = must_query_md[nalg].check_fn(&barrier);
 
 
-      if(must_query_md[nalg].check_correct.values.nonlocal)
+      if (must_query_md[nalg].check_correct.values.nonlocal)
       {
         /* \note We currently ignore check_correct.values.nonlocal
            because these tests should not have nonlocal differences (so far). */
-
-        /*fprintf(stderr,"Test does not support protocols with nonlocal metadata\n");
-          continue;*/
         result.check.nonlocal = 0;
       }
-
-      /*fprintf(stderr,"result.bitmask = %.8X\n",result.bitmask); */
       if (result.bitmask) continue;
 
 
       /* Do two functional runs with different delaying ranks*/
       int j;
-      for(j = 0; j < NUM_NON_ROOT_DELAYS; ++j)
+
+      for (j = 0; j < NUM_NON_ROOT_DELAYS; ++j)
       {
         if (!task_id)
         {
@@ -158,15 +138,15 @@ int main (int argc, char ** argv)
           blocking_coll(context[iContext], &barrier, &poll_flag);
           tf = timer();
           usec = tf - ti;
-  
+
           if (usec < 1800000.0 || usec > 2200000.0)
-          {  
-            rc = 1;  
-            fprintf(stderr, "%s FAIL: usec=%f want between %f and %f!\n",must_query_md[nalg].name,
+          {
+            rc = 1;
+            fprintf(stderr, "%s FAIL: usec=%f want between %f and %f!\n", must_query_md[nalg].name,
                     usec, 1800000.0, 2200000.0);
           }
           else
-            fprintf(stderr, "%s PASS: Barrier correct!\n",must_query_md[nalg].name);
+            fprintf(stderr, "%s PASS: Barrier correct!\n", must_query_md[nalg].name);
         }
         else
         {
@@ -175,11 +155,12 @@ int main (int argc, char ** argv)
           */
           if (task_id == non_root[j])
             delayTest(2);
+
           blocking_coll(context[iContext], &barrier, &poll_flag);
         }
       }
 
-      int niter = NITERLAT;
+      int niter = gNiterlat;
       blocking_coll(context[iContext], &barrier, &poll_flag);
 
       ti = timer();
@@ -215,9 +196,9 @@ int main (int argc, char ** argv)
     free(must_query_algo);
     free(must_query_md);
 
-  } /*for(unsigned iContext = 0; iContext < num_contexts; ++iContexts)*/
+  } /*for(unsigned iContext = 0; iContext < gNum_contexts; ++iContexts)*/
 
-  rc |= pami_shutdown(&client, context, &num_contexts);
+  rc |= pami_shutdown(&client, context, &gNum_contexts);
 
   return rc;
-};
+}

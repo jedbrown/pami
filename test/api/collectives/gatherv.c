@@ -3,11 +3,12 @@
    \brief Simple gatherv test 
 */
 
-#include "../pami_util.h"
 
 #define CHECK_DATA
 #define BUFSIZE 524288
 #define NITER   100
+
+#include "../pami_util.h"
 
 void initialize_sndbuf (pami_task_t task_id, void *buf, int bytes )
 {
