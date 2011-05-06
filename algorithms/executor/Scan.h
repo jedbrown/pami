@@ -12,14 +12,14 @@
 #include "algorithms/interfaces/NativeInterface.h"
 #include "common/default/Topology.h"
 
-#define MAX_CONCURRENT 32
-#define MAX_PARALLEL 20
+#define MAX_CONCURRENT_SCAN 32
+#define MAX_PARALLEL_SCAN 20
 
 #if defined EXECUTOR_DEBUG
 #undef EXECUTOR_DEBUG
-#define EXECUTOR_DEBUG(x) // fprintf x
+#define EXECUTOR_DEBUG(x)  // fprintf x
 #else
-#define EXECUTOR_DEBUG(x) // fprintf x
+#define EXECUTOR_DEBUG(x)  // fprintf x
 #endif
 
 namespace CCMI
@@ -46,7 +46,7 @@ namespace CCMI
           int             donecount;
           int             partnercnt;
           ScanExec        *exec;
-          RecvStruct      recvstr[MAX_CONCURRENT];
+          RecvStruct      recvstr[MAX_CONCURRENT_SCAN];
         };
 
       protected:
@@ -76,17 +76,17 @@ namespace CCMI
         unsigned            _connection_id;
 
         int                 _maxsrcs;
-        pami_task_t         _dstranks [MAX_CONCURRENT];
-        unsigned            _dstlens  [MAX_CONCURRENT];
-        pami_task_t         _srcranks [MAX_CONCURRENT];
-        unsigned            _srclens  [MAX_CONCURRENT];
+        pami_task_t         _dstranks [MAX_CONCURRENT_SCAN];
+        unsigned            _dstlens  [MAX_CONCURRENT_SCAN];
+        pami_task_t         _srcranks [MAX_CONCURRENT_SCAN];
+        unsigned            _srclens  [MAX_CONCURRENT_SCAN];
         PAMI::Topology      _selftopology;
-        PAMI::Topology      _dsttopology [MAX_CONCURRENT];
+        PAMI::Topology      _dsttopology [MAX_CONCURRENT_SCAN];
         PAMI::Topology      *_gtopology;
 
-        PAMI::PipeWorkQueue _pwq [MAX_CONCURRENT];
-        CollHeaderData      _mdata [MAX_CONCURRENT];
-        pami_multicast_t    _msend [MAX_CONCURRENT];
+        PAMI::PipeWorkQueue _pwq [MAX_CONCURRENT_SCAN];
+        CollHeaderData      _mdata [MAX_CONCURRENT_SCAN];
+        pami_multicast_t    _msend [MAX_CONCURRENT_SCAN];
 
         //Private method
         void             sendNext ();
@@ -105,7 +105,7 @@ namespace CCMI
             _startphase(0),
             _endphase(-1)
         {
-          TRACE_ADAPTOR((stderr, "<%p>Executor::ScanExec()\n", this));
+          EXECUTOR_DEBUG((stderr, "<%p>Executor::ScanExec()\n", this);)
         }
 
         ScanExec (Interfaces::NativeInterface  * mf,
@@ -129,7 +129,7 @@ namespace CCMI
             _selftopology(mf->myrank()),
             _gtopology(gtopology)
         {
-          TRACE_ADAPTOR((stderr, "<%p>Executor::ScanExec(...)\n", this));
+          EXECUTOR_DEBUG((stderr, "<%p>Executor::ScanExec(...)\n", this);)
           _clientdata        =  0;
           _buflen            =  0;
         }
@@ -151,14 +151,14 @@ namespace CCMI
 
         void setSchedule (T_Schedule *ct)
         {
-          TRACE_ADAPTOR((stderr, "<%p>Executor::ScanExec::setSchedule()\n", this));
+          EXECUTOR_DEBUG((stderr, "<%p>Executor::ScanExec::setSchedule()\n", this);)
           _comm_schedule = ct;
           // initialize schedule as if everybody is root
           _comm_schedule->init (_native->myrank(), CCMI::Schedule::SCATTER, _startphase, _nphases, _maxsrcs);
           CCMI_assert(_startphase == 0);
           CCMI_assert(_maxsrcs != 0);
-          CCMI_assert(_maxsrcs <= MAX_CONCURRENT);
-          CCMI_assert(_nphases <= MAX_PARALLEL);
+          CCMI_assert(_maxsrcs <= MAX_CONCURRENT_SCAN);
+          CCMI_assert(_nphases <= MAX_PARALLEL_SCAN);
 
 	  pami_result_t rc;
 	  rc = __global.heap_mm->memalign((void **)&_mrecvstr, 0, (_nphases + 1) * sizeof(PhaseRecvStr));
@@ -197,7 +197,7 @@ namespace CCMI
           if (_connmgr)
             _connection_id = _connmgr->getConnectionId(_comm, (unsigned) - 1, 0, (unsigned) - 1, (unsigned) - 1);
 
-          for (int i = 0; i < MAX_CONCURRENT; ++i)
+          for (int i = 0; i < MAX_CONCURRENT_SCAN; ++i)
             _msend[i].connection_id = _connection_id;
 
         }
@@ -210,7 +210,7 @@ namespace CCMI
           _connection_id = cid;
 
           //Override the connection id from the connection manager
-          for (int i = 0; i < MAX_CONCURRENT; ++i)
+          for (int i = 0; i < MAX_CONCURRENT_SCAN; ++i)
             _msend[i].connection_id = cid;
 
         }
@@ -241,7 +241,6 @@ namespace CCMI
                             pami_op          op = PAMI_OP_COUNT,
                             pami_dt          dt = PAMI_DT_COUNT)
         {
-
           CCMI_assert(count * sizeOfType == (unsigned)_buflen);
           _reduceFunc    = func;
           _sizeOfType    = sizeOfType;
@@ -259,11 +258,13 @@ namespace CCMI
           _buflen = len;
           _sbuf   = src;
           _rbuf   = dst;
+
+          PAMI_assertf(_tmpbuf != NULL, "tmpbuf is NULL\n");
         }
 
         void  setBuffers (char *src, char *dst, int len)
         {
-          TRACE_ADAPTOR((stderr, "<%p>Executor::ScanExec::setInfo() src %p, dst %p, len %d, _pwq %p\n", this, src, dst, len, &_pwq));
+          EXECUTOR_DEBUG((stderr, "<%p>Executor::ScanExec::setInfo() src %p, dst %p, len %d, _pwq %p\n", this, src, dst, len, &_pwq);)
 
           _buflen = len;
           _sbuf = src;
@@ -376,7 +377,7 @@ namespace CCMI
 template <class T_ConnMgr, class T_Schedule>
 inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::start ()
 {
-  TRACE_ADAPTOR((stderr, "<%p>Executor::ScanExec::start() count%d\n", this, _buflen));
+  EXECUTOR_DEBUG((stderr, "<%p>Executor::ScanExec::start() count%d\n", this, _buflen);)
 
   // Nothing to scan? We're done.
   if ((_buflen == 0) && _cb_done)
@@ -459,6 +460,7 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::sendNext ()
               _pwq[i].reset();
               _pwq[i].produceBytes(buflen);
 
+
               _mdata[i]._phase             = _curphase;
               _mdata[i]._count             = _buflen;
               _msend[i].src_participants   = (pami_topology_t *) & _selftopology;
@@ -469,7 +471,7 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::sendNext ()
               _msend[i].dst                = NULL;
               _msend[i].bytes              = buflen;
 
-              //fprintf(stderr, "send to %d during round %d\n", _dstranks[i], _curphase);
+              EXECUTOR_DEBUG((stderr, "send to %d during round %d\n", _dstranks[i], _curphase);)
 
               _native->multicast(&_msend[i]);
 
@@ -509,7 +511,6 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::sendNext ()
 
       return;
     }
-
   memcpy(_rbuf, _tmpbuf, _buflen);
 
   if (_cb_done) _cb_done (NULL, _clientdata, PAMI_SUCCESS);
@@ -527,7 +528,7 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::notifyRecv
 
   CollHeaderData *cdata = (CollHeaderData*) & info;
 
-  EXECUTOR_DEBUG((stderr, "recvd from %d, phase = %d, count = %d\n", src, cdata->_phase, cdata->_count);)
+  EXECUTOR_DEBUG((stderr, "recvd from %d, phase = %d, count = %d endphase=%d\n", src, cdata->_phase, cdata->_count, (unsigned)_endphase);)
 
   unsigned sindex = 0;
   unsigned nsrcs;
@@ -541,7 +542,7 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::notifyRecv
       for (unsigned i = 0; i < nsrcs; ++i)
         {
           size_t buflen       = _buflen;
-          EXECUTOR_DEBUG((stderr, "phase  = %d, buflen = %d, _srclens[%d] = %d, _srcranks[%d] = %d\n", cdata->_phase, _buflen, i, _srclens[i], i, _srcranks[i]));
+          EXECUTOR_DEBUG((stderr, "phase  = %d, buflen = %d, _srclens[%d] = %d, _srcranks[%d] = %d\n", cdata->_phase, _buflen, i, _srclens[i], i, _srcranks[i]);)
 #if ASSERT_LEVEL > 0
           unsigned srcindex = _gtopology->rank2Index(_srcranks[i]);
           unsigned dist     = (srcindex + _native->numranks() - _myindex) % _native->numranks();

@@ -76,8 +76,8 @@ public:
         COMPILE_TIME_ASSERT(sizeof(_schedule) >= sizeof(T_Schedule));
         create_schedule(&_schedule, sizeof(_schedule), (unsigned) - 1, native, geometry);
         _executor.setSchedule (&_schedule);
-        _executor.setBuffers (a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount);
-        _executor.setReduceInfo(a_xfer->stypecount / sizeOfType, sizeOfType, func, (pami_op)op, (pami_dt)dt);
+        _executor.setBuffers (a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount*sizeOfType);
+        _executor.setReduceInfo(a_xfer->stypecount, sizeOfType, func, (pami_op)op, (pami_dt)dt);
         _executor.setDoneCallback (cb_done.function, cb_done.clientdata);
     }
 
@@ -108,8 +108,11 @@ public:
         COMPILE_TIME_ASSERT(sizeof(_schedule) >= sizeof(T_Schedule));
         create_schedule(&_schedule, sizeof(_schedule), (unsigned) - 1, native, geometry);
         _executor.setSchedule (&_schedule);
-        _executor.setBuffers (sndbuf, rcvbuf, rtypecount);
-        _executor.setReduceInfo(stypecount / sizeOfType, sizeOfType, func, op, dt);
+        
+        // using stypecount here because this constructor is called in the
+        // unexpected message case:  stype and  rtype must be PAMI_TYPE_BYTE
+        _executor.setBuffers (sndbuf, rcvbuf, stypecount);
+        _executor.setReduceInfo(stypecount, 1, func, op, dt);
         _executor.setDoneCallback (cb_done.function, cb_done.clientdata);
 
     }
@@ -244,18 +247,15 @@ public:
             co->setFlag(LocalPosted);
 
             a_composite = co->getComposite();
-            // update send buffer pointer and, at root, receive buffer pointers
-            a_composite->executor().updateBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->rtypecount);
-
             coremath func;
             unsigned sizeOfType;
             uintptr_t op, dt;
             PAMI::Type::TypeFunc::GetEnums(a_xfer->stype,
                                            a_xfer->op,
                                            dt,op);
-
             CCMI::Adaptor::Allreduce::getReduceFunction((pami_dt)dt, (pami_op)op, sizeOfType, func);
-            a_composite->executor().updateReduceInfo(a_xfer->stypecount / sizeOfType, sizeOfType, func, (pami_op)op, (pami_dt)dt);
+            a_composite->executor().updateBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount*sizeOfType);
+            a_composite->executor().updateReduceInfo(a_xfer->stypecount, sizeOfType, func, (pami_op)op, (pami_dt)dt);
         }
         /// not found posted CollOp object, create a new one and
         /// queue it in active queue
@@ -332,6 +332,8 @@ public:
 
         if (!co)
         {
+
+          
             DEBUG((stderr, "key = %d no local post or early arrival, create new co\n", key);)
             co = factory->_free_pool.allocate(key);
             pami_callback_t cb_exec_done;
