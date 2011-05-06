@@ -425,14 +425,33 @@ namespace PAMI
 
 			int rc;
 			uint32_t N;
+			uint32_t nresv = 0;
+
+			/// \page env_vars Environment Variables
+			///
+			/// PAMI_RESV_CLASSROUTES - The number of classroutes
+			/// to leave free. PAMI will take all other available
+			/// classroutes. Note, setting this does not guarantee
+			/// a given number of classroutes, only that PAMI will
+			/// not take them.  The user must still employ the SPIs
+			/// to determine just how many, and which, classroutes
+			/// are available.
+			///
+			char *s = getenv("PAMI_RESV_CLASSROUTES");
+			if (s) {
+				nresv = strtoul(s, NULL, 0);
+			}
 			rc = Kernel_QueryCollectiveClassRoutes(&sh_crs->ncncr,
 						sh_crs->cn_crs, sizeof(sh_crs->cn_crs));
 			PAMI_assert_alwaysf(rc == 0, "Kernel_QueryCollectiveClassRoutes failed %d", rc);
 			// we take the "last" N ids, where "N" is some number we get from a
 			// resource manager - TBD.
-			N = sh_crs->ncncr; // take all, until we know otherwise...
+			if (sh_crs->ncncr < nresv) {
+				N = 0;
+			} else {
+				N = sh_crs->ncncr - nresv;
+			}
 
-			if (N > sh_crs->ncncr) N = sh_crs->ncncr;
 			sh_crs->cnfirst = sh_crs->ncncr - N;
 			sh_crs->cnused = N;
 			uint32_t x;
@@ -452,9 +471,12 @@ if (rc) fprintf(stderr, "Kernel_AllocateCollectiveClassRoute(%d) failed %d %d\n"
 
 			// we take the "last" N ids, where "N" is some number we get from a
 			// resource manager - TBD.
-			N = sh_crs->ngicr; // take all, until we know otherwise...
+			if (sh_crs->ngicr < nresv) {
+				N = 0;
+			} else {
+				N = sh_crs->ngicr - nresv;
+			}
 
-			if (N > sh_crs->ngicr) N = sh_crs->ngicr;
 			sh_crs->gifirst = sh_crs->ngicr - N;
 			sh_crs->giused = N;
 
