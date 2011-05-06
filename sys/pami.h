@@ -3563,7 +3563,7 @@ extern "C"
                                       pami_endpoint_t * endpoint);
 
   /**
-   * \brief Retrieve the client, task, and context offset associated with an endpoint
+   * \brief Retrieve the task and context offset associated with an endpoint
    *
    * The endpoint must have been previously initialized.
    *
