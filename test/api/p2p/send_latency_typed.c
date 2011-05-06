@@ -296,7 +296,7 @@ int main (int argc, char ** argv)
     if (_my_task == origin_task)
       fprintf (stdout, "Using PAMI Builtin Datatype\n");
   }
-  else if (data)
+  else if (data && !strcmp(data, "MPI"))
   {
     PAMI_Type_create(&send_datatype);
     PAMI_Type_add_simple(send_datatype,TYPESIZE,0UL,1,0);
@@ -304,6 +304,16 @@ int main (int argc, char ** argv)
     PAMI_Type_complete(send_datatype, TYPESIZE);
     if (_my_task == origin_task)
       fprintf (stdout, "Using PE MPI Style Builtin Datatype\n");
+  }
+  else if (data && !strcmp(data, "NONCONTIG"))
+  {
+    PAMI_Type_create(&send_datatype);
+    PAMI_Type_add_simple(send_datatype,TYPESIZE,0UL, 1, TYPESIZE/2);
+    PAMI_Type_add_simple(send_datatype,0,TYPESIZE/4,0,0);
+    PAMI_Type_add_simple(send_datatype,TYPESIZE,0UL,1,TYPESIZE/2);
+    PAMI_Type_complete(send_datatype, TYPESIZE);
+    if (_my_task == origin_task)
+      fprintf(stdout, "Using non-contiguous user defined datatype\n");
   }
   else
   {

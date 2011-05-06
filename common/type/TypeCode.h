@@ -137,8 +137,9 @@ namespace PAMI
             };
 
             struct Begin : Op {
+                unsigned int contiguous;
+                unsigned int depth;
                 size_t  code_size;
-                size_t  depth;
                 size_t  data_size;
                 size_t  extent;
                 size_t  num_blocks;
@@ -146,7 +147,7 @@ namespace PAMI
                 size_t  atom_size;
 
                 Begin()
-                    : Op(BEGIN), code_size(0), depth(1), data_size(0), extent(0),
+                    : Op(BEGIN), contiguous(0), depth(1), code_size(0), data_size(0), extent(0),
                     num_blocks(0), unit(0), atom_size(0) { }
 
                 void Show(int pc) const {
@@ -215,7 +216,7 @@ namespace PAMI
             void AddCodeSize(size_t inc_code_size);
             void AddDataSize(size_t inc_data_size);
             void AddExtent(size_t inc_extent);
-            void UpdateDepth(size_t call_depth);
+            void UpdateDepth(unsigned int call_depth);
             void AddNumBlocks(size_t inc_num_blocks);
             void UpdateUnit(size_t new_unit);
             void CopySubTypes();
@@ -237,10 +238,11 @@ namespace PAMI
 
     inline TypeCode::TypeCode(void *code_addr, size_t code_size)
         : code(NULL), code_buf_size(0), code_cursor(0), completed(true),
-        to_optimize(true), is_contiguous(true), primitive(PRIMITIVE_TYPE_COUNT)
+        to_optimize(true), is_contiguous(false), primitive(PRIMITIVE_TYPE_COUNT)
     {
         ResizeCodeBuffer(code_size);
         memcpy(code, code_addr, code_size);
+        if (((Begin *)code)->contiguous) is_contiguous = true;
     }
 
     inline TypeCode::TypeCode(size_t code_size, primitive_type_t primitive_type)
@@ -271,7 +273,6 @@ namespace PAMI
 
     inline void TypeCode::CheckCodeBuffer(size_t inc_code_size)
     {
-      // Begin &begin = *(Begin *)code;
         if (code_cursor + inc_code_size > code_buf_size) {
             ResizeCodeBuffer(code_buf_size * 2);
         }
@@ -364,9 +365,9 @@ namespace PAMI
         ((Begin *)code)->num_blocks += inc_num_blocks;
     }
 
-    inline void TypeCode::UpdateDepth(size_t call_depth)
+    inline void TypeCode::UpdateDepth(unsigned int call_depth)
     {
-        size_t &depth = ((Begin *)code)->depth;
+        unsigned int &depth = ((Begin *)code)->depth;
         if (depth < call_depth)
             depth = call_depth;
     }
@@ -385,8 +386,6 @@ namespace PAMI
         assert(!IsCompleted());
 
         if (shift != 0) {
-            // any shift breaks contiguity
-            is_contiguous = false;
             CheckCodeBuffer(sizeof(Shift));
             *(Shift *)(code + code_cursor) = Shift(shift);
             code_cursor += sizeof(Shift);
@@ -400,14 +399,10 @@ namespace PAMI
         assert(!IsCompleted());
 
         if (reps > 0) {
-            if ( bytes != stride) {
-                // breaks contiguity
-                is_contiguous = false;
-            } else {
-                if (to_optimize) {
-                    stride  = bytes *= reps;
-                    reps    = 1;
-                }
+            if (((Begin *)code)->data_size != ((Begin *)code)->extent) is_contiguous = false;
+            if (to_optimize && (bytes == stride)) {
+                stride  = bytes *= reps;
+                reps    = 1;
             }
             CheckCodeBuffer(sizeof(Copy));
             *(Copy *)(code + code_cursor) = Copy(bytes, stride, reps);
@@ -428,7 +423,7 @@ namespace PAMI
 
         if (reps > 0) {
             if (is_contiguous == true) {
-                if (stride != sub_type->GetDataSize()) is_contiguous = false;
+                if (((Begin *)code)->data_size != ((Begin *)code)->extent) is_contiguous = false;
                 else is_contiguous = sub_type->IsContiguous();
             }
             CheckCodeBuffer(sizeof(Call));
@@ -458,6 +453,13 @@ namespace PAMI
         if (code_cursor < GetCodeSize())
             CopySubTypes();
 
+        if (is_contiguous) {
+            if (((Begin *)code)->data_size != ((Begin *)code)->extent)
+                is_contiguous = false;
+            else
+                ((Begin *)code)->contiguous = 1;
+        }
+            
         completed = true;
     }
 
