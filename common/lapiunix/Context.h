@@ -89,7 +89,7 @@ namespace PAMI
     inline int advance_impl()
       {
         Context *cp      = (Context *)_lapi_state;
-        PAMI_Context_advance((pami_context_t) cp, 1);
+        return PAMI_Context_advance((pami_context_t) cp, 1);
       }
   private:
     lapi_state_t                          *_lapi_state;
