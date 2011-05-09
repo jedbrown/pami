@@ -35,6 +35,9 @@ namespace Adaptor
 namespace OneTask
 {
 
+typedef PAMI::Type::TypeCode    TypeCode;
+typedef PAMI::Type::TypeMachine TypeMachine;
+
 // OneTask Factory for generate routine
 // generate
 //
@@ -113,6 +116,7 @@ template <class T_Collective_type>
 inline pami_result_t doAction(T_Collective_type *xfer, PAMI_GEOMETRY_CLASS *_geometry)
 {
     COMPILE_TIME_ASSERT(0 == 1);
+    return PAMI_SUCCESS;
 }
 
 template <>
