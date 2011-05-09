@@ -15,12 +15,6 @@
 
 /*define this if you want to validate the data */
 #define CHECK_DATA
-#define FULL_TEST
-#define COUNT      65536
-#define MAXBUFSIZE COUNT*16
-#define NITERLAT   1000
-#define NITERBW    10
-#define CUTOFF     65536
 
 
 int main(int argc, char*argv[])
@@ -241,7 +235,7 @@ int main(int argc, char*argv[])
                       continue;
 
 #ifdef CHECK_DATA
-                    reduce_initialize_sndbuf (sbuf, i, op, dt, task_id);
+                    reduce_initialize_sndbuf (sbuf, i, op, dt, task_id, num_tasks);
 #endif
                     blocking_coll(context, &barrier, &bar_poll_flag);
                     ti = timer();
@@ -260,8 +254,7 @@ int main(int argc, char*argv[])
                     blocking_coll(context, &barrier, &bar_poll_flag);
 
 #ifdef CHECK_DATA
-                    rc = reduce_check_rcvbuf (rbuf, i, op, dt, num_tasks);
-
+		    int rc = reduce_check_rcvbuf (rbuf, i, op, dt, task_id, num_tasks);
                     if (rc) fprintf(stderr, "FAILED validation\n");
 
 #endif
