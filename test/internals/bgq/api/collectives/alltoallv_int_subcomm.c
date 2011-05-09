@@ -179,7 +179,8 @@ int main(int argc, char*argv[])
 
   range     = (pami_geometry_range_t *)malloc(((num_tasks + 1) / 2) * sizeof(pami_geometry_range_t));
 
-  get_split_method(&num_tasks, task_id, &rangecount, range, &local_task_id, set, &id, &root);
+  int unused_non_root[2];
+  get_split_method(&num_tasks, task_id, &rangecount, range, &local_task_id, set, &id, &root,unused_non_root);
 
   unsigned iContext = 0;
 

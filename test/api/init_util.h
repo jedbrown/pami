@@ -477,7 +477,7 @@ void setup_op_dt(size_t ** validTable,char* sDt, char* sOp)
 }
 
 void get_split_method(size_t *num_tasks,pami_task_t task_id, int *rangecount, pami_geometry_range_t *range, pami_task_t *local_task_id,
-                      size_t set[2],int *id,  int *root)
+                      size_t set[2],int *id,  int *root, int non_root[2])
 {
   size_t                 half        = *num_tasks / 2;
   char *method = getenv("TEST_SPLIT_METHOD");
@@ -495,6 +495,8 @@ void get_split_method(size_t *num_tasks,pami_task_t task_id, int *rangecount, pa
       *root     = 0;
       *num_tasks = half;
       *local_task_id = task_id;
+      non_root[0]  = *root +1;      /* first non-root rank in the subcomm  */
+      non_root[1]  = half-1;        /* last rank in the subcomm  */
     }
     else
     {
@@ -506,6 +508,8 @@ void get_split_method(size_t *num_tasks,pami_task_t task_id, int *rangecount, pa
       *root     = half;
       *num_tasks = *num_tasks - half;
       *local_task_id = task_id - *root;
+      non_root[0] = *root +1;      /* first non-root rank in the subcomm  */
+      non_root[1] = *num_tasks-1;  /* last rank in the subcomm  */
     }
   
     *rangecount = 1;
@@ -533,6 +537,8 @@ void get_split_method(size_t *num_tasks,pami_task_t task_id, int *rangecount, pa
       *id       = 2;
       *root     = 0;
       *rangecount = iter;
+      non_root[0] = range[1].lo;      /* first non-root rank in the subcomm  */
+      non_root[1] = range[iter-1].lo; /* last rank in the subcomm  */
     }
     else
     {
@@ -551,6 +557,8 @@ void get_split_method(size_t *num_tasks,pami_task_t task_id, int *rangecount, pa
       *id       = 2;
       *root     = 1;
       *rangecount = iter;
+      non_root[0] = range[1].lo;      /* first non-root rank in the subcomm  */
+      non_root[1] = range[iter-1].lo; /* last rank in the subcomm  */
     }
   
     *num_tasks = iter;
@@ -570,6 +578,8 @@ void get_split_method(size_t *num_tasks,pami_task_t task_id, int *rangecount, pa
       *root     = 0;
       *num_tasks = half;
       *local_task_id = task_id;
+      non_root[0] = *root +1;      /* first non-root rank in the subcomm  */
+      non_root[1] = half-1;        /* last rank in the subcomm  */
     }
     else
     {
@@ -581,6 +591,8 @@ void get_split_method(size_t *num_tasks,pami_task_t task_id, int *rangecount, pa
       *root     = half;
       *num_tasks = *num_tasks - half;
       *local_task_id = task_id - *root;
+      non_root[0] = *root +1;       /* first non-root rank in the subcomm  */
+      non_root[1] = *num_tasks-1;   /* last rank in the subcomm  */
     }
   
     *rangecount = 1;

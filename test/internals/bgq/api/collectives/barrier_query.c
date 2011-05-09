@@ -12,7 +12,6 @@
  */
 
 
-#define NUM_NON_ROOT_DELAYS 2
 /*
 #define NITERLAT   1
 */
@@ -23,7 +22,7 @@ int main(int argc, char*argv[])
 {
   pami_client_t        client;
   pami_context_t      *context;
-  pami_task_t          task_id, non_root[NUM_NON_ROOT_DELAYS];
+  pami_task_t          task_id, non_root[2];
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
 
@@ -128,7 +127,7 @@ int main(int argc, char*argv[])
       /* Do two functional runs with different delaying ranks*/
       int j;
 
-      for (j = 0; j < NUM_NON_ROOT_DELAYS; ++j)
+      for (j = 0; j < 2; ++j)
       {
         if (!task_id)
         {

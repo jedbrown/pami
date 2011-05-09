@@ -12,7 +12,6 @@
  */
 
 
-#define NUM_NON_ROOT_DELAYS 2
 /*
 #define NITERLAT   1
 */
@@ -103,11 +102,11 @@ int main(int argc, char*argv[])
     pami_xfer_t            newbarrier;
 
     size_t                 set[2];
-    int                    id, root = 0, non_root[NUM_NON_ROOT_DELAYS], timeDelay = 0;
+    int                    id, root = 0, non_root[2], timeDelay = 0;
 
     range     = (pami_geometry_range_t *)malloc(((num_tasks + 1) / 2) * sizeof(pami_geometry_range_t));
 
-    get_split_method(&num_tasks, task_id, &rangecount, range, &local_task_id, set, &id, &root);
+    get_split_method(&num_tasks, task_id, &rangecount, range, &local_task_id, set, &id, &root,non_root);
 
 
     if (root)
@@ -186,7 +185,7 @@ int main(int argc, char*argv[])
           /* Do two functional runs with different delaying ranks*/
           int j;
 
-          for (j = 0; j < NUM_NON_ROOT_DELAYS; ++j)
+          for (j = 0; j < 2; ++j)
           {
             if (task_id == root)
             {
