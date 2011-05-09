@@ -7,6 +7,7 @@
 #include <stdio.h>
 
 pami_endpoint_t * _endpoint;
+uint8_t _tmpbuffer[10240];
 
 static void createEndpointTable (pami_client_t client, int num)
 {
@@ -30,8 +31,19 @@ static void createEndpointTable (pami_client_t client, int num)
   for (i=0; i<global_tasks; i++)
   {
     for (j=0; j<num; j++)
+    {
       PAMI_Endpoint_create (client, i, j, &_endpoint[i*num+j]);
+      fprintf (stderr, "_endpoint[%zu] = 0x%08x\n", i*num+j, _endpoint[i*num+j]);
+    }
   }
+};
+
+static void decrement (pami_context_t   context,
+                       void           * cookie,
+                       pami_result_t    result)
+{
+  volatile size_t * value = (volatile size_t *) cookie;
+  (*value)--;
 };
 
 static void test_dispatch (
@@ -46,17 +58,24 @@ static void test_dispatch (
 {
   fprintf (stderr, "recv'd message from endpoint 0x%08x.\n", origin);
   volatile size_t * expect = (volatile size_t *) cookie;
-  (*expect)--;
+
+  if (pipe_addr != NULL)
+  {
+    fprintf (stderr, "short recv:  decrement cookie = %p, %zu => %zu\n", cookie, *expect, *expect-1);
+    (*expect)--;
+    return;
+  }
+
+  fprintf (stderr, "long recv");
+  recv->local_fn = decrement;
+  recv->cookie   = cookie;
+  recv->type     = PAMI_TYPE_BYTE;
+  recv->addr     = (void *)_tmpbuffer;
+  recv->offset   = 0;
+
   return;
 }
 
-static void decrement (pami_context_t   context,
-                       void           * cookie,
-                       pami_result_t    result)
-{
-  volatile size_t * value = (volatile size_t *) cookie;
-  (*value)--;
-};
 
 
 static pami_result_t send_endpoint (pami_context_t   context,
@@ -125,13 +144,12 @@ int main ()
   }
   size_t num_tasks = configuration.value.intval;
   fprintf (stderr, "Number of tasks = %zu\n", num_tasks);
-  if (num*num_tasks < 7)
-  {
-    fprintf (stderr, "Error. This test requires at least 7 endpoints. Number of endpoints in this job: %zu\n", num*num_tasks);
-    return 1;
-  }
+//  if (num*num_tasks < 7)
+  //{
+    //fprintf (stderr, "Error. This test requires at least 7 endpoints. Number of endpoints in this job: %zu\n", num*num_tasks);
+//    return 1;
+  //}
 
-  if (task_id == 1) expect += num_tasks;
 
   uint8_t header[16];
   uint8_t data[1024];
@@ -148,8 +166,12 @@ int main ()
   parameters.events.local_fn      = decrement;
   parameters.events.remote_fn     = NULL;
 
-  /* Send a message to endpoint "6" */
-  send_endpoint (context[0], 1, &parameters);
+  /* Send a message to endpoint "num_tasks * num_contexts - 1" */
+  pami_task_t target_task = (pami_task_t) -1;
+  size_t      target_offset = (size_t) -1;
+  PAMI_Endpoint_query (_endpoint[num*num_tasks-1], &target_task, &target_offset);
+  if (task_id == target_task) expect += num_tasks;
+  send_endpoint (context[0], num*num_tasks-1, &parameters);
 
   fprintf (stdout, "before advance, active = %zu, expect = %zu\n", active, expect);
   while ((active + expect) > 0) PAMI_Context_advancev (context, num, 100);
