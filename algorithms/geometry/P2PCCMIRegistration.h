@@ -129,9 +129,29 @@ namespace PAMI
             _ascs_pairwise_alltoallv_int_factory(),
             _alltoall_factory(),
             _alltoallv_factory(),
+            _onetask_barrier_factory(),
+            //_onetask_fence_factory(),
+            _onetask_broadcast_factory(),
+            _onetask_reduce_factory(),
+            _onetask_allreduce_factory(),
+            _onetask_allgather_factory(),
+            _onetask_allgatherv_factory(),
+            _onetask_allgatherv_int_factory(),
+            _onetask_scatter_factory(),
+            _onetask_scatterv_factory(),
+            _onetask_scatterv_int_factory(),
+            _onetask_gather_factory(),
+            _onetask_gatherv_factory(),
+            _onetask_gatherv_int_factory(),
+            _onetask_alltoall_factory(),
+            _onetask_alltoallv_factory(),
+            _onetask_alltoallv_int_factory(),
+            _onetask_scan_factory(),
+            _onetask_reduce_scatter_factory(),
             _composite_ni()
           {
             TRACE_INIT((stderr, "<%p>CCMIRegistration() use_shmem %s, use_p2p %s, local_size %zu, global_size %zu\n", this, use_shmem? "true":"false",use_p2p?"true":"false",local_size,global_size ));
+            setupOneTaskFactories();
             if ((use_shmem) && (use_p2p))
               {
                 TRACE_INIT((stderr, "<%p>CCMIRegistration() use composite\n",this));
@@ -178,139 +198,217 @@ namespace PAMI
                            this,
                            context_id,
                            geometry));
-      if (phase != 0) return PAMI_SUCCESS;
+            if (phase != 0) return PAMI_SUCCESS;
 
-            pami_xfer_t xfer = {0};
-            if (_binomial_barrier_factory == NULL) // nothing setup?
-              ; // then do nothing - no shmem on 1 process per node (and other protocol is disabled)
-            else
+            if(geometry->size() == 1)//if onetask geometry
             {
-              TRACE_INIT((stderr, "<%p>CCMIRegistration::analyze() add\n",this));
-              _binomial_barrier_composite = (CCMI::Adaptor::P2PBarrier::BinomialBarrier *)
-              _binomial_barrier_factory->generate(geometry, &xfer);
-              _binomial_barrier_composite->getExecutor()->setContext(_context);
-              geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
-                               (void*)_binomial_barrier_composite);
-
-              geometry->setKey(context_id,
-                               PAMI::Geometry::CKEY_BARRIERCOMPOSITE1,
-                               (void*)_binomial_barrier_composite);
-
-              if(context_id == 0) /// \todo multi-context support
+              pami_xfer_t xfer = {0};
+              if (_onetask_barrier_factory == NULL) // nothing setup?
+                ; // then do nothing - no shmem on 1 process per node (and other protocol is disabled)
+              else
               {
-                // Set geometry-wide, across contexts, UE barrier
-                geometry->setKey(PAMI::Geometry::GKEY_UEBARRIERCOMPOSITE1,
-                                 (void*)_binomial_barrier_composite);
-              }
+                TRACE_INIT((stderr, "<%p>CCMIRegistration::analyze() add\n",this));
+                _onetask_barrier_composite = (CCMI::Adaptor::P2POneTask::OneTaskBarrier *)
+                _onetask_barrier_factory->generate(geometry, &xfer);
 
-              _csconnmgr.setSequence(geometry->comm());
-
-              geometry->addCollective(PAMI_XFER_BARRIER,
-                                      _binomial_barrier_factory,
-                                      _context_id);
-
-              geometry->setUEBarrier(_binomial_barrier_factory);
-
-              PAMI::Topology * rectangle = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX);
-              if((rectangle->type() == PAMI_COORD_TOPOLOGY) &&   // could be EMPTY
-                 (__global.mapping.torusDims() > 1))             /// \todo problems on pseudo-torus platforms so disable it on tdim == 1
-
-              {
-                geometry->addCollective(PAMI_XFER_BROADCAST,
-                                        _rectangle_broadcast_factory,
+                geometry->addCollective(PAMI_XFER_BARRIER,
+                                        _onetask_barrier_factory,
                                         _context_id);
-                /// \todo 1 color doesn't work on sub-communicators, so disable it
-                if(rectangle->size() == __global.topology_global.size())
-                {
-                  geometry->addCollective(PAMI_XFER_BROADCAST,
-                                          _rectangle_1color_broadcast_factory,
-                                          _context_id);
-                }
+
+                geometry->setUEBarrier(_onetask_barrier_factory);
               }
+
+              //geometry->addCollective(PAMI_XFER_FENCE,
+              //                        _onetask_fence_factory,
+              //                        _context_id);
+
               geometry->addCollective(PAMI_XFER_BROADCAST,
-                                      _binomial_broadcast_factory,
-                                      _context_id);
-              geometry->addCollective(PAMI_XFER_BROADCAST,
-                                      _ring_broadcast_factory,
-                                      _context_id);
-              geometry->addCollective(PAMI_XFER_BROADCAST,
-                                      _ascs_binomial_broadcast_factory,
-                                      _context_id);
-              geometry->addCollective(PAMI_XFER_BROADCAST,
-                                      _asrb_binomial_broadcast_factory,
-                                      _context_id);
-              geometry->addCollective(PAMI_XFER_AMBROADCAST,
-                                      _active_binomial_broadcast_factory,
-                                      _context_id);
-              geometry->addCollective(PAMI_XFER_ALLREDUCE,
-                                      _binomial_allreduce_factory,
-                                      _context_id);
-              geometry->addCollective(PAMI_XFER_ALLREDUCE,
-                                      _binomial4_allreduce_factory,
-                                      _context_id);
-              geometry->addCollective(PAMI_XFER_ALLREDUCE,
-                                      _binomial8_allreduce_factory,
-                                      _context_id);
-              geometry->addCollective(PAMI_XFER_ALLREDUCE,
-                                      _ascs_binomial_allreduce_factory,
+                                      _onetask_broadcast_factory,
                                       _context_id);
               geometry->addCollective(PAMI_XFER_REDUCE,
-                                      _ascs_binomial_reduce_factory,
-                                      _context_id);
-              geometry->addCollective(PAMI_XFER_SCATTER,
-                                      _ascs_binomial_scatter_factory,
-                                      _context_id);
-              geometry->addCollective(PAMI_XFER_SCATTER,
-                                      _ascs_flat_scatter_factory,
-                                      _context_id);
-              geometry->addCollective(PAMI_XFER_SCATTERV,
-                                      _ascs_scatterv_factory,
-                                      _context_id);
-              geometry->addCollective(PAMI_XFER_SCATTERV_INT,
-                                     _ascs_scatterv_int_factory,
-                                     _context_id);
-              geometry->addCollective(PAMI_XFER_SCAN,
-                                     _ascs_binomial_scan_factory,
-                                     _context_id);
-              geometry->addCollective(PAMI_XFER_REDUCE_SCATTER,
-                                     _ascs_reduce_scatter_factory,
-                                     _context_id);
-              geometry->addCollective(PAMI_XFER_GATHER,
-                                      _ascs_binomial_gather_factory,
-                                      _context_id);
-              geometry->addCollective(PAMI_XFER_GATHER,
-                                      _ascs_flat_gather_factory,
-                                      _context_id);
-              geometry->addCollective(PAMI_XFER_GATHERV,
-                                      _ascs_gatherv_factory,
-                                      _context_id);
-              geometry->addCollective(PAMI_XFER_GATHERV_INT,
-                                      _ascs_gatherv_int_factory,
+                                      _onetask_reduce_factory,
                                       _context_id);
               geometry->addCollective(PAMI_XFER_ALLGATHER,
-                                      _ascs_binomial_allgather_factory,
-                                      _context_id);
-              geometry->addCollective(PAMI_XFER_ALLGATHER,
-                                      _ascs_ring_allgather_factory,
+                                      _onetask_allgather_factory,
                                       _context_id);
               geometry->addCollective(PAMI_XFER_ALLGATHERV,
-                                      _ascs_ring_allgatherv_factory,
+                                      _onetask_allgatherv_factory,
                                       _context_id);
               geometry->addCollective(PAMI_XFER_ALLGATHERV_INT,
-                                      _ascs_ring_allgatherv_int_factory,
+                                      _onetask_allgatherv_int_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_SCATTER,
+                                      _onetask_scatter_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_SCATTERV,
+                                      _onetask_scatterv_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_SCATTERV_INT,
+                                      _onetask_scatterv_int_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_GATHER,
+                                      _onetask_gather_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_GATHERV,
+                                      _onetask_gatherv_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_GATHERV_INT,
+                                      _onetask_gatherv_int_factory,
                                       _context_id);
               geometry->addCollective(PAMI_XFER_ALLTOALL,
-                                      _ascs_pairwise_alltoall_factory,
-                                      _context_id);
-              geometry->addCollective(PAMI_XFER_ALLTOALLV_INT,
-                                      _ascs_pairwise_alltoallv_int_factory,
-                                      _context_id);
-              geometry->addCollective(PAMI_XFER_ALLTOALL,
-                                      _alltoall_factory,
+                                      _onetask_alltoall_factory,
                                       _context_id);
               geometry->addCollective(PAMI_XFER_ALLTOALLV,
-                                      _alltoallv_factory,
+                                      _onetask_alltoallv_factory,
                                       _context_id);
+              geometry->addCollective(PAMI_XFER_ALLTOALLV_INT,
+                                      _onetask_alltoallv_int_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_ALLREDUCE,
+                                      _onetask_allreduce_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_SCAN,
+                                      _onetask_scan_factory,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_REDUCE_SCATTER,
+                                      _onetask_reduce_scatter_factory,
+                                      _context_id);
+
+            }//End if onetask geometry
+            else//More than one task
+            {
+              pami_xfer_t xfer = {0};
+              if (_binomial_barrier_factory == NULL) // nothing setup?
+                ; // then do nothing - no shmem on 1 process per node (and other protocol is disabled)
+              else
+              {
+                TRACE_INIT((stderr, "<%p>CCMIRegistration::analyze() add\n",this));
+                _binomial_barrier_composite = (CCMI::Adaptor::P2PBarrier::BinomialBarrier *)
+                _binomial_barrier_factory->generate(geometry, &xfer);
+                _binomial_barrier_composite->getExecutor()->setContext(_context);
+                geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
+                                 (void*)_binomial_barrier_composite);
+
+                geometry->setKey(context_id,
+                                 PAMI::Geometry::CKEY_BARRIERCOMPOSITE1,
+                                 (void*)_binomial_barrier_composite);
+
+                if(context_id == 0) /// \todo multi-context support
+                {
+                  // Set geometry-wide, across contexts, UE barrier
+                  geometry->setKey(PAMI::Geometry::GKEY_UEBARRIERCOMPOSITE1,
+                                   (void*)_binomial_barrier_composite);
+                }
+
+                _csconnmgr.setSequence(geometry->comm());
+
+                geometry->addCollective(PAMI_XFER_BARRIER,
+                                        _binomial_barrier_factory,
+                                        _context_id);
+
+                geometry->setUEBarrier(_binomial_barrier_factory);
+
+                PAMI::Topology * rectangle = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX);
+                if((rectangle->type() == PAMI_COORD_TOPOLOGY) &&   // could be EMPTY
+                   (__global.mapping.torusDims() > 1))             /// \todo problems on pseudo-torus platforms so disable it on tdim == 1
+
+                {
+                  geometry->addCollective(PAMI_XFER_BROADCAST,
+                                          _rectangle_broadcast_factory,
+                                          _context_id);
+                  /// \todo 1 color doesn't work on sub-communicators, so disable it
+                  if(rectangle->size() == __global.topology_global.size())
+                  {
+                    geometry->addCollective(PAMI_XFER_BROADCAST,
+                                            _rectangle_1color_broadcast_factory,
+                                            _context_id);
+                  }
+                }
+                geometry->addCollective(PAMI_XFER_BROADCAST,
+                                        _binomial_broadcast_factory,
+                                        _context_id);
+                geometry->addCollective(PAMI_XFER_BROADCAST,
+                                        _ring_broadcast_factory,
+                                        _context_id);
+                geometry->addCollective(PAMI_XFER_BROADCAST,
+                                        _ascs_binomial_broadcast_factory,
+                                        _context_id);
+                geometry->addCollective(PAMI_XFER_BROADCAST,
+                                        _asrb_binomial_broadcast_factory,
+                                        _context_id);
+                geometry->addCollective(PAMI_XFER_AMBROADCAST,
+                                        _active_binomial_broadcast_factory,
+                                        _context_id);
+                geometry->addCollective(PAMI_XFER_ALLREDUCE,
+                                        _binomial_allreduce_factory,
+                                        _context_id);
+                geometry->addCollective(PAMI_XFER_ALLREDUCE,
+                                        _binomial4_allreduce_factory,
+                                        _context_id);
+                geometry->addCollective(PAMI_XFER_ALLREDUCE,
+                                        _binomial8_allreduce_factory,
+                                        _context_id);
+                geometry->addCollective(PAMI_XFER_ALLREDUCE,
+                                        _ascs_binomial_allreduce_factory,
+                                        _context_id);
+                geometry->addCollective(PAMI_XFER_REDUCE,
+                                        _ascs_binomial_reduce_factory,
+                                        _context_id);
+                geometry->addCollective(PAMI_XFER_SCATTER,
+                                        _ascs_binomial_scatter_factory,
+                                        _context_id);
+                geometry->addCollective(PAMI_XFER_SCATTER,
+                                        _ascs_flat_scatter_factory,
+                                        _context_id);
+                geometry->addCollective(PAMI_XFER_SCATTERV,
+                                        _ascs_scatterv_factory,
+                                        _context_id);
+                geometry->addCollective(PAMI_XFER_SCATTERV_INT,
+                                       _ascs_scatterv_int_factory,
+                                       _context_id);
+                geometry->addCollective(PAMI_XFER_SCAN,
+                                       _ascs_binomial_scan_factory,
+                                       _context_id);
+                geometry->addCollective(PAMI_XFER_REDUCE_SCATTER,
+                                       _ascs_reduce_scatter_factory,
+                                       _context_id);
+                geometry->addCollective(PAMI_XFER_GATHER,
+                                        _ascs_binomial_gather_factory,
+                                        _context_id);
+                geometry->addCollective(PAMI_XFER_GATHER,
+                                        _ascs_flat_gather_factory,
+                                        _context_id);
+                geometry->addCollective(PAMI_XFER_GATHERV,
+                                        _ascs_gatherv_factory,
+                                        _context_id);
+                geometry->addCollective(PAMI_XFER_GATHERV_INT,
+                                        _ascs_gatherv_int_factory,
+                                        _context_id);
+                geometry->addCollective(PAMI_XFER_ALLGATHER,
+                                        _ascs_binomial_allgather_factory,
+                                        _context_id);
+                geometry->addCollective(PAMI_XFER_ALLGATHER,
+                                        _ascs_ring_allgather_factory,
+                                        _context_id);
+                geometry->addCollective(PAMI_XFER_ALLGATHERV,
+                                        _ascs_ring_allgatherv_factory,
+                                        _context_id);
+                geometry->addCollective(PAMI_XFER_ALLGATHERV_INT,
+                                        _ascs_ring_allgatherv_int_factory,
+                                        _context_id);
+                geometry->addCollective(PAMI_XFER_ALLTOALL,
+                                        _ascs_pairwise_alltoall_factory,
+                                        _context_id);
+                geometry->addCollective(PAMI_XFER_ALLTOALLV_INT,
+                                        _ascs_pairwise_alltoallv_int_factory,
+                                        _context_id);
+                geometry->addCollective(PAMI_XFER_ALLTOALL,
+                                        _alltoall_factory,
+                                        _context_id);
+                geometry->addCollective(PAMI_XFER_ALLTOALLV,
+                                        _alltoallv_factory,
+                                        _context_id);
+                }
               }
             return PAMI_SUCCESS;
           }
@@ -349,6 +447,75 @@ namespace PAMI
             PAMI_assert(result == PAMI_SUCCESS);
             COMPILE_TIME_ASSERT(sizeof(T_Factory) <= T_Allocator::objsize);
             factory = (T_Factory*) _allocator.allocateObject ();
+          }
+
+          template<class T_Factory>
+          void setupFactory(T_Factory *&factory)
+          {
+            COMPILE_TIME_ASSERT(sizeof(T_Factory) <= T_Allocator::objsize);
+            factory = (T_Factory*) _allocator.allocateObject ();
+          }
+
+
+          void setupOneTaskFactories()
+          {
+            setupFactory<CCMI::Adaptor::P2POneTask::OneTaskBarrierFactory>(_onetask_barrier_factory);
+            new ((void*)_onetask_barrier_factory) CCMI::Adaptor::P2POneTask::OneTaskBarrierFactory(NULL, NULL);
+
+            //setupFactory<CCMI::Adaptor::P2POneTask::OneTaskFenceFactory>(_onetask_fence_factory);
+            //new ((void*)_onetask_fence_factory) CCMI::Adaptor::P2POneTask::OneTaskFenceFactory(NULL, NULL);
+
+            setupFactory<CCMI::Adaptor::P2POneTask::OneTaskBroadcastFactory>(_onetask_broadcast_factory);
+            new ((void*)_onetask_broadcast_factory) CCMI::Adaptor::P2POneTask::OneTaskBroadcastFactory(NULL, NULL);
+
+            setupFactory<CCMI::Adaptor::P2POneTask::OneTaskReduceFactory>(_onetask_reduce_factory);
+            new ((void*)_onetask_reduce_factory) CCMI::Adaptor::P2POneTask::OneTaskReduceFactory(NULL, NULL);
+
+            setupFactory<CCMI::Adaptor::P2POneTask::OneTaskAllreduceFactory>(_onetask_allreduce_factory);
+            new ((void*)_onetask_allreduce_factory) CCMI::Adaptor::P2POneTask::OneTaskAllreduceFactory(NULL, NULL);
+
+            setupFactory<CCMI::Adaptor::P2POneTask::OneTaskAllgatherFactory>(_onetask_allgather_factory);
+            new ((void*)_onetask_allgather_factory) CCMI::Adaptor::P2POneTask::OneTaskAllgatherFactory(NULL, NULL);
+
+            setupFactory<CCMI::Adaptor::P2POneTask::OneTaskAllgathervFactory>(_onetask_allgatherv_factory);
+            new ((void*)_onetask_allgatherv_factory) CCMI::Adaptor::P2POneTask::OneTaskAllgathervFactory(NULL, NULL);
+
+            setupFactory<CCMI::Adaptor::P2POneTask::OneTaskAllgathervIntFactory>(_onetask_allgatherv_int_factory);
+            new ((void*)_onetask_allgatherv_int_factory) CCMI::Adaptor::P2POneTask::OneTaskAllgathervIntFactory(NULL, NULL);
+
+            setupFactory<CCMI::Adaptor::P2POneTask::OneTaskScatterFactory>(_onetask_scatter_factory);
+            new ((void*)_onetask_scatter_factory) CCMI::Adaptor::P2POneTask::OneTaskScatterFactory(NULL, NULL);
+
+            setupFactory<CCMI::Adaptor::P2POneTask::OneTaskScattervFactory>(_onetask_scatterv_factory);
+            new ((void*)_onetask_scatterv_factory) CCMI::Adaptor::P2POneTask::OneTaskScattervFactory(NULL, NULL);
+
+            setupFactory<CCMI::Adaptor::P2POneTask::OneTaskScattervIntFactory>(_onetask_scatterv_int_factory);
+            new ((void*)_onetask_scatterv_int_factory) CCMI::Adaptor::P2POneTask::OneTaskScattervIntFactory(NULL, NULL);
+
+            setupFactory<CCMI::Adaptor::P2POneTask::OneTaskGatherFactory>(_onetask_gather_factory);
+            new ((void*)_onetask_gather_factory) CCMI::Adaptor::P2POneTask::OneTaskGatherFactory(NULL, NULL);
+
+            setupFactory<CCMI::Adaptor::P2POneTask::OneTaskGathervFactory>(_onetask_gatherv_factory);
+            new ((void*)_onetask_gatherv_factory) CCMI::Adaptor::P2POneTask::OneTaskGathervFactory(NULL, NULL);
+
+            setupFactory<CCMI::Adaptor::P2POneTask::OneTaskGathervIntFactory>(_onetask_gatherv_int_factory);
+            new ((void*)_onetask_gatherv_int_factory) CCMI::Adaptor::P2POneTask::OneTaskGathervIntFactory(NULL, NULL);
+
+            setupFactory<CCMI::Adaptor::P2POneTask::OneTaskAlltoallFactory>(_onetask_alltoall_factory);
+            new ((void*)_onetask_alltoall_factory) CCMI::Adaptor::P2POneTask::OneTaskAlltoallFactory(NULL, NULL);
+
+            setupFactory<CCMI::Adaptor::P2POneTask::OneTaskAlltoallvFactory>(_onetask_alltoallv_factory);
+            new ((void*)_onetask_alltoallv_factory) CCMI::Adaptor::P2POneTask::OneTaskAlltoallvFactory(NULL, NULL);
+
+            setupFactory<CCMI::Adaptor::P2POneTask::OneTaskAlltoallvIntFactory>(_onetask_alltoallv_int_factory);
+            new ((void*)_onetask_alltoallv_int_factory) CCMI::Adaptor::P2POneTask::OneTaskAlltoallvIntFactory(NULL, NULL);
+
+            setupFactory<CCMI::Adaptor::P2POneTask::OneTaskScanFactory>(_onetask_scan_factory);
+            new ((void*)_onetask_scan_factory) CCMI::Adaptor::P2POneTask::OneTaskScanFactory(NULL, NULL);
+
+            setupFactory<CCMI::Adaptor::P2POneTask::OneTaskReduceScatterFactory>(_onetask_reduce_scatter_factory);
+            new ((void*)_onetask_reduce_scatter_factory) CCMI::Adaptor::P2POneTask::OneTaskReduceScatterFactory(NULL, NULL);
+
           }
 
         template<class T_NI_ActiveMessage, class T_NI_Allsided, class T_Protocol, class T_Device>
@@ -1037,7 +1204,10 @@ namespace PAMI
           T_Allocator                                                 &_allocator;
 
           // Barrier Storage and Native Interface
-	  CCMI::Adaptor::P2PBarrier::BinomialBarrier                  *_binomial_barrier_composite;
+          CCMI::Adaptor::P2PBarrier::BinomialBarrier                  *_binomial_barrier_composite;
+
+          // OneTask Barrier Storage
+          CCMI::Adaptor::P2POneTask::OneTaskBarrier                   *_onetask_barrier_composite;
 
           // CCMI Connection Manager Class
           CCMI::ConnectionManager::ColorGeometryConnMgr                _cg_connmgr;
@@ -1048,6 +1218,30 @@ namespace PAMI
 
           // CCMI Barrier Interface
           CCMI::Adaptor::P2PBarrier::BinomialBarrierFactory               *_binomial_barrier_factory;
+
+          // CCMI OneTask Barrier Interface
+          CCMI::Adaptor::P2POneTask::OneTaskBarrierFactory                *_onetask_barrier_factory;
+
+
+          //OneTask Factories
+          //CCMI::Adaptor::P2POneTask::OneTaskFenceFactory                  *_onetask_fence_factory;
+          CCMI::Adaptor::P2POneTask::OneTaskBroadcastFactory              *_onetask_broadcast_factory;
+          CCMI::Adaptor::P2POneTask::OneTaskReduceFactory                 *_onetask_reduce_factory;
+          CCMI::Adaptor::P2POneTask::OneTaskAllreduceFactory              *_onetask_allreduce_factory;
+          CCMI::Adaptor::P2POneTask::OneTaskAllgatherFactory              *_onetask_allgather_factory;
+          CCMI::Adaptor::P2POneTask::OneTaskAllgathervFactory             *_onetask_allgatherv_factory;
+          CCMI::Adaptor::P2POneTask::OneTaskAllgathervIntFactory          *_onetask_allgatherv_int_factory;
+          CCMI::Adaptor::P2POneTask::OneTaskScatterFactory                *_onetask_scatter_factory;
+          CCMI::Adaptor::P2POneTask::OneTaskScattervFactory               *_onetask_scatterv_factory;
+          CCMI::Adaptor::P2POneTask::OneTaskScattervIntFactory            *_onetask_scatterv_int_factory;
+          CCMI::Adaptor::P2POneTask::OneTaskGatherFactory                 *_onetask_gather_factory;
+          CCMI::Adaptor::P2POneTask::OneTaskGathervFactory                *_onetask_gatherv_factory;
+          CCMI::Adaptor::P2POneTask::OneTaskGathervIntFactory             *_onetask_gatherv_int_factory;
+          CCMI::Adaptor::P2POneTask::OneTaskAlltoallFactory               *_onetask_alltoall_factory;
+          CCMI::Adaptor::P2POneTask::OneTaskAlltoallvFactory              *_onetask_alltoallv_factory;
+          CCMI::Adaptor::P2POneTask::OneTaskAlltoallvIntFactory           *_onetask_alltoallv_int_factory;
+          CCMI::Adaptor::P2POneTask::OneTaskScanFactory                   *_onetask_scan_factory;
+          CCMI::Adaptor::P2POneTask::OneTaskReduceScatterFactory          *_onetask_reduce_scatter_factory;
 
           // CCMI Broadcasts
           CCMI::Adaptor::P2PBroadcast::RectangleBroadcastFactory          *_rectangle_broadcast_factory;

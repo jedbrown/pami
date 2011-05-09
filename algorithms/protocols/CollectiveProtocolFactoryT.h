@@ -72,7 +72,8 @@ public:
     {
         TRACE_ADAPTOR((stderr, "<%p>CollectiveProtocolFactoryT() %p\n",this, native));
         DO_DEBUG((templateName<MetaDataFn>()));
-        _native->setMulticastDispatch(cb_head, this);
+        if(_native != NULL)
+          _native->setMulticastDispatch(cb_head, this);
     }
 
     virtual ~CollectiveProtocolFactoryT ()
