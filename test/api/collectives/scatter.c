@@ -108,7 +108,7 @@ int main (int argc, char ** argv)
 
     for (nalg = 0; nalg < scatter_num_algorithm[0]; nalg++)
       {
-        size_t root = 0;
+        pami_task_t root = 0;
 
         if (task_id == root)
           {
@@ -123,7 +123,11 @@ int main (int argc, char ** argv)
         scatter.cb_done    = cb_done;
         scatter.cookie     = (void*) & scatter_poll_flag;
         scatter.algorithm  = scatter_always_works_algo[nalg];
-        scatter.cmd.xfer_scatter.root       = root;
+
+        pami_endpoint_t root_ep;
+        PAMI_Endpoint_create(client, root, 0, &root_ep);
+        
+        scatter.cmd.xfer_scatter.root       = root_ep;
         scatter.cmd.xfer_scatter.sndbuf     = buf;
         scatter.cmd.xfer_scatter.stype      = PAMI_TYPE_BYTE;
         scatter.cmd.xfer_scatter.stypecount = 0;

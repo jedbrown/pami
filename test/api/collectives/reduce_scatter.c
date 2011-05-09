@@ -65,7 +65,7 @@ int main(int argc, char*argv[])
   pami_client_t        client;
   pami_context_t       context;
   size_t               num_contexts=1;
-  pami_task_t          task_id;
+  pami_task_t          task_id, task_zero=0;
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
 
@@ -87,7 +87,7 @@ int main(int argc, char*argv[])
   pami_xfer_type_t     reduce_scatter_xfer = PAMI_XFER_REDUCE_SCATTER;
   volatile unsigned    reduce_scatter_poll_flag=0;
 
-  int                  root=0, i, j, nalg = 0;
+  int                  i, j, nalg = 0;
   double               ti, tf, usec;
   pami_xfer_t          barrier;
   pami_xfer_t          reduce_scatter;
@@ -210,9 +210,9 @@ int main(int argc, char*argv[])
 
   for(nalg=0; nalg<reduce_scatter_num_algorithm[0]; nalg++)
   {
-    if (task_id == root)
+    if (task_id == task_zero)
     {
-      printf("# Reduce Scatter Bandwidth Test -- root = %d protocol: %s\n", root,
+      printf("# Reduce Scatter Bandwidth Test -- task_zero = %d protocol: %s\n", task_zero,
              reduce_scatter_always_works_md[nalg].name);
       printf("# Size(bytes)           cycles    bytes/sec    usec\n");
       printf("# -----------      -----------    -----------    ---------\n");
@@ -240,7 +240,7 @@ int main(int argc, char*argv[])
       {
         if(validTable[op][dt])
         {
-          if(task_id == root)
+          if(task_id == task_zero)
             printf("Running Reduce_scatter: %s, %s\n",dt_array_str[dt], op_array_str[op]);
           for(i=4 * num_tasks; i<=COUNT; i*=2)
           {
@@ -280,7 +280,7 @@ int main(int argc, char*argv[])
 #endif
 
             usec = (tf - ti)/(double)niter;
-            if (task_id == root)
+            if (task_id == task_zero)
             {
               printf("  %11lld %16d %14.1f %12.2f\n",
                      dataSent,

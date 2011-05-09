@@ -22,7 +22,7 @@ int main (int argc, char ** argv)
   pami_client_t        client;
   pami_context_t       context;
   size_t               num_contexts = 1;
-  pami_task_t          task_id;
+  pami_task_t          task_id, task_zero;
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
 
@@ -93,7 +93,7 @@ int main (int argc, char ** argv)
   pami_xfer_t            newbarrier;
 
   size_t                 set[2];
-  int                    id, root = 0;
+  int                    id;
   size_t                 half        = num_tasks / 2;
   range     = (pami_geometry_range_t *)malloc(((num_tasks + 1) / 2) * sizeof(pami_geometry_range_t));
 
@@ -108,7 +108,7 @@ int main (int argc, char ** argv)
       set[0]   = 1;
       set[1]   = 0;
       id       = 1;
-      root     = 0;
+      task_zero     = 0;
     }
     else
     {
@@ -117,7 +117,7 @@ int main (int argc, char ** argv)
       set[0]   = 0;
       set[1]   = 1;
       id       = 2;
-      root     = half;
+      task_zero     = half;
     }
 
     rangecount = 1;
@@ -142,7 +142,7 @@ int main (int argc, char ** argv)
       set[0]   = 1;
       set[1]   = 0;
       id       = 2;
-      root     = 0;
+      task_zero     = 0;
       rangecount = iter;
     }
     else
@@ -160,7 +160,7 @@ int main (int argc, char ** argv)
       set[0]   = 0;
       set[1]   = 1;
       id       = 2;
-      root     = 1;
+      task_zero     = 1;
       rangecount = iter;
     }
 
@@ -211,15 +211,15 @@ int main (int argc, char ** argv)
       {
         double ti, tf, usec;
         newbarrier.algorithm = newbar_algo[nalg];
-        if (task_id == root)
+        if (task_id == task_zero)
         {
-          printf("# Barrier Test -- root = %d, protocol: %s\n", root, always_works_md[nalg].name);
+          printf("# Barrier Test -- task_zero = %d, protocol: %s\n", task_zero, always_works_md[nalg].name);
           printf("# -------------------------------------------------------------------\n");
         }
         if(((strstr(always_works_md[nalg].name,selected) == NULL) && selector) ||
            ((strstr(always_works_md[nalg].name,selected) != NULL) && !selector))  continue;
 
-        if (task_id == root)
+        if (task_id == task_zero)
         {
           fprintf(stderr, "Test set(%u):  Barrier protocol(%s) Correctness (%d of %zd algorithms)\n",k,
                   newbar_md[nalg].name, nalg + 1, newbar_num_algo[0]);
@@ -252,7 +252,7 @@ int main (int argc, char ** argv)
         tf = timer();
         usec = tf - ti;
 
-        if (task_id == root)
+        if (task_id == task_zero)
           fprintf(stderr, "Test set(%u): Barrier protocol(%s) Performance: time=%f usec\n",k,
                   newbar_md[nalg].name, usec / (double)niter);
       }

@@ -152,9 +152,9 @@ int main (int argc, char ** argv)
 
     for (nalg = 0; nalg < gatherv_num_algorithm[0]; nalg++)
       {
-        size_t root = 0;
+        pami_task_t root_zero = 0;
 
-        if (task_id == root)
+        if (task_id == root_zero)
           {
             printf("# Gatherv_int Bandwidth Test -- protocol: %s\n", gatherv_always_works_md[nalg].name);
             printf("# Size(bytes)           cycles    bytes/sec    usec\n");
@@ -166,7 +166,10 @@ int main (int argc, char ** argv)
         gatherv.cb_done                       = cb_done;
         gatherv.cookie                        = (void*) & gatherv_poll_flag;
         gatherv.algorithm                     = gatherv_always_works_algo[nalg];
-        gatherv.cmd.xfer_gatherv_int.root        = root;
+
+        pami_endpoint_t root_ep;
+        PAMI_Endpoint_create(client, root_zero, 0, &root_ep);
+        gatherv.cmd.xfer_gatherv_int.root        = root_ep;
         gatherv.cmd.xfer_gatherv_int.sndbuf      = buf;
         gatherv.cmd.xfer_gatherv_int.stype       = PAMI_TYPE_BYTE;
         gatherv.cmd.xfer_gatherv_int.stypecount  = 0;
@@ -195,18 +198,18 @@ int main (int argc, char ** argv)
 
             for (j = 0; j < niter; j++)
               {
-                root = (root + num_tasks - 1) % num_tasks;
+                root_zero = (root_zero + num_tasks - 1) % num_tasks;
 #ifdef CHECK_DATA
                 initialize_sndbuf(task_id, buf, i);
-                if (task_id == root) 
+                if (task_id == root_zero) 
                   memset(rbuf, 0xFF, i*num_tasks);                              
 #endif
-                gatherv.cmd.xfer_gatherv.root        = root;
+                gatherv.cmd.xfer_gatherv_int.root        = root_zero;
                 if (task_id != num_tasks - 1) 
                   gatherv.cmd.xfer_gatherv.stypecount  = i;
                 blocking_coll(context, &gatherv, &gatherv_poll_flag);
 #ifdef CHECK_DATA
-                if (task_id == root)
+                if (task_id == root_zero)
                   check_rcvbuf(num_tasks, rbuf, i);
 #endif
               }
@@ -216,7 +219,7 @@ int main (int argc, char ** argv)
 
             usec = (tf - ti) / (double)niter;
 
-            if (task_id == root)
+            if (task_id == root_zero)
               {
                 printf("  %11lld %16lld %14.1f %12.2f\n",
                        dataSent,

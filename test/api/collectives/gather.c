@@ -147,9 +147,9 @@ int main (int argc, char ** argv)
 
     for (nalg = 0; nalg < gather_num_algorithm[0]; nalg++)
       {
-        size_t root = 0;
+        pami_task_t root_zero = 0;
 
-        if (task_id == root)
+        if (task_id == root_zero)
           {
             printf("# Gather Bandwidth Test -- protocol: %s\n", gather_always_works_md[nalg].name);
             printf("#  Bandwidth Test -- \n");
@@ -162,7 +162,10 @@ int main (int argc, char ** argv)
         gather.cb_done    = cb_done;
         gather.cookie     = (void*) & gather_poll_flag;
         gather.algorithm  = gather_always_works_algo[nalg];
-        gather.cmd.xfer_gather.root       = root;
+
+        pami_endpoint_t root_ep;
+        PAMI_Endpoint_create(client, root_zero, 0, &root_ep);
+        gather.cmd.xfer_gather.root       = root_ep;
         gather.cmd.xfer_gather.sndbuf     = buf;
         gather.cmd.xfer_gather.stype      = PAMI_TYPE_BYTE;
         gather.cmd.xfer_gather.stypecount = 0;
@@ -181,18 +184,18 @@ int main (int argc, char ** argv)
 
             for (j = 0; j < niter; j++)
               {
-                root = (root + num_tasks - 1) % num_tasks; 
+                root_zero = (root_zero + num_tasks - 1) % num_tasks; 
 #ifdef CHECK_DATA
                 initialize_sndbuf (task_id, buf, i);
-                if (task_id == root) 
+                if (task_id == root_zero) 
                  memset(rbuf, 0xFF, i*num_tasks);
 #endif
                 gather.cmd.xfer_gather.stypecount = i;
                 gather.cmd.xfer_gather.rtypecount = i;
-                gather.cmd.xfer_gather.root       = root;
+                gather.cmd.xfer_gather.root       = root_zero;
                 blocking_coll(context, &gather, &gather_poll_flag);
 #ifdef CHECK_DATA
-                if (task_id == root) 
+                if (task_id == root_zero) 
                  check_rcvbuf(task_id, rbuf, i);
 #endif
               }
@@ -204,7 +207,7 @@ int main (int argc, char ** argv)
 
       
 
-            if (task_id == root)
+            if (task_id == root_zero)
               {
                 printf("  %11lld %16lld %14.1f %12.2f\n",
                        dataSent,

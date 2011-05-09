@@ -7,7 +7,7 @@
 #define CHECK_DATA
 
 #define BUFSIZE (1048576 * 8)
-#define NITER 100
+#define NITER 10
 
 #include "../pami_util.h"
 
@@ -142,68 +142,72 @@ int main (int argc, char ** argv)
   blocking_coll(context, &barrier, &bar_poll_flag);
 
   for (nalg = 0; nalg < bcast_num_algorithm[0]; nalg++)
+  {
+    pami_endpoint_t                   root;
+    broadcast.cb_done                      = cb_done;
+    broadcast.cookie                       = (void*) & bcast_poll_flag;
+    broadcast.algorithm                    = bcast_always_works_algo[nalg];
+    broadcast.cmd.xfer_broadcast.buf       = buf;
+    broadcast.cmd.xfer_broadcast.type      = PAMI_TYPE_BYTE;
+    broadcast.cmd.xfer_broadcast.typecount = 0;
+
+    protocolName = bcast_always_works_md[nalg].name;
+    if(((strstr(bcast_always_works_md[nalg].name,selected) == NULL) && selector) ||
+       ((strstr(bcast_always_works_md[nalg].name,selected) != NULL) && !selector))  continue;
+    int i, j, k;
+    for (k=0; k<num_tasks; k++)
     {
-      int         root = 0;
-      broadcast.cb_done                      = cb_done;
-      broadcast.cookie                       = (void*) & bcast_poll_flag;
-      broadcast.algorithm                    = bcast_always_works_algo[nalg];
-      broadcast.cmd.xfer_broadcast.root      = root;
-      broadcast.cmd.xfer_broadcast.buf       = buf;
-      broadcast.cmd.xfer_broadcast.type      = PAMI_TYPE_BYTE;
-      broadcast.cmd.xfer_broadcast.typecount = 0;
-
-      protocolName = bcast_always_works_md[nalg].name;
-      if (task_id == (size_t)root)
-        {
-          printf("# Broadcast Bandwidth Test -- root = %d  protocol: %s\n", root, protocolName);
-          printf("# Size(bytes)           cycles    bytes/sec    usec\n");
-          printf("# -----------      -----------    -----------    ---------\n");
-        }
-      if(((strstr(bcast_always_works_md[nalg].name,selected) == NULL) && selector) ||
-         ((strstr(bcast_always_works_md[nalg].name,selected) != NULL) && !selector))  continue;
-      int i, j;
-
+      pami_task_t root_task = (pami_task_t)k;
+      PAMI_Endpoint_create(client, root_task, 0, &root);
+      broadcast.cmd.xfer_broadcast.root = root;
+      if (task_id == root_task)
+      {
+        printf("# Broadcast Bandwidth Test -- root = %d  protocol: %s\n", root_task, protocolName);
+        printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+        printf("# -----------      -----------    -----------    ---------\n");
+      }
       for (i = 1; i <= BUFSIZE; i *= 2)
+      {
+        long long dataSent = i;
+        int          niter = NITER;
+#ifdef CHECK_DATA
+
+        if (task_id == root_task)
+          initialize_sndbuf (buf, i);
+        else
+          memset(buf, 0xFF, i);
+
+#endif
+        blocking_coll(context, &barrier, &bar_poll_flag);          
+        broadcast.cmd.xfer_broadcast.typecount = i;
+        blocking_coll (context, &broadcast, &bcast_poll_flag);
+        blocking_coll(context, &barrier, &bar_poll_flag);          
+        ti = timer();
+
+        for (j = 0; j < niter; j++)
         {
-          long long dataSent = i;
-          int          niter = NITER;
-#ifdef CHECK_DATA
-
-          if (task_id == (size_t)root)
-            initialize_sndbuf (buf, i);
-          else
-            memset(buf, 0xFF, i);
-
-#endif
-          blocking_coll(context, &barrier, &bar_poll_flag);          
-	  broadcast.cmd.xfer_broadcast.typecount = i;
-	  blocking_coll (context, &broadcast, &bcast_poll_flag);
-          blocking_coll(context, &barrier, &bar_poll_flag);          
-          ti = timer();
-
-          for (j = 0; j < niter; j++)
-            {
-              blocking_coll (context, &broadcast, &bcast_poll_flag);
-            }
-
-          blocking_coll(context, &barrier, &bar_poll_flag);
-          tf = timer();
-#ifdef CHECK_DATA
-          check_rcvbuf (buf, i);
-#endif
-          usec = (tf - ti) / (double)niter;
-
-          if (task_id == (size_t)root)
-            {
-              printf("  %11lld %16lld %14.1f %12.2f\n",
-                     dataSent,
-                     0LL,
-                     (double)1e6*(double)dataSent / (double)usec,
-                     usec);
-              fflush(stdout);
-            }
+          blocking_coll (context, &broadcast, &bcast_poll_flag);
         }
+
+        blocking_coll(context, &barrier, &bar_poll_flag);
+        tf = timer();
+#ifdef CHECK_DATA
+        check_rcvbuf (buf, i);
+#endif
+        usec = (tf - ti) / (double)niter;
+
+        if (task_id == root_task)
+        {
+          printf("  %11lld %16lld %14.1f %12.2f\n",
+                 dataSent,
+                 0LL,
+                 (double)1e6*(double)dataSent / (double)usec,
+                 usec);
+          fflush(stdout);
+        }
+      }
     }
+  }
 
   rc = pami_shutdown(&client, &context, &num_contexts);
   free(bar_always_works_algo);

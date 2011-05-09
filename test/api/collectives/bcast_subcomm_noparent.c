@@ -29,7 +29,7 @@ int main(int argc, char*argv[])
   pami_client_t        client;
   pami_context_t       context;
   size_t               num_contexts = 1;
-  pami_task_t          task_id;
+  pami_task_t          task_id, root_zero;
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
 
@@ -116,7 +116,7 @@ int main(int argc, char*argv[])
   pami_xfer_t            newbcast;
 
   size_t                 set[2];
-  int                    id, root = 0;
+  int                    id;
   size_t                 half        = num_tasks / 2;
   range     = (pami_geometry_range_t *)malloc(((num_tasks + 1) / 2) * sizeof(pami_geometry_range_t));
 
@@ -148,7 +148,7 @@ int main(int argc, char*argv[])
           set[0]   = 1;
           set[1]   = 0;
           id       = 1;
-          root     = 0;
+          root_zero     = 0;
         }
       else
         {
@@ -157,7 +157,7 @@ int main(int argc, char*argv[])
           set[0]   = 0;
           set[1]   = 1;
           id       = 2;
-          root     = half;
+          root_zero     = half;
         }
 
       rangecount = 1;
@@ -182,7 +182,7 @@ int main(int argc, char*argv[])
           set[0]   = 1;
           set[1]   = 0;
           id       = 2;
-          root     = 0;
+          root_zero     = 0;
           rangecount = iter;
         }
       else
@@ -200,16 +200,16 @@ int main(int argc, char*argv[])
           set[0]   = 0;
           set[1]   = 1;
           id       = 2;
-          root     = 1;
+          root_zero     = 1;
           rangecount = iter;
         }
 
     }
 
-  /* Delay root tasks, and emulate that he's doing "other" */
+  /* Delay root_zero tasks, and emulate that he's doing "other" */
   /* message passing.  This will cause the geometry_create */
   /* request from other nodes to be unexpected. */
-  if (task_id == root)
+  if (task_id == root_zero)
     {
       delayTest(1);
       PAMI_Context_advance (context, 1000);
@@ -256,11 +256,14 @@ int main(int argc, char*argv[])
   newbarrier.cookie    = (void*) & bar_poll_flag;
   newbarrier.algorithm = newbar_algo[0];
 
+  pami_endpoint_t root_ep;
+  PAMI_Endpoint_create(client, root_zero, 0, &root_ep);
+
   /*  Set up sub geometry bcast */
   newbcast.cb_done                      = cb_done;
   newbcast.cookie                       = (void*) & bcast_poll_flag;
   newbcast.algorithm                    = newbcast_algo[0];
-  newbcast.cmd.xfer_broadcast.root      = root;
+  newbcast.cmd.xfer_broadcast.root      = root_ep;
   newbcast.cmd.xfer_broadcast.buf       = buf;
   newbcast.cmd.xfer_broadcast.type      = PAMI_TYPE_BYTE;
   newbcast.cmd.xfer_broadcast.typecount = 0;
@@ -270,9 +273,9 @@ int main(int argc, char*argv[])
 
   for (k = 1; k >= 0; k--)
     {
-      if (task_id == root)
+      if (task_id == root_zero)
         {
-          printf("# Broadcast Bandwidth Test -- root = %d  protocol: %s\n", root, newbcast_md[0].name);
+          printf("# Broadcast Bandwidth Test -- root_zero = %d  protocol: %s\n", root_zero, newbcast_md[0].name);
           printf("# Size(bytes)           cycles    bytes/sec    usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
         }
@@ -293,7 +296,7 @@ int main(int argc, char*argv[])
 
               for (j = 0; j < niter; j++)
                 {
-                  newbcast.cmd.xfer_broadcast.root      = root;
+                  newbcast.cmd.xfer_broadcast.root      = root_ep;
                   newbcast.cmd.xfer_broadcast.buf       = buf;
                   newbcast.cmd.xfer_broadcast.typecount = i;
                   blocking_coll(context, &newbcast, &bcast_poll_flag);
@@ -303,7 +306,7 @@ int main(int argc, char*argv[])
               blocking_coll(context, &newbarrier, &bar_poll_flag);
               usec = (tf - ti) / (double)niter;
 
-              if (task_id == root)
+              if (task_id == root_zero)
                 {
                   printf("  %11lld %16lld %14.1f %12.2f\n",
                          dataSent,

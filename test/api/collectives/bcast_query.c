@@ -143,18 +143,22 @@ int main (int argc, char ** argv)
 
   for (nalg = 0; nalg < bcast_num_algorithm[1]; nalg++)
     {
-      int         root = 0;
+      pami_endpoint_t                   root;
       broadcast.cb_done                      = cb_done;
       broadcast.cookie                       = (void*) & bcast_poll_flag;
       broadcast.algorithm                    = bcast_must_query_algo[nalg];
-      broadcast.cmd.xfer_broadcast.root      = root;
       broadcast.cmd.xfer_broadcast.buf       = buf;
       broadcast.cmd.xfer_broadcast.type      = PAMI_TYPE_BYTE;
       broadcast.cmd.xfer_broadcast.typecount = 0;
 
       protocolName = bcast_must_query_md[nalg].name;
       metadata_result_t result = {0};
-      if (task_id == (size_t)root)
+      pami_task_t root_task = (pami_task_t)0;
+      PAMI_Endpoint_create(client, root_task, 0, &root);
+      broadcast.cmd.xfer_broadcast.root = root;
+
+      
+      if (task_id == root_task)
         {
           printf("# Broadcast Bandwidth Test -- root = %d  protocol: %s, Metadata: range %zu <-> %zd, mask %#X\n", 
                  root, protocolName,
@@ -186,7 +190,7 @@ int main (int argc, char ** argv)
 
 #ifdef CHECK_DATA
 
-          if (task_id == (size_t)root)
+          if (task_id == root_task)
             initialize_sndbuf (buf, i);
           else
             memset(buf, 0xFF, i);
@@ -212,7 +216,7 @@ int main (int argc, char ** argv)
 #endif
           usec = (tf - ti) / (double)niter;
 
-          if (task_id == (size_t)root)
+          if (task_id == root_task)
             {
               printf("  %11lld %16lld %14.1f %12.2f\n",
                      dataSent,

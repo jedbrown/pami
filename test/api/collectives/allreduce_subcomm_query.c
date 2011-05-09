@@ -29,7 +29,7 @@ int main(int argc, char*argv[])
   pami_client_t        client;
   pami_context_t       context;
   size_t               num_contexts = 1;
-  pami_task_t          task_id;
+  pami_task_t          task_id, task_zero=0;
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
 
@@ -52,7 +52,7 @@ int main(int argc, char*argv[])
   pami_xfer_type_t     allreduce_xfer = PAMI_XFER_ALLREDUCE;
   volatile unsigned    allreduce_poll_flag = 0;
 
-  int                  root = 0, i, j, nalg = 0;
+  int                  i, j, nalg = 0;
   double               ti, tf, usec;
   pami_xfer_t          barrier;
   pami_xfer_t          allreduce;
@@ -135,7 +135,7 @@ int main(int argc, char*argv[])
       set[0]   = 1;
       set[1]   = 0;
       id       = 1;
-      root     = 0;
+      task_zero     = 0;
     }
     else
     {
@@ -144,7 +144,7 @@ int main(int argc, char*argv[])
       set[0]   = 0;
       set[1]   = 1;
       id       = 2;
-      root     = half;
+      task_zero     = half;
     }
 
     rangecount = 1;
@@ -169,7 +169,7 @@ int main(int argc, char*argv[])
       set[0]   = 1;
       set[1]   = 0;
       id       = 2;
-      root     = 0;
+      task_zero     = 0;
       rangecount = iter;
     }
     else
@@ -187,7 +187,7 @@ int main(int argc, char*argv[])
       set[0]   = 0;
       set[1]   = 1;
       id       = 2;
-      root     = 1;
+      task_zero     = 1;
       rangecount = iter;
     }
 
@@ -297,10 +297,10 @@ int main(int argc, char*argv[])
     {
       if (set[k])
       {
-        if (task_id == root)
+        if (task_id == task_zero)
         {
-          printf("# Allreduce Bandwidth Test -- root = %d protocol: %s, Metadata: range %zu <-> %zd, mask %#X\n", 
-                 root, allreduce_must_query_md[nalg].name,
+          printf("# Allreduce Bandwidth Test -- task_zero = %d protocol: %s, Metadata: range %zu <-> %zd, mask %#X\n", 
+                 task_zero, allreduce_must_query_md[nalg].name,
                  allreduce_must_query_md[nalg].range_lo,(ssize_t)allreduce_must_query_md[nalg].range_hi,
                  allreduce_must_query_md[nalg].check_correct.bitmask_correct);
           printf("# Size(bytes)           cycles    bytes/sec    usec\n");
@@ -328,7 +328,7 @@ int main(int argc, char*argv[])
           {
             if (validTable[op][dt])
             {
-              if (task_id == root)
+              if (task_id == task_zero)
                 printf("Running Allreduce: %s, %s\n", dt_array_str[dt], op_array_str[op]);
 
               for (i = 1; i <= COUNT; i *= 2)
@@ -385,7 +385,7 @@ int main(int argc, char*argv[])
 
                 usec = (tf - ti) / (double)niter;
 
-                if (task_id == root)
+                if (task_id == task_zero)
                 {
                   printf("  %11lld %16d %14.1f %12.2f\n",
                          dataSent,

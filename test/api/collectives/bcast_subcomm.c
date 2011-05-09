@@ -153,7 +153,8 @@ int main(int argc, char*argv[])
   pami_xfer_t            newbcast;
 
   size_t                 set[2];
-  int                    id, root = 0;
+  int                    id;
+  pami_task_t            root_zero;
   size_t                 half        = num_tasks / 2;
   range     = (pami_geometry_range_t *)malloc(((num_tasks + 1) / 2) * sizeof(pami_geometry_range_t));
 
@@ -184,7 +185,7 @@ int main(int argc, char*argv[])
       set[0]   = 1;
       set[1]   = 0;
       id       = 1;
-      root     = 0;
+      root_zero     = 0;
     }
     else
     {
@@ -193,7 +194,7 @@ int main(int argc, char*argv[])
       set[0]   = 0;
       set[1]   = 1;
       id       = 2;
-      root     = half;
+      root_zero     = half;
     }
 
     rangecount = 1;
@@ -218,7 +219,7 @@ int main(int argc, char*argv[])
       set[0]   = 1;
       set[1]   = 0;
       id       = 2;
-      root     = 0;
+      root_zero     = 0;
       rangecount = iter;
     }
     else
@@ -236,7 +237,7 @@ int main(int argc, char*argv[])
       set[0]   = 0;
       set[1]   = 1;
       id       = 2;
-      root     = 1;
+      root_zero     = 1;
       rangecount = iter;
     }
 
@@ -292,7 +293,7 @@ int main(int argc, char*argv[])
     newbcast.cb_done                      = cb_done;
     newbcast.cookie                       = (void*) & bcast_poll_flag;
     newbcast.algorithm                    = newbcast_algo[nalg];
-    newbcast.cmd.xfer_broadcast.root      = root;
+    newbcast.cmd.xfer_broadcast.root      = root_zero;
     newbcast.cmd.xfer_broadcast.buf       = buf;
     newbcast.cmd.xfer_broadcast.type      = PAMI_TYPE_BYTE;
     newbcast.cmd.xfer_broadcast.typecount = 0;
@@ -306,9 +307,9 @@ int main(int argc, char*argv[])
     {
       if (set[k])
       {
-        if (task_id == root)
+        if (task_id == root_zero)
         {
-          printf("# Broadcast Bandwidth Test -- root = %d  protocol: %s\n", root, newbcast_md[nalg].name);
+          printf("# Broadcast Bandwidth Test -- root_zero = %d  protocol: %s\n", root_zero, newbcast_md[nalg].name);
           printf("# Size(bytes)           cycles    bytes/sec    usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
         }
@@ -325,17 +326,18 @@ int main(int argc, char*argv[])
           int          niter = 100;
 #ifdef CHECK_DATA
 
-          if (task_id == (size_t)root)
-            initialize_sndbuf (buf, i, root);
+          if (task_id == root_zero)
+            initialize_sndbuf (buf, i, root_zero);
           else
             memset(buf, 0xFF, i);       
 #endif
-          blocking_coll(context, &newbarrier, &newbar_poll_flag);
+          pami_endpoint_t root_ep;
+          PAMI_Endpoint_create(client, root_zero, 0, &root_ep);
+          blocking_coll(context, &newbarrier, &newbar_poll_flag);          
           ti = timer();
-
           for (j = 0; j < niter; j++)
-          {
-            newbcast.cmd.xfer_broadcast.root      = root;
+          {            
+            newbcast.cmd.xfer_broadcast.root      = root_ep;
             newbcast.cmd.xfer_broadcast.buf       = buf;
             newbcast.cmd.xfer_broadcast.typecount = i;
             blocking_coll(context, &newbcast, &bcast_poll_flag);
@@ -344,11 +346,11 @@ int main(int argc, char*argv[])
           tf = timer();
           blocking_coll(context, &newbarrier, &newbar_poll_flag);
 #ifdef CHECK_DATA
-          check_rcvbuf (buf, i, root);
+          check_rcvbuf (buf, i, root_zero);
 #endif
           usec = (tf - ti) / (double)niter;
 
-          if (task_id == root)
+          if (task_id == root_zero)
           {
             printf("  %11lld %16lld %14.1f %12.2f\n",
                    dataSent,

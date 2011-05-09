@@ -27,7 +27,7 @@ int main(int argc, char*argv[])
   pami_client_t        client;
   pami_context_t       context;
   size_t               num_contexts = 1;
-  pami_task_t          task_id;
+  pami_task_t          task_id, root=0;
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
 
@@ -49,7 +49,7 @@ int main(int argc, char*argv[])
   pami_xfer_type_t     reduce_xfer = PAMI_XFER_REDUCE;
   volatile unsigned    reduce_poll_flag = 0;
 
-  int                  root = 0, i, j, nalg = 0;
+  int                  i, j, nalg = 0;
   double               ti, tf, usec;
   pami_xfer_t          barrier;
   pami_xfer_t          reduce;
@@ -232,13 +232,14 @@ int main(int argc, char*argv[])
 #ifdef CHECK_DATA
                     reduce_initialize_sndbuf (sbuf, i, op, dt, task_id, num_tasks);
 #endif
+                    pami_endpoint_t root_ep;
+                    PAMI_Endpoint_create(client, root, 0, &root_ep);
+                    reduce.cmd.xfer_reduce.root    = root_ep;
                     blocking_coll(context, &barrier, &bar_poll_flag);
                     ti = timer();
 
                     for (j = 0; j < niter; j++)
                     {
-                      reduce.cmd.xfer_reduce.root    = root;
-
                       if (task_id == root)
                         reduce.cmd.xfer_reduce.rcvbuf    = rbuf;
                       else

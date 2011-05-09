@@ -7,27 +7,28 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/api/collectives/allreduce.c
- * \brief simple allreduce on world geometry
+ * \file test/api/collectives/allreduce_query.c
+ * \brief simple allreduce on world geometry using "must query" algorithms
  */
+
+#include "../pami_util.h"
 
 /*define this if you want to validate the data */
 #define CHECK_DATA
-#define FULL_TEST  1
+#define FULL_TEST
 #define COUNT      65536
 #define MAXBUFSIZE COUNT*16
-#define NITERLAT   10
+#define NITERLAT   1000
 #define NITERBW    10
 #define CUTOFF     65536
 
-#include "../pami_util.h"
 
 int main(int argc, char*argv[])
 {
   pami_client_t        client;
   pami_context_t       context;
   size_t               num_contexts = 1;
-  pami_task_t          task_id, task_zero = 0;
+  pami_task_t          task_id;
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
 
@@ -49,7 +50,7 @@ int main(int argc, char*argv[])
   pami_xfer_type_t     allreduce_xfer = PAMI_XFER_ALLREDUCE;
   volatile unsigned    allreduce_poll_flag = 0;
 
-  int                  i, j, nalg = 0;
+  int                  root = 0, i, j, nalg = 0;
   double               ti, tf, usec;
   pami_xfer_t          barrier;
   pami_xfer_t          allreduce;
@@ -119,11 +120,12 @@ int main(int argc, char*argv[])
 
   size_t** validTable =
     alloc2DContig(op_count, dt_count);
-#if FULL_TEST
+#ifdef FULL_TEST
 
   for (i = 0; i < op_count; i++)
     for (j = 0; j < dt_count; j++)
       validTable[i][j] = 1;
+
   /*--------------------------------------*/
   /* Disable unsupported ops on complex   */
   /* Only sum, prod                       */
@@ -173,16 +175,20 @@ int main(int argc, char*argv[])
 
 #endif
 
-  for (nalg = 0; nalg < allreduce_num_algorithm[0]; nalg++)
+  for (nalg = 0; nalg < allreduce_num_algorithm[1]; nalg++)
     {
-      if (task_id == task_zero)
+      metadata_result_t result = {0};
+      if (task_id == root)
         {
-          printf("# Allreduce Bandwidth Test -- protocol: %s\n", allreduce_always_works_md[nalg].name);
+          printf("# Allreduce Bandwidth Test -- root = %d protocol: %s, Metadata: range %zu <-> %zd, mask %#X\n", 
+                 root, allreduce_must_query_md[nalg].name,
+                 allreduce_must_query_md[nalg].range_lo,(ssize_t)allreduce_must_query_md[nalg].range_hi,
+                 allreduce_must_query_md[nalg].check_correct.bitmask_correct);
           printf("# Size(bytes)           cycles    bytes/sec    usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
         }
-      if(((strstr(allreduce_always_works_md[nalg].name,selected) == NULL) && selector) ||
-         ((strstr(allreduce_always_works_md[nalg].name,selected) != NULL) && !selector))  continue;
+      if(((strstr(allreduce_must_query_md[nalg].name,selected) == NULL) && selector) ||
+         ((strstr(allreduce_must_query_md[nalg].name,selected) != NULL) && !selector))  continue;
 
       barrier.cb_done   = cb_done;
       barrier.cookie    = (void*) & bar_poll_flag;
@@ -191,7 +197,7 @@ int main(int argc, char*argv[])
 
       allreduce.cb_done   = cb_done;
       allreduce.cookie    = (void*) & allreduce_poll_flag;
-      allreduce.algorithm = allreduce_always_works_algo[nalg];
+      allreduce.algorithm = allreduce_must_query_algo[nalg];
       allreduce.cmd.xfer_allreduce.sndbuf    = sbuf;
       allreduce.cmd.xfer_allreduce.stype     = PAMI_TYPE_BYTE;
       allreduce.cmd.xfer_allreduce.stypecount = 0;
@@ -205,11 +211,13 @@ int main(int argc, char*argv[])
           {
             if (validTable[op][dt])
               {
-                if (task_id == task_zero)
+                if (task_id == root)
                   printf("Running Allreduce: %s, %s\n", dt_array_str[dt], op_array_str[op]);
 
                 for (i = 1; i <= COUNT; i *= 2)
                   {
+                    unsigned checkrequired = allreduce_must_query_md[nalg].check_correct.values.checkrequired; /*must query every time */
+                    assert(!checkrequired || allreduce_must_query_md[nalg].check_fn); /* must have function if checkrequired. */
                     size_t sz=get_type_size(dt_array[dt]);
                     long long dataSent = i * sz;
                     int niter;
@@ -221,25 +229,38 @@ int main(int argc, char*argv[])
 
                     allreduce.cmd.xfer_allreduce.stypecount = i;
                     allreduce.cmd.xfer_allreduce.rtypecount = dataSent;
-                    allreduce.cmd.xfer_allreduce.stype = dt_array[dt];
-                    allreduce.cmd.xfer_allreduce.op    = op_array[op];
+                    allreduce.cmd.xfer_allreduce.stype      = dt_array[dt];
+                    allreduce.cmd.xfer_allreduce.op         = op_array[op];
+
+                    if(allreduce_must_query_md[nalg].check_fn) 
+                      result = allreduce_must_query_md[nalg].check_fn(&allreduce);
+                    if(result.bitmask) continue;
+
+                    if(!((dataSent <= allreduce_must_query_md[nalg].range_hi) &&
+                         (dataSent >= allreduce_must_query_md[nalg].range_lo)))
+                      continue;
 
 #ifdef CHECK_DATA
-                    reduce_initialize_sndbuf (sbuf, i, op, dt, task_id, num_tasks);
+                    reduce_initialize_sndbuf (sbuf, i, op, dt, task_id);
 #endif
                     blocking_coll(context, &barrier, &bar_poll_flag);
                     ti = timer();
 
                     for (j = 0; j < niter; j++)
+                    {
+                      if(checkrequired) /* must query every time */
                       {
-                        blocking_coll(context, &allreduce, &allreduce_poll_flag);
+                        result = allreduce_must_query_md[nalg].check_fn(&allreduce);
+                        if(result.bitmask) continue;
                       }
+                      blocking_coll(context, &allreduce, &allreduce_poll_flag);
+                    }
 
                     tf = timer();
                     blocking_coll(context, &barrier, &bar_poll_flag);
 
 #ifdef CHECK_DATA
-                    int rc = reduce_check_rcvbuf (rbuf, i, op, dt, task_id, num_tasks);
+                    rc = reduce_check_rcvbuf (rbuf, i, op, dt, num_tasks);
 
                     if (rc) fprintf(stderr, "FAILED validation\n");
 
@@ -247,7 +268,7 @@ int main(int argc, char*argv[])
 
                     usec = (tf - ti) / (double)niter;
 
-                    if (task_id == task_zero)
+                    if (task_id == root)
                       {
                         printf("  %11lld %16d %14.1f %12.2f\n",
                                dataSent,
