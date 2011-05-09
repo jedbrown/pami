@@ -14,12 +14,10 @@
 #ifndef __test_api_coll_util_h__
 #define __test_api_coll_util_h__
 
-unsigned gVerbose = 1;    /* Global verbose flag, some tests set with TEST_VERBOSE=n */
-
 #include<assert.h>
 #include "init_util.h"
 
-char *gProtocolName = ""; /* Global protocol name, some tests set it for error msgs   */
+char *gProtocolName = (char*)""; /* Global protocol name, some tests set it for error msgs   */
 static size_t get_type_size(pami_type_t intype);
 
 /* Docs09:  Done/Decrement call */
@@ -251,7 +249,9 @@ void reduce_initialize_sndbuf(void *buf, int count, int op, int dt, int task_id,
 int reduce_check_rcvbuf(void *buf, int count, int op, int dt, int task_id, int num_tasks)
 {
 
-  int i, err = 0;
+  int i;
+
+  int err = 0;
 
   if (op_array[op] == PAMI_DATA_SUM && dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
   {
@@ -259,7 +259,7 @@ int reduce_check_rcvbuf(void *buf, int count, int op, int dt, int task_id, int n
 
     for (i = 0; i < count; i++)
     {
-      if (rcvbuf[i] != i * num_tasks)
+      if (rcvbuf[i] != (unsigned) i * num_tasks)
       {
         fprintf(stderr, "%s:Check %s/%s(%d) failed rcvbuf[%d] %u != %u\n", gProtocolName, dt_array_str[dt], op_array_str[op], count, i, rcvbuf[1], i*num_tasks);
         err = -1;

@@ -14,9 +14,13 @@
 #ifndef __test_api_init_util_h__
 #define __test_api_init_util_h__
 
+unsigned gVerbose = 1;    /* Global verbose flag, some tests set with TEST_VERBOSE=n */
+
+#include<assert.h>
 #include <pami.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 enum opNum
 {
   OP_COPY,
@@ -317,7 +321,7 @@ void setup_env()
   /* substring is used to select, or de-select (with -) test protocols */
   gSelected = getenv("TEST_PROTOCOL");
 
-  if (!gSelected) gSelected = "";
+  if (!gSelected) gSelected = (char*)"";
   else if (gSelected[0] == '-')
   {
     gSelector = 0 ;
@@ -509,7 +513,7 @@ void get_split_method(size_t *num_tasks,pami_task_t task_id, int *rangecount, pa
   /* TEST_SPLIT_METHOD=-1 : alternate ranks  */
   else if ((method && !strcmp(method, "-1")))
   {
-    int i = 0;
+    unsigned i = 0;
     int iter = 0;;
     
     if ((task_id % 2) == 0)
