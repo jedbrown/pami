@@ -5,6 +5,9 @@
 #define BUFSIZE 524288
 #define CHECK_DATA
 
+#include "../pami_util.h"
+
+
 void initialize_sndbuf (void *sbuf, int bytes, pami_task_t task)
 {
   unsigned char c = 0xFF & task;
@@ -27,8 +30,6 @@ int check_rcvbuf (void *rbuf, int bytes, size_t ntasks)
   }
   return 0;
 }
-
-#include "../pami_util.h"
 
 int main (int argc, char ** argv)
 {
