@@ -47,7 +47,7 @@ int check_rcvbuf (void *buf, int count, int op, int dt, int num_tasks, int task_
   if (op_array[op] == PAMI_DATA_SUM && dt_array[dt] == PAMI_TYPE_UNSIGNED_INT) {
     unsigned int *rbuf = (unsigned int *)  buf;
     for (i = 0; i < count; i++) {
-      if (rbuf[i] != i * (num_tasks - task_id))
+      if (rbuf[i] != i * (task_id+1))
       {
         fprintf(stderr,"Check(%d) failed rbuf[%d] %u != %u\n",count,i,rbuf[i],i*(num_tasks-task_id));
         while(1);
