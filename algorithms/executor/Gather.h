@@ -120,8 +120,9 @@ namespace CCMI
         CollHeaderData      _mdata;
         pami_multicast_t    _msend;
 
-        int                 *_disps;
-        int                 *_rcvcounts;
+        typedef typename GatherVecType<T_Gather_type>::base_type basetype;
+        basetype            *_disps;
+        basetype            *_rcvcounts;
 
         //Private method
         void             sendNext ();
