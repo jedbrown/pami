@@ -310,7 +310,7 @@ namespace PAMI
                                           int           *inout_nelem,
                                           int            phase)
           {
-            if(!_enabled)
+            if(!_enabled || geometry->size() == 1)
             {
               return PAMI_SUCCESS;
             }
