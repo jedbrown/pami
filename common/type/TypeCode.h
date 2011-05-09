@@ -151,7 +151,7 @@ namespace PAMI
                     num_blocks(0), unit(0), atom_size(0) { }
 
                 void Show(int pc) const {
-                    printf("%4d: Begin code_size %zu depth %zu data_size %zu "
+                    printf("%4d: Begin code_size %zu depth %u data_size %zu "
                             "extent %zu num_blocks %zu unit %zu atom_size %zu\n",
                             pc, code_size, depth, data_size, extent, num_blocks,
                             unit, atom_size);
