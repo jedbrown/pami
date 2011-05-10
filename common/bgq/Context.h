@@ -528,13 +528,13 @@ namespace PAMI
         // Can always use composite if it's available
         if (_pgas_composite_registration) _pgas_composite_registration->analyze(_contextid, _world_geometry, 0);
 
-        if(_ccmi_registration && (((PAMI::Topology*)_world_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
+        if(_ccmi_registration) // && (((PAMI::Topology*)_world_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
         {
             _world_geometry->resetUEBarrier(); // Reset so ccmi will select the UE barrier
             _ccmi_registration->analyze(_contextid, _world_geometry, 0);
          }
 
-        if(_multi_registration && (((PAMI::Topology*)_world_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
+        if(_multi_registration) // && (((PAMI::Topology*)_world_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
         {
            _multi_registration->analyze(_contextid, _world_geometry, 0);
 
@@ -940,7 +940,7 @@ namespace PAMI
 				  BGQGeometry    * geometry,
 				  pami_result_t    result )
       {
-        TRACE_ERR((stderr, "Context::analyze_global context id %zu, geometry %p\n", context_id, geometry));
+        TRACE_ERR((stderr, "Context::receive_global context id %zu, geometry %p\n", context_id, geometry));
 	Context *context = (Context *) cookie;
 	context->_multi_registration->receive_global(context_id, geometry, reduce_result, n);
       }
@@ -961,13 +961,13 @@ namespace PAMI
         // Can always use composite if it's available
         if (_pgas_composite_registration) _pgas_composite_registration->analyze(_contextid, geometry, phase);
 
-        if(_ccmi_registration && (((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
+        if(_ccmi_registration)// && (((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
         {   
           geometry->resetUEBarrier(); // Reset so ccmi will select the UE barrier
           _ccmi_registration->analyze(context_id, geometry, phase);
         }
 
-        if(_multi_registration && (((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
+        if(_multi_registration)// && (((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
             _multi_registration->analyze(context_id, geometry, phase);
 
         return PAMI_SUCCESS;

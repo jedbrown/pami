@@ -58,12 +58,6 @@ int main(int argc, char*argv[])
   if (rc == 1)
     return 1;
 
-  if (num_tasks == 1)
-  {
-    fprintf(stderr, "No barrier on 1 node\n");
-    return 0;
-  }
-
   non_root[0] = 1;            /* first non-root rank in the comm  */
   non_root[1] = num_tasks - 1;/* last rank in the comm  */
 
@@ -138,7 +132,7 @@ int main(int argc, char*argv[])
           tf = timer();
           usec = tf - ti;
 
-          if (usec < 1800000.0 || usec > 2200000.0)
+          if ((usec < 1800000.0 || usec > 2200000.0) && (num_tasks > 1))
           {
             rc = 1;
             fprintf(stderr, "%s FAIL: usec=%f want between %f and %f!\n", must_query_md[nalg].name,

@@ -1049,6 +1049,10 @@ namespace PAMI
       inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry, int phase)
       {
         TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() phase %d, context_id %zu, geometry %p, msync %p, mcast %p, mcomb %p\n", this, phase, context_id, geometry, &_shmem_msync_factory, &_shmem_mcast_factory, &_shmem_mcomb_factory));
+        if(geometry->size() == 1) // Disable BGQ protocols on 1 task geometries.
+        {
+          return PAMI_SUCCESS;
+        }
         pami_xfer_t xfer = {0};
         // BE CAREFUL! It's not ok to make registration decisions based on local topology unless you know that all nodes will make the same decision.
         // We use local_sub_topology on single node registrations 
