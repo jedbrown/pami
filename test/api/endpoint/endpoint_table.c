@@ -144,12 +144,6 @@ int main ()
   }
   size_t num_tasks = configuration.value.intval;
   fprintf (stderr, "Number of tasks = %zu\n", num_tasks);
-//  if (num*num_tasks < 7)
-  //{
-    //fprintf (stderr, "Error. This test requires at least 7 endpoints. Number of endpoints in this job: %zu\n", num*num_tasks);
-//    return 1;
-  //}
-
 
   uint8_t header[16];
   uint8_t data[1024];
