@@ -169,13 +169,13 @@ namespace PAMI
           pami_result_t rc = PAMI_SUCCESS;
           _localrank = rank;
           _localsize = size;
-          PAMI_assertf(T_Counter::checkCtorMm(_mm), "Memory type incorrect for T_Counter class");
-          PAMI_assertf(T_Mutex::checkCtorMm(_mm), "Memory type incorrect for T_Mutex class");
-          PAMI_assertf(_mm, "Memory Manager is NULL\n");
-
           if(_mm)
+          {
+            PAMI_assertf(T_Counter::checkCtorMm(_mm), "Memory type incorrect for T_Counter class");
+            PAMI_assertf(T_Mutex::checkCtorMm(_mm), "Memory type incorrect for T_Mutex class");            
             rc = _mm->memalign((void **)&_collshm, 16, _size, "/pami-collshmem",
                                _collshminit, (void *)this);
+          }
           else
             rc = PAMI_ENOMEM;
 
