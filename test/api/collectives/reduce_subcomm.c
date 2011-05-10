@@ -16,8 +16,8 @@
 #define FULL_TEST  1
 #define COUNT      65536
 #define MAXBUFSIZE COUNT*16
-#define NITERLAT   1000
-#define NITERBW    10
+#define NITERLAT   10
+#define NITERBW    1
 #define CUTOFF     65536
 
 #include "../pami_util.h"
@@ -340,46 +340,36 @@ int main(int argc, char*argv[])
                     else
                       niter = NITERBW;
 
+                    reduce.cmd.xfer_reduce.stypecount = i;
+                    reduce.cmd.xfer_reduce.rtypecount = dataSent;
+                    reduce.cmd.xfer_reduce.stype      = dt_array[dt];
+                    reduce.cmd.xfer_reduce.op         = op_array[op];
 #ifdef CHECK_DATA
-                    reduce_initialize_sndbuf (sbuf, i, op, dt, task_id, num_tasks);
+                    reduce_initialize_sndbuf (sbuf, i, op, dt, task_id-root, half);
 #endif
-                    pami_endpoint_t root_ep;
-                    PAMI_Endpoint_create(client, root, 0, &root_ep);
-                    reduce.cmd.xfer_reduce.root    = root_ep;
                     blocking_coll(context, &newbarrier, &newbar_poll_flag);
                     ti = timer();
-/*                    root = 0; */
-
                     for (j = 0; j < niter; j++)
                       {
+                        pami_endpoint_t root_ep;
+                        PAMI_Endpoint_create(client, root, 0, &root_ep);
+                        reduce.cmd.xfer_reduce.root    = root_ep;
                         if (task_id == root)
                           reduce.cmd.xfer_reduce.rcvbuf    = rbuf;
                         else
                           reduce.cmd.xfer_reduce.rcvbuf    = NULL;
-
-                        reduce.cmd.xfer_reduce.stypecount = i;
-                        reduce.cmd.xfer_reduce.rtypecount = dataSent;
-                        reduce.cmd.xfer_reduce.stype      = dt_array[dt];
-                        reduce.cmd.xfer_reduce.op         = op_array[op];
                         blocking_coll(context, &reduce, &reduce_poll_flag);
-
-/*                        if (j < niter - 1) */
-/*                          root = (root + 1) % num_tasks; */
+                        /*root = (root + 1) % num_tasks;*/
                       }
 
                     tf = timer();
                     blocking_coll(context, &newbarrier, &newbar_poll_flag);
-
 #ifdef CHECK_DATA
-
                     if (task_id == root)
                       {
-                        int rc = reduce_check_rcvbuf (rbuf, i, op, dt, task_id, num_tasks);
-
-                        /*assert (rc == 0); */
+                        int rc = reduce_check_rcvbuf (rbuf, i, op, dt, task_id-root, half);
                         if (rc) fprintf(stderr, "FAILED validation\n");
                       }
-
 #endif
 
                     usec = (tf - ti) / (double)niter;

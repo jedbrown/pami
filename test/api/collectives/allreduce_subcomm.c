@@ -18,8 +18,8 @@
 #define FULL_TEST  1
 #define COUNT      65536
 #define MAXBUFSIZE COUNT*16
-#define NITERLAT   1000
-#define NITERBW    10
+#define NITERLAT   10
+#define NITERBW    1
 #define CUTOFF     65536
 
 #include "../pami_util.h"
@@ -353,7 +353,7 @@ int main(int argc, char*argv[])
                 allreduce.cmd.xfer_allreduce.op         = op_array[op];
 
 #ifdef CHECK_DATA
-                initialize_sndbuf (sbuf, i, op, dt, task_id);
+                reduce_initialize_sndbuf (sbuf, i, op, dt, task_id, num_tasks);
 #endif
                 blocking_coll(context, &newbarrier, &newbar_poll_flag);
                 ti = timer();
@@ -367,8 +367,7 @@ int main(int argc, char*argv[])
                 blocking_coll(context, &newbarrier, &newbar_poll_flag);
 
 #ifdef CHECK_DATA
-                int rc = check_rcvbuf (rbuf, i, op, dt, num_tasks);
-
+                int rc = reduce_check_rcvbuf (rbuf, i, op, dt, task_id, num_tasks);
                 if (rc) fprintf(stderr, "FAILED validation\n");
 
 #endif
