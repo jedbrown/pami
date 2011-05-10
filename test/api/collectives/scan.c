@@ -66,7 +66,7 @@ int main(int argc, char*argv[])
   pami_client_t        client;
   pami_context_t       context;
   size_t               num_contexts=1;
-  pami_task_t          task_id=0, task_zero;
+  pami_task_t          task_id,task_zero=0;
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
 
