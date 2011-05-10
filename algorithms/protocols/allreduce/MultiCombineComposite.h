@@ -83,6 +83,7 @@ namespace CCMI
 
             size_t size = cmd->cmd.xfer_allreduce.stypecount * sizeOfType;
 
+            TRACE_FORMAT( "srcPwq.configure %zu",size);
             _srcPwq.configure(cmd->cmd.xfer_allreduce.sndbuf, size, size);
             _srcPwq.reset();
 
@@ -94,6 +95,7 @@ namespace CCMI
             sizeOfType = type_obj->GetAtomSize();
 
             size = cmd->cmd.xfer_allreduce.rtypecount * sizeOfType;
+            TRACE_FORMAT( "dstPwq.configure %zu",size);
             _dstPwq.configure(cmd->cmd.xfer_allreduce.rcvbuf, size, 0);
             _dstPwq.reset();
 
@@ -113,7 +115,7 @@ namespace CCMI
             minfo.results              = (pami_pipeworkqueue_t *) & _dstPwq;
             minfo.optor                = (pami_op)op;
             minfo.dtype                = (pami_dt)dt;
-            minfo.count                = size / sizeOfType;
+            minfo.count                = cmd->cmd.xfer_allreduce.stypecount;
 
             if (T_inline) {
               T_Native *t_native = (T_Native *) native;

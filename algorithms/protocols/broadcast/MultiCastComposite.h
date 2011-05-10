@@ -46,7 +46,7 @@ namespace CCMI
         Composite(),
         _root(cmd->cmd.xfer_broadcast.root)
         {
-          TRACE_ADAPTOR((stderr, "<%p>%s type %#zX, count %zu, root %zu\n", this, __PRETTY_FUNCTION__, (size_t)cmd->cmd.xfer_broadcast.type, cmd->cmd.xfer_broadcast.typecount, cmd->cmd.xfer_broadcast.root));
+          TRACE_ADAPTOR((stderr, "<%p>%s type %#zX, count %zu, root %zu\n", this, __PRETTY_FUNCTION__, (size_t)cmd->cmd.xfer_broadcast.type, cmd->cmd.xfer_broadcast.typecount, (size_t)cmd->cmd.xfer_broadcast.root));
 
           PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)g;
           void *deviceInfo                  = geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
@@ -1273,7 +1273,7 @@ namespace CCMI
         _buffer_size(0),
         _buffer(NULL)
         {
-          TRACE_ADAPTOR((stderr, "<%p>%s type %#zX, count %zu, root %zu\n", this, __PRETTY_FUNCTION__, (size_t)cmd->cmd.xfer_broadcast.type, cmd->cmd.xfer_broadcast.typecount, cmd->cmd.xfer_broadcast.root));
+          TRACE_ADAPTOR((stderr, "<%p>%s type %#zX, count %zu, root %zu\n", this, __PRETTY_FUNCTION__, (size_t)cmd->cmd.xfer_broadcast.type, cmd->cmd.xfer_broadcast.typecount, (size_t)cmd->cmd.xfer_broadcast.root));
           PAMI::Type::TypeCode * type_obj = (PAMI::Type::TypeCode *)cmd->cmd.xfer_broadcast.type;
 
           /// \todo Support non-contiguous
@@ -1334,7 +1334,7 @@ namespace CCMI
           pami_xfer_t *cmd = (pami_xfer_t *)pcmd;
 
           _xfer_broadcast = cmd->cmd.xfer_broadcast;
-          TRACE_ADAPTOR((stderr, "<%p>%s type %#zX, count %zu, root %zu\n", this, __PRETTY_FUNCTION__, (size_t)cmd->cmd.xfer_broadcast.type, cmd->cmd.xfer_broadcast.typecount, cmd->cmd.xfer_broadcast.root));
+          TRACE_ADAPTOR((stderr, "<%p>%s type %#zX, count %zu, root %zu\n", this, __PRETTY_FUNCTION__, (size_t)cmd->cmd.xfer_broadcast.type, cmd->cmd.xfer_broadcast.typecount,(size_t)cmd->cmd.xfer_broadcast.root));
 
           PAMI::Type::TypeCode * type_obj = (PAMI::Type::TypeCode *)cmd->cmd.xfer_broadcast.type;
 
