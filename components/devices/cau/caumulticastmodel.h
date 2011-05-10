@@ -53,8 +53,8 @@ namespace PAMI
         unsigned geometry_id:12;
         unsigned connection_id:12;
         unsigned root:20;
-        unsigned data_sz:7;
-        unsigned msg_sz:33;
+        unsigned data_sz:8;
+        unsigned msg_sz:32;
       } __attribute__((__packed__));
 
       // This is a structure used to track pipelines
