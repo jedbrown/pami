@@ -259,6 +259,13 @@ int main(int argc, char*argv[])
   for (i = 0, j = DT_LOC_2DOUBLE   ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
 
   /*--------------------------------------*/
+  /* Disable NULL and byte operations     */
+  for (i = 0, j = DT_NULL; i < OP_COUNT; i++)validTable[i][j] = 0;
+  for (i = 0, j = DT_BYTE; i < OP_COUNT; i++)validTable[i][j] = 0;
+  for (j = 0, i = OP_COPY; j < DT_COUNT; j++) validTable[i][j] = 0;
+  for (j = 0, i = OP_NOOP; j < DT_COUNT; j++) validTable[i][j] = 0;
+
+  /*--------------------------------------*/
   /* Disable LOC ops on non-LOC dt's      */
   for (j = 0, i = OP_MAXLOC; j < DT_LOC_2INT; j++) validTable[i][j] = 0;
   for (j = 0, i = OP_MINLOC; j < DT_LOC_2INT; j++) validTable[i][j] = 0;
