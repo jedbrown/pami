@@ -449,7 +449,7 @@ namespace PAMI
             // Allocate storage for the user header and the system
             // header for the multicast
             PAMI_assert(mcast->msgcount == 0);
-            PAMI_assert(sizeof(msgHeader) <= 12);
+            COMPILE_TIME_ASSERT(sizeof(msgHeader) <= 12);
             size_t         hdrsz  = sizeof(msgHeader);
             msgHeader     *hdr    = (msgHeader*)m->allocateHeader(hdrsz);
             PipeWorkQueue *source = (PipeWorkQueue *)mcast->src;
