@@ -357,7 +357,7 @@ int main(int argc, char*argv[])
                         else
                           reduce.cmd.xfer_reduce.rcvbuf    = NULL;
 
-                        reduce.cmd.xfer_reduce.stypecount = dataSent;
+                        reduce.cmd.xfer_reduce.stypecount = i;
                         reduce.cmd.xfer_reduce.rtypecount = dataSent;
                         reduce.cmd.xfer_reduce.stype      = dt_array[dt];
                         reduce.cmd.xfer_reduce.op         = op_array[op];
