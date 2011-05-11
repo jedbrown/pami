@@ -789,6 +789,12 @@ namespace PAMI
     {
       return _mapcache.numActiveNodesGlobal;
     }
+
+    const size_t * getPeer2TaskArray ()
+    {
+      return _mapcache.node.peer2task;
+    };
+
   };  // class Mapping
 };  // namespace PAMI
 

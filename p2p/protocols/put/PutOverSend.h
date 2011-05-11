@@ -220,9 +220,8 @@ namespace PAMI
             // Verify that this task is addressable by this packet device
             if (unlikely(_short_model.device.isPeer (task) == false))
               {
-                errno = EHOSTUNREACH;
                 TRACE_FN_EXIT();
-                return PAMI_CHECK_ERRNO;
+                return PAMI_INVAL;
               }
 
             // Allocate memory to maintain the origin state of the put operation.

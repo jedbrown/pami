@@ -274,6 +274,12 @@ namespace PAMI
                 case PAMI_CLIENT_NUM_TASKS:
                   configuration[i].value.intval = __global.mapping.size();
                   break;
+                case PAMI_CLIENT_NUM_LOCAL_TASKS:
+                  __global.mapping.nodePeers (configuration[i].value.intval);
+                  break;
+                case PAMI_CLIENT_LOCAL_TASKS:
+                  configuration[i].value.intarray = __global.mapping.getPeer2TaskArray();
+                  break;
                 case PAMI_CLIENT_CLOCK_MHZ:
                 case PAMI_CLIENT_WTIMEBASE_MHZ:
                   configuration[i].value.intval = __global.time.clockMHz();

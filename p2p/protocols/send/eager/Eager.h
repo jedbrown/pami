@@ -146,11 +146,6 @@ namespace PAMI
 
                 if (T_Composite && result != PAMI_SUCCESS)
                   {
-#ifdef ERROR_CHECKS
-                    if ((result == PAMI_CHECK_ERRNO && errno != EHOSTUNREACH) ||
-                        (result != PAMI_CHECK_ERRNO))
-                      return result;
-#endif
                     result = _secondary.immediate_impl (parameters);
 
                   }
@@ -171,11 +166,6 @@ namespace PAMI
 
                 if (T_Composite && result != PAMI_SUCCESS)
                   {
-#ifdef ERROR_CHECKS
-                    if ((result == PAMI_CHECK_ERRNO && errno != EHOSTUNREACH) ||
-                        (result != PAMI_CHECK_ERRNO))
-                      return result;
-#endif
                     result = _secondary.simple_impl (parameters);
                   }
 

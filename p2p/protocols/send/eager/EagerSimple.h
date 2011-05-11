@@ -483,8 +483,7 @@ namespace PAMI
             // Verify that this task is addressable by this packet device
             if (unlikely(_short_model.device.isPeer(task) == false))
               {
-                errno = EHOSTUNREACH;
-                return PAMI_CHECK_ERRNO;
+                return PAMI_INVAL;
               }
 
             // Specify the protocol metadata to send with the application
@@ -568,8 +567,7 @@ namespace PAMI
             // Verify that this task is addressable by this packet device
             if (unlikely(_short_model.device.isPeer (task) == false))
               {
-                errno = EHOSTUNREACH;
-                return PAMI_CHECK_ERRNO;
+                return PAMI_INVAL;
               }
 
             const size_t header_bytes = parameters->send.header.iov_len;
