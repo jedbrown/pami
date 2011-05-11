@@ -72,7 +72,6 @@ build/collectives/ambcast.exe \
 build/collectives/barrier.exe \
 build/collectives/barrier_query.exe \
 build/collectives/barrier_subcomm.exe \
-build/collectives/barrier_subcomm_noparent.exe \
 build/collectives/barrier_subcomm_query.exe \
 build/collectives/bcast.exe \
 build/collectives/bcast_subcomm.exe \
