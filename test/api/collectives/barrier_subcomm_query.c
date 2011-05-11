@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/internals/bgq/api/collectives/barrier_subcomm_query.c
- * \brief Simple Barrier test on sub-geometries using "must query" algorithms
+ * \file test/api/collectives/barrier_subcomm_query.c
+ * \brief Simple Barrier test on sub-geometries using "query" algorithms
  */
 
 
@@ -16,13 +16,13 @@
 #define NITERLAT   1
 */
 
-#include "../../../../api/pami_util.h"
+#include "../pami_util.h"
 
 int main(int argc, char*argv[])
 {
   pami_client_t        client;
   pami_context_t      *context;
-  pami_task_t          task_id, local_task_id;
+  pami_task_t          task_id, local_task_id, root = 0;
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
 
@@ -102,7 +102,7 @@ int main(int argc, char*argv[])
     pami_xfer_t            newbarrier;
 
     size_t                 set[2];
-    int                    id, root = 0, non_root[2], timeDelay = 0;
+    int                    id, non_root[2], timeDelay = 0;
 
     range     = (pami_geometry_range_t *)malloc(((num_tasks + 1) / 2) * sizeof(pami_geometry_range_t));
 

@@ -12,24 +12,33 @@
 VPATH		= @abs_srcdir@
 SUBDIRS         = 
 NOTBUILT        = 
-APPS            = barrier.${EXTENSION} barrier_subcomm.${EXTENSION} \
-		bcast.${EXTENSION}  bcast_query.${EXTENSION}  bcast_subcomm.${EXTENSION} \
-		bcast_subcomm_noparent.${EXTENSION} \
-		ambcast.${EXTENSION} \
-		allreduce.${EXTENSION} allreduce_query.${EXTENSION} allreduce_subcomm.${EXTENSION} allreduce_subcomm_query.${EXTENSION} \
-		reduce.${EXTENSION} reduce_subcomm.${EXTENSION} reduce_query.${EXTENSION} \
-		allgather.${EXTENSION} \
-		allgatherv.${EXTENSION} \
-		allgatherv_int.${EXTENSION} \
-		gather.${EXTENSION} \
-		gatherv.${EXTENSION} \
-		gatherv_int.${EXTENSION} \
-		scatter.${EXTENSION} \
-		scatterv.${EXTENSION} \
-		scan.${EXTENSION} \
-		reduce_scatter.${EXTENSION} \
-		alltoall.${EXTENSION} \
-		alltoallv.${EXTENSION} 
+APPS            =  barrier.${EXTENSION} barrier_query.${EXTENSION} 
+APPS            += barrier_subcomm.${EXTENSION} barrier_subcomm_query.${EXTENSION}
+APPS            += bcast.${EXTENSION}  bcast_query.${EXTENSION}  
+APPS            += bcast_subcomm.${EXTENSION} bcast_subcomm_query.${EXTENSION} 
+APPS            += bcast_subcomm_noparent.${EXTENSION} 
+APPS            += ambcast.${EXTENSION} 
+APPS            += allreduce.${EXTENSION} allreduce_query.${EXTENSION} 
+APPS            += allreduce_subcomm.${EXTENSION} allreduce_subcomm_query.${EXTENSION} 
+APPS            += reduce.${EXTENSION} reduce_query.${EXTENSION}  
+APPS            += reduce_subcomm.${EXTENSION} 
+APPS            += allgather.${EXTENSION} 
+APPS            += allgather_subcomm.${EXTENSION} 
+APPS            += allgatherv.${EXTENSION} 
+APPS            += allgatherv_int.${EXTENSION} 
+APPS            += gather.${EXTENSION} 
+APPS            += gatherv.${EXTENSION} 
+APPS            += gatherv_int.${EXTENSION} 
+APPS            += scatter.${EXTENSION} 
+APPS            += scatter_subcomm.${EXTENSION} 
+APPS            += scatterv.${EXTENSION} 
+APPS            += scan.${EXTENSION} 
+APPS            += reduce_scatter.${EXTENSION} 
+APPS            += alltoall.${EXTENSION} 
+APPS            += alltoallv.${EXTENSION} 
+APPS            += alltoallv_int.${EXTENSION} 
+APPS            += alltoallv_int_subcomm.${EXTENSION} 
+APPS            += alltoallv_subcomm.${EXTENSION} 
 
 include @abs_top_builddir@/Build.rules
 

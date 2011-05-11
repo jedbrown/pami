@@ -27,12 +27,12 @@ void cb_bcast_recv  (pami_context_t         context,      /**< IN:  communicatio
                      pami_geometry_t        geometry,     /**< IN:  Geometry */
                      pami_recv_t          * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
 {
-  if(gVerbose && !context)
+  if (gVerbose && !context)
     fprintf(stderr, "Error. Null context received on cb_done.\n");
 
   void *rcvbuf =  malloc(data_size);
 
-  if(!recv)
+  if (!recv)
   {
     memcpy(rcvbuf, pipe_addr, data_size);
     return;
@@ -85,17 +85,17 @@ int main(int argc, char*argv[])
   /* \note Test environment variable" TEST_VERBOSE=N     */
   char* sVerbose = getenv("TEST_VERBOSE");
 
-  if(sVerbose) gVerbose=atoi(sVerbose); /* set the global defined in coll_util.h */
+  if (sVerbose) gVerbose=atoi(sVerbose); /* set the global defined in coll_util.h */
 
   /* \note Test environment variable" TEST_PROTOCOL={-}substring.       */
   /* substring is used to select, or de-select (with -) test protocols */
   unsigned selector = 1;
   char* selected = getenv("TEST_PROTOCOL");
-  if(!selected) selected = "";
-  else if(selected[0]=='-')
+  if (!selected) selected = "";
+  else if (selected[0]=='-')
   {
-      selector = 0 ;
-      ++selected;
+    selector = 0 ;
+    ++selected;
   }
 
 
@@ -127,7 +127,7 @@ int main(int argc, char*argv[])
     return 1;
 
   /*  Query the world geometry for ambroadcast algorithms */
-  rc = query_geometry_world(client,
+  rc |= query_geometry_world(client,
                             context,
                             &world_geometry,
                             ambcast_xfer,
@@ -159,68 +159,68 @@ int main(int argc, char*argv[])
   ambroadcast.cmd.xfer_ambroadcast.stypecount   = 0;
 
   for (nalg = 0; nalg < ambcast_num_algorithm[0]; nalg++)
+  {
+    if (task_id == root)
     {
-      if (task_id == root)
-        {
-          printf("# Broadcast Bandwidth Test -- root = %d, protocol: %s\n", root, ambcast_always_works_md[nalg].name);
-          printf("# Size(bytes)           cycles    bytes/sec    usec\n");
-          printf("# -----------      -----------    -----------    ---------\n");
-        }
-      if(((strstr(ambcast_always_works_md[nalg].name,selected) == NULL) && selector) ||
-         ((strstr(ambcast_always_works_md[nalg].name,selected) != NULL) && !selector))  continue;
-
-      pami_collective_hint_t h = {0};
-      pami_dispatch_callback_function fn;
-      fn.ambroadcast = cb_bcast_recv;
-      PAMI_AMCollective_dispatch_set(context,
-                                     ambcast_always_works_algo[nalg],
-                                     0,
-                                     fn,
-                                     NULL,
-                                     h);
-      ambroadcast.algorithm = ambcast_always_works_algo[nalg];
-      blocking_coll(context, &barrier, &bar_poll_flag);
-
-      for (i = 1; i <= BUFSIZE; i *= 2)
-        {
-          long long dataSent = i;
-          unsigned     niter = NITER;
-
-          if (task_id == root)
-            {
-              ti = timer();
-
-              for (j = 0; j < niter; j++)
-                {
-                  ambroadcast.cmd.xfer_ambroadcast.stypecount = i;
-                  blocking_coll (context, &ambroadcast, &ambcast_poll_flag);
-                }
-
-              while (ambcast_poll_flag)
-                result = PAMI_Context_advance (context, 1);
-
-              blocking_coll(context, &barrier, &bar_poll_flag);
-              tf = timer();
-              usec = (tf - ti) / (double)niter;
-              printf("  %11lld %16lld %14.1f %12.2f\n",
-                     dataSent,
-                     0LL,
-                     (double)1e6*(double)dataSent / (double)usec,
-                     usec);
-              fflush(stdout);
-            }
-          else
-            {
-              while (_g_total_broadcasts < niter)
-                result = PAMI_Context_advance (context, 1);
-
-              _g_total_broadcasts = 0;
-              blocking_coll(context, &barrier, &bar_poll_flag);
-            }
-        }
+      printf("# Broadcast Bandwidth Test -- root = %d, protocol: %s\n", root, ambcast_always_works_md[nalg].name);
+      printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+      printf("# -----------      -----------    -----------    ---------\n");
     }
+    if (((strstr(ambcast_always_works_md[nalg].name,selected) == NULL) && selector) ||
+        ((strstr(ambcast_always_works_md[nalg].name,selected) != NULL) && !selector))  continue;
 
-  rc = pami_shutdown(&client, &context, &num_contexts);
+    pami_collective_hint_t h = {0};
+    pami_dispatch_callback_function fn;
+    fn.ambroadcast = cb_bcast_recv;
+    PAMI_AMCollective_dispatch_set(context,
+                                   ambcast_always_works_algo[nalg],
+                                   0,
+                                   fn,
+                                   NULL,
+                                   h);
+    ambroadcast.algorithm = ambcast_always_works_algo[nalg];
+    blocking_coll(context, &barrier, &bar_poll_flag);
+
+    for (i = 1; i <= BUFSIZE; i *= 2)
+    {
+      long long dataSent = i;
+      unsigned     niter = NITER;
+
+      if (task_id == root)
+      {
+        ti = timer();
+
+        for (j = 0; j < niter; j++)
+        {
+          ambroadcast.cmd.xfer_ambroadcast.stypecount = i;
+          blocking_coll (context, &ambroadcast, &ambcast_poll_flag);
+        }
+
+        while (ambcast_poll_flag)
+          result = PAMI_Context_advance (context, 1);
+
+        blocking_coll(context, &barrier, &bar_poll_flag);
+        tf = timer();
+        usec = (tf - ti) / (double)niter;
+        printf("  %11lld %16lld %14.1f %12.2f\n",
+               dataSent,
+               0LL,
+               (double)1e6*(double)dataSent / (double)usec,
+               usec);
+        fflush(stdout);
+      }
+      else
+      {
+        while (_g_total_broadcasts < niter)
+          result = PAMI_Context_advance (context, 1);
+
+        _g_total_broadcasts = 0;
+        blocking_coll(context, &barrier, &bar_poll_flag);
+      }
+    }
+  }
+
+  rc |= pami_shutdown(&client, &context, &num_contexts);
   free(bar_always_works_algo);
   free(bar_always_works_md);
   free(bar_must_query_algo);
@@ -229,5 +229,5 @@ int main(int argc, char*argv[])
   free(ambcast_always_works_md);
   free(ambcast_must_query_algo);
   free(ambcast_must_query_md);
-  return 0;
+  return rc;
 }

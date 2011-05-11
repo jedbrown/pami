@@ -8,76 +8,62 @@
 /* end_generated_IBM_copyright_prolog                               */
 /**
  * \file test/api/collectives/alltoallv.c
- * \brief ???
+ * \brief Simple Alltoallv test on world geometry (only bytes)
  */
-#define COUNT     4096          /* see envvar TEST_COUNT for overrides */
-unsigned max_count = COUNT;
 
-#define OFFSET     0            /* see envvar TEST_OFFSET for overrides */
-unsigned buffer_offset = OFFSET;
-
-#define NITERLAT   100          /* see envvar TEST_ITER for overrides */
-unsigned niterlat  = NITERLAT;
-
+#define COUNT     (4096)
+#define NITERLAT   100
+/*
+#define OFFSET     0
 #define NITERBW    MIN(10, niterlat/100+1)
-
 #define CUTOFF     1024
+*/
 
 #include "../pami_util.h"
 
-/*#define INIT_BUFS(r) */
-#define INIT_BUFS(r) init_bufs(r)
-
-/*#define CHCK_BUFS */
-#define CHCK_BUFS(s,r)    check_bufs(s,r)
-
-
-char *sbuf = NULL;
-char *rbuf = NULL;
 
 size_t *sndlens = NULL;
 size_t *sdispls = NULL;
 size_t *rcvlens = NULL;
 size_t *rdispls = NULL;
 
-void init_bufs(size_t r)
+void initialize_sndbuf(size_t r, char *sbuf, char *rbuf)
 {
   size_t k;
 
-  for ( k = 0; k < sndlens[r]; k++ )
-    {
-      sbuf[ sdispls[r] + k ] = ((r + k) & 0xff);
-      rbuf[ rdispls[r] + k ] = 0xff;
-    }
+  for (k = 0; k < sndlens[r]; k++)
+  {
+    sbuf[ sdispls[r] + k ] = ((r + k) & 0xff);
+    rbuf[ rdispls[r] + k ] = 0xff;
+  }
 }
 
-
-void check_bufs(size_t sz, size_t myrank)
+int check_rcvbuf(size_t sz, size_t myrank, char *rbuf)
 {
   size_t r, k;
 
-  for ( r = 0; r < sz; r++ )
-    for ( k = 0; k < rcvlens[r]; k++ )
+  for (r = 0; r < sz; r++)
+    for (k = 0; k < rcvlens[r]; k++)
+    {
+      if (rbuf[ rdispls[r] + k ] != (char)((myrank + k) & 0xff))
       {
-        if ( rbuf[ rdispls[r] + k ] != (char)((myrank + k) & 0xff) )
-          {
-            printf("%zu: (E) rbuf[%zu]:%02x instead of %02zx (r:%zu)\n",
-                   myrank,
-                   rdispls[r] + k,
-                   rbuf[ rdispls[r] + k ],
-                   ((r + k) & 0xff),
-                   r );
-            exit(1);
-          }
+        fprintf(stderr, "%s:Check(%zu) failed rbuf[%zu+%zu]:%02x instead of %02zx (rank:%zu)\n",
+                gProtocolName, sndlens[r],
+                rdispls[r], k,
+                rbuf[ rdispls[r] + k ],
+                ((r + k) & 0xff),
+                r );
+        return 1;
       }
-}
+    }
 
+  return 0;
+}
 
 int main(int argc, char*argv[])
 {
   pami_client_t        client;
-  pami_context_t       context;
-  size_t               num_contexts = 1;
+  pami_context_t      *context;
   pami_task_t          task_id;
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
@@ -100,50 +86,23 @@ int main(int argc, char*argv[])
   pami_xfer_type_t     alltoallv_xfer = PAMI_XFER_ALLTOALLV;
   volatile unsigned    alltoallv_poll_flag = 0;
 
+  int                  nalg = 0;
   double               ti, tf, usec;
   pami_xfer_t          barrier;
   pami_xfer_t          alltoallv;
 
-  /* \note Test environment variable" TEST_VERBOSE=N     */
-  char* sVerbose = getenv("TEST_VERBOSE");
+  /* Process environment variables and setup globals */
+  setup_env();
 
-  if(sVerbose) gVerbose=atoi(sVerbose); /* set the global defined in coll_util.h */
+  assert(gNum_contexts > 0);
+  context = (pami_context_t*)malloc(sizeof(pami_context_t) * gNum_contexts);
 
-  /* \note Test environment variable" TEST_PROTOCOL={-}substring.       */
-  /* substring is used to select, or de-select (with -) test protocols */
-  unsigned selector = 1;
-  char* selected = getenv("TEST_PROTOCOL");
-
-  if (!selected) selected = "";
-  else if (selected[0] == '-')
-    {
-      selector = 0 ;
-      ++selected;
-    }
-
-  /* \note Test environment variable" TEST_COUNT=N max count     */
-  char* sCount = getenv("TEST_COUNT");
-
-  /* Override COUNT */
-  if (sCount) max_count = atoi(sCount);
-
-  /* \note Test environment variable" TEST_OFFSET=N buffer offset/alignment*/
-  char* sOffset = getenv("TEST_OFFSET");
-
-  /* Override OFFSET */
-  if (sOffset) buffer_offset = atoi(sOffset);
-
-  /* \note Test environment variable" TEST_ITER=N iterations      */
-  char* sIter = getenv("TEST_ITER");
-
-  /* Override NITERLAT */
-  if (sIter) niterlat = atoi(sIter);
 
   /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
-                     &context,       /* Context            */
+                     context,        /* Context            */
                      NULL,           /* Clientname=default */
-                     &num_contexts,  /* num_contexts       */
+                     &gNum_contexts, /* gNum_contexts       */
                      NULL,           /* null configuration */
                      0,              /* no configuration   */
                      &task_id,       /* task id            */
@@ -154,13 +113,15 @@ int main(int argc, char*argv[])
 
   /*  Allocate buffer(s) */
   int err = 0;
-  err = posix_memalign((void*)&sbuf, 128, (max_count*num_tasks)+buffer_offset);
+  void* sbuf = NULL;
+  err = posix_memalign((void*) & sbuf, 128, (gMax_count * num_tasks) + gBuffer_offset);
   assert(err == 0);
-  sbuf = (char*)sbuf + buffer_offset;
+  sbuf = (char*)sbuf + gBuffer_offset;
 
-  err = posix_memalign((void*)&rbuf, 128, (max_count*num_tasks)+buffer_offset);
+  void* rbuf = NULL;
+  err = posix_memalign((void*) & rbuf, 128, (gMax_count * num_tasks) + gBuffer_offset);
   assert(err == 0);
-  rbuf = (char*)rbuf + buffer_offset;
+  rbuf = (char*)rbuf + gBuffer_offset;
 
   sndlens = (size_t*) malloc(num_tasks * sizeof(size_t));
   assert(sndlens);
@@ -171,142 +132,144 @@ int main(int argc, char*argv[])
   rdispls = (size_t*) malloc(num_tasks * sizeof(size_t));
   assert(rdispls);
 
-  /*  Query the world geometry for barrier algorithms */
-  rc = query_geometry_world(client,
-                            context,
-                            &world_geometry,
-                            barrier_xfer,
-                            barrier_num_algorithm,
-                            &bar_always_works_algo,
-                            &bar_always_works_md,
-                            &bar_must_query_algo,
-                            &bar_must_query_md);
+  unsigned iContext = 0;
 
-  if (rc == 1)
-    return 1;
-
-  /*  Query the world geometry for alltoallv algorithms */
-  rc = query_geometry_world(client,
-                            context,
-                            &world_geometry,
-                            alltoallv_xfer,
-                            alltoallv_num_algorithm,
-                            &alltoallv_always_works_algo,
-                            &alltoallv_always_works_md,
-                            &alltoallv_must_query_algo,
-                            &alltoallv_must_query_md);
-
-  if (rc == 1)
-    return 1;
-
-  barrier.cb_done   = cb_done;
-  barrier.cookie    = (void*) & bar_poll_flag;
-  barrier.algorithm = bar_always_works_algo[0];
-
-  alltoallv.cb_done    = cb_done;
-  alltoallv.cookie     = (void*) & alltoallv_poll_flag;
-
+  for (; iContext < gNum_contexts; ++iContext)
   {
-    int nalg = 0;
+
+    if (task_id == 0)
+      printf("# Context: %u\n", iContext);
+
+    /*  Query the world geometry for barrier algorithms */
+    rc |= query_geometry_world(client,
+                               context[iContext],
+                               &world_geometry,
+                               barrier_xfer,
+                               barrier_num_algorithm,
+                               &bar_always_works_algo,
+                               &bar_always_works_md,
+                               &bar_must_query_algo,
+                               &bar_must_query_md);
+
+    if (rc == 1)
+      return 1;
+
+    /*  Query the world geometry for alltoallv algorithms */
+    rc |= query_geometry_world(client,
+                               context[iContext],
+                               &world_geometry,
+                               alltoallv_xfer,
+                               alltoallv_num_algorithm,
+                               &alltoallv_always_works_algo,
+                               &alltoallv_always_works_md,
+                               &alltoallv_must_query_algo,
+                               &alltoallv_must_query_md);
+
+    if (rc == 1)
+      return 1;
+
+    barrier.cb_done   = cb_done;
+    barrier.cookie    = (void*) & bar_poll_flag;
+    barrier.algorithm = bar_always_works_algo[0];
 
     for (nalg = 0; nalg < alltoallv_num_algorithm[0]; nalg++)
+    {
+      alltoallv.cb_done    = cb_done;
+      alltoallv.cookie     = (void*) & alltoallv_poll_flag;
+      alltoallv.algorithm  = alltoallv_always_works_algo[nalg];
+      alltoallv.cmd.xfer_alltoallv.sndbuf        = sbuf;
+      alltoallv.cmd.xfer_alltoallv.stype         = PAMI_TYPE_BYTE;
+      alltoallv.cmd.xfer_alltoallv.stypecounts   = sndlens;
+      alltoallv.cmd.xfer_alltoallv.sdispls       = sdispls;
+      alltoallv.cmd.xfer_alltoallv.rcvbuf        = rbuf;
+      alltoallv.cmd.xfer_alltoallv.rtype         = PAMI_TYPE_BYTE;
+      alltoallv.cmd.xfer_alltoallv.rtypecounts   = rcvlens;
+      alltoallv.cmd.xfer_alltoallv.rdispls       = rdispls;
+
+      gProtocolName = alltoallv_always_works_md[nalg].name;
+
+      if (task_id == 0)
       {
-        size_t i, j;
+        printf("# Alltoallv Bandwidth Test(size:%zu) -- context = %d, protocol: %s\n",
+               num_tasks, iContext, gProtocolName);
+        printf("# Size(bytes)           cycles    bytes/sec      usec\n");
+        printf("# -----------      -----------    -----------    ---------\n");
+      }
+
+      if (((strstr(alltoallv_always_works_md[nalg].name, gSelected) == NULL) && gSelector) ||
+          ((strstr(alltoallv_always_works_md[nalg].name, gSelected) != NULL) && !gSelector))  continue;
+
+      int i, j;
+
+      for (i = 1; i <= gMax_count; i *= 2)
+      {
+        size_t  dataSent = i;
+        int          niter;
+
+        if (dataSent < CUTOFF)
+          niter = gNiterlat;
+        else
+          niter = NITERBW;
+
+        for (j = 0; j < num_tasks; j++)
+        {
+          sndlens[j] = rcvlens[j] = i;
+          sdispls[j] = rdispls[j] = i * j;
+
+          initialize_sndbuf( j, sbuf, rbuf );
+
+        }
+
+        blocking_coll(context[iContext], &barrier, &bar_poll_flag);
+
+        /* Warmup */
+        blocking_coll(context[iContext], &alltoallv, &alltoallv_poll_flag);
+
+        blocking_coll(context[iContext], &barrier, &bar_poll_flag);
+
+        ti = timer();
+
+        for (j = 0; j < niter; j++)
+        {
+          blocking_coll(context[iContext], &alltoallv, &alltoallv_poll_flag);
+        }
+
+        tf = timer();
+        blocking_coll(context[iContext], &barrier, &bar_poll_flag);
+
+        int rc_check;
+        rc |= rc_check = check_rcvbuf(num_tasks, task_id, rbuf);
+
+        if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
+
+        usec = (tf - ti) / (double)niter;
 
         if (task_id == 0)
-          {
-            printf("# Alltoallv Bandwidth Test(size:%zu) %p, protocol: %s\n", num_tasks, cb_done, alltoallv_always_works_md[nalg].name);
-            printf("# Size(bytes)           cycles    bytes/sec      usec\n");
-            printf("# -----------      -----------    -----------    ---------\n");
-          }
-
-        if (((strstr(alltoallv_always_works_md[nalg].name, selected) == NULL) && selector) ||
-            ((strstr(alltoallv_always_works_md[nalg].name, selected) != NULL) && !selector))  continue;
-
-        alltoallv.algorithm  = alltoallv_always_works_algo[nalg];
-
-        for (i = 1; i <= max_count; i *= 2)
-          {
-            long long dataSent = i;
-            int          niter;
-
-            if (dataSent < CUTOFF)
-                niter = niterlat;
-            else
-                niter = NITERBW;
-
-            for ( j = 0; j < num_tasks; j++ )
-              {
-                sndlens[j] = rcvlens[j] = i;
-                sdispls[j] = rdispls[j] = i * j;
-                INIT_BUFS( j );
-              }
-
-            blocking_coll(context, &barrier, &bar_poll_flag);
-
-            /* Warmup */
-            alltoallv.cmd.xfer_alltoallv.sndbuf        = sbuf;
-            alltoallv.cmd.xfer_alltoallv.stype         = PAMI_TYPE_BYTE;
-            alltoallv.cmd.xfer_alltoallv.stypecounts   = sndlens;
-            alltoallv.cmd.xfer_alltoallv.sdispls       = sdispls;
-            alltoallv.cmd.xfer_alltoallv.rcvbuf        = rbuf;
-            alltoallv.cmd.xfer_alltoallv.rtype         = PAMI_TYPE_BYTE;
-            alltoallv.cmd.xfer_alltoallv.rtypecounts   = rcvlens;
-            alltoallv.cmd.xfer_alltoallv.rdispls       = rdispls;
-            blocking_coll(context, &alltoallv, &alltoallv_poll_flag);
-
-            blocking_coll(context, &barrier, &bar_poll_flag);
-
-            ti = timer();
-
-            for (j = 0; j < niter; j++)
-              {
-                alltoallv.cmd.xfer_alltoallv.sndbuf        = sbuf;
-                alltoallv.cmd.xfer_alltoallv.stype         = PAMI_TYPE_BYTE;
-                alltoallv.cmd.xfer_alltoallv.stypecounts   = sndlens;
-                alltoallv.cmd.xfer_alltoallv.sdispls       = sdispls;
-                alltoallv.cmd.xfer_alltoallv.rcvbuf        = rbuf;
-                alltoallv.cmd.xfer_alltoallv.rtype         = PAMI_TYPE_BYTE;
-                alltoallv.cmd.xfer_alltoallv.rtypecounts   = rcvlens;
-                alltoallv.cmd.xfer_alltoallv.rdispls       = rdispls;
-                blocking_coll(context, &alltoallv, &alltoallv_poll_flag);
-              }
-
-            tf = timer();
-
-            CHCK_BUFS(num_tasks, task_id);
-
-            blocking_coll(context, &barrier, &bar_poll_flag);
-
-            usec = (tf - ti) / (double)niter;
-
-            if (task_id == 0)
-              {
-
-                printf("  %11lld %16lld %14.1f %12.2f\n",
-                       dataSent,
-                       0LL,
-                       (double)1e6*(double)dataSent / (double)usec,
-                       usec);
-                fflush(stdout);
-              }
-          }
+        {
+          printf("  %11lld %16d %14.1f %12.2f\n",
+                 (long long)dataSent,
+                 niter,
+                 (double)1e6*(double)dataSent / (double)usec,
+                 usec);
+          fflush(stdout);
+        }
       }
-  }
-  rc = pami_shutdown(&client, &context, &num_contexts);
-  free(bar_always_works_algo);
-  free(bar_always_works_md);
-  free(bar_must_query_algo);
-  free(bar_must_query_md);
-  free(alltoallv_always_works_algo);
-  free(alltoallv_always_works_md);
-  free(alltoallv_must_query_algo);
-  free(alltoallv_must_query_md);
+    }
 
-  sbuf = (char*)sbuf - buffer_offset;
+    free(bar_always_works_algo);
+    free(bar_always_works_md);
+    free(bar_must_query_algo);
+    free(bar_must_query_md);
+    free(alltoallv_always_works_algo);
+    free(alltoallv_always_works_md);
+    free(alltoallv_must_query_algo);
+    free(alltoallv_must_query_md);
+  } /*for(unsigned iContext = 0; iContext < gNum_contexts; ++iContexts)*/
+
+  sbuf = (char*)sbuf - gBuffer_offset;
   free(sbuf);
 
-  rbuf = (char*)rbuf - buffer_offset;
+  rbuf = (char*)rbuf - gBuffer_offset;
   free(rbuf);
 
   free(sndlens);
@@ -314,5 +277,6 @@ int main(int argc, char*argv[])
   free(rcvlens);
   free(rdispls);
 
-  return 0;
+  rc |= pami_shutdown(&client, context, &gNum_contexts);
+  return rc;
 }

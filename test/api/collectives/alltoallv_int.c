@@ -7,44 +7,54 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/internals/bgq/api/collectives/scatter.c
- * \brief Simple Scatter test on world geometry (only scatters bytes)
+ * \file test/api/collectives/alltoallv_int.c
+ * \brief Simple alltoallv_int test on world geometry (only bytes)
  */
 
-#define COUNT     (524288)
+#define COUNT     (4096)
 /*
 #define OFFSET     0
-#define NITERLAT   1
+#define NITERLAT   100
 #define NITERBW    MIN(10, niterlat/100+1)
-#define CUTOFF     65536
+#define CUTOFF     1024
 */
 
-#include "../../../../api/pami_util.h"
+#include "../pami_util.h"
 
-void initialize_sndbuf (void *sbuf, int bytes, size_t ntasks)
+
+int *sndlens = NULL;
+int *sdispls = NULL;
+int *rcvlens = NULL;
+int *rdispls = NULL;
+
+void initialize_sndbuf(int r, char *sbuf, char *rbuf)
 {
-  size_t i;
-  unsigned char *cbuf = (unsigned char *)  sbuf;
+  int k;
 
-  for (i = 0; i < ntasks; i++)
+  for (k = 0; k < sndlens[r]; k++)
   {
-    unsigned char c = 0xFF & i;
-    memset(cbuf + (i*bytes), c, bytes);
+    sbuf[ sdispls[r] + k ] = ((r + k) & 0xff);
+    rbuf[ rdispls[r] + k ] = 0xff;
   }
 }
 
-int check_rcvbuf (void *rbuf, int bytes, pami_task_t task)
+int check_rcvbuf(size_t sz, size_t myrank, char *rbuf)
 {
-  int i;
-  unsigned char *cbuf = (unsigned char *)  rbuf;
+  int r, k;
 
-  unsigned char c = 0xFF & task;
-
-  for (i = 0; i < bytes; i++)
-    if (cbuf[i] != c)
+  for (r = 0; r < sz; r++)
+    for (k = 0; k < rcvlens[r]; k++)
     {
-      fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2u != %.2u \n", gProtocolName, bytes, cbuf, i, cbuf[i], c);
-      return 1;
+      if (rbuf[ rdispls[r] + k ] != (char)((myrank + k) & 0xff))
+      {
+        fprintf(stderr, "%s:Check(%d) failed rbuf[%u+%u]:%02x instead of %02x (rank:%u)\n",
+                gProtocolName, sndlens[r],
+                rdispls[r], k,
+                rbuf[ rdispls[r] + k ],
+                ((r + k) & 0xff),
+                r );
+        return 1;
+      }
     }
 
   return 0;
@@ -67,31 +77,25 @@ int main(int argc, char*argv[])
   pami_xfer_type_t     barrier_xfer = PAMI_XFER_BARRIER;
   volatile unsigned    bar_poll_flag = 0;
 
-  /* Scatter variables */
-  size_t               scatter_num_algorithm[2];
-  pami_algorithm_t    *scatter_always_works_algo = NULL;
-  pami_metadata_t     *scatter_always_works_md = NULL;
-  pami_algorithm_t    *scatter_must_query_algo = NULL;
-  pami_metadata_t     *scatter_must_query_md = NULL;
-  pami_xfer_type_t     scatter_xfer = PAMI_XFER_SCATTER;
-  volatile unsigned    scatter_poll_flag = 0;
+  /* alltoallv_int variables */
+  size_t               alltoallv_int_num_algorithm[2];
+  pami_algorithm_t    *alltoallv_int_always_works_algo = NULL;
+  pami_metadata_t     *alltoallv_int_always_works_md = NULL;
+  pami_algorithm_t    *alltoallv_int_must_query_algo = NULL;
+  pami_metadata_t     *alltoallv_int_must_query_md = NULL;
+  pami_xfer_type_t     alltoallv_int_xfer = PAMI_XFER_ALLTOALLV_INT;
+  volatile unsigned    alltoallv_int_poll_flag = 0;
 
   int                  nalg = 0;
   double               ti, tf, usec;
   pami_xfer_t          barrier;
-  pami_xfer_t          scatter;
+  pami_xfer_t          alltoallv_int;
 
   /* Process environment variables and setup globals */
   setup_env();
 
   assert(gNum_contexts > 0);
   context = (pami_context_t*)malloc(sizeof(pami_context_t) * gNum_contexts);
-
-  /* \note Test environment variable" TEST_ROOT=N, defaults to 0.*/
-  char* sRoot = getenv("TEST_ROOT");
-  int root = 0;
-  /* Override ROOT */
-  if (sRoot) root = atoi(sRoot);
 
 
   /*  Initialize PAMI */
@@ -109,20 +113,24 @@ int main(int argc, char*argv[])
 
   /*  Allocate buffer(s) */
   int err = 0;
-  void* buf = NULL;
-
-  if (task_id == root)
-  {
-    err = posix_memalign(&buf, 128, (gMax_count * num_tasks) + gBuffer_offset);
-    assert(err == 0);
-    buf = (char*)buf + gBuffer_offset;
-  }
+  void* sbuf = NULL;
+  err = posix_memalign((void*) & sbuf, 128, (gMax_count * num_tasks) + gBuffer_offset);
+  assert(err == 0);
+  sbuf = (char*)sbuf + gBuffer_offset;
 
   void* rbuf = NULL;
-  err = posix_memalign(&rbuf, 128, gMax_count + gBuffer_offset);
+  err = posix_memalign((void*) & rbuf, 128, (gMax_count * num_tasks) + gBuffer_offset);
   assert(err == 0);
   rbuf = (char*)rbuf + gBuffer_offset;
 
+  sndlens = (int*) malloc(num_tasks * sizeof(int));
+  assert(sndlens);
+  sdispls = (int*) malloc(num_tasks * sizeof(int));
+  assert(sdispls);
+  rcvlens = (int*) malloc(num_tasks * sizeof(int));
+  assert(rcvlens);
+  rdispls = (int*) malloc(num_tasks * sizeof(int));
+  assert(rdispls);
 
   unsigned iContext = 0;
 
@@ -146,16 +154,16 @@ int main(int argc, char*argv[])
     if (rc == 1)
       return 1;
 
-    /*  Query the world geometry for scatter algorithms */
+    /*  Query the world geometry for alltoallv_int algorithms */
     rc |= query_geometry_world(client,
                                context[iContext],
                                &world_geometry,
-                               scatter_xfer,
-                               scatter_num_algorithm,
-                               &scatter_always_works_algo,
-                               &scatter_always_works_md,
-                               &scatter_must_query_algo,
-                               &scatter_must_query_md);
+                               alltoallv_int_xfer,
+                               alltoallv_int_num_algorithm,
+                               &alltoallv_int_always_works_algo,
+                               &alltoallv_int_always_works_md,
+                               &alltoallv_int_must_query_algo,
+                               &alltoallv_int_must_query_md);
 
     if (rc == 1)
       return 1;
@@ -165,31 +173,32 @@ int main(int argc, char*argv[])
     barrier.algorithm = bar_always_works_algo[0];
     blocking_coll(context[iContext], &barrier, &bar_poll_flag);
 
-    for (nalg = 0; nalg < scatter_num_algorithm[0]; nalg++)
+    for (nalg = 0; nalg < alltoallv_int_num_algorithm[0]; nalg++)
     {
-      scatter.cb_done    = cb_done;
-      scatter.cookie     = (void*) & scatter_poll_flag;
-      scatter.algorithm  = scatter_always_works_algo[nalg];
-      scatter.cmd.xfer_scatter.root       = root;
-      scatter.cmd.xfer_scatter.sndbuf     = buf;
-      scatter.cmd.xfer_scatter.stype      = PAMI_TYPE_BYTE;
-      scatter.cmd.xfer_scatter.stypecount = 0;
-      scatter.cmd.xfer_scatter.rcvbuf     = rbuf;
-      scatter.cmd.xfer_scatter.rtype      = PAMI_TYPE_BYTE;
-      scatter.cmd.xfer_scatter.rtypecount = 0;
+      alltoallv_int.cb_done    = cb_done;
+      alltoallv_int.cookie     = (void*) & alltoallv_int_poll_flag;
+      alltoallv_int.algorithm  = alltoallv_int_always_works_algo[nalg];
+      alltoallv_int.cmd.xfer_alltoallv_int.sndbuf        = sbuf;
+      alltoallv_int.cmd.xfer_alltoallv_int.stype         = PAMI_TYPE_BYTE;
+      alltoallv_int.cmd.xfer_alltoallv_int.stypecounts   = sndlens;
+      alltoallv_int.cmd.xfer_alltoallv_int.sdispls       = sdispls;
+      alltoallv_int.cmd.xfer_alltoallv_int.rcvbuf        = rbuf;
+      alltoallv_int.cmd.xfer_alltoallv_int.rtype         = PAMI_TYPE_BYTE;
+      alltoallv_int.cmd.xfer_alltoallv_int.rtypecounts   = rcvlens;
+      alltoallv_int.cmd.xfer_alltoallv_int.rdispls       = rdispls;
 
-      gProtocolName = scatter_always_works_md[nalg].name;
+      gProtocolName = alltoallv_int_always_works_md[nalg].name;
 
-      if (task_id == root)
+      if (task_id == 0)
       {
-        printf("# Scatter Bandwidth Test -- context = %d, protocol: %s\n",
-               iContext, gProtocolName);
-        printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+        printf("# alltoallv_int Bandwidth Test(size:%zu) -- context = %d, protocol: %s\n",
+               num_tasks, iContext, gProtocolName);
+        printf("# Size(bytes)           cycles    bytes/sec      usec\n");
         printf("# -----------      -----------    -----------    ---------\n");
       }
 
-      if (((strstr(scatter_always_works_md[nalg].name, gSelected) == NULL) && gSelector) ||
-          ((strstr(scatter_always_works_md[nalg].name, gSelected) != NULL) && !gSelector))  continue;
+      if (((strstr(alltoallv_int_always_works_md[nalg].name, gSelected) == NULL) && gSelector) ||
+          ((strstr(alltoallv_int_always_works_md[nalg].name, gSelected) != NULL) && !gSelector))  continue;
 
       int i, j;
 
@@ -203,33 +212,40 @@ int main(int argc, char*argv[])
         else
           niter = NITERBW;
 
-        scatter.cmd.xfer_scatter.stypecount = i;
-        scatter.cmd.xfer_scatter.rtypecount = i;
+        for (j = 0; j < num_tasks; j++)
+        {
+          sndlens[j] = rcvlens[j] = i;
+          sdispls[j] = rdispls[j] = i * j;
 
-        if (task_id == root)
-          initialize_sndbuf (buf, i, num_tasks);
+          initialize_sndbuf( j, sbuf, rbuf );
 
-        memset(rbuf, 0xFF, i);
+        }
 
         blocking_coll(context[iContext], &barrier, &bar_poll_flag);
+
+        /* Warmup */
+        blocking_coll(context[iContext], &alltoallv_int, &alltoallv_int_poll_flag);
+
+        blocking_coll(context[iContext], &barrier, &bar_poll_flag);
+
         ti = timer();
 
         for (j = 0; j < niter; j++)
         {
-          blocking_coll(context[iContext], &scatter, &scatter_poll_flag);
+          blocking_coll(context[iContext], &alltoallv_int, &alltoallv_int_poll_flag);
         }
 
         tf = timer();
         blocking_coll(context[iContext], &barrier, &bar_poll_flag);
 
         int rc_check;
-        rc |= rc_check = check_rcvbuf (rbuf, i, task_id);
+        rc |= rc_check = check_rcvbuf(num_tasks, task_id, rbuf);
 
         if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
 
         usec = (tf - ti) / (double)niter;
 
-        if (task_id == root)
+        if (task_id == 0)
         {
           printf("  %11lld %16d %14.1f %12.2f\n",
                  (long long)dataSent,
@@ -245,21 +261,22 @@ int main(int argc, char*argv[])
     free(bar_always_works_md);
     free(bar_must_query_algo);
     free(bar_must_query_md);
-    free(scatter_always_works_algo);
-    free(scatter_always_works_md);
-    free(scatter_must_query_algo);
-    free(scatter_must_query_md);
-
+    free(alltoallv_int_always_works_algo);
+    free(alltoallv_int_always_works_md);
+    free(alltoallv_int_must_query_algo);
+    free(alltoallv_int_must_query_md);
   } /*for(unsigned iContext = 0; iContext < gNum_contexts; ++iContexts)*/
 
-  if (task_id == root)
-  {
-    buf = (char*)buf - gBuffer_offset;
-    free(buf);
-  }
+  sbuf = (char*)sbuf - gBuffer_offset;
+  free(sbuf);
 
   rbuf = (char*)rbuf - gBuffer_offset;
   free(rbuf);
+
+  free(sndlens);
+  free(sdispls);
+  free(rcvlens);
+  free(rdispls);
 
   rc |= pami_shutdown(&client, context, &gNum_contexts);
   return rc;

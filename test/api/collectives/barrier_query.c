@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/internals/bgq/api/collectives/barrier.c
- * \brief Simple Barrier test on world geometry
+ * \file test/api/collectives/barrier_query.c
+ * \brief Simple Barrier test on world geometry using "query" algorithms
  */
 
 
@@ -16,7 +16,7 @@
 #define NITERLAT   1
 */
 
-#include "../../../../api/pami_util.h"
+#include "../pami_util.h"
 
 int main(int argc, char*argv[])
 {
@@ -85,37 +85,38 @@ int main(int argc, char*argv[])
 
     barrier.cb_done   = cb_done;
     barrier.cookie    = (void*) & poll_flag;
-    barrier.algorithm = always_works_algo[0];
 
-    if (!(((strstr(always_works_md[0].name, gSelected) == NULL) && gSelector) ||
-          ((strstr(always_works_md[0].name, gSelected) != NULL) && !gSelector)))
+    for (nalg = 0; nalg < num_algorithm[1]; nalg++)
     {
-      if (!task_id)
-        fprintf(stderr, "Test Default Barrier(%s)\n", always_works_md[0].name);
-
-      rc |= blocking_coll(context[iContext], &barrier, &poll_flag);
-
-      if (rc == 1)
-        return 1;
-
-      if (!task_id)
-        fprintf(stderr, "Barrier Done (%s)\n", always_works_md[0].name);
-    }
-
-    for (nalg = 0; nalg < num_algorithm[0]; nalg++)
-    {
+      metadata_result_t result = {0};
       double ti, tf, usec;
-      barrier.algorithm = always_works_algo[nalg];
+      barrier.algorithm = must_query_algo[nalg];
 
       if (!task_id)
       {
         printf("# Barrier Test -- context = %d, protocol: %s (%d of %zd algorithms)\n",
-               iContext, always_works_md[nalg].name, nalg + 1, num_algorithm[0]);
+               iContext, must_query_md[nalg].name, nalg + 1, num_algorithm[1]);
         printf("# -------------------------------------------------------------------\n");
       }
 
-      if (((strstr(always_works_md[nalg].name, gSelected) == NULL) && gSelector) ||
-          ((strstr(always_works_md[nalg].name, gSelected) != NULL) && !gSelector))  continue;
+      if (((strstr(must_query_md[nalg].name,gSelected) == NULL) && gSelector) ||
+          ((strstr(must_query_md[nalg].name,gSelected) != NULL) && !gSelector))  continue;
+
+      unsigned checkrequired = must_query_md[nalg].check_correct.values.checkrequired; /*must query every time */
+      assert(!checkrequired || must_query_md[nalg].check_fn); /* must have function if checkrequired. */
+
+      if (must_query_md[nalg].check_fn)
+        result = must_query_md[nalg].check_fn(&barrier);
+
+
+      if (must_query_md[nalg].check_correct.values.nonlocal)
+      {
+        /* \note We currently ignore check_correct.values.nonlocal
+           because these tests should not have nonlocal differences (so far). */
+        result.check.nonlocal = 0;
+      }
+      if (result.bitmask) continue;
+
 
       /* Do two functional runs with different delaying ranks*/
       int j;
@@ -125,7 +126,7 @@ int main(int argc, char*argv[])
         if (!task_id)
         {
           fprintf(stderr, "Test Barrier protocol(%s) Correctness (%d of %zd algorithms)\n",
-                  always_works_md[nalg].name, nalg + 1, num_algorithm[0]);
+                  must_query_md[nalg].name, nalg + 1, num_algorithm[1]);
           ti = timer();
           blocking_coll(context[iContext], &barrier, &poll_flag);
           tf = timer();
@@ -134,11 +135,11 @@ int main(int argc, char*argv[])
           if ((usec < 1800000.0 || usec > 2200000.0) && (num_tasks > 1))
           {
             rc = 1;
-            fprintf(stderr, "%s FAIL: usec=%f want between %f and %f!\n", always_works_md[nalg].name,
+            fprintf(stderr, "%s FAIL: usec=%f want between %f and %f!\n", must_query_md[nalg].name,
                     usec, 1800000.0, 2200000.0);
           }
           else
-            fprintf(stderr, "%s PASS: Barrier correct!\n", always_works_md[nalg].name);
+            fprintf(stderr, "%s PASS: Barrier correct!\n", must_query_md[nalg].name);
         }
         else
         {
@@ -159,7 +160,16 @@ int main(int argc, char*argv[])
       int i;
 
       for (i = 0; i < niter; i++)
+      {
+        if (checkrequired) /* must query every time */
+        {
+          result = must_query_md[nalg].check_fn(&barrier);
+
+          if (result.bitmask) continue;
+        }
+
         blocking_coll(context[iContext], &barrier, &poll_flag);
+      }
 
       tf = timer();
       usec = tf - ti;
@@ -167,7 +177,7 @@ int main(int argc, char*argv[])
       if (!task_id)
       {
         fprintf(stderr, "Test Barrier protocol(%s) Performance: time=%f usec\n",
-                always_works_md[nalg].name, usec / (double)niter);
+                must_query_md[nalg].name, usec / (double)niter);
         delayTest(2);
       }
 

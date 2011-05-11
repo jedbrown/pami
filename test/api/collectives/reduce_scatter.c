@@ -12,7 +12,6 @@
  */
 
 /*define this if you want to validate the data for unsigned sums */
-#define CHECK_DATA
 #define FULL_TEST  1
 #define COUNT      65536
 #define MAXBUFSIZE COUNT*16
@@ -22,13 +21,16 @@
 
 #include "../pami_util.h"
 
-void initialize_sndbuf (void *buf, int count, int op, int dt, int task_id) {
+void initialize_sndbuf (void *buf, int count, int op, int dt, int task_id)
+{
 
   int i;
   /* if (op == PAMI_SUM && dt == PAMI_UNSIGNED_INT) { */
-  if (op_array[op] == PAMI_DATA_SUM && dt_array[dt] == PAMI_TYPE_UNSIGNED_INT) {
+  if (op_array[op] == PAMI_DATA_SUM && dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
+  {
     unsigned int *ibuf = (unsigned int *)  buf;
-    for (i = 0; i < count; i++) {
+    for (i = 0; i < count; i++)
+    {
       ibuf[i] = i;
     }
   }
@@ -39,17 +41,20 @@ void initialize_sndbuf (void *buf, int count, int op, int dt, int task_id) {
   }
 }
 
-int check_rcvbuf (void *buf, int count, int op, int dt, int num_tasks, int task_id) {
+int check_rcvbuf (void *buf, int count, int op, int dt, int num_tasks, int task_id)
+{
 
   int i, err = 0;
   /*  if (op == PAMI_SUM && dt == PAMI_UNSIGNED_INT) { */
-  if (op_array[op] == PAMI_DATA_SUM && dt_array[dt] == PAMI_TYPE_UNSIGNED_INT) {
+  if (op_array[op] == PAMI_DATA_SUM && dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
+  {
     unsigned int *rbuf = (unsigned int *)  buf;
-    for (i = 0; i < count / num_tasks; i++) {
+    for (i = 0; i < count / num_tasks; i++)
+    {
       if (rbuf[i] != (i + task_id * (count / num_tasks))* num_tasks)
       {
         fprintf(stderr,"Check(%d) failed rbuf[%d] %u != %u\n",count,i,rbuf[i],(i+task_id * (count/num_tasks))*num_tasks);
-        while(1);
+        while (1);
         err = -1;
         return err;    
       }
@@ -102,17 +107,17 @@ int main(int argc, char*argv[])
   /* \note Test environment variable" TEST_VERBOSE=N     */
   char* sVerbose = getenv("TEST_VERBOSE");
 
-  if(sVerbose) gVerbose=atoi(sVerbose); /* set the global defined in coll_util.h */
+  if (sVerbose) gVerbose=atoi(sVerbose); /* set the global defined in coll_util.h */
 
   /* \note Test environment variable" TEST_PROTOCOL={-}substring.       */
   /* substring is used to select, or de-select (with -) test protocols */
   unsigned selector = 1;
   char* selected = getenv("TEST_PROTOCOL");
-  if(!selected) selected = "";
-  else if(selected[0]=='-') 
+  if (!selected) selected = "";
+  else if (selected[0]=='-')
   {
-      selector = 0 ;
-      ++selected;
+    selector = 0 ;
+    ++selected;
   }
 
 
@@ -125,11 +130,11 @@ int main(int argc, char*argv[])
                      0,              /* no configuration   */
                      &task_id,       /* task id            */
                      &num_tasks);    /* number of tasks    */
-  if(rc==1)
+  if (rc==1)
     return 1;
 
   /*  Query the world geometry for barrier algorithms */
-  rc = query_geometry_world(client,
+  rc |= query_geometry_world(client,
                             context,
                             &world_geometry,
                             barrier_xfer,
@@ -138,11 +143,11 @@ int main(int argc, char*argv[])
                             &bar_always_works_md,
                             &bar_must_query_algo,
                             &bar_must_query_md);
-  if(rc==1)
+  if (rc==1)
     return 1;
 
   /*  Query the world geometry for reduce_scatter algorithms */
-  rc = query_geometry_world(client,
+  rc |= query_geometry_world(client,
                             context,
                             &world_geometry,
                             reduce_scatter_xfer,
@@ -151,24 +156,24 @@ int main(int argc, char*argv[])
                             &reduce_scatter_always_works_md,
                             &reduce_scatter_must_query_algo,
                             &reduce_scatter_must_query_md);
-  if(rc==1)
+  if (rc==1)
     return 1;
 
   size_t** validTable=
-    alloc2DContig(op_count,dt_count);
+  alloc2DContig(op_count,dt_count);
 #if FULL_TEST
-  for(i=0;i<op_count;i++)
-    for(j=0;j<dt_count;j++)
+  for (i=0;i<op_count;i++)
+    for (j=0;j<dt_count;j++)
       validTable[i][j]=1;
 
   /*--------------------------------------*/
   /* Disable unsupported ops on complex   */
   /* Only sum, prod                       */
-  for (i = 0, j = DT_SINGLE_COMPLEX; i < OP_COUNT; i++)if(i!=OP_SUM && i!=OP_PROD) validTable[i][j] = 0;
-  for (i = 0, j = DT_DOUBLE_COMPLEX; i < OP_COUNT; i++)if(i!=OP_SUM && i!=OP_PROD) validTable[i][j] = 0; 
+  for (i = 0, j = DT_SINGLE_COMPLEX; i < OP_COUNT; i++)if (i!=OP_SUM && i!=OP_PROD) validTable[i][j] = 0;
+  for (i = 0, j = DT_DOUBLE_COMPLEX; i < OP_COUNT; i++)if (i!=OP_SUM && i!=OP_PROD) validTable[i][j] = 0;
 
-  /*--------------------------------------*/
-  /* Disable non-LOC ops on LOC dt's      */
+    /*--------------------------------------*/
+    /* Disable non-LOC ops on LOC dt's      */
   for (i = 0, j = DT_LOC_2INT      ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
   for (i = 0, j = DT_LOC_SHORT_INT ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
   for (i = 0, j = DT_LOC_FLOAT_INT ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
@@ -200,15 +205,15 @@ int main(int argc, char*argv[])
   for (i = OP_PROD+1, j = DT_LONG_DOUBLE; i < OP_COUNT; i++) validTable[i][j] = 0;
 
 #else
-  for(i=0;i<op_count;i++)
-    for(j=0;j<dt_count;j++)
+  for (i=0;i<op_count;i++)
+    for (j=0;j<dt_count;j++)
       validTable[i][j]=0;
 
   validTable[OP_SUM][DT_UNSIGNED_INT]=1;
 
 #endif
 
-  for(nalg=0; nalg<reduce_scatter_num_algorithm[0]; nalg++)
+  for (nalg=0; nalg<reduce_scatter_num_algorithm[0]; nalg++)
   {
     if (task_id == task_zero)
     {
@@ -217,8 +222,8 @@ int main(int argc, char*argv[])
       printf("# Size(bytes)           cycles    bytes/sec    usec\n");
       printf("# -----------      -----------    -----------    ---------\n");
     }
-    if(((strstr(reduce_scatter_always_works_md[nalg].name,selected) == NULL) && selector) ||
-       ((strstr(reduce_scatter_always_works_md[nalg].name,selected) != NULL) && !selector))  continue;
+    if (((strstr(reduce_scatter_always_works_md[nalg].name,selected) == NULL) && selector) ||
+        ((strstr(reduce_scatter_always_works_md[nalg].name,selected) != NULL) && !selector))  continue;
 
     barrier.cb_done   = cb_done;
     barrier.cookie    = (void*)&bar_poll_flag;
@@ -235,29 +240,28 @@ int main(int argc, char*argv[])
     reduce_scatter.cmd.xfer_reduce_scatter.rtype     = PAMI_TYPE_BYTE;
     reduce_scatter.cmd.xfer_reduce_scatter.rtypecount= 0;
 
-    for(dt=0; dt<dt_count; dt++)
-      for(op=0; op<op_count; op++)
+    for (dt=0; dt<dt_count; dt++)
+      for (op=0; op<op_count; op++)
       {
-        if(validTable[op][dt])
+        if (validTable[op][dt])
         {
-          if(task_id == task_zero)
+          if (task_id == task_zero)
             printf("Running Reduce_scatter: %s, %s\n",dt_array_str[dt], op_array_str[op]);
-          for(i=4 * num_tasks; i<=COUNT; i*=2)
+          for (i=4 * num_tasks; i<=COUNT; i*=2)
           {
             size_t sz=get_type_size(dt_array[dt]);
             long long dataSent = i*sz;
             int niter;
-            if(dataSent < CUTOFF)
+            if (dataSent < CUTOFF)
               niter = NITERLAT;
             else
               niter = NITERBW;
-	    int ind;
+            int ind;
             for (ind =0; ind < num_tasks; ++ind) rcounts[ind] = i / num_tasks;
 
-#ifdef CHECK_DATA
             /* initialize_sndbuf (sbuf, i, op_array[op], dt_array[dt], task_id); */
             initialize_sndbuf (sbuf, i, op, dt, task_id);
-#endif
+
             blocking_coll(context,&barrier,&bar_poll_flag);
             ti = timer();
             for (j=0; j<niter; j++)
@@ -272,12 +276,11 @@ int main(int argc, char*argv[])
             tf = timer();
             blocking_coll(context,&barrier,&bar_poll_flag);
 
-#ifdef CHECK_DATA
-            /* int rc = check_rcvbuf (rbuf, i, op_array[op], dt_array[dt], num_tasks, task_id); */
-            int rc = check_rcvbuf (rbuf, i, op, dt, num_tasks, task_id); 
-            /*assert (rc == 0); */
-            if(rc) { fprintf(stderr, "FAILED validation\n"); exit(1); }
-#endif
+            int rc_check;
+            rc |= rc_check = check_rcvbuf (rbuf, i, op, dt, num_tasks, task_id); 
+
+            if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
+
 
             usec = (tf - ti)/(double)niter;
             if (task_id == task_zero)
@@ -293,7 +296,7 @@ int main(int argc, char*argv[])
         }
       }
   }
-  rc = pami_shutdown(&client,&context,&num_contexts);
+  rc |= pami_shutdown(&client,&context,&num_contexts);
   free(bar_always_works_algo);
   free(bar_always_works_md);
   free(bar_must_query_algo);
@@ -303,5 +306,5 @@ int main(int argc, char*argv[])
   free(reduce_scatter_must_query_algo);
   free(reduce_scatter_must_query_md);
 
-  return 0;
+  return rc;
 }

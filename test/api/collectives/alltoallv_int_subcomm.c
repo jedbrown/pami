@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/internals/bgq/api/collectives/alltoallv_int_subcomm.c
+ * \file test/api/collectives/alltoallv_int_subcomm.c
  * \brief Simple alltoallv_int test on sub-geometries (only bytes)
  */
 
@@ -19,7 +19,7 @@
 #define CUTOFF     1024
 */
 
-#include "../../../../api/pami_util.h"
+#include "../pami_util.h"
 
 
 int *sndlens = NULL;
@@ -64,7 +64,7 @@ int main(int argc, char*argv[])
 {
   pami_client_t        client;
   pami_context_t      *context;
-  pami_task_t          task_id, local_task_id;
+  pami_task_t          task_id, local_task_id, task_zero = 0;
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
 
@@ -87,7 +87,7 @@ int main(int argc, char*argv[])
   pami_xfer_type_t     alltoallv_int_xfer = PAMI_XFER_ALLTOALLV_INT;
   volatile unsigned    alltoallv_int_poll_flag = 0;
 
-  int                  root = 0, nalg = 0;
+  int                  nalg = 0;
   double               ti, tf, usec;
   pami_xfer_t          barrier;
   pami_xfer_t          alltoallv_int;
@@ -179,22 +179,22 @@ int main(int argc, char*argv[])
 
   range     = (pami_geometry_range_t *)malloc(((num_tasks + 1) / 2) * sizeof(pami_geometry_range_t));
 
-  int unused_non_root[2];
-  get_split_method(&num_tasks, task_id, &rangecount, range, &local_task_id, set, &id, &root,unused_non_root);
+  int unused_non_task_zero[2];
+  get_split_method(&num_tasks, task_id, &rangecount, range, &local_task_id, set, &id, &task_zero,unused_non_task_zero);
 
   unsigned iContext = 0;
 
   for (; iContext < gNum_contexts; ++iContext)
   {
 
-    if (task_id == root)
+    if (task_id == task_zero)
       printf("# Context: %u\n", iContext);
 
-    /* Delay root tasks, and emulate that he's doing "other"
+    /* Delay task_zero tasks, and emulate that he's doing "other"
        message passing.  This will cause the geometry_create
        request from other nodes to be unexpected when doing
        parentless geometries and won't affect parented.      */
-    if (task_id == root)
+    if (task_id == task_zero)
     {
       delayTest(1);
       unsigned ii = 0;
@@ -221,7 +221,7 @@ int main(int argc, char*argv[])
     if (rc == 1)
       return 1;
 
-    /*  Query the world geometry for alltoallv_int algorithms */
+    /*  Query the sub geometry for alltoallv algorithms */
     rc |= query_geometry(client,
                          context[iContext],
                          newgeometry,
@@ -262,10 +262,10 @@ int main(int argc, char*argv[])
       {
         if (set[k])
         {
-          if (task_id == root)
+          if (task_id == task_zero)
           {
-            printf("# Alltoallv_int Bandwidth Test(size:%zu) -- context = %d, root = %d, protocol: %s\n",
-                   num_tasks, iContext, root, gProtocolName);
+            printf("# Alltoallv_int Bandwidth Test(size:%zu) -- context = %d, task_zero = %d, protocol: %s\n",
+                   num_tasks, iContext, task_zero, gProtocolName);
             printf("# Size(bytes)           cycles    bytes/sec      usec\n");
             printf("# -----------      -----------    -----------    ---------\n");
           }
@@ -291,9 +291,9 @@ int main(int argc, char*argv[])
             {
               sndlens[j] = rcvlens[j] = i;
               sdispls[j] = rdispls[j] = i * j;
-#ifdef CHECK_DATA
+
               initialize_sndbuf( j, sbuf, rbuf );
-#endif
+
             }
 
             blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
@@ -320,7 +320,7 @@ int main(int argc, char*argv[])
 
             usec = (tf - ti) / (double)niter;
 
-            if (task_id == root)
+            if (task_id == task_zero)
             {
               printf("  %11lld %16d %14.1f %12.2f\n",
                      (long long)dataSent,

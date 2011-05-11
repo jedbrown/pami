@@ -7,44 +7,54 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/internals/bgq/api/collectives/scatter_subcomm.c
- * \brief Simple Scatter test on sub-geometries (only scatters bytes)
+ * \file test/api/collectives/alltoallv_subcomm.c
+ * \brief Simple Alltoallv test on sub-geometries (only bytes)
  */
 
-#define COUNT     (524288)
+#define COUNT     (4096)
 /*
 #define OFFSET     0
-#define NITERLAT   1
+#define NITERLAT   100
 #define NITERBW    MIN(10, niterlat/100+1)
-#define CUTOFF     65536
+#define CUTOFF     1024
 */
 
-#include "../../../../api/pami_util.h"
+#include "../pami_util.h"
 
-void initialize_sndbuf (void *sbuf, int bytes, size_t ntasks)
+
+size_t *sndlens = NULL;
+size_t *sdispls = NULL;
+size_t *rcvlens = NULL;
+size_t *rdispls = NULL;
+
+void initialize_sndbuf(size_t r, char *sbuf, char *rbuf)
 {
-  size_t i;
-  unsigned char *cbuf = (unsigned char *)  sbuf;
+  size_t k;
 
-  for (i = 0; i < ntasks; i++)
+  for (k = 0; k < sndlens[r]; k++)
   {
-    unsigned char c = 0xFF & i;
-    memset(cbuf + (i*bytes), c, bytes);
+    sbuf[ sdispls[r] + k ] = ((r + k) & 0xff);
+    rbuf[ rdispls[r] + k ] = 0xff;
   }
 }
 
-int check_rcvbuf (void *rbuf, int bytes, pami_task_t task)
+int check_rcvbuf(size_t sz, size_t myrank, char *rbuf)
 {
-  int i;
-  unsigned char *cbuf = (unsigned char *)  rbuf;
+  size_t r, k;
 
-  unsigned char c = 0xFF & task;
-
-  for (i = 0; i < bytes; i++)
-    if (cbuf[i] != c)
+  for (r = 0; r < sz; r++)
+    for (k = 0; k < rcvlens[r]; k++)
     {
-      fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2u != %.2u \n", gProtocolName, bytes, cbuf, i, cbuf[i], c);
-      return 1;
+      if (rbuf[ rdispls[r] + k ] != (char)((myrank + k) & 0xff))
+      {
+        fprintf(stderr, "%s:Check(%zu) failed rbuf[%zu+%zu]:%02x instead of %02x (rank:%zu)\n",
+                gProtocolName, sndlens[r],
+                rdispls[r], k,
+                rbuf[ rdispls[r] + k ],
+                (char)((myrank + k) & 0xff),
+                r );
+        return 1;
+      }
     }
 
   return 0;
@@ -54,7 +64,7 @@ int main(int argc, char*argv[])
 {
   pami_client_t        client;
   pami_context_t      *context;
-  pami_task_t          task_id, local_task_id;
+  pami_task_t          task_id, local_task_id, task_zero = 0;
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
 
@@ -68,31 +78,25 @@ int main(int argc, char*argv[])
   volatile unsigned    bar_poll_flag = 0;
   volatile unsigned    newbar_poll_flag = 0;
 
-  /* Scatter variables */
-  size_t               scatter_num_algorithm[2];
-  pami_algorithm_t    *scatter_always_works_algo = NULL;
-  pami_metadata_t     *scatter_always_works_md = NULL;
-  pami_algorithm_t    *scatter_must_query_algo = NULL;
-  pami_metadata_t     *scatter_must_query_md = NULL;
-  pami_xfer_type_t     scatter_xfer = PAMI_XFER_SCATTER;
-  volatile unsigned    scatter_poll_flag = 0;
+  /* Alltoallv variables */
+  size_t               alltoallv_num_algorithm[2];
+  pami_algorithm_t    *alltoallv_always_works_algo = NULL;
+  pami_metadata_t     *alltoallv_always_works_md = NULL;
+  pami_algorithm_t    *alltoallv_must_query_algo = NULL;
+  pami_metadata_t     *alltoallv_must_query_md = NULL;
+  pami_xfer_type_t     alltoallv_xfer = PAMI_XFER_ALLTOALLV;
+  volatile unsigned    alltoallv_poll_flag = 0;
 
   int                  nalg = 0;
   double               ti, tf, usec;
   pami_xfer_t          barrier;
-  pami_xfer_t          scatter;
+  pami_xfer_t          alltoallv;
 
   /* Process environment variables and setup globals */
   setup_env();
 
   assert(gNum_contexts > 0);
   context = (pami_context_t*)malloc(sizeof(pami_context_t) * gNum_contexts);
-
-  /* \note Test environment variable" TEST_ROOT=N, defaults to 0.*/
-  char* sRoot = getenv("TEST_ROOT");
-  int root = 0;
-  /* Override ROOT */
-  if (sRoot) root = atoi(sRoot);
 
 
   /*  Initialize PAMI */
@@ -114,22 +118,29 @@ int main(int argc, char*argv[])
     return 0;
   }
 
+  assert(task_id >= 0);
+  assert(task_id < num_tasks);
+
   /*  Allocate buffer(s) */
   int err = 0;
-  void* buf = NULL;
-
-  if (task_id == root)
-  {
-    err = posix_memalign(&buf, 128, (gMax_count * num_tasks) + gBuffer_offset);
-    assert(err == 0);
-    buf = (char*)buf + gBuffer_offset;
-  }
+  void* sbuf = NULL;
+  err = posix_memalign((void*) & sbuf, 128, (gMax_count * num_tasks) + gBuffer_offset);
+  assert(err == 0);
+  sbuf = (char*)sbuf + gBuffer_offset;
 
   void* rbuf = NULL;
-  err = posix_memalign(&rbuf, 128, gMax_count + gBuffer_offset);
+  err = posix_memalign((void*) & rbuf, 128, (gMax_count * num_tasks) + gBuffer_offset);
   assert(err == 0);
   rbuf = (char*)rbuf + gBuffer_offset;
 
+  sndlens = (size_t*) malloc(num_tasks * sizeof(size_t));
+  assert(sndlens);
+  sdispls = (size_t*) malloc(num_tasks * sizeof(size_t));
+  assert(sdispls);
+  rcvlens = (size_t*) malloc(num_tasks * sizeof(size_t));
+  assert(rcvlens);
+  rdispls = (size_t*) malloc(num_tasks * sizeof(size_t));
+  assert(rdispls);
 
   /*  Query the world geometry for barrier algorithms */
   rc |= query_geometry_world(client,
@@ -150,8 +161,6 @@ int main(int argc, char*argv[])
   barrier.cookie    = (void*) & bar_poll_flag;
   barrier.algorithm = bar_always_works_algo[0];
 
-  unsigned iContext = 0;
-
   /*  Create the subgeometry */
   pami_geometry_range_t *range;
   int                    rangecount;
@@ -170,20 +179,22 @@ int main(int argc, char*argv[])
 
   range     = (pami_geometry_range_t *)malloc(((num_tasks + 1) / 2) * sizeof(pami_geometry_range_t));
 
-  int unused_non_root[2];
-  get_split_method(&num_tasks, task_id, &rangecount, range, &local_task_id, set, &id, &root,unused_non_root);
+  int unused_non_task_zero[2];
+  get_split_method(&num_tasks, task_id, &rangecount, range, &local_task_id, set, &id, &task_zero,unused_non_task_zero);
+
+  unsigned iContext = 0;
 
   for (; iContext < gNum_contexts; ++iContext)
   {
 
-    if (task_id == root)
+    if (task_id == task_zero)
       printf("# Context: %u\n", iContext);
 
-    /* Delay root tasks, and emulate that he's doing "other"
+    /* Delay task_zero tasks, and emulate that he's doing "other"
        message passing.  This will cause the geometry_create
        request from other nodes to be unexpected when doing
        parentless geometries and won't affect parented.      */
-    if (task_id == root)
+    if (task_id == task_zero)
     {
       delayTest(1);
       unsigned ii = 0;
@@ -210,16 +221,16 @@ int main(int argc, char*argv[])
     if (rc == 1)
       return 1;
 
-    /*  Query the geometry for scatter algorithms */
+    /*  Query the sub geometry for alltoallv algorithms */
     rc |= query_geometry(client,
                          context[iContext],
                          newgeometry,
-                         scatter_xfer,
-                         scatter_num_algorithm,
-                         &scatter_always_works_algo,
-                         &scatter_always_works_md,
-                         &scatter_must_query_algo,
-                         &scatter_must_query_md);
+                         alltoallv_xfer,
+                         alltoallv_num_algorithm,
+                         &alltoallv_always_works_algo,
+                         &alltoallv_always_works_md,
+                         &alltoallv_must_query_algo,
+                         &alltoallv_must_query_md);
 
     if (rc == 1)
       return 1;
@@ -229,37 +240,38 @@ int main(int argc, char*argv[])
     newbarrier.cookie    = (void*) & newbar_poll_flag;
     newbarrier.algorithm = newbar_algo[0];
 
-    for (nalg = 0; nalg < scatter_num_algorithm[0]; nalg++)
+    for (nalg = 0; nalg < alltoallv_num_algorithm[0]; nalg++)
     {
-      scatter.cb_done    = cb_done;
-      scatter.cookie     = (void*) & scatter_poll_flag;
-      scatter.algorithm  = scatter_always_works_algo[nalg];
-      scatter.cmd.xfer_scatter.root       = root;
-      scatter.cmd.xfer_scatter.sndbuf     = buf;
-      scatter.cmd.xfer_scatter.stype      = PAMI_TYPE_BYTE;
-      scatter.cmd.xfer_scatter.stypecount = 0;
-      scatter.cmd.xfer_scatter.rcvbuf     = rbuf;
-      scatter.cmd.xfer_scatter.rtype      = PAMI_TYPE_BYTE;
-      scatter.cmd.xfer_scatter.rtypecount = 0;
+      alltoallv.cb_done    = cb_done;
+      alltoallv.cookie     = (void*) & alltoallv_poll_flag;
+      alltoallv.algorithm  = alltoallv_always_works_algo[nalg];
+      alltoallv.cmd.xfer_alltoallv.sndbuf        = sbuf;
+      alltoallv.cmd.xfer_alltoallv.stype         = PAMI_TYPE_BYTE;
+      alltoallv.cmd.xfer_alltoallv.stypecounts   = sndlens;
+      alltoallv.cmd.xfer_alltoallv.sdispls       = sdispls;
+      alltoallv.cmd.xfer_alltoallv.rcvbuf        = rbuf;
+      alltoallv.cmd.xfer_alltoallv.rtype         = PAMI_TYPE_BYTE;
+      alltoallv.cmd.xfer_alltoallv.rtypecounts   = rcvlens;
+      alltoallv.cmd.xfer_alltoallv.rdispls       = rdispls;
 
       int             k;
 
-      gProtocolName = scatter_always_works_md[nalg].name;
+      gProtocolName = alltoallv_always_works_md[nalg].name;
 
       for (k = 1; k >= 0; k--)
       {
         if (set[k])
         {
-          if (task_id == root)
+          if (task_id == task_zero)
           {
-            printf("# Scatter Bandwidth Test -- context = %d, root = %d, protocol: %s\n",
-                   iContext, root, gProtocolName);
-            printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+            printf("# Alltoallv Bandwidth Test(size:%zu) -- context = %d, root = %d, protocol: %s\n",
+                   num_tasks, iContext, task_zero, gProtocolName);
+            printf("# Size(bytes)           cycles    bytes/sec      usec\n");
             printf("# -----------      -----------    -----------    ---------\n");
           }
 
-          if (((strstr(scatter_always_works_md[nalg].name, gSelected) == NULL) && gSelector) ||
-              ((strstr(scatter_always_works_md[nalg].name, gSelected) != NULL) && !gSelector))  continue;
+          if (((strstr(alltoallv_always_works_md[nalg].name, gSelected) == NULL) && gSelector) ||
+              ((strstr(alltoallv_always_works_md[nalg].name, gSelected) != NULL) && !gSelector))  continue;
 
           blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
 
@@ -275,33 +287,40 @@ int main(int argc, char*argv[])
             else
               niter = NITERBW;
 
-            scatter.cmd.xfer_scatter.stypecount = i;
-            scatter.cmd.xfer_scatter.rtypecount = i;
+            for (j = 0; j < num_tasks; j++)
+            {
+              sndlens[j] = rcvlens[j] = i;
+              sdispls[j] = rdispls[j] = i * j;
 
-            if (task_id == root)
-              initialize_sndbuf (buf, i, num_tasks);
+              initialize_sndbuf( j, sbuf, rbuf );
 
-            memset(rbuf, 0xFF, i);
+            }
 
             blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
+
+            /* Warmup */
+            blocking_coll(context[iContext], &alltoallv, &alltoallv_poll_flag);
+
+            blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
+
             ti = timer();
 
             for (j = 0; j < niter; j++)
             {
-              blocking_coll(context[iContext], &scatter, &scatter_poll_flag);
+              blocking_coll(context[iContext], &alltoallv, &alltoallv_poll_flag);
             }
 
             tf = timer();
             blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
 
             int rc_check;
-            rc |= rc_check = check_rcvbuf (rbuf, i, local_task_id);
+            rc |= rc_check = check_rcvbuf(num_tasks, local_task_id, rbuf);
 
             if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
 
             usec = (tf - ti) / (double)niter;
 
-            if (task_id == root)
+            if (task_id == task_zero)
             {
               printf("  %11lld %16d %14.1f %12.2f\n",
                      (long long)dataSent,
@@ -318,27 +337,29 @@ int main(int argc, char*argv[])
       }
     }
 
-    blocking_coll(context[iContext], &barrier, &bar_poll_flag);
+    /* We aren't testing world barrier itself, so use context 0.*/
+    blocking_coll(context[0], &barrier, &bar_poll_flag);
 
     free(bar_always_works_algo);
     free(bar_always_works_md);
     free(bar_must_query_algo);
     free(bar_must_query_md);
-    free(scatter_always_works_algo);
-    free(scatter_always_works_md);
-    free(scatter_must_query_algo);
-    free(scatter_must_query_md);
-
+    free(alltoallv_always_works_algo);
+    free(alltoallv_always_works_md);
+    free(alltoallv_must_query_algo);
+    free(alltoallv_must_query_md);
   } /*for(unsigned iContext = 0; iContext < gNum_contexts; ++iContexts)*/
 
-  if (task_id == root)
-  {
-    buf = (char*)buf - gBuffer_offset;
-    free(buf);
-  }
+  sbuf = (char*)sbuf - gBuffer_offset;
+  free(sbuf);
 
   rbuf = (char*)rbuf - gBuffer_offset;
   free(rbuf);
+
+  free(sndlens);
+  free(sdispls);
+  free(rcvlens);
+  free(rdispls);
 
   rc |= pami_shutdown(&client, context, &gNum_contexts);
   return rc;

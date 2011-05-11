@@ -7,26 +7,51 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/internals/bgq/api/collectives/allreduce_subcomm.c
- * \brief Simple Allreduce test on sub-geometries
+ * \file test/api/collectives/allgather_subcomm.c
+ * \brief Simple Allgather test on sub-geometries (only gathers bytes)
  */
 
-/* see setup_env() for environment variable overrides
-#define FULL_TEST 0
-#define COUNT      65536
+#define COUNT     (524288)
+/*
 #define OFFSET     0
 #define NITERLAT   1
 #define NITERBW    MIN(10, niterlat/100+1)
 #define CUTOFF     65536
 */
 
-#include "../../../../api/pami_util.h"
+#include "../pami_util.h"
+
+void initialize_sndbuf (void *sbuf, int bytes, pami_task_t task)
+{
+  unsigned char c = 0xFF & task;
+  memset(sbuf, c, bytes);
+}
+
+int check_rcvbuf (void *rbuf, int bytes, size_t ntasks)
+{
+  int i, j;
+  unsigned char *cbuf = (unsigned char *)  rbuf;
+
+  for (j = 0; j < ntasks; j++)
+  {
+    unsigned char c = 0xFF & j;
+
+    for (i = j * bytes; i < (j + 1)*bytes; i++)
+      if (cbuf[i] != c)
+      {
+        fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2u != %.2u \n", gProtocolName, bytes, cbuf, i, cbuf[i], c);
+        return 1;
+      }
+  }
+
+  return 0;
+}
 
 int main(int argc, char*argv[])
 {
   pami_client_t        client;
   pami_context_t      *context;
-  pami_task_t          task_id, local_task_id;
+  pami_task_t          task_id, local_task_id, task_zero=0;
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
 
@@ -40,19 +65,19 @@ int main(int argc, char*argv[])
   volatile unsigned    bar_poll_flag = 0;
   volatile unsigned    newbar_poll_flag = 0;
 
-  /* Allreduce variables */
-  size_t               allreduce_num_algorithm[2];
-  pami_algorithm_t    *allreduce_always_works_algo = NULL;
-  pami_metadata_t     *allreduce_always_works_md   = NULL;
-  pami_algorithm_t    *allreduce_must_query_algo   = NULL;
-  pami_metadata_t     *allreduce_must_query_md     = NULL;
-  pami_xfer_type_t     allreduce_xfer = PAMI_XFER_ALLREDUCE;
-  volatile unsigned    allreduce_poll_flag = 0;
+  /* Allgather variables */
+  size_t               allgather_num_algorithm[2];
+  pami_algorithm_t    *allgather_always_works_algo = NULL;
+  pami_metadata_t     *allgather_always_works_md = NULL;
+  pami_algorithm_t    *allgather_must_query_algo = NULL;
+  pami_metadata_t     *allgather_must_query_md = NULL;
+  pami_xfer_type_t     allgather_xfer = PAMI_XFER_ALLGATHER;
+  volatile unsigned    allgather_poll_flag = 0;
 
-  int                  root = 0, nalg = 0;
+  int                  nalg = 0;
   double               ti, tf, usec;
   pami_xfer_t          barrier;
-  pami_xfer_t          allreduce;
+  pami_xfer_t          allgather;
 
   /* Process environment variables and setup globals */
   setup_env();
@@ -60,16 +85,6 @@ int main(int argc, char*argv[])
   assert(gNum_contexts > 0);
   context = (pami_context_t*)malloc(sizeof(pami_context_t) * gNum_contexts);
 
-  /*  Allocate buffer(s) */
-  int err = 0;
-  void* sbuf = NULL;
-  err = posix_memalign(&sbuf, 128, MAXBUFSIZE + gBuffer_offset);
-  assert(err == 0);
-  sbuf = (char*)sbuf + gBuffer_offset;
-  void* rbuf = NULL;
-  err = posix_memalign(&rbuf, 128, MAXBUFSIZE + gBuffer_offset);
-  assert(err == 0);
-  rbuf = (char*)rbuf + gBuffer_offset;
 
   /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
@@ -90,8 +105,18 @@ int main(int argc, char*argv[])
     return 0;
   }
 
-  assert(task_id >= 0);
-  assert(task_id < num_tasks);
+  /*  Allocate buffer(s) */
+  int err = 0;
+  void* buf = NULL;
+  err = posix_memalign(&buf, 128, (gMax_count) + gBuffer_offset);
+  assert(err == 0);
+  buf = (char*)buf + gBuffer_offset;
+
+  void* rbuf = NULL;
+  err = posix_memalign(&rbuf, 128, (gMax_count * num_tasks) + gBuffer_offset);
+  assert(err == 0);
+  rbuf = (char*)rbuf + gBuffer_offset;
+
 
   /*  Query the world geometry for barrier algorithms */
   rc |= query_geometry_world(client,
@@ -133,19 +158,19 @@ int main(int argc, char*argv[])
   range     = (pami_geometry_range_t *)malloc(((num_tasks + 1) / 2) * sizeof(pami_geometry_range_t));
 
   int unused_non_root[2];
-  get_split_method(&num_tasks, task_id, &rangecount, range, &local_task_id, set, &id, &root,unused_non_root);
+  get_split_method(&num_tasks, task_id, &rangecount, range, &local_task_id, set, &id, &task_zero,unused_non_root);
 
   for (; iContext < gNum_contexts; ++iContext)
   {
 
-    if (task_id == root)
+    if (task_id == task_zero)
       printf("# Context: %u\n", iContext);
 
     /* Delay root tasks, and emulate that he's doing "other"
        message passing.  This will cause the geometry_create
        request from other nodes to be unexpected when doing
        parentless geometries and won't affect parented.      */
-    if (task_id == root)
+    if (task_id == task_zero)
     {
       delayTest(1);
       unsigned ii = 0;
@@ -172,16 +197,16 @@ int main(int argc, char*argv[])
     if (rc == 1)
       return 1;
 
-    /*  Query the sub geometry for reduce algorithms */
+    /*  Query the sub geometry for allgather algorithms */
     rc |= query_geometry(client,
                          context[iContext],
                          newgeometry,
-                         allreduce_xfer,
-                         allreduce_num_algorithm,
-                         &allreduce_always_works_algo,
-                         &allreduce_always_works_md,
-                         &allreduce_must_query_algo,
-                         &allreduce_must_query_md);
+                         allgather_xfer,
+                         allgather_num_algorithm,
+                         &allgather_always_works_algo,
+                         &allgather_always_works_md,
+                         &allgather_must_query_algo,
+                         &allgather_must_query_md);
 
     if (rc == 1)
       return 1;
@@ -191,118 +216,108 @@ int main(int argc, char*argv[])
     newbarrier.cookie    = (void*) & newbar_poll_flag;
     newbarrier.algorithm = newbar_algo[0];
 
-
-    for (nalg = 0; nalg < allreduce_num_algorithm[0]; nalg++)
+    for (nalg = 0; nalg < allgather_num_algorithm[0]; nalg++)
     {
-      int             i, j, k;
+      allgather.cb_done    = cb_done;
+      allgather.cookie     = (void*) & allgather_poll_flag;
+      allgather.algorithm  = allgather_always_works_algo[nalg];
+      allgather.cmd.xfer_allgather.sndbuf     = buf;
+      allgather.cmd.xfer_allgather.stype      = PAMI_TYPE_BYTE;
+      allgather.cmd.xfer_allgather.stypecount = 0;
+      allgather.cmd.xfer_allgather.rcvbuf     = rbuf;
+      allgather.cmd.xfer_allgather.rtype      = PAMI_TYPE_BYTE;
+      allgather.cmd.xfer_allgather.rtypecount = 0;
+
+      int             k;
+
+      gProtocolName = allgather_always_works_md[nalg].name;
 
       for (k = 1; k >= 0; k--)
       {
         if (set[k])
         {
-          if (task_id == root)
+          if (task_id == task_zero)
           {
-            printf("# Allreduce Bandwidth Test -- context = %d, root = %d protocol: %s\n",
-                   iContext, root, allreduce_always_works_md[nalg].name);
+            printf("# Allgather Bandwidth Test -- context = %d, protocol: %s\n",
+                   iContext, gProtocolName);
             printf("# Size(bytes)           cycles    bytes/sec    usec\n");
             printf("# -----------      -----------    -----------    ---------\n");
           }
 
-          if (((strstr(allreduce_always_works_md[nalg].name, gSelected) == NULL) && gSelector) ||
-              ((strstr(allreduce_always_works_md[nalg].name, gSelected) != NULL) && !gSelector))  continue;
+          if (((strstr(allgather_always_works_md[nalg].name, gSelected) == NULL) && gSelector) ||
+              ((strstr(allgather_always_works_md[nalg].name, gSelected) != NULL) && !gSelector))  continue;
 
-          gProtocolName = allreduce_always_works_md[nalg].name;
+          blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
 
-          allreduce.cb_done   = cb_done;
-          allreduce.cookie    = (void*) & allreduce_poll_flag;
-          allreduce.algorithm = allreduce_always_works_algo[nalg];
-          allreduce.cmd.xfer_allreduce.sndbuf    = sbuf;
-          allreduce.cmd.xfer_allreduce.rcvbuf    = rbuf;
-          allreduce.cmd.xfer_allreduce.rtype     = PAMI_TYPE_BYTE;
-          allreduce.cmd.xfer_allreduce.rtypecount = 0;
+          int i, j;
 
-          int op, dt;
+          for (i = 1; i <= gMax_count; i *= 2)
+          {
+            size_t  dataSent = i;
+            int          niter;
 
-          for (dt = 0; dt < dt_count; dt++)
-            for (op = 0; op < op_count; op++)
+            if (dataSent < CUTOFF)
+              niter = gNiterlat;
+            else
+              niter = NITERBW;
+
+            allgather.cmd.xfer_allgather.stypecount = i;
+            allgather.cmd.xfer_allgather.rtypecount = i;
+
+            initialize_sndbuf (buf, i, local_task_id);
+            memset(rbuf, 0xFF, i);
+
+            blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
+            ti = timer();
+
+            for (j = 0; j < niter; j++)
             {
-              if (gValidTable[op][dt])
-              {
-                if (task_id == root)
-                  printf("Running Allreduce: %s, %s\n", dt_array_str[dt], op_array_str[op]);
-
-                for (i = 1; i <= gMax_count; i *= 2)
-                {
-                  size_t sz = get_type_size(dt_array[dt]);
-                  size_t  dataSent = i * sz;
-                  int niter;
-
-                  if (dataSent < CUTOFF)
-                    niter = gNiterlat;
-                  else
-                    niter = NITERBW;
-
-                  allreduce.cmd.xfer_allreduce.stypecount = i;
-                  allreduce.cmd.xfer_allreduce.rtypecount = dataSent;
-                  allreduce.cmd.xfer_allreduce.stype      = dt_array[dt];
-                  allreduce.cmd.xfer_allreduce.op = op_array[op];
-
-                  reduce_initialize_sndbuf (sbuf, i, op, dt, local_task_id, num_tasks);
-                  blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
-                  ti = timer();
-
-                  for (j = 0; j < niter; j++)
-                  {
-                    blocking_coll(context[iContext], &allreduce, &allreduce_poll_flag);
-                  }
-
-                  tf = timer();
-                  blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
-
-                  int rc_check;
-                  rc |= rc_check = reduce_check_rcvbuf (rbuf, i, op, dt, local_task_id, num_tasks);
-
-                  if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
-
-                  usec = (tf - ti) / (double)niter;
-
-                  if (task_id == root)
-                  {
-                    printf("  %11lld %16d %14.1f %12.2f\n",
-                           (long long)dataSent,
-                           niter,
-                           (double)1e6*(double)dataSent / (double)usec,
-                           usec);
-                    fflush(stdout);
-                  }
-                }
-              }
+              blocking_coll (context[iContext], &allgather, &allgather_poll_flag);
             }
+
+            tf = timer();
+            blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
+
+            int rc_check;
+            rc |= rc_check = check_rcvbuf (rbuf, i, num_tasks);
+
+            if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
+
+            usec = (tf - ti) / (double)niter;
+
+            if (task_id == task_zero)
+            {
+              printf("  %11lld %16d %14.1f %12.2f\n",
+                     (long long)dataSent,
+                     niter,
+                     (double)1e6*(double)dataSent / (double)usec,
+                     usec);
+              fflush(stdout);
+            }
+          }
         }
+
+        blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
+        fflush(stderr);
       }
     }
 
     /* We aren't testing world barrier itself, so use context 0.*/
     blocking_coll(context[0], &barrier, &bar_poll_flag);
 
-    free(newbar_algo);
-    free(newbar_md);
-    free(q_newbar_algo);
-    free(q_newbar_md);
-    free(allreduce_always_works_algo);
-    free(allreduce_always_works_md);
-    free(allreduce_must_query_algo);
-    free(allreduce_must_query_md);
-
+    free(bar_always_works_algo);
+    free(bar_always_works_md);
+    free(bar_must_query_algo);
+    free(bar_must_query_md);
+    free(allgather_always_works_algo);
+    free(allgather_always_works_md);
+    free(allgather_must_query_algo);
+    free(allgather_must_query_md);
   } /*for(unsigned iContext = 0; iContext < gNum_contexts; ++iContexts)*/
 
-  free(bar_always_works_algo);
-  free(bar_always_works_md);
-  free(bar_must_query_algo);
-  free(bar_must_query_md);
+  buf = (char*)buf - gBuffer_offset;
+  free(buf);
 
-  sbuf = (char*)sbuf - gBuffer_offset;
-  free(sbuf);
   rbuf = (char*)rbuf - gBuffer_offset;
   free(rbuf);
 

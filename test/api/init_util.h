@@ -476,8 +476,15 @@ void setup_op_dt(size_t ** validTable,char* sDt, char* sOp)
   }
 }
 
-void get_split_method(size_t *num_tasks,pami_task_t task_id, int *rangecount, pami_geometry_range_t *range, pami_task_t *local_task_id,
-                      size_t set[2],int *id,  int *root, int non_root[2])
+void get_split_method(size_t *num_tasks,            /* input number of tasks/output number of task in subcomm*/
+                      pami_task_t task_id,          /* input task id*/
+                      int *rangecount,              /* output rangecount for geometry create */
+                      pami_geometry_range_t *range, /* output range for geometry create */
+                      pami_task_t *local_task_id,   /* local task id in subcomm*/
+                      size_t set[2],                /* output split set*/
+                      int *id,                      /* output comm id*/
+                      pami_task_t *root,            /* output root/task 0 in subcomm*/
+                      int non_root[2])              /* 2 non-root tasks (first and last) for barrier tests */
 {
   size_t                 half        = *num_tasks / 2;
   char *method = getenv("TEST_SPLIT_METHOD");

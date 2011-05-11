@@ -8,21 +8,21 @@
 /* end_generated_IBM_copyright_prolog                               */
 /**
  * \file test/api/collectives/barrier_subcomm.c
- * \brief Simple Barrier test
+ * \brief Simple Barrier test on sub-geometries
  */
 
-#define NITER 100
+
+
+#define NITERLAT   100
+
 
 #include "../pami_util.h"
 
-#include <assert.h>
-
-int main (int argc, char ** argv)
+int main(int argc, char*argv[])
 {
   pami_client_t        client;
-  pami_context_t       context;
-  size_t               num_contexts = 1;
-  pami_task_t          task_id, task_zero;
+  pami_context_t      *context;
+  pami_task_t          task_id, local_task_id, task_zero=0;
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
 
@@ -38,27 +38,18 @@ int main (int argc, char ** argv)
 
   int                  nalg;
 
-  /* \note Test environment variable" TEST_VERBOSE=N     */
-  char* sVerbose = getenv("TEST_VERBOSE");
+  /* Process environment variables and setup globals */
+  setup_env();
 
-  if(sVerbose) gVerbose=atoi(sVerbose); /* set the global defined in coll_util.h */
-
-  /* \note Test environment variable" TEST_PROTOCOL={-}substring.       */
-  /* substring is used to select, or de-select (with -) test protocols */
-  unsigned selector = 1;
-  char* selected = getenv("TEST_PROTOCOL");
-  if(!selected) selected = "";
-  else if(selected[0]=='-') 
-  {
-      selector = 0 ;
-      ++selected;
-  }
+  assert(gNum_contexts > 0);
+  context = (pami_context_t*)malloc(sizeof(pami_context_t) * gNum_contexts);
 
 
+  /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
-                     &context,       /* Context            */
+                     context,        /* Context            */
                      NULL,           /* Clientname=default */
-                     &num_contexts,  /* num_contexts       */
+                     &gNum_contexts, /* gNum_contexts       */
                      NULL,           /* null configuration */
                      0,              /* no configuration   */
                      &task_id,       /* task id            */
@@ -67,208 +58,195 @@ int main (int argc, char ** argv)
   if (rc == 1)
     return 1;
 
-  rc = query_geometry_world(client,
-                            context,
-                            &world_geometry,
-                            barrier_xfer,
-                            num_algorithm,
-                            &always_works_algo,
-                            &always_works_md,
-                            &must_query_algo,
-                            &must_query_md);
-
-  if (rc == 1)
-    return 1;
-
-  /*  Create the subgeometry */
-  pami_geometry_range_t *range;
-  int                    rangecount;
-  pami_geometry_t        newgeometry;
-  size_t                 newbar_num_algo[2];
-  pami_algorithm_t      *newbar_algo        = NULL;
-  pami_metadata_t       *newbar_md          = NULL;
-  pami_algorithm_t      *q_newbar_algo      = NULL;
-  pami_metadata_t       *q_newbar_md        = NULL;
-
-  pami_xfer_t            newbarrier;
-
-  size_t                 set[2];
-  int                    id;
-  size_t                 half        = num_tasks / 2;
-  range     = (pami_geometry_range_t *)malloc(((num_tasks + 1) / 2) * sizeof(pami_geometry_range_t));
-
-  char *method = getenv("TEST_SPLIT_METHOD");
-
-  if (!(method && !strcmp(method, "1")))
+  if (num_tasks == 1)
   {
-    if (task_id >= 0 && task_id <= half - 1)
-    {
-      range[0].lo = 0;
-      range[0].hi = half - 1;
-      set[0]   = 1;
-      set[1]   = 0;
-      id       = 1;
-      task_zero     = 0;
-    }
-    else
-    {
-      range[0].lo = half;
-      range[0].hi = num_tasks - 1;
-      set[0]   = 0;
-      set[1]   = 1;
-      id       = 2;
-      task_zero     = half;
-    }
-
-    rangecount = 1;
-  }
-  else
-  {
-    int i = 0;
-    int iter = 0;;
-
-    if ((task_id % 2) == 0)
-    {
-      for (i = 0; i < num_tasks; i++)
-      {
-        if ((i % 2) == 0)
-        {
-          range[iter].lo = i;
-          range[iter].hi = i;
-          iter++;
-        }
-      }
-
-      set[0]   = 1;
-      set[1]   = 0;
-      id       = 2;
-      task_zero     = 0;
-      rangecount = iter;
-    }
-    else
-    {
-      for (i = 0; i < num_tasks; i++)
-      {
-        if ((i % 2) != 0)
-        {
-          range[iter].lo = i;
-          range[iter].hi = i;
-          iter++;
-        }
-      }
-
-      set[0]   = 0;
-      set[1]   = 1;
-      id       = 2;
-      task_zero     = 1;
-      rangecount = iter;
-    }
-
+    fprintf(stderr, "No barrier subcomms on 1 node\n");
+    return 0;
   }
 
-  rc = create_and_query_geometry(client,
-                                 context,
-                                 context,
-                                 world_geometry,
-                                 &newgeometry,
-                                 range,
-                                 rangecount,
-                                 id,
-                                 barrier_xfer,
-                                 newbar_num_algo,
-                                 &newbar_algo,
-                                 &newbar_md,
-                                 &q_newbar_algo,
-                                 &q_newbar_md);
+  assert(task_id >= 0);
+  assert(task_id < num_tasks);
 
-  if (rc == 1)
-    return 1;
+  unsigned iContext = 0;
 
-
-  /*  Set up world barrier */
-  barrier.cb_done   = cb_done;
-  barrier.cookie    = (void*) & poll_flag;
-  barrier.algorithm = always_works_algo[0];
-
-  /*  Set up sub geometry barrier */
-  newbarrier.cb_done   = cb_done;
-  newbarrier.cookie    = (void*) & poll_flag;
-  newbarrier.algorithm = newbar_algo[0];
-
-  rc = blocking_coll(context, &barrier, &poll_flag);
-
-  if (rc == 1)
-    return 1;
-
-  int  k;
-
-  for (k = 1; k >= 0; k--)
+  for (; iContext < gNum_contexts; ++iContext)
   {
-    if (set[k])
+
+    if (task_id == 0)
+      printf("# Context: %u\n", iContext);
+
+    /*  Query the world geometry for barrier algorithms */
+    rc |= query_geometry_world(client,
+                               context[iContext],
+                               &world_geometry,
+                               barrier_xfer,
+                               num_algorithm,
+                               &always_works_algo,
+                               &always_works_md,
+                               &must_query_algo,
+                               &must_query_md);
+
+    if (rc == 1)
+      return 1;
+
+    /*  Create the subgeometry */
+    pami_geometry_range_t *range;
+    int                    rangecount;
+    pami_geometry_t        newgeometry;
+    size_t                 newbar_num_algo[2];
+    pami_algorithm_t      *newbar_algo        = NULL;
+    pami_metadata_t       *newbar_md          = NULL;
+    pami_algorithm_t      *q_newbar_algo      = NULL;
+    pami_metadata_t       *q_newbar_md        = NULL;
+
+    pami_xfer_t            newbarrier;
+
+    size_t                 set[2];
+    int                    id, non_root[2], timeDelay = 0;
+
+    range     = (pami_geometry_range_t *)malloc(((num_tasks + 1) / 2) * sizeof(pami_geometry_range_t));
+
+    get_split_method(&num_tasks, task_id, &rangecount, range, &local_task_id, set, &id, &task_zero,non_root);
+
+
+    if (task_zero)
     {
+      timeDelay = 3; /* Need to stagger barriers between subcomm's */
+    }
 
-      for (nalg = 0; nalg < newbar_num_algo[0]; nalg++)
+    /* Delay task_zero tasks, and emulate that he's doing "other"
+       message passing.  This will cause the geometry_create
+       request from other nodes to be unexpected when doing
+       parentless geometries and won't affect parented.      */
+    if (task_id == task_zero)
+    {
+      delayTest(1);
+      unsigned ii = 0;
+
+      for (; ii < gNum_contexts; ++ii)
+        PAMI_Context_advance (context[ii], 1000);
+    }
+
+    rc |= create_and_query_geometry(client,
+                                    context[0],
+                                    context[iContext],
+                                    gParentless ? PAMI_GEOMETRY_NULL : world_geometry,
+                                    &newgeometry,
+                                    range,
+                                    rangecount,
+                                    id + iContext, /* Unique id for each context */
+                                    barrier_xfer,
+                                    newbar_num_algo,
+                                    &newbar_algo,
+                                    &newbar_md,
+                                    &q_newbar_algo,
+                                    &q_newbar_md);
+
+    if (rc == 1)
+      return 1;
+
+
+    /*  Set up world barrier */
+    barrier.cb_done   = cb_done;
+    barrier.cookie    = (void*) & poll_flag;
+    barrier.algorithm = always_works_algo[0];
+
+    /*  Set up sub geometry barrier */
+    newbarrier.cb_done   = cb_done;
+    newbarrier.cookie    = (void*) & poll_flag;
+
+    rc |= blocking_coll(context[iContext], &barrier, &poll_flag);
+
+    if (rc == 1)
+      return 1;
+
+    int  k;
+
+    for (k = 1; k >= 0; k--)
+    {
+      if (set[k])
       {
-        double ti, tf, usec;
-        newbarrier.algorithm = newbar_algo[nalg];
-        if (task_id == task_zero)
-        {
-          printf("# Barrier Test -- task_zero = %d, protocol: %s\n", task_zero, always_works_md[nalg].name);
-          printf("# -------------------------------------------------------------------\n");
-        }
-        if(((strstr(always_works_md[nalg].name,selected) == NULL) && selector) ||
-           ((strstr(always_works_md[nalg].name,selected) != NULL) && !selector))  continue;
 
-        if (task_id == task_zero)
+        for (nalg = 0; nalg < newbar_num_algo[0]; nalg++)
         {
-          fprintf(stderr, "Test set(%u):  Barrier protocol(%s) Correctness (%d of %zd algorithms)\n",k,
-                  newbar_md[nalg].name, nalg + 1, newbar_num_algo[0]);
+          double ti, tf, usec;
+          newbarrier.algorithm = newbar_algo[nalg];
+
+          if (task_id == task_zero)
+          {
+            printf("# Test set(%u):  Barrier Test -- context = %d, task_zero = %d, protocol: %s (%d of %zd algorithms)\n",
+                   k, iContext, task_zero, newbar_md[nalg].name, nalg + 1, newbar_num_algo[0]);
+            printf("# -------------------------------------------------------------------\n");
+          }
+
+          if (((strstr(newbar_md[nalg].name,gSelected) == NULL) && gSelector) ||
+              ((strstr(newbar_md[nalg].name,gSelected) != NULL) && !gSelector))  continue;
+
+          /* Do two functional runs with different delaying ranks*/
+          int j;
+
+          for (j = 0; j < 2; ++j)
+          {
+            if (task_id == task_zero)
+            {
+              delayTest(timeDelay);
+              fprintf(stderr, "Test set(%u):  Barrier protocol(%s) Correctness (%d of %zd algorithms)\n",k,
+                      newbar_md[nalg].name, nalg + 1, newbar_num_algo[0]);
+              ti = timer();
+              blocking_coll(context[iContext], &newbarrier, &poll_flag);
+              tf = timer();
+              usec = tf - ti;
+
+              if ((usec < 1800000.0 || usec > 2200000.0) && (num_tasks > 1))
+              {
+                rc = 1;
+                fprintf(stderr, "%s FAIL: usec=%f want between %f and %f!\n", newbar_md[nalg].name,
+                        usec, 1800000.0, 2200000.0);
+              }
+              else
+                fprintf(stderr, "%s PASS: Barrier correct!\n", newbar_md[nalg].name);
+            }
+            else
+            {
+              /* Try to vary where the delay comes from... by picking first and last (non-roots) we
+                 *might* be getting same node/different node delays.
+              */
+              if (task_id == non_root[j])
+                delayTest(2 + timeDelay);
+
+              blocking_coll(context[iContext], &newbarrier, &poll_flag);
+            }
+          }
+
+          int niter = gNiterlat;
+          blocking_coll(context[iContext], &newbarrier, &poll_flag);
+
           ti = timer();
-          blocking_coll(context, &newbarrier, &poll_flag);
+          int i;
+
+          for (i = 0; i < niter; i++)
+            blocking_coll(context[iContext], &newbarrier, &poll_flag);
+
           tf = timer();
           usec = tf - ti;
 
-          if (usec < 1800000.0 || usec > 2200000.0)
-            fprintf(stderr, "Barrier error: usec=%f want between %f and %f!\n",
-                    usec, 1800000.0, 2200000.0);
-          else
-            fprintf(stderr, "Barrier correct!\n");
+          if (task_id == task_zero)
+            fprintf(stderr, "Test set(%u): Barrier protocol(%s) Performance: time=%f usec\n",k,
+                    newbar_md[nalg].name, usec / (double)niter);
         }
-        else
-        {
-          delayTest(2);
-          blocking_coll(context, &newbarrier, &poll_flag);
-        }
-
-        int niter = NITER;
-        blocking_coll(context, &newbarrier, &poll_flag);
-
-        ti = timer();
-        int i;
-
-        for (i = 0; i < niter; i++)
-          blocking_coll(context, &newbarrier, &poll_flag);
-
-        tf = timer();
-        usec = tf - ti;
-
-        if (task_id == task_zero)
-          fprintf(stderr, "Test set(%u): Barrier protocol(%s) Performance: time=%f usec\n",k,
-                  newbar_md[nalg].name, usec / (double)niter);
       }
     }
-  }
 
-  blocking_coll(context, &barrier, &poll_flag);
+    blocking_coll(context[iContext], &barrier, &poll_flag);
 
-  rc = pami_shutdown(&client, &context, &num_contexts);
+    free(always_works_algo);
+    free(always_works_md);
+    free(must_query_algo);
+    free(must_query_md);
 
-  if (rc == 1)
-    return 1;
+  } /*for(unsigned iContext = 0; iContext < gNum_contexts; ++iContexts)*/
 
-  free(always_works_algo);
-  free(always_works_md);
-  free(must_query_algo);
-  free(must_query_md);
-  return 0;
-};
+  rc |= pami_shutdown(&client, context, &gNum_contexts);
+
+  return rc;
+}

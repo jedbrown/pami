@@ -7,11 +7,11 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/internals/bgq/api/collectives/bcast_subcomm.c
- * \brief Simple Bcast test on sub-geometries
+ * \file test/api/collectives/scatter_subcomm.c
+ * \brief Simple Scatter test on sub-geometries (only scatters bytes)
  */
 
-#define COUNT     (1048576*8)   /* see envvar TEST_COUNT for overrides */
+#define COUNT     (524288)
 /*
 #define OFFSET     0
 #define NITERLAT   1
@@ -19,37 +19,33 @@
 #define CUTOFF     65536
 */
 
-#include "../../../../api/pami_util.h"
+#include "../pami_util.h"
 
-void initialize_sndbuf (void *sbuf, int bytes, int root)
+void initialize_sndbuf (void *sbuf, int bytes, size_t ntasks)
 {
-
-  unsigned char c = root;
-  int i = bytes;
+  size_t i;
   unsigned char *cbuf = (unsigned char *)  sbuf;
 
-  for (; i; i--)
+  for (i = 0; i < ntasks; i++)
   {
-    cbuf[i-1] = (c++);
+    unsigned char c = 0xFF & i;
+    memset(cbuf + (i*bytes), c, bytes);
   }
 }
 
-int check_rcvbuf (void *rbuf, int bytes, int root)
+int check_rcvbuf (void *rbuf, int bytes, pami_task_t task)
 {
-  unsigned char c = root;
-  int i = bytes;
+  int i;
   unsigned char *cbuf = (unsigned char *)  rbuf;
 
-  for (; i; i--)
-  {
-    if (cbuf[i-1] != c)
+  unsigned char c = 0xFF & task;
+
+  for (i = 0; i < bytes; i++)
+    if (cbuf[i] != c)
     {
-      fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2u != %.2u \n", gProtocolName, bytes, rbuf, i - 1, cbuf[i-1], c);
+      fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2u != %.2u \n", gProtocolName, bytes, cbuf, i, cbuf[i], c);
       return 1;
     }
-
-    c++;
-  }
 
   return 0;
 }
@@ -58,10 +54,9 @@ int main(int argc, char*argv[])
 {
   pami_client_t        client;
   pami_context_t      *context;
-  pami_task_t          task_id, local_task_id;
+  pami_task_t          task_id, local_task_id, root=0;
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
-  int                  root = 0, nalg = 0;
 
   /* Barrier variables */
   size_t               barrier_num_algorithm[2];
@@ -70,21 +65,34 @@ int main(int argc, char*argv[])
   pami_algorithm_t    *bar_must_query_algo   = NULL;
   pami_metadata_t     *bar_must_query_md     = NULL;
   pami_xfer_type_t     barrier_xfer = PAMI_XFER_BARRIER;
-  pami_xfer_t          barrier;
   volatile unsigned    bar_poll_flag = 0;
   volatile unsigned    newbar_poll_flag = 0;
 
-  /* Bcast variables */
-  pami_xfer_type_t     bcast_xfer = PAMI_XFER_BROADCAST;
-  volatile unsigned    bcast_poll_flag = 0;
+  /* Scatter variables */
+  size_t               scatter_num_algorithm[2];
+  pami_algorithm_t    *scatter_always_works_algo = NULL;
+  pami_metadata_t     *scatter_always_works_md = NULL;
+  pami_algorithm_t    *scatter_must_query_algo = NULL;
+  pami_metadata_t     *scatter_must_query_md = NULL;
+  pami_xfer_type_t     scatter_xfer = PAMI_XFER_SCATTER;
+  volatile unsigned    scatter_poll_flag = 0;
 
+  int                  nalg = 0;
   double               ti, tf, usec;
+  pami_xfer_t          barrier;
+  pami_xfer_t          scatter;
 
   /* Process environment variables and setup globals */
   setup_env();
 
   assert(gNum_contexts > 0);
   context = (pami_context_t*)malloc(sizeof(pami_context_t) * gNum_contexts);
+
+  /* \note Test environment variable" TEST_ROOT=N, defaults to 0.*/
+  char* sRoot = getenv("TEST_ROOT");
+  /* Override ROOT */
+  if (sRoot) root = atoi(sRoot);
+
 
   /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
@@ -108,9 +116,18 @@ int main(int argc, char*argv[])
   /*  Allocate buffer(s) */
   int err = 0;
   void* buf = NULL;
-  err = posix_memalign(&buf, 128, gMax_count + gBuffer_offset);
+
+  if (task_id == root)
+  {
+    err = posix_memalign(&buf, 128, (gMax_count * num_tasks) + gBuffer_offset);
+    assert(err == 0);
+    buf = (char*)buf + gBuffer_offset;
+  }
+
+  void* rbuf = NULL;
+  err = posix_memalign(&rbuf, 128, gMax_count + gBuffer_offset);
   assert(err == 0);
-  buf = (char*)buf + gBuffer_offset;
+  rbuf = (char*)rbuf + gBuffer_offset;
 
 
   /*  Query the world geometry for barrier algorithms */
@@ -139,21 +156,16 @@ int main(int argc, char*argv[])
   int                    rangecount;
   pami_geometry_t        newgeometry;
   size_t                 newbar_num_algo[2];
-  size_t                 newbcast_num_algo[2];
   pami_algorithm_t      *newbar_algo        = NULL;
   pami_metadata_t       *newbar_md          = NULL;
   pami_algorithm_t      *q_newbar_algo      = NULL;
   pami_metadata_t       *q_newbar_md        = NULL;
 
-  pami_algorithm_t      *newbcast_algo      = NULL;
-  pami_metadata_t       *newbcast_md        = NULL;
-  pami_algorithm_t      *q_newbcast_algo    = NULL;
-  pami_metadata_t       *q_newbcast_md      = NULL;
   pami_xfer_t            newbarrier;
-  pami_xfer_t            newbcast;
 
   size_t                 set[2];
   int                    id;
+
 
   range     = (pami_geometry_range_t *)malloc(((num_tasks + 1) / 2) * sizeof(pami_geometry_range_t));
 
@@ -197,16 +209,16 @@ int main(int argc, char*argv[])
     if (rc == 1)
       return 1;
 
-    /*  Query the sub geometry for bcast algorithms */
+    /*  Query the geometry for scatter algorithms */
     rc |= query_geometry(client,
                          context[iContext],
                          newgeometry,
-                         bcast_xfer,
-                         newbcast_num_algo,
-                         &newbcast_algo,
-                         &newbcast_md,
-                         &q_newbcast_algo,
-                         &q_newbcast_md);
+                         scatter_xfer,
+                         scatter_num_algorithm,
+                         &scatter_always_works_algo,
+                         &scatter_always_works_md,
+                         &scatter_must_query_algo,
+                         &scatter_must_query_md);
 
     if (rc == 1)
       return 1;
@@ -216,23 +228,25 @@ int main(int argc, char*argv[])
     newbarrier.cookie    = (void*) & newbar_poll_flag;
     newbarrier.algorithm = newbar_algo[0];
 
-
-    for (nalg = 0; nalg < newbcast_num_algo[0]; nalg++)
+    for (nalg = 0; nalg < scatter_num_algorithm[0]; nalg++)
     {
+      pami_endpoint_t root_ep;
+      PAMI_Endpoint_create(client, root, 0, &root_ep);
+      scatter.cmd.xfer_scatter.root       = root_ep;
 
-      /*  Set up sub geometry bcast */
-      newbcast.cb_done                      = cb_done;
-      newbcast.cookie                       = (void*) & bcast_poll_flag;
-      newbcast.algorithm                    = newbcast_algo[nalg];
-      newbcast.cmd.xfer_broadcast.root      = root;
-      newbcast.cmd.xfer_broadcast.buf       = buf;
-      newbcast.cmd.xfer_broadcast.type      = PAMI_TYPE_BYTE;
-      newbcast.cmd.xfer_broadcast.typecount = 0;
-
+      scatter.cb_done    = cb_done;
+      scatter.cookie     = (void*) & scatter_poll_flag;
+      scatter.algorithm  = scatter_always_works_algo[nalg];
+      scatter.cmd.xfer_scatter.sndbuf     = buf;
+      scatter.cmd.xfer_scatter.stype      = PAMI_TYPE_BYTE;
+      scatter.cmd.xfer_scatter.stypecount = 0;
+      scatter.cmd.xfer_scatter.rcvbuf     = rbuf;
+      scatter.cmd.xfer_scatter.rtype      = PAMI_TYPE_BYTE;
+      scatter.cmd.xfer_scatter.rtypecount = 0;
 
       int             k;
 
-      gProtocolName = newbcast_md[nalg].name;
+      gProtocolName = scatter_always_works_md[nalg].name;
 
       for (k = 1; k >= 0; k--)
       {
@@ -240,14 +254,14 @@ int main(int argc, char*argv[])
         {
           if (task_id == root)
           {
-            printf("# Broadcast Bandwidth Test -- context = %d, root = %d  protocol: %s\n",
+            printf("# Scatter Bandwidth Test -- context = %d, root = %d, protocol: %s\n",
                    iContext, root, gProtocolName);
             printf("# Size(bytes)           cycles    bytes/sec    usec\n");
             printf("# -----------      -----------    -----------    ---------\n");
           }
 
-          if (((strstr(newbcast_md[nalg].name,gSelected) == NULL) && gSelector) ||
-              ((strstr(newbcast_md[nalg].name,gSelected) != NULL) && !gSelector))  continue;
+          if (((strstr(scatter_always_works_md[nalg].name, gSelected) == NULL) && gSelector) ||
+              ((strstr(scatter_always_works_md[nalg].name, gSelected) != NULL) && !gSelector))  continue;
 
           blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
 
@@ -263,33 +277,33 @@ int main(int argc, char*argv[])
             else
               niter = NITERBW;
 
-            newbcast.cmd.xfer_broadcast.root      = root;
-            newbcast.cmd.xfer_broadcast.buf       = buf;
-            newbcast.cmd.xfer_broadcast.typecount = i;
+            scatter.cmd.xfer_scatter.stypecount = i;
+            scatter.cmd.xfer_scatter.rtypecount = i;
 
-            if (task_id == (size_t)root)
-              initialize_sndbuf (buf, i, root);
-            else
-              memset(buf, 0xFF, i);
+            if (task_id == root)
+              initialize_sndbuf (buf, i, num_tasks);
+
+            memset(rbuf, 0xFF, i);
 
             blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
             ti = timer();
 
             for (j = 0; j < niter; j++)
             {
-              blocking_coll(context[iContext], &newbcast, &bcast_poll_flag);
+              blocking_coll(context[iContext], &scatter, &scatter_poll_flag);
             }
 
             tf = timer();
             blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
+
             int rc_check;
-            rc |= rc_check = check_rcvbuf (buf, i, root);
+            rc |= rc_check = check_rcvbuf (rbuf, i, local_task_id);
 
             if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
 
             usec = (tf - ti) / (double)niter;
 
-            if (task_id == (size_t)root)
+            if (task_id == root)
             {
               printf("  %11lld %16d %14.1f %12.2f\n",
                      (long long)dataSent,
@@ -306,28 +320,27 @@ int main(int argc, char*argv[])
       }
     }
 
-    /* We aren't testing world barrier itself, so use context 0.*/
-    blocking_coll(context[0], &barrier, &bar_poll_flag);
+    blocking_coll(context[iContext], &barrier, &bar_poll_flag);
 
     free(bar_always_works_algo);
     free(bar_always_works_md);
     free(bar_must_query_algo);
     free(bar_must_query_md);
-
-    free(newbar_algo);
-    free(newbar_md);
-    free(q_newbar_algo);
-    free(q_newbar_md);
-
-    free(newbcast_algo);
-    free(newbcast_md);
-    free(q_newbcast_algo);
-    free(q_newbcast_md);
+    free(scatter_always_works_algo);
+    free(scatter_always_works_md);
+    free(scatter_must_query_algo);
+    free(scatter_must_query_md);
 
   } /*for(unsigned iContext = 0; iContext < gNum_contexts; ++iContexts)*/
 
-  buf = (char*)buf - gBuffer_offset;
-  free(buf);
+  if (task_id == root)
+  {
+    buf = (char*)buf - gBuffer_offset;
+    free(buf);
+  }
+
+  rbuf = (char*)rbuf - gBuffer_offset;
+  free(rbuf);
 
   rc |= pami_shutdown(&client, context, &gNum_contexts);
   return rc;

@@ -69,7 +69,7 @@ int main(int argc, char*argv[])
     return 1;
 
   /*  Query the world geometry for barrier algorithms */
-  rc = query_geometry_world(client,
+  rc |= query_geometry_world(client,
                             context,
                             &world_geometry,
                             barrier_xfer,
@@ -83,7 +83,7 @@ int main(int argc, char*argv[])
     return 1;
 
   /*  Query the world geometry for broadcast algorithms */
-  rc = query_geometry_world(client,
+  rc |= query_geometry_world(client,
                             context,
                             &world_geometry,
                             bcast_xfer,
@@ -123,99 +123,99 @@ int main(int argc, char*argv[])
   /* \note Test environment variable" TEST_VERBOSE=N     */
   char* sVerbose = getenv("TEST_VERBOSE");
 
-  if(sVerbose) gVerbose=atoi(sVerbose); /* set the global defined in coll_util.h */
+  if (sVerbose) gVerbose=atoi(sVerbose); /* set the global defined in coll_util.h */
 
   /* \note Test environment variable" TEST_PROTOCOL={-}substring.       */
   /* substring is used to select, or de-select (with -) test protocols */
   unsigned selector = 1;
   char* selected = getenv("TEST_PROTOCOL");
-  if(!selected) selected = "";
-  else if(selected[0]=='-') 
+  if (!selected) selected = "";
+  else if (selected[0]=='-')
   {
-      selector = 0 ;
-      ++selected;
+    selector = 0 ;
+    ++selected;
   }
 
 
   char *method = getenv("TEST_SPLIT_METHOD");
 
   if (!(method && !strcmp(method, "1")))
+  {
+    if (task_id >= 0 && task_id <= half - 1)
     {
-      if (task_id >= 0 && task_id <= half - 1)
-        {
-          range[0].lo = 0;
-          range[0].hi = half - 1;
-          set[0]   = 1;
-          set[1]   = 0;
-          id       = 1;
-          root_zero     = 0;
-        }
-      else
-        {
-          range[0].lo = half;
-          range[0].hi = num_tasks - 1;
-          set[0]   = 0;
-          set[1]   = 1;
-          id       = 2;
-          root_zero     = half;
-        }
-
-      rangecount = 1;
+      range[0].lo = 0;
+      range[0].hi = half - 1;
+      set[0]   = 1;
+      set[1]   = 0;
+      id       = 1;
+      root_zero     = 0;
     }
+    else
+    {
+      range[0].lo = half;
+      range[0].hi = num_tasks - 1;
+      set[0]   = 0;
+      set[1]   = 1;
+      id       = 2;
+      root_zero     = half;
+    }
+
+    rangecount = 1;
+  }
   else
+  {
+    int i = 0;
+    int iter = 0;;
+
+    if ((task_id % 2) == 0)
     {
-      int i = 0;
-      int iter = 0;;
-
-      if ((task_id % 2) == 0)
+      for (i = 0; i < num_tasks; i++)
+      {
+        if ((i % 2) == 0)
         {
-          for (i = 0; i < num_tasks; i++)
-            {
-              if ((i % 2) == 0)
-                {
-                  range[iter].lo = i;
-                  range[iter].hi = i;
-                  iter++;
-                }
-            }
-
-          set[0]   = 1;
-          set[1]   = 0;
-          id       = 2;
-          root_zero     = 0;
-          rangecount = iter;
+          range[iter].lo = i;
+          range[iter].hi = i;
+          iter++;
         }
-      else
-        {
-          for (i = 0; i < num_tasks; i++)
-            {
-              if ((i % 2) != 0)
-                {
-                  range[iter].lo = i;
-                  range[iter].hi = i;
-                  iter++;
-                }
-            }
+      }
 
-          set[0]   = 0;
-          set[1]   = 1;
-          id       = 2;
-          root_zero     = 1;
-          rangecount = iter;
-        }
-
+      set[0]   = 1;
+      set[1]   = 0;
+      id       = 2;
+      root_zero     = 0;
+      rangecount = iter;
     }
+    else
+    {
+      for (i = 0; i < num_tasks; i++)
+      {
+        if ((i % 2) != 0)
+        {
+          range[iter].lo = i;
+          range[iter].hi = i;
+          iter++;
+        }
+      }
+
+      set[0]   = 0;
+      set[1]   = 1;
+      id       = 2;
+      root_zero     = 1;
+      rangecount = iter;
+    }
+
+  }
 
   /* Delay root_zero tasks, and emulate that he's doing "other" */
   /* message passing.  This will cause the geometry_create */
   /* request from other nodes to be unexpected. */
   if (task_id == root_zero)
-    {
-      delayTest(1);
-      PAMI_Context_advance (context, 1000);
-    }
+  {
+    delayTest(1);
+    PAMI_Context_advance (context, 1000);
+  }
 
-  rc = create_and_query_geometry(client,
+  rc |= create_and_query_geometry(client,
                                  context,
                                  context,
                                  PAMI_GEOMETRY_NULL,
@@ -233,7 +233,7 @@ int main(int argc, char*argv[])
   if (rc == 1)
     return 1;
 
-  rc = query_geometry(client,
+  rc |= query_geometry(client,
                       context,
                       newgeometry,
                       bcast_xfer,
@@ -258,12 +258,12 @@ int main(int argc, char*argv[])
 
   pami_endpoint_t root_ep;
   PAMI_Endpoint_create(client, root_zero, 0, &root_ep);
+  newbcast.cmd.xfer_broadcast.root      = root_ep;
 
   /*  Set up sub geometry bcast */
   newbcast.cb_done                      = cb_done;
   newbcast.cookie                       = (void*) & bcast_poll_flag;
   newbcast.algorithm                    = newbcast_algo[0];
-  newbcast.cmd.xfer_broadcast.root      = root_ep;
   newbcast.cmd.xfer_broadcast.buf       = buf;
   newbcast.cmd.xfer_broadcast.type      = PAMI_TYPE_BYTE;
   newbcast.cmd.xfer_broadcast.typecount = 0;
@@ -272,60 +272,66 @@ int main(int argc, char*argv[])
   int             i, j, k;
 
   for (k = 1; k >= 0; k--)
+  {
+    if (task_id == root_zero)
     {
-      if (task_id == root_zero)
-        {
-          printf("# Broadcast Bandwidth Test -- root_zero = %d  protocol: %s\n", root_zero, newbcast_md[0].name);
-          printf("# Size(bytes)           cycles    bytes/sec    usec\n");
-          printf("# -----------      -----------    -----------    ---------\n");
-        }
-      if(((strstr(newbcast_md[0].name,selected) == NULL) && selector) ||
-         ((strstr(newbcast_md[0].name,selected) != NULL) && !selector))  continue;
-
-      if (set[k])
-        {
-          fflush(stdout);
-          blocking_coll(context, &newbarrier, &bar_poll_flag);
-
-          for (i = 1; i <= BUFSIZE; i *= 2)
-            {
-              long long dataSent = i;
-              int          niter = 100;
-              blocking_coll(context, &newbarrier, &bar_poll_flag);
-              ti = timer();
-
-              for (j = 0; j < niter; j++)
-                {
-                  newbcast.cmd.xfer_broadcast.root      = root_ep;
-                  newbcast.cmd.xfer_broadcast.buf       = buf;
-                  newbcast.cmd.xfer_broadcast.typecount = i;
-                  blocking_coll(context, &newbcast, &bcast_poll_flag);
-                }
-
-              tf = timer();
-              blocking_coll(context, &newbarrier, &bar_poll_flag);
-              usec = (tf - ti) / (double)niter;
-
-              if (task_id == root_zero)
-                {
-                  printf("  %11lld %16lld %14.1f %12.2f\n",
-                         dataSent,
-                         0LL,
-                         (double)1e6*(double)dataSent / (double)usec,
-                         usec);
-                  fflush(stdout);
-                }
-            }
-        }
-
-      blocking_coll(context, &barrier, &bar_poll_flag);
-      blocking_coll(context, &barrier, &bar_poll_flag);
-      fflush(stderr);
+      printf("# Broadcast Bandwidth Test -- root_zero = %d  protocol: %s\n", root_zero, newbcast_md[0].name);
+      printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+      printf("# -----------      -----------    -----------    ---------\n");
     }
+    if (((strstr(newbcast_md[0].name,selected) == NULL) && selector) ||
+        ((strstr(newbcast_md[0].name,selected) != NULL) && !selector))  continue;
+
+    if (set[k])
+    {
+      fflush(stdout);
+      blocking_coll(context, &newbarrier, &bar_poll_flag);
+
+      for (i = 1; i <= BUFSIZE; i *= 2)
+      {
+        long long dataSent = i;
+        int          niter;
+
+        if (dataSent < CUTOFF)
+          niter = gNiterlat;
+        else
+          niter = NITERBW;
+
+        newbcast.cmd.xfer_broadcast.typecount = i;
+
+        blocking_coll(context, &newbarrier, &bar_poll_flag);
+
+        ti = timer();
+
+        for (j = 0; j < niter; j++)
+        {
+          blocking_coll(context, &newbcast, &bcast_poll_flag);
+        }
+
+        tf = timer();
+        blocking_coll(context, &newbarrier, &bar_poll_flag);
+        usec = (tf - ti) / (double)niter;
+
+        if (task_id == root_zero)
+        {
+          printf("  %11lld %16lld %14.1f %12.2f\n",
+                 dataSent,
+                 0LL,
+                 (double)1e6*(double)dataSent / (double)usec,
+                 usec);
+          fflush(stdout);
+        }
+      }
+    }
+
+    blocking_coll(context, &barrier, &bar_poll_flag);
+    blocking_coll(context, &barrier, &bar_poll_flag);
+    fflush(stderr);
+  }
 
   blocking_coll(context, &barrier, &bar_poll_flag);
 
-  rc = pami_shutdown(&client, &context, &num_contexts);
+  rc |= pami_shutdown(&client, &context, &num_contexts);
   free(bar_always_works_algo);
   free(bar_always_works_md);
   free(bar_must_query_algo);
@@ -345,5 +351,5 @@ int main(int argc, char*argv[])
   free(q_newbcast_algo);
   free(q_newbcast_md);
 
-  return 0;
+  return rc;
 }
