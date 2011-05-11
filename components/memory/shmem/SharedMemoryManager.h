@@ -184,12 +184,22 @@ public:
 		if (!first) {
 			lrc = shm_open(nkey, O_RDWR, 0);
 			if (lrc == -1) {
+#ifdef MM_DEBUG
+				if (_debug) {
+					dump("shm_open");
+				}
+#endif // MM_DEBUG
 				return PAMI_ERROR;
 			}
 		}
 		fd = lrc;
 		lrc = ftruncate(fd, max); // this zeroes memory...
 		if (lrc == -1) {
+#ifdef MM_DEBUG
+			if (_debug) {
+				dump("ftruncate");
+			}
+#endif // MM_DEBUG
 			close(fd);
 			if (first) { shm_unlink(nkey); } // yes?
 			return PAMI_ERROR;
@@ -198,6 +208,11 @@ public:
 		close(fd); // no longer needed
 		if (ptr == NULL || ptr == MAP_FAILED) {
 			// segment is not mapped...
+#ifdef MM_DEBUG
+			if (_debug) {
+				dump("mmap");
+			}
+#endif // MM_DEBUG
 			if (first) { shm_unlink(nkey); } // yes?
 			return PAMI_ERROR;
 		}
@@ -205,6 +220,11 @@ public:
 		_meta.acquire(); // only makes this thread-safe, not proc-safe.
 		alloc = _meta.findFree(ptr, bytes, alignment, nkey);
 		if (alloc == NULL) {
+#ifdef MM_DEBUG
+			if (_debug) {
+				dump("findFree");
+			}
+#endif // MM_DEBUG
 			munmap(ptr, max);
 			_meta.release();
 			return PAMI_ERROR;

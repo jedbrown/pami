@@ -95,6 +95,11 @@ public:
 #ifdef USE_MEMALIGN
 		int rc = posix_memalign(memptr, alignment, bytes);
 		if (rc != 0) {
+#ifdef MM_DEBUG
+			if (_debug) {
+				dump("ENOMEM");
+			}
+#endif // MM_DEBUG
 			return PAMI_ERROR;
 		}
 #else
