@@ -198,6 +198,8 @@ namespace CCMI
         unsigned getGlobalRank (unsigned relrank)
         {
           relrank += _rootindex;
+         if (relrank >= _topology->size())
+           relrank -= _topology->size();
           return _topology->index2Rank(relrank);
         }
 
