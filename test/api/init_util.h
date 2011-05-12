@@ -187,7 +187,7 @@ int pami_init(pami_client_t        * client,          /* in/out:  client      */
   pami_configuration_t l_configuration;
   size_t               max_contexts;
 
-  init_tables();
+
 
   if(clientname == NULL)
     clientname = cl_string;
@@ -200,6 +200,7 @@ int pami_init(pami_client_t        * client,          /* in/out:  client      */
                  clientname,result);
         return 1;
       }
+  init_tables();
   /* Docs02:  Create the client */
 
   /* Docs03:  Create the client */
