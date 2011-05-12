@@ -117,12 +117,9 @@ int main(int argc, char*argv[])
   int err = 0;
   void* buf = NULL;
 
-  if (task_id == root)
-  {
-    err = posix_memalign(&buf, 128, (gMax_count * num_tasks) + gBuffer_offset);
-    assert(err == 0);
-    buf = (char*)buf + gBuffer_offset;
-  }
+  err = posix_memalign(&buf, 128, (gMax_count * num_tasks) + gBuffer_offset);
+  assert(err == 0);
+  buf = (char*)buf + gBuffer_offset;
 
   void* rbuf = NULL;
   err = posix_memalign(&rbuf, 128, gMax_count + gBuffer_offset);
