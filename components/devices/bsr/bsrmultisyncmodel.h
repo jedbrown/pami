@@ -181,6 +181,7 @@ namespace PAMI
                       _Lapi_env.MP_partition, member_id, &param))
           {
             ITRC(IT_BSR, "postMultisync_impl: initialize sync group failed.\n");
+            PAMI_assertf(0, "On-node sync group initialization failed");
             return PAMI_ERROR;
           }
           ITRC(IT_BSR, "postMultisync_impl: initialize sync group passed.\n");

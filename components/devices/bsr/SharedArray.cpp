@@ -104,12 +104,12 @@ SharedArray::RC SharedArray::PosixShmSetup(const char* shm_key,
         }
         // we ignore the return code of shmctl
         close(shm_id);
+        shm_unlink(shm_key);
 
         if (ctrl_block->ref_cnt != member_cnt) {
             // when failed, we decrease the ref_cnt and detach
             fetch_and_add((atomic_p)&ctrl_block->ref_cnt, -1);
             // we ignore the return code of shmdt
-            munmap((void*)ctrl_block, t_size);
             shm_unlink(shm_key);
             return FAILED;
         }
@@ -236,7 +236,6 @@ SharedArray::RC SharedArray::PosixShmDestroy()
         // decrease ref_cnt
         fetch_and_add((atomic_p)&ctrl_block->ref_cnt, -1);
         // detach from memory; we don't care the return code
-        munmap((void*)ctrl_block, shm_size);
         // remove the shm_id; we don't care the return code
         shm_unlink(shm_str);
         ctrl_block = NULL;

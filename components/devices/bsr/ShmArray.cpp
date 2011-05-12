@@ -29,10 +29,6 @@ SharedArray::RC ShmArray::Init(const unsigned int member_cnt,
         const unsigned int group_id, const unsigned int job_key, 
         const bool is_leader, const int member_id, const unsigned char init_val)
 {
-#ifndef __64BIT__
-    ITRC(IT_BSR, "ShmArray: Not supported on 32Bit applications\n");
-    return NOT_AVAILABLE;
-#endif
     // if it is already initialized, then do nothing.
     if (status == READY) {
         return SUCCESS;

@@ -336,8 +336,8 @@ SharedArray::RC Bsr::Init(const unsigned int mem_cnt,
     if (leader) {
         // generate a unique key for BSR region
         int num_try = 0;
+        srand( time(NULL) );
         do {
-            srand( time(NULL) );
             bsr_key = rand();
             bsr_id = shmget(bsr_key, bsr_size, IPC_CREAT|IPC_EXCL|0600);
             num_try ++;
