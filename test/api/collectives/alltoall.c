@@ -199,7 +199,7 @@ int main(int argc, char*argv[])
           init_bufs(i, j );
         }
 
-        blocking_coll(context, &barrier, &bar_poll_flag);
+        blocking_coll(context[iContext], &barrier, &bar_poll_flag);
 
         /* Warmup */
         alltoall.cmd.xfer_alltoall.sndbuf        = sbuf;
@@ -209,9 +209,9 @@ int main(int argc, char*argv[])
         alltoall.cmd.xfer_alltoall.rtype         = PAMI_TYPE_BYTE;
         alltoall.cmd.xfer_alltoall.rtypecount    = i;
 
-        blocking_coll(context, &alltoall, &alltoall_poll_flag);
+        blocking_coll(context[iContext], &alltoall, &alltoall_poll_flag);
 
-        blocking_coll(context, &barrier, &bar_poll_flag);
+        blocking_coll(context[iContext], &barrier, &bar_poll_flag);
 
         ti = timer();
 
@@ -223,7 +223,7 @@ int main(int argc, char*argv[])
           alltoall.cmd.xfer_alltoall.rcvbuf        = rbuf;
           alltoall.cmd.xfer_alltoall.rtype         = PAMI_TYPE_BYTE;
           alltoall.cmd.xfer_alltoall.rtypecount    = i;
-          blocking_coll(context, &alltoall, &alltoall_poll_flag);
+          blocking_coll(context[iContext], &alltoall, &alltoall_poll_flag);
         }
 
         tf = timer();
@@ -233,7 +233,7 @@ int main(int argc, char*argv[])
         rc |= rc_check = check_bufs(i, num_tasks, task_id);
         if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
 
-        blocking_coll(context, &barrier, &bar_poll_flag);
+        blocking_coll(context[iContext], &barrier, &bar_poll_flag);
 
         usec = (tf - ti) / (double)niter;
 
