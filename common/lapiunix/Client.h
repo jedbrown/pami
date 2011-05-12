@@ -465,6 +465,18 @@ namespace PAMI
                 case PAMI_CLIENT_NUM_TASKS:
                   configuration[i].value.intval = __global.mapping.size();
                   break;
+                case PAMI_CLIENT_NUM_LOCAL_TASKS:
+                  if (_ncontexts > 0) {
+                    LapiImpl::Context* cp = (LapiImpl::Context*)_contexts[0];
+                    configuration[i].value.intval = cp->GetNumLocalTasks();
+                  }
+                  break;
+                case PAMI_CLIENT_LOCAL_TASKS:
+                  if (_ncontexts > 0) {
+                    LapiImpl::Context* cp = (LapiImpl::Context*)_contexts[0];
+                    configuration[i].value.intarray = cp->GetLocalTasks();
+                  }
+                  break;
                 case PAMI_CLIENT_WTICK:
                   configuration[i].value.doubleval =__global.time.tick();
                   break;

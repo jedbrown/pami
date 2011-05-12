@@ -57,8 +57,6 @@ extern "C"
     PAMI_CONTEXT_RFIFO_SZ,         /**<  Q : size_t : N/A : receiving fifo size */
     PAMI_CONTEXT_BULK_MIN_MSG_SZ,  /**<  Q : size_t : N/A : size of smallest RDMA message*/
     PAMI_CONTEXT_BULK_XFER,        /**<  Q : bool   : N/A : run in RDMA mode */
-    PAMI_CONTEXT_SHM_NUM_TASKS,    /**<  Q : size_t : N/A : number of tasks that uses SHM */
-    PAMI_CONTEXT_SHM_TASKS,        /**<  Q : pami_tasks_t* : N/A : list of task ids that make up SHM*/
     PAMI_CONTEXT_SHM_ENABLED,      /**<  Q : bool   : N/A : run in SHM mode*/
     PAMI_CONTEXT_ACK_THRESH,       /**<  Q : size_t : N/A : threshold of ACKs sent back to src */
     PAMI_CONTEXT_REXMIT_BUF_CNT,   /**<  Q : size_t : N/A : number of retransmission buffers */
@@ -144,15 +142,6 @@ extern "C"
     int                count;       /**< Number of counters */
     pami_counter_t     counters[1]; /**< Array of counters  */
   } pami_statistics_t;
-
-  /**
-   * \brief List of SHM tasks
-   */
-  typedef struct
-  {
-    int                count;       /**< Number of counters */
-    pami_task_t        shm_tasks[1];/**< List of SHM tasks  */
-  } pami_shm_tasks_t;
 
   /** \} */ /* end of "comm_stat" group */
 
