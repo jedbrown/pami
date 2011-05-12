@@ -8,7 +8,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <errno.h>
 
 static const char *optString = "DdMSh?";
 
@@ -90,7 +89,7 @@ unsigned validate (const void * addr, size_t bytes, size_t test_n_plus_minus1)
 
   return status;
 }
-
+/* --------------------------------------------------------------- */
 
 static void recv_done (pami_context_t   context,
                        void          * cookie,
@@ -126,36 +125,6 @@ static void recv_done (pami_context_t   context,
 
   (*active)--;
 }
-#if 0
-/* ---------------------------------------------------------------*/
-static void decrement_dispatch (
-  pami_context_t        context,      /**< IN: PAMI context */
-  void               * cookie,       /**< IN: dispatch cookie */
-  const void         * header_addr,  /**< IN: header address */
-  size_t               header_size,  /**< IN: header size */
-  const void         * pipe_addr,    /**< IN: address of PAMI pipe buffer */
-  size_t               pipe_size,    /**< IN: size of PAMI pipe buffer */
-  pami_endpoint_t      origin,
-  pami_recv_t         * recv)        /**< OUT: receive message structure */
-{
-  size_t * var = (size_t *) cookie;
-  (*var)--;
-}
-#endif
-
-/* --------------------------------------------------------------- */
-
-static void decrement (pami_context_t   context,
-                       void          * cookie,
-                       pami_result_t    result)
-{
-  volatile unsigned * value = (volatile unsigned *) cookie;
-  if (debug) {
-    fprintf(stderr, "(%zu) decrement() cookie = %p, %d => %d\n", _my_task, cookie, *value, *value - 1);
-  }
-  --*value;
-}
-
 /* --------------------------------------------------------------- */
 
 static void test_dispatch (
@@ -223,6 +192,7 @@ static void test_dispatch (
 
   return;
 }
+/* --------------------------------------------------------------- */
 
 static void send_done_local (pami_context_t   context,
                              void          * cookie,
@@ -234,6 +204,7 @@ static void send_done_local (pami_context_t   context,
   }
   (*active)--;
 }
+/* --------------------------------------------------------------- */
 
 static void send_done_remote (pami_context_t   context,
                               void          * cookie,
@@ -246,6 +217,7 @@ static void send_done_remote (pami_context_t   context,
   (*active)--;
   /*fprintf (stderr, "... send_done_remote function.  active = %zu\n", *active); */
 }
+/* --------------------------------------------------------------- */
 
 void display_usage( void )
 {
@@ -270,7 +242,7 @@ void display_usage( void )
   printf("\tex:  default-send-nplus-minus1.cnk --MS\n");
   printf("\n");
 }
-
+/* --------------------------------------------------------------- */
 
 int main (int argc, char ** argv)
 {
@@ -349,9 +321,45 @@ int main (int argc, char ** argv)
     return 1;
   }
 
+  size_t num_local_tasks = 0;
+  configuration.name = PAMI_CLIENT_NUM_LOCAL_TASKS;
+  result = PAMI_Client_query (client, &configuration, 1);
+  if (result != PAMI_SUCCESS) {
+    fprintf (stderr, "ERROR (E):  Unable to query configuration attribute PAMI_CLIENT_NUM_LOCAL_TASKS; result = %d\n", result);
+    return 1;
+  } else {
+    num_local_tasks = configuration.value.intval;
+    fprintf (stdout, "PAMI_CLIENT_NUM_LOCAL_TASKS = %zu\n", configuration.value.intval);
+  }
+
   /* Create an array for storing device addressabilty based on hint value*/
   /* row 0 (DEFAULT), row 1 (SHMem) and row 2 (MU) */
   size_t addressable_by_me[3][num_tasks]; 
+
+  configuration.name = PAMI_CLIENT_LOCAL_TASKS;
+  result = PAMI_Client_query (client, &configuration, 1);
+  if (result != PAMI_SUCCESS) {
+    fprintf (stderr, "ERROR (E):  Unable to query configuration attribute PAMI_CLIENT_LOCAL_TASKS; result = %d\n", result);
+    return 1;
+  } else {
+    /* Set local tasks in device addressability array */
+    for (i=0; i<num_local_tasks; i++) {
+      addressable_by_me[1][configuration.value.intarray[i]] = 1;
+    }
+  }
+    
+  /* Finish Initing device addressability array */
+  for ( hint = 0; hint < 3; hint++ ) {
+    for ( n = 0; n < num_tasks; n++ ) {
+      if ( hint == 1) { /* SHMem */
+	if (addressable_by_me[hint][n] != 1) {
+	  addressable_by_me[hint][n] = 0;
+	}
+      } else { /* hint = 0 (DEFAULT) or 2 (MU) */
+	addressable_by_me[hint][n] = 1;
+      }
+    }
+  }
 
   /* See if user passed in any args */
   opt = getopt( argc, argv, optString );
@@ -581,100 +589,13 @@ int main (int argc, char ** argv)
   size_t xtalk = 0;
   size_t remote_cb = 0;
 
-  /* Run addressability test to see which ranks can talk with rank 0 based on hint value */ 
-  if (debug) {
-    fprintf(stderr, "Before addressable ranks test ...\n");
-  }
-
-  for (hint = 0; hint < 3; hint++) {
-
-    /* Don't run hints that won't be tested */
-    if ( ! ((hints_to_test >> hint) & 1) ) {
-      continue;
-    }
-
-    size_t target_task;
-    volatile unsigned pretest_active = 1;
-
-    pami_send_t parameters;
-    parameters.send.dispatch        = dispatch[hint].id;
-    /*    parameters.send.header.iov_base = (void *) & parameters; */
-    parameters.send.header.iov_base = header;
-    parameters.send.header.iov_len  = 8;
-    /*   parameters.send.data.iov_base   = (void *) & parameters; */
-    parameters.send.data.iov_base   = data;
-    parameters.send.data.iov_len    = sizeof(pami_send_t);
-    parameters.events.cookie        = (void *) & pretest_active;
-    parameters.events.local_fn      = decrement;
-       /*    parameters.events.local_fn      = send_done_local; */
-    parameters.events.remote_fn     = NULL;
-    memset(&parameters.send.hints, 0, sizeof(parameters.send.hints));
-
-    for (n = 1; n < num_tasks; n++) {
-      if ((_my_task != 0) && (_my_task != n)) {
-	continue;
-      }
-
-      target_task = (_my_task == 0) ? n : 0;
-
-      dispatch[hint].result = PAMI_Endpoint_create (client, target_task, 0, &parameters.send.dest);
-      if (dispatch[hint].result != PAMI_SUCCESS) {
-	fprintf(stderr, "ERROR (E):  PAMI_Endpoint_create failed for Rank %zu, context 0 with rc = %d.\n", target_task, dispatch[hint].result);
-	return 1;
-      }
-      
-      if (debug) {
-	fprintf (stderr, "===== PAMI_Send() ADDRESSABILITY Test [%s][%s][%s][%s] %zu %zu (%zu, 0) -> (%zu, 0) =====\n\n", &device_str[hint][0], &xtalk_str[xtalk][0], &callback_str[remote_cb][0], &longheader_str[parameters.send.header.iov_len>(dispatch_recv_immediate_max[0][hint])][0], parameters.send.header.iov_len, parameters.send.data.iov_len, _my_task, target_task);
-      }
-
-      if (debug) {
-	fprintf (stderr, "Before addressability send ...\n");
-      }
-
-      dispatch[hint].result = PAMI_Send (context[0], &parameters);
-
-      if (debug) {
-	fprintf (stderr, "PAMI_Send result = %d\n", dispatch[hint].result);
-	fprintf (stderr, "After addressability send ...\n");
-      }
-
-      /* Send succeeded, listen for reply */
-      if (dispatch[hint].result == PAMI_SUCCESS) {
-	addressable_by_me[hint][target_task] = 1;
-	recv_active++;
-
-	while (pretest_active) PAMI_Context_advance (context[0], 100);
-	pretest_active = 1;
-      } else if ( (dispatch[hint].result == PAMI_CHECK_ERRNO) && (errno == EHOSTUNREACH) ){
-	/* Target rank is unaddressable with current hint value */
-	addressable_by_me[hint][target_task] = 0;
-
-	if (_my_task == 0) {
-	  fprintf (stderr, "WARNING (W):  Rank %zu is unaddressable by Rank %zu when use_shmem = %s.\n", target_task, _my_task, &hint_str[hint][0]);
-	}
-	
-      } else {
-	/* Send failed for an unexpected reason */
-	fprintf (stderr, "ERROR (E):  PAMI_Send failed with rc = %d\n", dispatch[hint].result);
-	return 1;
-      }	
-    } /* end task for loop */
-  } /* end hint for loop */
-
-  /* Process any left over receives (task 0 will have some for sure) */
-  /* If we try to combine the send and recv context advances above, recv_active gets corrupted */
-  while (recv_active > 1) PAMI_Context_advance (context[0], 100);
-
-  if (debug) {
-    fprintf(stderr, "After addressable ranks test ...\n");
-  }
-
   /* Time to run various headers and payloads */
   pami_send_t parameters;
   parameters.send.header.iov_base = header;
   parameters.send.data.iov_base   = data;
   parameters.events.cookie        = (void *) &send_active;
   parameters.events.local_fn      = send_done_local;
+  memset(&parameters.send.hints, 0, sizeof(parameters.send.hints));
 
   if (_my_task == 0)
   {
