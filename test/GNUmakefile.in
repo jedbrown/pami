@@ -10,7 +10,7 @@
 # end_generated_IBM_copyright_prolog                               #
 
 VPATH		= @abs_srcdir@
-SUBDIRS         = api @XTRA_TEST_SUBDIRS@
+SUBDIRS         = api #@XTRA_TEST_SUBDIRS@
 NOTBUILT        = 
 APPS            = 
 
