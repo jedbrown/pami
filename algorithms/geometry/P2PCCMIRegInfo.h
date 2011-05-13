@@ -1101,7 +1101,7 @@ namespace CCMI
           create_gatherv_schedule > IntComposite;
 
         typedef CCMI::Adaptor::Gather::AsyncLongGatherFactoryT
-        < Composite,
+        < IntComposite,
           gatherv_int_metadata,
           CCMI::ConnectionManager::CommSeqConnMgr,
           getKey >
