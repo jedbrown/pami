@@ -10,7 +10,7 @@
 # end_generated_IBM_copyright_prolog                               #
 
 VPATH		= @abs_srcdir@
-SUBDIRS         = 
+SUBDIRS         = mu2 memtest
 NOTBUILT        = 
 APPS            = personality.${EXTENSION}
 
