@@ -8,26 +8,25 @@
 /* end_generated_IBM_copyright_prolog                               */
 /**
  * \file test/api/collectives/reduce_subcomm.c
- * \brief reduce on sub-geometries
+ * \brief Simple Reduce test on sub-geometries
  */
 
-/*define this if you want to validate the data for unsigned sums */
-
-#define FULL_TEST  1
+#define FULL_TEST 1
+/* see setup_env() for environment variable overrides
 #define COUNT      65536
-#define MAXBUFSIZE COUNT*16
-#define NITERLAT   10
-#define NITERBW    1
+#define OFFSET     0
+#define NITERLAT   1
+#define NITERBW    MIN(10, niterlat/100+1)
 #define CUTOFF     65536
+*/
 
 #include "../pami_util.h"
 
 int main(int argc, char*argv[])
 {
   pami_client_t        client;
-  pami_context_t       context;
-  size_t               num_contexts = 1;
-  pami_task_t          task_id, root= 0;
+  pami_context_t      *context;
+  pami_task_t          task_id, local_task_id, task_zero=0;
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
 
@@ -50,21 +49,33 @@ int main(int argc, char*argv[])
   pami_xfer_type_t     reduce_xfer = PAMI_XFER_REDUCE;
   volatile unsigned    reduce_poll_flag = 0;
 
-  int                  i, j, nalg = 0;
+  int                  nalg = 0;
   double               ti, tf, usec;
   pami_xfer_t          barrier;
   pami_xfer_t          reduce;
 
+  /* Process environment variables and setup globals */
+  setup_env();
 
-  char sbuf[MAXBUFSIZE];
-  char rbuf[MAXBUFSIZE];
-  int op, dt;
+  assert(gNum_contexts > 0);
+  context = (pami_context_t*)malloc(sizeof(pami_context_t) * gNum_contexts);
+
+  /*  Allocate buffer(s) */
+  int err = 0;
+  void* sbuf = NULL;
+  err = posix_memalign(&sbuf, 128, MAXBUFSIZE + gBuffer_offset);
+  assert(err == 0);
+  sbuf = (char*)sbuf + gBuffer_offset;
+  void* rbuf = NULL;
+  err = posix_memalign(&rbuf, 128, MAXBUFSIZE + gBuffer_offset);
+  assert(err == 0);
+  rbuf = (char*)rbuf + gBuffer_offset;
 
   /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
-                     &context,       /* Context            */
+                     context,        /* Context            */
                      NULL,           /* Clientname=default */
-                     &num_contexts,  /* num_contexts       */
+                     &gNum_contexts, /* gNum_contexts       */
                      NULL,           /* null configuration */
                      0,              /* no configuration   */
                      &task_id,       /* task id            */
@@ -73,19 +84,35 @@ int main(int argc, char*argv[])
   if (rc == 1)
     return 1;
 
+  if (num_tasks == 1)
+  {
+    fprintf(stderr, "No subcomms on 1 node\n");
+    return 0;
+  }
+
+  assert(task_id >= 0);
+  assert(task_id < num_tasks);
+
   /*  Query the world geometry for barrier algorithms */
   rc |= query_geometry_world(client,
-                            context,
-                            &world_geometry,
-                            barrier_xfer,
-                            barrier_num_algorithm,
-                            &bar_always_works_algo,
-                            &bar_always_works_md,
-                            &bar_must_query_algo,
-                            &bar_must_query_md);
+                             context[0],
+                             &world_geometry,
+                             barrier_xfer,
+                             barrier_num_algorithm,
+                             &bar_always_works_algo,
+                             &bar_always_works_md,
+                             &bar_must_query_algo,
+                             &bar_must_query_md);
 
   if (rc == 1)
     return 1;
+
+  /*  Set up world barrier */
+  barrier.cb_done   = cb_done;
+  barrier.cookie    = (void*) & bar_poll_flag;
+  barrier.algorithm = bar_always_works_algo[0];
+
+  unsigned iContext = 0;
 
   /*  Create the subgeometry */
   pami_geometry_range_t *range;
@@ -101,311 +128,188 @@ int main(int argc, char*argv[])
 
   size_t                 set[2];
   int                    id;
-  size_t                 half        = num_tasks / 2;
+
+
   range     = (pami_geometry_range_t *)malloc(((num_tasks + 1) / 2) * sizeof(pami_geometry_range_t));
 
-  /* \note Test environment variable" TEST_VERBOSE=N     */
-  char* sVerbose = getenv("TEST_VERBOSE");
+  int unused_non_root[2];
+  get_split_method(&num_tasks, task_id, &rangecount, range, &local_task_id, set, &id, &task_zero,unused_non_root);
 
-  if (sVerbose) gVerbose=atoi(sVerbose); /* set the global defined in coll_util.h */
-
-  /* \note Test environment variable" TEST_PROTOCOL={-}substring.       */
-  /* substring is used to select, or de-select (with -) test protocols */
-  unsigned selector = 1;
-  char* selected = getenv("TEST_PROTOCOL");
-  if (!selected) selected = "";
-  else if (selected[0]=='-')
+  for (; iContext < gNum_contexts; ++iContext)
   {
-    selector = 0 ;
-    ++selected;
-  }
 
+    if (task_id == task_zero)
+      printf("# Context: %u\n", iContext);
 
-  char *method = getenv("TEST_SPLIT_METHOD");
-
-  if (!(method && !strcmp(method, "1")))
-  {
-    if (task_id >= 0 && task_id <= half - 1)
+    /* Delay task 0, and emulate that he's doing "other"
+       message passing.  This will cause the geometry_create
+       request from other nodes to be unexpected when doing
+       parentless geometries and won't affect parented.      */
+    if (task_id == task_zero)
     {
-      range[0].lo = 0;
-      range[0].hi = half - 1;
-      set[0]   = 1;
-      set[1]   = 0;
-      id       = 1;
-      root     = 0;
-    }
-    else
-    {
-      range[0].lo = half;
-      range[0].hi = num_tasks - 1;
-      set[0]   = 0;
-      set[1]   = 1;
-      id       = 2;
-      root     = half;
+      delayTest(1);
+      unsigned ii = 0;
+
+      for (; ii < gNum_contexts; ++ii)
+        PAMI_Context_advance (context[ii], 1000);
     }
 
-    rangecount = 1;
-  }
-  else
-  {
-    int i = 0;
-    int iter = 0;;
+    rc |= create_and_query_geometry(client,
+                                    context[0],
+                                    context[iContext],
+                                    gParentless ? PAMI_GEOMETRY_NULL : world_geometry,
+                                    &newgeometry,
+                                    range,
+                                    rangecount,
+                                    id + iContext, /* Unique id for each context */
+                                    barrier_xfer,
+                                    newbar_num_algo,
+                                    &newbar_algo,
+                                    &newbar_md,
+                                    &q_newbar_algo,
+                                    &q_newbar_md);
 
-    if ((task_id % 2) == 0)
+    if (rc == 1)
+      return 1;
+
+    /*  Query the sub geometry for reduce algorithms */
+    rc |= query_geometry(client,
+                         context[iContext],
+                         newgeometry,
+                         reduce_xfer,
+                         reduce_num_algorithm,
+                         &reduce_always_works_algo,
+                         &reduce_always_works_md,
+                         &reduce_must_query_algo,
+                         &reduce_must_query_md);
+
+    if (rc == 1)
+      return 1;
+
+    /*  Set up sub geometry barrier */
+    newbarrier.cb_done   = cb_done;
+    newbarrier.cookie    = (void*) & newbar_poll_flag;
+    newbarrier.algorithm = newbar_algo[0];
+
+
+    for (nalg = 0; nalg < reduce_num_algorithm[0]; nalg++)
     {
-      for (i = 0; i < num_tasks; i++)
+      int             i, j, k;
+
+      for (k = 1; k >= 0; k--)
       {
-        if ((i % 2) == 0)
+        if (set[k])
         {
-          range[iter].lo = i;
-          range[iter].hi = i;
-          iter++;
-        }
-      }
-
-      set[0]   = 1;
-      set[1]   = 0;
-      id       = 2;
-      root     = 0;
-      rangecount = iter;
-    }
-    else
-    {
-      for (i = 0; i < num_tasks; i++)
-      {
-        if ((i % 2) != 0)
-        {
-          range[iter].lo = i;
-          range[iter].hi = i;
-          iter++;
-        }
-      }
-
-      set[0]   = 0;
-      set[1]   = 1;
-      id       = 2;
-      root     = 1;
-      rangecount = iter;
-    }
-
-  }
-
-  rc |= create_and_query_geometry(client,
-                                 context,
-                                 context,
-                                 world_geometry,
-                                 &newgeometry,
-                                 range,
-                                 rangecount,
-                                 id,
-                                 barrier_xfer,
-                                 newbar_num_algo,
-                                 &newbar_algo,
-                                 &newbar_md,
-                                 &q_newbar_algo,
-                                 &q_newbar_md);
-
-  if (rc == 1)
-    return 1;
-
-  /*  Query the sub geometry for reduce algorithms */
-  rc |= query_geometry(client,
-                      context,
-                      newgeometry,
-                      reduce_xfer,
-                      reduce_num_algorithm,
-                      &reduce_always_works_algo,
-                      &reduce_always_works_md,
-                      &reduce_must_query_algo,
-                      &reduce_must_query_md);
-
-  if (rc == 1)
-    return 1;
-
-  /*  Set up world barrier */
-  barrier.cb_done   = cb_done;
-  barrier.cookie    = (void*) & bar_poll_flag;
-  barrier.algorithm = bar_always_works_algo[0];
-
-  /*  Set up sub geometry barrier */
-  newbarrier.cb_done   = cb_done;
-  newbarrier.cookie    = (void*) & newbar_poll_flag;
-  newbarrier.algorithm = newbar_algo[0];
-
-
-  size_t** validTable =
-  alloc2DContig(op_count, dt_count);
-
-#if FULL_TEST
-  /* Setup operation and datatype tables*/
-
-  for (i = 0; i < op_count; i++)
-    for (j = 0; j < dt_count; j++)
-      validTable[i][j] = 1;
-
-  /*--------------------------------------*/
-  /* Disable unsupported ops on complex   */
-  /* Only sum, prod                       */
-  for (i = 0, j = DT_SINGLE_COMPLEX; i < OP_COUNT; i++)if (i!=OP_SUM && i!=OP_PROD) validTable[i][j] = 0;
-  for (i = 0, j = DT_DOUBLE_COMPLEX; i < OP_COUNT; i++)if (i!=OP_SUM && i!=OP_PROD) validTable[i][j] = 0;
-
-    /*--------------------------------------*/
-    /* Disable non-LOC ops on LOC dt's      */
-  for (i = 0, j = DT_LOC_2INT      ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
-  for (i = 0, j = DT_LOC_SHORT_INT ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
-  for (i = 0, j = DT_LOC_FLOAT_INT ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
-  for (i = 0, j = DT_LOC_DOUBLE_INT; i < OP_MAXLOC; i++)validTable[i][j] = 0;
-  for (i = 0, j = DT_LOC_2FLOAT    ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
-  for (i = 0, j = DT_LOC_2DOUBLE   ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
-
-  /*--------------------------------------*/
-  /* Disable NULL and byte operations     */
-  for (i = 0, j = DT_NULL; i < OP_COUNT; i++)validTable[i][j] = 0;
-  for (i = 0, j = DT_BYTE; i < OP_COUNT; i++)validTable[i][j] = 0;
-  for (j = 0, i = OP_COPY; j < DT_COUNT; j++) validTable[i][j] = 0;
-  for (j = 0, i = OP_NOOP; j < DT_COUNT; j++) validTable[i][j] = 0;
-
-  /*--------------------------------------*/
-  /* Disable LOC ops on non-LOC dt's      */
-  for (j = 0, i = OP_MAXLOC; j < DT_LOC_2INT; j++) validTable[i][j] = 0;
-  for (j = 0, i = OP_MINLOC; j < DT_LOC_2INT; j++) validTable[i][j] = 0;
-
-  /*---------------------------------------*/
-  /* Disable unsupported ops on logical dt */
-  /* Only land, lor, lxor, band, bor, bxor */
-  for (i = 0,         j = DT_LOGICAL; i < OP_LAND ; i++) validTable[i][j] = 0;
-  for (i = OP_BXOR+1, j = DT_LOGICAL; i < OP_COUNT; i++) validTable[i][j] = 0;
-
-  /*---------------------------------------*/
-  /* Disable unsupported ops on long double*/
-  /* Only max,min,sum,prod                 */
-  for (i = OP_PROD+1, j = DT_LONG_DOUBLE; i < OP_COUNT; i++) validTable[i][j] = 0;
-
-#else
-
-  for (i = 0; i < op_count; i++)
-    for (j = 0; j < dt_count; j++)
-      validTable[i][j] = 0;
-
-  validTable[OP_SUM][DT_UNSIGNED_INT] = 1;
-
-#endif
-
-  for (nalg = 0; nalg < reduce_num_algorithm[0]; nalg++)
-  {
-    int             i, j, k;
-
-    for (k = 1; k >= 0; k--)
-    {
-      if (set[k])
-      {
-        if (task_id == root)
-        {
-          printf("# Reduce Bandwidth Test -- root = %d protocol: %s\n", root, reduce_always_works_md[nalg].name);
-          printf("# Size(bytes)           cycles    bytes/sec    usec\n");
-          printf("# -----------      -----------    -----------    ---------\n");
-        }
-        if (((strstr(reduce_always_works_md[nalg].name,selected) == NULL) && selector) ||
-            ((strstr(reduce_always_works_md[nalg].name,selected) != NULL) && !selector))  continue;
-
-        blocking_coll(context, &newbarrier, &newbar_poll_flag);
-
-        reduce.cb_done   = cb_done;
-        reduce.cookie    = (void*) & reduce_poll_flag;
-        reduce.algorithm = reduce_always_works_algo[nalg];
-        reduce.cmd.xfer_reduce.sndbuf    = sbuf;
-        reduce.cmd.xfer_reduce.stype     = PAMI_TYPE_BYTE;
-        reduce.cmd.xfer_reduce.stypecount = 0;
-        reduce.cmd.xfer_reduce.rtype     = PAMI_TYPE_BYTE;
-        reduce.cmd.xfer_reduce.rtypecount = 0;
-
-
-
-        for (dt = 0; dt < dt_count; dt++)
-          for (op = 0; op < op_count; op++)
+          if (task_id == task_zero)
           {
-            if (validTable[op][dt])
+            printf("# Reduce Bandwidth Test -- context = %d, root = %d protocol: %s\n", 
+                   iContext, task_zero, reduce_always_works_md[nalg].name);
+            printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+            printf("# -----------      -----------    -----------    ---------\n");
+          }
+
+          if (((strstr(reduce_always_works_md[nalg].name, gSelected) == NULL) && gSelector) ||
+              ((strstr(reduce_always_works_md[nalg].name, gSelected) != NULL) && !gSelector))  continue;
+
+          gProtocolName = reduce_always_works_md[nalg].name;
+
+          reduce.cb_done   = cb_done;
+          reduce.cookie    = (void*) & reduce_poll_flag;
+          reduce.algorithm = reduce_always_works_algo[nalg];
+          reduce.cmd.xfer_reduce.sndbuf    = sbuf;
+          reduce.cmd.xfer_reduce.rtype     = PAMI_TYPE_BYTE;
+          reduce.cmd.xfer_reduce.rtypecount = 0;
+
+          int op, dt;
+
+          for (dt = 0; dt < dt_count; dt++)
+            for (op = 0; op < op_count; op++)
             {
-              if (task_id == root)
-                printf("Running Reduce: %s, %s\n", dt_array_str[dt], op_array_str[op]);
-
-              for (i = 1; i <= COUNT; i *= 2)
+              if (gValidTable[op][dt])
               {
-                size_t sz=get_type_size(dt_array[dt]);
-                long long dataSent = i * sz;
-                int niter;
+                if (task_id == task_zero)
+                  printf("Running Allreduce: %s, %s\n", dt_array_str[dt], op_array_str[op]);
 
-                if (dataSent < CUTOFF)
-                  niter = NITERLAT;
-                else
-                  niter = NITERBW;
-
-                reduce.cmd.xfer_reduce.stypecount = i;
-                reduce.cmd.xfer_reduce.rtypecount = dataSent;
-                reduce.cmd.xfer_reduce.stype      = dt_array[dt];
-                reduce.cmd.xfer_reduce.op         = op_array[op];
-
-                reduce_initialize_sndbuf (sbuf, i, op, dt, task_id-root, half);
-
-                blocking_coll(context, &newbarrier, &newbar_poll_flag);
-                ti = timer();
-                for (j = 0; j < niter; j++)
+                for (i = 1; i <= gMax_count; i *= 2)
                 {
-                  pami_endpoint_t root_ep;
-                  PAMI_Endpoint_create(client, root, 0, &root_ep);
-                  reduce.cmd.xfer_reduce.root    = root_ep;
-                  if (task_id == root)
-                    reduce.cmd.xfer_reduce.rcvbuf    = rbuf;
+                  size_t sz=get_type_size(dt_array[dt]);
+                  size_t  dataSent = i * sz;
+                  int niter;
+
+                  if (dataSent < CUTOFF)
+                    niter = gNiterlat;
                   else
-                    reduce.cmd.xfer_reduce.rcvbuf    = NULL;
-                  blocking_coll(context, &reduce, &reduce_poll_flag);
-                  /*root = (root + 1) % num_tasks;*/
-                }
+                    niter = NITERBW;
 
-                tf = timer();
-                blocking_coll(context, &newbarrier, &newbar_poll_flag);
-                if (task_id == root)
-                {
-                  int rc_check;
-                  rc |= rc_check = reduce_check_rcvbuf (rbuf, i, op, dt, task_id-root, half);
+                  reduce.cmd.xfer_reduce.stypecount = i;
+                  reduce.cmd.xfer_reduce.rtypecount = dataSent;
+                  reduce.cmd.xfer_reduce.stype      = dt_array[dt];
+                  reduce.cmd.xfer_reduce.op         = op_array[op];
 
-                  if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
-                }
+                  reduce_initialize_sndbuf (sbuf, i, op, dt, local_task_id, num_tasks);
+                  blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
+                  ti = timer();
+
+                  for (j = 0; j < niter; j++)
+                  {
+                    pami_endpoint_t root_ep;
+                    PAMI_Endpoint_create(client, task_zero, 0, &root_ep);
+                    reduce.cmd.xfer_reduce.root    = root_ep;
+                    if (task_id == task_zero)
+                      reduce.cmd.xfer_reduce.rcvbuf    = rbuf;
+                    else
+                      reduce.cmd.xfer_reduce.rcvbuf    = NULL;
+                    blocking_coll(context[iContext], &reduce, &reduce_poll_flag);
+                  }
+
+                  tf = timer();
+                  blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
+                  if (task_id == task_zero)
+                  {
+                    int rc_check;
+                    rc |= rc_check = reduce_check_rcvbuf (rbuf, i, op, dt, local_task_id, num_tasks);
+
+                    if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
+                  }
 
 
-                usec = (tf - ti) / (double)niter;
+                  usec = (tf - ti) / (double)niter;
 
-                if (task_id == root)
-                {
-                  printf("  %11lld %16d %14.1f %12.2f\n",
-                         dataSent,
-                         niter,
-                         (double)1e6*(double)dataSent / (double)usec,
-                         usec);
-                  fflush(stdout);
+                  if (task_id == task_zero)
+                  {
+                    printf("  %11lld %16d %14.1f %12.2f\n",
+                           (long long)dataSent,
+                           niter,
+                           (double)1e6*(double)dataSent / (double)usec,
+                           usec);
+                    fflush(stdout);
+                  }
                 }
               }
             }
-          }
+        }
       }
-
-      blocking_coll(context, &barrier, &bar_poll_flag);
-      fflush(stderr);
     }
-  }
 
-  blocking_coll(context, &barrier, &bar_poll_flag);
+    /* We aren't testing world barrier itself, so use context 0.*/
+    blocking_coll(context[0], &barrier, &bar_poll_flag);
 
+    free(reduce_always_works_algo);
+    free(reduce_always_works_md);
+    free(reduce_must_query_algo);
+    free(reduce_must_query_md);
+  } /*for(unsigned iContext = 0; iContext < gNum_contexts; ++iContexts)*/
 
-  rc |= pami_shutdown(&client, &context, &num_contexts);
   free(bar_always_works_algo);
   free(bar_always_works_md);
   free(bar_must_query_algo);
   free(bar_must_query_md);
-  free(reduce_always_works_algo);
-  free(reduce_always_works_md);
-  free(reduce_must_query_algo);
-  free(reduce_must_query_md);
 
+  sbuf = (char*)sbuf - gBuffer_offset;
+  free(sbuf);
+  rbuf = (char*)rbuf - gBuffer_offset;
+  free(rbuf);
+
+  rc |= pami_shutdown(&client, context, &gNum_contexts);
   return rc;
 }
