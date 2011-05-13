@@ -200,6 +200,7 @@ int main(int argc, char*argv[])
               if (result.bitmask) continue;
 
               reduce_initialize_sndbuf (sbuf, i, op, dt, task_id, num_tasks);
+              memset(rbuf, 0xFF, dataSent);
 
               /* We aren't testing barrier itself, so use context 0. */
               blocking_coll(context[0], &barrier, &bar_poll_flag);

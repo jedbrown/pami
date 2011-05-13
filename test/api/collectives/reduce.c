@@ -166,18 +166,19 @@ int main(int argc, char*argv[])
               else
                 niter = NITERBW;
 
-              root = 0;
               reduce.cmd.xfer_reduce.stypecount = i;
               reduce.cmd.xfer_reduce.rtypecount = dataSent;
               reduce.cmd.xfer_reduce.stype      = dt_array[dt];
               reduce.cmd.xfer_reduce.op         = op_array[op];
 
               reduce_initialize_sndbuf (sbuf, i, op, dt, task_id, num_tasks);
+              memset(rbuf, 0xFF, dataSent);
 
               /* We aren't testing barrier itself, so use context 0. */
               blocking_coll(context[0], &barrier, &bar_poll_flag);
               ti = timer();
 
+              root = 0;
               for (j = 0; j < niter; j++)
               {
                 pami_endpoint_t root_ep;
@@ -198,10 +199,13 @@ int main(int argc, char*argv[])
               /* We aren't testing barrier itself, so use context 0. */
               blocking_coll(context[0], &barrier, &bar_poll_flag);
 
-              int rc_check;
-              rc |= rc_check = reduce_check_rcvbuf (rbuf, i, op, dt, task_id, num_tasks);
-
-              if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
+              if(task_id < niter) /* only validate tasks which were roots in niter loop */
+              {
+                int rc_check;
+                rc |= rc_check = reduce_check_rcvbuf (rbuf, i, op, dt, task_id, num_tasks);
+  
+                if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
+              }
 
               usec = (tf - ti) / (double)niter;
 

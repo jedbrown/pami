@@ -336,6 +336,7 @@ void setup_env()
   char* sOp = getenv("TEST_OP");
 
   /* Override FULL_TEST with 'ALL' */
+  if (sDt || sOp) gFull_test = 0;
   if ((sDt && !strcmp(sDt, "ALL")) || (sOp && !strcmp(sOp, "ALL"))) gFull_test = 1;
   if ((sDt && !strcmp(sDt, "SHORT")) || (sOp && !strcmp(sOp, "SHORT"))) 
   {
@@ -514,10 +515,10 @@ void get_split_method(size_t *num_tasks,            /* input number of tasks/out
       set[1]   = 1;
       *id       = 2;
       *root     = half;
-      *num_tasks = *num_tasks - half;
       *local_task_id = task_id - *root;
       non_root[0] = *root +1;      /* first non-root rank in the subcomm  */
       non_root[1] = *num_tasks-1;  /* last rank in the subcomm  */
+      *num_tasks = *num_tasks - half;
     }
   
     *rangecount = 1;
@@ -597,14 +598,17 @@ void get_split_method(size_t *num_tasks,            /* input number of tasks/out
       set[1]   = 1;
       *id       = 2;
       *root     = half;
-      *num_tasks = *num_tasks - half;
       *local_task_id = task_id - *root;
       non_root[0] = *root +1;       /* first non-root rank in the subcomm  */
       non_root[1] = *num_tasks-1;   /* last rank in the subcomm  */
+      *num_tasks = *num_tasks - half;
     }
   
     *rangecount = 1;
   }
+  /*  fprintf(stderr,"set %zu/%zu, root %u, num_tasks %zu, local_task_id %u, non_root[0] %d, non_root[1] %d, id %d\n",
+          set[0],set[1],*root, *num_tasks, *local_task_id, non_root[0], non_root[1], *id);
+  */
 }
 
 #endif /* __test_api_init_h__ */

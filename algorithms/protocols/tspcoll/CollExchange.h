@@ -254,6 +254,12 @@ inline void TSPColl::CollExchange<T_NI>::kick(T_NI *p2p_iface, pami_context_t co
       if (_recvcomplete[_phase] < _counter) goto the_end;
 
       /* -------------------------------------------------------- */
+      /* cannot run callback until send in this phase is complete */
+      /* -------------------------------------------------------- */
+
+      if (_sendcomplete <= _phase) { TRACE((stderr, "*\n")); goto the_end; }
+
+      /* -------------------------------------------------------- */
       /* reception complete - no callback - advance to next phase */
       /* -------------------------------------------------------- */
 
@@ -264,12 +270,6 @@ inline void TSPColl::CollExchange<T_NI>::kick(T_NI *p2p_iface, pami_context_t co
           _cbcomplete[_phase]++;
           continue;
         }
-
-      /* -------------------------------------------------------- */
-      /* cannot run callback until send in this phase is complete */
-      /* -------------------------------------------------------- */
-
-      if (_sendcomplete <= _phase) { TRACE((stderr, "*\n")); goto the_end; }
 
       /* ------------ */
       /* run callback */
