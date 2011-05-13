@@ -531,6 +531,7 @@ namespace PAMI
     Mcomb2DDputMetaData, CCMI::ConnectionManager::SimpleConnMgr >    MultiCombine2DeviceDputFactory;
 
 
+#ifdef ENABLE_X0_PROTOCOLS
     //----------------------------------------------------------------------------
     // 'Composite' Shmem/MU allsided 2 device multicombine with no pipelining
     //----------------------------------------------------------------------------
@@ -559,7 +560,8 @@ namespace PAMI
     }
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2DeviceNP,
     Mcomb2DMetaDataNP, CCMI::ConnectionManager::SimpleConnMgr > MultiCombine2DeviceFactoryNP;
-
+#endif
+#ifdef ENABLE_X0_PROTOCOLS
     //----------------------------------------------------------------------------
     // 'Composite' Shmem/MU-DPUT allsided 2 device multicombine with no pipelining
     //----------------------------------------------------------------------------
@@ -588,7 +590,7 @@ namespace PAMI
     }
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2DeviceNP,
     Mcomb2DDputMetaDataNP, CCMI::ConnectionManager::SimpleConnMgr > MultiCombine2DeviceDputFactoryNP;
-
+#endif
     //----------------------------------------------------------------------------
     // Rectangle broadcast
     //----------------------------------------------------------------------------
@@ -820,10 +822,12 @@ namespace PAMI
 #ifdef ENABLE_X0_PROTOCOLS
       _mcast2d_composite_factory(NULL),
       _mcomb2d_composite_factory(NULL),
-#endif
       _mcomb2dNP_composite_factory(NULL),
+#endif
       _mcomb2d_dput_composite_factory(NULL),
+#ifdef ENABLE_X0_PROTOCOLS
       _mcomb2dNP_dput_composite_factory(NULL),
+#endif
       _mu_rectangle_1color_dput_broadcast_factory(NULL),
       _mu_rectangle_dput_broadcast_factory(NULL),
       _mu_rectangle_dput_allgather_factory(NULL),
@@ -987,7 +991,9 @@ namespace PAMI
           _msync2d_rectangle_composite_factory->setMapIdToGeometry(mapidtogeometry);
 
           _mcomb2d_dput_composite_factory = new (_mcomb2d_dput_composite_factory_storage) MultiCombine2DeviceDputFactory(&_sconnmgr, _shmem_ni, _mu_global_dput_ni);
+#ifdef ENABLE_X0_PROTOCOLS
           _mcomb2dNP_dput_composite_factory = new (_mcomb2dNP_dput_composite_factory_storage) MultiCombine2DeviceDputFactoryNP(&_sconnmgr,  (CCMI::Interfaces::NativeInterface*)&_ni_array[4]);
+#endif
 
 #ifdef ENABLE_X0_PROTOCOLS
           _mcast2d_composite_factory = new (_mcast2d_composite_factory_storage) MultiCast2DeviceFactory(&_sconnmgr, _shmem_ni, false, _mu_ni_mcast2d,  _mu_ni_mcast2d ? true : false);
@@ -997,7 +1003,9 @@ namespace PAMI
 #ifdef ENABLE_X0_PROTOCOLS
           _mcomb2d_composite_factory = new (_mcomb2d_composite_factory_storage) MultiCombine2DeviceFactory(&_sconnmgr, _shmem_ni, _mu_ni_mcomb2d);
 #endif
+#ifdef ENABLE_X0_PROTOCOLS
           _mcomb2dNP_composite_factory = new (_mcomb2dNP_composite_factory_storage) MultiCombine2DeviceFactoryNP(&_sconnmgr,  (CCMI::Interfaces::NativeInterface*)&_ni_array[2]);
+#endif
         }
 
       }
@@ -1346,13 +1354,15 @@ namespace PAMI
                 if ((_mushmemcollectivedputmulticombinefactory) && (val && val != PAMI_CR_GKEY_FAIL))
                   geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,  _mushmemcollectivedputmulticombinefactory, _context_id);
 
+#ifdef ENABLE_X0_PROTOCOLS
                 // NP (non-pipelining) 2 device protocols
                 if ((_mcomb2dNP_dput_composite_factory) && (master_sub_topology->size() > 1))  // \todo Simple NP protocol doesn't like 1 master - fix it later
                   geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2dNP_dput_composite_factory, _context_id);
-
+#endif
+#ifdef ENABLE_X0_PROTOCOLS
                 if ((_mcomb2dNP_composite_factory) && (master_sub_topology->size() > 1))  // \todo Simple NP protocol doesn't like 1 master - fix it later
                   geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2dNP_composite_factory, _context_id);
-
+#endif
                 //  2 device protocols
                 if (_mcomb2d_dput_composite_factory)
                   geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2d_dput_composite_factory, _context_id);
@@ -1509,14 +1519,17 @@ namespace PAMI
       MultiCombine2DeviceFactory                     *_mcomb2d_composite_factory;
       uint8_t                                         _mcomb2d_composite_factory_storage[sizeof(MultiCombine2DeviceFactory)];
 #endif
+#ifdef ENABLE_X0_PROTOCOLS
       MultiCombine2DeviceFactoryNP                   *_mcomb2dNP_composite_factory;
       uint8_t                                         _mcomb2dNP_composite_factory_storage[sizeof(MultiCombine2DeviceFactoryNP)];
-
+#endif
       MultiCombine2DeviceDputFactory                 *_mcomb2d_dput_composite_factory;
       uint8_t                                         _mcomb2d_dput_composite_factory_storage[sizeof(MultiCombine2DeviceDputFactory)];
 
+#ifdef ENABLE_X0_PROTOCOLS
       MultiCombine2DeviceDputFactoryNP               *_mcomb2dNP_dput_composite_factory;
       uint8_t                                         _mcomb2dNP_dput_composite_factory_storage[sizeof(MultiCombine2DeviceDputFactoryNP)];
+#endif
 
       MUCollectiveDputMulticastFactory               *_mucollectivedputmulticastfactory;
       uint8_t                                         _mucollectivedputmulticaststorage[sizeof(MUCollectiveDputMulticastFactory)];
