@@ -296,7 +296,7 @@ int pami_shutdown(pami_client_t        * client,          /* in/out:  client    
   #define MAXBUFSIZE        gMax_count*16
 #endif
 
-
+unsigned gNumRoots       = -1; /* use num_tasks */
 unsigned gFull_test      = FULL_TEST;
 unsigned gMax_count      = COUNT;
 unsigned gBuffer_offset  = OFFSET;
@@ -343,6 +343,12 @@ void setup_env()
     sDt = sOp = NULL; /* no selection will select default/minimal */
     gFull_test = 0;
   }
+
+  /* \note Test environment variable" TEST_NUM_ROOTS=N max roots to test  */
+  char* sNRoots = getenv("TEST_NUM_ROOTS");
+
+  /* Override COUNT */
+  if (sNRoots) gNumRoots = atoi(sNRoots);
 
   /* \note Test environment variable" TEST_COUNT=N max count     */
   char* sCount = getenv("TEST_COUNT");

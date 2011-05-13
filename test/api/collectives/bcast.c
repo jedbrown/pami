@@ -104,6 +104,8 @@ int main(int argc, char*argv[])
   if (rc == 1)
     return 1;
 
+  if(gNumRoots == -1) gNumRoots = num_tasks;
+
   /*  Allocate buffer(s) */
   int err = 0;
   void* buf = NULL;
@@ -166,7 +168,7 @@ int main(int argc, char*argv[])
       gProtocolName = bcast_always_works_md[nalg].name;
 
       int k;
-      for (k=0; k<num_tasks; k++)
+      for (k=0; k< gNumRoots; k++)
       {
         pami_endpoint_t    root_ep;
         pami_task_t root_task = (pami_task_t)k;
