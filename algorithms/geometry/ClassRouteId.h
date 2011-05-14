@@ -54,7 +54,9 @@ namespace PAMI
         {
           PAMI_assert(count <= _max_reductions);
         }
-      void startAllreduce(pami_event_function cb_done, void *cookie)
+      void startAllreduce(pami_context_t context,
+                          pami_event_function cb_done,
+                          void *cookie)
         {
           pami_xfer_t                             ar;
           ar.cb_done                              = cb_done;
@@ -67,6 +69,7 @@ namespace PAMI
           ar.cmd.xfer_allreduce.rtype             = PAMI_TYPE_UNSIGNED_LONG_LONG;
           ar.cmd.xfer_allreduce.rtypecount        = _count;
           ar.cmd.xfer_allreduce.op                = PAMI_DATA_BAND;
+          _ar_algo->setContext(context);
           _ar_algo->generate(&ar);
         }
     protected:

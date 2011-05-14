@@ -123,6 +123,7 @@ public:
 		return PAMI_SUCCESS;
 	}
 
+
 	inline void free(void *mem) {
 #ifdef MM_DEBUG
 		if (_debug) {

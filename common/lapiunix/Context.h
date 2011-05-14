@@ -235,7 +235,7 @@ namespace PAMI
 
 
   // PGAS RT Typedefs/Coll Registration
-  typedef TSPColl::NBCollManager<CompositeNI_AM> LAPINBCollManager;
+  typedef xlpgas::CollectiveManager<CompositeNI_AM> LAPINBCollManager;
   typedef CollRegistration::PGASRegistration<LAPIGeometry,
                                              CompositeNI_AM,
                                              ProtocolAllocator,
@@ -895,6 +895,7 @@ namespace PAMI
           pami_result_t rc;
           Geometry::Algorithm<LAPIGeometry> *algo = (Geometry::Algorithm<LAPIGeometry> *)parameters->algorithm;
           plock();
+          algo->setContext((pami_context_t) this);
           rc = algo->generate(parameters);
           punlock();
           return rc;

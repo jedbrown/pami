@@ -1,92 +1,90 @@
-/* ************************************************************************* */
-/*                            IBM Confidential                               */
-/*                          OCO Source Materials                             */
-/*                      IBM XL UPC Alpha Edition, V0.9                       */
-/*                                                                           */
-/*                      Copyright IBM Corp. 2009, 2010.                      */
-/*                                                                           */
-/* The source code for this program is not published or otherwise divested   */
-/* of its trade secrets, irrespective of what has been deposited with the    */
-/* U.S. Copyright Office.                                                    */
-/* ************************************************************************* */
-/**
- * \file algorithms/protocols/tspcoll/Gather.h
- * \brief ???
- */
+#ifndef __xlpgas_Gather_h__
+#define __xlpgas_Gather_h__
 
-#ifndef __algorithms_protocols_tspcoll_Gather_h__
-#define __algorithms_protocols_tspcoll_Gather_h__
+#include "algorithms/protocols/tspcoll/Team.h"
+#include "algorithms/protocols/tspcoll/CollExchange.h"
 
-#include <assert.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-
-#include "interface/Communicator.h"
-#include "algorithms/protocols/tspcoll/Barrier.h"
-
-/* **************************************************************** */
-/*                      Gather                                     */
-/* **************************************************************** */
-
-namespace TSPColl
-{
-
-  class Gather: public NBColl
-  {
-    public:
-      void * operator new (size_t, void * addr)    { return addr; }
-      Gather       (Communicator *comm, NBTag tag, int id, int tagoff);
-      void reset   (int root, const void * sbuf, void * rbuf, size_t length);
-      virtual void kick    (void);
-      virtual bool isdone  (void) const { return _complete >= _counter; }
-    protected:
-      const void    * _sbuf;         /* send buffer    */
-      void          * _rbuf;         /* receive buffer */
-      size_t          _length;       /* msg length     */
-      int             _root;         /* root thread ID */
-      int             _incoming;     /* how many messages I got */
-
-      int             _commID;       /* communicator   */
-      unsigned        _counter;      /* instance counter */
-      unsigned        _complete;     /* instance completion counter */
-
-      struct gather_header
-      {
-        __pgasrt_AMHeader_t hdr;
-        int                 tag;
-        int                 id;
-        int                 tagoff;
-        unsigned            counter;
-        size_t              offset;   /* message offset in recv buffer */
-      }
-      _header __attribute__((__aligned__(16)));
-
-    protected:
-      static void cb_senddone (void *arg);
-      static __pgasrt_local_addr_t
-      cb_incoming (const struct __pgasrt_AMHeader_t *,
-                   void (**)(void *, void *), void **);
-      static void cb_recvcomplete (void * unused, void * arg);
-      Barrier _barrier;
-  };
-};
-
-
-/* **************************************************************** */
-/*                    Gatherv                                      */
-/* **************************************************************** */
-
-namespace TSPColl
-{
-  class Gatherv: public Gather
-  {
-    public:
-      void * operator new (size_t, void * addr)    { return addr; }
-      Gatherv (int comm, int tag, int id, int tagoff):
-          Gather(comm, tag, id, tagoff) { }
-      void reset (int root, const void * sbuf, void * rbuf, size_t * lengths);
-  };
-};
-
+#undef TRACE
+#ifdef DEBUG_COLL
+#define TRACE(x)  fprintf x;
+#else
+#define TRACE(x)
 #endif
+
+namespace xlpgas
+{
+  template <class T_NI>
+  class Gather : public Collective<T_NI>
+  {
+  public:
+    void * operator new (size_t, void * addr) { return addr; }
+
+    Gather (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
+    Collective<T_NI> (ctxt, comm, kind, tag, NULL, NULL)
+      {
+	_rcvcount = comm->size();
+
+	_header = (struct AMHeader *)__global.heap_mm->malloc (sizeof(struct AMHeader) );
+	assert (_header != NULL);
+
+	_header->hdr.handler   = XLPGAS_TSP_AMSEND_G;
+	_header->hdr.headerlen = sizeof (struct AMHeader);
+	_header->kind          = kind;
+	_header->tag           = tag;
+	_header->offset        = offset;
+	_header->senderID      = comm->ordinal();
+	_header->dest_ctxt     = -1;
+      }
+
+    static  void  amsend_reg       (xlpgas_AMHeaderReg_t amsend_regnum) {
+      xlpgas_tsp_amsend_reg (amsend_regnum, Gather::cb_incoming);
+    }
+
+    virtual void reset (int root,
+			const void * sbuf,
+			void * dbuf,
+			unsigned nbytes);
+
+    static void cb_senddone (void * ctxt, void * arg, pami_result_t res);
+
+    virtual void kick    ();
+    virtual bool isdone  (void) const;
+
+    static inline void cb_incoming(pami_context_t    context,
+                                   void            * cookie,
+                                   const void      * header_addr,
+                                   size_t            header_size,
+                                   const void      * pipe_addr,
+                                   size_t            data_size,
+                                   pami_endpoint_t   origin,
+                                   pami_recv_t     * recv);
+
+    static void cb_recvcomplete (void * unused, void * arg, pami_result_t result);
+
+  private:
+    const char    * _sbuf;         /* send buffer    */
+    char          * _rbuf;         /* receive buffer */
+    size_t          _len;          /* msg length     */
+    size_t          _root;
+
+    int             _rcvcount;
+
+    struct AMHeader
+    {
+      xlpgas_AMHeader_t    hdr;
+      CollectiveKind      kind;
+      int                 tag;
+      int                 offset;
+      int                 counter;
+      int                 phase;
+      int                 senderID;
+      int                 dest_ctxt;
+    } * _header;
+
+  }; /* Gather */
+} /* Xlpgas */
+
+#include "algorithms/protocols/tspcoll/Gather.cc"
+
+#endif /* __xlpgas_Gather_h__ */
+

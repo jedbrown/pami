@@ -495,6 +495,7 @@ namespace PAMI
       inline pami_result_t collective_impl (pami_xfer_t * parameters)
       {
         Geometry::Algorithm<BGPGeometry> *algo = (Geometry::Algorithm<BGPGeometry> *)parameters->algorithm;
+        algo->setContext((pami_context_t) this);
         return algo->generate(parameters);
       }
 

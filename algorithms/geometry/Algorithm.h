@@ -45,6 +45,7 @@ namespace PAMI
           TRACE_ERR((stderr, "<%p>Algorithm::metadata() factory %p\n", this , _factory));
           _factory->metadata(mdata);
         }
+        inline void setContext(pami_context_t ctxt) {_context = ctxt;}
         inline pami_result_t generate(pami_xfer_t *xfer)
         {
           TRACE_ERR((stderr, "<%p>Algorithm::generate() factory %p\n", this, _factory));
@@ -57,6 +58,7 @@ namespace PAMI
           if (exec)
 	  {
 	    //  exec->setDoneCallback(xfer->cb_done, xfer->cookie);
+            exec->setContext(_context);
 	    exec->start();
 	  }
           return PAMI_SUCCESS;
@@ -76,6 +78,7 @@ namespace PAMI
         }
         CCMI::Adaptor::CollectiveProtocolFactory                    *_factory;
         T_Geometry                                                  *_geometry;
+        pami_context_t                                               _context;
     };
 
     // This class manages lists of algorithms

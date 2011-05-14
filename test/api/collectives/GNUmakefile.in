@@ -18,6 +18,7 @@ APPS            += bcast.${EXTENSION}  bcast_query.${EXTENSION}
 APPS            += bcast_subcomm.${EXTENSION} bcast_subcomm_query.${EXTENSION} 
 APPS            += bcast_subcomm_noparent.${EXTENSION} 
 APPS            += ambcast.${EXTENSION} 
+APPS            += geometry.${EXTENSION}
 APPS            += allreduce.${EXTENSION} allreduce_query.${EXTENSION} 
 APPS            += allreduce_subcomm.${EXTENSION} allreduce_subcomm_query.${EXTENSION} 
 APPS            += reduce.${EXTENSION} reduce_query.${EXTENSION}  

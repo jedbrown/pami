@@ -181,7 +181,7 @@ namespace PAMI
   typedef PAMI::NativeInterfaceAllsided< PAMI::Protocol::Send::SendPWQ< Protocol::Send::Send> > CompositeNI_AS;
 
   // PGAS over MU
-  typedef TSPColl::NBCollManager<MUNI_AM> MU_NBCollManager;
+  typedef xlpgas::CollectiveManager<MUNI_AM> MU_NBCollManager;
   typedef CollRegistration::PGASRegistration < BGQGeometry,
   MUNI_AM,
   ProtocolAllocator,
@@ -192,7 +192,7 @@ namespace PAMI
   MU_NBCollManager > MU_PGASCollreg;
 
   // PGAS over Shmem
-  typedef TSPColl::NBCollManager<ShmemNI_AM> Shmem_NBCollManager;
+  typedef xlpgas::CollectiveManager<ShmemNI_AM> Shmem_NBCollManager;
   typedef CollRegistration::PGASRegistration < BGQGeometry,
   ShmemNI_AM,
   ProtocolAllocator,
@@ -203,7 +203,7 @@ namespace PAMI
   Shmem_NBCollManager > Shmem_PGASCollreg;
 
   // PGAS over Composite Shmem+MU
-  typedef TSPColl::NBCollManager<CompositeNI_AM> Composite_NBCollManager;
+  typedef xlpgas::CollectiveManager<CompositeNI_AM> Composite_NBCollManager;
   typedef CollRegistration::PGASRegistration < BGQGeometry,
   CompositeNI_AM,
   ProtocolAllocator,

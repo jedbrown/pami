@@ -79,14 +79,14 @@ namespace CCMI
           //Currently not all composites implement this method
           CCMI_abort();
         }
-
+      inline void setContext(pami_context_t ctxt) {_context=ctxt;}
       protected:
         ///
         ///  \brief Callback to call when the barrier has finished
         ///
         pami_event_function    _cb_done;
         void                * _clientdata;
-
+        pami_context_t        _context;
         //Store a pointer to the algorithm factory
         void                * _afactory;
 

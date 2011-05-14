@@ -1,23 +1,8 @@
-/* ************************************************************************* */
-/*                            IBM Confidential                               */
-/*                          OCO Source Materials                             */
-/*                      IBM XL UPC Alpha Edition, V0.9                       */
-/*                                                                           */
-/*                      Copyright IBM Corp. 2009, 2010.                      */
-/*                                                                           */
-/* The source code for this program is not published or otherwise divested   */
-/* of its trade secrets, irrespective of what has been deposited with the    */
-/* U.S. Copyright Office.                                                    */
-/* ************************************************************************* */
-/**
- * \file algorithms/protocols/tspcoll/Barrier.h
- * \brief ???
- */
-
-#ifndef __algorithms_protocols_tspcoll_Barrier_h__
-#define __algorithms_protocols_tspcoll_Barrier_h__
+#ifndef __xlpgas_barrier_h__
+#define __xlpgas_barrier_h__
 
 #include "algorithms/protocols/tspcoll/CollExchange.h"
+#include "algorithms/protocols/tspcoll/Team.h"
 
 #undef TRACE
 //#define DEBUG_TSPCOLL_BARRIER 1
@@ -31,33 +16,39 @@
 /*                 Pairwise exchange barrier                               */
 /* *********************************************************************** */
 
-namespace TSPColl
+namespace xlpgas
 {
   template <class T_NI>
   class Barrier: public CollExchange<T_NI>
   {
-    public:
-      void * operator new (size_t, void * addr)    { return addr; }
-      Barrier (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset);
-      void reset () { CollExchange<T_NI>::reset(); }
-    private:
-      char _dummy;
+  public:
+    void * operator new (size_t, void * addr)    { return addr; }
+    Barrier (int                 ctxt,
+	     Team              * comm,
+	     CollectiveKind      kind,
+	     int                 tag,
+	     int                 offset);
+    void reset () { CollExchange<T_NI>::reset(); }
+  private:
+    char _dummy;
   };
-};
-
+}
 
 /* *********************************************************************** */
 /*                 constructor                                             */
 /* *********************************************************************** */
 template <class T_NI>
-inline TSPColl::Barrier<T_NI>::
-Barrier (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
-    CollExchange<T_NI> (comm, tag, instID, offset, false)
+inline xlpgas::Barrier<T_NI>::Barrier (int               ctxt,
+				Team            * comm,
+				CollectiveKind    kind,
+				int               tag,
+				int               offset) :
+  CollExchange<T_NI> (ctxt, comm, kind, tag, offset)
 {
-  this->_numphases = -1;
+  TRACE((stderr, "%d: Barrier constructor: rank=%d of %d\n",
+	 XLPGAS_MYNODE, this->_comm->rank(), this->_comm->size()));
 
-  for (int n = 2 * this->_comm->size() - 1; n > 0; n >>= 1) this->_numphases++;
-
+  this->_numphases = -1; for (int n=2*this->_comm->size()-1; n>0; n>>=1) this->_numphases++;
   this->_sendcomplete = this->_numphases;
   this->_phase        = this->_numphases;
 
@@ -65,14 +56,14 @@ Barrier (PAMI_GEOMETRY_CLASS * comm, NBTag tag, int instID, int offset) :
   /* initialize destinations, offsets and buffer lengths */
   /* --------------------------------------------------- */
 
-  for (int i = 0; i < this->_numphases; i++)
+  for (int i=0; i<this->_numphases; i++)
     {
-      this->_dest[i]      = comm->absrankof((this->_comm->virtrank() + (1 << i)) % this->_comm->size());
-      this->_sbuf[i]      = &_dummy;
-      this->_sbufln[i]    = 0;
-      this->_rbuf[i]      = &_dummy;
-    }
+      this->_dest[i]      = comm->endpoint((comm->ordinal()+(1<<i))%comm->size());
 
+      this->_sbuf[i]      = &this->_dummy;
+      this->_sbufln[i]    = 1;
+      this->_rbuf[i]      = &this->_dummy;
+    }
 }
 
 #endif

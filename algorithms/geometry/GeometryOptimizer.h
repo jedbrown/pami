@@ -142,6 +142,7 @@ namespace PAMI {
 				ar.cmd.xfer_allreduce.rtype             = PAMI_TYPE_UNSIGNED_LONG_LONG;
 				ar.cmd.xfer_allreduce.rtypecount        = _total_nelem;
 				ar.cmd.xfer_allreduce.op                = PAMI_DATA_BAND;
+				_ar_algo->setContext(_context);
 				_ar_algo->generate(&ar);	  
 			}
 	  }

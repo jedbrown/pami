@@ -43,9 +43,22 @@ namespace PAMI
   namespace Geometry
   {
     class Common :
-        public Geometry<PAMI::Geometry::Common>
-    {
-      public:
+       public Geometry<PAMI::Geometry::Common>
+       {
+       public:
+	 static  Common * get (int ctxt, int geometryID)
+	 {
+	   assert(0);
+	   //assert(_ncontexts * teamID + ctxt < MAX_COMMS);
+	   // return _instances[_ncontexts * teamID + ctxt];
+
+	   // #warning "Return Geometry map"
+	   Common * g =NULL;
+	   return g;
+	 }
+
+
+
         inline ~Common()
         {
           freeAllocations_impl();
@@ -545,6 +558,21 @@ namespace PAMI
         {
           return _topos[DEFAULT_TOPOLOGY_INDEX].rank2Index(rank);
         }
+        inline pami_task_t ordinal_impl (int rank)
+        {
+          return _topos[DEFAULT_TOPOLOGY_INDEX].rank2Index(rank);
+        }
+        inline pami_task_t ordinal_impl ()
+        {
+          return _virtual_rank;
+        }
+        inline pami_endpoint_t endpoint_impl (pami_task_t ordinal)
+        {
+          pami_task_t task = _topos[DEFAULT_TOPOLOGY_INDEX].index2Rank(ordinal);
+          pami_endpoint_t ep;
+          PAMI_Endpoint_create(_client, task, 0, &ep);
+          return ep;
+        }
         inline void                      setKey_impl(gkeys_t key, void*value)
         {
           TRACE_ERR((stderr, "<%p>Common::setKey(%d, %p)\n", this, key, value));
@@ -735,6 +763,7 @@ namespace PAMI
           pami_xfer_t cmd;
           cmd.cb_done = cb_done;
           cmd.cookie = cookie;
+          _barriers[ctxt_id]._algo_list[0]->setContext(context);
           return _barriers[ctxt_id]._algo_list[0]->generate(&cmd);
         }
 
@@ -749,6 +778,7 @@ namespace PAMI
           pami_xfer_t cmd;
           cmd.cb_done = cb_done;
           cmd.cookie = cookie;
+          _ue_barrier.setContext(context);
           return _ue_barrier.generate(&cmd);
         }
 

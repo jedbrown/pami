@@ -15,8 +15,9 @@
 #define __algorithms_geometry_PGASWrapper_h__
 
 
+
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
-#include "algorithms/protocols/tspcoll/NBCollManager.h"
+#include "algorithms/protocols/tspcoll/Collectives.h"
 #include "algorithms/composite/Composite.h"
 #include "algorithms/geometry/Metadata.h"
 
@@ -33,15 +34,15 @@ namespace PAMI
     {
     public:
       virtual void start() = 0;
-      virtual void setcmd(T_TSPColl        *collexch,
+      virtual void setcmd(T_TSPColl         *collexch,
                           pami_xfer_t       *cmd,
-                          T_Device         *dev,
+                          T_Device          *dev,
                           T_P2P_NI          *model,
-                          T_TSPCollBarrier *collbarrier,
+                          T_TSPCollBarrier  *collbarrier,
                           pami_geometry_t    geometry,
                           T_P2P_NI          *barmodel)
-        {
 
+        {
           _cmd         = cmd;
           _collexch    = collexch;
           _dev         = dev;
@@ -49,14 +50,15 @@ namespace PAMI
           _collbarrier = collbarrier;
           _barmodel    = barmodel;
           _geometry    = (T_Geometry*)geometry;
+          _collexch->setNI(model);
         }
     public:
       pami_xfer_t                      *_cmd;
       T_TSPColl                       *_collexch;
       T_Device                        *_dev;
-      T_P2P_NI                         *_model;
+      T_P2P_NI                        *_model;
       T_TSPCollBarrier                *_collbarrier;
-      T_P2P_NI                         *_barmodel;
+      T_P2P_NI                        *_barmodel;
       T_Geometry                      *_geometry;
     };
 
@@ -130,8 +132,9 @@ namespace PAMI
         {
           while(!this->_collexch->isdone()) this->_dev->advance();
           this->_collexch->reset();
+          this->_collexch->setContext(this->_context);
           this->_collexch->setComplete(this->_cmd->cb_done, this->_cmd->cookie);
-          this->_collexch->kick(this->_model);
+          this->_collexch->kick();
         }
     };
     // --------------  PGAS Allgather wrapper classes -------------
@@ -145,8 +148,9 @@ namespace PAMI
           this->_collexch->reset (this->_cmd->cmd.xfer_allgather.sndbuf,
                                   this->_cmd->cmd.xfer_allgather.rcvbuf,
                                   this->_cmd->cmd.xfer_allgather.stypecount);
+          this->_collexch->setContext(this->_context);
           this->_collexch->setComplete(this->_cmd->cb_done, this->_cmd->cookie);
-          this->_collexch->kick(this->_model);
+          this->_collexch->kick();
         }
     };
 
@@ -161,8 +165,9 @@ namespace PAMI
           this->_collexch->reset (this->_cmd->cmd.xfer_allgatherv.sndbuf,
                                   this->_cmd->cmd.xfer_allgatherv.rcvbuf,
                                   this->_cmd->cmd.xfer_allgatherv.rtypecounts);
+          this->_collexch->setContext(this->_context);
           this->_collexch->setComplete(this->_cmd->cb_done, this->_cmd->cookie);
-          this->_collexch->kick(this->_model);
+          this->_collexch->kick();
         }
     };
 
@@ -178,16 +183,94 @@ namespace PAMI
                                   this->_cmd->cmd.xfer_scatter.sndbuf,
                                   this->_cmd->cmd.xfer_scatter.rcvbuf,
                                   this->_cmd->cmd.xfer_scatter.stypecount);
-          this->_collexch->setComplete(this->_cmd->cb_done, this->_cmd->cookie);
 
+          this->_collexch->setContext(this->_context);
+          this->_collexch->setComplete(this->_cmd->cb_done, this->_cmd->cookie);
           while(!this->_collbarrier->isdone()) this->_dev->advance();
           this->_collbarrier->reset();
+          this->_collbarrier->setContext(this->_context);
           this->_collbarrier->setComplete(NULL, NULL);
-          this->_collbarrier->kick(this->_barmodel);
+          this->_collbarrier->kick();
           while(!this->_collbarrier->isdone()) this->_dev->advance();
-          this->_collexch->kick(this->_model);
+          this->_collexch->kick();
         }
     };
+
+    // --------------  PGAS Gather wrapper classes -------------
+    template <class T_Geometry, class T_TSPColl, class T_P2P_NI, class T_Device, class T_TSPCollBarrier >
+    class PGGatherExec:public PGExec<T_Geometry,T_TSPColl,T_P2P_NI,T_Device,T_TSPCollBarrier>
+    {
+    public:
+      virtual void start()
+        {
+          if (!this->_collexch->isdone()) this->_dev->advance();
+          this->_collexch->reset (this->_geometry->virtrankof(this->_cmd->cmd.xfer_gather.root),
+                                  this->_cmd->cmd.xfer_gather.sndbuf,
+                                  this->_cmd->cmd.xfer_gather.rcvbuf,
+                                  this->_cmd->cmd.xfer_gather.stypecount);
+
+          this->_collexch->setContext(this->_context);
+          this->_collexch->setComplete(this->_cmd->cb_done, this->_cmd->cookie);
+          while(!this->_collbarrier->isdone()) this->_dev->advance();
+          this->_collbarrier->reset();
+          this->_collbarrier->setContext(this->_context);
+          this->_collbarrier->setComplete(NULL, NULL);
+          this->_collbarrier->kick();
+          while(!this->_collbarrier->isdone()) this->_dev->advance();
+          this->_collexch->kick();
+        }
+    };
+
+    // --------------  PGAS Alltoall wrapper classes -------------
+    template <class T_Geometry, class T_TSPColl, class T_P2P_NI, class T_Device, class T_TSPCollBarrier >
+    class PGAlltoallExec:public PGExec<T_Geometry,T_TSPColl,T_P2P_NI,T_Device,T_TSPCollBarrier>
+    {
+    public:
+      virtual void start()
+        {
+          if (!this->_collexch->isdone()) this->_dev->advance();
+          this->_collexch->reset (this->_cmd->cmd.xfer_alltoall.sndbuf,
+                                  this->_cmd->cmd.xfer_alltoall.rcvbuf,
+                                  this->_cmd->cmd.xfer_alltoall.stypecount);
+          this->_collexch->setContext(this->_context);
+          this->_collexch->setComplete(this->_cmd->cb_done, this->_cmd->cookie);
+          while(!this->_collbarrier->isdone()) this->_dev->advance();
+          this->_collbarrier->reset();
+          this->_collbarrier->setContext(this->_context);
+          this->_collbarrier->setComplete(NULL, NULL);
+          this->_collbarrier->kick();
+          while(!this->_collbarrier->isdone()) this->_dev->advance();
+          this->_collexch->kick();
+        }
+    };
+
+    // --------------  PGAS Alltoallv wrapper classes -------------
+    template <class T_Geometry, class T_TSPColl, class T_P2P_NI, class T_Device, class T_TSPCollBarrier >
+    class PGAlltoallvExec:public PGExec<T_Geometry,T_TSPColl,T_P2P_NI,T_Device,T_TSPCollBarrier>
+    {
+    public:
+      virtual void start()
+        {
+          if (!this->_collexch->isdone()) this->_dev->advance();
+          this->_collexch->reset (this->_cmd->cmd.xfer_alltoallv.sndbuf,
+                                  this->_cmd->cmd.xfer_alltoallv.rcvbuf,
+                                  this->_cmd->cmd.xfer_alltoallv.stypecounts,
+                                  this->_cmd->cmd.xfer_alltoallv.sdispls,
+                                  this->_cmd->cmd.xfer_alltoallv.rtypecounts,
+                                  this->_cmd->cmd.xfer_alltoallv.rdispls);
+          this->_collexch->setContext(this->_context);
+          this->_collexch->setComplete(this->_cmd->cb_done, this->_cmd->cookie);
+          while(!this->_collbarrier->isdone()) this->_dev->advance();
+          this->_collbarrier->reset();
+          this->_collbarrier->setContext(this->_context);
+          this->_collbarrier->setComplete(NULL, NULL);
+          this->_collbarrier->kick();
+          while(!this->_collbarrier->isdone()) this->_dev->advance();
+          this->_collexch->kick();
+        }
+    };
+
+
 
     // --------------  PGAS Scatterv wrapper classes -------------
     template <class T_Geometry, class T_TSPColl, class T_P2P_NI, class T_Device, class T_TSPCollBarrier >
@@ -201,14 +284,16 @@ namespace PAMI
                                   this->_cmd->cmd.xfer_scatterv.sndbuf,
                                   this->_cmd->cmd.xfer_scatterv.rcvbuf,
                                   this->_cmd->cmd.xfer_scatterv.stypecounts);
+          this->_collexch->setContext(this->_context);
           this->_collexch->setComplete(this->_cmd->cb_done, this->_cmd->cookie);
 
           while(!this->_collbarrier->isdone()) this->_dev->advance();
           this->_collbarrier->reset();
+          this->_collbarrier->setContext(this->_context);
           this->_collbarrier->setComplete(NULL, NULL);
-          this->_collbarrier->kick(this->_barmodel);
+          this->_collbarrier->kick();
           while(!this->_collbarrier->isdone()) this->_dev->advance();
-          this->_collexch->kick(this->_model);
+          this->_collexch->kick();
         }
     };
 
@@ -224,14 +309,39 @@ namespace PAMI
           PAMI::Type::TypeFunc::GetEnums(this->_cmd->cmd.xfer_allreduce.stype,
                                          this->_cmd->cmd.xfer_allreduce.op,
                                          dt,op);
+          user_func_t fn;
+          this->_collexch->reset (this->_cmd->cmd.xfer_allreduce.sndbuf,
+                                  this->_cmd->cmd.xfer_allreduce.rcvbuf,
+                                  (pami_op)op,
+                                  (pami_dt)dt,
+                                  this->_cmd->cmd.xfer_allreduce.stypecount,
+                                  &fn);
+          this->_collexch->setContext(this->_context);
+          this->_collexch->setComplete(this->_cmd->cb_done, this->_cmd->cookie);
+          this->_collexch->kick();
+        }
+    };
 
+    // --------------  PGAS Scan wrapper classes -------------
+    template <class T_Geometry, class T_TSPColl, class T_P2P_NI, class T_Device>
+    class PGScanExec:public PGExec<T_Geometry,T_TSPColl,T_P2P_NI,T_Device>
+    {
+    public:
+      virtual void start()
+        {
+          if (!this->_collexch->isdone()) this->_dev->advance();
+          uintptr_t op, dt;
+          PAMI::Type::TypeFunc::GetEnums(this->_cmd->cmd.xfer_allreduce.stype,
+                                         this->_cmd->cmd.xfer_allreduce.op,
+                                         dt,op);
           this->_collexch->reset (this->_cmd->cmd.xfer_allreduce.sndbuf,
                                   this->_cmd->cmd.xfer_allreduce.rcvbuf,
                                   (pami_op)op,
                                   (pami_dt)dt,
                                   this->_cmd->cmd.xfer_allreduce.stypecount);
+          this->_collexch->setContext(this->_context);
           this->_collexch->setComplete(this->_cmd->cb_done, this->_cmd->cookie);
-          this->_collexch->kick(this->_model);
+          this->_collexch->kick();
         }
     };
 
@@ -247,8 +357,9 @@ namespace PAMI
                                   this->_cmd->cmd.xfer_broadcast.buf,
                                   this->_cmd->cmd.xfer_broadcast.buf,
                                   this->_cmd->cmd.xfer_broadcast.typecount);
+          this->_collexch->setContext(this->_context);
           this->_collexch->setComplete(this->_cmd->cb_done, this->_cmd->cookie);
-          this->_collexch->kick(this->_model);
+          this->_collexch->kick();
         }
     };
 

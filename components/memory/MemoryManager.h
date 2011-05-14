@@ -666,6 +666,16 @@ public:
 	virtual pami_result_t memalign(void **memptr, size_t alignment, size_t bytes,
 				       const char *key = NULL,
 				       MM_INIT_FN *init_fn = NULL, void *cookie = NULL) = 0;
+        inline void * malloc(size_t bytes) {
+          pami_result_t     rc;
+          void   *memptr;
+          size_t  align=16;
+          rc = this->memalign(&memptr, align, bytes);
+          if(rc != PAMI_SUCCESS)
+            return NULL;
+          return memptr;
+        }
+
 	virtual void free(void *mem) = 0;
 	virtual size_t available(size_t alignment = 1) = 0;
 

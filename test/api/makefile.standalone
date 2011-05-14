@@ -69,6 +69,7 @@ build/collectives/alltoallv.exe \
 build/collectives/alltoallv_int.exe \
 build/collectives/alltoallv_int_subcomm.exe \
 build/collectives/ambcast.exe \
+build/collectives/geometry.exe \
 build/collectives/barrier.exe \
 build/collectives/barrier_query.exe \
 build/collectives/barrier_subcomm.exe \

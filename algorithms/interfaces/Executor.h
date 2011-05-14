@@ -69,7 +69,6 @@ namespace CCMI
         _clientdata =   cd;
       }
 
-
     protected:
       ///
       ///  \brief Callback to call when the barrier has finished

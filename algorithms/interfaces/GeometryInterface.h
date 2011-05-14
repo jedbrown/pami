@@ -165,6 +165,9 @@ namespace PAMI
       inline pami_task_t                 virtrank   (void);
       inline pami_task_t                 absrankof  (int rank);
       inline pami_task_t                 virtrankof (int rank);
+      inline pami_task_t                 ordinal    ();
+      inline pami_task_t                 ordinal    (int rank);
+      inline pami_endpoint_t             endpoint   (pami_task_t ordinal);
       inline void                       setKey(gkeys_t key, void*value);
       inline void                       setKey(size_t context_id, ckeys_t key, void*value);
       inline void                      *getKey(gkeys_t key);
@@ -495,6 +498,21 @@ namespace PAMI
     inline pami_task_t Geometry<T_Geometry>::virtrankof (int rank)
     {
       return static_cast<T_Geometry*>(this)->virtrankof_impl(rank);
+    }
+    template <class T_Geometry>
+    inline pami_task_t Geometry<T_Geometry>::ordinal (int rank)
+    {
+      return static_cast<T_Geometry*>(this)->ordinal_impl(rank);
+    }
+    template <class T_Geometry>
+    inline pami_task_t Geometry<T_Geometry>::ordinal ()
+    {
+      return static_cast<T_Geometry*>(this)->ordinal_impl();
+    }
+    template <class T_Geometry>
+    inline pami_task_t Geometry<T_Geometry>::endpoint (pami_task_t ordinal)
+    {
+      return static_cast<T_Geometry*>(this)->endpoint_impl(ordinal);
     }
     template <class T_Geometry>
     inline void                        Geometry<T_Geometry>::setKey (gkeys_t key, void *value)
