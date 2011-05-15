@@ -556,7 +556,7 @@ namespace PAMI
                 //printf("_cur_offset:%d\n", _cur_offset);
                 //if (total_bytes == 16384)
                 //if (total_bytes == 8192)
-                if ((total_bytes == 32768) || (total_bytes == 16384) || (total_bytes == 8192))
+                if (((total_bytes == 32768) || (total_bytes == 16384) || (total_bytes == 8192)) && (npeers == 16))
                 {  
                   *bytes_available  = _chunk_array[_chunk_for_injection];
                   _cur_offset+= *bytes_available;
