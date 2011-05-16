@@ -15,6 +15,3 @@ namespace PAMI
   };
 };
 #endif // __arch_power7_Math_h__
-
-
-

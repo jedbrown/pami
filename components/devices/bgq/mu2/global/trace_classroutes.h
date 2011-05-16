@@ -1,9 +1,9 @@
 /**
- * \file spi/tests/mu/offcore/cnclassroute/testlib.h
+ * \file components/devices/bgq/mu2/global/trace_classroutes.h
  * \brief Library header for tests on classroute SPIs
  */
-#ifndef __experimental_bgq_cnclassroute_testlib_h__
-#define __experimental_bgq_cnclassroute_testlib_h__
+#ifndef __components_devices_bgq_mu2_global_trace_classroutes_h__
+#define __components_devices_bgq_mu2_global_trace_classroutes_h__
 
 #include <stdio.h>
 

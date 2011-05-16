@@ -1,15 +1,15 @@
-/*!
- * \file SaOnNodeSyncGroup.h
+/**
+ * \file components/devices/bsr/SaOnNodeSyncGroup.h
  * \brief Class declaration for SaOnNodeSyncGroup class.
  */
-#ifndef _SAONNODESYNCGROUP_H_
-#define _SAONNODESYNCGROUP_H_
+#ifndef __components_devices_bsr_SaOnNodeSyncGroup_h__
+#define __components_devices_bsr_SaOnNodeSyncGroup_h__
 
 #include "SyncGroup.h"
 #include "SharedArray.h"
 #include "lapi_assert.h"
 
-/*!
+/**
  * \brief SaOnNodeSyncGroup class
  *
  * An object that represents an on-node synchronizable group using shared
@@ -18,20 +18,20 @@
  */
 class SaOnNodeSyncGroup : public SyncGroup {
     public:
-        /*!
+        /**
          * \brief Data structure to hold extra infomation (hints) to initialize
          *        the object.
          */
         typedef struct {
             bool multi_load;///< Flag to indicate if multi-byte load should be used.
-            bool use_shm_only;/*!< Flag to indicate we want to use ShmArray only.
+            bool use_shm_only;/**< Flag to indicate we want to use ShmArray only.
                                * If it is set, no other method, e.g.
                                * BSR, will be tried. */
         } Param_t;
 
         SaOnNodeSyncGroup();
         ~SaOnNodeSyncGroup();
-        /*!
+        /**
          * \brief Initialize function.
          * Initalize internal variables and allocate mempry spaces. Every member
          * prcess that want to be in the group has to initialize the SaOnSyncGroup

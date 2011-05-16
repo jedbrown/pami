@@ -1,5 +1,5 @@
 /**
- * \file api/extension/c/bgq_l2atomic/bgq/BGQL2AtomicExtension.cc
+ * \file api/extension/c/bgq_l2atomic/BGQL2AtomicExtension.cc
  * \brief ???
  */
 #include "api/extension/c/bgq_l2atomic/BGQL2AtomicExtension.h"

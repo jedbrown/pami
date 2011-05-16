@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/api/context/post-stress.cc
+ * \file test/api/context/post-break.cc
  * \brief ???
  */
 

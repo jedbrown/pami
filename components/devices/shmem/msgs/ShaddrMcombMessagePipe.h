@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/shmemcoll/msgs/ShaddrMcombMessagePipe.h
+ * \file components/devices/shmem/msgs/ShaddrMcombMessagePipe.h
  * \brief ???
  */
 
-#ifndef __components_devices_shmemcoll_msgs_ShaddrMcombMessagePipe_h__
-#define __components_devices_shmemcoll_msgs_ShaddrMcombMessagePipe_h__
+#ifndef __components_devices_shmem_msgs_ShaddrMcombMessagePipe_h__
+#define __components_devices_shmem_msgs_ShaddrMcombMessagePipe_h__
 
 #include <errno.h>
 #include <sys/uio.h>

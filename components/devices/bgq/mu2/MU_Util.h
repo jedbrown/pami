@@ -1,6 +1,9 @@
-
-#ifndef __pami_device_mu_MU_Util__
-#define __pami_device_mu_MU_Util__
+/**
+ * \file components/devices/bgq/mu2/MU_Util.h
+ * \brief ???
+ */
+#ifndef __components_devices_bgq_mu2_MU_Util_h__
+#define __components_devices_bgq_mu2_MU_Util_h__
 
 #include "spi/include/mu/DescriptorBaseXX.h"
 

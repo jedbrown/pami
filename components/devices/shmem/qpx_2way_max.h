@@ -1,9 +1,9 @@
 /**
- * \file components/devices/shmemcoll/2way_max.h
+ * \file components/devices/shmem/qpx_2way_max.h
  * \brief ???
  */
-#ifndef __components_devices_shmemcoll_2way_max_h__
-#define __components_devices_shmemcoll_2way_max_h__
+#ifndef __components_devices_shmem_qpx_2way_max_h__
+#define __components_devices_shmem_qpx_2way_max_h__
 
 #include "asmheader.h"
 

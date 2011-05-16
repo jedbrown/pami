@@ -1,4 +1,7 @@
-
+/**
+ * \file components/devices/bgq/mu2/msg/RectangleMultisyncMessage.h
+ * \brief ???
+ */
 #ifndef __components_devices_bgq_mu2_msg_RectangleMultisyncMessage_h__
 #define __components_devices_bgq_mu2_msg_RectangleMultisyncMessage_h__
 

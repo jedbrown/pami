@@ -1,12 +1,12 @@
 /**
- * \file api/c/pami_ext.h
+ * \file api/extension/c/multisend/pami_multisend.h
  * \brief platform-specific messaging interface
  */
 
 #include "pami.h"
 
-#ifndef __api_c_pami_ext_h__
-#define __api_c_pami_ext_h__
+#ifndef __api_extension_c_multisend_pami_multisend_h__
+#define __api_extension_c_multisend_pami_multisend_h__
 
 #ifndef PAMI_EXT_ATTR
 #define PAMI_EXT_ATTR 1000 /**< starting value for extended attributes */

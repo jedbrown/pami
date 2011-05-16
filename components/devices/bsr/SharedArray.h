@@ -1,14 +1,14 @@
-#ifndef _SHAREDARRAY_H
-#define _SHAREDARRAY_H
+#ifndef __components_devices_bsr_SharedArray_h__
+#define __components_devices_bsr_SharedArray_h__
 
 #include <stdlib.h>
-/*!
- * \file SharedArray.h
+/**
+ * \file components/devices/bsr/SharedArray.h
  *
  * \brief SharedArray class definition.
  */
 
-/*!
+/**
  * \brief SharedArray class
  *
  * A base class to encapsulate shared array data structure operations..
@@ -16,7 +16,7 @@
 class SharedArray
 {
     public:
-        /*!
+        /**
          * \brief Return codes for api functions.
          */
         enum RC {
@@ -25,29 +25,29 @@ class SharedArray
             NOT_AVAILABLE///< Shared array is not available.
         };
 
-        /*!
+        /**
          * \brief The status of the SharedArray object.
          *
          * NOT_READY is the default value when the object is constructed.
          */
         enum STATUS {
-            NOT_READY = 0, /*!< Object is not ready to use. */
-            READY = 1      /*!< Object is ready to use. */
+            NOT_READY = 0, /**< Object is not ready to use. */
+            READY = 1      /**< Object is ready to use. */
         };
 
-        /*!
+        /**
          * \brief typedef for progress callback function
          */
         typedef void (*ProgressCb_t)(void* param);
 
-        /*!
+        /**
          * \brief SharedArray default constructor
          *
          * This constructor initializes member variables to default values.
          */
         SharedArray();
 
-        /*!
+        /**
          * \brief Default destructor.
          *
          * The function frees all the resources that associate with
@@ -56,7 +56,7 @@ class SharedArray
          */
         virtual ~SharedArray();
 
-        /*!
+        /**
          * \brief Initialization function.
          *
          * If this call returns SharedArray::SUCCESS, then the object's status should
@@ -76,7 +76,7 @@ class SharedArray
                 const unsigned int group_id, const unsigned int job_key,
                 const bool is_leader, const int member_id, const unsigned char init_val)=0;
 
-        /*!
+        /**
          * \brief Loads one byte data from the array.
          *
          * \param offset a constant offset to indicate from which byte we
@@ -84,7 +84,7 @@ class SharedArray
          */
         virtual unsigned char      Load1(const int offset) const =0;
 
-        /*!
+        /**
          * \brief Loads two bytes data from the array.
          *
          * \param offset a constant offset to indicate from which byte we
@@ -92,7 +92,7 @@ class SharedArray
          */
         virtual unsigned short     Load2(const int offset) const =0;
 
-        /*!
+        /**
          * \brief Loads four bytes data from the array.
          *
          * \param offset a constant offset to indicate from which byte we
@@ -100,7 +100,7 @@ class SharedArray
          */
         virtual unsigned int      Load4(const int offset) const =0;
 
-        /*!
+        /**
          * \brief Loads eight bytes data from the array.
          *
          * \param offset a constant offset to indicate from which byte we
@@ -108,7 +108,7 @@ class SharedArray
          */
         virtual unsigned long long Load8(const int offset) const =0;
 
-        /*!
+        /**
          * \brief Store one byte data to the array.
          *
          * \param offset a constant offset to indicate starts from where
@@ -118,7 +118,7 @@ class SharedArray
          */
         virtual void Store1(const int offset, const unsigned char val)=0;
 
-        /*!
+        /**
          * \brief Store two bytes data to the array.
          *
          * \param offset a constant offset to indicate starts from where
@@ -128,7 +128,7 @@ class SharedArray
          */
         virtual void Store2(const int offset, const unsigned short val)=0;
 
-        /*!
+        /**
          * \brief Store four bytes data to the array.
          *
          * \param offset a constant offset to indicate starts from where
@@ -138,7 +138,7 @@ class SharedArray
          */
         virtual void Store4(const int offset, const unsigned int val)=0;
 
-        /*!
+        /**
          * \brief Store eight bytes data to the array.
          *
          * \param offset a constant offset to indicate starts from where
@@ -148,17 +148,17 @@ class SharedArray
          */
         virtual void Store8(const int offset, const unsigned long long val)=0;
 
-        /*!
+        /**
          * \brief Accessor function to the status of this object.
          */
         STATUS Status() const;
 
-        /*!
+        /**
          * \brief Accessor function to the is_leader flag of this object.
          */
         bool IsLeader() const;
 
-        /*!
+        /**
          * \brief Set the progress callback function.  This progress callback function
          *        will be used whenever there is a wait loop. If the callback is not
          *        set, nothing will be done in the wait loop.
@@ -170,7 +170,7 @@ class SharedArray
         static const int CACHE_LINE_SZ = 128;
 
         // Helper functions for derived classes:
-        /*!
+        /**
          * \brief Helper function to setup shared memory segment.
          *
          * This SHM segment is used for internal communication.
@@ -193,7 +193,7 @@ class SharedArray
         RC PosixShmSetup(const char* shm_key, const unsigned int size,
                 const unsigned int timeout);
 
-        /*!
+        /**
          * \brief Destroy the internal SHM segment
          *
          * This function detachs from the SHM segment and then remove the

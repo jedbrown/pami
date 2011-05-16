@@ -1,5 +1,5 @@
 ///
-/// \file common/PipeWorkQueueInterface.h
+/// \file common/M2MPipeWorkQueueInterface.h
 /// \brief PAMI pipeworkqueue implementation.
 ///
 #ifndef __common_M2MPipeWorkQueueInterface_h__

@@ -1,4 +1,7 @@
-
+/**
+ * \file test/internals/bgq/memtest/memtest.cc
+ * \brief ???
+ */
 #include <stdio.h>
 #include <string.h>
 #include <hwi/include/bqc/A2_core.h>

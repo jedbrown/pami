@@ -1,9 +1,9 @@
 /**
- * \file components/devices/shmemcoll/opt_copy_a2.h
+ * \file components/devices/shmem/opt_copy_a2.h
  * \brief ???
  */
-#ifndef __components_devices_shmemcoll_opt_copy_a2_h__
-#define __components_devices_shmemcoll_opt_copy_a2_h__
+#ifndef __components_devices_shmem_opt_copy_a2_h__
+#define __components_devices_shmem_opt_copy_a2_h__
 
 #include "asmheader.h"
 #include "assert.h"

@@ -1,10 +1,10 @@
 /**
- * \file sys/pami_ext_hfi.h
+ * \file api/extension/c/hfi_extension/pami_ext_hfi.h
  * \brief HFI specified interfaces
  */
 
-#ifndef __pami_ext_hfi_h__
-#define __pami_ext_hfi_h__
+#ifndef __api_extension_c_hfi_extension_pami_ext_hfi_h__
+#define __api_extension_c_hfi_extension_pami_ext_hfi_h__
 
 #include "pami.h"
 

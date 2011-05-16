@@ -1,3 +1,7 @@
+/**
+ * \file test/internals/pwq/noncontig.cc
+ * \brief ???
+ */
 #include "PipeWorkQueue.h"
 
 #define SIZEOF_STRUCT_ELEM(struct,elem)	sizeof(((struct *)0)->elem)

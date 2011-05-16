@@ -1,6 +1,9 @@
-
-#ifndef __components_devices_bgq_mu2_ManytomanyModel_h__
-#define __components_devices_bgq_mu2_ManytomanyModel_h__
+/**
+ * \file components/devices/bgq/mu2/model/ManytomanyModel.h
+ * \brief ???
+ */
+#ifndef __components_devices_bgq_mu2_model_ManytomanyModel_h__
+#define __components_devices_bgq_mu2_model_ManytomanyModel_h__
 
 #include <hwi/include/bqc/MU_PacketHeader.h>
 

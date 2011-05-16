@@ -1,6 +1,9 @@
-
-#ifndef  __pami_geometry_geometryoptimizer_h__
-#define  __pami_geometry_geometryoptimizer_h__
+/**
+ * \file algorithms/geometry/GeometryOptimizer.h
+ * \brief ???
+ */
+#ifndef __algorithms_geometry_GeometryOptimizer_h__
+#define __algorithms_geometry_GeometryOptimizer_h__
 
 #include "Geometry.h"
 #include "pami.h"

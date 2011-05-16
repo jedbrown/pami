@@ -303,4 +303,3 @@ namespace PAMI
 };    // namespace PAMI
 
 #endif // __arch_MathInterface_h__
-

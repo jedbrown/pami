@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/shmemcoll/mdls/ShortMcstModelWorld.h
+ * \file components/devices/shmem/mdls/ShortMcstModelWorld.h
  * \brief ???
  */
 
-#ifndef __components_devices_shmemcoll_mdls_ShortMcstModelWorld_h__
-#define __components_devices_shmemcoll_mdls_ShortMcstModelWorld_h__
+#ifndef __components_devices_shmem_mdls_ShortMcstModelWorld_h__
+#define __components_devices_shmem_mdls_ShortMcstModelWorld_h__
 
 #include <errno.h>
 #include <sys/uio.h>

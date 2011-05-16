@@ -1,9 +1,9 @@
 /**
- * \file components/devices/shmemcoll/4way_min.h
+ * \file components/devices/shmem/qpx_4way_min.h
  * \brief ???
  */
-#ifndef __components_devices_shmemcoll_4way_min_h__
-#define __components_devices_shmemcoll_4way_min_h__
+#ifndef __components_devices_shmem_qpx_4way_min_h__
+#define __components_devices_shmem_qpx_4way_min_h__
 
 #include "asmheader.h"
 

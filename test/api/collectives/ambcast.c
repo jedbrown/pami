@@ -327,4 +327,3 @@ int main(int argc, char*argv[])
   rc |= pami_shutdown(&client, context, &gNum_contexts);
   return rc;
 }
-

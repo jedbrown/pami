@@ -1,5 +1,5 @@
 /**
- * \file test/api/p2p/default-send.c
+ * \file test/api/p2p/send/type/send-typed-recv.c
  * \brief Simple point-topoint PAMI_send() test
 */
 
@@ -503,10 +503,10 @@ int main (int argc, char ** argv)
    ************************************/
   result = PAMI_Type_create (&__recv_type);
   result = PAMI_Type_add_simple (__recv_type,
-                                 sizeof(double),    // bytes
-                                 0,                 // offset
-                                 2048,              // count
-                                 sizeof(double) * 2); // stride
+                                 sizeof(double),    /* bytes */
+                                 0,                 /* offset */
+                                 2048,              /* count */
+                                 sizeof(double) * 2); /* stride */
   result = PAMI_Type_complete (__recv_type, sizeof(double));
 
 

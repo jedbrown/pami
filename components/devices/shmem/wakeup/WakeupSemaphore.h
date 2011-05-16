@@ -1,5 +1,5 @@
 ///
-/// \file components/wakeup/WakeupSemaphore.h
+/// \file components/devices/shmem/wakeup/WakeupSemaphore.h
 /// \brief Semaphore implementation of the wakeup interface
 ///
 /// \warning The maximum number of peers supported with this semaphore
@@ -9,8 +9,8 @@
 /// \todo Implement a multi-job version. Currently multiple jobs running on the
 ///       same node will use the same semaphore key value.
 ///
-#ifndef __components_device_shmem_wakeup_WakeupSemaphore_h__
-#define __components_device_shmem_wakeup_WakeupSemaphore_h__
+#ifndef __components_devices_shmem_wakeup_WakeupSemaphore_h__
+#define __components_devices_shmem_wakeup_WakeupSemaphore_h__
 
 #include "components/devices/shmem/wakeup/WakeupInterface.h"
 

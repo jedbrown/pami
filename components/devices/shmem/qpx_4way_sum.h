@@ -1,9 +1,9 @@
 /**
- * \file components/devices/shmemcoll/4way_sum.h
+ * \file components/devices/shmem/qpx_4way_sum.h
  * \brief ???
  */
-#ifndef __components_devices_shmemcoll_4way_sum_h__
-#define __components_devices_shmemcoll_4way_sum_h__
+#ifndef __components_devices_shmem_qpx_4way_sum_h__
+#define __components_devices_shmem_qpx_4way_sum_h__
 
 #include "asmheader.h"
 

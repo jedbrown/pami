@@ -15,6 +15,3 @@ namespace PAMI
   };
 };
 #endif // __arch_x86_64_Math_h__
-
-
-

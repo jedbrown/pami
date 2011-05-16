@@ -1,4 +1,7 @@
-
+/**
+ * \file test/internals/bgq/mu2/manytomany.cc
+ * \brief ???
+ */
 #include "sys/pami.h"
 
 #include "common/bgq/Global.h"

@@ -110,6 +110,3 @@ typedef enum
 
 
 #endif // __common_MultisendInterface_h__
-
-
-

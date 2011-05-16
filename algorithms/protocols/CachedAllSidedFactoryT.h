@@ -7,11 +7,11 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/protocols/CachedAllSidedFactoryT.H
+ * \file algorithms/protocols/CachedAllSidedFactoryT.h
  * \brief ???
  */
-#ifndef __algorithms_protocols_CachedAllSidedFactoryT_H
-#define __algorithms_protocols_CachedAllSidedFactoryT_H
+#ifndef __algorithms_protocols_CachedAllSidedFactoryT_h__
+#define __algorithms_protocols_CachedAllSidedFactoryT_h__
 
 #include "algorithms/protocols/AllSidedCollectiveProtocolFactoryT.h"
 

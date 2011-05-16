@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/api/p2p/sendimmediate_latency.cc
+ * \file test/internals/bgq/mu2/mrate.cc
  * \brief ???
  */
 #include <stdio.h>

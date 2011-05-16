@@ -1,9 +1,9 @@
 ///
-/// \file components/wakeup/WakeupPrepareNoop.h
+/// \file components/devices/shmem/wakeup/WakeupPrepareNoop.h
 /// \brief Empty "noop" implementation of the wakeup prepare interface
 ///
-#ifndef __components_wakeup_WakeupPrepareNoop_h__
-#define __components_wakeup_WakeupPrepareNoop_h__
+#ifndef __components_devices_shmem_wakeup_WakeupPrepareNoop_h__
+#define __components_devices_shmem_wakeup_WakeupPrepareNoop_h__
 
 #include "components/wakeup/WakeupInterface.h"
 

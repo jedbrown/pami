@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 
-/// \file common/default/GeometryPlatform.h
+/// \file common/lapiunix/GeometryPlatform.h
 /// Default (empty) platform extensions to Geometry class
 
 #ifndef __common_lapiunix_GeometryPlatform_h__

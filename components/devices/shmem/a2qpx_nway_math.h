@@ -1,5 +1,9 @@
-#ifndef __qpx_math_h__
-#define __qpx_math_h__
+/**
+ * \file components/devices/shmem/a2qpx_nway_math.h
+ * \brief ???
+ */
+#ifndef __components_devices_shmem_a2qpx_nway_math_h__
+#define __components_devices_shmem_a2qpx_nway_math_h__
 
 #include "components/devices/shmem/qpx_2way_sum.h"
 #include "components/devices/shmem/qpx_4way_sum.h"

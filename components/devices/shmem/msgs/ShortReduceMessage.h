@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file components/devices/shmemcoll/msgs/ShortReduceMessage.h
+ * \file components/devices/shmem/msgs/ShortReduceMessage.h
  * \brief ???
  */
 
-#ifndef __components_devices_shmemcoll_msgs_ShortReduceMessage_h__
-#define __components_devices_shmemcoll_msgs_ShortReduceMessage_h__
+#ifndef __components_devices_shmem_msgs_ShortReduceMessage_h__
+#define __components_devices_shmem_msgs_ShortReduceMessage_h__
 
 #include <errno.h>
 #include <sys/uio.h>

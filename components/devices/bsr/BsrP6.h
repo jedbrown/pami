@@ -1,8 +1,8 @@
-#ifndef _BSR_P6_H
-#define _BSR_P6_H
+#ifndef __components_devices_bsr_BsrP6_h__
+#define __components_devices_bsr_BsrP6_h__
 
-/*!
- * \file BsrP6.h
+/**
+ * \file components/devices/bsr/BsrP6.h
  *
  * \brief BsrP6 class definition.
  *
@@ -11,7 +11,7 @@
 
 #include "SharedArray.h"
 
-/*!
+/**
  * \brief BsrP6 class
  *
  * A derived class for Barrier Synchronization Register (BSR) on Power6

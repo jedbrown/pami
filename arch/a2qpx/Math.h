@@ -37,6 +37,3 @@ namespace PAMI
   };
 };
 #endif // __arch_a2qpx_Math_h__
-
-
-

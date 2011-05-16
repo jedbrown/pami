@@ -1,14 +1,14 @@
-/*!
- * \file ShmArray.h
+/**
+ * \file components/devices/bsr/ShmArray.h
  *
  * \brief ShmArray class definition.
  */
-#ifndef _SHMARRAY_H
-#define _SHMARRAY_H
+#ifndef __components_devices_bsr_ShmArray_h__
+#define __components_devices_bsr_ShmArray_h__
 
 #include "SharedArray.h"
 
-/*!
+/**
  * \brief ShmArray class
  *
  * A derived class to simulate Barrier Synchronization Register (BSR) device

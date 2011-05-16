@@ -1,8 +1,8 @@
-#ifndef _BSR_H
-#define _BSR_H
+#ifndef __components_devices_bsr_Bsr_h__
+#define __components_devices_bsr_Bsr_h__
 
-/*!
- * \file Bsr.h
+/**
+ * \file components/devices/bsr/Bsr.h
  *
  * \brief Bsr class definition.
  *
@@ -14,7 +14,7 @@
 #endif
 #include "SharedArray.h"
 
-/*!
+/**
  * \brief Bsr class
  *
  * A derived class for Barrier Synchronization Register (BSR) on Power

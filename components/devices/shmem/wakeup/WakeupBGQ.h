@@ -2,8 +2,8 @@
 /// \file components/devices/shmem/wakeup/WakeupBGQ.h
 /// \brief Blue Gene/Q "wakeup region" implementation of the shmem wakeup interface
 ///
-#ifndef __components_device_shmem_wakeup_WakeupBGQ_h__
-#define __components_device_shmem_wakeup_WakeupBGQ_h__
+#ifndef __components_devices_shmem_wakeup_WakeupBGQ_h__
+#define __components_devices_shmem_wakeup_WakeupBGQ_h__
 
 #include "Global.h"
 

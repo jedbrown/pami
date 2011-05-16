@@ -645,6 +645,3 @@ typedef enum
 
 
 #endif // __common_type_TypeFunc_h__
-
-
-

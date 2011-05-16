@@ -1,27 +1,27 @@
-/*!
- * \file SyncGroup.h
+/**
+ * \file components/devices/bsr/SyncGroup.h
  * \brief Class declaration for SyncGroup class.
  */
-#ifndef _SYNCGROUP_H_
-#define _SYNCGROUP_H_
+#ifndef __components_devices_bsr_SyncGroup_h__
+#define __components_devices_bsr_SyncGroup_h__
 
 #include <stdlib.h>
 #include <string>
 #include "util/common.h"
 using namespace std;
-/*!
+/**
  * \brief SyncGroup class
  *
  * An object that represents a synchronizable group.
  */
 class SyncGroup {
     public:
-        /*!
+        /**
          * \brief typedef for progress callback function
          */
         typedef void (*ProgressCb_t)(void* param);
 
-        /*!
+        /**
          * \brief Return codes for api functions.
          */
         enum RC {
@@ -55,7 +55,7 @@ class SyncGroup {
 
 // Inline functions
 
-/*!
+/**
  * \brief Default constructor.
  *
  * This function only sets the initialized flag to false. User has to call
@@ -73,7 +73,7 @@ SyncGroup::SyncGroup():
 {
 };
 
-/*!
+/**
  * \fn virtual SyncGroup::RC SyncGroup::Init(const int member_cnt, const int group_id, const int member_id, void* extra_arg) =0
  *
  * \brief Initialize function.
@@ -94,7 +94,7 @@ SyncGroup::SyncGroup():
  */
 
 
-/*!
+/**
  * \brief Default destroctor.
  *
  * By default, it does nothing. Derived class should use it to handle the
@@ -105,7 +105,7 @@ SyncGroup::~SyncGroup()
 {
 };
 
-/*!
+/**
  * \fn virtual void SyncGroup::BarrierEnter() =0
  * \brief BarrierEnter function.
  *
@@ -114,7 +114,7 @@ SyncGroup::~SyncGroup()
  * this function returns right away.
  */
 
-/*!
+/**
  * \fn virtual void SyncGroup::BarrierExit() =0
  * \brief BarrierExit function.
  *
@@ -123,7 +123,7 @@ SyncGroup::~SyncGroup()
  * function returns right away.
  */
 
-/*!
+/**
  * \brief Barrier function.
  *
  * This function won't return unless all members have entered.
@@ -136,7 +136,7 @@ void SyncGroup::Barrier()
     BarrierExit();
 }
 
-/*!
+/**
  * \brief Accessor function to check if the object has been initialied.
  * \return true, false
  */
@@ -146,7 +146,7 @@ bool SyncGroup::IsInitialized() const
     return this->initialized;
 }
 
-/*!
+/**
  * \brief Accessor function to get the number of members in this group.
  *
  * \return A unsigned integer.
@@ -156,7 +156,7 @@ unsigned int SyncGroup::GetMemberCount() const {
     return this->member_cnt;
 }
 
-/*!
+/**
  *\brief Accessor function to get the member_id value.
  *
  *\return A unsigned integer in range of 0 to (member_cnt-1).
@@ -166,7 +166,7 @@ unsigned int SyncGroup::GetMemberId() const {
     return this->member_id;
 }
 
-/*!
+/**
  * \brief Set the progress callback function.  This progress callback function
  *        will be used whenever there is a wait loop. If the callback is not
  *        set, nothing will be done in the wait loop.
@@ -177,7 +177,7 @@ void SyncGroup::SetProgressCb(SyncGroup::ProgressCb_t progress_cb, void* progres
     this->progress_cb_info = progress_cb_info;
 }
 
-/*!
+/**
  * \internal
  * \brief A function to dump object current states to stdout for debugging.
  */

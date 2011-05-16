@@ -1,9 +1,9 @@
 ///
-/// \file components/devices/bgq/mu2/msg/CollectiveDputMcomb2Device.h
+/// \file components/devices/bgq/mu2/msg/CollectiveMcomb2Device.h
 /// \brief ???
 ///
-#ifndef __components_devices_bgq_mu2_msg_CollectiveDputMcomb2Device_h__
-#define __components_devices_bgq_mu2_msg_CollectiveDputMcomb2Device_h__
+#ifndef __components_devices_bgq_mu2_msg_CollectiveMcomb2Device_h__
+#define __components_devices_bgq_mu2_msg_CollectiveMcomb2Device_h__
 
 #include "spi/include/mu/DescriptorBaseXX.h"
 #include "util/trace.h"

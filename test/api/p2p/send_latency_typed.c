@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/api/p2p/send_latency.c
+ * \file test/api/p2p/send_latency_typed.c
  * \brief ???
  */
 #include <stdio.h>

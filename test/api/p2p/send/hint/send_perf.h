@@ -407,4 +407,3 @@ void test (dispatch_info_t dispatch[], size_t n, size_t header_size[], size_t he
 
 #undef TRACE_ERR
 #endif /* __test_api_p2p_send_hint_send_perf_h__ */
-

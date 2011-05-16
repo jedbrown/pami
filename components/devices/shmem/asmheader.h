@@ -1,9 +1,9 @@
 /**
- * \file components/devices/shmemcoll/asmheader.h
+ * \file components/devices/shmem/asmheader.h
  * \brief ???
  */
-#ifndef __components_devices_shmemcoll_asmheader_h__
-#define __components_devices_shmemcoll_asmheader_h__
+#ifndef __components_devices_shmem_asmheader_h__
+#define __components_devices_shmem_asmheader_h__
 
 #define VECTOR_LOAD(si,sb,tgt) \
 do { \
