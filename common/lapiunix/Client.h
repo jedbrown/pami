@@ -983,6 +983,26 @@ namespace PAMI
         _ueb_queue.pushTail(ueb);
       }
     
+    inline double wtime_impl ()
+      {
+          if (_Lapi_env.use_hfi) {
+              LapiImpl::Client *lapi_client = (LapiImpl::Client *)_lapiClient;
+              return  lapi_client->GetWtime();
+          } else {
+              return __global.time.time();
+          }
+      }
+
+    inline unsigned long long wtimebase_impl ()
+      {
+          if (_Lapi_env.use_hfi) {
+              LapiImpl::Client *lapi_client = (LapiImpl::Client *)_lapiClient;
+              return lapi_client->GetWtimebase();
+          } else {
+              return __global.time.timebase();
+          }
+      }
+
   protected:
 
     inline pami_client_t getClient () const

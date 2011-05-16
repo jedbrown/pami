@@ -121,7 +121,8 @@ namespace PAMI
                                          pami_quad_t &info,
                                          unsigned     peer,
                                          unsigned     algorithm);
-      
+        inline double wtime();      
+        inline unsigned long long wtimebase();      
     }; // end class PAMI::Client::Client
 
     template <class T_Client>
@@ -335,6 +336,19 @@ namespace PAMI
                                                               peer,
                                                               algorithm);      
     }
+
+    template <class T_Client>
+    inline double Client<T_Client>::wtime ( )
+    {
+      return static_cast<T_Client*>(this)->wtime_impl();
+    }
+
+    template <class T_Client>
+    inline unsigned long long Client<T_Client>::wtimebase ( )
+    {
+      return static_cast<T_Client*>(this)->wtimebase_impl();
+    }
+
   }; // end namespace Interface
 }; // end namespace PAMI
 #endif // __pami_client_h__

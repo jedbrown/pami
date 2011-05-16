@@ -55,12 +55,14 @@ extern "C" size_t PAMI_Error_text (char * string, size_t length)
 
 extern "C" double PAMI_Wtime (pami_client_t client)
 {
-  return __global.time.time();
+    PAMI::Client * _client = (PAMI::Client *) client;
+    return _client->wtime (); 
 }
 
 extern "C" unsigned long long PAMI_Wtimebase(pami_client_t client)
 {
-  return __global.time.timebase();
+    PAMI::Client * _client = (PAMI::Client *) client;
+    return _client->wtimebase (); 
 }
 
 #ifndef PAMI_Endpoint_create
