@@ -241,12 +241,12 @@ extern "C"
   {
     char                  *name;     /**<  A character string describing the protocol   */
     unsigned               version;      /**<  A version number for the protocol            */
-    /* Correctness Parameters                                          
+    /* Correctness Parameters
      *
      * If an algorithm is placed on the "must query list", then the user must use the metadata
-     * to determine if the protocol can be issued given the call site parameters of the 
+     * to determine if the protocol can be issued given the call site parameters of the
      * collective operation.
-     * 
+     *
      * This may include calling the check_fn function, which takes as input a pami_xfer_t
      * corresponding to the call site parameters.  The call site is defined as the code location
      * where the user will call the PAMI_Collective function.
@@ -299,13 +299,13 @@ extern "C"
                                                   allreduced to determine if the operation
                                                   will work 0:no, 1:  requires nonlocal data  */
         unsigned               rangeminmax:1;  /**<  This protocol only supports a range of bytes
-                                                  sent/received. 0: no min/max, 1: check range_lo/range_hi */                                   
+                                                  sent/received. 0: no min/max, 1: check range_lo/range_hi */
         unsigned               sendminalign:1; /**<  This protocol requires a minimum address
                                                   alignment of send_min_align bytes.
-                                                  0: no min alignment, 1: check send_min_align */                                   
+                                                  0: no min alignment, 1: check send_min_align */
         unsigned               recvminalign:1; /**<  This protocol requires a minimum address
-                                                  alignment of recv_min_align bytes              
-                                                  0: no min alignment, 1: check recv_min_align */                                   
+                                                  alignment of recv_min_align bytes
+                                                  0: no min alignment, 1: check recv_min_align */
         unsigned               alldtop:1;      /**<  This protocol works for all datatypes and
                                                   operations for reduction/scan
                                                   0:not for all dt & op, 1:for all dt & op     */
@@ -361,7 +361,7 @@ extern "C"
       PAMI_HINT_DEFAULT = 0, /**< This hint leaves the option up to the PAMI implementation to choose. */
       PAMI_HINT_ENABLE  = 1, /**< A hint that the implementation should enable this option.  */
       PAMI_HINT_DISABLE = 2, /**< A hint that the implementation should disable this option. */
-      PAMI_HINT_INVALID = 3  /**< An invalid hint value provided for 2 bit completeness.     */ 
+      PAMI_HINT_INVALID = 3  /**< An invalid hint value provided for 2 bit completeness.     */
     } pami_hint_t;
 
   /**
@@ -369,40 +369,40 @@ extern "C"
    *
    * These hints are considered 'hard' hints that must be honored by the
    * implementation or the dispatch set must fail and return an error.
-   * 
+   *
    * Alternatively, hints may be specified for each send operation. Hints
    * specified in this way are considered 'soft' hints and may be silently
    * ignored by the implementation during a send operation.
-   * 
+   *
    * Hints are used to improve performance by allowing the send implementation
    * to safely assume that certain use cases will not ever, or will always,
    * be valid.
-   * 
+   *
    * \note Hints should be specified with the pami_hint_t enum values.
-   * 
+   *
    * \see pami_send_hint_t
    * \see PAMI_Dispatch_set()
-   * 
+   *
    */
   typedef struct
   {
     /**
      * \brief Parallelize communication across multiple contexts
-     * 
+     *
      * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
      * the send implementation may use other contexts to aid in the
      * communication operation. It is required that all contexts be advanced.
-     * 
+     *
      * If specified as pami_hint_t::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
      * the send implementation will not use other contexts to aid in the
      * communication operation. It is not required that all contexts be
      * advanced, only the contexts with active communication must be advanced.
-     * 
+     *
      * If specified as pami_hint_t::PAMI_HINT_DEFAULT, the effect on the
      * communication is equivalent to the effect of pami_hint_t::PAMI_HINT_ENABLE
      */
     unsigned  multicontext          : 2;
-    
+
     /**
      * \brief Long (multi-packet) header support
      *
@@ -421,11 +421,11 @@ extern "C"
      * communication is equivalent to the effect of pami_hint_t::PAMI_HINT_ENABLE
      */
     unsigned  long_header           : 2;
-    
+
     /**
      * \brief All asynchronous receives will be contiguous using
      *        PAMI_TYPE_BYTE with a zero offset.
-     * 
+     *
      * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
      * it is not required to set pami_recv_t::type nor pami_recv_t::offset for
      * the receive.
@@ -438,11 +438,11 @@ extern "C"
      * If specified as pami_hint_t::PAMI_HINT_DEFAULT, the effect on the
      * communication is equivalent to the effect of pami_hint_t::PAMI_HINT_DISABLE
      */
-    unsigned  recv_contiguous       : 2; 
-                                        
+    unsigned  recv_contiguous       : 2;
+
     /**
      * \brief All asynchronous receives will use PAMI_DATA_COPY and a \c NULL data cookie
-     * 
+     *
      * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
      * it is not required to set pami_recv_t::data_fn nor pami_recv_t::data_cookie
      * for the receive.
@@ -454,19 +454,19 @@ extern "C"
      *
      * If specified as pami_hint_t::PAMI_HINT_DEFAULT, the effect on the
      * communication is equivalent to the effect of pami_hint_t::PAMI_HINT_DISABLE
-     */                                
+     */
     unsigned  recv_copy             : 2;
-                                      
-    /** 
+
+    /**
      * \brief All sends will result in an 'immediate' receive
-     * 
+     *
      * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
      * the dispatch function will always receive as 'immediate', and it is not
      * required to initialize the pami_recv_t output parameters. It is also
      * required that only up to pami_attribute_name_t::PAMI_DISPATCH_RECV_IMMEDIATE_MAX
      * bytes of combined header and data is sent. Failure to limit the number of
      * bytes sent will result in undefined behavior.
-     * 
+     *
      * \note It is not neccessary to set the pami_dispatch_hint_t::recv_contiguous
      *       hint, nor the pami_dispatch_hint_t::recv_copy hint, when the
      *       pami_dispatch_hint_t::recv_immediate hint is set to
@@ -482,12 +482,12 @@ extern "C"
      * or the implementation may provide the source data as an 'asynchronous'
      * receive. The appropriate pami_recv_t output parameters must be initialized
      * as required by the dispatch function input parameters.
-     */                                  
+     */
     unsigned  recv_immediate        : 2;
-    
+
     /**
      * \brief Force match ordering semantics
-     * 
+     *
      * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
      * the dispatch functions for all communication between a pair of endpoints
      * will always be invoked in the same order as the send operations were
@@ -506,7 +506,7 @@ extern "C"
      * communication is equivalent to the effect of pami_hint_t::PAMI_HINT_DISABLE
      */
     unsigned  consistency           : 2;
-    
+
     /**
      * \brief Send and receive buffers are ready for RDMA operations
      *
@@ -529,7 +529,7 @@ extern "C"
      * communication is equivalent to the effect of pami_hint_t::PAMI_HINT_DISABLE
      **/
     unsigned  buffer_registered     : 2;
-    
+
     /**
      * \brief Force the destination endpoint to make asynchronous progress
      *
@@ -545,7 +545,7 @@ extern "C"
      * communication is equivalent to the effect of pami_hint_t::PAMI_HINT_DISABLE
      **/
     unsigned  remote_async_progress : 2;
-    
+
     /**
      * \brief Communication uses rdma operations
      *
@@ -562,7 +562,7 @@ extern "C"
      * communication operation.
      */
     unsigned  use_rdma              : 2;
-    
+
     /**
      * \brief Communication uses shared memory optimizations
      *
@@ -611,14 +611,14 @@ extern "C"
    *
    * These hints are considered 'soft' hints that may be silently ignored
    * by the implementation during a send operation.
-   * 
+   *
    * Alternatively, hints may be specified when a send dispatch identifier
    * is registered using PAMI_Dispatch_set().  Hints set in this way are
    * considered 'hard' hints and must be honored by the implementation,
    * or the dispatch set must fail and return an error.
-   * 
+   *
    * \note Hints should be specified with the pami_hint_t enum values.
-   * 
+   *
    * \see pami_dispatch_hint_t
    * \see PAMI_Send()
    * \see PAMI_Send_typed()
@@ -627,25 +627,25 @@ extern "C"
   typedef struct
   {
     unsigned reserved0             : 12; /**< \brief Reserved for future use. */
-    
+
     /**
      * \brief Send and receive buffers are ready for RDMA operations
      * \see   pami_dispatch_hint_t::buffer_registered
      **/
     unsigned buffer_registered     : 2;
-    
+
     /**
      * \brief Force the destination endpoint to make asynchronous progress
      * \see   pami_dispatch_hint_t::remote_async_progress
      **/
     unsigned remote_async_progress : 2;
-    
+
     /**
      * \brief Communication uses rdma operations
      * \see   pami_dispatch_hint_t::use_rdma
      **/
     unsigned use_rdma              : 2;
-    
+
     /**
      * \brief Communication uses shared memory optimizations
      * \see   pami_dispatch_hint_t::use_shmem
@@ -663,9 +663,9 @@ extern "C"
      * \see   pami_dispatch_hint_t::multicontext
      **/
     unsigned multicontext          : 2;
-    
+
     unsigned reserved0             : 20; /**< \brief Reserved for future use. */
-    
+
   } pami_collective_hint_t;
 
   /**
@@ -3688,7 +3688,7 @@ extern "C"
    *
    * It is \b illegal to invoke any PAMI functions using a communication
    * context from any thread after the context is destroyed.
-   * 
+   *
    * \note The PAMI_Context_lock(), PAMI_Context_trylock(), and
    *       PAMI_Context_unlock(), functions must not be used to ensure
    *       thread-safe access to the context destroy function as the lock
