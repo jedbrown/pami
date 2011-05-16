@@ -1030,13 +1030,13 @@ runHW ()
 				      then
 					  cp $incFile $cwd
 				      
-					  if [ $? -ne 0 ] || [ ! -e "${cwd}/${incFile}" ]
+					  if [ $? -ne 0 ] || [ ! -e "${cwd}/${incFile##*/}" ]
 					  then
 					      echo "ERROR (E)::runHW: Copy of ${incFile} to ${cwd} FAILED!!"
 					      runHW_rc=2
 					  fi
 				      else
-					  echo "ERROR (E)::runHW: ${incFile} DNE!!"
+					  echo "ERROR (E)::runHW: --inlcude file: \"${incFile}\" DNE!!"
 					  runHW_rc=2
 				      fi
 
@@ -1249,7 +1249,7 @@ runHW ()
 	# Add ENV vars
 	if [ "${envs}" != "" ]
 	then
-	    runCmd="${runCmd} --envs \"${envs}\""
+	    runCmd="${runCmd} --envs ${envs}"
 	fi
 	
 	# Add runjob opts
@@ -1410,7 +1410,7 @@ runHW ()
     fi # end use Roy's tools
    
     # Use Tom's snapbug tool if run exited with an error and I'm running from a BG/Q SN
-    if (( ${runStatus[0]} > 0 )) && [ $serviceNode -eq 1 ] && [ "${platform}" == 'bgq' ]
+    if (( ${runStatus[0]} > 0 )) && [ $serviceNode -eq 1 ] && [ "${platform}" == 'bgq' ] && (( $runSnapbug > 0 ))
     then
 	
 	# Get jobid if necessary
@@ -1419,8 +1419,18 @@ runHW ()
 	    jobid=`grep -a -i "ibm.runjob.client.job: job" $logFile | head -1 | sed "s|  *$||" | sed -e "s|.*job ||g" | cut -d " " -f1`
 	fi
 
+	# Build snapbug command
+	sbCmd="${snapbugScript} --output=${cwd}"
+
+	# Use block if jobid DNE
+	if [ "${jobid}" == '' ]
+	then
+	    sbCmd="${sbCmd} --block=${HWBlock}"
+	else
+	    sbCmd="${sbCmd} --jobid=${jobid}"
+	fi
+
 	echo "Gathering debug information for ${exe} using snapbug.pl ..." 2>&1 | tee -a $logFile
-	sbCmd="${snapbugScript} --jobid=${jobid} --output=${cwd}"
 
 	echo $sbCmd 2>&1 | tee -a $logFile
 	if [ $debug -eq 0 ]
@@ -1563,6 +1573,16 @@ exe_preProcessing ()
 					  shift
 				      done
 				      ;;
+	    --include )               # Verify user provided a valid file
+		                      shift # to file path
+				      if [ ! -e $1 ]
+				      then
+					  echo "ERROR (E)::exe_preProcessing: --include file: \"${1}\" DNE!!"
+					  return 1
+				      fi
+
+				      shift # to next options parm
+				      ;;
 	    --ranks-per-node )        shift
 		                      if ! ([ $forceScaling -eq 1 ] && [ $cmdLineMode -eq 1 ])
 				      then
@@ -1681,6 +1701,7 @@ exe_preProcessing ()
 		                      if ! ([ $forceScaling -eq 1 ] && (( $forceNP > 0 )) )
 				      then
 					  npOverride=$1
+					  eppOverride='Y'
 				      fi
 
                                       # Remove -np from $opts (so we control value using mpirun)
@@ -1701,7 +1722,11 @@ exe_preProcessing ()
 	    --np )                    shift
 		                      if ! ([ $forceScaling -eq 1 ] && (( $forceNP > 0 )) )
 				      then
-					  npOverride=$1
+					  if [ $1 -ne $orgNP ]
+					  then
+					      npOverride=$1
+					      eppOverride='Y'
+					  fi
 				      fi
 
                                       # Remove --np from $opts (unsupported by runfctest.sh)
@@ -2850,6 +2875,7 @@ block=""
 corner=""
 shape=""
 sub_block=""
+runSnapbug=1
 freeBlock=0             # 1 = Free block after each test
 noFree=0                # 1 = Don't free blocks after execution phase (default is to free them)
 ioReboot=0              # 1 = Reboot I/O blocks on CN fail
@@ -2999,6 +3025,10 @@ while [ "${1}" != "" ]; do
 	                        declare -a nodeArray=($( echo $1 | sed 's/"//g' )) 
 				cmdLineNode=1
                                 ;;
+	-nofree | --nofree )    noFree=1
+				;;
+	-nosnap | --nosnap )    runSnapbug=0
+	                        ;;
 	-np | --np )            shift
 	                        forceNP=$1
 				;;
