@@ -8,19 +8,26 @@ api/client/hello.cnk
 #
 #=== api/collectives SUBDIR ===
 api/collectives/allgather.cnk
+api/collectives/allgather_subcomm.cnk
 api/collectives/allgatherv.cnk
-api/collectives/allreduce.cnk --timelimit 1920
+api/collectives/allgatherv_int.cnk
+api/collectives/allreduce.cnk --timelimit 4860
 api/collectives/allreduce_query.cnk --timelimit 540
-api/collectives/allreduce_subcomm.cnk --timelimit 1380
+api/collectives/allreduce_subcomm.cnk --timelimit 3600
 api/collectives/allreduce_subcomm_query.cnk --timelimit 480
 #=========================================================================
 # NP for alltoall* must be <= 16
 #=========================================================================
 api/collectives/alltoall.cnk --maxnp 16
 api/collectives/alltoallv.cnk --maxnp 16
+api/collectives/alltoallv_int.cnk --maxnp 16
+api/collectives/alltoallv_int_subcomm.cnk --maxnp 16
+api/collectives/alltoallv_subcomm.cnk --maxnp 16
 api/collectives/ambcast.cnk --timelimit 360
 api/collectives/barrier.cnk
+api/collectives/barrier_query.cnk
 api/collectives/barrier_subcomm.cnk
+api/collectives/barrier_subcomm_query.cnk
 api/collectives/bcast.cnk --timelimit 180
 #api/collectives/bcast_advisor.cnk --timelimit 300          +++ REMOVED FROM MAKEFILE +++
 api/collectives/bcast_query.cnk --timelimit 300
@@ -28,12 +35,18 @@ api/collectives/bcast_subcomm.cnk --timelimit 480
 # bcast_subcomm2 is currently an invalid test
 api/collectives/bcast_subcomm2.cnk --timelimit 480 --compile-only
 api/collectives/bcast_subcomm_noparent.cnk --timelimit 120
+api/collectives/bcast_subcomm_query.cnk
+api/collectives/gather.cnk
+api/collectives/gatherv.cnk
+api/collectives/gatherv_int.cnk
 #api/collectives/multisync.cnk                              +++ REMOVED FROM MAKEFILE +++
 api/collectives/reduce.cnk --timelimit 960
+api/collectives/reduce_query.cnk
 api/collectives/reduce_scatter.cnk
 api/collectives/reduce_subcomm.cnk --timelimit 1320
 api/collectives/scan.cnk --timelimit 180
 api/collectives/scatter.cnk
+api/collectives/scatter_subcomm.cnk
 api/collectives/scatterv.cnk
 #
 #=== api/context SUBDIR ===
@@ -169,29 +182,6 @@ internals/atomics/bgq/bgqcompilation.cnk --compile-only
 #=== internals/bgq SUBDIR ===
 internals/bgq/personality.cnk
 #
-#=== internals/bgq/api/collectives SUBDIR ===
-internals/bgq/api/collectives/allgather-pami.cnk
-internals/bgq/api/collectives/allgather_subcomm-pami.cnk
-internals/bgq/api/collectives/allreduce-pami.cnk --timelimit 1920
-internals/bgq/api/collectives/allreduce_query-pami.cnk --timelimit 540
-internals/bgq/api/collectives/allreduce_subcomm-pami.cnk --timelimit 1380
-internals/bgq/api/collectives/allreduce_subcomm_query-pami.cnk --timelimit 480
-internals/bgq/api/collectives/alltoallv-pami.cnk --maxnp 16
-internals/bgq/api/collectives/alltoallv_int-pami.cnk --maxnp 16
-internals/bgq/api/collectives/alltoallv_int_subcomm-pami.cnk --maxnp 16
-internals/bgq/api/collectives/alltoallv_subcomm-pami.cnk --maxnp 16
-internals/bgq/api/collectives/barrier-pami.cnk
-internals/bgq/api/collectives/barrier_query-pami.cnk
-internals/bgq/api/collectives/barrier_subcomm-pami.cnk
-internals/bgq/api/collectives/barrier_subcomm_query-pami.cnk
-internals/bgq/api/collectives/bcast-pami.cnk --timelimit 120
-internals/bgq/api/collectives/bcast_query-pami.cnk --timelimit 300
-internals/bgq/api/collectives/bcast_subcomm-pami.cnk --timelimit 480
-internals/bgq/api/collectives/bcast_subcomm_query-pami.cnk --timelimit 480
-internals/bgq/api/collectives/reduce-pami.cnk --timelimit 420
-internals/bgq/api/collectives/scatter-pami.cnk
-internals/bgq/api/collectives/scatter_subcomm-pami.cnk
-#
 #=== internals/bgq/memtest SUBDIR ===
 internals/bgq/memtest/memtest-pami.cnk
 #
@@ -231,6 +221,9 @@ internals/multisend/bgq/bgqmultisync_perf.cnk --timelimit 120
 #=== internals/progressfunc SUBDIR ===
 internals/progressfunc/multiprogressfunc.cnk
 internals/progressfunc/progressfunc.cnk
+#
+#=== internals/pwq SUBDIR ===
+internals/pwq/noncontig.cnk
 #
 #=== internals/queue SUBDIR ===
 #internals/queue/gendev_perf.cnk --ranks-per-node 1   +++ COMMENTED OUT OF MAKEFILE +++
