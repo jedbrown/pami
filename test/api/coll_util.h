@@ -349,7 +349,7 @@ metadata_result_t check_metadata(pami_metadata_t md,
 {
   metadata_result_t result;
   if (md.check_fn)
-  {  
+  {
     result = md.check_fn(&xfer);
   }
   else /* Must check parameters ourselves... */
@@ -358,13 +358,13 @@ metadata_result_t check_metadata(pami_metadata_t md,
     result.bitmask = 0;
     if(md.check_correct.values.sendminalign)
     {
-      mask  = md.send_min_align - 1; 
-      result.check.align_send_buffer = (((uint64_t)s_buffer & (uint64_t)mask) == 0) ? 0:1;
+      mask  = md.send_min_align - 1;
+      result.check.align_send_buffer = (((size_t)s_buffer & (size_t)mask) == 0) ? 0:1;
     }
     if(md.check_correct.values.recvminalign)
     {
-      mask  = md.recv_min_align - 1; 
-      result.check.align_recv_buffer = (((uint64_t)r_buffer & (uint64_t)mask) == 0) ? 0:1;
+      mask  = md.recv_min_align - 1;
+      result.check.align_recv_buffer = (((size_t)r_buffer & (size_t)mask) == 0) ? 0:1;
     }
     if(md.check_correct.values.rangeminmax)
     {
@@ -372,7 +372,7 @@ metadata_result_t check_metadata(pami_metadata_t md,
                               (s_size >= md.range_lo));
       result.check.range |= !((r_size <= md.range_hi) &&
                               (r_size >= md.range_lo));
-    }   
+    }
     /* Very basic checks (primitives only) for continuous/contiguous */
     if(md.check_correct.values.contigsflags)
       result.check.contiguous_send = !primitive_dt(s_dt);
