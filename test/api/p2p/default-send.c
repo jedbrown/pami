@@ -16,6 +16,7 @@ char hint_str[3][50] = {"PAMI_HINT_DEFAULT", "PAMI_HINT_ENABLE", "PAMI_HINT_DISA
 char xtalk_str[2][50] = {"no crosstalk", "crosstalk"};
 char callback_str[2][50] = {"no callback", "callback"};
 char longheader_str[2][50] = {"no long header", "long header"};
+char debug_str[500];
 
 size_t debug = 0;
 size_t task_id;
@@ -219,6 +220,42 @@ int main (int argc, char ** argv)
   char                  cl_string[] = "TEST";
   pami_result_t result = PAMI_ERROR;
 
+  /* See if user passed in any args */
+  opt = getopt( argc, argv, optString );
+  while( opt != -1 ) {
+    switch( opt ) {
+    case 'D':
+      hints_to_test = hints_to_test | 1;	  
+      break;
+                
+    case 'd':
+      debug = 1;
+      break;
+                
+    case 'M':
+      hints_to_test = hints_to_test | 4;
+      break;
+                
+    case 'S':
+      hints_to_test = hints_to_test | 2;
+      break;
+                
+    case 'h':   /* fall-through is intentional */
+    case '?':
+      if (task_id == 0) {
+	display_usage();
+	return 1;
+      }
+    break;
+                
+    default:
+      /* You won't actually get here. */
+      break;
+    }
+        
+    opt = getopt( argc, argv, optString );
+  }
+
   result = PAMI_Client_create (cl_string, &client, NULL, 0);
   if (result != PAMI_SUCCESS) {
     fprintf (stderr, "ERROR (E):  Unable to initialize PAMI client. result = %d\n", result);
@@ -289,6 +326,17 @@ int main (int argc, char ** argv)
   /* row 0 (DEFAULT), row 1 (SHMem) and row 2 (MU) */
   size_t addressable_by_me[3][num_tasks];
 
+  /* Init device addressability array */
+  for ( hint = 0; hint < 3; hint++ ) {
+    for ( n = 0; n < num_tasks; n++ ) {
+      if ( hint == 1) { /* SHMem */	
+	addressable_by_me[hint][n] = 0;
+      } else { /* hint = 0 (DEFAULT) or 2 (MU) */
+	addressable_by_me[hint][n] = 1;
+      }
+    }
+  }
+
   configuration.name = PAMI_CLIENT_LOCAL_TASKS;
   result = PAMI_Client_query (client, &configuration, 1);
   if (result != PAMI_SUCCESS) {
@@ -296,58 +344,39 @@ int main (int argc, char ** argv)
     return 1;
   } else {
     /* Set local tasks in device addressability array */
+    if (debug) {   
+      sprintf (debug_str, "Tasks local to task %zu:", task_id);
+    }
+
     for (i=0; i<num_local_tasks; i++) {
+      if (debug) {   
+	if (i == 0) { /* First local task */
+	  sprintf (debug_str, "%s  %zu", debug_str, configuration.value.intarray[i]);
+	} else if (i == (num_local_tasks - 1)) {
+	  sprintf (debug_str, "%s & %zu", debug_str, configuration.value.intarray[i]);	
+	} else {
+	  sprintf (debug_str, "%s, %zu", debug_str, configuration.value.intarray[i]);
+	}
+      }
+
       addressable_by_me[1][configuration.value.intarray[i]] = 1;
     }
+
+    if (debug) {   
+      fprintf (stderr, "%s\n", debug_str);
+    }   
   }
     
-  /* Finish Initing device addressability array */
-  for ( hint = 0; hint < 3; hint++ ) {
-    for ( n = 0; n < num_tasks; n++ ) {
-      if ( hint == 1) { /* SHMem */
-	if (addressable_by_me[hint][n] != 1) {
-	  addressable_by_me[hint][n] = 0;
-	}
-      } else { /* hint = 0 (DEFAULT) or 2 (MU) */
-	addressable_by_me[hint][n] = 1;
-      }
-    }
-  }
+  if (debug) {
+    sprintf (debug_str, "task %zu SHMem addressable tasks:  ", task_id);
 
-  /* See if user passed in any args */
-  opt = getopt( argc, argv, optString );
-  while( opt != -1 ) {
-    switch( opt ) {
-    case 'D':
-      hints_to_test = hints_to_test | 1;	  
-      break;
-                
-    case 'd':
-      debug = 1;
-      break;
-                
-    case 'M':
-      hints_to_test = hints_to_test | 4;
-      break;
-                
-    case 'S':
-      hints_to_test = hints_to_test | 2;
-      break;
-                
-    case 'h':   /* fall-through is intentional */
-    case '?':
-      if (task_id == 0) {
-	display_usage();
-	return 1;
+    for ( n = 0; n < num_tasks; n++ ) {
+      if (addressable_by_me[1][n] == 1) {
+	sprintf (debug_str, "%s %zu", debug_str, n);
       }
-    break;
-                
-    default:
-      /* You won't actually get here. */
-      break;
     }
-        
-    opt = getopt( argc, argv, optString );
+
+    fprintf (stderr, "%s\n", debug_str);
   }
 
   /* Determine which Device(s) are initialized based on PAMI_DEVICE env var */
