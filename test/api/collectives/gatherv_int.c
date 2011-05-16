@@ -204,7 +204,7 @@ int main (int argc, char ** argv)
             memset(rbuf, 0xFF, i*num_tasks);
 
           if (task_id != num_tasks - 1)
-            gatherv.cmd.xfer_gatherv.stypecount  = i;
+            gatherv.cmd.xfer_gatherv_int.stypecount  = i;
           blocking_coll(context, &gatherv, &gatherv_poll_flag);
 
           if (task_id == root_zero)
