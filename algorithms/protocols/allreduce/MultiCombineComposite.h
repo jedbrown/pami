@@ -267,6 +267,8 @@ namespace CCMI
               TRACE_FORMAT( "Delivered Callback Function To User=%ld", m->_count);
               if(m->_temp_results)
                 __global.heap_mm->free(m->_temp_results);
+              if(m->_throwaway_results)
+                __global.heap_mm->free(m->_throwaway_results);
             }
             TRACE_FORMAT( "Phases Left: count=%ld", m->_count);
             TRACE_FN_EXIT();
@@ -312,22 +314,30 @@ namespace CCMI
             {
               amRoot      = (_geometry->rank() == root);
               new(&_t_root) PAMI::Topology(root);
-              rc = __global.heap_mm->memalign((void **)&_temp_results, 16, sbytes);
               PAMI_assert(rc == PAMI_SUCCESS);
             }
 
+            char *rcvBuf;
             // Create a "flat pwq" for the send buffer
             _pwq_src.configure(xfer->sndbuf,                       // buffer
                                sbytes,                             // buffer bytes
                                sbytes);                            // amount initially in buffer
-            if(amRoot || root == 0xFFFFFFFF)
+            if(amRoot || root == 0xFFFFFFFF)  // I am the real root of a Reduce, or I am in an allreduce
+            {
+              rcvBuf = xfer->rcvbuf;
               _pwq_dest.configure(xfer->rcvbuf,                    // buffer
                                   sbytes,                          // buffer bytes
                                   0);                              // amount initially in buffer
-            else
-              _pwq_dest.configure(_temp_results,                   // buffer
+            }
+            else                              // I am a non-root, and I must throw away the results
+            {
+              rc = __global.heap_mm->memalign((void **)&_throwaway_results, 16, sbytes);
+              PAMI_assert(rc == PAMI_SUCCESS && _throwaway_results != NULL);
+              rcvBuf = _throwaway_results;
+              _pwq_dest.configure(_throwaway_results,                   // buffer
                                   sbytes,                          // buffer bytes
                                   0);                              // amount initially in buffer
+            }
 
             _user_done.clientdata = cmd->cookie;
             _user_done.function   = cmd->cb_done;
@@ -340,7 +350,7 @@ namespace CCMI
             if (t_local->size() == _geometry->size() && amMaster)
               {
                 _pwq_inter0.configure(
-                                      xfer->rcvbuf,  // buffer
+                                      rcvBuf,  // buffer
                                       sbytes,                          // buffer bytes
                                       0);                              // amount initially in buffer
                 _pwq_inter0.reset();
@@ -415,7 +425,7 @@ namespace CCMI
             // reception buffers will be overwritten, maybe more than once
             // \todo Do we need some scratch space if we want to do something like in place?
             _pwq_inter0.configure(
-                                  xfer->rcvbuf,  // buffer
+                                  rcvBuf,  // buffer
                                   sbytes,                          // buffer bytes
                                   0);                              // amount initially in buffer
             _pwq_inter0.reset();
@@ -475,7 +485,7 @@ namespace CCMI
             // reception buffers will be overwritten, maybe more than once
             // \todo Do we need some scratch space if we want to do something like in place?
             _pwq_inter1.configure(
-                                  xfer->rcvbuf,  // buffer
+                                  rcvBuf,  // buffer
                                   sbytes,                          // buffer bytes
                                   0);                              // amount initially in buffer
             _pwq_inter1.reset();
@@ -672,12 +682,8 @@ namespace CCMI
 
             if (!amMaster)
               {
-                if(!_temp_results)
-                {
-                  rc = __global.heap_mm->memalign((void **)&_temp_results, 16, sbytes);
-                  PAMI_assert(rc == PAMI_SUCCESS);
-                }
-
+                rc = __global.heap_mm->memalign((void **)&_temp_results, 16, sbytes);
+                PAMI_assert(rc == PAMI_SUCCESS && _temp_results != NULL);
                 PAMI_assert(_temp_results != NULL);   // no local master?
                 _pwq_inter0.configure(_temp_results,  // buffer
                                       sbytes,         // buffer bytes
@@ -838,6 +844,7 @@ namespace CCMI
               _native_g(native_g),
               _geometry((PAMI_GEOMETRY_CLASS*)g),
               _temp_results(NULL),
+              _throwaway_results(NULL),
               _fn(fn),
               _cookie(cookie)
           {
@@ -925,6 +932,7 @@ namespace CCMI
           PAMI::Topology                       _t_me;
           PAMI::Topology                       _t_masterproxy;
           char                                *_temp_results;
+          char                                *_throwaway_results;
           pami_event_function                  _fn;
           void                                *_cookie;
       };

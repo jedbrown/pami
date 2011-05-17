@@ -11,13 +11,6 @@
  * \brief Simple reduce on world geometry using "query" algorithms
  */
 
-/* see setup_env() for environment variable overrides
-#define OFFSET     0
-*/
-#define FULL_TEST  1
-#define COUNT      65536
-#define NITERLAT   10
-
 #include "../pami_util.h"
 
 int main(int argc, char*argv[])
@@ -182,6 +175,14 @@ int main(int argc, char*argv[])
               reduce.cmd.xfer_reduce.stype      = dt_array[dt];
               reduce.cmd.xfer_reduce.op         = op_array[op];
 
+              pami_endpoint_t root_ep;
+              PAMI_Endpoint_create(client, root, 0, &root_ep);
+              reduce.cmd.xfer_reduce.root    = root_ep;
+              if (task_id == root)
+                reduce.cmd.xfer_reduce.rcvbuf    = rbuf;
+              else
+                reduce.cmd.xfer_reduce.rcvbuf    = NULL;
+
               result = check_metadata(reduce_must_query_md[nalg],
                                       reduce,
                                       dt_array[dt],
@@ -223,11 +224,12 @@ int main(int argc, char*argv[])
               /* We aren't testing barrier itself, so use context 0. */
               blocking_coll(context[0], &barrier, &bar_poll_flag);
 
-              int rc_check;
-              rc |= rc_check = reduce_check_rcvbuf (rbuf, i, op, dt, task_id, num_tasks);
-
-              if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
-
+              int rc_check=0;
+              if (task_id == root)
+              {
+                rc |= rc_check = reduce_check_rcvbuf (rbuf, i, op, dt, task_id, num_tasks);
+                if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
+              }
               usec = (tf - ti) / (double)niter;
 
               if (task_id == root)
