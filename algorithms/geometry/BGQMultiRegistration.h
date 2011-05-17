@@ -223,7 +223,7 @@ namespace PAMI
     OptBinomialBarrierFactory;
 
 
-    void getAlltoallMetaData(pami_metadata_t *m)
+    extern inline void getAlltoallMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:M2MComposite:MU:MU");
       m->check_perf.values.hw_accel     = 1;

@@ -42,7 +42,7 @@ void* xlpgas::AMBcast<T_NI>::parent_incomming(void){
 ////////////////////////////////////////////////////////////
 //     BCAST Implemented using AMBcast<T_NI>
 ////////////////////////////////////////////////////////////
-
+#if 0
 void *_xlpgas_internal_buf;
 bool  _xlpgas_internal_bcast_done;
 
@@ -80,13 +80,15 @@ void xlpgas::bcast_tree_collective_reg(){
 #endif
 }
 
+#endif 
 template<class T_NI>
 void xlpgas::BcastTree<T_NI>::reset (int root, const void * sbuf, void* rbuf, unsigned nbytes)
 {
 
   //printf("L%d RESET buffer to write [%x]\n", XLPGAS_MYNODE, rbuf);
-  _xlpgas_internal_bcast_done=false;
-  _xlpgas_internal_buf = rbuf;
+  //todo, fix me
+  //  _xlpgas_internal_bcast_done=false;
+  //  _xlpgas_internal_buf = rbuf;
 // #warning "Do Barrier Here?"
 #if 0
   xlpgas_tspcoll_barrier(_ctxt, _comm->commID());
@@ -118,5 +120,7 @@ void xlpgas::BcastTree<T_NI>::kick()
 template<class T_NI>
 bool xlpgas::BcastTree<T_NI>::isdone (void) const
 {
-  return _xlpgas_internal_bcast_done;
+  // #warning Fix me for PAMI
+  //  return _xlpgas_internal_bcast_done;
+  return false;
 }

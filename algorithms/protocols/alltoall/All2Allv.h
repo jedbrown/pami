@@ -26,12 +26,23 @@ namespace CCMI
     class VType
     {
     public:
-      static PAMI::M2MType type;
+      VType(){COMPILE_TIME_ASSERT(1==0);}
     };
     template<>
-    PAMI::M2MType VType<int>::type=PAMI::M2M_VECTOR_INT;
+    class VType<int>
+    {
+    public:
+      VType():type(PAMI::M2M_VECTOR_INT){}
+      PAMI::M2MType type;
+    };
     template<>
-    PAMI::M2MType VType<size_t>::type=PAMI::M2M_VECTOR_LONG;
+    class VType<long unsigned int>
+    {
+    public:
+      VType():type(PAMI::M2M_VECTOR_LONG){}
+      PAMI::M2MType type;
+    };
+
 
     template <typename T_Int>
     class All2AllvProtocolT: public CCMI::Executor::Composite
@@ -61,8 +72,10 @@ namespace CCMI
       T_Int                  * _recvinit;
       void                   *_initbuf;
       unsigned                _donecount;
+      VType<T_Int>            _vtype;
       PAMI::M2MPipeWorkQueueT<T_Int, 0>  _sendpwq;
       PAMI::M2MPipeWorkQueueT<T_Int, 0>  _recvpwq;
+      
       //CollHeaderData          _metadata;
     public:
       All2AllvProtocolT<T_Int>()
@@ -106,7 +119,7 @@ namespace CCMI
           _recvinit[i] = 0;
         }
 
-        _send.type   = VType<T_Int>::type;
+        _send.type   = _vtype.type;
         _send.buffer = &_sendpwq;
         _sendpwq.configure(
                           xfer_union->sndbuf,
@@ -119,14 +132,14 @@ namespace CCMI
         for(size_t i = 0; i<topo_size; ++i)
         {
           fprintf(stderr,"_sendinit[%zu] %zu\n",i,(size_t)_sendinit[i]);
-          char*  tmp      = _sendpwq.bufferToConsume(i);         
-          size_t tmpbytes = _sendpwq.bytesAvailableToConsume(i); 
+          char*  tmp      = _sendpwq.bufferToConsume(i);
+          size_t tmpbytes = _sendpwq.bytesAvailableToConsume(i);
           fprintf(stderr,"sendpwq(%zu) buffer %p, bytes %zu\n",i, tmp, tmpbytes);
         }
 #endif
         _send.participants = all;
 
-        _recv.type   = VType<T_Int>::type;
+        _recv.type   = _vtype.type;
         _recv.buffer = &_recvpwq;
         _recvpwq.configure(
                           xfer_union->rcvbuf,
@@ -138,8 +151,8 @@ namespace CCMI
 #if 0
         for(size_t i = 0; i<topo_size; ++i)
         {
-          char*  tmp      = _recvpwq.bufferToProduce(i);         
-          size_t tmpbytes = _recvpwq.bytesAvailableToProduce(i); 
+          char*  tmp      = _recvpwq.bufferToProduce(i);
+          size_t tmpbytes = _recvpwq.bytesAvailableToProduce(i);
           fprintf(stderr,"recvpwq(%zu) buffer %p, bytes %zu\n",i, tmp, tmpbytes);
         }
 #endif
