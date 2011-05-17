@@ -10,11 +10,7 @@
 # end_generated_IBM_copyright_prolog                               #
 
 VPATH		        = @abs_srcdir@
-SUBDIRS		        = common @PAMI_ARCH@
-@LIBNAME@-""-MATH_SOURCES	= FloatUtil.cc				\
-			  fp32.cc fp64.cc fp128.cc		\
-	  		  int8.cc int16.cc int32.cc int64.cc	\
-			  uint8.cc uint16.cc uint32.cc uint64.cc \
-			  pami_math.cc
+SUBDIRS		        =
+@LIBNAME@-""-MATH_SOURCES	= qpx_copy.cc
 DEVICENAME	        = @LIBNAME@-""-MATH
 include @abs_top_builddir@/Build.rules
