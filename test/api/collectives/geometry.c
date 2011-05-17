@@ -103,7 +103,7 @@ int main(int argc, char*argv[])
     get_split_method(&num_tasks, task_id, &rangecount, range, &local_task_id, set, &id, &task_zero,non_root);
 
     int k;
-    double ti=timer(), timeElapsed, timeIteration=0;
+    double ti=timer(), timeElapsed=0, timeIteration=0;
     for(k=0; k<NITER; k++)
     {
       if (task_id == k%num_tasks)
