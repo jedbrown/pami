@@ -39,12 +39,6 @@ const double PAMI::Time::seconds_per_cycle = 6.25e-10;
 extern "C" unsigned __isMambo() {return __global.personality._is_mambo? 1:0;};
 #endif
 
-#ifdef USE_COMMTHREADS
-#include "components/devices/bgq/commthread/CommThreadFactory.h"
-PAMI::Device::CommThread::Factory __CommThreadGlobal(&__global.mm, &__global.l2atomicFactory.__nodescoped_mm);
-#endif // USE_COMMTHREADS
-
-
 #include "components/devices/bgq/mu2/model/CollectiveMulticastDmaModel.h"
 #include "components/devices/bgq/mu2/model/Collective2DeviceBase.h"
 
@@ -54,6 +48,12 @@ uint32_t PAMI::Device::MU::CollectiveMulticastDmaModel::_zeroBytes;
 PAMI::Device::MU::CollectiveDmaModelBase::CollState PAMI::Device::MU::CollectiveDmaModelBase::_collstate;
 PAMI::Device::MU::Collective2DeviceBase::CollState PAMI::Device::MU::Collective2DeviceBase::_collstate;
 
+#ifdef USE_COMMTHREADS
+#include "components/devices/bgq/commthread/CommThreadWakeup.h"
+
+PAMI::Device::CommThread::Factory
+		__commThreads(&__global.mm, &__global.l2atomicFactory.__nodescoped_mm);
+#endif // USE_COMMTHREADS
 
 //
 // astyle info    http://astyle.sourceforge.net

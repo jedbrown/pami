@@ -10,8 +10,8 @@
 # end_generated_IBM_copyright_prolog                               #
 
 VPATH		= @abs_srcdir@
-SUBDIRS		= commthread
-NOTBUILT        =
-#@LIBNAME@-""-DEVICE_SOURCES=
-#DEVICENAME     = @LIBNAME@-""-DEVICE
+SUBDIRS		= 
+NOTBUILT	=
+#@LIBNAME@-""-COMMTHREADS_SOURCES =
+#DEVICENAME	= @LIBNAME@-""-COMMTHREADS
 include @abs_top_builddir@/Build.rules

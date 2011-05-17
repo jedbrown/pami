@@ -84,7 +84,7 @@
 #define DEBUG_WRITE(a,b)
 #endif // ! DEBUG_COMMTHREADS
 
-extern PAMI::Device::CommThread::Factory __CommThreadGlobal;
+extern PAMI::Device::CommThread::Factory __commThreads;
 #endif // !COMMTHREAD_LAYOUT_TESTING
 
 namespace PAMI {
@@ -212,15 +212,10 @@ public:
 		pthread_setschedprio(self, max_pri);
 	}
 
-	static inline void initContext(size_t clientid,
-					size_t contextid, pami_context_t context) {
-		// might need hook later, to do per-context initialization?
-	}
-
 #if 0
 	static void balanceThreads(uint32_t core, uint32_t &newcore, uint32_t &newthread) {
 
-		uint64_t mask = __CommThreadGlobal.availThreads(core);
+		uint64_t mask = __commThreads.availThreads(core);
 
 
 
@@ -239,27 +234,42 @@ public:
 	}
 #endif
 
+	static inline void initContext(size_t contextid, pami_context_t context) {
+		// might need hook later, to do per-context initialization?
+		// PAMI::Context *ctx = (PAMI::Context *)context;
+		// size_t client_id = ctx->getClientId();
+	}
+
+	static inline pami_result_t registerAsync(pami_context_t context,
+				PAMI::ProgressExtension::pamix_async_function progress_fn,
+				PAMI::ProgressExtension::pamix_async_function suspend_fn,
+				PAMI::ProgressExtension::pamix_async_function resume_fn,
+				void *cookie) {
+		PAMI::Context *ctx = (PAMI::Context *)context;
+		return ctx->registerAsync(progress_fn, suspend_fn, resume_fn, cookie);
+	}
+
 	// arrange for the new comm-thread to hunt-down this context and
 	// take it, even if some other thread already picked it up.
 	// This helps ensure a more-balanced startup, and prevents some
 	// complexities of trying to re-balance later. Then, only when
 	// a comm-thread leaves the set does there have to be a re-balance.
-	static inline pami_result_t addContext(size_t clientid,
-					pami_context_t context) {
+	static inline pami_result_t addContext(pami_context_t context) {
 		int status;
 		uint32_t c, t, core;
 		PAMI::Context *ctx = (PAMI::Context *)context;
+		// size_t client_id = ctx->getClientId();
 		core = ctx->coreAffinity();
 		BgqCommThread *thus;
 
 		//balanceThreads(core, c, t);
 		c = core;
-		__CommThreadGlobal.getNextThread(c, t);
+		__commThreads.getNextThread(c, t);
 		// any error checking?
 		thus = _comm_xlat[c][t];
 
 		// all BgqCommThread objects have the same ContextSet object.
-		BgqCommThread *devs = __CommThreadGlobal.getCommThreads();
+		BgqCommThread *devs = __commThreads.getCommThreads();
 		// this will wakeup existing commthreads...
 		// note, unsolvable race condition: we want to add 'm' to
 		// the existing commthread's _initCtxs, but can't do that
@@ -338,13 +348,13 @@ public:
 		return PAMI_SUCCESS;
 	}
 
-	static inline pami_result_t rmContexts(size_t clientid,
-						PAMI::Context *ctxs, size_t nctx) {
+	static inline pami_result_t rmContexts(pami_context_t _ctxs, size_t nctx) {
+		PAMI::Context *ctxs = (PAMI::Context *)_ctxs;
 		size_t x;
 		if (_numActive == 0) {
 			return PAMI_SUCCESS;
 		}
-		BgqCommThread *devs = __CommThreadGlobal.getCommThreads();
+		BgqCommThread *devs = __commThreads.getCommThreads();
 
 		// all BgqCommThread objects have the same ContextSet object.
 
@@ -514,6 +524,19 @@ DEBUG_WRITE('t','t');
 	static size_t _ptThread;
 #endif // !COMMTHREAD_LAYOUT_TESTING
 }; // class BgqCommThread
+
+size_t PAMI::Device::CommThread::BgqCommThread::_maxActive = 0;
+size_t PAMI::Device::CommThread::BgqCommThread::_maxloops = 100;
+size_t PAMI::Device::CommThread::BgqCommThread::_minloops = 10;
+#ifndef COMMTHREAD_LAYOUT_TESTING
+size_t PAMI::Device::CommThread::BgqCommThread::_numActive = 0;
+size_t PAMI::Device::CommThread::BgqCommThread::_ptCore = 0;
+size_t PAMI::Device::CommThread::BgqCommThread::_ptThread = 0;
+PAMI::Device::CommThread::BgqCommThread *PAMI::Device::CommThread::BgqCommThread::_comm_xlat[NUM_CORES][NUM_SMT] = {{NULL}};
+
+#undef DEBUG_INIT
+#undef DEBUG_WRITE
+#endif // !COMMTHREAD_LAYOUT_TESTING
 
 // Called from __global...
 //
@@ -708,21 +731,26 @@ Factory::~Factory() {
 	}
 }
 
+pami_result_t Factory::addContext(pami_context_t ctx) {
+	return BgqCommThread::addContext(ctx);
+}
+pami_result_t Factory::rmContexts(pami_context_t ctxs, size_t nctx) {
+	return BgqCommThread::rmContexts(ctxs, nctx);
+}
+void Factory::initContext(size_t contextid, pami_context_t context) {
+	BgqCommThread::initContext(contextid, context);
+}
+pami_result_t Factory::registerAsync(pami_context_t ctx,
+			PAMI::ProgressExtension::pamix_async_function progress_fn,
+			PAMI::ProgressExtension::pamix_async_function suspend_fn,
+			PAMI::ProgressExtension::pamix_async_function resume_fn,
+			void *cookie) {
+	return BgqCommThread::registerAsync(ctx,
+			progress_fn, suspend_fn, resume_fn, cookie);
+}
+
 }; // namespace CommThread
 }; // namespace Device
 }; // namespace PAMI
-
-size_t PAMI::Device::CommThread::BgqCommThread::_maxActive = 0;
-size_t PAMI::Device::CommThread::BgqCommThread::_maxloops = 100;
-size_t PAMI::Device::CommThread::BgqCommThread::_minloops = 10;
-#ifndef COMMTHREAD_LAYOUT_TESTING
-size_t PAMI::Device::CommThread::BgqCommThread::_numActive = 0;
-size_t PAMI::Device::CommThread::BgqCommThread::_ptCore = 0;
-size_t PAMI::Device::CommThread::BgqCommThread::_ptThread = 0;
-PAMI::Device::CommThread::BgqCommThread *PAMI::Device::CommThread::BgqCommThread::_comm_xlat[NUM_CORES][NUM_SMT] = {{NULL}};
-
-#undef DEBUG_INIT
-#undef DEBUG_WRITE
-#endif // !COMMTHREAD_LAYOUT_TESTING
 
 #endif // __components_devices_bgq_commthread_CommThreadWakeup_h__

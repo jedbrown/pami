@@ -23,6 +23,8 @@
 #include "components/atomic/indirect/IndirectCounter.h"
 #include "components/atomic/indirect/IndirectMutex.h"
 
+#include "api/extension/c/async_progress/ProgressExtension.h"
+
 #include "components/memory/MemoryAllocator.h"
 
 #include "components/memory/MemoryManager.h"
@@ -281,6 +283,9 @@ namespace PAMI
           _get(devices->_mu[_contextid]),
           _put(devices->_mu[_contextid])
       {
+        _async_suspend = NULL;
+        _async_resume = NULL;
+	_async_cookie = NULL;
         char mmkey[PAMI::Memory::MMKEYSIZE];
         char *mms;
         mms = mmkey + sprintf(mmkey, "/pami-clt%zd-ctx%zd", clientid, id);
@@ -1013,12 +1018,46 @@ namespace PAMI
       {
         return PAMI_INVAL;
       }
+
+      inline size_t getClientId ()
+      {
+	return _clientid;
+      }
+
+      inline pami_result_t registerAsync(
+		PAMI::ProgressExtension::pamix_async_function progress,
+		PAMI::ProgressExtension::pamix_async_function suspend,
+		PAMI::ProgressExtension::pamix_async_function resume,
+		void *cookie)
+      {
+        _async_suspend = suspend;
+        _async_resume = resume;
+	_async_cookie = cookie;
+	return PAMI_SUCCESS;
+      }
+
+      inline pami_result_t getAsyncRegs(
+		PAMI::ProgressExtension::pamix_async_function *progress,
+		PAMI::ProgressExtension::pamix_async_function *suspend,
+		PAMI::ProgressExtension::pamix_async_function *resume,
+		void **cookie)
+      {
+        *progress = NULL;
+	*suspend = _async_suspend;
+        *resume = _async_resume;
+	*cookie = _async_cookie;
+	return PAMI_SUCCESS;
+      }
+
     private:
 
       pami_client_t                _client;
       pami_context_t               _context;
       size_t                       _clientid;
       size_t                       _contextid;
+      PAMI::ProgressExtension::pamix_async_function _async_suspend;
+      PAMI::ProgressExtension::pamix_async_function _async_resume;
+      void                        *_async_cookie;
       int                          _dispatch_id;
       std::map<unsigned, pami_geometry_t> *_geometry_map;
       pami_endpoint_t              _self;

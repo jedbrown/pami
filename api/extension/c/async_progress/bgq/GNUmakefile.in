@@ -1,0 +1,6 @@
+VPATH       = @abs_srcdir@
+SUBDIRS     =
+NOTBUILT    =
+@LIBNAME@-""-PROGRESS_EXTENSION_SOURCES=ProgressExtension.cc
+DEVICENAME     = @LIBNAME@-""-PROGRESS_EXTENSION
+include @abs_top_builddir@/Build.rules

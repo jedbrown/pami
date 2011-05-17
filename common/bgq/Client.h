@@ -13,7 +13,7 @@
 #include <errno.h>
 
 #ifdef USE_COMMTHREADS
-#include "components/devices/bgq/commthread/CommThreadWakeup.h"
+#include "components/devices/bgq/commthread/CommThreadFactory.h"
 #endif // USE_COMMTHREADS
 
 #undef TRACE_ERR
@@ -194,7 +194,7 @@ namespace PAMI
             // but it won't matter since this object can't do anything with it anyway.
             // This must initialize before the context, so that MemoryManagers are
             // setup.
-            PAMI::Device::CommThread::BgqCommThread::initContext(_clientid, x, context[x]);
+	    __commThreads.initContext(x, context[x]);
 #endif // USE_COMMTHREADS
             new (&_contexts[x]) PAMI::Context(this->getClient(), _clientid, x, n,
                                    &_platdevs, &_xmm, bytes, _world_geometry, &_geometry_map);
@@ -220,7 +220,7 @@ namespace PAMI
         // for (i = 0.._ncontexts) PAMI_assertf(context[i] == &_contexts[i], "...");
 #ifdef USE_COMMTHREADS
         // This removes all contexts... only needs to be called once.
-        PAMI::Device::CommThread::BgqCommThread::rmContexts(_clientid, _contexts, _ncontexts);
+        __commThreads.rmContexts(_contexts, _ncontexts);
 #endif // USE_COMMTHREADS
         pami_result_t res = PAMI_SUCCESS;
         size_t i;
@@ -243,14 +243,6 @@ namespace PAMI
         _ncontexts = 0;
         return res;
       }
-
-#ifdef USE_COMMTHREADS
-      // This is not standard interface... yet?
-      inline pami_result_t addContextToCommThreadPool(pami_context_t ctx)
-      {
-          return PAMI::Device::CommThread::BgqCommThread::addContext(_clientid, ctx);
-      }
-#endif // USE_COMMTHREADS
 
       inline pami_result_t query_impl (pami_configuration_t configuration[],
                                        size_t               num_configs)

@@ -148,6 +148,23 @@ class BgqContextPool {
 		*ptr = v;
 	}
 
+	inline void do_event_callbacks(uint64_t m, const int start) {
+		PAMI::ProgressExtension::pamix_async_function progress, suspend, resume;
+		void *cookie;
+		size_t x = 0;
+		for (; m; m >>= 1, ++x) {
+			if (!(m & 1)) continue;
+			_contexts[x]->getAsyncRegs(&progress,
+					&suspend, &resume, &cookie);
+			if (start && resume) {
+				resume((pami_context_t)_contexts[x], cookie);
+			}
+			if (!start && suspend) {
+				suspend((pami_context_t)_contexts[x], cookie);
+			}
+		}
+	}
+
 public:
 	BgqContextPool() :
 	_contexts(NULL),
@@ -203,6 +220,7 @@ public:
 		}
 		if (x >= _ncontexts_total) {
 			// should never happen
+			_mutex.release();
 			return 0UL;
 		}
 		_contexts[x] = (PAMI::Context *)ctx;
@@ -286,6 +304,8 @@ public:
 			_sets[_nsets] = 0;
 			_sets[threadid] = m;
 			_numinsets[threadid] = num_bits(m);
+			// might not need lock for this, but safer this way.
+			do_event_callbacks(m, 1);
 		} else {
 			__rebalanceContexts(); // recalc _sets[], _numinsets[]
 		}
@@ -293,8 +313,9 @@ public:
 	}
 
 	inline void leaveContextSet(size_t &threadid) {
+		size_t na;
 		_mutex.acquire();
-		--_nactive;
+		na = --_nactive;
 		uint64_t m = _sets[threadid];
 		// PAMI_assert((_actm & (1UL << threadid)) != 0);
 		_sets[threadid] = 0;      // not valid unless _actm bit set
@@ -303,8 +324,12 @@ public:
 		_numinsets[threadid] = 0; // not valid unless _actm bit set
 		// must clear bit before calling __giveupContexts()
 		_actm &= ~(1UL << threadid);
-		if (_nactive == 0) {
+		// Race: another commthread could start picking up contexts
+		// before we finish... so have to do suspend callbacks under
+		// the lock.
+		if (na == 0) {
 			_sets[_nsets] |= m;
+			do_event_callbacks(m, 0);
 		} else {
 			__giveupContexts(m);
 		}

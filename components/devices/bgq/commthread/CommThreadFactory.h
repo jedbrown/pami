@@ -13,8 +13,12 @@
 #ifndef __components_devices_bgq_commthread_CommThreadFactory_h__
 #define __components_devices_bgq_commthread_CommThreadFactory_h__
 
+#if 0 // doesn't work because of circular dependencies anyway
 #include "common/bgq/ResourceManager.h"
 extern PAMI::ResourceManager __pamiRM;
+#endif
+
+#include "api/extension/c/async_progress/ProgressExtension.h"
 
 namespace PAMI {
 namespace Device {
@@ -24,12 +28,22 @@ class BgqCommThread;
 class Factory {
 	static const int MAX_NCTXS = 64;
 public:
+	Factory() { }
         Factory(PAMI::Memory::MemoryManager *genmm, PAMI::Memory::MemoryManager *l2xmm);
         ~Factory();
 #ifdef COMMTHREAD_LAYOUT_TESTING
 	void * operator new(size_t x, void *v) { return v; }
 #endif // COMMTHREAD_LAYOUT_TESTING
+	static pami_result_t addContext(pami_context_t context);
+	static pami_result_t rmContexts(pami_context_t ctxs, size_t nctx);
+	static pami_result_t registerAsync(pami_context_t ctx,
+				PAMI::ProgressExtension::pamix_async_function progress_fn,
+				PAMI::ProgressExtension::pamix_async_function suspend_fn,
+				PAMI::ProgressExtension::pamix_async_function resume_fn,
+				void *cookie);
+	static void initContext(size_t contextid, pami_context_t context);
 
+#if 0 // doesn't work because of circular dependencies anyway
 	inline size_t getPerProcessMaxPamiResources(size_t RmClientId) {
 		size_t x, y = 0;
 		size_t n = MAX_NCTXS;
@@ -50,6 +64,7 @@ public:
 		}
 		return y;
 	}
+#endif
 
 	inline size_t getPerProcessMaxPamiResources() {
 		return MAX_NCTXS; // this is because of uint64_t for context sets bitmaps.

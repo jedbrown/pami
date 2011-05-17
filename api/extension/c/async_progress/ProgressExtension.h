@@ -24,11 +24,11 @@ namespace PAMI
 
       ProgressExtension();
 
-      static pami_result_t pamix_async_progress_register (pami_context_t         context,
-                                                          pamix_async_function   progress_fn,
-                                                          pamix_async_function   suspend_fn,
-                                                          pamix_async_function   resume_fn,
-                                                          void                 * cookie);
+      static pami_result_t context_async_progress_register(pami_context_t         context,
+                                                           pamix_async_function   progress_fn,
+                                                           pamix_async_function   suspend_fn,
+                                                           pamix_async_function   resume_fn,
+                                                           void                 * cookie);
 
       static pami_result_t context_async_progress_enable (pami_context_t context,
                                                           pamix_async_t  event_type);

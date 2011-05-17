@@ -48,6 +48,10 @@
 // the following to "#undef".
 #define USE_COMMTHREADS // define/undef
 
+#ifdef USE_COMMTHREADS
+#include "components/devices/bgq/commthread/CommThreadFactory.h"
+#endif // USE_COMMTHREADS
+
 #undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
 
@@ -264,6 +268,9 @@ namespace PAMI
   }; // PAMI::Global
 };     // PAMI
 
+#ifdef USE_COMMTHREADS
+extern PAMI::Device::CommThread::Factory __commThreads;
+#endif // USE_COMMTHREADS
 
 // If 'mm' is NULL, compute total memory needed for mapcache and return (doing nothing else).
 size_t PAMI::Global::initializeMapCache (BgqJobPersonality  & personality,
