@@ -142,7 +142,7 @@ int main(int argc, char*argv[])
       barrier.cb_done   = cb_done;
       barrier.cookie    = (void*) & bar_poll_flag;
       barrier.algorithm = bar_always_works_algo[0];
-      blocking_coll(context, &barrier, &bar_poll_flag);
+      blocking_coll(context[0], &barrier, &bar_poll_flag);
       unsigned checkrequired = reduce_must_query_md[nalg].check_correct.values.checkrequired; /*must query every time */
       assert(!checkrequired || reduce_must_query_md[nalg].check_fn); /* must have function if checkrequired. */
 
