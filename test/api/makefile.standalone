@@ -2,9 +2,9 @@
 PAMI_INCLUDE   := /usr/include
 PAMI_LIB       := /usr/lib
 PAMI_LIBNAME   := -lpami_r
-C_COMPILER     := mpcc -q32
-CXX_COMPILER   := mpCC -q32
-LINKER         := mpcc -q32
+C_COMPILER     := mpcc
+CXX_COMPILER   := mpCC
+LINKER         := mpcc
 
 ##### You shouldn't have to edit under this line ######
 CC        := ${C_COMPILER}  -O0 -g -I${PAMI_INCLUDE}  -I${PAMI_INCLUDE}/default
@@ -69,7 +69,6 @@ build/collectives/alltoallv.exe \
 build/collectives/alltoallv_int.exe \
 build/collectives/alltoallv_int_subcomm.exe \
 build/collectives/ambcast.exe \
-build/collectives/geometry.exe \
 build/collectives/barrier.exe \
 build/collectives/barrier_query.exe \
 build/collectives/barrier_subcomm.exe \
@@ -81,7 +80,9 @@ build/collectives/bcast_subcomm_query.exe \
 build/collectives/gather.exe \
 build/collectives/gatherv.exe \
 build/collectives/gatherv_int.exe \
+build/collectives/geometry.exe \
 build/collectives/reduce.exe \
+build/collectives/reduce_query.exe \
 build/collectives/reduce_scatter.exe \
 build/collectives/reduce_subcomm.exe \
 build/collectives/scan.exe \
