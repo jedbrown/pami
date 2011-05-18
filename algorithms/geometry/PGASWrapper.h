@@ -29,7 +29,7 @@ namespace PAMI
     // around the PGAS RT classes
 
     // --------------  PGAS Wrapper base class -------------
-    template <class T_Geometry, class T_TSPColl, class T_P2P_NI, class T_Device, class T_TSPCollBarrier = void*>
+    template <class T_Geometry, class T_TSPColl, class T_P2P_NI, class T_Device, class T_TSPCollBarrier = xlpgas::Collective<T_P2P_NI> >
     class PGExec:public CCMI::Executor::Composite
     {
     public:
@@ -51,6 +51,7 @@ namespace PAMI
           _barmodel    = barmodel;
           _geometry    = (T_Geometry*)geometry;
           _collexch->setNI(model);
+          if(_collbarrier) _collbarrier->setNI(barmodel);
         }
     public:
       pami_xfer_t                      *_cmd;
@@ -67,7 +68,7 @@ namespace PAMI
               class       T_P2P_NI,
               class       T_Device,
               class       T_Exec,
-              class       T_TSPCollBarrier = void*>
+              class       T_TSPCollBarrier = xlpgas::Collective<T_P2P_NI> >
     class PGFactory : public CCMI::Adaptor::CollectiveProtocolFactory
     {
     public:
