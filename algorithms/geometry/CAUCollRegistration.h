@@ -61,8 +61,6 @@ namespace PAMI
       }
 
       
-      inline metadata_result_t op_dt_metadata_function(struct pami_xfer_t *in)
-        {
           const bool support[PAMI_DT_COUNT][PAMI_OP_COUNT] =
             {
          //  COPY,             NOOP,      MAX,      MIN,      SUM,      PROD,      LAND,      LOR,      LXOR,      BAND,      BOR,      BXOR,      MAXLOC,      MINLOC
@@ -90,11 +88,16 @@ namespace PAMI
             {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_LOC_FLOAT_INT
             {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false} //PRIMITIVE_TYPE_LOC_DOUBLE_INT
             };
-          metadata_result_t result = {0};
-          uintptr_t op;
-          uintptr_t dt;
-          PAMI::Type::TypeFunc::GetEnums(in->cmd.xfer_allreduce.stype,
-                                         in->cmd.xfer_allreduce.op,
+
+      template <class T_reduce_type>
+      inline metadata_result_t op_dt_metadata_function(struct pami_xfer_t *in)
+        {
+          T_reduce_type     *reduction = (T_reduce_type*)&in->cmd;
+          metadata_result_t  result    = {0};
+          uintptr_t          op;
+          uintptr_t          dt;
+          PAMI::Type::TypeFunc::GetEnums(reduction->stype,
+                                         reduction->op,
                                          dt,
                                          op);
           if(op < PAMI_OP_COUNT && dt < PAMI_DT_COUNT)
@@ -154,7 +157,7 @@ namespace PAMI
         {
           new(m) PAMI::Geometry::Metadata("I0:MultiCombineComposite:SHMEM:CAU");
           m->check_correct.values.alldtop   = 0;
-          m->check_fn                       = CAU::op_dt_metadata_function;
+          m->check_fn                       = CAU::op_dt_metadata_function<pami_allreduce_t>;
           m->check_perf.values.hw_accel     = 1;
           m->range_lo_perf                  = 0;
           m->range_hi_perf                  = 64;
@@ -172,7 +175,7 @@ namespace PAMI
         {
           new(m) PAMI::Geometry::Metadata("I0:MultiCombineComposite:SHMEM:CAU");
           m->check_correct.values.alldtop   = 0;
-          m->check_fn                       = CAU::op_dt_metadata_function;
+          m->check_fn                       = CAU::op_dt_metadata_function<pami_reduce_t>;
           m->check_perf.values.hw_accel     = 1;
           m->range_lo_perf                  = 0;
           m->range_hi_perf                  = 64;

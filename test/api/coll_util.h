@@ -229,6 +229,15 @@ void reduce_initialize_sndbuf(void *buf, int count, int op, int dt, int task_id,
       dbuf[i] = 1.0 * i;
     }
   }
+  else if (op_array[op] == PAMI_DATA_SUM && dt_array[dt] == PAMI_TYPE_FLOAT)
+  {
+    float *dbuf = (float *)  buf;
+
+    for (i = 0; i < count; i++)
+    {
+      dbuf[i] = 1.0 * i;
+    }
+  }
   else if ((op_array[op] == PAMI_DATA_MAX || op_array[op] == PAMI_DATA_MIN) && dt_array[dt] == PAMI_TYPE_DOUBLE)
   {
     memset(buf,  0,  count * sizeof(double));
@@ -276,6 +285,20 @@ int reduce_check_rcvbuf(void *buf, int count, int op, int dt, int task_id, int n
       if (rcvbuf[i] != 1.0 * i * num_tasks)
       {
         fprintf(stderr, "%s:Check %s/%s(%d) failed rcvbuf[%d] %f != %f\n", gProtocolName, dt_array_str[dt], op_array_str[op], count, i, rcvbuf[i], (double)1.0*i*num_tasks);
+        err = -1;
+        return err;
+      }
+    }
+  }
+  else if (op_array[op] == PAMI_DATA_SUM && dt_array[dt] == PAMI_TYPE_FLOAT)
+  {
+    float *rcvbuf = (float *)  buf;
+
+    for (i = 0; i < count; i++)
+    {
+      if (rcvbuf[i] != 1.0 * i * num_tasks)
+      {
+        fprintf(stderr, "%s:Check %s/%s(%d) failed rcvbuf[%d] %f != %f\n", gProtocolName, dt_array_str[dt], op_array_str[op], count, i, rcvbuf[i], (float)1.0*i*num_tasks);
         err = -1;
         return err;
       }
@@ -383,6 +406,18 @@ metadata_result_t check_metadata(pami_metadata_t md,
     if(md.check_correct.values.continrflags)
       result.check.continuous_recv = !primitive_dt(r_dt);
   }
+  if(gVerbose)
+    printf("Query Result: unspec=%u range=%u align_rbuf=%u align_sbuf=%u dt_op=%u cgs=%u cgr=%u cts=%u ctr=%u nonlocal=%u\n",
+           result.check.unspecified,
+           result.check.range,
+           result.check.align_send_buffer,
+           result.check.align_recv_buffer,
+           result.check.datatype_op,
+           result.check.contiguous_send,
+           result.check.contiguous_recv,
+           result.check.continuous_send,
+           result.check.continuous_recv,
+           result.check.nonlocal);
   return result;
 }
 
