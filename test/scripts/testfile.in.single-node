@@ -144,6 +144,7 @@ api/p2p/send/hint/use_shmem/use_shmem_perf.cnk
 #
 #=== api/p2p/send/immediate SUBDIR ===
 api/p2p/send/immediate/inject_perf.cnk
+api/p2p/send/immediate/data_integrity.cnk
 #
 #=== api/p2p/send/send_to_self_immed SUBDIR ===
 api/p2p/send/send_to_self_immed/send_to_self_immed.cnk --timelimit 180
