@@ -10,7 +10,7 @@
 # end_generated_IBM_copyright_prolog                               #
 
 VPATH		        = @abs_srcdir@
-SUBDIRS		        = common @PAMI_ARCH@
+SUBDIRS		        = common
 @LIBNAME@-""-MATH_SOURCES	= FloatUtil.cc				\
 			  fp32.cc fp64.cc fp128.cc		\
 	  		  int8.cc int16.cc int32.cc int64.cc	\
