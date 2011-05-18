@@ -36,7 +36,7 @@ namespace CCMI
       PAMI::M2MType type;
     };
     template<>
-    class VType<long unsigned int>
+    class VType<size_t>
     {
     public:
       VType():type(PAMI::M2M_VECTOR_LONG){}
