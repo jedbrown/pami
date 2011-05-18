@@ -651,6 +651,10 @@ public:
 	///
 	/// \brief Allocate an aligned buffer of the memory.
 	///
+	/// NOTE, this is not efficient for small allocations. Users that are
+	/// allocating large numbers of small chunks should allocate one
+	/// large block and then sub-divide into small chunks.
+	///
 	/// The initializer function is called only once on a given chunk of memory,
 	/// by the first caller to allocate with a given key.
 	///
