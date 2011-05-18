@@ -18,9 +18,11 @@
 #include "atomics.h"
 #include "Bsr.h"
 #include "lapi_itrace.h"
-#include "lapi_assert.h"
 #include "Arch.h"
+#include "dlpnsd_lib.h"
+#include "util/common.h"
 
+using namespace PNSDapi;
 
 #ifdef _LAPI_LINUX
 const char BSR_LIB_NAME[] = "libbsr.so";
@@ -175,6 +177,37 @@ void Bsr::CleanUp()
 #endif
     bsr_key = -1;
     bsr_id = -1;
+}
+
+int Bsr::GetBsrUniqueKey(const unsigned int j_key)
+{
+    int             pnsd_handle, rc, key_rc;
+    char            *name = "key.shmv";
+    pnsd_key_t      key;
+    open_flags_t    flags = NTBL_UPDATES;
+
+    rc = papi_open(&pnsd_handle, flags);
+    if( rc != 0 ) {
+        ITRC(IT_BSR, "Bsr::GetBsrUniqueKey() pnsd_api_open failed, rc = %d\n", rc);
+        return rc;
+    }
+
+    key_rc = papi_get_keys(pnsd_handle, j_key, name, 1, &key);
+    if( key_rc != 0 ) {
+        ITRC(IT_BSR, "Bsr::GetBsrUniqueKey() pnsd_api_get_keys failed, rc = %d\n",
+                key_rc);
+    } else {
+        bsr_key = (key_t)key;
+    }
+
+    rc = papi_close(pnsd_handle);
+    if ( rc != 0 ) {
+        ITRC(IT_BSR, "Bsr::GetBsrUniqueKey() pnsd_api_close failed with rc = %d\n", rc);
+    }
+
+    ITRC(IT_BSR, "Bsr::GetBsrUniqueKey() pnsd_api_get_keys succeeded with key (0x%x)\n",
+            key);
+    return key_rc;
 }
 
 SharedArray::RC Bsr::Init(const unsigned int mem_cnt,
@@ -334,23 +367,26 @@ SharedArray::RC Bsr::Init(const unsigned int mem_cnt,
     }
 #else  /* AIX flow */
     if (leader) {
-        // generate a unique key for BSR region
-        int num_try = 0;
-        srand( time(NULL) );
-        do {
-            bsr_key = rand();
+        int key_rc = GetBsrUniqueKey(job_key);
+        if (key_rc == 0) {
             bsr_id = shmget(bsr_key, bsr_size, IPC_CREAT|IPC_EXCL|0600);
-            num_try ++;
-        } while (bsr_id == -1 && num_try < 100);
-
-        if (bsr_id != -1) {
-            ITRC(IT_BSR, "Bsr: BSR master (BSR key=0x%x, BSR id=%d) allocation passed after %d tries.\n",
-                    bsr_key, bsr_id, num_try);
+            if (bsr_id != -1) {
+                ITRC(IT_BSR, "Bsr: BSR master shmget passed with (BSR key=0x%x, BSR id=%d)\n",
+                        bsr_key, bsr_id);
+            } else {
+                ITRC(IT_BSR, "Bsr: BSR master shmget failed with (BSR key=0x%x, errno=%d)\n",
+                        bsr_key, errno);
+                shm->bsr_setup_state = ST_FAIL;
+                CleanUp();
+                return FAILED;
+            }
         } else {
-            ITRC(IT_BSR, "Bsr: shmget to allocate BSR region failed with errno %d after %d tries.\n",
-                    errno, num_try);
+            ITRC(IT_BSR, "Bsr: BSR master failed to get key from PNSD (%d)\n",
+                    key_rc);
             shm->bsr_setup_state = ST_FAIL;
             CleanUp();
+            PAMI_assertf(0, "BSR master failed to get key from PNSD (rc=%d)",
+                    key_rc);
             return FAILED;
         }
 

@@ -72,7 +72,10 @@ SyncGroup::RC SaOnNodeSyncGroup::Init(
 
             // show_bsr("After BSR Init "); 
         } else {
-            // If both BSRs failed, try shm
+            ITRC(IT_BSR, "(%d)SaOnNodeSyncGroup: BSR setup failed with (%d)\n",
+                    sa_rc);
+
+            // If BSRs failed, try shm
             delete sa;
             sa = NULL;
             sa = new ShmArray;

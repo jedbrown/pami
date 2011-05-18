@@ -74,5 +74,6 @@ class Bsr : public SharedArray
 
         // helper function
         void CleanUp();
+        int GetBsrUniqueKey(const unsigned int j_key);
 };
 #endif
