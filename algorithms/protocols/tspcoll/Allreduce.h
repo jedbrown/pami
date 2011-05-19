@@ -44,7 +44,7 @@ namespace xlpgas
     class Short: public CollExchange<T_NI>
     {
     public:
-      static const int MAXBUF = 1000;
+      static const int MAXBUF = 512;
       void * operator new (size_t, void * addr) { return addr; }
       Short (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset);
       void reset (const void        * s,
@@ -61,7 +61,7 @@ namespace xlpgas
     protected:
       int           _nelems, _logMaxBF;
       void        * _dbuf;
-      void       (* _cb_allreduce) (void *, const void *, unsigned, const user_func_t&);
+      coremath      _cb_allreduce;
       char          _dummy;
       user_func_t*  _uf;
 
@@ -76,6 +76,7 @@ namespace xlpgas
 } /* Xlpgas */
 
 #include "algorithms/protocols/tspcoll/LongAllreduce.cc"
+#include "algorithms/protocols/tspcoll/ShortAllreduce.cc"
 #include "algorithms/protocols/tspcoll/Allreduce.cc"
 
 #endif /* __xlpgas_Allreduce_h__ */

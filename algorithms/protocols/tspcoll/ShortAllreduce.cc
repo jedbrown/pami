@@ -21,10 +21,10 @@
 /* ************************************************************************* */
 /*                       start a short allreduce                              */
 /* ************************************************************************* */
-
-xlpgas::Allreduce::Short::
+template <class T_NI>
+xlpgas::Allreduce::Short<T_NI>::
 Short (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
-  CollExchange (ctxt, comm, kind, tag, offset)
+  CollExchange<T_NI> (ctxt, comm, kind, tag, offset)
 {
   _dbuf = NULL;
   _nelems = 0;
@@ -95,11 +95,11 @@ Short (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
 /* ************************************************************************* */
 /*                     allreduce executor                                    */
 /* ************************************************************************* */
-
-void xlpgas::Allreduce::Short::
-cb_allreduce (CollExchange *coll, unsigned phase)
+template <class T_NI>
+void xlpgas::Allreduce::Short<T_NI>::
+cb_allreduce (CollExchange<T_NI> *coll, unsigned phase)
 {
-  xlpgas::Allreduce::Short * ar = (xlpgas::Allreduce::Short *) coll;
+  xlpgas::Allreduce::Short<T_NI> * ar = (xlpgas::Allreduce::Short<T_NI> *) coll;
   int c = (ar->_counter+1) & 1;
   /*int *s = (int*)(ar->_phasebuf[phase][c]);
   int *d = (int*)(ar->_dbuf);
@@ -107,13 +107,14 @@ cb_allreduce (CollExchange *coll, unsigned phase)
     printf("L%d Add %d %d\n",XLPGAS_MYNODE, s[i],d[i]);
   }
   */
-  ar->_cb_allreduce (ar->_dbuf, ar->_phasebuf[phase][c], ar->_nelems, *(ar->_uf));
+  void * inputs[] = {ar->_dbuf, ar->_phasebuf[phase][c]};
+  ar->_cb_allreduce (ar->_dbuf, inputs, 2, ar->_nelems);
 }
-
-xlpgas_local_addr_t xlpgas::Allreduce::Short::
-cb_switchbuf (CollExchange * coll, unsigned phase, unsigned counter)
+template <class T_NI>
+xlpgas_local_addr_t xlpgas::Allreduce::Short<T_NI>::
+cb_switchbuf (CollExchange<T_NI> * coll, unsigned phase, unsigned counter)
 {
-  xlpgas::Allreduce::Short * ar = (xlpgas::Allreduce::Short *) coll;
+  xlpgas::Allreduce::Short<T_NI> * ar = (xlpgas::Allreduce::Short<T_NI> *) coll;
   int c = (counter+1) & 1;
   return (xlpgas_local_addr_t) (ar->_phasebuf[phase][c]);
 }
@@ -121,7 +122,8 @@ cb_switchbuf (CollExchange * coll, unsigned phase, unsigned counter)
 /* ************************************************************************* */
 /*                      start a short allreduce operation                     */
 /* ************************************************************************* */
-void xlpgas::Allreduce::Short::reset (const void         * sbuf,
+template <class T_NI>
+void xlpgas::Allreduce::Short<T_NI>::reset (const void         * sbuf,
 				     void               * dbuf,
 				     xlpgas_ops_t       op,
 				     xlpgas_dtypes_t    dt,
@@ -131,7 +133,7 @@ void xlpgas::Allreduce::Short::reset (const void         * sbuf,
   assert (sbuf != NULL);
   assert (dbuf != NULL);
 
-  xlpgas::CollExchange::reset();//to lock
+  xlpgas::CollExchange<T_NI>::reset();//to lock
 
   _uf = uf; //user function pointer
   /* --------------------------------------------------- */
@@ -192,5 +194,5 @@ void xlpgas::Allreduce::Short::reset (const void         * sbuf,
     }
 
   assert (phase == _numphases);
-  _cb_allreduce = getcallback (op, dt);
+  this->_cb_allreduce = getcallback (op, dt);
 }

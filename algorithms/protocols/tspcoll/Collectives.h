@@ -22,7 +22,7 @@ struct base_coll_defs{
   typedef xlpgas::Barrier<T_NI>    barrier_type;
   typedef xlpgas::Broadcast<T_NI>  broadcast_type;
   typedef xlpgas::Allreduce::Long<T_NI> allreduce_type;
-  typedef xlpgas::Allreduce::Long<T_NI> short_allreduce_type; //not implemented yet
+  typedef xlpgas::Allreduce::Short<T_NI> short_allreduce_type;
   typedef xlpgas::Allgather<T_NI>  allgather_type;
   typedef xlpgas::Allgatherv<T_NI> allgatherv_type;
   typedef xlpgas::Alltoall<T_NI>   alltoall_type;

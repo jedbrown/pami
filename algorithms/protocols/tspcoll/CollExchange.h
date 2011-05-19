@@ -371,12 +371,12 @@ inline void xlpgas::CollExchange<T_NI>::cb_incoming(pami_context_t    context,
   if (z == NULL) b->internalerror (header, __LINE__);
 
   if(pipe_addr)
-    memcpy(b->_rbuf[header->phase], pipe_addr, data_size);
+    memcpy(z, pipe_addr, data_size);
   else if(recv)
   {
     recv->cookie        = &b->_cmplt[header->phase];
     recv->local_fn      = CollExchange::cb_recvcomplete;
-    recv->addr          = (char*)b->_rbuf[header->phase];
+    recv->addr          = (char*)z;
     recv->type          = PAMI_TYPE_BYTE;
     recv->offset        = 0;
     recv->data_fn       = PAMI_DATA_COPY;
