@@ -253,6 +253,7 @@ namespace PAMI
           if (_active[index])
             {
               //dumpPacket(head);
+              mem_barrier();
               packet.consume (_packet[index]);
               //dumpPacket(head);
 
