@@ -111,7 +111,7 @@ namespace CCMI
 
         void setRoot(unsigned root)
         {
-          TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::setRoot()\n", this));
+          TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::setRoot() root %u\n", this, root));
           _mdata._root = root;
           new (&_roottopology) PAMI::Topology(root);
         }
@@ -120,11 +120,11 @@ namespace CCMI
         {
           TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::setBuffers() src %p, dst %p, len %d, _pwq %p\n", this, src, dst, len, &_pwq));
           _msend.bytes = len;
-          //Setup pipework queue
-	  size_t bufinit = 0;
-	  if (_native->myrank() == _mdata._root)
-	    bufinit = len;
 
+          //Setup pipework queue. This depends on setRoot so it better be correct
+          size_t bufinit = 0;
+          if (_native->myrank() == _mdata._root)
+            bufinit = len;
           _pwq.configure (src, len, bufinit);
           _pwq.reset();
           TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::setBuffers() _pwq %p, bytes available %zu/%zu\n", this, &_pwq,
@@ -234,7 +234,7 @@ inline void  CCMI::Executor::BroadcastExec<T>::sendNext ()
 #ifdef CCMI_DEBUG
   char tbuf[1024];
   char sbuf[16384];
-  sprintf(sbuf, "<%p>Executor::BroadcastExec::sendNext() from %zu: bytes %zu, ndsts %zu bytes available to consume %zu\n",
+  sprintf(sbuf, "<%p>Executor::BroadcastExec::sendNext() from %zu: bytes %zu, ndsts %zu bytes available to consume %zu ",
           this,__global.mapping.task(), _msend.bytes, _dsttopology.size(), _pwq.bytesAvailableToConsume());
 
   for (unsigned i = 0; i < _dsttopology.size(); ++i)

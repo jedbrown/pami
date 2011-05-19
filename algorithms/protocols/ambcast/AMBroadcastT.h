@@ -56,20 +56,23 @@ public:
         _geometry((PAMI_GEOMETRY_CLASS *)g)
     {
         TRACE_ADAPTOR ((stderr, "<%p>Broadcast::AMBroadcastT() \n", this));
-        _executor.setBuffers ((char *)cmd->cmd.xfer_ambroadcast.sndbuf,
-                              (char *)cmd->cmd.xfer_ambroadcast.sndbuf,
-                              cmd->cmd.xfer_ambroadcast.stypecount);
+        _executor.setRoot (_root);
         _executor.setDoneCallback (cmd->cb_done, cmd->cookie);
     }
 
     void setRoot (unsigned root)
     {
         _root = root;
+        _executor.setRoot (_root);
+    }
+
+    void  setBuffers (char *src, char *dst, int len)
+    {
+        _executor.setBuffers (src,dst,len);
     }
 
     void start()
     {
-        _executor.setRoot (_root);
         COMPILE_TIME_ASSERT(sizeof(_schedule) >= sizeof(T_Schedule));
         create_schedule(&_schedule, sizeof(_schedule), _root, _native, _geometry);
         _executor.setSchedule(&_schedule, 0);
@@ -109,6 +112,9 @@ public:
                                            void                      * cmd)
     {
         TRACE_ADAPTOR((stderr, "AMBroadcastFactoryT::generate()\n"));
+
+        pami_xfer_t* pcmd = (pami_xfer_t*)cmd;
+
         typename CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::collObj *cobj =
             (typename CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::collObj *)
             CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_alloc.allocateObject();
@@ -117,11 +123,14 @@ public:
         (CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_native,  // Native interface
          CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_cmgr,    // Connection Manager
          g,                 // Geometry Object
-         (pami_xfer_t*)cmd, // Parameters
+         pcmd, // Parameters
          CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::done_fn,  // Intercept function
          cobj,              // Intercept cookie
          this);             // Factory
 
+        cobj->_obj.setBuffers ((char *)pcmd->cmd.xfer_ambroadcast.sndbuf,
+                              (char *)pcmd->cmd.xfer_ambroadcast.sndbuf,
+                               pcmd->cmd.xfer_ambroadcast.stypecount);
         cobj->_obj.start();
         return NULL;
     }
@@ -189,11 +198,11 @@ public:
          &broadcast, // Parameters
          CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::done_fn,  // Intercept function
          cobj,              // Intercept cookie
-         factory);             // Factory
+         factory);           // Factory 
 
         //Correct the root to what was passed in
-        //T_Composite *ambcast = (T_Composite *) factory->generate ((pami_geometry_t)geometry, &broadcast);
         cobj->_obj.setRoot (cdata->_root);
+        cobj->_obj.setBuffers ((char *)recv.addr,(char *)recv.addr, sndlen);
         cobj->_obj.start();
         cobj->_obj.executor().notifyRecv(peer, *info, (PAMI::PipeWorkQueue **)rcvpwq, cb_done);
 

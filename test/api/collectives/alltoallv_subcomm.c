@@ -264,7 +264,7 @@ int main(int argc, char*argv[])
         {
           if (task_id == task_zero)
           {
-            printf("# Alltoallv Bandwidth Test(size:%zu) -- context = %d, root = %d, protocol: %s\n",
+            printf("# Alltoallv Bandwidth Test(size:%zu) -- context = %d, task_zero = %d, protocol: %s\n",
                    num_tasks, iContext, task_zero, gProtocolName);
             printf("# Size(bytes)           cycles    bytes/sec      usec\n");
             printf("# -----------      -----------    -----------    ---------\n");

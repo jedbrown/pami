@@ -53,7 +53,7 @@ int check_rcvbuf (void *rbuf, int bytes, int root)
   return 0;
 }
 
-volatile unsigned       _g_total_broadcasts;
+volatile unsigned       _g_total_broadcasts=0;
 char                   *_g_recv_buffer;
 int                     _gRc = PAMI_SUCCESS;
 typedef struct 
@@ -72,7 +72,7 @@ void cb_ambcast_done (void *context, void * clientdata, pami_result_t err)
 
   _gRc |= rc_check = check_rcvbuf (v->rbuf, v->bytes, v->root);
   if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
-
+  //fprintf(stderr,"cb_ambcast_done root %u, bytes %u\n",v->root, v->bytes);
   free(clientdata);
 }
 
@@ -101,6 +101,8 @@ void cb_ambcast_recv  (pami_context_t         context,      /**< IN:  communicat
                               &offset);
 
   v->root = task;
+
+  //fprintf(stderr,"cb_ambcast_recv root %u, bytes %u, recv %p\n",v->root, v->bytes, recv);
 
   if (!recv)
   {
@@ -283,6 +285,7 @@ int main(int argc, char*argv[])
             for (j = 0; j < niter; j++)
             {
               ambroadcast.cmd.xfer_ambroadcast.stypecount = i;
+              //fprintf(stderr,"ambcast root %u, bytes %u\n",task_id, i);
               blocking_coll (context[iContext], &ambroadcast, &ambcast_poll_flag);
             }
 
@@ -301,7 +304,8 @@ int main(int argc, char*argv[])
           }
           else
           {
-            while (_g_total_broadcasts < niter)
+             //fprintf(stderr,"ambcast non-root %u, bytes %u\n",task_id, i);
+             while (_g_total_broadcasts < niter)
               result = PAMI_Context_advance (context[iContext], 1);
 
             rc |= _gRc; /* validation return code done in cb_ambcast_done */
