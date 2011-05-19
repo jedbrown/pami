@@ -43,7 +43,7 @@ int main (int argc, char ** argv)
   dispatch[2].options = (pami_dispatch_hint_t) {0};
   dispatch[2].options.long_header = PAMI_HINT_DISABLE;
 
-  initialize (dispatch, 3);
+  initialize (dispatch, 3, 1);
   
   /* Find the minimum recveive imemdiate maximum value */
   unsigned i;

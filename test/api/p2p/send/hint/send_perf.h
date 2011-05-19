@@ -35,7 +35,7 @@
 
 #undef TRACE_ERR
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) //  fprintf x
+#define TRACE_ERR(x) /*  fprintf x */
 #endif
 
 typedef struct
@@ -209,7 +209,7 @@ unsigned long long test_single (dispatch_info_t * dispatch, size_t hdrsize, size
   return ((t2 - t1) / ITERATIONS) / 2;
 }
 
-void initialize (dispatch_info_t dispatch[], size_t n)
+pami_client_t initialize (dispatch_info_t dispatch[], size_t n, unsigned test_using_send)
 {
   TRACE_ERR((stderr, "Initialize test.\n"));
 
@@ -248,6 +248,8 @@ void initialize (dispatch_info_t dispatch[], size_t n)
 
     }
 
+  if (test_using_send)
+  {
   /* Use task 0 to last task (arbitrary) */
   pami_task_t origin_task = 0;
   pami_task_t target_task = size - 1;
@@ -286,6 +288,9 @@ void initialize (dispatch_info_t dispatch[], size_t n)
             }
         }
     }
+  }
+  
+  return client;
 }
 
 void test (dispatch_info_t dispatch[], size_t n, size_t header_size[], size_t header_count)

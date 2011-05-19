@@ -43,7 +43,7 @@ int main (int argc, char ** argv)
   dispatch[2].options = (pami_dispatch_hint_t) {0};
   dispatch[2].options.use_shmem = PAMI_HINT_DISABLE;
 
-  initialize (dispatch, 3);
+  initialize (dispatch, 3, 1);
   
   test (dispatch, 3, header_size, header_count);
 

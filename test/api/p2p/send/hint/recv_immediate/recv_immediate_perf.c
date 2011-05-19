@@ -43,7 +43,7 @@ int main (int argc, char ** argv)
   dispatch[2].options = (pami_dispatch_hint_t) {0};
   dispatch[2].options.recv_immediate = PAMI_HINT_DISABLE;
 
-  initialize (dispatch, 3);
+  initialize (dispatch, 3, 1);
   
   unsigned i;
   pami_configuration_t configuration;

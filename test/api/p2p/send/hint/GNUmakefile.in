@@ -12,7 +12,7 @@
 VPATH		= @abs_srcdir@
 SUBDIRS         = use_shmem long_header recv_immediate 
 NOTBUILT        =
-APPS            = 
+APPS            = dispatch.${EXTENSION}
 
 include @abs_top_builddir@/Build.rules
 
