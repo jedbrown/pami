@@ -241,7 +241,7 @@ namespace CCMI
           _comm_schedule = ct;
 
           // should get the number of phases from a real schedule
-          _nphases    = _native->numranks() - 1 + _native->numranks() % 2;
+          _nphases    = _gtopology->size() - 1 + _gtopology->size() % 2;
           _startphase = 0;
           _curphase   = -1;
           _lphase     = 0;
@@ -249,7 +249,7 @@ namespace CCMI
           for (int i = 0; i < MAX_PARALLEL; ++i) _rphase[i]     = 0;
 
           _myindex  = _gtopology->rank2Index(_native->myrank());
-          _parindex = getPartnerIndex(0, _native->numranks(), _myindex);
+          _parindex = getPartnerIndex(0, _gtopology->size(), _myindex);
 
           unsigned connection_id = (unsigned) - 1;
 
@@ -413,7 +413,7 @@ namespace CCMI
               exec->_recvdone[exec->_curphase % MAX_PARALLEL] = 0;
               exec->_senddone = 0;
               exec->_curphase ++;
-              exec->_parindex =  exec->getPartnerIndex(exec->_curphase, exec->_native->numranks(), exec->_myindex);
+              exec->_parindex =  exec->getPartnerIndex(exec->_curphase, exec->_gtopology->size(), exec->_myindex);
               exec->sendNext();
             }
         }
@@ -433,7 +433,7 @@ namespace CCMI
               exec->_recvdone[exec->_curphase % MAX_PARALLEL] = 0;
               exec->_senddone = 0;
               exec->_curphase ++;
-              exec->_parindex =  exec->getPartnerIndex(exec->_curphase, exec->_native->numranks(), exec->_myindex);
+              exec->_parindex =  exec->getPartnerIndex(exec->_curphase, exec->_gtopology->size(), exec->_myindex);
               exec->sendNext();
             }
         }
@@ -497,7 +497,7 @@ inline void  CCMI::Executor::AlltoallvExec<T_ConnMgr, T_Type>::sendNext ()
           return;
         }
 
-      _parindex         = getPartnerIndex(_curphase, _native->numranks(), _myindex);
+      _parindex         = getPartnerIndex(_curphase, _gtopology->size(), _myindex);
     }
 
   new (&_partopology) PAMI::Topology(_gtopology->index2Rank(_parindex));
@@ -565,7 +565,7 @@ inline void  CCMI::Executor::AlltoallvExec<T_ConnMgr, T_Type>::notifyRecv
       EXECUTOR_DEBUG((stderr, "CCMI_assert(cdata->_phase(%u) - _curphase(%d) %d  <  %d MAX_PARALLEL)\n",cdata->_phase,_curphase,cdata->_phase - _curphase,MAX_PARALLEL);)
       CCMI_assert(cdata->_phase - _curphase < MAX_PARALLEL);
 #if ASSERT_LEVEL > 0
-      unsigned pindex  = getPartnerIndex(cdata->_phase - 1, _native->numranks(), _myindex);
+      unsigned pindex  = getPartnerIndex(cdata->_phase - 1, _gtopology->size(), _myindex);
       CCMI_assert(pindex != (unsigned) - 1);
       EXECUTOR_DEBUG((stderr, "phase = %d, src = %d, expected %d\n", cdata->_phase - 1, src, _gtopology->index2Rank(pindex));)
       CCMI_assert(src == _gtopology->index2Rank(pindex));
