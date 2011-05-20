@@ -1,10 +1,23 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
 /**
    \file test/api/collectives/gather.c
    \brief Simple gather test 
 */
 
-#define NITER   10
-#define BUFSIZE 524288
+#define COUNT     (524288)
+/*
+#define OFFSET     0
+#define NITERLAT   1
+#define NITERBW    MIN(10, niterlat/100+1)
+#define CUTOFF     65536
+*/
 
 #include "../pami_util.h"
 
@@ -23,6 +36,7 @@ void initialize_sndbuf (pami_task_t task_id, void *buf, int bytes )
 
 int check_rcvbuf (size_t num_tasks, void *buf, int bytes)
 {
+
   int j;
   for (j = 0; j < num_tasks; j++)
   {
@@ -33,7 +47,8 @@ int check_rcvbuf (size_t num_tasks, void *buf, int bytes)
     {
       if (cbuf[i-1] != c)
       {
-        fprintf(stderr, "Check(%d) failed <%p> rank=%.2u, buf[%d]=%.2u != %.2u \n",bytes,buf, i, i-1, cbuf[i-1], c);
+        fprintf(stderr, "%s:Check(%d) failed <%p> rank=%.2u, buf[%d]=%.2u != %.2u \n",
+                gProtocolName,bytes,buf, i, i-1, cbuf[i-1], c);
         return -1;
       }
 
@@ -41,15 +56,14 @@ int check_rcvbuf (size_t num_tasks, void *buf, int bytes)
     }
   }
   return 0;
+
 }
 
-
-int main (int argc, char ** argv)
+int main(int argc, char*argv[])
 {
   pami_client_t        client;
-  pami_context_t       context;
-  size_t               num_contexts = 1;
-  pami_task_t          task_id;
+  pami_context_t      *context;
+  pami_task_t          task_id, root_zero=0;
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
 
@@ -60,7 +74,6 @@ int main (int argc, char ** argv)
   pami_algorithm_t    *bar_must_query_algo   = NULL;
   pami_metadata_t     *bar_must_query_md     = NULL;
   pami_xfer_type_t     barrier_xfer = PAMI_XFER_BARRIER;
-  pami_xfer_t          barrier;
   volatile unsigned    bar_poll_flag = 0;
 
   /* Gather variables */
@@ -70,33 +83,25 @@ int main (int argc, char ** argv)
   pami_algorithm_t    *gather_must_query_algo = NULL;
   pami_metadata_t     *gather_must_query_md = NULL;
   pami_xfer_type_t     gather_xfer = PAMI_XFER_GATHER;
-  pami_xfer_t          gather;
   volatile unsigned    gather_poll_flag = 0;
 
+  int                  nalg = 0;
   double               ti, tf, usec;
+  pami_xfer_t          barrier;
+  pami_xfer_t          gather;
 
-  /* \note Test environment variable" TEST_VERBOSE=N     */
-  char* sVerbose = getenv("TEST_VERBOSE");
+  /* Process environment variables and setup globals */
+  setup_env();
 
-  if (sVerbose) gVerbose=atoi(sVerbose); /* set the global defined in coll_util.h */
-
-  /* \note Test environment variable" TEST_PROTOCOL={-}substring.       */
-  /* substring is used to select, or de-select (with -) test protocols */
-  unsigned selector = 1;
-  char* selected = getenv("TEST_PROTOCOL");
-  if (!selected) selected = "";
-  else if (selected[0]=='-')
-  {
-    selector = 0 ;
-    ++selected;
-  }
+  assert(gNum_contexts > 0);
+  context = (pami_context_t*)malloc(sizeof(pami_context_t) * gNum_contexts);
 
 
   /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
-                     &context,       /* Context            */
+                     context,        /* Context            */
                      NULL,           /* Clientname=default */
-                     &num_contexts,  /* num_contexts       */
+                     &gNum_contexts, /* gNum_contexts       */
                      NULL,           /* null configuration */
                      0,              /* no configuration   */
                      &task_id,       /* task id            */
@@ -104,6 +109,27 @@ int main (int argc, char ** argv)
 
   if (rc == 1)
     return 1;
+
+  /*  Allocate buffer(s) */
+  int err = 0;
+  void* buf = NULL;
+  err = posix_memalign(&buf, 128, (gMax_count * num_tasks) + gBuffer_offset);
+  assert(err == 0);
+  buf = (char*)buf + gBuffer_offset;
+
+  void* rbuf = NULL;
+  err = posix_memalign(&rbuf, 128, (gMax_count * num_tasks) + gBuffer_offset);
+  assert(err == 0);
+  rbuf = (char*)rbuf + gBuffer_offset;
+
+
+  unsigned iContext = 0;
+
+  for (; iContext < gNum_contexts; ++iContext)
+  {
+
+    if (task_id == root_zero)
+      printf("# Context: %u\n", iContext);
 
   /*  Query the world geometry for barrier algorithms */
   rc |= query_geometry_world(client,
@@ -121,7 +147,7 @@ int main (int argc, char ** argv)
 
   /*  Query the world geometry for gather algorithms */
   rc |= query_geometry_world(client,
-                            context,
+                            context[iContext],
                             &world_geometry,
                             gather_xfer,
                             gather_num_algorithm,
@@ -133,29 +159,14 @@ int main (int argc, char ** argv)
   if (rc == 1)
     return 1;
 
-  char *buf         = (char*)malloc(BUFSIZE * num_tasks);
-  char *rbuf        = (char*)malloc(BUFSIZE * num_tasks);
   barrier.cb_done   = cb_done;
   barrier.cookie    = (void*) & bar_poll_flag;
   barrier.algorithm = bar_always_works_algo[0];
-  blocking_coll(context, &barrier, &bar_poll_flag);
-
-  {
-    int nalg = 0;
+  blocking_coll(context[iContext], &barrier, &bar_poll_flag);
 
     for (nalg = 0; nalg < gather_num_algorithm[0]; nalg++)
     {
-      pami_task_t root_zero = 0;
-
-      if (task_id == root_zero)
-      {
-        printf("# Gather Bandwidth Test -- protocol: %s\n", gather_always_works_md[nalg].name);
-        printf("#  Bandwidth Test -- \n");
-        printf("# Size(bytes)           cycles    bytes/sec    usec\n");
-        printf("# -----------      -----------    -----------    ---------\n");
-      }
-      if (((strstr(gather_always_works_md[nalg].name,selected) == NULL) && selector) ||
-          ((strstr(gather_always_works_md[nalg].name,selected) != NULL) && !selector))  continue;
+      root_zero = 0;
 
       gather.cb_done    = cb_done;
       gather.cookie     = (void*) & gather_poll_flag;
@@ -168,13 +179,32 @@ int main (int argc, char ** argv)
       gather.cmd.xfer_gather.rtype      = PAMI_TYPE_BYTE;
       gather.cmd.xfer_gather.rtypecount = 0;
 
+      gProtocolName = gather_always_works_md[nalg].name;
+
+      if (task_id == root_zero)
+      {
+        printf("# Gather Bandwidth Test -- context = %d, protocol: %s\n",
+               iContext, gProtocolName);
+        printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+        printf("# -----------      -----------    -----------    ---------\n");
+      }
+
+      if (((strstr(gather_always_works_md[nalg].name,gSelected) == NULL) && gSelector) ||
+          ((strstr(gather_always_works_md[nalg].name,gSelected) != NULL) && !gSelector))  continue;
+
+
       int i, j;
 
-      for (i = 1; i <= BUFSIZE; i *= 2)
+      for (i = 1; i <= gMax_count; i *= 2)
       {
-        long long dataSent = i;
-        int          niter = NITER; 
-        blocking_coll(context, &barrier, &bar_poll_flag);
+        size_t  dataSent = i;
+        int          niter;
+        if (dataSent < CUTOFF)
+          niter = gNiterlat;
+        else
+          niter = NITERBW;
+
+        blocking_coll(context[iContext], &barrier, &bar_poll_flag);
         ti = timer();
 
         gather.cmd.xfer_gather.stypecount = i;
@@ -190,32 +220,34 @@ int main (int argc, char ** argv)
           initialize_sndbuf (task_id, buf, i);
           if (task_id == root_zero)
             memset(rbuf, 0xFF, i*num_tasks);
-          blocking_coll(context, &gather, &gather_poll_flag);
+          blocking_coll(context[iContext], &gather, &gather_poll_flag);
 
           if (task_id == root_zero)
-            check_rcvbuf(task_id, rbuf, i);
+          {
+            int rc_check;
+            rc |= rc_check =check_rcvbuf(task_id, rbuf, i);
+            if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
+          }
+
         }
 
         tf = timer();
-        blocking_coll(context, &barrier, &bar_poll_flag);
+        blocking_coll(context[iContext], &barrier, &bar_poll_flag);
 
         usec = (tf - ti) / (double)niter;
 
-
-
         if (task_id == root_zero)
         {
-          printf("  %11lld %16lld %14.1f %12.2f\n",
-                 dataSent,
-                 0LL,
+          printf("  %11lld %16d %14.1f %12.2f\n",
+                 (long long)dataSent,
+                 niter,
                  (double)1e6*(double)dataSent / (double)usec,
                  usec);
           fflush(stdout);
         }
       }
     }
-  }
-  rc |= pami_shutdown(&client, &context, &num_contexts);
+
   free(bar_always_works_algo);
   free(bar_always_works_md);
   free(bar_must_query_algo);
@@ -223,6 +255,14 @@ int main (int argc, char ** argv)
   free(gather_always_works_algo);
   free(gather_always_works_md);
   free(gather_must_query_algo);
-  free(gather_must_query_md);
+  } /*for(unsigned iContext = 0; iContext < gNum_contexts; ++iContexts)*/
+
+  buf = (char*)buf - gBuffer_offset;
+  free(buf);
+
+  rbuf = (char*)rbuf - gBuffer_offset;
+  free(rbuf);
+
+ rc |= pami_shutdown(&client, context, &gNum_contexts);
   return rc;
-};
+}
