@@ -277,11 +277,16 @@ namespace PAMI
         xfer.cmd.xfer_allgather.rtype       = PAMI_TYPE_BYTE;
         xfer.cmd.xfer_allgather.rtypecount  = str_len;
 
+        _dbg_print_time(_Lapi_env.LAPI_debug_time_init,
+                "generateMapCache: Before allgather");
 	// We can only advance the lapi device here because our other devices
 	// are not initialized;  they rely on the map that we are building.
         _contexts[0]->collective(&xfer);
         while(flag)
           _contexts[0]->advance_only_lapi(10,rc);
+
+        _dbg_print_time(_Lapi_env.LAPI_debug_time_init,
+                "generateMapCache: After allgather");
 
         PAMI_assertf(err == 0, "allgather failed, err %d", err);
 
