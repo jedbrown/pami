@@ -283,7 +283,7 @@ int pami_shutdown(pami_client_t        * client,          /* in/out:  client    
   #define OFFSET     0    
 #endif
 #ifndef NITERLAT
-  #define NITERLAT   1    
+  #define NITERLAT   100    
 #endif
 #ifndef NITERBW
   #define NITERBW    MIN(10, gNiterlat/100+1)
@@ -347,7 +347,7 @@ void setup_env()
   /* \note Test environment variable" TEST_NUM_ROOTS=N max roots to test  */
   char* sNRoots = getenv("TEST_NUM_ROOTS");
 
-  /* Override COUNT */
+  /* Override Number of Roots */
   if (sNRoots) gNumRoots = atoi(sNRoots);
 
   /* \note Test environment variable" TEST_COUNT=N max count     */
