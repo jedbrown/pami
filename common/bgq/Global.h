@@ -85,7 +85,7 @@ namespace PAMI
         size_t   pagesize  = 4096;
         char *envopts;
         envopts = getenv("PAMI_DEVICE_1");
-        _useshmem = true;
+        _useshmem = (personality.tSize() > 1);
         _useMU = true;
 
         time.init(personality.clockMHz());
