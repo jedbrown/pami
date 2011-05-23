@@ -203,21 +203,19 @@ namespace PAMI
               packet.produce (_packet[index]);
               //dumpPacket(index);
 
-              // Update the 'active' flag for this packet to notify the fifo
-              // consumer that the packet data has been initialized.
+              // This memory barrier forces all previous memory operations to
+              // complete (header writes, payload write, etc) before the packet is
+              // marked 'active'.  As soon as the receiving process sees that the
+              // 'active' attribute is set it will start to read the packet header
+              // and payload data.
               //
-              // On architectures that implement a 'write-through' L1 cache,
-              // such as Blue Gene/Q, a simple store will eventually be pushed
-              // to the L2 cache where the store will be noticed by the fifo
-              // consumer. Other architectures must issue a memory barrier after
-              // the 'active' flag is updated to flush the store from the L1
-              // cache to the L2 cache.
-              //
-              // Furthermore, the fifo producer is not required to push the
-              // stores of the packet data to the L2 cache before the 'active'
-              // flag is updated because the fifo consumer will issue a full
-              // read-write memory barrier of all memory operations on the node
-              // before reading the packet data.
+              // If this memory barrier is done *after* the packet is marked
+              // 'active', then the processor or memory system may still reorder
+              // any pending writes before the barrier, which could result in the
+              // receiving process reading the 'active' attribute and then reading
+              // stale packet header/payload data.
+              mem_barrier();
+
               _active[index] = 1;
 
               _last_packet_produced = tail;
@@ -243,32 +241,19 @@ namespace PAMI
           const size_t head = *(this->_head);
           size_t index = head & WrapFifo::mask;
 
+          // This memory barrier forces all previous memory operations to
+          // complete, including any pending updates to the 'active' status.
+          mem_barrier();
 
           if (_active[index])
             {
               TRACE_ERR((stderr, "   WrapFifo::consumePacket_impl(T_Consumer &), head = %zu, index = %zu (WrapFifo::mask = %p)\n", head, index, (void *)WrapFifo::mask));
-
-              // This read-write memory barrier forces all memory operations
-              // of the current and previous generations, by all threads on
-              // the node, to complete.
-              //
-              // This 'big hammer' is unique to the Blue Gene/Q hardware and is
-              // not neccessarily implemented the same on other ppc architectures.
-              //
-              // It is safe to only perform the memory synchronization by the
-              // fifo consumer, and not perform any memory synchronization by the
-              // fifo producer, because the memory barrier applies to all memory
-              // operations on the node.
-              mem_barrier();
-
               //dumpPacket(head);
               packet.consume (_packet[index]);
               //dumpPacket(head);
 
               _active[index] = 0;
-
-              mem_barrier(); // why is this needed? See ticket #467
-
+	      mem_barrier();
               *(this->_head) = head + 1;
 
               // Increment the upper bound everytime a packet is consumed..ok
