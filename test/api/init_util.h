@@ -274,7 +274,8 @@ int pami_shutdown(pami_client_t        * client,          /* in/out:  client    
 
 
 #ifndef FULL_TEST
-  #define FULL_TEST 0
+  #define FULL_TEST 0  /* default to 'short' test - only validated op/dt's,
+                          define to 1 to run all dt/op's or use TEST_OP=ALL */
 #endif
 #ifndef COUNT
   #define COUNT      65536
@@ -335,7 +336,7 @@ void setup_env()
   /* \note Test environment variable" TEST_OP=pami operation string or 'ALL' or 'SHORT'*/
   char* sOp = getenv("TEST_OP");
 
-  /* Override FULL_TEST with 'ALL' */
+  /* Override FULL_TEST with 'ALL' or 'SHORT' */
   if (sDt || sOp) gFull_test = 0;
   if ((sDt && !strcmp(sDt, "ALL")) || (sOp && !strcmp(sOp, "ALL"))) gFull_test = 1;
   if ((sDt && !strcmp(sDt, "SHORT")) || (sOp && !strcmp(sOp, "SHORT"))) 

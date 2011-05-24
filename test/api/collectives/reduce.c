@@ -13,8 +13,8 @@
 
 /* see setup_env() for environment variable overrides
 #define OFFSET     0
+#define FULL_TEST  0
 */
-#define FULL_TEST  1
 #define COUNT      65536
 #define NITERLAT   10
 

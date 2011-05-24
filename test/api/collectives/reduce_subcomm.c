@@ -11,8 +11,8 @@
  * \brief Simple Reduce test on sub-geometries
  */
 
-#define FULL_TEST 1
 /* see setup_env() for environment variable overrides
+#define FULL_TEST 0
 #define COUNT      65536
 #define OFFSET     0
 #define NITERLAT   1
