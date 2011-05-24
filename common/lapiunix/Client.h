@@ -483,7 +483,22 @@ namespace PAMI
                   }
                   break;
                 case PAMI_CLIENT_WTICK:
-                  configuration[i].value.doubleval =__global.time.tick();
+                  if (_Lapi_env.use_hfi) {
+                      LapiImpl::Client *lapi_client = (LapiImpl::Client *)_lapiClient;
+                      configuration[i].value.doubleval = lapi_client->GetWtick();
+                  } else {
+                      configuration[i].value.doubleval =__global.time.tick();
+                  }
+                  break;
+           
+                case PAMI_CLIENT_CLOCK_MHZ:
+                case PAMI_CLIENT_WTIMEBASE_MHZ:
+                  if (_Lapi_env.use_hfi) {
+                      LapiImpl::Client *lapi_client = (LapiImpl::Client *)_lapiClient;
+                      configuration[i].value.intval = lapi_client->GetWtimebaseMhz();
+                  } else {
+                      configuration[i].value.intval = __global.time.clockMHz(); 
+                  }
                   break;
                 case PAMI_GEOMETRY_OPTIMIZE:
                   result = PAMI_UNIMPL;
