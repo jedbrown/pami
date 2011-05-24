@@ -1174,7 +1174,7 @@ namespace PAMI
             if (_mucollectivedputmulticombinefactory && __global.topology_local.size() == 1)
               geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,  _mucollectivedputmulticombinefactory, _context_id);
 
-#if 0  // allgatherv hangs 
+#if 1  // allgatherv hangs 
 
             if (((master_sub_topology->size() == 1) || (local_sub_topology->size() < 32)) && (_shmem_mu_rectangle_dput_allgather_factory))
               geometry->addCollective(PAMI_XFER_ALLGATHERV,  _shmem_mu_rectangle_dput_allgather_factory, _context_id);
