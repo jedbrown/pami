@@ -949,21 +949,21 @@ inline unsigned _quad_double_min_16way_single(double* dst, double* src0, double 
 
   for (i = 0; i < num_dbls; i++)
   {
-    dst[i] = (src0[i] > src1[i])? src0[i]:src1[i];
-    dst[i] = (dst[i] > src2[i])? dst[i]:src2[i];
-    dst[i] = (dst[i] > src3[i])? dst[i]:src3[i];
-    dst[i] = (dst[i] > src4[i])? dst[i]:src4[i];
-    dst[i] = (dst[i] > src5[i])? dst[i]:src5[i];
-    dst[i] = (dst[i] > src6[i])? dst[i]:src6[i];
-    dst[i] = (dst[i] > src7[i])? dst[i]:src7[i];
-    dst[i] = (dst[i] > src8[i])? dst[i]:src8[i];
-    dst[i] = (dst[i] > src9[i])? dst[i]:src9[i];
-    dst[i] = (dst[i] > src10[i])? dst[i]:src10[i];
-    dst[i] = (dst[i] > src11[i])? dst[i]:src11[i];
-    dst[i] = (dst[i] > src12[i])? dst[i]:src12[i];
-    dst[i] = (dst[i] > src13[i])? dst[i]:src13[i];
-    dst[i] = (dst[i] > src14[i])? dst[i]:src14[i];
-    dst[i] = (dst[i] > src15[i])? dst[i]:src15[i];
+    dst[i] = (src0[i] < src1[i])? src0[i]:src1[i];
+    dst[i] = (dst[i] < src2[i])? dst[i]:src2[i];
+    dst[i] = (dst[i] < src3[i])? dst[i]:src3[i];
+    dst[i] = (dst[i] < src4[i])? dst[i]:src4[i];
+    dst[i] = (dst[i] < src5[i])? dst[i]:src5[i];
+    dst[i] = (dst[i] < src6[i])? dst[i]:src6[i];
+    dst[i] = (dst[i] < src7[i])? dst[i]:src7[i];
+    dst[i] = (dst[i] < src8[i])? dst[i]:src8[i];
+    dst[i] = (dst[i] < src9[i])? dst[i]:src9[i];
+    dst[i] = (dst[i] < src10[i])? dst[i]:src10[i];
+    dst[i] = (dst[i] < src11[i])? dst[i]:src11[i];
+    dst[i] = (dst[i] < src12[i])? dst[i]:src12[i];
+    dst[i] = (dst[i] < src13[i])? dst[i]:src13[i];
+    dst[i] = (dst[i] < src14[i])? dst[i]:src14[i];
+    dst[i] = (dst[i] < src15[i])? dst[i]:src15[i];
   }
   return num_dbls;
 
