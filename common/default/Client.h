@@ -310,6 +310,17 @@ namespace PAMI
           return _client;
         }
 
+    inline double wtime_impl ()
+      {
+        return __global.time.time();
+      }
+
+    inline unsigned long long wtimebase_impl ()
+      {
+        return __global.time.timebase();
+      }
+
+
 
         pami_client_t   _client;
         size_t          _clientid;

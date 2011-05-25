@@ -652,6 +652,16 @@ namespace PAMI
         _ueb_queue.pushTail(ueb);
       }
 
+    inline double wtime_impl ()
+      {
+        return __global.time.time();
+      }
+
+    inline unsigned long long wtimebase_impl ()
+      {
+        return __global.time.timebase();
+      }
+
     
 
   protected:
