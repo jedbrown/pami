@@ -27,39 +27,7 @@
 
 #undef DEBUG_COMMTHREADS // Enable debug messages here
 
-#undef HAVE_WU_ARMWITHADDRESS
-
-#ifndef HAVE_WU_ARMWITHADDRESS
-/// \todo #warning need CNK definition for WU_ArmWithAddress
-
-// temporary test implementation going directly to WAC registers...
-#include "hwi/include/bqc/wu_mmio.h"
-#define USR_WAKEUP_BASE ((unsigned long *)(PHYMAP_MINADDR_L1P + 0x1c00))
-
-#ifndef CNK_WAKEUP_SPI_FIRST_WAC
-#define CNK_WAKEUP_SPI_FIRST_WAC	0	// TBD: get from CNK
-#endif // CNK_WAKEUP_SPI_FIRST_WAC
-#define WU_ArmWithAddress(addr,mask) {				\
-	int thr = Kernel_PhysicalHWThreadID();			\
-	int reg = thr + CNK_WAKEUP_SPI_FIRST_WAC;		\
-	USR_WAKEUP_BASE[CLEAR_THREAD(thr)] = _BN(reg);		\
-	USR_WAKEUP_BASE[SET_THREAD(thr)] = (_BN(reg) >> 32);	\
-	USR_WAKEUP_BASE[WAC_BASE(reg)] = addr;			\
-	USR_WAKEUP_BASE[WAC_ENABLE(reg)] = mask;		\
-}
-
-/// \todo #warning Need CNK method to enable MU "interrupts" through Wakeup Unit
-#define WU_ArmMU(bits) {				\
-	int thr = Kernel_PhysicalHWThreadID();		\
-	USR_WAKEUP_BASE[SET_THREAD(thr)] = _B4(52,(bits));\
-}
-
-#define WU_DisarmMU(bits) {				\
-	int thr = Kernel_PhysicalHWThreadID();		\
-	USR_WAKEUP_BASE[CLEAR_THREAD(thr)] = _B4(52,(bits));\
-}
-
-#endif // !HAVE_WU_ARMWITHADDRESS
+#include "spi/include/wu/wait.h"
 
 #ifndef SCHED_COMM
 /// \todo #warning No SCHED_COMM from CNK yet
