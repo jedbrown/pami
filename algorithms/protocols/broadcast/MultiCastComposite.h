@@ -915,8 +915,9 @@ namespace CCMI
           }
           else
           {
-            // I am the final case  I will only receive from the master
-            // task on my node
+            // I am the final case  I will receive from the root
+            // task when I am on the same node as root; and I will receive from
+            // my master when I am not on the same node as root.
             TRACE_ADAPTOR((stderr, "MultiCastComposite2Device:  Non-master, Non-root, numLocal=%zu\n", numLocal));
 
             if (numLocal > 1)
@@ -928,7 +929,7 @@ namespace CCMI
               _minfo_l.roles              = -1U;
               _minfo_l.bytes              = bytes;
               _minfo_l.src                = NULL;
-              _minfo_l.src_participants   = (pami_topology_t*)t_my_master;
+              _minfo_l.src_participants   = (pami_topology_t*) (isRootLocal ?  &_root_topo : t_my_master);
               _minfo_l.dst                = (pami_pipeworkqueue_t*) & _pwq0;
               _minfo_l.dst_participants   = (pami_topology_t*)t_local;
               _minfo_l.msginfo            = 0;
