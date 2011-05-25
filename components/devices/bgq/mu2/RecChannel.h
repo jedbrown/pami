@@ -297,7 +297,34 @@ namespace PAMI
                     _dispatch[id].f = fn;
                     _dispatch[id].p = cookie;
 
-                    _unexpected_packet_queue.dispatch (id, fn, cookie);
+                    // Deliver any unexpected packets for registered dispatch ids. Stop at
+                    // the first unexpected packet for an un-registered dispatch id.
+                    UnexpectedPacketQueue<uint16_t>::UnexpectedPacket * uepkt = NULL;
+
+                    while ((uepkt = (UnexpectedPacketQueue<uint16_t>::UnexpectedPacket *) _unexpected_packet_queue.peek()) != NULL)
+                      {
+                        if (_dispatch[uepkt->id].f != UnexpectedPacketQueue<uint16_t>::dispatch_fn)
+                          {
+                            // Invoke the registered dispatch function
+                            _dispatch[uepkt->id].f (uepkt->metadata,
+                                                    uepkt->payload,
+                                                    uepkt->bytes,
+                                                    _dispatch[uepkt->id].p,
+                                                    uepkt->payload);
+
+                            // Remove the unexpected packet from the queue and free
+                            _unexpected_packet_queue.dequeue();
+                            free (uepkt);
+                          }
+                        else
+                          {
+                            // Stop unexpected queue processing.  This maintains packet order
+                            // which is required for protocols such as eager.
+                            break;
+                          }
+                      }
+
+
 
                     TRACE_FORMAT("registration success. set = %zu, fn = %p, cookie = %p --> id = %d", set, fn, cookie, id);
                     TRACE_FN_EXIT();

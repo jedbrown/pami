@@ -29,45 +29,31 @@ namespace PAMI
       template <typename T>
       class UnexpectedPacketQueue : public Queue
       {
-        protected:
+        public:
 
           class UnexpectedPacket : public Queue::Element
           {
             public:
 
-              UnexpectedPacket (uint8_t  * metadata,
-                                uint8_t  * payload,
-                                size_t     bytes,
-                                uint16_t   id) :
+              UnexpectedPacket (uint8_t  * m,
+                                uint8_t  * p,
+                                size_t     b,
+                                uint16_t   i) :
                   Queue::Element (),
-                  _metadata (metadata),
-                  _payload (payload),
-                  _bytes (bytes),
-                  _id (id)
+                  metadata (m),
+                  payload (p),
+                  bytes (b),
+                  id (i)
               {
               };
 
               ~UnexpectedPacket () {};
 
-              bool invoke (Device::Interface::RecvFunction_t fn, void * recv_func_parm, T id)
-              {
-                if (_id != id)
-                  return false;
-
-                fn (_metadata, _payload, _bytes, recv_func_parm, _payload);
-
-                return true;
-              };
-
-            protected:
-
-              uint8_t  * _metadata;
-              uint8_t  * _payload;
-              size_t     _bytes;
-              uint16_t   _id;
+              uint8_t  * metadata;
+              uint8_t  * payload;
+              size_t     bytes;
+              uint16_t   id;
           };
-
-        public:
 
           UnexpectedPacketQueue (T dispatch_count, size_t maximum_metadata_bytes) :
               Queue (),
@@ -94,27 +80,6 @@ namespace PAMI
             return (void *) & _id[id];
           };
 
-
-          void dispatch (uint16_t id, Device::Interface::RecvFunction_t fn, void * recv_func_parm)
-          {
-            UnexpectedPacket * packet =
-              (UnexpectedPacket *) peek ();
-
-            while (packet != NULL)
-              {
-                UnexpectedPacket * current = packet;
-                packet = (UnexpectedPacket *) packet->next();
-
-                if (current->invoke (fn, recv_func_parm, id))
-                  {
-                    remove (current);
-                    free (current);
-                  }
-              }
-          };
-
-          //protected:
-
           /// \see PAMI::Device::Interface::RecvFunction_t
           static int dispatch_fn (void   * metadata,
                                   void   * payload,
@@ -123,21 +88,25 @@ namespace PAMI
                                   void   * cookie)
           {
             uint16_t * id = (uint16_t *) recv_func_parm;
-            UnexpectedPacketQueue * queue = (UnexpectedPacketQueue *) (id - *id - 1);
 
-            UnexpectedPacket * packet = (UnexpectedPacket *) malloc (sizeof(UnexpectedPacket) + bytes + queue->_maximum_metadata_bytes);
+            TRACE_FORMAT("Warning. Dispatch to unregistered id (%d).\n", *id);
+
+            uint16_t * array = id - *id;
+
+            UnexpectedPacketQueue ** queue = ((UnexpectedPacketQueue **) array) - 1;
+
+            UnexpectedPacket * packet = (UnexpectedPacket *) malloc (sizeof(UnexpectedPacket) + bytes + (*queue)->_maximum_metadata_bytes);
 
             uint8_t * tmp_payload  = (uint8_t *) (packet + 1);
             memcpy (tmp_payload, payload, bytes);
 
             uint8_t * tmp_metadata = (uint8_t *) (tmp_payload + bytes);
-            memcpy (tmp_metadata, metadata, queue->_maximum_metadata_bytes);
+            memcpy (tmp_metadata, metadata, (*queue)->_maximum_metadata_bytes);
 
             new (packet) UnexpectedPacket (tmp_metadata, tmp_payload, bytes, *id);
 
-            queue->enqueue (packet);
+            (*queue)->enqueue (packet);
 
-            fprintf (stderr, "Warning. Dispatch to unregistered id (%d).\n", *id);
             return 0;
           };
 
