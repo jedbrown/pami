@@ -89,7 +89,7 @@ extern "C" pami_result_t PAMI_Endpoint_query (pami_endpoint_t   endpoint,
   *task   = endpoint;
   *offset = 0;
 #else
-  PAMI_ENDPOINT_INFO(endpoint,task,offset);
+  PAMI_ENDPOINT_INFO(endpoint,*task,*offset);
 #endif
   return rc;
 }
