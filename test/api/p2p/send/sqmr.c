@@ -55,8 +55,7 @@
 #include <pami.h>
 
 #if defined(__pami_target_bgq__) && defined(USE_THREADS)
-extern pami_result_t
-PAMI_Client_add_commthread_context(pami_client_t client, pami_context_t context);
+#include "test/async_progress.h"
 #endif
 
 
@@ -297,6 +296,8 @@ init()
 #ifndef __pami_target_bgq__
   ncontexts = MIN(ncontexts, query-1);
 #else
+  rc = init_async_prog();
+  assert(rc == PAMI_SUCCESS);
   /** \todo Remove this when trac #247 is fixed, since it shows a bug
    *   when having more contexts than active comm-threads.  While the
    *   code is correct for comm-thread mode (but not pthreads, where
@@ -350,7 +351,7 @@ init()
 
 #ifdef USE_THREADS
 #ifdef __pami_target_bgq__
-      rc = PAMI_Client_add_commthread_context(client, contexts[i]);
+      rc = async_prog_enable(contexts[i], PAMI_ASYNC_ALL);
       assert(rc == PAMI_SUCCESS);
 #else
       int result;

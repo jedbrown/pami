@@ -15,10 +15,10 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <pami.h>
-extern pami_result_t PAMI_Client_add_commthread_context(pami_client_t client, pami_context_t context);
 
-
-#ifndef __pami_target_bgq__
+#ifdef __pami_target_bgq__
+#include "test/async_progress.h"
+#else // ! __pami_target_bgq__
 #include <pthread.h>
 static void*
 advance(void* arg)
@@ -108,7 +108,10 @@ main(int argc, char **argv)
   pami_client_t  client;
   pami_context_t contexts[NCONTEXTS];
   size_t ncontexts = NCONTEXTS;
-#ifndef __pami_target_bgq__
+#ifdef __pami_target_bgq__
+  rc = init_async_prog();
+  assert(rc == PAMI_SUCCESS);
+#else
   pthread_t threads[NCONTEXTS];
 #endif
 
@@ -157,7 +160,7 @@ main(int argc, char **argv)
     size_t context;
     for (context = 0; context<ncontexts; ++context) {
 #ifdef __pami_target_bgq__
-      rc = PAMI_Client_add_commthread_context(client, contexts[context]);
+      rc = async_prog_enable(contexts[context], PAMI_ASYNC_ALL);
       assert(rc == PAMI_SUCCESS);
 #else
       int result;

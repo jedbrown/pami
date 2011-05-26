@@ -322,21 +322,6 @@ extern "C" pami_result_t PAMI_AMCollective_dispatch_set(pami_context_t          
 #include "pami_type.cc"
 
 
-#ifdef USE_COMMTHREADS
-#include "api/extension/c/async_progress/ProgressExtension.h"
-/// \todo #warning PAMI_Client_add_commthread_context() is DEPRECATED! to be removed...
-extern "C" pami_result_t PAMI_Client_add_commthread_context(pami_client_t client,
-                                            pami_context_t context)
-{
-  pami_result_t result;
-
-  result = PAMI::ProgressExtension::context_async_progress_enable(context,
-				PAMI::ProgressExtension::PAMI_ASYNC_ALL);
-  return result;
-}
-#endif // USE_COMMTHREADS
-
-
 extern "C" pami_result_t PAMI_Client_create (const char           *name,
                                              pami_client_t        *client,
                                              pami_configuration_t  configuration[],

@@ -10,6 +10,9 @@
 #include "spi/include/kernel/location.h"
 #endif
 
+#include <assert.h>
+#include "test/async_progress.h"
+
 int run = 0;
 struct thread_data {
 	pami_context_t context;
@@ -83,6 +86,9 @@ int main(int argc, char ** argv) {
 		exit(1);
 	}
 
+	result = init_async_prog();
+	assert(result == PAMI_SUCCESS);
+
 	result = PAMI_Context_createv(client, NULL, 0, &context[0], NUM_CONTEXTS);
 	if (result != PAMI_SUCCESS) {
 		fprintf(stderr, "Error. Unable to create %d pami context. "
@@ -92,7 +98,7 @@ int main(int argc, char ** argv) {
 	test_init();
 	write(2, buf, bufl);
 	for (x = 0; x < NUM_CONTEXTS; ++x) {
-		result = PAMI_Client_add_commthread_context(client, context[x]);
+		result = async_prog_enable(context[x], PAMI_ASYNC_ALL);
 		if (result != PAMI_SUCCESS) {
 			fprintf(stderr, "Error. Unable to add commthread to context[%d]. "
 							"result = %d (%d)\n", x, result, errno);

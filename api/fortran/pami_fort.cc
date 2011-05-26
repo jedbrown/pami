@@ -357,16 +357,6 @@ extern "C" void pami_type_transform_data (void**               src_addr,
             *dst_addr, *dst_type, *dst_offset, *size, data_fn, cookie);
 }
 
-#ifdef USE_COMMTHREADS // from (bgq/) Client.h
-/// \todo #warning pami_client_add_commthread_context() is non-standard API
-extern "C" void pami_client_add_commthread_context(pami_client_t*   client,
-        pami_context_t*  context,
-        pami_result_t*   result)
-{
-    *result = PAMI_Client_add_commthread_context(*client, context);
-}
-#endif // USE_COMMTHREADS
-
 
 extern "C" void pami_client_create (const char*             name,
                                     pami_client_t*          client,

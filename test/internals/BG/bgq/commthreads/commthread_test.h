@@ -15,14 +15,6 @@
 #include <errno.h>
 #include "misc-util.h"
 
-/* dummy routine in case PAMI target doesn't provide real one */
-pami_result_t __add_context(pami_client_t client, pami_context_t context) {
-	return PAMI_UNIMPL;
-}
-
-extern pami_result_t PAMI_Client_add_commthread_context(pami_client_t client,
-		pami_context_t context) __attribute__((weak, alias("__add_context")));
-
 typedef struct post_info {
 	pami_work_t state;
 	volatile unsigned value;

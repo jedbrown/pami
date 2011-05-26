@@ -8,7 +8,9 @@
 #define NUM_CONTEXTS	2
 #endif /* NUM_CONTEXTS */
 
+#include <assert.h>
 #include "commthread_test.h"
+#include "test/async_progress.h"
 
 int main(int argc, char ** argv) {
 	pami_client_t client;
@@ -44,6 +46,8 @@ int main(int argc, char ** argv) {
 		exit(1);
 	}
 	int bufl = strlen(buf);
+	result = init_async_prog();
+	assert(result == PAMI_SUCCESS);
 
 	num_contexts = ntasks;
 	if (num_contexts > NUM_CONTEXTS) num_contexts = NUM_CONTEXTS;
@@ -63,7 +67,7 @@ int main(int argc, char ** argv) {
 
 	write(2, buf, bufl);
 	for (x = 0; x < num_contexts; ++x) {
-		result = PAMI_Client_add_commthread_context(client, context[x]);
+		result = async_prog_enable(context[x], PAMI_ASYNC_ALL);
 		if (result != PAMI_SUCCESS) {
 			fprintf(stderr, "Error. Unable to add commthread to context[%d]. "
 							"result = %d (%d)\n", x, result, errno);
