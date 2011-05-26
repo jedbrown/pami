@@ -129,6 +129,10 @@ namespace PAMI
 
           inline ~BgpShaddr () {};
 
+          template <class T_Device> 
+          inline void initialize_impl (T_Device * device) 
+          {}; 
+
           inline bool isEnabled_impl ()
           {
             return _enabled;

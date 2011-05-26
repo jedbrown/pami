@@ -33,6 +33,12 @@ namespace PAMI
           static const bool shaddr_read_supported  = false;
           static const bool shaddr_write_supported = false;
 
+          template <class T_Device> 
+          inline void initialize_impl (T_Device * device) 
+          {};
+
+          inline bool isEnabled_impl () { return true; };
+
           ///
           /// \brief Shared address read operation using virtual addresses
           ///
