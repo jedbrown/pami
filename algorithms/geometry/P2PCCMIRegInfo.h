@@ -881,7 +881,7 @@ namespace CCMI
           create_schedule, pami_scatterv_int_t > IntComposite;
 
         typedef CCMI::Adaptor::Scatter::AsyncScatterFactoryT
-        < IntComposite,
+        < Composite,
           scatterv_metadata,
           CCMI::ConnectionManager::CommSeqConnMgr,
           getKey >
