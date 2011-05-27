@@ -99,12 +99,20 @@ void recv_once (pami_context_t context)
 
 unsigned long long test (pami_client_t client, pami_context_t context,
                          size_t dispatch, size_t hdrlen, size_t sndlen,
-                         pami_task_t myrank, pami_endpoint_t origin, pami_endpoint_t target)
+                         pami_task_t mytask, pami_endpoint_t origin, pami_endpoint_t target)
 {
   TRACE_ERR((stderr, "(%zu) Do test ... sndlen = %zu\n", _my_task, sndlen));
   _recv_active = 1;
   _recv_iteration = 0;
   _send_active = 1;
+
+  pami_task_t origin_task = (pami_task_t) -1;
+  size_t origin_offset    = (size_t) -1;
+  PAMI_Endpoint_query (origin, &origin_task, &origin_offset);
+
+  pami_task_t target_task = (pami_task_t) -1;
+  size_t target_offset    = (size_t) -1;
+  PAMI_Endpoint_query (target, &target_task, &target_offset);
 
   char metadata[MAX_BUFSIZE];
   char buffer[MAX_BUFSIZE];
@@ -122,7 +130,7 @@ unsigned long long test (pami_client_t client, pami_context_t context,
   unsigned i;
   unsigned long long t1 = PAMI_Wtimebase(client);
 
-  if (myrank == 0)
+  if (mytask == origin_task)
     {
       parameters.dest = target;
 
@@ -135,7 +143,7 @@ unsigned long long test (pami_client_t client, pami_context_t context,
           _recv_active = 1;
         }
     }
-  else if (myrank == 1)
+  else if (mytask == target_task)
     {
       parameters.dest = origin;
 
