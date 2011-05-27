@@ -184,9 +184,9 @@ int main (int argc, char ** argv)
     }
 
   size_t n = 0;
-  size_t counter[_num_tasks];
+  size_t counter[_num_tasks*2];
 
-  for (n = 0; n < _num_tasks; n++)
+  for (n = 0; n < _num_tasks*2; n++)
     counter[n] = 0;
 
 
@@ -223,11 +223,6 @@ int main (int argc, char ** argv)
       dispatch[dispatch_count].result = PAMI_ERROR;
       dispatch_count++;
     }
-  else
-    {
-      if (_my_task == 0)
-        fprintf (stdout, "INFO: shmem testing is disabled because not all tasks are located on the same node.\n");
-    }
 
   pami_dispatch_callback_function fn;
   fn.p2p = test_dispatch;
@@ -238,7 +233,7 @@ int main (int argc, char ** argv)
       dispatch[i].result = PAMI_Dispatch_set (context,
                                               dispatch[i].id,
                                               fn,
-                                              (void *) counter,
+                                              (void *) & counter[_num_tasks*i],
                                               dispatch[i].options);
     }
 
@@ -298,6 +293,7 @@ int main (int argc, char ** argv)
     {
       for (i = 0; i < dispatch_count; i++)
         {
+          data = 0;
           if (dispatch[i].result == PAMI_SUCCESS)
             {
               send (client, context, dispatch[i].id, _my_task, &data);
