@@ -300,7 +300,7 @@ public:
 
                 EADescriptor *ead = (EADescriptor *) co->getEAQ()->peekTail();
                 CCMI_assert(ead != NULL);
-                CCMI_assert(ead->bytes == scatter_xfer->rtypecount);
+                CCMI_assert(ead->bytes == (unsigned) scatter_xfer->rtypecount);
                 CCMI_assert(ead->cdata._root == scatter_xfer->root);
 
                 if (ead->flag == EACOMPLETED)
