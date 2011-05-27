@@ -33,6 +33,7 @@ APPS            += gatherv_int.${EXTENSION}
 APPS            += scatter.${EXTENSION} 
 APPS            += scatter_subcomm.${EXTENSION} 
 APPS            += scatterv.${EXTENSION} 
+APPS            += scatterv_int.${EXTENSION} 
 APPS            += scan.${EXTENSION} 
 APPS            += reduce_scatter.${EXTENSION} 
 APPS            += alltoall.${EXTENSION} 
