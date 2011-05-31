@@ -171,7 +171,7 @@ hdestroy ()
     then
 	rm -f $destHashFile
     else
-	echo "ERROR (E)::hdestroy: ${destHashFile} DNE !!"
+	echo "ERROR (E)::hdestroy:  ${destHashFile} DNE !!"
 	rc=1
     fi
 	
@@ -299,8 +299,8 @@ freeAllBlocks ()
 				bgp_mode_NumtoText $scaleMode groupMode
 				if [ $? -ne 0 ]
 				then
-				    echo "ERROR (E): bgp_mode_NumtoText subroutine FAILED!!"
-				    echo "ERROR (E): Using numeric mode value in group name."
+				    echo "ERROR (E):  bgp_mode_NumtoText subroutine FAILED!!"
+				    echo "ERROR (E):  Using numeric mode value in group name."
 				fi
 			    fi
 
@@ -361,7 +361,7 @@ freeAllBlocks ()
 resetBlocks ()
 {
     # Wait for all children (subshells) to complete
-    echo -e "WARNING (W): Need to free CN nodes and reboot I/O nodes.  Waiting for all current runs to complete ...\n"
+    echo -e "WARNING (W):  Need to free CN nodes and reboot I/O nodes.  Waiting for all current runs to complete ...\n"
     wait
 
     echo "INFO (I): Freeing all blocks (compute and I/O) ..."
@@ -419,7 +419,7 @@ bootIO ()
 	    # Quit if all I/O blocks are bad
 	    if [ $badIOBlocks -eq ${#ioblockArray[@]} ]
 	    then
-		echo "ERROR (E): Unable to boot any of the I/O blocks designated by user!!  Exiting ..."
+		echo "ERROR (E):  Unable to boot any of the I/O blocks designated by user!!  Exiting ..."
 		exit 1
 	    fi
 	else
@@ -525,7 +525,6 @@ cleanExit ()
     then
 	rm -f "${ioblockHash}.lock"
     fi
-
 }
 
 #-------------------------------------------------------------------------------
@@ -555,8 +554,8 @@ bgp_mode_TexttoNum ()
 	    eval $numModeVar=4
 	    ;;
 	* )                     
-	    echo "ERROR (E)::bgp_mode_TexttoNum: Unrecognized mode: ${alphaMode}"
-	    echo "ERROR (E)::bgp_mode_TexttoNum: Valid values are:  SMP, DUAL & VN"
+	    echo "ERROR (E)::bgp_mode_TexttoNum:  Unrecognized mode: ${alphaMode}"
+	    echo "ERROR (E)::bgp_mode_TexttoNum:  Valid values are:  SMP, DUAL & VN"
 	    TtN_rc=1
     esac
 
@@ -590,8 +589,8 @@ bgp_mode_NumtoText ()
 	    eval $textModeVar='VN'
 	    ;;
 	* )                     
-	    echo "ERROR (E)::bgp_mode_NumtoText: Unrecognized mode: ${digiMode}"
-	    echo "ERROR (E)::bgp_mode_NumtoText: Valid values are:  1, 2 & 4"
+	    echo "ERROR (E)::bgp_mode_NumtoText:  Unrecognized mode: ${digiMode}"
+	    echo "ERROR (E)::bgp_mode_NumtoText:  Valid values are:  1, 2 & 4"
 	    NtT_rc=1
     esac
 
@@ -829,7 +828,7 @@ runSA ()
 
     if [ $? -ne 0 ]
     then
-	echo "ERROR (E)::runSA: cd to exe dir FAILED!! Skipping to the next test ..."
+	echo "ERROR (E)::runSA:  cd to exe dir FAILED!! Skipping to the next test ..."
 	return 1
     fi  
     
@@ -872,13 +871,13 @@ runSA ()
     # Check status of stand alone test
     if [ ${runStatus[0]} -ne 0 ]
     then
-	echo "ERROR (E)::runSA: Execution of ${exe} FAILED!!"
+	echo "ERROR (E)::runSA:  Execution of ${exe} FAILED!!"
 	runSA_rc=${runStatus[0]}
     else # runCmd passed, let's check the logFile
 	if [[ $quietly -eq 0 && ${runStatus[1]} -ne 0 ]] || [ ! -e $logFile ]
 	then
-	    echo "ERROR (E)::runSA: FAILED to redirect output into ${logFile}!!"
-	    echo "ERROR (E)::runSA: No way to verify test results!!"
+	    echo "ERROR (E)::runSA:  FAILED to redirect output into ${logFile}!!"
+	    echo "ERROR (E)::runSA:  No way to verify test results!!"
 	    runSA_rc=${runStatus[1]}
 	fi
     fi
@@ -888,7 +887,7 @@ runSA ()
 
     if [ $? -ne 0 ]
     then
-	echo "ERROR (E)::runSA: cd back to original dir FAILED!! Exiting."
+	echo "ERROR (E)::runSA:  cd back to original dir FAILED!! Exiting."
 	exit 1
     fi
 
@@ -1032,11 +1031,11 @@ runHW ()
 				      
 					  if [ $? -ne 0 ] || [ ! -e "${cwd}/${incFile##*/}" ]
 					  then
-					      echo "ERROR (E)::runHW: Copy of ${incFile} to ${cwd} FAILED!!"
+					      echo "ERROR (E)::runHW:  Copy of ${incFile} to ${cwd} FAILED!!"
 					      runHW_rc=2
 					  fi
 				      else
-					  echo "ERROR (E)::runHW: --inlcude file: \"${incFile}\" DNE!!"
+					  echo "ERROR (E)::runHW:  --inlcude file: \"${incFile}\" DNE!!"
 					  runHW_rc=2
 				      fi
 
@@ -1093,12 +1092,12 @@ runHW ()
     fi
 
     # BGQ Corner
-    if [ "${corner}" == '' ]
-    then
+#    if [ "${corner}" == '' ]
+ #   then
 	HWCorner=$( echo $HWBlock | sed "s|:| |g" | awk '{print $2}' ) 
-    else
-	HWCorner=$corner
-    fi
+ #   else
+#	HWCorner=$corner
+ #   fi
 
     # Block
     HWBlock=$( echo $HWBlock | sed "s|:.*||g" )
@@ -1214,7 +1213,7 @@ runHW ()
 
     if [ $? -ne 0 ]
     then
-	echo "ERROR (E)::runHW: cd to exe dir FAILED!! Skipping to the next test ..."
+	echo "ERROR (E)::runHW:  cd to exe dir FAILED!! Skipping to the next test ..."
 	return 1
     fi
 
@@ -1313,14 +1312,14 @@ runHW ()
     # Check status of runjob
     if [ ${runStatus[0]} -ne 0 ]
     then
-	echo "ERROR (E)::runHW: Execution of ${exe} FAILED!!"
+	echo "ERROR (E)::runHW:  Execution of ${exe} FAILED!!"
 	runHW_rc=${runStatus[0]}
 
     else # runCmd passed, let's check the logFile
 	if [[ $quietly -eq 0 && ${runStatus[1]} -ne 0 ]] || [ ! -e $logFile ]
 	then
-	    echo "ERROR (E)::runHW: FAILED to redirect output into ${logFile}!!"
-	    echo "ERROR (E)::runHW: No way to verify test results!!"
+	    echo "ERROR (E)::runHW:  FAILED to redirect output into ${logFile}!!"
+	    echo "ERROR (E)::runHW:  No way to verify test results!!"
 	    runHW_rc=${runStatus[1]}
 	fi	
     fi
@@ -1444,7 +1443,7 @@ runHW ()
 
     if [ $? -ne 0 ]
     then
-	echo "ERROR (E)::runHW: cd back to original dir FAILED!! Exiting."
+	echo "ERROR (E)::runHW:  cd back to original dir FAILED!! Exiting."
 	exit 1
     fi
 
@@ -1520,14 +1519,14 @@ exe_preProcessing ()
     # Ensure that user didn't set -mode and MPIRUN_MODE for BGP runs
     if [[ "${opts}" =~ "-mode" ]] && [[ "${opts}" =~ "MPIRUN_MODE" ]]
     then 
-	echo "ERROR (E)::exe_preProcessing: use either -mode OR -envs MPIRUN_MODE to set mode, but not both."
+	echo "ERROR (E)::exe_preProcessing:  use either -mode OR -envs MPIRUN_MODE to set mode, but not both."
 	return 1
     fi
 
     # Ensure that user didn't set --ranks-per-node and BG_PROCESSESPERNODE for BGQ runs
     if [[ "${opts}" =~ "--ranks-per-node" ]] && [[ "${opts}" =~ "BG_PROCESSESPERNODE" ]]
     then 
-	echo "ERROR (E)::exe_preProcessing: use either --ranks-per-node OR -envs BG_PROCESSESPERNODE to set \"mode\", but not both."
+	echo "ERROR (E)::exe_preProcessing:  use either --ranks-per-node OR -envs BG_PROCESSESPERNODE to set \"mode\", but not both."
 	return 1
     fi
 
@@ -1577,7 +1576,7 @@ exe_preProcessing ()
 		                      shift # to file path
 				      if [ ! -e $1 ]
 				      then
-					  echo "ERROR (E)::exe_preProcessing: --include file: \"${1}\" DNE!!"
+					  echo "ERROR (E)::exe_preProcessing:  --include file: \"${1}\" DNE!!"
 					  return 1
 				      fi
 
@@ -1788,8 +1787,8 @@ exe_preProcessing ()
 
 					  if [ $found -eq 0 ]
 					  then 
-					      echo "ERROR (E)::exe_preProcessing: Unsupported option ${1} for ${runScript}!!"
-					      echo "ERROR (E)::exe_preProcessing: Type ${runScript} --help to view supported options"
+					      echo "ERROR (E)::exe_preProcessing:  Unsupported option ${1} for ${runScript}!!"
+					      echo "ERROR (E)::exe_preProcessing:  Type ${runScript} --help to view supported options"
 					      return 1
 					  fi
  
@@ -1839,7 +1838,7 @@ exe_preProcessing ()
 	    bgp_mode_TexttoNum $eppMode eppMode
 	    if [ $? -ne 0 ]
 	    then
-		echo "ERROR (E)::exe_preProcessing: bgp_mode_TexttoNum subroutine FAILED!!"
+		echo "ERROR (E)::exe_preProcessing:  bgp_mode_TexttoNum subroutine FAILED!!"
 		return 1
 	    fi
 	fi
@@ -2099,7 +2098,7 @@ runSim ()
 
     if [ $? -ne 0 ]
     then
-	echo "ERROR (E)::runSim: cd to exe dir FAILED!! Skipping to the next test ..."
+	echo "ERROR (E)::runSim:  cd to exe dir FAILED!! Skipping to the next test ..."
 	return 1
     fi  
 
@@ -2177,13 +2176,13 @@ runSim ()
     # Check status of runfctest
     if [ ${runStatus[0]} -ne 0 ]
     then
-	echo "ERROR (E)::runSim: Execution of ${exe} FAILED!!"
+	echo "ERROR (E)::runSim:  Execution of ${exe} FAILED!!"
 	runSim_rc=${runStatus[0]}
     else # runCmd passed, let's check the logFile	
 	if [[ $quietly -eq 0 && ${runStatus[1]} -ne 0 ]] || [ ! -e $logFile ]
 	then
-	    echo "ERROR (E)::runSim: FAILED to redirect output into ${logFile}!!"
-	    echo "ERROR (E)::runSim: No way to verify test results!!"
+	    echo "ERROR (E)::runSim:  FAILED to redirect output into ${logFile}!!"
+	    echo "ERROR (E)::runSim:  No way to verify test results!!"
 	    runSim_rc=${runStatus[1]}
 	fi
     fi
@@ -2212,7 +2211,7 @@ runSim ()
 
     if [ $? -ne 0 ]
     then
-	echo "ERROR (E)::runSim: cd back to original dir FAILED!! Exiting."
+	echo "ERROR (E)::runSim:  cd back to original dir FAILED!! Exiting."
 	exit 1
     fi
 
@@ -2287,7 +2286,7 @@ llJobs ()
 		        # Cancel this job
 			hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" 'Cancelled'
 			
-			echo -e "\nERROR (E): ${TEST_ARRAY[$test]} llq status = ${jobSTArray[$jobid]}. Cancelling jobid ${jobidArray[$jobid]}"
+			echo -e "\nERROR (E):  ${TEST_ARRAY[$test]} llq status = ${jobSTArray[$jobid]}. Cancelling jobid ${jobidArray[$jobid]}"
 			llcancel ${jobidArray[$jobid]}
 			continue
 		    else # Wait for this job to complete
@@ -2403,8 +2402,8 @@ logToWeb ()
 	bgp_mode_NumtoText $scaleMode groupMode
 	if [ $? -ne 0 ]
 	then
-	    echo "ERROR (E): bgp_mode_NumtoText subroutine FAILED!!"
-	    echo "ERROR (E): Using numeric mode value in group name."
+	    echo "ERROR (E):  bgp_mode_NumtoText subroutine FAILED!!"
+	    echo "ERROR (E):  Using numeric mode value in group name."
 	fi
     fi
 
@@ -2452,7 +2451,7 @@ logToWeb ()
 		    logDisabled=1
 		fi
 
-		echo "ERROR (E): logXML.sh FAILED for ${ltwTest}"
+		echo "ERROR (E):  logXML.sh FAILED for ${ltwTest}"
 		xmlStatus='FAILED'
 	    else
 		xmlStatus='Logged'
@@ -2478,11 +2477,11 @@ changeDir ()
 
 	if [ $? -ne 0 ]
 	then
-	    echo "ERROR (E)::changeDir: cd to ${dir} FAILED!!"
+	    echo "ERROR (E)::changeDir:  cd to ${dir} FAILED!!"
 	    cDir_rc=1
 	fi
     else
-	echo "ERROR (E)::changeDir: ${dir} DNE!!"
+	echo "ERROR (E)::changeDir:  ${dir} DNE!!"
 	cDir_rc=1
     fi
 
@@ -2507,7 +2506,7 @@ reConfig ()
     changeDir $configDir
     if [ $? -ne 0 ]
     then
-	echo "ERROR (E)::reConfig: changeDir FAILED!!"
+	echo "ERROR (E)::reConfig:  changeDir FAILED!!"
 	config_rc=1
     fi
 
@@ -2533,7 +2532,7 @@ reConfig ()
     # Verify tree floor changed successfully
     if [ $? -ne 0 ]
     then
-	echo "ERROR (E)::reConfig: configure script FAILED!!"
+	echo "ERROR (E)::reConfig:  configure script FAILED!!"
 	config_rc=1
     else # command passed, verify floor (sst/mpich only, unimplemented in pami)
 	if [ $mpich -eq 1 ] || [ "${configFamily}" == 'sst' ]
@@ -2543,9 +2542,9 @@ reConfig ()
 
 	    if [ "${new_floor}" != "${level}" ]
 	    then
-		echo "ERROR (E)::reConfig: Floor mismatch:"
-		echo "ERROR (E)::reConfig: BGQ_FLOOR_DIR => ${new_floor}"
-		echo "ERROR (E)::reConfig: Desired       => ${level}"
+		echo "ERROR (E)::reConfig:  Floor mismatch:"
+		echo "ERROR (E)::reConfig:  BGQ_FLOOR_DIR => ${new_floor}"
+		echo "ERROR (E)::reConfig:  Desired       => ${level}"
 		config_rc=1
 	    else
 		echo "BGQ_FLOOR_DIR is now set to: ${level}"
@@ -2607,6 +2606,9 @@ usage ()
     echo "                             To run subblocks in BGQ:"
     echo "                             --block <<block>:<corner>:<shape>>"
     echo "                             ex:  -b \"R00-M0-N01:J02:1x1x1x1x1 R00-M0-N01:J03:1x1x1x1x1"
+    echo "                                 results in:"
+    echo "                                 runjob --block R00-M0-N01 --corner R00-M0-N01-J02 --shape 1x1x1x1x1"
+    echo "                                 runjob --block R00-M0-N01 --corner R00-M0-N01-J03 --shape 1x1x1x1x1"
     echo ""
     echo "-c | --compile               Only compile binaries. Can be combined with -cp and/or -r."
     echo ""
@@ -2624,11 +2626,19 @@ usage ()
     echo ""
     echo "-cp | --copy                 Only copy binaries to bgusr exe dir. Can be combined with -c and/or -r."
     echo ""
-    echo "-corner | --corner <corner>  Universal corner for all blocks."
+    echo "-corner | --corner <corner>  Universal corner(s) for all blocks."
+    echo "                             To define multiple corners, surround space separated corner list with \"\":"
+    echo "                             ex:  --corner \"<corner 1> <corner 2> ..<corner n>\""
+    echo ""
     echo "                             ex: -b \"R00-M0-N01 R00-M0-N02\" --corner J05"
     echo "                                 results in:"
     echo "                                 runjob --block R00-M0-N01 --corner R00-M0-N01-J05"
     echo "                                 runjob --block R00-M0-N02 --corner R00-M0-N02-J05"
+    echo ""
+    echo "                             ex: -b R00-M0-N01 --corner \"J00 J05\""
+    echo "                                 results in:"
+    echo "                                 runjob --block R00-M0-N01 --corner R00-M0-N01-J00"
+    echo "                                 runjob --block R00-M0-N01 --corner R00-M0-N01-J05"
     echo ""
     echo "-d | --debug                 Debug enabled, major commands (make, runjob, etc) are only echoed."
     echo ""
@@ -2716,6 +2726,10 @@ usage ()
     echo ""
     echo "-mpich | --mpich )           Skips non-power-of-2 values for numnodes/mode and \"io\" tests."
     echo ""
+    echo "-nofree | --nofree           Don't free block(s) after runs are completed (default is to free them)."
+    echo ""
+    echo "-nosnap | --nosnap           Don't run Tom Gooding's snapbug tool after each failed run (default is to run it ...if this script is run from a service node)."
+    echo ""
     echo "-nn | --numnodes <arg>       Specify number of nodes to boot (required for multi-node runs with MMCS-Lite). Can be given as a space separated range for scaling purposes.  Command line value(s) will be trumped by --numnodes in the input file unless -fs|--force-scaling is also used on the command line."
     echo "                             default: 1 node"
     echo "                             ex:  --numnodes 2"
@@ -2772,6 +2786,12 @@ usage ()
     echo "-to | --timeout <time>       Sets universal runjob timeout (runfctest timelimit) for all tests in the testlist (in seconds)."
     echo "                             any --timeout/--timelimit values in the testfile will override this universal default"  
     echo "                             ex: --timeout 60"
+    echo ""
+    echo "-uncp | --uncopy             Remove binaries in testfile from exe dir.  Can be used alone or in combination with -c (compile), -cp (copy) and/or -r (run). Deleting the binaries from the exe tree will be the last action taken before printing the summary."
+    echo "                             default: disabled"
+    echo "                             ex: -cp -r -uncp (copy, run, delete)" 
+    echo "                             ex: --uncopy (delete binary copies in exe tree)"
+    echo "                             ex: -cp -uncp (copy, delete ...not a wise combo)"
     echo ""
     echo "-v | --verbose               Enable extra info to be printed to output."
     echo ""
@@ -2845,6 +2865,7 @@ make_clean=0
 ignoreMakeFails=0  # for mipch/pami recursive makes
 compile_floor=""
 copy=2             # 0 = off, 1 = on, 2 = unset
+unCopy=0           # Remove binaries after run to save space
 compileHash="/tmp/${USER}_hashmap.compile.${timestamp}" # avoid recompiles
 copyHash="/tmp/${USER}_hashmap.copy.${timestamp}"       # avoid recopies
 
@@ -2886,7 +2907,7 @@ mpich=0
 ignoreSysFails=0
 ioblockHash="/tmp/${USER}_hashmap.ioblocks.${timestamp}"   # list of I/O blocks currently booted by this run 
 bootBlockHash="/tmp/${USER}_hashmap.blocks.${timestamp}"       # list of CN blocks currently booted by this run 
-runBlockHash="/tmp/${USER}_hashmap.subblocks.${timestamp}" # block status of sub blocks
+runBlockHash="/tmp/${USER}_hashmap.subblocks.${timestamp}" # block status of all blocks/sub-blocks in blockArray
 allocateScript="${abs_script_dir}/allocateBlock.pl"        # perl script to allocate I/O and CN blocks
 freeScript="${abs_script_dir}/freeBlock.pl"                # perl script to free I/O and CN blocks
 blockInfoScript="${abs_script_dir}/getBlockInfo.pl"        # perl script to get block info
@@ -2928,10 +2949,6 @@ while [ "${1}" != "" ]; do
         -b | --block )          shift
 	                        declare -a blockNameArray=($( echo $1 | sed 's/"//g' )) 
                                 ;;
-        -c | --compile )        compile=1
-	                        if [ $copy -eq 2 ]; then copy=0; fi
-	                        if [ $run -eq 2 ]; then run=0; fi
-                                ;;
         -clean | --clean )      make_clean=1
                                 ;;
         -comment | --comment )  shift
@@ -2940,12 +2957,16 @@ while [ "${1}" != "" ]; do
         -cb | --compile-base )  shift
 	                        comp_base=$1
                                 ;;
+        -c | --compile )        compile=1
+	                        if [ $copy -eq 2 ]; then copy=0; fi
+	                        if [ $run -eq 2 ]; then run=0; fi
+                                ;;
         -cp | --copy )          copy=1
 	                        if [ $compile -eq 2 ]; then compile=0; fi
 	                        if [ $run -eq 2 ]; then run=0; fi
                                 ;;
         -corner | --corner )    shift
-	                        corner=$1
+	                        declare -a cornerArray=($( echo $1 | sed 's/"//g' ))
                                 ;;
         -d | --debug )          debug=1
                                 ;;
@@ -3071,6 +3092,11 @@ while [ "${1}" != "" ]; do
 	-to | --timeout )       shift
 	                        timeOut=$1
 				;;
+	-uncp | --uncopy )      unCopy=1
+	                        if [ $compile -eq 2 ]; then compile=0; fi
+				if [ $copy -eq 2 ]; then copy=0; fi
+	                        if [ $run -eq 2 ]; then run=0; fi
+				;;
         -v | --verbose )        verbose=1
                                 ;;
         -h | --help )           usage
@@ -3183,7 +3209,7 @@ fi
 # Don't check now for MPICH, because comm may not have been built yet
 if [ $mpich -eq 0 ] && [[ $compile -eq 1 || $copy -eq 1 ]] && [ ! -d "${comp_base}" ] 
 then
-    echo "ERROR (E): Compile base dir: ${comp_base} DNE!! Exiting."
+    echo "ERROR (E):  Compile base dir: ${comp_base} DNE!! Exiting."
     exit 1
 fi
 
@@ -3223,26 +3249,26 @@ then
 	
 	if [ $? -ne 0 ] || [ "${target}" == "" ]
 	then
-	    echo "ERROR (E): FAILED to determine current Make.rules target. Exiting."
+	    echo "ERROR (E):  FAILED to determine current Make.rules target. Exiting."
 	    exit 1
 	else
 	    if [ "${platform}" != "${target}" ]
 	    then
-		echo "ERROR (E): platform ${platform} != target ${target} in ${abs_rules_dir}/Make.rules!!"
-		echo "ERROR (E): Run ../buildtools/configure manually from: $abs_rules_dir"
-		echo "ERROR (E):    or"
-		echo "ERROR (E): Rerun sst_pami_verif.sh and append the -rc <floor> option."
-		echo "ERROR (E): Exiting."
+		echo "ERROR (E):  platform ${platform} != target ${target} in ${abs_rules_dir}/Make.rules!!"
+		echo "ERROR (E):  Run ../buildtools/configure manually from: $abs_rules_dir"
+		echo "ERROR (E):     or"
+		echo "ERROR (E):  Rerun sst_pami_verif.sh and append the -rc <floor> option."
+		echo "ERROR (E):  Exiting."
 		exit 1
 	    fi
 	fi
     elif [ $reconfigure -eq 0 ]
     then
-	echo "ERROR (E): ${abs_rules_dir}/Make.rules DNE!!"
-	echo "ERROR (E): Run ../buildtools/configure manually from: $abs_pami_build_dir"
-	echo "ERROR (E):    or"
-	echo "ERROR (E): Rerun sst_pami_verif.sh and append the -rc <floor> option."
-	echo "ERROR (E): Exiting."
+	echo "ERROR (E):  ${abs_rules_dir}/Make.rules DNE!!"
+	echo "ERROR (E):  Run ../buildtools/configure manually from: $abs_pami_build_dir"
+	echo "ERROR (E):     or"
+	echo "ERROR (E):  Rerun sst_pami_verif.sh and append the -rc <floor> option."
+	echo "ERROR (E):  Exiting."
 	exit 1
     fi
 fi
@@ -3269,7 +3295,7 @@ fi
 # Ensure input file exists
 if [ ! -e "${inputFile}" ]
 then
-    echo "ERROR (E): Input file: ${inputFile} DNE!! Exiting."
+    echo "ERROR (E):  Input file: ${inputFile} DNE!! Exiting."
 
     #ding ding ding
     if [[ A1 = A$ding ]]; then echo -en "\007"; sleep 1; echo -en "\007"; sleep 1; echo -en "\007"; fi
@@ -3348,7 +3374,7 @@ then
 	    fi
 	else # Fail if user only planned to run
 	    
-	    echo "ERROR (E): Runtime dir: ${exe_base} DNE!! Exiting."
+	    echo "ERROR (E):  Runtime dir: ${exe_base} DNE!! Exiting."
 	    exit 1
 	fi
     fi
@@ -3395,7 +3421,7 @@ else
 
 	    if [ $? -ne 0 ]
 	    then
-		echo "ERROR (E): bgp_mode_TexttoNum subroutine FAILED!!"
+		echo "ERROR (E):  bgp_mode_TexttoNum subroutine FAILED!!"
 		exit 1
 	    else
 		modeArray[$pmode]=$numMode
@@ -3435,7 +3461,7 @@ then
     # PAMI_DEVICE default
     if [ "${run_type}" == 'runFpga' ] # No MU unit in FPGA model
     then
-	echo "WARNING (W): Forcing PAMI_DEVICE to S (No MU unit in FPGA model)."
+	echo "WARNING (W):  Forcing PAMI_DEVICE to S (No MU unit in FPGA model)."
 	export PAMI_DEVICE='S'
 	groupDev='SHMem'
     else # non-FPGA default
@@ -3481,14 +3507,14 @@ then
 #    cur_floor=$(readlink -e "${cur_base}/x86_64.floor" ) 
     cur_floor=$(readlink -e "/bgsys/bgq/drivers/x86_64.floor" ) # until x86 systems are updated
 else
-    echo "ERROR (E): Unknown arch (${arch})!! Can't determine current floor. Exiting."
+    echo "ERROR (E):  Unknown arch (${arch})!! Can't determine current floor. Exiting."
     exit 1
 fi
 
 # Exit if readlink failed
 if [ $? -ne 0 ]
 then
-    echo "ERROR (E): readlink command FAILED!! Can't determine current floor. Exiting."
+    echo "ERROR (E):  readlink command FAILED!! Can't determine current floor. Exiting."
     exit 1
 fi
 
@@ -3501,7 +3527,7 @@ then
     else # Ensure path passed to me is legit
 	if [ ! -e "${compile_floor}" ]
 	then
-	    echo "ERROR (E): ${compile_floor} DNE!! Exiting."
+	    echo "ERROR (E):  ${compile_floor} DNE!! Exiting."
 	    exit 1
 	fi
     fi
@@ -3509,7 +3535,7 @@ then
     reConfig $abs_rules_dir $compile_floor $platform $run_type $codeFamily
     if [ $? -ne 0 ]
     then
-	echo "ERROR (E): reConfig FAILED!! Exiting."
+	echo "ERROR (E):  reConfig FAILED!! Exiting."
 	exit 1
     fi
 else # Set compile floor to existing floor in Make.rules
@@ -3527,11 +3553,11 @@ then
     then
 	if [ ! -e "${abs_rules_dir}/Make.rules" ]
 	then
-	    echo "ERROR (E): ${abs_rules_dir}/Make.rules DNE!! Cannot determine compile floor."
-	    echo "ERROR (E): Run ../scripts/configure manually from: ${abs_rules_dir}"
-	    echo "ERROR (E):    or"
-	    echo "ERROR (E): Rerun sst_pami_verif.sh and append -rc <floor> option."
-	    echo "ERROR (E): Exiting."
+	    echo "ERROR (E):  ${abs_rules_dir}/Make.rules DNE!! Cannot determine compile floor."
+	    echo "ERROR (E):  Run ../scripts/configure manually from: ${abs_rules_dir}"
+	    echo "ERROR (E):     or"
+	    echo "ERROR (E):  Rerun sst_pami_verif.sh and append -rc <floor> option."
+	    echo "ERROR (E):  Exiting."
 	    exit 1
 	else
 	    compile_floor=$(fgrep -a 'BGQ_FLOOR_DIR=' "${abs_rules_dir}/Make.rules" | cut -d '=' -f2)
@@ -3539,10 +3565,10 @@ then
 	    then
 		if [ $compile -eq 1 ]
 		    then
-		    echo "ERROR (E): BGQ_FLOOR_DIR: ${compile_floor} DNE!! Exiting."
+		    echo "ERROR (E):  BGQ_FLOOR_DIR: ${compile_floor} DNE!! Exiting."
 		    exit 1
 		else
-		    echo "WARNING (W): BGQ_FLOOR_DIR: ${compile_floor} DNE!!"
+		    echo "WARNING (W):  BGQ_FLOOR_DIR: ${compile_floor} DNE!!"
 		fi
 	    fi
 	fi
@@ -3560,7 +3586,7 @@ then
 	run_floor=$(readlink -e "${run_floor}" )
 	if [ $? -ne 0 ]
 	then
-	    echo "ERROR (E): ${run_floor} DNE!! Exiting."
+	    echo "ERROR (E):  ${run_floor} DNE!! Exiting."
 	    exit 1
 	fi
     fi
@@ -3583,6 +3609,8 @@ while read xtest xopts
   then
       continue
   fi
+
+
 
   # Store binary name
   TEST_ARRAY[$element]=$(echo "${xtest##*/}" | tr -d '\n' | tr -d '\r')
@@ -3692,7 +3720,7 @@ if [ $run -eq 1 ] && [ $needBlock -eq 1 ] && [[ "${run_type}" == "hw" || "${run_
 then 
     if [ ${#blockNameArray[@]} -eq 0 ]
     then
-	echo -e "ERROR (E): Block parameter(s) missing. Specify with -b <block> or --block <block>.\nExiting." 
+	echo -e "ERROR (E):  Block parameter(s) missing. Specify with -b <block> or --block <block>.\nExiting." 
 
             #ding ding ding
 	if [[ A1 = A$ding ]]; then echo -en "\007"; sleep 1; echo -en "\007"; sleep 1; echo -en "\007"; fi
@@ -3731,8 +3759,8 @@ then
 		source $utils_file
 	    else
 		echo 
-		echo "${utils_file} DNE."
-		echo "Please install the bgtools package available from SVN bgq/system_tests/tools/bgtools."
+		echo "ERROR (E):  ${utils_file} DNE."
+		echo "ERROR (E):  Please install the bgtools package available from SVN bgq/system_tests/tools/bgtools."
 		exit 1
 	    fi
 
@@ -3742,7 +3770,7 @@ then
 	fi
 
 	# Verify compute blocks
-	declare -a blockArray
+	declare -a blockArray # This array contains all given blocks/sub-blocks (runBlockHash holds status)
 
 	for ((index=0; index < ${#blockNameArray[@]}; index++))
 	do
@@ -3753,25 +3781,55 @@ then
 	    if [ $roysTools -eq 1 ] && [ $serviceNode -eq 1 ]
 	    then
 		if ! isblock $blockToTest; then 
-		    echo "Block $blockToTest is not a valid block.";
+		    echo "WARNING (W):  Block $blockToTest is not a valid block.";
 		    continue
 		fi
 	    else
 		`${blockInfoScript} -isBlock ${blockToTest}`
 		if [ $? -ne 0 ]
 		then
-		    echo "Block $blockToTest is not a valid block.";
+		    echo "WARNING (W):  Block $blockToTest is not a valid block.";
 		    continue
 		fi   
 	    fi
 
-	    blockArray[${#blockArray[@]}]=${blockNameArray[$index]}
-	    hput $runBlockHash ${blockNameArray[$index]} 'free'
+	    frankenBlock=${blockNameArray[$index]} 
+
+            # Make one block out of --block, --corner and --shape cmd line parms (if given)
+	    if [[ ! "${frankenBlock}" =~ ':' ]] && (( ${#cornerArray[@]} > 0 ))
+	    then		    
+		for ((cornerIndex=0; cornerIndex < ${#cornerArray[@]}; cornerIndex++))
+		do
+		    # Start with base block
+		    frankenBlock=$blockToTest
+
+		    #Append corner
+		    frankenBlock="${frankenBlock}:${cornerArray[$cornerIndex]}"
+
+		    # Append shape from command line (if provided)
+		    if [ "${shape}" != '' ]
+		    then
+			frankenBlock="${frankenBlock}:${shape}"
+		    fi
+		    
+		    # Update array of all given blocks
+		    blockArray[${#blockArray[@]}]=$frankenBlock
+
+	            # Update hash that holds status of all given blocks
+		    hput $runBlockHash $frankenBlock 'free'
+		done
+	    else
+		# Update array of all given blocks
+		blockArray[${#blockArray[@]}]=$frankenBlock
+
+	        # Update hash that holds status of all given blocks
+		hput $runBlockHash $frankenBlock 'free'
+	    fi
 	done
 
 	if [ ${#blockArray[@]} -eq 0 ]
 	then
-	    echo "None of the blocks provided are valid.  Exiting ..."
+	    echo "ERROR (E):  None of the blocks provided are valid!!  Exiting ..."
 	    exit 1
 	fi
     fi # end verify compute block
@@ -3790,14 +3848,14 @@ then
 	    if [ $roysTools -eq 1 ] && [ $serviceNode -eq 1 ]
 	    then
 		if ! isblock $ioblockToTest; then 
-		    echo "I/O block $ioblockToTest is not a valid I/O block.";
+		    echo "WARNING (W):  I/O block $ioblockToTest is not a valid I/O block.";
 		    continue
 		fi
 	    else
 		`${blockInfoScript} -isBlock ${ioblockToTest}`
 		if [ $? -ne 0 ]
 		then
-		    echo "I/O block $ioblockToTest is not a valid I/O block."
+		    echo "WARNING (W):  I/O block $ioblockToTest is not a valid I/O block."
 		    continue
 		fi 
 	    fi
@@ -3807,7 +3865,7 @@ then
 
 	if [ ${#ioblockArray[@]} -eq 0 ]  
 	then
-	    echo "None of the I/O blocks provided are valid.  Exiting ..."
+	    echo "ERROR (E):  None of the I/O blocks provided are valid!!  Exiting ..."
 	    exit 1
 	fi
     fi # end verify any I/O blocks
@@ -3830,9 +3888,9 @@ then
     then
 	echo "Compiling with floor:  ${cur_floor}"
     else
-	echo "WARNING (W): Floor mismatch:"
-	echo "WARNING (W): Latest floor  => ${cur_floor}"
-	echo "WARNING (W): Compile floor => ${compile_floor}"
+	echo "WARNING (W):  Floor mismatch:"
+	echo "WARNING (W):  Latest floor  => ${cur_floor}"
+	echo "WARNING (W):  Compile floor => ${compile_floor}"
     fi
 
     cleanType="clean"
@@ -3853,7 +3911,7 @@ then
 	changeDir $suiteSourceDir
 	if [ $? -ne 0 ]
 	then
-	    echo "ERROR (E): changeDir FAILED!! Exiting."
+	    echo "ERROR (E):  changeDir FAILED!! Exiting."
 	    exit 1
 	fi
 
@@ -3889,10 +3947,10 @@ then
 	    if [ $mpich -eq 1 ]
 	    then
 	    # This may not have been built yet
-		echo "WARNING (W): ${comp_base} DNE"
-		echo "WARNING (W): It may not have been built yet. Skipping make ${cleanType} ..."
+		echo "WARNING (W):  ${comp_base} DNE"
+		echo "WARNING (W):  It may not have been built yet. Skipping make ${cleanType} ..."
 	    else 
-		echo "ERROR (E): Compile base dir: ${comp_base} DNE!! Exiting."
+		echo "ERROR (E):  Compile base dir: ${comp_base} DNE!! Exiting."
 		exit 1
 	    fi  
 	fi
@@ -3903,7 +3961,7 @@ then
 	changeDir $comp_base
 	if [ $? -ne 0 ]
 	then
-	    echo "ERROR (E): changeDir FAILED!! Exiting."
+	    echo "ERROR (E):  changeDir FAILED!! Exiting."
 	    exit 1
 	fi
 
@@ -3932,7 +3990,7 @@ then
 	    changeDir "${abs_systest_dir}/applications"
 	    if [ $? -ne 0 ]
 	    then
-		echo "ERROR (E): changeDir FAILED!! Exiting."
+		echo "ERROR (E):  changeDir FAILED!! Exiting."
 		exit 1
 	    fi
 
@@ -3960,7 +4018,7 @@ then
 
 	    if [ "${enabled}" == '0' ]
 	    then
-		echo "Skipping compile of ${TEST_ARRAY[$test]} ..."
+		echo "WARNING (W):  Skipping compile of ${TEST_ARRAY[$test]} ..."
 		continue
 	    fi
 
@@ -3984,7 +4042,7 @@ then
 	    if [ $? -ne 0 ]
 	    then
 		hput $exeHash "${TEST_ARRAY[$test]}:$test:status" 'Compile FAILED'
-		echo "ERROR (E): changeDir FAILED!! Skipping to the next test ..."
+		echo "ERROR (E):  changeDir FAILED!! Skipping to the next test ..."
   
       	        # Disable this test for the rest of this run
 		hput $exeHash "${TEST_ARRAY[$test]}:$test:exe" 0
@@ -4050,7 +4108,7 @@ then
 	    then
 		overallStatus='Compile FAILED'
 		hput $exeHash "${TEST_ARRAY[$test]}:$test:status" "${overallStatus}"
-		echo "ERROR (E): make of ${TEST_ARRAY[$test]} FAILED!!"
+		echo "ERROR (E):  make of ${TEST_ARRAY[$test]} FAILED!!"
 
       	        # Disable this test for the rest of this run
 		hput $exeHash "${TEST_ARRAY[$test]}:$test:exe" 0
@@ -4063,7 +4121,7 @@ then
 		# Let's check the log
 		if [[ $quietly -eq 0 && ${makeStatus[1]} -ne 0 ]] || [ ! -e "${compileLog}" ]
 		then
-		    echo "WARNING (W): FAILED to redirect output into ${compileLog}!!"
+		    echo "WARNING (W):  FAILED to redirect output into ${compileLog}!!"
 		fi
 	    fi
 
@@ -4118,7 +4176,7 @@ then
 	    changeDir $abs_mpich_src_dir
 	    if [ $? -ne 0 ]
 	    then
-		echo "ERROR (E): changeDir FAILED!! Exiting."
+		echo "ERROR (E):  changeDir FAILED!! Exiting."
 		exit 1
 	    fi
 
@@ -4150,13 +4208,13 @@ then
             # Check status of make
 	    if [ ${makeStatus[0]} -ne 0 ]
 	    then
-		echo "ERROR (E): make FAILED!!"
+		echo "ERROR (E):  make FAILED!!"
 		exit 1
 
 	    else # make passed, let's check the log
 		if [[ $quietly -eq 0 && ${makeStatus[1]} -ne 0 ]] || [ ! -e "${make_log}" ]
 		then
-		    echo "WARNING (W): FAILED to redirect output into ${make_log}!!"
+		    echo "WARNING (W):  FAILED to redirect output into ${make_log}!!"
 		fi
 	    fi
 	fi # end build source code of select test suites
@@ -4166,7 +4224,7 @@ then
 	changeDir $comp_base
 	if [ $? -ne 0 ]
 	then
-	    echo "ERROR (E): changeDir FAILED!! Exiting."
+	    echo "ERROR (E):  changeDir FAILED!! Exiting."
 	    exit 1
 	fi
 
@@ -4254,13 +4312,13 @@ then
         # Check status of make
 	if [ ${makeStatus[0]} -ne 0 ]
 	then
-	    echo "ERROR (E): make FAILED!!"
+	    echo "ERROR (E):  make FAILED!!"
 	    exit 1
 
 	else # make passed, let's check the log
 	    if [[ $quietly -eq 0 && ${makeStatus[1]} -ne 0 ]] || [ ! -e "${make_log}" ]
 	    then
-		echo "WARNING (W): FAILED to redirect output into ${make_log}!!"
+		echo "WARNING (W):  FAILED to redirect output into ${make_log}!!"
 	    fi
 	fi
 
@@ -4315,7 +4373,7 @@ then
 			    signal=10 # SIGUSR1
 			fi
 		    else # make file DNE
-			echo "WARNING (W): $make_log DNE"
+			echo "WARNING (W):  $make_log DNE"
 			signal=10
 		    fi
 		else
@@ -4344,7 +4402,7 @@ then
         # Check status of make
 	if [ ${makeStatus[0]} -ne 0 ]
 	then
-	    echo "ERROR (E): make FAILED!!"
+	    echo "ERROR (E):  make FAILED!!"
 
 	    # If not compile only
 	    if [ $copy -eq 1 ] || [ $run -eq 1 ]
@@ -4362,7 +4420,7 @@ then
 	else # make passed, let's check the log
 	    if [[ $quietly -eq 0 && ${makeStatus[1]} -ne 0 ]] || [ ! -e "${make_log}" ]
 	    then
-		echo "WARNING (W): FAILED to redirect output into ${make_log}!!"
+		echo "WARNING (W):  FAILED to redirect output into ${make_log}!!"
 	    fi
 	fi
     fi # end mpich/pami compile 	
@@ -4387,9 +4445,9 @@ if [ $copy -eq 1 ]
 	then
 	    if [ "${cur_floor}" != "${compile_floor}" ]
 	    then
-		echo 'WARNING (W): Floor mismatch:'
-		echo "WARNING (W): Latest floor      => ${cur_floor}"
-		echo "WARNING (W): Compiled w/ floor => ${compile_floor}"
+		echo 'WARNING (W):  Floor mismatch:'
+		echo "WARNING (W):  Latest floor      => ${cur_floor}"
+		echo "WARNING (W):  Compiled w/ floor => ${compile_floor}"
 	    fi
 	fi
     fi
@@ -4404,7 +4462,7 @@ if [ $copy -eq 1 ]
       hget $exeHash "${TEST_ARRAY[$test]}:$test:exe" enabled
       if [ "${enabled}" == '0' ]
 	  then
-	  echo "Skipping copy of ${TEST_ARRAY[$test]} ..."
+	  echo "WARNING (W):  Skipping copy of ${TEST_ARRAY[$test]} ..."
 	  continue
       fi
 
@@ -4430,8 +4488,20 @@ if [ $copy -eq 1 ]
 
 	  if [ $? -ne 0 ] || [ ! -d "${exeDir}" ]
 	      then
-	      echo "Creation of ${exeDir} FAILED!!"
+	      echo "ERROR (E):  Creation of ${exeDir} FAILED!!"
 	      exit 1
+	  fi
+      fi
+
+      # Remove existing binary in exe dir so user doesn't accidentally run with a stale binary      	
+      if [ -e "${exeDir}/${TEST_ARRAY[$test]}" ]
+      then
+	  rm "${exeDir}/${TEST_ARRAY[$test]}"
+	  signal=$?
+	  
+	  if [ $? -ne 0 ] || [ -e "${exeDir}/${TEST_ARRAY[$test]}" ]
+	  then
+	      echo "ERROR (E):  Removal of existing binary: ${exeDir}/${TEST_ARRAY[$test]} FAILED!!"
 	  fi
       fi
 
@@ -4442,8 +4512,8 @@ if [ $copy -eq 1 ]
 	  then
 	  overallStatus='Copy FAILED'
 	  hput $exeHash "${TEST_ARRAY[$test]}:$test:status" "${overallStatus}"
-	  echo "Copy of ${buildDir}/${TEST_ARRAY[$test]} to ${exeDir} FAILED!!"
-	  echo "Skipping to next test ..."
+	  echo "ERROR (E):  Copy of ${buildDir}/${TEST_ARRAY[$test]} to ${exeDir} FAILED!!"
+	  echo "ERROR (E):  Skipping to next test ..."
 
       	  # Disable this test for the rest of this run
 	  hput $exeHash "${TEST_ARRAY[$test]}:$test:exe" 0
@@ -4493,9 +4563,9 @@ then
     then 
 	echo "Running with floor:  ${cur_floor}"
     else
-	echo "WARNING (W): Floor mismatch:"
-	echo "WARNING (W): Latest floor  => ${cur_floor}"
-	echo "WARNING (W): Runtime floor => ${run_floor}"
+	echo "WARNING (W):  Floor mismatch:"
+	echo "WARNING (W):  Latest floor  => ${cur_floor}"
+	echo "WARNING (W):  Runtime floor => ${run_floor}"
     fi
 
     # Verify the binary exists if we didn't copy it during this run
@@ -4517,8 +4587,8 @@ then
 	      then
 		  hput $exeHash "${TEST_ARRAY[$test]}:$test:status" 'Skipped (DNE)'
 		  hput $exeHash "${TEST_ARRAY[$test]}:$test:exe" 0
-		  echo -e "\nERROR (E): ${exeDir}/${TEST_ARRAY[$test]} DNE!!\n"
-		  echo "Skipping to next test ..."
+		  echo -e "\nERROR (E):  ${exeDir}/${TEST_ARRAY[$test]} DNE!!\n"
+		  echo "ERROR (E):  Skipping to next test ..."
 	      fi
 	  fi
 	done
@@ -4639,7 +4709,7 @@ then
 		  bgp_mode_NumtoText $mode eppInputMode
 		  if [ $? -ne 0 ]
 		  then
-		      echo "ERROR (E): bgp_mode_NumtoText subroutine FAILED!!"
+		      echo "ERROR (E):  bgp_mode_NumtoText subroutine FAILED!!"
 
 		      # Amend overall status
 		      overallStatus='Skipped (Bad run* Parm)'
@@ -4706,7 +4776,7 @@ then
 	      bgp_mode_NumtoText $exeMode exeInputMode
 	      if [ $? -ne 0 ]
 	      then
-		  echo "ERROR (E): bgp_mode_NumtoText subroutine FAILED!!"
+		  echo "ERROR (E):  bgp_mode_NumtoText subroutine FAILED!!"
 
 		  # Amend overall status
 		  overallStatus='Skipped (Bad run* Parm)'
@@ -4791,7 +4861,7 @@ then
 	  if [ "${enabled}" == '0' ]
 	  then
       
-	      echo "Skipping execution of disabled test: ${TEST_ARRAY[$test]} (nodes = ${exeNodes}, mode = ${exeInputMode}, np = ${exeNP}) ..."
+	      echo "WARNING (W):  Skipping execution of disabled test: ${TEST_ARRAY[$test]} (nodes = ${exeNodes}, mode = ${exeInputMode}, np = ${exeNP}) ..."
 
 	      # Set individual test status and summary
 	      testStatus=testSummary='Skipped (DOA)'
@@ -4826,7 +4896,7 @@ then
 	  # Skip runs with NP > maxNP and user has not chosen to force scaling
 	  if [ $forceScaling -eq 0 ] && (( $maxNP > 0 )) && (( $exeNP > $maxNP ))
 	  then 
-	      echo -e "Skipping ${TEST_ARRAY[$test]} (nodes = ${exeNodes}, mode = ${exeInputMode}, NP = ${exeNP}). NP (${exeNP}) > max NP for this test (${maxNP})."
+	      echo -e "WARNING (W):  Skipping ${TEST_ARRAY[$test]} (nodes = ${exeNodes}, mode = ${exeInputMode}, NP = ${exeNP}). NP (${exeNP}) > max NP for this test (${maxNP})."
                  
 	      # Set individual test status and summary
 	      testStatus=testSummary='Skipped (NP > maxNP)'
@@ -4862,7 +4932,7 @@ then
 
 #	  if [ $bitwiseNP != 0 ] # np is not a power-of-2
 #	  then
-#	      echo -e "Skipping ${TEST_ARRAY[$test]} (nodes = ${exeNodes}, mode = ${exeInputMode}, NP = ${exeNP}). NP value of ${exeNP} is not a power of 2."
+#	      echo -e "WARNING (W):  Skipping ${TEST_ARRAY[$test]} (nodes = ${exeNodes}, mode = ${exeInputMode}, NP = ${exeNP}). NP value of ${exeNP} is not a power of 2."
                  
 	      # Set individual test status and summary
 #	      testStatus=testSummary='Skipped (! ^2)'
@@ -4897,7 +4967,7 @@ then
 
 	  if [ "${combo}" == "1" ]
 	  then
-	      echo -e "Skipping rerun of ${TEST_ARRAY[$test]} (nodes = ${exeNodes}, mode = ${exeInputMode}, NP = ${exeNP})"
+	      echo -e "WARNING (W):  Skipping rerun of ${TEST_ARRAY[$test]} (nodes = ${exeNodes}, mode = ${exeInputMode}, NP = ${exeNP})"
                  
 	      # Set individual test status and summary
 	      testStatus=testSummary='Skipped (Rerun)'
@@ -4933,7 +5003,7 @@ then
 	  if [ $? -ne 0 ] || [ ! -e "${swtDir}/${TEST_ARRAY[$test]}" ]
 	  then
 
-	      echo -e "Skipping ${TEST_ARRAY[$test]} (nodes = ${exeNodes}, mode = ${exeInputMode}, NP = ${exeNP}).\nFAILED to create link to: ${exeDir}/${TEST_ARRAY[$test]}\nin: ${swtDir}."
+	      echo -e "ERROR (E):  Skipping ${TEST_ARRAY[$test]} (nodes = ${exeNodes}, mode = ${exeInputMode}, NP = ${exeNP}).\nFAILED to create link to: ${exeDir}/${TEST_ARRAY[$test]}\nin: ${swtDir}."
                  
 	      # Set individual test status and summary
 	      testStatus=testSummary='Skipped (Link FAILED)'
@@ -5017,7 +5087,7 @@ then
 			      # Psuedo-fork by creating a new subshell using ()&
 			      (
                                   # Wait for all sub block jobs to finish
-				  echo "WARNING (W): ${bootBlock} reset (step 1): Waiting for all sub block jobs to finish ..."
+				  echo "WARNING (W):  ${bootBlock} reset (step 1): Waiting for all sub block jobs to finish ..."
 			      	  
 				  while ( `${blockInfoScript} -hasjobs ${bootBlock}` )
 				  do
@@ -5025,7 +5095,7 @@ then
 				  done
 
 			          # Free block
-				  echo "WARNING (W): ${bootBlock} reset (step 2): Freeing ${bootBlock} ..."
+				  echo "WARNING (W):  ${bootBlock} reset (step 2): Freeing ${bootBlock} ..."
 				  freeCmd="${freeScript} -block ${bootBlock} >/dev/null 2>&1"		  
 
 				  if [ $debug -ne 1 ]
@@ -5043,7 +5113,7 @@ then
 			              # Have to also reboot the I/O block(s) in error cases for now 
 				      # Loop through blocks and reboot them
 
-				      echo "WARNING (W): ${bootBlock} reset (step 3): Rebooting associated I/O blocks ..."
+				      echo "WARNING (W):  ${bootBlock} reset (step 3): Rebooting associated I/O blocks ..."
 				      while read xblock xstatus
 				      do
 					  # Only reboot I/O block(s) associated with this compute node when it failed
@@ -5083,14 +5153,14 @@ then
 					      then
 						  hput $ioblockHash ${xblock} 'booted'
 					      else # boot I/O block failed
-						  echo "ERROR (E): ${bootBLock} reset (step 3): ${bootCmd} FAILED with rc = ${bootRC}"
+						  echo "ERROR (E):  ${bootBLock} reset (step 3): ${bootCmd} FAILED with rc = ${bootRC}"
 
                                                   # Mark this I/O and boot block dead
 						  hput $ioblockHash ${xblock} 'dead'
 						  hput $bootBlockHash $bootBlock 'dead'
 					      fi
 					  else # Free I/O block failed
-					      echo "ERROR (E): ${bootBLock} reset (step 3): ${freeCmd} FAILED with rc = ${freeRC}"
+					      echo "ERROR (E):  ${bootBLock} reset (step 3): ${freeCmd} FAILED with rc = ${freeRC}"
 
 			                      # Mark this I/O and boot block bad
 					      hput $ioblockHash ${xblock} 'dead'
@@ -5099,7 +5169,7 @@ then
 				      done < $ioblockHash
 
 				  else # free failed		  
-				      echo "ERROR (E): ${bootBLock} reset (step 2): ${freeCmd} FAILED with rc = ${freeRC}"
+				      echo "ERROR (E):  ${bootBLock} reset (step 2): ${freeCmd} FAILED with rc = ${freeRC}"
 				      
 			              # Mark this block dead
 				      hput $bootBlockHash $bootBlock 'dead'
@@ -5107,7 +5177,7 @@ then
 
                                   # Set all subblocks to "free" or "dead"
 				  step=$(( $ioReboot + 3 ))
-				  echo "WARNING (W): ${bootBlock} reset (step ${step}): Reset (sub)block status ..."
+				  echo "WARNING (W):  ${bootBlock} reset (step ${step}): Reset (sub)block status ..."
 
 				  hget $bootBlockHash $bootBlock bootBlockStatus
 				  
@@ -5135,7 +5205,7 @@ then
 
 			      continue # to next (sub)block
 			      ;;
-			  * ) # booted or DNE in hash
+			  * ) # booted or DNE in hash (free)
 		      esac # end bootBlockStatus case
 
 		      hget $runBlockHash ${blockArray[$index]} runBlockStatus
@@ -5147,6 +5217,7 @@ then
 			  idle )
 			      runBlock=${blockArray[$index]}
 			      hput $runBlockHash $runBlock 'running'
+			      break # out of block loop
 			      ;;
 			  dead )
 			      badBlocks=$(( $badBlocks + 1 ))
@@ -5194,7 +5265,7 @@ then
 				  # Any usable blocks?
 				  if [ $badBlocks -eq ${#blockArray[@]} ]
 				  then
-				      echo "ERROR (E): Unable to boot any of the blocks designated by user!!  Exiting ..."
+				      echo "ERROR (E):  Unable to boot any of the blocks designated by user!!  Exiting ..."
 				      exit 1
 				  else # Look for another (sub)block
 				      continue
@@ -5208,7 +5279,7 @@ then
 		  # Any usable blocks?
 		  if [ $badBlocks -eq ${#blockArray[@]} ]
 		  then
-		      echo "ERROR (E): Unable to boot any of the blocks designated by user!!  Exiting ..."
+		      echo "ERROR (E):  Unable to boot any of the blocks designated by user!!  Exiting ..."
 		      exit 1
 		  fi
 	      done # end block while loop
@@ -5217,9 +5288,9 @@ then
           # Print test scenario to screen
 	  if [ $exeOverride == 'Y' ]
 	  then
-	      echo -e "\nWARNING (W): Command line value(s) have been over-written by input file values for ${TEST_ARRAY[$test]}:"
-	      echo "WARNING (W): Expected values: nodes = ${numNodes}, mode = ${eppInputMode}, NP = ${numProcs}"
-	      echo "WARNING (W):   Actual values: nodes = ${exeNodes}, mode = ${exeInputMode}, NP = ${exeNP}"
+	      echo -e "\nWARNING (W):  Command line value(s) have been over-written by input file values for ${TEST_ARRAY[$test]}:"
+	      echo "WARNING (W):  Expected values: nodes = ${numNodes}, mode = ${eppInputMode}, NP = ${numProcs}"
+	      echo "WARNING (W):    Actual values: nodes = ${exeNodes}, mode = ${exeInputMode}, NP = ${exeNP}"
 	  else
 	      echo -e "\nRunning test ${TEST_ARRAY[$test]} (nodes = ${exeNodes}, mode = ${exeInputMode}, np = ${exeNP}) ..."
 	  fi
@@ -5232,9 +5303,9 @@ then
 
               if [ "${bin_floor}" != "${run_floor}" ]
 	      then
-		  echo "WARNING (W): Floor mismatch:"
-		  echo "WARNING (W): Binary floor  => ${bin_floor}"
-		  echo -e "WARNING (W): Runtime floor => ${run_floor}\n"
+		  echo "WARNING (W):  Floor mismatch:"
+		  echo "WARNING (W):  Binary floor  => ${bin_floor}"
+		  echo -e "WARNING (W):  Runtime floor => ${run_floor}\n"
               fi
 	  fi
 
@@ -5318,7 +5389,7 @@ then
 				  fi
 			      done
 			  else
-			      echo "ERROR (E): No I/O blocks associated with ${bootBlock}. Exiting ..."
+			      echo "ERROR (E):  No I/O blocks associated with ${bootBlock}. Exiting ..."
 			      exit 1
 			  fi
 		      fi
@@ -5572,7 +5643,7 @@ if [ $run -eq 1 ]
 		  # print error msg and change status if previous status was Submitted, but not if Cancelled
 		  if [ "${testStatus}" == 'Submitted' ]
 		  then
-		      echo "ERROR (E): Runtime output file: ${outfile} DNE!! Skipping to the next test."
+		      echo "ERROR (E):  Runtime output file: ${outfile} DNE!! Skipping to the next test."
 
 		      hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" 'Output DNE'
 		  fi
@@ -5620,7 +5691,7 @@ if [ $run -eq 1 ]
 
 		      if [ $? -ne 0 ]
 		      then
-			  echo "ERROR (E): bgp_mode_TexttoNum subroutine FAILED!!"
+			  echo "ERROR (E):  bgp_mode_TexttoNum subroutine FAILED!!"
 			  hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" 'FAILED'
 			  continue # to next node/mode combo
 		      fi
@@ -5654,6 +5725,50 @@ if [ $run -eq 1 ]
 	  then
 	  hput $exeHash "${TEST_ARRAY[$test]}:$test:status" "${runPass}/${runTotal} Passed"
       fi
+    done
+fi
+
+# =================================================
+# Remove binaries from exe dir if requested by user
+# =================================================
+if (( $unCopy > 0 ))
+then
+
+    echo -e "\nRemoving binaries from ${exe_base} ..."
+
+    for ((test=0; test < ${#TEST_ARRAY[@]}; test++))
+    do
+	# Get exe dir 
+	hget $exeHash "${TEST_ARRAY[$test]}:$test:exeDir" exeDir
+	
+	# Remove binary if it exists in exe dir
+	if [ -e "${exeDir}/${TEST_ARRAY[$test]}" ]
+	then
+	    rm "${exeDir}/${TEST_ARRAY[$test]}"
+	    signal=$?
+	    
+	    if [ $? -ne 0 ] || [ -e "${exeDir}/${TEST_ARRAY[$test]}" ]
+	    then
+		echo "Removal of ${exeDir}/${TEST_ARRAY[$test]} FAILED!!"
+	    elif (( $run < 1 ))
+	    then 
+		# Update test status unless we compiled but didn't copy
+                if ( ! (( $compile > 0 && $copy < 1 )) ) 
+		then  
+		    hput $exeHash "${TEST_ARRAY[$test]}:$test:status" 'DEL from EXE tree'
+		fi
+	    fi
+	else # binary DNE
+            # Update test status
+	    if (( $run < 1 ))
+	    then 
+		# Update test status unless we compiled but didn't copy
+                if ( ! (( $compile > 0 && $copy < 1 )) ) 
+		then    
+		    hput $exeHash "${TEST_ARRAY[$test]}:$test:status" 'DNE in EXE tree'
+		fi
+	    fi
+	fi
     done
 fi
 
@@ -5876,8 +5991,8 @@ for ((test=0; test < ${#TEST_ARRAY[@]}; test++))
 		      bgp_mode_NumtoText ${mode} ppn
 		      if [ $? -ne 1 ]
 			  then
-			  echo "ERROR (E): bgp_mode_NumtoText subroutine FAILED!!"
-			  echo "ERROR (E): Using numeric mode value in summary."
+			  echo "ERROR (E):  bgp_mode_NumtoText subroutine FAILED!!"
+			  echo "ERROR (E):  Using numeric mode value in summary."
 		      fi
 		  fi
 	      fi
@@ -5985,7 +6100,7 @@ if [ "${emailAddr}" != "" ]
     rm $summaryEmail
     if [ $? -ne 0 ]
 	then
-	echo "ERROR (E): Attempt to delete email file: ${summaryEmail} FAILED with rc = $?!!"
+	echo "ERROR (E):  Attempt to delete email file: ${summaryEmail} FAILED with rc = $?!!"
     fi
 fi
 
@@ -5998,7 +6113,7 @@ cat $summaryFile
 rm $summaryFile
 if [ $? -ne 0 ]
     then
-    echo "ERROR (E): Attempt to delete summary file: ${summaryFile} FAILED with rc = $?!!"
+    echo "ERROR (E):  Attempt to delete summary file: ${summaryFile} FAILED with rc = $?!!"
 fi
 
 exit 0
