@@ -135,7 +135,7 @@ namespace PAMI
         metadata_result_t result = {0};
         uintptr_t op;
         uintptr_t dt;
-        if(((uintptr_t)in->cmd.xfer_allreduce.stype >= PAMI::Type::TypeCode::PRIMITIVE_TYPE_COUNT) || ((uintptr_t)in->cmd.xfer_allreduce.op >= PAMI::Type::TypeFunc::PRIMITIVE_FUNC_COUNT))
+        if (((uintptr_t)in->cmd.xfer_allreduce.stype >= PAMI::Type::TypeCode::PRIMITIVE_TYPE_COUNT) || ((uintptr_t)in->cmd.xfer_allreduce.op >= PAMI::Type::TypeFunc::PRIMITIVE_FUNC_COUNT))
           result.check.datatype_op = 1; // No user-defined dt/op's
 
         PAMI::Type::TypeFunc::GetEnums(in->cmd.xfer_allreduce.stype,
@@ -157,7 +157,7 @@ namespace PAMI
         metadata_result_t result = {0};
         uintptr_t op;
         uintptr_t dt;
-        if(((uintptr_t)in->cmd.xfer_allreduce.stype >= PAMI::Type::TypeCode::PRIMITIVE_TYPE_COUNT) || ((uintptr_t)in->cmd.xfer_allreduce.op >= PAMI::Type::TypeFunc::PRIMITIVE_FUNC_COUNT))
+        if (((uintptr_t)in->cmd.xfer_allreduce.stype >= PAMI::Type::TypeCode::PRIMITIVE_TYPE_COUNT) || ((uintptr_t)in->cmd.xfer_allreduce.op >= PAMI::Type::TypeFunc::PRIMITIVE_FUNC_COUNT))
           result.check.datatype_op = 1; // No user-defined dt/op's
 
         PAMI::Type::TypeFunc::GetEnums(in->cmd.xfer_allreduce.stype,
@@ -1057,7 +1057,7 @@ namespace PAMI
       inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry, int phase)
       {
         TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() phase %d, context_id %zu, geometry %p, msync %p, mcast %p, mcomb %p\n", this, phase, context_id, geometry, &_shmem_msync_factory, &_shmem_mcast_factory, &_shmem_mcomb_factory));
-        if(geometry->size() == 1) // Disable BGQ protocols on 1 task geometries.
+        if (geometry->size() == 1) // Disable BGQ protocols on 1 task geometries.
         {
           return PAMI_SUCCESS;
         }
@@ -1081,6 +1081,7 @@ namespace PAMI
             pami_xfer_t xfer = {0};
             OptBinomialBarrier *opt_binomial = (OptBinomialBarrier *)
                                                _binomial_barrier_factory->generate(geometry, &xfer);
+            opt_binomial->getExecutor()->setContext(_context);
             geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
                              (void*)opt_binomial);
           }
@@ -1197,11 +1198,6 @@ namespace PAMI
           if (_binomial_barrier_factory)
             geometry->addCollective(PAMI_XFER_BARRIER, _binomial_barrier_factory, _context_id);
 
-#if 0 // test a query barrier protocol
-          if (_binomial_barrier_factory)
-            geometry->addCollectiveCheck(PAMI_XFER_BARRIER, _binomial_barrier_factory, _context_id);
-#endif
-
           if (_alltoall_factory)
             geometry->addCollective(PAMI_XFER_ALLTOALL, _alltoall_factory, _context_id);
 
@@ -1297,7 +1293,6 @@ namespace PAMI
 #endif
               }
             }
-
             // Add 2 device composite protocols
 #ifndef ENABLE_NEW_SHMEM
             // Default Shmem doesn't work with 2 device protocol right now
@@ -1376,10 +1371,35 @@ namespace PAMI
         }
         else if (phase == -1)
         {
-          /// \todo remove MU collectives algorithms... TBD
-          geometry->rmCollective(PAMI_XFER_BROADCAST, _mu_mcast_factory,  _context_id);
-          geometry->rmCollective(PAMI_XFER_ALLREDUCE, _mu_mcomb_factory, _context_id);
-          geometry->rmCollective(PAMI_XFER_BARRIER, _gi_msync_factory, _context_id);
+          /// \todo remove MU collectives algorithms... TBD... only remove phase 1 algorithms??
+          geometry->rmCollective(PAMI_XFER_ALLREDUCE,      _mu_mcomb_factory,                         _context_id);
+
+          geometry->rmCollective(PAMI_XFER_ALLTOALLV_INT,  _alltoallv_int_factory,                    _context_id);
+          geometry->rmCollective(PAMI_XFER_ALLTOALLV,      _alltoallv_factory,                        _context_id);
+          geometry->rmCollective(PAMI_XFER_ALLTOALL,       _alltoall_factory,                         _context_id);
+
+          geometry->rmCollective(PAMI_XFER_BROADCAST,      _mu_mcast_factory,                         _context_id);
+          geometry->rmCollective(PAMI_XFER_BROADCAST,      _mcast2d_dput_composite_factory,           _context_id);
+
+          geometry->rmCollective(PAMI_XFER_BARRIER,        _mu_rectangle_msync_factory,               _context_id); 
+          geometry->rmCollective(PAMI_XFER_BARRIER,        _gi_msync_factory,                         _context_id);
+          geometry->rmCollective(PAMI_XFER_BARRIER,        _binomial_barrier_factory,                 _context_id);
+          geometry->rmCollective(PAMI_XFER_BARRIER,        _msync2d_composite_factory,                _context_id);
+          geometry->rmCollective(PAMI_XFER_BARRIER,        _msync2d_gishm_composite_factory,          _context_id);
+          geometry->rmCollective(PAMI_XFER_BARRIER,        _msync2d_rectangle_composite_factory,      _context_id);
+
+          geometry->rmCollectiveCheck(PAMI_XFER_ALLREDUCE, _mushmemcollectivedputmulticombinefactory, _context_id);
+          geometry->rmCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2d_dput_composite_factory,           _context_id);
+
+#ifdef ENABLE_X0_PROTOCOLS
+          geometry->rmCollectiveCheck(PAMI_XFER_BROADCAST, _mu_mcast3_factory,                _context_id);
+          geometry->rmCollectiveCheck(PAMI_XFER_BROADCAST, _mcast2d_composite_factory,        _context_id);
+
+          geometry->rmCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2dNP_dput_composite_factory, _context_id);
+          geometry->rmCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2d_composite_factory,        _context_id);
+          geometry->rmCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2dNP_composite_factory,      _context_id);
+#endif
+
         }
 
         return PAMI_SUCCESS;

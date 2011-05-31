@@ -204,6 +204,10 @@ namespace PAMI
       inline pami_result_t addCollectiveCheck(pami_xfer_type_t                            xfer_type,
                                              CCMI::Adaptor::CollectiveProtocolFactory  *factory,
                                              size_t                                     context_id);
+      inline pami_result_t rmCollectiveCheck(pami_xfer_type_t                            xfer_type,
+                                             CCMI::Adaptor::CollectiveProtocolFactory  *factory,
+                                             size_t                                     context_id);
+
 
 
 
@@ -608,6 +612,15 @@ namespace PAMI
     {
       return static_cast<T_Geometry*>(this)->addCollectiveCheck_impl(xfer_type,factory,context_id);
     }
+
+    template <class T_Geometry>
+    inline pami_result_t Geometry<T_Geometry>::rmCollectiveCheck(pami_xfer_type_t                            xfer_type,
+                                                                 CCMI::Adaptor::CollectiveProtocolFactory  *factory,
+                                                                 size_t                                     context_id)
+    {
+      return static_cast<T_Geometry*>(this)->rmCollectiveCheck_impl(xfer_type,factory,context_id);
+    }
+
 
   }; // namespace Geometry
 }; // namespace PAMI

@@ -113,22 +113,23 @@ namespace PAMI
                                            T_Geometry                               *geometry,
                                            size_t                                    context_id)
         {
-	  int i;
-	  for (i = 0; i < _num_algo; ++i)
-	  {
-	    if (_algo_list[i]->_factory == factory)
-	    {
-	      PAMI_assertf(_algo_list_store[i]._factory == factory,
-			"Internal consistency error on algorithm list");
-	      size_t n = _num_algo - i - 1;
-	      if (n)
-	      {
-	        memcpy(&_algo_list[i], &_algo_list[i + 1], n * sizeof(_algo_list[0]));
-	        memcpy(&_algo_list_store[i], &_algo_list_store[i + 1], n * sizeof(_algo_list_store[0]));
-	      }
-	      --_num_algo;
-	    }
-	  }
+          int i;
+          for (i = 0; i < _num_algo; ++i)
+          {
+            if (_algo_list[i]->_factory == factory)
+            {
+              PAMI_assertf(_algo_list_store[i]._factory == factory,
+                           "Internal consistency error on algorithm list");
+              size_t n = _num_algo - i - 1;
+              if (n)
+              {
+                // We can leave _algo_list[i] == & _algo_list_store[i] and just move store.
+                memcpy(&_algo_list_store[i], &_algo_list_store[i + 1], n * sizeof(_algo_list_store[0]));
+              }
+              --_num_algo;
+            }
+
+          }
           return PAMI_SUCCESS;
         }
         inline pami_result_t addCollectiveCheck(CCMI::Adaptor::CollectiveProtocolFactory  *factory,
@@ -140,6 +141,28 @@ namespace PAMI
           _algo_list_check_store[_num_algo_check]._geometry = geometry;
           _algo_list_check[_num_algo_check]                 = &_algo_list_check_store[_num_algo_check];
           _num_algo_check++;
+          return PAMI_SUCCESS;
+        }
+        inline pami_result_t rmCollectiveCheck(CCMI::Adaptor::CollectiveProtocolFactory *factory,
+                                               T_Geometry                               *geometry,
+                                               size_t                                    context_id)
+        {
+          int i;
+          for (i = 0; i < _num_algo_check; ++i)
+          {
+            if (_algo_list_check[i]->_factory == factory)
+            {
+              PAMI_assertf(_algo_list_check_store[i]._factory == factory,
+                           "Internal consistency error on algorithm list");
+              size_t n = _num_algo_check - i - 1;
+              if (n)
+              {
+                // We can leave _algo_list_check[i] == & _algo_list_check_store[i] and just move store.
+                memcpy(&_algo_list_check_store[i], &_algo_list_check_store[i + 1], n * sizeof(_algo_list_check_store[0]));
+              }
+              --_num_algo_check;
+            }
+          }
           return PAMI_SUCCESS;
         }
         inline pami_result_t lengths(size_t             *lists_lengths)

@@ -674,8 +674,13 @@ namespace PAMI
         PAMI::Context *ctxt = (PAMI::Context *)context;
         pami_result_t rc = PAMI_SUCCESS;
 
-        if (configuration[0].value.intval != 0)
+        if (configuration[0].value.intval != 0) // Optimize
           {
+            // First remove optimized algorithms in case it was previously optimized
+            for (size_t n = 0; n < _ncontexts; n++)
+            {
+              _contexts[n].analyze(n, (BGQGeometry *)geometry, -1);
+            }
             gp->setCompletion(fn, cookie);
             gp->addCompletion();        // ensure completion doesn't happen until
             // all have been analyzed (_geom_opt_finish).
@@ -683,7 +688,7 @@ namespace PAMI
             rc = __MUGlobal.getMuRM().geomOptimize(gp, _clientid,
                                                    ctxt->getId(), context, _geom_opt_finish, (void *)gp);
           }
-        else
+        else // De-optimize
           {
             pami_result_t rc = __MUGlobal.getMuRM().geomDeoptimize(gp);
 
