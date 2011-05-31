@@ -305,6 +305,7 @@ namespace CCMI
           *src    = (_myindex + _native->numranks() - (1U << _curphase)) % _native->numranks();
           *nsrc   = 1;
           *srclen = _buflen;
+          return 0;
         }
 
         static void notifySendDone (pami_context_t context, void *cookie, pami_result_t result)
