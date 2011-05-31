@@ -56,7 +56,7 @@ namespace PAMI
                                       compl_hndlr_t **comp_h,
                                       void          **uinfo)
         {
-          T_Message::Header               *hdr   = (T_Message::Header*)uhdr;
+          typename T_Message::Header      *hdr   = (typename T_Message::Header*)uhdr;
           int                              did   = hdr->dispatch_id;
           int                              gid   = hdr->geometry_id;
           int                              seqno = hdr->seqno;
@@ -92,7 +92,7 @@ namespace PAMI
                                     compl_hndlr_t **comp_h,
                                     void          **uinfo)
         {
-          T_Message::Header               *hdr   = (T_Message::Header*)uhdr;
+          typename T_Message::Header      *hdr   = (typename T_Message::Header*)uhdr;
           int                              did   = hdr->dispatch_id;
           int                              gid   = hdr->geometry_id;
           int                              seqno = hdr->seqno;
