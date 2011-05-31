@@ -21,6 +21,7 @@
 #include "TypeDefs.h"
 #include "components/memory/MemoryAllocator.h"
 #include "algorithms/protocols/allreduce/ReduceFunctions.h"
+#include "components/devices/MulticombineModel.h"
 #include <list>
 
 namespace PAMI
@@ -166,89 +167,12 @@ namespace PAMI
 
     };
 
-    class CAUMcombineMessage : public MatchQueueElem
-    {
-    public:
-      CAUMcombineMessage(size_t               count,
-                         size_t               sizeoftype,
-                         PipeWorkQueue       *rcvpwq,
-                         PipeWorkQueue       *sndpwq,
-                         cau_reduce_op_t      red,
-                         pami_context_t       context,
-                         pami_event_function  done_fn,
-                         void                *user_cookie,
-                         int                  key,                         
-                         void                *toFree):
-        MatchQueueElem(key),
-        _user_done_fn(done_fn),
-        _user_cookie(user_cookie),
-        _toFree(toFree),
-        _count(count),
-        _sizeoftype(sizeoftype),
-        _bytesReduced(0),
-        _bytesToReduce(count*sizeoftype),
-        _bytesBroadcasted(0),
-        _bytesToBroadcast(_bytesToReduce),
-        _currentBytes(0),
-        _rcvpwq(rcvpwq),
-        _sndpwq(sndpwq),
-        _red(red),
-        _context(context),
-        _devinfo(NULL),
-        _device(NULL),
-        _workfcn(NULL)
-        {
-        }
-      pami_event_function  _user_done_fn;
-      void                *_user_cookie;
-      void                *_toFree;
-      pami_context_t       _context;
-      size_t               _count;
-      size_t               _sizeoftype; 
-      size_t               _bytesReduced;
-      size_t               _bytesToReduce;
-      size_t               _bytesBroadcasted;
-      size_t               _bytesToBroadcast;
-      size_t               _currentBytes;
-      PipeWorkQueue       *_rcvpwq;
-      PipeWorkQueue       *_sndpwq;
-      cau_reduce_op_t      _red;
-      void                *_ue_buf;
-      size_t               _ue_bytes;
-      void                *_ue_hdr;
-      size_t               _ue_hdr_bytes;
-      void                *_devinfo;
-      void                *_device;
-      coremath             _math_func;
-      bool                 _reduceOnly;
-      Generic::GenericThread *_workfcn;
-      struct               xfer_header
-      {
-        unsigned           dispatch_id:16;
-        unsigned           geometry_id:16;
-        unsigned           seqno      :32;
-        unsigned           pktsize    :7;
-        unsigned           msgsize    :25;
-      } _xfer_header __attribute__((__packed__));
-      struct               xfer_header_b
-      {
-        unsigned           dispatch_id:16;
-        unsigned           geometry_id:16;
-        unsigned           seqno      :32;
-        unsigned           pktsize    :7;
-        unsigned           msgsize    :25;
-      } _xfer_header_b __attribute__((__packed__));
-
-
-    };
 
     class CAUM2MMessage
     {
     public:
       unsigned toimpl;
     };
-
-
 
     class CAUGeometryInfo
     {
@@ -269,15 +193,15 @@ namespace PAMI
         {}
       int             _cau_id;
       int             _geometry_id;
-      uint64_t        _seqno;
+      unsigned        _seqno;
       MatchQueue      _ue;
       MatchQueue      _posted;
 
-      uint64_t        _seqnoRed;
+      unsigned        _seqnoRed;
       MatchQueue      _ueRed;
       MatchQueue      _postedRed;
       MatchQueue      _postedBcast;
-
+      
       PAMI::Topology *_topo;
     };
 

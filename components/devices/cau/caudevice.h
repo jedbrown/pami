@@ -20,9 +20,9 @@
 
 #ifdef TRACE
 #undef TRACE
-#define TRACE(x)// fprintf x
+#define TRACE(x) //fprintf x
 #else
-#define TRACE(x)// fprintf x
+#define TRACE(x) //fprintf x
 #endif
 
 extern pami_geometry_t mapidtogeometry (pami_context_t ctxt, int comm);
@@ -34,6 +34,317 @@ namespace PAMI
     class CAUDevice: public Interface::BaseDevice<CAUDevice>
     {
     public:
+      // CAU Multicombine Message Class      
+      class CAUMcombineMessage : public MatchQueueElem
+      {
+      public:
+        class               Header
+        {
+        public:
+          unsigned           dispatch_id:16;
+          unsigned           geometry_id:16;
+          unsigned           seqno      :32;
+          unsigned           pktsize    :7;
+          unsigned           msgsize    :25;
+        }  __attribute__((__packed__));
+        // When the reduction is done on the non-root nodes, we increment the bytes
+        // consumed out of the user's buffer, we won't be accessing that any more
+        // so update the pwq from the buffer and increment the total bytes consumed
+        // Also, toggle the phase back to reduce
+        static void cau_red_send_done(lapi_handle_t *hndl, void * completion_param)
+          {
+            CAUMcombineMessage *m = (CAUMcombineMessage*)completion_param;
+            unsigned bytesConsumed;
+            if(m->_sizeoftype == 4)
+              bytesConsumed = m->_reducePktBytes>>1;
+            else
+              bytesConsumed = m->_reducePktBytes;
+
+            m->_srcpwq->consumeBytes(bytesConsumed);
+            m->_totalBytesConsumed += bytesConsumed;
+            m->_reducePktBytes      = 0;
+            m->_phase               = BROADCAST;                        
+            TRACE((stderr, "cau_reduce_done: bc=%d tbc=%ld\n",
+                   bytesConsumed, m->_totalBytesConsumed));
+            return;
+          }
+
+        // When the multicast is finished on the root node, we can
+        // increment the bytes produced, indicating we are done with the
+        // buffer.  We then move into the reduction phase again to accept
+        // the next chunk of data from the non-root tasks.
+        static void cau_mcast_send_done(lapi_handle_t *hndl, void * completion_param)
+          {
+            CAUMcombineMessage *m = (CAUMcombineMessage*)completion_param;
+            unsigned bytesProduced;
+            if(m->_sizeoftype == 4)
+              bytesProduced = m->_resultPktBytes>>1;
+            else
+              bytesProduced = m->_resultPktBytes;            
+            m->_dstpwq->produceBytes(bytesProduced);
+            m->_totalBytesProduced += bytesProduced;
+            m->_resultPktBytes      = 0;
+            m->_phase               = REDUCE;
+            m->_resultPktBytes      = 0;
+            TRACE((stderr, "cau_mcast_send_done: bc=%d tbp=%ld\n",
+                   bytesProduced, m->_totalBytesProduced));
+            return;
+          }
+        
+        typedef enum
+        {
+          NOOP=0,
+          BROADCAST,
+          REDUCE
+        } mcombine_phase_t;
+
+        // These routines are here to implement a pesky CAU design feature
+        // that requires 4 byte operands to be strided onto 8 byte boundaries
+        inline void packBuf4(char *to, char * from, int count)
+          {
+            int i,j;
+            unsigned  *fromCast = (unsigned*)from;
+            unsigned  *toCast   = (unsigned*)to;
+            for(i=0,j=0;i<count;i++,j+=2)
+              toCast[j]   = fromCast[i];
+          }
+        inline void unpackBuf4(char *to, char * from, int count)
+          {
+            int i,j;
+            unsigned *fromCast = (unsigned*)from;
+            unsigned *toCast   = (unsigned*)to;
+            for(i=0,j=0;i<count;i++,j+=2)
+              toCast[i] = fromCast[j];
+          }
+        
+        CAUMcombineMessage(CAUDevice       *device,
+                           CAUGeometryInfo *geometryInfo,
+                           int              dispatch_red_id,
+                           int              dispatch_mcast_id):
+          MatchQueueElem(geometryInfo->_seqnoRed),
+          _geometryInfo(geometryInfo),
+          _device(device),
+          _isInit(false),
+          _dispatch_red_id(dispatch_red_id),
+          _dispatch_mcast_id(dispatch_mcast_id)
+          {
+
+          }
+        void init(pami_multicombine_t *mcomb)
+          {
+            TRACE((stderr, "CAU Mcombine Msg:  Init\n"));
+            _srcpwq = (PipeWorkQueue*)mcomb->data;
+            _dstpwq = (PipeWorkQueue*)mcomb->results;
+            _srctopo= (Topology*)mcomb->data_participants;
+            _dsttopo= (Topology*)mcomb->results_participants;
+            _red.operand_type = _device->pami_to_lapi_dt(mcomb->dtype);
+            _red.operation    = _device->pami_to_lapi_op(mcomb->optor);
+            CCMI::Adaptor::Allreduce::getReduceFunction(mcomb->dtype,mcomb->optor,
+                                                        _sizeoftype,_math_func);
+
+            _totalCount = mcomb->count;
+            _totalBytes = mcomb->count * _sizeoftype;
+            _totalBytesConsumed = 0;
+            _totalBytesProduced = 0;
+            _reducePktBytes     = 0;
+            _resultPktBytes     = 0;
+            _cb_done            = mcomb->cb_done;
+            _connection_id      = mcomb->connection_id;            
+            _key                = _geometryInfo->_seqnoRed++;
+            if(_dsttopo->index2Rank(0) == _device->taskid())
+              _amRoot=true;
+            else
+              _amRoot=false;
+
+            _phase =REDUCE;
+            _isInit = true;
+          }
+
+        inline void advanceRoot()
+          {
+            if(!_isInit) return;
+            unsigned  bytesAvailToConsume    = _srcpwq->bytesAvailableToConsume();
+            unsigned  bytesAvailToProduce    = _dstpwq->bytesAvailableToProduce();
+            char     *bufToConsume           = _srcpwq->bufferToConsume();
+            char     *bufToProduce           = _dstpwq->bufferToProduce();
+            if(_phase == REDUCE && _reducePktBytes)
+            {
+              unsigned actualDataInPacket;
+              if(_sizeoftype == 4)
+                actualDataInPacket=_reducePktBytes>>1;
+              else
+                actualDataInPacket=_reducePktBytes;
+
+              if(actualDataInPacket == 0 ||
+                 actualDataInPacket > bytesAvailToConsume ||
+                 actualDataInPacket > bytesAvailToProduce)
+                return;
+
+              if(_sizeoftype == 4)
+              {
+                char                    tmpPkt[64];
+                unsigned                countInPacket=actualDataInPacket>>2;
+                packBuf4(tmpPkt, bufToConsume, countInPacket);
+                void * inputs[] = {tmpPkt,_reducePkt};
+                // Reduce the entire packet, forget the holes
+                _math_func(_resultPkt, inputs, 2, countInPacket<<1);
+              }
+              else
+              {
+                void * inputs[] = {bufToConsume,_reducePkt};
+                _math_func(_resultPkt, inputs, 2, actualDataInPacket>>3);
+              }
+              _srcpwq->consumeBytes(actualDataInPacket);
+              _totalBytesConsumed += actualDataInPacket;
+              _resultPktBytes      = _reducePktBytes;
+              _reducePktBytes      = 0;
+              _phase=BROADCAST;
+            }
+            if(_phase == BROADCAST && bytesAvailToProduce && _resultPktBytes)
+            {
+              int bytesToBroadcast;
+              if(_sizeoftype == 4)
+              {
+                unpackBuf4(bufToProduce, _resultPkt, _resultPktBytes>>3);
+                bytesToBroadcast=_resultPktBytes>>1;
+              }
+              else
+              {
+                memcpy(bufToProduce, _resultPkt, _resultPktBytes);
+                bytesToBroadcast=_resultPktBytes;
+              }
+              _xfer_header.dispatch_id = _dispatch_mcast_id;
+              _xfer_header.geometry_id = _geometryInfo->_geometry_id;
+              _xfer_header.seqno       = this->_key;
+              _xfer_header.pktsize     = bytesToBroadcast;
+              _xfer_header.msgsize     = _totalBytes;
+              TRACE((stderr, "--->CAU Mcombine Advance Root: cau_multicast(inject) "
+                     "h.did=%d h.gid=%d h.seq=%d h.pktsz=%d, h.msz=%d\n",
+                     _xfer_header.dispatch_id, _xfer_header.geometry_id,
+                     _xfer_header.seqno, _xfer_header.pktsize,
+                     _xfer_header.msgsize));
+              CheckLapiRC(lapi_cau_multicast(_device->getHdl(),      // lapi handle
+                                             _geometryInfo->_cau_id, // group id
+                                             _dispatch_mcast_id,     // dispatch id
+                                             &_xfer_header,          // header
+                                             sizeof(_xfer_header),   // header len
+                                             bufToProduce,           // data
+                                             bytesToBroadcast,       // data size
+                                             cau_mcast_send_done,    // done cb
+                                             this));                 // clientdata
+            }
+            return;
+          }
+        inline void advanceNonRoot()
+          {
+            unsigned  bytesAvailToConsume    = _srcpwq->bytesAvailableToConsume();
+            unsigned  bytesAvailToProduce    = _dstpwq->bytesAvailableToProduce();
+            char     *bufToConsume           = _srcpwq->bufferToConsume();
+            char     *bufToProduce           = _dstpwq->bufferToProduce();
+            if(_phase == REDUCE && _reducePktBytes == 0)
+            {
+              if(bytesAvailToConsume == 0) return;
+              
+              unsigned actualDataInPacket;
+              if(_sizeoftype == 4)
+              {
+                bytesAvailToConsume    = MIN(32, bytesAvailToConsume);
+                unsigned countInPacket = bytesAvailToConsume>>2;
+                _reducePktBytes        = bytesAvailToConsume<<1;
+                packBuf4(_reducePkt, bufToConsume, countInPacket);
+              }
+              else
+              {
+                bytesAvailToConsume    = MIN(64, bytesAvailToConsume);
+                memcpy(_reducePkt, bufToConsume, bytesAvailToConsume);
+                _reducePktBytes        = bytesAvailToConsume;
+              }
+              _xfer_header.dispatch_id = _dispatch_red_id;
+              _xfer_header.geometry_id = _geometryInfo->_geometry_id;
+              _xfer_header.seqno       = this->_key;
+              _xfer_header.pktsize     = _reducePktBytes;
+              _xfer_header.msgsize     = _totalBytes;              
+              TRACE((stderr, "--->CAU Mcombine Advance Nonroot: cau_reduce(inject) "
+                     "h.did=%d h.gid=%d h.seq=%d h.pktsz=%d, h.msz=%d\n",
+                     _xfer_header.dispatch_id, _xfer_header.geometry_id,
+                     _xfer_header.seqno, _xfer_header.pktsize,
+                     _xfer_header.msgsize));
+
+              CheckLapiRC(lapi_cau_reduce(_device->getHdl(),           // lapi handle
+                                          _geometryInfo->_cau_id,      // group id
+                                          _dispatch_red_id,            // dispatch id
+                                          &_xfer_header,               // header
+                                          sizeof(_xfer_header),        // header_len
+                                          _reducePkt,                  // data
+                                          _reducePktBytes,             // data size
+                                          _red,                        // reduction op
+                                          cau_red_send_done,           // send completion handler
+                                          this));
+            }
+            if(_phase == BROADCAST && _resultPktBytes && bytesAvailToProduce)
+            {
+              if(bytesAvailToProduce == 0) return;
+              unsigned actualDataInPacket;
+              actualDataInPacket   =_resultPktBytes;
+              memcpy(bufToProduce, _resultPkt, actualDataInPacket);
+              _resultPktBytes      = 0;
+              _totalBytesProduced += actualDataInPacket;
+              _phase               = REDUCE;
+              TRACE((stderr, "--->NonRoot:  producing %d bytes, bytesAvailToProduce=%d totbyteprod=%ld\n",
+                     actualDataInPacket, bytesAvailToProduce, _totalBytesProduced));
+              _dstpwq->produceBytes(actualDataInPacket);
+            }
+            return;
+            }
+        // This message is inserted into the generic device, and the advance routine is called
+        // for each message posted.  Each message toggles between a reduce phase and a
+        // broadcast phase for each packet injected on the network.  Pipelining is handled
+        // by returning EAGAIN when no buffer space is available to consume or produce, depending
+        // on the current phase of the operation.
+        inline pami_result_t advance()
+          {
+            PAMI_assert(_isInit == true);
+            if(_amRoot) advanceRoot();
+            else        advanceNonRoot();
+            if(_totalBytesProduced == _totalBytes && _totalBytesConsumed == _totalBytes)
+            {
+              TRACE((stderr, "CAU Mcombine Advance:  Message Complete\n"));
+              if(_cb_done.function)
+                _cb_done.function(_device->getContext(), _cb_done.clientdata, PAMI_SUCCESS);
+              _geometryInfo->_postedRed.deleteElem(this);
+              return PAMI_SUCCESS;
+            }
+            return PAMI_EAGAIN;
+          }
+        CAUDevice              *_device;
+        CAUGeometryInfo        *_geometryInfo;
+        bool                    _isInit;
+        int                     _dispatch_red_id;
+        int                     _dispatch_mcast_id;
+        PipeWorkQueue          *_srcpwq;
+        PipeWorkQueue          *_dstpwq;
+        Topology               *_srctopo;
+        Topology               *_dsttopo;
+        cau_reduce_op_t         _red;
+        coremath                _math_func;
+        unsigned                _sizeoftype;
+        size_t                  _totalCount;
+        unsigned                _totalBytes;
+        unsigned                _totalBytesConsumed;
+        unsigned                _totalBytesProduced;
+        unsigned                _reducePktBytes;
+        unsigned                _resultPktBytes;
+        mcombine_phase_t        _phase;
+        pami_callback_t         _cb_done;
+        Generic::GenericThread *_workfcn;
+        unsigned                _connection_id;
+        bool                    _amRoot;
+        Header                  _xfer_header;
+        char                    _reducePkt[64];
+        char                    _resultPkt[64];
+      };
+
+
       CAUDevice():
 	_lapi_state(NULL),
         _lapi_handle(0)
@@ -63,10 +374,10 @@ namespace PAMI
           int my_dispatch_id = (*_dispatch_id)--;
           LapiImpl::Context *cp = (LapiImpl::Context *)_Lapi_port[_lapi_handle];
           internal_rc_t rc = (cp->*(cp->pDispatchSet))(my_dispatch_id,
-                                                          (void*)hdr,
-                                                          NULL,
-                                                          null_dispatch_hint,
-                                                          INTERFACE_LAPI);          
+                                                       (void*)hdr,
+                                                       NULL,
+                                                       null_dispatch_hint,
+                                                       INTERFACE_LAPI);          
           if(rc != SUCCESS) return -1;
           __global._id_to_device_table[my_dispatch_id] = clientdata;
           return my_dispatch_id;
@@ -78,10 +389,10 @@ namespace PAMI
         {
           LapiImpl::Context *cp = (LapiImpl::Context *)_Lapi_port[_lapi_handle];
           internal_rc_t rc = (cp->*(cp->pDispatchSet))(dispatch_id,
-                                                          (void*)hdr,
-                                                          NULL,
-                                                          null_dispatch_hint,
-                                                          INTERFACE_LAPI);          
+                                                       (void*)hdr,
+                                                       NULL,
+                                                       null_dispatch_hint,
+                                                       INTERFACE_LAPI);          
           if(rc != SUCCESS) return -1;
           __global._id_to_device_table[dispatch_id]           =  clientdata;
           return dispatch_id;
@@ -120,6 +431,7 @@ namespace PAMI
         {
           _work_alloc.returnObject(work);
         }
+
       inline int pami_to_lapi_dt(pami_dt dt)
         {
           switch(dt)

@@ -205,7 +205,7 @@ namespace PAMI
   // "New" Collective Message Typedefs
   typedef Device::CAUMsyncMessage                                     CAUMsyncMessage;
   typedef Device::CAUMcastSendMessage                                 CAUMcastSendMessage;
-  typedef Device::CAUMcombineMessage                                  CAUMcombineMessage;
+  typedef Device::CAUDevice::CAUMcombineMessage                       CAUMcombineMessage;
   typedef Device::CAUM2MMessage                                       CAUM2MMessage;
 
   // P2P Model Classes:  None here, LAPI component implements p2p
