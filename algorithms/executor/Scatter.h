@@ -208,7 +208,6 @@ namespace CCMI
           _rootindex  = _gtopology->rank2Index(_root);
 
           unsigned connection_id = (unsigned) - 1;
-
           if (_connmgr)
             connection_id = _connmgr->getConnectionId(_comm, _root, 0, (unsigned) - 1, (unsigned) - 1);
 
@@ -249,7 +248,6 @@ namespace CCMI
 
         void  setBuffers (char *src, char *dst, int len)
         {
-
           _buflen = len;
           _sbuf = src;
           _rbuf = dst;
@@ -266,21 +264,21 @@ namespace CCMI
                 _tmpbuf = src;
               else  // allocate temporary buffer and reshuffle the data
                 {
-              size_t buflen = _native->numranks() * len;
-	      pami_result_t rc;
-	      rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
-	      PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
-              memcpy (_tmpbuf, src+_myindex*len, (_native->numranks() - _myindex)*len);
-              memcpy (_tmpbuf+(_native->numranks() - _myindex)*len  ,src, _myindex * len);
+                  size_t buflen = _native->numranks() * len;
+                  pami_result_t rc;
+	              rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
+                  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
+                  memcpy (_tmpbuf, src+_myindex*len, (_native->numranks() - _myindex)*len);
+                  memcpy (_tmpbuf+(_native->numranks() - _myindex)*len  ,src, _myindex * len);
                 }
             }
           else if (_nphases > 1)
           {
             // schedule's getLList() method can be used for an accurate buffer size
             size_t  buflen = _native->numranks() * len;
-	    pami_result_t rc;
-	    rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
-	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
+            pami_result_t rc;
+            rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
+            PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
             _pwq.configure (_tmpbuf, buflen, 0);
             _pwq.reset();
           }
@@ -289,7 +287,6 @@ namespace CCMI
               _pwq.configure (dst, len, 0);
               _pwq.reset();
             }
-
         }
 
         void setVectors(T_Scatter_type *xfer)
@@ -299,6 +296,11 @@ namespace CCMI
             {
               setScatterVectors<T_Scatter_type>(xfer, (void *)&_disps, (void *)&_sndcounts);
             }
+        }
+
+        void setConnmgr(T_ConnMgr *connmgr)
+        {
+          _connmgr = connmgr;
         }
 
         //------------------------------------------
@@ -392,7 +394,6 @@ inline void  CCMI::Executor::ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type>:
 
       return;
     }
-
   _comm_schedule->getRList(_curphase, &_dstranks[0], ndst, &_dstlens[0]);
 
   CCMI_assert(_donecount  == 0);

@@ -256,7 +256,7 @@ inline pami_result_t doAction<pami_scan_t>(pami_scan_t *xfer, PAMI_GEOMETRY_CLAS
 template <>
 inline pami_result_t doAction<pami_reduce_scatter_t>(pami_reduce_scatter_t *xfer, PAMI_GEOMETRY_CLASS *_geometry)
 {
-   return copyData((void*)xfer->sndbuf, (TypeCode*)xfer->stype, (void*)xfer->rcvbuf, (TypeCode*)xfer->rtype, xfer->rtypecount, 0, 0);
+   return copyData((void*)xfer->sndbuf, (TypeCode*)xfer->stype, (void*)xfer->rcvbuf, (TypeCode*)xfer->rtype, xfer->rcounts[0], 0, 0);
 }
 
 

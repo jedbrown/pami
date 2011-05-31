@@ -90,16 +90,17 @@ public:
                                        dt,op);
 
         CCMI::Adaptor::Allreduce::getReduceFunction((pami_dt)dt, (pami_op)op, sizeOfType, func);
-        // unsigned bytes = sizeOfType * a_xfer->stypecount;
+        unsigned bytes = sizeOfType * a_xfer->stypecount;
+
         _reduce_executor.setRoot(root);
 
-        prepReduceBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount, native->myrank() == root);
+        prepReduceBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, bytes, native->myrank() == root);
 
         _reduce_executor.setDoneCallback (cb_done.function, cb_done.clientdata);
 
         COMPILE_TIME_ASSERT(sizeof(_reduce_schedule) >= sizeof(T_Reduce_Schedule));
         _reduce_executor.setSchedule (&_reduce_schedule, 0);
-        _reduce_executor.setReduceInfo(a_xfer->stypecount / sizeOfType, a_xfer->stypecount, sizeOfType, func, (pami_op)op, (pami_dt)dt);
+        _reduce_executor.setReduceInfo(a_xfer->stypecount, bytes, sizeOfType, func, (pami_op)op, (pami_dt)dt);
 
         _reduce_executor.reset();
 
@@ -185,14 +186,16 @@ public:
             PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
             _relbuf = rcvbuf;
             _reduce_executor.setBuffers (sndbuf, _tmpbuf, bytes);
+			
         }
         else
         {
             _reduce_executor.setBuffers(sndbuf, rcvbuf, bytes);
         }
+		
     }
 
-    void setScatterExecutor (char *sbuf, char *rbuf, size_t rtypecount, size_t *stypecounts,
+    void setScatterExecutor (char *sbuf, char *rbuf, size_t *stypecounts, size_t myrank,
                              pami_dt dt, pami_op op, unsigned counts, bool root,
                              pami_callback_t  cb_done)
     {
@@ -215,23 +218,26 @@ public:
         {
             _scounts[i+1] = stypecounts[i+1] * sizeOfType;
             _sdispls[i+1] = _sdispls[i] + stypecounts[i] * sizeOfType;
-            //fprintf(stderr, "setScatterExecutor - _sdispls[%d] = %d, _scounts[%d] = %d\n", i+1, _sdispls[i+1], i+1, _scounts[i+1]);
         }
 
         s_xfer.stypecounts = _scounts;
         s_xfer.sdispls     = _sdispls;
 
+
+
+        unsigned bytes = sizeOfType * stypecounts[myrank];
+        _scatter_executor.setConnmgr(_cmgr);
         _scatter_executor.setRoot (0);
         _scatter_executor.setSchedule (&_scatter_schedule);
-        _scatter_executor.setBuffers (sbuf, rbuf, rtypecount);
+        _scatter_executor.setBuffers (sbuf, rbuf, bytes);
 
         if (root)
         {
-            _scatter_executor.setBuffers(_tmpbuf, _relbuf, rtypecount);
+            _scatter_executor.setBuffers(_tmpbuf, _relbuf, bytes);
         }
         else
         {
-            _scatter_executor.setBuffers(sbuf, rbuf, rtypecount);
+            _scatter_executor.setBuffers(sbuf, rbuf, bytes);
         }
 
         _scatter_executor.setVectors (&s_xfer);
@@ -384,8 +390,15 @@ public:
             co->setFlag(LocalPosted);
 
             a_composite = co->getComposite();
-
-            a_composite->prepReduceBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount, _native->myrank() == root);
+            coremath func;
+            uintptr_t op, dt;
+            PAMI::Type::TypeFunc::GetEnums(a_xfer->stype,
+                                           a_xfer->op,
+                                           dt,op);
+            unsigned sizeOfType;
+            CCMI::Adaptor::Allreduce::getReduceFunction((pami_dt)dt, (pami_op)op, sizeOfType, func);
+            unsigned bytes = sizeOfType * a_xfer->stypecount;
+            a_composite->prepReduceBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, bytes, _native->myrank() == root);
 
             // previous connection manager may need cleanup
             CCMI_assert(co->getComposite()->connmgr() != ((AsyncReduceScatterFactoryT *)co->getFactory())->getConnMgr());
@@ -399,11 +412,8 @@ public:
             pami_callback_t  cb_exec_done;
             cb_exec_done.function   = scatter_exec_done;
             cb_exec_done.clientdata = co;
-            uintptr_t op, dt;
-            PAMI::Type::TypeFunc::GetEnums(a_xfer->stype,
-                                           a_xfer->op,
-                                           dt,op);
-            a_composite->setScatterExecutor(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->rtypecount, a_xfer->rcounts, (pami_dt)dt, (pami_op)op, _native->numranks(), _native->myrank() == root, cb_exec_done);
+
+            a_composite->setScatterExecutor(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->rcounts, _native->myrank(), (pami_dt)dt, (pami_op)op, _native->numranks(), _native->myrank() == root, cb_exec_done);
             a_composite->getScatterExecutor().setConnectionID(key + 1);
         }
         /// not found posted CollOp object, create a new one and
@@ -423,14 +433,14 @@ public:
                           cb_exec_done,
                           (PAMI_GEOMETRY_CLASS *)g,
                           cmd );
-
             cb_exec_done.function = scatter_exec_done;
 
             uintptr_t op, dt;
             PAMI::Type::TypeFunc::GetEnums(a_xfer->stype,
                                            a_xfer->op,
                                            dt,op);
-            a_composite->setScatterExecutor(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->rtypecount, a_xfer->rcounts, (pami_dt)dt, (pami_op)op, _native->numranks(), _native->myrank() == root, cb_exec_done);
+
+            a_composite->setScatterExecutor(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->rcounts, _native->myrank(), (pami_dt)dt, (pami_op)op, _native->numranks(), _native->myrank() == root, cb_exec_done);
 
             co->setXfer((pami_xfer_t*)cmd);
             co->setFlag(LocalPosted);
