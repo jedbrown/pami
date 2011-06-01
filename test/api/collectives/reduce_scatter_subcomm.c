@@ -241,7 +241,6 @@ int main(int argc, char*argv[])
       reduce_scatter.cmd.xfer_reduce_scatter.stypecount= 0;
       reduce_scatter.cmd.xfer_reduce_scatter.rcvbuf    = rbuf;
       reduce_scatter.cmd.xfer_reduce_scatter.rtype     = PAMI_TYPE_BYTE;
-      reduce_scatter.cmd.xfer_reduce_scatter.rtypecount= 0;
 
       int k;
 	  
@@ -287,7 +286,6 @@ int main(int argc, char*argv[])
                   for (ind =0; ind < num_tasks; ++ind) rcounts[ind] = i / num_tasks;
 
                   reduce_scatter.cmd.xfer_reduce_scatter.stypecount=i;
-                  reduce_scatter.cmd.xfer_reduce_scatter.rtypecount=dataSent;
                   reduce_scatter.cmd.xfer_reduce_scatter.stype=dt_array[dt];
                   reduce_scatter.cmd.xfer_reduce_scatter.rtype=dt_array[dt];
                   reduce_scatter.cmd.xfer_reduce_scatter.op=op_array[op];

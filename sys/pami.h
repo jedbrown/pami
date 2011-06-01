@@ -2158,8 +2158,8 @@ extern "C"
    * \param[in]  stypecount   Source buffer type count
    * \param[in]  rcvbuf       Receive buffer.
    * \param[in]  rtype        Receive buffer layout
-   * \param[in]  rtypecount   Receive buffer type count
    * \param[in]  rcounts      number of elements to receive from the destinations(common on all nodes)
+   *                          index of my task is the count my task will receive
    * \param[in]  op           Reduce operation
    *
    * \retval     0            Success
@@ -2172,7 +2172,6 @@ extern "C"
     size_t                      stypecount;
     char                      * rcvbuf;
     pami_type_t                 rtype;
-    size_t                      rtypecount;
     size_t                    * rcounts;
     pami_data_function          op;
     void                      * data_cookie;
