@@ -180,6 +180,20 @@ namespace PAMI
                                                        allocator,
                                                        result);
         ni->setSendProtocol(dispatch, protocol);
+
+        // Construct the p2p pwq protocol using the NI dispatch function and cookie
+        dispatch = (*dispatch_id)--;
+        fn        = T_NativeInterface::dispatch_send_pwq;
+        protocol  = (T_Protocol*) T_Protocol::generate(dispatch,
+                                                       fn,
+                                                       (void*) ni,
+                                                       device,
+                                                       origin,
+                                                       context,
+                                                       (pami_dispatch_hint_t){0},
+                                                       allocator,
+                                                       result);
+        ni->setSendPWQProtocol(dispatch, protocol);
       }
 
 
@@ -342,6 +356,36 @@ namespace PAMI
                                             result);
         // Set the composite protocol into the NI
         ni->setSendProtocol(dispatch, composite);
+
+        // Construct the p2p pwq protocol using the NI dispatch function and cookie
+        dispatch = (*dispatch_id)--;
+        fn        = T_NativeInterface::dispatch_send_pwq;
+        protocol1 = (T_Protocol1*) T_Protocol1::generate(dispatch,
+                                                                                    fn,
+                                                                                    (void*) ni,
+                                                                                    device1,
+                                                                                    origin,
+                                                                                    context,
+                                                                                    (pami_dispatch_hint_t){0},
+                                                                                    allocator,
+                                                                                    result);
+        protocol2 = (T_Protocol2*) T_Protocol2::generate(dispatch,
+                                                                                    fn,
+                                                                                    (void*) ni,
+                                                                                    device2,
+                                                                                    origin,
+                                                                                    context,
+                                                                                    (pami_dispatch_hint_t){0},
+                                                                                    allocator,
+                                                                                    result);
+        // Construct the composite from the two protocols
+        composite = (Protocol::Send::SendPWQ<Protocol::Send::Send>*)
+          Protocol::Send::Factory::generate(protocol1,
+                                            protocol2,
+                                            allocator,
+                                            result);
+        // Set the composite protocol into the NI
+        ni->setSendPWQProtocol(dispatch, composite);
       }
 
 
@@ -512,8 +556,10 @@ namespace PAMI
 
       virtual inline pami_result_t send (pami_send_t * parameters);
       virtual inline pami_result_t sendPWQ(pami_context_t       context,
-                                           pami_send_t         *parameters,
-                                           PAMI::PipeWorkQueue *pwq);
+                                           pami_endpoint_t      dest,
+                                           size_t               length,
+                                           PAMI::PipeWorkQueue *pwq,
+                                           pami_send_event_t   *events);
 
       /// \brief initial to set the mcast dispatch
       virtual inline pami_result_t setMulticastDispatch (pami_dispatch_multicast_function fn, void *cookie);
@@ -573,6 +619,14 @@ namespace PAMI
                                 size_t               data_size,
                                 pami_endpoint_t      origin,
                                 pami_recv_t        * recv);
+      static void dispatch_send_pwq(pami_context_t       context_hdl,
+                                void               * cookie,
+                                const void         * header,
+                                size_t               header_size,
+                                const void         * data,
+                                size_t               data_size,
+                                pami_endpoint_t      origin,
+                                pami_recv_t        * recv);
 
 
       /// \brief set the protocol pointer.    We can't pass the protocol on the NI ctor because it's a
@@ -604,6 +658,15 @@ namespace PAMI
         TRACE_FORMAT( "<%p> %zu, %p", this, dispatch, protocol);
         _send_dispatch = dispatch;
         _send_protocol = protocol;
+        TRACE_FN_EXIT();
+      }
+
+      inline void setSendPWQProtocol(size_t dispatch, T_Protocol* protocol)
+      {
+        TRACE_FN_ENTER();
+        TRACE_FORMAT( "<%p> %zu, %p", this, dispatch, protocol);
+        _send_pwq_dispatch = dispatch;
+        _send_pwq_protocol = protocol;
         TRACE_FN_EXIT();
       }
 
@@ -691,6 +754,11 @@ namespace PAMI
       void                                * _send_dispatch_arg;
       size_t                                _send_dispatch;
 
+      T_Protocol                           *_send_pwq_protocol;
+      pami_dispatch_p2p_function            _send_pwq_dispatch_function;
+      void                                * _send_pwq_dispatch_arg;
+      size_t                                _send_pwq_dispatch;
+
       Queue                                 _mcastQ;
       Queue                                 _m2mSendQ;
       Queue                                 _m2mRecvQ;
@@ -724,8 +792,11 @@ namespace PAMI
 
       virtual inline pami_result_t send (pami_send_t * parameters);
       virtual inline pami_result_t sendPWQ(pami_context_t       context,
-                                           pami_send_t         *parameters,
-                                           PAMI::PipeWorkQueue *pwq);
+                                           pami_endpoint_t      dest,
+                                           size_t               length,
+                                           PAMI::PipeWorkQueue *pwq,
+                                           pami_send_event_t   *events);
+
 
       /// \brief initialize to set the mcast dispatch
       virtual inline pami_result_t setMulticastDispatch (pami_dispatch_multicast_function fn,
@@ -782,6 +853,14 @@ namespace PAMI
                                 size_t               data_size,
                                 pami_endpoint_t      origin,
                                 pami_recv_t        * recv);
+      static void dispatch_send_pwq(pami_context_t      context_hdl,
+                                void               * cookie,
+                                const void         * header,
+                                size_t               header_size,
+                                const void         * data,
+                                size_t               data_size,
+                                pami_endpoint_t      origin,
+                                pami_recv_t        * recv);
 
       /// \brief set the protocol pointer.    We can't pass the protocol on the NI ctor because it's a
       /// chicken-n-egg problem.  NI ctor needs a protocol. Protocol ctor needs a dispatch fn (NI::dispatch_mcast) and cookie (NI*).
@@ -812,6 +891,15 @@ namespace PAMI
         TRACE_FORMAT( "<%p> %p dispatch %zu ", this, protocol, dispatch);
         this->_send_dispatch = dispatch;
         this->_send_protocol = protocol;
+        TRACE_FN_EXIT();
+      }
+
+      inline void setSendPWQProtocol(size_t dispatch, T_Protocol* protocol)
+      {
+        TRACE_FN_ENTER();
+        TRACE_FORMAT( "<%p> %p dispatch %zu ", this, protocol, dispatch);
+        this->_send_pwq_dispatch = dispatch;
+        this->_send_pwq_protocol = protocol;
         TRACE_FN_EXIT();
       }
 
@@ -876,6 +964,7 @@ namespace PAMI
       _allocator(),
       _mcast_protocol(NULL), /// must be set by setMcastProtocol() before using the NI.
       _send_protocol(NULL), /// must be set by setMcastProtocol() before using the NI.
+      _send_pwq_protocol(NULL),/// must be set by setMcastProtocol() before using the NI.
       _client(client),
       _context(context),
       _contextid(context_id),
@@ -959,7 +1048,8 @@ namespace PAMI
   template <class T_Protocol, int T_Max_Msgcount>
   inline pami_result_t NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>::setSendPWQDispatch (pami_dispatch_p2p_function fn, void *cookie)
   {
-    PAMI_abort();
+    this->_send_pwq_dispatch_arg      = cookie;
+    this->_send_pwq_dispatch_function = fn;
     return PAMI_ERROR;
   }
 
@@ -1072,9 +1162,13 @@ namespace PAMI
     return PAMI_ERROR;
   }
   template <class T_Protocol, int T_Max_Msgcount>
-  inline pami_result_t NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>::sendPWQ(pami_context_t       context,
-      pami_send_t         *parameters,
-      PAMI::PipeWorkQueue *pwq)
+  inline pami_result_t NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>::sendPWQ(
+      pami_context_t       context,
+      pami_endpoint_t      dest,
+      size_t               length,
+      PAMI::PipeWorkQueue *pwq,
+      pami_send_event_t   *events
+      )
   {
     PAMI_abort();
     return PAMI_ERROR;
@@ -1253,6 +1347,19 @@ namespace PAMI
 
   template <class T_Protocol, int T_Max_Msgcount>
   inline void NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>::dispatch_send(pami_context_t       context_hdl, /**< IN:  communication context handle */
+                                                                                 void               * cookie,       /**< IN:  dispatch cookie (pointer to protocol object)*/
+                                                                                 const void         * header,       /**< IN:  header address  */
+                                                                                 size_t               header_size,  /**< IN:  header size     */
+                                                                                 const void         * data,         /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
+                                                                                 size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
+                                                                                 pami_endpoint_t      origin,       /**< IN:  Endpoint that originated the transfer */
+                                                                                 pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
+  {
+    PAMI_abort();
+  }
+
+  template <class T_Protocol, int T_Max_Msgcount>
+  inline void NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>::dispatch_send_pwq(pami_context_t       context_hdl, /**< IN:  communication context handle */
                                                                                  void               * cookie,       /**< IN:  dispatch cookie (pointer to protocol object)*/
                                                                                  const void         * header,       /**< IN:  header address  */
                                                                                  size_t               header_size,  /**< IN:  header size     */
@@ -1516,7 +1623,8 @@ namespace PAMI
   template <class T_Protocol, int T_Max_Msgcount>
   inline pami_result_t NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::setSendPWQDispatch (pami_dispatch_p2p_function fn, void *cookie)
   {
-    PAMI_abort();
+    this->_send_pwq_dispatch_arg      = cookie;
+    this->_send_pwq_dispatch_function = fn;
     return PAMI_SUCCESS;
   }
 
@@ -1636,12 +1744,15 @@ namespace PAMI
     return this->_send_protocol->simple(&s);
   }
   template <class T_Protocol, int T_Max_Msgcount>
-  inline pami_result_t NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::sendPWQ(pami_context_t       context,
-      pami_send_t         *parameters,
-      PAMI::PipeWorkQueue *pwq)
+    inline pami_result_t NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::sendPWQ(
+      pami_context_t       context,
+      pami_endpoint_t      dest,
+      size_t               length,
+      PAMI::PipeWorkQueue *pwq,
+      pami_send_event_t   *events
+      )
   {
-    PAMI_abort();
-    return PAMI_ERROR;
+    return this->_send_pwq_protocol->simplePWQ(context,dest,length,pwq,events,this->_send_pwq_dispatch);
   }
 
 
@@ -1903,6 +2014,30 @@ namespace PAMI
     NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount> *p = (NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount> *)cookie;
     p->_send_dispatch_function(context_hdl,
                                p->_send_dispatch_arg,
+                               header,
+                               header_size,
+                               data,
+                               data_size,
+                               origin,
+                               recv);
+    TRACE_FN_EXIT();
+  }
+
+  template <class T_Protocol, int T_Max_Msgcount>
+  inline void NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::dispatch_send_pwq(pami_context_t       context_hdl, /**< IN:  communication context handle */
+      void               * cookie,       /**< IN:  dispatch cookie (pointer to protocol object)*/
+      const void         * header,       /**< IN:  header address  */
+      size_t               header_size,  /**< IN:  header size     */
+      const void         * data,         /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
+      size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
+      pami_endpoint_t      origin,       /**< IN:  Endpoint that originated the transfer */
+      pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
+  {
+    TRACE_FN_ENTER();
+    TRACE_FORMAT( "<%p> context %p, header/size %p/%zu, data/size %p/%zu, origin %u, recv %p", cookie, context_hdl, header, header_size, data, data_size, origin, recv);
+    NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount> *p = (NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount> *)cookie;
+    p->_send_pwq_dispatch_function(context_hdl,
+                               p->_send_pwq_dispatch_arg,
                                header,
                                header_size,
                                data,

@@ -138,13 +138,23 @@ namespace PAMI
         /// \brief Start a new immediate send message with PWQ. If there is no
         /// data ready, post an async work function to retry later.
         ///
-        /// \param[in]  task      Destination task.
-        /// \param[in]  src       Send data buffer.
-        /// \param[in]  bytes     Send data length in bytes.
-        /// \param[in]  msginfo   Opaque application header information.
-        /// \param[in]  mbytes    Number of opaque application header bytes.
-        ///
-        /// \param[in]  pwq       A pipe work queue to use for the data buffer
+        /// \param[in]  sendpwq_t      *state     state storage and parameters:
+        /// 
+        ///             pami_work_t               work; 
+        ///             enum {SIMPLE,IMMEDIATE}   type;
+        ///             union
+        ///             {
+        ///               pami_send_immediate_t       immediate;
+        ///               pami_send_t                 simple;
+        ///             }                         send;
+        ///             PAMI::PipeWorkQueue      *pwq;
+        ///             SendPWQ                  *pthis;
+        ///             PAMI::Topology            dst_participants;
+        ///             pami_client_t             client;
+        ///             size_t                    contextid;
+        ///             size_t                    clientid;
+        /// 
+        /// \param[in]  pami_context_t  context
         ///
         pami_result_t immediatePWQ(sendpwq_t* state, pami_context_t context)
         {
@@ -205,21 +215,72 @@ namespace PAMI
         }
 
         ///
+        /// \brief Start a new simple P2P send with PWQ.
+        ///
+        /// \param[in]  context   Send context
+        /// \param[in]  dest      Destination endpoint
+        /// \param[in]  bytes     Send data length in bytes.
+        /// \param[in]  pwq       A pipe work queue to use for the data buffer
+        /// \param[in]  events    Send completion events/cookie structure
+        /// \param[in]  dispatch  Dispatch id
+        ///
+        pami_result_t simplePWQ (
+          pami_context_t       context,
+          pami_endpoint_t      dest,
+          size_t               bytes,
+          PAMI::PipeWorkQueue *pwq,
+          pami_send_event_t   *events,
+          size_t               dispatch)
+        {
+          TRACE_FN_ENTER();
+          pami_result_t result = PAMI_EAGAIN;
+          pami_send_t s = { {{0,0}, {0,0}}, {0} };
+          s.send.dest = dest;
+          s.events = *events;
+          s.send.dispatch = dispatch;
+
+          TRACE_FORMAT( "<%p> context %p, pwq %p, bytes %zu, dest %zu",this, context, pwq, bytes, (size_t)dest);
+          size_t length = pwq? pwq->bytesAvailableToConsume() : 0;
+          void* payload = pwq?(void*)pwq->bufferToConsume(): NULL;
+          TRACE_FORMAT( "<%p> length %zd, payload %p",this, length,payload);
+
+          // send it now if there is enough data in the pwq
+          if (length >= bytes)
+          {
+            s.send.data.iov_base = payload;
+            s.send.data.iov_len = length;
+            TRACE_FORMAT( "<%p> send(%u(%p))", this, s.send.dest, context);
+            result =  this->simple(&s);
+            TRACE_FORMAT( "<%p> result %u", this, result);
+            TRACE_FN_EXIT();
+            return result;
+          }
+          // \todo not enough data to send yet, ...
+          TRACE_FORMAT( "<%p> result PAMI_ERROR", this);
+          TRACE_FN_EXIT();
+          return PAMI_ERROR; //PAMI_EAGAIN;
+        }
+        ///
         /// \brief Start a new simple send message with PWQ.  If there is no
         /// data ready, post an async work function to retry later.
         ///
-        /// \param[in]  local_fn  Callback to invoke on local node when
-        ///                       message local source data is completely sent.
-        /// \param[in]  remote_fn Callback to invoke on local node when
-        ///                       message is completely received on remote node.
-        /// \param[in]  cookie    Opaque application callback data.
-        /// \param[in]  task      Destination task.
-        /// \param[in]  bytes     Send data length in bytes.
-        /// \param[in]  src       Send data buffer.
-        /// \param[in]  msginfo   Opaque application header information.
-        /// \param[in]  mbytes    Number of msginfo bytes.
-        ///
-        /// \param[in]  pwq       A pipe work queue to use for the data buffer
+        /// \param[in]  sendpwq_t      *state     state storage and parameters:
+        /// 
+        ///             pami_work_t               work; 
+        ///             enum {SIMPLE,IMMEDIATE}   type;
+        ///             union
+        ///             {
+        ///               pami_send_immediate_t       immediate;
+        ///               pami_send_t                 simple;
+        ///             }                         send;
+        ///             PAMI::PipeWorkQueue      *pwq;
+        ///             SendPWQ                  *pthis;
+        ///             PAMI::Topology            dst_participants;
+        ///             pami_client_t             client;
+        ///             size_t                    contextid;
+        ///             size_t                    clientid;
+        /// 
+        /// \param[in]  pami_context_t  context
         ///
         pami_result_t simplePWQ (sendpwq_t* state, pami_context_t context)
         {

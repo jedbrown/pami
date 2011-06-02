@@ -76,8 +76,10 @@ namespace PAMI
         return PAMI_ERROR;
       }
     virtual inline pami_result_t sendPWQ(pami_context_t       context,
-                                         pami_send_t         *parameters,
-                                         PAMI::PipeWorkQueue *pwq)
+                                           pami_endpoint_t      dest,
+                                           size_t               length,
+                                           PAMI::PipeWorkQueue *pwq,
+                                           pami_send_event_t   *events)
       {
         PAMI_abort();
         return PAMI_ERROR;
