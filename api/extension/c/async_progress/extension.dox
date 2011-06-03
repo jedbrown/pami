@@ -86,19 +86,19 @@
  *
  * PAMI_Client_create ("async progress extension test", &__client, NULL, 0);
  * PAMI_Context_createv (__client, NULL, 0, __context, 2);
- * PAMI_Extension_open (__client, "async_progress", &__async_progress_extension);
+ * PAMI_Extension_open (__client, "EXT_async_progress", &__async_progress_extension);
  *
  * PAMIX_Context_async_progress_register =
  *   (async_progress_register_function) PAMI_Extension_symbol (__async_progress_extension,
- *                                                             "async_progress_register");
+ *                                                             "register");
  *
  * PAMIX_Context_async_progress_enable =
  *   (async_progress_enable_function) PAMI_Extension_symbol (__async_progress_extension,
- *                                                           "async_progress_enable");
+ *                                                           "enable");
  *
  * PAMIX_Context_async_progress_disable =
  *   (async_progress_disable_function) PAMI_Extension_symbol (__async_progress_extension,
- *                                                            "async_progress_disable");
+ *                                                            "disable");
  *
  * // ------------------------------------------------------------------
  * // enable and disable asynchronous progress
