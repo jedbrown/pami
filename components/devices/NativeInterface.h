@@ -21,13 +21,7 @@ namespace PAMI
 {
   namespace Device
   {
-    typedef enum DeviceNativeInterfaceSemantics
-    {
-      ActiveMessage=0,
-      AllSided,
-    }DeviceNativeInterfaceSemantics;
-
-    template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb,  int T_Semantics=ActiveMessage>
+    template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
     class DeviceNativeInterface : public CCMI::Interfaces::NativeInterface
     {
     public:
@@ -46,6 +40,7 @@ namespace PAMI
           _my_dispatch_id = (*_dispatch_id)--;
           return _mcast.registerMcastRecvFunction(_my_dispatch_id,fn,cookie);
         }
+
       virtual inline pami_result_t setManytomanyDispatch(pami_dispatch_manytomany_function fn, void *cookie)
       {
         PAMI_abort();
@@ -133,8 +128,8 @@ namespace PAMI
     ///////////////////////////////////////////////////////////////////////////////
     // Inline implementations
     ///////////////////////////////////////////////////////////////////////////////
-    template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, int T_Semantics>
-    DeviceNativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb, T_Semantics>::DeviceNativeInterface(T_Device       &device,
+    template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
+    DeviceNativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb>::DeviceNativeInterface(T_Device       &device,
                                                                                                 pami_client_t   client,
                                                                                                 pami_context_t  context,
                                                                                                 size_t          context_id,
@@ -158,14 +153,13 @@ namespace PAMI
     {
     }
 
-    template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, int T_Semantics>
+    template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
     inline void DeviceNativeInterface<T_Device,
                                       T_Mcast,
                                       T_Msync,
-                                      T_Mcomb,
-                                      T_Semantics>::ni_client_done(pami_context_t  context,
-                                                                   void          *rdata,
-                                                                   pami_result_t   res)
+                                      T_Mcomb>::ni_client_done(pami_context_t  context,
+                                                               void          *rdata,
+                                                               pami_result_t   res)
     {
       allocObj              *obj  = (allocObj*)rdata;
       DeviceNativeInterface *ni   = obj->_ni;
@@ -176,13 +170,12 @@ namespace PAMI
       ni->_allocator.returnObject(obj);
     }
 
-    template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, int T_Semantics>
+    template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
     inline pami_result_t DeviceNativeInterface<T_Device,
                                                T_Mcast,
                                                T_Msync,
-                                               T_Mcomb,
-                                               T_Semantics>::multicast (pami_multicast_t *mcast,
-                                                                        void             *devinfo)
+                                               T_Mcomb>::multicast (pami_multicast_t *mcast,
+                                                                    void             *devinfo)
     {
       allocObj *req          = (allocObj *)_allocator.allocateObject();
       req->_ni               = this;
@@ -198,13 +191,12 @@ namespace PAMI
       return _mcast.postMulticast(req->_state._mcast, _clientid, _contextid, &m, devinfo);
     }
 
-    template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, int T_Semantics>
+    template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
     inline pami_result_t DeviceNativeInterface<T_Device,
                                                T_Mcast,
                                                T_Msync,
-                                               T_Mcomb,
-                                               T_Semantics>::multisync(pami_multisync_t *msync,
-                                                                       void             *devinfo)
+                                               T_Mcomb>::multisync(pami_multisync_t *msync,
+                                                                   void             *devinfo)
     {
       allocObj         *req   = (allocObj *)_allocator.allocateObject();
       req->_ni                = this;
@@ -220,13 +212,12 @@ namespace PAMI
     }
 
 
-    template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, int T_Semantics>
+    template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
     inline pami_result_t DeviceNativeInterface<T_Device,
                                                T_Mcast,
                                                T_Msync,
-                                               T_Mcomb,
-                                               T_Semantics>::multicombine (pami_multicombine_t *mcomb,
-                                                                           void                *devinfo)
+                                               T_Mcomb>::multicombine (pami_multicombine_t *mcomb,
+                                                                       void                *devinfo)
     {
       allocObj            *req = (allocObj *)_allocator.allocateObject();
       req->_ni                 = this;
@@ -240,8 +231,8 @@ namespace PAMI
       return _mcomb.postMulticombine(req->_state._mcomb, _clientid, _contextid, &m, devinfo);
     }
 
-    template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, int T_Semantics>
-    inline pami_result_t  DeviceNativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb, T_Semantics>::multicast (uint8_t (&state)[T_Mcast::sizeof_msg],
+    template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
+    inline pami_result_t  DeviceNativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb>::multicast (uint8_t (&state)[T_Mcast::sizeof_msg],
                                                                                                            pami_multicast_t *mcast,
                                                                                                            void             *devinfo)
     {
@@ -250,8 +241,8 @@ namespace PAMI
       return _mcast.postMulticast_impl(state, _clientid, _contextid, mcast, devinfo);
     }
 
-    template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, int T_Semantics>
-    inline pami_result_t  DeviceNativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb, T_Semantics>::multisync (uint8_t (&state)[T_Msync::sizeof_msg],
+    template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
+    inline pami_result_t  DeviceNativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb>::multisync (uint8_t (&state)[T_Msync::sizeof_msg],
                                                                                                            pami_multisync_t *msync,
                                                                                                            void             *devinfo)
     {
@@ -259,8 +250,8 @@ namespace PAMI
       return _msync.postMultisync_impl(state, _clientid, _contextid, msync, devinfo);
     }
 
-    template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, int T_Semantics>
-    inline pami_result_t  DeviceNativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb, T_Semantics>::multicombine (uint8_t (&state)[T_Mcomb::sizeof_msg],
+    template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
+    inline pami_result_t  DeviceNativeInterface<T_Device,T_Mcast,T_Msync,T_Mcomb>::multicombine (uint8_t (&state)[T_Mcomb::sizeof_msg],
                                                                                                               pami_multicombine_t *mcomb,
                                                                                                               void                *devinfo)
     {

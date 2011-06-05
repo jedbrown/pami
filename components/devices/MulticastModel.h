@@ -130,6 +130,15 @@ namespace PAMI
           {
           };
 
+        inline pami_result_t registerMcastRecvFunction (int                         dispatch_id,
+                                                        pami_dispatch_multicast_function recv_func,
+                                                        void                       *async_arg)
+          {
+            // This is not an active message class
+            PAMI_abort();
+            return PAMI_ERROR;
+          }
+
 	inline pami_result_t postMulticastImmediate(size_t            client,
 						    size_t            context, 
 						    pami_multicast_t *mcast,

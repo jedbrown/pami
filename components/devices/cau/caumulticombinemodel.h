@@ -105,8 +105,8 @@ namespace PAMI
           PAMI_assert(ri->udata_one_pkt_ptr);
           if(msg == NULL)  // Not Found, insdert into ue queue
           {
-            msg = (T_Message *)mc->_msg_allocator.allocateObject();
-            new(msg) T_Message(&mc->_device,gi,did,gid); // Construct, but don't init this message
+            mc->_device.allocMessage(&msg);
+            new(msg) T_Message(&mc->_device,gi,did,gid,seqno); // Construct, but don't init this message
             gi->_ueRed.pushTail((MatchQueueElem*)msg);
           }
           // In either case, copy the packet and packet size into the message
@@ -120,7 +120,7 @@ namespace PAMI
           
           // Lapi return parameters
           *comp_h       = NULL;
-          ri->ret_flags = LAPI_SEND_REPLY;
+          ri->ret_flags = LAPI_LOCAL_STATE;
           ri->ctl_flags = LAPI_BURY_MSG;
           return NULL;
         }
@@ -174,7 +174,6 @@ namespace PAMI
           {
             CAUGeometryInfo  *gi             = (CAUGeometryInfo *)devinfo;
             T_Message        *msg, *earlymsg = (T_Message*)gi->_ueRed.findAndDelete(gi->_seqnoRed);
-            pami_result_t     res            = PAMI_SUCCESS;
             msg = new(state) T_Message(&_device,gi,
                                        _dispatch_red_id,
                                        _dispatch_mcast_id);
@@ -183,17 +182,20 @@ namespace PAMI
             {
               msg->_reducePktBytes = earlymsg->_reducePktBytes;
               memcpy(msg->_reducePkt, earlymsg->_reducePkt, msg->_reducePktBytes);
-              _msg_allocator.returnObject(earlymsg);
+              _device.freeMessage(earlymsg);
             }
             gi->_postedRed.pushTail((MatchQueueElem*)msg);                        
-            msg->_workfcn = _device.postWork(do_reduce, msg);
+
+            pami_result_t res = msg->advance();
+            if(res != PAMI_SUCCESS)
+              msg->_workfcn = _device.postWork(do_reduce, msg);
+
             return PAMI_SUCCESS;
           }
       public:
         T_Device                                    &_device;
         int                                          _dispatch_red_id;
         int                                          _dispatch_mcast_id;        
-        PAMI::MemoryAllocator<sizeof(T_Message),16>  _msg_allocator;
     };
   };
 };

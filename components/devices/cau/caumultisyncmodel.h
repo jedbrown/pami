@@ -41,14 +41,14 @@ namespace PAMI
         {
           TRACE((stderr, "cau_mcast_send_done\n"));
           // This means that the synchronization is complete on the root node
-          CAUMsyncMessage    *m   = (CAUMsyncMessage *)completion_param;
+          T_Message    *m   = (T_Message *)completion_param;
           m->_user_done_fn(m->_context,
                            m->_user_cookie,
                            PAMI_SUCCESS);
           if(m->_toFree)
             {
               CAUMultisyncModel *ms = (CAUMultisyncModel *)m->_toFree;
-              ms->_msg_allocator.returnObject(m);
+              ms->_device.freeMessage(m);
             }
         }
 
@@ -71,7 +71,7 @@ namespace PAMI
           // Next, search the posted queue for a message with the incoming seq number
           // A message must always be found because the reduction is synchronizing!
           CAUGeometryInfo    *gi  = (CAUGeometryInfo*) g->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
-          CAUMsyncMessage    *m   = (CAUMsyncMessage *)gi->_posted.findAndDelete(seqno);
+          T_Message          *m   = (T_Message *)gi->_postedBar.findAndDelete(seqno);
           void               *r   = NULL;
           lapi_return_info_t *ri  = (lapi_return_info_t *) retinfo;
 
@@ -123,7 +123,7 @@ namespace PAMI
 
           // Next, search the posted queue for a message with the incoming seq number
           CAUGeometryInfo    *gi  = (CAUGeometryInfo*) g->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
-          CAUMsyncMessage    *m   = (CAUMsyncMessage *)gi->_posted.findAndDelete(seqno);
+          T_Message          *m   = (T_Message *)gi->_postedBar.findAndDelete(seqno);
           void               *r   = NULL;
           lapi_return_info_t *ri  = (lapi_return_info_t *) retinfo;
 
@@ -133,14 +133,14 @@ namespace PAMI
           if(m == NULL)
             {
               TRACE((stderr, "cau_red_handler: NOT FOUND %d\n", seqno));
-              m = (CAUMsyncMessage *)ms->_msg_allocator.allocateObject();
-              new(m) CAUMsyncMessage(0.0,
+              ms->_device.allocMessage(&m);
+              new(m) T_Message(0.0,
                                      ms->_device.getContext(),
                                      NULL,
                                      NULL,
                                      gi->_seqno,
                                      ms);
-              gi->_ue.pushTail((MatchQueueElem*)m);
+              gi->_ueBar.pushTail((MatchQueueElem*)m);
               r             = NULL;
               *comp_h       = NULL;
               ri->ret_flags = LAPI_SEND_REPLY;
@@ -206,13 +206,10 @@ namespace PAMI
               msync->cb_done.function(_device.getContext(), msync->cb_done.clientdata, PAMI_SUCCESS);
               return PAMI_SUCCESS;
             }
-
-
           TRACE((stderr, "CAU:  PostMultisync\n"));
           // This assert ensures that the topology that the user created
           // at geometry create time is the same as the geometry input here
           CAUGeometryInfo *gi = (CAUGeometryInfo *)devinfo;
-          PAMI_assert(topology == gi->_topo);
 
           // Search the per-geometry UE queue for an "unexpected message"
           // Since the reduction has already been handled, we can begin our
@@ -222,17 +219,15 @@ namespace PAMI
           // Likewise, only the root performs the multicast, all other nodes
           // will receive an async composite.  Only the root node, which we choose
           // to be the first rank in the topology, can receive the ue message.
-          CAUMsyncMessage *m   = NULL;
-          pami_task_t     *tl  = NULL;
-          topology->rankList(&tl);
-
-          if(tl[0] == _device.taskid())
+          T_Message       *m      = NULL;
+          bool             amRoot = (topology->index2Rank(0) == _device.taskid())?true:false;
+          if(amRoot)
             {
-              m = (CAUMsyncMessage*)gi->_ue.findAndDelete(gi->_seqno);
+              m = (T_Message*)gi->_ueBar.findAndDelete(gi->_seqno);
               if (m != NULL)
                 {
                   TRACE((stderr, "CAU:  Multicast\n"));
-                  new(m) CAUMsyncMessage(0.0,
+                  new(m) T_Message(0.0,
                                          _device.getContext(),
                                          msync->cb_done.function,
                                          msync->cb_done.clientdata,
@@ -260,7 +255,7 @@ namespace PAMI
           // we will post the message to the "posted" queue.
           // The data transferred in the header will be the same on all nodes
           TRACE((stderr, "CAU:  Create Msync Message %d\n", gi->_seqno));
-          m  = new(state) CAUMsyncMessage(0.0,
+          m  = new(state) T_Message(0.0,
                                           _device.getContext(),
                                           msync->cb_done.function,
                                           msync->cb_done.clientdata,
@@ -275,12 +270,12 @@ namespace PAMI
           m->_xfer_data[2]     = gi->_seqno-1;
           // First task in the topology is the root
           TRACE((stderr, "CAU:  tl[0]=%d taskid=%d\n", tl[0], _device.taskid()));
-          if(tl[0] != _device.taskid())
+          if(!amRoot)
             {
               // We have tp push this first because the reduce call can
               // call our callback
               TRACE((stderr, "CAU:  Reduce\n"));
-              gi->_posted.pushTail((MatchQueueElem*)m);
+              gi->_postedBar.pushTail((MatchQueueElem*)m);
               CheckLapiRC(lapi_cau_reduce(_device.getHdl(),         // lapi handle
                                           gi->_cau_id,              // group id
                                           _dispatch_red_id,         // dispatch id
@@ -294,13 +289,12 @@ namespace PAMI
               return PAMI_SUCCESS;
             }
           TRACE((stderr, "CAU:  Pushing Tail\n"));
-          gi->_posted.pushTail((MatchQueueElem*)m);
+          gi->_postedBar.pushTail((MatchQueueElem*)m);
           return PAMI_SUCCESS;
         }
         T_Device                     &_device;
         int                           _dispatch_red_id;
         int                           _dispatch_mcast_id;
-        PAMI::MemoryAllocator<sizeof(CAUMsyncMessage),16> _msg_allocator;
     };
   };
 };

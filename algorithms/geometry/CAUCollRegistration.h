@@ -144,7 +144,7 @@ namespace PAMI
           new(m) PAMI::Geometry::Metadata("I0:MultiCastComposite:SHMEM:CAU");
         }
         typedef CCMI::Adaptor::Broadcast::MultiCastComposite2DeviceFactoryT
-        < CCMI::Adaptor::Broadcast::MultiCastComposite2Device<PAMI_GEOMETRY_CLASS>,
+        < CCMI::Adaptor::Broadcast::MultiCastComposite2Device<PAMI_GEOMETRY_CLASS,true,false>,
           McastMetaData,
           CCMI::ConnectionManager::SimpleConnMgr,
           1>
@@ -268,7 +268,7 @@ namespace PAMI
           _g_reduce_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
           _barrier_reg(&_sconnmgr,NULL, &_g_barrier_ni),
           _barrierbsr_reg(&_sconnmgr,&_l_barrierbsr_ni, &_g_barrier_ni),
-          _broadcast_reg(&_sconnmgr,NULL, false,&_g_broadcast_ni,true),
+          _broadcast_reg(&_sconnmgr,NULL, false,&_g_broadcast_ni,false),
           _allreduce_reg(&_sconnmgr,NULL, &_g_allreduce_ni),
           _reduce_reg(&_sconnmgr,NULL, &_g_reduce_ni),
           _csmm(mm)
@@ -470,9 +470,7 @@ namespace PAMI
                   if(local_master_topo->size() > 1)
                   {
                     cau_gi = (PAMI::Device::CAUGeometryInfo *)_cau_geom_allocator.allocateObject();
-                    new(cau_gi)PAMI::Device::CAUGeometryInfo(geometryInfo->_cau_group,
-                                                             geometry->comm(),
-                                                             local_master_topo);
+                    new(cau_gi)PAMI::Device::CAUGeometryInfo(geometryInfo->_cau_group,geometry->comm());
                     geometry->setKey(Geometry::GKEY_MCAST_CLASSROUTEID,cau_gi);
                     geometry->setKey(Geometry::GKEY_MCOMB_CLASSROUTEID,cau_gi);
                     geometry->setKey(Geometry::GKEY_MSYNC_CLASSROUTEID,cau_gi);

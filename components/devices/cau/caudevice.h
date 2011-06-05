@@ -31,10 +31,36 @@ namespace PAMI
 {
   namespace Device
   {
-    class CAUDevice: public Interface::BaseDevice<CAUDevice>
-    {
-    public:
-      // CAU Multicombine Message Class      
+      class CAUDevice: public Interface::BaseDevice<CAUDevice>
+      {
+      public:
+        
+      class CAUMsyncMessage : public MatchQueueElem
+      {
+      public:
+        CAUMsyncMessage(double               init_val,
+                        pami_context_t       context,
+                        pami_event_function  done_fn,
+                        void                *user_cookie,
+                        int                  key,
+                        void                *toFree):
+          MatchQueueElem(key),
+          _reduce_val(init_val),
+          _user_done_fn(done_fn),
+          _user_cookie(user_cookie),
+          _toFree(toFree),
+          _context(context)
+          {
+          }
+        double               _reduce_val;
+        pami_event_function  _user_done_fn;
+        void                *_user_cookie;
+        void                *_toFree;
+        pami_context_t       _context;
+        int                  _xfer_data[3];
+      };
+
+        // CAU Multicombine Message Class      
       class CAUMcombineMessage : public MatchQueueElem
       {
       public:
@@ -120,8 +146,9 @@ namespace PAMI
         CAUMcombineMessage(CAUDevice       *device,
                            CAUGeometryInfo *geometryInfo,
                            int              dispatch_red_id,
-                           int              dispatch_mcast_id):
-          MatchQueueElem(geometryInfo->_seqnoRed),
+                           int              dispatch_mcast_id,
+                           int              searchKey=-1):
+          MatchQueueElem(searchKey),
           _geometryInfo(geometryInfo),
           _device(device),
           _isInit(false),
@@ -345,6 +372,169 @@ namespace PAMI
       };
 
 
+      class CAUMcastMessage : public MatchQueueElem
+      {
+      public:
+        class               Header
+        {
+        public:
+          unsigned           dispatch_id:16;
+          unsigned           geometry_id:16;
+          unsigned           seqno      :32;
+          unsigned           pktsize    :7;
+          unsigned           msgsize    :25;
+        }  __attribute__((__packed__));
+
+        class IncomingPacket: public Queue::Element
+        {
+        public:
+          int   _size;
+          char  _data[64];
+        };
+        
+        static void cau_mcast_send_done(lapi_handle_t *hndl, void * completion_param)
+          {
+            CAUMcastMessage *m      = (CAUMcastMessage*)completion_param;
+            unsigned         bytes  = m->_xfer_header.pktsize;
+            m->_totalBytesConsumed += bytes;
+            m->_injectReady         = true;
+            m->_srcpwq->consumeBytes(bytes);
+            TRACE((stderr, "CAU Root Mcast Done:  bytes=%d tbc=%ld\n",
+                   bytes, m->_totalBytesConsumed));
+            return;
+          }        
+        CAUMcastMessage(CAUDevice       *device,
+                        CAUGeometryInfo *geometryInfo,
+                        int              dispatch_mcast_id,
+                        int              searchKey=-1):
+          MatchQueueElem(searchKey),
+          _geometryInfo(geometryInfo),
+          _device(device),
+          _isInit(false),
+          _injectReady(true),
+          _dispatch_mcast_id(dispatch_mcast_id)
+          {
+
+          }
+        void init(pami_multicast_t *mcast)
+          {
+            TRACE((stderr, "CAU Mcast Msg:  Init\n"));
+            _srcpwq             = (PipeWorkQueue*)mcast->src;
+            _dstpwq             = (PipeWorkQueue*)mcast->dst;
+            _srctopo            = (Topology*)mcast->src_participants;
+            _dsttopo            = (Topology*)mcast->dst_participants;
+            _totalBytes         = mcast->bytes;
+            _totalBytesConsumed = 0;
+            _totalBytesProduced = 0;
+            _cb_done            = mcast->cb_done;
+            _connection_id      = mcast->connection_id;            
+            _key                = _geometryInfo->_seqnoBcast++;
+            if(_srctopo->index2Rank(0) == _device->taskid())
+            {
+              _amRoot=true;
+              _totalBytesProduced=_totalBytes;
+            }
+            else
+            {
+              _amRoot=false;
+              _totalBytesConsumed=_totalBytes;
+            }
+            _isInit  = true;
+          }
+
+        inline void advanceRoot()
+          {
+            if(!_isInit) return;
+            unsigned  bytesAvailToConsume    = _srcpwq->bytesAvailableToConsume();
+            char     *bufToConsume           = _srcpwq->bufferToConsume();
+            while(bytesAvailToConsume && _injectReady)
+            {
+              TRACE((stderr, "Advance Root (%p):  bac=%d buf=%p, injectReady=%d\n",
+                     this,bytesAvailToConsume, bufToConsume, _injectReady));
+              int bytesToBroadcast     = MIN(bytesAvailToConsume, 64);              
+              _xfer_header.dispatch_id = _dispatch_mcast_id;
+              _xfer_header.geometry_id = _geometryInfo->_geometry_id;
+              _xfer_header.seqno       = this->_key;
+              _xfer_header.pktsize     = bytesToBroadcast;
+              _xfer_header.msgsize     = _totalBytes;
+              TRACE((stderr, "CAU Root Mcast:  buf=%p bytes=%d\n",
+                     bufToConsume, bytesToBroadcast));
+              
+              PAMI_assert(bytesAvailToConsume >= bytesToBroadcast);
+              _injectReady=false; // Set this here in case multicast done is called in inject
+              CheckLapiRC(lapi_cau_multicast(_device->getHdl(),      // lapi handle
+                                             _geometryInfo->_cau_id, // group id
+                                             _dispatch_mcast_id,     // dispatch id
+                                             &_xfer_header,          // header
+                                             sizeof(_xfer_header),   // header len
+                                             bufToConsume,           // data
+                                             bytesToBroadcast,       // data size
+                                             cau_mcast_send_done,    // done cb
+                                             this));                 // clientdata
+              bytesAvailToConsume    = _srcpwq->bytesAvailableToConsume();
+              bufToConsume           = _srcpwq->bufferToConsume();
+            }            
+            return;
+          }
+        inline void advanceNonRoot()
+          {
+            if(!_isInit) return;
+            unsigned  bytesAvailToProduce    = _dstpwq->bytesAvailableToProduce();
+            char     *bufToProduce           = _dstpwq->bufferToProduce();
+            while(bytesAvailToProduce && _packetQueue.size())
+            {
+              TRACE((stderr, "Advance NonRoot(%p):  bap=%d buf=%p, pqsz=%d\n",
+                   this, bytesAvailToProduce, bufToProduce, _packetQueue.size()));
+              IncomingPacket * pkt = (IncomingPacket*)_packetQueue.dequeue();
+              memcpy(bufToProduce, pkt->_data, pkt->_size);
+              PAMI_assert(bytesAvailToProduce >= pkt->_size);
+              _dstpwq->produceBytes(pkt->_size);
+              _totalBytesProduced+=pkt->_size;
+              bytesAvailToProduce = _dstpwq->bytesAvailableToProduce();
+              bufToProduce        = _dstpwq->bufferToProduce();
+              _device->_pkt_allocator.returnObject(pkt);
+            }
+            return;
+          }
+        inline pami_result_t advance()
+          {
+            PAMI_assert(_isInit == true);
+            if(_amRoot) advanceRoot();
+            else        advanceNonRoot();
+            if(_totalBytesProduced == _totalBytes && _totalBytesConsumed == _totalBytes)
+            {
+              TRACE((stderr, "CAU Mcombine Advance:  Message Complete\n"));
+              if(_cb_done.function)
+                _cb_done.function(_device->getContext(), _cb_done.clientdata, PAMI_SUCCESS);
+              _geometryInfo->_postedBcast.deleteElem(this);
+              return PAMI_SUCCESS;
+            }
+            return PAMI_EAGAIN;
+          }
+        CAUDevice              *_device;
+        CAUGeometryInfo        *_geometryInfo;
+        bool                    _isInit;
+        int                     _dispatch_mcast_id;
+        PipeWorkQueue          *_srcpwq;
+        PipeWorkQueue          *_dstpwq;
+        Topology               *_srctopo;
+        Topology               *_dsttopo;
+        unsigned                _sizeoftype;
+        unsigned                _totalBytes;
+        unsigned                _totalBytesConsumed;
+        unsigned                _totalBytesProduced;
+        pami_callback_t         _cb_done;
+        Generic::GenericThread *_workfcn;
+        unsigned                _connection_id;
+        bool                    _amRoot;
+        bool                    _injectReady;
+        Header                  _xfer_header;
+        Queue                   _packetQueue;
+      };
+
+
+      
+
       CAUDevice():
 	_lapi_state(NULL),
         _lapi_handle(0)
@@ -512,18 +702,45 @@ namespace PAMI
         {
           return mapidtogeometry(_context, comm);
         }
-
+      void allocMessage(CAUMcastMessage **msg)
+        {
+          *msg = (CAUMcastMessage*)_bcast_msg_allocator.allocateObject();
+        }
+      void freeMessage(CAUMcastMessage *msg)
+        {
+          _bcast_msg_allocator.returnObject(msg);
+        }
+      void allocMessage(CAUMcombineMessage **msg)
+        {
+          *msg = (CAUMcombineMessage*)_mcombine_msg_allocator.allocateObject();
+        }
+      void freeMessage(CAUMcombineMessage *msg)
+        {
+          _mcombine_msg_allocator.returnObject(msg);
+        }
+      void allocMessage(CAUMsyncMessage **msg)
+        {
+          *msg = (CAUMsyncMessage*)_msync_msg_allocator.allocateObject();
+        }
+      void freeMessage(CAUMsyncMessage *msg)
+        {
+          _msync_msg_allocator.returnObject(msg);
+        }
     public:
-      lapi_state_t                                              *_lapi_state;
-      lapi_handle_t                                              _lapi_handle;
-      pami_client_t                                              _client;
-      pami_context_t                                             _context;
-      size_t                                                     _client_id;
-      size_t                                                     _context_id;
-      int                                                       *_dispatch_id;
-      pami_task_t                                                _taskid;
-      Generic::Device                                           *_generics;
-      PAMI::MemoryAllocator<sizeof(Generic::GenericThread), 16>  _work_alloc;
+      lapi_state_t                                                     *_lapi_state;
+      lapi_handle_t                                                     _lapi_handle;
+      pami_client_t                                                     _client;
+      pami_context_t                                                    _context;
+      size_t                                                            _client_id;
+      size_t                                                            _context_id;
+      int                                                              *_dispatch_id;
+      pami_task_t                                                       _taskid;
+      Generic::Device                                                  *_generics;
+      PAMI::MemoryAllocator<sizeof(Generic::GenericThread), 16>         _work_alloc;
+      PAMI::MemoryAllocator<sizeof(CAUMcastMessage),16>                 _bcast_msg_allocator;
+      PAMI::MemoryAllocator<sizeof(CAUMcombineMessage),16>              _mcombine_msg_allocator;
+      PAMI::MemoryAllocator<sizeof(CAUMsyncMessage),16>                 _msync_msg_allocator;
+      PAMI::MemoryAllocator<sizeof(CAUMcastMessage::IncomingPacket),16> _pkt_allocator;
     };
   };
 };

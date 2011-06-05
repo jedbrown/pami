@@ -264,7 +264,6 @@ namespace PAMI
               // to the start of the fifo.
               if (index == (T_Size - 1))
                 {
-                  mem_barrier();
                   _tail.clear();
                 }
 
