@@ -72,7 +72,8 @@ namespace PAMI
           }
           // Copy message data into the packet
           // We can optimize this to avoid the copy, but care is needed to ensure pipelining is correct
-          T_Message::IncomingPacket *ipacket = (T_Message::IncomingPacket *)mc->_device._pkt_allocator.allocateObject();
+          typename T_Message::IncomingPacket *ipacket =
+            (typename T_Message::IncomingPacket *)mc->_device._pkt_allocator.allocateObject();
           msg->_packetQueue.enqueue(ipacket);
           memcpy(&ipacket->_data[0],ri->udata_one_pkt_ptr, hdr->pktsize);
           ipacket->_size=hdr->pktsize;
