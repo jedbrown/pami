@@ -550,7 +550,7 @@ void get_split_method(size_t *num_tasks,            /* input number of tasks/out
   
       set[0]   = 1;
       set[1]   = 0;
-      *id       = 2;
+      *id       = 1;
       *root     = 0;
       *rangecount = iter;
       non_root[0] = range[1].lo;      /* first non-root rank in the subcomm  */

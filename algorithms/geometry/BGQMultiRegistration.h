@@ -1135,7 +1135,7 @@ namespace PAMI
             {
               //Set optimized barrier to rectangle. May override optimized barrier later
               pami_xfer_t xfer = {0};
-              CCMI::Executor::Composite *opt_composite =  _mu_rectangle_msync_factory->generate(geometry, &xfer); //_gi_msync_factory->generate(geometry, &xfer);               
+              CCMI::Executor::Composite *opt_composite =  _mu_rectangle_msync_factory->generate(geometry, &xfer); 
               geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
                                (void*)opt_composite);
             }
@@ -1212,8 +1212,7 @@ namespace PAMI
           val = geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
           TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() GKEY_MSYNC_CLASSROUTEID %p\n", this, val));
 
-          if ((val && val != PAMI_CR_GKEY_FAIL) || // We have a class route or
-              (topology->isLocalToMe()))           // It's all local - we might use 2 device protocol in shmem-only mode
+          if (val && val != PAMI_CR_GKEY_FAIL)// We have a class route
           {
             // If we can use pure MU composites, add them
             if (usePureMu)
@@ -1232,14 +1231,17 @@ namespace PAMI
                 geometry->addCollective(PAMI_XFER_BARRIER, _gi_msync_factory, _context_id);
               }
 
-              if (_mu_rectangle_msync_factory  && geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID1)) // \todo PAMI_CR_GKEY_FAIL?
+              if (_mu_rectangle_msync_factory)
               {
                 _mu_rectangle_barrier_composite = _mu_rectangle_msync_factory->generate(geometry, &xfer);
                 // Add Barriers
                 geometry->addCollective(PAMI_XFER_BARRIER, _mu_rectangle_msync_factory, _context_id); 
               }
             }
-
+          }
+          if ((val && val != PAMI_CR_GKEY_FAIL) || // We have a class route or
+              (topology->isLocalToMe()))           // It's all local - we might use 2 device protocol in shmem-only mode
+          {
             // Add 2 device composite protocols
 #ifndef ENABLE_SHMEM_SUBNODE
             if (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
