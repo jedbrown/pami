@@ -1154,11 +1154,16 @@ fprintf(stderr, "%s\n", buf);
 	static void cr_gi_init_barrier_done(pami_context_t ctx, void *cookie, pami_result_t result)
 	{
 	  cr_cookie *crck = (cr_cookie *)cookie;
-	  MUSPI_GIBarrierInitMU2(crck->id, 1000);
+	  int32_t irc = MUSPI_GIBarrierInitMU2(crck->id, 1000);
+	  if (irc != 0) {
+	    cr_barrier_done(ctx, cookie, PAMI_ERROR);
+	    return;
+	  }
 	  pami_result_t rc = crck->geom->default_barrier(cr_barrier_done, cookie,
 							crck->context, ctx);
 	  if (rc != PAMI_SUCCESS) {
 	    cr_barrier_done(ctx, cookie, rc);
+	    return;
 	  }
 	}
 
@@ -1218,7 +1223,17 @@ fprintf(stderr, "%s\n", buf);
 		}
 #endif // TRACE_CLASSROUTES
 	        rc = Kernel_SetGlobalInterruptClassRoute(id, cr);
+	        if (rc != 0) {
+	          fprintf(stderr, "Kernel_SetGlobalInterruptClassRoute(%d, %08x) failed with %d\n",
+			id, (cr->input << 16) | cr->output, rc);
+	          return;
+	        }
 		rc = MUSPI_GIBarrierInitMU1(id);
+	        if (rc != 0) {
+	          fprintf(stderr, "MUSPI_GIBarrierInitMU1(%d) failed with %d\n",
+			id, rc);
+	          return;
+	        }
 		crck->id = id;
 		*fn = cr_gi_init_barrier_done;
 	      } else {
