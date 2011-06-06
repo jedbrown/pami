@@ -196,7 +196,7 @@ public:
     }
 
     void setScatterExecutor (char *sbuf, char *rbuf, size_t *stypecounts, size_t myrank,
-                             pami_dt dt, pami_op op, unsigned counts, bool root,
+                             pami_dt dt, pami_op op, unsigned counts, bool isRoot, unsigned root,
                              pami_callback_t  cb_done)
     {
 
@@ -227,11 +227,11 @@ public:
 
         unsigned bytes = sizeOfType * stypecounts[myrank];
         _scatter_executor.setConnmgr(_cmgr);
-        _scatter_executor.setRoot (0);
+        _scatter_executor.setRoot (root);
         _scatter_executor.setSchedule (&_scatter_schedule);
         _scatter_executor.setBuffers (sbuf, rbuf, bytes);
 
-        if (root)
+        if (isRoot)
         {
             _scatter_executor.setBuffers(_tmpbuf, _relbuf, bytes);
         }
@@ -368,6 +368,8 @@ public:
         pami_reduce_scatter_t *a_xfer = (pami_reduce_scatter_t *) & (((pami_xfer_t *)cmd)->cmd.xfer_reduce_scatter);
         PAMI::Topology *topo = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
         unsigned root = topo->index2Rank(0);
+        size_t indexInTopo = topo->rank2Index(_native->myrank());
+        size_t numRanksInTopo = topo->size();
 
         T_Conn *cmgr = _cmgr;
         unsigned key;
@@ -413,7 +415,7 @@ public:
             cb_exec_done.function   = scatter_exec_done;
             cb_exec_done.clientdata = co;
 
-            a_composite->setScatterExecutor(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->rcounts, _native->myrank(), (pami_dt)dt, (pami_op)op, _native->numranks(), _native->myrank() == root, cb_exec_done);
+            a_composite->setScatterExecutor(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->rcounts, indexInTopo, (pami_dt)dt, (pami_op)op, numRanksInTopo, _native->myrank() == root, root, cb_exec_done);
             a_composite->getScatterExecutor().setConnectionID(key + 1);
         }
         /// not found posted CollOp object, create a new one and
@@ -440,7 +442,7 @@ public:
                                            a_xfer->op,
                                            dt,op);
 
-            a_composite->setScatterExecutor(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->rcounts, _native->myrank(), (pami_dt)dt, (pami_op)op, _native->numranks(), _native->myrank() == root, cb_exec_done);
+            a_composite->setScatterExecutor(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->rcounts, indexInTopo, (pami_dt)dt, (pami_op)op, numRanksInTopo, _native->myrank() == root, root, cb_exec_done);
 
             co->setXfer((pami_xfer_t*)cmd);
             co->setFlag(LocalPosted);

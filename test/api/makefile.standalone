@@ -84,6 +84,7 @@ build/collectives/geometry.exe \
 build/collectives/reduce.exe \
 build/collectives/reduce_query.exe \
 build/collectives/reduce_scatter.exe \
+build/collectives/reduce_scatter_subcomm.exe \
 build/collectives/reduce_subcomm.exe \
 build/collectives/scan.exe \
 build/collectives/scatter.exe \

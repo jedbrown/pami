@@ -36,6 +36,7 @@ APPS            += scatterv.${EXTENSION}
 APPS            += scatterv_int.${EXTENSION} 
 APPS            += scan.${EXTENSION} 
 APPS            += reduce_scatter.${EXTENSION} 
+APPS            += reduce_scatter_subcomm.${EXTENSION} 
 APPS            += alltoall.${EXTENSION} 
 APPS            += alltoallv.${EXTENSION} 
 APPS            += alltoallv_int.${EXTENSION} 

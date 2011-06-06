@@ -179,7 +179,7 @@ namespace CCMI
         {
            /// Todo: convert this to allocator ?
            if (_maxdsts) __global.heap_mm->free(_msendstr);
-           if (_native->myrank() != _root || (_root != 0 && _native->numranks() != (unsigned)_nphases+1)) __global.heap_mm->free(_tmpbuf);
+           if (_native->myrank() != _root || (_root != 0 && _gtopology->size() != (unsigned)_nphases+1)) __global.heap_mm->free(_tmpbuf);
         }
 
         /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -260,22 +260,22 @@ namespace CCMI
           // setup PWQ
           if (_native->myrank() == _root)
             {
-              if ((unsigned)_nphases == _native->numranks() - 1 || _root == 0)
+              if ((unsigned)_nphases == _gtopology->size() - 1 || _root == 0)
                 _tmpbuf = src;
               else  // allocate temporary buffer and reshuffle the data
                 {
-                  size_t buflen = _native->numranks() * len;
+                  size_t buflen = _gtopology->size() * len;
                   pami_result_t rc;
 	              rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
                   PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
-                  memcpy (_tmpbuf, src+_myindex*len, (_native->numranks() - _myindex)*len);
-                  memcpy (_tmpbuf+(_native->numranks() - _myindex)*len  ,src, _myindex * len);
+                  memcpy (_tmpbuf, src+_myindex*len, (_gtopology->size() - _myindex)*len);
+                  memcpy (_tmpbuf+(_gtopology->size() - _myindex)*len  ,src, _myindex * len);
                 }
             }
           else if (_nphases > 1)
           {
             // schedule's getLList() method can be used for an accurate buffer size
-            size_t  buflen = _native->numranks() * len;
+            size_t  buflen = _gtopology->size() * len;
             pami_result_t rc;
             rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
             PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
