@@ -1070,6 +1070,8 @@ fprintf(stderr, "%s\n", buf);
 					 &algo, NULL, 1, NULL, NULL, 0);
 	  if (!algo)
 	  {
+	    fprintf(stderr, "PAMI_Geometry_algorithms_query() "
+					"failed\n");
 	    cr_allreduce_done(ctx, cookie, PAMI_ERROR);
 	    return;
 	  }
@@ -1085,6 +1087,8 @@ fprintf(stderr, "%s\n", buf);
 	  pami_result_t rc = PAMI_Collective(ctx, &crck->xfer);
 	  if (rc != PAMI_SUCCESS)
 	  {
+	    fprintf(stderr, "PAMI_Collective(ALLREDUCE) "
+					"failed to start (%d)\n", rc);
 	    // this frees 'cookie' if needed...
 	    // this also tells geom we're done.
 	    cr_allreduce_done(ctx, cookie, rc); // should this retry?
@@ -1118,10 +1122,16 @@ fprintf(stderr, "%s\n", buf);
 
 	  pami_event_function fn = cr_gi_init_dummy_barrier_done;
 	  ClassRoute_t cr = {0};
-	  crck->thus->set_classroute(crck->bbuf[0] & 0x0000ffff, crck, NULL, &cr,
+	  int irc = 0;
+	  irc += crck->thus->set_classroute(crck->bbuf[0] & 0x0000ffff, crck, NULL, &cr,
 					PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
-	  crck->thus->set_classroute((crck->bbuf[0] >> 32) & 0x0000ffff, crck, &fn, &cr,
+	  irc += crck->thus->set_classroute((crck->bbuf[0] >> 32) & 0x0000ffff, crck, &fn, &cr,
 					PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
+	  if (irc) {
+	    // message already printed...
+	    fn(ctx, cookie, PAMI_ERROR);
+	    return;
+	  }
 #ifdef TRACE_CLASSROUTES
 	if (crck->thus->_trace_cr) {
 		CR_RECT_T rect;
@@ -1137,7 +1147,10 @@ fprintf(stderr, "%s\n", buf);
 	  pami_result_t rc = crck->geom->default_barrier(fn, cookie,
 							crck->context, ctx);
 	  if (rc != PAMI_SUCCESS) {
+	    fprintf(stderr, "Default barrier after setting classroute ID "
+					"failed to start (%d)\n", rc);
 	    fn(ctx, cookie, rc);
+	    return;
 	  }
 	}
 
@@ -1147,6 +1160,8 @@ fprintf(stderr, "%s\n", buf);
 	  pami_result_t rc = crck->geom->default_barrier(cr_barrier_done, cookie,
 							crck->context, ctx);
 	  if (rc != PAMI_SUCCESS) {
+	    fprintf(stderr, "Default barrier after skipping MUSPI_GIBarrierInitMU2 "
+					"failed to start (%d)\n", rc);
 	    cr_barrier_done(ctx, cookie, rc);
 	  }
 	}
@@ -1156,12 +1171,16 @@ fprintf(stderr, "%s\n", buf);
 	  cr_cookie *crck = (cr_cookie *)cookie;
 	  int32_t irc = MUSPI_GIBarrierInitMU2(crck->id, 1000);
 	  if (irc != 0) {
+	    fprintf(stderr, "MUSPI_GIBarrierInitMU2(%d, %d) failed with %d\n",
+							crck->id, 1000, irc);
 	    cr_barrier_done(ctx, cookie, PAMI_ERROR);
 	    return;
 	  }
 	  pami_result_t rc = crck->geom->default_barrier(cr_barrier_done, cookie,
 							crck->context, ctx);
 	  if (rc != PAMI_SUCCESS) {
+	    fprintf(stderr, "Default barrier after MUSPI_GIBarrierInitMU2 "
+					"failed to start (%d)\n", rc);
 	    cr_barrier_done(ctx, cookie, rc);
 	    return;
 	  }
@@ -1194,7 +1213,7 @@ fprintf(stderr, "%s\n", buf);
 	}
 
 	// Only holder of mutex calls this... thread safe in process.
-	inline void set_classroute(uint32_t mask, cr_cookie *crck, pami_event_function *fn,
+	inline int set_classroute(uint32_t mask, cr_cookie *crck, pami_event_function *fn,
 					ClassRoute_t *cr, PAMI::Geometry::gkeys_t key) {
 	  uint32_t id = ffs(mask);
 	  bool gi = (key == PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
@@ -1226,13 +1245,13 @@ fprintf(stderr, "%s\n", buf);
 	        if (rc != 0) {
 	          fprintf(stderr, "Kernel_SetGlobalInterruptClassRoute(%d, %08x) failed with %d\n",
 			id, (cr->input << 16) | cr->output, rc);
-	          return;
+	          return 1;
 	        }
 		rc = MUSPI_GIBarrierInitMU1(id);
 	        if (rc != 0) {
 	          fprintf(stderr, "MUSPI_GIBarrierInitMU1(%d) failed with %d\n",
 			id, rc);
-	          return;
+	          return 1;
 	        }
 		crck->id = id;
 		*fn = cr_gi_init_barrier_done;
@@ -1243,14 +1262,19 @@ fprintf(stderr, "%s\n", buf);
 		}
 #endif // TRACE_CLASSROUTES
 	        rc = Kernel_SetCollectiveClassRoute(id, cr);
+	        if (rc != 0) {
+	          fprintf(stderr, "Kernel_SetCollectiveClassRoute(%d, %08x) failed with %d\n",
+			id, (cr->input << 16) | cr->output, rc);
+	          return 1;
+	        }
 	      }
-	      rc = rc; // until error checking
 	    }
 	    crck->geom->setKey(key, (void *)(id + 1));
 	    if (!gi) {
 	      crck->geom->setKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID, (void *)(id + 1));
 	    }
 	  }
+	  return 0;
 	}
 
         // \brief Get Per Process PAMI Max Number of Contexts For A Client
