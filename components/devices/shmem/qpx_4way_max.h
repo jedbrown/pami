@@ -51,74 +51,74 @@ inline unsigned _quad_double_max_4way_align64B(double* dst, double* src0, double
 
   (--y);
   
-  //ASM("qvfadd 16, 0, 1" ::  );
-  ASM("qvfcmpgt 31, 0,1" :: );
-  ASM("qvfsel 16, 31, 0, 1" :: );
+  //ASM("qvfadd 16, 0, 1" ::: "fr16"  );
+  ASM("qvfcmpgt 31, 0,1" ::: "fr31" );
+  ASM("qvfsel 16, 31, 0, 1" ::: "fr16" );
   VECTOR_LOAD(src0_1,inc,0);
   VECTOR_LOAD(src1_1,inc,1);
   VECTOR_LOAD(src0_2,inc,8);
   VECTOR_LOAD(src1_2,inc,9);
 
-  //ASM("qvfadd 17, 2, 3" ::  );
-  ASM("qvfcmpgt 31, 2,3" :: );
-  ASM("qvfsel 17, 31, 2, 3" :: );
+  //ASM("qvfadd 17, 2, 3" ::: "fr17"  );
+  ASM("qvfcmpgt 31, 2,3" ::: "fr31" );
+  ASM("qvfsel 17, 31, 2, 3" ::: "fr17" );
   VECTOR_LOAD(src2_1,inc,2);
   VECTOR_LOAD(src3_1,inc,3);
   VECTOR_LOAD(src2_2,inc,10);
   VECTOR_LOAD(src3_2,inc,11);
-  //ASM("qvfadd 22, 8, 9" ::  );
-  ASM("qvfcmpgt 31, 8,9" :: );
-  ASM("qvfsel 22, 31, 8, 9" :: );
+  //ASM("qvfadd 22, 8, 9" ::: "fr22"  );
+  ASM("qvfcmpgt 31, 8,9" ::: "fr31" );
+  ASM("qvfsel 22, 31, 8, 9" ::: "fr22" );
 
   do{
-    //ASM("qvfadd 18, 16, 17" ::  );
-    ASM("qvfcmpgt 31, 16, 17" :: );
-    ASM("qvfsel 18, 31, 16, 17" :: );
+    //ASM("qvfadd 18, 16, 17" ::: "fr18"  );
+    ASM("qvfcmpgt 31, 16, 17" ::: "fr31" );
+    ASM("qvfsel 18, 31, 16, 17" ::: "fr18" );
 
 
-    //ASM("qvfadd 19, 4, 5" ::  );
-    ASM("qvfcmpgt 31, 4, 5" :: );
-    ASM("qvfsel 19, 31, 4, 5" :: );
+    //ASM("qvfadd 19, 4, 5" ::: "fr19"  );
+    ASM("qvfcmpgt 31, 4, 5" ::: "fr31" );
+    ASM("qvfsel 19, 31, 4, 5" ::: "fr19" );
     VECTOR_LOAD(src0_1,inc,4);
     VECTOR_LOAD(src1_1,inc,5);
     VECTOR_LOAD(src0_2,inc,12);
     VECTOR_LOAD(src1_2,inc,13);
 
-    //ASM("qvfadd 23, 10, 11" ::  );
-    ASM("qvfcmpgt 31, 10, 11" :: );
-    ASM("qvfsel 23, 31, 10, 11" :: );
+    //ASM("qvfadd 23, 10, 11" ::: "fr23"  );
+    ASM("qvfcmpgt 31, 10, 11" ::: "fr31" );
+    ASM("qvfsel 23, 31, 10, 11" ::: "fr23" );
     VECTOR_STORE(dst_1,inc,18);
 
-    //ASM("qvfadd 20, 6, 7" ::  );
-    ASM("qvfcmpgt 31, 6, 7" :: );
-    ASM("qvfsel 20, 31, 6, 7" :: );
+    //ASM("qvfadd 20, 6, 7" ::: "fr20"  );
+    ASM("qvfcmpgt 31, 6, 7" ::: "fr31" );
+    ASM("qvfsel 20, 31, 6, 7" ::: "fr20" );
     VECTOR_LOAD(src2_1,inc,6);
     VECTOR_LOAD(src3_1,inc,7);
     VECTOR_LOAD(src2_2,inc,14);
     VECTOR_LOAD(src3_2,inc,15);
 
-    //ASM("qvfadd 25, 12, 13" ::  );
-    ASM("qvfcmpgt 31, 12, 13" :: );
-    ASM("qvfsel 25, 31, 12, 13" :: );
+    //ASM("qvfadd 25, 12, 13" ::: "fr25"  );
+    ASM("qvfcmpgt 31, 12, 13" ::: "fr31" );
+    ASM("qvfsel 25, 31, 12, 13" ::: "fr25" );
 
-    //ASM("qvfadd 24, 22, 23" ::  );
-    ASM("qvfcmpgt 31, 22, 23" :: );
-    ASM("qvfsel 24, 31, 22, 23" :: );
+    //ASM("qvfadd 24, 22, 23" ::: "fr24"  );
+    ASM("qvfcmpgt 31, 22, 23" ::: "fr31" );
+    ASM("qvfsel 24, 31, 22, 23" ::: "fr24" );
 
-    //ASM("qvfadd 21, 19, 20" ::  );
-    ASM("qvfcmpgt 31, 19, 20" :: );
-    ASM("qvfsel 21, 31, 19, 20" :: );
+    //ASM("qvfadd 21, 19, 20" ::: "fr21"  );
+    ASM("qvfcmpgt 31, 19, 20" ::: "fr31" );
+    ASM("qvfsel 21, 31, 19, 20" ::: "fr21" );
 
     if(!--y) break;
 
-    //ASM("qvfadd 16, 0, 1" ::  );
-    ASM("qvfcmpgt 31, 0,1" :: );
-    ASM("qvfsel 16, 31, 0, 1" :: );
+    //ASM("qvfadd 16, 0, 1" ::: "fr16"  );
+    ASM("qvfcmpgt 31, 0,1" ::: "fr31" );
+    ASM("qvfsel 16, 31, 0, 1" ::: "fr16" );
     VECTOR_LOAD(src0_1,inc,0);
     VECTOR_LOAD(src1_1,inc,1);
-    //ASM("qvfadd 26, 14, 15" ::  );
-    ASM("qvfcmpgt 31, 14, 15" :: );
-    ASM("qvfsel 26, 31, 14, 15" :: );
+    //ASM("qvfadd 26, 14, 15" ::: "fr26"  );
+    ASM("qvfcmpgt 31, 14, 15" ::: "fr31" );
+    ASM("qvfsel 26, 31, 14, 15" ::: "fr26" );
     VECTOR_LOAD(src0_2,inc,8);
     VECTOR_LOAD(src1_2,inc,9);
 
@@ -126,87 +126,87 @@ inline unsigned _quad_double_max_4way_align64B(double* dst, double* src0, double
 
     VECTOR_STORE(dst_1,inc,21);
 
-    //ASM("qvfadd 17, 2, 3" ::  );
-    ASM("qvfcmpgt 31, 2,3" :: );
-    ASM("qvfsel 17, 31, 2, 3" :: );
-    //ASM("qvfadd 27, 25, 26" ::  );
-    ASM("qvfcmpgt 31, 25, 26" :: );
-    ASM("qvfsel 27, 31, 25, 26" :: );
+    //ASM("qvfadd 17, 2, 3" ::: "fr17"  );
+    ASM("qvfcmpgt 31, 2,3" ::: "fr31" );
+    ASM("qvfsel 17, 31, 2, 3" ::: "fr17" );
+    //ASM("qvfadd 27, 25, 26" ::: "fr27"  );
+    ASM("qvfcmpgt 31, 25, 26" ::: "fr31" );
+    ASM("qvfsel 27, 31, 25, 26" ::: "fr27" );
     VECTOR_LOAD(src2_1,inc,2);
     VECTOR_LOAD(src3_1,inc,3);
     VECTOR_LOAD(src2_2,inc,10);
     VECTOR_LOAD(src3_2,inc,11);
-    //ASM("qvfadd 22, 8, 9" ::  );
-    ASM("qvfcmpgt 31, 8,9" :: );
-    ASM("qvfsel 22, 31, 8, 9" :: );
+    //ASM("qvfadd 22, 8, 9" ::: "fr22"  );
+    ASM("qvfcmpgt 31, 8,9" ::: "fr31" );
+    ASM("qvfsel 22, 31, 8, 9" ::: "fr22" );
     VECTOR_STORE(dst_2,inc,27);
 
   }while(1);
   VECTOR_STORE(dst_2,inc,24);
 
-  //ASM("qvfadd 26, 14, 15" ::  );
-   ASM("qvfcmpgt 31, 14, 15" :: );
-   ASM("qvfsel 26, 31, 14, 15" :: );
+  //ASM("qvfadd 26, 14, 15" ::: "fr26"  );
+   ASM("qvfcmpgt 31, 14, 15" ::: "fr31" );
+   ASM("qvfsel 26, 31, 14, 15" ::: "fr26" );
 
-  //ASM("qvfadd 16, 0, 1" ::  );
-  ASM("qvfcmpgt 31, 0,1" :: );
-  ASM("qvfsel 16, 31, 0, 1" :: );
-  //ASM("qvfadd 17, 2, 3" ::  );
-  ASM("qvfcmpgt 31, 2,3" :: );
-  ASM("qvfsel 17, 31, 2, 3" :: );
+  //ASM("qvfadd 16, 0, 1" ::: "fr16"  );
+  ASM("qvfcmpgt 31, 0,1" ::: "fr31" );
+  ASM("qvfsel 16, 31, 0, 1" ::: "fr16" );
+  //ASM("qvfadd 17, 2, 3" ::: "fr17"  );
+  ASM("qvfcmpgt 31, 2,3" ::: "fr31" );
+  ASM("qvfsel 17, 31, 2, 3" ::: "fr17" );
   VECTOR_LOAD(src0_2,inc,8);
   VECTOR_LOAD(src1_2,inc,9);
-  //ASM("qvfadd 22, 8, 9" ::  );
-  ASM("qvfcmpgt 31, 8,9" :: );
-  ASM("qvfsel 22, 31, 8, 9" :: );
+  //ASM("qvfadd 22, 8, 9" ::: "fr22"  );
+  ASM("qvfcmpgt 31, 8,9" ::: "fr31" );
+  ASM("qvfsel 22, 31, 8, 9" ::: "fr22" );
 
   VECTOR_STORE(dst_1,inc,21);
-  //ASM("qvfadd 27, 25, 26" ::  );
-  ASM("qvfcmpgt 31, 25, 26" :: );
-  ASM("qvfsel 27, 31, 25, 26" :: );
+  //ASM("qvfadd 27, 25, 26" ::: "fr27"  );
+  ASM("qvfcmpgt 31, 25, 26" ::: "fr31" );
+  ASM("qvfsel 27, 31, 25, 26" ::: "fr27" );
 
   VECTOR_LOAD(src2_2,inc,10);
   VECTOR_LOAD(src3_2,inc,11);
-  //ASM("qvfadd 23, 10, 11" ::  );
-  ASM("qvfcmpgt 31, 10, 11" :: );
-  ASM("qvfsel 23, 31, 10, 11" :: );
+  //ASM("qvfadd 23, 10, 11" ::: "fr23"  );
+  ASM("qvfcmpgt 31, 10, 11" ::: "fr31" );
+  ASM("qvfsel 23, 31, 10, 11" ::: "fr23" );
 
-  //ASM("qvfadd 18, 16, 17" ::  );
-  ASM("qvfcmpgt 31, 16, 17" :: );
-  ASM("qvfsel 18, 31, 16, 17" :: );
-  //ASM("qvfadd 24, 22, 23" ::  );
-  ASM("qvfcmpgt 31, 22, 23" :: );
-  ASM("qvfsel 24, 31, 22, 23" :: );
+  //ASM("qvfadd 18, 16, 17" ::: "fr18"  );
+  ASM("qvfcmpgt 31, 16, 17" ::: "fr31" );
+  ASM("qvfsel 18, 31, 16, 17" ::: "fr18" );
+  //ASM("qvfadd 24, 22, 23" ::: "fr24"  );
+  ASM("qvfcmpgt 31, 22, 23" ::: "fr31" );
+  ASM("qvfsel 24, 31, 22, 23" ::: "fr24" );
   VECTOR_STORE(dst_2,inc,27);
 
-  //ASM("qvfadd 19, 4, 5" ::  );
-  ASM("qvfcmpgt 31, 4, 5" :: );
-  ASM("qvfsel 19, 31, 4, 5" :: );
+  //ASM("qvfadd 19, 4, 5" ::: "fr19"  );
+  ASM("qvfcmpgt 31, 4, 5" ::: "fr31" );
+  ASM("qvfsel 19, 31, 4, 5" ::: "fr19" );
   VECTOR_LOAD(src0_2,inc,12);
   VECTOR_LOAD(src1_2,inc,13);
 
   VECTOR_STORE(dst_1,inc,18);
   VECTOR_STORE(dst_2,inc,24);
 
-  //ASM("qvfadd 20, 6, 7" ::  );
-  ASM("qvfcmpgt 31, 6, 7" :: );
-  ASM("qvfsel 20, 31, 6, 7" :: );
+  //ASM("qvfadd 20, 6, 7" ::: "fr20"  );
+  ASM("qvfcmpgt 31, 6, 7" ::: "fr31" );
+  ASM("qvfsel 20, 31, 6, 7" ::: "fr20" );
   VECTOR_LOAD(src2_2,inc,14);
   VECTOR_LOAD(src3_2,inc,15);
-  //ASM("qvfadd 25, 12, 13" ::  );
-  ASM("qvfcmpgt 31, 12, 13" :: );
-  ASM("qvfsel 25, 31, 12, 13" :: );
-  //ASM("qvfadd 26, 14, 15" ::  );
-  ASM("qvfcmpgt 31, 14, 15" :: );
-  ASM("qvfsel 26, 31, 14, 15" :: );
+  //ASM("qvfadd 25, 12, 13" ::: "fr25"  );
+  ASM("qvfcmpgt 31, 12, 13" ::: "fr31" );
+  ASM("qvfsel 25, 31, 12, 13" ::: "fr25" );
+  //ASM("qvfadd 26, 14, 15" ::: "fr26"  );
+  ASM("qvfcmpgt 31, 14, 15" ::: "fr31" );
+  ASM("qvfsel 26, 31, 14, 15" ::: "fr26" );
 
 
-  //ASM("qvfadd 21, 19, 20" ::  );
-  ASM("qvfcmpgt 31, 19, 20" :: );
-  ASM("qvfsel 21, 31, 19, 20" :: );
-  //ASM("qvfadd 27, 25, 26" ::  );
-  ASM("qvfcmpgt 31, 25, 26" :: );
-  ASM("qvfsel 27, 31, 25, 26" :: );
+  //ASM("qvfadd 21, 19, 20" ::: "fr21"  );
+  ASM("qvfcmpgt 31, 19, 20" ::: "fr31" );
+  ASM("qvfsel 21, 31, 19, 20" ::: "fr21" );
+  //ASM("qvfadd 27, 25, 26" ::: "fr27"  );
+  ASM("qvfcmpgt 31, 25, 26" ::: "fr31" );
+  ASM("qvfsel 27, 31, 25, 26" ::: "fr27" );
 
   VECTOR_STORE(dst_1,inc,21);
   VECTOR_STORE(dst_2,inc,27);
@@ -242,70 +242,70 @@ inline unsigned _quad_double_max_4way_align32B_short(double* dst, double* src0, 
 
   if (y == 1)
   {
-    ASM("qvfmr 28, 0" ::  );
-    ASM("qvfmr 29, 1" ::  );
-    //ASM("qvfadd 28, 28, 2" ::  );
-    ASM("qvfcmpgt 16, 28,2" :: );
-    //ASM("qvfsel 28, 16, 2, 28" :: );
-    ASM("qvfsel 28, 16, 28, 2" :: );
-    //ASM("qvfadd 29, 29, 3" ::  );
-    ASM("qvfcmpgt 16, 29,3" :: );
-    //ASM("qvfsel 29, 16, 3, 29" :: );
-    ASM("qvfsel 29, 16, 29, 3" :: );
-    //ASM("qvfadd 29, 29, 28" ::  );
-    ASM("qvfcmpgt 16, 29,28" :: );
-    ASM("qvfsel 29, 16, 29, 28" :: );
+    ASM("qvfmr 28, 0" ::: "fr28"  );
+    ASM("qvfmr 29, 1" ::: "fr29"  );
+    //ASM("qvfadd 28, 28, 2" ::: "fr28"  );
+    ASM("qvfcmpgt 16, 28,2" ::: "fr16" );
+    //ASM("qvfsel 28, 16, 2, 28" ::: "fr28" );
+    ASM("qvfsel 28, 16, 28, 2" ::: "fr28" );
+    //ASM("qvfadd 29, 29, 3" ::: "fr29"  );
+    ASM("qvfcmpgt 16, 29,3" ::: "fr16" );
+    //ASM("qvfsel 29, 16, 3, 29" ::: "fr29" );
+    ASM("qvfsel 29, 16, 29, 3" ::: "fr29" );
+    //ASM("qvfadd 29, 29, 28" ::: "fr29"  );
+    ASM("qvfcmpgt 16, 29,28" ::: "fr16" );
+    ASM("qvfsel 29, 16, 29, 28" ::: "fr29" );
     VECTOR_STORE(dst_1,inc,29);
     return 4;
   }
 
   --y;
 
-  ASM("qvfmr 28, 0" ::  );
+  ASM("qvfmr 28, 0" ::: "fr28"  );
   VECTOR_LOAD(src0_1,inc,0);
 
-  ASM("qvfmr 29, 1" ::  );
+  ASM("qvfmr 29, 1" ::: "fr29"  );
   VECTOR_LOAD(src1_1,inc,1);
 
   while (1){
-    //ASM("qvfadd 28, 28, 2" ::  );
-    ASM("qvfcmpgt 16, 28,2" :: );
-    ASM("qvfsel 28, 16, 28, 2" :: );
+    //ASM("qvfadd 28, 28, 2" ::: "fr28"  );
+    ASM("qvfcmpgt 16, 28,2" ::: "fr16" );
+    ASM("qvfsel 28, 16, 28, 2" ::: "fr28" );
     VECTOR_LOAD(src2_1,inc,2);
 
-    //ASM("qvfadd 29, 29, 3" ::  );
-    ASM("qvfcmpgt 16, 29,3" :: );
-    ASM("qvfsel 29, 16, 29, 3" :: );
+    //ASM("qvfadd 29, 29, 3" ::: "fr29"  );
+    ASM("qvfcmpgt 16, 29,3" ::: "fr16" );
+    ASM("qvfsel 29, 16, 29, 3" ::: "fr29" );
     VECTOR_LOAD(src3_1,inc,3);
 
     if (!--y) break;
 
-    //ASM("qvfadd 29, 29, 28" ::  );
-    ASM("qvfcmpgt 16, 29,28" :: );
-    ASM("qvfsel 29, 16, 29, 28" :: );
-    ASM("qvfmr 28, 0" ::  );
+    //ASM("qvfadd 29, 29, 28" ::: "fr29"  );
+    ASM("qvfcmpgt 16, 29,28" ::: "fr16" );
+    ASM("qvfsel 29, 16, 29, 28" ::: "fr29" );
+    ASM("qvfmr 28, 0" ::: "fr28"  );
     VECTOR_LOAD(src0_1,inc,0);
 
     VECTOR_STORE(dst_1,inc,29);
-    ASM("qvfmr 29, 1" ::  );
+    ASM("qvfmr 29, 1" ::: "fr29"  );
     VECTOR_LOAD(src1_1,inc,1);
   } 
 
-    //ASM("qvfadd 29, 29, 28" ::  );
-    ASM("qvfcmpgt 16, 29,28" :: );
-    ASM("qvfsel 29, 16, 29, 28" :: );
-    ASM("qvfmr 28, 0" ::  );
+    //ASM("qvfadd 29, 29, 28" ::: "fr29"  );
+    ASM("qvfcmpgt 16, 29,28" ::: "fr16" );
+    ASM("qvfsel 29, 16, 29, 28" ::: "fr29" );
+    ASM("qvfmr 28, 0" ::: "fr28"  );
     VECTOR_STORE(dst_1,inc,29);
-    ASM("qvfmr 29, 1" ::  );
-    //ASM("qvfadd 28, 28, 2" ::  );
-    ASM("qvfcmpgt 16, 28,2" :: );
-    ASM("qvfsel 28, 16, 28, 2" :: );
-    //ASM("qvfadd 29, 29, 3" ::  );
-    ASM("qvfcmpgt 16, 29,3" :: );
-    ASM("qvfsel 29, 16, 29, 3" :: );
-    //ASM("qvfadd 29, 29, 28" ::  );
-    ASM("qvfcmpgt 16, 29,28" :: );
-    ASM("qvfsel 29, 16, 29, 28" :: );
+    ASM("qvfmr 29, 1" ::: "fr29"  );
+    //ASM("qvfadd 28, 28, 2" ::: "fr28"  );
+    ASM("qvfcmpgt 16, 28,2" ::: "fr16" );
+    ASM("qvfsel 28, 16, 28, 2" ::: "fr28" );
+    //ASM("qvfadd 29, 29, 3" ::: "fr29"  );
+    ASM("qvfcmpgt 16, 29,3" ::: "fr16" );
+    ASM("qvfsel 29, 16, 29, 3" ::: "fr29" );
+    //ASM("qvfadd 29, 29, 28" ::: "fr29"  );
+    ASM("qvfcmpgt 16, 29,28" ::: "fr16" );
+    ASM("qvfsel 29, 16, 29, 28" ::: "fr29" );
     VECTOR_STORE(dst_1,inc,29);
 
   return ((num_dbls >> 2) << 2);

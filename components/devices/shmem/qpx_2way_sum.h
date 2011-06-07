@@ -42,37 +42,37 @@ inline unsigned _quad_double_sum_2way_align64B(double* dst, double* src0, double
 
   if (y == 1)
   {
-    ASM("qvfadd 8, 0, 1" ::  );
+    ASM("qvfadd 8, 0, 1" ::: "fr8"  );
 
     VECTOR_LOAD(src0_2,inc,16);
     VECTOR_LOAD(src1_2,inc,17);
 
-    ASM("qvfadd 9, 2, 3" ::  );
+    ASM("qvfadd 9, 2, 3" ::: "fr9"  );
 
     VECTOR_LOAD(src0_2,inc,18);
     VECTOR_LOAD(src1_2,inc,19);
 
     VECTOR_STORE(dst_1,inc,8);
-    ASM("qvfadd 10, 4, 5" ::  );
-    ASM("qvfadd 24, 16, 17" ::  );
+    ASM("qvfadd 10, 4, 5" ::: "fr10"  );
+    ASM("qvfadd 24, 16, 17" ::: "fr24"  );
 
     VECTOR_LOAD(src0_2,inc,20);
     VECTOR_LOAD(src1_2,inc,21);
 
     VECTOR_STORE(dst_1,inc,9);
-    ASM("qvfadd 11, 6, 7" ::  );
-    ASM("qvfadd 25, 18, 19" ::  );
+    ASM("qvfadd 11, 6, 7" ::: "fr11"  );
+    ASM("qvfadd 25, 18, 19" ::: "fr25"  );
 
     VECTOR_LOAD(src0_2,inc,22);
     VECTOR_LOAD(src1_2,inc,23);
 
     VECTOR_STORE(dst_1,inc,10);
     VECTOR_STORE(dst_2,inc,24);
-    ASM("qvfadd 26, 20, 21" ::  );
+    ASM("qvfadd 26, 20, 21" ::: "fr26"  );
 
     VECTOR_STORE(dst_1,inc,11);
     VECTOR_STORE(dst_2,inc,25);
-    ASM("qvfadd 27, 22, 23" ::  );
+    ASM("qvfadd 27, 22, 23" ::: "fr27"  );
 
     VECTOR_STORE(dst_2,inc,26);
     VECTOR_STORE(dst_2,inc,27);
@@ -80,14 +80,14 @@ inline unsigned _quad_double_sum_2way_align64B(double* dst, double* src0, double
     return 32;
   }
 
-  ASM("qvfadd 8, 0, 1" ::  );
+  ASM("qvfadd 8, 0, 1" ::: "fr8"  );
 
   VECTOR_LOAD(src0_1,inc,0); //5
   VECTOR_LOAD(src1_1,inc,1);
   VECTOR_LOAD(src0_2,inc,16);
   VECTOR_LOAD(src1_2,inc,17);
 
-  ASM("qvfadd 9, 2, 3" ::  );
+  ASM("qvfadd 9, 2, 3" ::: "fr9"  );
 
   VECTOR_LOAD(src0_1,inc,2);//6
   VECTOR_LOAD(src1_1,inc,3);
@@ -96,8 +96,8 @@ inline unsigned _quad_double_sum_2way_align64B(double* dst, double* src0, double
 
 
   VECTOR_STORE(dst_1,inc,8);
-  ASM("qvfadd 10, 4, 5" ::  );
-  ASM("qvfadd 24, 16, 17" ::  );
+  ASM("qvfadd 10, 4, 5" ::: "fr10"  );
+  ASM("qvfadd 24, 16, 17" ::: "fr24"  );
 
   VECTOR_LOAD(src0_1,inc,4); //7
   VECTOR_LOAD(src1_1,inc,5);
@@ -105,8 +105,8 @@ inline unsigned _quad_double_sum_2way_align64B(double* dst, double* src0, double
   VECTOR_LOAD(src1_2,inc,21);
 
   VECTOR_STORE(dst_1,inc,9);
-  ASM("qvfadd 11, 6, 7" ::  );
-  ASM("qvfadd 25, 18, 19" ::  );
+  ASM("qvfadd 11, 6, 7" ::: "fr11"  );
+  ASM("qvfadd 25, 18, 19" ::: "fr25"  );
 
   VECTOR_LOAD(src0_1,inc,6); //8
   VECTOR_LOAD(src1_1,inc,7);
@@ -115,8 +115,8 @@ inline unsigned _quad_double_sum_2way_align64B(double* dst, double* src0, double
 
   VECTOR_STORE(dst_1,inc,10);
   VECTOR_STORE(dst_2,inc,24);
-  ASM("qvfadd 8, 0, 1" ::  );
-  ASM("qvfadd 26, 20, 21" ::  );
+  ASM("qvfadd 8, 0, 1" ::: "fr8"  );
+  ASM("qvfadd 26, 20, 21" ::: "fr26"  );
 
    //y-=4;
    y-=2;
@@ -130,8 +130,8 @@ inline unsigned _quad_double_sum_2way_align64B(double* dst, double* src0, double
 
   VECTOR_STORE(dst_1,inc,11);
   VECTOR_STORE(dst_2,inc,25);
-  ASM("qvfadd 9, 2, 3" ::  );
-  ASM("qvfadd 27, 22, 23" ::  );
+  ASM("qvfadd 9, 2, 3" ::: "fr9"  );
+  ASM("qvfadd 27, 22, 23" ::: "fr27"  );
 
   VECTOR_LOAD(src0_1,inc,2);
   VECTOR_LOAD(src1_1,inc,3);
@@ -140,8 +140,8 @@ inline unsigned _quad_double_sum_2way_align64B(double* dst, double* src0, double
 
   VECTOR_STORE(dst_1,inc,8);
   VECTOR_STORE(dst_2,inc,26);
-  ASM("qvfadd 10, 4, 5" ::  );
-  ASM("qvfadd 24, 16, 17" ::  );
+  ASM("qvfadd 10, 4, 5" ::: "fr10"  );
+  ASM("qvfadd 24, 16, 17" ::: "fr24"  );
 
   VECTOR_LOAD(src0_1,inc,4);
   VECTOR_LOAD(src1_1,inc,5);
@@ -150,8 +150,8 @@ inline unsigned _quad_double_sum_2way_align64B(double* dst, double* src0, double
 
   VECTOR_STORE(dst_1,inc,9);
   VECTOR_STORE(dst_2,inc,27);
-  ASM("qvfadd 11, 6, 7" ::  );
-  ASM("qvfadd 25, 18, 19" ::  );
+  ASM("qvfadd 11, 6, 7" ::: "fr11"  );
+  ASM("qvfadd 25, 18, 19" ::: "fr25"  );
 
   VECTOR_LOAD(src0_1,inc,6);
   VECTOR_LOAD(src1_1,inc,7);
@@ -160,8 +160,8 @@ inline unsigned _quad_double_sum_2way_align64B(double* dst, double* src0, double
 
   VECTOR_STORE(dst_1,inc,10);
   VECTOR_STORE(dst_2,inc,24);
-  ASM("qvfadd 8, 0, 1" ::  );
-  ASM("qvfadd 26, 20, 21" ::  );
+  ASM("qvfadd 8, 0, 1" ::: "fr8"  );
+  ASM("qvfadd 26, 20, 21" ::: "fr26"  );
 
 	y-=1;
 	//y-=4;
@@ -173,35 +173,35 @@ inline unsigned _quad_double_sum_2way_align64B(double* dst, double* src0, double
 
   VECTOR_STORE(dst_1,inc,11);
   VECTOR_STORE(dst_2,inc,25);
-  ASM("qvfadd 9, 2, 3" ::  );
-  ASM("qvfadd 27, 22, 23" ::  );
+  ASM("qvfadd 9, 2, 3" ::: "fr9"  );
+  ASM("qvfadd 27, 22, 23" ::: "fr27"  );
 
   VECTOR_LOAD(src0_2,inc,18);
   VECTOR_LOAD(src1_2,inc,19);
 
   VECTOR_STORE(dst_1,inc,8);
   VECTOR_STORE(dst_2,inc,26);
-  ASM("qvfadd 10, 4, 5" ::  );
-  ASM("qvfadd 24, 16, 17" ::  );
+  ASM("qvfadd 10, 4, 5" ::: "fr10"  );
+  ASM("qvfadd 24, 16, 17" ::: "fr24"  );
 
   VECTOR_LOAD(src0_2,inc,20);
   VECTOR_LOAD(src1_2,inc,21);
 
   VECTOR_STORE(dst_1,inc,9);
   VECTOR_STORE(dst_2,inc,27);
-  ASM("qvfadd 11, 6, 7" ::  );
-  ASM("qvfadd 25, 18, 19" ::  );
+  ASM("qvfadd 11, 6, 7" ::: "fr11"  );
+  ASM("qvfadd 25, 18, 19" ::: "fr25"  );
 
   VECTOR_LOAD(src0_2,inc,22);
   VECTOR_LOAD(src1_2,inc,23);
 
   VECTOR_STORE(dst_1,inc,10);
   VECTOR_STORE(dst_2,inc,24);
-  ASM("qvfadd 26, 20, 21" ::  );
+  ASM("qvfadd 26, 20, 21" ::: "fr26"  );
 
   VECTOR_STORE(dst_1,inc,11);
   VECTOR_STORE(dst_2,inc,25);
-  ASM("qvfadd 27, 22, 23" ::  );
+  ASM("qvfadd 27, 22, 23" ::: "fr27"  );
   VECTOR_STORE(dst_2,inc,26);
   VECTOR_STORE(dst_2,inc,27);
 
