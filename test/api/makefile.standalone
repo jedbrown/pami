@@ -87,6 +87,7 @@ build/collectives/reduce_scatter.exe \
 build/collectives/reduce_scatter_subcomm.exe \
 build/collectives/reduce_subcomm.exe \
 build/collectives/scan.exe \
+build/collectives/scan_subcomm.exe \
 build/collectives/scatter.exe \
 build/collectives/scatter_subcomm.exe \
 build/collectives/scatterv.exe \

@@ -180,7 +180,7 @@ namespace CCMI
                 }
             }
 
-          if (_myrank == root) _lstartph = 0;
+          if (_myrank == _root) _lstartph = 0;
 
           _mynphs    = phase - _lstartph;
 

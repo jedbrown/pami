@@ -56,6 +56,7 @@ namespace CCMI
 
         int                 _comm;
         int                 _buflen;   // byte count of a single message, not really buffer length
+        int                 _exclusive;// 0 = Inclusive, 1 = Exclusive
         char                *_sbuf;
         char                *_rbuf;
         char                *_tmpbuf;
@@ -104,7 +105,8 @@ namespace CCMI
             _curphase(0),
             _nphases(0),
             _startphase(0),
-            _endphase(-1)
+            _endphase(-1),
+            _exclusive(0)
         {
           EXECUTOR_DEBUG((stderr, "<%p>Executor::ScanExec()\n", this);)
         }
@@ -127,6 +129,7 @@ namespace CCMI
             _nphases(0),
             _startphase(0),
             _endphase(-1),
+            _exclusive(0),
             _selftopology(mf->myrank()),
             _gtopology(gtopology)
         {
@@ -187,9 +190,9 @@ namespace CCMI
 
           _myindex    = _gtopology->rank2Index(_native->myrank());
 
-          for (unsigned i = 1; i < _native->numranks(); i *= 2)
+          for (unsigned i = 1; i < _gtopology->size(); i *= 2)
             {
-              if ((_myindex - i) >= 0)
+              if (_myindex  >= i)
                 _endphase ++;
               else
                 break;
@@ -279,6 +282,11 @@ namespace CCMI
           PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
         }
 
+        void setExclusive(int exclusive)
+        {
+          _exclusive = exclusive;
+        }
+
         //------------------------------------------
         // -- Executor Virtual Methods
         //------------------------------------------
@@ -300,12 +308,11 @@ namespace CCMI
         // -- Get the source for the current phase
         // -- Temporary workaround until we fix GenericTreeSchedule
         //------------------------------------------
-        unsigned       getSource(unsigned *src, unsigned *nsrc, unsigned *srclen)
+        void           getSource(unsigned *src, unsigned *nsrc, unsigned *srclen)
         {
-          *src    = (_myindex + _native->numranks() - (1U << _curphase)) % _native->numranks();
+          *src    = _gtopology->index2Rank((_myindex + _gtopology->size() - (1U << _curphase)) % _gtopology->size());
           *nsrc   = 1;
           *srclen = _buflen;
-          return 0;
         }
 
         static void notifySendDone (pami_context_t context, void *cookie, pami_result_t result)
@@ -375,7 +382,6 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::start ()
       return;
     }
 
-  // exscan needs special handling
   memcpy(_tmpbuf, _sbuf, _buflen);
 
   _curphase   = _startphase;
@@ -439,8 +445,8 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::sendNext ()
       for (unsigned i = 0; i < nsrcs; ++i)
         {
           srcindex     = _gtopology->rank2Index(_srcranks[i]);
-          dist         = (_myindex + _native->numranks() - srcindex) % _native->numranks();
-          dstindex     = (_myindex + _native->numranks() + dist) % _native->numranks();
+          dist         = (_myindex + _gtopology->size() - srcindex) % _gtopology->size();
+          dstindex     = (_myindex + _gtopology->size() + dist) % _gtopology->size();
 
           if (dstindex > _myindex)
             {
@@ -493,7 +499,11 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::sendNext ()
 
       return;
     }
-  memcpy(_rbuf, _tmpbuf, _buflen);
+
+  if(_exclusive == 0)
+    {
+      memcpy(_rbuf, _tmpbuf, _buflen);
+    }
 
   if (_cb_done) _cb_done (NULL, _clientdata, PAMI_SUCCESS);
 
@@ -532,7 +542,7 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::notifyRecv
                           cdata->_phase, _buflen, i, _srclens[i], i, _srcranks[i]);)
 #if ASSERT_LEVEL > 0
           unsigned srcindex = _gtopology->rank2Index(_srcranks[i]);
-          unsigned dist     = (_myindex + _native->numranks() - srcindex) % _native->numranks();
+          unsigned dist     = (_myindex + _gtopology->size() - srcindex) % _gtopology->size();
           CCMI_assert(_myindex - dist  >= 0);
 #endif
           RecvStruct *recvstr = &_mrecvstr[cdata->_phase].recvstr[i];
@@ -572,16 +582,25 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::notifyRecv
 
 template <class T_ConnMgr, class T_Schedule>
 inline void CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::localReduce() {
-  if (_endphase == -1)
+  if (_endphase != -1 && _curphase - 1 <= _endphase)
     {
-      memcpy(_rbuf, _sbuf, _buflen);
-    }
-  else if (_curphase - 1 <= _endphase)
-    {
-      //perform reduce operation before moving to the next phase
+      // Perform reduce operation before moving to the next phase
       void *bufs[2];
-      bufs[0] = _tmpbuf;
       bufs[1] = _tmpbuf + _curphase  * _buflen;
+      // Check if we are performing an exclusive scan
+      if(_exclusive == 1)
+        {
+          if(_curphase == 1)
+            {
+              memcpy(_rbuf, bufs[1], _buflen);
+            }
+          else
+            {
+              bufs[0] = _rbuf;
+              _reduceFunc(_rbuf, bufs, 2, _buflen / _sizeOfType);
+            }
+        }
+      bufs[0] = _tmpbuf;
       _reduceFunc(_tmpbuf, bufs, 2, _buflen / _sizeOfType);
     }
 }

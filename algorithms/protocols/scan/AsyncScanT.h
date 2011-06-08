@@ -79,6 +79,7 @@ public:
         _executor.setBuffers (a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount*sizeOfType);
         _executor.setReduceInfo(a_xfer->stypecount, sizeOfType, func, (pami_op)op, (pami_dt)dt);
         _executor.setDoneCallback (cb_done.function, cb_done.clientdata);
+        _executor.setExclusive(a_xfer->exclusive);
     }
 
     AsyncScanT (Interfaces::NativeInterface   * native,
@@ -114,7 +115,6 @@ public:
         _executor.setBuffers (sndbuf, rcvbuf, stypecount);
         _executor.setReduceInfo(stypecount, 1, func, op, dt);
         _executor.setDoneCallback (cb_done.function, cb_done.clientdata);
-
     }
 
     CCMI::Executor::ScanExec<T_Conn, T_Schedule> &executor()
@@ -256,6 +256,7 @@ public:
             CCMI::Adaptor::Allreduce::getReduceFunction((pami_dt)dt, (pami_op)op, sizeOfType, func);
             a_composite->executor().updateBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount*sizeOfType);
             a_composite->executor().updateReduceInfo(a_xfer->stypecount, sizeOfType, func, (pami_op)op, (pami_dt)dt);
+            a_composite->executor().setExclusive(a_xfer->exclusive);
         }
         /// not found posted CollOp object, create a new one and
         /// queue it in active queue
