@@ -5,11 +5,9 @@
 #include <algorithms/protocols/tspcoll/Collectives.h>
 
 namespace xlpgas{
-
   /* ******************************************************************* */
   /*                      Enumerated Team                                */
   /* ******************************************************************* */
-
   template <class Base>
   class EnumTeam: public Base
   {
@@ -25,9 +23,11 @@ namespace xlpgas{
       this->_id = commID;
       this->_me = my_ep;
       this->_size.node = nsize;
-      for (int i=0; i<MAXKIND; i++)
+      for (int i=0; i<MAXKIND; i++){
+	//printf("L%d[%x] allocate coll %d for TID=%d\n",XLPGAS_MYNODE,this,i,this->_id);
 	this->_colls[i] = CollectiveManager::
 	  instance(this->_me.ctxt)->allocate (this, (CollectiveKind)i, base_coll_defs());
+      }
     }
 
     int size () const {
@@ -46,6 +46,90 @@ namespace xlpgas{
     xlpgas_endpoint_t * _proclist; /* list of absolute (node) ranks */
     int _ordinal_rank;//stored; not computed as it may not be a formula anymore
   };
+
+
+  /* ******************************************************************* */
+  /*                      Leaders Team - UPC Shared Memory mode          */
+  /* ******************************************************************* */
+  template <class Base>
+  class SHMLeadersTeam: public Base
+  {
+  public:
+    void * operator new (size_t, void * addr) { return addr; }
+
+    SHMLeadersTeam (int commID,int ctxt,bool leader_or_not) {
+      //what used to be in the base constructor
+      this->_id = commID;
+      xlpgas_endpoint_t ep;
+      ep.node = XLPGAS_MYNODE;
+      ep.ctxt = ctxt;
+      this->_me = ep;
+      this->_size.node = XLPGAS_NODES;
+      this->_leader = leader_or_not;
+      for (int i=0; i<MAXKIND; i++)
+	this->_colls[i] = CollectiveManager::
+	  instance(this->_me.ctxt)->allocate (this, (CollectiveKind)i, base_coll_defs());
+    }
+
+    int size () const {
+      return XLPGAS_NODES; 
+    }
+
+    int ordinal () const {
+      return XLPGAS_MYNODE;
+    }
+
+    xlpgas_endpoint_t endpoint (int ordinal) const {
+      xlpgas_endpoint_t ep;
+      ep.node = ordinal;
+      ep.ctxt = 0;
+      return ep;
+    }
+
+    //GT: to be implemented
+    bool is_leader() const {
+      return _leader;
+    }
+  private:
+    bool _leader;
+  };
+
+  template <class Base>
+  class SHMLocalTeam: public Base
+  {
+  public:
+    void * operator new (size_t, void * addr) { return addr; }
+
+    SHMLocalTeam (int commID, int me) {
+      //what used to be in the base constructor
+      this->_id = commID;
+      xlpgas_endpoint_t ep;
+      ep.node = XLPGAS_MYNODE;
+      ep.ctxt = me;
+      this->_me = ep;
+      this->_size.node = XLPGAS_SMPTHREADS;
+      for (int i=0; i<MAXKIND; i++)
+	this->_colls[i] = CollectiveManager::
+	  instance(this->_me.ctxt)->allocate (this, (CollectiveKind)i, base_coll_defs());
+    }
+
+    int size () const {
+      return XLPGAS_SMPTHREADS; 
+    }
+
+    int ordinal () const {
+      return XLPGAS_MYSMPTHREAD;
+    }
+
+    xlpgas_endpoint_t endpoint (int ordinal) const {
+      xlpgas_endpoint_t ep;
+      ep.node = XLPGAS_MYNODE;
+      ep.ctxt = ordinal;
+      return ep;
+    }
+  };
+
+
 
   /* ******************************************************************* */
   /*                     blocked communicator                            */
