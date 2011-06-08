@@ -8,8 +8,8 @@
 #include <sched.h>
 
 
-#include "local/SingleAllreduce.h"
-#include "local/FixedLeader.h"
+#include "algorithms/protocols/tspcoll/local/SingleAllreduce.h"
+#include "algorithms/protocols/tspcoll/local/FixedLeader.h"
 
 extern "C" void upc_poll();
 
