@@ -7,6 +7,8 @@
 #include <string.h>
 #include <strings.h>
 
+
+#ifdef XLPGAS_PAMI_CAU
 #include <lapi.h>
 #include <pami.h>
 
@@ -49,5 +51,6 @@ namespace xlpgas{
       }
     }
   
+#endif // XLPGAS_PAMI_CAU
 }//end namespace
 #endif

@@ -6,12 +6,13 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
-#include <builtins.h>
 #include <sys/types.h>
 #include <unistd.h>
 
 #ifndef __xlpgas_local_SingleAllreduce_h__
 #define __xlpgas_local_SingleAllreduce_h__
+
+#ifdef XLPGAS_PAMI_CAU
 
 /* *********************************************************************** */
 /*             Class definition for shared memory allreduce                */
@@ -142,5 +143,7 @@ template <class Wait, class T, class Op> inline void
   __lwsync();
   _state[dest].recv_counters[phase] = cntr;
 }
+
+#endif // XLPGAS_PAMI_CAU
 
 #endif

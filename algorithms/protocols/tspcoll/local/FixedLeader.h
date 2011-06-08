@@ -4,12 +4,13 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
-#include <builtins.h>
 #include <sys/types.h>
 #include <unistd.h>
 
 #ifndef __xlpgas_local_FixedLeader_h__
 #define __xlpgas_local_FixedLeader_h__
+
+#ifdef XLPGAS_PAMI_CAU
 
 #include "../cau_collectives.h" //for ops on one element 
 
@@ -191,6 +192,7 @@ template <class Wait> inline void
   for (; *p1<cntr ; ) Wait::wait2();
 }
 
+#endif // XLPGAS_PAMI_CAU
 
 #endif
 

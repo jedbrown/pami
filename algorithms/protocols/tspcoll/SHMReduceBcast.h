@@ -4,6 +4,8 @@
 #include "algorithms/protocols/tspcoll/Collective.h"
 #include "algorithms/protocols/tspcoll/shm_collectives.h"
 
+#ifdef XLPGAS_PAMI_CAU
+
 namespace xlpgas
 {
   template<class T_NI>
@@ -45,5 +47,7 @@ namespace xlpgas
 } /* Xlpgas */
 
 #include "algorithms/protocols/tspcoll/SHMReduceBcast.cc"
+
+#endif // XLPGAS_PAMI_CAU
 
 #endif /* __xlpgas_Shmreducebcast_h__ */
