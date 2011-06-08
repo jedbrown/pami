@@ -77,6 +77,14 @@ public:
 		return PAMI_ERROR;
 	}
 
+	inline pami_result_t init2(MemoryManager *mm, void *buf, size_t bytes,
+				  const char *key = NULL,
+				  size_t new_align = 1,
+				  unsigned attrs = 0) {
+		PAMI_abortf("HeapMemoryManager cannot be init()");
+		return PAMI_ERROR;
+	}
+
 	inline pami_result_t reset(bool force = false) {
 #ifdef MM_DEBUG
 		if (_debug) {

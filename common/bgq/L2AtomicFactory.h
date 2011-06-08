@@ -131,21 +131,69 @@ namespace BGQ {
                 		if (*u == 'm' || *u == 'M') size *= 1024 * 1024;
                 		else if (*u == 'k' || *u == 'K') size *= 1024;
 			}
-			rc = __procscoped_mm.init(heap_mm,
+
+			struct _l2maptry {
+				struct _l2maptry *next;
+			} *failed, *next;
+			failed = NULL;
+			void *try1 = NULL;
+			int tries = 0;
+			krc = 0;
+			do {
+				rc = heap_mm->memalign(&try1,
+					sizeof(uint64_t),
 					sizeof(uint64_t) * size,
-					sizeof(uint64_t),
-					sizeof(uint64_t),
-					PAMI::Memory::PAMI_MM_L2ATOMIC,
-					"/L2AtomicFactory-priv",
+					NULL,
 					PAMI::Memory::MemoryManager::memzero, NULL);
+				if (rc != PAMI_SUCCESS) break;
+				krc = Kernel_L2AtomicsAllocate(try1,
+						sizeof(uint64_t) * size);
+				if (krc == 0) break;
+				++tries;
+				next = (struct _l2maptry *)try1;
+				next->next = failed;
+				failed = next;
+				// bump 1M...
+				rc = heap_mm->memalign(&try1,
+					sizeof(uint64_t),
+					1024*1024 - sizeof(uint64_t) * size,
+					NULL,
+					PAMI::Memory::MemoryManager::memzero, NULL);
+				if (rc != PAMI_SUCCESS) break;
+				next = (struct _l2maptry *)try1;
+				next->next = failed;
+				failed = next;
+			} while (true); // might be some max num attempts...
+
+			while (failed) {
+				next = failed->next;
+				heap_mm->free(failed);
+				failed = next;
+			}
+
 			PAMI_assert_alwaysf(rc == PAMI_SUCCESS,
-				"Failed to get memory for _l2proc, asked size %zu",
-				sizeof(uint64_t) * size);
-			krc = Kernel_L2AtomicsAllocate(__procscoped_mm.base(),
-							__procscoped_mm.size());
+					"Failed to get memory for _l2proc "
+					"after %d tries, asked size %zu", tries,
+					sizeof(uint64_t) * size);
                         PAMI_assert_alwaysf(krc == 0,
-				"Failed to map process L2 Atomic region %p (%zd): %ld",
-				__procscoped_mm.base(), __procscoped_mm.size(), krc);
+				"Failed to map process L2 Atomic region "
+				"after %d tries, %p (%zd): %ld", tries,
+				try1, sizeof(uint64_t) * size, krc);
+
+			rc = __procscoped_mm.init2(heap_mm, try1,
+					sizeof(uint64_t) * size,
+					"/L2AtomicFactory-priv",
+					sizeof(uint64_t),
+					PAMI::Memory::PAMI_MM_L2ATOMIC);
+			PAMI_assert_alwaysf(rc == PAMI_SUCCESS,
+				"Failed to init mm for _l2proc, %p size %zu",
+				try1, sizeof(uint64_t) * size);
+
+			if (tries) {
+				fprintf(stderr, "Got _l2proc memory %p size %zu "
+					"after %d tries\n",
+					try1, sizeof(uint64_t) * size, tries);
+			}
 
 #if 0
         size_t num_ctx = __MUGlobal.getMuRM().getPerProcessMaxPamiResources();

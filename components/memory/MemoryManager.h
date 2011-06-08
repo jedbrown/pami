@@ -702,6 +702,21 @@ public:
 				   unsigned attrs = 0, const char *key = NULL,
 				   MM_INIT_FN *init_fn = NULL, void *cookie = NULL) = 0;
 	///
+	/// \brief Intialize a memory manager from a buffer
+	///
+	/// \param[in] mm        MemoryManager that provided buffer
+	/// \param[in] buf       Buffer, must have been obtained from mm
+	/// \param[in] bytes     Number of bytes (length of buffer)
+	/// \param[in] key	 (opt) (information only) Name for new mm
+	/// \param[in] new_align (opt) Default/minimum alignment for new mm
+	/// \param[in] attrs     (opt) Attributes added to new mm
+	///
+	virtual pami_result_t init2(MemoryManager *mm,
+				  void *buf, size_t bytes,
+				  const char *key = NULL,
+				  size_t new_align = 1,
+				  unsigned attrs = 0) = 0;
+	///
 	/// \brief Reset a memory manager
 	///
 	/// Forceably release all user memory. (caution!)
@@ -839,6 +854,39 @@ public:
 			memset(_base, 0, _size);
 		}
 		return rc;
+	}
+
+	inline pami_result_t init2(MemoryManager *mm,
+				  void *buf, size_t bytes,
+				  const char *key = NULL,
+				  size_t new_align = 1,
+				  unsigned attrs = 0) {
+		PAMI_assert_debugf(!(new_align & (new_align - 1)), "%zd: new_align must be power of two", new_align);
+		PAMI_assert_debugf(mm && _enabled == false, "Trying to re-init MemoryManager");
+		if (new_align < _alignment) { new_align = _alignment; }
+		if (attrs & PAMI_MM_SCOPE) {
+			// can't change scope
+			return PAMI_INVAL;
+		}
+		_pmm = mm;
+		if (key) {
+			strncpy(_name, key, sizeof(_name));
+		} else {
+			sprintf(_name, "%s-%p", mm->getName(), this);
+		}
+#ifdef MM_DEBUG // set/unset in MemoryManager.h
+		_debug = setup_debug();
+#endif // MM_DEBUG
+		_attrs = mm->attrs() | attrs;
+		_size = bytes;
+		_alignment = new_align;
+		// have a problem when creating shm_mm,
+		// can't use itself for meta data allocs.
+		MemoryManager *mmm = (mm->attrs() & PAMI_MM_NODESCOPE) ?
+				     (this == shm_mm ? shared_mm : shm_mm) : heap_mm;
+		_meta.init(mmm, _name);
+		_enabled = true;
+		return PAMI_SUCCESS;
 	}
 
 	inline pami_result_t init(MemoryManager *mm,
