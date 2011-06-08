@@ -20,6 +20,9 @@
 static inline size_t quad_copy_128( char* dest, char* src ) {  
     register double *fpp1_1;
     register double *fpp2_1;
+    
+    register double f0 asm("fr0");
+    register double f1 asm("fr1");
 
     int r0;
     int r1;
@@ -35,19 +38,19 @@ static inline size_t quad_copy_128( char* dest, char* src ) {
     fpp2_1 = (double *) dest;
 
     // may speed up the 2nd to 7th load by using non-update versions of load, tbd later...
-    VECT_LOAD_NU(fpp1_1,r0,0);
-    VECT_LOAD_NU(fpp1_1,r1,1);        
+    QPX_LOAD_NU(fpp1_1,r0,f0);
+    QPX_LOAD_NU(fpp1_1,r1,f1);        
 
     //Wait for the load offset 0 to complete    
-    VECT_STORE_NU(fpp2_1,r0,0);
+    QPX_STORE_NU(fpp2_1,r0,f0);
     //load bottom half of cache line
-    VECT_LOAD_NU(fpp1_1,r2,0);        
+    QPX_LOAD_NU(fpp1_1,r2,f0);        
 
-    VECT_STORE_NU(fpp2_1,r1,1);
-    VECT_LOAD_NU(fpp1_1,r3,1);        
+    QPX_STORE_NU(fpp2_1,r1,f1);
+    QPX_LOAD_NU(fpp1_1,r3,f1);        
     
-    VECT_STORE_NU(fpp2_1,r2,0);
-    VECT_STORE_NU(fpp2_1,r3,1);
+    QPX_STORE_NU(fpp2_1,r2,f0);
+    QPX_STORE_NU(fpp2_1,r3,f1);
 
     return 0;
 }
@@ -56,6 +59,15 @@ static inline size_t quad_copy_128( char* dest, char* src ) {
 static inline size_t quad_copy_512( char* dest, char* src ) {  
     register double *fpp1_1, *fpp1_2;
     register double *fpp2_1, *fpp2_2;
+
+    register double f0 asm("fr0");
+    register double f1 asm("fr1");
+    register double f2 asm("fr2");
+    register double f3 asm("fr3");
+    register double f4 asm("fr4");
+    register double f5 asm("fr5");
+    register double f6 asm("fr6");
+    register double f7 asm("fr7");
 
     int r0;
     int r1;
@@ -81,41 +93,41 @@ static inline size_t quad_copy_512( char* dest, char* src ) {
     fpp2_2 = (double *)dest +4;
 
     // may speed up the 2nd to 7th load by using non-update versions of load, tbd later...
-    VECT_LOAD_NU(fpp1_1,r0,0);
+    QPX_LOAD_NU(fpp1_1,r0,f0);
     //asm volatile("qvlfdx 0,%0,%1": : "Ob" (fpp1_1), "r"(r0) :"memory");
-    VECT_LOAD_NU(fpp1_1,r1,1);
-    VECT_LOAD_NU(fpp1_1,r2,2);
-    VECT_LOAD_NU(fpp1_1,r3,3);
-    VECT_LOAD_NU(fpp1_1,r4,4);
-    VECT_LOAD_NU(fpp1_1,r5,5);
-    VECT_LOAD_NU(fpp1_1,r6,6);
-    VECT_LOAD_NU(fpp1_1,r7,7);
+    QPX_LOAD_NU(fpp1_1,r1,f1);
+    QPX_LOAD_NU(fpp1_1,r2,f2);
+    QPX_LOAD_NU(fpp1_1,r3,f3);
+    QPX_LOAD_NU(fpp1_1,r4,f4);
+    QPX_LOAD_NU(fpp1_1,r5,f5);
+    QPX_LOAD_NU(fpp1_1,r6,f6);
+    QPX_LOAD_NU(fpp1_1,r7,f7);
 
-    VECT_STORE_NU(fpp2_1,r0,0);
-    VECT_LOAD_NU(fpp1_2,r0,0);
-    VECT_STORE_NU(fpp2_1,r1,1);
-    VECT_LOAD_NU(fpp1_2,r1,1);
-    VECT_STORE_NU(fpp2_1,r2,2);
-    VECT_LOAD_NU(fpp1_2,r2,2);   
-    VECT_STORE_NU(fpp2_1,r3,3);
-    VECT_LOAD_NU(fpp1_2,r3,3);
-    VECT_STORE_NU(fpp2_1,r4,4);
-    VECT_LOAD_NU(fpp1_2,r4,4);
-    VECT_STORE_NU(fpp2_1,r5,5);
-    VECT_LOAD_NU(fpp1_2,r5,5);
-    VECT_STORE_NU(fpp2_1,r6,6);
-    VECT_LOAD_NU(fpp1_2,r6,6);
-    VECT_STORE_NU(fpp2_1,r7,7);
-    VECT_LOAD_NU(fpp1_2,r7,7);
+    QPX_STORE_NU(fpp2_1,r0,f0);
+    QPX_LOAD_NU(fpp1_2,r0,f0);
+    QPX_STORE_NU(fpp2_1,r1,f1);
+    QPX_LOAD_NU(fpp1_2,r1,f1);
+    QPX_STORE_NU(fpp2_1,r2,f2);
+    QPX_LOAD_NU(fpp1_2,r2,f2);   
+    QPX_STORE_NU(fpp2_1,r3,f3);
+    QPX_LOAD_NU(fpp1_2,r3,f3);
+    QPX_STORE_NU(fpp2_1,r4,f4);
+    QPX_LOAD_NU(fpp1_2,r4,f4);
+    QPX_STORE_NU(fpp2_1,r5,f5);
+    QPX_LOAD_NU(fpp1_2,r5,f5);
+    QPX_STORE_NU(fpp2_1,r6,f6);
+    QPX_LOAD_NU(fpp1_2,r6,f6);
+    QPX_STORE_NU(fpp2_1,r7,f7);
+    QPX_LOAD_NU(fpp1_2,r7,f7);
     
-    VECT_STORE_NU(fpp2_2,r0,0);
-    VECT_STORE_NU(fpp2_2,r1,1);
-    VECT_STORE_NU(fpp2_2,r2,2);
-    VECT_STORE_NU(fpp2_2,r3,3);
-    VECT_STORE_NU(fpp2_2,r4,4);
-    VECT_STORE_NU(fpp2_2,r5,5);
-    VECT_STORE_NU(fpp2_2,r6,6);
-    VECT_STORE_NU(fpp2_2,r7,7);
+    QPX_STORE_NU(fpp2_2,r0,f0);
+    QPX_STORE_NU(fpp2_2,r1,f1);
+    QPX_STORE_NU(fpp2_2,r2,f2);
+    QPX_STORE_NU(fpp2_2,r3,f3);
+    QPX_STORE_NU(fpp2_2,r4,f4);
+    QPX_STORE_NU(fpp2_2,r5,f5);
+    QPX_STORE_NU(fpp2_2,r6,f6);
+    QPX_STORE_NU(fpp2_2,r7,f7);
 
     return 0;
 }

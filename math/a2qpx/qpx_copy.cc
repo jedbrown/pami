@@ -22,6 +22,19 @@ size_t quad_copy_1024n( char* dest, char* src, size_t num )
   if (num < 1024)
     goto short_msg;
 
+  register double f0  __asm__("fr0");
+  register double f1  __asm__("fr1");
+  register double f2  __asm__("fr2");
+  register double f3  __asm__("fr3");
+  register double f4  __asm__("fr4");
+  register double f5  __asm__("fr5");
+  register double f6  __asm__("fr6");
+  register double f7  __asm__("fr7");
+  register double f8  __asm__("fr8");
+  register double f9  __asm__("fr9");
+  register double f10 __asm__("fr10");
+  register double f11 __asm__("fr11");
+
   nb = num & ~(1023L);
 
   double *fpp1_1, *fpp1_2;
@@ -40,104 +53,102 @@ size_t quad_copy_1024n( char* dest, char* src, size_t num )
 
   y=((nb >> 3) - 64)/64;
 
-  VECTOR_LOAD(fpp1_1,inc,0);
-  VECTOR_LOAD(fpp1_1,inc,1);
-  VECTOR_LOAD(fpp1_1,inc,2);
-  VECTOR_LOAD(fpp1_1,inc,3);
-  VECTOR_LOAD(fpp1_1,inc,4);
-  VECTOR_LOAD(fpp1_1,inc,5);
-  VECTOR_LOAD(fpp1_1,inc,6);
-  VECTOR_LOAD(fpp1_1,inc,7);
+  QPX_LOAD(fpp1_1,inc,f0);
+  QPX_LOAD(fpp1_1,inc,f1);
+  QPX_LOAD(fpp1_1,inc,f2);
+  QPX_LOAD(fpp1_1,inc,f3);
+  QPX_LOAD(fpp1_1,inc,f4);
+  QPX_LOAD(fpp1_1,inc,f5);
+  QPX_LOAD(fpp1_1,inc,f6);
+  QPX_LOAD(fpp1_1,inc,f7);
 
-  VECTOR_STORE(fpp2_1,inc,0);
-  VECTOR_LOAD(fpp1_1,inc,0);
-  VECTOR_LOAD(fpp1_2,inc,8);
+  QPX_STORE(fpp2_1,inc,f0);
+  QPX_LOAD(fpp1_1,inc,f0);
+  QPX_LOAD(fpp1_2,inc,f8);
 
-  VECTOR_STORE(fpp2_1,inc,1);
-  VECTOR_LOAD(fpp1_1,inc,1);
-  VECTOR_LOAD(fpp1_2,inc,9);
+  QPX_STORE(fpp2_1,inc,f1);
+  QPX_LOAD(fpp1_1,inc,f1);
+  QPX_LOAD(fpp1_2,inc,f9);
 
   do{
+    QPX_STORE(fpp2_1,inc,f2);
+    QPX_LOAD(fpp1_1,inc,f2);
+    QPX_LOAD(fpp1_2,inc,f10);
+    QPX_STORE(fpp2_2,inc,f8);
 
-    VECTOR_STORE(fpp2_1,inc,2);
-    VECTOR_LOAD(fpp1_1,inc,2);
-    VECTOR_LOAD(fpp1_2,inc,10);
-    VECTOR_STORE(fpp2_2,inc,8);
+    QPX_STORE(fpp2_1,inc,f3);
+    QPX_LOAD(fpp1_1,inc,f3);
+    QPX_LOAD(fpp1_2,inc,f11);
+    QPX_STORE(fpp2_2,inc,f9);
 
-    VECTOR_STORE(fpp2_1,inc,3);
-    VECTOR_LOAD(fpp1_1,inc,3);
-    VECTOR_LOAD(fpp1_2,inc,11);
-    VECTOR_STORE(fpp2_2,inc,9);
+    QPX_STORE(fpp2_1,inc,f4);
+    QPX_LOAD(fpp1_1,inc,f4);
+    QPX_LOAD(fpp1_2,inc,f8);
+    QPX_STORE(fpp2_2,inc,f10);
 
-    VECTOR_STORE(fpp2_1,inc,4);
-    VECTOR_LOAD(fpp1_1,inc,4);
-    VECTOR_LOAD(fpp1_2,inc,8);
-    VECTOR_STORE(fpp2_2,inc,10);
+    QPX_STORE(fpp2_1,inc,f5);
+    QPX_LOAD(fpp1_1,inc,f5);
+    QPX_LOAD(fpp1_2,inc,f9);
+    QPX_STORE(fpp2_2,inc,f11);
 
-    VECTOR_STORE(fpp2_1,inc,5);
-    VECTOR_LOAD(fpp1_1,inc,5);
-    VECTOR_LOAD(fpp1_2,inc,9);
-    VECTOR_STORE(fpp2_2,inc,11);
+    QPX_STORE(fpp2_1,inc,f6);
+    QPX_LOAD(fpp1_1,inc,f6);
+    QPX_LOAD(fpp1_2,inc,f10);
+    QPX_STORE(fpp2_2,inc,f8);
 
-    VECTOR_STORE(fpp2_1,inc,6);
-    VECTOR_LOAD(fpp1_1,inc,6);
-    VECTOR_LOAD(fpp1_2,inc,10);
-    VECTOR_STORE(fpp2_2,inc,8);
-
-    VECTOR_STORE(fpp2_1,inc,7);
-    VECTOR_LOAD(fpp1_1,inc,7);
-    VECTOR_LOAD(fpp1_2,inc,11);
-    VECTOR_STORE(fpp2_2,inc,9);
+    QPX_STORE(fpp2_1,inc,f7);
+    QPX_LOAD(fpp1_1,inc,f7);
+    QPX_LOAD(fpp1_2,inc,f11);
+    QPX_STORE(fpp2_2,inc,f9);
 
     if(!--y) break;
 
-    VECTOR_STORE(fpp2_1,inc,0);
-    VECTOR_LOAD(fpp1_1,inc,0);
-    VECTOR_LOAD(fpp1_2,inc,8);
-    VECTOR_STORE(fpp2_2,inc,10);
+    QPX_STORE(fpp2_1,inc,f0);
+    QPX_LOAD(fpp1_1,inc,f0);
+    QPX_LOAD(fpp1_2,inc,f8);
+    QPX_STORE(fpp2_2,inc,f10);
 
-    VECTOR_STORE(fpp2_1,inc,1);
-    VECTOR_LOAD(fpp1_1,inc,1);
-    VECTOR_LOAD(fpp1_2,inc,9);
-    VECTOR_STORE(fpp2_2,inc,11);
+    QPX_STORE(fpp2_1,inc,f1);
+    QPX_LOAD(fpp1_1,inc,f1);
+    QPX_LOAD(fpp1_2,inc,f9);
+    QPX_STORE(fpp2_2,inc,f11);
 
   }while(1);
 
-  VECTOR_STORE(fpp2_1,inc,0);
-  VECTOR_LOAD(fpp1_2,inc,8);
-  VECTOR_STORE(fpp2_2,inc,10);
+  QPX_STORE(fpp2_1,inc,f0);
+  QPX_LOAD(fpp1_2,inc,f8);
+  QPX_STORE(fpp2_2,inc,f10);
 
-  VECTOR_STORE(fpp2_1,inc,1);
-  VECTOR_LOAD(fpp1_2,inc,9);
-  VECTOR_STORE(fpp2_2,inc,11);
+  QPX_STORE(fpp2_1,inc,f1);
+  QPX_LOAD(fpp1_2,inc,f9);
+  QPX_STORE(fpp2_2,inc,f11);
 
-  VECTOR_STORE(fpp2_1,inc,2);
-  VECTOR_LOAD(fpp1_2,inc,10);
-  VECTOR_STORE(fpp2_2,inc,8);
+  QPX_STORE(fpp2_1,inc,f2);
+  QPX_LOAD(fpp1_2,inc,f10);
+  QPX_STORE(fpp2_2,inc,f8);
 
-  VECTOR_STORE(fpp2_1,inc,3);
-  VECTOR_LOAD(fpp1_2,inc,11);
-  VECTOR_STORE(fpp2_2,inc,9);
+  QPX_STORE(fpp2_1,inc,f3);
+  QPX_LOAD(fpp1_2,inc,f11);
+  QPX_STORE(fpp2_2,inc,f9);
 
-  VECTOR_STORE(fpp2_1,inc,4);
-  VECTOR_LOAD(fpp1_2,inc,8);
-  VECTOR_STORE(fpp2_2,inc,10);
+  QPX_STORE(fpp2_1,inc,f4);
+  QPX_LOAD(fpp1_2,inc,f8);
+  QPX_STORE(fpp2_2,inc,f10);
 
-  VECTOR_STORE(fpp2_1,inc,5);
-  VECTOR_LOAD(fpp1_2,inc,9);
-  VECTOR_STORE(fpp2_2,inc,11);
+  QPX_STORE(fpp2_1,inc,f5);
+  QPX_LOAD(fpp1_2,inc,f9);
+  QPX_STORE(fpp2_2,inc,f11);
 
-  VECTOR_STORE(fpp2_1,inc,6);
-  VECTOR_LOAD(fpp1_2,inc,10);
-  VECTOR_STORE(fpp2_2,inc,8);
+  QPX_STORE(fpp2_1,inc,f6);
+  QPX_LOAD(fpp1_2,inc,f10);
+  QPX_STORE(fpp2_2,inc,f8);
 
-  VECTOR_STORE(fpp2_1,inc,7);
-  VECTOR_LOAD(fpp1_2,inc,11);
-  VECTOR_STORE(fpp2_2,inc,9);
+  QPX_STORE(fpp2_1,inc,f7);
+  QPX_LOAD(fpp1_2,inc,f11);
+  QPX_STORE(fpp2_2,inc,f9);
 
-  VECTOR_STORE(fpp2_2,inc,10);
-  VECTOR_STORE(fpp2_2,inc,11);
-
+  QPX_STORE(fpp2_2,inc,f10);
+  QPX_STORE(fpp2_2,inc,f11);
 
   src += nb;
   dest += nb;
