@@ -13,8 +13,8 @@
 #include "algorithms/protocols/tspcoll/Scatter.h"
 #include "algorithms/protocols/tspcoll/Permute.h"
 #include "algorithms/protocols/tspcoll/PrefixSums.h"
-
 #include "algorithms/protocols/tspcoll/AMExchange.h"
+#include "algorithms/protocols/tspcoll/SHMReduceBcast.h"
 
 namespace xlpgas{
 template <class T_NI>
@@ -31,7 +31,10 @@ struct base_coll_defs{
   typedef xlpgas::Scatter<T_NI>    scatter_type;
   typedef xlpgas::Permute<T_NI>    permute_type;
   typedef xlpgas::PrefixSums<T_NI> prefixsums_type;
-
+#ifdef XLPGAS_PAMI_CAU
+  typedef xlpgas::SHMReduce<T_NI>  shm_reduce_type;
+  typedef xlpgas::SHMBcast<T_NI>   shm_broadcast_type;
+#endif
   //on certain platforms(BG, PERCS) the operations above may be specialized
   //but for certain configurations (geometry, operation, etc) they may not work;
   //In such situations the generic ones using point to point are used;

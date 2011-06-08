@@ -126,6 +126,8 @@ namespace xlpgas
       BcastPPKind,
       AllgatherPPKind,
       AlltoallPPKind,
+      SHMReduceKind,
+      SHMBcastKind,
       MAXKIND
     };
 
@@ -181,6 +183,12 @@ namespace xlpgas
       virtual void reset (const void *sbuf, void * rbuf,
 			  const size_t*, const size_t*, const size_t*, const size_t*) {
 	printf("ERROR: virtual method called (8)\n");
+      }
+      //for reduce with root
+      virtual void reset (int root, const void *sbuf, void * rbuf,
+			  xlpgas_ops_t op, xlpgas_dtypes_t dtype,
+			  unsigned nelems, user_func_t*) {
+	printf("ERROR: virtual method called (9)\n");
       }
       virtual void setNI(T_NI *p2p_iface) { _p2p_iface = p2p_iface; }
     protected:
@@ -265,7 +273,17 @@ namespace xlpgas
 	      new (b) allreduce_type (_ctxt, comm, kind, nextID, 0);
 	      break;
 	    }
-
+#ifdef XLPGAS_PAMI_CAU
+	  case SHMReduceKind:
+	    {
+	      typedef typename CollDefs::shm_reduce_type reduce_type;
+	      b = (Collective *)malloc (sizeof(reduce_type));
+	      assert (b != NULL);
+	      memset (b, 0, sizeof(reduce_type));
+	      new (b) reduce_type (_ctxt, comm, kind, nextID, 0);
+	      break;
+	    }
+#endif
 	  case AllreducePPKind:
 	    {
 	      typedef typename CollDefs::allreduce_pp_type allreduce_type;
@@ -285,7 +303,17 @@ namespace xlpgas
 	      new (b) bcast_type (_ctxt, comm, kind, nextID, 0);
 	      break;
 	    }
-
+#ifdef XLPGAS_PAMI_CAU
+	  case SHMBcastKind:
+	    {
+	      typedef typename CollDefs::shm_broadcast_type bcast_type;
+	      b = (Collective *)malloc (sizeof(bcast_type));
+	      assert (b != NULL);
+	      memset (b, 0, sizeof(bcast_type));
+	      new (b) bcast_type (_ctxt, comm, kind, nextID, 0);
+	      break;
+	    }
+#endif
 	  case BcastPPKind:
 	    {
 	      typedef typename CollDefs::broadcast_pp_type bcast_type;

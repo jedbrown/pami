@@ -32,15 +32,20 @@ namespace xlpgas
     Team(){}
     Team (int commID, xlpgas_endpoint_t me, xlpgas_endpoint_t size);
     void * operator new (size_t, void * addr) { return addr; }
-
+    void set_leader_team_id(int _l){_leaders_team_id=_l;}
+    void set_local_team_id(int _l) {_local_team_id=_l;}
+    int leader_team_id(void) const { return _leaders_team_id;}
+    int local_team_id(void) const  { return _local_team_id;}
+    virtual bool is_leader(void) const { return true;}//to be overloaded in the derived class
     /* ---------------------- */
     /* communicator utilities */
     /* ---------------------- */
 
     virtual void split(int ctxt, int newID, int mynewrank, int nsize, xlpgas_endpoint_t *plist);
+    virtual void set_sub_topologies(int){}
 
-  protected:
-    int               _id;
+  protected:  
+    int                _id; //team id
     xlpgas_endpoint_t  _me;
     xlpgas_endpoint_t  _size;
     Collective<T_NI>      * _colls[MAXKIND];
@@ -48,7 +53,9 @@ namespace xlpgas
   protected:
     static Team *     _instances[MAX_COMMS];
     static int        _ncontexts;
-    int        _max_team_id;
+    int               _max_team_id;
+    int               _leaders_team_id;
+    int               _local_team_id;
   };
 #endif
 

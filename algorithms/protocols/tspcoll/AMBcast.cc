@@ -80,7 +80,7 @@ void xlpgas::bcast_tree_collective_reg(){
 #endif
 }
 
-#endif 
+#endif
 template<class T_NI>
 void xlpgas::BcastTree<T_NI>::reset (int root, const void * sbuf, void* rbuf, unsigned nbytes)
 {
