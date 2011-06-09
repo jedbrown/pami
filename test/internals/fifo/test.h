@@ -7,6 +7,10 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "Global.h"
+#include "math/Memcpy.x.h"
+
+
 #include "components/fifo/FifoInterface.h"
 #include "components/fifo/PacketInterface.h"
 
@@ -38,6 +42,33 @@ class Consumer : public PAMI::Fifo::Interface::PacketConsumer <Consumer>
     const char * _name;
 };
 
+class PingpongConsumer : public PAMI::Fifo::Interface::PacketConsumer <PingpongConsumer>
+{
+  public:
+
+    friend class PAMI::Fifo::Interface::PacketConsumer <PingpongConsumer>;
+
+    PingpongConsumer ()
+    {
+    };
+
+  protected:
+
+    template <class T_FifoPacket>
+    inline bool consume_impl (T_FifoPacket & packet)
+    {
+      void * header  = packet.getHeader();
+      size_t bytes = *((size_t *)header);
+
+      uint8_t tmp[bytes];
+      Core_memcpy (tmp, packet.getPayload(), bytes);
+
+      return true;
+    };
+
+    const char * _name;
+};
+
 class Producer : public PAMI::Fifo::Interface::PacketProducer <Producer>
 {
 
@@ -46,9 +77,22 @@ class Producer : public PAMI::Fifo::Interface::PacketProducer <Producer>
 
     friend class PAMI::Fifo::Interface::PacketProducer <Producer>;
 
-    inline Producer (size_t value = (size_t) - 1) :
-        _value (value)
+    inline Producer () :
+        _value ((size_t) - 1),
+        _data (NULL),
+        _bytes (0)
     {};
+
+    inline void setValue (size_t value)
+    {
+      _value = value;
+    }
+
+    inline void setData (void * data, size_t bytes)
+    {
+      _data = data;
+      _bytes = bytes;
+    }
 
   protected:
 
@@ -57,6 +101,8 @@ class Producer : public PAMI::Fifo::Interface::PacketProducer <Producer>
     {
       void * header = packet.getHeader ();
       *((size_t *) header) = _value;
+
+      memcpy (packet.getPayload(), _data, _bytes);
 
       return true;
     };
@@ -70,6 +116,8 @@ class Producer : public PAMI::Fifo::Interface::PacketProducer <Producer>
     };
 
     size_t _value;
+    void * _data;
+    size_t _bytes;
 
 };
 
@@ -101,7 +149,10 @@ class Test
 
     void functional (const char * name = NULL)
     {
-      Producer producer(_task);
+      Producer producer;
+
+      producer.setValue(_task);
+
       Consumer consumer(name);
 
       if (_task != 0)
@@ -129,8 +180,75 @@ class Test
                 }
             }
         }
-
     };
+
+
+    unsigned long long pingpong (size_t bytes, size_t iterations = 1, const char * name = NULL)
+    {
+      uint64_t sndbuf[1024];
+
+      Producer producer;
+      producer.setValue (bytes);
+      producer.setData (sndbuf, bytes);
+
+      PingpongConsumer consumer;
+
+      unsigned i, warmup;
+      unsigned long long elapsed = 0;
+
+      for (warmup = 0; warmup < 2; warmup++)
+        {
+          if (_task == 0) // "ping-er"
+            {
+              unsigned long long t0 = __global.time.timebase();
+
+              for (i = 0; i < iterations; i++)
+                {
+
+                  bool done = false;
+
+                  do
+                    {
+                      done = _ififo[1].producePacket(producer);
+                    }
+                  while (!done);
+
+                  done = false;
+
+                  do
+                    {
+                      done = _rfifo.consumePacket(consumer);
+                    }
+                  while (!done);
+                }
+
+              elapsed = __global.time.timebase() - t0;
+            }
+          else if (_task == 1) // "pong-er"
+            {
+              for (i = 0; i < iterations; i++)
+                {
+                  bool done = false;
+
+                  do
+                    {
+                      done = _rfifo.consumePacket(consumer);
+                    }
+                  while (!done);
+
+                  done = false;
+
+                  do
+                    {
+                      done = _ififo[0].producePacket(producer);
+                    }
+                  while (!done);
+                }
+            }
+        }
+
+      return elapsed;
+    }
 
   protected:
 
