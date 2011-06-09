@@ -10,8 +10,7 @@
 # end_generated_IBM_copyright_prolog                               #
 
 VPATH		= @abs_srcdir@
-SUBDIRS         = multisend progressfunc topology queue misc atomics \
-			pwq fifo $(TARGET) #wakeup
+SUBDIRS         = $(TARGET)
 NOTBUILT        =
 APPS            =
 
@@ -30,11 +29,17 @@ ifeq (@BUILDENV@,ade)
 else
 
 %.${EXTENSION}: %.c
-	${CROSS_CC} -I${INSTALL_DIR}/include ${CROSS_CFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L../../${INSTALL_DIR}/lib ${CROSS_TESTCASE_FLAGS}
+	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L${INSTALL_DIR}/lib ${CROSS_TESTCASE_FLAGS}
 %.${EXTENSION}: %.cc
-	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L../../${INSTALL_DIR}/lib ${CROSS_TESTCASE_FLAGS}
+	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L${INSTALL_DIR}/lib ${CROSS_TESTCASE_FLAGS}
 %.${EXTENSION}: %.cpp
-	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L../../${INSTALL_DIR}/lib ${CROSS_TESTCASE_FLAGS}
+	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L${INSTALL_DIR}/lib ${CROSS_TESTCASE_FLAGS}
+
+gendev_perf.NOITER.${EXTENSION}: gendev_perf.cc
+	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L${INSTALL_DIR}/lib ${CROSS_TESTCASE_FLAGS} -DQUEUE_NO_ITER=1
+
+gendev_perf.%.${EXTENSION}: gendev_perf.cc
+	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -L${INSTALL_DIR}/lib ${CROSS_TESTCASE_FLAGS} -D$(subst .,,$(suffix $(basename $@)))=1
 
 endif
 

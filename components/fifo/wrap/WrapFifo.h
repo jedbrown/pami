@@ -24,6 +24,8 @@
 #include "components/fifo/FifoInterface.h"
 #include "components/fifo/PacketInterface.h"
 
+#include "components/devices/shmem/wakeup/WakeupNoop.h"
+
 #undef TRACE_ERR
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) // fprintf x

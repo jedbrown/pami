@@ -15,6 +15,7 @@
 #define __components_fifo_FifoPacket_h__
 
 #include <stdint.h>
+#include <string.h>
 
 #include "Arch.h"
 
@@ -82,7 +83,7 @@ namespace PAMI
 
         inline void copyPayload_impl (void * addr)
         {
-          memcpy ((void *) &_data[T_HeaderSize/sizeof(pami_quad_t)], addr, T_PacketSize - T_HeaderSize);
+          memcpy ((void *) &_data[T_HeaderSize], addr, T_PacketSize - T_HeaderSize);
         };
 
       private:

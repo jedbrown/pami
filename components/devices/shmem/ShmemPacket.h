@@ -16,6 +16,10 @@
 
 #include <pami.h>
 
+#include "components/fifo/FifoInterface.h"
+
+#include "util/common.h"
+
 #undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
 
