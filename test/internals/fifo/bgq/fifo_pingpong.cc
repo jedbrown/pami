@@ -45,18 +45,20 @@ int main (int argc, char ** argv)
   snprintf (shmemfile, sizeof(shmemfile) - 1, "/foo");
   mm.init(__global.shared_mm, 8*1024*1024, 1, 1, 0, shmemfile);
 
-  //Test<Wrap> wrap;
-  //wrap.init (&mm, task, size);
+  Test<Wrap> wrap;
+  wrap.init (&mm, task, size, "wrap");
   //wrap.functional("wrap fifo");
 
   Test<LinearNative> linear0;
-  linear0.init (&mm, task, size);
+  linear0.init (&mm, task, size, "linear");
 
   Test<LinearL2> linear1;
-  linear1.init (&mm, task, size);
+  linear1.init (&mm, task, size, "linearl2");
 
   sleep(1);
   
+  if (task == 0)
+    fprintf (stdout, "bytes linear linearl2 wrap\n");
   
 
   size_t sndlen = 0;
@@ -64,11 +66,12 @@ int main (int argc, char ** argv)
   for (; sndlen < ShmemPacket::payload_size; sndlen = sndlen * 3 / 2 + 1)
   {
   
-  unsigned long long elapsed0 = 0;//linear0.pingpong(sndlen, 100, "linear fifo native atomics");
+  unsigned long long elapsed0 = linear0.pingpong(sndlen, 100, "linear fifo native atomics");
   unsigned long long elapsed1 = linear1.pingpong(sndlen, 100, "linear fifo L2 atomics");
+  unsigned long long elapsed2 = wrap.pingpong(sndlen, 100, "wrap fifo");
   if (task == 0)
   {
-    fprintf (stdout, "%4zu %4lld %4lld\n", sndlen, elapsed0 / 100 / 2, elapsed1 / 100 / 2);
+    fprintf (stdout, "%4zu %4lld %4lld %4lld\n", sndlen, elapsed0 / 100 / 2, elapsed1 / 100 / 2, elapsed2 / 100 / 2);
   }
 }
   

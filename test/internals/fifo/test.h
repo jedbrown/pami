@@ -129,7 +129,7 @@ class Test
   public:
 
     template <class T_MemoryManager>
-    inline void init (T_MemoryManager * mm, size_t task, size_t size)
+    inline void init (T_MemoryManager * mm, size_t task, size_t size, const char * unique = "")
     {
       _task = task;
       _size = size;
@@ -139,7 +139,7 @@ class Test
       for (fnum = 0; fnum < 64; fnum++)
         {
           char fifokey[1024];
-          snprintf (fifokey, 1023, "/fifo-%zu", fnum);
+          snprintf (fifokey, 1023, "/%s-fifo%zu", unique, fnum);
           _ififo[fnum].initialize (mm, fifokey, 64, fnum);
         }
 
