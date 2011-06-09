@@ -50,12 +50,12 @@ int main (int argc, char ** argv)
   //wrap.functional("wrap fifo");
 
   Test<LinearNative> linear0;
-  linear0.init (&mm, task, size);
+  linear0.init (&mm, task, size, "linear");
   sleep(1);
   linear0.functional("linear fifo native atomics");
 
   Test<LinearL2> linear1;
-  linear1.init (&mm, task, size);
+  linear1.init (&mm, task, size, "linearl2");
   sleep(1);
   linear1.functional("linear fifo L2 atomics");
 
