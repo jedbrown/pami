@@ -19,12 +19,14 @@
 
 #include "components/fifo/FifoPacket.h"
 #include "components/fifo/wrap/WrapFifo.h"
+#include "components/fifo/linear/LinearFifo.h"
 #include "components/atomic/bgq/L2CounterBounded.h"
 
 typedef PAMI::Fifo::FifoPacket <32, 160> ShmemPacket;
 //typedef PAMI::Fifo::WrapFifo<ShmemPacket, PAMI::BoundedCounter::BGQ::IndirectL2Bounded, 128, Wakeup::BGQ> ShmemFifo;
-typedef PAMI::Fifo::WrapFifo<ShmemPacket, PAMI::BoundedCounter::BGQ::IndirectL2Bounded, 128> ShmemFifo;
-
+typedef PAMI::Fifo::WrapFifo<ShmemPacket, PAMI::BoundedCounter::BGQ::IndirectL2Bounded, 128> Wrap;
+//typedef Fifo::LinearFifo<ShmemPacket, PAMI::Counter::BGQ::IndirectL2, 128, Wakeup::BGQ> ShmemFifo;
+typedef PAMI::Fifo::LinearFifo<ShmemPacket, PAMI::Counter::BGQ::IndirectL2, 128> Linear;
 
 int main(int argc, char ** argv)
 {
@@ -41,9 +43,13 @@ int main(int argc, char ** argv)
   mm.init(__global.shared_mm, 8*1024*1024, 1, 1, 0, shmemfile);
 
 
-  Test<ShmemFifo> test;
-  test.init (&mm, task, size);
-  test.functional();
+  Test<Wrap> wrap;
+  wrap.init (&mm, task, size);
+  wrap.functional("wrap fifo");
+
+  Test<Linear> linear;
+  linear.init (&mm, task, size);
+  linear.functional("linear fifo");
 
   return 0;
 }

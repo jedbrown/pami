@@ -19,6 +19,11 @@ class Consumer : public PAMI::Fifo::Interface::PacketConsumer<Consumer>
 
     friend class PAMI::Fifo::Interface::PacketConsumer< Consumer >;
 
+    Consumer (const char * name = NULL) :
+      _name (name)
+    {
+    };
+
   protected:
 
     template <class T_FifoPacket>
@@ -29,10 +34,12 @@ class Consumer : public PAMI::Fifo::Interface::PacketConsumer<Consumer>
 
       size_t from = *((size_t *)header);
 
-      fprintf (stdout, "- received a packet from %zu\n", from);
+      fprintf (stdout, "[%s] - received a packet from %zu\n", _name, from);
 
       return true;
     };
+    
+    const char * _name;
 };
 
 
@@ -61,12 +68,12 @@ class Test
     };
 
 
-    void functional ()
+    void functional (const char * name = NULL)
     {
 
       PAMI::Device::Shmem::PacketWriter<void> writer(0);
 
-      Consumer consumer;
+      Consumer consumer(name);
 
       if (_task != 0)
         {
@@ -75,7 +82,7 @@ class Test
           while (! _ififo[0].producePacket(writer));
 
           size_t sequence = _ififo[0].lastPacketProduced();
-          fprintf (stdout, "produced packet %zu into fifo 0\n", sequence);
+          fprintf (stdout, "[%s] produced packet %zu into fifo 0\n", name, sequence);
 
           // bug!
           //while (ififo[0].lastPacketConsumed() < sequence);
@@ -90,7 +97,7 @@ class Test
             {
               if (_rfifo.consumePacket(consumer))
                 {
-                  fprintf (stdout, "consumed packet %zu\n", _rfifo.lastPacketConsumed());
+                  fprintf (stdout, "[%s] consumed packet %zu\n", name, _rfifo.lastPacketConsumed());
                   expected--;
                 }
             }
