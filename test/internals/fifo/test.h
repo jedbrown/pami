@@ -108,8 +108,8 @@ class Test
         {
           while (! _ififo[0].producePacket(producer));
 
-          size_t sequence = _ififo[0].lastPacketProduced();
-          fprintf (stdout, "[%s] produced packet %zu into fifo 0\n", name, sequence);
+          //size_t sequence = _ififo[0].lastPacketProduced();
+          //fprintf (stdout, "[%s] produced packet %zu into fifo 0\n", name, sequence);
 
           // bug!
           //while (ififo[0].lastPacketConsumed() < sequence);
@@ -124,7 +124,7 @@ class Test
             {
               if (_rfifo.consumePacket(consumer))
                 {
-                  fprintf (stdout, "[%s] consumed packet %zu\n", name, _rfifo.lastPacketConsumed());
+                  //fprintf (stdout, "[%s] consumed packet %zu\n", name, _rfifo.lastPacketConsumed());
                   expected--;
                 }
             }

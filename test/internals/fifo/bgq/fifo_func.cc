@@ -30,8 +30,8 @@ typedef PAMI::Fifo::FifoPacket <32, 160> ShmemPacket;
 typedef PAMI::Fifo::WrapFifo<ShmemPacket, PAMI::BoundedCounter::BGQ::IndirectL2Bounded, 128> Wrap;
 
 //typedef Fifo::LinearFifo<ShmemPacket, PAMI::Counter::BGQ::IndirectL2, 128, Wakeup::BGQ> ShmemFifo;
-//typedef PAMI::Fifo::LinearFifo<ShmemPacket, PAMI::Counter::BGQ::IndirectL2, 128> Linear;
-typedef PAMI::Fifo::LinearFifo<ShmemPacket, PAMI::Counter::Indirect<PAMI::Counter::Native>, 128> Linear;
+typedef PAMI::Fifo::LinearFifo<ShmemPacket, PAMI::Counter::BGQ::IndirectL2, 128> LinearL2;
+typedef PAMI::Fifo::LinearFifo<ShmemPacket, PAMI::Counter::Indirect<PAMI::Counter::Native>, 128> LinearNative;
 
 
 
@@ -49,12 +49,15 @@ int main (int argc, char ** argv)
   //wrap.init (&mm, task, size);
   //wrap.functional("wrap fifo");
 
-  Test<Linear> linear;
-  linear.init (&mm, task, size);
-  
+  Test<LinearNative> linear0;
+  linear0.init (&mm, task, size);
   sleep(1);
-  
-  linear.functional("linear fifo");
+  linear0.functional("linear fifo native atomics");
+
+  Test<LinearL2> linear1;
+  linear1.init (&mm, task, size);
+  sleep(1);
+  linear1.functional("linear fifo L2 atomics");
 
   return 0;
 }
