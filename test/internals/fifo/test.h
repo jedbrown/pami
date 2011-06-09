@@ -8,19 +8,17 @@
 #include <unistd.h>
 
 #include "components/fifo/FifoInterface.h"
-#include "components/fifo/FifoPacket.h"
+#include "components/fifo/PacketInterface.h"
 
 
-#include "components/devices/shmem/ShmemPacket.h"
-
-class Consumer : public PAMI::Fifo::Interface::PacketConsumer<Consumer>
+class Consumer : public PAMI::Fifo::Interface::PacketConsumer <Consumer>
 {
   public:
 
-    friend class PAMI::Fifo::Interface::PacketConsumer< Consumer >;
+    friend class PAMI::Fifo::Interface::PacketConsumer <Consumer>;
 
     Consumer (const char * name = NULL) :
-      _name (name)
+        _name (name)
     {
     };
 
@@ -30,16 +28,49 @@ class Consumer : public PAMI::Fifo::Interface::PacketConsumer<Consumer>
     inline bool consume_impl (T_FifoPacket & packet)
     {
       void * header  = packet.getHeader();
-      //void * payload = packet.getPayload();
-
       size_t from = *((size_t *)header);
 
       fprintf (stdout, "[%s] - received a packet from %zu\n", _name, from);
 
       return true;
     };
-    
+
     const char * _name;
+};
+
+class Producer : public PAMI::Fifo::Interface::PacketProducer <Producer>
+{
+
+
+  public:
+
+    friend class PAMI::Fifo::Interface::PacketProducer <Producer>;
+
+    inline Producer (size_t value = (size_t) - 1) :
+        _value (value)
+    {};
+
+  protected:
+
+    template <class T_Packet>
+    inline bool produce_impl (T_Packet & packet)
+    {
+      void * header = packet.getHeader ();
+      *((size_t *) header) = _value;
+
+      return true;
+    };
+
+    template <class T_Packet>
+    inline bool produce_impl (T_Packet & packet, bool & done)
+    {
+      produce_impl (packet);
+      done = true;
+      return true;
+    };
+
+    size_t _value;
+
 };
 
 
@@ -70,16 +101,12 @@ class Test
 
     void functional (const char * name = NULL)
     {
-
-      PAMI::Device::Shmem::PacketWriter<void> writer(0);
-
+      Producer producer(_task);
       Consumer consumer(name);
 
       if (_task != 0)
         {
-          writer.init ((void *) &_task, sizeof(size_t), NULL, 0);
-
-          while (! _ififo[0].producePacket(writer));
+          while (! _ififo[0].producePacket(producer));
 
           size_t sequence = _ififo[0].lastPacketProduced();
           fprintf (stdout, "[%s] produced packet %zu into fifo 0\n", name, sequence);

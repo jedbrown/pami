@@ -51,6 +51,9 @@ int main (int argc, char ** argv)
 
   Test<Linear> linear;
   linear.init (&mm, task, size);
+  
+  sleep(1);
+  
   linear.functional("linear fifo");
 
   return 0;
