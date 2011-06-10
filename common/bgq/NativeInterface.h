@@ -142,6 +142,10 @@ namespace PAMI
       _dispatch_id(dispatch_id)
   {
     TRACE_FN_ENTER();
+    DO_DEBUG((templateName<T_Device>()));
+    DO_DEBUG((templateName<T_Mcast>()));
+    DO_DEBUG((templateName<T_Msync>()));
+    DO_DEBUG((templateName<T_Mcomb>()));
     TRACE_FN_EXIT();
   };
 
@@ -172,6 +176,10 @@ namespace PAMI
       _dispatch_id(dispatch_id)
   {
     TRACE_FN_ENTER();
+    DO_DEBUG((templateName<T_Device>()));
+    DO_DEBUG((templateName<T_Mcast>()));
+    DO_DEBUG((templateName<T_Msync>()));
+    DO_DEBUG((templateName<T_Mcomb>()));
     TRACE_FORMAT( "<%p>%s %d %d %d", this, __PRETTY_FUNCTION__,
                   _mcast_status, _msync_status, _mcomb_status);
 
@@ -191,6 +199,9 @@ namespace PAMI
   {
     TRACE_FN_ENTER();
     DO_DEBUG((templateName<T_Device>()));
+    DO_DEBUG((templateName<T_Mcast>()));
+    DO_DEBUG((templateName<T_Msync>()));
+    DO_DEBUG((templateName<T_Mcomb>()));
     TRACE_FN_EXIT();
   }
 
@@ -204,7 +215,7 @@ namespace PAMI
     allocObj             *obj = (allocObj*)rdata;
     BGQNativeInterfaceAS *ni   = obj->_ni;
 
-    TRACE_FORMAT( "<%p> %p, %p, %d calling %p(%p)",
+    TRACE_FORMAT( "<%p> %p, %p, %d, calling %p(%p)",
                   ni, context, rdata, res,
                   obj->_user_callback.function, obj->_user_callback.clientdata);
 
@@ -279,7 +290,7 @@ namespace PAMI
     inline pami_result_t BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb>::multisync(pami_multisync_t *msync, void *devinfo)
   {
     TRACE_FN_ENTER();
-    TRACE_FORMAT( "<%p> %msync %p, connection id %u, devinfo %p", this, msync, msync->connection_id, devinfo);
+    TRACE_FORMAT( "<%p> msync %p, connection id %u, devinfo %p", this, msync, msync->connection_id, devinfo);
     int rc = _msync.postMultisyncImmediate(_clientid, _contextid, msync, devinfo);
     if (rc == PAMI_SUCCESS)
       {
@@ -291,7 +302,7 @@ namespace PAMI
       allocObj *req          = (allocObj *)_allocator.allocateObject();
       req->_ni               = this;
       req->_user_callback    = msync->cb_done;
-      TRACE_FORMAT( "<%p> %p", this, req);
+      TRACE_FORMAT( "<%p> req %p, cb_done %p/%p", this, req,msync->cb_done.function,msync->cb_done.clientdata);
       DO_DEBUG((templateName<T_Msync>()));
       
       pami_multisync_t  m     = *msync;

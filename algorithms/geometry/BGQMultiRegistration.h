@@ -191,10 +191,16 @@ namespace PAMI
       new(m) PAMI::Geometry::Metadata("I0:MultiSync:SHMEM:-");
     }
 
-    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSyncComposite<>,
+    typedef CCMI::Adaptor::Barrier::BarrierFactoryAllSidedT
+    <CCMI::Adaptor::Barrier::MultiSyncComposite<>,
     ShmemMsyncMetaData,
-    CCMI::ConnectionManager::SimpleConnMgr > ShmemMultiSyncFactory;
+    CCMI::ConnectionManager::SimpleConnMgr,
+    PAMI::Geometry::CKEY_BARRIERCOMPOSITE7>
+    ShmemMultiSyncFactory;
 
+    //----------------------------------------------------------------------------
+    // Optimized (MU) Binomial barrier
+    //----------------------------------------------------------------------------
     extern inline void OptBinomialMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:OptBinomial:P2P:P2P");
@@ -1081,6 +1087,7 @@ namespace PAMI
             pami_xfer_t xfer = {0};
             OptBinomialBarrier *opt_binomial = (OptBinomialBarrier *)
                                                _binomial_barrier_factory->generate(geometry, &xfer);
+            PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE2)==opt_binomial);
             opt_binomial->getExecutor()->setContext(_context);
             geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
                              (void*)opt_binomial);
@@ -1100,6 +1107,7 @@ namespace PAMI
             {
               TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register Local Shmem factories\n", this));
               _shmem_barrier_composite = _shmem_msync_factory.generate(geometry, &xfer);
+              PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE7)==_shmem_barrier_composite);
               // Add Barriers
               geometry->addCollective(PAMI_XFER_BARRIER, &_shmem_msync_factory, _context_id);
 
@@ -1136,6 +1144,7 @@ namespace PAMI
               //Set optimized barrier to rectangle. May override optimized barrier later
               pami_xfer_t xfer = {0};
               CCMI::Executor::Composite *opt_composite =  _mu_rectangle_msync_factory->generate(geometry, &xfer); 
+              PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE5)==opt_composite);
               geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
                                (void*)opt_composite);
             }
@@ -1146,6 +1155,7 @@ namespace PAMI
               //Set optimized barrier to rectangle. May override optimized barrier later
               pami_xfer_t xfer = {0};
               CCMI::Executor::Composite *opt_composite =  _msync2d_rectangle_composite_factory->generate(geometry, &xfer); 
+              PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE6)==opt_composite);
               geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
                                (void*)opt_composite);
             }
@@ -1224,8 +1234,7 @@ namespace PAMI
                 TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU barrier\n", this));
                 geometry->setKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE3, NULL);
                 _gi_barrier_composite = _gi_msync_factory->generate(geometry, &xfer);
-                geometry->setKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE3,
-                                 (void*)_gi_barrier_composite);
+                PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE3)==_gi_barrier_composite);
 
                 // Add Barriers
                 geometry->addCollective(PAMI_XFER_BARRIER, _gi_msync_factory, _context_id);
@@ -1258,8 +1267,7 @@ namespace PAMI
                 geometry->setKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE4, NULL);
                 _msync2d_gishm_composite = _msync2d_gishm_composite_factory->generate(geometry, &xfer);
                 geometry->addCollective(PAMI_XFER_BARRIER, _msync2d_gishm_composite_factory, _context_id);
-                geometry->setKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE4,
-                                 (void*)_msync2d_gishm_composite);
+                PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE4)==_msync2d_gishm_composite);
               }
 
               Topology master = *master_sub_topology;

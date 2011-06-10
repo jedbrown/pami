@@ -8,6 +8,19 @@
 #include "algorithms/executor/Barrier.h"
 #include "algorithms/composite/Composite.h"
 
+#include "util/trace.h"
+
+#undef DO_TRACE_ENTEREXIT 
+#undef DO_TRACE_DEBUG     
+
+#ifdef CCMI_TRACE_ALL
+#define DO_TRACE_ENTEREXIT 1
+#define DO_TRACE_DEBUG     1
+#else
+#define DO_TRACE_ENTEREXIT 0
+#define DO_TRACE_DEBUG     0
+#endif
+
 namespace CCMI
 {
   namespace Adaptor
@@ -34,31 +47,34 @@ namespace CCMI
                             void                                 * cookie) :
         Composite(), _native(native) //, _geometry((PAMI_GEOMETRY_CLASS*)g)
         {
-          TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
+          TRACE_FN_ENTER();
 
           PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)g;
-	  _deviceInfo          = geometry->getKey(gkey);
+          _deviceInfo          = geometry->getKey(gkey);
+          TRACE_FORMAT( "_devinfo %p",_deviceInfo);
 
           _minfo.cb_done.function   = NULL;
           _minfo.cb_done.clientdata = NULL;
           _minfo.connection_id      = 0;
           _minfo.roles              = -1U;
           _minfo.participants       = geometry->getTopology(T_Geometry_Index);                  
+          TRACE_FN_EXIT();
         }
 
         ///Barrier composite is created and cached
         virtual void start()
         {
-          TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
+          TRACE_FN_ENTER();
           _minfo.cb_done.function   = _cb_done;
           _minfo.cb_done.clientdata = _clientdata;
           if (T_inline)
-	  {
-	    T_Native *t_native = (T_Native *)_native;
-	    t_native->T_Native::multisync (&_minfo, _deviceInfo);
-	  }
+          {
+            T_Native *t_native = (T_Native *)_native;
+            t_native->T_Native::multisync (&_minfo, _deviceInfo);
+          }
           else
             _native->multisync(&_minfo, _deviceInfo);
+          TRACE_FN_EXIT();
         }
       };
 
@@ -69,16 +85,20 @@ namespace CCMI
                                   void           *cookie,
                                   pami_result_t   result )
         {
+          TRACE_FN_ENTER();
           MultiSyncComposite2Device *m = (MultiSyncComposite2Device*) cookie;
           m->_native_g->multisync(&m->_minfo_g, m->_deviceInfo);
+          TRACE_FN_EXIT();
         }
 
         static void global_done_fn(pami_context_t  context,
                                    void           *cookie,
                                    pami_result_t   result )
         {
+          TRACE_FN_ENTER();
           MultiSyncComposite2Device *m = (MultiSyncComposite2Device*) cookie;
           m->_native_l->multisync(&m->_minfo_l1, m->_deviceInfo);
+          TRACE_FN_EXIT();
         }
 
       public:
@@ -97,6 +117,7 @@ namespace CCMI
         _geometry((PAMI_GEOMETRY_CLASS*)g),
         _deviceInfo(NULL)
         {
+          TRACE_FN_ENTER();
           setup(_native_l,
                 _native_g,
                 cmgr,
@@ -104,6 +125,7 @@ namespace CCMI
                 cmd,
                 fn,
                 cookie);
+          TRACE_FN_EXIT();
         }
 
 
@@ -120,6 +142,7 @@ namespace CCMI
         _geometry((PAMI_GEOMETRY_CLASS*)g),
         _deviceInfo(NULL)
         {
+          TRACE_FN_ENTER();
           setup(_native_l,
                 _native_g,
                 cmgr,
@@ -127,6 +150,7 @@ namespace CCMI
                 cmd,
                 fn,
                 cookie);
+          TRACE_FN_EXIT();
         }
 
         void setup(Interfaces::NativeInterface      *mInterfaceL,
@@ -137,6 +161,7 @@ namespace CCMI
                    pami_event_function               fn,
                    void                             *cookie) 
         {
+          TRACE_FN_ENTER();
           PAMI::Topology  *t_master    = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
           PAMI::Topology  *t_local     = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
 
@@ -147,6 +172,7 @@ namespace CCMI
           _l0_reset_cb                  = false;
           _l1_reset_cb                  = false;
 
+          TRACE_FORMAT( "master size %zu, local size %zu",t_master->size(),  t_local->size());
           _minfo_l0.connection_id      = 0;
           _minfo_l0.roles              = -1U;
           _minfo_l0.participants       = (pami_topology_t*)t_local;
@@ -217,10 +243,14 @@ namespace CCMI
 
           if (_minfo_l1.cb_done.function == NULL)
             _l1_reset_cb = true;
+          TRACE_FORMAT( "g %u, l0 %u, l1 %u",_g_reset_cb, _l0_reset_cb, _l1_reset_cb);
+          TRACE_FN_EXIT();
         }
 
         virtual void start()
         {
+          TRACE_FN_ENTER();
+          TRACE_FORMAT( "g %u, l0 %u, l1 %u",_g_reset_cb, _l0_reset_cb, _l1_reset_cb);
           if (_g_reset_cb)
           {
             _minfo_g.cb_done.function   = _cb_done;
@@ -238,6 +268,7 @@ namespace CCMI
           }
 
           _active_native->multisync(_active_minfo, _deviceInfo);
+          TRACE_FN_EXIT();
         }
       protected:
         Interfaces::NativeInterface        *_native_l;
@@ -257,5 +288,8 @@ namespace CCMI
     };
   };
 };
+
+#undef DO_TRACE_ENTEREXIT 
+#undef DO_TRACE_DEBUG     
 
 #endif
