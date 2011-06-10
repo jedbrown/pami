@@ -149,7 +149,7 @@ extern "C"
    * \defgroup trigger User-defined triggers
    * \{
    *
-   * \ref PAMI_Context_update with \c PAMI_CLIENT_TRIGGER passes in
+   * \ref PAMI_Context_update with \c PAMI_CONTEXT_TRIGGER passes in
    * \ref pami_attribute_value_t.chararray as a pointer to \ref pami_trigger_t
    * to add or remove a user-defined trigger.
    *
