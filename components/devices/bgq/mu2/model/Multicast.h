@@ -218,12 +218,12 @@ namespace PAMI
 
       template <bool T_Allsided, bool T_Msgdata_support, bool T_PWQ_support>
       inline pami_result_t MulticastModel<T_Allsided, T_Msgdata_support, T_PWQ_support>::postMulticast_impl(uint8_t (&state)[MulticastModel::sizeof_msg],
-											  size_t            client,
-											  size_t            context, 
-                                                                                          pami_multicast_t *mcast,
-                                                                                          void             *devinfo)
+                                                                                                            size_t            client,
+                                                                                                            size_t            context, 
+                                                                                                            pami_multicast_t *mcast,
+                                                                                                            void             *devinfo)
       {
-	TRACE_FN_ENTER();
+        TRACE_FN_ENTER();
 
         uint32_t classRoute = (uint32_t)(size_t)devinfo; // convert platform independent void* to bgq uint32_t classroute
         // MU class routes start at 0 but ResourceManager adds 1 to avoid NULL-looking device info.

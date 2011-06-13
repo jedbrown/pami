@@ -409,6 +409,10 @@ namespace PAMI
           {
             // Clone the reduce packet model descriptors into the injection channel
             MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc_array[0];
+
+            _reducepkt.setRecFIFOId (rfifo);
+            _reducepkt.setClassRoute (route);
+
             _reducepkt.clone(*memfifo);
             TRACE_HEXDATA(memfifo,  sizeof(*memfifo));
             memfifo = (MUSPI_DescriptorBase *) desc_array[ndesc-1];
@@ -466,6 +470,9 @@ namespace PAMI
             new (msg) InjectDescriptorMessage<3> (channel, fn, cookie);
 
             // Clone the reduce packets into the message (before and after the bcast)
+            _reducepkt.setRecFIFOId (rfifo);
+            _reducepkt.setClassRoute (route);
+
             _reducepkt.clone(msg->desc[0]);
             _reducepkt.clone(msg->desc[ndesc-1]);
 
@@ -548,6 +555,10 @@ namespace PAMI
           {
             // Clone the reduce packet model descriptors into the injection channel
             MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc_array[0];
+
+            _reducepkt.setRecFIFOId (rfifo);
+            _reducepkt.setClassRoute (route);
+
             _reducepkt.clone(*memfifo);
             TRACE_HEXDATA(memfifo,  sizeof(*memfifo));
             memfifo = (MUSPI_DescriptorBase *) desc_array[ndesc-1];
@@ -606,6 +617,9 @@ namespace PAMI
             InjectDescriptorMessage<3> * msg =
               (InjectDescriptorMessage<3> *) state;
             new (msg) InjectDescriptorMessage<3> (channel, fn, cookie);
+
+            _reducepkt.setRecFIFOId (rfifo);
+            _reducepkt.setClassRoute (route);
 
             // Clone the reduce packets into the message (before and after the bcast)
             _reducepkt.clone(msg->desc[0]);
