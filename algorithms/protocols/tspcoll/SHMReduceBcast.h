@@ -29,7 +29,7 @@ namespace xlpgas
   }; /* Shmreduce */
 
   template<class T_NI>
-  class SHMBcast: public Collective<class T_NI>
+  class SHMBcast: public Collective<T_NI>
   {
     typedef xlpgas::local::FixedLeader<Wait> FL;
     FL  fl;

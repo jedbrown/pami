@@ -9,7 +9,7 @@ extern "C" char* xlpgas_shm_buf_bcast;
 template <class T_NI>
 xlpgas::SHMReduce<T_NI>::
 SHMReduce (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
-  Collective (ctxt, comm, kind, tag, NULL,NULL), fl(comm->size(),comm->ordinal(),XLPGAS_SHM_ROOT,xlpgas_shm_buf)
+  Collective<T_NI> (ctxt, comm, kind, tag, NULL,NULL), fl(comm->size(),comm->ordinal(),XLPGAS_SHM_ROOT,xlpgas_shm_buf)
 {
 }
 
@@ -34,7 +34,7 @@ void xlpgas::SHMReduce<T_NI>::reset (int rootindex,
 template <class T_NI>
 xlpgas::SHMBcast<T_NI>::
 SHMBcast (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
-  Collective (ctxt, comm, kind, tag, NULL,NULL), fl(comm->size(),comm->ordinal(),XLPGAS_SHM_ROOT,xlpgas_shm_buf_bcast)
+  Collective<T_NI> (ctxt, comm, kind, tag, NULL,NULL), fl(comm->size(),comm->ordinal(),XLPGAS_SHM_ROOT,xlpgas_shm_buf_bcast)
 {
 }
 

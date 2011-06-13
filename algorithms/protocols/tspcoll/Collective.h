@@ -277,7 +277,7 @@ namespace xlpgas
 	  case SHMReduceKind:
 	    {
 	      typedef typename CollDefs::shm_reduce_type reduce_type;
-	      b = (Collective *)malloc (sizeof(reduce_type));
+	      b = (Collective<T_NI> *)malloc (sizeof(reduce_type));
 	      assert (b != NULL);
 	      memset (b, 0, sizeof(reduce_type));
 	      new (b) reduce_type (_ctxt, comm, kind, nextID, 0);
@@ -307,7 +307,7 @@ namespace xlpgas
 	  case SHMBcastKind:
 	    {
 	      typedef typename CollDefs::shm_broadcast_type bcast_type;
-	      b = (Collective *)malloc (sizeof(bcast_type));
+	      b = (Collective<T_NI> *)malloc (sizeof(bcast_type));
 	      assert (b != NULL);
 	      memset (b, 0, sizeof(bcast_type));
 	      new (b) bcast_type (_ctxt, comm, kind, nextID, 0);
