@@ -119,6 +119,7 @@ namespace PAMI
 	  {
             TRACE_FN_ENTER();
 	    
+	    size_t numInjFifos = _mucontext.getNumInjFifos();
 	    if (!_doneSending) {
 	      MUSPI_DescriptorBase desc __attribute__((__aligned__(32)));
 	      _model.clone (desc);
@@ -138,7 +139,6 @@ namespace PAMI
 	      register double fp1 asm("fr1");	      
 	      VECTOR_LOAD_NU (&desc,  0, fp0);
 	      VECTOR_LOAD_NU (&desc, 32, fp1);	
-	      size_t numInjFifos = _mucontext.getNumInjFifos();
 
 	      while (_next  < _nranks) {
 		InjChannel &channel = _mucontext.injectionGroup.channel[fifo];
