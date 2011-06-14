@@ -30,7 +30,7 @@ namespace PAMI
           ///
           /// \brief Initialize the time object.
           ///
-          inline pami_result_t init (size_t clockMHz);
+          inline pami_result_t init (uint64_t clockMHz);
 
 
           ///
@@ -38,7 +38,7 @@ namespace PAMI
           ///
           /// \warning This returns \b mega hertz. Do not be confused.
           ///
-          size_t clockMHz ();
+          uint64_t clockMHz ();
 
           ///
           /// \brief Returns the number of "cycles" elapsed on the calling processor.
@@ -58,13 +58,13 @@ namespace PAMI
       }; // class Time
 
       template <class T>
-      inline pami_result_t Time<T>::init (size_t clockMHz)
+      inline pami_result_t Time<T>::init (uint64_t clockMHz)
       {
         return static_cast<T*>(this)->init_impl (clockMHz);
       }
 
       template <class T>
-      size_t Time<T>::clockMHz ()
+      uint64_t Time<T>::clockMHz ()
       {
         return static_cast<T*>(this)->clockMHz_impl ();
       }

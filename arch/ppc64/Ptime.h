@@ -43,11 +43,11 @@ namespace PAMI
     return result.d;
   }
 
-  static unsigned long timeGetTime( void )
+  static uint64_t timeGetTime( void )
   {
     struct timeval tv;
     gettimeofday( &tv, 0 );
-    return tv.tv_sec * 1000 + tv.tv_usec / 1000;
+    return tv.tv_sec * 1000ULL + tv.tv_usec / 1000ULL;
   }
 
   class Time : public Interface::Time<Time>
@@ -63,9 +63,9 @@ namespace PAMI
       ///
       /// \brief Initialize the time object.
       ///
-      inline pami_result_t init_impl (size_t dummy)
+      inline pami_result_t init_impl (uint64_t dummy)
       {
-        _clockMHz      = (size_t) (clockMHz() / 1e9);
+        _clockMHz      = (uint64_t) (clockMHz() / 1000000000ULL);
         _sec_per_cycle = 1.0 / ((double)_clockMHz * 1000000.0);
 
         if (_clockMHz == -1ULL)
@@ -79,16 +79,16 @@ namespace PAMI
       ///
       /// \warning This returns \b mega hertz. Do not be confused.
       ///
-      size_t clockMHz_impl ()
+      uint64_t clockMHz_impl ()
       {
         if (_clockMHz == 0.0)
           {
-            uint64_t sampleTime = 100; //sample time in usec
-            uint64_t timeStart = 0, timeStop = 0;
-            uint64_t startBase = 0, endBase = 0;
-            uint64_t overhead = 0, tbf = 0, tbi = 0;
-            uint64_t ticks = 0;
-            int      iter = 0;
+            uint64_t sampleTime = 100ULL; //sample time in usec
+            uint64_t timeStart = 0ULL, timeStop = 0ULL;
+            uint64_t startBase = 0ULL, endBase = 0ULL;
+            uint64_t overhead = 0ULL, tbf = 0ULL, tbi = 0ULL;
+            uint64_t ticks = 0ULL;
+            int      iter = 0ULL;
 
             do
               {
@@ -130,7 +130,7 @@ namespace PAMI
                 ticks = ((endBase - startBase) + (overhead));
                 iter++;
 
-                if (iter == 10)
+                if (iter == 10ULL)
                   {
                     fprintf(stderr, "Warning: unable to initialize high resolution timer.\n");
                     return -1;
@@ -138,7 +138,7 @@ namespace PAMI
               }
             while (endBase < startBase);
 
-            return (size_t) (ticks / (sampleTime*1e-6));
+            return (uint64_t) (ticks / (sampleTime*1e-6));
           }
         else
           return _clockMHz;
@@ -146,7 +146,7 @@ namespace PAMI
       ///
       /// \brief Returns the number of "cycles" elapsed on the calling processor.
       ///
-      unsigned long long timebase_impl ()
+      uint64_t timebase_impl ()
       {
         return tb();
       };
