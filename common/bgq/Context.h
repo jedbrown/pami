@@ -724,12 +724,12 @@ namespace PAMI
 
       inline pami_result_t purge_totask (pami_endpoint_t *dest, size_t count)
       {
-        return PAMI_UNIMPL;
+        return PAMI_SUCCESS;
       }
 
       inline pami_result_t resume_totask (pami_endpoint_t *dest, size_t count)
       {
-        return PAMI_UNIMPL;
+        return PAMI_SUCCESS;
       }
 
       inline pami_result_t fence_begin ()
