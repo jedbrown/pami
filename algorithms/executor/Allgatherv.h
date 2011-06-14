@@ -21,7 +21,12 @@
 #define SHFT_BITS      (SHFT_BITS_PHASE+SHFT_BITS_SRC)
 #endif
 
-#define EXECUTOR_DEBUG(x) // fprintf x
+#if defined EXECUTOR_DEBUG
+#undef EXECUTOR_DEBUG
+#define EXECUTOR_DEBUG(x)  //fprintf x
+#else
+#define EXECUTOR_DEBUG(x)  //fprintf x
+#endif
 
 namespace CCMI
 {
@@ -238,7 +243,7 @@ namespace CCMI
           TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::setSchedule()\n", this));
           _comm_schedule = ct;
 
-          _nphases    = _native->numranks() - 1;
+          _nphases    = _gtopology->size() - 1;
           _startphase = 0;
           _curphase   = -1;
           _lphase     = 0;
@@ -246,11 +251,11 @@ namespace CCMI
 
           _myindex  = _gtopology->rank2Index(_native->myrank());
 
-          unsigned dstindex = (_myindex + 1) % _native->numranks();
+          unsigned dstindex = (_myindex + 1) % _gtopology->size();
           _dst              = _gtopology->index2Rank(dstindex);
           new (&_dsttopology) PAMI::Topology(_dst);
 
-          unsigned srcindex = (_myindex + _native->numranks() - 1) % _native->numranks();
+          unsigned srcindex = (_myindex + _gtopology->size() - 1) % _gtopology->size();
           _src              = _gtopology->index2Rank(srcindex);
           new (&_srctopology) PAMI::Topology(_src);
 
@@ -321,25 +326,25 @@ namespace CCMI
 
         size_t getSendLength(int phase)
         {
-          int index = (_myindex + _native->numranks() - phase) % _native->numranks();
+          int index = (_myindex + _gtopology->size() - phase) % _gtopology->size();
           return (_rcvcounts) ? _rcvcounts[index] : _buflen;
         }
 
         size_t getRecvLength(int phase)
         {
-          int index = (_myindex + _native->numranks() -  phase - 1) % _native->numranks();
+          int index = (_myindex + _gtopology->size() -  phase - 1) % _gtopology->size();
           return (_rcvcounts) ? _rcvcounts[index] : _buflen;
         }
 
         size_t getSendDisp(int phase)
         {
-          int index = (_myindex + _native->numranks() - phase) % _native->numranks();
+          int index = (_myindex + _gtopology->size() - phase) % _gtopology->size();
           return (_disps) ? _disps[index] : index * _buflen;
         }
 
         size_t getRecvDisp(int phase)
         {
-          int index = (_myindex + _native->numranks() -  phase - 1) % _native->numranks();
+          int index = (_myindex + _gtopology->size() -  phase - 1) % _gtopology->size();
           return (_disps) ? _disps[index] : index * _buflen;
         }
 

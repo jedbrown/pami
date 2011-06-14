@@ -337,7 +337,7 @@ inline void  CCMI::Executor::AllgatherExec<T_ConnMgr, T_Schedule>::sendNext ()
             {
               size_t buflen       = _srclens[i] * _buflen;
               srcindex            = _gtopology->rank2Index(_srcranks[i]);
-              dist                = (srcindex + _native->numranks() - _myindex) % _native->numranks();
+              dist                = (srcindex + _gtopology->size() - _myindex) % _gtopology->size();
               RecvStruct *recvstr = &_mrecvstr[_curphase].recvstr[i];
               recvstr->pwq.configure (_tmpbuf + dist * _buflen, buflen, 0);
               recvstr->pwq.reset();
@@ -352,8 +352,8 @@ inline void  CCMI::Executor::AllgatherExec<T_ConnMgr, T_Schedule>::sendNext ()
       for (unsigned i = 0; i < nsrcs; ++i)
         {
           srcindex     = _gtopology->rank2Index(_srcranks[i]);
-          dist         = (srcindex + _native->numranks() - _myindex) % _native->numranks();
-          dstindex     = (_myindex + _native->numranks() - dist) % _native->numranks();
+          dist         = (srcindex + _gtopology->size() - _myindex) % _gtopology->size();
+          dstindex     = (_myindex + _gtopology->size() - dist) % _gtopology->size();
 
           _dstranks[i] = _gtopology->index2Rank(dstindex);
           _dstlens[i]  = _srclens[i];
@@ -379,8 +379,8 @@ inline void  CCMI::Executor::AllgatherExec<T_ConnMgr, T_Schedule>::sendNext ()
 
       return;
     }
-  memcpy (_rbuf + (_myindex * _buflen), _tmpbuf, (_native->numranks() - _myindex) * _buflen);
-  memcpy (_rbuf, _tmpbuf + (_native->numranks() - _myindex)*_buflen, _myindex * _buflen);
+  memcpy (_rbuf + (_myindex * _buflen), _tmpbuf, (_gtopology->size() - _myindex) * _buflen);
+  memcpy (_rbuf, _tmpbuf + (_gtopology->size() - _myindex) * _buflen, _myindex * _buflen);
 
   if (_cb_done) _cb_done (NULL, _clientdata, PAMI_SUCCESS);
 
@@ -413,7 +413,7 @@ inline void  CCMI::Executor::AllgatherExec<T_ConnMgr, T_Schedule>::notifyRecv
           size_t buflen       = _srclens[i] * _buflen;
           EXECUTOR_DEBUG((stderr, "phase  = %d, buflen = %d, _srclens[%d] = %d, _srcranks[%d] = %d\n", cdata->_phase, _buflen, i, _srclens[i], i, _srcranks[i]);)
           unsigned srcindex   = _gtopology->rank2Index(_srcranks[i]);
-          unsigned dist       = (srcindex + _native->numranks() - _myindex) % _native->numranks();
+          unsigned dist       = (srcindex + _gtopology->size() - _myindex) % _gtopology->size();
           RecvStruct *recvstr = &_mrecvstr[cdata->_phase].recvstr[i];
           recvstr->pwq.configure (_tmpbuf + dist * _buflen, buflen, 0);
           recvstr->pwq.reset();
