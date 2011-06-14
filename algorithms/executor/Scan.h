@@ -56,7 +56,6 @@ namespace CCMI
 
         int                 _comm;
         int                 _buflen;   // byte count of a single message, not really buffer length
-        int                 _exclusive;// 0 = Inclusive, 1 = Exclusive
         char                *_sbuf;
         char                *_rbuf;
         char                *_tmpbuf;
@@ -72,6 +71,7 @@ namespace CCMI
         int                 _nphases;
         int                 _startphase;
         int                 _endphase;
+        int                 _exclusive;// 0 = Inclusive, 1 = Exclusive
         int                 _donecount;
 
         unsigned            _connection_id;
