@@ -944,7 +944,15 @@ namespace PAMI
 	    {
 	      injectionGroup.setInterruptMask( acquire, _interruptMask );
 	    }
-
+	  /// \brief Get the number of injection fifos
+	  ///
+	  ///
+	  /// \retval  n number of injection fifos
+	  ///
+	  inline size_t getNumInjFifos()
+	  {
+	    return _numInjFifos;
+	  }
           RecChannel   receptionChannel; // Reception resources, public access
           InjGroup     injectionGroup __attribute__((__aligned__(16)));   // Injection resources, public access
 

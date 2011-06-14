@@ -91,6 +91,8 @@ namespace PAMI
 	    _amhdr.srcidx = srcidx;
 	    _amhdr.connid = connid;
 
+	    // Our arrays assume no more than 2*NumTorusDims fifos, may as well check now in the ctor.
+	    PAMI_assertf(_mucontext.getNumInjFifos() <= 2*NumTorusDims,"number of context fifos %zu",_mucontext.getNumInjFifos());
 	    for (size_t fifo = 0; fifo < 2*NumTorusDims; fifo++) 
 	      _sequence[fifo] = UNDEFINED_SEQ_NO;
 	    
@@ -136,6 +138,8 @@ namespace PAMI
 	      register double fp1 asm("fr1");	      
 	      VECTOR_LOAD_NU (&desc,  0, fp0);
 	      VECTOR_LOAD_NU (&desc, 32, fp1);	
+	      size_t numInjFifos = _mucontext.getNumInjFifos();
+
 	      while (_next  < _nranks) {
 		InjChannel &channel = _mucontext.injectionGroup.channel[fifo];
 		size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();			
@@ -201,7 +205,7 @@ namespace PAMI
 		  curidx = 0;
 	
 		fifo ++;
-		if (fifo >= NumTorusDims * 2)
+		if (fifo >= numInjFifos)
 		  fifo = 0;
 	      }	      
 	      _doneSending = (_next == _nranks);	    
@@ -211,7 +215,7 @@ namespace PAMI
 	      size_t fifo   = 0;
 	      uint32_t done = 1;
 
-	      for (fifo = 0; fifo < 2*NumTorusDims; fifo++) {
+	      for (fifo = 0; fifo < numInjFifos; fifo++) {
 		if (_sequence[fifo] != UNDEFINED_SEQ_NO) {
 		  InjChannel &channel = _mucontext.injectionGroup.channel[fifo];
 		  unsigned rc = channel.checkDescComplete(_sequence[fifo]);	      
