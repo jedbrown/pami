@@ -391,8 +391,7 @@ namespace PAMI
                     size_t                               clientid,
                     char                                *clientname,
                     size_t                               id,
-                    PlatformDeviceList                  *devices,
-                    std::map<unsigned, pami_geometry_t> *geometry_map):
+                    PlatformDeviceList                  *devices):
         Interface::Context<PAMI::Context> (client, id),
         _client (client),
         _clientid (clientid),
@@ -400,16 +399,9 @@ namespace PAMI
         _dispatch_id(255),
         _context((pami_context_t) this),
         _contextid (id),
-        _world_geometry(NULL),
-        _geometry_map(geometry_map),
         _devices(devices)
       {
       }
-
-      inline void setWorldGeometry(LAPIGeometry *world_geometry)
-        {
-          _world_geometry = world_geometry;
-        }
 
       inline pami_result_t initP2P(size_t        *out_myrank,
                                    size_t        *out_mysize,
@@ -461,98 +453,6 @@ namespace PAMI
           return PAMI_SUCCESS;
         }
 
-      inline pami_result_t initP2PCollectives()
-        {
-          // Initalize Collective Registration
-	  pami_result_t rc;
-	  rc = __global.heap_mm->memalign((void **)&_pgas_collreg, 0,
-								sizeof(*_pgas_collreg));
-	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PGASCollreg");
-          new(_pgas_collreg) PGASCollreg(_client,_context,_clientid,_contextid,
-                                         _protocol,_lapi_device,_devices->_shmem[_contextid],
-                                         &_dispatch_id,_geometry_map, false);
-          _world_geometry->resetUEBarrier(); // Reset so pgas will select the UE barrier
-          _pgas_collreg->analyze(_contextid,_world_geometry);
-          return PAMI_SUCCESS;
-        }
-
-      inline pami_result_t initCollectives(Memory::MemoryManager               *mm,
-                                           bool                                 disable_shm)
-        {
-          Memory::MemoryManager               *mm_ptr;
-          if(disable_shm) mm_ptr = NULL;
-          else            mm_ptr = mm;
-          PAMI::Topology *local_master_topo = (PAMI::Topology *) ((PAMI::Geometry::Lapi *)_world_geometry)->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
-	  pami_result_t rc;
-	  rc = __global.heap_mm->memalign((void **)&_p2p_ccmi_collreg, 0,
-						sizeof(*_p2p_ccmi_collreg));
-	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc P2PCCMICollreg");
-          size_t numpeers=0, numtasks;
-          __global.mapping.nodePeers(numpeers);
-          numtasks = __global.mapping.size();
-
-#ifndef _LAPI_LINUX          
-          _bsr_device.setGenericDevices(_devices->_generics);
-#endif          
-          _cau_device.setGenericDevices(_devices->_generics);
-	  rc = __global.heap_mm->memalign((void **)&_cau_collreg, 0,
-						sizeof(*_cau_collreg));
-	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc CAUCollreg");
-          new(_cau_collreg) CAUCollreg(_client,
-                                       _context,
-                                       _contextid,
-                                       _clientid,
-                                       *_devices->_generics,
-                                       _bsr_device,
-                                       _cau_device,
-                                       __global.mapping,
-                                       _lapi_handle,
-                                       &_dispatch_id,
-                                       _geometry_map,
-                                       mm_ptr);
-          // We analyze global here to get the proper device specific info
-          uint64_t invec[PAMI_MAX_PROC_PER_NODE];
-          int      count = 3+local_master_topo->size();
-
-          LapiImpl::Context *cp      = (LapiImpl::Context *)_Lapi_port[_lapi_handle];
-          size_t             cau_val = cp->nrt[0]->table_info.cau_index_resources;
-          invec[2] = cau_val;
-          _cau_collreg->analyze(_contextid,_world_geometry,
-                                &invec[2],&count,0);
-
-          count = 3+local_master_topo->size();
-          // We should be doing reductions
-          // after each phase of geometry creation.  However, we
-          // control initialization, so we can populate the allreduce
-          // values with known values
-          for (int i = 0; i < count; ++i)
-            invec[3+i] = 0x0ULL;
-
-          invec[2] = cau_val;
-          _cau_collreg->analyze(_contextid,_world_geometry,
-                                &invec[2],&count,1);
-
-          _cau_collreg->analyze(_contextid,_world_geometry,
-                                &invec[2],&count,2);
-          
-          new(_p2p_ccmi_collreg) P2PCCMICollreg(_client,
-                                                _context,
-                                                _contextid,
-                                                _clientid,
-                                                _devices->_shmem[_contextid],
-                                                _lapi_device,
-                                                _protocol,
-                                                mm_ptr?1:0,  //use shared memory
-                                                1,  //use "global" device
-                                                numtasks,
-                                                numpeers,
-                                                &_dispatch_id,
-                                                _geometry_map);
-          _p2p_ccmi_collreg->analyze(_contextid, _world_geometry);
-          _pgas_collreg->setGenericDevice(&_devices->_generics[_contextid]);
-
-          return PAMI_SUCCESS;
-        }
 
       inline pami_client_t getClient_impl ()
         {
@@ -1045,30 +945,24 @@ namespace PAMI
 
       /*  Pointer to the client name string                     */
       char                                  *_clientname;
-
+  public:
       /*  This is the "per context dispatch", and is used by    */
       /*  collectives, should start from 255 and decrease       */
       int                                    _dispatch_id;
       
-      /*  Protocol allocator                                    */
-      ProtocolAllocator                      _protocol;
-
       /*  The over lapi devices                                 */
       DeviceWrapper                          _lapi_device;
       CAUDevice                              _cau_device;
-
       BSRDevice                              _bsr_device;
-  public:
+
+      /*  Protocol allocator                                    */
+      ProtocolAllocator                      _protocol;
+
       /*  Collective Registrations                              */
       PGASCollreg                           *_pgas_collreg;
       P2PCCMICollreg                        *_p2p_ccmi_collreg;
       CAUCollreg                            *_cau_collreg;
 
-      /*  World Geometry Pointer for this context               */
-      LAPIGeometry                          *_world_geometry;
-
-      /*  Client scoped comm id to geomtry map                  */
-      std::map<unsigned, pami_geometry_t>   *_geometry_map;
       lapi_handle_t                          _lapi_handle;
       PlatformDeviceList                    *_devices;
   private:

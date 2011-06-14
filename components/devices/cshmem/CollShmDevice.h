@@ -1152,7 +1152,7 @@ namespace PAMI
                         unsigned                       gid,
                         PAMI::Topology                *topo,
                         T_MemoryManager               *csmm,
-                        void                          *str) :
+                        void                          *in_str) :
             GenericDeviceMessageQueue(),
             _topo(topo),
             _csmm(csmm),
@@ -1169,9 +1169,9 @@ namespace PAMI
             int num = _synccounts;
 
             while (num >>= 1) ++_syncbits;
-
             TRACE_DBG((stderr, "syncbits = %d\n", _syncbits));
 
+            void * str = (char*)csmm->getCollShmAddr() + (size_t)in_str;
             PAMI_ASSERT(str != NULL);
             collshm_wgroup_t *ctlstr = (collshm_wgroup_t *)str;
 
@@ -1196,7 +1196,8 @@ namespace PAMI
             // initialize shm channels
             for (unsigned i = 0;  i < _ntasks; ++i)
               {
-                TRACE_DBG((stderr, "ctlstr is %p\n", ctlstr));
+                TRACE_DBG((stderr, "%d: ctlstr is %p\n", i, ctlstr));
+                PAMI_assert(ctlstr != NULL);
                 _wgroups[i] = ctlstr;
                 // ctlstr      = (collshm_wgroup_t *)(*(collshm_wgroup_t **)ctlstr);
                 ctlstr      = ctlstr->next;

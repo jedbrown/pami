@@ -29,12 +29,12 @@
 
 #undef TRACE_ERR
 #ifndef TRACE_ERR
-#define TRACE_ERR(x)   // fprintf x
+#define TRACE_ERR(x)   //fprintf x
 #endif
 
 #undef TRACE_DBG
 #ifndef TRACE_DBG
-#define TRACE_DBG(x)   // fprintf x
+#define TRACE_DBG(x)   //fprintf x
 #endif
 
 #ifndef PAMI_ASSERT
@@ -87,8 +87,8 @@ namespace PAMI
           T_Mutex             ctlstr_pool_lock;
           T_Mutex             buffer_pool_lock;
           volatile uint64_t   clientdata_key;
-          void               *ctlstr_memory;
-          void               *buffer_memory;
+          size_t              ctlstr_offset;
+          size_t              buffer_offset;
           volatile ctlstr_t  *free_ctlstr_list;
           T_Atomic           *ctlstr_list;
           ctlstr_t           *ctlstr_pool;
@@ -129,24 +129,20 @@ namespace PAMI
           _collshm->buffer_pool = (databuf_t *)((char *)(_collshm->ctlstr_pool) + (_size - sizeof(collshm_t)) / 2);
 
           _collshm->clientdata_key = _key;
-          _collshm->ctlstr_memory  = _collshm->ctlstr_pool;
-          _collshm->buffer_memory  = _collshm->buffer_pool;
+          _collshm->ctlstr_offset  = (size_t)_collshm->ctlstr_pool - (size_t)_collshm;
+          _collshm->buffer_offset  = (size_t)_collshm->buffer_pool - (size_t)_collshm;
 
           _collshm->free_ctlstr_list   = _get_ctrl_str_from_pool();
           _collshm->ctlstr_list        = new (&(_collshm->free_ctlstr_list)) T_Atomic();
           _collshm->free_buffer_list   = _get_data_buf_from_pool();
           _collshm->buffer_list        = new (&(_collshm->free_buffer_list)) T_Atomic();
 
-          // Shared memory setup hack for _world_geometry and context 0
-          // Todo:  remove the following getCtrlStr()
-          // Todo:  add the per geometry shared memory information to allreduce in analyze().
-          getCtrlStr(_localsize);
           TRACE_DBG((stderr, "_collshm                   %p,    "
                      "getSGCtrlStrVec() _localsize %zu, "
                      "_collshm->ctlstr_pool      %p, "
                      "_collshm->buffer_pool      %p, "
-                     "_collshm->ctlstr_memory    %p, "
-                     "_collshm->buffer_memory    %p, "
+                     "_collshm->ctlstr_offset    %lu, "
+                     "_collshm->buffer_offset    %lu, "
                      "_collshm->free_ctlstr_list %p, "
                      "_collshm->ctlstr_list      %p, "
                      "_collshm->free_buffer_list %p, "
@@ -156,8 +152,8 @@ namespace PAMI
                      _localsize,
                      _collshm->ctlstr_pool      ,
                      _collshm->buffer_pool      ,
-                     _collshm->ctlstr_memory    ,
-                     _collshm->buffer_memory    ,
+                     _collshm->ctlstr_offset    ,
+                     _collshm->buffer_offset    ,
                      _collshm->free_ctlstr_list ,
                      _collshm->ctlstr_list      ,
                      _collshm->free_buffer_list ,
@@ -188,6 +184,10 @@ namespace PAMI
           return init(rank, size);
         }
 
+        void * getCollShmAddr()
+        {
+          return (void*) _collshm;
+        }
 
         ~CollSharedMemoryManager()
         {
@@ -268,8 +268,8 @@ namespace PAMI
 
           if ((char *)(new_bufs + COLLSHM_INIT_BUFCNT) > ((char *)_collshm + _size))
             {
-              TRACE_ERR((stderr, "Run out of shm data bufs, base=%p, buffer_memory=%p, boundary=%p, end=%p\n",
-                         _collshm, _collshm->buffer_memory, (char *)_collshm + _size,
+              TRACE_ERR((stderr, "Run out of shm data bufs, base=%p, buffer_offset=%lu, boundary=%p, end=%p\n",
+                         _collshm, _collshm->buffer_offset, (char *)_collshm + _size,
                          (char *)(new_bufs + COLLSHM_INIT_BUFCNT)));
               PAMI_ASSERT(0);
               return NULL;
@@ -429,11 +429,11 @@ namespace PAMI
           mem_isync();
           ctlstr_t *ctlstr   = _collshm->ctlstr_pool;
           ctlstr_t *tmp      = _collshm->ctlstr_pool;
-
-          if ((char *)(ctlstr + COLLSHM_INIT_CTLCNT) > ((char *)_collshm->buffer_memory))
+          size_t    offset   = (size_t)_collshm->buffer_pool - (size_t)_collshm;
+          if ((char *)(ctlstr + COLLSHM_INIT_CTLCNT) > ((char *)_collshm + offset))
             {
-              TRACE_ERR((stderr, "Run out of shm ctrl structs, base=%p, ctrl_memory=%p, boundary=%p, end=%p\n",
-                         _collshm, _collshm->ctlstr_memory, (char *)_collshm->buffer_memory,
+              TRACE_ERR((stderr, "Run out of shm ctrl structs: base=%p, ctrl_offset=%lu, boundary=%p, end=%p\n",
+                         _collshm, _collshm->ctlstr_offset, (char *)_collshm + offset,
                          (char *)(ctlstr + COLLSHM_INIT_CTLCNT)));
               PAMI_ASSERT(0);
               return NULL;
@@ -572,11 +572,11 @@ namespace PAMI
         ctlstr_t *getWGCtrlStr()
         {
           TRACE_DBG((stderr, "_collshm %p \n", _collshm));
-          TRACE_DBG((stderr, "WGCtrlStr = %p\n", ((ctlstr_t *)_collshm->ctlstr_memory + (_localsize - 1))));
-          return ((ctlstr_t *)_collshm->ctlstr_memory + (_localsize - 1));
+          TRACE_DBG((stderr, "WGCtrlStr = %p\n", ((ctlstr_t *)((char*)_collshm + _collshm->ctlstr_offset) + (_localsize-1))));
+          return ((ctlstr_t *)((char*)_collshm + _collshm->ctlstr_offset)) + (_localsize-1);
         }
 
-        // fill in a vector of coll shmem control structure addresses for sub-geometries
+        // fill in a vector of coll shmem control structure address offsets for sub-geometries
         // perform allreduce on the vector during geometry analyze()
         void getSGCtrlStrVec(pami_geometry_t geo, uint64_t *vec)
         {
@@ -596,7 +596,7 @@ namespace PAMI
           for (uint i = 0; i < master_size; ++i) vec[i] = 0xFFFFFFFFFFFFFFFFULL;
 
           if (local_index == 0)
-            vec[master_index] = (uint64_t) getCtrlStr(local_size);
+            vec[master_index] = (uint64_t) ((size_t)getCtrlStr(local_size) - (size_t)_collshm);
         }
 
       protected:

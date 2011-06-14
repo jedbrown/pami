@@ -204,7 +204,16 @@ public:
 			if (first) { shm_unlink(nkey); } // yes?
 			return PAMI_ERROR;
 		}
-		ptr = mmap(NULL, max, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+#ifdef EMULATE_DIFFERENT_ADDRESSES
+                // Emulate different addresses on different tasks
+                static int         last_mmap = 0;
+                unsigned long long my_addr   = getpid();
+                my_addr = 0xFFFFFFFFFFFF0000 & (my_addr<<16) + last_mmap;
+                last_mmap += max;
+#else
+                unsigned long long my_addr = 0ULL;
+#endif
+		ptr = mmap((void*)my_addr, max, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 		close(fd); // no longer needed
 		if (ptr == NULL || ptr == MAP_FAILED) {
 			// segment is not mapped...

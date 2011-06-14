@@ -53,6 +53,80 @@ namespace PAMI
         return;
       }
 
+    inline pami_result_t initP2PCollectives(Context      *ctxt)
+      {
+        // Initalize Collective Registration
+        pami_result_t rc;
+        rc = __global.heap_mm->memalign((void **)&ctxt->_pgas_collreg, 0,
+                                        sizeof(*ctxt->_pgas_collreg));
+        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PGASCollreg");
+        new(ctxt->_pgas_collreg) PGASCollreg(this,
+                                             ctxt,
+                                             _clientid,
+                                             ctxt->getId(),
+                                             ctxt->_protocol,
+                                             ctxt->_lapi_device,
+                                             ctxt->_devices->_shmem[ctxt->getId()],
+                                             &ctxt->_dispatch_id,
+                                             &_geometry_map,
+                                             false);
+        return PAMI_SUCCESS;
+      }
+
+    inline pami_result_t initCollectives(Context               *ctxt,
+                                         Memory::MemoryManager *mm,
+                                         bool                   disable_shm)
+      {
+        Memory::MemoryManager *mm_ptr;
+        pami_result_t          rc;
+
+        if(disable_shm) mm_ptr = NULL;
+        else            mm_ptr = mm;
+
+        rc = __global.heap_mm->memalign((void **)&ctxt->_p2p_ccmi_collreg,
+                                        0,
+                                        sizeof(*ctxt->_p2p_ccmi_collreg));
+        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc P2PCCMICollreg");
+
+#ifndef _LAPI_LINUX
+        ctxt->_bsr_device.setGenericDevices(ctxt->_devices->_generics);
+#endif
+        ctxt->_cau_device.setGenericDevices(ctxt->_devices->_generics);
+        rc = __global.heap_mm->memalign((void **)&ctxt->_cau_collreg, 0,
+                                        sizeof(*ctxt->_cau_collreg));
+        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc CAUCollreg");
+        new(ctxt->_cau_collreg) CAUCollreg(_client,
+                                           ctxt,
+                                           ctxt->getId(),
+                                           _clientid,
+                                           *ctxt->_devices->_generics,
+                                           ctxt->_bsr_device,
+                                           ctxt->_cau_device,
+                                           __global.mapping,
+                                           ctxt->_lapi_handle,
+                                           &ctxt->_dispatch_id,
+                                           &_geometry_map,
+                                           mm_ptr);
+        size_t numpeers, numtasks;
+        __global.mapping.nodePeers(numpeers);
+        numtasks = __global.mapping.size();
+        new(ctxt->_p2p_ccmi_collreg) P2PCCMICollreg(_client,
+                                                    ctxt,
+                                                    ctxt->getId(),
+                                                    _clientid,
+                                                    ctxt->_devices->_shmem[ctxt->getId()],
+                                                    ctxt->_lapi_device,
+                                                    ctxt->_protocol,
+                                                    mm_ptr?1:0,  //use shared memory
+                                                    1,           //use "global" device
+                                                    numtasks,
+                                                    numpeers,
+                                                    &ctxt->_dispatch_id,
+                                                    &_geometry_map);
+        ctxt->_pgas_collreg->setGenericDevice(&ctxt->_devices->_generics[ctxt->getId()]);
+        return PAMI_SUCCESS;
+      }
+
 
 
     inline Client (const char * name, pami_configuration_t configuration[],
@@ -165,7 +239,7 @@ namespace PAMI
             new(_world_geometry) LAPIGeometry((pami_client_t) this,
                                               NULL,
                                               &__global.mapping,
-                                              0,
+                                              1,
                                               num_world_procs,
                                               _world_list,
                                               &_geometry_map,
@@ -182,7 +256,7 @@ namespace PAMI
             new(_world_geometry) LAPIGeometry((pami_client_t) this,
                                               NULL,
                                               &__global.mapping,
-                                              0,
+                                              1,
                                               1,
                                               &_world_range,
                                               &_geometry_map,
@@ -190,12 +264,13 @@ namespace PAMI
                                                   // the optimized topologies.  we can
                                                   // generate them after building a mapping
           }
-        _contexts[0]->setWorldGeometry(_world_geometry);
 
         // Initialize "Safe" Collectives, which will be used
         // To build the mappings and topologies for the optimized
         // collectives and to set up token management for collectives
-        _contexts[0]->initP2PCollectives();
+        initP2PCollectives(_contexts[0]);
+        _world_geometry->resetUEBarrier();
+        _contexts[0]->_pgas_collreg->analyze(_contexts[0]->getId(),_world_geometry);
 
         // --> Ok to do collectives after here, build better mappings
         size_t min_rank, max_rank, num_local, *local_ranks;
@@ -224,15 +299,44 @@ namespace PAMI
         _world_geometry->regenTopo();
 
         // Initialize the optimized collectives
-        _contexts[0]->initCollectives(&_mm, _disable_shm);
+        initCollectives(_contexts[0], &_mm, _disable_shm);
 
+        // Initialize the optimized collectives by creating the "true world geometry"
         volatile int flag = 1;
-        _world_geometry->default_barrier(barrier_done_fn,
-                                         (void*)&flag,
-                                         _contexts[0]->getId(),
-                                         &_contexts[0]);
+        pami_geometry_t _new_world_geometry;
+        if(world_procs)
+        {
+          size_t num_world_procs = atoi(world_procs);
+          geometry_create_tasklist_impl(&_new_world_geometry,
+                                        NULL,
+                                        0,
+                                        _world_geometry,
+                                        0,
+                                        _world_list,
+                                        num_world_procs,
+                                        (pami_context_t)_contexts[0],
+                                        barrier_done_fn,
+                                        (void*)&flag);
+        }
+        else
+          geometry_create_taskrange_impl(&_new_world_geometry,
+                                         NULL,
+                                         0,
+                                         (pami_geometry_t)_world_geometry,
+                                         0,
+                                         &_world_range,
+                                         1,
+                                         (pami_context_t)_contexts[0],
+                                         barrier_done_fn,
+                                         (void*)&flag);
         while(flag)
           _contexts[0]->advance(10,rc);
+
+        // Clean up the temporary world geometry
+        _world_geometry->~Lapi();
+        _geometryAlloc.returnObject(_world_geometry);
+        _world_geometry = (LAPIGeometry*)_new_world_geometry;
+
 
         // Return error code
         result                         = rc;
@@ -401,8 +505,7 @@ namespace PAMI
                               _clientid,              /* Client  id       */
                               ((LapiImpl::Client*)&_lapiClient[0])->GetName(), /* Client String    */
                               index,                  /* Context id       */
-                              &_platdevs,             /* Platform Devices */
-                              &_geometry_map);  
+                              &_platdevs);             /* Platform Devices */
         *ctxt = c;
         _ncontexts++;
         return PAMI_SUCCESS;
@@ -442,10 +545,8 @@ namespace PAMI
                   contexts[i] = (pami_context_t) _contexts[i];
                   continue;
               }
-
-              _contexts[i]->setWorldGeometry(_world_geometry);
-              _contexts[i]->initP2PCollectives();
-              _contexts[i]->initCollectives(&_mm, _disable_shm);
+              initP2PCollectives(_contexts[i]);
+              initCollectives(_contexts[i],&_mm, _disable_shm);
               _contexts[i]->unlock();
 
               // Setup return for other contexts
