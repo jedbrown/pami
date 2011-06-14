@@ -364,8 +364,10 @@ namespace PAMI {
 	//fprintf(stderr, "Sending msg from payload pa %lx\n", paddr);
 	//MUSPI_DescriptorDumpHex ((char *)"Immediate Multicast", desc);
 
-	VECTOR_LOAD_NU (desc,  0, 0);
-	VECTOR_LOAD_NU (desc, 32, 1);	
+	register double fp0 asm("fr0");
+	register double fp1 asm("fr1");
+	VECTOR_LOAD_NU (desc,  0, fp0);
+	VECTOR_LOAD_NU (desc, 32, fp1);	
 	for (cidx = 1; cidx < nranks; cidx++) {
 	  MUSPI_DescriptorBase * memfifo = desc + cidx;	    
 	  _mucontext.pinFifo (ranks[cidx],
@@ -374,8 +376,8 @@ namespace PAMI {
 			      rfifo,
 			      map);
 
-	  VECTOR_STORE_NU (memfifo,  0, 0);
-	  VECTOR_STORE_NU (memfifo, 32, 1);
+	  VECTOR_STORE_NU (memfifo,  0, fp0);
+	  VECTOR_STORE_NU (memfifo, 32, fp1);
 	  //desc->clone(*memfifo);	  
 	  // Initialize the injection fifo descriptor in-place.
 	  memfifo->setDestination (dest);

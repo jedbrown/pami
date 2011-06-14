@@ -132,8 +132,10 @@ namespace PAMI
 	      size_t fifo = 0;	    
 
 	      size_t rfifo8 =  *(size_t*)((char*)&desc + 40);
-	      VECTOR_LOAD_NU (&desc,  0, 0);
-	      VECTOR_LOAD_NU (&desc, 32, 1);	
+	      register double fp0 asm("fr0");
+	      register double fp1 asm("fr1");	      
+	      VECTOR_LOAD_NU (&desc,  0, fp0);
+	      VECTOR_LOAD_NU (&desc, 32, fp1);	
 	      while (_next  < _nranks) {
 		InjChannel &channel = _mucontext.injectionGroup.channel[fifo];
 		size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();			
@@ -176,8 +178,8 @@ namespace PAMI
 		  
 		  size_t rfifo8_cur = rfifo8 | (((size_t)rfifo)<<22);
 
-		  VECTOR_STORE_NU (d+i,  0, 0);
-		  VECTOR_STORE_NU (d+i, 32, 1);	
+		  VECTOR_STORE_NU (d+i,  0, fp0);
+		  VECTOR_STORE_NU (d+i, 32, fp1);	
 		  //desc.clone (d+i);
 		  d[i].setDestination (dest);
 		  //d[i].setRecFIFOId (rfifo);

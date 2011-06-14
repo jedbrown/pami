@@ -24,6 +24,7 @@
 #include "components/devices/bgq/mu2/Context.h"
 #include "components/devices/bgq/mu2/msg/InjectDescriptorMessage.h"
 
+#include "math/Memcpy.x.h"
 
 #include "util/trace.h"
 #undef  DO_TRACE_ENTEREXIT
@@ -295,8 +296,11 @@ namespace PAMI
 
         InjChannel & channel = device.injectionGroup.channel[fnum];
         bool isfree = channel.hasFreeSpaceWithUpdate ();
-        VECTOR_LOAD_NU (&_singlepkt,  0, 0);  /* Load first 32 bytes to reg 0*/
-        VECTOR_LOAD_NU (&_singlepkt, 32, 1);  /* Load second 32 bytes to reg 1*/
+
+	register double f0 asm("fr0");
+	register double f1 asm("fr1");
+        VECTOR_LOAD_NU (&_singlepkt,  0, f0);  /* Load first 32 bytes to reg 0*/
+        VECTOR_LOAD_NU (&_singlepkt, 32, f1);  /* Load second 32 bytes to reg 1*/
 
         if (likely(channel.isSendQueueEmpty() && isfree))
           {
@@ -313,8 +317,8 @@ namespace PAMI
             // Clone the single-packet model descriptor into the injection fifo
             MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) desc;
             //_singlepkt.clone (*memfifo);
-            VECTOR_STORE_NU(memfifo,  0, 0);
-            VECTOR_STORE_NU(memfifo, 32, 1);
+            VECTOR_STORE_NU(memfifo,  0, f0);
+            VECTOR_STORE_NU(memfifo, 32, f1);
 
             // Initialize the injection fifo descriptor in-place.
             memfifo->setDestination (dest);

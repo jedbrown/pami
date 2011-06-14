@@ -194,8 +194,10 @@ namespace PAMI
 
 	    if (_nextdst < _ndestinations) 
 	    {
-	      VECTOR_LOAD_NU (&_desc,  0, 0);
-	      VECTOR_LOAD_NU (&_desc, 32, 1);		  	    
+	      register double fp0 asm("fr0");
+	      register double fp1 asm("fr1");	      
+	      VECTOR_LOAD_NU (&_desc,  0, fp0);
+	      VECTOR_LOAD_NU (&_desc, 32, fp1);		  	    
 	      
 	      do { 
 		size_t                fnum    = _fifos[_nextdst];
@@ -211,8 +213,8 @@ namespace PAMI
 		  // Clone the message descriptors directly into the injection fifo.
 		  MUSPI_DescriptorBase * d = (MUSPI_DescriptorBase *) channel.getNextDescriptor ();	    
 		  //_desc.clone (*d);
-		  VECTOR_STORE_NU (d,  0, 0);
-		  VECTOR_STORE_NU (d, 32, 1);	
+		  VECTOR_STORE_NU (d,  0, fp0);
+		  VECTOR_STORE_NU (d, 32, fp1);	
 		  d->setDestination(dest);
 		  d->setHintsABCD(hints);
 		  d->setPt2PtMisc1(hints_e);

@@ -93,8 +93,10 @@ namespace PAMI
 				  size_t         counter_offset,
 				  unsigned       iteration) 
 	  {
-	    VECTOR_LOAD_NU (&_params->_modeldesc,  0, 0);
-	    VECTOR_LOAD_NU (&_params->_modeldesc, 32, 1);		  	    
+	    register double fp0 asm("fr0");
+	    register double fp1 asm("fr1");
+	    VECTOR_LOAD_NU (&_params->_modeldesc,  0, fp0);
+	    VECTOR_LOAD_NU (&_params->_modeldesc, 32, fp1);		  	    
 	    
 	    uint64_t  map0     = _mu_fifomaps  [fifo0];
 	    uint8_t   hints0   = _mu_hintsABCD [fifo0];
@@ -111,8 +113,8 @@ namespace PAMI
 		MUSPI_DescriptorBase * d = (MUSPI_DescriptorBase *) channel.getNextDescriptor (); 
 
 		// Clone the message descriptors directly into the injection fifo.
-		VECTOR_STORE_NU (d,  0, 0);
-		VECTOR_STORE_NU (d, 32, 1);					
+		VECTOR_STORE_NU (d,  0, fp0);
+		VECTOR_STORE_NU (d, 32, fp1);					
 		//_params->_modeldesc.clone (d[0]);
 
 		d[0].PacketHeader.messageUnitHeader.Packet_Types.Direct_Put.Counter_Offset = counter_offset;
@@ -134,8 +136,8 @@ namespace PAMI
 		MUSPI_DescriptorBase * d = (MUSPI_DescriptorBase *) channel.getNextDescriptor (); 
 
 		// Clone the message descriptors directly into the injection fifo.
-		VECTOR_STORE_NU (d,  0, 0);
-		VECTOR_STORE_NU (d, 32, 1);			
+		VECTOR_STORE_NU (d,  0, fp0);
+		VECTOR_STORE_NU (d, 32, fp1);			
 		//_params->_modeldesc.clone (d[0]);
 
 		d[0].PacketHeader.messageUnitHeader.Packet_Types.Direct_Put.Counter_Offset = counter_offset;
