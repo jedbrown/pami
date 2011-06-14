@@ -948,8 +948,7 @@ fprintf(stderr, "%s\n", buf);
 	        // it is probably OK to leave the old one around,
 	        // else need to be sure what value we can set it to
 	        // and not have CNK think it is "free"...
-	        // cr = (some bit pattern);
-	        // rc = Kernel_SetCollectiveClassRoute(id, &cr);
+	        // rc = Kernel_SetEmptyCollectiveClassRoute(id);
 	        // for now, this code will just overwrite the bits next
 	        // time this id gets used.
 	      }
@@ -971,6 +970,15 @@ fprintf(stderr, "%s\n", buf);
 	      if (last)
 	      {
 	        // see Coll case above...
+		// Since GI bits have conflicts with id+8, need to actually
+		// make this classroute appear "empty" so it won't conflict
+		// with "id-8"...
+	        (void) Kernel_SetEmptyGlobalInterruptClassRoute(id);
+#ifdef TRACE_CLASSROUTES
+		if (_trace_cr) {
+			fprintf(stderr, "Clearing GI classroute bits for ID %d\n", id);
+		}
+#endif // TRACE_CLASSROUTES
 	      }
 	    }
 	  }
@@ -980,6 +988,7 @@ fprintf(stderr, "%s\n", buf);
 	  return PAMI_SUCCESS;
 	}
 
+      private:
 	static void start_over(pami_context_t ctx, void *cookie, pami_result_t result)
 	{
 	  cr_cookie *crck = (cr_cookie *)cookie;
@@ -1001,6 +1010,30 @@ fprintf(stderr, "%s\n", buf);
 	    got_mutex(ctx, cookie, rc); // should this retry?
 	    return;
 	  }
+	}
+
+	inline void CheckGICRConflicts(uint32_t &mask, CR_RECT_T *rect) {
+		uint32_t rc;
+		ClassRoute_t cr;
+		MUSPI_BuildNodeClassroute(&_refcomm, &_refroot, &_mycoord, rect,
+							_map, _pri_dim, &cr);
+		uint32_t msk = mask & ~CR_MATCH_RECT_FLAG; // just 0x0ffff ?
+		int x = 0;
+		while (msk) {
+			if (msk & 1) {
+				rc = Kernel_CheckGlobalInterruptClassRoute(x, &cr);
+				// only care about conflicts with id+8 here...
+				// but if there's an error now, we know it will
+				// also be an error later so we might as well
+				// just eliminate all GI classroutes and do the
+				// CN ones only.
+				if (rc != 0) {
+					mask &= ~(1 << x);
+				}
+			}
+			++x;
+			msk >>= 1;
+		}
 	}
 
 	static void got_mutex(pami_context_t ctx, void *cookie, pami_result_t result)
@@ -1040,6 +1073,7 @@ fprintf(stderr, "%s\n", buf);
 	  if (!val || val == PAMI_CR_GKEY_FAIL) {
 	    mask2 = MUSPI_GetClassrouteIds(PAMI_MU_CR_SPI_VC,
 	            &rect, &crck->thus->_gicrdata);
+	    crck->thus->CheckGICRConflicts(mask2, &rect);
 	  }
 	  // is this true? can we be sure ALL nodes got the same result?
 	  // if so, and we are re-using existing classroute, then we can skip
@@ -1276,6 +1310,8 @@ fprintf(stderr, "%s\n", buf);
 	  }
 	  return 0;
 	}
+
+      public:
 
         // \brief Get Per Process PAMI Max Number of Contexts For A Client
 	inline size_t getPerProcessMaxPamiResources ( size_t RmClientId )
