@@ -246,6 +246,8 @@ int main(int argc, char*argv[])
     char * scan_type = "Inclusive";
     for (exclusive = 0; exclusive < 2; exclusive++)
     {
+      if(exclusive == 1)
+        scan_type = "Exclusive";
       for (nalg = 0; nalg < scan_num_algorithm[0]; nalg++)
       {
         scan.cb_done   = cb_done;
@@ -267,8 +269,6 @@ int main(int argc, char*argv[])
           {
             if (task_id == task_zero)
             {
-              if(exclusive == 1)
-                scan_type = "Exclusive";
               printf("# %s Scan Bandwidth Test -- context = %d, task_zero = %d protocol: %s\n",
                      scan_type, iContext, task_zero, scan_always_works_md[nalg].name);
               printf("# Size(bytes)           cycles    bytes/sec    usec\n");

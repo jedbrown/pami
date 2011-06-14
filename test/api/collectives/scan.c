@@ -181,12 +181,12 @@ int main(int argc, char*argv[])
     char * scan_type = "Inclusive";
     for (exclusive = 0; exclusive < 2; exclusive++)
     {
+      if(exclusive == 1)
+        scan_type = "Exclusive";
       for (nalg = 0; nalg < scan_num_algorithm[0]; nalg++)
       {
         if (task_id == task_zero) /* root not set yet */
         {
-          if(exclusive == 1)
-            scan_type = "Exclusive";
           printf("# %s Scan Bandwidth Test -- context = %d, task_zero = %d protocol: %s\n",
                  scan_type, iContext, task_zero, scan_always_works_md[nalg].name);
           printf("# Size(bytes)           cycles    bytes/sec    usec\n");
@@ -250,7 +250,7 @@ int main(int argc, char*argv[])
                 int rc_check;
                 rc |= rc_check = check_rcvbuf (rbuf, i, op, dt, num_tasks, task_id, exclusive);
 
-                if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
+                if (rc_check) fprintf(stderr, "%s scan %s FAILED validation\n", scan_type, gProtocolName);
 
                 usec = (tf - ti)/(double)niter;
                 if (task_id == task_zero)

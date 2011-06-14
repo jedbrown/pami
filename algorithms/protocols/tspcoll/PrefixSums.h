@@ -19,6 +19,8 @@ namespace xlpgas
 		      unsigned             nelems);
 	  static void cb_prefixsums (CollExchange<T_NI> *coll, unsigned phase);
 
+          void setExclusive(int exclusive) { _exclusive = exclusive; }
+
 	protected:
 	  int           _logMaxBF;
 	  unsigned      _nelems;
@@ -27,8 +29,9 @@ namespace xlpgas
 	  void        * _tmpbuf;
 	  size_t        _tmpbuflen;
           coremath      _cb_prefixsums;
-	  user_func_t    *_uf;
-	  xlpgas_dtypes_t _dt;
+          user_func_t    *_uf;
+          xlpgas_dtypes_t _dt;
+          int           _exclusive; // 0 = Inclusive scan, 1 = Exclusive scan
 
   }; /* PrefixSums */
 } /* Xlpgas */

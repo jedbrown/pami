@@ -582,6 +582,7 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::notifyRecv
 
 template <class T_ConnMgr, class T_Schedule>
 inline void CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::localReduce() {
+  // Task 0 need not perform a reduce
   if (_endphase != -1 && _curphase - 1 <= _endphase)
     {
       // Perform reduce operation before moving to the next phase

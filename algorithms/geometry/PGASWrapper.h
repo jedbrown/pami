@@ -332,14 +332,16 @@ namespace PAMI
         {
           if (!this->_collexch->isdone()) this->_dev->advance();
           uintptr_t op, dt;
-          PAMI::Type::TypeFunc::GetEnums(this->_cmd->cmd.xfer_allreduce.stype,
-                                         this->_cmd->cmd.xfer_allreduce.op,
+
+          this->_collexch->setExclusive(this->_cmd->cmd.xfer_scan.exclusive);
+          PAMI::Type::TypeFunc::GetEnums(this->_cmd->cmd.xfer_scan.stype,
+                                         this->_cmd->cmd.xfer_scan.op,
                                          dt,op);
-          this->_collexch->reset (this->_cmd->cmd.xfer_allreduce.sndbuf,
-                                  this->_cmd->cmd.xfer_allreduce.rcvbuf,
+          this->_collexch->reset (this->_cmd->cmd.xfer_scan.sndbuf,
+                                  this->_cmd->cmd.xfer_scan.rcvbuf,
                                   (pami_op)op,
                                   (pami_dt)dt,
-                                  this->_cmd->cmd.xfer_allreduce.stypecount);
+                                  this->_cmd->cmd.xfer_scan.stypecount);
           this->_collexch->setContext(this->_context);
           this->_collexch->setComplete(this->_cmd->cb_done, this->_cmd->cookie);
           this->_collexch->kick();

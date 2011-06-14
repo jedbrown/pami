@@ -29,6 +29,7 @@ PrefixSums (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
   this->_tmpbuflen = 0;
   this->_dbuf = NULL;
   this->_nelems = 0;
+  this->_exclusive = 0;
   for (this->_logMaxBF = 0; (1<<(this->_logMaxBF+1)) <= (int)this->_comm->size(); this->_logMaxBF++) ;
   int maxBF  = 1<<this->_logMaxBF;
   if(maxBF < (int) this->_comm->size()) this->_logMaxBF++;
@@ -73,13 +74,35 @@ void xlpgas::PrefixSums<T_NI>::
 cb_prefixsums (CollExchange<T_NI> *coll, unsigned phase)
 {
   xlpgas::PrefixSums<T_NI> * ar = (xlpgas::PrefixSums<T_NI> *) coll;
-  void * inputs[] = {ar->_dbuf, ar->_tmpbuf};
-  ar->_cb_prefixsums (ar->_dbuf, inputs, 2, ar->_nelems);
+  void * inputs[2];
+  if(ar->_exclusive == 0)
+    {
+      inputs[0] = ar->_dbuf;
+      inputs[1] = ar->_tmpbuf;
+      ar->_cb_prefixsums (ar->_dbuf, inputs, 2, ar->_nelems);
+    }
+  else if(ar->_comm->ordinal() > 0)
+    {
+      size_t datawidth = xlpgas::Allreduce::datawidthof (ar->_dt);
+      inputs[1] = (((char *)ar->_tmpbuf) + ar->_nelems * datawidth);
+      // In phase 1 we copy the received data to the destination buffer
+      if(phase == 1)
+        {
+          memcpy(ar->_dbuf, inputs[1], ar->_nelems * datawidth);
+        }
+      else
+        {
+          inputs[0] = ar->_dbuf;
+          ar->_cb_prefixsums (ar->_dbuf, inputs, 2, ar->_nelems);
+        }
+        inputs[0] = ar->_tmpbuf;
+        ar->_cb_prefixsums (ar->_tmpbuf, inputs, 2, ar->_nelems);
+    }
 }
 
 
 /* ************************************************************************* */
-/*                      start prefixSums operation                         */
+/*                      start prefixSums operation                           */
 /* ************************************************************************* */
 template <class T_NI>
 void xlpgas::PrefixSums<T_NI>::reset (const void         * sbuf,
@@ -95,10 +118,21 @@ void xlpgas::PrefixSums<T_NI>::reset (const void         * sbuf,
   this->_dbuf   = dbuf;
   this->_nelems = nelems;
   size_t datawidth = xlpgas::Allreduce::datawidthof (dt);
-  if (sbuf != dbuf) memcpy (dbuf, sbuf, nelems * datawidth);
+  size_t tmpbufsize;
+
+  /* For exclusive scan we need twice the amount of temporary buffer space
+     _tmpbuf = {x,y}  , where
+      x = partial "inclusive" scan result
+      y = buffer received from left neighbour
+      size of x = size of y = nelems * datawidth
+  */
+  if(_exclusive == 0)
+    tmpbufsize = nelems * datawidth;
+  else
+    tmpbufsize = 2 * nelems * datawidth;
 
   /* need more memory in temp buffer? */
-  if (this->_tmpbuflen < nelems * datawidth)
+  if (this->_tmpbuflen < tmpbufsize)
     {
       if (this->_tmpbuf) {
 	__global.heap_mm->free (this->_tmpbuf);
@@ -109,15 +143,26 @@ void xlpgas::PrefixSums<T_NI>::reset (const void         * sbuf,
 #if TRANSPORT == bgp
       //int alignment = MAXOF(sizeof(void*), datawidth);
       int alignment = sizeof(void*);
-      int rc = __global.heap_mm->memalign (&this->_tmpbuf, alignment, nelems*datawidth);
+      int rc = __global.heap_mm->memalign (&this->_tmpbuf, alignment, tmpbufsize);
       //printf("L%d: AR bgp alment=%d sz=%d %d \n",XLPGAS_MYNODE, alignment,nelems*datawidth,rc)
 #else
-      this->_tmpbuf = __global.heap_mm->malloc (nelems * datawidth);
+      this->_tmpbuf = __global.heap_mm->malloc (tmpbufsize);
       int rc = 0;
 #endif
       if (rc || !this->_tmpbuf)
 	xlpgas_fatalerror (-1, "PrefixSums: memory allocation error, rc=%d", rc);
-      this->_tmpbuflen = nelems * datawidth;
+    }
+  this->_tmpbuflen = tmpbufsize;
+  if (sbuf != dbuf)
+    {
+      if(_exclusive == 0)
+        {
+          memcpy (dbuf, sbuf, nelems * datawidth);
+        }
+      else
+        {
+          memcpy (this->_tmpbuf, sbuf, nelems * datawidth);
+        }
     }
 
   /* --------------------------------------------------- */
@@ -125,15 +170,26 @@ void xlpgas::PrefixSums<T_NI>::reset (const void         * sbuf,
   /* We deal with non-power-of-2 nodes                   */
   /* --------------------------------------------------- */
   int phase  = 0;
+  void *sbuf_phase, *rbuf_phase;
+  if(this->_exclusive == 0)
+    {
+      sbuf_phase = this->_dbuf;
+      rbuf_phase = this->_tmpbuf;
+    }
+  else
+    {
+      sbuf_phase = this->_tmpbuf;
+      rbuf_phase = (((char *)this->_tmpbuf) + nelems * datawidth);
+    }
 
   for (int i=0; i<this->_logMaxBF; i++)   /* prefix sums pattern */
     {
       phase ++;
       int tgt = this->_comm->ordinal() + (1<<i);
-      this->_sbuf    [phase] = (tgt < (int)this->_comm->size()) ? this->_dbuf : NULL;
+      this->_sbuf    [phase] = (tgt < (int)this->_comm->size()) ? sbuf_phase : NULL;
       this->_sbufln  [phase] = (tgt<(int)this->_comm->size()) ? nelems * datawidth : 0 ;
       tgt = this->_comm->ordinal() - (1<<i);
-      this->_rbuf    [phase] = (tgt>=0) ? this->_tmpbuf : NULL;
+      this->_rbuf    [phase] = (tgt>=0) ? rbuf_phase : NULL;
       phase ++;
     }
 
