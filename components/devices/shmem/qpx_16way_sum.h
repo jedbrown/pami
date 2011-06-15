@@ -14,6 +14,30 @@ inline unsigned _quad_double_sum_16way_align64B(double* dst, double* src0, doubl
     double* src4, double* src5, double* src6, double* src7, double* src8, double *src9, double* src10, double* src11,
     double* src12, double* src13, double* src14, double* src15, unsigned num_dbls)
 {
+  register double f0  __asm__("fr0");
+  register double f1  __asm__("fr1");
+  register double f2  __asm__("fr2");
+  register double f3  __asm__("fr3");
+  register double f4  __asm__("fr4");
+  register double f5  __asm__("fr5");
+  register double f6  __asm__("fr6");
+  register double f7  __asm__("fr7");
+  register double f8  __asm__("fr8");
+  register double f9  __asm__("fr9");
+  register double f10 __asm__("fr10");
+  register double f11 __asm__("fr11");
+  register double f12 __asm__("fr12");
+  register double f13 __asm__("fr13");
+  register double f14 __asm__("fr14");
+  register double f15 __asm__("fr15");
+  register double f16 __asm__("fr16");
+  register double f17 __asm__("fr17");
+  register double f18 __asm__("fr18");
+  register double f19 __asm__("fr19");
+  register double f28 __asm__("fr28");
+  register double f29 __asm__("fr29");
+  register double f30 __asm__("fr30");
+  register double f31 __asm__("fr31");
 
   double *src0_1, *src1_1, *src2_1, *src3_1, *src4_1, *src5_1, *src6_1, *src7_1;
   double *src8_1, *src9_1, *src10_1, *src11_1, *src12_1, *src13_1, *src14_1, *src15_1;
@@ -49,284 +73,284 @@ inline unsigned _quad_double_sum_16way_align64B(double* dst, double* src0, doubl
 
   y = (num_dbls>>3) >> 1;
 
-  VECTOR_LOAD(src0_1,inc,0);
-  VECTOR_LOAD(src1_1,inc,1);
-  VECTOR_LOAD(src2_1,inc,2);
-  VECTOR_LOAD(src3_1,inc,3);
-  VECTOR_LOAD(src4_1,inc,4);
-  VECTOR_LOAD(src5_1,inc,5);
-  VECTOR_LOAD(src6_1,inc,6);
-  VECTOR_LOAD(src7_1,inc,7);
+  QPX_LOAD(src0_1,inc,f0);
+  QPX_LOAD(src1_1,inc,f1);
+  QPX_LOAD(src2_1,inc,f2);
+  QPX_LOAD(src3_1,inc,f3);
+  QPX_LOAD(src4_1,inc,f4);
+  QPX_LOAD(src5_1,inc,f5);
+  QPX_LOAD(src6_1,inc,f6);
+  QPX_LOAD(src7_1,inc,f7);
 
-  VECTOR_LOAD(src8_1,inc,8);
-  VECTOR_LOAD(src0_1,inc,16);
+  QPX_LOAD(src8_1,inc,f8);
+  QPX_LOAD(src0_1,inc,f16);
   ASM("qvfadd 28, 0, 1" ::: "fr28"  );
 
 
-  VECTOR_LOAD(src9_1,inc,9);
-  VECTOR_LOAD(src1_1,inc,17);
+  QPX_LOAD(src9_1,inc,f9);
+  QPX_LOAD(src1_1,inc,f17);
   ASM("qvfadd 28, 28, 2" ::: "fr28"  );
 
 
-  VECTOR_LOAD(src10_1,inc,10);
-  VECTOR_LOAD(src2_1,inc,18);
+  QPX_LOAD(src10_1,inc,f10);
+  QPX_LOAD(src2_1,inc,f18);
   ASM("qvfadd 28, 28, 3" ::: "fr28"  );
 
 
-  VECTOR_LOAD(src11_1,inc,11);
-  VECTOR_LOAD(src3_1,inc,19);
+  QPX_LOAD(src11_1,inc,f11);
+  QPX_LOAD(src3_1,inc,f19);
   ASM("qvfadd 28, 28, 4" ::: "fr28"  );
-  VECTOR_LOAD(src12_1,inc,12);
+  QPX_LOAD(src12_1,inc,f12);
 
   ASM("qvfadd 30, 16, 17" ::: "fr30"  );
 
 
-  VECTOR_LOAD(src4_1,inc,16);
+  QPX_LOAD(src4_1,inc,f16);
   ASM("qvfadd 28, 28, 5" ::: "fr28"  );
-  VECTOR_LOAD(src13_1,inc,13);
+  QPX_LOAD(src13_1,inc,f13);
   ASM("qvfadd 30, 30, 18" ::: "fr30"  );
 
 
-  VECTOR_LOAD(src5_1,inc,17);
+  QPX_LOAD(src5_1,inc,f17);
   ASM("qvfadd 28, 28, 6" ::: "fr28"  );
-  VECTOR_LOAD(src14_1,inc,14);
+  QPX_LOAD(src14_1,inc,f14);
   ASM("qvfadd 30, 30, 19" ::: "fr30"  );
 
 
-  VECTOR_LOAD(src6_1,inc,18);
+  QPX_LOAD(src6_1,inc,f18);
   ASM("qvfadd 28, 28, 7" ::: "fr28"  );
-  VECTOR_LOAD(src15_1,inc,15);
+  QPX_LOAD(src15_1,inc,f15);
   ASM("qvfadd 30, 30, 16" ::: "fr30"  );
 
 
-  VECTOR_LOAD(src7_1,inc,19);
+  QPX_LOAD(src7_1,inc,f19);
   ASM("qvfadd 28, 28, 8" ::: "fr28"  );
 
   while (1)
   {
 
-  VECTOR_LOAD(src0_1,inc,0);
+  QPX_LOAD(src0_1,inc,f0);
   ASM("qvfadd 30, 30, 17" ::: "fr30"  );
-  VECTOR_LOAD(src8_1,inc,16);
+  QPX_LOAD(src8_1,inc,f16);
   ASM("qvfadd 28, 28, 9" ::: "fr28"  );
 
 
 
-  VECTOR_LOAD(src1_1,inc,1);
+  QPX_LOAD(src1_1,inc,f1);
   ASM("qvfadd 30, 30, 18" ::: "fr30"  );
-  VECTOR_LOAD(src9_1,inc,17);
+  QPX_LOAD(src9_1,inc,f17);
   ASM("qvfadd 28, 28, 10" ::: "fr28"  );
 
-  VECTOR_LOAD(src2_1,inc,2);
+  QPX_LOAD(src2_1,inc,f2);
   ASM("qvfadd 30, 30, 19" ::: "fr30"  );
-  VECTOR_LOAD(src10_1,inc,18);
+  QPX_LOAD(src10_1,inc,f18);
   ASM("qvfadd 28, 28, 11" ::: "fr28"  );
 
 
 
-  VECTOR_LOAD(src3_1,inc,3);
+  QPX_LOAD(src3_1,inc,f3);
   ASM("qvfadd 30, 30, 16" ::: "fr30"  );
-  VECTOR_LOAD(src11_1,inc,19);
+  QPX_LOAD(src11_1,inc,f19);
   ASM("qvfadd 28, 28, 12" ::: "fr28"  );
 
 
-  VECTOR_LOAD(src4_1,inc,4);
+  QPX_LOAD(src4_1,inc,f4);
   ASM("qvfadd 30, 30, 17" ::: "fr30"  );
-  VECTOR_LOAD(src12_1,inc,16);
+  QPX_LOAD(src12_1,inc,f16);
   ASM("qvfadd 28, 28, 13" ::: "fr28"  );
 
 
-  VECTOR_LOAD(src5_1,inc,5);
+  QPX_LOAD(src5_1,inc,f5);
   ASM("qvfadd 30, 30, 18" ::: "fr30"  );
-  VECTOR_LOAD(src13_1,inc,17);
+  QPX_LOAD(src13_1,inc,f17);
   ASM("qvfadd 28, 28, 14" ::: "fr28"  );
 
 
-  VECTOR_LOAD(src6_1,inc,6);
+  QPX_LOAD(src6_1,inc,f6);
   ASM("qvfadd 30, 30, 19" ::: "fr30"  );
-  VECTOR_LOAD(src14_1,inc,18);
+  QPX_LOAD(src14_1,inc,f18);
   ASM("qvfadd 28, 28, 15" ::: "fr28"  ); //first first-half sum done
 
 
-  VECTOR_LOAD(src7_1,inc,7);
+  QPX_LOAD(src7_1,inc,f7);
   ASM("qvfadd 30, 30, 16" ::: "fr30"  );
-  VECTOR_LOAD(src15_1,inc,19);
+  QPX_LOAD(src15_1,inc,f19);
 
 
-  VECTOR_LOAD(src8_1,inc,8);
+  QPX_LOAD(src8_1,inc,f8);
   ASM("qvfadd 30, 30, 17" ::: "fr30"  );
-  VECTOR_LOAD(src0_1,inc,16);
+  QPX_LOAD(src0_1,inc,f16);
   ASM("qvfadd 29, 0, 1" ::: "fr29"  ); 	//second first-half sum start
 
 
 
-  VECTOR_LOAD(src9_1,inc,9);
+  QPX_LOAD(src9_1,inc,f9);
   ASM("qvfadd 30, 30, 18" ::: "fr30"  );
-  VECTOR_STORE(dst_1,inc1,28);
-  VECTOR_LOAD(src1_1,inc,17);
+  QPX_STORE(dst_1,inc1,f28);
+  QPX_LOAD(src1_1,inc,f17);
   ASM("qvfadd 29, 29, 2" ::: "fr29"  );
 
 
-  VECTOR_LOAD(src10_1,inc,10);
+  QPX_LOAD(src10_1,inc,f10);
   ASM("qvfadd 30, 30, 19" ::: "fr30"  ); //first second-half sum done
-  VECTOR_LOAD(src2_1,inc,18);
+  QPX_LOAD(src2_1,inc,f18);
   ASM("qvfadd 29, 29, 3" ::: "fr29"  );
 
-  VECTOR_LOAD(src11_1,inc,11);
-  VECTOR_LOAD(src3_1,inc,19);
+  QPX_LOAD(src11_1,inc,f11);
+  QPX_LOAD(src3_1,inc,f19);
   ASM("qvfadd 29, 29, 4" ::: "fr29"  );
 
 
 
-  VECTOR_LOAD(src12_1,inc,12);
+  QPX_LOAD(src12_1,inc,f12);
   ASM("qvfadd 31, 16, 17" ::: "fr31"  ); //second second-half sum start
-  VECTOR_LOAD(src4_1,inc,16);
+  QPX_LOAD(src4_1,inc,f16);
   ASM("qvfadd 29, 29, 5" ::: "fr29"  );
-  VECTOR_STORE(dst_2,inc1,30);
+  QPX_STORE(dst_2,inc1,f30);
 
 
-  VECTOR_LOAD(src13_1,inc,13);
+  QPX_LOAD(src13_1,inc,f13);
   ASM("qvfadd 31, 31, 18" ::: "fr31"  );
-  VECTOR_LOAD(src5_1,inc,17);
+  QPX_LOAD(src5_1,inc,f17);
   ASM("qvfadd 29, 29, 6" ::: "fr29"  );
 
 
-  VECTOR_LOAD(src14_1,inc,14);
+  QPX_LOAD(src14_1,inc,f14);
   ASM("qvfadd 31, 31, 19" ::: "fr31"  );
-  VECTOR_LOAD(src6_1,inc,18);
+  QPX_LOAD(src6_1,inc,f18);
   ASM("qvfadd 29, 29, 7" ::: "fr29"  );
 
 
-  VECTOR_LOAD(src15_1,inc,15);
+  QPX_LOAD(src15_1,inc,f15);
   ASM("qvfadd 31, 31, 16" ::: "fr31"  );
-  VECTOR_LOAD(src7_1,inc,19);
+  QPX_LOAD(src7_1,inc,f19);
   ASM("qvfadd 29, 29, 8" ::: "fr29"  );
 
 	//y-=2;
 	y-=1;
 	if (!y) break;
 
-  VECTOR_LOAD(src0_1,inc,0);
+  QPX_LOAD(src0_1,inc,f0);
   ASM("qvfadd 31, 31, 17" ::: "fr31"  );
-  VECTOR_LOAD(src8_1,inc,16);
+  QPX_LOAD(src8_1,inc,f16);
   ASM("qvfadd 29, 29, 9" ::: "fr29"  );
 
 
-  VECTOR_LOAD(src1_1,inc,1);
+  QPX_LOAD(src1_1,inc,f1);
   ASM("qvfadd 31, 31, 18" ::: "fr31"  );
-  VECTOR_LOAD(src9_1,inc,17);
+  QPX_LOAD(src9_1,inc,f17);
   ASM("qvfadd 29, 29, 10" ::: "fr29"  );
 
-  VECTOR_LOAD(src2_1,inc,2);
+  QPX_LOAD(src2_1,inc,f2);
   ASM("qvfadd 31, 31, 19" ::: "fr31"  );
-  VECTOR_LOAD(src10_1,inc,18);
+  QPX_LOAD(src10_1,inc,f18);
   ASM("qvfadd 29, 29, 11" ::: "fr29"  );
 
-  VECTOR_LOAD(src3_1,inc,3);
+  QPX_LOAD(src3_1,inc,f3);
   ASM("qvfadd 31, 31, 16" ::: "fr31"  );
-  VECTOR_LOAD(src11_1,inc,19);
+  QPX_LOAD(src11_1,inc,f19);
   ASM("qvfadd 29, 29, 12" ::: "fr29"  );
 
-  VECTOR_LOAD(src4_1,inc,4);
+  QPX_LOAD(src4_1,inc,f4);
   ASM("qvfadd 31, 31, 17" ::: "fr31"  );
-  VECTOR_LOAD(src12_1,inc,16);
+  QPX_LOAD(src12_1,inc,f16);
   ASM("qvfadd 29, 29, 13" ::: "fr29"  );
 
-  VECTOR_LOAD(src5_1,inc,5);
+  QPX_LOAD(src5_1,inc,f5);
   ASM("qvfadd 31, 31, 18" ::: "fr31"  );
-  VECTOR_LOAD(src13_1,inc,17);
+  QPX_LOAD(src13_1,inc,f17);
   ASM("qvfadd 29, 29, 14" ::: "fr29"  );
 
-  VECTOR_LOAD(src6_1,inc,6);
+  QPX_LOAD(src6_1,inc,f6);
   ASM("qvfadd 31, 31, 19" ::: "fr31"  );
-  VECTOR_LOAD(src14_1,inc,18);
+  QPX_LOAD(src14_1,inc,f18);
   ASM("qvfadd 29, 29, 15" ::: "fr29"  );
 
-  VECTOR_LOAD(src7_1,inc,7);
+  QPX_LOAD(src7_1,inc,f7);
   ASM("qvfadd 31, 31, 16" ::: "fr31"  );
-  VECTOR_LOAD(src15_1,inc,19);
+  QPX_LOAD(src15_1,inc,f19);
 
-  VECTOR_LOAD(src8_1,inc,8);
+  QPX_LOAD(src8_1,inc,f8);
   ASM("qvfadd 31, 31, 17" ::: "fr31"  );
-  VECTOR_LOAD(src0_1,inc,16);
+  QPX_LOAD(src0_1,inc,f16);
   ASM("qvfadd 28, 0, 1" ::: "fr28"  );
 
-  VECTOR_LOAD(src9_1,inc,9);
+  QPX_LOAD(src9_1,inc,f9);
   ASM("qvfadd 31, 31, 18" ::: "fr31"  );
-  VECTOR_STORE(dst_1,inc1,29);
-  VECTOR_LOAD(src1_1,inc,17);
+  QPX_STORE(dst_1,inc1,f29);
+  QPX_LOAD(src1_1,inc,f17);
   ASM("qvfadd 28, 28, 2" ::: "fr28"  );
 
-  VECTOR_LOAD(src10_1,inc,10);
+  QPX_LOAD(src10_1,inc,f10);
   ASM("qvfadd 31, 31, 19" ::: "fr31"  );
-  VECTOR_LOAD(src2_1,inc,18);
+  QPX_LOAD(src2_1,inc,f18);
   ASM("qvfadd 28, 28, 3" ::: "fr28"  );
 
-  VECTOR_LOAD(src11_1,inc,11);
-  VECTOR_LOAD(src3_1,inc,19);
+  QPX_LOAD(src11_1,inc,f11);
+  QPX_LOAD(src3_1,inc,f19);
   ASM("qvfadd 28, 28, 4" ::: "fr28"  );
 
-  VECTOR_LOAD(src12_1,inc,12);
+  QPX_LOAD(src12_1,inc,f12);
   ASM("qvfadd 30, 16, 17" ::: "fr30"  );
-  VECTOR_LOAD(src4_1,inc,16);
-  VECTOR_STORE(dst_2,inc1,31);
+  QPX_LOAD(src4_1,inc,f16);
+  QPX_STORE(dst_2,inc1,f31);
   ASM("qvfadd 28, 28, 5" ::: "fr28"  );
 
-  VECTOR_LOAD(src13_1,inc,13);
+  QPX_LOAD(src13_1,inc,f13);
   ASM("qvfadd 30, 30, 18" ::: "fr30"  );
-  VECTOR_LOAD(src5_1,inc,17);
+  QPX_LOAD(src5_1,inc,f17);
   ASM("qvfadd 28, 28, 6" ::: "fr28"  );
 
-  VECTOR_LOAD(src14_1,inc,14);
+  QPX_LOAD(src14_1,inc,f14);
   ASM("qvfadd 30, 30, 19" ::: "fr30"  );
-  VECTOR_LOAD(src6_1,inc,18);
+  QPX_LOAD(src6_1,inc,f18);
   ASM("qvfadd 28, 28, 7" ::: "fr28"  );
 
-  VECTOR_LOAD(src15_1,inc,15);
+  QPX_LOAD(src15_1,inc,f15);
   ASM("qvfadd 30, 30, 16" ::: "fr30"  );
-  VECTOR_LOAD(src7_1,inc,19);
+  QPX_LOAD(src7_1,inc,f19);
   ASM("qvfadd 28, 28, 8" ::: "fr28"  );
   }
 
   ASM("qvfadd 31, 31, 17" ::: "fr31"  );
-  VECTOR_LOAD(src8_1,inc,16);
+  QPX_LOAD(src8_1,inc,f16);
   ASM("qvfadd 29, 29, 9" ::: "fr29"  );
 
 
   ASM("qvfadd 31, 31, 18" ::: "fr31"  );
-  VECTOR_LOAD(src9_1,inc,17);
+  QPX_LOAD(src9_1,inc,f17);
   ASM("qvfadd 29, 29, 10" ::: "fr29"  );
 
   ASM("qvfadd 31, 31, 19" ::: "fr31"  );
-  VECTOR_LOAD(src10_1,inc,18);
+  QPX_LOAD(src10_1,inc,f18);
   ASM("qvfadd 29, 29, 11" ::: "fr29"  );
 
   ASM("qvfadd 31, 31, 16" ::: "fr31"  );
-  VECTOR_LOAD(src11_1,inc,19);
+  QPX_LOAD(src11_1,inc,f19);
   ASM("qvfadd 29, 29, 12" ::: "fr29"  );
 
   ASM("qvfadd 31, 31, 17" ::: "fr31"  );
-  VECTOR_LOAD(src12_1,inc,16);
+  QPX_LOAD(src12_1,inc,f16);
   ASM("qvfadd 29, 29, 13" ::: "fr29"  );
 
   ASM("qvfadd 31, 31, 18" ::: "fr31"  );
-  VECTOR_LOAD(src13_1,inc,17);
+  QPX_LOAD(src13_1,inc,f17);
   ASM("qvfadd 29, 29, 14" ::: "fr29"  );
 
   ASM("qvfadd 31, 31, 19" ::: "fr31"  );
-  VECTOR_LOAD(src14_1,inc,18);
+  QPX_LOAD(src14_1,inc,f18);
   ASM("qvfadd 29, 29, 15" ::: "fr29"  );
 
   ASM("qvfadd 31, 31, 16" ::: "fr31"  );
-  VECTOR_LOAD(src15_1,inc,19);
+  QPX_LOAD(src15_1,inc,f19);
 
   ASM("qvfadd 31, 31, 17" ::: "fr31"  );
 
   ASM("qvfadd 31, 31, 18" ::: "fr31"  );
-  VECTOR_STORE(dst_1,inc1,29);
+  QPX_STORE(dst_1,inc1,f29);
 
   ASM("qvfadd 31, 31, 19" ::: "fr31"  );
-  VECTOR_STORE(dst_2,inc1,31);
+  QPX_STORE(dst_2,inc1,f31);
 
   return ((num_dbls>>(3+1)) << (3+1));
 }
@@ -336,6 +360,27 @@ inline unsigned _quad_double_sum_16way_align64B(double* dst, double* src0, doubl
     double* src4, double* src5, double* src6, double* src7, double* src8, double *src9, double* src10, double* src11,
     double* src12, double* src13, double* src14, double* src15, unsigned num_dbls)
 {
+  register double f0  __asm__("fr0");
+  register double f1  __asm__("fr1");
+  register double f2  __asm__("fr2");
+  register double f3  __asm__("fr3");
+  register double f4  __asm__("fr4");
+  register double f5  __asm__("fr5");
+  register double f6  __asm__("fr6");
+  register double f7  __asm__("fr7");
+  register double f8  __asm__("fr8");
+  register double f9  __asm__("fr9");
+  register double f10 __asm__("fr10");
+  register double f11 __asm__("fr11");
+  register double f12 __asm__("fr12");
+  register double f13 __asm__("fr13");
+  register double f14 __asm__("fr14");
+  register double f15 __asm__("fr15");
+  register double f16 __asm__("fr16");
+  register double f17 __asm__("fr17");
+  register double f18 __asm__("fr18");
+  register double f19 __asm__("fr19");
+  register double f31 __asm__("fr31");
 
   double *src0_1, *src1_1, *src2_1, *src3_1, *src4_1, *src5_1, *src6_1, *src7_1;
   double *src8_1, *src9_1, *src10_1, *src11_1, *src12_1, *src13_1, *src14_1, *src15_1;
@@ -371,273 +416,273 @@ inline unsigned _quad_double_sum_16way_align64B(double* dst, double* src0, doubl
 
   y = (num_dbls>>3) >> 1;
 
-  VECTOR_LOAD(src0_1,inc,0); 
-  VECTOR_LOAD(src1_1,inc,1);
-  VECTOR_LOAD(src2_1,inc,2);
-  VECTOR_LOAD(src3_1,inc,3);
-  VECTOR_LOAD(src4_1,inc,4);
-  VECTOR_LOAD(src5_1,inc,5);
-  VECTOR_LOAD(src6_1,inc,6);
-  VECTOR_LOAD(src7_1,inc,7);
+  QPX_LOAD(src0_1,inc,f0); 
+  QPX_LOAD(src1_1,inc,f1);
+  QPX_LOAD(src2_1,inc,f2);
+  QPX_LOAD(src3_1,inc,f3);
+  QPX_LOAD(src4_1,inc,f4);
+  QPX_LOAD(src5_1,inc,f5);
+  QPX_LOAD(src6_1,inc,f6);
+  QPX_LOAD(src7_1,inc,f7);
   ASM("qvfmr 28, 0" ::: "fr28"  );
 
-  VECTOR_LOAD(src8_1,inc,8);
-  VECTOR_LOAD(src0_1,inc,0);
+  QPX_LOAD(src8_1,inc,f8);
+  QPX_LOAD(src0_1,inc,f0);
   ASM("qvfadd 28, 28, 1" ::: "fr28"  );
 
 
-  VECTOR_LOAD(src9_1,inc,9);
-  VECTOR_LOAD(src1_1,inc,1);
+  QPX_LOAD(src9_1,inc,f9);
+  QPX_LOAD(src1_1,inc,f1);
   ASM("qvfadd 28, 28, 2" ::: "fr28"  );
 
 
-  VECTOR_LOAD(src10_1,inc,10);
-  VECTOR_LOAD(src2_1,inc,2);
+  QPX_LOAD(src10_1,inc,f10);
+  QPX_LOAD(src2_1,inc,f2);
   ASM("qvfadd 28, 28, 3" ::: "fr28"  );
 
 
-  VECTOR_LOAD(src11_1,inc,11);
+  QPX_LOAD(src11_1,inc,f11);
   ASM("qvfmr 30, 0" ::: "fr30"  );
-  VECTOR_LOAD(src3_1,inc,3);
+  QPX_LOAD(src3_1,inc,f3);
   ASM("qvfadd 28, 28, 4" ::: "fr28"  );       
 
-  VECTOR_LOAD(src12_1,inc,12);
+  QPX_LOAD(src12_1,inc,f12);
   ASM("qvfadd 30, 30, 1" ::: "fr30"  );
-  VECTOR_LOAD(src4_1,inc,4);
+  QPX_LOAD(src4_1,inc,f4);
   ASM("qvfadd 28, 28, 5" ::: "fr28"  );       
 
-  VECTOR_LOAD(src13_1,inc,13);
+  QPX_LOAD(src13_1,inc,f13);
   ASM("qvfadd 30, 30, 2" ::: "fr30"  );
-  VECTOR_LOAD(src5_1,inc,5);
+  QPX_LOAD(src5_1,inc,f5);
   ASM("qvfadd 28, 28, 6" ::: "fr28"  );       
 
-  VECTOR_LOAD(src14_1,inc,14);
+  QPX_LOAD(src14_1,inc,f14);
   ASM("qvfadd 30, 30, 3" ::: "fr30"  );
-  VECTOR_LOAD(src6_1,inc,6);
+  QPX_LOAD(src6_1,inc,f6);
   ASM("qvfadd 28, 28, 7" ::: "fr28"  );       
 
-  VECTOR_LOAD(src15_1,inc,15);
+  QPX_LOAD(src15_1,inc,f15);
   ASM("qvfadd 30, 30, 4" ::: "fr30"  );
-  VECTOR_LOAD(src7_1,inc,7);
+  QPX_LOAD(src7_1,inc,f7);
   ASM("qvfadd 28, 28, 8" ::: "fr28"  );       
 
   while (1)
   {
 
-  VECTOR_LOAD(src0_1,inc,0); 
+  QPX_LOAD(src0_1,inc,f0); 
   ASM("qvfadd 30, 30, 5" ::: "fr30"  );
-  VECTOR_LOAD(src8_1,inc,8);
+  QPX_LOAD(src8_1,inc,f8);
   ASM("qvfadd 28, 28, 9" ::: "fr28"  );       
 
-  VECTOR_LOAD(src1_1,inc,1);
+  QPX_LOAD(src1_1,inc,f1);
   ASM("qvfadd 30, 30, 6" ::: "fr30"  );
-  VECTOR_LOAD(src9_1,inc,9);
+  QPX_LOAD(src9_1,inc,f9);
   ASM("qvfadd 28, 28, 10" ::: "fr28"  );      
 
-  VECTOR_LOAD(src2_1,inc,2);
+  QPX_LOAD(src2_1,inc,f2);
   ASM("qvfadd 30, 30, 7" ::: "fr30"  );
-  VECTOR_LOAD(src10_1,inc,10);
+  QPX_LOAD(src10_1,inc,f10);
   ASM("qvfadd 28, 28, 11" ::: "fr28"  );      
 
-  VECTOR_LOAD(src3_1,inc,3);
+  QPX_LOAD(src3_1,inc,f3);
   ASM("qvfadd 30, 30, 8" ::: "fr30"  );
-  VECTOR_LOAD(src11_1,inc,11);
+  QPX_LOAD(src11_1,inc,f11);
   ASM("qvfadd 28, 28, 12" ::: "fr28"  );      
 
-  VECTOR_LOAD(src4_1,inc,4);
+  QPX_LOAD(src4_1,inc,f4);
   ASM("qvfadd 30, 30, 9" ::: "fr30"  );
-  VECTOR_LOAD(src12_1,inc,12);
+  QPX_LOAD(src12_1,inc,f12);
   ASM("qvfadd 28, 28, 13" ::: "fr28"  );      
 
-  VECTOR_LOAD(src5_1,inc,5);
+  QPX_LOAD(src5_1,inc,f5);
   ASM("qvfadd 30, 30, 10" ::: "fr30"  );
-  VECTOR_LOAD(src13_1,inc,13);
+  QPX_LOAD(src13_1,inc,f13);
   ASM("qvfadd 28, 28, 14" ::: "fr28"  );      
 
-  VECTOR_LOAD(src6_1,inc,6);
+  QPX_LOAD(src6_1,inc,f6);
   ASM("qvfadd 30, 30, 11" ::: "fr30"  );
-  VECTOR_LOAD(src14_1,inc,14);
+  QPX_LOAD(src14_1,inc,f14);
   ASM("qvfadd 28, 28, 15" ::: "fr28"  ); //first first-half sum done      
 
 
-  VECTOR_LOAD(src7_1,inc,7);
+  QPX_LOAD(src7_1,inc,f7);
   ASM("qvfadd 30, 30, 12" ::: "fr30"  );
-  VECTOR_LOAD(src15_1,inc,15);
+  QPX_LOAD(src15_1,inc,f15);
 
 
-  VECTOR_LOAD(src8_1,inc,8);
+  QPX_LOAD(src8_1,inc,f8);
   ASM("qvfadd 30, 30, 13" ::: "fr30"  );
-  VECTOR_LOAD(src0_1,inc,0);
+  QPX_LOAD(src0_1,inc,f0);
   ASM("qvfadd 29, 0, 1" ::: "fr29"  );  //second first-half sum start
 
 
-  VECTOR_LOAD(src9_1,inc,9);
+  QPX_LOAD(src9_1,inc,f9);
   ASM("qvfadd 30, 30, 14" ::: "fr30"  );
-  VECTOR_STORE(dst_1,inc1,28);
-  VECTOR_LOAD(src1_1,inc,1);
+  QPX_STORE(dst_1,inc1,f28);
+  QPX_LOAD(src1_1,inc,f1);
   ASM("qvfadd 29, 29, 2" ::: "fr29"  );
 
 
-  VECTOR_LOAD(src10_1,inc,10);
+  QPX_LOAD(src10_1,inc,f10);
   ASM("qvfadd 30, 30, 15" ::: "fr30"  ); //first second-half sum done
-  VECTOR_LOAD(src2_1,inc,2);
+  QPX_LOAD(src2_1,inc,f2);
   ASM("qvfadd 29, 29, 3" ::: "fr29"  );
   
-  VECTOR_LOAD(src11_1,inc,11);
-  VECTOR_LOAD(src3_1,inc,3);
+  QPX_LOAD(src11_1,inc,f11);
+  QPX_LOAD(src3_1,inc,f3);
   ASM("qvfadd 29, 29, 4" ::: "fr29"  );
 
 
-  VECTOR_LOAD(src12_1,inc,12);
+  QPX_LOAD(src12_1,inc,f12);
   ASM("qvfadd 31, 0, 1" ::: "fr31"  ); //second second-half sum start
-  VECTOR_LOAD(src4_1,inc,4);
+  QPX_LOAD(src4_1,inc,f4);
   ASM("qvfadd 29, 29, 5" ::: "fr29"  );
-  VECTOR_STORE(dst_2,inc1,30);
+  QPX_STORE(dst_2,inc1,f30);
 
 
-  VECTOR_LOAD(src13_1,inc,13);
+  QPX_LOAD(src13_1,inc,f13);
   ASM("qvfadd 31, 31, 2" ::: "fr31"  ); 
-  VECTOR_LOAD(src5_1,inc,5);
+  QPX_LOAD(src5_1,inc,f5);
   ASM("qvfadd 29, 29, 6" ::: "fr29"  );
 
 
-  VECTOR_LOAD(src14_1,inc,14);
+  QPX_LOAD(src14_1,inc,f14);
   ASM("qvfadd 31, 31, 3" ::: "fr31"  ); 
-  VECTOR_LOAD(src6_1,inc,6);
+  QPX_LOAD(src6_1,inc,f6);
   ASM("qvfadd 29, 29, 7" ::: "fr29"  );
 
 
-  VECTOR_LOAD(src15_1,inc,15);
+  QPX_LOAD(src15_1,inc,f15);
   ASM("qvfadd 31, 31, 4" ::: "fr31"  ); 
-  VECTOR_LOAD(src7_1,inc,7);
+  QPX_LOAD(src7_1,inc,f7);
   ASM("qvfadd 29, 29, 8" ::: "fr29"  );
 
   //y-=2;
   y-=1;
   if (!y) break; 
 
-  VECTOR_LOAD(src0_1,inc,0); 
+  QPX_LOAD(src0_1,inc,f0); 
   ASM("qvfadd 31, 31, 5" ::: "fr31"  ); 
-  VECTOR_LOAD(src8_1,inc,8);
+  QPX_LOAD(src8_1,inc,f8);
   ASM("qvfadd 29, 29, 9" ::: "fr29"  );
 
 
-  VECTOR_LOAD(src1_1,inc,1);
+  QPX_LOAD(src1_1,inc,f1);
   ASM("qvfadd 31, 31, 6" ::: "fr31"  ); 
-  VECTOR_LOAD(src9_1,inc,9);
+  QPX_LOAD(src9_1,inc,f9);
   ASM("qvfadd 29, 29, 10" ::: "fr29"  );
 
-  VECTOR_LOAD(src2_1,inc,2);
+  QPX_LOAD(src2_1,inc,f2);
   ASM("qvfadd 31, 31, 7" ::: "fr31"  ); 
-  VECTOR_LOAD(src10_1,inc,10);
+  QPX_LOAD(src10_1,inc,f10);
   ASM("qvfadd 29, 29, 11" ::: "fr29"  );
 
-  VECTOR_LOAD(src3_1,inc,3);
+  QPX_LOAD(src3_1,inc,f3);
   ASM("qvfadd 31, 31, 8" ::: "fr31"  ); 
-  VECTOR_LOAD(src11_1,inc,11);
+  QPX_LOAD(src11_1,inc,f11);
   ASM("qvfadd 29, 29, 12" ::: "fr29"  );
 
-  VECTOR_LOAD(src4_1,inc,4);
+  QPX_LOAD(src4_1,inc,f4);
   ASM("qvfadd 31, 31, 9" ::: "fr31"  ); 
-  VECTOR_LOAD(src12_1,inc,12);
+  QPX_LOAD(src12_1,inc,f12);
   ASM("qvfadd 29, 29, 13" ::: "fr29"  );
 
-  VECTOR_LOAD(src5_1,inc,5);
+  QPX_LOAD(src5_1,inc,f5);
   ASM("qvfadd 31, 31, 10" ::: "fr31"  ); 
-  VECTOR_LOAD(src13_1,inc,13);
+  QPX_LOAD(src13_1,inc,f13);
   ASM("qvfadd 29, 29, 14" ::: "fr29"  );
 
-  VECTOR_LOAD(src6_1,inc,6);
+  QPX_LOAD(src6_1,inc,f6);
   ASM("qvfadd 31, 31, 11" ::: "fr31"  ); 
-  VECTOR_LOAD(src14_1,inc,14);
+  QPX_LOAD(src14_1,inc,f14);
   ASM("qvfadd 29, 29, 15" ::: "fr29"  );
 
-  VECTOR_LOAD(src7_1,inc,7);
+  QPX_LOAD(src7_1,inc,f7);
   ASM("qvfadd 31, 31, 12" ::: "fr31"  ); 
-  VECTOR_LOAD(src15_1,inc,15);
+  QPX_LOAD(src15_1,inc,f15);
   ASM("qvfmr 28, 0" ::: "fr28"  );
 
-  VECTOR_LOAD(src8_1,inc,8);
+  QPX_LOAD(src8_1,inc,f8);
   ASM("qvfadd 31, 31, 13" ::: "fr31"  ); 
-  VECTOR_LOAD(src0_1,inc,0);
+  QPX_LOAD(src0_1,inc,f0);
   ASM("qvfadd 28, 28, 1" ::: "fr28"  );
 
-  VECTOR_LOAD(src9_1,inc,9);
+  QPX_LOAD(src9_1,inc,f9);
   ASM("qvfadd 31, 31, 14" ::: "fr31"  ); 
-  VECTOR_STORE(dst_1,inc1,29);
-  VECTOR_LOAD(src1_1,inc,1);
+  QPX_STORE(dst_1,inc1,f29);
+  QPX_LOAD(src1_1,inc,f1);
   ASM("qvfadd 28, 28, 2" ::: "fr28"  );
 
-  VECTOR_LOAD(src10_1,inc,10);
+  QPX_LOAD(src10_1,inc,f10);
   ASM("qvfadd 31, 31, 15" ::: "fr31"  ); 
-  VECTOR_LOAD(src2_1,inc,2);
+  QPX_LOAD(src2_1,inc,f2);
   ASM("qvfadd 28, 28, 3" ::: "fr28"  );
   
-  VECTOR_LOAD(src11_1,inc,11);
+  QPX_LOAD(src11_1,inc,f11);
   ASM("qvfmr 30, 0" ::: "fr30"  );
-  VECTOR_LOAD(src3_1,inc,3);
+  QPX_LOAD(src3_1,inc,f3);
   ASM("qvfadd 28, 28, 4" ::: "fr28"  );
 
-  VECTOR_LOAD(src12_1,inc,12);
+  QPX_LOAD(src12_1,inc,f12);
   ASM("qvfadd 30, 30, 1" ::: "fr30"  ); 
-  VECTOR_LOAD(src4_1,inc,4);
-  VECTOR_STORE(dst_2,inc1,31);
+  QPX_LOAD(src4_1,inc,f4);
+  QPX_STORE(dst_2,inc1,f31);
   ASM("qvfadd 28, 28, 5" ::: "fr28"  );
 
-  VECTOR_LOAD(src13_1,inc,13);
+  QPX_LOAD(src13_1,inc,f13);
   ASM("qvfadd 30, 30, 2" ::: "fr30"  ); 
-  VECTOR_LOAD(src5_1,inc,5);
+  QPX_LOAD(src5_1,inc,f5);
   ASM("qvfadd 28, 28, 6" ::: "fr28"  );
 
-  VECTOR_LOAD(src14_1,inc,14);
+  QPX_LOAD(src14_1,inc,f14);
   ASM("qvfadd 30, 30, 3" ::: "fr30"  ); 
-  VECTOR_LOAD(src6_1,inc,6);
+  QPX_LOAD(src6_1,inc,f6);
   ASM("qvfadd 28, 28, 7" ::: "fr28"  );
 
-  VECTOR_LOAD(src15_1,inc,15);
+  QPX_LOAD(src15_1,inc,f15);
   ASM("qvfadd 30, 30, 4" ::: "fr30"  ); 
-  VECTOR_LOAD(src7_1,inc,7);
+  QPX_LOAD(src7_1,inc,f7);
   ASM("qvfadd 28, 28, 8" ::: "fr28"  );
   }
 
   ASM("qvfadd 31, 31, 5" ::: "fr31"  ); 
-  VECTOR_LOAD(src8_1,inc,8);
+  QPX_LOAD(src8_1,inc,f8);
   ASM("qvfadd 29, 29, 9" ::: "fr29"  );
 
   ASM("qvfadd 31, 31, 6" ::: "fr31"  ); 
-  VECTOR_LOAD(src9_1,inc,9);
+  QPX_LOAD(src9_1,inc,f9);
   ASM("qvfadd 29, 29, 10" ::: "fr29"  );
 
   ASM("qvfadd 31, 31, 7" ::: "fr31"  ); 
-  VECTOR_LOAD(src10_1,inc,10);
+  QPX_LOAD(src10_1,inc,f10);
   ASM("qvfadd 29, 29, 11" ::: "fr29"  );
 
   ASM("qvfadd 31, 31, 8" ::: "fr31"  ); 
-  VECTOR_LOAD(src11_1,inc,11);
+  QPX_LOAD(src11_1,inc,f11);
   ASM("qvfadd 29, 29, 12" ::: "fr29"  );
 
   ASM("qvfadd 31, 31, 9" ::: "fr31"  ); 
-  VECTOR_LOAD(src12_1,inc,12);
+  QPX_LOAD(src12_1,inc,f12);
   ASM("qvfadd 29, 29, 13" ::: "fr29"  );
 
   ASM("qvfadd 31, 31, 10" ::: "fr31"  ); 
-  VECTOR_LOAD(src13_1,inc,13);
+  QPX_LOAD(src13_1,inc,f13);
   ASM("qvfadd 29, 29, 14" ::: "fr29"  );
 
   ASM("qvfadd 31, 31, 11" ::: "fr31"  ); 
-  VECTOR_LOAD(src14_1,inc,14);
+  QPX_LOAD(src14_1,inc,f14);
   ASM("qvfadd 29, 29, 15" ::: "fr29"  );
 
   ASM("qvfadd 31, 31, 12" ::: "fr31"  ); 
-  VECTOR_LOAD(src15_1,inc,15);
+  QPX_LOAD(src15_1,inc,f15);
 
   ASM("qvfadd 31, 31, 13" ::: "fr31"  ); 
 
   ASM("qvfadd 31, 31, 14" ::: "fr31"  ); 
-  VECTOR_STORE(dst_1,inc1,29);
+  QPX_STORE(dst_1,inc1,f29);
 
   ASM("qvfadd 31, 31, 15" ::: "fr31"  ); 
-  VECTOR_STORE(dst_2,inc1,31);
+  QPX_STORE(dst_2,inc1,f31);
 
   return ((num_dbls>>(3+1)) << 3+1);
 
@@ -649,6 +694,24 @@ inline unsigned _quad_double_sum_16way_align32B_short(double* dst, double* src0,
     double* src4, double* src5, double* src6, double* src7, double* src8, double *src9, double* src10, double* src11,
     double* src12, double* src13, double* src14, double* src15, unsigned num_dbls)
 {
+  register double f0  __asm__("fr0");
+  register double f1  __asm__("fr1");
+  register double f2  __asm__("fr2");
+  register double f3  __asm__("fr3");
+  register double f4  __asm__("fr4");
+  register double f5  __asm__("fr5");
+  register double f6  __asm__("fr6");
+  register double f7  __asm__("fr7");
+  register double f8  __asm__("fr8");
+  register double f9  __asm__("fr9");
+  register double f10 __asm__("fr10");
+  register double f11 __asm__("fr11");
+  register double f12 __asm__("fr12");
+  register double f13 __asm__("fr13");
+  register double f14 __asm__("fr14");
+  register double f15 __asm__("fr15");
+  register double f31 __asm__("fr31");
+
   double *src0_1, *src1_1, *src2_1, *src3_1, *src4_1, *src5_1, *src6_1, *src7_1;
   double *src8_1, *src9_1, *src10_1, *src11_1, *src12_1, *src13_1, *src14_1, *src15_1;
   double *dst_1;
@@ -680,22 +743,22 @@ inline unsigned _quad_double_sum_16way_align32B_short(double* dst, double* src0,
 
   if (y == 0) return 0;
 
-  VECTOR_LOAD(src0_1,inc,0);
-  VECTOR_LOAD(src1_1,inc,1);
-  VECTOR_LOAD(src2_1,inc,2);
-  VECTOR_LOAD(src3_1,inc,3);
-  VECTOR_LOAD(src4_1,inc,4);
-  VECTOR_LOAD(src5_1,inc,5);
-  VECTOR_LOAD(src6_1,inc,6);
-  VECTOR_LOAD(src7_1,inc,7);
-  VECTOR_LOAD(src8_1,inc,8);
-  VECTOR_LOAD(src9_1,inc,9);
-  VECTOR_LOAD(src10_1,inc,10);
-  VECTOR_LOAD(src11_1,inc,11);
-  VECTOR_LOAD(src12_1,inc,12);
-  VECTOR_LOAD(src13_1,inc,13);
-  VECTOR_LOAD(src14_1,inc,14);
-  VECTOR_LOAD(src15_1,inc,15);
+  QPX_LOAD(src0_1,inc,f0);
+  QPX_LOAD(src1_1,inc,f1);
+  QPX_LOAD(src2_1,inc,f2);
+  QPX_LOAD(src3_1,inc,f3);
+  QPX_LOAD(src4_1,inc,f4);
+  QPX_LOAD(src5_1,inc,f5);
+  QPX_LOAD(src6_1,inc,f6);
+  QPX_LOAD(src7_1,inc,f7);
+  QPX_LOAD(src8_1,inc,f8);
+  QPX_LOAD(src9_1,inc,f9);
+  QPX_LOAD(src10_1,inc,f10);
+  QPX_LOAD(src11_1,inc,f11);
+  QPX_LOAD(src12_1,inc,f12);
+  QPX_LOAD(src13_1,inc,f13);
+  QPX_LOAD(src14_1,inc,f14);
+  QPX_LOAD(src15_1,inc,f15);
 
   if (y == 1)
   {
@@ -718,98 +781,98 @@ inline unsigned _quad_double_sum_16way_align32B_short(double* dst, double* src0,
     ASM("qvfadd 29, 29, 28" ::: "fr29"  );
     ASM("qvfadd 31, 31, 30" ::: "fr31"  );
     ASM("qvfadd 31, 31, 29" ::: "fr31"  );
-    VECTOR_STORE(dst_1,inc,31);
+    QPX_STORE(dst_1,inc,f31);
     return 4;
   }
 
   --y;
 
   ASM("qvfmr 28, 0" ::: "fr28"  );
-  VECTOR_LOAD(src0_1,inc,0);
+  QPX_LOAD(src0_1,inc,f0);
 
   ASM("qvfmr 29, 1" ::: "fr29"  );
-  VECTOR_LOAD(src1_1,inc,1);
+  QPX_LOAD(src1_1,inc,f1);
 
   ASM("qvfmr 30, 2" ::: "fr30"  );
-  VECTOR_LOAD(src2_1,inc,2);
+  QPX_LOAD(src2_1,inc,f2);
 
   ASM("qvfmr 31, 3" ::: "fr31"  );
-  VECTOR_LOAD(src3_1,inc,3);
+  QPX_LOAD(src3_1,inc,f3);
 
   ASM("qvfadd 28, 28, 4" ::: "fr28"  );
-  VECTOR_LOAD(src4_1,inc,4);
+  QPX_LOAD(src4_1,inc,f4);
 
   ASM("qvfadd 29, 29, 5" ::: "fr29"  );
-  VECTOR_LOAD(src5_1,inc,5);
+  QPX_LOAD(src5_1,inc,f5);
 
   ASM("qvfadd 30, 30, 6" ::: "fr30"  );
-  VECTOR_LOAD(src6_1,inc,6);
+  QPX_LOAD(src6_1,inc,f6);
 
   ASM("qvfadd 31, 31, 7" ::: "fr31"  );
-  VECTOR_LOAD(src7_1,inc,7);
+  QPX_LOAD(src7_1,inc,f7);
 
   while (1){
 
     ASM("qvfadd 28, 28, 8" ::: "fr28"  );
-    VECTOR_LOAD(src8_1,inc,8);
+    QPX_LOAD(src8_1,inc,f8);
 
     ASM("qvfadd 29, 29, 9" ::: "fr29"  );
-    VECTOR_LOAD(src9_1,inc,9);
+    QPX_LOAD(src9_1,inc,f9);
 
     ASM("qvfadd 30, 30, 10" ::: "fr30"  );
-    VECTOR_LOAD(src10_1,inc,10);
+    QPX_LOAD(src10_1,inc,f10);
 
     ASM("qvfadd 31, 31, 11" ::: "fr31"  );
-    VECTOR_LOAD(src11_1,inc,11);
+    QPX_LOAD(src11_1,inc,f11);
 
     ASM("qvfadd 28, 28, 12" ::: "fr28"  );
-    VECTOR_LOAD(src12_1,inc,12);
+    QPX_LOAD(src12_1,inc,f12);
 
     ASM("qvfadd 29, 29, 13" ::: "fr29"  );
-    VECTOR_LOAD(src13_1,inc,13);
+    QPX_LOAD(src13_1,inc,f13);
 
     ASM("qvfadd 30, 30, 14" ::: "fr30"  );
-    VECTOR_LOAD(src14_1,inc,14);
+    QPX_LOAD(src14_1,inc,f14);
 
     ASM("qvfadd 31, 31, 15" ::: "fr31"  );
-    VECTOR_LOAD(src15_1,inc,15);
+    QPX_LOAD(src15_1,inc,f15);
 
     if (!--y) break;
 
     ASM("qvfadd 29, 29, 28" ::: "fr29"  );
     ASM("qvfmr 28, 0" ::: "fr28"  );
-    VECTOR_LOAD(src0_1,inc,0);
+    QPX_LOAD(src0_1,inc,f0);
 
     ASM("qvfadd 31, 31, 30" ::: "fr31"  );
     ASM("qvfadd 31, 31, 29" ::: "fr31"  );
 
     ASM("qvfmr 29, 1" ::: "fr29"  );
-    VECTOR_LOAD(src1_1,inc,1);
+    QPX_LOAD(src1_1,inc,f1);
 
     ASM("qvfmr 30, 2" ::: "fr30"  );
-    VECTOR_LOAD(src2_1,inc,2);
+    QPX_LOAD(src2_1,inc,f2);
 
-    VECTOR_STORE(dst_1,inc,31);
+    QPX_STORE(dst_1,inc,f31);
     ASM("qvfmr 31, 3" ::: "fr31"  );
-    VECTOR_LOAD(src3_1,inc,3);
+    QPX_LOAD(src3_1,inc,f3);
 
     ASM("qvfadd 28, 28, 4" ::: "fr28"  );
-    VECTOR_LOAD(src4_1,inc,4);
+    QPX_LOAD(src4_1,inc,f4);
 
     ASM("qvfadd 29, 29, 5" ::: "fr29"  );
-    VECTOR_LOAD(src5_1,inc,5);
+    QPX_LOAD(src5_1,inc,f5);
 
     ASM("qvfadd 30, 30, 6" ::: "fr30"  );
-    VECTOR_LOAD(src6_1,inc,6);
+    QPX_LOAD(src6_1,inc,f6);
 
     ASM("qvfadd 31, 31, 7" ::: "fr31"  );
-    VECTOR_LOAD(src7_1,inc,7);
+    QPX_LOAD(src7_1,inc,f7);
   } 
 
     ASM("qvfadd 29, 29, 28" ::: "fr29"  );
     ASM("qvfadd 31, 31, 30" ::: "fr31"  );
     ASM("qvfadd 31, 31, 29" ::: "fr31"  );
-    VECTOR_STORE(dst_1,inc,31);
+    QPX_STORE(dst_1,inc,f31);
 
     ASM("qvfmr 28, 0" ::: "fr28"  );
     ASM("qvfmr 29, 1" ::: "fr29"  );
@@ -830,7 +893,7 @@ inline unsigned _quad_double_sum_16way_align32B_short(double* dst, double* src0,
     ASM("qvfadd 29, 29, 28" ::: "fr29"  );
     ASM("qvfadd 31, 31, 30" ::: "fr31"  );
     ASM("qvfadd 31, 31, 29" ::: "fr31"  );
-    VECTOR_STORE(dst_1,inc,31);
+    QPX_STORE(dst_1,inc,f31);
 
   return ((num_dbls >> 2) << 2);
 
