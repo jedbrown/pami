@@ -183,9 +183,9 @@ namespace PAMI
   // Device Typedefs
   typedef Device::CAUDevice                                           CAUDevice;
   typedef Device::BSRDevice                                           BSRDevice;
-  typedef Device::BSRMsyncMessage                                     BSRMsyncMessage;
-  typedef Device::BSRMcastMessage                                     BSRMcastMessage;
-  typedef Device::BSRMcombineMessage                                  BSRMcombineMessage;
+  typedef Device::BSRDevice::BSRMsyncMessage                          BSRMsyncMessage;
+  typedef Device::BSRDevice::BSRMcastMessage                          BSRMcastMessage;
+  typedef Device::BSRDevice::BSRMcombineMessage                       BSRMcombineMessage;
   typedef Device::BSRMultisyncModel<BSRDevice,BSRMsyncMessage>        BSRMultisyncModel;
   typedef Device::BSRMulticastModel<BSRDevice,BSRMcastMessage>        BSRMulticastModel;
   typedef Device::BSRMulticombineModel<BSRDevice,BSRMcombineMessage>  BSRMulticombineModel;

@@ -222,6 +222,7 @@ namespace PAMI
           T_LocalModel                      *_local_model;
           T_LocalNI_AM                      *_ni;
           PAMI::Device::CAUGeometryInfo     *_cau_info;
+          PAMI::Device::BSRGeometryInfo     *_bsr_info;
           uint64_t                           _cau_mask;
           int                                _cau_group;
         }GeometryInfo;
@@ -454,7 +455,7 @@ namespace PAMI
                   PAMI_assert(local_topo->size() != 0);
                   PAMI_assert(local_master_topo->size() != 0);
                   PAMI::Device::CAUGeometryInfo *cau_gi = NULL;
-
+                  PAMI::Device::BSRGeometryInfo *bsr_gi = NULL;
                   if(inout_val[0]==0 && local_master_topo->size()>1)
                   {
                     TRACE((stderr, "CAU collectives disabled in phase 2  Geometry: %d size=%d:\n", geometry->comm(), geometry->size()));
@@ -478,7 +479,7 @@ namespace PAMI
 
                   T_LocalNI_AM                     *ni = NULL;
                   T_LocalModel                     *local_model=NULL;
-
+                  
                   if(local_topo->size() > 1)
                   {
                     local_model  = (T_LocalModel*)_model_allocator.allocateObject();
@@ -494,11 +495,15 @@ namespace PAMI
                                         _context_id,
                                         local_topo->rank2Index(_global_task),
                                         local_topo->size());
+                    bsr_gi = (PAMI::Device::BSRGeometryInfo *)_bsr_geom_allocator.allocateObject();
+                    new(bsr_gi)PAMI::Device::BSRGeometryInfo(geometry->comm(),local_topo);
+                    geometry->setKey(Geometry::GKEY_MSYNC_LOCAL_CLASSROUTEID,bsr_gi);
                   }
 
                   geometryInfo->_local_model                     = local_model;
                   geometryInfo->_ni                              = ni;
                   geometryInfo->_cau_info                        = cau_gi;
+                  geometryInfo->_bsr_info                        = bsr_gi;
 
                   _barrier_reg.setNI(geometry, ni, &_g_barrier_ni);
                   _barrierbsr_reg.setNI(geometry, &_l_barrierbsr_ni, &_g_barrier_ni);
@@ -560,6 +565,10 @@ namespace PAMI
           {
             _cau_geom_allocator.returnObject(cau_gi);
           }
+        inline void freeBsrInfo(PAMI::Device::BSRGeometryInfo *bsr_gi)
+          {
+            _bsr_geom_allocator.returnObject(bsr_gi);
+          }
 
 
         static inline void cleanupCallback(pami_context_t ctxt, void *data, pami_result_t res)
@@ -577,6 +586,9 @@ namespace PAMI
 
             if(gi->_cau_info)
               gi->_registration->freeCauInfo(gi->_cau_info);
+            
+            if(gi->_bsr_info)
+              gi->_registration->freeBsrInfo(gi->_bsr_info);
 
             gi->_registration->freeGeomInfo(gi);
 
@@ -622,6 +634,7 @@ namespace PAMI
         PAMI::MemoryAllocator<sizeof(T_LocalNI_AM),16>                  _ni_allocator;
         PAMI::MemoryAllocator<sizeof(GeometryInfo),16>                  _geom_allocator;
         PAMI::MemoryAllocator<sizeof(PAMI::Device::CAUGeometryInfo),16> _cau_geom_allocator;
+        PAMI::MemoryAllocator<sizeof(PAMI::Device::BSRGeometryInfo),16> _bsr_geom_allocator;
 
         // Collective shared memory manager
         T_CSMemoryManager                                               _csmm;

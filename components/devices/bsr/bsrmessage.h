@@ -19,34 +19,33 @@
 #include "common/lapiunix/lapifunc.h"
 #include "TypeDefs.h"
 #include "components/memory/MemoryAllocator.h"
+#ifndef _LAPI_LINUX
+#include "components/devices/bsr/SaOnNodeSyncGroup.h"
+#endif
+#include <list>
 
 namespace PAMI
 {
   namespace Device
   {
-    class BSRMsyncMessage : public Generic::GenericThread
+    class BSRGeometryInfo
     {
     public:
-      BSRMsyncMessage(pami_work_function workfn, void* cookie, pami_callback_t cb_done, void* model):
-        GenericThread(workfn, cookie),
-        _cb_done(cb_done),
-        _multisyncmodel(model)
+      BSRGeometryInfo(int       geometry_id,
+                      Topology *topology):
+        _geometry_id(geometry_id),
+        _topology(topology)
         {
+
         }
-
-      pami_callback_t    _cb_done;
-      void              *_multisyncmodel;
+#ifndef _LAPI_LINUX
+      SaOnNodeSyncGroup         _sync_group;
+#endif
+      int                       _geometry_id;
+      Topology                 *_topology;
+//      std::vector <void*>     _waiters_q;
+//      bool                      _in_barrier;      
     };
-
-    class BSRMcastMessage
-    {
-    };
-
-    class BSRMcombineMessage
-    {
-    };
-
-
   };
 };
 

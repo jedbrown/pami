@@ -40,6 +40,7 @@ namespace PAMI
       GKEY_MCOMB_CLASSROUTEID,     // Multicombine class route id
       GKEY_MSYNC_CLASSROUTEID,     // Multisync class route id
       GKEY_MSYNC_CLASSROUTEID1,    // Multisync class route id1 
+      GKEY_MSYNC_LOCAL_CLASSROUTEID, //Multisync id for local hw accel barriers
       PAMI_GKEY_PLATEXTENSIONS
       GKEY_GEOMETRYCSNI,            // native interface for coll shm device
       NUM_GKEYS, 

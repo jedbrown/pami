@@ -28,7 +28,12 @@ namespace CCMI
     namespace Barrier
     {
 
-      template < bool T_inline=false, class T_Native=Interfaces::NativeInterface, PAMI::Geometry::topologyIndex_t T_Geometry_Index = PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX, PAMI::Geometry::gkeys_t gkey=PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID>
+      template < bool  T_inline=false,
+                 class T_Native=Interfaces::NativeInterface,
+                 PAMI::Geometry::topologyIndex_t T_Geometry_Index = PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX,
+                 PAMI::Geometry::gkeys_t gkey=PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID,
+                 PAMI::Geometry::gkeys_t lkey=PAMI::Geometry::GKEY_MSYNC_LOCAL_CLASSROUTEID
+                 >
 
       class MultiSyncComposite : public CCMI::Executor::Composite
       {
@@ -87,7 +92,7 @@ namespace CCMI
         {
           TRACE_FN_ENTER();
           MultiSyncComposite2Device *m = (MultiSyncComposite2Device*) cookie;
-          m->_native_g->multisync(&m->_minfo_g, m->_deviceInfo);
+          m->_native_g->multisync(&m->_minfo_g, m->_deviceInfoG);
           TRACE_FN_EXIT();
         }
 
@@ -97,7 +102,7 @@ namespace CCMI
         {
           TRACE_FN_ENTER();
           MultiSyncComposite2Device *m = (MultiSyncComposite2Device*) cookie;
-          m->_native_l->multisync(&m->_minfo_l1, m->_deviceInfo);
+          m->_native_l->multisync(&m->_minfo_l1, m->_deviceInfoL);
           TRACE_FN_EXIT();
         }
 
@@ -115,7 +120,8 @@ namespace CCMI
         _native_l((Interfaces::NativeInterface*)((void **)mInterface)[0]),
         _native_g((Interfaces::NativeInterface*)((void **)mInterface)[1]),
         _geometry((PAMI_GEOMETRY_CLASS*)g),
-        _deviceInfo(NULL)
+        _deviceInfoG(NULL),
+        _deviceInfoL(NULL)
         {
           TRACE_FN_ENTER();
           setup(_native_l,
@@ -140,7 +146,8 @@ namespace CCMI
         _native_l(mInterfaceL),
         _native_g(mInterfaceG),
         _geometry((PAMI_GEOMETRY_CLASS*)g),
-        _deviceInfo(NULL)
+        _deviceInfoG(NULL),
+        _deviceInfoL(NULL)
         {
           TRACE_FN_ENTER();
           setup(_native_l,
@@ -187,24 +194,26 @@ namespace CCMI
 
           // If the global "master" topology has only one rank, the local barrier will
           // suffice to implement the barrier
+          _deviceInfoG = _geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
+          _deviceInfoL = _geometry->getKey(PAMI::Geometry::GKEY_MSYNC_LOCAL_CLASSROUTEID);
           if (t_master->size() == 1 && t_local->size() != 1)
           {
             _minfo_l0.cb_done.function   =  NULL; //fn;
             _minfo_l0.cb_done.clientdata =  NULL; //cookie;
             _active_native               =  _native_l;
+            _activeDeviceInfo            = _deviceInfoL;
             _active_minfo                = &_minfo_l0;
           }
 
           // If we have more than one master, but we are the only local process
           // we are guaranteed to be a "local master", so we will just
           // issue the collective on the global device
-          _deviceInfo = _geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
-
           if (t_master->size() > 1 && t_local->size() == 1)
           {
             _minfo_g.cb_done.function    =  NULL; //fn;
             _minfo_g.cb_done.clientdata  =  NULL; //cookie;
             _active_native               =  _native_g;
+            _activeDeviceInfo            = _deviceInfoG;
             _active_minfo                = &_minfo_g;
           }
 
@@ -232,6 +241,7 @@ namespace CCMI
             _minfo_l1.cb_done.function   = NULL; //fn;
             _minfo_l1.cb_done.clientdata = NULL; //cookie;
             _active_native               =  _native_l;
+            _activeDeviceInfo            = _deviceInfoL;
             _active_minfo                = &_minfo_l0;
           }
 
@@ -267,7 +277,7 @@ namespace CCMI
             _minfo_l1.cb_done.clientdata = _clientdata;
           }
 
-          _active_native->multisync(_active_minfo, _deviceInfo);
+          _active_native->multisync(_active_minfo, _activeDeviceInfo);
           TRACE_FN_EXIT();
         }
       protected:
@@ -275,7 +285,9 @@ namespace CCMI
         Interfaces::NativeInterface        *_native_g;
         Interfaces::NativeInterface        *_active_native;
         PAMI_GEOMETRY_CLASS                *_geometry;
-        void                               *_deviceInfo;
+        void                               *_deviceInfoG;
+        void                               *_deviceInfoL;
+        void                               *_activeDeviceInfo;
         pami_multisync_t                    _minfo_l0;
         pami_multisync_t                    _minfo_g;
         pami_multisync_t                    _minfo_l1;
