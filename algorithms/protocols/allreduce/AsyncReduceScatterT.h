@@ -204,7 +204,10 @@ public:
         coremath func;
         unsigned sizeOfType;
 
-        CCMI::Adaptor::Allreduce::getReduceFunction(dt, op, sizeOfType, func);
+        if(dt == PAMI_BYTE) 
+          sizeOfType = sizeof(unsigned char);
+        else 
+          CCMI::Adaptor::Allreduce::getReduceFunction(dt, op, sizeOfType, func);
 
         pami_result_t rc;
         rc = __global.heap_mm->memalign((void **)&_sdispls, 0, counts * sizeof(*_sdispls));
@@ -393,12 +396,15 @@ public:
 
             a_composite = co->getComposite();
             coremath func;
-            uintptr_t op, dt;
+            uintptr_t op, reduce_dt, scatter_dt;
             PAMI::Type::TypeFunc::GetEnums(a_xfer->stype,
                                            a_xfer->op,
-                                           dt,op);
+                                           reduce_dt,op);
+            PAMI::Type::TypeFunc::GetEnums(a_xfer->rtype,
+                                           a_xfer->op,
+                                           scatter_dt,op);
             unsigned sizeOfType;
-            CCMI::Adaptor::Allreduce::getReduceFunction((pami_dt)dt, (pami_op)op, sizeOfType, func);
+            CCMI::Adaptor::Allreduce::getReduceFunction((pami_dt)reduce_dt, (pami_op)op, sizeOfType, func);
             unsigned bytes = sizeOfType * a_xfer->stypecount;
             a_composite->prepReduceBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, bytes, _native->myrank() == root);
 
@@ -415,7 +421,7 @@ public:
             cb_exec_done.function   = scatter_exec_done;
             cb_exec_done.clientdata = co;
 
-            a_composite->setScatterExecutor(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->rcounts, indexInTopo, (pami_dt)dt, (pami_op)op, numRanksInTopo, _native->myrank() == root, root, cb_exec_done);
+            a_composite->setScatterExecutor(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->rcounts, indexInTopo, (pami_dt)scatter_dt, (pami_op)op, numRanksInTopo, _native->myrank() == root, root, cb_exec_done);
             a_composite->getScatterExecutor().setConnectionID(key + 1);
         }
         /// not found posted CollOp object, create a new one and
@@ -438,7 +444,7 @@ public:
             cb_exec_done.function = scatter_exec_done;
 
             uintptr_t op, dt;
-            PAMI::Type::TypeFunc::GetEnums(a_xfer->stype,
+            PAMI::Type::TypeFunc::GetEnums(a_xfer->rtype,
                                            a_xfer->op,
                                            dt,op);
 

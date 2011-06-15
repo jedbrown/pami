@@ -216,6 +216,7 @@ int main(int argc, char*argv[])
               reduce_scatter.cmd.xfer_reduce_scatter.stypecount=i;
               reduce_scatter.cmd.xfer_reduce_scatter.rtypecount=dataSent;
               reduce_scatter.cmd.xfer_reduce_scatter.stype=dt_array[dt];
+              reduce_scatter.cmd.xfer_reduce_scatter.rtype=dt_array[dt];
               reduce_scatter.cmd.xfer_reduce_scatter.op=op_array[op];
               reduce_scatter.cmd.xfer_reduce_scatter.rcounts=&rcounts[0];
 
