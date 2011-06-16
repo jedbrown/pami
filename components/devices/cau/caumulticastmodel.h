@@ -96,15 +96,16 @@ namespace PAMI
           // before the message storage may be freed as a result of
           // a message cb_done
           T_Message              *m      = (T_Message*) cookie;
-          Generic::GenericThread *t      = m->_workfcn;
-          T_Device               *device = (T_Device *)m->_device;
-
           // Advance the message
           pami_result_t           result = m->advance();
 
           // Free the message if not PAMI_EAGAIN.
           if(result == PAMI_SUCCESS)
+          {
+            Generic::GenericThread *t      = m->_workfcn;
+            T_Device               *device = (T_Device *)m->_device;
             device->freeWork(t);
+          }
           return result;
         }
       
@@ -139,8 +140,12 @@ namespace PAMI
                 msg->_packetQueue.enqueue(earlymsg->_packetQueue.dequeue());
               _device.freeMessage(earlymsg);
             }
-            gi->_postedBcast.pushTail((MatchQueueElem*)msg);                        
-            msg->_workfcn = _device.postWork(do_bcast, msg);
+            pami_result_t rc = msg->advance();
+            if(rc == PAMI_EAGAIN)
+            {
+              gi->_postedBcast.pushTail((MatchQueueElem*)msg);                        
+              msg->_workfcn = _device.postWork(do_bcast, msg);
+            }
             return PAMI_SUCCESS;
           }
         T_Device                                                   &_device;
