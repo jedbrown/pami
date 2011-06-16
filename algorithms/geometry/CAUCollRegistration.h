@@ -564,6 +564,7 @@ namespace PAMI
           }
         inline void freeLocalNI(T_LocalNI_AM *ni)
           {
+            ni->destroy();
             _ni_allocator.returnObject(ni);
           }
         inline void freeGeomInfo(GeometryInfo *gi)

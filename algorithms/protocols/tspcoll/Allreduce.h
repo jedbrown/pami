@@ -17,7 +17,7 @@ namespace xlpgas
       /* ******************************************************************* */
 
       typedef coremath cb_Allreduce_t;
-      inline cb_Allreduce_t  getcallback (xlpgas_ops_t, xlpgas_dtypes_t);
+      inline cb_Allreduce_t  getcallback (pami_data_function, TypeCode*);
       inline size_t          datawidthof (xlpgas_dtypes_t);
 
       /* ******************************************************************* */
@@ -34,15 +34,17 @@ namespace xlpgas
                 __global.heap_mm->free(_tmpbuf);
             }
 	  void reset (const void * s, void * d,
-		      xlpgas_ops_t op, xlpgas_dtypes_t dt, unsigned nelems, user_func_t* uf);
+	              pami_data_function op, TypeCode * sdt, size_t nelems,
+	              TypeCode * rdt, user_func_t* uf);
 
 	protected:
 	  static void cb_allreduce (CollExchange<T_NI> *, unsigned phase);
 
 	protected:
-	  int           _nelems, _logMaxBF;
+	  size_t        _nelems;
+	  int           _logMaxBF;
 	  void        * _dbuf;
-          coremath      _cb_allreduce;
+	  coremath      _cb_allreduce;
 	  char          _dummy;
 	  void        * _tmpbuf;
 	  size_t        _tmpbuflen;
@@ -58,9 +60,10 @@ namespace xlpgas
       Short (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset);
       void reset (const void        * s,
 		  void              * d,
-		  xlpgas_ops_t         op,
-		  xlpgas_dtypes_t     dt,
-		  unsigned            nelems,
+		  pami_data_function  op,
+		  TypeCode          * sdt,
+		  size_t              nelems,
+          TypeCode          * rdt,
 		  user_func_t*        uf);
 
     protected:

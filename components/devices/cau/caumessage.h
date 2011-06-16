@@ -75,26 +75,92 @@ namespace PAMI
     class CAUMsyncMessage : public MatchQueueElem
     {
       public:
+
+        static void cau_red_send_done(lapi_handle_t *hndl, void * completion_param)
+        {
+          TRACE((stderr, "cau_red_send_done\n"));
+        }
+
+        static void cau_mcast_send_done(lapi_handle_t *hndl, void * completion_param)
+        {
+          TRACE((stderr, "cau_mcast_send_done\n"));
+          // This means that the synchronization is complete on the root node
+          CAUMsyncMessage     *m          = (CAUMsyncMessage *)completion_param;
+          void                *ms         = m->_toFree;
+          pami_event_function  cleanup_fn = m->_cleanup_fn;
+          m->_user_done_fn(m->_context,
+                           m->_user_cookie,
+                           PAMI_SUCCESS);
+          if(cleanup_fn)//This will only be true if the message was allocated using memory allocator
+            cleanup_fn(ms, m, PAMI_SUCCESS);
+
+        }
+
+        inline void advanceNonRoot()
+        {
+           CheckLapiRC(lapi_cau_reduce(_lapi_hdl,                   // lapi handle
+                                       _geometryInfo->_cau_id,      // group id
+                                       _dispatch_red_id,            // dispatch id
+                                      &_xfer_data[0],               // header
+                                       sizeof(_xfer_data),          // header_len
+                                      &_reduce_val,                 // data
+                                       sizeof(_reduce_val),         // data size
+                                       _red,                        // reduction op
+                                       cau_red_send_done,           // send completion handler
+                                       this));
+        }
+
+        inline void advanceRoot()
+        {
+           CheckLapiRC(lapi_cau_multicast(_lapi_hdl,                   // lapi handle
+                                          _geometryInfo->_cau_id,      // group id
+                                          _dispatch_mcast_id,          // dispatch id
+                                         &_xfer_data[0],               // header
+                                          sizeof(_xfer_data),          // header len
+                                         &_reduce_val,                 // data
+                                          sizeof(_reduce_val),         // data size
+                                          cau_mcast_send_done,         // done cb
+                                          this));                      // clientdata
+        }
+
+
         CAUMsyncMessage(double               init_val,
+                        cau_reduce_op_t      red,
                         pami_context_t       context,
                         pami_event_function  done_fn,
                         void                *user_cookie,
-                        int                  key,
+                        pami_event_function  cleanup_fn,
+                        CAUGeometryInfo     *geometryInfo,
+                        int                  dispatch_mcast_id,
+                        int                  dispatch_red_id,
+                        lapi_handle_t        lapi_handle,
                         void                *toFree):
-          MatchQueueElem(key),
+          MatchQueueElem(geometryInfo->_seqno),
           _reduce_val(init_val),
           _user_done_fn(done_fn),
           _user_cookie(user_cookie),
           _toFree(toFree),
-          _context(context)
+          _context(context),
+          _lapi_hdl(lapi_handle),
+          _geometryInfo(geometryInfo),
+          _dispatch_mcast_id(dispatch_mcast_id),
+          _dispatch_red_id(dispatch_red_id),
+          _red(red),
+          _cleanup_fn(cleanup_fn)
           {
           }
+        CAUGeometryInfo     *_geometryInfo;
         double               _reduce_val;
+        cau_reduce_op_t      _red;
         pami_event_function  _user_done_fn;
+        pami_event_function  _cleanup_fn;
         void                *_user_cookie;
         void                *_toFree;
         pami_context_t       _context;
         int                  _xfer_data[3];
+        int                  _dispatch_mcast_id;
+        int                  _dispatch_red_id;
+        lapi_handle_t        _lapi_hdl;
     };
 	
     // CAU Multicombine Message Class      

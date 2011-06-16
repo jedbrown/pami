@@ -48,6 +48,7 @@ namespace PAMI
       inline BGQNativeInterfaceAS(T_Device &device, pami_client_t client, pami_context_t context, size_t context_id, size_t client_id, int *dispatch_id);
 
       /// Virtual interfaces (from base \see CCMI::Interfaces::NativeInterface)
+      virtual inline pami_result_t destroy      ( ) { return PAMI_SUCCESS; };
       virtual inline pami_result_t multicast    (pami_multicast_t    *, void *devinfo = NULL);
       virtual inline pami_result_t multisync    (pami_multisync_t    *, void *devinfo = NULL);
       virtual inline pami_result_t multicombine (pami_multicombine_t *, void *devinfo = NULL);
@@ -687,6 +688,7 @@ namespace PAMI
     };
 
     /// Virtual interfaces (from base \see CCMI::Interfaces::NativeInterface)
+    virtual inline pami_result_t destroy      ( ) { return PAMI_SUCCESS; };
     virtual pami_result_t setMulticastDispatch (pami_dispatch_multicast_function fn, void *cookie)
     {
       PAMI_abort();

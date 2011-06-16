@@ -182,8 +182,10 @@ DEFN_CB_ALLREDUCE_UF (flt,  float,              uf)
 
 /* allreduce callback discriminator  */
 xlpgas::Allreduce::cb_Allreduce_t
-xlpgas::Allreduce::getcallback (xlpgas_ops_t optype, xlpgas_dtypes_t dtype)
+xlpgas::Allreduce::getcallback (pami_data_function op, TypeCode* dt)
 {
+  uintptr_t      optype, dtype;
+  PAMI::Type::TypeFunc::GetEnums(dt, op, dtype, optype);
   switch (optype)
     {
     case XLPGAS_OP_ADD:
@@ -384,11 +386,13 @@ size_t xlpgas::Allreduce::datawidthof (xlpgas_dtypes_t dtype)
 
 
 inline xlpgas::Allreduce::cb_Allreduce_t
-xlpgas::Allreduce::getcallback (xlpgas_ops_t optype, xlpgas_dtypes_t dtype)
+xlpgas::Allreduce::getcallback (pami_data_function optype, TypeCode* dtype)
 {
   cb_Allreduce_t cb_allreduce;
-  unsigned                          datawidth;
-  CCMI::Adaptor::Allreduce::getReduceFunction(dtype, optype,datawidth, cb_allreduce);
+  unsigned       datawidth;
+  uintptr_t      op, dt;
+  PAMI::Type::TypeFunc::GetEnums(dtype, optype, dt, op);
+  CCMI::Adaptor::Allreduce::getReduceFunction((pami_dt)dt, (pami_op)op, datawidth, cb_allreduce);
   return cb_allreduce;
 }
 

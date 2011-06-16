@@ -47,6 +47,20 @@ namespace PAMI
         T_Support_One_Task>, 
         T_Geometry >
       {
+
+        class GeometryInfo
+        {
+        public:
+          inline GeometryInfo(CCMI::Executor::Composite *ueb_composite,
+                              void                      *geom_allocator):
+            _ueb_composite(ueb_composite),
+            _geom_allocator(geom_allocator)
+            {
+            }
+          CCMI::Executor::Composite    *_ueb_composite;
+          void                         *_geom_allocator;
+        };
+
       protected:
 
       public:
@@ -148,6 +162,20 @@ namespace PAMI
           TRACE_FN_EXIT();
         }
 
+       static inline void cleanupCallback(pami_context_t ctxt, void *data, pami_result_t res)
+         {
+           GeometryInfo *gi = (GeometryInfo*) data;
+           CCMI::Executor::Composite *ueb_composite = (CCMI::Executor::Composite *)gi->_ueb_composite;
+           PAMI::MemoryAllocator<sizeof(GeometryInfo),16>  *geom_allocator =
+                 (PAMI::MemoryAllocator<sizeof(GeometryInfo),16>  *)gi->_geom_allocator;
+
+           T_BinomialBarrierFactory::cleanup_done_fn(ctxt, ueb_composite, res);
+           //ueb_composite->_factory->_alloc.returnObject(ueb_composite);
+
+           geom_allocator->returnObject(gi);
+         }
+
+
         inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry, int phase)
           {
             TRACE_FN_ENTER();
@@ -175,6 +203,9 @@ namespace PAMI
                                         _context_id);
 
                 geometry->setUEBarrier(_onetask_barrier_factory);
+
+
+                geometry->setCleanupCallback(CCMI::Adaptor::P2POneTask::OneTaskBarrierFactory::cleanup_done_fn, _onetask_barrier_composite);
               }
 
               //geometry->addCollective(PAMI_XFER_FENCE,
@@ -232,7 +263,6 @@ namespace PAMI
               geometry->addCollective(PAMI_XFER_REDUCE_SCATTER,
                                       _onetask_reduce_scatter_factory,
                                       _context_id);
-
             }//End if onetask geometry
             else//More than one task
             {
@@ -259,6 +289,10 @@ namespace PAMI
                 TRACE_FORMAT( "<%p>CCMIRegistration::analyze() add",this);
                 _binomial_barrier_composite = (T_BinomialBarrier *)
                   _binomial_barrier_factory->generate(geometry, &xfer);
+
+                GeometryInfo    *gi = (GeometryInfo*)_geom_allocator.allocateObject();
+                new(gi) GeometryInfo(_binomial_barrier_composite, &_geom_allocator);
+
                 _binomial_barrier_composite->getExecutor()->setContext(_context);
                 geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
                                  (void*)_binomial_barrier_composite);
@@ -281,6 +315,7 @@ namespace PAMI
                                         _context_id);
 
                 geometry->setUEBarrier(_binomial_barrier_factory);
+                geometry->setCleanupCallback(cleanupCallback, gi);
               }
 
 #ifdef PAMI_ENABLE_X0_PROTOCOLS // Experimental (X0:) protocols
@@ -991,6 +1026,7 @@ namespace PAMI
           int                                                         *_dispatch_id;
 
           T_Allocator                                                 &_allocator;
+          PAMI::MemoryAllocator<sizeof(GeometryInfo),16>               _geom_allocator;
 
           // Barrier Storage and Native Interface
           T_BinomialBarrier                                           *_binomial_barrier_composite;

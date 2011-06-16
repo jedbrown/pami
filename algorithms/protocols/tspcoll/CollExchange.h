@@ -14,14 +14,24 @@
 
 #include <pthread.h>
 
-//#define DEBUG_COLLEXCHANGE 0
+#include "util/trace.h"
+
+/*#define DEBUG_COLLEXCHANGE 0*/
 #undef TRACE
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
 
 #ifdef DEBUG_COLLEXCHANGE
-#define TRACE(x)  fprintf x;
+ #define TRACE(x)  fprintf x;
+ #define DO_TRACE_ENTEREXIT 1
+ #define DO_TRACE_DEBUG     1
 #else
-#define TRACE(x)
+ #define TRACE(x)
+ #define DO_TRACE_ENTEREXIT 0
+ #define DO_TRACE_DEBUG     0
 #endif
+
+
 
 /* *********************************************************************** */
 /*  Base class for implementing a non-blocking collective using s.   */
@@ -87,12 +97,13 @@ namespace xlpgas
     /* set by start()                 */
     /* ------------------------------ */
 
-    xlpgas_endpoint_t _dest[MAX_PHASES];    /* list of destination nodes     */
-    void       * _sbuf     [MAX_PHASES];    /* list of source addresses      */
-    void       * _rbuf     [MAX_PHASES];    /* list of destination addresses */
-    size_t       _sbufln   [MAX_PHASES];    /* list of buffer lenghts        */
-    cb_CollRcv_t _cb_rcvhdr[MAX_PHASES];    /* what to do before reception; adjust reception buffers    */
-    cb_Coll_t    _postrcv  [MAX_PHASES];    /* what to do after reception    */
+    xlpgas_endpoint_t   _dest     [MAX_PHASES];    /* list of destination nodes     */
+    void              * _sbuf     [MAX_PHASES];    /* list of source addresses      */
+    void              * _rbuf     [MAX_PHASES];    /* list of destination addresses */
+    size_t              _sbufln   [MAX_PHASES];    /* list of buffer lenghts        */
+    cb_CollRcv_t        _cb_rcvhdr[MAX_PHASES];    /* what to do before reception; adjust reception buffers    */
+    cb_Coll_t           _postrcv  [MAX_PHASES];    /* what to do after reception    */
+	PAMI::PipeWorkQueue _pwq      [MAX_PHASES];    /* pwq used by sendPWQ to support non-contigous dt */
 
     /* --------------------------------- */
     /* STATE: changes during execution   */
@@ -256,8 +267,8 @@ inline void xlpgas::CollExchange<T_NI>::kick()
 	this->_postrcv[_phase](this, _phase);
       }
     }
-  TRACE((stderr, "%d:%d: FINI tag=%d ctr=%d phase=%d/%d sendcmplt=%d\n",
-	 XLPGAS_MYNODE, _ctxt, _tag, _counter,
+  TRACE((stderr, "%d:%p: FINI tag=%d ctr=%d phase=%d/%d sendcmplt=%d\n",
+	 XLPGAS_MYNODE, this->_pami_ctxt, _header[_phase].tag, _counter,
 	 _phase, _numphases, _sendcomplete));
   if (this->_cb_complete)
     if (_phase == _numphases) { _phase++; _cb_complete (this->_pami_ctxt, this->_arg, PAMI_SUCCESS); }
@@ -283,9 +294,9 @@ template <class T_NI>
 inline void xlpgas::CollExchange<T_NI>::send (int phase)
 {
 
-  TRACE((stderr,"L%d:%d SEND tag=%d ctr=%d phase=%d tgt=%d nbytes=%d  sbuf=%x sbufln=%d numphases=%d  PHASE inside _cplt=%d and inside _headers=%d\n",
-	 XLPGAS_MYNODE, _ctxt, _tag, _counter, phase,
-	 _dest[phase].node, _sbufln[phase], _sbuf[phase],
+  TRACE((stderr,"L%d:%p SEND tag=%d ctr=%d phase=%d tgt=%d nbytes=%zu  sbuf=%p sbufln=%zu numphases=%d  PHASE inside _cplt=%d and inside _headers=%d\n",
+	 XLPGAS_MYNODE, this->_pami_ctxt, _header[_phase].tag, _counter, phase,
+	 _dest[phase], _sbufln[phase], _sbuf[phase],
 	_sbufln[phase],_numphases,_cmplt[phase].phase, _header[phase].phase ));
 
   _header[phase].counter       = _counter;
@@ -297,7 +308,8 @@ inline void xlpgas::CollExchange<T_NI>::send (int phase)
   assert (_sbufln[phase] >= 0);
 
 
-  pami_send_t s;
+  pami_send_t s;//Should remove this when done
+  pami_send_event_t   events;
   s.send.header.iov_base  = &_header[phase];
   s.send.header.iov_len   =  sizeof(_header[phase]);
   s.send.data.iov_base    = _sbuf[phase];
@@ -305,10 +317,12 @@ inline void xlpgas::CollExchange<T_NI>::send (int phase)
   s.send.dispatch         = -1;
   memset(&s.send.hints, 0, sizeof(s.send.hints));
   s.send.dest             = _dest[phase];
-  s.events.cookie         = &_cmplt[phase];
-  s.events.local_fn       = CollExchange::cb_senddone;
-  s.events.remote_fn      = NULL;
-  this->_p2p_iface->send(&s);
+  events.cookie         = &_cmplt[phase];
+  events.local_fn       = CollExchange::cb_senddone;
+  events.remote_fn      = NULL;
+  this->_p2p_iface->sendPWQ(this->_pami_ctxt, _dest[phase], sizeof(_header[phase]),&_header[phase],_sbufln[phase], &_pwq[phase], &events);
+  //this->_p2p_iface->send(&s);
+
 }
 
 /* *********************************************************************** */
@@ -341,6 +355,8 @@ inline void xlpgas::CollExchange<T_NI>::cb_incoming(pami_context_t    context,
                                                     pami_endpoint_t   origin,
                                                     pami_recv_t     * recv)
 {
+  TRACE_FN_ENTER();
+
   struct AMHeader * header = (struct AMHeader *) hdr;
   // unused:  int ctxt = header->dest_ctxt;
   CollectiveManager<T_NI> *mc = (CollectiveManager<T_NI>*) cookie;
@@ -355,11 +371,11 @@ inline void xlpgas::CollExchange<T_NI>::cb_incoming(pami_context_t    context,
 
   MUTEX_LOCK(&b->_mutex);
 
-  TRACE((stderr, "L%d:%d INC kind=%d tag=%d ctr=%d phase=%d nphases=%d "
-	  "msgctr=%d msgphase=%d\n",
-	  XLPGAS_MYNODE, b->_ctxt,header->kind, header->tag, b->_counter,
-	  b->_phase, b->_numphases,
-	  header->counter, header->phase));
+  TRACE_FORMAT("L%d:%d INC kind=%d tag=%d ctr=%d phase=%d nphases=%d "
+               "msgctr=%d msgphase=%d",
+               XLPGAS_MYNODE, b->_ctxt,header->kind, header->tag, b->_counter,
+               b->_phase, b->_numphases,
+               header->counter, header->phase);
 
   assert (b->_header[0].tag == header->tag);
   assert (b->_numphases > 0);
@@ -369,6 +385,9 @@ inline void xlpgas::CollExchange<T_NI>::cb_incoming(pami_context_t    context,
   /* should this be atomic */
   xlpgas_local_addr_t z = (xlpgas_local_addr_t) b->_rbuf[header->phase];
   //adjust if user cb function present
+
+  TRACE_FORMAT( " b->_cb_rcvhdr[%d] %p, pipe_addr %p, recv %p",header->phase, b->_cb_rcvhdr[header->phase],pipe_addr, recv);
+
   if (b->_cb_rcvhdr[header->phase])
     z = b->_cb_rcvhdr[header->phase](b, header->phase, header->counter);
 
@@ -386,10 +405,12 @@ inline void xlpgas::CollExchange<T_NI>::cb_incoming(pami_context_t    context,
     recv->data_fn       = PAMI_DATA_COPY;
     recv->data_cookie   = (void*)NULL;
     MUTEX_UNLOCK(&b->_mutex);
+    TRACE_FN_EXIT();
     return;
   }
   CollExchange::cb_recvcomplete(context, &b->_cmplt[header->phase], PAMI_SUCCESS);
   MUTEX_UNLOCK(&b->_mutex);
+  TRACE_FN_EXIT();
   return;
 }
 
@@ -443,4 +464,6 @@ xlpgas::CollExchange<T_NI>::internalerror (AMHeader * header, int lineno)
 }
 
 #undef TRACE
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
 #endif

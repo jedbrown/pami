@@ -20,6 +20,7 @@ xlpgas::Allgatherv<T_NI>::
 Allgatherv (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
   CollExchange<T_NI> (ctxt, comm, kind, tag, offset)
 {
+  pami_type_t allgathervtype = PAMI_TYPE_BYTE;
   this->_tmpbuf = NULL;
   this->_tmpbuflen = 0;
   this->_dbuf = NULL;
@@ -34,6 +35,8 @@ Allgatherv (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
       this->_sbuf[i] = &this->_dummy;
       this->_rbuf[i] = &this->_dummy;
       this->_sbufln[i] = 1;
+      this->_pwq[i].configure((char *)this->_sbuf[i], this->_sbufln[i], this->_sbufln[i], (TypeCode *)allgathervtype, (TypeCode *)allgathervtype);
+      this->_pwq[i].reset();
     }
   this->_numphases   *= 3;
   this->_phase        = this->_numphases;
@@ -46,20 +49,21 @@ Allgatherv (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
 template <class T_NI>
 void xlpgas::Allgatherv<T_NI>::reset (const void         * sbuf,
 				void               * rbuf,
-				size_t             * lengths)
+				TypeCode           * stype,
+				size_t               stypecount,
+				TypeCode           * rtype,
+				size_t             * rtypecounts,
+				size_t             * rdispls)
 {
   size_t allsumbytes= 0;
   for(int i=0;i<(int)this->_comm->size();i++)
-    allsumbytes+=lengths[i];
+    allsumbytes+=(rtype->GetDataSize()*rtypecounts[i]);
 
-  size_t mysumbytes = 0;
-  for(int i=0;i<(int)this->_comm->ordinal();i++)
-    mysumbytes +=lengths[i];
 
   /* --------------------------------------------------- */
   /*    copy source buffer to dest buffer                */
   /* --------------------------------------------------- */
-  memcpy ((char *)rbuf + mysumbytes, sbuf, lengths[this->_comm->ordinal()]);
+  memcpy ((char *)rbuf + rdispls[this->_comm->ordinal()], sbuf, rtype->GetDataSize()*rtypecounts[this->_comm->ordinal()]);
   /* --------------------------------------------------- */
   /* initialize destinations, offsets and buffer lengths */
   /* --------------------------------------------------- */
@@ -69,26 +73,29 @@ void xlpgas::Allgatherv<T_NI>::reset (const void         * sbuf,
       int destindex = (this->_comm->ordinal()+2*this->_comm->size()-(1<<i))%this->_comm->size();
       this->_dest[phase]   =  this->_comm->endpoint (destindex);
       this->_dest[phase+1]   = this->_dest[phase];
-      this->_sbuf[phase]   = (char *)rbuf + mysumbytes;
+      this->_sbuf[phase]   = (char *)rbuf + rdispls[this->_comm->ordinal()];
       this->_sbuf[phase+1]   = (char *)rbuf;
 
       size_t phasesumbytes=0;
       for (int n=0; n < (1<<i); n++)
-        phasesumbytes += lengths[(this->_comm->ordinal()+n)%this->_comm->size()];
+        phasesumbytes += (rtype->GetDataSize()*rtypecounts[(this->_comm->ordinal()+n)%this->_comm->size()]);
 
-      this->_rbuf[phase]   = (char *)rbuf+ ((mysumbytes + phasesumbytes) % allsumbytes
-);
+      this->_rbuf[phase]   = (char *)rbuf + ((rdispls[this->_comm->ordinal()] + phasesumbytes) % allsumbytes);
       this->_rbuf[phase+1]   = (char *)rbuf;
-      if (mysumbytes + phasesumbytes >= allsumbytes)
+      if (rdispls[this->_comm->ordinal()] + phasesumbytes >= allsumbytes)
         {
-	  this->_sbufln[phase] = allsumbytes - mysumbytes;
-          this->_sbufln[phase+1] = mysumbytes + phasesumbytes - allsumbytes;
+          this->_sbufln[phase] = allsumbytes - rdispls[this->_comm->ordinal()];
+          this->_sbufln[phase+1] = rdispls[this->_comm->ordinal()] + phasesumbytes - allsumbytes;
         }
       else
         {
           this->_sbufln[phase] = phasesumbytes;
           this->_sbufln[phase+1] = 0;
         }
+      this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], stype, rtype);
+      this->_pwq[phase].reset();
+      this->_pwq[phase+1].configure((char *)this->_sbuf[phase+1], this->_sbufln[phase+1], this->_sbufln[phase+1], stype, rtype);
+      this->_pwq[phase+1].reset();
     }
   /* ----------------------------------- */
   /* ----------------------------------- */

@@ -58,6 +58,7 @@ namespace PAMI
           PAMI_abort();
           return PAMI_ERROR;
         }
+      virtual inline pami_result_t destroy      ( );
       virtual inline pami_result_t multicast    (pami_multicast_t    *, void *devinfo=NULL);
       virtual inline pami_result_t multisync    (pami_multisync_t    *, void *devinfo=NULL);
       virtual inline pami_result_t multicombine (pami_multicombine_t *, void *devinfo=NULL);
@@ -73,6 +74,8 @@ namespace PAMI
         }
       virtual inline pami_result_t sendPWQ(pami_context_t       context,
                                            pami_endpoint_t      dest,
+                                           size_t               header_length,
+                                           void                *header,
                                            size_t               length,
                                            PAMI::PipeWorkQueue *pwq,
                                            pami_send_event_t   *events)
@@ -170,6 +173,16 @@ namespace PAMI
                                      obj->_user_callback.clientdata,
                                      res);
       ni->_allocator.returnObject(obj);
+    }
+
+    template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
+    inline pami_result_t DeviceNativeInterface<T_Device,
+                                               T_Mcast,
+                                               T_Msync,
+                                               T_Mcomb>::destroy ( )
+    {
+      this->~DeviceNativeInterface();
+      return PAMI_SUCCESS;
     }
 
     template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb>
@@ -276,6 +289,8 @@ namespace PAMI
                                size_t         context_id,
                                pami_task_t    tasks,
                                size_t         num_tasks);
+      ~CSNativeInterface();
+      virtual inline pami_result_t destroy       ();
       virtual inline pami_result_t multicast    (pami_multicast_t    *, void *devinfo=NULL);
       virtual inline pami_result_t multisync    (pami_multisync_t    *, void *devinfo=NULL);
       virtual inline pami_result_t multicombine (pami_multicombine_t *, void *devinfo=NULL);
@@ -339,6 +354,11 @@ namespace PAMI
     };
 
     template <class T_Model>
+    inline CSNativeInterface<T_Model>::~CSNativeInterface()
+    {
+    }
+
+    template <class T_Model>
     inline void CSNativeInterface<T_Model>::ni_client_done(pami_context_t  context,
                                                            void          *rdata,
                                                            pami_result_t   res)
@@ -350,8 +370,15 @@ namespace PAMI
         obj->_user_callback.function(context,
                                      obj->_user_callback.clientdata,
                                      res);
-
       ni->_allocator.returnObject(obj);
+    }
+
+    template <class T_Model>
+    inline pami_result_t CSNativeInterface<T_Model>::destroy ( )
+    {
+      this->~CSNativeInterface();
+
+      return PAMI_SUCCESS;
     }
 
     template <class T_Model>
@@ -362,7 +389,6 @@ namespace PAMI
       req->_ni               = this;
       req->_user_callback    = mcast->cb_done;
       DO_DEBUG((templateName<T_Model>()));
-
       //  \todo:  this copy will cause a latency hit, maybe we need to change postMultisync
       //          interface so we don't need to copy
       // pami_multicast_t  m     = *mcast;

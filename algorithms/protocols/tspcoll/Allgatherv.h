@@ -16,8 +16,12 @@ namespace xlpgas
 	  void * operator new (size_t, void * addr) { return addr; }
 	  Allgatherv (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset);
 	  void reset (const void * sbuf,
-		      void   * dbuf,
-		      size_t * lengths);
+		      void      * rbuf,
+		      TypeCode  * stype,
+		      size_t      stypecount,
+		      TypeCode  * rtype,
+		      size_t    * rtypecounts,
+		      size_t    * rdispls);
 
 	protected:
 	  int           _logMaxBF;

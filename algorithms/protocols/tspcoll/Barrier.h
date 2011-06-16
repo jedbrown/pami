@@ -9,7 +9,7 @@
 #include "algorithms/protocols/tspcoll/Team.h"
 
 #undef TRACE
-//#define DEBUG_TSPCOLL_BARRIER 1
+//#define DEBUG_TSPCOLL_BARRIER 0
 #ifdef DEBUG_TSPCOLL_BARRIER
 #define TRACE(x)  fprintf x;
 #else
@@ -34,7 +34,8 @@ namespace xlpgas
 	     int                 offset);
     void reset () { CollExchange<T_NI>::reset(); }
   private:
-    char _dummy;
+    pami_type_t _type;
+    char        _dummy;
   };
 }
 
@@ -47,7 +48,8 @@ inline xlpgas::Barrier<T_NI>::Barrier (int               ctxt,
 				CollectiveKind    kind,
 				int               tag,
 				int               offset) :
-  CollExchange<T_NI> (ctxt, comm, kind, tag, offset)
+  CollExchange<T_NI> (ctxt, comm, kind, tag, offset),
+  _type(PAMI_TYPE_BYTE)
 {
   TRACE((stderr, "%d: Barrier constructor: rank=%d of %d\n",
 	 XLPGAS_MYNODE, this->_comm->rank(), this->_comm->size()));
@@ -60,12 +62,15 @@ inline xlpgas::Barrier<T_NI>::Barrier (int               ctxt,
   /* initialize destinations, offsets and buffer lengths */
   /* --------------------------------------------------- */
 
-  for (int i=0; i<this->_numphases; i++)
+    for (int i=0; i<this->_numphases; i++)
     {
       this->_dest[i]      = comm->endpoint((comm->ordinal()+(1<<i))%comm->size());
+      TRACE((stderr, "%d: Barrier constructor: dest[%d]=%d \n",XLPGAS_MYNODE,i ,this->_dest[i]));
 
       this->_sbuf[i]      = &this->_dummy;
       this->_sbufln[i]    = 1;
+      this->_pwq[i].configure((char *)this->_sbuf[i], this->_sbufln[i], this->_sbufln[i], (TypeCode *)_type, (TypeCode *)_type);
+      this->_pwq[i].reset();
       this->_rbuf[i]      = &this->_dummy;
     }
 }

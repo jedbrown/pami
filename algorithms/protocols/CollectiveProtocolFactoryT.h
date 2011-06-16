@@ -108,6 +108,7 @@ namespace CCMI
         CCMI_abort();
       }
 
+
       static void done_fn(pami_context_t  context,
                           void           *clientdata,
                           pami_result_t   res)

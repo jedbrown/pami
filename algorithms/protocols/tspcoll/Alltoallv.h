@@ -33,8 +33,10 @@ namespace xlpgas
 
     virtual void reset (const void   *sbuf,
 			void *        dbuf,
+			TypeCode     *stype,
 			const size_t *scnts,
 			const size_t *sdispls,
+			TypeCode     *rtype,
 			const size_t *rcnts,
 			const size_t *rdispls);
 

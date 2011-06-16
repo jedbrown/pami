@@ -17,7 +17,10 @@ namespace xlpgas
 	  Allgather (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset);
 	  void reset (const void * sbuf,
 		      void * dbuf,
-		      unsigned nbytes);
+		      TypeCode           * stype,
+		      size_t               stypecount,
+		      TypeCode           * rtype,
+		      size_t               rtypecount);
 
 	protected:
 	  int           _logMaxBF;

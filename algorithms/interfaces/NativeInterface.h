@@ -65,6 +65,7 @@ namespace CCMI
           //PAMI_abort();
           return PAMI_ERROR;
         }
+        virtual pami_result_t destroy () = 0;
         virtual pami_result_t multicast(pami_multicast_t *mcast, void *devinfo = NULL) = 0;
         virtual pami_result_t multisync(pami_multisync_t *msync, void *devinfo = NULL) = 0;
         virtual pami_result_t multicombine(pami_multicombine_t *mcombine, void *devinfo = NULL) = 0;
@@ -76,6 +77,8 @@ namespace CCMI
         }
         virtual pami_result_t sendPWQ(pami_context_t       context,
                                            pami_endpoint_t      dest,
+                                           size_t               header_length,
+                                           void                *header,
                                            size_t               length,
                                            PAMI::PipeWorkQueue *pwq,
                                            pami_send_event_t   *events)

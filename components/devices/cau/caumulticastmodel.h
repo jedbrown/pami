@@ -121,10 +121,10 @@ namespace PAMI
           };
       
         inline pami_result_t postMulticast_impl (uint8_t (&state)[mcast_model_state_bytes],
-						 size_t            client,
-						 size_t            context,
-                                                 pami_multicast_t *mcast,
-                                                 void             *devinfo)
+                         size_t            client,
+                         size_t            context,
+                         pami_multicast_t *mcast,
+                         void             *devinfo)
           {
             CAUGeometryInfo  *gi             = (CAUGeometryInfo *)devinfo;
             T_Message        *msg, *earlymsg = (T_Message*)gi->_ueBcast.findAndDelete(gi->_seqnoBcast);

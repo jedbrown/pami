@@ -89,7 +89,11 @@ public:
                                        a_xfer->op,
                                        dt,op);
 
-        CCMI::Adaptor::Allreduce::getReduceFunction((pami_dt)dt, (pami_op)op, sizeOfType, func);
+        if(dt == PAMI_BYTE)
+          sizeOfType = sizeof(unsigned char);
+        else
+          CCMI::Adaptor::Allreduce::getReduceFunction((pami_dt)dt, (pami_op)op, sizeOfType, func);
+
         unsigned bytes = sizeOfType * a_xfer->stypecount;
 
         _reduce_executor.setRoot(root);

@@ -10,13 +10,19 @@
 /*      Start a new scatter. Old scatters needs to complete       */
 /* **************************************************************** */
 template<class T_NI>
-void xlpgas::Scatter<T_NI>::reset (int root, const void * s, void * d, unsigned l)
+void xlpgas::Scatter<T_NI>::reset (int root, const void * s, void * d,
+		    TypeCode           * stype,
+		    size_t               stypecount,
+		    TypeCode           * rtype,
+		    size_t               rtypecount)
 {
   _root           = root;
   _rcvcount       = 0;
   _rbuf           = (char *)d;
   _sbuf           = (const char *)s;
-  _len            = l;
+  _len            = stype->GetDataSize() * stypecount;
+  _pwq.configure((char *)this->_sbuf, this->_len, this->_len, stype, rtype);
+  _pwq.reset();
 }
 
 /* **************************************************************** */
@@ -38,6 +44,7 @@ void xlpgas::Scatter<T_NI>::kick    (){
 	  xlpgas_endpoint_t dst = this->_comm->endpoint (i);
 //	  ((AMHeader&)(_header->hdr)).dest_ctxt = dst.ctxt;
           pami_send_t p_send;
+          pami_send_event_t   events;
           p_send.send.header.iov_base  = this->_header;
           p_send.send.header.iov_len   = sizeof(*this->_header);
           p_send.send.data.iov_base    = (char*)(this->_sbuf + i * this->_len);
@@ -45,10 +52,11 @@ void xlpgas::Scatter<T_NI>::kick    (){
           p_send.send.dispatch         = -1;
           memset(&p_send.send.hints, 0, sizeof(p_send.send.hints));
           p_send.send.dest             = dst;
-          p_send.events.cookie         = this;
-          p_send.events.local_fn       = this->cb_senddone;
-          p_send.events.remote_fn      = NULL;
-          this->_p2p_iface->send(&p_send);
+          events.cookie         = this;
+          events.local_fn       = this->cb_senddone;
+          events.remote_fn      = NULL;
+          this->_p2p_iface->sendPWQ(this->_pami_ctxt, dst,sizeof(*this->_header),this->_header, this->_len, &_pwq, &events);
+          //this->_p2p_iface->send(&p_send);
 	}
       }
     }

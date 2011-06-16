@@ -18,7 +18,8 @@ namespace xlpgas
 	  virtual void reset (int root,
 		      const void * sbuf,
 		      void * dbuf,
-		      unsigned nbytes);
+		      TypeCode * type,
+		      size_t typecount);
 
        protected:
 	  static void cb_bcast (CollExchange<T_NI> *, unsigned phase);

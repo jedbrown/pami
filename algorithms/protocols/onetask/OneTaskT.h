@@ -65,6 +65,18 @@ public:
       TRACE_FN_EXIT();
     }
 
+    static void cleanup_done_fn(pami_context_t  context,
+                          void           *clientdata,
+                          pami_result_t   res)
+    {
+      TRACE_FN_ENTER();
+      T_Composite *obj = (T_Composite *)clientdata;
+      typename CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::collObj *cobj = (typename CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::collObj *)obj->getCollObj();
+      cobj->~collObj();
+      cobj->_factory->_alloc.returnObject(cobj);
+      TRACE_FN_EXIT();
+    }
+
 };
 
 
@@ -304,6 +316,7 @@ public:
         _cookie   = cookie;
         _res      = PAMI_SUCCESS;
 
+        this->_collObj = cookie;
         setDoneCallback(xfer->cb_done, xfer->cookie);
 
       TRACE_FN_EXIT();
@@ -322,7 +335,13 @@ public:
       TRACE_FN_EXIT();
     }
 
-
+    inline void * getCollObj()
+    {
+      TRACE_FN_ENTER();
+      TRACE_FORMAT("<%p> %p",this,_collObj);
+      TRACE_FN_EXIT();
+      return _collObj;
+    }
 
 protected:
 
@@ -331,7 +350,7 @@ protected:
     pami_event_function  _fn;
     void                *_cookie;
     pami_result_t        _res;
-
+    void                *_collObj;
 }; //-OneTaskT
 
 //////////////////////////////////////////////////////////////////////////////

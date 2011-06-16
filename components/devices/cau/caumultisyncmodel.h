@@ -33,24 +33,16 @@ namespace PAMI
     class CAUMultisyncModel :
       public Interface::MultisyncModel<CAUMultisyncModel<T_Device, T_Message>,T_Device,sizeof(T_Message)>
     {
-      static void cau_red_send_done(lapi_handle_t *hndl, void * completion_param)
+
+      static void cleanup_fn(void  *msync, void *message, pami_result_t res)
+      {
+        T_Message         *m   = (T_Message  *)message;
+        CAUMultisyncModel *ms  = (CAUMultisyncModel *)msync;
+        if(ms)
         {
-          TRACE((stderr, "cau_red_send_done\n"));
+          ms->_device.freeMessage(m);
         }
-      static void cau_mcast_send_done(lapi_handle_t *hndl, void * completion_param)
-        {
-          TRACE((stderr, "cau_mcast_send_done\n"));
-          // This means that the synchronization is complete on the root node
-          T_Message    *m   = (T_Message *)completion_param;
-          m->_user_done_fn(m->_context,
-                           m->_user_cookie,
-                           PAMI_SUCCESS);
-          if(m->_toFree)
-            {
-              CAUMultisyncModel *ms = (CAUMultisyncModel *)m->_toFree;
-              ms->_device.freeMessage(m);
-            }
-        }
+      }
 
       static void * cau_mcast_handler(lapi_handle_t  *hndl,
                                       void           *uhdr,
@@ -72,12 +64,14 @@ namespace PAMI
           // A message must always be found because the reduction is synchronizing!
           CAUGeometryInfo    *gi  = (CAUGeometryInfo*) g->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
           T_Message          *m   = (T_Message *)gi->_postedBar.findAndDelete(seqno);
-          void               *r   = NULL;
           lapi_return_info_t *ri  = (lapi_return_info_t *) retinfo;
 
           TRACE((stderr, "cau_mcast_handler 3\n"));
           if(m == NULL)
-            PAMI_abort();
+            {
+              fprintf(stderr, "CAUMultisyncModel: cau_mcast_handler: Message was not found in the postedBar queue\n");fflush(stderr);
+              PAMI_abort();
+            }
 
           // Message was found, we can free it and dequeue
           // Deliver the user's callback
@@ -87,18 +81,16 @@ namespace PAMI
               m->_user_done_fn(m->_context,
                                m->_user_cookie,
                                PAMI_SUCCESS);
-              r             = NULL;
               *comp_h       = NULL;
               ri->ret_flags = LAPI_SEND_REPLY;
               ri->ctl_flags = LAPI_BURY_MSG;
-              return NULL;
             }
           else
-            PAMI_abort();
-
-          // Should not be reached
-          PAMI_abort();
-          return NULL;
+            {
+              fprintf(stderr, "CAUMultisyncModel: cau_mcast_handler: ri->udata_one_pkt_ptr is null\n");fflush(stderr);
+              PAMI_abort();
+            }
+           return NULL;
         }
 
 
@@ -124,9 +116,8 @@ namespace PAMI
           // Next, search the posted queue for a message with the incoming seq number
           CAUGeometryInfo    *gi  = (CAUGeometryInfo*) g->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
           T_Message          *m   = (T_Message *)gi->_postedBar.findAndDelete(seqno);
-          void               *r   = NULL;
           lapi_return_info_t *ri  = (lapi_return_info_t *) retinfo;
-
+          cau_reduce_op_t  red;
           // If no message was found, return, because we aren't ready to broadcast
           // Push a new message to the unexpected queue
           TRACE((stderr, "cau_red_handler: found and delete seqno=%d\n", seqno));
@@ -134,48 +125,39 @@ namespace PAMI
             {
               TRACE((stderr, "cau_red_handler: NOT FOUND %d\n", seqno));
               ms->_device.allocMessage(&m);
-              new(m) T_Message(0.0,
+              cau_reduce_op_t  red;
+              red.operand_type     = CAU_DOUBLE;
+              red.operation        = CAU_SUM;
+              new(m) T_Message(0.0, red,
                                      ms->_device.getContext(),
                                      NULL,
                                      NULL,
-                                     gi->_seqno,
+                                     cleanup_fn, //I need a cleanup function in this case since I allocated this message.
+                                     gi,
+                                     ms->_dispatch_mcast_id,
+                                     ms->_dispatch_red_id,
+                                     ms->_device.getHdl(),
                                      ms);
               gi->_ueBar.pushTail((MatchQueueElem*)m);
-              r             = NULL;
-              *comp_h       = NULL;
-              ri->ret_flags = LAPI_SEND_REPLY;
-              ri->ctl_flags = LAPI_BURY_MSG;
-              return r;
             }
-
-          // Message was found, we can free it and dequeue
-          // We can now issue the multicast and complete the
-          // msync.  We can free the message as well
-          TRACE((stderr, "cau_red_handler: NOT FOUND %d\n", seqno));
-          if (ri->udata_one_pkt_ptr)
+           else
             {
-              TRACE((stderr, "cau_red_handler: POSTING MULTICAST %d\n", seqno));
 
-              CheckLapiRC(lapi_cau_multicast(ms->_device.getHdl(),            // lapi handle
-                                             gi->_cau_id,                     // group id
-                                             ms->_dispatch_mcast_id,          // dispatch id
-                                             &m->_xfer_data[0],               // header
-                                             sizeof(m->_xfer_data),           // header len
-                                             &m->_reduce_val,                 // data
-                                             sizeof(m->_reduce_val),          // data size
-                                             cau_mcast_send_done,             // done cb
-                                             m));                              // clientdata
-              r             = NULL;
-              *comp_h       = NULL;
-              ri->ret_flags = LAPI_SEND_REPLY;
-              ri->ctl_flags = LAPI_BURY_MSG;
-              return NULL;
+              // Message was found, we can free it and dequeue
+              // We can now issue the multicast and complete the
+              // msync.  Message will be freed when send done.
+              TRACE((stderr, "cau_red_handler: FOUND %d\n", seqno));
+              if (ri->udata_one_pkt_ptr)
+                {
+                  TRACE((stderr, "cau_red_handler: POSTING MULTICAST %d\n", seqno));
+                  m->advanceRoot();
+                }
+              else
+                PAMI_abort();
             }
-          else
-            PAMI_abort();
-
-          // Not reached
-          PAMI_abort();
+          *comp_h       = NULL;
+          ri->ret_flags = LAPI_SEND_REPLY;
+          ri->ctl_flags = LAPI_BURY_MSG;
           return NULL;
         }
 
@@ -206,11 +188,13 @@ namespace PAMI
               msync->cb_done.function(_device.getContext(), msync->cb_done.clientdata, PAMI_SUCCESS);
               return PAMI_SUCCESS;
             }
+          cau_reduce_op_t  red;
+          red.operand_type     = CAU_DOUBLE;
+          red.operation        = CAU_SUM;
           TRACE((stderr, "CAU:  PostMultisync\n"));
           // This assert ensures that the topology that the user created
           // at geometry create time is the same as the geometry input here
           CAUGeometryInfo *gi = (CAUGeometryInfo *)devinfo;
-
           // Search the per-geometry UE queue for an "unexpected message"
           // Since the reduction has already been handled, we can begin our
           // broadcast of the data.  Only the root of the reduction can receive
@@ -227,24 +211,22 @@ namespace PAMI
               if (m != NULL)
                 {
                   TRACE((stderr, "CAU:  Multicast\n"));
-                  new(m) T_Message(0.0,
+                  new(m) T_Message(0.0, red,
                                          _device.getContext(),
                                          msync->cb_done.function,
                                          msync->cb_done.clientdata,
-                                         gi->_seqno++,
+                                         cleanup_fn, //I need a cleanup function here since this is an allocated message.
+                                         gi,
+                                         _dispatch_mcast_id,
+                                         _dispatch_red_id,
+                                         _device.getHdl(),
                                          this);
+
                   m->_xfer_data[0]     = _dispatch_red_id;
                   m->_xfer_data[1]     = gi->_geometry_id;
-                  m->_xfer_data[2]     = gi->_seqno-1;
-                  CheckLapiRC(lapi_cau_multicast(_device.getHdl(),            // lapi handle
-                                                 gi->_cau_id,                 // group id
-                                                 _dispatch_mcast_id,          // dispatch id
-                                                 &m->_xfer_data[0],           // header
-                                                 sizeof(m->_xfer_data),       // header len
-                                                 &m->_reduce_val,             // data
-                                                 sizeof(m->_reduce_val),      // data size
-                                                 cau_mcast_send_done,         // done cb
-                                                 m));                          // clientdata
+                  m->_xfer_data[2]     = gi->_seqno;
+                  gi->_seqno++;
+                  m->advanceRoot();
                   return PAMI_SUCCESS;
                 }
             }
@@ -255,43 +237,36 @@ namespace PAMI
           // we will post the message to the "posted" queue.
           // The data transferred in the header will be the same on all nodes
           TRACE((stderr, "CAU:  Create Msync Message %d\n", gi->_seqno));
-          m  = new(state) T_Message(0.0,
+          m  = new(state) T_Message(0.0, red,
                                           _device.getContext(),
                                           msync->cb_done.function,
                                           msync->cb_done.clientdata,
-                                          gi->_seqno++,
+                                          NULL, //no need for a cleanup here. The message is allocated in the user buffer
+                                          gi,
+                                         _dispatch_mcast_id,
+                                         _dispatch_red_id,
+                                         _device.getHdl(),
                                           NULL);
-          int              rc;
-          cau_reduce_op_t  red;
-          red.operand_type     = CAU_DOUBLE;
-          red.operation        = CAU_SUM;
+
           m->_xfer_data[0]     = _dispatch_red_id;
           m->_xfer_data[1]     = gi->_geometry_id;
-          m->_xfer_data[2]     = gi->_seqno-1;
+          m->_xfer_data[2]     = gi->_seqno;
+          gi->_seqno++;
           // First task in the topology is the root
           TRACE((stderr, "CAU:  tl[0]=%d taskid=%d\n", tl[0], _device.taskid()));
+          TRACE((stderr, "CAU:  Pushing Tail\n"))
+          gi->_postedBar.pushTail((MatchQueueElem*)m);
           if(!amRoot)
             {
               // We have tp push this first because the reduce call can
               // call our callback
               TRACE((stderr, "CAU:  Reduce\n"));
-              gi->_postedBar.pushTail((MatchQueueElem*)m);
-              CheckLapiRC(lapi_cau_reduce(_device.getHdl(),         // lapi handle
-                                          gi->_cau_id,              // group id
-                                          _dispatch_red_id,         // dispatch id
-                                          &m->_xfer_data[0],        // header
-                                          sizeof(m->_xfer_data),    // header_len
-                                          &m->_reduce_val,          // data
-                                          sizeof(m->_reduce_val),   // data size
-                                          red,                      // reduction op
-                                          cau_red_send_done,        // send completion handler
-                                          m));                       // cookie
-              return PAMI_SUCCESS;
+              m->advanceNonRoot();
             }
-          TRACE((stderr, "CAU:  Pushing Tail\n"));
-          gi->_postedBar.pushTail((MatchQueueElem*)m);
           return PAMI_SUCCESS;
         }
+
+
         T_Device                     &_device;
         int                           _dispatch_red_id;
         int                           _dispatch_mcast_id;

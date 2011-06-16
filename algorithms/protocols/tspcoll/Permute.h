@@ -50,9 +50,12 @@ namespace xlpgas
     }
 
     virtual void reset (int dest,
-			const void * sbuf,
-			void * dbuf,
-			unsigned nbytes);
+		    const void         * sbuf,
+		    void               * dbuf,
+		    TypeCode           * stype,
+		    size_t               stypecount,
+		    TypeCode           * rtype,
+		    size_t               rtypecount);
 
     static void cb_senddone (void * ctxt, void * arg, pami_result_t result);
 
@@ -75,7 +78,7 @@ namespace xlpgas
     char          * _rbuf;         /* receive buffer */
     size_t          _len;          /* msg length     */
     size_t          _dest;
-
+    PAMI::PipeWorkQueue  _pwq;
     int             _rcvcount;
 
     struct AMHeader

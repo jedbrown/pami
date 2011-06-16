@@ -217,16 +217,20 @@ namespace PAMI
         ///
         /// \brief Start a new simple P2P send with PWQ.
         ///
-        /// \param[in]  context   Send context
-        /// \param[in]  dest      Destination endpoint
-        /// \param[in]  bytes     Send data length in bytes.
-        /// \param[in]  pwq       A pipe work queue to use for the data buffer
-        /// \param[in]  events    Send completion events/cookie structure
-        /// \param[in]  dispatch  Dispatch id
+        /// \param[in]  context    Send context
+        /// \param[in]  dest       Destination endpoint
+        /// \param[in]  header_len Send header length in bytes.
+        /// \param[in]  header     A pointer to header data
+        /// \param[in]  bytes      Send data length in bytes.
+        /// \param[in]  pwq        A pipe work queue to use for the data buffer
+        /// \param[in]  events     Send completion events/cookie structure
+        /// \param[in]  dispatch   Dispatch id
         ///
         pami_result_t simplePWQ (
           pami_context_t       context,
           pami_endpoint_t      dest,
+          size_t               header_length,
+          void                *header,
           size_t               bytes,
           PAMI::PipeWorkQueue *pwq,
           pami_send_event_t   *events,
@@ -234,10 +238,6 @@ namespace PAMI
         {
           TRACE_FN_ENTER();
           pami_result_t result = PAMI_EAGAIN;
-          pami_send_t s = { {{0,0}, {0,0}}, {0} };
-          s.send.dest = dest;
-          s.events = *events;
-          s.send.dispatch = dispatch;
 
           TRACE_FORMAT( "<%p> context %p, pwq %p, bytes %zu, dest %zu",this, context, pwq, bytes, (size_t)dest);
           size_t length = pwq? pwq->bytesAvailableToConsume() : 0;
@@ -247,6 +247,13 @@ namespace PAMI
           // send it now if there is enough data in the pwq
           if (length >= bytes)
           {
+            pami_send_t s;
+            memset(&s.send.hints, 0, sizeof(s.send.hints));
+            s.send.dest = dest;
+            s.events = *events;
+            s.send.dispatch = dispatch;
+            s.send.header.iov_base = header;
+            s.send.header.iov_len = header_length;
             s.send.data.iov_base = payload;
             s.send.data.iov_len = length;
             TRACE_FORMAT( "<%p> send(%u(%p))", this, s.send.dest, context);
@@ -256,9 +263,9 @@ namespace PAMI
             return result;
           }
           // \todo not enough data to send yet, ...
-          TRACE_FORMAT( "<%p> result PAMI_ERROR", this);
+          TRACE_FORMAT( "<%p> result %u", this, result);
           TRACE_FN_EXIT();
-          return PAMI_ERROR; //PAMI_EAGAIN;
+          return result; // PAMI_EAGAIN
         }
         ///
         /// \brief Start a new simple send message with PWQ.  If there is no

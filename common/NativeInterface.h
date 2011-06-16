@@ -542,7 +542,9 @@ namespace PAMI
 
       /// \brief ctor
       inline NativeInterfaceAllsided(pami_client_t client, pami_context_t context, size_t context_id, size_t client_id);
+      ~NativeInterfaceAllsided();
       /// Virtual interfaces (from base \see CCMI::Interfaces::NativeInterface)
+      virtual inline pami_result_t destroy      ( );
       virtual inline pami_result_t multicast    (pami_multicast_t    *, void *devinfo = NULL);
       virtual inline pami_result_t multisync    (pami_multisync_t    *, void *devinfo = NULL);
       virtual inline pami_result_t multicombine (pami_multicombine_t *, void *devinfo = NULL);
@@ -555,6 +557,8 @@ namespace PAMI
       virtual inline pami_result_t send (pami_send_t * parameters);
       virtual inline pami_result_t sendPWQ(pami_context_t       context,
                                            pami_endpoint_t      dest,
+                                           size_t               header_length,
+                                           void                *header,
                                            size_t               length,
                                            PAMI::PipeWorkQueue *pwq,
                                            pami_send_event_t   *events);
@@ -782,7 +786,9 @@ namespace PAMI
 
       /// \brief ctor
       inline NativeInterfaceActiveMessage(pami_client_t client, pami_context_t context, size_t context_id, size_t client_id);
+      ~NativeInterfaceActiveMessage();
       /// Virtual interfaces (from base \see CCMI::Interfaces::NativeInterfaceActiveMessage)
+      virtual inline pami_result_t destroy      ( );
       virtual inline pami_result_t multicast    (pami_multicast_t    *, void *devinfo = NULL);
       virtual inline pami_result_t multisync    (pami_multisync_t    *, void *devinfo = NULL);
       virtual inline pami_result_t multicombine (pami_multicombine_t *, void *devinfo = NULL);
@@ -791,6 +797,8 @@ namespace PAMI
       virtual inline pami_result_t send (pami_send_t * parameters);
       virtual inline pami_result_t sendPWQ(pami_context_t       context,
                                            pami_endpoint_t      dest,
+                                           size_t               header_length,
+                                           void                *header,
                                            size_t               length,
                                            PAMI::PipeWorkQueue *pwq,
                                            pami_send_event_t   *events);
@@ -974,6 +982,11 @@ namespace PAMI
   };
 
   template <class T_Protocol, int T_Max_Msgcount>
+  inline NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>::~NativeInterfaceAllsided()
+  {
+  }
+
+  template <class T_Protocol, int T_Max_Msgcount>
   inline void NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>::ni_client_done(pami_context_t  context,
       void          *rdata,
       pami_result_t   res)
@@ -1038,19 +1051,31 @@ namespace PAMI
   template <class T_Protocol, int T_Max_Msgcount>
   inline pami_result_t NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>::setSendDispatch (pami_dispatch_p2p_function fn, void *cookie)
   {
+    TRACE_FN_ENTER();
     this->_send_dispatch_arg      = cookie;
     this->_send_dispatch_function = fn;
+    TRACE_FORMAT( "<%p> dispatch fn %p, arg %p ", this, this->_send_dispatch_function, this->_send_dispatch_arg);
+    TRACE_FN_EXIT();
     return PAMI_ERROR;
   }
 
   template <class T_Protocol, int T_Max_Msgcount>
   inline pami_result_t NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>::setSendPWQDispatch (pami_dispatch_p2p_function fn, void *cookie)
   {
+    TRACE_FN_ENTER();
     this->_send_pwq_dispatch_arg      = cookie;
     this->_send_pwq_dispatch_function = fn;
+    TRACE_FORMAT( "<%p> dispatch fn %p, arg %p ", this, this->_send_pwq_dispatch_function, this->_send_pwq_dispatch_arg);
+    TRACE_FN_EXIT();
     return PAMI_ERROR;
   }
 
+  template <class T_Protocol, int T_Max_Msgcount>
+  inline pami_result_t NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>::destroy ( )
+  {
+    this->~NativeInterfaceAllsided();
+    return PAMI_SUCCESS;
+  }
 
 
   template <class T_Protocol, int T_Max_Msgcount>
@@ -1163,6 +1188,8 @@ namespace PAMI
   inline pami_result_t NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>::sendPWQ(
       pami_context_t       context,
       pami_endpoint_t      dest,
+      size_t               header_length,
+      void                *header,
       size_t               length,
       PAMI::PipeWorkQueue *pwq,
       pami_send_event_t   *events
@@ -1529,6 +1556,12 @@ namespace PAMI
     DO_DEBUG((templateName<T_Protocol>()));
     TRACE_FN_EXIT();
   }
+
+  template <class T_Protocol, int T_Max_Msgcount>
+  inline NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::~NativeInterfaceActiveMessage()
+  {
+  }
+
   template <class T_Protocol, int T_Max_Msgcount>
   inline void NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::ni_client_done(pami_context_t  context,
       void          *rdata,
@@ -1613,19 +1646,32 @@ namespace PAMI
   template <class T_Protocol, int T_Max_Msgcount>
   inline pami_result_t NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::setSendDispatch (pami_dispatch_p2p_function fn, void *cookie)
   {
+    TRACE_FN_ENTER();
     this->_send_dispatch_arg      = cookie;
     this->_send_dispatch_function = fn;
+    TRACE_FORMAT( "<%p> dispatch fn %p, arg %p ", this, this->_send_dispatch_function, this->_send_dispatch_arg);
+    TRACE_FN_EXIT();
     return PAMI_SUCCESS;
   }
 
   template <class T_Protocol, int T_Max_Msgcount>
   inline pami_result_t NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::setSendPWQDispatch (pami_dispatch_p2p_function fn, void *cookie)
   {
+    TRACE_FN_ENTER();
     this->_send_pwq_dispatch_arg      = cookie;
     this->_send_pwq_dispatch_function = fn;
+    TRACE_FORMAT( "<%p> dispatch fn %p, arg %p ", this, this->_send_pwq_dispatch_function, this->_send_pwq_dispatch_arg);
+    TRACE_FN_EXIT();
     return PAMI_SUCCESS;
   }
 
+
+  template <class T_Protocol, int T_Max_Msgcount>
+  inline pami_result_t NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::destroy ()
+  {
+    this->~NativeInterfaceActiveMessage();
+	return PAMI_SUCCESS;
+  }
 
   template <class T_Protocol, int T_Max_Msgcount>
   inline pami_result_t NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::multicast (pami_multicast_t *mcast, void *devinfo)
@@ -1745,12 +1791,14 @@ namespace PAMI
     inline pami_result_t NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::sendPWQ(
       pami_context_t       context,
       pami_endpoint_t      dest,
+      size_t               header_length,
+      void                *header,
       size_t               length,
       PAMI::PipeWorkQueue *pwq,
       pami_send_event_t   *events
       )
   {
-    return this->_send_pwq_protocol->simplePWQ(context,dest,length,pwq,events,this->_send_pwq_dispatch);
+    return this->_send_pwq_protocol->simplePWQ(context,dest,header_length,header,length,pwq,events,this->_send_pwq_dispatch);
   }
 
 

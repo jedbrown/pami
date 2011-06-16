@@ -10,8 +10,10 @@
 /* **************************************************************** */
 template<class T_NI>
 void xlpgas::Alltoallv<T_NI>::reset (const void * s, void * d,
+			       TypeCode     *stype,
 			       const size_t *scnts,
 			       const size_t *sdispls,
+			       TypeCode     *rtype,
 			       const size_t *rcnts,
 			       const size_t *rdispls)
 {
@@ -22,6 +24,8 @@ void xlpgas::Alltoallv<T_NI>::reset (const void * s, void * d,
   this->_rcvcount[this->_odd] = 0;
   this->_rbuf           = (char *)d;
   this->_sbuf           = (const char *)s;
+  this->_stype          = stype;
+  this->_rtype          = rtype;
   //altoallv specific
   this->_scnts          = scnts;
   this->_sdispls        = sdispls;
@@ -36,12 +40,13 @@ void xlpgas::Alltoallv<T_NI>::reset (const void * s, void * d,
 template<class T_NI>
 void xlpgas::Alltoallv<T_NI>::kick    () {
   MUTEX_LOCK(&this->_mutex);
+  size_t datawidth = this->_stype->GetDataSize();
   for (int i=0; i < (int)this->_comm->size(); i++)
     if (i == (int)this->_comm->ordinal())
       {
 	memcpy (this->_rbuf + this->_rdispls[i],
 		this->_sbuf + this->_sdispls[i],
-		this->_scnts[i]);
+		this->_scnts[i]*datawidth);
 
 	this->_sndcount[this->_odd]++;
 	this->_rcvcount[this->_odd]++;
@@ -57,17 +62,21 @@ void xlpgas::Alltoallv<T_NI>::kick    () {
       MUTEX_UNLOCK(&this->_mutex);
 //      _headers[i].dest_ctxt = _comm->endpoint(i).ctxt;
       pami_send_t p_send;
+	  pami_send_event_t   events;
       p_send.send.header.iov_base  = &(this->_headers[i]);
       p_send.send.header.iov_len   = sizeof(this->_headers[i]);
       p_send.send.data.iov_base    = (char*) this->_sbuf + this->_sdispls[i];
-      p_send.send.data.iov_len     = this->_scnts[i];
+      p_send.send.data.iov_len     = this->_scnts[i] * datawidth;
       p_send.send.dispatch         = -1;
       memset(&p_send.send.hints, 0, sizeof(p_send.send.hints));
       p_send.send.dest             = this->_comm->endpoint (i);
-      p_send.events.cookie         = this;
-      p_send.events.local_fn       = this->cb_senddone;
-      p_send.events.remote_fn      = NULL;
-      this->_p2p_iface->send(&p_send);
+      events.cookie         = this;
+      events.local_fn       = this->cb_senddone;
+      events.remote_fn      = NULL;
+      this->_pwq.configure((char*) this->_sbuf + this->_sdispls[i], this->_scnts[i] * datawidth, this->_scnts[i] * datawidth, this->_stype, this->_rtype);
+      this->_pwq.reset();
+      this->_p2p_iface->sendPWQ(this->_pami_ctxt, this->_comm->endpoint (i), sizeof(this->_headers[i]),&this->_headers[i],this->_scnts[i] * datawidth, &this->_pwq, &events);
+      //this->_p2p_iface->send(&p_send);
     }
 }
 

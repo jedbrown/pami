@@ -77,6 +77,8 @@ namespace PAMI
       }
     virtual inline pami_result_t sendPWQ(pami_context_t       context,
                                            pami_endpoint_t      dest,
+                                           size_t               header_length,
+                                           void                *header,
                                            size_t               length,
                                            PAMI::PipeWorkQueue *pwq,
                                            pami_send_event_t   *events)

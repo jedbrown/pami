@@ -132,6 +132,7 @@ namespace CCMI
           TRACE_FN_EXIT();
           return _context;
         }
+
       protected:
         ///
         ///  \brief Callback to call when the barrier has finished

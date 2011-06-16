@@ -29,6 +29,7 @@ xlpgas::PrefixSums<T_NI>::
 PrefixSums (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
   CollExchange<T_NI> (ctxt, comm, kind, tag, offset)
 {
+  pami_type_t scantype = PAMI_TYPE_BYTE;
   this->_tmpbuf = NULL;
   this->_tmpbuflen = 0;
   this->_dbuf = NULL;
@@ -53,7 +54,8 @@ PrefixSums (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
       this->_rbuf    [phase] = (right < (int)this->_comm->size()) ? &this->_dummy : NULL;
       this->_postrcv [phase] = NULL;
       this->_sbufln  [phase] = 1;
-
+      this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], (TypeCode *)scantype, (TypeCode *)scantype);
+      this->_pwq[phase].reset();
       //printf("%d: ### in phase %d will send permission to  %d \n", XLPGAS_MYNODE, phase, _dest[phase].node);
       phase ++;
 
@@ -63,7 +65,8 @@ PrefixSums (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
       this->_rbuf    [phase] = NULL; /* receive buffer not available */
       this->_postrcv [phase] = (left >= 0) ? cb_prefixsums : NULL;
       this->_sbufln  [phase] = 0;    /* data length not available */
-
+      this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], (TypeCode *)scantype, (TypeCode *)scantype);
+      this->_pwq[phase].reset();
       //printf("%d: ### in phase %d will send data to  %d \n", XLPGAS_MYNODE, phase, _dest[phase].node);
       phase ++;
     }
@@ -87,7 +90,8 @@ cb_prefixsums (CollExchange<T_NI> *coll, unsigned phase)
     }
   else if(ar->_comm->ordinal() > 0)
     {
-      size_t datawidth = xlpgas::Allreduce::datawidthof (ar->_dt);
+      TypeCode *dt = ar->_dt;
+      size_t datawidth = dt->GetDataSize();
       inputs[1] = (((char *)ar->_tmpbuf) + ar->_nelems * datawidth);
       // In phase 1 we copy the received data to the destination buffer
       if(phase == 1)
@@ -111,9 +115,9 @@ cb_prefixsums (CollExchange<T_NI> *coll, unsigned phase)
 template <class T_NI>
 void xlpgas::PrefixSums<T_NI>::reset (const void         * sbuf,
 				void               * dbuf,
-				xlpgas_ops_t         op,
-				xlpgas_dtypes_t      dt,
-				unsigned             nelems)
+				pami_data_function   op,
+				TypeCode           * dt,
+				size_t               nelems)
 {
   assert (sbuf != NULL);
   assert (dbuf != NULL);
@@ -121,7 +125,8 @@ void xlpgas::PrefixSums<T_NI>::reset (const void         * sbuf,
   this->_dt = dt;
   this->_dbuf   = dbuf;
   this->_nelems = nelems;
-  size_t datawidth = xlpgas::Allreduce::datawidthof (dt);
+
+  size_t datawidth = dt->GetDataSize();
   size_t tmpbufsize;
 
   /* For exclusive scan we need twice the amount of temporary buffer space
@@ -134,6 +139,7 @@ void xlpgas::PrefixSums<T_NI>::reset (const void         * sbuf,
     tmpbufsize = nelems * datawidth;
   else
     tmpbufsize = 2 * nelems * datawidth;
+
 
   /* need more memory in temp buffer? */
   if (this->_tmpbuflen < tmpbufsize)
@@ -194,6 +200,8 @@ void xlpgas::PrefixSums<T_NI>::reset (const void         * sbuf,
       this->_sbufln  [phase] = (tgt<(int)this->_comm->size()) ? nelems * datawidth : 0 ;
       tgt = this->_comm->ordinal() - (1<<i);
       this->_rbuf    [phase] = (tgt>=0) ? rbuf_phase : NULL;
+      this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], dt, dt);
+      this->_pwq[phase].reset();
       phase ++;
     }
 

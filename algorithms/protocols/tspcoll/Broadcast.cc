@@ -30,6 +30,7 @@ xlpgas::Broadcast<T_NI>::
 Broadcast (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
   CollExchange<T_NI> (ctxt, comm, kind, tag, offset)
 {
+  pami_type_t bcasttype = PAMI_TYPE_BYTE;
   this->_tmpbuf = NULL;
   this->_tmpbuflen = 0;
   this->_dbuf = NULL;
@@ -42,6 +43,8 @@ Broadcast (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
       this->_sbuf[i] = &this->_dummy;
       this->_rbuf[i] = &this->_dummy;
       this->_sbufln[i] = 1;
+      this->_pwq[i].configure((char *)this->_sbuf[i], this->_sbufln[i], this->_sbufln[i], (TypeCode *)bcasttype, (TypeCode *)bcasttype);/*The root doesn't need to send to itself*/
+      this->_pwq[i].reset();
     }
   this->_numphases   *= 2;
   this->_phase        = this->_numphases;
@@ -56,20 +59,22 @@ template <class T_NI>
 void xlpgas::Broadcast<T_NI>::reset (int rootindex,
 			       const void         * sbuf,
 			       void               * dbuf,
-			       unsigned             nbytes)
+			       TypeCode           * type,
+			       size_t               typecount)
 {
   if(rootindex == (int)this->_comm->ordinal()) {
     assert (sbuf != NULL);
   }
-  assert (dbuf != NULL);
 
+  assert (dbuf != NULL);
+  size_t nbytes = type->GetDataSize() * typecount;
   if (rootindex >= (int)this->_comm->size())
     xlpgas_fatalerror (-1, "Invalid root index in Bcast");
 
   /* --------------------------------------------------- */
   /* --------------------------------------------------- */
 
-  if (rootindex == (int)this->_comm->ordinal() && sbuf != dbuf) {
+  if (rootindex == (int)this->_comm->ordinal() && sbuf != dbuf){
     memcpy (dbuf, sbuf, nbytes);
   }
 
@@ -87,6 +92,8 @@ void xlpgas::Broadcast<T_NI>::reset (int rootindex,
       this->_sbuf[phase]    = dosend ? dbuf : NULL;
       this->_sbufln[phase]  = dosend ? nbytes : 0;
       this->_rbuf[phase]    = dorecv ? dbuf : NULL;
+      this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], type, type);/*The root doesn't need to send to itself*/
+      this->_pwq[phase].reset();
     }
   xlpgas::CollExchange<T_NI>::reset();
   return;

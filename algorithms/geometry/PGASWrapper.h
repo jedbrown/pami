@@ -146,9 +146,14 @@ namespace PAMI
       virtual void start()
         {
           if (!this->_collexch->isdone()) this->_dev->advance();
+          PAMI::Type::TypeCode * allgathersType = (PAMI::Type::TypeCode *)this->_cmd->cmd.xfer_allgather.stype;
+          PAMI::Type::TypeCode * allgatherrType = (PAMI::Type::TypeCode *)this->_cmd->cmd.xfer_allgather.rtype;
           this->_collexch->reset (this->_cmd->cmd.xfer_allgather.sndbuf,
                                   this->_cmd->cmd.xfer_allgather.rcvbuf,
-                                  this->_cmd->cmd.xfer_allgather.stypecount);
+                                  allgathersType,
+                                  this->_cmd->cmd.xfer_allgather.stypecount,
+                                  allgatherrType,
+                                  this->_cmd->cmd.xfer_allgather.rtypecount);
           this->_collexch->setContext(this->_context);
           this->_collexch->setComplete(this->_cmd->cb_done, this->_cmd->cookie);
           this->_collexch->kick();
@@ -163,9 +168,15 @@ namespace PAMI
       virtual void start()
         {
           if (!this->_collexch->isdone()) this->_dev->advance();
+          PAMI::Type::TypeCode * allgathervsType = (PAMI::Type::TypeCode *)this->_cmd->cmd.xfer_allgatherv.stype;
+          PAMI::Type::TypeCode * allgathervrType = (PAMI::Type::TypeCode *)this->_cmd->cmd.xfer_allgatherv.rtype;
           this->_collexch->reset (this->_cmd->cmd.xfer_allgatherv.sndbuf,
                                   this->_cmd->cmd.xfer_allgatherv.rcvbuf,
-                                  this->_cmd->cmd.xfer_allgatherv.rtypecounts);
+								  allgathervsType,
+                                  this->_cmd->cmd.xfer_allgatherv.stypecount,
+								  allgathervrType,
+								  this->_cmd->cmd.xfer_allgatherv.rtypecounts,
+								  this->_cmd->cmd.xfer_allgatherv.rdispls);
           this->_collexch->setContext(this->_context);
           this->_collexch->setComplete(this->_cmd->cb_done, this->_cmd->cookie);
           this->_collexch->kick();
@@ -180,10 +191,15 @@ namespace PAMI
       virtual void start()
         {
           if (!this->_collexch->isdone()) this->_dev->advance();
+		  PAMI::Type::TypeCode * sndType = (PAMI::Type::TypeCode *)this->_cmd->cmd.xfer_scatter.stype;
+		  PAMI::Type::TypeCode * rcvType = (PAMI::Type::TypeCode *)this->_cmd->cmd.xfer_scatter.rtype;
           this->_collexch->reset (this->_geometry->virtrankof(this->_cmd->cmd.xfer_scatter.root),
                                   this->_cmd->cmd.xfer_scatter.sndbuf,
                                   this->_cmd->cmd.xfer_scatter.rcvbuf,
-                                  this->_cmd->cmd.xfer_scatter.stypecount);
+                                  sndType,
+                                  this->_cmd->cmd.xfer_scatter.stypecount,
+                                  rcvType,
+                                  this->_cmd->cmd.xfer_scatter.rtypecount);
 
           this->_collexch->setContext(this->_context);
           this->_collexch->setComplete(this->_cmd->cb_done, this->_cmd->cookie);
@@ -205,10 +221,15 @@ namespace PAMI
       virtual void start()
         {
           if (!this->_collexch->isdone()) this->_dev->advance();
+		  PAMI::Type::TypeCode * sndType = (PAMI::Type::TypeCode *)this->_cmd->cmd.xfer_gather.stype;
+		  PAMI::Type::TypeCode * rcvType = (PAMI::Type::TypeCode *)this->_cmd->cmd.xfer_gather.rtype;
           this->_collexch->reset (this->_geometry->virtrankof(this->_cmd->cmd.xfer_gather.root),
                                   this->_cmd->cmd.xfer_gather.sndbuf,
                                   this->_cmd->cmd.xfer_gather.rcvbuf,
-                                  this->_cmd->cmd.xfer_gather.stypecount);
+                                  sndType,
+                                  this->_cmd->cmd.xfer_gather.stypecount,
+                                  rcvType,
+                                  this->_cmd->cmd.xfer_gather.rtypecount);
 
           this->_collexch->setContext(this->_context);
           this->_collexch->setComplete(this->_cmd->cb_done, this->_cmd->cookie);
@@ -230,9 +251,14 @@ namespace PAMI
       virtual void start()
         {
           if (!this->_collexch->isdone()) this->_dev->advance();
+		  PAMI::Type::TypeCode * sndType = (PAMI::Type::TypeCode *)this->_cmd->cmd.xfer_alltoall.stype;
+		  PAMI::Type::TypeCode * rcvType = (PAMI::Type::TypeCode *)this->_cmd->cmd.xfer_alltoall.rtype;
           this->_collexch->reset (this->_cmd->cmd.xfer_alltoall.sndbuf,
                                   this->_cmd->cmd.xfer_alltoall.rcvbuf,
-                                  this->_cmd->cmd.xfer_alltoall.stypecount);
+                                  sndType,
+                                  this->_cmd->cmd.xfer_alltoall.stypecount,
+                                  rcvType,
+                                  this->_cmd->cmd.xfer_alltoall.rtypecount);
           this->_collexch->setContext(this->_context);
           this->_collexch->setComplete(this->_cmd->cb_done, this->_cmd->cookie);
           while(!this->_collbarrier->isdone()) this->_dev->advance();
@@ -253,10 +279,14 @@ namespace PAMI
       virtual void start()
         {
           if (!this->_collexch->isdone()) this->_dev->advance();
+		  PAMI::Type::TypeCode * sndType = (PAMI::Type::TypeCode *)this->_cmd->cmd.xfer_alltoallv.stype;
+		  PAMI::Type::TypeCode * rcvType = (PAMI::Type::TypeCode *)this->_cmd->cmd.xfer_alltoallv.rtype;
           this->_collexch->reset (this->_cmd->cmd.xfer_alltoallv.sndbuf,
                                   this->_cmd->cmd.xfer_alltoallv.rcvbuf,
+                                  sndType,
                                   this->_cmd->cmd.xfer_alltoallv.stypecounts,
                                   this->_cmd->cmd.xfer_alltoallv.sdispls,
+                                  rcvType,
                                   this->_cmd->cmd.xfer_alltoallv.rtypecounts,
                                   this->_cmd->cmd.xfer_alltoallv.rdispls);
           this->_collexch->setContext(this->_context);
@@ -281,10 +311,15 @@ namespace PAMI
       virtual void start()
         {
           if (!this->_collexch->isdone()) this->_dev->advance();
+		  PAMI::Type::TypeCode * sndType = (PAMI::Type::TypeCode *)this->_cmd->cmd.xfer_scatterv.stype;
+		  PAMI::Type::TypeCode * rcvType = (PAMI::Type::TypeCode *)this->_cmd->cmd.xfer_scatterv.rtype;
           this->_collexch->reset (this->_geometry->virtrankof(this->_cmd->cmd.xfer_scatterv.root),
                                   this->_cmd->cmd.xfer_scatterv.sndbuf,
                                   this->_cmd->cmd.xfer_scatterv.rcvbuf,
-                                  this->_cmd->cmd.xfer_scatterv.stypecounts);
+								  sndType,
+                                  this->_cmd->cmd.xfer_scatterv.stypecounts,
+								  rcvType,
+								  this->_cmd->cmd.xfer_scatterv.rtypecounts);
           this->_collexch->setContext(this->_context);
           this->_collexch->setComplete(this->_cmd->cb_done, this->_cmd->cookie);
 
@@ -306,16 +341,15 @@ namespace PAMI
       virtual void start()
         {
           if (!this->_collexch->isdone()) this->_dev->advance();
-          uintptr_t op, dt;
-          PAMI::Type::TypeFunc::GetEnums(this->_cmd->cmd.xfer_allreduce.stype,
-                                         this->_cmd->cmd.xfer_allreduce.op,
-                                         dt,op);
+          PAMI::Type::TypeCode * allreducesType = (PAMI::Type::TypeCode *)this->_cmd->cmd.xfer_allreduce.stype;
+          PAMI::Type::TypeCode * allreducerType = (PAMI::Type::TypeCode *)this->_cmd->cmd.xfer_allreduce.rtype;
           user_func_t fn;
           this->_collexch->reset (this->_cmd->cmd.xfer_allreduce.sndbuf,
                                   this->_cmd->cmd.xfer_allreduce.rcvbuf,
-                                  (pami_op)op,
-                                  (pami_dt)dt,
+                                  this->_cmd->cmd.xfer_allreduce.op,
+                                  allreducesType,
                                   this->_cmd->cmd.xfer_allreduce.stypecount,
+                                  allreducerType,
                                   &fn);
           this->_collexch->setContext(this->_context);
           this->_collexch->setComplete(this->_cmd->cb_done, this->_cmd->cookie);
@@ -331,16 +365,12 @@ namespace PAMI
       virtual void start()
         {
           if (!this->_collexch->isdone()) this->_dev->advance();
-          uintptr_t op, dt;
-
           this->_collexch->setExclusive(this->_cmd->cmd.xfer_scan.exclusive);
-          PAMI::Type::TypeFunc::GetEnums(this->_cmd->cmd.xfer_scan.stype,
-                                         this->_cmd->cmd.xfer_scan.op,
-                                         dt,op);
+          PAMI::Type::TypeCode * scanType = (PAMI::Type::TypeCode *)this->_cmd->cmd.xfer_scan.stype;
           this->_collexch->reset (this->_cmd->cmd.xfer_scan.sndbuf,
                                   this->_cmd->cmd.xfer_scan.rcvbuf,
-                                  (pami_op)op,
-                                  (pami_dt)dt,
+                                  this->_cmd->cmd.xfer_scan.op,
+                                  scanType,
                                   this->_cmd->cmd.xfer_scan.stypecount);
           this->_collexch->setContext(this->_context);
           this->_collexch->setComplete(this->_cmd->cb_done, this->_cmd->cookie);
@@ -355,10 +385,12 @@ namespace PAMI
     public:
       virtual void start()
         {
+          PAMI::Type::TypeCode * bcastType = (PAMI::Type::TypeCode *)this->_cmd->cmd.xfer_broadcast.type;
           if (!this->_collexch->isdone()) this->_dev->advance();
           this->_collexch->reset (this->_geometry->virtrankof(this->_cmd->cmd.xfer_broadcast.root),
                                   this->_cmd->cmd.xfer_broadcast.buf,
                                   this->_cmd->cmd.xfer_broadcast.buf,
+                                  bcastType,
                                   this->_cmd->cmd.xfer_broadcast.typecount);
           this->_collexch->setContext(this->_context);
           this->_collexch->setComplete(this->_cmd->cb_done, this->_cmd->cookie);

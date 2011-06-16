@@ -27,6 +27,9 @@ typedef pami_op                            xlpgas_ops_t;
 typedef pami_dt                            xlpgas_dtypes_t;
 typedef pami_endpoint_t                    xlpgas_endpoint_t;
 typedef pami_event_function                xlpgas_LCompHandler_t;
+
+using namespace PAMI::Type;
+//typedef PAMI::Type::TypeCode               TypeCode;
 //typedef pami_dispatch_ambroadcast_function PAMIAMHeader_bcast;
  typedef struct AMHeader_bcast
  {
@@ -487,7 +490,7 @@ namespace xlpgas
 	  case BarrierKind:
 	    {
               typedef typename CollDefs::barrier_type barrier_type;
-              p2p_iface->setSendDispatch(barrier_type::cb_incoming, this);
+              p2p_iface->setSendPWQDispatch(barrier_type::cb_incoming, this);
 	      break;
 	    }
 
@@ -499,14 +502,14 @@ namespace xlpgas
 	  case LongAllreduceKind:
 	    {
               typedef typename CollDefs::allreduce_type allreduce_type;
-              p2p_iface->setSendDispatch(allreduce_type::cb_incoming, this);
+              p2p_iface->setSendPWQDispatch(allreduce_type::cb_incoming, this);
 	      break;
 	    }
 
 	  case ShortAllreduceKind:
 	    {
               typedef typename CollDefs::short_allreduce_type short_allreduce_type;
-              p2p_iface->setSendDispatch(short_allreduce_type::cb_incoming, this);
+              p2p_iface->setSendPWQDispatch(short_allreduce_type::cb_incoming, this);
 	      break;
 	    }
 
@@ -518,7 +521,7 @@ namespace xlpgas
 	  case BcastKind:
 	    {
               typedef typename CollDefs::broadcast_type broadcast_type;
-              p2p_iface->setSendDispatch(broadcast_type::cb_incoming, this);
+              p2p_iface->setSendPWQDispatch(broadcast_type::cb_incoming, this);
 	      break;
 	    }
 
@@ -535,7 +538,7 @@ namespace xlpgas
 	  case AllgatherKind:
 	    {
               typedef typename CollDefs::allgather_type allgather_type;
-              p2p_iface->setSendDispatch(allgather_type::cb_incoming, this);
+              p2p_iface->setSendPWQDispatch(allgather_type::cb_incoming, this);
 	      break;
 	    }
 	  case AllgatherPPKind:
@@ -546,13 +549,13 @@ namespace xlpgas
 	  case AllgathervKind:
 	    {
               typedef typename CollDefs::allgatherv_type allgatherv_type;
-              p2p_iface->setSendDispatch(allgatherv_type::cb_incoming, this);
+              p2p_iface->setSendPWQDispatch(allgatherv_type::cb_incoming, this);
 	      break;
 	    }
 	  case AlltoallKind:
 	    {
               typedef typename CollDefs::alltoall_type alltoall_type;
-              p2p_iface->setSendDispatch(alltoall_type::cb_incoming, this);
+              p2p_iface->setSendPWQDispatch(alltoall_type::cb_incoming, this);
 	      break;
 	    }
 	  case AlltoallPPKind:
@@ -562,21 +565,21 @@ namespace xlpgas
 	  case AlltoallvKind:
 	    {
               typedef typename CollDefs::alltoallv_type alltoallv_type;
-              p2p_iface->setSendDispatch(alltoallv_type::cb_incoming_v, this);
+              p2p_iface->setSendPWQDispatch(alltoallv_type::cb_incoming_v, this);
 	      break;
 	    }
 
 	  case GatherKind:
 	    {
               typedef typename CollDefs::gather_type gather_type;
-              p2p_iface->setSendDispatch(gather_type::cb_incoming, this);
+              p2p_iface->setSendPWQDispatch(gather_type::cb_incoming, this);
 	      break;
 	    }
 
 	  case ScatterKind:
 	    {
               typedef typename CollDefs::scatter_type scatter_type;
-              p2p_iface->setSendDispatch(scatter_type::cb_incoming, this);
+              p2p_iface->setSendPWQDispatch(scatter_type::cb_incoming, this);
 	      break;
 	    }
 
@@ -588,7 +591,7 @@ namespace xlpgas
 	  case PrefixKind:
 	    {
               typedef typename CollDefs::prefixsums_type prefixsums_type;
-              p2p_iface->setSendDispatch(prefixsums_type::cb_incoming, this);
+              p2p_iface->setSendPWQDispatch(prefixsums_type::cb_incoming, this);
 	      break;
 	    }
 

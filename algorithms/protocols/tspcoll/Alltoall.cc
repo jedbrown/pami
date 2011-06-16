@@ -9,15 +9,22 @@
 /*      start a new alltoall. Old alltoall has to be complete       */
 /* **************************************************************** */
 template<class T_NI>
-void xlpgas::Alltoall<T_NI>::reset (const void * s, void * d, unsigned l)
+void xlpgas::Alltoall<T_NI>::reset (const void        * s,
+                                          void        * d,
+                                          TypeCode    * stype,
+                                          size_t        stypecount,
+                                          TypeCode    * rtype,
+                                          size_t        rtypecount)
 {
   MUTEX_LOCK(&this->_mutex);
-  _odd = (!_odd);
+  _odd            = (!_odd);
   _sndcount[_odd] = 0;
   _rcvcount[_odd] = 0;
   _rbuf           = (char *)d;
   _sbuf           = (const char *)s;
-  _len            = l;
+  _len            = stype->GetDataSize() * stypecount;
+  _stype          = stype;
+  _rtype          = rtype;
   MUTEX_UNLOCK(&this->_mutex);
 }
 
@@ -47,7 +54,8 @@ void xlpgas::Alltoall<T_NI>::kick    () {
     else {
       MUTEX_UNLOCK(&this->_mutex);
 //      _headers[i].dest_ctxt = _comm->endpoint(i).ctxt;
-      pami_send_t p_send;
+      pami_send_t p_send;/*This should go once we make sure sendPWQ works*/
+	  pami_send_event_t   events;
       p_send.send.header.iov_base  = &(_headers[i]);
       p_send.send.header.iov_len   = sizeof(_headers[i]);
       p_send.send.data.iov_base    = (char*) _sbuf + i * _len;
@@ -55,10 +63,13 @@ void xlpgas::Alltoall<T_NI>::kick    () {
       p_send.send.dispatch         = -1;
       memset(&p_send.send.hints, 0, sizeof(p_send.send.hints));
       p_send.send.dest             = this->_comm->endpoint (i);
-      p_send.events.cookie         = this;
-      p_send.events.local_fn       = this->cb_senddone;
-      p_send.events.remote_fn      = NULL;
-      this->_p2p_iface->send(&p_send);
+      events.cookie         = this;
+      events.local_fn       = this->cb_senddone;
+      events.remote_fn      = NULL;
+      _pwq.configure((char *)_sbuf + i * _len, this->_len, this->_len, _stype, _rtype);
+      _pwq.reset();
+      this->_p2p_iface->sendPWQ(this->_pami_ctxt, this->_comm->endpoint (i), sizeof(_headers[i]),&_headers[i],this->_len, &_pwq, &events);
+      //this->_p2p_iface->send(&p_send);
     }
 }
 

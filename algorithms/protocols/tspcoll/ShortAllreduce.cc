@@ -30,6 +30,7 @@ xlpgas::Allreduce::Short<T_NI>::
 Short (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
   CollExchange<T_NI> (ctxt, comm, kind, tag, offset)
 {
+  pami_type_t allreducetype = PAMI_TYPE_BYTE;
   this->_dbuf = NULL;
   this->_nelems = 0;
   for (this->_logMaxBF = 0; (1<<(this->_logMaxBF+1)) <= (int)this->_comm->size(); this->_logMaxBF++) ;
@@ -52,6 +53,8 @@ Short (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
       this->_postrcv [phase] = ((int)comm->ordinal() < nonBF)  ? cb_allreduce : NULL;
       this->_sbufln  [phase] = 0;       /* unknown */
       this->_bufctr  [phase] = 0;
+      this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], (TypeCode *)allreducetype, (TypeCode *)allreducetype);
+      this->_pwq[phase].reset();
       phase ++;
     }
 
@@ -70,6 +73,8 @@ Short (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
       this->_postrcv [phase] = ((int)comm->ordinal() < maxBF) ? cb_allreduce : NULL;
       this->_sbufln  [phase] = 0;        /* unknown */
       this->_bufctr  [phase] = 0;
+      this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], (TypeCode *)allreducetype, (TypeCode *)allreducetype);
+      this->_pwq[phase].reset();
       phase ++;
     }
 
@@ -88,6 +93,8 @@ Short (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
       this->_postrcv [phase] = NULL;
       this->_sbufln  [phase] = 0;        /* unknown */
       this->_bufctr  [phase] = 0;
+      this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], (TypeCode *)allreducetype, (TypeCode *)allreducetype);
+      this->_pwq[phase].reset();
       phase ++;
     }
 
@@ -129,10 +136,11 @@ cb_switchbuf (CollExchange<T_NI> * coll, unsigned phase, unsigned counter)
 template <class T_NI>
 void xlpgas::Allreduce::Short<T_NI>::reset (const void         * sbuf,
 				     void               * dbuf,
-				     xlpgas_ops_t       op,
-				     xlpgas_dtypes_t    dt,
-				     unsigned           nelems,
-				     user_func_t* uf)
+				     pami_data_function   op,
+				     TypeCode           * sdt,
+				     size_t               nelems,
+                     TypeCode           * rdt,
+				     user_func_t        * uf)
 {
   assert (sbuf != NULL);
   assert (dbuf != NULL);
@@ -154,7 +162,7 @@ void xlpgas::Allreduce::Short<T_NI>::reset (const void         * sbuf,
   */
   _dbuf   = dbuf;
   _nelems = nelems;
-  size_t datawidth = datawidthof (dt);
+  size_t datawidth = sdt->GetDataSize();
   if (sbuf != dbuf) memcpy (dbuf, sbuf, nelems * datawidth);
 
   /* --------------------------------------------------- */
@@ -170,6 +178,8 @@ void xlpgas::Allreduce::Short<T_NI>::reset (const void         * sbuf,
     {
       this->_sbuf    [phase] = ((int)this->_comm->ordinal() >= maxBF) ? dbuf  : NULL;
       this->_sbufln  [phase] = nelems * datawidth;
+      this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], sdt, rdt);
+      this->_pwq[phase].reset();
       phase ++;
     }
 
@@ -181,6 +191,8 @@ void xlpgas::Allreduce::Short<T_NI>::reset (const void         * sbuf,
     {
       this->_sbuf    [phase] = ((int)this->_comm->ordinal() < maxBF) ? dbuf  : NULL;
       this->_sbufln  [phase] = nelems * datawidth;
+      this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], sdt, rdt);
+      this->_pwq[phase].reset();
       phase ++;
     }
 
@@ -194,9 +206,10 @@ void xlpgas::Allreduce::Short<T_NI>::reset (const void         * sbuf,
       this->_sbuf    [phase] = ((int)this->_comm->ordinal() < nonBF)  ? dbuf  : NULL;
       this->_rbuf    [phase] = ((int)this->_comm->ordinal() >= maxBF) ? dbuf  : NULL;
       this->_sbufln  [phase] = nelems * datawidth;
+      this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], sdt, rdt);
+      this->_pwq[phase].reset();
       phase ++;
     }
-
   assert (phase == this->_numphases);
-  this->_cb_allreduce = getcallback (op, dt);
+  this->_cb_allreduce = getcallback (op, sdt);
 }

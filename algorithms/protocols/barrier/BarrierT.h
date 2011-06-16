@@ -88,7 +88,17 @@ public:
         TRACE_FN_EXIT();
         return composite;
     }
-
+    static void cleanup_done_fn(pami_context_t  context,
+                          void           *clientdata,
+                          pami_result_t   res)
+    {
+      TRACE_FN_ENTER();
+      T_Composite *obj = (T_Composite *)clientdata;
+      typename CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::collObj *cobj = (typename CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::collObj *)obj->getCollObj();
+      cobj->~collObj();
+      cobj->_factory->_alloc.returnObject(cobj);
+      TRACE_FN_EXIT();
+    }
     ///
     ///  \brief Cache the barrier executor for the most recent geometry
     ///  \brief They pami context
@@ -386,6 +396,7 @@ public:
         TRACE_FN_ENTER();
         TRACE_FORMAT( "%p",this);
         _myexecutor.setCommSchedule (&_myschedule);
+        this->_collObj = cookie;//SSS: cookie is the collObj that contains this composite. I need to set it here so I can free it later.
         TRACE_FN_EXIT();
     }
 
@@ -397,6 +408,7 @@ public:
     {
         return((AnalyzeFn) afn)(geometry);
     }
+
 
     virtual void start()
     {
@@ -415,6 +427,16 @@ public:
     {
         _myexecutor.notifyRecv (src, metadata, NULL, NULL);
     }
+
+    inline void * getCollObj()
+    {
+      TRACE_FN_ENTER();
+      TRACE_FORMAT("<%p> %p",this,_collObj);
+      TRACE_FN_EXIT();
+      return _collObj;
+    }
+
+    void   *_collObj;
 
 }; //-BarrierT
 

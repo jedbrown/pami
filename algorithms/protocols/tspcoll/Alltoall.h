@@ -54,8 +54,11 @@ namespace xlpgas
     }
 
     virtual void reset (const void * sbuf,
-			void * dbuf,
-			unsigned nbytes);
+			void               * dbuf,
+			TypeCode           * stype,
+			size_t               stypecount,
+			TypeCode           * rtype,
+			size_t               rtypecount);
 
     static void cb_senddone (void * ctxt, void * arg, pami_result_t result);
 
@@ -74,9 +77,12 @@ namespace xlpgas
     static void cb_recvcomplete (void * unused, void * arg, pami_result_t result);
 
   protected:
-    const char    * _sbuf;         /* send buffer    */
-    char          * _rbuf;         /* receive buffer */
-    size_t          _len;          /* msg length     */
+    const char          * _sbuf;         /* send buffer    */
+    char                * _rbuf;         /* receive buffer */
+    size_t                _len;          /* msg length     */
+    TypeCode            * _stype;        /* Single datatype of the send buffer */
+    TypeCode            * _rtype;        /* Single datatype of the recv buffer */
+    PAMI::PipeWorkQueue   _pwq;
 
     int             _sndcount[2], _rcvcount[2], _odd;
 

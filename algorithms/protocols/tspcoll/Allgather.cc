@@ -29,6 +29,7 @@ xlpgas::Allgather<T_NI>::
 Allgather (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
   CollExchange<T_NI> (ctxt, comm, kind, tag, offset)
 {
+  pami_type_t allgathertype = PAMI_TYPE_BYTE;
   this->_tmpbuf = NULL;
   this->_tmpbuflen = 0;
   this->_dbuf = NULL;
@@ -43,6 +44,8 @@ Allgather (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
       this->_sbuf[i] = &this->_dummy;
       this->_rbuf[i] = &this->_dummy;
       this->_sbufln[i] = 1;
+      this->_pwq[i].configure((char *)this->_sbuf[i], this->_sbufln[i], this->_sbufln[i], (TypeCode *)allgathertype, (TypeCode *)allgathertype);
+      this->_pwq[i].reset();
     }
   this->_numphases   *= 3;
   this->_phase        = this->_numphases;
@@ -55,16 +58,20 @@ Allgather (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
 template <class T_NI>
 void xlpgas::Allgather<T_NI>::reset (const void         * sbuf,
 			       void               * dbuf,
-			       unsigned             nbytes)
+			       TypeCode           * stype,
+			       size_t               stypecount,
+			       TypeCode           * rtype,
+			       size_t               rtypecount)
 {
   assert (sbuf != NULL);
   assert (dbuf != NULL);
-
+  size_t nsbytes = stype->GetDataSize() * stypecount;
+  size_t nrbytes = rtype->GetDataSize() * rtypecount;
   /* --------------------------------------------------- */
   /*    copy source buffer to dest buffer                */
   /* --------------------------------------------------- */
 
-  memcpy ((char *)dbuf + nbytes * this->_comm->ordinal(), sbuf, nbytes);
+  memcpy ((char *)dbuf + nrbytes * this->_comm->ordinal(), sbuf, nsbytes);
 
   /* --------------------------------------------------- */
   /* initialize destinations, offsets and buffer lengths */
@@ -78,24 +85,28 @@ void xlpgas::Allgather<T_NI>::reset (const void         * sbuf,
       this->_dest[phase]   = this->_comm->endpoint (previndex);
       this->_dest[phase+1] = this->_dest[phase];
 
-      this->_sbuf[phase]   = (char *)dbuf + this->_comm->ordinal() * nbytes;
+      this->_sbuf[phase]   = (char *)dbuf + this->_comm->ordinal() * nsbytes;
       this->_sbuf[phase+1] = (char *)dbuf;
 
-      this->_rbuf[phase]   = (char *)dbuf + nextindex*nbytes;
+      this->_rbuf[phase]   = (char *)dbuf + nextindex*nrbytes;
       this->_rbuf[phase+1] = (char *)dbuf;
 
       if (this->_comm->ordinal() + (1<<i) >= this->_comm->size())
         {
-          this->_sbufln[phase]   = nbytes * (this->_comm->size() - this->_comm->ordinal());
-          this->_sbufln[phase+1] = nbytes * (this->_comm->ordinal() + (1<<i) - this->_comm->size());
+          this->_sbufln[phase]   = nsbytes * (this->_comm->size() - this->_comm->ordinal());
+          this->_sbufln[phase+1] = nsbytes * (this->_comm->ordinal() + (1<<i) - this->_comm->size());
 	  //if(this->_sbufln[phase+1] == 0) this->_sbuf[phase+1] = NULL;//mark that there is no data to send
         }
       else
         {
-          this->_sbufln[phase] = nbytes * (1<<i);
+          this->_sbufln[phase] = nsbytes * (1<<i);
           this->_sbufln[phase+1] = 0;
 	  //this->_sbuf[phase+1] = NULL;
         }
+      this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], stype, rtype);
+      this->_pwq[phase+1].configure((char *)this->_sbuf[phase+1], this->_sbufln[phase+1], this->_sbufln[phase+1], stype, rtype);
+      this->_pwq[phase].reset();
+      this->_pwq[phase+1].reset();
     }
 
   xlpgas::CollExchange<T_NI>::reset();
