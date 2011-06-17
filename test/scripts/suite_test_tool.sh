@@ -791,6 +791,16 @@ then
     evalSignal=10 # SIGUSR1
 fi 
 
+if [ "${evalSummary}" == '' ]
+then
+    if [ $evalSignal -eq 0 ]	
+    then
+	evalSummary='Passed'
+    else
+	evalSummary='Failed'
+    fi
+fi
+
 eval $outLogSigVar=$evalSignal
 eval $outLogSumVar=\"$( echo $evalSummary | sed 's/"/\\"/g')\"
 
@@ -1175,7 +1185,7 @@ runHW ()
 	else
 	    echo "BG_PROCESSESPERNODE = ${HWMode}"
 	fi
-	echo "PPCFLOOR = $ppcfloor"
+	echo "PPCFLOOR = ${run_floor}"
     } >> $logFile
 
     # Print ENV vars to log and create -envs/--envs parm 
@@ -1243,7 +1253,9 @@ runHW ()
     else # Create BGQ run command
         # Remove "'s from args string if they exist
 #         args=$( echo $args | sed 's/"//g' ) 
-	runCmd="${runjob} --cwd ${cwd} --exe ${exe} --np ${HWProcs} --ranks-per-node ${HWMode} --block ${HWBlock}"
+
+	# === Use ./${exe} until Issue 3041 is fixed ===
+	runCmd="${runjob} --cwd ${cwd} --exe ./${exe} --np ${HWProcs} --ranks-per-node ${HWMode} --block ${HWBlock}"
   
 	# Add ENV vars
 	if [ "${envs}" != "" ]
@@ -2517,7 +2529,11 @@ reConfig ()
     then
 	configCmd="${abs_bgq_dir}/scripts/configure --with-floor=${level}"
     else # pami
-	configCmd="${abs_pami_buildtools_dir}/configure --with-target=${tar} --with-bgfloor=${level}"
+
+	# === Remove --with-pami-extension parm when TRAC 487 is fixed ===
+	configCmd="${abs_pami_buildtools_dir}/configure --with-target=${tar} --with-bgfloor=${level} --with-pami-extension=torus_extension,async_progress"
+
+#	configCmd="${abs_pami_buildtools_dir}/configure --with-target=${tar} --with-bgfloor=${level}"
 
 	if [ "${type}" == 'runMambo' ]
 	then
@@ -2728,8 +2744,6 @@ usage ()
     echo ""
     echo "-nofree | --nofree           Don't free block(s) after runs are completed (default is to free them)."
     echo ""
-    echo "-nosnap | --nosnap           Don't run Tom Gooding's snapbug tool after each failed run (default is to run it ...if this script is run from a service node)."
-    echo ""
     echo "-nn | --numnodes <arg>       Specify number of nodes to boot (required for multi-node runs with MMCS-Lite). Can be given as a space separated range for scaling purposes.  Command line value(s) will be trumped by --numnodes in the input file unless -fs|--force-scaling is also used on the command line."
     echo "                             default: 1 node"
     echo "                             ex:  --numnodes 2"
@@ -2783,6 +2797,8 @@ usage ()
     echo "                                 runjob --block R00-M0-N01 --corner R00-M0-N01-J02 --shape 1x1x1x1x1"
     echo "                                 runjob --block R00-M0-N02 --corner R00-M0-N02-J05 --shape 1x1x1x1x1"
     echo ""
+    echo "-snap | --snap               Run Tom Gooding's snapbug tool after each failed run (default is to not run it)."
+    echo ""
     echo "-to | --timeout <time>       Sets universal runjob timeout (runfctest timelimit) for all tests in the testlist (in seconds)."
     echo "                             any --timeout/--timelimit values in the testfile will override this universal default"  
     echo "                             ex: --timeout 60"
@@ -2813,6 +2829,11 @@ usage ()
     echo ""
     echo " --maxnp <NP limit>          Tells script that if NP of current test scenario > this value, skip this test"
     echo "                             ex:  api/context/post-multithreaded-perf.cnk --maxnp 63 --timelimit 180 --args 1"
+    echo ""
+    echo " --notes <text>              Add custom text to DB summary field for this test."
+    echo "                             NOTE:  Text must be surrounded by quotes (\"\")"
+    echo "                             ex:  errhan/errfatal --numnodes 1 --notes \"This should fail\""
+    echo "                             ex:  exercisers/bgqcore/bgqcore.elf --ranks-per-node 16 --notes \"--matrixSize 4 --runtime 1\" --args \"--matrixSize 4 --runtime 1\""
     echo ""
     echo " --skip <reason>             Tells script that this binary is to be skipped (compile, copy and run) and why"
     echo "                             <reason> must be a quoted string"
@@ -2896,17 +2917,17 @@ block=""
 corner=""
 shape=""
 sub_block=""
-runSnapbug=1
+runSnapbug=0            # Do not run snapbug after failed run
 freeBlock=0             # 1 = Free block after each test
 noFree=0                # 1 = Don't free blocks after execution phase (default is to free them)
 ioReboot=0              # 1 = Reboot I/O blocks on CN fail
 fpga_queue=0
-temp_jobid=""      # used to build common jobid between llsubmit and llq
-jobid=""           # used by FPGA and HW runs
+temp_jobid=""           # used to build common jobid between llsubmit and llq
+jobid=""                # used by FPGA and HW runs
 mpich=0
 ignoreSysFails=0
 ioblockHash="/tmp/${USER}_hashmap.ioblocks.${timestamp}"   # list of I/O blocks currently booted by this run 
-bootBlockHash="/tmp/${USER}_hashmap.blocks.${timestamp}"       # list of CN blocks currently booted by this run 
+bootBlockHash="/tmp/${USER}_hashmap.blocks.${timestamp}"   # list of CN blocks currently booted by this run 
 runBlockHash="/tmp/${USER}_hashmap.subblocks.${timestamp}" # block status of all blocks/sub-blocks in blockArray
 allocateScript="${abs_script_dir}/allocateBlock.pl"        # perl script to allocate I/O and CN blocks
 freeScript="${abs_script_dir}/freeBlock.pl"                # perl script to free I/O and CN blocks
@@ -2933,6 +2954,7 @@ groupDev='MU'
 logGroup=""
 groupScale=0
 logDisabled=0           # set to 1 when logXML has rc = 2 (can't create xml file)
+testSummary=""
 emailAddr=""
 summaryEmail="sst_verif_summary_email.${timestamp}"
 comment=""
@@ -3048,8 +3070,6 @@ while [ "${1}" != "" ]; do
                                 ;;
 	-nofree | --nofree )    noFree=1
 				;;
-	-nosnap | --nosnap )    runSnapbug=0
-	                        ;;
 	-np | --np )            shift
 	                        forceNP=$1
 				;;
@@ -3089,6 +3109,8 @@ while [ "${1}" != "" ]; do
         -shape | --shape )      shift
 	                        shape=$1
                                 ;;
+	-snap | --snap )        runSnapbug=1
+	                        ;;
 	-to | --timeout )       shift
 	                        timeOut=$1
 				;;
@@ -3610,8 +3632,6 @@ while read xtest xopts
       continue
   fi
 
-
-
   # Store binary name
   TEST_ARRAY[$element]=$(echo "${xtest##*/}" | tr -d '\n' | tr -d '\r')
   hput $compileHash ${TEST_ARRAY[$element]} 0
@@ -3651,6 +3671,36 @@ while read xtest xopts
 
   # Store "runjob" options
   tempOpts="$(echo ${xopts%%--args*} | tr -d '\n' | tr -d '\r')"
+
+  # Did user provide notes about this test?
+  if [[ "${tempOpts}" =~ '-notes ' ]]
+  then      
+      # Get text
+      notesText=$( echo ${tempOpts##*-notes} | awk -F\" '{ print $2 }' ) 
+
+      # Update hash entry for this test
+      hput $exeHash "${TEST_ARRAY[$element]}:$element:notes" "...NOTE: ${notesText}"
+
+      # Remove --notes from $tempOpts
+      # Save off everything after "--notes"
+      postNotes=${tempOpts##*--notes}
+      
+      # Get rid of everything up to opening notes "
+      postNotes=${postNotes#*\"}
+      # Get rid of everything up to closing notes "
+      postNotes=${postNotes#*\"}
+
+      # Set tempOpts = everything before "--notes"
+      tempOpts=${tempOpts%%--notes*}
+
+      # Final opts string with --notes val removed
+      if [[ "${postNotes}" =~ '--' ]]
+      then					 
+	  tempOpts="${tempOpts}--${postNotes#*--}"
+      fi
+  else
+      hput $exeHash "${TEST_ARRAY[$element]}:$element:notes" ''
+  fi
 
   # Is this test compile only?
   if [[ "${tempOpts}" =~ 'compile-only' ]]
@@ -4067,7 +4117,7 @@ then
 
 	    echo -e "\nCompiling test ${TEST_ARRAY[$test]} ..."
 
-	    makeCmd="make -j ${MAKECPUS} ${TEST_ARRAY[$test]}"
+	    makeCmd="make -j ${MAKECPUS} ${TEST_ARRAY[$test]} BGQ_INSTALL_DIR=${compile_floor}"
 
 	    # Execute make
 	    if [ $quietly -eq 1 ]
@@ -4151,8 +4201,16 @@ then
 		fi
 		
 		hget $exeHash "${TEST_ARRAY[$test]}:$test:stub" stub
+		hget $exeHash "${TEST_ARRAY[$test]}:$test:notes" notes
 
-		logToWeb "${buildDir} ${stub} ${TEST_ARRAY[$test]}" "0 0 0" "${nodeArray[0]} ${modeArray[0]}" "${overallStatus}" "" $signal "${overallStatus}" "${compileLog}" xmlStat
+		if [ "${notes}" != '' ]
+		then
+		    testSummary="${overallStatus} ${notes}"
+		else
+		    testSummary="${overallStatus}"
+		fi
+
+		logToWeb "${buildDir} ${stub} ${TEST_ARRAY[$test]}" "0 0 0" "${nodeArray[0]} ${modeArray[0]}" "${overallStatus}" "" $signal "${testSummary}" "${compileLog}" xmlStat
 	       
 	      # Determine NP value for saving XML status
 		keyNP=0
@@ -4381,8 +4439,16 @@ then
 		fi
 		
 		hget $exeHash "${TEST_ARRAY[$test]}:$test:stub" stub
+		hget $exeHash "${TEST_ARRAY[$test]}:$test:notes" notes
 
-		logToWeb "${buildDir} ${stub} ${TEST_ARRAY[$test]}" "0 0 0" "${nodeArray[0]} ${modeArray[0]}" "${overallStatus}" "" $signal "${overallStatus}" "${make_log}" xmlStat
+		if [ "${notes}" != '' ]
+		then
+		    testSummary="${overallStatus} ${notes}"
+		else
+		    testSummary="${overallStatus}"
+		fi
+
+		logToWeb "${buildDir} ${stub} ${TEST_ARRAY[$test]}" "0 0 0" "${nodeArray[0]} ${modeArray[0]}" "${overallStatus}" "" $signal "${testSummary}" "${make_log}" xmlStat
 		
 
 	      # Determine NP value for saving XML status
@@ -4522,7 +4588,16 @@ if [ $copy -eq 1 ]
 	  if [ $run -eq 1 ]
 	  then
 
-	      logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "0 0 0" "${nodeArray[0]} ${modeArray[0]}" "${overallStatus}" "" $signal "${overallStatus}" "" xmlStat
+	      hget $exeHash "${TEST_ARRAY[$test]}:$test:notes" notes
+
+	      if [ "${notes}" != '' ]
+	      then
+		  testSummary="${overallStatus} ${notes}"
+	      else
+		  testSummary="${overallStatus}"
+	      fi
+
+	      logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "0 0 0" "${nodeArray[0]} ${modeArray[0]}" "${overallStatus}" "" $signal "${testSummary}" "" xmlStat
 
 	      # Determine NP value for saving XML status
 	      keyNP=0
@@ -4618,8 +4693,16 @@ then
 
 	      hget $exeHash "${TEST_ARRAY[$test]}:$test:stub" stub
 	      hget $exeHash "${TEST_ARRAY[$test]}:$test:exeDir" exeDir
+	      hget $exeHash "${TEST_ARRAY[$test]}:$test:notes" notes
 
-	      logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "0 0 0" "${nodeArray[0]} ${modeArray[0]}" "${overallStatus}" "" 999 "${overallStatus}" "" xmlStat
+	      if [ "${notes}" != '' ]
+	      then
+		  testSummary="${overallStatus} ${notes}"
+	      else
+		  testSummary="${overallStatus}"
+	      fi
+
+	      logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "0 0 0" "${nodeArray[0]} ${modeArray[0]}" "${overallStatus}" "" 999 "${testSummary}" "" xmlStat
 
 	      # Determine NP value for saving XML status
 	      keyNP=0
@@ -4692,6 +4775,7 @@ then
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:stub" stub
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:runOpts" runOpts
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:exeArgs" exeArgs
+	  hget $exeHash "${TEST_ARRAY[$test]}:$test:notes" notes
 
 	  # Determine final values for nodes, mode & NP
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:standAlone" standAlone
@@ -4718,8 +4802,15 @@ then
 	              # Disable test
 		      hput $exeHash "${TEST_ARRAY[$test]}:$test:exe" 0
 
-		      #Log to web		      
-		      logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "0 0 0" "${nodeArray[0]} ${modeArray[0]}" "${overallStatus}" "" 999 "${overallStatus}" "" xmlStat
+		      #Log to web
+		      if [ "${notes}" != '' ]
+		      then
+			  testSummary="${overallStatus} ${notes}"
+		      else
+			  testSummary="${overallStatus}"
+		      fi
+		      
+		      logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "0 0 0" "${nodeArray[0]} ${modeArray[0]}" "${overallStatus}" "" 999 "${testSummary}" "" xmlStat
 
 	              # Determine NP value for saving XML status
 		      keyNP=0
@@ -4751,8 +4842,15 @@ then
 	          # Disable test
 		  hput $exeHash "${TEST_ARRAY[$test]}:$test:exe" 0
 
-		  # Log to web	      
-		  logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "0 0 0" "${nodeArray[0]} ${modeArray[0]}" "${overallStatus}" "" 999 "${overallStatus}" "" xmlStat
+		  # Log to web
+		  if [ "${notes}" != '' ]
+		  then
+		      testSummary="${overallStatus} ${notes}"
+		  else
+		      testSummary="${overallStatus}"
+		  fi
+	      
+		  logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "0 0 0" "${nodeArray[0]} ${modeArray[0]}" "${overallStatus}" "" 999 "${testSummary}" "" xmlStat
 
 	          # Determine NP value for saving XML status
 		  keyNP=0
@@ -4785,8 +4883,15 @@ then
 	          # Disable test
 		  hput $exeHash "${TEST_ARRAY[$test]}:$test:exe" 0
 
-		  # Log to web		      
-		  logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "0 0 0" "${nodeArray[0]} ${modeArray[0]}" "${overallStatus}" "" 999 "${overallStatus}" "" xmlStat
+		  # Log to web	
+		  if [ "${notes}" != '' ]
+		  then
+		      testSummary="${overallStatus} ${notes}"
+		  else
+		      testSummary="${overallStatus}"
+		  fi
+	      
+		  logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "0 0 0" "${nodeArray[0]} ${modeArray[0]}" "${overallStatus}" "" 999 "${testSummary}" "" xmlStat
 
 	          # Determine NP value for saving XML status
 		  keyNP=0
@@ -4886,6 +4991,11 @@ then
 	      # Log to web
 	      hget $exeHash "${TEST_ARRAY[$test]}:$test:status" overallStatus
 
+	      if [ "${notes}" != '' ]
+	      then
+		  testSummary="${testSummary} ${notes}"
+	      fi
+
 	      logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "${exeNP} ${exeInputMode} ${exeThreads}" "${numNodes} ${mode}" "${overallStatus}" "${testStatus}" 999 "${testSummary}" "${runLog}" xmlStat
 
 	      hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" $xmlStat
@@ -4918,6 +5028,11 @@ then
 
 	      # Log to web
 	      hget $exeHash "${TEST_ARRAY[$test]}:$test:status" overallStatus
+
+	      if [ "${notes}" != '' ]
+	      then
+		  testSummary="${testSummary} ${notes}"
+	      fi
 
 	      logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "${exeNP} ${exeInputMode} ${exeThreads}" "${numNodes} ${mode}" "${overallStatus}" "${testStatus}" 999 "${testSummary}" "${runLog}" xmlStat
 
@@ -4955,6 +5070,11 @@ then
 	      # Log to web
 #	      hget $exeHash "${TEST_ARRAY[$test]}:$test:status" overallStatus
 
+#             if [ "${notes}" != '' ]
+#	      then
+#		  testSummary="${testSummary} ${notes}"
+#	      fi
+
 #	      logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "${exeNP} ${exeInputMode} ${exeThreads}" "${numNodes} ${mode}" "${overallStatus}" "${testStatus}" 999 "${testSummary}" "${runLog}" xmlStat
 
 #	      hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" $xmlStat
@@ -4989,6 +5109,11 @@ then
 
 	      # Log to web
 	      hget $exeHash "${TEST_ARRAY[$test]}:$test:status" overallStatus
+
+	      if [ "${notes}" != '' ]
+	      then
+		  testSummary="${testSummary} ${notes}"
+	      fi
 
 	      logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "${exeNP} ${exeInputMode} ${exeThreads}" "${numNodes} ${mode}" "${overallStatus}" "${testStatus}" 999 "${testSummary}" "${runLog}" xmlStat
 
@@ -5025,6 +5150,11 @@ then
 
 	      # Log to web
 	      hget $exeHash "${TEST_ARRAY[$test]}:$test:status" overallStatus
+
+	      if [ "${notes}" != '' ]
+	      then
+		  testSummary="${testSummary} ${notes}"
+	      fi
 
 	      logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "${exeNP} ${exeInputMode} ${exeThreads}" "${numNodes} ${mode}" "${overallStatus}" "${testStatus}" 999 "${testSummary}" "${runLog}" xmlStat
 
@@ -5478,7 +5608,14 @@ then
 	          # Log to web
 		  hget $exeHash "${TEST_ARRAY[$test]}:$test:status" overallStatus
 
-		  logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "${exeNP} ${exeInputMode} ${exeThreads}" "${numNodes} ${mode}" "${overallStatus}" "${testStatus}" $finalSignal "${exeSummary}" "${runLog}" xmlStat
+		  if [ "${notes}" != '' ]
+		  then
+		      testSummary="${exeSummary} ${notes}"
+		  else
+		      testSummary="${exeSummary}"
+		  fi
+
+		  logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "${exeNP} ${exeInputMode} ${exeThreads}" "${numNodes} ${mode}" "${overallStatus}" "${testStatus}" $finalSignal "${testSummary}" "${runLog}" xmlStat
 
 		  hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" $xmlStat
 
@@ -5702,7 +5839,14 @@ if [ $run -eq 1 ]
                   # Determine number of threads
 		  threads=$( grep -a "^THREADS =" ${runLog} | awk '{print $3}')
 
-		  logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "${np} ${ppn} ${threads}" "${numNodes} ${mode}" "${overallStatus}" "${testStatus}" $finalSignal "${exeSummary}" "${runLog}" xmlStat
+		  if [ "${notes}" != '' ]
+		  then
+		      testSummary="${exeSummary} ${notes}"
+		  else
+		      testSummary="${exeSummary}"
+		  fi
+
+		  logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "${np} ${ppn} ${threads}" "${numNodes} ${mode}" "${overallStatus}" "${testStatus}" $finalSignal "${testSummary}" "${runLog}" xmlStat
 
 		  hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" $xmlStat
 		  
