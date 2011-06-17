@@ -123,16 +123,29 @@ namespace PAMI
           // Capture all message information needed to free
           // before the message storage may be freed as a result of
           // a message cb_done
-          T_Message              *m      = (T_Message*) cookie;
+          T_Message              *m       = (T_Message*) cookie;
+          Generic::GenericThread *t       = m->_workfcn;
+          T_Device               *device  = (T_Device *)m->_device;
+          BSRGeometryInfo        *bsrinfo = m->_bsrinfo;
           // Advance the message
           pami_result_t           result = m->advance();
-
           // Free the message if not PAMI_EAGAIN.
           if(result == PAMI_SUCCESS)
-          {
-            Generic::GenericThread *t      = m->_workfcn;
-            T_Device               *device = (T_Device *)m->_device;
+          {            
             device->freeWork(t);
+            if(!bsrinfo->_waiters_q.empty())
+            {
+              m = (T_Message*) bsrinfo->_waiters_q.front();
+              bsrinfo->_waiters_q.erase(bsrinfo->_waiters_q.begin());
+              pami_result_t   rc = m->advance();
+
+              if(rc == PAMI_EAGAIN)                
+                m->_workfcn      = device->postWork(do_msync, m);
+              else if(bsrinfo->_waiters_q.empty())
+                bsrinfo->_in_barrier = false;
+            }
+            else
+              bsrinfo->_in_barrier = false;
           }
           return result;
         }
@@ -148,9 +161,17 @@ namespace PAMI
                                                                 bsrinfo,
                                                                 msync->cb_done.function,
                                                                 msync->cb_done.clientdata);        
-        pami_result_t rc = msg->advance();
-        if(rc == PAMI_EAGAIN)
-          msg->_workfcn = _device.postWork(do_msync, msg);
+        if(!bsrinfo->_in_barrier)
+        {
+          pami_result_t rc = msg->advance();
+          if(rc == PAMI_EAGAIN)
+          {
+            bsrinfo->_in_barrier = true;
+            msg->_workfcn        = _device.postWork(do_msync, msg);
+          }
+        }
+        else
+          bsrinfo->_waiters_q.push_back(msg);
 
         return PAMI_SUCCESS;
       }

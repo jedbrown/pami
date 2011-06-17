@@ -22,7 +22,7 @@
 #ifndef _LAPI_LINUX
 #include "components/devices/bsr/SaOnNodeSyncGroup.h"
 #endif
-#include <list>
+#include <vector>
 
 namespace PAMI
 {
@@ -34,7 +34,8 @@ namespace PAMI
       BSRGeometryInfo(int       geometry_id,
                       Topology *topology):
         _geometry_id(geometry_id),
-        _topology(topology)
+        _topology(topology),
+        _in_barrier(false)
         {
 
         }
@@ -43,8 +44,9 @@ namespace PAMI
 #endif
       int                       _geometry_id;
       Topology                 *_topology;
-//      std::vector <void*>     _waiters_q;
-//      bool                      _in_barrier;      
+      bool                      _in_barrier;
+      std::vector <void*>       _waiters_q;
+
     };
   };
 };
