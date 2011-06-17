@@ -663,16 +663,27 @@ int main (int argc, char ** argv)
     if (debug) {
       fprintf(stderr, "Before context %zu, ID 5 PAMI_Dispatch_set() ...&recv_active = %p, recv_active = %zu\n", i, &recv_active, recv_active);
     }
-    result = PAMI_Dispatch_set (context[i],
-				5,
-				fn,
-				(void *)&recv_active,
-				options);
-    if (result != PAMI_SUCCESS)
-      {
-	fprintf(stderr, "ERROR (E): Unable to register PAMI dispatch ID 5 on context %zu. result = %d\n", i, result);
-	return 1;
-      }
+
+    if (debug) {
+      fprintf (stderr, "rank:  %zu\tnum local tasks:  %zu\n", task_id, num_local_tasks);
+    }
+
+    /* Can't create shmem dispatch ID if there aren't any other local tasks */
+    if ((options.use_shmem == PAMI_HINT_ENABLE) && (num_local_tasks == 1)) {
+      fprintf(stderr, "WARNING (W):  No other local tasks exist with Rank %zu.  Skipping creation of \"SHMem\" dispatch ID ...\n", task_id);
+    } else { /* create ID 5 */
+
+      result = PAMI_Dispatch_set (context[i],
+				  5,
+				  fn,
+				  (void *)&recv_active,
+				  options);
+      if (result != PAMI_SUCCESS)
+	{
+	  fprintf(stderr, "ERROR (E): Unable to register PAMI dispatch ID 5 on context %zu. result = %d\n", i, result);
+	  return 1;
+	}
+    }
 
     options.use_shmem = PAMI_HINT_DISABLE;
     if (debug) {
@@ -792,31 +803,43 @@ int main (int argc, char ** argv)
       if (debug) {
 	fprintf(stderr, "Before context %zu, ID 4 PAMI_Dispatch_set() ...&recv_active = %p, recv_active = %zu\n", i, &recv_active, recv_active);
       }
-      result = PAMI_Dispatch_set (context[i],
-				  4,
-				  fn,
-				  (void *)&recv_active,
-				  options);
-      if (result != PAMI_SUCCESS)
-	{
-	  fprintf(stderr, "ERROR (E): Unable to register PAMI dispatch ID 4 on context %zu. result = %d\n", i, result);
-	  return 1;
-	}
 
-      options.use_shmem = PAMI_HINT_ENABLE;
       if (debug) {
-	fprintf(stderr, "Before context %zu, ID 6 PAMI_Dispatch_set() ...&recv_active = %p, recv_active = %zu\n", i, &recv_active, recv_active);
+	fprintf (stderr, "rank:  %zu\tnum local tasks:  %zu\n", task_id, num_local_tasks);
       }
-      result = PAMI_Dispatch_set (context[i],
-				  6,
-				  fn,
-				  (void *)&recv_active,
-				  options);
-      if (result != PAMI_SUCCESS)
-	{
-	  fprintf(stderr, "ERROR (E): Unable to register PAMI dispatch ID 6 on context %zu. result = %d\n", i, result);
-	  return 1;
+
+      /* Can't create shmem dispatch ID if there aren't any other local tasks */
+      if ((options.use_shmem == PAMI_HINT_ENABLE) && (num_local_tasks == 1)) {
+	fprintf(stderr, "WARNING (W):  No other local tasks exist with Rank %zu.  Skipping creation of \"SHMem\" dispatch ID ...\n", task_id);
+      } else { /* create IDs 4 & 6 */
+
+	result = PAMI_Dispatch_set (context[i],
+				    4,
+				    fn,
+				    (void *)&recv_active,
+				    options);
+	if (result != PAMI_SUCCESS)
+	  {
+	    fprintf(stderr, "ERROR (E): Unable to register PAMI dispatch ID 4 on context %zu. result = %d\n", i, result);
+	    return 1;
+	  }
+   
+
+	options.use_shmem = PAMI_HINT_ENABLE;
+	if (debug) {
+	  fprintf(stderr, "Before context %zu, ID 6 PAMI_Dispatch_set() ...&recv_active = %p, recv_active = %zu\n", i, &recv_active, recv_active);
 	}
+	result = PAMI_Dispatch_set (context[i],
+				    6,
+				    fn,
+				    (void *)&recv_active,
+				    options);
+	if (result != PAMI_SUCCESS)
+	  {
+	    fprintf(stderr, "ERROR (E): Unable to register PAMI dispatch ID 6 on context %zu. result = %d\n", i, result);
+	    return 1;
+	  }
+      }
 
       options.use_shmem = PAMI_HINT_DISABLE;
       if (debug) {
@@ -987,16 +1010,27 @@ int main (int argc, char ** argv)
       if (debug) {
 	fprintf(stderr, "Before context %zu, ID 1 PAMI_Dispatch_set() ...&recv_active = %p, recv_active = %zu\n", i, &recv_active, recv_active);
       }
-      result = PAMI_Dispatch_set (context[i],
-				  1,
-				  fn,
-				  (void *)&recv_active,
-				  options);
-      if (result != PAMI_SUCCESS)
-	{
-	  fprintf(stderr, "ERROR (E): Unable to register PAMI dispatch ID 1 on context %zu. result = %d\n", i, result);
-	  return 1;
-	}
+
+      if (debug) {
+	fprintf (stderr, "rank:  %zu\tnum local tasks:  %zu\n", task_id, num_local_tasks);
+      }
+
+      /* Can't create shmem dispatch ID if there aren't any other local tasks */
+      if ((options.use_shmem == PAMI_HINT_ENABLE) && (num_local_tasks == 1)) {
+	fprintf(stderr, "WARNING (W):  No other local tasks exist with Rank %zu.  Skipping creation of \"SHMem\" dispatch ID ...\n", task_id);
+      } else { /* create ID 1 */
+
+	result = PAMI_Dispatch_set (context[i],
+				    1,
+				    fn,
+				    (void *)&recv_active,
+				    options);
+	if (result != PAMI_SUCCESS)
+	  {
+	    fprintf(stderr, "ERROR (E): Unable to register PAMI dispatch ID 1 on context %zu. result = %d\n", i, result);
+	    return 1;
+	  }
+      }
 
       options.use_shmem = PAMI_HINT_DISABLE;
       if (debug) {
@@ -1062,16 +1096,27 @@ int main (int argc, char ** argv)
       if (debug) {
 	fprintf(stderr, "Before context %zu, ID 9 PAMI_Dispatch_set() ...&recv_active = %p, recv_active = %zu\n", i, &recv_active, recv_active);
       }
-      result = PAMI_Dispatch_set (context[i],
-				  9,
-				  fn,
-				  (void *)&recv_active,
-				  options);
-      if (result != PAMI_SUCCESS)
-	{
-	  fprintf(stderr, "ERROR (E): Unable to register PAMI dispatch ID 9 on context %zu. result = %d\n", i, result);
-	  return 1;
-	}
+
+      if (debug) {
+	fprintf (stderr, "rank:  %zu\tnum local tasks:  %zu\n", task_id, num_local_tasks);
+      }
+
+      /* Can't create shmem dispatch ID if there aren't any other local tasks */
+      if ((options.use_shmem == PAMI_HINT_ENABLE) && (num_local_tasks == 1)) {
+	fprintf(stderr, "WARNING (W):  No other local tasks exist with Rank %zu.  Skipping creation of \"SHMem\" dispatch ID ...\n", task_id);
+      } else { /* create ID 9 */
+
+	result = PAMI_Dispatch_set (context[i],
+				    9,
+				    fn,
+				    (void *)&recv_active,
+				    options);
+	if (result != PAMI_SUCCESS)
+	  {
+	    fprintf(stderr, "ERROR (E): Unable to register PAMI dispatch ID 9 on context %zu. result = %d\n", i, result);
+	    return 1;
+	  }
+      }
     } /* end context loop */
 
     result = PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
