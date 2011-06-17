@@ -554,6 +554,16 @@ int main (int argc, char ** argv)
 
     for (hint = 0; hint < hint_limit; hint++) {
       
+      if (debug) {
+      fprintf (stderr, "rank:  %zu\tnum local tasks:  %zu\n", _my_task, num_local_tasks);
+      }
+
+      /* Can't create shmem dispatch ID if there aren't any other local tasks */
+      if ( (hint == 1) && (num_local_tasks == 1) ) {
+	fprintf(stderr, "WARNING (W):  No other local tasks exist with Rank %zu.  Skipping creation of \"SHMem\" dispatch ID ...\n", _my_task);
+	continue;
+      }
+
       dispatch[hint].result = PAMI_Dispatch_set (context[i],
                                               dispatch[hint].id,
                                               fn,
