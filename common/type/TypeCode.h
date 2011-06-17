@@ -20,6 +20,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <algorithm>
+#ifdef USE_ITRACE
+#include "lapi_itrace.h"
+#else
+#define ITRC(...)
+#endif
 #include "Math.h"
 #include "ReferenceCount.h"
 //#undef assert
@@ -105,10 +110,12 @@ namespace PAMI
             void AddShift(size_t shift);
             void AddSimple(size_t bytes, size_t stride, size_t reps);
             void AddTyped(TypeCode *sub_type, size_t stride, size_t reps);
+            void Optimize();
             void Complete();
 
             bool IsCompleted() const;
             bool IsContiguous() const;
+            bool IsSimple() const;
             bool IsPrimitive() const;
 
             void * GetCodeAddr() const;
@@ -137,7 +144,9 @@ namespace PAMI
             };
 
             struct Begin : Op {
-                unsigned int contiguous;
+                unsigned int contiguous:1;
+                unsigned int simple:1;
+                unsigned int optimized:1;
                 unsigned int depth;
                 size_t  code_size;
                 size_t  data_size;
@@ -147,14 +156,14 @@ namespace PAMI
                 size_t  atom_size;
 
                 Begin()
-                    : Op(BEGIN), contiguous(0), depth(1), code_size(0), data_size(0), extent(0),
-                    num_blocks(0), unit(0), atom_size(0) { }
+                    : Op(BEGIN), contiguous(1), simple(1), optimized(0), depth(1), code_size(0),
+                    data_size(0), extent(0), num_blocks(0), unit(0), atom_size(0) { }
 
                 void Show(int pc) const {
-                    printf("%4d: Begin code_size %zu depth %u data_size %zu "
-                            "extent %zu num_blocks %zu unit %zu atom_size %zu\n",
-                            pc, code_size, depth, data_size, extent, num_blocks,
-                            unit, atom_size);
+                    ITRC(IT_TYPE, "%d: Begin: contiguous %d simple %d code_size %zu depth %u "
+                            " data_size %zu extent %zu num_blocks %zu unit %zu atom_size %zu\n",
+                            pc, contiguous, simple, code_size, depth, data_size, extent,
+                            num_blocks, unit, atom_size);
                 }
             };
 
@@ -166,8 +175,8 @@ namespace PAMI
                 Copy(size_t bytes, size_t stride, size_t reps)
                     : Op(COPY), bytes(bytes), stride(stride), reps(reps) { }
 
-                void Show(int pc) const {
-                    printf("%4d: Copy bytes %zu stride %zu reps %zu\n",
+                inline void Show(int pc) const {
+                    ITRC(IT_TYPE, "%d: Copy: bytes %zu stride %zd reps %zu\n",
                             pc, bytes, stride, reps);
                 }
             };
@@ -180,8 +189,8 @@ namespace PAMI
                 Call(size_t sub_type, size_t stride, size_t reps)
                     : Op(CALL), sub_type(sub_type), stride(stride), reps(reps) { }
 
-                void Show(int pc) const {
-                    printf("%4d: Call sub %zu stride %zu reps %zu\n",
+                inline void Show(int pc) const {
+                    ITRC(IT_TYPE, "%d: Call: sub_type %zu stride %zd reps %zu\n",
                             pc, pc + sub_type, stride, reps);
                 }
             };
@@ -191,25 +200,25 @@ namespace PAMI
 
                 Shift(size_t shift) : Op(SHIFT), shift(shift) { }
 
-                void Show(int pc) const {
-                    printf("%4d: Shift %zu\n", pc, shift);
+                inline void Show(int pc) const {
+                    ITRC(IT_TYPE, "%d: Shift: shift %zd\n", pc, shift);
                 }
             };
 
             struct End : Op {
                 End() : Op(END) { }
 
-                void Show(int pc) const {
-                    printf("%4d: End\n", pc);
+                inline void Show(int pc) const {
+                    ITRC(IT_TYPE, "%d: End\n", pc);
                 }
             };
 
             char  *code;
             size_t code_buf_size;
+            size_t prev_cursor;
             size_t code_cursor;
             bool   completed;
             bool   to_optimize;
-            bool   is_contiguous;
 
             void CheckCodeBuffer(size_t inc_code_size);
             void ResizeCodeBuffer(size_t new_size);
@@ -220,14 +229,16 @@ namespace PAMI
             void AddNumBlocks(size_t inc_num_blocks);
             void UpdateUnit(size_t new_unit);
             void CopySubTypes();
+            void SetContiguous(bool);
+            void SetSimple(bool);
 
           protected:
             primitive_type_t   primitive;
     };
 
     inline TypeCode::TypeCode(bool to_optimize = true)
-        : code(NULL), code_buf_size(0), code_cursor(0), completed(false),
-        to_optimize(to_optimize), is_contiguous(true), primitive(PRIMITIVE_TYPE_COUNT)
+        : code(NULL), code_buf_size(0), prev_cursor(0), code_cursor(0), completed(false),
+        to_optimize(to_optimize), primitive(PRIMITIVE_TYPE_COUNT)
     {
         ResizeCodeBuffer(sizeof(Begin) + sizeof(Copy)*4);
         *(Begin *)code = Begin();
@@ -237,17 +248,16 @@ namespace PAMI
     }
 
     inline TypeCode::TypeCode(void *code_addr, size_t code_size)
-        : code(NULL), code_buf_size(0), code_cursor(0), completed(true),
-        to_optimize(true), is_contiguous(false), primitive(PRIMITIVE_TYPE_COUNT)
+        : code(NULL), code_buf_size(0), prev_cursor(0), code_cursor(0), completed(true),
+        to_optimize(true), primitive(PRIMITIVE_TYPE_COUNT)
     {
         ResizeCodeBuffer(code_size);
         memcpy(code, code_addr, code_size);
-        if (((Begin *)code)->contiguous) is_contiguous = true;
     }
 
     inline TypeCode::TypeCode(size_t code_size, primitive_type_t primitive_type)
-        : code(NULL), code_buf_size(0), code_cursor(0), completed(true),
-        to_optimize(true), is_contiguous(true), primitive(primitive_type)
+        : code(NULL), code_buf_size(0), prev_cursor(0), code_cursor(0), completed(true),
+        to_optimize(true), primitive(primitive_type)
     {
         ResizeCodeBuffer(code_size);
     }
@@ -335,9 +345,24 @@ namespace PAMI
         return completed;
     }
 
+    inline void TypeCode::SetSimple(bool smpl)
+    {
+        ((Begin *)code)->simple = smpl;
+    }
+
+    inline bool TypeCode::IsSimple() const
+    {
+        return ((Begin *)code)->simple;
+    }
+
+    inline void TypeCode::SetContiguous(bool contig)
+    {
+        ((Begin *)code)->contiguous = contig;
+    }
+
     inline bool TypeCode::IsContiguous() const
     {
-        return is_contiguous;
+        return ((Begin *)code)->contiguous;
     }
 
     inline bool TypeCode::IsPrimitive() const
@@ -386,10 +411,22 @@ namespace PAMI
         assert(!IsCompleted());
 
         if (shift != 0) {
-            CheckCodeBuffer(sizeof(Shift));
-            *(Shift *)(code + code_cursor) = Shift(shift);
-            code_cursor += sizeof(Shift);
-            AddCodeSize(sizeof(Shift));
+            ITRC(IT_TYPE, "AddShift(): this 0x%zx shift %zd\n", this, shift);
+            if ((COPY == ((Op *)(code+prev_cursor))->opcode) && (1 == ((Copy *)(code+prev_cursor))->reps)) {
+                ITRC(IT_TYPE, "AddShift(): this 0x%zx modify prev copy stride by %zd\n", this, shift);
+                ((Copy *)(code+prev_cursor))->stride += shift;
+            } else if (SHIFT == ((Op *)(code+prev_cursor))->opcode) {
+                ITRC(IT_TYPE, "AddShift(): this 0x%zx modify prev shift by %zd\n", this, shift);
+                ((Shift *)(code+prev_cursor))->shift += shift;
+            } else {
+                ITRC(IT_TYPE, "AddShift(): this 0x%zx add shift by %zd\n", this, shift);
+                SetSimple(false);
+                CheckCodeBuffer(sizeof(Shift));
+                *(Shift *)(code + code_cursor) = Shift(shift);
+                prev_cursor = code_cursor;
+                code_cursor += sizeof(Shift);
+                AddCodeSize(sizeof(Shift));
+            }
             AddExtent(shift);
         }
     }
@@ -399,13 +436,19 @@ namespace PAMI
         assert(!IsCompleted());
 
         if (reps > 0) {
-            if (((Begin *)code)->data_size != ((Begin *)code)->extent) is_contiguous = false;
+            ITRC(IT_TYPE, "AddSimple(): this 0x%zx bytes %zu stride %zd reps %zu\n", this, bytes, stride, reps);
+            if (IsContiguous() && (GetDataSize() != GetExtent())) SetContiguous(false);
             if (to_optimize && (bytes == stride)) {
                 stride  = bytes *= reps;
                 reps    = 1;
             }
+            // if not the first copy instruction or reps more than 1,
+            // then not simple anymore
+            if ((0 != prev_cursor) || (1 != reps)) SetSimple(false);
+
             CheckCodeBuffer(sizeof(Copy));
             *(Copy *)(code + code_cursor) = Copy(bytes, stride, reps);
+            prev_cursor = code_cursor;
             code_cursor += sizeof(Copy);
 
             AddCodeSize(sizeof(Copy));
@@ -422,21 +465,145 @@ namespace PAMI
         assert(sub_type->IsCompleted());
 
         if (reps > 0) {
-            if (is_contiguous == true) {
-                if (((Begin *)code)->data_size != ((Begin *)code)->extent) is_contiguous = false;
-                else is_contiguous = sub_type->IsContiguous();
-            }
-            CheckCodeBuffer(sizeof(Call));
-            *(Call *)(code + code_cursor) = Call((size_t)sub_type, stride, reps);
-            code_cursor += sizeof(Call);
+            ITRC(IT_TYPE, "AddTyped(): this 0x%zx sub_type 0x%zx stride %zd reps %zu\n", this, sub_type, stride, reps);
+            sub_type->Show();
+            // if the subtype is simple and reps is greater than one, then change the reps
+            // in the subtype
+            if ((1 != reps) && sub_type->IsSimple()) {
+                assert(COPY == ((Op *)(sub_type->code+sizeof(Begin)))->opcode);
+                // this subtype is a simple copy: add a simple copy instead of a call
+                AddSimple(((Copy *)(sub_type->code+sizeof(Begin)))->bytes, stride, reps);
+            } else if (sub_type->IsContiguous()) {
+                // the subtype is contiguous: add a simple copy instead of a call
+                // add a single copy instead of a call
+                AddSimple(sub_type->GetDataSize(), stride, reps);
+            } else {
+                if (IsContiguous()) {
+                    if (GetDataSize() != GetExtent()) SetContiguous(false);
+                    else SetContiguous(sub_type->IsContiguous());
+                }
+                CheckCodeBuffer(sizeof(Call));
+                *(Call *)(code + code_cursor) = Call((size_t)sub_type, stride, reps);
+                prev_cursor = code_cursor;
+                code_cursor += sizeof(Call);
 
-            AddCodeSize(sizeof(Call) + sub_type->GetCodeSize());
-            AddDataSize(sub_type->GetDataSize() * reps);
-            UpdateDepth(sub_type->GetDepth() + 1);
-            AddNumBlocks(sub_type->GetNumBlocks()*reps);
-            UpdateUnit(sub_type->GetUnit());
-            AddExtent(stride * reps);
+                AddCodeSize(sizeof(Call) + sub_type->GetCodeSize());
+                AddDataSize(sub_type->GetDataSize() * reps);
+                UpdateDepth(sub_type->GetDepth() + 1);
+                AddNumBlocks(sub_type->GetNumBlocks()*reps);
+                UpdateUnit(sub_type->GetUnit());
+                AddExtent(stride * reps);
+            }
         }
+    }
+
+    inline void TypeCode::Optimize()
+    {
+        // optimize the code, by lumping together identical copy instructions;
+        // this routine needs to be called during the completion of the type code
+        // and before the addition of the sub-types, when there is only a single
+        // Begin-End sequence
+        size_t pc = 0, opc = 0, copyseqstart = 0, copyseqcnt = 0, copyreps = 0;
+        size_t ocode_size = GetCodeSize();
+        Op *op;
+
+        do {
+            op = (Op *)(code + pc);
+            switch (op->opcode) {
+                case BEGIN:
+                    ITRC(IT_TYPE, "Optimize(): this 0x%zx: Begin %zu %zu\n", this, opc, pc);
+                    // only one begin instruction allowed, i.e. the first instruction
+                    assert(!((Begin *)code)->optimized);
+                    opc = pc += sizeof(Begin);
+                    break;
+                case COPY:
+                    if (0 == copyseqstart) {
+                        // initialize the sequence
+                        ITRC(IT_TYPE, "Optimize(): this 0x%zx: start copy sequence %zu %zu\n", this, opc, pc);
+                        copyseqstart = pc;
+                        copyseqcnt = 0;
+                        copyreps = ((Copy *)op)->reps;
+                        pc += sizeof(Copy);
+                        break;
+                    } else {
+                        // this is not the first copy instruction in the sequence
+                        if ((((Copy *)(code+copyseqstart))->bytes == ((Copy *)op)->bytes) &&
+                            (((Copy *)(code+copyseqstart))->stride == ((Copy *)op)->stride)) {
+                            // the sequence continues
+                            ITRC(IT_TYPE, "Optimize(): this 0x%zx: add to copy sequence %zu %zu\n", this, opc, pc);
+                            copyseqcnt++;
+                            copyreps += ((Copy *)op)->reps;
+                            pc += sizeof(Copy);
+                            break;
+                        }
+                        // intentional fall through to default
+                    }
+                default:
+                    // not a copy instruction or a copy instr. that breaks the copy sequence
+                    if (copyseqstart) {
+                        // a copy sequence was in progress; check if more than one copy
+                        // instruction in the sequence
+                        ITRC(IT_TYPE, "Optimize(): this 0x%zx: break copy sequence %zu %zu\n", this, opc, pc);
+                        if ((SHIFT == op->opcode) && (0 == ((Shift *)(code+pc))->shift)) {
+                            // this can happen due to type transformations that may have
+                            // occured just get rid of it an don't break the copy sequence
+                            ITRC(IT_TYPE, "Optimize(): this 0x%zx: zero Shift %zu %zu\n", this, opc, pc);
+                            // adjust code size and code cursor for the skipped shift
+                            // instruction
+                            AddCodeSize(0-sizeof(Shift)); code_cursor -= sizeof(Shift);
+                            pc += sizeof(Shift); break;
+                        }
+                        if (0 < copyseqcnt) {
+                            // compress the sequence
+                            ITRC(IT_TYPE, "Optimize(): this 0x%zx: compress copy sequence %zu %zu\n", this, opc, pc);
+                            assert(opc < pc);
+                            ((Copy *)(code+copyseqstart))->reps = copyreps;
+                            if (opc < copyseqstart) {
+                                memmove(code+opc, code+copyseqstart, sizeof(Copy));
+                            }
+                            // update code size and code cursor for the skipped copy
+                            // instructions
+                            AddCodeSize(0-copyseqcnt*sizeof(Copy));
+                            code_cursor -= copyseqcnt*sizeof(Copy);
+                        }
+                        opc += sizeof(Copy);
+                        copyseqstart = 0;
+                    }
+
+                    switch(op->opcode) {
+                        case CALL:
+                            ITRC(IT_TYPE, "Optimize(): this 0x%zx: Call %zu %zu\n", this, opc, pc);
+                            if (opc < pc) memmove(code+opc, code+pc, sizeof(Call));
+                            pc += sizeof(Call); opc += sizeof(Call); break;
+                        case COPY:
+                            ITRC(IT_TYPE, "Optimize(): this 0x%zx: Copy %zu %zu\n", this, opc, pc);
+                            if (opc < pc) memmove(code+opc, code+pc, sizeof(Copy));
+                            pc += sizeof(Copy); opc += sizeof(Copy); break;
+                        case SHIFT:
+                            if (0 == ((Shift *)(code+pc))->shift) {
+                                // this can happen due to type transformations that may have occured
+                                // just get rid of it altogether
+                                ITRC(IT_TYPE, "Optimize(): this 0x%zx: skipping zero Shift %zu %zu\n", this, opc, pc);
+                                // adjust code size and code cursor for the skipped shift
+                                // instruction
+                                AddCodeSize(0-sizeof(Shift)); code_cursor -= sizeof(Shift);
+                            } else {
+                                ITRC(IT_TYPE, "Optimize(): this 0x%zx: Shift %zu %zu\n", this, opc, pc);
+                                if (opc < pc) memmove(code+opc, code+pc, sizeof(Shift));
+                                opc += sizeof(Shift);
+                            }
+                            pc += sizeof(Shift); break;
+                        case END:
+                            ITRC(IT_TYPE, "Optimize(): this 0x%zx: End %zu %zu\n", this, opc, pc);
+                            if (opc < pc) memmove(code+opc, code+pc, sizeof(End));
+                            pc += sizeof(End); opc += sizeof(End); break;
+                        default: assert(!"Bogus opcode"); 
+                    }
+                    break;
+            }
+        } while (END != op->opcode);
+        // ((Begin *)code)->code_size = ocode_size;
+        ((Begin *)code)->optimized = true;
     }
 
     inline void TypeCode::Complete()
@@ -450,17 +617,17 @@ namespace PAMI
         AddCodeSize(sizeof(End));
 
         assert(code_cursor <= GetCodeSize());
+
+        if (to_optimize) Optimize();
+
         if (code_cursor < GetCodeSize())
             CopySubTypes();
 
-        if (is_contiguous) {
-            if (((Begin *)code)->data_size != ((Begin *)code)->extent)
-                is_contiguous = false;
-            else
-                ((Begin *)code)->contiguous = 1;
-        }
-            
+        if (IsContiguous() && (GetDataSize() != GetExtent())) SetContiguous(false);
+
         completed = true;
+        ITRC(IT_TYPE, "Complete(): this 0x%zx code = 0x%zx; code_buf_size = %zd; code_cursor = %zu; completed = %d; to_optimize = %d\n", this, code, code_buf_size, code_cursor, completed, to_optimize);
+        Show();
     }
 
     inline void TypeCode::CopySubTypes()
@@ -476,6 +643,7 @@ namespace PAMI
                     {
                         size_t &sub_type_loc = ((Call *)op)->sub_type;
                         TypeCode *sub_type = (TypeCode *)sub_type_loc;
+                        sub_type->Show();
                         sub_type_loc = code_cursor - pc;
                         memcpy(code + code_cursor, sub_type->code,
                                 sub_type->GetCodeSize());
@@ -494,6 +662,7 @@ namespace PAMI
 
     inline void TypeCode::Show() const
     {
+#ifdef USE_ITRACE
         size_t pc = 0;
         Op *op;
         do {
@@ -507,6 +676,7 @@ namespace PAMI
                 default:    assert(!"Bogus opcode");
             }
         } while (pc < GetCodeSize());
+#endif
     }
 
     class TypeContig : public TypeCode

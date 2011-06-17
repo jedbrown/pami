@@ -331,6 +331,10 @@ namespace PAMI
     inline void TypeMachine::InternalMemCopy(void *to, void *from, size_t size)
     {
         switch (size) {
+            case 16:
+                ((double *)to)[0] = ((double *)from)[0];
+                ((double *)to)[1] = ((double *)from)[1];
+                break;
             case 8: *(double *)to   = *(double *)from; break;
             case 4: *(uint32_t *)to = *(uint32_t *)from; break;
             case 2: *(uint16_t *)to = *(uint16_t *)from; break;
@@ -518,7 +522,7 @@ namespace PAMI
 
     inline void TypeMachine::Pack(void *target, void *origin, size_t bytes)
     {
-        if (copy_func == NULL)
+        if ((copy_func == NULL) || (copy_func == PAMI_DATA_COPY))
             Run<true, true>((char *)target, (char *)origin, bytes);
         else
             Run<true, false>((char *)target, (char *)origin, bytes);
@@ -526,7 +530,7 @@ namespace PAMI
 
     inline void TypeMachine::Unpack(void *target, void *origin, size_t bytes)
     {
-        if (copy_func == NULL)
+        if ((copy_func == NULL) || (copy_func == PAMI_DATA_COPY))
             Run<false, true>((char *)origin, (char *)target, bytes);
         else
             Run<false, false>((char *)origin, (char *)target, bytes);
