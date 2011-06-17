@@ -878,6 +878,7 @@ public:
 		_debug = setup_debug();
 #endif // MM_DEBUG
 		_attrs = mm->attrs() | attrs;
+		_base = buf;
 		_size = bytes;
 		_alignment = new_align;
 		// have a problem when creating shm_mm,
