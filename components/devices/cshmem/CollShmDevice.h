@@ -1133,7 +1133,7 @@ namespace PAMI
 
           typedef struct collshm_wgroup_t
           {
-            int               next_offset;
+            collshm_wgroup_t  *next;
             unsigned          context_id : 16;
             unsigned          num_tasks  : 8;
             unsigned          task_rank  : 8;
@@ -1170,6 +1170,7 @@ namespace PAMI
 
             while (num >>= 1) ++_syncbits;
             TRACE_DBG((stderr, "syncbits = %d\n", _syncbits));
+
             void * str = (char*)csmm->getCollShmAddr() + (size_t)in_str;
             PAMI_ASSERT(str != NULL);
             collshm_wgroup_t *ctlstr = (collshm_wgroup_t *)str;
@@ -1191,6 +1192,7 @@ namespace PAMI
                 for (unsigned j = 0; j < _numsyncs; ++j)
                   _completions[i][j] = 0;
               }
+
             // initialize shm channels
             for (unsigned i = 0;  i < _ntasks; ++i)
               {
@@ -1198,7 +1200,7 @@ namespace PAMI
                 PAMI_assert(ctlstr != NULL);
                 _wgroups[i] = ctlstr;
                 // ctlstr      = (collshm_wgroup_t *)(*(collshm_wgroup_t **)ctlstr);
-                ctlstr      = (collshm_wgroup_t*)((char*)ctlstr + ctlstr->next_offset);
+                ctlstr      = ctlstr->next;
 
                 if (_tid == 0)
                   {
