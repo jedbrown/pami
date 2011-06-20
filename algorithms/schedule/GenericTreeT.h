@@ -1380,6 +1380,7 @@ namespace CCMI
         int _op;
     };
 
+#if 0
     ///
     /// \brief Simple K-nomial dissemination schedule. It can be used
     ///        by Barrier and Allgather. Note the schedule must be
@@ -1469,7 +1470,7 @@ namespace CCMI
         int _nranks;
 
     };
-
+#endif
     ///
     /// \brief Single-port send/recv Alltoall schedule
     ///
