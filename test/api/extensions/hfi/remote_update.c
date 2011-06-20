@@ -24,7 +24,7 @@
     if (rc != PAMI_SUCCESS) { \
         fprintf (stderr, #statement " rc = %d, line %d\n", \
                 rc, __LINE__); \
-        exit(-1); \
+        exit(1); \
     } \
 }
 
@@ -61,7 +61,7 @@ int main(int argc, char ** argv)
     volatile int          is_barrier_done = 0;
 
     /* create PAMI client */
-    RC( PAMI_Client_create("pami", &client, NULL, 0) );
+    RC( PAMI_Client_create("TEST", &client, NULL, 0) );
     DBG_FPRINTF((stderr,"Client created successfully at 0x%p\n",client));
 
     /* create PAMI context */
