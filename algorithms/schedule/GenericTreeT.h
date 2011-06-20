@@ -971,7 +971,64 @@ namespace CCMI
     };
 
 
-#if 0
+
+    ///
+    /// \brief Simple K-nary tree Broadcast schedule
+    ///
+    template <unsigned P>
+    class KnaryBcastSchedule : public GenericTreeSchedule < P, 0, P + 1 >
+    {
+      public:
+        KnaryBcastSchedule () : GenericTreeSchedule < P, 0, P + 1 > ()
+        {
+        }
+      
+        KnaryBcastSchedule (int myrank, int nranks) : GenericTreeSchedule < P, 0, P + 1 > (myrank, nranks)
+        {
+        }
+
+        using GenericTreeSchedule < P, 0, P + 1 >::getLList;
+        using GenericTreeSchedule < P, 0, P + 1 >::getRList;
+
+        ///
+        /// \brief Get both left and right neighbors
+        ///        Since the partner list are pre-calculated and cached in the
+        ///        Schedule object, this simply calls getRList() and getLList()
+        ///
+        void getList (unsigned uphase, unsigned *lpes, unsigned &nlpes,
+                      unsigned *rpes, unsigned &nrpes, size_t *loffs = NULL,
+                      size_t *llens = NULL, size_t *roffs = NULL, size_t *rlens = NULL)
+        {
+          //this->getLList(uphase, lpes, nlpes);
+          getLList(uphase, lpes, nlpes);
+          assert(nlpes == 1 || nlpes == 0);
+
+          if (loffs && llens)
+            {
+              for (int i = 0; i < nlpes; ++i)
+                {
+                  loffs[i] = 0;
+                  llens[i] = 1; // Single message for the entire data
+                }
+            }
+
+          //this->getRList(uphase, rpes, nrpes);
+          getRList(uphase, rpes, nrpes);
+          assert(nrpes <= this->_nports);
+
+          if (roffs && rlens)
+            {
+              for (int i = 0; i < nrpes; ++i)
+                {
+                  roffs[i] = 0;
+                  rlens[i] = 1; // Single message for the entire data
+                }
+            }
+        }
+    };
+
+
+    
     ///
     /// \brief Simple K-nomial tree Broadcast schedule
     ///
@@ -979,6 +1036,10 @@ namespace CCMI
     class KnomialBcastSchedule : public GenericTreeSchedule < P, 1, P + 1 >
     {
       public:
+        KnomialBcastSchedule () : GenericTreeSchedule < P, 1, P + 1 > ()
+        {
+        }
+      
         KnomialBcastSchedule (int myrank, int nranks) : GenericTreeSchedule < P, 1, P + 1 > (myrank, nranks)
         {
         }
@@ -1666,7 +1727,6 @@ namespace CCMI
         int _nphs;
 
     };
-#endif
 
   } // Schedule
 } // CCMI

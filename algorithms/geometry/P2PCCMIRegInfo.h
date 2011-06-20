@@ -589,7 +589,253 @@ namespace CCMI
         am_cs_broadcast_metadata,
         CCMI::ConnectionManager::CommSeqConnMgr,
         getKey_as> AsyncCSBinomialBroadcastFactory;
+      
+      // Generic tree 2-nomial broadcast
+      extern inline void am_2nomial_broadcast_metadata(pami_metadata_t *m)
+      {
+        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
+        new(m) PAMI::Geometry::Metadata("I0:2-nomial:P2P:P2P");
+      }
+      extern inline void create_schedule_2nomial(void                        * buf,
+                                                  unsigned                      size,
+                                                  unsigned                      root,
+                                                  Interfaces::NativeInterface * native,
+                                                  PAMI_GEOMETRY_CLASS          * g)
+      {
+        TRACE_INIT((stderr, "<%p>Async2nomialBroadcastComposite::create_schedule()\n",(void*)NULL));
+        new (buf) CCMI::Schedule::KnomialBcastSchedule<2>(native->myrank(),
+                                                          ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size());
+          }
+      extern inline unsigned getKey_2nomial(unsigned                                   root,
+                                            unsigned                                   connid,
+                                            PAMI_GEOMETRY_CLASS                      * geometry,
+                                            ConnectionManager::BaseConnectionManager **connmgr)
+      {
+        TRACE_INIT((stderr, "<%p>Async2nomialBroadcastFactory::getKey\n",(void*)NULL));
+        ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
+        if (connid != (unsigned) - 1)
+          {
+            *connmgr = NULL; //use this key as connection id
+            return connid;
+          }
+        return cm->updateConnectionId( geometry->comm() );
+      }
+      typedef CCMI::Adaptor::Broadcast::AsyncBroadcastT
+      < CCMI::Schedule::KnomialBcastSchedule<2>,
+        CCMI::ConnectionManager::CommSeqConnMgr,
+        create_schedule_2nomial > Async2nomialBroadcastComposite;
 
+      typedef CCMI::Adaptor::Broadcast::AsyncBroadcastFactoryT
+      < Async2nomialBroadcastComposite,
+        am_2nomial_broadcast_metadata,
+        CCMI::ConnectionManager::CommSeqConnMgr,
+        getKey_2nomial> Async2nomialBroadcastFactory;
+
+
+      // Generic tree 3-nomial broadcast
+      extern inline void am_3nomial_broadcast_metadata(pami_metadata_t *m)
+      {
+        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
+        new(m) PAMI::Geometry::Metadata("I0:3-nomial:P2P:P2P");
+      }
+      extern inline void create_schedule_3nomial(void                        * buf,
+                                                  unsigned                      size,
+                                                  unsigned                      root,
+                                                  Interfaces::NativeInterface * native,
+                                                  PAMI_GEOMETRY_CLASS          * g)
+      {
+        TRACE_INIT((stderr, "<%p>Async3nomialBroadcastComposite::create_schedule()\n",(void*)NULL));
+        new (buf) CCMI::Schedule::KnomialBcastSchedule<3>(native->myrank(),
+                                                          ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size());
+          }
+      extern inline unsigned getKey_3nomial(unsigned                                   root,
+                                            unsigned                                   connid,
+                                            PAMI_GEOMETRY_CLASS                      * geometry,
+                                            ConnectionManager::BaseConnectionManager **connmgr)
+      {
+        TRACE_INIT((stderr, "<%p>Async3nomialBroadcastFactory::getKey\n",(void*)NULL));
+        ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
+        if (connid != (unsigned) - 1)
+          {
+            *connmgr = NULL; //use this key as connection id
+            return connid;
+          }
+        return cm->updateConnectionId( geometry->comm() );
+      }
+      typedef CCMI::Adaptor::Broadcast::AsyncBroadcastT
+      < CCMI::Schedule::KnomialBcastSchedule<3>,
+        CCMI::ConnectionManager::CommSeqConnMgr,
+        create_schedule_3nomial > Async3nomialBroadcastComposite;
+
+      typedef CCMI::Adaptor::Broadcast::AsyncBroadcastFactoryT
+      < Async3nomialBroadcastComposite,
+        am_3nomial_broadcast_metadata,
+        CCMI::ConnectionManager::CommSeqConnMgr,
+        getKey_3nomial> Async3nomialBroadcastFactory;
+
+      // Generic tree 4-nomial broadcast
+      extern inline void am_4nomial_broadcast_metadata(pami_metadata_t *m)
+      {
+        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
+        new(m) PAMI::Geometry::Metadata("I0:4-nomial:P2P:P2P");
+      }
+      extern inline void create_schedule_4nomial(void                        * buf,
+                                                  unsigned                      size,
+                                                  unsigned                      root,
+                                                  Interfaces::NativeInterface * native,
+                                                  PAMI_GEOMETRY_CLASS          * g)
+      {
+        TRACE_INIT((stderr, "<%p>Async4nomialBroadcastComposite::create_schedule()\n",(void*)NULL));
+        new (buf) CCMI::Schedule::KnomialBcastSchedule<4>(native->myrank(),
+                                                          ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size());
+          }
+      extern inline unsigned getKey_4nomial(unsigned                                   root,
+                                            unsigned                                   connid,
+                                            PAMI_GEOMETRY_CLASS                      * geometry,
+                                            ConnectionManager::BaseConnectionManager **connmgr)
+      {
+        TRACE_INIT((stderr, "<%p>Async4nomialBroadcastFactory::getKey\n",(void*)NULL));
+        ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
+        if (connid != (unsigned) - 1)
+          {
+            *connmgr = NULL; //use this key as connection id
+            return connid;
+          }
+        return cm->updateConnectionId( geometry->comm() );
+      }
+      typedef CCMI::Adaptor::Broadcast::AsyncBroadcastT
+      < CCMI::Schedule::KnomialBcastSchedule<4>,
+        CCMI::ConnectionManager::CommSeqConnMgr,
+        create_schedule_4nomial > Async4nomialBroadcastComposite;
+
+      typedef CCMI::Adaptor::Broadcast::AsyncBroadcastFactoryT
+      < Async4nomialBroadcastComposite,
+        am_4nomial_broadcast_metadata,
+        CCMI::ConnectionManager::CommSeqConnMgr,
+        getKey_4nomial> Async4nomialBroadcastFactory;
+
+      // Generic tree 4-nary broadcast
+      extern inline void am_2nary_broadcast_metadata(pami_metadata_t *m)
+      {
+        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
+        new(m) PAMI::Geometry::Metadata("I0:2-nary:P2P:P2P");
+      }
+      extern inline void create_schedule_2nary(void                        * buf,
+                                                  unsigned                      size,
+                                                  unsigned                      root,
+                                                  Interfaces::NativeInterface * native,
+                                                  PAMI_GEOMETRY_CLASS          * g)
+      {
+        TRACE_INIT((stderr, "<%p>Async2naryBroadcastComposite::create_schedule()\n",(void*)NULL));
+        new (buf) CCMI::Schedule::KnaryBcastSchedule<2>(native->myrank(),
+                                                          ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size());
+          }
+      extern inline unsigned getKey_2nary(unsigned                                   root,
+                                            unsigned                                   connid,
+                                            PAMI_GEOMETRY_CLASS                      * geometry,
+                                            ConnectionManager::BaseConnectionManager **connmgr)
+      {
+        TRACE_INIT((stderr, "<%p>Async2naryBroadcastFactory::getKey\n",(void*)NULL));
+        ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
+        if (connid != (unsigned) - 1)
+          {
+            *connmgr = NULL; //use this key as connection id
+            return connid;
+          }
+        return cm->updateConnectionId( geometry->comm() );
+      }
+      typedef CCMI::Adaptor::Broadcast::AsyncBroadcastT
+      < CCMI::Schedule::KnaryBcastSchedule<2>,
+        CCMI::ConnectionManager::CommSeqConnMgr,
+        create_schedule_2nary > Async2naryBroadcastComposite;
+
+      typedef CCMI::Adaptor::Broadcast::AsyncBroadcastFactoryT
+      < Async2naryBroadcastComposite,
+        am_2nary_broadcast_metadata,
+        CCMI::ConnectionManager::CommSeqConnMgr,
+        getKey_2nary> Async2naryBroadcastFactory;      
+      
+      // Generic tree 3-nary broadcast
+      extern inline void am_3nary_broadcast_metadata(pami_metadata_t *m)
+      {
+        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
+        new(m) PAMI::Geometry::Metadata("I0:3-nary:P2P:P2P");
+      }
+      extern inline void create_schedule_3nary(void                        * buf,
+                                                  unsigned                      size,
+                                                  unsigned                      root,
+                                                  Interfaces::NativeInterface * native,
+                                                  PAMI_GEOMETRY_CLASS          * g)
+      {
+        TRACE_INIT((stderr, "<%p>Async3naryBroadcastComposite::create_schedule()\n",(void*)NULL));
+        new (buf) CCMI::Schedule::KnaryBcastSchedule<3>(native->myrank(),
+                                                          ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size());
+          }
+      extern inline unsigned getKey_3nary(unsigned                                   root,
+                                            unsigned                                   connid,
+                                            PAMI_GEOMETRY_CLASS                      * geometry,
+                                            ConnectionManager::BaseConnectionManager **connmgr)
+      {
+        TRACE_INIT((stderr, "<%p>Async3naryBroadcastFactory::getKey\n",(void*)NULL));
+        ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
+        if (connid != (unsigned) - 1)
+          {
+            *connmgr = NULL; //use this key as connection id
+            return connid;
+          }
+        return cm->updateConnectionId( geometry->comm() );
+      }
+      typedef CCMI::Adaptor::Broadcast::AsyncBroadcastT
+      < CCMI::Schedule::KnaryBcastSchedule<3>,
+        CCMI::ConnectionManager::CommSeqConnMgr,
+        create_schedule_3nary > Async3naryBroadcastComposite;
+
+      typedef CCMI::Adaptor::Broadcast::AsyncBroadcastFactoryT
+      < Async3naryBroadcastComposite,
+        am_3nary_broadcast_metadata,
+        CCMI::ConnectionManager::CommSeqConnMgr,
+        getKey_3nary> Async3naryBroadcastFactory;      
+
+      // Generic tree 4-nary broadcast
+      extern inline void am_4nary_broadcast_metadata(pami_metadata_t *m)
+      {
+        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
+        new(m) PAMI::Geometry::Metadata("I0:4-nary:P2P:P2P");
+      }
+      extern inline void create_schedule_4nary(void                        * buf,
+                                                  unsigned                      size,
+                                                  unsigned                      root,
+                                                  Interfaces::NativeInterface * native,
+                                                  PAMI_GEOMETRY_CLASS          * g)
+      {
+        TRACE_INIT((stderr, "<%p>Async4naryBroadcastComposite::create_schedule()\n",(void*)NULL));
+        new (buf) CCMI::Schedule::KnaryBcastSchedule<4>(native->myrank(),
+                                                          ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size());
+          }
+      extern inline unsigned getKey_4nary(unsigned                                   root,
+                                            unsigned                                   connid,
+                                            PAMI_GEOMETRY_CLASS                      * geometry,
+                                            ConnectionManager::BaseConnectionManager **connmgr)
+      {
+        TRACE_INIT((stderr, "<%p>Async4naryBroadcastFactory::getKey\n",(void*)NULL));
+        ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
+        if (connid != (unsigned) - 1)
+          {
+            *connmgr = NULL; //use this key as connection id
+            return connid;
+          }
+        return cm->updateConnectionId( geometry->comm() );
+      }
+      typedef CCMI::Adaptor::Broadcast::AsyncBroadcastT
+      < CCMI::Schedule::KnaryBcastSchedule<4>,
+        CCMI::ConnectionManager::CommSeqConnMgr,
+        create_schedule_4nary > Async4naryBroadcastComposite;
+
+      typedef CCMI::Adaptor::Broadcast::AsyncBroadcastFactoryT
+      < Async4naryBroadcastComposite,
+        am_4nary_broadcast_metadata,
+        CCMI::ConnectionManager::CommSeqConnMgr,
+        getKey_4nary> Async4naryBroadcastFactory;      
     }//Broadcast
 
     namespace P2PAMBroadcast

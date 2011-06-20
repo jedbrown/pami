@@ -124,6 +124,12 @@ namespace PAMI
             _ring_broadcast_factory(),
             _asrb_binomial_broadcast_factory(),
             _ascs_binomial_broadcast_factory(),
+            _2nomial_broadcast_factory(),
+            _3nomial_broadcast_factory(),
+            _4nomial_broadcast_factory(),
+            _2nary_broadcast_factory(),
+            _3nary_broadcast_factory(),
+            _4nary_broadcast_factory(),
             _active_binomial_broadcast_factory(),
             _binomial_allreduce_factory(),
             _binomial4_allreduce_factory(),
@@ -332,6 +338,24 @@ namespace PAMI
                                         _context_id);
                 geometry->addCollective(PAMI_XFER_BROADCAST,
                                         _ascs_binomial_broadcast_factory,
+                                        _context_id);
+                geometry->addCollective(PAMI_XFER_BROADCAST,
+                                        _2nomial_broadcast_factory,
+                                        _context_id);
+                geometry->addCollective(PAMI_XFER_BROADCAST,
+                                        _3nomial_broadcast_factory,
+                                        _context_id);
+                geometry->addCollective(PAMI_XFER_BROADCAST,
+                                        _4nomial_broadcast_factory,
+                                        _context_id);
+                geometry->addCollective(PAMI_XFER_BROADCAST,
+                                        _2nary_broadcast_factory,
+                                        _context_id);
+                geometry->addCollective(PAMI_XFER_BROADCAST,
+                                        _3nary_broadcast_factory,
+                                        _context_id);
+                geometry->addCollective(PAMI_XFER_BROADCAST,
+                                        _4nary_broadcast_factory,
                                         _context_id);
                 geometry->addCollective(PAMI_XFER_BROADCAST,
                                         _asrb_binomial_broadcast_factory,
@@ -560,6 +584,43 @@ namespace PAMI
             // ----------------------------------------------------
 
             // ----------------------------------------------------
+            // Setup and Construct an asynchronous, comm_id/seq_num binomial broadcast factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PBroadcast::Async2nomialBroadcastFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device,  _2nomial_broadcast_factory);
+            new ((void*)_2nomial_broadcast_factory) CCMI::Adaptor::P2PBroadcast::Async2nomialBroadcastFactory(&_csconnmgr, ni_am);
+            // ----------------------------------------------------
+
+            // ----------------------------------------------------
+            // Setup and Construct an asynchronous, comm_id/seq_num 3nomial broadcast factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PBroadcast::Async3nomialBroadcastFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device,  _3nomial_broadcast_factory);
+            new ((void*)_3nomial_broadcast_factory) CCMI::Adaptor::P2PBroadcast::Async3nomialBroadcastFactory(&_csconnmgr, ni_am);
+            // ----------------------------------------------------
+
+            // ----------------------------------------------------
+            // Setup and Construct an asynchronous, comm_id/seq_num 4nomial broadcast factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PBroadcast::Async4nomialBroadcastFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device,  _4nomial_broadcast_factory);
+            new ((void*)_4nomial_broadcast_factory) CCMI::Adaptor::P2PBroadcast::Async4nomialBroadcastFactory(&_csconnmgr, ni_am);
+            // ----------------------------------------------------
+
+            // ----------------------------------------------------
+            // Setup and Construct an asynchronous, comm_id/seq_num 2nary broadcast factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PBroadcast::Async2naryBroadcastFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device,  _2nary_broadcast_factory);
+            new ((void*)_2nary_broadcast_factory) CCMI::Adaptor::P2PBroadcast::Async2naryBroadcastFactory(&_csconnmgr, ni_am);
+            // ----------------------------------------------------
+
+            // ----------------------------------------------------
+            // Setup and Construct an asynchronous, comm_id/seq_num 3nary broadcast factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PBroadcast::Async3naryBroadcastFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device,  _3nary_broadcast_factory);
+            new ((void*)_3nary_broadcast_factory) CCMI::Adaptor::P2PBroadcast::Async3naryBroadcastFactory(&_csconnmgr, ni_am);
+            // ----------------------------------------------------
+
+            // ----------------------------------------------------
+            // Setup and Construct an asynchronous, comm_id/seq_num 4nary broadcast factory from active message ni and p2p protocol
+            setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PBroadcast::Async4naryBroadcastFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device,  _4nary_broadcast_factory);
+            new ((void*)_4nary_broadcast_factory) CCMI::Adaptor::P2PBroadcast::Async4naryBroadcastFactory(&_csconnmgr, ni_am);
+            // ----------------------------------------------------
+
+            
+            // ----------------------------------------------------
             // Setup and Construct an asynchronous, rank based binomial broadcast factory from active message ni and p2p protocol
             setupFactory<T_NI_ActiveMessage, T_Protocol, T_Device,CCMI::Adaptor::P2PBroadcast::AsyncRBBinomialBroadcastFactory,NativeInterfaceCommon::MULTICAST_ONLY>(ni_am, device,  _asrb_binomial_broadcast_factory);
             new ((void*)_asrb_binomial_broadcast_factory) CCMI::Adaptor::P2PBroadcast::AsyncRBBinomialBroadcastFactory(&_rbconnmgr, ni_am);
@@ -706,6 +767,12 @@ namespace PAMI
             _binomial_barrier_factory->setMapIdToGeometry(mapidtogeometry);
             _asrb_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
+            _2nomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
+            _3nomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
+            _4nomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
+            _2nary_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
+            _3nary_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
+            _4nary_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
             _active_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
             _binomial_allreduce_factory->setMapIdToGeometry(mapidtogeometry);
             _binomial4_allreduce_factory->setMapIdToGeometry(mapidtogeometry);
@@ -836,6 +903,42 @@ namespace PAMI
                          ni_am,
                          CCMI::Adaptor::P2PBroadcast::AsyncCSBinomialBroadcastFactory,
                          _ascs_binomial_broadcast_factory,
+                         _csconnmgr);
+
+            SETUPFACTORY(T_NI_ActiveMessage,
+                         ni_am,
+                         CCMI::Adaptor::P2PBroadcast::Async2nomialBroadcastFactory,
+                         _2nomial_broadcast_factory,
+                         _csconnmgr);
+
+            SETUPFACTORY(T_NI_ActiveMessage,
+                         ni_am,
+                         CCMI::Adaptor::P2PBroadcast::Async3nomialBroadcastFactory,
+                         _3nomial_broadcast_factory,
+                         _csconnmgr);
+
+            SETUPFACTORY(T_NI_ActiveMessage,
+                         ni_am,
+                         CCMI::Adaptor::P2PBroadcast::Async4nomialBroadcastFactory,
+                         _4nomial_broadcast_factory,
+                         _csconnmgr);
+
+            SETUPFACTORY(T_NI_ActiveMessage,
+                         ni_am,
+                         CCMI::Adaptor::P2PBroadcast::Async2naryBroadcastFactory,
+                         _2nary_broadcast_factory,
+                         _csconnmgr);
+
+            SETUPFACTORY(T_NI_ActiveMessage,
+                         ni_am,
+                         CCMI::Adaptor::P2PBroadcast::Async3naryBroadcastFactory,
+                         _3nary_broadcast_factory,
+                         _csconnmgr);
+
+            SETUPFACTORY(T_NI_ActiveMessage,
+                         ni_am,
+                         CCMI::Adaptor::P2PBroadcast::Async4naryBroadcastFactory,
+                         _4nary_broadcast_factory,
                          _csconnmgr);
 
             SETUPFACTORY(T_NI_ActiveMessage,
@@ -1159,6 +1262,12 @@ namespace PAMI
             _binomial_barrier_factory->setMapIdToGeometry(mapidtogeometry);
             _asrb_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
             _ascs_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
+            _2nomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
+            _3nomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
+            _4nomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
+            _2nary_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
+            _3nary_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
+            _4nary_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
             _active_binomial_broadcast_factory->setMapIdToGeometry(mapidtogeometry);
             _binomial_allreduce_factory->setMapIdToGeometry(mapidtogeometry);
             _binomial4_allreduce_factory->setMapIdToGeometry(mapidtogeometry);
@@ -1250,6 +1359,12 @@ namespace PAMI
           CCMI::Adaptor::P2PBroadcast::RingBroadcastFactory               *_ring_broadcast_factory;
           CCMI::Adaptor::P2PBroadcast::AsyncRBBinomialBroadcastFactory    *_asrb_binomial_broadcast_factory;
           CCMI::Adaptor::P2PBroadcast::AsyncCSBinomialBroadcastFactory    *_ascs_binomial_broadcast_factory;
+          CCMI::Adaptor::P2PBroadcast::Async2nomialBroadcastFactory       *_2nomial_broadcast_factory;
+          CCMI::Adaptor::P2PBroadcast::Async3nomialBroadcastFactory       *_3nomial_broadcast_factory;
+          CCMI::Adaptor::P2PBroadcast::Async4nomialBroadcastFactory       *_4nomial_broadcast_factory;
+          CCMI::Adaptor::P2PBroadcast::Async2naryBroadcastFactory         *_2nary_broadcast_factory;
+          CCMI::Adaptor::P2PBroadcast::Async3naryBroadcastFactory         *_3nary_broadcast_factory;
+          CCMI::Adaptor::P2PBroadcast::Async4naryBroadcastFactory         *_4nary_broadcast_factory;
           CCMI::Adaptor::P2PAMBroadcast::AMBinomialBroadcastFactory       *_active_binomial_broadcast_factory;
 
           // CCMI Binomial Allreduce
