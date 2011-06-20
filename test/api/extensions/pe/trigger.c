@@ -16,14 +16,14 @@
 #include <pami.h>
 #include <pami_ext_pe.h>
 
-#define DBG_FPRINTF(x) /*fprintf x */
+#define DBG_FPRINTF(x) fprintf x 
 #define RC(statement) \
 { \
     pami_result_t rc = statement; \
     if (rc != PAMI_SUCCESS) { \
         fprintf (stderr, #statement " rc = %d, line %d\n", \
                 rc, __LINE__); \
-        exit(-1); \
+        exit(1); \
     } \
 }
 
@@ -37,6 +37,8 @@ int my_trigger(pami_context_t pc, int argc, char *argv[])
       printf("\tArg #%d:\t%s\n", i+1, argv[i]);
   }
   trigger_bool = 0;
+
+  return 0; /* successfully finished */
 }
 
 int main(int argc, char ** argv)
@@ -46,7 +48,7 @@ int main(int argc, char ** argv)
   pami_result_t     status = PAMI_ERROR;
   
   /* create PAMI client */
-  RC( PAMI_Client_create("pami", &client, NULL, 0) );
+  RC( PAMI_Client_create("TEST", &client, NULL, 0) );
   DBG_FPRINTF((stderr,"Client created successfully at 0x%p\n",client));
 
   /* create PAMI context */

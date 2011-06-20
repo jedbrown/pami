@@ -161,6 +161,9 @@ extern "C"
 
   /**
    * \brief Signature of trigger functions
+   *
+   * \retval 0 If trigger function finishes successfully.
+   * \retval Non-0 Otherwise.
    */
   typedef int (*pami_trigger_func_t) (
     pami_context_t     context,
