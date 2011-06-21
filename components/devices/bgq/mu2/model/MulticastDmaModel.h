@@ -121,6 +121,7 @@ namespace PAMI
 	    if (rcBAT == -1)
 	      {
 		status = PAMI_ERROR;
+	    TRACE_FN_EXIT();
 		return;
 	      }
 
@@ -129,6 +130,7 @@ namespace PAMI
 	    if (rcBAT == -1)
 	      {
 		status = PAMI_ERROR;
+	    TRACE_FN_EXIT();
 		return;
 	      }
 	    _c_batid = batid;
@@ -266,12 +268,14 @@ namespace PAMI
 						    pami_multicast_t    * mcast,
 						    void                * devinfo=NULL) 
 	  {
+	    TRACE_FN_ENTER();
 	    // Get the source data buffer/length and validate (assert) inputs
 	    PAMI::Topology *root_topo = (PAMI::Topology*)mcast->src_participants;
 	    if ((root_topo != NULL)  && (root_topo->index2Rank(0) == _mytask))
 	      processSend (mcast, devinfo);
 	    else
 	      processRecv (mcast, devinfo);
+	    TRACE_FN_EXIT();
 	    return PAMI_SUCCESS;
 	  }
 
@@ -282,8 +286,8 @@ namespace PAMI
 					   pami_multicast_t *mcast,
 					   void             *devinfo = NULL) 
 	  {
-	    TRACE_FN_ENTER();
-	    TRACE_FN_EXIT();		    	    
+			TRACE_FN_ENTER();
+			TRACE_FN_EXIT();		    	    
 	    return PAMI_SUCCESS;
 	  }
 
@@ -337,6 +341,7 @@ namespace PAMI
 		}
 	      }	 
 	    }
+	    TRACE_FN_EXIT();		    	    
 	    return events;
 	  }
 
@@ -370,6 +375,7 @@ namespace PAMI
 	      _nSendsComplete = 0;
 	      _nActiveSends = 0;
 	    }
+	    TRACE_FN_EXIT();
 	  }
 
 	  

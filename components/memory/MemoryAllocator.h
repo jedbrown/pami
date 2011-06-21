@@ -111,15 +111,17 @@ namespace PAMI
   template <unsigned T_ObjSize, unsigned T_ObjAlign, unsigned T_PREALLOC, class T_Atomic>
     void *MemoryAllocator<T_ObjSize, T_ObjAlign, T_PREALLOC, T_Atomic>::internalAllocate () 
     {
+      TRACE_FN_ENTER();
       memory_object_t *object; 
       
       // Allocate and construct a new set of objects
       unsigned i;
       pami_result_t rc;
       rc = PAMI::Memory::MemoryManager::heap_mm->memalign((void **)&object, T_ObjAlign, sizeof(memory_object_t) * T_PREALLOC);
-      PAMI_assertf(rc==PAMI_SUCCESS, "alloc failed for context\n");
+      PAMI_assert_alwaysf(rc==PAMI_SUCCESS, "alloc %zu bytes failed for context\n",sizeof(memory_object_t) * T_PREALLOC);
       // "return" the newly allocated objects to the pool of free objects.
       for (i=1; i<T_PREALLOC; i++) returnObject ((void *) &object[i]);
+      TRACE_FN_EXIT();
       return  (void *)object;
     }
   

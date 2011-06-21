@@ -21,6 +21,17 @@
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
 #include "algorithms/protocols/CollOpT.h"
 
+#include "util/trace.h"
+
+#ifdef CCMI_TRACE_ALL
+ #define DO_TRACE_ENTEREXIT 1
+ #define DO_TRACE_DEBUG     1
+#else
+ #define DO_TRACE_ENTEREXIT 0
+ #define DO_TRACE_DEBUG     0
+#endif
+
+
 namespace CCMI
 {
 namespace Adaptor
@@ -55,7 +66,8 @@ public:
         Executor::Composite(),
         _executor (native, cmgr, geometry->comm())
     {
-        TRACE_ADAPTOR ((stderr, "<%p>Broadcast::AsyncBroadcastT() \n", this));
+        TRACE_FN_ENTER();
+        TRACE_FORMAT("<%p> root %u, bytes %u", this,root,bytes);
 
         _executor.setRoot (root);
         _executor.setBuffers (src, src, bytes);
@@ -64,6 +76,7 @@ public:
         COMPILE_TIME_ASSERT(sizeof(_schedule) >= sizeof(T_Schedule));
         create_schedule(&_schedule, sizeof(_schedule), root, native, geometry);
         _executor.setSchedule (&_schedule, 0);
+        TRACE_FN_EXIT();
     }
 
     CCMI::Executor::BroadcastExec<T_Conn> &executor()
@@ -107,11 +120,17 @@ public:
         _cmgr(cmgr),
         _native(native)
     {
+        TRACE_FN_ENTER();
+        TRACE_FORMAT("<%p> nativeinterface %p", this, native);
         native->setMulticastDispatch(cb_async, this);
+        TRACE_FN_EXIT();
     }
 
     virtual ~AsyncBroadcastFactoryT ()
     {
+        TRACE_FN_ENTER();
+        TRACE_FORMAT("<%p>", this);
+        TRACE_FN_EXIT();
     }
 
     /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -134,33 +153,46 @@ public:
 
     virtual void metadata(pami_metadata_t *mdata)
     {
-        TRACE_ADAPTOR((stderr, "<%p>AsyncBroadcastFactoryT::metadata()\n", this));
         DO_DEBUG((templateName<MetaDataFn>()));
         get_metadata(mdata);
     }
 
     char *allocateBuffer (unsigned size)
     {
+        TRACE_FN_ENTER();
+        TRACE_FORMAT("<%p>", this);
         if (size <= 32768)
+        {
+            TRACE_FN_EXIT();
             return(char *)_eab_allocator.allocateObject();
+        }
 
         char *buf;
         pami_result_t rc;
         rc = __global.heap_mm->memalign((void **)&buf, 0, size);
+        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to allocate %u async buffer\n",size);
+        TRACE_FN_EXIT();
         return rc == PAMI_SUCCESS ? buf : NULL;
     }
 
     void freeBuffer (unsigned size, char *buf)
     {
+        TRACE_FN_ENTER();
+        TRACE_FORMAT("<%p>", this);
         if (size <= 32768)
+        {
+            TRACE_FN_EXIT();
             return _eab_allocator.returnObject(buf);
+        }
 
         __global.heap_mm->free(buf);
+        TRACE_FN_EXIT();
     }
 
     virtual Executor::Composite * generate(pami_geometry_t              g,
                                            void                      * cmd)
     {
+        TRACE_FN_ENTER();
         T_Composite* a_bcast = NULL;
         CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *co = NULL;
         pami_broadcast_t *bcast_xfer = &((pami_xfer_t*)cmd)->cmd.xfer_broadcast;
@@ -173,6 +205,7 @@ public:
                               (PAMI_GEOMETRY_CLASS*)g,
                               (ConnectionManager::BaseConnectionManager**) & cmgr);
 
+        TRACE_FORMAT("<%p> key %u", this,key);
         //fprintf (stderr, "%d: Using Key %d\n", _native->myrank(), key);
 
         if (_native->myrank() == bcast_xfer->root)
@@ -190,6 +223,7 @@ public:
                           bcast_xfer->root,
                           bcast_xfer->buf,
                           bcast_xfer->typecount);
+            TRACE_FORMAT("<%p> root composite %p", this,a_bcast);
 
             co->setXfer((pami_xfer_t*)cmd);
             co->setFlag(LocalPosted);
@@ -204,6 +238,7 @@ public:
         else
         {
             co = (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)geometry->asyncCollectiveUnexpQ().findAndDelete(key);
+            TRACE_FORMAT("<%p> non-root found coll %p", this,co);
 
             /// Try to match in active queue
             if (co)
@@ -245,6 +280,7 @@ public:
 
                     a_bcast = co->getComposite();
                 }
+            TRACE_FORMAT("<%p> non-root found composite %p", this,a_bcast);
             }
             /// not found posted CollOp object, create a new one and
             /// queue it in active queue
@@ -264,6 +300,8 @@ public:
                               bcast_xfer->buf,
                               bcast_xfer->typecount);
 
+                TRACE_FORMAT("<%p> non-root unexpected composite %p", this,a_bcast);
+
                 co->setXfer((pami_xfer_t*)cmd);
                 co->setFlag(LocalPosted);
                 co->setFactory(this);
@@ -278,6 +316,7 @@ public:
             //dev->unlock();
         }
 
+        TRACE_FN_EXIT();
         return NULL; //a_bcast;
     }
 
@@ -294,6 +333,8 @@ public:
      pami_callback_t       * cb_done)
     {
         AsyncBroadcastFactoryT *factory = (AsyncBroadcastFactoryT *) arg;
+        TRACE_FN_ENTER();
+        TRACE_FORMAT("<%p> count %u, conn_id %u, peer %zu, sndlen %zu", arg,count,conn_id,peer,sndlen);
         //fprintf(stderr, "%d: <%#.8X>Broadcast::AsyncBroadcastFactoryT::cb_async() connid %d\n",factory->_native->myrank(), (int)factory, conn_id);
 
         CollHeaderData *cdata = (CollHeaderData *) info;
@@ -306,6 +347,7 @@ public:
         unsigned key = factory->myGetKey (cdata->_root, conn_id, geometry, &cmgr);
         CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *co =
             (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *) geometry->asyncCollectivePostQ().findAndDelete(key);
+        TRACE_FORMAT("<%p> found coll %p", arg,co);
 
         if (!co)
         {
@@ -332,6 +374,7 @@ public:
                           cdata->_root,
                           ead->buf,
                           sndlen);
+            TRACE_FORMAT("<%p> unexpected composite %p", arg,a_bcast);
 
             co->getEAQ()->pushTail(ead);
             co->setFlag(EarlyArrival);
@@ -345,10 +388,11 @@ public:
         }
         else
         {
-            // use type count for now, need datatype handling !!!
+            /// \todo use type count for now, need datatype handling !!!
             // CCMI_assert (co->getXfer()->type != PAMI_TYPE_BYTE);
             CCMI_assert (co->getXfer()->cmd.xfer_broadcast.typecount == sndlen);
             a_bcast = (T_Composite *) co->getComposite();
+            TRACE_FORMAT("<%p> expected composite %p", arg,a_bcast);
         }
 
         a_bcast->executor().notifyRecv(peer, *info, (PAMI::PipeWorkQueue **)rcvpwq, cb_done);
@@ -356,6 +400,7 @@ public:
         //We only support sndlen == rcvlen
         * rcvlen  = sndlen;
 
+        TRACE_FN_EXIT();
         return;
     }
 
@@ -363,6 +408,8 @@ public:
     {
         CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> * co =
             (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)cd;
+        TRACE_FN_ENTER();
+        TRACE_FORMAT("<%p>", co);
 
         //fprintf (stderr, "%d: exec_done for key %d\n", ((AsyncBroadcastFactoryT *)co->getFactory())->_native->myrank(), co->key());
 
@@ -411,6 +458,7 @@ public:
         {
             CCMI_assert(0);
         }
+        TRACE_FN_EXIT();
     }
 
 }; //- Async Composite Factory

@@ -208,7 +208,7 @@ public:
         char *buf;
         pami_result_t rc;
         rc = __global.heap_mm->memalign((void **)&buf, 0, size);
-        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc buf");
+        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to allocate %u async buffer\n",size);
         return buf;
     }
 

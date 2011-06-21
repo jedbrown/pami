@@ -180,7 +180,9 @@ namespace CCMI
               return ( new (co) CollOpT<T_xfer, T_composite>(connid) );
             } else {
               CollOpT<T_xfer, T_composite>* co = NULL;
-              __global.heap_mm->memalign((void **)&co, 0, sizeof(CollOpT<T_xfer, T_composite>));
+              pami_result_t rc;
+	      rc = __global.heap_mm->memalign((void **)&co, 0, sizeof(CollOpT<T_xfer, T_composite>));
+              PAMI_assertf(rc == PAMI_SUCCESS, "Failed to allocate composite storage\n");
               return( new (co) CollOpT<T_xfer, T_composite>(connid) );
             }
           }

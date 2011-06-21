@@ -241,6 +241,7 @@ public:
         char *buf;
         pami_result_t prc;
         prc = __global.heap_mm->memalign((void **)&buf, 0, size);
+        PAMI_assertf(prc == PAMI_SUCCESS, "Failed to allocate %u async buffer\n",size);
         return prc == PAMI_SUCCESS ? buf : NULL;
     }
 
