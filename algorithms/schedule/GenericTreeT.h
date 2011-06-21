@@ -987,6 +987,10 @@ namespace CCMI
         {
         }
 
+        KnaryBcastSchedule (unsigned myrank, PAMI::Topology *topo) : GenericTreeSchedule < P, 0, P + 1 > (myrank, topo)
+        {
+        }
+
         using GenericTreeSchedule < P, 0, P + 1 >::getLList;
         using GenericTreeSchedule < P, 0, P + 1 >::getRList;
 
@@ -1041,6 +1045,10 @@ namespace CCMI
         }
       
         KnomialBcastSchedule (int myrank, int nranks) : GenericTreeSchedule < P, 1, P + 1 > (myrank, nranks)
+        {
+        }
+
+        KnomialBcastSchedule (unsigned myrank, PAMI::Topology *topo) : GenericTreeSchedule < P, 1, P + 1 > (myrank, topo)
         {
         }
 

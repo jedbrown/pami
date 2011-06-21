@@ -604,7 +604,7 @@ namespace CCMI
       {
         TRACE_INIT((stderr, "<%p>Async2nomialBroadcastComposite::create_schedule()\n",(void*)NULL));
         new (buf) CCMI::Schedule::KnomialBcastSchedule<2>(native->myrank(),
-                                                          ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size());
+                                                          ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)));
           }
       extern inline unsigned getKey_2nomial(unsigned                                   root,
                                             unsigned                                   connid,
@@ -646,7 +646,7 @@ namespace CCMI
       {
         TRACE_INIT((stderr, "<%p>Async3nomialBroadcastComposite::create_schedule()\n",(void*)NULL));
         new (buf) CCMI::Schedule::KnomialBcastSchedule<3>(native->myrank(),
-                                                          ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size());
+                                                          ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)));
           }
       extern inline unsigned getKey_3nomial(unsigned                                   root,
                                             unsigned                                   connid,
@@ -687,7 +687,7 @@ namespace CCMI
       {
         TRACE_INIT((stderr, "<%p>Async4nomialBroadcastComposite::create_schedule()\n",(void*)NULL));
         new (buf) CCMI::Schedule::KnomialBcastSchedule<4>(native->myrank(),
-                                                          ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size());
+                                                          ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)));
           }
       extern inline unsigned getKey_4nomial(unsigned                                   root,
                                             unsigned                                   connid,
@@ -728,8 +728,8 @@ namespace CCMI
       {
         TRACE_INIT((stderr, "<%p>Async2naryBroadcastComposite::create_schedule()\n",(void*)NULL));
         new (buf) CCMI::Schedule::KnaryBcastSchedule<2>(native->myrank(),
-                                                          ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size());
-          }
+                                                          ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)));
+      }
       extern inline unsigned getKey_2nary(unsigned                                   root,
                                             unsigned                                   connid,
                                             PAMI_GEOMETRY_CLASS                      * geometry,
@@ -769,8 +769,8 @@ namespace CCMI
       {
         TRACE_INIT((stderr, "<%p>Async3naryBroadcastComposite::create_schedule()\n",(void*)NULL));
         new (buf) CCMI::Schedule::KnaryBcastSchedule<3>(native->myrank(),
-                                                          ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size());
-          }
+                                                        ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)));
+      }
       extern inline unsigned getKey_3nary(unsigned                                   root,
                                             unsigned                                   connid,
                                             PAMI_GEOMETRY_CLASS                      * geometry,
@@ -810,7 +810,7 @@ namespace CCMI
       {
         TRACE_INIT((stderr, "<%p>Async4naryBroadcastComposite::create_schedule()\n",(void*)NULL));
         new (buf) CCMI::Schedule::KnaryBcastSchedule<4>(native->myrank(),
-                                                          ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size());
+                                                          ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)));
           }
       extern inline unsigned getKey_4nary(unsigned                                   root,
                                             unsigned                                   connid,
