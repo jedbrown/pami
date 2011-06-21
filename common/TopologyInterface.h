@@ -104,7 +104,7 @@ namespace PAMI
       /// \param[in] ix	Which index to select
       /// \return	Nth permuted index or (size_t)-1 if does not exist
       ///
-      inline pami_task_t index2PermutedIndex(size_t index);
+      inline size_t index2PermutedIndex(size_t index);
 
       /// \brief determine index of rank in topology
       ///
@@ -357,7 +357,7 @@ namespace PAMI
     }
 
    template <class T_Topology>
-      pami_task_t Topology<T_Topology>::index2PermutedIndex(size_t ix)
+      size_t Topology<T_Topology>::index2PermutedIndex(size_t ix)
     {
       return static_cast<T_Topology*>(this)->index2PermutedIndex_impl(ix);
     }

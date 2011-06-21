@@ -759,7 +759,7 @@ namespace PAMI {
     /// \param[in] index Which index to select
     /// \return	Nth permuted index or (size_t)-1 if does not exist
     ///
-    pami_task_t index2PermutedIndex_impl(size_t index)
+    size_t index2PermutedIndex_impl(size_t index)
     {
       return index;
     }
