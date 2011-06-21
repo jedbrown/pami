@@ -778,6 +778,7 @@ namespace PAMI
                       root     = _device->getTopo()->rank2Index(topo->index2Rank(0));
                       _len     = mcombine->count << pami_dt_shift[mcombine->dtype] ;
                       _wlen    = 0;
+                      k        = 2; // binary for better latency
                       TRACE_DBG((stderr, "CollShmThread::initThread, Multicombine() topo=%p topo->index2Rank(0) %d size=%ld:\n",
                                  mcombine->results_participants,
                                  (int)topo->index2Rank(0),
@@ -787,6 +788,7 @@ namespace PAMI
                       TRACE_DBG((stderr, "CollShmThread::initThread() MultiSync\n"));
                       _sync_flag    = 1;
                       root          = 0;
+                      k             = 2;  // binary for better latency
                       break;
                     default:
                       PAMI_ASSERT(0);
