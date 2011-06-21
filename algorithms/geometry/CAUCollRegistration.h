@@ -390,8 +390,6 @@ namespace PAMI
                   uint master_rank   = ((PAMI::Topology *)geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX))->index2Rank(0);
                   uint master_index  = local_master_topo->rank2Index(master_rank);
                   void *ctrlstr      = (void *)inout_val[master_index+1];
-                  if (ctrlstr == NULL)
-                    ctrlstr = _csmm.getWGCtrlStr();
                   geometry->setKey(Geometry::GKEY_GEOMETRYCSNI,ctrlstr);
                   
                   if(inout_val[0] == 0)

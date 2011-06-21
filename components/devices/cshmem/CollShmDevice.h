@@ -1133,7 +1133,7 @@ namespace PAMI
 
           typedef struct collshm_wgroup_t
           {
-            collshm_wgroup_t  *next;
+            size_t            next_offset;
             unsigned          context_id : 16;
             unsigned          num_tasks  : 8;
             unsigned          task_rank  : 8;
@@ -1199,9 +1199,7 @@ namespace PAMI
                 TRACE_DBG((stderr, "%d: ctlstr is %p\n", i, ctlstr));
                 PAMI_assert(ctlstr != NULL);
                 _wgroups[i] = ctlstr;
-                // ctlstr      = (collshm_wgroup_t *)(*(collshm_wgroup_t **)ctlstr);
-                ctlstr      = ctlstr->next;
-
+                ctlstr      = (collshm_wgroup_t*)((intptr_t)csmm->getCollShmAddr() + ctlstr->next_offset);
                 if (_tid == 0)
                   {
                     if(!_wgroups[i])

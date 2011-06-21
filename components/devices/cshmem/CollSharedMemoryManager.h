@@ -56,6 +56,9 @@ namespace PAMI
     ///        T_WindowSz is the size of allocation unit for collective operation control structures
     ///        T_ShmBufSz is the size of shared memory data buffers
 
+
+
+
     template <class T_Atomic, class T_Mutex, class T_Counter, unsigned T_SegSz, unsigned T_PageSz, unsigned T_WindowSz, unsigned T_ShmBufSz>
     class CollSharedMemoryManager
     {
@@ -66,17 +69,27 @@ namespace PAMI
         static const size_t _windowsz = T_WindowSz;
         static const size_t _shmbufsz = T_ShmBufSz;
 
+      inline size_t addr_to_offset(void *addr)
+        {
+          return (size_t)addr - (size_t)_collshm;
+        }
+      inline void *offset_to_addr(size_t offset)
+        {
+          return (void*)((char*)_collshm + offset);
+        }
+
+
         union shm_ctrl_str_t
         {
-          char    ctrl[_windowsz];
-          shm_ctrl_str_t *next;
+          char     ctrl[_windowsz];
+          size_t   next_offset;
         } __attribute__ ((__aligned__ (CACHEBLOCKSZ)));
         typedef shm_ctrl_str_t ctlstr_t;
 
         union shm_data_buf_t
         {
           char           data[_shmbufsz];
-          shm_data_buf_t *next;
+          size_t         next_offset;
         } __attribute__ ((__aligned__ (CACHEBLOCKSZ)));
         typedef shm_data_buf_t databuf_t;
 
@@ -133,9 +146,9 @@ namespace PAMI
           _collshm->buffer_offset  = (size_t)_collshm->buffer_pool - (size_t)_collshm;
 
           _collshm->free_ctlstr_list   = _get_ctrl_str_from_pool();
-          _collshm->ctlstr_list        = new (&(_collshm->free_ctlstr_list)) T_Atomic();
+          _collshm->ctlstr_list        = new ((void*)_collshm->free_ctlstr_list) T_Atomic();
           _collshm->free_buffer_list   = _get_data_buf_from_pool();
-          _collshm->buffer_list        = new (&(_collshm->free_buffer_list)) T_Atomic();
+          _collshm->buffer_list        = new ((void*)_collshm->free_buffer_list) T_Atomic();
 
           TRACE_DBG((stderr, "_collshm                   %p,    "
                      "getSGCtrlStrVec() _localsize %zu, "
@@ -277,11 +290,11 @@ namespace PAMI
 
           for (int i = 0; i < COLLSHM_INIT_BUFCNT - 1; ++i)
             {
-              new_bufs->next = new_bufs + 1;
-              new_bufs       = new_bufs->next;
+              new_bufs->next_offset = addr_to_offset(new_bufs + 1);
+              new_bufs              = (databuf_t*)offset_to_addr(new_bufs->next_offset);
             }
 
-          new_bufs->next = NULL;
+          new_bufs->next_offset = addr_to_offset(NULL);
 
           _collshm->buffer_pool += COLLSHM_INIT_BUFCNT;
           //COLLSHM_CLEAR_LOCK((atomic_p)&(_collshm->buffer_pool_lock),0);
@@ -314,27 +327,27 @@ namespace PAMI
           while (buf_count < count)
             {
               // cur = (databuf_t *)_collshm->free_buffer_list;
-              cur = (databuf_t *)_collshm->buffer_list->fetch();
+              cur = (databuf_t *)offset_to_addr(_collshm->buffer_list->fetch());
 
               if (cur == NULL)
                 {
                   tmp   = _get_data_buf_from_pool();   // Allocate a whold chunk of INIT_BUFCNT new buffers from the pool
                   cur   = tmp + count - buf_count - 1; // End of the list satisfying the requirement
-                  next  = cur->next;                   // Extra buffers that should be put into free list
+                  next  = (databuf_t*)offset_to_addr(cur->next_offset);   // Extra buffers that should be put into free list
 
-                  cur->next = buffers;                 // Merge with buffers already allocated
+                  cur->next_offset = addr_to_offset(buffers);                 // Merge with buffers already allocated
                   buffers = tmp;
 
                   cur = tmp + COLLSHM_INIT_BUFCNT - 1;            // End of the newly allocated chunk
                   // Merge with free list
                   // cur->next = (databuf_t *)_collshm->free_buffer_list;
-                  cur->next = (databuf_t *)_collshm->buffer_list->fetch();
+                  cur->next_offset = _collshm->buffer_list->fetch();
 
                   // while(!COLLSHM_COMPARE_AND_SWAPLP((atomic_l)&(_collshm->free_buffer_list), (long *)&(cur->next), (long)next));
-                  while(!_collshm->buffer_list->bool_compare_and_swap((size_t)cur->next, (size_t)next))
+                  while(!_collshm->buffer_list->bool_compare_and_swap(cur->next_offset, addr_to_offset(next)))
                     {
                       //cur->next = (databuf_t *)_collshm->free_buffer_list;
-                      cur->next = (databuf_t *)_collshm->buffer_list->fetch();
+                      cur->next_offset = _collshm->buffer_list->fetch();
                     }
 
                   buf_count = count;
@@ -342,23 +355,23 @@ namespace PAMI
                   continue;
                 }
 
-              next = cur->next;
+              next = (databuf_t*)offset_to_addr(cur->next_offset);
               TRACE_DBG((stderr, "start: cur = %p, cur->next = %p and _collshm->free_buffer_list = %p\n",
                          cur, next, _collshm->free_buffer_list));
 
               //while (!COLLSHM_COMPARE_AND_SWAPLP((atomic_l)&(_collshm->free_buffer_list),(long *)&cur, (long)next))
-              while (!_collshm->buffer_list->bool_compare_and_swap((size_t)cur, (size_t)next))
+              while (!_collshm->buffer_list->bool_compare_and_swap(addr_to_offset(cur), addr_to_offset(next)))
                 {
                   TRACE_DBG((stderr, "entry cur = %p, cur->next = %p and _collshm->free_buffer_list = %p\n",
                              cur, next, _collshm->free_buffer_list));
 
                   // cur = (databuf_t *)_collshm->free_buffer_list;
-                  cur = (databuf_t *)_collshm->buffer_list->fetch();
+                  cur = (databuf_t*)offset_to_addr(_collshm->buffer_list->fetch());
 
                   if (cur == NULL)
                     next = NULL;  // take care of the case in which free list becomes empty
                   else
-                    next = cur->next;
+                    next = (databuf_t*)offset_to_addr(cur->next_offset);
 
                   TRACE_DBG((stderr, "exit cur = %p, cur->next = %p and _collshm->free_buffer_list = %p\n",
                              cur, next, _collshm->free_buffer_list));
@@ -367,7 +380,7 @@ namespace PAMI
               if (cur == NULL) continue;  // may need to start over
 
               TRACE_DBG((stderr, "end cur = %p\n", cur));
-              cur->next = buffers;
+              cur->next_offset = addr_to_offset(buffers);
               buffers = (databuf_t *)cur;
               buf_count ++;
             }
@@ -391,20 +404,20 @@ namespace PAMI
 
           databuf_t *tmp = data_buf;
 
-          while (tmp->next != NULL)
+          while (tmp->next_offset != addr_to_offset(NULL))
             {
-              tmp = tmp->next;
+              tmp = (databuf_t*)offset_to_addr(tmp->next_offset);
               --_ndatabufs;
             }
 
           // tmp->next = _collshm->free_buffer_list;
-          tmp->next = (databuf_t *)_collshm->buffer_list->fetch();
+          tmp->next_offset = _collshm->buffer_list->fetch();
 
           //while(!COLLSHM_COMPARE_AND_SWAPLP((atomic_l)&(_collshm->free_buffer_list),(long *)&(tmp->next), (long)tmp));
-          while(!_collshm->buffer_list->bool_compare_and_swap((size_t)tmp->next, (size_t)tmp))
+          while(!_collshm->buffer_list->bool_compare_and_swap(tmp->next_offset, addr_to_offset(tmp)))
             {
               //tmp->next = _collshm->free_buffer_list;
-              tmp->next = (databuf_t *)_collshm->buffer_list->fetch();
+              tmp->next_offset = _collshm->buffer_list->fetch();
             }
 
           TRACE_DBG((stderr, "_ndatabufs = %d\n", _ndatabufs));
@@ -442,11 +455,10 @@ namespace PAMI
 
           for (int i = 0; i < COLLSHM_INIT_CTLCNT - 1; ++i)
             {
-              tmp->next = tmp + 1;
-              tmp       = tmp->next;
+              tmp->next_offset = addr_to_offset(tmp + 1);
+              tmp              = (ctlstr_t*)offset_to_addr(tmp->next_offset);
             }
-
-          tmp->next = NULL;
+          tmp->next_offset = addr_to_offset(NULL);
 
           _collshm->ctlstr_pool += COLLSHM_INIT_CTLCNT;
           //COLLSHM_CLEAR_LOCK((atomic_p)&(_collshm->ctlstr_pool_lock),0);
@@ -480,52 +492,52 @@ namespace PAMI
               // cur = (ctlstr_t * )_collshm->free_ctlstr_list;
               PAMI_ASSERT(_collshm != NULL);
               PAMI_ASSERT(_collshm->ctlstr_list != NULL);
-              cur = (ctlstr_t *)_collshm->ctlstr_list->fetch();
+              cur = (ctlstr_t *)offset_to_addr(_collshm->ctlstr_list->fetch());
 
               if (cur == NULL)
                 {
                   tmp   = _get_ctrl_str_from_pool();       // Allocate a whold chunk of INIT_CTLCNT new buffers from the pool
                   cur   = tmp + count - ctlstr_count - 1;  // End of the list satisfying the requirement
-                  next  = cur->next;                       // Extra buffers that should be put into free list
+                  next  = (ctlstr_t*)offset_to_addr(cur->next_offset);// Extra buffers that should be put into free list
 
-                  cur->next = (ctlstr_t *)ctlstr;                    // Merge with ctrl structs already allocated
+                  cur->next_offset = addr_to_offset(ctlstr);                    // Merge with ctrl structs already allocated
                   ctlstr   = tmp;
 
                   cur = tmp + COLLSHM_INIT_CTLCNT - 1;             // End of the newly allocated chunk
                   // Merge with free list
                   // cur->next = (ctlstr_t *)_collshm->free_ctlstr_list;
-                  cur->next = (ctlstr_t *)_collshm->ctlstr_list->fetch();
+                  cur->next_offset = _collshm->ctlstr_list->fetch();
 
                   // while(!COLLSHM_COMPARE_AND_SWAPLP((atomic_l)&(_collshm->free_ctlstr_list),(long *)&(cur->next), (long)next));
-                  while(!_collshm->ctlstr_list->bool_compare_and_swap((size_t)cur->next, (size_t)next))
+                  while(!_collshm->ctlstr_list->bool_compare_and_swap(cur->next_offset, addr_to_offset(next)))
                     {
                       // cur->next = (ctlstr_t *)_collshm->free_ctlstr_list;
-                      cur->next = (ctlstr_t *)_collshm->ctlstr_list->fetch();
+                      cur->next_offset = _collshm->ctlstr_list->fetch();
                     }
 
                   ctlstr_count = count;
                   continue;
                 }
 
-              next = cur->next;
+              next = (ctlstr_t*)offset_to_addr(cur->next_offset);
 
               //while (!COLLSHM_COMPARE_AND_SWAPLP((atomic_l)&(_collshm->free_ctlstr_list),(long *)&cur, (long)next))
-              while (!_collshm->ctlstr_list->bool_compare_and_swap((size_t)cur, (size_t)next))
+              while (!_collshm->ctlstr_list->bool_compare_and_swap(addr_to_offset(cur), addr_to_offset(next)))
                 {
                   // cur = (ctlstr_t * )_collshm->free_ctlstr_list;
-                  cur = (ctlstr_t *)_collshm->ctlstr_list->fetch();
+                  cur = (ctlstr_t*)offset_to_addr(_collshm->ctlstr_list->fetch());
 
                   if (cur == NULL)
                     next = NULL;  // take care of the case in which free list becomes empty
                   else
-                    next = cur->next;
+                    next = (ctlstr_t*)offset_to_addr(cur->next_offset);
 
                   TRACE_DBG((stderr, "cur = %p\n", cur));
                 }
 
               if (cur == NULL) continue;  // may need to start over
 
-              cur->next = (ctlstr_t *)ctlstr;
+              cur->next_offset = addr_to_offset(ctlstr);
               ctlstr = (ctlstr_t *)cur;
               ctlstr_count ++;
             }
@@ -548,20 +560,20 @@ namespace PAMI
 
           ctlstr_t *tmp = ctlstr;
 
-          while (tmp->next != NULL)
+          while (tmp->next_offset != addr_to_offset(NULL))
             {
-              tmp = tmp->next;
+              tmp = (ctlstr_t*)offset_to_addr(tmp->next_offset);
               -- _nctrlstrs;
             }
 
           //tmp->next = _collshm->free_ctlstr_list;
-          tmp->next = (ctlstr_t *)_collshm->ctlstr_list->fetch();
+          tmp->next_offset = _collshm->ctlstr_list->fetch();
 
           // while(!COLLSHM_COMPARE_AND_SWAPLP((atomic_l)&(_collshm->free_ctlstr_list),(long *)&(tmp->next), (long)tmp));
-          while(!_collshm->ctlstr_list->bool_compare_and_swap((size_t)tmp->next, (size_t)tmp))
+          while(!_collshm->ctlstr_list->bool_compare_and_swap(tmp->next_offset, addr_to_offset(tmp)))
             {
               // tmp->next =  _collshm->free_ctlstr_list;
-              tmp->next = (ctlstr_t *)_collshm->ctlstr_list->fetch();
+              tmp->next_offset = _collshm->ctlstr_list->fetch();
             }
 
           TRACE_DBG((stderr, "_nctrlstrs = %d\n", _nctrlstrs));
