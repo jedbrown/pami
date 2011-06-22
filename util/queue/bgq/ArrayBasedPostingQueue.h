@@ -127,13 +127,6 @@ namespace PAMI {
 			L2_AtomicStore(&_array_q.Producer, 0);
 			L2_AtomicStore(&_array_q.UpperBound, DEFAULT_SIZE);
 
-/* _tailAddress[]:	L2_AtomicLoadIncrementBounded(&Producer) */
-/* _tailLoadAddress[]:	L2_AtomicLoad(&Producer) */
-/* _boundAddress[]:	L2_AtomicStoreAdd(&UpperBound) */
-#if USE_GUARDED_WC_FLUSH
-/* _flushAddress[]:	L2_AtomicStore(&Flush) */
-#endif
-
 			rc = __global.heap_mm->memalign ((void **)&_array,
 					L1D_CACHE_LINE_SIZE,
 					sizeof(*_array) * DEFAULT_SIZE);
@@ -153,14 +146,16 @@ namespace PAMI {
 
 		/// \copydoc PAMI::Interface::QueueInterface::enqueue
 		inline void enqueue_impl(Element *element) {
+			uint64_t index = L2_AtomicLoadIncrementBounded(&_array_q.Producer);
 #if USE_GUARDED_WC_FLUSH
-			L2_AtomicStore(&_array_q.Flush, 0); //Store 0 to the flush address to
-							//flush all stores. Low overhead
-							//non-blocking write fence
-#endif
+			// Store 0 to the flush address to flush all stores. Low overhead
+			// non-blocking write fence. In addition, we schedule the flush
+			// to overlap with the load increment operation.
+			L2_AtomicStore(&_array_q.Flush, 0);
+#else
 			//mbar();
-			uint64_t index = 0;
-			if ((index = L2_AtomicLoadIncrementBounded(&_array_q.Producer)) != L2_ATOMIC_FULL) {
+#endif
+			if (index != L2_ATOMIC_FULL) {
 				array_queue(index,element);
 				return;
 			}
