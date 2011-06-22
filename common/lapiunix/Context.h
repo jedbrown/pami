@@ -197,7 +197,7 @@ namespace PAMI
   // Shared Memory P2P Typedefs
   typedef Fifo::FifoPacket <P2PSHM_HDRSIZE,P2PSHM_PKTSIZE>            ShmemPacket;
   typedef Fifo::LinearFifo<ShmemPacket, Counter::Indirect<Counter::Native> > ShmemFifo;
-  typedef Device::ShmemDevice<ShmemFifo, Counter::Indirect<Counter::Native>, Device::Shmem::NoShaddr, 128 > ShmemDevice;
+  typedef Device::ShmemDevice<ShmemFifo, Counter::Indirect<Counter::Native>, Device::Shmem::NoShaddr, 128, 4096 > ShmemDevice;
   typedef Device::Shmem::PacketModel<ShmemDevice>                     ShmemPacketModel;
   typedef Protocol::Send::Eager <ShmemPacketModel>                    ShmemEagerBase;
   typedef PAMI::Protocol::Send::SendWrapperPWQ < ShmemEagerBase >            ShmemEager;
@@ -396,7 +396,7 @@ namespace PAMI
         _client (client),
         _clientid (clientid),
         _clientname(clientname),
-        _dispatch_id(255),
+        _dispatch_id(4095),
         _context((pami_context_t) this),
         _contextid (id),
         _devices(devices)

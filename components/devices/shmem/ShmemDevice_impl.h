@@ -22,8 +22,8 @@ namespace PAMI
 {
   namespace Device
   {
-    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount>
-    pami_result_t ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount>::init (pami_client_t  client,
+    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount, unsigned T_SetCount>
+    pami_result_t ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount, T_SetCount>::init (pami_client_t  client,
                                                                     pami_context_t context)
     {
       TRACE_ERR((stderr, "(%zu) ShmemDevice::init ()\n", __global.mapping.task()));
@@ -33,22 +33,22 @@ namespace PAMI
       return PAMI_SUCCESS;
     }
 
-    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount>
-    bool ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount>::isInit_impl ()
+    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount, unsigned T_SetCount>
+    bool ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount, T_SetCount>::isInit_impl ()
     {
       return true;
     }
 
     /// \see PAMI::Device::Interface::BaseDevice::peers()
-    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount>
-    size_t ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount>::peers_impl ()
+    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount, unsigned T_SetCount>
+    size_t ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount, T_SetCount>::peers_impl ()
     {
       return _npeers;
     }
 
     /// \see PAMI::Device::Interface::BaseDevice::task2peer()
-    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount>
-    size_t ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount>::task2peer_impl (size_t task)
+    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount, unsigned T_SetCount>
+    size_t ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount, T_SetCount>::task2peer_impl (size_t task)
     {
       PAMI::Interface::Mapping::nodeaddr_t address;
       TRACE_ERR((stderr, ">> ShmemDevice::task2peer_impl(%zu)\n", task));
@@ -63,14 +63,14 @@ namespace PAMI
     }
 
     /// \see PAMI::Device::Interface::BaseDevice::isPeer()
-    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount>
-    bool ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount>::isPeer_impl (size_t task)
+    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount, unsigned T_SetCount>
+    bool ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount, T_SetCount>::isPeer_impl (size_t task)
     {
       return __global.mapping.isLocal(task);
     };
 
-    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount>
-    pami_result_t ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount>::registerRecvFunction (size_t                      set,
+    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount, unsigned T_SetCount>
+    pami_result_t ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount, T_SetCount>::registerRecvFunction (size_t                      set,
         Interface::RecvFunction_t   recv_func,
         void                      * recv_func_parm,
         uint16_t                  & id)
@@ -79,16 +79,16 @@ namespace PAMI
     };
 
 
-    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount>
-    pami_result_t ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount>::registerSystemRecvFunction (Interface::RecvFunction_t   recv_func,
+    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount, unsigned T_SetCount>
+    pami_result_t ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount, T_SetCount>::registerSystemRecvFunction (Interface::RecvFunction_t   recv_func,
         void                      * recv_func_parm,
         uint16_t                  & id)
     {
       return _dispatch.registerSystemDispatch (recv_func, recv_func_parm, id);
     };
 
-    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount>
-    void ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount>::dispatch (uint16_t id,
+    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount, unsigned T_SetCount>
+    void ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount, T_SetCount>::dispatch (uint16_t id,
                                                                void * metadata,
                                                                void * payload,
                                                                size_t bytes)
@@ -96,8 +96,8 @@ namespace PAMI
       _dispatch.dispatch(id, metadata, payload, bytes);
     };
 
-    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount>
-    pami_result_t ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount>::post (size_t fnum, Shmem::SendQueue::Message * msg)
+    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount, unsigned T_SetCount>
+    pami_result_t ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount, T_SetCount>::post (size_t fnum, Shmem::SendQueue::Message * msg)
     {
       TRACE_ERR((stderr, ">> (%zu) ShmemDevice::post(%zu, %p)\n", __global.mapping.task(), fnum, msg));
       PAMI_assert_debug (fnum < _nfifos);
@@ -106,8 +106,8 @@ namespace PAMI
       return PAMI_SUCCESS;
     };
 
-    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount>
-    pami_result_t ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount>::postCompletion
+    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount, unsigned T_SetCount>
+    pami_result_t ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount, T_SetCount>::postCompletion
     (uint8_t               state[completion_work_size],
      pami_event_function   local_fn,
      void                * cookie,
@@ -126,8 +126,8 @@ namespace PAMI
       return PAMI_SUCCESS;
     };
 
-    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount>
-    char * ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount>::getUniqueString ()
+    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount, unsigned T_SetCount>
+    char * ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount, T_SetCount>::getUniqueString ()
     {
       return _unique_str;
     };
@@ -137,8 +137,8 @@ namespace PAMI
 
 
 
-    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount>
-    pami_result_t ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount>::getShmemWorldDesc
+    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount, unsigned T_SetCount>
+    pami_result_t ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount, T_SetCount>::getShmemWorldDesc
     (typename CollectiveFifo::Descriptor ** desc)
       {
         unsigned desc_index;
