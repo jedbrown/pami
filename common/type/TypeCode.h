@@ -504,7 +504,6 @@ namespace PAMI
         // and before the addition of the sub-types, when there is only a single
         // Begin-End sequence
         size_t pc = 0, opc = 0, copyseqstart = 0, copyseqcnt = 0, copyreps = 0;
-        size_t ocode_size = GetCodeSize();
         Op *op;
 
         do {
@@ -602,7 +601,6 @@ namespace PAMI
                     break;
             }
         } while (END != op->opcode);
-        // ((Begin *)code)->code_size = ocode_size;
         ((Begin *)code)->optimized = true;
     }
 
