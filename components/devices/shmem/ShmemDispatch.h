@@ -30,7 +30,7 @@ namespace PAMI
   {
     namespace Shmem
     {
-      template < class T_Packet, unsigned T_SetCount = 512 /*8192*/, unsigned T_SetSize = 8 >
+      template < class T_Packet, unsigned T_SetCount, unsigned T_SetSize >
       class Dispatch : public PAMI::Fifo::Interface::PacketConsumer< Dispatch<T_Packet, T_SetCount, T_SetSize> >
       {
         protected:
@@ -113,6 +113,8 @@ namespace PAMI
               }
 
 
+
+
             // Find the next available id for this dispatch set.
             bool found_free_slot = false;
             size_t n = set * T_SetSize + T_SetSize;
@@ -165,6 +167,7 @@ namespace PAMI
                   }
               }
 
+
             TRACE_ERR((stderr, "<< (%zu,%p) ShmemDevice::registerUserDispatch(%zu) => %d\n", __global.mapping.task(), this, set, id));
             return PAMI_SUCCESS;
           };
@@ -211,7 +214,6 @@ namespace PAMI
                     free (uepkt);
                   }
               }
-
             return PAMI_SUCCESS;
           };
 

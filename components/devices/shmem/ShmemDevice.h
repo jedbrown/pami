@@ -78,8 +78,8 @@ namespace PAMI
                class T_Shaddr = Shmem::NoShaddr,
                unsigned T_FifoCount = 64,
                unsigned T_SetCount = 512>
-    class ShmemDevice : public Interface::BaseDevice< ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount> >,
-        public Interface::PacketDevice<ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount> >
+    class ShmemDevice : public Interface::BaseDevice< ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount, T_SetCount> >,
+        public Interface::PacketDevice<ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount, T_SetCount> >
     {
       public:
 
@@ -91,7 +91,7 @@ namespace PAMI
 
         typedef Shmem::CollectiveFifo<T_Atomic> CollectiveFifo;
 
-        typedef Shmem::BaseMessage<ShmemDevice<T_Fifo,T_Atomic,T_Shaddr,T_FifoCount> > BaseMessage;
+        typedef Shmem::BaseMessage<ShmemDevice<T_Fifo,T_Atomic,T_Shaddr,T_FifoCount, T_SetCount> > BaseMessage;
 
 
         // Inner factory class
@@ -153,8 +153,8 @@ namespace PAMI
         inline ShmemDevice (size_t clientid, size_t ncontexts,
                             Memory::MemoryManager & mm, size_t contextid,
                             PAMI::Device::Generic::Device * progress) :
-            Interface::BaseDevice< ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount> > (),
-            Interface::PacketDevice< ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount> > (),
+            Interface::BaseDevice< ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount, T_SetCount> > (),
+            Interface::PacketDevice< ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount, T_SetCount> > (),
             _clientid (clientid),
             _contextid (contextid),
             _ncontexts (ncontexts),
@@ -364,7 +364,7 @@ namespace PAMI
         size_t            _task;
         size_t            _peer;
 
-        Shmem::Dispatch<Shmem::Packet<typename T_Fifo::Packet>, T_SetCount >  _dispatch;
+        Shmem::Dispatch<Shmem::Packet<typename T_Fifo::Packet>, T_SetCount, 8 >  _dispatch;
         Shmem::Shaddr::System<T_Shaddr>                           shaddr;
         
         // -------------------------------------------------------------
