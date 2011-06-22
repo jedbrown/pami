@@ -312,8 +312,8 @@ namespace PAMI
         _devices->init(_clientid, _contextid, _client, _context, &_mm);
 
         pami_endpoint_t self = PAMI_ENDPOINT_INIT(_clientid, __global.mapping.task(), _contextid);
-        _get.initialize (110, self, _context);
-        _put.initialize (111, self, _context);
+        _get.initialize (_dispatch_id--, self, _context);
+        _put.initialize (_dispatch_id--, self, _context);
 
         Protocol::Get::GetRdma <Device::MU::DmaModelMemoryFifoCompletion, MUDevice> * rget_mu = NULL;
         Protocol::Put::PutRdma <Device::MU::DmaModelMemoryFifoCompletion, MUDevice> * rput_mu = NULL;
