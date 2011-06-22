@@ -103,9 +103,12 @@ void BsrP6::CleanUp()
     bsr_fd = -1;
 }
 
-SharedArray::RC BsrP6::Init(const unsigned int member_cnt,
-        const unsigned int key, const unsigned int job_key,
-        const bool is_leader, const int member_id, const unsigned char init_val)
+SharedArray::RC BsrP6::CheckInitDone(const unsigned int   mem_cnt, 
+                                     const unsigned int   job_key, 
+                                     const uint64_t       unique_key,
+                                     const bool           leader, 
+                                     const int            mem_id, 
+                                     const unsigned char  init_val)
 {
     RC              rc;
     BSR_SETUP_STATE state;

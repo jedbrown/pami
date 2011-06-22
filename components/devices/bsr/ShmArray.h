@@ -19,9 +19,13 @@ class ShmArray : public SharedArray
     public:
         ShmArray();
 	~ShmArray();
-        RC Init(const unsigned int member_cnt,
-                const unsigned int group_id, const unsigned int job_key, 
-                const bool is_leader, const int member_id, const unsigned char init_val);
+        RC CheckInitDone(const unsigned int   mem_cnt, 
+                         const unsigned int   job_key, 
+                         const uint64_t       unique_key,
+                         const bool           leader, 
+                         const int            mem_id, 
+                         const unsigned char  init_val);
+
         unsigned char      Load1(const int offset) const;
         unsigned short     Load2(const int offset) const;
         unsigned int       Load4(const int offset) const;
@@ -32,6 +36,15 @@ class ShmArray : public SharedArray
         void Store8(const int offset, const unsigned long long val);
 
     private:
+        unsigned int            shm_size;
+        enum SHM_SETUP_STATE {
+            ST_NONE = 0,
+            ST_SHM_PROCESSING,
+            ST_SHM_DONE,
+            ST_SHM_CHECK_REF_CNT,
+            ST_SUCCESS,
+            ST_FAIL
+        } shm_state;
         struct Cacheline {
             volatile char byte;
             char          pad[SharedArray::CACHE_LINE_SZ-1];// a full cache line
@@ -43,6 +56,16 @@ class ShmArray : public SharedArray
         };
 
         Shm   *shm;
+        ShmArray::SHM_SETUP_STATE CheckShmSetup(
+                                        const unsigned int  member_cnt, 
+                                        const unsigned int  job_key, 
+                                        const uint64_t      unique_key,
+                                        const bool          is_leader);
+        ShmArray::SHM_SETUP_STATE CheckShmDone();
+        ShmArray::SHM_SETUP_STATE CheckShmRefCount(const int            member_id, 
+                                                   const unsigned char  init_val);
+        ShmArray::SHM_SETUP_STATE CheckShmReady();
+
 };
 
 #endif

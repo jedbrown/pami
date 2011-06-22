@@ -2,6 +2,10 @@
 #define __components_devices_bsr_SharedArray_h__
 
 #include <stdlib.h>
+#include <string>
+#include <stdint.h>
+using namespace std;
+
 /**
  * \file components/devices/bsr/SharedArray.h
  *
@@ -21,24 +25,10 @@ class SharedArray
          */
         enum RC {
             SUCCESS = 0, ///< Operation successed.
+            PROCESSING,  ///< Operation not finished.
             FAILED,      ///< Operation failed.
             NOT_AVAILABLE///< Shared array is not available.
         };
-
-        /**
-         * \brief The status of the SharedArray object.
-         *
-         * NOT_READY is the default value when the object is constructed.
-         */
-        enum STATUS {
-            NOT_READY = 0, /**< Object is not ready to use. */
-            READY = 1      /**< Object is ready to use. */
-        };
-
-        /**
-         * \brief typedef for progress callback function
-         */
-        typedef void (*ProgressCb_t)(void* param);
 
         /**
          * \brief SharedArray default constructor
@@ -64,17 +54,24 @@ class SharedArray
          * SharedArray::NOT_READY.
          *
          * \param member_cnt Number of members on the local node
-         * \param key An unique key that will be used to establish a shared
-         *            memory segment for internal data exchange.
-         * \param is_leader Specifies if this is a leader member.
-         * \param member_id Specifies the unique id (0 based) within the group
-         *                  This is used by BSR priming only
+         * \param job_key    Job key is used to communicate with PNSD and also
+         *                   used to generate an unique SHM key 
+         * \param unique_key A unique number generated at the time the geometry
+         *                   is created to generate an unique SHM key
+         * \param leader     Specifies if this is a leader member.
+         * \param mem_id     Specifies the unique id (0 based) within the group
+         *                   This is used by BSR priming only
+         * \param init_val   Initial value for each task to perform barrier op
+         *                   This is used by BSR priming only
          *
          * \return SharedArray::SUCCESS, SharedArray::FAILED
          */
-        virtual RC Init(const unsigned int member_cnt,
-                const unsigned int group_id, const unsigned int job_key,
-                const bool is_leader, const int member_id, const unsigned char init_val)=0;
+        virtual RC CheckInitDone(const unsigned int   mem_cnt, 
+                                 const unsigned int   job_key, 
+                                 const uint64_t       unique_key,
+                                 const bool           leader, 
+                                 const int            mem_id, 
+                                 const unsigned char  init_val)=0;
 
         /**
          * \brief Loads one byte data from the array.
@@ -149,21 +146,9 @@ class SharedArray
         virtual void Store8(const int offset, const unsigned long long val)=0;
 
         /**
-         * \brief Accessor function to the status of this object.
-         */
-        STATUS Status() const;
-
-        /**
          * \brief Accessor function to the is_leader flag of this object.
          */
         bool IsLeader() const;
-
-        /**
-         * \brief Set the progress callback function.  This progress callback function
-         *        will be used whenever there is a wait loop. If the callback is not
-         *        set, nothing will be done in the wait loop.
-         */
-        void SetProgressCb(ProgressCb_t progress_cb, void* progress_cb_info);
 
     protected:
         /// Memory cache line size in bytes.
@@ -187,11 +172,7 @@ class SharedArray
          * \note This function must be called after the SharedArray::member_cnt is
          *       set.
          */
-        RC ShmSetup(const unsigned int shm_key, const unsigned int size,
-                const unsigned int timeout);
-
-        RC PosixShmSetup(const char* shm_key, const unsigned int size,
-                const unsigned int timeout);
+        RC IsPosixShmSetupDone(const unsigned int size);
 
         /**
          * \brief Destroy the internal SHM segment
@@ -201,52 +182,42 @@ class SharedArray
          *
          * \return SharedArray::SUCCESS
          */
-        RC ShmDestroy();
         RC PosixShmDestroy();
 
         // Member variables
-        STATUS        status;     ///< Current object status.
         unsigned int  member_cnt; ///< Number of members on the local node.
         bool          is_leader;  ///< Indicates if this is a leader task.
         int           shm_id;     ///< The shm id for the created segment.
-        char          shm_str[64];///< The shm string for POSIX shm
+        string       *shm_str;    ///< The shm string for POSIX shm
         int           shm_size;   ///< The POSIX shm size
         void*         shm_seg;    ///< Pointer to the SHM segment.
-        ProgressCb_t  progress_cb;  ///< Function pointer to idle processing.
-        void*         progress_cb_info; ///< Pointer be passed into idel_proc.
 
     private:
+        enum SETUP_STATE {
+            ST_NONE = 0,
+            ST_ATTACHED,
+            ST_PASSED,
+            ST_FAILED
+        } setup_state;
         struct ShmCtrlBlock {
             volatile unsigned int ref_cnt; // number of member currently attached
         };
         ShmCtrlBlock* ctrl_block;
+        SharedArray::SETUP_STATE PosixShmAllAttached();
+        SharedArray::SETUP_STATE PosixShmAttach(const unsigned int size);
+
 };
 
-inline SharedArray::SharedArray():status(NOT_READY),
+inline SharedArray::SharedArray():
+                  setup_state(ST_NONE),
                   member_cnt(0),
                   is_leader(false),
                   shm_id(-1),
                   shm_seg(NULL),
-                  progress_cb(NULL),
-                  progress_cb_info(NULL),
                   ctrl_block(NULL){};
-
-inline SharedArray::STATUS SharedArray::Status() const {
-    return this->status;
-}
 
 inline bool SharedArray::IsLeader() const {
     return this->is_leader;
 }
-
-inline void
-SharedArray::SetProgressCb(ProgressCb_t progress_cb, void* progress_cb_info) {
-    this->progress_cb = progress_cb;
-    this->progress_cb_info = progress_cb_info;
-}
-
-inline
-SharedArray::~SharedArray()
-{
-};
 #endif /* _SHAREDARRAY_H */
+

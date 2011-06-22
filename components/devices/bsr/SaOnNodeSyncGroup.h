@@ -32,14 +32,16 @@ class SaOnNodeSyncGroup : public SyncGroup {
         SaOnNodeSyncGroup();
         ~SaOnNodeSyncGroup();
         /**
-         * \brief Initialize function.
+         * \brief Check Initialization Status function.
          * Initalize internal variables and allocate mempry spaces. Every member
          * prcess that want to be in the group has to initialize the SaOnSyncGroup
          * with the same \em member_cnt and \em group_id values.
          *
          * \param member_cnt Number of members will be in the group.
-         * \param group_id   An UNIQUE id that identifies the group and will be used
-         *                   as a key to create internal shared memory segment.
+         * \param job_key    Job key is used to communicate with PNSD and also
+         *                   used to generate an unique SHM key 
+         * \param unique_key A unique number generated at the time the geometry
+         *                   is created to generate an unique SHM key
          * \param member_id  An unique id to identify the member who creates the
          *                   object. The value should be in the range of
          *                   [0..member_cnt)
@@ -48,9 +50,11 @@ class SaOnNodeSyncGroup : public SyncGroup {
          *
          * \return SyncGroup::SUCCESS SyncGroup::FAILED
          */
-        RC   Init(const unsigned int member_cnt, const unsigned int group_id,
-                const unsigned int job_key,
-                const unsigned int member_id, void* param);
+        RC   CheckInitDone(const unsigned int   member_cnt,
+                           const unsigned int   job_key, 
+                           const uint64_t       unique_key,
+                           const unsigned int   member_id, 
+                           void*                param);
         void BarrierEnter();
         void BarrierExit();
         bool IsNbBarrierDone();/* to check if the non-blocking Barrier finishes */
@@ -60,7 +64,28 @@ class SaOnNodeSyncGroup : public SyncGroup {
         void show_bsr(char*); /* for debugging purpose */
 
     private:
-        int           seq;
+        enum SetupState {
+            ORIG_ST = 0,
+            BSR_ST,
+            BSR_DONE_ST,
+            BSR_FAIL_ST,
+            SHM_ST,
+            SHM_DONE_ST,
+            FAIL_ST,
+            DONE_ST
+        } s_state;
+        SaOnNodeSyncGroup::SetupState Init_bsr_step(const unsigned int  mem_cnt, 
+                                                    const unsigned int  job_key, 
+                                                    const uint64_t      unique_key,
+                                                    const unsigned int  mem_id, 
+                                                    void*               param);
+        SaOnNodeSyncGroup::SetupState Init_shm_step();
+        SaOnNodeSyncGroup::SetupState Init_shm();
+        SaOnNodeSyncGroup::SetupState Init_bsr();
+        unsigned int  is_leader;
+        unsigned int  job_key;
+        uint64_t      unique_key;
+        unsigned int  seq;
         SharedArray   *sa;      // could be BSRs, ShmArray
         unsigned char mask[2][8];
         bool          multi_load;
@@ -81,9 +106,11 @@ void SaOnNodeSyncGroup::NbBarrier()
 inline
 SaOnNodeSyncGroup::SaOnNodeSyncGroup():
     seq(0),
+    is_leader(0),
     sa(NULL),
     multi_load(false),
-    nb_barrier_stage(2)
+    nb_barrier_stage(2),
+    s_state(ORIG_ST)
 {
 };
 #endif /* _SAONNODESYNCGROUP_H_ */

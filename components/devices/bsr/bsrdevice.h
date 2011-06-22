@@ -69,17 +69,22 @@ namespace PAMI
                   {
                     SaOnNodeSyncGroup::Param_t param = { false, false };
                     size_t member_id = _bsrinfo->_topology->rank2Index(_device->taskid());
-                    if (SyncGroup::SUCCESS != _bsrinfo->_sync_group.Init(_bsrinfo->_topology->size(),
-                                                                         _bsrinfo->_geometry_id,
-                                                                         _Lapi_env.MP_partition,
-                                                                         member_id,
-                                                                         &param))
-                    {
-                      ITRC(IT_BSR, "BSRMsync Advance:  setup, EAGAIN\n");
-                      return PAMI_EAGAIN;
+                    SyncGroup::RC sg_rc =  _bsrinfo->_sync_group.CheckInitDone( 
+                                                    _bsrinfo->_topology->size(),
+                                                    _Lapi_env.MP_partition,
+                                                    _bsrinfo->_shm_unique_key,
+                                                    member_id,
+                                                    &param);
+                    switch (sg_rc) {
+                        case SyncGroup::SUCCESS:
+                            _state = ENTERING;
+                            break;
+                        case SyncGroup::PROCESSING:
+                            return PAMI_EAGAIN;
+                        default:
+                            assert(0);
+                            return PAMI_ERROR;
                     }
-                    else
-                      _state = ENTERING;
                   }
                   // no break, fallthrough
                 }
@@ -144,11 +149,13 @@ namespace PAMI
           _context    = context;
           _my_task_id = my_task_id;
 
+          /*
 #ifdef _LAPI_LINUX
           _initialized = false;
 #else
+*/
           _initialized = true;
-#endif
+//#endif
         }
 
       pami_context_t getContext_impl()

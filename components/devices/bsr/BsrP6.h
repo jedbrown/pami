@@ -26,9 +26,13 @@ class BsrP6 : public SharedArray
     public:
         BsrP6();
         ~BsrP6();
-        RC Init(const unsigned int member_cnt,
-                const unsigned int group_id, const unsigned int job_key,
-                const bool is_leader, const int member_id, const unsigned char init_val);
+        RC CheckInitDone(const unsigned int   mem_cnt, 
+                         const unsigned int   job_key, 
+                         const uint64_t       unique_key,
+                         const bool           leader, 
+                         const int            mem_id, 
+                         const unsigned char  init_val);
+
         unsigned char      Load1(const int offset) const;
         unsigned short     Load2(const int offset) const;
         unsigned int       Load4(const int offset) const;

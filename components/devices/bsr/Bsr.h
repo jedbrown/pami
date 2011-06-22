@@ -36,9 +36,13 @@ class Bsr : public SharedArray
     public:
         Bsr();
         ~Bsr();
-        RC Init(const unsigned int member_cnt,
-                const unsigned int group_id, const unsigned int job_key,
-                const bool is_leader, const int member_id, const unsigned char init_val);
+        RC CheckInitDone(const unsigned int   mem_cnt, 
+                         const unsigned int   job_key, 
+                         const uint64_t       unique_key,
+                         const bool           leader, 
+                         const int            mem_id, 
+                         const unsigned char  init_val);
+
         unsigned char      Load1(const int offset) const;
         unsigned short     Load2(const int offset) const;
         unsigned int       Load4(const int offset) const;
@@ -51,16 +55,22 @@ class Bsr : public SharedArray
     private:
         key_t                   bsr_key;        // BSR key
         int                     bsr_id;         // BSR id
-        size_t                  bsr_size;       // BSR region size, min 4KB
-        unsigned char*          bsr_addr;       // bsr address
-        bool                    is_bsr_attached;
-
-
+        size_t                  bsr_size;       // BSR region size
+        unsigned char*          bsr_addr;       // BSR address
+#ifdef _LAPI_LINUX 
+        uint32_t                smask;
+        uint32_t                fmask;
+#endif
         enum BSR_SETUP_STATE {
-            ST_NONE    = 0x00000000,
-            ST_ATTACHED= 0x00000001,
-            ST_FAIL    = 0x00009999
-        };
+            ST_NONE = 0,
+            ST_BOOTSTRAP_PROCESSING,
+            ST_BOOTSTRAP_DONE,
+            ST_BSR_ATTACHED,
+            ST_BSR_CHECK_REF_CNT,
+            ST_SUCCESS,
+            ST_FAIL
+        } bsr_state;
+
         struct Shm {
             // current state of BSR setup process
             volatile BSR_SETUP_STATE bsr_setup_state;
@@ -75,5 +85,13 @@ class Bsr : public SharedArray
         // helper function
         void CleanUp();
         int GetBsrUniqueKey(const unsigned int j_key);
+        Bsr::BSR_SETUP_STATE CheckBsrResource(const unsigned int mem_cnt,
+                const unsigned int job_key, const uint64_t unique_key,
+                const bool leader);
+        Bsr::BSR_SETUP_STATE CheckBootstrapSetup();
+        Bsr::BSR_SETUP_STATE CheckBsrAttach(const unsigned int job_key);
+        Bsr::BSR_SETUP_STATE CheckBsrRefCount(const int mem_id, 
+                                              const unsigned char init_val);
+        Bsr::BSR_SETUP_STATE CheckBsrReady();
 };
 #endif

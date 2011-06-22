@@ -26,14 +26,17 @@ class SyncGroup {
          */
         enum RC {
             SUCCESS = 0, ///< Operation successed.
+            PROCESSING,  ///< Operation in process
             FAILED       ///< Operation failed.
         };
 
         SyncGroup();
         virtual      ~SyncGroup();
-        virtual RC   Init(const unsigned int member_cnt, const unsigned int group_id,
-                          const unsigned int job_key,
-                          const unsigned int member_id, void* extra_arg) =0;
+        virtual RC   CheckInitDone(const unsigned int   member_cnt,
+                                   const unsigned int   job_key, 
+                                   const uint64_t       unique_key,
+                                   const unsigned int   member_id, 
+                                   void*                extra_arg)=0;
         virtual void BarrierEnter() =0;
         virtual void BarrierExit()  =0;
         void         Barrier();

@@ -18,69 +18,119 @@
 /*!
  * \brief Default constructor.
  */
-ShmArray::ShmArray():shm(NULL) {};
+ShmArray::ShmArray():
+    shm(NULL),
+    shm_size(0),
+    shm_state(ST_NONE){};
 
 /*!
  * \brief Initialization function.
  *
  * \TODO distinguish member count and byte count
  */
-SharedArray::RC ShmArray::Init(const unsigned int member_cnt,
-        const unsigned int group_id, const unsigned int job_key, 
-        const bool is_leader, const int member_id, const unsigned char init_val)
+ShmArray::SHM_SETUP_STATE ShmArray::CheckShmReady()
 {
-    // if it is already initialized, then do nothing.
-    if (status == READY) {
-        return SUCCESS;
+    if (shm->ready_cnt == this->member_cnt) {
+        ITRC(IT_BSR, "ShmArray(FAILOVER): initialized\n");
+        return ST_SUCCESS;
+    } else {
+        return ST_SHM_CHECK_REF_CNT;
     }
+}
 
-    // Workaround before PNSD could provide unique keys
-    char key_str[64];
-    sprintf(key_str, "/SHM_%d_%d", job_key, group_id);
-    ITRC(IT_BSR, "ShmArray::Init Unique key string for POSIX shm setup <%s>\n", key_str);
-
-    /// Main steps:
-    this->is_leader  = is_leader;
-    this->member_cnt = member_cnt;
-    ITRC(IT_BSR, "ShmArray: initializing with %d members\n", member_cnt);
-
-    /// - create shared memory or retrieve the existing one
-    unsigned int  num_bytes = sizeof(Shm) + sizeof(Cacheline) * member_cnt;
-
-#if 0
-    if (FAILED == ShmSetup(key, num_bytes, 300)) {
-#else
-    if (FAILED == PosixShmSetup(key_str, num_bytes, 300)) {
-#endif
-        ITRC(IT_BSR, "ShmArray: ShmSetup failed\n");
-        return FAILED;
-    }
-
-    /// - attach to shared memory
-    shm = (Shm *)shm_seg;
-
+ShmArray::SHM_SETUP_STATE ShmArray::CheckShmRefCount(
+        const int member_id, const unsigned char init_val)
+{
     /// Initialize SHM region with init_val
     Store1(member_id, init_val);
 
     fetch_and_add((atomic_p)&(shm->ready_cnt), 1);
-    // wait everyone reaches here;
-    volatile unsigned int cnt = shm->ready_cnt;
-    if (progress_cb) {
-        while (cnt < member_cnt) {
-            (*progress_cb)(progress_cb_info);
-            cnt = shm->ready_cnt;
-        }
-    } else {
-        while (cnt < member_cnt) {
-            cnt = shm->ready_cnt;
+
+    return CheckShmReady();
+}
+
+ShmArray::SHM_SETUP_STATE ShmArray::CheckShmDone()
+{
+    RC rc = IsPosixShmSetupDone(shm_size);
+    switch (rc) {
+        case SUCCESS:
+            /// - attach to shared memory
+            shm = (Shm *)shm_seg;
+
+            ITRC(IT_BSR, "ShmArray(FAILOVER): %s ShmSetup with key <%s> PASSED.\n",
+                    (this->is_leader)?"LEADER":"FOLLOWER",
+                    this->shm_str->c_str());
+            return ST_SHM_DONE;
+        case PROCESSING:
+            return ST_SHM_PROCESSING;
+        default:
+            ITRC(IT_BSR, "ShmArray(FAILOVER): %s ShmSetup with key <%s> FAILED"
+                    " with rc %d.\n",
+                    (this->is_leader)?"LEADER":"FOLLOWER",
+                    this->shm_str->c_str(), rc);
+            return ST_FAIL;
+    }
+}
+
+ShmArray::SHM_SETUP_STATE ShmArray::CheckShmSetup(
+        const unsigned int member_cnt, const unsigned int job_key, 
+        const uint64_t unique_key, const bool is_leader)
+{
+    char tmp[64];
+    sprintf(tmp, "/SHM_%d_%llu", job_key, unique_key);
+    this->shm_str = new string(tmp);
+    ITRC(IT_BSR, "ShmArray(FAILOVER): Unique key string for POSIX shm setup <%s>\n",
+            this->shm_str->c_str());
+
+    /// Main steps:
+    this->is_leader  = is_leader;
+    this->member_cnt = member_cnt;
+    ITRC(IT_BSR, "ShmArray(FAILOVER): initializing with %d members\n", member_cnt);
+
+    /// - create shared memory or retrieve the existing one
+    shm_size = sizeof(Shm) + sizeof(Cacheline) * member_cnt;
+
+    return CheckShmDone();
+}
+
+SharedArray::RC ShmArray::CheckInitDone(const unsigned int   mem_cnt, 
+                                        const unsigned int   job_key, 
+                                        const uint64_t       unique_key,
+                                        const bool           leader, 
+                                        const int            mem_id, 
+                                        const unsigned char  init_val)
+{
+    bool advance = true;
+    while (advance) {
+        advance = false;
+        switch (shm_state) {
+            case ST_NONE:
+                shm_state = CheckShmSetup(mem_cnt, 
+                                          job_key, 
+                                          unique_key,
+                                          is_leader);
+                advance = (shm_state != ST_NONE);
+                break;
+            case ST_SHM_PROCESSING:
+                shm_state = CheckShmDone();
+                advance = (shm_state != ST_SHM_PROCESSING);
+                break;
+            case ST_SHM_DONE:
+                shm_state = CheckShmRefCount(mem_id, init_val);
+                advance = (shm_state != ST_SHM_DONE);
+                break;
+            case ST_SHM_CHECK_REF_CNT:
+                shm_state = CheckShmReady();
+                advance = (shm_state != ST_SHM_CHECK_REF_CNT);
+                break;
+            case ST_SUCCESS:
+                return SUCCESS;
+            case ST_FAIL:
+                return FAILED;
         }
     }
 
-    /// - at the end, set the status to READY
-    status = READY;
-
-    ITRC(IT_BSR, "ShmArray: initialized\n");
-    return SUCCESS;
+    return PROCESSING;
 }
 
 /*!
@@ -92,14 +142,7 @@ SharedArray::RC ShmArray::Init(const unsigned int member_cnt,
  */
 ShmArray::~ShmArray()
 {
-    status = NOT_READY;
-#if 0
-    ShmDestroy();
-#else
-    PosixShmDestroy();
-#endif
-
-    ITRC(IT_BSR, "ShmArray: Destroyed\n");
+    ITRC(IT_BSR, "ShmArray(FAILOVER): Destroyed\n");
 }
 
 unsigned char      ShmArray::Load1(const int offset) const
