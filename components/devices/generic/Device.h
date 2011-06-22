@@ -437,7 +437,7 @@ public:
 	///
 	/// \param[in] thr  Thread object to post for advance work
 	///
-	inline void postThread(GenericThread *thr) {
+	inline void postThread(GenericThread *thr) __attribute__((__always_inline__)) {
 		__queues->__Posted.enqueue((GenericDevicePostingQueue::Element *)thr);
 	}
 

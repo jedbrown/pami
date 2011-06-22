@@ -139,7 +139,7 @@ namespace PAMI
         ///
         /// \param[in] element  Queue element to add
         ///
-        inline void enqueue (T_Element * element);
+        inline void enqueue (T_Element * element) __attribute__((__always_inline__));
 
         ///
         /// \brief Remove a queue element from the front of the queue

@@ -143,7 +143,7 @@ namespace PAMI {
 		}
 
 		/// \copydoc PAMI::Interface::QueueInterface::enqueue
-		inline void enqueue_impl(Element *element) {
+		inline void enqueue_impl(Element *element) __attribute__((__always_inline__)) {
 			uint64_t index = L2_AtomicLoadIncrementBounded(&_array_q.Producer);
 			//mbar();
 			if (index != L2_ATOMIC_FULL) {
