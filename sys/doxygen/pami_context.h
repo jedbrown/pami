@@ -25,21 +25,6 @@
  * - Communication that addresses a destination task will use an \ref endpoint
  *   "endpoint object" to identify the destination thread point that will
  *   receive the dispatch
- *
- * <b>Context initialization</b>
- *
- * The maximum number of allowed contexts should be queried after the client
- * is initialized with the PAMI_Client_create() function. The contexts
- * are created with the PAMI_Context_createv() function. This function will
- * initialize an array of context opaque objects and will set the
- * "global endpoints" output parameter.  The "global endpoints" is the number
- * of destination endpoints for all tasks in a client.
- *
- * PAMI_Context_createv() is a
- * synchronizing operation. Each task may create a different number of local
- * endpoints. However, the special attribute BLAH can be used to assert that
- * every task in the client is creating the same number of contexts
- *
  * <b>Endpoint usage</b>
  *
  * All communication functions require a context to perform the
@@ -50,22 +35,6 @@
  *
  * - The application must invoke PAMI_Endpoint_create() to obtain an endpoint to
  *   address a specific context on a destination task.
- *
- * <b>Endpoint identification</b>
- * Applications may prefer to use a unique integer to identify all endpoints
- * for a client. This can be accomplished by creating an array of
- * endpoint opaque objects and using the index into the array as the endpoint
- * identifier.
- *
- * \dontinclude examples/endpoint_table.c
- * \until }
- *
- * Endpoints may be identified by a monotonically increasing integer
- * value after the endpoint opaque object array has been initialized.
- *
- * \until }
- *
- * \until PAMI_Context_unlock (context[0]);
  *
  * <b>Dispatch</b>
  *
@@ -80,37 +49,6 @@
  * dispatch function. This can be
  * accomplished by storing the application-defined endpoint identifier in the
  * dispatch function cookie for each dispatch registration.
- */
-/**
- * \defgroup context Context
- * \ingroup contexts_and_endpoints
- * \brief Contexts specify a local operation thread point.
- *
- * Contexts are defined as an opaque object type. The application must not
- * directly read or write the value of the object.
- *
- * \par Advice to implementors
- * The opaque context type may contain a back-pointer to the internal
- * client object associated with the context, flow control information,
- * etc.
- */
-/**
- * \defgroup endpoint Endpoints
- * \ingroup contexts_and_endpoints
- * \brief Endpoints address a destination thread point on a destination task.
- *
- * Endpoints are defined as an opaque object type. The application must not
- * directly read or write the value of the object.
- *
- * \note The endpoint type may be written by one task and read by another task.
- *       To save storage in an environment where multiple tasks reside on the
- *       same physical node the endpoint table may be stored in a shared memory
- *       area.
- *
- * \par Advice to implementors
- * The opaque endpoint type may contain the task id and local context
- * index, etc.
- *
  */
 
 #endif /* __doxygen_pami_context_h__ */

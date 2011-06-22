@@ -36,7 +36,7 @@ extern "C"
   } pami_result_t;
 
   typedef void*    pami_client_t;   /**< Client of communication contexts */
-  typedef void*    pami_context_t;  /**< Context for data transfers       */
+  typedef void*    pami_context_t;  /**< \ingroup context Context for data transfers       */
   typedef void*    pami_type_t;     /**< \ingroup datatype Description for data layout  */
   typedef uint32_t pami_task_t;     /**< Identity of a process            */
   typedef uint32_t pami_endpoint_t; /**< Identity of a context            */
@@ -53,15 +53,42 @@ extern "C"
   extern pami_endpoint_t  PAMI_ENDPOINT_NULL;
 
   /**
-   * \brief Callback to handle message events
+   * \brief Event callback function signature of application functions used to
+   *        process message events on a communication context
    *
-   * \param[in] context   PAMI communication context that invoked the callback
-   * \param[in] cookie    Event callback application argument
-   * \param[in] result    Asynchronous result information
+   * At the time an event function is invoked the application has already
+   * protected access to the associated communication context, either by using
+   * PAMI_Context_lock() or by some other mechanism. Consequently, application code
+   * executed from within an event callback function has dedicated access to the
+   * associated communication context and is \b not required to further protect
+   * access to the context prior to invoking functions that operate on that
+   * context.
+   *
+   * The event function is invoked as a result of an advance of the internal
+   * progress engine of the associated communication context. The application
+   * code executed from within an event callback function \b must \b not invoke
+   * any progress function, such as PAMI_Context_advance(), to avoid corruption
+   * of the internal progress engine state.
+   *
+   * \note Application code executed from within an event callback function does
+   *       \b not have implicit dedicated access to other communication
+   *       contexts. Operations on other communication contexts must be
+   *       protected from re-entrant access from other execution resources by
+   *       the application.
+   * 
+   * \warning The application must take care to avoid deadlocks when protecting
+   *          access to a communication context other than the communication
+   *          context which invoked the event callback function. It is
+   *          recommended that PAMI_Context_trylock() or PAMI_Context_post()
+   *          be used instead of PAMI_Context_lock() in this situtation.
+   * 
+   * \param [in] context   Communication context that invoked the callback
+   * \param [in] cookie    Event callback application argument
+   * \param [in] result    Asynchronous result information
    */
   typedef void (*pami_event_function) ( pami_context_t   context,
-                                       void          * cookie,
-                                       pami_result_t    result );
+                                        void           * cookie,
+                                        pami_result_t    result );
 
   /**
    * \brief Function to produce data at send side or consume data at receive side
@@ -77,7 +104,7 @@ extern "C"
    * Atom size is defined as the minimum unit size that a data function
    * can accept. For example, a data function for summing up doubles may
    * require the input to be an integral number of doubles, thus the atom
-   * size for this data function is sizeof(double).
+   * size for this data function is \c sizeof(double).
    *
    * When a data function is used with a typed transfer, one must make sure
    * the atom size of the data function divides the atom size of the type.
@@ -93,16 +120,52 @@ extern "C"
                                       void       * cookie);
 
   /**
-   * \brief Function signature for work posted to a communication context
+   * \brief Work callback function signature of application functions used to
+   *        process work posted to a communication context
    *
-   * This work function, with the associated cookie, will continue to be invoked
-   * during communication context advance until this function does not return
-   * ::PAMI_EAGAIN.
+   * The work callback function, with the associated cookie, will continue to be
+   * invoked during communication context advance until the function does not
+   * return ::PAMI_EAGAIN.
    *
+   * If the work callback function will return ::PAMI_SUCCESS then the
+   * application may safely dispose of the pami_work_t object, or the
+   * application may re-post the pami_work_t object if arrangements were made to
+   * provide the location of the pami_work_t object to the work callback
+   * function (e.g. via the cookie).
+   *
+   * If the work callback function will return ::PAMI_EAGAIN then the
+   * application must \b not have altered the pami_work_t object in any way.
+   * 
    * \see PAMI_Context_post()
+   * 
+   * At the time a work function is invoked the application has already
+   * protected access to the associated communication context, either by using
+   * PAMI_Context_lock() or by some other mechanism. Consequently, application code
+   * executed from within a work callback function has dedicated access to the
+   * associated communication context and is \b not required to further protect
+   * access to the context prior to invoking functions that operate on that
+   * context.
+   * 
+   * The work function is invoked as a result of an advance of the internal
+   * progress engine of the associated communication context. The application
+   * code executed from within a work callback function \b must \b not invoke
+   * any progress function, such as PAMI_Context_advance(), to avoid corruption
+   * of the internal progress engine state.
    *
-   * \param [in] context   The communication context that invoked this function
-   * \param [in] cookie    Opaque data pointer to pass to the work function
+   * \note Application code executed from within a work callback function does
+   *       \b not have implicit dedicated access to other communication
+   *       contexts. Operations on other communication contexts must be
+   *       protected from re-entrant access from other execution resources by
+   *       the application.
+   * 
+   * \warning The application must take care to avoid deadlocks when protecting
+   *          access to a communication context other than the communication
+   *          context which invoked the work callback function. It is
+   *          recommended that PAMI_Context_trylock() or PAMI_Context_post()
+   *          be used instead of PAMI_Context_lock() in this situtation.
+   *
+   * \param [in] context   Communication context that invoked this function
+   * \param [in] cookie    Work callback application argument
    *
    * \return ::PAMI_SUCCESS  The work function will dequeue and stop running
    *
@@ -730,29 +793,32 @@ extern "C"
    * a network resource attribute, such as a packet size.
    *
    * It is safe for the application to deallocate, or otherwise alter, the
-   * pami_send_t parameter structure after this function returns.
-   *
-   * It is \b not safe for the application to deallocate, or otherwise alter,
+   * pami_send_t parameter structure after this function returns. However,
+   * it is \b not safe for the application to deallocate, or otherwise alter,
    * the memory locations specified by pami_send_immediate_t::header and
    * pami_send_immediate_t::data until the pami_send_event_t::local_fn is
    * invoked.
    *
-   * \attention The pami_send_immediate_t::dispatch identifier must be
-   *            registered on the sending context, using PAMI_Dispatch_set(),
-   *            prior to the send operation.
+   * \thread    This operation on the communication context is \b not 
+   *            \b thread-safe. It is the responsibility of the application to
+   *            ensure that only one execution resource operates on a
+   *            communication context at any time.
+   * 
+   * \pre  The pami_send_immediate_t::dispatch identifier must be registered on
+   *       the context with PAMI_Dispatch_set().
    *
-   * \note It is valid to specify the endpoint associated with the
+   * \note It \e is valid to specify the endpoint associated with the
    *       communication context used to issue the operation as the
    *       destination for the transfer.
    *
    * \see pami_send_hint_t
    * \see PAMI_Dispatch_query
    *
-   * \param[in] context    Communication context
-   * \param[in] parameters Send simple parameter structure
+   * \param [in] context     Communication context
+   * \param [in] parameters  Send simple parameter structure
    *
-   * \retval PAMI_SUCCESS  The request has been accepted.
-   * \retval PAMI_INVAL    The request has been rejected due to invalid parameters.
+   * \retval ::PAMI_SUCCESS  The request has been accepted.
+   * \retval ::PAMI_INVAL    The request has been rejected due to invalid parameters.
    */
   pami_result_t PAMI_Send (pami_context_t    context,
                            pami_send_t     * parameters);
@@ -784,35 +850,36 @@ extern "C"
    * with a single dispatch callback. Typically this limit is associated with
    * a network resource attribute, such as a packet size.
    *
-   * It is safe for the application to deallocate, or otherwise alter, the send
-   * parameter structure and the memory locations specified by
+   * It is safe for the application to deallocate, or otherwise alter, the
+   * pami_send_immediate_t parameter structure and the memory locations specified by
    * pami_send_immediate_t::header and pami_send_immediate_t::data after this
    * function returns.
    *
-   * \attention The pami_send_immediate_t::dispatch identifier must be
-   *            registered on the sending context, using PAMI_Dispatch_set(),
-   *            prior to the send operation.
+   * \thread    This operation on the communication context is \b not 
+   *            \b thread-safe. It is the responsibility of the application to
+   *            ensure that only one execution resource operates on a
+   *            communication context at any time.
    *
-   * \note It is valid to specify the endpoint associated with the
+   * \pre  The pami_send_immediate_t::dispatch identifier must be registered on
+   *       the context with PAMI_Dispatch_set().
+   *
+   * \note It \e is valid to specify the endpoint associated with the
    *       communication context used to issue the operation as the
    *       destination for the transfer.
    *
    * \see pami_send_hint_t
    * \see PAMI_Dispatch_query
    *
-   * \todo Better define send parameter structure so done callback is not required
-   * \todo Define configuration attribute for the size limit
+   * \param [in] context    Communication context
+   * \param [in] parameters Send parameter structure
    *
-   * \param[in] context    Communication context
-   * \param[in] parameters Send parameter structure
-   *
-   * \retval PAMI_SUCCESS  The request has been accepted.
-   * \retval PAMI_INVAL    The request has been rejected due to invalid parameters.
-   * \retval PAMI_EAGAIN   The request could not be satisfied due to unavailable
-   *                       network resources and the request data could not be
-   *                       queued for later processing due to the value of the
-   *                       pami_dispatch_hint_t::queue_immediate hint for this
-   *                       dispatch identifier.
+   * \retval ::PAMI_SUCCESS  The request has been accepted.
+   * \retval ::PAMI_INVAL    The request has been rejected due to invalid parameters.
+   * \retval ::PAMI_EAGAIN   The request could not be satisfied due to unavailable
+   *                         network resources and the request data could not be
+   *                         queued for later processing due to the value of the
+   *                         pami_dispatch_hint_t::queue_immediate hint for this
+   *                         dispatch identifier.
    */
   pami_result_t PAMI_Send_immediate (pami_context_t          context,
                                      pami_send_immediate_t * parameters);
@@ -827,45 +894,48 @@ extern "C"
    * received by the remote task into a different format, such as a contiguous
    * buffer or the same or different predefined type.
    *
-   * It is safe for the application to deallocate, or otherwise alter, the send
-   * parameter structure after this function returns.
-   *
-   * It is \b not safe for the application to deallocate, or otherwise alter,
+   * It is safe for the application to deallocate, or otherwise alter, the
+   * pami_send_typed_t parameter structure after this function returns. However,
+   * it is \b not safe for the application to deallocate, or otherwise alter,
    * the memory locations specified by pami_send_immediate_t::header and
-   * pami_send_immediate_t::data until the pami_send_event_t::local_fn is
-   * invoked.
+   * pami_send_immediate_t::data until the pami_send_event_t::local_fn
+   * is invoked.
    *
-   * \attention The pami_send_immediate_t::dispatch identifier must be
-   *            registered on the sending context, using PAMI_Dispatch_set(),
-   *            prior to the send operation.
+   * \thread    This operation on the communication context is \b not 
+   *            \b thread-safe. It is the responsibility of the application to
+   *            ensure that only one execution resource operates on a
+   *            communication context at any time.
    *
-   * \note It is valid to specify the endpoint associated with the
+   * \pre  The pami_send_immediate_t::dispatch identifier must be registered on
+   *       the context with PAMI_Dispatch_set().
+   *
+   * \note It \e is valid to specify the endpoint associated with the
    *       communication context used to issue the operation as the
    *       destination for the transfer.
    *
-   * \param[in] context    Communication context
-   * \param[in] parameters Send typed parameter structure
+   * \param [in] context    Communication context
+   * \param [in] parameters Send typed parameter structure
    *
-   * \retval PAMI_SUCCESS  The request has been accepted.
-   * \retval PAMI_INVAL    The request has been rejected due to invalid parameters.
+   * \retval ::PAMI_SUCCESS  The request has been accepted.
+   * \retval ::PAMI_INVAL    The request has been rejected due to invalid parameters.
    */
   pami_result_t PAMI_Send_typed (pami_context_t      context,
                                  pami_send_typed_t * parameters);
 
   /**
-   * \brief Receive message structure
+   * \brief Active message receive parameter structure
    *
-   * This structure is initialized and then returned as an output parameter from
-   * the active message dispatch callback to direct the pami runtime how to
-   * receive the data stream.
+   * This structure is initialized by the application and then returned as an
+   * output parameter from the active message dispatch callback function to
+   * direct the receive of the incoming data stream.
    *
    * When pami_recv_t::type is ::PAMI_TYPE_BYTE, the receive buffer is
-   * contiguous and it must be large enough to hold the entire message.
+   * contiguous and must be large enough to hold the entire message.
    *
    * With a non-contiguous pami_recv_t::type, the receive buffer in general must
    * be large enough for the incoming message as well. However, pami_recv_t::type
-   * can be constructed in such a way that unwanted portions of the incoming are
-   * disposed into a circular junk buffer.
+   * may be constructed in such a way that unwanted portions of the incoming
+   * data stream are disposed into a circular junk buffer.
    *
    * \see pami_dispatch_p2p_function
    */
@@ -881,42 +951,76 @@ extern "C"
   } pami_recv_t;
 
   /**
-   * \brief Dispatch callback
+  * \brief Dispatch callback function signature of application functions used to
+   *       receive incoming messages on a communication context
    *
-   * This single dispatch function type supports two kinds of receives:
-   * "immediate" and "asynchronous".
+   * Each dispatch callback function supports two kinds of receives:
+   * \e immediate and \e asynchronous.
    *
-   * An immediate receive occurs when the dispatch function is invoked and all
-   * of the data sent is \em immediately available in the buffer. In this case
+   * An \e immediate receive occurs when the dispatch function is invoked and all
+   * of the data sent is immediately available in the buffer. In this case
    * \c pipe_addr will point to a valid memory location - even when the number
    * of bytes sent is zero, and the \c recv output structure will be \c NULL.
    *
-   * An asynchronous receive occurs when the dispatch function is invoked and
+   * An \e asynchronous receive occurs when the dispatch function is invoked and
    * all of the data sent is \b not immediately available. In this case the
-   * application must provide information to direct how the receive will
-   * complete. The \c recv output structure will point to a valid memory
+   * application must provide information to direct the completion of the
+   * receive. The \c recv output structure will point to a valid memory
    * location for this purpose, and the \c pipe_addr pointer will be \c NULL.
    * The \c data_size parameter will contain the number of bytes that are being
-   * sent from the remote endpoint.
+   * sent from the \c origin endpoint.
    *
    * The memory location, specified by pami_recv_t::addr, for an asynchronous
    * receive must not be deallocated, or otherwise altered, until the
    * pami_recv_t::local_fn is invoked.
    *
    * \note The maximum number of bytes that may be immediately received can be
-   *       queried with the ::PAMI_DISPATCH_RECV_IMMEDIATE_MAX  configuration
-   *       attribute.
+   *       queried using PAMI_Dispatch_query() with the
+   *       ::PAMI_DISPATCH_RECV_IMMEDIATE_MAX configuration attribute.
+   * 
+   * At the time a dispatch function is invoked the application has already
+   * protected access to the associated communication context, either by using
+   * PAMI_Context_lock() or by some other mechanism. Consequently, application code
+   * executed from within a dispatch callback function has dedicated access to the
+   * associated communication context and is \b not required to further protect
+   * access to the context prior to invoking functions that operate on that
+   * context. The application code executed from within an event callback
+   * function \b must \b not invoke any progress function, such as
+   * PAMI_Context_advance(), to avoid corruption of the internal progress engine
+   * state.
    *
-   * \see PAMI_Dispatch_query
+   * \note Application code executed from within a dispatch callback function
+   *       does \b not have implicit dedicated access to other communication
+   *       contexts. Operations on other communication contexts must be
+   *       protected from re-entrant access from other execution resources by
+   *       the application.
+   * 
+   * \warning The application must take care to avoid deadlocks when protecting
+   *          access to a communication context other than the communication
+   *          context which invoked the dispatch callback function. It is
+   *          recommended that PAMI_Context_trylock() or PAMI_Context_post()
+   *          be used instead of PAMI_Context_lock() in this situtation.
+   * 
+   * \param [in] context     Communication context that invoked this function
+   * \param [in] cookie      Dispatch callback application argument
+   * \param [in] header_addr Application header address
+   * \param [in] header_size Application header size in bytes
+   * \param [in] pipe_addr   Address of the \e immediate receive buffer - valid
+   *                         only if non-NULL
+   * \param [in] data_size   Application data size in bytes, valid regardless of
+   *                         message type 
+   * \param [in] origin      Endpoint that originated the transfer
+   * \param [in] recv        Receive message structure, only needed if
+   *                         \c pipe_addr is non-NULL
    */
-  typedef void (*pami_dispatch_p2p_function) (pami_context_t    context,      /**< IN:  communication context which invoked the dispatch function */
-                                              void            * cookie,       /**< IN:  dispatch cookie */
-                                              const void      * header_addr,  /**< IN:  header address  */
-                                              size_t            header_size,  /**< IN:  header size     */
-                                              const void      * pipe_addr,    /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
-                                              size_t            data_size,    /**< IN:  number of bytes of message data, valid regardless of message type */
-                                              pami_endpoint_t   origin,       /**< IN:  Endpoint that originated the transfer */
-                                              pami_recv_t     * recv);        /**< OUT: receive message structure, only needed if addr is non-NULL */
+  typedef void (*pami_dispatch_p2p_function) (pami_context_t    context,
+                                              void            * cookie,
+                                              const void      * header_addr,
+                                              size_t            header_size,
+                                              const void      * pipe_addr,
+                                              size_t            data_size,
+                                              pami_endpoint_t   origin,
+                                              pami_recv_t     * recv);
 
   /** \} */ /* end of "active message" group */
 
@@ -1006,11 +1110,16 @@ extern "C"
    * \note It is valid to specify the destination endpoint associated with the
    *       communication context used to issue the operation.
    *
-   * \param[in] context    Communication context
-   * \param[in] parameters Simple put input parameters
+   * \thread    This operation on the communication context is \b not 
+   *            \b thread-safe. It is the responsibility of the application to
+   *            ensure that only one execution resource operates on a
+   *            communication context at any time.
    *
-   * \retval PAMI_SUCCESS  The request has been accepted.
-   * \retval PAMI_INVAL    The request has been rejected due to invalid parameters.
+   * \param [in] context    Communication context
+   * \param [in] parameters Simple put input parameters
+   *
+   * \retval ::PAMI_SUCCESS  The request has been accepted.
+   * \retval ::PAMI_INVAL    The request has been rejected due to invalid parameters.
    */
   pami_result_t PAMI_Put (pami_context_t      context,
                           pami_put_simple_t * parameters);
@@ -1045,11 +1154,16 @@ extern "C"
    * \note It is valid to specify the destination endpoint associated with the
    *       communication context used to issue the operation.
    *
-   * \param[in] context    Communication context
-   * \param[in] parameters Typed put input parameters
+   * \thread    This operation on the communication context is \b not 
+   *            \b thread-safe. It is the responsibility of the application to
+   *            ensure that only one execution resource operates on a
+   *            communication context at any time.
    *
-   * \retval PAMI_SUCCESS  The request has been accepted.
-   * \retval PAMI_INVAL    The request has been rejected due to invalid parameters.
+   * \param [in] context    Communication context
+   * \param [in] parameters Typed put input parameters
+   *
+   * \retval ::PAMI_SUCCESS  The request has been accepted.
+   * \retval ::PAMI_INVAL    The request has been rejected due to invalid parameters.
    */
   pami_result_t PAMI_Put_typed (pami_context_t     context,
                                 pami_put_typed_t * parameters);
@@ -1091,11 +1205,16 @@ extern "C"
    * \note It is valid to specify the destination endpoint associated with the
    *       communication context used to issue the operation.
    *
-   * \param[in] context    Communication context
-   * \param[in] parameters Simple get input parameters
+   * \thread    This operation on the communication context is \b not 
+   *            \b thread-safe. It is the responsibility of the application to
+   *            ensure that only one execution resource operates on a
+   *            communication context at any time.
    *
-   * \retval PAMI_SUCCESS  The request has been accepted.
-   * \retval PAMI_INVAL    The request has been rejected due to invalid parameters.
+   * \param [in] context    Communication context
+   * \param [in] parameters Simple get input parameters
+   *
+   * \retval ::PAMI_SUCCESS  The request has been accepted.
+   * \retval ::PAMI_INVAL    The request has been rejected due to invalid parameters.
    */
   pami_result_t PAMI_Get (pami_context_t      context,
                           pami_get_simple_t * parameters);
@@ -1128,11 +1247,16 @@ extern "C"
    * \note It is valid to specify the destination endpoint associated with the
    *       communication context used to issue the operation.
    *
-   * \param[in] context    Communication context
-   * \param[in] parameters Typed get input parameters
+   * \thread    This operation on the communication context is \b not 
+   *            \b thread-safe. It is the responsibility of the application to
+   *            ensure that only one execution resource operates on a
+   *            communication context at any time.
    *
-   * \retval PAMI_SUCCESS  The request has been accepted.
-   * \retval PAMI_INVAL    The request has been rejected due to invalid parameters.
+   * \param [in] context    Communication context
+   * \param [in] parameters Typed get input parameters
+   *
+   * \retval ::PAMI_SUCCESS  The request has been accepted.
+   * \retval ::PAMI_INVAL    The request has been rejected due to invalid parameters.
    */
   pami_result_t PAMI_Get_typed (pami_context_t     context,
                                 pami_get_typed_t * parameters);
@@ -1256,11 +1380,16 @@ extern "C"
    * \note It is valid to specify the destination endpoint associated with the
    *       communication context used to issue the operation.
    *
-   * \param[in] context    Communication context
-   * \param[in] parameters read-modify-write input parameters
+   * \thread    This operation on the communication context is \b not 
+   *            \b thread-safe. It is the responsibility of the application to
+   *            ensure that only one execution resource operates on a
+   *            communication context at any time.
    *
-   * \retval PAMI_SUCCESS  The request has been accepted.
-   * \retval PAMI_INVAL    The request has been rejected due to invalid parameters.
+   * \param [in] context    Communication context
+   * \param [in] parameters read-modify-write input parameters
+   *
+   * \retval ::PAMI_SUCCESS  The request has been accepted.
+   * \retval ::PAMI_INVAL    The request has been rejected due to invalid parameters.
    */
   pami_result_t PAMI_Rmw (pami_context_t context, pami_rmw_t * parameters);
 
@@ -1406,8 +1535,13 @@ extern "C"
    * \note It is valid to specify the destination endpoint associated with the
    *       communication context used to issue the operation.
    *
-   * \param[in] context    Communication context
-   * \param[in] parameters Input parameters structure
+   * \thread    This operation on the communication context is \b not 
+   *            \b thread-safe. It is the responsibility of the application to
+   *            ensure that only one execution resource operates on a
+   *            communication context at any time.
+   *
+   * \param [in] context    Communication context
+   * \param [in] parameters Input parameters structure
    */
   pami_result_t PAMI_Rput (pami_context_t context, pami_rput_simple_t * parameters);
 
@@ -1417,8 +1551,13 @@ extern "C"
    * \note It is valid to specify the destination endpoint associated with the
    *       communication context used to issue the operation.
    *
-   * \param[in] context    Communication context
-   * \param[in] parameters Input parameters structure
+   * \thread    This operation on the communication context is \b not 
+   *            \b thread-safe. It is the responsibility of the application to
+   *            ensure that only one execution resource operates on a
+   *            communication context at any time.
+   *
+   * \param [in] context    Communication context
+   * \param [in] parameters Input parameters structure
    */
   pami_result_t PAMI_Rput_typed (pami_context_t context, pami_rput_typed_t * parameters);
 
@@ -1449,8 +1588,13 @@ extern "C"
    * \note It is valid to specify the destination endpoint associated with the
    *       communication context used to issue the operation.
    *
-   * \param[in] context    Communication context
-   * \param[in] parameters Input parameters structure
+   * \thread    This operation on the communication context is \b not 
+   *            \b thread-safe. It is the responsibility of the application to
+   *            ensure that only one execution resource operates on a
+   *            communication context at any time.
+   *
+   * \param [in] context    Communication context
+   * \param [in] parameters Input parameters structure
    */
   pami_result_t PAMI_Rget (pami_context_t context, pami_rget_simple_t * parameters);
 
@@ -1484,8 +1628,13 @@ extern "C"
    * \note It is valid to specify the destination endpoint associated with the
    *       communication context used to issue the operation.
    *
-   * \param[in] context    Communication context
-   * \param[in] parameters Input parameters structure
+   * \thread    This operation on the communication context is \b not 
+   *            \b thread-safe. It is the responsibility of the application to
+   *            ensure that only one execution resource operates on a
+   *            communication context at any time.
+   *
+   * \param [in] context    Communication context
+   * \param [in] parameters Input parameters structure
    */
   pami_result_t PAMI_Rget_typed (pami_context_t context, pami_rget_typed_t * parameters);
 
@@ -1562,7 +1711,12 @@ extern "C"
    * \warning It is considered \b illegal to begin a fence region inside an
    *          existing fence region. Fence regions can not be nested.
    *
-   * \param[in] context PAMI communication context
+   * \thread    This operation on the communication context is \b not 
+   *            \b thread-safe. It is the responsibility of the application to
+   *            ensure that only one execution resource operates on a
+   *            communication context at any time.
+   *
+   * \param [in] context Communication context
    */
   pami_result_t PAMI_Fence_begin (pami_context_t context);
 
@@ -1578,7 +1732,12 @@ extern "C"
    * \warning It is considered \b illegal to end a fence region outside of an
    *          existing fence region.
    *
-   * \param[in] context PAMI communication context
+   * \thread    This operation on the communication context is \b not 
+   *            \b thread-safe. It is the responsibility of the application to
+   *            ensure that only one execution resource operates on a
+   *            communication context at any time.
+   *
+   * \param [in] context Communication context
    */
   pami_result_t PAMI_Fence_end (pami_context_t context);
 
@@ -1586,13 +1745,18 @@ extern "C"
   /**
    * \brief Synchronize all transfers between all endpoints on a context.
    *
-   * \param[in] context PAMI communication context
-   * \param[in] done_fn Event callback to invoke when the fence is complete
-   * \param[in] cookie  Event callback argument
+   * \thread    This operation on the communication context is \b not 
+   *            \b thread-safe. It is the responsibility of the application to
+   *            ensure that only one execution resource operates on a
+   *            communication context at any time.
+   *
+   * \param [in] context Communication context
+   * \param [in] done_fn Event callback to invoke when the fence is complete
+   * \param [in] cookie  Event callback argument
    */
   pami_result_t PAMI_Fence_all (pami_context_t        context,
-                              pami_event_function   done_fn,
-                              void               * cookie);
+                                pami_event_function   done_fn,
+                                void                * cookie);
 
   /**
    * \brief Synchronize all transfers to an endpoints.
@@ -1600,10 +1764,15 @@ extern "C"
    * \note It is valid to specify the destination endpoint associated with the
    *       communication context used to issue the operation.
    *
-   * \param[in] context Communication context
-   * \param[in] done_fn Event callback to invoke when the fence is complete
-   * \param[in] cookie  Event callback argument
-   * \param[in] target  Endpoint to synchronize
+   * \thread    This operation on the communication context is \b not 
+   *            \b thread-safe. It is the responsibility of the application to
+   *            ensure that only one execution resource operates on a
+   *            communication context at any time.
+   *
+   * \param [in] context Communication context
+   * \param [in] done_fn Event callback to invoke when the fence is complete
+   * \param [in] cookie  Event callback argument
+   * \param [in] target  Endpoint to synchronize
    */
   pami_result_t PAMI_Fence_endpoint (pami_context_t        context,
                                      pami_event_function   done_fn,
@@ -3235,55 +3404,73 @@ extern "C"
   } pami_dispatch_callback_function;
 
   /**
-   * \brief Initialize the dispatch function for a dispatch identifier.
+   * \brief Initialize point-to-point operations for a dispatch identifier.
    *
-   * This is a local, non-collective operation. There is no communication
-   * between tasks.
+   * Point-to-point operations on a communication context for a specific
+   * dispatch identifier must be initialized on the origin task before the
+   * operations may be used. The target task must initialize before any
+   * point-to-point messages may be received.
    *
-   * It is \b illegal for the user to specify different hint assertions for the
-   * same client, context offset, and dispatch identifier on different tasks.
-   * However, there is no specific error check that will prevent specifying
-   * different hint assertions. The result of a communication operation using
-   * mismatched hint assertions is \em undefined.
+   * The initialization is a local, non-collective operation. There is no
+   * communication between tasks.
+   *
+   * It is \b illegal for the application to specify different hint assertions
+   * for the same client, context offset, and dispatch identifier on different
+   * tasks. However, there is no specific error check that will prevent
+   * specifying different hint assertions. The result of a communication
+   * operation using mismatched hint assertions is \e undefined.
    *
    * \note The maximum allowed dispatch identifier attribute,
-   *       \c PAMI_CONTEXT_DISPATCH_ID_MAX, can be queried with the
-   *       configuration interface
+   *       ::PAMI_CONTEXT_DISPATCH_ID_MAX, can be queried with
+   *       PAMI_Context_query().
    *
-   * \see PAMI_Context_query
-   *
-   * \param[in] context    PAMI communication context
-   * \param[in] dispatch   Dispatch identifier to initialize
-   * \param[in] fn         Dispatch receive function
-   * \param[in] cookie     Dispatch function cookie
-   * \param[in] options    Dispatch registration assertions
+   * \param [in] context    Communication context
+   * \param [in] dispatch   Dispatch identifier to initialize
+   * \param [in] fn         Dispatch receive function
+   * \param [in] cookie     Dispatch function cookie
+   * \param [in] options    Dispatch registration assertions
    */
-  pami_result_t PAMI_Dispatch_set (pami_context_t              context,
-                                   size_t                      dispatch,
-                                   pami_dispatch_callback_function fn,
-                                   void                      * cookie,
-                                   pami_dispatch_hint_t        options);
+  pami_result_t PAMI_Dispatch_set (pami_context_t                    context,
+                                   size_t                            dispatch,
+                                   pami_dispatch_callback_function   fn,
+                                   void                            * cookie,
+                                   pami_dispatch_hint_t              options);
 
   /**
-   * \brief Initialize the dispatch functions for a dispatch id.
+   * \brief Initialize collective active message operations for a dispatch identifier.
    *
-   * This is a local, non-collective operation. There is no communication
-   * between tasks.
+   * Collective active message operations on a communication context for a
+   * specific dispatch identifier must be initialized on the origin task before
+   * the operations may be used. The target task must initialize before any
+   * collective active messages may be received.
    *
-   * \param[in] context    PAMI communication context
-   * \param[in] algorithm  The AM collective to set the dispatch
-   * \param[in] dispatch   Dispatch identifier to initialize
-   * \param[in] fn         Dispatch receive function
-   * \param[in] cookie     Dispatch function cookie
-   * \param[in] options    Dispatch registration assertions
+   * The initialization is a local, non-collective operation. There is no
+   * communication between tasks.
+   *
+   * It is \b illegal for the application to specify different hint assertions
+   * for the same client, context offset, and dispatch identifier on different
+   * tasks. However, there is no specific error check that will prevent
+   * the application from specifying different hint assertions. The result of a
+   * communication operation using  mismatched hint assertions is \e undefined.
+   * 
+   * \note The maximum allowed dispatch identifier attribute,
+   *       ::PAMI_CONTEXT_DISPATCH_ID_MAX, can be queried with
+   *       PAMI_Context_query().
+   *
+   * \param [in] context    Communication context
+   * \param [in] algorithm  Active message collective to set the dispatch
+   * \param [in] dispatch   Dispatch identifier to initialize
+   * \param [in] fn         Dispatch receive function
+   * \param [in] cookie     Dispatch function cookie
+   * \param [in] options    Dispatch registration assertions
    *
    */
-  pami_result_t PAMI_AMCollective_dispatch_set(pami_context_t              context,
-                                             pami_algorithm_t            algorithm,
-                                             size_t                     dispatch,
-                                             pami_dispatch_callback_function fn,
-                                             void                     * cookie,
-                                             pami_collective_hint_t      options);
+  pami_result_t PAMI_AMCollective_dispatch_set(pami_context_t                    context,
+                                               pami_algorithm_t                  algorithm,
+                                               size_t                            dispatch,
+                                               pami_dispatch_callback_function   fn,
+                                               void                            * cookie,
+                                               pami_collective_hint_t            options);
   /** \} */ /* end of "dispatch" group */
 
   /**
@@ -3364,13 +3551,18 @@ extern "C"
   /**
    * \brief Update the value of an attribute
    *
-   * \param [in] context        The PAMI context
+   * \thread    This operation on the communication context is \b not 
+   *            \b thread-safe. It is the responsibility of the application to
+   *            ensure that only one execution resource operates on a
+   *            communication context at any time.
+   *
+   * \param [in] context        Communication context
    * \param [in] configuration  The configuration attribute to update
    * \param [in] num_configs    The number of configuration elements
    *
-   * \retval PAMI_SUCCESS  The update has completed successfully.
-   * \retval PAMI_INVAL    The update has failed due to invalid parameters.
-   *                       For example, trying to update a read-only attribute.
+   * \retval ::PAMI_SUCCESS  The update has completed successfully.
+   * \retval ::PAMI_INVAL    The update has failed due to invalid parameters.
+   *                         For example, trying to update a read-only attribute.
    */
   pami_result_t PAMI_Context_update (pami_context_t        context,
                                      pami_configuration_t  configuration[],
@@ -3465,7 +3657,7 @@ extern "C"
 
   /*****************************************************************************/
   /**
-   * \defgroup contexts_and_endpoints multi-context messaging interface
+   * \defgroup contexts_and_endpoints Multi-context messaging
    *
    * Some brief documentation on context stuff ...
    * \{
@@ -3473,98 +3665,136 @@ extern "C"
   /*****************************************************************************/
 
   /**
-   * \brief Initialize the PAMI runtime for a client program
+   * \brief Initialize the runtime for a client program
    *
-   * An PAMI client represents a collection of resources to enable network
-   * communications. Each PAMI client that is initialized is unique and does not
-   * directly communicate with other clients. This allows middleware to be
-   * developed independently and each middleware can be used concurrently by an
-   * application. Resources are allocated and assigned at client creation time.
-   *
-   * An PAMI client \em program is any software that invokes an PAMI function.
-   * This includes applications, libraries, and other middleware. Some example
-   * client names may include: "MPI", "UPC", "OpenSHMEM", and "ARMCI"
-   *
+   * A client \e program is any software that invokes a PAMI function.
+   * This includes applications, libraries, and other middleware. Example
+   * client names include:
+   * - "MPI"
+   * - "UPC"
+   * - "ARMCI"
+   * 
+   * The opaque client object represents a collection of resources to enable
+   * network communications. Resources are allocated and assigned when the
+   * client is created.
+   * 
+   * A client must be initialized with an identical name and configuration on
+   * each process to enable communication between clients. Clients are unable to
+   * communicate with any client that has been initialized with a different
+   * configuration. This feature enables the independent development of
+   * middleware software and allows middleware to be used concurrently by an
+   * application.
+   * 
+   * A communication context must be created before any data transfer functions
+   * may be invoked.
+   * 
    * \note Client creation may be a synchronizing event, but is not required
    *       to be implemented as a synchronizing event. Application code must
    *       not make any assumption about synchronization during client
    *       creation, and therefore must create clients in the same order in
    *       all processes of the job.
    *
-   * A communication context must be created before any data transfer functions
-   * may be invoked.
-   *
    * \see PAMI_Context_createv
    *
-   * \param[in]  name           PAMI client unique name
-   * \param[out] client         Opaque client object
-   * \param[in]  configuration  objects for the client
-   * \param[in]  num_configs    The number of configuration elements
+   * \param [in]  name           Client unique name
+   * \param [out] client         Opaque client object
+   * \param [in]  configuration  Array of configurable attributes and values
+   * \param [in]  num_configs    Number of configurations, may be zero
    *
-   * \retval PAMI_SUCCESS  The client has been successfully created.
-   * \retval PAMI_INVAL    The client name has been rejected by the runtime.
-   *                       It happens when a job scheduler requires the client
-   *                       name to match what's in the job description.
+   * \retval ::PAMI_SUCCESS  The client has been successfully created.
+   * \retval ::PAMI_INVAL    The client name has been rejected by the runtime.
+   *                         It happens when a job scheduler requires the client
+   *                         name to match what's in the job description.
    */
-  pami_result_t PAMI_Client_create (const char           *name,
-                                    pami_client_t        *client,
-                                    pami_configuration_t  configuration[],
-                                    size_t                num_configs);
+  pami_result_t PAMI_Client_create (const char           * name,
+                                    pami_client_t        * client,
+                                    pami_configuration_t   configuration[],
+                                    size_t                 num_configs);
 
   /**
-   * \brief Finalize the PAMI runtime for a client program
+   * \brief Finalize the runtime for a client program
    *
-   * \warning It is \b illegal to invoke any PAMI functions using the client
-   *          handle from any thread after the finalize function.
+   * The application must destroy any communication contexts associated with
+   * the client before the client is destroyed.
+   * 
+   * This function is \b not \b thread-safe and it is the responsibility of the
+   * application to ensure that one, and only one, application thread destroys
+   * the client. After the client is destroyed the client handle will be changed
+   * to an invalid value so that it is are clearly destroyed. It is \b illegal
+   * to invoke any functions using a destroyed client.
    *
-   * \param[in] client PAMI client handle
-   * \retval PAMI_SUCCESS  The client has been successfully destroyed.
-   * \retval PAMI_INVAL    The client is invalid, e.g. already destroyed.
+   * \note The PAMI_Context_lock(), PAMI_Context_trylock(), and
+   *       PAMI_Context_unlock(), functions are not available to be used to
+   *       ensure thread-safe access to the client destroy function as the
+   *       locks, and the contexts associated with the locks, are required to
+   *       have been previously destroyed by the application.
    *
-   * The client handle will be changed to an invalid value so that it
-   * is clearly destroyed.
+   * \param [in] client Opaque client object
+   * 
+   * \retval ::PAMI_SUCCESS  The client has been successfully destroyed.
+   * \retval ::PAMI_INVAL    The client is invalid, e.g. already destroyed.
    */
   pami_result_t PAMI_Client_destroy (pami_client_t * client);
 
+  /****************************************************************************/
   /**
-   * \brief Construct an endpoint to address communication destinations
+   * \defgroup endpoint Endpoints
    *
    * Endpoints are opaque objects that are used to address a destination
    * in a client and are constructed from a client, task, and context offset.
+   * The application must not directly read or write the value of the object.
+   * 
    * - The client is required to disambiguate the task and context offset
    *   identifiers, as these identifiers may be the same for multiple clients
+   * 
    * - The task is required to construct an endpoint to address the specific
    *   process that contains the destination context
+   * 
    * - The context offset is required to identify the specific context on the
-   *   destination task. Recall that a context identifies a specific threading
-   *   point on a task. The context offset identifies which threading point
-   *   will process the communication operation.
+   *   destination task and corresponds to the location in the array of contexts
+   *   created by PAMI_Context_createv()
    *
    * Point-to-point communication operations, such as send, put, and get, will
    * address a destination with the opaque endpoint object. Collective
-   * communication operations are addressed by an opaque geometry object.
+   * communication operations are addressed by an opaque geometry object which
+   * may be constucted from a set of endpoints
    *
-   * The application may choose to write an endpoint table in shared memory to
-   * save storage in an environment where multiple tasks of a client have
-   * access to the same shared memory area  It is the responsibility of the
-   * application to allocate this shared memory area and coordinate the
-   * initialization and access of any shared data structures. This includes
-   * any opaque endpoint objects which may be created by one task and read by
-   * another task.
+   * \par Alternative endpoint identification
+   * 
+   * Applications may prefer to use a unique integer, instead of the endpoint
+   * opaque type, to identify all communication destinations for a client. This
+   * can be accomplished by creating an array of endpoint opaque objects and
+   * using the index into the array as the destination identifier.
+   * 
+   * See to the \link endpoint_table.c endpoint table example \endlink for more
+   * information.
+   * 
+   * An array of all endpoints in a client can be large. One strategy to reduce
+   * the endpoint array memory requirements is to create the endpoint table in
+   * shared memory in an environment where multiple processes have access to the
+   * same shared memory area. It is the responsibility of the application to
+   * allocate this shared memory area and coordinate the initialization and
+   * access of any shared data structures. This includes any endpoint opaque
+   * objects which may be created by one process and read by another process.
+   * 
+   * \note The internal implementation of the endpoint opaque object will not
+   *       contain any pointers to the local address space of a particular
+   *       process, as doing so will prevent the application from placing the
+   *       array of endpoints in a shared memory area to be used, read-only, by
+   *       all tasks with access to the shared memory area.
+   * 
+   * \{
+   */
+  /****************************************************************************/
+
+  /**
+   * \brief Create an individual endpoint identifier to address a destination
+   *        for communication operations
    *
-   * \internal The endpoint opaque object should not contain any pointers to
-   *           the local address space of a particular process, as doing so will
-   *           prevent the application from placing an array of endpoints in a
-   *           shared memory area to be used, read-only, by all tasks with
-   *           access to the shared memory area.
-   *
-   * \note This function may be replaced with a generated macro specific to the
-   *       install platform if needed for performance reasons.
-   *
-   * \param[in]  client   Opaque destination client object
-   * \param[in]  task     Opaque destination task object
-   * \param[in]  offset   Destination context offset
-   * \param[out] endpoint Opaque endpoint object
+   * \param [in]  client   Opaque destination client object
+   * \param [in]  task     Opaque destination task object
+   * \param [in]  offset   Destination context offset
+   * \param [out] endpoint Opaque endpoint object
    */
   pami_result_t PAMI_Endpoint_create (pami_client_t     client,
                                       pami_task_t       task,
@@ -3576,127 +3806,127 @@ extern "C"
    *
    * The endpoint must have been previously initialized.
    *
-   * \note This function may be replaced with a generated macro specific to the
-   *       install platform if needed for performance reasons.
-   *
    * \see PAMI_Endpoint_create()
    *
-   * \param[in]  endpoint Opaque endpoint object
-   * \param[out] task     Opaque destination task object
-   * \param[out] offset   Destination context offset
+   * \param [in]  endpoint Opaque endpoint object
+   * \param [out] task     Opaque destination task object
+   * \param [out] offset   Destination context offset
    */
   pami_result_t PAMI_Endpoint_query (pami_endpoint_t   endpoint,
                                      pami_task_t     * task,
                                      size_t          * offset);
 
+  /** \} */ /* end of "endpoint" group */
 
+  /*****************************************************************************/
+  /**
+   * \defgroup context Communication contexts
+   *
+   * Communication contexts are a partition of the local resources assigned to
+   * the client object for each task. Every context within a client has
+   * equivalent functionality and semantics. The application must not directly
+   * read or write the value of the ::pami_context_t opaque object.
+   * 
+   * It is the responsibility of the application to ensure that all
+   * communication contexts created for a client are advanced by a thread or
+   * execution resource to prevent deadlocks. This is the "all advance" rule.
+   * 
+   * All point-to-point and collective operations are posted to a local
+   * communication context and delivered to a communication context on a remote
+   * task. The runtime could implement \e horizontal parallelism by injecting
+   * data or processing events across multiple communication contexts associated
+   * with the client. Consequently, data can be received across multiple
+   * communication contexts. To guarantee progress of a single operation, and
+   * avoid deadlocks, every context must be advanced.
+   * 
+   * The "all advance" rule may be relaxed for an application with expert
+   * knowledge about the communication patterns being used. To do this the
+   * application must specify special hints to disable "horizontal", or
+   * cross-context, parallelism. Refer to the pami_dispatch_hint_t.multicontext
+   * and pami_collective_hint_t.multicontext option. These options must be set
+   * to pami_hint_t::PAMI_HINT_DISABLE to disable multi-context parallelization
+   * and relax the "all advance" progress rule.
+   * 
+   * \thread  The progress engine for each communication context is independent
+   *          and may be advanced concurrently by using multiple threads to
+   *          invoke the progress functions. However, operations on contexts are
+   *          critical sections and \b not \b thread-safe. The application must
+   *          ensure that critical sections are protected from re-entrant use.
+   *          All callback functions associated with a communication operation
+   *          on a communication context will be invoked by the thread or
+   *          execution resource that advances the context.
+   *
+   * \warning The progress functions, such as PAMI_Context_advance(), are \b not
+   *          \b re-entrant for a given communication context. Application code
+   *          that is executed within any callback function that is invoked as a
+   *          result of an advance of the internal progress engine of a
+   *          communication context must not invoke any progress function,
+   *          such as PAMI_Context_advance(), on the associated communication
+   *          context. This restriction is required to avoid corruption of the
+   *          internal progress engine state.
+   *
+   * \{
+   */
+  /*****************************************************************************/
 
   /**
-   * \brief Create new independent communication contexts for a client
+   * \brief Create and initialize one or more independent communication contexts
    *
-   * Contexts are local "threading points" that an application may use to
-   * optimize concurrent communication operations. A context handle is an
-   * opaque object type that the application must not directly read or write
-   * the value of the object.
+   * The maximum number of contexts that may be created for a client can be
+   * determined with the PAMI_Client_query() function and the
+   * ::PAMI_CLIENT_NUM_CONTEXTS attribute.
    *
-   * Communication contexts have these features:
-   * - Each context is a partition of the local resources assigned to the
-   *   client object for each task
-   * - Every context within a client has equivalent functionality and
-   *   semantics
-   * - Communication operations initiated by the local task will use the
-   *   opaque context object to identify the specific threading point that
-   *   will be used to issue the communication independent of communication
-   *   occurring in other contexts
-   * - All local event callbacks(s) associated with a communication operation
-   *   will be invoked by the thread which advances the context that was used
-   *   to initiate the operation
-   * - A context is a local object and is not used to directly address a
-   *   communication destination
-   * - Progress is driven independently among contexts
-   * - Progress may be driven concurrently among contexts, by using multiple
-   *   threads, as desired by the application
-   * - <b>All contexts created by a client must be advanced by the application
-   *   to prevent deadlocks.  This is the "all advance" rule</b>
-   * - The rationale for the "all-advance" rule is that for a point-to-point
-   *   send or a collective operation, a communication is posted to a
-   *   context, and delivered to a context on a remote task. The internals
-   *   of the messaging layer could implement "horizontal" parallelism by
-   *   injecting data or processing across multiple contexts associated with
-   *   the client. Consequently, data can be received across multiple contexts.
-   *   To guarantee progress of a single operation, every context must be advanced
-   *   by the user.
-   * - The user application/client of pami may have more knowledge about
-   *   the communication patterns and the "all advance" rule can be relaxed.
-   *   To do this the user can specify special hints to disable "horizontal",
-   *   or cross context parallelism. Refer to pami_send_hint_t, and the
-   *   "multicontext" option.  This option must be switched "off" to disable
-   *   parallelization and the "all advance rule".
-   * - The task based geometry constructor implies all contexts are included
-   *   in the geometry, with a single participant per task. All contexts must
-   *   be advanced during a collective operation.  However, the user can specify
-   *   special hints to disable "horizontal", or cross context parallelism.
-   *   Refer to pami_collective_hint_t, and the
-   *   "multicontext" option.  This option must be switched "off" to disable
-   *   parallelization and the "all advance rule".
+   * This function is \b not \b thread-safe
+   * and the application must ensure that one, and only one, thread creates the
+   * communication contexts for a client.
    *
-   * \par Thread considerations
-   *       Applications map, or "apply", threading resources to contexts.
-   *       Operations on contexts are critical sections and not thread-safe.
-   *       The application must ensure that critical sections are protected
-   *       from re-entrant use. PAMI provides mechanisms for controlling access
-   *       to critical sections
-   *
-   * The context configuration attributes may include:
-   * - Context optimizations, such as shared memory, collective acceleration, etc
+   * \note The PAMI_Context_lock(), PAMI_Context_trylock(), and
+   *       PAMI_Context_unlock(), functions must not be used to ensure
+   *       thread-safe access to the context create function as the lock
+   *       associated with each context has not yet been created.
    *
    * Context creation is a local operation and does not involve communication or
-   * synchronization with other tasks.
+   * synchronization with other tasks. 
    *
-   * \warning This function is \b not \b thread-safe and the application must
-   *          ensure that one, and only one thread creates the communication
-   *          contexts for a client.
+   * \param [in]  client        Client handle
+   * \param [in]  configuration Array of configurable attributes and values
+   * \param [in]  num_configs   Number of configurations, may be zero
+   * \param [out] context       Array of communication contexts to initialize
+   * \param [in]  ncontexts     Number of contexts to be created
    *
-   * \param[in]  client        Client handle
-   * \param[in]  configuration List of configurable attributes and values
-   * \param[in]  num_configs   Number of configurations, may be zero
-   * \param[out] context       Array of communication contexts to initialize
-   * \param[in]  ncontexts     Number of contexts to be created
-   *
-   * \retval PAMI_SUCCESS  Contexts have been created.
-   * \retval PAMI_INVAL    Configuration could not be satisfied or there were
-   *                       errors in other parameters.
+   * \retval ::PAMI_SUCCESS  Contexts have been created.
+   * \retval ::PAMI_INVAL    Configuration could not be satisfied or there were
+   *                         errors in other parameters.
    */
-  pami_result_t PAMI_Context_createv (pami_client_t          client,
-                                      pami_configuration_t   configuration[],
-                                      size_t                 num_configs,
-                                      pami_context_t       * context,
-                                      size_t                 ncontexts);
+  pami_result_t PAMI_Context_createv (pami_client_t        client,
+                                      pami_configuration_t configuration[],
+                                      size_t               num_configs,
+                                      pami_context_t       context[],
+                                      size_t               ncontexts);
 
 
   /**
    * \brief Destroy communication contexts for a client
    *
-   * The context handles will be changed to an invalid value so that
-   * they are clearly destroyed.
-   *
-   * \warning This function is \b not \b thread-safe and the application must
-   *          ensure that one, and only one, thread destroys the communication
-   *          context(s) for a client.
-   *
-   * It is \b illegal to invoke any PAMI functions using a communication
-   * context from any thread after the context is destroyed.
+   * This function is \b not \b thread-safe and it is the responsibility of the
+   * application to ensure that one, and only one, application thread destroys
+   * the communication context(s) for a client.
+   * 
+   * After the context(s) are
+   * destroyed the context handles will be changed to an invalid value so that
+   * they are clearly destroyed. It is \b illegal to invoke any functions using
+   * a destroyed communication context.
    * 
    * \note The PAMI_Context_lock(), PAMI_Context_trylock(), and
    *       PAMI_Context_unlock(), functions must not be used to ensure
    *       thread-safe access to the context destroy function as the lock
    *       associated with each context will be destroyed.
    *
-   * \param[in,out] contexts  PAMI communication context list
-   * \param[in]     ncontexts The number of contexts in the list.
+   * \param [in,out] contexts  PAMI communication context list
+   * \param [in]     ncontexts The number of contexts in the list.
    *
-   * \retval PAMI_SUCCESS  The contexts have been destroyed.
-   * \retval PAMI_INVAL    Some context is invalid, e.g. already destroyed.
+   * \retval ::PAMI_SUCCESS  The contexts have been destroyed.
+   * \retval ::PAMI_INVAL    Some context is invalid, e.g. already destroyed.
    */
   pami_result_t PAMI_Context_destroyv (pami_context_t * contexts,
                                        size_t           ncontexts);
@@ -3704,27 +3934,23 @@ extern "C"
   /**
    * \brief Post work to a context, thread-safe
    *
-   * It is \b not required that the target context is locked, or otherwise
-   * reserved, by an external atomic operation to ensure thread safety. The
-   * runtime will internally perform any necessary atomic operations in order
-   * to post the work to the context.
+   * Functions that operate on a communication context are typically not
+   * thread-safe and it is the responsibility of the application to ensure that
+   * these critical sections are protected from re-entrant access by multiple
+   * execution resources. The PAMI_Context_post() function is unique because it
+   * does \b not require that the communcation context is locked, or otherwise
+   * protected from re-entrant access by multiple execution resource to ensure
+   * thread safety. The runtime will internally perform any necessary atomic
+   * operations in order to safely post the work to the context.
    *
-   * The work function will be invoked in the thread that advances the
-   * target context. There is no explicit completion notification provided
-   * to the \em posting thread when a thread advancing the target context
-   * returns from the work function.  If the posting thread desires
-   * a completion notification it must explicitly program such notifications,
-   * via the PAMI_Context_post() interface or other mechanism.
-   *
-   * \see pami_work_function
-   *
-   * If the function is returning ::PAMI_SUCCESS then it may dispose of the
-   * pami_work_t object (including re-posting) if it so chooses, provided
-   * arrangements were made to pass the address of the pami_work_t into the
-   * work function (e.g. via the cookie).
-   *
-   * If the function is returning ::PAMI_EAGAIN then it must \b not have altered
-   * the pami_work_t object in anyway.
+   * The work callback function, with the associated cookie, will continue to be
+   * invoked during communication context advance until the function does not
+   * return ::PAMI_EAGAIN.
+   *  
+   * There is no explicit completion notification provided to the \e posting
+   * thread when a thread advancing the target context returns ::PAMI_SUCCESS
+   * from the work callback function.  If the posting thread desires
+   * a completion notification it must explicitly program such notifications.
    *
    * \param [in] context Communication context
    * \param [in] work    Opaque storage for the work, used internally
@@ -3732,7 +3958,6 @@ extern "C"
    * \param [in] cookie  Opaque data pointer to pass to the work function
    *
    * \return ::PAMI_SUCCESS  The work has been posted.
-   *
    * \return ::PAMI_INVAL    The post operation was rejected due to invalid parameters.
    */
   pami_result_t PAMI_Context_post (pami_context_t       context,
@@ -3740,69 +3965,91 @@ extern "C"
                                    pami_work_function   fn,
                                    void               * cookie);
 
-
   /**
    * \brief Advance the progress engine for a single communication context
    *
-   * May complete zero, one, or more outbound transfers. May invoke dispatch
-   * handlers for incoming transfers. May invoke work event callbacks previously
-   * posted to the communication context.
+   * May complete zero, one, or more outbound transfers. May invoke event
+   * callback functions to notify the application of completed events. May
+   * invoke dispatch callback functions for incoming transfers. May invoke work
+   * callback functions previously posted to the communication context. 
    *
    * This polling advance function will return after the first poll iteration
-   * that results in a processed event or if, no events are processed, after
+   * that results in a processed event or, if no events are processed, after
    * polling for the maximum number of iterations.
    *
-   * \warning This function is \b not \b thread-safe and the application must
-   *          ensure that only one thread advances a context at any time.
+   * The advance operation is considered a critical section for the
+   * communication context and this function does \b not provide thread-safe
+   * access to this critical section. It is the responsibility of the
+   * application to ensure that critical sections are protected from concurrent
+   * access by multiple execution resources.
+   * 
+   * \warning This function is \b not \b re-entrant for any given communication
+   *          context. Application code that is executed within any callback
+   *          function that is invoked as a result of an advance of the internal
+   *          progress engine of a communication context must not invoke
+   *          any progress function, such as PAMI_Context_advance(), on the
+   *          associated communication context. This restriction is required to
+   *          avoid corruption of the internal progress engine state.
    *
    * \see PAMI_Context_lock
    * \see PAMI_Context_trylock
    *
-   * \todo Define return code
+   * \param [in] context Communication context
+   * \param [in] maximum Maximum number of internal poll iterations
    *
-   * \param[in] context PAMI communication context
-   * \param[in] maximum Maximum number of internal poll iterations
-   *
-   * \retval PAMI_SUCCESS  An event has occurred and been processed.
-   * \retval PAMI_EAGAIN   No event has occurred.
+   * \retval ::PAMI_SUCCESS  An event has occurred and been processed
+   * \retval ::PAMI_EAGAIN   No event has occurred
    */
   pami_result_t PAMI_Context_advance (pami_context_t context, size_t maximum);
 
   /**
    * \brief Advance the progress engine for multiple communication contexts
    *
-   * May complete zero, one, or more outbound transfers. May invoke dispatch
-   * handlers for incoming transfers. May invoke work event callbacks previously
-   * posted to a communication context.
+   * May complete zero, one, or more outbound transfers. May invoke event
+   * callback functions to notify the application of completed events. May
+   * invoke dispatch callback functions for incoming transfers. May invoke work
+   * callback functions previously posted to the communication context.
    *
    * This polling advance function will return after the first poll iteration
-   * that results in a processed event on any context, or if, no events are
+   * that results in a processed event on any context, or, if no events are
    * processed, after polling for the maximum number of iterations.
    *
-   * \warning This function is \b not \b thread-safe and the application must
-   *          ensure that only one thread advances the contexts at any time.
+   * The advance operation is considered a critical section for each individual
+   * communication context and this function does \b not provide thread-safe
+   * access to these critical sections. It is the responsibility of the
+   * application to ensure that critical sections are protected from concurrent
+   * access by multiple execution resources.
    *
    * \note It is possible to define a set of communication contexts that are
-   *       always advanced together by any pami client thread.  It is the
-   *       responsibility of the pami client to atomically lock the context set,
+   *       always advanced together by any application thread.  It is the
+   *       responsibility of the application to atomically lock the context set,
    *       perhaps by using the PAMI_Context_lock() function on a designated
-   *       \em leader context, and to manage the pami client threads to ensure
+   *       \e leader context, and to manage the application threads to ensure
    *       that only one thread ever advances the set of contexts.
    *
-   * \todo Define return code
+   * \warning This function is not re-entrant for an associated communication
+   *          context. Application code that is executed within any callback
+   *          function that is invoked as a result of an advance of the internal
+   *          progress engine of a communication context \b must \b not invoke
+   *          any progress function, such as PAMI_Context_advancev(), on the
+   *          associated communication context. This restriction is required to
+   *          avoid corruption of the internal progress engine state.
    *
    * \see PAMI_Context_lock
    * \see PAMI_Context_trylock
    *
-   * \param[in] context Array of PAMI communication contexts
-   * \param[in] count   Number of communication contexts
-   * \param[in] maximum Maximum number of internal poll iterations on each context
-   * \retval PAMI_SUCCESS  An event has occurred and been processed.
-   * \retval PAMI_EAGAIN   No event has occurred.
+   * \param [in] context Array of communication contexts
+   * \param [in] count   Number of communication contexts
+   * \param [in] maximum Maximum number of internal poll iterations on each context
+   * 
+   * \retval ::PAMI_SUCCESS  An event has occurred and been processed.
+   * \retval ::PAMI_EAGAIN   No event has occurred.
    */
   pami_result_t PAMI_Context_advancev (pami_context_t context[],
                                        size_t         count,
                                        size_t         maximum);
+
+  /** \} */ /* end of "context" group */
 
   /*****************************************************************************/
   /**
@@ -3812,33 +4059,38 @@ extern "C"
   /*****************************************************************************/
 
   /**
-   * \brief Thread-safe Advance the progress engine for multiple communication contexts
+   * \brief Advance the progress engine for multiple communication contexts, thread-safe
    *
+   * Similar to PAMI_Context_advancev(), this function will advance the progress
+   * engine for the communication contexts, however before each individual
+   * advance a context lock will be attempted to protected each context from
+   * re-entrant access by multiple execution resources.
+   * 
    * May complete zero, one, or more outbound transfers. May invoke dispatch
    * handlers for incoming transfers. May invoke work event callbacks previously
    * posted to a communication context.
    *
    * This polling advance function will return after the first poll iteration
    * that results in a processed event on any context, or if, no events are
-   * processed, after polling for the maximum number of iterations.
+   * processed, after polling for the maximum number of iterations. Applications
+   * must not assume that events processed by other threads, or execution
+   * resources, will cause this thread to return before the \c maximum number
+   * of loop iterations.
    *
-   * \warning This function uses Context Locks for mutual exclusion.
-   *          If you are using a different system, this will not be
-   *          thread-safe.
-   *
-   * \todo Define return code
+   * \warning This function uses context locks for mutual exclusion and will
+   *          \b not be thread-safe if the other application threads or
+   *          execution resources are using a different system to protect the
+   *          communication context critical sections.
    *
    * \see PAMI_Context_lock
    * \see PAMI_Context_trylock
    *
-   * \param[in] context Array of PAMI communication contexts
-   * \param[in] count   Number of communication contexts
-   * \param[in] maximum Maximum number of internal poll iterations.
-   *            Users cannot assume that events processed by other
-   *            threads will cause this thread to return before
-   *            "maximum" loop iterations.
-   * \retval PAMI_SUCCESS  An event has occurred and been processed.
-   * \retval PAMI_EAGAIN   No event has occurred.
+   * \param [in] context Array of communication contexts
+   * \param [in] count   Number of communication contexts
+   * \param [in] maximum Maximum number of internal poll iterations
+   * 
+   * \retval ::PAMI_SUCCESS  An event has occurred and been processed.
+   * \retval ::PAMI_EAGAIN   No event has occurred.
    */
   pami_result_t PAMI_Context_trylock_advancev (pami_context_t context[],
                                                size_t         count,
@@ -3923,13 +4175,17 @@ extern "C"
    * #endif
    * \endcode
    *
+   * \thread This operation on the client is \b not \b thread-safe. It is the
+   *         responsibility of the application to ensure that only one
+   *         execution resource opens the extension for a client at any time.
+   *
    * \param [in]  client    Client handle
    * \param [in]  name      Unique extension name
    * \param [out] extension Extension handle
    *
-   * \retval PAMI_SUCCESS The named extension is available and implemented by the PAMI runtime.
-   * \retval PAMI_UNIMPL  The named extension is not implemented by the PAMI runtime.
-   * \retval PAMI_ERROR   The named extension was not initialized by the PAMI runtime.
+   * \retval ::PAMI_SUCCESS The named extension is available and implemented by the PAMI runtime.
+   * \retval ::PAMI_UNIMPL  The named extension is not implemented by the PAMI runtime.
+   * \retval ::PAMI_ERROR   The named extension was not initialized by the PAMI runtime.
    */
   pami_result_t PAMI_Extension_open (pami_client_t      client,
                                      const char       * name,
@@ -3937,6 +4193,10 @@ extern "C"
 
   /**
    * \brief Close an extension
+   *
+   * \thread This operation on the client is \b not \b thread-safe. It is the
+   *         responsibility of the application to ensure that only one
+   *         execution resource closes the extension for a client at any time.
    *
    * \param [in] extension Extension handle
    */
@@ -3972,12 +4232,12 @@ extern "C"
    * \endcode
    *
    * \param [in] extension Extension handle
-   * \param [in] fn        Extension symbol name
+   * \param [in] name      Extension symbol name
    *
    * \retval NULL Request PAMI extension is not available
    * \return PAMI extension symbol pointer
    */
-  void * PAMI_Extension_symbol (pami_extension_t extension, const char * fn);
+  void * PAMI_Extension_symbol (pami_extension_t extension, const char * name);
 
   /** \} */ /* end of "extensions" group */
 
