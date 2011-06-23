@@ -87,6 +87,7 @@ namespace PAMI {
 		}
 
 		inline void enqueue_impl(Element *e) {
+			Memory::sync();	// traditional producer-side msync
 			_pub_queue.enqueue(e);
 		}
 

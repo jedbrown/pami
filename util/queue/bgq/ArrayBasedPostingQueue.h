@@ -33,6 +33,7 @@
 #include "util/queue/QueueIteratorInterface.h"
 #include "util/queue/Queue.h"
 #include "spi/include/l2/atomic.h"
+#include "spi/include/l1p/flush.h"
 #include "Global.h"
 
 #ifndef TRACE_ERR
@@ -145,7 +146,7 @@ namespace PAMI {
 		/// \copydoc PAMI::Interface::QueueInterface::enqueue
 		inline void enqueue_impl(Element *element) __attribute__((__always_inline__)) {
 			uint64_t index = L2_AtomicLoadIncrementBounded(&_array_q.Producer);
-			//mbar();
+			L1P_FlushRequests();
 			if (index != L2_ATOMIC_FULL) {
 				array_queue(index,element);
 				return;
@@ -264,11 +265,13 @@ namespace PAMI {
 			// _overflow can only be !empty if _array_q is also !empty...
 			iter->tail = L2_AtomicLoad(&_array_q.Producer);
 			iter->head = _array_q.Consumer; // not needed?
+			if (iter->head < iter->tail) ppc_msync(); // conditional too much?
 			return (iter->head < iter->tail);
 		}
 
 		inline bool iter_check_impl(Iterator *iter) {
 			if (iter->head < iter->tail) {
+				// msync was done in iter_begin()...
 				volatile Element *e = array_queue(iter->head);
 				// it is reasonable to wait here since the
 				// enqueuer will immediately update the pointer.
@@ -286,6 +289,7 @@ namespace PAMI {
 				return true;
 			}
 			if (iter->curr != NULL) {
+				// msync was done after removeAll() in iter_end()...
 				iter->next = _overflow.nextElem(iter->curr);
 				return true;
 			}
@@ -316,6 +320,7 @@ namespace PAMI {
 						L2_AtomicStore(&_array_q.UpperBound, n);
 						if (t) {
 							_overflow.removeAll(iter->curr, t, s);
+							ppc_msync();
 						}
 					}
 					_ovf_mtx.release();
