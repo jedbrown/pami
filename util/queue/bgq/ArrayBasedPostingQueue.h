@@ -44,8 +44,6 @@
 #define L2_ATOMIC_FULL        0x8000000000000000UL
 #define L2_ATOMIC_EMPTY       0x8000000000000000UL
 
-#define USE_GUARDED_WC_FLUSH 0
-
 namespace PAMI {
 	///
 	/// \brief A fast array based queue based on L2 atomics. All calls
@@ -147,14 +145,7 @@ namespace PAMI {
 		/// \copydoc PAMI::Interface::QueueInterface::enqueue
 		inline void enqueue_impl(Element *element) {
 			uint64_t index = L2_AtomicLoadIncrementBounded(&_array_q.Producer);
-#if USE_GUARDED_WC_FLUSH
-			// Store 0 to the flush address to flush all stores. Low overhead
-			// non-blocking write fence. In addition, we schedule the flush
-			// to overlap with the load increment operation.
-			L2_AtomicStore(&_array_q.Flush, 0);
-#else
 			//mbar();
-#endif
 			if (index != L2_ATOMIC_FULL) {
 				array_queue(index,element);
 				return;
