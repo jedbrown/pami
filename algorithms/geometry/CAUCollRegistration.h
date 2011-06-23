@@ -567,7 +567,7 @@ namespace PAMI
           }
         inline void freeBsrInfo(PAMI::Device::BSRGeometryInfo *bsr_gi)
           {
-            bsr_gi->PAMI::Device::~BSRGeometryInfo();
+            bsr_gi->~BSRGeometryInfo();
             _bsr_geom_allocator.returnObject(bsr_gi);
           }
 
