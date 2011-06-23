@@ -11,6 +11,7 @@ void xlpgas::ShmCauAllReduce<T_NI>::reset (const void         * sbuf,
 				     unsigned           nelems,
 				     user_func_t* uf
 				     ) {  
+#if 0
   //if(XLPGAS_MYTHREAD==0) printf("Composed allreduce\n");
   xlpgas::Team * team        = this->_comm;
   xlpgas::Team * local_team  = xlpgas::Team::get (this->_ctxt, team->local_team_id());
@@ -84,4 +85,6 @@ void xlpgas::ShmCauAllReduce<T_NI>::reset (const void         * sbuf,
   else{
     memcpy( rbuf, &tmp_cau, xlpgas::Allreduce::datawidthof(dtype) );
   }
+#endif
+
 }

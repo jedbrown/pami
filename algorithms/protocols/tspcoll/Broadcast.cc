@@ -54,7 +54,7 @@ void xlpgas::Broadcast<T_NI>::reset (int rootindex,
 			       void               * dbuf,
 			       unsigned             nbytes)
 {
-  if(rootindex == _comm->ordinal()) {
+  if(rootindex == (int)this->_comm->ordinal()) {
     assert (sbuf != NULL);
   }
   assert (dbuf != NULL);
@@ -65,7 +65,7 @@ void xlpgas::Broadcast<T_NI>::reset (int rootindex,
   /* --------------------------------------------------- */
   /* --------------------------------------------------- */
 
-  if (rootindex == _comm->ordinal() && sbuf != dbuf) {
+  if (rootindex == (int)this->_comm->ordinal() && sbuf != dbuf) {
     memcpy (dbuf, sbuf, nbytes);
   }
 

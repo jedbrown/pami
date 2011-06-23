@@ -7,6 +7,7 @@ void xlpgas::ShmHybridBcast<T_NI>::reset (int root,
 				    const void         * sbuf, 
 				    void               * rbuf, 
 				    unsigned           nbytes) {
+#if 0
   xlpgas::Team * team        = this->_comm;//xlpgas::Team::get (_ctxt, teamID);
   xlpgas::Team * local_team  = xlpgas::Team::get (_ctxt, team->local_team_id());
   xlpgas::Team * leader_team = xlpgas::Team::get (_ctxt, team->leader_team_id());
@@ -85,4 +86,5 @@ void xlpgas::ShmHybridBcast<T_NI>::reset (int root,
       lrbuf = (void*)((char*)lrbuf+SHM_BUF_SIZE);
     }
   }
+#endif
 }
