@@ -128,6 +128,9 @@ namespace xlpgas
       AlltoallPPKind,
       SHMReduceKind,
       SHMBcastKind,
+      SHMLargeBcastKind,
+      ShmCauAllReduceKind,
+      ShmHybridBcastKind,
       MAXKIND
     };
 
@@ -283,6 +286,16 @@ namespace xlpgas
 	      new (b) reduce_type (_ctxt, comm, kind, nextID, 0);
 	      break;
 	    }
+
+	  case ShmCauAllReduceKind:
+	    {
+	      typedef typename CollDefs::shm_cau_allreduce_type reduce_type;
+	      b = (Collective *)malloc (sizeof(reduce_type));
+	      assert (b != NULL);
+	      memset (b, 0, sizeof(reduce_type));
+	      new (b) reduce_type (_ctxt, comm, kind, nextID, 0);
+	      break;
+	    }
 #endif
 	  case AllreducePPKind:
 	    {
@@ -308,6 +321,24 @@ namespace xlpgas
 	    {
 	      typedef typename CollDefs::shm_broadcast_type bcast_type;
 	      b = (Collective<T_NI> *)malloc (sizeof(bcast_type));
+	      assert (b != NULL);
+	      memset (b, 0, sizeof(bcast_type));
+	      new (b) bcast_type (_ctxt, comm, kind, nextID, 0);
+	      break;
+	    }
+	  case SHMLargeBcastKind:
+	    {
+	      typedef typename CollDefs::shm_large_broadcast_type bcast_type;
+	      b = (Collective *)malloc (sizeof(bcast_type));
+	      assert (b != NULL);
+	      memset (b, 0, sizeof(bcast_type));
+	      new (b) bcast_type (_ctxt, comm, kind, nextID, 0);
+	      break;
+	    }
+	  case ShmHybridBcastKind:
+	    {
+	      typedef typename CollDefs::shm_hybrid_broadcast_type bcast_type;
+	      b = (Collective *)malloc (sizeof(bcast_type));
 	      assert (b != NULL);
 	      memset (b, 0, sizeof(bcast_type));
 	      new (b) bcast_type (_ctxt, comm, kind, nextID, 0);

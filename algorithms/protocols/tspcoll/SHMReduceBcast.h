@@ -44,6 +44,27 @@ namespace xlpgas
 
 	  
   }; /* Shmbcast */
+
+class SHMLargeBcast: public Collective
+   {
+     typedef xlpgas::local::FixedLeader2LB<Wait> FL;
+     FL  fl;
+     const void* _sbuf;
+     void*       _dbuf;
+     unsigned    _nbytes;
+   public:
+     void * operator new (size_t, void * addr) { return addr; }
+     SHMLargeBcast (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset);
+     
+     virtual void reset (int rootindex,
+                       const void         * sbuf, 
+                       void               * dbuf,
+                       unsigned           nbytes);
+     
+     virtual void kick();
+   }; /* ShmLargebcast */
+
+
 } /* Xlpgas */
 
 #include "algorithms/protocols/tspcoll/SHMReduceBcast.cc"

@@ -72,6 +72,12 @@ int xlpgas::Team::ordinal () const
   return _me.node * _size.ctxt + _me.ctxt;
 }
 
+int xlpgas::Team::ordinal (xlpgas_endpoint_t& _ep) const
+{
+  return _ep.node * _size.ctxt + _ep.ctxt;
+}
+
+
 xlpgas_endpoint_t xlpgas::Team::endpoint (void) const
 {
   return _me;
@@ -98,6 +104,17 @@ void xlpgas::Team::split(int ctxt, int newTeamID, int mynewrank, int nsize, xlpg
   xlpgas::Team::set(ctxt, newTeamID, c);
 }
 
+int xlpgas::Team::leader(int root) const {
+  assert(_all_info != NULL);
+  xlpgas_endpoint_t root_ep = endpoint(root);
+  for(int i=0;i<size();++i){
+    if(_all_info[i].node == root_ep.node &&
+       _all_info[i].ctxt == root_ep.ctxt) 
+      return _all_info[i].leader;
+  }
+  assert(false);//fail if not in the table
+  return -1;
+}
 
 /* ************************************************************************ */
 /* ************************************************************************ */

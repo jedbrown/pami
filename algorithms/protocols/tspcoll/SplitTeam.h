@@ -42,7 +42,30 @@ namespace xlpgas{
       return _proclist[ordinal];
     }
 
-  protected:
+    bool is_leader() const {
+      return (_ordinal_rank != -1);
+    }
+
+    bool contains_endp(xlpgas_endpoint_t& _ep) const {
+      //printf("L%d looking for [%d,%d]\n",XLPGAS_MYTHREAD, _ep.node, _ep.ctxt); 
+      for (int i=0;i<this->size();++i){
+	//printf("L%d contains at %d =[%d,%d]\n", XLPGAS_MYTHREAD, i, _proclist[i].node, _proclist[i].ctxt);
+	if(_proclist[i].node == _ep.node &&
+	   _proclist[i].ctxt == _ep.ctxt) return true;
+      }
+      return false;
+    }
+
+    int ordinal (xlpgas_endpoint_t& _ep) const
+    {
+      for (int i=0;i<this->size();++i){
+	if(_proclist[i].node == _ep.node &&
+	   _proclist[i].ctxt == _ep.ctxt) return i;
+      }
+      return -1;
+    }
+
+  protected:  
     xlpgas_endpoint_t * _proclist; /* list of absolute (node) ranks */
     int _ordinal_rank;//stored; not computed as it may not be a formula anymore
   };

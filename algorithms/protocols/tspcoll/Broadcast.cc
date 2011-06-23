@@ -54,7 +54,9 @@ void xlpgas::Broadcast<T_NI>::reset (int rootindex,
 			       void               * dbuf,
 			       unsigned             nbytes)
 {
-//  if(rootindex == XLPGAS_MYTHREAD) assert (sbuf != NULL);
+  if(rootindex == _comm->ordinal()) {
+    assert (sbuf != NULL);
+  }
   assert (dbuf != NULL);
 
   if (rootindex >= (int)this->_comm->size())
@@ -63,8 +65,9 @@ void xlpgas::Broadcast<T_NI>::reset (int rootindex,
   /* --------------------------------------------------- */
   /* --------------------------------------------------- */
 
-  if (rootindex == (int)this->_comm->ordinal() && sbuf != dbuf)
+  if (rootindex == _comm->ordinal() && sbuf != dbuf) {
     memcpy (dbuf, sbuf, nbytes);
+  }
 
   int myrelrank = (this->_comm->ordinal() + this->_comm->size() - rootindex) % this->_comm->size();
   for (int i=0, phase=this->_numphases/2; i<this->_numphases/2; i++, phase++)

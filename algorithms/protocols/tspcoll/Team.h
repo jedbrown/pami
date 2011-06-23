@@ -11,6 +11,17 @@
 namespace xlpgas
 {
 #if 0
+  /*
+   * Used to store the global picture of local/global teams and their
+   * associated leaders; stored in the team and filled in during sub
+   * topology build
+   */
+  struct xlpgas_local_info {
+    int node;
+    int ctxt;
+    int leader;
+  };
+
   template <class T_NI>
   class Team
   {
@@ -37,6 +48,10 @@ namespace xlpgas
     int leader_team_id(void) const { return _leaders_team_id;}
     int local_team_id(void) const  { return _local_team_id;}
     virtual bool is_leader(void) const { return true;}//to be overloaded in the derived class
+    virtual bool contains_endp(xlpgas_endpoint_t&) const { return true;};//to be overloaded in non global teams 
+    virtual int ordinal(xlpgas_endpoint_t&) const;
+    int leader(int root) const;//find the leader of the input arg 
+                               //(ordinal of an endpoint of the team)
     /* ---------------------- */
     /* communicator utilities */
     /* ---------------------- */
@@ -50,12 +65,12 @@ namespace xlpgas
     xlpgas_endpoint_t  _size;
     Collective<T_NI>      * _colls[MAXKIND];
 
-  protected:
     static Team *     _instances[MAX_COMMS];
     static int        _ncontexts;
     int               _max_team_id;
     int               _leaders_team_id;
     int               _local_team_id;
+    xlpgas_local_info* _all_info;
   };
 #endif
 

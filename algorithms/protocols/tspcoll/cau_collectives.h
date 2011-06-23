@@ -51,6 +51,7 @@ namespace xlpgas{
       }
     }
   
-#endif // XLPGAS_PAMI_CAU
 }//end namespace
+#endif // XLPGAS_PAMI_CAU
+
 #endif

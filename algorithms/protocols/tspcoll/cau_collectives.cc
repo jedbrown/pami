@@ -13,7 +13,7 @@
 //extern pami_context_t  xlpgas_pami_ctxt[256];
 
 int  base_group_id  = 0; // Cau group id
-enum { XLPGAS_RECV_MCAST = 64, XLPGAS_RECV_REDUCE = 65 };
+enum { XLPGAS_RECV_MCAST = 66, XLPGAS_RECV_REDUCE = 67 };
 const int XLPGAS_CAU_POLL_CNT   = 10000;
 
 
@@ -246,7 +246,7 @@ void xlpgas::cau_fast_allreduce(int64_t* dest, int64_t* src, cau_reduce_op_t& op
     lapi_msg_info_t msg_info;
     bzero(&msg_info, sizeof(msg_info));
     while (mcast_received < instance_id) {
-      //xlpgas_tsp_wait (ctxt);
+      // xlpgas_tsp_wait (ctxt);
       RC0( LAPI_Msgpoll(lapi_handle, XLPGAS_CAU_POLL_CNT, &msg_info) );
     }
     //printf("L%d MCAST RECV\n",XLPGAS_MYNODE);

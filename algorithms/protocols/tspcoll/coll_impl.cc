@@ -9,34 +9,6 @@
 /////////////////////////////////////////////////////////////////////////
 EXTERN XLPGAS_CAU_SHM_AVAIL;
 
-#ifdef REDUCE_PHASES
-
-#include <sys/time.h>
-double timer()
-{
-  struct timeval tv;
-  gettimeofday(&tv,NULL);
-  return 1e6*(double)tv.tv_sec + (double)tv.tv_usec;
-}
-
-double coll_timers_1[10];
-double coll_timers_2[10];
-double coll_timers_3[10];
-#endif
-
-extern "C" void xlpgas_tspcoll_display_timers(int niters){
-#ifdef REDUCE_PHASES
-  printf("Phase_1=%g\n", coll_timers_1[0]/niters);
-  printf("Phase_2=%g\n", coll_timers_2[0]/niters);
-  printf("Phase_3=%g\n", coll_timers_3[0]/niters);
-  coll_timers_1[0]=0;
-  coll_timers_2[0]=0;
-  coll_timers_3[0]=0;
-#endif
-}
-
-
-
 extern "C" void xlpgas_tspcoll_hybrid_allreduce   (int              ctxt,
 						int               teamID,
 						const void      * sbuf,
@@ -46,104 +18,29 @@ extern "C" void xlpgas_tspcoll_hybrid_allreduce   (int              ctxt,
 						unsigned          nelems,
 						user_func_t*      uf=NULL)
 {
-  //if(XLPGAS_MYTHREAD==0) printf("Composed allreduce\n");
-#ifdef REDUCE_PHASES
-    double t0,t1;
-    t0 = timer();
-#endif
-    xlpgas::Team * team        = xlpgas::Team::get (ctxt, teamID);
-    xlpgas::Team * local_team  = xlpgas::Team::get (ctxt, team->local_team_id());
-    xlpgas::Team * leader_team = xlpgas::Team::get (ctxt, team->leader_team_id());
-    bool finish_early=false;//if shared memory only the collective ends without bcast;
-    if(local_team->size() == team->size()) finish_early = true;
-    
-    int64_t s;
-    memcpy(&s, sbuf, xlpgas::Allreduce::datawidthof(dtype) );
-    int64_t tmp = 0;
-    int64_t tmp_cau = 0;
+  xlpgas::Collective* a = xlpgas::Team::get (ctxt, teamID)->coll (xlpgas::ShmCauAllReduceKind);
+  assert (a != NULL);
+  a->reset (sbuf, rbuf, op, dtype, nelems, uf);
+  a->kick();
+  while (!a->isdone()) {
+    xlpgas_tsp_wait (ctxt);
+  }
+}
 
-    xlpgas::Collective * a;
-    int lid = local_team->ordinal();
-    int gid=-1;
-    int leader = 0; //ordinal zero in the current group
-
-    if(leader_team->is_leader()) gid = leader_team->ordinal();
-    //printf("L[%d,%d] local_team_id = %d [%x] leader_id=%d\n", XLPGAS_MYNODE, XLPGAS_MYSMPTHREAD, lid, local_team, gid);
-    //for(int i=0;i<nelems;++i){
-    //  printf("L[%d,%d] SS[%ld]=%d\n",XLPGAS_MYNODE, XLPGAS_MYSMPTHREAD,i,ss[i]); 
-    //}
-
-    //phase 1; reduce on local teams;
-    if(local_team->size()>1){
-      a = local_team->coll (xlpgas::SHMReduceKind);
-      assert (a != NULL);
-      if(!finish_early)
-	a->reset (leader, &s, &tmp, op, dtype, nelems, uf);
-      else
-	a->reset (leader, &s, &tmp_cau, op, dtype, nelems, uf);
-      a->kick();
-      while (!a->isdone()) {
-	xlpgas_tsp_wait (ctxt);
-      }
-    }
-    else{
-      if(!finish_early){
-	//tmp = s;
-	memcpy(&tmp, &s, xlpgas::Allreduce::datawidthof(dtype) );
-      }
-      else {
-	//tmp_cau = s;
-	memcpy(&tmp_cau, &s, xlpgas::Allreduce::datawidthof(dtype) );
-      }
-    }
-
-#ifdef REDUCE_PHASES
-    t1 = timer();
-    if(leader_team->is_leader()) coll_timers_1[0] += t1-t0;
-#endif
-
-    //for(int i=0;i<nelems;++i){
-    //  printf("L[%d,%d] DD[%d]=%ld\n",XLPGAS_MYNODE, XLPGAS_MYSMPTHREAD,i,dd[i]); 
-    //}
-
-    if(!finish_early){
-      // phase 2; allreduce across leaders
-      if(leader_team->is_leader()){ //if not leader this pointer is null;
-#ifdef REDUCE_PHASES
-	t0 = timer();
-#endif
-	//printf("CAU LEADER L[%d,%d] ctxt [%d]should be 0\n",XLPGAS_MYNODE, XLPGAS_MYSMPTHREAD,ctxt); 
-	cau_reduce_op_t cau_op = xlpgas::cau_op_dtype(op,dtype);
-	xlpgas::cau_fast_allreduce(&tmp_cau,&tmp, cau_op, ctxt);
-#ifdef REDUCE_PHASES
-	t1 = timer();
-	coll_timers_2[0]+=t1-t0;
-#endif
-	//for(int i=0;i<nelems;++i){
-	//printf("L[%d,%d] ACROSS DD[%d]=%d\n",XLPGAS_MYNODE, XLPGAS_MYSMPTHREAD,i,dd[i]); 
-      }
-    }
-#ifdef REDUCE_PHASES 
-    t0 = timer();
-#endif
-    //phase 3: bcastr on local teams
-    //printf("L[%d,%d] PREPARE BCAST=%d\n",XLPGAS_MYNODE, XLPGAS_MYSMPTHREAD,leader);
-    if(local_team->size()>1){
-      a = local_team->coll (xlpgas::SHMBcastKind);
-      assert (a != NULL);
-      a->reset (leader, &tmp_cau, rbuf, nelems * xlpgas::Allreduce::datawidthof(dtype) );
-      a->kick();
-      while (!a->isdone()) {
-	xlpgas_tsp_wait (ctxt);
-      }
-    }
-    else{
-      memcpy( rbuf, &tmp_cau, xlpgas::Allreduce::datawidthof(dtype) );
-    }
-#ifdef REDUCE_PHASES
-    t1 = timer();
-    if(leader_team->is_leader()) coll_timers_3[0] += t1-t0;
-#endif
+extern "C" void xlpgas_tspcoll_bcast_hybrid  (int               ctxt,
+                                              int               teamID,
+                                              int               root,
+                                              const void      * sbuf,
+                                              void            * rbuf,
+                                              unsigned          nbytes)
+{
+  xlpgas::Collective* a = xlpgas::Team::get (ctxt, teamID)->coll (xlpgas::ShmHybridBcastKind);
+  assert (a != NULL);
+  a->reset (root, sbuf, rbuf, nbytes);
+  a->kick();
+  while (!a->isdone()) {
+    xlpgas_tsp_wait (ctxt);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -156,7 +53,7 @@ extern "C" void xlpgas_tspcoll_barrier (int ctxt, int teamID)
   if(XLPGAS_CAU_SHM_AVAIL<=1 && teamID==0){//if cau avail and team zero(all threads)
     //call hybrid allreduce with a NOP operation
     int64_t x,y; 
-    xlpgas_tspcoll_hybrid_allreduce(ctxt,teamID,&x,&y,XLPGAS_OP_NOP,XLPGAS_DT_llg,1,NULL);
+    xlpgas_tspcoll_hybrid_allreduce(ctxt,teamID,&x,&y,XLPGAS_OP_MAX,XLPGAS_DT_llg,1,NULL);
     return;
   }
 #endif
@@ -291,12 +188,19 @@ extern "C" void xlpgas_tspcoll_allreduce_wait   (int ctxt, void* _coll) {
 
 
 extern "C" void xlpgas_tspcoll_bcast  (int               ctxt,
-					   int               teamID,
-					   int               root,
-                                           const void      * sbuf,
-                                           void            * rbuf,
-					   unsigned          nbytes)
+				       int               teamID,
+				       int               root,
+				       const void      * sbuf,
+				       void            * rbuf, 
+				       unsigned          nbytes)
 {
+#ifdef XLPGAS_PAMI_CAU
+  if(XLPGAS_CAU_SHM_AVAIL<=1 && teamID==0){//if cau/shm avail and team zero(all threads)
+    xlpgas_tspcoll_bcast_hybrid(ctxt, teamID, root, sbuf, rbuf, nbytes);
+    return;
+  }
+#endif
+
   xlpgas::Collective * a;
   if(XLPGAS_SMPTHREADS <= 1){//specialized
     a = xlpgas::Team::get (ctxt, teamID)->coll (xlpgas::BcastKind);
@@ -328,8 +232,8 @@ extern "C" void xlpgas_tspcoll_bcast_amcoll  (int               ctxt,
   while (! a->isdone() ) {
     xlpgas_tsp_wait (ctxt);
   }
-
 }
+
 
 extern "C" void xlpgas_tspcoll_allgather  (int               ctxt,
 					   int               teamID,
