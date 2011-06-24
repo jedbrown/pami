@@ -134,7 +134,15 @@ unsigned long long test (pami_client_t client, pami_context_t context, size_t di
   unsigned long long t1 = 0;
   unsigned long long t2 = 0;
 
-  if (myrank == 0)
+  pami_task_t origin_task;
+  size_t origin_offset;
+  PAMI_Endpoint_query (origin, &origin_task, &origin_offset);
+
+  pami_task_t target_task;
+  size_t target_offset;
+  PAMI_Endpoint_query (target, &target_task, &target_offset);
+
+  if (myrank == origin_task)
     {
       parameters.dest = target;
 
@@ -151,7 +159,7 @@ unsigned long long test (pami_client_t client, pami_context_t context, size_t di
       recv_many (context);
       _recv_active = ITERATIONS;
     }
-  else if (myrank == 1)
+  else if (myrank == target_task)
     {
       parameters.dest = origin;
 
@@ -209,7 +217,7 @@ int main (int argc, char ** argv)
   size_t num_tasks = configuration.value.intval;
 
   usleep(100*_my_task);
-  fprintf (stdout, "# task %zu of %zu\n", _my_task, num_tasks);
+  /* fprintf (stdout, "# task %zu of %zu\n", _my_task, num_tasks); */
   usleep(100*(num_tasks - _my_task + 1) + 1000);
 
   configuration.name = PAMI_CLIENT_WTICK;
