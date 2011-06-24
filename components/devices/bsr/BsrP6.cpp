@@ -18,6 +18,7 @@
 #include "BsrP6.h"
 #include "lapi_itrace.h"
 #include "Arch.h"
+#include "Memory.h"
 
 /*!
  * \brief The name of BSR library to use.
@@ -61,7 +62,7 @@ void BsrP6::CleanUp()
             // do we need synchronize here?
             // to make sure the state update to SHM is done before
             // we destroy the SHM.
-            mem_barrier();
+            PAMI::Memory::sync();
             mem_isync();
             // detach from bsr, if attached before
             for (int i = 0; i < bsr_att_cnt; ++i) {
@@ -230,7 +231,7 @@ SharedArray::RC BsrP6::CheckInitDone(const unsigned int   mem_cnt,
 
         shm->bsr_setup_ref = 1;
         // make sure BSR IDs are set before we change the state
-        mem_barrier();
+        PAMI::Memory::sync();
 
         // move to next state; notify the others that BSR IDs are available
         shm->bsr_setup_state = ST_ATTACHED;
@@ -391,7 +392,7 @@ void BsrP6::Store1(const int offset, const unsigned char val)
     } else {
         bsr_addr[offset/bsr_granule][offset%bsr_granule] = val;
     }
-    mem_barrier();
+    PAMI::Memory::sync();
 }
 
 void BsrP6::Store2(const int offset, const unsigned short val)

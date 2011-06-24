@@ -15,6 +15,7 @@
 #include "ShmArray.h"
 #include "lapi_itrace.h"
 #include "Arch.h"
+#include "Memory.h"
 /*!
  * \brief Default constructor.
  */
@@ -180,10 +181,10 @@ unsigned long long ShmArray::Load8(const int offset) const
 void ShmArray::Store1(const int offset, const unsigned char val)
 {
   // LAPI code had  isync();
-    mem_isync();
+    PAMI::Memory::sync<PAMI::Memory::instruction>();
     shm->line[offset].byte = val;
     // LAPI Code had  lwsync();
-    mem_barrier();
+    PAMI::Memory::sync();
 }
 
 void ShmArray::Store2(const int offset, const unsigned short val)

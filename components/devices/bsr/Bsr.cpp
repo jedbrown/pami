@@ -19,6 +19,7 @@
 #include "Bsr.h"
 #include "lapi_itrace.h"
 #include "Arch.h"
+#include "Memory.h"
 #include "dlpnsd_lib.h"
 #include "util/common.h"
 
@@ -122,7 +123,7 @@ void Bsr::CleanUp()
     }
 #else
     if (bsr_addr) {
-        mem_barrier();
+        PAMI::Memory::sync();
         mem_isync();
         // detach from bsr, if attached before
         shmdt(bsr_addr);
@@ -510,14 +511,14 @@ void Bsr::Store1(const int offset, const unsigned char val)
 {
     mem_isync();
     bsr_addr[offset] = val;
-    mem_barrier();
+    PAMI::Memory::sync();
 }
 
 void Bsr::Store2(const int offset, const unsigned short val)
 {
     mem_isync();
     ((unsigned short*)bsr_addr)[offset] = val;
-    mem_barrier();
+    PAMI::Memory::sync();
 }
 
 void Bsr::Store4(const int offset, const unsigned int val)
