@@ -27,6 +27,5 @@
 
 #define mem_sync()    __sync_synchronize()
 #define mem_isync()   mem_sync()
-#define mem_barrier() __sync_synchronize()
 
 #endif // __arch_x86_64_Arch_h__

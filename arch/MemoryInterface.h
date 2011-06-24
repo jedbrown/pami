@@ -11,6 +11,10 @@
 #ifndef __arch_MemoryInterface_h__
 #define __arch_MemoryInterface_h__
 
+#ifndef mem_barrier
+#error "mem_barrier() was not defined by the architecture"
+#endif
+
 #include "Arch.h"
 
 namespace PAMI
@@ -33,15 +37,15 @@ namespace PAMI
     template <unsigned T_Attribute>
     static void sync ()
     {
-      //fprintf (stdout, "sync<>()\n");
       mem_barrier();
     };
 
     static void sync ()
     {
-      //fprintf (stdout, "sync()\n");
       sync<0> ();
     };
+
+    template <> const bool supports <full_sync> () { return true; };
 
   };
 };

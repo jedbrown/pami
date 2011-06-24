@@ -38,9 +38,6 @@
 #undef  mem_isync
 #define mem_isync()   isync()
 
-#undef  mem_barrier
-#define mem_barrier() mbar()
-
 #ifdef __cplusplus
 ///
 /// \brief Template specialization for size_t copies.

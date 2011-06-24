@@ -21,10 +21,8 @@
 
 //#define mem_sync() __sync()
 //#define mem_isync() __isync()
-//#define mem_barrier() __lwsync()
 
 #define mem_sync() { asm volatile ("sync"); }
 #define mem_isync() { asm volatile ("isync"); }
-#define mem_barrier() { asm volatile ("lwsync"); }
 
 #endif // __pami_arch_power7_h__

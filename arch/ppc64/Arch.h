@@ -28,6 +28,5 @@
 
 #define mem_sync()    do { asm volatile ("sync" : : : "memory"); } while(0)
 #define mem_isync()   do { asm volatile ("isync" : : : "memory"); } while(0)
-#define mem_barrier() do { asm volatile ("lwsync"  : : : "memory"); } while(0)
 
 #endif // __pami_arch_ppc64_h__

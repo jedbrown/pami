@@ -11,7 +11,13 @@
 #ifndef __arch_a2qpx_Memory_h__
 #define __arch_a2qpx_Memory_h__
 
+#include <hwi/include/bqc/A2_inlines.h>
+
+#define mem_barrier() mbar()
+
 #include "arch/MemoryInterface.h"
+
+#undef  mem_barrier
 
 #include <hwi/include/bqc/l2_central_inlines.h>
 #include <hwi/include/bqc/MU_Macros.h>
@@ -20,18 +26,12 @@ namespace PAMI
 {
   namespace Memory
   {
-    template <> const bool supports<remote_msync>() { return true; };
-    template <> const bool supports<l1p_flush>() { return true; };
+    template <> const bool supports <remote_msync> () { return true; };
+    template <> const bool supports <l1p_flush>    () { return true; };
 
-    template <>
-    void sync<remote_msync>()
-    {
-      //fprintf (stdout, "sync<remote_msync>()\n");
-      mem_barrier();
-    };
+    template <> void sync <remote_msync> () { mbar(); };
 
-    template <>
-    void sync<l1p_flush>()
+    template <> void sync <l1p_flush> ()
     {
       //fprintf (stdout, "sync<l1p_flush>()\n");
       volatile uint64_t *dummy_mu_reg =
