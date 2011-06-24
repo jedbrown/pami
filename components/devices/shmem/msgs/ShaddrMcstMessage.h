@@ -18,6 +18,8 @@
 #include <sys/uio.h>
 
 #include "Arch.h"
+#include "Memory.h"
+
 #include "sys/pami.h"
 //#include "opt_copy_a2.h"
 #include "math/Memcpy.x.h"
@@ -97,7 +99,7 @@ namespace PAMI
 
                 mcst_control->incoming_bytes = 0;
                 mcst_control->glob_src_buffer = NULL;
-                mem_barrier();
+                Memory::sync();
                 mcast_params.cb_done.function(this->_context, mcast_params.cb_done.clientdata, PAMI_SUCCESS);
                 _my_desc->set_my_state(Shmem::DESCSTATE_DONE);
                 TRACE_FN_EXIT();

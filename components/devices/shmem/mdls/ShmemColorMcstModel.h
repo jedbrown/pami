@@ -18,6 +18,7 @@
 #include <sys/uio.h>
 
 #include "Arch.h"
+#include "Memory.h"
 
 #include "sys/pami.h"
 #include "common/bgq/TypeDefs.h"
@@ -157,7 +158,7 @@ namespace PAMI
               mcst_control->incoming_bytes = 0;
               //my_desc->set_consumers(num_dst_ranks);
               my_desc->reset_master_done();
-              mem_barrier();
+              Memory::sync();
 
               my_desc->set_seq_id(my_desc->get_seq_id()+1);
             }
