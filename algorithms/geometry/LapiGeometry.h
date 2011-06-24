@@ -450,13 +450,13 @@ namespace PAMI
           if(_cleanupFcn)
             _cleanupFcn(NULL, _cleanupData, PAMI_SUCCESS);
 
-
           if (_ranks_malloc) __global.heap_mm->free(_ranks);
 
           _ranks = NULL;
           _ranks_malloc = false;
           free(_allreduce_storage[0]);
           free(_allreduce_storage[1]);
+          (*_geometry_map)[_commid] = NULL;
           
           return;
         }
