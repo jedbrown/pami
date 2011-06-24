@@ -26,6 +26,7 @@
 #include <unistd.h>
 
 #include "Platform.h"
+#include "Memory.h"
 
 #undef TRACE_ERR
 #ifndef TRACE_ERR
@@ -298,7 +299,7 @@ namespace PAMI
 
           _collshm->buffer_pool += COLLSHM_INIT_BUFCNT;
           //COLLSHM_CLEAR_LOCK((atomic_p)&(_collshm->buffer_pool_lock),0);
-          mem_barrier();
+          Memory::sync();
           _collshm->buffer_pool_lock.release();
 
           return bufs;
@@ -462,7 +463,7 @@ namespace PAMI
 
           _collshm->ctlstr_pool += COLLSHM_INIT_CTLCNT;
           //COLLSHM_CLEAR_LOCK((atomic_p)&(_collshm->ctlstr_pool_lock),0);
-          mem_barrier();
+          Memory::sync();
           _collshm->ctlstr_pool_lock.release();
 
           return ctlstr;

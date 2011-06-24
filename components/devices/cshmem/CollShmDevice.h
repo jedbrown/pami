@@ -17,6 +17,7 @@
 #include "math/math_coremath.h"
 #include "Global.h"
 #include "Platform.h"
+#include "Memory.h"
 #include "components/devices/util/SubDeviceSuppt.h"
 #include "components/devices/generic/AdvanceThread.h"
 #include "components/devices/MultisyncModel.h"
@@ -214,7 +215,7 @@ namespace PAMI
               inline void setContent(window_content_t content)
               {
                 TRACE_DBG((stderr, "<%p>CollShmWindow::setContent() %u\n", this, content));
-                mem_barrier(); // lwsync();
+                Memory::sync(); // lwsync();
                 _ctrl.content = content;
               }
               inline int getSyncflag() { return _ctrl.sync_flag; }
@@ -232,7 +233,7 @@ namespace PAMI
                            avail_value, cmpl_value));
                 PAMI_ASSERT(_ctrl.cmpl_cntr.fetch() == 0);
                 _ctrl.cmpl_cntr.fetch_and_add(cmpl_value);
-                mem_barrier();
+                Memory::sync();
                 PAMI_ASSERT(_ctrl.avail_flag != avail_value);
                 _ctrl.avail_flag = avail_value;
 
@@ -853,7 +854,7 @@ namespace PAMI
 
                 if (!_step)
                   {
-                    mem_barrier(); // lwsync();
+                    Memory::sync(); // lwsync();
                     window = _device->getWindow(0, _arank, _idx);
                     TRACE_DBG((stderr, "window addr = %p\n", window));
                     TRACE_DBG((stderr, "window addr = %p, sync flag=%d\n", window, _sync_flag));
@@ -1384,13 +1385,13 @@ namespace PAMI
                           (_wgroups[grp]->windows[idx * _synccounts + w]).clearCtrl();
                       }
 
-                    mem_barrier();
+                    Memory::sync();
                   }
               } //while(!(COLLSHM_COMPARE_AND_SWAP((atomic_p)&(_wgroups[0]->barrier[round][idx]),&arrived, arrived+increment)))
             while(!_wgroups[0]->barrier[round][idx].bool_compare_and_swap(arrived, arrived + increment)) ;
             TRACE_DBG((stderr, "Setting Thread Available Done\n"));
 
-            mem_barrier();
+            Memory::sync();
             _advanceHead();
           }
 
