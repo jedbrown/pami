@@ -19,6 +19,9 @@
 #include <hwi/include/bqc/A2_inlines.h>
 #include <hwi/include/bqc/A2_core.h>
 
+
+
+
 // Here go things specific to this processor architecture
 
 #define NUM_CORES 16
