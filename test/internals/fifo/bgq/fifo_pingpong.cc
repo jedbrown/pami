@@ -24,9 +24,11 @@
 #include "components/fifo/linear/LinearFifo.h"
 #include "components/atomic/bgq/L2CounterBounded.h"
 
-typedef PAMI::Fifo::FifoPacket <32, 160> ShmemPacket;
+//#include "components/devices/shmem/wakeup/WakeupBGQ.h"
 
-//typedef PAMI::Fifo::WrapFifo<ShmemPacket, PAMI::BoundedCounter::BGQ::IndirectL2Bounded, 128, Wakeup::BGQ> ShmemFifo;
+typedef PAMI::Fifo::FifoPacket <32, 128> ShmemPacket;
+
+//typedef PAMI::Fifo::WrapFifo<ShmemPacket, PAMI::BoundedCounter::BGQ::IndirectL2Bounded, 128, PAMI::Wakeup::BGQ> Wrap;
 typedef PAMI::Fifo::WrapFifo<ShmemPacket, PAMI::BoundedCounter::BGQ::IndirectL2Bounded, 128> Wrap;
 
 //typedef Fifo::LinearFifo<ShmemPacket, PAMI::Counter::BGQ::IndirectL2, 128, Wakeup::BGQ> ShmemFifo;
@@ -58,7 +60,16 @@ int main (int argc, char ** argv)
   sleep(1);
   
   if (task == 0)
-    fprintf (stdout, "bytes linear linearl2 wrap\n");
+  {
+    fprintf (stdout, "Memory::supports<l1p_flush>()    = %d\n", PAMI::Memory::supports<PAMI::Memory::l1p_flush>());
+    fprintf (stdout, "Memory::supports<remote_msync>() = %d\n", PAMI::Memory::supports<PAMI::Memory::remote_msync>());
+    fprintf (stdout, "Memory::supports<999>()          = %d\n", PAMI::Memory::supports<999>());
+    fprintf (stdout, "\n");
+    
+    //fprintf (stdout, "bytes linear linearl2 wrap\n");
+    fprintf (stdout, "bytes %10s %10s %10s\n", "linear", "linearl2", "wrap");
+    //fprintf (stdout, "bytes wrap\n");
+  }
   
 
   size_t sndlen = 0;
@@ -71,7 +82,9 @@ int main (int argc, char ** argv)
   unsigned long long elapsed2 = wrap.pingpong(sndlen, 100, "wrap fifo");
   if (task == 0)
   {
-    fprintf (stdout, "%4zu %4lld %4lld %4lld\n", sndlen, elapsed0 / 100 / 2, elapsed1 / 100 / 2, elapsed2 / 100 / 2);
+    fprintf (stdout, "%5zu %10lld %10lld %10lld\n", sndlen, elapsed0 / 100 / 2, elapsed1 / 100 / 2, elapsed2 / 100 / 2);
+    //fprintf (stdout, "%5zu %10lld %10lld\n", sndlen, elapsed1 / 100 / 2, elapsed2 / 100 / 2);
+    //fprintf (stdout, "%4zu %4lld\n", sndlen, elapsed2 / 10 / 2);
   }
 }
   

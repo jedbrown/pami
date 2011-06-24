@@ -17,6 +17,7 @@
 #include <string.h>
 
 #include "Arch.h"
+#include "Memory.h"
 
 #include "components/memory/MemoryManager.h"
 
@@ -207,23 +208,38 @@ namespace PAMI
             {
               packet.produce (_packet[index]);
 
-              mem_barrier();
-              // This memory barrier forces all previous memory operations to
-              // complete (header writes, payload write, etc) before the packet is
-              // marked 'active'.  As soon as the receiving process sees that the
-              // 'active' attribute is set it will start to read the packet header
-              // and payload data.
-              //
-              // If this memory barrier is done *after* the packet is marked
-              // 'active', then the processor or memory system may still reorder
-              // any pending writes before the barrier, which could result in the
-              // receiving process reading the 'active' attribute and then reading
-              // stale packet header/payload data.
+              if (Memory::supports<Memory::remote_msync>() &&
+                  Memory::supports<Memory::l1p_flush>())
+                {
+                  // This "L1P flush" forces all previous memory operations
+                  // (header writes, payload writes, etc) to flush to the L2
+                  // before the packet is marked 'active'.  As soon as the
+                  // consumer process sees that the 'active' attribute is set it
+                  // will start to read the packet header and payload data.
+                  Memory::sync<Memory::l1p_flush>();
+                }
+              else
+                {
+                  // This memory barrier forces all previous memory operations to
+                  // complete (header writes, payload write, etc) before the packet is
+                  // marked 'active'.  As soon as the receiving process sees that the
+                  // 'active' attribute is set it will start to read the packet header
+                  // and payload data.
+                  //
+                  // If this memory barrier is done *after* the packet is marked
+                  // 'active', then the processor or memory system may still reorder
+                  // any pending writes before the barrier, which could result in the
+                  // receiving process reading the 'active' attribute and then reading
+                  // stale packet header/payload data.
+                  Memory::sync();
+                }
 
               _active[index] = 1;
 
               TRACE_ERR((stderr, "   LinearFifo::producePacket_impl(T_Producer &), _active[%zu] = %zu\n", index, _active[index]));
-              mem_barrier();
+
+              if (! Memory::supports<Memory::remote_msync>())
+                Memory::sync(); // is this really needed to flush the 'active' write?
 
               _last_packet_produced = index;
 
@@ -252,12 +268,33 @@ namespace PAMI
 
           if (_active[index])
             {
+              _active[index] = 0;
+
+              if (Memory::supports<Memory::remote_msync>())
+                {
+                  // This memory sync forces all previous memory operations on
+                  // the node to complete, including:
+                  // - the pending local update to the 'active' status, and
+                  // - the writes to the packet data by the producer
+                  Memory::sync<Memory::remote_msync>();
+                }
+              else
+                {
+                  // This memory sync forces all previous local memory writes
+                  // to complete, including the pending update to the 'active'
+                  // status.
+                  //
+                  // Without this write synchronization a race condition is
+                  // present where it is possible that the atomic counter
+                  // increment could be visible to other cores before the clear
+                  // of the 'active' status.
+                  Memory::sync();
+                }
+
               //dumpPacket(head);
-              mem_barrier();
               packet.consume (_packet[index]);
               //dumpPacket(head);
 
-              _active[index] = 0;
               *(this->_head) = head + 1;
 
               // If this packet is the last packet in the fifo, reset the tail
@@ -306,16 +343,16 @@ namespace PAMI
         // -----------------------------------------------------------------
         // Located in shared memory
         // -----------------------------------------------------------------
-        T_Packet     * _packet;
-        size_t       * _head;
+        T_Packet        * _packet;
+        volatile size_t * _head;
 
         // -----------------------------------------------------------------
         // Located in-place
         // -----------------------------------------------------------------
-        T_Wakeup                                    * _wakeup;
-        typename T_Wakeup::template Region<uint8_t>   _active;
-        T_Atomic                                      _tail;
-        size_t                                        _last_packet_produced;
+        T_Wakeup                                             * _wakeup;
+        typename T_Wakeup::template Region<volatile uint8_t>   _active;
+        T_Atomic                                               _tail;
+        size_t                                                 _last_packet_produced;
     };
 
   };

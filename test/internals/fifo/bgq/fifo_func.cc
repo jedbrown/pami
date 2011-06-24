@@ -24,9 +24,11 @@
 #include "components/fifo/linear/LinearFifo.h"
 #include "components/atomic/bgq/L2CounterBounded.h"
 
-typedef PAMI::Fifo::FifoPacket <32, 160> ShmemPacket;
+//#include "components/devices/shmem/wakeup/WakeupBGQ.h"
 
-//typedef PAMI::Fifo::WrapFifo<ShmemPacket, PAMI::BoundedCounter::BGQ::IndirectL2Bounded, 128, Wakeup::BGQ> ShmemFifo;
+typedef PAMI::Fifo::FifoPacket <32, 128> ShmemPacket;
+
+//typedef PAMI::Fifo::WrapFifo<ShmemPacket, PAMI::BoundedCounter::BGQ::IndirectL2Bounded, 128, PAMI::Wakeup::BGQ> Wrap;
 typedef PAMI::Fifo::WrapFifo<ShmemPacket, PAMI::BoundedCounter::BGQ::IndirectL2Bounded, 128> Wrap;
 
 //typedef Fifo::LinearFifo<ShmemPacket, PAMI::Counter::BGQ::IndirectL2, 128, Wakeup::BGQ> ShmemFifo;
@@ -36,7 +38,7 @@ typedef PAMI::Fifo::LinearFifo<ShmemPacket, PAMI::Counter::Indirect<PAMI::Counte
 
 
 int main (int argc, char ** argv)
-{
+{  
   size_t task = __global.mapping.task();
   size_t size = __global.mapping.size();
 
@@ -45,9 +47,9 @@ int main (int argc, char ** argv)
   snprintf (shmemfile, sizeof(shmemfile) - 1, "/foo");
   mm.init(__global.shared_mm, 8*1024*1024, 1, 1, 0, shmemfile);
 
-  //Test<Wrap> wrap;
-  //wrap.init (&mm, task, size);
-  //wrap.functional("wrap fifo");
+  Test<Wrap> wrap;
+  wrap.init (&mm, task, size, "wrap");
+  wrap.functional("wrap fifo");
 
   Test<LinearNative> linear0;
   linear0.init (&mm, task, size, "linear");

@@ -17,6 +17,7 @@
 #include <string.h>
 
 #include "Arch.h"
+#include "Memory.h"
 
 #include "components/memory/MemoryManager.h"
 #include "components/atomic/CounterInterface.h"
@@ -120,6 +121,7 @@ namespace PAMI
           TRACE_ERR((stderr, ">> WrapFifo::initialize_impl(WrapFifo &)\n"));
           _bounded_counter.clone (fifo._bounded_counter);
 
+
           _packet = fifo._packet;
           _active = fifo._active;
           _head = fifo._head;
@@ -196,6 +198,7 @@ namespace PAMI
           TRACE_ERR((stderr, ">> WrapFifo::producePacket_impl(T_Producer &)\n"));
 
           size_t tail = _bounded_counter.fetch_and_inc_bounded ();
+
           if (likely (tail != T_Atomic::bound_error))
             {
               TRACE_ERR((stderr, "   WrapFifo::producePacket_impl(T_Producer &), tail = %zu\n", tail));
@@ -205,18 +208,20 @@ namespace PAMI
               packet.produce (_packet[index]);
               //dumpPacket(index);
 
-              // This memory barrier forces all previous memory operations to
-              // complete (header writes, payload write, etc) before the packet is
-              // marked 'active'.  As soon as the receiving process sees that the
-              // 'active' attribute is set it will start to read the packet header
-              // and payload data.
-              //
-              // If this memory barrier is done *after* the packet is marked
-              // 'active', then the processor or memory system may still reorder
-              // any pending writes before the barrier, which could result in the
-              // receiving process reading the 'active' attribute and then reading
-              // stale packet header/payload data.
-              mem_barrier();
+              if (Memory::supports<Memory::remote_msync>() &&
+                  Memory::supports<Memory::l1p_flush>())
+                {
+                  // This "L1P flush" forces all previous memory operations
+                  // (header writes, payload writes, etc) to flush to the L2
+                  // before the packet is marked 'active'.  As soon as the
+                  // consumer process sees that the 'active' attribute is set it
+                  // will start to read the packet header and payload data.
+                  Memory::sync<Memory::l1p_flush>();
+                }
+              else
+                {
+                  Memory::sync();
+                }
 
               _active[index] = 1;
 
@@ -243,24 +248,43 @@ namespace PAMI
           const size_t head = *(this->_head);
           size_t index = head & WrapFifo::mask;
 
-          // This memory barrier forces all previous memory operations to
-          // complete, including any pending updates to the 'active' status.
-          mem_barrier();
-
           if (_active[index])
             {
+              // Immediately clear the 'active' status to flush this write with
+              // the packet data memory synchronization.
+              _active[index] = 0;
+
+              if (Memory::supports<Memory::remote_msync>())
+                {
+                  // This memory sync forces all previous memory operations on
+                  // the node to complete, including:
+                  // - the pending local update to the 'active' status, and
+                  // - the writes to the packet data by the producer
+                  Memory::sync<Memory::remote_msync>();
+                }
+              else
+                {
+                  // This memory sync forces all previous local memory writes
+                  // to complete, including the pending update to the 'active'
+                  // status.
+                  //
+                  // Without this write synchronization a race condition is
+                  // present where it is possible that the atomic counter
+                  // increment could be visible to other cores before the clear
+                  // of the 'active' status.
+                  Memory::sync();
+                }
+
               TRACE_ERR((stderr, "   WrapFifo::consumePacket_impl(T_Consumer &), head = %zu, index = %zu (WrapFifo::mask = %p)\n", head, index, (void *)WrapFifo::mask));
               //dumpPacket(head);
               packet.consume (_packet[index]);
               //dumpPacket(head);
 
-              _active[index] = 0;
-	      mem_barrier();
               *(this->_head) = head + 1;
 
               // Increment the upper bound everytime a packet is consumed..ok
               // to be incremented in chunks
-              _bounded_counter.bound_upper_fetch_and_inc();
+              _bounded_counter.bound_upper_store_and_add();
 
               TRACE_ERR((stderr, "<< WrapFifo::consumePacket_impl(T_Consumer &), return true\n"));
               return true;
@@ -306,18 +330,17 @@ namespace PAMI
         // -----------------------------------------------------------------
         // Located in shared memory
         // -----------------------------------------------------------------
-        T_Packet     * _packet;
-        size_t       * _head;
+        T_Packet        * _packet;
+        volatile size_t * _head;
 
         // -----------------------------------------------------------------
         // Located in-place
         // -----------------------------------------------------------------
-        T_Wakeup                                    * _wakeup;
-        typename T_Wakeup::template Region<uint8_t>   _active;
-        T_Atomic                                      _bounded_counter;
-        size_t                                        _last_packet_produced;
+        T_Wakeup                                           * _wakeup;
+        typename T_Wakeup::template Region<volatile uint8_t> _active;
+        T_Atomic                                             _bounded_counter;
+        size_t                                               _last_packet_produced;
     };
-
   };
 };
 #undef TRACE_ERR

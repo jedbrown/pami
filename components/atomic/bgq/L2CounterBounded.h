@@ -53,6 +53,10 @@ public:
 		return ((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0);
 	}
 
+	inline void bound_upper_store_and_add() {
+		L2_AtomicStoreAdd(&_counter->upper, 1);
+	}
+
 protected:
 
 	struct L2BoundedCounter_t {
