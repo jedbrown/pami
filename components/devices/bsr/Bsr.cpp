@@ -124,7 +124,7 @@ void Bsr::CleanUp()
 #else
     if (bsr_addr) {
         PAMI::Memory::sync();
-        mem_isync();
+        PAMI::Memory::sync<PAMI::Memory::instruction>();
         // detach from bsr, if attached before
         shmdt(bsr_addr);
         bsr_addr = NULL;
@@ -509,14 +509,14 @@ unsigned long long Bsr::Load8(const int offset) const
 
 void Bsr::Store1(const int offset, const unsigned char val)
 {
-    mem_isync();
+    PAMI::Memory::sync<PAMI::Memory::instruction>();
     bsr_addr[offset] = val;
     PAMI::Memory::sync();
 }
 
 void Bsr::Store2(const int offset, const unsigned short val)
 {
-    mem_isync();
+    PAMI::Memory::sync<PAMI::Memory::instruction>();
     ((unsigned short*)bsr_addr)[offset] = val;
     PAMI::Memory::sync();
 }

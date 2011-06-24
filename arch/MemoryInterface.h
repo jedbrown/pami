@@ -24,8 +24,9 @@ namespace PAMI
     typedef enum
     {
       full_sync = 0,
+      instruction,
       remote_msync,
-      l1p_flush
+      l1p_flush,
     } attribute_t;
 
     template <unsigned T_Attribute>

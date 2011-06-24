@@ -21,6 +21,16 @@
 
 #undef  mem_barrier
 
+namespace PAMI
+{
+  namespace Memory
+  {
+    template <> const bool supports <instruction> () { return true; };
+
+    template <> void sync <instruction> () { _bgp_msync(); };
+  };
+};
+
 #endif // __arch_ppc450d_Memory_h__
 
 //

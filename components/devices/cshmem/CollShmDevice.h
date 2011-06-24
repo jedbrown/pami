@@ -262,7 +262,7 @@ namespace PAMI
                     return PAMI_EAGAIN;
                   }
 
-                mem_isync(); //isync();
+                Memory::sync<Memory::instruction>(); //isync();
                 TRACE_DBG((stderr, "<%p>CollShmWindow::isAvail() value %u cmpflag=%u PAMI_SUCCESS\n", this, value, _ctrl.avail_flag));
                 return PAMI_SUCCESS;
               }
@@ -874,7 +874,7 @@ namespace PAMI
                 }
                 else
                   {
-                    mem_isync(); //isync();
+                    Memory::sync<Memory::instruction>(); //isync();
                     msg->setStatus(PAMI::Device::Done);
                     setMsg(NULL);
                     _device->decActiveMsg();

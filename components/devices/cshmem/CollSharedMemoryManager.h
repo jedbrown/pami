@@ -276,7 +276,7 @@ namespace PAMI
           // require a implementation of check_lock and clear_lock in atomic class
           //while(COLLSHM_CHECK_LOCK((atomic_p)&(_collshm->buffer_pool_lock), 0, 1));
           _collshm->buffer_pool_lock.acquire();
-          mem_isync();
+          Memory::sync<Memory::instruction>();
           databuf_t *new_bufs = _collshm->buffer_pool;
           databuf_t *bufs     = _collshm->buffer_pool;
 
@@ -439,8 +439,8 @@ namespace PAMI
           // while(COLLSHM_CHECK_LOCK((atomic_p)&(_collshm->ctlstr_pool_lock), 0, 1));
           PAMI_ASSERT(&_collshm->ctlstr_pool_lock != NULL);
           _collshm->ctlstr_pool_lock.acquire();
-          // is mem_isync() equivalent to isync() on PERCS ?
-          mem_isync();
+          // is Memory::sync<Memory::instruction>() equivalent to isync() on PERCS ?
+          Memory::sync<Memory::instruction>();
           ctlstr_t *ctlstr   = _collshm->ctlstr_pool;
           ctlstr_t *tmp      = _collshm->ctlstr_pool;
           size_t    offset   = (size_t)_collshm->buffer_pool - (size_t)_collshm;

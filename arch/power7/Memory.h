@@ -17,6 +17,16 @@
 
 #undef  mem_barrier
 
+namespace PAMI
+{
+  namespace Memory
+  {
+    template <> const bool supports <instruction> () { return true; };
+
+    template <> void sync <instruction> () { asm volatile ("isync"); };
+  };
+};
+
 #endif // __arch_power7_Memory_h__
 
 //

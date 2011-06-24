@@ -17,6 +17,19 @@
 
 #undef  mem_barrier
 
+namespace PAMI
+{
+  namespace Memory
+  {
+    template <> const bool supports <instruction> () { return true; };
+
+    template <> void sync <instruction> ()
+    {
+      do { asm volatile ("isync" : : : "memory"); } while(0);
+    };
+  };
+};
+
 #endif // __arch_ppc64_Memory_h__
 
 //

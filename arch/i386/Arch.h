@@ -26,6 +26,5 @@
 #define PAMI_MAX_THREAD_PER_PROC 32
 
 #define mem_sync()    __sync_synchronize()
-#define mem_isync()   mem_sync()
 
 #endif // __pami_arch_i386_h__

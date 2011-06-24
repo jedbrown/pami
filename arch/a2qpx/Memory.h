@@ -26,9 +26,11 @@ namespace PAMI
 {
   namespace Memory
   {
+    template <> const bool supports <instruction>  () { return true; };
     template <> const bool supports <remote_msync> () { return true; };
     template <> const bool supports <l1p_flush>    () { return true; };
 
+    template <> void sync <instruction>  () { isync(); };
     template <> void sync <remote_msync> () { mbar(); };
 
     template <> void sync <l1p_flush> ()
@@ -41,7 +43,6 @@ namespace PAMI
     };
   };
 };
-
 
 #endif // __arch_a2qpx_Memory_h__
 

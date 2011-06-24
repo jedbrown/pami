@@ -35,9 +35,6 @@
 #undef  mem_sync
 #define mem_sync()    ppc_msync()
 
-#undef  mem_isync
-#define mem_isync()   isync()
-
 #ifdef __cplusplus
 ///
 /// \brief Template specialization for size_t copies.

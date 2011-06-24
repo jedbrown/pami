@@ -32,10 +32,6 @@
 #undef  mem_sync
 #define mem_sync()      _bgp_msync()
 
-#undef  mem_isync
-#define mem_isync()   mem_sync()
-
-
 #define LQU(x, ptr, incr) \
 asm volatile ("lfpdux %0,%1,%2" : "=f"(x), "+Ob"(ptr) : "r"(incr) : "memory")
 #define SQU(x, ptr, incr) \

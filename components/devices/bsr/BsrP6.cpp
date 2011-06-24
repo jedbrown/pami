@@ -63,7 +63,7 @@ void BsrP6::CleanUp()
             // to make sure the state update to SHM is done before
             // we destroy the SHM.
             PAMI::Memory::sync();
-            mem_isync();
+            PAMI::Memory::sync<PAMI::Memory::instruction>();
             // detach from bsr, if attached before
             for (int i = 0; i < bsr_att_cnt; ++i) {
                 (*(bsr_func.bsr_detach))(bsr_fd, (void*)(bsr_addr[i]));
@@ -258,7 +258,7 @@ SharedArray::RC BsrP6::CheckInitDone(const unsigned int   mem_cnt,
         }
 
         // make sure we load the BSR IDs after the state is changed
-        mem_isync();
+        Memory::sync<Memory::instruction>();
 
         // attach to bsr memory
         for (int i = 0; i < bsr_id_cnt; ++i) {
@@ -386,7 +386,7 @@ unsigned long long BsrP6::Load8(const int offset) const
 
 void BsrP6::Store1(const int offset, const unsigned char val)
 {
-    mem_isync();
+    PAMI::Memory::sync<PAMI::Memory::instruction>();
     if (bsr_granule > offset) {
         bsr_addr[0][offset] = val;
     } else {
