@@ -33,7 +33,7 @@ hput ()
 
     putHashFile=$1
     putKey=$2
-    putValue=$3
+    putValue="${3}"
 
     putLockFile="${putHashFile}.lock"
     curValue=''
@@ -1496,6 +1496,7 @@ exe_preProcessing ()
     finalOptsVar=$( echo $5 | awk '{print $5}' )
     overrideVar=$( echo $5 | awk '{print $6}' )
     maxNPVar=$( echo $5 | awk '{print $7}' )
+    maxRPNVar=$( echo $5 | awk '{print $8}' )
 
     eppNodes=$orgNodes
     eppMode=$orgMode
@@ -1504,6 +1505,7 @@ exe_preProcessing ()
 
     OpenMP=0
     eppMaxNP=0
+    eppMaxRPN=0
     npOverride=0
     eppOverride='N'
 
@@ -1631,6 +1633,24 @@ exe_preProcessing ()
 				      opts=${opts%%--maxnp*}
 
 				      # Final opts string with --maxnp val removed
+				      if [[ "${temp_opts}" =~ '--' ]]
+				      then					 
+					  opts="${opts}--${temp_opts#*--}"
+				      fi
+
+				      shift
+				      ;;
+	    --maxrpn    )             shift
+	                              eppMaxRPN=$1
+
+                                      # Remove --maxrpn from $opts
+				      # Save off everything after "--maxrpn"
+				      temp_opts=${opts##*--maxrpn}
+
+				      # Set opts = everything before "--maxrpn"
+				      opts=${opts%%--maxrpn*}
+
+				      # Final opts string with --maxrpn val removed
 				      if [[ "${temp_opts}" =~ '--' ]]
 				      then					 
 					  opts="${opts}--${temp_opts#*--}"
@@ -1870,6 +1890,7 @@ exe_preProcessing ()
     eval $overrideVar=$eppOverride
     eval $finalOptsVar=\"$( echo $opts | sed 's/"/\\"/g' )\"
     eval $maxNPVar=$eppMaxNP
+    eval $maxRPNVar=$eppMaxRPN
 
     return 0
 }
@@ -2829,6 +2850,9 @@ usage ()
     echo ""
     echo " --maxnp <NP limit>          Tells script that if NP of current test scenario > this value, skip this test"
     echo "                             ex:  api/context/post-multithreaded-perf.cnk --maxnp 63 --timelimit 180 --args 1"
+    echo ""
+    echo " --maxrpn <RPN limit>        Tells script that if RPN of current test scenario > this value, skip this test"
+    echo "                             ex:  api/context/post-multithreaded-perf.cnk --maxrpn 32 --timelimit 180 --args 1"
     echo ""
     echo " --notes <text>              Add custom text to DB summary field for this test."
     echo "                             NOTE:  Text must be surrounded by quotes (\"\")"
@@ -4221,7 +4245,7 @@ then
 		    keyNP=$forceNP
 		fi
 
-		hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${nodeArray[0]}_m${modeArray[0]}_p${keyNP}" $xmlStat
+		hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${nodeArray[0]}_m${modeArray[0]}_p${keyNP}" "${xmlStat}"
 	    fi # end log to web
 	done # end loop through tests
     else # --- mpich or pami compile ---
@@ -4460,7 +4484,7 @@ then
 		    keyNP=$forceNP
 		fi
 
-		hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${nodeArray[0]}_m${modeArray[0]}_p${keyNP}" $xmlStat
+		hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${nodeArray[0]}_m${modeArray[0]}_p${keyNP}" "${xmlStat}"
 	    fi
 
 	done
@@ -4608,7 +4632,7 @@ if [ $copy -eq 1 ]
 		  keyNP=$forceNP
 	      fi
 
-	      hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${nodeArray[0]}_m${modeArray[0]}_p${keyNP}" $xmlStat	      
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${nodeArray[0]}_m${modeArray[0]}_p${keyNP}" "${xmlStat}"	      
 	  fi
 
 	  continue # to next test
@@ -4713,7 +4737,7 @@ then
 		  keyNP=$forceNP
 	      fi
 
-	      hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${nodeArray[0]}_m${modeArray[0]}_p${keyNP}" $xmlStat
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${nodeArray[0]}_m${modeArray[0]}_p${keyNP}" "${xmlStat}"
 	  fi
       fi
     done
@@ -4764,6 +4788,7 @@ then
 	  exeThreads=1       # Numeric value of # of threads used in run* subroutine
 	  exeRuntime=0       # Elapsed time of run command
 	  maxNP=0            # Maximum valid NP value for for this test
+	  maxRPN=0           # Maximum valid RPN value for for this test
 
 	  if [[ "${TEST_ARRAY[$test]}" =~ 'threadTest_omp' ]]
 	  then
@@ -4821,13 +4846,13 @@ then
 			  keyNP=$forceNP
 		      fi
 
-		      hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${nodeArray[0]}_m${modeArray[0]}_p${keyNP}" $xmlStat
+		      hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${nodeArray[0]}_m${modeArray[0]}_p${keyNP}" "${xmlStat}"
 
 		      continue # to next test
 		  fi
 	      fi
 
-	      exe_preProcessing "$numNodes $eppInputMode $numProcs $exeThreads" "${TEST_ARRAY[$test]##*/}" "${runOpts}" "${exeArgs}" "exeNodes exeMode exeNP exeThreads exeOpts exeOverride maxNP"
+	      exe_preProcessing "$numNodes $eppInputMode $numProcs $exeThreads" "${TEST_ARRAY[$test]##*/}" "${runOpts}" "${exeArgs}" "exeNodes exeMode exeNP exeThreads exeOpts exeOverride maxNP maxRPN"
 
 	      preProcRC=$?
 
@@ -4861,7 +4886,7 @@ then
 		      keyNP=$forceNP
 		  fi
 
-		  hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${nodeArray[0]}_m${modeArray[0]}_p${keyNP}" $xmlStat
+		  hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${nodeArray[0]}_m${modeArray[0]}_p${keyNP}" "${xmlStat}"
 
 		  continue # to next test
 	      fi
@@ -4902,14 +4927,14 @@ then
 		      keyNP=$forceNP
 		  fi
 
-		  hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${nodeArray[0]}_m${modeArray[0]}_p${keyNP}" $xmlStat
+		  hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${nodeArray[0]}_m${modeArray[0]}_p${keyNP}" "${xmlStat}"
 
 		  continue # to next test
 	      fi
 	  fi
 
           # Document if final values contain override(s)
-	  hput $exeHash "${TEST_ARRAY[$test]}:$test:override_n${numNodes}_m${mode}_p${numProcs}" $exeOverride
+	  hput $exeHash "${TEST_ARRAY[$test]}:$test:override_n${numNodes}_m${mode}_p${numProcs}" "${exeOverride}"
 
 	  # Define test dir path
 	  if [ $user_outdir -eq 0 ] 
@@ -4959,7 +4984,7 @@ then
 	      runLog="${swtDir}/run.${TEST_ARRAY[$test]%\.*}.log"
 	  fi
 	  
-	  hput $exeHash "${TEST_ARRAY[$test]}:$test:log_n${numNodes}_m${mode}_p${numProcs}" $runLog
+	  hput $exeHash "${TEST_ARRAY[$test]}:$test:log_n${numNodes}_m${mode}_p${numProcs}" "${runLog}"
 
           # See if test has been disabled since we last checked
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:exe" enabled
@@ -4969,9 +4994,10 @@ then
 	      echo "WARNING (W):  Skipping execution of disabled test: ${TEST_ARRAY[$test]} (nodes = ${exeNodes}, mode = ${exeInputMode}, np = ${exeNP}) ..."
 
 	      # Set individual test status and summary
-	      testStatus=testSummary='Skipped (DOA)'
-	      hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" $testStatus
-	      hput $exeHash "${TEST_ARRAY[$test]}:$test:summary_n${numNodes}_m${mode}_p${numProcs}" $testSummary
+	      testStatus='Skipped (DOA)'
+	      testSummary=$testStatus
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" "${testStatus}"
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:summary_n${numNodes}_m${mode}_p${numProcs}" "${testSummary}"
  
 	      # Ensure we report this right in the summary
 	      {
@@ -4998,7 +5024,7 @@ then
 
 	      logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "${exeNP} ${exeInputMode} ${exeThreads}" "${numNodes} ${mode}" "${overallStatus}" "${testStatus}" 999 "${testSummary}" "${runLog}" xmlStat
 
-	      hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" $xmlStat
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" "${xmlStat}"
 
 	      continue # to next test
 	  fi
@@ -5009,9 +5035,10 @@ then
 	      echo -e "WARNING (W):  Skipping ${TEST_ARRAY[$test]} (nodes = ${exeNodes}, mode = ${exeInputMode}, NP = ${exeNP}). NP (${exeNP}) > max NP for this test (${maxNP})."
                  
 	      # Set individual test status and summary
-	      testStatus=testSummary='Skipped (NP > maxNP)'
-	      hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" $testStatus
-	      hput $exeHash "${TEST_ARRAY[$test]}:$test:summary_n${numNodes}_m${mode}_p${numProcs}" $testSummary
+	      testStatus='Skipped (NP > maxNP)'
+	      testSummary=$testStatus
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" "${testStatus}"
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:summary_n${numNodes}_m${mode}_p${numProcs}" "${testSummary}"
 
 	      # Ensure we report this right in the summary
 	      {
@@ -5036,7 +5063,47 @@ then
 
 	      logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "${exeNP} ${exeInputMode} ${exeThreads}" "${numNodes} ${mode}" "${overallStatus}" "${testStatus}" 999 "${testSummary}" "${runLog}" xmlStat
 
-	      hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" $xmlStat
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" "${xmlStat}"
+
+	      continue # to next test
+	  fi
+
+	  # Skip runs with RPN > maxRPN and user has not chosen to force scaling
+	  if [ $forceScaling -eq 0 ] && (( $maxRPN > 0 )) && (( $exeInputMode > $maxRPN ))
+	  then 
+	      echo -e "WARNING (W):  Skipping ${TEST_ARRAY[$test]} (nodes = ${exeNodes}, mode = ${exeInputMode}, NP = ${exeNP}). RPN (${exeInputMode}) > max RPN for this test (${maxRPN})."
+                 
+	      # Set individual test status and summary
+	      testStatus='Skipped (RPN > maxRPN)'
+	      testSummary=$testStatus
+
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" "${testStatus}"
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:summary_n${numNodes}_m${mode}_p${numProcs}" "${testSummary}"
+
+	      # Ensure we report this right in the summary
+	      {
+		  echo "NP = ${exeNP}"
+		  echo "THREADS = ${exeThreads}"
+		  echo "NODES = ${exeNodes}"
+		  if [ "${platform}" == 'bgp' ]
+		  then
+		      echo "MODE = ${exeInputMode}"
+		  else
+		      echo "BG_PROCESSESPERNODE = ${exeInputMode}"
+		  fi
+	      } >> $runLog
+
+	      # Log to web
+	      hget $exeHash "${TEST_ARRAY[$test]}:$test:status" overallStatus
+
+	      if [ "${notes}" != '' ]
+	      then
+		  testSummary="${testSummary} ${notes}"
+	      fi
+
+	      logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "${exeNP} ${exeInputMode} ${exeThreads}" "${numNodes} ${mode}" "${overallStatus}" "${testStatus}" 999 "${testSummary}" "${runLog}" xmlStat
+
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" "${xmlStat}"
 
 	      continue # to next test
 	  fi
@@ -5050,9 +5117,10 @@ then
 #	      echo -e "WARNING (W):  Skipping ${TEST_ARRAY[$test]} (nodes = ${exeNodes}, mode = ${exeInputMode}, NP = ${exeNP}). NP value of ${exeNP} is not a power of 2."
                  
 	      # Set individual test status and summary
-#	      testStatus=testSummary='Skipped (! ^2)'
-#	      hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" $testStatus
-#	      hput $exeHash "${TEST_ARRAY[$test]}:$test:summary_n${numNodes}_m${mode}_p${numProcs}" $testSummary
+#	      testStatus='Skipped (! ^2)'
+#	      testSummary=$testStatus
+#	      hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" "${testStatus}"
+#	      hput $exeHash "${TEST_ARRAY[$test]}:$test:summary_n${numNodes}_m${mode}_p${numProcs}" "${testSummary}"
 
 	      # Ensure we report this right in the summary
 #	      {
@@ -5077,7 +5145,7 @@ then
 
 #	      logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "${exeNP} ${exeInputMode} ${exeThreads}" "${numNodes} ${mode}" "${overallStatus}" "${testStatus}" 999 "${testSummary}" "${runLog}" xmlStat
 
-#	      hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" $xmlStat
+#	      hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" "${xmlStat}"
 
 #	      continue # to next test
 #	  fi
@@ -5090,9 +5158,10 @@ then
 	      echo -e "WARNING (W):  Skipping rerun of ${TEST_ARRAY[$test]} (nodes = ${exeNodes}, mode = ${exeInputMode}, NP = ${exeNP})"
                  
 	      # Set individual test status and summary
-	      testStatus=testSummary='Skipped (Rerun)'
-	      hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" $testStatus
-	      hput $exeHash "${TEST_ARRAY[$test]}:$test:summary_n${numNodes}_m${mode}_p${numProcs}" $testSummary
+	      testStatus='Skipped (Rerun)'
+	      testSummary=$testStatus
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" "${testStatus}"
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:summary_n${numNodes}_m${mode}_p${numProcs}" "${testSummary}"
 
 	      # Ensure we report this right in the summary
 	      {
@@ -5117,7 +5186,7 @@ then
 
 	      logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "${exeNP} ${exeInputMode} ${exeThreads}" "${numNodes} ${mode}" "${overallStatus}" "${testStatus}" 999 "${testSummary}" "${runLog}" xmlStat
 
-	      hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" $xmlStat
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" "${xmlStat}"
 
 	      continue # to next test
 	  fi
@@ -5131,9 +5200,10 @@ then
 	      echo -e "ERROR (E):  Skipping ${TEST_ARRAY[$test]} (nodes = ${exeNodes}, mode = ${exeInputMode}, NP = ${exeNP}).\nFAILED to create link to: ${exeDir}/${TEST_ARRAY[$test]}\nin: ${swtDir}."
                  
 	      # Set individual test status and summary
-	      testStatus=testSummary='Skipped (Link FAILED)'
-	      hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" $testStatus
-	      hput $exeHash "${TEST_ARRAY[$test]}:$test:summary_n${numNodes}_m${mode}_p${numProcs}" $testSummary
+	      testStatus='Skipped (Link FAILED)'
+	      testSummary=$testStatus
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" "${testStatus}"
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:summary_n${numNodes}_m${mode}_p${numProcs}" "${testSummary}"
 
 	      # Ensure we report this right in the summary
 	      {
@@ -5158,7 +5228,7 @@ then
 
 	      logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "${exeNP} ${exeInputMode} ${exeThreads}" "${numNodes} ${mode}" "${overallStatus}" "${testStatus}" 999 "${testSummary}" "${runLog}" xmlStat
 
-	      hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" $xmlStat
+	      hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" "${xmlStat}"
 
 	      continue # to next test
 	  fi
@@ -5459,7 +5529,7 @@ then
 	      # Document signal and elapsed time for this run
 	      if [ "${run_type}" != 'runFpga' ]
 	      then
-		  hput $exeHash "${TEST_ARRAY[$test]}:$test:runtime_n${numNodes}_m${mode}_p${numProcs}" $exeRuntime
+		  hput $exeHash "${TEST_ARRAY[$test]}:$test:runtime_n${numNodes}_m${mode}_p${numProcs}" "${exeRuntime}"
 
 	          # Append run time to log file
 		  echo "Elapsed time:  ${exeRuntime}" >> $runLog
@@ -5468,7 +5538,7 @@ then
 
 	          # Also document fctest dir for FPGA runs
 		  temp_fctest=$(fgrep -a "Test directory:" "${runLog}" | awk '{print $3}')
-		  hput $exeHash "${TEST_ARRAY[$test]}:$test:FPGAfctestDir_n${numNodes}_m${mode}_p${numProcs}" $temp_fctest
+		  hput $exeHash "${TEST_ARRAY[$test]}:$test:FPGAfctestDir_n${numNodes}_m${mode}_p${numProcs}" "${temp_fctest}"
 	      fi
 	      
 	      if [[ ! ( $exeRC -eq 0  && "${run_type}" == 'runFpga' ) ]]
@@ -5513,7 +5583,7 @@ then
 				  curIOBlock=$( echo $ioBlocks | awk -F, -v N=$index '{ print $(N+1) }' )
 				  if [ "${curIOBlock}" != "" ] && (( $( grep -a -i -c $curIOBlock $ioblockHash ) > 0 ))
 				  then # associate I/O block with this boot block
-				      hput $ioblockHash $curIOBlock $bootBlock
+				      hput "${ioblockHash}" "${curIOBlock}" "${bootBlock}"
 				  else
 				      break
 				  fi
@@ -5602,7 +5672,7 @@ then
 		  echo "${TEST_ARRAY[$test]} ${testStatus}!!"
 
 		  # Store individual test status, signal & summary
-		  hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" $testStatus
+		  hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" "${testStatus}"
 		  hput $exeHash "${TEST_ARRAY[$test]}:$test:signal_n${numNodes}_m${mode}_p${numProcs}" $finalSignal
 		  hput $exeHash "${TEST_ARRAY[$test]}:$test:summary_n${numNodes}_m${mode}_p${numProcs}" "${exeSummary}"
 	          # Log to web
@@ -5617,7 +5687,7 @@ then
 
 		  logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "${exeNP} ${exeInputMode} ${exeThreads}" "${numNodes} ${mode}" "${overallStatus}" "${testStatus}" $finalSignal "${testSummary}" "${runLog}" xmlStat
 
-		  hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" $xmlStat
+		  hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" "${xmlStat}"
 
 	      fi # end test verification
 	  ) & # end psuedo-fork subshell
@@ -5796,7 +5866,7 @@ if [ $run -eq 1 ]
 	      
 	          # Store signal & summary
 		  hput $exeHash "${TEST_ARRAY[$test]}:$test:signal_n${numNodes}_m${mode}_p${numProcs}" $finalSignal
-		  hput $exeHash "${TEST_ARRAY[$test]}:$test:summary_n${numNodes}_m${mode}_p${numProcs}" $exeSummary
+		  hput $exeHash "${TEST_ARRAY[$test]}:$test:summary_n${numNodes}_m${mode}_p${numProcs}" "${exeSummary}"
 
 		  testStatus=""
 
@@ -5811,7 +5881,7 @@ if [ $run -eq 1 ]
 		  fi
 
 		  # Update individual test status
-		  hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" $testStatus
+		  hput $exeHash "${TEST_ARRAY[$test]}:$test:status_n${numNodes}_m${mode}_p${numProcs}" "${testStatus}"
 
 	          # Log to web
 	          # Determine np
@@ -5848,7 +5918,7 @@ if [ $run -eq 1 ]
 
 		  logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "${np} ${ppn} ${threads}" "${numNodes} ${mode}" "${overallStatus}" "${testStatus}" $finalSignal "${testSummary}" "${runLog}" xmlStat
 
-		  hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" $xmlStat
+		  hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${numNodes}_m${mode}_p${numProcs}" "${xmlStat}"
 		  
 	      fi
 	    done # mode loop
@@ -6043,7 +6113,6 @@ for ((test=0; test < ${#TEST_ARRAY[@]}; test++))
 
 	  # Get status of this particular run in case it was skipped or was an FPGA run
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:status_n${nodeArray[0]}_m${modeArray[0]}_p${numProcs}" runStatus
-
 	  # FPGA status could be Cancelled, Passed or FAILED
 	  if [ "${run_type}" == 'runFpga' ]
 	      then
@@ -6068,11 +6137,20 @@ for ((test=0; test < ${#TEST_ARRAY[@]}; test++))
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:runtime_n${nodeArray[0]}_m${modeArray[0]}_p${numProcs}" runtime
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${nodeArray[0]}_m${modeArray[0]}_p${numProcs}" xmlStatus
 
-	  if (( ${#hashStatus} < 8 ))
-	      then
+	  if (( ${#runStatus} < 8 ))
+	  then
 	      echo -e -n "\t\t${runtime:1:7}\t${xmlStatus}" >> $summaryFile
-	  else
-	      echo -e -n "\t${runtime:1:7}\t${xmlStatus}" >> $summaryFile 
+	      
+	  elif (( ${#runStatus} < 16 ))
+	  then
+	      echo -e -n "\t${runtime:1:7}\t${xmlStatus}" >> $summaryFile
+	  else # run status spills over into runtime column 
+	      if [ "${runtime}" == '' ]
+	      then # Skip it so we can line up the XML status
+		  echo -e -n "\t${xmlStatus}" >> $summaryFile
+	      else # keep things tabbed even though the headers won't line up
+		  echo -e -n "\t${runtime:1:7}\t${xmlStatus}" >> $summaryFile 
+	      fi
 	  fi
 
 	  # Print log file to summary file if appropriate
