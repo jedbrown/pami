@@ -6113,10 +6113,13 @@ for ((test=0; test < ${#TEST_ARRAY[@]}; test++))
 
 	  # Get status of this particular run in case it was skipped or was an FPGA run
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:status_n${nodeArray[0]}_m${modeArray[0]}_p${numProcs}" runStatus
+
+	  statusText=''
+
 	  # FPGA status could be Cancelled, Passed or FAILED
 	  if [ "${run_type}" == 'runFpga' ]
 	      then
-	      echo -e -n "${system}\t${np}\t${ppn}\t${override}\tExe ${runStatus}" >> $summaryFile
+	      statusText="Exe ${runStatus}"
 
 	  else # Standalone, MMCS[_Lite] and Mambo runs are only Pass/FAIL
 	      
@@ -6124,24 +6127,26 @@ for ((test=0; test < ${#TEST_ARRAY[@]}; test++))
 		  then
 		  if [[ ! "${runStatus}" =~ 'FAILED' ]]
 		      then
-		      echo -e -n "${system}\t${np}\t${ppn}\t${override}\t${runStatus}" >> $summaryFile
+		      statusText="${runStatus}"
 		  else
-		      echo -e -n "${system}\t${np}\t${ppn}\t${override}\tExe FAILED" >> $summaryFile
+		      statusText='Exe FAILED'
 		  fi
 	      else
-		  echo -e -n "${system}\t${np}\t${ppn}\t${override}\tExe Passed" >> $summaryFile
+		  statusText='Exe Passed'
 	      fi
 	  fi
 	  
+	  echo -e -n "${system}\t${np}\t${ppn}\t${override}\t${statusText}" >> $summaryFile
+
 	  # Print run time & XML status to the summary file
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:runtime_n${nodeArray[0]}_m${modeArray[0]}_p${numProcs}" runtime
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${nodeArray[0]}_m${modeArray[0]}_p${numProcs}" xmlStatus
 
-	  if (( ${#runStatus} < 8 ))
+	  if (( ${#statusText} < 8 ))
 	  then
 	      echo -e -n "\t\t${runtime:1:7}\t${xmlStatus}" >> $summaryFile
 	      
-	  elif (( ${#runStatus} < 16 ))
+	  elif (( ${#statusText} < 16 ))
 	  then
 	      echo -e -n "\t${runtime:1:7}\t${xmlStatus}" >> $summaryFile
 	  else # run status spills over into runtime column 
@@ -6154,7 +6159,7 @@ for ((test=0; test < ${#TEST_ARRAY[@]}; test++))
 	  fi
 
 	  # Print log file to summary file if appropriate
-	  if [[ ! "${runStatus}" =~ 'Skipped' ]]
+	  if [[ ! "${statusText}" =~ 'Skipped' ]]
 	      then
 	      echo -e "\t${runLog}" >> $summaryFile
 	  else
@@ -6231,8 +6236,16 @@ for ((test=0; test < ${#TEST_ARRAY[@]}; test++))
 	      if (( ${#hashStatus} < 8 ))
 		  then
 		  echo -e -n "\t\t${runtime:1:7}\t${xmlStatus}" >> $summaryFile
-	      else
-		  echo -e -n "\t${runtime:1:7}\t${xmlStatus}" >> $summaryFile 
+	      elif (( ${#statusText} < 16 ))
+	      then
+		  echo -e -n "\t${runtime:1:7}\t${xmlStatus}" >> $summaryFile
+	      else # run status spills over into runtime column 
+		  if [ "${runtime}" == '' ]
+		  then # Skip it so we can line up the XML status
+		      echo -e -n "\t${xmlStatus}" >> $summaryFile
+		  else # keep things tabbed even though the headers won't line up
+		      echo -e -n "\t${runtime:1:7}\t${xmlStatus}" >> $summaryFile 
+		  fi
 	      fi
 
 	      # Print log file to summary file
