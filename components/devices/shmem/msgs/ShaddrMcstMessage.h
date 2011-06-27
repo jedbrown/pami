@@ -137,7 +137,7 @@ namespace PAMI
               TRACE_FORMAT("incoming_bytes:%d, _bytes_consumed:%u", mcst_control->incoming_bytes, this->_bytes_consumed);
               if (mcst_control->incoming_bytes > this->_bytes_consumed)
               {
-                mem_sync();
+                Memory::sync();
                 TRACE_FORMAT("incoming_bytes:%d, _bytes_consumed:%u", mcst_control->incoming_bytes, this->_bytes_consumed);
                 size_t	bytes_to_copy = mcst_control->incoming_bytes - this->_bytes_consumed;
                 mybuf = rcv->bufferToProduce();
@@ -252,7 +252,7 @@ namespace PAMI
 
               if (mcst_control->incoming_bytes > this->_bytes_consumed)
               {
-                mem_sync();
+                Memory::sync();
                 TRACE_FORMAT("incoming_bytes:%d, _bytes_consumed:%u", mcst_control->incoming_bytes, this->_bytes_consumed);
                 size_t	bytes_to_copy = mcst_control->incoming_bytes - this->_bytes_consumed;
                 mybuf = rcv->bufferToProduce();

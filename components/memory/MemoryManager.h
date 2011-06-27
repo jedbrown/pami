@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include <fnmatch.h>
 #include "NativeAtomics.h"
+#include "Memory.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
@@ -243,7 +244,7 @@ protected:
 		}
 
 		inline void release() {
-			mem_sync();
+			Memory::sync();
 			_mutex.set(0);
 		}
 

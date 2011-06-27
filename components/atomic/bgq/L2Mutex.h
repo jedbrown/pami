@@ -14,6 +14,7 @@
 #define __components_atomic_bgq_L2Mutex_h__
 
 #include "Global.h"
+#include "Memory.h"
 #include "components/atomic/MutexInterface.h"
 #include "components/atomic/IndirectInterface.h"
 
@@ -74,7 +75,7 @@ namespace PAMI
 
           void release_impl()
           {
-            mem_sync();
+            Memory::sync();
             L2_AtomicLoadClear(&_counter);
           }
 
@@ -191,7 +192,7 @@ namespace PAMI
 
           void release_impl()
           {
-            mem_sync();
+            Memory::sync();
             L2_AtomicLoadClear(_counter);
           }
 

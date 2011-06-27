@@ -26,6 +26,8 @@
 #include "../a2qpx_nway_math.h"
 #include "components/devices/shmem/CNShmemDesc.h"
 
+#include "Memory.h"
+
 namespace PAMI
 {
   namespace Device
@@ -258,7 +260,7 @@ namespace PAMI
                 if (*counter_addr == counter_curr)
                   return PAMI_EAGAIN;
 
-                mem_sync();
+                Memory::sync();
                 my_desc->signal_flag();
               }
               else
@@ -284,7 +286,7 @@ namespace PAMI
                   return PAMI_EAGAIN;
 
                 bytes_arrived = counter_curr - *counter_addr;
-                mem_sync();
+                Memory::sync();
                 _controlB->bytes_incoming+= (unsigned)bytes_arrived;
 
                 //memcpy((char*)_rcvbuf + bytes_so_far, (char*)buf + bytes_so_far, bytes_arrived);
@@ -328,7 +330,7 @@ namespace PAMI
                     return PAMI_EAGAIN;
 
                 bytes_arrived = counter_curr - *counter_addr;
-                mem_sync();
+                Memory::sync();
                 _controlB->bytes_incoming+= (unsigned)bytes_arrived;
                 counter_curr -= bytes_arrived;
               }

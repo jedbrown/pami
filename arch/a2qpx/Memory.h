@@ -13,7 +13,8 @@
 
 #include <hwi/include/bqc/A2_inlines.h>
 
-#define mem_barrier() mbar()
+#define mem_barrier() { do { asm volatile ("mbar"  : : : "memory"); } while(0); }
+//{ do { asm volatile ("msync" : : : "memory"); } while(0); }
 
 #include "arch/MemoryInterface.h"
 
@@ -30,12 +31,18 @@ namespace PAMI
     template <> const bool supports <remote_msync> () { return true; };
     template <> const bool supports <l1p_flush>    () { return true; };
 
-    template <> void sync <instruction>  () { isync(); };
-    template <> void sync <remote_msync> () { mbar(); };
+    template <> void sync <instruction>  ()
+    {
+      do { asm volatile ("isync" : : : "memory"); } while(0);
+    };
+    
+    template <> void sync <remote_msync> ()
+    {
+      do { asm volatile ("mbar"  : : : "memory"); } while(0);
+    };
 
     template <> void sync <l1p_flush> ()
     {
-      //fprintf (stdout, "sync<l1p_flush>()\n");
       volatile uint64_t *dummy_mu_reg =
         (uint64_t *) (BGQ_MU_STATUS_CONTROL_REGS_START_OFFSET(0, 0) +
                       0x030 - PHYMAP_PRIVILEGEDOFFSET);

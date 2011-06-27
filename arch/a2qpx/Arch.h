@@ -31,10 +31,6 @@
 #define PAMI_MAX_PROC_PER_NODE   (NUM_CORES * NUM_SMT)
 #define PAMI_MAX_THREAD_PER_PROC (NUM_CORES * NUM_SMT)
 
-
-#undef  mem_sync
-#define mem_sync()    ppc_msync()
-
 #ifdef __cplusplus
 ///
 /// \brief Template specialization for size_t copies.

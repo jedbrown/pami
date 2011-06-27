@@ -21,6 +21,7 @@
  */
 #include "components/atomic/Barrier.h"
 #include "Global.h"
+#include "Memory.h"
 #include "hwi/include/bqc/A2_inlines.h"
 
 namespace PAMI {
@@ -138,7 +139,7 @@ public:
 
         inline void pollInit_impl() {
                 uint64_t lockup;
-                mem_sync();
+                Memory::sync();
                 lockup = *(_barrier.controlPtr());
                 Fetch_and_Add(_barrier.lockPtr(lockup), 1);
                 _data = (void*)lockup;

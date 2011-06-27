@@ -12,6 +12,8 @@
 #include "common/bgq/Mapping.h"
 #include "components/memory/MemoryAllocator.h"
 
+#include "Memory.h"
+
 #undef DO_TRACE_ENTEREXIT
 #undef DO_TRACE_DEBUG
 
@@ -178,7 +180,7 @@ namespace PAMI
               return (cval == 0);
               }
 
-            mem_sync();
+            Memory::sync();
             _dpwq->produceBytes(_cc - cval);
             _cc = cval;
 

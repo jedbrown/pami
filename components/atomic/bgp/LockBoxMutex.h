@@ -18,6 +18,7 @@
  * would be new classes, all inheriting from "Mutex".
  */
 #include "Global.h"
+#include "Memory.h"
 #include "common/bgp/LockBoxFactory.h"
 #include "components/atomic/MutexInterface.h"
 #include "components/atomic/IndirectInterface.h"
@@ -103,7 +104,7 @@ namespace PAMI
           void acquire_impl()
           {
             LockBox_MutexLock((LockBox_Mutex_t)_addr);
-            mem_sync();
+            Memory::sync();
           }
 
           void release_impl()

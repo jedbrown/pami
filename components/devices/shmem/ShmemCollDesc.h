@@ -10,6 +10,8 @@
 #include "components/devices/MulticombineModel.h"
 
 #include "Arch.h"
+#include "Memory.h"
+
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) //fprintf(stderr,"%s:%d\n",__FILE__,__LINE__); fprintf x
 #endif
@@ -426,7 +428,7 @@ public:
                           {
                             TRACE_ERR((stderr, "releasing descriptor:%d\n", (unsigned)_head % DESCRIPTOR_FIFO_SIZE));
                             _desc[_head%DESCRIPTOR_FIFO_SIZE].reset();
-                            mem_sync();
+                            Memory::sync();
                             seq_id = _desc[_head%DESCRIPTOR_FIFO_SIZE].get_seq_id();
                             _desc[_head%DESCRIPTOR_FIFO_SIZE].set_seq_id(seq_id + DESCRIPTOR_FIFO_SIZE);
                             seq_id = _desc[_head%DESCRIPTOR_FIFO_SIZE].get_my_seq_id();

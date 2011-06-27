@@ -36,6 +36,7 @@
 #include "util/queue/Queue.h"
 #include "spi/include/l2/atomic.h"
 #include "Global.h"
+#include "Memory.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x)
@@ -101,7 +102,7 @@ namespace PAMI {
 
 	Element *element = (Element *)_queueArray[qindex];
 	_queueArray[qindex] = NULL; //Mark the element as unused
-	mem_sync();
+	Memory::sync();
 	//fprintf(stderr, "Found element %ld\n", index);
 
 	_privateq.enqueue((Element *)element);

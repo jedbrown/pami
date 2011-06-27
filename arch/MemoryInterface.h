@@ -24,7 +24,19 @@ namespace PAMI
     typedef enum
     {
       full_sync = 0,
+
+      // The instruction synchronization causes the processor to complete
+      // execution of all previous instructions and then to discard instructions
+      // (which may have begun execution) following the synchronization. After
+      // the instruction synchronization is executed, the following instructions
+      // then begin execution.
+      //
+      // Instruction synchronization is used in locking code to ensure that the
+      // loads following entry into the critical section are not performed
+      // (because of aggressive out-of-order or speculative execution in the
+      // processor) until the lock is granted.
       instruction,
+
       remote_msync,
       l1p_flush,
     } attribute_t;

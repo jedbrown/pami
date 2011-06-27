@@ -18,6 +18,7 @@
 #include <sys/uio.h>
 
 #include "Arch.h"
+#include "Memory.h"
 
 #include "sys/pami.h"
 
@@ -170,7 +171,7 @@ namespace PAMI
               my_desc->set_my_state(Shmem::DESCSTATE_INIT);
               //src->consumeBytes(bytes);
 
-              mem_sync();
+              Memory::sync();
               /*Shmem::ShaddrMcombMessage<T_Device, T_Desc> * obj = (Shmem::ShaddrMcombMessage<T_Device, T_Desc> *) (&state[0]);
               new (obj) Shmem::ShaddrMcombMessage<T_Device, T_Desc> (_device.getContext(), my_desc, _local_rank);*/
               Shmem::ShaddrMcombMessagePipe<T_Device> * obj = (Shmem::ShaddrMcombMessagePipe<T_Device> *) (&state[0]);

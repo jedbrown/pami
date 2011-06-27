@@ -13,6 +13,8 @@
 #ifndef __components_devices_bgq_commthread_CommThreadWakeup_h__
 #define __components_devices_bgq_commthread_CommThreadWakeup_h__
 
+#include "Memory.h"
+
 #ifndef COMMTHREAD_LAYOUT_TESTING
 #include <pami.h>
 #include "components/devices/bgq/commthread/WakeupRegion.h"
@@ -254,7 +256,7 @@ public:
 				return PAMI_EAGAIN; // closest thing to ENOSPC ?
 			}
 			thus->_initCtxs |= m;
-			mem_sync();
+			Memory::sync();
 			return PAMI_SUCCESS;
 		}
 
@@ -303,7 +305,7 @@ public:
 		}
 
 		thus->_shutdown = false;
-		mem_sync();
+		Memory::sync();
 		status = pthread_create(&thus->_thread, &attr, commThread, thus);
 		pthread_attr_destroy(&attr);
 		if (status) {
@@ -402,7 +404,7 @@ more_work:		// lightweight enough.
 				_lockCtxs = lkd_ctx;
 				if (old_ctx != new_ctx) ev_since_wu += 1;
 				old_ctx = new_ctx;
-				mem_sync();
+				Memory::sync();
 				events += __advanceContextSet(lkd_ctx);
 				ev_since_wu += events;
 				++n;
@@ -446,7 +448,7 @@ DEBUG_WRITE('w','u');
 				// this only locks/unlocks what changed...
 				(void)__lockContextSet(lkd_ctx, 0);
 				_lockCtxs = lkd_ctx;
-				mem_sync();
+				Memory::sync();
 
 				_ctxset->leaveContextSet(id); // id invalid now
 DEBUG_WRITE('s','a');
@@ -466,7 +468,7 @@ DEBUG_WRITE('s','b');
 		if (lkd_ctx) {
 			(void)__lockContextSet(lkd_ctx, 0);
 			_lockCtxs = lkd_ctx;
-			mem_sync();
+			Memory::sync();
 		}
 		if (id != (size_t)-1) {
 			_ctxset->leaveContextSet(id); // id invalid now

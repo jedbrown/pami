@@ -18,6 +18,8 @@
 #include "components/devices/workqueue/WorkQueue.h"
 #include "string.h"
 
+#include "Memory.h"
+
 #ifndef PAMI_DEF_SH_WORKSIZE
 #define PAMI_DEF_SH_WORKSIZE 4096
 #endif
@@ -125,7 +127,7 @@ namespace PAMI
             for (i=0; i<_consumers; i++)
               _sharedqueue->consumer[i].bytes = 0;
 
-            mem_sync();
+            Memory::sync();
           }
 
           ///
@@ -153,7 +155,7 @@ namespace PAMI
           ///
           inline void dump (const char * prefix = NULL)
           {
-            mem_sync();
+            Memory::sync();
             unsigned pbytes0 = _sharedqueue->producer[0].bytes;
             unsigned pbytes1 = _sharedqueue->producer[1].bytes;
             unsigned pbytes2 = _sharedqueue->producer[2].bytes;

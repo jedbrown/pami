@@ -19,8 +19,5 @@
 #error BROKEN
 // Here go things specific to this processor architecture
 
-//#define mem_sync() __sync()
-
-#define mem_sync() { asm volatile ("sync"); }
 
 #endif // __pami_arch_power7_h__

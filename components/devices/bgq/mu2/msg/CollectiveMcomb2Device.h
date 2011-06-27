@@ -15,6 +15,7 @@
 
 #include "math/a2qpx/Core_memcpy.h"
 
+#include "Memory.h"
 
 namespace PAMI
 {
@@ -146,7 +147,7 @@ namespace PAMI
               else
                 _context.setCNShmemCollectiveBufferBatEntry((uint64_t)rcvbuf_phy);
             }
-            mem_sync();
+            Memory::sync();
             _shmem_desc->signal_arrived(); //signal that I have copied all my addresses/data
           }
 

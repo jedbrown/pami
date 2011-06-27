@@ -20,6 +20,7 @@
  *
  */
 #include "Global.h"
+#include "Memory.h"
 #include "components/memory/MemoryManager.h"
 #include "components/atomic/Mutex.h"
 #include "hwi/include/bqc/A2_inlines.h"
@@ -40,7 +41,7 @@ namespace BGQ {
 			} while (!StoreConditional(&_mutex, 1));
                 }
                 void release_impl() {
-			mem_sync();
+			Memory::sync();
                         _mutex = 0;
                 }
                 bool tryAcquire_impl() {

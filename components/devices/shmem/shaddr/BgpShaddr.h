@@ -26,6 +26,7 @@
 
 #include <pami.h>
 #include "Global.h"
+#include "Memory.h"
 #include "components/devices/shmem/shaddr/ShaddrInterface.h"
 
 #ifndef TRACE_ERR
@@ -224,11 +225,11 @@ size_t PAMI::Device::Shmem::BgpShaddr::read_impl (void   * local,
 
   if (likely(bytes <= n))
     {
-      mem_sync();
+      Memory::sync();
       /* print_data (paddr, bytes); */
       TRACE_ERR((stderr, "   BgpShaddr::read_impl(), before memcpy(%p, %p, %zu)\n", local, paddr, bytes));
       memcpy (local, paddr, bytes);
-      mem_sync();
+      Memory::sync();
       TRACE_ERR((stderr, "<< BgpShaddr::read_impl()\n"));
       return bytes;
     }
@@ -237,9 +238,9 @@ size_t PAMI::Device::Shmem::BgpShaddr::read_impl (void   * local,
   size_t bytes_to_copy = bytes - n;
   size_t bytes_copied  = n;
 
-  mem_sync();
+  Memory::sync();
   memcpy (local, paddr, n);
-  mem_sync();
+  Memory::sync();
 
   while (bytes_to_copy > 0)
     {
@@ -248,9 +249,9 @@ size_t PAMI::Device::Shmem::BgpShaddr::read_impl (void   * local,
       paddr = v2p (task, source, bytes_to_copy, bytes_available);
       TRACE_ERR((stderr, "   BgpShaddr::read_impl(), bytes_available = %zu, paddr = %p\n", bytes_available, paddr));
       n = MIN(bytes_to_copy, bytes_available);
-      mem_sync();
+      Memory::sync();
       memcpy (local, paddr, n);
-      mem_sync();
+      Memory::sync();
 
       bytes_to_copy -= n;
       bytes_copied  += n;
@@ -275,9 +276,9 @@ size_t PAMI::Device::Shmem::BgpShaddr::write_impl (void   * remote,
       /* print_data (local, bytes); */
       /* print_data (paddr, bytes); */
       TRACE_ERR((stderr, "   BgpShaddr::write_impl(), before memcpy(%p, %p, %zu)\n", paddr, local, bytes));
-      mem_sync();
+      Memory::sync();
       memcpy (paddr, local, bytes);
-      mem_sync();
+      Memory::sync();
       /* print_data (paddr, bytes); */
       TRACE_ERR((stderr, "<< BgpShaddr::write_impl()\n"));
       return bytes;
@@ -286,18 +287,18 @@ size_t PAMI::Device::Shmem::BgpShaddr::write_impl (void   * remote,
   size_t bytes_to_copy = bytes - n;
   size_t bytes_copied  = n;
 
-  mem_sync();
+  Memory::sync();
   memcpy (paddr, local, n);
-  mem_sync();
+  Memory::sync();
 
   while (bytes_to_copy > 0)
     {
       paddr = v2p (task, (void *)(((size_t)paddr) + bytes_copied),
                    bytes_to_copy, bytes_available);
       n = MIN(bytes_to_copy, bytes_available);
-      mem_sync();
+      Memory::sync();
       memcpy (paddr, local, n);
-      mem_sync();
+      Memory::sync();
 
       bytes_to_copy -= n;
       bytes_copied  += n;
@@ -324,19 +325,19 @@ size_t PAMI::Device::Shmem::BgpShaddr::read_impl (Memregion * local,
 
   if (likely(bytes <= n))
     {
-      mem_sync();
+      Memory::sync();
       /* print_data (remote_va, bytes); */
       TRACE_ERR((stderr, "   BgpShaddr::read_impl('memregion'), before memcpy(%p, %p, %zu)\n", local_va, remote_va, bytes));
       memcpy (local_va, remote_va, bytes);
-      mem_sync();
+      Memory::sync();
       TRACE_ERR((stderr, "<< BgpShaddr::read_impl('memregion')\n"));
       return bytes;
     }
 
 
-  mem_sync();
+  Memory::sync();
   memcpy (local_va, remote_va, n);
-  mem_sync();
+  Memory::sync();
 
   size_t bytes_copied  = n;
   size_t bytes_to_copy = bytes - n;
@@ -348,9 +349,9 @@ size_t PAMI::Device::Shmem::BgpShaddr::read_impl (Memregion * local,
 
       TRACE_ERR((stderr, "   BgpShaddr::read_impl('memregion'), bytes_to_copy = %zu, bytes_copied = %zu, dst = %p, src = %p\n", bytes_to_copy, bytes_copied, dst, src));
       n = MIN(bytes_to_copy, n);
-      mem_sync();
+      Memory::sync();
       memcpy (dst, src, n);
-      mem_sync();
+      Memory::sync();
 
       bytes_to_copy -= n;
       bytes_copied  += n;
@@ -376,18 +377,18 @@ size_t PAMI::Device::Shmem::BgpShaddr::write_impl (Memregion * remote,
 
   if (likely(bytes <= n))
     {
-      mem_sync();
+      Memory::sync();
       TRACE_ERR((stderr, "   BgpShaddr::write_impl('memregion'):%d .. before memcpy(%p, %p, %zu)\n", __LINE__, local_va, remote_va, bytes));
       memcpy (remote_va, local_va, bytes);
-      mem_sync();
+      Memory::sync();
       TRACE_ERR((stderr, "<< BgpShaddr::write_impl('memregion'):%d\n", __LINE__));
       return bytes;
     }
 
 
-  mem_sync();
+  Memory::sync();
   memcpy (remote_va, local_va, n);
-  mem_sync();
+  Memory::sync();
 
   size_t bytes_copied  = n;
   size_t bytes_to_copy = bytes - n;
@@ -399,9 +400,9 @@ size_t PAMI::Device::Shmem::BgpShaddr::write_impl (Memregion * remote,
 
       TRACE_ERR((stderr, "   BgpShaddr::write_impl('memregion'):%d .. bytes_to_copy = %zu, bytes_copied = %zu, dst = %p, src = %p\n", __LINE__, bytes_to_copy, bytes_copied, dst, src));
       n = MIN(bytes_to_copy, n);
-      mem_sync();
+      Memory::sync();
       memcpy (dst, src, n);
-      mem_sync();
+      Memory::sync();
 
       bytes_to_copy -= n;
       bytes_copied  += n;

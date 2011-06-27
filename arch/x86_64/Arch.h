@@ -25,6 +25,4 @@
 #define PAMI_MAX_PROC_PER_NODE   128
 #define PAMI_MAX_THREAD_PER_PROC 32
 
-#define mem_sync()    __sync_synchronize()
-
 #endif // __arch_x86_64_Arch_h__

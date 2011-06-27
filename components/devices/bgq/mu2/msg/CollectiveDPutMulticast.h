@@ -12,6 +12,8 @@
 #include "common/bgq/Mapping.h"
 #include "components/memory/MemoryAllocator.h"
 
+#include "Memory.h"
+
 namespace PAMI
 {
   namespace Device
@@ -176,7 +178,7 @@ namespace PAMI
             if (cval == _cc)
               return (cval == 0);
 
-            mem_sync();
+            Memory::sync();
 
             if (!_isRoot)
               _pwq->produceBytes(_cc - cval);

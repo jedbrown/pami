@@ -25,6 +25,7 @@
 #include "assert.h"
 #include "BaseMessage.h"
 
+#include "Memory.h"
 
 #if 0
 inline int quad_double_sum_8way(double* dest, double* src0, double *src1, double* src2, double* src3,
@@ -279,7 +280,7 @@ namespace PAMI
               return PAMI_EAGAIN;
             }
 
-            mem_sync();
+            Memory::sync();
             TRACE_ERR((stderr, "all peers:%zu arrived, starting the blocking Mcomb protocol\n", num_src_ranks));
 
             /* Start the protocol here..blocking version since everyone arrived */
@@ -368,7 +369,7 @@ namespace PAMI
               /* copying last chunk */
               my_peer = CURRENT_ITER %(_npeers-1)+1;
               while (mcomb_control->chunks_done[my_peer] <= mcomb_control->chunks_copied[my_peer]){};
-              mem_sync();
+              Memory::sync();
 
 
               if (bytes%CHUNK_SIZE == 0)

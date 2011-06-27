@@ -19,6 +19,8 @@
 #include "components/devices/bgq/mu2/Context.h"
 #include "components/devices/bgq/mu2/msg/InjectDPutMulticast.h"
 
+#include "Memory.h"
+
 #define MAX_COUNTERS 12
 #define MAX_VEC_SIZE 16
 
@@ -328,7 +330,7 @@ namespace PAMI
 		uint64_t cc = _counterVec[cid];
 		uint64_t bytes = _counterShadowVec[i] - cc;
 		if (bytes > 0) {
-		  mem_sync();
+		  Memory::sync();
 		  recv->produceBytes (bytes);
 		  _counterShadowVec[i] = cc;
 		  

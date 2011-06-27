@@ -16,6 +16,8 @@
 #include "sys/pami.h"
 #include "math/a2qpx/Core_memcpy.h"
 
+#include "Memory.h"
+
 //#define MU_SHORT_BLOCKING_COLLECTIVE 0
 
 #undef DO_TRACE_ENTEREXIT
@@ -272,7 +274,7 @@ namespace PAMI
 
             while (_collstate._colCounter != 0);
 
-            mem_sync();
+            Memory::sync();
 
             if (dpwq)
               {
@@ -357,7 +359,7 @@ namespace PAMI
 
             if (*scmsg->_counterAddress == 0)
               {
-                mem_sync();
+                Memory::sync();
 
                 if (scmsg->_dpwq)
                   {

@@ -15,6 +15,7 @@
 #define __common_default_PipeWorkQueue_h__
 
 #include "Arch.h"
+#include "Memory.h"
 #include "common/PipeWorkQueueInterface.h"
 #include "common/type/TypeMachine.h"
 #include "util/common.h"
@@ -252,7 +253,7 @@ public:
 		_sharedqueue->_u._s.consumerWakeVec = NULL;
 		if (_prod_tm) _prod_tm->MoveCursor(_isize);
 		if (_cons_tm) _cons_tm->MoveCursor(0);
-		mem_sync();
+    Memory::sync();
 	}
 
 	///
@@ -275,7 +276,7 @@ public:
 	/// \param[in] prefix	Optional character string to prefix.
 	///
 	inline void dump_impl(const char *prefix = NULL) {
-		mem_sync();
+    Memory::sync();
 		size_t pbytes0 = _sharedqueue->_u._s.producedBytes;
 		size_t cbytes0 = _sharedqueue->_u._s.consumedBytes;
 

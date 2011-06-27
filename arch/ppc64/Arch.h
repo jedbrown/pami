@@ -26,6 +26,4 @@
 #define PAMI_MAX_THREAD_PER_PROC 32
 #define MATH_MAX_NSRC 2
 
-#define mem_sync()    do { asm volatile ("sync" : : : "memory"); } while(0)
-
 #endif // __pami_arch_ppc64_h__

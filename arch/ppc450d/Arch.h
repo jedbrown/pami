@@ -29,9 +29,6 @@
 #include <bpcore/bgp_atomic_ops.h>
 #include <spi/kernel_interface.h>
 
-#undef  mem_sync
-#define mem_sync()      _bgp_msync()
-
 #define LQU(x, ptr, incr) \
 asm volatile ("lfpdux %0,%1,%2" : "=f"(x), "+Ob"(ptr) : "r"(incr) : "memory")
 #define SQU(x, ptr, incr) \

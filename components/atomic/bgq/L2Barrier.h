@@ -23,6 +23,7 @@
 #include "components/atomic/IndirectInterface.h"
 
 #include "Global.h"
+#include "Memory.h"
 #include <spi/include/l2/atomic.h>
 
 namespace PAMI
@@ -115,7 +116,7 @@ namespace PAMI
           inline void begin_impl()
           {
             uint64_t lockup;
-            mem_sync();
+            Memory::sync();
             lockup = L2_AtomicLoad(_barrier.controlPtr());
             L2_AtomicLoadIncrement(_barrier.lockPtr(lockup));
             _data = (void*)lockup;
