@@ -88,9 +88,7 @@ namespace PAMI
                                         sizeof(*ctxt->_p2p_ccmi_collreg));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc P2PCCMICollreg");
 
-#ifndef _LAPI_LINUX
         ctxt->_bsr_device.setGenericDevices(ctxt->_devices->_generics);
-#endif
         ctxt->_cau_device.setGenericDevices(ctxt->_devices->_generics);
         rc = __global.heap_mm->memalign((void **)&ctxt->_cau_collreg, 0,
                                         sizeof(*ctxt->_cau_collreg));
@@ -346,6 +344,17 @@ namespace PAMI
 
     inline ~Client ()
       {
+        _world_geometry->~Lapi();
+        /* clean up all existing geometries */
+        std::map<unsigned, pami_geometry_t>::iterator g_it = _geometry_map.begin();
+        while (g_it != _geometry_map.end()) {
+          if (NULL != g_it->second) {
+            LAPIGeometry* g = (LAPIGeometry*)(g_it->second);
+            g->~Lapi();
+            g_it->second = NULL;
+          }
+          g_it++;
+        }
         if(_world_list) free(_world_list);
       }
 

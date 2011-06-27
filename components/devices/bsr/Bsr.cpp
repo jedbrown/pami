@@ -396,7 +396,7 @@ Bsr::BSR_SETUP_STATE Bsr::CheckBsrResource(const unsigned int mem_cnt,
     }
 
     for (unsigned req_size = 1; req_size <= avail; req_size = req_size << 1) {
-        if (req_size & fmask == 0)
+        if ((req_size & fmask) == 0)
             continue;
         if (req_size < mem_cnt)
             continue;

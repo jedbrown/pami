@@ -349,6 +349,7 @@ namespace PAMI
                   geometryInfo->_geometry                        = geometry;
                   geometryInfo->_local_model                     = NULL;
                   geometryInfo->_ni                              = NULL;
+                  geometryInfo->_bsr_info                        = NULL;
                   geometryInfo->_cau_info                        = NULL;
                   geometryInfo->_cau_mask                        = inout_val[0];
                   geometryInfo->_cau_group                       = -1;

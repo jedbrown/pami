@@ -443,9 +443,7 @@ namespace PAMI
                            _context,
                            _contextid,
                           &_dispatch_id);
-#ifndef _LAPI_LINUX
           _bsr_device.init(_client, _context, _contextid, _Lapi_env.MP_child);
-#endif
           *out_mysize        = _Lapi_env.MP_procs;
           *out_myrank        = _Lapi_env.MP_child;
           *out_lapi_handle   = _lapi_handle;
