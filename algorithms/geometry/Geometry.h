@@ -76,7 +76,7 @@ namespace PAMI
                                              comm,
                                              nranks,
                                              ranks),
-	  //_kvstore(),
+          //_kvstore(),
             _commid(comm),
             _client(client),
             _rank(mapping->task()),
@@ -98,6 +98,7 @@ namespace PAMI
           (*_geometry_map)[_commid] = this;
 
           _allreduce_storage[0] = _allreduce_storage[1] = NULL;
+          _allreduce[0] = _allreduce[1] = NULL;
 
           _cb_done = (pami_callback_t) {NULL, NULL};
 
@@ -119,7 +120,7 @@ namespace PAMI
                                              comm,
                                              numranges,
                                              rangelist),
-	  //_kvstore(),
+          //_kvstore(),
             _commid(comm),
             _client(client),
             _rank(mapping->task()),
@@ -228,6 +229,7 @@ namespace PAMI
           (*_geometry_map)[_commid] = this;
 
           _allreduce_storage[0] = _allreduce_storage[1] = NULL;
+          _allreduce[0] = _allreduce[1] = NULL;
 
           _cb_done = (pami_callback_t) {NULL, NULL};
 
@@ -247,7 +249,7 @@ namespace PAMI
                                              mapping,
                                              comm,
                                              topology),
-	  //_kvstore(),
+          //_kvstore(),
             _commid(comm),
             _client(client),
             _rank(mapping->task()),
@@ -273,6 +275,7 @@ namespace PAMI
           (*_geometry_map)[_commid] = this;
 
           _allreduce_storage[0] = _allreduce_storage[1] = NULL;
+          _allreduce[0] = _allreduce[1] = NULL;
 
           _cb_done = (pami_callback_t) {NULL, NULL};
 
@@ -454,6 +457,7 @@ namespace PAMI
           _ranks_malloc = false;
           __global.heap_mm->free(_allreduce_storage[0]);
           __global.heap_mm->free(_allreduce_storage[1]);
+          (*_geometry_map)[_commid] = NULL;
 
           return;
         }
@@ -479,12 +483,12 @@ namespace PAMI
         inline CCMI_EXECUTOR_TYPE        getAllreduceCompositeStorage_impl(unsigned i)
         {
           if(_allreduce_storage[i] == NULL) {
-	    pami_result_t rc;
-	    rc = __global.heap_mm->memalign((void **)&_allreduce_storage[i],
-			sizeof(void *), PAMI_REQUEST_NQUADS*4);
-	    PAMI_assertf(rc == PAMI_SUCCESS,
-			"Failed to alloc memory for _allreduce_storage[%d]", i);
-	  }
+            pami_result_t rc;
+            rc = __global.heap_mm->memalign((void **)&_allreduce_storage[i],
+                                            sizeof(void *), PAMI_REQUEST_NQUADS*4);
+            PAMI_assertf(rc == PAMI_SUCCESS,
+                         "Failed to alloc memory for _allreduce_storage[%d]", i);
+          }
           return _allreduce_storage[i];
         }
         inline COMPOSITE_TYPE            getAllreduceComposite_impl(unsigned i)
@@ -505,14 +509,14 @@ namespace PAMI
         inline CCMI_EXECUTOR_TYPE        getAllreduceCompositeStorage_impl()
         {
           if(_allreduce_storage[_allreduce_iteration] == NULL) {
-	    pami_result_t rc;
-	    rc = __global.heap_mm->memalign(
-			(void **)&_allreduce_storage[_allreduce_iteration],
-			sizeof(void *), PAMI_REQUEST_NQUADS*4);
-	    PAMI_assertf(rc == PAMI_SUCCESS,
-			"Failed to alloc memory for _allreduce_storage[%d]",
-			_allreduce_iteration);
-	  }
+            pami_result_t rc;
+            rc = __global.heap_mm->memalign(
+              (void **)&_allreduce_storage[_allreduce_iteration],
+              sizeof(void *), PAMI_REQUEST_NQUADS*4);
+            PAMI_assertf(rc == PAMI_SUCCESS,
+                         "Failed to alloc memory for _allreduce_storage[%d]",
+                         _allreduce_iteration);
+          }
           return _allreduce_storage[_allreduce_iteration];
         }
 
@@ -579,15 +583,15 @@ namespace PAMI
           _kvstore[key] = value;
         }
 
-	inline void  * getKey_impl(gkeys_t key)
-	{
-	  void * value = _kvstore[key];
-	  TRACE_ERR((stderr, "<%p>Common::getKey(%d, %p)\n", this, key, value));
-	  return value;
-	}
-	
-	void  * getKey_impl(size_t context_id, ckeys_t key) __attribute__((noinline, weak));
-	
+        inline void  * getKey_impl(gkeys_t key)
+        {
+          void * value = _kvstore[key];
+          TRACE_ERR((stderr, "<%p>Common::getKey(%d, %p)\n", this, key, value));
+          return value;
+        }
+        
+        void  * getKey_impl(size_t context_id, ckeys_t key) __attribute__((noinline, weak));
+        
         inline void                      setKey_impl(size_t context_id, ckeys_t key, void*value)
         {
           PAMI_assert(PAMI_GEOMETRY_NUMALGOLISTS > context_id);
