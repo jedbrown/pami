@@ -63,7 +63,7 @@ api/context/post-multithreaded-perf.cnk --timelimit 180 --args 1
 api/context/post-multithreaded.cnk
 api/context/post-perf.cnk
 api/context/post-stress.cnk
-api/context/post.cnk
+api/context/post.cnk --maxrpn 32
 #
 #=== api/endpoint SUBDIR ===
 api/endpoint/endpoint_table.cnk --timelimit 180
@@ -99,7 +99,7 @@ api/p2p/immediate_send_overflow.cnk --numnodes 2 --ranks-per-node 1 --maxnp 2
 api/p2p/send_latency.cnk --timelimit 360
 api/p2p/send_latency_typed.cnk --timelimit 360
 api/p2p/sendimmediate_latency.cnk --timelimit 360
-api/p2p/simple-send-immediate.cnk
+api/p2p/simple-send-immediate.cnk --maxrpn 32
 # +++ udp_simple_send.cnk is INTERACTIVE +++
 api/p2p/udp_simple_send.cnk --compile-only
 #
@@ -123,7 +123,7 @@ api/p2p/send/default-send-1.cnk
 api/p2p/send/dispatch_err.cnk
 api/p2p/send/long-header-matrix.cnk
 api/p2p/send/long-header.cnk --numnodes 2 --ranks-per-node 1 --maxnp 2       
-api/p2p/send/mmps.cnk
+api/p2p/send/mmps.cnk --maxrpn 16
 api/p2p/send/rdma-matrix.cnk --timelimit 360
 api/p2p/send/send_flood_perf.cnk
 api/p2p/send/send_immediate_pingpong_ring.cnk --timelimit 360
