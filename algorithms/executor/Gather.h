@@ -277,23 +277,26 @@ namespace CCMI
           CCMI_assert(_comm_schedule != NULL);
 
           if (_native->myrank() == _root)
-          {
-            _donecount = _native->numranks();
+            {
+            _donecount = _gtopology->size();
             size_t buflen = 0;
-            if (_disps && _rcvcounts) {
-              for (unsigned i = 0; i < _native->numranks() ; ++i)
+            if (_disps && _rcvcounts)
               {
-                buflen += _rcvcounts[i];
-                if (_rcvcounts[i] == 0 && i != _rootindex) _donecount--;
+                for (unsigned i = 0; i < _gtopology->size() ; ++i)
+                {
+                  buflen += _rcvcounts[i];
+                  if (_rcvcounts[i] == 0 && i != _rootindex) _donecount--;
+                }
+                _buflen = buflen;
+                _tmpbuf = _rbuf;
               }
-              _buflen = buflen;
-              _tmpbuf = _rbuf;
-            } else {
-              buflen = _native->numranks() * len;
-	      pami_result_t rc;
-	      rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
-	      PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
-            }
+            else
+              {
+                buflen = _gtopology->size() * len;
+	        pami_result_t rc;
+	        rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
+	        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
+              }
             }
           else // setup PWQ
             {
@@ -422,17 +425,17 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::s
   // TODO: needs to add noncontiguous datatype handling
   if (_native->myrank() == _root)
     {
-
+      // If root is zero the data is already available in _rbuf
       if (!(_disps && _rcvcounts))
         {
           if (_rootindex != 0)
             {
-              memcpy (_rbuf + ((_myindex + 1) % _native->numranks())* _buflen, _tmpbuf + _buflen, (_native->numranks() - _myindex - 1)*_buflen);
-              memcpy (_rbuf, _tmpbuf + (_native->numranks() - _myindex)*_buflen, _myindex * _buflen);
+              memcpy (_rbuf + ((_myindex + 1) % _gtopology->size()) * _buflen, _tmpbuf + _buflen, (_gtopology->size() - _myindex - 1) * _buflen);
+              memcpy (_rbuf, _tmpbuf + (_gtopology->size() - _myindex) * _buflen, _myindex * _buflen);
             }
           else
             {
-              memcpy (_rbuf, _tmpbuf, _myindex * _buflen);
+              memcpy (_rbuf + _buflen, _tmpbuf + _buflen, (_gtopology->size() - 1) * _buflen);
             }
         }
 
@@ -488,22 +491,16 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::n
       buflen    =  _rcvcounts[srcindex];
       offset    =  _disps[srcindex];
     }
-  else if (0 && (unsigned)_mynphases == _native->numranks() - 1)
-    {
-      _srclens[i] = 1;
-      buflen   = _buflen;
-      offset   = srcindex * _buflen;
-    }
   else
     {
       buflen   = _srclens[i] * _buflen;
-      offset   = ((srcindex + size - _myindex) % size) * _buflen; // will root be affected by this ?
+      offset   = ((srcindex + size - _myindex) % size) * _buflen;
     }
 
   // CCMI_assert (buflen == cdata->_count);
 
   char    *tmpbuf   = _tmpbuf + offset;
-  unsigned ind      = cdata->_phase * _maxsrcs + i;
+  unsigned ind      = (_nphases - cdata->_phase - 1) * _maxsrcs + i;
   *pwq = &_mrecvstr[ind].pwq;
   (*pwq)->configure (tmpbuf, buflen, 0);
   (*pwq)->reset();

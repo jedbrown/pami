@@ -225,7 +225,7 @@ int main(int argc, char*argv[])
           if (task_id == root_zero)
           {
             int rc_check;
-            rc |= rc_check =check_rcvbuf(task_id, rbuf, i);
+            rc |= rc_check =check_rcvbuf(num_tasks, rbuf, i);
             if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
           }
 
