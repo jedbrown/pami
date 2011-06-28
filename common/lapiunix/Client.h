@@ -344,17 +344,6 @@ namespace PAMI
 
     inline ~Client ()
       {
-        _world_geometry->~Lapi();
-        /* clean up all existing geometries */
-        std::map<unsigned, pami_geometry_t>::iterator g_it = _geometry_map.begin();
-        while (g_it != _geometry_map.end()) {
-          if (NULL != g_it->second) {
-            LAPIGeometry* g = (LAPIGeometry*)(g_it->second);
-            g->~Lapi();
-            g_it->second = NULL;
-          }
-          g_it++;
-        }
         if(_world_list) free(_world_list);
       }
 
