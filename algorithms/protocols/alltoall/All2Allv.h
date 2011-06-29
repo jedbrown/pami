@@ -265,15 +265,13 @@ namespace CCMI
     protected:
       pami_mapidtogeometry_fn _cb_geometry;
       T_Conn *_cmgr;
-      Interfaces::NativeInterface *_native;
       pami_dispatch_manytomany_function _fn;
       CCMI::Adaptor::CollOpPoolT<pami_xfer_t, T_Composite> _free_pool;
     public:
       All2AllvFactoryT(T_Conn *cmgr,
                        Interfaces::NativeInterface *native):
-      CollectiveProtocolFactory(),
-      _cmgr(cmgr),
-      _native(native)
+      CollectiveProtocolFactory(native),
+      _cmgr(cmgr)
       {
         TRACE_ADAPTOR((stderr, "<%p>All2AllvFactoryT\n", this));
         _fn = cb_manytomany;
@@ -299,6 +297,7 @@ namespace CCMI
       virtual void metadata(pami_metadata_t *mdata)
       {
         get_metadata(mdata);
+        CollectiveProtocolFactory::metadata(mdata,PAMI_XFER_ALLTOALLV);
       }
 
       virtual Executor::Composite * generate(pami_geometry_t g,

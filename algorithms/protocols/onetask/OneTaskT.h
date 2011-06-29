@@ -19,6 +19,16 @@
 #include "algorithms/protocols/CollectiveProtocolFactoryT.h"
 #include "algorithms/executor/Barrier.h"
 
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
+
+#ifdef CCMI_TRACE_ALL
+#define DO_TRACE_ENTEREXIT 1
+#define DO_TRACE_DEBUG     1
+#else
+#define DO_TRACE_ENTEREXIT 0
+#define DO_TRACE_DEBUG     0
+#endif
 
 
 #define CHECK_ROOT    {                      \
@@ -50,7 +60,9 @@ public:
                     pami_dispatch_multicast_function cb_head = NULL):
         CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>(cmgr, native, cb_head)
     {
-        TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
+      TRACE_FN_ENTER();
+      TRACE_FORMAT( "<%p> ni %p",this, native);
+      TRACE_FN_EXIT();
     }
 
 };
@@ -280,8 +292,8 @@ public:
                pami_event_function                     fn,
                void                                 * cookie)
     {
-        TRACE_INIT((stderr, "<%p>CCMI::Adaptors::OneTask::OneTaskT::ctor()\n",
-                    this));//, geometry->comm()));
+      TRACE_FN_ENTER();
+      TRACE_FORMAT( "<%p> ni %p",this, mInterface);
 
         CCMI_assert( mInterface == NULL );
         CCMI_assert( cmgr       == NULL );
@@ -294,17 +306,20 @@ public:
 
         setDoneCallback(xfer->cb_done, xfer->cookie);
 
+      TRACE_FN_EXIT();
     }
 
 
     virtual void start()
     {
-        TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
+      TRACE_FN_ENTER();
+      TRACE_FORMAT( "<%p>",this);
         T_Collective_type *coll_xfer = (T_Collective_type*)&_cmd.cmd;
 
         _res = doAction<T_Collective_type>(coll_xfer, _geometry);
 
         _fn( NULL, _cookie, _res);
+      TRACE_FN_EXIT();
     }
 
 
@@ -323,6 +338,9 @@ protected:
 };
 };
 };  //namespace CCMI::Adaptor::OneTask
+
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
 
 #endif
 //

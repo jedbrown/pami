@@ -86,7 +86,11 @@ namespace PAMI
     template <class T_Geometry>
     class AlgoLists
     {
+#ifndef PAMI_ALGOLISTS_MAX_NUM
       static const int MAX_NUM_ALGO = 16;
+#else
+      static const int MAX_NUM_ALGO = PAMI_ALGOLISTS_MAX_NUM;
+#endif
       public:
         AlgoLists():
             _num_algo(0),
@@ -104,6 +108,7 @@ namespace PAMI
                                            size_t                                    context_id)
         {
           TRACE_ERR((stderr, "<%p>AlgoLists::addCollective() _num_algo=%u, factory=%p, geometry=%p\n", this, _num_algo, factory, geometry));
+          PAMI_assertf(MAX_NUM_ALGO>_num_algo,"MAX_NUM_ALGO(%u)>_num_algo(%u)",MAX_NUM_ALGO,_num_algo);
           _algo_list_store[_num_algo]._factory  = factory;
           _algo_list_store[_num_algo]._geometry = geometry;
           _algo_list[_num_algo]                 = &_algo_list_store[_num_algo];
@@ -138,6 +143,7 @@ namespace PAMI
                                                 size_t                                     context_id)
         {
           TRACE_ERR((stderr, "<%p>AlgoLists::addCollectiveCheck() _num_algo_check=%u, factory=%p, geometry=%p\n", this, _num_algo_check, factory, geometry));
+          PAMI_assertf(MAX_NUM_ALGO>_num_algo_check,"MAX_NUM_ALGO(%u)>_num_algo(%u)",MAX_NUM_ALGO,_num_algo_check);
           _algo_list_check_store[_num_algo_check]._factory  = factory;
           _algo_list_check_store[_num_algo_check]._geometry = geometry;
           _algo_list_check[_num_algo_check]                 = &_algo_list_check_store[_num_algo_check];

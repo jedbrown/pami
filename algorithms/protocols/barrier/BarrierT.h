@@ -181,6 +181,14 @@ public:
         TRACE_FORMAT( "%p",this);
         TRACE_FN_EXIT();
     }
+    BarrierFactoryAllSidedT(T_Conn                       *cmgr,
+                            Interfaces::NativeInterface **native):
+        AllSidedCollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>(cmgr, native)
+    {
+        TRACE_FN_ENTER();
+        TRACE_FORMAT( "%p",this);
+        TRACE_FN_EXIT();
+    }
 
     virtual Executor::Composite * generate(pami_geometry_t              geometry,
                                            void                       * cmd)
@@ -316,6 +324,7 @@ public:
         TRACE_FN_ENTER();
         TRACE_FORMAT("mdata=%p",mdata);
         get_metadata(mdata);
+        CollectiveProtocolFactory::metadata(mdata,PAMI_XFER_BARRIER);
         TRACE_FN_EXIT();
     }
 

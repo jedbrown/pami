@@ -83,11 +83,7 @@ namespace PAMI
         if(disable_shm) mm_ptr = NULL;
         else            mm_ptr = mm;
 
-        rc = __global.heap_mm->memalign((void **)&ctxt->_p2p_ccmi_collreg,
-                                        0,
-                                        sizeof(*ctxt->_p2p_ccmi_collreg));
-        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc P2PCCMICollreg");
-
+        // Init CAU/BSR
         ctxt->_bsr_device.setGenericDevices(ctxt->_devices->_generics);
         ctxt->_cau_device.setGenericDevices(ctxt->_devices->_generics);
         rc = __global.heap_mm->memalign((void **)&ctxt->_cau_collreg, 0,
@@ -115,19 +111,49 @@ namespace PAMI
         {
           use_shm = atoi(shm_method);
         }
+        // Init CCMI
+        rc = __global.heap_mm->memalign((void **)&ctxt->_p2p_ccmi_collreg,
+                                        0,
+                                        sizeof(*ctxt->_p2p_ccmi_collreg));
+        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc P2PCCMICollreg");
+
+        CCMI::Interfaces::NativeInterfaceFactory *ni_factory;
+        if (use_shm) //shmem is available so use composite local/global (shmem/lapi) NI
+        {
+          rc = __global.heap_mm->memalign((void **)&ni_factory,
+                                          0,
+                                          sizeof(CompositeNIFactory));
+          PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc P2PCCMICollreg");
+
+          new (ni_factory) CompositeNIFactory (_client, ctxt, _clientid, ctxt->getId(),
+                                               ctxt->_devices->_shmem[ctxt->getId()],
+                                               ctxt->_lapi_device,
+                                               ctxt->_protocol);
+        }
+        else // no shmem, use global (lapi) only
+        {
+          rc = __global.heap_mm->memalign((void **)&ni_factory,
+                                          0,
+                                          sizeof(LapiNIFactory));
+          PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc P2PCCMICollreg");
+
+          new (ni_factory) LapiNIFactory (_client, ctxt, _clientid, ctxt->getId(),
+                                          ctxt->_lapi_device,
+                                          ctxt->_protocol);
+        }
+
         new(ctxt->_p2p_ccmi_collreg) P2PCCMICollreg(_client,
                                                     ctxt,
                                                     ctxt->getId(),
                                                     _clientid,
-                                                    ctxt->_devices->_shmem[ctxt->getId()],
-                                                    ctxt->_lapi_device,
                                                     ctxt->_protocol,
-                                                    use_shm,
-                                                    1,           //use "global" device
                                                     numtasks,
                                                     numpeers,
                                                     &ctxt->_dispatch_id,
-                                                    &_geometry_map);
+                                                    &_geometry_map,
+                                                    ni_factory);
+
+        // Finish PGAS
         ctxt->_pgas_collreg->setGenericDevice(&ctxt->_devices->_generics[ctxt->getId()]);
         return PAMI_SUCCESS;
       }

@@ -69,6 +69,7 @@
 #include "components/devices/cshmem/CollSharedMemoryManager.h"
 #include "components/devices/cshmem/CollShmDevice.h"
 #include "components/devices/NativeInterface.h"
+#include "common/NativeInterfaceFactory.h"
 
 
 namespace PAMI
@@ -245,20 +246,24 @@ namespace PAMI
                                              LAPINBCollManager> PGASCollreg;
 
   // Over P2P CCMI Protocol Typedefs
+  typedef NativeInterfaceCommon::NativeInterfaceFactory <ProtocolAllocator,  
+                                                         LAPISendNI_AM,  
+                                                         LAPISendNI_AS, 
+                                                         LAPISend, 
+                                                         DeviceWrapper>       LapiNIFactory;
+
+  typedef NativeInterfaceCommon::NativeInterfaceFactory2Device <ProtocolAllocator, 
+                                                                CompositeNI_AM, 
+                                                                CompositeNI_AS, 
+                                                                ShmemEager, 
+                                                                ShmemDevice, 
+                                                                LAPISend, 
+                                                                DeviceWrapper> CompositeNIFactory;  
+
   typedef CollRegistration::P2P::CCMIRegistration<LAPIGeometry,
-                                                  ShmemDevice,
-                                                  DeviceWrapper,
                                                   ProtocolAllocator,
-                                                  ShmemEager,
-                                                  ShmemDevice,
-                                                  ShmemEagerNI_AM,
-                                                  ShmemEagerNI_AS,
-                                                  LAPISend,
-                                                  DeviceWrapper,
-                                                  LAPISendNI_AM,
-                                                  LAPISendNI_AS,
-                                                  CompositeNI_AM,
-                                                  CompositeNI_AS> P2PCCMICollreg;
+                                                  CCMI::Adaptor::P2PBarrier::BinomialBarrier,
+                                                  CCMI::Adaptor::P2PBarrier::BinomialBarrierFactory > P2PCCMICollreg;
 
 
   // Collective Shmem Protocol Typedefs

@@ -154,14 +154,12 @@ protected:
     PAMI::MemoryAllocator<32768, 16>                 _eab_allocator;
 
     T_Conn                                        * _cmgr;
-    Interfaces::NativeInterface                   * _native;
 
 public:
     AsyncScanFactoryT (T_Conn                      *cmgr,
                        Interfaces::NativeInterface *native):
-        CollectiveProtocolFactory(),
-        _cmgr(cmgr),
-        _native(native)
+        CollectiveProtocolFactory(native),
+        _cmgr(cmgr)
     {
         native->setMulticastDispatch(cb_async, this);
     }
@@ -181,6 +179,7 @@ public:
         // TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
         DO_DEBUG((templateName<MetaDataFn>()));
         get_metadata(mdata);
+        CollectiveProtocolFactory::metadata(mdata,PAMI_XFER_SCAN);
     }
 
     T_Conn *getConnMgr()

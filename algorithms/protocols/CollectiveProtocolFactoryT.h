@@ -84,9 +84,8 @@ namespace CCMI
       CollectiveProtocolFactoryT (T_Conn                      *cmgr,
                                   Interfaces::NativeInterface *native,
                                   pami_dispatch_multicast_function cb_head = NULL):
-      CollectiveProtocolFactory(),
-      _cmgr(cmgr),
-      _native(native)
+      CollectiveProtocolFactory(native),
+      _cmgr(cmgr)
       {
         TRACE_FN_ENTER();
         TRACE_FORMAT("<%p> native %p",this, native);
@@ -146,11 +145,12 @@ namespace CCMI
         TRACE_FORMAT("<%p>",this);
         DO_DEBUG((templateName<MetaDataFn>()));
         get_metadata(mdata);
+        // We don't know the xfter so use arbitrary PAMI_XFER_COUNT. \todo something better
+        CollectiveProtocolFactory::metadata(mdata,PAMI_XFER_COUNT);
         TRACE_FN_EXIT();
       }
 
       T_Conn                                     * _cmgr;
-      Interfaces::NativeInterface                * _native;
       PAMI::MemoryAllocator < sizeof(collObj), 16 >   _alloc;
     };//CollectiveProtocolFactoryT
 

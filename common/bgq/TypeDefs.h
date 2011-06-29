@@ -67,9 +67,11 @@
 #include "components/devices/bgq/mu2/model/Multisync.h"
 #include "components/devices/bgq/mu2/model/AllreducePacketModel.h"
 
-
+#include "algorithms/interfaces/NativeInterfaceFactory.h"
 #include "common/NativeInterface.h"
+#include "common/NativeInterfaceFactory.h"
 #include "common/bgq/NativeInterface.h"
+#include "common/bgq/NativeInterfaceFactory.h"
 
 #include "algorithms/geometry/Geometry.h"
 

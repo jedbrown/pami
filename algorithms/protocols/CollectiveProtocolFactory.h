@@ -18,6 +18,9 @@
 #include  "algorithms/interfaces/Executor.h"
 #include  "algorithms/composite/Composite.h"
 
+#include "algorithms/interfaces/NativeInterface.h"
+
+
 #include "util/ccmi_debug.h"
 #include "util/ccmi_util.h"
 
@@ -42,10 +45,20 @@ namespace CCMI
       public:
         CollectiveProtocolFactory ():
           _cb_geometry(NULL),
-          _context(NULL)
+          _context(NULL),
+          _native(NULL)
         {
           TRACE_FN_ENTER();
           TRACE_FORMAT("<%p>",this);
+          TRACE_FN_EXIT();
+        }
+        CollectiveProtocolFactory (Interfaces::NativeInterface  * native):
+          _cb_geometry(NULL),
+          _context(NULL),
+          _native(native)
+        {
+          TRACE_FN_ENTER();
+          TRACE_FORMAT("<%p> native %p",this,native);
           TRACE_FN_EXIT();
         }
 
@@ -83,7 +96,19 @@ namespace CCMI
         virtual Executor::Composite * generate(pami_geometry_t              geometry,
                                                void                      * cmd) = 0;
 
-        virtual void metadata(pami_metadata_t *mdata) = 0;
+        virtual void metadata(pami_metadata_t *mdata)=0;
+        inline void metadata(pami_metadata_t *m, pami_xfer_type_t t)
+        {
+          TRACE_FN_ENTER();
+          // trace input
+          TRACE_FORMAT("<%p:%p> %s  metatadata %p, type %u",this,_native,m->name,m,t);
+          TRACE_HEXDATA(m, sizeof(*m));
+          if(_native) _native->metadata(m,t);
+          // trace overrides
+          TRACE_FORMAT("<%p:%p> %s  metatadata %p, type %u",this,_native,m->name,m,t);
+          TRACE_HEXDATA(m, sizeof(*m));
+          TRACE_FN_EXIT();
+        }
 
         virtual void setAsyncInfo (bool                          is_buffered,
                                    pami_dispatch_callback_function cb_async,
@@ -120,9 +145,11 @@ namespace CCMI
       protected:
         pami_mapidtogeometry_fn              _cb_geometry;
         pami_context_t                       _context;
+        Interfaces::NativeInterface        * _native;
     };
   };
 };
+
 
 #undef  DO_TRACE_ENTEREXIT
 #undef  DO_TRACE_DEBUG

@@ -124,20 +124,11 @@ namespace PAMI
                                   MPIMulticombineModel,
                                   AllSided>              DefaultNativeInterfaceAS;
 
- typedef CollRegistration::P2P::CCMIRegistration<MPIGeometry,
-                                                 ShmemDevice,
-                                                 MPIDevice,
+  typedef NativeInterfaceCommon::NativeInterfaceFactory <ProtocolAllocator,  MPIEagerNI_AM, MPIEagerNI_AS, MPIEager, MPIDevice> MPINIFactory;
+  typedef CollRegistration::P2P::CCMIRegistration<MPIGeometry,
                                                  ProtocolAllocator,
-                                                 ShmemEager,
-                                                 ShmemDevice,
-                                                 ShmemEagerNI_AM,
-                                                 ShmemEagerNI_AS,
-                                                 MPIEager,
-                                                 MPIDevice,
-                                                 MPIEagerNI_AM,
-                                                 MPIEagerNI_AS,
-                                                 CompositeNI_AM,
-                                                 CompositeNI_AS> P2PCCMICollreg;
+                                                 CCMI::Adaptor::P2PBarrier::BinomialBarrier,
+                                                 CCMI::Adaptor::P2PBarrier::BinomialBarrierFactory > P2PCCMICollreg;
 
 
   // PGAS RT Typedefs/Coll Registration
@@ -329,31 +320,36 @@ namespace PAMI
           // we shoudl find a way to remove this
           MPI_Barrier(MPI_COMM_WORLD);
 
-	  pami_result_t rc;
-	  rc = __global.heap_mm->memalign((void **)&_pgas_collreg, 0,
-								sizeof(*_pgas_collreg));
-	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PGASCollreg");
+          pami_result_t rc;
+          rc = __global.heap_mm->memalign((void **)&_pgas_collreg, 0,
+                                          sizeof(*_pgas_collreg));
+          PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PGASCollreg");
           new(_pgas_collreg) PGASCollreg(client,(pami_context_t)this,clientid,id,_protocol,*_mpi,
                                          _devices->_shmem[_contextid], &_dispatch_id, _geometry_map,false);
           _world_geometry->resetUEBarrier(); // Reset so pgas will select the UE barrier
           _pgas_collreg->analyze(_contextid,_world_geometry);
           _pgas_collreg->setGenericDevice(&_devices->_generics[_contextid]);
 
-	  rc = __global.heap_mm->memalign((void **)&_p2p_ccmi_collreg, 0,
-								sizeof(*_p2p_ccmi_collreg));
-	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc P2PCCMICollreg");
+          // We have not enabled shmem or shmem/mpi composite CCMI, only mpi (ni factory)
+          MPINIFactory *ni_factory;
+          rc = __global.heap_mm->memalign((void **)&ni_factory, 0,
+                                          sizeof(*ni_factory)); 
+          PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc NI Factory");
+          new (ni_factory) MPINIFactory (_client, _context, _clientid, _contextid, *_mpi, _protocol);
+
+          rc = __global.heap_mm->memalign((void **)&_p2p_ccmi_collreg, 0,
+                                          sizeof(*_p2p_ccmi_collreg));
+          PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc P2PCCMICollreg");
           new(_p2p_ccmi_collreg) P2PCCMICollreg(_client,
                                                 _context,
                                                 _contextid,
                                                 _clientid,
-                                                _devices->_shmem[_contextid],*_mpi,
                                                 _protocol,
-                                                0,
-                                                1,
                                                 __global.topology_global.size(),
                                                 __global.topology_local.size(),
                                                 &_dispatch_id,
-                                                _geometry_map);
+                                                _geometry_map,
+                                                ni_factory);
           _p2p_ccmi_collreg->analyze(_contextid, _world_geometry);
 
           MPI_Barrier(MPI_COMM_WORLD);

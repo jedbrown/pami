@@ -43,7 +43,8 @@
 #include "algorithms/protocols/alltoall/AsyncAlltoallvT.h"
 #include "algorithms/protocols/scan/AsyncScanT.h"
 #include "p2p/protocols/SendPWQ.h"
-#include "common/NativeInterface.h"
+#include "algorithms/interfaces/NativeInterface.h"
+#include "algorithms/interfaces/NativeInterfaceFactory.h"
 #include "algorithms/protocols/alltoall/All2All.h"
 #include "algorithms/protocols/alltoall/All2Allv.h"
 #include "algorithms/schedule/TorusRect.h"
@@ -385,6 +386,21 @@ namespace CCMI
         binomial_barrier_md,
         CCMI::ConnectionManager::SimpleConnMgr>
       BinomialBarrierFactory;
+
+      typedef CCMI::Adaptor::Barrier::BarrierT
+        < CCMI::Schedule::TopoMultinomial4,
+        binomial_analyze,
+        PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX,
+        PAMI::Geometry::CKEY_BARRIERCOMPOSITE2>
+        BinomialBarrierKey2;
+
+      typedef CCMI::Adaptor::Barrier::BarrierFactoryT
+        < BinomialBarrierKey2,
+        binomial_barrier_md,
+        CCMI::ConnectionManager::SimpleConnMgr,
+        false,
+        PAMI::Geometry::CKEY_BARRIERCOMPOSITE2>
+        BinomialBarrierFactoryKey2;      
     };//Barrier
 
 
@@ -395,12 +411,11 @@ namespace CCMI
                        unsigned                  * colors,
                        unsigned                  & ncolors)
       {
-        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
         ncolors = 1;
         colors[0] = CCMI::Schedule::TorusRect::NO_COLOR;
       }
 
-#ifdef ENABLE_X0_PROTOCOLS // Experimental (X0:) protocols
+#ifdef PAMI_ENABLE_X0_PROTOCOLS // Experimental (X0:) protocols
 
     extern inline void get_rect_colors (PAMI::Topology             * t,
                           unsigned                    bytes,
@@ -435,7 +450,6 @@ namespace CCMI
 
       extern inline void rectangle_broadcast_metadata(pami_metadata_t *m)
       {
-        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
         new(m) PAMI::Geometry::Metadata("X0:Rectangle:P2P:P2P");
       }
 
@@ -455,7 +469,6 @@ namespace CCMI
 
       extern inline void rectangle_1color_broadcast_metadata(pami_metadata_t *m)
       {
-        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
         new(m) PAMI::Geometry::Metadata("X0:Rectangle1Color:P2P:P2P");
       }
 
@@ -475,13 +488,11 @@ namespace CCMI
 #endif
       extern inline void binomial_broadcast_metadata(pami_metadata_t *m)
       {
-        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
         new(m) PAMI::Geometry::Metadata("I0:Binomial:P2P:P2P");
       }
 
       extern inline void ring_broadcast_metadata(pami_metadata_t *m)
       {
-        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
         new(m) PAMI::Geometry::Metadata("I0:Ring:P2P:P2P");
       }
 
@@ -513,13 +524,11 @@ namespace CCMI
 
       extern inline void am_rb_broadcast_metadata(pami_metadata_t *m)
       {
-        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
         new(m) PAMI::Geometry::Metadata("I0:RankBased_Binomial:P2P:P2P");
       }
 
       extern inline void am_cs_broadcast_metadata(pami_metadata_t *m)
       {
-        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
         new(m) PAMI::Geometry::Metadata("I0:SequenceBased_Binomial:P2P:P2P");
       }
 
@@ -529,7 +538,6 @@ namespace CCMI
                            Interfaces::NativeInterface * native,
                            PAMI_GEOMETRY_CLASS         * g)
       {
-        TRACE_INIT((stderr, "<%p>AsyncRBBinomialBroadcastComposite::create_schedule()\n",(void*)NULL));
         new (buf) CCMI::Schedule::TopoMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0);
       }
 
@@ -538,7 +546,6 @@ namespace CCMI
                       PAMI_GEOMETRY_CLASS                                    *geometry,
                       ConnectionManager::BaseConnectionManager              **connmgr)
       {
-        TRACE_INIT((stderr, "<%p>AsyncRBBinomialBroadcastFactory::getKey()\n",(void*)NULL));
         return root;
       }
 
@@ -548,7 +555,6 @@ namespace CCMI
                               Interfaces::NativeInterface * native,
                               PAMI_GEOMETRY_CLASS          * g)
       {
-        TRACE_INIT((stderr, "<%p>AsyncCSBinomialBroadcastComposite::create_schedule()\n",(void*)NULL));
         new (buf) CCMI::Schedule::TopoMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0);
       }
 
@@ -557,7 +563,6 @@ namespace CCMI
                          PAMI_GEOMETRY_CLASS                      * geometry,
                          ConnectionManager::BaseConnectionManager **connmgr)
       {
-        TRACE_INIT((stderr, "<%p>AsyncCSBinomialBroadcastFactory::getKey\n",(void*)NULL));
         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
         if (connid != (unsigned) - 1)
           {
@@ -596,7 +601,6 @@ namespace CCMI
       // Generic tree 2-nomial broadcast
       extern inline void am_2nomial_broadcast_metadata(pami_metadata_t *m)
       {
-        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
         new(m) PAMI::Geometry::Metadata("I0:2-nomial:P2P:P2P");
       }
       extern inline void create_schedule_2nomial(void                        * buf,
@@ -605,7 +609,6 @@ namespace CCMI
                                                   Interfaces::NativeInterface * native,
                                                   PAMI_GEOMETRY_CLASS          * g)
       {
-        TRACE_INIT((stderr, "<%p>Async2nomialBroadcastComposite::create_schedule()\n",(void*)NULL));
         new (buf) CCMI::Schedule::KnomialBcastSchedule<2>(native->myrank(),
                                                           ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)));
           }
@@ -614,7 +617,6 @@ namespace CCMI
                                             PAMI_GEOMETRY_CLASS                      * geometry,
                                             ConnectionManager::BaseConnectionManager **connmgr)
       {
-        TRACE_INIT((stderr, "<%p>Async2nomialBroadcastFactory::getKey\n",(void*)NULL));
         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
         if (connid != (unsigned) - 1)
           {
@@ -638,7 +640,6 @@ namespace CCMI
       // Generic tree 3-nomial broadcast
       extern inline void am_3nomial_broadcast_metadata(pami_metadata_t *m)
       {
-        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
         new(m) PAMI::Geometry::Metadata("I0:3-nomial:P2P:P2P");
       }
       extern inline void create_schedule_3nomial(void                        * buf,
@@ -647,7 +648,6 @@ namespace CCMI
                                                   Interfaces::NativeInterface * native,
                                                   PAMI_GEOMETRY_CLASS          * g)
       {
-        TRACE_INIT((stderr, "<%p>Async3nomialBroadcastComposite::create_schedule()\n",(void*)NULL));
         new (buf) CCMI::Schedule::KnomialBcastSchedule<3>(native->myrank(),
                                                           ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)));
           }
@@ -656,7 +656,6 @@ namespace CCMI
                                             PAMI_GEOMETRY_CLASS                      * geometry,
                                             ConnectionManager::BaseConnectionManager **connmgr)
       {
-        TRACE_INIT((stderr, "<%p>Async3nomialBroadcastFactory::getKey\n",(void*)NULL));
         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
         if (connid != (unsigned) - 1)
           {
@@ -679,7 +678,6 @@ namespace CCMI
       // Generic tree 4-nomial broadcast
       extern inline void am_4nomial_broadcast_metadata(pami_metadata_t *m)
       {
-        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
         new(m) PAMI::Geometry::Metadata("I0:4-nomial:P2P:P2P");
       }
       extern inline void create_schedule_4nomial(void                        * buf,
@@ -688,7 +686,6 @@ namespace CCMI
                                                   Interfaces::NativeInterface * native,
                                                   PAMI_GEOMETRY_CLASS          * g)
       {
-        TRACE_INIT((stderr, "<%p>Async4nomialBroadcastComposite::create_schedule()\n",(void*)NULL));
         new (buf) CCMI::Schedule::KnomialBcastSchedule<4>(native->myrank(),
                                                           ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)));
           }
@@ -697,7 +694,6 @@ namespace CCMI
                                             PAMI_GEOMETRY_CLASS                      * geometry,
                                             ConnectionManager::BaseConnectionManager **connmgr)
       {
-        TRACE_INIT((stderr, "<%p>Async4nomialBroadcastFactory::getKey\n",(void*)NULL));
         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
         if (connid != (unsigned) - 1)
           {
@@ -720,7 +716,6 @@ namespace CCMI
       // Generic tree 4-nary broadcast
       extern inline void am_2nary_broadcast_metadata(pami_metadata_t *m)
       {
-        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
         new(m) PAMI::Geometry::Metadata("I0:2-nary:P2P:P2P");
       }
       extern inline void create_schedule_2nary(void                        * buf,
@@ -729,7 +724,6 @@ namespace CCMI
                                                   Interfaces::NativeInterface * native,
                                                   PAMI_GEOMETRY_CLASS          * g)
       {
-        TRACE_INIT((stderr, "<%p>Async2naryBroadcastComposite::create_schedule()\n",(void*)NULL));
         new (buf) CCMI::Schedule::KnaryBcastSchedule<2>(native->myrank(),
                                                           ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)));
       }
@@ -738,7 +732,6 @@ namespace CCMI
                                             PAMI_GEOMETRY_CLASS                      * geometry,
                                             ConnectionManager::BaseConnectionManager **connmgr)
       {
-        TRACE_INIT((stderr, "<%p>Async2naryBroadcastFactory::getKey\n",(void*)NULL));
         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
         if (connid != (unsigned) - 1)
           {
@@ -761,7 +754,6 @@ namespace CCMI
       // Generic tree 3-nary broadcast
       extern inline void am_3nary_broadcast_metadata(pami_metadata_t *m)
       {
-        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
         new(m) PAMI::Geometry::Metadata("I0:3-nary:P2P:P2P");
       }
       extern inline void create_schedule_3nary(void                        * buf,
@@ -770,7 +762,6 @@ namespace CCMI
                                                   Interfaces::NativeInterface * native,
                                                   PAMI_GEOMETRY_CLASS          * g)
       {
-        TRACE_INIT((stderr, "<%p>Async3naryBroadcastComposite::create_schedule()\n",(void*)NULL));
         new (buf) CCMI::Schedule::KnaryBcastSchedule<3>(native->myrank(),
                                                         ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)));
       }
@@ -779,7 +770,6 @@ namespace CCMI
                                             PAMI_GEOMETRY_CLASS                      * geometry,
                                             ConnectionManager::BaseConnectionManager **connmgr)
       {
-        TRACE_INIT((stderr, "<%p>Async3naryBroadcastFactory::getKey\n",(void*)NULL));
         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
         if (connid != (unsigned) - 1)
           {
@@ -802,7 +792,6 @@ namespace CCMI
       // Generic tree 4-nary broadcast
       extern inline void am_4nary_broadcast_metadata(pami_metadata_t *m)
       {
-        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
         new(m) PAMI::Geometry::Metadata("I0:4-nary:P2P:P2P");
       }
       extern inline void create_schedule_4nary(void                        * buf,
@@ -811,7 +800,6 @@ namespace CCMI
                                                   Interfaces::NativeInterface * native,
                                                   PAMI_GEOMETRY_CLASS          * g)
       {
-        TRACE_INIT((stderr, "<%p>Async4naryBroadcastComposite::create_schedule()\n",(void*)NULL));
         new (buf) CCMI::Schedule::KnaryBcastSchedule<4>(native->myrank(),
                                                           ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)));
           }
@@ -820,7 +808,6 @@ namespace CCMI
                                             PAMI_GEOMETRY_CLASS                      * geometry,
                                             ConnectionManager::BaseConnectionManager **connmgr)
       {
-        TRACE_INIT((stderr, "<%p>Async4naryBroadcastFactory::getKey\n",(void*)NULL));
         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
         if (connid != (unsigned) - 1)
           {
@@ -845,7 +832,6 @@ namespace CCMI
     {
       extern inline void am_broadcast_metadata(pami_metadata_t *m)
       {
-        TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
         new(m) PAMI::Geometry::Metadata("I0:Binomial:P2P:P2P");
       }
 
@@ -855,7 +841,6 @@ namespace CCMI
                            Interfaces::NativeInterface * native,
                            PAMI_GEOMETRY_CLASS          * g)
       {
-        TRACE_INIT((stderr, "<%p>AMBinomialBroadcastComposite::create_schedule()\n",(void*)NULL));
         new (buf) CCMI::Schedule::TopoMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0);
       }
 
@@ -1019,7 +1004,6 @@ namespace CCMI
                              Interfaces::NativeInterface * native,
                              PAMI_GEOMETRY_CLASS          * g)
         {
-          TRACE_INIT((stderr, "<%p>AsyncBinomialScatterComposite::create_schedule()\n",(void*)NULL));
           new (buf) CCMI::Schedule::GenericTreeSchedule<>(native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
@@ -1050,7 +1034,6 @@ namespace CCMI
                              Interfaces::NativeInterface * native,
                              PAMI_GEOMETRY_CLASS          * g)
         {
-          TRACE_INIT((stderr, "<%p>AsyncFlatScatterComposite::create_schedule()\n",(void*)NULL));
           new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
@@ -1098,7 +1081,6 @@ namespace CCMI
                              Interfaces::NativeInterface * native,
                              PAMI_GEOMETRY_CLASS          * g)
         {
-          TRACE_INIT((stderr, "<%p>AsyncScattervComposite::create_schedule()\n",(void*)NULL));
           new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
@@ -1162,7 +1144,6 @@ namespace CCMI
                            Interfaces::NativeInterface * native,
                            PAMI_GEOMETRY_CLASS          * g)
       {
-        TRACE_INIT((stderr, "<%p>AsyncReduceScatterComposite::create_schedule()\n",(void*)NULL));
         new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
       }
 
@@ -1209,7 +1190,6 @@ namespace CCMI
                              Interfaces::NativeInterface * native,
                              PAMI_GEOMETRY_CLASS          * g)
         {
-          TRACE_INIT((stderr, "<%p>AsyncBinomialGatherComposite::create_schedule()\n",(void*)NULL));
           new (buf) CCMI::Schedule::GenericTreeSchedule<> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
@@ -1241,7 +1221,6 @@ namespace CCMI
                                     Interfaces::NativeInterface * native,
                                     PAMI_GEOMETRY_CLASS          * g)
         {
-          TRACE_INIT((stderr, "<%p>AsyncFlatGatherComposite::create_gather_schedule()\n",(void*)NULL));
           new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
@@ -1251,7 +1230,6 @@ namespace CCMI
                                    Interfaces::NativeInterface * native,
                                    PAMI_GEOMETRY_CLASS          * g)
         {
-          TRACE_INIT((stderr, "<%p>AsyncFlatGatherComposite::create_bcast_schedule()\n",(void*)NULL));
           new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,2> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
@@ -1302,7 +1280,6 @@ namespace CCMI
                                      Interfaces::NativeInterface * native,
                                      PAMI_GEOMETRY_CLASS          * g)
         {
-          TRACE_INIT((stderr, "<%p>AsyncGathervComposite::create_gatherv_schedule()\n",(void*)NULL));
           new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
@@ -1312,7 +1289,6 @@ namespace CCMI
                                    Interfaces::NativeInterface * native,
                                    PAMI_GEOMETRY_CLASS          * g)
         {
-          TRACE_INIT((stderr, "<%p>AsyncGathervComposite::create_bcast_schedule()\n",(void*)NULL));
           new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,2> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
@@ -1383,7 +1359,6 @@ namespace CCMI
                              Interfaces::NativeInterface * native,
                              PAMI_GEOMETRY_CLASS          * g)
         {
-          TRACE_INIT((stderr, "<%p>AsyncBinomialScanComposite::create_schedule()\n",(void*)NULL));
           new (buf) CCMI::Schedule::GenericTreeSchedule<> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
@@ -1433,7 +1408,6 @@ namespace CCMI
                              Interfaces::NativeInterface * native,
                              PAMI_GEOMETRY_CLASS          * g)
         {
-          TRACE_INIT((stderr, "<%p>AsyncBinomialAllgatherComposite::create_schedule()\n",(void*)NULL));
           new (buf) CCMI::Schedule::GenericTreeSchedule<> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 

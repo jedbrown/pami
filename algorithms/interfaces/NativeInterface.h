@@ -18,6 +18,8 @@ namespace CCMI
 {
   namespace Interfaces
   {
+
+
     class NativeInterface
     {
       protected:
@@ -81,6 +83,11 @@ namespace CCMI
           PAMI_abort();
           return PAMI_ERROR;
         }
+        ///
+        /// \brief NI hook to override metadata for collective
+        ///
+        virtual void metadata(pami_metadata_t *m, pami_xfer_type_t t) {/* no override */};
+
     };
   };
 };

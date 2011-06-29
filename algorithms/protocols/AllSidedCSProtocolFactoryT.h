@@ -14,10 +14,6 @@ namespace CCMI
 {
   namespace Adaptor
   {
-    ///
-    /// \brief choose if this protocol supports the input geometry
-    ///
-    typedef void      (*MetaDataFn)   (pami_metadata_t *m);
 
     template <class T, MetaDataFn get_metadata>
     class AllSidedCSProtocolFactoryT: public CollectiveProtocolFactory
@@ -86,14 +82,16 @@ namespace CCMI
                           done_fn,          // Intercept function
                           cobj,             // Intercept cookie
                           this);            // Factory
-	//We do not override completion callbacks 
-	//as they must free memory
+        //We do not override completion callbacks 
+        //as they must free memory
         return(Executor::Composite *)&cobj->_obj;
       }
 
       virtual void metadata(pami_metadata_t *mdata)
       {
         get_metadata(mdata);
+        // We don't know the xfter so use arbitrary PAMI_XFER_COUNT. \todo something better
+        CollectiveProtocolFactory::metadata(mdata,PAMI_XFER_COUNT);
       }
     private:
       PAMI::MemoryAllocator<sizeof(collObj), 16>   _alloc;

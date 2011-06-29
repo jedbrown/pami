@@ -22,15 +22,17 @@
 #define PAMI_NATIVE_ATOMIC_ALIGN	L1D_CACHE_LINE_SIZE
 
 // Enable multi-context CCMI/Optimized collective registration.  Default is only PGAS on multi-contexts.
-// #define ENABLE_COLLECTIVE_MULTICONTEXT
+// #define PAMI_ENABLE_COLLECTIVE_MULTICONTEXT
 
 // New BGQ optimized shmem stack:
-#define ENABLE_NEW_SHMEM
+#define PAMI_ENABLE_NEW_SHMEM
 
 // Enable BGQ shmem stack on sub-node geometries
-//#define ENABLE_SHMEM_SUBNODE
+//#define PAMI_ENABLE_SHMEM_SUBNODE
 
 // Enable experimental (X0) collective protocols
-//#define ENABLE_X0_PROTOCOLS
+//#define PAMI_ENABLE_X0_PROTOCOLS
+
+#define PAMI_ALGOLISTS_MAX_NUM 48 // Maximum number of algorithms per collective per geometry
 
 #endif // __common_bgq_platform_h__

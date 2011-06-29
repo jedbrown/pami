@@ -187,14 +187,12 @@ protected:
     PAMI::MemoryAllocator<32768, 16>                 _eab_allocator;
 
     T_Conn                                        * _cmgr;
-    Interfaces::NativeInterface                   * _native;
 
 public:
     AsyncScatterFactoryT (T_Conn                      *cmgr,
                           Interfaces::NativeInterface *native):
-        CollectiveProtocolFactory(),
-        _cmgr(cmgr),
-        _native(native)
+        CollectiveProtocolFactory(native),
+        _cmgr(cmgr)
     {
         native->setMulticastDispatch(cb_async, this);
     }
@@ -226,6 +224,7 @@ public:
         TRACE_ADAPTOR((stderr, "<%p>AsyncScatterFactoryT::metadata()\n", this));
         DO_DEBUG((templateName<MetaDataFn>()));
         get_metadata(mdata);
+        CollectiveProtocolFactory::metadata(mdata,PAMI_XFER_SCATTER);
     }
 
     char *allocateBuffer (unsigned size)

@@ -38,7 +38,6 @@ namespace Adaptor
 ///
 /// \brief choose if this protocol is supports the input geometry
 ///
-typedef void      (*MetaDataFn)   (pami_metadata_t *m);
 
 template <class T_Composite, MetaDataFn get_metadata, class T_Conn>
 class AllSidedCollectiveProtocolFactoryT: public CollectiveProtocolFactory
@@ -74,9 +73,20 @@ class AllSidedCollectiveProtocolFactoryT: public CollectiveProtocolFactory
 public:
     AllSidedCollectiveProtocolFactoryT (T_Conn              * cmgr,
                                         Interfaces::NativeInterface * native):
+        CollectiveProtocolFactory(native),
+        _cmgr(cmgr),
+        _pnative(native)
+    {
+        TRACE_FN_ENTER();
+        TRACE_FORMAT("<%p> native %p",this, native);
+        DO_DEBUG((templateName<MetaDataFn>()));
+        TRACE_FN_EXIT();
+    }
+    AllSidedCollectiveProtocolFactoryT (T_Conn              * cmgr,
+                                        Interfaces::NativeInterface ** native):
         CollectiveProtocolFactory(),
         _cmgr(cmgr),
-        _native(native)
+        _pnative((Interfaces::NativeInterface *)native) /// \todo fix the NI array ctor's
     {
         TRACE_FN_ENTER();
         TRACE_FORMAT("<%p> native %p",this, native);
@@ -117,7 +127,7 @@ public:
         TRACE_FN_ENTER();
         collObj *cobj = (collObj*)  _alloc.allocateObject();
         TRACE_FORMAT("<%p> cobj %p",this, cobj);
-        new(cobj) collObj(_native,          // Native interface
+        new(cobj) collObj(_pnative,          // Native interface
                           _cmgr,            // Connection Manager
                           geometry,         // Geometry Object
                           (pami_xfer_t*)cmd,// Parameters
@@ -137,11 +147,13 @@ public:
         TRACE_FORMAT("<%p>",this);
         DO_DEBUG((templateName<MetaDataFn>()));
         get_metadata(mdata);
+        // We don't know the xfter so use arbitrary PAMI_XFER_COUNT. \todo something better
+        CollectiveProtocolFactory::metadata(mdata,PAMI_XFER_COUNT);
         TRACE_FN_EXIT();
     }
 private:
     T_Conn                                     * _cmgr;
-    Interfaces::NativeInterface                * _native;
+    Interfaces::NativeInterface                * _pnative;
     PAMI::MemoryAllocator<sizeof(collObj), 16>   _alloc;
 };//AllSidedCollectiveProtocolFactoryT
 

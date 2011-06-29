@@ -111,14 +111,12 @@ protected:
     PAMI::MemoryAllocator<32768, 16>                 _eab_allocator;
 
     T_Conn                                        * _cmgr;
-    Interfaces::NativeInterface                   * _native;
 
 public:
     AsyncBroadcastFactoryT (T_Conn                      *cmgr,
                             Interfaces::NativeInterface *native):
-        CollectiveProtocolFactory(),
-        _cmgr(cmgr),
-        _native(native)
+        CollectiveProtocolFactory(native),
+        _cmgr(cmgr)
     {
         TRACE_FN_ENTER();
         TRACE_FORMAT("<%p> nativeinterface %p", this, native);
@@ -155,6 +153,7 @@ public:
     {
         DO_DEBUG((templateName<MetaDataFn>()));
         get_metadata(mdata);
+        CollectiveProtocolFactory::metadata(mdata,PAMI_XFER_BROADCAST);
     }
 
     char *allocateBuffer (unsigned size)

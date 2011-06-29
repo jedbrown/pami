@@ -44,12 +44,27 @@ namespace PAMI
         uint8_t                pad[T_ObjAlign - ((T_ObjSize+sizeof(struct memory_object*)) & (T_ObjAlign-1))];
       } memory_object_t;
 
-    public:
+  private:
+    inline MemoryAllocator (const MemoryAllocator &m) 
+    {
+      COMPILE_TIME_ASSERT(0);
+      PAMI_abort();
+    }
+    inline MemoryAllocator& operator= (const MemoryAllocator &m) 
+    {
+      COMPILE_TIME_ASSERT(0);
+      PAMI_abort();
+    }
+  public:
 
       inline MemoryAllocator () :
         _mutex (),
         _head (NULL)
-      {}
+      {
+        TRACE_FN_ENTER();
+        TRACE_FORMAT("<%p> ", this);
+        TRACE_FN_EXIT();
+      }
 
       void *internalAllocate () __attribute__((noinline, weak));
     
@@ -70,7 +85,7 @@ namespace PAMI
 
         unlock ();
 
-        TRACE_FORMAT("<%p>", object);
+        TRACE_FORMAT("<%p> _head %p, object %p", this, _head, object);
         TRACE_FN_EXIT();
         return (void *) object;
       };
@@ -80,10 +95,10 @@ namespace PAMI
         TRACE_FN_ENTER();
         lock ();
 
-        TRACE_FORMAT("<%p>", object);
         memory_object_t * tmp = (memory_object_t *) object;
         tmp->next = _head;
         _head = tmp;
+        TRACE_FORMAT("<%p> _head %p, object %p", this, _head, object);
 
         unlock ();
         TRACE_FN_EXIT();

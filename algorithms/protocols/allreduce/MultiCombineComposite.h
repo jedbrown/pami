@@ -196,6 +196,7 @@ namespace CCMI
           virtual void metadata(pami_metadata_t *mdata)
           {
             get_metadata(mdata);
+            CollectiveProtocolFactory::metadata(mdata,PAMI_XFER_ALLREDUCE);
           }
           static void done_fn(pami_context_t  context,
                               void           *clientdata,
