@@ -115,6 +115,9 @@ api/p2p/put/simple_put_func.cnk --numnodes 2 --ranks-per-node 1 --maxnp 2
 #=== api/p2p/rget SUBDIR ===
 api/p2p/rget/simple_rget_func.cnk
 #
+#=== api/p2p/rmw SUBDIR ===
+api/p2p/rmw/rmw_func.cnk --maxnp 64
+#
 #=== api/p2p/rput SUBDIR ===
 api/p2p/rput/simple_rput_func.cnk
 #
