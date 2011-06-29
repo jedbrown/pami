@@ -18,6 +18,7 @@
 
 #include <stdlib.h>
 #include "lapi.h"
+#include "lapi_hfi.h"
 #include "common/lapiunix/lapierror.h"
 
 // Define this to turn on dlopened lapi functions

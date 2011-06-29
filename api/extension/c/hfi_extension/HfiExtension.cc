@@ -7,7 +7,7 @@
 
 extern internal_rc_t _dbg_hfi_perf_counters(lapi_handle_t hndl, lapi_pkt_counter_t* cnt,
         bool is_dump);
-extern int LAPI__Remote_update(lapi_handle_t ghndl, uint count,
+extern int LAPI_Remote_update(lapi_handle_t ghndl, uint count,
         lapi_remote_update_t *info);
 
 pami_result_t
@@ -27,7 +27,7 @@ pami_result_t
 PAMI::HfiExtension::hfi_remote_update (pami_context_t context,
         uint count, hfi_remote_update_info_t* info)
 {
-  int rst = LAPI__Remote_update( ((Context*)context)->my_hndl,
+  int rst = LAPI_Remote_update( ((Context*)context)->my_hndl,
           count, (lapi_remote_update_t*)info);
 
   if (rst == 0)
