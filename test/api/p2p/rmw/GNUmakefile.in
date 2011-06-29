@@ -10,9 +10,9 @@
 # end_generated_IBM_copyright_prolog                               #
 
 VPATH		= @abs_srcdir@
-SUBDIRS         = send get put rget rput rmw
-NOTBUILT        = 
-APPS            = adi.${EXTENSION} default-send.${EXTENSION} default-send-nplus-minus1.${EXTENSION} immediate_send.${EXTENSION} immediate_send_overflow.${EXTENSION} send_latency.${EXTENSION} sendimmediate_latency.${EXTENSION} udp_simple_send.${EXTENSION} simple-send-immediate.${EXTENSION} send_latency_typed.${EXTENSION}
+SUBDIRS         = 
+NOTBUILT        =
+APPS            = rmw_func.${EXTENSION}
 
 include @abs_top_builddir@/Build.rules
 
@@ -21,7 +21,7 @@ ifeq (@BUILDENV@,ade)
 	cp ${CROSS_CRT1} .
 	cp ${CROSS_CRTI} .
 	cp ${CROSS_CRTN} .
-	${CROSS_CC} -I${INSTALL_DIR}/include ${CROSS_CFLAGS} $< -o $@ ${CROSS_LDFLAGS} -lm -L${CROSS_TOOLCHAIN_LDPATH} @POELIB@ @IBMMPILIB@ 
+	${CROSS_CC} -I${INSTALL_DIR}/include ${CROSS_CFLAGS} $< -o $@ ${CROSS_LDFLAGS} -lm -L${CROSS_TOOLCHAIN_LDPATH} @POELIB@ @IBMMPILIB@
 	rm `basename ${CROSS_CRT1}`
 	rm `basename ${CROSS_CRTI}`
 	rm `basename ${CROSS_CRTN}`
@@ -29,7 +29,7 @@ ifeq (@BUILDENV@,ade)
 	cp ${CROSS_CRT1} .
 	cp ${CROSS_CRTI} .
 	cp ${CROSS_CRTN} .
-	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -lm -L${CROSS_TOOLCHAIN_LDPATH} @POELIB@ @IBMMPILIB@ 
+	${CROSS_CXX} -I${INSTALL_DIR}/include ${CROSS_CXXFLAGS} $< -o $@ ${CROSS_LDFLAGS} -lm -L${CROSS_TOOLCHAIN_LDPATH} @POELIB@ @IBMMPILIB@
 	rm `basename ${CROSS_CRT1}`
 	rm `basename ${CROSS_CRTI}`
 	rm `basename ${CROSS_CRTN}`
@@ -46,9 +46,4 @@ endif
 
 default: ${APPS}
 
-#hack to run multi-mambo.  First runmambo and runmulti-mambo will find/cp the elf and pers files
-runmulti-mambo:
-	find ./ -name "send_latency.cnk.t1.pers"  -exec cp {} ./send_latency.cnk.pers \;
-	find ./ -name "bgq_firmware.elf" -exec cp {} ./firmware.elf \;
-	cp $(VPATH)/mmambo.tcl .
-	mpirun -np 2 -x MAMBO_BGQ_MAPFILE=$(VPATH)/map.txt /bgsys/bgq/drivers/x86_64.multi-mambo/bin/systemsim-bgq -n -f mmambo.tcl
+

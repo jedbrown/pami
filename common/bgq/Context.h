@@ -35,6 +35,7 @@
 #include "p2p/protocols/rput/PutRdma.h"
 #include "p2p/protocols/get/GetOverSend.h"
 #include "p2p/protocols/put/PutOverSend.h"
+#include "p2p/protocols/rmw/RmwOverSend.h"
 #include "p2p/protocols/send/eager/Eager.h"
 #include "p2p/protocols/send/composite/Composite.h"
 
@@ -281,7 +282,9 @@ namespace PAMI
           _dummy_disabled(false),
           _senderror(),
           _get(devices->_mu[_contextid]),
-          _put(devices->_mu[_contextid])
+          _put(devices->_mu[_contextid]),
+          _rmw(devices->_mu[_contextid])
+//          _rmw(devices->_shmem[_contextid])
       {
         _async_suspend = NULL;
         _async_resume = NULL;
@@ -314,6 +317,7 @@ namespace PAMI
         pami_endpoint_t self = PAMI_ENDPOINT_INIT(_clientid, __global.mapping.task(), _contextid);
         _get.initialize (_dispatch_id--, self, _context);
         _put.initialize (_dispatch_id--, self, _context);
+        _rmw.initialize (_dispatch_id--, self, _context);
 
         Protocol::Get::GetRdma <Device::MU::DmaModelMemoryFifoCompletion, MUDevice> * rget_mu = NULL;
         Protocol::Put::PutRdma <Device::MU::DmaModelMemoryFifoCompletion, MUDevice> * rput_mu = NULL;
@@ -672,7 +676,7 @@ namespace PAMI
 
       inline pami_result_t rmw (pami_rmw_t * parameters)
       {
-        return PAMI_UNIMPL;
+        return _rmw.start (parameters);
       }
 
       inline pami_result_t memregion_create_impl (void             * address,
@@ -1099,6 +1103,9 @@ namespace PAMI
       
       Protocol::Get::GetOverSend<Device::MU::PacketModel> _get;
       Protocol::Put::PutOverSend<Device::MU::PacketModel> _put;
+      Protocol::Rmw::RmwOverSend<Device::MU::PacketModel> _rmw;
+      //Protocol::Rmw::RmwOverSend<ShmemPacketModel> _rmw;
+      
       
   }; // end PAMI::Context
 }; // end namespace PAMI

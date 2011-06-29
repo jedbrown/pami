@@ -673,7 +673,7 @@ namespace PAMI
                     dst += iov[i].iov_len;
                   }
 
-                TRACE_HEXDATA(vaddr, 32);
+                TRACE_HEXDATA(vaddr, 64);
 
                 // Advance the injection fifo tail pointer. This action
                 // completes the injection operation.
