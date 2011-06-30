@@ -399,6 +399,9 @@ namespace CCMI
         ncolors = 1;
         colors[0] = CCMI::Schedule::TorusRect::NO_COLOR;
       }
+
+#ifdef ENABLE_X0_PROTOCOLS // Experimental (X0:) protocols
+
     extern inline void get_rect_colors (PAMI::Topology             * t,
                           unsigned                    bytes,
                           unsigned                  * colors,
@@ -433,7 +436,7 @@ namespace CCMI
       extern inline void rectangle_broadcast_metadata(pami_metadata_t *m)
       {
         TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
-        new(m) PAMI::Geometry::Metadata("I0:Rectangle:P2P:P2P");
+        new(m) PAMI::Geometry::Metadata("X0:Rectangle:P2P:P2P");
       }
 
       typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
@@ -453,7 +456,7 @@ namespace CCMI
       extern inline void rectangle_1color_broadcast_metadata(pami_metadata_t *m)
       {
         TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
-        new(m) PAMI::Geometry::Metadata("I0:Rectangle1Color:P2P:P2P");
+        new(m) PAMI::Geometry::Metadata("X0:Rectangle1Color:P2P:P2P");
       }
 
       typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
@@ -469,7 +472,7 @@ namespace CCMI
         rectangle_1color_broadcast_metadata,
         CCMI::ConnectionManager::ColorConnMgr>
       Rectangle1ColorBroadcastFactory;
-
+#endif
       extern inline void binomial_broadcast_metadata(pami_metadata_t *m)
       {
         TRACE_INIT((stderr, "%s\n", __PRETTY_FUNCTION__));
