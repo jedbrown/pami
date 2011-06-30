@@ -579,8 +579,32 @@ namespace PAMI
           }
         else
           {
-            // Construct and post a message
-            PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+            // Create a simple single-descriptor message
+            COMPILE_TIME_ASSERT(sizeof(InjectDescriptorMessage<1>) <= dma_model_state_bytes);
+            
+            InjectDescriptorMessage<1> * msg =
+              (InjectDescriptorMessage<1> *) state;
+            new (msg) InjectDescriptorMessage<1> (channel, local_fn, cookie);
+
+            // Clone the single-packet descriptor model into the message
+            _dput.clone (msg->desc[0]);
+
+            // Initialize the injection fifo descriptor in-place.
+            uint64_t local_pa  = (uint64_t) local_memregion->getBasePhysicalAddress ();
+            uint64_t remote_pa = (uint64_t) remote_memregion->getBasePhysicalAddress ();
+
+            msg->desc[0].setDestination (dest);
+            msg->desc[0].setTorusInjectionFIFOMap (map);
+            msg->desc[0].setPayload (local_pa + local_offset, bytes);
+
+            // The global BAT id is constant .. should only need to set
+            // the "offset" (second parameter) here.
+            msg->desc[0].setRecPayloadBaseAddressInfo (_context.getGlobalBatId(), remote_pa + remote_offset);
+
+            TRACE_HEXDATA(&msg->desc[0], sizeof(MUHWI_Descriptor_t));
+
+            // Post the message to the injection channel
+            channel.post (msg);
           }
 
         TRACE_FN_EXIT();
