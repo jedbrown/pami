@@ -110,18 +110,18 @@ namespace PAMI
                                                        pami_dispatch_multicast_function func,
                                                        void                      *arg);
 
-	  pami_result_t postMulticombineImmediate_impl(size_t                   client,
-						       size_t                   context, 
-						       pami_multicombine_t    * mcomb,
-						       void                   * devinfo=NULL) 
-	  {
-	    return PAMI_ERROR;
-	  }
+          pami_result_t postMulticombineImmediate_impl(size_t                   client,
+                                                       size_t                   context, 
+                                                       pami_multicombine_t    * mcomb,
+                                                       void                   * devinfo=NULL) 
+          {
+            return PAMI_ERROR;
+          }
 
           /// \see PAMI::Device::Interface::MulticombineModel::postMulticombine
           pami_result_t postMulticombine_impl(uint8_t (&state)[MulticombineModel<T_PacketModel, T_Msgdata_support, T_PWQ_support>::sizeof_msg],
-					      size_t               client,
-					      size_t               context,					      
+                                              size_t               client,
+                                              size_t               context,					      
                                               pami_multicombine_t *mcomb,
                                               void                *devinfo = NULL);
 
@@ -153,6 +153,7 @@ namespace PAMI
 
         private:
           MU::Context                                & _device;
+          pami_context_t                               _context;
           pami_task_t                                  _task_id;
 
           T_PacketModel                         _data_model;
@@ -166,6 +167,7 @@ namespace PAMI
           MulticombineModel (pami_client_t client, pami_context_t context, MU::Context & device, pami_result_t &status) :
               Interface::MulticombineModel < MulticombineModel<T_PacketModel, T_Msgdata_support, T_PWQ_support>, MU::Context, 2048 /*sizeof(state_data_t)*/ > (device, status),
               _device (device),
+              _context(context),
               _task_id(__global.mapping.task()),
               _data_model (device)
               //        _connection (device)
@@ -392,7 +394,7 @@ namespace PAMI
 
             // Invoke the receive done callback.
             if (state_data->cb_done.function)
-              state_data->cb_done.function (0,//_device.getContext(), ///\todo why does this assert?
+              state_data->cb_done.function (_context,
                                             state_data->cb_done.clientdata,
                                             PAMI_SUCCESS);
           }

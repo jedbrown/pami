@@ -1,3 +1,11 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
 /**
  * \file algorithms/geometry/GeometryOptimizer.h
  * \brief ???
@@ -108,7 +116,8 @@ namespace PAMI {
 	}
 
 	void start() {
-	  TRACE_ERR((stderr, "<%p>GeometryOptimizer::start()\n", this));	  	  
+        TRACE_FN_ENTER();
+	  TRACE_FORMAT("<%p>", this);	  	  
 
 	  if (_vector_elem.size() > 0) {
 	    int rc  = 0;
@@ -148,6 +157,7 @@ namespace PAMI {
 	  }
 	  else if (_cb_done)
 	    _cb_done (_context, _cookie, PAMI_SUCCESS);
+		TRACE_FN_EXIT();
 	}
 
 	static void optimizer_notify (pami_context_t    context,

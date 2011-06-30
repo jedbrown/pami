@@ -8,13 +8,14 @@
 /* end_generated_IBM_copyright_prolog                               */
 /**
  * \file common/bgq/TypeDefs.h
- * \brief ???
+ * \brief BGQ protocol templates and typedefs
  */
 
 #ifndef __common_bgq_TypeDefs_h__
 #define __common_bgq_TypeDefs_h__
 
 #include "util/ccmi_debug.h"
+#include "util/trace.h"
 
 #include "components/devices/shmem/ShmemDevice.h"
 #include "components/devices/shmem/ShmemPacketModel.h"
@@ -27,29 +28,11 @@
 #include "components/fifo/linear/LinearFifo.h"
 #include "components/fifo/wrap/WrapFifo.h"
 
-#if 0
-#include "components/devices/workqueue/LocalBcastWQMessage.h"
-#include "components/devices/workqueue/LocalAllreduceWQMessage.h"
-#include "components/devices/workqueue/LocalReduceWQMessage.h"
-#endif
-
 #include "components/devices/bgq/mu2/Factory.h"
 #include "components/devices/bgq/mu2/Context.h"
 #include "components/devices/bgq/mu2/model/PacketModel.h"
 #include "components/devices/bgq/mu2/model/DmaModel.h"
 #include "components/devices/bgq/mu2/model/DmaModelMemoryFifoCompletion.h"
-
-#include "components/devices/bgq/mu2/model/AxialMulticast.h"
-#include "components/devices/bgq/mu2/model/MulticastDmaModel.h"
-#include "components/devices/bgq/mu2/model/Multicast.h"
-#include "components/devices/bgq/mu2/model/Multicombine.h"
-#include "components/devices/bgq/mu2/model/Multisync.h"
-#include "components/devices/bgq/mu2/model/AllreducePacketModel.h"
-
-//  #include "components/devices/bgq/mu/MUCollDevice.h"
-//  #include "components/devices/bgq/mu/MUMulticastModel.h"
-//  #include "components/devices/bgq/mu/MUMultisyncModel.h"
-//  #include "components/devices/bgq/mu/MUMulticombineModel.h"
 
 #include "p2p/protocols/send/eager/Eager.h"
 #include "p2p/protocols/send/composite/Composite.h"
@@ -64,6 +47,26 @@
 #include "components/atomic/indirect/IndirectBarrier.h"
 #include "components/atomic/indirect/IndirectCounter.h"
 #include "components/devices/misc/AtomicBarrierMsg.h"
+
+#include "common/type/TypeMachine.h"
+
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
+
+#ifdef CCMI_TRACE_ALL
+ #define DO_TRACE_ENTEREXIT 1
+ #define DO_TRACE_DEBUG     1
+#else
+ #define DO_TRACE_ENTEREXIT 0
+ #define DO_TRACE_DEBUG     0
+#endif
+
+#include "components/devices/bgq/mu2/model/MulticastDmaModel.h"
+#include "components/devices/bgq/mu2/model/Multicast.h"
+#include "components/devices/bgq/mu2/model/Multicombine.h"
+#include "components/devices/bgq/mu2/model/Multisync.h"
+#include "components/devices/bgq/mu2/model/AllreducePacketModel.h"
+
 
 #include "common/NativeInterface.h"
 #include "common/bgq/NativeInterface.h"
@@ -87,8 +90,6 @@
 #include "components/devices/bgq/mu2/model/RectangleMultisyncModel.h"
 #include "components/devices/bgq/mu2/model/ManytomanyModel.h"
 
-#include "common/type/TypeMachine.h"
-
 namespace PAMI
 {
   typedef Geometry::Common                     BGQGeometry;
@@ -102,16 +103,6 @@ namespace PAMI
   Device::MU::MultisyncModel<false, false>,
   Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false> > MUGlobalNI;
 
-  typedef BGQNativeInterface < MUDevice,
-  Device::MU::AxialMulticastModel<false, false>,
-  Device::MU::MultisyncModel<false, false>,
-  Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false> > MUAxialNI;
-
-  /*  typedef BGQNativeInterface < MUDevice,
-                                 Device::MU::AxialMulticastModel<false, false>,
-                                 Device::MU::MultisyncModel<false, false>,
-                                 Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false> > MUAxialDputNI;
-  */
   typedef BGQNativeInterfaceAS < MUDevice,
   Device::MU::MulticastDmaModel,
   Device::MU::Rectangle::MultisyncModel,
@@ -215,21 +206,13 @@ namespace PAMI
 
 
   typedef PAMI::Barrier::IndirectCounter<PAMI::Counter::BGQ::IndirectL2> Barrier_Type;
-  //typedef PAMI::Barrier::Indirect<PAMI::Barrier::Counter<PAMI::Counter::BGQ::L2> > Barrier_Type;
+//typedef PAMI::Barrier::Indirect<PAMI::Barrier::Counter<PAMI::Counter::BGQ::L2> > Barrier_Type;
 
   typedef PAMI::Device::AtomicBarrierMdl<Barrier_Type>                           ShmemMsyncModel;
 
-  //typedef PAMI::Device::Shmem::ShmemCollDesc <Counter::Indirect<Counter::Native> > ShmemCollDesc;
-  //typedef PAMI::Device::ShmemCollDevice<Counter::Indirect<Counter::Native> > ShmemCollDevice;
-//  typedef PAMI::Device::ShmemCollDevice<PAMI::Counter::BGQ::IndirectL2> ShmemCollDevice;
   typedef PAMI::Device::Shmem::ShmemMcombModelWorld <ShmemDevice> ShmemMcombModel;
   typedef PAMI::Device::Shmem::ShmemMcstModelWorld <ShmemDevice> ShmemMcstModel;
   typedef PAMI::Device::Shmem::ShortMcombMessage <ShmemDevice> ShmemMcombMessage;
-#if 0
-  typedef Device::LocalAllreduceWQModel ShmemMcombModel;
-  typedef Device::LocalBcastWQModel ShmemMcstModel;
-  typedef ShmemDevice ShmemCollDevice;
-#endif
 
   typedef BGQNativeInterfaceAS <ShmemDevice, ShmemMcstModel, ShmemMsyncModel, ShmemMcombModel> AllSidedShmemNI;
 
@@ -239,9 +222,7 @@ namespace PAMI
 
 }
 
-//#define PAMI_COLL_MCAST_CLASS
-//#define PAMI_COLL_M2M_CLASS
-//#define PAMI_NATIVEINTERFACE
-//#define PAMI_GEOMETRY_CLASS    PAMI::BGQGeometry
+#undef  DO_TRACE_ENTEREXIT
+#undef  DO_TRACE_DEBUG
 
 #endif

@@ -48,19 +48,20 @@ namespace PAMI
         inline void setContext(pami_context_t ctxt) {_context = ctxt;}
         inline pami_result_t generate(pami_xfer_t *xfer)
         {
-          TRACE_ERR((stderr, "<%p>Algorithm::generate() factory %p\n", this, _factory));
-	  CCMI::Executor::Composite *exec = _factory->generate((pami_geometry_t)_geometry,
-							       (void*) xfer);
-	  
-	  //As, the factories may override completion callbacks, 
-	  //so we dont reset completion callback here. Factory
-	  //responsible to call the application callback.
+          TRACE_ERR((stderr, "<%p>Algorithm::generate() factory %p context %p\n", this, _factory, _context));
+          _factory->setContext(_context);
+          CCMI::Executor::Composite *exec = _factory->generate((pami_geometry_t)_geometry,
+                                                               (void*) xfer);
+
+          //As, the factories may override completion callbacks,  
+          //so we dont reset completion callback here. Factory
+          //responsible to call the application callback.
           if (exec)
-	  {
-	    //  exec->setDoneCallback(xfer->cb_done, xfer->cookie);
+          {
+            //  exec->setDoneCallback(xfer->cb_done, xfer->cookie);
             exec->setContext(_context);
-	    exec->start();
-	  }
+            exec->start();
+          }
           return PAMI_SUCCESS;
         }
 

@@ -1,7 +1,15 @@
-///
-/// \file components/devices/bgq/mu2/msg/CollectiveDPutMulticast.h
-/// \brief ???
-///
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file components/devices/bgq/mu2/msg/CollectiveDPutMulticast.h
+ * \brief ???
+ */
 #ifndef __components_devices_bgq_mu2_msg_CollectiveDPutMulticast_h__
 #define __components_devices_bgq_mu2_msg_CollectiveDPutMulticast_h__
 
@@ -49,6 +57,7 @@ namespace PAMI
           /// \param[in] counterAddress address of the counter address
           ///
           CollectiveDPutMulticast (MU::Context         & context,
+                                   pami_context_t        pami_context,
                                    pami_event_function   fn,
                                    void                * cookie,
                                    PipeWorkQueue       * pwq,
@@ -58,6 +67,7 @@ namespace PAMI
                                    bool                  isroot,
                                    volatile uint64_t   * counterAddress):
               _context (context),
+              _pami_context(pami_context),
               _injectedBytes (0),
               _length (length),
               _pwq (pwq),
@@ -191,7 +201,7 @@ namespace PAMI
                   _pwq->consumeBytes(_length);
 
                 if (_fn)
-                  _fn (NULL, _cookie, PAMI_SUCCESS);
+                  _fn (_pami_context, _cookie, PAMI_SUCCESS);
 
                 return true;
               }
@@ -225,6 +235,7 @@ namespace PAMI
         protected:
 
           MU::Context            & _context;
+          pami_context_t           _pami_context;
           uint32_t                 _injectedBytes;
           uint32_t                 _length;        //Number of bytes to transfer
           PipeWorkQueue          * _pwq;

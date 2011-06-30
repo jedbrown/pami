@@ -431,7 +431,8 @@ public:
 
         // activate user callback
         if (xfer->cb_done)
-            xfer->cb_done(NULL, xfer->cookie, PAMI_SUCCESS);
+            xfer->cb_done(co->getComposite()->getContext()?co->getComposite()->getContext():factory->_context,
+                          xfer->cookie, PAMI_SUCCESS);
 
         // must be on the posted queue, dequeue it
         geometry->asyncCollectivePostQ().deleteElem(co);

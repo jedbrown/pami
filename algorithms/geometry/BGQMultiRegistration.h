@@ -38,13 +38,19 @@
 
 #include "algorithms/geometry/P2PCCMIRegInfo.h"
 
-#include "util/ccmi_debug.h" // tracing
+#include "util/ccmi_debug.h"
 #include "util/ccmi_util.h"
 
-#ifndef CCMI_TRACE_ALL
-  #undef TRACE_INIT
-  #define TRACE_INIT(x) //fprintf x
+#include "util/trace.h"
+
+#ifdef CCMI_TRACE_ALL
+  #define DO_TRACE_ENTEREXIT 1
+  #define DO_TRACE_DEBUG     1
+#else
+  #define DO_TRACE_ENTEREXIT 0
+  #define DO_TRACE_DEBUG     0
 #endif
+
 
 namespace PAMI
 {
@@ -135,6 +141,7 @@ namespace PAMI
         metadata_result_t result = {0};
         uintptr_t op;
         uintptr_t dt;
+        TRACE_FN_ENTER();
         if (((uintptr_t)in->cmd.xfer_allreduce.stype >= PAMI::Type::TypeCode::PRIMITIVE_TYPE_COUNT) || ((uintptr_t)in->cmd.xfer_allreduce.op >= PAMI::Type::TypeFunc::PRIMITIVE_FUNC_COUNT))
           result.check.datatype_op = 1; // No user-defined dt/op's
 
@@ -142,8 +149,9 @@ namespace PAMI
                                        in->cmd.xfer_allreduce.op,
                                        dt,
                                        op);
-        TRACE((stderr, "MU::op_dt_metadata_function(dt %p/%d,op %p/%d) = %s\n", in->cmd.xfer_allreduce.stype,(pami_dt)dt, in->cmd.xfer_allreduce.op,(pami_op)op, support[dt][op] ? "true" : "false"));
+        TRACE_FORMAT("(dt %p/%d,op %p/%d) = %s", in->cmd.xfer_allreduce.stype,(pami_dt)dt, in->cmd.xfer_allreduce.op,(pami_op)op, support[dt][op] ? "true" : "false");
         result.check.datatype_op = support[dt][op]?0:1;
+        TRACE_FN_EXIT();
         return(result);
       }
     }
@@ -153,7 +161,7 @@ namespace PAMI
     {
       extern inline metadata_result_t op_dt_metadata_function(struct pami_xfer_t *in)
       {
-        TRACE((stderr, "Shmem::op_dt_metadata_function(dt %d,op %d) = %s\n", dt, op, support[dt][op] ? "true" : "false"));
+        TRACE_FN_ENTER();
         metadata_result_t result = {0};
         uintptr_t op;
         uintptr_t dt;
@@ -170,6 +178,8 @@ namespace PAMI
                                     ((pop == PAMI_MIN) ||
                                      (pop == PAMI_MAX) ||
                                      (pop == PAMI_SUM))) ?0:1;
+        TRACE_FORMAT("(dt %d,op %d) = %s", pdt, pop, result.check.datatype_op ? "true" : "false");
+        TRACE_FN_EXIT();
         return(result);
       }
     }
@@ -605,9 +615,10 @@ namespace PAMI
                                    unsigned                  * colors,
                                    unsigned                  & ncolors)
     {
-      TRACE_INIT((stderr, "get_colors\n"));
+      TRACE_FN_ENTER();
       ncolors = 1;
       colors[0] = CCMI::Schedule::TorusRect::NO_COLOR;
+      TRACE_FN_EXIT();
     }
 
     extern inline void get_rect_colors (PAMI::Topology             * t,
@@ -615,11 +626,11 @@ namespace PAMI
                                         unsigned                  * colors,
                                         unsigned                  & ncolors)
     {
-
+      TRACE_FN_ENTER();
       unsigned max = 0, ideal = 0;
       unsigned _colors[10];
       CCMI::Schedule::TorusRect::getColors (t, ideal, max, _colors);
-      TRACE_INIT((stderr, "get_rect_colors() bytes %u, ncolors %u, ideal %u, max %u\n", bytes, ncolors, ideal, max));
+      TRACE_FORMAT("bytes %u, ncolors %u, ideal %u, max %u", bytes, ncolors, ideal, max);
 
       if (bytes <= 4096) //16 packets
         ideal = 1;
@@ -635,8 +646,9 @@ namespace PAMI
       if (ideal < ncolors)
         ncolors = ideal;  //Reduce the number of colors to the relavant colors
 
-      TRACE_INIT((stderr, "get_rect_colors() ncolors %u, ideal %u\n", ncolors, ideal));
+      TRACE_FORMAT("ncolors %u, ideal %u", ncolors, ideal);
       memcpy (colors, _colors, ncolors * sizeof(int));
+      TRACE_FN_EXIT();
     }
 
     extern inline void rectangle_dput_1color_broadcast_metadata(pami_metadata_t *m)
@@ -767,9 +779,9 @@ namespace PAMI
     //----------------------------------------------------------------------------
     /// \brief The BGQ Multi* registration class for Shmem and MU.
     //----------------------------------------------------------------------------
-    template <class T_Geometry, class T_ShmemDevice, class T_ShmemNativeInterface, class T_MUDevice, class T_MUNativeInterface, class T_AxialNativeInterface, class T_AxialDputNativeInterface, class T_AxialShmemDputNativeInterface>
+    template <class T_Geometry, class T_ShmemDevice, class T_ShmemNativeInterface, class T_MUDevice, class T_MUNativeInterface, class T_AxialDputNativeInterface, class T_AxialShmemDputNativeInterface>
     class BGQMultiRegistration :
-    public CollRegistration<PAMI::CollRegistration::BGQMultiRegistration<T_Geometry, T_ShmemDevice, T_ShmemNativeInterface, T_MUDevice, T_MUNativeInterface, T_AxialNativeInterface, T_AxialDputNativeInterface, T_AxialShmemDputNativeInterface>, T_Geometry>
+    public CollRegistration<PAMI::CollRegistration::BGQMultiRegistration<T_Geometry, T_ShmemDevice, T_ShmemNativeInterface, T_MUDevice, T_MUNativeInterface, T_AxialDputNativeInterface, T_AxialShmemDputNativeInterface>, T_Geometry>
     {
 
     public:
@@ -782,7 +794,7 @@ namespace PAMI
                                   size_t                               client_id,
                                   int                                 *dispatch_id,
                                   std::map<unsigned, pami_geometry_t> *geometry_map):
-      CollRegistration<PAMI::CollRegistration::BGQMultiRegistration<T_Geometry, T_ShmemDevice, T_ShmemNativeInterface, T_MUDevice, T_MUNativeInterface, T_AxialNativeInterface, T_AxialDputNativeInterface, T_AxialShmemDputNativeInterface>, T_Geometry> (),
+      CollRegistration<PAMI::CollRegistration::BGQMultiRegistration<T_Geometry, T_ShmemDevice, T_ShmemNativeInterface, T_MUDevice, T_MUNativeInterface, T_AxialDputNativeInterface, T_AxialShmemDputNativeInterface>, T_Geometry> (),
       _client(client),
       _context(context),
       _context_id(context_id),
@@ -813,8 +825,6 @@ namespace PAMI
       _mu_ni_mcast2d(NULL),
       _mu_ni_mcomb2d(NULL),
       _mu_ni_mcomb2dNP(NULL),
-      _axial_mu_ni(NULL),
-      _axial_mu_1_ni(NULL),
       _axial_mu_dput_ni(NULL),
       //_axial_dput_mu_1_ni(NULL),
       _gi_msync_factory(NULL),
@@ -841,24 +851,24 @@ namespace PAMI
       _shmem_mu_rectangle_dput_broadcast_factory(NULL),
       _shmem_mu_rectangle_dput_allgather_factory(NULL)
       {
-        TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration()\n", this));
+        TRACE_FN_ENTER();
+        TRACE_FORMAT("<%p>", this);
         //DO_DEBUG((templateName<T_Geometry>()));
         //DO_DEBUG((templateName<T_ShmemNativeInterface>()));
         //DO_DEBUG((templateName<T_MUDevice>()));
         //DO_DEBUG((templateName<T_MUNativeInterface>()));
-        //DO_DEBUG((templateName<T_AxialNativeInterface>()));
         //DO_DEBUG((templateName<T_AxialDputNativeInterface>()));
 
         //set the mapid functions
         if (__global.useshmem())// && (__global.topology_local.size() > 1))
         {
-          TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration() useshmem\n", this));
+          TRACE_FORMAT("<%p> useshmem", this);
           _shmem_msync_factory.setMapIdToGeometry(mapidtogeometry);
         }
 
         if (__global.useMU())
         {
-          TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration() usemu\n", this));
+          TRACE_FORMAT("<%p> usemu", this);
 
           _mu_ni_msync          = new (_mu_ni_msync_storage         ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id, _dispatch_id);
           _mu_ni_mcomb          = new (_mu_ni_mcomb_storage         ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id, _dispatch_id);
@@ -868,7 +878,6 @@ namespace PAMI
           _mu_ni_mcast2d        = new (_mu_ni_mcast2d_storage       ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id, _dispatch_id);
           _mu_ni_mcomb2d        = new (_mu_ni_mcomb2d_storage       ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id, _dispatch_id);
           _mu_ni_mcomb2dNP      = new (_mu_ni_mcomb2dNP_storage     ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id, _dispatch_id);
-          _axial_mu_ni          = new (_axial_mu_ni_storage         ) T_AxialNativeInterface(_mu_device, client, context, context_id, client_id, _dispatch_id);
 
           _axial_mu_dput_ni     = new (_axial_mu_dput_ni_storage    ) T_AxialDputNativeInterface(_mu_device, client, context, context_id, client_id, _dispatch_id);
 
@@ -947,10 +956,10 @@ namespace PAMI
 
           if (_axial_shmem_mu_dput_ni)
           {
-            TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration()  RectangleDput1ColorBroadcastFactory\n", this));
+            TRACE_FORMAT("<%p>  RectangleDput1ColorBroadcastFactory", this);
             _shmem_mu_rectangle_1color_dput_broadcast_factory = new (_shmem_mu_rectangle_1color_dput_broadcast_factory_storage) RectangleDput1ColorBroadcastFactory(&_color_connmgr, _axial_shmem_mu_dput_ni);
 
-            TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration()  RectangleDputBroadcastFactory\n", this));
+            TRACE_FORMAT("<%p>  RectangleDputBroadcastFactory", this);
             _shmem_mu_rectangle_dput_broadcast_factory = new (_shmem_mu_rectangle_dput_broadcast_factory_storage) RectangleDputBroadcastFactory(&_color_connmgr, _axial_shmem_mu_dput_ni);
 
             _shmem_mu_rectangle_dput_allgather_factory = new (_shmem_mu_rectangle_dput_allgather_factory_storage) RectangleDputAllgatherFactory(&_color_connmgr, _axial_shmem_mu_dput_ni);
@@ -958,10 +967,10 @@ namespace PAMI
 
           if (_axial_mu_dput_ni)
           {
-            TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration()  MURectangleDput1ColorBroadcastFactory\n", this));
+            TRACE_FORMAT("<%p> MURectangleDput1ColorBroadcastFactory", this);
             _mu_rectangle_1color_dput_broadcast_factory = new (_mu_rectangle_1color_dput_broadcast_factory_storage) MURectangleDput1ColorBroadcastFactory(&_color_connmgr, _axial_mu_dput_ni);
 
-            TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration()  MURectangleDputBroadcastFactory\n", this));
+            TRACE_FORMAT("<%p>  MURectangleDputBroadcastFactory", this);
             _mu_rectangle_dput_broadcast_factory = new (_mu_rectangle_dput_broadcast_factory_storage) MURectangleDputBroadcastFactory(&_color_connmgr, _axial_mu_dput_ni);
 
             _mu_rectangle_dput_allgather_factory = new (_mu_rectangle_dput_allgather_factory_storage) RectangleDputAllgatherFactory(&_color_connmgr, _axial_mu_dput_ni);
@@ -1014,6 +1023,7 @@ namespace PAMI
 #endif
         }
 
+        TRACE_FN_EXIT();
       }
 
       inline pami_result_t register_local_impl (size_t context_id, T_Geometry *geometry, uint64_t *in, int &n) 
@@ -1050,7 +1060,7 @@ namespace PAMI
           for (size_t i = 0; i < 64; ++i)
             if ((result & (0x1 << i)) != 0)
             {
-              //fprintf (stderr, "Calling configure with class route %ld, in 0x%lx\n", i, result);
+              //fprintf (stderr, "Calling configure with class route %ld, in 0x%lx", i, result);
               _axial_mu_dput_ni->getMsyncModel().configureClassRoute(i, (PAMI::Topology *)geometry->getTopology(PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX));
               geometry->setKey (PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID1, (void*)(i+1));
               break;
@@ -1062,9 +1072,11 @@ namespace PAMI
 
       inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry, int phase)
       {
-        TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() phase %d, context_id %zu, geometry %p, msync %p, mcast %p, mcomb %p\n", this, phase, context_id, geometry, &_shmem_msync_factory, &_shmem_mcast_factory, &_shmem_mcomb_factory));
+        TRACE_FN_ENTER();
+        TRACE_FORMAT("<%p>phase %d, context_id %zu, geometry %p, msync %p, mcast %p, mcomb %p", this, phase, context_id, geometry, &_shmem_msync_factory, &_shmem_mcast_factory, &_shmem_mcomb_factory);
         if (geometry->size() == 1) // Disable BGQ protocols on 1 task geometries.
         {
+          TRACE_FN_EXIT();
           return PAMI_SUCCESS;
         }
         pami_xfer_t xfer = {0};
@@ -1074,9 +1086,9 @@ namespace PAMI
         PAMI::Topology * topology = (PAMI::Topology*) geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
         PAMI::Topology * local_sub_topology = (PAMI::Topology*) geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
         PAMI::Topology * master_sub_topology = (PAMI::Topology*) geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
-        TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() topology: size() %zu, isLocal() %u/%zu, isGlobal #u/%zu\n", this, topology->size(),  topology->isLocalToMe(), local_sub_topology->size(), master_sub_topology->size()));//,  topology->isGlobal()));
+        TRACE_FORMAT("<%p>topology: size() %zu, isLocal() %u/%zu, isGlobal #u/%zu", this, topology->size(),  topology->isLocalToMe(), local_sub_topology->size(), master_sub_topology->size());//,  topology->isGlobal()));
 
-        //DO_DEBUG(for (unsigned i = 0; i < topology->size(); ++i) fprintf(stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() topology[%u] = %u\n", this, i, topology->index2Rank(i)););
+        //DO_DEBUG(for (unsigned i = 0; i < topology->size(); ++i) fprintf(stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() topology[%u] = %u", this, i, topology->index2Rank(i)););
 
         if (phase == 0)
         {
@@ -1100,12 +1112,12 @@ namespace PAMI
 #endif
              )
           {
-            TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register Shmem local barrier\n", this));
+            TRACE_FORMAT("<%p>Register Shmem local barrier", this);
 
             // If the geometry is all local nodes, we can use pure shmem composites.
             if (topology->isLocalToMe())
             {
-              TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register Local Shmem factories\n", this));
+              TRACE_FORMAT("<%p>Register Local Shmem factories", this);
               _shmem_barrier_composite = _shmem_msync_factory.generate(geometry, &xfer);
               PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE7)==_shmem_barrier_composite);
               // Add Barriers
@@ -1127,17 +1139,17 @@ namespace PAMI
           }
 
           // (Maybe) Add rectangle broadcasts
-          TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Analyze Rectangle factories %p/%p, %p/%p, isLocal? %u\n", this,
+          TRACE_FORMAT("<%p>Analyze Rectangle factories %p/%p, %p/%p, isLocal? %u", this,
                       _mu_rectangle_1color_dput_broadcast_factory, _mu_rectangle_dput_broadcast_factory,
                       _shmem_mu_rectangle_1color_dput_broadcast_factory, _shmem_mu_rectangle_dput_broadcast_factory,
-                      topology->isLocal()));
+                      topology->isLocal());
 
           // Is there a coordinate topology? Try rectangle protocols
           PAMI::Topology * rectangle = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX);
 
           if (rectangle->type() == PAMI_COORD_TOPOLOGY) // could be EMPTY if not valid on this geometry
           {
-            TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register Rectangle\n", this));
+            TRACE_FORMAT("<%p>Register Rectangle", this);
             if (_mu_rectangle_msync_factory && __global.topology_local.size() == 1 &&
                 geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID1))
             {
@@ -1202,7 +1214,7 @@ namespace PAMI
           /// then the geometry topology is usable by 'pure' MU protocols
           bool usePureMu = topology->size() == master_sub_topology->size() ? true : false;
           usePureMu = usePureMu && !topology->isLocalToMe();
-          TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() usePureMu = %u (size %zu/%zu)\n", this, usePureMu, topology->size(), master_sub_topology->size()));
+          TRACE_FORMAT("<%p>usePureMu = %u (size %zu/%zu)", this, usePureMu, topology->size(), master_sub_topology->size());
 
           // Add optimized binomial barrier
           if (_binomial_barrier_factory)
@@ -1220,7 +1232,7 @@ namespace PAMI
           // Check for class routes before enabling MU collective network protocols
           void *val;
           val = geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
-          TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() GKEY_MSYNC_CLASSROUTEID %p\n", this, val));
+          TRACE_FORMAT("<%p>GKEY_MSYNC_CLASSROUTEID %p", this, val);
 
           if (val && val != PAMI_CR_GKEY_FAIL)// We have a class route
           {
@@ -1231,7 +1243,7 @@ namespace PAMI
               if ((_context_id == 0) // (__global.mapping.isLowestT())
                   && (_gi_msync_factory))
               {
-                TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU barrier\n", this));
+                TRACE_FORMAT("<%p>Register MU barrier", this);
                 geometry->setKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE3, NULL);
                 _gi_barrier_composite = _gi_msync_factory->generate(geometry, &xfer);
                 PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE3)==_gi_barrier_composite);
@@ -1284,7 +1296,7 @@ namespace PAMI
           }
 
           val = geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
-          TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() GKEY_MCAST_CLASSROUTEID %p\n", this, val));
+          TRACE_FORMAT("<%p>GKEY_MCAST_CLASSROUTEID %p", this, val);
 
           if ((val && val != PAMI_CR_GKEY_FAIL) || // We have a class route or
               (topology->isLocalToMe()))           // It's all local - we might use 2 device protocol in shmem-only mode
@@ -1295,7 +1307,7 @@ namespace PAMI
               // Direct MU only on one context per node (lowest T, context 0) lowest T is guaranteed by classroute code
               if (_context_id == 0) // (__global.mapping.isLowestT())
               {
-                TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU bcast\n", this));
+                TRACE_FORMAT("<%p>Register MU bcast", this);
                 // Add Broadcasts
                 geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_mcast_factory,  _context_id);
 #ifdef ENABLE_X0_PROTOCOLS
@@ -1315,20 +1327,20 @@ namespace PAMI
 #ifdef ENABLE_X0_PROTOCOLS
                 if (_mcast2d_composite_factory)
                 {
-                  TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register mcast 2D\n", this));
+                  TRACE_FORMAT("<%p>Register mcast 2D", this);
                   geometry->addCollectiveCheck(PAMI_XFER_BROADCAST, _mcast2d_composite_factory, _context_id);
                 }
 #endif
                 if (_mcast2d_dput_composite_factory)
                 {
-                  TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register mcast dput 2D\n", this));
+                  TRACE_FORMAT("<%p>Register mcast dput 2D", this);
                   geometry->addCollective(PAMI_XFER_BROADCAST, _mcast2d_dput_composite_factory, _context_id);
                 }
               }
           }
 
           val = geometry->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
-          TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() GKEY_MCOMB_CLASSROUTEID %p\n", this, val));
+          TRACE_FORMAT("<%p>GKEY_MCOMB_CLASSROUTEID %p", this, val);
 
           if ((val && val != PAMI_CR_GKEY_FAIL) || // We have a class route or
               (topology->isLocalToMe()))           // It's all local - we might use 2 device protocol in shmem-only mode
@@ -1340,7 +1352,7 @@ namespace PAMI
               if (_context_id == 0) // (__global.mapping.isLowestT())
               {
                 // Add Allreduces
-                TRACE_INIT((stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() Register MU allreduce\n", this));
+                TRACE_FORMAT("<%p>Register MU allreduce", this);
                 geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mu_mcomb_factory, _context_id);
               }
             }
@@ -1412,6 +1424,7 @@ namespace PAMI
 
         }
 
+        TRACE_FN_EXIT();
         return PAMI_SUCCESS;
       }
     public:
@@ -1475,10 +1488,6 @@ namespace PAMI
       uint8_t                                         _mu_ni_mcomb2d_storage[sizeof(T_MUNativeInterface)];
       T_MUNativeInterface                            *_mu_ni_mcomb2dNP;
       uint8_t                                         _mu_ni_mcomb2dNP_storage[sizeof(T_MUNativeInterface)];
-      T_AxialNativeInterface                         *_axial_mu_ni;
-      uint8_t                                         _axial_mu_ni_storage[sizeof(T_AxialNativeInterface)];
-      T_AxialNativeInterface                         *_axial_mu_1_ni;
-      uint8_t                                         _axial_mu_1_ni_storage[sizeof(T_AxialNativeInterface)];
 
       T_AxialDputNativeInterface                     *_axial_mu_dput_ni;
       uint8_t                                         _axial_mu_dput_ni_storage[sizeof(T_AxialDputNativeInterface)];
@@ -1604,10 +1613,8 @@ namespace PAMI
   };
 };
 
-#ifndef CCMI_TRACE_ALL
-  #undef TRACE_INIT
-  #define TRACE_INIT(x)
-#endif
+#undef  DO_TRACE_ENTEREXIT
+#undef  DO_TRACE_DEBUG
 
 #endif
 //

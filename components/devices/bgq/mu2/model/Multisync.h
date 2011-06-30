@@ -130,6 +130,7 @@ namespace PAMI
 
         private:
           MU::Context                                & _device;
+          pami_context_t                               _context;
           pami_task_t                                  _task_id;
 
           AllreducePacketModel                         _header_model;
@@ -144,6 +145,7 @@ namespace PAMI
           MultisyncModel (pami_client_t    client, pami_context_t   context, MU::Context & device, pami_result_t &status) :
               Interface::MultisyncModel < MultisyncModel<T_Msgdata_support, T_PWQ_support>, MU::Context, 2048 /*sizeof(state_data_t)*/ > (device, status),
               _device (device),
+              _context(context),
               _task_id(__global.mapping.task()),
               _header_model (device),
               _debug(0x11*(_task_id + 1))
@@ -185,8 +187,8 @@ namespace PAMI
 
       template <bool T_Msgdata_support, bool T_PWQ_support>
       inline pami_result_t MultisyncModel<T_Msgdata_support, T_PWQ_support>::postMultisync_impl(uint8_t (&state)[MultisyncModel::sizeof_msg],
-	  size_t           client,
-	  size_t           context,
+                                                                                                size_t           client,
+                                                                                                size_t           context,
           pami_multisync_t *msync,
           void             *devinfo)
       {
@@ -270,7 +272,7 @@ namespace PAMI
 
         // Invoke the receive done callback.
         if (state->cb_done.function)
-          state->cb_done.function (0,//model->_device.getContext(), ///\todo why does this assert?
+          state->cb_done.function (model->_context,
                                    state->cb_done.clientdata,
                                    PAMI_SUCCESS);
 
@@ -299,10 +301,10 @@ namespace PAMI
             PAMI_abort();
           }
           inline pami_result_t postMultisync_impl(uint8_t (&state)[NullMultisyncModel::sizeof_msg],
-						  size_t            client,
-						  size_t            context, 
-						  pami_multisync_t *msync,
-						  void             *devinfo)
+                                                  size_t            client,
+                                                  size_t            context, 
+                                                  pami_multisync_t *msync,
+                                                  void             *devinfo)
           {
             PAMI_abort();
           }

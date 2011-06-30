@@ -14,6 +14,16 @@
 #define __algorithms_protocols_allreduce_ProtocolFactoryT_h__
 
 #include "algorithms/protocols/CollectiveProtocolFactoryT.h"
+#include "util/trace.h"
+
+#ifdef CCMI_TRACE_ALL
+  #define DO_TRACE_ENTEREXIT 1
+  #define DO_TRACE_DEBUG     1
+#else
+  #define DO_TRACE_ENTEREXIT 0
+  #define DO_TRACE_DEBUG     0
+#endif
+
 
 namespace CCMI
 {
@@ -30,10 +40,16 @@ public:
                       pami_dispatch_multicast_function cb_head = NULL):
         CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>(cmgr, native, cb_head)
     {
+        TRACE_FN_ENTER();
+        TRACE_FORMAT("%p", this);
+        TRACE_FN_EXIT();
     }
 
     virtual ~ProtocolFactoryT ()
     {
+        TRACE_FN_ENTER();
+        TRACE_FORMAT("%p", this);
+        TRACE_FN_EXIT();
     }
 
     /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -45,8 +61,10 @@ public:
     virtual Executor::Composite * generate(pami_geometry_t              g,
                                            void                      * cmd)
     {
+        TRACE_FN_ENTER();
         PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)g;
         T_Composite * arcomposite = (T_Composite *)geometry->getAllreduceComposite();
+        TRACE_FORMAT("%p composite %p", this,arcomposite);
 
         pami_xfer_t *allreduce = (pami_xfer_t *)cmd;
 
@@ -58,6 +76,7 @@ public:
             if (status == PAMI_SUCCESS)
             {
                 geometry->setAllreduceComposite(arcomposite);
+                TRACE_FN_EXIT();
                 return NULL;
             }
         }
@@ -70,6 +89,8 @@ public:
         }
 
         T_Composite* obj = (T_Composite*)CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_alloc.allocateObject();
+        TRACE_FORMAT("%p composite %p", this,arcomposite);
+        obj->setContext(this->_context);
         geometry->setAllreduceComposite(obj);
         new (obj) T_Composite(CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_native,  // Native interface
                               CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_cmgr,    // Connection Manager
@@ -78,12 +99,16 @@ public:
                               allreduce->cb_done,
                               allreduce->cookie);
 
+        TRACE_FN_EXIT();
         return NULL;
     }
 };
 };
 };
 }; //CCMI
+
+#undef  DO_TRACE_ENTEREXIT
+#undef  DO_TRACE_DEBUG
 
 #endif
 //

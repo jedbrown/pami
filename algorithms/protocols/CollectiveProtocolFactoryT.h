@@ -16,24 +16,37 @@
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
 #include "algorithms/interfaces/NativeInterface.h"
 #include "components/memory/MemoryAllocator.h"
+
+#include "util/ccmi_debug.h"
 #include "util/ccmi_util.h"
+
+#include "util/trace.h"
+
+#ifdef CCMI_TRACE_ALL
+  #define DO_TRACE_ENTEREXIT 1
+  #define DO_TRACE_DEBUG     1
+#else
+  #define DO_TRACE_ENTEREXIT 0
+  #define DO_TRACE_DEBUG     0
+#endif
+
 
 namespace CCMI
 {
-namespace Adaptor
-{
+  namespace Adaptor
+  {
 ///
 /// \brief choose if this protocol is supports the input geometry
 ///
-typedef void      (*MetaDataFn)   (pami_metadata_t *m);
+    typedef void      (*MetaDataFn)   (pami_metadata_t *m);
 
-template <class T_Composite, MetaDataFn get_metadata, class T_Conn>
-class CollectiveProtocolFactoryT: public CollectiveProtocolFactory
-{
-public:
-    class collObj
+    template <class T_Composite, MetaDataFn get_metadata, class T_Conn>
+    class CollectiveProtocolFactoryT: public CollectiveProtocolFactory
     {
     public:
+      class collObj
+      {
+      public:
         collObj(Interfaces::NativeInterface             * native,
                 T_Conn                                   * cmgr,
                 pami_geometry_t                            geometry,
@@ -41,18 +54,23 @@ public:
                 pami_event_function                        fn,
                 void                                     * cookie,
                 CollectiveProtocolFactoryT               * factory):
-            _factory(factory),
-            _user_done_fn(cmd->cb_done),
-            _user_cookie(cmd->cookie),
-            _obj(native, cmgr, geometry, cmd, fn, cookie)
+        _factory(factory),
+        _user_done_fn(cmd->cb_done),
+        _user_cookie(cmd->cookie),
+        _obj(native, cmgr, geometry, cmd, fn, cookie)
         {
-            TRACE_ADAPTOR((stderr, "<%p>CollectiveProtocolFactoryT::collObj()\n",this));
-            DO_DEBUG((templateName<T_Composite>()));
+          TRACE_FN_ENTER();
+          TRACE_FORMAT("<%p>",this);
+          DO_DEBUG((templateName<T_Composite>()));
+          TRACE_FN_EXIT();
         }
         void done_fn( pami_context_t   context,
                       pami_result_t    result )
         {
-            _user_done_fn(context, _user_cookie, result);
+          TRACE_FN_ENTER();
+          TRACE_FORMAT("<%p> context %p, result %u",this,context,result);
+          _user_done_fn(context, _user_cookie, result);
+          TRACE_FN_EXIT();
         }
 
         CollectiveProtocolFactoryT * _factory;
@@ -60,48 +78,57 @@ public:
         void                       * _user_cookie;
         T_Composite                            _obj;
         unsigned                     _connection_id;
-    };
+      };
 
-public:
-    CollectiveProtocolFactoryT (T_Conn                      *cmgr,
-                                Interfaces::NativeInterface *native,
-                                pami_dispatch_multicast_function cb_head = NULL):
-        CollectiveProtocolFactory(),
-        _cmgr(cmgr),
-        _native(native)
-    {
-        TRACE_ADAPTOR((stderr, "<%p>CollectiveProtocolFactoryT() %p\n",this, native));
+    public:
+      CollectiveProtocolFactoryT (T_Conn                      *cmgr,
+                                  Interfaces::NativeInterface *native,
+                                  pami_dispatch_multicast_function cb_head = NULL):
+      CollectiveProtocolFactory(),
+      _cmgr(cmgr),
+      _native(native)
+      {
+        TRACE_FN_ENTER();
+        TRACE_FORMAT("<%p> native %p",this, native);
         DO_DEBUG((templateName<MetaDataFn>()));
-        if(_native != NULL)
+        if (_native != NULL)
           _native->setMulticastDispatch(cb_head, this);
-    }
+        TRACE_FN_EXIT();
+      }
 
-    virtual ~CollectiveProtocolFactoryT ()
-    {
-    }
+      virtual ~CollectiveProtocolFactoryT ()
+      {
+        TRACE_FN_ENTER();
+        TRACE_FORMAT("<%p>",this);
+        TRACE_FN_EXIT();
+      }
 
-    /// NOTE: This is required to make "C" programs link successfully with virtual destructors
-    void operator delete(void * p)
-    {
+      /// NOTE: This is required to make "C" programs link successfully with virtual destructors
+      void operator delete(void * p)
+      {
         CCMI_abort();
-    }
+      }
 
-    static void done_fn(pami_context_t  context,
-                        void           *clientdata,
-                        pami_result_t   res)
-    {
+      static void done_fn(pami_context_t  context,
+                          void           *clientdata,
+                          pami_result_t   res)
+      {
+        TRACE_FN_ENTER();
         collObj *cobj = (collObj *)clientdata;
-        TRACE_ADAPTOR((stderr, "<%p>CollectiveProtocolFactoryT::done_fn()\n",cobj));
-        cobj->done_fn(context, res);
+        TRACE_FORMAT("<%p> context %p,result %u) factory %p context %p\n",
+                     cobj,context,res, cobj->_factory,cobj->_factory->getContext());
+        cobj->done_fn(context?context:cobj->_factory->getContext(), res);
         cobj->_factory->_alloc.returnObject(cobj);
-    }
+        TRACE_FN_EXIT();
+      }
 
 
-    virtual Executor::Composite * generate(pami_geometry_t             geometry,
-                                           void                      * cmd)
-    {
+      virtual Executor::Composite * generate(pami_geometry_t             geometry,
+                                             void                      * cmd)
+      {
+        TRACE_FN_ENTER();
         collObj *cobj = (collObj*) _alloc.allocateObject();
-        TRACE_ADAPTOR((stderr, "<%p>CollectiveProtocolFactoryT::generate()\n",cobj));
+        TRACE_FORMAT("<%p> cobj %p",this, cobj);
         new(cobj) collObj(_native,          // Native interface
                           _cmgr,            // Connection Manager
                           geometry,         // Geometry Object
@@ -109,26 +136,31 @@ public:
                           done_fn,          // Intercept function
                           cobj,             // Intercept cookie
                           this);            // Factory
-        return (Executor::Composite *)&cobj->_obj;
-    }
+        TRACE_FN_EXIT();
+        return(Executor::Composite *)&cobj->_obj;
+      }
 
-    virtual void metadata(pami_metadata_t *mdata)
-    {
-        TRACE_ADAPTOR((stderr, "<%p>CollectiveProtocolFactoryT::metadata()\n",this));
+      virtual void metadata(pami_metadata_t *mdata)
+      {
+        TRACE_FN_ENTER();
+        TRACE_FORMAT("<%p>",this);
         DO_DEBUG((templateName<MetaDataFn>()));
         get_metadata(mdata);
-    }
+        TRACE_FN_EXIT();
+      }
 
-    T_Conn                                     * _cmgr;
-    Interfaces::NativeInterface                * _native;
-    PAMI::MemoryAllocator < sizeof(collObj), 16 >   _alloc;
-};//CollectiveProtocolFactoryT
+      T_Conn                                     * _cmgr;
+      Interfaces::NativeInterface                * _native;
+      PAMI::MemoryAllocator < sizeof(collObj), 16 >   _alloc;
+    };//CollectiveProtocolFactoryT
 
-};//Adaptor
+  };//Adaptor
 };//CCMI
 
+#undef  DO_TRACE_ENTEREXIT
+#undef  DO_TRACE_DEBUG
+
 #endif
-//
 // astyle info    http://astyle.sourceforge.net
 //
 // astyle options --style=gnu --indent=spaces=2 --indent-classes

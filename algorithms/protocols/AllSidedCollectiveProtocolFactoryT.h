@@ -16,6 +16,8 @@
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
 #include "algorithms/interfaces/NativeInterface.h"
 #include "components/memory/MemoryAllocator.h"
+
+#include "util/ccmi_debug.h"
 #include "util/ccmi_util.h"
 
 #include "util/trace.h"
@@ -27,6 +29,7 @@
 #define DO_TRACE_ENTEREXIT 0
 #define DO_TRACE_DEBUG     0
 #endif
+
 
 namespace CCMI
 {
@@ -76,12 +79,16 @@ public:
         _native(native)
     {
         TRACE_FN_ENTER();
-        TRACE_FORMAT("<%p>",this);
+        TRACE_FORMAT("<%p> native %p",this, native);
+        DO_DEBUG((templateName<MetaDataFn>()));
         TRACE_FN_EXIT();
     }
 
     virtual ~AllSidedCollectiveProtocolFactoryT ()
     {
+      TRACE_FN_ENTER();
+      TRACE_FORMAT("<%p>",this);
+      TRACE_FN_EXIT();
     }
 
     /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -96,8 +103,9 @@ public:
     {
         TRACE_FN_ENTER();
         collObj *cobj = (collObj *)clientdata;
-        TRACE_FORMAT("<%p> cobj %p",cobj->_factory, cobj);
-        cobj->_user_done_fn(context, cobj->_user_cookie, res);
+        TRACE_FORMAT("<%p> context %p,result %u) factory %p context %p\n",
+                     cobj,context,res, cobj->_factory,cobj->_factory->getContext());
+        cobj->_user_done_fn(context?context:cobj->_factory->getContext(), cobj->_user_cookie, res);
         cobj->_factory->_alloc.returnObject(cobj);
         TRACE_FN_EXIT();
     }
@@ -126,7 +134,8 @@ public:
     virtual void metadata(pami_metadata_t *mdata)
     {
         TRACE_FN_ENTER();
-        TRACE_FORMAT("mdata=%p",mdata);
+        TRACE_FORMAT("<%p>",this);
+        DO_DEBUG((templateName<MetaDataFn>()));
         get_metadata(mdata);
         TRACE_FN_EXIT();
     }
@@ -138,6 +147,9 @@ private:
 
 };//Adaptor
 };//CCMI
+
+#undef  DO_TRACE_ENTEREXIT
+#undef  DO_TRACE_DEBUG
 
 #endif
 // astyle info    http://astyle.sourceforge.net

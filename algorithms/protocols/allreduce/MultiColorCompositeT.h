@@ -19,6 +19,17 @@
 #include "algorithms/executor/AllreduceBaseExec.h"
 #include "algorithms/composite/MultiColorCompositeT.h"
 
+#include "util/trace.h"
+
+#ifdef CCMI_TRACE_ALL
+  #define DO_TRACE_ENTEREXIT 1
+  #define DO_TRACE_DEBUG     1
+#else
+  #define DO_TRACE_ENTEREXIT 0
+  #define DO_TRACE_DEBUG     0
+#endif
+
+
 namespace CCMI
 {
   namespace Adaptor
@@ -60,12 +71,13 @@ namespace CCMI
                mf,
                NUMCOLORS)
           {
+            TRACE_FN_ENTER();
             uintptr_t op, dt;
             PAMI::Type::TypeFunc::GetEnums(((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype,
                                            ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.op,
                                            dt,op);
-            TRACE_ADAPTOR((stderr, "<%p>Allreduce::MultiColorCompositeT::ctor() count %zu, dt %#X, op %#X\n", this, ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount,
-                           (pami_dt)dt, (pami_op)op));
+            TRACE_FORMAT( "<%p>Allreduce::MultiColorCompositeT::ctor() count %zu, dt %#X, op %#X\n", this, ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount,
+                           (pami_dt)dt, (pami_op)op);
 
 
             PAMI::Type::TypeCode * type_obj = (PAMI::Type::TypeCode *)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype;
@@ -106,14 +118,16 @@ namespace CCMI
             Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::addBarrier(barrier);
             barrier->setDoneCallback(Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::cb_barrier_done, this);
             barrier->start();
+            TRACE_FN_EXIT();
           }
 
 
           /// Default Destructor
           virtual ~MultiColorCompositeT()
           {
-            TRACE_ALERT((stderr, "<%p>Allreduce::MultiColorCompositeT::dtor() ALERT:\n", this));
-            TRACE_ADAPTOR((stderr, "<%p>Allreduce::MultiColorCompositeT::dtor()\n", this));
+            TRACE_FN_ENTER();
+            TRACE_FORMAT( "<%p>", this);
+            TRACE_FN_EXIT();
           }
 
           void operator delete (void *p)
@@ -131,8 +145,8 @@ namespace CCMI
                             pami_op                           op,
                             unsigned                          pipelineWidth = 0)// none specified, calculate it
           {
-
-            TRACE_ADAPTOR((stderr, "<%p>Allreduce::MultiColorCompositeT::initialize() count %u, dt %#X, op %#X\n", this, count, dtype, op));
+            TRACE_FN_ENTER();
+            TRACE_FORMAT( "<%p>Allreduce::MultiColorCompositeT::initialize() count %u, dt %#X, op %#X\n", this, count, dtype, op);
 
             if ((op != allreduce->getOp()) || (dtype != allreduce->getDt()) ||
                 (count != allreduce->getCount()))
@@ -166,12 +180,14 @@ namespace CCMI
 
                 allreduce->setReduceInfo ( count, pwidth, sizeOfType, func, op, dtype );
               }
+            TRACE_FN_EXIT();
           }
 
           unsigned computePipelineWidth (unsigned count, unsigned sizeOfType, unsigned min_pwidth)
           {
-            TRACE_ADAPTOR((stderr, "<%p>Allreduce::MultiColorCompositeT::computePipelineWidth() count %#X, size %#X, min %#X\n", this,
-                           count, sizeOfType, min_pwidth));
+            TRACE_FN_ENTER();
+            TRACE_FORMAT( "<%p>Allreduce::MultiColorCompositeT::computePipelineWidth() count %#X, size %#X, min %#X\n", this,
+                           count, sizeOfType, min_pwidth);
             unsigned pwidth = min_pwidth;
 
             if (count * sizeOfType > 1024 * pwidth)
@@ -183,8 +199,9 @@ namespace CCMI
             else if (count * sizeOfType > 16 * pwidth)
               pwidth *= 4;
 
-            TRACE_ADAPTOR((stderr, "<%p>Allreduce::MultiColorCompositeT::computePipelineWidth() pwidth %#X\n", this,
-                           pwidth));
+            TRACE_FORMAT( "<%p>Allreduce::MultiColorCompositeT::computePipelineWidth() pwidth %#X\n", this,
+                           pwidth);
+            TRACE_FN_EXIT();
             return pwidth;
           }
 
@@ -194,7 +211,8 @@ namespace CCMI
           ///
           virtual unsigned restart   ( void *cmd )
           {
-            TRACE_ADAPTOR((stderr, "<%p>Allreduce::MultiColorCompositeT::restart()\n", this));
+            TRACE_FN_ENTER();
+            TRACE_FORMAT( "<%p>", this);
 
             for (unsigned c = 0; c <  Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::_numColors; c++)
               {
@@ -214,14 +232,16 @@ namespace CCMI
             Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::_doneCount = 0; // default to just a composite done needed
 
             Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::restart(cmd);
+            TRACE_FN_EXIT();
             return PAMI_SUCCESS;
           }
 
           virtual void start()
           {
+            TRACE_FN_ENTER();
+            TRACE_FORMAT( "<%p>", this);
             CCMI_abort();
-
-            TRACE_ADAPTOR((stderr, "<%p>Allreduce::MultiColorCompositeT::start()\n", this));
+            TRACE_FN_EXIT();
             //Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::getExecutor(0)->start();
           }
 
@@ -240,8 +260,9 @@ namespace CCMI
            pami_pipeworkqueue_t ** rcvpwq,
            PAMI_Callback_t       * cb_done)
           {
-            TRACE_ADAPTOR((stderr, "<%p>Allreduce::MultiColorCompositeT::cb_receiveHead peer %zd, conn_id %d\n",
-                           arg, peer, conn_id));
+            TRACE_FN_ENTER();
+            TRACE_FORMAT( "<%p>Allreduce::MultiColorCompositeT::cb_receiveHead peer %zd, conn_id %d\n",
+                           arg, peer, conn_id);
             CCMI_assert (info && arg);
             CollHeaderData  *cdata = (CollHeaderData *) info;
             CollectiveProtocolFactory *factory = (CollectiveProtocolFactory *) arg;
@@ -259,6 +280,7 @@ namespace CCMI
                                       sndlen,    arg,
                                       rcvlen,    rcvpwq,
                                       cb_done);
+            TRACE_FN_EXIT();
             return;
           };
 
@@ -266,6 +288,9 @@ namespace CCMI
     };
   };
 }; // namespace CCMI::Adaptor::Allreduce
+
+#undef  DO_TRACE_ENTEREXIT
+#undef  DO_TRACE_DEBUG
 
 #endif
 //

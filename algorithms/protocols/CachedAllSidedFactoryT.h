@@ -14,6 +14,16 @@
 #define __algorithms_protocols_CachedAllSidedFactoryT_h__
 
 #include "algorithms/protocols/AllSidedCollectiveProtocolFactoryT.h"
+#include "util/trace.h"
+
+#ifdef CCMI_TRACE_ALL
+  #define DO_TRACE_ENTEREXIT 1
+  #define DO_TRACE_DEBUG     1
+#else
+  #define DO_TRACE_ENTEREXIT 0
+  #define DO_TRACE_DEBUG     0
+#endif
+
 
 namespace CCMI
 {
@@ -32,20 +42,24 @@ public:
                            Interfaces::NativeInterface *native):
         AllSidedCollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>(cmgr, native)
     {
-        TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
+        TRACE_FN_ENTER();
+        TRACE_FORMAT( "%p",this);
+        TRACE_FN_EXIT();
     }
 
     virtual Executor::Composite * generate(pami_geometry_t              geometry,
                                            void                       * cmd)
     {
-        TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
+        TRACE_FN_ENTER();
         PAMI_GEOMETRY_CLASS  *g = ( PAMI_GEOMETRY_CLASS *)geometry;
         /// \todo does NOT support multicontext
         T_Composite *composite = (T_Composite *) g->getKey((size_t)0, T_Key);
+        TRACE_FORMAT( "<%p>composite %p",this,composite);
 
         if (!composite)
         {
             composite = (T_Composite *) AllSidedCollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::generate(geometry, cmd);
+            TRACE_FORMAT( "<%p>composite %p",this,composite);
             g->setKey((size_t)0, /// \todo does NOT support multicontext
                       T_Key,
                       (void*)composite);
@@ -57,10 +71,15 @@ public:
         pami_xfer_t *xfer = (pami_xfer_t *)cmd;
         composite->setDoneCallback(xfer->cb_done, xfer->cookie);
         return composite;
+        TRACE_FN_EXIT();
     }
 };
 };
 };
+
+#undef  DO_TRACE_ENTEREXIT
+#undef  DO_TRACE_DEBUG
+
 #endif /* __algorithms_protocols_CachedAllSidedFactoryT_H */
 //
 // astyle info    http://astyle.sourceforge.net

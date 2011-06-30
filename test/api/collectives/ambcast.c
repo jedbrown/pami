@@ -21,6 +21,8 @@
 
 #include "../pami_util.h"
 
+pami_context_t      lgContext=NULL;
+
 void initialize_sndbuf (void *sbuf, int bytes, int root)
 {
   unsigned char c = root;
@@ -66,6 +68,28 @@ typedef struct
 
 void cb_ambcast_done (void *context, void * clientdata, pami_result_t err)
 {
+  if(gVerbose)
+  {
+    if(!context) fprintf(stderr, "%s: Error. Null context received on cb_done.\n",gProtocolName);
+    if(lgContext != context) fprintf(stderr, "%s: Error. Unexpected context received on cb_done %p != %p.\n",gProtocolName,lgContext,context);
+#ifdef PAMI_TEST_STRICT
+    assert(context);
+    assert(lgContext==context);
+#endif
+
+    pami_configuration_t configs;
+    configs.name         = PAMI_CONTEXT_DISPATCH_ID_MAX;
+    configs.value.intval = -1;
+
+    pami_result_t rc;
+    rc = PAMI_Context_query (context,&configs,1);
+
+    if(rc != PAMI_SUCCESS && rc != PAMI_INVAL) fprintf(stderr,"%s: Error. Could not query the context(%u).\n",gProtocolName,rc);
+#ifdef PAMI_TEST_STRICT
+    assert(rc == PAMI_SUCCESS || rc == PAMI_INVAL);
+#endif
+  }
+
   _g_total_broadcasts++;
   int rc_check;
   validation_t *v = (validation_t*)clientdata;
@@ -75,8 +99,8 @@ void cb_ambcast_done (void *context, void * clientdata, pami_result_t err)
   /*fprintf(stderr,"cb_ambcast_done root %u, bytes %u\n",v->root, v->bytes); */
   free(clientdata);
 }
-
-void cb_ambcast_recv  (pami_context_t         context,      /**< IN:  communication context which invoked the dispatch function */
+ 
+void cb_ambcast_recv(pami_context_t         context,      /**< IN:  communication context which invoked the dispatch function */
                      void                 * cookie,       /**< IN:  dispatch cookie */
                      const void           * header_addr,  /**< IN:  header address  */
                      size_t                 header_size,  /**< IN:  header size     */
@@ -86,9 +110,28 @@ void cb_ambcast_recv  (pami_context_t         context,      /**< IN:  communicat
                      pami_geometry_t        geometry,     /**< IN:  Geometry */
                      pami_recv_t          * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
 {
-  if (gVerbose && !context)
-    fprintf(stderr, "Error. Null context received on cb_done.\n");
+  if(gVerbose)
+  {
+    if(!context) fprintf(stderr, "%s: Error. Null context received on cb_done.\n",gProtocolName);
+    if(lgContext != context) fprintf(stderr, "%s: Error. Unexpected context received on cb_done %p != %p.\n",gProtocolName,lgContext,context);
+#ifdef PAMI_TEST_STRICT
+    assert(context);
+    assert(lgContext==context);
+#endif
 
+    pami_configuration_t configs;
+    configs.name         = PAMI_CONTEXT_DISPATCH_ID_MAX;
+    configs.value.intval = -1;
+
+    pami_result_t rc;
+    rc = PAMI_Context_query (context,&configs,1);
+
+    if(rc != PAMI_SUCCESS && rc != PAMI_INVAL) fprintf(stderr,"%s: Error. Could not query the context(%u).\n",gProtocolName,rc);
+#ifdef PAMI_TEST_STRICT
+    assert(rc == PAMI_SUCCESS || rc == PAMI_INVAL);
+#endif
+
+  }
 
   validation_t *v =  malloc(data_size+sizeof(validation_t));
 
@@ -256,6 +299,7 @@ int main(int argc, char*argv[])
         int i, j;
         pami_collective_hint_t h = {0};
         pami_dispatch_callback_function fn;
+        lgContext = context[iContext];
         fn.ambroadcast = cb_ambcast_recv;
         PAMI_AMCollective_dispatch_set(context[iContext],
                                        ambcast_always_works_algo[nalg],
@@ -308,12 +352,14 @@ int main(int argc, char*argv[])
              while (_g_total_broadcasts < niter)
               result = PAMI_Context_advance (context[iContext], 1);
 
+
             rc |= _gRc; /* validation return code done in cb_ambcast_done */
 
             _g_total_broadcasts = 0;
             blocking_coll(context[iContext], &barrier, &bar_poll_flag);
           }
         }
+        lgContext = NULL;
       }
     }
     free(bar_always_works_algo);

@@ -1,7 +1,15 @@
-///
-/// \file components/devices/bgq/mu2/model/CollectiveMulticastDmaModel.h
-/// \brief ???
-///
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file components/devices/bgq/mu2/model/CollectiveMulticastDmaModel.h
+ * \brief ???
+ */
 #ifndef __components_devices_bgq_mu2_model_CollectiveMulticastDmaModel_h__
 #define __components_devices_bgq_mu2_model_CollectiveMulticastDmaModel_h__
 
@@ -39,7 +47,7 @@ namespace PAMI
                                        pami_context_t   context,
                                        MU::Context                 & device,
                                        pami_result_t               & status) :
-              CollectiveDmaModelBase(device, status),
+              CollectiveDmaModelBase(context, device, status),
               Interface::MulticastModel<CollectiveMulticastDmaModel, MU::Context, mcast_state_bytes >  (device, status), _myrank(__global.mapping.task())
           {
             TRACE_FN_ENTER();

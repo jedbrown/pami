@@ -17,6 +17,21 @@
 //#include "TypeDefs.h"
 #include  "algorithms/interfaces/Executor.h"
 #include  "algorithms/composite/Composite.h"
+
+#include "util/ccmi_debug.h"
+#include "util/ccmi_util.h"
+
+#include "util/trace.h"
+
+#ifdef CCMI_TRACE_ALL
+  #define DO_TRACE_ENTEREXIT 1
+  #define DO_TRACE_DEBUG     1
+#else
+  #define DO_TRACE_ENTEREXIT 0
+  #define DO_TRACE_DEBUG     0
+#endif
+
+
 namespace CCMI
 {
   namespace Adaptor
@@ -25,28 +40,38 @@ namespace CCMI
     class CollectiveProtocolFactory
     {
       public:
-        CollectiveProtocolFactory ()
+        CollectiveProtocolFactory ():
+          _cb_geometry(NULL),
+          _context(NULL)
         {
-          TRACE_ADAPTOR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
-          _cb_geometry = NULL;
+          TRACE_FN_ENTER();
+          TRACE_FORMAT("<%p>",this);
+          TRACE_FN_EXIT();
         }
 
         void setMapIdToGeometry(pami_mapidtogeometry_fn     cb_geometry)
         {
-          TRACE_ADAPTOR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
+          TRACE_FN_ENTER();
+          TRACE_FORMAT("<%p> cb_geometry %p",this,cb_geometry);
           _cb_geometry = cb_geometry;
+          TRACE_FN_EXIT();
         }
 
 
         pami_geometry_t getGeometry(pami_context_t ctxt, unsigned id)
         {
-          TRACE_ADAPTOR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
+          TRACE_FN_ENTER();
+          TRACE_FORMAT("<%p>",this);
           CCMI_assert (_cb_geometry != NULL);
+          TRACE_FN_EXIT();
           return _cb_geometry (ctxt, id);  // -1, the function is scoped to the geometry
         }
 
         virtual ~CollectiveProtocolFactory ()
         {
+          TRACE_FN_ENTER();
+          TRACE_FORMAT("<%p>",this);
+          TRACE_FN_EXIT();
         }
 
         /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -64,21 +89,43 @@ namespace CCMI
                                    pami_dispatch_callback_function cb_async,
                                    pami_mapidtogeometry_fn        cb_geometry)
         {
-          TRACE_ADAPTOR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
+          TRACE_FN_ENTER();
+          TRACE_FORMAT("<%p>",this);
+          TRACE_FN_EXIT();
           PAMI_abort();
         };
 
         pami_mapidtogeometry_fn getMapIdToGeometry()
         {
-          TRACE_ADAPTOR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
+          TRACE_FN_ENTER();
+          TRACE_FORMAT("<%p> _cb_geometry %p",this,_cb_geometry);
+          TRACE_FN_EXIT();
           return _cb_geometry;
         }
 
+        inline void setContext(pami_context_t ctxt) 
+        {
+          TRACE_FN_ENTER();
+          _context=ctxt;
+          TRACE_FORMAT("<%p> _context %p",this,_context);
+          TRACE_FN_EXIT();
+        }
+        inline pami_context_t getContext() 
+        {
+          TRACE_FN_ENTER();
+          TRACE_FORMAT("<%p> _context %p",this,_context);
+          TRACE_FN_EXIT();
+          return _context;
+        }
       protected:
         pami_mapidtogeometry_fn              _cb_geometry;
+        pami_context_t                       _context;
     };
   };
 };
+
+#undef  DO_TRACE_ENTEREXIT
+#undef  DO_TRACE_DEBUG
 
 #endif
 //

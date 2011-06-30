@@ -1,3 +1,11 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
 /**
  * \file algorithms/protocols/allreduce/MultiCombineComposite.h
  * \brief Simple composite based on multicombine
@@ -354,8 +362,6 @@ namespace CCMI
                                       sbytes,                          // buffer bytes
                                       0);                              // amount initially in buffer
                 _pwq_inter0.reset();
-                //_mcombine_l.client               = 0; /// \todo ?
-                //_mcombine_l.context              = 0; /// \todo ?
                 _mcombine_l.cb_done.clientdata   = this;
                 _mcombine_l.cb_done.function     = composite_done;
                 _mcombine_l.connection_id        = _geometry->comm();
@@ -371,8 +377,6 @@ namespace CCMI
                 // Also, prepare the local multicast, with the root as the local master
                 // We are guaranteed to not have an early arrival with this multicast if we post
                 // it first.  This protocol expects the local multicast to be 2 sided
-                //_mcast_l.client                  = 0; /// \todo ?
-                //_mcast_l.context                 = 0; /// \todo ?
                 _mcast_l.cb_done.function        = composite_done;
                 _mcast_l.cb_done.clientdata      = this;
                 _mcast_l.connection_id           = _geometry->comm();
@@ -397,8 +401,6 @@ namespace CCMI
             // To detect this case, the local size will be only me
             if (t_local->size() == 1)
               {
-                //_mcombine_g.client               = 0; /// \todo ?
-                //_mcombine_g.context              = 0; /// \todo ?
                 _mcombine_g.cb_done.clientdata   = this;
                 _mcombine_g.cb_done.function     = composite_done;
                 _mcombine_g.connection_id        = _geometry->comm();
@@ -439,8 +441,6 @@ namespace CCMI
                 // \note we supply a result pwq in case the mcombine_l expects reduce
                 // and can't do a simple reduction (probably ignores results_participants)
                 //
-                //_mcombine_l.client               = 0; /// \todo ?
-                //_mcombine_l.context              = 0; /// \todo ?
                 _mcombine_l.cb_done.clientdata   = this;
                 _mcombine_l.cb_done.function     = composite_done;
                 _mcombine_l.connection_id        = _geometry->comm();
@@ -456,8 +456,6 @@ namespace CCMI
                 // Also, prepare the local multicast, with the root as the local master
                 // We are guaranteed to not have an early arrival with this multicast if we post
                 // it first.  This protocol expects the local multicast to be 2 sided
-                //_mcast_l.client                  = 0; /// \todo ?
-                //_mcast_l.context                 = 0; /// \todo ?
                 _mcast_l.cb_done.function        = composite_done;
                 _mcast_l.cb_done.clientdata      = this;
                 _mcast_l.connection_id           = _geometry->comm();
@@ -490,8 +488,6 @@ namespace CCMI
                                   0);                              // amount initially in buffer
             _pwq_inter1.reset();
 
-            //_mcombine_l.client               = 0; /// \todo ?
-            //_mcombine_l.context              = 0; /// \todo ?
             _mcombine_l.cb_done.clientdata   = this;
             _mcombine_l.cb_done.function     = composite_done;
             _mcombine_l.connection_id        = _geometry->comm();
@@ -504,8 +500,6 @@ namespace CCMI
             _mcombine_l.dtype                = (pami_dt)dt;
             _mcombine_l.count                = scountDt;
 
-            //_mcombine_g.client               = 0; /// \todo ?
-            //_mcombine_g.context              = 0; /// \todo ?
             _mcombine_g.cb_done.clientdata   = this;
             _mcombine_g.cb_done.function     = composite_done;
             _mcombine_g.connection_id        = _geometry->comm();
@@ -518,8 +512,6 @@ namespace CCMI
             _mcombine_g.dtype                = (pami_dt)dt;
             _mcombine_g.count                = scountDt;
 
-            //_mcast_l.client                  = 0; /// \todo ?
-            //_mcast_l.context                 = 0; /// \todo ?
             _mcast_l.cb_done.function        = composite_done;
             _mcast_l.cb_done.clientdata      = this;
             _mcast_l.connection_id           = _geometry->comm();
@@ -1125,8 +1117,6 @@ namespace CCMI
             _mcomb_l.results              = (pami_pipeworkqueue_t*) & _pwq_temp;
             _mcomb_l.cb_done.function     =  _amMaster ? local_master_done_fn : local_done_fn;
             _mcomb_l.cb_done.clientdata   =  this;
-            //_mcomb_l.context              = 0; /// \todo ?
-            //_mcomb_l.client               = 0; /// \todo ?
             _mcomb_l.count                = countDt;
             _mcomb_l.dtype                = (pami_dt)dt;
             _mcomb_l.optor                = (pami_op)op;
@@ -1139,8 +1129,6 @@ namespace CCMI
             _mcomb_g.results              = (pami_pipeworkqueue_t*) & _pwq_dst;
             _mcomb_g.cb_done.function     = global_done_fn;
             _mcomb_g.cb_done.clientdata   = this;
-            //_mcomb_g.context              = 0; /// \todo ?
-            //_mcomb_g.client               = 0; /// \todo ?
             _mcomb_g.count                = countDt;
             _mcomb_g.dtype                = (pami_dt)dt;
             _mcomb_g.optor                = (pami_op)op;
@@ -1161,8 +1149,6 @@ namespace CCMI
             _mcast_l.cb_done.function     =  fn;
             _mcast_l.cb_done.clientdata   =  cookie;
 #endif
-            //_mcast_l.context              = 0; /// \todo ?
-            //_mcast_l.client               = 0; /// \todo ?
             _mcast_l.bytes                = _bytes;
             _mcast_l.dispatch             = -1; /// \todo assuming all-sided?
             _mcast_l.msgcount             = 0;

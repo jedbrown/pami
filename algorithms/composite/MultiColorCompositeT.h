@@ -1,3 +1,11 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
 /**
  * \file algorithms/composite/MultiColorCompositeT.h
  * \brief ???
@@ -99,7 +107,7 @@ namespace CCMI
       {
         TRACE_FN_ENTER();
         _nComplete     = _numColors + 1;
-	this->setDoneCallback (cb_done, clientdata);
+        this->setDoneCallback (cb_done, clientdata);
         TRACE_FORMAT("<%p> numcolors %u, complete %u", this,_numColors,_nComplete);
         TRACE_FN_EXIT();
       }
@@ -110,11 +118,11 @@ namespace CCMI
       }
 
       void initialize (unsigned                                comm,
-		       PAMI::Topology                        * topology,
-		       unsigned                                root,
-		       unsigned                                bytes,
-		       char                                  * src,
-		       char                                  * dst)
+                       PAMI::Topology                        * topology,
+                       unsigned                                root,
+                       unsigned                                bytes,
+                       char                                  * src,
+                       char                                  * dst)
       {
         TRACE_FN_ENTER();
         TRACE_FORMAT("<%p> root %u, bytes %u", this,root, bytes);
@@ -125,8 +133,8 @@ namespace CCMI
         _nComplete     = _numColors + 1;
         TRACE_FORMAT("<%p> numcolors %u, complete %u", this,_numColors,_nComplete);
 
-	_root  = root;
-	_bytes = bytes;
+        _root  = root;
+        _bytes = bytes;
 
         _bytecounts[0] = bytes;
         unsigned aligned_bytes = 0;
@@ -146,7 +154,7 @@ namespace CCMI
           TRACE_FORMAT("<%p> bytecounts[%u] %u", this,_numColors-1,_bytecounts[_numColors-1]);
         }
 
-	unsigned c = 0;
+        unsigned c = 0;
         for (c = 0; c < _numColors; c++)
         {
           CCMI_assert (c < NUMCOLORS);
@@ -165,44 +173,44 @@ namespace CCMI
           addExecutor(exec);
         }
 
-	for (c = 0; c < _numColors; c++) 
-	{
-	  T_Sched *schedule = new (&_schedules[c]) T_Sched(_native->myrank(), topology, _colors[c]);
-	  T_Exec *exec  = (T_Exec *) (&_executors[c]);
-	  exec->setSchedule (schedule, _colors[c]);
-	}
+        for (c = 0; c < _numColors; c++) 
+        {
+          T_Sched *schedule = new (&_schedules[c]) T_Sched(_native->myrank(), topology, _colors[c]);
+          T_Exec *exec  = (T_Exec *) (&_executors[c]);
+          exec->setSchedule (schedule, _colors[c]);
+        }
 
         TRACE_FN_EXIT();	
       }
 
       
       void reset (unsigned                                comm,
-		  PAMI::Topology                        * topology,
-		  unsigned                                root,
-		  unsigned                                bytes,
-		  char                                  * src,
-		  char                                  * dst)
+                  PAMI::Topology                        * topology,
+                  unsigned                                root,
+                  unsigned                                bytes,
+                  char                                  * src,
+                  char                                  * dst)
       {
         TRACE_FN_ENTER();
         TRACE_FORMAT("<%p> root %u, bytes %u", this,root, bytes);
-	_doneCount = 0;
+        _doneCount = 0;
 
-	CCMI::Executor::CompositeT<NUMCOLORS, T_Bar, T_Exec>::reset();
-	if (_bytes != bytes || _root != root) {
-	  _numColors = _numColorsMax;
-	  initialize (comm, topology, root, bytes, src, dst);
-	  return;
-	}
+        CCMI::Executor::CompositeT<NUMCOLORS, T_Bar, T_Exec>::reset();
+        if (_bytes != bytes || _root != root) {
+          _numColors = _numColorsMax;
+          initialize (comm, topology, root, bytes, src, dst);
+          return;
+        }
 
-	unsigned c = 0;
+        unsigned c = 0;
         for (c = 0; c < _numColors; c++)
-	{
-	  T_Exec *exec  = (T_Exec *) (&_executors[c]);
-	  exec->setBuffers (src + _bytecounts[0]*c,
-			    dst + _bytecounts[0]*c,
-			    _bytecounts[c]);
-	  addExecutor(exec);
-	}
+        {
+          T_Exec *exec  = (T_Exec *) (&_executors[c]);
+          exec->setBuffers (src + _bytecounts[0]*c,
+                            dst + _bytecounts[0]*c,
+                            _bytecounts[c]);
+          addExecutor(exec);
+        }
 
         TRACE_FN_EXIT();	
       }
@@ -248,8 +256,8 @@ namespace CCMI
         TRACE_FN_ENTER();
         MultiColorCompositeT * composite = (MultiColorCompositeT *) me;
         TRACE_FORMAT("<%p> %d: numcolors %u, donecount %u, complete count %u bytes %d\n", me, 
-		     composite->_native->myrank(), composite->_numColors, 
-		     composite->_doneCount, composite->_nComplete, composite->_bytes);
+                     composite->_native->myrank(), composite->_numColors, 
+                     composite->_doneCount, composite->_nComplete, composite->_bytes);
         CCMI_assert (composite != NULL);
 
         //printf ("In cb_barrier_done donec=%d\n",
@@ -264,7 +272,7 @@ namespace CCMI
         if (composite->_doneCount == composite->_nComplete) // call users done function
         {
           TRACE_FORMAT ("%d: Composite Done from barrier bytes %d\n", composite->_native->myrank(), composite->_bytes);
-          composite->_cb_done(NULL, composite->_clientdata, PAMI_SUCCESS);
+          composite->_cb_done(composite->_context, composite->_clientdata, PAMI_SUCCESS);
         }
         TRACE_FN_EXIT();
       }
@@ -281,8 +289,8 @@ namespace CCMI
 
         if (composite->_doneCount == composite->_nComplete) // call users done function
         {
-	  TRACE_FORMAT ("%d: Composite Done from collective, bytes %d\n", composite->_native->myrank(), composite->_bytes);
-          composite->_cb_done(context, composite->_clientdata, PAMI_SUCCESS);
+          TRACE_FORMAT ("%d: Composite Done from collective, bytes %d context %p/%p\n", composite->_native->myrank(), composite->_bytes, context,composite->_context);
+          composite->_cb_done(context?context:composite->_context, composite->_clientdata, PAMI_SUCCESS);
         }
         TRACE_FN_EXIT();
       }
@@ -290,6 +298,9 @@ namespace CCMI
 
   };  //- end namespace Executor
 };  //- end CCMI
+
+#undef  DO_TRACE_ENTEREXIT
+#undef  DO_TRACE_DEBUG
 
 #endif
 //

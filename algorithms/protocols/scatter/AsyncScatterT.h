@@ -323,7 +323,8 @@ public:
 
                     if (((pami_xfer_t *)cmd)->cb_done)
                     {
-                        ((pami_xfer_t *)cmd)->cb_done(NULL, ((pami_xfer_t *)cmd)->cookie, PAMI_SUCCESS);
+                        ((pami_xfer_t *)cmd)->cb_done(co->getComposite()->getContext()?co->getComposite()->getContext():this->_context,
+                                                      ((pami_xfer_t *)cmd)->cookie, PAMI_SUCCESS);
                     }
 
                     _free_pool.free(co);
@@ -504,7 +505,8 @@ public:
             }
 
             if (xfer->cb_done)
-                xfer->cb_done(NULL, xfer->cookie, PAMI_SUCCESS);
+                xfer->cb_done(co->getComposite()->getContext()?co->getComposite()->getContext():factory->_context,
+                              xfer->cookie, PAMI_SUCCESS);
 
             factory->_free_pool.free(co);
         }

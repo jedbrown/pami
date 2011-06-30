@@ -144,9 +144,9 @@ namespace PAMI
           /// \param[in] mu_context_cookie   MU context cookie delivered in callbacks
           ///
           inline pami_result_t init (size_t   id_client,
-          			     size_t   id_context,
+                                     size_t   id_context,
                                      void   * mu_context_cookie,
-				     Generic::Device       * progress)
+                                     Generic::Device       * progress)
           {
             TRACE_FN_ENTER();
 
@@ -236,7 +236,7 @@ namespace PAMI
                                            _lookAsideCompletionFnPtrs[fifo],
                                            _lookAsideCompletionCookiePtrs[fifo],
                                            _rm.getMaxNumDescInInjFifo(),
-                                           NULL);  // \todo This should be the pami_context_t
+                                           mu_context_cookie);  // \todo This should be the pami_context_t
               }
 
 	    // ----------------------------------------------------------------

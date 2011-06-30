@@ -1,3 +1,11 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
 /*
  * \file algorithms/executor/Barrier.h
  * \brief ???
@@ -13,6 +21,16 @@
 #include "algorithms/executor/ScheduleCache.h"
 
 #define CCMI_BARRIER_MAXPHASES  24
+#include "util/trace.h"
+
+#ifdef CCMI_TRACE_ALL
+  #define DO_TRACE_ENTEREXIT 1
+  #define DO_TRACE_DEBUG     1
+#else
+  #define DO_TRACE_ENTEREXIT 0
+  #define DO_TRACE_DEBUG     0
+#endif
+
 
 namespace CCMI
 {
@@ -27,23 +45,23 @@ namespace CCMI
         unsigned             _start;     /// Start phase (don't assume 0)
         unsigned             _nphases;   /// Number of phases
 
-	/// pointer to the multicast interface to send messages
+        /// pointer to the multicast interface to send messages
         Interfaces::NativeInterface    * _native;
 
-	///\brief A red/black vector for each neigbor which is incremented
+        ///\brief A red/black vector for each neigbor which is incremented
         ///when the neighbor's message arrives
         char                   _phasevec[CCMI_BARRIER_MAXPHASES][2];	
-	
+
         CollHeaderData         _cdata;  /// Info passed as meta data
         pami_multicast_t       _minfo;  /// The multicast info structure	
 
         ///\brief A cache of the barrier schedule
         ScheduleCache          _cache;
 
-	///\brief The self topology
+        ///\brief The self topology
         PAMI::Topology         _srctopology;
 
-	pami_context_t         _context; //Context id of the collective 
+        pami_context_t         _context; //Context id of the collective 
 
         ///
         /// \brief core internal function to initiate the next phase
@@ -65,8 +83,8 @@ namespace CCMI
             {
               _phasevec[count][_iteration] += _cache.getSrcTopology(count)->size();
 
-              TRACE_FLOW((stderr, "<%p>Executor::BarrierExec::resetVector phase %d, nranks %zu, vec %d\n",
-                          this, count, _cache.getSrcTopology(count)->size(),  _phasevec[count][_iteration]));
+              TRACE_FORMAT( "<%p>phase %d, nranks %zu, vec %d",
+                          this, count, _cache.getSrcTopology(count)->size(),  _phasevec[count][_iteration]);
             }
 
           _senddone  =   false;
@@ -75,7 +93,7 @@ namespace CCMI
         /// Static function to be passed into the done of multisend
         static void staticNotifySendDone(pami_context_t context, void *cd, pami_result_t err)
         {
-          TRACE_FLOW((stderr, "<%p>Executor::BarrierExec::staticNotifySendDone\n", cd));
+          TRACE_FORMAT( "<%p>", cd);
 
           BarrierExec *barrier = (BarrierExec *) cd;
           barrier->internalNotifySendDone();
@@ -97,11 +115,11 @@ namespace CCMI
                     Interfaces::NativeInterface *ninterface):
             Interfaces::Executor(),
             _native(ninterface),
-	    _srctopology(ninterface->myrank()),
-	    _context (NULL)
+          _srctopology(ninterface->myrank()),
+          _context (NULL)
         {
-          TRACE_FLOW((stderr, "<%p>Executor::BarrierExec::::ctor(comm %X,connid %d)\n",
-                      this, comm, connid));
+          TRACE_FORMAT( "<%p>(comm %X,connid %d)",
+                      this, comm, connid);
           _start          =  0;
           _phase          =  0;
           _nphases        =  0;
@@ -118,7 +136,7 @@ namespace CCMI
           _minfo.roles         = -1U;
           _minfo.dst_participants  = NULL;
           _minfo.src_participants  = (pami_topology_t *) & _srctopology;
-	  _minfo.connection_id     = connid;
+          _minfo.connection_id     = connid;
           _iteration           = 0;
         }
 
@@ -135,7 +153,7 @@ namespace CCMI
           CCMI_assert(_start + _nphases  <=  CCMI_BARRIER_MAXPHASES);
         }
 
-	void setContext (pami_context_t context) { _context = context; }
+        void setContext (pami_context_t context) { _context = context; }
 
         /**
          * \brief notify when a message has been recived
@@ -161,13 +179,13 @@ namespace CCMI
 inline void CCMI::Executor::BarrierExec::sendNext()
 {
   CCMI_assert(_phase <= (_start + _nphases));
-  TRACE_FLOW((stderr, "<%p>Executor::BarrierExec::sendNext _phase %d, _start %d, _nphases %d\n",
-              this, _phase, _start, _nphases));
+  TRACE_FORMAT( "<%p> _phase %d, _start %d, _nphases %d",
+              this, _phase, _start, _nphases);
 
   if (_phase == (_start + _nphases))
     {
-      TRACE_FLOW((stderr, "<%p>Executor::BarrierExec::sendNext DONE _cb_done %p, _phase %d, _clientdata %p\n",
-                  this, _cb_done, _phase, _clientdata));
+      TRACE_FORMAT( "<%p>DONE _cb_done %p, _phase %d, _clientdata %p",
+                  this, _cb_done, _phase, _clientdata);
 
       if (_cb_done) _cb_done(_context, _clientdata, PAMI_SUCCESS);
 
@@ -185,9 +203,9 @@ inline void CCMI::Executor::BarrierExec::sendNext()
   if (ndest > 0)
     {
 #ifdef CCMI_DEBUG
-      TRACE_FLOW((stderr, "<%p>Executor::BarrierExec::sendNext _phase %d, ndest %zd,connid %d, _clientdata %p\n", this, _phase, topology->size(), _minfo.connection_id, _clientdata));
+      TRACE_FORMAT( "<%p>_phase %d, ndest %zd,connid %d, _clientdata %p", this, _phase, topology->size(), _minfo.connection_id, _clientdata);
       for (size_t count = 0; count < topology->size(); count++)
-        TRACE_FLOW((stderr, "<%p>Executor::BarrierExec::sendNext _dstranks[%zu] %u\n", this, count, topology->index2Rank(count)));
+        TRACE_FORMAT( "<%p>_dstranks[%zu] %u", this, count, topology->index2Rank(count));
 
       CCMI_assert (topology->type() == PAMI_LIST_TOPOLOGY);
 #endif
@@ -199,7 +217,7 @@ inline void CCMI::Executor::BarrierExec::sendNext()
       //if last receive has arrived before the last send dont call executor notifySendDone rather app done callback
       if ( (_phase == (_start + _nphases - 1)) && (_phasevec[_phase][_iteration] <= 0) )
         {
-          TRACE_FLOW((stderr, "<%p>Executor::BarrierExec::sendNext set callback %p\n", this, _cb_done));
+          TRACE_FORMAT( "<%p>set callback %p", this, _cb_done);
           _minfo.cb_done.function   = _cb_done;
           _minfo.cb_done.clientdata = _clientdata;
           _phase ++;
@@ -223,7 +241,7 @@ inline void CCMI::Executor::BarrierExec::sendNext()
 /// Entry function called to start the barrier
 inline void  CCMI::Executor::BarrierExec::start()
 {
-  TRACE_FLOW((stderr, "<%p>Executor::BarrierExec::start\n", this));
+  TRACE_FORMAT( "<%p>", this);
   resetVector();
   sendNext();
 }
@@ -245,8 +263,8 @@ inline void  CCMI::Executor::BarrierExec::notifyRecv  (unsigned             src,
   //Process this message by incrementing the phase vec
   _phasevec[hdr->_phase][hdr->_iteration] --;
 
-  TRACE_FLOW((stderr, "<%p>Executor::BarrierExec::notifyRecv phase %d/%d(%d,%d), vec %d expected vec %zu\n", this,
-              hdr->_phase, _phase, _start, _nphases, _phasevec[hdr->_phase][hdr->_iteration],  _cache.getSrcTopology(hdr->_phase)->size()));
+  TRACE_FORMAT( "<%p>phase %d/%d(%d,%d), vec %d expected vec %zu", this,
+              hdr->_phase, _phase, _start, _nphases, _phasevec[hdr->_phase][hdr->_iteration],  _cache.getSrcTopology(hdr->_phase)->size());
 
   //Start has not been called, just record recv and return
   if (unlikely(_phase == _start + _nphases))
@@ -266,7 +284,7 @@ inline void  CCMI::Executor::BarrierExec::notifyRecv  (unsigned             src,
 ///
 inline void CCMI::Executor::BarrierExec::internalNotifySendDone( )
 {
-  TRACE_FLOW((stderr, "<%p>Executor::BarrierExec::notifySendDone phase %d, vec %d\n", this, _phase, _phasevec[_phase][_iteration]));
+  TRACE_FORMAT( "<%p>phase %d, vec %d", this, _phase, _phasevec[_phase][_iteration]);
 
   _senddone = true;
 

@@ -1,3 +1,11 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
 /**
  * \file algorithms/executor/AllreduceBaseExec.h
  * \brief ???
@@ -13,6 +21,18 @@
 #include "algorithms/executor/ScheduleCache.h"
 #include "algorithms/executor/AllreduceCache.h"
 
+#include "util/ccmi_debug.h"
+#include "util/ccmi_util.h"
+
+#include "util/trace.h"
+
+#ifdef CCMI_TRACE_ALL
+  #define DO_TRACE_ENTEREXIT 1
+  #define DO_TRACE_DEBUG     1
+#else
+  #define DO_TRACE_ENTEREXIT 0
+  #define DO_TRACE_DEBUG     0
+#endif
 
 namespace CCMI
 {
@@ -31,98 +51,109 @@ namespace CCMI
         /// \brief Static function to be passed into the done of multisend send
         static void staticNotifySendDone (pami_context_t context, void *cd, pami_result_t err)
         {
+          TRACE_FN_ENTER();
           AC_SendCallbackData * cdata = ( AC_SendCallbackData *)cd;
           pami_quad_t *info = (pami_quad_t *)cd;
-          TRACE_FLOW((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::staticNotifySendDone() enter\n", cdata->me));
+          TRACE_FORMAT("<%p>", cdata->me);
           ((AllreduceBaseExec<T_Conn> *)(cdata->me))->AllreduceBaseExec<T_Conn>::notifySendDone(*info);
-          TRACE_FLOW((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::staticNotifySendDone() exit\n", cdata->me));
+          TRACE_FN_EXIT();
         }
 
         /// \brief Static function to be passed into the done of multisend postRecv
         static void staticNotifyReceiveDone (pami_context_t context, void *cd, pami_result_t err)
         {
+          TRACE_FN_ENTER();
           AC_RecvCallbackData * cdata = (AC_RecvCallbackData *)cd;
-          TRACE_FLOW((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::staticNotifyReceiveDone() enter\n", cdata->allreduce));
+          TRACE_FORMAT("<%p>", cdata->allreduce);
           pami_quad_t *info = (pami_quad_t *)cd;
 
           ((AllreduceBaseExec<T_Conn> *)cdata->allreduce)->AllreduceBaseExec<T_Conn>::notifyRecv((unsigned) - 1, *info, NULL, NULL);
-          TRACE_FLOW((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::staticNotifyReceiveDone() exit\n", cdata->allreduce));
+          TRACE_FN_EXIT();
         }
 
         static void short_recv_done (pami_context_t context, void *me, pami_result_t res)
         {
+          TRACE_FN_ENTER();
           AllreduceBaseExec<T_Conn> *allreduce = (AllreduceBaseExec<T_Conn> *)me;
-          TRACE_FLOW((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::short_recv_done enter\n", allreduce));
+          TRACE_FORMAT("<%p>", allreduce);
 
           if (allreduce->_sState.sndClientData.isDone) //send has finished
             allreduce->advance();
 
-          TRACE_FLOW((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::short_recv_done exit\n", allreduce));
+          TRACE_FN_EXIT();
         }
 
       protected:
         void inline_math_isum (void *dst, void *src1, void *src2, unsigned count)
         {
+          TRACE_FN_ENTER();
           int *idst  = (int *) dst;
           int *isrc1 = (int *) src1;
           int *isrc2 = (int *) src2;
 
-          TRACE_DATA(("src1", (char*)src1, count*_acache.getSizeOfType()));
-          TRACE_DATA(("src2", (char*)src2, count*_acache.getSizeOfType()));
-          TRACE_DATA(("dst ", (char*)dst, 1)); // Just to trace the input pointer
+          TRACE_HEXDATA((char*)src1, count*_acache.getSizeOfType());
+          TRACE_HEXDATA((char*)src2, count*_acache.getSizeOfType());
+          TRACE_HEXDATA((char*)dst, 1); // Just to trace the input pointer
 
           for (unsigned c = 0; c < count; c++)
             idst[c] = isrc1[c] + isrc2[c];
 
-          TRACE_DATA(("dst ", (char*)dst, count*_acache.getSizeOfType()));
+          TRACE_HEXDATA((char*)dst, count*_acache.getSizeOfType());
+          TRACE_FN_EXIT();
         }
 
         void inline_math_dsum (void *dst, void *src1, void *src2, unsigned count)
         {
+          TRACE_FN_ENTER();
           double *idst  = (double *) dst;
           double *isrc1 = (double *) src1;
           double *isrc2 = (double *) src2;
 
-          TRACE_DATA(("src1", (char*)src1, count*_acache.getSizeOfType()));
-          TRACE_DATA(("src2", (char*)src2, count*_acache.getSizeOfType()));
-          TRACE_DATA(("dst ", (char*)dst, 1)); // Just to trace the input pointer
+          TRACE_HEXDATA((char*)src1, count*_acache.getSizeOfType());
+          TRACE_HEXDATA((char*)src2, count*_acache.getSizeOfType());
+          TRACE_HEXDATA((char*)dst, 1); // Just to trace the input pointer
 
           for (unsigned c = 0; c < count; c++)
             idst[c] = isrc1[c] + isrc2[c];
 
-          TRACE_DATA(("dst ", (char*)dst, count*_acache.getSizeOfType()));
+          TRACE_HEXDATA((char*)dst, count*_acache.getSizeOfType());
+          TRACE_FN_EXIT();
         }
 
         void inline_math_dmin (void *dst, void *src1, void *src2, unsigned count)
         {
+          TRACE_FN_ENTER();
           double *idst  = (double *) dst;
           double *isrc1 = (double *) src1;
           double *isrc2 = (double *) src2;
 
-          TRACE_DATA(("src1", (char*)src1, count*_acache.getSizeOfType()));
-          TRACE_DATA(("src2", (char*)src2, count*_acache.getSizeOfType()));
-          TRACE_DATA(("dst ", (char*)dst, 1)); // Just to trace the input pointer
+          TRACE_HEXDATA((char*)src1, count*_acache.getSizeOfType());
+          TRACE_HEXDATA((char*)src2, count*_acache.getSizeOfType());
+          TRACE_HEXDATA((char*)dst, 1); // Just to trace the input pointer
 
           for (unsigned c = 0; c < count; c++)
             idst[c] = (isrc1[c] < isrc2[c]) ? isrc1[c] : isrc2[c];
 
-          TRACE_DATA(("dst ", (char*)dst, count*_acache.getSizeOfType()));
+          TRACE_HEXDATA((char*)dst, count*_acache.getSizeOfType());
+          TRACE_FN_EXIT();
         }
 
         void inline_math_dmax (void *dst, void *src1, void *src2, unsigned count)
         {
+          TRACE_FN_ENTER();
           double *idst  = (double *) dst;
           double *isrc1 = (double *) src1;
           double *isrc2 = (double *) src2;
 
-          TRACE_DATA(("src1", (char*)src1, count*_acache.getSizeOfType()));
-          TRACE_DATA(("src2", (char*)src2, count*_acache.getSizeOfType()));
-          TRACE_DATA(("dst ", (char*)dst, 1)); // Just to trace the input pointer
+          TRACE_HEXDATA((char*)src1, count*_acache.getSizeOfType());
+          TRACE_HEXDATA((char*)src2, count*_acache.getSizeOfType());
+          TRACE_HEXDATA((char*)dst, 1); // Just to trace the input pointer
 
           for (unsigned c = 0; c < count; c++)
             idst[c] = (isrc1[c] > isrc2[c]) ? isrc1[c] : isrc2[c];
 
-          TRACE_DATA(("dst ", (char*)dst, count*_acache.getSizeOfType()));
+          TRACE_HEXDATA((char*)dst, count*_acache.getSizeOfType());
+          TRACE_FN_EXIT();
         }
 
         void advance ();
@@ -173,7 +204,7 @@ namespace CCMI
         /// Default Destructor
         virtual ~AllreduceBaseExec ()
         {
-          TRACE_ALERT((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::dtor() ALERT:\n", this));
+          TRACE_FN_ENTER();
 #ifdef CCMI_DEBUG
           _curPhase = (unsigned) - 1;
           _curIdx = (unsigned) - 1;
@@ -191,6 +222,8 @@ namespace CCMI
           _rconnmgr = NULL;
           _bconnmgr = NULL;
 #endif
+          TRACE_FORMAT("<%p>", this);
+          TRACE_FN_EXIT();
         }
 
         /// Default Constructor
@@ -212,7 +245,9 @@ namespace CCMI
             _scache(),
             _acache(NULL, (unsigned) - 1)
         {
-          TRACE_ALERT((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::ctor() ALERT:\n", this));
+          TRACE_FN_ENTER();
+          TRACE_FORMAT("<%p>", this);
+          TRACE_FN_EXIT();
         }
 
         ///  Main constructor to initialize the executor
@@ -236,7 +271,8 @@ namespace CCMI
             _scache(),
             _acache(&_scache, native->myrank())
         {
-          TRACE_ALERT((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::ctor() ALERT:\n", this));
+          TRACE_FN_ENTER();
+          TRACE_FORMAT("<%p>", this);
 
           _msend.msginfo     = NULL;
           _msend.msgcount    = 0;
@@ -253,6 +289,7 @@ namespace CCMI
 
           _msend.cb_done.function = _sendCallbackHandler;
           _msend.cb_done.clientdata = &_sState.sndClientData;
+          TRACE_FN_EXIT();
         }
 
         void setIteration (unsigned iteration)
@@ -345,7 +382,7 @@ namespace CCMI
                           void           * dstbuf,
                           unsigned         bytes)
         {
-          //printf ("%d: srcbuf = %x, dstbuf %x\n", _native->myrank(), srcbuf, dstbuf);
+          //printf ("%d: srcbuf = %x, dstbuf %x", _native->myrank(), srcbuf, dstbuf);
           _srcbuf        = (char *) srcbuf;
           _dstbuf        = (char *) dstbuf;
         }
@@ -365,9 +402,9 @@ namespace CCMI
                             pami_op          op = PAMI_OP_COUNT,
                             pami_dt          dt = PAMI_DT_COUNT)
         {
-          TRACE_INIT((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::setReduceInfo() "
-                      "count %#X, pipelineWidth %#X, sizeOfType %#X, func %p, op %#X, dt %#X\n",
-                      this, count, pipelineWidth, sizeOfType, func, op, dt));
+          TRACE_FN_ENTER();
+          TRACE_FORMAT("<%p> count %#X, pipelineWidth %#X, sizeOfType %#X, func %p, op %#X, dt %#X",
+                      this, count, pipelineWidth, sizeOfType, func, op, dt);
           CCMI_assert (pipelineWidth % sizeOfType == 0);
 
           _reduceFunc    = func;
@@ -379,7 +416,7 @@ namespace CCMI
 
           _acache.init(count, sizeOfType, op, dt, pipelineWidth);
 
-          TRACE_INIT((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::setReduceInfo() exit\n", this));
+          TRACE_FN_EXIT();
         }
 
         pami_event_function  getRecvCallbackHandler ()
@@ -494,8 +531,9 @@ namespace CCMI
 template <class T_Conn>
 inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::advance ()
 {
-  TRACE_ADVANCE ((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::advance _curPhase %d,_endPhase %d, lastReducePhase %d, _curIdx %d, nsrcranks %u\n", this,
-                  _curPhase, _scache.getEndPhase(),_scache.getLastReducePhase(), _curIdx, _scache.getNumSrcRanks(_curPhase)));
+  TRACE_FN_ENTER();
+  TRACE_FORMAT("<%p>_curPhase %d,_endPhase %d, lastReducePhase %d, _curIdx %d, nsrcranks %u", this,
+                  _curPhase, _scache.getEndPhase(),_scache.getLastReducePhase(), _curIdx, _scache.getNumSrcRanks(_curPhase));
 
   CCMI_assert_debug (_initialized);
   CCMI_assert_debug (_sState.sndClientData.isDone == true);
@@ -518,8 +556,8 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::advance ()
       pami_op op = _acache.getOp();
       pami_dt dt = _acache.getDt();
       unsigned count = _acache.getCount();
-      TRACE_ADVANCE ((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::advance op %u, dt %u, count %u\n", this,
-                      op, dt, count));
+      TRACE_FORMAT("<%p>op %u, dt %u, count %u", this,
+                      op, dt, count);
 
       if (_curPhase <= _scache.getLastReducePhase())
         {
@@ -567,12 +605,12 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::advance ()
                   void * bufs[2];
                   bufs[0] = src1;
                   bufs[1] = src2;
-                  TRACE_DATA(("localbuf", (char*)bufs[0], count*_acache.getSizeOfType()));
-                  TRACE_DATA(("input buf", (char*)bufs[1], count*_acache.getSizeOfType()));
-                  TRACE_DATA(("reduceBuf", (char*)reducebuf, 1)); // Just to trace the input pointer
+                  TRACE_HEXDATA((char*)bufs[0], count*_acache.getSizeOfType());
+                  TRACE_HEXDATA((char*)bufs[1], count*_acache.getSizeOfType());
+                  TRACE_HEXDATA((char*)reducebuf, 1); // Just to trace the input pointer
                   _reduceFunc( reducebuf, bufs, 2, count);
 
-                  TRACE_DATA(("reduceBuf", (char*)reducebuf, count*_acache.getSizeOfType()));
+                  TRACE_HEXDATA((char*)reducebuf, count*_acache.getSizeOfType());
                   src1 = reducebuf;
                 }
             }
@@ -581,14 +619,14 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::advance ()
       {
         CCMI_assert(nsrcranks == 1);
         src2 =  _acache.getPhaseRecvBufs (_curPhase, _curIdx);
-        TRACE_DATA(("localbuf ", (char*)src1,      count*_acache.getSizeOfType()));
-        TRACE_DATA(("input buf", (char*)src2,      count*_acache.getSizeOfType()));
-        TRACE_DATA(("reduceBuf", (char*)reducebuf, count*_acache.getSizeOfType()));
+        TRACE_HEXDATA((char*)src1,      count*_acache.getSizeOfType());
+        TRACE_HEXDATA((char*)src2,      count*_acache.getSizeOfType());
+        TRACE_HEXDATA((char*)reducebuf, count*_acache.getSizeOfType());
         memcpy(reducebuf, src2, count*_acache.getSizeOfType());
         _curIdx = nsrcranks;
       }
 
-      TRACE_ADVANCE ((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::advance_loop _curPhase %d,_endPhase %d,_curIdx %d nsrcranks %d phase chunks rcvd %d\n", this, _curPhase, _scache.getEndPhase(), _curIdx, nsrcranks, (_curIdx < nsrcranks)?_acache.getPhaseChunksRcvd(_curPhase, _curIdx):-1));
+      TRACE_FORMAT("<%p>_curPhase %d,_endPhase %d,_curIdx %d nsrcranks %d phase chunks rcvd %d", this, _curPhase, _scache.getEndPhase(), _curIdx, nsrcranks, (_curIdx < nsrcranks)?_acache.getPhaseChunksRcvd(_curPhase, _curIdx):-1);
 
       if (_curIdx != nsrcranks) //we are waiting for more data
         break;
@@ -616,6 +654,7 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::advance ()
           break;
         }
     }
+  TRACE_FN_EXIT();
 }
 
 
@@ -630,6 +669,7 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::sendMessage
  unsigned                 sphase,
  SendState              * s_state)
 {
+  TRACE_FN_ENTER();
   //Request buffer and callback set in setSendState !!
   CCMI_assert (dst_topology->size() > 0);
 
@@ -665,14 +705,15 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::sendMessage
   pami_task_t *dstranks = NULL;
   dst_topology->rankList(&dstranks);
 
-  TRACE_MSG ((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::sendMessage connid %#X curphase:%#X "
-              "bytes:%#X destPe:%#X ndst %zu cData:%p \n",
+  TRACE_FORMAT("<%p>connid %#X curphase:%#X "
+              "bytes:%#X destPe:%#X ndst %zu cData:%p ",
               this,
               _acache.getPhaseSendConnectionId (sphase),
               sphase, bytes, dstranks[0], dst_topology->size(),
-              &s_state->sndInfo));
+              &s_state->sndInfo);
 
   _native->multicast (&_msend);
+  TRACE_FN_EXIT();
 }
 
 
@@ -685,7 +726,8 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::sendMessage
 template <class T_Conn>
 inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::start()
 {
-  TRACE_FLOW((stderr, "<%p>Executor::AllreduceBaseExec start()\n", this));
+  TRACE_FN_ENTER();
+  TRACE_FORMAT("<%p>", this);
 
   _initialized = true;
   _sState.sndClientData.me        = this;
@@ -707,6 +749,7 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::start()
     }
   else
     advance ();
+  TRACE_FN_EXIT();
 }
 
 template <class T_Conn>
@@ -716,10 +759,11 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecv
   PAMI::PipeWorkQueue ** p,
   pami_callback_t      * cb_done )
 {
+  TRACE_FN_ENTER();
   AC_RecvCallbackData * cdata = (AC_RecvCallbackData *)(&info);
 
-  TRACE_MSG ((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::notifyRecv %#X, %#X\n",
-              this, cdata->phase, cdata->srcPeIndex));
+  TRACE_FORMAT("<%p> %#X, %#X",
+              this, cdata->phase, cdata->srcPeIndex);
 
   // update state  (we dont support multiple sources per phase yet)
   _acache.incrementPhaseChunksRcvd(cdata->phase, cdata->srcPeIndex);
@@ -733,21 +777,24 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecv
       _sState.sndClientData.isDone  &&  //send has finished
       _initialized)
     advance();
+  TRACE_FN_EXIT();
 }
 
 template <class T_Conn>
 inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::notifySendDone
 ( const pami_quad_t & info)
 {
+  TRACE_FN_ENTER();
   // update state
-  TRACE_MSG((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::notifySendDone, cur phase %#X\n",
-             this, _curPhase));
+  TRACE_FORMAT("<%p>cur phase %#X",
+             this, _curPhase);
 
   AC_SendCallbackData * cdata = (AC_SendCallbackData *)(&info);
   cdata->isDone = true;
 
   //Call the appropriate advance
   advance ();
+  TRACE_FN_EXIT();
 }
 
 template <class T_Conn>
@@ -763,14 +810,14 @@ CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead
  pami_pipeworkqueue_t ** rcvpwq,
  PAMI_Callback_t       * cb_done)
 {
+  TRACE_FN_ENTER();
   CCMI_assert_debug(count == 1);
   CCMI_assert_debug(info);
   CollHeaderData *cdata = (CollHeaderData*) info;
 
-  TRACE_MSG((stderr, "%d: <%p>Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead() count: %#X "
-             "connID:%#X phase:%#X root:%#X local root:%#X src %#X sndlen %#X,_state->getBytes():%#X "
-             "_state->getPipelineWidth():%#X \n",
-             _native->myrank(),
+  TRACE_FORMAT("<%p>count: %u "
+             "connID:%u phase:%u root:%u local root:%u src %u sndlen %u,_state->getBytes():%u "
+             "_state->getPipelineWidth():%u",
              this,
              count,
              conn_id,
@@ -780,7 +827,7 @@ CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead
              peer,
              sndlen,
              _acache.getBytes(),
-             _acache.getPipelineWidth()));
+             _acache.getPipelineWidth());
 
   CCMI_assert_debug(cdata->_comm == _commID);
   CCMI_assert_debug(cdata->_root == (unsigned) _scache.getRoot());
@@ -806,17 +853,16 @@ CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead
       while ((_scache.getNumSrcRanks(cdata->_phase) == 0) &&
              (cdata->_phase < (unsigned)_scache.getEndPhase()))
         {
-          TRACE_MSG((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead "
-                     "no src in phase %#X\n",
-                     this, cdata->_phase));
+          TRACE_FORMAT("<%p>no src in phase %#X",
+                     this, cdata->_phase);
           cdata->_phase++;
         }
     }
 
   CCMI_assert(_scache.getNumSrcRanks(cdata->_phase) > 0);
 
-  TRACE_MSG ((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead phase %#X, numsrcranks %#X\n",
-              this, cdata->_phase, _scache.getNumSrcRanks(cdata->_phase)));
+  TRACE_FORMAT("<%p>phase %#X, numsrcranks %#X",
+              this, cdata->_phase, _scache.getNumSrcRanks(cdata->_phase));
 
   int srcPeIndex = -1;
   int idx = 0;
@@ -871,12 +917,13 @@ CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead
   pwq->reset();
   //char * buf = pwq->bufferToProduce();
   //CCMI_assert (buf != NULL);
-  //printf ("%d: PWQ buffer 0x%x for phase %d index %d\n", _native->myrank(), buf, cdata->_phase, srcPeIndex);
+  //printf ("%d: PWQ buffer 0x%x for phase %d index %d", _native->myrank(), buf, cdata->_phase, srcPeIndex);
 
   * rcvpwq    = (pami_pipeworkqueue_t *) pwq;
   cb_done->function   = _recvCallbackHandler;
   cb_done->clientdata = rdata;
 
+  TRACE_FN_EXIT();
   return _acache.getRecvReq() + index;
 }
 
@@ -885,6 +932,7 @@ CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecvHead
 template <class T_Conn>
 inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::postReceives ()
 {
+  TRACE_FN_ENTER();
   // post receives for each expected incoming message
   _postReceives = true;
 
@@ -898,8 +946,9 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::postReceives ()
         }
     }
 
-  TRACE_INIT((stderr, "<%p>Executor::AllreduceBaseExec<T_Conn>::postReceives() exit\n",
-              this));
+  TRACE_FORMAT("<%p>",
+              this);
+  TRACE_FN_EXIT();
 }
 
 #endif
@@ -920,6 +969,7 @@ CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecvShort
  PAMI_Callback_t * cb_done,
  unsigned          order)
 {
+  TRACE_FN_ENTER();
   *rcvbuf = _acache.getPhaseRecvBufs (phase, srcindex);
   *rcvlen = sndlen;
 
@@ -930,10 +980,10 @@ CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecvShort
 
   unsigned nsrcranks = _scache.getNumSrcRanks(phase);
 
-  TRACE_FLOW ((stderr, "notifyRecvShort phase = %d, srcindex = %d, nsrcranks = %d, totalchunksrcvd %d, recvbuf = %#X, len = %d\n",
+  TRACE_FORMAT("phase = %d, srcindex = %d, nsrcranks = %d, totalchunksrcvd %d, recvbuf = %#X, len = %d",
                phase, srcindex, nsrcranks, _acache.getPhaseTotalChunksRcvd(_curPhase),
                (int)*rcvbuf,
-               *rcvlen));
+               *rcvlen);
 
   cb_done->function = NULL;
 
@@ -943,9 +993,13 @@ CCMI::Executor::AllreduceBaseExec<T_Conn>::notifyRecvShort
       cb_done->function   = short_recv_done; //short recv callback
       cb_done->clientdata = this;
     }
+  TRACE_FN_EXIT();
 }
 
 #endif
+
+#undef  DO_TRACE_ENTEREXIT
+#undef  DO_TRACE_DEBUG
 
 #endif /* __simple_allreduce_executor_h__ */
 //

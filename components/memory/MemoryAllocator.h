@@ -127,8 +127,6 @@ namespace PAMI
   
 };
 #undef  DO_TRACE_ENTEREXIT
-#define DO_TRACE_ENTEREXIT 0
 #undef  DO_TRACE_DEBUG    
-#define DO_TRACE_DEBUG     0
 
 #endif // __pami_components_memory_memoryallocator_h__

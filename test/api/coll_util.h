@@ -14,17 +14,40 @@
 #ifndef __test_api_coll_util_h__
 #define __test_api_coll_util_h__
 
+/* Define to assert on failures */
+/* #define PAMI_TEST_STRICT     */
+
 #include<assert.h>
 #include "init_util.h"
 
 char *gProtocolName = (char*)""; /* Global protocol name, some tests set it for error msgs   */
 static size_t get_type_size(pami_type_t intype);
+pami_context_t      gContext=NULL;
 
 /* Docs09:  Done/Decrement call */
 void cb_done (void *ctxt, void * clientdata, pami_result_t err)
 {
-  if(gVerbose && !ctxt)
-    fprintf(stderr, "Error. Null context received on cb_done.\n");
+  if(gVerbose)
+  {
+    if(!ctxt) fprintf(stderr, "%s: Error. Null context received on cb_done.\n",gProtocolName);
+    if(gContext != ctxt) fprintf(stderr, "%s: Error. Unexpected context received on cb_done %p != %p.\n",gProtocolName,gContext,ctxt);
+#ifdef PAMI_TEST_STRICT
+    assert(context);
+    assert(gContext==ctxt);
+#endif
+    pami_configuration_t configs;
+    configs.name         = PAMI_CONTEXT_DISPATCH_ID_MAX;
+    configs.value.intval = -1;
+
+    pami_result_t rc;
+    rc = PAMI_Context_query (ctxt,&configs,1);
+
+    if(rc != PAMI_SUCCESS && rc != PAMI_INVAL) fprintf(stderr,"%s: Error. Could not query the context(%u).\n",gProtocolName,rc);
+#ifdef PAMI_TEST_STRICT
+    assert(rc == PAMI_SUCCESS || rc == PAMI_INVAL);
+#endif
+  }
+
   int * active = (int *) clientdata;
   (*active)--;
 }
@@ -36,15 +59,18 @@ int blocking_coll (pami_context_t      context,
                    volatile unsigned  *active)
 {
   pami_result_t result;
+  gContext = context;
   (*active)++;
   result = PAMI_Collective(context, coll);
   if (result != PAMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to issue  collective. result = %d\n", result);
+      gContext = NULL;
       return 1;
     }
   while (*active)
     result = PAMI_Context_advance (context, 1);
+  gContext = NULL;
   return 0;
 }
 /* Docs08:  Blocking Collective Call */
@@ -171,6 +197,7 @@ int create_and_query_geometry(pami_client_t           client,
 {
   pami_result_t result;
   int           geom_init=1;
+  gContext = context;
 
   pami_configuration_t config;
   config.name = PAMI_GEOMETRY_OPTIMIZE;
@@ -194,6 +221,8 @@ int create_and_query_geometry(pami_client_t           client,
     }
     while (geom_init)
       result = PAMI_Context_advance (context, 1);
+
+    gContext = NULL;
 
     return query_geometry(client,
                           contextq,
@@ -406,7 +435,7 @@ metadata_result_t check_metadata(pami_metadata_t md,
     if(md.check_correct.values.continrflags)
       result.check.continuous_recv = !primitive_dt(r_dt);
   }
-  if(gVerbose)
+  if(gVerbose==2)
     printf("Query Result: unspec=%u range=%u align_rbuf=%u align_sbuf=%u dt_op=%u cgs=%u cgr=%u cts=%u ctr=%u nonlocal=%u\n",
            result.check.unspecified,
            result.check.range,

@@ -20,6 +20,16 @@
 #include "algorithms/executor/Barrier.h"
 #include "algorithms/protocols/AllSidedCollectiveProtocolFactoryT.h"
 
+#include "util/trace.h"
+
+#ifdef CCMI_TRACE_ALL
+  #define DO_TRACE_ENTEREXIT 1
+  #define DO_TRACE_DEBUG     1
+#else
+  #define DO_TRACE_ENTEREXIT 0
+  #define DO_TRACE_DEBUG     0
+#endif
+
 extern void registerunexpbarrier(pami_context_t context,
                                  unsigned       comm,
                                  pami_quad_t   &info,
@@ -47,23 +57,27 @@ public:
                     pami_dispatch_multicast_function cb_head = NULL):
         CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>(cmgr, native, cb_head)
     {
-        TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
+        TRACE_FN_ENTER();
+        TRACE_FORMAT( "%p",this);
         _cached_object = NULL;
         _cached_id     = (unsigned) -1;
+        TRACE_FN_EXIT();
     }
     virtual Executor::Composite * generate(pami_geometry_t              geometry,
                                            void                      * cmd)
 
     {
         // Use the cached barrier or generate a new one if the cached barrier doesn't exist
-        TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
+        TRACE_FN_ENTER();
         PAMI_GEOMETRY_CLASS  *g = ( PAMI_GEOMETRY_CLASS *)geometry;
         Executor::Composite *composite = (Executor::Composite *) g->getKey((size_t)0, /// \todo does NOT support multicontext
                                          T_Key);
 
+        TRACE_FORMAT( "<%p> composite %p",this,composite);
         if (!composite)
         {
             composite = CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::generate(geometry, cmd);
+            TRACE_FORMAT( "<%p> composite %p",this,composite);
             g->setKey((size_t)0, /// \todo does NOT support multicontext
                       T_Key,
                       (void*)composite);
@@ -71,6 +85,7 @@ public:
 
         pami_xfer_t *xfer = (pami_xfer_t *)cmd;
         composite->setDoneCallback(xfer->cb_done, xfer->cookie);
+        TRACE_FN_EXIT();
         return composite;
     }
 
@@ -108,9 +123,10 @@ public:
                               pami_pipeworkqueue_t **recvpwq,
                               PAMI_Callback_t  *     cb_done)
     {
-        TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
+        TRACE_FN_ENTER();
         CollHeaderData  *cdata = (CollHeaderData *) info;
         BarrierFactoryT *factory = (BarrierFactoryT *) arg;
+        TRACE_FORMAT( "<%p>cdata %p",factory,cdata);
 
         *rcvlen    = 0;
         *recvpwq   = 0;
@@ -130,16 +146,18 @@ public:
                                      (pami_quad_t&)*info,
                                      peer,
                                      (unsigned) PAMI::Geometry::GKEY_UEBARRIERCOMPOSITE1);
+                TRACE_FN_EXIT();
                 return;
             }
         }
 
         T_Composite *composite = (T_Composite*) object;
-        TRACE_INIT((stderr, "<%p>CCMI::Adaptor::Barrier::BarrierFactoryT::cb_head(%d,%p)\n",
-                    factory, cdata->_comm, composite));
+        TRACE_FORMAT("<%p>CCMI::Adaptor::Barrier::BarrierFactoryT::cb_head(%d,%p)",
+                    factory, cdata->_comm, composite);
 
         //Override poly morphism
         composite->_myexecutor.notifyRecv (peer, *info, NULL, 0);
+        TRACE_FN_EXIT();
     }
 
 protected:
@@ -159,14 +177,17 @@ public:
                             Interfaces::NativeInterface *native):
         AllSidedCollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>(cmgr, native)
     {
-        TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
+        TRACE_FN_ENTER();
+        TRACE_FORMAT( "%p",this);
+        TRACE_FN_EXIT();
     }
 
     virtual Executor::Composite * generate(pami_geometry_t              geometry,
                                            void                       * cmd)
     {
         // Use the cached barrier or generate a new one if the cached barrier doesn't exist
-        TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
+        TRACE_FN_ENTER();
+        TRACE_FORMAT( "%p",this);
         PAMI_GEOMETRY_CLASS  *g = ( PAMI_GEOMETRY_CLASS *)geometry;
         /// \todo does NOT support multicontext
         Executor::Composite *composite = (Executor::Composite *) g->getKey((size_t)0,
@@ -182,6 +203,7 @@ public:
 
         pami_xfer_t *xfer = (pami_xfer_t *)cmd;
         composite->setDoneCallback(xfer->cb_done, xfer->cookie);
+        TRACE_FN_EXIT();
         return composite;
     }
 };
@@ -352,9 +374,10 @@ public:
                     mInterface),
         _myschedule (__global.mapping.task(), (PAMI::Topology *)((PAMI_GEOMETRY_CLASS *)geometry)->getTopology(T_Geometry_Index))
     {
-        TRACE_INIT((stderr, "<%p>CCMI::Adaptors::Barrier::BarrierT::ctor()\n",
-                    this));//, geometry->comm()));
+        TRACE_FN_ENTER();
+        TRACE_FORMAT( "%p",this);
         _myexecutor.setCommSchedule (&_myschedule);
+        TRACE_FN_EXIT();
     }
 
     CCMI::Executor::BarrierExec *getExecutor() {
@@ -368,9 +391,11 @@ public:
 
     virtual void start()
     {
-        TRACE_ADAPTOR((stderr, "%s\n", __PRETTY_FUNCTION__));
+        TRACE_FN_ENTER();
+        TRACE_FORMAT( "%p",this);
         _myexecutor.setDoneCallback (_cb_done, _clientdata);
         _myexecutor.start();
+        TRACE_FN_EXIT();
     }
 
     virtual void   notifyRecv  (unsigned              src,
@@ -388,6 +413,9 @@ public:
 };
 };
 };  //namespace CCMI::Adaptor::Barrier
+
+#undef  DO_TRACE_ENTEREXIT
+#undef  DO_TRACE_DEBUG
 
 #endif
 //

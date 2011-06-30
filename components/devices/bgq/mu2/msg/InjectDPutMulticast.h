@@ -21,6 +21,13 @@
 #include "components/memory/MemoryAllocator.h"
 #include "components/devices/bgq/mu2/MU_Util.h"
 
+#ifndef DO_TRACE_ENTEREXIT
+ #define DO_TRACE_ENTEREXIT 0
+#endif
+#ifndef DO_TRACE_DEBUG
+ #define DO_TRACE_DEBUG     0
+#endif
+
 #define LOCAL_DIM  5 //the index of the local dimension
 #define MAX_CHANNELS  (2 * NumTorusDims)
 
@@ -48,8 +55,9 @@ namespace PAMI
 
 	/// \brief Constructor
 	/// \param[in] context the MU context for this message
-	InjectDPutMulticast (MU::Context &context):
+	InjectDPutMulticast (MU::Context &context,pami_context_t   pami_context):
 	_context (context),
+		_pami_context(pami_context),
 	  _nextdst (0),
 	  _ndestinations(0),
 #if 0
@@ -171,7 +179,7 @@ namespace PAMI
 	
 	void advanceLocal (unsigned bytes_available) __attribute__((noinline, weak));
 
-	bool advance ()
+	bool advance ( )
 	{
 	  //TRACE_FN_ENTER();	  
 	  //TRACE_FORMAT("InjectDPutMulticast:  advance:  ndesc=%zu\n",ndesc);
@@ -253,7 +261,7 @@ namespace PAMI
 	  _doneCompletion = done;
 	  
 	  if (done && _fn)
-	    _fn (NULL, _cookie, PAMI_SUCCESS);
+	    _fn (_pami_context, _cookie, PAMI_SUCCESS); 
 	  
 	  //TRACE_FN_EXIT();
 	  return _doneCompletion;
@@ -286,6 +294,7 @@ namespace PAMI
 
       protected:	
 	MU::Context            & _context;
+	pami_context_t   				 _pami_context;
 	uint32_t                 _nextdst;
 	uint32_t                 _ndestinations;
 	bool                     _processInjection;
@@ -459,5 +468,8 @@ namespace PAMI
     };   // namespace PAMI::Device::MU                          
   };     // namespace PAMI::Device           
 };       // namespace PAMI                                   
+
+#undef  DO_TRACE_ENTEREXIT
+#undef  DO_TRACE_DEBUG
 
 #endif // __components_devices_bgq_mu2_msg_InjectDPutMulticast_h__                     

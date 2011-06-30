@@ -1,7 +1,15 @@
-///
-/// \file common/bgq/Context.h
-/// \brief PAMI Blue Gene\Q specific context implementation.
-///
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file common/bgq/Context.h
+ * \brief PAMI Blue Gene\Q specific context implementation.
+ */
 #ifndef __common_bgq_Context_h__
 #define __common_bgq_Context_h__
 
@@ -44,9 +52,10 @@
 
 #include "algorithms/geometry/P2PCCMIRegistration.h"
 
-#undef TRACE_ERR
-#define TRACE_ERR(x) //fprintf x
+#include "util/trace.h"
 
+#define DO_TRACE_ENTEREXIT 0
+#define DO_TRACE_DEBUG     0
 
 #include "algorithms/geometry/GeometryOptimizer.h"
 
@@ -75,7 +84,6 @@ namespace PAMI
       AllSidedShmemNI, 
       MUDevice, 
       MUGlobalNI, 
-      MUAxialNI, 
       MUAxialDputNI, 
       MUShmemAxialDputNI > BGQRegistration;
   /**
@@ -123,37 +131,39 @@ namespace PAMI
       {
         // these calls create (allocate and construct) each element.
         // We don't know how these relate to contexts, they are semi-opaque.
-        TRACE_ERR((stderr, "device init: generic\n"));
+        TRACE_FN_ENTER();
+        TRACE_FORMAT("<%p>",this);
+        TRACE_STRING("device init: generic");
         _generics = PAMI::Device::Generic::Device::Factory::generate(clientid, num_ctx, mm, NULL);
 
         if (__global.useshmem())
           {
-            TRACE_ERR((stderr, "device init: shmem\n"));
+            TRACE_STRING("device init: shmem");
             _shmem = ShmemDevice::Factory::generate(clientid, num_ctx, mm, _generics);
 #if 0
-            TRACE_ERR((stderr, "device init: local allreduce wq\n"));
+            TRACE_STRING("device init: local allreduce wq");
             _localallreduce = PAMI::Device::LocalAllreduceWQDevice::Factory::generate(clientid, num_ctx, mm, _generics);
-            TRACE_ERR((stderr, "device init: local bcast wq\n"));
+            TRACE_STRING("device init: local bcast wq");
             _localbcast = PAMI::Device::LocalBcastWQDevice::Factory::generate(clientid, num_ctx, mm, _generics);
-            TRACE_ERR((stderr, "device init: local reduce wq\n"));
+            TRACE_STRING("device init: local reduce wq");
             _localreduce = PAMI::Device::LocalReduceWQDevice::Factory::generate(clientid, num_ctx, mm, _generics);
 #endif
           }
 
-        TRACE_ERR((stderr, "device init: progress function\n"));
+        TRACE_STRING("device init: progress function");
         _progfunc = PAMI::Device::ProgressFunctionDev::Factory::generate(clientid, num_ctx, mm, _generics);
-        TRACE_ERR((stderr, "device init: atomic barrier\n"));
+        TRACE_STRING("device init: atomic barrier");
         _atombarr = PAMI::Device::AtomicBarrierDev::Factory::generate(clientid, num_ctx, mm, _generics);
 
         if (__global.useMU())
           {
-            TRACE_ERR((stderr, "device init: MU\n"));
+            TRACE_STRING("device init: MU");
             _mu = Device::MU::Factory::generate(clientid, num_ctx, mm, _generics);
           }
 
         _atmmtx = PAMI::Device::AtomicMutexDev::Factory::generate(clientid, num_ctx, mm, _generics);
         PAMI_assertf(_atmmtx == _generics, "AtomicMutexDev must be a NillSubDevice");
-        TRACE_ERR((stderr, "device init: done!\n"));
+        TRACE_FN_EXIT();
         return PAMI_SUCCESS;
       }
 
@@ -286,6 +296,7 @@ namespace PAMI
           _rmw(devices->_mu[_contextid])
 //          _rmw(devices->_shmem[_contextid])
       {
+        TRACE_FN_ENTER();
         _async_suspend = NULL;
         _async_resume = NULL;
 	_async_cookie = NULL;
@@ -293,7 +304,7 @@ namespace PAMI
         char *mms;
         mms = mmkey + sprintf(mmkey, "/pami-clt%zd-ctx%zd", clientid, id);
 
-        TRACE_ERR((stderr,  "<%p>Context::Context() enter\n", this));
+        TRACE_FORMAT( "<%p>", this);
         // ----------------------------------------------------------------
         // Compile-time assertions
         // ----------------------------------------------------------------
@@ -426,7 +437,7 @@ namespace PAMI
 
                 if (result != PAMI_SUCCESS) rput_shmem = NULL;
               }
-            else TRACE_ERR((stderr, "topology does not support shmem\n"));
+            else TRACE_STRING("topology does not support shmem");
           }
         // Complete rget and rput protocol initialization
         if (((rget_mu != NULL) && (rget_shmem != NULL)) &&
@@ -470,7 +481,7 @@ namespace PAMI
             // Can't construct these models on single process nodes (no shmem)
             if (__global.topology_local.size() > 1)
               {
-                TRACE_ERR((stderr,  "<%p>Context::Context() construct shmem native interface and models\n", this));
+                TRACE_FORMAT( "<%p> construct shmem native interface and models", this);
                 _shmemMcastModel         = (ShmemMcstModel*)_shmemMcastModel_storage;
                 _shmemMcombModel         = (ShmemMcombModel*)_shmemMcombModel_storage;
                 _shmemMsyncModel         = (ShmemMsyncModel*)_shmemMsyncModel_storage;
@@ -492,12 +503,12 @@ namespace PAMI
 
                 _pgas_shmem_registration = new(_pgas_shmem_registration_storage) Shmem_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _protocol, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), & _dispatch_id, _geometry_map);
               }
-            else TRACE_ERR((stderr, "topology does not support shmem\n"));
+            else TRACE_STRING("topology does not support shmem");
           }
         if ((__global.useMU()) && (__global.useshmem()))
             _pgas_composite_registration = new(_pgas_composite_registration_storage) Composite_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _protocol, Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid), _devices->_shmem[_contextid], &_dispatch_id, _geometry_map, true);
 
-        TRACE_ERR((stderr,  "<%p>Context::Context() Register collectives(%p,%p,%p,%zu,%zu\n", this, _shmem_native_interface, client, this, id, clientid));
+        TRACE_FORMAT( "<%p> Register collectives(%p,%p,%p,%zu,%zu", this, _shmem_native_interface, client, this, id, clientid);
         // The multi registration will use shmem/mu if they are ctor'd above.
 
 #ifndef ENABLE_COLLECTIVE_MULTICONTEXT
@@ -557,7 +568,7 @@ namespace PAMI
         for (i=0; i<n; i++)
           _dispatch[i] = (Protocol::Send::Send *) & _senderror;
 
-        TRACE_ERR((stderr,  "<%p>Context:: exit\n", this));
+        TRACE_FN_EXIT();
       }
 
       inline ~Context() { }
@@ -628,23 +639,27 @@ namespace PAMI
 
       inline pami_result_t send_impl (pami_send_t * parameters)
       {
+        TRACE_FN_ENTER();
         size_t id = (size_t) (parameters->send.dispatch);
-        TRACE_ERR((stderr, "Context::send_impl('simple'), _dispatch[%zu] = %p\n", id, _dispatch[id]));
+        TRACE_FORMAT("_dispatch[%zu] = %p", id, _dispatch[id]);
 
         pami_result_t rc = _dispatch[id]->simple (parameters);
 
-        TRACE_ERR((stderr, "Context::send_impl('simple') rc = %d\n", rc));
+        TRACE_FORMAT("rc = %d", rc);
+        TRACE_FN_EXIT();
         return rc;
       }
 
       inline pami_result_t send_impl (pami_send_immediate_t * parameters)
       {
+        TRACE_FN_ENTER();
         size_t id = (size_t) (parameters->dispatch);
-        TRACE_ERR((stderr, "Context::send_impl('immediate'), _dispatch[%zu] = %p\n", id, _dispatch[id]));
+        TRACE_FORMAT("_dispatch[%zu] = %p", id, _dispatch[id]);
 
         pami_result_t rc = _dispatch[id]->immediate (parameters);
 
-        TRACE_ERR((stderr, "Context::send_impl('immediate') rc = %d\n", rc));
+        TRACE_FORMAT("rc = %d", rc);
+        TRACE_FN_EXIT();
         return rc;
       }
 
@@ -698,11 +713,12 @@ namespace PAMI
 
       inline pami_result_t rput_impl (pami_rput_simple_t * parameters)
       {
-        TRACE_ERR((stderr, ">> rput_impl('simple')\n"));
+        TRACE_FN_ENTER();
 
         pami_result_t rc = _rput->simple (parameters);
 
-        TRACE_ERR((stderr, "<< rput_impl('simple') rc = %d\n", rc));
+        TRACE_FORMAT("rc = %d", rc);
+        TRACE_FN_EXIT();
         return rc;
       }
 
@@ -713,11 +729,12 @@ namespace PAMI
 
       inline pami_result_t rget_impl (pami_rget_simple_t * parameters)
       {
-        TRACE_ERR((stderr, ">> rget_impl('simple')\n"));
+        TRACE_FN_ENTER();
 
         pami_result_t rc = _rget->simple (parameters);
 
-        TRACE_ERR((stderr, "<< rget_impl('simple') rc = %d\n", rc));
+        TRACE_FORMAT("rc = %d", rc);
+        TRACE_FN_EXIT();
         return rc;
       }
 
@@ -762,8 +779,11 @@ namespace PAMI
 
       inline pami_result_t collective_impl (pami_xfer_t * parameters)
       {
+        TRACE_FN_ENTER();
         Geometry::Algorithm<BGQGeometry> *algo = (Geometry::Algorithm<BGQGeometry> *)parameters->algorithm;
+        TRACE_FORMAT("algorithm %p, context %p",algo,this);
         algo->setContext((pami_context_t) this);
+        TRACE_FN_EXIT();
         return algo->generate(parameters);
       }
 
@@ -782,8 +802,9 @@ namespace PAMI
                                           void                          * cookie,
                                           pami_dispatch_hint_t            options)
       {
+        TRACE_FN_ENTER();
         pami_result_t result = PAMI_ERROR;
-        TRACE_ERR((stderr, "Context::dispatch_impl .. _dispatch[%zu] = %p, options = %#X\n", id, _dispatch[id], *(unsigned*)&options));
+        TRACE_FORMAT(" _dispatch[%zu] = %p, options = %#X", id, _dispatch[id], *(unsigned*)&options);
 
         // Return an error for invalid / unimplemented 'hard' hints.
         if (
@@ -792,6 +813,7 @@ namespace PAMI
             (options.use_shmem            == PAMI_HINT_DISABLE && !__global.useMU())    ||
             false)
           {
+            TRACE_FN_EXIT();
             return PAMI_ERROR;
           }
 
@@ -829,7 +851,8 @@ namespace PAMI
               }
           } // end dispatch[id]==null
 
-        TRACE_ERR((stderr, "Context::Context::dispatch_impl .. result = %d\n", result));
+        TRACE_FORMAT("result = %d", result);
+        TRACE_FN_EXIT();
         return result;
       }
 
@@ -892,9 +915,10 @@ namespace PAMI
       ///
       inline void cleanupAffinity(bool acquire)
       {
+        TRACE_FN_ENTER();
 #if 1
         bool affinity = (coreAffinity() == Kernel_ProcessorCoreID());
-        TRACE_ERR((stderr, "acquire=%d, affinity=%d, coreAffinity=%u, Kernel_ProcessorCoreID=%u, ContextID=%zu\n", acquire, affinity, coreAffinity(), Kernel_ProcessorCoreID(), _contextid));
+        TRACE_FORMAT("acquire=%d, affinity=%d, coreAffinity=%u, Kernel_ProcessorCoreID=%u, ContextID=%zu", acquire, affinity, coreAffinity(), Kernel_ProcessorCoreID(), _contextid);
 #else
         bool affinity = !__global.useMU(); // if no MU, affinity anywhere
 #endif
@@ -924,22 +948,25 @@ namespace PAMI
           {
             _dummy_disable = true;
           }
+        TRACE_FN_EXIT();
       }
 
       inline pami_result_t registerWithOptimizer (Geometry::GeometryOptimizer<BGQGeometry>  *go)
       {
+        TRACE_FN_ENTER();
 #ifndef ENABLE_COLLECTIVE_MULTICONTEXT
         if (_contextid == 0) 
 #endif
-	{
-	  TRACE_ERR((stderr, "Context::registerWithOptimizer id %zu, geometry %p\n", _contextid, go->geometry()));
-	  uint64_t  reduce_result[16];
-	  int n_multi = 0;
-	  _multi_registration->register_local (_contextid, go->geometry(), reduce_result, n_multi);	
-	  go->registerWithOptimizer (_contextid, reduce_result, n_multi, receive_global, this );
-	  
-	}
-	return PAMI_SUCCESS;
+            {
+            TRACE_FORMAT("id %zu, geometry %p", _contextid, go->geometry());
+            uint64_t  reduce_result[16];
+            int n_multi = 0;
+            _multi_registration->register_local (_contextid, go->geometry(), reduce_result, n_multi);	
+            go->registerWithOptimizer (_contextid, reduce_result, n_multi, receive_global, this );
+
+        }
+        TRACE_FN_EXIT();
+        return PAMI_SUCCESS;
       }
 
       
@@ -950,16 +977,19 @@ namespace PAMI
 				  BGQGeometry    * geometry,
 				  pami_result_t    result )
       {
-        TRACE_ERR((stderr, "Context::receive_global context id %zu, geometry %p\n", context_id, geometry));
-	Context *context = (Context *) cookie;
-	context->_multi_registration->receive_global(context_id, geometry, reduce_result, n);
+        TRACE_FN_ENTER();
+        TRACE_FORMAT("context id %zu, geometry %p", context_id, geometry);
+        Context *context = (Context *) cookie;
+        context->_multi_registration->receive_global(context_id, geometry, reduce_result, n);
+        TRACE_FN_EXIT();
       }
 
       inline pami_result_t analyze(size_t         context_id,
                                    BGQGeometry    *geometry,
                                    int phase = 0)
       {
-        TRACE_ERR((stderr, "Context::analyze context id %zu, registration %p, phase %d\n", context_id, geometry, phase));
+        TRACE_FN_ENTER();
+        TRACE_FORMAT("id %zu, registration %p, phase %d", context_id, geometry, phase);
 	
         // Can only use shmem pgas if the geometry is all local tasks, so check the topology
         if (_pgas_shmem_registration && ((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->isLocal())
@@ -980,6 +1010,7 @@ namespace PAMI
         if(_multi_registration)// && (((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
             _multi_registration->analyze(context_id, geometry, phase);
 
+        TRACE_FN_EXIT();
         return PAMI_SUCCESS;
       }
 
@@ -1109,6 +1140,9 @@ namespace PAMI
       
   }; // end PAMI::Context
 }; // end namespace PAMI
+
+#undef DO_TRACE_ENTEREXIT 
+#undef DO_TRACE_DEBUG     
 
 #endif // __components_context_bgq_bgqcontext_h__
 //

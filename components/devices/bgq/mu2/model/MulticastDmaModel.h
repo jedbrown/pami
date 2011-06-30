@@ -102,7 +102,7 @@ namespace PAMI
 
 	    for (int i = 0; i < MAX_COUNTERS; ++i) {
 	      char *sbuf = buf + sizeof(InjectDPutMulticast) * i;
-	      new (sbuf) InjectDPutMulticast(device);
+	      new (sbuf) InjectDPutMulticast(device,context);
 	    }
 	    _sends = (InjectDPutMulticast *)buf;
 

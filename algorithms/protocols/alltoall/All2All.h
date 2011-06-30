@@ -318,7 +318,7 @@ public:
             pami_xfer_t *xfer = coll_object->getXfer();
 
             if (xfer->cb_done)
-                xfer->cb_done(NULL, xfer->cookie, PAMI_SUCCESS);
+                xfer->cb_done(context, xfer->cookie, PAMI_SUCCESS);
 
             All2AllFactoryT *factory = (All2AllFactoryT *)
                                        coll_object->getFactory();

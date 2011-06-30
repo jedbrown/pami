@@ -1,7 +1,15 @@
-///
-/// \file components/devices/bgq/mu2/model/CollectiveDmaModelBase.h
-/// \brief ???
-///
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file components/devices/bgq/mu2/model/CollectiveDmaModelBase.h
+ * \brief ???
+ */
 #ifndef __components_devices_bgq_mu2_model_CollectiveDmaModelBase_h__
 #define __components_devices_bgq_mu2_model_CollectiveDmaModelBase_h__
 
@@ -148,6 +156,7 @@ namespace PAMI
 
           CollectiveDmaModelBase ():
               _mucontext(*(MU::Context*)NULL),
+              _context(NULL),
               _injChannel (*(InjChannel *)NULL),
               _gdev(*(Generic::Device*)NULL)
           {
@@ -155,9 +164,11 @@ namespace PAMI
           TRACE_FN_EXIT();
           }
 
-          CollectiveDmaModelBase (MU::Context    & context,
+          CollectiveDmaModelBase (pami_context_t   pami_context,
+                                  MU::Context    & context,
                                   pami_result_t  & status):
               _mucontext(context),
+              _context(pami_context),
               _injChannel (context.injectionGroup.channel[0]),
               _gdev(*context.getProgressDevice())
           {
@@ -428,6 +439,7 @@ namespace PAMI
 
         protected:
           MU::Context                                & _mucontext;         /// Pointer to MU context
+          pami_context_t                               _context;
           InjChannel                                 & _injChannel;
           Generic::Device                            & _gdev;
           MUSPI_DescriptorBase                       _modeldesc;         /// Model descriptor
@@ -468,6 +480,7 @@ namespace PAMI
 
         _collstate._colCounter = bytes;
         CollectiveDPutMulticast *msg = new (&_mcast_msg) CollectiveDPutMulticast (_mucontext,
+                                                                                  _context,
                                                                                   cb_done,
                                                                                   cookie,
                                                                                   (isroot) ? src : dst,

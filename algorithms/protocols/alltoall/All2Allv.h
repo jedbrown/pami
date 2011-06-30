@@ -373,7 +373,7 @@ namespace CCMI
           pami_xfer_t *xfer = coll_object->getXfer();
 
           if (xfer->cb_done)
-            xfer->cb_done(NULL, xfer->cookie, PAMI_SUCCESS);
+            xfer->cb_done(context, xfer->cookie, PAMI_SUCCESS);
 
           All2AllvFactoryT *factory = (All2AllvFactoryT *)
                                       coll_object->getFactory();

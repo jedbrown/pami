@@ -1,7 +1,15 @@
-///
-/// \file components/devices/bgq/mu2/model/CollectiveMulticombineDmaModel.h
-/// \brief ???
-///
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file components/devices/bgq/mu2/model/CollectiveMulticombineDmaModel.h
+ * \brief ???
+ */
 #ifndef __components_devices_bgq_mu2_model_CollectiveMulticombineDmaModel_h__
 #define __components_devices_bgq_mu2_model_CollectiveMulticombineDmaModel_h__
 
@@ -33,7 +41,7 @@ namespace PAMI
                                           pami_context_t   context,
                                           MU::Context                 & device,
                                           pami_result_t               & status) :
-              CollectiveDmaModelBase(device, status),
+              CollectiveDmaModelBase(context, device, status),
               Interface::MulticombineModel<CollectiveMulticombineDmaModel, MU::Context, mcomb_state_bytes>  (device, status)
           {
             TRACE_FN_ENTER();

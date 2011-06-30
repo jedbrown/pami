@@ -16,6 +16,20 @@
 
 #include "algorithms/executor/Executor.h"
 
+#include "util/ccmi_debug.h"
+#include "util/ccmi_util.h"
+
+#include "util/trace.h"
+
+#ifdef CCMI_TRACE_ALL
+  #define DO_TRACE_ENTEREXIT 1
+  #define DO_TRACE_DEBUG     1
+#else
+  #define DO_TRACE_ENTEREXIT 0
+  #define DO_TRACE_DEBUG     0
+#endif
+
+
 namespace CCMI
 {
   namespace Executor
@@ -25,17 +39,30 @@ namespace CCMI
     {
       public:
         //Base Composite class
-        Composite() {TRACE_ADAPTOR((stderr, "<%p>Executor::Composite()\n", this));}
+        Composite() 
+        {
+          TRACE_FN_ENTER();
+          TRACE_FORMAT("<%p>",this);
+          TRACE_FN_EXIT();
+        }
 
         ///
         /// \brief Destructor
         ///
-        virtual ~Composite() {}
+        virtual ~Composite() 
+        {
+          TRACE_FN_ENTER();
+          TRACE_FORMAT("<%p>",this);
+          TRACE_FN_EXIT();
+        }
 
         void setDoneCallback (pami_event_function cb_done, void *cd)
         {
+          TRACE_FN_ENTER();
           _cb_done    =   cb_done;
           _clientdata =   cd;
+          TRACE_FORMAT("<%p> %p(%p)",this,_cb_done,_clientdata);
+          TRACE_FN_EXIT();
         }
 
         ///
@@ -43,9 +70,9 @@ namespace CCMI
         ///
         virtual void start()
         {
-          TRACE_ADAPTOR((stderr, "<%p>Executor::Composite::start() DO NOTHING?\n", this));
-          //Currently not all composites implement this method
-          //	CCMI_abort();
+          TRACE_FN_ENTER();
+          TRACE_FORMAT("<%p> do nothing",this);
+          TRACE_FN_EXIT();
         }
 
         ///
@@ -58,9 +85,21 @@ namespace CCMI
           return PAMI_SUCCESS;
         }
 
-        void   setAlgorithmFactory (void *f) { _afactory = f; }
+        void   setAlgorithmFactory (void *f) 
+        { 
+          TRACE_FN_ENTER();
+          _afactory = f; 
+          TRACE_FORMAT("<%p> %p",this,f);
+          TRACE_FN_EXIT();
+        }
 
-        void  * getAlgorithmFactory() { return _afactory; }
+        void  * getAlgorithmFactory() 
+        { 
+          TRACE_FN_ENTER();
+          TRACE_FORMAT("<%p> %p",this,_afactory);
+          TRACE_FN_EXIT();
+          return _afactory; 
+        }
 
 
         /**
@@ -79,7 +118,20 @@ namespace CCMI
           //Currently not all composites implement this method
           CCMI_abort();
         }
-      inline void setContext(pami_context_t ctxt) {_context=ctxt;}
+        inline void setContext(pami_context_t ctxt) 
+        {
+          TRACE_FN_ENTER();
+          _context=ctxt;
+          TRACE_FORMAT("<%p> %p",this,ctxt);
+          TRACE_FN_EXIT();
+        }
+        inline pami_context_t getContext() 
+        {
+          TRACE_FN_ENTER();
+          TRACE_FORMAT("<%p> %p",this,_context);
+          TRACE_FN_EXIT();
+          return _context;
+        }
       protected:
         ///
         ///  \brief Callback to call when the barrier has finished
@@ -114,13 +166,18 @@ namespace CCMI
 
         CompositeT () : Composite()
         {
-          TRACE_ADAPTOR((stderr, "<%p>Executor::CompositeT()\n", this));
-	  reset();
+          TRACE_FN_ENTER();
+          TRACE_FORMAT("<%p>",this);
+          reset();
+          TRACE_FN_EXIT();
         }
 
         /// Default Destructor
         virtual ~CompositeT()
         {
+          TRACE_FN_ENTER();
+          TRACE_FORMAT("<%p>",this);
+          TRACE_FN_EXIT();
           for (unsigned count = 0; count < _numExecutors; count ++)
             {
               _executors[count]->~T_Exec();
@@ -144,7 +201,6 @@ namespace CCMI
 
         void addBarrier (T_Bar *exec)
         {
-          TRACE_ADAPTOR((stderr, "<%p>Executor::CompositeT::addBarrier()\n", this));
           _barrier = exec;
         }
 
@@ -158,13 +214,16 @@ namespace CCMI
           return _numExecutors;
         }
 
-	inline void reset () 
-	{
+        inline void reset () 
+        {
+          TRACE_FN_ENTER();
+          TRACE_FORMAT("<%p>",this);
           _barrier = NULL;
-	  for (int count = 0; count < NUM_EXECUTORS; count ++)
+          for (int count = 0; count < NUM_EXECUTORS; count ++)
             _executors[count] = NULL;	  
           _numExecutors = 0;
-	}
+          TRACE_FN_EXIT();
+        }
 
         //virtual void start () = 0;
     };  //-- end class Composite

@@ -162,6 +162,7 @@ namespace PAMI
 
       private:
         MU::Context                                & _device;
+        pami_context_t                               _context;
         pami_task_t                                  _task_id;
 
         MemoryAllocator < sizeof(state_data_t), 16 > _allocator;
@@ -181,6 +182,7 @@ namespace PAMI
         MulticastModel (pami_client_t  client, pami_context_t context, MU::Context & device, pami_result_t &status) :
         Interface::AMMulticastModel < MulticastModel<T_Allsided, T_Msgdata_support, T_PWQ_support>, MU::Context, 4096 /*sizeof(state_data_t)*/ > (device, status),
         _device (device),
+        _context(context),
         _task_id(__global.mapping.task()),
         _header_model (device),
         _data_model (device),
@@ -480,8 +482,8 @@ namespace PAMI
             state_data->cb_done.clientdata = NULL;
 
             // Invoke the registered dispatch function.
-            model->_dispatch_function((pami_context_t)NULL, /// \todo mu2 context asserts => model->_device.getContext(),
-                                      (pami_quad_t*)msg,                              // Msgdata
+            model->_dispatch_function(model->_context,                  // context
+                                      (pami_quad_t*)msg,                // Msgdata
                                       m->msgcount,                      // Count of msgdata
                                       m->connection_id,                 // Connection ID of data
                                       m->root,                          // Sending task/root
@@ -589,7 +591,7 @@ namespace PAMI
 
           // Invoke the receive done callback.
           if (state_data->cb_done.function)
-            state_data->cb_done.function (0,//_device.getContext(), ///\todo why does this assert?
+            state_data->cb_done.function (_context,
                                           state_data->cb_done.clientdata,
                                           PAMI_SUCCESS);
 
