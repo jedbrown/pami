@@ -1,3 +1,7 @@
+/**
+ * \file algorithms/protocols/tspcoll/Scatter.cc
+ * \brief ???
+ */
 #include "algorithms/protocols/tspcoll/Scatter.h"
 #include "algorithms/protocols/tspcoll/Team.h"
 

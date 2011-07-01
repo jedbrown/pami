@@ -1,3 +1,7 @@
+/**
+ * \file algorithms/protocols/tspcoll/cau_collectives.cc
+ * \brief ???
+ */
 #include "cau_collectives.h"
 
 #ifndef RC0
@@ -291,4 +295,3 @@ cau_reduce_op_t xlpgas::cau_op_dtype(xlpgas_ops_t      op,
   
   return cau_op;
 }
-

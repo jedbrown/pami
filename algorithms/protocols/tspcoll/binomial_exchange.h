@@ -1,5 +1,9 @@
-#ifndef __binomial_exchange_h__
-#define __binomial_exchange_h__
+/**
+ * \file algorithms/protocols/tspcoll/binomial_exchange.h
+ * \brief ???
+ */
+#ifndef __algorithms_protocols_tspcoll_binomial_exchange_h__
+#define __algorithms_protocols_tspcoll_binomial_exchange_h__
 
 /* **********************************************************************
     Binomial exchange tree interface and implementation; Used by one sided

@@ -56,7 +56,7 @@ void dispatch_fn (
   
   uintptr_t * data_location = (uintptr_t *) header;
 
-  //fprintf (stdout, "recv'd rmw data location %p from task %d\n", (void *) *data_location, task);
+  /*fprintf (stdout, "recv'd rmw data location %p from task %d\n", (void *) *data_location, task); */
   
   uintptr_t * rmw = (uintptr_t *) cookie;
   rmw[task] = *data_location;
@@ -150,7 +150,7 @@ int main (int argc, char ** argv)
       parameters.data.iov_len    = 0;
       PAMI_Endpoint_create (client, i, 0, &parameters.dest);
 
-      //fprintf (stdout, "send rmw data location %p (%p) to task %zu\n", parameters.header.iov_base, (void *) data_location, i);
+      /*fprintf (stdout, "send rmw data location %p (%p) to task %zu\n", parameters.header.iov_base, (void *) data_location, i); */
 
       result = PAMI_Send_immediate (context, &parameters);
     }
@@ -158,7 +158,7 @@ int main (int argc, char ** argv)
   /* Wait until all tasks have exchanged the rmw information */
   for (i = 0; i < num_tasks; i++)
     {
-      //fprintf (stdout, "waiting for task %zu to send rmw data.\n", i);
+      /*fprintf (stdout, "waiting for task %zu to send rmw data.\n", i); */
       while (rmw[i] == 0)
         PAMI_Context_advance (context, 100);
     }

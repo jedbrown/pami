@@ -1,3 +1,7 @@
+/**
+ * \file algorithms/protocols/tspcoll/ShmHybridBcast.cc
+ * \brief ???
+ */
 #include "algorithms/protocols/tspcoll/ShmHybridBcast.h"
 #include "algorithms/protocols/tspcoll/local/FixedLeader.h"
 #include "algorithms/protocols/tspcoll/Team.h"

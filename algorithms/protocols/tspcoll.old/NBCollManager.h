@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/protocols/tspcoll/NBCollManager.h
+ * \file algorithms/protocols/tspcoll.old/NBCollManager.h
  * \brief ???
  */
 
-#ifndef __algorithms_protocols_tspcoll_NBCollManager_h__
-#define __algorithms_protocols_tspcoll_NBCollManager_h__
+#ifndef __algorithms_protocols_tspcoll_old_NBCollManager_h__
+#define __algorithms_protocols_tspcoll_old_NBCollManager_h__
 
 
 #include "algorithms/protocols/tspcoll/NBCollFactory.h"

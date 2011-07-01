@@ -10,12 +10,12 @@
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
 /**
- * \file algorithms/protocols/tspcoll/ScBcast.h
+ * \file algorithms/protocols/tspcoll.old/ScBcast.h
  * \brief ???
  */
 
-#ifndef __algorithms_protocols_tspcoll_ScBcast_h__
-#define __algorithms_protocols_tspcoll_ScBcast_h__
+#ifndef __algorithms_protocols_tspcoll_old_ScBcast_h__
+#define __algorithms_protocols_tspcoll_old_ScBcast_h__
 
 #include <assert.h>
 #include <stdio.h>

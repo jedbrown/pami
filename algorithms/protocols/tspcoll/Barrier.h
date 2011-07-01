@@ -1,5 +1,9 @@
-#ifndef __xlpgas_barrier_h__
-#define __xlpgas_barrier_h__
+/**
+ * \file algorithms/protocols/tspcoll/Barrier.h
+ * \brief ???
+ */
+#ifndef __algorithms_protocols_tspcoll_Barrier_h__
+#define __algorithms_protocols_tspcoll_Barrier_h__
 
 #include "algorithms/protocols/tspcoll/CollExchange.h"
 #include "algorithms/protocols/tspcoll/Team.h"

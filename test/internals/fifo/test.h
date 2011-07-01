@@ -2,6 +2,9 @@
  * \file test/internals/fifo/test.h
  * \brief ???
  */
+#ifndef __test_internals_fifo_test_h__
+#define __test_internals_fifo_test_h__
+
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -258,4 +261,4 @@ class Test
     size_t _size;
 };
 
-
+#endif

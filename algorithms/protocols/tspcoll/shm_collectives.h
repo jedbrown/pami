@@ -1,5 +1,9 @@
-#ifndef _shm_collectives
-#define _shm_collectives
+/**
+ * \file algorithms/protocols/tspcoll/shm_collectives.h
+ * \brief ???
+ */
+#ifndef __algorithms_protocols_tspcoll_shm_collectives_h__
+#define __algorithms_protocols_tspcoll_shm_collectives_h__
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>

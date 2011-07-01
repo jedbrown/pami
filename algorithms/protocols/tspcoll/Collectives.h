@@ -1,5 +1,9 @@
-#ifndef __xlpgas_all_collectives_h__
-#define __xlpgas_all_collectives_h__
+/**
+ * \file algorithms/protocols/tspcoll/Collectives.h
+ * \brief ???
+ */
+#ifndef __algorithms_protocols_tspcoll_Collectives_h__
+#define __algorithms_protocols_tspcoll_Collectives_h__
 
 #include "algorithms/protocols/tspcoll/CollExchange.h"
 #include "algorithms/protocols/tspcoll/Barrier.h"

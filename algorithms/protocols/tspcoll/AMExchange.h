@@ -1,5 +1,9 @@
-#ifndef __xlpgas_AMExchange_h__
-#define __xlpgas_AMExchange_h__
+/**
+ * \file algorithms/protocols/tspcoll/AMExchange.h
+ * \brief ???
+ */
+#ifndef __algorithms_protocols_tspcoll_AMExchange_h__
+#define __algorithms_protocols_tspcoll_AMExchange_h__
 
 #include "algorithms/protocols/tspcoll/Team.h"
 #include "algorithms/protocols/tspcoll/CollExchange.h"

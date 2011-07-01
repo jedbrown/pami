@@ -1,5 +1,9 @@
-#ifndef __xlpgas_ShmCauAllReduce_h__
-#define __xlpgas_ShmCauAllReduce_h__
+/**
+ * \file algorithms/protocols/tspcoll/ShmCauAllReduce.h
+ * \brief ???
+ */
+#ifndef __algorithms_protocols_tspcoll_ShmCauAllReduce_h__
+#define __algorithms_protocols_tspcoll_ShmCauAllReduce_h__
 
 #include "algorithms/protocols/tspcoll/Team.h"
 #include "algorithms/protocols/tspcoll/CollExchange.h"
@@ -36,4 +40,3 @@ namespace xlpgas
 #include "algorithms/protocols/tspcoll/ShmCauAllReduce.cc"
 
 #endif /* __xlpgas_ShmCauAllReduce_h__ */
-

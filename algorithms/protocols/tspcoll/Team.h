@@ -1,5 +1,9 @@
-#ifndef __xlpgas_communicator_h__
-#define __xlpgas_communicator_h__
+/**
+ * \file algorithms/protocols/tspcoll/Team.h
+ * \brief ???
+ */
+#ifndef __algorithms_protocols_tspcoll_Team_h__
+#define __algorithms_protocols_tspcoll_Team_h__
 
 #include "stdio.h"
 #include "algorithms/protocols/tspcoll/Collective.h"

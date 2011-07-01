@@ -1,3 +1,7 @@
+/**
+ * \file algorithms/protocols/tspcoll/coll_impl.cc
+ * \brief ???
+ */
 #include "algorithms/protocols/tspcoll/Collective.h"
 #include "algorithms/protocols/tspcoll/Team.h"
 #include "algorithms/protocols/tspcoll/Collectives.h"

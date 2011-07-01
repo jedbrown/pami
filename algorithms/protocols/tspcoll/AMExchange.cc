@@ -1,3 +1,7 @@
+/**
+ * \file algorithms/protocols/tspcoll/AMExchange.cc
+ * \brief ???
+ */
 #include "algorithms/protocols/tspcoll/AMExchange.h"
 #include "algorithms/protocols/tspcoll/AMBcast.h"
 #include "algorithms/protocols/tspcoll/AMGather.h"

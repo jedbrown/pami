@@ -1,3 +1,7 @@
+/**
+ * \file algorithms/protocols/tspcoll/SHMReduceBcast.cc
+ * \brief ???
+ */
 #include "algorithms/protocols/tspcoll/SHMReduceBcast.h"
 #include "algorithms/protocols/tspcoll/Team.h"
 

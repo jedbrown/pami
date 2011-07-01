@@ -10,12 +10,12 @@
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
 /**
- * \file algorithms/protocols/tspcoll/Gather.h
+ * \file algorithms/protocols/tspcoll.old/Gather.h
  * \brief ???
  */
 
-#ifndef __algorithms_protocols_tspcoll_Gather_h__
-#define __algorithms_protocols_tspcoll_Gather_h__
+#ifndef __algorithms_protocols_tspcoll_old_Gather_h__
+#define __algorithms_protocols_tspcoll_old_Gather_h__
 
 #include <assert.h>
 #include <stdio.h>

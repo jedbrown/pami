@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/protocols/tspcoll/NBCallbacks.h
+ * \file algorithms/protocols/tspcoll.old/NBCallbacks.h
  * \brief ???
  */
 
-#ifndef __algorithms_protocols_tspcoll_NBCallbacks_h__
-#define __algorithms_protocols_tspcoll_NBCallbacks_h__
+#ifndef __algorithms_protocols_tspcoll_old_NBCallbacks_h__
+#define __algorithms_protocols_tspcoll_old_NBCallbacks_h__
 
 #include "components/devices/generic/Device.h"
 

@@ -1,3 +1,7 @@
+/**
+ * \file algorithms/protocols/tspcoll/Broadcast.cc
+ * \brief ???
+ */
 #include "algorithms/protocols/tspcoll/Broadcast.h"
 #include "algorithms/protocols/tspcoll/Team.h"
 #include <assert.h>

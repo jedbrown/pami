@@ -1,3 +1,7 @@
+/**
+ * \file algorithms/protocols/tspcoll/Team.cc
+ * \brief ???
+ */
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>

@@ -1,3 +1,7 @@
+/**
+ * \file algorithms/protocols/tspcoll/CollectiveManager.cc
+ * \brief ???
+ */
 #include "algorithms/protocols/tspcoll/Collective.h"
 template <class T_NI>
 xlpgas::CollectiveManager<T_NI> ** xlpgas::CollectiveManager<T_NI>::_instances = NULL;

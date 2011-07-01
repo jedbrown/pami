@@ -1,5 +1,9 @@
-#ifndef __xlpgas_Scatter_h__
-#define __xlpgas_Scatter_h__
+/**
+ * \file algorithms/protocols/tspcoll/Scatter.h
+ * \brief ???
+ */
+#ifndef __algorithms_protocols_tspcoll_Scatter_h__
+#define __algorithms_protocols_tspcoll_Scatter_h__
 
 #include "algorithms/protocols/tspcoll/Team.h"
 #include "algorithms/protocols/tspcoll/CollExchange.h"
@@ -88,4 +92,3 @@ namespace xlpgas
 #include "algorithms/protocols/tspcoll/Scatter.cc"
 
 #endif /* __xlpgas_Scatter_h__ */
-

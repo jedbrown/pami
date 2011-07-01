@@ -1,3 +1,7 @@
+/**
+ * \file algorithms/protocols/tspcoll/Allreduce.cc
+ * \brief ???
+ */
 #include "algorithms/protocols/tspcoll/Allreduce.h"
 
 /* ************************************************************************* */

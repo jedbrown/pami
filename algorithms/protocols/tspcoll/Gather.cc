@@ -1,3 +1,7 @@
+/**
+ * \file algorithms/protocols/tspcoll/Gather.cc
+ * \brief ???
+ */
 #include "algorithms/protocols/tspcoll/Gather.h"
 #include "algorithms/protocols/tspcoll/Team.h"
 

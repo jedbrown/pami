@@ -1,3 +1,7 @@
+/**
+ * \file algorithms/protocols/tspcoll/PrefixSums.cc
+ * \brief ???
+ */
 #include "algorithms/protocols/tspcoll/PrefixSums.h"
 #include "algorithms/protocols/tspcoll/Team.h"
 #include <assert.h>

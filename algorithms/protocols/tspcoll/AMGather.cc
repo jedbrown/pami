@@ -1,3 +1,7 @@
+/**
+ * \file algorithms/protocols/tspcoll/AMGather.cc
+ * \brief ???
+ */
 #include "algorithms/protocols/tspcoll/AMExchange.h"
 
 void xlpgas::AMGather::reset (int root, const void * s, unsigned l)

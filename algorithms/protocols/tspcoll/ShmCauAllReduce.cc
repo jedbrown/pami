@@ -1,3 +1,7 @@
+/**
+ * \file algorithms/protocols/tspcoll/ShmCauAllReduce.cc
+ * \brief ???
+ */
 #include "algorithms/protocols/tspcoll/Allreduce.h"
 #include "algorithms/protocols/tspcoll/ShmCauAllReduce.h"
 #include "algorithms/protocols/tspcoll/Team.h"

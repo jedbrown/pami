@@ -1,5 +1,9 @@
-#ifndef __xlpgas_PrefixSums_h__
-#define __xlpgas_PrefixSums_h__
+/**
+ * \file algorithms/protocols/tspcoll/PrefixSums.h
+ * \brief ???
+ */
+#ifndef __algorithms_protocols_tspcoll_PrefixSums_h__
+#define __algorithms_protocols_tspcoll_PrefixSums_h__
 
 #include "algorithms/protocols/tspcoll/CollExchange.h"
 #include "algorithms/protocols/tspcoll/Allreduce.h"

@@ -1,5 +1,9 @@
-#ifndef __xlpgas_AMReduce_h__
-#define __xlpgas_AMReduce_h__
+/**
+ * \file algorithms/protocols/tspcoll/AMReduce.h
+ * \brief ???
+ */
+#ifndef __algorithms_protocols_tspcoll_AMReduce_h__
+#define __algorithms_protocols_tspcoll_AMReduce_h__
 
 namespace xlpgas
 {

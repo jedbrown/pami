@@ -10,12 +10,12 @@
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
 /**
- * \file algorithms/protocols/tspcoll/Allreduce.h
+ * \file algorithms/protocols/tspcoll.old/Allreduce.h
  * \brief ???
  */
 
-#ifndef __algorithms_protocols_tspcoll_Allreduce_h__
-#define __algorithms_protocols_tspcoll_Allreduce_h__
+#ifndef __algorithms_protocols_tspcoll_old_Allreduce_h__
+#define __algorithms_protocols_tspcoll_old_Allreduce_h__
 
 #include "algorithms/protocols/tspcoll/CollExchange.h"
 #include "algorithms/protocols/allreduce/ReduceFunctions.h"

@@ -1,5 +1,9 @@
-#ifndef __xlpgas_Broadcast_h__
-#define __xlpgas_Broadcast_h__
+/**
+ * \file algorithms/protocols/tspcoll/Broadcast.h
+ * \brief ???
+ */
+#ifndef __algorithms_protocols_tspcoll_Broadcast_h__
+#define __algorithms_protocols_tspcoll_Broadcast_h__
 
 #include "algorithms/protocols/tspcoll/CollExchange.h"
 

@@ -1,5 +1,9 @@
-#ifndef __xlpgas_Allreduce_h__
-#define __xlpgas_Allreduce_h__
+/**
+ * \file algorithms/protocols/tspcoll/Allreduce.h
+ * \brief ???
+ */
+#ifndef __algorithms_protocols_tspcoll_Allreduce_h__
+#define __algorithms_protocols_tspcoll_Allreduce_h__
 
 #include "algorithms/protocols/tspcoll/CollExchange.h"
 

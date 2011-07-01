@@ -1,3 +1,7 @@
+/**
+ * \file algorithms/protocols/tspcoll/AMBcast.cc
+ * \brief ???
+ */
 #include "algorithms/protocols/tspcoll/AMExchange.h" // this includes AMBcast.h
 
 template<class T_NI>

@@ -41,4 +41,3 @@ namespace PAMI
 }; // namespace PAMI
 
 #endif // __api_extension_c_async_progress_ProgressExtension_h__
-

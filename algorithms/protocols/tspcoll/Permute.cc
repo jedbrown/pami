@@ -1,3 +1,7 @@
+/**
+ * \file algorithms/protocols/tspcoll/Permute.cc
+ * \brief ???
+ */
 #include "algorithms/protocols/tspcoll/Permute.h"
 #include "algorithms/protocols/tspcoll/Team.h"
 

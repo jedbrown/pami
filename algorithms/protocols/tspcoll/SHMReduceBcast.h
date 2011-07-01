@@ -1,5 +1,9 @@
-#ifndef __xlpgas_Shmreduce_h__
-#define __xlpgas_Shmreduce_h__
+/**
+ * \file algorithms/protocols/tspcoll/SHMReduceBcast.h
+ * \brief ???
+ */
+#ifndef __algorithms_protocols_tspcoll_SHMReduceBcast_h__
+#define __algorithms_protocols_tspcoll_SHMReduceBcast_h__
 
 #include "algorithms/protocols/tspcoll/Collective.h"
 #include "algorithms/protocols/tspcoll/shm_collectives.h"

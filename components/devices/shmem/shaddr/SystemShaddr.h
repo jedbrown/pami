@@ -148,4 +148,3 @@ namespace PAMI
 };        // PAMI namespace
 
 #endif /* __components_devices_shmem_shaddr_SystemShaddr_h__ */
-

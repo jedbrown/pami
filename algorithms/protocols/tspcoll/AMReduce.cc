@@ -1,3 +1,7 @@
+/**
+ * \file algorithms/protocols/tspcoll/AMReduce.cc
+ * \brief ???
+ */
 #include "algorithms/protocols/tspcoll/AMExchange.h" // this includes AMBcast.h
 
 void xlpgas::AMReduce::reset (int root, const void * s, unsigned l)

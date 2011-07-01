@@ -220,4 +220,3 @@ inline bool SharedArray::IsLeader() const {
     return this->is_leader;
 }
 #endif /* _SHAREDARRAY_H */
-

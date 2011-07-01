@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/api/collectives/geometry.cc
+ * \file test/api/collectives/geometry.c
  * \brief Test for large geometry create counts
  */
 

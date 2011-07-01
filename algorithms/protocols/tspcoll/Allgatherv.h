@@ -1,5 +1,9 @@
-#ifndef __xlpgas_Allgatherv_h__
-#define __xlpgas_Allgatherv_h__
+/**
+ * \file algorithms/protocols/tspcoll/Allgatherv.h
+ * \brief ???
+ */
+#ifndef __algorithms_protocols_tspcoll_Allgatherv_h__
+#define __algorithms_protocols_tspcoll_Allgatherv_h__
 
 #include "algorithms/protocols/tspcoll/CollExchange.h"
 
@@ -28,4 +32,3 @@ namespace xlpgas
 #include "algorithms/protocols/tspcoll/Allgatherv.cc"
 
 #endif /* __xlpgas_Allgatherv_h__ */
-

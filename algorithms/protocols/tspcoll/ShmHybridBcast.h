@@ -1,5 +1,9 @@
-#ifndef __xlpgas_ShmHybridBcast_h__
-#define __xlpgas_ShmHybridBcast_h__
+/**
+ * \file algorithms/protocols/tspcoll/ShmHybridBcast.h
+ * \brief ???
+ */
+#ifndef __algorithms_protocols_tspcoll_ShmHybridBcast_h__
+#define __algorithms_protocols_tspcoll_ShmHybridBcast_h__
 
 #include "algorithms/protocols/tspcoll/Team.h"
 #include "algorithms/protocols/tspcoll/CollExchange.h"
@@ -35,4 +39,3 @@ namespace xlpgas
 #include "algorithms/protocols/tspcoll/ShmHybridBcast.cc"
 
 #endif /* __xlpgas_ShmHybridBcast_h__ */
-

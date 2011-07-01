@@ -1,5 +1,9 @@
-#ifndef __xlpgas_Collective_h__
-#define __xlpgas_Collective_h__
+/**
+ * \file algorithms/protocols/tspcoll/Collective.h
+ * \brief ???
+ */
+#ifndef __algorithms_protocols_tspcoll_Collective_h__
+#define __algorithms_protocols_tspcoll_Collective_h__
 
 #include <stdio.h>
 #include "algorithms/protocols/tspcoll/Array.h"

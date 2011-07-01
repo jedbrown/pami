@@ -1,3 +1,7 @@
+/**
+ * \file algorithms/protocols/tspcoll/local/FixedLeader.h
+ * \brief ???
+ */
 /* *********************************************************************** */
 /* *********************************************************************** */
 #include <stdio.h>
@@ -7,8 +11,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#ifndef __xlpgas_local_FixedLeader_h__
-#define __xlpgas_local_FixedLeader_h__
+#ifndef __algorithms_protocols_tspcoll_local_FixedLeader_h__
+#define __algorithms_protocols_tspcoll_local_FixedLeader_h__
 
 #ifdef XLPGAS_PAMI_CAU
 
@@ -362,4 +366,3 @@ void xlpgas::local::FixedLeader2LB<Wait>::
 
 
 #endif
-

@@ -1,5 +1,9 @@
-#ifndef __xlpgas_split_team_h__
-#define __xlpgas_split_team_h__
+/**
+ * \file algorithms/protocols/tspcoll/SplitTeam.h
+ * \brief ???
+ */
+#ifndef __algorithms_protocols_tspcoll_SplitTeam_h__
+#define __algorithms_protocols_tspcoll_SplitTeam_h__
 
 #include <Team.h>
 #include <algorithms/protocols/tspcoll/Collectives.h>

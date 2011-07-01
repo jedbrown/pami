@@ -1,3 +1,7 @@
+/**
+ * \file algorithms/protocols/tspcoll/shm_collectives.cc
+ * \brief ???
+ */
 #include "shm_collectives.h"
 
 extern "C" void __xlupc_barrier (int, int);

@@ -10,12 +10,12 @@
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
 /**
- * \file algorithms/protocols/tspcoll/Scatter.h
+ * \file algorithms/protocols/tspcoll.old/Scatter.h
  * \brief ???
  */
 
-#ifndef __algorithms_protocols_tspcoll_Scatter_h__
-#define __algorithms_protocols_tspcoll_Scatter_h__
+#ifndef __algorithms_protocols_tspcoll_old_Scatter_h__
+#define __algorithms_protocols_tspcoll_old_Scatter_h__
 
 #include <assert.h>
 #include <stdio.h>

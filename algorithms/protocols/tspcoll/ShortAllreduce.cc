@@ -1,3 +1,7 @@
+/**
+ * \file algorithms/protocols/tspcoll/ShortAllreduce.cc
+ * \brief ???
+ */
 #include "algorithms/protocols/tspcoll/Allreduce.h"
 #include "algorithms/protocols/tspcoll/Team.h"
 #include <assert.h>

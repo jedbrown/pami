@@ -1,5 +1,9 @@
-#ifndef __xlpgas_Alltoall_h__
-#define __xlpgas_Alltoall_h__
+/**
+ * \file algorithms/protocols/tspcoll/Alltoall.h
+ * \brief ???
+ */
+#ifndef __algorithms_protocols_tspcoll_Alltoall_h__
+#define __algorithms_protocols_tspcoll_Alltoall_h__
 
 #include "algorithms/protocols/tspcoll/Team.h"
 #include "algorithms/protocols/tspcoll/CollExchange.h"

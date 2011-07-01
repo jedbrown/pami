@@ -10,12 +10,12 @@
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
 /**
- * \file algorithms/protocols/tspcoll/Allgatherv.h
+ * \file algorithms/protocols/tspcoll.old/Allgatherv.h
  * \brief ???
  */
 
-#ifndef __algorithms_protocols_tspcoll_Allgatherv_h__
-#define __algorithms_protocols_tspcoll_Allgatherv_h__
+#ifndef __algorithms_protocols_tspcoll_old_Allgatherv_h__
+#define __algorithms_protocols_tspcoll_old_Allgatherv_h__
 
 #include <assert.h>
 #include <stdio.h>

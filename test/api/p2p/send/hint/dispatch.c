@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/api/p2p/send/hint/use_shmem/use_shmem_perf.c
+ * \file test/api/p2p/send/hint/dispatch.c
  * \brief ???
  */
 
@@ -244,6 +244,3 @@ int main (int argc, char ** argv)
 
   return (errors>0);
 }
-
-
-

@@ -7,12 +7,12 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/protocols/tspcoll/AllreduceShort.h
+ * \file algorithms/protocols/tspcoll.old/AllreduceShort.h
  * \brief ???
  */
 
-#ifndef __algorithms_protocols_tspcoll_AllreduceShort_h__
-#define __algorithms_protocols_tspcoll_AllreduceShort_h__
+#ifndef __algorithms_protocols_tspcoll_old_AllreduceShort_h__
+#define __algorithms_protocols_tspcoll_old_AllreduceShort_h__
 
 class ShortAllreduce
 {

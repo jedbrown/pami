@@ -1,5 +1,9 @@
-#ifndef __xlpgas_Gather_h__
-#define __xlpgas_Gather_h__
+/**
+ * \file algorithms/protocols/tspcoll/Gather.h
+ * \brief ???
+ */
+#ifndef __algorithms_protocols_tspcoll_Gather_h__
+#define __algorithms_protocols_tspcoll_Gather_h__
 
 #include "algorithms/protocols/tspcoll/Team.h"
 #include "algorithms/protocols/tspcoll/CollExchange.h"
@@ -87,4 +91,3 @@ namespace xlpgas
 #include "algorithms/protocols/tspcoll/Gather.cc"
 
 #endif /* __xlpgas_Gather_h__ */
-

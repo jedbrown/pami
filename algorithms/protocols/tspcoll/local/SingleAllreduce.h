@@ -1,3 +1,7 @@
+/**
+ * \file algorithms/protocols/tspcoll/local/SingleAllreduce.h
+ * \brief ???
+ */
 /* *********************************************************************** */
 /*    SMP short Allreduce implementation                                   */
 /* *********************************************************************** */
@@ -9,8 +13,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#ifndef __xlpgas_local_SingleAllreduce_h__
-#define __xlpgas_local_SingleAllreduce_h__
+#ifndef __algorithms_protocols_tspcoll_local_SingleAllreduce_h__
+#define __algorithms_protocols_tspcoll_local_SingleAllreduce_h__
 
 #ifdef XLPGAS_PAMI_CAU
 

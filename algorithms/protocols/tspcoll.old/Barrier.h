@@ -10,12 +10,12 @@
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
 /**
- * \file algorithms/protocols/tspcoll/Barrier.h
+ * \file algorithms/protocols/tspcoll.old/Barrier.h
  * \brief ???
  */
 
-#ifndef __algorithms_protocols_tspcoll_Barrier_h__
-#define __algorithms_protocols_tspcoll_Barrier_h__
+#ifndef __algorithms_protocols_tspcoll_old_Barrier_h__
+#define __algorithms_protocols_tspcoll_old_Barrier_h__
 
 #include "algorithms/protocols/tspcoll/CollExchange.h"
 

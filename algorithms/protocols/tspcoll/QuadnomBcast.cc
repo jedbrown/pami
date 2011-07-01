@@ -1,3 +1,7 @@
+/**
+ * \file algorithms/protocols/tspcoll/QuadnomBcast.cc
+ * \brief ???
+ */
 #include "algorithms/protocols/tspcoll/QuadnomBcast.h"
 #include "algorithms/protocols/tspcoll/Team.h"
 #include <assert.h>
@@ -97,4 +101,3 @@ void xlpgas::QuadnomBcast<T_NI>::reset (int                  rootindex,
   return;
 
 }
-

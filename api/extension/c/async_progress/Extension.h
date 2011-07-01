@@ -59,4 +59,3 @@ namespace PAMI
 
 #endif // __pami_extension_async_progress__
 #endif // __api_extension_c_async_progress_Extension_h__
-

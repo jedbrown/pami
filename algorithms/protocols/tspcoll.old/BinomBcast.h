@@ -10,12 +10,12 @@
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
 /**
- * \file algorithms/protocols/tspcoll/BinomBcast.h
+ * \file algorithms/protocols/tspcoll.old/BinomBcast.h
  * \brief ???
  */
 
-#ifndef __algorithms_protocols_tspcoll_BinomBcast_h__
-#define __algorithms_protocols_tspcoll_BinomBcast_h__
+#ifndef __algorithms_protocols_tspcoll_old_BinomBcast_h__
+#define __algorithms_protocols_tspcoll_old_BinomBcast_h__
 
 #include <assert.h>
 #include <stdio.h>

@@ -1,3 +1,7 @@
+/**
+ * \file algorithms/protocols/tspcoll/Alltoall.cc
+ * \brief ???
+ */
 #include "algorithms/protocols/tspcoll/Alltoall.h"
 #include "algorithms/protocols/tspcoll/Team.h"
 

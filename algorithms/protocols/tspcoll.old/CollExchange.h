@@ -10,12 +10,12 @@
 /* U.S. Copyright Office.                                                    */
 /* ************************************************************************* */
 /**
- * \file algorithms/protocols/tspcoll/CollExchange.h
+ * \file algorithms/protocols/tspcoll.old/CollExchange.h
  * \brief ???
  */
 
-#ifndef __algorithms_protocols_tspcoll_CollExchange_h__
-#define __algorithms_protocols_tspcoll_CollExchange_h__
+#ifndef __algorithms_protocols_tspcoll_old_CollExchange_h__
+#define __algorithms_protocols_tspcoll_old_CollExchange_h__
 
 #include "util/ccmi_debug.h"
 #include "algorithms/protocols/tspcoll/NBColl.h"

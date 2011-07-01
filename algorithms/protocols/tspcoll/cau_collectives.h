@@ -1,5 +1,9 @@
-#ifndef XLPGAS_CAU_COLLECTIVES
-#define XLPGAS_CAU_COLLECTIVES
+/**
+ * \file algorithms/protocols/tspcoll/cau_collectives.h
+ * \brief ???
+ */
+#ifndef __algorithms_protocols_tspcoll_cau_collectives_h__
+#define __algorithms_protocols_tspcoll_cau_collectives_h__
 #include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>

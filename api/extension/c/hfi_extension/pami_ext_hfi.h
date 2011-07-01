@@ -41,4 +41,3 @@ extern "C"
 #endif
 
 #endif // __pami_ext_hfi_h__
-

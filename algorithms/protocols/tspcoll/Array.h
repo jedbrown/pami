@@ -1,8 +1,12 @@
+/**
+ * \file algorithms/protocols/tspcoll/Array.h
+ * \brief ???
+ */
 #include <assert.h>
 #include <string.h>
 
-#ifndef __util_array_h__
-#define __util_array_h__
+#ifndef __algorithms_protocols_tspcoll_Array_h__
+#define __algorithms_protocols_tspcoll_Array_h__
 
 namespace util
 {

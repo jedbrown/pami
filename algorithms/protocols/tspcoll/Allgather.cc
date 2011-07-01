@@ -1,3 +1,7 @@
+/**
+ * \file algorithms/protocols/tspcoll/Allgather.cc
+ * \brief ???
+ */
 #include "algorithms/protocols/tspcoll/Allgather.h"
 #include "algorithms/protocols/tspcoll/Team.h"
 #include <assert.h>

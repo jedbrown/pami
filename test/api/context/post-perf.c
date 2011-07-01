@@ -18,7 +18,7 @@
 
 #ifdef __pami_target_bgq__
 #include "test/async_progress.h"
-#else // ! __pami_target_bgq__
+#else /* ! __pami_target_bgq__ */
 #include <pthread.h>
 static void*
 advance(void* arg)

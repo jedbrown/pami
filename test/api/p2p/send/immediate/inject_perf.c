@@ -285,8 +285,6 @@ int main (int argc, char ** argv)
 
     }
 
-  //sleep(1); /* work-around for ticket #385 */
-
   for (i = 0; i < 3; i++)
     {
       if ((dispatch[i].result == PAMI_SUCCESS) &&

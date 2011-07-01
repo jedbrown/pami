@@ -1,5 +1,9 @@
-#ifndef __xlpgas_AMGather_h__
-#define __xlpgas_AMGather_h__
+/**
+ * \file algorithms/protocols/tspcoll/AMGather.h
+ * \brief ???
+ */
+#ifndef __algorithms_protocols_tspcoll_AMGather_h__
+#define __algorithms_protocols_tspcoll_AMGather_h__
 
 namespace xlpgas
 {

@@ -1,5 +1,9 @@
-#ifndef __xlpgas_QuadnomBcast_h__
-#define __xlpgas_QuadnomBcast_h__
+/**
+ * \file algorithms/protocols/tspcoll/QuadnomBcast.h
+ * \brief ???
+ */
+#ifndef __algorithms_protocols_tspcoll_QuadnomBcast_h__
+#define __algorithms_protocols_tspcoll_QuadnomBcast_h__
 
 #if 0
 #include "algorithms/protocols/tspcoll/CollExchangeX.h"
