@@ -7,6 +7,10 @@
 
 #include "asmheader.h"
 
+void _pami_core_double_sum_16way(double* dst, double* src0, double *src1, double* src2, double* src3,
+    double* src4, double* src5, double* src6, double* src7, double* src8, double *src9, double* src10, double* src11,
+    double* src12, double* src13, double* src14, double* src15, unsigned num_dbls);
+
 //atleast 128B(16 doubles) ..in multiples of 64B
 //alignment expected is L1 cache line == 64B
 
@@ -979,6 +983,11 @@ inline unsigned quad_double_sum_16way(double* dst, double* src0, double *src1, d
 {
   
   unsigned  dbls = 0;
+
+  _pami_core_double_sum_16way(dst, src0, src1, src2, src3, src4, src5, src6, src7, src8, 
+                              src9, src10, src11, src12, src13, src14, src15, num_dbls);
+  return 0;
+
 
   if (num_dbls <= 128)
    dbls = _quad_double_sum_16way_align32B_short(dst, src0, src1, src2, src3, src4, src5, src6, src7, src8, 
