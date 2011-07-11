@@ -108,6 +108,13 @@ namespace PAMI
         size_t numpeers, numtasks;
         __global.mapping.nodePeers(numpeers);
         numtasks = __global.mapping.size();
+
+        bool  use_shm    = mm_ptr?true:false;
+        char *shm_method = getenv("PAMI_COLLECTIVES_SHM_DIRECT");
+        if(shm_method && use_shm)
+        {
+          use_shm = atoi(shm_method);
+        }
         new(ctxt->_p2p_ccmi_collreg) P2PCCMICollreg(_client,
                                                     ctxt,
                                                     ctxt->getId(),
@@ -115,7 +122,7 @@ namespace PAMI
                                                     ctxt->_devices->_shmem[ctxt->getId()],
                                                     ctxt->_lapi_device,
                                                     ctxt->_protocol,
-                                                    mm_ptr?1:0,  //use shared memory
+                                                    use_shm,
                                                     1,           //use "global" device
                                                     numtasks,
                                                     numpeers,
