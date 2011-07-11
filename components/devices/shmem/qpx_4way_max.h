@@ -9,6 +9,7 @@
 
 //atleast 128B(16 doubles) ..in multiples of 64B
 //alignment expected is L1 cache line == 64B
+void _pami_core_double_max_4way(double* dst, double* src0, double *src1, double* src2, double* src3, unsigned num_dbls);
 
 inline unsigned _quad_double_max_4way_align64B(double* dst, double* src0, double *src1, double* src2, double* src3, unsigned num_dbls)
 {
@@ -384,6 +385,17 @@ inline unsigned _quad_double_max_4way_align32B(double* dst, double* src0, double
 inline unsigned quad_double_max_4way(double* dst, double* src0, double *src1, double* src2, double* src3, unsigned num_dbls)
 {
   
+   const uint64_t      alignment = 32;
+  uint64_t    mask    = 0;
+  mask = (alignment - 1);
+
+
+  if (mask & ((uint64_t)src0|(uint64_t)src1|(uint64_t)src2|(uint64_t)src3|(uint64_t)dst))
+  {
+    _pami_core_double_max_4way(dst, src0, src1, src2, src3, num_dbls);
+    return 0;
+  }
+
   unsigned  dbls = 0;
 
   if (num_dbls < 36)

@@ -3,14 +3,39 @@
 // num_dbls = 16*m + rem
 
 #ifdef OP
-  register double f0, f1, f2, f3, f4, f5, f6, f7;
-  register double res1=0.0, res2=0.0;
   register unsigned n,i,j;
-
+  register double res1=0.0, res2=0.0;
   register unsigned m  = num_dbls >> 4;
   i = 0;          //first stream beginning
   j = (m << 3);   //second stream start from half-way 
 
+  if (m)
+  {
+    for (n=0; n < (m<<4); n+=2,i++,j++)
+    {
+      res1  = OP(src0[i], src1[i]);
+      res2  = OP(src0[j], src1[j]);
+      res1  = OP(res1, src2[i]);
+      res2  = OP(res2, src2[j]);
+      res1  = OP(res1, src3[i]);
+      dst[i]  = res1;
+      res2  = OP(res2, src3[j]);
+      dst[j]  = res2;
+    }
+  }
+
+  //remainder of the doubles
+  for (n=(m<<4); n < num_dbls; n++)
+  {
+    res1  = OP(src0[n], src1[n]);
+    res1  = OP(res1, src2[n]);
+    res1  = OP(res1, src3[n]);
+    dst[n]  = res1;
+  }
+  return;
+#if 0
+  register double f0, f1, f2, f3, f4, f5, f6, f7;
+  register double res1=0.0, res2=0.0;
   if (m)
   { 
     f0  = src0[i];
@@ -22,10 +47,11 @@
     f6  = src3[i];
     f7  = src3[j];
 
-    i++;
-    j++;
+    i+=1;
+    j+=1;
     for (n=2; n < (m << 4); n+=2,i++,j++)
     {
+      printf("n:%u limit:%u\n", n, (m << 4));
       res1 = OP(f0, res1);
       f0  = src0[i];
 
@@ -55,13 +81,5 @@
       res1 = res2 = 0.0;
     }
   }
-
-  //remainder of the doubles
-  for (n=(m<<4); n < num_dbls; n++)
-  {
-    res1  = OP(src0[n], src1[n]);
-    res1  = OP(res1, src2[n]);
-    res1  = OP(res1, src3[n]);
-    dst[n]  = res1;
-  }
+#endif
 #endif	/* OP */

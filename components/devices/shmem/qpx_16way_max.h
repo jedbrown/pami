@@ -10,6 +10,10 @@
 //atleast 128B(16 doubles) ..in multiples of 64B
 //alignment expected is L1 cache line == 64B
 
+void _pami_core_double_max_16way(double* dst, double* src0, double *src1, double* src2, double* src3,
+    double* src4, double* src5, double* src6, double* src7, double* src8, double *src9, double* src10, double* src11,
+    double* src12, double* src13, double* src14, double* src15, unsigned num_dbls);
+
 inline unsigned _quad_double_max_16way_align64B(double* dst, double* src0, double *src1, double* src2, double* src3,
     double* src4, double* src5, double* src6, double* src7, double* src8, double *src9, double* src10, double* src11,
     double* src12, double* src13, double* src14, double* src15, unsigned num_dbls)
@@ -1107,8 +1111,20 @@ inline unsigned quad_double_max_16way(double* dst, double* src0, double *src1, d
     double* src4, double* src5, double* src6, double* src7, double* src8, double *src9, double* src10, double* src11,
     double* src12, double* src13, double* src14, double* src15, unsigned num_dbls)
 {
-  
   unsigned  dbls = 0;
+  const uint64_t      alignment = 32;
+  uint64_t    mask    = 0;
+  mask = (alignment - 1);
+
+  if (mask & ((uint64_t)src0|(uint64_t)src1|(uint64_t)src2|(uint64_t)src3|(uint64_t)src4|(uint64_t)src5|(uint64_t)src6|
+      (uint64_t)src7| (uint64_t)src8|(uint64_t)src9|(uint64_t)src10|(uint64_t)src11|(uint64_t)src12|(uint64_t)src13|
+      (uint64_t)src14|(uint64_t)src15))
+  {
+    _pami_core_double_max_16way(dst, src0, src1, src2, src3, src4, src5, src6, src7, src8,
+        src9, src10, src11, src12, src13, src14, src15, num_dbls);
+    return 0;
+  }
+
 
   if (num_dbls <= 128)
    dbls = _quad_double_max_16way_align32B_short(dst, src0, src1, src2, src3, src4, src5, src6, src7, src8, 

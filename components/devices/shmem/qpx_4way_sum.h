@@ -305,6 +305,7 @@ inline unsigned quad_double_sum_4way(double* dst, double* src0, double *src1, do
   uint64_t    mask    = 0;
   mask = (alignment - 1);
 
+
   if (mask & ((uint64_t)src0|(uint64_t)src1|(uint64_t)src2|(uint64_t)src3|(uint64_t)dst))
   {
     _pami_core_double_sum_4way(dst, src0, src1, src2, src3, num_dbls);
