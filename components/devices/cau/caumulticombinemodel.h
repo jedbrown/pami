@@ -101,23 +101,29 @@ namespace PAMI
           CAUGeometryInfo                 *gi    = (CAUGeometryInfo*) g->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
           T_Message                       *msg   = (T_Message *)gi->_postedRed.find(seqno);
           lapi_return_info_t              *ri    = (lapi_return_info_t *) retinfo;
-          
+          bool                             msgEA = false;
+
           PAMI_assert(ri->udata_one_pkt_ptr);
-          if(msg == NULL)  // Not Found, insdert into ue queue
+          if(msg == NULL)  // Not Found, insert into ue queue
           {
             mc->_device.allocMessage(&msg);
             new(msg) T_Message(&mc->_device,gi,did,gid,seqno); // Construct, but don't init this message
-            gi->_ueRed.pushTail((MatchQueueElem*)msg);
+            msgEA = true; //flag early arrival so we don't delete from posted queue
+			gi->_ueRed.pushTail((MatchQueueElem*)msg);
           }
           // In either case, copy the packet and packet size into the message
           msg->_reducePktBytes = (unsigned)hdr->pktsize;
           memcpy(msg->_reducePkt, ri->udata_one_pkt_ptr, hdr->pktsize);
-
+          
+		  
           TRACE((stderr, "MCombine:  cau_red_handler: h.psz=%d h.msz=%d sno=%d rpb=%d did=%d, gid=%d\n",
                  hdr->pktsize, hdr->msgsize, seqno, msg->_reducePktBytes, did, gid));
 
-          msg->advanceRoot();
-          
+          if(!msgEA) {//Call the advance only for posted messages. There is no point for calling advance on ue messages since they are not initialized anyway
+            pami_result_t rc = msg->advance();
+            if(rc == PAMI_SUCCESS)gi->_postedRed.deleteElem(msg);//Only delete the message from _postedRed when I have success i.e. I processed all the packets for that seqno
+          }
+		  
           // Lapi return parameters
           *comp_h       = NULL;
           ri->ret_flags = LAPI_LOCAL_STATE;
@@ -183,12 +189,13 @@ namespace PAMI
               msg->_reducePktBytes = earlymsg->_reducePktBytes;
               memcpy(msg->_reducePkt, earlymsg->_reducePkt, msg->_reducePktBytes);
               _device.freeMessage(earlymsg);
-            }
-            gi->_postedRed.pushTail((MatchQueueElem*)msg);                        
+            }                        
 
             pami_result_t res = msg->advance();
-            if(res != PAMI_SUCCESS)
+            if(res != PAMI_SUCCESS){
+              gi->_postedRed.pushTail((MatchQueueElem*)msg);
               msg->_workfcn = _device.postWork(do_reduce, msg);
+            }
 
             return PAMI_SUCCESS;
           }
