@@ -145,8 +145,8 @@ namespace PAMI
   //typedef Fifo::LinearFifo<ShmemPacket, PAMI::Counter::BGQ::IndirectL2, 128, Wakeup::BGQ> ShmemFifo;
   typedef Fifo::WrapFifo<ShmemPacket, PAMI::BoundedCounter::BGQ::IndirectL2Bounded, 128, Wakeup::BGQ> ShmemFifo;
   typedef Device::ShmemDevice<ShmemFifo, Counter::BGQ::IndirectL2, Device::Shmem::BgqShaddrReadOnly> ShmemDevice;
-  //typedef Device::Shmem::PacketModel<ShmemDevice> ShmemPacketModel;
-  typedef Device::Shmem::BgqShaddrPacketModel<ShmemDevice> ShmemPacketModel;
+  typedef Device::Shmem::PacketModel<ShmemDevice> ShmemPacketModel;
+  //typedef Device::Shmem::BgqShaddrPacketModel<ShmemDevice> ShmemPacketModel;
   typedef Device::Shmem::DmaModel<ShmemDevice> ShmemDmaModel;
 
   typedef Protocol::Send::Eager <ShmemPacketModel> ShmemEagerBase;
