@@ -140,6 +140,41 @@ namespace PAMI
           char shortallreduce_blob[sizeof(ShortAllreduceFactory)];
         }Factories;
 
+        class GeometryInfo
+        {
+        public:
+          inline GeometryInfo(PAMI::MemoryAllocator<sizeof(Factories),16,16> *allocator,
+                              void                                           *geom_allocator):
+            _allocator(allocator),
+            _geom_allocator(geom_allocator)
+            {
+            }
+          inline void freeAllocations()
+          {
+            // First, free the factories
+            int sz = _f_list.size();
+            for(int i=0; i<sz; i++)
+            {
+              Factories *f = _f_list.front();
+              _allocator->returnObject(f);
+              _f_list.pop_front();
+            }
+
+            // Now free the pgas allocations
+            sz = _nbcoll_list.size();
+            for(int i=0; i<sz; i++)
+            {
+              void *nbcoll = _nbcoll_list.front();
+              __global.heap_mm->free(nbcoll);
+              _nbcoll_list.pop_front();
+            }
+          }
+          std::list<Factories*>                           _f_list;
+          std::list<void *>                               _nbcoll_list;
+          PAMI::MemoryAllocator<sizeof(Factories),16,16> *_allocator;
+          void                                           *_geom_allocator;
+        };
+
       public:
       /// \brief The one device (p2p) pgas constructor.
       /// 
@@ -330,9 +365,19 @@ namespace PAMI
             _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI> >(xlpgas::BcastKind,          _broadcast);
           }
 
+      static inline void cleanupCallback(pami_context_t ctxt, void *data, pami_result_t res)
+          {
+            GeometryInfo *gi = (GeometryInfo*) data;
+            gi->freeAllocations();
+            PAMI::MemoryAllocator<sizeof(GeometryInfo),16>  *geom_allocator =
+              (PAMI::MemoryAllocator<sizeof(GeometryInfo),16>  *)gi->_geom_allocator;
+            geom_allocator->returnObject(gi);
+          }
+
       inline pami_result_t analyze_impl(size_t context_id,T_Geometry *geometry, int phase)
         {
           if (phase != 0) return PAMI_SUCCESS;
+          GeometryInfo          *gi                  = (GeometryInfo*)_geom_allocator.allocateObject();           new(gi) GeometryInfo(&_allocator, &_geom_allocator);
 
           _nb_barrier         = (xlpgas::Barrier<T_NI>*)_mgr.template allocate<xlpgas::base_coll_defs<T_NI> > (geometry, xlpgas::BarrierKind, geometry->comm());
           _nb_broadcast       = (xlpgas::Broadcast<T_NI>*)_mgr.template allocate<xlpgas::base_coll_defs<T_NI> > (geometry, xlpgas::BcastKind, geometry->comm());
@@ -346,18 +391,30 @@ namespace PAMI
           _nb_alltoall        = (xlpgas::Alltoall<T_NI>*)_mgr.template allocate<xlpgas::base_coll_defs<T_NI> > (geometry, xlpgas::AlltoallKind, geometry->comm());
           _nb_alltoallv       = (xlpgas::Alltoallv<T_NI>*)_mgr.template allocate<xlpgas::base_coll_defs<T_NI> > (geometry, xlpgas::AlltoallvKind, geometry->comm());
 
-          // todo:  free these on geometry destroy, maybe use KVS
-          BarrierFactory        *_barrier_reg        = (BarrierFactory*)_allocator.allocateObject();
-          BroadcastFactory      *_broadcast_reg      = (BroadcastFactory*)_allocator.allocateObject();
-          AllgatherFactory      *_allgather_reg      = (AllgatherFactory*)_allocator.allocateObject();
-          AllgathervFactory     *_allgatherv_reg     = (AllgathervFactory*)_allocator.allocateObject();
-          ScatterFactory        *_scatter_reg        = (ScatterFactory*)_allocator.allocateObject();
-          GatherFactory         *_gather_reg         = (GatherFactory*)_allocator.allocateObject();
-          AlltoallFactory       *_alltoall_reg       = (AlltoallFactory*)_allocator.allocateObject();
-          AlltoallvFactory      *_alltoallv_reg      = (AlltoallvFactory*)_allocator.allocateObject();
-          AllreduceFactory      *_allreduce_reg      = (AllreduceFactory*)_allocator.allocateObject();
-          ScanFactory           *_scan_reg           = (ScanFactory*)_allocator.allocateObject();
-          ShortAllreduceFactory *_shortallreduce_reg = (ShortAllreduceFactory*)_allocator.allocateObject();
+          gi->_nbcoll_list.push_back(_nb_barrier);
+          gi->_nbcoll_list.push_back(_nb_broadcast);
+          gi->_nbcoll_list.push_back(_nb_allgather);
+          gi->_nbcoll_list.push_back(_nb_allgatherv);
+          gi->_nbcoll_list.push_back(_nb_short_allreduce);
+          gi->_nbcoll_list.push_back(_nb_long_allreduce);
+          gi->_nbcoll_list.push_back(_nb_scan);
+          gi->_nbcoll_list.push_back(_nb_scatter);
+          gi->_nbcoll_list.push_back(_nb_gather);
+          gi->_nbcoll_list.push_back(_nb_alltoall);
+          gi->_nbcoll_list.push_back(_nb_alltoallv);
+
+
+          BarrierFactory        *_barrier_reg        = (BarrierFactory*)_allocator.allocateObject();        gi->_f_list.push_back((Factories*)_barrier_reg);
+          BroadcastFactory      *_broadcast_reg      = (BroadcastFactory*)_allocator.allocateObject();      gi->_f_list.push_back((Factories*)_broadcast_reg);
+          AllgatherFactory      *_allgather_reg      = (AllgatherFactory*)_allocator.allocateObject();      gi->_f_list.push_back((Factories*)_allgather_reg);
+          AllgathervFactory     *_allgatherv_reg     = (AllgathervFactory*)_allocator.allocateObject();     gi->_f_list.push_back((Factories*)_allgatherv_reg);
+          ScatterFactory        *_scatter_reg        = (ScatterFactory*)_allocator.allocateObject();        gi->_f_list.push_back((Factories*)_scatter_reg);
+          GatherFactory         *_gather_reg         = (GatherFactory*)_allocator.allocateObject();         gi->_f_list.push_back((Factories*)_gather_reg);
+          AlltoallFactory       *_alltoall_reg       = (AlltoallFactory*)_allocator.allocateObject();       gi->_f_list.push_back((Factories*)_alltoall_reg);
+          AlltoallvFactory      *_alltoallv_reg      = (AlltoallvFactory*)_allocator.allocateObject();      gi->_f_list.push_back((Factories*)_alltoallv_reg);
+          AllreduceFactory      *_allreduce_reg      = (AllreduceFactory*)_allocator.allocateObject();      gi->_f_list.push_back((Factories*)_allreduce_reg);
+          ScanFactory           *_scan_reg           = (ScanFactory*)_allocator.allocateObject();           gi->_f_list.push_back((Factories*)_scan_reg);
+          ShortAllreduceFactory *_shortallreduce_reg = (ShortAllreduceFactory*)_allocator.allocateObject(); gi->_f_list.push_back((Factories*)_shortallreduce_reg);
 
           new(_barrier_reg)        BarrierFactory(&_dev_p2p, _barrier, _nb_barrier, BarrierString);
           new(_broadcast_reg)      BroadcastFactory(&_dev_p2p, _broadcast, _nb_broadcast, BroadcastString);
@@ -416,6 +473,8 @@ namespace PAMI
                                        (CCMI::Adaptor::CollectiveProtocolFactory*)_shortallreduce_reg,
                                        _context_id);
 
+          geometry->setCleanupCallback(cleanupCallback, gi);
+
           return PAMI_SUCCESS;
         }
 
@@ -451,9 +510,9 @@ namespace PAMI
       std::map<unsigned, pami_geometry_t> *_geometry_map; 
  
       // Native Interface
-      T_Device_P2P               &_dev_p2p;
-      T_Device_SHMEM             &_dev_shmem;
-      T_Allocator                &_proto_alloc;
+      T_Device_P2P           &_dev_p2p;
+      T_Device_SHMEM         &_dev_shmem;
+      T_Allocator            &_proto_alloc;
       T_NI                   *_allgather;
       T_NI                   *_allgatherv;
       T_NI                   *_scatter_s;
@@ -471,17 +530,18 @@ namespace PAMI
       T_NI                   *_broadcast;
 
       PAMI::MemoryAllocator<sizeof(Factories),16,16>  _allocator;
-      xlpgas::Barrier<T_NI>                  *_nb_barrier;
-      xlpgas::Broadcast<T_NI>                *_nb_broadcast;
-      xlpgas::Allgather<T_NI>                *_nb_allgather;
-      xlpgas::Allgatherv<T_NI>               *_nb_allgatherv;
-      xlpgas::Allreduce::Short<T_NI>         *_nb_short_allreduce;
-      xlpgas::Allreduce::Long<T_NI>          *_nb_long_allreduce;
-      xlpgas::PrefixSums<T_NI>               *_nb_scan;
-      xlpgas::Scatter<T_NI>                  *_nb_scatter;
-      xlpgas::Gather<T_NI>                   *_nb_gather;
-      xlpgas::Alltoall<T_NI>                 *_nb_alltoall;
-      xlpgas::Alltoallv<T_NI>                *_nb_alltoallv;
+      PAMI::MemoryAllocator<sizeof(GeometryInfo),16>  _geom_allocator;
+      xlpgas::Barrier<T_NI>                          *_nb_barrier;
+      xlpgas::Broadcast<T_NI>                        *_nb_broadcast;
+      xlpgas::Allgather<T_NI>                        *_nb_allgather;
+      xlpgas::Allgatherv<T_NI>                       *_nb_allgatherv;
+      xlpgas::Allreduce::Short<T_NI>                 *_nb_short_allreduce;
+      xlpgas::Allreduce::Long<T_NI>                  *_nb_long_allreduce;
+      xlpgas::PrefixSums<T_NI>                       *_nb_scan;
+      xlpgas::Scatter<T_NI>                          *_nb_scatter;
+      xlpgas::Gather<T_NI>                           *_nb_gather;
+      xlpgas::Alltoall<T_NI>                         *_nb_alltoall;
+      xlpgas::Alltoallv<T_NI>                        *_nb_alltoallv;
     };
   };
 };

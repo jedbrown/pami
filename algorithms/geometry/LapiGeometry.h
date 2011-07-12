@@ -19,6 +19,7 @@
 #include "algorithms/interfaces/GeometryInterface.h"
 #include "algorithms/geometry/Algorithm.h"
 #include <map>
+#include <list>
 
 #undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
@@ -85,8 +86,7 @@ namespace PAMI
             _geometry_map(geometry_map),
             _allreduce_async_mode(0),
             _allreduce_iteration(0),
-            _masterRank(-1),
-            _cleanupFcn(NULL)          
+            _masterRank(-1)
         {
           TRACE_ERR((stderr, "<%p>Lapi(ranklist)\n", this));
           // this creates the topology including all subtopologies
@@ -128,8 +128,7 @@ namespace PAMI
             _geometry_map(geometry_map),
             _allreduce_async_mode(0),
             _allreduce_iteration(0),
-            _masterRank(-1),
-            _cleanupFcn(NULL)
+            _masterRank(-1)
         {
           TRACE_ERR((stderr, "<%p>Lapi(ranges)\n", this));
 
@@ -251,8 +250,7 @@ namespace PAMI
             _geometry_map(geometry_map),
             _allreduce_async_mode(0),
             _allreduce_iteration(0),
-            _masterRank(-1),
-            _cleanupFcn(NULL)
+            _masterRank(-1)
         {
           TRACE_ERR((stderr, "<%p>Lapi(topology)\n", this));
 
@@ -447,8 +445,13 @@ namespace PAMI
         }
         inline void                      freeAllocations_impl()
         {
-          if(_cleanupFcn)
-            _cleanupFcn(NULL, _cleanupData, PAMI_SUCCESS);
+          int sz = _cleanupFcns.size();
+          for(int i=0; i<sz; i++)
+          {
+            pami_event_function  fn = _cleanupFcns.front();  _cleanupFcns.pop_front();
+            void                *cd = _cleanupDatas.front(); _cleanupDatas.pop_front();
+            if(fn) fn(NULL, cd, PAMI_SUCCESS);
+          }
 
           if (_ranks_malloc) __global.heap_mm->free(_ranks);
 
@@ -816,8 +819,8 @@ namespace PAMI
       
       void setCleanupCallback(pami_event_function fcn, void *data)
         {
-          _cleanupFcn  = fcn;
-          _cleanupData = data;
+          _cleanupFcns.push_back(fcn);
+          _cleanupDatas.push_back(data);
         }
 
       
@@ -868,8 +871,9 @@ namespace PAMI
         PAMI::Topology                              _topos[MAX_NUM_TOPOLOGIES];
         pami_task_t                                 _virtual_rank;
         pami_task_t                                 _masterRank;
-        pami_event_function                         _cleanupFcn;
-        void                                       *_cleanupData;
+        std::list<pami_event_function>              _cleanupFcns;
+        std::list<void*>                            _cleanupDatas;
+
     }; // class Geometry
   };  // namespace Geometry
 }; // namespace PAMI
