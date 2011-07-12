@@ -92,10 +92,10 @@ namespace PAMI
             uint64_t rcvbuf_phy=0, srcbuf_phy=0;
             rcvbuf = (char*)_dpwq->bufferToProduce(); 
             PAMI_assert (rcvbuf != NULL);
-            PAMI_assert(((uint64_t)rcvbuf & (uint64_t)mask) == 0);
+            //PAMI_assert(((uint64_t)rcvbuf & (uint64_t)mask) == 0);
             srcbuf = (char*)_spwq->bufferToConsume();
             PAMI_assert (srcbuf != NULL);
-            PAMI_assert(((uint64_t)srcbuf & (uint64_t)mask) == 0);
+            //PAMI_assert(((uint64_t)srcbuf & (uint64_t)mask) == 0);
 
             Kernel_MemoryRegion_t memRegion;
             uint32_t rc;
