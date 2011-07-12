@@ -184,11 +184,14 @@ namespace PAMI
               memcpy(msg->_reducePkt, earlymsg->_reducePkt, msg->_reducePktBytes);
               _device.freeMessage(earlymsg);
             }
-            gi->_postedRed.pushTail((MatchQueueElem*)msg);
-
             pami_result_t res = msg->advance();
             if(res != PAMI_SUCCESS)
+            {
+              gi->_postedRed.pushTail((MatchQueueElem*)msg);
+              msg->_isPosted= true;
               msg->_workfcn = _device.postWork(do_reduce, msg);
+
+            }
 
             return PAMI_SUCCESS;
           }

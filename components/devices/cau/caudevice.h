@@ -152,6 +152,7 @@ namespace PAMI
           _geometryInfo(geometryInfo),
           _device(device),
           _isInit(false),
+          _isPosted(false),
           _dispatch_red_id(dispatch_red_id),
           _dispatch_mcast_id(dispatch_mcast_id)
           {
@@ -336,9 +337,11 @@ namespace PAMI
             if(_totalBytesProduced == _totalBytes && _totalBytesConsumed == _totalBytes)
             {
               TRACE((stderr, "CAU Mcombine Advance:  Message Complete\n"));
+              if(_isPosted)
+                _geometryInfo->_postedRed.deleteElem(this);
               if(_cb_done.function)
                 _cb_done.function(_device->getContext(), _cb_done.clientdata, PAMI_SUCCESS);
-              _geometryInfo->_postedRed.deleteElem(this);
+
               return PAMI_SUCCESS;
             }
             return PAMI_EAGAIN;
@@ -346,6 +349,7 @@ namespace PAMI
         CAUDevice              *_device;
         CAUGeometryInfo        *_geometryInfo;
         bool                    _isInit;
+        bool                    _isPosted;
         int                     _dispatch_red_id;
         int                     _dispatch_mcast_id;
         PipeWorkQueue          *_srcpwq;
@@ -411,6 +415,7 @@ namespace PAMI
           _geometryInfo(geometryInfo),
           _device(device),
           _isInit(false),
+          _isPosted(false),
           _injectReady(true),
           _dispatch_mcast_id(dispatch_mcast_id)
           {
@@ -504,9 +509,11 @@ namespace PAMI
             if(_totalBytesProduced == _totalBytes && _totalBytesConsumed == _totalBytes)
             {
               TRACE((stderr, "CAU Mcombine Advance:  Message Complete\n"));
+              if(_isPosted)
+                _geometryInfo->_postedBcast.deleteElem(this);
+
               if(_cb_done.function)
                 _cb_done.function(_device->getContext(), _cb_done.clientdata, PAMI_SUCCESS);
-              _geometryInfo->_postedBcast.deleteElem(this);
               return PAMI_SUCCESS;
             }
             return PAMI_EAGAIN;
@@ -514,6 +521,7 @@ namespace PAMI
         CAUDevice              *_device;
         CAUGeometryInfo        *_geometryInfo;
         bool                    _isInit;
+        bool                    _isPosted;
         int                     _dispatch_mcast_id;
         PipeWorkQueue          *_srcpwq;
         PipeWorkQueue          *_dstpwq;
