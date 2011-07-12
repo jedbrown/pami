@@ -143,36 +143,16 @@ namespace PAMI
         class GeometryInfo
         {
         public:
-          inline GeometryInfo(PAMI::MemoryAllocator<sizeof(Factories),16,16> *allocator,
-                              void                                           *geom_allocator):
-            _allocator(allocator),
+          inline GeometryInfo(void *factory_allocator,
+                              void *geom_allocator):
+            _factory_allocator(factory_allocator),
             _geom_allocator(geom_allocator)
             {
             }
-          inline void freeAllocations()
-          {
-            // First, free the factories
-            int sz = _f_list.size();
-            for(int i=0; i<sz; i++)
-            {
-              Factories *f = _f_list.front();
-              _allocator->returnObject(f);
-              _f_list.pop_front();
-            }
-
-            // Now free the pgas allocations
-            sz = _nbcoll_list.size();
-            for(int i=0; i<sz; i++)
-            {
-              void *nbcoll = _nbcoll_list.front();
-              __global.heap_mm->free(nbcoll);
-              _nbcoll_list.pop_front();
-            }
-          }
-          std::list<Factories*>                           _f_list;
-          std::list<void *>                               _nbcoll_list;
-          PAMI::MemoryAllocator<sizeof(Factories),16,16> *_allocator;
-          void                                           *_geom_allocator;
+          std::list<Factories*>   _f_list;
+          std::list<void *>       _nbcoll_list;
+          void                   *_factory_allocator;
+          void                   *_geom_allocator;
         };
 
       public:
@@ -368,16 +348,35 @@ namespace PAMI
       static inline void cleanupCallback(pami_context_t ctxt, void *data, pami_result_t res)
           {
             GeometryInfo *gi = (GeometryInfo*) data;
-            gi->freeAllocations();
+            PAMI::MemoryAllocator<sizeof(Factories),16,16>  *factory_allocator =
+              (PAMI::MemoryAllocator<sizeof(Factories),16,16>  *)gi->_factory_allocator;
             PAMI::MemoryAllocator<sizeof(GeometryInfo),16>  *geom_allocator =
               (PAMI::MemoryAllocator<sizeof(GeometryInfo),16>  *)gi->_geom_allocator;
+
+            // First, free the factories
+            int sz = gi->_f_list.size();
+            for(int i=0; i<sz; i++)
+            {
+              Factories *f = gi->_f_list.front();
+              factory_allocator->returnObject(f);
+              gi->_f_list.pop_front();
+            }
+            // Now free the pgas allocations
+            sz = gi->_nbcoll_list.size();
+            for(int i=0; i<sz; i++)
+            {
+              void *nbcoll = gi->_nbcoll_list.front();
+              __global.heap_mm->free(nbcoll);
+              gi->_nbcoll_list.pop_front();
+            }
             geom_allocator->returnObject(gi);
           }
 
       inline pami_result_t analyze_impl(size_t context_id,T_Geometry *geometry, int phase)
         {
           if (phase != 0) return PAMI_SUCCESS;
-          GeometryInfo          *gi                  = (GeometryInfo*)_geom_allocator.allocateObject();           new(gi) GeometryInfo(&_allocator, &_geom_allocator);
+          GeometryInfo    *gi = (GeometryInfo*)_geom_allocator.allocateObject();
+          new(gi) GeometryInfo(&_allocator, &_geom_allocator);
 
           _nb_barrier         = (xlpgas::Barrier<T_NI>*)_mgr.template allocate<xlpgas::base_coll_defs<T_NI> > (geometry, xlpgas::BarrierKind, geometry->comm());
           _nb_broadcast       = (xlpgas::Broadcast<T_NI>*)_mgr.template allocate<xlpgas::base_coll_defs<T_NI> > (geometry, xlpgas::BcastKind, geometry->comm());
