@@ -47,25 +47,22 @@ namespace PAMI
                                       compl_hndlr_t **comp_h,
                                       void          **uinfo)
         {
-          typename T_Message::Header      *hdr     = (typename T_Message::Header*)uhdr;
-          int                              did     = hdr->dispatch_id;
-          int                              gid     = hdr->geometry_id;
-          int                              seqno   = hdr->seqno;
-          CAUMulticastModel               *mc      = (CAUMulticastModel*) CAUDevice::getClientData(did);
-          PAMI_GEOMETRY_CLASS             *g       = (PAMI_GEOMETRY_CLASS*)mc->_device.geometrymap(gid);
-          CAUGeometryInfo                 *gi      = (CAUGeometryInfo*) g->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
-          T_Message                       *msg     = (T_Message *)gi->_postedBcast.find(seqno);
-          lapi_return_info_t              *ri      = (lapi_return_info_t *) retinfo;
-          bool                             msgEA   = false;          
-
+          typename T_Message::Header      *hdr   = (typename T_Message::Header*)uhdr;
+          int                              did   = hdr->dispatch_id;
+          int                              gid   = hdr->geometry_id;
+          int                              seqno = hdr->seqno;
+          CAUMulticastModel               *mc    = (CAUMulticastModel*) CAUDevice::getClientData(did);
+          PAMI_GEOMETRY_CLASS             *g     = (PAMI_GEOMETRY_CLASS*)mc->_device.geometrymap(gid);
+          CAUGeometryInfo                 *gi    = (CAUGeometryInfo*) g->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
+          T_Message                       *msg   = (T_Message *)gi->_postedBcast.find(seqno);
+          lapi_return_info_t              *ri    = (lapi_return_info_t *) retinfo;
           PAMI_assert(ri->udata_one_pkt_ptr);
 
           TRACE((stderr, "Packet Arrival, seqno=%d msg=%p\n", seqno, msg));
-          if(msg == NULL)  // Not Found, find in ue queue
+          if(msg == NULL)  // Not Found, insdert into ue queue
           {
-            msgEA = true;
             msg = (T_Message*)gi->_ueBcast.find(seqno);
-            if(msg == NULL) // Not Found, insert into ue queue
+            if(msg == NULL)
             {
               TRACE((stderr, "   is a first packet seqno=%d msg=%p\n", seqno, msg));              
               mc->_device.allocMessage(&msg); 
@@ -77,15 +74,11 @@ namespace PAMI
           // We can optimize this to avoid the copy, but care is needed to ensure pipelining is correct
           typename T_Message::IncomingPacket *ipacket =
             (typename T_Message::IncomingPacket *)mc->_device._pkt_allocator.allocateObject();
-
+          msg->_packetQueue.enqueue(ipacket);
           memcpy(&ipacket->_data[0],ri->udata_one_pkt_ptr, hdr->pktsize);
           ipacket->_size=hdr->pktsize;
-          msg->_packetQueue.enqueue(ipacket);
-          
-          if(!msgEA) {//Call the advance only for posted messages. There is no point for calling advance on ue messages since they are not initialized anyway
-            pami_result_t rc = msg->advance();
-            if(rc == PAMI_SUCCESS)gi->_postedBcast.deleteElem(msg);//Only delete the message from _postedBcast when I have success i.e. I processed all the packets for that seqno
-          }
+
+          msg->advanceNonRoot();
 
           // Lapi return parameters
           *comp_h       = NULL;
@@ -111,7 +104,6 @@ namespace PAMI
           {
             Generic::GenericThread *t      = m->_workfcn;
             T_Device               *device = (T_Device *)m->_device;
-
             device->freeWork(t);
           }
           return result;

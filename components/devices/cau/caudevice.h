@@ -338,7 +338,7 @@ namespace PAMI
               TRACE((stderr, "CAU Mcombine Advance:  Message Complete\n"));
               if(_cb_done.function)
                 _cb_done.function(_device->getContext(), _cb_done.clientdata, PAMI_SUCCESS);
-
+              _geometryInfo->_postedRed.deleteElem(this);
               return PAMI_SUCCESS;
             }
             return PAMI_EAGAIN;
@@ -414,6 +414,7 @@ namespace PAMI
           _injectReady(true),
           _dispatch_mcast_id(dispatch_mcast_id)
           {
+
           }
         void init(pami_multicast_t *mcast)
           {
@@ -505,7 +506,7 @@ namespace PAMI
               TRACE((stderr, "CAU Mcombine Advance:  Message Complete\n"));
               if(_cb_done.function)
                 _cb_done.function(_device->getContext(), _cb_done.clientdata, PAMI_SUCCESS);
-
+              _geometryInfo->_postedBcast.deleteElem(this);
               return PAMI_SUCCESS;
             }
             return PAMI_EAGAIN;
