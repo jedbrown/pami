@@ -557,27 +557,27 @@ namespace PAMI
                             ITRC(IT_TYPE, "Optimize(): this 0x%zx: compress copy sequence %zu %zu\n", this, opc, pc);
                             assert(opc < pc);
                             ((Copy *)(code+copyseqstart))->reps = copyreps;
-                            if (opc < copyseqstart) {
-                                memmove(code+opc, code+copyseqstart, sizeof(Copy));
-                            }
-                            // update code size and code cursor for the skipped copy
-                            // instructions
+                            // update code size and code cursor for the skipped copy instructions, if any
                             AddCodeSize(0-copyseqcnt*sizeof(Copy));
                             code_cursor -= copyseqcnt*sizeof(Copy);
                         }
+                        // move the potentially compressed copy instruction to the optimized PC, if need be
+                        if (opc < copyseqstart) memmove(code+opc, code+copyseqstart, sizeof(Copy));
+                        // adjust the optimized program counter with the moved copy instruction
                         opc += sizeof(Copy);
                         copyseqstart = 0;
                     }
 
                     switch(op->opcode) {
+                        case COPY:
+                            // this is the copy instruction that broke a previous copy sequence
+                            // just break
+                            ITRC(IT_TYPE, "Optimize(): this 0x%zx: Copy %zu %zu\n", this, opc, pc);
+                            break;
                         case CALL:
                             ITRC(IT_TYPE, "Optimize(): this 0x%zx: Call %zu %zu\n", this, opc, pc);
                             if (opc < pc) memmove(code+opc, code+pc, sizeof(Call));
                             pc += sizeof(Call); opc += sizeof(Call); break;
-                        case COPY:
-                            ITRC(IT_TYPE, "Optimize(): this 0x%zx: Copy %zu %zu\n", this, opc, pc);
-                            if (opc < pc) memmove(code+opc, code+pc, sizeof(Copy));
-                            pc += sizeof(Copy); opc += sizeof(Copy); break;
                         case SHIFT:
                             if (0 == ((Shift *)(code+pc))->shift) {
                                 // this can happen due to type transformations that may have occured
