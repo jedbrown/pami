@@ -274,7 +274,7 @@ namespace PAMI
           _reduce_reg(&_sconnmgr,NULL, &_g_reduce_ni),
           _csmm(mm)
           {
-            if(_Lapi_env.use_mpi_shm == SHM_YES)
+            if(_Lapi_env.use_shm == SHM_YES)
               _enabled = true;
             else
               _enabled = false;

@@ -1164,7 +1164,7 @@ namespace PAMI
     inline pami_result_t  initializeMemoryManager ()
       {
         pami_result_t rc = PAMI_ERROR;
-        if(_Lapi_env.use_mpi_shm == SHM_YES)
+        if(_Lapi_env.use_shm == SHM_YES)
           {
             char   shmemfile[PAMI::Memory::MMKEYSIZE];
             size_t bytes     = COLLSHM_SEGSZ +      // Shmem used by collshm
