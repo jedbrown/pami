@@ -20,6 +20,7 @@
 #include "algorithms/interfaces/GeometryInterface.h"
 #include "algorithms/geometry/Algorithm.h"
 #include <map>
+#include <list>
 
 #undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
@@ -451,6 +452,14 @@ namespace PAMI
         }
         inline void                      freeAllocations_impl()
         {
+	  int sz = _cleanupFcns.size();
+	  for(int i=0; i<sz; i++)
+          {
+            pami_event_function  fn = _cleanupFcns.front();  _cleanupFcns.pop_front();
+            void                *cd = _cleanupDatas.front(); _cleanupDatas.pop_front();
+            if(fn) fn(NULL, cd, PAMI_SUCCESS);
+          }
+
           if (_ranks_malloc) __global.heap_mm->free(_ranks);
 
           _ranks = NULL;
@@ -816,6 +825,12 @@ namespace PAMI
           return _client;
         }
 
+      void setCleanupCallback(pami_event_function fcn, void *data)
+        {
+          _cleanupFcns.push_back(fcn);
+          _cleanupDatas.push_back(data);
+        }
+
 
       private:
         AlgoLists<Geometry<PAMI::Geometry::Common> >  _allreduces[PAMI_GEOMETRY_NUMALGOLISTS];
@@ -868,6 +883,8 @@ namespace PAMI
         pami_callback_t                               _cb_done;
         pami_result_t                                 _cb_result;
         GeomCompCtr                                   _comp;
+        std::list<pami_event_function>                _cleanupFcns;
+        std::list<void*>                              _cleanupDatas;
 
         
       public:

@@ -15,6 +15,7 @@
 #define __algorithms_geometry_PGASCollRegistration_h__
 
 #include <map>
+#include <list>
 #include <vector>
 #include "algorithms/interfaces/CollRegistrationInterface.h"
 #include "algorithms/geometry/PGASWrapper.h"
