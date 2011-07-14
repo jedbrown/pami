@@ -53,9 +53,11 @@ namespace PAMI
 
               CollState ()
               {
+                TRACE_FN_ENTER();
                 _isInited = false;
                 _tempSize = TEMP_BUF_SIZE;
                 _tempBuf = (char *)malloc (_tempSize * sizeof(char));
+                TRACE_FN_EXIT();
               }
 
               bool isInited () { return _isInited; }
@@ -66,7 +68,12 @@ namespace PAMI
 
               void init (MU::Context &mucontext, pami_result_t &status)
               {
-                if (_isInited) return;
+                TRACE_FN_ENTER();
+                if (_isInited) 
+                  {
+                  TRACE_FN_EXIT();
+                  return;
+                  }
 
                 ///// Get the BAT IDS ///////////////
                 //// Setup CounterVec in BAT
@@ -75,6 +82,8 @@ namespace PAMI
                 if (_tBatID == -1)
                   {
                     status = PAMI_ERROR;
+                    TRACE_STRING("Error");
+                    TRACE_FN_EXIT();
                     return;
                   }
 
@@ -83,6 +92,8 @@ namespace PAMI
                 if (_pBatID == -1)
                   {
                     status = PAMI_ERROR;
+                    TRACE_STRING("Error");
+                    TRACE_FN_EXIT();
                     return;
                   }
 
@@ -91,6 +102,8 @@ namespace PAMI
                 if (_cBatID == -1)
                   {
                     status = PAMI_ERROR;
+                    TRACE_STRING("Error");
+                    TRACE_FN_EXIT();
                     return;
                   }
 
@@ -112,6 +125,7 @@ namespace PAMI
                 mucontext.setThroughputCollectiveCounterBatEntry (atomic_address);
 
                 _isInited = true;
+                TRACE_FN_EXIT();
                 return;
               }
           };
@@ -126,7 +140,10 @@ namespace PAMI
               uint64_t                                   _bytes;       /// Short bytes
               volatile uint64_t                        * _counterAddress; /// Counter address
 
-              ShortCompletionMsg () {}
+              ShortCompletionMsg () {          
+                TRACE_FN_ENTER();
+                TRACE_FN_EXIT();
+              }
           };
 
           CollectiveDmaModelBase ():
@@ -134,6 +151,8 @@ namespace PAMI
               _injChannel (*(InjChannel *)NULL),
               _gdev(*(Generic::Device*)NULL)
           {
+          TRACE_FN_ENTER();
+          TRACE_FN_EXIT();
           }
 
           CollectiveDmaModelBase (MU::Context    & context,
@@ -142,6 +161,7 @@ namespace PAMI
               _injChannel (context.injectionGroup.channel[0]),
               _gdev(*context.getProgressDevice())
           {
+            TRACE_FN_ENTER();
             //The collective state must be initialized by task 0 context 0
             if (__global.mapping.t() == 0)
               _collstate.init(context, status);
@@ -150,11 +170,12 @@ namespace PAMI
             new (&_swork) PAMI::Device::Generic::GenericThread(short_advance, &_scompmsg);
 
             initDescBase();
+            TRACE_FN_EXIT();
           }
 
           void initDescBase()
           {
-            //TRACE_FN_ENTER();
+            TRACE_FN_ENTER();
             // Zero-out the descriptor models before initialization
             memset((void *)&_modeldesc, 0, sizeof(_modeldesc));
 
@@ -214,7 +235,7 @@ namespace PAMI
 
             _modeldesc.setDirectPutFields (&dput);
             _modeldesc.setMessageUnitPacketType (MUHWI_PACKET_TYPE_PUT);
-            //TRACE_FN_EXIT();
+            TRACE_FN_EXIT();
           }
 
           void postShortCompletion (pami_event_function      cb_done,
@@ -222,6 +243,7 @@ namespace PAMI
                                     size_t                   bytes,
                                     PipeWorkQueue          * pwq)
           {
+            TRACE_FN_ENTER();
             _scompmsg._cb_done = cb_done;
             _scompmsg._cookie  = cookie;
             _scompmsg._bytes   = bytes;
@@ -229,6 +251,7 @@ namespace PAMI
 
             PAMI::Device::Generic::GenericThread *work = (PAMI::Device::Generic::GenericThread *) & _swork;
             _gdev.postThread(work);
+            TRACE_FN_EXIT();
           }
 
           pami_result_t  postShortCollective (uint32_t        opcode,
@@ -241,7 +264,9 @@ namespace PAMI
                                               unsigned        classroute)
           {
             TRACE_FN_ENTER();
+            TRACE_FORMAT("opcode %u, sizeoftype %u, bytes %u, src %p, dpwq %p, classroute %u", opcode, sizeoftype, bytes, src, dpwq, classroute);
             PAMI_assert (bytes <= _collstate._tempSize);
+            PAMI_assert(bytes);
             _int64Cpy(_collstate._tempBuf, src, bytes);
             //memcpy(_collstate._tempBuf, src, bytes);
 
@@ -249,6 +274,7 @@ namespace PAMI
 
             if (!flag)
               {
+              TRACE_STRING("Error");
               TRACE_FN_EXIT();
               return PAMI_ERROR;
               }
@@ -261,6 +287,7 @@ namespace PAMI
             d->setPayload (_collstate._tempPAddr, bytes);
             d->setOpCode (opcode);
             d->setWordLength (sizeoftype);
+            TRACE_HEXDATA(d, sizeof(*d));
             //d->PacketHeader.messageUnitHeader.Packet_Types.Direct_Put.Rec_Payload_Base_Address_Id = _pBatID;
             _mucontext.setThroughputCollectiveBufferBatEntry(_collstate._tempPAddr);
 
@@ -375,6 +402,7 @@ namespace PAMI
                 return PAMI_SUCCESS;
               }
 
+            TRACE_STRING("EAGAIN");
             TRACE_FN_EXIT();
             return PAMI_EAGAIN;
           }
@@ -391,6 +419,7 @@ namespace PAMI
               TRACE_FN_EXIT();
               return PAMI_SUCCESS;
               }
+            TRACE_STRING("EAGAIN");
             TRACE_FN_EXIT();
             return PAMI_EAGAIN;
           }
