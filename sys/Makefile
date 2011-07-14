@@ -7,9 +7,7 @@ default all install: check docs
 
 docs:
 	${RM} -r ${INSTALL_DIR}/doc
-	( cat ./Doxyfile; echo "OUTPUT_DIRECTORY=${INSTALL_DIR}/doc" ) | doxygen - > /dev/null
-	@echo
-	@echo "OUTPUT_DIRECTORY=${INSTALL_DIR}/doc"
+	( cat ./Doxyfile; echo "OUTPUT_DIRECTORY=${INSTALL_DIR}/doc" ) | doxygen - >${INSTALL_DIR}/doc.out 2>${INSTALL_DIR}/doc.err
 
 check: ${HEADERS_O} pami_checkall.h.o
 pami_checkall.h.o: ${HEADERS}
