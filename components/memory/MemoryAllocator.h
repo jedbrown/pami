@@ -41,7 +41,7 @@ namespace PAMI
 	
 	//Correct padding assuming T_Objsize is not a multiple of T_ObjAlign. 
 	//T_ObjAlign - (objsize+sizeof(next))%T_ObjAlign
-	uint8_t                pad[T_ObjAlign - ((T_ObjSize+8) & (T_ObjAlign-1))];
+        uint8_t                pad[T_ObjAlign - ((T_ObjSize+sizeof(struct memory_object*)) & (T_ObjAlign-1))];
       } memory_object_t;
 
     public:
