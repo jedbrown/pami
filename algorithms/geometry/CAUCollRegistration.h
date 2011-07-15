@@ -225,6 +225,7 @@ namespace PAMI
           PAMI::Device::BSRGeometryInfo     *_bsr_info;
           uint64_t                           _cau_mask;
           int                                _cau_group;
+          uint64_t                           _ctlstr_offset;
         }GeometryInfo;
 
       public:
@@ -336,7 +337,8 @@ namespace PAMI
                   TRACE((stderr, "\n"));
                   
                   // prepare for collshmem device control structure address distribution
-                  _csmm.getSGCtrlStrVec(geometry, &inout_val[1]);
+                  uint64_t        ctlstr_offset=0xFFFFFFFFFFFFFFFFULL;
+                  _csmm.getSGCtrlStrVec(geometry, &inout_val[1], &ctlstr_offset);
                   bool            participant       = geometry->isLocalMasterParticipant();
                   if(participant)
                     inout_val[0] = _csmm.getAndSetKey(0x0ULL);
@@ -353,6 +355,7 @@ namespace PAMI
                   geometryInfo->_cau_info                        = NULL;
                   geometryInfo->_cau_mask                        = inout_val[0];
                   geometryInfo->_cau_group                       = -1;
+                  geometryInfo->_ctlstr_offset                   = ctlstr_offset;
                   
                   geometry->setKey(Geometry::PAMI_GKEY_GEOMETRYINFO,geometryInfo);                  
                   geometry->setCleanupCallback(cleanupCallback, geometryInfo);
@@ -392,8 +395,7 @@ namespace PAMI
                   uint master_rank   = ((PAMI::Topology *)geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX))->index2Rank(0);
                   uint master_index  = local_master_topo->rank2Index(master_rank);
                   void *ctrlstr      = (void *)inout_val[master_index+1];
-                  geometry->setKey(Geometry::GKEY_GEOMETRYCSNI,ctrlstr);
-                  
+
                   if(inout_val[0] == 0)
                   {
                     TRACE((stderr, "Phase 1:  P0: Disabling Collectives on Geometry %d inout_val=%llx\n",
@@ -484,8 +486,11 @@ namespace PAMI
                   if(local_topo->size() > 1)
                   {
                     local_model  = (T_LocalModel*)_model_allocator.allocateObject();
-                    void                             *csmm_ctrlstr = (void *) geometry->getKey(PAMI::Geometry::GKEY_GEOMETRYCSNI);
-                    new(local_model)T_LocalModel(&_local_devs, geometry->comm(), local_topo, &_csmm, csmm_ctrlstr);
+                    new(local_model)T_LocalModel(&_local_devs,
+                                                 geometry->comm(),
+                                                 local_topo,
+                                                 &_csmm,
+                                                 (void*)geometryInfo->_ctlstr_offset);
 
                     // Allocate the local native interface
                     ni           = (T_LocalNI_AM*)_ni_allocator.allocateObject();
@@ -572,6 +577,11 @@ namespace PAMI
             _bsr_geom_allocator.returnObject(bsr_gi);
           }
 
+        inline void freeSharedMemory(uint64_t ctlstr_offset)
+          {
+            _csmm.returnSGCtrlStr(ctlstr_offset);
+          }
+        
 
         static inline void cleanupCallback(pami_context_t ctxt, void *data, pami_result_t res)
           {
@@ -592,6 +602,8 @@ namespace PAMI
             if(gi->_bsr_info)
               gi->_registration->freeBsrInfo(gi->_bsr_info);
 
+            gi->_registration->freeSharedMemory(gi->_ctlstr_offset);
+            
             gi->_registration->freeGeomInfo(gi);
 
           }

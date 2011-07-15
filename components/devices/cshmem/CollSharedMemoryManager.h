@@ -528,32 +528,53 @@ namespace PAMI
           return (ctlstr_t *)ctlstr;
         }
 
+        void returnCtrlStr (ctlstr_t *ctlstr)
+        {
+          PAMI_ASSERT(ctlstr != NULL);
+
+          ctlstr_t *tmp         = ctlstr;
+          T_Atomic *ctlstr_list = (T_Atomic *) offset_to_addr(_collshm->ctlstr_list_offset);
+          tmp->next_offset = ctlstr_list->fetch();
+          while(!ctlstr_list->bool_compare_and_swap(tmp->next_offset, addr_to_offset(tmp)))
+          {
+            tmp->next_offset = ctlstr_list->fetch();
+          }
+        }
+      
         ///
         /// \brief Return a list of shm ctrl struct to the free list
         ///
         /// \param ctlstr pointer to a list of ctrl structs to be returned
         ///
-
-        void returnCtrlStr (ctlstr_t *ctlstr)
+        void returnCtrlStrList (ctlstr_t *ctlstr)
         {
 
           PAMI_ASSERT(ctlstr != NULL);
 
           ctlstr_t *tmp         = ctlstr;
-          T_Atomic *ctlstr_list = (T_Atomic *) offset_to_addr(_collshm->ctlstr_list);
-          while (tmp->next_offset != addr_to_offset(NULL))
-            {
+          T_Atomic *ctlstr_list = (T_Atomic *) offset_to_addr(_collshm->ctlstr_list_offset);
+
+          // Decrement the number of control strings
+          // and count the number in the list
+          int cnt = 0;
+          while (tmp != NULL)
+            { 
               tmp = (ctlstr_t*)offset_to_addr(tmp->next_offset);
               -- _nctrlstrs;
+              cnt++;
             }
+          ctlstr_t *cur=ctlstr;
+          for(int i=0; i<cnt; i++)
+          {
+            ctlstr_t *next = (ctlstr_t*)offset_to_addr(cur->next_offset);            
 
-          tmp->next_offset = ctlstr_list->fetch();
-
-          while(!ctlstr_list->bool_compare_and_swap(tmp->next_offset, addr_to_offset(tmp)))
+            cur->next_offset = ctlstr_list->fetch();
+            while(!ctlstr_list->bool_compare_and_swap(cur->next_offset, addr_to_offset(cur)))
             {
-              tmp->next_offset = ctlstr_list->fetch();
+              cur->next_offset = ctlstr_list->fetch();
             }
-
+            cur=next;
+          }
           TRACE_DBG((stderr, "_nctrlstrs = %d\n", _nctrlstrs));
 
         }
@@ -568,7 +589,9 @@ namespace PAMI
 
         // fill in a vector of coll shmem control structure address offsets for sub-geometries
         // perform allreduce on the vector during geometry analyze()
-        void getSGCtrlStrVec(pami_geometry_t geo, uint64_t *vec)
+        void getSGCtrlStrVec(pami_geometry_t geo,
+                             uint64_t       *vec,
+                             uint64_t       *ctlstr_offset)
         {
 
           PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)geo;
@@ -586,9 +609,20 @@ namespace PAMI
           for (uint i = 0; i < master_size; ++i) vec[i] = 0xFFFFFFFFFFFFFFFFULL;
 
           if (local_index == 0)
-            vec[master_index] = (uint64_t) ((size_t)getCtrlStr(local_size) - (size_t)_collshm);
-        }
+            vec[master_index] = (uint64_t) addr_to_offset(getCtrlStr(local_size));
 
+          *ctlstr_offset = vec[master_index];
+        }
+      
+      void returnSGCtrlStr(uint64_t ctlstr_offset)
+        {
+          if(ctlstr_offset != 0xFFFFFFFFFFFFFFFFULL)
+          {
+            ctlstr_t *ctlstr = (ctlstr_t *)offset_to_addr(ctlstr_offset);
+            returnCtrlStrList(ctlstr);
+          }
+        }
+      
       protected:
         size_t                    _nctrlstrs;
         size_t                    _ndatabufs;
