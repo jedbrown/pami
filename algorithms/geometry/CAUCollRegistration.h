@@ -225,6 +225,7 @@ namespace PAMI
           PAMI::Device::BSRGeometryInfo     *_bsr_info;
           uint64_t                           _cau_mask;
           int                                _cau_group;
+          int                                _ctlstr_offset;
         }GeometryInfo;
 
       public:
@@ -336,7 +337,8 @@ namespace PAMI
                   TRACE((stderr, "\n"));
                   
                   // prepare for collshmem device control structure address distribution
-                  _csmm.getSGCtrlStrVec(geometry, &inout_val[1]);
+                  uint64_t ctlstr_offset;
+                  _csmm.getSGCtrlStrVec(geometry, &inout_val[1], &ctlstr_offset);
                   bool            participant       = geometry->isLocalMasterParticipant();
                   if(participant)
                     inout_val[0] = _csmm.getAndSetKey(0x0ULL);
@@ -353,6 +355,7 @@ namespace PAMI
                   geometryInfo->_cau_info                        = NULL;
                   geometryInfo->_cau_mask                        = inout_val[0];
                   geometryInfo->_cau_group                       = -1;
+                  geometryInfo->_ctlstr_offset                   = ctlstr_offset;
                   
                   geometry->setKey(Geometry::PAMI_GKEY_GEOMETRYINFO,geometryInfo);                  
                   geometry->setCleanupCallback(cleanupCallback, geometryInfo);
@@ -571,7 +574,10 @@ namespace PAMI
             bsr_gi->~BSRGeometryInfo();
             _bsr_geom_allocator.returnObject(bsr_gi);
           }
-
+        inline void freeSharedMemory(uint64_t ctlstr_offset)
+          {
+            _csmm.returnSGCtrlStr(ctlstr_offset);
+          }
 
         static inline void cleanupCallback(pami_context_t ctxt, void *data, pami_result_t res)
           {
@@ -592,6 +598,8 @@ namespace PAMI
             if(gi->_bsr_info)
               gi->_registration->freeBsrInfo(gi->_bsr_info);
 
+            gi->_registration->freeSharedMemory(gi->_ctlstr_offset);
+            
             gi->_registration->freeGeomInfo(gi);
 
           }
