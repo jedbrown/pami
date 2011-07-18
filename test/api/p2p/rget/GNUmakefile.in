@@ -12,7 +12,7 @@
 VPATH		= @abs_srcdir@
 SUBDIRS         = 
 NOTBUILT        = 
-APPS            = simple_rget_func.${EXTENSION}
+APPS            = simple_rget_func.${EXTENSION} rget_flood.${EXTENSION}
 
 include @abs_top_builddir@/Build.rules
 
