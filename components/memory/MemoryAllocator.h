@@ -32,16 +32,18 @@ namespace PAMI
   template <unsigned T_ObjSize, unsigned T_ObjAlign, unsigned T_PREALLOC=4, class T_Mutex = PAMI::Mutex::Noop>
   class MemoryAllocator
   {
-    protected:
+
+   protected:
 
       typedef struct memory_object
       {
         uint8_t                object[T_ObjSize];
-	struct memory_object * next;
+        struct memory_object * next;
 	
-	//Correct padding assuming T_Objsize is not a multiple of T_ObjAlign. 
-	//T_ObjAlign - (objsize+sizeof(next))%T_ObjAlign
-        uint8_t                pad[T_ObjAlign - ((T_ObjSize+sizeof(struct memory_object*)) & (T_ObjAlign-1))];
+        //Correct padding assuming T_Objsize is not a multiple of T_ObjAlign. 
+        //T_ObjAlign - (objsize+sizeof(next))%T_ObjAlign
+        //SSS: Using sizeof(int*) instead of a hard coded 8 to have the correct value for 32-bit
+        uint8_t                pad[T_ObjAlign - ((T_ObjSize+sizeof(int*)) & (T_ObjAlign-1))];
       } memory_object_t;
 
   private:
@@ -66,12 +68,24 @@ namespace PAMI
         TRACE_FN_EXIT();
       }
 
+	  ~MemoryAllocator()
+      {
+        while(!_segments.empty())
+        {
+          PAMI::Memory::MemoryManager::heap_mm->free(_segments.back());
+          _segments.pop_back();
+        }
+      }
+	  
+	  
       void *internalAllocate () __attribute__((noinline, weak));
     
       inline void * allocateObject ()
       {
         TRACE_FN_ENTER();
         lock ();
+
+        COMPILE_TIME_ASSERT(T_ObjSize > 1);//SSS: Leave this here to catch any compiler misbehavior
 
         memory_object_t * object = _head;
         if (object != NULL)
@@ -80,13 +94,14 @@ namespace PAMI
         }
         else
         {
-	  object = (memory_object_t*) internalAllocate();
+          object = (memory_object_t*) internalAllocate();
         }
 
         unlock ();
 
         TRACE_FORMAT("<%p> _head %p, object %p", this, _head, object);
         TRACE_FN_EXIT();
+		
         return (void *) object;
       };
 
@@ -120,7 +135,9 @@ namespace PAMI
 
       T_Mutex          _mutex;
 
-      memory_object_t * _head;
+      memory_object_t *_head;
+	  
+      vector<void *>   _segments;
   };
 
   template <unsigned T_ObjSize, unsigned T_ObjAlign, unsigned T_PREALLOC, class T_Atomic>
@@ -128,7 +145,7 @@ namespace PAMI
     {
       TRACE_FN_ENTER();
       memory_object_t *object; 
-      
+
       // Allocate and construct a new set of objects
       unsigned i;
       pami_result_t rc;
@@ -137,6 +154,7 @@ namespace PAMI
       // "return" the newly allocated objects to the pool of free objects.
       for (i=1; i<T_PREALLOC; i++) returnObject ((void *) &object[i]);
       TRACE_FN_EXIT();
+      _segments.push_back((void *)object);
       return  (void *)object;
     }
   
