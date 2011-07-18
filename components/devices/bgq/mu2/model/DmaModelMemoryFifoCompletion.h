@@ -47,13 +47,13 @@ namespace PAMI
           inline ~DmaModelMemoryFifoCompletion () {};
 
           inline size_t initializeRemoteGetPayload (void                * vaddr,
-						    uint64_t              local_dst_pa,
-						    uint64_t              remote_src_pa,
-						    size_t                bytes,
-						    uint64_t              map,
-						    uint8_t               hintsE,
-						    pami_event_function   local_fn,
-						    void                * cookie)
+                                                    uint64_t              local_dst_pa,
+                                                    uint64_t              remote_src_pa,
+                                                    size_t                bytes,
+                                                    uint64_t              map,
+                                                    uint8_t               hintsE,
+                                                    pami_event_function   local_fn,
+                                                    void                * cookie)
           {
             TRACE_FN_ENTER();
 
@@ -83,8 +83,8 @@ namespace PAMI
             // Set the pinned fifo/map information
             desc[0].setTorusInjectionFIFOMap (map);
 
-	    // Set the ABCD hint bits to zero, and the E hint bits to the caller's
-	    desc[0].setHints (0, hintsE);
+            // Set the ABCD hint bits to zero, and the E hint bits to the caller's
+            desc[0].setHints (0, hintsE);
 
             // ----------------------------------------------------------------
             // Initialize the "ack to self" descriptor in the rget payload
@@ -94,11 +94,11 @@ namespace PAMI
             // Set the pinned fifo/map information
             desc[1].setTorusInjectionFIFOMap (map);
 
-	    // Set the ABCD hint bits to zero, and the E hint bits to the caller's
-	    desc[1].setHints (0, hintsE);
+            // Set the ABCD hint bits to zero, and the E hint bits to the caller's
+            desc[1].setHints (0, hintsE);
 
-	    //MUSPI_DescriptorDumpHex((char *)"Remote Put", &desc[0]);
-	    //MUSPI_DescriptorDumpHex((char *)"Fifo Completion", &desc[1]);
+            //MUSPI_DescriptorDumpHex((char *)"Remote Put", &desc[0]);
+            //MUSPI_DescriptorDumpHex((char *)"Fifo Completion", &desc[1]);
 
             TRACE_HEXDATA(desc, 128);
             TRACE_FN_EXIT();

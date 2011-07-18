@@ -67,12 +67,12 @@ namespace PAMI
           static const size_t dma_model_mr_supported = true;
 
           /// \see Device::Interface::DmaModel::getDmaTransferStateBytes
-	  ///
-	  /// One usage is to store a descriptor message and its payload (1 descriptor)
-	  /// in the "state" array, which dictates its size to be:
-	  ///   256 = sizeof(InjectDescriptorMessage) + sizeof(MUHWI_Descriptor_t)
-	  /// Prior to this size, it was 128.
-	  /// 
+          ///
+          /// One usage is to store a descriptor message and its payload (1 descriptor)
+          /// in the "state" array, which dictates its size to be:
+          ///   256 = sizeof(InjectDescriptorMessage) + sizeof(MUHWI_Descriptor_t)
+          /// Prior to this size, it was 128.
+          ///
           static const size_t dma_model_state_bytes  = 256;
 
 
@@ -149,116 +149,119 @@ namespace PAMI
           MUSPI_DescriptorBase   _dput; // "direct put" used for postDmaPut_impl()
           MUSPI_DescriptorBase   _rget; // "remote get" used for postDmaGet_impl()
           MUSPI_DescriptorBase   _rput; // "remote put" _rget payload descriptor
-	  MemoryFifoRemoteCompletion _remoteCompletion; // Class that does a
-	                                                // memory fifo completion
-                                                        // ping pong.
+          MemoryFifoRemoteCompletion _remoteCompletion; // Class that does a
+          // memory fifo completion
+          // ping pong.
 
           MU::Context          & _context;
-	  MUHWI_Destination_t  * _myCoords;
-	  size_t                 _pamiEagerLimit;
+          MUHWI_Destination_t  * _myCoords;
+          size_t                 _pamiEagerLimit;
 
-	  // This structure is allocated at runtime when we split an rget into
-	  // two and send it on opposite E links.  It is used to track the status
-	  // of those two rgets.
+          // This structure is allocated at runtime when we split an rget into
+          // two and send it on opposite E links.  It is used to track the status
+          // of those two rgets.
           typedef struct getSplitState
           {
             pami_event_function     finalCallbackFn;
             void                  * finalCallbackFnCookie;
             uint32_t                completionCount;
-	    DmaModelBase<T_Model> * model;
-	    
+            DmaModelBase<T_Model> * model;
+
           } getSplitState_t;
 
-	  // This memory allocator allocates getSplitState_t objects.
-	  // 32-byte alignment is used to optimize cloning of descriptors.
+          // This memory allocator allocates getSplitState_t objects.
+          // 32-byte alignment is used to optimize cloning of descriptors.
           MemoryAllocator < sizeof(getSplitState_t), 32 > _getSplitStateAllocator;
 
           inline getSplitState_t * allocateGetSplitState ()
-	    {
-	      return(getSplitState_t *) _getSplitStateAllocator.allocateObject ();
-	    }
+          {
+            return(getSplitState_t *) _getSplitStateAllocator.allocateObject ();
+          }
 
           inline void freeGetSplitState ( getSplitState_t * object)
-	    {
-	      _getSplitStateAllocator.returnObject ((void *) object);
-	    }
+          {
+            _getSplitStateAllocator.returnObject ((void *) object);
+          }
 
           ///
           /// \brief Local get completion event callback for split rgets
           ///
           /// This callback is invoked when completing a split rget.
-	  /// It will be called twice, once for each half of the rget.
-	  /// The first time, the counter will be zero, so it just increments
-	  /// the counter and returns.  The second time, the counter will be
-	  /// 1, so it invokes the application local completion
+          /// It will be called twice, once for each half of the rget.
+          /// The first time, the counter will be zero, so it just increments
+          /// the counter and returns.  The second time, the counter will be
+          /// 1, so it invokes the application local completion
           /// callback function and frees the transfer state memory.
           ///
           static void splitComplete (pami_context_t   context,
-				     void           * cookie,
-				     pami_result_t    result)
+                                     void           * cookie,
+                                     pami_result_t    result)
           {
-	    getSplitState_t *splitState = (getSplitState_t*) cookie;
+            getSplitState_t *splitState = (getSplitState_t*) cookie;
 
-	    if ( splitState->completionCount == 0 )
-	      {
-		splitState->completionCount++;
-	      }
-	    else
-	      {
-		if ( splitState->finalCallbackFn != NULL)
-		  {
-		    splitState->finalCallbackFn (context, 
-						 splitState->finalCallbackFnCookie, 
-						 PAMI_SUCCESS);
-		  }
+            if ( splitState->completionCount == 0 )
+              {
+                splitState->completionCount++;
+              }
+            else
+              {
+                if ( splitState->finalCallbackFn != NULL)
+                  {
+                    splitState->finalCallbackFn (context,
+                                                 splitState->finalCallbackFnCookie,
+                                                 PAMI_SUCCESS);
+                  }
 
-		splitState->model->freeGetSplitState (splitState);
-	      }
+                splitState->model->freeGetSplitState (splitState);
+              }
 
             return;
           }
 
-	  /// \brief Determine if Dest is a Nearest Neighbor in E
-	  ///
-	  /// Returns true if the specified dest is only linked with our
-	  /// node via E links.  No ABCD links.
-	  ///
-	  /// \param[in]  dest  ABCDE coords of the destination node
-	  ///
-	  /// \retval  true  Dest is nearest neighbor in E
-	  /// \retval  false Dest is NOT nearest neighbor in E
-	  ///
-	  inline bool nearestNeighborInE ( MUHWI_Destination_t dest )
-	    {
-	      if ( ( ( dest.Destination.Destination & 0xffffffc0 ) == 
-		     ( _myCoords->Destination.Destination & 0xffffffc0 ) ) && // Same ABCD coords?
-		   dest.Destination.Destination != 
-		   _myCoords->Destination.Destination )      // And different E coords?
-		return true;
-	      else
-		return false;
-	    }
+          /// \brief Determine if Dest is a Nearest Neighbor in E
+          ///
+          /// Returns true if the specified dest is only linked with our
+          /// node via E links.  No ABCD links.
+          ///
+          /// \param[in]  dest  ABCDE coords of the destination node
+          ///
+          /// \retval  true  Dest is nearest neighbor in E
+          /// \retval  false Dest is NOT nearest neighbor in E
+          ///
+          inline bool nearestNeighborInE ( MUHWI_Destination_t dest )
+          {
+            if ( ( ( dest.Destination.Destination & 0xffffffc0 ) ==
+                   ( _myCoords->Destination.Destination & 0xffffffc0 ) ) && // Same ABCD coords?
+                 dest.Destination.Destination !=
+                 _myCoords->Destination.Destination )      // And different E coords?
+              return true;
+            else
+              return false;
+          }
 
       };
 
       template <class T_Model>
       DmaModelBase<T_Model>::DmaModelBase (MU::Context & device, pami_result_t & status) :
           Interface::DmaModel < MU::DmaModelBase<T_Model>, MU::Context, 256 > (device, status),
-	  _remoteCompletion (device),
-	  _context (device)
+          _remoteCompletion (device),
+          _context (device)
       {
         COMPILE_TIME_ASSERT(sizeof(MUSPI_DescriptorBase) <= MU::Context::immediate_payload_size);
 
-	_myCoords = __global.mapping.getMuDestinationSelf();
+        _myCoords = __global.mapping.getMuDestinationSelf();
 
-	// Fetch the eager limit
-	/// \todo Match this up with mpich default.
-	_pamiEagerLimit = 1234;
-	char *env;
-	env = getenv("PAMI_RVZ");
-	if (env == NULL) env = getenv("PAMI_RZV");
-	if (env == NULL) env = getenv("PAMI_EAGER");
-	if (env != NULL) _pamiEagerLimit = atoi(env);
+        // Fetch the eager limit
+        /// \todo Match this up with mpich default.
+        _pamiEagerLimit = 1234;
+        char *env;
+        env = getenv("PAMI_RVZ");
+
+        if (env == NULL) env = getenv("PAMI_RZV");
+
+        if (env == NULL) env = getenv("PAMI_EAGER");
+
+        if (env != NULL) _pamiEagerLimit = atoi(env);
 
         // Zero-out the descriptor models before initialization
         memset((void *)&_dput, 0, sizeof(_dput));
@@ -267,12 +270,12 @@ namespace PAMI
 
         // --------------------------------------------------------------------
         // Set the common base descriptor fields
-	// 
-	// For the remote get packet, send it using the high priority torus
-	// fifo map.  Everything else uses non-priority torus fifos, pinned
-	// later based on destination.  This is necessary to avoid deadlock
-	// when the remote get fifo fills.  Note that this is in conjunction
-	// with using the high priority virtual channel (set elsewhere).
+        //
+        // For the remote get packet, send it using the high priority torus
+        // fifo map.  Everything else uses non-priority torus fifos, pinned
+        // later based on destination.  This is necessary to avoid deadlock
+        // when the remote get fifo fills.  Note that this is in conjunction
+        // with using the high priority virtual channel (set elsewhere).
         // --------------------------------------------------------------------
         MUSPI_BaseDescriptorInfoFields_t base;
         memset((void *)&base, 0, sizeof(base));
@@ -282,18 +285,18 @@ namespace PAMI
         _dput.setBaseFields (&base);
         _rput.setBaseFields (&base);
 
-	base.Torus_FIFO_Map = MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_PRIORITY;
-	_rget.setBaseFields (&base);
+        base.Torus_FIFO_Map = MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_PRIORITY;
+        _rget.setBaseFields (&base);
 
 
         // --------------------------------------------------------------------
         // Set the common point-to-point descriptor fields
-	//
-	// For the remote get packet, send it on the high priority virtual
-	// channel.  Everything else is on the deterministic virtual channel.
-	// This is necessary to avoid deadlock when the remote get fifo fills.
-	// Note that this is in conjunction with setting the high priority
-	// torus fifo map (set elsewhere).
+        //
+        // For the remote get packet, send it on the high priority virtual
+        // channel.  Everything else is on the deterministic virtual channel.
+        // This is necessary to avoid deadlock when the remote get fifo fills.
+        // Note that this is in conjunction with setting the high priority
+        // torus fifo map (set elsewhere).
         // --------------------------------------------------------------------
         MUSPI_Pt2PtDescriptorInfoFields_t pt2pt;
         memset((void *)&pt2pt, 0, sizeof(pt2pt));
@@ -396,7 +399,7 @@ namespace PAMI
 // Allocate completion counter, set counter in rput descriptor, set completion function and cookie
 // !!!!
 
-	//MUSPI_DescriptorDumpHex((char *)"Remote Put", rput);
+        //MUSPI_DescriptorDumpHex((char *)"Remote Put", rput);
 
         return sizeof(MUHWI_Descriptor_t);
       };
@@ -467,47 +470,47 @@ namespace PAMI
             return postDmaGet_impl (state, local_fn, cookie, target_task, target_offset, 0,
                                     local_memregion, local_offset,
                                     remote_memregion, remote_offset);
-	    // Note: This technique is turned-off because it won't work with the MU.
-	    // The postDmaGet() implementation is to send a remote-get to the remote
-	    // node.  When that DmaGet completes, we know the previous put operations
-	    // have been received at the remote node.  This remote get must be
-	    // deterministically routed on the same virtual channel as the previous
-	    // put operations so it flows after the put operations.  But, to avoid
-	    // deadlocks, the MU requires the remote get to flow on the high-priority
-	    // virtual channel, which is different from the virtual channel that the
-	    // data flows on.  Thus, we can't use this remote get tecnhique.
+            // Note: This technique is turned-off because it won't work with the MU.
+            // The postDmaGet() implementation is to send a remote-get to the remote
+            // node.  When that DmaGet completes, we know the previous put operations
+            // have been received at the remote node.  This remote get must be
+            // deterministically routed on the same virtual channel as the previous
+            // put operations so it flows after the put operations.  But, to avoid
+            // deadlocks, the MU requires the remote get to flow on the high-priority
+            // virtual channel, which is different from the virtual channel that the
+            // data flows on.  Thus, we can't use this remote get tecnhique.
 #else
-	    // A zero-byte put is defined to be complete after a memory fifo pingpong
-	    // with the remote node.  The ping must be injected into the same injection
-	    // fifo and torus injection fifo, and must be deterministically routed so it 
-	    // follows behind the previous deterministically-routed put operations.
-	    // When the ping is received at the remote node, it sends a pong back to our
-	    // node, causing the local_fn callback to be invoked, indicating completion.
+            // A zero-byte put is defined to be complete after a memory fifo pingpong
+            // with the remote node.  The ping must be injected into the same injection
+            // fifo and torus injection fifo, and must be deterministically routed so it
+            // follows behind the previous deterministically-routed put operations.
+            // When the ping is received at the remote node, it sends a pong back to our
+            // node, causing the local_fn callback to be invoked, indicating completion.
 
-	    // Before injecting the ping descriptor, determine the destination,
-	    // torus fifo map, and injection channel to use to get to the
-	    // destination.
-	    MUHWI_Destination_t   dest;
-	    uint16_t              rfifo;
-	    uint64_t              map;
-	    
-	    size_t fnum = _context.pinFifo (target_task,
-					    target_offset,
-					    dest,
-					    rfifo,
-					    map);
-	    
-	    InjChannel & channel = _context.injectionGroup.channel[fnum];
+            // Before injecting the ping descriptor, determine the destination,
+            // torus fifo map, and injection channel to use to get to the
+            // destination.
+            MUHWI_Destination_t   dest;
+            uint16_t              rfifo;
+            uint64_t              map;
 
-	    _remoteCompletion.inject( state,
-				      channel,
-				      local_fn,
-				      cookie,
-				      map,
-				      dest.Destination.Destination);
+            size_t fnum = _context.pinFifo (target_task,
+                                            target_offset,
+                                            dest,
+                                            rfifo,
+                                            map);
+
+            InjChannel & channel = _context.injectionGroup.channel[fnum];
+
+            _remoteCompletion.inject( state,
+                                      channel,
+                                      local_fn,
+                                      cookie,
+                                      map,
+                                      dest.Destination.Destination);
 
             TRACE_FN_EXIT();
-	    return true;
+            return true;
 #endif
           }
 
@@ -581,7 +584,7 @@ namespace PAMI
           {
             // Create a simple single-descriptor message
             COMPILE_TIME_ASSERT(sizeof(InjectDescriptorMessage<1>) <= dma_model_state_bytes);
-            
+
             InjectDescriptorMessage<1> * msg =
               (InjectDescriptorMessage<1> *) state;
             new (msg) InjectDescriptorMessage<1> (channel, local_fn, cookie);
@@ -679,150 +682,151 @@ namespace PAMI
 
         InjChannel & channel = _context.injectionGroup.channel[fnum];
 
-	// When the dest is on a line in the E dimension, split the message into
-	// two rgets, and flow one DPut in the E+ and the other in the E- to
-	// optimize bandwidth.  This is possible because dest and our node are
-	// linked via the two E links.
-	if ( unlikely ( nearestNeighborInE ( dest ) &&	( bytes >= _pamiEagerLimit ) ) )
-	  { // Special E dimension case
+        // When the dest is on a line in the E dimension, split the message into
+        // two rgets, and flow one DPut in the E+ and the other in the E- to
+        // optimize bandwidth.  This is possible because dest and our node are
+        // linked via the two E links.
+        if ( unlikely ( nearestNeighborInE ( dest ) &&	( bytes >= _pamiEagerLimit ) ) )
+          { // Special E dimension case
 
-	    // Get pointers to 2 descriptor slots, if they are available.
-	    MUHWI_Descriptor_t * desc[2];
-	    uint64_t descNum = channel.getNextDescriptorMultiple ( 2, desc );
+            // Get pointers to 2 descriptor slots, if they are available.
+            MUHWI_Descriptor_t * desc[2];
+            uint64_t descNum = channel.getNextDescriptorMultiple ( 2, desc );
 
-	    // If the send queue is empty and there is space in the fifo for
-	    // both descriptors, continue.
-	    if (likely( channel.isSendQueueEmpty() && (descNum != (uint64_t)-1 )))
-	      {
-		// Clone the remote inject model descriptors into the injection fifo slots.
-		MUSPI_DescriptorBase * rgetMinus = (MUSPI_DescriptorBase *) desc[0];
-		MUSPI_DescriptorBase * rgetPlus  = (MUSPI_DescriptorBase *) desc[1];
-		_rget.clone (*rgetMinus);
-		_rget.clone (*rgetPlus);
+            // If the send queue is empty and there is space in the fifo for
+            // both descriptors, continue.
+            if (likely( channel.isSendQueueEmpty() && (descNum != (uint64_t) - 1 )))
+              {
+                // Clone the remote inject model descriptors into the injection fifo slots.
+                MUSPI_DescriptorBase * rgetMinus = (MUSPI_DescriptorBase *) desc[0];
+                MUSPI_DescriptorBase * rgetPlus  = (MUSPI_DescriptorBase *) desc[1];
+                _rget.clone (*rgetMinus);
+                _rget.clone (*rgetPlus);
 
-		// Initialize the destination in the rget descriptors.
-		rgetMinus->setDestination (dest);
-		rgetPlus ->setDestination (dest);
+                // Initialize the destination in the rget descriptors.
+                rgetMinus->setDestination (dest);
+                rgetPlus ->setDestination (dest);
 
-		// Set the remote injection fifo identifiers to E- and E+ respectively.
-		uint32_t *rgetInjFifoIds = _context.getRgetInjFifoIds ();
-		rgetMinus->setRemoteGetInjFIFOId ( rgetInjFifoIds[8] );
-		rgetPlus ->setRemoteGetInjFIFOId ( rgetInjFifoIds[9] );
+                // Set the remote injection fifo identifiers to E- and E+ respectively.
+                uint32_t *rgetInjFifoIds = _context.getRgetInjFifoIds ();
+                rgetMinus->setRemoteGetInjFIFOId ( rgetInjFifoIds[8] );
+                rgetPlus ->setRemoteGetInjFIFOId ( rgetInjFifoIds[9] );
 
-		// Allocate space for
-		// - A completion counter that will count how many completion messages
-		//   have been received (we are done when two have been received), 
-		// - The original callback function and cookie.
-		// This will be freed in the splitComplete() function when it has been
-		// called with the second completion message.
-		getSplitState_t *splitCookie       = allocateGetSplitState();
-		splitCookie->finalCallbackFn       = local_fn;
-		splitCookie->finalCallbackFnCookie = cookie;
-		splitCookie->completionCount       = 0;
-		splitCookie->model                 = this;
+                // Allocate space for
+                // - A completion counter that will count how many completion messages
+                //   have been received (we are done when two have been received),
+                // - The original callback function and cookie.
+                // This will be freed in the splitComplete() function when it has been
+                // called with the second completion message.
+                getSplitState_t *splitCookie       = allocateGetSplitState();
+                splitCookie->finalCallbackFn       = local_fn;
+                splitCookie->finalCallbackFnCookie = cookie;
+                splitCookie->completionCount       = 0;
+                splitCookie->model                 = this;
 
-		// Initialize the rget payload descriptor(s) for the E- rget
-		void * vaddr;
-		uint64_t paddr;
-		size_t bytes0 = bytes >> 1;
-		size_t bytes1 = bytes - bytes0;
+                // Initialize the rget payload descriptor(s) for the E- rget
+                void * vaddr;
+                uint64_t paddr;
+                size_t bytes0 = bytes >> 1;
+                size_t bytes1 = bytes - bytes0;
 
-		channel.getDescriptorPayload (desc[0], vaddr, paddr);
-		size_t pbytes = static_cast<T_Model*>(this)->
-		  initializeRemoteGetPayload (vaddr,
-					      local_dst_pa,
-					      remote_src_pa,
-					      bytes0,
-					      MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EM,
-					      MUHWI_PACKET_HINT_EM,
-					      splitComplete,
-					      splitCookie);
-		rgetMinus->setPayload (paddr, pbytes);
+                channel.getDescriptorPayload (desc[0], vaddr, paddr);
+                size_t pbytes = static_cast<T_Model*>(this)->
+                                initializeRemoteGetPayload (vaddr,
+                                                            local_dst_pa,
+                                                            remote_src_pa,
+                                                            bytes0,
+                                                            MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EM,
+                                                            MUHWI_PACKET_HINT_EM,
+                                                            splitComplete,
+                                                            splitCookie);
+                rgetMinus->setPayload (paddr, pbytes);
 
-/* 		MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Rget0",desc[0]); */
-/* 		MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Dput0",(MUHWI_Descriptor_t*)vaddr); */
-/* 		MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Memfifo-Completion0",((MUHWI_Descriptor_t*)vaddr)+1); */
+                /* 		MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Rget0",desc[0]); */
+                /* 		MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Dput0",(MUHWI_Descriptor_t*)vaddr); */
+                /* 		MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Memfifo-Completion0",((MUHWI_Descriptor_t*)vaddr)+1); */
 
-		// Initialize the rget payload descriptor(s) for the E+ rget
-		channel.getDescriptorPayload (desc[1], vaddr, paddr);
-		pbytes = static_cast<T_Model*>(this)->
-		  initializeRemoteGetPayload (vaddr,
-					      local_dst_pa + bytes0,
-					      remote_src_pa + bytes0,
-					      bytes1,
-					      MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EP,
-					      MUHWI_PACKET_HINT_EP,
-					      splitComplete,
-					      splitCookie);
-		rgetPlus->setPayload (paddr, pbytes);
+                // Initialize the rget payload descriptor(s) for the E+ rget
+                channel.getDescriptorPayload (desc[1], vaddr, paddr);
+                pbytes = static_cast<T_Model*>(this)->
+                         initializeRemoteGetPayload (vaddr,
+                                                     local_dst_pa + bytes0,
+                                                     remote_src_pa + bytes0,
+                                                     bytes1,
+                                                     MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EP,
+                                                     MUHWI_PACKET_HINT_EP,
+                                                     splitComplete,
+                                                     splitCookie);
+                rgetPlus->setPayload (paddr, pbytes);
 
-/* 		MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Rget1",desc[1]); */
-/* 		MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Dput1",(MUHWI_Descriptor_t*)vaddr); */
-/* 		MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Memfifo-Completion1",((MUHWI_Descriptor_t*)vaddr)+1); */
-		
-		// Finally, advance the injection fifo tail pointer. This action
-		// completes the injection operation.
-		channel.injFifoAdvanceDescMultiple(2);
-		
-		return true;
-	      }
-	    return false;
+                /* 		MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Rget1",desc[1]); */
+                /* 		MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Dput1",(MUHWI_Descriptor_t*)vaddr); */
+                /* 		MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Memfifo-Completion1",((MUHWI_Descriptor_t*)vaddr)+1); */
 
-	  } // End: Special E dimension case
-	else
-	  { // Not special E dimension case
-	    size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
+                // Finally, advance the injection fifo tail pointer. This action
+                // completes the injection operation.
+                channel.injFifoAdvanceDescMultiple(2);
 
-	    if (likely(channel.isSendQueueEmpty() && ndesc > 0))
-	      {
-		// There is at least one descriptor slot available in the injection
-		// fifo before a fifo-wrap event.
-		MUHWI_Descriptor_t * desc = channel.getNextDescriptor ();
-		
-		// Clone the remote inject model descriptor into the injection fifo
-		MUSPI_DescriptorBase * rget = (MUSPI_DescriptorBase *) desc;
-		_rget.clone (*rget);
-		
-		// Initialize the injection fifo descriptor in-place.
-		rget->setDestination (dest);
-		
-		// Determine the remote pinning information
-		size_t rfifo =
-		  _context.pinFifoToSelf (target_task, map);
-		
-		// Set the remote injection fifo identifier
-		rget->setRemoteGetInjFIFOId (rfifo);
-		
-		//MUSPI_DescriptorDumpHex((char *)"Remote Get", desc);
-		
-		// Initialize the rget payload descriptor(s)
-		void * vaddr;
-		uint64_t paddr;
-		channel.getDescriptorPayload (desc, vaddr, paddr);
-		size_t pbytes = static_cast<T_Model*>(this)->
-		  initializeRemoteGetPayload (vaddr,
-					      local_dst_pa,
-					      remote_src_pa,
-					      bytes,
-					      map,
-					      MUHWI_PACKET_HINT_E_NONE,
-					      local_fn,
-					      cookie);
-		
-		rget->setPayload (paddr, pbytes);
-		/*             MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Rget",desc); */
-		/*             MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Dput",(MUHWI_Descriptor_t*)vaddr); */
-		/*             MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Memfifo-Completion",((MUHWI_Descriptor_t*)vaddr)+1); */
-		
-		// Finally, advance the injection fifo tail pointer. This action
-		// completes the injection operation.
-		channel.injFifoAdvanceDesc();
-		
-		return true;
-	      }
-	    
-	    return false;
-	  } // End: Not special E dimension case
+                return true;
+              }
+
+            return false;
+
+          } // End: Special E dimension case
+        else
+          { // Not special E dimension case
+            size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
+
+            if (likely(channel.isSendQueueEmpty() && ndesc > 0))
+              {
+                // There is at least one descriptor slot available in the injection
+                // fifo before a fifo-wrap event.
+                MUHWI_Descriptor_t * desc = channel.getNextDescriptor ();
+
+                // Clone the remote inject model descriptor into the injection fifo
+                MUSPI_DescriptorBase * rget = (MUSPI_DescriptorBase *) desc;
+                _rget.clone (*rget);
+
+                // Initialize the injection fifo descriptor in-place.
+                rget->setDestination (dest);
+
+                // Determine the remote pinning information
+                size_t rfifo =
+                  _context.pinFifoToSelf (target_task, map);
+
+                // Set the remote injection fifo identifier
+                rget->setRemoteGetInjFIFOId (rfifo);
+
+                //MUSPI_DescriptorDumpHex((char *)"Remote Get", desc);
+
+                // Initialize the rget payload descriptor(s)
+                void * vaddr;
+                uint64_t paddr;
+                channel.getDescriptorPayload (desc, vaddr, paddr);
+                size_t pbytes = static_cast<T_Model*>(this)->
+                                initializeRemoteGetPayload (vaddr,
+                                                            local_dst_pa,
+                                                            remote_src_pa,
+                                                            bytes,
+                                                            map,
+                                                            MUHWI_PACKET_HINT_E_NONE,
+                                                            local_fn,
+                                                            cookie);
+
+                rget->setPayload (paddr, pbytes);
+                /*             MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Rget",desc); */
+                /*             MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Dput",(MUHWI_Descriptor_t*)vaddr); */
+                /*             MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Memfifo-Completion",((MUHWI_Descriptor_t*)vaddr)+1); */
+
+                // Finally, advance the injection fifo tail pointer. This action
+                // completes the injection operation.
+                channel.injFifoAdvanceDesc();
+
+                return true;
+              }
+
+            return false;
+          } // End: Not special E dimension case
       }
 
     };   // PAMI::Device::MU namespace
