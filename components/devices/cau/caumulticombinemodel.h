@@ -103,12 +103,13 @@ namespace PAMI
           lapi_return_info_t              *ri    = (lapi_return_info_t *) retinfo;
 
           PAMI_assert(ri->udata_one_pkt_ptr);
-          if(msg == NULL)  // Not Found, insdert into ue queue
+          if(msg == NULL)  // Not Found, insert into ue queue
           {
             mc->_device.allocMessage(&msg);
-            new(msg) T_Message(&mc->_device,gi,did,gid,seqno); // Construct, but don't init this message
-            gi->_ueRed.pushTail((MatchQueueElem*)msg);
+            new(msg) T_Message(&mc->_device,gi,did,gid,mc->_device.getHdl(),mc->_device.getContext(),seqno); // Construct, but don't init this message
+			gi->_ueRed.pushTail((MatchQueueElem*)msg);
           }
+
           // In either case, copy the packet and packet size into the message
           msg->_reducePktBytes = (unsigned)hdr->pktsize;
           memcpy(msg->_reducePkt, ri->udata_one_pkt_ptr, hdr->pktsize);
@@ -176,8 +177,11 @@ namespace PAMI
             T_Message        *msg, *earlymsg = (T_Message*)gi->_ueRed.findAndDelete(gi->_seqnoRed);
             msg = new(state) T_Message(&_device,gi,
                                        _dispatch_red_id,
-                                       _dispatch_mcast_id);
-            msg->init(mcombine);
+                                       _dispatch_mcast_id,
+                                       _device.getHdl(),
+                                       _device.getContext());
+
+            msg->init(mcombine, _device.taskid());
             if(earlymsg)
             {
               msg->_reducePktBytes = earlymsg->_reducePktBytes;
@@ -185,10 +189,10 @@ namespace PAMI
               _device.freeMessage(earlymsg);
             }
             pami_result_t res = msg->advance();
-            if(res != PAMI_SUCCESS)
-            {
+
+            if(res != PAMI_SUCCESS){
+              msg->_isPosted = true;
               gi->_postedRed.pushTail((MatchQueueElem*)msg);
-              msg->_isPosted= true;
               msg->_workfcn = _device.postWork(do_reduce, msg);
 
             }

@@ -64,22 +64,25 @@ namespace PAMI
             msg = (T_Message*)gi->_ueBcast.find(seqno);
             if(msg == NULL)
             {
-              TRACE((stderr, "   is a first packet seqno=%d msg=%p\n", seqno, msg));              
+              TRACE((stderr, "   is a first packet seqno=%d msg=%p\n", seqno, msg));
               mc->_device.allocMessage(&msg); 
-              new(msg) T_Message(&mc->_device,gi,did,seqno); // Construct, but don't init this message
+              new(msg) T_Message(&mc->_device,gi,did,mc->_device.getHdl(),mc->_device.getContext(),seqno); // Construct, but don't init this message
               gi->_ueBcast.pushTail((MatchQueueElem*)msg);
             }
           }
           // Copy message data into the packet
           // We can optimize this to avoid the copy, but care is needed to ensure pipelining is correct
-          typename T_Message::IncomingPacket *ipacket =
+          typename T_Message::IncomingPacket *ipacket = 
             (typename T_Message::IncomingPacket *)mc->_device._pkt_allocator.allocateObject();
-          msg->_packetQueue.enqueue(ipacket);
+
           memcpy(&ipacket->_data[0],ri->udata_one_pkt_ptr, hdr->pktsize);
           ipacket->_size=hdr->pktsize;
 
-          msg->advanceNonRoot();
-
+          msg->_packetQueue.enqueue(ipacket);
+          
+          msg->advanceNonRoot();//Advance nonRoot will not call the done callback so won't delete element from queue
+		                        //The do_bcast will advance and delete from queue if message is on queue.
+								
           // Lapi return parameters
           *comp_h       = NULL;
           ri->ret_flags = LAPI_LOCAL_STATE;
@@ -125,10 +128,12 @@ namespace PAMI
           {
             CAUGeometryInfo  *gi             = (CAUGeometryInfo *)devinfo;
             T_Message        *msg, *earlymsg = (T_Message*)gi->_ueBcast.findAndDelete(gi->_seqnoBcast);
-            msg = new(state) T_Message(&_device,gi,_dispatch_mcast_id);
+            msg = new(state) T_Message(&_device,gi,_dispatch_mcast_id,_device.getHdl(),_device.getContext());
+			  
+
             TRACE((stderr, "Posting Multicast, seqno=%d, earlymsg=%p\n", gi->_seqnoBcast, earlymsg));
 
-            msg->init(mcast);
+            msg->init(mcast, _device.taskid(), &_device._pkt_allocator);
             if(earlymsg)
             {
               // Copy early arrival packet pointers to new message
@@ -141,8 +146,8 @@ namespace PAMI
             pami_result_t rc = msg->advance();
             if(rc == PAMI_EAGAIN)
             {
-              gi->_postedBcast.pushTail((MatchQueueElem*)msg);
-              msg->_isPosted= true;
+              msg->_isPosted = true;
+              gi->_postedBcast.pushTail((MatchQueueElem*)msg);                        
               msg->_workfcn = _device.postWork(do_bcast, msg);
             }
             return PAMI_SUCCESS;
