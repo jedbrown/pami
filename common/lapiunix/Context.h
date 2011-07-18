@@ -204,9 +204,9 @@ namespace PAMI
   typedef PAMI::Protocol::Send::SendWrapperPWQ < ShmemEagerBase >            ShmemEager;
 
   // "New" Collective Message Typedefs
-  typedef Device::CAUDevice::CAUMsyncMessage                          CAUMsyncMessage;
-  typedef Device::CAUDevice::CAUMcastMessage                          CAUMcastMessage;
-  typedef Device::CAUDevice::CAUMcombineMessage                       CAUMcombineMessage;
+  typedef Device::CAUMsyncMessage                                     CAUMsyncMessage;
+  typedef Device::CAUMcastMessage                                     CAUMcastMessage;
+  typedef Device::CAUMcombineMessage                                  CAUMcombineMessage;
 
   // P2P Model Classes:  None here, LAPI component implements p2p
 
