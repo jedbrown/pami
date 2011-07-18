@@ -767,9 +767,12 @@ namespace PAMI
                 // completes the injection operation.
                 channel.injFifoAdvanceDescMultiple(2);
 
-                return true;
+                // The completion callback was not invoked; return false.
+                return false;
               }
 
+            // Construct and post a message
+            PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
             return false;
 
           } // End: Special E dimension case
@@ -822,9 +825,12 @@ namespace PAMI
                 // completes the injection operation.
                 channel.injFifoAdvanceDesc();
 
-                return true;
+                // The completion callback was not invoked; return false.
+                return false;
               }
 
+            // Construct and post a message
+            PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
             return false;
           } // End: Not special E dimension case
       }
