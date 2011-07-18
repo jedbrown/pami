@@ -16,6 +16,8 @@
 #ifndef __components_memory_MemoryAllocator_h__
 #define __components_memory_MemoryAllocator_h__
 
+#include <vector>
+
 #include "components/memory/MemoryManager.h"
 #include "components/atomic/noop/Noop.h"
 
@@ -137,7 +139,7 @@ namespace PAMI
 
       memory_object_t *_head;
 	  
-      vector<void *>   _segments;
+      std::vector<void *>   _segments;
   };
 
   template <unsigned T_ObjSize, unsigned T_ObjAlign, unsigned T_PREALLOC, class T_Atomic>
