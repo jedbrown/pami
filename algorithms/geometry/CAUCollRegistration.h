@@ -117,6 +117,7 @@ namespace PAMI
         void MsyncMetaData(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("I0:MultiSyncComposite:SHMEM:CAU");
+          m->check_perf.values.hw_accel     = 1;
         }
         typedef CCMI::Adaptor::Barrier::BarrierFactory2DeviceMsync < CCMI::Adaptor::Barrier::MultiSyncComposite2Device,
                                                                      MsyncMetaData,
@@ -127,6 +128,7 @@ namespace PAMI
         void MsyncBSRMetaData(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("I0:MultiSyncComposite:BSR:CAU");
+          m->check_perf.values.hw_accel     = 1;
         }
         typedef CCMI::Adaptor::Barrier::BarrierFactory2DeviceMsync < CCMI::Adaptor::Barrier::MultiSyncComposite2Device,
                                                                      MsyncBSRMetaData,
@@ -142,6 +144,7 @@ namespace PAMI
         void McastMetaData(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("I0:MultiCastComposite:SHMEM:CAU");
+          m->check_perf.values.hw_accel     = 1;
         }
         typedef CCMI::Adaptor::Broadcast::MultiCastComposite2DeviceFactoryT
         < CCMI::Adaptor::Broadcast::MultiCastComposite2Device<PAMI_GEOMETRY_CLASS,true,false>,
