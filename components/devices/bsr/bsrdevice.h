@@ -148,7 +148,9 @@ namespace PAMI
           _client     = client;
           _context    = context;
           _my_task_id = my_task_id;
-          _initialized = true;
+          // Check the affinity info to enable/disable BSR
+          _initialized = 
+              ((LapiImpl::Context*)context)->CheckAffinityInfo();
         }
 
       pami_context_t getContext_impl()
