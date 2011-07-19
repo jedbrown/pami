@@ -10,7 +10,7 @@
 
 #include "../../init_util.h"
 
-#define ITERATIONS 1024
+#define ITERATIONS 10240
 #define BUFFERSIZE 1024*32
 
 typedef struct

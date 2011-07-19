@@ -37,7 +37,7 @@ namespace PAMI
     namespace MU
     {
       template <class T_Model>
-      class DmaModelBase : public Interface::DmaModel < MU::DmaModelBase<T_Model>, MU::Context, 256 >
+      class DmaModelBase : public Interface::DmaModel < MU::DmaModelBase<T_Model>, MU::Context, 512 >
       {
         protected :
 
@@ -49,6 +49,8 @@ namespace PAMI
           ~DmaModelBase ();
 
         public:
+
+          static const size_t payload_size = sizeof(MUSPI_DescriptorBase);
 
           inline size_t initializeRemoteGetPayload (void                * vaddr,
                                                     uint64_t              local_dst_pa,
@@ -68,12 +70,12 @@ namespace PAMI
 
           /// \see Device::Interface::DmaModel::getDmaTransferStateBytes
           ///
-          /// One usage is to store a descriptor message and its payload (1 descriptor)
+          /// One usage is to store a descriptor message and its payload (1 or more descriptors)
           /// in the "state" array, which dictates its size to be:
-          ///   256 = sizeof(InjectDescriptorMessage) + sizeof(MUHWI_Descriptor_t)
-          /// Prior to this size, it was 128.
+          ///   sizeof(InjectDescriptorMessage) + T_Model::payload_size
+          /// Prior to this size, it was fixed at 128.
           ///
-          static const size_t dma_model_state_bytes  = 256;
+          static const size_t dma_model_state_bytes  = 512;//sizeof(InjectDescriptorMessage<1>) + T_Model::payload_size;
 
 
           inline bool postDmaPut_impl (size_t                target_task,
@@ -243,7 +245,7 @@ namespace PAMI
 
       template <class T_Model>
       DmaModelBase<T_Model>::DmaModelBase (MU::Context & device, pami_result_t & status) :
-          Interface::DmaModel < MU::DmaModelBase<T_Model>, MU::Context, 256 > (device, status),
+          Interface::DmaModel < MU::DmaModelBase<T_Model>, MU::Context, 512 > (device, status),
           _remoteCompletion (device),
           _context (device)
       {
@@ -772,9 +774,97 @@ namespace PAMI
               }
 
             // Construct and post a message
-            PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
-            return false;
+            // Create a simple dual-descriptor message
+            COMPILE_TIME_ASSERT((sizeof(InjectDescriptorMessage<2, false>) + (T_Model::payload_size*2)) <= dma_model_state_bytes);
 
+            InjectDescriptorMessage<2, false> * msg =
+              (InjectDescriptorMessage<2, false> *) state;
+            new (msg) InjectDescriptorMessage<2, false> (channel);
+
+            // Clone the remote inject model descriptors into the injection fifo slots.
+            MUSPI_DescriptorBase * rgetMinus = (MUSPI_DescriptorBase *) & msg->desc[0];
+            MUSPI_DescriptorBase * rgetPlus  = (MUSPI_DescriptorBase *) & msg->desc[1];
+            _rget.clone (*rgetMinus);
+            _rget.clone (*rgetPlus);
+
+            // Initialize the destination in the rget descriptors.
+            rgetMinus->setDestination (dest);
+            rgetPlus ->setDestination (dest);
+
+            // Set the remote injection fifo identifiers to E- and E+ respectively.
+            uint32_t *rgetInjFifoIds = _context.getRgetInjFifoIds ();
+            rgetMinus->setRemoteGetInjFIFOId ( rgetInjFifoIds[8] );
+            rgetPlus ->setRemoteGetInjFIFOId ( rgetInjFifoIds[9] );
+
+            // Allocate space for
+            // - A completion counter that will count how many completion messages
+            //   have been received (we are done when two have been received),
+            // - The original callback function and cookie.
+            // This will be freed in the splitComplete() function when it has been
+            // called with the second completion message.
+            getSplitState_t *splitCookie       = allocateGetSplitState();
+            splitCookie->finalCallbackFn       = local_fn;
+            splitCookie->finalCallbackFnCookie = cookie;
+            splitCookie->completionCount       = 0;
+            splitCookie->model                 = this;
+
+            // Initialize the rget payload descriptor(s) for the E- rget
+            void * e_minus_payload_vaddr = (void *) (msg + 1);
+            size_t bytes0 = bytes >> 1;
+            size_t bytes1 = bytes - bytes0;
+
+            size_t pbytes = static_cast<T_Model*>(this)->
+                            initializeRemoteGetPayload (e_minus_payload_vaddr,
+                                                        local_dst_pa,
+                                                        remote_src_pa,
+                                                        bytes0,
+                                                        MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EM,
+                                                        MUHWI_PACKET_HINT_EM,
+                                                        splitComplete,
+                                                        splitCookie);
+            // Determine the physical address of the rget payload buffer from
+            // the model state memory.
+            Kernel_MemoryRegion_t memRegion;
+            uint32_t rc;
+            rc = Kernel_CreateMemoryRegion (&memRegion, e_minus_payload_vaddr, bytes);
+            PAMI_assert_debug ( rc == 0 );
+            uint64_t paddr = (uint64_t)memRegion.BasePa +
+                             ((uint64_t)e_minus_payload_vaddr - (uint64_t)memRegion.BaseVa);
+            TRACE_FORMAT("e_minus_payload_vaddr = %p, paddr = %ld (%p)", e_minus_payload_vaddr, paddr, (void *)paddr);
+
+            rgetMinus->setPayload (paddr, T_Model::payload_size);
+
+            /* 		MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Rget0",desc[0]); */
+            /* 		MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Dput0",(MUHWI_Descriptor_t*)vaddr); */
+            /* 		MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Memfifo-Completion0",((MUHWI_Descriptor_t*)vaddr)+1); */
+
+            // Initialize the rget payload descriptor(s) for the E+ rget
+            void * e_plus_payload_vaddr =
+              (void *) (((uint8_t *) e_minus_payload_vaddr) + T_Model::payload_size);
+
+            pbytes = static_cast<T_Model*>(this)->
+                     initializeRemoteGetPayload (e_plus_payload_vaddr,
+                                                 local_dst_pa + bytes0,
+                                                 remote_src_pa + bytes0,
+                                                 bytes1,
+                                                 MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EP,
+                                                 MUHWI_PACKET_HINT_EP,
+                                                 splitComplete,
+                                                 splitCookie);
+            rgetPlus->setPayload (paddr + T_Model::payload_size, T_Model::payload_size);
+
+            /* 		MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Rget1",desc[1]); */
+            /* 		MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Dput1",(MUHWI_Descriptor_t*)vaddr); */
+            /* 		MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Memfifo-Completion1",((MUHWI_Descriptor_t*)vaddr)+1); */
+
+            TRACE_HEXDATA(&msg->desc[0], sizeof(MUHWI_Descriptor_t));
+            TRACE_HEXDATA(&msg->desc[1], sizeof(MUHWI_Descriptor_t));
+
+            // Post the message to the injection channel
+            channel.post (msg);
+
+            // The completion callback was not invoked; return false.
+            return false;
           } // End: Special E dimension case
         else
           { // Not special E dimension case
@@ -830,11 +920,62 @@ namespace PAMI
               }
 
             // Construct and post a message
-            PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+            // Create a simple single-descriptor message
+            COMPILE_TIME_ASSERT((sizeof(InjectDescriptorMessage<1, false>) + T_Model::payload_size) <= dma_model_state_bytes);
+
+            InjectDescriptorMessage<1, false> * msg =
+              (InjectDescriptorMessage<1, false> *) state;
+            new (msg) InjectDescriptorMessage<1, false> (channel);
+
+            // Clone the remote inject model descriptor into the message
+            MUSPI_DescriptorBase * rget = (MUSPI_DescriptorBase *) & msg->desc[0];
+            _rget.clone (msg->desc[0]);
+
+            // Determine the remote pinning information
+            size_t rfifo =
+              _context.pinFifoToSelf (target_task, map);
+
+            // Set the remote injection fifo identifier
+            rget->setRemoteGetInjFIFOId (rfifo);
+
+            //MUSPI_DescriptorDumpHex((char *)"Remote Get", desc);
+
+            // Initialize the rget payload descriptor(s)
+            void * vaddr = (void *) (msg + 1);
+            static_cast<T_Model*>(this)->
+            initializeRemoteGetPayload (vaddr,
+                                        local_dst_pa,
+                                        remote_src_pa,
+                                        bytes,
+                                        map,
+                                        MUHWI_PACKET_HINT_E_NONE,
+                                        local_fn,
+                                        cookie);
+
+            // Determine the physical address of the rget payload buffer from
+            // the model state memory.
+            Kernel_MemoryRegion_t memRegion;
+            uint32_t rc;
+            rc = Kernel_CreateMemoryRegion (&memRegion, vaddr, bytes);
+            PAMI_assert_debug ( rc == 0 );
+            uint64_t paddr = (uint64_t)memRegion.BasePa +
+                             ((uint64_t)vaddr - (uint64_t)memRegion.BaseVa);
+            TRACE_FORMAT("vaddr = %p, paddr = %ld (%p)", vaddr, paddr, (void *)paddr);
+
+            rget->setPayload (paddr, T_Model::payload_size);
+            /*             MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Rget",desc); */
+            /*             MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Dput",(MUHWI_Descriptor_t*)vaddr); */
+            /*             MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Memfifo-Completion",((MUHWI_Descriptor_t*)vaddr)+1); */
+
+            TRACE_HEXDATA(&msg->desc[0], sizeof(MUHWI_Descriptor_t));
+
+            // Post the message to the injection channel
+            channel.post (msg);
+
+            // The completion callback was not invoked; return false.
             return false;
           } // End: Not special E dimension case
       }
-
     };   // PAMI::Device::MU namespace
   };     // PAMI::Device namespace
 };       // PAMI namespace

@@ -35,6 +35,8 @@ namespace PAMI
 
           friend class MU::DmaModelBase<DmaModelMemoryFifoCompletion>;
 
+          static const size_t payload_size = sizeof(MUSPI_DescriptorBase)*2;
+
           /// \see PAMI::Device::Interface::DmaModel::DmaModel
           inline DmaModelMemoryFifoCompletion (MU::Context & context, pami_result_t & status) :
               MU::DmaModelBase<DmaModelMemoryFifoCompletion> (context, status),
