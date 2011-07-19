@@ -210,7 +210,6 @@ namespace CCMI
           CCMI_assert(_maxsrcs <= MAX_CONCURRENT);
 
           _mynphases = _comm_schedule->getMyNumPhases();
-          CCMI_assert(_mynphases <= MAX_PARALLEL);
 
           _myindex    = _gtopology->rank2Index(_native->myrank());
           _rootindex  = _gtopology->rank2Index(_root);
