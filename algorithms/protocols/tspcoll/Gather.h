@@ -40,6 +40,12 @@ namespace xlpgas
 	_header->dest_ctxt     = -1;
       }
 
+    ~Gather()
+      {
+        __global.heap_mm->free(_header);
+      }
+
+
     static  void  amsend_reg       (xlpgas_AMHeaderReg_t amsend_regnum) {
       xlpgas_tsp_amsend_reg (amsend_regnum, Gather::cb_incoming);
     }

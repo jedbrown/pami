@@ -95,6 +95,12 @@ int main(int argc, char*argv[])
     pami_algorithm_t      *q_newbar_algo      = NULL;
     pami_metadata_t       *q_newbar_md        = NULL;
 
+    size_t                 newbcast_num_algo[2];
+    pami_algorithm_t      *newbcast_algo      = NULL;
+    pami_metadata_t       *newbcast_md        = NULL;
+    pami_algorithm_t      *q_newbcast_algo    = NULL;
+    pami_metadata_t       *q_newbcast_md      = NULL;
+
     size_t                 set[2];
     int                    id, non_root[2];
 
@@ -130,10 +136,49 @@ int main(int argc, char*argv[])
       if (rc == 1)
         return 1;
 
+      /*  Query the sub geometry for bcast algorithms */
+      pami_xfer_type_t     bcast_xfer = PAMI_XFER_BROADCAST;
+      pami_xfer_t          newbcast;
+      rc |= query_geometry(client,
+                           context[iContext],
+                           newgeometry,
+                           bcast_xfer,
+                           newbcast_num_algo,
+                           &newbcast_algo,
+                           &newbcast_md,
+                           &q_newbcast_algo,
+                           &q_newbcast_md);
+
+      if (rc == 1)
+        return 1;
+
+      int buf = 0;
+      pami_endpoint_t    root_ep;
+      volatile unsigned    bcast_poll_flag = 0;
+      PAMI_Endpoint_create(client, task_zero, 0, &root_ep);
+      newbcast.cmd.xfer_broadcast.root = root_ep;
+      newbcast.cb_done                      = cb_done;
+      newbcast.cookie                       = (void*) & bcast_poll_flag;
+      newbcast.algorithm                    = newbcast_algo[0];
+      newbcast.cmd.xfer_broadcast.buf       = (char*)&buf;
+      newbcast.cmd.xfer_broadcast.type      = PAMI_TYPE_BYTE;
+      newbcast.cmd.xfer_broadcast.typecount = sizeof(buf);
+      blocking_coll(context[iContext], &newbcast, &bcast_poll_flag);
+
       rc |= PAMI_Geometry_destroy(client, &newgeometry);
       if (rc == 1)
         return 1;
-      if(k!=0 && (k%(NITER/10))==0 && task_id == task_real_zero)
+
+      free(newbcast_algo);
+      free(newbcast_md);
+      free(q_newbcast_algo);
+      free(q_newbcast_md);
+      free(newbar_algo);
+      free(newbar_md);
+      free(q_newbar_algo);
+      free(q_newbar_md);
+
+      if(k!=0 && (k%(100))==0 && task_id == task_real_zero)
       {
         double tf     = timer();
         timeIteration = timeElapsed;

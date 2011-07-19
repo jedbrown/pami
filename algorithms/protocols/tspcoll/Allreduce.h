@@ -28,6 +28,11 @@ namespace xlpgas
 	public:
 	  void * operator new (size_t, void * addr) { return addr; }
 	  Long (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset);
+          ~Long()
+            {
+              if(_tmpbuf)
+                __global.heap_mm->free(_tmpbuf);
+            }
 	  void reset (const void * s, void * d,
 		      xlpgas_ops_t op, xlpgas_dtypes_t dt, unsigned nelems, user_func_t* uf);
 

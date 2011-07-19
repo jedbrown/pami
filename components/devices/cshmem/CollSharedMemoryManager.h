@@ -554,7 +554,8 @@ namespace PAMI
           for(int i=0; i<cnt; i++)
           {
             ctlstr_t *next = (ctlstr_t*)offset_to_addr(cur->next_offset);            
-
+            memset(((char*)cur)+sizeof(size_t), 0, sizeof(*cur)-sizeof(size_t));
+            Memory::sync();
             cur->next_offset = ctlstr_list->fetch();
             while(!ctlstr_list->bool_compare_and_swap(cur->next_offset, addr_to_offset(cur)))
             {

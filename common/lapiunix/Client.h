@@ -1131,13 +1131,105 @@ namespace PAMI
                                           num1,
                                           0);
       }
+    class geomCleanup
+    {
+    public:
+      LAPIGeometry              *_geometry;
+      volatile int               _counter;
+      std::vector<geomCleanup*> *_cleanup;
+    };
+    static void geometry_destroy_done_fn(pami_context_t   context,
+                                         void           * cookie,
+                                         pami_result_t    result)
+      {
+        PAMI::Context *ctxt         = (PAMI::Context*)context;
+        PAMI::Client  *clnt         = (PAMI::Client*)ctxt->getClient();
+        geomCleanup   *gc           = (geomCleanup*)cookie;
+        LAPIGeometry  *g            = gc->_geometry;
+        int commid                  = g->comm();
+        gc->_counter                = 0;
+        clnt->_geometry_map[commid] = NULL;
+        gc->_cleanup->push_back(gc);
+      }
 
+    // This code destroys a geometry.
+    // For this context, the destroy of a geometry can have many race conditions
+    // In particular, shared memory segments must be freed in the geometry destroy.
+    // Other tasks may still be using the shared memory control structures, while
+    // the leader allocator task is freeing the structure.
+    // Therefore,  a barrier is necessary to ensure that all tasks are done using the strucure.
+
+    // We cannot free the geometry in the advance loop because CAU group creation calls advance
+    // and the geometry is destroyed in the geometry destructor.
+    // In addition, we must guarantee that an incoming geometry create request (via unexpected barrier)
+    // with the same geometry id as the geometry being destroyed cannot be looked up in the
+    // geometry map object, that maps geometry id's to geometry objects.
+
+    // Note:  This operation is **blocking**, which may be a violation of the API for geometry destroy.
+    // Some clarification of the API is necessary.  The code below assumes that we can defer the geometry
+    // destruction by not blocking in advance.  However, we cannot destroy the geometry because
+    // the barrier uses the rank list, which is provided by the user.
+
+    // Our options are
+    // a)  copy the rank list(topology), and create a protocol that uses the new ranklist/native interfaces
+    // b)  block in this call
+
+    // We chose to block because of it's simplicity.
+
+    // The flow is commented below:
 
     inline pami_result_t geometry_destroy_impl (pami_geometry_t geometry)
       {
+        _contexts[0]->plock();
+
+        // Create a geometry cleanup object
+        // 1)  Cleanup object has a flag, the geometry, and the allocation list
+        //     for the object.  We keep this code so that we can eventually
+        //     make this non-blocking if required.
         LAPIGeometry* g = (LAPIGeometry*)geometry;
-        g->~LAPIGeometry();
-        free(g);        
+        geomCleanup *gc  = (geomCleanup*)__global.heap_mm->malloc(sizeof(geomCleanup));
+        new(gc)geomCleanup();
+        gc->_geometry    = g;
+        gc->_counter     = 1;
+        gc->_cleanup     = &_geometryCleanupList;
+        pami_result_t    rc;
+
+        // Start the ue barrier, the barrier callback will decrement the counter
+        // indicating the barrier is complete.  It will also enqueue
+        // the cleanup object for cleanup (for non-blocking).
+
+        // It also clears the geometry map for the current id so an incoming
+        // ue barrier with the same geometry id will not reference the current
+        // object.  This really happens, because advance may process multiple messages
+        // and the timing is highly dependent on the exit fromt eh barrier....it can
+        // be "staggered" across tasks, meaning that some task may race ahead and
+        // send a subsequent geometry create packet.
+
+        // We do not destroy the geometry object in the done callback because
+        // The destroy is dependent on the dispatcher to de-regester a cau group.
+
+        // Do the work for the blocking barrier
+        g->ue_barrier(geometry_destroy_done_fn, gc, 0, _contexts[0]);
+        while(gc->_counter==1)
+          _contexts[0]->advance(1,rc);
+
+        // Check for any geometries that can be cleaned up
+        // and delete storage for the geometry and geometry cleanup object
+        int sz = _geometryCleanupList.size();
+        for(int i=0; i<sz; i++)
+        {
+          geomCleanup *cleanup_g = (geomCleanup*)_geometryCleanupList.back();
+
+          // This is where the geometry cleanup is called, including:
+          // 1.  releasing cau resources
+          // 2.  releaseing shared memory segments
+          // 3.  Deallocating protocols and protocol lists
+          cleanup_g->_geometry->~LAPIGeometry();
+          __global.heap_mm->free(cleanup_g->_geometry);
+          __global.heap_mm->free(cleanup_g);
+          _geometryCleanupList.pop_back();
+        }
+        _contexts[0]->punlock();
         return PAMI_SUCCESS;
       }
     
@@ -1269,6 +1361,8 @@ namespace PAMI
     // Geometry Allocator
     MemoryAllocator<sizeof(LAPIGeometry),16>     _geometryAlloc;
 
+    // List of geometries to clean up
+    std::vector<geomCleanup*>                    _geometryCleanupList;
 
     //  Unexpected Barrier allocator
     MemoryAllocator <sizeof(PAMI::Geometry::UnexpBarrierQueueElement), 16> _ueb_allocator;

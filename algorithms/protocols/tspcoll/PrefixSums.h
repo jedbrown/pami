@@ -16,6 +16,12 @@ namespace xlpgas
 	public:
 	  void * operator new (size_t, void * addr) { return addr; }
 	  PrefixSums (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset);
+          ~PrefixSums()
+            {
+              if(_tmpbuf)
+                __global.heap_mm->free(_tmpbuf);
+            }
+
 	  void reset (const void         * sbuf,
 		      void               * dbuf,
 		      xlpgas_ops_t         op,

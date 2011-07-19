@@ -44,6 +44,11 @@ namespace xlpgas
 	  }
       }
 
+    ~Alltoall()
+      {
+          __global.heap_mm->free(_headers);
+      }
+
     static  void  amsend_reg       (xlpgas_AMHeaderReg_t amsend_regnum) {
       xlpgas_tsp_amsend_reg (amsend_regnum, Alltoall::cb_incoming);
     }

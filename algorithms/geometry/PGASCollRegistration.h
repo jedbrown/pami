@@ -366,10 +366,12 @@ namespace PAMI
             sz = gi->_nbcoll_list.size();
             for(int i=0; i<sz; i++)
             {
-              void *nbcoll = gi->_nbcoll_list.front();
+              xlpgas::Collective<T_NI> *nbcoll = (xlpgas::Collective<T_NI>*)gi->_nbcoll_list.front();
+              nbcoll->~Collective();
               __global.heap_mm->free(nbcoll);
               gi->_nbcoll_list.pop_front();
             }
+            gi->~GeometryInfo();
             geom_allocator->returnObject(gi);
           }
 
@@ -405,6 +407,7 @@ namespace PAMI
 
 
           BarrierFactory        *_barrier_reg        = (BarrierFactory*)_allocator.allocateObject();        gi->_f_list.push_back((Factories*)_barrier_reg);
+
           BroadcastFactory      *_broadcast_reg      = (BroadcastFactory*)_allocator.allocateObject();      gi->_f_list.push_back((Factories*)_broadcast_reg);
           AllgatherFactory      *_allgather_reg      = (AllgatherFactory*)_allocator.allocateObject();      gi->_f_list.push_back((Factories*)_allgather_reg);
           AllgathervFactory     *_allgatherv_reg     = (AllgathervFactory*)_allocator.allocateObject();     gi->_f_list.push_back((Factories*)_allgatherv_reg);

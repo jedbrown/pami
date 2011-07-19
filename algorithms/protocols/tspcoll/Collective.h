@@ -154,6 +154,10 @@ namespace xlpgas
 		  int                      tag,
 		  xlpgas_LCompHandler_t     cb_complete,
 		  void                   * arg);
+      virtual ~Collective()
+        {
+
+        }
 
     public:
       int            tag  () const { return _tag; }

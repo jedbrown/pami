@@ -40,6 +40,11 @@ namespace xlpgas
 	_header->dest_ctxt     = -1;
       }
 
+    ~Permute()
+      {
+        __global.heap_mm->free(_header);
+      }
+
     static  void  amsend_reg       (xlpgas_AMHeaderReg_t amsend_regnum) {
       xlpgas_tsp_amsend_reg (amsend_regnum, Permute::cb_incoming);
     }

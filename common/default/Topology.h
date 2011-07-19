@@ -178,6 +178,7 @@ namespace PAMI {
             s *= (topo_urdim(x) - topo_lldim(x) + 1);
           }
           _new->__size = s;
+          _new->__free_ranklist =false;
           return;
         }
       } else {
@@ -202,6 +203,7 @@ namespace PAMI {
           }
           if(!s) _new->__type = PAMI_EMPTY_TOPOLOGY;
           _new->__size = s;
+          _new->__free_ranklist =false;
           return;
         }
       } 
@@ -244,6 +246,7 @@ namespace PAMI {
             // ...or even coords?
             _new->__type = PAMI_LIST_TOPOLOGY;
             _new->__size = s;
+            _new->__free_ranklist =true;
             _new->topo_ranklist = rl;
             return;
           } else {
@@ -253,6 +256,7 @@ namespace PAMI {
       }
       _new->__type = PAMI_EMPTY_TOPOLOGY;
       _new->__size = 0;
+      _new->__free_ranklist =false;
     }
 
     /// \brief create topology of all Nth ranks on all nodes
@@ -288,10 +292,12 @@ namespace PAMI {
       }
       if (n == 0) { // no overflow on num local nodes...
         _new->__size = s;
+        _new->__free_ranklist =false;
         return;
       }
       _new->__type = PAMI_EMPTY_TOPOLOGY;
       _new->__size = 0;
+      _new->__free_ranklist =false;
     }
 
     /// \brief Create new Rectangular Segment topology from subset of this
@@ -322,6 +328,7 @@ namespace PAMI {
       }
       // cannot result in empty...
       _new->__size = s;
+      _new->__free_ranklist =false;
     }
 
     /// \brief iterate to next coord, [0] is most-significant dim
@@ -539,11 +546,20 @@ namespace PAMI {
       RANK2COORDS(mapping->task(), &my_coords);
     }
 
+    ~Topology() {
+      if(__free_ranklist)
+      {
+        PAMI::Memory::MemoryManager::heap_mm->free(topo_ranklist);
+        topo_ranklist=NULL;
+      }
+    }
+
     /// \brief default constructor (PAMI_EMPTY_TOPOLOGY)
     ///
     Topology() {
       __type = PAMI_EMPTY_TOPOLOGY;
       __size = 0;
+      __free_ranklist = false;
     }
 
     /// \brief rectangular segment with torus (PAMI_COORD_TOPOLOGY)
@@ -566,6 +582,7 @@ namespace PAMI {
         set_istorus(topo_llcoord,topo_urcoord,topo_istorus);  
       }
       __size = __sizeRange(ll, ur, mapping->globalDims());
+      __free_ranklist =false;
     }
 
     /// \brief Construct axial neighborhood (PAMI_AXIAL_TOPOLOGY)
@@ -602,6 +619,7 @@ namespace PAMI {
         {
           __size += (mapping->torusSize(i) + topo_axial_urdim(i) - topo_axial_lldim(i)) % mapping->torusSize(i);
         }
+        __free_ranklist =false;
       }
     /// \brief single rank constructor (PAMI_SINGLE_TOPOLOGY)
     ///
@@ -611,6 +629,7 @@ namespace PAMI {
       __type = PAMI_SINGLE_TOPOLOGY;
       __size = 1;
       __topo._rank = rank;
+      __free_ranklist =false;
     }
 
 
@@ -625,6 +644,7 @@ namespace PAMI {
       __size = rankn - rank0 + 1;
       __topo._rankrange._first = rank0;
       __topo._rankrange._last = rankn;
+      __free_ranklist =false;
       // should we do this automatically, or let caller?
       // (void)__analyzeCoordsRange();
     }
@@ -642,6 +662,7 @@ namespace PAMI {
       __type = PAMI_LIST_TOPOLOGY;
       __size = nranks;
       topo_ranklist = ranks;
+      __free_ranklist =false;
       // should we do this automatically, or let caller?
       // (void)__analyzeCoordsList();
     }
@@ -662,6 +683,7 @@ namespace PAMI {
 	    PAMI_assertf(rc == PAMI_SUCCESS, "ranklist[%zd] alloc failed", __size);
 	    memcpy(topo_ranklist, topo->topo_ranklist, __size * sizeof(*topo_ranklist));
 	}
+        __free_ranklist =true;
     }
 
     /// \brief accessor for size of a Topology object
@@ -1218,6 +1240,7 @@ namespace PAMI {
         if (k == 1) {
           _new->__type = PAMI_SINGLE_TOPOLOGY;
           _new->__size = 1;
+          _new->__free_ranklist =false;
           _new->topo_rank = rl[0];
           PAMI::Memory::MemoryManager::heap_mm->free(rl);
           return;
@@ -1226,10 +1249,12 @@ namespace PAMI {
           _new->__type = PAMI_LIST_TOPOLOGY;
           _new->topo_ranklist = rl;
           _new->__size = k;
+          _new->__free_ranklist = true;
           return;
         }
         _new->__type = PAMI_EMPTY_TOPOLOGY;
         _new->__size = 0;
+        _new->__free_ranklist =false;
         PAMI::Memory::MemoryManager::heap_mm->free(rl);
       }
     }
@@ -1251,6 +1276,7 @@ namespace PAMI {
         // the really hard way... impractical?
         _new->__type = PAMI_EMPTY_TOPOLOGY;
         _new->__size = 0;
+        _new->__free_ranklist =false;
       }
     }
 
@@ -1387,6 +1413,7 @@ namespace PAMI {
           __type = PAMI_LIST_TOPOLOGY;
           *rl = topo_rank;
           topo_ranklist = rl;
+          __free_ranklist =true;
           return true;
           break;
         case PAMI_SINGLE_TOPOLOGY:
@@ -1418,6 +1445,7 @@ namespace PAMI {
             *rp++ = r;
           }
           topo_ranklist = rl;
+          __free_ranklist =true;
           return true;
           break;
         case PAMI_RANGE_TOPOLOGY:
@@ -1471,6 +1499,7 @@ namespace PAMI {
           } while (__nextCoord(&c0, mapping->globalDims()));
           __type = PAMI_LIST_TOPOLOGY;
           topo_ranklist = rl;
+          __free_ranklist =true;
           return true;
           break;
         case PAMI_RANGE_TOPOLOGY:
@@ -1617,6 +1646,7 @@ namespace PAMI {
                      mapping->globalDims());
           _new->__size = __sizeRange(&_new->topo_llcoord,
                                      &_new->topo_urcoord, mapping->globalDims());
+          _new->__free_ranklist =false;
           set_istorus(_new->topo_llcoord,_new->topo_urcoord,_new->topo_istorus);  
           return;
           break;
@@ -1624,6 +1654,7 @@ namespace PAMI {
           if (other->topo_rank == topo_rank) {
             _new->__type = PAMI_SINGLE_TOPOLOGY;
             _new->__size = 1;
+            _new->__free_ranklist =false;
             _new->topo_rank = topo_rank;
             return;
           }
@@ -1641,6 +1672,7 @@ namespace PAMI {
           _new->topo_last = (topo_last < other->topo_last ?
                              topo_last : other->topo_last);
           _new->__size = _new->topo_last - _new->topo_first + 1;
+          _new->__free_ranklist =false;
           return;
           break;
         case PAMI_LIST_TOPOLOGY:
@@ -1662,6 +1694,7 @@ namespace PAMI {
           if (k) {
             _new->__type = PAMI_LIST_TOPOLOGY;
             _new->__size = k;
+            _new->__free_ranklist =true;
             _new->topo_ranklist = rl;
             return;
           }
@@ -1675,6 +1708,7 @@ namespace PAMI {
         if (other->isRankMember(topo_rank)) {
           _new->__type = PAMI_SINGLE_TOPOLOGY;
           _new->__size = 1;
+          _new->__free_ranklist =false;
           _new->topo_rank = topo_rank;
           return;
         }
@@ -1682,6 +1716,7 @@ namespace PAMI {
         if (isRankMember(other->topo_rank)) {
           _new->__type = PAMI_SINGLE_TOPOLOGY;
           _new->__size = 1;
+          _new->__free_ranklist =false;
           _new->topo_rank = other->topo_rank;
           return;
         }
@@ -1732,6 +1767,7 @@ namespace PAMI {
       }
       _new->__type = PAMI_EMPTY_TOPOLOGY;
       _new->__size = 0;
+      _new->__free_ranklist =false;
     }
 
     /// \brief produce the difference of two topologies
@@ -1781,6 +1817,7 @@ namespace PAMI {
             break;
           }
           _new->__size = k;
+          _new->__free_ranklist =false;
           s = __sizeRange(&ll, &ur, mapping->globalDims());
           if (s == k) {
             _new->__type = PAMI_COORD_TOPOLOGY;
@@ -1796,6 +1833,7 @@ namespace PAMI {
           } else {
             _new->__type = PAMI_LIST_TOPOLOGY;
             _new->topo_ranklist = rl;
+            _new->__free_ranklist = true;
           }
           return;
           break;
@@ -1848,6 +1886,7 @@ namespace PAMI {
             }
             PAMI_assert_debug(k == s);
             _new->__size = s;
+            _new->__free_ranklist =false;
             return;
             break;
           case b0111:
@@ -1856,6 +1895,7 @@ namespace PAMI {
             _new->topo_first = topo_first;
             _new->topo_last = other->topo_first - 1;
             _new->__size = _new->topo_last - _new->topo_first + 1;
+            _new->__free_ranklist =false;
             PAMI_assert_debugf(_new->__size != 0, "subtraction results in empty topology\n");
             return;
             break;
@@ -1865,6 +1905,7 @@ namespace PAMI {
             _new->topo_first = other->topo_last + 1;
             _new->topo_last = topo_last;
             _new->__size = _new->topo_last - _new->topo_first + 1;
+            _new->__free_ranklist =false;
             PAMI_assert_debugf(_new->__size != 0, "subtraction results in empty topology\n");
             return;
             break;
@@ -1891,10 +1932,12 @@ namespace PAMI {
             PAMI::Memory::MemoryManager::heap_mm->free(rl);
             _new->__type = PAMI_EMPTY_TOPOLOGY;
             _new->__size = 0;
+            _new->__free_ranklist =false;
             break;
           }
           _new->__type = PAMI_LIST_TOPOLOGY;
           _new->__size = k;
+          _new->__free_ranklist =true;
           _new->topo_ranklist = rl;
           return;
           break;
@@ -1907,6 +1950,7 @@ namespace PAMI {
         if (other->isRankMember(topo_rank)) {
           _new->__type = PAMI_SINGLE_TOPOLOGY;
           _new->__size = 1;
+          _new->__free_ranklist =false;
           _new->topo_rank = topo_rank;
           return;
         }
@@ -1935,12 +1979,14 @@ namespace PAMI {
             } else if (k == 1) {
               _new->__type = PAMI_SINGLE_TOPOLOGY;
               _new->__size = 1;
+              _new->__free_ranklist =false;
               _new->topo_rank = rl[0];
               PAMI::Memory::MemoryManager::heap_mm->free(rl);
               return;
             }
             _new->__type = PAMI_LIST_TOPOLOGY;
             _new->__size = k;
+            _new->__free_ranklist =true;
             _new->topo_ranklist = rl;
             return;
           } else {
@@ -1968,12 +2014,14 @@ namespace PAMI {
             } else if (k == 1) {
               _new->__type = PAMI_SINGLE_TOPOLOGY;
               _new->__size = 1;
+              _new->__free_ranklist =false;
               _new->topo_rank = rl[0];
               PAMI::Memory::MemoryManager::heap_mm->free(rl);
               return;
             }
             _new->__type = PAMI_LIST_TOPOLOGY;
             _new->__size = k;
+            _new->__free_ranklist =true;
             _new->topo_ranklist = rl;
             return;
           } else {
@@ -1998,12 +2046,14 @@ namespace PAMI {
           } else if (k == 1) {
             _new->__type = PAMI_SINGLE_TOPOLOGY;
             _new->__size = 1;
+            _new->__free_ranklist =false;
             _new->topo_rank = rl[0];
             PAMI::Memory::MemoryManager::heap_mm->free(rl);
             return;
           }
           _new->__type = PAMI_LIST_TOPOLOGY;
           _new->__size = k;
+          _new->__free_ranklist =true;
           _new->topo_ranklist = rl;
           return;
           break;
@@ -2066,7 +2116,7 @@ namespace PAMI {
     size_t	__size;		///< number of ranks in this topology
     pami_topology_type_t __type;	///< type of topology this is
     union topology_u __topo;///< topoloy info
-
+    bool             __free_ranklist;
   }; // class Topology
 
 }; // namespace PAMI
