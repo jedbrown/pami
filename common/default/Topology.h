@@ -675,6 +675,7 @@ namespace PAMI {
     ///
     Topology(Topology *topo) {
 	memcpy(this, topo, sizeof(*topo));
+        __free_ranklist = false;
 	// right now, the only type that allocates additional storage is PAMI_LIST_TOPOLOGY
 	if (topo->__type == PAMI_LIST_TOPOLOGY) {
 	    pami_result_t rc;
@@ -682,8 +683,8 @@ namespace PAMI {
 			(void **)&topo_ranklist, 0, __size * sizeof(*topo_ranklist));
 	    PAMI_assertf(rc == PAMI_SUCCESS, "ranklist[%zd] alloc failed", __size);
 	    memcpy(topo_ranklist, topo->topo_ranklist, __size * sizeof(*topo_ranklist));
-	}
         __free_ranklist =true;
+	}
     }
 
     /// \brief accessor for size of a Topology object
@@ -1388,6 +1389,7 @@ namespace PAMI {
       pami_task_t rank = 0;
       pami_task_t *rl, *rp;
       pami_task_t min, max;
+      __free_ranklist = false; // fix this memory leak
       switch (__type) {
       case PAMI_SINGLE_TOPOLOGY:
         switch (new_type) {
