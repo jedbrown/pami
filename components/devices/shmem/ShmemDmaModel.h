@@ -81,7 +81,7 @@ namespace PAMI
       /// \brief Dma model interface implementation for shared memory.
       ///
       template < class T_Device, bool T_Ordered = false >
-      class DmaModel : public Interface::DmaModel < DmaModel<T_Device, T_Ordered>, T_Device, sizeof(DmaModelState<T_Device>) >
+      class DmaModel : public Interface::DmaModel < DmaModel<T_Device, T_Ordered> >
       {
         public:
 
@@ -91,7 +91,7 @@ namespace PAMI
           /// \param[in] device  Shared memory device
           ///
           DmaModel (T_Device & device, pami_result_t & status) :
-              Interface::DmaModel < DmaModel<T_Device, T_Ordered>, T_Device, sizeof(DmaModelState<T_Device>) >
+              Interface::DmaModel < DmaModel<T_Device, T_Ordered> >
               (device, status),
               _device (device),
               _context (device.getContext())
@@ -109,9 +109,19 @@ namespace PAMI
             return;
           };
 
-          static const size_t dma_model_state_bytes  = sizeof(DmaModelState<T_Device>);
-          static const size_t dma_model_va_supported = T_Device::shaddr_va_supported;
-          static const size_t dma_model_mr_supported = T_Device::shaddr_mr_supported;
+        protected:
+
+          /////////////////////////////////////////////////////////////////////
+          //
+          // PAMI::Interface::DmaModel interface implementation -- BEGIN
+          //
+          /////////////////////////////////////////////////////////////////////
+
+          friend class Interface::DmaModel < DmaModel<T_Device, T_Ordered> >;
+
+          static const size_t dma_model_state_bytes_impl = sizeof(DmaModelState<T_Device>);
+          static const bool dma_model_va_supported_impl  = T_Device::shaddr_va_supported;
+          static const bool dma_model_mr_supported_impl  = T_Device::shaddr_mr_supported;
 
           inline bool postDmaPut_impl (size_t   task,
                                        size_t   bytes,
@@ -136,7 +146,8 @@ namespace PAMI
 #endif
           };
 
-          inline bool postDmaPut_impl (uint8_t               (&state)[sizeof(DmaModelState<T_Device>)],
+          template <unsigned T_StateBytes>
+          inline bool postDmaPut_impl (uint8_t               (&state)[T_StateBytes],
                                        pami_event_function   local_fn,
                                        void                * cookie,
                                        size_t                target,
@@ -240,7 +251,8 @@ namespace PAMI
             return false;
           };
 
-          inline bool postDmaPut_impl (uint8_t               (&state)[sizeof(DmaModelState<T_Device>)],
+          template <unsigned T_StateBytes>
+          inline bool postDmaPut_impl (uint8_t               (&state)[T_StateBytes],
                                        pami_event_function   local_fn,
                                        void                * cookie,
                                        size_t                target_task,
@@ -282,6 +294,8 @@ namespace PAMI
                           {
                             // Create a "completion message" on the done queue and wait
                             // until the target task has completed the put operation.
+                            COMPILE_TIME_ASSERT(T_Device::completion_work_size <= T_StateBytes);
+
                             size_t sequence = _device._fifo[fnum].lastPacketProduced();
                             array_t<uint8_t, T_Device::completion_work_size> * resized =
                               (array_t<uint8_t, T_Device::completion_work_size> *) state;
@@ -299,7 +313,7 @@ namespace PAMI
                       }
                   }
 
-                COMPILE_TIME_ASSERT(sizeof(ReadOnlyPutMessage<T_Device>) <= dma_model_state_bytes);
+                COMPILE_TIME_ASSERT(sizeof(ReadOnlyPutMessage<T_Device>) <= T_StateBytes);
 
                 ReadOnlyPutMessage<T_Device> * msg = (ReadOnlyPutMessage<T_Device> *) state;
                 new (msg) ReadOnlyPutMessage<T_Device> (local_fn, cookie, &_device, fnum,
@@ -330,6 +344,8 @@ namespace PAMI
                     // address write operation.
 
                     size_t fnum = _device.fnum (_device.task2peer(target_task), target_offset);
+
+                    COMPILE_TIME_ASSERT(sizeof(DmaMessage<T_Device>) <= T_StateBytes);
 
                     DmaMessage<T_Device> * msg =
                       (DmaMessage<T_Device> *) state;
@@ -377,7 +393,8 @@ namespace PAMI
             return false;
           };
 
-          inline bool postDmaGet_impl (uint8_t               (&state)[sizeof(DmaModelState<T_Device>)],
+          template <unsigned T_StateBytes>
+          inline bool postDmaGet_impl (uint8_t               (&state)[T_StateBytes],
                                        pami_event_function   local_fn,
                                        void                * cookie,
                                        size_t                target_task,
@@ -476,7 +493,8 @@ namespace PAMI
             return false;
           };
 
-          inline bool postDmaGet_impl (uint8_t               (&state)[sizeof(DmaModelState<T_Device>)],
+          template <unsigned T_StateBytes>
+          inline bool postDmaGet_impl (uint8_t               (&state)[T_StateBytes],
                                        pami_event_function   local_fn,
                                        void                * cookie,
                                        size_t                target_task,
@@ -523,6 +541,8 @@ namespace PAMI
             // Unable to read all bytes, or an ordering condition failed.
             // Block at the head of the send queue, then perform a shared
             // address read operation.
+            COMPILE_TIME_ASSERT(sizeof(DmaMessage<T_Device>) <= T_StateBytes);
+
             DmaMessage<T_Device> * msg =
               (DmaMessage<T_Device> *) state;
             new (msg) DmaMessage<T_Device> (local_fn,
@@ -541,7 +561,11 @@ namespace PAMI
             return false;
           };
 
-        protected:
+          /////////////////////////////////////////////////////////////////////
+          //
+          // PAMI::Interface::DmaModel interface implementation -- END
+          //
+          /////////////////////////////////////////////////////////////////////
 
           T_Device       & _device;
           pami_context_t   _context;

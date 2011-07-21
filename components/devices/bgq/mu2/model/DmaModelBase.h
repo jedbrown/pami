@@ -37,9 +37,17 @@ namespace PAMI
     namespace MU
     {
       template <class T_Model>
-      class DmaModelBase : public Interface::DmaModel < MU::DmaModelBase<T_Model>, MU::Context, 512 >
+      class DmaModelBase : public Interface::DmaModel < MU::DmaModelBase<T_Model> >
       {
         protected :
+
+          /////////////////////////////////////////////////////////////////////
+          //
+          // PAMI::Interface::DmaModel interface implementation -- BEGIN
+          //
+          /////////////////////////////////////////////////////////////////////
+
+          friend class Interface::DmaModel < MU::DmaModelBase<T_Model> >;
 
           /// \see PAMI::Device::Interface::DmaModel::DmaModel
           /// \todo set base address table information int he direct put descriptor(s)
@@ -48,7 +56,99 @@ namespace PAMI
           /// \see PAMI::Device::Interface::DmaModel::DmaModel
           ~DmaModelBase ();
 
-        public:
+          /// \see Device::Interface::DmaModel::getVirtualAddressSupported
+          static const bool dma_model_va_supported_impl = false;
+
+          /// \see Device::Interface::DmaModel::getMemoryRegionSupported
+          static const bool dma_model_mr_supported_impl = true;
+
+          /// \see Device::Interface::DmaModel::getDmaTransferStateBytes
+          ///
+          /// One usage is to store a descriptor message and its payload (1 or
+          /// more descriptors) in the "state" array, which dictates its size
+          /// to be:
+          ///   sizeof(InjectDescriptorMessage) + T_Model::payload_size
+          /// Prior to this size, it was fixed at 128.
+          ///
+          static const size_t dma_model_state_bytes_impl  = 512;//sizeof(InjectDescriptorMessage<1>) + T_Model::payload_size;
+
+          inline bool postDmaPut_impl (size_t                target_task,
+                                       size_t                target_offset,
+                                       size_t                bytes,
+                                       void                * local,
+                                       void                * remote);
+
+          template <unsigned T_StateBytes>
+          inline bool postDmaPut_impl (uint8_t               (&state)[T_StateBytes],
+                                       pami_event_function   local_fn,
+                                       void                * cookie,
+                                       size_t                target_task,
+                                       size_t                target_offset,
+                                       size_t                bytes,
+                                       void                * local,
+                                       void                * remote);
+
+          inline bool postDmaPut_impl (size_t                target_task,
+                                       size_t                target_offset,
+                                       size_t                bytes,
+                                       Memregion           * local_memregion,
+                                       size_t                local_offset,
+                                       Memregion           * remote_memregion,
+                                       size_t                remote_offset);
+
+          template <unsigned T_StateBytes>
+          inline bool postDmaPut_impl (uint8_t               (&state)[T_StateBytes],
+                                       pami_event_function   local_fn,
+                                       void                * cookie,
+                                       size_t                target_task,
+                                       size_t                target_offset,
+                                       size_t                bytes,
+                                       Memregion           * local_memregion,
+                                       size_t                local_offset,
+                                       Memregion           * remote_memregion,
+                                       size_t                remote_offset);
+
+          inline bool postDmaGet_impl (size_t                target_task,
+                                       size_t                target_offset,
+                                       size_t                bytes,
+                                       void                * local,
+                                       void                * remote);
+
+          template <unsigned T_StateBytes>
+          inline bool postDmaGet_impl (uint8_t               (&state)[T_StateBytes],
+                                       pami_event_function   local_fn,
+                                       void                * cookie,
+                                       size_t                target_task,
+                                       size_t                target_offset,
+                                       size_t                bytes,
+                                       void                * local,
+                                       void                * remote);
+
+          inline bool postDmaGet_impl (size_t                target_task,
+                                       size_t                target_offset,
+                                       size_t                bytes,
+                                       Memregion           * local_memregion,
+                                       size_t                local_offset,
+                                       Memregion           * remote_memregion,
+                                       size_t                remote_offset);
+
+          template <unsigned T_StateBytes>
+          inline bool postDmaGet_impl (uint8_t               (&state)[T_StateBytes],
+                                       pami_event_function   local_fn,
+                                       void                * cookie,
+                                       size_t                target_task,
+                                       size_t                target_offset,
+                                       size_t                bytes,
+                                       Memregion           * local_memregion,
+                                       size_t                local_offset,
+                                       Memregion           * remote_memregion,
+                                       size_t                remote_offset);
+
+          /////////////////////////////////////////////////////////////////////
+          //
+          // PAMI::Interface::DmaModel interface implementation -- END
+          //
+          /////////////////////////////////////////////////////////////////////
 
           static const size_t payload_size = sizeof(MUSPI_DescriptorBase);
 
@@ -61,93 +161,6 @@ namespace PAMI
                                                     pami_event_function   local_fn,
                                                     void                * cookie);
 
-
-          /// \see Device::Interface::DmaModel::getVirtualAddressSupported
-          static const size_t dma_model_va_supported = false;
-
-          /// \see Device::Interface::DmaModel::getMemoryRegionSupported
-          static const size_t dma_model_mr_supported = true;
-
-          /// \see Device::Interface::DmaModel::getDmaTransferStateBytes
-          ///
-          /// One usage is to store a descriptor message and its payload (1 or more descriptors)
-          /// in the "state" array, which dictates its size to be:
-          ///   sizeof(InjectDescriptorMessage) + T_Model::payload_size
-          /// Prior to this size, it was fixed at 128.
-          ///
-          static const size_t dma_model_state_bytes  = 512;//sizeof(InjectDescriptorMessage<1>) + T_Model::payload_size;
-
-
-          inline bool postDmaPut_impl (size_t                target_task,
-                                       size_t                target_offset,
-                                       size_t                bytes,
-                                       void                * local,
-                                       void                * remote);
-
-          inline bool postDmaPut_impl (uint8_t               (&state)[dma_model_state_bytes],
-                                       pami_event_function   local_fn,
-                                       void                * cookie,
-                                       size_t                target_task,
-                                       size_t                target_offset,
-                                       size_t                bytes,
-                                       void                * local,
-                                       void                * remote);
-
-          inline bool postDmaPut_impl (size_t                target_task,
-                                       size_t                target_offset,
-                                       size_t                bytes,
-                                       Memregion           * local_memregion,
-                                       size_t                local_offset,
-                                       Memregion           * remote_memregion,
-                                       size_t                remote_offset);
-
-          inline bool postDmaPut_impl (uint8_t               (&state)[dma_model_state_bytes],
-                                       pami_event_function   local_fn,
-                                       void                * cookie,
-                                       size_t                target_task,
-                                       size_t                target_offset,
-                                       size_t                bytes,
-                                       Memregion           * local_memregion,
-                                       size_t                local_offset,
-                                       Memregion           * remote_memregion,
-                                       size_t                remote_offset);
-
-          inline bool postDmaGet_impl (size_t                target_task,
-                                       size_t                target_offset,
-                                       size_t                bytes,
-                                       void                * local,
-                                       void                * remote);
-
-          inline bool postDmaGet_impl (uint8_t               (&state)[dma_model_state_bytes],
-                                       pami_event_function   local_fn,
-                                       void                * cookie,
-                                       size_t                target_task,
-                                       size_t                target_offset,
-                                       size_t                bytes,
-                                       void                * local,
-                                       void                * remote);
-
-          inline bool postDmaGet_impl (size_t                target_task,
-                                       size_t                target_offset,
-                                       size_t                bytes,
-                                       Memregion           * local_memregion,
-                                       size_t                local_offset,
-                                       Memregion           * remote_memregion,
-                                       size_t                remote_offset);
-
-          inline bool postDmaGet_impl (uint8_t               (&state)[dma_model_state_bytes],
-                                       pami_event_function   local_fn,
-                                       void                * cookie,
-                                       size_t                target_task,
-                                       size_t                target_offset,
-                                       size_t                bytes,
-                                       Memregion           * local_memregion,
-                                       size_t                local_offset,
-                                       Memregion           * remote_memregion,
-                                       size_t                remote_offset);
-
-
-        protected:
           MUSPI_DescriptorBase   _dput; // "direct put" used for postDmaPut_impl()
           MUSPI_DescriptorBase   _rget; // "remote get" used for postDmaGet_impl()
           MUSPI_DescriptorBase   _rput; // "remote put" _rget payload descriptor
@@ -245,7 +258,7 @@ namespace PAMI
 
       template <class T_Model>
       DmaModelBase<T_Model>::DmaModelBase (MU::Context & device, pami_result_t & status) :
-          Interface::DmaModel < MU::DmaModelBase<T_Model>, MU::Context, 512 > (device, status),
+          Interface::DmaModel < MU::DmaModelBase<T_Model> > (device, status),
           _remoteCompletion (device),
           _context (device)
       {
@@ -420,7 +433,8 @@ namespace PAMI
       }
 
       template <class T_Model>
-      bool DmaModelBase<T_Model>::postDmaPut_impl (uint8_t               (&state)[dma_model_state_bytes],
+      template <unsigned T_StateBytes>
+      bool DmaModelBase<T_Model>::postDmaPut_impl (uint8_t               (&state)[T_StateBytes],
                                                    pami_event_function   local_fn,
                                                    void                * cookie,
                                                    size_t                target_task,
@@ -451,7 +465,8 @@ namespace PAMI
       }
 
       template <class T_Model>
-      bool DmaModelBase<T_Model>::postDmaPut_impl (uint8_t               (&state)[dma_model_state_bytes],
+      template <unsigned T_StateBytes>
+      bool DmaModelBase<T_Model>::postDmaPut_impl (uint8_t               (&state)[T_StateBytes],
                                                    pami_event_function   local_fn,
                                                    void                * cookie,
                                                    size_t                target_task,
@@ -585,7 +600,7 @@ namespace PAMI
         else
           {
             // Create a simple single-descriptor message
-            COMPILE_TIME_ASSERT(sizeof(InjectDescriptorMessage<1>) <= dma_model_state_bytes);
+            COMPILE_TIME_ASSERT(sizeof(InjectDescriptorMessage<1>) <= T_StateBytes);
 
             InjectDescriptorMessage<1> * msg =
               (InjectDescriptorMessage<1> *) state;
@@ -628,7 +643,8 @@ namespace PAMI
       }
 
       template <class T_Model>
-      bool DmaModelBase<T_Model>::postDmaGet_impl (uint8_t               (&state)[dma_model_state_bytes],
+      template <unsigned T_StateBytes>
+      bool DmaModelBase<T_Model>::postDmaGet_impl (uint8_t               (&state)[T_StateBytes],
                                                    pami_event_function   local_fn,
                                                    void                * cookie,
                                                    size_t                target_task,
@@ -655,7 +671,8 @@ namespace PAMI
       }
 
       template <class T_Model>
-      bool DmaModelBase<T_Model>::postDmaGet_impl (uint8_t               (&state)[dma_model_state_bytes],
+      template <unsigned T_StateBytes>
+      bool DmaModelBase<T_Model>::postDmaGet_impl (uint8_t               (&state)[T_StateBytes],
                                                    pami_event_function   local_fn,
                                                    void                * cookie,
                                                    size_t                target_task,
@@ -775,7 +792,7 @@ namespace PAMI
 
             // Construct and post a message
             // Create a simple dual-descriptor message
-            COMPILE_TIME_ASSERT((sizeof(InjectDescriptorMessage<2, false>) + (T_Model::payload_size*2)) <= dma_model_state_bytes);
+            COMPILE_TIME_ASSERT((sizeof(InjectDescriptorMessage<2, false>) + (T_Model::payload_size*2)) <= T_StateBytes);
 
             InjectDescriptorMessage<2, false> * msg =
               (InjectDescriptorMessage<2, false> *) state;
@@ -921,7 +938,7 @@ namespace PAMI
 
             // Construct and post a message
             // Create a simple single-descriptor message
-            COMPILE_TIME_ASSERT((sizeof(InjectDescriptorMessage<1, false>) + T_Model::payload_size) <= dma_model_state_bytes);
+            COMPILE_TIME_ASSERT((sizeof(InjectDescriptorMessage<1, false>) + T_Model::payload_size) <= T_StateBytes);
 
             InjectDescriptorMessage<1, false> * msg =
               (InjectDescriptorMessage<1, false> *) state;
