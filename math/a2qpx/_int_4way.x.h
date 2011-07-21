@@ -3,14 +3,14 @@
 // num_ints = 32*m + rem
 
 #ifdef OP
-  register int r0, r1, r2, r3, r4, r5, r6, r7;
-  register int res1=0, res2=0;
+#ifdef DTYPE
+  register DTYPE r0, r1, r2, r3, r4, r5, r6, r7;
+  register DTYPE res1=0, res2=0;
   register unsigned n,i,j;
 
   register unsigned m  = num_ints >> 5;
   i = 0;          //first stream beginning
   j = (m << 4);   //second stream start from half-way 
-
   if (m)
   { 
     r0  = src0[i];
@@ -24,7 +24,7 @@
 
     i++;
     j++;
-    for (n=2; n < (m << 5); n+=2,i++,j++)
+    for (n=2; n < (m << 5); n+=2)
     {
       res1 = OP(r0, res1);
       r0  = src0[i];
@@ -38,22 +38,37 @@
       res2 = OP(r3, res2);
       r3  = src1[j];
 
-      res1 = OP(r0, res1);
+      res1 = OP(r4, res1);
       r4  = src2[i];
 
-      res2 = OP(r1, res2);
+      res2 = OP(r5, res2);
       r5  = src2[j];
 
-      res1 = OP(r0, res1);
+      res1 = OP(r6, res1);
       r6  = src3[i];
 
-      res2 = OP(r1, res2);
+      res2 = OP(r7, res2);
       r7  = src3[j];
 
       dst[i-1]  = res1;
       dst[j-1]  = res2;
       res1 = res2 = 0;
+
+      i++;
+      j++;
     }
+      res1 = OP(r0, res1);
+      res1 = OP(r2, res1);
+      res1 = OP(r4, res1);
+      res1 = OP(r6, res1);
+
+      res2 = OP(r1, res2);
+      res2 = OP(r3, res2);
+      res2 = OP(r5, res2);
+      res2 = OP(r7, res2);
+
+      dst[i-1]  = res1;
+      dst[j-1]  = res2;
   }
 
   //remainder of the ints
@@ -64,4 +79,5 @@
     res1  = OP(res1, src3[n]);
     dst[n]  = res1;
   }
+#endif	/* DTYPE */
 #endif	/* OP */

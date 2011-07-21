@@ -4,20 +4,18 @@
  */
 #ifndef __components_devices_shmem_a2qpx_nway_math_h__
 #define __components_devices_shmem_a2qpx_nway_math_h__
-
-#include "components/devices/shmem/qpx_2way_sum.h"
-#include "components/devices/shmem/qpx_4way_sum.h"
-#include "components/devices/shmem/qpx_8way_sum.h"
-#include "components/devices/shmem/qpx_16way_sum.h"
-#include "components/devices/shmem/qpx_2way_max.h"
-#include "components/devices/shmem/qpx_4way_max.h"
-#include "components/devices/shmem/qpx_8way_max.h"
-#include "components/devices/shmem/qpx_16way_max.h"
-#include "components/devices/shmem/qpx_2way_min.h"
-#include "components/devices/shmem/qpx_4way_min.h"
-#include "components/devices/shmem/qpx_8way_min.h"
-#include "components/devices/shmem/qpx_16way_min.h"
-
+#include "math/a2qpx/qpx_2way_sum.h"
+#include "math/a2qpx/qpx_4way_sum.h"
+#include "math/a2qpx/qpx_8way_sum.h"
+#include "math/a2qpx/qpx_16way_sum.h"
+#include "math/a2qpx/qpx_2way_max.h"
+#include "math/a2qpx/qpx_4way_max.h"
+#include "math/a2qpx/qpx_8way_max.h"
+#include "math/a2qpx/qpx_16way_max.h"
+#include "math/a2qpx/qpx_2way_min.h"
+#include "math/a2qpx/qpx_4way_min.h"
+#include "math/a2qpx/qpx_8way_min.h"
+#include "math/a2qpx/qpx_16way_min.h"
 
 inline unsigned quad_double_math_2way(double* dst, double* src0, double *src1, unsigned num_dbls, pami_op opcode)
 {

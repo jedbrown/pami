@@ -15,9 +15,10 @@
 // operands, i.e. e=op(a,b)
 
 #ifdef OP
+#ifdef DTYPE
 
-register int r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14, r15;
-register int res = 0;
+register DTYPE r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14, r15;
+register DTYPE res = 0;
 register  unsigned n;
 
   r0 = src0[0];
@@ -108,4 +109,5 @@ register  unsigned n;
   res = OP(r14, res);
   res = OP(r15, res);
   dst[n-1]  = res;
+#endif	/* DTYPE */
 #endif	/* OP */

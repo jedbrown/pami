@@ -19,57 +19,12 @@
 
 #include "Arch.h"
 #include "sys/pami.h"
-#include "../opt_copy_a2.h"
-//#include "../a2qpx_nway_sum.h"
-#include "../a2qpx_nway_math.h"
+//#include "../a2qpx_nway_math.h"
 #include "assert.h"
 #include "BaseMessage.h"
 
 #include "Memory.h"
 
-#if 0
-inline int quad_double_sum_8way(double* dest, double* src0, double *src1, double* src2, double* src3,
-    double* src4, double* src5, double* src6, double* src7, uint64_t num )
-{
-
-  quad_double_sum_4way(dest, src0, src1, src2, src3,num);
-  quad_double_sum_4way(dest, dest, src4, src5, src6, num);
-  quad_double_sum_2way(dest, dest, src7, num);
-
-  return 0;
-
-}
-#endif
-
-#if 0
-inline int quad_double_sum_16way(double* dest, double* src0, double *src1, double* src2, double* src3,
-    double* src4, double* src5, double* src6, double* src7, double* src8, double* src9, double* src10,
-    double* src11,  double* src12, double* src13, double* src14, double* src15, uint64_t num )
-{
-
-  quad_double_sum_8way(dest, src0, src1, src2, src3, src4, src5, src6, src7, num);
-  quad_double_sum_8way(dest, dest, src8, src9, src10, src11, src12, src13, src14, num);
-  quad_double_sum_2way(dest, dest, src15, num);
-
-  return 0;
-}
-#endif
-
-#if 0
-inline int quad_double_sum_16way(double* dest, double* src0, double *src1, double* src2, double* src3,
-    double* src4, double* src5, double* src6, double* src7, double* src8, double* src9, double* src10,
-    double* src11,  double* src12, double* src13, double* src14, double* src15, uint64_t num )
-{
-
-  quad_double_sum_4way(dest, src0, src1, src2, src3,num);
-  quad_double_sum_4way(dest, dest, src4, src5, src6, num);
-  quad_double_sum_4way(dest, dest, src7, src8, src9, num);
-  quad_double_sum_4way(dest, dest, src10, src11, src12, num);
-  quad_double_sum_4way(dest, dest, src13, src14, src15, num);
-
-  return 0;
-}
-#endif
 #ifndef TRACE_ERR
 //#define TRACE_ERR(x) fprintf(stderr,"%s:%d\n",__FILE__,__LINE__); fprintf x
 #define TRACE_ERR(x)  //fprintf x
@@ -78,6 +33,7 @@ inline int quad_double_sum_16way(double* dest, double* src0, double *src1, doubl
 #ifndef PAMI_ASSERT
 #define PAMI_ASSERT(x) PAMI_assert(x)
 #endif
+#include "../bgq_math.h"
 
 
 namespace PAMI
@@ -89,13 +45,12 @@ namespace PAMI
 
 //#define	CHUNK_SIZE 	1024
 //#define	CHUNK_SIZE	2048
-#define	CHUNK_SIZE 	4096
 //#define	CHUNK_SIZE 	8192
-#define NUM_DBLS_PER_CHUNK (CHUNK_SIZE/sizeof(double))
+#define	CHUNK_SIZE 	4096
 #define NUM_CHUNKS(bytes)	((bytes%CHUNK_SIZE == 0) ? (bytes/CHUNK_SIZE):(bytes/CHUNK_SIZE + 1))
 
-#define SHADDR_SRCBUF(x) 	((double*)(mcomb_control->GlobalAddressTable.src_bufs[x]))
-#define SHADDR_DSTBUF(x) 	((double*)(mcomb_control->GlobalAddressTable.dst_bufs[x]))
+#define SHADDR_SRCBUF(x) 	((char*)(mcomb_control->GlobalAddressTable.src_bufs[x]))
+#define SHADDR_DSTBUF(x) 	((char*)(mcomb_control->GlobalAddressTable.dst_bufs[x]))
 
 #define ALIGNED_SRCBUF(x,y)	((((uint64_t)(mcomb_control->GlobalAddressTable.src_bufs[x])) & ((uint64_t)y)) == 0)
 #define ALIGNED_DSTBUF(x,y)	((((uint64_t)(mcomb_control->GlobalAddressTable.dst_bufs[x])) & ((uint64_t)y)) == 0)
@@ -127,55 +82,57 @@ namespace PAMI
           };
 
           inline void advance_4way_math(Shmem::McombControl* mcomb_control, unsigned _local_rank, unsigned _npeers,
-              double* dst, size_t bytes, pami_op opcode)
+              char* dst, size_t bytes, pami_op opcode, pami_dt dt)
           {
+#if  1
             /* local ranks other than 0 do the following quad sum */
             unsigned iter;
 
             for (iter=0; iter < NUM_CHUNKS(bytes)-1; iter++){
               if ((iter%(_npeers-1) +1) == _local_rank){
 
-                quad_double_math_4way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(1)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(2)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, NUM_DBLS_PER_CHUNK, opcode);
+                bgq_math_4way(dst+ iter* CHUNK_SIZE, SHADDR_SRCBUF(0)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(1)+iter*CHUNK_SIZE, SHADDR_SRCBUF(2)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(3)+iter*CHUNK_SIZE, CHUNK_SIZE, opcode, dt);
                 mcomb_control->chunks_done[_local_rank] += 1;
               }
-              TRACE_ERR((stderr,"dst[%zu]:%f\n", iter*NUM_DBLS_PER_CHUNK, dst[iter*NUM_DBLS_PER_CHUNK]));
+              //TRACE_ERR((stderr,"dst[%zu]:%f\n", iter*CHUNK_SIZE, dst[iter*CHUNK_SIZE]));
             }
 
             /* summing last chunk which can be of any size */
             if ((iter%(_npeers-1) +1) == _local_rank){
               if (bytes%CHUNK_SIZE == 0)
               {
-                quad_double_math_4way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(1)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(2)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, NUM_DBLS_PER_CHUNK, opcode);
+                bgq_math_4way(dst+ iter* CHUNK_SIZE, SHADDR_SRCBUF(0)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(1)+iter*CHUNK_SIZE, SHADDR_SRCBUF(2)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(3)+iter*CHUNK_SIZE, CHUNK_SIZE, opcode, dt);
 
               }
               else
               {
-                quad_double_math_4way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(1)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(2)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, (bytes%CHUNK_SIZE)/sizeof(double), opcode);
+                bgq_math_4way(dst+ iter* CHUNK_SIZE, SHADDR_SRCBUF(0)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(1)+iter*CHUNK_SIZE, SHADDR_SRCBUF(2)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(3)+iter*CHUNK_SIZE, (bytes%CHUNK_SIZE), opcode, dt);
               }
               mcomb_control->chunks_done[_local_rank] += 1;
             }
-
+#endif
           }
 
           inline void advance_8way_math(Shmem::McombControl* mcomb_control, unsigned _local_rank, unsigned _npeers,
-              double* dst, size_t bytes, pami_op opcode)
+              char* dst, size_t bytes, pami_op opcode, pami_dt  dt)
           {
+#if 1
             /* local ranks other than 0 do the following quad sum */
             unsigned iter;
 
             for (iter=0; iter < NUM_CHUNKS(bytes)-1; iter++){
               if ((iter%(_npeers-1) +1) == _local_rank){
-                quad_double_math_8way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(1)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(2)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(4)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(5)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(6)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(7)+iter*NUM_DBLS_PER_CHUNK, NUM_DBLS_PER_CHUNK, opcode);
+                bgq_math_8way(dst+ iter* CHUNK_SIZE, SHADDR_SRCBUF(0)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(1)+iter*CHUNK_SIZE, SHADDR_SRCBUF(2)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(3)+iter*CHUNK_SIZE, SHADDR_SRCBUF(4)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(5)+iter*CHUNK_SIZE, SHADDR_SRCBUF(6)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(7)+iter*CHUNK_SIZE, CHUNK_SIZE, opcode, dt);
                 mcomb_control->chunks_done[_local_rank] += 1;
               }
             }
@@ -184,30 +141,30 @@ namespace PAMI
             if ((iter%(_npeers-1) +1) == _local_rank){
               if (bytes%CHUNK_SIZE == 0)
               {
-                quad_double_math_8way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(1)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(2)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(4)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(5)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(6)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(7)+iter*NUM_DBLS_PER_CHUNK, NUM_DBLS_PER_CHUNK, opcode);
+                bgq_math_8way(dst+ iter* CHUNK_SIZE, SHADDR_SRCBUF(0)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(1)+iter*CHUNK_SIZE, SHADDR_SRCBUF(2)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(3)+iter*CHUNK_SIZE, SHADDR_SRCBUF(4)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(5)+iter*CHUNK_SIZE, SHADDR_SRCBUF(6)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(7)+iter*CHUNK_SIZE, CHUNK_SIZE, opcode, dt);
 
               }
               else
               {
-                quad_double_math_8way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(1)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(2)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(4)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(5)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(6)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(7)+iter*NUM_DBLS_PER_CHUNK, (bytes%CHUNK_SIZE)/sizeof(double), opcode);
+                bgq_math_8way(dst+ iter* CHUNK_SIZE, SHADDR_SRCBUF(0)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(1)+iter*CHUNK_SIZE, SHADDR_SRCBUF(2)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(3)+iter*CHUNK_SIZE, SHADDR_SRCBUF(4)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(5)+iter*CHUNK_SIZE, SHADDR_SRCBUF(6)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(7)+iter*CHUNK_SIZE, (bytes%CHUNK_SIZE), opcode, dt);
               }
 
               mbar();
               mcomb_control->chunks_done[_local_rank] += 1;
             }
-
+#endif
           }
 
           inline void advance_16way_math(Shmem::McombControl* mcomb_control, unsigned _local_rank, unsigned _npeers,
-              double* dst, size_t bytes, pami_op opcode)
+              char* dst, size_t bytes, pami_op opcode, pami_dt dt)
           {
             /* local ranks other than 0 do the following quad sum */
             unsigned iter;
@@ -215,46 +172,46 @@ namespace PAMI
             for (iter=0; iter < NUM_CHUNKS(bytes)-1; iter++){
               if ((iter%(_npeers-1) +1) == _local_rank){
 
-                quad_double_math_16way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(1)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(2)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(4)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(5)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(6)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(7)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(8)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(9)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(10)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(11)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(12)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(13)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(14)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(15)+iter*NUM_DBLS_PER_CHUNK, NUM_DBLS_PER_CHUNK, opcode);
+                bgq_math_16way(dst+ iter* CHUNK_SIZE, SHADDR_SRCBUF(0)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(1)+iter*CHUNK_SIZE, SHADDR_SRCBUF(2)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(3)+iter*CHUNK_SIZE, SHADDR_SRCBUF(4)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(5)+iter*CHUNK_SIZE, SHADDR_SRCBUF(6)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(7)+iter*CHUNK_SIZE, SHADDR_SRCBUF(8)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(9)+iter*CHUNK_SIZE, SHADDR_SRCBUF(10)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(11)+iter*CHUNK_SIZE, SHADDR_SRCBUF(12)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(13)+iter*CHUNK_SIZE, SHADDR_SRCBUF(14)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(15)+iter*CHUNK_SIZE, CHUNK_SIZE, opcode, dt);
                 mcomb_control->chunks_done[_local_rank] += 1;
               }
-              TRACE_ERR((stderr,"dst[%zu]:%f\n", iter*NUM_DBLS_PER_CHUNK, dst[iter*NUM_DBLS_PER_CHUNK]));
+              //TRACE_ERR((stderr,"dst[%zu]:%f\n", iter*CHUNK_SIZE, dst[iter*CHUNK_SIZE]));
             }
 
             /* summing last chunk which can be of any size */
             if ((iter%(_npeers-1) +1) == _local_rank){
               if (bytes%CHUNK_SIZE == 0)
               {
-                quad_double_math_16way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(1)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(2)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(4)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(5)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(6)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(7)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(8)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(9)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(10)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(11)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(12)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(13)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(14)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(15)+iter*NUM_DBLS_PER_CHUNK, NUM_DBLS_PER_CHUNK, opcode);
+                bgq_math_16way(dst+ iter* CHUNK_SIZE, SHADDR_SRCBUF(0)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(1)+iter*CHUNK_SIZE, SHADDR_SRCBUF(2)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(3)+iter*CHUNK_SIZE, SHADDR_SRCBUF(4)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(5)+iter*CHUNK_SIZE, SHADDR_SRCBUF(6)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(7)+iter*CHUNK_SIZE, SHADDR_SRCBUF(8)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(9)+iter*CHUNK_SIZE, SHADDR_SRCBUF(10)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(11)+iter*CHUNK_SIZE, SHADDR_SRCBUF(12)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(13)+iter*CHUNK_SIZE, SHADDR_SRCBUF(14)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(15)+iter*CHUNK_SIZE, CHUNK_SIZE, opcode, dt);
 
               }
               else
               {
-                quad_double_math_16way(dst+ iter* NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(0)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(1)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(2)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(3)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(4)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(5)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(6)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(7)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(8)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(9)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(10)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(11)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(12)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(13)+iter*NUM_DBLS_PER_CHUNK, SHADDR_SRCBUF(14)+iter*NUM_DBLS_PER_CHUNK,
-                    SHADDR_SRCBUF(15)+iter*NUM_DBLS_PER_CHUNK, (bytes%CHUNK_SIZE)/sizeof(double), opcode);
+                bgq_math_16way(dst+ iter* CHUNK_SIZE, SHADDR_SRCBUF(0)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(1)+iter*CHUNK_SIZE, SHADDR_SRCBUF(2)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(3)+iter*CHUNK_SIZE, SHADDR_SRCBUF(4)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(5)+iter*CHUNK_SIZE, SHADDR_SRCBUF(6)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(7)+iter*CHUNK_SIZE, SHADDR_SRCBUF(8)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(9)+iter*CHUNK_SIZE, SHADDR_SRCBUF(10)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(11)+iter*CHUNK_SIZE, SHADDR_SRCBUF(12)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(13)+iter*CHUNK_SIZE, SHADDR_SRCBUF(14)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(15)+iter*CHUNK_SIZE, (bytes%CHUNK_SIZE), opcode, dt);
               }
               mcomb_control->chunks_done[_local_rank] += 1;
             }
@@ -285,14 +242,14 @@ namespace PAMI
 
             /* Start the protocol here..blocking version since everyone arrived */
 
-            TRACE_ERR((stderr,"size of desc:%ld sizeof mcomb_control:%ld", sizeof(typename T_Device::CollectiveFifo::Descriptor), sizeof(McombControl)));
+            //TRACE_ERR((stderr,"size of desc:%ld sizeof mcomb_control:%ld", sizeof(typename T_Device::CollectiveFifo::Descriptor), sizeof(McombControl)));
 
             Shmem::McombControl* mcomb_control = NULL;
             mcomb_control = (Shmem::McombControl*) _my_desc->get_buffer();
             assert(mcomb_control != NULL);
 
             PAMI::PipeWorkQueue *rcv = (PAMI::PipeWorkQueue *)mcomb_params.results;
-            double* dst = (double*)(rcv->bufferToConsume());
+            char* dst = (char*)(rcv->bufferToConsume());
             size_t bytes = mcomb_params.count << pami_dt_shift[mcomb_params.dtype];
 
             TRACE_ERR((stderr, "bytes of data to be multicombined:%zu\n", bytes));
@@ -302,6 +259,7 @@ namespace PAMI
 	    mask1 = (alignment - 1);
 
             pami_op opcode = mcomb_params.optor;
+            pami_dt dt  = mcomb_params.dtype;
 
             /* All nodes except master(local rank 0), do the math */
 
@@ -310,29 +268,16 @@ namespace PAMI
               if (_npeers == 4)
               {
 
-                /* Check for the alignment..Assuming L1 cache line alignment for now */
-                //PAMI_ASSERT(ALIGNED_SRCBUF(0,mask1) && ALIGNED_SRCBUF(1,mask1) &&ALIGNED_SRCBUF(2,mask1) &&ALIGNED_SRCBUF(3,mask1)) ;
-
-                advance_4way_math(mcomb_control, _local_rank, _npeers, dst, bytes, opcode);
+                advance_4way_math(mcomb_control, _local_rank, _npeers, dst, bytes, opcode, dt);
 
               }
               else if (_npeers == 8){
 
-                /* Check for the alignment..Assuming L1 cache line alignment for now */
-                /*PAMI_ASSERT(ALIGNED_SRCBUF(0,mask1) && ALIGNED_SRCBUF(1,mask1) &&ALIGNED_SRCBUF(2,mask1) &&ALIGNED_SRCBUF(3,mask1)) ;
-                PAMI_ASSERT(ALIGNED_SRCBUF(4,mask1) && ALIGNED_SRCBUF(5,mask1) &&ALIGNED_SRCBUF(6,mask1) &&ALIGNED_SRCBUF(7,mask1)) ;*/
-
-                advance_8way_math(mcomb_control, _local_rank, _npeers, dst, bytes, opcode);
+                advance_8way_math(mcomb_control, _local_rank, _npeers, dst, bytes, opcode, dt);
               }
               else if (_npeers == 16){
 
-                /* Check for the alignment..Assuming L1 cache line alignment for now */
-                /*PAMI_ASSERT(ALIGNED_SRCBUF(0,mask1) && ALIGNED_SRCBUF(1,mask1) &&ALIGNED_SRCBUF(2,mask1) &&ALIGNED_SRCBUF(3,mask1)) ;
-                PAMI_ASSERT(ALIGNED_SRCBUF(4,mask1) && ALIGNED_SRCBUF(5,mask1) &&ALIGNED_SRCBUF(6,mask1) &&ALIGNED_SRCBUF(7,mask1)) ;
-                PAMI_ASSERT(ALIGNED_SRCBUF(8,mask1) && ALIGNED_SRCBUF(9,mask1) &&ALIGNED_SRCBUF(10,mask1) &&ALIGNED_SRCBUF(11,mask1)) ;
-                PAMI_ASSERT(ALIGNED_SRCBUF(12,mask1) && ALIGNED_SRCBUF(13,mask1) &&ALIGNED_SRCBUF(14,mask1) &&ALIGNED_SRCBUF(15,mask1)) ;*/
-
-                advance_16way_math(mcomb_control, _local_rank, _npeers, dst, bytes, opcode);
+                advance_16way_math(mcomb_control, _local_rank, _npeers, dst, bytes, opcode, dt);
 
               }
               else{
@@ -352,9 +297,10 @@ namespace PAMI
                 while (mcomb_control->chunks_done[my_peer] <= mcomb_control->chunks_copied[my_peer]){};
 
                 {
-                  quad_double_copy((dst + NUM_DBLS_PER_CHUNK*iter),
-                      (SHADDR_DSTBUF(my_peer)+NUM_DBLS_PER_CHUNK*iter), NUM_DBLS_PER_CHUNK);
+                  memcpy((void*)(dst + CHUNK_SIZE*iter),
+                  (void*)(SHADDR_DSTBUF(my_peer)+CHUNK_SIZE*iter), CHUNK_SIZE);
                   rcv->produceBytes(CHUNK_SIZE);
+                  TRACE_ERR((stderr,"produced bytes%u\n",(unsigned)CHUNK_SIZE));
                   mcomb_control->chunks_copied[my_peer] += 1;
                 }
               }
@@ -374,17 +320,17 @@ namespace PAMI
 
               if (bytes%CHUNK_SIZE == 0)
               {
-                /*memcpy((void*)(dst + NUM_DBLS_PER_CHUNK*iter),
-                  (void*)(SHADDR_DSTBUF(my_peer)+NUM_DBLS_PER_CHUNK*iter), CHUNK_SIZE);*/
-                quad_double_copy((dst + NUM_DBLS_PER_CHUNK*CURRENT_ITER),
-                    (SHADDR_DSTBUF(my_peer)+NUM_DBLS_PER_CHUNK*CURRENT_ITER), NUM_DBLS_PER_CHUNK);
+                memcpy((void*)(dst + CHUNK_SIZE*CURRENT_ITER),
+                  (void*)(SHADDR_DSTBUF(my_peer)+CHUNK_SIZE*CURRENT_ITER), CHUNK_SIZE);
                 rcv->produceBytes(CHUNK_SIZE);
+                  TRACE_ERR((stderr,"produced bytes%u\n",(unsigned)CHUNK_SIZE));
               }
               else
               {
-                memcpy((void*)(dst + NUM_DBLS_PER_CHUNK*CURRENT_ITER),
-                    (void*)(SHADDR_DSTBUF(my_peer)+NUM_DBLS_PER_CHUNK*CURRENT_ITER), bytes%CHUNK_SIZE);
+                memcpy((void*)(dst + CHUNK_SIZE*CURRENT_ITER),
+                    (void*)(SHADDR_DSTBUF(my_peer)+CHUNK_SIZE*CURRENT_ITER), bytes%CHUNK_SIZE);
                 rcv->produceBytes(bytes%CHUNK_SIZE);
+                  TRACE_ERR((stderr,"produced bytes:%u\n",(unsigned)bytes%CHUNK_SIZE));
               }
             }
 

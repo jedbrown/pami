@@ -174,7 +174,7 @@ namespace PAMI
                                        op);
         pami_dt pdt = (pami_dt) dt;
         pami_op pop = (pami_op) op;
-        result.check.datatype_op = ((pdt == PAMI_DOUBLE) && 
+        result.check.datatype_op = (((pdt == PAMI_DOUBLE)||(pdt == PAMI_SIGNED_INT) || (pdt == PAMI_UNSIGNED_INT)) && 
                                     ((pop == PAMI_MIN) ||
                                      (pop == PAMI_MAX) ||
                                      (pop == PAMI_SUM))) ?0:1;

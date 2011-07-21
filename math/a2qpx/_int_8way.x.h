@@ -1,8 +1,9 @@
 // 8way operation on ints
 
 #ifdef OP
-register int r0, r1, r2, r3, r4, r5, r6, r7;
-register int res = 0;
+#ifdef DTYPE
+register DTYPE r0, r1, r2, r3, r4, r5, r6, r7;
+register DTYPE res = 0;
 register  unsigned  n;
 
   r0 = src0[0];
@@ -53,4 +54,6 @@ register  unsigned  n;
   res = OP(r6, res);
   res = OP(r7, res);
   dst[n-1]  = res;
+#endif	/* DTYPE */
 #endif	/* OP */
+

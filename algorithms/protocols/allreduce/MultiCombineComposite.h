@@ -26,7 +26,7 @@
 //#undef  DO_DEBUG
 //#define DO_DEBUG(x) x
 
-#undef DO_TRACE_ENTEREXIT
+//#undef DO_TRACE_ENTEREXIT
 #undef DO_TRACE_DEBUG
 
 //#define CCMI_TRACE_ALL

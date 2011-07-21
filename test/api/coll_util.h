@@ -240,7 +240,16 @@ void reduce_initialize_sndbuf(void *buf, int count, int op, int dt, int task_id,
 
   int i;
 
-  if (op_array[op] == PAMI_DATA_SUM && dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
+  if (op_array[op] == PAMI_DATA_SUM && dt_array[dt] == PAMI_TYPE_SIGNED_INT)
+  {
+    int *ibuf = ( int *)  buf;
+
+    for (i = 0; i < count; i++)
+    {
+      ibuf[i] = i;
+    }
+  }
+  else if (op_array[op] == PAMI_DATA_SUM && dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
   {
     unsigned int *ibuf = (unsigned int *)  buf;
 
@@ -291,7 +300,21 @@ int reduce_check_rcvbuf(void *buf, int count, int op, int dt, int task_id, int n
 
   int err = 0;
 
-  if (op_array[op] == PAMI_DATA_SUM && dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
+  if (op_array[op] == PAMI_DATA_SUM && dt_array[dt] == PAMI_TYPE_SIGNED_INT)
+  {
+    int *rcvbuf = (int *)  buf;
+
+    for (i = 0; i < count; i++)
+    {
+      if (rcvbuf[i] != (int) i * num_tasks)
+      {
+        fprintf(stderr, "%s:Check %s/%s(%d) failed rcvbuf[%d] %d != %d\n", gProtocolName, dt_array_str[dt], op_array_str[op], count, i, rcvbuf[i], i*num_tasks);
+        err = -1;
+        return err;
+      }
+    }
+  }
+  else if (op_array[op] == PAMI_DATA_SUM && dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
   {
     unsigned int *rcvbuf = (unsigned int *)  buf;
 

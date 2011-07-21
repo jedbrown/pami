@@ -33,7 +33,6 @@
 //#define TRACE_ERR(x) //fprintf(stderr,"%s:%d\n",__FILE__,__LINE__); fprintf x
 #define TRACE_ERR(x) //fprintf x
 #endif
-//#define SHORT_MCOMB_BLOCKING
 namespace PAMI
 {
   namespace Device
@@ -102,30 +101,11 @@ namespace PAMI
               my_desc->set_mcomb_params(mcomb);
               my_desc->signal_arrived(); //signal that I have copied all my addresses/data
 
-#ifdef SHORT_MCOMB_BLOCKING
-              res = Shmem::ShortMcombMessage<T_Device>
-                ::short_msg_advance(my_desc, mcomb, _npeers, _local_rank, __global.mapping.task());
-
-              if (res == PAMI_SUCCESS)	//signal inline completion
-              {
-                mcomb->cb_done.function(_context, mcomb->cb_done.clientdata, PAMI_SUCCESS);
-                my_desc->set_my_state(Shmem::DONE);
-              }
-
-              return PAMI_SUCCESS;
-#else
               Shmem::ShortMcombMessage<T_Device> * obj = (Shmem::ShortMcombMessage<T_Device> *) (&state[0]);
               new (obj) Shmem::ShortMcombMessage<T_Device> (_device.getContext(), my_desc, _local_rank);
 
               _device.post_obj(obj);
 
-              /*res = PAMI_EAGAIN;
-              while (res != PAMI_SUCCESS) { res = obj->__advance(_context, obj); }*/
-              /*PAMI::Device::Generic::Device *generic = _device.getLocalProgressDevice();
-              generic->postThread(&(obj->_work));*/
-              /*PAMI::Device::Generic::Device * generic = _device.getProgressDeviceNew();
-              generic->postThread(&(obj->_work));*/
-#endif
             }
             else
             {
@@ -135,8 +115,8 @@ namespace PAMI
               my_desc->set_mcomb_params(mcomb);
               void* src_buf = ((PAMI::PipeWorkQueue *)mcomb->data)->bufferToConsume();
               void* dst_buf = ((PAMI::PipeWorkQueue *)mcomb->results)->bufferToProduce();
-              //TRACE_ERR((stderr, "Taking shaddr path local_root%u my_local_rank:%u my_va_src_buf:%p my_va_dst_buf:%p\n",
-              //      local_root, _local_rank, src_buf, dst_buf));
+              TRACE_ERR((stderr, "Taking shaddr path local_root%u my_local_rank:%u my_va_src_buf:%p my_va_dst_buf:%p\n",
+                    local_root, _local_rank, src_buf, dst_buf));
 
               Memregion memreg_src;
               Memregion memreg_dst;
@@ -167,7 +147,7 @@ namespace PAMI
               mcomb_control->chunks_done[_local_rank] = 0;
               mcomb_control->chunks_copied[_local_rank] = 0;
               mcomb_control->current_iter=0;
-              //TRACE_ERR((stderr, "[%d]setting my chunks_done:%p to 0\n", _local_rank, &mcomb_control->chunks_done[_peer]));
+              TRACE_ERR((stderr, "[%d]setting my chunks_done:%p to 0\n", _local_rank, &mcomb_control->chunks_done[_peer]));
               my_desc->set_my_state(Shmem::DESCSTATE_INIT);
               //src->consumeBytes(bytes);
 

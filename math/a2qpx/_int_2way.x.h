@@ -3,8 +3,9 @@
 // num_ints ==  64*m + rem
 
 #ifdef OP
-  register int r0, r1, r2, r3, r4, r5, r6, r7;
-  register int res1=0, res2=0, res3=0, res4=0;
+#ifdef  DTYPE
+  register DTYPE  r0, r1, r2, r3, r4, r5, r6, r7;
+  register DTYPE res1=0, res2=0, res3=0, res4=0;
   register unsigned n,i,j,k,l;
 
   register unsigned m  = num_ints >> 6;
@@ -67,4 +68,5 @@
   {
     dst[n]  = OP(src0[n], src1[n]);
   }
+#endif	/* DTYPE */
 #endif	/* OP */
