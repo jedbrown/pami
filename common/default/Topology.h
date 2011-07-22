@@ -549,7 +549,9 @@ namespace PAMI {
     ~Topology() {
       if(__free_ranklist)
       {
+#ifndef __pami_target_bgq__// double free memory on bgq
         PAMI::Memory::MemoryManager::heap_mm->free(topo_ranklist);
+#endif
         topo_ranklist=NULL;
       }
     }
