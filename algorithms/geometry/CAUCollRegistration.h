@@ -278,7 +278,9 @@ namespace PAMI
           _reduce_reg(&_sconnmgr,NULL, &_g_reduce_ni),
           _csmm(mm)
           {
-            if(_Lapi_env.use_shm == SHM_YES)
+            LapiImpl::Context *cp = (LapiImpl::Context *)_Lapi_port[_lapi_handle];
+
+            if(cp->coll_use_shm)
               _enabled = true;
             else
               _enabled = false;
@@ -286,7 +288,6 @@ namespace PAMI
             if(!_enabled) return;
 
             //  Populate the initial mask of available CAU indexes
-            LapiImpl::Context *cp = (LapiImpl::Context *)_Lapi_port[_lapi_handle];
             TRACE((stderr, "CAU Indexes Mask = %llx\n", cp->nrt[0]->table_info.cau_index_resources));
             
             // To initialize shared memory, we need to provide the task offset into the
