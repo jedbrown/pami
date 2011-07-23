@@ -216,7 +216,7 @@ namespace PAMI
                 {
                   size_t *offset = (size_t*) _buf;
                   *offset=csmm->addr_to_offset(NULL);
-                  csmm->returnDataBuffer((T_MemoryManager::shm_data_buf_t *)_buf);
+                  csmm->returnDataBuffer((typename T_MemoryManager::shm_data_buf_t *)_buf);
                   _buf = NULL;
                 }
               }
