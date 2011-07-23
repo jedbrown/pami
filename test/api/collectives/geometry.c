@@ -118,7 +118,9 @@ int main(int argc, char*argv[])
         for (; ii < gNum_contexts; ++ii)
           PAMI_Context_advance (context[ii], 1000);
       }
-
+      if(k==0 && task_id == task_zero)
+         fprintf(stdout, "Entering First Geometry Create\n");
+         
       rc |= create_and_query_geometry(client,
                                       context[0],
                                       context[iContext],
@@ -136,6 +138,9 @@ int main(int argc, char*argv[])
       if (rc == 1)
         return 1;
 
+      if(k==0 && task_id == task_zero)
+         fprintf(stdout, "Entering Geometry Query\n");
+         
       /*  Query the sub geometry for bcast algorithms */
       pami_xfer_type_t     bcast_xfer = PAMI_XFER_BROADCAST;
       pami_xfer_t          newbcast;
@@ -152,23 +157,37 @@ int main(int argc, char*argv[])
       if (rc == 1)
         return 1;
 
-      int buf = 0;
+      if(k==0 && task_id == task_zero)
+         fprintf(stdout, "Broadcasting\n");
+
+      int buf[256];
+      memset(buf, 0xFF, sizeof(buf));
       pami_endpoint_t    root_ep;
       volatile unsigned    bcast_poll_flag = 0;
       PAMI_Endpoint_create(client, task_zero, 0, &root_ep);
       newbcast.cmd.xfer_broadcast.root = root_ep;
       newbcast.cb_done                      = cb_done;
       newbcast.cookie                       = (void*) & bcast_poll_flag;
+#if 1
+      newbcast.algorithm                    = newbcast_algo[newbcast_num_algo[0]-1];
+#else      
       newbcast.algorithm                    = newbcast_algo[0];
-      newbcast.cmd.xfer_broadcast.buf       = (char*)&buf;
+#endif      
+      newbcast.cmd.xfer_broadcast.buf       = (char*)&buf[0];
       newbcast.cmd.xfer_broadcast.type      = PAMI_TYPE_BYTE;
       newbcast.cmd.xfer_broadcast.typecount = sizeof(buf);
       blocking_coll(context[iContext], &newbcast, &bcast_poll_flag);
 
+      if(k==0 && task_id == task_zero)
+         fprintf(stdout, "Destroying Geometry\n");
+         
       rc |= PAMI_Geometry_destroy(client, &newgeometry);
       if (rc == 1)
         return 1;
 
+      if(k==0 && task_id == task_zero)
+         fprintf(stdout, "Done....entering iterative phase\n");
+   
       free(newbcast_algo);
       free(newbcast_md);
       free(q_newbcast_algo);
@@ -178,7 +197,8 @@ int main(int argc, char*argv[])
       free(q_newbar_algo);
       free(q_newbar_md);
 
-      if(k!=0 && (k%(100))==0 && task_id == task_real_zero)
+      if((k==0 && task_id == task_real_zero)
+         || (k!=0 && (k%(100))==0 && task_id == task_real_zero))
       {
         double tf     = timer();
         timeIteration = timeElapsed;

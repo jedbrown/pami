@@ -172,7 +172,7 @@ namespace PAMI
                 char immediate_data[IMMEDIATE_CHANNEL_DATA_SIZE];
               } window_data_t;
 
-              CollShmWindow() :
+              CollShmWindow():
                 _buf(NULL),
                 _len(0)
               {
@@ -209,6 +209,16 @@ namespace PAMI
               {
                 TRACE_DBG((stderr, "<%p>CollShmWindow::clearCtrl()\n", this));
                 *((long long *)&_ctrl) = 0x0LL;
+              }
+              inline void freeBuf(T_MemoryManager *csmm)
+              {
+                if(_buf)
+                {
+                  size_t *offset = (size_t*) _buf;
+                  *offset=csmm->addr_to_offset(NULL);
+                  csmm->returnDataBuffer((T_MemoryManager::shm_data_buf_t *)_buf);
+                  _buf = NULL;
+                }
               }
               inline void prepData() { }
               inline window_content_t getContent() { return _ctrl.content; }
@@ -357,7 +367,7 @@ namespace PAMI
                     if (!_buf)
                       {
                         if (NULL != csmm)
-                          _buf = (char *)csmm->getDataBuffer(1);
+                          _buf = (char *)csmm->getDataBuffer(1); 
 
                         if (!_buf)
                           return -1;
@@ -531,8 +541,7 @@ namespace PAMI
                   }
 
                 return buf;
-              }
-
+              }            
               ///
               /// \brief Return data buffer, only really needed to detach buffer in Xmem attach case
               ///
@@ -609,6 +618,7 @@ namespace PAMI
                   }
 
                 *parent = (uint8_t) (rank + k - 1) / k - 1;
+
               }
 
               CollShmThread() : PAMI::Device::Generic::GenericAdvanceThread()
@@ -1207,8 +1217,9 @@ namespace PAMI
                   {
                     if(!_wgroups[i])
                       fprintf(stderr, "Error:  _wgroups[%d] is NULL\n", i);
-
+                    
                     PAMI_assert(_wgroups[i]);
+                    memset((char*)_wgroups[i]+sizeof(size_t), 0, sizeof(_wgroups[i])-sizeof(size_t));
                     _wgroups[i]->context_id = _gid;
                     _wgroups[i]->num_tasks  = _ntasks;
                     _wgroups[i]->task_rank  = i;
@@ -1223,6 +1234,22 @@ namespace PAMI
               }
           }
 
+          ~CollShmDevice()
+          {
+            if (_tid == 0)
+            {
+              for (unsigned i = 0;  i < _ntasks; ++i)
+              {
+                for(unsigned j = 0; j < _numchannels; j++)
+                {
+                  _wgroups[i]->windows[j].freeBuf(_csmm);
+                }
+                
+              }
+            }
+          }
+
+        
           inline PAMI::Device::Generic::Device *getGenerics()
           {
             return _generics;
@@ -1524,9 +1551,9 @@ namespace PAMI
           PAMI::Topology                *_topo;
           T_MemoryManager               *_csmm;   ///< collective shmem memory manager
           PAMI::Device::Generic::Device *_generics; ///< generic device arrays
-          CollShmThread _threads[_numchannels];   ///< Threads for active posted messages on device
-          PAMI::Device::Generic::GenericAdvanceThread
-          _threadm; // this thread is not associated with shared memory channel
+          CollShmThread                  _threads[_numchannels];   ///< Threads for active posted messages on device
+          PAMI::Device::Generic::GenericAdvanceThread _threadm;
+          // this thread is not associated with shared memory channel
           // it is a pure work item making sure enqueued message gets
           // a chance to run
 
@@ -1579,6 +1606,16 @@ namespace PAMI
             _csdevice.getWindow(0, 0, 0); // just simple checking
           }
 
+          ~CollShmModel()
+            {
+
+            }
+          
+          void destroy()
+            {
+              this->~CollShmModel();
+            }
+
           inline pami_result_t postMulticast_impl(uint8_t (&state)[sizeof_msg],
                                                   size_t           client,
                                                   size_t           context,
@@ -1595,12 +1632,10 @@ namespace PAMI
                                                      pami_multicombine_t *mcombine,
                                                      void             *devinfo = NULL);
         private:
-          unsigned _peer;
-          unsigned _npeers;
-
-          pami_result_t           _status;
-
-          T_CollShmDevice         _csdevice;
+          unsigned        _peer;
+          unsigned        _npeers;
+          pami_result_t   _status;
+          T_CollShmDevice _csdevice;
 
       }; // class CollShmModel
 

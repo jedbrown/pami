@@ -1213,6 +1213,14 @@ namespace PAMI
         while(gc->_counter==1)
           _contexts[0]->advance(1,rc);
 
+        // This context advance is *required* because of an implementation
+        // specific issue with the collective shared memory device.
+        // The collshm device delays synchornization until after the
+        // final operation may be complete and the user callback is called
+        // We need one advance here to finalize the synchronization.
+        // This is an artifact of calling generic device advance after
+        // the network advacne.
+        _contexts[0]->advance(1,rc);
         // Check for any geometries that can be cleaned up
         // and delete storage for the geometry and geometry cleanup object
         int sz = _geometryCleanupList.size();

@@ -559,6 +559,7 @@ namespace PAMI
           }
         inline void freeLocalModel(T_LocalModel *m)
           {
+            m->destroy();
             _model_allocator.returnObject(m);
           }
         inline void freeLocalNI(T_LocalNI_AM *ni)
@@ -591,10 +592,11 @@ namespace PAMI
             if(gi->_geometry->isLocalMasterParticipant() && gi->_cau_info)
               gi->_registration->freeGroup(gi->_geometry, gi->_cau_group);
 
-            if(gi->_ni)
-              gi->_registration->freeLocalNI(gi->_ni);
             if(gi->_local_model)
               gi->_registration->freeLocalModel(gi->_local_model);
+
+            if(gi->_ni)
+              gi->_registration->freeLocalNI(gi->_ni);
 
             if(gi->_cau_info)
               gi->_registration->freeCauInfo(gi->_cau_info);
