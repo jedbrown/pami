@@ -59,7 +59,7 @@ int main(int argc, char*argv[])
   pami_client_t        client;
   pami_context_t      *context;
   pami_task_t          task_id, local_task_id;
-  size_t               num_tasks;
+  size_t               num_tasks,subgeometry_num_tasks;
   pami_geometry_t      world_geometry;
   int                  nalg = 0;
 
@@ -95,6 +95,7 @@ int main(int argc, char*argv[])
                      0,              /* no configuration   */
                      &task_id,       /* task id            */
                      &num_tasks);    /* number of tasks    */
+  subgeometry_num_tasks = num_tasks;
 
   if (rc == 1)
     return 1;
@@ -155,11 +156,11 @@ int main(int argc, char*argv[])
   size_t                 set[2];
   int                    id;
 
-  pami_task_t            root_zero;
+  pami_task_t            root_zero, root_task;
   range     = (pami_geometry_range_t *)malloc(((num_tasks + 1) / 2) * sizeof(pami_geometry_range_t));
 
   int unused_non_root[2];
-  get_split_method(&num_tasks, task_id, &rangecount, range, &local_task_id, set, &id, &root_zero,unused_non_root);
+  get_split_method(&subgeometry_num_tasks, task_id, &rangecount, range, &local_task_id, set, &id, &root_zero,unused_non_root);
 
   for (; iContext < gNum_contexts; ++iContext)
   {
@@ -220,10 +221,6 @@ int main(int argc, char*argv[])
 
     for (nalg = 0; nalg < newbcast_num_algo[0]; nalg++)
     {
-      pami_endpoint_t    root_ep;
-      PAMI_Endpoint_create(client, root_zero, 0, &root_ep);
-      newbcast.cmd.xfer_broadcast.root = root_ep;
-
 
       /*  Set up sub geometry bcast */
       newbcast.cb_done                      = cb_done;
@@ -240,65 +237,76 @@ int main(int argc, char*argv[])
       {
         if (set[k])
         {
-          if (task_id == root_zero)
+          int l = 0;
+
+          root_task = root_zero;
+          if (gNumRoots == -1) gNumRoots = subgeometry_num_tasks;
+          for (l=0; l< gNumRoots; l++)
           {
-            printf("# Broadcast Bandwidth Test -- context = %d, root = %d  protocol: %s\n",
-                   iContext, root_zero, gProtocolName);
-            printf("# Size(bytes)           cycles    bytes/sec    usec\n");
-            printf("# -----------      -----------    -----------    ---------\n");
-          }
-
-          if (((strstr(newbcast_md[nalg].name,gSelected) == NULL) && gSelector) ||
-              ((strstr(newbcast_md[nalg].name,gSelected) != NULL) && !gSelector))  continue;
-
-          blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
-
-          int i, j;
-
-          for (i = 1; i <= gMax_count; i *= 2)
-          {
-            size_t  dataSent = i;
-            int          niter;
-
-            if (dataSent < CUTOFF)
-              niter = gNiterlat;
-            else
-              niter = NITERBW;
-
-            newbcast.cmd.xfer_broadcast.buf       = buf;
-            newbcast.cmd.xfer_broadcast.typecount = i;
-
-            if (task_id == root_zero)
-              initialize_sndbuf (buf, i, root_zero);
-            else
-              memset(buf, 0xFF, i);       
-
-            blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
-            ti = timer();
-
-            for (j = 0; j < niter; j++)
+            pami_endpoint_t    root_ep;
+            PAMI_Endpoint_create(client, root_task, 0, &root_ep);
+            newbcast.cmd.xfer_broadcast.root = root_ep;
+            if (task_id == root_task)
             {
-              blocking_coll(context[iContext], &newbcast, &bcast_poll_flag);
+              printf("# Broadcast Bandwidth Test -- context = %d, root_task = %d  protocol: %s\n",
+                     iContext, root_task, gProtocolName);
+              printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+              printf("# -----------      -----------    -----------    ---------\n");
             }
 
-            tf = timer();
+            if (((strstr(newbcast_md[nalg].name,gSelected) == NULL) && gSelector) ||
+                ((strstr(newbcast_md[nalg].name,gSelected) != NULL) && !gSelector))  continue;
+
             blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
-            int rc_check;
-            rc |= rc_check = check_rcvbuf (buf, i, root_zero);
 
-            if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
+            int i, j;
 
-            usec = (tf - ti) / (double)niter;
-
-            if (task_id == root_zero)
+            for (i = 1; i <= gMax_count; i *= 2)
             {
-              printf("  %11lld %16d %14.1f %12.2f\n",
-                     (long long)dataSent,
-                     niter,
-                     (double)1e6*(double)dataSent / (double)usec,
-                     usec);
-              fflush(stdout);
+              size_t  dataSent = i;
+              int          niter;
+
+              if (dataSent < CUTOFF)
+                niter = gNiterlat;
+              else
+                niter = NITERBW;
+
+              newbcast.cmd.xfer_broadcast.buf       = buf;
+              newbcast.cmd.xfer_broadcast.typecount = i;
+
+              if (task_id == root_task)
+                initialize_sndbuf (buf, i, root_task);
+              else
+                memset(buf, 0xFF, i);       
+
+              blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
+              ti = timer();
+
+              for (j = 0; j < niter; j++)
+              {
+                blocking_coll(context[iContext], &newbcast, &bcast_poll_flag);
+              }
+
+              tf = timer();
+              blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
+              int rc_check;
+              rc |= rc_check = check_rcvbuf (buf, i, root_task);
+
+              if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
+
+              usec = (tf - ti) / (double)niter;
+
+              if (task_id == root_task)
+              {
+                printf("  %11lld %16d %14.1f %12.2f\n",
+                       (long long)dataSent,
+                       niter,
+                       (double)1e6*(double)dataSent / (double)usec,
+                       usec);
+                fflush(stdout);
+              }
             }
+            get_next_root(num_tasks, &root_task);
           }
         }
 

@@ -489,11 +489,11 @@ void get_split_method(size_t *num_tasks,            /* input number of tasks/out
                       pami_task_t task_id,          /* input task id*/
                       int *rangecount,              /* output rangecount for geometry create */
                       pami_geometry_range_t *range, /* output range for geometry create */
-                      pami_task_t *local_task_id,   /* local task id in subcomm*/
+                      pami_task_t *local_task_id,   /* output local task id in subcomm*/
                       size_t set[2],                /* output split set*/
                       int *id,                      /* output comm id*/
                       pami_task_t *root,            /* output root/task 0 in subcomm*/
-                      int non_root[2])              /* 2 non-root tasks (first and last) for barrier tests */
+                      int non_root[2])              /* output 2 non-root tasks (first and last) for barrier tests */
 {
   size_t                 half        = *num_tasks / 2;
   char *method = getenv("TEST_SPLIT_METHOD");
@@ -615,6 +615,59 @@ void get_split_method(size_t *num_tasks,            /* input number of tasks/out
   }
   /*  fprintf(stderr,"set %zu/%zu, root %u, num_tasks %zu, local_task_id %u, non_root[0] %d, non_root[1] %d, id %d\n",
           set[0],set[1],*root, *num_tasks, *local_task_id, non_root[0], non_root[1], *id);
+  */
+}
+void get_next_root(size_t num_tasks,             /* input number of tasks*/
+                   pami_task_t *root)            /* input/output current/next root*/
+{
+  size_t                 half        = num_tasks / 2;
+  char *method = getenv("TEST_SPLIT_METHOD");
+    
+  /* Default or TEST_SPLIT_METHOD=0 : divide in half */
+  if ((!method || !strcmp(method, "0")))
+  {
+    if (*root < half)
+    {
+      *root = *root + 1;
+      if(*root >= half) *root = 0;
+    }
+    else
+    {
+      *root = *root + 1;
+      if(*root >= num_tasks) *root = half;
+    }
+  }
+  /* TEST_SPLIT_METHOD=-1 : alternate ranks  */
+  else if ((method && !strcmp(method, "-1")))
+  {
+    if ((*root % 2) == 0)
+    {
+      *root = *root + 2;
+      if(*root >= num_tasks) *root = 0;
+    }
+    else
+    {
+      *root = *root + 2;
+      if(*root >= num_tasks) *root = 1;
+    }
+  }
+  /* TEST_SPLIT_METHOD=N : Split the first "N" processes into a communicator */
+  else
+  {
+    half = atoi(method);
+    if (*root < half)
+    {
+      *root = *root + 1;
+      if(*root >= half) *root = 0;
+    }
+    else
+    {
+      *root = *root + 1;
+      if(*root >= num_tasks) *root = half;
+    }
+  }
+  /*  fprintf(stderr,"root %u, num_tasks %zu\n",
+          *root, *num_tasks);
   */
 }
 
