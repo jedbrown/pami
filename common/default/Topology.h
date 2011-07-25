@@ -546,14 +546,19 @@ namespace PAMI {
       RANK2COORDS(mapping->task(), &my_coords);
     }
 
-    ~Topology() {
+    // hack on top of hack on top of hack.
+    void finalize() {
       if(__free_ranklist)
       {
-#ifndef __pami_target_bgq__// double free memory on bgq
         PAMI::Memory::MemoryManager::heap_mm->free(topo_ranklist);
-#endif
         topo_ranklist=NULL;
+        __free_ranklist = false;
       }
+    }
+
+
+    ~Topology() {
+	finalize();
     }
 
     /// \brief default constructor (PAMI_EMPTY_TOPOLOGY)

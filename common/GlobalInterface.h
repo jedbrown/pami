@@ -46,6 +46,9 @@ namespace Interface
         }
 
         inline ~Global () {
+		// hack on top of hack on top of hack.
+		topology_local.finalize();
+		topology_global.finalize();
 		PAMI::Memory::SharedMemoryManager *smm =
 				(PAMI::Memory::SharedMemoryManager *)shared_mm;
 		PAMI::Memory::HeapMemoryManager *hmm =
