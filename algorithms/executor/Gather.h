@@ -424,7 +424,6 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::s
   // TODO: needs to add noncontiguous datatype handling
   if (_native->myrank() == _root)
     {
-      // If root is zero the data is already available in _rbuf
       if (!(_disps && _rcvcounts))
         {
           if (_rootindex != 0)

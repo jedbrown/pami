@@ -113,7 +113,7 @@ int main(int argc, char*argv[])
   /*  Allocate buffer(s) */
   int err = 0;
   void* buf = NULL;
-  err = posix_memalign(&buf, 128, (gMax_count * num_tasks) + gBuffer_offset);
+  err = posix_memalign(&buf, 128, gMax_count + gBuffer_offset);
   assert(err == 0);
   buf = (char*)buf + gBuffer_offset;
 
