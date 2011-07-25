@@ -102,9 +102,9 @@ namespace PAMI
               T_Index index;
             };
 
-            TypeCode(bool to_optimize);
+            TypeCode();
             TypeCode(void *code_addr, size_t code_size);
-            TypeCode(size_t code_size, primitive_type_t primitive = PRIMITIVE_TYPE_COUNT);
+            TypeCode(size_t code_size, primitive_type_t primitive);
             ~TypeCode();
 
             void AddShift(size_t shift);
@@ -139,6 +139,7 @@ namespace PAMI
 
             struct Op {
                 Opcode  opcode;
+                Opcode  prev_opcode;
 
                 Op(Opcode opcode) : opcode(opcode) { }
             };
@@ -146,7 +147,6 @@ namespace PAMI
             struct Begin : Op {
                 unsigned int contiguous:1;
                 unsigned int simple:1;
-                unsigned int optimized:1;
                 unsigned int depth;
                 size_t  code_size;
                 size_t  data_size;
@@ -156,12 +156,12 @@ namespace PAMI
                 size_t  atom_size;
 
                 Begin()
-                    : Op(BEGIN), contiguous(1), simple(1), optimized(0), depth(1), code_size(0),
+                    : Op(BEGIN), contiguous(1), simple(1), depth(1), code_size(0),
                     data_size(0), extent(0), num_blocks(0), unit(0), atom_size(0) { }
 
                 void Show(int pc) const {
                     ITRC(IT_TYPE, "%d: Begin: contiguous %d simple %d code_size %zu depth %u "
-                            " data_size %zu extent %zu num_blocks %zu unit %zu atom_size %zu\n",
+                            "data_size %zu extent %zu num_blocks %zu unit %zu atom_size %zu\n",
                             pc, contiguous, simple, code_size, depth, data_size, extent,
                             num_blocks, unit, atom_size);
                 }
@@ -172,7 +172,7 @@ namespace PAMI
                 size_t  stride;
                 size_t  reps;
 
-                Copy(size_t bytes, size_t stride, size_t reps)
+                Copy(size_t bytes = 0, size_t stride = 0, size_t reps = 0)
                     : Op(COPY), bytes(bytes), stride(stride), reps(reps) { }
 
                 inline void Show(int pc) const {
@@ -186,11 +186,11 @@ namespace PAMI
                 size_t  stride;
                 size_t  reps;
 
-                Call(size_t sub_type, size_t stride, size_t reps)
+                Call(size_t sub_type = 0, size_t stride = 0, size_t reps = 0)
                     : Op(CALL), sub_type(sub_type), stride(stride), reps(reps) { }
 
                 inline void Show(int pc) const {
-                    ITRC(IT_TYPE, "%d: Call: sub_type %zu stride %zd reps %zu\n",
+                    ITRC(IT_TYPE, "%d: Call: sub_type 0x%zx stride %zd reps %zu\n",
                             pc, pc + sub_type, stride, reps);
                 }
             };
@@ -198,7 +198,7 @@ namespace PAMI
             struct Shift : Op {
                 size_t  shift;
 
-                Shift(size_t shift) : Op(SHIFT), shift(shift) { }
+                Shift(size_t shift = 0) : Op(SHIFT), shift(shift) { }
 
                 inline void Show(int pc) const {
                     ITRC(IT_TYPE, "%d: Shift: shift %zd\n", pc, shift);
@@ -213,12 +213,16 @@ namespace PAMI
                 }
             };
 
+            template <class T> void Push(const T &op);
+            template <class T> bool Top(T &op);
+            void Pop();
+
             char  *code;
             size_t code_buf_size;
             size_t prev_cursor;
             size_t code_cursor;
             bool   completed;
-            bool   to_optimize;
+            // bool   to_optimize;
 
             void CheckCodeBuffer(size_t inc_code_size);
             void ResizeCodeBuffer(size_t new_size);
@@ -228,7 +232,7 @@ namespace PAMI
             void UpdateDepth(unsigned int call_depth);
             void AddNumBlocks(size_t inc_num_blocks);
             void UpdateUnit(size_t new_unit);
-            void CopySubTypes();
+            // void CopySubTypes();
             void SetContiguous(bool);
             void SetSimple(bool);
 
@@ -236,9 +240,9 @@ namespace PAMI
             primitive_type_t   primitive;
     };
 
-    inline TypeCode::TypeCode(bool to_optimize = true)
-        : code(NULL), code_buf_size(0), prev_cursor(0), code_cursor(0), completed(false),
-        to_optimize(to_optimize), primitive(PRIMITIVE_TYPE_COUNT)
+    inline TypeCode::TypeCode()
+        : code(NULL), code_buf_size(0), prev_cursor(0), code_cursor(0),
+        completed(false), primitive(PRIMITIVE_TYPE_COUNT)
     {
         ResizeCodeBuffer(sizeof(Begin) + sizeof(Copy)*4);
         *(Begin *)code = Begin();
@@ -248,16 +252,16 @@ namespace PAMI
     }
 
     inline TypeCode::TypeCode(void *code_addr, size_t code_size)
-        : code(NULL), code_buf_size(0), prev_cursor(0), code_cursor(0), completed(true),
-        to_optimize(true), primitive(PRIMITIVE_TYPE_COUNT)
+        : code(NULL), code_buf_size(0), prev_cursor(0), code_cursor(0),
+        completed(true), primitive(PRIMITIVE_TYPE_COUNT)
     {
         ResizeCodeBuffer(code_size);
         memcpy(code, code_addr, code_size);
     }
 
-    inline TypeCode::TypeCode(size_t code_size, primitive_type_t primitive_type)
-        : code(NULL), code_buf_size(0), prev_cursor(0), code_cursor(0), completed(true),
-        to_optimize(true), primitive(primitive_type)
+    inline TypeCode::TypeCode(size_t code_size, primitive_type_t primitive_type = PRIMITIVE_TYPE_COUNT)
+        : code(NULL), code_buf_size(0), prev_cursor(0), code_cursor(0),
+        completed(true), primitive(primitive_type)
     {
         ResizeCodeBuffer(code_size);
     }
@@ -286,6 +290,49 @@ namespace PAMI
         if (code_cursor + inc_code_size > code_buf_size) {
             ResizeCodeBuffer(code_buf_size * 2);
         }
+    }
+
+    template <class T>
+        void TypeCode::Push(const T &op)
+        {
+            CheckCodeBuffer(sizeof(op) + sizeof(struct Op));
+            T *top = (T *)(code + code_cursor);
+
+            // save previous opcode so it's not overwritten
+            Opcode prev_opcode = top->prev_opcode;
+            *top = op;
+            // recover previous opcode
+            top->prev_opcode = prev_opcode;
+
+            // save current opcode as previous opcode in the next instruction
+            (++top)->prev_opcode = op.opcode;
+
+            code_cursor += sizeof(op);
+            AddCodeSize(sizeof(op));
+        }
+
+    template <class T>
+        bool TypeCode::Top(T &op)
+        {
+            Op &top = *(Op *)(code + code_cursor);
+            if (top.prev_opcode != op.opcode)
+                return false;
+
+            op = *(T *)(code + code_cursor - sizeof(T));
+            return true;
+        }
+
+    inline void TypeCode::Pop()
+    {
+        static const int op_size[] = {
+            sizeof(Begin), sizeof(Copy), sizeof(Call), sizeof(Shift), sizeof(End)
+        };
+
+        assert(0<code_cursor);
+
+        Op &top = *(Op *)(code + code_cursor);
+        code_cursor -= op_size[top.prev_opcode];
+        AddCodeSize(0-op_size[top.prev_opcode]);
     }
 
     inline void * TypeCode::GetCodeAddr() const
@@ -345,9 +392,9 @@ namespace PAMI
         return completed;
     }
 
-    inline void TypeCode::SetSimple(bool smpl)
+    inline void TypeCode::SetSimple(bool is_simple)
     {
-        ((Begin *)code)->simple = smpl;
+        ((Begin *)code)->simple = is_simple;
     }
 
     inline bool TypeCode::IsSimple() const
@@ -355,9 +402,9 @@ namespace PAMI
         return ((Begin *)code)->simple;
     }
 
-    inline void TypeCode::SetContiguous(bool contig)
+    inline void TypeCode::SetContiguous(bool is_contig)
     {
-        ((Begin *)code)->contiguous = contig;
+        ((Begin *)code)->contiguous = is_contig;
     }
 
     inline bool TypeCode::IsContiguous() const
@@ -410,53 +457,87 @@ namespace PAMI
     {
         assert(!IsCompleted());
 
-        if (shift != 0) {
-            ITRC(IT_TYPE, "AddShift(): this 0x%zx shift %zd\n", this, shift);
-            if ((COPY == ((Op *)(code+prev_cursor))->opcode) && (1 == ((Copy *)(code+prev_cursor))->reps)) {
-                ITRC(IT_TYPE, "AddShift(): this 0x%zx modify prev copy stride by %zd\n", this, shift);
-                ((Copy *)(code+prev_cursor))->stride += shift;
-            } else if (SHIFT == ((Op *)(code+prev_cursor))->opcode) {
-                ITRC(IT_TYPE, "AddShift(): this 0x%zx modify prev shift by %zd\n", this, shift);
-                ((Shift *)(code+prev_cursor))->shift += shift;
-            } else {
-                ITRC(IT_TYPE, "AddShift(): this 0x%zx add shift by %zd\n", this, shift);
-                SetSimple(false);
-                CheckCodeBuffer(sizeof(Shift));
-                *(Shift *)(code + code_cursor) = Shift(shift);
-                prev_cursor = code_cursor;
-                code_cursor += sizeof(Shift);
-                AddCodeSize(sizeof(Shift));
+        Shift prev_shift;
+        Copy prev_copy;
+
+        ITRC(IT_TYPE, "AddShift(): this 0x%zx shift %zd\n", this, shift);
+
+        do {
+            if (0 == shift) {
+                // SHIFT 0                  => NO-OP
+                break;
             }
-            AddExtent(shift);
-        }
+            if (Top(prev_shift)) {
+                // SHIFT shift1
+                // SHIFT shift2             => SHIFT shift1+shift2
+                ITRC(IT_TYPE, " AddShift(): this 0x%zx modify prev SHIFT\n", this);
+                Pop();
+                AddShift(prev_shift.shift + shift);
+                break;
+            }
+            if (Top(prev_copy)) {
+                // previous instruction is a copy: if single repeat modify its stride
+                if (1 == prev_copy.reps) {
+                    // SHIFT shift1
+                    // COPY  bytes  stride  1   => COPY  bytes  stride+sift  1
+                    ITRC(IT_TYPE, " AddShift(): this 0x%zx modify prev COPY\n", this);
+                    Pop();
+                    AddSimple(prev_copy.bytes, prev_copy.stride + shift, 1);
+                    break;
+                }
+            }
+            // No optimization, yet: add a shift instruction
+            Push(Shift(shift));
+        } while (0);
     }
 
     inline void TypeCode::AddSimple(size_t bytes, size_t stride, size_t reps)
     {
         assert(!IsCompleted());
 
-        if (reps > 0) {
-            ITRC(IT_TYPE, "AddSimple(): this 0x%zx bytes %zu stride %zd reps %zu\n", this, bytes, stride, reps);
-            if (IsContiguous() && (GetDataSize() != GetExtent())) SetContiguous(false);
-            if (to_optimize && (bytes == stride)) {
-                stride  = bytes *= reps;
-                reps    = 1;
+        Copy prev_copy;
+
+        ITRC(IT_TYPE, "AddSimple(): this 0x%zx bytes %zu stride %zd reps %zu\n", this, bytes, stride, reps);
+
+        do {
+            if (0 == reps) {
+                // COPY  bytes  stride  0       => NO-OP
+                break;
             }
-            // if not the first copy instruction or reps more than 1,
-            // then not simple anymore
-            if ((0 != prev_cursor) || (1 != reps)) SetSimple(false);
-
-            CheckCodeBuffer(sizeof(Copy));
-            *(Copy *)(code + code_cursor) = Copy(bytes, stride, reps);
-            prev_cursor = code_cursor;
-            code_cursor += sizeof(Copy);
-
-            AddCodeSize(sizeof(Copy));
-            AddDataSize(bytes * reps);
-            AddNumBlocks(reps);
-            UpdateUnit(bytes);
-            AddExtent(stride * reps);
-        }
+            if (0 == bytes) {
+                // COPY  0  stride  reps        => SHIFT  stride*reps
+                ITRC(IT_TYPE, " AddSimple(): this 0x%zx add SHIFT\n", this);
+                AddShift(stride * reps);
+                break;
+            }
+            if ((bytes == stride) && (1<reps)) {
+                // COPY  bytes  bytes  reps     => COPY  bytes*reps  stride*reps  1
+                ITRC(IT_TYPE, " AddSimple(): this 0x%zx add modified COPY\n", this);
+                AddSimple(bytes * reps, stride * reps, 1);
+                break;
+            }
+            if (Top(prev_copy)) {
+                // the previous instruction was a COPY
+                if (prev_copy.bytes==prev_copy.stride && 1==reps) {
+                    // COPY  bytes1  bytes1  1
+                    // COPY  bytes2  stride  1   => COPY bytes1+bytes2  stride+bytes1  1
+                    ITRC(IT_TYPE, " AddSimple(): this 0x%zx modify prev COPY [1]\n", this);
+                    Pop();
+                    AddSimple(prev_copy.bytes + bytes, prev_copy.stride + stride, 1);
+                    break;
+                }
+                if (prev_copy.bytes==bytes && prev_copy.stride==stride) {
+                    // COPY  bytes  stride  reps1
+                    // COPY  bytes  stride  reps2   => COPY  bytes  stride  reps1+reps2
+                    ITRC(IT_TYPE, " AddSimple(): this 0x%zx modify previous COPY [2]\n", this);
+                    Pop();
+                    AddSimple(bytes, stride, prev_copy.reps + reps);
+                    break;
+                }
+            }
+            // no optimization yet: add a copy instruction
+            Push(Copy(bytes, stride, reps));
+        } while (0);
     }
 
     inline void TypeCode::AddTyped(TypeCode *sub_type, size_t stride, size_t reps)
@@ -464,198 +545,148 @@ namespace PAMI
         assert(!IsCompleted());
         assert(sub_type->IsCompleted());
 
-        if (reps > 0) {
-            ITRC(IT_TYPE, "AddTyped(): this 0x%zx sub_type 0x%zx stride %zd reps %zu\n", this, sub_type, stride, reps);
-            sub_type->Show();
-            // if the subtype is simple and reps is greater than one, then change the reps
-            // in the subtype
-            if ((1 != reps) && sub_type->IsSimple()) {
-                assert(COPY == ((Op *)(sub_type->code+sizeof(Begin)))->opcode);
-                // this subtype is a simple copy: add a simple copy instead of a call
-                AddSimple(((Copy *)(sub_type->code+sizeof(Begin)))->bytes, stride, reps);
-            } else if (sub_type->IsContiguous()) {
-                // the subtype is contiguous: add a simple copy instead of a call
-                // add a single copy instead of a call
-                AddSimple(sub_type->GetDataSize(), stride, reps);
-            } else {
-                if (IsContiguous()) {
-                    if (GetDataSize() != GetExtent()) SetContiguous(false);
-                    else SetContiguous(sub_type->IsContiguous());
-                }
-                CheckCodeBuffer(sizeof(Call));
-                *(Call *)(code + code_cursor) = Call((size_t)sub_type, stride, reps);
-                prev_cursor = code_cursor;
-                code_cursor += sizeof(Call);
+        Call prev_call;
 
-                AddCodeSize(sizeof(Call) + sub_type->GetCodeSize());
-                AddDataSize(sub_type->GetDataSize() * reps);
-                UpdateDepth(sub_type->GetDepth() + 1);
-                AddNumBlocks(sub_type->GetNumBlocks()*reps);
-                UpdateUnit(sub_type->GetUnit());
-                AddExtent(stride * reps);
-            }
-        }
-    }
-
-    inline void TypeCode::Optimize()
-    {
-        // optimize the code, by lumping together identical copy instructions;
-        // this routine needs to be called during the completion of the type code
-        // and before the addition of the sub-types, when there is only a single
-        // Begin-End sequence
-        size_t pc = 0, opc = 0, copyseqstart = 0, copyseqcnt = 0, copyreps = 0;
-        Op *op;
+        ITRC(IT_TYPE, "AddTyped(): this 0x%zx sub_type 0x%zx stride %zd reps %zu\n", this, sub_type, stride, reps);
+        sub_type->Show();
 
         do {
-            op = (Op *)(code + pc);
-            switch (op->opcode) {
-                case BEGIN:
-                    ITRC(IT_TYPE, "Optimize(): this 0x%zx: Begin %zu %zu\n", this, opc, pc);
-                    // only one begin instruction allowed, i.e. the first instruction
-                    assert(!((Begin *)code)->optimized);
-                    opc = pc += sizeof(Begin);
-                    break;
-                case COPY:
-                    if (0 == copyseqstart) {
-                        // initialize the sequence
-                        ITRC(IT_TYPE, "Optimize(): this 0x%zx: start copy sequence %zu %zu\n", this, opc, pc);
-                        copyseqstart = pc;
-                        copyseqcnt = 0;
-                        copyreps = ((Copy *)op)->reps;
-                        pc += sizeof(Copy);
-                        break;
-                    } else {
-                        // this is not the first copy instruction in the sequence
-                        if ((((Copy *)(code+copyseqstart))->bytes == ((Copy *)op)->bytes) &&
-                            (((Copy *)(code+copyseqstart))->stride == ((Copy *)op)->stride)) {
-                            // the sequence continues
-                            ITRC(IT_TYPE, "Optimize(): this 0x%zx: add to copy sequence %zu %zu\n", this, opc, pc);
-                            copyseqcnt++;
-                            copyreps += ((Copy *)op)->reps;
-                            pc += sizeof(Copy);
-                            break;
-                        }
-                        // intentional fall through to default
-                    }
-                default:
-                    // not a copy instruction or a copy instr. that breaks the copy sequence
-                    if (copyseqstart) {
-                        // a copy sequence was in progress; check if more than one copy
-                        // instruction in the sequence
-                        ITRC(IT_TYPE, "Optimize(): this 0x%zx: break copy sequence %zu %zu\n", this, opc, pc);
-                        if ((SHIFT == op->opcode) && (0 == ((Shift *)(code+pc))->shift)) {
-                            // this can happen due to type transformations that may have
-                            // occured just get rid of it an don't break the copy sequence
-                            ITRC(IT_TYPE, "Optimize(): this 0x%zx: zero Shift %zu %zu\n", this, opc, pc);
-                            // adjust code size and code cursor for the skipped shift
-                            // instruction
-                            AddCodeSize(0-sizeof(Shift)); code_cursor -= sizeof(Shift);
-                            pc += sizeof(Shift); break;
-                        }
-                        if (0 < copyseqcnt) {
-                            // compress the sequence
-                            ITRC(IT_TYPE, "Optimize(): this 0x%zx: compress copy sequence %zu %zu\n", this, opc, pc);
-                            assert(opc < pc);
-                            ((Copy *)(code+copyseqstart))->reps = copyreps;
-                            // update code size and code cursor for the skipped copy instructions, if any
-                            AddCodeSize(0-copyseqcnt*sizeof(Copy));
-                            code_cursor -= copyseqcnt*sizeof(Copy);
-                        }
-                        // move the potentially compressed copy instruction to the optimized PC, if need be
-                        if (opc < copyseqstart) memmove(code+opc, code+copyseqstart, sizeof(Copy));
-                        // adjust the optimized program counter with the moved copy instruction
-                        opc += sizeof(Copy);
-                        copyseqstart = 0;
-                    }
-
-                    switch(op->opcode) {
-                        case COPY:
-                            // this is the copy instruction that broke a previous copy sequence
-                            // just break
-                            ITRC(IT_TYPE, "Optimize(): this 0x%zx: Copy %zu %zu\n", this, opc, pc);
-                            break;
-                        case CALL:
-                            ITRC(IT_TYPE, "Optimize(): this 0x%zx: Call %zu %zu\n", this, opc, pc);
-                            if (opc < pc) memmove(code+opc, code+pc, sizeof(Call));
-                            pc += sizeof(Call); opc += sizeof(Call); break;
-                        case SHIFT:
-                            if (0 == ((Shift *)(code+pc))->shift) {
-                                // this can happen due to type transformations that may have occured
-                                // just get rid of it altogether
-                                ITRC(IT_TYPE, "Optimize(): this 0x%zx: skipping zero Shift %zu %zu\n", this, opc, pc);
-                                // adjust code size and code cursor for the skipped shift
-                                // instruction
-                                AddCodeSize(0-sizeof(Shift)); code_cursor -= sizeof(Shift);
-                            } else {
-                                ITRC(IT_TYPE, "Optimize(): this 0x%zx: Shift %zu %zu\n", this, opc, pc);
-                                if (opc < pc) memmove(code+opc, code+pc, sizeof(Shift));
-                                opc += sizeof(Shift);
-                            }
-                            pc += sizeof(Shift); break;
-                        case END:
-                            ITRC(IT_TYPE, "Optimize(): this 0x%zx: End %zu %zu\n", this, opc, pc);
-                            if (opc < pc) memmove(code+opc, code+pc, sizeof(End));
-                            pc += sizeof(End); opc += sizeof(End); break;
-                        default: assert(!"Bogus opcode"); 
-                    }
-                    break;
+            if (0 == reps) {
+                // CALL subtype  stride  0      => NO-OP
+                break;
             }
-        } while (END != op->opcode);
-        ((Begin *)code)->optimized = true;
+            if (sub_type->IsContiguous()) {
+                // CALL  subtye  stride  reps
+                // subtype is contiguous        => COPY  subtype->bytes  stride  reps
+                ITRC(IT_TYPE, " AddTyped(): this 0x%zx add COPY [1]\n", this);
+                AddSimple(sub_type->GetDataSize(), stride, reps);
+                break;
+            }
+            if (sub_type->IsSimple()) {
+                // CALL  subtype  stride1  reps1
+                // subtype is simple
+                assert(COPY == ((Op *)(sub_type->code+sizeof(Begin)))->opcode);
+
+                Copy *sub_copy = (Copy *)(sub_type->code+sizeof(Begin));
+
+                if (stride == sub_type->GetExtent()) {
+                    // the Call's stride is equal to the subtype's extent
+                    // COPY  bytes  stride2  reps2  => COPY  bytes  stride2  reps1*reps2
+                    ITRC(IT_TYPE, " AddTyped(): this 0x%zx add COPY [2]\n", this);
+                    AddSimple(sub_copy->bytes, sub_copy->stride, sub_copy->reps * reps);
+                    break;
+                }
+                // the Call's stride is different from the subtype's extent
+                if (1 == sub_copy->reps) {
+                    // the subtype consists of a single copy instruction w/no repeats
+                    ITRC(IT_TYPE, " AddTyped(): this 0x%zx add COPY [3]\n", this);
+                    AddSimple(sub_copy->bytes, stride, reps);
+                    break;
+                }
+            }
+            if (Top(prev_call)) {
+                // previous instruction is a call
+                if (prev_call.sub_type==(size_t)sub_type && prev_call.stride==stride) {
+                    // CALL  bytes  stride  reps1
+                    // CALL  bytes  stride  reps2   => CALL  bytes  stride  reps1+reps2
+                    Pop();
+                    AddTyped(sub_type, stride, prev_call.reps + reps);
+                    break;
+                }
+            }
+            // No optimization yet: add a new CALL
+            Push(Call((size_t)sub_type, stride, reps));
+        } while (0);
     }
 
     inline void TypeCode::Complete()
     {
         assert(!IsCompleted());
 
-        CheckCodeBuffer(sizeof(End));
-        *(End *)(code + code_cursor) = End();
-        code_cursor += sizeof(End);
-
-        AddCodeSize(sizeof(End));
+        // push the END instruction
+        Push(End());
 
         assert(code_cursor <= GetCodeSize());
 
-        if (to_optimize) Optimize();
-
-        if (code_cursor < GetCodeSize())
-            CopySubTypes();
-
-        if (IsContiguous() && (GetDataSize() != GetExtent())) SetContiguous(false);
-
-        completed = true;
-        ITRC(IT_TYPE, "Complete(): this 0x%zx code = 0x%zx; code_buf_size = %zd; code_cursor = %zu; completed = %d; to_optimize = %d\n", this, code, code_buf_size, code_cursor, completed, to_optimize);
-        Show();
-    }
-
-    inline void TypeCode::CopySubTypes()
-    {
-        ResizeCodeBuffer(GetCodeSize());
+        // calculate the data layout properties: data size/extent, unit, depth
+        // copy the sub-types' code, if any
 
         size_t pc = 0;
         Op *op;
+        
         do {
             op = (Op *)(code + pc);
             switch (op->opcode) {
-                case CALL:
-                    {
-                        size_t &sub_type_loc = ((Call *)op)->sub_type;
-                        TypeCode *sub_type = (TypeCode *)sub_type_loc;
-                        sub_type->Show();
-                        sub_type_loc = code_cursor - pc;
-                        memcpy(code + code_cursor, sub_type->code,
-                                sub_type->GetCodeSize());
-                        code_cursor += sub_type->GetCodeSize();
-                        pc += sizeof(Call);
-                        break;
-                    }
                 case BEGIN: pc += sizeof(Begin); break;
-                case SHIFT: pc += sizeof(Shift); break;
-                case COPY:  pc += sizeof(Copy); break;
-                case END:   pc += sizeof(End); break;
+                case COPY:
+                    // if not the first COPY => not simple
+                    if (BEGIN != op->prev_opcode) SetSimple(false);
+                    // update data size/extent, unit size and number of blocks
+                    AddDataSize(((Copy *)op)->bytes * ((Copy *)op)->reps);
+                    AddExtent(((Copy *)op)->stride * ((Copy *)op)->reps);
+                    AddNumBlocks(((Copy *)op)->reps);
+                    UpdateUnit(((Copy *)op)->bytes);
+                    pc += sizeof(Copy); break;
+                case CALL:
+                    // a CALL instruction breaks simplicity
+                    SetSimple(false);
+                    // copy the sub-type's code
+                    // update data size/extent, unit size, number of blocks and depth
+                    {
+                        TypeCode *sub_type = (TypeCode *)(((Call *)op)->sub_type);
+
+                        sub_type->Show();
+
+                        // update the type's code size w/the sub-type's code size and resize
+                        AddCodeSize(sub_type->GetCodeSize());
+                        ResizeCodeBuffer(GetCodeSize());
+
+                        // update the new location of the sub-type
+                        ((Call *)op)->sub_type = code_cursor - pc;
+                       
+                        // copy the sub-type's code
+                        memcpy(code + code_cursor, sub_type->code, sub_type->GetCodeSize());
+                        code_cursor += sub_type->GetCodeSize();
+
+                        // update the type's properties
+                        AddDataSize(sub_type->GetDataSize() * ((Call *)op)->reps);
+                        AddExtent(((Call *)op)->stride * ((Call *)op)->reps);
+                        UpdateDepth(sub_type->GetDepth() + 1);
+                        AddNumBlocks(sub_type->GetNumBlocks() * ((Call *)op)->reps);
+                        UpdateUnit(sub_type->GetUnit());
+                    }
+                    pc += sizeof(Call); break;
+                case SHIFT:
+                    // a SHIFT instruction breaks simplicity
+                    SetSimple(false);
+                    // update data extent
+                    AddExtent(((Shift *)op)->shift);
+                    pc += sizeof(Shift); break;
+                case END:
+                    // no instruction breaks simplicity
+                    if (BEGIN == op->prev_opcode) SetSimple(false);
+                    pc += sizeof(End); break;
                 default:    assert(!"Bogus opcode");
             }
         } while (op->opcode != END);
+
+        // Check for contiguity and simplicity: after the optimizations already
+        // performed, the following will be true:
+        // - a simple data layout contains a single COPY instruction
+        // - a contiguous data layout consists of a single copy instruction that has
+        //   the bytes value equal to the stride value
+        do {
+            if (!IsSimple()) { SetContiguous(false); break; }
+            // this is a simple data type, i.e. only one copy instruction
+            // check for contiguity
+            Copy *single_copy = (Copy *)(code + sizeof(Begin));
+            if (single_copy->bytes != single_copy->stride) { SetContiguous(false); break; }
+            assert(1 == single_copy->reps);
+        } while (0);
+
+        completed = true;
+        ITRC(IT_TYPE, "Complete(): this 0x%zx code = 0x%zx; code_buf_size = %zd; code_cursor = %zu; completed = %d\n", this, code, code_buf_size, code_cursor, completed);
+        Show();
     }
 
     inline void TypeCode::Show() const
@@ -686,7 +717,7 @@ namespace PAMI
     };
 
     inline TypeContig::TypeContig(size_t atom_size)
-        : TypeCode(true)
+        : TypeCode()
     {
         assert(0<atom_size);
         primitive = PRIMITIVE_TYPE_BYTE;
