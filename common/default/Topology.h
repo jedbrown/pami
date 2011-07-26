@@ -443,6 +443,11 @@ namespace PAMI {
       }
       size_t s = __sizeRange(&ll, &ur, mapping->globalDims());
       if (s == __size) {
+	// LIST -> COORDS, drop ranklist and turn off flag
+	if (__free_ranklist) {
+            PAMI::Memory::MemoryManager::heap_mm->free(topo_ranklist);
+	    __free_ranklist = false;
+	}
         __type = PAMI_COORD_TOPOLOGY;
         topo_llcoord = ll;
         topo_urcoord = ur;
@@ -469,6 +474,11 @@ namespace PAMI {
         }
       }
       if (__size == max - min + 1) {
+	// LIST -> RANGE, drop ranklist and turn off flag
+	if (__free_ranklist) {
+            PAMI::Memory::MemoryManager::heap_mm->free(topo_ranklist);
+	    __free_ranklist = false;
+	}
         __type = PAMI_RANGE_TOPOLOGY;
         topo_first = min;
         topo_last = max;
@@ -1396,7 +1406,7 @@ namespace PAMI {
       pami_task_t rank = 0;
       pami_task_t *rl, *rp;
       pami_task_t min, max;
-      __free_ranklist = false; // fix this memory leak
+      // __free_ranklist flag is unchanged unless conversion dictates
       switch (__type) {
       case PAMI_SINGLE_TOPOLOGY:
         switch (new_type) {
@@ -1416,6 +1426,7 @@ namespace PAMI {
           return true;
           break;
         case PAMI_LIST_TOPOLOGY:
+	  // SINGLE -> LIST, malloc ranklist and turn on flag
 	  rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
 						(void **)&rl, 0, sizeof(*rl));
 	  PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[1] alloc failed");
@@ -1444,6 +1455,7 @@ namespace PAMI {
           }
           break;
         case PAMI_LIST_TOPOLOGY:
+	  // RANGE to LIST, malloc ranklist and turn on flag
 	  rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
 						(void **)&rl, 0, __size * sizeof(*rl));
 	  PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", __size);
@@ -1466,10 +1478,16 @@ namespace PAMI {
       case PAMI_LIST_TOPOLOGY:
         switch (new_type) {
         case PAMI_COORD_TOPOLOGY:
+	  // LIST -> COORDS, drop ranklist and turn off flag
           return __analyzeCoordsList();
           break;
         case PAMI_SINGLE_TOPOLOGY:
           if (__size == 1) {
+	    // LIST -> SINGLE, drop ranklist and turn off flag
+	    if (__free_ranklist) {
+                PAMI::Memory::MemoryManager::heap_mm->free(topo_ranklist);
+	        __free_ranklist = false;
+	    }
             __type = PAMI_SINGLE_TOPOLOGY;
             topo_rank = topo_list(0);
             return true;
@@ -1478,6 +1496,7 @@ namespace PAMI {
         case PAMI_LIST_TOPOLOGY:
           break;
         case PAMI_RANGE_TOPOLOGY:
+	  // LIST -> RANGE, drop ranklist and turn off flag
           return __analyzeRangeList();
           break;
         default:
@@ -1497,6 +1516,7 @@ namespace PAMI {
           }
           break;
         case PAMI_LIST_TOPOLOGY:
+	  // COORD -> LIST, malloc ranklist and turn on flag
 	  rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
 						(void **)&rl, 0, __size * sizeof(*rl));
 	  PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", __size);
