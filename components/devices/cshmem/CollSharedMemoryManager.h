@@ -30,12 +30,12 @@
 
 #undef TRACE_ERR
 #ifndef TRACE_ERR
-#define TRACE_ERR(x)  // fprintf x
+#define TRACE_ERR(x)  //fprintf x
 #endif
 
 #undef TRACE_DBG
 #ifndef TRACE_DBG
-#define TRACE_DBG(x)  // fprintf x
+#define TRACE_DBG(x)  //fprintf x
 #endif
 
 #ifndef PAMI_ASSERT
@@ -104,6 +104,7 @@ namespace PAMI
           volatile size_t     free_ctlstr_list_offset;
           size_t              ctlstr_list_offset;
           size_t              ctlstr_pool_offset;
+          size_t              ctlstr_pool_init_offset;
           volatile size_t     free_buffer_list_offset;
           size_t              buffer_list_offset;
           size_t              buffer_pool_offset;
@@ -138,6 +139,7 @@ namespace PAMI
           // _collshm->ctlstr_pool_lock = 0;
 
           _collshm->ctlstr_pool_offset      = addr_to_offset(((char  *)_collshm + sizeof(collshm_t)));
+          _collshm->ctlstr_pool_init_offset = _collshm->ctlstr_pool_offset;
           _collshm->buffer_pool_offset      = addr_to_offset(((char *)(offset_to_addr(_collshm->ctlstr_pool_offset))
                                                          + (_size - sizeof(collshm_t)) / 2));
 
@@ -260,7 +262,7 @@ namespace PAMI
           return;
         }
 
-
+        
 
         ///
         /// \brief Get a whole chunk of INIT_BUFCNT new data buffers from the pool
@@ -419,6 +421,33 @@ namespace PAMI
         /// \return A chunk of INIT_CTLCNT new ctrl struct chained together
         ///
 
+      inline void ctl_str_check(void* in)
+        {
+          ctlstr_t *ctlstr = (ctlstr_t*)in;
+
+          if(addr_to_offset(ctlstr) >=
+             _collshm->ctlstr_pool_init_offset+(COLLSHM_INIT_CTLCNT*sizeof(*ctlstr)))
+          {
+            fprintf(stderr, "Control String=%p too large(offset=%ld), start=%ld end=%ld\n",
+                    in,
+                    addr_to_offset(ctlstr),
+                    _collshm->ctlstr_pool_init_offset,
+                    _collshm->ctlstr_pool_init_offset+(COLLSHM_INIT_CTLCNT*sizeof(*ctlstr)));            
+          }
+          if(addr_to_offset(ctlstr) < _collshm->ctlstr_pool_init_offset)
+          {
+            fprintf(stderr, "Control String=%p too small(offset=%ld), start=%ld end=%ld\n",
+                    ctlstr,
+                    addr_to_offset(ctlstr),
+                    _collshm->ctlstr_pool_init_offset,
+                    _collshm->ctlstr_pool_init_offset+(COLLSHM_INIT_CTLCNT*sizeof(*ctlstr)));
+          }
+          PAMI_ASSERT(addr_to_offset(ctlstr) <
+                      _collshm->ctlstr_pool_init_offset+(COLLSHM_INIT_CTLCNT*sizeof(*ctlstr)));
+          PAMI_ASSERT(addr_to_offset(ctlstr) > _collshm->ctlstr_pool_init_offset);
+          
+        }
+      
         ctlstr_t * _get_ctrl_str_from_pool ()
         {
 
@@ -430,16 +459,15 @@ namespace PAMI
           ctlstr_t *ctlstr   = (ctlstr_t*)offset_to_addr(_collshm->ctlstr_pool_offset);
           ctlstr_t *tmp      = ctlstr;
           size_t    offset   = (size_t)offset_to_addr(_collshm->buffer_pool_offset) - (size_t)_collshm;
+
           if ((char *)(ctlstr + COLLSHM_INIT_CTLCNT) > ((char *)_collshm + offset))
             {
-              TRACE_ERR((stderr, "Run out of shm ctrl structs: base=%p, ctrl_offset=%lu, boundary=%p, end=%p\n",
-                         _collshm, _collshm->ctlstr_offset, (char *)_collshm + offset,
-                         (char *)(ctlstr + COLLSHM_INIT_CTLCNT)));
+              fprintf(stderr, "Run out of shm ctrl structs: base=%p, ctrl_offset=%lu, boundary=%p, end=%p\n",
+                      _collshm, _collshm->ctlstr_offset, (char *)_collshm + offset,
+                      (char *)(ctlstr + COLLSHM_INIT_CTLCNT));
               PAMI_ASSERT(0);
               return NULL;
             }
-
-
           for (int i = 0; i < COLLSHM_INIT_CTLCNT - 1; ++i)
             {
               tmp->next_offset = addr_to_offset(tmp + 1);
@@ -553,7 +581,7 @@ namespace PAMI
           ctlstr_t *cur=ctlstr;
           for(int i=0; i<cnt; i++)
           {
-            ctlstr_t *next = (ctlstr_t*)offset_to_addr(cur->next_offset);            
+            ctlstr_t *next = (ctlstr_t*)offset_to_addr(cur->next_offset);
             memset(((char*)cur)+sizeof(size_t), 0, sizeof(*cur)-sizeof(size_t));
             Memory::sync();
             cur->next_offset = ctlstr_list->fetch();
@@ -597,8 +625,17 @@ namespace PAMI
           for (uint i = 0; i < master_size; ++i) vec[i] = 0xFFFFFFFFFFFFFFFFULL;
 
           if (local_index == 0)
-            vec[master_index] = (uint64_t) addr_to_offset(getCtrlStr(local_size));
-
+          {
+            ctlstr_t *prev = NULL, * ctlstr = NULL;
+            for(uint i=0; i<local_size; i++)
+            {
+              ctlstr = getCtrlStr(1);
+              ctlstr->next_offset = addr_to_offset(prev);
+              ctl_str_check(ctlstr);
+              prev = ctlstr;
+            }
+            vec[master_index] = (uint64_t)addr_to_offset(ctlstr);
+          }
           *ctlstr_offset = vec[master_index];
         }
       

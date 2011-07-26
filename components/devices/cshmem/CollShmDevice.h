@@ -412,7 +412,7 @@ namespace PAMI
 #if  defined(__64BIT__) && !defined(_LAPI_LINUX)
                 char *src;
 #endif
-
+                TRACE_DBG((stderr, "Using Control Structure this=%p %p\n", this, &_ctrl));
                 switch (_ctrl.content)
                   {
                     case IMMEDIATE:
@@ -441,7 +441,7 @@ namespace PAMI
                       break;
 #endif
                     default:
-                      TRACE_DBG((stderr, "<%p>CollShmWindow::consumeData() valus of content is %d\n", this, _ctrl.content));
+                      fprintf(stderr, "<%p>CollShmWindow::consumeData() value of content is %d\n", this, _ctrl.content);
                       PAMI_ASSERT(0);
                   }
 
@@ -616,9 +616,7 @@ namespace PAMI
                   {
                     children[i] = rank * k + 1 + i;
                   }
-
                 *parent = (uint8_t) (rank + k - 1) / k - 1;
-
               }
 
               CollShmThread() : PAMI::Device::Generic::GenericAdvanceThread()
@@ -629,7 +627,7 @@ namespace PAMI
                 _idx(idx),
                 _step(0),
                 _action(NOACTION),
-                _partners(0),
+                _partners(0ULL),
                 _sync_flag(0),
                 _target_cntr(0),
                 _root((unsigned char) - 1),
@@ -642,6 +640,7 @@ namespace PAMI
               }
               inline void resetThread()
               {
+                _root        = -1;
                 _step        = 0;
                 _action      = NOACTION;
                 _partners    = 0x0ULL;
@@ -666,7 +665,7 @@ namespace PAMI
 
                       while (_partners && pollcnt--)
                         {
-                          for (collshm_mask_t partner = 0x1ULL, i = 0; i < _nranks; ++i, partner <<= 1)
+                          for (collshm_mask_t partner = 0x1ULL, i = 0ULL; i < _nranks; ++i, partner <<= 1ULL)
                             {
                               if (_partners & partner)
                                 {
@@ -698,7 +697,7 @@ namespace PAMI
                       break;
                     case READFROM:
 
-                      for (collshm_mask_t partner = 0; partner < _nranks; ++partner)
+                      for (collshm_mask_t partner = 0ULL; partner < _nranks; ++partner)
                         {
                           if (_partners & (0x1ULL << partner))
                             {
@@ -770,18 +769,36 @@ namespace PAMI
                 PAMI::Topology *topo;
                 pami_multicast_t *mcast;
                 pami_multicombine_t *mcombine;
-
+                resetThread();
+                
                 TRACE_DBG((stderr, "<%p>CollShmThread::initThread() msgtype %u\n", this, msgtype));
 
                 switch (msgtype)
                   {
                     case MultiCast:
+                    {
                       mcast  = (pami_multicast_t *) static_cast<CollShmMessage<pami_multicast_t, CollShmDevice> *>(_msg)->getMulti();
                       topo   = (PAMI::Topology *)mcast->src_participants;
                       root   = _device->getTopo()->rank2Index(topo->index2Rank(0));
                       _len   = mcast->bytes;
                       _wlen  = 0;
                       TRACE_DBG((stderr, "CollShmThread::initThread() MultiCast topo->index2Rank(0) %d\n", (int)topo->index2Rank(0)));
+#if 0                      
+                      fprintf(stderr, "Multicasting, rootindex=%d, root=%d\n", root, topo->index2Rank(0));
+                      PAMI::Topology *topo2 =  (PAMI::Topology *)mcast->dst_participants;
+                      fprintf(stderr, "Dest Topo:  ");
+                      for(int i=0; i<topo2->size(); i++)
+                        fprintf(stderr, " %d", topo2->index2Rank(i));
+                      fprintf(stderr, "\n");
+
+                      topo2 =  (PAMI::Topology *)_device->getTopo();
+                      fprintf(stderr, "Local Dest Topo:  ");
+                      for(int i=0; i<topo2->size(); i++)
+                        fprintf(stderr, " %d", topo2->index2Rank(i));
+                      fprintf(stderr, "\n");
+#endif
+
+                    } 
                       break;
                     case MultiCombine:
                       mcombine = (pami_multicombine_t *) static_cast<CollShmMessage<pami_multicombine_t, CollShmDevice> *>(_msg)->getMulti();
@@ -808,8 +825,8 @@ namespace PAMI
 
                 _rrank           = (_arank + _nranks - root) % _nranks;
                 uint8_t rootcast = (uint8_t)root;
-                TRACE_DBG((stderr, "rootcast = %d, _root = %d\n", (int)rootcast, (int)_root));
-
+                TRACE_DBG((stderr, "rootcast = %d, _root = %d, arank=%d nranks=%d\n",
+                           (int)rootcast, (int)_root, _arank, _nranks));
                 if (rootcast != _root)
                   {
                     _root = rootcast;
@@ -838,7 +855,7 @@ namespace PAMI
 
                     while (_partners && pollcnt--)
                       {
-                        for (; i < _nranks; ++i, partner <<= 1)
+                        for (; i < _nranks; ++i, partner <<= 1ULL)
                           {
                             if (_partners & partner)
                               {
@@ -994,7 +1011,7 @@ namespace PAMI
                         _setPartners();
                         collshm_mask_t partner = 0x1ULL;
 
-                        for (int i = 0 ; i < _nranks; ++i, partner <<= 1)
+                        for (int i = 0 ; i < _nranks; ++i, partner <<= 1ULL)
                           {
                             TRACE_DBG((stderr, "<%p>progressMulticombine msg %p, idx %d: _partners=%lX partner=%lX\n",
                                        this, msg, _idx,
@@ -1106,7 +1123,7 @@ namespace PAMI
                         if (pwindow->isAvail(_step) != PAMI_SUCCESS)
                           {
                             _target_cntr   = _step;
-                            _partners      = 1 << prank;
+                            _partners      = 1ULL << prank;
                             return PAMI_EAGAIN;
                           }
                       }
@@ -1213,6 +1230,7 @@ namespace PAMI
                 PAMI_assert(ctlstr != NULL);
                 _wgroups[i] = ctlstr;
                 ctlstr      = (collshm_wgroup_t*)((intptr_t)csmm->getCollShmAddr() + ctlstr->next_offset);
+                csmm->ctl_str_check(_wgroups[i]);
                 if (_tid == 0)
                   {
                     if(!_wgroups[i])
@@ -1220,10 +1238,17 @@ namespace PAMI
                     
                     PAMI_assert(_wgroups[i]);
                     memset((char*)_wgroups[i]+sizeof(size_t), 0, sizeof(_wgroups[i])-sizeof(size_t));
+                    Memory::sync();
                     _wgroups[i]->context_id = _gid;
                     _wgroups[i]->num_tasks  = _ntasks;
                     _wgroups[i]->task_rank  = i;
 
+                    for(unsigned j = 0; j < _numchannels; j++)
+                    {
+                      memset(&_wgroups[i]->windows[j], 0, sizeof(_wgroups[i]->windows[j]));
+                      Memory::sync();
+                    }
+                    
                     for (int j = 0; j < 2; ++j)
                       for (unsigned k = 0; k < _numsyncs; ++k)
                         {
@@ -1241,9 +1266,8 @@ namespace PAMI
               for (unsigned i = 0;  i < _ntasks; ++i)
               {
                 for(unsigned j = 0; j < _numchannels; j++)
-                {
                   _wgroups[i]->windows[j].freeBuf(_csmm);
-                }
+                _wgroups[i]=NULL;
                 
               }
             }
@@ -1275,8 +1299,8 @@ namespace PAMI
 
             while (_completions[round][head] == _synccounts)
               {
-                TRACE_DBG((stderr, "advanceHead() round = %d, head = %d, barrier = %zu, completion = %d\n",
-                           round, head, _wgroups[0]->barrier[round][head].fetch(), _completions[round][head]));
+                TRACE_DBG((stderr, "advanceHead() round = %d, head = %d, barrier = %zu, completion = %d wgroups %p\n",
+                           round, head, _wgroups[0]->barrier[round][head].fetch(), _completions[round][head], _wgroups[0]));
 
                 if (_wgroups[0]->barrier[round][head].fetch() == ((increment == 1) ? _ntasks : 0))
                   {
@@ -1298,14 +1322,17 @@ namespace PAMI
 
             _head += (adv * _synccounts);
             TRACE_DBG((stderr,
-                       "advance head ..._head = %d, adv = %u, round = %d, head = %d, barrier = %zu, completion = %d\n",
-                       _head, adv, round, head, _wgroups[0]->barrier[round][head].fetch(), _completions[round][head]));
+                       "advance head ..._head = %d, adv = %u, round = %d, head = %d, barrier = %zu, completion = %d\n, wgroups=%p",
+                       _head, adv, round, head, _wgroups[0]->barrier[round][head].fetch(), _completions[round][head] ,_wgroups[0]));
             return adv;
           }
 
           /// \brief Check if there is available Thread in the device
           ///
-          inline bool _isThreadAvailable() { return (_tail < _head || _advanceHead()); }
+          inline bool _isThreadAvailable()
+          {
+            return (_tail < _head || _advanceHead());
+          }
 
           ///
           /// \brief Advance the tail index and return the next available thread
@@ -1434,7 +1461,7 @@ namespace PAMI
           /// \return pointer to the corresponding window
           inline CollShmWindow * getWindow (unsigned geometry, size_t peer, unsigned channel)
           {
-            //TRACE_DBG((stderr,"<%p>getWindow() _wgroup[%zu]=%p window[%d]=%p\n",this, peer, _wgroups[peer], channel, &(_wgroups[peer]->windows[channel])));
+            // _csmm->ctl_str_check(&(_wgroups[peer]->windows[channel]));
             return &(_wgroups[peer]->windows[channel]);
           }
 
