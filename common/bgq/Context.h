@@ -107,6 +107,7 @@ namespace PAMI
       char* s = strstr(m->name,"P2P");
       PAMI_assertf(sizeof(name) >= (s-m->name)+strlen(niName)+1,"%zu >= %zu",sizeof(name),(s-m->name)+strlen(niName)+1);
       memcpy(name,m->name,(s-m->name));
+      name[(s-m->name)] = 0x00;
       strcat(name,niName);
       m->name = name;
       TRACE_FORMAT("<%p> %s",this,m->name);
@@ -187,6 +188,7 @@ namespace PAMI
       char* s = strstr(m->name,"P2P");
       PAMI_assertf(sizeof(name) >= (s-m->name)+strlen(niName)+1,"%zu >= %zu",sizeof(name),(s-m->name)+strlen(niName)+1);
       memcpy(name,m->name,(s-m->name));
+      name[(s-m->name)] = 0x00;
       strcat(name,niName);
       m->name = name;
       if(T_Range_Hi)
@@ -261,6 +263,7 @@ namespace PAMI
       char* s = strstr(m->name,"P2P");
       PAMI_assertf(sizeof(name) >= (s-m->name)+strlen(niName)+1,"%zu >= %zu",sizeof(name),(s-m->name)+strlen(niName)+1);
       memcpy(name,m->name,(s-m->name));
+      name[(s-m->name)] = 0x00;
       strcat(name,niName);
       m->name = name;
       TRACE_FORMAT("<%p> %s",this,m->name);

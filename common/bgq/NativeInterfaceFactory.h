@@ -67,7 +67,7 @@ namespace PAMI {
     {
       TRACE_FN_ENTER();
       pami_result_t result = PAMI_ERROR;
-            
+      ni = NULL;           
       if (T_Sel != ni_select)
       {  
         TRACE_FN_EXIT();
@@ -145,7 +145,7 @@ namespace PAMI {
     {
       TRACE_FN_ENTER();
       pami_result_t result = PAMI_ERROR;
-            
+      ni = NULL;           
       if (T_Sel != ni_select)
       {
         TRACE_FN_EXIT();
