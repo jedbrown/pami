@@ -737,7 +737,7 @@ namespace PAMI
                              _geometry_map,
                              ni_factory);
           }
-          if (__global.useMU()) {
+          else if (__global.useMU()) {
             CCMI::Interfaces::NativeInterfaceFactory *ni_factory_mu = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
             TRACE_FORMAT("MU CCMI NI %p, registration %p", ni_factory_mu,  _ccmi_registration_mu_storage);
             new (ni_factory_mu) MUNIFactory (_client, _context, _clientid, _contextid, _devices->_mu[_contextid], _protocol);
@@ -750,7 +750,7 @@ namespace PAMI
                              _geometry_map,
                              ni_factory_mu);
           }
-          if(__global.useshmem()) { //use shmem
+          else if(__global.useshmem()) { //use shmem
             CCMI::Interfaces::NativeInterfaceFactory *ni_factory_shmem = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
             TRACE_FORMAT("Shmem CCMI NI %p, registration %p", ni_factory_shmem,  _ccmi_registration_shmem_storage);
             new (ni_factory_shmem) ShmemNIFactory (_client, _context, _clientid, _contextid, _devices->_shmem[_contextid], _protocol);
