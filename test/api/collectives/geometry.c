@@ -54,12 +54,6 @@ int main(int argc, char*argv[])
   if (rc == 1)
     return 1;
 
-  if (num_tasks == 1)
-  {
-    fprintf(stderr, "No barrier subcomms on 1 node\n");
-    return 0;
-  }
-
   assert(task_id >= 0);
   assert(task_id < num_tasks);
 
@@ -209,6 +203,9 @@ int main(int argc, char*argv[])
       }
     }
 
+    if(task_id == task_real_zero)
+      fprintf(stdout, "Done with iteration %d of %d\n",
+              NITER, NITER);
 
   } /*for(unsigned iContext = 0; iContext < gNum_contexts; ++iContexts)*/
 
