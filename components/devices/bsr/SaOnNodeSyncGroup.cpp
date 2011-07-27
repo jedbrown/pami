@@ -12,6 +12,12 @@
 #include "lapi_itrace.h"
 #include "util/common.h"
 
+#ifdef POWER_ARCH
+#define EIEIO __asm__ ("\n\t eieio")
+#else
+#define EIEIO
+#endif
+
 SaOnNodeSyncGroup::SetupState SaOnNodeSyncGroup::Init_bsr()
 {
     SharedArray::RC sa_rc = sa->CheckInitDone(member_cnt, 
@@ -374,6 +380,8 @@ bool SaOnNodeSyncGroup::IsNbBarrierDone()
     if (nb_barrier_stage == 1) { /* enter broadcast stage */
         //        show_bsr("stage 1");
         if (member_id == 0) {
+            // need eieio to make sure correctness of BSR operations
+            EIEIO;
             // notify others about barrier exit
             sa->Store1(member_id, !seq);
         } else {
