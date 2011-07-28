@@ -20,6 +20,7 @@
 
 #include <pami.h>
 #include "common/ContextInterface.h"
+#include "common/default/Dispatch.h"
 
 #include "components/devices/generic/Device.h"
 #include "components/devices/misc/ProgressFunctionMsg.h"
@@ -461,7 +462,7 @@ namespace PAMI
           _context ((pami_context_t)this),
           _clientid (clientid),
           _contextid (id),
-          _dispatch_id(255),
+          //_dispatch_id(255),
           _geometry_map(geometry_map),
           _lock(),
           _multi_registration(NULL),
@@ -481,7 +482,6 @@ namespace PAMI
           _pgas_composite_registration(NULL),
           _dummy_disable(false),
           _dummy_disabled(false),
-          _senderror(),
           _get(devices->_mu[_contextid]),
           _put(devices->_mu[_contextid]),
           _rmw(devices->_mu[_contextid])
@@ -517,9 +517,9 @@ namespace PAMI
         _devices->init(_clientid, _contextid, _client, _context, &_mm);
 
         pami_endpoint_t self = PAMI_ENDPOINT_INIT(_clientid, __global.mapping.task(), _contextid);
-        _get.initialize (_dispatch_id--, self, _context);
-        _put.initialize (_dispatch_id--, self, _context);
-        _rmw.initialize (_dispatch_id--, self, _context);
+        _get.initialize (_dispatch.id--, self, _context);
+        _put.initialize (_dispatch.id--, self, _context);
+        _rmw.initialize (_dispatch.id--, self, _context);
 
         Protocol::Get::GetRdma <Device::MU::DmaModelMemoryFifoCompletion, MUDevice> * rget_mu = NULL;
         Protocol::Put::PutRdma <Device::MU::DmaModelMemoryFifoCompletion, MUDevice> * rput_mu = NULL;
@@ -665,7 +665,7 @@ namespace PAMI
         ///////////////////////////////////////////////////////////////
         if (__global.useMU())
           {
-            _pgas_mu_registration = new(_pgas_mu_registration_storage) MU_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _protocol, Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid),ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), &_dispatch_id, _geometry_map);
+            _pgas_mu_registration = new(_pgas_mu_registration_storage) MU_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _protocol, Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid),ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), &_dispatch.id, _geometry_map);
           }
         if (__global.useshmem())
           {
@@ -690,14 +690,14 @@ namespace PAMI
 #endif
 
                 _shmem_native_interface  = (AllSidedShmemNI*)_shmem_native_interface_storage;
-                new (_shmem_native_interface_storage) AllSidedShmemNI(_shmemMcastModel, _shmemMsyncModel, _shmemMcombModel, client, (pami_context_t)this, id, clientid, &_dispatch_id);
+                new (_shmem_native_interface_storage) AllSidedShmemNI(_shmemMcastModel, _shmemMsyncModel, _shmemMcombModel, client, (pami_context_t)this, id, clientid, &_dispatch.id);
 
-                _pgas_shmem_registration = new(_pgas_shmem_registration_storage) Shmem_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _protocol, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), & _dispatch_id, _geometry_map);
+                _pgas_shmem_registration = new(_pgas_shmem_registration_storage) Shmem_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _protocol, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), & _dispatch.id, _geometry_map);
               }
             else TRACE_STRING("topology does not support shmem");
           }
         if ((__global.useMU()) && (__global.useshmem()))
-            _pgas_composite_registration = new(_pgas_composite_registration_storage) Composite_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _protocol, Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid), _devices->_shmem[_contextid], &_dispatch_id, _geometry_map, true);
+            _pgas_composite_registration = new(_pgas_composite_registration_storage) Composite_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _protocol, Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid), _devices->_shmem[_contextid], &_dispatch.id, _geometry_map, true);
 
         TRACE_FORMAT( "<%p> Register collectives(%p,%p,%p,%zu,%zu", this, _shmem_native_interface, client, this, id, clientid);
         // The multi registration will use shmem/mu if they are ctor'd above.
@@ -714,7 +714,7 @@ namespace PAMI
 			      (pami_context_t)this,
 			      id,
 			      clientid,
-			      &_dispatch_id,
+			      &_dispatch.id,
 			      _geometry_map);
 	    uint64_t inval = (uint64_t)-1;
 	    _multi_registration->receive_global (_contextid, _world_geometry, &inval, 1);
@@ -733,7 +733,7 @@ namespace PAMI
                              _protocol,
                              __global.topology_global.size(), 
                              __global.topology_local.size(), 
-                             &_dispatch_id, 
+                             &_dispatch.id, 
                              _geometry_map,
                              ni_factory);
           }
@@ -746,7 +746,7 @@ namespace PAMI
                              _protocol,
                              __global.topology_global.size(), 
                              __global.topology_local.size(), 
-                             &_dispatch_id, 
+                             &_dispatch.id, 
                              _geometry_map,
                              ni_factory_mu);
           }
@@ -759,7 +759,7 @@ namespace PAMI
                              _protocol,
                              __global.topology_global.size(), 
                              __global.topology_local.size(), 
-                             &_dispatch_id, 
+                             &_dispatch.id, 
                              _geometry_map,
                              ni_factory_shmem);
           }        
@@ -773,7 +773,7 @@ namespace PAMI
                                  _protocol,
                                  __global.topology_global.size(), 
                                  __global.topology_local.size(), 
-                                 &_dispatch_id, 
+                                 &_dispatch.id, 
                                  _geometry_map,
                                  ni_factory_muam);
           }
@@ -816,11 +816,6 @@ namespace PAMI
            // We know that _world_geometry is always "optimized" at create time.
            _multi_registration->analyze(_contextid, _world_geometry, 1);
          }
-
-        // dispatch_impl relies on the table being initialized to NULL's.
-        size_t i, n = sizeof(_dispatch) / sizeof(Protocol::Send::Send *);
-        for (i=0; i<n; i++)
-          _dispatch[i] = (Protocol::Send::Send *) & _senderror;
 
         TRACE_FN_EXIT();
       }
@@ -894,10 +889,8 @@ namespace PAMI
       inline pami_result_t send_impl (pami_send_t * parameters)
       {
         TRACE_FN_ENTER();
-        size_t id = (size_t) (parameters->send.dispatch);
-        TRACE_FORMAT("_dispatch[%zu] = %p", id, _dispatch[id]);
 
-        pami_result_t rc = _dispatch[id]->simple (parameters);
+        pami_result_t rc = _dispatch.send (parameters);
 
         TRACE_FORMAT("rc = %d", rc);
         TRACE_FN_EXIT();
@@ -907,10 +900,8 @@ namespace PAMI
       inline pami_result_t send_impl (pami_send_immediate_t * parameters)
       {
         TRACE_FN_ENTER();
-        size_t id = (size_t) (parameters->dispatch);
-        TRACE_FORMAT("_dispatch[%zu] = %p", id, _dispatch[id]);
 
-        pami_result_t rc = _dispatch[id]->immediate (parameters);
+        pami_result_t rc = _dispatch.send (parameters);
 
         TRACE_FORMAT("rc = %d", rc);
         TRACE_FN_EXIT();
@@ -1058,7 +1049,7 @@ namespace PAMI
       {
         TRACE_FN_ENTER();
         pami_result_t result = PAMI_ERROR;
-        TRACE_FORMAT(" _dispatch[%zu] = %p, options = %#X", id, _dispatch[id], *(unsigned*)&options);
+        //TRACE_FORMAT(" _dispatch[%zu] = %p, options = %#X", id, _dispatch[id], *(unsigned*)&options);
 
         // Return an error for invalid / unimplemented 'hard' hints.
         if (
@@ -1076,34 +1067,34 @@ namespace PAMI
         using namespace Protocol::Send;
 
 
-        if (_dispatch[id] == (Send *) & _senderror)
-          {
             if ((options.use_shmem == PAMI_HINT_DISABLE) || (__global.useMU() && !__global.useshmem()))
               {
-                _dispatch[id] =
+                Protocol::Send::Send * send =
                   Eager <Device::MU::PacketModel>::generate (id, fn.p2p, cookie,
                                                              _devices->_mu[_contextid],
                                                              self, _context, options,
                                                              _protocol, result);
+                _dispatch.set (id, send, send);
               }
             else if ((options.use_shmem == PAMI_HINT_ENABLE) || (!__global.useMU() && __global.useshmem()))
               {
-                _dispatch[id] =
+                Protocol::Send::Send * send =
                   Eager <ShmemPacketModel>::generate (id, fn.p2p, cookie,
                                                              _devices->_shmem[_contextid],
                                                              self, _context, options,
                                                              _protocol, result);
+                _dispatch.set (id, send, send);
               }
             else
               {
-                _dispatch[id] =
+                Protocol::Send::Send * send =
                   Eager <ShmemPacketModel, Device::MU::PacketModel>::generate (id, fn.p2p, cookie,
                                                              _devices->_shmem[_contextid],
                                                              _devices->_mu[_contextid],
                                                              self, _context, options,
                                                              _protocol, result);
+                _dispatch.set (id, send, send);
               }
-          } // end dispatch[id]==null
 
         TRACE_FORMAT("result = %d", result);
         TRACE_FN_EXIT();
@@ -1287,17 +1278,16 @@ namespace PAMI
                                                pami_configuration_t  configuration[],
                                                size_t                num_configs)
       {
-        PAMI::Protocol::Send::Send * send =
-          (PAMI::Protocol::Send::Send *) _dispatch[dispatch];
-        return send->getAttributes (configuration, num_configs);
+        return _dispatch.query (dispatch, configuration, num_configs);
       }
 
       inline pami_result_t dispatch_update_impl(size_t                dispatch,
                                                 pami_configuration_t  configuration[],
                                                 size_t                num_configs)
       {
-        return PAMI_INVAL;
+        return _dispatch.update (dispatch, configuration, num_configs);
       }
+      
       inline pami_result_t query_impl(pami_configuration_t  configuration[],
                                       size_t                num_configs)
       {
@@ -1309,6 +1299,9 @@ namespace PAMI
             switch (configuration[i].name)
               {
                 case PAMI_CONTEXT_DISPATCH_ID_MAX:
+                  configuration[i].value.intval = _dispatch.id;
+                  break;
+                  
                 default:
                   result = PAMI_INVAL;
               }
@@ -1362,13 +1355,11 @@ namespace PAMI
       PAMI::ProgressExtension::pamix_async_function _async_suspend;
       PAMI::ProgressExtension::pamix_async_function _async_resume;
       void                        *_async_cookie;
-      int                          _dispatch_id;
       std::map<unsigned, pami_geometry_t> *_geometry_map;
       pami_endpoint_t              _self;
 
       PAMI::Memory::GenMemoryManager  _mm;
 
-      PAMI::Protocol::Send::Send  *_dispatch[1024];
       Protocol::Get::RGet         *_rget;
       Protocol::Put::RPut         *_rput;
       MemoryAllocator<1024,64,16> _request;
@@ -1405,14 +1396,13 @@ namespace PAMI
       bool _dummy_disable;
       bool _dummy_disabled;
       PAMI::Device::Generic::GenericThread _dummy_work;
-      PAMI::Protocol::Send::Error  _senderror;
       
       Protocol::Get::GetOverSend<Device::MU::PacketModel> _get;
       Protocol::Put::PutOverSend<Device::MU::PacketModel> _put;
       Protocol::Rmw::RmwOverSend<Device::MU::PacketModel> _rmw;
       //Protocol::Rmw::RmwOverSend<ShmemPacketModel> _rmw;
-      
-      
+
+      Dispatch<256> _dispatch;
   }; // end PAMI::Context
 }; // end namespace PAMI
 

@@ -24,34 +24,31 @@
 
 namespace PAMI
 {
+  template <unsigned T_DispatchCount>
   class Dispatch
   {
     protected:
 
-      static const size_t dispatch_id_max = 1024;
-
-      typedef enum
-      {
-        FENCE_MODE_DISABLED = 0,
-        FENCE_MODE_ENABLED
-      } fence_mode_t;
-
-      Protocol::Send::Error   _default;
-      Protocol::Send::Send  * _protocol[dispatch_id_max][2];
-      fence_mode_t            _mode;
+      Protocol::Send::Error    _default;
+      Protocol::Send::Send  *  _protocol_fence_disabled[T_DispatchCount];
+      Protocol::Send::Send  *  _protocol_fence_enabled[T_DispatchCount];
+      Protocol::Send::Send  ** _protocol;
 
 
     public:
 
+      int id;
+
       inline Dispatch () :
-        _mode (FENCE_MODE_DISABLED)
+        id (T_DispatchCount-1)
       {
         size_t i;
-        for (i=0; i<dispatch_id_max; i++)
+        for (i=0; i<T_DispatchCount; i++)
         {
-          _protocol[i][FENCE_MODE_ENABLED] = & _default;
-          _protocol[i][FENCE_MODE_DISABLED] = & _default;
+          _protocol_fence_disabled[i] = & _default;
+          _protocol_fence_enabled[i]  = & _default;
         };
+        _protocol = _protocol_fence_disabled;
       };
 
       inline ~Dispatch () {};
@@ -69,25 +66,28 @@ namespace PAMI
       {
       };
 
-      inline pami_result_t query (size_t                id,
+      inline pami_result_t query (size_t                dispatch_id,
                                   pami_configuration_t  configuration[],
                                   size_t                num_configs)
       {
-        if (id >= dispatch_id_max) return PAMI_INVAL;
-        return _protocol[id][_mode]->getAttributes (configuration, num_configs);
+        if (dispatch_id >= T_DispatchCount) return PAMI_INVAL;
+        return _protocol[id]->getAttributes (configuration, num_configs);
       };
 
-      inline pami_result_t update (size_t                id,
+      inline pami_result_t update (size_t                dispatch_id,
                                    pami_configuration_t  configuration[],
                                    size_t                num_configs)
       {
-        if (id >= dispatch_id_max) return PAMI_INVAL;
+        if (dispatch_id >= T_DispatchCount) return PAMI_INVAL;
         return PAMI_INVAL;
       };
 
       inline void fence (bool enable)
       {
-        _mode = (fence_mode_t) enable;
+        if (enable)
+          _protocol = _protocol_fence_enabled;
+        else
+          _protocol = _protocol_fence_disabled;
       };
 
       /// "fence all"
@@ -105,32 +105,32 @@ namespace PAMI
         return PAMI_UNIMPL;
       };
 
-      inline pami_result_t set (size_t                 id,
+      inline pami_result_t set (size_t                 dispatch_id,
                                 Protocol::Send::Send * fence_supported_protocol,
                                 Protocol::Send::Send * fence_unsupported_protocol)
       {
-        if (id >= dispatch_id_max) return PAMI_INVAL;
-        if (_protocol[id][FENCE_MODE_ENABLED]  != (& _default)) return PAMI_INVAL;
-        if (_protocol[id][FENCE_MODE_DISABLED] != (& _default)) return PAMI_INVAL;
+        if (dispatch_id >= T_DispatchCount) return PAMI_INVAL;
+        if (_protocol_fence_enabled[dispatch_id]  != (& _default)) return PAMI_INVAL;
+        if (_protocol_fence_disabled[dispatch_id] != (& _default)) return PAMI_INVAL;
 
-        _protocol[id][FENCE_MODE_ENABLED]  = fence_supported_protocol;
-        _protocol[id][FENCE_MODE_DISABLED] = fence_unsupported_protocol;
+        _protocol_fence_enabled[dispatch_id]  = fence_supported_protocol;
+        _protocol_fence_disabled[dispatch_id] = fence_unsupported_protocol;
 
         return PAMI_SUCCESS;
       };
 
-      inline pami_result_t start (pami_send_t * parameters)
+      inline pami_result_t send (pami_send_t * parameters)
       {
-        size_t id = (size_t)(parameters->send.dispatch);
-        PAMI_assert_debug (id < dispatch_id_max);
-        return _protocol[id][_mode]->simple (parameters);
+        size_t dispatch_id = (size_t)(parameters->send.dispatch);
+        PAMI_assert_debug (dispatch_id < T_DispatchCount);
+        return _protocol[dispatch_id]->simple (parameters);
       };
 
-      inline pami_result_t start (pami_send_immediate_t * parameters)
+      inline pami_result_t send (pami_send_immediate_t * parameters)
       {
-        size_t id = (size_t)(parameters->dispatch);
-        PAMI_assert_debug (id < dispatch_id_max);
-        return _protocol[id][_mode]->immediate (parameters);
+        size_t dispatch_id = (size_t)(parameters->dispatch);
+        PAMI_assert_debug (dispatch_id < T_DispatchCount);
+        return _protocol[dispatch_id]->immediate (parameters);
       };
   };
 };
