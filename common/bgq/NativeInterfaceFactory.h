@@ -45,7 +45,10 @@ namespace PAMI {
       _device(device),
       _allocator(allocator)
       {	
-	COMPILE_TIME_ASSERT(sizeof(T_NI) <= T_Allocator::objsize);
+        TRACE_FN_ENTER();
+        COMPILE_TIME_ASSERT(sizeof(T_NI) <= T_Allocator::objsize);
+        TRACE_FORMAT("Allocator:  sizeof(T_NI) %zu, T_Allocator::objsize %zu",sizeof(T_NI),T_Allocator::objsize);
+        TRACE_FN_EXIT();
       }
     
 
@@ -123,7 +126,10 @@ namespace PAMI {
       _device(device),
       _allocator(allocator)
       {	
-	COMPILE_TIME_ASSERT(sizeof(T_NI) <= T_Allocator::objsize);
+        COMPILE_TIME_ASSERT(sizeof(T_NI) <= T_Allocator::objsize);
+        TRACE_FN_ENTER();
+        TRACE_FORMAT("Allocator:  sizeof(T_NI) %zu, T_Allocator::objsize %zu",sizeof(T_NI),T_Allocator::objsize);
+        TRACE_FN_EXIT();
       }
     
 

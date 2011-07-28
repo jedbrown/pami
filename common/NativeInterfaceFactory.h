@@ -6,6 +6,17 @@
 #include "algorithms/interfaces/NativeInterface.h"
 #include "algorithms/interfaces/NativeInterfaceFactory.h"
 
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
+
+#ifdef CCMI_TRACE_ALL
+#define DO_TRACE_ENTEREXIT 1
+#define DO_TRACE_DEBUG     1
+#else
+#define DO_TRACE_ENTEREXIT 0
+#define DO_TRACE_DEBUG     0
+#endif
+
 namespace PAMI {
   namespace NativeInterfaceCommon { // Common constants
 
@@ -37,7 +48,10 @@ namespace PAMI {
 	{	
 	  COMPILE_TIME_ASSERT(sizeof(T_NIAM) <= T_Allocator::objsize);
 	  COMPILE_TIME_ASSERT(sizeof(T_NIAS) <= T_Allocator::objsize);
-	  COMPILE_TIME_ASSERT(sizeof(T_Protocol) <= T_Allocator::objsize);
+		TRACE_FN_ENTER();
+		TRACE_FORMAT("Allocator:  sizeof(T_NIAM) %zu, T_Allocator::objsize %zu\n",sizeof(T_NIAM),T_Allocator::objsize);
+		TRACE_FORMAT("Allocator:  sizeof(T_NIAS) %zu, T_Allocator::objsize %zu\n",sizeof(T_NIAS),T_Allocator::objsize);
+		TRACE_FN_EXIT();
 	}
       
       virtual pami_result_t analyze(size_t context_id, void *geometry, int phase, int* flag){return PAMI_SUCCESS;};
@@ -209,8 +223,10 @@ namespace PAMI {
 	{	
 	  COMPILE_TIME_ASSERT(sizeof(T_NIAM) <= T_Allocator::objsize);
 	  COMPILE_TIME_ASSERT(sizeof(T_NIAS) <= T_Allocator::objsize);
-	  COMPILE_TIME_ASSERT(sizeof(T_Protocol1) <= T_Allocator::objsize);
-	  COMPILE_TIME_ASSERT(sizeof(T_Protocol2) <= T_Allocator::objsize);
+		TRACE_FN_ENTER();
+		TRACE_FORMAT("Allocator:  sizeof(T_NIAM) %zu, T_Allocator::objsize %zu\n",sizeof(T_NIAM),T_Allocator::objsize);
+		TRACE_FORMAT("Allocator:  sizeof(T_NIAS) %zu, T_Allocator::objsize %zu\n",sizeof(T_NIAS),T_Allocator::objsize);
+		TRACE_FN_EXIT();
 	}
       
       virtual pami_result_t analyze(size_t context_id, void *geometry, int phase, int* flag){return PAMI_SUCCESS;};
@@ -234,12 +250,7 @@ namespace PAMI {
 	//TRACE_FN_ENTER();
 	pami_result_t result = PAMI_ERROR;
 	
-	COMPILE_TIME_ASSERT(sizeof(T_NIAM) <= T_Allocator::objsize);
-	COMPILE_TIME_ASSERT(sizeof(T_NIAS) <= T_Allocator::objsize);
-	COMPILE_TIME_ASSERT(sizeof(T_Protocol1) <= T_Allocator::objsize);
-	COMPILE_TIME_ASSERT(sizeof(T_Protocol2) <= T_Allocator::objsize);
-	COMPILE_TIME_ASSERT(sizeof(Protocol::Send::Send) <= T_Allocator::objsize);
-	
+
 	// Get storage for the NI and construct it.
 	ni = (CCMI::Interfaces::NativeInterface *) _allocator.allocateObject ();
 	if (ni_type == CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED)
@@ -424,5 +435,7 @@ namespace PAMI {
     }; 
   }; //- Native Interface Common
 }; //- PAMI
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
 
 #endif

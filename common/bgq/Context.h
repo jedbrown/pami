@@ -73,7 +73,8 @@ namespace PAMI
   typedef CollRegistration::P2P::CCMIRegistration < BGQGeometry,
     ProtocolAllocator,
     CCMI::Adaptor::P2PBarrier::BinomialBarrierKey2,
-    CCMI::Adaptor::P2PBarrier::BinomialBarrierFactoryKey2 > CCMIRegistrationKey2;
+    CCMI::Adaptor::P2PBarrier::BinomialBarrierFactoryKey2,
+    0 > CCMIRegistrationKey2;
 
   typedef CollRegistration::BGQMultiRegistration < BGQGeometry, 
       ShmemDevice,
@@ -118,7 +119,7 @@ namespace PAMI
 
   // Shmem NI factory for ShmemNI_metadata<ShmemNI_AM>/ShmemNI_metadata<ShmemNI_AS> 
   // which will override analyze to only enable on shmem-only geometries
-  class ShmemNIFactory : public NativeInterfaceCommon::NativeInterfaceFactory <ProtocolAllocator,  ShmemNI_metadata<ShmemNI_AM>,  ShmemNI_metadata<ShmemNI_AS>, ShmemEager, ShmemDevice>
+  class ShmemNIFactory : public NativeInterfaceCommon::NativeInterfaceFactory <MidProtocolAllocator,  ShmemNI_metadata<ShmemNI_AM>,  ShmemNI_metadata<ShmemNI_AS>, ShmemEager, ShmemDevice>
   {
   public:
       ShmemNIFactory( pami_client_t       client,
@@ -126,8 +127,8 @@ namespace PAMI
                       size_t              clientid,
                       size_t              contextid,
                       ShmemDevice          & device,
-                      ProtocolAllocator       & allocator) : 
-          NativeInterfaceCommon::NativeInterfaceFactory<ProtocolAllocator,  ShmemNI_metadata<ShmemNI_AM>,  ShmemNI_metadata<ShmemNI_AS>, ShmemEager, ShmemDevice>( client,
+                      MidProtocolAllocator       & allocator) : 
+          NativeInterfaceCommon::NativeInterfaceFactory<MidProtocolAllocator,  ShmemNI_metadata<ShmemNI_AM>,  ShmemNI_metadata<ShmemNI_AS>, ShmemEager, ShmemDevice>( client,
                                    context,
                                    clientid,
                                    contextid,
@@ -203,11 +204,11 @@ namespace PAMI
   };
 
   // MU NI factory for MUNI_metadata<MUNI_AM>/MUNI_metadata<MUNI_AS>
-  typedef NativeInterfaceCommon::NativeInterfaceFactory <ProtocolAllocator,  MUNI_metadata<MUNI_AM>,  MUNI_metadata<MUNI_AS>, MUEager, MUDevice> MUNIFactory;
+  typedef NativeInterfaceCommon::NativeInterfaceFactory <MidProtocolAllocator,  MUNI_metadata<MUNI_AM>,  MUNI_metadata<MUNI_AS>, MUEager, MUDevice> MUNIFactory;
 
   // MU NI factory for MUNI_metadata<MUAMMulticastNI,(512-16)> which will
   // override analyze to set query-required for (short) range metadata
-  class MUAMMulticastFactory : public BGQNativeInterfaceFactory < ProtocolAllocator, MUNI_metadata<MUAMMulticastNI,(512-16)>, MUDevice, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE>
+  class MUAMMulticastFactory : public BGQNativeInterfaceFactory < BigProtocolAllocator, MUNI_metadata<MUAMMulticastNI,(512-16)>, MUDevice, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE>
   {
   public:
     MUAMMulticastFactory( pami_client_t       client,
@@ -215,8 +216,8 @@ namespace PAMI
                           size_t              clientid,
                           size_t              contextid,
                           MUDevice          & device,
-                          ProtocolAllocator       & allocator) : 
-      BGQNativeInterfaceFactory < ProtocolAllocator, MUNI_metadata<MUAMMulticastNI,(512-16)>, MUDevice, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE>
+                          BigProtocolAllocator       & allocator) : 
+      BGQNativeInterfaceFactory < BigProtocolAllocator, MUNI_metadata<MUAMMulticastNI,(512-16)>, MUDevice, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE>
         ( client,
           context,
           clientid,
@@ -273,7 +274,7 @@ namespace PAMI
   };
 
   // Composite (MU/SHMEM) NI factory for CompositeNI_metadata
-  typedef NativeInterfaceCommon::NativeInterfaceFactory2Device <ProtocolAllocator, CompositeNI_metadata<CompositeNI_AM>, CompositeNI_metadata<CompositeNI_AS>, ShmemEager, ShmemDevice, MUEager, MUDevice> CompositeNIFactory;
+  typedef NativeInterfaceCommon::NativeInterfaceFactory2Device <MidProtocolAllocator, CompositeNI_metadata<CompositeNI_AM>, CompositeNI_metadata<CompositeNI_AS>, ShmemEager, ShmemDevice, MUEager, MUDevice> CompositeNIFactory;
 
   /**
    * \brief Class containing all devices used on this platform.
@@ -663,11 +664,14 @@ namespace PAMI
         ///////////////////////////////////////////////////////////////
         // Register collectives
         ///////////////////////////////////////////////////////////////
-        if (__global.useMU())
+        TRACE_FORMAT( "<%p> Register collectives(%p,%p,%zu,%zu", this, client, this, id, clientid);
+        if ((__global.useMU()) && (__global.useshmem()))
+            _pgas_composite_registration = new(_pgas_composite_registration_storage) Composite_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _mid_protocol, Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid), _devices->_shmem[_contextid], &_dispatch.id, _geometry_map, true);
+        else if (__global.useMU())
           {
-            _pgas_mu_registration = new(_pgas_mu_registration_storage) MU_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _protocol, Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid),ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), &_dispatch.id, _geometry_map);
+            _pgas_mu_registration = new(_pgas_mu_registration_storage) MU_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _mid_protocol, Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid),ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), &_dispatch.id, _geometry_map);
           }
-        if (__global.useshmem())
+        else if (__global.useshmem())
           {
             // Can't construct these models on single process nodes (no shmem)
             if (__global.topology_local.size() > 1)
@@ -692,14 +696,10 @@ namespace PAMI
                 _shmem_native_interface  = (AllSidedShmemNI*)_shmem_native_interface_storage;
                 new (_shmem_native_interface_storage) AllSidedShmemNI(_shmemMcastModel, _shmemMsyncModel, _shmemMcombModel, client, (pami_context_t)this, id, clientid, &_dispatch.id);
 
-                _pgas_shmem_registration = new(_pgas_shmem_registration_storage) Shmem_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _protocol, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), & _dispatch.id, _geometry_map);
+                _pgas_shmem_registration = new(_pgas_shmem_registration_storage) Shmem_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _mid_protocol, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), & _dispatch.id, _geometry_map);
               }
             else TRACE_STRING("topology does not support shmem");
           }
-        if ((__global.useMU()) && (__global.useshmem()))
-            _pgas_composite_registration = new(_pgas_composite_registration_storage) Composite_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _protocol, Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid), _devices->_shmem[_contextid], &_dispatch.id, _geometry_map, true);
-
-        TRACE_FORMAT( "<%p> Register collectives(%p,%p,%p,%zu,%zu", this, _shmem_native_interface, client, this, id, clientid);
         // The multi registration will use shmem/mu if they are ctor'd above.
 
 #ifndef PAMI_ENABLE_COLLECTIVE_MULTICONTEXT
@@ -725,9 +725,11 @@ namespace PAMI
 #endif
         {
           if ((__global.useMU()) && (__global.useshmem())) {
+            COMPILE_TIME_ASSERT(sizeof(CompositeNIFactory) <= ProtocolAllocator::objsize);
+            TRACE_FORMAT("Allocator:  sizeof(CompositeNIFactory) %zu, ProtocolAllocator::objsize %zu",sizeof(CompositeNIFactory),ProtocolAllocator::objsize);
             CCMI::Interfaces::NativeInterfaceFactory *ni_factory = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
             TRACE_FORMAT("Composite CCMI NI %p, registration %p", ni_factory,  _ccmi_registration_storage);
-            new (ni_factory) CompositeNIFactory (_client, _context, _clientid, _contextid, _devices->_shmem[_contextid], _devices->_mu[_contextid], _protocol);
+            new (ni_factory) CompositeNIFactory (_client, _context, _clientid, _contextid, _devices->_shmem[_contextid], _devices->_mu[_contextid], _mid_protocol);
             _ccmi_registration =  new((CCMIRegistration*)_ccmi_registration_storage) 	
             CCMIRegistration(_client, _context, _contextid, _clientid, 
                              _protocol,
@@ -738,9 +740,11 @@ namespace PAMI
                              ni_factory);
           }
           else if (__global.useMU()) {
+            COMPILE_TIME_ASSERT(sizeof(MUNIFactory) <= ProtocolAllocator::objsize);
+            TRACE_FORMAT("Allocator:  sizeof(MUNIFactory) %zu, ProtocolAllocator::objsize %zu",sizeof(MUNIFactory),ProtocolAllocator::objsize);
             CCMI::Interfaces::NativeInterfaceFactory *ni_factory_mu = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
             TRACE_FORMAT("MU CCMI NI %p, registration %p", ni_factory_mu,  _ccmi_registration_mu_storage);
-            new (ni_factory_mu) MUNIFactory (_client, _context, _clientid, _contextid, _devices->_mu[_contextid], _protocol);
+            new (ni_factory_mu) MUNIFactory (_client, _context, _clientid, _contextid, _devices->_mu[_contextid], _mid_protocol);
             _ccmi_registration_mu =  new((CCMIRegistration*)_ccmi_registration_mu_storage) 	
             CCMIRegistration(_client, _context, _contextid, _clientid, 
                              _protocol,
@@ -751,9 +755,11 @@ namespace PAMI
                              ni_factory_mu);
           }
           else if(__global.useshmem()) { //use shmem
+            COMPILE_TIME_ASSERT(sizeof(ShmemNIFactory) <= ProtocolAllocator::objsize);
+            TRACE_FORMAT("Allocator:  sizeof(ShmemNIFactory) %zu, ProtocolAllocator::objsize %zu",sizeof(ShmemNIFactory),ProtocolAllocator::objsize);
             CCMI::Interfaces::NativeInterfaceFactory *ni_factory_shmem = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
             TRACE_FORMAT("Shmem CCMI NI %p, registration %p", ni_factory_shmem,  _ccmi_registration_shmem_storage);
-            new (ni_factory_shmem) ShmemNIFactory (_client, _context, _clientid, _contextid, _devices->_shmem[_contextid], _protocol);
+            new (ni_factory_shmem) ShmemNIFactory (_client, _context, _clientid, _contextid, _devices->_shmem[_contextid], _mid_protocol);
             _ccmi_registration_shmem =  new((CCMIRegistration*)_ccmi_registration_shmem_storage) 	
             CCMIRegistration(_client, _context, _contextid, _clientid, 
                              _protocol,
@@ -764,9 +770,11 @@ namespace PAMI
                              ni_factory_shmem);
           }        
           if (__global.useMU()) {
+            COMPILE_TIME_ASSERT(sizeof(MUAMMulticastFactory) <= ProtocolAllocator::objsize);
+            TRACE_FORMAT("Allocator:  sizeof(MUAMMulticastFactory) %zu, ProtocolAllocator::objsize %zu",sizeof(MUAMMulticastFactory),ProtocolAllocator::objsize);
             CCMI::Interfaces::NativeInterfaceFactory *ni_factory_muam = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
             TRACE_FORMAT("MU AM CCMI NI %p, registration %p", ni_factory_muam,  _ccmi_registration_muam_storage);
-            new (ni_factory_muam) MUAMMulticastFactory (_client, _context, _clientid, _contextid, _devices->_mu[_contextid], _protocol);
+            new (ni_factory_muam) MUAMMulticastFactory (_client, _context, _clientid, _contextid, _devices->_mu[_contextid], _big_protocol);
           
             _ccmi_registration_muam =  new((CCMIRegistrationKey2*)_ccmi_registration_muam_storage) 	
             CCMIRegistrationKey2(_client, _context, _contextid, _clientid, 
@@ -1385,6 +1393,8 @@ namespace PAMI
       uint8_t                      _shmemMcombModel_storage[sizeof(ShmemMcombModel)];
       uint8_t                      _shmem_native_interface_storage[sizeof(AllSidedShmemNI)];
       ProtocolAllocator            _protocol;
+      BigProtocolAllocator         _big_protocol;
+      MidProtocolAllocator         _mid_protocol;
       PlatformDeviceList          *_devices;
       MU_PGASCollreg              *_pgas_mu_registration;
       uint8_t                      _pgas_mu_registration_storage[sizeof(MU_PGASCollreg)];

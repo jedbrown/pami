@@ -117,7 +117,7 @@ namespace PAMI
       pami_result_t result = PAMI_ERROR;
 
       COMPILE_TIME_ASSERT(sizeof(T_NativeInterface) <= T_Allocator::objsize);
-      COMPILE_TIME_ASSERT(sizeof(T_Protocol) <= T_Allocator::objsize);
+      TRACE_FORMAT("Allocator:  sizeof(T_NativeInterface) %zu, T_Allocator::objsize %zu",sizeof(T_NativeInterface),T_Allocator::objsize);
 
 
       // Construct the protocol(s) using the NI dispatch function and cookie
@@ -241,9 +241,7 @@ namespace PAMI
       pami_result_t result = PAMI_ERROR;
 
       COMPILE_TIME_ASSERT(sizeof(T_NativeInterface) <= T_Allocator::objsize);
-      COMPILE_TIME_ASSERT(sizeof(T_Protocol1) <= T_Allocator::objsize);
-      COMPILE_TIME_ASSERT(sizeof(T_Protocol2) <= T_Allocator::objsize);
-      COMPILE_TIME_ASSERT(sizeof(Protocol::Send::Send) <= T_Allocator::objsize);
+      TRACE_FORMAT("Allocator:  sizeof(T_NativeInterface) %zu, T_Allocator::objsize %zu",sizeof(T_NativeInterface),T_Allocator::objsize);
 
       // Get storage for the NI and construct it.
       ni = (T_NativeInterface*) allocator.allocateObject ();

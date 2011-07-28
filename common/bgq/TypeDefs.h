@@ -96,7 +96,9 @@ namespace PAMI
 {
   typedef Geometry::Common                     BGQGeometry;
 
-  typedef MemoryAllocator<4096, 64, 16> ProtocolAllocator; /// \todo How much do we really need?  Is there a better way?
+  typedef MemoryAllocator<152,  64, 1> ProtocolAllocator; /// \todo How much do we really need?  Is there a better way?
+  typedef MemoryAllocator<1024, 64, 1> BigProtocolAllocator; /// \todo How much do we really need?  Is there a better way?
+  typedef MemoryAllocator<352,  64, 1> MidProtocolAllocator; /// \todo How much do we really need?  Is there a better way?
 
   typedef Device::MU::Context MUDevice;
 
@@ -177,7 +179,7 @@ namespace PAMI
   typedef xlpgas::CollectiveManager<MUNI_AM> MU_NBCollManager;
   typedef CollRegistration::PGASRegistration < BGQGeometry,
   MUNI_AM,
-  ProtocolAllocator,
+  MidProtocolAllocator,
   MUEager,
   ShmemEager,
   MUDevice,
@@ -188,7 +190,7 @@ namespace PAMI
   typedef xlpgas::CollectiveManager<ShmemNI_AM> Shmem_NBCollManager;
   typedef CollRegistration::PGASRegistration < BGQGeometry,
   ShmemNI_AM,
-  ProtocolAllocator,
+  MidProtocolAllocator,
   ShmemEager,
   ShmemEager,
   ShmemDevice,
@@ -199,7 +201,7 @@ namespace PAMI
   typedef xlpgas::CollectiveManager<CompositeNI_AM> Composite_NBCollManager;
   typedef CollRegistration::PGASRegistration < BGQGeometry,
   CompositeNI_AM,
-  ProtocolAllocator,
+  MidProtocolAllocator,
   MUEager,
   ShmemEager,
   MUDevice,

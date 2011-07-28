@@ -33,6 +33,6 @@
 // Enable experimental (X0) collective protocols
 //#define PAMI_ENABLE_X0_PROTOCOLS
 
-#define PAMI_ALGOLISTS_MAX_NUM 48 // Maximum number of algorithms per collective per geometry
+#define PAMI_ALGOLISTS_MAX_NUM 17 // Maximum number of algorithms per collective per geometry
 
 #endif // __common_bgq_platform_h__

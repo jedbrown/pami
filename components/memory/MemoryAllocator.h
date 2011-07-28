@@ -151,6 +151,7 @@ namespace PAMI
       // Allocate and construct a new set of objects
       unsigned i;
       pami_result_t rc;
+      TRACE_FORMAT("<%p> malloc %6.6zu (%zu * %u) T_ObjSize %u",this,sizeof(memory_object_t) * T_PREALLOC,sizeof(memory_object_t),T_PREALLOC,T_ObjSize);
       rc = PAMI::Memory::MemoryManager::heap_mm->memalign((void **)&object, T_ObjAlign, sizeof(memory_object_t) * T_PREALLOC);
       PAMI_assert_alwaysf(rc==PAMI_SUCCESS, "alloc %zu bytes failed for context\n",sizeof(memory_object_t) * T_PREALLOC);
       // "return" the newly allocated objects to the pool of free objects.

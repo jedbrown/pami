@@ -37,12 +37,14 @@ namespace PAMI
       template < class T_Geometry,
         class T_Allocator,
         class T_BinomialBarrier,
-        class T_BinomialBarrierFactory>
+        class T_BinomialBarrierFactory,
+        int   T_Support_One_Task=1>
       class CCMIRegistration :
         public CollRegistration < PAMI::CollRegistration::P2P::CCMIRegistration < T_Geometry,
         T_Allocator, 
         T_BinomialBarrier,
-        T_BinomialBarrierFactory>, 
+        T_BinomialBarrierFactory,
+        T_Support_One_Task>, 
         T_Geometry >
       {
       protected:
@@ -61,7 +63,8 @@ namespace PAMI
               CollRegistration < PAMI::CollRegistration::P2P::CCMIRegistration < T_Geometry,
           T_Allocator, 
           T_BinomialBarrier,
-          T_BinomialBarrierFactory>, 	      
+          T_BinomialBarrierFactory,
+          T_Support_One_Task>, 	      
           T_Geometry > (),
           _client(client),
           _context(context),
@@ -138,7 +141,7 @@ namespace PAMI
         {
           TRACE_FN_ENTER();
           TRACE_FORMAT( "<%p>NI Factory %p, local_size %zu, global_size %zu", this, nifactory, local_size, global_size);
-          setupOneTaskFactories();
+          if(T_Support_One_Task) setupOneTaskFactories();
     
           setupFactories ();
 
@@ -156,6 +159,8 @@ namespace PAMI
 
             if(geometry->size() == 1)//if onetask geometry
             {
+              if(T_Support_One_Task==0) {TRACE_FN_EXIT(); return PAMI_SUCCESS;}
+
               pami_xfer_t xfer = {0};
               if (_onetask_barrier_factory == NULL) // nothing setup?
                 ; // then do nothing - no shmem on 1 process per node (and other protocol is disabled)
@@ -625,6 +630,8 @@ namespace PAMI
             
             //PAMI_assert(result == PAMI_SUCCESS);
             factory = NULL;
+            COMPILE_TIME_ASSERT(sizeof(T_Factory) <= T_Allocator::objsize);
+            TRACE_FORMAT("Allocator:  sizeof(T_Factory) %zu, T_Allocator::objsize %zu",sizeof(T_Factory),T_Allocator::objsize);
             if (result == PAMI_SUCCESS)
               factory = (T_Factory*) _allocator.allocateObject ();
             
@@ -640,6 +647,7 @@ namespace PAMI
             TRACE_FN_ENTER();
             DO_DEBUG((templateName<T_Factory>()));
             COMPILE_TIME_ASSERT(sizeof(T_Factory) <= T_Allocator::objsize);
+            TRACE_FORMAT("Allocator:  sizeof(T_Factory) %zu, T_Allocator::objsize %zu",sizeof(T_Factory),T_Allocator::objsize);
             factory = (T_Factory*) _allocator.allocateObject ();
             TRACE_FORMAT("<%p> factory %p", this, factory);            
             TRACE_FN_EXIT();

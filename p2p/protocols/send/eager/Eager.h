@@ -84,7 +84,7 @@ namespace PAMI
                   }
                 TRACE_FN_EXIT();
               };
-
+              
               virtual ~EagerImpl () {};
 
               /// \note This is required to make "C" programs link successfully
