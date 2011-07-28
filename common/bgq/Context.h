@@ -1073,7 +1073,7 @@ namespace PAMI
                   Eager <Device::MU::PacketModel>::generate (id, fn.p2p, cookie,
                                                              _devices->_mu[_contextid],
                                                              self, _context, options,
-                                                             _protocol, result);
+                                                             __global.heap_mm, result);
                 _dispatch.set (id, send, send);
               }
             else if ((options.use_shmem == PAMI_HINT_ENABLE) || (!__global.useMU() && __global.useshmem()))
@@ -1082,7 +1082,7 @@ namespace PAMI
                   Eager <ShmemPacketModel>::generate (id, fn.p2p, cookie,
                                                              _devices->_shmem[_contextid],
                                                              self, _context, options,
-                                                             _protocol, result);
+                                                             __global.heap_mm, result);
                 _dispatch.set (id, send, send);
               }
             else
@@ -1092,7 +1092,7 @@ namespace PAMI
                                                              _devices->_shmem[_contextid],
                                                              _devices->_mu[_contextid],
                                                              self, _context, options,
-                                                             _protocol, result);
+                                                             __global.heap_mm, result);
                 _dispatch.set (id, send, send);
               }
 

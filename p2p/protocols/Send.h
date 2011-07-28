@@ -15,6 +15,11 @@
 
 #include <pami.h>
 
+#include "util/trace.h"
+
+#define DO_TRACE_ENTEREXIT 0
+#define DO_TRACE_DEBUG     0
+
 namespace PAMI
 {
   namespace Protocol
@@ -97,16 +102,25 @@ namespace PAMI
           virtual pami_result_t getAttributes (pami_configuration_t  configuration[],
                                                size_t                num_configs)
           {
+            TRACE_FN_ENTER();
+            TRACE_FORMAT( "return PAMI_ERROR (%d)", PAMI_ERROR);
+            TRACE_FN_EXIT();
             return PAMI_INVAL;
           };
 
           virtual pami_result_t immediate (pami_send_immediate_t * parameters)
           {
+            TRACE_FN_ENTER();
+            TRACE_FORMAT( "return PAMI_ERROR (%d)", PAMI_ERROR);
+            TRACE_FN_EXIT();
             return PAMI_ERROR;
           };
 
           virtual pami_result_t simple (pami_send_t * parameters)
           {
+            TRACE_FN_ENTER();
+            TRACE_FORMAT( "return PAMI_ERROR (%d)", PAMI_ERROR);
+            TRACE_FN_EXIT();
             return PAMI_ERROR;
           };
 
@@ -114,6 +128,8 @@ namespace PAMI
     };   // PAMI::Protocol::Send namespace
   };     // PAMI::Protocol namespace
 };       // PAMI namespace
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
 
 #endif // __pami_p2p_protocols_send_h__
 

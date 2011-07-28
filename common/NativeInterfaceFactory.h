@@ -92,7 +92,7 @@ namespace PAMI {
 							  origin,
 							  _context,
 							  (pami_dispatch_hint_t){0},
-							  _allocator,
+							  __global.heap_mm,
 							  result);
 	    if (ni_type == CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED)
 	      ((T_NIAS *)ni)->setMcastProtocol(dispatch, protocol);
@@ -116,7 +116,7 @@ namespace PAMI {
 							   origin,
 							   _context,
 							   (pami_dispatch_hint_t){0},
-							   _allocator,
+							   __global.heap_mm,
 							   result);
 	    if (ni_type == CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED)
 	      ((T_NIAS *)ni)->setM2mProtocol(dispatch, protocol);
@@ -141,7 +141,7 @@ namespace PAMI {
 							   origin,
 							   _context,
 							   (pami_dispatch_hint_t){0},
-							   _allocator,
+							   __global.heap_mm,
 							   result);
 	    if (ni_type == CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED)
 	      ((T_NIAS *)ni)->setSendProtocol(dispatch, protocol);
@@ -161,7 +161,7 @@ namespace PAMI {
 							   origin,							   
 							   _context,
 							   (pami_dispatch_hint_t){0},
-							   _allocator,
+							   __global.heap_mm,
 							   result);
 	    //ni->setSendPWQProtocol(dispatch, protocol);
 	    if (ni_type == CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED)
@@ -272,7 +272,7 @@ namespace PAMI {
 							   origin,
 							   _context,
 							   (pami_dispatch_hint_t){0},
-							   _allocator,
+							   __global.heap_mm,
 							   result);
 	  protocol2 = (T_Protocol2*) T_Protocol2::generate(dispatch,
 							   fn,
@@ -281,14 +281,14 @@ namespace PAMI {
 							   origin,
 							   _context,
 							   (pami_dispatch_hint_t){0},
-							   _allocator,
+							   __global.heap_mm,
 							   result);
 	  
 	  // Construct the composite from the two protocols
 	  composite = (Protocol::Send::SendPWQ<Protocol::Send::Send>*)
 	    Protocol::Send::Factory::generate(protocol1,
 					      protocol2,
-					      _allocator,
+					      __global.heap_mm,
 					      result);
 	  // Set the composite protocol into the NI
 	  //ni->setMcastProtocol(dispatch, composite);
@@ -314,7 +314,7 @@ namespace PAMI {
 							   origin,
 							   _context,
 							   (pami_dispatch_hint_t){0},
-							   _allocator,
+							   __global.heap_mm,
 							   result);
 	  protocol2 = (T_Protocol2*) T_Protocol2::generate(dispatch,
 							   fn,
@@ -323,13 +323,13 @@ namespace PAMI {
 							   origin,
 							   _context,
 							   (pami_dispatch_hint_t){0},
-							   _allocator,
+							   __global.heap_mm,
 							   result);
 	  // Construct the composite from the two protocols
 	  composite = (Protocol::Send::SendPWQ<Protocol::Send::Send>*)
 	    Protocol::Send::Factory::generate(protocol1,
 					      protocol2,
-					      _allocator,
+					      __global.heap_mm,
 					      result);
 	  // Set the composite protocol into the NI
 	  //ni->setM2mProtocol(dispatch, composite);
@@ -355,7 +355,7 @@ namespace PAMI {
 							   origin,
 							   _context,
 							   (pami_dispatch_hint_t){0},
-							   _allocator,
+							   __global.heap_mm,
 							   result);
 	  protocol2 = (T_Protocol2*) T_Protocol2::generate(dispatch,
 							   fn,
@@ -364,13 +364,13 @@ namespace PAMI {
 							   origin,
 							   _context,
 							   (pami_dispatch_hint_t){0},
-							   _allocator,
+							   __global.heap_mm,
 							   result);
 	  // Construct the composite from the two protocols
 	  composite = (Protocol::Send::SendPWQ<Protocol::Send::Send>*)
 	    Protocol::Send::Factory::generate(protocol1,
 					      protocol2,
-					      _allocator,
+					      __global.heap_mm,
 					      result);
 	  // Set the composite protocol into the NI
 	  //ni->setSendProtocol(dispatch, composite);	  	
@@ -392,7 +392,7 @@ namespace PAMI {
 							   origin,
 							   _context,
 							   (pami_dispatch_hint_t){0},
-							   _allocator,
+							   __global.heap_mm,
 							   result);
 	  protocol2 = (T_Protocol2*) T_Protocol2::generate(dispatch,
 							   fn,
@@ -401,13 +401,13 @@ namespace PAMI {
 							   origin,
 							   _context,
 							   (pami_dispatch_hint_t){0},
-							   _allocator,
+							   __global.heap_mm,
 							   result);
 	  // Construct the composite from the two protocols
 	  composite = (Protocol::Send::SendPWQ<Protocol::Send::Send>*)
 	    Protocol::Send::Factory::generate(protocol1,
 					      protocol2,
-					      _allocator,
+					      __global.heap_mm,
 					      result);
 	  // Set the composite protocol into the NI
 	  //ni->setSendPWQProtocol(dispatch, composite);

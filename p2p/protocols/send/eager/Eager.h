@@ -21,9 +21,10 @@
 #include "p2p/protocols/Send.h"
 #include "p2p/protocols/send/eager/EagerSimple.h"
 
-#ifndef TRACE_ERR
-#define TRACE_ERR(x) // fprintf x
-#endif
+#include "util/trace.h"
+
+#define DO_TRACE_ENTEREXIT 0
+#define DO_TRACE_DEBUG     0
 
 namespace PAMI
 {
@@ -74,12 +75,14 @@ namespace PAMI
                   _primary (device0),
                   _secondary (device1)
               {
+                TRACE_FN_ENTER();
                 status = _primary.initialize (dispatch, dispatch_fn, cookie, origin, context, hint);
 
                 if (T_Composite && status == PAMI_SUCCESS)
                   {
                     status = _secondary.initialize (dispatch, dispatch_fn, cookie, origin, context, hint);
                   }
+                TRACE_FN_EXIT();
               };
 
               virtual ~EagerImpl () {};
@@ -99,10 +102,12 @@ namespace PAMI
               virtual pami_result_t getAttributes (pami_configuration_t  configuration[],
                                                    size_t                num_configs)
               {
+                TRACE_FN_ENTER();
                 size_t i;
 
                 for (i = 0; i < num_configs; i++)
                   {
+                    TRACE_FORMAT( "configuration[%zu].name = %d", i, configuration[i].name);
                     switch (configuration[i].name)
                       {
                         case PAMI_DISPATCH_RECV_IMMEDIATE_MAX:
@@ -114,7 +119,9 @@ namespace PAMI
                                 configuration[i].value.intval = EagerSimple<T_ModelSecondary, T_Option>::recv_immediate_max;
                             }
 
+                          TRACE_FORMAT( "configuration[%zu].value.intval = %zu", i, configuration[i].value.intval);
                           break;
+
                         case PAMI_DISPATCH_SEND_IMMEDIATE_MAX:
                           configuration[i].value.intval = T_ModelPrimary::packet_model_immediate_bytes;
 
@@ -124,13 +131,17 @@ namespace PAMI
                                 configuration[i].value.intval = T_ModelSecondary::packet_model_immediate_bytes;
                             }
 
+                          TRACE_FORMAT( "configuration[%zu].value.intval = %zu", i, configuration[i].value.intval);
                           break;
+
                         default:
+                          TRACE_FN_EXIT();
                           return PAMI_INVAL;
                           break;
                       };
                   };
 
+                TRACE_FN_EXIT();
                 return PAMI_SUCCESS;
               };
 
@@ -141,7 +152,7 @@ namespace PAMI
               ///
               virtual pami_result_t immediate (pami_send_immediate_t * parameters)
               {
-                TRACE_ERR((stderr, ">> EagerImpl::immediate()\n"));
+                TRACE_FN_ENTER();
                 pami_result_t result = _primary.immediate_impl (parameters);
 
                 if (T_Composite && result != PAMI_SUCCESS)
@@ -150,7 +161,7 @@ namespace PAMI
 
                   }
 
-                TRACE_ERR((stderr, "<< EagerImpl::immediate()\n"));
+                TRACE_FN_EXIT();
                 return result;
               };
 
@@ -161,7 +172,7 @@ namespace PAMI
               ///
               virtual pami_result_t simple (pami_send_t * parameters)
               {
-                TRACE_ERR((stderr, ">> EagerImpl::simple()\n"));
+                TRACE_FN_ENTER();
                 pami_result_t result = _primary.simple_impl (parameters);
 
                 if (T_Composite && result != PAMI_SUCCESS)
@@ -169,7 +180,7 @@ namespace PAMI
                     result = _secondary.simple_impl (parameters);
                   }
 
-                TRACE_ERR((stderr, "<< EagerImpl::simple()\n"));
+                TRACE_FN_EXIT();
                 return result;
               };
 
@@ -182,7 +193,7 @@ namespace PAMI
 
         protected:
 
-          template <class T_Allocator, class T_DevicePrimary, class T_DeviceSecondary>
+          template <class T_MemoryManager, class T_DevicePrimary, class T_DeviceSecondary>
           static Send * generate (size_t                       dispatch,
                                   pami_dispatch_p2p_function   dispatch_fn,
                                   void                       * cookie,
@@ -191,11 +202,11 @@ namespace PAMI
                                   pami_endpoint_t              origin,
                                   pami_context_t               context,
                                   pami_dispatch_hint_t         options,
-                                  T_Allocator                & allocator,
+                                  T_MemoryManager            * mm,
                                   pami_result_t              & result,
                                   bool                         composite)
           {
-            TRACE_ERR((stderr, ">> Eager::generate() dispatch %zu\n", dispatch));
+            TRACE_FN_ENTER();
 
             // Return an error for invalid / unimplemented 'hard' hints.
             if (
@@ -204,10 +215,11 @@ namespace PAMI
               false)
               {
                 result = PAMI_ERROR;
+                TRACE_FN_ENTER();
                 return (Send *) NULL;
               }
 
-            void * eager = allocator.allocateObject ();
+            void * eager = NULL;
 
             if (options.queue_immediate == PAMI_HINT_DISABLE)
               {
@@ -220,35 +232,53 @@ namespace PAMI
                     if (options.recv_immediate == PAMI_HINT_ENABLE)
                       {
                         const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEON);
-                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, true>) <= T_Allocator::objsize);
-                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, false>) <= T_Allocator::objsize);
 
                         if (composite)
+                        {
+                          result = mm->memalign((void **)&eager, 16, sizeof(EagerImpl<hint, true>));
+                          PAMI_assert_alwaysf(result == PAMI_SUCCESS, "Failed to get memory for eager send protocol");
                           new (eager) EagerImpl<hint, true> (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        }
                         else
+                        {
+                          result = mm->memalign((void **)&eager, 16, sizeof(EagerImpl<hint, false>));
+                          PAMI_assert_alwaysf(result == PAMI_SUCCESS, "Failed to get memory for eager send protocol");
                           new (eager) EagerImpl<hint, false>(dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        }
                       }
                     else if (options.recv_immediate == PAMI_HINT_DISABLE)
                       {
                         const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEOFF);
-                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, true>) <= T_Allocator::objsize);
-                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, false>) <= T_Allocator::objsize);
 
                         if (composite)
+                        {
+                          result = mm->memalign((void **)&eager, 16, sizeof(EagerImpl<hint, true>));
+                          PAMI_assert_alwaysf(result == PAMI_SUCCESS, "Failed to get memory for eager send protocol");
                           new (eager) EagerImpl<hint, true> (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        }
                         else
+                        {
+                          result = mm->memalign((void **)&eager, 16, sizeof(EagerImpl<hint, false>));
+                          PAMI_assert_alwaysf(result == PAMI_SUCCESS, "Failed to get memory for eager send protocol");
                           new (eager) EagerImpl<hint, false>(dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        }
                       }
                     else
                       {
                         const configuration_t hint = (configuration_t) (long_header);
-                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, true>) <= T_Allocator::objsize);
-                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, false>) <= T_Allocator::objsize);
 
                         if (composite)
+                        {
+                          result = mm->memalign((void **)&eager, 16, sizeof(EagerImpl<hint, true>));
+                          PAMI_assert_alwaysf(result == PAMI_SUCCESS, "Failed to get memory for eager send protocol");
                           new (eager) EagerImpl<hint, true> (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        }
                         else
+                        {
+                          result = mm->memalign((void **)&eager, 16, sizeof(EagerImpl<hint, false>));
+                          PAMI_assert_alwaysf(result == PAMI_SUCCESS, "Failed to get memory for eager send protocol");
                           new (eager) EagerImpl<hint, false>(dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        }
                       }
                   }
                 else
@@ -258,35 +288,53 @@ namespace PAMI
                     if (options.recv_immediate == PAMI_HINT_ENABLE)
                       {
                         const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEON);
-                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, true>) <= T_Allocator::objsize);
-                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, false>) <= T_Allocator::objsize);
 
                         if (composite)
+                        {
+                          result = mm->memalign((void **)&eager, 16, sizeof(EagerImpl<hint, true>));
+                          PAMI_assert_alwaysf(result == PAMI_SUCCESS, "Failed to get memory for eager send protocol");
                           new (eager) EagerImpl<hint, true> (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        }
                         else
+                        {
+                          result = mm->memalign((void **)&eager, 16, sizeof(EagerImpl<hint, false>));
+                          PAMI_assert_alwaysf(result == PAMI_SUCCESS, "Failed to get memory for eager send protocol");
                           new (eager) EagerImpl<hint, false>(dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        }
                       }
                     else if (options.recv_immediate == PAMI_HINT_DISABLE)
                       {
                         const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEOFF);
-                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, true>) <= T_Allocator::objsize);
-                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, false>) <= T_Allocator::objsize);
 
                         if (composite)
+                        {
+                          result = mm->memalign((void **)&eager, 16, sizeof(EagerImpl<hint, true>));
+                          PAMI_assert_alwaysf(result == PAMI_SUCCESS, "Failed to get memory for eager send protocol");
                           new (eager) EagerImpl<hint, true> (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        }
                         else
+                        {
+                          result = mm->memalign((void **)&eager, 16, sizeof(EagerImpl<hint, false>));
+                          PAMI_assert_alwaysf(result == PAMI_SUCCESS, "Failed to get memory for eager send protocol");
                           new (eager) EagerImpl<hint, false>(dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        }
                       }
                     else
                       {
                         const configuration_t hint = (configuration_t) (long_header);
-                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, true>) <= T_Allocator::objsize);
-                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, false>) <= T_Allocator::objsize);
 
                         if (composite)
+                        {
+                          result = mm->memalign((void **)&eager, 16, sizeof(EagerImpl<hint, true>));
+                          PAMI_assert_alwaysf(result == PAMI_SUCCESS, "Failed to get memory for eager send protocol");
                           new (eager) EagerImpl<hint, true> (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        }
                         else
+                        {
+                          result = mm->memalign((void **)&eager, 16, sizeof(EagerImpl<hint, false>));
+                          PAMI_assert_alwaysf(result == PAMI_SUCCESS, "Failed to get memory for eager send protocol");
                           new (eager) EagerImpl<hint, false>(dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        }
                       }
                   }
 
@@ -302,35 +350,53 @@ namespace PAMI
                     if (options.recv_immediate == PAMI_HINT_ENABLE)
                       {
                         const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEON);
-                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, true>) <= T_Allocator::objsize);
-                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, false>) <= T_Allocator::objsize);
 
                         if (composite)
+                        {
+                          result = mm->memalign((void **)&eager, 16, sizeof(EagerImpl<hint, true>));
+                          PAMI_assert_alwaysf(result == PAMI_SUCCESS, "Failed to get memory for eager send protocol");
                           new (eager) EagerImpl<hint, true> (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        }
                         else
+                        {
+                          result = mm->memalign((void **)&eager, 16, sizeof(EagerImpl<hint, false>));
+                          PAMI_assert_alwaysf(result == PAMI_SUCCESS, "Failed to get memory for eager send protocol");
                           new (eager) EagerImpl<hint, false>(dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        }
                       }
                     else if (options.recv_immediate == PAMI_HINT_DISABLE)
                       {
                         const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEOFF);
-                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, true>) <= T_Allocator::objsize);
-                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, false>) <= T_Allocator::objsize);
 
                         if (composite)
+                        {
+                          result = mm->memalign((void **)&eager, 16, sizeof(EagerImpl<hint, true>));
+                          PAMI_assert_alwaysf(result == PAMI_SUCCESS, "Failed to get memory for eager send protocol");
                           new (eager) EagerImpl<hint, true> (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        }
                         else
+                        {
+                          result = mm->memalign((void **)&eager, 16, sizeof(EagerImpl<hint, false>));
+                          PAMI_assert_alwaysf(result == PAMI_SUCCESS, "Failed to get memory for eager send protocol");
                           new (eager) EagerImpl<hint, false>(dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        }
                       }
                     else
                       {
                         const configuration_t hint = (configuration_t) (long_header);
-                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, true>) <= T_Allocator::objsize);
-                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, false>) <= T_Allocator::objsize);
 
                         if (composite)
+                        {
+                          result = mm->memalign((void **)&eager, 16, sizeof(EagerImpl<hint, true>));
+                          PAMI_assert_alwaysf(result == PAMI_SUCCESS, "Failed to get memory for eager send protocol");
                           new (eager) EagerImpl<hint, true> (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        }
                         else
+                        {
+                          result = mm->memalign((void **)&eager, 16, sizeof(EagerImpl<hint, false>));
+                          PAMI_assert_alwaysf(result == PAMI_SUCCESS, "Failed to get memory for eager send protocol");
                           new (eager) EagerImpl<hint, false>(dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        }
                       }
                   }
                 else
@@ -340,35 +406,53 @@ namespace PAMI
                     if (options.recv_immediate == PAMI_HINT_ENABLE)
                       {
                         const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEON);
-                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, true>) <= T_Allocator::objsize);
-                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, false>) <= T_Allocator::objsize);
 
                         if (composite)
+                        {
+                          result = mm->memalign((void **)&eager, 16, sizeof(EagerImpl<hint, true>));
+                          PAMI_assert_alwaysf(result == PAMI_SUCCESS, "Failed to get memory for eager send protocol");
                           new (eager) EagerImpl<hint, true> (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        }
                         else
+                        {
+                          result = mm->memalign((void **)&eager, 16, sizeof(EagerImpl<hint, false>));
+                          PAMI_assert_alwaysf(result == PAMI_SUCCESS, "Failed to get memory for eager send protocol");
                           new (eager) EagerImpl<hint, false>(dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        }
                       }
                     else if (options.recv_immediate == PAMI_HINT_DISABLE)
                       {
                         const configuration_t hint = (configuration_t) (long_header | RECV_IMMEDIATE_FORCEOFF);
-                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, true>) <= T_Allocator::objsize);
-                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, false>) <= T_Allocator::objsize);
 
                         if (composite)
+                        {
+                          result = mm->memalign((void **)&eager, 16, sizeof(EagerImpl<hint, true>));
+                          PAMI_assert_alwaysf(result == PAMI_SUCCESS, "Failed to get memory for eager send protocol");
                           new (eager) EagerImpl<hint, true> (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        }
                         else
+                        {
+                          result = mm->memalign((void **)&eager, 16, sizeof(EagerImpl<hint, false>));
+                          PAMI_assert_alwaysf(result == PAMI_SUCCESS, "Failed to get memory for eager send protocol");
                           new (eager) EagerImpl<hint, false>(dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        }
                       }
                     else
                       {
                         const configuration_t hint = (configuration_t) (long_header);
-                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, true>) <= T_Allocator::objsize);
-                        COMPILE_TIME_ASSERT(sizeof(EagerImpl<hint, false>) <= T_Allocator::objsize);
 
                         if (composite)
+                        {
+                          result = mm->memalign((void **)&eager, 16, sizeof(EagerImpl<hint, true>));
+                          PAMI_assert_alwaysf(result == PAMI_SUCCESS, "Failed to get memory for eager send protocol");
                           new (eager) EagerImpl<hint, true> (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        }
                         else
+                        {
+                          result = mm->memalign((void **)&eager, 16, sizeof(EagerImpl<hint, false>));
+                          PAMI_assert_alwaysf(result == PAMI_SUCCESS, "Failed to get memory for eager send protocol");
                           new (eager) EagerImpl<hint, false>(dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, result);
+                        }
                       }
                   }
 
@@ -376,17 +460,19 @@ namespace PAMI
 
             if (result != PAMI_SUCCESS)
               {
-                allocator.returnObject (eager);
+                if (eager != NULL)
+                  mm->free(eager);
                 eager = NULL;
               }
 
-            TRACE_ERR((stderr, "<< Eager::generate(), eager = %p, result = %d, dispatch = %zu\n", eager, result, dispatch));
+            TRACE_FORMAT( "eager = %p, result = %d, dispatch = %zu", eager, result, dispatch);
+            TRACE_FN_EXIT();
             return (Send *) eager;
           };
 
         public:
 
-          template <class T_Allocator, class T_DevicePrimary, class T_DeviceSecondary>
+          template <class T_MemoryManager, class T_DevicePrimary, class T_DeviceSecondary>
           static Send * generate (size_t                       dispatch,
                                   pami_dispatch_p2p_function   dispatch_fn,
                                   void                       * cookie,
@@ -395,13 +481,13 @@ namespace PAMI
                                   pami_endpoint_t              origin,
                                   pami_context_t               context,
                                   pami_dispatch_hint_t         options,
-                                  T_Allocator                & allocator,
+                                  T_MemoryManager            * mm,
                                   pami_result_t              & result)
           {
-            return generate (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, allocator, result, true);
+            return generate (dispatch, dispatch_fn, cookie, device0, device1, origin, context, options, mm, result, true);
           };
 
-          template <class T_Allocator, class T_Device>
+          template <class T_MemoryManager, class T_Device>
           static Send * generate (size_t                       dispatch,
                                   pami_dispatch_p2p_function   dispatch_fn,
                                   void                       * cookie,
@@ -409,16 +495,18 @@ namespace PAMI
                                   pami_endpoint_t              origin,
                                   pami_context_t               context,
                                   pami_dispatch_hint_t         options,
-                                  T_Allocator                & allocator,
+                                  T_MemoryManager            * mm,
                                   pami_result_t              & result)
           {
-            return generate (dispatch, dispatch_fn, cookie, device, device, origin, context, options, allocator, result, false);
+            return generate (dispatch, dispatch_fn, cookie, device, device, origin, context, options, mm, result, false);
           };
       };     // PAMI::Protocol::Send::Eager class
     };       // PAMI::Protocol::Send namespace
   };         // PAMI::Protocol namespace
 };           // PAMI namespace
-#undef TRACE_ERR
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
+
 #endif // __pami_p2p_protocol_send_eager_eager_h__
 
 //

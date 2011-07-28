@@ -634,7 +634,7 @@ namespace PAMI
                   Eager <MPIPacketModel>::generate (id, fn.p2p, cookie,
                                                     *_mpi,
                                                     self, _context, options,
-                                                    _protocol, result);
+                                                    __global.heap_mm, result);
               }
 #ifdef ENABLE_SHMEM_DEVICE
             else if (options.use_shmem == PAMI_HINT_ENABLE)
@@ -643,7 +643,7 @@ namespace PAMI
                   Eager <ShmemPacketModel>::generate (id, fn.p2p, cookie,
                                                              _devices->_shmem[_contextid],
                                                              self, _context, options,
-                                                             _protocol, result);
+                                                             __global.heap_mm, result);
               }
 #endif
             else
@@ -654,12 +654,12 @@ namespace PAMI
                                                              _devices->_shmem[_contextid],
                                                              *_mpi,
                                                              self, _context, options,
-                                                             _protocol, result);
+                                                             __global.heap_mm, result);
 #else
                   Eager <MPIPacketModel>::generate (id, fn.p2p, cookie,
                                                     *_mpi,
                                                     self, _context, options,
-                                                    _protocol, result);
+                                                    __global.heap_mm, result);
 #endif
               }
           } // end dispatch[id][0]==null

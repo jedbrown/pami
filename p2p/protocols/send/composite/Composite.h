@@ -35,21 +35,22 @@ namespace PAMI
 
       namespace Factory
       {
-        template <class T_Primary, class T_Secondary, class T_Allocator>
-        static Composite<T_Primary, T_Secondary> * generate (T_Primary    * primary,
-                                                             T_Secondary  * secondary,
-                                                             T_Allocator  & allocator,
-                                                             pami_result_t & result)
+        template <class T_Primary, class T_Secondary, class T_MemoryManager>
+        static Composite<T_Primary, T_Secondary> * generate (T_Primary       * primary,
+                                                             T_Secondary     * secondary,
+                                                             T_MemoryManager * mm,
+                                                             pami_result_t   & result)
         {
           TRACE_ERR((stderr, ">> Send::Factory::generate() [Composite]\n"));
-          COMPILE_TIME_ASSERT(sizeof(Composite<T_Primary, T_Secondary>) <= T_Allocator::objsize);
 
-          void * composite = allocator.allocateObject ();
+          void * composite = NULL;
+          result = mm->memalign((void **)&composite, 16, sizeof(Composite<T_Primary, T_Secondary>));
+          PAMI_assert_alwaysf(result == PAMI_SUCCESS, "Failed to get memory for composite send protocol");
           new (composite) Composite<T_Primary, T_Secondary> (primary, secondary, result);
 
           if (result != PAMI_SUCCESS)
             {
-              allocator.returnObject (composite);
+              mm->free (composite);
               composite = NULL;
             }
 

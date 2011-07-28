@@ -243,7 +243,7 @@ namespace PAMI
           Eager <ShmemModel>::generate (id, fn.p2p, cookie,
                                         ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid),
                                         self, _context, options,
-                                        _protocol, result);
+                                        __global.heap_mm, result);
 
         _dispatch.set (id, send, send);
 /*
