@@ -156,7 +156,7 @@ namespace PAMI
       }
 
 
-     template <class T_Allocator>
+     template <class T_MemoryManager>
      static inline SendWrapper * generate (size_t                      dispatch,
                                            pami_dispatch_p2p_function  dispatch_fn,
                                            void                      * cookie,
@@ -164,15 +164,16 @@ namespace PAMI
                                            pami_endpoint_t             origin,
                                            pami_context_t              context,
                                            pami_dispatch_hint_t        hint,
-                                           T_Allocator               & allocator,
+                                           T_MemoryManager           * mm,
                                            pami_result_t             & result)
       {
-        COMPILE_TIME_ASSERT(sizeof(SendWrapper) <= T_Allocator::objsize);
-        SendWrapper * sw = (SendWrapper *) allocator.allocateObject ();
+        SendWrapper * sw = NULL;
+        result = mm->memalign((void **)&sw, 16, sizeof(SendWrapper));
+        PAMI_assert_alwaysf(result == PAMI_SUCCESS, "Failed to get memory for send wrapper");
         new ((void *)sw) SendWrapper (dispatch, dispatch_fn, cookie, device, origin, hint, result);
         if (result != PAMI_SUCCESS)
             {
-              allocator.returnObject (sw);
+              mm->free(sw);
               sw = NULL;
             }
         return sw;
