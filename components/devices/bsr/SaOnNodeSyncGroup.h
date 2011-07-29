@@ -105,8 +105,10 @@ void SaOnNodeSyncGroup::NbBarrier()
 
 inline
 SaOnNodeSyncGroup::SaOnNodeSyncGroup():
-    seq(0),
     is_leader(0),
+    job_key(0),
+    unique_key(0),
+    seq(0),
     sa(NULL),
     multi_load(false),
     nb_barrier_stage(2),

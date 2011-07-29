@@ -153,8 +153,9 @@ SharedArray::RC SharedArray::PosixShmDestroy()
         shm_size = 0;
         // if ctrl_block is not NULL; shm_unlink is called already
         ctrl_block = NULL;
+        ITRC(IT_BSR, "SharedArray: PosixShmDestroy <%s> finished\n", shm_str->c_str());
     }
-    ITRC(IT_BSR, "SharedArray: PosixShmDestroy <%s> finished\n", shm_str->c_str());
+    ITRC(IT_BSR, "SharedArray: PosixShmDestroy finished without being initialized.\n");
     return SUCCESS;
 }
 

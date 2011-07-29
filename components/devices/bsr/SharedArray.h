@@ -213,6 +213,8 @@ inline SharedArray::SharedArray():
                   member_cnt(0),
                   is_leader(false),
                   shm_id(-1),
+                  shm_str(NULL),
+                  shm_size(0),
                   shm_seg(NULL),
                   ctrl_block(NULL){};
 

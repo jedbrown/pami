@@ -98,7 +98,8 @@ Bsr::Bsr() :
     bsr_id(-1),
     bsr_size(0),
     bsr_addr(NULL),
-    bsr_state(ST_NONE){};
+    bsr_state(ST_NONE),
+    shm(NULL) {};
 
 /*!
  * \brief Default destructor.

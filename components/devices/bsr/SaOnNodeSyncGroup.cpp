@@ -34,7 +34,7 @@ SaOnNodeSyncGroup::SetupState SaOnNodeSyncGroup::Init_bsr()
             return BSR_ST;
         default:
             ITRC(IT_BSR, "(%d)SaOnNodeSyncGroup: BSR setup failed with (%d)\n",
-                    sa_rc);
+                    this->member_id, sa_rc);
             return BSR_FAIL_ST;
     }
 }
@@ -55,7 +55,7 @@ SaOnNodeSyncGroup::SetupState SaOnNodeSyncGroup::Init_shm()
             return SHM_ST;
         default:
             ITRC(IT_BSR, "(%d)SaOnNodeSyncGroup: SHM setup failed with (%d)\n",
-                    sa_rc);
+                    this->member_id, sa_rc);
             return FAIL_ST;
     }
 }
