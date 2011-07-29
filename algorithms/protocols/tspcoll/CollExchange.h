@@ -293,14 +293,11 @@ inline bool xlpgas::CollExchange<T_NI>::isdone() const
 template <class T_NI>
 inline void xlpgas::CollExchange<T_NI>::send (int phase)
 {
-
   TRACE((stderr,"L%d:%p SEND tag=%d ctr=%d phase=%d tgt=%d nbytes=%zu  sbuf=%p sbufln=%zu numphases=%d  PHASE inside _cplt=%d and inside _headers=%d\n",
-	 XLPGAS_MYNODE, this->_pami_ctxt, _header[_phase].tag, _counter, phase,
+          this->rank(), this->_pami_ctxt, _header[_phase].tag, _counter, phase,
 	 _dest[phase], _sbufln[phase], _sbuf[phase],
-	_sbufln[phase],_numphases,_cmplt[phase].phase, _header[phase].phase ));
-
+         _sbufln[phase],_numphases,_cmplt[phase].phase, _header[phase].phase ));
   _header[phase].counter       = _counter;
-  // ((AMHeader&)(_header[phase].hdr)).dest_ctxt = _dest[phase].ctxt;
 
   MUTEX_UNLOCK(&_mutex);
 
@@ -371,11 +368,11 @@ inline void xlpgas::CollExchange<T_NI>::cb_incoming(pami_context_t    context,
 
   MUTEX_LOCK(&b->_mutex);
 
-  TRACE_FORMAT("L%d:%d INC kind=%d tag=%d ctr=%d phase=%d nphases=%d "
-               "msgctr=%d msgphase=%d",
-               XLPGAS_MYNODE, b->_ctxt,header->kind, header->tag, b->_counter,
-               b->_phase, b->_numphases,
-               header->counter, header->phase);
+  TRACE((stderr, "L%d I%d :%d INC kind=%d tag=%d ctr=%d phase=%d nphases=%d "
+         "msgctr=%d msgphase=%d\n",
+         b->ordinal(), b->rank(), b->_ctxt,header->kind, header->tag, b->_counter,
+         b->_phase, b->_numphases,
+        header->counter, header->phase));
 
   assert (b->_header[0].tag == header->tag);
   assert (b->_numphases > 0);
@@ -391,7 +388,9 @@ inline void xlpgas::CollExchange<T_NI>::cb_incoming(pami_context_t    context,
   if (b->_cb_rcvhdr[header->phase])
     z = b->_cb_rcvhdr[header->phase](b, header->phase, header->counter);
 
-  if (z == NULL) b->internalerror (header, __LINE__);
+  if (z == NULL) {
+    b->internalerror (header, __LINE__);
+  }
 
   if(pipe_addr)
     memcpy(z, pipe_addr, data_size);
@@ -427,8 +426,8 @@ xlpgas::CollExchange<T_NI>::cb_recvcomplete (void* ctxt, void * arg, pami_result
   /* The execution of post-receive if done inside kick depending if
      the we are in the right phase of the computation */
 
-  TRACE((stderr, "L%d:%d CPLT phase=%d\n",
-         XLPGAS_MYNODE, base->_ctxt, phase));
+  TRACE((stderr, "L%d I%d ctxt:%d CPLT phase=%d [counter=%d recvcplt=%d] \n",
+          base->ordinal(), base->rank(), base->_ctxt, phase, base->_counter, base->_recvcomplete[phase]));
 
   /* BEGIN ATOMIC */
   MUTEX_LOCK(&base->_mutex);
@@ -449,7 +448,7 @@ xlpgas::CollExchange<T_NI>::internalerror (AMHeader * header, int lineno)
     fprintf (stdout, "%d: CollExchange internal: line=%d "
 	     "tag=%d id=%d phase=%d/%d ctr=%d "
 	     "header: tag=%d id=%d phase=%d ctr=%d\n",
-	     XLPGAS_MYNODE, lineno,
+	     this->rank(), lineno,
              this->_kind, this->_tag,
 	     _phase, _numphases, _counter,
 	     header->kind, header->tag, header->phase,
@@ -457,7 +456,7 @@ xlpgas::CollExchange<T_NI>::internalerror (AMHeader * header, int lineno)
   else
     fprintf (stdout, "%d: CollExchange internal: line=%d "
 	     "tag=%d id=%d phase=%d/%d ctr=%d\n",
-	     XLPGAS_MYNODE, lineno,
+	     this->rank(), lineno,
 	     this->_kind, this->_tag,
 	     _phase, _numphases, _counter);
   abort();

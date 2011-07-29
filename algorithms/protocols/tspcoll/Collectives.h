@@ -48,8 +48,10 @@ struct base_coll_defs{
   typedef xlpgas::CAUReduce<T_NI>  cau_reduce_type;
   typedef xlpgas::CAUBcast<T_NI>   cau_broadcast_type;
   typedef xlpgas::SHMLargeBcast<T_NI>   shm_large_broadcast_type;
+  typedef xlpgas::Broadcast<T_NI>   leaders_broadcast_type;
   typedef xlpgas::ShmCauAllReduce<T_NI, T_Device> shm_cau_allreduce_type;
-  typedef xlpgas::ShmHybridBcast<T_NI> shm_hybrid_broadcast_type;
+  typedef xlpgas::ShmHybridBcast<T_NI, T_Device> shm_hybrid_broadcast_type;
+  typedef xlpgas::ShmHybridPipelinedBcast<T_NI, T_Device> shm_hybrid_pipelined_broadcast_type;
 #endif
   //on certain platforms(BG, PERCS) the operations above may be specialized
   //but for certain configurations (geometry, operation, etc) they may not work;

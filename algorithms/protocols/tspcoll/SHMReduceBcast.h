@@ -52,7 +52,7 @@ namespace xlpgas
     FL              fl;
     size_t          _nbytes;
     bool            _done;
-    pami_work_t     _work_pami;
+    pami_work_t     _work_pami;//used to repost work
   public:
     void * operator new (size_t, void * addr) { return addr; }
     SHMBcast (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, void* device_info, T_NI* ni);
@@ -82,7 +82,15 @@ class SHMLargeBcast: public Collective<T_NI>
      const void* _sbuf;
      void*       _dbuf;
      unsigned    _nbytes;
+
+     pami_work_t _work_pami;//used to repost work 
+     
    public:
+     size_t _cntr;
+     size_t _cntr_done;
+
+     int CNT;
+
      void * operator new (size_t, void * addr) { return addr; }
      SHMLargeBcast (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset,void* device_info, T_NI* ni);
      virtual void setComplete (xlpgas_LCompHandler_t cb,
@@ -95,7 +103,9 @@ class SHMLargeBcast: public Collective<T_NI>
                        void               * dbuf,
                        unsigned           nbytes);
      
-     virtual void kick();
+     virtual bool isdone           () const;
+     virtual void  kick            (void);
+     virtual void  kick_internal   (void);    
    }; /* ShmLargebcast */
 
 

@@ -124,7 +124,7 @@ namespace PAMI
 #ifdef XLPGAS_PAMI_CAU
 	//hybrid all reduce
         typedef PGAllreduceExec<T_Geometry,xlpgas::ShmCauAllReduce<T_NI,T_Device_P2P>, T_NI, T_Device_P2P> HybridAllreduceExec;
-        //typedef PGHybridBroadcastExec<T_Geometry,xlpgas::ShmHybridBcast<T_NI>, T_NI, T_Device_P2P> HybridBroadcastExec;
+        typedef PGBroadcastExec<T_Geometry,xlpgas::ShmHybridPipelinedBcast<T_NI,T_Device_P2P>, T_NI, T_Device_P2P> HybridBroadcastExec;
 #endif
         typedef PGFactory<xlpgas::Barrier<T_NI>,T_NI,T_Device_P2P,BarExec> BarrierFactory;
         typedef PGFactory<xlpgas::Broadcast<T_NI>,T_NI,T_Device_P2P,BroadcastExec> BroadcastFactory;
@@ -140,6 +140,7 @@ namespace PAMI
 #ifdef XLPGAS_PAMI_CAU
 	//hybrid all reduce - three shm only and two distributed hybrid
 	typedef PGFactory<xlpgas::ShmCauAllReduce<T_NI,T_Device_P2P>,T_NI,T_Device_P2P,HybridAllreduceExec> HybridAllreduceFactory;
+	typedef PGFactory<xlpgas::ShmHybridPipelinedBcast<T_NI,T_Device_P2P>,T_NI,T_Device_P2P,HybridBroadcastExec> HybridBroadcastFactory;
 #endif
         typedef union Factories
         {
@@ -157,7 +158,7 @@ namespace PAMI
 #ifdef XLPGAS_PAMI_CAU
 	  //shm/hybrid
 	  char hybridshortallreduce_blob[sizeof(HybridAllreduceFactory)];
-	  //char hybridbroadcast_blob[sizeof(HybridBroadcastFactory)];
+	  char hybridbroadcast_blob[sizeof(HybridBroadcastFactory)];
 #endif
         }Factories;
 
@@ -241,7 +242,8 @@ namespace PAMI
 	_cau_shortbcast(NULL),
 	_leaders_bcast(NULL),
 	_hybrid_shortallreduce(NULL),
-	_hybrid_bcast(NULL)
+	_hybrid_bcast(NULL),
+        _hybrid_pipelined_bcast(NULL)
 #endif
           {
             pami_result_t       result   = PAMI_SUCCESS;
@@ -271,6 +273,7 @@ namespace PAMI
 	    SETUPNI_P2P_P2P(_leaders_bcast);
 	    SETUPNI_P2P_P2P(_hybrid_shortallreduce);
 	    SETUPNI_P2P_P2P(_hybrid_bcast);
+            SETUPNI_P2P_P2P(_hybrid_pipelined_bcast);
 #endif
             _mgr.Initialize(1,&_mgr); // Initialize for 1 context
             _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::AllgatherKind,      _allgather);
@@ -295,9 +298,10 @@ namespace PAMI
 	    _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::SHMLargeBcastKind,     _shm_largebcast);
 	    _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::CAUReduceKind,         _cau_shortreduce, _dispatch_id, _comm_handle);
 	    _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::CAUBcastKind,          _cau_shortbcast, _dispatch_id, _comm_handle);
-	    _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::BcastPPKind,           _leaders_bcast);
+	    _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::LeadersBcastKind,      _leaders_bcast);
 	    _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::ShmCauAllReduceKind,   _hybrid_shortallreduce);
 	    _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::ShmHybridBcastKind,    _hybrid_bcast);
+            _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::ShmHybridPipelinedBcastKind,    _hybrid_pipelined_bcast);
 #endif
           }
 
@@ -360,7 +364,8 @@ namespace PAMI
 	_cau_shortbcast(NULL),
 	_leaders_bcast(NULL),
 	_hybrid_shortallreduce(NULL),
-	_hybrid_bcast(NULL)
+	_hybrid_bcast(NULL),
+        _hybrid_pipelined_bcast(NULL)
 #endif
           {
             pami_result_t       result   = PAMI_SUCCESS;
@@ -391,6 +396,7 @@ namespace PAMI
 		SETUPNI_P2P_SHMEM(_leaders_bcast);
 		SETUPNI_P2P_SHMEM(_hybrid_shortallreduce);
 		SETUPNI_P2P_SHMEM(_hybrid_bcast);
+		SETUPNI_P2P_SHMEM(_hybrid_pipelined_bcast);
 #endif
               }
             else
@@ -420,6 +426,7 @@ namespace PAMI
 		SETUPNI_P2P_P2P(_leaders_bcast);
 		SETUPNI_P2P_P2P(_hybrid_shortallreduce);
 		SETUPNI_P2P_P2P(_hybrid_bcast);
+                SETUPNI_P2P_P2P(_hybrid_pipelined_bcast);
 #endif
               }
             
@@ -446,9 +453,10 @@ namespace PAMI
 	    _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::SHMLargeBcastKind,     _shm_largebcast);
 	    _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::CAUReduceKind,         _cau_shortreduce, _dispatch_id, _comm_handle);
 	    _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::CAUBcastKind,          _cau_shortbcast, _dispatch_id, _comm_handle );
-            _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::BcastPPKind,           _leaders_bcast);
+	    _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::LeadersBcastKind,      _leaders_bcast);
 	    _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::ShmCauAllReduceKind,   _hybrid_shortallreduce);
 	    _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::ShmHybridBcastKind,    _hybrid_bcast);
+            _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::ShmHybridPipelinedBcastKind,    _hybrid_pipelined_bcast);
 #endif
           }
 
@@ -636,7 +644,6 @@ namespace PAMI
             //marking in the geometry the shared memory region to be used by pgas hybrid
             uint64_t data_offset = inout_val[master_index+1+2*num_master_tasks];
 
-
             // set the shared mem buf to be properly deallocated;
             // this is done by only one thred in teh local topology
             PAMI::Topology *local_topo    = (PAMI::Topology *)geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
@@ -663,31 +670,52 @@ namespace PAMI
 	    if(device_info->shm_buffers().valid() && (_local_team->size() == _team->size() || (use_cau && _local_team->size() < _team->size())) )
 	    {
 	      HybridAllreduceFactory   *_hybrid_shortallreduce_reg;
+	      HybridBroadcastFactory   *_hybrid_broadcast_reg;
 	      _nb_shm_short_reduce= (xlpgas::SHMReduce<T_NI>*)_mgr.template allocate<xlpgas::base_coll_defs<T_NI, T_Device_P2P> > (_local_team, xlpgas::SHMReduceKind, geometry->comm(), (void*)device_info,_shm_shortreduce);
 	      _nb_shm_short_bcast = (xlpgas::SHMBcast<T_NI>*)_mgr.template allocate<xlpgas::base_coll_defs<T_NI, T_Device_P2P> > (_local_team, xlpgas::SHMBcastKind, geometry->comm(), (void*)device_info,_shm_shortbcast);
-	      //_nb_shm_large_bcast = (xlpgas::SHMLargeBcast<T_NI>*)_mgr.template allocate<xlpgas::base_coll_defs<T_NI, T_Device_P2P> > (_local_team, xlpgas::SHMLargeBcastKind, geometry->comm());
+	      _nb_shm_large_bcast = (xlpgas::SHMLargeBcast<T_NI>*)_mgr.template allocate<xlpgas::base_coll_defs<T_NI, T_Device_P2P> > (_local_team, xlpgas::SHMLargeBcastKind, geometry->comm(), (void*)device_info,_shm_largebcast);
 	      _nb_cau_short_reduce= (xlpgas::CAUReduce<T_NI>*)_mgr.template allocate<xlpgas::base_coll_defs<T_NI, T_Device_P2P> > (_leaders_team, xlpgas::CAUReduceKind, geometry->comm(), (void*)device_info,_cau_shortreduce);
 	      _nb_cau_short_bcast = (xlpgas::CAUBcast<T_NI>*)_mgr.template allocate<xlpgas::base_coll_defs<T_NI, T_Device_P2P> > (_leaders_team, xlpgas::CAUBcastKind, geometry->comm(),(void*)device_info,_cau_shortbcast);
-	      //_nb_leaders_bcast   = (xlpgas::Broadcast<T_NI>*)_mgr.template allocate<xlpgas::base_coll_defs<T_NI, T_Device_P2P> > (_leaders_team, xlpgas::BcastPPKind, geometry->comm());
+	      _nb_leaders_bcast   = (xlpgas::Broadcast<T_NI>*)_mgr.template allocate<xlpgas::base_coll_defs<T_NI, T_Device_P2P> > (_leaders_team, xlpgas::LeadersBcastKind, geometry->comm(), (void*)device_info,_leaders_bcast);
+
 	      _nb_hybrid_short_allreduce= (xlpgas::ShmCauAllReduce<T_NI,T_Device_P2P>*)_mgr.template allocate<xlpgas::base_coll_defs<T_NI, T_Device_P2P> > (_team, xlpgas::ShmCauAllReduceKind, geometry->comm(),(void*)device_info,_hybrid_shortallreduce);
-	      //_nb_hybrid_bcast = (xlpgas::ShmHybridBcast<T_NI>*)_mgr.template allocate<xlpgas::base_coll_defs<T_NI, T_Device_P2P> > (_team, xlpgas::ShmHybridBcastKind, geometry->comm());
+	      _nb_hybrid_bcast = (xlpgas::ShmHybridBcast<T_NI,T_Device_P2P>*)_mgr.template allocate<xlpgas::base_coll_defs<T_NI, T_Device_P2P> > (_team, xlpgas::ShmHybridBcastKind, geometry->comm(), (void*)device_info,_hybrid_bcast);
+	      _nb_hybrid_pipelined_bcast = (xlpgas::ShmHybridPipelinedBcast<T_NI,T_Device_P2P>*)_mgr.template allocate<xlpgas::base_coll_defs<T_NI, T_Device_P2P> > (_team, xlpgas::ShmHybridPipelinedBcastKind, geometry->comm(), (void*)device_info,_hybrid_pipelined_bcast);
 
 	      _gi->_nbcoll_list.push_back(_nb_shm_short_reduce);
 	      _gi->_nbcoll_list.push_back(_nb_shm_short_bcast);
 	      _gi->_nbcoll_list.push_back(_nb_cau_short_reduce);
 	      _gi->_nbcoll_list.push_back(_nb_cau_short_bcast);
 	      _gi->_nbcoll_list.push_back(_nb_hybrid_short_allreduce);
-
-	      //and factory
+              _gi->_nbcoll_list.push_back(_nb_hybrid_bcast);
+              _gi->_nbcoll_list.push_back(_nb_hybrid_pipelined_bcast);
+	      
+	      //create allreduce factory and add to the list of collectives
 	      _hybrid_shortallreduce_reg    = (HybridAllreduceFactory*)_allocator.allocateObject(); _gi->_f_list.push_back((Factories*)_hybrid_shortallreduce_reg);
 	      new(_hybrid_shortallreduce_reg) HybridAllreduceFactory(&_dev_p2p, _hybrid_shortallreduce,_nb_hybrid_short_allreduce, HybridAllreduceString);
 
-	      //geometry->addCollective(PAMI_XFER_BROADCAST,
-	      //			 (CCMI::Adaptor::CollectiveProtocolFactory*)_hybrid_bcast_reg,
-	      //			 _context_id);
 	      geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,
 					   (CCMI::Adaptor::CollectiveProtocolFactory*)_hybrid_shortallreduce_reg,
 					   _context_id);
+
+	      //add bcast only if there is shared memory left outside of the control structures
+	      if(device_info->shm_buffers()._bcast_buf_sz > 0)
+		{
+		_hybrid_broadcast_reg    = (HybridBroadcastFactory*)_allocator.allocateObject(); _gi->_f_list.push_back((Factories*)_hybrid_broadcast_reg);
+		new(_hybrid_broadcast_reg) HybridBroadcastFactory(&_dev_p2p, _hybrid_pipelined_bcast,_nb_hybrid_pipelined_bcast, HybridBroadcastString);
+		geometry->addCollective(PAMI_XFER_BROADCAST,
+					(CCMI::Adaptor::CollectiveProtocolFactory*)_hybrid_broadcast_reg,
+					_context_id);
+	      }
+
+	      // set the shared mem buf to be properly deallocated;
+              // this is done by only one thred in teh local topology
+              PAMI::Topology *local_topo    = (PAMI::Topology *)geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
+              uint local_index              =  local_topo->rank2Index(__global.mapping.task());
+              if(local_index == 0){
+                _gi->_mm = _mm;
+                _gi->_pgas_shmem_offset = data_offset;
+              }
 	    }//if hybrid can be used
 	  }//if phase 1
 #endif
@@ -764,6 +792,7 @@ namespace PAMI
       T_NI                   *_leaders_bcast;
       T_NI                   *_hybrid_shortallreduce;
       T_NI                   *_hybrid_bcast;
+      T_NI                   *_hybrid_pipelined_bcast;
 #endif
       PAMI::MemoryAllocator<sizeof(Factories),16,16>  _allocator;
       PAMI::MemoryAllocator<sizeof(GeometryInfo),16>  _geom_allocator;
@@ -786,8 +815,9 @@ namespace PAMI
       xlpgas::CAUReduce<T_NI>                *_nb_cau_short_reduce;
       xlpgas::CAUBcast<T_NI>                 *_nb_cau_short_bcast;
       xlpgas::Broadcast<T_NI>                *_nb_leaders_bcast;
-      xlpgas::ShmCauAllReduce<T_NI, T_Device_P2P>          *_nb_hybrid_short_allreduce;
-      xlpgas::ShmHybridBcast<T_NI>           *_nb_hybrid_bcast;
+      xlpgas::ShmCauAllReduce<T_NI, T_Device_P2P> *_nb_hybrid_short_allreduce;
+      xlpgas::ShmHybridBcast<T_NI, T_Device_P2P>  *_nb_hybrid_bcast;
+      xlpgas::ShmHybridPipelinedBcast<T_NI, T_Device_P2P>  *_nb_hybrid_pipelined_bcast;
 #endif
     };
   };

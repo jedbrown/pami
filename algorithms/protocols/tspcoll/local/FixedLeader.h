@@ -32,6 +32,7 @@
 //#define SHM_BUF_SIZE 262144
 #define SHM_BUF_SIZE 524288
 
+
 namespace xlpgas
 {
   namespace local
@@ -61,9 +62,8 @@ namespace xlpgas
       State*     _state;
       int        _N, _me, _nchildren;
       int        _children[128], _parent, _leader;
-      static const int BusyWaitCycles=100000;
+      static const int BusyWaitCycles=1000000;
       bool _done;
-
       //handle cb
       xlpgas_LCompHandler_t     _cb_complete;
       void*                     _arg;
@@ -84,7 +84,7 @@ namespace xlpgas
       typedef FixedLeader<Wait> base;
       char* _large_buffer;
     public:
-      FixedLeaderLB (int N, int myindex, int leader, void * sh_mem,int nc=32);
+      FixedLeaderLB (int N, int myindex, int leader, pgas_shm_buffers& bufs, int nc=128);
       void bcast (xlpgas_local_addr_t buffer, size_t len);
     };
     
@@ -96,7 +96,7 @@ namespace xlpgas
       char* _large_buffer0;
       char* _large_buffer1;
     public:
-      FixedLeader2LB (int N, int myindex, int leader, void * sh_mem,int nc=32);
+      FixedLeader2LB (int N, int myindex, int leader, pgas_shm_buffers& bufs, int nc=128);
       void bcast (xlpgas_local_addr_t buffer, size_t len);
     };
     
@@ -113,7 +113,7 @@ inline xlpgas::local::FixedLeader<Wait>::
 FixedLeader (int N, int me, int leader, void * sh_mem, int nchildren):
 _N(N), _me(me), _nchildren(nchildren)
 {
-  assert (nchildren <= 16);
+  assert (nchildren <= 32);
   int k = (me-leader+N) %N;  // my distance from leader, modulo N
 
   for (int c=0; c<this->_nchildren; c++)
@@ -124,8 +124,8 @@ _N(N), _me(me), _nchildren(nchildren)
   if (k>0) _parent = ((k-1)/this->_nchildren+leader)%N; else _parent = -1;
 
   this->_state = (State *) sh_mem;
-
-
+  _done = true;
+  
   //memory is set to zero when allocated; reset to zero is a bug
   // when sub teams are created; they will wipe out whatever was here;
   //subteams are guarded by another if and they won't call hybrid collectives
@@ -212,6 +212,8 @@ template <class Wait>
   void xlpgas::local::FixedLeader<Wait>::
   bcast (xlpgas_local_addr_t buf, size_t len)
 {
+
+
   /* ------------------------------------------------------------------ */
   /* wait until both children say they have data for previous iteration */
   /* ------------------------------------------------------------------ */
@@ -250,7 +252,9 @@ template <class Wait>
   /* ------------------------------------------------------- */
   /*   copy data to output buffer                            */
   /* ------------------------------------------------------- */
-  if (haveParent()) memcpy (buf, (void *)(&this->_state[this->_me].buffer), len);
+  if (haveParent()) {
+    memcpy (buf, (void *)(&this->_state[this->_me].buffer), len);
+  }
   _done = true;
   if (this->_cb_complete)
     _cb_complete ((void*)_pami_ctxt, _arg, PAMI_SUCCESS);
@@ -303,7 +307,7 @@ template <class Wait> inline void
 
 template <class Wait> 
 inline xlpgas::local::FixedLeaderLB<Wait>::
- FixedLeaderLB (int N, int me, int leader, void * sh_mem, int nchildren) : xlpgas::local::FixedLeader<Wait>(N,me,leader,nchildren){
+ FixedLeaderLB (int N, int me, int leader, pgas_shm_buffers& bufs, int nchildren) : xlpgas::local::FixedLeader<Wait>(N,me,leader,nchildren){
   assert (nchildren <= 128);
   int k = (me-leader+N) % N;  // my distance from leader, modulo N
   for (int c=0; c<this->_nchildren; c++)
@@ -313,8 +317,8 @@ inline xlpgas::local::FixedLeaderLB<Wait>::
   /* parent: (k+1)/this->_nchildren from leader */
   if (k>0) this->_parent = ((k-1)/this->_nchildren+leader)%N; else this->_parent = -1;
   typedef typename xlpgas::local::FixedLeaderLB<Wait>::base::State State;
-  this->_state = (State *) sh_mem;
-  _large_buffer = ((char*)sh_mem + N * sizeof(State));
+  this->_state = (State *) bufs._large_bcast_buf;
+  _large_buffer = (char*)(bufs._large_bcast_data_buf);
 }
 
 /* *********************************************************************** */
@@ -327,13 +331,22 @@ void xlpgas::local::FixedLeaderLB<Wait>::
   /* ------------------------------------------------------------------ */
   /* wait until both children say they have data for previous iteration */
   /* ------------------------------------------------------------------ */
-  for (int c=0; c<this->_nchildren; c++) base::wait (this->_children[c], this->_state[this->_me].counter);
+  bool all = true;
+  for (int c=0; c<this->_nchildren; c++) {
+    if (this->_children[c]>=0) {
+      bool wait_i = base::wait1 (this->_children[c], this->_state[this->_me].counter);
+      all = all && wait_i;
+    }
+  }
 
+  if(!all) return;
   /* -------------------------------------------------- */
   /* wait for my parent to have data for this iteration */
   /* -------------------------------------------------- */
-  base::wait (this->_parent, this->_state[this->_me].counter+1);
+  if(this->_parent != -1)
+    all = base::wait1 (this->_parent, this->_state[this->_me].counter+1);
 
+  if(!all) return;
   /* ------------------------------------------------------- */
   /* copy data from my parent (or from input if I am leader) */
   /* ------------------------------------------------------- */
@@ -341,11 +354,13 @@ void xlpgas::local::FixedLeaderLB<Wait>::
   if(! this->haveParent()) memcpy ((void *)(_large_buffer), (void *)buf, len);
   __lwsync(); /* write barrier */
 
+
   /* ------------------------------------------------------- */
   /*   children copy data to output buffer                            */
   /* ------------------------------------------------------- */
-  __isync();
-  if (this->haveParent()) memcpy (buf, (void *)(_large_buffer), len);
+  if (this->haveParent()) {
+    memcpy (buf, (void *)(_large_buffer), len);
+  }
 
   /* ------------------------------------------------------- */
   /* put out notice that I have data for this iteration      */
@@ -353,6 +368,11 @@ void xlpgas::local::FixedLeaderLB<Wait>::
   volatile int32_t * p = (volatile int32_t *) &this->_state[this->_me].counter;
   (*p) = (*p) + 1;
   __lwsync(); /* write barrier */
+
+  
+  this->_done = true;
+  if (this->_cb_complete) 
+    this->_cb_complete ((void*)&(this->_ctxt),this-> _arg, PAMI_SUCCESS);
 }
 
 /* *********************************************************************** */
@@ -360,7 +380,7 @@ void xlpgas::local::FixedLeaderLB<Wait>::
 /* *********************************************************************** */
 template <class Wait> 
 inline xlpgas::local::FixedLeader2LB<Wait>::
- FixedLeader2LB (int N, int me, int leader, void * sh_mem, int nchildren) : xlpgas::local::FixedLeader<Wait>(N,me,leader,nchildren){
+ FixedLeader2LB (int N, int me, int leader, pgas_shm_buffers& bufs, int nchildren) : xlpgas::local::FixedLeader<Wait>(N,me,leader,nchildren){
   assert (nchildren <= 128);
   int k = (me-leader+N) % N;  // my distance from leader, modulo N
   for (int c=0; c<this->_nchildren; c++)
@@ -370,9 +390,9 @@ inline xlpgas::local::FixedLeader2LB<Wait>::
   /* parent: (k+1)/this->_nchildren from leader */
   if (k>0) this->_parent = ((k-1)/this->_nchildren+leader)%N; else this->_parent = -1;
   typedef typename xlpgas::local::FixedLeader2LB<Wait>::base::State State;
-  this->_state = (State *) sh_mem;
-  _large_buffer0 = ((char*)sh_mem + N * sizeof(State));
-  _large_buffer1 = ((char*)sh_mem + N * sizeof(State) + SHM_BUF_SIZE);
+  this->_state = (State *) bufs._large_bcast_buf;
+  _large_buffer0 = (char*)(bufs._large_bcast_data_buf);
+  _large_buffer1 = (char*)(bufs._large_bcast_data_buf) + bufs._bcast_buf_sz / 2;
 }
 
 template <class Wait>
@@ -382,12 +402,26 @@ void xlpgas::local::FixedLeader2LB<Wait>::
   /* ------------------------------------------------------------------ */
   /* wait until both children say they have data for previous iteration */
   /* ------------------------------------------------------------------ */
-  for (int c=0; c<this->_nchildren; c++) base::wait (this->_children[c], this->_state[this->_me].counter-1);
+  //for (int c=0; c<this->_nchildren; c++) 
+  //  base::wait (this->_children[c], this->_state[this->_me].counter-1);
+  bool all = true;
+  for (int c=0; c<this->_nchildren; c++) {
+    if (this->_children[c]>=0) {
+      bool wait_i = base::wait1 (this->_children[c], this->_state[this->_me].counter-1);
+      all = all && wait_i;
+    }
+  }
+
+  if(!all) return;
 
   /* -------------------------------------------------- */
   /* wait for my parent to have data for this iteration */
   /* -------------------------------------------------- */
-  base::wait (this->_parent, this->_state[this->_me].counter+1);
+  //base::wait (this->_parent, this->_state[this->_me].counter+1);
+  if(this->_parent != -1)
+    all = base::wait1 (this->_parent, this->_state[this->_me].counter+1);
+
+  if(!all) return;
 
   /* ------------------------------------------------------- */
   /* copy data from my parent (or from input if I am leader) */
@@ -419,6 +453,9 @@ void xlpgas::local::FixedLeader2LB<Wait>::
   (*p) = (*p) + 1;
   __lwsync(); /* write barrier */
 
+  this->_done = true;
+  if (this->_cb_complete) 
+    this->_cb_complete ((void*)&(this->_ctxt),this-> _arg, PAMI_SUCCESS);
 }
 
 #endif

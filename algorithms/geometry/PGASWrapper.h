@@ -69,7 +69,7 @@ namespace PAMI
     };
 
     // metadata check function for allreduce; one element only
-      static inline metadata_result_t allreduce_metadata_function(struct pami_xfer_t *in) {
+    static inline metadata_result_t allreduce_metadata_function(struct pami_xfer_t *in) {
       metadata_result_t result;
       result.bitmask = 0;
       if(in->cmd.xfer_allreduce.stypecount > 1) result.check.range = 1;
@@ -415,19 +415,20 @@ namespace PAMI
       virtual void start()
         {
           PAMI::Type::TypeCode * bcastType = (PAMI::Type::TypeCode *)this->_cmd->cmd.xfer_broadcast.type;
-          if (!this->_collexch->isdone()) this->_dev->advance();
+          while (!this->_collexch->isdone()) this->_dev->advance();
+          this->_collexch->setComplete(this->_cmd->cb_done, this->_cmd->cookie);
+          this->_collexch->setContext(this->_context);//don't move after reset
           this->_collexch->reset (this->_geometry->virtrankof(this->_cmd->cmd.xfer_broadcast.root),
                                   this->_cmd->cmd.xfer_broadcast.buf,
                                   this->_cmd->cmd.xfer_broadcast.buf,
                                   bcastType,
                                   this->_cmd->cmd.xfer_broadcast.typecount);
-          this->_collexch->setContext(this->_context);
-          this->_collexch->setComplete(this->_cmd->cb_done, this->_cmd->cookie);
-          this->_collexch->kick();
+           this->_collexch->kick();
         }
     };
 
   }//namespace CollRegistration
 }//namespace PAMI
+
 
 #endif

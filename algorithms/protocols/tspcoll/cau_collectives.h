@@ -242,8 +242,15 @@ class CAUReduce: public CollExchange<T_NI>
     void* _reduce_buf;
     void* _bcast_buf;
     void* _large_bcast_buf;
+    void* _large_bcast_data_buf;
+
     bool _valid;
-    pgas_shm_buffers():_reduce_buf(NULL), _bcast_buf(NULL), _large_bcast_buf(NULL),_valid(false) {}
+    size_t _bcast_buf_sz;
+    pgas_shm_buffers():_reduce_buf(NULL), 
+                       _bcast_buf(NULL), 
+                       _large_bcast_buf(NULL),
+                       _large_bcast_data_buf(NULL),
+                       _valid(false), _bcast_buf_sz(0){}
     bool valid(){
       return _valid;
     }
@@ -265,7 +272,7 @@ class CAUReduce: public CollExchange<T_NI>
 
 	  size_t state_sz = sizeof(_State);
 
-	  size_t mem_sz = 2 * local_tasks * state_sz;
+	  size_t mem_sz = 3 * local_tasks * state_sz;
           //typically the shmbufsz is 32k; if more space is required
           //by a large number of threads we disable shmem collectives
 	  if(mem_sz >= mm->_shmbufsz) {
@@ -275,17 +282,16 @@ class CAUReduce: public CollExchange<T_NI>
 	    return;
 	  }
 
-	  //size_t mem_sz = 3 * local_tasks * state_sz + SHM_BUF_SIZE;
 	  uintptr_t pgas_shmem = (uintptr_t)mm->offset_to_addr(data_offset);
-          pgas_shmem += sizeof(size_t);
-
-	  // set the buffers starting at the address computed above
+          
+          // set the buffers starting at the address computed above
 	  bfs._reduce_buf      = (void*)(pgas_shmem);
 	  bfs._bcast_buf       = (void*)(pgas_shmem + local_tasks*state_sz);
-	  //to be enabled for arbitrary size bcasts
-	  //bfs._large_bcast_buf = (void*)(pgas_shmem + 2 * local_tasks*state_sz);
+	  bfs._large_bcast_buf = (void*)(pgas_shmem + 2 * local_tasks*state_sz);
+          bfs._large_bcast_data_buf = (void*)(pgas_shmem + mm->_shmbufsz/2 );
+	  bfs._bcast_buf_sz    = mm->_shmbufsz / 2;
 
-	  bfs._valid = true;
+          bfs._valid = true;
 	}
 	else {
 	  //hybrid disabled

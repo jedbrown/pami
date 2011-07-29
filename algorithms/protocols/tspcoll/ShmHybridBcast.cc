@@ -3,257 +3,358 @@
  * \brief ???
  */
 #include "algorithms/protocols/tspcoll/ShmHybridBcast.h"
+#include "algorithms/protocols/tspcoll/SHMReduceBcast.h"
 #include "algorithms/protocols/tspcoll/local/FixedLeader.h"
 #include "algorithms/protocols/tspcoll/Team.h"
 
+#include "algorithms/protocols/tspcoll/cau_collectives.h"
 
-#include "algorithms/geometry/LapiGeometry.h"
-
-template <class T_NI>
-void xlpgas::ShmHybridBcast<T_NI>::kick () {
-  //operation is finished in reset; here only invoke completion handler
-  if (this->_cb_complete)
-    _cb_complete (this->_pami_ctxt, this->_arg, PAMI_SUCCESS);
+template <class T_NI, class T_Device>
+xlpgas::ShmHybridBcast<T_NI,T_Device>::ShmHybridBcast (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, void* device_info, T_NI* ni) :
+  xlpgas::Collective<T_NI> (ctxt, comm, kind, tag, NULL, NULL, ni) {
+  typedef xlpgas::cau_device_info<T_NI> device_info_type;
+  this->_device_info = device_info;
+  this->_buf_size = ((device_info_type*)device_info)->shm_buffers()._bcast_buf_sz / 2; // divide by two only for 2LB
 }
 
 template <class T_NI>
-void xlpgas::ShmHybridBcast<T_NI>::reset (int root, 
-					  const void         * sbuf,
-					  void               * rbuf,
-					  unsigned           nbytes) {
+void next_repeated_phase (void* ctxt, void * arg, pami_result_t){
+  typedef xlpgas::if_else_coll_continuation<T_NI> ARGS;
+  ARGS* hb_args = (ARGS*)arg;//hybrid bcast args
+  if(hb_args->left_to_send > 0){
+    xlpgas::Collective<T_NI>* b = (xlpgas::Collective<T_NI>*)hb_args->shm_bcast;    
 
-#if 0
-  PAMI::Topology* team        = (PAMI::Topology*)(this->_comm->geometry()->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
+    //fprintf(stderr, "L%d NRP LEFTOVER ROOT =%d\n",b->rank(),hb_args->leader_root);
+
+    //here we need to increment the buf size and decrement left to send
+    hb_args->sbuf  = (void*)( (char*)(hb_args->sbuf) + hb_args->buf_size );
+    hb_args->dbuf  = (void*)( (char*)(hb_args->dbuf) + hb_args->buf_size );
+    size_t to_send = (hb_args->left_to_send > hb_args->buf_size) ? hb_args->buf_size : hb_args->left_to_send ;    
+    b->reset(hb_args->local_root,
+	     hb_args->sbuf,
+	     hb_args->dbuf,
+	     to_send);
+    if(hb_args->left_to_send > hb_args->buf_size)
+      hb_args->left_to_send  -= hb_args->buf_size;
+    else
+      hb_args->left_to_send = 0;
+    
+    b->setComplete(next_repeated_phase<T_NI>, arg);
+    b->kick();
+  }
+  else {
+    xlpgas::SHMLargeBcast<T_NI>* shm_bcast = (xlpgas::SHMLargeBcast<T_NI>*)hb_args->shm_bcast;
+    //fprintf(stderr, "L%d NRP non LEFTOVER ROOT =%d\n",shm_bcast->rank(),hb_args->leader_root);
+    hb_args->shmem_finished = true;
+    // if leader will start global bcast; 
+    // if required only which is controlled by b being null or not
+    xlpgas::Broadcast<T_NI>* b = (xlpgas::Broadcast<T_NI>*)hb_args->p2p_bcast;
+    if(b == NULL) {
+      //the shared memory part is finished; there is no leader component user call back is called
+      if (hb_args->cb) {
+        //fprintf(stderr, "L%d NRP LEFTOVER ROOT CALL BACK RETURN=%d\n",shm_bcast->rank(),hb_args->leader_root);
+        hb_args->cb (hb_args->pami_ctxt, hb_args->arg, PAMI_SUCCESS);
+      }
+      return;//no continuation; done
+    }
+
+    //need reset here; we can't have advance/progress between reset and kick of the p2p
+    //fprintf(stderr, "L%d NRP P2P RESET KICK=%d\n", b->rank(),hb_args->leader_root);
+    b->reset(hb_args->leader_root,
+             hb_args->o_dbuf,
+             hb_args->o_dbuf,
+             hb_args->ttype,
+             hb_args->tcount);
+    b->kick();
+  }
+}
+
+
+template <class T_NI>
+void next_local_phase (void* ctxt, void * arg, pami_result_t){
+  typedef xlpgas::if_else_coll_continuation<T_NI> ARGS;
+  ARGS* hb_args = (ARGS*)arg;//hybrid bcast args
+  xlpgas::SHMLargeBcast<T_NI>* b = (xlpgas::SHMLargeBcast<T_NI>*)hb_args->shm_bcast;
+  size_t to_send = (hb_args->nbytes > hb_args->buf_size) ? hb_args->buf_size : hb_args->nbytes ;
+
+  if(hb_args->nbytes > hb_args->buf_size)
+    hb_args->left_to_send  = hb_args->nbytes - hb_args->buf_size;
+  else
+    hb_args->left_to_send = 0;
+
+  //the leaders component is finished; user call back is called on the node that owns the root
+  if(hb_args->shmem_finished == true){
+    if (hb_args->cb){
+      hb_args->cb (hb_args->pami_ctxt, hb_args->arg, PAMI_SUCCESS);
+    }
+  }
+  else{
+    //this is a non same location as root node; this is the callback of the p2p step;
+    //it starts the local shmem bcast
+    //fprintf(stderr, "L%d N LOCAL PHASE LEFTOVER ROOT=%d\n",b->rank(),hb_args->leader_root);
+    hb_args->p2p_bcast = NULL;
+    b->reset(hb_args->local_root,
+             hb_args->sbuf,
+             hb_args->dbuf,
+             to_send);
+    b->setComplete(next_repeated_phase<T_NI>, arg);
+    //if(b->rank()==0) fprintf(stderr, "NLP->kicks SHMEM %d \n", hb_args->buf_size);
+    b->kick();
+  }
+}
+
+template <class T_NI, class T_Device>
+bool xlpgas::ShmHybridBcast<T_NI,T_Device>::isdone () const {
+  if(shm_bcast == NULL) return true;
+  else return shm_bcast->isdone();
+}
+
+template <class T_NI, class T_Device>
+void xlpgas::ShmHybridBcast<T_NI,T_Device>::kick () {
+  if(leader_team->size()>1 && leader_team->isRankMember(_root)){//if root is leader
+    //leader will kick the p2p bcast; this in turn will kick the shmem part as well
+    if( leader_team->isRankMember(this->ordinal())) {
+      p2p_bcast->setComplete(next_local_phase<T_NI>,&args);
+      p2p_bcast->reset(args.leader_root, 
+                       args.o_sbuf,
+                       args.o_dbuf,
+                       args.ttype,
+                       args.tcount);
+      //fprintf(stderr, "L%d KICK P2P for root=%d\n",p2p_bcast->rank(),args.leader_root);
+      p2p_bcast->kick();
+    }
+    //all others except leader on a node not the same as root kicks the shmem part; 
+    //the leader will kick the shmem part on the call back of p2p 
+    else {
+      shm_bcast->setComplete(next_repeated_phase<T_NI>,&args);
+      //fprintf(stderr, "L%d KICK SHM non root (r=%d) \n",shm_bcast->rank(),_root);
+      shm_bcast->kick();
+    }
+  }
+  else {//general case
+    if(local_team->isRankMember(_root)) {
+      //fprintf(stderr, "L%d KICK SHM ROOT =%d\n",shm_bcast->rank(),_root);
+      shm_bcast->setComplete(next_repeated_phase<T_NI>,&args);
+      shm_bcast->kick();
+    }
+    else {
+      if (leader_team->size() > 1){
+        //leader will kick the p2p bcast; this in turn will kick the shmem part as well
+        if( leader_team->isRankMember(this->ordinal())) {
+          p2p_bcast->setComplete(next_local_phase<T_NI>,&args);
+          p2p_bcast->reset(args.leader_root, 
+                           args.o_dbuf,
+                           args.o_dbuf,
+                           args.ttype,
+                           args.tcount);
+          //fprintf(stderr, "L%d KICK P2P for root=%d\n",p2p_bcast->rank(),args.leader_root);
+          p2p_bcast->kick();
+        }
+        //all others except leader on a node not the same as root kicks the shmem part; 
+        //the leader will kick the shmem part on the call back of p2p 
+        else {
+          shm_bcast->setComplete(next_repeated_phase<T_NI>,&args);
+          //fprintf(stderr, "L%d KICK SHM non root (r=%d) \n",shm_bcast->rank(),_root);
+          shm_bcast->kick();
+        }
+      }
+    }
+  }//else; the root  is not leader
+}
+
+template <class T_NI, class T_Device>
+void xlpgas::ShmHybridBcast<T_NI,T_Device>::reset (int root, 
+						   const void         * sbuf, 
+						   void               * rbuf, 
+						   TypeCode           * type,
+						   size_t               typecount) {
+  typedef xlpgas::if_else_coll_continuation<T_NI> ARGS;
+  typedef xlpgas::cau_device_info<T_NI> device_info_type;
+  PAMI_GEOMETRY_CLASS* geometry = ((device_info_type*)(this->_device_info))->geometry();
+  team        = (PAMI::Topology*)(geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
+  local_team  = (PAMI::Topology*)(geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX));
+  leader_team = (PAMI::Topology*)(geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX));
+
+  _root = root;
+
+  size_t nbytes = type->GetDataSize() * typecount;
   if(team->size()==1){
     memcpy(rbuf, sbuf, nbytes);
+    if (this->_cb_complete){ 
+      this->_cb_complete (this->_pami_ctxt, this->_arg, PAMI_SUCCESS); 
+    }
     return ;
   }
-  PAMI::Topology* local_team  = (PAMI::Topology*)(this->_comm->geometry()->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX));
-  PAMI::Topology* leader_team = (PAMI::Topology*)(this->_comm->geometry()->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX));
 
   bool local_done=false;
   bool root_is_leader=false;
-  int my_rank = this->_comm->my_rank();
+  int my_rank = this->ordinal();
 
-  //xlpgas_endpoint_t root_ep = this->_comm->endpoint(root);
-  if(leader_team->isRankMember(root)) root_is_leader = true;//else will be false
-  xlpgas::Collective<T_NI> * a;
-  /*
-  if(! root_is_leader){
-    //local bcast first to reach the leader
-    if(local_team->isRankMember(root)){
-      a = xlpgas::CollectiveManager<T_NI>::instance(0)->collective(xlpgas::SHMLargeBcastKind);
-      assert (a != NULL);
-      void* lsbuf = const_cast<void*>(sbuf);
-      void* lrbuf = rbuf;
-      //int l_root = local_team->ordinal(root_ep);
-      int l_root = local_team->rank2Index(root);
+  shm_bcast = xlpgas::CollectiveManager<T_NI>::instance(0)->collective(xlpgas::SHMLargeBcastKind);
+  assert (shm_bcast != NULL);
 
-      printf("L%d does local bcast SSS from lsbuf to lrbuf l_root=%d\n", my_rank, l_root);
-      int NB=nbytes;
-      while (NB > 0){
-	int sz = (NB > SHM_BUF_SIZE)?SHM_BUF_SIZE:NB;
-	a->reset (l_root, lsbuf, lrbuf, sz);
-	a->kick();
-	if(NB > SHM_BUF_SIZE) NB -= SHM_BUF_SIZE;
-	else NB = 0;
-	lsbuf = (void*)((char*)lsbuf+SHM_BUF_SIZE);
-	lrbuf = (void*)((char*)lrbuf+SHM_BUF_SIZE);
+  args.shm_bcast      = (void*)shm_bcast;
+  args.shmem_finished = false;
+  args.nbytes         = nbytes;
+  args.ttype          = type;
+  args.tcount         = typecount;
+
+ if(leader_team->size()>1) {
+    if( leader_team->isRankMember(this->ordinal()) ){
+      xlpgas::Broadcast<T_NI>*  bcast = (xlpgas::Broadcast<T_NI>*)xlpgas::CollectiveManager<T_NI>::instance(0)->collective(xlpgas::LeadersBcastKind);
+      p2p_bcast = bcast;//xlpgas::CollectiveManager<T_NI>::instance(0)->collective(xlpgas::LeadersBcastKind);
+      assert (bcast != NULL);
+      args.p2p_bcast    = (void*)bcast;
+
+      //compute the leader root; This is the leader of the shared
+      //memory node where the real root of bcast resides; Not an
+      //efficient op for now; can be improved;
+      size_t nranks;
+      pami_task_t* leader_ranks = (pami_task_t*)malloc(leader_team->size()*sizeof(pami_task_t));
+      leader_team->getRankList(leader_team->size(), leader_ranks, &nranks);
+      assert(nranks == leader_team->size());
+      args.leader_root = -1; 
+      for(size_t l=0;l<nranks;++l){
+        if(__global.mapping.isPeer(root, leader_ranks[l])) {
+          args.leader_root = leader_team->rank2Index(leader_ranks[l]);
+          break;
+        }
       }
-    }
-  }
-
-  if(leader_team->isRankMember(my_rank) && leader_team->size() > 1){
-    //xlpgas_endpoint_t r_ep;
-    //r_ep.node = team->leader(root);
-    //r_ep.ctxt = 0;
-    //int g_root = leader_team->ordinal(r_ep);
-    int g_root = leader_team->rank2Index(root);
-  */
-
-  if(sbuf != rbuf && (size_t)root == this->_comm->my_rank()){
-    memcpy (rbuf, sbuf, nbytes);
-  }
-
-  pami_result_t     result           = PAMI_SUCCESS;
-  size_t               num_algorithm[2];
-
-  result = PAMI_Geometry_algorithms_num(this->_comm->geometry(),
-                                        PAMI_XFER_BROADCAST,
-                                        num_algorithm);
-
-  if (result != PAMI_SUCCESS || num_algorithm[0]==0)
-    {
-      fprintf (stderr,
-               "Error. query, Unable to query algorithm, or no algorithms available result = %d\n",
-               result);
-    }
-
-  pami_algorithm_t* always_works_alg = (pami_algorithm_t*)malloc(sizeof(pami_algorithm_t)*num_algorithm[0]);
-  pami_metadata_t*  always_works_md  = (pami_metadata_t*)malloc(sizeof(pami_metadata_t)*num_algorithm[0]);
-  pami_algorithm_t* must_query_alg   = (pami_algorithm_t*)malloc(sizeof(pami_algorithm_t)*num_algorithm[1]);
-  pami_metadata_t*  must_query_md    = (pami_metadata_t*)malloc(sizeof(pami_metadata_t)*num_algorithm[1]);
-
-  result = PAMI_Geometry_algorithms_query(this->_comm->geometry(),
-                                          PAMI_XFER_BROADCAST,
-                                          always_works_alg,
-                                          always_works_md,
-                                          num_algorithm[0],
-                                          must_query_alg,
-                                          must_query_md,
-                                          num_algorithm[1]);
-
-  pami_xfer_t          broadcast;
-  //broadcast.cb_done                      = cb_done;
-  //broadcast.cookie                       = (void*) & bcast_poll_flag;
-  broadcast.algorithm                    = always_works_alg[0];
-  broadcast.cmd.xfer_broadcast.root      = root;
-  broadcast.cmd.xfer_broadcast.buf       = (char*)rbuf;
-  broadcast.cmd.xfer_broadcast.type      = PAMI_TYPE_BYTE;
-  broadcast.cmd.xfer_broadcast.typecount = 0;
-  broadcast.cmd.xfer_broadcast.typecount = nbytes;
-
-
-  //PAMI_Collective(this->_pami_ctxt, &broadcast);
-  //PAMI_Context_advance (this->_pami_ctxt, 1);
-
-  PAMI::Geometry::Algorithm<PAMI::Geometry::Lapi> *algo = (PAMI::Geometry::Algorithm<PAMI::Geometry::Lapi> *)broadcast.algorithm;
-  algo->setContext((pami_context_t) this);
-  algo->generate(&broadcast);
-  //PAMI_Context_advance (this->_pami_ctxt, 1);
-  xlpgas::CollectiveManager<T_NI>::instance(0)->device()->advance();
-
-  int g_root=root;
-    printf("L%d does Leaders Bcast from g_root=%d for real root%d  nbytes=%d\n", my_rank, g_root, root, nbytes);
-    //a = leader_team->coll (xlpgas::BcastPPKind);
-    a = xlpgas::CollectiveManager<T_NI>::instance(0)->collective(xlpgas::BcastKind);
-
-    a->setNI(this->_p2p_iface);
-
-    assert (a != NULL);
-    fprintf(stderr, "L%d does Leaders Bcast from g_root=%d for real root%d a=%p a.comm->size=%d  nbytes=%d\n", my_rank, g_root, root,a, a->comm()->size(), nbytes );
-    if(root_is_leader) {
-      a->reset (g_root, sbuf, rbuf, nbytes);
+      assert(args.leader_root != -1);
+      free(leader_ranks);
+      bcast->setContext(this->_pami_ctxt);
+      bcast->setComplete(next_local_phase<T_NI>,&args);
     }
     else {
-      a->reset (g_root, rbuf, rbuf, nbytes);
-    }
-    a->kick();
-    fprintf(stderr, "Device Advance=%p\n", xlpgas::CollectiveManager<T_NI>::instance(0)->device());
-    while (!a->isdone()) {
-      //fprintf(stderr, "Device Advance=%p\n", xlpgas::CollectiveManager<T_NI>::instance(0)->device());
-      xlpgas::CollectiveManager<T_NI>::instance(0)->device()->advance();
-    }
-#endif
-
-/*
-  }
-
-  if(root_is_leader || (!root_is_leader && !local_team->isRankMember(root))){
-    //here locally broadcast on all local teams except the one containing original root;
-    //a = local_team->coll (xlpgas::SHMLargeBcastKind);
-    a = xlpgas::CollectiveManager<T_NI>::instance(0)->collective(xlpgas::SHMLargeBcastKind);
-    assert (a != NULL);
-    void* lsbuf = const_cast<void*>(sbuf);
-    void* lrbuf = rbuf;
-    int l_root = 0;//the leader of the local team has ordinal 0
-    while (nbytes > 0){
-      int sz = (nbytes > SHM_BUF_SIZE)?SHM_BUF_SIZE:nbytes;
-      if(leader_team->size() > 1) {
-	//printf("L%d does local bcast from rbuf to rbuf after sz > 1 l_root=%d\n", XLPGAS_MYTHREAD, l_root);
-	a->reset (l_root, lrbuf, lrbuf, sz);
-      }
-      else {
-	//printf("L%d does local bcast from sbuf to rbuf after sz=1 l_root=%d\n", XLPGAS_MYTHREAD, l_root);
-	a->reset (l_root, lsbuf, lrbuf, sz);
-      }
-      a->kick();
-      if(nbytes > SHM_BUF_SIZE) nbytes -= SHM_BUF_SIZE;
-      else nbytes = 0;
-      lsbuf = (void*)((char*)lsbuf+SHM_BUF_SIZE);
-      lrbuf = (void*)((char*)lrbuf+SHM_BUF_SIZE);
+      //non leader node; skips this step
+      args.p2p_bcast = NULL;
     }
   }
-*/
-
-#if 0
-  xlpgas::Team * team        = this->_comm;//xlpgas::Team::get (_ctxt, teamID);
-  xlpgas::Team * local_team  = xlpgas::Team::get (_ctxt, team->local_team_id());
-  xlpgas::Team * leader_team = xlpgas::Team::get (_ctxt, team->leader_team_id());
-  bool local_done=false;
-  bool root_is_leader=false;
-
-  xlpgas_endpoint_t root_ep = team->endpoint(root);
-  if(leader_team->contains_endp(root_ep)) root_is_leader = true;//else will be false  
-  xlpgas::Collective * a;
-
-  //printf("L%d BCAST from  %d  | is root leader %d  sizes[%d %d %d] \n", XLPGAS_MYTHREAD, root, root_is_leader, team->size(), local_team->size(), leader_team->size() );
-
-  if(! root_is_leader){
-    //local bcast first to reach the leader
-    if(local_team->contains_endp(root_ep)){
-      a = local_team->coll (xlpgas::SHMLargeBcastKind);
-      assert (a != NULL);
-      void* lsbuf = const_cast<void*>(sbuf);
-      void* lrbuf = rbuf;
-      int l_root = local_team->ordinal(root_ep);
-
-      //printf("L%d does local bcast SSS from lsbuf to lrbuf l_root=%d\n", XLPGAS_MYTHREAD, l_root);
-      int NB=nbytes;
-      while (NB > 0){
-	int sz = (NB > SHM_BUF_SIZE)?SHM_BUF_SIZE:NB;
-	a->reset (l_root, lsbuf, lrbuf, sz);
-	a->kick();
-	if(NB > SHM_BUF_SIZE) NB -= SHM_BUF_SIZE;
-	else NB = 0;
-	lsbuf = (void*)((char*)lsbuf+SHM_BUF_SIZE);
-	lrbuf = (void*)((char*)lrbuf+SHM_BUF_SIZE);
-      } 
-    }
+  else {
+    args.p2p_bcast = NULL;
   }
 
-  if(leader_team->is_leader() && leader_team->size() > 1){
-    xlpgas_endpoint_t r_ep;
-    r_ep.node = team->leader(root);
-    r_ep.ctxt = 0;
-    int g_root = leader_team->ordinal(r_ep);
-    a = leader_team->coll (xlpgas::BcastPPKind);
-    assert (a != NULL);
-    if(root_is_leader) {
-      a->reset (g_root, sbuf, rbuf, nbytes);
-    }
-    else {
-      a->reset (g_root, rbuf, rbuf, nbytes);
-    }
-    a->kick();
-    while (!a->isdone()) {
-      xlpgas_tsp_wait (_ctxt);
-    }
-  }
+  args.buf_size     = this->_buf_size;
+  args.left_to_send = (nbytes > this->_buf_size) ? nbytes - this->_buf_size : 0;
+  args.pami_ctxt    = this->_pami_ctxt;
+  args.cb           = this->_cb_complete; 
+  args.arg          = this->_arg;
 
-  if(root_is_leader || (!root_is_leader && !local_team->contains_endp(root_ep))){  
-    //here locally broadcast on all local teams except the one containing original root;
-    a = local_team->coll (xlpgas::SHMLargeBcastKind);
-    assert (a != NULL);
-    void* lsbuf = const_cast<void*>(sbuf);
-    void* lrbuf = rbuf;
-    int l_root = 0;//the leader of the local team has ordinal 0
-    while (nbytes > 0){
-      int sz = (nbytes > SHM_BUF_SIZE)?SHM_BUF_SIZE:nbytes;
-      if(leader_team->size() > 1) {
-	//printf("L%d does local bcast from rbuf to rbuf after sz > 1 l_root=%d\n", XLPGAS_MYTHREAD, l_root);
-	a->reset (l_root, lrbuf, lrbuf, sz);
-      }
-      else {
-	//printf("L%d does local bcast from sbuf to rbuf after sz=1 l_root=%d\n", XLPGAS_MYTHREAD, l_root);
-	a->reset (l_root, lsbuf, lrbuf, sz);
-      }
-      a->kick();
-      if(nbytes > SHM_BUF_SIZE) nbytes -= SHM_BUF_SIZE;
-      else nbytes = 0;
-      lsbuf = (void*)((char*)lsbuf+SHM_BUF_SIZE);
-      lrbuf = (void*)((char*)lrbuf+SHM_BUF_SIZE);
-    }
+  size_t to_send = (nbytes <= this->_buf_size) ? nbytes : this->_buf_size;
+  
+  if(local_team->isRankMember(root) && ( !leader_team->isRankMember(_root) || leader_team->size()==1) ) {
+    args.local_root   = local_team->rank2Index(root);//translate global root to local index
+    args.sbuf         = const_cast<void*>(sbuf);
+    args.dbuf         = rbuf;
+    args.o_sbuf = args.sbuf;
+    args.o_dbuf = args.dbuf;
+    shm_bcast->reset(args.local_root,
+		     sbuf,
+		     rbuf,
+		     to_send);
+    shm_bcast->setComplete(next_repeated_phase<T_NI>,&args);
   }
-#endif
+  else {
+    args.local_root   = 0;//always the local master bcasts data received from P2P
+    args.sbuf         = const_cast<void*>(rbuf);
+    args.dbuf         = rbuf;
+    args.o_sbuf       = args.sbuf;
+    args.o_dbuf       = args.dbuf;
+    args.p2p_bcast    = NULL;//these are the nodes that receives data in the P2P phase
+                             //they will stop when local bcast is done
+    shm_bcast->reset(args.local_root, 
+		     rbuf,
+		     rbuf,
+		     to_send);
+    shm_bcast->setComplete(next_repeated_phase<T_NI>,&args);
+  }
+}
+
+
+///////////////////////////////////////////////////////////////////////
+//  Pipelined version starts here; 
+///////////////////////////////////////////////////////////////////////
+template <class T_NI, class T_Device>
+xlpgas::ShmHybridPipelinedBcast<T_NI,T_Device>::ShmHybridPipelinedBcast (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, void* device_info, T_NI* ni) :
+  xlpgas::Collective<T_NI> (ctxt, comm, kind, tag, NULL, NULL, ni) {
+  typedef xlpgas::cau_device_info<T_NI> device_info_type;
+  this->_device_info = device_info;
+  this->_buf_size = ((device_info_type*)device_info)->shm_buffers()._bcast_buf_sz;
+  //fprintf(stderr, "L%d BFSZ = %d\n",  this->rank(), this->_buf_size);
+  _flag = true;
+}
+
+template <class T_NI, class T_Device>
+bool xlpgas::ShmHybridPipelinedBcast<T_NI,T_Device>::isdone () const {
+  return _flag;
+}
+
+template <class T_NI, class T_Device>
+void xlpgas::ShmHybridPipelinedBcast<T_NI,T_Device>::kick () {
+  _onebuf_bcast->kick();
+}
+
+
+template <class T_NI,class T_Device>
+void next_pipelined_phase (void* ctxt, void * arg, pami_result_t){
+  typedef xlpgas::args_pipeline<T_NI> ARGS;
+  ARGS* hb_args = (ARGS*)arg;//hybrid bcast args
+  if(hb_args->left_to_send > 0){
+    xlpgas::ShmHybridBcast<T_NI,T_Device>* b = (xlpgas::ShmHybridBcast<T_NI,T_Device>*)hb_args->onebuf_bcast;    
+    //here we need to increment the buf size and decrement left to send
+    hb_args->sbuf  = (void*)( (char*)(hb_args->sbuf) + hb_args->buf_size );
+    hb_args->dbuf  = (void*)( (char*)(hb_args->dbuf) + hb_args->buf_size );
+    size_t to_send = (hb_args->left_to_send > hb_args->buf_size) ? hb_args->buf_size : hb_args->left_to_send ;    
+    b->reset(hb_args->root,
+	     hb_args->sbuf,
+	     hb_args->dbuf,
+	     hb_args->ttype,
+             to_send);
+    if(hb_args->left_to_send > hb_args->buf_size)
+      hb_args->left_to_send  -= hb_args->buf_size;
+    else
+      hb_args->left_to_send = 0;
+    //fprintf(stderr, "L%d NPL reset bsize=%d leftover=%d\n",  b->rank(), to_send, hb_args->left_to_send);
+    b->setComplete(next_pipelined_phase<T_NI,T_Device>, arg);
+    b->kick();
+  }
+  else {
+    hb_args->cb (hb_args->pami_ctxt, hb_args->arg, PAMI_SUCCESS);
+    //set done on the cuurent collective
+    xlpgas::ShmHybridPipelinedBcast<T_NI,T_Device>* pb = (xlpgas::ShmHybridPipelinedBcast<T_NI,T_Device>*)hb_args->pipelined_bcast;
+    pb->set_done();
+  }
+}
+
+
+template <class T_NI, class T_Device>
+void xlpgas::ShmHybridPipelinedBcast<T_NI,T_Device>::reset (int root, 
+                                                            const void         * sbuf, 
+                                                            void               * rbuf, 
+                                                            TypeCode           * type,
+                                                            size_t               typecount) {
+  size_t nbytes = type->GetDataSize() * typecount;
+  args.root     = root;
+  args.buf_size = this->_buf_size;
+  args.nbytes   = nbytes;
+  args.ttype    = type;
+  args.tcount   = typecount;
+  args.sbuf     = const_cast<void*>(sbuf);
+  args.dbuf     = rbuf;
+  args.o_sbuf   = args.sbuf;
+  args.o_dbuf   = args.dbuf;
+  args.pami_ctxt= this->_pami_ctxt;
+  args.cb       = this->_cb_complete; 
+  args.arg      = this->_arg;
+  args.left_to_send = (nbytes > this->_buf_size) ? nbytes - this->_buf_size : 0;
+  _flag         = false; 
+  _onebuf_bcast = (xlpgas::ShmHybridBcast<T_NI,T_Device>*) xlpgas::CollectiveManager<T_NI>::instance(0)->collective(xlpgas::ShmHybridBcastKind);  
+  args.onebuf_bcast    = (void*)_onebuf_bcast;
+  args.pipelined_bcast    = (void*)this;
+  _onebuf_bcast->setComplete(next_pipelined_phase<T_NI,T_Device>,&args);
+  size_t to_send = (nbytes <= this->_buf_size) ? nbytes : this->_buf_size;
+  //fprintf(stderr, "L%d reset bsize=%d leftover=%d\n", this->rank(), to_send,  args.left_to_send);
+  //next line is very important; 
+  _onebuf_bcast->setContext(this->_pami_ctxt);//don't move after reset; and you always have to set it
+  _onebuf_bcast->reset(root,sbuf,rbuf,type,to_send);
 }

@@ -140,7 +140,9 @@ namespace xlpgas
       CAUBcastKind,
       SHMLargeBcastKind,
       ShmCauAllReduceKind,
+      LeadersBcastKind,
       ShmHybridBcastKind,
+      ShmHybridPipelinedBcastKind,
 #endif
       MAXKIND
     };
@@ -216,6 +218,10 @@ namespace xlpgas
 
       pami_task_t ordinal(void) const {
         return _my_rank;
+      }
+
+      pami_task_t rank(void) const {
+        return this->_p2p_iface->myrank();
       }
 
     protected:
@@ -382,13 +388,33 @@ namespace xlpgas
 	      new (b) bcast_type (_ctxt, comm, kind, nextID, 0,device_info,ni);
 	      break;
 	    }
+
+	  case LeadersBcastKind:
+	    {
+	      typedef typename CollDefs::leaders_broadcast_type bcast_type;
+	      b = (Collective<T_NI> *)__global.heap_mm->malloc (sizeof(bcast_type));
+	      assert (b != NULL);
+	      memset (b, 0, sizeof(bcast_type));
+	      new (b) bcast_type (_ctxt, comm, kind, nextID, 0,ni);
+	      break;
+	    }
+
 	  case ShmHybridBcastKind:
 	    {
 	      typedef typename CollDefs::shm_hybrid_broadcast_type bcast_type;
 	      b = (Collective<T_NI> *)__global.heap_mm->malloc (sizeof(bcast_type));
 	      assert (b != NULL);
 	      memset (b, 0, sizeof(bcast_type));
-	      new (b) bcast_type (_ctxt, comm, kind, nextID, 0, ni);
+	      new (b) bcast_type (_ctxt, comm, kind, nextID, 0, device_info, ni);
+	      break;
+	    }
+          case ShmHybridPipelinedBcastKind:
+	    {
+	      typedef typename CollDefs::shm_hybrid_pipelined_broadcast_type bcast_type;
+	      b = (Collective<T_NI> *)__global.heap_mm->malloc (sizeof(bcast_type));
+	      assert (b != NULL);
+	      memset (b, 0, sizeof(bcast_type));
+	      new (b) bcast_type (_ctxt, comm, kind, nextID, 0, device_info, ni);
 	      break;
 	    }
 #endif
@@ -562,6 +588,14 @@ namespace xlpgas
 	      break;
 	    }
 
+#ifdef XLPGAS_PAMI_CAU
+	  case LeadersBcastKind:
+	    {
+              typedef typename CollDefs::leaders_broadcast_type broadcast_type;
+              p2p_iface->setSendPWQDispatch(broadcast_type::cb_incoming, this);
+	      break;
+	    }
+#endif
 	  case BcastPPKind:
 	    {
 	      break;
@@ -665,6 +699,10 @@ namespace xlpgas
 	      break;
 	    }
 	   case ShmHybridBcastKind:
+	    {
+	      break;
+	    }
+            case ShmHybridPipelinedBcastKind:
 	    {
 	      break;
 	    }
