@@ -33,7 +33,7 @@ void xlpgas::Permute<T_NI>::reset (int dest, const void * s, void * d,
 /* **************************************************************** */
 template <class T_NI>
 void xlpgas::Permute<T_NI>::kick    () {
-  if (this->_dest == this->_comm->ordinal())
+  if (this->_dest == this->ordinal())
     {
       memcpy (this->_rbuf ,
 	      this->_sbuf ,

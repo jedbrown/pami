@@ -179,7 +179,7 @@ namespace PAMI
          }
 
 
-        inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry, int phase)
+        inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry, int phase, uint64_t*)
           {
             TRACE_FN_ENTER();
             TRACE_FORMAT(  "<%p>CCMIRegistration::analyze_impl() context_id %zu, geometry %p",

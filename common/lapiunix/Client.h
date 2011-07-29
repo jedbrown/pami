@@ -63,8 +63,14 @@ namespace PAMI
         return;
       }
 
-    inline pami_result_t initP2PCollectives(Context      *ctxt)
+    inline pami_result_t initP2PCollectives(Context               *ctxt,
+					    Memory::MemoryManager *mm,
+					    bool                   disable_shm)
       {
+        Memory::MemoryManager *mm_ptr;
+        if(disable_shm) mm_ptr = NULL;
+        else            mm_ptr = mm;
+
         // Initalize Collective Registration
         pami_result_t rc;
         rc = __global.heap_mm->memalign((void **)&ctxt->_pgas_collreg, 0,
@@ -77,6 +83,7 @@ namespace PAMI
                                              ctxt->_protocol,
                                              ctxt->_lapi_device,
                                              ctxt->_devices->_shmem[ctxt->getId()],
+					     &(ctxt->_lapi_handle),
                                              &ctxt->_dispatch_id,
                                              &_geometry_map,
                                              false);
@@ -331,7 +338,7 @@ namespace PAMI
         // Initialize "Safe" Collectives, which will be used
         // To build the mappings and topologies for the optimized
         // collectives and to set up token management for collectives
-        initP2PCollectives(_contexts[0]);
+        initP2PCollectives(_contexts[0], &_mm, _disable_shm);
         _world_geometry->resetUEBarrier();
         _contexts[0]->_pgas_collreg->analyze(_contexts[0]->getId(),_world_geometry);
 
@@ -647,7 +654,7 @@ namespace PAMI
                   contexts[i] = (pami_context_t) _contexts[i];
                   continue;
               }
-              initP2PCollectives(_contexts[i]);
+              initP2PCollectives(_contexts[i],&_mm,_disable_shm);
               initCollectives(_contexts[i],&_mm, _disable_shm);
               _contexts[i]->unlock();
 
@@ -842,6 +849,7 @@ namespace PAMI
                                                                 &reduce_result[1],1);
         classroute->_context->_cau_collreg->analyze(0,classroute->_geometry,
                                                     &reduce_result[2],&count,1);
+        classroute->_context->_pgas_collreg->analyze(0,classroute->_geometry,1,&reduce_result[2]);
       }
       
     static void create_classroute(pami_context_t context, void *cookie, pami_result_t result)
@@ -919,7 +927,7 @@ namespace PAMI
                                           &_geometry_map);
 
             PAMI::Topology *local_master_topology  = (PAMI::Topology *)new_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
-            to_reduce_count = 3 + 2*local_master_topology->size();
+            to_reduce_count = 3 + 3*local_master_topology->size();
             rc = __global.heap_mm->memalign((void **)&to_reduce, 0,
                                             to_reduce_count * sizeof(uint64_t));
             PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc to_reduce");
@@ -1052,7 +1060,7 @@ namespace PAMI
                                           &_geometry_map);
 
             PAMI::Topology *local_master_topology  = (PAMI::Topology *)new_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
-            to_reduce_count = 3 + 2*local_master_topology->size();
+            to_reduce_count = 3 + 3*local_master_topology->size();
             rc = __global.heap_mm->memalign((void **)&to_reduce, 0,
                                             to_reduce_count * sizeof(uint64_t));
             PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc to_reduce");

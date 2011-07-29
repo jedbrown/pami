@@ -7,6 +7,7 @@
 
 #include "algorithms/protocols/tspcoll/Team.h"
 #include "algorithms/protocols/tspcoll/CollExchange.h"
+#include "algorithms/protocols/tspcoll/cau_collectives.h"
 
 #undef TRACE
 #ifdef DEBUG_COLL
@@ -17,23 +18,38 @@
 
 namespace xlpgas
 {
-  template <class T_NI>
+  template <class T_NI, class T_Device>
   class ShmCauAllReduce : public Collective<T_NI>
   {
   public:
+
     void * operator new (size_t, void * addr) { return addr; }
 
-    ShmCauAllReduce (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
-    Collective<T_NI> (ctxt, comm, kind, tag, NULL, NULL) {
-      //empty
+    ShmCauAllReduce (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, void* device_info, T_NI* ni) :
+      Collective<T_NI> (ctxt, comm, kind, tag, NULL, NULL, ni) {
+      this->_device_info = device_info;
     }
     virtual void reset (const void         * sbuf, 
 			void               * dbuf, 
-			xlpgas_ops_t       op,
-			xlpgas_dtypes_t    dt,
-			unsigned           nelems,
-			user_func_t* uf
+			pami_data_function   op,
+			TypeCode           * sdt,
+			unsigned             nelems,
+                        TypeCode           * rdt,
+			user_func_t        * uf
 			);
+
+    virtual void kick();
+
+    virtual bool isdone           () const;
+    virtual void setComplete (xlpgas_LCompHandler_t cb,
+			      void *arg);
+    virtual void setContext (pami_context_t ctxt);
+  public:
+    xlpgas::Collective<T_NI> *shm_reduce, *shm_bcast, *cau_reduce, *cau_bcast;
+    int64_t s;
+    int64_t tmp;
+    int64_t tmp_cau;
+
   }; /* ShmCauAllReduce */
 } /* Xlpgas */
 

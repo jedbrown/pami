@@ -25,6 +25,7 @@
 #include "algorithms/protocols/allreduce/MultiCombineComposite.h"
 #include "algorithms/protocols/CollectiveProtocolFactoryT.h"
 #include "common/lapiunix/lapifunc.h"
+#include "algorithms/geometry/CAUUtil.h"
 
 
 #define CAU_SETUPNI_P2P(NI_PTR) rc =                                    \
@@ -122,54 +123,6 @@ namespace PAMI
       }
 
       
-          const bool support[PAMI_DT_COUNT][PAMI_OP_COUNT] =
-            {
-         //  COPY,             NOOP,      MAX,      MIN,      SUM,      PROD,      LAND,      LOR,      LXOR,      BAND,      BOR,      BXOR,      MAXLOC,      MINLOC
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_BYTE
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_SIGNED_CHAR
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_SIGNED_SHORT
-            {false,            false,     true,     true,     true,     false,     false,     false,    false,     true,      true,     true,      false,       false},//PRIMITIVE_TYPE_SIGNED_INT
-            {false,            false,     true,     true,     true,     false,     false,     false,    false,     true,      true,     true,      false,       false},//PRIMITIVE_TYPE_SIGNED_LONG
-            {false,            false,     true,     true,     true,     false,     false,     false,    false,     true,      true,     true,      false,       false},//PRIMITIVE_TYPE_SIGNED_LONG_LONG
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_UNSIGNED_CHAR
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_UNSIGNED_SHORT
-            {false,            false,     true,     true,     true,     false,     false,     false,    false,     true,      true,     true,      false,       false},//PRIMITIVE_TYPE_UNSIGNED_INT
-            {false,            false,     true,     true,     true,     false,     false,     false,    false,     true,      true,     true,      false,       false},//PRIMITIVE_TYPE_UNSIGNED_LONG
-            {false,            false,     true,     true,     true,     false,     false,     false,    false,     true,      true,     true,      false,       false},//PRIMITIVE_TYPE_UNSIGNED_LONG_LONG
-            {false,            false,     true,     true,     true,     false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_FLOAT
-            {false,            false,     true,     true,     true,     false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_DOUBLE
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_LONG_DOUBLE
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_LOGICAL
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_SINGLE_COMPLEX
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_DOUBLE_COMPLEX
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_LOC_2INT
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_LOC_2FLOAT
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_LOC_2DOUBLE
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_LOC_SHORT_INT
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//PRIMITIVE_TYPE_LOC_FLOAT_INT
-            {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false} //PRIMITIVE_TYPE_LOC_DOUBLE_INT
-            };
-
-      template <class T_reduce_type>
-      inline metadata_result_t op_dt_metadata_function(struct pami_xfer_t *in)
-        {
-          T_reduce_type     *reduction = (T_reduce_type*)&in->cmd;
-          metadata_result_t  result    = {0};
-          uintptr_t          op;
-          uintptr_t          dt;
-          PAMI::Type::TypeFunc::GetEnums(reduction->stype,
-                                         reduction->op,
-                                         dt,
-                                         op);
-          if(op < PAMI_OP_COUNT && dt < PAMI_DT_COUNT)
-            result.check.datatype_op = support[dt][op]?0:1;
-          else
-            result.check.datatype_op = false;
-
-          return(result);
-        }
-
-
       //  **********************************************************************
       //  Typedefs for template instantiations
       //  **********************************************************************
@@ -358,13 +311,16 @@ namespace PAMI
           T_Geometry                        *_geometry;
           T_LocalModel                      *_local_model;
           T_LocalNI_AM                      *_ni;
+          bool                               _use_cau;
           PAMI::Device::CAUGeometryInfo     *_cau_info;
+          bool                               _use_bsr;
           PAMI::Device::BSRGeometryInfo     *_bsr_info;
           CCMI::Executor::Composite         *_bsr_p2p_composite;
           CCMI::Executor::Composite         *_shm_p2p_composite;
           uint32_t                           _unique_key;
           uint64_t                           _ctlstr_offset;
           uint64_t                           _bsrstr_offset;
+          uint64_t                           _databuf_offset;
         }GeometryInfo;
         typedef typename Barrier::HybridBarrierFactory<T_LocalBSRNI,
                                                        Barrier::HybridBSRMetaData,
@@ -547,6 +503,7 @@ namespace PAMI
             geometry->setKey(Geometry::GKEY_MSYNC_LOCAL_CLASSROUTEID,*bsr_gi);
           }
 
+
         inline pami_result_t analyze_impl(size_t         context_id,
                                           T_Geometry    *geometry,
                                           uint64_t      *inout_val,
@@ -628,6 +585,9 @@ namespace PAMI
                   // invert for bitwise AND
                   inout_val[0] = ~result_mask;
 
+                  //Make the geometry aware of the shared memory allocator object
+                  geometry->setKey(Geometry::GKEY_GEOMETRYSHMEM,(void*)(&_csmm));
+
                   // Construct the geometry info object, so we can free our allocated objects later
                   GeometryInfo                     *geometryInfo = (GeometryInfo*)_geom_allocator.allocateObject();
                   memset(geometryInfo, 0, sizeof(*geometryInfo));
@@ -635,6 +595,7 @@ namespace PAMI
                   geometryInfo->_geometry                        = geometry;
                   geometryInfo->_local_model                     = NULL;
                   geometryInfo->_ni                              = NULL;
+
                   geometryInfo->_bsr_info                        = NULL;
                   geometryInfo->_cau_info                        = NULL;
                   geometryInfo->_bsr_p2p_composite               = NULL;
@@ -663,7 +624,20 @@ namespace PAMI
                     inout_ptr[master_index]                   = ctrlstr_off;
                   }
                   geometryInfo->_bsrstr_offset = inout_ptr[master_index];
-
+                  
+                  // Get a data segment for PGAS Collectives
+                  // PGAS Registration will inspect the inout value directly
+                  // But CAU registration will manage the storage
+                  inout_ptr    = &inout_val[1+2*num_master_tasks];
+                  memset(inout_ptr, 0xFF, num_master_tasks*sizeof(uint64_t));
+                  if(participant)
+                  {
+                    typename T_CSMemoryManager::databuf_t *str = _csmm.getDataBuffer(1);
+                    uint64_t  databuf_off                      = _csmm.addr_to_offset(str);
+                    inout_ptr[master_index]                    = databuf_off;
+                  }
+                  geometryInfo->_databuf_offset = inout_ptr[master_index];
+                  
                   inout_nelem[0]    = inout_nelem[0];
                   ITRC(IT_CAU, "CollReg(phase 0): group_id=%d, unique_id=0x%x "
                        "reduceMask:0x%lx noGroup=0x%x noJobUniq=0x%x cau_collis=0x%x bsr_collis=0x%lx no_affinity=0x%llx\n",
@@ -757,8 +731,13 @@ namespace PAMI
                   // Set info in the geometry so these can be cleaned up
                   geometryInfo->_local_model                     = local_model;
                   geometryInfo->_ni                              = ni;
+                  geometryInfo->_use_cau                         = useCau;
                   geometryInfo->_cau_info                        = cau_gi;
+                  geometryInfo->_use_bsr                         = useBsr;
                   geometryInfo->_bsr_info                        = bsr_gi;
+
+                  geometry->setKey(Geometry::GKEY_GEOMETRYUSECAU,(void*)(&(geometryInfo->_use_cau)));
+                  geometry->setKey(Geometry::GKEY_GEOMETRYUSEBSR,(void*)(&(geometryInfo->_use_bsr)));
 
                   _barrier_reg.setNI(geometry, ni, &_g_barrier_ni);
                   _barrierbsr_reg.setNI(geometry, &_l_barrierbsr_ni, &_g_barrier_ni);
@@ -912,7 +891,8 @@ namespace PAMI
             _bsr_geom_allocator.returnObject(bsr_gi);
           }
         inline void freeSharedMemory(uint64_t ctlstr_offset,
-                                     uint64_t bsrstr_offset)
+                                     uint64_t bsrstr_offset,
+                                     uint64_t databuf_offset)
           {
             _csmm.returnSGCtrlStr(ctlstr_offset);
             if(bsrstr_offset != 0xFFFFFFFFFFFFFFFFULL)
@@ -921,6 +901,13 @@ namespace PAMI
                 (typename T_CSMemoryManager::ctlstr_t *)_csmm.offset_to_addr(bsrstr_offset);
               _csmm.returnCtrlStr(ctlstr);
             }
+            if(databuf_offset != 0xFFFFFFFFFFFFFFFFULL)
+            {
+              size_t *buf = (size_t*)_csmm.offset_to_addr(databuf_offset);
+              *buf        = _csmm.shm_null_offset();
+              _csmm.returnDataBuffer((typename T_CSMemoryManager::databuf_t *)buf);
+            }
+            
           }
         inline void freeUniqueKey(uint32_t unique_key)
           {
@@ -968,7 +955,8 @@ namespace PAMI
             gi->_registration->freeUniqueKey(gi->_unique_key);
 
             gi->_registration->freeSharedMemory(gi->_ctlstr_offset,
-                                                gi->_bsrstr_offset);
+                                                gi->_bsrstr_offset,
+                                                gi->_databuf_offset);
             
             gi->_registration->freeGeomInfo(gi);
           }

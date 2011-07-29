@@ -27,8 +27,8 @@
 /* ************************************************************************* */
 template <class T_NI>
 xlpgas::Allreduce::Short<T_NI>::
-Short (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
-  CollExchange<T_NI> (ctxt, comm, kind, tag, offset)
+Short (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset,T_NI* ni) :
+  CollExchange<T_NI> (ctxt, comm, kind, tag, offset, ni)
 {
   pami_type_t allreducetype = PAMI_TYPE_BYTE;
   this->_dbuf = NULL;
@@ -45,12 +45,12 @@ Short (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
   if (nonBF > 0)
     {
       //xlpgas_endpoint_t rdest = comm->endpoint (comm->ordinal() - maxBF);
-      //_dest    [phase] = (comm->ordinal() >= maxBF) ? rdest : -1;
-      this->_dest    [phase] = comm->endpoint (comm->ordinal() - maxBF);
+      //_dest    [phase] = (this->ordinal() >= maxBF) ? rdest : -1;
+      this->_dest    [phase] = comm->endpoint (this->ordinal() - maxBF);
       this->_sbuf    [phase] = NULL;    /* unknown */
-      this->_rbuf    [phase] = ((int)comm->ordinal() < nonBF)  ? this->_phasebuf[phase][0] : NULL;
-      this->_cb_rcvhdr[phase] = ((int)comm->ordinal() < nonBF)  ? cb_switchbuf : NULL;
-      this->_postrcv [phase] = ((int)comm->ordinal() < nonBF)  ? cb_allreduce : NULL;
+      this->_rbuf    [phase] = ((int)this->ordinal() < nonBF)  ? this->_phasebuf[phase][0] : NULL;
+      this->_cb_rcvhdr[phase] = ((int)this->ordinal() < nonBF)  ? cb_switchbuf : NULL;
+      this->_postrcv [phase] = ((int)this->ordinal() < nonBF)  ? cb_allreduce : NULL;
       this->_sbufln  [phase] = 0;       /* unknown */
       this->_bufctr  [phase] = 0;
       this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], (TypeCode *)allreducetype, (TypeCode *)allreducetype);
@@ -64,13 +64,13 @@ Short (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
 
   for (int i=0; i<_logMaxBF; i++)
     {
-      //unsigned rdest   = comm->endpoint (comm->ordinal() ^ (1<<i));
-      //_dest    [phase] = ((int)comm->ordinal() < maxBF) ? rdest : -1;
-      this->_dest [phase] = comm->endpoint (comm->ordinal() ^ (1<<i));
+      //unsigned rdest   = comm->endpoint (this->ordinal() ^ (1<<i));
+      //_dest    [phase] = ((int)this->ordinal() < maxBF) ? rdest : -1;
+      this->_dest [phase] = comm->endpoint (this->ordinal() ^ (1<<i));
       this->_sbuf    [phase] = NULL;     /* unknown */
-      this->_rbuf    [phase] = ((int)comm->ordinal() < maxBF) ? this->_phasebuf[phase][0] : NULL;
-      this->_cb_rcvhdr[phase] = ((int)comm->ordinal() < maxBF) ? cb_switchbuf : NULL;
-      this->_postrcv [phase] = ((int)comm->ordinal() < maxBF) ? cb_allreduce : NULL;
+      this->_rbuf    [phase] = ((int)this->ordinal() < maxBF) ? this->_phasebuf[phase][0] : NULL;
+      this->_cb_rcvhdr[phase] = ((int)this->ordinal() < maxBF) ? cb_switchbuf : NULL;
+      this->_postrcv [phase] = ((int)this->ordinal() < maxBF) ? cb_allreduce : NULL;
       this->_sbufln  [phase] = 0;        /* unknown */
       this->_bufctr  [phase] = 0;
       this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], (TypeCode *)allreducetype, (TypeCode *)allreducetype);
@@ -84,9 +84,9 @@ Short (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
 
   if (nonBF > 0)
     {
-      ///unsigned rdest   = comm->endpoint (comm->ordinal() + maxBF);
-      //_dest    [phase] = ((int)comm->ordinal() < nonBF)  ? rdest : -1;
-      this->_dest    [phase] = comm->endpoint (comm->ordinal() + maxBF);
+      ///unsigned rdest   = comm->endpoint (this->ordinal() + maxBF);
+      //_dest    [phase] = ((int)this->ordinal() < nonBF)  ? rdest : -1;
+      this->_dest    [phase] = comm->endpoint (this->ordinal() + maxBF);
       this->_sbuf    [phase] = NULL;     /* unknown */
       this->_rbuf    [phase] = NULL;     /* unknown */
       this->_cb_rcvhdr[phase] = NULL;
@@ -155,7 +155,7 @@ void xlpgas::Allreduce::Short<T_NI>::reset (const void         * sbuf,
     printf("L%d: short allreduce [teamid=%d rank=%d sizeworld=%d nelems=%d]\n",
 	 XLPGAS_MYNODE,
 	 this->_comm->commID(),
-	 this->_comm->ordinal(),
+	 this->ordinal(),
 	 this->_comm->size(),
 	 nelems
 	 );
@@ -176,7 +176,7 @@ void xlpgas::Allreduce::Short<T_NI>::reset (const void         * sbuf,
 
   if (nonBF > 0)   /* phase 0: gather buffers from ordinals > n2prev */
     {
-      this->_sbuf    [phase] = ((int)this->_comm->ordinal() >= maxBF) ? dbuf  : NULL;
+      this->_sbuf    [phase] = ((int)this->ordinal() >= maxBF) ? dbuf  : NULL;
       this->_sbufln  [phase] = nelems * datawidth;
       this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], sdt, rdt);
       this->_pwq[phase].reset();
@@ -189,7 +189,7 @@ void xlpgas::Allreduce::Short<T_NI>::reset (const void         * sbuf,
 
   for (int i=0; i<this->_logMaxBF; i++)   /* middle phases: butterfly pattern */
     {
-      this->_sbuf    [phase] = ((int)this->_comm->ordinal() < maxBF) ? dbuf  : NULL;
+      this->_sbuf    [phase] = ((int)this->ordinal() < maxBF) ? dbuf  : NULL;
       this->_sbufln  [phase] = nelems * datawidth;
       this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], sdt, rdt);
       this->_pwq[phase].reset();
@@ -203,8 +203,8 @@ void xlpgas::Allreduce::Short<T_NI>::reset (const void         * sbuf,
 
   if (nonBF > 0)   /*  last phase: collect results */
     {
-      this->_sbuf    [phase] = ((int)this->_comm->ordinal() < nonBF)  ? dbuf  : NULL;
-      this->_rbuf    [phase] = ((int)this->_comm->ordinal() >= maxBF) ? dbuf  : NULL;
+      this->_sbuf    [phase] = ((int)this->ordinal() < nonBF)  ? dbuf  : NULL;
+      this->_rbuf    [phase] = ((int)this->ordinal() >= maxBF) ? dbuf  : NULL;
       this->_sbufln  [phase] = nelems * datawidth;
       this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], sdt, rdt);
       this->_pwq[phase].reset();

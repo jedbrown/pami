@@ -194,7 +194,7 @@ namespace PAMI
   ShmemEager,
   MUDevice,
   ShmemDevice,
-  MU_NBCollManager > MU_PGASCollreg;
+  MU_NBCollManager,void > MU_PGASCollreg;
 
   // PGAS over Shmem
   typedef xlpgas::CollectiveManager<ShmemNI_AM> Shmem_NBCollManager;
@@ -205,7 +205,7 @@ namespace PAMI
   ShmemEager,
   ShmemDevice,
   ShmemDevice,
-  Shmem_NBCollManager > Shmem_PGASCollreg;
+  Shmem_NBCollManager, void> Shmem_PGASCollreg;
 
   // PGAS over Composite Shmem+MU
   typedef xlpgas::CollectiveManager<CompositeNI_AM> Composite_NBCollManager;
@@ -216,7 +216,7 @@ namespace PAMI
   ShmemEager,
   MUDevice,
   ShmemDevice,
-  Composite_NBCollManager > Composite_PGASCollreg;
+  Composite_NBCollManager, void > Composite_PGASCollreg;
 
 
   typedef PAMI::Barrier::IndirectCounter<PAMI::Counter::BGQ::IndirectL2> Barrier_Type;

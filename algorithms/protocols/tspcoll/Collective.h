@@ -102,8 +102,8 @@ static inline void xlpgas_fatalerror (int errcode, const char * strg, ...)
 
 namespace xlpgas
 {
-//  class Team;
-  typedef PAMI_GEOMETRY_CLASS Team;
+
+  typedef PAMI::Topology Team;
 
   /* *********************************************************** */
   /* *********************************************************** */
@@ -133,11 +133,15 @@ namespace xlpgas
       BcastPPKind,
       AllgatherPPKind,
       AlltoallPPKind,
+#ifdef XLPGAS_PAMI_CAU
       SHMReduceKind,
       SHMBcastKind,
+      CAUReduceKind,
+      CAUBcastKind,
       SHMLargeBcastKind,
       ShmCauAllReduceKind,
       ShmHybridBcastKind,
+#endif
       MAXKIND
     };
 
@@ -156,7 +160,8 @@ namespace xlpgas
 		  CollectiveKind           kind,
 		  int                      tag,
 		  xlpgas_LCompHandler_t     cb_complete,
-		  void                   * arg);
+		  void                   * arg,
+                  T_NI                   * ni);
       virtual ~Collective()
         {
 
@@ -166,10 +171,10 @@ namespace xlpgas
       int            tag  () const { return _tag; }
       int            kind    () const { return _kind; }
       Team * comm    () const { return _comm; }
-      void setComplete (xlpgas_LCompHandler_t cb,
-			void *arg) { _cb_complete = cb; _arg = arg; }
-      void setContext (pami_context_t ctxt) {_pami_ctxt=ctxt;}
-
+      virtual void setComplete (xlpgas_LCompHandler_t cb,
+				void *arg) { _cb_complete = cb; _arg = arg; }
+      virtual void setContext (pami_context_t ctxt) {_pami_ctxt=ctxt;}
+      void setDeviceInfo(void* di){_device_info = di;}
     public:
       virtual void   kick   () { } /* force progress */
       virtual bool   isdone () const { return true; } /* check completion */
@@ -204,7 +209,15 @@ namespace xlpgas
 			  unsigned nelems, user_func_t*) {
 	printf("ERROR: virtual method called (9)\n");
       }
+
       virtual void setNI(T_NI *p2p_iface) { _p2p_iface = p2p_iface; }
+
+      virtual void setGenericDevice(PAMI::Device::Generic::Device *dev) { _dev = dev;}
+
+      pami_task_t ordinal(void) const {
+        return _my_rank;
+      }
+
     protected:
       int                       _ctxt;
       pami_context_t            _pami_ctxt;
@@ -214,6 +227,9 @@ namespace xlpgas
       xlpgas_LCompHandler_t      _cb_complete;
       void                    * _arg;
       T_NI                    * _p2p_iface;
+      PAMI::Device::Generic::Device * _dev;
+      void                    * _device_info;
+      pami_task_t               _my_rank;
       DECL_MUTEX(_mutex);
     };
 
@@ -232,13 +248,13 @@ namespace xlpgas
       /* external API     */
       /* ---------------- */
 
-      static void Initialize (int ncontexts);
+      static void Initialize (int ncontexts, CollectiveManager<T_NI>*);
       static CollectiveManager * instance(int ctxt) { return _instances[ctxt];}
 
       Collective<T_NI> * find (CollectiveKind kind, int tag);
 
       template <class CollDefs>
-      Collective<T_NI> * allocate (Team* comm, CollectiveKind kind, int id){
+      Collective<T_NI> * allocate (Team* comm, CollectiveKind kind, int id, void* device_info, T_NI* ni){
 	assert (0 <= kind && kind < MAXKIND);
 //	int nextID = _kindlist[kind]->len();
         int nextID = id;
@@ -254,7 +270,7 @@ namespace xlpgas
 	      b = (Collective<T_NI> *)__global.heap_mm->malloc (sizeof(barrier_type));
 	      assert (b != NULL);
 	      memset (b, 0, sizeof(barrier_type));
-	      new (b) barrier_type (_ctxt, comm, kind, nextID, 0);
+	      new (b) barrier_type (_ctxt, comm, kind, nextID, 0, ni);
 	      break;
 	    }
 
@@ -264,7 +280,7 @@ namespace xlpgas
 	      b = (Collective<T_NI> *) __global.heap_mm->malloc (sizeof(barrier_type));
 	      assert (b != NULL);
 	      memset (b, 0, sizeof(barrier_type));
-	      new (b) barrier_type (_ctxt, comm, kind, nextID, 0);
+	      new (b) barrier_type (_ctxt, comm, kind, nextID, 0,ni);
 	      break;
 	    }
 
@@ -274,7 +290,7 @@ namespace xlpgas
 	      b = (Collective<T_NI> *)__global.heap_mm->malloc (sizeof(allreduce_type));
 	      assert (b != NULL);
 	      memset (b, 0, sizeof(allreduce_type));
-	      new (b) allreduce_type (_ctxt, comm, kind, nextID, 0);
+	      new (b) allreduce_type (_ctxt, comm, kind, nextID, 0, ni);
 	      break;
 	    }
 
@@ -284,27 +300,36 @@ namespace xlpgas
 	      b = (Collective<T_NI> *)__global.heap_mm->malloc (sizeof(allreduce_type));
 	      assert (b != NULL);
 	      memset (b, 0, sizeof(allreduce_type));
-	      new (b) allreduce_type (_ctxt, comm, kind, nextID, 0);
+	      new (b) allreduce_type (_ctxt, comm, kind, nextID, 0, ni);
 	      break;
 	    }
 #ifdef XLPGAS_PAMI_CAU
 	  case SHMReduceKind:
 	    {
 	      typedef typename CollDefs::shm_reduce_type reduce_type;
-	      b = (Collective<T_NI> *)malloc (sizeof(reduce_type));
+	      b = (Collective<T_NI> *)__global.heap_mm->malloc (sizeof(reduce_type));
 	      assert (b != NULL);
 	      memset (b, 0, sizeof(reduce_type));
-	      new (b) reduce_type (_ctxt, comm, kind, nextID, 0);
+	      new (b) reduce_type (_ctxt, comm, kind, nextID, 0, device_info, ni);
+	      break;
+	    }
+	  case CAUReduceKind:
+	    {
+	      typedef typename CollDefs::cau_reduce_type reduce_type;
+	      b = (Collective<T_NI> *)__global.heap_mm->malloc (sizeof(reduce_type));
+	      assert (b != NULL);
+	      memset (b, 0, sizeof(reduce_type));
+	      new (b) reduce_type (_ctxt, comm, kind, nextID, 0, device_info, ni);
 	      break;
 	    }
 
 	  case ShmCauAllReduceKind:
 	    {
 	      typedef typename CollDefs::shm_cau_allreduce_type reduce_type;
-	      b = (Collective *)malloc (sizeof(reduce_type));
+	      b = (Collective<T_NI> *)__global.heap_mm->malloc (sizeof(reduce_type));
 	      assert (b != NULL);
 	      memset (b, 0, sizeof(reduce_type));
-	      new (b) reduce_type (_ctxt, comm, kind, nextID, 0);
+	      new (b) reduce_type (_ctxt, comm, kind, nextID, 0, device_info, ni);
 	      break;
 	    }
 #endif
@@ -314,7 +339,7 @@ namespace xlpgas
 	      b = (Collective<T_NI> *)__global.heap_mm->malloc (sizeof(allreduce_type));
 	      assert (b != NULL);
 	      memset (b, 0, sizeof(allreduce_type));
-	      new (b) allreduce_type (_ctxt, comm, kind, nextID, 0);
+	      new (b) allreduce_type (_ctxt, comm, kind, nextID, 0, ni);
 	      break;
 	    }
 
@@ -324,35 +349,46 @@ namespace xlpgas
 	      b = (Collective<T_NI> *)__global.heap_mm->malloc (sizeof(bcast_type));
 	      assert (b != NULL);
 	      memset (b, 0, sizeof(bcast_type));
-	      new (b) bcast_type (_ctxt, comm, kind, nextID, 0);
+	      new (b) bcast_type (_ctxt, comm, kind, nextID, 0, ni);
 	      break;
 	    }
 #ifdef XLPGAS_PAMI_CAU
 	  case SHMBcastKind:
 	    {
 	      typedef typename CollDefs::shm_broadcast_type bcast_type;
-	      b = (Collective<T_NI> *)malloc (sizeof(bcast_type));
+	      b = (Collective<T_NI> *)__global.heap_mm->malloc (sizeof(bcast_type));
 	      assert (b != NULL);
 	      memset (b, 0, sizeof(bcast_type));
-	      new (b) bcast_type (_ctxt, comm, kind, nextID, 0);
+	      new (b) bcast_type (_ctxt, comm, kind, nextID, 0, device_info, ni);
 	      break;
 	    }
+
+	  case CAUBcastKind:
+	     {
+	       typedef typename CollDefs::cau_broadcast_type bcast_type;
+	       b = (Collective<T_NI> *)__global.heap_mm->malloc (sizeof(bcast_type));
+	       assert (b != NULL);
+	       memset (b, 0, sizeof(bcast_type));
+	       new (b) bcast_type (_ctxt, comm, kind, nextID, 0, device_info, ni);
+	       break;
+	     }
+
 	  case SHMLargeBcastKind:
 	    {
 	      typedef typename CollDefs::shm_large_broadcast_type bcast_type;
-	      b = (Collective *)malloc (sizeof(bcast_type));
+	      b = (Collective<T_NI> *)__global.heap_mm->malloc (sizeof(bcast_type));
 	      assert (b != NULL);
 	      memset (b, 0, sizeof(bcast_type));
-	      new (b) bcast_type (_ctxt, comm, kind, nextID, 0);
+	      new (b) bcast_type (_ctxt, comm, kind, nextID, 0,device_info,ni);
 	      break;
 	    }
 	  case ShmHybridBcastKind:
 	    {
 	      typedef typename CollDefs::shm_hybrid_broadcast_type bcast_type;
-	      b = (Collective *)malloc (sizeof(bcast_type));
+	      b = (Collective<T_NI> *)__global.heap_mm->malloc (sizeof(bcast_type));
 	      assert (b != NULL);
 	      memset (b, 0, sizeof(bcast_type));
-	      new (b) bcast_type (_ctxt, comm, kind, nextID, 0);
+	      new (b) bcast_type (_ctxt, comm, kind, nextID, 0, ni);
 	      break;
 	    }
 #endif
@@ -362,7 +398,7 @@ namespace xlpgas
 	      b = (Collective<T_NI> *)__global.heap_mm->malloc (sizeof(bcast_type));
 	      assert (b != NULL);
 	      memset (b, 0, sizeof(bcast_type));
-	      new (b) bcast_type (_ctxt, comm, kind, nextID, 0);
+	      new (b) bcast_type (_ctxt, comm, kind, nextID, 0,ni);
 	      break;
 	    }
 
@@ -372,7 +408,7 @@ namespace xlpgas
 	      b = (Collective<T_NI> *)__global.heap_mm->malloc (sizeof(bcast_type));
 	      assert (b != NULL);
 	      memset (b, 0, sizeof(bcast_type));
-	      new (b) bcast_type (_ctxt, comm, kind, nextID, 0);
+	      new (b) bcast_type (_ctxt, comm, kind, nextID, 0,ni);
 	      break;
 	    }
 
@@ -382,7 +418,7 @@ namespace xlpgas
 	      b = (Collective<T_NI> *)__global.heap_mm->malloc (sizeof(allgather_type));
 	      assert (b != NULL);
 	      memset (b, 0, sizeof(allgather_type));
-	      new (b) allgather_type (_ctxt, comm, kind, nextID, 0);
+	      new (b) allgather_type (_ctxt, comm, kind, nextID, 0,ni);
 	      break;
 	    }
 	  case AllgatherPPKind:
@@ -391,7 +427,7 @@ namespace xlpgas
 	      b = (Collective<T_NI> *)__global.heap_mm->malloc (sizeof(allgather_type));
 	      assert (b != NULL);
 	      memset (b, 0, sizeof(allgather_type));
-	      new (b) allgather_type (_ctxt, comm, kind, nextID, 0);
+	      new (b) allgather_type (_ctxt, comm, kind, nextID, 0,ni);
 	      break;
 	    }
 
@@ -401,7 +437,7 @@ namespace xlpgas
 	      b = (Collective<T_NI> *)__global.heap_mm->malloc (sizeof(allgatherv_type));
 	      assert (b != NULL);
 	      memset (b, 0, sizeof(allgatherv_type));
-	      new (b) allgatherv_type (_ctxt, comm, kind, nextID, 0);
+	      new (b) allgatherv_type (_ctxt, comm, kind, nextID, 0, ni);
 	      break;
 	    }
 	  case AlltoallKind:
@@ -410,7 +446,7 @@ namespace xlpgas
 	      b = (Collective<T_NI> *)__global.heap_mm->malloc (sizeof(alltoall_type));
 	      assert (b != NULL);
 	      memset (b, 0, sizeof(alltoall_type));
-	      new (b) alltoall_type (_ctxt, comm, kind, nextID, 0);
+	      new (b) alltoall_type (_ctxt, comm, kind, nextID, 0,ni);
 	      break;
 	    }
 	  case AlltoallPPKind:
@@ -419,7 +455,7 @@ namespace xlpgas
 	      b = (Collective<T_NI> *)__global.heap_mm->malloc (sizeof(alltoall_type));
 	      assert (b != NULL);
 	      memset (b, 0, sizeof(alltoall_type));
-	      new (b) alltoall_type (_ctxt, comm, kind, nextID, 0);
+	      new (b) alltoall_type (_ctxt, comm, kind, nextID, 0, ni);
 	      break;
 	    }
 	  case AlltoallvKind:
@@ -428,7 +464,7 @@ namespace xlpgas
 	      b = (Collective<T_NI> *)__global.heap_mm->malloc (sizeof(alltoallv_type));
 	      assert (b != NULL);
 	      memset (b, 0, sizeof(alltoallv_type));
-	      new (b) alltoallv_type (_ctxt, comm, kind, nextID, 0);
+	      new (b) alltoallv_type (_ctxt, comm, kind, nextID, 0, ni);
 	      break;
 	    }
 
@@ -438,7 +474,7 @@ namespace xlpgas
 	      b = (Collective<T_NI> *)__global.heap_mm->malloc (sizeof(gather_type));
 	      assert (b != NULL);
 	      memset (b, 0, sizeof(gather_type));
-	      new (b) gather_type (_ctxt, comm, kind, nextID, 0);
+	      new (b) gather_type (_ctxt, comm, kind, nextID, 0, ni);
 	      break;
 	    }
 
@@ -448,7 +484,7 @@ namespace xlpgas
 	      b = (Collective<T_NI> *)__global.heap_mm->malloc (sizeof(scatter_type));
 	      assert (b != NULL);
 	      memset (b, 0, sizeof(scatter_type));
-	      new (b) scatter_type (_ctxt, comm, kind, nextID, 0);
+	      new (b) scatter_type (_ctxt, comm, kind, nextID, 0, ni);
 	      break;
 	    }
 
@@ -458,7 +494,7 @@ namespace xlpgas
 	      b = (Collective<T_NI> *)__global.heap_mm->malloc (sizeof(permute_type));
 	      assert (b != NULL);
 	      memset (b, 0, sizeof(permute_type));
-	      new (b) permute_type (_ctxt, comm, kind, nextID, 0);
+	      new (b) permute_type (_ctxt, comm, kind, nextID, 0, ni);
 	      break;
 	    }
 
@@ -468,7 +504,7 @@ namespace xlpgas
 	      b = (Collective<T_NI> *)__global.heap_mm->malloc (sizeof(prefixsums_type));
 	      assert (b != NULL);
 	      memset (b, 0, sizeof(prefixsums_type));
-	      new (b) prefixsums_type (_ctxt, comm, kind, nextID, 0);
+	      new (b) prefixsums_type (_ctxt, comm, kind, nextID, 0, ni);
 	      break;
 	    }
 
@@ -479,11 +515,12 @@ namespace xlpgas
 	    }
 	  }
 	(*_kindlist[kind])[nextID] = b;
+        b->setGenericDevice(_genericDevice);
 	return b;
       }
 
       template <class CollDefs>
-      inline void          multisend_reg(CollectiveKind kind, T_NI *p2p_iface)
+        inline void          multisend_reg(CollectiveKind kind, T_NI *p2p_iface, int* dispatch_id = NULL, void* comm_handle = NULL)
         {
           switch (kind)
             {
@@ -594,7 +631,44 @@ namespace xlpgas
               p2p_iface->setSendPWQDispatch(prefixsums_type::cb_incoming, this);
 	      break;
 	    }
+#ifdef XLPGAS_PAMI_CAU
+	    //shm/hybrid
+            //registration for hybrid cau collectives happens in the cau algorithms class
+            //It requires dispatch id and lapi handle;
+	   case SHMReduceKind:
+	    {
+	      break;
+	    }
+	   case SHMBcastKind:
+	    {
+	      break;
+	    }
+	   case CAUReduceKind:
+	    {
+              typedef typename CollDefs::cau_reduce_type reduce_type;
+              reduce_type::register_dispatch(dispatch_id,*((lapi_handle_t*)comm_handle));
+	      break;
+	    }
+	   case CAUBcastKind:
+	    {
+              typedef typename CollDefs::cau_broadcast_type bcast_type;
+              bcast_type::register_dispatch(dispatch_id,*((lapi_handle_t*)comm_handle));
+	      break;
+	    }
 
+	   case SHMLargeBcastKind:
+	    {
+	      break;
+	    }
+	   case ShmCauAllReduceKind:
+	    {
+	      break;
+	    }
+	   case ShmHybridBcastKind:
+	    {
+	      break;
+	    }
+#endif
 	  default:
 	    {
 	      xlpgas_fatalerror (-1, "Internal: invalid collective registration");
@@ -621,6 +695,8 @@ namespace xlpgas
     public:
       CollectiveManager (int ctxt);
       void * operator new (size_t, void * addr) { return addr; }
+      Collective<T_NI>* collective(CollectiveKind kind){ return (*_kindlist[kind])[0];}
+      PAMI::Device::Generic::Device* device() {return _genericDevice;}
     };
 }
 

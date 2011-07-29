@@ -23,8 +23,8 @@ namespace xlpgas
   public:
     void * operator new (size_t, void * addr) { return addr; }
 
-    ShmHybridBcast (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
-    Collective<T_NI> (ctxt, comm, kind, tag, NULL, NULL) {
+    ShmHybridBcast (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, T_NI* ni) :
+      Collective<T_NI> (ctxt, comm, kind, tag, NULL, NULL, ni) {
       //empty
     }
 
@@ -33,6 +33,8 @@ namespace xlpgas
 			void               * dbuf, 
 			unsigned           nbytes
 			);
+    virtual void kick();
+
   }; /* ShmHybridBcast */
 } /* Xlpgas */
 

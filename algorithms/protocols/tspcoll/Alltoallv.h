@@ -22,8 +22,8 @@ namespace xlpgas
   public:
     void * operator new (size_t, void * addr) { return addr; }
 
-    Alltoallv (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
-    Alltoall<T_NI> (ctxt, comm, kind, tag, offset)
+    Alltoallv (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, T_NI* ni) :
+      Alltoall<T_NI> (ctxt, comm, kind, tag, offset,ni)
       {
 	for (int i=0; i<(int)comm->size(); i++)
 	  {

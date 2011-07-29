@@ -31,7 +31,8 @@ namespace xlpgas
 	     Team              * comm,
 	     CollectiveKind      kind,
 	     int                 tag,
-	     int                 offset);
+	     int                 offset,
+             T_NI              * ni);
     void reset () { CollExchange<T_NI>::reset(); }
   private:
     pami_type_t _type;
@@ -44,11 +45,12 @@ namespace xlpgas
 /* *********************************************************************** */
 template <class T_NI>
 inline xlpgas::Barrier<T_NI>::Barrier (int               ctxt,
-				Team            * comm,
-				CollectiveKind    kind,
-				int               tag,
-				int               offset) :
-  CollExchange<T_NI> (ctxt, comm, kind, tag, offset),
+                                       Team            * comm,
+                                       CollectiveKind    kind,
+                                       int               tag,
+                                       int               offset,
+                                       T_NI             *ni) :
+  CollExchange<T_NI> (ctxt, comm, kind, tag, offset, ni),
   _type(PAMI_TYPE_BYTE)
 {
   TRACE((stderr, "%d: Barrier constructor: rank=%d of %d\n",
@@ -64,7 +66,7 @@ inline xlpgas::Barrier<T_NI>::Barrier (int               ctxt,
 
     for (int i=0; i<this->_numphases; i++)
     {
-      this->_dest[i]      = comm->endpoint((comm->ordinal()+(1<<i))%comm->size());
+      this->_dest[i]      = comm->endpoint((this->ordinal()+(1<<i))%comm->size());
       TRACE((stderr, "%d: Barrier constructor: dest[%d]=%d \n",XLPGAS_MYNODE,i ,this->_dest[i]));
 
       this->_sbuf[i]      = &this->_dummy;

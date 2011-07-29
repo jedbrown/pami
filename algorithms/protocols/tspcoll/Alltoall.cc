@@ -35,7 +35,7 @@ template<class T_NI>
 void xlpgas::Alltoall<T_NI>::kick    () {
   MUTEX_LOCK(&this->_mutex);
   for (int i=0; i < (int)this->_comm->size(); i++)
-    if (i == (int)this->_comm->ordinal())
+    if (i == (int)this->ordinal())
       {
 	memcpy (_rbuf + i * _len,
 		_sbuf + i* _len,

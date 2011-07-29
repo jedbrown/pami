@@ -15,13 +15,15 @@
 #include "algorithms/protocols/tspcoll/local/SingleAllreduce.h"
 #include "algorithms/protocols/tspcoll/local/FixedLeader.h"
 
-extern "C" void upc_poll();
-
 namespace xlpgas{
 
+  template <class T_NI>
   struct Wait
   {
-    static void wait2() { upc_poll (); }
+    static void wait2() {
+      //printf("replace with dev->advance\n");
+      xlpgas::CollectiveManager<T_NI>::instance(0)->device()->advance();
+    }
     static void wait1() { sched_yield(); }
   };
 

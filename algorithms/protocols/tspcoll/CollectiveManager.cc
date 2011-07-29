@@ -10,18 +10,20 @@ xlpgas::CollectiveManager<T_NI> ** xlpgas::CollectiveManager<T_NI>::_instances =
 /*            Initialize the collective manager singleton                   */
 /* ************************************************************************ */
 template <class T_NI>
-void xlpgas::CollectiveManager<T_NI>::Initialize (int ncontexts)
+void xlpgas::CollectiveManager<T_NI>::Initialize (int ncontexts, xlpgas::CollectiveManager<T_NI>* cmgr)
 {
   _instances = (CollectiveManager<T_NI> **)
     __global.heap_mm->malloc (sizeof(CollectiveManager<T_NI>*)*ncontexts);
   assert (_instances);
 
-  for (int i=0; i<ncontexts; i++)
-    {
-      _instances[i] = (CollectiveManager<T_NI> *)__global.heap_mm->malloc (sizeof(CollectiveManager<T_NI>));
-      assert (_instances[i]);
-      new (_instances[i]) CollectiveManager<T_NI>(i);
-    }
+  _instances[0] = cmgr;
+
+  //for (int i=0; i<ncontexts; i++)
+  //  {
+  //    _instances[i] = (CollectiveManager<T_NI> *)__global.heap_mm->malloc (sizeof(CollectiveManager<T_NI>));
+  //    assert (_instances[i]);
+  //    new (_instances[i]) CollectiveManager<T_NI>(i);
+  //  }
 }
 
 /* ************************************************************************ */

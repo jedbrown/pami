@@ -11,18 +11,23 @@ extern "C" char* xlpgas_shm_buf;
 extern "C" char* xlpgas_shm_buf_bcast;
 extern "C" char* xlpgas_shm_buf_lg_bcast;
 
-template <class T_NI>
+/* ************************************************************************* */
+/*                      start a reduce operation                         */
+/* ************************************************************************* */
+template<class T_NI>
 xlpgas::SHMReduce<T_NI>::
-SHMReduce (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
-  Collective<T_NI> (ctxt, comm, kind, tag, NULL,NULL), fl(comm->size(),comm->ordinal(),XLPGAS_SHM_ROOT,xlpgas_shm_buf)
+SHMReduce (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, void* device_info, T_NI* ni) :
+  CollExchange<T_NI> (ctxt, comm, kind, tag,offset,ni), fl(comm->size(),this->ordinal(),XLPGAS_SHM_ROOT,((device_info_type*)device_info)->shm_buffers()._reduce_buf)
 {
 }
 
-
-/* ************************************************************************* */
-/*                      start a bcast operation                         */
-/* ************************************************************************* */
 template <class T_NI>
+void xlpgas::SHMReduce<T_NI>::setContext (pami_context_t ctxt) {
+  this->_pami_ctxt=ctxt;
+  fl.setContext(ctxt);
+}
+
+template<class T_NI>
 void xlpgas::SHMReduce<T_NI>::reset (int rootindex,
 			       const void         * sbuf, 
 			       void               * dbuf,
@@ -31,42 +36,126 @@ void xlpgas::SHMReduce<T_NI>::reset (int rootindex,
 			       unsigned           nelems,
 			       user_func_t*       uf)
 {
-
-  cau_reduce_op_t cau_op = xlpgas::cau_op_dtype(op,dt);
-  fl.reduce ( (int64_t*)sbuf, (int64_t*)dbuf , cau_op);			
+  this->cau_op = xlpgas::cau_op_dtype(op,dt);
+  this->_rbuf[0] = dbuf;
+  this->_sbuf[0] = const_cast<void*>(sbuf);
+  this->_done = false;
+  fl.set_undone();
 }
 
-template <class T_NI>
-xlpgas::SHMBcast<T_NI>::
-SHMBcast (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
-  Collective<T_NI> (ctxt, comm, kind, tag, NULL,NULL), fl(comm->size(),comm->ordinal(),XLPGAS_SHM_ROOT,xlpgas_shm_buf_bcast)
+
+template<class T_NI>
+pami_result_t repost_function (pami_context_t context, void *cookie) {
+  xlpgas::SHMReduce<T_NI>* coll = (xlpgas::SHMReduce<T_NI>*)cookie;
+  coll->kick_internal();
+  if(coll->isdone()) {
+    return PAMI_SUCCESS;
+  }
+  else return PAMI_EAGAIN;
+}
+
+template<class T_NI>
+void xlpgas::SHMReduce<T_NI>::kick_internal (void) {
+  fl.reduce ( (int64_t*)this->_sbuf[0], (int64_t*)this->_rbuf[0] , cau_op);
+}
+
+template<class T_NI>
+void xlpgas::SHMReduce<T_NI>::kick (void) {
+  kick_internal();
+  if(!fl.isdone()) {
+    //repost
+    PAMI::Device::Generic::GenericThread *work = new ((void*)(&_work_pami)) PAMI::Device::Generic::GenericThread(&repost_function<T_NI>, (void*)this);
+    this->_dev[this->_ctxt].postThread(work);
+  }
+}
+
+template<class T_NI>
+inline bool xlpgas::SHMReduce<T_NI>::isdone() const
 {
+  return fl.isdone();
 }
-
 
 /* ************************************************************************* */
 /*                      start a bcast operation                         */
 /* ************************************************************************* */
+template<class T_NI>
+xlpgas::SHMBcast<T_NI>::
+SHMBcast (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, void* device_info, T_NI* ni) :
+  CollExchange<T_NI> (ctxt, comm, kind, tag, offset, ni), fl(comm->size(),this->ordinal(),XLPGAS_SHM_ROOT,((device_info_type*)device_info)->shm_buffers()._bcast_buf)
+{
+}
+
 template <class T_NI>
+void xlpgas::SHMBcast<T_NI>::setContext (pami_context_t ctxt) {
+  this->_pami_ctxt=ctxt;
+  fl.setContext(ctxt);
+}
+
+template<class T_NI>
 void xlpgas::SHMBcast<T_NI>::reset (int rootindex,
 			      const void         * sbuf, 
 			      void               * dbuf,
 			      unsigned           nbytes)
 {
-  *((int64_t*)dbuf) = *((int64_t*)sbuf);
-  fl.bcast ((xlpgas_local_addr_t)dbuf, nbytes);			
+  this->_rbuf[0] = dbuf;
+  this->_sbuf[0] = const_cast<void*>(sbuf);
+  _nbytes = nbytes;
+  this->_done = false;
+  fl.set_undone();
+}
+
+template<class T_NI>
+pami_result_t repost_bcast_function (pami_context_t context, void *cookie) {
+  xlpgas::SHMBcast<T_NI>* coll = (xlpgas::SHMBcast<T_NI>*)cookie;
+  coll->kick_internal();
+  if(coll->isdone()) {
+    return PAMI_SUCCESS;
+  }
+  else return PAMI_EAGAIN;
+}
+
+template<class T_NI>
+void xlpgas::SHMBcast<T_NI>::kick_internal (void) {
+  if(!fl.haveParent()){
+    *((int64_t*)this->_rbuf[0]) = *((int64_t*)this->_sbuf[0]);
+  }
+  fl.bcast ((xlpgas_local_addr_t)this->_rbuf[0], _nbytes);
+}
+
+template<class T_NI>
+void xlpgas::SHMBcast<T_NI>::kick (void) {
+  kick_internal();
+  if(!fl.isdone()) {
+    //repost
+    PAMI::Device::Generic::GenericThread *work = new ((void*)(&_work_pami)) PAMI::Device::Generic::GenericThread(&repost_bcast_function<T_NI>, (void*)this);
+    this->_dev[this->_ctxt].postThread(work);
+  }
+}
+
+template<class T_NI>
+inline bool xlpgas::SHMBcast<T_NI>::isdone() const
+{
+  return fl.isdone();
 }
 
 /* ************************************************************************* */
 /*                      Large shared bcast operation                         */
 /* ************************************************************************* */
-xlpgas::SHMLargeBcast::
-SHMLargeBcast (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
-  Collective (ctxt, comm, kind, tag, NULL,NULL), fl(comm->size(),comm->ordinal(),XLPGAS_SHM_ROOT,xlpgas_shm_buf_lg_bcast,128)
+template<class T_NI>
+xlpgas::SHMLargeBcast<T_NI>::
+SHMLargeBcast (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, void* device_info, T_NI* ni) :
+  Collective<T_NI> (ctxt, comm, kind, tag, NULL,NULL,ni), fl(comm->size(),this->ordinal(),XLPGAS_SHM_ROOT,((device_info_type*)device_info)->shm_buffers()._large_bcast_buf,128)
 {
 }
 
-void xlpgas::SHMLargeBcast::reset (int rootindex,
+template <class T_NI>
+void xlpgas::SHMLargeBcast<T_NI>::setContext (pami_context_t ctxt) {
+  this->_pami_ctxt=ctxt;
+  fl.setContext(ctxt);
+}
+
+template<class T_NI>
+void xlpgas::SHMLargeBcast<T_NI>::reset (int rootindex,
                                   const void         * sbuf, 
                                   void               * dbuf,
                                   unsigned           nbytes)
@@ -77,7 +166,8 @@ void xlpgas::SHMLargeBcast::reset (int rootindex,
   if(rootindex != fl.root()) fl.reset(rootindex);
 }
   
-void xlpgas::SHMLargeBcast::kick () {
+template<class T_NI>
+void xlpgas::SHMLargeBcast<T_NI>::kick () {
   if( ! fl.haveParent() && _dbuf != _sbuf) memcpy(_dbuf, _sbuf, _nbytes);
   fl.bcast((xlpgas_local_addr_t)_dbuf, _nbytes);
 }

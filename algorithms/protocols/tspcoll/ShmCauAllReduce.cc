@@ -5,90 +5,103 @@
 #include "algorithms/protocols/tspcoll/Allreduce.h"
 #include "algorithms/protocols/tspcoll/ShmCauAllReduce.h"
 #include "algorithms/protocols/tspcoll/Team.h"
+
 #include "algorithms/protocols/tspcoll/cau_collectives.h"
 
 template <class T_NI>
-void xlpgas::ShmCauAllReduce<T_NI>::reset (const void         * sbuf, 
-				     void               * rbuf, 
-				     xlpgas_ops_t       op,
-				     xlpgas_dtypes_t    dtype,
-				     unsigned           nelems,
-				     user_func_t* uf
-				     ) {  
-#if 0
-  //if(XLPGAS_MYTHREAD==0) printf("Composed allreduce\n");
-  xlpgas::Team * team        = this->_comm;
-  xlpgas::Team * local_team  = xlpgas::Team::get (this->_ctxt, team->local_team_id());
-  xlpgas::Team * leader_team = xlpgas::Team::get (this->_ctxt, team->leader_team_id());
+void next_phase (void* ctxt, void * arg, pami_result_t){
+  xlpgas::Collective<T_NI>* b = (xlpgas::Collective<T_NI>*)arg;
+  b->kick();
+}
+
+template <class T_NI, class T_Device>
+void xlpgas::ShmCauAllReduce<T_NI,T_Device>::kick (){
+  shm_reduce->kick();
+}
+
+template <class T_NI, class T_Device>
+bool xlpgas::ShmCauAllReduce<T_NI,T_Device>::isdone () const {
+  if(shm_bcast==NULL) return true;
+  else return shm_bcast->isdone();
+}
+
+template <class T_NI, class T_Device>
+void xlpgas::ShmCauAllReduce<T_NI,T_Device>::setContext (pami_context_t ctxt) {
+  this->_pami_ctxt=ctxt;
+  shm_reduce->setContext(ctxt);
+  shm_bcast->setContext(ctxt);
+  if(cau_reduce!=NULL) cau_reduce->setContext(ctxt);
+  if(cau_bcast!=NULL)  cau_bcast->setContext(ctxt);
+}
+
+template <class T_NI, class T_Device>
+void xlpgas::ShmCauAllReduce<T_NI,T_Device>::setComplete (xlpgas_LCompHandler_t cb,
+							  void *arg) {
+  shm_bcast->setComplete(cb,arg);
+}
+
+template <class T_NI, class T_Device>
+void xlpgas::ShmCauAllReduce<T_NI,T_Device>::reset (const void         * sbuf,
+                                                    void               * rbuf,
+                                                    pami_data_function   op,
+                                                    TypeCode           * sdt,
+                                                    unsigned           nelems,
+                                                    TypeCode           * rdt,
+                                                    user_func_t        * uf
+				     ) {
+  assert(nelems == 1);
+  typedef xlpgas::cau_device_info<T_NI> device_info_type;
+  PAMI_GEOMETRY_CLASS* geometry = ((device_info_type*)(this->_device_info))->geometry();
+  PAMI::Topology* team        = (PAMI::Topology*)(geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
+  PAMI::Topology* local_team  = (PAMI::Topology*)(geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX));
+  PAMI::Topology* leader_team = (PAMI::Topology*)(geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX));
+
+  uintptr_t i_op, i_dt;
+  PAMI::Type::TypeFunc::GetEnums((void*)sdt,
+                                 ( void (*)(void*, void*, size_t, void*) )op,
+                                 i_dt,i_op);
+
   bool finish_early=false;//if shared memory only the collective ends without bcast;
   if(local_team->size() == team->size()) finish_early = true;
   
-  int64_t s;
-  memcpy(&s, sbuf, xlpgas::Allreduce::datawidthof(dtype) );
-  int64_t tmp = 0;
-  int64_t tmp_cau = 0;
-  
-  xlpgas::Collective * a;
-  int lid = local_team->ordinal();
-  int gid=-1;
+  memcpy(&s, sbuf, sdt->GetDataSize() );
+  tmp = tmp_cau = 0;
+
   int leader = 0; //ordinal zero in the current group
   
-  if(leader_team->is_leader()) gid = leader_team->ordinal();
-  //printf("L[%d,%d] local_team_id = %d [%x] leader_id=%d\n", XLPGAS_MYNODE, XLPGAS_MYSMPTHREAD, lid, local_team, gid);
-  //for(int i=0;i<nelems;++i){
-  //  printf("L[%d,%d] SS[%ld]=%d\n",XLPGAS_MYNODE, XLPGAS_MYSMPTHREAD,i,ss[i]); 
-  //}
-  
-  //phase 1; reduce on local teams;
-  if(local_team->size()>1){
-    //if(cntcnt<3) fprintf(stdout, "L%d local reduce start \n", XLPGAS_MYTHREAD);
-    a = local_team->coll (xlpgas::SHMReduceKind);
-    assert (a != NULL);
-    if(!finish_early)
-	a->reset (leader, &s, &tmp, op, dtype, nelems, uf);
-    else
-      a->reset (leader, &s, &tmp_cau, op, dtype, nelems, uf);
-    a->kick();
-    while (!a->isdone()) {
-      xlpgas_tsp_wait (_ctxt);
-    }
-    //if(cntcnt<3) fprintf(stdout, "L%d local reduce finished \n", XLPGAS_MYTHREAD);
-  }
-  else{
-    if(!finish_early){
-	//tmp = s;
-      memcpy(&tmp, &s, xlpgas::Allreduce::datawidthof(dtype) );
+  //allocate shm bcast
+  shm_bcast = xlpgas::CollectiveManager<T_NI>::instance(0)->collective(xlpgas::SHMBcastKind);
+  assert (shm_bcast != NULL);
+  shm_bcast->reset (leader, &tmp_cau, rbuf, nelems * sdt->GetDataSize() );
+
+  //allocate shm reduce
+  shm_reduce = xlpgas::CollectiveManager<T_NI>::instance(0)->collective(xlpgas::SHMReduceKind);
+  assert (shm_reduce != NULL);
+  if(!finish_early)
+    shm_reduce->reset (leader, &s, &tmp, (pami_op)i_op, (pami_dt)i_dt, nelems, uf);
+  else
+    shm_reduce->reset (leader, &s, &tmp_cau, (pami_op)i_op, (pami_dt)i_dt, nelems, uf);
+
+  if(!finish_early){
+    if(leader_team->isRankMember(this->ordinal())){
+      //allocate caureduce
+       cau_reduce = xlpgas::CollectiveManager<T_NI>::instance(0)->collective(xlpgas::CAUReduceKind);
+      assert (cau_reduce != NULL);
+      cau_reduce->reset (leader, &tmp, &tmp_cau, (pami_op)i_op, (pami_dt)i_dt, nelems, uf);
+      shm_reduce->setComplete(&next_phase<T_NI>,cau_reduce);
+
+      //allocate cau bcast
+      cau_bcast = xlpgas::CollectiveManager<T_NI>::instance(0)->collective(xlpgas::CAUBcastKind);
+      assert (cau_bcast != NULL);
+      cau_bcast->reset (leader, &tmp_cau, &tmp_cau, nelems * sdt->GetDataSize() );
+      cau_reduce->setComplete(&next_phase<T_NI>,cau_bcast);
+
+      cau_bcast->setComplete(&next_phase<T_NI>,shm_bcast);
     }
     else {
-      //tmp_cau = s;
-      memcpy(&tmp_cau, &s, xlpgas::Allreduce::datawidthof(dtype) );
+      shm_reduce->setComplete(&next_phase<T_NI>,shm_bcast);
     }
+  } else {
+    shm_reduce->setComplete(&next_phase<T_NI>,shm_bcast);
   }
-    
-  if(!finish_early){
-    // phase 2; allreduce across leaders
-    if(leader_team->is_leader()){ //if not leader this pointer is null;
-      cau_reduce_op_t cau_op = xlpgas::cau_op_dtype(op,dtype);
-      xlpgas::cau_fast_allreduce(&tmp_cau,&tmp, cau_op, _ctxt);
-    }
-  }
-#ifdef REDUCE_PHASES 
-  t0 = timer();
-#endif
-  //phase 3: bcastr on local teams
-  //if(cntcnt<3) fprintf(stdout, "%d L[%d,%d] PREPARE LBCAST=%d\n",cntcnt, XLPGAS_MYNODE, XLPGAS_MYSMPTHREAD,leader);
-  if(local_team->size()>1){
-    a = local_team->coll (xlpgas::SHMBcastKind);
-    assert (a != NULL);
-    a->reset (leader, &tmp_cau, rbuf, nelems * xlpgas::Allreduce::datawidthof(dtype) );
-    a->kick();
-    while (!a->isdone()) {
-      xlpgas_tsp_wait (_ctxt);
-    }
-  }
-  else{
-    memcpy( rbuf, &tmp_cau, xlpgas::Allreduce::datawidthof(dtype) );
-  }
-#endif
-
 }

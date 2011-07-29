@@ -27,8 +27,8 @@
 /* ************************************************************************* */
 template <class T_NI>
 xlpgas::Broadcast<T_NI>::
-Broadcast (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
-  CollExchange<T_NI> (ctxt, comm, kind, tag, offset)
+Broadcast (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset,T_NI* ni) :
+  CollExchange<T_NI> (ctxt, comm, kind, tag, offset, ni)
 {
   pami_type_t bcasttype = PAMI_TYPE_BYTE;
   this->_tmpbuf = NULL;
@@ -38,7 +38,7 @@ Broadcast (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
   this->_numphases = -1; for (int n=2*this->_comm->size()-1; n>0; n>>=1) this->_numphases++;
   for (int i=0; i< this->_numphases; i++)
     {
-      int destindex = (this->_comm->ordinal()+2*this->_comm->size()-(1<<i))%this->_comm->size();
+      int destindex = (this->ordinal()+2*this->_comm->size()-(1<<i))%this->_comm->size();
       this->_dest[i] = this->_comm->endpoint(destindex);
       this->_sbuf[i] = &this->_dummy;
       this->_rbuf[i] = &this->_dummy;
@@ -62,7 +62,7 @@ void xlpgas::Broadcast<T_NI>::reset (int rootindex,
 			       TypeCode           * type,
 			       size_t               typecount)
 {
-  if(rootindex == (int)this->_comm->ordinal()) {
+  if(rootindex == (int)this->ordinal()) {
     assert (sbuf != NULL);
   }
 
@@ -74,11 +74,11 @@ void xlpgas::Broadcast<T_NI>::reset (int rootindex,
   /* --------------------------------------------------- */
   /* --------------------------------------------------- */
 
-  if (rootindex == (int)this->_comm->ordinal() && sbuf != dbuf){
+  if (rootindex == (int)this->ordinal() && sbuf != dbuf){
     memcpy (dbuf, sbuf, nbytes);
   }
 
-  int myrelrank = (this->_comm->ordinal() + this->_comm->size() - rootindex) % this->_comm->size();
+  int myrelrank = (this->ordinal() + this->_comm->size() - rootindex) % this->_comm->size();
   for (int i=0, phase=this->_numphases/2; i<this->_numphases/2; i++, phase++)
     {
       int  dist       = 1<<(this->_numphases/2-1-i);
@@ -109,7 +109,7 @@ void xlpgas::Broadcast<T_NI>::reset (int rootindex,
   _numphases = -1; for (int n=2*_comm->size()-1; n>0; n>>=1) _numphases++;
   _numphases   *= 2;
 
-  int myrelrank = (_comm->ordinal() + _comm->size() - rootindex) % _comm->size();
+  int myrelrank = (ordinal() + _comm->size() - rootindex) % _comm->size();
   phase=0;
   for (int i=0; i<_numphases/2; i++)
     {
@@ -133,7 +133,7 @@ void xlpgas::Broadcast<T_NI>::reset (int rootindex,
       //_rbuf[phase]    = dorecv ? &_dummy : NULL;
       //_postrcv[phase] = NULL;
 
-      //printf("L%d: in phase %d send to %d : dosend=%d dorecv=%d\n", _comm->ordinal(), phase, _dest[phase].node, dosend, dorecv);
+      //printf("L%d: in phase %d send to %d : dosend=%d dorecv=%d\n", ordinal(), phase, _dest[phase].node, dosend, dorecv);
       //phase++;
 
       //broadcast data
@@ -143,13 +143,13 @@ void xlpgas::Broadcast<T_NI>::reset (int rootindex,
       _rbuf[phase]    = dorecv ? dbuf : NULL;
       _postrcv[phase] = NULL;
 
-      //printf("L%d: in phase %d send to %d : dosend=%d dorecv=%d\n", _comm->ordinal(), phase, _dest[phase].node, dosend, dorecv);
+      //printf("L%d: in phase %d send to %d : dosend=%d dorecv=%d\n", ordinal(), phase, _dest[phase].node, dosend, dorecv);
 
       phase++;
     }
 
   _numphases = phase;
-  //printf("%d: NUMPHASES =%d\n", _comm->ordinal(), _numphases);
+  //printf("%d: NUMPHASES =%d\n", ordinal(), _numphases);
   xlpgas::CollExchange::reset();
   */
 }

@@ -30,7 +30,7 @@ void xlpgas::Scatter<T_NI>::reset (int root, const void * s, void * d,
 /* **************************************************************** */
 template<class T_NI>
 void xlpgas::Scatter<T_NI>::kick    (){
-  if (_root == this->_comm->ordinal())
+  if (_root == this->ordinal())
     {
       memcpy (_rbuf,
 	      _sbuf + _root*_len,

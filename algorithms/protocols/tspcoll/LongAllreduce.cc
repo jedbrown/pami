@@ -27,8 +27,8 @@
 /* ************************************************************************* */
 template <class T_NI>
 xlpgas::Allreduce::Long<T_NI>::
-Long (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
-  CollExchange<T_NI> (ctxt, comm, kind, tag, offset)
+Long (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, T_NI* ni) :
+  CollExchange<T_NI> (ctxt, comm, kind, tag, offset, ni)
 {
   pami_type_t allreducetype = PAMI_TYPE_BYTE;
   this->_tmpbuf = NULL;
@@ -48,9 +48,9 @@ Long (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
     {
       /* send permission chits to potential senders */
 
-      this->_dest    [phase] = this->_comm->endpoint (this->_comm->ordinal() + maxBF);
-      this->_sbuf    [phase] = ((int)this->_comm->ordinal() <  nonBF) ? &this->_dummy : NULL;
-      this->_rbuf    [phase] = ((int)this->_comm->ordinal() >= maxBF) ? &this->_dummy : NULL;
+      this->_dest    [phase] = this->_comm->endpoint (this->ordinal() + maxBF);
+      this->_sbuf    [phase] = ((int)this->ordinal() <  nonBF) ? &this->_dummy : NULL;
+      this->_rbuf    [phase] = ((int)this->ordinal() >= maxBF) ? &this->_dummy : NULL;
       this->_postrcv [phase] = NULL;
       this->_sbufln  [phase] = 1;
       this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], (TypeCode *)allreducetype, (TypeCode *)allreducetype);
@@ -60,10 +60,10 @@ Long (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
 
       /* send data */
 
-      this->_dest    [phase] = this->_comm->endpoint (this->_comm->ordinal() - maxBF);
+      this->_dest    [phase] = this->_comm->endpoint (this->ordinal() - maxBF);
       this->_sbuf    [phase] = NULL; /* send buffer not available */
       this->_rbuf    [phase] = NULL; /* receive buffer not available */
-      this->_postrcv [phase] = ((int)this->_comm->ordinal() < nonBF)  ? cb_allreduce : NULL;
+      this->_postrcv [phase] = ((int)this->ordinal() < nonBF)  ? cb_allreduce : NULL;
       this->_sbufln  [phase] = 0;    /* data length not available */
       this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], (TypeCode *)allreducetype, (TypeCode *)allreducetype);
       this->_pwq[phase].reset();
@@ -79,9 +79,9 @@ Long (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
     {
       /* send permission chits to senders */
 
-      this->_dest    [phase] = this->_comm->endpoint (this->_comm->ordinal() ^ (1<<i));
-      this->_sbuf    [phase] = ((int)this->_comm->ordinal() < maxBF) ? &this->_dummy : NULL;
-      this->_rbuf    [phase] = ((int)this->_comm->ordinal() < maxBF) ? &this->_dummy : NULL;
+      this->_dest    [phase] = this->_comm->endpoint (this->ordinal() ^ (1<<i));
+      this->_sbuf    [phase] = ((int)this->ordinal() < maxBF) ? &this->_dummy : NULL;
+      this->_rbuf    [phase] = ((int)this->ordinal() < maxBF) ? &this->_dummy : NULL;
       this->_postrcv [phase] = NULL;
       this->_sbufln  [phase] = 1;
       this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], (TypeCode *)allreducetype, (TypeCode *)allreducetype);
@@ -92,10 +92,10 @@ Long (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
 
       /* send data */
 
-      this->_dest    [phase] = this->_comm->endpoint (this->_comm->ordinal() ^ (1<<i));
+      this->_dest    [phase] = this->_comm->endpoint (this->ordinal() ^ (1<<i));
       this->_sbuf    [phase] = NULL; /* send buffer not available */
       this->_rbuf    [phase] = NULL; /* receive buffer not available */
-      this->_postrcv [phase] = ((int)this->_comm->ordinal() < maxBF) ? cb_allreduce : NULL;
+      this->_postrcv [phase] = ((int)this->ordinal() < maxBF) ? cb_allreduce : NULL;
       this->_sbufln  [phase] = 0;    /* data length not available */
       this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], (TypeCode *)allreducetype, (TypeCode *)allreducetype);
       this->_pwq[phase].reset();
@@ -111,9 +111,9 @@ Long (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
     {
       /* send permission slips */
 
-      this->_dest    [phase] = this->_comm->endpoint (this->_comm->ordinal() - maxBF);
-      this->_sbuf    [phase] = ((int)this->_comm->ordinal() >= maxBF) ? &this->_dummy : NULL;
-      this->_rbuf    [phase] = ((int)this->_comm->ordinal() < nonBF)  ? &this->_dummy : NULL;
+      this->_dest    [phase] = this->_comm->endpoint (this->ordinal() - maxBF);
+      this->_sbuf    [phase] = ((int)this->ordinal() >= maxBF) ? &this->_dummy : NULL;
+      this->_rbuf    [phase] = ((int)this->ordinal() < nonBF)  ? &this->_dummy : NULL;
       this->_postrcv [phase] = NULL;
       this->_sbufln  [phase] = 1;
       this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], (TypeCode *)allreducetype, (TypeCode *)allreducetype);
@@ -123,7 +123,7 @@ Long (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
 
       /* send data */
 
-      this->_dest    [phase] = this->_comm->endpoint ((int)this->_comm->ordinal() + maxBF);
+      this->_dest    [phase] = this->_comm->endpoint ((int)this->ordinal() + maxBF);
       this->_sbuf    [phase] = NULL; /* send buffer not available */
       this->_rbuf    [phase] = NULL; /* receive buffer not available */
       this->_postrcv [phase] = NULL;
@@ -165,7 +165,7 @@ void xlpgas::Allreduce::Long<T_NI>::reset (const void         * sbuf,
 				     pami_data_function   op,
 				     TypeCode           * sdt,
 				     size_t               nelems,
-                     TypeCode           * rdt,
+                                     TypeCode           * rdt,
 				     user_func_t        * uf)
 {
   assert (sbuf != NULL);
@@ -181,7 +181,7 @@ void xlpgas::Allreduce::Long<T_NI>::reset (const void         * sbuf,
     printf("L%d: long allreduce [teamid=%d rank=%d sizeworld=%d nelems=%d]\n",
 	 XLPGAS_MYNODE,
 	 _comm->commID(),
-	 _comm->ordinal(),
+	 ordinal(),
 	 _comm->size(),
 	 nelems
 	 );
@@ -232,8 +232,8 @@ void xlpgas::Allreduce::Long<T_NI>::reset (const void         * sbuf,
   if (nonBF > 0)   /* phase 0: gather buffers from ranks > n2prev */
     {
       phase ++;
-      this->_sbuf    [phase] = ((int)this->_comm->ordinal() >= maxBF) ? this->_dbuf : NULL;
-      this->_rbuf    [phase] = ((int)this->_comm->ordinal() < nonBF)  ? this->_tmpbuf : NULL;
+      this->_sbuf    [phase] = ((int)this->ordinal() >= maxBF) ? this->_dbuf : NULL;
+      this->_rbuf    [phase] = ((int)this->ordinal() < nonBF)  ? this->_tmpbuf : NULL;
       this->_sbufln  [phase] = nelems * datawidth;
       this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], sdt, rdt);
       this->_pwq[phase].reset();
@@ -243,8 +243,8 @@ void xlpgas::Allreduce::Long<T_NI>::reset (const void         * sbuf,
   for (int i=0; i<this->_logMaxBF; i++)   /* middle phases: butterfly pattern */
     {
       phase ++;
-      this->_sbuf    [phase] = ((int)this->_comm->ordinal() < maxBF) ? this->_dbuf : NULL;
-      this->_rbuf    [phase] = ((int)this->_comm->ordinal() < maxBF) ? this->_tmpbuf : NULL;
+      this->_sbuf    [phase] = ((int)this->ordinal() < maxBF) ? this->_dbuf : NULL;
+      this->_rbuf    [phase] = ((int)this->ordinal() < maxBF) ? this->_tmpbuf : NULL;
       this->_sbufln  [phase] = nelems * datawidth;
       this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], sdt, rdt);
       this->_pwq[phase].reset();
@@ -254,8 +254,8 @@ void xlpgas::Allreduce::Long<T_NI>::reset (const void         * sbuf,
   if (nonBF > 0)   /*  last phase: collect results */
     {
       phase ++;
-      this->_sbuf    [phase] = ((int)this->_comm->ordinal() < nonBF)  ? this->_dbuf  : NULL;
-      this->_rbuf    [phase] = ((int)this->_comm->ordinal() >= maxBF) ? this->_dbuf  : NULL;
+      this->_sbuf    [phase] = ((int)this->ordinal() < nonBF)  ? this->_dbuf  : NULL;
+      this->_rbuf    [phase] = ((int)this->ordinal() >= maxBF) ? this->_dbuf  : NULL;
       this->_sbufln  [phase] = nelems * datawidth;
       this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], sdt, rdt);
       this->_pwq[phase].reset();

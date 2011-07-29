@@ -23,8 +23,8 @@ namespace xlpgas
   public:
     void * operator new (size_t, void * addr) { return addr; }
 
-    Alltoall (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
-    Collective<T_NI> (ctxt, comm, kind, tag, NULL, NULL)
+    Alltoall (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, T_NI* ni) :
+      Collective<T_NI> (ctxt, comm, kind, tag, NULL, NULL, ni)
       {
 	_sndcount[0] = comm->size(); _sndcount[1] = comm->size();
 	_rcvcount[0] = comm->size(); _rcvcount[1] = comm->size();
@@ -40,7 +40,7 @@ namespace xlpgas
 	    _headers[i].kind          = kind;
 	    _headers[i].tag           = tag;
 	    _headers[i].offset        = offset;
-	    _headers[i].senderID      = comm->ordinal();
+	    _headers[i].senderID      = this->ordinal();
 	  }
       }
 

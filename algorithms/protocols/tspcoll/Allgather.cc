@@ -26,8 +26,8 @@
 /* ************************************************************************* */
 template <class T_NI>
 xlpgas::Allgather<T_NI>::
-Allgather (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
-  CollExchange<T_NI> (ctxt, comm, kind, tag, offset)
+Allgather (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset,T_NI* ni) :
+  CollExchange<T_NI> (ctxt, comm, kind, tag, offset, ni)
 {
   pami_type_t allgathertype = PAMI_TYPE_BYTE;
   this->_tmpbuf = NULL;
@@ -38,8 +38,8 @@ Allgather (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
   for (int i=0; i< this->_numphases; i++)
     {
       //this first part of the collective makes a barrier;
-      //int destindex = (this->_comm->ordinal()+2*this->_comm->size()-(1<<i))%this->_comm->size();
-      int destindex = (comm->ordinal()+(1<<i))%comm->size();
+      //int destindex = (this->ordinal()+2*this->_comm->size()-(1<<i))%this->_comm->size();
+      int destindex = (this->ordinal()+(1<<i))%comm->size();
       this->_dest[i] = this->_comm->endpoint(destindex);
       this->_sbuf[i] = &this->_dummy;
       this->_rbuf[i] = &this->_dummy;
@@ -71,7 +71,7 @@ void xlpgas::Allgather<T_NI>::reset (const void         * sbuf,
   /*    copy source buffer to dest buffer                */
   /* --------------------------------------------------- */
 
-  memcpy ((char *)dbuf + nrbytes * this->_comm->ordinal(), sbuf, nsbytes);
+  memcpy ((char *)dbuf + nrbytes * this->ordinal(), sbuf, nsbytes);
 
   /* --------------------------------------------------- */
   /* initialize destinations, offsets and buffer lengths */
@@ -79,22 +79,22 @@ void xlpgas::Allgather<T_NI>::reset (const void         * sbuf,
 
   for (int i=0, phase=this->_numphases/3; i<this->_numphases/3; i++, phase+=2)
     {
-      int previndex  = (this->_comm->ordinal()+2*this->_comm->size()-(1<<i))%this->_comm->size();
-      int nextindex  = (this->_comm->ordinal()+(1<<i))%this->_comm->size();
+      int previndex  = (this->ordinal()+2*this->_comm->size()-(1<<i))%this->_comm->size();
+      int nextindex  = (this->ordinal()+(1<<i))%this->_comm->size();
 
       this->_dest[phase]   = this->_comm->endpoint (previndex);
       this->_dest[phase+1] = this->_dest[phase];
 
-      this->_sbuf[phase]   = (char *)dbuf + this->_comm->ordinal() * nsbytes;
+      this->_sbuf[phase]   = (char *)dbuf + this->ordinal() * nsbytes;
       this->_sbuf[phase+1] = (char *)dbuf;
 
       this->_rbuf[phase]   = (char *)dbuf + nextindex*nrbytes;
       this->_rbuf[phase+1] = (char *)dbuf;
 
-      if (this->_comm->ordinal() + (1<<i) >= this->_comm->size())
+      if (this->ordinal() + (1<<i) >= this->_comm->size())
         {
-          this->_sbufln[phase]   = nsbytes * (this->_comm->size() - this->_comm->ordinal());
-          this->_sbufln[phase+1] = nsbytes * (this->_comm->ordinal() + (1<<i) - this->_comm->size());
+          this->_sbufln[phase]   = nsbytes * (this->_comm->size() - this->ordinal());
+          this->_sbufln[phase+1] = nsbytes * (this->ordinal() + (1<<i) - this->_comm->size());
 	  //if(this->_sbufln[phase+1] == 0) this->_sbuf[phase+1] = NULL;//mark that there is no data to send
         }
       else

@@ -26,8 +26,8 @@
 /* ************************************************************************* */
 template <class T_NI>
 xlpgas::PrefixSums<T_NI>::
-PrefixSums (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
-  CollExchange<T_NI> (ctxt, comm, kind, tag, offset)
+PrefixSums (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, T_NI* ni) :
+  CollExchange<T_NI> (ctxt, comm, kind, tag, offset, ni)
 {
   pami_type_t scantype = PAMI_TYPE_BYTE;
   this->_tmpbuf = NULL;
@@ -47,10 +47,10 @@ PrefixSums (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
   for (int i=0; i<this->_logMaxBF; i++)
     {
       /* send permission chits to senders */
-      int left = this->_comm->ordinal() - (1<<i);
+      int left = this->ordinal() - (1<<i);
       this->_dest    [phase] = this->_comm->endpoint (left);
       this->_sbuf    [phase] = (left >= 0) ? &this->_dummy : NULL;
-      int right = this->_comm->ordinal() + (1<<i);
+      int right = this->ordinal() + (1<<i);
       this->_rbuf    [phase] = (right < (int)this->_comm->size()) ? &this->_dummy : NULL;
       this->_postrcv [phase] = NULL;
       this->_sbufln  [phase] = 1;
@@ -88,7 +88,7 @@ cb_prefixsums (CollExchange<T_NI> *coll, unsigned phase)
       inputs[1] = ar->_tmpbuf;
       ar->_cb_prefixsums (ar->_dbuf, inputs, 2, ar->_nelems);
     }
-  else if(ar->_comm->ordinal() > 0)
+  else if(ar->ordinal() > 0)
     {
       TypeCode *dt = ar->_dt;
       size_t datawidth = dt->GetDataSize();
@@ -202,10 +202,10 @@ void xlpgas::PrefixSums<T_NI>::reset (const void         * sbuf,
   for (int i=0; i<this->_logMaxBF; i++)   /* prefix sums pattern */
     {
       phase ++;
-      int tgt = this->_comm->ordinal() + (1<<i);
+      int tgt = this->ordinal() + (1<<i);
       this->_sbuf    [phase] = (tgt < (int)this->_comm->size()) ? sbuf_phase : NULL;
       this->_sbufln  [phase] = (tgt<(int)this->_comm->size()) ? nelems * datawidth : 0 ;
-      tgt = this->_comm->ordinal() - (1<<i);
+      tgt = this->ordinal() - (1<<i);
       this->_rbuf    [phase] = (tgt>=0) ? rbuf_phase : NULL;
       this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], dt, dt);
       this->_pwq[phase].reset();

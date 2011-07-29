@@ -61,6 +61,7 @@ namespace xlpgas
 				    CollectiveKind,
 				    int tag,
 				    int off,
+                                    T_NI* ni,
 				    xlpgas_LCompHandler_t cb_complete=NULL,
 				    void * arg = NULL);
     virtual void          reset            (void);
@@ -103,7 +104,7 @@ namespace xlpgas
     size_t              _sbufln   [MAX_PHASES];    /* list of buffer lenghts        */
     cb_CollRcv_t        _cb_rcvhdr[MAX_PHASES];    /* what to do before reception; adjust reception buffers    */
     cb_Coll_t           _postrcv  [MAX_PHASES];    /* what to do after reception    */
-	PAMI::PipeWorkQueue _pwq      [MAX_PHASES];    /* pwq used by sendPWQ to support non-contigous dt */
+    PAMI::PipeWorkQueue _pwq      [MAX_PHASES];    /* pwq used by sendPWQ to support non-contigous dt */
 
     /* --------------------------------- */
     /* STATE: changes during execution   */
@@ -115,8 +116,6 @@ namespace xlpgas
     int          _sendstarted;
     int          _sendcomplete;             /* #sends complete               */
     int          _recvcomplete[MAX_PHASES]; /* #recv complete in each phase  */
-
-  private:
 
     /* ------------------------------ */
     /*   active message headers       */
@@ -170,9 +169,10 @@ CollExchange (int ctxt,
 	      CollectiveKind kind,
 	      int tag,
 	      int offset,
+              T_NI* ni,
 	      xlpgas_LCompHandler_t cb_complete,
 	      void *arg):
-  Collective<T_NI> (ctxt, comm, kind, tag, cb_complete, arg)
+  Collective<T_NI> (ctxt, comm, kind, tag, cb_complete, arg, ni)
 {
   _counter         = 0;
   _numphases       = -100 * kind;
@@ -428,7 +428,7 @@ xlpgas::CollExchange<T_NI>::cb_recvcomplete (void* ctxt, void * arg, pami_result
      the we are in the right phase of the computation */
 
   TRACE((stderr, "L%d:%d CPLT phase=%d\n",
-	  XLPGAS_MYNODE, base->_ctxt, phase));
+         XLPGAS_MYNODE, base->_ctxt, phase));
 
   /* BEGIN ATOMIC */
   MUTEX_LOCK(&base->_mutex);

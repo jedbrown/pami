@@ -55,7 +55,8 @@ namespace PAMI
       /** Can we deprecate/remove this? */
       inline pami_result_t analyze(size_t         context_id,
                                    T_Geometry    *geometry,
-                                   int            phase=0);
+                                   int            phase=0,
+                                   uint64_t       *inout_val=NULL);
 
       inline pami_result_t analyze(size_t         context_id,
                                    T_Geometry    *geometry,
@@ -85,9 +86,10 @@ namespace PAMI
     template <class T_Collregistration, class T_Geometry>
     inline pami_result_t CollRegistration<T_Collregistration,T_Geometry>::analyze(size_t      context_id,
                                                                                   T_Geometry *geometry,
-                                                                                  int         phase)
+                                                                                  int         phase,
+                                                                                  uint64_t    *inout_val)
     {
-      return static_cast<T_Collregistration*>(this)->analyze_impl(context_id, geometry, phase);
+      return static_cast<T_Collregistration*>(this)->analyze_impl(context_id, geometry, phase, inout_val);
     }
 
     template <class T_Collregistration, class T_Geometry>

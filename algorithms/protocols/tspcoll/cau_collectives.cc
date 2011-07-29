@@ -2,296 +2,249 @@
  * \file algorithms/protocols/tspcoll/cau_collectives.cc
  * \brief ???
  */
-#include "cau_collectives.h"
+#include "algorithms/protocols/tspcoll/cau_collectives.h"
+#include "algorithms/protocols/tspcoll/SHMReduceBcast.h"
 
-#ifndef RC0
-#define RC0(S) { \
-    int rc = S; \
-    if (rc != 0) { \
-        printf(#S " failed with rc %d, line %d\n", rc, __LINE__); \
-        exit(-1); \
-    } \
-}
-#endif
+///////////////////////////////////////////////////////
+template <class T_NI>
+int xlpgas::CAUReduce<T_NI>::_dispatch_id;
 
-//extern pami_context_t  xlpgas_pami_ctxt[256];
-
-int  base_group_id  = 0; // Cau group id
-enum { XLPGAS_RECV_MCAST = 66, XLPGAS_RECV_REDUCE = 67 };
-const int XLPGAS_CAU_POLL_CNT   = 10000;
-
-
-// global LAPI resources
-lapi_handle_t       lapi_handle;
-//global if CAU avail or not
-int XLPGAS_CAU_SHM_AVAIL;
-
-
-
-long instance_id;
-int64_t* mcast_data;
-long mcast_sent;
-long mcast_received;
-
-struct mcast_hdr_t {
-  uint src;
-  uint seq;
-};
-
-void *recv_mcast(lapi_handle_t *hndl, void *uhdr, uint *uhdr_len,
-        ulong *msg_len, compl_hndlr_t **comp_h, void **uinfo)
-{
-    lapi_return_info_t &ret_info = *(lapi_return_info_t *)msg_len;
-    mcast_hdr_t  &mcast_hdr = *(mcast_hdr_t *)uhdr;
-    assert( *uhdr_len == sizeof(mcast_hdr) );
-
-    ++mcast_received;
-
-    int64_t *data = (int64_t *)ret_info.udata_one_pkt_ptr;
-    uint group_id = ret_info.src;
-    //print the data
-    //printf("L%d BCAST",XLPGAS_MYNODE);
-    //for(int i=0;i<4;++i){
-    //  printf("=%d",((int64_t*)data)[i]);
-    //}
-    //printf("\n");
-    //memcpy((int64_t *)mcast_data, 
-    //	   data, ret_info.msg_len
-    //	   );
-    *mcast_data = *data;
-    return NULL;
+template <class T_NI>
+void xlpgas::CAUReduce<T_NI>::
+register_dispatch(int* dispatch_id, lapi_handle_t lh){
+  _dispatch_id = (*dispatch_id)--;
+  LapiImpl::Context *cp = (LapiImpl::Context *)_Lapi_port[lh];
+  internal_rc_t rc = (cp->*(cp->pDispatchSet))(_dispatch_id,
+                                               (void * )xlpgas::CAUReduce<T_NI>::recv_reduce,
+                                               NULL,
+                                               null_dispatch_hint,
+                                               INTERFACE_LAPI);
+  assert(rc == SUCCESS);
 }
 
-void on_mcast_sent(lapi_handle_t *hndl, void *cookie)
+template <class T_NI>
+xlpgas::CAUReduce<T_NI>::
+CAUReduce (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset,void* device_info, T_NI* ni) :
+  CollExchange<T_NI> (ctxt, comm, kind, tag, offset, ni)
 {
-  ++ mcast_sent;
+  reduce_sent=0;
+  reduce_received=0;
+  _done = false;
+  //set device specific
+  this->_device_info = device_info;
+  lapi_handle = ((device_info_type*)device_info)->lapi_handle();
+  base_group_id = ((device_info_type*)device_info)->cau_group();
 }
 
-////////////////////////////////////////////////////////////
-long reduce_sent;
-long reduce_received;
-
-struct reduce_hdr_t {
-    cau_reduce_op_t op;
-    uint seq;
-};
-
-int64_t* reduce_data;
-int64_t temp_reduce_data;
-
-void on_reduce_sent(lapi_handle_t *hndl, void *cookie)
+template <class T_NI>
+void xlpgas::CAUReduce<T_NI>::reset (int rootindex,
+			       const void         * sbuf,
+			       void               * dbuf,
+			       xlpgas_ops_t       op,
+			       xlpgas_dtypes_t    dt,
+			       unsigned           nelems,
+			       user_func_t*       uf)
 {
-  ++reduce_sent;
+  cau_op = xlpgas::cau_op_dtype(op,dt);
+  mcast_data  = (int64_t*)dbuf;
+  reduce_data = (int64_t*)sbuf;
 }
 
-
-void xlpgas::reduce_op(int64_t *dst, int64_t *src, const cau_reduce_op_t& op)
-{
-    switch (op.operand_type) {
-        case CAU_SIGNED_INT:
-            reduce_fixed_point(*(int32_t *)dst, *(int32_t *)src, op.operation);
-            break;
-        case CAU_UNSIGNED_INT:
-            reduce_fixed_point(*(uint32_t *)dst, *(uint32_t *)src, op.operation);
-            break;
-        case CAU_SIGNED_LONGLONG:
-            reduce_fixed_point(*(int64_t *)dst, *(int64_t *)src, op.operation);
-            break;
-        case CAU_UNSIGNED_LONGLONG:
-            reduce_fixed_point(*(uint64_t *)dst, *(uint64_t *)src, op.operation);
-            break;
-        case CAU_FLOAT:
-            reduce_floating_point(*(float *)dst, *(float *)src, op.operation);
-            break;
-        case CAU_DOUBLE:
-            reduce_floating_point(*(double *)dst, *(double *)src, op.operation);
-            break;
-        default: assert(!"Bogus reduce operand type");
-    }
-  }
-
-
-void *recv_reduce(lapi_handle_t *hndl, void *uhdr, uint *uhdr_len,
-        ulong *msg_len, compl_hndlr_t **comp_h, void **uinfo)
+template <class T_NI>
+void* xlpgas::CAUReduce<T_NI>::recv_reduce(lapi_handle_t *hndl, void *uhdr, uint *uhdr_len,
+				     ulong *msg_len, compl_hndlr_t **comp_h, void **uinfo)
 {
     lapi_return_info_t &ret_info = *(lapi_return_info_t *)msg_len;
     reduce_hdr_t  &reduce_hdr = *(reduce_hdr_t *)uhdr;
     assert( *uhdr_len == sizeof(reduce_hdr) );
 
-    ++reduce_received; //reduce_hdr.seq;
+    int ctxt = 0;//reduce_hdr->dest_ctxt;
+    void * base = xlpgas::CollectiveManager<T_NI>::instance(ctxt)->find (reduce_hdr.kind,reduce_hdr.tag);
+    if (base == NULL){
+      xlpgas_fatalerror (-1, "%d: incoming: cannot find coll=<%d,%d>",
+			 XLPGAS_MYNODE, reduce_hdr.kind, reduce_hdr.tag);
+    }
+    xlpgas::CAUReduce<T_NI> * b = (xlpgas::CAUReduce<T_NI> * ) ((char *)base);
+    bool exec_cb=false;
+    MUTEX_LOCK(&b->_mutex);
+    ++(b->reduce_received); //reduce_hdr.seq;
     int64_t *data = (int64_t *)ret_info.udata_one_pkt_ptr;
-    uint group_id = ret_info.src;
-
-    temp_reduce_data = *data;
+    b->temp_reduce_data = *data;
+    //fprintf(stderr, "L%d reduce CB invoked  %d %d \n",this->ordinal(),reduce_received, instance_id);
+    if (b->reduce_received <= b->instance_id){
+      //data already arrived
+      xlpgas::reduce_op(b->mcast_data, &(b->temp_reduce_data), reduce_hdr.op);
+      exec_cb=true;
+    }
+    MUTEX_UNLOCK(&b->_mutex);
+    if (exec_cb && b->_cb_complete)
+	b->_cb_complete ((void*)&(b->_ctxt), b->_arg, PAMI_SUCCESS);
     return NULL;
 }
 
-
-
-
-void xlpgas::cau_init(void) {
-  //decide if cau available
-  XLPGAS_CAU_SHM_AVAIL=0;//cau available and must be called
-
-  char           *env_str = NULL;
-  env_str   = getenv("MP_COMMON_TASKS");
-  int ncaus = atoi(env_str);
-  
-  if(ncaus == 0) XLPGAS_CAU_SHM_AVAIL = 1; //one node; cau can be bypassed but it will use shmem
-  else {
-    //query if env set for cau;
-    env_str=NULL;
-    env_str   = getenv("MP_SHARED_MEMORY");
-    if( strcmp(env_str, "yes") != 0)  XLPGAS_CAU_SHM_AVAIL = 2;//cau/shmem not available
-    
-    env_str=NULL;
-    env_str   = getenv("MP_COLLECTIVE_GROUPS");
-    int ngroups=0;
-    if(env_str !=NULL) ngroups = atoi(env_str);
-    if( ngroups == 0)  XLPGAS_CAU_SHM_AVAIL = 2;//cau/shmem not available
-  }
-
-  //memcpy(&lapi_handle, (char*)(xlpgas_pami_ctxt[0]), sizeof(lapi_handle_t));
-  lapi_handle = 0;
-  RC0( LAPI_Addr_set(lapi_handle, ( void * )recv_mcast, XLPGAS_RECV_MCAST) );
-  RC0( LAPI_Addr_set(lapi_handle, ( void * )recv_reduce, XLPGAS_RECV_REDUCE) );
-
-  mcast_sent = 0;
-  mcast_received = 0;
-  reduce_sent = 0;
-  reduce_received = 0;
-  instance_id = 0;  
-  RC0( LAPI_Gfence(lapi_handle) );
+template <class T_NI>
+void xlpgas::CAUReduce<T_NI>::on_reduce_sent(lapi_handle_t *hndl, void *cookie)
+{
+  xlpgas::CAUReduce<T_NI> *b = (xlpgas::CAUReduce<T_NI>*)cookie;
+  ++(b->reduce_sent);
 }
 
-
-void xlpgas::cau_fast_allreduce(int64_t* dest, int64_t* src, cau_reduce_op_t& op, int ctxt){
-
-  //printf("L[%d,%d] inside cau all reduce lapi_handle=%d bgid=%d\n",
-  //	 XLPGAS_MYNODE,XLPGAS_MYSMPTHREAD,
-  //	 lapi_handle,base_group_id);
-
-  instance_id++;
-
-  mcast_data  = dest;
-  reduce_data = src;
-
-  int ROOT=0;
+template <class T_NI>
+void  xlpgas::CAUReduce<T_NI>::kick(void){
+  unsigned int ROOT=0;
   int data_size = 1;
-
-  if(XLPGAS_MYNODE != ROOT) {
-    //printf("Non Root sends\n");
-    reduce_hdr_t  reduce_hdr;
-    reduce_hdr.op     = op;
-    reduce_hdr.seq    = 1;
-
-    //printf("L%d Reduce  Send",XLPGAS_MYNODE);
-    //for(int i=0;i<4;++i){
-    //  printf("@%d",((int64_t*)reduce_data)[i]);
-    //}
-    //printf("\n Totalsize=%d\n",data_size*sizeof(int64_t));
-    
+  if(this->ordinal() != ROOT) {
+    //fprintf(stderr, "Non Root sends cg=%d handle=%d DID=%d\n",base_group_id,lapi_handle, _dispatch_id);
+    reduce_hdr.op     = cau_op;
+    reduce_hdr.kind    = this->_header[0].kind;
+    reduce_hdr.tag    = this->_header[0].tag;
+    instance_id++;
     RC0( LAPI_Cau_reduce(lapi_handle, base_group_id, 
-			 XLPGAS_RECV_REDUCE, &reduce_hdr, sizeof(reduce_hdr), 
+			 this->_dispatch_id, &reduce_hdr, sizeof(reduce_hdr),
 			 reduce_data, 
-			 data_size * sizeof(int64_t), op, 
-			 on_reduce_sent, (void *)reduce_hdr.seq) );
+			 data_size * sizeof(int64_t), cau_op,
+			 CAUReduce<T_NI>::on_reduce_sent, (void *)this) );
     ++reduce_received;
-    lapi_msg_info_t msg_info;
-    bzero(&msg_info, sizeof(msg_info));
-    while (reduce_sent < instance_id) {
-      //xlpgas_tsp_wait (ctxt);
-      RC0( LAPI_Msgpoll(lapi_handle, XLPGAS_CAU_POLL_CNT, &msg_info) );
-    }
   }
 
-  if(XLPGAS_MYNODE == ROOT) {
-    //printf("L%d Reduce root wait for results\n", XLPGAS_MYNODE);
+  if(this->ordinal() == ROOT) {
+    //fprintf(stderr, "L%d Reduce root wait for results cg=%d handle=%d DID=%d\n", this->ordinal(), base_group_id, lapi_handle, _dispatch_id);
     //Root receives
+    bool exec_cb=false;
+    MUTEX_LOCK(&this->_mutex);
+    instance_id++;
     ++reduce_sent; 
     *mcast_data=*reduce_data;
-    lapi_msg_info_t msg_info;
-    bzero(&msg_info, sizeof(msg_info));
-    while (reduce_received < instance_id) {
-      //xlpgas_tsp_wait (ctxt);
-      RC0( LAPI_Msgpoll(lapi_handle, XLPGAS_CAU_POLL_CNT, &msg_info) );
+    if (reduce_received >= instance_id){
+      //data already arrived
+      xlpgas::reduce_op(mcast_data, &temp_reduce_data, cau_op);
+      exec_cb=true;
     }
-    xlpgas::reduce_op(mcast_data, &temp_reduce_data, op);       
+    MUTEX_UNLOCK(&this->_mutex);
+    if (exec_cb && this->_cb_complete)
+      this->_cb_complete ((void*)&(this->_ctxt), this->_arg, PAMI_SUCCESS);
   }
-  //printf("L%d reduce done\n",XLPGAS_MYNODE);
+}//end kick()
 
+template <class T_NI>
+inline bool xlpgas::CAUReduce<T_NI>::isdone() const
+{
+  if(this->ordinal() != 0) {
+    return (reduce_sent >= instance_id);
+  }
+  else{
+    return (reduce_received >= instance_id);
+  }
+}
 
+/////////////////////////////////////////// CAUBcast
+template <class T_NI>
+int xlpgas::CAUBcast<T_NI>::_dispatch_id;
+
+template <class T_NI>
+void xlpgas::CAUBcast<T_NI>::
+register_dispatch(int* dispatch_id, lapi_handle_t lh){
+  _dispatch_id = (*dispatch_id)--;
+  LapiImpl::Context *cp = (LapiImpl::Context *)_Lapi_port[lh];
+  internal_rc_t rc = (cp->*(cp->pDispatchSet))(_dispatch_id,
+                                               (void * )xlpgas::CAUBcast<T_NI>::recv_mcast,
+                                               NULL,
+                                               null_dispatch_hint,
+                                               INTERFACE_LAPI);
+  assert(rc == SUCCESS);
+}
+
+template <class T_NI>
+xlpgas::CAUBcast<T_NI>::
+CAUBcast (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset,void* device_info, T_NI* ni) :
+  CollExchange<T_NI> (ctxt, comm, kind, tag, offset, ni)
+{
+  instance_id=0;
+  mcast_sent=0;
+  mcast_received=0;
+  _done =false;
+  //set device specific
+  this->_device_info = device_info;
+  lapi_handle = ((device_info_type*)device_info)->lapi_handle();
+  base_group_id = ((device_info_type*)device_info)->cau_group();
+}
+
+template <class T_NI>
+void xlpgas::CAUBcast<T_NI>::reset (int rootindex,
+                                    const void         * sbuf,
+                                    void               * dbuf,
+                                    unsigned           nbytes){
+  _done =false;
+  mcast_data = (int64_t*)dbuf;
+}
+
+template <class T_NI>
+void xlpgas::CAUBcast<T_NI>::on_mcast_sent(lapi_handle_t *hndl, void *cookie)
+{
+  xlpgas::CAUBcast<T_NI> *b = (xlpgas::CAUBcast<T_NI>*)cookie;
+  ++(b->mcast_sent);
+}
+
+template <class T_NI>
+void* xlpgas::CAUBcast<T_NI>::recv_mcast(lapi_handle_t *hndl, void *uhdr, uint *uhdr_len,
+        ulong *msg_len, compl_hndlr_t **comp_h, void **uinfo)
+{
+    lapi_return_info_t &ret_info = *(lapi_return_info_t *)msg_len;
+    mcast_hdr_t  &mcast_hdr = *(mcast_hdr_t *)uhdr;
+    assert( *uhdr_len == sizeof(mcast_hdr) );
+    int ctxt = 0;//reduce_hdr->dest_ctxt;
+    void * base = xlpgas::CollectiveManager<T_NI>::instance(ctxt)->find (mcast_hdr.kind,mcast_hdr.tag);
+    if (base == NULL){
+      xlpgas_fatalerror (-1, "%d: incoming: cannot find coll=<%d,%d>",
+			 XLPGAS_MYNODE, mcast_hdr.kind, mcast_hdr.tag);
+    }
+    xlpgas::CAUBcast<T_NI> * b = (xlpgas::CAUBcast<T_NI> * ) ((char *)base);
+
+    ++(b->mcast_received);
+
+    int64_t *data = (int64_t *)ret_info.udata_one_pkt_ptr;
+    *(b->mcast_data) = *data;
+
+    if (b->_cb_complete)
+      b->_cb_complete ((void*)&(b->_ctxt), b->_arg, PAMI_SUCCESS);
+
+    return NULL;
+}
+
+template <class T_NI>
+void  xlpgas::CAUBcast<T_NI>::kick(void){
   //BCAST
-  mcast_hdr_t  mcast_hdr;
+  unsigned int ROOT=0;
+
   // initialize multicast header
-  mcast_hdr.src    = ROOT; //root for multicast
-  mcast_hdr.seq    = 1;
-  
-  
-  if(XLPGAS_MYNODE == ROOT){
-    //printf("L%d MCAST sent\n",XLPGAS_MYNODE);
+  mcast_hdr.kind    = this->_header[0].kind;
+  mcast_hdr.tag    = this->_header[0].tag;
+
+  //int dd = *((int*)mcast_data);
+  //fprintf(stderr, "L%d MCAST dispatchid=%d  \n",this->ordinal(),_dispatch_id);
+  if(this->ordinal() == ROOT){
     ++mcast_received;
     RC0( LAPI_Cau_multicast(lapi_handle, base_group_id, 
-			    XLPGAS_RECV_MCAST, &mcast_hdr, sizeof(mcast_hdr), 
-			    mcast_data, data_size * sizeof(int64_t), 
-			    on_mcast_sent, (void *)mcast_hdr.seq) );
-    
-    //wait until sent
-    lapi_msg_info_t msg_info;
-    bzero(&msg_info, sizeof(msg_info));
-    while (mcast_sent < instance_id) {
-      //xlpgas_tsp_wait (ctxt);
-      RC0( LAPI_Msgpoll(lapi_handle, XLPGAS_CAU_POLL_CNT, &msg_info) );
-    }
+			    _dispatch_id, &mcast_hdr, sizeof(mcast_hdr),
+			    mcast_data, sizeof(int64_t),
+			    CAUBcast<T_NI>::on_mcast_sent, (void *)this) );
+
+    //this move inside on_mcast_sent
+    if (this->_cb_complete)
+      this->_cb_complete ((void*)&(this->_ctxt), this->_arg, PAMI_SUCCESS);
   }
   else {
     ++mcast_sent;
-    //all others wait for data to be received
-    lapi_msg_info_t msg_info;
-    bzero(&msg_info, sizeof(msg_info));
-    while (mcast_received < instance_id) {
-      // xlpgas_tsp_wait (ctxt);
-      RC0( LAPI_Msgpoll(lapi_handle, XLPGAS_CAU_POLL_CNT, &msg_info) );
-    }
-    //printf("L%d MCAST RECV\n",XLPGAS_MYNODE);
   }
-  
-  //printf("L%d FINALREDUCE:",XLPGAS_MYNODE);
-  //for(int i=0;i<4;++i){
-  //  printf("=%d",((int64_t*)mcast_data)[i]);
-  //}
-  //printf("\n");
 }
 
-cau_reduce_op_t xlpgas::cau_op_dtype(xlpgas_ops_t      op,
-			  xlpgas_dtypes_t   dtype){
-
-  cau_reduce_op_t cau_op;
-  
-  switch (dtype)
-    {
-    case XLPGAS_DT_int:    cau_op.operand_type = CAU_SIGNED_INT; break;
-    case XLPGAS_DT_word:   cau_op.operand_type = CAU_UNSIGNED_INT; break;
-    case XLPGAS_DT_llg:    cau_op.operand_type = CAU_SIGNED_LONGLONG;break;
-    case XLPGAS_DT_dwrd:   cau_op.operand_type = CAU_UNSIGNED_LONGLONG; break;
-    case XLPGAS_DT_dbl:    cau_op.operand_type = CAU_DOUBLE; break;
-    case XLPGAS_DT_flt:    cau_op.operand_type = CAU_FLOAT; break;
-    default: xlpgas_fatalerror (-1,"xlpgas::cau_fast_allreduce :: data type not supported");
-    }
-
-  switch(op) {
-    case XLPGAS_OP_ADD:    cau_op.operation = CAU_SUM; break;
-    case XLPGAS_OP_AND: 
-    case XLPGAS_OP_LOGAND: cau_op.operation = CAU_AND; break;
-    case XLPGAS_OP_OR: 
-    case XLPGAS_OP_LOGOR:  cau_op.operation = CAU_OR; break; 
-    case XLPGAS_OP_XOR:    cau_op.operation = CAU_XOR; break; 
-    case XLPGAS_OP_MAX:	   cau_op.operation = CAU_MAX; break; 
-    case XLPGAS_OP_MIN:	   cau_op.operation = CAU_MIN; break; 
-    case XLPGAS_OP_NOP:	   cau_op.operation = CAU_NOP; break; 
-    default:		
-      xlpgas_fatalerror (-1, "xlpgas::cau_fast_allreduce :: OP not implemented");
-    }
-  
-  return cau_op;
+template <class T_NI>
+inline bool xlpgas::CAUBcast<T_NI>::isdone() const
+{
+  if(this->ordinal() == 0){
+    return (mcast_sent >= instance_id);
+  }
+  else{
+    return (mcast_received >= instance_id);
+  }
 }

@@ -21,6 +21,11 @@
 #include "algorithms/composite/Composite.h"
 #include "algorithms/geometry/Metadata.h"
 
+#ifdef XLPGAS_PAMI_CAU
+ //for cau algo metadata
+ #include "algorithms/geometry/CAUUtil.h"
+#endif
+
 namespace PAMI
 {
   namespace CollRegistration
@@ -62,6 +67,15 @@ namespace PAMI
       T_P2P_NI                        *_barmodel;
       T_Geometry                      *_geometry;
     };
+
+    // metadata check function for allreduce; one element only
+    metadata_result_t allreduce_metadata_function(struct pami_xfer_t *in) {
+      metadata_result_t result;
+      result.bitmask = 0;
+      if(in->cmd.xfer_allreduce.stypecount > 1) result.check.range = 1;
+      return result;
+    }
+
 
     // --------------  PGAS Factory base class -------------
     template <class       T_TSPColl,
@@ -106,6 +120,7 @@ namespace PAMI
 	  composite->setDoneCallback(xfer->cb_done, xfer->cookie);
           return composite; 
         }
+
       virtual void metadata(pami_metadata_t *mdata)
         {
           new(mdata) PAMI::Geometry::Metadata(_string);
@@ -114,6 +129,20 @@ namespace PAMI
             mdata->check_correct.values.rangeminmax = 1;
             mdata->range_hi = 512; 
           }
+#ifdef XLPGAS_PAMI_CAU
+	  if(strstr(_string,"HybridShortAllreduce"))
+            {
+              mdata->check_correct.values.alldtop   = 0;
+              mdata->check_fn                       = CAU::op_dt_metadata_function<pami_allreduce_t>;
+              mdata->check_perf.values.hw_accel     = 1;
+              mdata->range_lo_perf                  = 0;
+              mdata->range_hi_perf                  = 64;
+              mdata->check_correct.values.rangeminmax = 1;
+              mdata->range_hi = 8;
+              //mdata->check_correct.values.checkrequired = 1;
+              mdata->check_fn = allreduce_metadata_function;
+          }
+#endif
         }
       T_Exec            _exec;
       T_TSPColl        *_coll;
@@ -398,7 +427,7 @@ namespace PAMI
         }
     };
 
-  }
-}
+  }//namespace CollRegistration
+}//namespace PAMI
 
 #endif

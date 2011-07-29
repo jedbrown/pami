@@ -15,7 +15,7 @@ namespace xlpgas
   {
 	public:
 	  void * operator new (size_t, void * addr) { return addr; }
-	  PrefixSums (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset);
+	  PrefixSums (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, T_NI*);
           ~PrefixSums()
             {
               if(_tmpbuf)

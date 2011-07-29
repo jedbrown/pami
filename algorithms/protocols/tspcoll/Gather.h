@@ -23,8 +23,8 @@ namespace xlpgas
   public:
     void * operator new (size_t, void * addr) { return addr; }
 
-    Gather (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
-    Collective<T_NI> (ctxt, comm, kind, tag, NULL, NULL)
+    Gather (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, T_NI* ni) :
+      Collective<T_NI> (ctxt, comm, kind, tag, NULL, NULL, ni)
       {
 	_rcvcount = comm->size();
 
@@ -36,7 +36,7 @@ namespace xlpgas
 	_header->kind          = kind;
 	_header->tag           = tag;
 	_header->offset        = offset;
-	_header->senderID      = comm->ordinal();
+	_header->senderID      = this->ordinal();
 	_header->dest_ctxt     = -1;
       }
 

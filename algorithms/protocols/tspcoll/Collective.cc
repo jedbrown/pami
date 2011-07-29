@@ -15,18 +15,22 @@
 /* ************************************************************************ */
 template<class T_NI>
 xlpgas::Collective<T_NI>::Collective (int                     ctxt,
-			       Team                  * comm,
-			       CollectiveKind          kind,
-			       int                     tag,
-			       xlpgas_LCompHandler_t    cb_complete,
-			       void                  * arg):
+                                      Team                  * comm,
+                                      CollectiveKind          kind,
+                                      int                     tag,
+                                      xlpgas_LCompHandler_t    cb_complete,
+                                      void                  * arg,
+                                      T_NI                  * ni):
   _ctxt        (ctxt),
   _comm        (comm),
   _kind        (kind),
   _tag         (tag),
   _cb_complete (cb_complete),
-  _arg         (arg)
+  _arg         (arg),
+  _p2p_iface   (ni)
 {
+  _my_rank = _comm->rank2Index(_p2p_iface->myrank());
+  _dev = NULL;
 }
 
 /* ************************************************************************ */

@@ -856,18 +856,24 @@ namespace PAMI {
       size_t x, ix, nn;
       pami_coord_t c0;
       pami_result_t rc;
+
+      //printf("Query for %d\n", rank);
+
       switch (__type) {
       case PAMI_SINGLE_TOPOLOGY:
         if (topo_rank == rank) {
+	  //printf("LLL\n");
           return 0;
         }
         break;
       case PAMI_RANGE_TOPOLOGY:
         if (rank >= topo_first && rank <= topo_last) {
+	  //printf("REturn [%d %d] %d\n", rank, topo_first, rank-topo_first);
           return rank - topo_first;
         }
         break;
       case PAMI_LIST_TOPOLOGY:
+	//printf("BBB\n");
         for (x = 0; x < __size; ++x) {
           if (rank == topo_list(x)) {
             return x;
@@ -876,6 +882,7 @@ namespace PAMI {
         break;
 
       case PAMI_AXIAL_TOPOLOGY:
+	//printf("CCC\n");
         rc = RANK2COORDS(rank, &c0);
         ix = 0;
         nn = 0;
@@ -899,6 +906,7 @@ namespace PAMI {
         break;
 
       case PAMI_COORD_TOPOLOGY:
+	//printf("DDD\n");
         // probably not used?
         // assume last dim is least-significant
         rc = RANK2COORDS(rank, &c0);
@@ -917,6 +925,7 @@ namespace PAMI {
         return ix;
         break;
       case PAMI_EMPTY_TOPOLOGY:
+	//printf("CACA\n");
       default:
         break;
       }
@@ -2182,11 +2191,23 @@ namespace PAMI {
       _new->__size = 0;
     }
 
+    void setClient_impl(pami_client_t c){
+      __client = c;
+    }
+
+    pami_endpoint_t endpoint(pami_task_t ordinal){
+      pami_task_t task = this->index2Rank_impl(ordinal);
+      pami_endpoint_t ep;
+      PAMI_Endpoint_create(__client, task, 0, &ep);
+      return ep;
+    }
+
   private:
     size_t	__size;		///< number of ranks in this topology
     pami_topology_type_t __type;	///< type of topology this is
     union topology_u __topo;///< topoloy info
     bool             __free_ranklist;
+    pami_client_t    __client;
   }; // class Topology
 
 }; // namespace PAMI

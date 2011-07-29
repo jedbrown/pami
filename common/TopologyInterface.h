@@ -90,8 +90,6 @@ namespace PAMI
       /// \return topology type
       inline pami_topology_type_t type();
 
-
-
       /// \brief Nth rank in topology
       ///
       /// \param[in] ix Which rank to select
@@ -122,6 +120,7 @@ namespace PAMI
       /// \return PAMI_SUCCESS, or PAMI_UNIMPL if not a range topology
       ///
       inline pami_result_t rankRange(pami_task_t *first, pami_task_t *last);
+
 
       /// \brief return rank list
       ///
@@ -330,6 +329,14 @@ namespace PAMI
       /// \param[in] other  The other topology
       ///
       inline void subtractTopology(T_Topology *_new, T_Topology *other);
+
+
+      /// Associate a client with the topology
+      void setClient(pami_client_t);
+
+      ///returns an endpoint corresponding to the input ordinal
+      pami_endpoint_t endpoint(pami_task_t ordinal);
+
     }; // end class PAMI::Interface::Topology
 
     template <class T_Topology>
@@ -506,6 +513,19 @@ namespace PAMI
     {
       return static_cast<T_Topology*>(this)->subtractTopology_impl(_new, other);
     }
+
+    template <class T_Topology>
+      void Topology<T_Topology>::setClient(pami_client_t pc)
+    {
+      static_cast<T_Topology*>(this)->setClient_impl(pc);
+    }
+
+    template <class T_Topology>
+      pami_endpoint_t Topology<T_Topology>::endpoint(pami_task_t ordinal)
+    {
+      return static_cast<T_Topology*>(this)->endpoint_impl(ordinal);
+    }
+
   }; // end namespace Interface
 }; // end namespace PAMI
 

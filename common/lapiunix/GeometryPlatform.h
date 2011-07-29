@@ -15,6 +15,10 @@
 
 /// \brief Extensions to enum keys_t
 #define PAMI_GKEY_PLATEXTENSIONS \
-PAMI_GKEY_GEOMETRYINFO,
+PAMI_GKEY_GEOMETRYINFO, \
+GKEY_GEOMETRYCSNI,      \
+GKEY_GEOMETRYSHMEM,     \
+GKEY_GEOMETRYUSECAU,\
+GKEY_GEOMETRYUSEBSR,
 
 #endif // __common_default_GeometryPlatform_h__

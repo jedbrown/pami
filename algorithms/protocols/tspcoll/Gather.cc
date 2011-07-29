@@ -30,8 +30,8 @@ void xlpgas::Gather<T_NI>::reset (int root, const void * s, void * d,
 /* **************************************************************** */
 template<class T_NI>
 void xlpgas::Gather<T_NI>::kick    () {
-  //printf("ROOT2=%d <> %d", _root, this->_comm->ordinal());
-  if (_root == this->_comm->ordinal())
+  //printf("ROOT2=%d <> %d", _root, this->ordinal());
+  if (_root == this->ordinal())
     {
       memcpy (_rbuf + _root * _len,
 	      _sbuf ,

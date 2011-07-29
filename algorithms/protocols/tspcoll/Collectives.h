@@ -18,14 +18,16 @@
 #include "algorithms/protocols/tspcoll/Scatter.h"
 #include "algorithms/protocols/tspcoll/Permute.h"
 #include "algorithms/protocols/tspcoll/PrefixSums.h"
+#ifdef XLPGAS_PAMI_CAU
 #include "algorithms/protocols/tspcoll/SHMReduceBcast.h"
 #include "algorithms/protocols/tspcoll/ShmCauAllReduce.h"
 #include "algorithms/protocols/tspcoll/ShmHybridBcast.h"
-#include "algorithms/protocols/tspcoll/AMExchange.h"
+#endif
+//#include "algorithms/protocols/tspcoll/AMExchange.h"
 
 
 namespace xlpgas{
-template <class T_NI>
+  template <class T_NI, class T_Device>
 struct base_coll_defs{
   typedef xlpgas::Barrier<T_NI>    barrier_type;
   typedef xlpgas::Broadcast<T_NI>  broadcast_type;
@@ -39,11 +41,14 @@ struct base_coll_defs{
   typedef xlpgas::Scatter<T_NI>    scatter_type;
   typedef xlpgas::Permute<T_NI>    permute_type;
   typedef xlpgas::PrefixSums<T_NI> prefixsums_type;
+  //shm/cau/hybrid
 #ifdef XLPGAS_PAMI_CAU
   typedef xlpgas::SHMReduce<T_NI>  shm_reduce_type;
   typedef xlpgas::SHMBcast<T_NI>   shm_broadcast_type;
+  typedef xlpgas::CAUReduce<T_NI>  cau_reduce_type;
+  typedef xlpgas::CAUBcast<T_NI>   cau_broadcast_type;
   typedef xlpgas::SHMLargeBcast<T_NI>   shm_large_broadcast_type;
-  typedef xlpgas::ShmCauAllReduce<T_NI> shm_cau_allreduce_type;
+  typedef xlpgas::ShmCauAllReduce<T_NI, T_Device> shm_cau_allreduce_type;
   typedef xlpgas::ShmHybridBcast<T_NI> shm_hybrid_broadcast_type;
 #endif
   //on certain platforms(BG, PERCS) the operations above may be specialized
@@ -55,7 +60,7 @@ struct base_coll_defs{
 #else
   typedef xlpgas::Broadcast<T_NI>  broadcast_pp_type;
 #endif
-  typedef xlpgas::BcastTree<T_NI>  broadcast_tree_type;
+  typedef xlpgas::Broadcast<T_NI>  broadcast_tree_type;
   typedef xlpgas::Allreduce::Long<T_NI> allreduce_pp_type;
   typedef xlpgas::Allgather<T_NI>  allgather_pp_type;
   typedef xlpgas::Alltoall<T_NI>   alltoall_pp_type;

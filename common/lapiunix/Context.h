@@ -245,6 +245,14 @@ namespace PAMI
   typedef MemoryAllocator<1024, 16> ProtocolAllocator;
 
 
+  // Collective Shmem Protocol Typedefs
+  typedef Atomic::NativeAtomic                                                   LAPICSAtomic;
+  typedef Counter::Native                                                        LAPICSCounter;
+  typedef Mutex::YieldingNative                                                  LAPICSMutex;
+  typedef PAMI::Memory::CollSharedMemoryManager<LAPICSAtomic,LAPICSMutex,LAPICSCounter,COLLSHM_SEGSZ,COLLSHM_PAGESZ,
+                                    COLLSHM_WINGROUPSZ,COLLSHM_BUFSZ>            LAPICSMemoryManager;
+
+
   // PGAS RT Typedefs/Coll Registration
   typedef xlpgas::CollectiveManager<CompositeNI_AM> LAPINBCollManager;
   typedef CollRegistration::PGASRegistration<LAPIGeometry,
@@ -254,7 +262,8 @@ namespace PAMI
                                              ShmemEager,
                                              DeviceWrapper,
                                              ShmemDevice,
-                                             LAPINBCollManager> PGASCollreg;
+                                             LAPINBCollManager,
+                                             LAPICSMemoryManager> PGASCollreg;
 
   // Over P2P CCMI Protocol Typedefs
   typedef NativeInterfaceCommon::NativeInterfaceFactory <ProtocolAllocator,  
@@ -286,6 +295,7 @@ namespace PAMI
                                                 LAPICSCounter,
                                                 COLLSHM_SEGSZ,COLLSHM_PAGESZ,
                                                 COLLSHM_WINGROUPSZ,COLLSHM_BUFSZ> LAPICSMemoryManager;
+
   typedef PAMI::Device::CollShm::CollShmDevice<LAPICSAtomic,
                                                LAPICSMemoryManager,
                                                COLLSHM_DEVICE_NUMSYNCS,

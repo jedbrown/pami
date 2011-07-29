@@ -27,7 +27,7 @@ namespace xlpgas
 	{
 	public:
 	  void * operator new (size_t, void * addr) { return addr; }
-	  Long (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset);
+	  Long (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, T_NI*);
           ~Long()
             {
               if(_tmpbuf)
@@ -57,14 +57,14 @@ namespace xlpgas
     public:
       static const int MAXBUF = 512;
       void * operator new (size_t, void * addr) { return addr; }
-      Short (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset);
+      Short (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset,T_NI*);
       void reset (const void        * s,
 		  void              * d,
-		  pami_data_function  op,
-		  TypeCode          * sdt,
-		  size_t              nelems,
-          TypeCode          * rdt,
-		  user_func_t*        uf);
+                  pami_data_function  op,
+                  TypeCode          * sdt,
+                  size_t              nelems,
+                  TypeCode          * rdt,
+                  user_func_t*        uf);
 
     protected:
       static xlpgas_local_addr_t cb_switchbuf (CollExchange<T_NI> *, unsigned phase, unsigned counter);

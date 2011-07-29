@@ -14,7 +14,7 @@ namespace xlpgas
   {
 	public:
 	  void * operator new (size_t, void * addr) { return addr; }
-	  Allgather (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset);
+	  Allgather (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset,T_NI*);
 	  void reset (const void * sbuf,
 		      void * dbuf,
 		      TypeCode           * stype,

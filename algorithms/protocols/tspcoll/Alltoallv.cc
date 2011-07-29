@@ -42,7 +42,7 @@ void xlpgas::Alltoallv<T_NI>::kick    () {
   MUTEX_LOCK(&this->_mutex);
   size_t datawidth = this->_stype->GetDataSize();
   for (int i=0; i < (int)this->_comm->size(); i++)
-    if (i == (int)this->_comm->ordinal())
+    if (i == (int)this->ordinal())
       {
 	memcpy (this->_rbuf + this->_rdispls[i],
 		this->_sbuf + this->_sdispls[i],

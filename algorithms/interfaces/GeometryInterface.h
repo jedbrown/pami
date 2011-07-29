@@ -42,7 +42,6 @@ namespace PAMI
       GKEY_MSYNC_CLASSROUTEID1,    // Multisync class route id1 
       GKEY_MSYNC_LOCAL_CLASSROUTEID, //Multisync id for local hw accel barriers
       PAMI_GKEY_PLATEXTENSIONS
-      GKEY_GEOMETRYCSNI,            // native interface for coll shm device
       NUM_GKEYS, 
     } gkeys_t;                     // global keystore keys
     typedef enum

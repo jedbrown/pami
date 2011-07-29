@@ -1103,7 +1103,7 @@ namespace PAMI
         return PAMI_SUCCESS;
       }
 
-      inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry, int phase)
+      inline pami_result_t analyze_impl(size_t context_id, T_Geometry *geometry, int phase, uint64_t * inout_val=NULL)
       {
         TRACE_FN_ENTER();
         PAMI_assertf(context_id == _context_id,"%zu != %zu\n",context_id,_context_id);

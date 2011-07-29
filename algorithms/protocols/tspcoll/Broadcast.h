@@ -14,7 +14,7 @@ namespace xlpgas
   {
 	public:
 	  void * operator new (size_t, void * addr) { return addr; }
-	  Broadcast (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset);
+	  Broadcast (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset,T_NI*);
 	  virtual void reset (int root,
 		      const void * sbuf,
 		      void * dbuf,

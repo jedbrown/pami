@@ -851,12 +851,23 @@ namespace PAMI
         {
         // Register one PGAS (mu+shmem, mu, or shmem)
         if ((__global.useMU()) && (__global.useshmem()))
-            _pgas_composite_registration = new(_pgas_composite_registration_storage) Composite_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _mid_protocol, Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid), _devices->_shmem[_contextid], &_dispatch.id, _geometry_map, true);
+	  _pgas_composite_registration = new(_pgas_composite_registration_storage) Composite_PGASCollreg(_client,
+													 (pami_context_t)this,
+													 _clientid,
+													 _contextid,
+													 _mid_protocol,
+													 Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid),
+													 _devices->_shmem[_contextid],
+													 NULL,
+													 &_dispatch.id,
+													 _geometry_map,
+													 true);
         else if (__global.useMU())
-          _pgas_mu_registration = new(_pgas_mu_registration_storage) MU_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _mid_protocol, Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid),ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), &_dispatch.id, _geometry_map);
+          _pgas_mu_registration = new(_pgas_mu_registration_storage) MU_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _mid_protocol, Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid),ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), NULL, &_dispatch.id, _geometry_map);
         else if ((__global.useshmem()) && (__global.topology_local.size() > 1))
-          _pgas_shmem_registration = new(_pgas_shmem_registration_storage) Shmem_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _mid_protocol, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), & _dispatch.id, _geometry_map);
+          _pgas_shmem_registration = new(_pgas_shmem_registration_storage) Shmem_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _mid_protocol, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), NULL, & _dispatch.id, _geometry_map);
         }
+
         TRACE_FORMAT( "<%p:%u>, dispatch.id %u", this,__LINE__, _dispatch.id);
 
         // The multi registration will use shmem/mu if they are ctor'd above.

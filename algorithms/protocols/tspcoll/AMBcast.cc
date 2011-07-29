@@ -108,7 +108,9 @@ void xlpgas::BcastTree<T_NI>::reset (int root, const void * sbuf, void* rbuf, un
     memset (a, 0, sizeof(xlpgas::AMBcast<T_NI>));
     header.hdr.headerlen = sizeof(AMHeader_bcast);
     header.user_cb = XLPGAS_TSP_BCAST_TREE;
-    new (a) xlpgas::AMBcast<T_NI> (this->_ctxt, this->_comm->comm(), &header);
+    //temporary commented out untill reenabled; this method not
+    //available on the topo class passed as argument
+    //new (a) xlpgas::AMBcast<T_NI> (this->_ctxt,this->_comm->comm(), &header);
     a->reset (root, sbuf, nbytes);
   }
   else //non root

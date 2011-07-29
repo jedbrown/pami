@@ -17,8 +17,8 @@
 /* ************************************************************************* */
 template <class T_NI>
 xlpgas::Allgatherv<T_NI>::
-Allgatherv (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
-  CollExchange<T_NI> (ctxt, comm, kind, tag, offset)
+Allgatherv (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset,T_NI* ni) :
+  CollExchange<T_NI> (ctxt, comm, kind, tag, offset, ni)
 {
   pami_type_t allgathervtype = PAMI_TYPE_BYTE;
   this->_tmpbuf = NULL;
@@ -29,8 +29,8 @@ Allgatherv (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
   for (int i=0; i< this->_numphases; i++)
     {
       //this first part of the collective makes a barrier;
-      //int destindex = (this->_comm->ordinal()+2*this->_comm->size()-(1<<i))%this->_comm->size();
-      int destindex = (comm->ordinal()+(1<<i))%comm->size();
+      //int destindex = (this->ordinal()+2*this->_comm->size()-(1<<i))%this->_comm->size();
+      int destindex = (this->ordinal()+(1<<i))%comm->size();
       this->_dest[i] = this->_comm->endpoint(destindex);
       this->_sbuf[i] = &this->_dummy;
       this->_rbuf[i] = &this->_dummy;
@@ -63,29 +63,29 @@ void xlpgas::Allgatherv<T_NI>::reset (const void         * sbuf,
   /* --------------------------------------------------- */
   /*    copy source buffer to dest buffer                */
   /* --------------------------------------------------- */
-  memcpy ((char *)rbuf + rdispls[this->_comm->ordinal()], sbuf, rtype->GetDataSize()*rtypecounts[this->_comm->ordinal()]);
+  memcpy ((char *)rbuf + rdispls[this->ordinal()], sbuf, rtype->GetDataSize()*rtypecounts[this->ordinal()]);
   /* --------------------------------------------------- */
   /* initialize destinations, offsets and buffer lengths */
   /* --------------------------------------------------- */
 
   for (int i=0, phase=this->_numphases/3; i<this->_numphases/3; i++, phase+=2)
     {
-      int destindex = (this->_comm->ordinal()+2*this->_comm->size()-(1<<i))%this->_comm->size();
+      int destindex = (this->ordinal()+2*this->_comm->size()-(1<<i))%this->_comm->size();
       this->_dest[phase]   =  this->_comm->endpoint (destindex);
       this->_dest[phase+1]   = this->_dest[phase];
-      this->_sbuf[phase]   = (char *)rbuf + rdispls[this->_comm->ordinal()];
+      this->_sbuf[phase]   = (char *)rbuf + rdispls[this->ordinal()];
       this->_sbuf[phase+1]   = (char *)rbuf;
 
       size_t phasesumbytes=0;
       for (int n=0; n < (1<<i); n++)
-        phasesumbytes += (rtype->GetDataSize()*rtypecounts[(this->_comm->ordinal()+n)%this->_comm->size()]);
+        phasesumbytes += (rtype->GetDataSize()*rtypecounts[(this->ordinal()+n)%this->_comm->size()]);
 
-      this->_rbuf[phase]   = (char *)rbuf + ((rdispls[this->_comm->ordinal()] + phasesumbytes) % allsumbytes);
+      this->_rbuf[phase]   = (char *)rbuf + ((rdispls[this->ordinal()] + phasesumbytes) % allsumbytes);
       this->_rbuf[phase+1]   = (char *)rbuf;
-      if (rdispls[this->_comm->ordinal()] + phasesumbytes >= allsumbytes)
+      if (rdispls[this->ordinal()] + phasesumbytes >= allsumbytes)
         {
-          this->_sbufln[phase] = allsumbytes - rdispls[this->_comm->ordinal()];
-          this->_sbufln[phase+1] = rdispls[this->_comm->ordinal()] + phasesumbytes - allsumbytes;
+          this->_sbufln[phase] = allsumbytes - rdispls[this->ordinal()];
+          this->_sbufln[phase+1] = rdispls[this->ordinal()] + phasesumbytes - allsumbytes;
         }
       else
         {
