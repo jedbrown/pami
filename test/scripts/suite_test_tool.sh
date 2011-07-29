@@ -691,12 +691,23 @@ else
 			evalSummary=$tempSummary
 		    fi
 
+		elif [ $evalSignal -eq 6 ]
+		then
+
+		    # Abort, grab rank from output file
+		    rank=""
+		    rank=$( grep -a -i "ibm.runjob.client.job: .*termination by signal" $testLog | awk -F"rank " '{print $2}' | awk -F"." '{print $1}' )
+		    if [ $? -eq 0 ] && [ "${rank}" != "" ]
+		    then
+			evalSummary="Abort (rank ${rank})"
+		    fi		    
+
 		elif [ $evalSignal -eq 11 ]
 		then
 
 		    # Seg fault, grab rank from output file
 		    rank=""
-		    rank=$( grep -a -i "ibm.runjob.client.job: .*termination by signal" $testLog | awk '{print $NF}' )
+		    rank=$( grep -a -i "ibm.runjob.client.job: .*termination by signal" $testLog | awk -F"rank " '{print $2}' | awk -F"." '{print $1}' )
 		    if [ $? -eq 0 ] && [ "${rank}" != "" ]
 		    then
 			evalSummary="Seg fault (rank ${rank})"
@@ -1094,11 +1105,11 @@ runHW ()
     HWLocation=$( echo $HWBlock | sed "s|:| |" | awk '{print $2}' )    
 
     # BGQ Shape
-    if [ "${shape}" == '' ]
+    if [ "${cmdlineShape}" == '' ]
     then
 	HWShape=$( echo $HWBlock | sed "s|:| |g" | awk '{print $3}' )
     else
-	HWShape=$shape
+	HWShape=$cmdlineShape
     fi
 
     # BGQ Corner
@@ -1142,7 +1153,12 @@ runHW ()
 	# corner
 	if [[ ! "${opts}" =~ '--corner' ]] && [ "${HWCorner}" != "" ]
 	then
-	    HWBlock="${HWBlock} --corner ${HWBlock}-${HWCorner}"
+	    if [[ "${HWCorner}" =~ ^[jJ] ]] #user only provided node location
+	    then
+		HWBlock="${HWBlock} --corner ${HWBlock}-${HWCorner}"
+	    else # user provided block and node location
+		HWBlock="${HWBlock} --corner ${HWCorner}"
+	    fi
 	fi
 
 	# shape
@@ -1188,7 +1204,7 @@ runHW ()
 	echo "PPCFLOOR = ${run_floor}"
     } >> $logFile
 
-    # Print ENV vars to log and create -envs/--envs parm 
+    # Print ENV vars to log and create -envs/--envs parm
     while read xename xeval
     do
 	echo "${xename} = ${xeval}" >> $logFile 
@@ -1458,6 +1474,9 @@ runHW ()
 	echo "ERROR (E)::runHW:  cd back to original dir FAILED!! Exiting."
 	exit 1
     fi
+
+    # remove temp ENV var hash
+    rm -f $runENVHash
 
     # Return
     return $runHW_rc
@@ -1806,7 +1825,7 @@ exe_preProcessing ()
 				      # Have to do this since this option is valid, but not in the runfctest.sh help text
 		                      ;;
 	    * )                       # See if this is an option or value
-		                      if [[ "${1}" =~ '-' ]] # option
+		                      if [[ "${1}" =~ "^-" ]] # option
 				      then
 	
                                           # Check against *run* help text
@@ -1891,6 +1910,13 @@ exe_preProcessing ()
     eval $finalOptsVar=\"$( echo $opts | sed 's/"/\\"/g' )\"
     eval $maxNPVar=$eppMaxNP
     eval $maxRPNVar=$eppMaxRPN
+
+    # Update BG_SHAREDMEMSIZE ...default is 0, but it must be > 0 if mode is > 1 (for MPI apps)
+
+    if (( $eppMode > 1 )) && (( $BG_SHAREDMEMSIZE < 1 ))  
+    then # set BG_SHAREDMEMSIZE to 32
+	BG_SHAREDMEMSIZE=32
+    fi
 
     return 0
 }
@@ -2677,6 +2703,13 @@ usage ()
     echo "                                 runjob --block R00-M0-N01 --corner R00-M0-N01-J00"
     echo "                                 runjob --block R00-M0-N01 --corner R00-M0-N01-J05"
     echo ""
+    echo "                             ex: -b R00-M0-N08-128 --corner \"R00-M0-N08-J04 R00-M0-N09-J05 R00-M0-N10-J08 R00-M0-N11-J09\""
+    echo "                                 results in:"
+    echo "                                 runjob --block R00-M0-N08-128 --corner R00-M0-N08-J04"
+    echo "                                 runjob --block R00-M0-N08-128 --corner R00-M0-N09-J05"
+    echo "                                 runjob --block R00-M0-N08-128 --corner R00-M0-N10-J08"
+    echo "                                 runjob --block R00-M0-N08-128 --corner R00-M0-N11-J09"
+    echo ""
     echo "-d | --debug                 Debug enabled, major commands (make, runjob, etc) are only echoed."
     echo ""
     echo "-db | --dbhost <arg>         Select which DB to add results to."
@@ -2939,7 +2972,7 @@ needBlock=0             # 0 = can run w/out block, 1 = fail if no block given
 #block_name="missing"
 block=""
 corner=""
-shape=""
+cmdlineShape=""
 sub_block=""
 runSnapbug=0            # Do not run snapbug after failed run
 freeBlock=0             # 1 = Free block after each test
@@ -3036,6 +3069,9 @@ while [ "${1}" != "" ]; do
         -email | --email )      shift
 	                        emailAddr=$1
                                 ;;
+        -envs | --envs )        shift
+	                        declare -a envArray=($( echo $1 | sed 's/"//g' ))
+                                ;;
         -f | --fpga )           run_type='runFpga'
                                 ;;
         -fam | --family )       shift
@@ -3131,7 +3167,7 @@ while [ "${1}" != "" ]; do
 				abs_pami_sb_dir=$1
                                 ;;
         -shape | --shape )      shift
-	                        shape=$1
+	                        cmdlineShape=$1
                                 ;;
 	-snap | --snap )        runSnapbug=1
 	                        ;;
@@ -3426,8 +3462,74 @@ then
     fi
 fi
 
+# Default number of nodes
+if (( ${#nodeArray[@]} < 1 )) # no value was provided through -nn | --numnodes cmdline parm
+then
+    if [ $run -eq 1 ] && [ "${run_type}" == 'hw' ] # executing binaries on hw using MMCS
+    then # get default num nodes from user-defined shape (--shape or --block cmdline parm)
+	definedShape=''
+
+	if [ "${cmdlineShape}" != '' ] # user defined --shape cmdline parm
+	then
+	    definedShape=${cmdlineShape}
+        elif (( ${#blockNameArray[@]} > 0 )) # look for shape in --block cmdline parm
+	then 
+	    definedShape=$( echo "${blockNameArray[0]}" | sed "s|:| |g" | awk '{print $3}' )		
+	fi
+
+	if [ "${definedShape}" != '' ] # shape was defined by user
+	then
+	    Asize=$( echo "${definedShape}" | awk -F"x" '{print $1}' )
+	    Bsize=$( echo "${definedShape}" | awk -F"x" '{print $2}' )
+	    Csize=$( echo "${definedShape}" | awk -F"x" '{print $3}' )
+	    Dsize=$( echo "${definedShape}" | awk -F"x" '{print $4}' )
+	    Esize=$( echo "${definedShape}" | awk -F"x" '{print $5}' )
+	
+	    nodeArray[0]=$(( $Asize * $Bsize * $Csize * $Dsize * $Esize ))
+	
+	elif (( ${#blockNameArray[@]} > 0 )) # get num nodes from block def
+	then
+
+	    # Grab base block
+	    baseBlock=$( echo ${blockNameArray[0]} | sed "s|:.*||g" )
+
+	    # Create block info command
+	    infoCmd="${blockInfoScript} -numNodes ${baseBlock}"
+
+	    echo $infoCmd
+
+	    if [ $debug -ne 1 ]
+	    then
+
+		nodeArray[0]=`${infoCmd} | tr -d '\n' | tr -d '\r'`
+
+		infoRC=$?
+	    else
+		nodeArray[0]=32
+		infoRC=0
+	    fi
+
+	    if [ $infoRC -ne 0 ]
+	    then # attempt to get block info failed
+		echo "ERROR (E):: ${infoCmd} FAILED with rc = ${infoRC} ...Exiting."
+		exit 1
+	    fi
+	else # default to 1 
+	    nodeArray[0]=1
+	fi
+    else # compile, copy or sim run
+	nodeArray[0]=1
+    fi     
+fi
+
 echo -e "\nENVIRONMENT VARIABLE DEFAULTS:" 
 echo      "------------------------------"
+
+# Loop through defaults set by user with the -envs | --envs cmdline parm
+#for ((envIndex=0; envIndex < ${#envArray[@]}; envIndex++))
+#do
+# 
+#done
 
 # Set "mode" ENV variable to default value
 if [ "${platform}" == 'bgq' ]
@@ -3448,7 +3550,7 @@ else # BGP
 fi
 
 # Default ranks per node (mode)
-if [ ${#modeArray[@]} -eq 0 ]
+if (( ${#modeArray[@]} < 1 ))
 then
     if [ "${platform}" == 'bgq' ]
     then
@@ -3476,12 +3578,6 @@ else
     fi
 fi
 
-# Default number of nodes = 1
-if [ ${#nodeArray[@]} -eq 0 ]
-then
-    nodeArray[0]=1
-fi
-
 # --- BGQ Runtime defaults ---
 if [ $run -eq 1 ] && [ "${platform}" == 'bgq' ]
 then
@@ -3499,7 +3595,12 @@ then
 #    if [ "${BG_SHAREDMEMSIZE}" == "" ] && [ "${run_type}" != 'hw' ]
     if [ "${BG_SHAREDMEMSIZE}" == "" ]
     then 
-	export BG_SHAREDMEMSIZE=32
+	if (( $BG_PROCESSESPERNODE > 1 )) # more than 1 rank/node
+	then
+	    export BG_SHAREDMEMSIZE=32 
+	else
+	    export BG_SHAREDMEMSIZE=0 # since there isn't anyone to share with
+	fi
     fi
 
     echo "BG_SHAREDMEMSIZE = ${BG_SHAREDMEMSIZE}"
@@ -3741,15 +3842,39 @@ while read xtest xopts
       hput $exeHash "${TEST_ARRAY[$element]}:$element:runOpts" "${tempOpts}"
   fi
 
-  # Did user want to communicate skip reason rather than just comment out?
+  # Did user want to communicate skip reason rather than just comment out test?
   if [[ "${tempOpts}" =~ '-skip ' ]]
   then      
       # Get reason
       skipText=$( echo ${tempOpts##*-skip} | awk -F\" '{ print $2 }' ) 
 
-      # Disable this test (for copy and/or exe) and tell user why
+      # Disable this test and tell user why
       hput $exeHash "${TEST_ARRAY[$element]}:$element:exe" 0
-      hput $exeHash "${TEST_ARRAY[$element]}:$element:status" 'Skipped (${skipText})'
+      hput $exeHash "${TEST_ARRAY[$element]}:$element:status" "Skipped (${skipText})"
+
+      # Log to Web
+      hget $exeHash "${TEST_ARRAY[$element]}:$element:stub" stub
+      hget $exeHash "${TEST_ARRAY[$element]}:$element:exeDir" exeDir
+      hget $exeHash "${TEST_ARRAY[$element]}:$element:notes" notes
+      hget $exeHash "${TEST_ARRAY[$element]}:$element:status" overallStatus
+
+      if [ "${notes}" != '' ]
+      then
+	  testSummary="${overallStatus} ${notes}"
+      else
+	  testSummary="${overallStatus}"
+      fi
+
+      logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$element]}" "0 0 0" "${nodeArray[0]} ${modeArray[0]}" "${overallStatus}" "" 999 "${testSummary}" "" xmlStat
+
+      if [ $forceNP -eq 0 ]
+      then
+	  numProcs=$(( ${nodeArray[0]} * ${modeArray[0]} ))
+      else
+	  numProcs=$forceNP
+      fi
+
+      hput $exeHash "${TEST_ARRAY[$element]}:$element:xml_n${nodeArray[0]}_m${modeArray[0]}_p${numProcs}" "${xmlStat}"
   fi
 
   # Is this a standalone/native test?
@@ -3764,8 +3889,6 @@ while read xtest xopts
       fi
   fi 
       
-  
-
   # Disable mpich "io" runs for now:
   if [ $mpich -eq 1 ]
   then
@@ -3881,9 +4004,9 @@ then
 		    frankenBlock="${frankenBlock}:${cornerArray[$cornerIndex]}"
 
 		    # Append shape from command line (if provided)
-		    if [ "${shape}" != '' ]
+		    if [ "${cmdlineShape}" != '' ]
 		    then
-			frankenBlock="${frankenBlock}:${shape}"
+			frankenBlock="${frankenBlock}:${cmdlineShape}"
 		    fi
 		    
 		    # Update array of all given blocks
@@ -4778,7 +4901,7 @@ then
 	  else
 	      numProcs=$forceNP
 	  fi
-	      
+
 	  # Set default test scenario values
 	  exeNodes=$numNodes # Numeric value of # of nodes sent to run* subroutine
 	  eppInputMode=$mode # Alpha-numeric value of mode sent to exe_preProcessing subroutine
@@ -5306,68 +5429,69 @@ then
 				      freeRC=0
 				  fi
 
-				  if [ $freeRC -eq 0 ] && [ $ioReboot -eq 1 ]
+				  if [ $freeRC -eq 0 ]
 				  then
-				      #hdelete $bootBlockHash $bootBlock
+				      if [ $ioReboot -eq 1 ] # User chose to reboot I/O block as well
+				      then
+				          #hdelete $bootBlockHash $bootBlock
+ 
+				          # Loop through blocks and reboot them
 
-			              # Have to also reboot the I/O block(s) in error cases for now 
-				      # Loop through blocks and reboot them
+					  echo "WARNING (W):  ${bootBlock} reset (step 3): Rebooting associated I/O blocks ..."
+					  while read xblock xstatus
+					  do
+					      # Only reboot I/O block(s) associated with this compute node when it failed
+					      if [ "${xstatus}" != "${bootBlock}" ]
+					      then
+						  continue
+					      fi
 
-				      echo "WARNING (W):  ${bootBlock} reset (step 3): Rebooting associated I/O blocks ..."
-				      while read xblock xstatus
-				      do
-					  # Only reboot I/O block(s) associated with this compute node when it failed
-					  if [ "${xstatus}" != "${bootBlock}" ]
-					  then
-					      continue
-					  fi
-
-				          # Free I/O block	
-			      		  echo -e "\t Freeing ${xblock} ..."
-					  freeCmd="${freeScript} -block ${xblock} >/dev/null 2>&1"
-					  
-					  if [ $debug -ne 1 ]
-					  then
-					      eval $freeCmd
-					      freeRC=$?
-					  else
-					      freeRC=0
-					  fi
-
-					  if [ $freeRC -eq 0 ]
-					  then # Boot I/O block			
-
-					      hdelete $ioblockHash ${xblock}
+				              # Free I/O block	
+			      		      echo -e "\t Freeing ${xblock} ..."
+					      freeCmd="${freeScript} -block ${xblock} >/dev/null 2>&1"
 					      
-					      echo -e "\t Booting ${xblock} ..."
-				  	      bootCmd="${allocateScript} -block ${xblock} -io >/dev/null 2>&1"
 					      if [ $debug -ne 1 ]
 					      then
-						  eval $bootCmd
-						  bootRC=$?
+						  eval $freeCmd
+						  freeRC=$?
 					      else
-						  bootRC=0
+						  freeRC=0
 					      fi
 
-					      if [ $bootRC -eq 0 ]
-					      then
-						  hput $ioblockHash ${xblock} 'booted'
-					      else # boot I/O block failed
-						  echo "ERROR (E):  ${bootBLock} reset (step 3): ${bootCmd} FAILED with rc = ${bootRC}"
+					      if [ $freeRC -eq 0 ]
+					      then # Boot I/O block			
 
-                                                  # Mark this I/O and boot block dead
+						  hdelete $ioblockHash ${xblock}
+						  
+						  echo -e "\t Booting ${xblock} ..."
+				  		  bootCmd="${allocateScript} -block ${xblock} -io >/dev/null 2>&1"
+						  if [ $debug -ne 1 ]
+						  then
+						      eval $bootCmd
+						      bootRC=$?
+						  else
+						      bootRC=0
+						  fi
+
+						  if [ $bootRC -eq 0 ]
+						  then
+						      hput $ioblockHash ${xblock} 'booted'
+						  else # boot I/O block failed
+						      echo "ERROR (E):  ${bootBLock} reset (step 3): ${bootCmd} FAILED with rc = ${bootRC}"
+
+                                                      # Mark this I/O and boot block dead
+						      hput $ioblockHash ${xblock} 'dead'
+						      hput $bootBlockHash $bootBlock 'dead'
+						  fi
+					      else # Free I/O block failed
+						  echo "ERROR (E):  ${bootBLock} reset (step 3): ${freeCmd} FAILED with rc = ${freeRC}"
+
+			                          # Mark this I/O and boot block bad
 						  hput $ioblockHash ${xblock} 'dead'
 						  hput $bootBlockHash $bootBlock 'dead'
-					      fi
-					  else # Free I/O block failed
-					      echo "ERROR (E):  ${bootBLock} reset (step 3): ${freeCmd} FAILED with rc = ${freeRC}"
-
-			                      # Mark this I/O and boot block bad
-					      hput $ioblockHash ${xblock} 'dead'
-					      hput $bootBlockHash $bootBlock 'dead'
-				       	  fi
-				      done < $ioblockHash
-
+				       	      fi
+					  done < $ioblockHash
+				      fi # end IO reboot
 				  else # free failed		  
 				      echo "ERROR (E):  ${bootBLock} reset (step 2): ${freeCmd} FAILED with rc = ${freeRC}"
 				      
@@ -6276,6 +6400,7 @@ for ((test=0; test < ${#TEST_ARRAY[@]}; test++))
 
       # Get and print the logXML status
       hget $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${nodeArray[0]}_m${modeArray[0]}_p${numProcs}" xmlStatus
+
       if (( ${#hashStatus} < 8 ))
       then
 	  echo -e -n "\t\t\t${xmlStatus}" >> $summaryFile
@@ -6285,7 +6410,6 @@ for ((test=0; test < ${#TEST_ARRAY[@]}; test++))
       else
 	  echo -e -n "\t${xmlStatus}" >> $summaryFile 
       fi
-
 
       # If a compile was performed during this run, get the log path
       if [ $compile -eq 1 ] 
