@@ -1166,10 +1166,11 @@ namespace PAMI
             {
               //Set optimized barrier to rectangle. May override optimized barrier later
               pami_xfer_t xfer = {0};
-              CCMI::Executor::Composite *opt_composite =  _msync2d_rectangle_composite_factory->generate(geometry, &xfer); 
+              CCMI::Executor::Composite *opt_composite;
+              opt_composite = _msync2d_rectangle_composite_factory->generate(geometry, &xfer); 
               PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE6)==opt_composite);
-              geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
-                               (void*)opt_composite);
+//            geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
+//                             (void*)opt_composite);
             }
 
             // Add rectangle protocols:
