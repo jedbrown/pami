@@ -10,6 +10,7 @@
 #include "common/ClientInterface.h"
 
 #include "Context.h"
+#include "Memregion.h"
 #include <errno.h>
 
 #ifdef USE_COMMTHREADS
@@ -300,6 +301,9 @@ namespace PAMI
                   break;
                 case PAMI_CLIENT_MEM_SIZE:
                   configuration[i].value.intval = __global.personality.memSize();
+                  break;
+                case PAMI_CLIENT_MEMREGION_SIZE:
+                  configuration[i].value.intval = sizeof(Memregion);
                   break;
                 default:
                   result = PAMI_INVAL;
