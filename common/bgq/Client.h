@@ -284,11 +284,10 @@ namespace PAMI
                 {
                   int rc;
                   char* pn = __global.processor_name;
-                  /// \todo This should be more descriptive and the
-                  /// snprintf() should be run at init only.  This is
-                  /// the BGP version:
-                  /// "Rank 0 of 128 (0,0,0,0)  R00-M0-N10-J01"
-                  rc = snprintf(pn, 128, "Task %zu of %zu", __global.mapping.task(), __global.mapping.size());
+                  size_t coords[6];
+                  size_t me = __global.mapping.task();
+                  __global.mapping.task2global (me, coords);
+                  rc = snprintf(pn, 128, "Task %zu of %zu (%zu,%zu,%zu,%zu,%zu,%zu)  %s", me, __global.mapping.size(), coords[0], coords[1], coords[2], coords[3], coords[4], coords[5], __global.mapping.getLocation());
                   pn[128-1] = 0;
                   configuration[i].value.chararray = pn;
 

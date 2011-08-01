@@ -34,6 +34,7 @@
 #include <stdlib.h>
 
 #include <firmware/include/personality.h>
+#include <hwi/include/common/uci.h>
 #include <kernel/location.h>
 #include <kernel/process.h>
 
@@ -231,8 +232,9 @@ getenv("BG_MAPFILE"));
 #endif // MU_CR_DEBUG
       };
 
-      void location (char location[], size_t size)
+      void location (char location[])
       {
+        bg_uci_toString (Kernel_Config.UCI, location);
       };
 
       void dumpPersonality ()

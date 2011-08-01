@@ -110,6 +110,8 @@ namespace PAMI
       _torusInfo[3]= _pers.isTorusD();
       _torusInfo[4]= _pers.isTorusE();
 
+      _pers.location (_location);
+
       TRACE_ERR((stderr, "Mapping() coords(%zu %zu %zu %zu %zu %zu), node: (%#lX %#lX)\n", _a, _b, _c, _d, _e, _t, _nodeaddr.global, _nodeaddr.local));
       TRACE_ERR((stderr, "Mapping() torusInfo(%u %u %u %u %u )", _torusInfo[0],_torusInfo[1],_torusInfo[2],_torusInfo[3],_torusInfo[4]));
 
@@ -117,6 +119,11 @@ namespace PAMI
 
     inline ~Mapping ()
     {
+    };
+
+    const char * getLocation ()
+    {
+      return (const char *) _location;
     };
 
   protected:
@@ -144,7 +151,7 @@ namespace PAMI
     Interface::Mapping::nodeaddr_t _nodeaddr;
 
     bgq_mapcache_t _mapcache;
-
+    char _location[256];
 
     inline void coord2node (size_t   a,
                             size_t   b,
@@ -404,15 +411,16 @@ namespace PAMI
     ///
     inline pami_result_t task2global (size_t task, size_t (&addr)[BGQ_TDIMS + BGQ_LDIMS])
     {
-      uint32_t abcdept = _mapcache.torus.task2coords[task].raw;
+      uint32_t abcdet = _mapcache.torus.task2coords[task].raw;
+      TRACE_ERR((stderr, "Mapping::task2global(%zu, ...),  _mapcache.torus.task2coords[%zu].raw = 0x%08x\n", task, task, abcdet));
 
       // Mask off the high bit of ABCD since it is used for fifo pinning.
-      addr[0] = (abcdept >> 24) & 0x00000001f; // 'a' coordinate
-      addr[1] = (abcdept >> 18) & 0x00000001f; // 'b' coordinate
-      addr[2] = (abcdept >> 12) & 0x00000001f; // 'c' coordinate
-      addr[3] = (abcdept >>  6) & 0x00000001f; // 'd' coordinate
-      addr[4] = (abcdept >> 31)              ; // 'e' coordinate
-      addr[5] = (abcdept)       & 0x00000003f; // 't' coordinate
+      addr[0] = (abcdet >> 24) & 0x00000001f; // 'a' coordinate
+      addr[1] = (abcdet >> 18) & 0x00000001f; // 'b' coordinate
+      addr[2] = (abcdet >> 12) & 0x00000001f; // 'c' coordinate
+      addr[3] = (abcdet >>  6) & 0x00000001f; // 'd' coordinate
+      addr[4] = (abcdet >> 31)              ; // 'e' coordinate
+      addr[5] = (abcdet)       & 0x00000003f; // 't' coordinate
 
       TRACE_ERR((stderr, "Mapping::task2global(%zu, {%zu, %zu, %zu, %zu, %zu, %zu}) <<\n", task, addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]));
       return PAMI_SUCCESS;
