@@ -79,6 +79,7 @@ build/collectives/bcast_subcomm.exe \
 build/collectives/bcast_subcomm_noparent.exe \
 build/collectives/bcast_subcomm_query.exe \
 build/collectives/gather.exe \
+build/collectives/gather_subcomm.exe \
 build/collectives/gatherv.exe \
 build/collectives/gatherv_int.exe \
 build/collectives/geometry.exe \
