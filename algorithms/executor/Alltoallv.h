@@ -10,6 +10,7 @@
 #include "algorithms/interfaces/Executor.h"
 #include "algorithms/connmgr/ConnectionManager.h"
 #include "algorithms/interfaces/NativeInterface.h"
+#include "util/BitVector.h"
 
 // #define CONNECTION_ID_SHFT
 #ifdef CONNECTION_ID_SHFT
@@ -123,7 +124,7 @@ namespace CCMI
         int                 _nphases;
         int                 _startphase;
         int                 _lphase;
-        int                 _rphase [MAX_PARALLEL];
+        PAMI::BitVector     _rphase;
 
         int                 _maxsrcs;
 
@@ -191,12 +192,12 @@ namespace CCMI
             _sdisps(NULL),
             _scounts(NULL),
             _rdisps(NULL),
-            _rcounts(NULL)
+            _rcounts(NULL),
+            _rphase(gtopology->size())
         {
           TRACE_ADAPTOR((stderr, "<%p>Executor::AlltoallvExec(...)\n", this));
           _clientdata        =  0;
           _buflen            =  0;
-
           _senddone          =  0;
 
           for (int i = 0; i < MAX_PARALLEL; ++i) _recvdone[i] = 0;
@@ -245,8 +246,6 @@ namespace CCMI
           _startphase = 0;
           _curphase   = -1;
           _lphase     = 0;
-
-          for (int i = 0; i < MAX_PARALLEL; ++i) _rphase[i]     = 0;
 
           _myindex  = _gtopology->rank2Index(_native->myrank());
           _parindex = getPartnerIndex(0, _gtopology->size(), _myindex);
@@ -487,7 +486,6 @@ inline void  CCMI::Executor::AlltoallvExec<T_ConnMgr, T_Type>::sendNext ()
   if (_parindex == (unsigned) - 1) // skip this phase
     {
       _lphase   ++;
-      CCMI_assert(_rphase[_curphase % MAX_PARALLEL] == 0);
       _curphase ++;
 
       if (_curphase == _startphase + _nphases)
@@ -525,9 +523,9 @@ inline void  CCMI::Executor::AlltoallvExec<T_ConnMgr, T_Type>::sendNext ()
       EXECUTOR_DEBUG((stderr, "phase %d, send buffer available msg to %d\n", _curphase, _partopology.index2Rank(0));)
     }
 
-  if (_rphase[_curphase % MAX_PARALLEL] == _curphase + 1) // buffer available at the right neighbor
+  if (_rphase.get(_parindex)) // buffer available at the right neighbor
     {
-      _rphase[_curphase % MAX_PARALLEL] = 0;
+      _rphase.clear(_parindex);
       _mrdata._phase             = _curphase;
       _mrdata._count             = 0; // indicating this is data message
       _mrsend.src_participants   = (pami_topology_t *) & _selftopology;
@@ -562,20 +560,18 @@ inline void  CCMI::Executor::AlltoallvExec<T_ConnMgr, T_Type>::notifyRecv
 
   if ((int)cdata->_count == -1)
     {
-      EXECUTOR_DEBUG((stderr, "CCMI_assert(cdata->_phase(%u) - _curphase(%d) %d  <  %d MAX_PARALLEL)\n",cdata->_phase,_curphase,cdata->_phase - _curphase,MAX_PARALLEL);)
-      CCMI_assert(cdata->_phase - _curphase < MAX_PARALLEL);
 #if ASSERT_LEVEL > 0
       unsigned pindex  = getPartnerIndex(cdata->_phase - 1, _gtopology->size(), _myindex);
       CCMI_assert(pindex != (unsigned) - 1);
-      EXECUTOR_DEBUG((stderr, "phase = %d, src = %d, expected %d\n", cdata->_phase - 1, src, _gtopology->index2Rank(pindex));)
+      EXECUTOR_DEBUG((stderr, "notifyRecv - phase = %d, src = %d, expected %d\n", cdata->_phase - 1, src, _gtopology->index2Rank(pindex));)
       CCMI_assert(src == _gtopology->index2Rank(pindex));
 #endif
-    _rphase[(cdata->_phase-1) % MAX_PARALLEL] = cdata->_phase;
+    _rphase.set(pindex);
     *pwq = NULL;
     cb_done->function   = notifyAvailRecvDone;
     cb_done->clientdata = this;
   } else {
-    EXECUTOR_DEBUG((stderr, "data phase = %d, src = %d, expected %d\n", _curphase, src, _gtopology->index2Rank(_parindex));)
+    EXECUTOR_DEBUG((stderr, "notifyRecv - data phase = %d, src = %d, expected %d\n", _curphase, src, _gtopology->index2Rank(_parindex));)
     CCMI_assert(cdata->_count == 0);
     CCMI_assert(src == _gtopology->index2Rank(_parindex));
     CCMI_assert(cdata->_phase == (unsigned)_curphase);
