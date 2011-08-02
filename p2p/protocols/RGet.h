@@ -91,11 +91,13 @@ namespace PAMI
 
           pami_result_t simple (pami_rget_simple_t * parameters)
           {
+            TRACE_ERR((stderr, "<> NoRGet::simple()\n"));
             return PAMI_ERROR;
           }
 
           pami_result_t typed (pami_rget_typed_t * parameters)
           {
+            TRACE_ERR((stderr, "<> NoRGet::typed()\n"));
             return PAMI_ERROR;
           }
       }; // PAMI::Protocol::NoRGet class

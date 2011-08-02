@@ -656,12 +656,19 @@ namespace PAMI
             ((rput_mu != NULL) && (rput_shmem != NULL)))
           {
             // Create "composite" protocols
-            pami_result_t result = PAMI_ERROR;
-            _rget = (Protocol::Get::RGet *) Protocol::Get::Factory::
-                    generate (rget_shmem, rget_mu, _request, result);
-            _rput = (Protocol::Put::RPut *) Protocol::Put::Factory::
-                    generate (rput_shmem, rput_mu, _request, result);
+            pami_result_t result;
 
+            result = PAMI_ERROR;
+            Protocol::Get::RGet * rget = NULL;
+            rget = Protocol::Get::Factory::generate (rget_shmem, rget_mu, _request, result);
+            if (result == PAMI_SUCCESS)
+              _dispatch.init (rget);
+
+            result = PAMI_ERROR;
+            Protocol::Put::RPut * rput = NULL;
+            rput = Protocol::Put::Factory::generate (rput_shmem, rput_mu, _request, result);
+            if (result == PAMI_SUCCESS)
+              _dispatch.init (rput);
             // For now, just use mu-based get and put protocols.
             get_mu->initialize (_dispatch.id--, self, _context);
             put_mu->initialize (_dispatch.id--, self, _context);
@@ -682,6 +689,8 @@ namespace PAMI
             _get = get_mu;
             _put = put_mu;
             _rmw = rmw_mu;
+            _dispatch.init (rget_mu);
+            _dispatch.init (rput_mu);
           }
         else if (((rget_mu == NULL) && (rget_shmem != NULL)) &&
                  ((rput_mu == NULL) && (rput_shmem != NULL)))
@@ -695,6 +704,8 @@ namespace PAMI
             _get = get_shmem;
             _put = put_shmem;
             _rmw = rmw_shmem;
+            _dispatch.init (rget_shmem);
+            _dispatch.init (rput_shmem);
           }
 
         ///////////////////////////////////////////////////////////////
@@ -964,7 +975,13 @@ namespace PAMI
 
       inline pami_result_t put_impl (pami_put_simple_t * parameters)
       {
-        return _put->simple (parameters);
+        TRACE_FN_ENTER();
+
+        pami_result_t rc = _dispatch.put (parameters);
+
+        TRACE_FORMAT("rc = %d", rc);
+        TRACE_FN_EXIT();
+        return rc;
       }
 
       inline pami_result_t put_typed (pami_put_typed_t * parameters)
@@ -974,8 +991,13 @@ namespace PAMI
 
       inline pami_result_t get_impl (pami_get_simple_t * parameters)
       {
+        TRACE_FN_ENTER();
 
-        return _get->get (parameters);
+        pami_result_t rc = _dispatch.get (parameters);
+
+        TRACE_FORMAT("rc = %d", rc);
+        TRACE_FN_EXIT();
+        return rc;
       }
 
       inline pami_result_t get_typed (pami_get_typed_t * parameters)
@@ -1009,7 +1031,7 @@ namespace PAMI
       {
         TRACE_FN_ENTER();
 
-        pami_result_t rc = _rput->simple (parameters);
+        pami_result_t rc = _dispatch.rput (parameters);
 
         TRACE_FORMAT("rc = %d", rc);
         TRACE_FN_EXIT();
@@ -1025,7 +1047,7 @@ namespace PAMI
       {
         TRACE_FN_ENTER();
 
-        pami_result_t rc = _rget->simple (parameters);
+        pami_result_t rc = _dispatch.rget (parameters);
 
         TRACE_FORMAT("rc = %d", rc);
         TRACE_FN_EXIT();
@@ -1049,25 +1071,27 @@ namespace PAMI
 
       inline pami_result_t fence_begin ()
       {
-        return PAMI_UNIMPL;
+        _dispatch.fence (true);
+        return PAMI_SUCCESS;
       }
 
       inline pami_result_t fence_end ()
       {
-        return PAMI_UNIMPL;
+        _dispatch.fence (false);
+        return PAMI_SUCCESS;
       }
 
       inline pami_result_t fence_all (pami_event_function   done_fn,
                                       void               * cookie)
       {
-        return PAMI_UNIMPL;
+        return _dispatch.fence (done_fn, cookie);
       }
 
       inline pami_result_t fence_endpoint (pami_event_function   done_fn,
                                            void                * cookie,
                                            pami_endpoint_t       endpoint)
       {
-        return PAMI_UNIMPL;
+        return _dispatch.fence (done_fn, cookie, endpoint);
       }
 
 
@@ -1123,7 +1147,7 @@ namespace PAMI
                                                              _devices->_mu[_contextid],
                                                              self, _context, options,
                                                              __global.heap_mm, result);
-                _dispatch.set (id, send, send);
+                _dispatch.set (id, send);
               }
             else if ((options.use_shmem == PAMI_HINT_ENABLE) || (!__global.useMU() && __global.useshmem()))
               {
@@ -1132,7 +1156,7 @@ namespace PAMI
                                                              _devices->_shmem[_contextid],
                                                              self, _context, options,
                                                              __global.heap_mm, result);
-                _dispatch.set (id, send, send);
+                _dispatch.set (id, send);
               }
             else
               {
@@ -1142,7 +1166,7 @@ namespace PAMI
                                                              _devices->_mu[_contextid],
                                                              self, _context, options,
                                                              __global.heap_mm, result);
-                _dispatch.set (id, send, send);
+                _dispatch.set (id, send);
               }
 
         TRACE_FORMAT("result = %d", result);

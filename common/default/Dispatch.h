@@ -103,6 +103,7 @@ namespace PAMI
 
         _send = _fence_unsupported_send;
 
+        TRACE_FORMAT( "_send = %p, _put = %p, _get = %p, _rput = %p, _rget = %p", _send, _put, _get, _rput, _rget);
         TRACE_FN_EXIT();
       };
 
@@ -118,45 +119,97 @@ namespace PAMI
       };
 
       inline void init (Protocol::Put::Put     * fence_supported_put,
-                        Protocol::Put::Put     * fence_unsupported_put)
+                        Protocol::Put::Put     * fence_unsupported_put = NULL)
       {
         TRACE_FN_ENTER();
 
-        _fence_supported_put    = fence_supported_put;
-        _fence_unsupported_put  = fence_unsupported_put;
+        // Determine if there is a current fence region
+        bool enabled = (_put==_fence_supported_put);
+
+        _fence_supported_put = fence_supported_put;
+
+        if (fence_unsupported_put == NULL)
+          _fence_unsupported_put = fence_supported_put;
+        else
+          _fence_unsupported_put = fence_unsupported_put;
+
+        // Set the protocol to the appropriate pointer based on the fence region
+        if (enabled)
+          _put = _fence_supported_put;
+        else
+          _put = _fence_unsupported_put;
 
         TRACE_FN_EXIT();
       };
 
       inline void init (Protocol::Get::Get     * fence_supported_get,
-                        Protocol::Get::Get     * fence_unsupported_get)
+                        Protocol::Get::Get     * fence_unsupported_get = NULL)
       {
         TRACE_FN_ENTER();
 
-        _fence_supported_get    = fence_supported_get;
-        _fence_unsupported_get  = fence_unsupported_get;
+        // Determine if there is a current fence region
+        bool enabled = (_get==_fence_supported_get);
+
+        _fence_supported_get = fence_supported_get;
+
+        if (fence_unsupported_get == NULL)
+          _fence_unsupported_get = fence_supported_get;
+        else
+          _fence_unsupported_get = fence_unsupported_get;
+
+        // Set the protocol to the appropriate pointer based on the fence region
+        if (enabled)
+          _get = _fence_supported_get;
+        else
+          _get = _fence_unsupported_get;
 
         TRACE_FN_EXIT();
       };
 
       inline void init (Protocol::Put::RPut    * fence_supported_rput,
-                        Protocol::Put::RPut    * fence_unsupported_rput)
+                        Protocol::Put::RPut    * fence_unsupported_rput = NULL)
       {
         TRACE_FN_ENTER();
 
-        _fence_supported_rput   = fence_supported_rput;
-        _fence_unsupported_rput = fence_unsupported_rput;
+        // Determine if there is a current fence region
+        bool enabled = (_rput==_fence_supported_rput);
+
+        _fence_supported_rput = fence_supported_rput;
+
+        if (fence_unsupported_rput == NULL)
+          _fence_unsupported_rput = fence_supported_rput;
+        else
+          _fence_unsupported_rput = fence_unsupported_rput;
+
+        // Set the protocol to the appropriate pointer based on the fence region
+        if (enabled)
+          _rput = _fence_supported_rput;
+        else
+          _rput = _fence_unsupported_rput;
 
         TRACE_FN_EXIT();
       };
 
       inline void init (Protocol::Get::RGet    * fence_supported_rget,
-                        Protocol::Get::RGet    * fence_unsupported_rget)
+                        Protocol::Get::RGet    * fence_unsupported_rget = NULL)
       {
         TRACE_FN_ENTER();
 
+        // Determine if there is a current fence region
+        bool enabled = (_rget==_fence_supported_rget);
+
         _fence_supported_rget   = fence_supported_rget;
-        _fence_unsupported_rget = fence_unsupported_rget;
+
+        if (fence_unsupported_rget == NULL)
+          _fence_unsupported_rget = fence_supported_rget;
+        else
+          _fence_unsupported_rget = fence_unsupported_rget;
+
+        // Set the protocol to the appropriate pointer based on the fence region
+        if (enabled)
+          _rget = _fence_supported_rget;
+        else
+          _rget = _fence_unsupported_rget;
 
         TRACE_FN_EXIT();
       };
@@ -203,10 +256,23 @@ namespace PAMI
         TRACE_FN_ENTER();
 
         if (enable)
-          _send = _fence_supported_send;
+          {
+            _send = _fence_supported_send;
+            _put  = _fence_supported_put;
+            _get  = _fence_supported_get;
+            _rput = _fence_supported_rput;
+            _rget = _fence_supported_rget;
+          }
         else
-          _send = _fence_unsupported_send;
+          {
+            _send = _fence_unsupported_send;
+            _put  = _fence_unsupported_put;
+            _get  = _fence_unsupported_get;
+            _rput = _fence_unsupported_rput;
+            _rget = _fence_unsupported_rget;
+          }
 
+        TRACE_FORMAT( "enable = %s, _send = %p, _put = %p, _get = %p, _rput = %p, _rget = %p", enable==true?"true":"false", _send, _put, _get, _rput, _rget);
         TRACE_FN_EXIT();
       };
 
@@ -256,7 +322,7 @@ namespace PAMI
 
       inline pami_result_t set (size_t                 dispatch_id,
                                 Protocol::Send::Send * fence_supported_send,
-                                Protocol::Send::Send * fence_unsupported_send)
+                                Protocol::Send::Send * fence_unsupported_send = NULL)
       {
         TRACE_FN_ENTER();
 
@@ -284,7 +350,10 @@ namespace PAMI
         _fence_supported_send[dispatch_id]  = fence_supported_send;
         TRACE_FORMAT( "_fence_supported_send[%zu] = %p, &_fence_supported_send[%zu] = %p", dispatch_id, fence_supported_send, dispatch_id, _fence_supported_send[dispatch_id]);
 
-        _fence_unsupported_send[dispatch_id] = fence_unsupported_send;
+        if (fence_unsupported_send == NULL)
+          _fence_unsupported_send[dispatch_id] = fence_supported_send;
+        else
+          _fence_unsupported_send[dispatch_id] = fence_unsupported_send;
         TRACE_FORMAT( "_fence_unsupported_send[%zu] = %p, &_fence_unsupported_send[%zu] = %p", dispatch_id, fence_unsupported_send, dispatch_id, _fence_unsupported_send[dispatch_id]);
 
         TRACE_FN_EXIT();
