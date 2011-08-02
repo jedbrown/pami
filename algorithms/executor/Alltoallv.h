@@ -186,14 +186,14 @@ namespace CCMI
             _curphase(-1),
             _nphases(0),
             _startphase(0),
+            _rphase(gtopology->size()),
             _partopology(),
             _selftopology(mf->myrank()),
             _gtopology(gtopology),
             _sdisps(NULL),
             _scounts(NULL),
             _rdisps(NULL),
-            _rcounts(NULL),
-            _rphase(gtopology->size())
+            _rcounts(NULL)
         {
           TRACE_ADAPTOR((stderr, "<%p>Executor::AlltoallvExec(...)\n", this));
           _clientdata        =  0;
