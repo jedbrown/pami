@@ -36,7 +36,8 @@ public:
     explicit BitVector(unsigned size, bool val = false) :_size(size)
     {
       _capacity = numBitWords(_size);
-      int rc = __global.heap_mm->memalign((void **)&_bits, 0,
+      int rc;
+      rc = __global.heap_mm->memalign((void **)&_bits, 0,
                                           sizeof(bit_word_t) * _capacity);
       PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc bit vector _bits");
       std::memset(_bits, val ? 1 : 0,  _capacity * sizeof(bit_word_t));
@@ -52,7 +53,8 @@ public:
       }
 
       _capacity = numBitWords(_size);
-      int rc = __global.heap_mm->memalign((void **)&_bits, 0,
+      int rc;
+      rc = __global.heap_mm->memalign((void **)&_bits, 0,
                                           sizeof(bit_word_t) * _capacity);
       PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc bit vector _bits");
       std::memcpy(_bits, right._bits, sizeof(bit_word_t) * _capacity);
