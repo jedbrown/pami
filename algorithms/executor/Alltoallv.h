@@ -566,7 +566,7 @@ inline void  CCMI::Executor::AlltoallvExec<T_ConnMgr, T_Type>::notifyRecv
       EXECUTOR_DEBUG((stderr, "notifyRecv - phase = %d, src = %d, expected %d\n", cdata->_phase - 1, src, _gtopology->index2Rank(pindex));)
       CCMI_assert(src == _gtopology->index2Rank(pindex));
 #endif
-    _rphase.set(pindex);
+    _rphase.set(_gtopology->rank2Index(src));
     *pwq = NULL;
     cb_done->function   = notifyAvailRecvDone;
     cb_done->clientdata = this;
