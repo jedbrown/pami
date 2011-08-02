@@ -662,69 +662,71 @@ namespace PAMI
           }
 
         ///////////////////////////////////////////////////////////////
+        // Construct shmem native interface
+        ///////////////////////////////////////////////////////////////
+
+        // Can't construct these models on single process nodes (no shmem)
+        if ((__global.useshmem()) && (__global.topology_local.size() > 1))
+        {
+          TRACE_FORMAT( "<%p> construct shmem native interface and models", this);
+          _shmemMcastModel         = (ShmemMcstModel*)_shmemMcastModel_storage;
+          _shmemMcombModel         = (ShmemMcombModel*)_shmemMcombModel_storage;
+          _shmemMsyncModel         = (ShmemMsyncModel*)_shmemMsyncModel_storage;
+
+          // if _shmemMsyncModel_storage is in heap...
+          // PAMI_assert(Barrier_Model::checkCtorMm(__global.heap_mm);
+          new (_shmemMsyncModel_storage)        ShmemMsyncModel(PAMI::Device::AtomicBarrierDev::Factory::getDevice(_devices->_atombarr, _clientid, _contextid), _status);
+          
+          //new (_shmemMcastModel_storage)        ShmemMcstModel(PAMI::Device::Generic::Device::Factory::getDevice(_devices->_generics,  _clientid, _contextid),_status);
+          new (_shmemMcastModel_storage)        ShmemMcstModel(ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid),_status);
+          new (_shmemMcombModel_storage)        ShmemMcombModel(ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), _status);
+#if 0 
+          new (_shmemMcastModel_storage)        ShmemMcstModel(PAMI::Device::LocalBcastWQDevice::Factory::getDevice(_devices->_localbcast, _clientid, _contextid), _status);
+          new (_shmemMcombModel_storage)        ShmemMcombModel(PAMI::Device::LocalAllreduceWQDevice::Factory::getDevice(_devices->_localreduce, _clientid, _contextid), _status);
+#endif  
+
+          _shmem_native_interface  = (AllSidedShmemNI*)_shmem_native_interface_storage;
+          new (_shmem_native_interface_storage) AllSidedShmemNI(_shmemMcastModel, _shmemMsyncModel, _shmemMcombModel, client, (pami_context_t)this, id, clientid, &_dispatch.id);
+        }
+
+        ///////////////////////////////////////////////////////////////
         // Register collectives
         ///////////////////////////////////////////////////////////////
         TRACE_FORMAT( "<%p> Register collectives(%p,%p,%zu,%zu", this, client, this, id, clientid);
+
+        // Register one PGAS (mu+shmem, mu, or shmem)
         if ((__global.useMU()) && (__global.useshmem()))
             _pgas_composite_registration = new(_pgas_composite_registration_storage) Composite_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _mid_protocol, Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid), _devices->_shmem[_contextid], &_dispatch.id, _geometry_map, true);
         else if (__global.useMU())
-          {
-            _pgas_mu_registration = new(_pgas_mu_registration_storage) MU_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _mid_protocol, Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid),ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), &_dispatch.id, _geometry_map);
-          }
-        else if (__global.useshmem())
-          {
-            // Can't construct these models on single process nodes (no shmem)
-            if (__global.topology_local.size() > 1)
-              {
-                TRACE_FORMAT( "<%p> construct shmem native interface and models", this);
-                _shmemMcastModel         = (ShmemMcstModel*)_shmemMcastModel_storage;
-                _shmemMcombModel         = (ShmemMcombModel*)_shmemMcombModel_storage;
-                _shmemMsyncModel         = (ShmemMsyncModel*)_shmemMsyncModel_storage;
+          _pgas_mu_registration = new(_pgas_mu_registration_storage) MU_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _mid_protocol, Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid),ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), &_dispatch.id, _geometry_map);
+        else if ((__global.useshmem()) && (__global.topology_local.size() > 1))
+          _pgas_shmem_registration = new(_pgas_shmem_registration_storage) Shmem_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _mid_protocol, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), & _dispatch.id, _geometry_map);
 
-                // if _shmemMsyncModel_storage is in heap...
-                // PAMI_assert(Barrier_Model::checkCtorMm(__global.heap_mm);
-                new (_shmemMsyncModel_storage)        ShmemMsyncModel(PAMI::Device::AtomicBarrierDev::Factory::getDevice(_devices->_atombarr, _clientid, _contextid), _status);
-
-                //new (_shmemMcastModel_storage)        ShmemMcstModel(PAMI::Device::Generic::Device::Factory::getDevice(_devices->_generics,  _clientid, _contextid),_status);
-                new (_shmemMcastModel_storage)        ShmemMcstModel(ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid),_status);
-                new (_shmemMcombModel_storage)        ShmemMcombModel(ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), _status);
-#if 0
-                new (_shmemMcastModel_storage)        ShmemMcstModel(PAMI::Device::LocalBcastWQDevice::Factory::getDevice(_devices->_localbcast, _clientid, _contextid), _status);
-                new (_shmemMcombModel_storage)        ShmemMcombModel(PAMI::Device::LocalAllreduceWQDevice::Factory::getDevice(_devices->_localreduce, _clientid, _contextid), _status);
-#endif
-
-                _shmem_native_interface  = (AllSidedShmemNI*)_shmem_native_interface_storage;
-                new (_shmem_native_interface_storage) AllSidedShmemNI(_shmemMcastModel, _shmemMsyncModel, _shmemMcombModel, client, (pami_context_t)this, id, clientid, &_dispatch.id);
-
-                _pgas_shmem_registration = new(_pgas_shmem_registration_storage) Shmem_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _mid_protocol, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), & _dispatch.id, _geometry_map);
-              }
-            else TRACE_STRING("topology does not support shmem");
-          }
         // The multi registration will use shmem/mu if they are ctor'd above.
-
 #ifndef PAMI_ENABLE_COLLECTIVE_MULTICONTEXT
         if (_contextid == 0) 
 #endif
-	  {
+        {
             _multi_registration       =  new ((BGQRegistration*) _multi_registration_storage)
-	      BGQRegistration(_shmem_native_interface,
-			      ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid),
-			      PAMI::Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid),
-			      client,
-			      (pami_context_t)this,
-			      id,
-			      clientid,
-			      &_dispatch.id,
-			      _geometry_map);
-	    uint64_t inval = (uint64_t)-1;
-	    _multi_registration->receive_global (_contextid, _world_geometry, &inval, 1);
-	  }
-	
+            BGQRegistration(_shmem_native_interface,
+                            ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid),
+                            PAMI::Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid),
+                            client,
+                            (pami_context_t)this,
+                            id,
+                            clientid,
+                            &_dispatch.id,
+                            _geometry_map);
+            uint64_t inval = (uint64_t)-1;
+            _multi_registration->receive_global (_contextid, _world_geometry, &inval, 1);
+        }
+        
 #ifndef PAMI_ENABLE_COLLECTIVE_MULTICONTEXT
         if (_contextid == 0)
 #endif
         {
-          if ((__global.useMU()) && (__global.useshmem())) {
+          if ((__global.useMU()) && (__global.useshmem())) 
+          {
             COMPILE_TIME_ASSERT(sizeof(CompositeNIFactory) <= ProtocolAllocator::objsize);
             TRACE_FORMAT("Allocator:  sizeof(CompositeNIFactory) %zu, ProtocolAllocator::objsize %zu",sizeof(CompositeNIFactory),ProtocolAllocator::objsize);
             CCMI::Interfaces::NativeInterfaceFactory *ni_factory = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
@@ -739,7 +741,8 @@ namespace PAMI
                              _geometry_map,
                              ni_factory);
           }
-          else if (__global.useMU()) {
+          else if (__global.useMU()) 
+          {
             COMPILE_TIME_ASSERT(sizeof(MUNIFactory) <= ProtocolAllocator::objsize);
             TRACE_FORMAT("Allocator:  sizeof(MUNIFactory) %zu, ProtocolAllocator::objsize %zu",sizeof(MUNIFactory),ProtocolAllocator::objsize);
             CCMI::Interfaces::NativeInterfaceFactory *ni_factory_mu = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
@@ -754,7 +757,8 @@ namespace PAMI
                              _geometry_map,
                              ni_factory_mu);
           }
-          else if(__global.useshmem()) { //use shmem
+          else if(__global.useshmem()) 
+          { //use shmem
             COMPILE_TIME_ASSERT(sizeof(ShmemNIFactory) <= ProtocolAllocator::objsize);
             TRACE_FORMAT("Allocator:  sizeof(ShmemNIFactory) %zu, ProtocolAllocator::objsize %zu",sizeof(ShmemNIFactory),ProtocolAllocator::objsize);
             CCMI::Interfaces::NativeInterfaceFactory *ni_factory_shmem = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
@@ -769,7 +773,8 @@ namespace PAMI
                              _geometry_map,
                              ni_factory_shmem);
           }        
-          if (__global.useMU()) {
+          if (__global.useMU()) 
+          {
             COMPILE_TIME_ASSERT(sizeof(MUAMMulticastFactory) <= ProtocolAllocator::objsize);
             TRACE_FORMAT("Allocator:  sizeof(MUAMMulticastFactory) %zu, ProtocolAllocator::objsize %zu",sizeof(MUAMMulticastFactory),ProtocolAllocator::objsize);
             CCMI::Interfaces::NativeInterfaceFactory *ni_factory_muam = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
@@ -795,23 +800,23 @@ namespace PAMI
         // Can always use composite if it's available
         if (_pgas_composite_registration) _pgas_composite_registration->analyze(_contextid, _world_geometry, 0);
 
-        if(_ccmi_registration_shmem) // && (((PAMI::Topology*)_world_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
+        if(_ccmi_registration_shmem) 
         {
             _world_geometry->resetUEBarrier(); // Reset so ccmi will select the UE barrier
             _ccmi_registration_shmem->analyze(_contextid, _world_geometry, 0);
-         }
-        if(_ccmi_registration_mu) // && (((PAMI::Topology*)_world_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
+        }
+        if(_ccmi_registration_mu) 
         {
             _world_geometry->resetUEBarrier(); // Reset so ccmi will select the UE barrier
             _ccmi_registration_mu->analyze(_contextid, _world_geometry, 0);
-         }
-        if(_ccmi_registration) // && (((PAMI::Topology*)_world_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
+        }
+        if(_ccmi_registration) 
         {
             _world_geometry->resetUEBarrier(); // Reset so ccmi will select the UE barrier
             _ccmi_registration->analyze(_contextid, _world_geometry, 0);
-         }
+        }
 
-        if(_ccmi_registration_muam) // && (((PAMI::Topology*)_world_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
+        if(_ccmi_registration_muam) 
         {
           _ccmi_registration_muam->analyze(_contextid, _world_geometry, 0);
         }
@@ -823,7 +828,7 @@ namespace PAMI
            // for now, this is the only registration that has a phase 1...
            // We know that _world_geometry is always "optimized" at create time.
            _multi_registration->analyze(_contextid, _world_geometry, 1);
-         }
+        }
 
         TRACE_FN_EXIT();
       }
