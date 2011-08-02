@@ -22,6 +22,8 @@
 #include "p2p/protocols/RPut.h"
 #include "p2p/protocols/RGet.h"
 
+#include "p2p/protocols/Fence.h"
+
 #include "util/trace.h"
 
 #define DO_TRACE_ENTEREXIT 0
@@ -34,17 +36,60 @@ namespace PAMI
   {
     protected:
 
-      Protocol::Send::Error    _default;
-      Protocol::Send::Send  *  _protocol_fence_disabled[T_DispatchCount];
-      Protocol::Send::Send  *  _protocol_fence_enabled[T_DispatchCount];
-      Protocol::Send::Send  ** _protocol;
+      Protocol::Fence::Error   _default_fence;
+      Protocol::Put::NoPut     _default_put;
+      Protocol::Get::NoGet     _default_get;
+      Protocol::Put::NoRPut    _default_rput;
+      Protocol::Get::NoRGet    _default_rget;
+      Protocol::Send::Error    _default_send;
 
+      Protocol::Fence::Fence * _fence;
+
+      Protocol::Put::Put     * _fence_supported_put;
+      Protocol::Put::Put     * _fence_unsupported_put;
+      Protocol::Put::Put     * _put;
+
+      Protocol::Get::Get     * _fence_supported_get;
+      Protocol::Get::Get     * _fence_unsupported_get;
+      Protocol::Get::Get     * _get;
+
+      Protocol::Put::RPut    * _fence_supported_rput;
+      Protocol::Put::RPut    * _fence_unsupported_rput;
+      Protocol::Put::RPut    * _rput;
+
+      Protocol::Get::RGet    * _fence_supported_rget;
+      Protocol::Get::RGet    * _fence_unsupported_rget;
+      Protocol::Get::RGet    * _rget;
+
+      Protocol::Send::Send  *  _fence_unsupported_send[T_DispatchCount];
+      Protocol::Send::Send  *  _fence_supported_send[T_DispatchCount];
+      Protocol::Send::Send  ** _send;
 
     public:
 
       int id;
 
-      inline Dispatch () :
+      inline Dispatch (pami_context_t context) :
+          _default_fence (),
+          _default_put (context),
+          _default_get (context),
+          _default_rput (),
+          _default_rget (),
+          _default_send (),
+
+          _fence (& _default_fence),
+          _fence_supported_put (& _default_put),
+          _fence_unsupported_put (& _default_put),
+          _put (_fence_unsupported_put),
+          _fence_supported_get (& _default_get),
+          _fence_unsupported_get (& _default_get),
+          _get (_fence_unsupported_get),
+          _fence_supported_rput (& _default_rput),
+          _fence_unsupported_rput (& _default_rput),
+          _rput (_fence_unsupported_rput),
+          _fence_supported_rget (& _default_rget),
+          _fence_unsupported_rget (& _default_rget),
+          _rget (_fence_unsupported_rget),
           id (T_DispatchCount - 1)
       {
         TRACE_FN_ENTER();
@@ -52,29 +97,67 @@ namespace PAMI
 
         for (i = 0; i < T_DispatchCount; i++)
           {
-            _protocol_fence_disabled[i] = & _default;
-            _protocol_fence_enabled[i]  = & _default;
+            _fence_unsupported_send[i] = & _default_send;
+            _fence_supported_send[i]  = & _default_send;
           };
 
-        _protocol = _protocol_fence_disabled;
+        _send = _fence_unsupported_send;
 
         TRACE_FN_EXIT();
       };
 
       inline ~Dispatch () {};
 
-      /// use this to set the fence protocol pointer, or is it just a data member?
-      inline void init (Protocol::Put::Put * fence_supported_put,
-                        Protocol::Put::Put * fence_unsupported_put,
-                        Protocol::Get::Get * fence_supported_get,
-                        Protocol::Get::Get * fence_unsupported_get,
-                        Protocol::Put::RPut * fence_supported_rput,
-                        Protocol::Put::RPut * fence_unsupported_rput,
-                        Protocol::Get::RGet * fence_supported_rget,
-                        Protocol::Get::RGet * fence_unsupported_rget
-                       )
+      inline void init (Protocol::Fence::Fence * fence_protocol)
       {
         TRACE_FN_ENTER();
+
+        _fence = fence_protocol;
+
+        TRACE_FN_EXIT();
+      };
+
+      inline void init (Protocol::Put::Put     * fence_supported_put,
+                        Protocol::Put::Put     * fence_unsupported_put)
+      {
+        TRACE_FN_ENTER();
+
+        _fence_supported_put    = fence_supported_put;
+        _fence_unsupported_put  = fence_unsupported_put;
+
+        TRACE_FN_EXIT();
+      };
+
+      inline void init (Protocol::Get::Get     * fence_supported_get,
+                        Protocol::Get::Get     * fence_unsupported_get)
+      {
+        TRACE_FN_ENTER();
+
+        _fence_supported_get    = fence_supported_get;
+        _fence_unsupported_get  = fence_unsupported_get;
+
+        TRACE_FN_EXIT();
+      };
+
+      inline void init (Protocol::Put::RPut    * fence_supported_rput,
+                        Protocol::Put::RPut    * fence_unsupported_rput)
+      {
+        TRACE_FN_ENTER();
+
+        _fence_supported_rput   = fence_supported_rput;
+        _fence_unsupported_rput = fence_unsupported_rput;
+
+        TRACE_FN_EXIT();
+      };
+
+      inline void init (Protocol::Get::RGet    * fence_supported_rget,
+                        Protocol::Get::RGet    * fence_unsupported_rget)
+      {
+        TRACE_FN_ENTER();
+
+        _fence_supported_rget   = fence_supported_rget;
+        _fence_unsupported_rget = fence_unsupported_rget;
+
         TRACE_FN_EXIT();
       };
 
@@ -91,8 +174,8 @@ namespace PAMI
             return PAMI_INVAL;
           }
 
-        TRACE_FORMAT( "_protocol[%zu] = %p", dispatch_id, _protocol[dispatch_id]);
-        pami_result_t result = _protocol[dispatch_id]->getAttributes (configuration, num_configs);
+        TRACE_FORMAT( "_send[%zu] = %p", dispatch_id, _send[dispatch_id]);
+        pami_result_t result = _send[dispatch_id]->getAttributes (configuration, num_configs);
 
         TRACE_FN_EXIT();
         return result;
@@ -120,9 +203,9 @@ namespace PAMI
         TRACE_FN_ENTER();
 
         if (enable)
-          _protocol = _protocol_fence_enabled;
+          _send = _fence_supported_send;
         else
-          _protocol = _protocol_fence_disabled;
+          _send = _fence_unsupported_send;
 
         TRACE_FN_EXIT();
       };
@@ -132,8 +215,21 @@ namespace PAMI
                                   void                * cookie)
       {
         TRACE_FN_ENTER();
+
+#ifdef ERROR_CHECKS
+
+        if (_send != _fence_supported_send)
+          {
+            TRACE_STRING( "Error. Not in an active fence region");
+            TRACE_FN_EXIT();
+            return PAMI_INVAL;
+          }
+
+#endif
+
+        pami_result_t result = _fence->all (done_fn, cookie);
         TRACE_FN_EXIT();
-        return PAMI_UNIMPL;
+        return result;
       };
 
       /// "fence endpoint"
@@ -142,13 +238,25 @@ namespace PAMI
                                   pami_endpoint_t       endpoint)
       {
         TRACE_FN_ENTER();
+
+#ifdef ERROR_CHECKS
+
+        if (_send != _fence_supported_send)
+          {
+            TRACE_STRING( "Error. Not in an active fence region");
+            TRACE_FN_EXIT();
+            return PAMI_INVAL;
+          }
+
+#endif
+        pami_result_t result = _fence->endpoint (done_fn, cookie, endpoint);
         TRACE_FN_EXIT();
-        return PAMI_UNIMPL;
+        return result;
       };
 
       inline pami_result_t set (size_t                 dispatch_id,
-                                Protocol::Send::Send * fence_supported_protocol,
-                                Protocol::Send::Send * fence_unsupported_protocol)
+                                Protocol::Send::Send * fence_supported_send,
+                                Protocol::Send::Send * fence_unsupported_send)
       {
         TRACE_FN_ENTER();
 
@@ -159,25 +267,25 @@ namespace PAMI
             return PAMI_INVAL;
           }
 
-        if (_protocol_fence_enabled[dispatch_id]  != (& _default))
+        if (_fence_supported_send[dispatch_id]  != (& _default_send))
           {
-            TRACE_FORMAT( "Error. dispatch_id (%zu) was not previously set", dispatch_id);
+            TRACE_FORMAT( "Error. dispatch_id (%zu) was previously set", dispatch_id);
             TRACE_FN_EXIT();
             return PAMI_INVAL;
           }
 
-        if (_protocol_fence_disabled[dispatch_id] != (& _default))
+        if (_fence_unsupported_send[dispatch_id] != (& _default_send))
           {
-            TRACE_FORMAT( "Error. dispatch_id (%zu) was not previously set", dispatch_id);
+            TRACE_FORMAT( "Error. dispatch_id (%zu) was previously set", dispatch_id);
             TRACE_FN_EXIT();
             return PAMI_INVAL;
           }
 
-        _protocol_fence_enabled[dispatch_id]  = fence_supported_protocol;
-        TRACE_FORMAT( "_protocol_fence_enabled[%zu] = %p, &_protocol_fence_enabled[%zu] = %p", dispatch_id, fence_supported_protocol, dispatch_id, _protocol_fence_enabled[dispatch_id]);
+        _fence_supported_send[dispatch_id]  = fence_supported_send;
+        TRACE_FORMAT( "_fence_supported_send[%zu] = %p, &_fence_supported_send[%zu] = %p", dispatch_id, fence_supported_send, dispatch_id, _fence_supported_send[dispatch_id]);
 
-        _protocol_fence_disabled[dispatch_id] = fence_unsupported_protocol;
-        TRACE_FORMAT( "_protocol_fence_disabled[%zu] = %p, &_protocol_fence_disabled[%zu] = %p", dispatch_id, fence_unsupported_protocol, dispatch_id, _protocol_fence_disabled[dispatch_id]);
+        _fence_unsupported_send[dispatch_id] = fence_unsupported_send;
+        TRACE_FORMAT( "_fence_unsupported_send[%zu] = %p, &_fence_unsupported_send[%zu] = %p", dispatch_id, fence_unsupported_send, dispatch_id, _fence_unsupported_send[dispatch_id]);
 
         TRACE_FN_EXIT();
         return PAMI_SUCCESS;
@@ -189,7 +297,7 @@ namespace PAMI
 
         size_t dispatch_id = (size_t)(parameters->send.dispatch);
         PAMI_assert_debug (dispatch_id < T_DispatchCount);
-        pami_result_t result = _protocol[dispatch_id]->simple (parameters);
+        pami_result_t result = _send[dispatch_id]->simple (parameters);
 
         TRACE_FN_EXIT();
         return result;
@@ -201,14 +309,93 @@ namespace PAMI
 
         size_t dispatch_id = (size_t)(parameters->dispatch);
         PAMI_assert_debug (dispatch_id < T_DispatchCount);
-        pami_result_t result =  _protocol[dispatch_id]->immediate (parameters);
+        pami_result_t result =  _send[dispatch_id]->immediate (parameters);
 
         TRACE_FN_EXIT();
         return result;
       };
+
+      inline pami_result_t send (pami_send_typed_t * parameters)
+      {
+        TRACE_FN_ENTER();
+        TRACE_FN_EXIT();
+        return PAMI_UNIMPL;
+      }
+
+      inline pami_result_t put (pami_put_simple_t * parameters)
+      {
+        TRACE_FN_ENTER();
+        pami_result_t result = _put->simple (parameters);
+        TRACE_FORMAT("result = %d", result);
+        TRACE_FN_EXIT();
+        return result;
+      }
+
+      inline pami_result_t put (pami_put_typed_t * parameters)
+      {
+        TRACE_FN_ENTER();
+        TRACE_FN_EXIT();
+        return PAMI_UNIMPL;
+      }
+
+      inline pami_result_t get (pami_get_simple_t * parameters)
+      {
+        TRACE_FN_ENTER();
+        pami_result_t result = _get->get (parameters);
+        TRACE_FORMAT("result = %d", result);
+        TRACE_FN_EXIT();
+        return result;
+      }
+
+      inline pami_result_t get (pami_get_typed_t * parameters)
+      {
+        TRACE_FN_ENTER();
+        TRACE_FN_EXIT();
+        return PAMI_UNIMPL;
+      }
+
+      inline pami_result_t rput (pami_rput_simple_t * parameters)
+      {
+        TRACE_FN_ENTER();
+        pami_result_t result = _rput->simple (parameters);
+        TRACE_FORMAT("result = %d", result);
+        TRACE_FN_EXIT();
+        return result;
+      }
+
+      inline pami_result_t rput (pami_rput_typed_t * parameters)
+      {
+        TRACE_FN_ENTER();
+        TRACE_FN_EXIT();
+        return PAMI_UNIMPL;
+      }
+
+      inline pami_result_t rget (pami_rget_simple_t * parameters)
+      {
+        TRACE_FN_ENTER();
+        pami_result_t result = _rget->simple (parameters);
+        TRACE_FORMAT("result = %d", result);
+        TRACE_FN_EXIT();
+        return result;
+      }
+
+      inline pami_result_t rget (pami_rget_typed_t * parameters)
+      {
+        TRACE_FN_ENTER();
+        TRACE_FN_EXIT();
+        return PAMI_UNIMPL;
+      }
   };
 };
 #undef DO_TRACE_ENTEREXIT
 #undef DO_TRACE_DEBUG
 
 #endif // __components_dispatch_Dispatch_h__
+
+//
+// astyle info    http://astyle.sourceforge.net
+//
+// astyle options --style=gnu --indent=spaces=2 --indent-classes
+// astyle options --indent-switches --indent-namespaces --break-blocks
+// astyle options --pad-oper --keep-one-line-blocks --max-instatement-indent=79
+//

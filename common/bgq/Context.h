@@ -492,7 +492,8 @@ namespace PAMI
           _no_put (_context),
           _no_rget (),
           _no_rput (),
-          _no_rmw ()
+          _no_rmw (),
+          _dispatch (_context)
       {
         TRACE_FN_ENTER();
         _async_suspend = NULL;
