@@ -50,193 +50,7 @@ private:
 			_loc_bytes, _rep_bytes, _fre_bytes);
 	}
 #endif // MM_DEBUG
-
 public:
-	typedef int MM_ATTR_FN(int fd);
-
-	///
-	/// \brief Allocate an aligned buffer of the memory.
-	///
-	/// NOTE, this is not efficient for small allocations. Users that are
-	/// allocating large numbers of small chunks should allocate one
-	/// large block and then sub-divide into small chunks.
-	///
-	/// The initializer function is called only once on a given chunk of memory,
-	/// by the first caller to allocate with a given key.
-	///
-	/// This does NOT support the freeing of memory
-	///
-	/// The attr_fn is used to customize the shmem segment on platforms
-	/// that require it. The file descriptor representing the shmem segment
-	/// is passed as the only argument. The return value is the same as
-	/// for other system calls, 0 = success, -1 = error with errno set.
-	/// attr_fn is called after the shm_open and before the ftruncate.
-	///
-	/// \param[out] memptr    Pointer to the allocated memory.
-	/// \param[in]  alignment Requested buffer alignment - must be a power of 2.
-	/// \param[in]  bytes     Number of bytes to allocate.
-	/// \param[in]  key       Shared identifier for allocation
-	/// \param[in]  init_fn   Initializer
-	/// \param[in]  cookie    Opaque data for initializer
-	/// \param[in]  attr_fn   Function to call on fd after shm_open
-	///
-	inline pami_result_t memalign_attrfn(void **memptr, size_t alignment, size_t bytes,
-				      const char *key,
-				      MM_INIT_FN *init_fn, void *cookie,
-					MM_ATTR_FN *attr_fn) {
-		//fprintf(stderr,">> SharedMemoryManager::memalign(), this = %p\n", this);
-		PAMI_assert_debugf(_attrs == PAMI_MM_NODESCOPE, "SharedMemoryManager not shared");
-		// May need to enforce uniquness at a higher level than just this
-		// PAMI job. May need to acquire a unique prefix from, say, Mapping
-		// that ensures the underlying OS shmem segment will not conflict
-		// with any other jobs that might be running.
-		//
-		char nkey[MMKEYSIZE];
-		if (key && key[0]) {
-			if (*key == '/') { ++key; } // or... allow "relative" vs. "absolute" keys?
-			snprintf(nkey, sizeof(nkey), "/job%zd-%s", _jobid, key);
-		} else {
-			// this should be unique... or not? memptr might not be...
-			snprintf(nkey, sizeof(nkey), "/job%zd-pid%d-%lx", _jobid,
-				 getpid(), (unsigned long)memptr);
-			if (key) {
-				// callers wants to know the unique key we chose...
-				strcpy((char *)key, nkey);
-			}
-		}
-		// ... use 'nkey' here-after...
-		//
-		//fprintf(stderr,"   SharedMemoryManager::memalign(), key = '%s', nkey = '%s'\n", key, nkey);
-
-
-		if (alignment < _alignment) { alignment = _alignment; }
-		void *ptr = NULL;
-		bool first = false;
-		// note, inital (worst-case) padding now set, when
-		// actual pointer assigned below, padding is updated.
-
-		// Note, Global does not construct this if the target conditions
-		// would prevent it from succeeding - for example SMP-mode on BG.
-		// So that simplifies the code, as any errors are just fatal.
-
-		// should we keep track of each shm_open, so that we can
-		// later shm_unlink?
-
-		// first try to create the file exclusively, if that
-		// succeeds then we know we should initialize it.
-		// However, we still need to ensure others do not
-		// start using the memory until we complete the init.
-		// Use a "counter mutex" that is initialized to 0, all but
-		// the first (based on O_EXCL) will wait on it.
-		//
-
-		// use GCC atomics on the shared memory chunk, in order to
-		// synchronize init, and in free will need to ensure memory gets zeroed.
-		MemoryManagerOSShmAlloc *alloc;
-		int lrc, fd = -1;
-		size_t max = MemoryManagerOSShmAlloc::maxSize(bytes, alignment);
-
-		lrc = shm_open(nkey, O_CREAT | O_EXCL | O_RDWR, 0600);
-		first = (lrc != -1); // must be the first...
-		//fprintf(stderr,"   SharedMemoryManager::memalign(), lrc = %d, first = %d\n", lrc, first);
-		if (!first) {
-			lrc = shm_open(nkey, O_RDWR, 0);
-			if (lrc == -1) {
-#ifdef MM_DEBUG
-				if (_debug) {
-					dump("shm_open");
-				}
-#endif // MM_DEBUG
-				return PAMI_ERROR;
-			}
-		}
-		fd = lrc;
-		if (attr_fn) {
-			lrc = attr_fn(fd);
-			if (lrc == -1) {
-#ifdef MM_DEBUG
-				if (_debug) {
-					dump("*attr_fn");
-				}
-#endif // MM_DEBUG
-				close(fd); 
-				if (first) { shm_unlink(nkey); } // yes?
-				return PAMI_ERROR;
-			}
-		}
-		lrc = ftruncate(fd, max); // this zeroes memory...
-		if (lrc == -1) {
-#ifdef MM_DEBUG
-			if (_debug) {
-				dump("ftruncate");
-			}
-#endif // MM_DEBUG
-			close(fd);
-			if (first) { shm_unlink(nkey); } // yes?
-			return PAMI_ERROR;
-		}
-#ifdef EMULATE_DIFFERENT_ADDRESSES
-                // Emulate different addresses on different tasks
-                static int         last_mmap = 0;
-                unsigned long long my_addr   = getpid();
-                my_addr = 0xFFFFFFFFFFFF0000 & (my_addr<<16) + last_mmap;
-                last_mmap += max;
-#else
-                unsigned long long my_addr = 0ULL;
-#endif
-		ptr = mmap((void*)my_addr, max, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-		close(fd); // no longer needed
-		if (ptr == NULL || ptr == MAP_FAILED) {
-			// segment is not mapped...
-#ifdef MM_DEBUG
-			if (_debug) {
-				dump("mmap");
-			}
-#endif // MM_DEBUG
-			if (first) { shm_unlink(nkey); } // yes?
-			return PAMI_ERROR;
-		}
-		// shared segment acquired and mapped, now sync and init.
-		_meta.acquire(); // only makes this thread-safe, not proc-safe.
-		alloc = _meta.findFree(ptr, bytes, alignment, nkey);
-		if (alloc == NULL) {
-#ifdef MM_DEBUG
-			if (_debug) {
-				dump("findFree");
-			}
-#endif // MM_DEBUG
-			munmap(ptr, max);
-			_meta.release();
-			return PAMI_ERROR;
-		}
-
-		_meta.release();
-
-		//fprintf(stderr,"memalign(), init_fn = %p, first = %d, nkey = '%s'\n", init_fn, first, nkey);
-
-		if (init_fn) {
-			if (first) {
-				init_fn(alloc->userMem(), alloc->userSize(),
-					alloc->key(), _attrs, cookie);
-				alloc->initDone();
-			} else {
-				alloc->waitDone();
-			}
-		}
-		*memptr = alloc->userMem();
-#ifdef MM_DEBUG
-		if (_debug) {
-			++_num_allocs;
-			size_t alloc_bytes = alloc->rawSize();
-			if (first) {
-				_loc_bytes += alloc_bytes;
-			} else {
-				_rep_bytes += alloc_bytes;
-			}
-		}
-#endif // MM_DEBUG
-		return PAMI_SUCCESS;
-	}
 
 	/// \brief This class is a wrapper for the shm_open/ftruncate/mmap sequence
 	///
@@ -320,7 +134,145 @@ public:
 	inline pami_result_t memalign(void **memptr, size_t alignment, size_t bytes,
 				      const char *key = NULL,
 				      MM_INIT_FN *init_fn = NULL, void *cookie = NULL) {
-		return memalign_attrfn(memptr, alignment, bytes, key, init_fn, cookie, NULL);
+		//fprintf(stderr,">> SharedMemoryManager::memalign(), this = %p\n", this);
+		PAMI_assert_debugf(_attrs == PAMI_MM_NODESCOPE, "SharedMemoryManager not shared");
+		// May need to enforce uniquness at a higher level than just this
+		// PAMI job. May need to acquire a unique prefix from, say, Mapping
+		// that ensures the underlying OS shmem segment will not conflict
+		// with any other jobs that might be running.
+		//
+		char nkey[MMKEYSIZE];
+		if (key && key[0]) {
+			if (*key == '/') { ++key; } // or... allow "relative" vs. "absolute" keys?
+			snprintf(nkey, sizeof(nkey), "/job%zd-%s", _jobid, key);
+		} else {
+			// this should be unique... or not? memptr might not be...
+			snprintf(nkey, sizeof(nkey), "/job%zd-pid%d-%lx", _jobid,
+				 getpid(), (unsigned long)memptr);
+			if (key) {
+				// callers wants to know the unique key we chose...
+				strcpy((char *)key, nkey);
+			}
+		}
+		// ... use 'nkey' here-after...
+		//
+		//fprintf(stderr,"   SharedMemoryManager::memalign(), key = '%s', nkey = '%s'\n", key, nkey);
+
+
+		if (alignment < _alignment) { alignment = _alignment; }
+		void *ptr = NULL;
+		bool first = false;
+		// note, inital (worst-case) padding now set, when
+		// actual pointer assigned below, padding is updated.
+
+		// Note, Global does not construct this if the target conditions
+		// would prevent it from succeeding - for example SMP-mode on BG.
+		// So that simplifies the code, as any errors are just fatal.
+
+		// should we keep track of each shm_open, so that we can
+		// later shm_unlink?
+
+		// first try to create the file exclusively, if that
+		// succeeds then we know we should initialize it.
+		// However, we still need to ensure others do not
+		// start using the memory until we complete the init.
+		// Use a "counter mutex" that is initialized to 0, all but
+		// the first (based on O_EXCL) will wait on it.
+		//
+
+		// use GCC atomics on the shared memory chunk, in order to
+		// synchronize init, and in free will need to ensure memory gets zeroed.
+		MemoryManagerOSShmAlloc *alloc;
+		int lrc, fd = -1;
+		size_t max = MemoryManagerOSShmAlloc::maxSize(bytes, alignment);
+
+		lrc = shm_open(nkey, O_CREAT | O_EXCL | O_RDWR, 0600);
+		first = (lrc != -1); // must be the first...
+		//fprintf(stderr,"   SharedMemoryManager::memalign(), lrc = %d, first = %d\n", lrc, first);
+		if (!first) {
+			lrc = shm_open(nkey, O_RDWR, 0);
+			if (lrc == -1) {
+#ifdef MM_DEBUG
+				if (_debug) {
+					dump("shm_open");
+				}
+#endif // MM_DEBUG
+				return PAMI_ERROR;
+			}
+		}
+		fd = lrc;
+		lrc = ftruncate(fd, max); // this zeroes memory...
+		if (lrc == -1) {
+#ifdef MM_DEBUG
+			if (_debug) {
+				dump("ftruncate");
+			}
+#endif // MM_DEBUG
+			close(fd);
+			if (first) { shm_unlink(nkey); } // yes?
+			return PAMI_ERROR;
+		}
+#ifdef EMULATE_DIFFERENT_ADDRESSES
+                // Emulate different addresses on different tasks
+                static int         last_mmap = 0;
+                unsigned long long my_addr   = getpid();
+                my_addr = 0xFFFFFFFFFFFF0000 & (my_addr<<16) + last_mmap;
+                last_mmap += max;
+#else
+                unsigned long long my_addr = 0ULL;
+#endif
+		ptr = mmap((void*)my_addr, max, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+		close(fd); // no longer needed
+		if (ptr == NULL || ptr == MAP_FAILED) {
+			// segment is not mapped...
+#ifdef MM_DEBUG
+			if (_debug) {
+				dump("mmap");
+			}
+#endif // MM_DEBUG
+			if (first) { shm_unlink(nkey); } // yes?
+			return PAMI_ERROR;
+		}
+		// shared segment acquired and mapped, now sync and init.
+		_meta.acquire(); // only makes this thread-safe, not proc-safe.
+		alloc = _meta.findFree(ptr, bytes, alignment, nkey);
+		if (alloc == NULL) {
+#ifdef MM_DEBUG
+			if (_debug) {
+				dump("findFree");
+			}
+#endif // MM_DEBUG
+			munmap(ptr, max);
+			_meta.release();
+			return PAMI_ERROR;
+		}
+
+		_meta.release();
+
+		//fprintf(stderr,"memalign(), init_fn = %p, first = %d, nkey = '%s'\n", init_fn, first, nkey);
+
+		if (init_fn) {
+			if (first) {
+				init_fn(alloc->userMem(), alloc->userSize(),
+					alloc->key(), _attrs, cookie);
+				alloc->initDone();
+			} else {
+				alloc->waitDone();
+			}
+		}
+		*memptr = alloc->userMem();
+#ifdef MM_DEBUG
+		if (_debug) {
+			++_num_allocs;
+			size_t alloc_bytes = alloc->rawSize();
+			if (first) {
+				_loc_bytes += alloc_bytes;
+			} else {
+				_rep_bytes += alloc_bytes;
+			}
+		}
+#endif // MM_DEBUG
+		return PAMI_SUCCESS;
 	}
 
 	static void last_free(MemoryManagerOSShmAlloc *m) {
