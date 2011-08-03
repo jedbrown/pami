@@ -476,7 +476,7 @@ namespace PAMI {
       if (__size == max - min + 1) {
 	// LIST -> RANGE, drop ranklist and turn off flag
 	if (__free_ranklist) {
-            PAMI::Memory::MemoryManager::heap_mm->free(topo_ranklist);
+              PAMI::Memory::MemoryManager::heap_mm->free(topo_ranklist);
 	    __free_ranklist = false;
 	}
         __type = PAMI_RANGE_TOPOLOGY;
@@ -560,7 +560,7 @@ namespace PAMI {
     void finalize() {
       if(__free_ranklist)
       {
-        PAMI::Memory::MemoryManager::heap_mm->free(topo_ranklist);
+          PAMI::Memory::MemoryManager::heap_mm->free(topo_ranklist);
         topo_ranklist=NULL;
         __free_ranklist = false;
       }
@@ -688,20 +688,61 @@ namespace PAMI {
     ///
     /// Creates a fully-independent copy of a topology (re-mallocs any storage)
     ///
-    /// \param[in] topo		Topology to replicate
+    /// \param[in] topo   Topology to replicate
     ///
     Topology(Topology *topo) {
-	memcpy(this, topo, sizeof(*topo));
-        __free_ranklist = false;
-	// right now, the only type that allocates additional storage is PAMI_LIST_TOPOLOGY
-	if (topo->__type == PAMI_LIST_TOPOLOGY) {
-	    pami_result_t rc;
-	    rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
-			(void **)&topo_ranklist, 0, __size * sizeof(*topo_ranklist));
-	    PAMI_assertf(rc == PAMI_SUCCESS, "ranklist[%zd] alloc failed", __size);
-	    memcpy(topo_ranklist, topo->topo_ranklist, __size * sizeof(*topo_ranklist));
+      memcpy(this, topo, sizeof(*topo));
+      __free_ranklist = false;
+      // right now, the only type that allocates additional storage is PAMI_LIST_TOPOLOGY
+      if (topo->__type == PAMI_LIST_TOPOLOGY) {
+        pami_result_t rc;
+        rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+          (void **)&topo_ranklist, 0, __size * sizeof(*topo_ranklist));
+        PAMI_assertf(rc == PAMI_SUCCESS, "ranklist[%zd] alloc failed", __size);
+        memcpy(topo_ranklist, topo->topo_ranklist, __size * sizeof(*topo_ranklist));
         __free_ranklist =true;
-	}
+      }
+    }
+    /// \brief Copy constructor (all)
+    ///
+    /// Creates a fully-independent copy of a topology (re-mallocs any storage)
+    ///
+    /// \param[in] rtopo   Topology to replicate
+    ///
+    Topology(const Topology &rtopo) {
+      const Topology *topo = &rtopo ;
+      memcpy(this, topo, sizeof(*topo));
+      __free_ranklist = false;
+      // right now, the only type that allocates additional storage is PAMI_LIST_TOPOLOGY
+      if (topo->__type == PAMI_LIST_TOPOLOGY) {
+        pami_result_t rc;
+        rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+          (void **)&topo_ranklist, 0, __size * sizeof(*topo_ranklist));
+        PAMI_assertf(rc == PAMI_SUCCESS, "ranklist[%zd] alloc failed", __size);
+        memcpy(topo_ranklist, topo->topo_ranklist, __size * sizeof(*topo_ranklist));
+        __free_ranklist =true;
+      }
+    }
+    /// \brief Assignment operator (all)
+    ///
+    /// Creates a fully-independent copy of a topology (re-mallocs any storage)
+    ///
+    /// \param[in] rtopo   Topology to replicate
+    ///
+    Topology& operator= (const Topology &rtopo) {
+      const Topology *topo = &rtopo ;
+      memcpy(this, topo, sizeof(*topo));
+      __free_ranklist = false;
+      // right now, the only type that allocates additional storage is PAMI_LIST_TOPOLOGY
+      if (topo->__type == PAMI_LIST_TOPOLOGY) {
+        pami_result_t rc;
+        rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+          (void **)&topo_ranklist, 0, __size * sizeof(*topo_ranklist));
+        PAMI_assertf(rc == PAMI_SUCCESS, "ranklist[%zd] alloc failed", __size);
+        memcpy(topo_ranklist, topo->topo_ranklist, __size * sizeof(*topo_ranklist));
+        __free_ranklist =true;
+      }
+      return(*this);
     }
 
     /// \brief accessor for size of a Topology object
@@ -1485,7 +1526,7 @@ namespace PAMI {
           if (__size == 1) {
 	    // LIST -> SINGLE, drop ranklist and turn off flag
 	    if (__free_ranklist) {
-                PAMI::Memory::MemoryManager::heap_mm->free(topo_ranklist);
+                  PAMI::Memory::MemoryManager::heap_mm->free(topo_ranklist);
 	        __free_ranklist = false;
 	    }
             __type = PAMI_SINGLE_TOPOLOGY;

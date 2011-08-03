@@ -1269,12 +1269,6 @@ namespace PAMI
             if (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
 #endif
             {
-              if (_msync2d_composite_factory)
-              {
-                _msync2d_composite = _msync2d_composite_factory->generate(geometry, &xfer);
-                geometry->addCollective(PAMI_XFER_BARRIER, _msync2d_composite_factory, _context_id);
-              }
-
               if (_msync2d_gishm_composite_factory)
               {
                 geometry->setKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE4, NULL);
@@ -1346,6 +1340,18 @@ namespace PAMI
           if ((val && val != PAMI_CR_GKEY_FAIL) || // We have a class route or
               (topology->isLocalToMe()))           // It's all local - we might use 2 device protocol in shmem-only mode
           {
+            // Add 2 device msync over mcombine (thus using GKEY_MCOMB_CLASSROUTEID not GKEY_MSYNC_CLASSROUTEID) composite protocol
+#ifndef PAMI_ENABLE_SHMEM_SUBNODE
+            if (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
+#endif
+            {
+              if (_msync2d_composite_factory)
+              {
+                _msync2d_composite = _msync2d_composite_factory->generate(geometry, &xfer);
+                geometry->addCollective(PAMI_XFER_BARRIER, _msync2d_composite_factory, _context_id);
+              }
+            }
+
             // If we can use pure MU composites, add them
             if (usePureMu)
             {

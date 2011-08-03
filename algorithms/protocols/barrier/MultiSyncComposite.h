@@ -21,6 +21,9 @@
 #define DO_TRACE_DEBUG     0
 #endif
 
+#undef DO_DEBUG
+#define DO_DEBUG(x) x
+
 namespace CCMI
 {
   namespace Adaptor
@@ -172,6 +175,9 @@ namespace CCMI
           PAMI::Topology  *t_master    = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
           PAMI::Topology  *t_local     = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
 
+          DO_DEBUG(for (unsigned j = 0; j < t_master->size(); ++j) TRACE_FORMAT("<%p>t_master[%u]=%#X, size %zu", t_master, j, t_master->index2Rank(j), t_master->size()));
+          DO_DEBUG(for (unsigned j = 0; j < t_local->size(); ++j) TRACE_FORMAT("<%p>t_local[%u]=%zu, size %zu", t_local, j, (size_t)t_local->index2Rank(j), t_local->size()));
+
           _cb_done                     = ((pami_xfer_t*)cmd)->cb_done;
           _clientdata                  = ((pami_xfer_t*)cmd)->cookie;
           
@@ -303,5 +309,8 @@ namespace CCMI
 
 #undef DO_TRACE_ENTEREXIT 
 #undef DO_TRACE_DEBUG     
+
+#undef DO_DEBUG
+#define DO_DEBUG(x) 
 
 #endif

@@ -2535,7 +2535,7 @@ uint64_t PAMI::Device::MU::ResourceManager::getInterruptMask ( size_t rmClientId
       mask |= 0x80000000ULL >> (_clientResources[rmClientId].recResources[contextOffset].globalFifoIds[fifo] % BGQ_MU_NUM_REC_FIFOS_PER_GROUP);
       mask |= 0x8000ULL >> (_clientResources[rmClientId].recResources[contextOffset].globalFifoIds[fifo] % BGQ_MU_NUM_REC_FIFOS_PER_GROUP);
     }
-  TRACE_ERR((stderr,"MU ResourceManager: getInterruptMask: Client %zu, Context %zu, Interrupt mask=0x%lx\n",rmClientId,contextOffset,mask));
+  TRACE((stderr,"MU ResourceManager: getInterruptMask: Client %zu, Context %zu, Interrupt mask=0x%lx\n",rmClientId,contextOffset,mask));
 
   return mask;
 }

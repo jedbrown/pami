@@ -214,14 +214,11 @@ namespace PAMI
         PAMI_assert(_connection[msync->connection_id] == NULL);
         _connection[msync->connection_id] = state_data;
 
-        Topology* topology = (Topology*)msync->participants;
-        pami_task_t root = topology->index2Rank(0);
-
         _header_model.postCollectivePacket (state_data->pkt,
                                             NULL,
                                             NULL,
                                             classRoute,
-                                            root,
+                                            _task_id, // use myself as destination (my 'slice' of rfifo's)
                                             MUHWI_COLLECTIVE_OP_CODE_OR,
                                             sizeof(unsigned int),
                                             &state_data->header_metadata,
@@ -264,8 +261,8 @@ namespace PAMI
         TRACE_FORMAT( "connection_id %#X  debug %#X\n", m->connection_id, m->debug);
 
         state = model->_connection[m->connection_id]; //model->_connection.get(m->connection_id);
+        PAMI_assertf(state,"connection id %u\n",m->connection_id);
         state->header_metadata.debug = -1;
-        PAMI_assert(state);
 
         model->_connection.erase(state->header_metadata.connection_id);
         //_connection.clear(state->header_metadata.connection_id);
