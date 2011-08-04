@@ -110,6 +110,8 @@ SaOnNodeSyncGroup::SetupState SaOnNodeSyncGroup::Init_bsr_step(
     this->unique_key = unique_key;
     this->member_id  = mem_id;
     this->is_leader  = ((mem_id == 0) ? 1 : 0);
+    this->multi_byte_load_num   = mem_cnt >> 3;
+    this->single_byte_load_num  = mem_cnt & 0x7;
 
     // Initialize masks: 
     //      seq = 0, use mask[0] 
@@ -345,31 +347,15 @@ bool SaOnNodeSyncGroup::IsNbBarrierDone()
     if(nb_barrier_stage == 0) { /* entering reduce stage */
         //        show_bsr("stage 0");
         if (member_id == 0) {
-            if (multi_load) {
-                unsigned int i=0;
-                for (i = 0; i + 8 <= member_cnt; i += 8)
-                    if (sa->Load8(i) != *(unsigned long long*)(mask[seq]))
-                        return false;
-
-                for (; i + 4 <= member_cnt; i+= 4)
-                    if (sa->Load4(i) != *(unsigned int*)(mask[seq]))
-                        return false;
-
-                for (; i + 2 <= member_cnt; i+= 2)
-                    if (sa->Load2(i) != *(unsigned short*)(mask[seq]))
-                        return false;
-
-                // use 1-byte loads to finish the rest
-                if (i == 0) i = 1;
-                for (; i < member_cnt; i++)
-                    if (sa->Load1(i) != seq)
-                        return false;
-            } else {
-                // use 1 byte load
-                for (unsigned int i = 1; i < member_cnt; i++) {
-                    if (sa->Load1(i) != seq)
-                        return false;
-                }
+            // using 8-byte load as many as possible
+            for (unsigned int i = 0; i < multi_byte_load_num; i ++) {
+                if (sa->Load8(i) != *(unsigned long long*)(mask[seq]))
+                    return false;
+            }
+            // using 1-byte load for the remained
+            for (unsigned int i = 1; i <= single_byte_load_num; i ++) {
+                if (sa->Load1(member_cnt - i) != seq)
+                    return false;
             }
         } else {
             sa->Store1(member_id, !seq);
