@@ -53,12 +53,28 @@ namespace PAMI
                                                      PAMI::Device::Generic::Device * devices)
           {
 	    int32_t rc;
+	    size_t myA, myB, myC, myD, myE, myT, T, tSize;
+	    myA = __global.mapping.a();
+	    myB = __global.mapping.b();
+	    myC = __global.mapping.c();
+	    myD = __global.mapping.d();
+	    myE = __global.mapping.e();
+	    myT = __global.mapping.t();
+	    tSize = __global.mapping.tSize();
+	    size_t addr[BGQ_TDIMS + BGQ_LDIMS];
+	    addr[0]=myA;
+	    addr[1]=myB;
+	    addr[2]=myC;
+	    addr[3]=myD;
+	    addr[4]=myE;
+	    // Note: addr[5] is the T coord and will be set later.
+
 	    // Set up a local barrier (needed below).
 	    bool master;
-	    size_t myTask        = __global.mapping.t();
 	    size_t numLocalTasks = __global.topology_local.size();
-	    ( myTask == __global.mapping.lowestT() ) ? master=true : master=false;
+	    ( myT == __global.mapping.lowestT() ) ? master=true : master=false;
 
+	    TRACE((stderr, "MU::Context::generate_impl: myCoords=(%zu,%zu,%zu,%zu,%zu,%zu)\n", myA,myB,myC,myD,myE,myT));
 	    TRACE((stderr, "MU::Context::generate_impl: Initializing local barrier, size=%zu, master=%d\n", numLocalTasks, master));
 
       PAMI::Barrier::IndirectCounter<PAMI::Counter::Indirect<PAMI::Counter::Native> > barrier(numLocalTasks,master);
@@ -72,22 +88,30 @@ namespace PAMI
 	    // in the MU SPIs.  To enforce this, loop through each task on the
 	    // local node performing a local barrier.  During each loop iteration,
 	    // only one task performs the init.
-	    size_t task;
 
 	    TRACE((stderr,"MU Factory: Entering local barrier before context create loop\n"));
 	    barrier.enter();
 	    TRACE((stderr,"MU Factory: Exiting  local barrier before context create loop\n"));
 
-	    for ( task=0; task<numLocalTasks; task++)
+	    for ( T=0; T<tSize; T++)
 	      {
-		if ( myTask == task ) // Is it my turn to initialize?
+		// Check if current T exists.  If not, move to next T
+		pami_result_t rc;
+		size_t dummyTask;
+		addr[5] = T;
+		rc = __global.mapping.global2task ( addr, dummyTask );
+		if ( rc != PAMI_SUCCESS ) continue; // Move to next T...this one does not have a task.
+
+		// We found a T that has a task on it.  If it is our task, initialize it.
+		if ( myT == T ) // Is it my turn to initialize?
 		  {
+		    TRACE((stderr,"MU Factory: Initializing contexts for T=%zu\n",T));
 		    // Initialize the MU resources for all contexts for this client
 		    __MUGlobal.getMuRM().initializeContexts( id_client, id_count, devices );
 		  }
-		TRACE((stderr,"MU Factory: Entering local barrier. Initializing task=%zu\n",task));
+		TRACE((stderr,"MU Factory: Entering local barrier. Initializing T=%zu\n",T));
 		barrier.enter();
-		TRACE((stderr,"MU Factory: Exiting  local barrier. Initializing task=%zu\n",task));
+		TRACE((stderr,"MU Factory: Exiting  local barrier. Initializing T=%zu\n",T));
 	      }
 
             // Allocate an array of mu contexts, one for each pami context
