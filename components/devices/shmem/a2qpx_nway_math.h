@@ -47,7 +47,7 @@ inline unsigned quad_double_math_2way(double* dst, double* src0, double *src1, u
     case PAMI_MAXLOC:
     case PAMI_MINLOC:
     case PAMI_OP_COUNT:
-      printf("not supported\n");
+      PAMI_abortf("opcode <%u> not supported\n",opcode);
       exit(0);
     break;
   } 
@@ -82,7 +82,7 @@ inline unsigned quad_double_math_4way(double* dst, double* src0, double *src1, d
     case PAMI_MAXLOC:
     case PAMI_MINLOC:
     case PAMI_OP_COUNT:
-      printf("not supported\n");
+      PAMI_abortf("opcode <%u> not supported\n",opcode);
       exit(0);
     break;
   } 
@@ -119,7 +119,7 @@ inline unsigned quad_double_math_8way(double* dst, double* src0, double *src1, d
     case PAMI_MAXLOC:
     case PAMI_MINLOC:
     case PAMI_OP_COUNT:
-      printf("not supported\n");
+      PAMI_abortf("opcode <%u> not supported\n",opcode);
       exit(0);
     break;
   } 
@@ -158,7 +158,7 @@ inline unsigned quad_double_math_16way(double* dst, double* src0, double *src1, 
     case PAMI_MAXLOC:
     case PAMI_MINLOC:
     case PAMI_OP_COUNT:
-      printf("not supported\n");
+      PAMI_abortf("opcode <%u> not supported\n",opcode);
       exit(0);
     break;
   } 
