@@ -8,7 +8,7 @@
 /* end_generated_IBM_copyright_prolog                               */
 /**
  * \file test/api/collectives/alltoall.c
- * \brief ???
+ * \brief Simple Alltoall test on world geometry (only bytes)
  */
 
 #define COUNT     (4096)

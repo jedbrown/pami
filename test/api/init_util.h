@@ -437,7 +437,12 @@ void setup_op_dt(size_t ** validTable,char* sDt, char* sOp)
       for (j = 0; j < dt_count; j++)
         validTable[i][j] = 0;
   
+      validTable[OP_SUM][DT_SIGNED_INT] = 1;
+      validTable[OP_MAX][DT_SIGNED_INT] = 1;
+      validTable[OP_MIN][DT_SIGNED_INT] = 1;
       validTable[OP_SUM][DT_UNSIGNED_INT] = 1;
+      validTable[OP_MAX][DT_UNSIGNED_INT] = 1;
+      validTable[OP_MIN][DT_UNSIGNED_INT] = 1;
       validTable[OP_SUM][DT_DOUBLE] = 1;
       validTable[OP_MAX][DT_DOUBLE] = 1;
       validTable[OP_MIN][DT_DOUBLE] = 1;
@@ -580,6 +585,52 @@ void get_split_method(size_t *num_tasks,            /* input number of tasks/out
     *num_tasks = iter;
     *local_task_id = task_id/2;
   }
+  /* TEST_SPLIT_METHOD=-2 : divide in half and reverse order the ranks */
+  else if ((!method || !strcmp(method, "-2")))
+  {
+    int iter = 0;;
+    if (task_id < half)
+    {
+      signed i = 0;
+      for (i = half - 1; i >=0; i--)
+      {
+        range[iter].lo = i;
+        range[iter].hi = i;
+        if(task_id == (unsigned)i)
+          *local_task_id = iter;
+        iter++;
+      }
+
+      set[0]   = 1;
+      set[1]   = 0;
+      *id       = 1;
+      *root     = half-1;
+      *rangecount = iter;
+      non_root[0] = range[1].lo;      /* first non-root rank in the subcomm  */
+      non_root[1] = range[iter-1].lo; /* last rank in the subcomm  */
+    }
+    else
+    {
+      unsigned i = 0;
+      for (i = *num_tasks - 1; i >=half; i--)
+      {
+        range[iter].lo = i;
+        range[iter].hi = i;
+        if(task_id == i)
+          *local_task_id = iter;
+        iter++;
+      }
+  
+      set[0]   = 0;
+      set[1]   = 1;
+      *id       = 2;
+      *root     = *num_tasks - 1;
+      *rangecount = iter;
+      non_root[0] = range[1].lo;      /* first non-root rank in the subcomm  */
+      non_root[1] = range[iter-1].lo; /* last rank in the subcomm  */
+    }
+    *num_tasks = iter;
+  }
   /* TEST_SPLIT_METHOD=N : Split the first "N" processes into a communicator */
   else
   {
@@ -613,9 +664,9 @@ void get_split_method(size_t *num_tasks,            /* input number of tasks/out
   
     *rangecount = 1;
   }
-  /*  fprintf(stderr,"set %zu/%zu, root %u, num_tasks %zu, local_task_id %u, non_root[0] %d, non_root[1] %d, id %d\n",
-          set[0],set[1],*root, *num_tasks, *local_task_id, non_root[0], non_root[1], *id);
-  */
+  /*fprintf(stderr,"set %zu/%zu, root %u, num_tasks %zu, local_task_id %u, non_root[0] %d, non_root[1] %d, id %d\n",
+          set[0],set[1],*root, *num_tasks, *local_task_id, non_root[0], non_root[1], *id);*/
+  
 }
 void get_next_root(size_t num_tasks,             /* input number of tasks*/
                    pami_task_t *root)            /* input/output current/next root*/

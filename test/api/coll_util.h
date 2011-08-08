@@ -299,7 +299,7 @@ int reduce_check_rcvbuf(void *buf, int count, int op, int dt, int task_id, int n
     {
       if (rcvbuf[i] != (unsigned) i * num_tasks)
       {
-        fprintf(stderr, "%s:Check %s/%s(%d) failed rcvbuf[%d] %u != %u\n", gProtocolName, dt_array_str[dt], op_array_str[op], count, i, rcvbuf[1], i*num_tasks);
+        fprintf(stderr, "%s:Check %s/%s(%d) failed rcvbuf[%d] %u != %u\n", gProtocolName, dt_array_str[dt], op_array_str[op], count, i, rcvbuf[i], i*num_tasks);
         err = -1;
         return err;
       }
