@@ -77,6 +77,9 @@ namespace PAMI
             put_state_t put_state;
             get_state_t get_state;
           } state_t;
+        public:
+
+          typedef MU::Context Device;
 
         protected :
 

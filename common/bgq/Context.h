@@ -47,6 +47,7 @@
 #include "p2p/protocols/rmw/RmwOverSend.h"
 #include "p2p/protocols/send/eager/Eager.h"
 #include "p2p/protocols/send/composite/Composite.h"
+#include "p2p/protocols/fence/deterministic/DeterministicFence.h"
 
 #include "TypeDefs.h"
 #include "algorithms/geometry/BGQMultiRegistration.h"
@@ -493,6 +494,7 @@ namespace PAMI
           _no_rget (),
           _no_rput (),
           _no_rmw (),
+          _mu_fence (devices->_mu[_contextid], devices->_mu[_contextid]),          
           _dispatch (_context)
       {
         TRACE_FN_ENTER();
@@ -564,6 +566,8 @@ namespace PAMI
             get_mu = Protocol::Get::GetOverSend<Device::MU::PacketModel>::generate(_devices->_mu[_contextid], _request);
             put_mu = Protocol::Put::PutOverSend<Device::MU::PacketModel>::generate(_devices->_mu[_contextid], _request);
             rmw_mu = Protocol::Rmw::RmwOverSend<Device::MU::PacketModel>::generate(_devices->_mu[_contextid], __global.heap_mm);
+
+            _mu_fence.initialize (_dispatch.id--, self, _context);
           }
 
 #if 0
@@ -1480,6 +1484,9 @@ namespace PAMI
       Protocol::Get::NoRGet       _no_rget;
       Protocol::Put::NoRPut       _no_rput;
       Protocol::Rmw::Error        _no_rmw;
+
+      Protocol::Fence::DeterministicFence<Device::MU::PacketModel,
+                                          Device::MU::DmaModelMemoryFifoCompletion> _mu_fence;
 
       Dispatch<256> _dispatch;
   }; // end PAMI::Context

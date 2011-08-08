@@ -52,6 +52,8 @@ namespace PAMI
 
         public:
 
+          typedef MU::Context Device;
+
           /// \see PAMI::Device::Interface::PacketModel::isPacketDeterministic
           static const bool   deterministic_packet_model         = true;
 
