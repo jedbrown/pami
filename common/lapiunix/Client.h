@@ -44,9 +44,9 @@ namespace PAMI
   {
   public:
 
-    static void barrier_done_fn(pami_context_t   context,
-                                void           * cookie,
-                                pami_result_t    result)
+    static void decrement_done_fn(pami_context_t   context,
+                                  void           * cookie,
+                                  pami_result_t    result)
       {
         volatile int* var = (volatile int*) cookie;
         (*var)--;
@@ -318,16 +318,23 @@ namespace PAMI
         PAMI::Topology::static_init(&__global.mapping);
 
         // Generate the "generic" device queues
-	// We do this here because some devices need a properly initialized
-	// mapping to correctly build (like shmem device, for example.  shmem
-	// device requires to know the "local" nodes, so a proper mapping
-	// must be built).
+    	// We do this here because some devices need a properly initialized
+    	// mapping to correctly build (like shmem device, for example.  shmem
+    	// device requires to know the "local" nodes, so a proper mapping
+    	// must be built).
         _platdevs.generate(_clientid, _maxctxts, _mm, _disable_shm);
-	_platdevs.init(_clientid,0,_client,(pami_context_t)_contexts[0],&_mm, _disable_shm);
+      	_platdevs.init(_clientid,0,_client,(pami_context_t)_contexts[0],&_mm, _disable_shm);
 
         // Now that we have a new mapping, we want to regenerate the topologies
         // to use the optimized geometries
         _world_geometry->regenTopo();
+
+        // gather and exchange affinity info from all tasks to enable/disable BSR
+        // this is a blocking call
+        bool affinity_checked = generateAffinityInfo();
+
+        // initialize CAU and BSR devices
+        _contexts[0]->initDevices(affinity_checked);
 
         // Initialize the optimized collectives
         initCollectives(_contexts[0], &_mm, _disable_shm);
@@ -346,7 +353,7 @@ namespace PAMI
                                         _world_list,
                                         num_world_procs,
                                         (pami_context_t)_contexts[0],
-                                        barrier_done_fn,
+                                        decrement_done_fn,
                                         (void*)&flag);
         }
         else
@@ -358,7 +365,7 @@ namespace PAMI
                                          &_world_range,
                                          1,
                                          (pami_context_t)_contexts[0],
-                                         barrier_done_fn,
+                                         decrement_done_fn,
                                          (void*)&flag);
         while(flag)
           _contexts[0]->advance(10,rc);
@@ -486,6 +493,47 @@ namespace PAMI
         return PAMI_SUCCESS;
       }
 
+    // a blocking call to gather and exchange affinity info among tasks
+    // return true when affinity is right for BSR
+    // return false otherwise
+    bool generateAffinityInfo()
+      {
+        pami_xfer_type_t   colltype = PAMI_XFER_ALLREDUCE;
+        pami_algorithm_t   alg;
+        pami_metadata_t    mdata;
+        pami_xfer_t        xfer;
+        volatile int       flag = 1;
+        pami_result_t      rc;
+
+        // gather local affinity info through PNSD
+        unsigned int affinityCheck =
+            (((LapiImpl::Context*)_contexts[0])->CheckAffinityInfo())?1:0;
+
+        unsigned int affinityCheckResult = 0;
+
+        _world_geometry->algorithms_info(colltype,&alg,&mdata,1,NULL,NULL,0,0);
+
+        xfer.cb_done                        = decrement_done_fn;
+        xfer.cookie                         = (void*)&flag;
+        xfer.algorithm                      = alg;
+        xfer.cmd.xfer_allreduce.sndbuf      = (char*)&affinityCheck;
+        xfer.cmd.xfer_allreduce.stype       = PAMI_TYPE_UNSIGNED_INT;
+        xfer.cmd.xfer_allreduce.stypecount  = 1;
+        xfer.cmd.xfer_allreduce.rcvbuf      = (char*)&affinityCheckResult;
+        xfer.cmd.xfer_allreduce.rtype       = PAMI_TYPE_UNSIGNED_INT;
+        xfer.cmd.xfer_allreduce.rtypecount  = 1;
+        xfer.cmd.xfer_allreduce.op          = PAMI_DATA_BAND;
+        xfer.cmd.xfer_allreduce.commutative = 1;
+        xfer.cmd.xfer_allreduce.data_cookie = NULL;
+        
+        // do an allreduce to exchange affinity info
+        _contexts[0]->collective(&xfer);
+
+        while(flag)
+          _contexts[0]->advance(10,rc);
+
+        return (affinityCheckResult == 1);
+      }
 
 
     static pami_result_t generate_impl (const char * name, pami_client_t * client,

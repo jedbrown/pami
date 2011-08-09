@@ -442,14 +442,7 @@ namespace PAMI
 
           // Initialize the lapi device for collectives
           _lapi_device.init((lapi_state_t*)_lapi_state);
-          _cau_device.init((lapi_state_t*)_lapi_state,
-                           _lapi_handle,
-                           _client,
-                           _clientid,
-                           _context,
-                           _contextid,
-                          &_dispatch_id);
-          _bsr_device.init(_client, _context, _contextid, _Lapi_env.MP_child);
+
           *out_mysize        = _Lapi_env.MP_procs;
           *out_myrank        = _Lapi_env.MP_child;
           *out_lapi_handle   = _lapi_handle;
@@ -457,6 +450,24 @@ namespace PAMI
           return PAMI_SUCCESS;
         }
 
+      inline pami_result_t initDevices(bool affinity_checked)
+        {
+          _cau_device.init((lapi_state_t*)_lapi_state,
+                           _lapi_handle,
+                           _client,
+                           _clientid,
+                           _context,
+                           _contextid,
+                          &_dispatch_id);
+
+          _bsr_device.init(_client, 
+                           _context, 
+                           _contextid, 
+                           _Lapi_env.MP_child,
+                           affinity_checked);
+
+          return PAMI_SUCCESS;
+        }
 
       inline pami_client_t getClient_impl ()
         {
