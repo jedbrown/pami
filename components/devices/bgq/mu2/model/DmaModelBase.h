@@ -25,6 +25,9 @@
 
 #include <stdlib.h>
 
+
+#define SPLIT_E_CUTOFF 2048 // 4 packets
+
 #undef  DO_TRACE_ENTEREXIT
 #undef  DO_TRACE_DEBUG
 #define DO_TRACE_ENTEREXIT 0
@@ -170,7 +173,6 @@ namespace PAMI
 
           MU::Context          & _context;
           MUHWI_Destination_t  * _myCoords;
-          size_t                 _pamiEagerLimit;
 
           // This structure is allocated at runtime when we split an rget into
           // two and send it on opposite E links.  It is used to track the status
@@ -265,18 +267,6 @@ namespace PAMI
         COMPILE_TIME_ASSERT(sizeof(MUSPI_DescriptorBase) <= MU::Context::immediate_payload_size);
 
         _myCoords = __global.mapping.getMuDestinationSelf();
-
-        // Fetch the eager limit
-        /// \todo Match this up with mpich default.
-        _pamiEagerLimit = 1234;
-        char *env;
-        env = getenv("PAMI_RVZ");
-
-        if (env == NULL) env = getenv("PAMI_RZV");
-
-        if (env == NULL) env = getenv("PAMI_EAGER");
-
-        if (env != NULL) _pamiEagerLimit = atoi(env);
 
         // Zero-out the descriptor models before initialization
         memset((void *)&_dput, 0, sizeof(_dput));
@@ -705,7 +695,7 @@ namespace PAMI
         // two rgets, and flow one DPut in the E+ and the other in the E- to
         // optimize bandwidth.  This is possible because dest and our node are
         // linked via the two E links.
-        if ( unlikely ( nearestNeighborInE ( dest ) &&	( bytes >= _pamiEagerLimit ) ) )
+        if ( unlikely ( nearestNeighborInE ( dest ) &&	( bytes >= SPLIT_E_CUTOFF ) ) )
           { // Special E dimension case
 
             // Get pointers to 2 descriptor slots, if they are available.
