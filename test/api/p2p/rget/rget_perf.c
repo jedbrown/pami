@@ -13,6 +13,8 @@
 #define ITERATIONS 100
 #define BUFFERSIZE 10240*32
 #define WARMUP
+#define TEST_COMPLETE_DISPATCH_ID 10
+#define MR_EXCHANGE_DISPATCH_ID   11
 
 typedef struct
 {
@@ -25,6 +27,26 @@ typedef struct
   volatile size_t counter;
   mr_t            task[0];
 } mr_exchange_t;
+
+typedef struct
+{
+  pami_task_t task;
+  char        name[1024];
+} testinfo_t;
+
+/* --------------------------------------------------------------- */
+typedef struct pami_extension_torus_information
+{
+  size_t   dims;
+  size_t * coord;
+  size_t * size;
+  size_t * torus;
+} pami_extension_torus_information_t;
+
+typedef const pami_extension_torus_information_t * (*pami_extension_torus_information_fn) ();
+typedef pami_result_t (*pami_extension_torus_task2torus_fn) (pami_task_t, size_t[]);
+typedef pami_result_t (*pami_extension_torus_torus2task_fn) (size_t[], pami_task_t *);
+/* --------------------------------------------------------------- */
 
 
 /* --------------------------------------------------------------- */
@@ -39,6 +61,25 @@ static void decrement (pami_context_t   context,
 }
 
 /* --------------------------------------------------------------- */
+
+/**
+ * \brief test completion dispatch function
+ */
+void test_complete_fn (
+  pami_context_t    context,      /**< IN: PAMI context */
+  void            * cookie,       /**< IN: dispatch cookie */
+  const void      * header,       /**< IN: header address */
+  size_t            header_size,  /**< IN: header size */
+  const void      * data,         /**< IN: address of PAMI pipe buffer */
+  size_t            data_size,    /**< IN: size of PAMI pipe buffer */
+  pami_endpoint_t   origin,
+  pami_recv_t     * recv)         /**< OUT: receive message structure */
+{
+  unsigned * value = (unsigned *) cookie;
+  /*fprintf (stderr, "test_complete_fn() cookie = %p, %d => %d\n", cookie, *value, *value - 1);*/
+  --*value;
+  return;
+}
 
 /**
  * \brief memory region exchange dispatch function
@@ -65,13 +106,15 @@ void mr_exchange_fn (
   return;
 }
 
-
 int main (int argc, char ** argv)
 {
+  setbuf (stdout, NULL);
+  setbuf (stderr, NULL);
+
   pami_client_t        client;
   pami_context_t       context;
   size_t               num_contexts = 1;
-  pami_task_t          me, you;
+  pami_task_t          me;
   size_t               num_tasks;
   pami_result_t        result;
 
@@ -86,13 +129,103 @@ int main (int argc, char ** argv)
 
   if (rc == 1)
     return 1;
-    
-  you = num_tasks - 1;
+
+  testinfo_t target[1024];
+
+  int arg, ntargets = 0;
+
+  for (arg = 1; (arg < 1024) && (arg < argc); arg++)
+    {
+      target[ntargets].task = (size_t) strtol (argv[arg], NULL, 10);
+      target[ntargets].name[0] = 0;
+
+      if (target[ntargets].task < num_tasks)
+        ntargets++;
+      else if (me == 0)
+        fprintf (stderr, "Skipping invalid target task parameter (%d) specified on the command line .. Only %zu tasks in this job.\n", target[ntargets].task, num_tasks);
+    }
+
+  if (argc == 1)
+    {
+      /* no arguments .. set default */
+      ntargets = 1;
+      target[0].task = num_tasks - 1;
+      target[0].name[0] = 0;
+    }
 
   pami_configuration_t configuration;
   configuration.name = PAMI_CLIENT_WTICK;
   PAMI_Client_query(client, &configuration, 1);
   double tick = configuration.value.doubleval;
+
+
+  /* ------------------------------------------------------------------------ */
+  pami_extension_t extension;
+  pami_result_t torus_extension_status;
+  torus_extension_status = PAMI_Extension_open (client, "EXT_torus_network", &extension);
+
+  if (torus_extension_status == PAMI_SUCCESS)
+    {
+      pami_extension_torus_information_fn pamix_torus_info =
+        (pami_extension_torus_information_fn) PAMI_Extension_symbol (extension, "information");
+
+      if (pamix_torus_info == (void *)NULL)
+        {
+          fprintf (stderr, "Error. The \"EXT_torus_network\" extension function \"information\" is not implemented.\n");
+          return 1;
+        }
+
+      const pami_extension_torus_information_t * info = pamix_torus_info ();
+
+      pami_extension_torus_task2torus_fn pamix_torus_task2torus =
+        (pami_extension_torus_task2torus_fn) PAMI_Extension_symbol (extension, "task2torus");
+
+      if (pamix_torus_task2torus == (void *)NULL)
+        {
+          fprintf (stderr, "Error. The \"EXT_torus_network\" extension function \"task2torus\" is not implemented.\n");
+          return 1;
+        }
+
+      unsigned n;
+
+      for (n = 0; n < ntargets; n++)
+        {
+          size_t coord[1024];
+          pamix_torus_task2torus (target[n].task, coord);
+          unsigned nchars, i;
+
+          for (nchars = i = 0; i < (info->dims - 1); i++)
+            nchars += snprintf (&target[n].name[nchars], 1023 - nchars, "%zu,", coord[i]);
+
+          nchars += snprintf (&target[n].name[nchars], 1023 - nchars, "%zu", coord[i]);
+        }
+    }
+
+  /* ------------------------------------------------------------------------ */
+
+
+  /* ------------------------------------------------------------------------ */
+  /* Set up the 'test completion' dispatch function.                          */
+  /* ------------------------------------------------------------------------ */
+  volatile unsigned test_active = (me == 0) ? num_tasks - 1 : 1;
+  pami_dispatch_callback_function fn;
+  fn.p2p = test_complete_fn;
+  pami_dispatch_hint_t options = {};
+
+  result = PAMI_Dispatch_set (context,
+                              TEST_COMPLETE_DISPATCH_ID,
+                              fn,
+                              (void *) & test_active,
+                              options);
+
+  if (result != PAMI_SUCCESS)
+    {
+      fprintf (stderr, "Error. Unable register pami dispatch function \"test_complete_fn()\" with dispatch id %d. result = %d\n", TEST_COMPLETE_DISPATCH_ID, result);
+      return 1;
+    }
+
+  /* ------------------------------------------------------------------------ */
+
 
 
   mr_exchange_t * exchange =
@@ -103,13 +236,9 @@ int main (int argc, char ** argv)
 
   mr_t * info = exchange->task;
 
-  size_t dispatch = 10;
-  pami_dispatch_callback_function fn;
   fn.p2p = mr_exchange_fn;
-  pami_dispatch_hint_t options = {};
-
   result = PAMI_Dispatch_set (context,
-                              dispatch,
+                              MR_EXCHANGE_DISPATCH_ID,
                               fn,
                               (void *) exchange,
                               options);
@@ -148,7 +277,7 @@ int main (int argc, char ** argv)
   for (i = 0; i < num_tasks; i++)
     {
       pami_send_immediate_t parameters;
-      parameters.dispatch        = dispatch;
+      parameters.dispatch        = MR_EXCHANGE_DISPATCH_ID;
       parameters.header.iov_base = (void *) & bytes;
       parameters.header.iov_len  = sizeof(size_t);
       parameters.data.iov_base   = (void *) & mr;
@@ -162,22 +291,49 @@ int main (int argc, char ** argv)
   while (exchange->counter > 0)
     PAMI_Context_advance (context, 100);
 
-
-
-
   /* **************************************************************************
-   * Begin the test - all tasks, including the 'root' task, will use PAMI_Rget
-   * to flood the 'root' task and (hopefully) fill network fifos and force
-   * a message queue event.
+   * Begin the test - Task 0 will use PAMI_Rget to performance test against
+   * the target tasks specified on the command line.
    * **************************************************************************/
-   
+
   /* Display some test header information */
   if (me == 0)
     {
-      fprintf (stdout, "# PAMI_Rget() blocking latency performance test\n");
-      fprintf (stdout, "# task 0 rget from task %d\n", you);
+      char str[3][1024];
+      int index[3];
+      index[0] = 0;
+      index[1] = 0;
+      index[2] = 0;
+
+      index[0] += sprintf (&str[0][index[0]], "#          ");
+      index[1] += sprintf (&str[1][index[1]], "#          ");
+      index[2] += sprintf (&str[2][index[2]], "#%9s ", "bytes");
+
+      for (i = 0; i < ntargets; i++)
+        {
+          index[0] += sprintf (&str[0][index[0]], "[--- task %3d ---] ", target[i].task);
+
+          if (target[i].name[0] != 0)
+            {
+              index[1] += sprintf (&str[1][index[1]], "[   %11s  ] ", target[i].name);
+            }
+
+          index[2] += sprintf (&str[2][index[2]], "%8s %8s  ", "cycles", "usec");
+        }
+
       fprintf (stdout, "#\n");
-      fprintf (stdout, "#    bytes   cycles     usec\n");
+      fprintf (stdout, "# PAMI_Rget() blocking latency performance test\n");
+      fprintf (stdout, "#\n");
+      fprintf (stdout, "# origin task 0 invokes PAMI_Rget().\n");
+      fprintf (stdout, "# target task(s) are specified on the command line.\n");
+      fprintf (stdout, "# default target task is the number of global tasks - 1.\n");
+      fprintf (stdout, "#\n");
+      fprintf (stdout, "%s\n", str[0]);
+
+      if (index[1] > 11)
+        fprintf (stdout, "%s\n", str[1]);
+
+      fprintf (stdout, "%s\n", str[2]);
       fflush (stdout);
 
       volatile unsigned active;
@@ -188,43 +344,87 @@ int main (int argc, char ** argv)
       parameters.rma.done_fn        = decrement;
       parameters.rdma.local.mr      = &info[me].mr;
       parameters.rdma.local.offset  = 0;
-      parameters.rdma.remote.mr     = &info[you].mr;
       parameters.rdma.remote.offset = 0;
-      PAMI_Endpoint_create (client, you, 0, &parameters.rma.dest);
 
       unsigned long long t0, t1, cycles;
       double usec;
 
-      size_t nbytes = 1;
+      size_t nbytes = 512;
 
       for (; nbytes < BUFFERSIZE; nbytes = nbytes * 3 / 2 + 1)
         {
+          char str[10240];
+          int index = 0;
+          index += sprintf (&str[index], "%10zd ", nbytes);
+
           parameters.rma.bytes = nbytes;
 
-#ifdef WARMUP
-          for (i = 0; i < ITERATIONS; i++)
-            {
-              active = 1;
-              PAMI_Rget (context, &parameters);
-              while (active > 0)
-                PAMI_Context_advance (context, 100);
-            }
-#endif
-          t0 = PAMI_Wtimebase (client);
-          for (i = 0; i < ITERATIONS; i++)
-            {
-              active = 1;
-              PAMI_Rget (context, &parameters);
-              while (active > 0)
-                PAMI_Context_advance (context, 100);
-            }
-          t1 = PAMI_Wtimebase(client);
+          unsigned n;
 
-          cycles = (t1 - t0) / ITERATIONS;
-          usec   = cycles * tick * 1000000.0;
-          fprintf (stdout, "%10zd %8lld %8.4f\n", nbytes, cycles, usec);
+          for (n = 0; n < ntargets; n++)
+            {
+              parameters.rdma.remote.mr = &info[target[n].task].mr;
+              PAMI_Endpoint_create (client, target[n].task, 0, &parameters.rma.dest);
+
+#ifdef WARMUP
+
+              for (i = 0; i < ITERATIONS; i++)
+                {
+                  active = 1;
+                  PAMI_Rget (context, &parameters);
+
+                  while (active > 0)
+                    PAMI_Context_advance (context, 100);
+                }
+
+#endif
+              t0 = PAMI_Wtimebase (client);
+
+              for (i = 0; i < ITERATIONS; i++)
+                {
+                  active = 1;
+                  PAMI_Rget (context, &parameters);
+
+                  while (active > 0)
+                    PAMI_Context_advance (context, 100);
+                }
+
+              t1 = PAMI_Wtimebase(client);
+
+              cycles = (t1 - t0) / ITERATIONS;
+              usec   = cycles * tick * 1000000.0;
+              index += sprintf (&str[index], "%8lld %8.4f  ", cycles, usec);
+            }
+
+          fprintf (stdout, "%s\n", str);
+
+
         }
+
+      {
+        size_t i;
+
+        pami_send_t parameters;
+        parameters.send.dispatch        = TEST_COMPLETE_DISPATCH_ID;
+        parameters.send.header.iov_base = (void *) & test_active;
+        parameters.send.header.iov_len  = 1;
+        parameters.send.data.iov_base   = (void *) & test_active;
+        parameters.send.data.iov_len    = 1;
+        parameters.events.cookie        = (void *) & test_active;
+        parameters.events.local_fn      = decrement;
+        parameters.events.remote_fn     = (void *) NULL;
+
+        for (i = 1; i < num_tasks; i++)
+          {
+            PAMI_Endpoint_create (client, i, 0, &parameters.send.dest);
+            result = PAMI_Send (context, &parameters);
+          }
+      }
     }
+
+  /* Wait until the test is completed */
+  while (test_active)
+    PAMI_Context_advance (context, 100);
 
   rc = pami_shutdown(&client, context, &num_contexts);
 
