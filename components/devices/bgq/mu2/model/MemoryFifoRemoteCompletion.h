@@ -11,7 +11,7 @@
  * \brief MU Memory Fifo Remote Completion Model
  *
  * This MU model injects a completion descriptor targeted for the
- * remote node's comm agent reception fifo.  The payload is a 
+ * remote node's comm agent reception fifo.  The payload is a
  * memory fifo descriptor that the comm agent will inject, targeted
  * for our reception fifo, causing the completion callback to be
  * invoked on our node.
@@ -48,50 +48,50 @@ namespace PAMI
         private :
 
           MU::Context & _context;
-	  
-	  MUSPI_Pt2PtMemoryFIFODescriptor _pingDesc; // The ping descriptor model.
+
+          MUSPI_Pt2PtMemoryFIFODescriptor _pingDesc; // The ping descriptor model.
 
         public :
 
           ///
           inline MemoryFifoRemoteCompletion (MU::Context & context) :
-	    _context (context),
-	    _pingDesc ()
+              _context (context),
+              _pingDesc ()
           {
             TRACE_FN_ENTER();
 
-	    // Set up to construct the ping descriptor
-	    MUSPI_Pt2PtMemoryFIFODescriptorInfo_t info;
+            // Set up to construct the ping descriptor
+            MUSPI_Pt2PtMemoryFIFODescriptorInfo_t info;
 
-	    info.Base.Pre_Fetch_Only  = MUHWI_DESCRIPTOR_PRE_FETCH_ONLY_NO;
-	    info.Base.Payload_Address = 0; // To be set at runtime.
-	    info.Base.Message_Length  = sizeof(MUHWI_Descriptor_t);
-	    info.Base.Torus_FIFO_Map  = 0; // To be set at runtime.
-	    info.Base.Dest.Destination.Destination = 0; // To be set at runtime.
+            info.Base.Pre_Fetch_Only  = MUHWI_DESCRIPTOR_PRE_FETCH_ONLY_NO;
+            info.Base.Payload_Address = 0; // To be set at runtime.
+            info.Base.Message_Length  = sizeof(MUHWI_Descriptor_t);
+            info.Base.Torus_FIFO_Map  = 0; // To be set at runtime.
+            info.Base.Dest.Destination.Destination = 0; // To be set at runtime.
 
-	    info.Pt2Pt.Hints_ABCD = 
-	      MUHWI_PACKET_HINT_A_NONE |
-	      MUHWI_PACKET_HINT_B_NONE |
-	      MUHWI_PACKET_HINT_C_NONE |
-	      MUHWI_PACKET_HINT_D_NONE;
-	    info.Pt2Pt.Misc1 = 
-	      MUHWI_PACKET_HINT_E_NONE |
-	      MUHWI_PACKET_DO_NOT_ROUTE_TO_IO_NODE |
-	      MUHWI_PACKET_USE_DETERMINISTIC_ROUTING |
-	      MUHWI_PACKET_DO_NOT_DEPOSIT;
-	    info.Pt2Pt.Misc2 =
-	      MUHWI_PACKET_VIRTUAL_CHANNEL_DETERMINISTIC;
-	    info.Pt2Pt.Skip = 136; // Skip entire packet for checksum.
+            info.Pt2Pt.Hints_ABCD =
+              MUHWI_PACKET_HINT_A_NONE |
+              MUHWI_PACKET_HINT_B_NONE |
+              MUHWI_PACKET_HINT_C_NONE |
+              MUHWI_PACKET_HINT_D_NONE;
+            info.Pt2Pt.Misc1 =
+              MUHWI_PACKET_HINT_E_NONE |
+              MUHWI_PACKET_DO_NOT_ROUTE_TO_IO_NODE |
+              MUHWI_PACKET_USE_DETERMINISTIC_ROUTING |
+              MUHWI_PACKET_DO_NOT_DEPOSIT;
+            info.Pt2Pt.Misc2 =
+              MUHWI_PACKET_VIRTUAL_CHANNEL_DETERMINISTIC;
+            info.Pt2Pt.Skip = 136; // Skip entire packet for checksum.
 
-	    memset(info.MemFIFO.SoftwareBytes, 0x00, sizeof(info.MemFIFO.SoftwareBytes));
-	    info.MemFIFO.Rec_FIFO_Id      = _context.getGlobalCommAgentRecFifoId();
-	    info.MemFIFO.Rec_Put_Offset   = 0;
-	    info.MemFIFO.Interrupt        = MUHWI_DESCRIPTOR_INTERRUPT_ON_PACKET_ARRIVAL;
-	    info.MemFIFO.SoftwareBit      = 0;
-	    info.MemFIFO.SoftwareBytes[0] = CommAgent_Fence_GetRecFifoDispatchId();
+            memset(info.MemFIFO.SoftwareBytes, 0x00, sizeof(info.MemFIFO.SoftwareBytes));
+            info.MemFIFO.Rec_FIFO_Id      = _context.getGlobalCommAgentRecFifoId();
+            info.MemFIFO.Rec_Put_Offset   = 0;
+            info.MemFIFO.Interrupt        = MUHWI_DESCRIPTOR_INTERRUPT_ON_PACKET_ARRIVAL;
+            info.MemFIFO.SoftwareBit      = 0;
+            info.MemFIFO.SoftwareBytes[0] = CommAgent_Fence_GetRecFifoDispatchId();
 
-	    // Construct the ping descriptor.
-	    new ( &_pingDesc ) MUSPI_Pt2PtMemoryFIFODescriptor( &info );
+            // Construct the ping descriptor.
+            new ( &_pingDesc ) MUSPI_Pt2PtMemoryFIFODescriptor( &info );
             TRACE_FN_EXIT();
           };
 
@@ -115,57 +115,57 @@ namespace PAMI
           };
 
 
-	  ///
+          ///
           inline void setupPingPongDescs (MUSPI_Pt2PtMemoryFIFODescriptor *ping,
-					  MUSPI_DescriptorBase            *pong,
-					  pami_event_function              fn,
-					  void                            *cookie,
-					  uint64_t                         torusFIFOMap,
-					  uint32_t                         dest)
-	    {
-	      // Clone the ping model descriptor into the injection fifo.
-	      _pingDesc.clone( *ping );
+                                          MUSPI_DescriptorBase            *pong,
+                                          pami_event_function              fn,
+                                          void                            *cookie,
+                                          uint64_t                         torusFIFOMap,
+                                          uint32_t                         dest)
+          {
+            // Clone the ping model descriptor into the injection fifo.
+            _pingDesc.clone( *ping );
 
-	      // In the ping descriptor: 
+            // In the ping descriptor:
 
-	      // 1. Set payload address in the ping descriptor to point into
-	      //    where the pong descriptor will be constructed.
-	      //    Determine the physical address of the payload buffer.
-	      Kernel_MemoryRegion_t memRegion;
-	      int32_t rc;
-	      rc = Kernel_CreateMemoryRegion ( &memRegion, 
-					       pong, 
-					       sizeof(MUHWI_Descriptor_t) );
-	      PAMI_assert ( rc == 0 );
-	      uint64_t paddr = (uint64_t)memRegion.BasePa +
-		((uint64_t)pong - (uint64_t)memRegion.BaseVa);
-	      ping->Pa_Payload = paddr;
-		
-	      // 2. Set the torus fifo map to use to get to the dest node.
-	      ping->setTorusInjectionFIFOMap ( torusFIFOMap );
+            // 1. Set payload address in the ping descriptor to point into
+            //    where the pong descriptor will be constructed.
+            //    Determine the physical address of the payload buffer.
+            Kernel_MemoryRegion_t memRegion;
+            int32_t rc;
+            rc = Kernel_CreateMemoryRegion ( &memRegion,
+                                             pong,
+                                             sizeof(MUHWI_Descriptor_t) );
+            PAMI_assert ( rc == 0 );
+            uint64_t paddr = (uint64_t)memRegion.BasePa +
+                             ((uint64_t)pong - (uint64_t)memRegion.BaseVa);
+            ping->Pa_Payload = paddr;
 
-	      // 3. Set the destination coordinates.
-	      ping->setDestination ( dest );
+            // 2. Set the torus fifo map to use to get to the dest node.
+            ping->setTorusInjectionFIFOMap ( torusFIFOMap );
 
-	      // Clone the "notify self" descriptor into the payload and update
-	      // it with the callback function and cookie to be given control
-	      // when the comm agent on the remote node sends this packet
-	      // back to our context.
-	      initializeNotifySelfDescriptor ( *pong,
-					       fn,
-					       cookie );
+            // 3. Set the destination coordinates.
+            ping->setDestination ( dest );
 
-	      // Use the same torus fifo map as we used to get to the dest.
-	      // We could reverse it, but that would require an "if" statement
-	      // that may cause an extra branch.
-	      (*pong).setTorusInjectionFIFOMap ( torusFIFOMap );
+            // Clone the "notify self" descriptor into the payload and update
+            // it with the callback function and cookie to be given control
+            // when the comm agent on the remote node sends this packet
+            // back to our context.
+            initializeNotifySelfDescriptor ( *pong,
+                                             fn,
+                                             cookie );
 
-	      TRACE_FORMAT("Ping,Pong descriptors at %p,%p:\n",ping,pong);
-	      TRACE_HEXDATA(ping,64);
-	      TRACE_HEXDATA(pong,64);
-	    }
-	  
-	  
+            // Use the same torus fifo map as we used to get to the dest.
+            // We could reverse it, but that would require an "if" statement
+            // that may cause an extra branch.
+            (*pong).setTorusInjectionFIFOMap ( torusFIFOMap );
+
+            TRACE_FORMAT("Ping,Pong descriptors at %p,%p:\n", ping, pong);
+            TRACE_HEXDATA(ping, 64);
+            TRACE_HEXDATA(pong, 64);
+          }
+
+
           ///
           /// \brief Inject the memory fifo completion descriptor into the injection channel.
           ///
@@ -179,62 +179,62 @@ namespace PAMI
                               InjChannel           & channel,
                               pami_event_function    fn,
                               void                 * cookie,
-			      uint64_t               torusFIFOMap,
-			      uint32_t               dest)
+                              uint64_t               torusFIFOMap,
+                              uint32_t               dest)
           {
             TRACE_FN_ENTER();
 
-	    TRACE_FORMAT("Inject: state=%p, sizeof(state)=%zu, fn=%p, cookie=%p, map=0x%lx, dest=0x%08x\n",&state,sizeof(state),fn,cookie,torusFIFOMap,dest);
+            TRACE_FORMAT("Inject: state=%p, sizeof(state)=%zu, fn=%p, cookie=%p, map=0x%lx, dest=0x%08x\n", &state, sizeof(state), fn, cookie, torusFIFOMap, dest);
 
-	    /// \todo Remove this check when the comm agent is always started.
-	    PAMI_assertf(_context.isCommAgentActive(), "Aborting:  Cannot complete one-sided-put-fence operation because the Messaging App Agent is not running.  Specify environment variable 'BG_APPAGENT1=/bgsys/drivers/ppcfloor/agents/bin/comm.elf' to run it.\n");
+            /// \todo Remove this check when the comm agent is always started.
+            PAMI_assertf(_context.isCommAgentActive(), "Aborting:  Cannot complete one-sided-put-fence operation because the Messaging App Agent is not running.  Specify environment variable 'BG_APPAGENT1=/bgsys/drivers/ppcfloor/agents/bin/comm.elf' to run it.\n");
 
-	    size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
-	    TRACE_FORMAT("MemoryFifoRemoteCompletion: inject(): ndesc = %zu", ndesc);
-	    
-	    if (likely(channel.isSendQueueEmpty() && ndesc > 0))
-	      {
-		// There is nothing queued, and there is space in the
-		// injection fifo for the ping descriptor.
-		// Get a pointer to the next descriptor slot.
-		// That is where the ping descriptor is to be constructed.
-		MUHWI_Descriptor_t *desc = channel.getNextDescriptor ();
+            size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
+            TRACE_FORMAT("MemoryFifoRemoteCompletion: inject(): ndesc = %zu", ndesc);
 
-		MUSPI_Pt2PtMemoryFIFODescriptor *ping =
-		  (MUSPI_Pt2PtMemoryFIFODescriptor*)desc;
-		
-		// The payload (the pong descriptor) goes in the "state" storage.
-		MUSPI_DescriptorBase *pong = (MUSPI_DescriptorBase *)(&state[0]);
+            if (likely(channel.isSendQueueEmpty() && ndesc > 0))
+              {
+                // There is nothing queued, and there is space in the
+                // injection fifo for the ping descriptor.
+                // Get a pointer to the next descriptor slot.
+                // That is where the ping descriptor is to be constructed.
+                MUHWI_Descriptor_t *desc = channel.getNextDescriptor ();
 
-		// Construct the ping and pong descriptors at the specified locations.
-		setupPingPongDescs( ping, pong, fn, cookie, torusFIFOMap, dest );
-		
-		// Advance the injection fifo tail pointer. This action
-		// completes the injection operation.
-		channel.injFifoAdvanceDesc ();
-		
-		TRACE_FN_EXIT();
+                MUSPI_Pt2PtMemoryFIFODescriptor *ping =
+                  (MUSPI_Pt2PtMemoryFIFODescriptor*)desc;
 
-		return;
-	      }
-	    
-	    // There is not enough space in the injection fifo for the ping
-	    // descriptor.  Create a message and post it to the injection
-	    // channel so it gets injected on a future advance().
+                // The payload (the pong descriptor) goes in the "state" storage.
+                MUSPI_DescriptorBase *pong = (MUSPI_DescriptorBase *)(&state[0]);
 
-	    channel.post ( createSimpleMessage (state, 
-						channel, 
-						fn, 
-						cookie,
-						torusFIFOMap,
-						dest));
-	    TRACE_FN_EXIT();
+                // Construct the ping and pong descriptors at the specified locations.
+                setupPingPongDescs( ping, pong, fn, cookie, torusFIFOMap, dest );
+
+                // Advance the injection fifo tail pointer. This action
+                // completes the injection operation.
+                channel.injFifoAdvanceDesc ();
+
+                TRACE_FN_EXIT();
+
+                return;
+              }
+
+            // There is not enough space in the injection fifo for the ping
+            // descriptor.  Create a message and post it to the injection
+            // channel so it gets injected on a future advance().
+
+            channel.post ( createSimpleMessage (state,
+                                                channel,
+                                                fn,
+                                                cookie,
+                                                torusFIFOMap,
+                                                dest));
+            TRACE_FN_EXIT();
           }
 
 
           ///
           /// \brief Create a simple message containing the ping descriptor and
-	  //         its payload (the pong descriptor).
+          ///        its payload (the pong descriptor).
           ///
           /// \param[in] state   Memory which will contain the message object
           /// \param[in] channel Injection channel to use during message advance
@@ -248,8 +248,8 @@ namespace PAMI
                                                                   InjChannel           & channel,
                                                                   pami_event_function    fn,
                                                                   void                 * cookie,
-								  uint64_t               torusFIFOMap,
-								  uint32_t               dest)
+                                                                  uint64_t               torusFIFOMap,
+                                                                  uint32_t               dest)
           {
             TRACE_FN_ENTER();
             COMPILE_TIME_ASSERT((sizeof(InjectDescriptorMessage<1, false>) + sizeof(MUHWI_Descriptor_t)) <= T_State);
@@ -258,17 +258,17 @@ namespace PAMI
               (InjectDescriptorMessage<1, false> *) state;
             new (msg) InjectDescriptorMessage<1, false> (channel);
 
-	    // The ping descriptor is to be constructed within the 
-	    // InjectDescriptorMessage.
-	    MUSPI_Pt2PtMemoryFIFODescriptor *ping =
-	      (MUSPI_Pt2PtMemoryFIFODescriptor*)(&msg->desc[0]);
+            // The ping descriptor is to be constructed within the
+            // InjectDescriptorMessage.
+            MUSPI_Pt2PtMemoryFIFODescriptor *ping =
+              (MUSPI_Pt2PtMemoryFIFODescriptor*)(&msg->desc[0]);
 
-	    // The payload (the pong descriptor) goes after the 
-	    // InjectDescriptorMessage.
-	    MUSPI_DescriptorBase *pong = (MUSPI_DescriptorBase *)(msg+1);
+            // The payload (the pong descriptor) goes after the
+            // InjectDescriptorMessage.
+            MUSPI_DescriptorBase *pong = (MUSPI_DescriptorBase *)(msg + 1);
 
-	    // Construct the ping and pong descriptors at the specified locations.
-	    setupPingPongDescs( ping, pong, fn, cookie, torusFIFOMap, dest );
+            // Construct the ping and pong descriptors at the specified locations.
+            setupPingPongDescs( ping, pong, fn, cookie, torusFIFOMap, dest );
 
             TRACE_FN_EXIT();
             return (MU::MessageQueue::Element *) msg;
