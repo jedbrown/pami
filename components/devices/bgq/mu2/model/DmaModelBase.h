@@ -42,6 +42,42 @@ namespace PAMI
       template <class T_Model>
       class DmaModelBase : public Interface::DmaModel < MU::DmaModelBase<T_Model> >
       {
+        private :
+
+          // This structure is used to track the status when we split an rget
+          // into two and send it on opposite E links.
+          typedef struct getSplitState
+          {
+            pami_event_function     finalCallbackFn;
+            void                  * finalCallbackFnCookie;
+            uint32_t                completionCount;
+          } getSplitState_t;
+
+          typedef struct
+          {
+            uint64_t msg[(sizeof(InjectDescriptorMessage<1>) >> 3) + 1];
+          } put_state_t;
+
+          typedef struct
+          {
+            union
+            {
+              uint64_t msg1[(sizeof(InjectDescriptorMessage<1,false>) >> 3) + 1];
+              uint64_t msg2[(sizeof(InjectDescriptorMessage<2,false>) >> 3) + 1];
+            };
+            uint8_t e_minus_payload[T_Model::payload_size];
+            uint8_t e_plus_payload[T_Model::payload_size];
+            getSplitState_t split_e_state;
+          } get_state_t;
+
+          typedef union
+          {
+            MemoryFifoRemoteCompletion::state_t memfifo_remote_completion_state;
+            uint8_t injchannel_completion_state[InjChannel::completion_event_state_bytes];
+            put_state_t put_state;
+            get_state_t get_state;
+          } state_t;
+
         protected :
 
           /////////////////////////////////////////////////////////////////////
@@ -66,14 +102,7 @@ namespace PAMI
           static const bool dma_model_mr_supported_impl = true;
 
           /// \see Device::Interface::DmaModel::getDmaTransferStateBytes
-          ///
-          /// One usage is to store a descriptor message and its payload (1 or
-          /// more descriptors) in the "state" array, which dictates its size
-          /// to be:
-          ///   sizeof(InjectDescriptorMessage) + T_Model::payload_size
-          /// Prior to this size, it was fixed at 128.
-          ///
-          static const size_t dma_model_state_bytes_impl  = 512;//sizeof(InjectDescriptorMessage<1>) + T_Model::payload_size;
+          static const size_t dma_model_state_bytes_impl  = sizeof(state_t);
 
           inline bool postDmaPut_impl (size_t                target_task,
                                        size_t                target_offset,
@@ -174,32 +203,6 @@ namespace PAMI
           MU::Context          & _context;
           MUHWI_Destination_t  * _myCoords;
 
-          // This structure is allocated at runtime when we split an rget into
-          // two and send it on opposite E links.  It is used to track the status
-          // of those two rgets.
-          typedef struct getSplitState
-          {
-            pami_event_function     finalCallbackFn;
-            void                  * finalCallbackFnCookie;
-            uint32_t                completionCount;
-            DmaModelBase<T_Model> * model;
-
-          } getSplitState_t;
-
-          // This memory allocator allocates getSplitState_t objects.
-          // 32-byte alignment is used to optimize cloning of descriptors.
-          MemoryAllocator < sizeof(getSplitState_t), 32 > _getSplitStateAllocator;
-
-          inline getSplitState_t * allocateGetSplitState ()
-          {
-            return(getSplitState_t *) _getSplitStateAllocator.allocateObject ();
-          }
-
-          inline void freeGetSplitState ( getSplitState_t * object)
-          {
-            _getSplitStateAllocator.returnObject ((void *) object);
-          }
-
           ///
           /// \brief Local get completion event callback for split rgets
           ///
@@ -228,8 +231,6 @@ namespace PAMI
                                                  splitState->finalCallbackFnCookie,
                                                  PAMI_SUCCESS);
                   }
-
-                splitState->model->freeGetSplitState (splitState);
               }
 
             return;
@@ -265,6 +266,8 @@ namespace PAMI
           _context (device)
       {
         COMPILE_TIME_ASSERT(sizeof(MUSPI_DescriptorBase) <= MU::Context::immediate_payload_size);
+
+        TRACE_FORMAT("sizeof(state_t) == %ld, sizeof(get_state_t) = %ld, sizeof(put_state_t) = %ld, T_Model::payload_size = %zu", sizeof(state_t), sizeof(get_state_t), sizeof(put_state_t), T_Model::payload_size);
 
         _myCoords = __global.mapping.getMuDestinationSelf();
 
@@ -469,6 +472,9 @@ namespace PAMI
       {
         TRACE_FN_ENTER();
 
+        COMPILE_TIME_ASSERT(sizeof(put_state_t) <= T_StateBytes);
+        put_state_t * put_state = (put_state_t *) state;
+
         if (unlikely(bytes == 0)) // eliminate this branch with a template parameter?
           {
 #if 0
@@ -590,10 +596,8 @@ namespace PAMI
         else
           {
             // Create a simple single-descriptor message
-            COMPILE_TIME_ASSERT(sizeof(InjectDescriptorMessage<1>) <= T_StateBytes);
-
             InjectDescriptorMessage<1> * msg =
-              (InjectDescriptorMessage<1> *) state;
+              (InjectDescriptorMessage<1> *) put_state->msg;
             new (msg) InjectDescriptorMessage<1> (channel, local_fn, cookie);
 
             // Clone the single-packet descriptor model into the message
@@ -673,6 +677,11 @@ namespace PAMI
                                                    Memregion           * remote_memregion,
                                                    size_t                remote_offset)
       {
+        TRACE_FN_ENTER();
+
+        COMPILE_TIME_ASSERT(sizeof(get_state_t) <= T_StateBytes);
+        get_state_t * get_state = (get_state_t *) state;
+
         uint64_t remote_src_pa = (uint64_t) remote_memregion->getBasePhysicalAddress ();
         remote_src_pa += remote_offset;
 
@@ -721,17 +730,14 @@ namespace PAMI
                 rgetMinus->setRemoteGetInjFIFOId ( rgetInjFifoIds[8] );
                 rgetPlus ->setRemoteGetInjFIFOId ( rgetInjFifoIds[9] );
 
-                // Allocate space for
+                // The "split e state" contains
                 // - A completion counter that will count how many completion messages
                 //   have been received (we are done when two have been received),
                 // - The original callback function and cookie.
-                // This will be freed in the splitComplete() function when it has been
-                // called with the second completion message.
-                getSplitState_t *splitCookie       = allocateGetSplitState();
+                getSplitState_t *splitCookie       = & get_state->split_e_state;
                 splitCookie->finalCallbackFn       = local_fn;
                 splitCookie->finalCallbackFnCookie = cookie;
                 splitCookie->completionCount       = 0;
-                splitCookie->model                 = this;
 
                 // Initialize the rget payload descriptor(s) for the E- rget
                 void * vaddr;
@@ -777,15 +783,14 @@ namespace PAMI
                 channel.injFifoAdvanceDescMultiple(2);
 
                 // The completion callback was not invoked; return false.
+                TRACE_FN_EXIT();
                 return false;
               }
 
             // Construct and post a message
             // Create a simple dual-descriptor message
-            COMPILE_TIME_ASSERT((sizeof(InjectDescriptorMessage<2, false>) + (T_Model::payload_size*2)) <= T_StateBytes);
-
             InjectDescriptorMessage<2, false> * msg =
-              (InjectDescriptorMessage<2, false> *) state;
+              (InjectDescriptorMessage<2, false> *) get_state->msg2;
             new (msg) InjectDescriptorMessage<2, false> (channel);
 
             // Clone the remote inject model descriptors into the injection fifo slots.
@@ -803,20 +808,17 @@ namespace PAMI
             rgetMinus->setRemoteGetInjFIFOId ( rgetInjFifoIds[8] );
             rgetPlus ->setRemoteGetInjFIFOId ( rgetInjFifoIds[9] );
 
-            // Allocate space for
+            // The "split e state" contains
             // - A completion counter that will count how many completion messages
             //   have been received (we are done when two have been received),
             // - The original callback function and cookie.
-            // This will be freed in the splitComplete() function when it has been
-            // called with the second completion message.
-            getSplitState_t *splitCookie       = allocateGetSplitState();
+            getSplitState_t *splitCookie       = & get_state->split_e_state;
             splitCookie->finalCallbackFn       = local_fn;
             splitCookie->finalCallbackFnCookie = cookie;
             splitCookie->completionCount       = 0;
-            splitCookie->model                 = this;
 
             // Initialize the rget payload descriptor(s) for the E- rget
-            void * e_minus_payload_vaddr = (void *) (msg + 1);
+            void * e_minus_payload_vaddr = (void *) get_state->e_minus_payload;
             size_t bytes0 = bytes >> 1;
             size_t bytes1 = bytes - bytes0;
 
@@ -846,8 +848,7 @@ namespace PAMI
             /* 		MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Memfifo-Completion0",((MUHWI_Descriptor_t*)vaddr)+1); */
 
             // Initialize the rget payload descriptor(s) for the E+ rget
-            void * e_plus_payload_vaddr =
-              (void *) (((uint8_t *) e_minus_payload_vaddr) + T_Model::payload_size);
+            void * e_plus_payload_vaddr =  (void *) get_state->e_plus_payload;
 
             pbytes = static_cast<T_Model*>(this)->
                      initializeRemoteGetPayload (e_plus_payload_vaddr,
@@ -871,6 +872,7 @@ namespace PAMI
             channel.post (msg);
 
             // The completion callback was not invoked; return false.
+            TRACE_FN_EXIT();
             return false;
           } // End: Special E dimension case
         else
@@ -923,15 +925,14 @@ namespace PAMI
                 channel.injFifoAdvanceDesc();
 
                 // The completion callback was not invoked; return false.
+                TRACE_FN_EXIT();
                 return false;
               }
 
             // Construct and post a message
             // Create a simple single-descriptor message
-            COMPILE_TIME_ASSERT((sizeof(InjectDescriptorMessage<1, false>) + T_Model::payload_size) <= T_StateBytes);
-
             InjectDescriptorMessage<1, false> * msg =
-              (InjectDescriptorMessage<1, false> *) state;
+              (InjectDescriptorMessage<1, false> *) get_state->msg1;
             new (msg) InjectDescriptorMessage<1, false> (channel);
 
             // Clone the remote inject model descriptor into the message
@@ -948,7 +949,7 @@ namespace PAMI
             //MUSPI_DescriptorDumpHex((char *)"Remote Get", desc);
 
             // Initialize the rget payload descriptor(s)
-            void * vaddr = (void *) (msg + 1);
+            void * vaddr = (void *) get_state->e_minus_payload;
             static_cast<T_Model*>(this)->
             initializeRemoteGetPayload (vaddr,
                                         local_dst_pa,
@@ -980,6 +981,7 @@ namespace PAMI
             channel.post (msg);
 
             // The completion callback was not invoked; return false.
+            TRACE_FN_EXIT();
             return false;
           } // End: Not special E dimension case
       }

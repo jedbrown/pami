@@ -31,6 +31,8 @@
 
 #include <agents/include/comm/fence.h>
 
+#include "util/common.h"
+
 #include "util/trace.h"
 #undef  DO_TRACE_ENTEREXIT
 #undef  DO_TRACE_DEBUG
@@ -47,11 +49,30 @@ namespace PAMI
       {
         private :
 
+          typedef struct
+          {
+            uint64_t pong[sizeof(MUSPI_DescriptorBase) >> 3];
+          } inject_t;
+
+          typedef struct
+          {
+            uint64_t msg[(sizeof(InjectDescriptorMessage<1,false>) >> 3) + 1];
+            uint64_t pong[sizeof(MUSPI_DescriptorBase) >> 3];
+          } simple_t;
+
           MU::Context & _context;
 
           MUSPI_Pt2PtMemoryFIFODescriptor _pingDesc; // The ping descriptor model.
 
         public :
+
+          typedef union
+          {
+            inject_t inject;
+            simple_t simple;
+          } state_t;
+
+          static const size_t state_bytes = sizeof(state_t);
 
           ///
           inline MemoryFifoRemoteCompletion (MU::Context & context) :
@@ -204,7 +225,9 @@ namespace PAMI
                   (MUSPI_Pt2PtMemoryFIFODescriptor*)desc;
 
                 // The payload (the pong descriptor) goes in the "state" storage.
-                MUSPI_DescriptorBase *pong = (MUSPI_DescriptorBase *)(&state[0]);
+                COMPILE_TIME_ASSERT((sizeof(inject_t) <= T_State));
+                inject_t * inject = (inject_t *) state;
+                MUSPI_DescriptorBase *pong = (MUSPI_DescriptorBase *) inject->pong;
 
                 // Construct the ping and pong descriptors at the specified locations.
                 setupPingPongDescs( ping, pong, fn, cookie, torusFIFOMap, dest );
@@ -252,10 +275,12 @@ namespace PAMI
                                                                   uint32_t               dest)
           {
             TRACE_FN_ENTER();
-            COMPILE_TIME_ASSERT((sizeof(InjectDescriptorMessage<1, false>) + sizeof(MUHWI_Descriptor_t)) <= T_State);
+            COMPILE_TIME_ASSERT((sizeof(simple_t) <= T_State));
+
+            simple_t * simple = (simple_t *) state;
 
             InjectDescriptorMessage<1, false> * msg =
-              (InjectDescriptorMessage<1, false> *) state;
+              (InjectDescriptorMessage<1, false> *) simple->msg;
             new (msg) InjectDescriptorMessage<1, false> (channel);
 
             // The ping descriptor is to be constructed within the
@@ -265,7 +290,7 @@ namespace PAMI
 
             // The payload (the pong descriptor) goes after the
             // InjectDescriptorMessage.
-            MUSPI_DescriptorBase *pong = (MUSPI_DescriptorBase *)(msg + 1);
+            MUSPI_DescriptorBase *pong = (MUSPI_DescriptorBase *) simple->pong;
 
             // Construct the ping and pong descriptors at the specified locations.
             setupPingPongDescs( ping, pong, fn, cookie, torusFIFOMap, dest );
