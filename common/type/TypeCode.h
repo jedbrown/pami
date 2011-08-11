@@ -245,10 +245,7 @@ namespace PAMI
         completed(false), primitive(PRIMITIVE_TYPE_COUNT)
     {
         ResizeCodeBuffer(sizeof(Begin) + sizeof(Copy)*4);
-        *(Begin *)code = Begin();
-        code_cursor += sizeof(Begin);
-
-        AddCodeSize(sizeof(Begin));
+        Push(Begin());
     }
 
     inline TypeCode::TypeCode(void *code_addr, size_t code_size)
