@@ -380,11 +380,14 @@ namespace CCMI
 
         void setBuffers ( void           * srcbuf,
                           void           * dstbuf,
-                          unsigned         bytes)
+                          unsigned         bytes,
+                          TypeCode       * stype,
+                          TypeCode       * rtype)
         {
           //printf ("%d: srcbuf = %x, dstbuf %x", _native->myrank(), srcbuf, dstbuf);
           _srcbuf        = (char *) srcbuf;
           _dstbuf        = (char *) dstbuf;
+          /// SSS: bytes, stype, rtype are not needed here..We just need this signature for compiling
         }
 
         /// \brief Set the parameters related to the reduce.  When
@@ -399,6 +402,8 @@ namespace CCMI
                             unsigned         pipelineWidth,
                             unsigned         sizeOfType,
                             coremath         func,
+                            TypeCode       * stype,
+                            TypeCode       * rtype,
                             pami_op          op = PAMI_OP_COUNT,
                             pami_dt          dt = PAMI_DT_COUNT)
         {
@@ -414,7 +419,7 @@ namespace CCMI
           if (!_enablePipelining)
             pipelineWidth = count * sizeOfType;
 
-          _acache.init(count, sizeOfType, op, dt, pipelineWidth);
+          _acache.init(count, sizeOfType, op, dt, stype, rtype, pipelineWidth);//sizeOfType is based on stype/rtype size on dt size
 
           TRACE_FN_EXIT();
         }
@@ -507,14 +512,27 @@ namespace CCMI
         {
           return  _acache.getOp();
         }
+
         pami_dt    getDt ()
         {
           return  _acache.getDt();
         }
+
         unsigned   getCount ()
         {
           return  _acache.getCount();
         }
+
+        TypeCode * getStype()
+        {
+          return _acache.getStype();
+        }
+
+        TypeCode * getRtype()
+        {
+          return _acache.getRtype();
+        }
+
         static void _compile_time_assert_ ()
         {
           // Compile time assert
@@ -677,12 +695,12 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::sendMessage
   _msend.bytes         = bytes;
 
   PAMI::PipeWorkQueue *pwq = _acache.getPhaseDstPipeWorkQueue(sphase);
-  pwq->configure((char *)buf, bytes, 0);
+  pwq->configure((char *)buf, bytes, 0, getStype(), getRtype());
   pwq->reset();
   pwq->produceBytes(bytes);
 
-  _msend.src           = (pami_pipeworkqueue_t *) pwq;
-  _msend.dst           = NULL;
+  _msend.src              = (pami_pipeworkqueue_t *) pwq;
+  _msend.dst              = NULL;
   _msend.src_participants = (pami_topology_t *) & _selftopology;
   _msend.dst_participants = (pami_topology_t *) _scache.getDstTopology(sphase);
 
@@ -691,13 +709,13 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn>::sendMessage
 
   if (!_postReceives)
     {
-      s_state->sndInfo._comm    = _commID;
-      s_state->sndInfo._count   = _acache.getCount();
-      s_state->sndInfo._phase   = sphase;
-      s_state->sndInfo._dt      = _acache.getDt();
-      s_state->sndInfo._op      = _acache.getOp();
+      s_state->sndInfo._comm      = _commID;
+      s_state->sndInfo._count     = _acache.getCount();
+      s_state->sndInfo._phase     = sphase;
+      s_state->sndInfo._dt        = _acache.getDt();
+      s_state->sndInfo._op        = _acache.getOp();
       s_state->sndInfo._iteration = _acache.getIteration();
-      s_state->sndInfo._root    = (unsigned)_scache.getRoot();
+      s_state->sndInfo._root      = (unsigned)_scache.getRoot();
       _msend.msginfo  =  (pami_quad_t *) & s_state->sndInfo;
       _msend.msgcount = 1;
     }

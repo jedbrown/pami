@@ -82,29 +82,28 @@ namespace CCMI
             PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS*)g;
             void *deviceInfo                  = geometry->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
 
-            PAMI::Type::TypeCode * type_obj = (PAMI::Type::TypeCode *)cmd->cmd.xfer_allreduce.stype;
+            TypeCode * stype_obj = (TypeCode *)cmd->cmd.xfer_allreduce.stype;
+            TypeCode * rtype_obj = (TypeCode *)cmd->cmd.xfer_allreduce.rtype;
 
             /// \todo Support non-contiguous
-            assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
+            assert(stype_obj->IsContiguous() &&  stype_obj->IsPrimitive());
 
-            unsigned        sizeOfType = type_obj->GetAtomSize();
+            unsigned        sizeOfType = stype_obj->GetDataSize();
 
-            size_t size = cmd->cmd.xfer_allreduce.stypecount * sizeOfType;
+            size_t bytes = cmd->cmd.xfer_allreduce.stypecount * sizeOfType;
 
-            TRACE_FORMAT( "srcPwq.configure %zu",size);
-            _srcPwq.configure(cmd->cmd.xfer_allreduce.sndbuf, size, size);
+            TRACE_FORMAT( "srcPwq.configure %zu",bytes);
+            _srcPwq.configure(cmd->cmd.xfer_allreduce.sndbuf, bytes, bytes, stype_obj, rtype_obj);
             _srcPwq.reset();
 
-            type_obj = (PAMI::Type::TypeCode *)cmd->cmd.xfer_allreduce.rtype;
-
             /// \todo Support non-contiguous
-            assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
+            assert(rtype_obj->IsContiguous() &&  rtype_obj->IsPrimitive());
 
-            sizeOfType = type_obj->GetAtomSize();
+            sizeOfType = rtype_obj->GetDataSize();
 
-            size = cmd->cmd.xfer_allreduce.rtypecount * sizeOfType;
-            TRACE_FORMAT( "dstPwq.configure %zu",size);
-            _dstPwq.configure(cmd->cmd.xfer_allreduce.rcvbuf, size, 0);
+            bytes = cmd->cmd.xfer_allreduce.rtypecount * sizeOfType;
+            TRACE_FORMAT( "dstPwq.configure %zu",bytes);
+            _dstPwq.configure(cmd->cmd.xfer_allreduce.rcvbuf, bytes, 0, stype_obj, rtype_obj);// SSS: Should the types be in this order???
             _dstPwq.reset();
 
             DO_DEBUG(PAMI::Topology all);
@@ -315,7 +314,10 @@ namespace CCMI
                               (pami_op)op,
                               typesize,
                               func);
-            size_t           sbytes      = xfer->stypecount * typesize;
+            TypeCode       * stype       = (TypeCode *)xfer->stype;
+            TypeCode       * rtype       = (TypeCode *)xfer->rtype;
+            size_t           sizeOfType  = stype->GetDataSize();
+            size_t           sbytes      = xfer->stypecount * sizeOfType;
             size_t           scountDt    = xfer->stypecount;
             bool             amRoot      = false;
 
@@ -330,13 +332,17 @@ namespace CCMI
             // Create a "flat pwq" for the send buffer
             _pwq_src.configure(xfer->sndbuf,                       // buffer
                                sbytes,                             // buffer bytes
-                               sbytes);                            // amount initially in buffer
+                               sbytes,                             // amount initially in buffer
+                               stype,
+                               rtype);
             if(amRoot || root == 0xFFFFFFFF)  // I am the real root of a Reduce, or I am in an allreduce
             {
               rcvBuf = xfer->rcvbuf;
               _pwq_dest.configure(xfer->rcvbuf,                    // buffer
                                   sbytes,                          // buffer bytes
-                                  0);                              // amount initially in buffer
+                                  0,                               // amount initially in buffer
+                                  stype,
+                                  rtype);
             }
             else                              // I am a non-root, and I must throw away the results
             {
@@ -345,7 +351,9 @@ namespace CCMI
               rcvBuf = _throwaway_results;
               _pwq_dest.configure(_throwaway_results,                   // buffer
                                   sbytes,                          // buffer bytes
-                                  0);                              // amount initially in buffer
+                                  0,                               // amount initially in buffer
+                                  stype,
+                                  rtype);
             }
 
             _user_done.clientdata = cmd->cookie;
@@ -361,7 +369,9 @@ namespace CCMI
                 _pwq_inter0.configure(
                                       rcvBuf,  // buffer
                                       sbytes,                          // buffer bytes
-                                      0);                              // amount initially in buffer
+                                      0,                               // amount initially in buffer
+                                      stype,
+                                      rtype);
                 _pwq_inter0.reset();
                 _mcombine_l.cb_done.clientdata   = this;
                 _mcombine_l.cb_done.function     = composite_done;
@@ -382,7 +392,7 @@ namespace CCMI
                 _mcast_l.cb_done.clientdata      = this;
                 _mcast_l.connection_id           = _geometry->comm();
                 _mcast_l.roles                   = -1U;
-                _mcast_l.bytes                   = xfer->rtypecount;
+                _mcast_l.bytes                   = xfer->rtypecount*rtype->GetDataSize();
                 _mcast_l.src                     = (pami_pipeworkqueue_t*) & _pwq_inter0;
                 _mcast_l.src_participants        = (pami_topology_t*)t_my_master;
                 _mcast_l.dst                     = (pami_pipeworkqueue_t*) & _pwq_dest;
@@ -430,7 +440,9 @@ namespace CCMI
             _pwq_inter0.configure(
                                   rcvBuf,  // buffer
                                   sbytes,                          // buffer bytes
-                                  0);                              // amount initially in buffer
+                                  0,                               // amount initially in buffer
+                                  stype,
+                                  rtype);
             _pwq_inter0.reset();
 
             if (!amMaster)
@@ -461,7 +473,7 @@ namespace CCMI
                 _mcast_l.cb_done.clientdata      = this;
                 _mcast_l.connection_id           = _geometry->comm();
                 _mcast_l.roles                   = -1U;
-                _mcast_l.bytes                   = xfer->rtypecount;
+                _mcast_l.bytes                   = xfer->rtypecount * rtype->GetDataSize();
                 _mcast_l.src                     = NULL;
                 _mcast_l.src_participants        = (pami_topology_t*)t_my_master;
                 _mcast_l.dst                     = (pami_pipeworkqueue_t*) & _pwq_dest;
@@ -486,7 +498,9 @@ namespace CCMI
             _pwq_inter1.configure(
                                   rcvBuf,  // buffer
                                   sbytes,                          // buffer bytes
-                                  0);                              // amount initially in buffer
+                                  0,                               // amount initially in buffer
+                                  stype,
+                                  rtype);
             _pwq_inter1.reset();
 
             _mcombine_l.cb_done.clientdata   = this;
@@ -517,7 +531,7 @@ namespace CCMI
             _mcast_l.cb_done.clientdata      = this;
             _mcast_l.connection_id           = _geometry->comm();
             _mcast_l.roles                   = -1U;
-            _mcast_l.bytes                   = xfer->rtypecount;
+            _mcast_l.bytes                   = xfer->rtypecount * rtype->GetDataSize();
             _mcast_l.src                     = (pami_pipeworkqueue_t*) & _pwq_inter1;
             _mcast_l.src_participants        = (pami_topology_t*)t_my_master;  // me!
             _mcast_l.dst                     = (pami_pipeworkqueue_t*) & _pwq_dest;
@@ -560,7 +574,10 @@ namespace CCMI
             getReduceFunction((pami_dt)dt,(pami_op)op,
                               typesize,
                               func);
-            size_t           sbytes      = cmd->cmd.xfer_reduce.stypecount * typesize;
+            TypeCode       * stype       = (TypeCode *) cmd->cmd.xfer_reduce.stype;
+            TypeCode       * rtype       = (TypeCode *) cmd->cmd.xfer_reduce.rtype;
+            size_t           sizeOfType  = stype->GetDataSize();
+            size_t           sbytes      = cmd->cmd.xfer_reduce.stypecount * sizeOfType;
             size_t           scountDt    = cmd->cmd.xfer_reduce.stypecount;
 
             new(&_t_root) PAMI::Topology(cmd->cmd.xfer_reduce.root);
@@ -575,10 +592,14 @@ namespace CCMI
             // Create a "flat pwq" for the send buffer
             _pwq_src.configure(cmd->cmd.xfer_reduce.sndbuf,  // buffer
                                sbytes,                       // buffer bytes
-                               sbytes);                      // amount initially in buffer
+                               sbytes,                       // amount initially in buffer
+                               stype,
+                               rtype);
             _pwq_dest.configure(cmd->cmd.xfer_reduce.rcvbuf, // buffer
                                 sbytes,                      // buffer bytes
-                                0);                          // amount initially in buffer
+                                0,                           // amount initially in buffer
+                                stype,
+                                rtype);
             _user_done.clientdata = cmd->cookie;
             _user_done.function   = cmd->cb_done;
             _pwq_src.reset();
@@ -680,10 +701,14 @@ namespace CCMI
                 PAMI_assert(_temp_results != NULL);   // no local master?
                 _pwq_inter0.configure(_temp_results,  // buffer
                                       sbytes,         // buffer bytes
-                                      0);             // amount initially in buffer
+                                      0,              // amount initially in buffer
+                                      stype,
+                                      rtype);
                 _pwq_inter1.configure(_temp_results,  // buffer
                                       sbytes,         // buffer bytes
-                                      0);             // amount initially in buffer
+                                      0,              // amount initially in buffer
+                                      stype,
+                                      rtype);
                 _pwq_inter0.reset();
                 _pwq_inter1.reset();
 
@@ -705,7 +730,7 @@ namespace CCMI
                   _mcast_l.cb_done.clientdata      = this;
                   _mcast_l.connection_id           = _geometry->comm();
                   _mcast_l.roles                   = -1U;
-                  _mcast_l.bytes                   = cmd->cmd.xfer_reduce.rtypecount;
+                  _mcast_l.bytes                   = cmd->cmd.xfer_reduce.rtypecount * rtype->GetDataSize();
                   _mcast_l.src_participants        = (pami_topology_t*)t_my_master;
                   if(amRoot)
                     _mcast_l.dst                   = (pami_pipeworkqueue_t*)&_pwq_dest;
@@ -757,10 +782,14 @@ namespace CCMI
             }
             _pwq_inter0.configure(_temp_results,  // buffer
                                   sbytes,         // buffer bytes
-                                  0);             // amount initially in buffer
+                                  0,              // amount initially in buffer
+                                  stype,
+                                  rtype);
             _pwq_inter1.configure(_temp_results,  // buffer
                                   sbytes,         // buffer bytes
-                                  0);             // amount initially in buffer
+                                  0,              // amount initially in buffer
+                                  stype,
+                                  rtype);
             _pwq_inter0.reset();
             _pwq_inter1.reset();
 
@@ -795,13 +824,15 @@ namespace CCMI
             {
               _pwq_inter2.configure(_temp_results,  // buffer
                                     sbytes,         // buffer bytes
-                                    0);             // amount initially in buffer
+                                    0,              // amount initially in buffer
+                                    stype,
+                                    rtype);
               _pwq_inter2.reset();
               _mcast_l.cb_done.function        = composite_done;
               _mcast_l.cb_done.clientdata      = this;
               _mcast_l.connection_id           = _geometry->comm();
               _mcast_l.roles                   = -1U;
-              _mcast_l.bytes                   = cmd->cmd.xfer_reduce.rtypecount;
+              _mcast_l.bytes                   = cmd->cmd.xfer_reduce.rtypecount * rtype->GetDataSize();
               _mcast_l.src                     = (pami_pipeworkqueue_t*) & _pwq_inter1;
               _mcast_l.src_participants        = (pami_topology_t*)t_my_master;  // me!
               _mcast_l.dst                     = (pami_pipeworkqueue_t*) & _pwq_inter2;
@@ -1053,15 +1084,16 @@ namespace CCMI
 
             PAMI_assert(_topology_lm.index2Rank(0) != (unsigned) - 1); // no local master?
 
-            PAMI::Type::TypeCode * type_obj = (PAMI::Type::TypeCode *)cmd->cmd.xfer_allreduce.stype;
+            TypeCode * stype_obj = (TypeCode *)cmd->cmd.xfer_allreduce.stype;
+            TypeCode * rtype_obj = (TypeCode *)cmd->cmd.xfer_allreduce.rtype;
 
             /// \todo Support non-contiguous
-            assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
+            assert(stype_obj->IsContiguous() &&  stype_obj->IsPrimitive());
 
-            unsigned        sizeOfType = type_obj->GetAtomSize();
+            unsigned        sizeOfType   = stype_obj->GetDataSize();
 
             _bytes                       = cmd->cmd.xfer_allreduce.stypecount * sizeOfType;
-            size_t countDt = cmd->cmd.xfer_allreduce.stypecount;
+            size_t          countDt      = cmd->cmd.xfer_allreduce.stypecount;
 
             // Discover the root node and intereesting topology information
             size_t           numMasters  = _topology_g->size();
@@ -1076,26 +1108,29 @@ namespace CCMI
             _pwq_src.configure(
                                cmd->cmd.xfer_allreduce.sndbuf,  // buffer
                                _bytes,                          // buffer bytes
-                               _bytes);                         // amount initially in buffer
+                               _bytes,                          // amount initially in buffer
+                               stype_obj,
+                               rtype_obj);
             _pwq_src.reset();
             TRACE_FORMAT( "<%p>send buffer %p, bytes available to consume:%zd, produce:%zd",
                          this, _pwq_src.bufferToConsume(),
                            _pwq_src.bytesAvailableToConsume(), _pwq_src.bytesAvailableToProduce());
             DO_DEBUG(dumpDbuf((double*)_pwq_src.bufferToConsume() , _pwq_src.bytesAvailableToConsume() / sizeof(double)));
 
-            type_obj = (PAMI::Type::TypeCode *)cmd->cmd.xfer_allreduce.rtype;
 
             /// \todo Support non-contiguous
-            assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
+            assert(rtype_obj->IsContiguous() &&  rtype_obj->IsPrimitive());
 
-            sizeOfType = type_obj->GetAtomSize();
+            sizeOfType = rtype_obj->GetDataSize();
 
             PAMI_assert(_bytes <= cmd->cmd.xfer_allreduce.rtypecount * sizeOfType);
 
             _pwq_dst.configure(
                                cmd->cmd.xfer_allreduce.rcvbuf,  // buffer
                                _bytes,                          // buffer bytes
-                               0);                              // amount initially in buffer
+                               0,                               // amount initially in buffer
+                               stype_obj,
+                               rtype_obj);
             _pwq_dst.reset();
             TRACE_FORMAT( "<%p>receive buffer %p, bytes available to consume:%zd, produce:%zd",
                           this, _pwq_dst.bufferToProduce(),
@@ -1105,9 +1140,11 @@ namespace CCMI
             // reception buffers will be overwritten, maybe more than once
             // \todo Do we need some scratch space if we want to do something like in place?
             _pwq_temp.configure(
-                                  cmd->cmd.xfer_allreduce.rcvbuf,  // buffer
-                                  _bytes,                         // buffer bytes
-                                  0);                             // amount initially in buffer
+                                cmd->cmd.xfer_allreduce.rcvbuf,  // buffer
+                                _bytes,                          // buffer bytes
+                                0,                               // amount initially in buffer
+                                stype_obj,
+                                rtype_obj);
             _pwq_temp.reset();
 
             _mcomb_l.connection_id        = 0;
@@ -1189,18 +1226,6 @@ namespace CCMI
           pami_callback_t                     _cb_done;   // User's completion callback
 #endif
       };
-
-
-
-
-
-
-
-
-
-
-
-
     };
   };
 };

@@ -120,13 +120,16 @@ namespace CCMI
       void initialize (unsigned                                comm,
                        PAMI::Topology                        * topology,
                        unsigned                                root,
-                       unsigned                                bytes,
+                       unsigned                                stypecount,
+                       PAMI::Type::TypeCode                  * stype,
+                       unsigned                                rtypecount,
+                       PAMI::Type::TypeCode                  * rtype,
                        char                                  * src,
                        char                                  * dst)
       {
         TRACE_FN_ENTER();
-        TRACE_FORMAT("<%p> root %u, bytes %u", this,root, bytes);
-        pwcfn (topology, bytes, _colors, _numColors);
+        TRACE_FORMAT("<%p> root %u, bytes %lu", this,root, stypecount * stype->GetDataSize());
+        pwcfn (topology, stypecount * stype->GetDataSize(), _colors, _numColors);
         //printf ("Using %d colors, %d\n", _numColors, _colors[0]);
         if (_numColors > NUMCOLORS)
           _numColors = NUMCOLORS;
@@ -134,14 +137,14 @@ namespace CCMI
         TRACE_FORMAT("<%p> numcolors %u, complete %u", this,_numColors,_nComplete);
 
         _root  = root;
-        _bytes = bytes;
+        _bytes = stypecount * stype->GetDataSize();
 
-        _bytecounts[0] = bytes;
+        _bytecounts[0] = stypecount * stype->GetDataSize();
         unsigned aligned_bytes = 0;
 
         if (_numColors > 1)
         {
-          aligned_bytes = (bytes / _numColors) & alignment_mask;
+          aligned_bytes = ((stypecount * stype->GetDataSize()) / _numColors) & alignment_mask;
           _bytecounts[0] =  aligned_bytes;
 
           for (unsigned c = 1; c < _numColors; ++c)
@@ -150,7 +153,7 @@ namespace CCMI
             TRACE_FORMAT("<%p> bytecounts[%u] %u", this,c,_bytecounts[c]);
           }
 
-          _bytecounts[_numColors-1]  = bytes - (aligned_bytes * (_numColors - 1));
+          _bytecounts[_numColors-1]  = (stypecount * stype->GetDataSize()) - (aligned_bytes * (_numColors - 1));
           TRACE_FORMAT("<%p> bytecounts[%u] %u", this,_numColors-1,_bytecounts[_numColors-1]);
         }
 
@@ -167,7 +170,7 @@ namespace CCMI
           exec->setRoot (root);
           exec->setBuffers (src + aligned_bytes*c,
                             dst + aligned_bytes*c,
-                            _bytecounts[c]);
+                            _bytecounts[c], stype, rtype);//SSS: In the case of broadcast, stype and rtype are the same. In case of allreduce they will be different
           exec->setDoneCallback (cb_composite_done, this);
 
           addExecutor(exec);
@@ -187,18 +190,21 @@ namespace CCMI
       void reset (unsigned                                comm,
                   PAMI::Topology                        * topology,
                   unsigned                                root,
-                  unsigned                                bytes,
+                  unsigned                                stypecount,
+                  PAMI::Type::TypeCode                  * stype,
+                  unsigned                                rtypecount,
+                  PAMI::Type::TypeCode                  * rtype,
                   char                                  * src,
                   char                                  * dst)
       {
         TRACE_FN_ENTER();
-        TRACE_FORMAT("<%p> root %u, bytes %u", this,root, bytes);
+        TRACE_FORMAT("<%p> root %u, bytes %lu", this,root, stypecount * stype->GetDataSize());
         _doneCount = 0;
 
         CCMI::Executor::CompositeT<NUMCOLORS, T_Bar, T_Exec>::reset();
-        if (_bytes != bytes || _root != root) {
+        if (_bytes != (stypecount * stype->GetDataSize()) || _root != root) {
           _numColors = _numColorsMax;
-          initialize (comm, topology, root, bytes, src, dst);
+          initialize (comm, topology, root, stypecount, stype, rtypecount, rtype, src, dst);
           return;
         }
 
@@ -208,7 +214,7 @@ namespace CCMI
           T_Exec *exec  = (T_Exec *) (&_executors[c]);
           exec->setBuffers (src + _bytecounts[0]*c,
                             dst + _bytecounts[0]*c,
-                            _bytecounts[c]);
+                            _bytecounts[c], stype, rtype);
           addExecutor(exec);
         }
 

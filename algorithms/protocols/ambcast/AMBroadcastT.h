@@ -66,9 +66,9 @@ public:
         _executor.setRoot (_root);
     }
 
-    void  setBuffers (char *src, char *dst, int len)
+    void  setBuffers (char *src, char *dst, int len, TypeCode * stype, TypeCode * rtype)
     {
-        _executor.setBuffers (src,dst,len);
+        _executor.setBuffers (src,dst,len,stype,rtype);
     }
 
     void start()
@@ -128,9 +128,11 @@ public:
          cobj,              // Intercept cookie
          this);             // Factory
 
+        TypeCode * stype = (TypeCode *)pcmd->cmd.xfer_ambroadcast.stype;
         cobj->_obj.setBuffers ((char *)pcmd->cmd.xfer_ambroadcast.sndbuf,
                               (char *)pcmd->cmd.xfer_ambroadcast.sndbuf,
-                               pcmd->cmd.xfer_ambroadcast.stypecount);
+                               pcmd->cmd.xfer_ambroadcast.stypecount * stype->GetDataSize(),
+                               stype,stype);
         cobj->_obj.start();
         return NULL;
     }
@@ -187,6 +189,8 @@ public:
         broadcast.cb_done                         = recv.local_fn;
         broadcast.cookie                          = recv.cookie;
 
+        TypeCode * stype = (TypeCode *)broadcast.cmd.xfer_ambroadcast.stype;
+
         typename CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::collObj *cobj =
             (typename CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::collObj *)
             factory->CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_alloc.allocateObject();
@@ -202,7 +206,7 @@ public:
 
         //Correct the root to what was passed in
         cobj->_obj.setRoot (cdata->_root);
-        cobj->_obj.setBuffers ((char *)recv.addr,(char *)recv.addr, sndlen);
+        cobj->_obj.setBuffers ((char *)recv.addr,(char *)recv.addr, sndlen*stype->GetDataSize(), stype, stype);
         cobj->_obj.start();
         cobj->_obj.executor().notifyRecv(peer, *info, (PAMI::PipeWorkQueue **)rcvpwq, cb_done);
 

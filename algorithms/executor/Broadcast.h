@@ -116,7 +116,7 @@ namespace CCMI
           new (&_roottopology) PAMI::Topology(root);
         }
 
-        void  setBuffers (char *src, char *dst, int len)
+        void  setBuffers (char *src, char *dst, int len, TypeCode *stype, TypeCode *rtype)
         {
           TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::setBuffers() src %p, dst %p, len %d, _pwq %p\n", this, src, dst, len, &_pwq));
           _msend.bytes = len;
@@ -125,7 +125,7 @@ namespace CCMI
           size_t bufinit = 0;
           if (_native->myrank() == _mdata._root)
             bufinit = len;
-          _pwq.configure (src, len, bufinit);
+          _pwq.configure (src, len, bufinit, stype, rtype);
           _pwq.reset();
           TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::setBuffers() _pwq %p, bytes available %zu/%zu\n", this, &_pwq,
                          _pwq.bytesAvailableToConsume(), _pwq.bytesAvailableToProduce()));

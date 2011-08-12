@@ -42,28 +42,24 @@ namespace CCMI
 
             _native = (Interfaces::NativeInterface  *)_geometry->getKey(PAMI::Geometry::GKEY_GEOMETRYCSNI);
 
-            PAMI::Type::TypeCode * type_obj = (PAMI::Type::TypeCode *)cmd->cmd.xfer_reduce.stype;
+            TypeCode * stype_obj = (TypeCode *)cmd->cmd.xfer_reduce.stype;
+            TypeCode * rtype_obj = (TypeCode *)cmd->cmd.xfer_reduce.rtype;
 
             /// \todo Support non-contiguous
-            assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
+            assert(stype_obj->IsContiguous() &&  stype_obj->IsPrimitive());
 
-            unsigned        sizeOfType = type_obj->GetAtomSize();
+            unsigned        sizeOfType = stype_obj->GetDataSize();
 
-            size_t size = cmd->cmd.xfer_reduce.stypecount * sizeOfType;
-            _srcPwq.configure(cmd->cmd.xfer_reduce.sndbuf, size, size);
+            size_t bytes = cmd->cmd.xfer_reduce.stypecount * sizeOfType;
+            _srcPwq.configure(cmd->cmd.xfer_reduce.sndbuf, bytes, bytes, stype_obj, rtype_obj);
             _srcPwq.reset();
 
             if (cmd->cmd.xfer_reduce.root == __global.mapping.task())
             {
-              PAMI::Type::TypeCode * type_obj = (PAMI::Type::TypeCode *)cmd->cmd.xfer_reduce.stype;
+              sizeOfType = rtype_obj->GetDataSize();
 
-              /// \todo Support non-contiguous
-              assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
-
-              sizeOfType = type_obj->GetAtomSize();
-
-              size = cmd->cmd.xfer_reduce.rtypecount * sizeOfType;
-              _dstPwq.configure(cmd->cmd.xfer_reduce.rcvbuf, size, 0);
+              bytes = cmd->cmd.xfer_reduce.rtypecount * sizeOfType;
+              _dstPwq.configure(cmd->cmd.xfer_reduce.rcvbuf, bytes, 0, stype_obj, rtype_obj);// SSS: Should the types be in this order???
               _dstPwq.reset();
             }
 
@@ -84,7 +80,7 @@ namespace CCMI
             _minfo.results              = (pami_pipeworkqueue_t *) & _dstPwq;
             _minfo.optor                = cmd->cmd.xfer_reduce.op;
             _minfo.dtype                = cmd->cmd.xfer_reduce.dt;
-            _minfo.count                = size / sizeOfType;
+            _minfo.count                = bytes / sizeOfType;
             TRACE_ADAPTOR((stderr, "%s, count %zu\n", __PRETTY_FUNCTION__, _minfo.count));
           }
 

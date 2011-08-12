@@ -81,9 +81,10 @@ namespace CCMI
           {
             if (_geometry->ranks()[i] == _native->myrank())
             {
+              PAMI::Type::TypeCode * rtype = (PAMI::Type::TypeCode *)_cmd.rtype;
               char *dst = _cmd.rcvbuf + _cmd.rdispls[i];
               char *src = _cmd.sndbuf; 
-              unsigned bytes = _cmd.rtypecounts[i];
+              unsigned bytes = _cmd.rtypecounts[i] * rtype->GetDataSize();
 
               if (src && (src != (char *)ALLGV_IN_PLACE))
                 Core_memcpy(dst, src, bytes);
@@ -103,18 +104,20 @@ namespace CCMI
           //Allow each bcast to have atleast 3 colors
           for (i = 0; (i < NBCAST) && (ncomplete < _nranks) && nc < NCOLORS; i++, ncomplete++)
           {
-            size_t root, bytes;
+            size_t root, rtypecounts;
             char *src, *dst;
+            PAMI::Type::TypeCode * rtype;
 
-            bytes = _cmd.rtypecounts[ncomplete];
-            root  = _geometry->ranks()[ncomplete];
-            dst   = _cmd.rcvbuf + _cmd.rdispls[ncomplete];
-            src   = dst;        //For non-inplace allgvs the src has been copied to dst on root
+            rtypecounts = _cmd.rtypecounts[ncomplete];
+            root        = _geometry->ranks()[ncomplete];
+            dst         = _cmd.rcvbuf + _cmd.rdispls[ncomplete];
+            src         = dst;        //For non-inplace allgvs the src has been copied to dst on root
+            rtype       = (PAMI::Type::TypeCode *)_cmd.rtype;
 
             TRACE_FORMAT("<%p> _cmgr[%u]=%p, _bcast[%u]=%p", this,i,&_cmgr[i],i,&_bcast[i]);
             new (&_cmgr[i]) T_Conn (nc);
             new (&_bcast[i]) T_Bcast(_native, &_cmgr[i], _geometry, done, this);
-            _bcast[i].initialize (root, bytes, src, dst);       
+            _bcast[i].initialize (root, rtypecounts, rtype, src, dst);
             nc += _bcast[i].getNumColors();
             if (nc > NCOLORS)
               break;

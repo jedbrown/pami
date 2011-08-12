@@ -99,31 +99,34 @@ public:
                                        dt,op);
 
         CCMI::Adaptor::Allreduce::getReduceFunction((pami_dt)dt, (pami_op)op, sizeOfType, func);
+        sizeOfType = ((TypeCode *)a_xfer->stype)->GetDataSize();
         unsigned bytes = a_xfer->stypecount * sizeOfType;
         // unsigned bytes = sizeOfType * a_xfer->stypecount;
-        _executor.setBuffers (a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount);
+        _executor.setBuffers (a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount, (TypeCode *)a_xfer->stype, (TypeCode *)a_xfer->rtype);
         _executor.setDoneCallback (cb_done.function, cb_done.clientdata);
 
         COMPILE_TIME_ASSERT(sizeof(_schedule) >= sizeof(T_Schedule));
         _executor.setSchedule (&_schedule, 0);
         _executor.setReduceInfo(a_xfer->stypecount,
                                 bytes,
-                                sizeOfType, func,
+                                sizeOfType, func, (TypeCode *)a_xfer->stype, (TypeCode *)a_xfer->rtype,
                                 (pami_op)op, (pami_dt)dt);
 
         _executor.reset();
     }
 
-    AsyncAllreduceT (Interfaces::NativeInterface   * native,
-                     T_Conn                        * cmgr,
-                     pami_callback_t                  cb_done,
-                     PAMI_GEOMETRY_CLASS            * geometry,
-                     char                           * sndbuf,
-                     char                           * rcvbuf,
+    AsyncAllreduceT (Interfaces::NativeInterface  * native,
+                     T_Conn                       * cmgr,
+                     pami_callback_t                cb_done,
+                     PAMI_GEOMETRY_CLASS          * geometry,
+                     char                         * sndbuf,
+                     char                         * rcvbuf,
                      unsigned                       root,
                      size_t                         dt_count,
                      pami_dt                        dt,
-                     pami_op                        op ) :
+                     pami_op                        op,
+                     TypeCode                     * stype,
+                     TypeCode                     * rtype) :
         Executor::Composite(),
         _executor (native, cmgr, geometry->comm()),
         _schedule (native->myrank(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0),
@@ -137,13 +140,16 @@ public:
 
         // ??? Why would getReduceFunction need data size ? use dt_count for now
         CCMI::Adaptor::Allreduce::getReduceFunction(dt, op, sizeOfType, func);
+        // SSS: We need sizeOfType based on stype/rtype not primitive type dt for non-contigous support;
+        // however, most probably, this constructor will be called on EA and stype will not be known so leave
+        // sizeOfType as is here.
         unsigned bytes = dt_count * sizeOfType;
-        _executor.setBuffers (sndbuf, rcvbuf, bytes);
+        _executor.setBuffers (sndbuf, rcvbuf, bytes, stype, rtype);
         _executor.setDoneCallback (cb_done.function, cb_done.clientdata);
 
         COMPILE_TIME_ASSERT(sizeof(_schedule) >= sizeof(T_Schedule));
         _executor.setSchedule (&_schedule, 0);
-        _executor.setReduceInfo(dt_count, bytes, sizeOfType, func, op, dt);
+        _executor.setReduceInfo(dt_count, bytes, sizeOfType, func, stype, rtype, op, dt);
 
         _executor.reset();
     }
@@ -271,6 +277,16 @@ public:
         /// Try to match in unexpected queue
         if (co)
         {
+            unsigned sizeOfType;
+            coremath func;
+            uintptr_t op, dt;
+            PAMI::Type::TypeFunc::GetEnums(a_xfer->rtype,
+                                           a_xfer->op,
+                                           dt,op);
+
+            CCMI::Adaptor::Allreduce::getReduceFunction((pami_dt)dt, (pami_op)op, sizeOfType, func);
+            sizeOfType = ((TypeCode *)a_xfer->rtype)->GetDataSize();
+            unsigned bytes = a_xfer->rtypecount * sizeOfType;
 
             DEBUG((stderr, "key = %d, found early arrival in unexpected queue\n", key);)
 
@@ -280,9 +296,10 @@ public:
             co->setFlag(LocalPosted);
 
             a_composite = co->getComposite();
-            a_composite->executor().setBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, 0); // need number of bytes ???
+            a_composite->executor().setBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, 0, (TypeCode *)a_xfer->stype, (TypeCode *)a_xfer->rtype); // need number of bytes ???
             a_composite->executor().setReduceConnectionManager(_cmgr);
             a_composite->executor().setBroadcastConnectionManager(_cmgr);
+            a_composite->executor().setReduceInfo(a_xfer->rtypecount, bytes, sizeOfType, func, (TypeCode *)a_xfer->stype, (TypeCode *)a_xfer->rtype, (pami_op)op, (pami_dt)dt);
         }
         /// not found posted CollOp object, create a new one and
         /// queue it in active queue
@@ -383,7 +400,9 @@ public:
                           (unsigned)cdata->_root,
                           cdata->_count,
                           (pami_dt) cdata->_dt,
-                          (pami_op) cdata->_op);
+                          (pami_op) cdata->_op,
+                          (TypeCode *) PAMI_TYPE_BYTE,
+                          (TypeCode *) PAMI_TYPE_BYTE);//SSS: This will be reset to the correct datatype when posted
 
             co->setFlag(EarlyArrival);
             co->setFactory (factory);

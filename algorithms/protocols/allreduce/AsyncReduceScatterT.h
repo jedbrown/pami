@@ -85,6 +85,8 @@ public:
         unsigned sizeOfType;
         pami_reduce_scatter_t *a_xfer = (pami_reduce_scatter_t *) & (((pami_xfer_t *)cmd)->cmd.xfer_reduce_scatter);
         uintptr_t op, dt;
+        TypeCode * stype = (TypeCode *)a_xfer->stype;
+        TypeCode * rtype = (TypeCode *)a_xfer->rtype;
         PAMI::Type::TypeFunc::GetEnums(a_xfer->stype,
                                        a_xfer->op,
                                        dt,op);
@@ -94,17 +96,20 @@ public:
         else
           CCMI::Adaptor::Allreduce::getReduceFunction((pami_dt)dt, (pami_op)op, sizeOfType, func);
 
+        //SSS: I actually need size of type to be based on size of stype not size of dt for non-contigous support
+        sizeOfType = stype->GetDataSize();
+
         unsigned bytes = sizeOfType * a_xfer->stypecount;
 
         _reduce_executor.setRoot(root);
 
-        prepReduceBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, bytes, native->myrank() == root);
+        prepReduceBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, bytes, native->myrank() == root, stype, rtype);
 
         _reduce_executor.setDoneCallback (cb_done.function, cb_done.clientdata);
 
         COMPILE_TIME_ASSERT(sizeof(_reduce_schedule) >= sizeof(T_Reduce_Schedule));
         _reduce_executor.setSchedule (&_reduce_schedule, 0);
-        _reduce_executor.setReduceInfo(a_xfer->stypecount, bytes, sizeOfType, func, (pami_op)op, (pami_dt)dt);
+        _reduce_executor.setReduceInfo(a_xfer->stypecount, bytes, sizeOfType, func, stype, rtype, (pami_op)op, (pami_dt)dt);
 
         _reduce_executor.reset();
 
@@ -116,15 +121,17 @@ public:
     }
 
 
-    AsyncReduceScatterT (Interfaces::NativeInterface   * native,
-                         T_Conn                        * cmgr,
+    AsyncReduceScatterT (Interfaces::NativeInterface    * native,
+                         T_Conn                         * cmgr,
                          pami_callback_t                  cb_done,
                          PAMI_GEOMETRY_CLASS            * geometry,
                          char                           * sndbuf,
                          char                           * rcvbuf,
-                         size_t                         dt_count,
-                         pami_dt                        dt,
-                         pami_op                        op ) :
+                         size_t                           dt_count,
+                         pami_dt                          dt,
+                         pami_op                          op,
+                         TypeCode                       * stype,
+                         TypeCode                       * rtype) :
         Executor::Composite(),
         _reduce_executor (native, cmgr, geometry->comm()),
         _reduce_schedule (native->myrank(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0),
@@ -145,13 +152,16 @@ public:
         _reduce_executor.setRoot(root);
 
         CCMI::Adaptor::Allreduce::getReduceFunction(dt, op, sizeOfType, func);
+        // SSS: We need sizeOfType based on stype/rtype not primitive type dt for non-contigous support;
+        // however, most probably, this constructor will be called on EA and stype will not be known so leave
+        // sizeOfType as is here.
         unsigned bytes = dt_count * sizeOfType;
-        _reduce_executor.setBuffers (sndbuf, rcvbuf, bytes);
+        _reduce_executor.setBuffers (sndbuf, rcvbuf, bytes, stype, rtype);
         _reduce_executor.setDoneCallback (cb_done.function, cb_done.clientdata);
 
         COMPILE_TIME_ASSERT(sizeof(_reduce_schedule) >= sizeof(T_Reduce_Schedule));
         _reduce_executor.setSchedule (&_reduce_schedule, 0);
-        _reduce_executor.setReduceInfo(dt_count, bytes, sizeOfType, func, op, dt);
+        _reduce_executor.setReduceInfo(dt_count, bytes, sizeOfType, func, stype, rtype, op, dt);
 
         _reduce_executor.reset();
 
@@ -181,7 +191,7 @@ public:
         return _scatter_executor;
     }
 
-    void prepReduceBuffers(char *sndbuf, char *rcvbuf, size_t bytes, bool root)
+    void prepReduceBuffers(char *sndbuf, char *rcvbuf, size_t bytes, bool root, TypeCode * stype, TypeCode * rtype)
     {
         if (root)
         {
@@ -189,29 +199,23 @@ public:
             rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, bytes);
             PAMI_assertf(rc == PAMI_SUCCESS, "Failed to allocate %zu reduce buffers\n",bytes);
             _relbuf = rcvbuf;
-            _reduce_executor.setBuffers (sndbuf, _tmpbuf, bytes);
+            _reduce_executor.setBuffers (sndbuf, _tmpbuf, bytes, stype, rtype);
 			
         }
         else
         {
-            _reduce_executor.setBuffers(sndbuf, rcvbuf, bytes);
+            _reduce_executor.setBuffers(sndbuf, rcvbuf, bytes, stype, rtype);
         }
 		
     }
 
     void setScatterExecutor (char *sbuf, char *rbuf, size_t *stypecounts, size_t myrank,
-                             pami_dt dt, pami_op op, unsigned counts, bool isRoot, unsigned root,
+                             TypeCode * stype, unsigned counts, bool isRoot, unsigned root,
                              pami_callback_t  cb_done)
     {
 
         pami_scatterv_t s_xfer;
-        coremath func;
-        unsigned sizeOfType;
-
-        if(dt == PAMI_BYTE) 
-          sizeOfType = sizeof(unsigned char);
-        else 
-          CCMI::Adaptor::Allreduce::getReduceFunction(dt, op, sizeOfType, func);
+        unsigned sizeOfType = stype->GetDataSize();
 
         pami_result_t rc;
         rc = __global.heap_mm->memalign((void **)&_sdispls, 0, counts * sizeof(*_sdispls));
@@ -219,16 +223,18 @@ public:
         rc = __global.heap_mm->memalign((void **)&_scounts, 0, counts * sizeof(*_scounts));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _scounts");
         _sdispls[0] = 0;
-        _scounts[0] = stypecounts[0] * sizeOfType;
+        _scounts[0] = stypecounts[0];
 
         for (unsigned i = 0; i < counts; ++i)
         {
-            _scounts[i+1] = stypecounts[i+1] * sizeOfType;
+            _scounts[i+1] = stypecounts[i+1];
             _sdispls[i+1] = _sdispls[i] + stypecounts[i] * sizeOfType;
         }
 
         s_xfer.stypecounts = _scounts;
         s_xfer.sdispls     = _sdispls;
+        s_xfer.stype       = stype;
+        s_xfer.rtype       = stype;//In this case of scatter, stype and rtype are the reduce_scatter.rtype
 
 
 
@@ -236,7 +242,7 @@ public:
         _scatter_executor.setConnmgr(_cmgr);
         _scatter_executor.setRoot (root);
         _scatter_executor.setSchedule (&_scatter_schedule);
-        _scatter_executor.setBuffers (sbuf, rbuf, bytes);
+        _scatter_executor.setVectors (&s_xfer);
 
         if (isRoot)
         {
@@ -247,7 +253,7 @@ public:
             _scatter_executor.setBuffers(sbuf, rbuf, bytes);
         }
 
-        _scatter_executor.setVectors (&s_xfer);
+
 
         _scatter_executor.setDoneCallback (cb_done.function, cb_done.clientdata);
 
@@ -376,6 +382,8 @@ public:
         unsigned root = topo->index2Rank(0);
         size_t indexInTopo = topo->rank2Index(_native->myrank());
         size_t numRanksInTopo = topo->size();
+        TypeCode * stype = (TypeCode *)a_xfer->stype;
+        TypeCode * rtype = (TypeCode *)a_xfer->rtype;
 
         T_Conn *cmgr = _cmgr;
         unsigned key;
@@ -399,17 +407,16 @@ public:
 
             a_composite = co->getComposite();
             coremath func;
-            uintptr_t op, reduce_dt, scatter_dt;
+            uintptr_t op, reduce_dt;
             PAMI::Type::TypeFunc::GetEnums(a_xfer->stype,
                                            a_xfer->op,
                                            reduce_dt,op);
-            PAMI::Type::TypeFunc::GetEnums(a_xfer->rtype,
-                                           a_xfer->op,
-                                           scatter_dt,op);
             unsigned sizeOfType;
             CCMI::Adaptor::Allreduce::getReduceFunction((pami_dt)reduce_dt, (pami_op)op, sizeOfType, func);
+            sizeOfType = stype->GetDataSize();
             unsigned bytes = sizeOfType * a_xfer->stypecount;
-            a_composite->prepReduceBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, bytes, _native->myrank() == root);
+            a_composite->prepReduceBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, bytes, _native->myrank() == root, stype, rtype);
+
 
             // previous connection manager may need cleanup
             CCMI_assert(co->getComposite()->connmgr() != ((AsyncReduceScatterFactoryT *)co->getFactory())->getConnMgr());
@@ -419,12 +426,13 @@ public:
 
             a_composite->getReduceExecutor().setReduceConnectionManager(cmgr);
             a_composite->getReduceExecutor().setBroadcastConnectionManager(cmgr);
+            a_composite->getReduceExecutor().setReduceInfo(a_xfer->stypecount, bytes, sizeOfType, func, stype, rtype, (pami_op)op, (pami_dt)reduce_dt);
 
             pami_callback_t  cb_exec_done;
             cb_exec_done.function   = scatter_exec_done;
             cb_exec_done.clientdata = co;
 
-            a_composite->setScatterExecutor(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->rcounts, indexInTopo, (pami_dt)scatter_dt, (pami_op)op, numRanksInTopo, _native->myrank() == root, root, cb_exec_done);
+            a_composite->setScatterExecutor(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->rcounts, indexInTopo, rtype, numRanksInTopo, _native->myrank() == root, root, cb_exec_done);
             a_composite->getScatterExecutor().setConnectionID(key + 1);
         }
         /// not found posted CollOp object, create a new one and
@@ -446,12 +454,8 @@ public:
                           cmd );
             cb_exec_done.function = scatter_exec_done;
 
-            uintptr_t op, dt;
-            PAMI::Type::TypeFunc::GetEnums(a_xfer->rtype,
-                                           a_xfer->op,
-                                           dt,op);
 
-            a_composite->setScatterExecutor(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->rcounts, indexInTopo, (pami_dt)dt, (pami_op)op, numRanksInTopo, _native->myrank() == root, root, cb_exec_done);
+            a_composite->setScatterExecutor(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->rcounts, indexInTopo, rtype, numRanksInTopo, _native->myrank() == root, root, cb_exec_done);
 
             co->setXfer((pami_xfer_t*)cmd);
             co->setFlag(LocalPosted);
@@ -543,7 +547,9 @@ public:
                           NULL, NULL,
                           cdata->_count,
                           (pami_dt) cdata->_dt,
-                          (pami_op) cdata->_op);
+                          (pami_op) cdata->_op,
+                          (TypeCode *) PAMI_TYPE_BYTE,
+                          (TypeCode *) PAMI_TYPE_BYTE);
 
             co->setFlag(EarlyArrival);
             co->setFactory (factory);

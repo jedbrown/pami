@@ -76,16 +76,17 @@ public:
         create_bcast_schedule(&_bcast_schedule, sizeof(_bcast_schedule), a_xfer->root, native, geometry);
         _bcast_executor.setRoot(a_xfer->root);
         _bcast_executor.setSchedule (&_bcast_schedule, 0);
-        _bcast_executor.setBuffers (&_bbuf[0], &_bbuf[0], 1); // Need to confirm that 0-byte message gets delivered
+        _bcast_executor.setBuffers (&_bbuf[0], &_bbuf[0], 1, (TypeCode *) PAMI_TYPE_BYTE, (TypeCode *) PAMI_TYPE_BYTE); // Need to confirm that 0-byte message gets delivered
         _bcast_executor.setDoneCallback (cb_done.function, cb_done.clientdata);
 
+        TypeCode *stype = (TypeCode *)a_xfer->stype;
         COMPILE_TIME_ASSERT(sizeof(_gather_schedule) >= sizeof(T_Gather_Schedule));
         create_gather_schedule(&_gather_schedule, sizeof(_gather_schedule), a_xfer->root, native, geometry);
         // how do we reuse the sequence number as connection id ???
         _gather_executor.setRoot(a_xfer->root);
         _gather_executor.setSchedule(&_gather_schedule);
         _gather_executor.setVectors(a_xfer);
-        _gather_executor.setBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount);
+        _gather_executor.setBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount * stype->GetDataSize());
         _gather_executor.setDoneCallback (cb_done.function, cb_done.clientdata);
 
     }
@@ -228,12 +229,14 @@ public:
             CCMI_assert(ead != NULL);
             CCMI_assert(ead->cdata._root == a_xfer->root);
 
+            TypeCode *stype = (TypeCode *)a_xfer->stype;
             co->setXfer((pami_xfer_t*)cmd);
             co->setFlag(LocalPosted);
 
             a_composite = co->getComposite();
             // update send buffer pointer and, at root, receive buffer pointers
-            a_composite->getGatherExecutor().updateBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount);
+            a_composite->getGatherExecutor().setVectors(a_xfer);// SSS: I need setVectors to setup the datatypes correctly
+            a_composite->getGatherExecutor().updateBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount * stype->GetDataSize());
             a_composite->getGatherExecutor().updatePWQ();
 
             // setVectors is not needed since there is no early arrival at root for long gather

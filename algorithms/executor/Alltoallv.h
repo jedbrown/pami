@@ -59,23 +59,26 @@ namespace CCMI
 
     template <class T_Alltoall_type>
     inline void setAlltoallVec(T_Alltoall_type *xfer, int *buflen, void *sbuf, void *scounts, void *sdisps,
-                               void *rbuf, void *rcounts, void *rdisps)
+                               void *rbuf, void *rcounts, void *rdisps, TypeCode **stype, TypeCode **rtype)
     {
       COMPILE_TIME_ASSERT(0 == 1);
     }
 
     template <>
-    inline void setAlltoallVec<pami_alltoall_t> (pami_alltoall_t *xfer, int *buflen, void *sbuf, void *scounts, void *sdisps,                                   void *rbuf, void *rcounts, void *rdisps)
+    inline void setAlltoallVec<pami_alltoall_t> (pami_alltoall_t *xfer, int *buflen,
+                                                 void *sbuf, void *scounts, void *sdisps, void *rbuf, void *rcounts, void *rdisps, TypeCode **stype, TypeCode **rtype)
     {
       *((char **)rbuf)   = xfer->rcvbuf;
       *((char **)sbuf)   = xfer->sndbuf;
-      *buflen            = xfer->rtypecount;
+      *stype             = (TypeCode *)xfer->stype;
+      *rtype             = (TypeCode *)xfer->rtype;
+      *buflen            = xfer->rtypecount * (*rtype)->GetDataSize();
       return;
     }
 
     template <>
     inline void setAlltoallVec<pami_alltoallv_t> (pami_alltoallv_t *xfer, int *buflen,
-                                                  void *sbuf, void *scounts, void *sdisps, void *rbuf, void *rcounts, void *rdisps)
+                                                  void *sbuf, void *scounts, void *sdisps, void *rbuf, void *rcounts, void *rdisps, TypeCode **stype, TypeCode **rtype)
     {
       *((char **)sbuf)      = xfer->sndbuf;
       *((size_t **)sdisps)  = xfer->sdispls;
@@ -84,12 +87,14 @@ namespace CCMI
       *((size_t **)rdisps)  = xfer->rdispls;
       *((size_t **)rcounts) = xfer->rtypecounts;
       *buflen               = 0;
+      *stype                = (TypeCode *)xfer->stype;
+      *rtype                = (TypeCode *)xfer->rtype;
       return;
     }
 
     template <>
     inline void setAlltoallVec<pami_alltoallv_int_t> (pami_alltoallv_int_t *xfer, int *buflen,
-                                                      void *sbuf, void *scounts, void *sdisps, void *rbuf, void *rcounts, void *rdisps)
+                                                      void *sbuf, void *scounts, void *sdisps, void *rbuf, void *rcounts, void *rdisps, TypeCode **stype, TypeCode **rtype)
     {
       *((char **)sbuf)   = xfer->sndbuf;
       *((int **)sdisps)  = xfer->sdispls;
@@ -98,7 +103,8 @@ namespace CCMI
       *((int **)rdisps)  = xfer->rdispls;
       *((int **)rcounts) = xfer->rtypecounts;
       *buflen            = 0;
-
+      *stype             = (TypeCode *)xfer->stype;
+      *rtype             = (TypeCode *)xfer->rtype;
       return;
     }
 
@@ -116,6 +122,8 @@ namespace CCMI
         int                 _buflen;
         char                *_sbuf;
         char                *_rbuf;
+        TypeCode            *_stype;
+        TypeCode            *_rtype;
 
         PAMI::PipeWorkQueue _pwq;
         PAMI::PipeWorkQueue _rpwq [MAX_PARALLEL];
@@ -290,13 +298,13 @@ namespace CCMI
 
         void setVectors(T_Type *xfer)
         {
-          setAlltoallVec<T_Type> (xfer, &_buflen, &_sbuf, &_scounts, &_sdisps, &_rbuf, &_rcounts,  &_rdisps);
+          setAlltoallVec<T_Type> (xfer, &_buflen, &_sbuf, &_scounts, &_sdisps, &_rbuf, &_rcounts,  &_rdisps, &_stype, &_rtype);
           EXECUTOR_DEBUG((stderr, "setVector gets called, rbuf = %p, rdisp = %p, _rounts = %zu\n", _rbuf, _rdisps,(size_t) _rcounts);)
         }
 
         void  updateVectors(T_Type *xfer)
         {
-          setAlltoallVec<T_Type> (xfer, &_buflen, &_sbuf, &_scounts, &_sdisps, &_rbuf, &_rcounts,  &_rdisps);
+          setAlltoallVec<T_Type> (xfer, &_buflen, &_sbuf, &_scounts, &_sdisps, &_rbuf, &_rcounts,  &_rdisps, &_stype, &_rtype);
           EXECUTOR_DEBUG((stderr, "updateVector gets called, rbuf = %p, rdisp = %p, _rounts = %zu\n", _rbuf, _rdisps, (size_t)_rcounts);)
         }
 
@@ -336,13 +344,13 @@ namespace CCMI
         size_t getSendLength(unsigned index)
         {
           EXECUTOR_DEBUG((stderr, "index = %d, scounts = %p, buflen = %d\n", index, _scounts, _buflen);)
-          return (_scounts) ? _scounts[index] : _buflen;
+          return (_scounts) ? _scounts[index]*_stype->GetDataSize() : _buflen;
         }
 
         size_t getRecvLength(unsigned index)
         {
           EXECUTOR_DEBUG((stderr, "index = %d, rcounts = %p, buflen = %d\n", index, _rcounts, _buflen);)
-          return (_rcounts) ? _rcounts[index] : _buflen;
+          return (_rcounts) ? _rcounts[index]*_rtype->GetDataSize() : _buflen;
         }
 
         size_t getSendDisp(unsigned index)
@@ -359,7 +367,7 @@ namespace CCMI
         {
           size_t sleng = getSendLength(index);
           size_t sdisp = getSendDisp(index);
-          _pwq.configure (_sbuf + sdisp, sleng, 0);
+          _pwq.configure (_sbuf + sdisp, sleng, 0, _stype, _rtype);
           _pwq.reset();
           _pwq.produceBytes(sleng);
           EXECUTOR_DEBUG((stderr, "send index = %u, disp = %zu, leng = %zu\n", index, sdisp, sleng);)
@@ -370,7 +378,7 @@ namespace CCMI
         {
           size_t rleng = getRecvLength(index);
           size_t rdisp = getRecvDisp(index);
-          _rpwq[phase % MAX_PARALLEL].configure (_rbuf + rdisp, rleng, 0);
+          _rpwq[phase % MAX_PARALLEL].configure (_rbuf + rdisp, rleng, 0, _stype, _rtype);
           _rpwq[phase % MAX_PARALLEL].reset();
           EXECUTOR_DEBUG((stderr, "receive index = %u, phase = %d, disp = %zu, leng = %zu\n", index, phase, rdisp, rleng);)
           return &_rpwq[phase % MAX_PARALLEL];

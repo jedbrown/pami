@@ -134,7 +134,8 @@ public:
         T_Gather_type *g_xfer;
         getGatherXfer<T_Gather_type>(&g_xfer, &((pami_xfer_t *)cmd)->cmd);
 
-        unsigned bytes = g_xfer->stypecount;
+        TypeCode *stype = (TypeCode *)g_xfer->stype;
+        unsigned bytes = g_xfer->stypecount * stype->GetDataSize();
 
         COMPILE_TIME_ASSERT(sizeof(_schedule) >= sizeof(T_Schedule));
         create_schedule(&_schedule, sizeof(_schedule), g_xfer->root, native, geometry);
@@ -281,9 +282,12 @@ public:
             co->setXfer((pami_xfer_t*)cmd);
             co->setFlag(LocalPosted);
 
+            TypeCode *rtype = (TypeCode *)g_xfer->rtype;
             a_composite = co->getComposite();
             // update send buffer pointer and, at root, receive buffer pointers
-            a_composite->executor().updateBuffers(g_xfer->sndbuf, g_xfer->rcvbuf, g_xfer->rtypecount);
+            a_composite->executor().setVectors(g_xfer);// SSS: I need setVectors to setup the datatypes correctly
+			a_composite->executor().updateBuffers(g_xfer->sndbuf, g_xfer->rcvbuf, g_xfer->rtypecount * rtype->GetDataSize());
+            a_composite->executor().updatePWQ();
         }
         /// not found posted CollOp object, create a new one and
         /// queue it in active queue

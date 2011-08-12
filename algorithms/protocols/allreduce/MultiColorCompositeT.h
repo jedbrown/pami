@@ -80,21 +80,20 @@ namespace CCMI
                            (pami_dt)dt, (pami_op)op);
 
 
-            PAMI::Type::TypeCode * type_obj = (PAMI::Type::TypeCode *)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype;
+            TypeCode * stype_obj = (TypeCode *)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype;
+            TypeCode * rtype_obj = (TypeCode *)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rtype;
 
             /// \todo Support non-contiguous
-            assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
-
-            unsigned        sizeOfType = type_obj->GetAtomSize();
-
-            //For now assume stypecount == rtypecount
-            unsigned bytes = ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount * sizeOfType;
+            assert(stype_obj->IsContiguous() &&  stype_obj->IsPrimitive());
 
             Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::
             initialize (((PAMI_GEOMETRY_CLASS *)g)->comm(),
                         (PAMI::Topology*)((PAMI_GEOMETRY_CLASS *)g)->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX),
                         (unsigned) - 1,/*((pami_allreduce_t *)cmd)->root,*/
-                        bytes,
+                        ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount,
+                        stype_obj,
+                        ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rtypecount,
+                        rtype_obj,
                         ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.sndbuf,
                         ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rcvbuf);
 
@@ -105,6 +104,7 @@ namespace CCMI
                 T_Exec *allreduce = Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::getExecutor(c);
                 initialize(allreduce,
                            ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount,
+                           stype_obj, rtype_obj,
                            (pami_dt)dt,(pami_op)op);
                 allreduce->reset();
                 allreduce->setIteration(iteration);
@@ -141,6 +141,8 @@ namespace CCMI
           ///
           void initialize ( T_Exec                          * allreduce,
                             unsigned                          count,
+                            TypeCode                        * stype,
+                            TypeCode                        * rtype,
                             pami_dt                           dtype,
                             pami_op                           op,
                             unsigned                          pipelineWidth = 0)// none specified, calculate it
@@ -149,7 +151,7 @@ namespace CCMI
             TRACE_FORMAT( "<%p>Allreduce::MultiColorCompositeT::initialize() count %u, dt %#X, op %#X\n", this, count, dtype, op);
 
             if ((op != allreduce->getOp()) || (dtype != allreduce->getDt()) ||
-                (count != allreduce->getCount()))
+                (count != allreduce->getCount()) || (stype != allreduce->getStype()))
               {
                 coremath func;
                 unsigned sizeOfType;
@@ -172,13 +174,15 @@ namespace CCMI
                 /*
                    If -1, disable pipelining or use specified value
                 */
+                // SSS: Set sizeOfType based on stype not primitive type for non-contig support
+                sizeOfType = stype->GetDataSize();
                 pwidth = (pwidth == (unsigned) - 1) ? count * sizeOfType : pwidth;
                 /*
                    Use specified (non-zero) value or calculate (if zero is specified)
                 */
                 pwidth = pwidth ? pwidth : computePipelineWidth (count, sizeOfType, min_pwidth);
 
-                allreduce->setReduceInfo ( count, pwidth, sizeOfType, func, op, dtype );
+                allreduce->setReduceInfo ( count, pwidth, sizeOfType, func, stype, rtype, op, dtype );
               }
             TRACE_FN_EXIT();
           }
@@ -223,6 +227,8 @@ namespace CCMI
                                                dt,op);
                 initialize(allreduce,
                            ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount,
+                           (TypeCode *)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype,
+                           (TypeCode *)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rtype,
                            (pami_dt)dt,
                            (pami_op)op);
 

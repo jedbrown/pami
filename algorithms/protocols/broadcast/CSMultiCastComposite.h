@@ -46,17 +46,17 @@ namespace CCMI
             /// \todo Support non-contiguous
             assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
 
-            unsigned        sizeOfType = type_obj->GetAtomSize();
+            unsigned        sizeOfType = type_obj->GetDataSize();
 
             unsigned bytes = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
 
             if (cmd->cmd.xfer_broadcast.root == __global.mapping.task())
               {
-                _pwq.configure(cmd->cmd.xfer_broadcast.buf, bytes, bytes);
+                _pwq.configure(cmd->cmd.xfer_broadcast.buf, bytes, bytes, type_obj, type_obj);
               }
             else
               {
-                _pwq.configure(cmd->cmd.xfer_broadcast.buf, bytes, 0);
+                _pwq.configure(cmd->cmd.xfer_broadcast.buf, bytes, 0, type_obj, type_obj);
               }
 
             _pwq.reset();

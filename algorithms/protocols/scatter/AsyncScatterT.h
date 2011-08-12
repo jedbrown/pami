@@ -141,15 +141,16 @@ public:
 
         /// \todo add datatype support !
         // CCMI_assert(s_xfer->stypecount == s_xfer->rtypecount);
-        unsigned bytes = s_xfer->rtypecount;
+        TypeCode * rtype = (TypeCode *)s_xfer->rtype;
+        unsigned bytes = s_xfer->rtypecount * rtype->GetDataSize();
 
         COMPILE_TIME_ASSERT(sizeof(_schedule) >= sizeof(T_Schedule));
         create_schedule(&_schedule, sizeof(_schedule), s_xfer->root, native, geometry);
         _executor.setRoot (s_xfer->root);
         _executor.setSchedule (&_schedule);
 
-        _executor.setBuffers (s_xfer->sndbuf, s_xfer->rcvbuf, bytes);
         _executor.setVectors (s_xfer);
+        _executor.setBuffers (s_xfer->sndbuf, s_xfer->rcvbuf, bytes);
         _executor.setDoneCallback (cb_done.function, cb_done.clientdata);
     }
 
@@ -257,6 +258,7 @@ public:
         scatter_type *scatter_xfer;
         getScatterXfer<scatter_type>(&scatter_xfer, &((pami_xfer_t *)cmd)->cmd);
 
+        TypeCode *rtype = (TypeCode *)scatter_xfer->rtype;
         PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)g;
         T_Conn *cmgr = _cmgr;
         unsigned key = getKey(scatter_xfer->root,
@@ -300,7 +302,7 @@ public:
 
                 EADescriptor *ead = (EADescriptor *) co->getEAQ()->peekTail();
                 CCMI_assert(ead != NULL);
-                CCMI_assert(ead->bytes == (unsigned) scatter_xfer->rtypecount);
+                CCMI_assert(ead->bytes == (unsigned) scatter_xfer->rtypecount * rtype->GetDataSize());
                 CCMI_assert(ead->cdata._root == scatter_xfer->root);
 
                 if (ead->flag == EACOMPLETED)
@@ -311,8 +313,8 @@ public:
                     {
                         char *eab = ead->buf;
                         CCMI_assert(eab != NULL);
-                        memcpy (scatter_xfer->rcvbuf, eab, scatter_xfer->rtypecount);
-                        freeBuffer(scatter_xfer->rtypecount, eab);
+                        memcpy (scatter_xfer->rcvbuf, eab, scatter_xfer->rtypecount * rtype->GetDataSize());
+                        freeBuffer(scatter_xfer->rtypecount * rtype->GetDataSize(), eab);
                         //_eab_allocator.returnObject(eab);
                     }
 
@@ -425,6 +427,7 @@ public:
             scatter_xfer->root       = cdata->_root;
             scatter_xfer->rcvbuf     = ead->buf;
             scatter_xfer->rtypecount = ead->bytes;
+            scatter_xfer->rtype      = PAMI_TYPE_BYTE;
 
             a_scatter = new (co->getComposite())
             T_Composite ( factory->_native,
@@ -490,8 +493,8 @@ public:
                 {
                     char *eab = ead->buf;
                     CCMI_assert(eab != NULL);
-                    memcpy (scatter_xfer->rcvbuf, eab, scatter_xfer->rtypecount);
-                    factory->freeBuffer(scatter_xfer->rtypecount, eab); //_eab_allocator.returnObject(eab);
+                    memcpy (scatter_xfer->rcvbuf, eab, scatter_xfer->rtypecount * ((TypeCode *)scatter_xfer->rtype)->GetDataSize());
+                    factory->freeBuffer(scatter_xfer->rtypecount * ((TypeCode *)scatter_xfer->rtype)->GetDataSize(), eab); //_eab_allocator.returnObject(eab);
                 }
 
                 ead->flag = EANODATA;

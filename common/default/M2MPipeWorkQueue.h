@@ -91,8 +91,9 @@ namespace PAMI
       {
         /// \todo 'real' dgsp is unimplemented now, so assume PAMI_TYPE_BYTE
         /// \todo why pami_type_t*? Copied from PAMI::PipeWorkQueue
-        PAMI_assert(*dgsp == PAMI_TYPE_BYTE);
-        _sizeOfDgsp = 1;
+        //PAMI_assert(*dgsp == PAMI_TYPE_BYTE);
+        PAMI::Type::TypeCode * tempType = (PAMI::Type::TypeCode *) *dgsp;
+        _sizeOfDgsp = tempType->GetDataSize();
 
         _indexCount = indexcount;
         _buffer     = buffer;
@@ -141,8 +142,9 @@ namespace PAMI
       {
         /// \todo 'real' dgsp is unimplemented now, so assume PAMI_TYPE_BYTE
         /// \todo why pami_type_t*? Copied from PAMI::PipeWorkQueue
-        PAMI_assert(*dgsp == PAMI_TYPE_BYTE);
-        _sizeOfDgsp = 1;
+        //PAMI_assert(*dgsp == PAMI_TYPE_BYTE);
+        PAMI::Type::TypeCode * tempType = (PAMI::Type::TypeCode *) *dgsp;
+        _sizeOfDgsp = tempType->GetDataSize();
 
         _indexCount = indexcount;
         _buffer     = buffer;

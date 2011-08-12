@@ -59,6 +59,8 @@ namespace CCMI
         char                *_sbuf;
         char                *_rbuf;
         char                *_tmpbuf;
+        TypeCode            *_stype;
+        TypeCode            *_rtype;
 
         coremath            _reduceFunc;
         unsigned            _sizeOfType;
@@ -222,6 +224,8 @@ namespace CCMI
         void updateReduceInfo(unsigned         count,
                               unsigned         sizeOfType,
                               coremath         func,
+                              TypeCode        *stype,
+                              TypeCode        *rtype,
                               pami_op          op = PAMI_OP_COUNT,
                               pami_dt          dt = PAMI_DT_COUNT)
         {
@@ -229,6 +233,8 @@ namespace CCMI
           CCMI_assert(count * sizeOfType == (unsigned)_buflen);
           _reduceFunc    = func;
           _sizeOfType    = sizeOfType;
+          _stype         = stype;
+          _rtype         = rtype;
 
           for (int i = 0; i < _maxsrcs; ++i)
             {
@@ -242,12 +248,16 @@ namespace CCMI
         void setReduceInfo( unsigned         count,
                             unsigned         sizeOfType,
                             coremath         func,
+                            TypeCode        *stype,
+                            TypeCode        *rtype,
                             pami_op          op = PAMI_OP_COUNT,
                             pami_dt          dt = PAMI_DT_COUNT)
         {
           CCMI_assert(count * sizeOfType == (unsigned)_buflen);
           _reduceFunc    = func;
           _sizeOfType    = sizeOfType;
+          _stype         = stype;
+          _rtype         = rtype;
 
           for (int i = 0; i < _maxsrcs; ++i)
             {
@@ -427,7 +437,7 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::sendNext ()
               if (srcindex < _myindex)
                 {
                   RecvStruct *recvstr = &_mrecvstr[_curphase].recvstr[i];
-                  recvstr->pwq.configure (_tmpbuf + (_curphase + 1)* _buflen, _buflen, 0);
+                  recvstr->pwq.configure (_tmpbuf + (_curphase + 1)* _buflen, _buflen, 0, _stype, _rtype);
                   recvstr->pwq.reset();
                   recvstr->subsize    = _buflen;
                   recvstr->rank       = _srcranks[i];
@@ -455,7 +465,7 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::sendNext ()
               new (&_dsttopology[i]) PAMI::Topology(_dstranks[i]);
 
               size_t buflen = _buflen;
-              _pwq[i].configure (_tmpbuf, buflen, 0);
+              _pwq[i].configure (_tmpbuf, buflen, 0, _stype, _rtype);
               _pwq[i].reset();
               _pwq[i].produceBytes(buflen);
 
@@ -546,7 +556,7 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::notifyRecv
           CCMI_assert(_myindex - dist  >= 0);
 #endif
           RecvStruct *recvstr = &_mrecvstr[cdata->_phase].recvstr[i];
-          recvstr->pwq.configure (_tmpbuf + (cdata->_phase + 1) * _buflen, buflen, 0);
+          recvstr->pwq.configure (_tmpbuf + (cdata->_phase + 1) * _buflen, buflen, 0, _stype, _rtype);
           recvstr->pwq.reset();
           recvstr->subsize = buflen;
           recvstr->rank    = _srcranks[i];

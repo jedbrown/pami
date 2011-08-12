@@ -49,27 +49,33 @@ namespace CCMI
     };
 
     template <class T_Gather_type>
-    extern inline void setGatherVectors(T_Gather_type *xfer, void *disps, void *sndcounts)
+    extern inline void setGatherVectors(T_Gather_type *xfer, void *disps, void *sndcounts, TypeCode **stype, TypeCode **rtype)
     {
     }
 
     template<>
-    inline void setGatherVectors<pami_gather_t> (pami_gather_t *xfer, void *disps, void * rcvcounts)
+    inline void setGatherVectors<pami_gather_t> (pami_gather_t *xfer, void *disps, void * rcvcounts, TypeCode **stype, TypeCode **rtype)
     {
+       *stype = (TypeCode *)xfer->stype;
+       *rtype = (TypeCode *)xfer->rtype;
     }
 
     template<>
-    inline void setGatherVectors<pami_gatherv_t> (pami_gatherv_t *xfer, void *disps, void *rcvcounts)
+    inline void setGatherVectors<pami_gatherv_t> (pami_gatherv_t *xfer, void *disps, void *rcvcounts, TypeCode **stype, TypeCode **rtype)
     {
-      *((size_t **)disps)     = xfer->rdispls;
-      *((size_t **)rcvcounts) = xfer->rtypecounts;
+       *((size_t **)disps)     = xfer->rdispls;
+       *((size_t **)rcvcounts) = xfer->rtypecounts;
+       *stype = (TypeCode *)xfer->stype;
+       *rtype = (TypeCode *)xfer->rtype;
     }
 
     template<>
-    inline void setGatherVectors<pami_gatherv_int_t> (pami_gatherv_int_t *xfer, void *disps, void *rcvcounts)
+    inline void setGatherVectors<pami_gatherv_int_t> (pami_gatherv_int_t *xfer, void *disps, void *rcvcounts, TypeCode **stype, TypeCode **rtype)
     {
-      *((int **)disps)     = xfer->rdispls;
-      *((int **)rcvcounts) = xfer->rtypecounts;
+       *((int **)disps)     = xfer->rdispls;
+       *((int **)rcvcounts) = xfer->rtypecounts;
+       *stype = (TypeCode *)xfer->stype;
+       *rtype = (TypeCode *)xfer->rtype;
     }
 
 
@@ -96,8 +102,9 @@ namespace CCMI
         int                 _totallen;
         char                *_sbuf;
         char                *_rbuf;
+        TypeCode            *_stype;
+        TypeCode            *_rtype;
         char                *_tmpbuf;
-
         unsigned            _myindex;
         unsigned            _rootindex;
 
@@ -224,11 +231,11 @@ namespace CCMI
           // todo: this is clearly not scalable, need to use rendezvous similar to
           // that in allgather
           if (_maxsrcs) {
-	    pami_result_t rc;
-	    rc = __global.heap_mm->memalign((void **)&_mrecvstr, 0,
+	        pami_result_t rc;
+	        rc = __global.heap_mm->memalign((void **)&_mrecvstr, 0,
 					_maxsrcs * _mynphases * sizeof(RecvStruct));
-	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _mrecvstr");
-	  }
+	        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _mrecvstr");
+	      }
         }
 
         void setConnectionID (unsigned cid)
@@ -257,7 +264,7 @@ namespace CCMI
 
         void updatePWQ()
         {
-          _pwq.configure (_sbuf, _buflen, 0);
+          _pwq.configure (_sbuf, _buflen, 0, _stype, _rtype);
           _pwq.reset();
           _pwq.produceBytes(_buflen);
         }
@@ -276,29 +283,29 @@ namespace CCMI
           CCMI_assert(_comm_schedule != NULL);
 
           if (_native->myrank() == _root)
-            {
+          {
             _donecount = _gtopology->size();
             size_t buflen = 0;
             if (_disps && _rcvcounts)
-              {
+            {
                 for (unsigned i = 0; i < _gtopology->size() ; ++i)
                 {
-                  buflen += _rcvcounts[i];
+                  buflen += _rcvcounts[i]*_rtype->GetDataSize();
                   if (_rcvcounts[i] == 0 && i != _rootindex) _donecount--;
                 }
                 _buflen = buflen;
                 _tmpbuf = _rbuf;
-              }
-            else
-              {
-                buflen = _gtopology->size() * len;
-	        pami_result_t rc;
-	        rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
-	        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
-              }
             }
-          else // setup PWQ
+            else
             {
+                buflen = _gtopology->size() * len;
+	            pami_result_t rc;
+	            rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
+	            PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
+            }
+          }
+          else // setup PWQ
+          {
 
               unsigned ndst;
               _comm_schedule->getLList(_startphase, &_srcranks[0], ndst, &_srclens[0]);
@@ -307,25 +314,25 @@ namespace CCMI
               //new (&_dsttopology) PAMI::Topology(_gtopology->index2Rank(_srcranks[0]));
               new (&_dsttopology) PAMI::Topology(_srcranks[0]);
 
-            _donecount        = _srclens[0];
-            size_t  buflen    = _srclens[0]  * _buflen;
-            if (_mynphases > 1)
-            {
-	      pami_result_t rc;
-	      rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
-	      PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
-              _pwq.configure (_tmpbuf, buflen, 0);
-            }
-            else
-            {
-              _pwq.configure (src, buflen, 0);
-            }
-            _pwq.reset();
-            _pwq.produceBytes(buflen);
+              _donecount        = _srclens[0];
+              size_t  buflen    = _srclens[0]  * _buflen;
+              if (_mynphases > 1)
+              {
+	            pami_result_t rc;
+	            rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
+	            PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
+                _pwq.configure (_tmpbuf, buflen, 0, _stype, _rtype);
+              }
+              else
+              {
+                _pwq.configure (src, buflen, 0, _stype, _rtype);
+              }
+              _pwq.reset();
+              _pwq.produceBytes(buflen);
 
               _totallen = _srclens[0];
 
-            }
+          }
 
           //TRACE_ADAPTOR((stderr, "<%p>Executor::GatherExec::setInfo() _pwq %p, bytes available %zu/%zu\n", this, &_pwq, _pwq.bytesAvailableToConsume(), _pwq.bytesAvailableToProduce()));
 
@@ -336,7 +343,7 @@ namespace CCMI
 
           if (_native->myrank() == _root)
             {
-              setGatherVectors<T_Gather_type>(xfer, (void *)&_disps, (void *)&_rcvcounts);
+              setGatherVectors<T_Gather_type>(xfer, (void *)&_disps, (void *)&_rcvcounts, &_stype, &_rtype);
             }
         }
 
@@ -404,7 +411,7 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::s
   if (_native->myrank() == _root)
     {
       if (_disps && _rcvcounts)
-        memcpy(_rbuf + _disps[_rootindex], _sbuf, _rcvcounts[_rootindex]);
+        memcpy(_rbuf + _disps[_rootindex], _sbuf, _rcvcounts[_rootindex] * _rtype->GetDataSize());
       else
         memcpy(_rbuf + _rootindex * _buflen, _sbuf, _buflen);
     }
@@ -486,7 +493,7 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::n
     {
       CCMI_assert(_native->myrank() == _root);
       _srclens[i] = 1;
-      buflen    =  _rcvcounts[srcindex];
+      buflen    =  _rcvcounts[srcindex] * _rtype->GetDataSize();
       offset    =  _disps[srcindex];
     }
   else
@@ -500,7 +507,7 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::n
   char    *tmpbuf   = _tmpbuf + offset;
   unsigned ind      = (_nphases - cdata->_phase - 1) * _maxsrcs + i;
   *pwq = &_mrecvstr[ind].pwq;
-  (*pwq)->configure (tmpbuf, buflen, 0);
+  (*pwq)->configure (tmpbuf, buflen, 0, _stype, _rtype);
   (*pwq)->reset();
   // (*pwq)->produceBytes(buflen);
   _mrecvstr[ind].subsize  = _srclens[i];

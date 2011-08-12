@@ -58,19 +58,20 @@ public:
     };
     AsyncBroadcastT (Interfaces::NativeInterface   * native,
                      T_Conn                        * cmgr,
-                     pami_callback_t                  cb_done,
-                     PAMI_GEOMETRY_CLASS            * geometry,
+                     pami_callback_t                 cb_done,
+                     PAMI_GEOMETRY_CLASS           * geometry,
                      unsigned                        root,
                      char                          * src,
-                     unsigned                        bytes) :
+                     unsigned                        counts,
+                     TypeCode                      * type) :
         Executor::Composite(),
         _executor (native, cmgr, geometry->comm())
     {
         TRACE_FN_ENTER();
+        unsigned bytes = counts * type->GetDataSize();
         TRACE_FORMAT("<%p> root %u, bytes %u", this,root,bytes);
-
         _executor.setRoot (root);
-        _executor.setBuffers (src, src, bytes);
+        _executor.setBuffers (src, src, bytes, type, type);
         _executor.setDoneCallback (cb_done.function, cb_done.clientdata);
 
         COMPILE_TIME_ASSERT(sizeof(_schedule) >= sizeof(T_Schedule));
@@ -196,6 +197,7 @@ public:
         CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *co = NULL;
         pami_broadcast_t *bcast_xfer = &((pami_xfer_t*)cmd)->cmd.xfer_broadcast;
 
+        TypeCode * type = (TypeCode *)bcast_xfer->type;
         //CCMI_assert(bcast_xfer->typecount <= 32768);
         PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)g;
         T_Conn *cmgr = _cmgr;
@@ -221,7 +223,8 @@ public:
                           (PAMI_GEOMETRY_CLASS *)g,
                           bcast_xfer->root,
                           bcast_xfer->buf,
-                          bcast_xfer->typecount);
+                          bcast_xfer->typecount,
+                          type);
             TRACE_FORMAT("<%p> root composite %p", this,a_bcast);
 
             co->setXfer((pami_xfer_t*)cmd);
@@ -246,7 +249,7 @@ public:
 
                 EADescriptor *ead = (EADescriptor *) co->getEAQ()->peekTail();
                 CCMI_assert(ead != NULL);
-                CCMI_assert(ead->bytes == bcast_xfer->typecount);
+                CCMI_assert(ead->bytes == (bcast_xfer->typecount * type->GetDataSize()));
                 CCMI_assert(ead->cdata._root == bcast_xfer->root);
 
                 if (ead->flag == EACOMPLETED)
@@ -255,8 +258,8 @@ public:
                     {
                         char *eab = ead->buf;
                         CCMI_assert(eab != NULL);
-                        memcpy (bcast_xfer->buf, eab, bcast_xfer->typecount);
-                        freeBuffer(bcast_xfer->typecount, eab);
+                        memcpy (bcast_xfer->buf, eab, bcast_xfer->typecount*type->GetDataSize());
+                        freeBuffer(bcast_xfer->typecount*type->GetDataSize(), eab);
                         //_eab_allocator.returnObject(eab);
                     }
 
@@ -298,7 +301,8 @@ public:
                               (PAMI_GEOMETRY_CLASS *)g,
                               bcast_xfer->root,
                               bcast_xfer->buf,
-                              bcast_xfer->typecount);
+                              bcast_xfer->typecount,
+                              type);
 
                 TRACE_FORMAT("<%p> non-root unexpected composite %p", this,a_bcast);
 
@@ -373,7 +377,8 @@ public:
                           geometry,
                           cdata->_root,
                           ead->buf,
-                          sndlen);
+                          sndlen,
+                          (TypeCode*)PAMI_TYPE_BYTE);//SSS: I guess passing a byte type here is ok since we will take care of that when posting???
             TRACE_FORMAT("<%p> unexpected composite %p", arg,a_bcast);
 
             co->getEAQ()->pushTail(ead);
@@ -390,7 +395,8 @@ public:
         {
             /// \todo use type count for now, need datatype handling !!!
             // CCMI_assert (co->getXfer()->type != PAMI_TYPE_BYTE);
-            CCMI_assert (co->getXfer()->cmd.xfer_broadcast.typecount == sndlen);
+            CCMI_assert ((co->getXfer()->cmd.xfer_broadcast.typecount *
+			  ((TypeCode *)co->getXfer()->cmd.xfer_broadcast.type)->GetDataSize()) == sndlen);
             a_bcast = (T_Composite *) co->getComposite();
             TRACE_FORMAT("<%p> expected composite %p", arg,a_bcast);
         }
@@ -422,7 +428,7 @@ public:
 
             EADescriptor *ead = (EADescriptor *) co->getEAQ()->popTail();
             AsyncBroadcastFactoryT *factory = (AsyncBroadcastFactoryT *)co->getFactory();
-
+            TypeCode * type = (TypeCode *)bcast_xfer->type;
             if (flag & EarlyArrival)
             {
                 CCMI_assert(ead != NULL);
@@ -431,8 +437,8 @@ public:
                 {
                     char *eab = ead->buf;
                     CCMI_assert(eab != NULL);
-                    memcpy (bcast_xfer->buf, eab, bcast_xfer->typecount);
-                    factory->freeBuffer(bcast_xfer->typecount, eab); //_eab_allocator.returnObject(eab);
+                    memcpy (bcast_xfer->buf, eab, bcast_xfer->typecount * type->GetDataSize());
+                    factory->freeBuffer(bcast_xfer->typecount * type->GetDataSize(), eab); //_eab_allocator.returnObject(eab);
                 }
 
                 ead->flag = EANODATA;

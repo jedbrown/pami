@@ -73,7 +73,7 @@ namespace CCMI
           /// \todo Support non-contiguous
           assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
 
-          unsigned        sizeOfType = type_obj->GetAtomSize();
+          unsigned        sizeOfType = type_obj->GetDataSize();
 
           size_t bytes = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
           size_t pbytes = 0;
@@ -81,7 +81,7 @@ namespace CCMI
           if (cmd->cmd.xfer_broadcast.root == __global.mapping.task())
             pbytes = bytes;
 
-          _pwq.configure(cmd->cmd.xfer_broadcast.buf, bytes, pbytes);
+          _pwq.configure(cmd->cmd.xfer_broadcast.buf, bytes, pbytes, type_obj, type_obj);
           _pwq.reset();
 
           pami_multicast_t minfo;
@@ -169,7 +169,7 @@ namespace CCMI
           /// \todo Support non-contiguous
           assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
 
-          unsigned        sizeOfType = type_obj->GetAtomSize();
+          unsigned        sizeOfType = type_obj->GetDataSize();
           _bytes = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
 
           _deviceMcastInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
@@ -186,18 +186,18 @@ namespace CCMI
 
           if (cmd->cmd.xfer_broadcast.root == __global.mapping.task())
           {
-            _src.configure(cmd->cmd.xfer_broadcast.buf, _bytes, _bytes);
+            _src.configure(cmd->cmd.xfer_broadcast.buf, _bytes, _bytes, type_obj, type_obj);
             /// \todo unless the device lets me toss unwanted data, we need a dummy buffer to receive.
             pami_result_t prc;
             prc = __global.heap_mm->memalign((void **) & _buffer, 0, _bytes);
             PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _buffer failed");
-            _dst.configure(_buffer, _bytes, 0);
+            _dst.configure(_buffer, _bytes, 0, type_obj, type_obj);
           }
           else
           {
             //_buffer = (char*) & _bytes; // dummy buffer - unused
             _src.configure((char*)NULL, 0, 0);
-            _dst.configure(cmd->cmd.xfer_broadcast.buf, _bytes, 0);
+            _dst.configure(cmd->cmd.xfer_broadcast.buf, _bytes, 0, type_obj, type_obj);
           }
 
           _src.reset();
@@ -379,12 +379,16 @@ namespace CCMI
           _pwq0.configure(
                          cmd->cmd.xfer_broadcast.buf,     // buffer
                          bytes,                           // buffer bytes
-                         initBytes);                      // amount initially in buffer
+                         initBytes,                       // amount initially in buffer
+                         tc,
+                         tc);
 
           _pwq1.configure(
                          cmd->cmd.xfer_broadcast.buf,     // buffer
                          bytes,                           // buffer bytes
-                         initBytes);                      // amount initially in buffer
+                         initBytes,                       // amount initially in buffer
+                         tc,
+                         tc);
 
           _pwq0.reset();
           _pwq1.reset();
@@ -735,12 +739,16 @@ namespace CCMI
           _pwq0.configure(
                          cmd->cmd.xfer_broadcast.buf,     // buffer
                          bytes,                           // buffer bytes
-                         initBytes);                      // amount initially in buffer
+                         initBytes,                       // amount initially in buffer
+                         tc,
+                         tc);
 
           _pwq1.configure(
                          cmd->cmd.xfer_broadcast.buf,     // buffer
                          bytes,                           // buffer bytes
-                         initBytes);                      // amount initially in buffer
+                         initBytes,                       // amount initially in buffer
+                         tc,
+                         tc);
 
           _pwq0.reset();
           _pwq1.reset();
@@ -928,7 +936,7 @@ namespace CCMI
                 TRACE_FORMAT( "MultiCastComposite2Device:  Found in UE queue queue:  target_pwq=%p",
                                &pwqBuf->_ue_pwq);
                 pwqBuf->_target_pwq           = &pwqBuf->_ue_pwq;
-                pwqBuf->_ue_pwq.configure(cmd->cmd.xfer_broadcast.buf, bytes, 0);
+                pwqBuf->_ue_pwq.configure(cmd->cmd.xfer_broadcast.buf, bytes, 0, tc, tc);
                 pwqBuf->_ue_pwq.reset();
                 _minfo_l.src                = (pami_pipeworkqueue_t*) & pwqBuf->_ue_pwq;
                 _activePwqBuf                 = pwqBuf;
@@ -1342,7 +1350,7 @@ namespace CCMI
           /// \todo Support non-contiguous
           assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
 
-          unsigned        sizeOfType = type_obj->GetAtomSize();
+          unsigned        sizeOfType = type_obj->GetDataSize();
           _bytes = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
 
           _deviceInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
@@ -1355,15 +1363,15 @@ namespace CCMI
           {
             _buffer_size = _bytes;
             _buffer = (char*) malloc(_buffer_size);
-            _data.configure(cmd->cmd.xfer_broadcast.buf, _bytes, _bytes);
-            _results.configure(_buffer, _bytes, 0);
+            _data.configure(cmd->cmd.xfer_broadcast.buf, _bytes, _bytes, type_obj, type_obj);
+            _results.configure(_buffer, _bytes, 0, type_obj, type_obj);
           }
           else
           {
             /// \todo consume/produce from one buffer and avoid the temp _buffer -does this work everywhere?
             memset(cmd->cmd.xfer_broadcast.buf,  0x00,  _bytes);
-            _data.configure(cmd->cmd.xfer_broadcast.buf, _bytes, _bytes);
-            _results.configure(cmd->cmd.xfer_broadcast.buf, _bytes, 0);
+            _data.configure(cmd->cmd.xfer_broadcast.buf, _bytes, _bytes, type_obj, type_obj);
+            _results.configure(cmd->cmd.xfer_broadcast.buf, _bytes, 0, type_obj, type_obj);
           }
 
           _data.reset();
@@ -1406,7 +1414,7 @@ namespace CCMI
           /// \todo Support non-contiguous
           assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
 
-          unsigned        sizeOfType = type_obj->GetAtomSize();
+          unsigned        sizeOfType = type_obj->GetDataSize();
           _bytes = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
 
           if (_buffer_size < _bytes)
@@ -1418,15 +1426,15 @@ namespace CCMI
 
           if (cmd->cmd.xfer_broadcast.root == __global.mapping.task())
           {
-            _data.configure(cmd->cmd.xfer_broadcast.buf, _bytes, _bytes);
-            _results.configure(_buffer, _bytes, 0);
+            _data.configure(cmd->cmd.xfer_broadcast.buf, _bytes, _bytes, type_obj, type_obj);
+            _results.configure(_buffer, _bytes, 0, type_obj, type_obj);
           }
           else
           {
             /// \todo would be nice to consume/produce from one buffer and avoid the temp _buffer
             memset(_buffer,  0x00,  _bytes);
-            _data.configure(_buffer, _bytes, _bytes);
-            _results.configure(cmd->cmd.xfer_broadcast.buf, _bytes, 0);
+            _data.configure(_buffer, _bytes, _bytes, type_obj, type_obj);
+            _results.configure(cmd->cmd.xfer_broadcast.buf, _bytes, 0, type_obj, type_obj);
           }
 
           _data.reset();

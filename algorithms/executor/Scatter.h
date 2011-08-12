@@ -48,27 +48,33 @@ namespace CCMI
     };
 
     template <class T_Scatter_type>
-    extern inline void setScatterVectors(T_Scatter_type *xfer, void *disps, void *sndcounts)
+    extern inline void setScatterVectors(T_Scatter_type *xfer, void *disps, void *sndcounts, TypeCode **stype, TypeCode **rtype)
     {
     }
 
     template<>
-    inline void setScatterVectors<pami_scatter_t> (pami_scatter_t *xfer, void *disps, void * sndcounts)
+    inline void setScatterVectors<pami_scatter_t> (pami_scatter_t *xfer, void *disps, void * sndcounts, TypeCode **stype, TypeCode **rtype)
     {
+      *stype = (TypeCode *)xfer->stype;
+      *rtype = (TypeCode *)xfer->rtype;
     }
 
     template<>
-    inline void setScatterVectors<pami_scatterv_t> (pami_scatterv_t *xfer, void *disps, void * sndcounts)
+    inline void setScatterVectors<pami_scatterv_t> (pami_scatterv_t *xfer, void *disps, void * sndcounts, TypeCode **stype, TypeCode **rtype)
     {
       *((size_t **)disps)     = xfer->sdispls;
       *((size_t **)sndcounts) = xfer->stypecounts;
+      *stype = (TypeCode *)xfer->stype;
+      *rtype = (TypeCode *)xfer->rtype;
     }
 
     template<>
-    inline void setScatterVectors<pami_scatterv_int_t> (pami_scatterv_int_t *xfer, void *disps, void * sndcounts)
+    inline void setScatterVectors<pami_scatterv_int_t> (pami_scatterv_int_t *xfer, void *disps, void * sndcounts, TypeCode **stype, TypeCode **rtype)
     {
       *((int **)disps)     = xfer->sdispls;
       *((int **)sndcounts) = xfer->stypecounts;
+      *stype = (TypeCode *)xfer->stype;
+      *rtype = (TypeCode *)xfer->rtype;
     }
 
     template<class T_ConnMgr, class T_Schedule, typename T_Scatter_type>
@@ -98,6 +104,8 @@ namespace CCMI
         char                *_sbuf;
         char                *_rbuf;
         char                *_tmpbuf;
+        TypeCode            *_stype;
+        TypeCode            *_rtype;
 
         PAMI::PipeWorkQueue _pwq;
 
@@ -214,19 +222,19 @@ namespace CCMI
           _msendstr = NULL;
           if (_maxdsts)
           {
-	    pami_result_t rc;
-	    rc = __global.heap_mm->memalign((void **)&_msendstr, 0, 
+            pami_result_t rc;
+            rc = __global.heap_mm->memalign((void **)&_msendstr, 0,
             						_maxdsts * sizeof(SendStruct));
-	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _msendstr");
+            PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _msendstr");
             pami_quad_t *info      =  (pami_quad_t*)((void*) & _mdata);
             for (int i = 0; i <_maxdsts; ++i)
-                {
-                  _msendstr[i].msend.msginfo       =  info;
-                  _msendstr[i].msend.msgcount      =  1;
-                  _msendstr[i].msend.roles         = -1U;
-                  _msendstr[i].msend.connection_id = connection_id;
-                }
+            {
+               _msendstr[i].msend.msginfo       =  info;
+               _msendstr[i].msend.msgcount      =  1;
+               _msendstr[i].msend.roles         = -1U;
+               _msendstr[i].msend.connection_id = connection_id;
             }
+          }
         }
 
         void setConnectionID (unsigned cid)
@@ -259,19 +267,19 @@ namespace CCMI
 
           // setup PWQ
           if (_native->myrank() == _root)
+          {
+            if ((unsigned)_nphases == _gtopology->size() - 1 || _root == 0)
+              _tmpbuf = src;
+            else  // allocate temporary buffer and reshuffle the data
             {
-              if ((unsigned)_nphases == _gtopology->size() - 1 || _root == 0)
-                _tmpbuf = src;
-              else  // allocate temporary buffer and reshuffle the data
-                {
-                  size_t buflen = _gtopology->size() * len;
-                  pami_result_t rc;
-	              rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
-                  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
-                  memcpy (_tmpbuf, src+_myindex*len, (_gtopology->size() - _myindex)*len);
-                  memcpy (_tmpbuf+(_gtopology->size() - _myindex)*len  ,src, _myindex * len);
-                }
+               size_t buflen = _gtopology->size() * len;
+               pami_result_t rc;
+	           rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
+               PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
+               memcpy (_tmpbuf, src+_myindex*len, (_gtopology->size() - _myindex)*len);
+               memcpy (_tmpbuf+(_gtopology->size() - _myindex)*len  ,src, _myindex * len);
             }
+          }
           else if (_nphases > 1)
           {
             // schedule's getLList() method can be used for an accurate buffer size
@@ -279,12 +287,12 @@ namespace CCMI
             pami_result_t rc;
             rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
             PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
-            _pwq.configure (_tmpbuf, buflen, 0);
+            _pwq.configure (_tmpbuf, buflen, 0, _stype, _rtype);
             _pwq.reset();
           }
           else
             {
-              _pwq.configure (dst, len, 0);
+              _pwq.configure (dst, len, 0, _stype, _rtype);
               _pwq.reset();
             }
         }
@@ -294,7 +302,7 @@ namespace CCMI
 
           if (_native->myrank() == _root)
             {
-              setScatterVectors<T_Scatter_type>(xfer, (void *)&_disps, (void *)&_sndcounts);
+              setScatterVectors<T_Scatter_type>(xfer, (void *)&_disps, (void *)&_sndcounts, &_stype, &_rtype);
             }
         }
 
@@ -415,7 +423,7 @@ inline void  CCMI::Executor::ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type>:
         {
           CCMI_assert(_native->myrank() == _root);
           CCMI_assert(ndst == 1);
-          buflen   =  _sndcounts[dstindex];
+          buflen   =  _sndcounts[dstindex] * _stype->GetDataSize();
           offset   =  _disps[dstindex];
           _mdata._count = buflen;
         }
@@ -431,7 +439,7 @@ inline void  CCMI::Executor::ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type>:
         }
 
       char    *tmpbuf   = _tmpbuf + offset;
-      sendstr->pwq.configure (tmpbuf, buflen, 0);
+      sendstr->pwq.configure (tmpbuf, buflen, 0, _stype, _rtype);
       sendstr->pwq.reset();
       sendstr->pwq.produceBytes(buflen);
 

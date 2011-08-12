@@ -63,9 +63,11 @@ namespace CCMI
         {
           unsigned          _count;         /// total count of datatypes on operation
           unsigned          _bytes;         /// # of bytes (not count of datatypes)
-          unsigned          _sizeOfType;    /// Size of the data type
-          pami_op            _op;            /// Arithmatic operation to be performed
-          pami_dt            _dt;            /// Data type
+          unsigned          _sizeOfType;    /// Size of data type
+          pami_op           _op;            /// Arithmatic operation to be performed
+          pami_dt           _dt;            /// Primitive data type
+          TypeCode        * _stype;         /// Send data type
+          TypeCode        * _rtype;         /// Recv data type
           unsigned          _pipewidth;     /// Pipeline width of the allreduce
 
           AllreduceParams():
@@ -74,6 +76,8 @@ namespace CCMI
               _sizeOfType(0),
               _op(PAMI_OP_COUNT),
               _dt(PAMI_DT_COUNT),
+              _stype((TypeCode *)PAMI_TYPE_BYTE),
+              _rtype((TypeCode *)PAMI_TYPE_BYTE),
               _pipewidth(0)
           {
           }
@@ -169,24 +173,30 @@ namespace CCMI
         void setIteration(unsigned iteration) { _iteration = iteration; }
 
         void init(unsigned         count,
-                  unsigned         sizeOfType,
+                  unsigned         sizeOfType,/*SSS: This has to be type->GetDataSize() not the size of primitive type*/
                   pami_op          op,
                   pami_dt          dt,
+                  TypeCode        *stype,
+                  TypeCode        *rtype,
                   unsigned         pipelineWidth)
         {
-          TRACE_FORMAT("count %u, size %u, op %u, dt %u, pipelineWidth %u",
+          TRACE_FORMAT("count %u, sizeOfType %u, op %u, dt %u, pipelineWidth %u",
                         count, sizeOfType, op, dt, pipelineWidth);
                         
           if ((_pcache._pipewidth == pipelineWidth) &&
               (_pcache._sizeOfType    == sizeOfType) &&
-              (_pcache._bytes         == count * sizeOfType))
+              (_pcache._bytes         == count * sizeOfType) &&
+              (_pcache._stype         == stype) &&
+              (_pcache._rtype         == rtype))
             return;
 
-          _pcache._op         = op;
-          _pcache._dt         = dt;
-          _pcache._count      = count;
-          _pcache._sizeOfType = sizeOfType;
-          _pcache._bytes      = count * sizeOfType;
+          _pcache._op          = op;
+          _pcache._dt          = dt;
+          _pcache._count       = count;
+          _pcache._sizeOfType  = sizeOfType;
+          _pcache._bytes       = count * sizeOfType;
+          _pcache._stype       = stype;
+          _pcache._rtype       = rtype;
           updatePipelineWidth(pipelineWidth);
 
           //printf ("In AllreduceCache::init bytes = %x", _pcache._bytes);
@@ -220,6 +230,16 @@ namespace CCMI
           return _pcache._dt;
         }
 
+        TypeCode * getStype()
+        {
+          return _pcache._stype;
+        }
+
+        TypeCode * getRtype()
+        {
+          return _pcache._rtype;
+        }
+
         unsigned getPipelineWidth()
         {
           return _pcache._pipewidth;
@@ -234,6 +254,7 @@ namespace CCMI
         {
           return _fullChunkCount;
         }
+
         unsigned getLastChunk()
         {
           return _lastChunk;
@@ -254,18 +275,22 @@ namespace CCMI
         {
           return  _phaseVec[index].chunksRcvd[jindex];
         }
+
         unsigned              getPhaseTotalChunksRcvd(unsigned index)
         {
           return  _phaseVec[index].totalChunksRcvd;
         }
+
         unsigned              getPhaseChunksSent(unsigned index)
         {
           return  _phaseVec[index].chunksSent;
         }
+
         unsigned               getPhaseSendConnectionId (unsigned index)
         {
           return  _phaseVec[index].sconnId;
         }
+
         PAMI::PipeWorkQueue  *getPhasePipeWorkQueues (unsigned index, unsigned jindex)
         {
           return  &_phaseVec[index].pwqs[jindex];
@@ -287,6 +312,7 @@ namespace CCMI
                       _phaseVec[index].chunksRcvd[jindex]);
           TRACE_FN_EXIT();
         }
+
         void                  incrementPhaseChunksSent(unsigned index, unsigned val = 1)
         {
           _phaseVec[index].chunksSent += val;
@@ -296,14 +322,17 @@ namespace CCMI
         {
           return _recvClientData + index;
         }
+
         Interfaces::Executor * getRecvClientAllreduce(unsigned index)
         {
           return _recvClientData[index].allreduce;
         }
+
         unsigned    getRecvClientPhase(unsigned index)
         {
           return _recvClientData[index].phase;
         }
+
         unsigned    getRecvClientSrcPeIndex(unsigned index)
         {
           return _recvClientData[index].srcPeIndex;
@@ -325,10 +354,12 @@ namespace CCMI
         {
           _recvClientData[index].phase = value;
         }
+
         void setRecvClientSrcPeIndex(unsigned index, unsigned value)
         {
           _recvClientData[index].srcPeIndex = value;
         }
+
         void incrementRecvClientSrcPeIndex(unsigned index)
         {
           ++_recvClientData[index].srcPeIndex;
@@ -345,6 +376,7 @@ namespace CCMI
           _protocol = protocol;
           return ;
         }
+
         unsigned getProtocol()
         {
           return _protocol;
@@ -677,7 +709,7 @@ inline void CCMI::Executor::AllreduceCache<T_Conn>::constructPhaseData()
 
               PAMI::PipeWorkQueue *dpwq = &_phaseVec[i].dpwq;
               new (dpwq) PAMI::PipeWorkQueue();
-              dpwq->configure (_tempBuf, _pcache._bytes, 0);
+              dpwq->configure (_tempBuf, _pcache._bytes, 0, _pcache._stype, _pcache._rtype);
               dpwq->reset();
             }
           else // No source/receive processing this phase.
@@ -848,7 +880,7 @@ inline void  CCMI::Executor::AllreduceCache<T_Conn>::setupReceives(bool infoRequ
               CCMI_assert (_phaseVec[p].recvBufs[scount] != NULL);
               PAMI::PipeWorkQueue *pwq = &_phaseVec[p].pwqs[scount];
               new (pwq) PAMI::PipeWorkQueue();
-              pwq->configure (_phaseVec[p].recvBufs[scount], _pcache._bytes, 0);
+              pwq->configure (_phaseVec[p].recvBufs[scount], _pcache._bytes, 0, _pcache._stype, _pcache._rtype);
               pwq->reset();
               CCMI_assert (pwq->bufferToProduce() != NULL);
 

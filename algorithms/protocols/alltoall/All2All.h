@@ -57,12 +57,15 @@ public:
         TRACE_ADAPTOR((stderr, "<%p>All2AllProtocol size %zu, stypecount %zu, rtypecount %zu\n", this, topo_size, coll->cmd.xfer_alltoall.stypecount, coll->cmd.xfer_alltoall.rtypecount));
         //_my_index = all->rank2Index(self);
 
+        TypeCode * stype = (TypeCode *)coll->cmd.xfer_alltoall.stype;
+        TypeCode * rtype = (TypeCode *)coll->cmd.xfer_alltoall.rtype;
+
         _my_cb_done.function = a2aDone;
         _my_cb_done.clientdata = this;
         _donecount = 0;
 
         /// \todo only supporting PAMI_TYPE_BYTE right now
-        PAMI_assert(coll->cmd.xfer_alltoall.stype == PAMI_TYPE_BYTE);
+        //PAMI_assert(coll->cmd.xfer_alltoall.stype == PAMI_TYPE_BYTE);
 
         pami_result_t rc;
         rc = __global.heap_mm->memalign(&_initbuf, 0, 2 * sizeof(size_t) * topo_size);
@@ -73,7 +76,7 @@ public:
 
         for (size_t i = 0; i < topo_size; ++i)
         {
-            _sendinit[i] = coll->cmd.xfer_alltoall.stypecount;
+            _sendinit[i] = coll->cmd.xfer_alltoall.stypecount * stype->GetDataSize();
             _recvinit[i] = 0;
         }
 
@@ -83,7 +86,7 @@ public:
             coll->cmd.xfer_alltoall.sndbuf,
             topo_size,
             &coll->cmd.xfer_alltoall.stype,
-            coll->cmd.xfer_alltoall.stypecount,/// \todo only supporting PAMI_TYPE_BYTE so offset=length
+            coll->cmd.xfer_alltoall.stypecount * stype->GetDataSize(),
             coll->cmd.xfer_alltoall.stypecount,
             _sendinit);
 
@@ -97,7 +100,7 @@ public:
             coll->cmd.xfer_alltoall.rcvbuf,
             topo_size,
             &coll->cmd.xfer_alltoall.rtype,
-            coll->cmd.xfer_alltoall.rtypecount,/// \todo only supporting PAMI_TYPE_BYTE so offset=length
+            coll->cmd.xfer_alltoall.rtypecount * rtype->GetDataSize(),/// \todo only supporting PAMI_TYPE_BYTE so offset=length
             coll->cmd.xfer_alltoall.rtypecount,
             _recvinit);
 

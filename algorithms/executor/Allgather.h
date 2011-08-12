@@ -59,6 +59,8 @@ namespace CCMI
         char                *_sbuf;
         char                *_rbuf;
         char                *_tmpbuf;
+        TypeCode            *_stype;
+        TypeCode            *_rtype;
 
         unsigned            _myindex;
 
@@ -200,26 +202,30 @@ namespace CCMI
 
         }
 
-        void  updateBuffers(char *src, char *dst, int len)
+        void  updateBuffers(char *src, char *dst, int len, TypeCode * stype, TypeCode * rtype)
         {
           _buflen = len;
           _sbuf   = src;
           _rbuf   = dst;
+          _stype  = stype;
+          _rtype  = rtype;
         }
 
-        void  setBuffers (char *src, char *dst, int len)
+        void  setBuffers (char *src, char *dst, int len, TypeCode * stype, TypeCode * rtype)
         {
           TRACE_ADAPTOR((stderr, "<%p>Executor::AllgatherExec::setInfo() src %p, dst %p, len %d, _pwq %p\n", this, src, dst, len, &_pwq));
 
           _buflen = len;
-          _sbuf = src;
-          _rbuf = dst;
+          _sbuf   = src;
+          _rbuf   = dst;
+          _stype  = stype;
+          _rtype  = rtype;
 
           CCMI_assert(_comm_schedule != NULL);
           size_t buflen = _native->numranks() * len;
-	  pami_result_t rc;
-	  rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
-	  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
+          pami_result_t rc;
+          rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
+          PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
         }
 
         //------------------------------------------
@@ -339,7 +345,7 @@ inline void  CCMI::Executor::AllgatherExec<T_ConnMgr, T_Schedule>::sendNext ()
               srcindex            = _gtopology->rank2Index(_srcranks[i]);
               dist                = (srcindex + _gtopology->size() - _myindex) % _gtopology->size();
               RecvStruct *recvstr = &_mrecvstr[_curphase].recvstr[i];
-              recvstr->pwq.configure (_tmpbuf + dist * _buflen, buflen, 0);
+              recvstr->pwq.configure (_tmpbuf + dist * _buflen, buflen, 0, _stype, _rtype);
               recvstr->pwq.reset();
               recvstr->subsize = buflen;
               recvstr->rank    = _srcranks[i];
@@ -361,7 +367,7 @@ inline void  CCMI::Executor::AllgatherExec<T_ConnMgr, T_Schedule>::sendNext ()
           new (&_dsttopology[i]) PAMI::Topology(_dstranks[i]);
 
           size_t buflen = _dstlens[i] * _buflen;
-          _pwq[i].configure (_tmpbuf, buflen, 0);
+          _pwq[i].configure (_tmpbuf, buflen, 0, _stype, _rtype);
           _pwq[i].reset();
           _pwq[i].produceBytes(buflen);
 
@@ -415,7 +421,7 @@ inline void  CCMI::Executor::AllgatherExec<T_ConnMgr, T_Schedule>::notifyRecv
           unsigned srcindex   = _gtopology->rank2Index(_srcranks[i]);
           unsigned dist       = (srcindex + _gtopology->size() - _myindex) % _gtopology->size();
           RecvStruct *recvstr = &_mrecvstr[cdata->_phase].recvstr[i];
-          recvstr->pwq.configure (_tmpbuf + dist * _buflen, buflen, 0);
+          recvstr->pwq.configure (_tmpbuf + dist * _buflen, buflen, 0, _stype, _rtype);
           recvstr->pwq.reset();
           recvstr->subsize = buflen;
           recvstr->rank    = _srcranks[i];

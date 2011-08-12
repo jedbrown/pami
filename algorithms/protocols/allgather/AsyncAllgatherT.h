@@ -45,7 +45,7 @@ class AsyncAllgatherT : public CCMI::Executor::Composite
 protected:
     CCMI::Executor::AllgatherExec<T_Conn, T_Schedule>  _executor __attribute__((__aligned__(16)));
     T_Schedule                                         _schedule;
-    T_Conn                                             *_cmgr;
+    T_Conn                                            *_cmgr;
 
 public:
 
@@ -55,20 +55,22 @@ public:
     AsyncAllgatherT () {};
     AsyncAllgatherT (Interfaces::NativeInterface   * native,
                      T_Conn                        * cmgr,
-                     pami_callback_t                  cb_done,
-                     PAMI_GEOMETRY_CLASS            * geometry,
-                     void                           *cmd) :
+                     pami_callback_t                 cb_done,
+                     PAMI_GEOMETRY_CLASS           * geometry,
+                     void                          * cmd) :
         Executor::Composite(),
         _executor (native, cmgr, geometry->comm(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)),
         _cmgr(cmgr)
     {
         TRACE_ADAPTOR ((stderr, "<%p>Allgather::AsyncAllgatherT() \n", this));
         pami_allgather_t *a_xfer = &((pami_xfer_t *)cmd)->cmd.xfer_allgather;
+        PAMI::Type::TypeCode * stype = (PAMI::Type::TypeCode *)a_xfer->stype;
+        PAMI::Type::TypeCode * rtype = (PAMI::Type::TypeCode *)a_xfer->rtype;
 
         COMPILE_TIME_ASSERT(sizeof(_schedule) >= sizeof(T_Schedule));
         create_schedule(&_schedule, sizeof(_schedule), (unsigned) - 1, native, geometry);
         _executor.setSchedule (&_schedule);
-        _executor.setBuffers (a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount);
+        _executor.setBuffers (a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount * stype->GetDataSize(), stype, rtype);
         _executor.setDoneCallback (cb_done.function, cb_done.clientdata);
     }
 
@@ -88,11 +90,13 @@ public:
         _cmgr(cmgr)
     {
         TRACE_ADAPTOR ((stderr, "<%p>Allgather::AsyncAllgatherT() \n", this));
+        PAMI::Type::TypeCode * sndtype = (PAMI::Type::TypeCode *)stype;
+        PAMI::Type::TypeCode * rcvtype = (PAMI::Type::TypeCode *)rtype;
 
         COMPILE_TIME_ASSERT(sizeof(_schedule) >= sizeof(T_Schedule));
         create_schedule(&_schedule, sizeof(_schedule), (unsigned) - 1, native, geometry);
         _executor.setSchedule (&_schedule);
-        _executor.setBuffers (sndbuf, rcvbuf, rtypecount);
+        _executor.setBuffers (sndbuf, rcvbuf, rtypecount * rcvtype->GetDataSize(), sndtype, rcvtype);
         _executor.setDoneCallback (cb_done.function, cb_done.clientdata);
 
     }
@@ -205,6 +209,8 @@ public:
         T_Composite* a_composite = NULL;
         CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *co = NULL;
         pami_allgather_t *a_xfer =  &((pami_xfer_t *)cmd)->cmd.xfer_allgather;
+        PAMI::Type::TypeCode * stype = (PAMI::Type::TypeCode *)a_xfer->stype;
+        PAMI::Type::TypeCode * rtype = (PAMI::Type::TypeCode *)a_xfer->rtype;
 
         PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)g;
         T_Conn *cmgr = _cmgr;
@@ -227,7 +233,7 @@ public:
 
             a_composite = co->getComposite();
             // update send buffer pointer and, at root, receive buffer pointers
-            a_composite->executor().updateBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->rtypecount);
+            a_composite->executor().updateBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->rtypecount * rtype->GetDataSize(), stype, rtype);
         }
         /// not found posted CollOp object, create a new one and
         /// queue it in active queue

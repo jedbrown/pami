@@ -72,6 +72,9 @@ namespace CCMI
                       (PAMI::Topology*)_geometry->getTopology(T_Geometry_Index),
                       ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.root,
                       ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.typecount,
+                      (PAMI::Type::TypeCode *)((pami_xfer_t *)cmd)->cmd.xfer_broadcast.type,
+                      ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.typecount,/*SSS: send type and recv type are the same in bcast*/
+                      (PAMI::Type::TypeCode *)((pami_xfer_t *)cmd)->cmd.xfer_broadcast.type,
                       ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.buf,
                       ((pami_xfer_t *)cmd)->cmd.xfer_broadcast.buf);
 
@@ -97,6 +100,9 @@ namespace CCMI
                    (PAMI::Topology*)_geometry->getTopology(T_Geometry_Index),
                    xfer->cmd.xfer_broadcast.root,
                    xfer->cmd.xfer_broadcast.typecount,
+                   (PAMI::Type::TypeCode*)xfer->cmd.xfer_broadcast.type,
+                   xfer->cmd.xfer_broadcast.typecount,
+                   (PAMI::Type::TypeCode*)xfer->cmd.xfer_broadcast.type,
                    xfer->cmd.xfer_broadcast.buf,
                    xfer->cmd.xfer_broadcast.buf);
 
@@ -133,7 +139,8 @@ namespace CCMI
 
         /// \brief initialize routing for allgatherv
         unsigned initialize (size_t                                  root,
-                             size_t                                  bytes,
+                             size_t                                  typecount,
+                             PAMI::Type::TypeCode                  * type,
                              char                                  * src,
                              char                                  * dst)
         {
@@ -144,9 +151,12 @@ namespace CCMI
           (_geometry->comm(),           
            (PAMI::Topology*)_geometry->getTopology(T_Geometry_Index),
            root,
-           bytes,
+           typecount,
+           type,
+           typecount,
+           type,
            src,
-           dst );
+           dst );//SSS: send type and recv type are the same for bcast
 
           SyncBcastPost();
 

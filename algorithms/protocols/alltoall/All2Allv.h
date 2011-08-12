@@ -115,7 +115,7 @@ namespace CCMI
 
         for (size_t i = 0; i < topo_size; ++i)
         {
-          _sendinit[i] = xfer_union->stypecounts[i];
+          _sendinit[i] = xfer_union->stypecounts[i] * ((TypeCode *)xfer_union->stype)->GetDataSize();
           _recvinit[i] = 0;
         }
 

@@ -73,11 +73,14 @@ public:
 
         CCMI::Adaptor::Allreduce::getReduceFunction((pami_dt)dt, (pami_op)op, sizeOfType, func);
 
+        TypeCode *stype = (TypeCode *)a_xfer->stype;
+        TypeCode *rtype = (TypeCode *)a_xfer->rtype;
+        sizeOfType = stype->GetDataSize();// SSS: Need sizeOfType for the data type not the primitive
         COMPILE_TIME_ASSERT(sizeof(_schedule) >= sizeof(T_Schedule));
         create_schedule(&_schedule, sizeof(_schedule), (unsigned) - 1, native, geometry);
         _executor.setSchedule (&_schedule);
         _executor.setBuffers (a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount*sizeOfType);
-        _executor.setReduceInfo(a_xfer->stypecount, sizeOfType, func, (pami_op)op, (pami_dt)dt);
+        _executor.setReduceInfo(a_xfer->stypecount, sizeOfType, func, stype, rtype, (pami_op)op, (pami_dt)dt);
         _executor.setDoneCallback (cb_done.function, cb_done.clientdata);
         _executor.setExclusive(a_xfer->exclusive);
     }
@@ -113,7 +116,7 @@ public:
         // using stypecount here because this constructor is called in the
         // unexpected message case:  stype and  rtype must be PAMI_TYPE_BYTE
         _executor.setBuffers (sndbuf, rcvbuf, stypecount);
-        _executor.setReduceInfo(stypecount, 1, func, op, dt);
+        _executor.setReduceInfo(stypecount, 1, func, (TypeCode*)PAMI_TYPE_BYTE, (TypeCode*)PAMI_TYPE_BYTE, op, dt);
         _executor.setDoneCallback (cb_done.function, cb_done.clientdata);
     }
 
@@ -253,8 +256,11 @@ public:
                                            a_xfer->op,
                                            dt,op);
             CCMI::Adaptor::Allreduce::getReduceFunction((pami_dt)dt, (pami_op)op, sizeOfType, func);
+            TypeCode *stype = (TypeCode *)a_xfer->stype;
+            TypeCode *rtype = (TypeCode *)a_xfer->rtype;
+            sizeOfType = stype->GetDataSize();
             a_composite->executor().updateBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount*sizeOfType);
-            a_composite->executor().updateReduceInfo(a_xfer->stypecount, sizeOfType, func, (pami_op)op, (pami_dt)dt);
+            a_composite->executor().updateReduceInfo(a_xfer->stypecount, sizeOfType, func, stype, rtype, (pami_op)op, (pami_dt)dt);
             a_composite->executor().setExclusive(a_xfer->exclusive);
         }
         /// not found posted CollOp object, create a new one and
