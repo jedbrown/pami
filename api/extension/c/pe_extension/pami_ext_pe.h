@@ -63,6 +63,7 @@ extern "C"
     PAMI_CONTEXT_REXMIT_BUF_SZ,    /**<  Q : size_t : N/A : retransmission buffer  size */
     PAMI_CONTEXT_RC_MAX_QP,        /**<  Q : size_t : N/A : max number of RC QPs */
     PAMI_CONTEXT_RC_USE_LMC,       /**<  Q : bool   : N/A : run with one RC QP per path */
+    PAMI_CONTEXT_COPY_ROUTINE,     /**<  Q : pami_copy_routine_t : N/A : function addresses of 3 copy routines */
   } pami_attribute_name_ext_t;
 
   /** \} */ /* end of "ext_attr" group */
@@ -225,6 +226,33 @@ extern "C"
   } pami_active_context_t; 
   
   /** \} */ /* end of "act_clients" group */
+
+
+  /**
+   * \defgroup copy_routine
+   * \{
+   *
+   * \ref PAMI_Context_query with \c PAMI_CONTEXT_COPY_ROUTINE returns in
+   * \ref pami_attribute_value_t.chararray a pointer to \ref pami_copy_routine_t
+   * whose memory is managed by PAMI internally.
+   *
+   */
+
+  typedef void (copyRtn) (void *,void*,size_t);
+
+  /**
+   * \brief Addresses for the copy routines
+   */
+  typedef struct
+  {
+      copyRtn *normal_copy;
+      copyRtn *copy_to_shm;
+      copyRtn *copy_from_shm;
+  } pami_copy_routine_t;
+
+  /** \} */ /* end of "copy_routine" group */
+
+
   /*****************************************************************************/
   /**
    * \defgroup mutex_cond Context mutex and condition
