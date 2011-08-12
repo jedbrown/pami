@@ -715,6 +715,13 @@ namespace PAMI
       {
         TRACE_FN_ENTER();
 
+        /* Local transfers are implemented as a 'reverse direct put'. */
+        if ( unlikely ( __global.mapping.isLocal ( target_task ) ) )
+          return postDmaPut_impl (state, local_fn, cookie,
+                                  target_task, target_offset, bytes,
+                                  remote_memregion, remote_offset,
+                                  local_memregion, local_offset);
+
         COMPILE_TIME_ASSERT(sizeof(get_state_t) <= T_StateBytes);
         get_state_t * get_state = (get_state_t *) state;
 
