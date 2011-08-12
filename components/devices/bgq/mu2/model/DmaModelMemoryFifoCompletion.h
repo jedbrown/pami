@@ -30,7 +30,10 @@ namespace PAMI
     {
       class DmaModelMemoryFifoCompletion : public MU::DmaModelBase<DmaModelMemoryFifoCompletion>
       {
-
+        protected:
+        
+          static const bool fence_supported = true;
+        
         public :
 
           friend class MU::DmaModelBase<DmaModelMemoryFifoCompletion>;

@@ -61,6 +61,9 @@ namespace PAMI
           /// \see getMemoryRegionSupported()
           static const bool dma_model_mr_supported = T::dma_model_mr_supported_impl;
 
+          /// \see getFenceSupported()
+          static const bool dma_model_fence_supported = T::dma_model_fence_supported_impl;
+
           /// \see getDmaTransferStateBytes()
           static const size_t dma_model_state_bytes = T::dma_model_state_bytes_impl;
 
@@ -87,6 +90,18 @@ namespace PAMI
           /// access the 'dma_model_mr_supported' constant.
           ///
           static const bool getMemoryRegionSupported ();
+
+          ///
+          /// \brief Returns the fence dma attribute of this model.
+          ///
+          /// \attention All dma model interface derived classes \b must
+          ///            contain a public static const data member named
+          ///            'bool dma_model_fence_supported'.
+          ///
+          /// C++ code using templates to specify the model may statically
+          /// access the 'dma_model_mr_supported' constant.
+          ///
+          static const bool getFenceSupported ();
 
           ///
           /// \brief Returns the transfer state bytes attribute of this model.
@@ -404,6 +419,49 @@ namespace PAMI
                                   size_t                local_offset,
                                   Memregion           * remote_memregion,
                                   size_t                remote_offset);
+
+          ///
+          /// \brief Post a non-blocking dma fence operation
+          ///
+          /// The post dma fence operation interface allows the dma model
+          /// and dma device implementations to optimize for performance by
+          /// avoiding the overhead to construct a dma message object. If
+          /// the dma device has resources immediately available then the
+          /// message may be directly posted, otherwise a dma message object
+          /// may be constructed to maintain the transfer state until the callback
+          /// is invoked.
+          ///
+          /// A fence operation will invoke the callback only after all
+          /// previous put and get operations to the target task and offset
+          /// have completed.
+          ///
+          /// \attention All dma model interface implementation classes \b must
+          ///            implement the postDmaFence_impl() method - even when
+          ///            T::dma_model_fence_supported == false.
+          ///
+          /// \tparam     T_StateBytes     Number of bytes in the dma transfer
+          ///                              state array - must be at least
+          ///                              T::dma_model_state_bytes
+          ///
+          /// \param [in] state            Location to store the internal dma transfer state
+          /// \param [in] local_fn         Callback to invoke when the operation is complete
+          /// \param [in] cookie           Completion callback opaque application data
+          /// \param [in] target_task      Global task identifier of the target
+          /// \param [in] target_offset    Identifier of the destination context
+          ///
+          /// \retval true  Dma operation completed and the completion
+          ///               callback was invoked
+          ///
+          /// \retval false Dma operation did not complete and the dma
+          ///               device must be advanced until the completion
+          ///               callback is invoked
+          ///
+          template <unsigned T_StateBytes>
+          inline bool postDmaFence (uint8_t              (&state)[T_StateBytes],
+                                    pami_event_function   local_fn,
+                                    void                * cookie,
+                                    size_t                target_task,
+                                    size_t                target_offset);
       };
 
       template <class T>
@@ -416,6 +474,12 @@ namespace PAMI
       const bool DmaModel<T>::getMemoryRegionSupported ()
       {
         return T::dma_model_mr_supported;
+      }
+
+      template <class T>
+      const bool DmaModel<T>::getFenceSupported ()
+      {
+        return T::dma_model_fence_supported;
       }
 
       template <class T>
@@ -603,6 +667,26 @@ namespace PAMI
                                                        local_offset,
                                                        remote_memregion,
                                                        remote_offset);
+      }
+
+      template <class T>
+      template <unsigned T_StateBytes>
+      inline bool DmaModel<T>::postDmaFence (
+        uint8_t               (&state)[T_StateBytes],
+        pami_event_function   local_fn,
+        void                * cookie,
+        size_t                target_task,
+        size_t                target_offset)
+      {
+        // This compile time assert verifies that sufficient memory was provided
+        // to maintain the state of the operation.
+        COMPILE_TIME_ASSERT(T::dma_model_state_bytes <= T_StateBytes);
+
+        return static_cast<T*>(this)->postDmaFence_impl (state,
+                                                         local_fn,
+                                                         cookie,
+                                                         target_task,
+                                                         target_offset);
       }
     };
   };

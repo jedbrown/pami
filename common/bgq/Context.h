@@ -528,6 +528,9 @@ namespace PAMI
 
         pami_endpoint_t self = PAMI_ENDPOINT_INIT(_clientid, __global.mapping.task(), _contextid);
 
+        _mu_fence.initialize (_dispatch.id--, self, _context);
+        _dispatch.init (&_mu_fence);
+
         Protocol::Get::GetRdma <Device::MU::DmaModelMemoryFifoCompletion, MUDevice> * rget_mu = NULL;
         Protocol::Put::PutRdma <Device::MU::DmaModelMemoryFifoCompletion, MUDevice> * rput_mu = NULL;
 

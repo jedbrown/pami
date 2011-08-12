@@ -85,6 +85,8 @@ namespace PAMI
       {
         public:
 
+          typedef T_Device Device;
+
           ///
           /// \brief Construct a shared memory dma model.
           ///
@@ -122,6 +124,9 @@ namespace PAMI
           static const size_t dma_model_state_bytes_impl = sizeof(DmaModelState<T_Device>);
           static const bool dma_model_va_supported_impl  = T_Device::shaddr_va_supported;
           static const bool dma_model_mr_supported_impl  = T_Device::shaddr_mr_supported;
+          
+          static const bool dma_model_fence_supported_impl = T_Ordered;
+          
 
           inline bool postDmaPut_impl (size_t   task,
                                        size_t   bytes,
@@ -558,6 +563,16 @@ namespace PAMI
             _device.post (fnum, msg);
 
             TRACE_ERR((stderr, "<< Shmem::DmaModel::postDmaGet_impl('non-blocking memregion'), return false\n"));
+            return false;
+          };
+
+          template <unsigned T_StateBytes>
+          inline bool postDmaFence_impl (uint8_t               (&state)[T_StateBytes],
+                                         pami_event_function   local_fn,
+                                         void                * cookie,
+                                         size_t                target_task,
+                                         size_t                target_offset)
+          {
             return false;
           };
 

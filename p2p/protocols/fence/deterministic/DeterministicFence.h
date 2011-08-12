@@ -42,6 +42,7 @@ namespace PAMI
           typedef DeterministicFence<T_PacketModel, T_DmaModel> Protocol;
 
           typedef uint8_t packet_model_state_t[T_PacketModel::packet_model_state_bytes];
+          typedef uint8_t dma_model_state_t[T_DmaModel::dma_model_state_bytes];
         
           typedef struct 
           {
@@ -54,12 +55,18 @@ namespace PAMI
             unsigned               active;
             pami_event_function    done_fn;
             void                 * cookie;
+            void                 * protocol;
             
             struct
             {
               packet_model_state_t state;
               packet_metadata_t    metadata;
             } pkt;
+            
+            struct
+            {
+              dma_model_state_t state;
+            } dma;
             
           } origin_state_t;
           
@@ -83,11 +90,13 @@ namespace PAMI
 
           T_PacketModel                                   _packet_ack_model;
           T_PacketModel                                   _packet_rts_model;
+          T_DmaModel                                      _dma_model;
           typename T_PacketModel::Device                & _packet_device;
           typename T_DmaModel::Device                   & _dma_device;
           MemoryAllocator < sizeof(fence_state_t), 16 >   _allocator;
           pami_endpoint_t                                 _origin;
           pami_context_t                                  _context;
+          pami_result_t                                   _status;
 
 
           inline DeterministicFence () {};
@@ -207,6 +216,28 @@ namespace PAMI
 
             return 0;
           };
+
+          static void dma_done (pami_context_t   context,
+                                void           * cookie,
+                                pami_result_t    result)
+          {
+            fence_state_t * fence = (fence_state_t *) cookie;
+            Protocol * protocol = (Protocol *) fence->origin.protocol;
+            
+            fence->origin.active--;
+            
+            if (fence->origin.active == 0)
+              {
+                if (fence->origin.done_fn)
+                  fence->origin.done_fn (protocol->_context,
+                                         fence->origin.cookie,
+                                         PAMI_SUCCESS);
+
+                protocol->freeState (fence);
+              }
+
+            return;
+          }
                
         public:
 
@@ -217,6 +248,7 @@ namespace PAMI
                                      typename T_DmaModel::Device    & dma_device) :
             _packet_ack_model (packet_device),
             _packet_rts_model (packet_device),
+            _dma_model (dma_device, _status),
             _packet_device (packet_device),
             _dma_device (dma_device)
           {
@@ -229,6 +261,9 @@ namespace PAMI
 
             // This protocol only works with deterministic models.
             COMPILE_TIME_ASSERT(T_PacketModel::deterministic_packet_model == true);
+            
+            // This protocol only work with fence-enabled dma models.
+            COMPILE_TIME_ASSERT(T_DmaModel::dma_model_fence_supported == true);
 
             // ----------------------------------------------------------------
             // Compile-time assertions (end)
@@ -298,10 +333,11 @@ namespace PAMI
             fence_state_t * fence = allocateState ();
             fence->origin.done_fn             = done_fn;
             fence->origin.cookie              = cookie;
+            fence->origin.protocol            = (void *) this;
             fence->origin.pkt.metadata.origin = _origin;
             fence->origin.pkt.metadata.cookie = (uintptr_t) fence;
             
-            fence->origin.active              = 1;
+            fence->origin.active              = 2;
 
             _packet_rts_model.postPacket (fence->origin.pkt.state,
                                           NULL, NULL,
@@ -309,6 +345,10 @@ namespace PAMI
                                           (void *) NULL, 0,
                                           (void *) & fence->origin.pkt.metadata,
                                           sizeof (packet_metadata_t));
+                                          
+            _dma_model.postDmaFence (fence->origin.dma.state,
+                                     dma_done, (void *) fence,
+                                     task, offset);
                                           
             return PAMI_SUCCESS;
           };
