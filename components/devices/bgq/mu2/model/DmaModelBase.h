@@ -865,26 +865,26 @@ namespace PAMI
             size_t bytes0 = bytes >> 1;
             size_t bytes1 = bytes - bytes0;
 
-            size_t pbytes = static_cast<T_Model*>(this)->
-                            initializeRemoteGetPayload (e_minus_payload_vaddr,
-                                                        local_dst_pa,
-                                                        remote_src_pa,
-                                                        bytes0,
-                                                        MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EM,
-                                                        MUHWI_PACKET_HINT_EM,
-                                                        splitComplete,
-                                                        splitCookie);
+            size_t pbytes0 = static_cast<T_Model*>(this)->
+                             initializeRemoteGetPayload (e_minus_payload_vaddr,
+                                                         local_dst_pa,
+                                                         remote_src_pa,
+                                                         bytes0,
+                                                         MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EM,
+                                                         MUHWI_PACKET_HINT_EM,
+                                                         splitComplete,
+                                                         splitCookie);
             // Determine the physical address of the rget payload buffer from
             // the model state memory.
             Kernel_MemoryRegion_t memRegion;
             uint32_t rc;
-            rc = Kernel_CreateMemoryRegion (&memRegion, e_minus_payload_vaddr, bytes);
+            rc = Kernel_CreateMemoryRegion (&memRegion, e_minus_payload_vaddr, T_Model::payload_size * 2);
             PAMI_assert_debug ( rc == 0 );
             uint64_t paddr = (uint64_t)memRegion.BasePa +
                              ((uint64_t)e_minus_payload_vaddr - (uint64_t)memRegion.BaseVa);
             TRACE_FORMAT("e_minus_payload_vaddr = %p, paddr = %ld (%p)", e_minus_payload_vaddr, paddr, (void *)paddr);
 
-            rgetMinus->setPayload (paddr, T_Model::payload_size);
+            rgetMinus->setPayload (paddr, pbytes0);
 
             /* 		MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Rget0",desc[0]); */
             /* 		MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Dput0",(MUHWI_Descriptor_t*)vaddr); */
@@ -893,16 +893,16 @@ namespace PAMI
             // Initialize the rget payload descriptor(s) for the E+ rget
             void * e_plus_payload_vaddr =  (void *) get_state->e_plus_payload;
 
-            pbytes = static_cast<T_Model*>(this)->
-                     initializeRemoteGetPayload (e_plus_payload_vaddr,
-                                                 local_dst_pa + bytes0,
-                                                 remote_src_pa + bytes0,
-                                                 bytes1,
-                                                 MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EP,
-                                                 MUHWI_PACKET_HINT_EP,
-                                                 splitComplete,
-                                                 splitCookie);
-            rgetPlus->setPayload (paddr + T_Model::payload_size, T_Model::payload_size);
+            size_t pbytes1 = static_cast<T_Model*>(this)->
+                             initializeRemoteGetPayload (e_plus_payload_vaddr,
+                                                         local_dst_pa + bytes0,
+                                                         remote_src_pa + bytes0,
+                                                         bytes1,
+                                                         MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EP,
+                                                         MUHWI_PACKET_HINT_EP,
+                                                         splitComplete,
+                                                         splitCookie);
+            rgetPlus->setPayload (paddr + pbytes0, pbytes1);
 
             /* 		MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Rget1",desc[1]); */
             /* 		MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Dput1",(MUHWI_Descriptor_t*)vaddr); */
@@ -993,27 +993,27 @@ namespace PAMI
 
             // Initialize the rget payload descriptor(s)
             void * vaddr = (void *) get_state->e_minus_payload;
-            static_cast<T_Model*>(this)->
-            initializeRemoteGetPayload (vaddr,
-                                        local_dst_pa,
-                                        remote_src_pa,
-                                        bytes,
-                                        map,
-                                        MUHWI_PACKET_HINT_E_NONE,
-                                        local_fn,
-                                        cookie);
+            size_t pbytes = static_cast<T_Model*>(this)->
+                            initializeRemoteGetPayload (vaddr,
+                                                        local_dst_pa,
+                                                        remote_src_pa,
+                                                        bytes,
+                                                        map,
+                                                        MUHWI_PACKET_HINT_E_NONE,
+                                                        local_fn,
+                                                        cookie);
 
             // Determine the physical address of the rget payload buffer from
             // the model state memory.
             Kernel_MemoryRegion_t memRegion;
             uint32_t rc;
-            rc = Kernel_CreateMemoryRegion (&memRegion, vaddr, bytes);
+            rc = Kernel_CreateMemoryRegion (&memRegion, vaddr, pbytes);
             PAMI_assert_debug ( rc == 0 );
             uint64_t paddr = (uint64_t)memRegion.BasePa +
                              ((uint64_t)vaddr - (uint64_t)memRegion.BaseVa);
             TRACE_FORMAT("vaddr = %p, paddr = %ld (%p)", vaddr, paddr, (void *)paddr);
 
-            rget->setPayload (paddr, T_Model::payload_size);
+            rget->setPayload (paddr, pbytes);
             /*             MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Rget",desc); */
             /*             MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Dput",(MUHWI_Descriptor_t*)vaddr); */
             /*             MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Memfifo-Completion",((MUHWI_Descriptor_t*)vaddr)+1); */
