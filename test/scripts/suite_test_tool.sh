@@ -679,6 +679,7 @@ else
 			    evalSignal=$runSubRC
 			else # I give up
 			    evalSignal=10 # SIGUSR1
+			    evalSummary="Failed: no signal"
 			fi			   
 		    fi
 
@@ -781,6 +782,7 @@ else
 			    evalSignal=$runSubRC
 			else # I give up
 			    evalSignal=10 # SIGUSR1
+			    evalSummary="Failed: no signal"
 			fi
 		    fi
 		fi
@@ -800,6 +802,7 @@ fi
 if [ $evalSignal -eq 0 ] && [ $mpich -eq 1 ] && [ -e $testLog ] && (( $( grep -a -c 'No Errors' $testLog ) < 1 ))
 then
     evalSignal=10 # SIGUSR1
+    evalSummary="Failed: no signal"
 fi 
 
 if [ "${evalSummary}" == '' ]
@@ -943,9 +946,14 @@ runHW ()
     HWSignalVar=$( echo $8 | awk '{print $1}' )
     elapsedTimeVar=$( echo $8 | awk '{print $2}' )
 
-    runjob="${run_floor}/hlcs/bin/runjob"
-    runfctest="${run_floor}/scripts/runfctest.sh"
-    type='MMCS'
+    local pythonBin=""
+    local pythonVer=0
+    local runjob="${run_floor}/hlcs/bin/runjob"
+    local runfctest="${run_floor}/scripts/runfctest.sh"
+    local type='MMCS'
+    local stdinFile=""
+
+    
 
     runjobArgs=$( echo "${args}" | sed 's/ -/ --args -/g' | sed 's/"//g' ) # use "${args}" for when 1st arg is -n
 
@@ -996,7 +1004,8 @@ runHW ()
                                       shift                  
 		                      while [[ "${1}" =~ '=' ]];do
 					  env_name=$( echo $1 | cut -d '=' -f1 | sed 's/"//g' )
-					  env_val=$( echo $1 | cut -d '=' -f2 | sed 's/"//g' )
+					  # Can't use cut for value due to XLSMPOPTS env vars
+					  env_val=$( echo ${1#*=} | sed 's/"//g' )
 					  
 					  if [ "${env_name}" != 'BG_PROCESSESPERNODE' ] && [ "${env_name}" != 'MPIRUN_MODE' ]
 					  then
@@ -1048,7 +1057,7 @@ runHW ()
 
 				      if [ -e $incFile ]
 				      then
-					  cp $incFile $cwd
+					  cp -d $incFile $cwd
 				      
 					  if [ $? -ne 0 ] || [ ! -e "${cwd}/${incFile##*/}" ]
 					  then
@@ -1074,7 +1083,50 @@ runHW ()
 				      fi
 
 				      shift # to next option
-				      ;;   
+				      ;;  
+	    --python )                shift # to get python version
+		                      pythonVer=$1
+
+				      # Cut this out of the options text so we don't send it to runjob
+				      # Save off everything after "--python"
+				      temp_opts=${opts##*--python}
+
+				      # Set opts = everything before "--python"
+				      opts=${opts%%--python*}
+
+				      # Final opts string with --python ver removed
+				      if [[ "${temp_opts}" =~ '--' ]]
+				      then					 
+					  opts="${opts}--${temp_opts#*--}"
+				      fi
+
+				      shift # to next option
+				      ;; 
+	    --stdin )                 shift # to get stdin file
+		                      stdinFile=$1
+
+				      # Verify file exists
+                                      if [ ! -e "${cwd}/${stdinFile}" ]
+				      then
+				      	  echo "ERROR (E)::runHW:  --stdin file: \"${stdinFile}\" DNE!!"
+					  runHW_rc=2
+				      fi
+
+				      # Cut this out of the options text so we don't send it to runjob
+				      # Save off everything after "--stdin"
+				      temp_opts=${opts##*--stdin}
+
+				      # Set opts = everything before "--stdin"
+				      opts=${opts%%--stdin*}
+
+				      # Final opts string with --stdin ver removed
+				      if [[ "${temp_opts}" =~ '--' ]]
+				      then					 
+					  opts="${opts}--${temp_opts#*--}"
+				      fi
+
+				      shift # to next option
+				      ;;
 	    * )                       # Goto the next value
 		                      shift
 	esac
@@ -1270,9 +1322,18 @@ runHW ()
         # Remove "'s from args string if they exist
 #         args=$( echo $args | sed 's/"//g' ) 
 
-	# === Use ./${exe} until Issue 3041 is fixed ===
-	runCmd="${runjob} --cwd ${cwd} --exe ./${exe} --np ${HWProcs} --ranks-per-node ${HWMode} --block ${HWBlock}"
-  
+        # === Use ./${exe} until Issue 3041 is fixed ===
+	# Is this a python run?
+	
+	if [ "${pythonVer}" != '0' ]
+	then
+	    pythonBin="${pythonBase}/Python-${pythonVer}/bin/python${pythonVer:0:3}"
+
+	    runCmd="${runjob} --cwd ${cwd} --exe ${pythonBin} --np ${HWProcs} --ranks-per-node ${HWMode} --block ${HWBlock}"
+	else
+	    runCmd="${runjob} --cwd ${cwd} --exe ${exe} --np ${HWProcs} --ranks-per-node ${HWMode} --block ${HWBlock}"
+	fi
+
 	# Add ENV vars
 	if [ "${envs}" != "" ]
 	then
@@ -1289,6 +1350,12 @@ runHW ()
 	if [ "${runjobArgs}" != "" ]
 	then
 	    runCmd="${runCmd} --args ${runjobArgs}"
+	fi
+
+	# Add stdin file
+	if [ "${stdinFile}" != "" ]
+	then
+	    runCmd="${runCmd} < ${stdinFile}"
 	fi
     fi
 
@@ -1578,7 +1645,8 @@ exe_preProcessing ()
 	    -env | --envs )           shift                  
 		                      while [[ "${1}" =~ '=' ]]; do
 					  env_name=$( echo $1 | cut -d '=' -f1 | sed 's/"//g' )
-					  env_val=$( echo $1 | cut -d '=' -f2 | sed 's/"//g' )
+					  # Can't use cut for value due to XLSMPOPTS env vars
+					  env_val=$( echo ${1#*=} | sed 's/"//g' )
 					  
 					  # Update final mode value
 					  if [ "${env_name}" == 'BG_PROCESSESPERNODE' ] || [ "${env_name}" == 'MPIRUN_MODE' ]
@@ -1851,6 +1919,7 @@ exe_preProcessing ()
 #	shift
     done
 #fi
+
     # Parse exe args looking for number of threads
     set -- $(echo "${args}" | sed -e 's/"//g') # use "${args}" for when 1st arg is -n
 
@@ -1914,8 +1983,8 @@ exe_preProcessing ()
     # Update BG_SHAREDMEMSIZE ...default is 0, but it must be > 0 if mode is > 1 (for MPI apps)
 
     if (( $eppMode > 1 )) && (( $BG_SHAREDMEMSIZE < 1 ))  
-    then # set BG_SHAREDMEMSIZE to 32
-	BG_SHAREDMEMSIZE=32
+    then # set BG_SHAREDMEMSIZE to 64
+	BG_SHAREDMEMSIZE=64
     fi
 
     return 0
@@ -1979,7 +2048,8 @@ runSim ()
 	    --envs )                  shift                  
 		                      while [[ "${1}" =~ '=' ]];do
 					  env_name=$( echo $1 | cut -d '=' -f1 | sed 's/"//g' )
-					  env_val=$( echo $1 | cut -d '=' -f2 | sed 's/"//g' )
+					  # Can't use cut for value due to XLSMPOPTS env vars
+					  env_val=$( echo ${1#*=} | sed 's/"//g' )
 					  
 					  # Update environment array
 					  if [ "${env_name}" != 'BG_PROCESSESPERNODE' ]
@@ -2892,6 +2962,14 @@ usage ()
     echo "                             ex:  errhan/errfatal --numnodes 1 --notes \"This should fail\""
     echo "                             ex:  exercisers/bgqcore/bgqcore.elf --ranks-per-node 16 --notes \"--matrixSize 4 --runtime 1\" --args \"--matrixSize 4 --runtime 1\""
     echo ""
+    echo " --python <level>            Tells script that this binary requires python and which level of python to use."
+    echo "                             Python runs are different because when setting up runjob the --exe parm is the python tool and the python script is the --arg parm."
+    echo "                             Valid python levels are:  2.6 & 3.1.1"
+    echo "                             ex:  --python 3.1.1"
+    echo ""
+    echo "                             full testlist entry ex:"
+    echo "                             functional/dynlink/python/dynlink_python3.py --python 3.1.1 --envs LD_LIBRARY_PATH=/bgsys/tools/Python-3.1.1/lib BG_INTERPRETER=/bgsys/drivers/ppcfloor/gnu-linux/powerpc64-bgq-linux/lib/ld64.so.1 --args ./dynlink_python3.py"
+    echo ""
     echo " --skip <reason>             Tells script that this binary is to be skipped (compile, copy and run) and why"
     echo "                             <reason> must be a quoted string"
     echo "                             ex:  scripts/hello.sh --skip \"Unimplemented\""
@@ -2899,6 +2977,10 @@ usage ()
     echo ""
     echo " --standalone                Tells script that this binary is to be run natively without real or simulated hadware"
     echo "                             ex:  scripts/hello.sh --standalone"
+    echo ""
+    echo " --stdin <file>              Tells script to direct file to stdin"
+    echo "                             NOTE:  use --include <file> to copy stdin file to exe dir then use relative file name with --stdin parm"
+    echo "                             ex:  --stdin ammp.in"
 
 }
 
@@ -2955,6 +3037,7 @@ gpfs=0                           # 0 = default file server (bgusr_base), 1 = gpf
 sandbox=""
 common_exe_dir=""
 exe_base=""
+pythonBase="/bgsys/tools"        # Dir where Python bins 1st diverge
 user_outdir=0
 out_dir=""
 run_type='hw'
@@ -2964,9 +3047,9 @@ serverID="unknown"
 cmdLineNode=0           # User specified node value on command line 
 cmdLineMode=0           # User specified mode value on command line
 cmdLineNP=0             # User specified NP value on command line
-numNodes=0              # total num of nodes
-forceNP=0               # force np to this value instead of ranks/node * nodes
-numProcs=0              # total num of ranks/tasks = ranks/node * nodes
+numNodes=0              # Total num of nodes
+forceNP=0               # Force np to this value instead of ranks/node * nodes
+numProcs=0              # Total num of ranks/tasks = ranks/node * nodes
 forceScaling=0
 needBlock=0             # 0 = can run w/out block, 1 = fail if no block given  
 #block_name="missing"
@@ -2979,8 +3062,8 @@ freeBlock=0             # 1 = Free block after each test
 noFree=0                # 1 = Don't free blocks after execution phase (default is to free them)
 ioReboot=0              # 1 = Reboot I/O blocks on CN fail
 fpga_queue=0
-temp_jobid=""           # used to build common jobid between llsubmit and llq
-jobid=""                # used by FPGA and HW runs
+temp_jobid=""           # Used to build common jobid between llsubmit and llq
+jobid=""                # Used by FPGA and HW runs
 mpich=0
 ignoreSysFails=0
 ioblockHash="/tmp/${USER}_hashmap.ioblocks.${timestamp}"   # list of I/O blocks currently booted by this run 
@@ -3597,7 +3680,7 @@ then
     then 
 	if (( $BG_PROCESSESPERNODE > 1 )) # more than 1 rank/node
 	then
-	    export BG_SHAREDMEMSIZE=32 
+	    export BG_SHAREDMEMSIZE=64 
 	else
 	    export BG_SHAREDMEMSIZE=0 # since there isn't anyone to share with
 	fi
@@ -3890,14 +3973,14 @@ while read xtest xopts
   fi 
       
   # Disable mpich "io" runs for now:
-  if [ $mpich -eq 1 ]
-  then
-      if [[ "${xtest}" =~ ^io/ ]] || [[ "${xtest}" =~ '/io/' ]]
-      then
-	  hput $exeHash "${TEST_ARRAY[$element]}:$element:exe" 0
-	  hput $exeHash "${TEST_ARRAY[$element]}:$element:status" 'Skipped (I/O)'
-      fi
-  fi
+#  if [ $mpich -eq 1 ]
+#  then
+#      if [[ "${xtest}" =~ ^io/ ]] || [[ "${xtest}" =~ '/io/' ]]
+#      then
+#	  hput $exeHash "${TEST_ARRAY[$element]}:$element:exe" 0
+#	  hput $exeHash "${TEST_ARRAY[$element]}:$element:status" 'Skipped (I/O)'
+#      fi
+#  fi
 
 #  hput $exeHash "${TEST_ARRAY[$element]}:$element:runOpts" "$(echo ${xopts%%--args*} | tr -d '\n' | tr -d '\r')"
 
@@ -4835,7 +4918,8 @@ then
 	  overallStatus=''
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:status" overallStatus
 
-	  if [[ "${overallStatus}" == 'Skipped (Compile Only)' && $compile -eq 0 ]] || [ "${overallStatus}" == 'Skipped (DNE)' ] || [ "${overallStatus}" == 'Skipped (I/O)' ]
+#	  if [[ "${overallStatus}" == 'Skipped (Compile Only)' && $compile -eq 0 ]] || [ "${overallStatus}" == 'Skipped (DNE)' ] || [ "${overallStatus}" == 'Skipped (I/O)' ]
+	  if [[ "${overallStatus}" == 'Skipped (Compile Only)' && $compile -eq 0 ]] || [ "${overallStatus}" == 'Skipped (DNE)' ]
 	  then
 
 	      hget $exeHash "${TEST_ARRAY[$test]}:$test:stub" stub
