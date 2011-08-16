@@ -52,6 +52,9 @@ namespace PAMI
       class PacketModel : public Interface::PacketModel < PacketModel<T_Device> >
       {
         public:
+
+          typedef T_Device Device;
+
           ///
           /// \brief Construct a shared memory device packet model.
           ///

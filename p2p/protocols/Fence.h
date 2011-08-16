@@ -15,6 +15,8 @@
 
 #include <pami.h>
 
+#include "components/memory/MemoryAllocator.h"
+
 #include "util/trace.h"
 
 #define DO_TRACE_ENTEREXIT 0
@@ -26,6 +28,32 @@ namespace PAMI
   {
     namespace Fence
     {
+
+      // Forward declaration
+      template <class T0, class T1> class CompositeFence;
+
+      template <class T0, class T1, class T_Allocator>
+      static CompositeFence<T0, T1> * generate (T0            * fence0,
+                                                T1            * fence1,
+                                                T_Allocator   & allocator,
+                                                pami_result_t & result)
+        {
+          TRACE_FN_ENTER();
+          COMPILE_TIME_ASSERT(sizeof(CompositeFence<T0, T1>) <= T_Allocator::objsize);
+
+          void * composite = allocator.allocateObject ();
+          new (composite) CompositeFence<T0, T1> (fence0, fence1, result);
+
+          if (result != PAMI_SUCCESS)
+            {
+              allocator.returnObject (composite);
+              composite = NULL;
+            }
+
+          TRACE_FN_EXIT();
+          return (CompositeFence<T0, T1> *) composite;
+        };
+
       ///
       /// \brief Base class for point-to-point fence implementations.
       ///
@@ -104,6 +132,103 @@ namespace PAMI
           };
 
       }; // PAMI::Protocol::Fence::Error class
+
+      template <class T0, class T1>
+      class CompositeFence : public Fence
+      {
+        protected:
+
+          typedef struct
+          {
+            volatile unsigned     active;
+            pami_event_function   done_fn;
+            void                * cookie;
+            MemoryAllocator<32,16> * allocator;
+          } state_t;
+
+
+          static void fence_done (pami_context_t   context,
+                                  void           * cookie,
+                                  pami_result_t    result)
+          {
+            state_t * state = (state_t *) cookie;
+
+            state->active--;
+
+            if (state->active == 0)
+              {
+                pami_event_function f = state->done_fn;
+                void * c = state->cookie;
+
+                state->allocator->returnObject(cookie);
+
+                if (f != NULL)
+                  f (context, c, PAMI_SUCCESS);
+              }
+          };
+
+          MemoryAllocator<32,16> _allocator;
+          T0 * _fence0;
+          T1 * _fence1;
+
+
+        public:
+
+          inline CompositeFence (T0 * fence0, T1 * fence1, pami_result_t & result) :
+            _allocator(),
+            _fence0 (fence0),
+            _fence1 (fence1)
+          {
+            result = PAMI_SUCCESS;
+          };
+
+          virtual ~CompositeFence () {};
+
+          virtual pami_result_t endpoint (pami_event_function   done_fn,
+                                          void                * cookie,
+                                          pami_endpoint_t       target)
+          {
+            TRACE_FN_ENTER();
+
+            pami_result_t result = PAMI_ERROR;
+
+            state_t * state = (state_t *) _allocator.allocateObject();
+
+            state->active    = 2;
+            state->done_fn   = done_fn;
+            state->cookie    = cookie;
+            state->allocator = & _allocator;
+
+            result = _fence0->endpoint (fence_done, (void *) state, target);
+            if (result != PAMI_SUCCESS)
+              {
+                TRACE_FORMAT( "_fence0->endpoint() returned %d", result);
+                TRACE_FN_EXIT();
+                return result;
+              }
+
+            result = _fence1->endpoint (fence_done, (void *) state, target);
+            if (result != PAMI_SUCCESS)
+              {
+                TRACE_FORMAT( "_fence1->endpoint() returned %d", result);
+                TRACE_FN_EXIT();
+                return result;
+              }
+
+            TRACE_FN_EXIT();
+            return result;
+          };
+
+          virtual pami_result_t all (pami_event_function   done_fn,
+                                     void                * cookie)
+          {
+            TRACE_FN_ENTER();
+            TRACE_FORMAT( "return PAMI_ERROR (%d)", PAMI_ERROR);
+            TRACE_FN_EXIT();
+            return PAMI_ERROR;
+          };
+
+      }; // PAMI::Protocol::Fence::CompositeFence class
     };   // PAMI::Protocol::Fence namespace
   };     // PAMI::Protocol namespace
 };       // PAMI namespace

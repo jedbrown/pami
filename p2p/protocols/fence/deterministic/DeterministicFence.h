@@ -241,6 +241,21 @@ namespace PAMI
                
         public:
 
+          template <class T_Allocator>
+          static DeterministicFence * generate (typename T_PacketModel::Device & packet_device,
+                                                typename T_DmaModel::Device    & dma_device,
+                                                T_Allocator                    & allocator)
+          {
+            TRACE_FN_ENTER();
+            COMPILE_TIME_ASSERT(sizeof(DeterministicFence) <= T_Allocator::objsize);
+
+            void * fence = allocator.allocateObject ();
+            new (fence) DeterministicFence (packet_device, dma_device);
+
+            TRACE_FN_EXIT();
+            return (DeterministicFence *) fence;
+          };
+
           ///
           /// \brief DeterministicFence class constructor.
           ///

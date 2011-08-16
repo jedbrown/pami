@@ -27,6 +27,7 @@
 #include "components/devices/shmem/ShmemDmaMessage.h"
 #include "components/devices/shmem/ShmemPacket.h"
 #include "components/devices/shmem/ShmemPacketMessage.h"
+#include "components/devices/shmem/ShmemFenceMessage.h"
 #include "components/devices/shmem/shaddr/ShaddrInterface.h"
 #include "components/devices/shmem/shaddr/SystemShaddr.h"
 
@@ -573,6 +574,29 @@ namespace PAMI
                                          size_t                target_task,
                                          size_t                target_offset)
           {
+            size_t fnum = _device.fnum (_device.task2peer(target_task), target_offset);
+
+            // If the send queue is empty and there are no active packets
+            // injected from this device ... then the fence is already complete.
+            if ((_device.isSendQueueEmpty (fnum)) &&
+                (_device.activePackets(fnum) == false))
+              {
+                if (local_fn) local_fn (_context, cookie, PAMI_SUCCESS);
+                return true;
+              }
+
+            // Post a fence message to the send queue. The fence message simply
+            // blocks at the head of the send queue until there are no active
+            // packets from this device in the fifo.
+            COMPILE_TIME_ASSERT(sizeof(FenceMessage<T_Device>) <= T_StateBytes);
+            FenceMessage<T_Device> * msg =
+              (FenceMessage<T_Device> *) state;
+            new (msg) FenceMessage<T_Device> (local_fn,
+                                              cookie,
+                                              &_device,
+                                              fnum);
+            _device.post (fnum, msg);
+
             return false;
           };
 

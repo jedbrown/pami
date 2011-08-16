@@ -107,8 +107,9 @@ namespace PAMI
     };
 
     template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount, unsigned T_SetCount>
+    template <unsigned T_StateBytes>
     pami_result_t ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount, T_SetCount>::postCompletion
-    (uint8_t               state[completion_work_size],
+    (uint8_t               (&state)[T_StateBytes],
      pami_event_function   local_fn,
      void                * cookie,
      size_t                fnum,
@@ -116,7 +117,7 @@ namespace PAMI
     {
       TRACE_ERR((stderr, ">> (%zu) ShmemDevice::postCompletion(%p,%p,%p,%zu,%zu), _local_progress_device = %p\n", __global.mapping.task(), state, local_fn, cookie, fnum, sequence, _local_progress_device));
 
-      COMPILE_TIME_ASSERT(sizeof(Shmem::RecPacketWork<T_Fifo>) <= completion_work_size);
+      COMPILE_TIME_ASSERT(sizeof(Shmem::RecPacketWork<T_Fifo>) <= T_StateBytes);
 
       Shmem::RecPacketWork<T_Fifo> * work = (Shmem::RecPacketWork<T_Fifo> *) state;
       new (work) Shmem::RecPacketWork<T_Fifo> (_fifo[fnum], local_fn, cookie, sequence);

@@ -214,10 +214,6 @@ namespace PAMI
           _desc_fifo.init (mm, _unique_str);
           
           // Initialize the deterministic packet connection array.
-          pami_result_t mmrc;
-  	      mmrc = __global.heap_mm->memalign((void **) & _connection, 16, sizeof(void *) * _nfifos);
-          PAMI_assertf(mmrc == PAMI_SUCCESS, "memalign failed for shared memory devices, rc=%d\n", mmrc);
-
           for (i = 0; i < _nfifos; i++) _connection[i] = NULL;
         };
 
@@ -311,7 +307,8 @@ namespace PAMI
 
         pami_result_t post (size_t ififo, Shmem::SendQueue::Message * msg);
 
-        pami_result_t postCompletion (uint8_t               state[completion_work_size],
+        template <unsigned T_StateBytes>
+        pami_result_t postCompletion (uint8_t               (&state)[T_StateBytes],
                                       pami_event_function   local_fn,
                                       void                * cookie,
                                       size_t                fnum,
@@ -385,7 +382,7 @@ namespace PAMI
         // Deterministic packet interface connection array
         // -------------------------------------------------------------
         
-        void ** _connection;
+        void * _connection[T_FifoCount];
     };
 
     template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount, unsigned T_SetCount>
