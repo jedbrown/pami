@@ -126,6 +126,20 @@ namespace PAMI
 
         public:
 
+          template <class T_Device, class T_Allocator>
+          static PutOverSend * generate (T_Device      & device,
+                                         T_Allocator   & allocator)
+          {
+            TRACE_FN_ENTER();
+            COMPILE_TIME_ASSERT(sizeof(PutOverSend) <= T_Allocator::objsize);
+
+            void * protocol = allocator.allocateObject ();
+            new (protocol) PutOverSend (device);
+
+            TRACE_FN_EXIT();
+            return (PutOverSend *) protocol;
+          };
+
           template <class T_Device>
           inline PutOverSend (T_Device & device) :
               _ack_model (device),

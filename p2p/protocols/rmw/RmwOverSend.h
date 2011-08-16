@@ -91,6 +91,21 @@ namespace PAMI
 
         public:
 
+          template <class T_Device, class T_MemoryManager>
+          static RmwOverSend * generate (T_Device        & device,
+                                         T_MemoryManager * mm)
+          {
+            TRACE_FN_ENTER();
+
+            void * protocol = NULL;
+            pami_result_t result = mm->memalign((void **)&protocol, 16, sizeof(RmwOverSend));
+            PAMI_assert_alwaysf(result == PAMI_SUCCESS, "Failed to get memory for rmw-over-send protocol");
+            new (protocol) RmwOverSend (device);
+
+            TRACE_FN_EXIT();
+            return (RmwOverSend *) protocol;
+          };
+
           template <class T_Device>
           inline RmwOverSend (T_Device & device) :
               _ack_32b_model (device),

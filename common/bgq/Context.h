@@ -465,6 +465,11 @@ namespace PAMI
           _contextid (id),
           //_dispatch_id(255),
           _geometry_map(geometry_map),
+          _get (&_no_get),
+          _put (&_no_put),
+          _rget (&_no_rget),
+          _rput (&_no_rput),
+          _rmw (&_no_rmw),
           _lock(),
           _multi_registration(NULL),
           _ccmi_registration(NULL),
@@ -483,10 +488,11 @@ namespace PAMI
           _pgas_composite_registration(NULL),
           _dummy_disable(false),
           _dummy_disabled(false),
-          _get(devices->_mu[_contextid]),
-          _put(devices->_mu[_contextid]),
-          _rmw(devices->_mu[_contextid])
-//          _rmw(devices->_shmem[_contextid])
+          _no_get (_context),
+          _no_put (_context),
+          _no_rget (),
+          _no_rput (),
+          _no_rmw ()
       {
         TRACE_FN_ENTER();
         _async_suspend = NULL;
@@ -518,16 +524,22 @@ namespace PAMI
         _devices->init(_clientid, _contextid, _client, _context, &_mm);
 
         pami_endpoint_t self = PAMI_ENDPOINT_INIT(_clientid, __global.mapping.task(), _contextid);
-        _get.initialize (_dispatch.id--, self, _context);
-        _put.initialize (_dispatch.id--, self, _context);
-        _rmw.initialize (_dispatch.id--, self, _context);
 
         Protocol::Get::GetRdma <Device::MU::DmaModelMemoryFifoCompletion, MUDevice> * rget_mu = NULL;
         Protocol::Put::PutRdma <Device::MU::DmaModelMemoryFifoCompletion, MUDevice> * rput_mu = NULL;
 
+        Protocol::Get::GetOverSend<Device::MU::PacketModel> * get_mu = NULL;
+        Protocol::Put::PutOverSend<Device::MU::PacketModel> * put_mu = NULL;
+
+        Protocol::Rmw::RmwOverSend<Device::MU::PacketModel> * rmw_mu = NULL;
+
         Protocol::Get::GetRdma <Device::Shmem::DmaModel<ShmemDevice, false>, ShmemDevice> * rget_shmem = NULL;
         Protocol::Put::PutRdma <Device::Shmem::DmaModel<ShmemDevice, false>, ShmemDevice> * rput_shmem = NULL;
 
+        Protocol::Get::GetOverSend<ShmemPacketModel> * get_shmem = NULL;
+        Protocol::Put::PutOverSend<ShmemPacketModel> * put_shmem = NULL;
+
+        Protocol::Rmw::RmwOverSend<ShmemPacketModel> * rmw_shmem = NULL;
 
         ///////////////////////////////////////////////////////////////
         // Setup rget/rput protocols
@@ -535,7 +547,6 @@ namespace PAMI
 
         if (__global.useMU())
           {
-
             // Initialize mu rget and mu rput protocols.
             pami_result_t result = PAMI_ERROR;
 
@@ -548,6 +559,10 @@ namespace PAMI
                       generate (_devices->_mu[_contextid], _context, _request, result);
 
             if (result != PAMI_SUCCESS) rput_mu = NULL;
+
+            get_mu = Protocol::Get::GetOverSend<Device::MU::PacketModel>::generate(_devices->_mu[_contextid], _request);
+            put_mu = Protocol::Put::PutOverSend<Device::MU::PacketModel>::generate(_devices->_mu[_contextid], _request);
+            rmw_mu = Protocol::Rmw::RmwOverSend<Device::MU::PacketModel>::generate(_devices->_mu[_contextid], __global.heap_mm);
           }
 
 #if 0
@@ -628,6 +643,10 @@ namespace PAMI
                              generate (_devices->_shmem[_contextid], _context, _request, result);
 
                 if (result != PAMI_SUCCESS) rput_shmem = NULL;
+
+                get_shmem = Protocol::Get::GetOverSend<ShmemPacketModel>::generate(_devices->_shmem[_contextid], _request);
+                put_shmem = Protocol::Put::PutOverSend<ShmemPacketModel>::generate(_devices->_shmem[_contextid], _request);
+                rmw_shmem = Protocol::Rmw::RmwOverSend<ShmemPacketModel>::generate(_devices->_shmem[_contextid], __global.heap_mm);
               }
             else TRACE_STRING("topology does not support shmem");
           }
@@ -641,24 +660,40 @@ namespace PAMI
                     generate (rget_shmem, rget_mu, _request, result);
             _rput = (Protocol::Put::RPut *) Protocol::Put::Factory::
                     generate (rput_shmem, rput_mu, _request, result);
+
+            // For now, just use mu-based get and put protocols.
+            get_mu->initialize (_dispatch.id--, self, _context);
+            put_mu->initialize (_dispatch.id--, self, _context);
+            rmw_mu->initialize (_dispatch.id--, self, _context);
+            _get = get_mu;
+            _put = put_mu;
+            _rmw = rmw_mu;
           }
         else if (((rget_mu != NULL) && (rget_shmem == NULL)) &&
                  ((rput_mu != NULL) && (rput_shmem == NULL)))
           {
             _rget = rget_mu;
             _rput = rput_mu;
+
+            get_mu->initialize (_dispatch.id--, self, _context);
+            put_mu->initialize (_dispatch.id--, self, _context);
+            rmw_mu->initialize (_dispatch.id--, self, _context);
+            _get = get_mu;
+            _put = put_mu;
+            _rmw = rmw_mu;
           }
         else if (((rget_mu == NULL) && (rget_shmem != NULL)) &&
                  ((rput_mu == NULL) && (rput_shmem != NULL)))
           {
             _rget = rget_shmem;
             _rput = rput_shmem;
-          }
-        else
-          {
-            // No shmem or mu rget-rput protocols available
-            _rget = Protocol::Get::NoRGet::generate (_request);
-            _rput = Protocol::Put::NoRPut::generate (_request);
+
+            get_shmem->initialize (_dispatch.id--, self, _context);
+            put_shmem->initialize (_dispatch.id--, self, _context);
+            rmw_shmem->initialize (_dispatch.id--, self, _context);
+            _get = get_shmem;
+            _put = put_shmem;
+            _rmw = rmw_shmem;
           }
 
         ///////////////////////////////////////////////////////////////
@@ -928,7 +963,7 @@ namespace PAMI
 
       inline pami_result_t put_impl (pami_put_simple_t * parameters)
       {
-        return _put.simple (parameters);
+        return _put->simple (parameters);
       }
 
       inline pami_result_t put_typed (pami_put_typed_t * parameters)
@@ -939,7 +974,7 @@ namespace PAMI
       inline pami_result_t get_impl (pami_get_simple_t * parameters)
       {
 
-        return _get.get (parameters);
+        return _get->get (parameters);
       }
 
       inline pami_result_t get_typed (pami_get_typed_t * parameters)
@@ -949,7 +984,7 @@ namespace PAMI
 
       inline pami_result_t rmw (pami_rmw_t * parameters)
       {
-        return _rmw.start (parameters);
+        return _rmw->start (parameters);
       }
 
       inline pami_result_t memregion_create_impl (void             * address,
@@ -1373,8 +1408,11 @@ namespace PAMI
 
       PAMI::Memory::GenMemoryManager  _mm;
 
+      Protocol::Get::Get          *_get;
+      Protocol::Put::Put          *_put;
       Protocol::Get::RGet         *_rget;
       Protocol::Put::RPut         *_rput;
+      Protocol::Rmw::Rmw          *_rmw;
       MemoryAllocator<1024,64,16> _request;
       ContextLock                  _lock;
       BGQRegistration             *_multi_registration;
@@ -1412,10 +1450,11 @@ namespace PAMI
       bool _dummy_disabled;
       PAMI::Device::Generic::GenericThread _dummy_work;
       
-      Protocol::Get::GetOverSend<Device::MU::PacketModel> _get;
-      Protocol::Put::PutOverSend<Device::MU::PacketModel> _put;
-      Protocol::Rmw::RmwOverSend<Device::MU::PacketModel> _rmw;
-      //Protocol::Rmw::RmwOverSend<ShmemPacketModel> _rmw;
+      Protocol::Get::NoGet        _no_get;
+      Protocol::Put::NoPut        _no_put;
+      Protocol::Get::NoRGet       _no_rget;
+      Protocol::Put::NoRPut       _no_rput;
+      Protocol::Rmw::Error        _no_rmw;
 
       Dispatch<256> _dispatch;
   }; // end PAMI::Context

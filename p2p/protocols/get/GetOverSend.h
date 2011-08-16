@@ -76,6 +76,20 @@ namespace PAMI
 
         public:
 
+          template <class T_Device, class T_Allocator>
+          static GetOverSend * generate (T_Device      & device,
+                                         T_Allocator   & allocator)
+          {
+            TRACE_FN_ENTER();
+            COMPILE_TIME_ASSERT(sizeof(GetOverSend) <= T_Allocator::objsize);
+
+            void * protocol = allocator.allocateObject ();
+            new (protocol) GetOverSend (device);
+
+            TRACE_FN_EXIT();
+            return (GetOverSend *) protocol;
+          };
+
           template <class T_Device>
           inline GetOverSend (T_Device & device) :
               _data_model (device),
