@@ -294,6 +294,7 @@ namespace PAMI
 #endif
 
         pami_result_t result = _fence->all (done_fn, cookie);
+        TRACE_FORMAT("return result=%d",result);
         TRACE_FN_EXIT();
         return result;
       };
