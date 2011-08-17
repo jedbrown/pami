@@ -45,13 +45,14 @@ namespace PAMI
         private :
 
           // This structure is used to track the status when we split an rget
-          // into two and send it on opposite E links.
-          typedef struct getSplitState
+          // into two and send it on opposite E links. Also, it is used to
+          // track multiple completions in the fence method.
+          typedef struct
           {
-            pami_event_function     finalCallbackFn;
-            void                  * finalCallbackFnCookie;
-            uint32_t                completionCount;
-          } getSplitState_t;
+            pami_event_function     fn;
+            void                  * cookie;
+            uint32_t                active;
+          } multi_complete_t;
 
           typedef struct
           {
@@ -62,30 +63,30 @@ namespace PAMI
           {
             union
             {
-              uint64_t msg1[(sizeof(InjectDescriptorMessage<1,false>) >> 3) + 1];
-              uint64_t msg2[(sizeof(InjectDescriptorMessage<2,false>) >> 3) + 1];
+              uint64_t msg1[(sizeof(InjectDescriptorMessage<1, false>) >> 3) + 1];
+              uint64_t msg2[(sizeof(InjectDescriptorMessage<2, false>) >> 3) + 1];
             };
             uint8_t e_minus_payload[T_Model::payload_size];
             uint8_t e_plus_payload[T_Model::payload_size];
-            getSplitState_t split_e_state;
+            multi_complete_t split_e_state;
           } get_state_t;
 
           typedef struct
           {
-            MemoryFifoRemoteCompletion::state_t memfifo_remote_completion_state;
+            multi_complete_t multi;
+            uint8_t memfifo_remote_completion_state[sizeof(MemoryFifoRemoteCompletion::state_t)];
             union
             {
               struct
               {
-                uint64_t msg[(sizeof(InjectDescriptorMessage<2,false>) >> 3) + 1];
+                uint64_t msg[(sizeof(InjectDescriptorMessage<2, false>) >> 3) + 1];
                 uint8_t e_minus_payload[T_Model::payload_size];
                 uint8_t e_plus_payload[T_Model::payload_size];
-                getSplitState_t e_state;
               } split;
-              
+
               struct
               {
-                uint64_t msg[(sizeof(InjectDescriptorMessage<1,false>) >> 3) + 1];
+                uint64_t msg[(sizeof(InjectDescriptorMessage<1, false>) >> 3) + 1];
                 uint64_t payload[(sizeof(MUSPI_DescriptorBase) >> 3) + 1];
               };
             };
@@ -240,32 +241,30 @@ namespace PAMI
           MUHWI_Destination_t  * _myCoords;
 
           ///
-          /// \brief Local get completion event callback for split rgets
+          /// \brief Local completion event callback for multiple sub-events
           ///
           /// This callback is invoked when completing a split rget.
           /// It will be called twice, once for each half of the rget.
-          /// The first time, the counter will be zero, so it just increments
+          /// The first time, the counter will be two, so it just decrements
           /// the counter and returns.  The second time, the counter will be
           /// 1, so it invokes the application local completion
-          /// callback function and frees the transfer state memory.
+          /// callback function.
           ///
-          static void splitComplete (pami_context_t   context,
+          /// Similarly, this callback is used for the fence operation.
+          ///
+          static void multiComplete (pami_context_t   context,
                                      void           * cookie,
                                      pami_result_t    result)
           {
-            getSplitState_t *splitState = (getSplitState_t*) cookie;
+            multi_complete_t * state = (multi_complete_t*) cookie;
 
-            if ( splitState->completionCount == 0 )
+            state->active--;
+
+            if ( state->active == 0 )
               {
-                splitState->completionCount++;
-              }
-            else
-              {
-                if ( splitState->finalCallbackFn != NULL)
+                if ( state->fn != NULL)
                   {
-                    splitState->finalCallbackFn (context,
-                                                 splitState->finalCallbackFnCookie,
-                                                 PAMI_SUCCESS);
+                    state->fn (context, state->cookie, PAMI_SUCCESS);
                   }
               }
 
@@ -777,10 +776,10 @@ namespace PAMI
                 // - A completion counter that will count how many completion messages
                 //   have been received (we are done when two have been received),
                 // - The original callback function and cookie.
-                getSplitState_t *splitCookie       = & get_state->split_e_state;
-                splitCookie->finalCallbackFn       = local_fn;
-                splitCookie->finalCallbackFnCookie = cookie;
-                splitCookie->completionCount       = 0;
+                multi_complete_t * multiCookie = & get_state->split_e_state;
+                multiCookie->fn                = local_fn;
+                multiCookie->cookie            = cookie;
+                multiCookie->active            = 2;
 
                 // Initialize the rget payload descriptor(s) for the E- rget
                 void * vaddr;
@@ -796,8 +795,8 @@ namespace PAMI
                                                             bytes0,
                                                             MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EM,
                                                             MUHWI_PACKET_HINT_EM,
-                                                            splitComplete,
-                                                            splitCookie);
+                                                            multiComplete,
+                                                            multiCookie);
                 rgetMinus->setPayload (paddr, pbytes);
 
                 /* 		MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Rget0",desc[0]); */
@@ -813,8 +812,8 @@ namespace PAMI
                                                      bytes1,
                                                      MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EP,
                                                      MUHWI_PACKET_HINT_EP,
-                                                     splitComplete,
-                                                     splitCookie);
+                                                     multiComplete,
+                                                     multiCookie);
                 rgetPlus->setPayload (paddr, pbytes);
 
                 /* 		MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Rget1",desc[1]); */
@@ -855,10 +854,10 @@ namespace PAMI
             // - A completion counter that will count how many completion messages
             //   have been received (we are done when two have been received),
             // - The original callback function and cookie.
-            getSplitState_t *splitCookie       = & get_state->split_e_state;
-            splitCookie->finalCallbackFn       = local_fn;
-            splitCookie->finalCallbackFnCookie = cookie;
-            splitCookie->completionCount       = 0;
+            multi_complete_t * multiCookie = & get_state->split_e_state;
+            multiCookie->fn                = local_fn;
+            multiCookie->cookie            = cookie;
+            multiCookie->active            = 2;
 
             // Initialize the rget payload descriptor(s) for the E- rget
             void * e_minus_payload_vaddr = (void *) get_state->e_minus_payload;
@@ -872,8 +871,8 @@ namespace PAMI
                                                          bytes0,
                                                          MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EM,
                                                          MUHWI_PACKET_HINT_EM,
-                                                         splitComplete,
-                                                         splitCookie);
+                                                         multiComplete,
+                                                         multiCookie);
             // Determine the physical address of the rget payload buffer from
             // the model state memory.
             Kernel_MemoryRegion_t memRegion;
@@ -900,8 +899,8 @@ namespace PAMI
                                                          bytes1,
                                                          MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EP,
                                                          MUHWI_PACKET_HINT_EP,
-                                                         splitComplete,
-                                                         splitCookie);
+                                                         multiComplete,
+                                                         multiCookie);
             rgetPlus->setPayload (paddr + pbytes0, pbytes1);
 
             /* 		MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Rget1",desc[1]); */
@@ -1068,22 +1067,28 @@ namespace PAMI
 
         InjChannel & channel = _context.injectionGroup.channel[fnum];
 
-        _remoteCompletion.inject( state,
+        const bool is_nearest_neighbor_in_e = nearestNeighborInE (dest)
+
+                                              fence_state->multi.fn     = local_fn;
+        fence_state->multi.cookie = cookie;
+        fence_state->multi.active = 2 + is_nearest_neighbor_in_e;
+
+        _remoteCompletion.inject( fence_state->memfifo_remote_completion_state,
                                   channel,
-                                  local_fn,
-                                  cookie,
+                                  multiComplete,
+                                  (void *) & fence_state->multi,
                                   map,
                                   dest.Destination.Destination);
 
         ////////////////////////////////////////////////////////////////////////
         // Fence mu remote get operations
         ////////////////////////////////////////////////////////////////////////
-        
+
         // When the dest is on a line in the E dimension, the message is split into
         // two rgets, and flow one DPut in the E+ and the other in the E- to
         // optimize bandwidth.  This is possible because dest and our node are
         // linked via the two E links.
-        if ( unlikely ( nearestNeighborInE ( dest ) ) )
+        if ( unlikely ( is_nearest_neighbor_in_e ) )
           { // Special E dimension case
 
             // Get pointers to 2 descriptor slots, if they are available.
@@ -1109,15 +1114,6 @@ namespace PAMI
                 rgetMinus->setRemoteGetInjFIFOId ( rgetInjFifoIds[8] );
                 rgetPlus ->setRemoteGetInjFIFOId ( rgetInjFifoIds[9] );
 
-                // The "split e state" contains
-                // - A completion counter that will count how many completion messages
-                //   have been received (we are done when two have been received),
-                // - The original callback function and cookie.
-                getSplitState_t *splitCookie       = & fence_state->split.e_state;
-                splitCookie->finalCallbackFn       = local_fn;
-                splitCookie->finalCallbackFnCookie = cookie;
-                splitCookie->completionCount       = 0;
-
                 // ----------------------------------------------------------------
                 // Initialize the "ack to self" descriptor in the rget payload
                 // ----------------------------------------------------------------
@@ -1126,7 +1122,7 @@ namespace PAMI
 
                 channel.getDescriptorPayload (desc[0], vaddr, paddr);
                 MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) vaddr;
-                _remoteCompletion.initializeNotifySelfDescriptor (*memfifo, splitComplete, splitCookie);
+                _remoteCompletion.initializeNotifySelfDescriptor (*memfifo, multiComplete, & fence_state->multi);
                 memfifo->setTorusInjectionFIFOMap (MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EM);
                 memfifo->setHints (0, MUHWI_PACKET_HINT_EM);
                 TRACE_HEXDATA(desc, 128);
@@ -1138,7 +1134,7 @@ namespace PAMI
 
                 channel.getDescriptorPayload (desc[1], vaddr, paddr);
                 memfifo = (MUSPI_DescriptorBase *) vaddr;
-                _remoteCompletion.initializeNotifySelfDescriptor (*memfifo, splitComplete, splitCookie);
+                _remoteCompletion.initializeNotifySelfDescriptor (*memfifo, multiComplete, & fence_state->multi);
                 memfifo->setTorusInjectionFIFOMap (MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EP);
                 memfifo->setHints (0, MUHWI_PACKET_HINT_EP);
                 TRACE_HEXDATA(desc, 128);
@@ -1180,22 +1176,13 @@ namespace PAMI
             rgetMinus->setRemoteGetInjFIFOId ( rgetInjFifoIds[8] );
             rgetPlus ->setRemoteGetInjFIFOId ( rgetInjFifoIds[9] );
 
-            // The "split e state" contains
-            // - A completion counter that will count how many completion messages
-            //   have been received (we are done when two have been received),
-            // - The original callback function and cookie.
-            getSplitState_t *splitCookie       = & fence_state->split.e_state;
-            splitCookie->finalCallbackFn       = local_fn;
-            splitCookie->finalCallbackFnCookie = cookie;
-            splitCookie->completionCount       = 0;
-
             // Determine the physical address of the rget payload buffer from
             // the model state memory.
             void * e_minus_payload_vaddr = (void *) fence_state->split.e_minus_payload;
             void * e_plus_payload_vaddr = (void *) fence_state->split.e_plus_payload;
             Kernel_MemoryRegion_t memRegion;
             uint32_t rc;
-            rc = Kernel_CreateMemoryRegion (&memRegion, e_minus_payload_vaddr, T_Model::payload_size*2);
+            rc = Kernel_CreateMemoryRegion (&memRegion, e_minus_payload_vaddr, T_Model::payload_size * 2);
             PAMI_assert_debug ( rc == 0 );
             uint64_t paddr = (uint64_t)memRegion.BasePa +
                              ((uint64_t)e_minus_payload_vaddr - (uint64_t)memRegion.BaseVa);
@@ -1203,7 +1190,7 @@ namespace PAMI
 
             // Initialize the rget payload descriptor(s) for the E- rget
             MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) e_minus_payload_vaddr;
-            _remoteCompletion.initializeNotifySelfDescriptor (*memfifo, splitComplete, splitCookie);
+            _remoteCompletion.initializeNotifySelfDescriptor (*memfifo, multiComplete, & fence_state->multi);
             memfifo->setTorusInjectionFIFOMap (MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EM);
             memfifo->setHints (0, MUHWI_PACKET_HINT_EM);
             rgetMinus->setPayload (paddr, sizeof(MUHWI_Descriptor_t));
@@ -1214,7 +1201,7 @@ namespace PAMI
 
             // Initialize the rget payload descriptor(s) for the E+ rget
             memfifo = (MUSPI_DescriptorBase *) e_plus_payload_vaddr;
-            _remoteCompletion.initializeNotifySelfDescriptor (*memfifo, splitComplete, splitCookie);
+            _remoteCompletion.initializeNotifySelfDescriptor (*memfifo, multiComplete, & fence_state->multi);
             memfifo->setTorusInjectionFIFOMap (MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EP);
             memfifo->setHints (0, MUHWI_PACKET_HINT_EP);
             rgetPlus->setPayload (paddr + sizeof(MUHWI_Descriptor_t), sizeof(MUHWI_Descriptor_t));
@@ -1270,7 +1257,7 @@ namespace PAMI
                 // ----------------------------------------------------------------
                 // Initialize the "ack to self" descriptor in the rget payload
                 // ----------------------------------------------------------------
-                _remoteCompletion.initializeNotifySelfDescriptor (*memfifo, local_fn, cookie);
+                _remoteCompletion.initializeNotifySelfDescriptor (*memfifo, multiComplete, & fence_state->multi);
 
                 // Set the pinned fifo/map information
                 memfifo->setTorusInjectionFIFOMap (map);
@@ -1321,7 +1308,7 @@ namespace PAMI
             // ----------------------------------------------------------------
             // Initialize the "ack to self" descriptor in the rget payload
             // ----------------------------------------------------------------
-            _remoteCompletion.initializeNotifySelfDescriptor (*memfifo, local_fn, cookie);
+            _remoteCompletion.initializeNotifySelfDescriptor (*memfifo, multiComplete, & fence_state->multi);
 
             // Set the pinned fifo/map information
             memfifo->setTorusInjectionFIFOMap (map);
