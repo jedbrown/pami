@@ -34,6 +34,7 @@ elem_t** remote_buf_addr;
 pami_client_t     client;
 pami_context_t    context;
 pami_send_hint_t  null_send_hint;
+pami_dispatch_hint_t  null_dispatch_hint;
 pami_endpoint_t  *endpts;
 
 typedef struct
@@ -64,7 +65,7 @@ static void dispatch_addr_recv (
 
   (*ready)++;
 #ifdef DEBUG
-  fprintf (stderr, "<< 'addr_recv' dispatch function. ready = %zu\n", *ready);
+  fprintf (stderr, "'addr_recv' dispatch function. ready = %zu\n", *ready);
 #endif /* DEBUG */
 
   return;
@@ -83,7 +84,7 @@ static void dispatch_test_done (
   volatile size_t * ready = (volatile size_t *) cookie;
 
   (*ready)++;
-  fprintf (stderr, "<< 'test_done' dispatch function. ready = %zu\n", *ready);
+  fprintf (stderr, "'test_done' dispatch function. ready = %zu\n", *ready);
 
   return;
 }
@@ -97,7 +98,7 @@ static void fence_done (
 
   volatile bool *_done = (volatile bool *)cookie;
   (*_done) = true;
-  fprintf (stderr, "<< 'fence_done' dispatch function. \n");
+  fprintf (stderr, "'fence_done' dispatch function. \n");
 }
 
 int main (int argc, char* argv[])
@@ -140,7 +141,7 @@ int main (int argc, char* argv[])
       DISPATCH_ADDR_RECV,
       fn,
       (void *)&ready,
-      null_send_hint);
+      null_dispatch_hint);
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable register pami dispatch. result = %d\n", result);
@@ -152,7 +153,7 @@ int main (int argc, char* argv[])
       DISPATCH_TEST_DONE,
       fn,
       (void *)&ready,
-      null_send_hint);
+      null_dispatch_hint);
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable register pami dispatch. result = %d\n", result);
