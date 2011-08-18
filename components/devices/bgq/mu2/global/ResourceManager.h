@@ -836,7 +836,7 @@ fprintf(stderr, "%s\n", buf);
 
 	  /// \todo #warning needs to be modified to work with -np comm-worlds
 
-	  PAMI::Topology *topo = (PAMI::Topology *)geom->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
+	  PAMI::Topology *topo = (PAMI::Topology *)geom->getTopology(PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX);
 	  // try to convert to a rectangle... will NO-OP if already rectangle...
 	  // this will change the topology in the geometry... should be OK but
 	  // if there are other ways to optimize we need to avoid thrashing.

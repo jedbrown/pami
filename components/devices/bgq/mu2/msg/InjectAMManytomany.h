@@ -128,7 +128,7 @@ namespace PAMI
 
 	      //We assumePRIME_B0  > max ranks (BG/Q is expected to have 6.8M tasks)
 	      size_t random_seed = PRIME_B * (_amhdr.srcidx+1) + PRIME_A; 
-	      register size_t curidx = random_seed % _nranks;
+	      register size_t curidx = ((random_seed % _nranks) + _next) % _nranks;
 	      size_t num_msgs_perfifo = 4;
 	      if (_nranks >= 128)
 		num_msgs_perfifo = 8;
