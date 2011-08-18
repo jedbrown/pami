@@ -611,9 +611,8 @@ fprintf(stderr, "%s\n", buf);
 	  _pers.blockCoord(_mycoord);
 
 	  MUSPI_PickWorldRoot(&_refcomm, NULL, &_refroot, &_pri_dim);
-	  s = getenv("BG_MAPFILE");
 	  /// \todo #warning need authoritative CNK default mapping constant
-	  if (!s) s = (char*)"ABCDET";
+	  s = (char*)"ABCDET";
 	  i = 0;
 	  if (s)
 	  {
@@ -644,20 +643,6 @@ fprintf(stderr, "%s\n", buf);
 	  size_t univz = __MUSPI_rect_size(&_communiv);
 	  // now, factor in any -np...
 	  _np = __global.mapping.numActiveNodes();
-	  s = getenv("BG_NP");
-	  if (s)
-	  {
-	    int n = strtoul(s, NULL, 0);
-	    size_t v;
-	    __global.mapping.nodePeers(v);
-	    s = getenv("BG_PROCESSESPERNODE");
-	    if (s)
-	    {
-	      v = strtoul(s, NULL, 0);
-	    }
-	    n = (n + v - 1) / v;
-	    _np = n;
-	  }
 	  prc = __global.heap_mm->memalign((void **)&_excluded, 0,
 					(univz - _np + 1) * sizeof(CR_COORD_T));
 	  PAMI_assert_alwaysf(prc == PAMI_SUCCESS, "alloc of _excluded failed");

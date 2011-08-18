@@ -225,10 +225,6 @@ _jobTorus[1],
 _jobTorus[2],
 _jobTorus[3],
 _jobTorus[4]);
-fprintf(stderr, "NP=%s PPN=%s MAP=%s\n",
-getenv("BG_NP"),
-getenv("BG_PROCESSESPERNODE"),
-getenv("BG_MAPFILE"));
 #endif // MU_CR_DEBUG
       };
 
