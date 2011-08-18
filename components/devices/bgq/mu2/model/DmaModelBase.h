@@ -1067,9 +1067,9 @@ namespace PAMI
 
         InjChannel & channel = _context.injectionGroup.channel[fnum];
 
-        const bool is_nearest_neighbor_in_e = nearestNeighborInE (dest)
+        const bool is_nearest_neighbor_in_e = nearestNeighborInE (dest);
 
-                                              fence_state->multi.fn     = local_fn;
+        fence_state->multi.fn     = local_fn;
         fence_state->multi.cookie = cookie;
         fence_state->multi.active = 2 + is_nearest_neighbor_in_e;
 
