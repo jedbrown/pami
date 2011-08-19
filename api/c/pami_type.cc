@@ -261,6 +261,7 @@ pami_result_t PAMI_Type_transform_data (void               * src_addr,
         // generic: non-contiguous to non-contiguous
         TypeMachine packer(src_type_obj);
         packer.MoveCursor(src_offset);
+        packer.SetCopyFunc(data_fn, cookie);
 
         TypeMachine unpacker(dst_type_obj);
         unpacker.SetCopyFunc(data_fn, cookie);
@@ -272,8 +273,12 @@ pami_result_t PAMI_Type_transform_data (void               * src_addr,
 
         for (size_t offset = 0; offset < size; offset += TMP_BUF_SIZE) {
             size_t bytes_to_copy = std::min(size - offset, TMP_BUF_SIZE);
-            packer.Pack(tmp_buf, (char *)src_addr + offset, bytes_to_copy);
-            unpacker.Unpack((char *)dst_addr + offset, tmp_buf, bytes_to_copy);
+            packer.Pack(tmp_buf, (char *)src_addr/* + offset*/, bytes_to_copy);
+            unpacker.Unpack((char *)dst_addr/* + offset*/, tmp_buf, bytes_to_copy);
+            src_offset += bytes_to_copy;
+            dst_offset += bytes_to_copy;
+            packer.MoveCursor(src_offset);
+            unpacker.MoveCursor(dst_offset);
         }
     }
 
