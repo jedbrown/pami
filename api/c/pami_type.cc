@@ -272,8 +272,8 @@ pami_result_t PAMI_Type_transform_data (void               * src_addr,
 
         for (size_t offset = 0; offset < size; offset += TMP_BUF_SIZE) {
             size_t bytes_to_copy = std::min(size - offset, TMP_BUF_SIZE);
-            packer.Pack(tmp_buf, (char *)src_addr + offset, bytes_to_copy);
-            unpacker.Unpack((char *)dst_addr + offset, tmp_buf, bytes_to_copy);
+            packer.Pack(tmp_buf, (char *)src_addr, bytes_to_copy);
+            unpacker.Unpack((char *)dst_addr, tmp_buf, bytes_to_copy);
         }
     }
 
