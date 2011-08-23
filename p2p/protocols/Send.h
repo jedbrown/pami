@@ -27,16 +27,16 @@ namespace PAMI
     namespace Send
     {
       typedef enum
-        {
-          DEFAULT                 = 0x00,
+      {
+        DEFAULT                 = 0x00,
 
-          LONG_HEADER_DISABLE     = 0x01,
+        LONG_HEADER_DISABLE     = 0x01,
 
-          RECV_IMMEDIATE_FORCEON  = 0x01 << 2,
-          RECV_IMMEDIATE_FORCEOFF = 0x01 << 3,
-          
-          QUEUE_IMMEDIATE_DISABLE = 0x01 << 4
-        } configuration_t;
+        RECV_IMMEDIATE_FORCEON  = 0x01 << 2,
+        RECV_IMMEDIATE_FORCEOFF = 0x01 << 3,
+
+        QUEUE_IMMEDIATE_DISABLE = 0x01 << 4
+      } configuration_t;
 
       ///
       /// \brief Base class for point-to-point send implementations.
@@ -92,6 +92,13 @@ namespace PAMI
           ///
           virtual pami_result_t simple (pami_send_t * parameters) = 0;
 
+          ///
+          /// \brief Start a new typed send message.
+          ///
+          /// \param[in] parameters Typed send parameter structure
+          ///
+          virtual pami_result_t typed (pami_send_typed_t * parameters) = 0;
+
       }; // PAMI::Protocol::Send::Send class
 
       class Error : public Send
@@ -117,6 +124,14 @@ namespace PAMI
           };
 
           virtual pami_result_t simple (pami_send_t * parameters)
+          {
+            TRACE_FN_ENTER();
+            TRACE_FORMAT( "return PAMI_ERROR (%d)", PAMI_ERROR);
+            TRACE_FN_EXIT();
+            return PAMI_ERROR;
+          };
+
+          virtual pami_result_t typed (pami_send_typed_t * parameters)
           {
             TRACE_FN_ENTER();
             TRACE_FORMAT( "return PAMI_ERROR (%d)", PAMI_ERROR);

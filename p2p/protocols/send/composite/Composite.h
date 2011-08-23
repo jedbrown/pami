@@ -44,7 +44,7 @@ namespace PAMI
           TRACE_ERR((stderr, ">> Send::Factory::generate() [Composite]\n"));
 
           void * composite = NULL;
-          result = mm->memalign((void **)&composite, 16, sizeof(Composite<T_Primary, T_Secondary>));
+          result = mm->memalign((void **) & composite, 16, sizeof(Composite<T_Primary, T_Secondary>));
           PAMI_assert_alwaysf(result == PAMI_SUCCESS, "Failed to get memory for composite send protocol");
           new (composite) Composite<T_Primary, T_Secondary> (primary, secondary, result);
 
@@ -180,6 +180,27 @@ namespace PAMI
               }
 
             TRACE_ERR((stderr, "<< Composite::simple()\n"));
+            return result;
+          };
+
+          ///
+          /// \brief Start a new typed send operation.
+          ///
+          /// \see PAMI::Protocol::Send::typed
+          ///
+          virtual pami_result_t typed (pami_send_typed_t * parameters)
+          {
+            TRACE_ERR((stderr, ">> Composite::typed()\n"));
+            pami_result_t result = _primary->typed (parameters);
+            TRACE_ERR((stderr, "   Composite::typed(), destination endpoint = 0x%08x, primary result = %d\n", parameters->send.dest, result));
+
+            if (result != PAMI_SUCCESS)
+              {
+                result = _secondary->typed (parameters);
+                TRACE_ERR((stderr, "   Composite::typed(), destination endpoint = 0x%08x, secondary result = %d\n", parameters->send.dest, result));
+              }
+
+            TRACE_ERR((stderr, "<< Composite::typed()\n"));
             return result;
           };
 
