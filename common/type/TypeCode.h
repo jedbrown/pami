@@ -638,6 +638,9 @@ namespace PAMI
                         AddCodeSize(sub_type->GetCodeSize());
                         ResizeCodeBuffer(GetCodeSize());
 
+                        // resize could have changed the location of op
+                        op = (Op *)(code + pc);
+
                         // update the new location of the sub-type
                         ((Call *)op)->sub_type = code_cursor - pc;
                        
