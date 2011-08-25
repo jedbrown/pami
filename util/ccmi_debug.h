@@ -18,6 +18,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
+#include "spi/include/kernel/location.h" // Kernel_ProcessorID() thread id
 //#define CCMI_TRACE_ALL 1
 
 #ifdef CCMI_TRACE_ALL

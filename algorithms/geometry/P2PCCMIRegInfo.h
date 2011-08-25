@@ -378,28 +378,32 @@ namespace CCMI
 
       typedef CCMI::Adaptor::Barrier::BarrierT
       < CCMI::Schedule::TopoMultinomial,
-        binomial_analyze >
+        binomial_analyze,
+        PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX,
+        PAMI::Geometry::CKEY_BARRIERCOMPOSITE1 >
       BinomialBarrier;
 
       typedef CCMI::Adaptor::Barrier::BarrierFactoryT
       < BinomialBarrier,
         binomial_barrier_md,
-        CCMI::ConnectionManager::SimpleConnMgr>
+        CCMI::ConnectionManager::SimpleConnMgr,
+        true,
+        PAMI::Geometry::CKEY_BARRIERCOMPOSITE1>
       BinomialBarrierFactory;
 
       typedef CCMI::Adaptor::Barrier::BarrierT
         < CCMI::Schedule::TopoMultinomial4,
         binomial_analyze,
         PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX,
-        PAMI::Geometry::CKEY_BARRIERCOMPOSITE2>
+        PAMI::Geometry::CKEY_BARRIERCOMPOSITE8>
         BinomialBarrierKey2;
 
       typedef CCMI::Adaptor::Barrier::BarrierFactoryT
         < BinomialBarrierKey2,
         binomial_barrier_md,
         CCMI::ConnectionManager::SimpleConnMgr,
-        false,
-        PAMI::Geometry::CKEY_BARRIERCOMPOSITE2>
+        true,
+        PAMI::Geometry::CKEY_BARRIERCOMPOSITE8>
         BinomialBarrierFactoryKey2;      
     };//Barrier
 

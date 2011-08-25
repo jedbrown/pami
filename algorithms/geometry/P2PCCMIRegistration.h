@@ -297,9 +297,10 @@ namespace PAMI
                 geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
                                  (void*)_binomial_barrier_composite);
 
-                geometry->setKey(context_id,
+/*                geometry->setKey(context_id,
                                  PAMI::Geometry::CKEY_BARRIERCOMPOSITE1,
                                  (void*)_binomial_barrier_composite);
+*/
 
                 if(context_id == 0) /// \todo multi-context support
                 {

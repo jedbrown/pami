@@ -56,6 +56,8 @@ namespace PAMI
       CKEY_BARRIERCOMPOSITE5,      // CCMI barrier cache
       CKEY_BARRIERCOMPOSITE6,      // CCMI barrier cache
       CKEY_BARRIERCOMPOSITE7,      // CCMI barrier cache
+      CKEY_BARRIERCOMPOSITE8,      // CCMI barrier cache
+      CKEY_BARRIERCOMPOSITE9,      // CCMI barrier cache
       CKEY_OPTIMIZEDBARRIERCOMPOSITE, // The optimized algorithm for this geometry
       CKEY_BCASTCOMPOSITE0,
       CKEY_BCASTCOMPOSITE1,

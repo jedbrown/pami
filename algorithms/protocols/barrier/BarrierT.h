@@ -30,6 +30,12 @@
   #define DO_TRACE_DEBUG     0
 #endif
 
+
+#undef TRACE_ERR
+#ifndef TRACE_ERR
+#define TRACE_ERR(x) //fprintf x
+#endif
+
 extern void registerunexpbarrier(pami_context_t context,
                                  unsigned       comm,
                                  pami_quad_t   &info,
@@ -48,7 +54,7 @@ typedef bool (*AnalyzeFn) (PAMI_GEOMETRY_CLASS *g);
 // Barrier Factory for generate routine
 // generate
 //
-template < class T_Composite, MetaDataFn get_metadata, class T_Conn, bool T_Unexp=true, PAMI::Geometry::ckeys_t T_Key = PAMI::Geometry::CKEY_BARRIERCOMPOSITE1 >
+template < class T_Composite, MetaDataFn get_metadata, class T_Conn, bool T_Unexp, PAMI::Geometry::ckeys_t T_Key >
 class BarrierFactoryT : public CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>
 {
 public:
@@ -73,7 +79,7 @@ public:
         Executor::Composite *composite = (Executor::Composite *) g->getKey((size_t)0, /// \todo does NOT support multicontext
                                          T_Key);
 
-        TRACE_FORMAT( "<%p> composite %p",this,composite);
+        TRACE_ERR((stderr,"(%8.8u)<%p>generate composite %p geometry %p, T_Key %u\n",Kernel_ProcessorID(),this,composite, geometry, T_Key));
         if (!composite)
         {
             composite = CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::generate(geometry, cmd);
@@ -81,10 +87,14 @@ public:
             g->setKey((size_t)0, /// \todo does NOT support multicontext
                       T_Key,
                       (void*)composite);
+            TRACE_ERR((stderr,"(%8.8u)<%p>generate composite %p geometry %p, T_Key %u\n",Kernel_ProcessorID(),this,composite, geometry, T_Key));
         }
 
         pami_xfer_t *xfer = (pami_xfer_t *)cmd;
         composite->setDoneCallback(xfer->cb_done, xfer->cookie);
+        pami_metadata_t mdata;
+        this->metadata(&mdata);
+        TRACE_ERR((stderr,"(%8.8u)<%p>generate composite %p geometry %p, T_Key %u, name %s\n",Kernel_ProcessorID(),this,composite, geometry, T_Key, mdata.name));
         TRACE_FN_EXIT();
         return composite;
     }
@@ -146,7 +156,7 @@ public:
         PAMI_assert (factory != NULL);
         //PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry (ctxt, cdata->_comm);
         void *object = factory->getGeometryObject(ctxt, cdata->_comm);
-
+        TRACE_ERR((stderr,"(%8.8u)<%p>cb_head composite %p, T_Unexp %u, T_Key %u\n",Kernel_ProcessorID(),factory, object, T_Unexp, T_Key));
         if (T_Unexp) {
             if (object == NULL)
             {
@@ -363,7 +373,7 @@ private:
 ///
 /// \brief barrier template
 ///
-template < class T_Schedule, AnalyzeFn afn, PAMI::Geometry::topologyIndex_t T_Geometry_Index = PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX, PAMI::Geometry::ckeys_t T_Key = PAMI::Geometry::CKEY_BARRIERCOMPOSITE1 >
+template < class T_Schedule, AnalyzeFn afn, PAMI::Geometry::topologyIndex_t T_Geometry_Index, PAMI::Geometry::ckeys_t T_Key >
 class BarrierT : public CCMI::Executor::Composite
 {
 public:
