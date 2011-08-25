@@ -388,21 +388,23 @@ namespace PAMI
       new(m) PAMI::Geometry::Metadata("I0:MultiCombineDput:SHMEM:MU");
 #ifdef PAMI_ENABLE_NEW_SHMEM
       m->check_correct.values.alldtop       = 0;
-      m->check_correct.values.sendminalign  = 1;
-      m->check_correct.values.recvminalign  = 1;
-      m->check_correct.values.nonlocal      = 1;
-      m->send_min_align                     = 64; 
-      m->recv_min_align                     = 64; 
-      m->check_fn                           = align_metadata_function<1,64,1,64,Shmem::op_dt_metadata_function>;
+//    m->check_correct.values.sendminalign  = 1;
+//    m->check_correct.values.recvminalign  = 1;
+//    m->check_correct.values.nonlocal      = 1;
+//    m->send_min_align                     = 64;
+//    m->recv_min_align                     = 64;
+//    m->check_fn                           = align_metadata_function<1,64,1,64,Shmem::op_dt_metadata_function>;
+      m->check_fn                           = Shmem::op_dt_metadata_function;
       m->check_perf.values.hw_accel         = 1;
 #else
       m->check_correct.values.alldtop       = 0;
-      m->check_correct.values.sendminalign  = 1;
-      m->check_correct.values.recvminalign  = 1;
-      m->check_correct.values.nonlocal      = 1;
-      m->send_min_align                     = 64; 
-      m->recv_min_align                     = 64; 
-      m->check_fn                           = align_metadata_function<1,64,1,64,MU::op_dt_metadata_function>;
+//    m->check_correct.values.sendminalign  = 1;
+//    m->check_correct.values.recvminalign  = 1;
+//    m->check_correct.values.nonlocal      = 1;
+//    m->send_min_align                     = 64;
+//    m->recv_min_align                     = 64;
+//    m->check_fn                           = align_metadata_function<1,64,1,64,MU::op_dt_metadata_function>;
+      m->check_fn                           = MU::op_dt_metadata_function;
       m->check_perf.values.hw_accel         = 1;
 #endif
     }
@@ -528,8 +530,8 @@ namespace PAMI
       m->check_correct.values.sendminalign  = 1;
       m->check_correct.values.recvminalign  = 1;
       m->check_correct.values.nonlocal      = 1;
-      m->send_min_align                     = 32; 
-      m->recv_min_align                     = 32; 
+      m->send_min_align                     = 32;
+      m->recv_min_align                     = 32;
       m->check_fn                           = align_metadata_function<1,32,1,32,Shmem::op_dt_metadata_function>;
       m->check_perf.values.hw_accel         = 1;
 #else
@@ -537,8 +539,8 @@ namespace PAMI
       m->check_correct.values.sendminalign  = 1;
       m->check_correct.values.recvminalign  = 1;
       m->check_correct.values.nonlocal      = 1;
-      m->send_min_align                     = 32; 
-      m->recv_min_align                     = 32; 
+      m->send_min_align                     = 32;
+      m->recv_min_align                     = 32;
       m->check_fn                           = align_metadata_function<1,32,1,32,MU::op_dt_metadata_function>;
       m->check_perf.values.hw_accel         = 1;
 #endif
@@ -556,21 +558,23 @@ namespace PAMI
       new(m) PAMI::Geometry::Metadata("X0:MultiCombine2DeviceNP:SHMEM:MU");
 #ifdef PAMI_ENABLE_NEW_SHMEM
       m->check_correct.values.alldtop       = 0;
-      m->check_correct.values.sendminalign  = 1;
-      m->check_correct.values.recvminalign  = 1;
-      m->check_correct.values.nonlocal      = 1;
-      m->send_min_align                     = 32; 
-      m->recv_min_align                     = 32; 
-      m->check_fn                           = align_metadata_function<1,32,1,32,Shmem::op_dt_metadata_function>;
+//    m->check_correct.values.sendminalign  = 1;
+//    m->check_correct.values.recvminalign  = 1;
+//    m->check_correct.values.nonlocal      = 1;
+//    m->send_min_align                     = 32;
+//    m->recv_min_align                     = 32;
+//    m->check_fn                           = align_metadata_function<1,32,1,32,Shmem::op_dt_metadata_function>;
+      m->check_fn                           = Shmem::op_dt_metadata_function;
       m->check_perf.values.hw_accel         = 1;
 #else
       m->check_correct.values.alldtop       = 0;
-      m->check_correct.values.sendminalign  = 1;
-      m->check_correct.values.recvminalign  = 1;
-      m->check_correct.values.nonlocal      = 1;
-      m->send_min_align                     = 32; 
-      m->recv_min_align                     = 32; 
-      m->check_fn                           = align_metadata_function<1,32,1,32,MU::op_dt_metadata_function>;
+//    m->check_correct.values.sendminalign  = 1;
+//    m->check_correct.values.recvminalign  = 1;
+//    m->check_correct.values.nonlocal      = 1;
+//    m->send_min_align                     = 32;
+//    m->recv_min_align                     = 32;
+//    m->check_fn                           = align_metadata_function<1,32,1,32,MU::op_dt_metadata_function>;
+      m->check_fn                           = MU::op_dt_metadata_function;
       m->check_perf.values.hw_accel         = 1;
 #endif
     }
@@ -586,21 +590,23 @@ namespace PAMI
       new(m) PAMI::Geometry::Metadata("X0:MultiCombine2DeviceDputNP:SHMEM:MU");
 #ifdef PAMI_ENABLE_NEW_SHMEM
       m->check_correct.values.alldtop       = 0;
-      m->check_correct.values.sendminalign  = 1;
-      m->check_correct.values.recvminalign  = 1;
-      m->check_correct.values.nonlocal      = 1;
-      m->send_min_align                     = 32; 
-      m->recv_min_align                     = 32; 
-      m->check_fn                           = align_metadata_function<1,32,1,32,Shmem::op_dt_metadata_function>;
+//    m->check_correct.values.sendminalign  = 1;
+//    m->check_correct.values.recvminalign  = 1;
+//    m->check_correct.values.nonlocal      = 1;
+//    m->send_min_align                     = 32;
+//    m->recv_min_align                     = 32;
+//    m->check_fn                           = align_metadata_function<1,32,1,32,Shmem::op_dt_metadata_function>;
+      m->check_fn                           = Shmem::op_dt_metadata_function;
       m->check_perf.values.hw_accel         = 1;
 #else
       m->check_correct.values.alldtop       = 0;
-      m->check_correct.values.sendminalign  = 1;
-      m->check_correct.values.recvminalign  = 1;
-      m->check_correct.values.nonlocal      = 1;
-      m->send_min_align                     = 32; 
-      m->recv_min_align                     = 32; 
-      m->check_fn                           = align_metadata_function<1,32,1,32,MU::op_dt_metadata_function>;
+//    m->check_correct.values.sendminalign  = 1;
+//    m->check_correct.values.recvminalign  = 1;
+//    m->check_correct.values.nonlocal      = 1;
+//    m->send_min_align                     = 32;
+//    m->recv_min_align                     = 32;
+//    m->check_fn                           = align_metadata_function<1,32,1,32,MU::op_dt_metadata_function>;
+      m->check_fn                           = MU::op_dt_metadata_function;
       m->check_perf.values.hw_accel         = 1;
 #endif
     }
