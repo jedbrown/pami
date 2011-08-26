@@ -505,7 +505,7 @@ namespace PAMI
                                              (void *) state,
                                              task,
                                              offset,
-                                             (void *) &(state->eager_protocol.origin),
+                                             (void *) & _origin,
                                              sizeof (pami_endpoint_t),
                                              parameters->send.data.iov_base,
                                              parameters->send.data.iov_len);
