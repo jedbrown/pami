@@ -19,24 +19,24 @@ static char   __trace_indent_string[64] = { "                                   
 
 #define TRACE_FN_ENTER() \
   if (DO_TRACE_ENTEREXIT) \
-    fprintf (stderr, "%s>> %s() [%s:%d]\n", &__trace_indent_string[63-(__trace_fn_counter++<<1)], __FUNCTION__, __FILE__, __LINE__);
+    fprintf (stderr, "%s> %s() [%s:%d]\n", &__trace_indent_string[63-(((++__trace_fn_counter)<<1)-2)], __FUNCTION__, __FILE__, __LINE__);
 
 #define TRACE_FN_EXIT() \
   if (DO_TRACE_ENTEREXIT) \
-    fprintf (stderr, "%s<< %s() [%s:%d]\n", &__trace_indent_string[63-(--__trace_fn_counter<<1)], __FUNCTION__, __FILE__, __LINE__);
+    fprintf (stderr, "%s< %s() [%s:%d]\n", &__trace_indent_string[63-(((__trace_fn_counter--)<<1)-2)], __FUNCTION__, __FILE__, __LINE__);
 
 #define TRACE_STRING(str) \
   if (DO_TRACE_DEBUG) \
-    fprintf (stderr, "%s   %s():%d .. " str "\n", &__trace_indent_string[63-(__trace_fn_counter<<1)], __FUNCTION__, __LINE__);
+    fprintf (stderr, "%s  %s():%d .. " str "\n", &__trace_indent_string[63-((__trace_fn_counter<<1)-2)], __FUNCTION__, __LINE__);
 
 #define TRACE_FORMAT(fmt, ...) \
   if (DO_TRACE_DEBUG) \
-    fprintf (stderr, "%s   %s():%d .. " fmt "\n", &__trace_indent_string[63-(__trace_fn_counter<<1)], __FUNCTION__, __LINE__, __VA_ARGS__);
+    fprintf (stderr, "%s  %s():%d .. " fmt "\n", &__trace_indent_string[63-((__trace_fn_counter<<1)-2)], __FUNCTION__, __LINE__, __VA_ARGS__);
 
 #define TRACE_HEXDATA(ptr,n) \
   if (DO_TRACE_DEBUG) { \
     size_t byte; char bigstring[1000];\
-    size_t index = sprintf(&bigstring[0], "%s   %s():%d [%p]",&__trace_indent_string[63-(__trace_fn_counter<<1)], __FUNCTION__, __LINE__, ptr); \
+    size_t index = sprintf(&bigstring[0], "%s  %s():%d [%p]",&__trace_indent_string[63-((__trace_fn_counter<<1)-2)], __FUNCTION__, __LINE__, ptr); \
     size_t indent = index; \
     for(byte=0; byte<n; byte++) { \
       if(byte%32==0) { fprintf(stderr,"%s\n",bigstring); index = sprintf(&bigstring[0], "%s", &__trace_indent_string[63-indent]); } \
