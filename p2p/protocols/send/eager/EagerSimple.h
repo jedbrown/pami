@@ -29,8 +29,11 @@
 #define RETURN_ERR_PAMI(code, ...) return (code)
 #endif
 
-#undef TRACE_ERR
-#define TRACE_ERR(x) // fprintf x
+#include "util/trace.h"
+#undef  DO_TRACE_ENTEREXIT
+#undef  DO_TRACE_DEBUG
+#define DO_TRACE_ENTEREXIT 0
+#define DO_TRACE_DEBUG     0
 
 namespace PAMI
 {
@@ -215,6 +218,8 @@ namespace PAMI
                                     pami_context_t               context,
                                     pami_dispatch_hint_t         hint)
           {
+            TRACE_FN_ENTER();
+
             _dispatch_fn = dispatch_fn;
             _cookie      = cookie;
             _origin      = origin;
@@ -225,20 +230,20 @@ namespace PAMI
             // The models must be registered in reverse order of use in case
             // the remote side is delayed in it's registrations and must save
             // unexpected packets until dispatch registration.
-            TRACE_ERR((stderr, "EagerSimple() register ack model dispatch %zu\n", dispatch));
+            TRACE_FORMAT("register ack model dispatch %zu", dispatch);
 
             status = _ack_model.init (dispatch, dispatch_ack, this);
-            TRACE_ERR((stderr, "EagerSimple() ack model status = %d\n", status));
+            TRACE_FORMAT("ack model status = %d", status);
 
             if (status == PAMI_SUCCESS)
               {
-                TRACE_ERR((stderr, "EagerSimple() register short model dispatch %zu\n", dispatch));
+                TRACE_FORMAT("register short model dispatch %zu", dispatch);
                 status = _short_model.init (dispatch, dispatch_short, this);
-                TRACE_ERR((stderr, "EagerSimple() short model status = %d\n", status));
+                TRACE_FORMAT("short model status = %d", status);
 
                 if (status == PAMI_SUCCESS)
                   {
-                    TRACE_ERR((stderr, "EagerSimple() register data model dispatch %zu\n", dispatch));
+                    TRACE_FORMAT("register data model dispatch %zu", dispatch);
 
                     if (hint.recv_contiguous == PAMI_HINT_ENABLE &&
                         hint.recv_copy       == PAMI_HINT_ENABLE)
@@ -252,11 +257,11 @@ namespace PAMI
                         status = _data_model.init (dispatch, dispatch_data_message<false>, this);
                       }
 
-                    TRACE_ERR((stderr, "EagerSimple() data model status = %d\n", status));
+                    TRACE_FORMAT("data model status = %d", status);
 
                     if (status == PAMI_SUCCESS)
                       {
-                        TRACE_ERR((stderr, "EagerSimple() register envelope model dispatch %zu\n", dispatch));
+                        TRACE_FORMAT("register envelope model dispatch %zu", dispatch);
 
                         if (hint.recv_contiguous == PAMI_HINT_ENABLE)
                           {
@@ -281,18 +286,18 @@ namespace PAMI
                               }
                           }
 
-                        TRACE_ERR((stderr, "EagerSimple() envelope model status = %d\n", status));
+                        TRACE_FORMAT("envelope model status = %d", status);
 
                         if (status == PAMI_SUCCESS && !(T_Option & LONG_HEADER_DISABLE))
                           {
-                            TRACE_ERR((stderr, "EagerSimple() register 'long header' envelope model dispatch %zu\n", dispatch));
+                            TRACE_FORMAT("register 'long header' envelope model dispatch %zu", dispatch);
                             status = _longheader_envelope_model.init (dispatch, dispatch_longheader_envelope, this);
-                            TRACE_ERR((stderr, "EagerSimple() 'long header' envelope model status = %d\n", status));
+                            TRACE_FORMAT("'long header' envelope model status = %d", status);
 
                             if (status == PAMI_SUCCESS)
                               {
 
-                                TRACE_ERR((stderr, "EagerSimple() register 'long header' message model dispatch %zu\n", dispatch));
+                                TRACE_FORMAT("register 'long header' message model dispatch %zu", dispatch);
 
                                 if (hint.recv_contiguous == PAMI_HINT_ENABLE)
                                   {
@@ -317,19 +322,21 @@ namespace PAMI
                                       }
                                   }
 
-                                TRACE_ERR((stderr, "EagerSimple() 'long header' message model status = %d\n", status));
+                                TRACE_FORMAT("'long header' message model status = %d", status);
                               }
                           }
                       }
                   }
               }
 
+            TRACE_FN_EXIT();
             return status;
           }
 
           inline pami_result_t short_send (pami_send_immediate_t * send, pami_send_event_t * events, pami_task_t task, size_t offset)
           {
-            TRACE_ERR((stderr, ">> EagerSimple::short_send() .. sizeof(short_protocol_t) = %zu\n", sizeof(short_protocol_t)));
+            TRACE_FN_ENTER();
+            TRACE_FORMAT("sizeof(short_protocol_t) = %zu", sizeof(short_protocol_t));
 
             // Allocate memory to maintain the state of the send.
             send_state_t * state = allocateSendState ();
@@ -344,12 +351,12 @@ namespace PAMI
             state->short_protocol.metabytes    = send->header.iov_len;
             state->short_protocol.origin       = _origin;
 
-            TRACE_ERR((stderr, "   EagerSimple::short_send() .. 'short' protocol special case\n"));
+            TRACE_STRING("'short' protocol special case");
 
             // This branch should be resolved at compile time and optimized out.
             if (sizeof(short_protocol_t) <= T_Model::packet_model_metadata_bytes)
               {
-                TRACE_ERR((stderr, "   EagerSimple::short_send() .. 'short' protocol special case, protocol metadata fits in the packet metadata\n"));
+                TRACE_STRING("'short' protocol special case, protocol metadata fits in the packet metadata");
 
                 array_t<iovec, 2> * resized = (array_t<iovec, 2> *) & (send->header);
 
@@ -362,7 +369,7 @@ namespace PAMI
               }
             else
               {
-                TRACE_ERR((stderr, "   EagerSimple::short_send() .. 'short' protocol special case, protocol metadata does not fit in the packet metadata\n"));
+                TRACE_STRING("'short' protocol special case, protocol metadata does not fit in the packet metadata");
 
                 state->v3[0].iov_base = (void *) & (state->short_protocol);
                 state->v3[0].iov_len  = sizeof (short_protocol_t);
@@ -383,7 +390,7 @@ namespace PAMI
                 send_ack_request (task, offset, events->remote_fn, events->cookie);
               }
 
-            TRACE_ERR((stderr, "<< EagerSimple::short_send() .. 'short' protocol special case\n"));
+            TRACE_FN_EXIT();
             return PAMI_SUCCESS;
           }
 
@@ -394,10 +401,10 @@ namespace PAMI
                                             struct iovec        & header,
                                             pami_event_function   done_fn)
           {
+            TRACE_FN_ENTER();
 
 
-
-            TRACE_ERR((stderr, ">> EagerSimple::longheader_send() .. sizeof(longheader_protocol_t) = %zu\n", sizeof(longheader_protocol_t)));
+            TRACE_FORMAT("sizeof(longheader_protocol_t) = %zu", sizeof(longheader_protocol_t));
 
 #ifdef ERROR_CHECKS
 
@@ -405,7 +412,8 @@ namespace PAMI
               {
                 // 'long header' support is disabled, yet the application
                 // header will not fit in a single packet.
-                TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. Application error: 'long header' support is disabled.\n"));
+                TRACE_STRING("Application error: 'long header' support is disabled.");
+                TRACE_FN_EXIT();
                 return PAMI_INVAL;
               }
 
@@ -424,7 +432,7 @@ namespace PAMI
                 state->longheader_protocol.origin       = _origin;
 
 
-                TRACE_ERR((stderr, "   EagerSimple::longheader_send() .. long header special case, protocol metadata does not fit in the packet metadata\n"));
+                TRACE_STRING("long header special case, protocol metadata does not fit in the packet metadata");
                 _longheader_envelope_model.postPacket (state->msg[0],
                                                        NULL, NULL,
                                                        task, offset,
@@ -450,7 +458,7 @@ namespace PAMI
                 // This branch should be resolved at compile time and optimized out.
                 if (sizeof(eager_protocol_t) <= T_Model::packet_model_metadata_bytes)
                   {
-                    TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. protocol metadata fits in the packet metadata\n"));
+                    TRACE_STRING("protocol metadata fits in the packet metadata");
                     _envelope_model.postPacket (state->msg[0],
                                                 done_fn,
                                                 (void *) state,
@@ -462,7 +470,7 @@ namespace PAMI
                   }
                 else
                   {
-                    TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. protocol metadata does not fit in the packet metadata\n"));
+                    TRACE_STRING("protocol metadata does not fit in the packet metadata");
 
                     state->v[0].iov_base = (void *) & (state->eager_protocol);
                     state->v[0].iov_len  = sizeof (eager_protocol_t);
@@ -478,6 +486,7 @@ namespace PAMI
                   }
               }
 
+            TRACE_FN_EXIT();
             return PAMI_SUCCESS;
           }
 
@@ -487,6 +496,8 @@ namespace PAMI
                                           size_t                offset,
                                           pami_send_typed_t   * parameters)
           {
+            TRACE_FN_ENTER();
+
             if (T_Contiguous == true)
               {
                 _data_model.postMultiPacket (state->msg[2],
@@ -505,19 +516,21 @@ namespace PAMI
                 PAMI_abort();
               }
 
+            TRACE_FN_EXIT();
             return PAMI_SUCCESS;
           }
 
           inline pami_result_t immediate_impl (pami_send_immediate_t * parameters)
           {
-            TRACE_ERR((stderr, "EagerSimple::immediate_impl() >>\n"));
+            TRACE_FN_ENTER();
 
 #ifdef ERROR_CHECKS
 
             if (T_Model::packet_model_immediate_bytes <
                 (parameters->data.iov_len + parameters->header.iov_len))
               {
-                TRACE_ERR((stderr, "Oops! ... %zu < (%zu+%zu) ???\n", T_Model::packet_model_immediate_bytes, parameters->data.iov_len, parameters->header.iov_len));
+                TRACE_FORMAT("Oops! ... %zu < (%zu+%zu) ???", T_Model::packet_model_immediate_bytes, parameters->data.iov_len, parameters->header.iov_len);
+                TRACE_FN_EXIT();
                 return PAMI_INVAL;
               }
 
@@ -530,6 +543,7 @@ namespace PAMI
             // Verify that this task is addressable by this packet device
             if (unlikely(_short_model.device.isPeer(task) == false))
               {
+                TRACE_FN_EXIT();
                 return PAMI_INVAL;
               }
 
@@ -542,9 +556,9 @@ namespace PAMI
             short_protocol.metabytes = parameters->header.iov_len;
             short_protocol.origin    = _origin;
 
-            TRACE_ERR((stderr, "EagerSimple::immediate_impl() .. before _send_model.postPacket() .. parameters->header.iov_len = %zu, parameters->data.iov_len = %zu dest:%x\n", parameters->header.iov_len, parameters->data.iov_len, parameters->dest));
+            TRACE_FORMAT("before _send_model.postPacket() .. parameters->header.iov_len = %zu, parameters->data.iov_len = %zu dest:%x", parameters->header.iov_len, parameters->data.iov_len, parameters->dest);
 
-            TRACE_ERR((stderr, "EagerSimple::immediate_impl() .. before _send_model.postPacket() .. task = %d, offset = %zu\n", task, offset));
+            TRACE_FORMAT("before _send_model.postPacket() .. task = %d, offset = %zu", task, offset);
 
             bool posted = false;
 
@@ -578,7 +592,7 @@ namespace PAMI
 
             if ((T_Option & QUEUE_IMMEDIATE_DISABLE) && !posted)
               {
-                TRACE_ERR((stderr, "EagerSimple::immediate_impl() <<\n"));
+                TRACE_FN_EXIT();
                 return PAMI_EAGAIN;
               }
 
@@ -587,7 +601,7 @@ namespace PAMI
                 // For some reason the packet could not be immediately posted.
                 // Allocate memory, pack the user data and metadata, and attempt
                 // a regular (non-blocking) post.
-                TRACE_ERR((stderr, "EagerSimple::immediate_impl() .. immediate post packet unsuccessful.\n"));
+                TRACE_STRING("immediate post packet unsuccessful.");
 
                 // Allocate memory to maintain the state of the send.
                 send_state_t * state = allocateSendState ();
@@ -603,7 +617,7 @@ namespace PAMI
                 // This branch should be resolved at compile time and optimized out.
                 if (sizeof(short_protocol_t) <= T_Model::packet_model_metadata_bytes)
                   {
-                    TRACE_ERR((stderr, "   EagerSimple::immediate_impl() .. 'short' protocol special case, protocol metadata fits in the packet metadata\n"));
+                    TRACE_STRING("'short' protocol special case, protocol metadata fits in the packet metadata");
 
                     uint8_t * ptr = (uint8_t *) state->pkt;
                     memcpy (ptr, parameters->header.iov_base, parameters->header.iov_len);
@@ -623,7 +637,7 @@ namespace PAMI
                   }
                 else
                   {
-                    TRACE_ERR((stderr, "   EagerSimple::immediate_impl() .. 'short' protocol special case, protocol metadata does not fit in the packet metadata\n"));
+                    TRACE_STRING("'short' protocol special case, protocol metadata does not fit in the packet metadata");
 
                     uint8_t * ptr = (uint8_t *) state->pkt;
                     memcpy (ptr, (void *) & (state->short_protocol), sizeof (short_protocol_t));
@@ -645,10 +659,10 @@ namespace PAMI
               }
             else
               {
-                TRACE_ERR((stderr, "EagerSimple::immediate_impl() .. immediate post packet successful.\n"));
+                TRACE_STRING("immediate post packet successful.");
               }
 
-            TRACE_ERR((stderr, "EagerSimple::immediate_impl() <<\n"));
+            TRACE_FN_EXIT();
             return PAMI_SUCCESS;
           };
 
@@ -656,7 +670,8 @@ namespace PAMI
           template <bool T_Contiguous>
           inline pami_result_t simple_and_typed_implementation (pami_send_typed_t * parameters)
           {
-            TRACE_ERR((stderr, ">> EagerSimple::simple_impl() .. T_Model::packet_model_metadata_bytes = %zu\n", T_Model::packet_model_metadata_bytes));
+            TRACE_FN_ENTER();
+            TRACE_FORMAT("T_Model::packet_model_metadata_bytes = %zu", T_Model::packet_model_metadata_bytes);
 
             pami_task_t task;
             size_t offset;
@@ -665,6 +680,7 @@ namespace PAMI
             // Verify that this task is addressable by this packet device
             if (unlikely(_short_model.device.isPeer (task) == false))
               {
+                TRACE_FN_EXIT();
                 return PAMI_INVAL;
               }
 
@@ -683,7 +699,8 @@ namespace PAMI
               {
                 // 'receive immediate' is forced ON, yet the application
                 // header + data will not fit in a single packet.
-                TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. Application error: 'recv immediate' forced on.\n"));
+                TRACE_STRING("Application error: 'recv immediate' forced on.");
+                TRACE_FN_EXIT();
                 return PAMI_INVAL;
               }
 
@@ -701,7 +718,9 @@ namespace PAMI
                  (!(T_Option & RECV_IMMEDIATE_FORCEOFF) &&
                   (total_bytes <= maximum_short_packet_payload))))
               {
-                return short_send (&parameters->send, &parameters->events, task, offset);
+                pami_result_t result = short_send (&parameters->send, &parameters->events, task, offset);
+                TRACE_FN_EXIT();
+                return result;
               }
 
 #ifdef ERROR_CHECKS
@@ -710,7 +729,8 @@ namespace PAMI
               {
                 // 'long header' support is disabled, yet the application
                 // header will not fit in a single packet.
-                TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. Application error: 'long header' support is disabled.\n"));
+                TRACE_STRING("Application error: 'long header' support is disabled.");
+                TRACE_FN_EXIT();
                 return PAMI_INVAL;
               }
 
@@ -735,7 +755,7 @@ namespace PAMI
             state->eager_protocol.metabytes    = header_bytes;
             state->eager_protocol.origin       = _origin;
 
-            TRACE_ERR((stderr, "   EagerSimple::simple_impl() .. parameters->send.header.iov_len = %zu, parameters->send.data.iov_len = %zu\n", header_bytes, data_bytes));
+            TRACE_FORMAT("parameters->send.header.iov_len = %zu, parameters->send.data.iov_len = %zu", header_bytes, data_bytes);
 
 
             if (unlikely(data_bytes == 0))
@@ -753,7 +773,7 @@ namespace PAMI
                 send_ack_request (task, offset, parameters->events.remote_fn, parameters->events.cookie);
               }
 
-            TRACE_ERR((stderr, "<< EagerSimple::simple_impl()\n"));
+            TRACE_FN_EXIT();
             return PAMI_SUCCESS;
           };
 
@@ -787,7 +807,10 @@ namespace PAMI
 
           inline send_state_t * allocateSendState ()
           {
-            return (send_state_t *) _send_allocator.allocateObject ();
+            TRACE_FN_ENTER();
+            send_state_t * state = (send_state_t *) _send_allocator.allocateObject ();
+            TRACE_FN_EXIT();
+            return state;
           }
 
           inline void freeSendState (send_state_t * object)
@@ -797,7 +820,10 @@ namespace PAMI
 
           inline recv_state_t * allocateRecvState ()
           {
-            return (recv_state_t *) _recv_allocator.allocateObject ();
+            TRACE_FN_ENTER();
+            recv_state_t * state = (recv_state_t *) _recv_allocator.allocateObject ();
+            TRACE_FN_EXIT();
+            return state;
           }
 
           inline void freeRecvState (recv_state_t * object)
@@ -812,7 +838,8 @@ namespace PAMI
                                         pami_endpoint_t      origin,
                                         recv_state_t       * state)
           {
-            TRACE_ERR((stderr, ">> EagerSimple::process_envelope() .. origin = 0x%08x, header = %p, header bytes = %zu\n", origin, header, header_bytes));
+            TRACE_FN_ENTER();
+            TRACE_FORMAT("origin = 0x%08x, header = %p, header bytes = %zu", origin, header, header_bytes);
 
             state->info.type = (pami_type_t) PAMI_TYPE_BYTE;
 
@@ -826,11 +853,12 @@ namespace PAMI
                           origin,              // Origin endpoint for the transfer
                           (pami_recv_t *) &(state->info));
 
-            TRACE_ERR((stderr, "   EagerSimple::process_envelope() .. data bytes = %zu, state->info.type = %p\n", data_bytes, state->info.type));
+            TRACE_FORMAT("data bytes = %zu, state->info.type = %p", data_bytes, state->info.type);
 
             if (T_Contiguous && T_Copy)
               {
-                TRACE_ERR((stderr, "<< EagerSimple::process_envelope() .. 'contiguous copy' receive only.\n"));
+                TRACE_STRING("'contiguous copy' receive only.");
+                TRACE_FN_EXIT();
                 return;
               }
             else if (T_Contiguous)
@@ -845,16 +873,17 @@ namespace PAMI
               }
 
             Type::TypeCode * type = (Type::TypeCode *) state->info.type;
-            PAMI_assert_debugf(type != NULL, "state->info.type == NULL !\n");
+            PAMI_assert_debugf(type != NULL, "state->info.type == NULL !");
 
 #ifdef ERROR_CHECKS
 
             if (! type->IsCompleted())
               {
-                //RETURN_ERR_PAMI(PAMI_INVAL, "Using an incompleted type.\n");
+                //RETURN_ERR_PAMI(PAMI_INVAL, "Using an incompleted type.");
                 if (state->info.local_fn != NULL)
                   state->info.local_fn (_context, state->info.cookie, PAMI_INVAL);
 
+                TRACE_FN_EXIT();
                 return;
               }
 
@@ -871,7 +900,7 @@ namespace PAMI
                 state->machine.MoveCursor (state->info.offset);
               }
 
-            TRACE_ERR((stderr, "<< EagerSimple::process_envelope()\n"));
+            TRACE_FN_EXIT();
             return;
           }
 
@@ -883,6 +912,7 @@ namespace PAMI
 
           inline void send_ack_request (pami_task_t task, size_t offset, pami_event_function fn, void * cookie)
           {
+            TRACE_FN_ENTER();
             ack_protocol_t ack_protocol;
             ack_protocol.remote_fn = fn;
             ack_protocol.cookie = cookie;
@@ -908,19 +938,21 @@ namespace PAMI
                                        (void *) &(state->ack_protocol),
                                        sizeof(ack_protocol_t));
               }
+
+            TRACE_FN_EXIT();
           }
 
           static void ack_done (pami_context_t   context,
                                 void           * cookie,
                                 pami_result_t    result)
           {
-            TRACE_ERR((stderr, "EagerSimple::ack_done() >> \n"));
+            TRACE_FN_ENTER();
 
             send_state_t * state = (send_state_t *) cookie;
             EagerSimpleProtocol * eager = (EagerSimpleProtocol *) state->eager;
             eager->freeSendState (state);
 
-            TRACE_ERR((stderr, "EagerSimple::ack_done() << \n"));
+            TRACE_FN_EXIT();
           }
 
           static int dispatch_ack (void   * metadata,
@@ -929,7 +961,7 @@ namespace PAMI
                                    void   * recv_func_parm,
                                    void   * cookie)
           {
-            TRACE_ERR((stderr, ">> EagerSimple::dispatch_ack()\n"));
+            TRACE_FN_ENTER();
             EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
             uint8_t stack[T_Model::packet_model_payload_bytes];
 
@@ -946,6 +978,7 @@ namespace PAMI
                 // This is a 'pong' ack message .. invoke the callback function
                 // and return.
                 ack->remote_fn (ack->context, ack->cookie, PAMI_SUCCESS);
+                TRACE_FN_EXIT();
                 return 0;
               }
 
@@ -978,7 +1011,7 @@ namespace PAMI
                                               sizeof(ack_protocol_t));
               }
 
-            TRACE_ERR((stderr, "<< EagerSimple::dispatch_ack()\n"));
+            TRACE_FN_EXIT();
             return 0;
           }
 
@@ -1003,6 +1036,7 @@ namespace PAMI
                                      void   * recv_func_parm,
                                      void   * cookie)
           {
+            TRACE_FN_ENTER();
             EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
             uint8_t stack[T_Model::packet_model_payload_bytes];
 
@@ -1029,7 +1063,7 @@ namespace PAMI
 
             void * data = (void *) (((uint8_t *) header) + short_protocol->metabytes);
 
-            TRACE_ERR ((stderr, ">> EagerSimple::dispatch_short(), origin = 0x%08x, bytes = %d\n", short_protocol->origin, short_protocol->bytes));
+            TRACE_FORMAT("origin = 0x%08x, bytes = %d", short_protocol->origin, short_protocol->bytes);
 
             // Invoke the registered dispatch function.
             eager->_dispatch_fn (eager->_context,           // Communication context
@@ -1041,7 +1075,7 @@ namespace PAMI
                                  short_protocol->origin,    // Origin endpoint for the transfer
                                  (pami_recv_t *) NULL);
 
-            TRACE_ERR ((stderr, "<< EagerSimple::dispatch_short()\n"));
+            TRACE_FN_EXIT();
             return 0;
           };
 
@@ -1069,6 +1103,7 @@ namespace PAMI
                                                    void   * recv_func_parm,
                                                    void   * cookie)
           {
+            TRACE_FN_ENTER();
             EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
             uint8_t stack[T_Model::packet_model_payload_bytes];
 
@@ -1080,7 +1115,7 @@ namespace PAMI
 
             longheader_protocol_t * m = (longheader_protocol_t *) payload;
 
-            TRACE_ERR ((stderr, ">> EagerSimple::dispatch_longheader_envelope(), origin = 0x%08x, m->bytes = %zu\n", m->origin, m->bytes));
+            TRACE_FORMAT("origin = 0x%08x, m->bytes = %zu", m->origin, m->bytes);
 
             // Allocate a recv state object!
             recv_state_t * state = eager->allocateRecvState ();
@@ -1101,8 +1136,8 @@ namespace PAMI
             prc = __global.heap_mm->memalign((void **) & state->longheader.addr, 0,
                                              state->header_size);
             PAMI_assertf(prc == PAMI_SUCCESS, "alloc of state->longheader.addr failed");
-            TRACE_ERR ((stderr, "<< EagerSimple::dispatch_longheader_envelope() .. long header\n"));
 
+            TRACE_FN_EXIT();
             return 0;
           };
 
@@ -1120,6 +1155,7 @@ namespace PAMI
                                               void   * recv_func_parm,
                                               void   * cookie)
           {
+            TRACE_FN_ENTER();
             EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
             uint8_t stack[T_Model::packet_model_payload_bytes];
 
@@ -1144,7 +1180,7 @@ namespace PAMI
                 p = payload;
               }
 
-            TRACE_ERR ((stderr, ">> EagerSimple::dispatch_eager_envelope(), origin = 0x%08x, m->bytes = %zu\n", m->origin, m->bytes));
+            TRACE_FORMAT("origin = 0x%08x, m->bytes = %zu", m->origin, m->bytes);
 
             // Allocate a recv state object!
             recv_state_t * state = eager->allocateRecvState ();
@@ -1163,7 +1199,7 @@ namespace PAMI
 
                 eager->freeRecvState (state);
 
-                TRACE_ERR ((stderr, "<< EagerSimple::dispatch_eager_envelope()\n"));
+                TRACE_FN_EXIT();
                 return 0;
               }
 
@@ -1180,7 +1216,7 @@ namespace PAMI
             PAMI_ENDPOINT_INFO(m->origin, task, offset);
             eager->_envelope_model.device.setConnection ((void *)state, task, offset);
 
-            TRACE_ERR ((stderr, "<< EagerSimple::dispatch_eager_envelope()\n"));
+            TRACE_FN_EXIT();
             return 0;
           };
 
@@ -1191,6 +1227,7 @@ namespace PAMI
                                                   void   * recv_func_parm,
                                                   void   * cookie)
           {
+            TRACE_FN_ENTER();
             EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
             uint8_t stack[T_Model::packet_model_payload_bytes];
 
@@ -1202,7 +1239,7 @@ namespace PAMI
 
             pami_endpoint_t origin = *((pami_endpoint_t *) metadata);
 
-            TRACE_ERR((stderr, ">> EagerSimple::dispatch_longheader_message(), origin = 0x%08x, bytes = %zu\n", origin, bytes));
+            TRACE_FORMAT("origin = 0x%08x, bytes = %zu", origin, bytes);
 
             pami_task_t task;
             size_t offset;
@@ -1256,7 +1293,7 @@ namespace PAMI
                   }
               }
 
-            TRACE_ERR((stderr, "<< EagerSimple::dispatch_longheader_message()\n"));
+            TRACE_FN_EXIT();
             return 0;
           };
 
@@ -1282,6 +1319,7 @@ namespace PAMI
                                               void   * recv_func_parm,
                                               void   * cookie)
           {
+            TRACE_FN_ENTER();
             EagerSimpleProtocol * eager = (EagerSimpleProtocol *) recv_func_parm;
             uint8_t stack[T_Model::packet_model_payload_bytes];
 
@@ -1296,7 +1334,7 @@ namespace PAMI
             size_t offset;
             PAMI_ENDPOINT_INFO(origin, task, offset);
 
-            TRACE_ERR((stderr, ">> EagerSimple::dispatch_data_message(), origin task = %d, origin offset = %zu, bytes = %zu\n", task, offset, bytes));
+            TRACE_FORMAT("origin task = %d, origin offset = %zu, bytes = %zu", task, offset, bytes);
 
             recv_state_t * state = (recv_state_t *) eager->_data_model.device.getConnection (task, offset);
 
@@ -1306,7 +1344,7 @@ namespace PAMI
             // Number of bytes left to copy into the destination buffer
             const size_t nleft = state->data_size - nbyte;
 
-            TRACE_ERR((stderr, "   EagerSimple::dispatch_data_message(), bytes received so far = %zu, bytes yet to receive = %zu, total bytes to receive = %zu\n", state->received, nleft, state->data_size));
+            TRACE_FORMAT("bytes received so far = %zu, bytes yet to receive = %zu, total bytes to receive = %zu", state->received, nleft, state->data_size);
 
             // Copy data from the packet payload into the destination buffer
             size_t ncopy = MIN(nleft, bytes);
@@ -1318,7 +1356,7 @@ namespace PAMI
 
             state->received += ncopy;
 
-            TRACE_ERR((stderr, "   EagerSimple::dispatch_data_message(), nbyte = %zu, bytes = %zu, state->data_bytes = %zu\n", nbyte, bytes, state->data_size));
+            TRACE_FORMAT("nbyte = %zu, bytes = %zu, state->data_bytes = %zu", nbyte, bytes, state->data_size);
 
             if (nbyte + bytes >= state->data_size)
               {
@@ -1336,11 +1374,13 @@ namespace PAMI
                 // Return the receive state object memory to the memory pool.
                 eager->freeRecvState (state);
 
-                TRACE_ERR((stderr, "<< EagerSimple::dispatch_data_message(), origin task = %d ... receive completed\n", task));
+                TRACE_FORMAT("origin task = %d ... receive completed", task);
+                TRACE_FN_EXIT();
                 return 0;
               }
 
-            TRACE_ERR((stderr, "<< EagerSimple::dispatch_data_message(), origin task = %d ... wait for more data\n", task));
+            TRACE_FORMAT("origin task = %d ... wait for more data", task);
+            TRACE_FN_EXIT();
             return 0;
           };
 
@@ -1355,7 +1395,7 @@ namespace PAMI
                                      void           * cookie,
                                      pami_result_t    result)
           {
-            TRACE_ERR((stderr, "EagerSimple::send_complete() >> \n"));
+            TRACE_FN_ENTER();
 
             send_state_t * state = (send_state_t *) cookie;
             EagerSimpleProtocol * eager = (EagerSimpleProtocol *) state->eager;
@@ -1367,7 +1407,7 @@ namespace PAMI
 
             eager->freeSendState (state);
 
-            TRACE_ERR((stderr, "EagerSimple::send_complete() << \n"));
+            TRACE_FN_EXIT();
             return;
           }
 
@@ -1375,7 +1415,10 @@ namespace PAMI
     };
   };
 };
-#undef TRACE_ERR
+
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
+
 #endif // __pami_p2p_protocol_send_eager_eagersimple_h__
 
 //
