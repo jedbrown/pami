@@ -432,8 +432,8 @@ namespace PAMI
                                    size_t **local_ranks)
       {
         size_t  r,q,nSize,tSize;
-        int     err,nz,tz,str_len=128;
-        char   *host,*hosts,*s;
+        int     nz,tz;
+        nrt_node_number_t *hosts;
 
         // local node process/rank info
 	pami_result_t rc;
@@ -442,49 +442,19 @@ namespace PAMI
         PAMI_assertf(rc == PAMI_SUCCESS, "memory alloc failed");
 	rc = __global.heap_mm->memalign((void **)&_peers, 0, sizeof(*_peers) * mysize);
         PAMI_assertf(rc == PAMI_SUCCESS, "memory alloc failed");
-	rc = __global.heap_mm->memalign((void **)&host, 0, str_len);
+	rc = __global.heap_mm->memalign((void **)&hosts, 0, sizeof(nrt_node_number_t) * mysize);
         PAMI_assertf(rc == PAMI_SUCCESS, "memory alloc failed");
-	rc = __global.heap_mm->memalign((void **)&hosts, 0, str_len*mysize);
-        PAMI_assertf(rc == PAMI_SUCCESS, "memory alloc failed");
-        err = gethostname(host, str_len);
-        PAMI_assertf(err == 0, "gethostname failed, errno %d", errno);
 
-	// Do an allgather to collect the map
-        pami_xfer_type_t   colltype = PAMI_XFER_ALLGATHER;
-        pami_algorithm_t   alg;
-        pami_metadata_t    mdata;
-        pami_xfer_t        xfer;
-        volatile int       flag = 1;
-        _world_geometry->algorithms_info(colltype,&alg,&mdata,1,NULL,NULL,0,0);
-        xfer.cb_done                        = map_cache_fn;
-        xfer.cookie                         = (void*)&flag;
-        xfer.algorithm                      = alg;
-        xfer.cmd.xfer_allgather.sndbuf      = host;
-        xfer.cmd.xfer_allgather.stype       = PAMI_TYPE_BYTE;
-        xfer.cmd.xfer_allgather.stypecount  = str_len;
-        xfer.cmd.xfer_allgather.rcvbuf      = hosts;
-        xfer.cmd.xfer_allgather.rtype       = PAMI_TYPE_BYTE;
-        xfer.cmd.xfer_allgather.rtypecount  = str_len;
-
-        _dbg_print_time(_Lapi_env.LAPI_debug_time_init,
-                "generateMapCache: Before allgather");
-	// We can only advance the lapi device here because our other devices
-	// are not initialized;  they rely on the map that we are building.
-        _contexts[0]->collective(&xfer);
-        while(flag)
-          _contexts[0]->advance_only_lapi(10,rc);
-
-        _dbg_print_time(_Lapi_env.LAPI_debug_time_init,
-                "generateMapCache: After allgather");
-
-        PAMI_assertf(err == 0, "allgather failed, err %d", err);
+        // get task-node map
+        LapiImpl::Context *lapi_context = (LapiImpl::Context *)_contexts[0];
+        lapi_context->GetTaskNodeMap(hosts);
 
         nSize = 0;
         tSize = 1;
         _npeers = 0;
         for (r = 0; r < mysize; ++r) {
           // search backwards for anyone with the same hostname...
-          for (q = r - 1; (int)q >= 0 && strcmp(hosts + str_len * r, hosts + str_len * q) != 0; --q);
+          for (q = r - 1; (int)q >= 0 && hosts[r] != hosts[q]; --q);
           if ((int)q >= 0) {
             // already saw this hostname... add new peer...
             uint32_t u = _mapcache[q];
@@ -496,11 +466,10 @@ namespace PAMI
             _mapcache[r] = (nSize << 16) | 0;
             ++nSize;
           }
-          if (strcmp(host, hosts + str_len * r) == 0) {
+          if (hosts[myrank] == hosts[r]) {
             _peers[_npeers++] = r;
           }
         }
-        __global.heap_mm->free(host);
         __global.heap_mm->free(hosts);
 
         PAMI_assertf(_npeers != 0, "Peers is 0"); // or return?
