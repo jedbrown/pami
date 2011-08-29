@@ -382,8 +382,22 @@ namespace PAMI
         return;
       }
 
+    inline void cleanup_geometry() {
+        /* clean up all existing geometries */
+        std::map<unsigned, pami_geometry_t>::iterator g_it = _geometry_map.begin();
+        while (g_it != _geometry_map.end()) {
+          if (NULL != g_it->second) {
+            LAPIGeometry* g = (LAPIGeometry*)(g_it->second);
+            g->~Lapi();
+            g_it->second = NULL;
+          }
+          g_it++;
+        }
+    }
+
     inline ~Client ()
       {
+        cleanup_geometry();
         if(_world_list) free(_world_list);
       }
 

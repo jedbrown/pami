@@ -590,8 +590,13 @@ namespace PAMI
             GeometryInfo *gi = (GeometryInfo*) data;
             int commid = gi->_geometry->comm();
 
-            if(gi->_geometry->isLocalMasterParticipant() && gi->_cau_info)
-              gi->_registration->freeGroup(gi->_geometry, gi->_cau_group);
+            if(ctxt != NULL && gi->_cau_info) {
+              if(gi->_geometry->isLocalMasterParticipant()) {
+                gi->_registration->freeGroup(gi->_geometry, gi->_cau_group);
+              }
+            
+              gi->_registration->freeCauInfo(gi->_cau_info);
+            }
 
             if(gi->_local_model)
               gi->_registration->freeLocalModel(gi->_local_model);
@@ -599,9 +604,6 @@ namespace PAMI
             if(gi->_ni)
               gi->_registration->freeLocalNI(gi->_ni);
 
-            if(gi->_cau_info)
-              gi->_registration->freeCauInfo(gi->_cau_info);
-            
             if(gi->_bsr_info)
               gi->_registration->freeBsrInfo(gi->_bsr_info);
 
