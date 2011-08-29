@@ -1092,7 +1092,11 @@ namespace PAMI
         PAMI::Topology * topology = (PAMI::Topology*) geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
         PAMI::Topology * local_sub_topology = (PAMI::Topology*) geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
         PAMI::Topology * master_sub_topology = (PAMI::Topology*) geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
-        TRACE_FORMAT("<%p>topology: size() %zu, isLocal() %u/%zu, isGlobal #u/%zu", this, topology->size(),  topology->isLocalToMe(), local_sub_topology->size(), master_sub_topology->size());//,  topology->isGlobal()));
+        // Is there a coordinate (rectangular) topology? 
+        PAMI::Topology * rectangle = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX);
+        bool rectangle_topo = (rectangle->type() == PAMI_COORD_TOPOLOGY); // could be EMPTY if not valid on this geometry
+
+        TRACE_FORMAT("<%p>topology: size() %zu, isLocal() %u/%zu, isGlobal #u/%zu, is rectangle %u", this, topology->size(),  topology->isLocalToMe(), local_sub_topology->size(), master_sub_topology->size(),rectangle_topo);
 
         //DO_DEBUG(for (unsigned i = 0; i < topology->size(); ++i) fprintf(stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() topology[%u] = %u", this, i, topology->index2Rank(i)););
 
@@ -1150,10 +1154,7 @@ namespace PAMI
                       _shmem_mu_rectangle_1color_dput_broadcast_factory, _shmem_mu_rectangle_dput_broadcast_factory,
                       topology->isLocal());
 
-          // Is there a coordinate topology? Try rectangle protocols
-          PAMI::Topology * rectangle = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX);
-
-          if (rectangle->type() == PAMI_COORD_TOPOLOGY) // could be EMPTY if not valid on this geometry
+          if (rectangle_topo)
           {
             TRACE_FORMAT("<%p>Register Rectangle", this);
             if (_mu_rectangle_msync_factory && __global.topology_local.size() == 1 &&
@@ -1241,7 +1242,7 @@ namespace PAMI
           val = geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
           TRACE_FORMAT("<%p>GKEY_MSYNC_CLASSROUTEID %p", this, val);
 
-          if (val && val != PAMI_CR_GKEY_FAIL)// We have a class route
+          if (val && val != PAMI_CR_GKEY_FAIL && rectangle_topo)// We have a class route
           {
             // If we can use pure MU composites, add them
             if (usePureMu)
@@ -1267,7 +1268,7 @@ namespace PAMI
               }
             }
           }
-          if ((val && val != PAMI_CR_GKEY_FAIL) || // We have a class route or
+          if ((val && val != PAMI_CR_GKEY_FAIL && rectangle_topo) || // We have a class route or
               (topology->isLocalToMe()))           // It's all local - we might use 2 device protocol in shmem-only mode
           {
             // Add 2 device composite protocols
@@ -1299,7 +1300,7 @@ namespace PAMI
           val = geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
           TRACE_FORMAT("<%p>GKEY_MCAST_CLASSROUTEID %p", this, val);
 
-          if ((val && val != PAMI_CR_GKEY_FAIL) || // We have a class route or
+          if ((val && val != PAMI_CR_GKEY_FAIL && rectangle_topo) || // We have a class route or
               (topology->isLocalToMe()))           // It's all local - we might use 2 device protocol in shmem-only mode
           {
             // If we can use pure MU composites, add them
@@ -1343,7 +1344,7 @@ namespace PAMI
           val = geometry->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
           TRACE_FORMAT("<%p>GKEY_MCOMB_CLASSROUTEID %p", this, val);
 
-          if ((val && val != PAMI_CR_GKEY_FAIL) || // We have a class route or
+          if ((val && val != PAMI_CR_GKEY_FAIL && rectangle_topo) || // We have a class route or
               (topology->isLocalToMe()))           // It's all local - we might use 2 device protocol in shmem-only mode
           {
             // Add 2 device msync over mcombine (thus using GKEY_MCOMB_CLASSROUTEID not GKEY_MSYNC_CLASSROUTEID) composite protocol
@@ -1381,7 +1382,7 @@ namespace PAMI
 #endif
               {
                 // New optimized MU+Shmem protocol requires a class route
-                if ((_mushmemcollectivedputmulticombinefactory) && (val && val != PAMI_CR_GKEY_FAIL))
+                if ((_mushmemcollectivedputmulticombinefactory) && (val && val != PAMI_CR_GKEY_FAIL && rectangle_topo))
                   geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,  _mushmemcollectivedputmulticombinefactory, _context_id);
 
 #ifdef PAMI_ENABLE_X0_PROTOCOLS

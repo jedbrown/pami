@@ -56,6 +56,8 @@
 
 #include "util/trace.h"
 
+#undef DO_TRACE_ENTEREXIT 
+#undef DO_TRACE_DEBUG     
 #define DO_TRACE_ENTEREXIT 0
 #define DO_TRACE_DEBUG     0
 
@@ -495,7 +497,7 @@ namespace PAMI
         char *mms;
         mms = mmkey + sprintf(mmkey, "/pami-clt%zd-ctx%zd", clientid, id);
 
-        TRACE_FORMAT( "<%p>", this);
+        TRACE_FORMAT( "<%p>, dispatch.id %u", this, _dispatch.id);
         // ----------------------------------------------------------------
         // Compile-time assertions
         // ----------------------------------------------------------------
@@ -567,6 +569,7 @@ namespace PAMI
             rmw_mu = Protocol::Rmw::RmwOverSend<Device::MU::PacketModel>::generate(_devices->_mu[_contextid], __global.heap_mm);
           }
 
+        TRACE_FORMAT( "<%p:%u>, dispatch.id %u", this,__LINE__, _dispatch.id);
 #if 0
         // ----------------------------------------------------------------
         // Initialize the memory region get protocol(s)
@@ -661,8 +664,15 @@ namespace PAMI
                 put_shmem = Protocol::Put::PutOverSend<ShmemPacketModel>::generate(_devices->_shmem[_contextid], _request);
                 rmw_shmem = Protocol::Rmw::RmwOverSend<ShmemPacketModel>::generate(_devices->_shmem[_contextid], __global.heap_mm);
               }
-            else TRACE_STRING("topology does not support shmem");
+            else {
+	      // We need to decrement id if some nodes > 1 PPN and this 
+	      // node == 1 PPN or else the dispatch id gets out of sync.
+	      if(__global.mapping.tSize() > 1)
+		_dispatch.id--;
+              TRACE_STRING("topology does not support shmem");
+            }
           }
+        TRACE_FORMAT( "<%p:%u>, dispatch.id %u", this,__LINE__, _dispatch.id);
 
         // Complete rget and rput protocol initialization
         if (((rget_mu != NULL) && (rget_shmem != NULL)) &&
@@ -732,6 +742,7 @@ namespace PAMI
             _rmw = rmw_shmem;
           }
 
+        TRACE_FORMAT( "<%p:%u>, dispatch.id %u", this,__LINE__, _dispatch.id);
         ///////////////////////////////////////////////////////////////
         // Construct shmem native interface
         ///////////////////////////////////////////////////////////////
@@ -759,6 +770,7 @@ namespace PAMI
           _shmem_native_interface  = (AllSidedShmemNI*)_shmem_native_interface_storage;
           new (_shmem_native_interface_storage) AllSidedShmemNI(_shmemMcastModel, _shmemMsyncModel, _shmemMcombModel, client, (pami_context_t)this, id, clientid, &_dispatch.id);
         }
+        TRACE_FORMAT( "<%p:%u>, dispatch.id %u", this,__LINE__, _dispatch.id);
 
         ///////////////////////////////////////////////////////////////
         // Register collectives
@@ -772,6 +784,8 @@ namespace PAMI
           _pgas_mu_registration = new(_pgas_mu_registration_storage) MU_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _mid_protocol, Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid),ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), &_dispatch.id, _geometry_map);
         else if ((__global.useshmem()) && (__global.topology_local.size() > 1))
           _pgas_shmem_registration = new(_pgas_shmem_registration_storage) Shmem_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _mid_protocol, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), & _dispatch.id, _geometry_map);
+
+        TRACE_FORMAT( "<%p:%u>, dispatch.id %u", this,__LINE__, _dispatch.id);
 
         // The multi registration will use shmem/mu if they are ctor'd above.
 #ifndef PAMI_ENABLE_COLLECTIVE_MULTICONTEXT
@@ -791,6 +805,7 @@ namespace PAMI
             uint64_t inval = (uint64_t)-1;
             _multi_registration->receive_global (_contextid, _world_geometry, &inval, 1);
         }
+        TRACE_FORMAT( "<%p:%u>, dispatch.id %u", this,__LINE__, _dispatch.id);
         
 #ifndef PAMI_ENABLE_COLLECTIVE_MULTICONTEXT
         if (_contextid == 0)
