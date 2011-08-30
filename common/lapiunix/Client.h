@@ -182,9 +182,7 @@ namespace PAMI
       _mm (),
       _disable_shm(true)
       {
-        pami_result_t   rc               = PAMI_SUCCESS;
         static size_t   next_client_id   = 0;
-        size_t          myrank=0, mysize = 0;
         _clientid                        = next_client_id++;
 
         // Initialize a LAPI Client Object
@@ -198,21 +196,36 @@ namespace PAMI
             result = PAMI_ENOMEM;
             return;
         }
+        result = PAMI_SUCCESS;
+      }
+
+    inline pami_result_t createContext_impl (pami_configuration_t configuration[],
+                                             size_t               count,
+                                             pami_context_t      *contexts,
+                                             size_t               ncontexts)
+      {
+        pami_result_t   rc = PAMI_SUCCESS;
+        size_t          myrank, mysize;
 
         // Support more contexts
         pami_configuration_t query = { PAMI_CLIENT_NUM_CONTEXTS };
         query_impl(&query, 1);
         _maxctxts = query.value.intval;
+        if (ncontexts > _maxctxts)
+          RETURN_ERR_PAMI(PAMI_ERROR, "creating %d contexts while %d available\n",
+              ncontexts, _maxctxts);
 
-        // Create an initial context for initialization
-        rc = createOneContext(&_contexts[0],0);
-        if(rc) {result=rc;  return;}
-        // Initialize Point-to-Point Communication
-        // This is used to build an initial "simple" mapping
-        // Using rank and size
-        // This returns locked, so make sure to unlock before returning
-        rc = _contexts[0]->initP2P(&myrank, &mysize, &_main_lapi_handle);
-        if(rc) {result=rc; _contexts[0]->unlock(); return;}
+        // Create all contexts with P2P initialized
+        for(int i=0; i< ncontexts; i++)
+            {
+              lapi_handle_t t_lhandle;
+
+              rc = createOneContext(&_contexts[i],i);
+              if(rc) RETURN_ERR_PAMI(PAMI_ERROR, "createOneContext failed with rc %d\n", rc);
+
+              rc = _contexts[i]->initP2P(&myrank, &mysize, &t_lhandle);
+              if(rc) RETURN_ERR_PAMI(PAMI_ERROR, "initP2P failed with rc %d\n", rc);
+            }
 
         // Initialize the mapping to be used for collectives
         __global.mapping.init(myrank, mysize);
@@ -221,9 +234,8 @@ namespace PAMI
         if (_Lapi_env.endpoints > 1) {
             _platdevs.generate(_clientid, _maxctxts, _mm, _disable_shm);
             _platdevs.init(_clientid,0,_client,(pami_context_t)_contexts[0],&_mm, _disable_shm);
-            result = rc;
             _contexts[0]->unlock();
-            return;
+            return initMoreContexts(configuration, count, contexts, ncontexts);
         }
 
         // Get number of tasks for this world
@@ -245,9 +257,8 @@ namespace PAMI
             _mm.init (__global.heap_mm, 16);
             _platdevs.generate(_clientid, _maxctxts, _mm, true);
             _platdevs.init(_clientid,0,_client,(pami_context_t)_contexts[0],&_mm,true);
-            result=rc;
             _contexts[0]->unlock();
-            return;
+            return rc;
           }
 
         // Initialize the shared memory manager
@@ -390,9 +401,8 @@ namespace PAMI
 
 
         // Return error code
-        result                         = rc;
         _contexts[0]->unlock();
-        return;
+        return initMoreContexts(configuration, count, contexts, ncontexts);
       }
 
     inline void cleanup_geometry() {
@@ -600,7 +610,7 @@ namespace PAMI
 
 
 
-    inline pami_result_t createContext_impl (pami_configuration_t configuration[],
+    inline pami_result_t initMoreContexts (pami_configuration_t configuration[],
                                              size_t               count,
                                              pami_context_t      *contexts,
                                              size_t               ncontexts)
@@ -620,11 +630,7 @@ namespace PAMI
               pami_result_t rc;
               lapi_handle_t t_lhandle;
               size_t        t_myrank, t_mysize;
-              contexts[i] = (pami_context_t*)_contexts[i];
-              rc = createOneContext(&_contexts[i],i);
-              rc = _contexts[i]->initP2P(&t_myrank, &t_mysize, &t_lhandle);
 	      _platdevs.init(_clientid,i,_client,(pami_context_t)_contexts[i],&_mm, _disable_shm);
-              if(rc) RETURN_ERR_PAMI(PAMI_ERROR, "createContext failed with rc %d\n", rc);
 
               // TODO: remove this check for collectives supporting multiple endpoints
               if (_Lapi_env.endpoints > 1) {
@@ -680,24 +686,6 @@ namespace PAMI
               {
                 case PAMI_CLIENT_CONST_CONTEXTS:
                   configuration[i].value.intval = 1;
-                  break;
-                case PAMI_CLIENT_TASK_ID:
-                  configuration[i].value.intval = __global.mapping.task();
-                  break;
-                case PAMI_CLIENT_NUM_TASKS:
-                  configuration[i].value.intval = __global.mapping.size();
-                  break;
-                case PAMI_CLIENT_NUM_LOCAL_TASKS:
-                  if (_ncontexts > 0) {
-                    LapiImpl::Context* cp = (LapiImpl::Context*)_contexts[0];
-                    configuration[i].value.intval = cp->GetNumLocalTasks();
-                  }
-                  break;
-                case PAMI_CLIENT_LOCAL_TASKS:
-                  if (_ncontexts > 0) {
-                    LapiImpl::Context* cp = (LapiImpl::Context*)_contexts[0];
-                    configuration[i].value.intarray = cp->GetLocalTasks();
-                  }
                   break;
                 case PAMI_CLIENT_WTICK:
                   if (_Lapi_env.use_hfi) {
