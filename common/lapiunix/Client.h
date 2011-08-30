@@ -227,6 +227,15 @@ namespace PAMI
               if(rc) RETURN_ERR_PAMI(PAMI_ERROR, "initP2P failed with rc %d\n", rc);
             }
 
+        // Additional work after contexts are created
+        try {
+          ((LapiImpl::Client *)_lapiClient)->EndContextCreate();
+        } catch (internal_rc_t int_err) {
+          return PAMI_RC(int_err);                                                 
+        } catch (std::bad_alloc) {                                                 
+          return PAMI_ENOMEM;                                        
+        }
+
         // Initialize the mapping to be used for collectives
         __global.mapping.init(myrank, mysize);
 
