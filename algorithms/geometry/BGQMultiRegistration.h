@@ -1268,7 +1268,7 @@ namespace PAMI
               }
             }
           }
-          if ((val && val != PAMI_CR_GKEY_FAIL && rectangle_topo) || // We have a class route or
+          if ((val && val != PAMI_CR_GKEY_FAIL) || // We have a class route or
               (topology->isLocalToMe()))           // It's all local - we might use 2 device protocol in shmem-only mode
           {
             // Add 2 device composite protocols
