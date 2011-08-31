@@ -27,6 +27,63 @@
 using namespace PAMI::Protocol::Send;
 
 template < class T_Model, configuration_t T_Option >
+inline bool EagerSimple<T_Model, T_Option>::send_packed (pami_task_t             task,
+                                                         size_t                  offset,
+                                                         const size_t            header_bytes,
+                                                         const size_t            data_bytes, 
+                                                         pami_send_immediate_t * parameters)
+{
+  TRACE_FN_ENTER();
+
+  // Specify the protocol metadata to send with the application
+  // metadata in the packet. This metadata is copied
+  // into the network by the device and, therefore, can be placed
+  // on the stack.
+  packed_metadata_t packed_metadata;
+  packed_metadata.data_bytes   = data_bytes;
+  packed_metadata.header_bytes = header_bytes;
+  packed_metadata.origin       = _origin;
+
+  TRACE_FORMAT("before _send_model.postPacket() .. parameters->header.iov_len = %zu, parameters->data.iov_len = %zu dest:%x", parameters->header.iov_len, parameters->data.iov_len, parameters->dest);
+
+  TRACE_FORMAT("before _send_model.postPacket() .. task = %d, offset = %zu", task, offset);
+
+  bool posted = false;
+
+  // This branch should be resolved at compile time and optimized out.
+  if (sizeof(packed_metadata_t) <= T_Model::packet_model_metadata_bytes)
+    {
+      // This allows the header+data iovec elements to be treated as a
+      // two-element array of iovec structures, and therefore allows the
+      // packet model to implement template specialization.
+      array_t<struct iovec, 2> * iov = (array_t<struct iovec, 2> *) parameters;
+
+      posted = _short_model.postPacket (task, offset,
+                                        (void *) & packed_metadata,
+                                        sizeof (packed_metadata_t),
+                                        iov->array);
+    }
+  else
+    {
+      iovec iov[3];
+      iov[0].iov_base = (void *) & packed_metadata;
+      iov[0].iov_len  = sizeof (packed_metadata_t);
+      iov[1].iov_base = parameters->header.iov_base;
+      iov[1].iov_len  = parameters->header.iov_len;
+      iov[2].iov_base = parameters->data.iov_base;
+      iov[2].iov_len  = parameters->data.iov_len;
+
+      posted = _short_model.postPacket (task, offset,
+                                        NULL, 0,
+                                        iov);
+    }
+
+  TRACE_FN_EXIT();
+  return posted;
+};
+
+
+template < class T_Model, configuration_t T_Option >
 inline pami_result_t EagerSimple<T_Model, T_Option>::send_packed (eager_state_t           * state,
                                                                   pami_task_t             task,
                                                                   size_t                  offset,

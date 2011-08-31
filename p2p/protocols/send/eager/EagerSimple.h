@@ -510,48 +510,15 @@ namespace PAMI
                 return PAMI_INVAL;
               }
 
-            // Specify the protocol metadata to send with the application
-            // metadata in the packet. This metadata is copied
-            // into the network by the device and, therefore, can be placed
-            // on the stack.
-            packed_metadata_t packed_metadata;
-            packed_metadata.data_bytes   = parameters->data.iov_len;
-            packed_metadata.header_bytes = parameters->header.iov_len;
-            packed_metadata.origin       = _origin;
-
             TRACE_FORMAT("before _send_model.postPacket() .. parameters->header.iov_len = %zu, parameters->data.iov_len = %zu dest:%x", parameters->header.iov_len, parameters->data.iov_len, parameters->dest);
 
             TRACE_FORMAT("before _send_model.postPacket() .. task = %d, offset = %zu", task, offset);
+            
+            const size_t header_bytes = parameters->header.iov_len;
+            const size_t data_bytes   = parameters->data.iov_len;
 
-            bool posted = false;
-
-            // This branch should be resolved at compile time and optimized out.
-            if (sizeof(packed_metadata_t) <= T_Model::packet_model_metadata_bytes)
-              {
-                // This allows the header+data iovec elements to be treated as a
-                // two-element array of iovec structures, and therefore allows the
-                // packet model to implement template specialization.
-                array_t<struct iovec, 2> * iov = (array_t<struct iovec, 2> *) parameters;
-
-                posted = _short_model.postPacket (task, offset,
-                                                  (void *) & packed_metadata,
-                                                  sizeof (packed_metadata_t),
-                                                  iov->array);
-              }
-            else
-              {
-                iovec iov[3];
-                iov[0].iov_base = (void *) & packed_metadata;
-                iov[0].iov_len  = sizeof (packed_metadata_t);
-                iov[1].iov_base = parameters->header.iov_base;
-                iov[1].iov_len  = parameters->header.iov_len;
-                iov[2].iov_base = parameters->data.iov_base;
-                iov[2].iov_len  = parameters->data.iov_len;
-
-                posted = _short_model.postPacket (task, offset,
-                                                  NULL, 0,
-                                                  iov);
-              }
+            bool posted =
+              send_packed (task, offset, header_bytes, data_bytes, parameters);
 
             if ((T_Option & QUEUE_IMMEDIATE_DISABLE) && !posted)
               {
@@ -585,6 +552,15 @@ namespace PAMI
                   {
                     TRACE_STRING("'short' protocol special case, protocol metadata fits in the packet metadata");
 
+  // Specify the protocol metadata to send with the application
+  // metadata in the packet. This metadata is copied
+  // into the network by the device and, therefore, can be placed
+  // on the stack.
+  packed_metadata_t packed_metadata;
+  packed_metadata.data_bytes   = data_bytes;
+  packed_metadata.header_bytes = header_bytes;
+  packed_metadata.origin       = _origin;
+
                     uint8_t * ptr = (uint8_t *) state->origin.immediate.packet;
                     memcpy (ptr, parameters->header.iov_base, parameters->header.iov_len);
                     ptr += parameters->header.iov_len;
@@ -605,9 +581,12 @@ namespace PAMI
                   {
                     TRACE_STRING("'short' protocol special case, protocol metadata does not fit in the packet metadata");
 
-                    uint8_t * ptr = (uint8_t *) state->origin.immediate.packet;
-                    memcpy (ptr, (void *) & packed_metadata, sizeof (packed_metadata_t));
-                    ptr += sizeof (packed_metadata_t);
+                    packed_metadata_t * mdata = (packed_metadata_t *) state->origin.immediate.packet;
+                    mdata->header_bytes = header_bytes;
+                    mdata->data_bytes   = data_bytes;
+                    mdata->origin       = _origin;
+                    
+                    uint8_t * ptr = (uint8_t *) (mdata + 1);
                     memcpy (ptr, parameters->header.iov_base, parameters->header.iov_len);
                     ptr += parameters->header.iov_len;
                     memcpy (ptr, parameters->data.iov_base, parameters->data.iov_len);
@@ -636,8 +615,117 @@ namespace PAMI
 
           inline pami_result_t simple_impl (pami_send_t * parameters)
           {
-            // ok to cast since pami_send_t is a subset of pami_send_typed_t.
-            return simple_and_typed_implementation<true> ((pami_send_typed_t *) parameters);
+            TRACE_FN_ENTER();
+            TRACE_FORMAT("T_Model::packet_model_metadata_bytes = %zu", T_Model::packet_model_metadata_bytes);
+
+            pami_task_t task;
+            size_t offset;
+            PAMI_ENDPOINT_INFO(parameters->send.dest, task, offset);
+
+            // Verify that this task is addressable by this packet device
+            if (unlikely(_short_model.device.isPeer (task) == false))
+              {
+                TRACE_FN_EXIT();
+                return PAMI_INVAL;
+              }
+
+            const size_t header_bytes = parameters->send.header.iov_len;
+
+            const size_t data_bytes   = parameters->send.data.iov_len;
+
+            const size_t total_bytes  = header_bytes + data_bytes;
+
+            // ----------------------------------------------------------------
+            // Check for a "short" send protocol
+            // ----------------------------------------------------------------
+#ifdef ERROR_CHECKS
+
+            if ((T_Option & RECV_IMMEDIATE_FORCEON) && (total_bytes > maximum_short_packet_payload))
+              {
+                // 'receive immediate' is forced ON, yet the application
+                // header + data will not fit in a single packet.
+                TRACE_STRING("Application error: 'recv immediate' forced on.");
+                TRACE_FN_EXIT();
+                return PAMI_INVAL;
+              }
+
+#endif
+
+            //
+            //   'immediate receives' are forced on ('long header' is irrelevant),
+            //      OR
+            //   'immediate receives' are not forced off AND the header + data fit in a single packet
+            //
+//fprintf (stderr, "(T_Option & RECV_IMMEDIATE_FORCEON) = %d .. (T_Option & RECV_IMMEDIATE_FORCEOFF) = %d .. !(T_Option & RECV_IMMEDIATE_FORCEOFF) = %d\n", (T_Option & RECV_IMMEDIATE_FORCEON), (T_Option & RECV_IMMEDIATE_FORCEOFF), !(T_Option & RECV_IMMEDIATE_FORCEOFF));
+//fprintf (stderr, "!(T_Option & RECV_IMMEDIATE_FORCEOFF) && (%zu <= %zu) == %d\n", total_bytes, maximum_short_packet_payload, !(T_Option & RECV_IMMEDIATE_FORCEOFF) && total_bytes);
+            if ((T_Option & RECV_IMMEDIATE_FORCEON) ||
+                (!(T_Option & RECV_IMMEDIATE_FORCEOFF) &&
+                 (total_bytes <= maximum_short_packet_payload)))
+              {
+                // Allocate memory to maintain the state of the send.
+                eager_state_t * state = allocateSendState ();
+
+                state->origin.cookie        = parameters->events.cookie;
+                state->origin.local_fn      = parameters->events.local_fn;
+                state->origin.remote_fn     = parameters->events.remote_fn;
+                state->origin.target_task   = task;
+                state->origin.target_offset = offset;
+                state->origin.protocol      = this;
+
+                pami_result_t result = send_packed (state, task, offset, (pami_send_t *) parameters);
+
+                TRACE_FN_EXIT();
+                return result;
+              }
+
+#ifdef ERROR_CHECKS
+
+            if ((T_Option & LONG_HEADER_DISABLE) && (header_bytes > maximum_eager_packet_payload))
+              {
+                // 'long header' support is disabled, yet the application
+                // header will not fit in a single packet.
+                TRACE_STRING("Application error: 'long header' support is disabled.");
+                TRACE_FN_EXIT();
+                return PAMI_INVAL;
+              }
+
+#endif
+
+            // ----------------------------------------------------------------
+            // Send a single-packet envelope eager message
+            // ----------------------------------------------------------------
+
+            // Allocate memory to maintain the state of the send.
+            eager_state_t * state = allocateSendState ();
+
+            state->origin.cookie        = parameters->events.cookie;
+            state->origin.local_fn      = parameters->events.local_fn;
+            state->origin.remote_fn     = parameters->events.remote_fn;
+            state->origin.target_task   = task;
+            state->origin.target_offset = offset;
+            state->origin.protocol      = this;
+
+            // Specify the protocol metadata to send with the application
+            // metadata in the envelope packet.
+            state->origin.eager.envelope.single.metadata.bytes        = data_bytes;
+            state->origin.eager.envelope.single.metadata.metabytes    = header_bytes;
+            state->origin.eager.envelope.single.metadata.origin       = _origin;
+
+            TRACE_FORMAT("parameters->send.header.iov_len = %zu, parameters->send.data.iov_len = %zu", header_bytes, data_bytes);
+
+
+            if (unlikely(data_bytes == 0))
+              {
+                send_envelope (state, task, offset, parameters->send.header, send_complete);
+              }
+            else
+              {
+                send_envelope (state, task, offset, parameters->send.header, NULL);
+                send_data<true> (state, task, offset, (pami_send_typed_t *) parameters);
+              }
+
+            TRACE_FN_EXIT();
+            return PAMI_SUCCESS;
           };
 
           inline pami_result_t typed_impl (pami_send_typed_t * parameters)
@@ -647,8 +735,9 @@ namespace PAMI
 
         protected:
 
-          MemoryAllocator < sizeof(eager_state_t), 16 > _send_allocator;
-          MemoryAllocator < sizeof(eager_state_t), 16 > _recv_allocator;
+//          MemoryAllocator < sizeof(eager_state_t), 16 > _send_allocator;
+  //        MemoryAllocator < sizeof(eager_state_t), 16 > _recv_allocator;
+          MemoryAllocator < sizeof(eager_state_t), 16 > _state_allocator;
 
           T_Model          _envelope_model;
           T_Model          _longheader_envelope_model;
@@ -665,27 +754,27 @@ namespace PAMI
           inline eager_state_t * allocateSendState ()
           {
             TRACE_FN_ENTER();
-            eager_state_t * state = (eager_state_t *) _send_allocator.allocateObject ();
+            eager_state_t * state = (eager_state_t *) _state_allocator.allocateObject ();
             TRACE_FN_EXIT();
             return state;
           }
 
           inline void freeSendState (eager_state_t * state)
           {
-            _send_allocator.returnObject ((void *) state);
+            _state_allocator.returnObject ((void *) state);
           }
 
           inline eager_state_t * allocateRecvState ()
           {
             TRACE_FN_ENTER();
-            eager_state_t * state = (eager_state_t *) _recv_allocator.allocateObject ();
+            eager_state_t * state = (eager_state_t *) _state_allocator.allocateObject ();
             TRACE_FN_EXIT();
             return state;
           }
 
           inline void freeRecvState (eager_state_t * object)
           {
-            _recv_allocator.returnObject ((void *) object);
+            _state_allocator.returnObject ((void *) object);
           }
 
           template <bool T_ContiguousCopy>
@@ -748,8 +837,9 @@ namespace PAMI
                 state->origin.target_task   = task;
                 state->origin.target_offset = offset;
                 state->origin.protocol      = this;
-                
+
                 pami_result_t result = send_packed (state, task, offset, (pami_send_t *) parameters);
+
                 TRACE_FN_EXIT();
                 return result;
               }
@@ -829,10 +919,10 @@ namespace PAMI
           /// \param [in] fn     Origin completion function
           /// \param [in] cookie Origin completion cookie
           ///
-          inline void send_remotefn (pami_task_t           task,
-                                     size_t                offset,
-                                     pami_event_function   fn,
-                                     void                * cookie);
+          void send_remotefn (pami_task_t           task,
+                              size_t                offset,
+                              pami_event_function   fn,
+                              void                * cookie);
 
           ///
           /// \brief Receive the "remote fn" ping and pong packets
@@ -870,6 +960,33 @@ namespace PAMI
           // ##################################################################
           // 'packed' code section
           // ##################################################################
+
+          ///
+          /// \brief Initiate an 'immediate' packed transfer
+          ///
+          /// The protocol metadata, application header, and application data
+          /// will be transfered in a single packet to the target task.
+          ///
+          /// \note The zero-byte application data case is handled as a 'packed'
+          ///       eager transfer if the application header will fit in a
+          ///       single packet, or as a 'multi-packet envelope' transfer
+          ///       without any data packets to follow.
+          ///
+          /// \note Does not support non-contiguous source data transfers.
+          ///
+          /// \param [in] task         Target task identifier
+          /// \param [in] offset       Target context identifier
+          /// \param [in] header_bytes Number of application header bytes to transfer
+          /// \param [in] data_bytes   Number of application data bytes to transfer
+          /// \param [in] parameters   Send immediate parameter structure
+          ///
+          /// \see dispatch_packed
+          ///
+          inline bool send_packed (pami_task_t             task,
+                                   size_t                  offset,
+                                   const size_t            header_bytes,
+                                   const size_t            data_bytes, 
+                                   pami_send_immediate_t * parameters);
 
           ///
           /// \brief Initiate a packed, or 'short', transfer

@@ -25,10 +25,10 @@
 
 #define MPI_MSGINFO_SIZE 16
 
-#define ITERATIONS 100
+#define ITERATIONS 1000
 
 #ifndef BUFSIZE
-#define BUFSIZE 256*1024
+#define BUFSIZE 4*1024
 #endif
 
 #define WARMUP
