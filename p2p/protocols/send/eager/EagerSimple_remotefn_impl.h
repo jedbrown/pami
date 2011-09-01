@@ -46,7 +46,7 @@ inline void EagerSimple<T_Model, T_Option>::send_remotefn (pami_task_t          
   if (result != true)
     {
       // Allocate memory to maintain the state of the send.
-      eager_state_t * state = allocateSendState ();
+      eager_state_t * state = allocateState ();
 
       state->origin.protocol = this;
       state->origin.ack.metadata = metadata;
@@ -105,7 +105,7 @@ inline int EagerSimple<T_Model, T_Option>::dispatch_remotefn (void   * metadata,
     {
       TRACE_STRING("immediate post failed. Allocate state memory for non-blocking send.");
       // Allocate memory to maintain the state of the send.
-      eager_state_t * state = eager->allocateSendState ();
+      eager_state_t * state = eager->allocateState ();
 
       state->origin.protocol = eager;
       state->origin.ack.metadata.remote_fn = ack->remote_fn;
@@ -134,7 +134,7 @@ inline void EagerSimple<T_Model, T_Option>::complete_remotefn (pami_context_t   
 
   eager_state_t * state = (eager_state_t *) cookie;
   EagerSimpleProtocol * eager = (EagerSimpleProtocol *) state->origin.protocol;
-  eager->freeSendState (state);
+  eager->freeState (state);
 
   TRACE_FN_EXIT();
 }

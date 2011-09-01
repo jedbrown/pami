@@ -84,10 +84,10 @@ inline bool EagerSimple<T_Model, T_Option>::send_packed (pami_task_t            
 
 
 template < class T_Model, configuration_t T_Option >
-inline pami_result_t EagerSimple<T_Model, T_Option>::send_packed (eager_state_t           * state,
-                                                                  pami_task_t             task,
-                                                                  size_t                  offset,
-                                                                  pami_send_t           * parameters)
+inline pami_result_t EagerSimple<T_Model, T_Option>::send_packed (eager_state_t * state,
+                                                                  pami_task_t     task,
+                                                                  size_t          offset,
+                                                                  pami_send_t   * parameters)
 {
   TRACE_FN_ENTER();
 
@@ -114,7 +114,7 @@ inline pami_result_t EagerSimple<T_Model, T_Option>::send_packed (eager_state_t 
     }
   else
     {
-      TRACE_STRING("'short' protocol special case, protocol metadata does not fit in the packet metadata");
+      TRACE_STRING("protocol metadata does not fit in the packet metadata");
 
       // Initialize the short protocol metadata to be sent with the
       // application metadata and application data in the packet payload.
@@ -135,17 +135,85 @@ inline pami_result_t EagerSimple<T_Model, T_Option>::send_packed (eager_state_t 
                                NULL, 0,
                                &state->origin.packed.v, 3);
     }
-#if 0
-  if (unlikely(parameters->events.remote_fn != NULL))
-    {
-      send_remotefn (task, offset,
-                     parameters->events.remote_fn,
-                     parameters->events.cookie);
-    }
-#endif
+
   TRACE_FN_EXIT();
   return PAMI_SUCCESS;
 };
+
+template < class T_Model, configuration_t T_Option >
+inline pami_result_t EagerSimple<T_Model, T_Option>::send_packed (eager_state_t     * state,
+                                                                  pami_task_t         task,
+                                                                  size_t              offset,
+                                                                  pami_send_typed_t * parameters)
+{
+  TRACE_FN_ENTER();
+
+  // Construct a type machine for this transfer.
+  Type::TypeCode * type = (Type::TypeCode *) parameters->typed.type;
+  Type::TypeMachine machine (type);
+  machine.SetCopyFunc (parameters->typed.data_fn, parameters->typed.data_cookie);
+  machine.MoveCursor (parameters->typed.offset);
+
+  struct iovec iov[1];
+  iov[0].iov_base = (void *) state->origin.packed.packet;
+  iov[0].iov_len  = parameters->send.header.iov_len + parameters->send.data.iov_len;
+
+  // This branch should be resolved at compile time and optimized out.
+  if (sizeof(packed_metadata_t) <= T_Model::packet_model_metadata_bytes)
+    {
+      TRACE_FORMAT("protocol metadata (%ld bytes) fits in the packet metadata (%zu bytes)", sizeof(packed_metadata_t), T_Model::packet_model_metadata_bytes);
+
+      // Initialize the short protocol metadata on the stack to copy
+      // into the packet metadata.
+      packed_metadata_t metadata;
+      metadata.data_bytes   = parameters->send.data.iov_len;
+      metadata.header_bytes = parameters->send.header.iov_len;
+      metadata.origin       = _origin;
+
+      // Pack the header and data into a temporary packet payload
+      uint8_t * ptr = (uint8_t *) state->origin.packed.packet;
+      memcpy (ptr, parameters->send.header.iov_base, parameters->send.header.iov_len);
+      ptr += parameters->send.header.iov_len;
+      machine.Pack (state->origin.packed.packet, ptr, parameters->send.data.iov_len);
+      
+      _short_model.postPacket (state->origin.packed.state,
+                               send_complete, (void *) state,
+                               task, offset,
+                               (void *) & metadata,
+                               sizeof (packed_metadata_t),
+                               iov);
+    }
+  else
+    {
+      TRACE_STRING("protocol metadata does not fit in the packet metadata");
+
+      // Initialize the metadata, to be sent with the header and data, in the
+      // temporary packet payload.
+      packed_metadata_t * mdata = (packed_metadata_t *) state->origin.packed.packet;
+      mdata->data_bytes   = parameters->send.data.iov_len;
+      mdata->header_bytes = parameters->send.header.iov_len;
+      mdata->origin       = _origin;
+
+      // Pack the header and data into the temporary packet payload
+      uint8_t * ptr = (uint8_t *) (mdata + 1);
+      memcpy (ptr, parameters->send.header.iov_base, parameters->send.header.iov_len);
+      ptr += parameters->send.header.iov_len;
+      machine.Pack (state->origin.packed.packet, ptr, parameters->send.data.iov_len);
+      
+      iov[0].iov_len  += sizeof(packed_metadata_t);
+
+      _short_model.postPacket (state->origin.packed.state,
+                               send_complete, (void *) state,
+                               task, offset,
+                               NULL, 0,
+                               iov);
+    }
+
+  TRACE_FN_EXIT();
+  return PAMI_SUCCESS;
+};
+
+
 
 template < class T_Model, configuration_t T_Option >
 inline int EagerSimple<T_Model, T_Option>::dispatch_packed (void   * metadata,

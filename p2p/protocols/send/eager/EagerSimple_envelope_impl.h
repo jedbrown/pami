@@ -58,10 +58,14 @@ inline pami_result_t EagerSimple<T_Model, T_Option>::send_envelope (eager_state_
     {
       // Specify the protocol metadata to send with the application
       // metadata in the envelope packet.
-      state->origin.eager.envelope.multi.metadata.bytes        = state->origin.eager.envelope.single.metadata.bytes;
-      state->origin.eager.envelope.multi.metadata.metabytes    = header.iov_len;
-      state->origin.eager.envelope.multi.metadata.origin       = _origin;
-
+      state->origin.eager.envelope.multi.metadata.bytes =
+        state->origin.eager.envelope.single.metadata.bytes;
+        
+      state->origin.eager.envelope.multi.metadata.metabytes =
+        header.iov_len;
+        
+      state->origin.eager.envelope.multi.metadata.origin =
+        _origin;
 
       TRACE_STRING("long header special case, protocol metadata does not fit in the packet metadata");
       _longheader_envelope_model.postPacket (state->origin.eager.envelope.multi.state[0],
@@ -104,10 +108,17 @@ inline pami_result_t EagerSimple<T_Model, T_Option>::send_envelope (eager_state_
         {
           TRACE_STRING("protocol metadata does not fit in the packet metadata");
 
-          state->origin.eager.envelope.single.v[0].iov_base = (void *) & (state->origin.eager.envelope.single.metadata);
-          state->origin.eager.envelope.single.v[0].iov_len  = sizeof (shortheader_metadata_t);
-          state->origin.eager.envelope.single.v[1].iov_base = header.iov_base;
-          state->origin.eager.envelope.single.v[1].iov_len  = header.iov_len;
+          state->origin.eager.envelope.single.v[0].iov_base =
+            (void *) & (state->origin.eager.envelope.single.metadata);
+            
+          state->origin.eager.envelope.single.v[0].iov_len =
+            sizeof (shortheader_metadata_t);
+            
+          state->origin.eager.envelope.single.v[1].iov_base =
+            header.iov_base;
+            
+          state->origin.eager.envelope.single.v[1].iov_len =
+            header.iov_len;
 
           _envelope_model.postPacket (state->origin.eager.envelope.single.state,
                                       done_fn,
@@ -158,7 +169,7 @@ inline int EagerSimple<T_Model, T_Option>::dispatch_envelope_packed (void   * me
   TRACE_FORMAT("origin = 0x%08x, m->bytes = %zu", m->origin, m->bytes);
 
   // Allocate and initialize recv state object!
-  eager_state_t * state = eager->allocateRecvState ();
+  eager_state_t * state = eager->allocateState ();
   state->target.info.local_fn = NULL;
 
   // This is a short header envelope .. all application metadata
@@ -173,7 +184,7 @@ inline int EagerSimple<T_Model, T_Option>::dispatch_envelope_packed (void   * me
       if (unlikely(state->target.info.local_fn != NULL))
         state->target.info.local_fn (eager->_context, state->target.info.cookie, PAMI_SUCCESS);
 
-      eager->freeRecvState (state);
+      eager->freeState (state);
 
       TRACE_FN_EXIT();
       return 0;
@@ -184,7 +195,6 @@ inline int EagerSimple<T_Model, T_Option>::dispatch_envelope_packed (void   * me
   state->target.data.bytes_received      = 0;
   state->target.data.bytes_total     = m->bytes;
   state->target.header.bytes_total   = m->metabytes;
-  //state->target.origin        = m->origin;
 
   // Set the eager connection.
   pami_task_t task;
@@ -218,14 +228,12 @@ inline int EagerSimple<T_Model, T_Option>::dispatch_envelope_metadata (void   * 
   TRACE_FORMAT("origin = 0x%08x, m->bytes = %zu", m->origin, m->bytes);
 
   // Allocate a recv state object!
-  eager_state_t * state = eager->allocateRecvState ();
-  state->target.eager         = eager;
-  state->target.data.bytes_received      = 0;
-  state->target.data.bytes_total     = m->bytes;
-  state->target.header.bytes_total   = m->metabytes;
-  state->target.header.bytes_received   = 0;
-  //state->origin        = m->origin;
-  //state->longheader.offset = 0;
+  eager_state_t * state = eager->allocateState ();
+  state->target.eager                 = eager;
+  state->target.data.bytes_received   = 0;
+  state->target.data.bytes_total      = m->bytes;
+  state->target.header.bytes_total    = m->metabytes;
+  state->target.header.bytes_received = 0;
 
   // Set the eager connection.
   pami_task_t task;
@@ -300,7 +308,7 @@ inline int EagerSimple<T_Model, T_Option>::dispatch_envelope_header (void   * me
           // delivered to the application.
           __global.heap_mm->free (state->target.header.addr);
 
-          eager->freeRecvState (state);
+          eager->freeState (state);
         }
       else
         {

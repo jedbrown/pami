@@ -37,7 +37,7 @@ inline pami_result_t EagerSimple<T_Model, T_Option>::send_data (eager_state_t   
 
   if (T_ContiguousCopy == true)
     {
-      _data_model.postMultiPacket (state->origin.eager.data.contig.state,
+      _data_model.postMultiPacket (state->origin.eager.data.state[0],
                                    send_complete,
                                    (void *) state,
                                    task,
@@ -46,21 +46,9 @@ inline pami_result_t EagerSimple<T_Model, T_Option>::send_data (eager_state_t   
                                    sizeof (pami_endpoint_t),
                                    parameters->send.data.iov_base,
                                    parameters->send.data.iov_len);
-#if 0
-      if (unlikely(parameters->events.remote_fn != NULL))
-        {
-          send_remotefn (task, offset,
-                         parameters->events.remote_fn,
-                         parameters->events.cookie);
-        }
-#endif
     }
   else
     {
-      PAMI_abort();
-
-
-#if 0
       Type::TypeCode * type = (Type::TypeCode *) parameters->typed.type;
       PAMI_assert_debugf(type != NULL, "parameters->typed.type == NULL !");
 
@@ -69,19 +57,20 @@ inline pami_result_t EagerSimple<T_Model, T_Option>::send_data (eager_state_t   
       if (! type->IsCompleted())
         {
           //RETURN_ERR_PAMI(PAMI_INVAL, "Using an incompleted type.");
-          if (state->info.local_fn != NULL)
-            state->info.local_fn (_context, state->info.cookie, PAMI_INVAL);
+          if (state->origin.local_fn != NULL)
+            state->origin.local_fn (_context, state->origin.local_fn, PAMI_INVAL);
 
           TRACE_FN_EXIT();
-          return;
+          return PAMI_ERROR;
         }
 
 #endif
 
       // Construct a type machine for this transfer.
-      new (&(state->typed.machine)) Type::TypeMachine (type);
-      state->typed.machine.SetCopyFunc (parameters->typed.data_fn, parameters->typed.data_cookie);
-      state->typed.machine.MoveCursor (parameters->typed.offset);
+      Type::TypeMachine * machine = (Type::TypeMachine *) state->origin.eager.data.machine;
+      new (machine) Type::TypeMachine (type);
+      machine->SetCopyFunc (parameters->typed.data_fn, parameters->typed.data_cookie);
+      machine->MoveCursor (parameters->typed.offset);
 
       const size_t atom_size = type->GetAtomSize();
 
@@ -89,101 +78,104 @@ inline pami_result_t EagerSimple<T_Model, T_Option>::send_data (eager_state_t   
         {
           // partial packet data not supported.
           PAMI_abort();
-          return;
+          return PAMI_ERROR;
         }
 
-      state->typed.origin_addr     = parameters->send.data.iov_base;
-      state->typed.bytes_remaining = parameters->send.data.iov_len;
+      state->origin.eager.data.base_addr =
+        parameters->send.data.iov_base;
+        
+      state->origin.eager.data.bytes_remaining =
+        parameters->send.data.iov_len;
 
-      size_t bytes_remaining = parameters->send.data.iov_len;
+      const size_t bytes_remaining = parameters->send.data.iov_len;
 
-      if (bytes_remaining <= sizeof(typed_pipeline_t))
+      if (bytes_remaining <= sizeof(data_pipeline_t))
         {
           // "short", non-pipelined, pack-n-send
-          state->typed.machine.Pack (state->typed.pipeline[0],
-                                     state->typed.origin_addr,
-                                     bytes_remaining);
+          machine->Pack (state->origin.eager.data.pipeline[0],
+                         state->origin.eager.data.base_addr,
+                         bytes_remaining);
 
-          _data_model.postMultiPacket (state->msg[2],
+          _data_model.postMultiPacket (state->origin.eager.data.state[0],
                                        send_complete,
                                        (void *) state,
                                        task,
                                        offset,
                                        (void *) & _origin,
                                        sizeof (pami_endpoint_t),
-                                       state->typed.pipeline[0],
+                                       state->origin.eager.data.pipeline[0],
                                        bytes_remaining);
         }
-      else if (bytes_remaining <= sizeof(typed_pipeline_t)*2)
+      else if (bytes_remaining <= (sizeof(data_pipeline_t) << 1))
         {
           // pack-n-send the first full pipeline width _without_ a
           // completion callback.
-          state->typed.machine.Pack (state->typed.pipeline[0],
-                                     state->typed.origin_addr,
-                                     sizeof(typed_pipeline_t));
+          machine->Pack (state->origin.eager.data.pipeline[0],
+                         state->origin.eager.data.base_addr,
+                         sizeof(data_pipeline_t));
 
-          _data_model.postMultiPacket (state->msg[2],
+          _data_model.postMultiPacket (state->origin.eager.data.state[0],
                                        NULL,
                                        (void *) NULL,
                                        task,
                                        offset,
                                        (void *) & _origin,
                                        sizeof (pami_endpoint_t),
-                                       state->typed.pipeline[0],
-                                       sizeof(typed_pipeline_t));
+                                       state->origin.eager.data.pipeline[0],
+                                       sizeof(data_pipeline_t));
 
           // pack-n-send the second (and also last) pipeline width
           // with a normal data completion callback.
-          state->typed.machine.Pack (state->typed.pipeline[1],
-                                     state->typed.origin_addr,
-                                     bytes_remaining - sizeof(typed_pipeline_t));
+          machine->Pack (state->origin.eager.data.pipeline[1],
+                         state->origin.eager.data.base_addr,
+                         bytes_remaining - sizeof(data_pipeline_t));
 
-          _data_model.postMultiPacket (state->msg[3],
+          _data_model.postMultiPacket (state->origin.eager.data.state[1],
                                        send_complete,
                                        (void *) state,
                                        task,
                                        offset,
                                        (void *) & _origin,
                                        sizeof (pami_endpoint_t),
-                                       state->typed.pipeline[1],
-                                       bytes_remaining - sizeof(typed_pipeline_t));
+                                       state->origin.eager.data.pipeline[1],
+                                       bytes_remaining - sizeof(data_pipeline_t));
         }
       else
         {
-          // pack-n-send the first full pipeline width with a data
-          // completion callback.
-          state->typed.machine.Pack (state->typed.pipeline[0],
-                                     state->typed.origin_addr,
-                                     sizeof(typed_pipeline_t));
+          state->origin.eager.data.start_count = 2;
 
-          _data_model.postMultiPacket (state->typed.msg[2],
-                                       data_complete,
+          // pack-n-send the first full pipeline width with a data pipeline
+          // completion callback.
+          machine->Pack (state->origin.eager.data.pipeline[0],
+                         state->origin.eager.data.base_addr,
+                         sizeof(data_pipeline_t));
+
+          _data_model.postMultiPacket (state->origin.eager.data.state[0],
+                                       complete_data,
                                        (void *) state,
                                        task,
                                        offset,
                                        (void *) & _origin,
                                        sizeof (pami_endpoint_t),
-                                       state->typed.pipeline[0],
-                                       sizeof(typed_pipeline_t));
+                                       state->origin.eager.data.pipeline[0],
+                                       sizeof(data_pipeline_t));
 
-          // pack-n-send the second full pipeline width with a data
+          // pack-n-send the second full pipeline width with a data pipeline
           // completion callback.
-          state->typed.machine.Pack (state->typed.pipeline[1],
-                                     state->typed.origin_addr,
-                                     sizeof(typed_pipeline_t));
+          machine->Pack (state->origin.eager.data.pipeline[1],
+                         state->origin.eager.data.base_addr,
+                         sizeof(data_pipeline_t));
 
-          _data_model.postMultiPacket (state->msg[3],
-                                       data_complete,
+          _data_model.postMultiPacket (state->origin.eager.data.state[1],
+                                       complete_data,
                                        (void *) state,
                                        task,
                                        offset,
                                        (void *) & _origin,
                                        sizeof (pami_endpoint_t),
-                                       state->typed.pipeline[1],
-                                       sizeof(typed_pipeline_t));
+                                       state->origin.eager.data.pipeline[1],
+                                       sizeof(data_pipeline_t));
         }
-
-#endif
     }
 
   TRACE_FN_EXIT();
@@ -254,7 +246,7 @@ inline int EagerSimple<T_Model, T_Option>::dispatch_data   (void   * metadata,
                               PAMI_SUCCESS);
 
       // Return the receive state object memory to the memory pool.
-      eager->freeRecvState (state);
+      eager->freeState (state);
 
       TRACE_FORMAT("origin task = %d ... receive completed", task);
       TRACE_FN_EXIT();
@@ -276,70 +268,73 @@ inline void EagerSimple<T_Model, T_Option>::complete_data (pami_context_t   cont
   eager_state_t * state = (eager_state_t *) cookie;
   EagerSimpleProtocol * eager = (EagerSimpleProtocol *) state->origin.protocol;
 
-  size_t which = state->origin.data.noncontig.start_count & 0x01;
-  state->origin.data.noncontig.start_count += 1;
+  // Determine which pipline completion invoked this callback, and increment the
+  // start count for the next pipeline completion.
+  const size_t which = (state->origin.eager.data.start_count++) & 0x01;
 
-  const size_t bytes_remaining = state->origin.data.noncontig.bytes_remaining;
+  const size_t bytes_remaining = state->origin.eager.data.bytes_remaining;
 
-  if (bytes_remaining <= sizeof(pipeline_t))
+  Type::TypeMachine * machine =
+    (Type::TypeMachine *) state->origin.eager.data.machine;
+
+  if (bytes_remaining <= sizeof(data_pipeline_t))
     {
-      // pack-n-send the last pipeline width with a _send_
-      // completion callback.
-      state->origin.data.noncontig.machine.Pack (state->origin.data.noncontig.pipeline[which],
-                                                 state->origin.data.noncontig.origin_addr,
-                                                 bytes_remaining);
+      // pack-n-send the last pipeline width with a _send_ completion callback.
+      machine->Pack (state->origin.eager.data.pipeline[which],
+                     state->origin.eager.data.base_addr,
+                     bytes_remaining);
 
-      state->origin.data.noncontig.bytes_remaining -= bytes_remaining;
-
-      eager->_data_model.postMultiPacket (state->origin.data.noncontig.state[which],
+      eager->_data_model.postMultiPacket (state->origin.eager.data.state[which],
                                           send_complete,
                                           (void *) state,
-                                          0,//task,
-                                          0,//offset,
+                                          state->origin.target_task,
+                                          state->origin.target_offset,
                                           (void *) & eager->_origin,
                                           sizeof (pami_endpoint_t),
-                                          state->origin.data.noncontig.pipeline[which],
+                                          state->origin.eager.data.pipeline[which],
                                           bytes_remaining);
     }
-  else if (bytes_remaining <= sizeof(pipeline_t)*2)
+  else if (bytes_remaining <= (sizeof(data_pipeline_t) << 1))
     {
       // pack-n-send this next-to-last full pipeline width _without_ a
-      // completion callback.
-      state->origin.data.noncontig.machine.Pack (state->origin.data.noncontig.pipeline[which],
-                                                 state->origin.data.noncontig.origin_addr,
-                                                 sizeof(pipeline_t));
+      // completion callback. This is allowed because the next pipeline width is
+      // also the last pipeline width and this last pipeline width will specify
+      // a send completion callback (see if clause above).
+      machine->Pack (state->origin.eager.data.pipeline[which],
+                     state->origin.eager.data.base_addr,
+                     sizeof(data_pipeline_t));
 
-      state->origin.data.noncontig.bytes_remaining -= sizeof(pipeline_t);
+      state->origin.eager.data.bytes_remaining -= sizeof(data_pipeline_t);
 
-      eager->_data_model.postMultiPacket (state->origin.data.noncontig.state[which],
+      eager->_data_model.postMultiPacket (state->origin.eager.data.state[which],
                                           NULL,
                                           (void *) NULL,
-                                          0,//task,
-                                          0,//offset,
+                                          state->origin.target_task,
+                                          state->origin.target_offset,
                                           (void *) & eager->_origin,
                                           sizeof (pami_endpoint_t),
-                                          state->origin.data.noncontig.pipeline[which],
-                                          sizeof(pipeline_t));
+                                          state->origin.eager.data.pipeline[which],
+                                          sizeof(data_pipeline_t));
     }
   else
     {
-      // pack-n-send this next full pipeline width with a pipeline
-      // completion callback.
-      state->origin.data.noncontig.machine.Pack (state->origin.data.noncontig.pipeline[which],
-                                                 state->origin.data.noncontig.origin_addr,
-                                                 sizeof(pipeline_t));
+      // pack-n-send a full pipeline width with a data pipeline completion callback.
+      machine->Pack (state->origin.eager.data.pipeline[which],
+                     state->origin.eager.data.base_addr,
+                     sizeof(data_pipeline_t));
 
-      state->origin.data.noncontig.bytes_remaining -= sizeof(pipeline_t);
+      state->origin.eager.data.bytes_remaining -= sizeof(data_pipeline_t);
 
-      eager->_data_model.postMultiPacket (state->origin.data.noncontig.state[which],
+      eager->_data_model.postMultiPacket (state->origin.eager.data.state[which],
                                           complete_data,
                                           (void *) state,
-                                          0,//task,
-                                          0,//offset,
+                                          state->origin.target_task,
+                                          state->origin.target_offset,
                                           (void *) & eager->_origin,
                                           sizeof (pami_endpoint_t),
-                                          state->origin.data.noncontig.pipeline[which],
-                                          sizeof(pipeline_t));
+                                          state->origin.eager.data.pipeline[which],
+                                          sizeof(data_pipeline_t));
+
     }
 
   TRACE_FN_EXIT();

@@ -135,60 +135,12 @@ namespace PAMI
           } shortheader_metadata_t;
 
 
-          typedef struct
-          {
-          } contig_data_metadata_t;
-
-          typedef struct
-          {
-          } noncontig_data_metadata_t;
-
-          typedef model_packet_t pipeline_t;
+          typedef model_packet_t data_pipeline_t;
           
           typedef struct
-          {
-            model_state_t           msg[2];
-            pipeline_t              pipeline[2];
-            
-            size_t start_count;
-            size_t bytes_remaining;
-            void * origin_addr;
-            
-            Type::TypeMachine             machine;
-            
-          } data_flow_t;
-
-#if 0
-          typedef struct send_state
-          {
-            model_state_t           msg[3];
-            model_packet_t          pkt;
-            union
-            {
-              ack_protocol_t        ack_protocol;
-              packed_metadata_t      packed_metadata;
-              longheader_metadata_t metadata;
-              shortheader_metadata_t      metadata;
-            };
-            pami_event_function     local_fn;  ///< Application send injection completion callback
-            pami_event_function     remote_fn; ///< Application remote receive acknowledgement callback
-            void                  * cookie;    ///< Application callback cookie
-            union
-            {
-              struct iovec          v[2];      ///< Iovec array used for transfers
-              struct iovec          v3[3];     ///< Iovec array used for transfers
-            };
-            data_flow_t             data;
-            EagerSimpleProtocol   * eager;     ///< Eager protocol object
-          } send_state_t;
-#endif
-
-          typedef struct
-          {
-            
+          {            
             struct
             {
-              //Type::TypeMachine     machine;
               uint8_t               machine[sizeof(Type::TypeMachine)];
               bool                  is_contiguous_copy_recv;
               size_t                bytes_received;
@@ -203,22 +155,7 @@ namespace PAMI
             } header;
 
             pami_recv_t             info;     ///< Application receive information.
-            EagerSimpleProtocol   * eager;   ///< Eager protocol object
-            
-            //size_t                  received; ///< Number of bytes received.
-            //size_t                  data_size;
-            //size_t                  header_size;
-            //pami_endpoint_t         origin;
-
-
-            //model_state_t           msg;      ///< packet send state memory
-
-//            struct
-  //          {
-    //          uint8_t             * addr;     ///< Address of the long header recv buffer
-      //        size_t                bytes;
-        //      size_t                offset;
-          //  } longheader;
+            EagerSimpleProtocol   * eager;   ///< Eager protocol object            
           } target_t;
 
           typedef struct
@@ -231,6 +168,7 @@ namespace PAMI
           typedef struct
           {
             model_state_t             state;
+            model_packet_t            packet;
             packed_metadata_t          metadata;
             struct iovec              v[3];
           } packed_t;
@@ -250,15 +188,14 @@ namespace PAMI
 
           typedef struct
           {
-            model_state_t             state;
-            contig_data_metadata_t    metadata;
-          } contig_data_t;
+            model_state_t             state[2];
+            data_pipeline_t           pipeline[2];
+            uint8_t                   machine[sizeof(Type::TypeMachine)];
 
-          typedef struct
-          {
-            model_state_t             state;
-            noncontig_data_metadata_t metadata;
-          } noncontig_data_t;
+            void                    * base_addr;
+            size_t                    bytes_remaining;
+            size_t                    start_count;
+          } data_t;
 
           typedef struct
           {
@@ -279,11 +216,7 @@ namespace PAMI
                   short_header_t      single;
                   long_header_t       multi;
                 } envelope;
-                union
-                {
-                  contig_data_t       contig;
-                  noncontig_data_t    noncontig;
-                } data;
+                data_t                data;
               } eager;
               ack_t                   ack;
             };
@@ -534,7 +467,7 @@ namespace PAMI
                 TRACE_STRING("immediate post packet unsuccessful.");
 
                 // Allocate memory to maintain the state of the send.
-                eager_state_t * state = allocateSendState ();
+                eager_state_t * state = allocateState ();
 
                 state->origin.cookie        = NULL;
                 state->origin.local_fn      = NULL;
@@ -663,7 +596,7 @@ namespace PAMI
                  (total_bytes <= maximum_short_packet_payload)))
               {
                 // Allocate memory to maintain the state of the send.
-                eager_state_t * state = allocateSendState ();
+                eager_state_t * state = allocateState ();
 
                 state->origin.cookie        = parameters->events.cookie;
                 state->origin.local_fn      = parameters->events.local_fn;
@@ -696,7 +629,7 @@ namespace PAMI
             // ----------------------------------------------------------------
 
             // Allocate memory to maintain the state of the send.
-            eager_state_t * state = allocateSendState ();
+            eager_state_t * state = allocateState ();
 
             state->origin.cookie        = parameters->events.cookie;
             state->origin.local_fn      = parameters->events.local_fn;
@@ -729,56 +662,6 @@ namespace PAMI
           };
 
           inline pami_result_t typed_impl (pami_send_typed_t * parameters)
-          {
-            return simple_and_typed_implementation<false> (parameters);
-          };
-
-        protected:
-
-//          MemoryAllocator < sizeof(eager_state_t), 16 > _send_allocator;
-  //        MemoryAllocator < sizeof(eager_state_t), 16 > _recv_allocator;
-          MemoryAllocator < sizeof(eager_state_t), 16 > _state_allocator;
-
-          T_Model          _envelope_model;
-          T_Model          _longheader_envelope_model;
-          T_Model          _longheader_message_model;
-          T_Model          _data_model;
-          T_Model          _ack_model;
-          T_Model          _short_model;
-          pami_endpoint_t  _origin;
-          pami_context_t   _context;
-
-          pami_dispatch_p2p_function _dispatch_fn;
-          void                     * _cookie;
-
-          inline eager_state_t * allocateSendState ()
-          {
-            TRACE_FN_ENTER();
-            eager_state_t * state = (eager_state_t *) _state_allocator.allocateObject ();
-            TRACE_FN_EXIT();
-            return state;
-          }
-
-          inline void freeSendState (eager_state_t * state)
-          {
-            _state_allocator.returnObject ((void *) state);
-          }
-
-          inline eager_state_t * allocateRecvState ()
-          {
-            TRACE_FN_ENTER();
-            eager_state_t * state = (eager_state_t *) _state_allocator.allocateObject ();
-            TRACE_FN_EXIT();
-            return state;
-          }
-
-          inline void freeRecvState (eager_state_t * object)
-          {
-            _state_allocator.returnObject ((void *) object);
-          }
-
-          template <bool T_ContiguousCopy>
-          inline pami_result_t simple_and_typed_implementation (pami_send_typed_t * parameters)
           {
             TRACE_FN_ENTER();
             TRACE_FORMAT("T_Model::packet_model_metadata_bytes = %zu", T_Model::packet_model_metadata_bytes);
@@ -823,13 +706,12 @@ namespace PAMI
             //
 //fprintf (stderr, "(T_Option & RECV_IMMEDIATE_FORCEON) = %d .. (T_Option & RECV_IMMEDIATE_FORCEOFF) = %d .. !(T_Option & RECV_IMMEDIATE_FORCEOFF) = %d\n", (T_Option & RECV_IMMEDIATE_FORCEON), (T_Option & RECV_IMMEDIATE_FORCEOFF), !(T_Option & RECV_IMMEDIATE_FORCEOFF));
 //fprintf (stderr, "!(T_Option & RECV_IMMEDIATE_FORCEOFF) && (%zu <= %zu) == %d\n", total_bytes, maximum_short_packet_payload, !(T_Option & RECV_IMMEDIATE_FORCEOFF) && total_bytes);
-            if ((T_ContiguousCopy == true) &&    // 'typed' short send not supported
-                ((T_Option & RECV_IMMEDIATE_FORCEON) ||
-                 (!(T_Option & RECV_IMMEDIATE_FORCEOFF) &&
-                  (total_bytes <= maximum_short_packet_payload))))
+            if ((T_Option & RECV_IMMEDIATE_FORCEON) ||
+                (!(T_Option & RECV_IMMEDIATE_FORCEOFF) &&
+                 (total_bytes <= maximum_short_packet_payload)))
               {
                 // Allocate memory to maintain the state of the send.
-                eager_state_t * state = allocateSendState ();
+                eager_state_t * state = allocateState ();
 
                 state->origin.cookie        = parameters->events.cookie;
                 state->origin.local_fn      = parameters->events.local_fn;
@@ -838,7 +720,7 @@ namespace PAMI
                 state->origin.target_offset = offset;
                 state->origin.protocol      = this;
 
-                pami_result_t result = send_packed (state, task, offset, (pami_send_t *) parameters);
+                pami_result_t result = send_packed (state, task, offset, parameters);
 
                 TRACE_FN_EXIT();
                 return result;
@@ -862,7 +744,7 @@ namespace PAMI
             // ----------------------------------------------------------------
 
             // Allocate memory to maintain the state of the send.
-            eager_state_t * state = allocateSendState ();
+            eager_state_t * state = allocateState ();
 
             state->origin.cookie        = parameters->events.cookie;
             state->origin.local_fn      = parameters->events.local_fn;
@@ -887,13 +769,42 @@ namespace PAMI
             else
               {
                 send_envelope (state, task, offset, parameters->send.header, NULL);
-                send_data<T_ContiguousCopy> (state, task, offset, parameters);
+                send_data<false> (state, task, offset, parameters);
               }
 
 
             TRACE_FN_EXIT();
             return PAMI_SUCCESS;
           };
+
+        protected:
+
+          MemoryAllocator < sizeof(eager_state_t), 16 > _state_allocator;
+
+          T_Model          _envelope_model;
+          T_Model          _longheader_envelope_model;
+          T_Model          _longheader_message_model;
+          T_Model          _data_model;
+          T_Model          _ack_model;
+          T_Model          _short_model;
+          pami_endpoint_t  _origin;
+          pami_context_t   _context;
+
+          pami_dispatch_p2p_function _dispatch_fn;
+          void                     * _cookie;
+
+          inline eager_state_t * allocateState ()
+          {
+            TRACE_FN_ENTER();
+            eager_state_t * state = (eager_state_t *) _state_allocator.allocateObject ();
+            TRACE_FN_EXIT();
+            return state;
+          }
+
+          inline void freeState (eager_state_t * state)
+          {
+            _state_allocator.returnObject ((void *) state);
+          }
 
           // ##################################################################
           // The "remote fn" capability, as required by pami.h, is implemented
@@ -989,7 +900,7 @@ namespace PAMI
                                    pami_send_immediate_t * parameters);
 
           ///
-          /// \brief Initiate a packed, or 'short', transfer
+          /// \brief Initiate a packed, or 'short', contigous data transfer
           ///
           /// The protocol metadata, application header, and application data
           /// will be transfered in a single packet to the target task.
@@ -998,8 +909,6 @@ namespace PAMI
           ///       eager transfer if the application header will fit in a
           ///       single packet, or as a 'multi-packet envelope' transfer
           ///       without any data packets to follow.
-          ///
-          /// \note Does not support non-contiguous source data transfers.
           ///
           /// \param [in] state      Eager state structure to track the transfer
           /// \param [in] task       Target task identifier
@@ -1012,6 +921,29 @@ namespace PAMI
                                             pami_task_t     task,
                                             size_t          offset,
                                             pami_send_t   * parameters);
+
+          ///
+          /// \brief Initiate a packed, or 'short', non-contiguous data transfer
+          ///
+          /// The protocol metadata, application header, and application data
+          /// will be transfered in a single packet to the target task.
+          ///
+          /// \note The zero-byte application data case is handled as a 'packed'
+          ///       eager transfer if the application header will fit in a
+          ///       single packet, or as a 'multi-packet envelope' transfer
+          ///       without any data packets to follow.
+          ///
+          /// \param [in] state      Eager state structure to track the transfer
+          /// \param [in] task       Target task identifier
+          /// \param [in] offset     Target context identifier
+          /// \param [in] parameters Send typed parameter structure
+          ///
+          /// \see dispatch_packed
+          ///
+          inline pami_result_t send_packed (eager_state_t     * state,
+                                            pami_task_t         task,
+                                            size_t              offset,
+                                            pami_send_typed_t * parameters);
 
           ///
           /// \brief Receive a packed single-packet, or 'short', packet.
@@ -1252,7 +1184,7 @@ namespace PAMI
                 state->origin.local_fn (eager->_context, state->origin.cookie, PAMI_SUCCESS);
               }
 
-            eager->freeSendState (state);
+            eager->freeState (state);
 
             if (unlikely(state->origin.remote_fn != NULL))
               {
