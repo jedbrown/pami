@@ -39,7 +39,7 @@
 /// \b 'eager data' is the portion of an eager transfer that sends and receives
 ///    the source data information.
 ///
-/// 
+///
 #ifndef __p2p_protocols_send_eager_EagerSimple_h__
 #define __p2p_protocols_send_eager_EagerSimple_h__
 
@@ -85,13 +85,7 @@ namespace PAMI
           typedef uint8_t model_state_t[T_Model::packet_model_state_bytes];
           typedef uint8_t model_packet_t[T_Model::packet_model_state_bytes];
 
-          typedef struct
-          {
-            pami_event_function   remote_fn;
-            void                * cookie;
-            pami_context_t        context;
-            bool                  invoke;
-          } ack_metadata_t;
+
 
           ///
           /// \note The 'short' protocol metadata limits the maximum size of
@@ -105,17 +99,28 @@ namespace PAMI
           ///
           typedef struct
           {
-            uint16_t           data_bytes;   ///< Number of bytes of application data being sent
-            uint16_t           header_bytes; ///< Number of bytes of application header being sent
-            pami_endpoint_t    origin;       ///< Endpoint that originated the transfer
+            uint16_t                data_bytes;
+            uint16_t                header_bytes;
+            pami_endpoint_t         origin;
           } packed_metadata_t;
 
           typedef struct
           {
-            size_t             bytes;     ///< Number of bytes of application data being sent
-            size_t             metabytes; ///< Number of bytes of application metadata being sent
-            pami_endpoint_t    origin;    ///< Endpoint that originated the transfer
-          } longheader_metadata_t;
+            model_state_t           state;
+            model_packet_t          packet;
+            packed_metadata_t       metadata;
+          } immediate_t;
+
+          typedef struct
+          {
+            model_state_t           state;
+            model_packet_t          packet;
+            packed_metadata_t       metadata;
+            struct iovec            v[3];
+          } packed_t;
+
+
+
 
           ///
           /// \note The 'eager' protocol metadata structure limits the maximum
@@ -129,16 +134,93 @@ namespace PAMI
           ///
           typedef struct
           {
-            size_t             bytes;     ///< Number of bytes of application data being sent
-            uint16_t           metabytes; ///< Number of bytes of application metadata being sent
-            pami_endpoint_t    origin;    ///< Endpoint that originated the transfer
+            size_t                  bytes;
+            uint16_t                metabytes;
+            pami_endpoint_t         origin;
           } shortheader_metadata_t;
+
+          typedef struct
+          {
+            model_state_t           state;
+            shortheader_metadata_t  metadata;
+            struct iovec            v[2];
+          } short_header_t;
+
+
+
+          typedef struct
+          {
+            size_t                  bytes;
+            size_t                  metabytes;
+            pami_endpoint_t         origin;
+          } longheader_metadata_t;
+
+          typedef struct
+          {
+            model_state_t           state[2];
+            longheader_metadata_t   metadata;
+          } long_header_t;
+
 
 
           typedef model_packet_t data_pipeline_t;
-          
+
           typedef struct
-          {            
+          {
+            model_state_t           state[2];
+            data_pipeline_t         pipeline[2];
+            uint8_t                 machine[sizeof(Type::TypeMachine)];
+
+            void                  * base_addr;
+            size_t                  bytes_remaining;
+            size_t                  start_count;
+          } data_t;
+
+
+
+          typedef struct
+          {
+            pami_event_function     remote_fn;
+            void                  * cookie;
+            pami_context_t          context;
+            bool                    invoke;
+          } ack_metadata_t;
+
+          typedef struct
+          {
+            model_state_t           state;
+            ack_metadata_t          metadata;
+          } ack_t;
+
+
+          typedef struct
+          {
+            union
+            {
+              immediate_t           immediate;
+              packed_t              packed;
+              struct
+              {
+                union
+                {
+                  short_header_t    single;
+                  long_header_t     multi;
+                } envelope;
+                data_t              data;
+              } eager;
+              ack_t                 ack;
+            };
+
+            pami_task_t             target_task;
+            size_t                  target_offset;
+            pami_event_function     local_fn;
+            pami_event_function     remote_fn;
+            void                  * cookie;
+            EagerSimpleProtocol   * protocol;
+          } origin_t;
+
+          typedef struct
+          {
             struct
             {
               uint8_t               machine[sizeof(Type::TypeMachine)];
@@ -146,7 +228,7 @@ namespace PAMI
               size_t                bytes_received;
               size_t                bytes_total;
             } data;
-            
+
             struct
             {
               size_t                bytes_received;
@@ -154,81 +236,10 @@ namespace PAMI
               void                * addr;
             } header;
 
-            pami_recv_t             info;     ///< Application receive information.
-            EagerSimpleProtocol   * eager;   ///< Eager protocol object            
+            pami_recv_t             info;
+            EagerSimpleProtocol   * eager;
           } target_t;
 
-          typedef struct
-          {
-            model_state_t             state;
-            model_packet_t            packet;
-            packed_metadata_t          metadata;
-          } immediate_t;
-
-          typedef struct
-          {
-            model_state_t             state;
-            model_packet_t            packet;
-            packed_metadata_t          metadata;
-            struct iovec              v[3];
-          } packed_t;
-
-          typedef struct
-          {
-            model_state_t             state;
-            shortheader_metadata_t    metadata;
-            struct iovec              v[2];
-          } short_header_t;
-
-          typedef struct
-          {
-            model_state_t             state[2];
-            longheader_metadata_t     metadata;
-          } long_header_t;
-
-          typedef struct
-          {
-            model_state_t             state[2];
-            data_pipeline_t           pipeline[2];
-            uint8_t                   machine[sizeof(Type::TypeMachine)];
-
-            void                    * base_addr;
-            size_t                    bytes_remaining;
-            size_t                    start_count;
-          } data_t;
-
-          typedef struct
-          {
-            model_state_t             state;
-            ack_metadata_t            metadata;
-          } ack_t;
-
-          typedef struct
-          {
-            union
-            {
-              immediate_t             immediate;
-              packed_t                packed;
-              struct
-              {
-                union
-                {
-                  short_header_t      single;
-                  long_header_t       multi;
-                } envelope;
-                data_t                data;
-              } eager;
-              ack_t                   ack;
-            };
-            
-            pami_task_t               target_task;
-            size_t                    target_offset;
-            pami_event_function       local_fn;  ///< Application send injection completion callback
-            pami_event_function       remote_fn; ///< Application remote receive acknowledgement callback
-            void                    * cookie;    ///< Application callback cookie
-            EagerSimpleProtocol     * protocol;  ///< Eager protocol object
-          } origin_t;
-          
           typedef union
           {
             origin_t origin;
@@ -446,7 +457,7 @@ namespace PAMI
             TRACE_FORMAT("before _send_model.postPacket() .. parameters->header.iov_len = %zu, parameters->data.iov_len = %zu dest:%x", parameters->header.iov_len, parameters->data.iov_len, parameters->dest);
 
             TRACE_FORMAT("before _send_model.postPacket() .. task = %d, offset = %zu", task, offset);
-            
+
             const size_t header_bytes = parameters->header.iov_len;
             const size_t data_bytes   = parameters->data.iov_len;
 
@@ -485,14 +496,14 @@ namespace PAMI
                   {
                     TRACE_STRING("'short' protocol special case, protocol metadata fits in the packet metadata");
 
-  // Specify the protocol metadata to send with the application
-  // metadata in the packet. This metadata is copied
-  // into the network by the device and, therefore, can be placed
-  // on the stack.
-  packed_metadata_t packed_metadata;
-  packed_metadata.data_bytes   = data_bytes;
-  packed_metadata.header_bytes = header_bytes;
-  packed_metadata.origin       = _origin;
+                    // Specify the protocol metadata to send with the application
+                    // metadata in the packet. This metadata is copied
+                    // into the network by the device and, therefore, can be placed
+                    // on the stack.
+                    packed_metadata_t packed_metadata;
+                    packed_metadata.data_bytes   = data_bytes;
+                    packed_metadata.header_bytes = header_bytes;
+                    packed_metadata.origin       = _origin;
 
                     uint8_t * ptr = (uint8_t *) state->origin.immediate.packet;
                     memcpy (ptr, parameters->header.iov_base, parameters->header.iov_len);
@@ -518,7 +529,7 @@ namespace PAMI
                     mdata->header_bytes = header_bytes;
                     mdata->data_bytes   = data_bytes;
                     mdata->origin       = _origin;
-                    
+
                     uint8_t * ptr = (uint8_t *) (mdata + 1);
                     memcpy (ptr, parameters->header.iov_base, parameters->header.iov_len);
                     ptr += parameters->header.iov_len;
@@ -896,7 +907,7 @@ namespace PAMI
           inline bool send_packed (pami_task_t             task,
                                    size_t                  offset,
                                    const size_t            header_bytes,
-                                   const size_t            data_bytes, 
+                                   const size_t            data_bytes,
                                    pami_send_immediate_t * parameters);
 
           ///
@@ -1084,7 +1095,7 @@ namespace PAMI
                                         size_t               data_bytes,
                                         pami_endpoint_t      origin,
                                         eager_state_t      * state);
-                                        
+
           // ##################################################################
           // 'data' code section
           // ##################################################################
