@@ -1,6 +1,6 @@
 /**
- * \file test/api/p2p/send/type/send-typed-recv.c
- * \brief Simple point-topoint PAMI_send() test
+ * \file test/api/p2p/send/type/send-typed.c
+ * \brief Simple point-to-point PAMI_Send_typed() test
 */
 
 #include <pami.h>
@@ -26,6 +26,7 @@ size_t __header_errors = 0;
 size_t __data_errors = 0;
 
 pami_type_t __recv_type;
+pami_type_t __send_type;
 
 #define PI 3.14159265
 #define E  2.71828183
@@ -86,8 +87,6 @@ void barrier_init (pami_client_t client, pami_context_t * context, unsigned ncon
     {
       PAMI_Dispatch_set (context[i], dispatch_id, fn, (void *) & handle->counter, (pami_dispatch_hint_t) {0});
     }
-
-
 };
 
 void barrier (barrier_t * handle)
@@ -343,7 +342,7 @@ static void send_done_remote (pami_context_t   context,
 }
 /* ---------------------------------------------------------------*/
 
-void display_usage( void )
+void display_usage(int argc, char ** argv)
 {
 
   printf("This is the help text for default-send.c:\n");
@@ -362,8 +361,8 @@ void display_usage( void )
   printf("-d | --debug Enable error tracing messages to stderr for debug.\n");
   printf("\n");
   printf("Parms can be provided separately or together.\n");
-  printf("\tex:  default-send.cnk -D -S --debug\n");
-  printf("\tex:  default-send.cnk --MS\n");
+  printf("\tex:  %s -D -S --debug\n", argv[0]);
+  printf("\tex:  %s --MS\n", argv[0]);
   printf("\n");
 }
 /* ---------------------------------------------------------------*/
@@ -416,7 +415,7 @@ int main (int argc, char ** argv)
 
             if (task_id == 0)
               {
-                display_usage();
+                display_usage(argc, argv);
                 return 1;
               }
 
@@ -753,17 +752,37 @@ int main (int argc, char ** argv)
   result = PAMI_Type_complete (__recv_type, sizeof(double));
 
 
+  /* This noncontiguous 'send type' is composed of two contiguous doubles,
+   * then skips two doubles, then repeats.
+   */ 
+  result = PAMI_Type_create (&__send_type);
+  result = PAMI_Type_add_simple (__send_type,
+                                 sizeof(double) * 2,  /* bytes */
+                                 0,                   /* offset */
+                                 1024,                /* count */
+                                 sizeof(double) * 4); /* stride */
+  result = PAMI_Type_complete (__send_type, sizeof(double));
 
-  double header[2048];
-  double data[2048];
+
+
+
+  double header[2048*2];
+  double data[2048*2];
 
   /* ***********************************
    * Initialize the send buffer
    ************************************/
+  for (i = 0; i< 2048*2; i++)
+    {
+      header[i] = E;
+      data[i]   = E;
+    }
+  unsigned offset = 0;
   for (i = 0; i < 2048; i++)
     {
-      header[i] = PI * (i + 1);
-      data[i]   = PI * (i + 1);
+      header[i] = PI * (i + 1); /* header is CONTIGUOUS */
+      data[i+offset]   = PI * (i + 1);
+      offset += ((i & 0x01) << 1);
     }
 
   size_t h, hsize = 0;
@@ -837,11 +856,15 @@ int main (int argc, char ** argv)
 
 
   /* Time to run various headers and payloads */
-  pami_send_t parameters;
+  pami_send_typed_t parameters;
   parameters.send.header.iov_base = header;
   parameters.send.data.iov_base   = data;
   parameters.events.cookie        = (void *) & send_active;
   parameters.events.local_fn      = send_done_local;
+  parameters.typed.type           = __send_type;
+  parameters.typed.offset         = 0;
+  parameters.typed.data_fn        = PAMI_DATA_COPY;
+  parameters.typed.data_cookie    = NULL;
   memset(&parameters.send.hints, 0, sizeof(parameters.send.hints));
 
   if (task_id == 0)
@@ -905,7 +928,7 @@ int main (int argc, char ** argv)
                                   return 1;
                                 }
 
-                              fprintf (stderr, "===== PAMI_Send() FUNCTIONAL Test [%s][%s][%s] %zu %zu (%zu, 0) -> (%zu, %zu) =====\n\n", &device_str[hint][0], &xtalk_str[xtalk][0], &callback_str[remote_cb][0], header_bytes[h], data_bytes[p], task_id, n, xtalk);
+                              fprintf (stderr, "===== PAMI_Send_typed() FUNCTIONAL Test [%s][%s][%s] %zu %zu (%zu, 0) -> (%zu, %zu) =====\n\n", &device_str[hint][0], &xtalk_str[xtalk][0], &callback_str[remote_cb][0], header_bytes[h], data_bytes[p], task_id, n, xtalk);
 
                               if (remote_cb)
                                 {
@@ -914,19 +937,19 @@ int main (int argc, char ** argv)
 
                               if (debug)
                                 {
-                                  fprintf (stderr, "before PAMI_Send ...\n");
+                                  fprintf (stderr, "before PAMI_Send_typed() ...\n");
                                 }
 
-                              result = PAMI_Send (context[0], &parameters);
+                              result = PAMI_Send_typed (context[0], &parameters);
 
                               if (debug)
                                 {
-                                  fprintf (stderr, "... after PAMI_Send.\n");
+                                  fprintf (stderr, "... after PAMI_Send_typed().\n");
                                 }
 
                               if (result != PAMI_SUCCESS)
                                 {
-                                  fprintf (stderr, "ERROR (E):  PAMI_Send failed with rc = %d\n", result);
+                                  fprintf (stderr, "ERROR (E):  PAMI_Send_typed failed with rc = %d\n", result);
                                   return 1;
                                 }
 
@@ -1041,7 +1064,7 @@ int main (int argc, char ** argv)
                               fprintf (stderr, "... after recv advance loop\n");
                             }
 
-                          fprintf (stderr, "===== PAMI_Send() FUNCTIONAL Test [%s][%s][%s] %zu %zu (%zu, %zu) -> (0, 0) =====\n\n", &device_str[hint][0], &xtalk_str[xtalk][0], &callback_str[remote_cb][0], header_bytes[h], data_bytes[p], task_id, xtalk);
+                          fprintf (stderr, "===== PAMI_Send_typed() FUNCTIONAL Test [%s][%s][%s] %zu %zu (%zu, %zu) -> (0, 0) =====\n\n", &device_str[hint][0], &xtalk_str[xtalk][0], &callback_str[remote_cb][0], header_bytes[h], data_bytes[p], task_id, xtalk);
 
                           if (remote_cb)
                             {
@@ -1053,7 +1076,7 @@ int main (int argc, char ** argv)
                               fprintf (stderr, "before send ...\n");
                             }
 
-                          result = PAMI_Send (context[xtalk], &parameters);
+                          result = PAMI_Send_typed (context[xtalk], &parameters);
 
                           if (debug)
                             {
@@ -1062,7 +1085,7 @@ int main (int argc, char ** argv)
 
                           if (result != PAMI_SUCCESS)
                             {
-                              fprintf (stderr, "ERROR (E):  PAMI_Send failed with rc = %d\n", result);
+                              fprintf (stderr, "ERROR (E):  PAMI_Send_typed() failed with rc = %d\n", result);
                               return 1;
 
                             }
