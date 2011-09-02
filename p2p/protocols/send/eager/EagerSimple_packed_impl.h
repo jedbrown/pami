@@ -30,7 +30,7 @@ template < class T_Model, configuration_t T_Option >
 inline bool EagerSimple<T_Model, T_Option>::send_packed (pami_task_t             task,
                                                          size_t                  offset,
                                                          const size_t            header_bytes,
-                                                         const size_t            data_bytes, 
+                                                         const size_t            data_bytes,
                                                          pami_send_immediate_t * parameters)
 {
   TRACE_FN_ENTER();
@@ -174,8 +174,10 @@ inline pami_result_t EagerSimple<T_Model, T_Option>::send_packed (eager_state_t 
       uint8_t * ptr = (uint8_t *) state->origin.packed.packet;
       memcpy (ptr, parameters->send.header.iov_base, parameters->send.header.iov_len);
       ptr += parameters->send.header.iov_len;
-      machine.Pack (state->origin.packed.packet, ptr, parameters->send.data.iov_len);
-      
+      machine.Pack (ptr, parameters->send.data.iov_base, parameters->send.data.iov_len);
+
+      TRACE_HEXDATA(state->origin.packed.packet, iov[0].iov_len);
+
       _short_model.postPacket (state->origin.packed.state,
                                send_complete, (void *) state,
                                task, offset,
@@ -198,9 +200,11 @@ inline pami_result_t EagerSimple<T_Model, T_Option>::send_packed (eager_state_t 
       uint8_t * ptr = (uint8_t *) (mdata + 1);
       memcpy (ptr, parameters->send.header.iov_base, parameters->send.header.iov_len);
       ptr += parameters->send.header.iov_len;
-      machine.Pack (state->origin.packed.packet, ptr, parameters->send.data.iov_len);
-      
+      machine.Pack (ptr, parameters->send.data.iov_base, parameters->send.data.iov_len);
+
       iov[0].iov_len  += sizeof(packed_metadata_t);
+
+      TRACE_HEXDATA(state->origin.packed.packet, iov[0].iov_len);
 
       _short_model.postPacket (state->origin.packed.state,
                                send_complete, (void *) state,
