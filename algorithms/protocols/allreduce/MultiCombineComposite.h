@@ -347,7 +347,7 @@ namespace CCMI
             else                              // I am a non-root, and I must throw away the results
             {
               rc = __global.heap_mm->memalign((void **)&_throwaway_results, 16, sbytes);
-              PAMI_assert(rc == PAMI_SUCCESS && _throwaway_results != NULL);
+              if(sbytes)PAMI_assert(rc == PAMI_SUCCESS && _throwaway_results != NULL);
               rcvBuf = _throwaway_results;
               _pwq_dest.configure(_throwaway_results,                   // buffer
                                   sbytes,                          // buffer bytes

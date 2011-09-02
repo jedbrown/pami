@@ -385,12 +385,6 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::start ()
 {
   EXECUTOR_DEBUG((stderr, "<%p>Executor::ScanExec::start: _buflen = %d\n", this, _buflen);)
 
-  // Nothing to scan? We're done.
-  if ((_buflen == 0) && _cb_done)
-    {
-      _cb_done (NULL, _clientdata, PAMI_SUCCESS);
-      return;
-    }
 
   memcpy(_tmpbuf, _sbuf, _buflen);
 

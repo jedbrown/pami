@@ -190,6 +190,7 @@ namespace CCMI
                     sizeOfType = sizeof(long double);
                     func = (coremath) Core_fp128_max;
                     break;
+
                   case PAMI_SIGNED_CHAR:
                     sizeOfType = sizeof(char);
                     func = (coremath) Core_int8_max;
@@ -263,6 +264,7 @@ namespace CCMI
                     sizeOfType = sizeof(unsigned char);
                     func = (coremath) Core_uint8_min;
                     break;
+
                   case PAMI_SIGNED_CHAR:
                     sizeOfType = sizeof(char);
                     func = (coremath) Core_int8_min;
@@ -325,6 +327,8 @@ namespace CCMI
                     sizeOfType = sizeof(short);
                     func = (coremath) Core_int16_band;
                     break;
+
+                  case PAMI_BYTE:
                   case PAMI_UNSIGNED_CHAR:
                     sizeOfType = sizeof(unsigned char);
                     func = (coremath) Core_uint8_band;
@@ -391,6 +395,8 @@ namespace CCMI
                     sizeOfType = sizeof(short);
                     func = (coremath) Core_int16_bor;
                     break;
+
+                  case PAMI_BYTE:
                   case PAMI_UNSIGNED_CHAR:
                     sizeOfType = sizeof(unsigned char);
                     func = (coremath) Core_uint8_bor;
@@ -457,6 +463,8 @@ namespace CCMI
                     sizeOfType = sizeof(short);
                     func = (coremath) Core_int16_bxor;
                     break;
+
+                  case PAMI_BYTE:
                   case PAMI_UNSIGNED_CHAR:
                     sizeOfType = sizeof(unsigned char);
                     func = (coremath) Core_uint8_bxor;
@@ -527,6 +535,7 @@ namespace CCMI
                     sizeOfType = sizeof(unsigned char);
                     func = (coremath) Core_uint8_land;
                     break;
+
                   case PAMI_SIGNED_CHAR:
                     sizeOfType = sizeof(char);
                     func = (coremath) Core_int8_land;
@@ -593,6 +602,7 @@ namespace CCMI
                     sizeOfType = sizeof(unsigned char);
                     func = (coremath) Core_uint8_lor;
                     break;
+
                   case PAMI_SIGNED_CHAR:
                     sizeOfType = sizeof(char);
                     func = (coremath) Core_int8_lor;
@@ -659,6 +669,7 @@ namespace CCMI
                     sizeOfType = sizeof(unsigned char);
                     func = (coremath) Core_uint8_lxor;
                     break;
+
                   case PAMI_SIGNED_CHAR:
                     sizeOfType = sizeof(char);
                     func = (coremath) Core_int8_lxor;
@@ -794,6 +805,7 @@ namespace CCMI
                     sizeOfType = sizeof(long double);
                     func = (coremath) Core_fp128_prod;
                     break;
+
                   case PAMI_SIGNED_CHAR:
                     sizeOfType = sizeof(char);
                     func = (coremath) Core_int8_prod;
@@ -822,6 +834,7 @@ namespace CCMI
 
               switch (dtype)
                 {
+                  case PAMI_BYTE:
                   case PAMI_SIGNED_CHAR:
                     sizeOfType = sizeof(char);
                     break;

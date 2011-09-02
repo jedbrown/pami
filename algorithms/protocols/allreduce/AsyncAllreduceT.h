@@ -280,13 +280,13 @@ public:
             unsigned sizeOfType;
             coremath func;
             uintptr_t op, dt;
-            PAMI::Type::TypeFunc::GetEnums(a_xfer->rtype,
+            PAMI::Type::TypeFunc::GetEnums(a_xfer->stype,
                                            a_xfer->op,
                                            dt,op);
 
             CCMI::Adaptor::Allreduce::getReduceFunction((pami_dt)dt, (pami_op)op, sizeOfType, func);
-            sizeOfType = ((TypeCode *)a_xfer->rtype)->GetDataSize();
-            unsigned bytes = a_xfer->rtypecount * sizeOfType;
+            sizeOfType = ((TypeCode *)a_xfer->stype)->GetDataSize();
+            unsigned bytes = a_xfer->stypecount * sizeOfType;
 
             DEBUG((stderr, "key = %d, found early arrival in unexpected queue\n", key);)
 
@@ -299,7 +299,7 @@ public:
             a_composite->executor().setBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, 0, (TypeCode *)a_xfer->stype, (TypeCode *)a_xfer->rtype); // need number of bytes ???
             a_composite->executor().setReduceConnectionManager(_cmgr);
             a_composite->executor().setBroadcastConnectionManager(_cmgr);
-            a_composite->executor().setReduceInfo(a_xfer->rtypecount, bytes, sizeOfType, func, (TypeCode *)a_xfer->stype, (TypeCode *)a_xfer->rtype, (pami_op)op, (pami_dt)dt);
+            a_composite->executor().setReduceInfo(a_xfer->stypecount, bytes, sizeOfType, func, (TypeCode *)a_xfer->stype, (TypeCode *)a_xfer->rtype, (pami_op)op, (pami_dt)dt);
         }
         /// not found posted CollOp object, create a new one and
         /// queue it in active queue

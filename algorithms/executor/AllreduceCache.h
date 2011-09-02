@@ -416,7 +416,7 @@ namespace CCMI
           TRACE_FN_ENTER();
           /////////////////*****  Reset Pipe Work Queues  **********///////////////
           TRACE_FORMAT( "<%p>", this);
-          CCMI_assert(_pcache._bytes > 0);
+          //CCMI_assert(_pcache._bytes > 0);
 
           //Hard reset the cache
           if (rflag) _isConfigChanged = true;
@@ -876,7 +876,7 @@ inline void  CCMI::Executor::AllreduceCache<T_Conn>::setupReceives(bool infoRequ
 
               nextRecvData ++;
 
-              CCMI_assert (_pcache._bytes != 0);
+              //CCMI_assert (_pcache._bytes != 0);
               CCMI_assert (_phaseVec[p].recvBufs[scount] != NULL);
               PAMI::PipeWorkQueue *pwq = &_phaseVec[p].pwqs[scount];
               new (pwq) PAMI::PipeWorkQueue();

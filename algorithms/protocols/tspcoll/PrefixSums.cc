@@ -143,12 +143,12 @@ void xlpgas::PrefixSums<T_NI>::reset (const void         * sbuf,
 
   /* need more memory in temp buffer? */
   if (this->_tmpbuflen < tmpbufsize)
-    {
-      if (this->_tmpbuf) {
-	__global.heap_mm->free (this->_tmpbuf);
-	this->_tmpbuf = NULL;
-      }
-      assert (nelems * datawidth > 0);
+  {
+    if (this->_tmpbuf) {
+      __global.heap_mm->free (this->_tmpbuf);
+      this->_tmpbuf = NULL;
+    }
+    assert (nelems * datawidth > 0);
 
 #if TRANSPORT == bgp
       //int alignment = MAXOF(sizeof(void*), datawidth);
@@ -156,12 +156,14 @@ void xlpgas::PrefixSums<T_NI>::reset (const void         * sbuf,
       int rc = __global.heap_mm->memalign (&this->_tmpbuf, alignment, tmpbufsize);
       //printf("L%d: AR bgp alment=%d sz=%d %d \n",XLPGAS_MYNODE, alignment,nelems*datawidth,rc)
 #else
-      this->_tmpbuf = __global.heap_mm->malloc (tmpbufsize);
-      int rc = 0;
+    this->_tmpbuf = __global.heap_mm->malloc (tmpbufsize);
+    int rc = 0;
 #endif
-      if (rc || !this->_tmpbuf)
-	xlpgas_fatalerror (-1, "PrefixSums: memory allocation error, rc=%d", rc);
-    }
+    if (rc || !this->_tmpbuf)
+	  xlpgas_fatalerror (-1, "PrefixSums: memory allocation error, rc=%d", rc);
+  }
+
+ 
   this->_tmpbuflen = tmpbufsize;
   if (sbuf != dbuf)
     {
@@ -192,6 +194,11 @@ void xlpgas::PrefixSums<T_NI>::reset (const void         * sbuf,
       rbuf_phase = (((char *)this->_tmpbuf) + nelems * datawidth);
     }
 
+  if(tmpbufsize == 0 && !rbuf_phase)
+  {
+    rbuf_phase = this->_dbuf;
+  }
+
   for (int i=0; i<this->_logMaxBF; i++)   /* prefix sums pattern */
     {
       phase ++;
@@ -204,7 +211,6 @@ void xlpgas::PrefixSums<T_NI>::reset (const void         * sbuf,
       this->_pwq[phase].reset();
       phase ++;
     }
-
   assert (phase == this->_numphases);
   this->_cb_prefixsums = xlpgas::Allreduce::getcallback (op, dt);
 }

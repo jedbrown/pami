@@ -364,13 +364,6 @@ inline void  CCMI::Executor::ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type>:
 {
   TRACE_ADAPTOR((stderr, "<%p>Executor::ScatterExec::start() count%d\n", this, _buflen));
 
-  // Nothing to scatter? We're done.
-  if ((_buflen == 0) && _cb_done && !(_disps && _sndcounts))
-    {
-      _cb_done (NULL, _clientdata, PAMI_SUCCESS);
-      return;
-    }
-
   _curphase  = 0;
 
   if (_native->myrank() == _root)

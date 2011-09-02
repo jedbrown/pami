@@ -156,8 +156,6 @@ namespace CCMI
         {
           if (_native->myrank() == _mdata._root) return;
 
-          if (_msend.bytes == 0) return; //we call callback in start
-
           pami_multicast_t mrecv;
           //memcpy (&mrecv, &_msend, sizeof(pami_multicast_t));
 	  mrecv.msginfo  = _msend.msginfo;
@@ -205,13 +203,6 @@ template <class T>
 inline void  CCMI::Executor::BroadcastExec<T>::start ()
 {
   TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::start() count %zu\n", this, _msend.bytes));
-
-  // Nothing to broadcast? We're done.
-  if ((_msend.bytes == 0) && _cb_done)
-    {
-      _cb_done (NULL, _clientdata, PAMI_SUCCESS);
-      return;
-    }
 
   if (_native->myrank() == _mdata._root || _postReceives)
     {
