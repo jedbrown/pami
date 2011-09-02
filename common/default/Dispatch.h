@@ -390,8 +390,13 @@ namespace PAMI
       inline pami_result_t send (pami_send_typed_t * parameters)
       {
         TRACE_FN_ENTER();
+
+        size_t dispatch_id = (size_t)(parameters->send.dispatch);
+        PAMI_assert_debug (dispatch_id < T_DispatchCount);
+        pami_result_t result =  _send[dispatch_id]->typed (parameters);
+
         TRACE_FN_EXIT();
-        return PAMI_UNIMPL;
+        return result;
       }
 
       inline pami_result_t put (pami_put_simple_t * parameters)

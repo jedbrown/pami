@@ -1009,7 +1009,13 @@ namespace PAMI
 
       inline pami_result_t send_impl (pami_send_typed_t * parameters)
       {
-        return PAMI_UNIMPL;
+        TRACE_FN_ENTER();
+
+        pami_result_t rc = _dispatch.send (parameters);
+
+        TRACE_FORMAT("rc = %d", rc);
+        TRACE_FN_EXIT();
+        return rc;
       }
 
       inline pami_result_t put_impl (pami_put_simple_t * parameters)
