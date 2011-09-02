@@ -78,6 +78,14 @@ namespace PAMI
         {
           return (void*)((char*)_collshm + offset);
         }
+        inline void *shm_null_ptr()
+        {
+          return _end;
+        }
+        inline size_t shm_null_offset()
+        {
+          return _size;
+        }
         union shm_ctrl_str_t
         {
           char     ctrl[_windowsz];
@@ -115,6 +123,8 @@ namespace PAMI
         CollSharedMemoryManager (Memory::MemoryManager *mm) :
           _nctrlstrs(0),
           _ndatabufs(0),
+          _start(NULL),
+          _end(NULL),
           _collshm (NULL),
           _localrank (__global.mapping.task()), // hacking for now, only support single node job
           _localsize (__global.mapping.size()), // hacking for now, only support single node job
@@ -186,6 +196,8 @@ namespace PAMI
             PAMI_assertf(T_Mutex::checkCtorMm(_mm), "Memory type incorrect for T_Mutex class");            
             rc = _mm->memalign((void **)&_collshm, 16, _size, "/pami-collshmem",
                                _collshminit, (void *)this);
+            _start = (void*)_collshm;
+            _end   = (void*)((char*)_collshm + _size);
           }
           else
             rc = PAMI_ENOMEM;
@@ -273,9 +285,6 @@ namespace PAMI
 
         databuf_t * _get_data_buf_from_pool ()
         {
-
-          // require a implementation of check_lock and clear_lock in atomic class
-          //while(COLLSHM_CHECK_LOCK((atomic_p)&(_collshm->buffer_pool_lock), 0, 1));
           _collshm->buffer_pool_lock.acquire();
           Memory::sync<Memory::instruction>();
           databuf_t *new_bufs = (databuf_t*) offset_to_addr(_collshm->buffer_pool_offset);
@@ -287,7 +296,7 @@ namespace PAMI
                          _collshm, _collshm->buffer_offset, (char *)_collshm + _size,
                          (char *)(new_bufs + COLLSHM_INIT_BUFCNT)));
               PAMI_ASSERT(0);
-              return NULL;
+              return (databuf_t*)shm_null_ptr();
             }
 
           for (int i = 0; i < COLLSHM_INIT_BUFCNT - 1; ++i)
@@ -295,14 +304,11 @@ namespace PAMI
               new_bufs->next_offset = addr_to_offset(new_bufs + 1);
               new_bufs              = (databuf_t*)offset_to_addr(new_bufs->next_offset);
             }
-
-          new_bufs->next_offset = addr_to_offset(NULL);
-
+          new_bufs->next_offset = shm_null_offset();
           _collshm->buffer_pool_offset += (COLLSHM_INIT_BUFCNT*sizeof(databuf_t));
-          //COLLSHM_CLEAR_LOCK((atomic_p)&(_collshm->buffer_pool_lock),0);
+
           Memory::sync();
           _collshm->buffer_pool_lock.release();
-
           return bufs;
         }
 
@@ -319,19 +325,17 @@ namespace PAMI
 
         databuf_t *getDataBuffer (unsigned count)
         {
-
           PAMI_ASSERT(count <= COLLSHM_INIT_BUFCNT);
 
           unsigned buf_count = 0;
-          databuf_t * cur;
-          databuf_t *next, *tmp, *buffers = NULL;
+          databuf_t *cur;
+          databuf_t *next, *tmp, *buffers = (databuf_t*)shm_null_ptr();
 
           T_Atomic *buffer_list = (T_Atomic*)offset_to_addr(_collshm->buffer_list_offset);
           while (buf_count < count)
             {
               cur = (databuf_t *)offset_to_addr(buffer_list->fetch());
-
-              if (cur == NULL)
+              if (cur == shm_null_ptr())
                 {
                   tmp   = _get_data_buf_from_pool();   // Allocate a whold chunk of INIT_BUFCNT new buffers from the pool
                   cur   = tmp + count - buf_count - 1; // End of the list satisfying the requirement
@@ -364,15 +368,15 @@ namespace PAMI
                              cur, next, _collshm->free_buffer_list_offset));
 
                   cur = (databuf_t*)offset_to_addr(buffer_list->fetch());
-                  if (cur == NULL)
-                    next = NULL;  // take care of the case in which free list becomes empty
+                  if (cur == shm_null_ptr())
+                    next = (databuf_t*)shm_null_ptr();  // take care of the case in which free list becomes empty
                   else
                     next = (databuf_t*)offset_to_addr(cur->next_offset);
                   TRACE_DBG((stderr, "exit cur = %p, cur->next = %p and _collshm->free_buffer_list_offset = %lu\n",
                              cur, next, _collshm->free_buffer_list_offset));
                 }
 
-              if (cur == NULL) continue;  // may need to start over
+              if (cur == shm_null_ptr()) continue;  // may need to start over
 
               TRACE_DBG((stderr, "end cur = %p\n", cur));
               cur->next_offset = addr_to_offset(buffers);
@@ -395,11 +399,11 @@ namespace PAMI
         void returnDataBuffer (databuf_t *data_buf)
         {
 
-          PAMI_ASSERT(data_buf != NULL);
+          PAMI_ASSERT(data_buf != shm_null_ptr());
 
           databuf_t *tmp = data_buf;
           T_Atomic  *buffer_list = (T_Atomic*)offset_to_addr(_collshm->buffer_list_offset);
-          while (tmp->next_offset != addr_to_offset(NULL))
+          while (tmp->next_offset != shm_null_offset())
             {
               tmp = (databuf_t*)offset_to_addr(tmp->next_offset);
               --_ndatabufs;
@@ -466,14 +470,14 @@ namespace PAMI
                       _collshm, _collshm->ctlstr_offset, (char *)_collshm + offset,
                       (char *)(ctlstr + COLLSHM_INIT_CTLCNT));
               PAMI_ASSERT(0);
-              return NULL;
+              return (ctlstr_t*)shm_null_ptr();
             }
           for (int i = 0; i < COLLSHM_INIT_CTLCNT - 1; ++i)
             {
               tmp->next_offset = addr_to_offset(tmp + 1);
               tmp              = (ctlstr_t*)offset_to_addr(tmp->next_offset);
             }
-          tmp->next_offset = addr_to_offset(NULL);
+          tmp->next_offset = shm_null_offset();
 
           _collshm->ctlstr_pool_offset += (COLLSHM_INIT_CTLCNT*sizeof(ctlstr_t));
           //COLLSHM_CLEAR_LOCK((atomic_p)&(_collshm->ctlstr_pool_lock),0);
@@ -499,16 +503,16 @@ namespace PAMI
 
           unsigned ctlstr_count = 0;
           ctlstr_t * cur;
-          ctlstr_t *next, *tmp, *ctlstr = NULL;
+          ctlstr_t *next, *tmp, *ctlstr = (ctlstr_t*)shm_null_ptr();
 
           T_Atomic *ctlstr_list = (T_Atomic *) offset_to_addr(_collshm->ctlstr_list_offset);
           while (ctlstr_count < count)
             {
               PAMI_ASSERT(_collshm != NULL);
-              PAMI_ASSERT(ctlstr_list != NULL);
+              PAMI_ASSERT(ctlstr_list != shm_null_ptr());
               cur = (ctlstr_t *)offset_to_addr(ctlstr_list->fetch());
 
-              if (cur == NULL)
+              if (cur == shm_null_ptr())
                 {
                   tmp   = _get_ctrl_str_from_pool();       // Allocate a whold chunk of INIT_CTLCNT new buffers from the pool
                   cur   = tmp + count - ctlstr_count - 1;  // End of the list satisfying the requirement
@@ -536,15 +540,15 @@ namespace PAMI
                 {
                   cur = (ctlstr_t*)offset_to_addr(ctlstr_list->fetch());
 
-                  if (cur == NULL)
-                    next = NULL;  // take care of the case in which free list becomes empty
+                  if (cur == shm_null_ptr())
+                    next = (ctlstr_t*)shm_null_ptr();  // take care of the case in which free list becomes empty
                   else
                     next = (ctlstr_t*)offset_to_addr(cur->next_offset);
 
                   TRACE_DBG((stderr, "cur = %p\n", cur));
                 }
 
-              if (cur == NULL) continue;  // may need to start over
+              if (cur == shm_null_ptr()) continue;  // may need to start over
 
               cur->next_offset = addr_to_offset(ctlstr);
               ctlstr = (ctlstr_t *)cur;
@@ -564,7 +568,7 @@ namespace PAMI
         void returnCtrlStr (ctlstr_t *ctlstr)
         {
 
-          PAMI_ASSERT(ctlstr != NULL);
+          PAMI_ASSERT(ctlstr != shm_null_ptr());
 
           ctlstr_t *tmp         = ctlstr;
           T_Atomic *ctlstr_list = (T_Atomic *) offset_to_addr(_collshm->ctlstr_list_offset);
@@ -572,7 +576,7 @@ namespace PAMI
           // Decrement the number of control strings
           // and count the number in the list
           int cnt = 0;
-          while (tmp != NULL)
+          while (tmp != shm_null_ptr())
             { 
               tmp = (ctlstr_t*)offset_to_addr(tmp->next_offset);
               -- _nctrlstrs;
@@ -626,7 +630,7 @@ namespace PAMI
 
           if (local_index == 0)
           {
-            ctlstr_t *prev = NULL, * ctlstr = NULL;
+            ctlstr_t *prev = (ctlstr_t*)shm_null_ptr(), * ctlstr = (ctlstr_t*)shm_null_ptr();
             for(uint i=0; i<local_size; i++)
             {
               ctlstr = getCtrlStr(1);
@@ -651,6 +655,8 @@ namespace PAMI
       protected:
         size_t                    _nctrlstrs;
         size_t                    _ndatabufs;
+        void                     *_start;
+        void                     *_end;
         collshm_t                *_collshm;       // base pointer of the shared memory segment
         size_t                    _localrank;      // rank in the local topology
         size_t                    _localsize;      // size of the local topology

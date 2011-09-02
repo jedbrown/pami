@@ -173,7 +173,7 @@ namespace PAMI
               } window_data_t;
 
               CollShmWindow():
-                _buf(NULL),
+                _buf_offset(-1UL),
                 _len(0)
               {
                 TRACE_DBG((stderr, "<%p>CollShmWindow()\n", this));
@@ -212,12 +212,12 @@ namespace PAMI
               }
               inline void freeBuf(T_MemoryManager *csmm)
               {
-                if(_buf)
+                if(_buf_offset != csmm->shm_null_offset())
                 {
-                  size_t *offset = (size_t*) _buf;
-                  *offset=csmm->addr_to_offset(NULL);
-                  csmm->returnDataBuffer((typename T_MemoryManager::shm_data_buf_t *)_buf);
-                  _buf = NULL;
+                  size_t *buf = (size_t*)csmm->offset_to_addr(_buf_offset);
+                  *buf        = csmm->shm_null_offset();
+                  csmm->returnDataBuffer((typename T_MemoryManager::shm_data_buf_t *)buf);
+                  _buf_offset = csmm->shm_null_offset();
                 }
               }
               inline void prepData() { }
@@ -308,19 +308,18 @@ namespace PAMI
                 else if (reqbytes <= XMEM_THRESH)
                   {
                     _len = MIN(reqbytes, COLLSHM_BUFSZ);
-
-                    if (!_buf)
+                    void* buf = csmm->offset_to_addr(_buf_offset);
+                    if (buf == csmm->shm_null_ptr())
                       {
-                        if (NULL != csmm)
-                          _buf = (char *)csmm->getDataBuffer(1);
-
-                        if (!_buf)
-                          {
-                            return -1;
-                          }
+                        buf         = csmm->getDataBuffer(1);
+                        _buf_offset = csmm->addr_to_offset(buf);
+                        if (buf == NULL)
+                        {
+                          _buf_offset = csmm->shm_null_offset();
+                          return -1;
+                        }
                       }
-
-                    memcpy (_buf, src.bufferToConsume(), _len);
+                    memcpy (buf, src.bufferToConsume(), _len);
                     src.consumeBytes(_len);
                     setContent(COPYINOUT);
                   }
@@ -364,16 +363,19 @@ namespace PAMI
                   {
                     _len = MIN(length, COLLSHM_BUFSZ);
 
-                    if (!_buf)
+                    void* buf = csmm->offset_to_addr(_buf_offset);
+                    if (buf == csmm->shm_null_ptr())
                       {
-                        if (NULL != csmm)
-                          _buf = (char *)csmm->getDataBuffer(1); 
-
-                        if (!_buf)
+                        buf         = (char *)csmm->getDataBuffer(1);
+                        _buf_offset = csmm->addr_to_offset(buf);
+                        if (buf == NULL)
+                        {
+                          _buf_offset = csmm->shm_null_offset();
                           return -1;
+                        }
                       }
 
-                    memcpy (_buf, src, _len);
+                    memcpy (buf, src, _len);
                     setContent(COPYINOUT);
                   }
                 else
@@ -401,7 +403,7 @@ namespace PAMI
               ///
               /// \brief Consumer consumes data, PipeWorkQueue version, destination is a pipeworkqueue
               ///
-              inline size_t consumeData(PAMI::PipeWorkQueue &dest, size_t length, int combine_flag, pami_op op, pami_dt dt)
+              inline size_t consumeData(PAMI::PipeWorkQueue &dest, size_t length, int combine_flag, pami_op op, pami_dt dt,T_MemoryManager *csmm)
               {
                 TRACE_DBG((stderr, "<%p>CollShmWindow::consumeData() dest %p/%p, length %zu\n", this, &dest, dest.bufferToConsume(), length));
 
@@ -419,7 +421,10 @@ namespace PAMI
                       combineData(dest.bufferToProduce(), _data.immediate_data, len, combine_flag, op, dt);
                       break;
                     case COPYINOUT:
-                      combineData(dest.bufferToProduce(), _buf, len, combine_flag, op, dt);
+                    {
+                      void* buf = csmm->offset_to_addr(_buf_offset);
+                      combineData(dest.bufferToProduce(), buf, len, combine_flag, op, dt);
+                    }
                       break;
 #if  defined(__64BIT__) && !defined(_LAPI_LINUX)
                     case XMEMATT:
@@ -452,7 +457,7 @@ namespace PAMI
               ///
               /// \brief Consumer consumes data, destination is a flat buffer
               ///
-              inline size_t consumeData(char *dest, size_t length, int combine_flag, pami_op op, pami_dt dt)
+              inline size_t consumeData(char *dest, size_t length, int combine_flag, pami_op op, pami_dt dt,T_MemoryManager *csmm)
               {
                 TRACE_DBG((stderr, "<%p>CollShmWindow::consumeData() dest %p, length %zu\n", this, dest, length));
                 size_t len      = MIN (length, _len);
@@ -466,7 +471,10 @@ namespace PAMI
                       combineData(dest, _data.immediate_data, len, combine_flag, op, dt);
                       break;
                     case COPYINOUT:
-                      combineData(dest, _buf, len, combine_flag, op, dt);
+                    {
+                      void* buf = csmm->offset_to_addr(_buf_offset);
+                      combineData(dest, buf, len, combine_flag, op, dt);
+                    }
                       break;
 #if defined(__64BIT__) && !defined(_LAPI_LINUX)
                     case XMEMATT:
@@ -502,7 +510,7 @@ namespace PAMI
               inline char *getBuffer(T_MemoryManager *csmm)
               {
                 TRACE_DBG((stderr, "<%p>CollShmWindow::getBuffer()\n", this));
-                char *buf = NULL;
+                char *buf = (char*)csmm->shm_null_ptr();
 
                 switch (_ctrl.content)
                   {
@@ -510,16 +518,16 @@ namespace PAMI
                       buf = &(_data.immediate_data[0]);
                       break;
                     case COPYINOUT:
-
-                      if (!_buf)
+                    {
+                      char* tbuf = (char*)csmm->offset_to_addr(_buf_offset);
+                      if (tbuf == csmm->shm_null_ptr())
                         {
-                          if (NULL != csmm)
-                            _buf = (char *)csmm->getDataBuffer(1);
-
-                          PAMI_ASSERT(_buf);
+                          tbuf        = (char *)csmm->getDataBuffer(1);
+                          PAMI_ASSERT(tbuf);
                         }
-
-                      buf = _buf;
+                      buf         = tbuf;
+                      _buf_offset = csmm->addr_to_offset(buf);
+                    }
                       break;
 #if defined(__64BIT__) && !defined(_LAPI_LINUX)
                     case XMEMATT:
@@ -558,9 +566,13 @@ namespace PAMI
                 PAMI_ASSERT(! _css_shmem_register((zcmem_t)&reg));
 #endif
               }
+            inline size_t getBufOffset()
+              {  return _buf_offset; }
+            inline void   setBufOffset(size_t set)
+              {  _buf_offset = set;}
             protected:
               window_control_t _ctrl;
-              char             *_buf;
+              size_t           _buf_offset;
               volatile size_t  _len;
               window_data_t    _data;
           } __attribute__((__aligned__(CACHEBLOCKSZ) ));  // class CollShmWindow
@@ -960,7 +972,9 @@ namespace PAMI
                                   {
                                     prank = (_children[i] + _root) % _nranks;
                                     CollShmWindow *pwindow = _device->getWindow(0, prank, _idx);
-                                    size_t len = pwindow->consumeData(window->getBuffer(NULL), _wlen, 1, mcombine->optor, mcombine->dtype);
+                                    size_t len = pwindow->consumeData(window->getBuffer(_device->getSysdep()), _wlen, 1,
+                                                                      mcombine->optor, mcombine->dtype,
+                                                                      _device->getSysdep());
                                     PAMI_ASSERT(len == _wlen);
                                     pwindow->setCmpl();
                                   }
@@ -982,7 +996,9 @@ namespace PAMI
                             else
                               {
                                 // PARENT
-                                size_t len = window->consumeData(*(PAMI::PipeWorkQueue *)mcombine->results, _wlen, 0, PAMI_OP_COUNT, PAMI_DT_COUNT);
+                                size_t len = window->consumeData(*(PAMI::PipeWorkQueue *)mcombine->results, _wlen,0,
+                                                                 PAMI_OP_COUNT, PAMI_DT_COUNT,
+                                                                 _device->getSysdep());
 
                                 if (len == 0)
                                   {
@@ -1097,7 +1113,9 @@ namespace PAMI
 
                         if (_action == READFROM)
                           {
-                            _wlen = pwindow->consumeData(*(PAMI::PipeWorkQueue *)mcast->dst, _len, 0, PAMI_OP_COUNT, PAMI_DT_COUNT);
+                            _wlen = pwindow->consumeData(*(PAMI::PipeWorkQueue *)mcast->dst, _len, 0,
+                                                         PAMI_OP_COUNT, PAMI_DT_COUNT,
+                                                         _device->getSysdep());
 
                             if (_wlen == 0) return PAMI_EAGAIN;
 
@@ -1202,7 +1220,7 @@ namespace PAMI
             TRACE_DBG((stderr, "syncbits = %d\n", _syncbits));
 
             void * str = (char*)csmm->getCollShmAddr() + (size_t)in_str;
-            PAMI_ASSERT(str != NULL);
+            PAMI_ASSERT(str != csmm->shm_null_ptr());
             collshm_wgroup_t *ctlstr = (collshm_wgroup_t *)str;
 
             for (unsigned i = 0;  i < _numchannels; ++i)
@@ -1227,7 +1245,7 @@ namespace PAMI
             for (unsigned i = 0;  i < _ntasks; ++i)
               {
                 TRACE_DBG((stderr, "%d: ctlstr is %p\n", i, ctlstr));
-                PAMI_assert(ctlstr != NULL);
+                PAMI_assert(ctlstr != csmm->shm_null_ptr());
                 _wgroups[i] = ctlstr;
                 ctlstr      = (collshm_wgroup_t*)((intptr_t)csmm->getCollShmAddr() + ctlstr->next_offset);
                 csmm->ctl_str_check(_wgroups[i]);
@@ -1246,17 +1264,16 @@ namespace PAMI
                     for(unsigned j = 0; j < _numchannels; j++)
                     {
                       memset(&_wgroups[i]->windows[j], 0, sizeof(_wgroups[i]->windows[j]));
-                      Memory::sync();
+                      _wgroups[i]->windows[j].setBufOffset(csmm->shm_null_offset());
                     }
                     
                     for (int j = 0; j < 2; ++j)
                       for (unsigned k = 0; k < _numsyncs; ++k)
-                        {
-                          _wgroups[i]->barrier[i][j].set(0);
-                        }
+                          _wgroups[i]->barrier[j][k].set(0);
                   }
 
               }
+            Memory::sync();
           }
 
           ~CollShmDevice()
@@ -1267,7 +1284,7 @@ namespace PAMI
               {
                 for(unsigned j = 0; j < _numchannels; j++)
                   _wgroups[i]->windows[j].freeBuf(_csmm);
-                _wgroups[i]=NULL;
+                _wgroups[i]=(collshm_wgroup_t*)_csmm->shm_null_ptr();
                 
               }
             }
