@@ -292,7 +292,9 @@ namespace PAMI
                     COMPILE_TIME_ASSERT(sizeof(Shaddr::SystemShaddrInfo) <= T_Device::payload_size);
                     Shaddr::SystemShaddrInfo info(local_memregion, remote_memregion, local_offset, remote_offset, bytes);
                     PacketWriter<void> writer (_device.shaddr.system_ro_put_dispatch);
-                    writer.init (NULL, 0, (void *)&info, sizeof(Shaddr::SystemShaddrInfo));
+
+                    writer.setMetadata (NULL, 0);
+                    writer.setData ((void *)&info, sizeof(Shaddr::SystemShaddrInfo));
 
                     if (_device._fifo[fnum].producePacket(writer))
                       {

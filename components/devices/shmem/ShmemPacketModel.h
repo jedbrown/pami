@@ -98,7 +98,8 @@ namespace PAMI
             TRACE_ERR((stderr, ">> PacketModel::postPacket_impl(1)\n"));
             size_t fnum = device.fnum (device.task2peer(target_task), target_offset);
             PacketWriter<struct iovec_t> writer (_dispatch_id);
-            writer.init (metadata, metasize, iov, niov);
+            writer.setMetadata (metadata, metasize);
+            writer.setData (iov, niov);
 
             if (device.isSendQueueEmpty (fnum))
               {
@@ -114,10 +115,14 @@ namespace PAMI
             // Send queue is not empty or not all packets were written to the
             // fifo. Construct a message and post to device
             TRACE_ERR((stderr, "   PacketModel::postPacket_impl(1), post message to device\n"));
-            COMPILE_TIME_ASSERT(sizeof(PacketMessage<T_Device, PacketWriter<struct iovec_t> >) <= packet_model_state_bytes);
+            COMPILE_TIME_ASSERT((sizeof(PacketMessage<T_Device, PacketWriter<struct iovec_t> >) + packet_model_metadata_bytes) <= packet_model_state_bytes);
 
             PacketMessage<T_Device, PacketWriter<struct iovec_t> > * msg =
-            (PacketMessage<T_Device, PacketWriter<struct iovec_t> > *) & state[0];
+              (PacketMessage<T_Device, PacketWriter<struct iovec_t> > *) & state[0];
+
+            memcpy ((void *)(msg+1), metadata, packet_model_metadata_bytes);
+            writer.setMetadata ((void *)(msg+1), metasize);
+
             new (msg) PacketMessage<T_Device, PacketWriter<struct iovec_t> > (fn, cookie, &device, fnum, writer);
             device.post (fnum, msg);
 
@@ -138,7 +143,8 @@ namespace PAMI
             TRACE_ERR((stderr, ">> PacketModel::postPacket_impl(2), T_Niov = %d\n", T_Niov));
             size_t fnum = device.fnum (device.task2peer(target_task), target_offset);
             PacketIovecWriter<T_Niov> writer (_dispatch_id);
-            writer.init (metadata, metasize, iov);
+            writer.setMetadata (metadata, metasize);
+            writer.setData (iov);
 
             if (device.isSendQueueEmpty (fnum))
               {
@@ -153,10 +159,14 @@ namespace PAMI
             // Send queue is not empty or not all packets were written to the
             // fifo. Construct a message and post to device
             TRACE_ERR((stderr, "   PacketModel::postPacket_impl(2), post message to device\n"));
-            COMPILE_TIME_ASSERT(sizeof(PacketMessage<T_Device, PacketIovecWriter<T_Niov> >) <= packet_model_state_bytes);
+            COMPILE_TIME_ASSERT((sizeof(PacketMessage<T_Device, PacketIovecWriter<T_Niov> >) + packet_model_metadata_bytes) <= packet_model_state_bytes);
 
             PacketMessage<T_Device, PacketIovecWriter<T_Niov> > * msg =
               (PacketMessage<T_Device, PacketIovecWriter<T_Niov> > *) & state[0];
+
+            memcpy ((void *)(msg+1), metadata, packet_model_metadata_bytes);
+            writer.setMetadata ((void *)(msg+1), metasize);
+
             new (msg) PacketMessage<T_Device, PacketIovecWriter<T_Niov> > (fn, cookie, &device, fnum, writer);
             device.post (fnum, msg);
 
@@ -178,7 +188,8 @@ namespace PAMI
             TRACE_ERR((stderr, ">> PacketModel::postPacket_impl(0)\n"));
             size_t fnum = device.fnum (device.task2peer(target_task), target_offset);
             PacketWriter<void> writer (_dispatch_id);
-            writer.init (metadata, metasize, payload, length);
+            writer.setMetadata (metadata, metasize);
+            writer.setData (payload, length);
 
             if (device.isSendQueueEmpty (fnum))
               {
@@ -194,10 +205,14 @@ namespace PAMI
             // Send queue is not empty or not all packets were written to the
             // fifo. Construct a message and post to device
             TRACE_ERR((stderr, "   PacketModel::postPacket_impl(0), post message to device\n"));
-            COMPILE_TIME_ASSERT(sizeof(PacketMessage<T_Device, PacketWriter<void> >) <= packet_model_state_bytes);
+            COMPILE_TIME_ASSERT((sizeof(PacketMessage<T_Device, PacketWriter<void> >) + packet_model_metadata_bytes) <= packet_model_state_bytes);
 
             PacketMessage<T_Device, PacketWriter<void> > * msg =
               (PacketMessage<T_Device, PacketWriter<void> > *) & state[0];
+
+            memcpy ((void *)(msg+1), metadata, packet_model_metadata_bytes);
+            writer.setMetadata ((void *)(msg+1), metasize);
+
             new (msg) PacketMessage<T_Device, PacketWriter<void> > (fn, cookie, &device, fnum, writer);
             device.post (fnum, msg);
 
@@ -218,7 +233,8 @@ namespace PAMI
             if (device.isSendQueueEmpty (fnum))
               {
                 PacketIovecWriter<T_Niov> writer (_dispatch_id);
-                writer.init (metadata, metasize, iov);
+                writer.setMetadata (metadata, metasize);
+                writer.setData (iov);
                 bool result = device._fifo[fnum].producePacket(writer);
                 
                 TRACE_ERR((stderr, ">> PacketModel::postPacket_impl(\"immediate\"), return %d\n", result));
@@ -243,7 +259,8 @@ namespace PAMI
             TRACE_ERR((stderr, ">> PacketModel::postMultiPacket_impl()\n"));
             size_t fnum = device.fnum (device.task2peer(target_task), target_offset);
             MultiPacketWriter<void> writer (_dispatch_id);
-            writer.init (metadata, metasize, payload, length);
+            writer.setMetadata (metadata, metasize);
+            writer.setData (payload, length);
 
             if (device.isSendQueueEmpty (fnum))
               {
@@ -268,10 +285,14 @@ namespace PAMI
             // Send queue is not empty or not all packets were written to the
             // fifo. Construct a message and post to device
             TRACE_ERR((stderr, "   PacketModel::postMultiPacket_impl(), post message to device\n"));
-            COMPILE_TIME_ASSERT(sizeof(PacketMessage<T_Device, MultiPacketWriter<void> >) <= packet_model_state_bytes);
+            COMPILE_TIME_ASSERT((sizeof(PacketMessage<T_Device, MultiPacketWriter<void> >) + packet_model_metadata_bytes) <= packet_model_state_bytes);
 
             PacketMessage<T_Device, MultiPacketWriter<void> > * msg =
               (PacketMessage<T_Device, MultiPacketWriter<void> > *) & state[0];
+
+            memcpy ((void *)(msg+1), metadata, packet_model_metadata_bytes);
+            writer.setMetadata ((void *)(msg+1), metasize);
+
             new (msg) PacketMessage<T_Device, MultiPacketWriter<void> > (fn, cookie, &device, fnum, writer);
             device.post (fnum, msg);
 

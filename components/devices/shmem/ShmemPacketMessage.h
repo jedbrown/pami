@@ -162,7 +162,8 @@ namespace PAMI
           {
             TRACE_ERR((stderr, ">> PacketMessage::PacketMessage()\n"));
 
-            _writer.init (metadata, metasize, payload, bytes);
+            _writer.setMetadata (metadata, metasize);
+            _writer.setData (payload, bytes);
 
             if (T_Remote == true)
               {

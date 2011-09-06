@@ -207,12 +207,15 @@ namespace PAMI
               _dispatch (dispatch)
           {};
 
-          inline void init (void         * metadata,
-                            size_t         metasize,
-                            struct iovec * iov)
+          inline void setMetadata (void   * metadata,
+                                   size_t   metasize)
           {
             _metadata = metadata;
             _metasize = metasize;
+          };
+
+          inline void setData (struct iovec * iov)
+          {
             unsigned i;
             for (i=0; i<T_Niov; i++)
               _iov[i] = iov[i];
@@ -274,13 +277,16 @@ namespace PAMI
               _dispatch (dispatch)
           {};
 
-          inline void init (void      * metadata,
-                            size_t      metasize,
-                            T_Payload * payload,
-                            size_t      length)
+          inline void setMetadata (void   * metadata,
+                                   size_t   metasize)
           {
             _metadata = metadata;
             _metasize = metasize;
+          };
+
+          inline void setData (T_Payload * payload,
+                               size_t      length)
+          {
             _payload  = payload;
             _length   = length;
           };
@@ -343,13 +349,16 @@ namespace PAMI
               _dispatch (dispatch)
           {};
 
-          inline void init (void      * metadata,
-                            size_t      metasize,
-                            T_Payload * payload,
-                            size_t      length)
+          inline void setMetadata (void   * metadata,
+                                   size_t   metasize)
           {
-            _metadata       = metadata;
-            _metasize       = metasize;
+            _metadata = metadata;
+            _metasize = metasize;
+          };
+
+          inline void setData (T_Payload * payload,
+                               size_t      length)
+          {
             _payload        = payload;
             _length         = length;
             TRACE_ERR((stderr, "   MultiPacketWriter::init(%p,%zu,%p,%zu)\n", metadata, metasize, payload, length));
