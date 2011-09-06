@@ -149,7 +149,9 @@ int main(int argc, char ** argv) {
 					int rc = pthread_create(&thr_data[x].thread, &attr,
 							user_pthread, (void *)&thr_data[x]);
 					if (rc == -1) perror("pthread_create");
+#ifdef __pami_target_bgq__
 fprintf(stderr, "++ %ld %d:%d\n", thr_data[x].thread, i / 4, i % 4);
+#endif /* __pami_target_bgq__ */
 					pthread_attr_destroy(&attr);
 				}
 			}
