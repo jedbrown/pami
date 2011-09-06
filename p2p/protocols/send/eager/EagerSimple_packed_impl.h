@@ -161,7 +161,7 @@ inline pami_result_t EagerSimple<T_Model, T_Option>::send_packed (eager_state_t 
   // This branch should be resolved at compile time and optimized out.
   if (sizeof(packed_metadata_t) <= T_Model::packet_model_metadata_bytes)
     {
-      TRACE_FORMAT("protocol metadata (%ld bytes) fits in the packet metadata (%zu bytes)", sizeof(packed_metadata_t), T_Model::packet_model_metadata_bytes);
+      TRACE_FORMAT("protocol metadata (%ld bytes) fits in the packet header (%zu bytes)", sizeof(packed_metadata_t), T_Model::packet_model_metadata_bytes);
 
       // Initialize the short protocol metadata on the stack to copy
       // into the packet metadata.
@@ -169,6 +169,9 @@ inline pami_result_t EagerSimple<T_Model, T_Option>::send_packed (eager_state_t 
       metadata.data_bytes   = parameters->send.data.iov_len;
       metadata.header_bytes = parameters->send.header.iov_len;
       metadata.origin       = _origin;
+
+      TRACE_FORMAT("protocol metadata: origin = 0x%08x, header_bytes = %d, data_bytes = %d", metadata.origin, metadata.header_bytes, metadata.data_bytes);
+      TRACE_HEXDATA(&metadata,sizeof(packed_metadata_t));
 
       // Pack the header and data into a temporary packet payload
       uint8_t * ptr = (uint8_t *) state->origin.packed.packet;
@@ -187,7 +190,7 @@ inline pami_result_t EagerSimple<T_Model, T_Option>::send_packed (eager_state_t 
     }
   else
     {
-      TRACE_STRING("protocol metadata does not fit in the packet metadata");
+      TRACE_FORMAT("protocol metadata (%ld bytes) does not fit in the packet header (%zu bytes)", sizeof(packed_metadata_t), T_Model::packet_model_metadata_bytes);
 
       // Initialize the metadata, to be sent with the header and data, in the
       // temporary packet payload.
@@ -242,18 +245,20 @@ inline int EagerSimple<T_Model, T_Option>::dispatch_packed (void   * metadata,
   // This branch should be resolved at compile time and optimized out.
   if (sizeof(packed_metadata_t) > T_Model::packet_model_metadata_bytes)
     {
+      TRACE_FORMAT("protocol metadata (%ld bytes) is in the packet header (%zu bytes)", sizeof(packed_metadata_t), T_Model::packet_model_metadata_bytes);
       packed_metadata = (packed_metadata_t *) payload;
       header = (void *) (packed_metadata + 1);
     }
   else
     {
+      TRACE_FORMAT("protocol metadata (%ld bytes) is in the packet payload (packet header is %zu bytes)", sizeof(packed_metadata_t), T_Model::packet_model_metadata_bytes);
       packed_metadata = (packed_metadata_t *) metadata;
       header = payload;
     }
 
   void * data = (void *) (((uint8_t *) header) + packed_metadata->header_bytes);
 
-  TRACE_FORMAT("origin = 0x%08x, bytes = %d", packed_metadata->origin, packed_metadata->data_bytes);
+  TRACE_FORMAT("protocol metadata: origin = 0x%08x, header_bytes = %d, data_bytes = %d", packed_metadata->origin, packed_metadata->header_bytes, packed_metadata->data_bytes);
 
   // Invoke the registered dispatch function.
   eager->_dispatch_fn (eager->_context,               // Communication context

@@ -57,9 +57,6 @@ inline pami_result_t EagerSimple<T_Model, T_Option>::send_data (eager_state_t   
       if (! type->IsCompleted())
         {
           //RETURN_ERR_PAMI(PAMI_INVAL, "Using an incompleted type.");
-          if (state->origin.local_fn != NULL)
-            state->origin.local_fn (_context, state->origin.local_fn, PAMI_INVAL);
-
           TRACE_FN_EXIT();
           return PAMI_ERROR;
         }

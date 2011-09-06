@@ -27,7 +27,7 @@
 using namespace PAMI::Protocol::Send;
 
 template < class T_Model, configuration_t T_Option >
-inline pami_result_t EagerSimple<T_Model, T_Option>::send_envelope (eager_state_t        * state,
+inline pami_result_t EagerSimple<T_Model, T_Option>::send_envelope (eager_state_t       * state,
                                                                     pami_task_t           task,
                                                                     size_t                offset,
                                                                     struct iovec        & header,
@@ -39,7 +39,7 @@ inline pami_result_t EagerSimple<T_Model, T_Option>::send_envelope (eager_state_
 
 #ifdef ERROR_CHECKS
 
-  if ((T_Option & LONG_HEADER_DISABLE) && (header_bytes > maximum_eager_packet_payload))
+  if ((T_Option & LONG_HEADER_DISABLE) && (header.iov_len > maximum_eager_packet_payload))
     {
       // 'long header' support is disabled, yet the application
       // header will not fit in a single packet.
