@@ -120,8 +120,11 @@ namespace PAMI
             PacketMessage<T_Device, PacketWriter<struct iovec_t> > * msg =
               (PacketMessage<T_Device, PacketWriter<struct iovec_t> > *) & state[0];
 
-            memcpy ((void *)(msg+1), metadata, packet_model_metadata_bytes);
-            writer.setMetadata ((void *)(msg+1), metasize);
+            if (likely(metadata != NULL))
+              {
+                memcpy ((void *)(msg+1), metadata, packet_model_metadata_bytes);
+                writer.setMetadata ((void *)(msg+1), metasize);
+              }
 
             new (msg) PacketMessage<T_Device, PacketWriter<struct iovec_t> > (fn, cookie, &device, fnum, writer);
             device.post (fnum, msg);
@@ -164,8 +167,11 @@ namespace PAMI
             PacketMessage<T_Device, PacketIovecWriter<T_Niov> > * msg =
               (PacketMessage<T_Device, PacketIovecWriter<T_Niov> > *) & state[0];
 
-            memcpy ((void *)(msg+1), metadata, packet_model_metadata_bytes);
-            writer.setMetadata ((void *)(msg+1), metasize);
+            if (likely(metadata != NULL))
+              {
+                memcpy ((void *)(msg+1), metadata, packet_model_metadata_bytes);
+                writer.setMetadata ((void *)(msg+1), metasize);
+              }
 
             new (msg) PacketMessage<T_Device, PacketIovecWriter<T_Niov> > (fn, cookie, &device, fnum, writer);
             device.post (fnum, msg);
@@ -210,8 +216,11 @@ namespace PAMI
             PacketMessage<T_Device, PacketWriter<void> > * msg =
               (PacketMessage<T_Device, PacketWriter<void> > *) & state[0];
 
-            memcpy ((void *)(msg+1), metadata, packet_model_metadata_bytes);
-            writer.setMetadata ((void *)(msg+1), metasize);
+            if (likely(metadata != NULL))
+              {
+                memcpy ((void *)(msg+1), metadata, packet_model_metadata_bytes);
+                writer.setMetadata ((void *)(msg+1), metasize);
+              }
 
             new (msg) PacketMessage<T_Device, PacketWriter<void> > (fn, cookie, &device, fnum, writer);
             device.post (fnum, msg);
@@ -290,8 +299,11 @@ namespace PAMI
             PacketMessage<T_Device, MultiPacketWriter<void> > * msg =
               (PacketMessage<T_Device, MultiPacketWriter<void> > *) & state[0];
 
-            memcpy ((void *)(msg+1), metadata, packet_model_metadata_bytes);
-            writer.setMetadata ((void *)(msg+1), metasize);
+            if (likely(metadata != NULL))
+              {
+                memcpy ((void *)(msg+1), metadata, packet_model_metadata_bytes);
+                writer.setMetadata ((void *)(msg+1), metasize);
+              }
 
             new (msg) PacketMessage<T_Device, MultiPacketWriter<void> > (fn, cookie, &device, fnum, writer);
             device.post (fnum, msg);
