@@ -148,6 +148,10 @@ namespace PAMI
                                                  INTERFACE_PAMI, FLAG_NULL);
         return PAMI_RC(rc);
       }
+    inline pami_result_t typed (pami_send_typed_t * send)
+      {
+        return PAMI_UNIMPL;
+      }
     inline pami_result_t getAttributes (pami_configuration_t  configuration[],
                                         size_t                num_configs)
       {

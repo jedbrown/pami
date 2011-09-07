@@ -115,6 +115,17 @@ namespace PAMI
             TRACE_ERR((stderr, "<< Adaptive::simple()\n"));
             return result;
           };
+
+          ///
+          /// \brief Start a new typed send operation.
+          ///
+          /// \see PAMI::Protocol::Send::typed
+          ///
+          virtual pami_result_t typed (pami_send_typed_t * parameters)
+          {
+            return PAMI_UNIMPL;
+          };
+
       };  // PAMI::Protocol::Send::Adaptive class
     };    // PAMI::Protocol::Send namespace
   };      // PAMI::Protocol namespace
