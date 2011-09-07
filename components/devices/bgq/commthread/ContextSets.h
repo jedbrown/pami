@@ -245,8 +245,10 @@ public:
 				}
 			}
 		}
-		for (x = 0; x <= _nsets; ++x) {
+		_sets[_nsets] &= ~mask;
+		for (x = 0; x < _nsets; ++x) {
 			_sets[x] &= ~mask;
+			_coresets[x] &= ~mask;
 		}
 		// maybe should rebalance?
 		// also, caller probably needs to wait until all the contexts
@@ -342,14 +344,14 @@ private:
 	size_t _ncontexts;
 
 	ContextSetMutex _mutex;
-	uint64_t _actm;		// protected by _mutex
-	uint64_t *_sets;	// protected by _mutex
-	uint64_t *_coresets;	// protected by _mutex
+	volatile uint64_t _actm;		// protected by _mutex
+	volatile uint64_t *_sets;	// protected by _mutex
+	volatile uint64_t *_coresets;	// protected by _mutex
 	uint64_t *_coreids;	// protected by _mutex
-	uint64_t *_numinsets;	// protected by _mutex
+	volatile uint64_t *_numinsets;	// protected by _mutex
 	size_t _nsets;		// protected by _mutex
-	size_t _nactive;	// protected by _mutex
-	size_t _lastset;	// protected by _mutex
+	volatile size_t _nactive;	// protected by _mutex
+	volatile size_t _lastset;	// protected by _mutex
 }; // class BgqContextPool
 
 }; // namespace CommThread
