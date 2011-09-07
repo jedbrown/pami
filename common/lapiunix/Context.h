@@ -148,9 +148,11 @@ namespace PAMI
                                                  INTERFACE_PAMI, FLAG_NULL);
         return PAMI_RC(rc);
       }
-    inline pami_result_t typed (pami_send_typed_t * send)
+    inline pami_result_t typed (pami_send_typed_t * typed)
       {
-        return PAMI_UNIMPL;
+        LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
+        // No error code conversion required for typed send
+        return (cp->*(cp->pSendTyped))(typed);
       }
     inline pami_result_t getAttributes (pami_configuration_t  configuration[],
                                         size_t                num_configs)
