@@ -204,16 +204,22 @@ int main (int argc, char ** argv)
       for (n = 1; n < (BUFFERSIZE >> 1); n = n << 1)
         {
           double expect = ((loop++&0x01) == 0) ? PI : E;
+          fprintf (stderr, "== validate %d byte (%d double) put ==\n", n*8, n);
 
           unsigned j;
 
           for (j = 0; j < n; j++)
             if (_buffer[offset+j] != expect)
               {
-                fprintf (stderr, "ERROR. _buffer[%d] != %g .. offset=%d, n=%d\n", offset + j, expect, offset, n);
+                fprintf (stderr, "_buffer[%04d] = %g .. <---- ERROR.  expected %g, n=%d\n", offset + j, _buffer[offset+j], expect, n);
                 errors++;
               }
-
+#if 0
+            else
+              {
+                fprintf (stderr, "_buffer[%04d] = %g\n", offset + j, _buffer[offset+j]);
+              }
+#endif
           offset += n;
         }
     }

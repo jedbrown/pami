@@ -62,7 +62,7 @@ namespace PAMI
           ///
           /// \brief Start a new non-contiguous put operation
           ///
-          //virtual pami_result_t typed (pami_get_typed_t * parameters) = 0;
+          virtual pami_result_t typed (pami_put_typed_t * parameters) = 0;
 
       }; // PAMI::Protocol::Put::Put class
 
@@ -90,7 +90,7 @@ namespace PAMI
 
           inline ~NoPut () {};
 
-          pami_result_t simple (pami_put_simple_t * parameters)
+          virtual pami_result_t simple (pami_put_simple_t * parameters)
           {
             //if (parameters->rma.done_fn)
               //parameters->rma.done_fn (_context, parameters->rma.cookie, PAMI_ERROR);
@@ -98,7 +98,7 @@ namespace PAMI
             return PAMI_ERROR;
           }
 
-          pami_result_t typed (pami_put_typed_t * parameters)
+          virtual pami_result_t typed (pami_put_typed_t * parameters)
           {
             //if (parameters->rma.done_fn)
               //parameters->rma.done_fn (_context, parameters->rma.cookie, PAMI_ERROR);

@@ -28,6 +28,10 @@
 #include "math/Memcpy.x.h"
 #include "p2p/protocols/Put.h"
 
+#include "common/type/TypeCode.h"
+#include "common/type/TypeMachine.h"
+
+
 #include "util/trace.h"
 #undef  DO_TRACE_ENTEREXIT
 #undef  DO_TRACE_DEBUG
@@ -47,93 +51,164 @@ namespace PAMI
 
           typedef PutOverSend<T_Model> PutOverSendProtocol;
 
-          typedef uint8_t msg_t[T_Model::packet_model_state_bytes];
+          typedef uint8_t model_state_t[T_Model::packet_model_state_bytes];
+          typedef uint8_t model_packet_t[T_Model::packet_model_state_bytes];
+
+
 
           typedef struct
           {
-            pami_event_function   remote_fn;
-            void                * cookie;
-            pami_context_t        context;
-            bool                  invoke;
-          } ack_info_t;
+            uintptr_t             remote_addr;
+            uint16_t              type_bytes;
+            uint16_t              data_bytes;
+          } metadata_packed_t;
 
           typedef struct
           {
-            struct iovec    dst;
-            pami_endpoint_t origin;
-          } envelope_t;
+            model_state_t         state;
+            model_packet_t        packet;
+            metadata_packed_t     metadata;
+          } origin_packed_t;
+
+
+
+          typedef struct
+          {
+            uintptr_t             remote_addr;
+            size_t                data_bytes;
+            pami_endpoint_t       origin;
+            size_t                type_bytes; // => 0 iff contiguous
+          } metadata_header_t;
+
+          typedef struct
+          {
+            struct
+            {
+              model_state_t       state;
+            } type;
+
+            struct
+            {
+              model_state_t       state;
+              metadata_header_t   metadata;
+            } header;
+
+          } origin_envelope_t;
+
+          typedef struct
+          {
+            struct
+            {
+              void             * serialized_type;
+              size_t             serialized_bytes;
+              size_t             bytes_remaining;
+            } type;
+
+
+          } target_envelope_t;
+
+
 
           typedef union
           {
             struct
             {
-              uint8_t * addr;
-              size_t    bytes;
-            } recv;
+              model_state_t       state;
+            } contig;
 
             struct
             {
-              msg_t           msg[2];
-              struct iovec    metadata;
-              struct iovec    iov[2];
-              envelope_t      envelope;
-              PutOverSendProtocol * protocol;
-              pami_event_function   done_fn;
-              void                * cookie;
-            } send;
+              model_state_t       state[2];
+              model_packet_t      packet[2];
+              uint8_t             machine[sizeof(Type::TypeMachine)];
+              void              * base_addr;
+              size_t              bytes_remaining;
+              size_t              start_count;
+            } typed;
 
-            struct
+          } origin_data_t;
+
+          typedef struct
+          {
+            uint8_t               machine[sizeof(Type::TypeMachine)];
+            uint8_t               type_obj[sizeof(Type::TypeCode)];
+            size_t                bytes_remaining;
+            void                * base_addr;
+            bool                  is_contiguous;
+          } target_data_t;
+
+
+
+          typedef struct
+          {
+            pami_event_function   remote_fn;
+            void                * cookie;
+            bool                  invoke;
+          } metadata_remotefn_t;
+
+
+
+
+          typedef struct
+          {
+            union
             {
-              msg_t           msg;
-              ack_info_t  info;
-              PutOverSendProtocol * protocol;
-            } ack;
+              origin_packed_t       packed;
+              struct
+              {
+                origin_envelope_t   envelope;
+                origin_data_t       data;
+              };
+            };
+            pami_event_function     done_fn;
+            pami_event_function     rdone_fn;
+            void                  * cookie;
+            PutOverSendProtocol   * protocol;
+            pami_task_t             target_task;
+            size_t                  target_offset;
+            
+          } origin_state_t;
 
+          typedef struct
+          {
+            target_envelope_t       envelope;
+            target_data_t           data;
+          } target_state_t;
+
+          typedef struct
+          {
+            model_state_t         state;
+            metadata_remotefn_t   metadata;
+            PutOverSendProtocol * protocol;
+          } remotefn_state_t;
+
+
+
+          typedef union
+          {
+            origin_state_t        origin;
+            target_state_t        target;
+            remotefn_state_t      remotefn;
           } state_t;
 
-          static const size_t maximum_short_packet_payload =
+
+          static const size_t maximum_packed_packet_payload =
             T_Model::packet_model_payload_bytes -
-            (sizeof(struct iovec) > T_Model::packet_model_metadata_bytes) * sizeof(struct iovec);
+            (sizeof(metadata_packed_t) > T_Model::packet_model_metadata_bytes) * sizeof(metadata_packed_t);
 
-
-          ///
-          /// \brief Local put completion event callback.
-          ///
-          /// This callback will invoke the application local completion
-          /// callback function and free the transfer state memory.
-          ///
-          static void complete_local (pami_context_t   context,
-                                      void           * cookie,
-                                      pami_result_t    result)
-          {
-            TRACE_FN_ENTER();
-            TRACE_FORMAT("cookie = %p", cookie);
-
-            state_t * state = (state_t *) cookie;
-            TRACE_FORMAT("state->send.done_fn = %p, state->send.cookie = %p", state->send.done_fn, state->send.cookie);
-
-            if (state->send.done_fn != NULL)
-              {
-                state->send.done_fn (context, state->send.cookie, PAMI_SUCCESS);
-              }
-
-            TRACE_FORMAT("state->send.protocol = %p", state->send.protocol);
-            state->send.protocol->_allocator.returnObject (cookie);
-
-            TRACE_FN_EXIT();
-            return;
-          }
 
         public:
 
-          template <class T_Device, class T_Allocator>
-          static PutOverSend * generate (T_Device      & device,
-                                         T_Allocator   & allocator)
+          template <class T_Device, class T_MemoryManager>
+          static PutOverSend * generate (T_Device        & device,
+                                         T_MemoryManager * mm)
           {
             TRACE_FN_ENTER();
-            COMPILE_TIME_ASSERT(sizeof(PutOverSend) <= T_Allocator::objsize);
 
-            void * protocol = allocator.allocateObject ();
+            pami_result_t result = PAMI_ERROR;
+            void * protocol = NULL;
+            result = mm->memalign((void **) & protocol, 16, sizeof(PutOverSend));
+            PAMI_assert_alwaysf(result == PAMI_SUCCESS, "Failed to get memory for put-over-send protocol");
             new (protocol) PutOverSend (device);
 
             TRACE_FN_EXIT();
@@ -142,9 +217,10 @@ namespace PAMI
 
           template <class T_Device>
           inline PutOverSend (T_Device & device) :
-              _ack_model (device),
-              _short_model (device),
-              _envelope_model (device),
+              _remotefn_model (device),
+              _packed_model (device),
+              _header_model (device),
+              _type_model (device),
               _data_model (device)
           {
             TRACE_FN_ENTER();
@@ -191,30 +267,61 @@ namespace PAMI
             // the remote side is delayed in its registrations and must save
             // unexpected packets until dispatch registration.
 
-            TRACE_FORMAT("register ack model dispatch %zu", dispatch);
-            status = _ack_model.init (dispatch, dispatch_ack_fn, this);
-            TRACE_STRING("ack model registration successful.");
+            TRACE_FORMAT("register remotefn model dispatch %zu", dispatch);
+            status = _remotefn_model.init (dispatch, dispatch_remotefn, this);
 
-            if (status == PAMI_SUCCESS)
+            if (status != PAMI_SUCCESS)
               {
-                TRACE_FORMAT("register short model dispatch %zu", dispatch);
-                status = _short_model.init (dispatch, dispatch_short_fn, this);
-                TRACE_STRING("short model registration successful.");
-
-                if (status == PAMI_SUCCESS)
-                  {
-                    TRACE_FORMAT("register data model dispatch %zu", dispatch);
-                    status = _data_model.init (dispatch, dispatch_data_fn, this);
-                    TRACE_STRING("data model registration successful.");
-
-                    if (status == PAMI_SUCCESS)
-                      {
-                        TRACE_FORMAT("register envelope model dispatch %zu", dispatch);
-                        status = _envelope_model.init (dispatch, dispatch_envelope_fn, this);
-                        TRACE_STRING("envelope model registration successful.");
-                      }
-                  }
+                TRACE_STRING("remotefn model registration failed.");
+                TRACE_FN_EXIT();
+                return status;
               }
+
+            TRACE_STRING("remotefn model registration successful.");
+            TRACE_FORMAT("register packed model dispatch %zu", dispatch);
+            status = _packed_model.init (dispatch, dispatch_packed, this);
+
+            if (status != PAMI_SUCCESS)
+              {
+                TRACE_STRING("packed model registration failed.");
+                TRACE_FN_EXIT();
+                return status;
+              }
+
+            TRACE_STRING("packed model registration successful.");
+            TRACE_FORMAT("register data model dispatch %zu", dispatch);
+            status = _data_model.init (dispatch, dispatch_data, this);
+
+            if (status != PAMI_SUCCESS)
+              {
+                TRACE_STRING("data model registration failed.");
+                TRACE_FN_EXIT();
+                return status;
+              }
+
+            TRACE_STRING("data model registration successful.");
+            TRACE_FORMAT("register type model dispatch %zu", dispatch);
+            status = _type_model.init (dispatch, dispatch_type, this);
+
+            if (status != PAMI_SUCCESS)
+              {
+                TRACE_STRING("type model registration failed.");
+                TRACE_FN_EXIT();
+                return status;
+              }
+
+            TRACE_STRING("type model registration successful.");
+            TRACE_FORMAT("register header model dispatch %zu", dispatch);
+            status = _header_model.init (dispatch, dispatch_header, this);
+
+            if (status != PAMI_SUCCESS)
+              {
+                TRACE_STRING("header model registration failed.");
+                TRACE_FN_EXIT();
+                return status;
+              }
+
+            TRACE_STRING("header model registration successful.");
 
             TRACE_FN_EXIT();
             return status;
@@ -227,12 +334,43 @@ namespace PAMI
           {
             TRACE_FN_ENTER();
 
+            pami_result_t result = PAMI_ERROR;
+            result = start_internal (parameters);
+
+            TRACE_FN_EXIT();
+            return result;
+          };
+
+          ///
+          /// \brief Start a new non-contiguous put operation
+          ///
+          virtual pami_result_t typed (pami_put_typed_t * parameters)
+          {
+            TRACE_FN_ENTER();
+
+            pami_result_t result = PAMI_ERROR;
+            result = start_internal (parameters);
+
+            TRACE_FN_EXIT();
+            return result;
+          }
+
+        protected:
+
+          ///
+          /// \brief Start a new put operation
+          ///
+          template <typename T>
+          inline pami_result_t start_internal (T * parameters)
+          {
+            TRACE_FN_ENTER();
+
             pami_task_t task;
             size_t offset;
             PAMI_ENDPOINT_INFO(parameters->rma.dest, task, offset);
 
             // Verify that this task is addressable by this packet device
-            if (unlikely(_short_model.device.isPeer (task) == false))
+            if (unlikely(_packed_model.device.isPeer (task) == false))
               {
                 TRACE_FN_EXIT();
                 return PAMI_INVAL;
@@ -241,195 +379,150 @@ namespace PAMI
             // Allocate memory to maintain the origin state of the put operation.
             state_t * state = (state_t *) _allocator.allocateObject();
             TRACE_FORMAT("state = %p", state);
-            state->send.envelope.dst.iov_base = parameters->addr.remote;
-            state->send.envelope.dst.iov_len  = parameters->rma.bytes;
-            state->send.done_fn  = parameters->rma.done_fn;
-            state->send.cookie   = parameters->rma.cookie;
-            state->send.protocol = this;
+            state->origin.done_fn       = parameters->rma.done_fn;
+            state->origin.rdone_fn      = parameters->put.rdone_fn;
+            state->origin.cookie        = parameters->rma.cookie;
+            state->origin.protocol      = this;
+            state->origin.target_task   = task;
+            state->origin.target_offset = offset;
 
             // ----------------------------------------------------------------
             // Check for a "short" put protocol
             // ----------------------------------------------------------------
-            if (parameters->rma.bytes <= maximum_short_packet_payload)
+            if (parameters->rma.bytes <= maximum_packed_packet_payload)
               {
-                TRACE_FORMAT("'short' put protocol: parameters->rma.bytes = %zu, maximum_short_packet_payload = %zu", parameters->rma.bytes, maximum_short_packet_payload);
+                TRACE_FORMAT("'single packet' put protocol: parameters->rma.bytes = %zu, maximum_packed_packet_payload = %zu", parameters->rma.bytes, maximum_packed_packet_payload);
 
-                if (sizeof(struct iovec) <= T_Model::packet_model_metadata_bytes)
-                  {
-                    // Send the "destination" virtual address and data length in
-                    // the packet header.
-                    _short_model.postPacket (state->send.msg[0],
-                                             complete_local, state,
-                                             task, offset,
-                                             (void *) &(state->send.envelope.dst),
-                                             sizeof (struct iovec),
-                                             parameters->addr.local,
-                                             parameters->rma.bytes);
-                  }
-                else
-                  {
-                    // Send the "destination" virtual address and data length in
-                    // the packet payload.
-                    state->send.iov[0].iov_base = &(state->send.envelope.dst);
-                    state->send.iov[0].iov_len  = sizeof(struct iovec);
-                    state->send.iov[1].iov_base = parameters->addr.local;
-                    state->send.iov[1].iov_len  = parameters->rma.bytes;
-
-                    _short_model.postPacket (state->send.msg[0],
-                                             complete_local, state,
-                                             task, offset,
-                                             (void *) NULL, 0,
-                                             state->send.iov);
-                  }
+                send_packed (parameters, task, offset, state);
               }
             else
               {
-                TRACE_FORMAT("'long' put protocol: parameters->rma.bytes = %zu, maximum_short_packet_payload = %zu", parameters->rma.bytes, maximum_short_packet_payload);
+                TRACE_FORMAT("'multi packet' put protocol: parameters->rma.bytes = %zu, maximum_packed_packet_payload = %zu", parameters->rma.bytes, maximum_packed_packet_payload);
 
-                // Send the "destination" virtual address and data length, and the
-                // origin endpoint to establish an eager-style connection, in the
-                // payload of an envelope packet.
-                state->send.envelope.origin = _origin;
-                _envelope_model.postPacket (state->send.msg[0],
-                                            NULL, NULL,
-                                            task, offset,
-                                            (void *) NULL, 0,
-                                            (void *) &(state->send.envelope),
-                                            sizeof (envelope_t));
-
-                TRACE_FORMAT("'long' put protocol, before postMultiPacket(): state->send.done_fn = %p, state->send.cookie = %p", state->send.done_fn, state->send.cookie);
-                _data_model.postMultiPacket (state->send.msg[1],
-                                             complete_local, state,
-                                             task, offset,
-                                             (void *) &(state->send.envelope.origin),
-                                             sizeof(pami_endpoint_t),
-                                             parameters->addr.local,
-                                             parameters->rma.bytes);
-                TRACE_FORMAT("'long' put protocol, after postMultiPacket():  state->send.done_fn = %p, state->send.cookie = %p", state->send.done_fn, state->send.cookie);
-              }
-
-            if (unlikely(parameters->put.rdone_fn != NULL))
-              {
-                send_ack_request (task, offset,
-                                  parameters->put.rdone_fn,
-                                  parameters->rma.cookie);
+                send_envelope (parameters, task, offset, state);
+                send_data (parameters, task, offset, state);
               }
 
             TRACE_FN_EXIT();
             return PAMI_SUCCESS;
           };
 
-        protected:
-
-          static int dispatch_short_fn (void   * metadata,
-                                        void   * payload,
-                                        size_t   bytes,
-                                        void   * recv_func_parm,
-                                        void   * cookie)
+          ///
+          /// \brief Origin put completion event callback.
+          ///
+          /// This callback will invoke the application local completion
+          /// callback function, free the transfer state memory, and initiate a
+          /// 'remotefn' communication flow - if needed.
+          ///
+          static void complete_origin (pami_context_t   context,
+                                       void           * cookie,
+                                       pami_result_t    result)
           {
             TRACE_FN_ENTER();
+            TRACE_FORMAT("cookie = %p", cookie);
 
-            PutOverSendProtocol * protocol = (PutOverSendProtocol *) recv_func_parm;
+            state_t * state = (state_t *) cookie;
+            TRACE_FORMAT("state->origin.done_fn = %p, state->origin.cookie = %p", state->origin.done_fn, state->origin.cookie);
 
-            if (sizeof(struct iovec) <= T_Model::packet_model_metadata_bytes)
+            if (state->origin.done_fn != NULL)
               {
-                // The "destination" virtual address and data length are located
-                // in the packet header.
-                struct iovec * iov = (struct iovec *) metadata;
-
-                if (T_Model::read_is_required_packet_model)
-                  protocol->_short_model.device.read (iov->iov_base, iov->iov_len, cookie);
-                else
-                  Core_memcpy (iov->iov_base, payload, iov->iov_len);
-              }
-            else
-              {
-                // The "destination" virtual address and data length are located
-                // in the packet payload.
-                if (T_Model::read_is_required_packet_model)
-                  {
-                    struct iovec iov;
-                    protocol->_short_model.device.read (&iov, sizeof(struct iovec), cookie);
-                    protocol->_short_model.device.read (iov.iov_base, iov.iov_len, cookie);
-                  }
-                else
-                  {
-                    struct iovec * iov = (struct iovec *) payload;
-                    void * src = (void *) (iov + 1);
-                    Core_memcpy (iov->iov_base, src, iov->iov_len);
-                  }
+                state->origin.done_fn (context, state->origin.cookie, PAMI_SUCCESS);
               }
 
-            TRACE_FN_EXIT();
-            return 0;
-          }
+            PutOverSendProtocol * protocol = (PutOverSendProtocol *) state->origin.protocol;
+            TRACE_FORMAT("protocol = %p", protocol);
 
-          static int dispatch_envelope_fn (void   * metadata,
-                                           void   * payload,
-                                           size_t   bytes,
-                                           void   * recv_func_parm,
-                                           void   * cookie)
-          {
-            TRACE_FN_ENTER();
-
-            PutOverSendProtocol * protocol = (PutOverSendProtocol *) recv_func_parm;
-            uint8_t stack[T_Model::packet_model_payload_bytes];
-
-            if (T_Model::read_is_required_packet_model)
+            if (state->origin.rdone_fn != NULL)
               {
-                payload = (void *) & stack[0];
-                protocol->_envelope_model.device.read (payload, bytes, cookie);
+                protocol->send_remotefn (state->origin.target_task,
+                                         state->origin.target_offset,
+                                         state->origin.rdone_fn,
+                                         state->origin.cookie);
               }
 
-            // Allocate memory to maintain the state of the send.
-            state_t * state = (state_t *) protocol->_allocator.allocateObject();
-
-            envelope_t * envelope = (envelope_t *) payload;
-            state->recv.addr  = (uint8_t *) envelope->dst.iov_base;
-            state->recv.bytes = envelope->dst.iov_len;
-
-            // Set the deterministic connection.
-            pami_task_t task;
-            size_t offset;
-            PAMI_ENDPOINT_INFO(envelope->origin, task, offset);
-            protocol->_envelope_model.device.setConnection ((void *)state, task, offset);
+            protocol->_allocator.returnObject (cookie);
 
             TRACE_FN_EXIT();
-            return 0;
+            return;
           }
 
-          static int dispatch_data_fn (void   * metadata,
-                                       void   * payload,
-                                       size_t   bytes,
-                                       void   * recv_func_parm,
-                                       void   * cookie)
-          {
-            TRACE_FN_ENTER();
 
-            PutOverSendProtocol * protocol = (PutOverSendProtocol *) recv_func_parm;
+          // ##################################################################
+          // 'packed' code which sends the source data and the serialized
+          // target type in a single packet.
+          // ##################################################################
 
-            pami_endpoint_t origin = *((pami_endpoint_t *)metadata);
-            pami_task_t task;
-            size_t offset;
-            PAMI_ENDPOINT_INFO(origin, task, offset);
-            state_t * state = (state_t *) protocol->_data_model.device.getConnection (task, offset);
+          inline void send_packed (pami_put_simple_t * parameters,
+                                   pami_task_t         task,
+                                   size_t              offset,
+                                   state_t           * state);
 
-            size_t nbytes = MIN(bytes, state->recv.bytes);
+          inline void send_packed (pami_put_typed_t * parameters,
+                                   pami_task_t        task,
+                                   size_t             offset,
+                                   state_t          * state);
 
-            if (T_Model::read_is_required_packet_model)
-              protocol->_data_model.device.read (state->recv.addr, nbytes, cookie);
-            else
-              Core_memcpy (state->recv.addr, payload, nbytes);
+          static int dispatch_packed (void   * metadata,
+                                      void   * payload,
+                                      size_t   bytes,
+                                      void   * recv_func_parm,
+                                      void   * cookie);
 
-            state->recv.addr  += nbytes;
-            state->recv.bytes -= nbytes;
 
-            if (state->recv.bytes == 0)
-              protocol->_data_model.device.clearConnection (task, offset);
+          // ##################################################################
+          // 'envelope' code which sends the protocol metadata in a 'header'
+          // packet, and the serialized type (if non-contiguous) in one or more
+          // 'type' packets.
+          // ##################################################################
 
-            TRACE_FN_EXIT();
-            return 0;
-          }
+          inline void send_envelope (pami_put_simple_t * parameters,
+                                     pami_task_t         task,
+                                     size_t              offset,
+                                     state_t           * state);
+
+          inline void send_envelope (pami_put_typed_t * parameters,
+                                     pami_task_t        task,
+                                     size_t             offset,
+                                     state_t          * state);
+
+          static int dispatch_header (void   * metadata,
+                                      void   * payload,
+                                      size_t   bytes,
+                                      void   * recv_func_parm,
+                                      void   * cookie);
+
+          static int dispatch_type (void   * metadata,
+                                    void   * payload,
+                                    size_t   bytes,
+                                    void   * recv_func_parm,
+                                    void   * cookie);
+
+
+          // ##################################################################
+          // 'data' code which sends one or more data packets for contiguous
+          // source data, or packs the non-contiguous source data, in a
+          // pipelined manner, one packet at a time.
+          // ##################################################################
+
+          inline void send_data (pami_put_simple_t * parameters,
+                                 pami_task_t         task,
+                                 size_t              offset,
+                                 state_t           * state);
+
+          inline void send_data (pami_put_typed_t * parameters,
+                                 pami_task_t        task,
+                                 size_t             offset,
+                                 state_t          * state);
+
+          static int dispatch_data (void   * metadata,
+                                    void   * payload,
+                                    size_t   bytes,
+                                    void   * recv_func_parm,
+                                    void   * cookie);
+
+          static void complete_data (pami_context_t   context,
+                                     void           * cookie,
+                                     pami_result_t    result);
 
 
           // ##################################################################
@@ -439,154 +532,53 @@ namespace PAMI
           // ##################################################################
 
           ///
-          /// \brief Process an incomming 'ack' packet
+          /// \brief Initiate an independent 'remotefn' communication flow
           ///
-          /// This dispatch function is invoked on both the target and origin
-          /// tasks of an acknowledgement communication flow.
-          ///
-          /// A dispatch on the target task will inject the ack 'pong' packet,
-          /// while a dispatch on the origin task will examine the information
-          /// in the ack packet and invoke the ack completion event function.
-          ///
-          /// \see PAMI::Device::Interface::RecvFunction_t
-          ///
-          static int dispatch_ack_fn (void   * metadata,
-                                      void   * payload,
-                                      size_t   bytes,
-                                      void   * recv_func_parm,
-                                      void   * cookie)
-          {
-            TRACE_FN_ENTER();
-
-            PutOverSendProtocol * protocol = (PutOverSendProtocol *) recv_func_parm;
-            uint8_t stack[T_Model::packet_model_payload_bytes];
-
-            if (T_Model::read_is_required_packet_model)
-              {
-                payload = (void *) & stack[0];
-                protocol->_ack_model.device.read (payload, bytes, cookie);
-              }
-
-            ack_info_t * info = (ack_info_t *) payload;
-
-            if (info->invoke)
-              {
-                // This is a 'pong' ack message .. invoke the callback function
-                // and return.
-                info->remote_fn (info->context, info->cookie, PAMI_SUCCESS);
-
-                TRACE_FN_EXIT();
-                return 0;
-              }
-
-            pami_task_t task;
-            size_t offset;
-            PAMI_ENDPOINT_INFO(*((pami_endpoint_t*)metadata), task, offset);
-
-            // Send the ack information back to the origin, however change the
-            // value of the 'invoke' field so that the origin dispatch will
-            // invoke the event function.
-            info->invoke = true;
-
-            // Attempt an 'immediate' packet post. If this fails, then a send
-            // state must be allocated for this 'pong' ack message.
-            struct iovec iov[1] = {{payload, sizeof(ack_info_t)}};
-            bool result = protocol->_ack_model.postPacket(task, offset, NULL, 0, iov);
-
-            if (result != true)
-              {
-                // Allocate memory to maintain the state of the send.
-                state_t * state = (state_t *) protocol->_allocator.allocateObject();
-
-                state->send.protocol = protocol;
-                state->ack.info = *info;
-
-                protocol->_ack_model.postPacket (state->send.msg[0],
-                                                 ack_done, (void *) state,
-                                                 task, offset,
-                                                 NULL, 0,
-                                                 (void *) &(state->ack.info),
-                                                 sizeof(ack_info_t));
-              }
-
-            TRACE_FN_EXIT();
-            return 0;
-          }
-
-
-          ///
-          /// \brief Initiate an independent 'ack' communication flow
-          ///
-          /// Used only by the ack request originiator.
+          /// Used only by the remotefn request originator.
           ///
           /// \param [in] task   Target task
           /// \param [in] offset Target context offset
-          /// \param [in] fn     Event function to invoke after ack completes
+          /// \param [in] fn     Event function to be invoked on the origin
           /// \param [in] cookie Event function cookie
           ///
-          inline void send_ack_request (pami_task_t task, size_t offset,
-                                        pami_event_function fn, void * cookie)
-          {
-            TRACE_FN_ENTER();
-
-            ack_info_t info;
-            info.remote_fn = fn;
-            info.cookie    = cookie;
-            info.context   = _context;
-            info.invoke    = false;
-
-            // It is safe to place this iovec array on the stack as it is only
-            // used by the 'immediate' post packet function below.
-            struct iovec iov[1] = {{&info, sizeof(ack_info_t)}};
-
-            bool result =
-              _ack_model.postPacket (task, offset, &_origin, sizeof(pami_endpoint_t), iov);
-
-            if (result != true)
-              {
-                // The 'immediate' post packet failed. Allocate memory to
-                // maintain the origin state of the ack. The state object is
-                // deallocated after the ack request packet is injected.
-                state_t * state = (state_t *) _allocator.allocateObject();
-
-                state->ack.protocol = this;
-                state->ack.info     = info;
-
-                _ack_model.postPacket (state->ack.msg,
-                                       ack_done, (void *) state,
-                                       task, offset,
-                                       &_origin, sizeof(pami_endpoint_t),
-                                       (void *) &(state->ack.info),
-                                       sizeof(ack_info_t));
-              }
-
-            TRACE_FN_EXIT();
-          }
+          inline void send_remotefn (pami_task_t           task,
+                                     size_t                offset,
+                                     pami_event_function   fn,
+                                     void                * cookie);
 
           ///
-          /// \brief Deallocate the send object used to inject an ack packet
+          /// \brief Process an incomming 'remotefn' packet
           ///
-          static void ack_done (pami_context_t   context,
-                                void           * cookie,
-                                pami_result_t    result)
-          {
-            TRACE_FN_ENTER();
+          /// This dispatch function is invoked on both the target and origin
+          /// tasks of a remotefn acknowledgement communication flow.
+          ///
+          /// A dispatch on the target task will inject the remotefn 'pong'
+          /// packet, while a dispatch on the origin task will examine the
+          /// remotefn packet metadata and invoke the completion event function.
+          ///
+          /// \see PAMI::Device::Interface::RecvFunction_t
+          ///
+          static int dispatch_remotefn (void   * metadata,
+                                        void   * payload,
+                                        size_t   bytes,
+                                        void   * recv_func_parm,
+                                        void   * cookie);
 
-            state_t * state = (state_t *) cookie;
-            state->ack.protocol->_allocator.returnObject (cookie);
+          ///
+          /// \brief Deallocate the send object used to inject a remotefn packet
+          ///
+          static void complete_remotefn (pami_context_t   context,
+                                         void           * cookie,
+                                         pami_result_t    result);
 
-            TRACE_FN_EXIT();
-          }
 
-          // ##################################################################
-          // end 'acknowledgement' code section
-          // ##################################################################
 
-          T_Model                                   _ack_model;
-          T_Model                                   _short_model;
-          T_Model                                   _envelope_model;
+          T_Model                                   _remotefn_model;
+          T_Model                                   _packed_model;
+          T_Model                                   _header_model;
+          T_Model                                   _type_model;
           T_Model                                   _data_model;
-          MemoryAllocator < sizeof(state_t), 16 > _allocator;
+          MemoryAllocator < sizeof(state_t), 16 >   _allocator;
           pami_context_t                            _context;
           pami_endpoint_t                           _origin;
       };
@@ -595,6 +587,12 @@ namespace PAMI
 };
 #undef DO_TRACE_ENTEREXIT
 #undef DO_TRACE_DEBUG
+
+#include "p2p/protocols/put/PutOverSend_packed_impl.h"
+#include "p2p/protocols/put/PutOverSend_envelope_impl.h"
+#include "p2p/protocols/put/PutOverSend_data_impl.h"
+#include "p2p/protocols/put/PutOverSend_remotefn_impl.h"
+
 #endif // __p2p_protocols_put_PutOverSend_h__
 
 //

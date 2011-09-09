@@ -573,7 +573,7 @@ namespace PAMI
             if (result != PAMI_SUCCESS) rput_mu = NULL;
 
             get_mu = Protocol::Get::GetOverSend<Device::MU::PacketModel>::generate(_devices->_mu[_contextid], _request);
-            put_mu = Protocol::Put::PutOverSend<Device::MU::PacketModel>::generate(_devices->_mu[_contextid], _request);
+            put_mu = Protocol::Put::PutOverSend<Device::MU::PacketModel>::generate(_devices->_mu[_contextid], __global.heap_mm);
             rmw_mu = Protocol::Rmw::RmwOverSend<Device::MU::PacketModel>::generate(_devices->_mu[_contextid], __global.heap_mm);
           }
 
@@ -669,7 +669,7 @@ namespace PAMI
                 if (result != PAMI_SUCCESS) rput_shmem = NULL;
 
                 get_shmem = Protocol::Get::GetOverSend<ShmemPacketModel>::generate(_devices->_shmem[_contextid], _request);
-                put_shmem = Protocol::Put::PutOverSend<ShmemPacketModel>::generate(_devices->_shmem[_contextid], _request);
+                put_shmem = Protocol::Put::PutOverSend<ShmemPacketModel>::generate(_devices->_shmem[_contextid], __global.heap_mm);
                 rmw_shmem = Protocol::Rmw::RmwOverSend<ShmemPacketModel>::generate(_devices->_shmem[_contextid], __global.heap_mm);
               }
             else {
@@ -1041,7 +1041,13 @@ namespace PAMI
 
       inline pami_result_t put_typed (pami_put_typed_t * parameters)
       {
-        return PAMI_UNIMPL;
+        TRACE_FN_ENTER();
+
+        pami_result_t rc = _dispatch.put (parameters);
+
+        TRACE_FORMAT("rc = %d", rc);
+        TRACE_FN_EXIT();
+        return rc;
       }
 
       inline pami_result_t get_impl (pami_get_simple_t * parameters)
