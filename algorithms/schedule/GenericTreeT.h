@@ -95,7 +95,7 @@ namespace CCMI
          * \param[in] topo    Topology pointer
          * \param[in] myrank  My rank in topology
          */
-        GenericTreeSchedule (unsigned myrank, PAMI::Topology *topo);
+      GenericTreeSchedule (unsigned myrank, PAMI::Topology *topo, unsigned c = 0);
 
         /**
          * \brief Constructor for list of ranks
@@ -432,7 +432,7 @@ namespace CCMI
      */
     template <unsigned P, unsigned NU, unsigned DE>
     inline CCMI::Schedule::GenericTreeSchedule<P, NU, DE>::
-    GenericTreeSchedule(unsigned myrank, PAMI::Topology *topology):
+      GenericTreeSchedule(unsigned myrank, PAMI::Topology *topology, unsigned c):
         _myrank(topology->rank2Index(myrank)),
         _nranks(topology->size()),
         _lstartph(-1),
@@ -987,7 +987,7 @@ namespace CCMI
         {
         }
 
-        KnaryBcastSchedule (unsigned myrank, PAMI::Topology *topo) : GenericTreeSchedule < P, 0, P + 1 > (myrank, topo)
+      KnaryBcastSchedule (unsigned myrank, PAMI::Topology *topo, unsigned c = 0) : GenericTreeSchedule < P, 0, P + 1 > (myrank, topo)
         {
         }
 

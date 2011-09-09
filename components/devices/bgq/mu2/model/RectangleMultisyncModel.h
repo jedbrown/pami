@@ -24,25 +24,41 @@ namespace PAMI
 	class MultisyncModel : public Interface::MultisyncModel<MultisyncModel, MU::Context, sizeof(MultisyncMessage)>
 	{
 	public:
-	  static const size_t   sizeof_msg      = sizeof(MultisyncMessage);
-	  
-	  MultisyncModel (pami_client_t     client,
-			  pami_context_t    context,
-			  MU::Context     & mucontext,
-			  pami_result_t   & status):
-	  Interface::MultisyncModel<MultisyncModel, MU::Context, sizeof(MultisyncMessage)> (mucontext, status),
-	  _params(NULL),
-	  _inited (0xFFFFFFFFFFFFFFFFUL)  //Reserve the first two bits
+	  class CounterState {
+	  public:
+	    bool                     _initialized;
+	    uint16_t                 _pbatid;
+	    uint16_t                 _cbatid;	 
+	    MultisyncParams        * _params;
+	    uint64_t                 _payload;
+	    uint64_t                 _crbitmap;
+
+	    ///
+	    /// \brief CounterState constructor
+	    ////
+	    CounterState() : 
+	      _initialized(false),
+	      _pbatid((unsigned short)-1),
+	      _cbatid((unsigned short)-1),
+	      _params(NULL),
+	      _payload(0),  //Payload of the put
+	      _crbitmap (0xFFFFFFFFFFFFFFFFUL)  //Reserve the first two bits
+	      {}
+
+	    pami_result_t  initialize(pami_context_t    context,
+				      MU::Context     & mucontext) 
 	    {
-	      COMPILE_TIME_ASSERT (NumClassRoutes <= sizeof(unsigned long) * 8);
+	      if (_initialized)
+		return PAMI_SUCCESS;
+
 	      //Test global allreduce to allocate ids
-	      //_inited &= ~(0x1 << (__global.mapping.task() + 1));
-	      
+	      //_counterstate._crbitmap&=~(0x1<<(__global.mapping.task()+1)); 
+
 	      //Allocate params to a 32b aligned location
 	      __global.heap_mm->memalign ((void**)&_params, 64, sizeof(MultisyncParams));
 	      memset(_params, 0, sizeof(MultisyncParams));
 	      new (_params) MultisyncParams (mucontext, context);
-
+	      
 	      //Set all bits to 1 enabling counters to have all bits 1
 	      memset ((void *)_params->_countervec, 0xff, NumClassRoutes * NumTorusDims * 2 * sizeof(uint64_t));
 	      
@@ -53,42 +69,63 @@ namespace PAMI
 	      rcBAT = mucontext.allocateBatIds (1, &_pbatid);  
 	      PAMI_assert (rcBAT != -1);
 	      if (rcBAT == -1)
-		{
-		  status = PAMI_ERROR;
-		return;
-		}
+		return PAMI_ERROR;
+	      
 	      rcBAT = mucontext.allocateBatIds (1, &_cbatid);  
 	      PAMI_assert (rcBAT != -1);
 	      if (rcBAT == -1)
-		{
-		  status = PAMI_ERROR;
-		  return;
-		}
+		return PAMI_ERROR;
 	      
 	      int rc = 0;
 	      Kernel_MemoryRegion_t memRegion;
 	      rc = Kernel_CreateMemoryRegion (&memRegion, (void *)_params->_countervec, sizeof(uint64_t) * NumTorusDims * NumClassRoutes * 2);
-	      PAMI_assert ( rc == 0 );
+	      if (rc != 0)
+		return PAMI_ERROR;
+
 	      uint64_t paddr = (uint64_t)memRegion.BasePa +
-		((uint64_t)(void *)_params->_countervec - (uint64_t)memRegion.BaseVa);
-	      
-	      uint64_t atomic_address = MUSPI_GetAtomicAddress(paddr, MUHWI_ATOMIC_OPCODE_STORE_ADD);
+		((uint64_t)(void *)_params->_countervec - 
+		 (uint64_t)memRegion.BaseVa);	      
+	      uint64_t atomic_address = 
+		MUSPI_GetAtomicAddress(paddr, MUHWI_ATOMIC_OPCODE_STORE_ADD);
 	      mucontext.setBatEntry (_cbatid, atomic_address);	    
 	      
-	      rc = Kernel_CreateMemoryRegion (&memRegion, (void *)&_payload, sizeof(size_t));
-	      PAMI_assert ( rc == 0 );
-	      paddr = (uint64_t)memRegion.BasePa + 
-		((uint64_t)(void *)&_payload - (uint64_t)memRegion.BaseVa);	    
-	      
-	      mucontext.setBatEntry (_pbatid, paddr);  	    
+	      rc = Kernel_CreateMemoryRegion (&memRegion, (void *)&_payload, 
+					      sizeof(size_t));
+	      if (rc != 0)
+		return PAMI_ERROR;
 
-	      //Init models
-	      initModel();
-	      //Send a 1 byte message from _payload and receive it in _payload
-	      _params->_modeldesc.setPayload (paddr, 1);  
+	      paddr = (uint64_t)memRegion.BasePa + 
+		((uint64_t)(void *)&_payload - (uint64_t)memRegion.BaseVa); 
+
+	      mucontext.setBatEntry (_pbatid, paddr);  	
+
+	      buildP2pDputModelDescriptor(_params->_modeldesc,_pbatid,_cbatid);
+	      _params->_modeldesc.setDeposit (MUHWI_PACKET_DEPOSIT);   	      
+              _params->_modeldesc.setPayload (paddr, 1);
+
+	      _initialized = true;
+	      return PAMI_SUCCESS;
+	    }
+	  };
+
+
+	public:
+	  static const size_t   sizeof_msg      = sizeof(MultisyncMessage);
+	  
+	  MultisyncModel (pami_client_t     client,
+			  pami_context_t    context,
+			  MU::Context     & mucontext,
+			  pami_result_t   & status):
+	  Interface::MultisyncModel<MultisyncModel, MU::Context, sizeof(MultisyncMessage)> (mucontext, status),
+	  _params(NULL)
+	    {
+	      COMPILE_TIME_ASSERT (NumClassRoutes <= sizeof(unsigned long) * 8);
+	      
+	      status = _counterstate.initialize(context, mucontext);	      
+	      _params = _counterstate._params;
 	    } 
 	  
-	  uint64_t getAllocationVector () { return _inited; }
+	  uint64_t getAllocationVector () { return _counterstate._crbitmap; }
 	  
 	  ///
 	  /// \brief Once a globally unique id has been allocated the
@@ -97,17 +134,6 @@ namespace PAMI
 	  pami_result_t  configureClassRoute (size_t       id,
 					      Topology   * topology) __attribute__((noinline, weak));
 	  
-	  void initModel () {
-	    //TRACE_FN_ENTER();	    
-	    //uint64_t desc_addr = (uint64_t)(void*)(&(_params->_modeldesc));
-	    //PAMI_assert ( (desc_addr & 0x1fUL) == 0);
-				   
-	    buildP2pDputModelDescriptor (_params->_modeldesc, _pbatid, _cbatid);
-	    _params->_modeldesc.setDeposit (MUHWI_PACKET_DEPOSIT);	    	  
-	    //TRACE_FN_EXIT();		    
-	  }
-	
-	
 	  /// \see PAMI::Device::Interface::MultisyncModel::postMultisync
 	  pami_result_t postMultisyncImmediate_impl(size_t            client,
 						    size_t            context, 
@@ -130,7 +156,7 @@ namespace PAMI
 	      classroute = (size_t)devinfo - 1;
 	    
 	    //printf ("Starting collective on class route %ld, devinfo %ld\n", classroute, (size_t)devinfo);
-	    if ((_inited & (0x1 << classroute)) != 0) {
+	    if ((_counterstate._crbitmap & (0x1 << classroute)) != 0) {
 	      printf ("Call configure class route\n");
 	      configureClassRoute (classroute, (Topology*)msync->participants);
 	    }
@@ -143,7 +169,7 @@ namespace PAMI
 #if MU_RECTANGLE_BLOCKING_BARRIER 
 	    while (!msg->advance());
 #else
-	    for (size_t i = 0; i < 32; ++i)
+	    for (size_t i = 0; i < 64; ++i)
 	      if (msg->advance()) 
 		return PAMI_SUCCESS;
 	    
@@ -167,10 +193,8 @@ namespace PAMI
 	  
 	protected:
 	  MultisyncParams          * _params;
-	  uint16_t                   _pbatid;
-	  uint16_t                   _cbatid;
-	  uint64_t                   _inited;
-	  uint64_t                   _payload;
+
+	  static CounterState        _counterstate;
 	};
 	
 	///
@@ -180,9 +204,9 @@ namespace PAMI
 	pami_result_t  MultisyncModel::configureClassRoute (size_t       id,
 							    Topology   * topology) 
 	{
-	  PAMI_assert ( (_inited & (0x1 << id)) != 0 );	  
+	  PAMI_assert ( (_counterstate._crbitmap & (0x1 << id)) != 0 );	  
 	  PAMI_assert (_params->_statevec != NULL);
-	  _inited &= ~(0x1 << id);  
+	  _counterstate._crbitmap &= ~(0x1 << id);  
 	  memset(&_params->_statevec[id], 0, sizeof(MultisyncState));	  
 	  
 	  //Build list of destinations to send despost bit packets to

@@ -13,20 +13,7 @@
 #ifndef __components_devices_bgq_mu2_msg_InjectDPutMulticast_h__
 #define __components_devices_bgq_mu2_msg_InjectDPutMulticast_h__
 
-#include "spi/include/mu/DescriptorBaseXX.h"
-#include "util/trace.h"
-#include "components/devices/bgq/mu2/InjChannel.h"
-#include "components/devices/bgq/mu2/msg/MessageQueue.h"
-#include "common/bgq/Mapping.h"
-#include "components/memory/MemoryAllocator.h"
-#include "components/devices/bgq/mu2/MU_Util.h"
-
-#ifndef DO_TRACE_ENTEREXIT
- #define DO_TRACE_ENTEREXIT 0
-#endif
-#ifndef DO_TRACE_DEBUG
- #define DO_TRACE_DEBUG     0
-#endif
+#include "components/devices/bgq/mu2/msg/InjectDPutBase.h"
 
 #define LOCAL_DIM  5 //the index of the local dimension
 #define MAX_CHANNELS  (2 * NumTorusDims)
@@ -45,26 +32,17 @@ namespace PAMI
       /// \brief Inject one or more descriptors into an inject fifo
       ///
       ///
-      class InjectDPutMulticast 
+      class InjectDPutMulticast : public InjectDPutBase
       {
       public:
-	struct CompletionMsg {
-	  InjectDPutMulticast     * _multicast;
-	  uint8_t                   _state[InjChannel::completion_event_state_bytes];
-	};
 
 	/// \brief Constructor
 	/// \param[in] context the MU context for this message
-	InjectDPutMulticast (MU::Context &context,pami_context_t   pami_context):
+	InjectDPutMulticast (MU::Context &context):
 	_context (context),
-		_pami_context(pami_context),
 	  _nextdst (0),
 	  _ndestinations(0),
-#if 0
-	  _recPayloadOffset (0),
-#endif
 	  _processInjection (false),
-	  _doneCompletion (false),
 	  _localMulticast(0),
 	  _startfnum(0),
 	  _endfnum(0),  
@@ -110,7 +88,7 @@ namespace PAMI
 	  _nextdst          = 0;
 	  _ndestinations    = 0;
 	  _processInjection = true;
-	  _doneCompletion   = false;
+	  this->_doneCompletion   = false;
 	  _localMulticast   = localMulticast;
 	  _length           = length;	
 	  _consumedBytes    = 0;
@@ -148,12 +126,6 @@ namespace PAMI
 	  
 	inline ~InjectDPutMulticast () {};
 	
-#if 0
-	void setRecPutOffset (uint64_t rec_offset) { 
-	  _recPayloadOffset = rec_offset; 
-	}
-#endif	 
-
 	void setupLocalDestinations (MUHWI_Destination_t  * me, 
 				     pami_coord_t         * ref, 
 				     unsigned char        * isTorus, 
@@ -179,7 +151,7 @@ namespace PAMI
 	
 	void advanceLocal (unsigned bytes_available) __attribute__((noinline, weak));
 
-	bool advance ( )
+	virtual bool advance ()
 	{
 	  //TRACE_FN_ENTER();	  
 	  //TRACE_FORMAT("InjectDPutMulticast:  advance:  ndesc=%zu\n",ndesc);
@@ -258,13 +230,13 @@ namespace PAMI
 	      _lastCompletionSeqNo[fnum] |= seqno_table[rc];
 	      done &=  rc;
 	    }
-	  _doneCompletion = done;
+	  this->_doneCompletion = done;
 	  
 	  if (done && _fn)
-	    _fn (_pami_context, _cookie, PAMI_SUCCESS); 
+	    _fn (NULL, _cookie, PAMI_SUCCESS);
 	  
 	  //TRACE_FN_EXIT();
-	  return _doneCompletion;
+	  return this->_doneCompletion;
 	}
       
 
@@ -287,26 +259,19 @@ namespace PAMI
 
 	inline uint32_t ndestinations() { return _ndestinations; }
 
-	inline bool done () { return _doneCompletion; }
-
 	//The descriptor is setup externally and contains batids, sndbuffer base and msg length
 	MUSPI_DescriptorBase     _desc __attribute__((__aligned__(32))); 
 
       protected:	
 	MU::Context            & _context;
-	pami_context_t   				 _pami_context;
 	uint32_t                 _nextdst;
 	uint32_t                 _ndestinations;
 	bool                     _processInjection;
-	bool                     _doneCompletion;
 	bool                     _localMulticast;
 	uint32_t                 _startfnum;
 	uint32_t                 _endfnum;
 	uint64_t                 _length;        //Number of bytes to transfer
 	uint64_t                 _consumedBytes;
-#if 0
-	uint64_t                 _recPayloadOffset;
-#endif
 	PipeWorkQueue          * _pwq;
 	pami_event_function      _fn;
 	void                   * _cookie;
@@ -468,8 +433,5 @@ namespace PAMI
     };   // namespace PAMI::Device::MU                          
   };     // namespace PAMI::Device           
 };       // namespace PAMI                                   
-
-#undef  DO_TRACE_ENTEREXIT
-#undef  DO_TRACE_DEBUG
 
 #endif // __components_devices_bgq_mu2_msg_InjectDPutMulticast_h__                     

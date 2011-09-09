@@ -126,6 +126,8 @@ namespace PAMI
             default:
               PAMI_abortf("Error: Do not know how to handle tSize=%u\n",tSize);
           }
+	PAMI_assertf(PAMI_GEOMETRY_NUMALGOLISTS >= result,"Mismatch num contexts %u/%zu\n",PAMI_GEOMETRY_NUMALGOLISTS,result);
+
         return result;
       }
 

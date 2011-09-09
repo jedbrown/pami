@@ -41,12 +41,19 @@ extern "C" unsigned __isMambo() {return __global.personality._is_mambo? 1:0;};
 
 #include "components/devices/bgq/mu2/model/CollectiveMulticastDmaModel.h"
 #include "components/devices/bgq/mu2/model/Collective2DeviceBase.h"
+#include "components/devices/bgq/mu2/model/MulticastDmaModel.h"
+#include "components/devices/bgq/mu2/model/RectangleMultisyncModel.h"
 
 char *PAMI::Device::MU::CollectiveMulticastDmaModel::_zeroBuf;
 uint32_t PAMI::Device::MU::CollectiveMulticastDmaModel::_zeroBytes;
 
 PAMI::Device::MU::CollectiveDmaModelBase::CollState PAMI::Device::MU::CollectiveDmaModelBase::_collstate;
 PAMI::Device::MU::Collective2DeviceBase::CollState PAMI::Device::MU::Collective2DeviceBase::_collstate;
+
+PAMI::Device::MU::MUCounterSet PAMI::Device::MU::MulticastDmaModel::_mu_counterset;
+
+PAMI::Device::MU::Rectangle::MultisyncModel::CounterState PAMI::Device::MU::Rectangle::MultisyncModel::_counterstate;
+
 
 #ifdef USE_COMMTHREADS
 #include "components/devices/bgq/commthread/CommThreadWakeup.h"

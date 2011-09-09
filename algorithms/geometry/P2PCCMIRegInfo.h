@@ -490,6 +490,7 @@ namespace CCMI
         CCMI::ConnectionManager::ColorConnMgr>
       Rectangle1ColorBroadcastFactory;
 #endif
+
       extern inline void binomial_broadcast_metadata(pami_metadata_t *m)
       {
         new(m) PAMI::Geometry::Metadata("I0:Binomial:P2P:P2P");
@@ -518,13 +519,49 @@ namespace CCMI
         CCMI::Schedule::RingSchedule,
         CCMI::ConnectionManager::ColorGeometryConnMgr,
         get_colors >
-      RingBroadcastComposite;
+	RingBroadcastComposite;
 
       typedef CCMI::Adaptor::CollectiveProtocolFactoryT
       < RingBroadcastComposite,
         ring_broadcast_metadata,
         CCMI::ConnectionManager::ColorGeometryConnMgr>
-      RingBroadcastFactory;
+	RingBroadcastFactory;
+      
+      extern inline void binomial_broadcast_metadata_singleth(pami_metadata_t *m)
+      {
+        new(m) PAMI::Geometry::Metadata("I0:BinomialSingleTh:P2P:P2P");
+      }
+
+      extern inline void ring_broadcast_metadata_singleth(pami_metadata_t *m)
+      {
+        new(m) PAMI::Geometry::Metadata("I0:RingSingleTh:P2P:P2P");
+      }      
+
+      typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
+      < 1,
+        CCMI::Schedule::TopoMultinomial,
+        CCMI::ConnectionManager::ColorConnMgr,
+        get_colors >
+      BinomialBroadcastSingleThComposite;
+
+      typedef CCMI::Adaptor::CollectiveProtocolFactoryT
+      < BinomialBroadcastSingleThComposite,
+        binomial_broadcast_metadata_singleth,
+        CCMI::ConnectionManager::ColorConnMgr>
+      BinomialBroadcastSingleThFactory;
+
+      typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
+      < 1,
+        CCMI::Schedule::RingSchedule,
+        CCMI::ConnectionManager::ColorConnMgr,
+        get_colors >
+      RingBroadcastSingleThComposite;
+
+      typedef CCMI::Adaptor::CollectiveProtocolFactoryT
+      < RingBroadcastSingleThComposite,
+        ring_broadcast_metadata_singleth,
+        CCMI::ConnectionManager::ColorConnMgr>
+      RingBroadcastSingleThFactory;
 
       extern inline void am_rb_broadcast_metadata(pami_metadata_t *m)
       {
@@ -722,6 +759,12 @@ namespace CCMI
       {
         new(m) PAMI::Geometry::Metadata("I0:2-nary:P2P:P2P");
       }
+
+      extern inline void sync_2nary_broadcast_metadata(pami_metadata_t *m)
+      {
+        new(m) PAMI::Geometry::Metadata("I0:2-nary:P2P:P2P");
+      }
+
       extern inline void create_schedule_2nary(void                        * buf,
                                                   unsigned                      size,
                                                   unsigned                      root,
@@ -755,6 +798,19 @@ namespace CCMI
         CCMI::ConnectionManager::CommSeqConnMgr,
         getKey_2nary> Async2naryBroadcastFactory;      
       
+      typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
+      < 1,
+        CCMI::Schedule::KnaryBcastSchedule<2>,
+        CCMI::ConnectionManager::ColorConnMgr,
+        get_colors >
+      TwoNaryBroadcastComposite;
+
+      typedef CCMI::Adaptor::CollectiveProtocolFactoryT
+      < TwoNaryBroadcastComposite,
+        sync_2nary_broadcast_metadata,
+        CCMI::ConnectionManager::ColorConnMgr>
+      TwoNaryBroadcastFactory;
+
       // Generic tree 3-nary broadcast
       extern inline void am_3nary_broadcast_metadata(pami_metadata_t *m)
       {

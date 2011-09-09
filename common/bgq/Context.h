@@ -237,7 +237,7 @@ namespace PAMI
         TRACE_FORMAT("<%p>",this);
         TRACE_FN_EXIT();
       };
-      pami_result_t  analyze(size_t context_id, pami_topology_t *topology, int phase, int* flag)
+    pami_result_t  analyze(size_t context_id, pami_topology_t *topology, int phase, int* flag)
       {
         TRACE_FN_ENTER();
         *flag = 0; 
@@ -247,6 +247,24 @@ namespace PAMI
       };
   };
 
+  // MU NI class that overrides the metadata name and possibly the range (templatized)
+  class MUDputNI_metadata : public MUNI_metadata<MUDputNI, BigProtocolAllocator>
+  {
+  public:
+  MUDputNI_metadata(MUDevice &device, BigProtocolAllocator &allocator, pami_client_t client, pami_context_t context, size_t context_id, size_t client_id, int *dispatch_id) :
+    MUNI_metadata<MUDputNI, BigProtocolAllocator>(device, allocator, client, context, context_id, client_id, dispatch_id)
+      {
+	this->niName="-:MUDput";
+      }
+  };
+
+  // MU NI factory for MUNI_metadata<MUNI_AM>/MUNI_metadata<MUNI_AS>
+  typedef BGQNativeInterfaceFactory <BigProtocolAllocator,  
+    MUDputNI_metadata,
+    MUDevice, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, 
+    CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED, 16> 
+    MUDputNIFactory;
+  
   // Composite (MU/SHMEM) NI class that overrides the metadata name
   template<class T_Parent>
   class CompositeNI_metadata : public T_Parent
@@ -482,6 +500,7 @@ namespace PAMI
           _ccmi_registration_shmem(NULL),
           _ccmi_registration_mu(NULL),
           _ccmi_registration_muam(NULL),
+          _ccmi_registration_mudput(NULL),
           _world_geometry(world_geometry),
           _status(PAMI_SUCCESS),
           _shmemMcastModel(NULL),
@@ -885,6 +904,18 @@ namespace PAMI
                                  &_dispatch.id, 
                                  _geometry_map,
                                  ni_factory_muam);
+
+            CCMI::Interfaces::NativeInterfaceFactory *ni_factory_mudp = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
+            new (ni_factory_mudp) MUDputNIFactory (_client, _context, _clientid, _contextid, _devices->_mu[_contextid], _big_protocol);
+          
+            _ccmi_registration_mudput =  new((CCMIRegistrationKey2*)_ccmi_registration_mudput_storage) 	
+            CCMIRegistrationKey2(_client, _context, _contextid, _clientid, 
+                                 _protocol,
+                                 __global.topology_global.size(), 
+                                 __global.topology_local.size(), 
+                                 &_dispatch.id, 
+                                 _geometry_map,
+                                 ni_factory_mudp);
           }
         }
         // Can only use shmem pgas if the geometry is all local tasks, so check the topology
@@ -917,6 +948,12 @@ namespace PAMI
           _ccmi_registration_muam->analyze(_contextid, _world_geometry, 0);
         }
 	
+        if(_ccmi_registration_mudput) 
+        {
+	  //printf("Analyze mu dput on comm world\n");
+          _ccmi_registration_mudput->analyze(_contextid, _world_geometry, 0);
+        }
+
         if(_multi_registration) // && (((PAMI::Topology*)_world_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
         {
            _multi_registration->analyze(_contextid, _world_geometry, 0);
@@ -1407,6 +1444,11 @@ namespace PAMI
           _ccmi_registration_muam->analyze(context_id, geometry, phase);
         }
 
+	if(_ccmi_registration_mudput) 
+        {
+          _ccmi_registration_mudput->analyze(context_id, geometry, phase);
+        }
+
         if(_multi_registration)// && (((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
             _multi_registration->analyze(context_id, geometry, phase);
 
@@ -1508,6 +1550,7 @@ namespace PAMI
       CCMIRegistration            *_ccmi_registration_shmem;
       CCMIRegistration            *_ccmi_registration_mu;
       CCMIRegistrationKey2        *_ccmi_registration_muam;
+      CCMIRegistrationKey2        *_ccmi_registration_mudput;
       BGQGeometry                 *_world_geometry;
       pami_result_t                _status;
       ShmemMcstModel              *_shmemMcastModel;
@@ -1518,6 +1561,7 @@ namespace PAMI
       uint8_t                      _ccmi_registration_shmem_storage[sizeof(CCMIRegistration)];
       uint8_t                      _ccmi_registration_mu_storage[sizeof(CCMIRegistration)];
       uint8_t                      _ccmi_registration_muam_storage[sizeof(CCMIRegistrationKey2)];
+      uint8_t                      _ccmi_registration_mudput_storage[sizeof(CCMIRegistrationKey2)];
       uint8_t                      _multi_registration_storage[sizeof(BGQRegistration)];
       uint8_t                      _shmemMcastModel_storage[sizeof(ShmemMcstModel)];
       uint8_t                      _shmemMsyncModel_storage[sizeof(ShmemMsyncModel)];
