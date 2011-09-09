@@ -145,7 +145,7 @@ namespace PAMI
         TRACE_FN_EXIT();
       };
           
-	pami_result_t  analyze(size_t context_id, pami_topology_t *topology, int phase, size_t nconnections, int* flag)
+	pami_result_t  analyze(size_t context_id, pami_topology_t *topology, int phase, int* flag)
       {
         TRACE_FN_ENTER();
         *flag=0;
@@ -237,7 +237,7 @@ namespace PAMI
         TRACE_FORMAT("<%p>",this);
         TRACE_FN_EXIT();
       };
-      pami_result_t  analyze(size_t context_id, pami_topology_t *topology, int phase, int nconnections, int* flag)
+      pami_result_t  analyze(size_t context_id, pami_topology_t *topology, int phase, int* flag)
       {
         TRACE_FN_ENTER();
         *flag = 0; 
