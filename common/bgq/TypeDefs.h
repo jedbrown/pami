@@ -91,13 +91,15 @@
 #include "components/devices/bgq/mu2/model/MUMultisync.h"
 #include "components/devices/bgq/mu2/model/RectangleMultisyncModel.h"
 #include "components/devices/bgq/mu2/model/ManytomanyModel.h"
+#include "components/devices/bgq/mu2/model/NullMultisync.h"
+#include "components/devices/bgq/mu2/model/NullMulticombine.h"
 
 namespace PAMI
 {
   typedef Geometry::Common                     BGQGeometry;
 
   typedef MemoryAllocator<152,  64, 1> ProtocolAllocator; /// \todo How much do we really need?  Is there a better way?
-  typedef MemoryAllocator<1024, 64, 1> BigProtocolAllocator; /// \todo How much do we really need?  Is there a better way?
+  typedef MemoryAllocator<640, 64, 1> BigProtocolAllocator; /// \todo How much do we really need?  Is there a better way?
   typedef MemoryAllocator<352,  64, 1> MidProtocolAllocator; /// \todo How much do we really need?  Is there a better way?
 
   typedef Device::MU::Context MUDevice;
@@ -105,25 +107,29 @@ namespace PAMI
   typedef BGQNativeInterface < MUDevice,
   Device::MU::MulticastModel<true>, // all-sided
   Device::MU::MultisyncModel<false, false>,
-  Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false> > MUGlobalNI;
+    Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false>,
+  MidProtocolAllocator> MUGlobalNI;
 
   typedef BGQNativeInterfaceAS < MUDevice,
-  Device::MU::MulticastDmaModel,
-  Device::MU::Rectangle::MultisyncModel,
-  //Device::MU::MUMultisyncModel,
-  Device::MU::CollectiveMulticombineDmaModel > MUAxialDputNI;
+    Device::MU::MulticastDmaModel,
+    Device::MU::Rectangle::MultisyncModel,
+    //Device::MU::CollectiveMulticombineDmaModel 
+    Device::MU::NullMulticombineModel,
+    BigProtocolAllocator> MUDputNI;
 
   typedef BGQNativeInterfaceAS < MUDevice,
   Device::MU::CollectiveMulticastDmaModel,
   Device::MU::MUMultisyncModel,
-  Device::MU::CollectiveMulticombineDmaModel
+  Device::MU::CollectiveMulticombineDmaModel,
   //Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false>
+  MidProtocolAllocator
   > MUGlobalDputNI;
 
   typedef BGQNativeInterfaceAS < MUDevice,
   Device::MU::CollectiveMcast2Device,
   Device::MU::CollectiveMsync2Device,
-  Device::MU::CollectiveMcomb2Device
+  Device::MU::CollectiveMcomb2Device,
+  MidProtocolAllocator
   > MUShmemGlobalDputNI;
   
   //typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::Native> ShmemCollDesc;
@@ -131,8 +137,11 @@ namespace PAMI
 
   typedef BGQNativeInterface < MUDevice,
     Device::MU::ShortAMMulticastModel,
-    Device::MU::MultisyncModel<false, false>,
-    Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false>
+    //Device::MU::MultisyncModel<false, false>,
+    //Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false>
+    Device::MU::NullMultisyncModel,
+    Device::MU::NullMulticombineModel,
+    MidProtocolAllocator
     > MUAMMulticastNI;
 
   typedef Fifo::FifoPacket <32, 160> ShmemPacket;
@@ -154,7 +163,8 @@ namespace PAMI
   Device::MU::MulticastDmaModel,
   ShaddrMcstModel,
   Device::MU::MultisyncModel<false, false>,
-  Device::MU::MulticombineModel<PAMI::Device::MU::AllreducePacketModel, false, false> > MUShmemAxialDputNI;
+  Device::MU::MulticombineModel<PAMI::Device::MU::AllreducePacketModel, false, false>,
+  BigProtocolAllocator > MUShmemAxialDputNI;
 
 
   // shmem active message over p2p eager
@@ -217,8 +227,9 @@ namespace PAMI
   typedef PAMI::Device::Shmem::ShmemMcombModelWorld <ShmemDevice> ShmemMcombModel;
   typedef PAMI::Device::Shmem::ShmemMcstModelWorld <ShmemDevice> ShmemMcstModel;
   typedef PAMI::Device::Shmem::ShortMcombMessage <ShmemDevice> ShmemMcombMessage;
-
-  typedef BGQNativeInterfaceAS <ShmemDevice, ShmemMcstModel, ShmemMsyncModel, ShmemMcombModel> AllSidedShmemNI;
+  
+  typedef BGQNativeInterfaceAS <ShmemDevice, ShmemMcstModel, ShmemMsyncModel, ShmemMcombModel,
+  MidProtocolAllocator> AllSidedShmemNI;
 
   typedef BGQNativeInterfaceM2M <MUDevice, Device::MU::ManytomanyModel<size_t, 1> > M2MNISingle;
   typedef BGQNativeInterfaceM2M <MUDevice, Device::MU::ManytomanyModel<size_t, 0> > M2MNIVectorLong;

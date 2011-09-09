@@ -87,7 +87,7 @@ namespace PAMI
     class AlgoLists
     {
 #ifndef PAMI_ALGOLISTS_MAX_NUM
-      static const int MAX_NUM_ALGO = 16;
+      static const int MAX_NUM_ALGO = 19;
 #else
       static const int MAX_NUM_ALGO = PAMI_ALGOLISTS_MAX_NUM;
 #endif

@@ -269,7 +269,7 @@ namespace PAMI
               int flag=0;
               unsigned op_query_needed = 0, all_query_needed=0;
               // Let the NI analyze the geometry and pass back flags
-              pami_result_t result = _ni_factory->analyze(context_id,geometry,phase,&flag);
+              pami_result_t result = _ni_factory->analyze(context_id,geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX),phase,&flag);
               if(result == PAMI_SUCCESS); // no analyze changes, all ok
               else if(result == PAMI_UNIMPL) {TRACE_FN_EXIT(); return PAMI_SUCCESS;} // not supported, don't add algorithms
               else if(result == PAMI_OTHER) // check flag for must-query protocol
@@ -662,6 +662,7 @@ namespace PAMI
             result = _ni_factory->generate ( _dispatch_id, 
                                              niselect,
                                              nitype,
+					     -1,          //We dont care about #connections in this commit
                                              ni           );
             
             //PAMI_assert(result == PAMI_SUCCESS);

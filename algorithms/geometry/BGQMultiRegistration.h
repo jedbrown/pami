@@ -330,7 +330,7 @@ namespace PAMI
     }
 
     typedef CCMI::Adaptor::Barrier::BarrierFactoryAllSidedT
-    <CCMI::Adaptor::Barrier::MultiSyncComposite<true, MUAxialDputNI,PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX, PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID1>,
+    <CCMI::Adaptor::Barrier::MultiSyncComposite<true, MUDputNI,PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX, PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID1>,
     MURectangleMsyncMetaData,
     CCMI::ConnectionManager::SimpleConnMgr,
     PAMI::Geometry::CKEY_BARRIERCOMPOSITE5>
@@ -785,9 +785,9 @@ namespace PAMI
     //----------------------------------------------------------------------------
     /// \brief The BGQ Multi* registration class for Shmem and MU.
     //----------------------------------------------------------------------------
-    template <class T_Geometry, class T_ShmemDevice, class T_ShmemNativeInterface, class T_MUDevice, class T_MUNativeInterface, class T_AxialDputNativeInterface, class T_AxialShmemDputNativeInterface>
+    template <class T_Geometry, class T_ShmemDevice, class T_ShmemNativeInterface, class T_MUDevice, class T_MUNativeInterface, class T_AxialDputNativeInterface, class T_AxialShmemDputNativeInterface, class T_Allocator, class T_BigAllocator>
     class BGQMultiRegistration :
-    public CollRegistration<PAMI::CollRegistration::BGQMultiRegistration<T_Geometry, T_ShmemDevice, T_ShmemNativeInterface, T_MUDevice, T_MUNativeInterface, T_AxialDputNativeInterface, T_AxialShmemDputNativeInterface>, T_Geometry>
+    public CollRegistration<PAMI::CollRegistration::BGQMultiRegistration<T_Geometry, T_ShmemDevice, T_ShmemNativeInterface, T_MUDevice, T_MUNativeInterface, T_AxialDputNativeInterface, T_AxialShmemDputNativeInterface, T_Allocator, T_BigAllocator>, T_Geometry>
     {
 
     public:
@@ -799,13 +799,17 @@ namespace PAMI
                                   size_t                               context_id,
                                   size_t                               client_id,
                                   int                                 *dispatch_id,
-                                  std::map<unsigned, pami_geometry_t> *geometry_map):
-      CollRegistration<PAMI::CollRegistration::BGQMultiRegistration<T_Geometry, T_ShmemDevice, T_ShmemNativeInterface, T_MUDevice, T_MUNativeInterface, T_AxialDputNativeInterface, T_AxialShmemDputNativeInterface>, T_Geometry> (),
+                                  std::map<unsigned, pami_geometry_t> *geometry_map,
+				  T_Allocator                          &allocator,
+				  T_BigAllocator                       &big_allocator):
+      CollRegistration<PAMI::CollRegistration::BGQMultiRegistration<T_Geometry, T_ShmemDevice, T_ShmemNativeInterface, T_MUDevice, T_MUNativeInterface, T_AxialDputNativeInterface, T_AxialShmemDputNativeInterface, T_Allocator, T_BigAllocator>, T_Geometry> (),
       _client(client),
       _context(context),
       _context_id(context_id),
       _dispatch_id(dispatch_id),
       _geometry_map(geometry_map),
+      _allocator (allocator),
+      _big_allocator (big_allocator),
       _sconnmgr(65535),
       _csconnmgr(),
       _cg_connmgr(65535),
@@ -876,27 +880,27 @@ namespace PAMI
         {
           TRACE_FORMAT("<%p> usemu", this);
 
-          _mu_ni_msync          = new (_mu_ni_msync_storage         ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id, _dispatch_id);
-          _mu_ni_mcomb          = new (_mu_ni_mcomb_storage         ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id, _dispatch_id);
-          _mu_ni_mcast          = new (_mu_ni_mcast_storage         ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id, _dispatch_id);
-          _mu_ni_mcast3         = new (_mu_ni_mcast3_storage        ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id, _dispatch_id);
-          _mu_ni_msync2d        = new (_mu_ni_msync2d_storage       ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id, _dispatch_id);
-          _mu_ni_mcast2d        = new (_mu_ni_mcast2d_storage       ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id, _dispatch_id);
-          _mu_ni_mcomb2d        = new (_mu_ni_mcomb2d_storage       ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id, _dispatch_id);
-          _mu_ni_mcomb2dNP      = new (_mu_ni_mcomb2dNP_storage     ) T_MUNativeInterface(_mu_device, client, context, context_id, client_id, _dispatch_id);
+          _mu_ni_msync          = new (_mu_ni_msync_storage         ) T_MUNativeInterface(_mu_device, _allocator, client, context, context_id, client_id, _dispatch_id);
+          _mu_ni_mcomb          = new (_mu_ni_mcomb_storage         ) T_MUNativeInterface(_mu_device, _allocator, client, context, context_id, client_id, _dispatch_id);
+          _mu_ni_mcast          = new (_mu_ni_mcast_storage         ) T_MUNativeInterface(_mu_device, _allocator, client, context, context_id, client_id, _dispatch_id);
+          _mu_ni_mcast3         = new (_mu_ni_mcast3_storage        ) T_MUNativeInterface(_mu_device, _allocator, client, context, context_id, client_id, _dispatch_id);
+          _mu_ni_msync2d        = new (_mu_ni_msync2d_storage       ) T_MUNativeInterface(_mu_device, _allocator, client, context, context_id, client_id, _dispatch_id);
+          _mu_ni_mcast2d        = new (_mu_ni_mcast2d_storage       ) T_MUNativeInterface(_mu_device, _allocator, client, context, context_id, client_id, _dispatch_id);
+          _mu_ni_mcomb2d        = new (_mu_ni_mcomb2d_storage       ) T_MUNativeInterface(_mu_device, _allocator, client, context, context_id, client_id, _dispatch_id);
+          _mu_ni_mcomb2dNP      = new (_mu_ni_mcomb2dNP_storage     ) T_MUNativeInterface(_mu_device, _allocator, client, context, context_id, client_id, _dispatch_id);
 
-          _axial_mu_dput_ni     = new (_axial_mu_dput_ni_storage    ) T_AxialDputNativeInterface(_mu_device, client, context, context_id, client_id, _dispatch_id);
+          _axial_mu_dput_ni     = new (_axial_mu_dput_ni_storage    ) T_AxialDputNativeInterface(_mu_device, _big_allocator, client, context, context_id, client_id, _dispatch_id);
 
           if (_axial_mu_dput_ni->status() != PAMI_SUCCESS) _axial_mu_dput_ni = NULL; // Not enough resources?
 
           if (__global.mapping.t() == 0)
             //We can now construct this on any process (as long as
             //process 0 on each node in the job also calls it
-            _mu_global_dput_ni    = new (_mu_global_dput_ni_storage) MUGlobalDputNI (_mu_device, client, context, context_id, client_id, _dispatch_id);
+            _mu_global_dput_ni    = new (_mu_global_dput_ni_storage) MUGlobalDputNI (_mu_device, _allocator, client, context, context_id, client_id, _dispatch_id);
 
-          _mu_shmem_global_dput_ni    = new (_mu_shmem_global_dput_ni_storage) MUShmemGlobalDputNI (_mu_device, client, context, context_id, client_id, _dispatch_id);
+          _mu_shmem_global_dput_ni    = new (_mu_shmem_global_dput_ni_storage) MUShmemGlobalDputNI (_mu_device, _allocator, client, context, context_id, client_id, _dispatch_id);
 
-          _mu_ammulticast_ni    = new (_mu_ammulticast_ni_storage) MUAMMulticastNI (_mu_device, client, context, context_id, client_id, _dispatch_id);
+          _mu_ammulticast_ni    = new (_mu_ammulticast_ni_storage) MUAMMulticastNI (_mu_device, _allocator, client, context, context_id, client_id, _dispatch_id);
 
           _mu_m2m_single_ni      = new (_mu_m2m_single_ni_storage) M2MNISingle (_mu_device, client, context, context_id, client_id, _dispatch_id);
 
@@ -913,7 +917,7 @@ namespace PAMI
 
           if (__global.useshmem())
           {
-            _axial_shmem_mu_dput_ni     = new (_axial_shmem_mu_dput_ni_storage    ) T_AxialShmemDputNativeInterface(_mu_device, _shmem_device, client, context, context_id, client_id, _dispatch_id);
+            _axial_shmem_mu_dput_ni     = new (_axial_shmem_mu_dput_ni_storage    ) T_AxialShmemDputNativeInterface(_mu_device, _shmem_device, _big_allocator, client, context, context_id, client_id, _dispatch_id);
 
             if (_axial_shmem_mu_dput_ni->status() != PAMI_SUCCESS) _axial_shmem_mu_dput_ni = NULL; // Not enough resources?
           }
@@ -1176,8 +1180,8 @@ namespace PAMI
               CCMI::Executor::Composite *opt_composite;
               opt_composite = _msync2d_rectangle_composite_factory->generate(geometry, &xfer); 
               PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE6)==opt_composite);
-//            geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
-//                             (void*)opt_composite);
+	      geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
+			       (void*)opt_composite);
             }
 
             // Add rectangle protocols:
@@ -1449,6 +1453,9 @@ namespace PAMI
       // This will be decremented by the ConstructNativeInterface routines
       int                                            *_dispatch_id;
       std::map<unsigned, pami_geometry_t>            *_geometry_map;
+
+      T_Allocator                                    &_allocator;
+      T_BigAllocator                                 &_big_allocator;
 
       // CCMI Connection Manager Class
       CCMI::ConnectionManager::SimpleConnMgr          _sconnmgr;

@@ -33,6 +33,7 @@ class Geometry;
 	 \brief generate a native interface to optimize operations given by NISelect flag input
 	 \param [in] dispatch id. Id of the dispatch for AM M* implementations
 	 \param [in] sflag.  Construct M* interfaces to support subset or all of the M* calls. 
+	 \param[in] size of the connection id to NI (-1UL for unlimited connections)
 	 \param [out] ni. Output native interface
 	 \return PAMI_SUCCESS or PAMI_ERROR	         
       */
@@ -40,9 +41,17 @@ class Geometry;
 	( int               *  dispatch_id,
 	  NISelect             sflag,
 	  NIType               tflag,
+	  size_t               nconnections,
 	  NativeInterface   *& ni) = 0;
-      virtual pami_result_t analyze(size_t context_id, void *geometry, int phase, int* flag) = 0;
 
+      /**
+       * \brief Analyze the native interface factory on what operations / native interfaces it can build
+       * \param[in] context_id
+       * \param[in] topology  Communicator topology
+       * \param[in] phase of the analyze
+       * \param[out] flag 
+       */
+      virtual pami_result_t analyze(size_t context_id, pami_topology_t *topology, int phase, int *flag) = 0;
     };
   };
 };

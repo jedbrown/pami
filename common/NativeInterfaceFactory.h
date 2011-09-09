@@ -54,7 +54,7 @@ namespace PAMI {
 		TRACE_FN_EXIT();
 	}
       
-      virtual pami_result_t analyze(size_t context_id, void *geometry, int phase, int* flag){return PAMI_SUCCESS;};
+	virtual pami_result_t analyze(size_t context_id, pami_topology_t *topology, int phase, int* flag){return PAMI_SUCCESS;};
 
       /// \brief Construct a P2p Native Interface
       /// \details
@@ -70,6 +70,7 @@ namespace PAMI {
       virtual pami_result_t generate (int                                                        *   dispatch_id,
 				      CCMI::Interfaces::NativeInterfaceFactory::NISelect             ni_select,
 				      CCMI::Interfaces::NativeInterfaceFactory::NIType               ni_type,
+				      size_t                                     nconnections,
 				      CCMI::Interfaces::NativeInterface                          *&  ni)
       {
 	//TRACE_FN_ENTER();
@@ -229,7 +230,7 @@ namespace PAMI {
 		TRACE_FN_EXIT();
 	}
       
-      virtual pami_result_t analyze(size_t context_id, void *geometry, int phase, int* flag){return PAMI_SUCCESS;};
+	virtual pami_result_t analyze(size_t context_id, pami_topology_t *topo, int phase, int* flag){return PAMI_SUCCESS;};
       
       /// \brief Construct a P2p Native Interface
       /// \details
@@ -245,6 +246,7 @@ namespace PAMI {
       virtual pami_result_t generate (int                                *   dispatch_id,
 				      CCMI::Interfaces::NativeInterfaceFactory::NISelect             ni_select,
 				      CCMI::Interfaces::NativeInterfaceFactory::NIType               ni_type,
+				      size_t                                                         nconnections,
 				      CCMI::Interfaces::NativeInterface                          *&  ni)
       {
 	//TRACE_FN_ENTER();

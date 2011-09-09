@@ -33,6 +33,8 @@
 // Enable experimental (X0) collective protocols
 //#define PAMI_ENABLE_X0_PROTOCOLS
 
-#define PAMI_ALGOLISTS_MAX_NUM 17 // Maximum number of algorithms per collective per geometry
+#define PAMI_ALGOLISTS_MAX_NUM 32 // Maximum number of algorithms per collective per geometry
+#define PAMI_GEOMETRY_NUMALGOLISTS 1// Maximum number of algorithm lists == max number of contexts (do we care about different algo lists for each context in a geometry?)
+
 
 #endif // __common_bgq_platform_h__

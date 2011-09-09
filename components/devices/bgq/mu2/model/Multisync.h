@@ -277,6 +277,7 @@ namespace PAMI
         return 0;
       }; // PAMI::Device::MU::MultisyncModel::dispatch_header
 
+#if 0
       class NullMultisyncModel : public Interface::MultisyncModel < NullMultisyncModel, MU::Context, 0 /*sizeof(state_data_t)*/ >
       {
         public:
@@ -306,6 +307,7 @@ namespace PAMI
             PAMI_abort();
           }
       };
+#endif
 
     };
   };

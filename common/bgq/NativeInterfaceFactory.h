@@ -19,7 +19,7 @@
 
 namespace PAMI {
 
-  template <class T_Allocator, class T_NI, class T_Device, CCMI::Interfaces::NativeInterfaceFactory::NISelect T_Sel, CCMI::Interfaces::NativeInterfaceFactory::NIType T_Type>
+  template <class T_Allocator, class T_NI, class T_Device, CCMI::Interfaces::NativeInterfaceFactory::NISelect T_Sel, CCMI::Interfaces::NativeInterfaceFactory::NIType T_Type, size_t NCONN=-1>
     class BGQNativeInterfaceFactory : public CCMI::Interfaces::NativeInterfaceFactory {
   protected:
     pami_client_t       _client;
@@ -66,6 +66,7 @@ namespace PAMI {
     virtual pami_result_t generate (int                                                        *   dispatch_id,
                                     CCMI::Interfaces::NativeInterfaceFactory::NISelect             ni_select,
                                     CCMI::Interfaces::NativeInterfaceFactory::NIType               ni_type,
+				    size_t                                        nconnections, 
                                     CCMI::Interfaces::NativeInterface                          *&  ni)
     {
       TRACE_FN_ENTER();
@@ -83,17 +84,27 @@ namespace PAMI {
         return result;
       }
       
+      if (NCONN > 0 && nconnections > NCONN)
+	return result;
+
       result = PAMI_SUCCESS;
       // Construct the protocol(s) using the NI dispatch function and cookie
       ni = (CCMI::Interfaces::NativeInterface *) _allocator.allocateObject ();
       TRACE_FORMAT("<%p> ni %p", this,  ni);
-      new ((void *)ni) T_NI (_device, _client, _context, _context_id, _client_id, dispatch_id);
+      new ((void *)ni) T_NI (_device, _allocator, _client, _context, _context_id, _client_id, dispatch_id);
      
       TRACE_FN_EXIT();
       return result;
     }
-    virtual pami_result_t analyze(size_t context_id, void *geometry, int phase, int* flag){return PAMI_SUCCESS;};
-  
+
+    virtual pami_result_t  analyze(size_t context_id, pami_topology_t *topology, int phase, int* flag)
+    {
+      TRACE_FN_ENTER();
+      *flag = 0; 
+      TRACE_FORMAT("<%p> result %u/%u",this,PAMI_OTHER,*flag);
+      TRACE_FN_EXIT();     
+      return PAMI_SUCCESS;// query required (short metadata)
+    }  
   };
 
 
@@ -147,6 +158,7 @@ namespace PAMI {
     virtual pami_result_t generate (int                                                        *   dispatch_id,
 				    CCMI::Interfaces::NativeInterfaceFactory::NISelect             ni_select,
 				    CCMI::Interfaces::NativeInterfaceFactory::NIType               ni_type,
+				    size_t                                                         nconnections, 
 				    CCMI::Interfaces::NativeInterface                          *&  ni)
     {
       TRACE_FN_ENTER();

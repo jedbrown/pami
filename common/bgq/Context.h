@@ -80,13 +80,15 @@ namespace PAMI
     0 > CCMIRegistrationKey2;
 
   typedef CollRegistration::BGQMultiRegistration < BGQGeometry, 
-      ShmemDevice,
-      AllSidedShmemNI, 
-      MUDevice, 
-      MUGlobalNI, 
-      MUAxialDputNI, 
-      MUShmemAxialDputNI > BGQRegistration;
-
+    ShmemDevice,
+    AllSidedShmemNI, 
+    MUDevice, 
+    MUGlobalNI, 
+    MUDputNI, 
+    MUShmemAxialDputNI,
+    MidProtocolAllocator,
+    BigProtocolAllocator > BGQRegistration;
+  
   // Shmem NI class that overrides the metadata name
   template<class T_Parent>
   class ShmemNI_metadata : public T_Parent
@@ -143,14 +145,15 @@ namespace PAMI
         TRACE_FN_EXIT();
       };
           
-      pami_result_t  analyze(size_t context_id, void *vgeometry, int phase, int* flag)
+	pami_result_t  analyze(size_t context_id, pami_topology_t *topology, int phase, size_t nconnections, int* flag)
       {
         TRACE_FN_ENTER();
         *flag=0;
-        BGQGeometry* geometry = (BGQGeometry*) vgeometry;
-        PAMI::Topology * local = (PAMI::Topology*) geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
+	PAMI::Topology *global = (PAMI::Topology *) topology; 
+        PAMI::Topology local;
+	global->subTopologyLocalToMe(&local);
         pami_result_t result = PAMI_UNIMPL; // not supported 
-        if(local->size() == geometry->size()) result = PAMI_SUCCESS; // all local/shmem - ok
+        if(local.size() == global->size()) result = PAMI_SUCCESS; // all local/shmem - ok
         TRACE_FORMAT("<%p> result %u/%u",this,result,*flag);
         TRACE_FN_EXIT();
         return result;
@@ -158,17 +161,19 @@ namespace PAMI
   };
 
   // MU NI class that overrides the metadata name and possibly the range (templatized)
-  template<class T_Parent, int T_Range_Hi=0>
+  template<class T_Parent, class T_Allocator, int T_Range_Hi=0>
   class MUNI_metadata : public T_Parent
   {
+   protected:
     char name[48];
     const char* niName;
-  public:
-    MUNI_metadata(MUDevice &device, pami_client_t client, pami_context_t context, size_t context_id, size_t client_id, int *dispatch_id) :
-      T_Parent(device,client,context,context_id,client_id,dispatch_id)
+   public:
+  MUNI_metadata(MUDevice &device, T_Allocator &allocator, pami_client_t client, pami_context_t context, size_t context_id, size_t client_id, int *dispatch_id) :
+   T_Parent(device,allocator,client,context,context_id,client_id,dispatch_id)
     {
         TRACE_FN_ENTER();
-        if(T_Range_Hi) niName="-:ShortMU";
+        if(T_Range_Hi) 
+	  niName="-:ShortMU";
         else niName = "-:MU";
         TRACE_FORMAT("<%p>%s,%d",this,niName,T_Range_Hi);
         TRACE_FN_EXIT();
@@ -189,7 +194,7 @@ namespace PAMI
     void metadata(pami_metadata_t *m, pami_xfer_type_t t) 
     {
       TRACE_FN_ENTER();
-      TRACE_FORMAT("<%p> %s type %u",this,m->name,t);
+      //printf("<%p> %s type %u cur niName %s",this,m->name,t, niName);
       char* s = strstr(m->name,"P2P");
       PAMI_assertf(sizeof(name) >= (s-m->name)+strlen(niName)+1,"%zu >= %zu",sizeof(name),(s-m->name)+strlen(niName)+1);
       memcpy(name,m->name,(s-m->name));
@@ -207,11 +212,11 @@ namespace PAMI
   };
 
   // MU NI factory for MUNI_metadata<MUNI_AM>/MUNI_metadata<MUNI_AS>
-  typedef NativeInterfaceCommon::NativeInterfaceFactory <MidProtocolAllocator,  MUNI_metadata<MUNI_AM>,  MUNI_metadata<MUNI_AS>, MUEager, MUDevice> MUNIFactory;
+  typedef NativeInterfaceCommon::NativeInterfaceFactory <MidProtocolAllocator,  MUNI_metadata<MUNI_AM, MidProtocolAllocator>,  MUNI_metadata<MUNI_AS, MidProtocolAllocator>, MUEager, MUDevice> MUNIFactory;
 
   // MU NI factory for MUNI_metadata<MUAMMulticastNI,(512-16)> which will
   // override analyze to set query-required for (short) range metadata
-  class MUAMMulticastFactory : public BGQNativeInterfaceFactory < BigProtocolAllocator, MUNI_metadata<MUAMMulticastNI,(512-16)>, MUDevice, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE>
+  class MUAMMulticastFactory : public BGQNativeInterfaceFactory < MidProtocolAllocator, MUNI_metadata<MUAMMulticastNI,MidProtocolAllocator, (512-16)>, MUDevice, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE>
   {
   public:
     MUAMMulticastFactory( pami_client_t       client,
@@ -219,8 +224,8 @@ namespace PAMI
                           size_t              clientid,
                           size_t              contextid,
                           MUDevice          & device,
-                          BigProtocolAllocator       & allocator) : 
-      BGQNativeInterfaceFactory < BigProtocolAllocator, MUNI_metadata<MUAMMulticastNI,(512-16)>, MUDevice, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE>
+			  MidProtocolAllocator       & allocator) : 
+    BGQNativeInterfaceFactory <MidProtocolAllocator, MUNI_metadata<MUAMMulticastNI,MidProtocolAllocator, (512-16)>, MUDevice, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE>
         ( client,
           context,
           clientid,
@@ -232,7 +237,7 @@ namespace PAMI
         TRACE_FORMAT("<%p>",this);
         TRACE_FN_EXIT();
       };
-      pami_result_t  analyze(size_t context_id, void *geometry, int phase, int* flag)
+      pami_result_t  analyze(size_t context_id, pami_topology_t *topology, int phase, int nconnections, int* flag)
       {
         TRACE_FN_ENTER();
         *flag = 0; 
@@ -275,6 +280,9 @@ namespace PAMI
       TRACE_FN_EXIT();
     };
   };
+
+
+
 
   // Composite (MU/SHMEM) NI factory for CompositeNI_metadata
   typedef NativeInterfaceCommon::NativeInterfaceFactory2Device <MidProtocolAllocator, CompositeNI_metadata<CompositeNI_AM>, CompositeNI_metadata<CompositeNI_AS>, ShmemEager, ShmemDevice, MUEager, MUDevice> CompositeNIFactory;
@@ -768,7 +776,7 @@ namespace PAMI
 #endif  
 
           _shmem_native_interface  = (AllSidedShmemNI*)_shmem_native_interface_storage;
-          new (_shmem_native_interface_storage) AllSidedShmemNI(_shmemMcastModel, _shmemMsyncModel, _shmemMcombModel, client, (pami_context_t)this, id, clientid, &_dispatch.id);
+          new (_shmem_native_interface_storage) AllSidedShmemNI(_shmemMcastModel, _shmemMsyncModel, _shmemMcombModel, _mid_protocol, client, (pami_context_t)this, id, clientid, &_dispatch.id);
         }
         TRACE_FORMAT( "<%p:%u>, dispatch.id %u", this,__LINE__, _dispatch.id);
 
@@ -801,7 +809,9 @@ namespace PAMI
                             id,
                             clientid,
                             &_dispatch.id,
-                            _geometry_map);
+                            _geometry_map,
+			    _mid_protocol,
+			    _big_protocol);
             uint64_t inval = (uint64_t)-1;
             _multi_registration->receive_global (_contextid, _world_geometry, &inval, 1);
         }
@@ -865,7 +875,7 @@ namespace PAMI
             TRACE_FORMAT("Allocator:  sizeof(MUAMMulticastFactory) %zu, ProtocolAllocator::objsize %zu",sizeof(MUAMMulticastFactory),ProtocolAllocator::objsize);
             CCMI::Interfaces::NativeInterfaceFactory *ni_factory_muam = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
             TRACE_FORMAT("MU AM CCMI NI %p, registration %p", ni_factory_muam,  _ccmi_registration_muam_storage);
-            new (ni_factory_muam) MUAMMulticastFactory (_client, _context, _clientid, _contextid, _devices->_mu[_contextid], _big_protocol);
+            new (ni_factory_muam) MUAMMulticastFactory (_client, _context, _clientid, _contextid, _devices->_mu[_contextid], _mid_protocol);
           
             _ccmi_registration_muam =  new((CCMIRegistrationKey2*)_ccmi_registration_muam_storage) 	
             CCMIRegistrationKey2(_client, _context, _contextid, _clientid, 
@@ -906,7 +916,7 @@ namespace PAMI
           _world_geometry->resetUEBarrier(); // Reset so ccmi will select the UE barrier
           _ccmi_registration_muam->analyze(_contextid, _world_geometry, 0);
         }
-
+	
         if(_multi_registration) // && (((PAMI::Topology*)_world_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
         {
            _multi_registration->analyze(_contextid, _world_geometry, 0);
