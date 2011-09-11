@@ -30,40 +30,14 @@ namespace PAMI
     {
     public:
       BSRGeometryInfo(int       geometry_id,
-                      Topology *topology):
+                      Topology *topology,
+                      uint64_t  shm_unique_key):
         _geometry_id(geometry_id),
         _topology(topology),
-        _in_barrier(false)
+        _in_barrier(false),
+        _shm_unique_key(shm_unique_key)
         {
-            GenerateUniqueKey();
         }
-
-      void GenerateUniqueKey() {
-          srand(_geometry_id);
-          _shm_unique_key = 0;
-          switch (_topology->type()) {
-              case PAMI_RANGE_TOPOLOGY:
-                  {
-                      pami_task_t rfirst;
-                      pami_task_t rlast;
-                      _topology->rankRange(&rfirst, &rlast);
-                      for (uint64_t i = (size_t)rfirst; i <= (uint64_t)rlast; i ++) {
-                          _shm_unique_key += (rand()*i);
-                      }
-                      break;
-                  }
-              default:
-                  {
-                      pami_task_t *rlist;
-                      _topology->rankList(&rlist);
-                      for (int i = 0; i < _topology->size(); i ++) {
-                          _shm_unique_key += (rand()*(uint64_t)rlist[i]);
-                      }
-                      break;
-                  }
-          }
-      }
-
       SaOnNodeSyncGroup         _sync_group;
       int                       _geometry_id;
       Topology                 *_topology;

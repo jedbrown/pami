@@ -45,19 +45,22 @@ namespace PAMI
                                 size_t         client_id,
                                 pami_context_t context,
                                 size_t         context_id,
+                                unsigned       cau_uniqifier,
                                 int           *dispatch_id)
         {
-          _lapi_state  = lapi_state;
-          _lapi_handle = lapi_handle;
-          _client      = client;
-          _client_id   = client_id;
-          _context     = context;
-          _context_id  = context_id;
-          _dispatch_id = dispatch_id;
+          _lapi_state    = lapi_state;
+          _lapi_handle   = lapi_handle;
+          _client        = client;
+          _client_id     = client_id;
+          _context       = context;
+          _context_id    = context_id;
+          _cau_uniqifier = cau_uniqifier;
+          _dispatch_id   = dispatch_id;
           lapi_qenv(_lapi_handle, TASK_ID, (int *)&_taskid);
         }
       inline lapi_state_t  *getState() { return _lapi_state;}
       inline lapi_handle_t  getHdl() { return _lapi_handle;}
+      inline unsigned       getUniqifier() { return _cau_uniqifier; }
       inline int            registerSyncDispatch(hdr_hndlr_t *hdr,
                                                  void        *clientdata)
         {
@@ -164,6 +167,7 @@ namespace PAMI
       size_t                                                            _context_id;
       int                                                              *_dispatch_id;
       pami_task_t                                                       _taskid;
+      unsigned                                                          _cau_uniqifier;
       Generic::Device                                                  *_generics;
       PAMI::MemoryAllocator<sizeof(Generic::GenericThread), 16>         _work_alloc;
       PAMI::MemoryAllocator<sizeof(CAUMcastMessage),16>                 _bcast_msg_allocator;

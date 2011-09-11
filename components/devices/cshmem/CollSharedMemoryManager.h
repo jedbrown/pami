@@ -106,7 +106,7 @@ namespace PAMI
           T_Counter           term_count;
           T_Mutex             ctlstr_pool_lock;
           T_Mutex             buffer_pool_lock;
-          volatile uint64_t   clientdata_key;
+          volatile int64_t    clientdata_key;
           size_t              ctlstr_offset;
           size_t              buffer_offset;
           volatile size_t     free_ctlstr_list_offset;
@@ -230,52 +230,28 @@ namespace PAMI
             }
 
         }
-
-        uint64_t getKey()
+        inline pami_result_t allocateKey()
         {
-          uint64_t returnKey;
+          pami_result_t rc = PAMI_SUCCESS;
           _collshm->buffer_pool_lock.acquire();
-          returnKey = _collshm->clientdata_key;
+          if(_collshm->clientdata_key > 0)
+            _collshm->clientdata_key--;
+          else
+            rc = PAMI_ERROR;
+
+          PAMI_ASSERT(_collshm->clientdata_key>=0);
           _collshm->buffer_pool_lock.release();
-          return returnKey;
+          return rc;
         }
-        uint64_t getAndSetKey(uint64_t in)
+        inline pami_result_t returnKey()
         {
-          uint64_t returnKey;
+          pami_result_t rc = PAMI_SUCCESS;
           _collshm->buffer_pool_lock.acquire();
-          returnKey = _collshm->clientdata_key;
-          _collshm->clientdata_key = in;
+          _collshm->clientdata_key++;
+          PAMI_ASSERT(_collshm->clientdata_key <= _key);
           _collshm->buffer_pool_lock.release();
-          return returnKey;
+          return rc;
         }
-
-        void setKeyBit(int index)
-        {
-          _collshm->buffer_pool_lock.acquire();
-          _collshm->clientdata_key |= (1ULL << (index));
-          _collshm->buffer_pool_lock.release();
-          return;
-        }
-
-
-        void setKey(uint64_t in)
-        {
-          _collshm->buffer_pool_lock.acquire();
-          _collshm->clientdata_key = in;
-          _collshm->buffer_pool_lock.release();
-          return;
-        }
-
-        void setKeyOR(uint64_t in)
-        {
-          _collshm->buffer_pool_lock.acquire();
-          _collshm->clientdata_key |= in;
-          _collshm->buffer_pool_lock.release();
-          return;
-        }
-
-        
-
         ///
         /// \brief Get a whole chunk of INIT_BUFCNT new data buffers from the pool
         ///        Hold buffer pool lock.
@@ -660,7 +636,7 @@ namespace PAMI
         collshm_t                *_collshm;       // base pointer of the shared memory segment
         size_t                    _localrank;      // rank in the local topology
         size_t                    _localsize;      // size of the local topology
-        uint64_t                  _key;
+        int64_t                   _key;
         Memory::MemoryManager    *_mm;
 
     };  // class CollSharedmemoryManager

@@ -61,6 +61,8 @@ namespace PAMI
 
         inline ~Lapi ()
         {
+          PAMI_assert(_destroyed == false);
+          _destroyed = true;
           freeAllocations_impl();
         }
 
@@ -86,7 +88,8 @@ namespace PAMI
             _geometry_map(geometry_map),
             _allreduce_async_mode(0),
             _allreduce_iteration(0),
-            _masterRank(-1)
+            _masterRank(-1),
+            _destroyed(false)
         {
           TRACE_ERR((stderr, "<%p>Lapi(ranklist)\n", this));
           // this creates the topology including all subtopologies
@@ -128,7 +131,8 @@ namespace PAMI
             _geometry_map(geometry_map),
             _allreduce_async_mode(0),
             _allreduce_iteration(0),
-            _masterRank(-1)
+            _masterRank(-1),
+            _destroyed(false)
         {
           TRACE_ERR((stderr, "<%p>Lapi(ranges)\n", this));
 
@@ -250,7 +254,8 @@ namespace PAMI
             _geometry_map(geometry_map),
             _allreduce_async_mode(0),
             _allreduce_iteration(0),
-            _masterRank(-1)
+            _masterRank(-1),
+            _destroyed(false)
         {
           TRACE_ERR((stderr, "<%p>Lapi(topology)\n", this));
 
@@ -873,7 +878,7 @@ namespace PAMI
         pami_task_t                                 _masterRank;
         std::list<pami_event_function>              _cleanupFcns;
         std::list<void*>                            _cleanupDatas;
-
+        bool                                        _destroyed;
     }; // class Geometry
   };  // namespace Geometry
 }; // namespace PAMI

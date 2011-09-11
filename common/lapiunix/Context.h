@@ -456,7 +456,8 @@ namespace PAMI
           return PAMI_SUCCESS;
         }
 
-      inline pami_result_t initDevices(bool affinity_checked)
+      inline pami_result_t initDevices(bool      affinity_checked,
+                                       unsigned  cau_uniqifier)
         {
           _cau_device.init((lapi_state_t*)_lapi_state,
                            _lapi_handle,
@@ -464,6 +465,7 @@ namespace PAMI
                            _clientid,
                            _context,
                            _contextid,
+                           cau_uniqifier,
                           &_dispatch_id);
 
           _bsr_device.init(_client, 
@@ -487,6 +489,7 @@ namespace PAMI
 
       inline pami_result_t destroy_impl ()
         {
+          _cau_collreg->invalidateContext();
           LapiImpl::Context *ep = (LapiImpl::Context *)(lapi_state_t*)_lapi_state;
           int rc = LAPI__Term(ep->my_hndl);
           if (rc) {

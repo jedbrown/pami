@@ -21,7 +21,7 @@ extern pthread_once_t  _Per_proc_lapi_init;
 extern void _lapi_perproc_setup(void);
 extern PAMI::PamiActiveClients  _pami_act_clients;
 
-void
+inline void
 simplesplit(vector<string> &vec,
             const  string  &str,
             const  string  &del )
@@ -35,6 +35,16 @@ simplesplit(vector<string> &vec,
       start =((end>(string::npos-del.size()))
               ?string::npos:end+del.size());
     }
+}
+
+static inline int find_first_bit(uint64_t in)
+{
+  int index;
+  if (in == 0)
+    return (0);
+  for (index = 1; !(in&1); index++)
+    in = (uint64_t)in >> 1;
+  return index;
 }
 
 namespace PAMI
@@ -203,7 +213,7 @@ namespace PAMI
         if(rc) {result=rc; _contexts[0]->unlock(); return;}
 
         // Initialize the mapping to be used for collectives
-        __global.mapping.init(myrank, mysize);        
+        __global.mapping.init(myrank, mysize);
 
         // TODO: remove this return for collectives supporting multiple endpoints
         if (_Lapi_env.endpoints > 1) {
@@ -221,7 +231,7 @@ namespace PAMI
         world_procs = getenv("MP_I_WORLD_PROCS");
         world_tasks = getenv("MP_I_WORLD_TASKS");
         dyntasking  = getenv("MP_I_DYNAMIC_TASKING");
-        
+
         // If I am a spawned task, Do not set up a geometry, or even
         // a mapping
         // see the TODO below about building mappings for
@@ -242,7 +252,7 @@ namespace PAMI
         pami_result_t shm_rc = initializeMemoryManager ();
         if(shm_rc == PAMI_SUCCESS)
           _disable_shm = false;
-        
+
         // We do something slightly different for dynamic tasking
         // vs non-dynamic tasking.  In the dynamic tasking case,
         // the world geometry is only available for the "world" created
@@ -264,7 +274,7 @@ namespace PAMI
             _world_list = (pami_task_t*)malloc(num_world_procs*sizeof(pami_task_t));
             for( unsigned int i = 0;  i < vec.size();   i++ )
               _world_list[i]=atoi(vec[i].c_str());
-            
+
             // Initialize world geometry object, and set the geometry ptr for the context
             _world_geometry = (LAPIGeometry*)_geometryAlloc.allocateObject();
             new(_world_geometry) LAPIGeometry((pami_client_t) this,
@@ -314,7 +324,7 @@ namespace PAMI
         __global.mapping.set_mapcache(_mapcache,
                                       _peers,
                                       _npeers);
-        
+
         PAMI::Topology::static_init(&__global.mapping);
 
         // Generate the "generic" device queues
@@ -331,10 +341,11 @@ namespace PAMI
 
         // gather and exchange affinity info from all tasks to enable/disable BSR
         // this is a blocking call
-        bool affinity_checked = generateAffinityInfo();
+        // Also find the first common cau index
+        bool affinity_checked = generateDeviceInfo();
 
         // initialize CAU and BSR devices
-        _contexts[0]->initDevices(affinity_checked);
+        _contexts[0]->initDevices(affinity_checked, _cau_uniqifier);
 
         // Initialize the optimized collectives
         initCollectives(_contexts[0], &_mm, _disable_shm);
@@ -510,7 +521,7 @@ namespace PAMI
     // a blocking call to gather and exchange affinity info among tasks
     // return true when affinity is right for BSR
     // return false otherwise
-    bool generateAffinityInfo()
+    bool generateDeviceInfo()
       {
         pami_xfer_type_t   colltype = PAMI_XFER_ALLREDUCE;
         pami_algorithm_t   alg;
@@ -520,33 +531,40 @@ namespace PAMI
         pami_result_t      rc;
 
         // gather local affinity info through PNSD
-        unsigned int affinityCheck =
-            (((LapiImpl::Context*)_contexts[0])->CheckAffinityInfo())?1:0;
+        uint64_t deviceCheck[2];
+        deviceCheck[0] = (((LapiImpl::Context*)_contexts[0])->CheckAffinityInfo())?1:0;
+        deviceCheck[1] = ((LapiImpl::Context*)_contexts[0])->nrt[0]->table_info.cau_index_resources;
 
-        unsigned int affinityCheckResult = 0;
+        volatile uint64_t deviceCheckResult[2] = {0,0};
 
         _world_geometry->algorithms_info(colltype,&alg,&mdata,1,NULL,NULL,0,0);
 
         xfer.cb_done                        = decrement_done_fn;
         xfer.cookie                         = (void*)&flag;
         xfer.algorithm                      = alg;
-        xfer.cmd.xfer_allreduce.sndbuf      = (char*)&affinityCheck;
-        xfer.cmd.xfer_allreduce.stype       = PAMI_TYPE_UNSIGNED_INT;
-        xfer.cmd.xfer_allreduce.stypecount  = 1;
-        xfer.cmd.xfer_allreduce.rcvbuf      = (char*)&affinityCheckResult;
-        xfer.cmd.xfer_allreduce.rtype       = PAMI_TYPE_UNSIGNED_INT;
-        xfer.cmd.xfer_allreduce.rtypecount  = 1;
+        xfer.cmd.xfer_allreduce.sndbuf      = (char*)&deviceCheck[0];
+        xfer.cmd.xfer_allreduce.stype       = PAMI_TYPE_UNSIGNED_LONG_LONG;
+        xfer.cmd.xfer_allreduce.stypecount  = 2;
+        xfer.cmd.xfer_allreduce.rcvbuf      = (char*)&deviceCheckResult[0];
+        xfer.cmd.xfer_allreduce.rtype       = PAMI_TYPE_UNSIGNED_LONG_LONG;
+        xfer.cmd.xfer_allreduce.rtypecount  = 2;
         xfer.cmd.xfer_allreduce.op          = PAMI_DATA_BAND;
         xfer.cmd.xfer_allreduce.commutative = 1;
         xfer.cmd.xfer_allreduce.data_cookie = NULL;
-        
+
         // do an allreduce to exchange affinity info
         _contexts[0]->collective(&xfer);
 
         while(flag)
           _contexts[0]->advance(10,rc);
 
-        return (affinityCheckResult == 1);
+        _cau_uniqifier = find_first_bit(deviceCheckResult[1]);
+        
+        ITRC(IT_CAU, "Client CAU Discovery: inmask=0x%llx reducemask=0x%llx _cau_uniq=%u\n",
+             deviceCheck[1], deviceCheckResult[1], _cau_uniqifier);
+        
+
+        return (deviceCheckResult[0] == 1);
       }
 
 
@@ -570,8 +588,8 @@ namespace PAMI
         if (res != PAMI_SUCCESS)
           return res;
         *client = (pami_client_t) clientp;
-        
-        // Store newly created client into global structure 
+
+        // Store newly created client into global structure
         res = _pami_act_clients.AddClient(*client);
         if (res != PAMI_SUCCESS)
           RETURN_ERR_PAMI(PAMI_ERROR, "Failed to add the created client to the active client counter.\n");
@@ -580,9 +598,9 @@ namespace PAMI
 
     static void destroy_impl (pami_client_t client)
       {
-        // Delete destroyed client from global structure 
+        // Delete destroyed client from global structure
         _pami_act_clients.RemoveClient(client);
-          
+
         Client *c = (Client *) client;
         c->~Client();
         __global.heap_mm->free(client);
@@ -668,10 +686,10 @@ namespace PAMI
             PAMI::Context *c = _contexts[i];
             _contexts[i]     = NULL;
             pami_result_t r  = c->destroy();
-	    if (r != PAMI_SUCCESS) rc = r;
+	    if (r != PAMI_SUCCESS) rc = r;            
             _contextAlloc.returnObject((void *)c);
           }
-	_ncontexts = 0;
+	_ncontexts = 0;        
         return rc;
       }
 
@@ -713,14 +731,14 @@ namespace PAMI
                       configuration[i].value.doubleval =__global.time.tick();
                   }
                   break;
-           
+
                 case PAMI_CLIENT_CLOCK_MHZ:
                 case PAMI_CLIENT_WTIMEBASE_MHZ:
                   if (_Lapi_env.use_hfi) {
                       LapiImpl::Client *lapi_client = (LapiImpl::Client *)_lapiClient;
                       configuration[i].value.intval = lapi_client->GetWtimebaseMhz();
                   } else {
-                      configuration[i].value.intval = __global.time.clockMHz(); 
+                      configuration[i].value.intval = __global.time.clockMHz();
                   }
                   break;
                 case PAMI_GEOMETRY_OPTIMIZE:
@@ -827,14 +845,6 @@ namespace PAMI
             return PAMI_EAGAIN;
           }
         }
-      static void phase_done(pami_context_t context, void *cookie, pami_result_t result)
-        {
-          TRACE((stderr, "%p phase_done\n", cookie));
-          PostedClassRoute<LAPIGeometry> *classroute = (PostedClassRoute<LAPIGeometry> *)cookie;
-          classroute->start();
-        }
-
-
     static void cr_func(pami_context_t  context,
                         void           *cookie,
                         uint64_t       *reduce_result,
@@ -851,19 +861,7 @@ namespace PAMI
         classroute->_context->_cau_collreg->analyze(0,classroute->_geometry,
                                                     &reduce_result[2],&count,1);
       }
-
-    static void cr_func2(pami_context_t  context,
-                        void            *cookie,
-                        uint64_t        *reduce_result,
-                        LAPIGeometry    *g,
-                        pami_result_t    result )
-      {
-        TRACE((stderr, "%p CR FUNC 2\n", cookie));
-        int count=1;
-        PostedClassRoute<LAPIGeometry> *classroute = (PostedClassRoute<LAPIGeometry> *)cookie;
-        classroute->_context->_cau_collreg->analyze(0,g,&reduce_result[2],&count,2);
-      }
-
+      
     static void create_classroute(pami_context_t context, void *cookie, pami_result_t result)
       {
         // Barrier is done, start phase 1
@@ -902,7 +900,7 @@ namespace PAMI
       bool            _free_bitmask;
       GenericThread   _work;
     };
-    
+
     inline pami_result_t geometry_create_taskrange_impl(pami_geometry_t       * geometry,
                                                         pami_configuration_t    configuration[],
                                                         size_t                  num_configs,
@@ -937,7 +935,7 @@ namespace PAMI
                                           slice_count,
                                           rank_slices,
                                           &_geometry_map);
-            
+
             PAMI::Topology *local_master_topology  = (PAMI::Topology *)new_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
             to_reduce_count = 3 + local_master_topology->size();
             rc = __global.heap_mm->memalign((void **)&to_reduce, 0,
@@ -985,17 +983,21 @@ namespace PAMI
                                           0,
                                           ctxt->getId());
             Geometry::Algorithm<LAPIGeometry> *ar_algo = (Geometry::Algorithm<LAPIGeometry> *)alg;
-            PostedClassRoute<LAPIGeometry> *cr[2];
+            PostedClassRoute<LAPIGeometry> *cr[1];
 	    rc = __global.heap_mm->memalign((void **)&cr[0], 0, sizeof(PostedClassRoute<LAPIGeometry>));
 	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PostedClassRoute<LAPIGeometry>");
-            rc = __global.heap_mm->memalign((void **)&cr[1], 0, sizeof(PostedClassRoute<LAPIGeometry>));
-	    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PostedClassRoute<LAPIGeometry>");
-            new(cr[0])PostedClassRoute<LAPIGeometry>(ctxt,ar_algo,new_geometry,to_reduce,
-                                                     to_reduce_count,PostedClassRoute<LAPIGeometry>::cr_func,
-                                                     cr[0],PostedClassRoute<LAPIGeometry>::phase_done,cr[1]);
-            new(cr[1])PostedClassRoute<LAPIGeometry>(ctxt,ar_algo,new_geometry,to_reduce,
-                                                     to_reduce_count,PostedClassRoute<LAPIGeometry>::cr_func2,
-                                                     cr[1],fn,cookie, true);
+            to_reduce[0] = 0;
+            to_reduce[1] = 0;
+            new(cr[0])PostedClassRoute<LAPIGeometry>(ctxt,
+                                                     ar_algo,
+                                                     new_geometry,
+                                                     to_reduce,
+                                                     to_reduce_count,
+                                                     PostedClassRoute<LAPIGeometry>::cr_func,
+                                                     cr[0],
+                                                     fn,
+                                                     cookie,
+                                                     true);
             TRACE((stderr, "Allocated Classroutes:  %p %p\n", cr[0], cr[1]));
             if(bargeom)
               bargeom->default_barrier(PostedClassRoute<LAPIGeometry>::create_classroute, cr[0], ctxt->getId(), context);
@@ -1050,7 +1052,7 @@ namespace PAMI
         LAPIGeometry              *new_geometry = NULL;
         uint64_t                  *to_reduce;
         uint                      to_reduce_count;
-        pami_result_t             rc; 
+        pami_result_t             rc;
         // If our new geometry is NOT NULL, we will create a new geometry
         // for this client.  This new geometry will be populated with a
         // set of algorithms.
@@ -1116,19 +1118,21 @@ namespace PAMI
                                           0,
                                           ctxt->getId());
             Geometry::Algorithm<LAPIGeometry> *ar_algo = (Geometry::Algorithm<LAPIGeometry> *)alg;
-            PostedClassRoute<LAPIGeometry> *cr[2];
+            PostedClassRoute<LAPIGeometry> *cr[1];
             rc = __global.heap_mm->memalign((void **)&cr[0], 0, sizeof(PostedClassRoute<LAPIGeometry>));
-            PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PostedClassRoute<LAPIGeometry>");
-            rc = __global.heap_mm->memalign((void **)&cr[1], 0, sizeof(PostedClassRoute<LAPIGeometry>));
             PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PostedClassRoute<LAPIGeometry>");
             to_reduce[0] = 0;
             to_reduce[1] = 0;
-            new(cr[0])PostedClassRoute<LAPIGeometry>(ctxt,ar_algo,new_geometry,to_reduce,
-                                                     to_reduce_count,PostedClassRoute<LAPIGeometry>::cr_func,
-                                                     cr[0],PostedClassRoute<LAPIGeometry>::phase_done,cr[1]);
-            new(cr[1])PostedClassRoute<LAPIGeometry>(ctxt,ar_algo,new_geometry,to_reduce,
-                                                     to_reduce_count,PostedClassRoute<LAPIGeometry>::cr_func2,
-                                                     cr[1],fn,cookie, true);
+            new(cr[0])PostedClassRoute<LAPIGeometry>(ctxt,
+                                                     ar_algo,
+                                                     new_geometry,
+                                                     to_reduce,
+                                                     to_reduce_count,
+                                                     PostedClassRoute<LAPIGeometry>::cr_func,
+                                                     cr[0],
+                                                     fn,
+                                                     cookie,
+                                                     true);
             if(bargeom)
               bargeom->default_barrier(PostedClassRoute<LAPIGeometry>::create_classroute, cr[0], ctxt->getId(), context);
             else
@@ -1302,7 +1306,7 @@ namespace PAMI
         _contexts[0]->punlock();
         return PAMI_SUCCESS;
       }
-    
+
     inline pami_geometry_t mapidtogeometry_impl (int comm)
       {
         pami_geometry_t g = _geometry_map[comm];
@@ -1320,7 +1324,7 @@ namespace PAMI
         new (ueb) Geometry::UnexpBarrierQueueElement (comm, info, peer, algorithm);
         _ueb_queue.pushTail(ueb);
       }
-    
+
     inline double wtime_impl ()
       {
           if (_Lapi_env.use_hfi) {
@@ -1356,7 +1360,7 @@ namespace PAMI
           {
             char   shmemfile[PAMI::Memory::MMKEYSIZE];
             size_t bytes     = COLLSHM_SEGSZ +      // Shmem used by collshm
-              P2PSHM_MEMSIZE;      // Shmem used by p2pshm 
+              P2PSHM_MEMSIZE;      // Shmem used by p2pshm
             size_t pagesize  = COLLSHM_PAGESZ;
 
             // Convert string to lower case so the string can be found by
@@ -1373,8 +1377,8 @@ namespace PAMI
       }
 
   private:
-    // LAPI Client object. use this for direct access 
-    char                    _lapiClient[sizeof(LapiImpl::Client)];
+    // LAPI Client object. use this for direct access
+    char                                         _lapiClient[sizeof(LapiImpl::Client)];
 
     // Array of PAMI Contexts associated with this Client
     PAMI::Context                               *_contexts[128];
@@ -1414,7 +1418,7 @@ namespace PAMI
 
     // This is a map of geometries to geometry id's
     std::map<unsigned, pami_geometry_t>          _geometry_map;
-    
+
     // Shared Memory Manager for this Client
     Memory::GenMemoryManager                     _mm;
 
@@ -1438,10 +1442,13 @@ namespace PAMI
     MemoryAllocator <sizeof(PAMI::Geometry::UnexpBarrierQueueElement), 16> _ueb_allocator;
 
     //  Unexpected Barrier match queue
-    MatchQueue                                                             _ueb_queue;
+    MatchQueue                                   _ueb_queue;
 
     // Active contexts in the Client
     PamiActiveContexts                           _active_contexts;
+
+    // Unique, shared cau index to identify cau resources across jobs
+    unsigned                                     _cau_uniqifier;
   }; // end class PAMI::Client
 }; // end namespace PAMI
 
