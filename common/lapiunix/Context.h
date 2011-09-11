@@ -205,10 +205,14 @@ namespace PAMI
   // Shared Memory P2P Typedefs
   typedef Fifo::FifoPacket <P2PSHM_HDRSIZE,P2PSHM_PKTSIZE>            ShmemPacket;
   typedef Fifo::LinearFifo<ShmemPacket, Counter::Indirect<Counter::Native> > ShmemFifo;
-  typedef Device::ShmemDevice<ShmemFifo, Counter::Indirect<Counter::Native>, Device::Shmem::NoShaddr, 128, 4096 > ShmemDevice;
+  typedef Device::ShmemDevice<ShmemFifo,
+                              Counter::Indirect<Counter::Native>,
+                              Device::Shmem::NoShaddr,
+                              128,
+                              4096 > ShmemDevice;
   typedef Device::Shmem::PacketModel<ShmemDevice>                     ShmemPacketModel;
   typedef Protocol::Send::Eager <ShmemPacketModel>                    ShmemEagerBase;
-  typedef PAMI::Protocol::Send::SendWrapperPWQ < ShmemEagerBase >            ShmemEager;
+  typedef PAMI::Protocol::Send::SendWrapperPWQ < ShmemEagerBase >     ShmemEager;
 
   // "New" Collective Message Typedefs
   typedef Device::CAUMsyncMessage                                     CAUMsyncMessage;
@@ -277,12 +281,15 @@ namespace PAMI
   typedef Atomic::NativeAtomic                                                   LAPICSAtomic;
   typedef Counter::Native                                                        LAPICSCounter;
   typedef Mutex::YieldingNative                                                  LAPICSMutex;
-  typedef PAMI::Memory::CollSharedMemoryManager<LAPICSAtomic,LAPICSMutex,LAPICSCounter,COLLSHM_SEGSZ,COLLSHM_PAGESZ,
-                                    COLLSHM_WINGROUPSZ,COLLSHM_BUFSZ>            LAPICSMemoryManager;
+  typedef PAMI::Memory::CollSharedMemoryManager<LAPICSAtomic,
+                                                LAPICSMutex,
+                                                LAPICSCounter,
+                                                COLLSHM_SEGSZ,COLLSHM_PAGESZ,
+                                                COLLSHM_WINGROUPSZ,COLLSHM_BUFSZ> LAPICSMemoryManager;
   typedef PAMI::Device::CollShm::CollShmDevice<LAPICSAtomic,
                                                LAPICSMemoryManager,
                                                COLLSHM_DEVICE_NUMSYNCS,
-                                               COLLSHM_DEVICE_SYNCCOUNT>  LAPICSDevice;
+                                               COLLSHM_DEVICE_SYNCCOUNT>         LAPICSDevice;
   typedef PAMI::Device::CollShm::CollShmModel<LAPICSDevice, LAPICSMemoryManager> LAPICollShmModel;
   typedef PAMI::Device::CSNativeInterface<LAPICollShmModel>                      LAPICSNativeInterface;
 
@@ -307,6 +314,10 @@ namespace PAMI
                                                  CAUNativeInterface,
                                                  BSRNativeInterface,
                                                  LAPICollShmModel,
+                                                 DeviceWrapper,
+                                                 LAPISendNI_AM,
+                                                 ProtocolAllocator,
+                                                 LAPISend,
                                                  LAPICSMemoryManager>  CAUCollreg;
 
   typedef Geometry::ClassRouteId<LAPIGeometry> LAPIClassRouteId;

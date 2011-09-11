@@ -106,6 +106,8 @@ namespace PAMI
                                            *ctxt->_devices->_generics,
                                            ctxt->_bsr_device,
                                            ctxt->_cau_device,
+                                           ctxt->_lapi_device,
+                                           ctxt->_protocol,
                                            __global.mapping,
                                            ctxt->_lapi_handle,
                                            &ctxt->_dispatch_id,

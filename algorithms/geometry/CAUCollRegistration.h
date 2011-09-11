@@ -25,16 +25,20 @@
 #include "algorithms/protocols/CollectiveProtocolFactoryT.h"
 #include "common/lapiunix/lapifunc.h"
 
-#ifdef TRACE
-#undef TRACE
-#define TRACE(x)  //fprintf x
-#else
-#define TRACE(x)  //fprintf x
-#endif
 
+#define CAU_SETUPNI_P2P(NI_PTR) rc =                                    \
+    NativeInterfaceCommon::constructNativeInterface                     \
+    <T_Allocator, T_NI_P2P, T_Protocol, T_Device_P2P,                   \
+     NativeInterfaceCommon::P2P_ONLY>(                                  \
+       _proto_alloc,                                                    \
+       _dev_p2p,                                                        \
+       NI_PTR,                                                          \
+       _client,                                                         \
+       _context,                                                        \
+       _context_id,                                                     \
+       _client_id,                                                      \
+       _dispatch_id)
 
-
-// Collective Registration for CAU protocols for p2p
 namespace PAMI
 {
   namespace CollRegistration
@@ -192,6 +196,47 @@ namespace PAMI
                                                                      1>
         MultiSyncBSRFactory;
 
+        extern inline void HybridBSRMetaData(pami_metadata_t *m)
+        {
+          new(m) PAMI::Geometry::Metadata("I0:Hybrid:BSR:P2P");
+        }
+        extern inline void HybridSHMEMMetaData(pami_metadata_t *m)
+        {
+          new(m) PAMI::Geometry::Metadata("I0:Hybrid:SHMEM:P2P");
+        }
+        extern inline bool hybrid_analyze (PAMI_GEOMETRY_CLASS *geometry)
+        {
+          return true;
+        }
+        typedef CCMI::Adaptor::Barrier::BarrierT
+        < CCMI::Schedule::TopoMultinomial,
+          hybrid_analyze,
+          PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX,
+          PAMI::Geometry::CKEY_BARRIERCOMPOSITE1 >
+        HybridSHMEMBarrier;
+        
+        typedef CCMI::Adaptor::Barrier::BarrierFactoryT
+        < HybridSHMEMBarrier,
+          HybridSHMEMMetaData,
+          CCMI::ConnectionManager::SimpleConnMgr,
+          true,
+          PAMI::Geometry::CKEY_BARRIERCOMPOSITE1>
+        HybridSHMEMBarrierFactory;
+
+        typedef CCMI::Adaptor::Barrier::BarrierT
+        < CCMI::Schedule::TopoMultinomial,
+          hybrid_analyze,
+          PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX,
+          PAMI::Geometry::CKEY_BARRIERCOMPOSITE1 >
+        HybridBSRBarrier;
+        
+        typedef CCMI::Adaptor::Barrier::BarrierFactoryT
+        < HybridBSRBarrier,
+          HybridBSRMetaData,
+          CCMI::ConnectionManager::SimpleConnMgr,
+          true,
+          PAMI::Geometry::CKEY_BARRIERCOMPOSITE1>
+        HybridBSRBarrierFactory;
 
       };
 
@@ -260,6 +305,10 @@ namespace PAMI
                 class T_GlobalNI_AM,
                 class T_LocalBSRNI,
                 class T_LocalModel,
+                class T_Device_P2P,
+                class T_NI_P2P,
+                class T_Allocator,
+                class T_Protocol,
                 class T_CSMemoryManager>
       class CAURegistration :
         public CollRegistration < PAMI::CollRegistration::CAU::CAURegistration < T_Geometry,
@@ -270,6 +319,10 @@ namespace PAMI
                                                                                  T_GlobalNI_AM,
                                                                                  T_LocalBSRNI,
                                                                                  T_LocalModel,
+                                                                                 T_Device_P2P,
+                                                                                 T_NI_P2P,
+                                                                                 T_Allocator,
+                                                                                 T_Protocol,
                                                                                  T_CSMemoryManager>,
                                   T_Geometry >
       {
@@ -294,6 +347,8 @@ namespace PAMI
                                T_Local_Device                      &ldev,
                                T_Local_DeviceBSR                   &ldevbsr,
                                T_Global_Device                     &gdev,
+                               T_Device_P2P                        &dev_p2p,
+                               T_Allocator                         &proto_alloc,
                                Mapping                             &mapping,
                                lapi_handle_t                        lapi_handle,
                                int                                 *dispatch_id,
@@ -307,6 +362,10 @@ namespace PAMI
                                                                             T_GlobalNI_AM,
                                                                             T_LocalBSRNI,
                                                                             T_LocalModel,
+                                                                            T_Device_P2P,
+                                                                            T_NI_P2P,
+                                                                            T_Allocator,
+                                                                            T_Protocol,
                                                                             T_CSMemoryManager>,
                              T_Geometry > (),
           _client(client),
@@ -326,8 +385,12 @@ namespace PAMI
           _g_broadcast_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
           _g_allreduce_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
           _g_reduce_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
+          _dev_p2p(dev_p2p),
+          _proto_alloc(proto_alloc),
           _barrier_reg(&_sconnmgr,NULL, &_g_barrier_ni),
           _barrierbsr_reg(&_sconnmgr,&_l_barrierbsr_ni, &_g_barrier_ni),
+          _barrierbsrp2p_reg(NULL),
+          _barriershmemp2p_reg(NULL),
           _broadcast_reg(&_sconnmgr,NULL, false,&_g_broadcast_ni,false),
           _allreduce_reg(&_sconnmgr,NULL, &_g_allreduce_ni),
           _reduce_reg(&_sconnmgr,NULL, &_g_reduce_ni),
@@ -357,7 +420,15 @@ namespace PAMI
             _cau_uniqifier   = _global_dev.getUniqifier(); 
             
             if(rc == PAMI_SUCCESS)
+            {
               _enabled = true;
+              CAU_SETUPNI_P2P(_p2p_ni_bsr);
+              CAU_SETUPNI_P2P(_p2p_ni_shmem);
+              _barrierbsrp2p_reg   = new(&_bsrp2p_reg_store[0])   Barrier::HybridBSRBarrierFactory(&_sconnmgr,_p2p_ni_bsr);
+              _barriershmemp2p_reg = new(&_shmemp2p_reg_store[0]) Barrier::HybridSHMEMBarrierFactory(&_sconnmgr,_p2p_ni_shmem);
+              _barrierbsrp2p_reg->setMapIdToGeometry(mapidtogeometry);
+              _barriershmemp2p_reg->setMapIdToGeometry(mapidtogeometry);
+            }
             else
               _enabled = false;
           }
@@ -631,6 +702,20 @@ namespace PAMI
                     geometry->addCollective(PAMI_XFER_ALLREDUCE,&_allreduce_reg,context_id);
                     geometry->addCollective(PAMI_XFER_REDUCE,&_reduce_reg,context_id);
                   }
+                  // These are the two "hybrid protocols"
+                  // Currently they are emulated over P2P until we get
+                  // a true 2 device protocol enabled.  This code
+                  // is stubbed in so middleware can experiment with collective
+                  // selection.
+                  ITRC(IT_CAU, "CollReg(phase 1): group_id=%d adding SHM/P2P Barrier collective to list\n",groupid);
+                  geometry->addCollective(PAMI_XFER_BARRIER,
+                                          _barriershmemp2p_reg,
+                                          _context_id);
+
+                  ITRC(IT_CAU, "CollReg(phase 1): group_id=%d adding BSR/P2P Barrier collective to list\n",groupid);                  
+                  geometry->addCollective(PAMI_XFER_BARRIER,
+                                          _barrierbsrp2p_reg,
+                                          _context_id);
                   return PAMI_SUCCESS;
                 }
                 default:
@@ -740,15 +825,28 @@ namespace PAMI
         T_GlobalNI_AM                                                   _g_allreduce_ni;
         T_GlobalNI_AM                                                   _g_reduce_ni;
 
-        // Registrations
+        // P2P Native Interfaces
+        T_Device_P2P                                                   &_dev_p2p;
+        T_Allocator                                                    &_proto_alloc;
+        T_NI_P2P                                                       *_p2p_ni_bsr;
+        T_NI_P2P                                                       *_p2p_ni_shmem;
+        
+        // Registrations, hybrid first
+        Barrier::HybridBSRBarrierFactory                               *_barrierbsrp2p_reg;
+        Barrier::HybridSHMEMBarrierFactory                             *_barriershmemp2p_reg;
+        char                                                            _bsrp2p_reg_store[sizeof(Barrier::HybridBSRBarrierFactory)];
+        char                                                            _shmemp2p_reg_store[sizeof(Barrier::HybridSHMEMBarrierFactory)];
+        
+        // Registration, optimized
         Barrier::MultiSyncFactory                                       _barrier_reg;
         Barrier::MultiSyncBSRFactory                                    _barrierbsr_reg;
         Broadcast::MultiCastFactory                                     _broadcast_reg;
         Allreduce::MultiCombineFactory                                  _allreduce_reg;
         Reduce::MultiCombineFactory                                     _reduce_reg;
+
         // BSR Device
         T_LocalBSRNI                                                    _l_barrierbsr_ni;
-
+        
         // Variable to uniquely identify the job with respect to cau
         unsigned                                                        _cau_uniqifier;
 
