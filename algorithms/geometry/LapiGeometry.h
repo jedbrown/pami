@@ -810,10 +810,11 @@ namespace PAMI
           _ue_barrier._geometry = (PAMI::Geometry::Lapi*)NULL;
         }
 
-      void setUEBarrier_impl(CCMI::Adaptor::CollectiveProtocolFactory *f)
+      pami_result_t setUEBarrier_impl(CCMI::Adaptor::CollectiveProtocolFactory *f)
         {
           _ue_barrier._factory  =f;
           _ue_barrier._geometry =this;
+          return PAMI_SUCCESS;
         }
 
         pami_client_t getClient_impl()

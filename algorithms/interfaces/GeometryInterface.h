@@ -178,7 +178,7 @@ namespace PAMI
       inline void                      *getKey(size_t context_id, ckeys_t key);
       inline pami_result_t              ue_barrier(pami_event_function,void*,size_t,pami_context_t);
       inline void                       resetUEBarrier();
-      inline void                       setUEBarrier(CCMI::Adaptor::CollectiveProtocolFactory *f);
+      inline pami_result_t              setUEBarrier(CCMI::Adaptor::CollectiveProtocolFactory *f);
 
 
       // API support
@@ -559,7 +559,7 @@ namespace PAMI
     }
 
     template <class T_Geometry>
-    inline void                        Geometry<T_Geometry>::setUEBarrier(CCMI::Adaptor::CollectiveProtocolFactory *f)
+    inline pami_result_t               Geometry<T_Geometry>::setUEBarrier(CCMI::Adaptor::CollectiveProtocolFactory *f)
     {
       return static_cast<T_Geometry*>(this)->setUEBarrier_impl(f);
     }

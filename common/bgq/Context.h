@@ -1440,7 +1440,7 @@ namespace PAMI
         }
         if(_ccmi_registration_muam)
         {   
-          _world_geometry->resetUEBarrier(); // Reset so ccmi will select the UE barrier
+          geometry->resetUEBarrier(); // Reset so ccmi will select the UE barrier
           _ccmi_registration_muam->analyze(context_id, geometry, phase);
         }
 

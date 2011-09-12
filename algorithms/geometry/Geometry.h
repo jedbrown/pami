@@ -22,9 +22,6 @@
 #include <map>
 #include <list>
 
-#undef TRACE_ERRf
-#define TRACE_ERRf(x) //fprintf x
-
 #undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
 
@@ -95,7 +92,7 @@ namespace PAMI
             _masterRank(-1),
             _cb_result(PAMI_EAGAIN)
         {
-          TRACE_ERRf((stderr, "<%p>Common(ranklist)\n", this));
+          TRACE_ERR((stderr, "<%p>Common(ranklist)\n", this));
           // this creates the topology including all subtopologies
           new(&_topos[DEFAULT_TOPOLOGY_INDEX]) PAMI::Topology(_ranks, nranks);
           buildSpecialTopologies();
@@ -296,8 +293,8 @@ namespace PAMI
         {
           // build local and global topos
           DO_DEBUG(pami_task_t *list = NULL);
-          DO_DEBUG(TRACE_ERRf((stderr,"(%u)buildSpecialTopologies() DEFAULT_TOPOLOGY rankList %p\n", _topos[DEFAULT_TOPOLOGY_INDEX].rankList(&list), list)));
-          DO_DEBUG(for (unsigned j = 0; j < _topos[DEFAULT_TOPOLOGY_INDEX].size(); ++j) TRACE_ERRf((stderr, "buildSpecialTopologies() DEFAULT_TOPOLOGY[%u]=%zu, size %zu\n", j, (size_t)_topos[DEFAULT_TOPOLOGY_INDEX].index2Rank(j), _topos[DEFAULT_TOPOLOGY_INDEX].size())));
+          DO_DEBUG(TRACE_ERR((stderr,"(%u)buildSpecialTopologies() DEFAULT_TOPOLOGY rankList %p\n", _topos[DEFAULT_TOPOLOGY_INDEX].rankList(&list), list)));
+          DO_DEBUG(for (unsigned j = 0; j < _topos[DEFAULT_TOPOLOGY_INDEX].size(); ++j) TRACE_ERR((stderr, "buildSpecialTopologies() DEFAULT_TOPOLOGY[%u]=%zu, size %zu\n", j, (size_t)_topos[DEFAULT_TOPOLOGY_INDEX].index2Rank(j), _topos[DEFAULT_TOPOLOGY_INDEX].size())));
           _topos[DEFAULT_TOPOLOGY_INDEX].subTopologyNthGlobal(&_topos[MASTER_TOPOLOGY_INDEX], 0);
           _topos[DEFAULT_TOPOLOGY_INDEX].subTopologyLocalToMe(&_topos[LOCAL_TOPOLOGY_INDEX]);
           _topos[MASTER_TOPOLOGY_INDEX].subTopologyLocalToMe(&_topos[LOCAL_MASTER_TOPOLOGY_INDEX]);
@@ -313,11 +310,11 @@ namespace PAMI
                   _masterRank = _topos[LOCAL_TOPOLOGY_INDEX].index2Rank(j);
                   break;
                 };
-          DO_DEBUG(TRACE_ERRf((stderr,"(%u)buildSpecialTopologies() MASTER_TOPOLOGY_INDEX rankList %p\n", _topos[MASTER_TOPOLOGY_INDEX].rankList(&list), list)));
-          DO_DEBUG(for (unsigned j = 0; j < _topos[MASTER_TOPOLOGY_INDEX].size(); ++j) TRACE_ERRf((stderr, "buildSpecialTopologies() MASTER_TOPOLOGY[%u]=%zu, size %zu\n", j, (size_t)_topos[MASTER_TOPOLOGY_INDEX].index2Rank(j), _topos[MASTER_TOPOLOGY_INDEX].size())));
-          DO_DEBUG(TRACE_ERRf((stderr,"(%u)buildSpecialTopologies() LOCAL_TOPOLOGY rankList %p\n", _topos[LOCAL_TOPOLOGY_INDEX].rankList(&list), list)));
-          DO_DEBUG(for (unsigned j = 0; j < _topos[LOCAL_TOPOLOGY_INDEX].size(); ++j) TRACE_ERRf((stderr, "buildSpecialTopologies() LOCAL_TOPOLOGY[%u]=%zu, size %zu\n", j, (size_t)_topos[LOCAL_TOPOLOGY_INDEX].index2Rank(j), _topos[LOCAL_TOPOLOGY_INDEX].size())));
-          TRACE_ERRf((stderr, "buildSpecialTopologies() _masterRank %u\n", _masterRank));
+          DO_DEBUG(TRACE_ERR((stderr,"(%u)buildSpecialTopologies() MASTER_TOPOLOGY_INDEX rankList %p\n", _topos[MASTER_TOPOLOGY_INDEX].rankList(&list), list)));
+          DO_DEBUG(for (unsigned j = 0; j < _topos[MASTER_TOPOLOGY_INDEX].size(); ++j) TRACE_ERR((stderr, "buildSpecialTopologies() MASTER_TOPOLOGY[%u]=%zu, size %zu\n", j, (size_t)_topos[MASTER_TOPOLOGY_INDEX].index2Rank(j), _topos[MASTER_TOPOLOGY_INDEX].size())));
+          DO_DEBUG(TRACE_ERR((stderr,"(%u)buildSpecialTopologies() LOCAL_TOPOLOGY rankList %p\n", _topos[LOCAL_TOPOLOGY_INDEX].rankList(&list), list)));
+          DO_DEBUG(for (unsigned j = 0; j < _topos[LOCAL_TOPOLOGY_INDEX].size(); ++j) TRACE_ERR((stderr, "buildSpecialTopologies() LOCAL_TOPOLOGY[%u]=%zu, size %zu\n", j, (size_t)_topos[LOCAL_TOPOLOGY_INDEX].index2Rank(j), _topos[LOCAL_TOPOLOGY_INDEX].size())));
+          TRACE_ERR((stderr, "buildSpecialTopologies() _masterRank %u\n", _masterRank));
 
           // Create a coordinate topo (may be EMPTY)
           _topos[COORDINATE_TOPOLOGY_INDEX] = _topos[DEFAULT_TOPOLOGY_INDEX];
@@ -325,8 +322,8 @@ namespace PAMI
           if (_topos[COORDINATE_TOPOLOGY_INDEX].type() != PAMI_COORD_TOPOLOGY)
             _topos[COORDINATE_TOPOLOGY_INDEX].convertTopology(PAMI_COORD_TOPOLOGY);
 
-          DO_DEBUG(TRACE_ERRf((stderr,"(%u)buildSpecialTopologies() COORDINATE_TOPOLOGY rankList %p\n", _topos[COORDINATE_TOPOLOGY_INDEX].rankList(&list), list)));
-          DO_DEBUG(for (unsigned j = 0; j < _topos[COORDINATE_TOPOLOGY_INDEX].size(); ++j) TRACE_ERRf((stderr, "buildSpecialTopologies() COORDINATE_TOPOLOGY[%u]=%zu, size %zu\n", j, (size_t)_topos[COORDINATE_TOPOLOGY_INDEX].index2Rank(j), _topos[COORDINATE_TOPOLOGY_INDEX].size())));
+          DO_DEBUG(TRACE_ERR((stderr,"(%u)buildSpecialTopologies() COORDINATE_TOPOLOGY rankList %p\n", _topos[COORDINATE_TOPOLOGY_INDEX].rankList(&list), list)));
+          DO_DEBUG(for (unsigned j = 0; j < _topos[COORDINATE_TOPOLOGY_INDEX].size(); ++j) TRACE_ERR((stderr, "buildSpecialTopologies() COORDINATE_TOPOLOGY[%u]=%zu, size %zu\n", j, (size_t)_topos[COORDINATE_TOPOLOGY_INDEX].index2Rank(j), _topos[COORDINATE_TOPOLOGY_INDEX].size())));
 
           // If we have a rank list, set the special topology, otherwise leave it EMPTY unless needed
           _topos[LIST_TOPOLOGY_INDEX] = _topos[DEFAULT_TOPOLOGY_INDEX];
@@ -800,7 +797,7 @@ namespace PAMI
                                                          size_t                   ctxt_id,
                                                          pami_context_t            context)
         {
-          TRACE_ERRf((stderr, "<%p>Common::default_barrier()\n", this));
+          TRACE_ERR((stderr, "<%p>Common::default_barrier()\n", this));
           pami_xfer_t cmd;
           cmd.cb_done = cb_done;
           cmd.cookie = cookie;
@@ -813,7 +810,7 @@ namespace PAMI
                                                     size_t                  ctxt_id,
                                                     pami_context_t          context)
         {
-          TRACE_ERRf((stderr, "<%p>Common::ue_barrier()\n", this));
+          TRACE_ERR((stderr, "<%p>Common::ue_barrier()\n", this));
           PAMI_assert (_ue_barrier._factory != NULL);
 
           pami_xfer_t cmd;
@@ -829,13 +826,16 @@ namespace PAMI
           _ue_barrier._geometry = (PAMI::Geometry::Common*)NULL;
         }
 
-      void setUEBarrier_impl(CCMI::Adaptor::CollectiveProtocolFactory *f)
+      pami_result_t setUEBarrier_impl(CCMI::Adaptor::CollectiveProtocolFactory *f)
         {
           if(_ue_barrier._factory == (CCMI::Adaptor::CollectiveProtocolFactory*)NULL)
           {
             _ue_barrier._factory  =f;
             _ue_barrier._geometry =this;
+            TRACE_ERR((stderr, "<%p>Common::set ue_barrier() %p, %p/%p, %p\n", this,&_ue_barrier,f,_ue_barrier._factory,_ue_barrier._geometry));
+            return PAMI_SUCCESS;
           }
+          return PAMI_EAGAIN;  // can't set again unless you reset first.
         }
 
         pami_client_t                 getClient_impl()

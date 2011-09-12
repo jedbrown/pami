@@ -205,7 +205,14 @@ namespace PAMI
                                         _onetask_barrier_factory,
                                         _context_id);
 
-                geometry->setUEBarrier(_onetask_barrier_factory);
+                pami_result_t ueResult = geometry->setUEBarrier(_onetask_barrier_factory);
+                if((context_id == 0) && (ueResult == PAMI_SUCCESS)) /// \todo multi-context support
+                {
+                  // Set geometry-wide, across contexts, UE barrier
+		  //                  fprintf(stderr, "set ue barrier key %u, %p \n",PAMI::Geometry::GKEY_UEBARRIERCOMPOSITE1, (void*)_onetask_barrier_factory);
+                  geometry->setKey(PAMI::Geometry::GKEY_UEBARRIERCOMPOSITE1,
+                                   (void*)_onetask_barrier_factory);
+                }
 
 
                 geometry->setCleanupCallback(CCMI::Adaptor::P2POneTask::OneTaskBarrierFactory::cleanup_done_fn, _onetask_barrier_composite);
@@ -305,12 +312,6 @@ namespace PAMI
                                  (void*)_binomial_barrier_composite);
 */
 
-                if(context_id == 0) /// \todo multi-context support
-                {
-                  // Set geometry-wide, across contexts, UE barrier
-                  geometry->setKey(PAMI::Geometry::GKEY_UEBARRIERCOMPOSITE1,
-                                   (void*)_binomial_barrier_composite);
-                }
 
                 _csconnmgr.setSequence(geometry->comm());
 
@@ -318,7 +319,15 @@ namespace PAMI
                                         _binomial_barrier_factory,
                                         _context_id);
 
-                geometry->setUEBarrier(_binomial_barrier_factory);
+                pami_result_t ueResult = geometry->setUEBarrier(_binomial_barrier_factory);
+                if((context_id == 0) && (ueResult == PAMI_SUCCESS)) /// \todo multi-context support
+                {
+                  // Set geometry-wide, across contexts, UE barrier
+		  //                  fprintf(stderr, "set ue barrier key %u, %p \n",PAMI::Geometry::GKEY_UEBARRIERCOMPOSITE1, (void*)_binomial_barrier_composite);
+                  geometry->setKey(PAMI::Geometry::GKEY_UEBARRIERCOMPOSITE1,
+                                   (void*)_binomial_barrier_composite);
+                }
+
                 geometry->setCleanupCallback(cleanupCallback, gi);
               }
 

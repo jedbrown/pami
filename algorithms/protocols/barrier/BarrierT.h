@@ -160,7 +160,7 @@ public:
         if (T_Unexp) {
             if (object == NULL)
             {
-                //Geoemtry doesnt exist
+                //Geometry doesn't exist
                 registerunexpbarrier(ctxt,
                                      cdata->_comm,
                                      (pami_quad_t&)*info,
