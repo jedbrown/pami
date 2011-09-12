@@ -385,12 +385,13 @@ namespace PAMI
 					void             * cookie) 
 	    {
 	      MulticastDmaModel *model = (MulticastDmaModel *)cookie;	      
-	      for (int i =0; i < 16; ++i) {
-		size_t events = model->advance_recvs(context);		
+	      for (int i =0; i < 4; ++i) {
+		//size_t events = 
+		model->advance_recvs(context);		
 		model->advance_sends (context);
 		
-		if (events == 0 && model->_nActiveRecvs > 0)
-		  break;
+		//if (events == 0 && model->_nActiveRecvs > 0)
+		//break;
 		
 		if (model->_nActiveRecvs == model->_nRecvsComplete) {
 		  model->reset_recvs(context);

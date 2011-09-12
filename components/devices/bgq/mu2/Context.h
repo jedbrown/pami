@@ -637,6 +637,30 @@ namespace PAMI
             return  _pinInfo->injFifoIds[fifoPin];
           }
 
+	  ///
+	  /// \brief For dput collectives
+	  ///
+          inline size_t pinFifo (size_t                task,
+                                 size_t                offset,
+                                 MUHWI_Destination_t & dest,
+                                 size_t              & tcoord,
+                                 uint64_t            & map)
+          {
+            TRACE_FN_ENTER();
+
+            // Calculate the destination recpetion fifo identifier based on
+            // the destination task+offset.  This is important for
+            // multi-context support.
+            uint32_t fifoPin = 0;
+            _mapping.getMuDestinationTask( task, dest, tcoord, fifoPin );
+
+            map = _pinInfo->torusInjFifoMaps[fifoPin];
+
+            TRACE_FN_EXIT();
+
+            return  _pinInfo->injFifoIds[fifoPin];
+          }
+
 
           ///
           /// \brief Pin Fifo (from Self to Destination)

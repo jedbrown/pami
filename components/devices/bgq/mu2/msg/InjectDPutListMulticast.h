@@ -123,17 +123,23 @@ namespace PAMI
 	      register double fp1 asm("fr1");	      
 	      VECTOR_LOAD_NU (&_desc,  0, fp0);
 	      VECTOR_LOAD_NU (&_desc, 32, fp1);		  	    
+
+	      MUHWI_MessageUnitHeader_t *muh_model = &(_desc.PacketHeader.messageUnitHeader);
+	      uint pid = muh_model->Packet_Types.Direct_Put.Rec_Payload_Base_Address_Id;
+	      uint cid = muh_model->Packet_Types.Direct_Put.Rec_Counter_Base_Address_Id;	      
 	      
 	      do { 
-		if (!__global.mapping.isPeer(__global.mapping.task(), _ranks[_nextdst]) || _localMulticast) {
+		bool islocal = __global.mapping.isPeer(__global.mapping.task(), _ranks[_nextdst]);
+		if (!islocal || _localMulticast) {
 		  MUHWI_Destination_t   dest;
-		  uint16_t              rfifo;
 		  uint64_t              map;
-		  unsigned fnum = _context.pinFifo (_ranks[_nextdst],
-						    0,
-						    dest,
-						    rfifo,
-						    map);
+		  size_t                tcoord;
+		  uint32_t              fnum;
+		  fnum = _context.pinFifo (_ranks[_nextdst],
+					   0,
+					   dest,
+					   tcoord,
+					   map);
 		  
 		  InjChannel & channel = _context.injectionGroup.channel[fnum];
 		  bool flag = channel.hasFreeSpaceWithUpdate ();
@@ -146,6 +152,10 @@ namespace PAMI
 		    VECTOR_STORE_NU (d, 32, fp1);	
 		    d->setDestination(dest);
 		    d->Torus_FIFO_Map = map;
+		    
+		    MUHWI_MessageUnitHeader_t *muh_dput  = &(d->PacketHeader.messageUnitHeader);		    
+		    muh_dput->Packet_Types.Direct_Put.Rec_Payload_Base_Address_Id = _context.pinBatId(tcoord, pid); 
+		    muh_dput->Packet_Types.Direct_Put.Rec_Counter_Base_Address_Id = _context.pinBatId(tcoord, cid);
 		    
 		    sequence = channel.injFifoAdvanceDesc ();	      
 		    _lastCompletionSeqNo[fnum] = sequence;
