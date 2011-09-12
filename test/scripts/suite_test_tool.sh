@@ -802,7 +802,7 @@ fi
 if [ $evalSignal -eq 0 ] && [ $mpich -eq 1 ] && [ -e $testLog ] && (( $( grep -a -c 'No Errors' $testLog ) < 1 ))
 then
     evalSignal=10 # SIGUSR1
-    evalSummary="Failed: no signal"
+    evalSummary="Failed"
 fi 
 
 if [ "${evalSummary}" == '' ]
@@ -973,7 +973,7 @@ runHW ()
 	mmcslogfile=`ls /bgsys/logs/BGP/*-bgdb0-mmcs_db_server-current.log`
     elif [ "${platform}" == 'bgq' ]
     then
-        mmcslogfile=`ls /bgsys/logs/BGQ/*-mmcs_server-current.log`
+        mmcslogfile=`ls /bgsys/logs/BGQ/*-mmcs_server.log`
     fi
 
     runHW_rc=0
