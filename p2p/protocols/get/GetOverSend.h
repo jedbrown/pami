@@ -24,9 +24,11 @@
 #include "pami.h"
 
 #include "components/devices/PacketInterface.h"
-#include "components/memory/MemoryAllocator.h"
 #include "math/Memcpy.x.h"
 #include "p2p/protocols/Get.h"
+
+#include "common/type/TypeCode.h"
+#include "common/type/TypeMachine.h"
 
 #include "util/trace.h"
 #undef  DO_TRACE_ENTEREXIT
@@ -47,43 +49,92 @@ namespace PAMI
 
           typedef GetOverSend<T_Model> GetOverSendProtocol;
 
-          typedef uint8_t msg_t[T_Model::packet_model_state_bytes];
+          typedef uint8_t model_state_t[T_Model::packet_model_state_bytes];
+          typedef uint8_t model_packet_t[T_Model::packet_model_state_bytes];
+
+
 
           typedef struct
           {
-            void                * src;      ///< src buffer virtual address on target
-            void                * state;    ///< state object virtual address on origin
-            size_t                bytes;    ///< bytes to transfer
-            size_t                origin_task;
-            size_t                origin_offset; 
-          } rts_t;
+            uintptr_t             remote_addr;
+            size_t                data_bytes;
+            pami_endpoint_t       origin;
+            size_t                type_bytes; // => 0 iff contiguous
+            uintptr_t             origin_state;
+          } metadata_header_t;
 
-          typedef struct 
+          typedef struct
           {
-            msg_t                 msg;
-            rts_t                 rts;
-            
-            uint8_t             * dst;
+            void                * serialized_type;
+            size_t                serialized_bytes;
             size_t                bytes_remaining;
+          } target_envelope_t;
 
-            pami_event_function   fn;       ///< completion function
-            void                * cookie;   ///< completion cookie
-            
+          typedef struct
+          {
+            model_state_t         state[2];
+            model_packet_t        packet[2];
+            uint8_t               machine[sizeof(Type::TypeMachine)];
+            uint8_t               type_obj[sizeof(Type::TypeCode)];
+            void                * base_addr;
+            size_t                bytes_remaining;
+            size_t                start_count;
+            size_t                origin_task;
+            size_t                origin_offset;
+
+            uintptr_t             metadata;
             GetOverSendProtocol * protocol;
 
-          } state_t;
+            bool                  is_contiguous;
+          } target_data_t;
 
+          typedef struct
+          {
+            target_envelope_t     envelope;
+            target_data_t         data;
+          } target_t;
+
+
+
+          typedef struct
+          {
+            size_t                bytes_remaining;
+            void                * base_addr;
+            pami_event_function   done_fn;
+            void                * cookie;
+            uint8_t               machine[sizeof(Type::TypeMachine)];
+            bool                  is_contiguous;
+            struct
+            {
+              model_state_t       state;
+              metadata_header_t   metadata;
+            } header;
+            struct
+            {
+              model_state_t       state;
+            } type;
+          } origin_t;
+
+
+
+          typedef union
+          {
+            origin_t              origin;
+            target_t              target;
+          } state_t;
 
         public:
 
-          template <class T_Device, class T_Allocator>
-          static GetOverSend * generate (T_Device      & device,
-                                         T_Allocator   & allocator)
+          template <class T_Device, class T_MemoryManager>
+          static GetOverSend * generate (T_Device        & device,
+                                         T_MemoryManager * mm)
           {
             TRACE_FN_ENTER();
-            COMPILE_TIME_ASSERT(sizeof(GetOverSend) <= T_Allocator::objsize);
 
-            void * protocol = allocator.allocateObject ();
+            pami_result_t result = PAMI_ERROR;
+            void * protocol = NULL;
+            result = mm->memalign((void **) & protocol, 16, sizeof(GetOverSend));
+            PAMI_assert_alwaysf(result == PAMI_SUCCESS, "Failed to get memory for get-over-send protocol");
             new (protocol) GetOverSend (device);
 
             TRACE_FN_EXIT();
@@ -93,7 +144,8 @@ namespace PAMI
           template <class T_Device>
           inline GetOverSend (T_Device & device) :
               _data_model (device),
-              _rts_model (device)
+              _type_model (device),
+              _header_model (device)
           {
             TRACE_FN_ENTER();
 
@@ -110,7 +162,7 @@ namespace PAMI
             // Assert that the size of the packet metadata area is large
             // enough to transfer the virtual address of the origin state object.
             // This is used by postMultiPacket() to transfer data messages.
-            COMPILE_TIME_ASSERT(sizeof(void *) <= T_Model::packet_model_multi_metadata_bytes);
+            COMPILE_TIME_ASSERT(sizeof(uintptr_t) <= T_Model::packet_model_multi_metadata_bytes);
 
             // ----------------------------------------------------------------
             // Compile-time assertions (end)
@@ -125,9 +177,8 @@ namespace PAMI
           {
             TRACE_FN_ENTER();
 
-            _context     = context;
-
-            PAMI_ENDPOINT_INFO(origin, _origin_task, _origin_offset);
+            _context = context;
+            _origin  = origin;
 
             pami_result_t status = PAMI_ERROR;
 
@@ -136,15 +187,41 @@ namespace PAMI
             // unexpected packets until dispatch registration.
 
             TRACE_FORMAT("register data model dispatch %zu", dispatch);
-            status = _data_model.init (dispatch, dispatch_data_fn, this);
+            status = _data_model.init (dispatch, dispatch_data, this);
+
+            if (status != PAMI_SUCCESS)
+              {
+                TRACE_FORMAT("data model registration failed. status = %d", status);
+                TRACE_FN_EXIT();
+                return status;
+              }
+
             TRACE_STRING("data model registration successful.");
 
-            if (status == PAMI_SUCCESS)
+            TRACE_FORMAT("register type model dispatch %zu", dispatch);
+            status = _type_model.init (dispatch, dispatch_type, this);
+
+            if (status != PAMI_SUCCESS)
               {
-                TRACE_FORMAT("register rts model dispatch %zu", dispatch);
-                status = _rts_model.init (dispatch, dispatch_rts_fn, this);
-                TRACE_STRING("rts model registration successful.");
+                TRACE_FORMAT("type model registration failed. status = %d", status);
+                TRACE_FN_EXIT();
+                return status;
               }
+
+            TRACE_STRING("type model registration successful.");
+
+            TRACE_FORMAT("register header model dispatch %zu", dispatch);
+            status = _header_model.init (dispatch, dispatch_header, this);
+
+            if (status != PAMI_SUCCESS)
+              {
+                TRACE_FORMAT("header model registration failed. status = %d", status);
+                TRACE_FN_EXIT();
+                return status;
+              }
+
+            TRACE_STRING("header model registration successful.");
+
 
             TRACE_FN_EXIT();
             return status;
@@ -162,7 +239,7 @@ namespace PAMI
             PAMI_ENDPOINT_INFO(parameters->rma.dest, task, offset);
 
             // Verify that this task is addressable by this packet device
-            if (unlikely(_rts_model.device.isPeer (task) == false))
+            if (unlikely(_data_model.device.isPeer (task) == false))
               {
                 TRACE_FN_EXIT();
                 return PAMI_INVAL;
@@ -171,25 +248,55 @@ namespace PAMI
             // Allocate memory to maintain the origin state of the operation.
             state_t * state = (state_t *) _allocator.allocateObject();
             TRACE_FORMAT("state = %p", state);
-            
-            state->rts.src           = parameters->addr.remote;
-            state->rts.bytes         = parameters->rma.bytes;
-            state->rts.state         = (void *) state;
-            state->rts.origin_task   = _origin_task;
-            state->rts.origin_offset = _origin_offset;
-            
-            state->dst               = (uint8_t *) parameters->addr.local;
-            state->bytes_remaining   = parameters->rma.bytes;
-            
-            state->fn                = parameters->rma.done_fn;
-            state->cookie            = parameters->rma.cookie;
-            
-            _rts_model.postPacket (state->msg,
-                                   NULL, NULL,
-                                   task, offset,
-                                   (void *) NULL, 0,
-                                   (void *) &(state->rts),
-                                   sizeof (rts_t));
+
+            state->origin.bytes_remaining = parameters->rma.bytes;
+            state->origin.base_addr       = parameters->addr.local;
+            state->origin.done_fn         = parameters->rma.done_fn;
+            state->origin.cookie          = parameters->rma.cookie;
+            state->origin.is_contiguous   = true;
+
+            send_envelope (parameters, task, offset, state);
+
+            TRACE_FN_EXIT();
+            return PAMI_SUCCESS;
+          };
+
+          ///
+          /// \brief Start a new non-contiguous get operation
+          ///
+          virtual pami_result_t get (pami_get_typed_t * parameters)
+          {
+            TRACE_FN_ENTER();
+
+            pami_task_t task;
+            size_t offset;
+            PAMI_ENDPOINT_INFO(parameters->rma.dest, task, offset);
+
+            // Verify that this task is addressable by this packet device
+            if (unlikely(_data_model.device.isPeer (task) == false))
+              {
+                TRACE_FN_EXIT();
+                return PAMI_INVAL;
+              }
+
+            // Allocate memory to maintain the origin state of the operation.
+            state_t * state = (state_t *) _allocator.allocateObject();
+            TRACE_FORMAT("state = %p", state);
+
+            state->origin.bytes_remaining = parameters->rma.bytes;
+            state->origin.base_addr       = parameters->addr.local;
+            state->origin.done_fn         = parameters->rma.done_fn;
+            state->origin.cookie          = parameters->rma.cookie;
+            state->origin.is_contiguous   = false;
+
+            // Construct the type machine.
+            // The machine will be destroyed when the last data packet has
+            // been received from the target endpoint.
+            Type::TypeCode * type_obj = (Type::TypeCode *) parameters->type.local;
+            Type::TypeCode * machine = (Type::TypeCode *) state->origin.machine;
+            new (machine) Type::TypeMachine (type_obj);
+
+            send_envelope (parameters, task, offset, state);
 
             TRACE_FN_EXIT();
             return PAMI_SUCCESS;
@@ -197,97 +304,76 @@ namespace PAMI
 
         protected:
 
-          static void target_done (pami_context_t   context,
-                                   void           * cookie,
-                                   pami_result_t    result)
-          {
-            TRACE_FN_ENTER();
-            TRACE_FORMAT("cookie = %p", cookie);
+          // ##################################################################
+          // 'envelope' code which sends the protocol metadata in a 'header'
+          // packet, and the serialized type (if non-contiguous) in one or more
+          // 'type' packets.
+          // ##################################################################
 
-            state_t * state = (state_t *) cookie;
-            TRACE_FORMAT("state->protocol = %p", state->protocol);
-            state->protocol->_allocator.returnObject (cookie);
+          inline void send_envelope (pami_get_simple_t * parameters,
+                                     pami_task_t         task,
+                                     size_t              offset,
+                                     state_t           * state);
 
-            TRACE_FN_EXIT();
-            return;
-          }
+          inline void send_envelope (pami_get_typed_t * parameters,
+                                     pami_task_t        task,
+                                     size_t             offset,
+                                     state_t          * state);
 
-          static int dispatch_rts_fn (void   * metadata,
+          static int dispatch_header (void   * metadata,
                                       void   * payload,
                                       size_t   bytes,
                                       void   * recv_func_parm,
-                                      void   * cookie)
-          {
-            TRACE_FN_ENTER();
+                                      void   * cookie);
 
-            GetOverSendProtocol * protocol = (GetOverSendProtocol *) recv_func_parm;
+          static int dispatch_type (void   * metadata,
+                                    void   * payload,
+                                    size_t   bytes,
+                                    void   * recv_func_parm,
+                                    void   * cookie);
 
-            // Allocate memory to maintain the target state of the operation.
-            state_t * state = (state_t *) protocol->_allocator.allocateObject();
-            TRACE_FORMAT("state = %p", state);
+          // ##################################################################
+          // 'data' code which sends one or more data packets for contiguous
+          // source data, or packs the non-contiguous source data, in a
+          // pipelined manner, one packet at a time.
+          // ##################################################################
 
-            rts_t * rts = (rts_t *) payload;
-            state->protocol = protocol;
-            
-            protocol->_data_model.postMultiPacket (state->msg,
-                                                   target_done, (void *) state,
-                                                   rts->origin_task, rts->origin_offset,
-                                                   (void *) &(rts->state), sizeof(void *),
-                                                   rts->src, rts->bytes);
+          inline void send_data (uintptr_t     metadata,
+                                 void        * data_addr,
+                                 size_t        data_bytes,
+                                 pami_task_t   task,
+                                 size_t        offset,
+                                 state_t     * state);
 
-            TRACE_FN_EXIT();
-            return 0;
-          }
+          inline void send_data (state_t * state);
 
-          static int dispatch_data_fn (void   * metadata,
-                                       void   * payload,
-                                       size_t   bytes,
-                                       void   * recv_func_parm,
-                                       void   * cookie)
-          {
-            TRACE_FN_ENTER();
+          static void complete_data (pami_context_t   context,
+                                     void           * cookie,
+                                     pami_result_t    result);
 
-            GetOverSendProtocol * protocol = (GetOverSendProtocol *) recv_func_parm;
+          static int dispatch_data (void   * metadata,
+                                    void   * payload,
+                                    size_t   bytes,
+                                    void   * recv_func_parm,
+                                    void   * cookie);
 
-            state_t * state = (state_t *) *((state_t **) metadata);
-
-            size_t nbytes = MIN(bytes, state->bytes_remaining);
-
-            if (T_Model::read_is_required_packet_model)
-              protocol->_data_model.device.read (state->dst, nbytes, cookie);
-            else
-              Core_memcpy (state->dst, payload, nbytes);
-
-            state->dst  += nbytes;
-            state->bytes_remaining -= nbytes;
-
-            if (state->bytes_remaining == 0)
-            {
-              TRACE_FORMAT("protocol = %p", protocol);
-              if (state->fn != NULL)
-              {
-                state->fn (protocol->_context, state->cookie, PAMI_SUCCESS);
-              }
-
-              protocol->_allocator.returnObject (state);
-            }
-
-            TRACE_FN_EXIT();
-            return 0;
-          }
 
           T_Model                                 _data_model;
-          T_Model                                 _rts_model;
+          T_Model                                 _type_model;
+          T_Model                                 _header_model;
           MemoryAllocator < sizeof(state_t), 16 > _allocator;
           pami_context_t                          _context;
-          size_t                                  _origin_task;
-          size_t                                  _origin_offset;
+          pami_endpoint_t                         _origin;
       };
     };
   };
 };
 #undef DO_TRACE_ENTEREXIT
 #undef DO_TRACE_DEBUG
+
+#include "p2p/protocols/get/GetOverSend_envelope_impl.h"
+#include "p2p/protocols/get/GetOverSend_data_impl.h"
+
 #endif // __p2p_protocols_get_GetOverSend_h__
 
 //

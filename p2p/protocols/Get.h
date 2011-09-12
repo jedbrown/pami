@@ -62,7 +62,7 @@ namespace PAMI
           ///
           /// \brief Start a new non-contiguous get operation
           ///
-          //virtual pami_result_t get (pami_get_typed_t * parameters) = 0;
+          virtual pami_result_t get (pami_get_typed_t * parameters) = 0;
 
       }; // PAMI::Protocol::Get class
 
@@ -84,8 +84,8 @@ namespace PAMI
           }
 
           inline NoGet (pami_context_t context) :
-            Get (),
-            _context (context)
+              Get (),
+              _context (context)
           {}
 
           inline ~NoGet () {};
