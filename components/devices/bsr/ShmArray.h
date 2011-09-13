@@ -26,14 +26,14 @@ class ShmArray : public SharedArray
                          const int            mem_id, 
                          const unsigned char  init_val);
 
-        unsigned char      Load1(const int offset) const;
-        unsigned short     Load2(const int offset) const;
-        unsigned int       Load4(const int offset) const;
-        unsigned long long Load8(const int offset) const;
-        void Store1(const int offset, const unsigned char val);
-        void Store2(const int offset, const unsigned short val);
-        void Store4(const int offset, const unsigned int val);
-        void Store8(const int offset, const unsigned long long val);
+        unsigned char      Load1(const int byte_offset) const;
+        unsigned short     Load2(const int byte_offset) const;
+        unsigned int       Load4(const int byte_offset) const;
+        unsigned long long Load8(const int byte_offset) const;
+        void Store1(const int byte_offset, const unsigned char val);
+        void Store2(const int byte_offset, const unsigned short val);
+        void Store4(const int byte_offset, const unsigned int val);
+        void Store8(const int byte_offset, const unsigned long long val);
 
     private:
         unsigned int            shm_size;
@@ -45,14 +45,10 @@ class ShmArray : public SharedArray
             ST_SUCCESS,
             ST_FAIL
         } shm_state;
-        struct Cacheline {
-            volatile char byte;
-            char          pad[SharedArray::CACHE_LINE_SZ-1];// a full cache line
-        };
 
         struct Shm {
-            volatile unsigned ready_cnt; // number of member has finished the init
-            Cacheline         line[0];
+            volatile unsigned      ready_cnt;   // number of member has finished the init
+            volatile unsigned char shm_data[0]; // byte array of shm data
         };
 
         Shm   *shm;

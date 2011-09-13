@@ -488,46 +488,46 @@ SharedArray::RC Bsr::CheckInitDone(const unsigned int   mem_cnt,
     return PROCESSING;
 }
 
-unsigned char      Bsr::Load1(const int offset) const
+unsigned char      Bsr::Load1(const int byte_offset) const
 {
-    return bsr_addr[offset];
+    return bsr_addr[byte_offset];
 }
 
-unsigned short     Bsr::Load2(const int offset) const
+unsigned short     Bsr::Load2(const int byte_offset) const
 {
-    return ((unsigned short*)(bsr_addr))[offset];
+    return *((unsigned short*)(bsr_addr + byte_offset));
 }
 
-unsigned int       Bsr::Load4(const int offset) const
+unsigned int       Bsr::Load4(const int byte_offset) const
 {
-    return ((unsigned int*)(bsr_addr))[offset];
+    return *((unsigned int*)(bsr_addr + byte_offset));
 }
 
-unsigned long long Bsr::Load8(const int offset) const
+unsigned long long Bsr::Load8(const int byte_offset) const
 {
-    return ((unsigned long long*)(bsr_addr))[offset];
+    return *((unsigned long long*)(bsr_addr + byte_offset));
 }
 
-void Bsr::Store1(const int offset, const unsigned char val)
+void Bsr::Store1(const int byte_offset, const unsigned char val)
 {
     PAMI::Memory::sync<PAMI::Memory::instruction>();
-    bsr_addr[offset] = val;
+    bsr_addr[byte_offset] = val;
     PAMI::Memory::sync();
 }
 
-void Bsr::Store2(const int offset, const unsigned short val)
+void Bsr::Store2(const int byte_offset, const unsigned short val)
 {
     PAMI::Memory::sync<PAMI::Memory::instruction>();
-    ((unsigned short*)bsr_addr)[offset] = val;
+    *((unsigned short*)(bsr_addr + byte_offset)) = val;
     PAMI::Memory::sync();
 }
 
-void Bsr::Store4(const int offset, const unsigned int val)
+void Bsr::Store4(const int byte_offset, const unsigned int val)
 {
     assert(0 && "Bsr::Store4() not supported");
 }
 
-void Bsr::Store8(const int offset, const unsigned long long val)
+void Bsr::Store8(const int byte_offset, const unsigned long long val)
 {
     assert(0 && "Bsr::Store8() not supported");
 }

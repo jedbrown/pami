@@ -309,29 +309,29 @@ SharedArray::RC BsrP6::CheckInitDone(const unsigned int   mem_cnt,
     return SUCCESS;
 }
 
-unsigned char      BsrP6::Load1(const int offset) const
+unsigned char      BsrP6::Load1(const int byte_offset) const
 {
-    if (bsr_granule > offset) {
-        return bsr_addr[0][offset];
+    if (bsr_granule > byte_offset) {
+        return bsr_addr[0][byte_offset];
     } else {
-        return bsr_addr[offset/bsr_granule][offset%bsr_granule];
+        return bsr_addr[byte_offset/bsr_granule][byte_offset%bsr_granule];
     }
 }
 
-unsigned short     BsrP6::Load2(const int offset) const
+unsigned short     BsrP6::Load2(const int byte_offset) const
 {
 #ifdef POWER_ARCH
     // maybe not worth to do this in Load2
     /*
-    if (bsr_id_cnt == 1 && !(offset & 0x1) && (offset+1)<bsr_granule) {
-        return ((unsigned short*)(bsr_addr[0]))[offset];
+    if (bsr_id_cnt == 1 && !(byte_offset & 0x1) && (byte_offset+1)<bsr_granule) {
+        return ((unsigned short*)(bsr_addr[0]))[byte_offset];
     } else {
     */
 #endif /* POWER_ARCH */
     unsigned short val;
     unsigned char *ptr = (unsigned char*)&val;
-    ptr[0] = Load1(offset);
-    ptr[1] = Load1(offset+1);
+    ptr[0] = Load1(byte_offset);
+    ptr[1] = Load1(byte_offset+1);
     return val;
 #ifdef POWER_ARCH
     /*
@@ -340,72 +340,72 @@ unsigned short     BsrP6::Load2(const int offset) const
 #endif /* POWER_ARCH */
 }
 
-unsigned int       BsrP6::Load4(const int offset) const
+unsigned int       BsrP6::Load4(const int byte_offset) const
 {
 #ifdef POWER_ARCH
-    if (!(offset & 0x3) && (offset+3)<bsr_granule) {
+    if (!(byte_offset & 0x3) && (byte_offset+3)<bsr_granule) {
         return ((unsigned int*)
-                (bsr_addr[offset/bsr_granule]))[offset%bsr_granule];
+                (bsr_addr[byte_offset/bsr_granule]))[byte_offset%bsr_granule];
     } else {
 #endif /* POWER_ARCH */
         unsigned int val;
         unsigned char *ptr = (unsigned char*)&val;
-        ptr[0] = Load1(offset);
-        ptr[1] = Load1(offset+1);
-        ptr[2] = Load1(offset+2);
-        ptr[3] = Load1(offset+3);
+        ptr[0] = Load1(byte_offset);
+        ptr[1] = Load1(byte_offset+1);
+        ptr[2] = Load1(byte_offset+2);
+        ptr[3] = Load1(byte_offset+3);
         return val;
 #ifdef POWER_ARCH
     }
 #endif /* POWER_ARCH */
 }
 
-unsigned long long BsrP6::Load8(const int offset) const
+unsigned long long BsrP6::Load8(const int byte_offset) const
 {
 #ifdef POWER_ARCH
-    if (!(offset & 0x7) && (offset+7)<bsr_granule) {
+    if (!(byte_offset & 0x7) && (byte_offset+7)<bsr_granule) {
         return ((unsigned long long*)
-                (bsr_addr[offset/bsr_granule]))[offset%bsr_granule];
+                (bsr_addr[byte_offset/bsr_granule]))[byte_offset%bsr_granule];
     } else {
 #endif /* POWER_ARCH */
         unsigned long long val;
         unsigned char *ptr = (unsigned char*)&val;
-        ptr[0] = Load1(offset);
-        ptr[1] = Load1(offset+1);
-        ptr[2] = Load1(offset+2);
-        ptr[3] = Load1(offset+3);
-        ptr[4] = Load1(offset+4);
-        ptr[5] = Load1(offset+5);
-        ptr[6] = Load1(offset+6);
-        ptr[7] = Load1(offset+7);
+        ptr[0] = Load1(byte_offset);
+        ptr[1] = Load1(byte_offset+1);
+        ptr[2] = Load1(byte_offset+2);
+        ptr[3] = Load1(byte_offset+3);
+        ptr[4] = Load1(byte_offset+4);
+        ptr[5] = Load1(byte_offset+5);
+        ptr[6] = Load1(byte_offset+6);
+        ptr[7] = Load1(byte_offset+7);
         return val;
 #ifdef POWER_ARCH
     }
 #endif /* POWER_ARCH */
 }
 
-void BsrP6::Store1(const int offset, const unsigned char val)
+void BsrP6::Store1(const int byte_offset, const unsigned char val)
 {
     PAMI::Memory::sync<PAMI::Memory::instruction>();
-    if (bsr_granule > offset) {
-        bsr_addr[0][offset] = val;
+    if (bsr_granule > byte_offset) {
+        bsr_addr[0][byte_offset] = val;
     } else {
-        bsr_addr[offset/bsr_granule][offset%bsr_granule] = val;
+        bsr_addr[byte_offset/bsr_granule][byte_offset%bsr_granule] = val;
     }
     PAMI::Memory::sync();
 }
 
-void BsrP6::Store2(const int offset, const unsigned short val)
+void BsrP6::Store2(const int byte_offset, const unsigned short val)
 {
     assert(0 && "BsrP6::Store2() not supported");
 }
 
-void BsrP6::Store4(const int offset, const unsigned int val)
+void BsrP6::Store4(const int byte_offset, const unsigned int val)
 {
     assert(0 && "BsrP6::Store4() not supported");
 }
 
-void BsrP6::Store8(const int offset, const unsigned long long val)
+void BsrP6::Store8(const int byte_offset, const unsigned long long val)
 {
     assert(0 && "BsrP6::Store8() not supported");
 }

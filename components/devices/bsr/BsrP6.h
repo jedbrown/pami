@@ -33,14 +33,14 @@ class BsrP6 : public SharedArray
                          const int            mem_id, 
                          const unsigned char  init_val);
 
-        unsigned char      Load1(const int offset) const;
-        unsigned short     Load2(const int offset) const;
-        unsigned int       Load4(const int offset) const;
-        unsigned long long Load8(const int offset) const;
-        void Store1(const int offset, const unsigned char val);
-        void Store2(const int offset, const unsigned short val);
-        void Store4(const int offset, const unsigned int val);
-        void Store8(const int offset, const unsigned long long val);
+        unsigned char      Load1(const int byte_offset) const;
+        unsigned short     Load2(const int byte_offset) const;
+        unsigned int       Load4(const int byte_offset) const;
+        unsigned long long Load8(const int byte_offset) const;
+        void Store1(const int byte_offset, const unsigned char val);
+        void Store2(const int byte_offset, const unsigned short val);
+        void Store4(const int byte_offset, const unsigned int val);
+        void Store8(const int byte_offset, const unsigned long long val);
 
     private:
         typedef int   (*_bsr_open_t)(void);

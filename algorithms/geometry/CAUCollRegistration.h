@@ -699,7 +699,11 @@ namespace PAMI
                   }
                   ITRC(IT_CAU, "P2P_bsr registration=%p P2P_shmem registration=%p local topo size=%d, geom size=%d\n",
                        f0, f1, local_topo->size(), geometry->size());
-                  _barrierbsrp2p_reg->setInfo(geometry, &_l_barrierbsr_ni, f0);
+                  if(bsr_gi)
+                    _barrierbsrp2p_reg->setInfo(geometry, &_l_barrierbsr_ni, f0);
+                  else
+                    _barrierbsrp2p_reg->setInfo(geometry, NULL, f0);
+
                   _barriershmemp2p_reg->setInfo(geometry, ni, f1);
 
                   // Add the geometry info to the geometry

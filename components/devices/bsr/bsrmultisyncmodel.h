@@ -156,6 +156,7 @@ namespace PAMI
                                         pami_multisync_t *msync,
                                         void             *devinfo)
       {
+        PAMI_assertf(devinfo != NULL, "postMulticast_impl() devinfo is NULL\n");
         BSRGeometryInfo  *bsrinfo        = (BSRGeometryInfo *)devinfo;
         T_Message        *msg            = new(state) T_Message(&_device,
                                                                 bsrinfo,

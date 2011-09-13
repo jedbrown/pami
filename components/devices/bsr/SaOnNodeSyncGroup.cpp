@@ -349,7 +349,7 @@ bool SaOnNodeSyncGroup::IsNbBarrierDone()
         if (member_id == 0) {
             // using 8-byte load as many as possible
             for (unsigned int i = 0; i < multi_byte_load_num; i ++) {
-                if (sa->Load8(i) != *(unsigned long long*)(mask[seq]))
+                if (sa->Load8(i<<3) != *(unsigned long long*)(mask[seq]))
                     return false;
             }
             // using 1-byte load for the remained

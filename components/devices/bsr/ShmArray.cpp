@@ -89,7 +89,7 @@ ShmArray::SHM_SETUP_STATE ShmArray::CheckShmSetup(
     ITRC(IT_BSR, "ShmArray(FAILOVER): initializing with %d members\n", member_cnt);
 
     /// - create shared memory or retrieve the existing one
-    shm_size = sizeof(Shm) + sizeof(Cacheline) * member_cnt;
+    shm_size = sizeof(Shm) + member_cnt;
 
     return CheckShmDone();
 }
@@ -146,58 +146,50 @@ ShmArray::~ShmArray()
     ITRC(IT_BSR, "ShmArray(FAILOVER): Destroyed\n");
 }
 
-unsigned char      ShmArray::Load1(const int offset) const
+unsigned char      ShmArray::Load1(const int byte_offset) const
 {
-    return shm->line[offset].byte;
+    return shm->shm_data[byte_offset];
 }
 
-unsigned short     ShmArray::Load2(const int offset) const
+unsigned short     ShmArray::Load2(const int byte_offset) const
 {
-    unsigned short value;
-    unsigned char *byte = (unsigned char *)&value;
-    for (size_t i = 0; i < sizeof(value); i++)
-        byte[i] = shm->line[offset+i].byte;
-    return value;
+    return *((unsigned short*)(shm->shm_data + byte_offset));
 }
 
-unsigned int       ShmArray::Load4(const int offset) const
+unsigned int       ShmArray::Load4(const int byte_offset) const
 {
-    unsigned int   value;
-    unsigned char *byte = (unsigned char *)&value;
-    for (size_t i = 0; i < sizeof(value); i++)
-        byte[i] = shm->line[offset+i].byte;
-    return value;
+    return *((unsigned int*)(shm->shm_data + byte_offset));
 }
 
-unsigned long long ShmArray::Load8(const int offset) const
+unsigned long long ShmArray::Load8(const int byte_offset) const
 {
-    unsigned long long value;
-    unsigned char *byte = (unsigned char *)&value;
-    for (size_t i = 0; i < sizeof(value); i++)
-        byte[i] = shm->line[offset+i].byte;
-    return value;
+    return *((unsigned long long*)(shm->shm_data + byte_offset));
 }
 
-void ShmArray::Store1(const int offset, const unsigned char val)
+void ShmArray::Store1(const int byte_offset, const unsigned char val)
 {
   // LAPI code had  isync();
     PAMI::Memory::sync<PAMI::Memory::instruction>();
-    shm->line[offset].byte = val;
+    shm->shm_data[byte_offset] = val;
     // LAPI Code had  lwsync();
     PAMI::Memory::sync();
 }
 
-void ShmArray::Store2(const int offset, const unsigned short val)
+void ShmArray::Store2(const int byte_offset, const unsigned short val)
 {
-    assert(0 && "ShmArray::Store2 Not supported yet");
+  // LAPI code had  isync();
+    PAMI::Memory::sync<PAMI::Memory::instruction>();
+    *((unsigned short*)(shm->shm_data + byte_offset)) = val;
+    // LAPI Code had  lwsync();
+    PAMI::Memory::sync();
 }
 
-void ShmArray::Store4(const int offset, const unsigned int val)
+void ShmArray::Store4(const int byte_offset, const unsigned int val)
 {
     assert(0 && "ShmArray::Store4 Not supported yet");
 }
 
-void ShmArray::Store8(const int offset, const unsigned long long val)
+void ShmArray::Store8(const int byte_offset, const unsigned long long val)
 {
     assert(0 && "ShmArray::Store8 Not supported yet");
 }
