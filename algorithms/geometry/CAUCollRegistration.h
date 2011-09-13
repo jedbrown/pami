@@ -19,6 +19,7 @@
 #include "algorithms/interfaces/NativeInterface.h"
 #include "algorithms/geometry/Metadata.h"
 #include "algorithms/protocols/barrier/BarrierT.h"
+#include "algorithms/protocols/barrier/HybridBarrierT.h"
 #include "algorithms/protocols/barrier/MultiSyncComposite.h"
 #include "algorithms/protocols/broadcast/MultiCastComposite.h"
 #include "algorithms/protocols/allreduce/MultiCombineComposite.h"
@@ -29,7 +30,7 @@
 #define CAU_SETUPNI_P2P(NI_PTR) rc =                                    \
     NativeInterfaceCommon::constructNativeInterface                     \
     <T_Allocator, T_NI_P2P, T_Protocol, T_Device_P2P,                   \
-     NativeInterfaceCommon::P2P_ONLY>(                                  \
+     NativeInterfaceCommon::MULTICAST_ONLY>(                            \
        _proto_alloc,                                                    \
        _dev_p2p,                                                        \
        NI_PTR,                                                          \
@@ -204,40 +205,53 @@ namespace PAMI
         {
           new(m) PAMI::Geometry::Metadata("I0:Hybrid:SHMEM:P2P");
         }
+        extern inline void GlobalP2PMetaData(pami_metadata_t *m)
+        {
+          new(m) PAMI::Geometry::Metadata("I0:HybridP2PComponent:SHMEM:P2P");
+        }
         extern inline bool hybrid_analyze (PAMI_GEOMETRY_CLASS *geometry)
         {
           return true;
         }
         typedef CCMI::Adaptor::Barrier::BarrierT
         < CCMI::Schedule::TopoMultinomial,
-          hybrid_analyze,
-          PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX,
-          PAMI::Geometry::CKEY_BARRIERCOMPOSITE1 >
-        HybridSHMEMBarrier;
+          Barrier::hybrid_analyze,
+          PAMI::Geometry::MASTER_TOPOLOGY_INDEX,
+          PAMI::Geometry::CKEY_BARRIERCOMPOSITE2 >
+        GlobalP2PBarrier;
         
         typedef CCMI::Adaptor::Barrier::BarrierFactoryT
-        < HybridSHMEMBarrier,
-          HybridSHMEMMetaData,
+        < Barrier::GlobalP2PBarrier,
+          Barrier::GlobalP2PMetaData,
           CCMI::ConnectionManager::SimpleConnMgr,
-          true,
-          PAMI::Geometry::CKEY_BARRIERCOMPOSITE1>
-        HybridSHMEMBarrierFactory;
+          false,
+          PAMI::Geometry::CKEY_BARRIERCOMPOSITE2>
+        GlobalP2PBarrierFactory;
 
-        typedef CCMI::Adaptor::Barrier::BarrierT
-        < CCMI::Schedule::TopoMultinomial,
-          hybrid_analyze,
-          PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX,
-          PAMI::Geometry::CKEY_BARRIERCOMPOSITE1 >
-        HybridBSRBarrier;
-        
-        typedef CCMI::Adaptor::Barrier::BarrierFactoryT
-        < HybridBSRBarrier,
-          HybridBSRMetaData,
-          CCMI::ConnectionManager::SimpleConnMgr,
-          true,
-          PAMI::Geometry::CKEY_BARRIERCOMPOSITE1>
-        HybridBSRBarrierFactory;
-
+        // Since templated typedefs aren't in the c++ compilers we are using
+        // We need a templated class to build this type
+        template <class T_NativeInterface>
+        class HybridBarrier
+        {
+        public:
+          typedef CCMI::Adaptor::Barrier::HybridBarrierCompositeT
+          < GlobalP2PBarrierFactory,
+            GlobalP2PBarrier,
+            T_NativeInterface>
+          HybridBarrierType;
+        };
+        template<class T_NativeInterface, CCMI::Adaptor::MetaDataFn get_metadata>
+        class HybridBarrierFactory
+        {
+        public:
+          typedef CCMI::Adaptor::Barrier::HybridBarrierFactoryT
+          <typename HybridBarrier<T_NativeInterface>::HybridBarrierType,
+           get_metadata,
+           GlobalP2PBarrierFactory,
+           T_NativeInterface,
+           PAMI::Geometry::GKEY_MSYNC_LOCAL_CLASSROUTEID>
+          HybridBarrierFactoryType;
+        };
       };
 
       namespace Broadcast
@@ -338,7 +352,8 @@ namespace PAMI
           uint32_t                           _unique_key;
           uint64_t                           _ctlstr_offset;
         }GeometryInfo;
-
+      typedef typename Barrier::HybridBarrierFactory<T_LocalBSRNI,Barrier::HybridBSRMetaData>::HybridBarrierFactoryType    HybridBSRBarrierFactory;
+      typedef typename Barrier::HybridBarrierFactory<T_LocalNI_AM,Barrier::HybridSHMEMMetaData>::HybridBarrierFactoryType  HybridSHMEMBarrierFactory;
       public:
         inline CAURegistration(pami_client_t                        client,
                                pami_context_t                       context,
@@ -380,17 +395,17 @@ namespace PAMI
           _local_devs(ldev),
           _local_devs_bsr(ldevbsr),
           _global_dev(gdev),
-          _g_barrier_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
           _l_barrierbsr_ni(_local_devs_bsr,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
+          _g_barrier_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
           _g_broadcast_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
           _g_allreduce_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
           _g_reduce_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
           _dev_p2p(dev_p2p),
           _proto_alloc(proto_alloc),
-          _barrier_reg(&_sconnmgr,NULL, &_g_barrier_ni),
-          _barrierbsr_reg(&_sconnmgr,&_l_barrierbsr_ni, &_g_barrier_ni),
           _barrierbsrp2p_reg(NULL),
           _barriershmemp2p_reg(NULL),
+          _barrier_reg(&_sconnmgr,NULL, &_g_barrier_ni),
+          _barrierbsr_reg(&_sconnmgr,&_l_barrierbsr_ni, &_g_barrier_ni),
           _broadcast_reg(&_sconnmgr,NULL, false,&_g_broadcast_ni,false),
           _allreduce_reg(&_sconnmgr,NULL, &_g_allreduce_ni),
           _reduce_reg(&_sconnmgr,NULL, &_g_reduce_ni),
@@ -404,6 +419,8 @@ namespace PAMI
             else
               _enabled = false;
 
+            if(!mm) _enabled=false;
+
             if(!_enabled) return;
 
             // To initialize shared memory, we need to provide the task offset into the
@@ -416,18 +433,26 @@ namespace PAMI
             mapping.nodePeers(numpeers);
 
             numbits = countbits(cp->nrt[0]->table_info.cau_index_resources);
+            _cau_uniqifier   = _global_dev.getUniqifier();
             pami_result_t rc = _csmm.init(peer,numpeers,numbits);
-            _cau_uniqifier   = _global_dev.getUniqifier(); 
-            
             if(rc == PAMI_SUCCESS)
             {
               _enabled = true;
               CAU_SETUPNI_P2P(_p2p_ni_bsr);
               CAU_SETUPNI_P2P(_p2p_ni_shmem);
-              _barrierbsrp2p_reg   = new(&_bsrp2p_reg_store[0])   Barrier::HybridBSRBarrierFactory(&_sconnmgr,_p2p_ni_bsr);
-              _barriershmemp2p_reg = new(&_shmemp2p_reg_store[0]) Barrier::HybridSHMEMBarrierFactory(&_sconnmgr,_p2p_ni_shmem);
-              _barrierbsrp2p_reg->setMapIdToGeometry(mapidtogeometry);
-              _barriershmemp2p_reg->setMapIdToGeometry(mapidtogeometry);
+
+              _globalp2p_barrier_reg_bsr = new(&_globalp2p_barrier_reg_store0[0])
+                Barrier::GlobalP2PBarrierFactory(&_sconnmgr,
+                                                 _p2p_ni_bsr,
+                                                 Barrier::GlobalP2PBarrierFactory::cb_head);
+              _globalp2p_barrier_reg_shmem = new(&_globalp2p_barrier_reg_store1[0])
+                Barrier::GlobalP2PBarrierFactory(&_sconnmgr,
+                                                 _p2p_ni_shmem,
+                                                 Barrier::GlobalP2PBarrierFactory::cb_head);
+              _globalp2p_barrier_reg_bsr->setMapIdToGeometry(mapidtogeometry);
+              _globalp2p_barrier_reg_shmem->setMapIdToGeometry(mapidtogeometry);
+              _barrierbsrp2p_reg   = new(&_bsrp2p_reg_store[0])   HybridBSRBarrierFactory();
+              _barriershmemp2p_reg = new(&_shmemp2p_reg_store[0]) HybridSHMEMBarrierFactory();
             }
             else
               _enabled = false;
@@ -491,9 +516,12 @@ namespace PAMI
           {
             PAMI::Topology *local_topo   = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX));
             GeometryInfo   *geometryInfo = (GeometryInfo*)geometry->getKey(Geometry::PAMI_GKEY_GEOMETRYINFO);
-            *bsr_gi                      = (PAMI::Device::BSRGeometryInfo *)_bsr_geom_allocator.allocateObject();
-            new(*bsr_gi)PAMI::Device::BSRGeometryInfo(geometry->comm(),local_topo, geometryInfo->_unique_key);
-            geometry->setKey(Geometry::GKEY_MSYNC_LOCAL_CLASSROUTEID,*bsr_gi);
+            if(local_topo->size() > 1)
+            {
+              *bsr_gi                      = (PAMI::Device::BSRGeometryInfo *)_bsr_geom_allocator.allocateObject();
+              new(*bsr_gi)PAMI::Device::BSRGeometryInfo(geometry->comm(),local_topo, geometryInfo->_unique_key);
+              geometry->setKey(Geometry::GKEY_MSYNC_LOCAL_CLASSROUTEID,*bsr_gi);
+            }
           }
 
         inline pami_result_t analyze_impl(size_t         context_id,
@@ -636,7 +664,7 @@ namespace PAMI
 
                     // Can we enable BSR?  Maybe.  Collision matters
                     // If no key collision, enable bsr protocols
-                    if(!((result_mask&2ULL) || (result_mask&4ULL)))
+                    if((result_mask&2ULL) || (result_mask&4ULL))
                     {
                       setup_bsr(geometry, &bsr_gi);
                       ITRC(IT_CAU, "CollReg(phase 1): group_id=%d setup shm, bsr\n", groupid);
@@ -660,6 +688,20 @@ namespace PAMI
                   _allreduce_reg.setNI(geometry, ni,&_g_allreduce_ni);
                   _reduce_reg.setNI(geometry, ni, &_g_reduce_ni);
 
+                  Barrier::GlobalP2PBarrierFactory *f0 = NULL, *f1 = NULL;
+                  if((local_topo->size() < geometry->size()) && participant)
+                  {
+                    // Leader tasks with more than one leader
+                    // require global communication, set up the pointers for
+                    // the off node communication.
+                    f0 = _globalp2p_barrier_reg_bsr;
+                    f1 = _globalp2p_barrier_reg_shmem;
+                  }
+                  ITRC(IT_CAU, "P2P_bsr registration=%p P2P_shmem registration=%p local topo size=%d, geom size=%d\n",
+                       f0, f1, local_topo->size(), geometry->size());
+                  _barrierbsrp2p_reg->setInfo(geometry, &_l_barrierbsr_ni, f0);
+                  _barriershmemp2p_reg->setInfo(geometry, ni, f1);
+
                   // Add the geometry info to the geometry
                   geometry->setKey(PAMI::Geometry::GKEY_GEOMETRYCSNI, ni);
 
@@ -672,22 +714,51 @@ namespace PAMI
 
                   ITRC(IT_CAU, "CollReg(phase 1): group_id=%d shmOnly=%d bsrOnly=%d globalCAUOnly=%d fullShmCAU=%d fullBsrCAU=%d\n",
                        groupid,shmOnly, bsrOnly,globalCAUOnly, fullyShmCAUConnected, fullyBsrCAUConnected);
-                  
+
+                  // ///////////////////////////////////////////////////////////
+                  // Barrier Protocols
+                  // ///////////////////////////////////////////////////////////
                   if(shmOnly || fullyShmCAUConnected || globalCAUOnly)
                   {
                     ITRC(IT_CAU, "CollReg(phase 1): group_id=%d adding CAU/SHM Barrier collective to list\n",groupid);
                     geometry->addCollective(PAMI_XFER_BARRIER,&_barrier_reg,context_id);
                   }
+
+                  // Shared memory protocols should always be available
+                  ITRC(IT_CAU, "CollReg(phase 1): group_id=%d adding SHM/P2P Barrier collective to list\n",groupid);
+                  geometry->addCollective(PAMI_XFER_BARRIER,
+                                          _barriershmemp2p_reg,
+                                          _context_id);
+
                   if(bsrOnly || fullyBsrCAUConnected)
                   {
                     ITRC(IT_CAU, "CollReg(phase 1): group_id=%d adding BSR/SHM Barrier collective to list\n", groupid);
                     geometry->addCollective(PAMI_XFER_BARRIER,&_barrierbsr_reg,context_id);
                   }
+
+                  if(_local_devs_bsr.isInit())
+                  {
+                    // Ok to check isInit without a reduction because it's a job global
+                    // Always insert into the list because BSR device should emulate
+                    // BSR over shared memory if resources aren't available.
+                    ITRC(IT_CAU, "CollReg(phase 1): group_id=%d adding BSR/P2P Barrier collective to list\n",groupid);
+                    geometry->addCollective(PAMI_XFER_BARRIER,
+                                            _barrierbsrp2p_reg,
+                                            _context_id);
+                  }
+
+                  // ///////////////////////////////////////////////////////////
+                  // Broadcast Protocols
+                  // ///////////////////////////////////////////////////////////
                   if(shmOnly || fullyShmCAUConnected || globalCAUOnly)
                   {
                     ITRC(IT_CAU, "CollReg(phase 1): group_id=%d adding CAU/SHM Broadcast collective to list\n", groupid);
                     geometry->addCollective(PAMI_XFER_BROADCAST,&_broadcast_reg,context_id);
                   }
+
+                  // ///////////////////////////////////////////////////////////
+                  // Reduce Protocols
+                  // ///////////////////////////////////////////////////////////
                   // If cau is enabled, we need to restrict the operations available by the
                   // CAU/SHM algorithms (cau cannot do all the math, metadata is important)
                   if(fullyShmCAUConnected || globalCAUOnly)
@@ -702,20 +773,6 @@ namespace PAMI
                     geometry->addCollective(PAMI_XFER_ALLREDUCE,&_allreduce_reg,context_id);
                     geometry->addCollective(PAMI_XFER_REDUCE,&_reduce_reg,context_id);
                   }
-                  // These are the two "hybrid protocols"
-                  // Currently they are emulated over P2P until we get
-                  // a true 2 device protocol enabled.  This code
-                  // is stubbed in so middleware can experiment with collective
-                  // selection.
-                  ITRC(IT_CAU, "CollReg(phase 1): group_id=%d adding SHM/P2P Barrier collective to list\n",groupid);
-                  geometry->addCollective(PAMI_XFER_BARRIER,
-                                          _barriershmemp2p_reg,
-                                          _context_id);
-
-                  ITRC(IT_CAU, "CollReg(phase 1): group_id=%d adding BSR/P2P Barrier collective to list\n",groupid);                  
-                  geometry->addCollective(PAMI_XFER_BARRIER,
-                                          _barrierbsrp2p_reg,
-                                          _context_id);
                   return PAMI_SUCCESS;
                 }
                 default:
@@ -819,6 +876,9 @@ namespace PAMI
         T_Local_DeviceBSR                                              &_local_devs_bsr;
         T_Global_Device                                                &_global_dev;
 
+        // BSR Device
+        T_LocalBSRNI                                                    _l_barrierbsr_ni;
+
         // Global native interface
         T_GlobalNI_AM                                                   _g_barrier_ni;
         T_GlobalNI_AM                                                   _g_broadcast_ni;
@@ -832,10 +892,15 @@ namespace PAMI
         T_NI_P2P                                                       *_p2p_ni_shmem;
         
         // Registrations, hybrid first
-        Barrier::HybridBSRBarrierFactory                               *_barrierbsrp2p_reg;
-        Barrier::HybridSHMEMBarrierFactory                             *_barriershmemp2p_reg;
-        char                                                            _bsrp2p_reg_store[sizeof(Barrier::HybridBSRBarrierFactory)];
-        char                                                            _shmemp2p_reg_store[sizeof(Barrier::HybridSHMEMBarrierFactory)];
+        Barrier::GlobalP2PBarrierFactory                               *_globalp2p_barrier_reg_bsr;
+        Barrier::GlobalP2PBarrierFactory                               *_globalp2p_barrier_reg_shmem;
+        HybridBSRBarrierFactory                                        *_barrierbsrp2p_reg;
+        HybridSHMEMBarrierFactory                                      *_barriershmemp2p_reg;
+
+        char                                                            _globalp2p_barrier_reg_store0[sizeof(Barrier::GlobalP2PBarrierFactory)];
+        char                                                            _globalp2p_barrier_reg_store1[sizeof(Barrier::GlobalP2PBarrierFactory)];
+        char                                                            _bsrp2p_reg_store[sizeof(HybridBSRBarrierFactory)];
+        char                                                            _shmemp2p_reg_store[sizeof(HybridSHMEMBarrierFactory)];
         
         // Registration, optimized
         Barrier::MultiSyncFactory                                       _barrier_reg;
@@ -844,9 +909,6 @@ namespace PAMI
         Allreduce::MultiCombineFactory                                  _allreduce_reg;
         Reduce::MultiCombineFactory                                     _reduce_reg;
 
-        // BSR Device
-        T_LocalBSRNI                                                    _l_barrierbsr_ni;
-        
         // Variable to uniquely identify the job with respect to cau
         unsigned                                                        _cau_uniqifier;
 

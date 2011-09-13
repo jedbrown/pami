@@ -176,6 +176,8 @@ public:
                     factory, cdata->_comm, composite);
 
         //Override poly morphism
+        PAMI_assert(ctxt != NULL);
+        composite->_myexecutor.setContext(ctxt);
         composite->_myexecutor.notifyRecv (peer, *info, NULL, 0);
         TRACE_FN_EXIT();
     }
@@ -423,7 +425,7 @@ public:
     virtual void start()
     {
         TRACE_FN_ENTER();
-        TRACE_FORMAT( "%p",this);
+        TRACE_FORMAT( "%p %p %p",this, _cb_done, _clientdata);
         _myexecutor.setDoneCallback (_cb_done, _clientdata);
         _myexecutor.start();
         TRACE_FN_EXIT();

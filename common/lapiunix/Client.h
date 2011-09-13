@@ -533,11 +533,12 @@ namespace PAMI
         pami_result_t      rc;
 
         // gather local affinity info through PNSD
-        uint64_t deviceCheck[2];
-        deviceCheck[0] = (((LapiImpl::Context*)_contexts[0])->CheckAffinityInfo())?1:0;
+        uint64_t deviceCheck[3];
+        deviceCheck[0] = (((LapiImpl::Context*)_contexts[0])->CheckAffinityInfo())?1ULL:0ULL;
         deviceCheck[1] = ((LapiImpl::Context*)_contexts[0])->nrt[0]->table_info.cau_index_resources;
+        deviceCheck[2] = _disable_shm?1ULL:0ULL;
 
-        volatile uint64_t deviceCheckResult[2] = {0,0};
+        volatile uint64_t deviceCheckResult[3] = {0,0,0};
 
         _world_geometry->algorithms_info(colltype,&alg,&mdata,1,NULL,NULL,0,0);
 
@@ -546,10 +547,10 @@ namespace PAMI
         xfer.algorithm                      = alg;
         xfer.cmd.xfer_allreduce.sndbuf      = (char*)&deviceCheck[0];
         xfer.cmd.xfer_allreduce.stype       = PAMI_TYPE_UNSIGNED_LONG_LONG;
-        xfer.cmd.xfer_allreduce.stypecount  = 2;
+        xfer.cmd.xfer_allreduce.stypecount  = 3;
         xfer.cmd.xfer_allreduce.rcvbuf      = (char*)&deviceCheckResult[0];
         xfer.cmd.xfer_allreduce.rtype       = PAMI_TYPE_UNSIGNED_LONG_LONG;
-        xfer.cmd.xfer_allreduce.rtypecount  = 2;
+        xfer.cmd.xfer_allreduce.rtypecount  = 3;
         xfer.cmd.xfer_allreduce.op          = PAMI_DATA_BAND;
         xfer.cmd.xfer_allreduce.commutative = 1;
         xfer.cmd.xfer_allreduce.data_cookie = NULL;
@@ -561,10 +562,10 @@ namespace PAMI
           _contexts[0]->advance(10,rc);
 
         _cau_uniqifier = find_first_bit(deviceCheckResult[1]);
+        if(deviceCheckResult[2]) _disable_shm=true;
         
-        ITRC(IT_CAU, "Client CAU Discovery: inmask=0x%llx reducemask=0x%llx _cau_uniq=%u\n",
-             deviceCheck[1], deviceCheckResult[1], _cau_uniqifier);
-        
+        ITRC(IT_CAU, "Client CAU Discovery: inmask=0x%llx reducemask=0x%llx _cau_uniq=%u, _shm=%llx\n",
+             deviceCheck[1], deviceCheckResult[1], _cau_uniqifier, deviceCheckResult[2]);
 
         return (deviceCheckResult[0] == 1);
       }
