@@ -23,9 +23,11 @@
 
 #include "p2p/protocols/RPut.h"
 
-#ifndef TRACE_ERR
-#define TRACE_ERR(x) // fprintf x
-#endif
+#include "util/trace.h"
+#undef  DO_TRACE_ENTEREXIT
+#undef  DO_TRACE_DEBUG
+#define DO_TRACE_ENTEREXIT 0
+#define DO_TRACE_DEBUG     0
 
 namespace PAMI
 {
@@ -38,84 +40,130 @@ namespace PAMI
       {
         protected:
 
-          typedef uint8_t msg_t[T_Model::dma_model_state_bytes];
+          typedef PutRdma<T_Model, T_Device> Protocol;
 
-          typedef struct put_state
+          typedef uint8_t model_state_t[T_Model::dma_model_state_bytes];
+
+          typedef struct
           {
-            msg_t                        msg0;
-            msg_t                        msg1;
-            pami_event_function          fn_no_deallocate;
-            pami_event_function          fn_with_deallocate;
-            void                       * cookie;
-            PutRdma<T_Model, T_Device> * protocol;
-          } put_state_t;
+            model_state_t         state;
+            pami_event_function   fn;
+            void                * cookie;
+            Protocol            * protocol;
+          } state_t;
 
-          ///
-          /// \brief Local put completion event callback.
-          ///
-          /// This callback will invoke the application local completion
-          /// callback function and \b not free the transfer state memory.
-          ///
-          static void complete_no_deallocate (pami_context_t   context,
-                                              void           * cookie,
-                                              pami_result_t    result)
+          void start_remotefn (pami_task_t           task,
+                               size_t                offset,
+                               pami_event_function   fn,
+                               void                * cookie,
+                               Memregion           * local_mr,
+                               Memregion           * remote_mr)
           {
-            put_state_t * state = (put_state_t *) cookie;
+            TRACE_FN_ENTER();
 
-// This if check can be ignored?
-            if (state->fn_no_deallocate != NULL)
+            // Allocate memory to maintain the state of the put operation.
+            state_t * put =
+              (state_t *) _allocator.allocateObject();
+
+            put->fn       = fn;
+            put->cookie   = cookie;
+            put->protocol = this;
+
+            _model.postDmaPut (put->state,
+                               complete_remotefn, (void *) put,
+                               task, offset, 0,
+                               local_mr, 0, remote_mr, 0);
+
+            TRACE_FN_EXIT();
+          };
+
+          static void complete_remotefn (pami_context_t   context,
+                                         void           * cookie,
+                                         pami_result_t    result)
+          {
+            TRACE_FN_ENTER();
+
+            state_t * put = (state_t *) cookie;
+
+            put->fn (context, put->cookie, PAMI_SUCCESS);
+            put->protocol->_allocator.returnObject ((void *) put);
+
+            TRACE_FN_EXIT();
+          };
+
+          inline void start_simple (pami_task_t           task,
+                                    size_t                offset,
+                                    size_t                bytes,
+                                    Memregion           * local_mr,
+                                    size_t                local_offset,
+                                    Memregion           * remote_mr,
+                                    size_t                remote_offset,
+                                    pami_event_function   done_fn,
+                                    void                * cookie)
+          {
+            TRACE_FN_ENTER();
+
+            if (_model.postDmaPut (task, offset, bytes,
+                                   local_mr, local_offset,
+                                   remote_mr, remote_offset))
               {
-                state->fn_no_deallocate (context, state->cookie, PAMI_SUCCESS);
+                if (done_fn)
+                  done_fn (_context, cookie, PAMI_SUCCESS);
+              }
+            else
+              {
+                state_t * put =
+                  (state_t *) _allocator.allocateObject();
+
+                put->fn       = done_fn;
+                put->cookie   = cookie;
+                put->protocol = this;
+
+                _model.postDmaPut (put->state,
+                                   complete_simple, (void *) put,
+                                   task, offset, bytes,
+                                   local_mr, local_offset,
+                                   remote_mr, remote_offset);
               }
 
-            return;
-          }
+            TRACE_FN_EXIT();
+          };
 
-          ///
-          /// \brief Local put completion event callback.
-          ///
-          /// This callback will invoke the application local completion
-          /// callback function and free the transfer state memory.
-          ///
-          static void complete_with_deallocate (pami_context_t   context,
-                                                void           * cookie,
-                                                pami_result_t    result)
+          static void complete_simple (pami_context_t   context,
+                                       void           * cookie,
+                                       pami_result_t    result)
           {
-            put_state_t * state = (put_state_t *) cookie;
+            TRACE_FN_ENTER();
 
-// This if check can be ignored?
-            if (state->fn_with_deallocate != NULL)
-              {
-                state->fn_with_deallocate (context, state->cookie, PAMI_SUCCESS);
-              }
+            state_t * put = (state_t *) cookie;
 
-            state->protocol->_allocator.returnObject ((void *) state);
+            if (put->fn)
+              put->fn (context, put->cookie, PAMI_SUCCESS);
 
-            return;
-          }
+            put->protocol->_allocator.returnObject ((void *) put);
+
+            TRACE_FN_EXIT();
+          };
+
 
         public:
 
-          template <class T_Allocator>
-          static PutRdma * generate (T_Device       & device,
-                                     pami_context_t   context,
-                                     T_Allocator    & allocator,
-                                     pami_result_t  & status)
+          template <class T_MemoryManager>
+          static PutRdma * generate (T_Device        & device,
+                                     pami_context_t    context,
+                                     T_MemoryManager * mm,
+                                     pami_result_t   & status)
           {
-            TRACE_ERR((stderr, ">> PutRdma::generate()\n"));
-            COMPILE_TIME_ASSERT(sizeof(PutRdma) <= T_Allocator::objsize);
+            TRACE_FN_ENTER();
 
-            PutRdma * put = (PutRdma *) allocator.allocateObject ();
-            new ((void *)put) PutRdma (device, context, status);
+            void * protocol = NULL;
+            status = mm->memalign((void **) & protocol, 16, sizeof(PutRdma));
+            PAMI_assert_alwaysf(status == PAMI_SUCCESS, "Failed to get memory for rdma put protocol");
+            new (protocol) PutRdma (device, context, status);
 
-            if (status != PAMI_SUCCESS)
-              {
-                allocator.returnObject (put);
-                put = NULL;
-              }
+            TRACE_FN_EXIT();
 
-            TRACE_ERR((stderr, "<< PutRdma::generate(), put = %p, status = %d\n", put, status));
-            return put;
+            return (PutRdma *) protocol;;
           }
 
 
@@ -124,7 +172,11 @@ namespace PAMI
               _device (device),
               _context (context)
           {
+            TRACE_FN_ENTER();
+
             COMPILE_TIME_ASSERT(T_Model::dma_model_mr_supported == true);
+
+            TRACE_FN_EXIT();
           }
 
           ///
@@ -132,7 +184,8 @@ namespace PAMI
           ///
           inline pami_result_t simple (pami_rput_simple_t * parameters)
           {
-            TRACE_ERR((stderr, ">> PutRdma::simple()\n"));
+            TRACE_FN_ENTER();
+
             pami_task_t task;
             size_t offset;
             PAMI_ENDPOINT_INFO(parameters->rma.dest, task, offset);
@@ -140,138 +193,24 @@ namespace PAMI
             // Verify that this task is addressable by this dma device
             if (unlikely(_device.isPeer(task) == false)) return PAMI_ERROR;
 
-            TRACE_ERR((stderr, "   PutRdma::simple(), attempt an 'immediate' rput transfer.\n"));
-            if (_model.postDmaPut (task, offset,
-                                   parameters->rma.bytes,
-                                   (Memregion *) parameters->rdma.local.mr,
-                                   parameters->rdma.local.offset,
-                                   (Memregion *) parameters->rdma.remote.mr,
-                                   parameters->rdma.remote.offset))
-              {
-                TRACE_ERR((stderr, "   PutRdma::simple(), 'immediate' rput transfer was successful, invoke callback.\n"));
-                if (parameters->rma.done_fn)
-                  parameters->rma.done_fn (_context, parameters->rma.cookie, PAMI_SUCCESS);
+            start_simple (task, offset,
+                          parameters->rma.bytes,
+                          (Memregion *) parameters->rdma.local.mr,
+                          parameters->rdma.local.offset,
+                          (Memregion *) parameters->rdma.remote.mr,
+                          parameters->rdma.remote.offset,
+                          parameters->rma.done_fn,
+                          parameters->rma.cookie);
 
-                if (parameters->put.rdone_fn)
-                {
-                  TRACE_ERR((stderr, "   PutRdma::simple(), attempt an 'immediate' rput zero-byte transfer.\n"));
-                  if (_model.postDmaPut (task, offset, 0,
-                                         (Memregion *) parameters->rdma.local.mr,
-                                         parameters->rdma.local.offset,
-                                         (Memregion *) parameters->rdma.remote.mr,
-                                         parameters->rdma.remote.offset))
-                    {
-                      parameters->put.rdone_fn (_context, parameters->rma.cookie, PAMI_SUCCESS);
-                    }
-                  else
-                    {
-                      TRACE_ERR((stderr, "   PutRdma::simple(), 'immediate' rput zero-byte transfer was not successful, allocate rdma put state memory.\n"));
+            if (unlikely(parameters->put.rdone_fn != NULL))
+              start_remotefn (task, offset,
+                              parameters->put.rdone_fn,
+                              parameters->rma.cookie,
+                          (Memregion *) parameters->rdma.local.mr,
+                          (Memregion *) parameters->rdma.remote.mr);
 
-                      // Allocate memory to maintain the state of the put operation.
-                      put_state_t * state =
-                        (put_state_t *) _allocator.allocateObject();
+            TRACE_FN_EXIT();
 
-                      state->fn_with_deallocate = parameters->put.rdone_fn;
-                      state->cookie             = parameters->rma.cookie;
-                      state->protocol           = this;
-
-                      TRACE_ERR((stderr, "   PutRdma::simple(), attempt a 'non-blocking' rput zero-byte transfer.\n"));
-                      _model.postDmaPut (state->msg0,
-                                         complete_with_deallocate,
-                                         (void *) state,
-                                         task, offset, 0,
-                                         (Memregion *) parameters->rdma.local.mr,
-                                         parameters->rdma.local.offset,
-                                         (Memregion *) parameters->rdma.remote.mr,
-                                         parameters->rdma.remote.offset);
-                    }
-                }
-
-                TRACE_ERR((stderr, "<< PutRdma::simple(), PAMI_SUCCESS\n"));
-                return PAMI_SUCCESS;
-              }
-
-            TRACE_ERR((stderr, "   PutRdma::simple(), 'immediate' rput transfer was not successful, allocate rdma put state memory.\n"));
-
-            // Allocate memory to maintain the state of the put operation.
-            put_state_t * state =
-              (put_state_t *) _allocator.allocateObject();
-
-            state->cookie   = parameters->rma.cookie;
-            state->protocol = this;
-
-            TRACE_ERR((stderr, "   PutRdma::simple(), attempt a 'non-blocking' rput transfer.\n"));
-            if (likely(parameters->rma.done_fn != NULL))
-            {
-              if (unlikely(parameters->put.rdone_fn != NULL))
-              {
-                state->fn_no_deallocate = parameters->rma.done_fn;
-                _model.postDmaPut (state->msg0,
-                                   complete_no_deallocate,
-                                   (void *) state,
-                                   task, offset,
-                                   parameters->rma.bytes,
-                                   (Memregion *) parameters->rdma.local.mr,
-                                   parameters->rdma.local.offset,
-                                   (Memregion *) parameters->rdma.remote.mr,
-                                   parameters->rdma.remote.offset);
-
-                // A zero-byte put initiates a fence operation
-                state->fn_with_deallocate = parameters->put.rdone_fn;
-                _model.postDmaPut (state->msg1,
-                                   complete_with_deallocate,
-                                   (void *) state,
-                                   task, offset, 0,
-                                   (Memregion *) parameters->rdma.local.mr,
-                                   parameters->rdma.local.offset,
-                                   (Memregion *) parameters->rdma.remote.mr,
-                                   parameters->rdma.remote.offset);
-              }
-              else
-              {
-                state->fn_with_deallocate = parameters->rma.done_fn;
-                _model.postDmaPut (state->msg0,
-                                   complete_with_deallocate,
-                                   (void *) state,
-                                   task, offset,
-                                   parameters->rma.bytes,
-                                   (Memregion *) parameters->rdma.local.mr,
-                                   parameters->rdma.local.offset,
-                                   (Memregion *) parameters->rdma.remote.mr,
-                                   parameters->rdma.remote.offset);
-              }
-            }
-            else
-            {
-              if (likely(parameters->put.rdone_fn != NULL))
-              {
-                _model.postDmaPut (state->msg0,
-                                   NULL, NULL,
-                                   task, offset,
-                                   parameters->rma.bytes,
-                                   (Memregion *) parameters->rdma.local.mr,
-                                   parameters->rdma.local.offset,
-                                   (Memregion *) parameters->rdma.remote.mr,
-                                   parameters->rdma.remote.offset);
-
-                // A zero-byte put initiates a fence operation
-                state->fn_with_deallocate = parameters->put.rdone_fn;
-                _model.postDmaPut (state->msg1,
-                                   complete_with_deallocate,
-                                   (void *) state,
-                                   task, offset, 0,
-                                   (Memregion *) parameters->rdma.local.mr,
-                                   parameters->rdma.local.offset,
-                                   (Memregion *) parameters->rdma.remote.mr,
-                                   parameters->rdma.remote.offset);
-              }
-              else
-              {
-                // huh? no callbacks specified?
-              }
-            }
-
-            TRACE_ERR((stderr, "<< PutRdma::simple(), PAMI_SUCCESS\n"));
             return PAMI_SUCCESS;
           };
 
@@ -279,13 +218,15 @@ namespace PAMI
 
           T_Model                                   _model;
           T_Device                                & _device;
-          MemoryAllocator < sizeof(put_state), 16 > _allocator;
+          MemoryAllocator < sizeof(state_t), 16 > _allocator;
           pami_context_t                            _context;
       };
     };
   };
 };
-#undef TRACE_ERR
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
+
 #endif /* __p2p_protocols_rput_PutRdma_h__ */
 
 //
