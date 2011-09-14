@@ -94,6 +94,7 @@ namespace PAMI
             //Core_memcpy (buf, payload, bytes);
 
             if (bytes >= 512) {
+	      _pwq->produceBytes(srcidx, 512);            
 	      bytes = 512;
 	      if(likely(((uint64_t)buf & 0x1F) == 0)) {
 		quad_copy_512(buf, (char *)payload);
@@ -111,11 +112,12 @@ namespace PAMI
 	      else
 		memcpy (buf, payload, 512);
 	    }
-            else
+            else {
+	      _pwq->produceBytes(srcidx, bytes);            
 	      //bytes left less then 512 we only have a single packet
               _int64Cpy(buf, (char *)payload, bytes);
+	    }
 	    
-	    _pwq->produceBytes(srcidx, bytes);            
 	    
             //printf ("Process Packet from src %d bytes avail %ld packet bytes %ld\n", srcidx, bytes_available, pbytes);
             return (_n_incomplete == 0);

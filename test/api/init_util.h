@@ -287,7 +287,7 @@ int pami_shutdown(pami_client_t        * client,          /* in/out:  client    
   #define NITERLAT   100    
 #endif
 #ifndef NITERBW
-  #define NITERBW    MIN(10, gNiterlat/100+1)
+#define NITERBW    gNiterlat  //MIN(10, gNiterlat/100+1)
 #endif
 #ifndef CUTOFF
   #define CUTOFF     65536
