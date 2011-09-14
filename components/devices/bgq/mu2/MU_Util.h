@@ -148,6 +148,9 @@ namespace PAMI
 	
 	desc.setDirectPutFields (&dput);
 	desc.setMessageUnitPacketType (MUHWI_PACKET_TYPE_PUT);  
+
+	//Skip link checksumming the packet header
+	desc.setPt2PtSkip(8);	
       }
 
 

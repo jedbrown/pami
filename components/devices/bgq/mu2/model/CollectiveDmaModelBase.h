@@ -246,6 +246,10 @@ namespace PAMI
 
             _modeldesc.setDirectPutFields (&dput);
             _modeldesc.setMessageUnitPacketType (MUHWI_PACKET_TYPE_PUT);
+
+	    //Skip link checksumming the packet header
+	    _modeldesc.setCollectiveSkip(8);	
+	    
             TRACE_FN_EXIT();
           }
 

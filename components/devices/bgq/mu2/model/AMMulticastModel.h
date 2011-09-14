@@ -109,6 +109,9 @@ namespace PAMI {
 	  _singlepkt.setMemoryFIFOFields (&memfifo);
 	  _singlepkt.setMessageUnitPacketType (MUHWI_PACKET_TYPE_FIFO);
 
+	  //Skip link checksumming the packet header
+	  _singlepkt.setPt2PtSkip(8);	
+
 	  // --------------------------------------------------------------------
 	  // Set the network header information in the descriptor models to
 	  // differentiate between a single-packet transfer and a multi-packet
