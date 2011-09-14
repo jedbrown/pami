@@ -2025,15 +2025,44 @@ extern "C"
 
   /**
    * \brief Free any memory allocated inside of a geometry.
-   * \param[in] client   pami client
-   * \param[in] geometry The geometry object to free
+   * \param[in]  client   pami client
+   * \param[in]  geometry The geometry object to free
+   * \param[in]  context  context to deliver async callback to
+   * \param[in]  fn       event function to call when geometry has been destroyed
+   * \param[in]  cookie   user cookie to deliver with the callback
    * \retval PAMI_SUCCESS Memory free didn't fail
+   *
+   * PAMI_Geometry_destroy will free any internal resources allocated
+   * during a geometry create routine.  This may involve syncronization
+   * with other tasks in the geometry to free the resource, and thus
+   * requires a callback to be run before completion.  Synchronization with other
+   * tasks can not be assumed, however, as the operation to free the
+   * geometry may be local only, and dependant on the hardware and networks
+   * used for communication.
+   *
+   * PAMI_Geometry_destroy is nonblocking.  After the callback function
+   * has been called, the user is free to reuse the geometry id
+   * of the geometry being freed, subject to the geometry id creation
+   * rules.  It is valid to assume the geometry has been destroyed in
+   * the callback function.
+   *
+   * It is invalid to destroy geometry 0 (the world geometry)
+   *
+   * A valid client, geometry pointer, and context should provided
+   * to this API.  The fn can be NULL, but the user cannot re-use
+   * the geometry id(provided to the geometry create routine)
+   * for the lifecycle of the client.  If the event function is NULL
+   * there is no way for the user to determine when the resources
+   * can be reused.
    *
    * The geometry handle will be changed to an invalid value so that
    * it is clearly destroyed.
    */
-  pami_result_t PAMI_Geometry_destroy(pami_client_t     client,
-                                      pami_geometry_t * geometry);
+  pami_result_t PAMI_Geometry_destroy(pami_client_t          client,
+                                      pami_geometry_t      * geometry,
+                                      pami_context_t         context,
+                                      pami_event_function    fn,
+                                      void                 * cookie);
 
   /**
    * \brief Create and post a non-blocking alltoall vector operation.
