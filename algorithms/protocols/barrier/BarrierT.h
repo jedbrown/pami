@@ -177,6 +177,7 @@ public:
 
         //Override poly morphism
         PAMI_assert(ctxt != NULL);
+        PAMI_assert(composite != NULL);
         composite->_myexecutor.setContext(ctxt);
         composite->_myexecutor.notifyRecv (peer, *info, NULL, 0);
         TRACE_FN_EXIT();

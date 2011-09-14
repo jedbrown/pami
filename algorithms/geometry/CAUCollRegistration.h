@@ -706,6 +706,10 @@ namespace PAMI
 
                   _barriershmemp2p_reg->setInfo(geometry, ni, f1);
 
+                  pami_xfer_t xfer = {0};
+                  if(f0) f0->generate(geometry, &xfer);
+                  if(f1) f1->generate(geometry, &xfer);
+                  
                   // Add the geometry info to the geometry
                   geometry->setKey(PAMI::Geometry::GKEY_GEOMETRYCSNI, ni);
 
