@@ -60,7 +60,7 @@ namespace PAMI
           M2MPipeWorkQueueT<T_Int, T_Single> * _pwq;
           pami_callback_t                      _cb_done;
           bool                                 _init; 
-          uint32_t                             _ncomplete;
+          uint32_t                             _n_incomplete;
 
           M2mRecv (): _init(false)
           {
@@ -76,39 +76,56 @@ namespace PAMI
                            void                               * async_arg, 
                            unsigned                             connid);
 
-          void processPacket (uint32_t         srcidx,
+          bool processPacket (uint32_t         srcidx,
                               size_t           poffset,
                               size_t           pbytes,
-                              void           * payload,
-                              pami_context_t   ctxt) 
+                              void           * payload)
           {
             size_t bytes_produced = _pwq->getBytesProduced(srcidx);
             //Get the start of the buffer and then add packet offset to it
-            char * buf = (char *)_pwq->bufferToProduce(srcidx) + poffset - bytes_produced;
-            size_t bytes_available = _pwq->bytesAvailableToProduce(srcidx);
+            char * buf = (char *)_pwq->getBufferBase(srcidx) + poffset;
             //Compute the total bytes expected for this src idx
-            size_t total_bytes = bytes_produced + bytes_available;
+            size_t total_bytes = _pwq->getTotalBytes(srcidx);
             //Is this the last packet?
-            size_t is_complete = (bytes_available - pbytes - 1) >> 63;
-            _ncomplete  += is_complete;
+            size_t is_complete = (total_bytes - bytes_produced - pbytes - 1) >> 63;
+            _n_incomplete  -= is_complete;
             //Compute how many bytes can be copied 
-            size_t bytes = ((pbytes + poffset) <= total_bytes) ? pbytes : (total_bytes - poffset);
-            _pwq->produceBytes(srcidx, bytes);            
+            size_t bytes = total_bytes - poffset;
             //Core_memcpy (buf, payload, bytes);
 
-            if ((bytes == 512) && (((uint64_t)buf & 0x1F) == 0))
-              quad_copy_512(buf, (char *)payload);
+            if (bytes >= 512) {
+	      bytes = 512;
+	      if(likely(((uint64_t)buf & 0x1F) == 0)) {
+		quad_copy_512(buf, (char *)payload);
+		//pull in the next packet
+		char *nextp = (char *)payload + 512;
+		muspi_dcbt(nextp, 0);
+		muspi_dcbt(nextp, 64);
+		muspi_dcbt(nextp, 128);
+		muspi_dcbt(nextp, 192);
+		muspi_dcbt(nextp, 256);
+		muspi_dcbt(nextp, 320);
+		muspi_dcbt(nextp, 384);
+		muspi_dcbt(nextp, 448);		
+	      }
+	      else
+		memcpy (buf, payload, 512);
+	    }
             else
+	      //bytes left less then 512 we only have a single packet
               _int64Cpy(buf, (char *)payload, bytes);
-
+	    
+	    _pwq->produceBytes(srcidx, bytes);            
+	    
             //printf ("Process Packet from src %d bytes avail %ld packet bytes %ld\n", srcidx, bytes_available, pbytes);
-            if (unlikely(_ncomplete == _pwq->numActive()))
-            {
-              _init = false;
-              if (likely(_cb_done.function != NULL))
-                _cb_done.function (ctxt, _cb_done.clientdata, PAMI_SUCCESS);
-            }
+            return (_n_incomplete == 0);
           }
+
+	  void processCompletion (pami_context_t   ctxt) {
+	    _init = false;
+	    if (likely(_cb_done.function != NULL))
+	      _cb_done.function (ctxt, _cb_done.clientdata, PAMI_SUCCESS);
+	  }
 
         };
 
@@ -241,21 +258,21 @@ namespace PAMI
         {
           ManytomanyModel<T_Int, T_Single> *model = (ManytomanyModel<T_Int, T_Single> *) recv_func_parm;
           M2mHdr *amhdr = (M2mHdr *) metadata;
-
           unsigned connid    =  amhdr->connid;
           M2mRecv *recv =  model->getRecvObject(connid); 
-
           //PAMI_assert (model != NULL);
           //PAMI_assert (model->_recv_func != NULL);
-
-          if (unlikely(!recv->initialized()))
-            recv->initialize (model->_ctxt, model->_recv_func, model->_async_arg, connid);
 
           MUHWI_PacketHeader_t  * hdr = (MUHWI_PacketHeader_t *) ((char*)cookie - 32);
           //We only support an alltoall 2GB in size per destination
           size_t offset = hdr->messageUnitHeader.Packet_Types.Memory_FIFO.Put_Offset_LSB;
 
-          recv->processPacket (amhdr->srcidx, offset, bytes, payload, model->_ctxt);    
+          bool done = recv->processPacket (amhdr->srcidx, offset, bytes, payload);    
+	  if(unlikely(done)) {
+	    recv->processCompletion(model->_ctxt);
+	    model->_cached_connid = (unsigned) -1;
+	  }
+
           return PAMI_SUCCESS;
         }   
 
@@ -320,7 +337,12 @@ namespace PAMI
       template <typename T_Int, bool T_Single>
       void *ManytomanyModel<T_Int, T_Single>::getRecvFromMap(uint32_t connid)
       {
-        return &_recvmap[connid];
+	M2mRecv *recv =  (M2mRecv *)&_recvmap[connid];
+
+	if (unlikely(!recv->initialized()))
+	  recv->initialize (_ctxt, _recv_func, _async_arg, connid);
+
+        return recv;
       }
 
       template <typename T_Int, bool T_Single>
@@ -330,7 +352,6 @@ namespace PAMI
                                                                   unsigned                             connid) 
       {
         _init = true;
-        _ncomplete = 0;     
         pami_manytomanybuf_t *rbuf;
         recv_func (ctxt,
                    async_arg,
@@ -340,6 +361,7 @@ namespace PAMI
                    &rbuf,
                    &_cb_done);    
         _pwq = (M2MPipeWorkQueueT<T_Int, T_Single> *) rbuf->buffer;
+	_n_incomplete = _pwq->numActive();
       }
 
     };

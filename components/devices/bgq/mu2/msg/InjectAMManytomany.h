@@ -15,8 +15,8 @@
 #define DO_TRACE_ENTEREXIT 0
 #define DO_TRACE_DEBUG     0
 
-#define PRIME_A            1346567UL
-#define PRIME_B           17032781UL
+#define PRIME_A         1346567UL
+#define PRIME_B        17032781UL
 
 
 namespace PAMI
@@ -126,14 +126,27 @@ namespace PAMI
 	      MemoryFifoPacketHeader *hdr = (MemoryFifoPacketHeader*) &desc.PacketHeader;
 	      hdr->setMetaData(&_amhdr, sizeof(M2mHdr));
 
-	      //We assumePRIME_B0  > max ranks (BG/Q is expected to have 6.8M tasks)
-	      size_t random_seed = PRIME_B * (_amhdr.srcidx+1) + PRIME_A; 
-	      register size_t curidx = ((random_seed % _nranks) + _next) % _nranks;
-	      size_t num_msgs_perfifo = 4;
-	      if (_nranks >= 128)
-		num_msgs_perfifo = 8;
-	      size_t fifo = 0;	    
+	      bool is_small  = _pwq->bytesAvailableToConsume(0) <= 2048;
+	      bool is_medium = _pwq->bytesAvailableToConsume(0) <= 8192;
 
+	      //We assumePRIME_B0  > max ranks (BG/Q is expected to have 6.8M tasks)
+	      size_t random_seed, curidx;
+	      if (is_small) {
+		random_seed = PRIME_B * (_amhdr.srcidx+1) + PRIME_A;  
+		curidx = ((random_seed % _nranks) + _next) % _nranks;
+	      }
+	      else {
+		random_seed = PRIME_B*(_amhdr.srcidx+1) + PRIME_A; 
+		curidx = (random_seed + _next * PRIME_A) % _nranks;
+	      }
+
+	      size_t num_msgs_perfifo = 1;
+	      if(is_small)
+		num_msgs_perfifo = 16;
+	      else if(is_medium)
+		num_msgs_perfifo = 4;
+
+	      size_t fifo = 0;	    
 	      size_t rfifo8 =  *(size_t*)((char*)&desc + 40);
 	      register double fp0 asm("fr0");
 	      register double fp1 asm("fr1");	      
@@ -150,8 +163,6 @@ namespace PAMI
 		  ndesc = num_msgs_perfifo;		
 		if ((_next + ndesc) > _nranks)
 		  ndesc = _nranks - _next;
-		if ((curidx + ndesc) > _nranks)
-		  ndesc = _nranks - curidx;
 
 		register size_t i = 0;
 		register int64_t paddr_base = (int64_t)_paddr_base - (int64_t)_src_base;
@@ -172,16 +183,14 @@ namespace PAMI
 		  uint64_t              map;		
 		  // Clone the message descriptors directly into the injection fifo.
 		  _mucontext.pinFifo (_topology->index2Rank(curidx),
-				    0,
-				    dest,
-				    rfifo,
-				    map);
-		  ++curidx;
+				      0,
+				      dest,
+				      rfifo,
+				      map);
 		  size_t loc = (map & (0x30UL)) >> 4; //at the 6th and 7th bits the local fifos are specified
 		  map = AnyFifoMapVec[loc];		
 		  
 		  size_t rfifo8_cur = rfifo8 | (((size_t)rfifo)<<22);
-
 		  VECTOR_STORE_NU (d+i,  0, fp0);
 		  VECTOR_STORE_NU (d+i, 32, fp1);	
 		  //desc.clone (d+i);
@@ -193,16 +202,26 @@ namespace PAMI
 		  d[i].setTorusInjectionFIFOMap (map);		
 		  //MUSPI_DescriptorDumpHex ((char *)"M2M Desc", &d);		  
 		  ++i;
+		  ++_next;
+		  
+		  if (is_small) {
+		    ++curidx;
+		    if (curidx >= _nranks)
+		      curidx = 0;
+		  }
+		  else
+		    curidx = (random_seed + _next * PRIME_A) % _nranks;
+		  
 		}
 		
 		// Advance the injection fifo tail pointer. This will be
 		// moved outside the loop when an "advance multiple" is
 		// available.
 		_sequence[fifo] = channel.injFifoAdvanceDescMultiple(ndesc);
-		_next += ndesc;
-	
-		if (curidx >= _nranks)
-		  curidx = 0;
+		//_next += ndesc;
+
+		//if (curidx >= _nranks)
+		//curidx = 0;
 	
 		fifo ++;
 		if (fifo >= numInjFifos)

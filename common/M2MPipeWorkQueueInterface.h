@@ -266,6 +266,12 @@ public:
 	///
 	inline void consumeBytes(size_t index, size_t bytes);
 
+	inline char   * getBufferBase (size_t index);
+	
+	inline size_t   getTotalBytes (size_t index);
+
+
+	/// \brief current position for producing into buffer
 	/// \brief is workqueue ready for action
 	///
 	/// \return boolean indicate workqueue readiness
@@ -394,8 +400,13 @@ char *M2MPipeWorkQueue<T_PipeWorkQueue>::bufferToConsume(size_t index) {
 }
 
 template <class T_PipeWorkQueue>
-void M2MPipeWorkQueue<T_PipeWorkQueue>::consumeBytes(size_t index, size_t bytes) {
-	return static_cast<T_PipeWorkQueue *>(this)->consumeBytes_impl(index, bytes);
+char* M2MPipeWorkQueue<T_PipeWorkQueue>::getBufferBase(size_t index) {
+	return static_cast<T_PipeWorkQueue *>(this)->getBufferBase_impl(index);
+}
+
+template <class T_PipeWorkQueue>
+size_t M2MPipeWorkQueue<T_PipeWorkQueue>::getTotalBytes(size_t index) {
+	return static_cast<T_PipeWorkQueue *>(this)->getTotalBytes_impl(index);
 }
 
 template <class T_PipeWorkQueue>

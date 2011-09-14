@@ -210,6 +210,7 @@ int main(int argc, char*argv[])
         alltoall.cmd.xfer_alltoall.rtypecount    = i;
 
         blocking_coll(context[iContext], &alltoall, &alltoall_poll_flag);
+        blocking_coll(context[iContext], &alltoall, &alltoall_poll_flag);
 
         blocking_coll(context[iContext], &barrier, &bar_poll_flag);
 

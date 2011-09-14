@@ -390,6 +390,7 @@ namespace PAMI
                 MUHWI_PacketHeader_t *phdr = (MUHWI_PacketHeader_t *) va_head;
                 uint32_t pbytes   = (phdr->NetworkHeader.pt2pt.Byte8.Size + 1) << 5;
                 va_head = (void *)((char *)va_head + pbytes);
+		muspi_dcbt (va_head, 0);
 
                 hdr = (MemoryFifoPacketHeader *) phdr;
                 TRACE_HEXDATA(hdr, 64);
