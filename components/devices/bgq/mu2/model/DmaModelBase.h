@@ -350,6 +350,7 @@ namespace PAMI
           MUHWI_PACKET_DO_NOT_ROUTE_TO_IO_NODE;
         pt2pt.Misc2 =
           MUHWI_PACKET_VIRTUAL_CHANNEL_DETERMINISTIC;
+	pt2pt.Skip       = 8; // Don't link checksum dput and rput packet header
 
         _dput.setDataPacketType (MUHWI_PT2PT_DATA_PACKET_TYPE);
         _dput.PacketHeader.NetworkHeader.pt2pt.Byte8.Size = 16;
@@ -361,6 +362,7 @@ namespace PAMI
         _rget.PacketHeader.NetworkHeader.pt2pt.Byte8.Size = 16;
         pt2pt.Misc2 =
           MUHWI_PACKET_VIRTUAL_CHANNEL_HIGH_PRIORITY;
+	pt2pt.Skip       = 136; // Don't link checksum entire rget packet
         _rget.setPt2PtFields (&pt2pt);
 
 

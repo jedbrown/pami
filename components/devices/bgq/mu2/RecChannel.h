@@ -116,7 +116,7 @@ namespace PAMI
             memset((void *)&pt2pt, 0, sizeof(pt2pt));
 
             pt2pt.Hints_ABCD = 0;
-            pt2pt.Skip       = 0;
+            pt2pt.Skip       = 136; // Don't link checksum entire notify packet
             pt2pt.Misc1 =
               MUHWI_PACKET_USE_DETERMINISTIC_ROUTING |
               MUHWI_PACKET_DO_NOT_DEPOSIT |

@@ -189,7 +189,6 @@ namespace PAMI
         memset((void *)&pt2pt, 0, sizeof(pt2pt));
 
         pt2pt.Hints_ABCD = 0;
-        pt2pt.Skip       = 0;
         pt2pt.Misc1 =
           MUHWI_PACKET_USE_DETERMINISTIC_ROUTING |
           MUHWI_PACKET_DO_NOT_DEPOSIT |
@@ -197,9 +196,12 @@ namespace PAMI
         pt2pt.Misc2 =
           MUHWI_PACKET_VIRTUAL_CHANNEL_DETERMINISTIC;
 
+        pt2pt.Skip       = 136; /* Skip entire single packet for checksum since it
+				 * may contain metadata */
         _singlepkt.setDataPacketType (MUHWI_PT2PT_DATA_PACKET_TYPE);
         _singlepkt.PacketHeader.NetworkHeader.pt2pt.Byte8.Size = 16;
         _singlepkt.setPt2PtFields (&pt2pt);
+        pt2pt.Skip       = 8; /* Skip only the data packet header for checksum */
         _multipkt.setDataPacketType (MUHWI_PT2PT_DATA_PACKET_TYPE);
         _multipkt.PacketHeader.NetworkHeader.pt2pt.Byte8.Size = 16;
         _multipkt.setPt2PtFields (&pt2pt);
