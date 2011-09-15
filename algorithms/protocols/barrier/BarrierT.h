@@ -18,7 +18,7 @@
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
 #include "algorithms/protocols/AllSidedCollectiveProtocolFactoryT.h"
 #include "algorithms/executor/Barrier.h"
-#include "algorithms/protocols/AllSidedCollectiveProtocolFactoryT.h"
+#include "algorithms/protocols/AllSidedCollectiveProtocolFactoryNCOT.h"
 
 #include "util/trace.h"
 
@@ -67,6 +67,12 @@ public:
         TRACE_FORMAT( "%p",this);
         _cached_object = NULL;
         _cached_id     = (unsigned) -1;
+        TRACE_FN_EXIT();
+    }
+    ~BarrierFactoryT()
+    {
+        TRACE_FN_ENTER();
+        TRACE_FORMAT( "%p",this);
         TRACE_FN_EXIT();
     }
     virtual Executor::Composite * generate(pami_geometry_t              geometry,
@@ -193,12 +199,12 @@ protected:
 /// Barrier Factory All Sided for generate routine
 ///
 template < class T_Composite, MetaDataFn get_metadata, class T_Conn, PAMI::Geometry::ckeys_t T_Key >
-class BarrierFactoryAllSidedT : public AllSidedCollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>
+class BarrierFactoryAllSidedT : public AllSidedCollectiveProtocolFactoryNCOT<T_Composite, get_metadata, T_Conn>
 {
 public:
     BarrierFactoryAllSidedT(T_Conn                      *cmgr,
                             Interfaces::NativeInterface *native):
-        AllSidedCollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>(cmgr, native)
+        AllSidedCollectiveProtocolFactoryNCOT<T_Composite, get_metadata, T_Conn>(cmgr, native)
     {
         TRACE_FN_ENTER();
         TRACE_FORMAT( "%p",this);
@@ -206,7 +212,7 @@ public:
     }
     BarrierFactoryAllSidedT(T_Conn                       *cmgr,
                             Interfaces::NativeInterface **native):
-        AllSidedCollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>(cmgr, native)
+        AllSidedCollectiveProtocolFactoryNCOT<T_Composite, get_metadata, T_Conn>(cmgr, native)
     {
         TRACE_FN_ENTER();
         TRACE_FORMAT( "%p",this);
@@ -226,7 +232,7 @@ public:
 
         if (!composite)
         {
-            composite = AllSidedCollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::generate(geometry, cmd);
+            composite = AllSidedCollectiveProtocolFactoryNCOT<T_Composite, get_metadata, T_Conn>::generate(geometry, cmd);
             g->setKey((size_t)0, /// \todo does NOT support multicontext
                       T_Key,
                       (void*)composite);
@@ -272,7 +278,7 @@ class BarrierFactory2DeviceMsync: public CollectiveProtocolFactory
         BarrierFactory2DeviceMsync         * _factory;
         pami_event_function                  _user_done_fn;
         void                               * _user_cookie;
-        T_Composite                                    _obj;
+        T_Composite                          _obj;
     };
 
 
@@ -292,6 +298,9 @@ public:
 
     virtual ~BarrierFactory2DeviceMsync ()
     {
+        TRACE_FN_ENTER();
+        TRACE_FORMAT( "%p",this);
+        TRACE_FN_EXIT();
     }
 
     /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -412,7 +421,12 @@ public:
         this->_collObj = cookie;//SSS: cookie is the collObj that contains this composite. I need to set it here so I can free it later.
         TRACE_FN_EXIT();
     }
-
+    ~BarrierT()
+    {
+        TRACE_FN_ENTER();
+        TRACE_FORMAT( "%p",this);
+        TRACE_FN_EXIT();
+    }
     CCMI::Executor::BarrierExec *getExecutor() {
         return &_myexecutor;
     }

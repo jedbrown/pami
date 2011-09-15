@@ -23,28 +23,24 @@
 #include "util/trace.h"
 
 #ifdef CCMI_TRACE_ALL
-#define DO_TRACE_ENTEREXIT 1
-#define DO_TRACE_DEBUG     1
+  #define DO_TRACE_ENTEREXIT 1
+  #define DO_TRACE_DEBUG     1
 #else
-#define DO_TRACE_ENTEREXIT 0
-#define DO_TRACE_DEBUG     0
+  #define DO_TRACE_ENTEREXIT 0
+  #define DO_TRACE_DEBUG     0
 #endif
 
 
 namespace CCMI
 {
-namespace Adaptor
-{
-///
-/// \brief choose if this protocol is supports the input geometry
-///
-
-template <class T_Composite, MetaDataFn get_metadata, class T_Conn>
-class AllSidedCollectiveProtocolFactoryT: public CollectiveProtocolFactory
-{
-    class collObj
+  namespace Adaptor
+  {
+    template <class T_Composite, MetaDataFn get_metadata, class T_Conn>
+    class AllSidedCollectiveProtocolFactoryT: public CollectiveProtocolFactory
     {
-    public:
+      class collObj
+      {
+      public:
         collObj(Interfaces::NativeInterface             * native,
                 T_Conn                                  * cmgr,
                 pami_geometry_t                           geometry,
@@ -52,65 +48,65 @@ class AllSidedCollectiveProtocolFactoryT: public CollectiveProtocolFactory
                 pami_event_function                       fn,
                 void                                    * cookie,
                 AllSidedCollectiveProtocolFactoryT      * factory):
-            _factory(factory),
-            _user_done_fn(cmd->cb_done),
-            _user_cookie(cmd->cookie),
-            _obj(native,cmgr,geometry,cmd,fn,cookie)
+        _factory(factory),
+        _user_done_fn(cmd->cb_done),
+        _user_cookie(cmd->cookie),
+        _obj(native,cmgr,geometry,cmd,fn,cookie)
         {
-            TRACE_FN_ENTER();
-            TRACE_FORMAT("<%p>",this);
-            DO_DEBUG((templateName<T_Composite>()));
-            TRACE_FN_EXIT();
+          TRACE_FN_ENTER();
+          TRACE_FORMAT("<%p>",this);
+          DO_DEBUG((templateName<T_Composite>()));
+          TRACE_FN_EXIT();
         }
 
         AllSidedCollectiveProtocolFactoryT * _factory;
         pami_event_function                  _user_done_fn;
         void                               * _user_cookie;
         T_Composite                                    _obj;
-    };
+      };
 
 
-public:
-    AllSidedCollectiveProtocolFactoryT (T_Conn              * cmgr,
-                                        Interfaces::NativeInterface * native):
-        CollectiveProtocolFactory(native),
-        _cmgr(cmgr),
-        _pnative(native)
-    {
+    public:
+      AllSidedCollectiveProtocolFactoryT (T_Conn              * cmgr,
+                                          Interfaces::NativeInterface * native):
+      CollectiveProtocolFactory(native),
+      _cmgr(cmgr),
+      _pnative(native)
+      {
         TRACE_FN_ENTER();
         TRACE_FORMAT("<%p> native %p",this, native);
         DO_DEBUG((templateName<MetaDataFn>()));
         TRACE_FN_EXIT();
-    }
-    AllSidedCollectiveProtocolFactoryT (T_Conn              * cmgr,
-                                        Interfaces::NativeInterface ** native):
-        CollectiveProtocolFactory(),
-        _cmgr(cmgr),
-        _pnative((Interfaces::NativeInterface *)native) /// \todo fix the NI array ctor's
-    {
+      }
+      AllSidedCollectiveProtocolFactoryT (T_Conn              * cmgr,
+                                          Interfaces::NativeInterface ** native):
+      CollectiveProtocolFactory(),
+      _cmgr(cmgr),
+      _pnative((Interfaces::NativeInterface *)native) /// \todo fix the NI array ctor's
+      {
         TRACE_FN_ENTER();
         TRACE_FORMAT("<%p> native %p",this, native);
         DO_DEBUG((templateName<MetaDataFn>()));
         TRACE_FN_EXIT();
-    }
+      }
 
-    virtual ~AllSidedCollectiveProtocolFactoryT ()
-    {
-      TRACE_FN_ENTER();
-      TRACE_FORMAT("<%p>",this);
-      TRACE_FN_EXIT();
-    }
+      virtual ~AllSidedCollectiveProtocolFactoryT ()
+      {
+        TRACE_FN_ENTER();
+        TRACE_FORMAT("<%p>",this);
+        TRACE_FN_EXIT();
+      }
 
-    /// NOTE: This is required to make "C" programs link successfully with virtual destructors
-    void operator delete(void * p)
-    {
+      /// NOTE: This is required to make "C" programs link successfully with virtual destructors
+      void operator delete(void * p)
+      {
         CCMI_abort();
-    }
+      }
 
-    static void done_fn(pami_context_t  context,
-                        void          * clientdata,
-                        pami_result_t   res)
-    {
+      static void done_fn(pami_context_t  context,
+                          void          * clientdata,
+                          pami_result_t   res)
+      {
         TRACE_FN_ENTER();
         collObj *cobj = (collObj *)clientdata;
         TRACE_FORMAT("<%p> context %p,result %u) factory %p context %p\n",
@@ -118,12 +114,26 @@ public:
         cobj->_user_done_fn(context?context:cobj->_factory->getContext(), cobj->_user_cookie, res);
         cobj->_factory->_alloc.returnObject(cobj);
         TRACE_FN_EXIT();
-    }
+      }
 
+      static void cleanup_done_fn(pami_context_t  context,
+                                  void           *clientdata,
+                                  pami_result_t   res)
+      {
+        TRACE_FN_ENTER();
+        T_Composite *obj = (T_Composite *)clientdata;
+        //obj->~T_Composite();
+        //typename AllSidedCollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::collObj *cobj = (typename CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::collObj *)obj->getCollObj();
+        collObj *cobj = (collObj *)obj->getCollObj();
 
-    virtual Executor::Composite * generate(pami_geometry_t             geometry,
-                                           void                      * cmd)
-    {
+        cobj->~collObj();
+        cobj->_factory->_alloc.returnObject(cobj);
+        TRACE_FN_EXIT();
+      }
+
+      virtual Executor::Composite * generate(pami_geometry_t             geometry,
+                                             void                      * cmd)
+      {
         TRACE_FN_ENTER();
         collObj *cobj = (collObj*)  _alloc.allocateObject();
         TRACE_FORMAT("<%p> cobj %p",this, cobj);
@@ -138,11 +148,11 @@ public:
         //We do not override completion callbacks
         //as they must free memory
         TRACE_FN_EXIT();
-        return (Executor::Composite *)(&cobj->_obj);
-    }
+        return(Executor::Composite *)(&cobj->_obj);
+      }
 
-    virtual void metadata(pami_metadata_t *mdata)
-    {
+      virtual void metadata(pami_metadata_t *mdata)
+      {
         TRACE_FN_ENTER();
         TRACE_FORMAT("<%p>",this);
         DO_DEBUG((templateName<MetaDataFn>()));
@@ -150,14 +160,14 @@ public:
         // We don't know the xfter so use arbitrary PAMI_XFER_COUNT. \todo something better
         CollectiveProtocolFactory::metadata(mdata,PAMI_XFER_COUNT);
         TRACE_FN_EXIT();
-    }
-private:
-    T_Conn                                     * _cmgr;
-    Interfaces::NativeInterface                * _pnative;
-    PAMI::MemoryAllocator<sizeof(collObj), 16>   _alloc;
-};//AllSidedCollectiveProtocolFactoryT
+      }
+    private:
+      T_Conn                                     * _cmgr;
+      Interfaces::NativeInterface                * _pnative;
+      PAMI::MemoryAllocator<sizeof(collObj), 16>   _alloc;
+    };//AllSidedCollectiveProtocolFactoryT
 
-};//Adaptor
+  };//Adaptor
 };//CCMI
 
 #undef  DO_TRACE_ENTEREXIT

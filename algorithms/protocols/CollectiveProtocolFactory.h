@@ -61,6 +61,12 @@ namespace CCMI
           TRACE_FORMAT("<%p> native %p",this,native);
           TRACE_FN_EXIT();
         }
+        static void cleanup_done_fn(pami_context_t  context,
+                                  void           *clientdata,
+                                  pami_result_t   res)
+        {
+          PAMI_abort();
+        }
 
         void setMapIdToGeometry(pami_mapidtogeometry_fn     cb_geometry)
         {

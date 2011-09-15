@@ -25,6 +25,7 @@
 #include "algorithms/protocols/allreduce/MultiCombineComposite.h"
 #include "algorithms/protocols/barrier/MultiSyncComposite.h"
 #include "algorithms/protocols/AllSidedCollectiveProtocolFactoryT.h"
+#include "algorithms/protocols/AllSidedCollectiveProtocolFactoryNCOT.h"
 #include "algorithms/protocols/CollectiveProtocolFactoryT.h"
 
 #include "algorithms/connmgr/ColorGeometryConnMgr.h"
@@ -439,7 +440,7 @@ namespace PAMI
       m->check_perf.values.hw_accel     = 1;
     }
 
-    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Barrier::MultiSyncComposite2Device,
+    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryNCOT < CCMI::Adaptor::Barrier::MultiSyncComposite2Device,
     Msync2DMetaData, CCMI::ConnectionManager::SimpleConnMgr >  MultiSync2DeviceFactory;
 
     //----------------------------------------------------------------------------
@@ -789,6 +790,35 @@ namespace PAMI
     class BGQMultiRegistration :
     public CollRegistration<PAMI::CollRegistration::BGQMultiRegistration<T_Geometry, T_ShmemDevice, T_ShmemNativeInterface, T_MUDevice, T_MUNativeInterface, T_AxialDputNativeInterface, T_AxialShmemDputNativeInterface, T_Allocator, T_BigAllocator>, T_Geometry>
     {
+      template<class T_Factory>
+      class GeometryInfo
+      {
+        public:
+          GeometryInfo(pami_context_t              context,
+                              CCMI::Executor::Composite  *composite,
+                              void                       *allocator):
+              _context(context),
+              _composite(composite),
+              _allocator(allocator)
+          {
+            TRACE_FN_ENTER();
+            TRACE_FORMAT("<%p> %p, %p, %p",this,_context,_composite,_allocator);
+            DO_DEBUG((templateName<T_Factory>()));
+            TRACE_FN_EXIT();
+          }
+          virtual ~GeometryInfo()
+          {
+            TRACE_FN_ENTER();
+            TRACE_FORMAT("<%p> %p, %p, %p",this,_context,_composite,_allocator);
+            DO_DEBUG((templateName<T_Factory>()));
+            T_Factory::cleanup_done_fn(_context, _composite, PAMI_SUCCESS);
+//            _allocator->returnObject(this); // ?!
+            TRACE_FN_EXIT();
+          }
+          pami_context_t                _context;
+          CCMI::Executor::Composite    *_composite;
+          void                         *_allocator;
+      };
 
     public:
       inline BGQMultiRegistration(T_ShmemNativeInterface              *shmem_ni,
@@ -814,13 +844,6 @@ namespace PAMI
       _csconnmgr(),
       _cg_connmgr(65535),
       _color_connmgr(),
-      _shmem_barrier_composite(NULL),
-      _gi_barrier_composite(NULL),
-      _mu_rectangle_barrier_composite(NULL),
-      _msync_composite(NULL),
-      _msync2d_composite(NULL),
-      _msync2d_gishm_composite(NULL),
-      _msync2d_rectangle_composite(NULL), 
       _shmem_device(shmem_device),
       _shmem_ni(shmem_ni),
       _shmem_msync_factory(&_sconnmgr, _shmem_ni),
@@ -1117,6 +1140,11 @@ namespace PAMI
             opt_binomial->getExecutor()->setContext(_context);
             geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
                              (void*)opt_binomial);
+
+            GeometryInfo<OptBinomialBarrierFactory>    *gi = (GeometryInfo<OptBinomialBarrierFactory>*) _geom_allocator.allocateObject();
+            new(gi) GeometryInfo<OptBinomialBarrierFactory>(_context, opt_binomial, &_geom_allocator);
+
+            geometry->setCleanupCallback(cleanupCallback, gi);
           }
 
 
@@ -1132,10 +1160,16 @@ namespace PAMI
             if (topology->isLocalToMe())
             {
               TRACE_FORMAT("<%p>Register Local Shmem factories", this);
-              _shmem_barrier_composite = _shmem_msync_factory.generate(geometry, &xfer);
-              PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE7)==_shmem_barrier_composite);
+
+              CCMI::Executor::Composite *composite;
+              composite = _shmem_msync_factory.generate(geometry, &xfer);
+              PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE7)==composite);
               // Add Barriers
               geometry->addCollective(PAMI_XFER_BARRIER, &_shmem_msync_factory, _context_id);
+
+              GeometryInfo<ShmemMultiSyncFactory>    *gi = (GeometryInfo<ShmemMultiSyncFactory>*) _geom_allocator.allocateObject();
+              new(gi) GeometryInfo<ShmemMultiSyncFactory>(_context, composite, &_geom_allocator);
+              geometry->setCleanupCallback(cleanupCallback, gi);
 
               // Add Broadcasts
               geometry->addCollective(PAMI_XFER_BROADCAST, &_shmem_mcast_factory, _context_id);
@@ -1164,12 +1198,17 @@ namespace PAMI
             if (_mu_rectangle_msync_factory && __global.topology_local.size() == 1 &&
                 geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID1))
             {
-              //Set optimized barrier to rectangle. May override optimized barrier later
+              //Set optimized barrier to rectangle. May override optimized barrier later  \TODO TWO GENERATES??
               pami_xfer_t xfer = {0};
-              CCMI::Executor::Composite *opt_composite =  _mu_rectangle_msync_factory->generate(geometry, &xfer); 
+              CCMI::Executor::Composite *opt_composite;
+              opt_composite =  _mu_rectangle_msync_factory->generate(geometry, &xfer); 
               PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE5)==opt_composite);
               geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
                                (void*)opt_composite);
+
+              GeometryInfo<MURectangleMultiSyncFactory>    *gi = (GeometryInfo<MURectangleMultiSyncFactory>*) _geom_allocator.allocateObject();
+              new(gi) GeometryInfo<MURectangleMultiSyncFactory>(_context, opt_composite, &_geom_allocator);
+              geometry->setCleanupCallback(cleanupCallback, gi);
             }
             else if (_msync2d_rectangle_composite_factory && __global.topology_local.size() > 1 && 
                      __global.useMU() && __global.useshmem() &&               
@@ -1177,11 +1216,15 @@ namespace PAMI
             {
               //Set optimized barrier to rectangle. May override optimized barrier later
               pami_xfer_t xfer = {0};
-              CCMI::Executor::Composite *opt_composite;
+              CCMI::Executor::Composite *opt_composite; // \todo TWO GENERATES?
               opt_composite = _msync2d_rectangle_composite_factory->generate(geometry, &xfer); 
               PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE6)==opt_composite);
-	      geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
-			       (void*)opt_composite);
+              geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
+                               (void*)opt_composite);
+
+              GeometryInfo<MultiSync2DeviceRectangleFactory>    *gi = (GeometryInfo<MultiSync2DeviceRectangleFactory>*) _geom_allocator.allocateObject();
+              new(gi) GeometryInfo<MultiSync2DeviceRectangleFactory>(_context, opt_composite, &_geom_allocator);
+              geometry->setCleanupCallback(cleanupCallback, gi);
             }
 
             // Add rectangle protocols:
@@ -1257,18 +1300,29 @@ namespace PAMI
               {
                 TRACE_FORMAT("<%p>Register MU barrier", this);
                 geometry->setKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE3, NULL);
-                _gi_barrier_composite = _gi_msync_factory->generate(geometry, &xfer);
-                PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE3)==_gi_barrier_composite);
+                CCMI::Executor::Composite* composite;
+                composite = _gi_msync_factory->generate(geometry, &xfer);
+                PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE3)==composite);
 
                 // Add Barriers
                 geometry->addCollective(PAMI_XFER_BARRIER, _gi_msync_factory, _context_id);
+
+                GeometryInfo<GIMultiSyncFactory>    *gi = (GeometryInfo<GIMultiSyncFactory>*) _geom_allocator.allocateObject();
+                new(gi) GeometryInfo<GIMultiSyncFactory>(_context, composite, &_geom_allocator);
+                geometry->setCleanupCallback(cleanupCallback, gi);
               }
 
-              if (_mu_rectangle_msync_factory)
+              if (_mu_rectangle_msync_factory) // \todo TWO GENERATES?
               {
-                _mu_rectangle_barrier_composite = _mu_rectangle_msync_factory->generate(geometry, &xfer);
+                CCMI::Executor::Composite* composite;
+                composite = _mu_rectangle_msync_factory->generate(geometry, &xfer);
+                PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE5)==composite);
                 // Add Barriers
                 geometry->addCollective(PAMI_XFER_BARRIER, _mu_rectangle_msync_factory, _context_id); 
+
+                GeometryInfo<MURectangleMultiSyncFactory>    *gi = (GeometryInfo<MURectangleMultiSyncFactory>*) _geom_allocator.allocateObject();
+                new(gi) GeometryInfo<MURectangleMultiSyncFactory>(_context, composite, &_geom_allocator);
+                geometry->setCleanupCallback(cleanupCallback, gi);
               }
             }
           }
@@ -1283,9 +1337,14 @@ namespace PAMI
               if (_msync2d_gishm_composite_factory)
               {
                 geometry->setKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE4, NULL);
-                _msync2d_gishm_composite = _msync2d_gishm_composite_factory->generate(geometry, &xfer);
+                CCMI::Executor::Composite* composite;
+                composite = _msync2d_gishm_composite_factory->generate(geometry, &xfer);
                 geometry->addCollective(PAMI_XFER_BARRIER, _msync2d_gishm_composite_factory, _context_id);
-                PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE4)==_msync2d_gishm_composite);
+                PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE4)==composite);
+
+                GeometryInfo<MultiSync2DeviceGIShmemFactory>    *gi = (GeometryInfo<MultiSync2DeviceGIShmemFactory>*) _geom_allocator.allocateObject();
+                new(gi) GeometryInfo<MultiSync2DeviceGIShmemFactory>(_context, composite, &_geom_allocator);
+                geometry->setCleanupCallback(cleanupCallback, gi);
               }
 
               Topology master = *master_sub_topology;
@@ -1294,9 +1353,15 @@ namespace PAMI
                   (_msync2d_rectangle_composite_factory) && 
                   (geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID1)) // \todo PAMI_CR_GKEY_FAIL?
                  )
-              {
-                _msync2d_rectangle_composite = _msync2d_rectangle_composite_factory->generate(geometry, &xfer);
+              { // \todo TWO GENERATES?
+                CCMI::Executor::Composite *composite;
+                composite = _msync2d_rectangle_composite_factory->generate(geometry, &xfer);
+                PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE6)==composite);
                 geometry->addCollective(PAMI_XFER_BARRIER, _msync2d_rectangle_composite_factory, _context_id);
+
+                GeometryInfo<MultiSync2DeviceRectangleFactory>    *gi = (GeometryInfo<MultiSync2DeviceRectangleFactory>*) _geom_allocator.allocateObject();
+                new(gi) GeometryInfo<MultiSync2DeviceRectangleFactory>(_context, composite, &_geom_allocator);
+                geometry->setCleanupCallback(cleanupCallback, gi);
               }
             }
           }
@@ -1358,8 +1423,13 @@ namespace PAMI
             {
               if (_msync2d_composite_factory)
               {
-                _msync2d_composite = _msync2d_composite_factory->generate(geometry, &xfer);
+                CCMI::Executor::Composite* composite;
+                composite = _msync2d_composite_factory->generate(geometry, &xfer);
                 geometry->addCollective(PAMI_XFER_BARRIER, _msync2d_composite_factory, _context_id);
+
+                GeometryInfo<MultiSync2DeviceFactory>    *gi = (GeometryInfo<MultiSync2DeviceFactory>*) _geom_allocator.allocateObject();
+                new(gi) GeometryInfo<MultiSync2DeviceFactory>(_context, composite, &_geom_allocator);
+                geometry->setCleanupCallback(cleanupCallback, gi);
               }
             }
 
@@ -1456,21 +1526,13 @@ namespace PAMI
 
       T_Allocator                                    &_allocator;
       T_BigAllocator                                 &_big_allocator;
+      PAMI::MemoryAllocator<sizeof(GeometryInfo<CCMI::Adaptor::CollectiveProtocolFactory>),16>  _geom_allocator;
 
       // CCMI Connection Manager Class
       CCMI::ConnectionManager::SimpleConnMgr          _sconnmgr;
       CCMI::ConnectionManager::CommSeqConnMgr         _csconnmgr;
       CCMI::ConnectionManager::ColorGeometryConnMgr   _cg_connmgr;
       CCMI::ConnectionManager::ColorConnMgr           _color_connmgr;
-
-      // Barrier Storage
-      CCMI::Executor::Composite                      *_shmem_barrier_composite;
-      CCMI::Executor::Composite                      *_gi_barrier_composite;
-      CCMI::Executor::Composite                      *_mu_rectangle_barrier_composite;
-      CCMI::Executor::Composite                      *_msync_composite;
-      CCMI::Executor::Composite                      *_msync2d_composite;
-      CCMI::Executor::Composite                      *_msync2d_gishm_composite;
-      CCMI::Executor::Composite                      *_msync2d_rectangle_composite;
 
       //* SHMEM interfaces:
       // Shmem Device
@@ -1627,6 +1689,24 @@ namespace PAMI
 
       All2AllvFactory_int                           *_alltoallv_int_factory;
       uint8_t                                        _alltoallv_int_factory_storage[sizeof(All2AllvFactory_int)];
+
+      static inline void cleanupCallback(pami_context_t ctxt, void *data, pami_result_t res)
+      {
+        TRACE_FN_ENTER();
+        GeometryInfo<CCMI::Adaptor::CollectiveProtocolFactory> *gi = (GeometryInfo<CCMI::Adaptor::CollectiveProtocolFactory>*) data;
+        //CCMI::Executor::Composite *opt_barrier_composite = (CCMI::Executor::Composite *)gi->_opt_barrier_composite;
+
+        PAMI::MemoryAllocator<sizeof(GeometryInfo<CCMI::Adaptor::CollectiveProtocolFactory>),16>  *geom_allocator =
+          (PAMI::MemoryAllocator<sizeof(GeometryInfo<CCMI::Adaptor::CollectiveProtocolFactory>),16>  *)gi->_allocator;
+        
+        //if(opt_barrier_composite) OptBinomialBarrierFactory::cleanup_done_fn(ctxt, opt_barrier_composite, res);
+        //opt_barrier_composite->_factory->_alloc.returnObject(opt_barrier_composite);
+
+        gi->~GeometryInfo();
+        geom_allocator->returnObject(gi);
+
+        TRACE_FN_EXIT();
+      }
     };
 
 
