@@ -467,14 +467,14 @@ namespace PAMI
         inline void setup_cau(T_Geometry                     *geometry,
                               PAMI::Device::CAUGeometryInfo **cau_gi)
           {
-            PAMI::Topology *local_master_topo = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX));
-            uint            num_master_tasks  = local_master_topo->size();
+            PAMI::Topology *master_topo       = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX));
+            uint            num_master_tasks  = master_topo->size();
             bool            participant       = geometry->isLocalMasterParticipant();
             GeometryInfo   *geometryInfo      = (GeometryInfo*)geometry->getKey(Geometry::PAMI_GKEY_GEOMETRYINFO);
             if(participant)
             {
               pami_task_t    *rl    = NULL;
-              pami_result_t   rc    = local_master_topo->rankList(&rl);
+              pami_result_t   rc    = master_topo->rankList(&rl);
               uint           *tasks = (uint*)rl;
               int             myrc  = lapi_cau_group_create(_lapi_handle,
                                                             geometryInfo->_unique_key,
@@ -494,9 +494,9 @@ namespace PAMI
                               void                          *ctrlstr)
           
           {
-            PAMI::Topology *local_master_topo = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX));
-            GeometryInfo   *geometryInfo      = (GeometryInfo*)geometry->getKey(Geometry::PAMI_GKEY_GEOMETRYINFO);
-            PAMI::Topology *local_topo        = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX));
+            PAMI::Topology *master_topo   = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX));
+            GeometryInfo   *geometryInfo  = (GeometryInfo*)geometry->getKey(Geometry::PAMI_GKEY_GEOMETRYINFO);
+            PAMI::Topology *local_topo    = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX));
             if(local_topo->size() > 1)
             {
               *local_model  = (T_LocalModel*)_model_allocator.allocateObject();
@@ -516,7 +516,7 @@ namespace PAMI
           {
             PAMI::Topology *local_topo   = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX));
             GeometryInfo   *geometryInfo = (GeometryInfo*)geometry->getKey(Geometry::PAMI_GKEY_GEOMETRYINFO);
-            if(local_topo->size() > 1)
+            if(local_topo->size() > 1 && _local_devs_bsr.isInit())
             {
               *bsr_gi                      = (PAMI::Device::BSRGeometryInfo *)_bsr_geom_allocator.allocateObject();
               new(*bsr_gi)PAMI::Device::BSRGeometryInfo(geometry->comm(),local_topo, geometryInfo->_unique_key);
@@ -545,9 +545,9 @@ namespace PAMI
                   // Note:  Disabling means contributing "0" to the allreduce
                   //        non-leader tasks should never disable algorithms
                   PAMI::Topology    *topo              = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
-                  PAMI::Topology    *local_master_topo = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX));
+                  PAMI::Topology    *master_topo       = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX));
                   uint               numtasks          = topo->size();
-                  uint               num_master_tasks  = local_master_topo->size();
+                  uint               num_master_tasks  = master_topo->size();
                   LapiImpl::Context *cp                = (LapiImpl::Context *)_Lapi_port[_lapi_handle];
                   bool               participant       = geometry->isLocalMasterParticipant();
 
@@ -623,14 +623,16 @@ namespace PAMI
                   // 1)  Check allreduce results to determine if all leaders have resources
                   // 2)  Allocate the CAU via group_create if this is a leader node
                   // 3)  return the cau resource via returnKey if cau is unavailable across the group
-                  PAMI::Topology *local_master_topo = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX));
+                  PAMI::Topology *master_topo       = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX));
                   PAMI::Topology *local_topo        = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX));
-                  uint            num_master_tasks  = local_master_topo->size();
+                  uint            num_tasks         = geometry->size();
+                  uint            num_master_tasks  = master_topo->size();
+                  uint            num_local_tasks   = local_topo->size();
                   uint            groupid           = geometry->comm();
                   bool            participant       = geometry->isLocalMasterParticipant();
                   GeometryInfo   *geometryInfo      = (GeometryInfo*)geometry->getKey(Geometry::PAMI_GKEY_GEOMETRYINFO);
                   uint            master_rank       = ((PAMI::Topology *)geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX))->index2Rank(0);
-                  uint            master_index      = local_master_topo->rank2Index(master_rank);
+                  uint            master_index      = master_topo->rank2Index(master_rank);
                   void           *ctrlstr           = (void *)inout_val[master_index+1];
                   PAMI::Device::CAUGeometryInfo *cau_gi      = NULL;
                   PAMI::Device::BSRGeometryInfo *bsr_gi      = NULL;
@@ -643,6 +645,7 @@ namespace PAMI
                        groupid, result_mask,result_mask&1ULL,result_mask&2ULL,
                        result_mask&4ULL,result_mask&8ULL);
 
+                  uint64_t bsr_result = (result_mask&4ULL);
                   // Success, set up all devices
                   // No abnormal return codes
                   if(result_mask == 0)
@@ -664,14 +667,14 @@ namespace PAMI
 
                     // Can we enable BSR?  Maybe.  Collision matters
                     // If no key collision, enable bsr protocols
-                    if((result_mask&2ULL) || (result_mask&4ULL))
+                    if(bsr_result)
                     {
-                      setup_bsr(geometry, &bsr_gi);
-                      ITRC(IT_CAU, "CollReg(phase 1): group_id=%d setup shm, bsr\n", groupid);
+                      ITRC(IT_CAU, "CollReg(phase 1): group_id=%d setup shm only\n", groupid);
                     }
                     else
                     {
-                      ITRC(IT_CAU, "CollReg(phase 1): group_id=%d setup shm only\n", groupid);
+                      setup_bsr(geometry, &bsr_gi);
+                      ITRC(IT_CAU, "CollReg(phase 1): group_id=%d setup shm, bsr\n", groupid);
                     }
                   }
                   geometryInfo->_local_model                     = local_model;
@@ -679,8 +682,8 @@ namespace PAMI
                   geometryInfo->_cau_info                        = cau_gi;
                   geometryInfo->_bsr_info                        = bsr_gi;
 
-                  ITRC(IT_CAU, "CollReg(phase 1): group_id=%d lm=%p ni=%p cau_info=%p bsr_info=%p\n",
-                       groupid, local_model, ni, cau_gi, bsr_gi);
+                  ITRC(IT_CAU, "CollReg(phase 1): group_id=%d lm=%p ni=%p cau_info=%p bsr_info=%p bsr_result=%llx\n",
+                       groupid, local_model, ni, cau_gi, bsr_gi, bsr_result);
                   
                   _barrier_reg.setNI(geometry, ni, &_g_barrier_ni);
                   _barrierbsr_reg.setNI(geometry, &_l_barrierbsr_ni, &_g_barrier_ni);
@@ -689,7 +692,8 @@ namespace PAMI
                   _reduce_reg.setNI(geometry, ni, &_g_reduce_ni);
 
                   Barrier::GlobalP2PBarrierFactory *f0 = NULL, *f1 = NULL;
-                  if((local_topo->size() < geometry->size()) && participant)
+                  bool offNodeP2PRequired = ((num_local_tasks < num_tasks) && participant);
+                  if(offNodeP2PRequired)
                   {
                     // Leader tasks with more than one leader
                     // require global communication, set up the pointers for
@@ -697,13 +701,12 @@ namespace PAMI
                     f0 = _globalp2p_barrier_reg_bsr;
                     f1 = _globalp2p_barrier_reg_shmem;
                   }
-                  ITRC(IT_CAU, "P2P_bsr registration=%p P2P_shmem registration=%p local topo size=%d, geom size=%d\n",
-                       f0, f1, local_topo->size(), geometry->size());
+                  ITRC(IT_CAU, "CollReg(phase 1): group_id=%d f0(bsr)=%p f1(shmem)=%p lsz=%d, gsz=%d bsr_gi=%p ni=%p\n",
+                       groupid, f0, f1, num_local_tasks, num_tasks, bsr_gi, ni);
                   if(bsr_gi)
                     _barrierbsrp2p_reg->setInfo(geometry, &_l_barrierbsr_ni, f0);
                   else
                     _barrierbsrp2p_reg->setInfo(geometry, NULL, f0);
-
                   _barriershmemp2p_reg->setInfo(geometry, ni, f1);
 
                   pami_xfer_t xfer = {0};
@@ -713,42 +716,56 @@ namespace PAMI
                   // Add the geometry info to the geometry
                   geometry->setKey(PAMI::Geometry::GKEY_GEOMETRYCSNI, ni);
 
-                  bool shmOnly               = (ni     && (local_topo->size() == geometry->size()));
-                  bool bsrOnly               = (bsr_gi && (local_topo->size() == geometry->size())
-                                                && _local_devs_bsr.isInit());
-                  bool globalCAUOnly         = (cau_gi && (local_master_topo->size() == geometry->size()));
-                  bool fullyShmCAUConnected  = (cau_gi && (ni || local_topo->size()==1));
-                  bool fullyBsrCAUConnected  = (cau_gi && ((bsr_gi&&_local_devs_bsr.isInit()) || local_topo->size()==1));
+                  bool singleNode            = (num_local_tasks  == num_tasks);
+                  bool masterOnly            = (num_master_tasks == num_tasks);
+                  bool oneTaskOnMyNode       = (num_local_tasks==1);
+                  bool shmOnly               = (ni     && singleNode);
+                  bool bsrOnly               = (bsr_gi && singleNode);
+                  bool globalCAUOnly         = (cau_gi && masterOnly);
+                  bool globalP2PBsrOnly      = (f0     && masterOnly);
+                  bool globalP2PShmOnly      = (f1     && masterOnly);
+                  bool fullyShmCAUConnected  = (cau_gi && (ni     || oneTaskOnMyNode));
+                  bool fullyBsrCAUConnected  = (cau_gi && (bsr_gi || oneTaskOnMyNode) && !bsr_result);
+                  bool fullyBsrP2PConnected  = ((f0 || !participant) && (bsr_gi || oneTaskOnMyNode) && !bsr_result);
+                  bool fullyShmP2PConnected  = ((f1 || !participant) && (ni     || oneTaskOnMyNode));
 
-                  ITRC(IT_CAU, "CollReg(phase 1): group_id=%d shmOnly=%d bsrOnly=%d globalCAUOnly=%d fullShmCAU=%d fullBsrCAU=%d\n",
-                       groupid,shmOnly, bsrOnly,globalCAUOnly, fullyShmCAUConnected, fullyBsrCAUConnected);
+                  ITRC(IT_CAU, "CollReg(phase 1): group_id=%d singleNode=%d masterOnly=%d oneTaskOnMyNode=%d shmOnly=%d bsrOnly=%d\n",
+                       groupid,singleNode,masterOnly,oneTaskOnMyNode,shmOnly,bsrOnly);
+                  ITRC(IT_CAU, "----------------> group_id=%d globalCAUOnly=%d globalP2PBsrOnly=%d globalP2PShmOnly=%d\n",
+                       groupid,globalCAUOnly,globalP2PBsrOnly,globalP2PShmOnly);
+                  ITRC(IT_CAU, "----------------> group_id=%d fullyConnected:  ShmCau=%d BsrCAU=%d BsrP2P=%d ShmP2P=%d\n",
+                       groupid,fullyShmCAUConnected,fullyBsrCAUConnected,fullyBsrP2PConnected,fullyShmP2PConnected);
+
 
                   // ///////////////////////////////////////////////////////////
                   // Barrier Protocols
                   // ///////////////////////////////////////////////////////////
-                  if(shmOnly || fullyShmCAUConnected || globalCAUOnly)
+                  if(fullyShmCAUConnected || globalCAUOnly)
                   {
                     ITRC(IT_CAU, "CollReg(phase 1): group_id=%d adding CAU/SHM Barrier collective to list\n",groupid);
                     geometry->addCollective(PAMI_XFER_BARRIER,&_barrier_reg,context_id);
                   }
 
                   // Shared memory protocols should always be available
-                  ITRC(IT_CAU, "CollReg(phase 1): group_id=%d adding SHM/P2P Barrier collective to list\n",groupid);
-                  geometry->addCollective(PAMI_XFER_BARRIER,
-                                          _barriershmemp2p_reg,
-                                          _context_id);
+                  // However, we won't add it to the list when globalP2P only
+                  // because other registrations can handle this case
+                  // || globalP2PShmOnly  : add this condition to always add this protocol
+                  if(shmOnly || fullyShmP2PConnected)
+                  {
+                    ITRC(IT_CAU, "CollReg(phase 1): group_id=%d adding SHM/P2P Barrier collective to list\n",groupid);
+                    geometry->addCollective(PAMI_XFER_BARRIER,
+                                            _barriershmemp2p_reg,
+                                            _context_id);
+                  }
 
-                  if(bsrOnly || fullyBsrCAUConnected)
+                  if(fullyBsrCAUConnected)
                   {
                     ITRC(IT_CAU, "CollReg(phase 1): group_id=%d adding BSR/SHM Barrier collective to list\n", groupid);
                     geometry->addCollective(PAMI_XFER_BARRIER,&_barrierbsr_reg,context_id);
                   }
 
-                  if(_local_devs_bsr.isInit())
+                  if(bsrOnly || globalP2PBsrOnly || fullyBsrP2PConnected)
                   {
-                    // Ok to check isInit without a reduction because it's a job global
-                    // Always insert into the list because BSR device should emulate
-                    // BSR over shared memory if resources aren't available.
                     ITRC(IT_CAU, "CollReg(phase 1): group_id=%d adding BSR/P2P Barrier collective to list\n",groupid);
                     geometry->addCollective(PAMI_XFER_BARRIER,
                                             _barrierbsrp2p_reg,

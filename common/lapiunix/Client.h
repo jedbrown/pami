@@ -564,8 +564,12 @@ namespace PAMI
         _cau_uniqifier = find_first_bit(deviceCheckResult[1]);
         if(deviceCheckResult[2]) _disable_shm=true;
         
-        ITRC(IT_CAU, "Client CAU Discovery: inmask=0x%llx reducemask=0x%llx _cau_uniq=%u, _shm=%llx\n",
-             deviceCheck[1], deviceCheckResult[1], _cau_uniqifier, deviceCheckResult[2]);
+        ITRC(IT_CAU, "Client Affinity Discovery: [in]=0x%llx [out]=0x%llx\n",
+             deviceCheck[0], deviceCheckResult[0]);
+        ITRC(IT_CAU, "Client CAU Mask Discovery: [in]=0x%llx [out]=0x%llx firstbit(cau_uniqifier)=%d\n",
+             deviceCheck[1], deviceCheckResult[1],_cau_uniqifier);
+        ITRC(IT_CAU, "Client Disable SHM Discovery: [in]=0x%llx [out]=0x%llx\n",
+             deviceCheck[2], deviceCheckResult[2]);
 
         return (deviceCheckResult[0] == 1);
       }
