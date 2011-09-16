@@ -62,7 +62,7 @@ namespace PAMI
           ///
           /// \brief Start a new non-contiguous rput operation
           ///
-          //virtual pami_result_t typed (pami_rput_typed_t * parameters) = 0;
+          virtual pami_result_t typed (pami_rput_typed_t * parameters) = 0;
 
       }; // PAMI::Protocol::Put::RPut class
 
@@ -89,12 +89,12 @@ namespace PAMI
 
           inline ~NoRPut () {};
 
-          pami_result_t simple (pami_rput_simple_t * parameters)
+          virtual pami_result_t simple (pami_rput_simple_t * parameters)
           {
             return PAMI_ERROR;
           }
 
-          pami_result_t typed (pami_rput_typed_t * parameters)
+          virtual pami_result_t typed (pami_rput_typed_t * parameters)
           {
             return PAMI_ERROR;
           }
@@ -190,6 +190,25 @@ namespace PAMI
             TRACE_ERR((stderr, "<< CompositeRPut::rput('simple')\n"));
             return result;
           };
+
+          ///
+          /// \brief Start a new non-contiguous rput operation
+          ///
+          virtual pami_result_t typed (pami_rput_typed_t * parameters)
+          {
+            TRACE_ERR((stderr, ">> CompositeRPut::rput('typed')\n"));
+            pami_result_t result = _primary->typed (parameters);
+            TRACE_ERR((stderr, "   CompositeRPut::rput('typed'), primary result = %d\n", result));
+
+            if (result != PAMI_SUCCESS)
+              {
+                result = _secondary->typed (parameters);
+                TRACE_ERR((stderr, "   CompositeRPut::rput('typed'), secondary result = %d\n", result));
+              }
+
+            TRACE_ERR((stderr, "<< CompositeRPut::rput('typed')\n"));
+            return result;
+          }
 
         protected:
 
