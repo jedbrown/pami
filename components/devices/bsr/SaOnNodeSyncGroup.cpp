@@ -110,8 +110,6 @@ SaOnNodeSyncGroup::SetupState SaOnNodeSyncGroup::Init_bsr_step(
     this->unique_key = unique_key;
     this->member_id  = mem_id;
     this->is_leader  = ((mem_id == 0) ? 1 : 0);
-    this->multi_byte_load_num   = mem_cnt >> 3;
-    this->single_byte_load_num  = mem_cnt & 0x7;
 
     // Initialize masks: 
     //      seq = 0, use mask[0] 
@@ -348,13 +346,15 @@ bool SaOnNodeSyncGroup::IsNbBarrierDone()
         //        show_bsr("stage 0");
         if (member_id == 0) {
             // using 8-byte load as many as possible
-            for (unsigned int i = 0; i < multi_byte_load_num; i ++) {
-                if (sa->Load8(i<<3) != *(unsigned long long*)(mask[seq]))
+            unsigned int byte_offset = 0;
+            for (unsigned int i = 8; i < this->member_cnt; i += 8) {
+                if (sa->Load8(byte_offset) != *(unsigned long long*)(mask[seq]))
                     return false;
+                byte_offset += 8;
             }
             // using 1-byte load for the remained
-            for (unsigned int i = 1; i <= single_byte_load_num; i ++) {
-                if (sa->Load1(member_cnt - i) != seq)
+            for (; byte_offset < this->member_cnt; byte_offset ++) {
+                if (sa->Load1(byte_offset) != seq)
                     return false;
             }
         } else {

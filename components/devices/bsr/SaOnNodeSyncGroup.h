@@ -93,8 +93,6 @@ class SaOnNodeSyncGroup : public SyncGroup {
                                          * (0) init stage
                                          * (1) for reduce done;
                                          * (2) for broadcast done */
-        unsigned int  multi_byte_load_num;
-        unsigned int  single_byte_load_num;
 
 };
 
@@ -114,9 +112,7 @@ SaOnNodeSyncGroup::SaOnNodeSyncGroup():
     sa(NULL),
     multi_load(false),
     nb_barrier_stage(2),
-    s_state(ORIG_ST),
-    multi_byte_load_num(0),
-    single_byte_load_num(0)
+    s_state(ORIG_ST)
 {
 };
 #endif /* _SAONNODESYNCGROUP_H_ */
