@@ -63,6 +63,7 @@ namespace PAMI
       CKEY_BCASTCOMPOSITE1,
       CKEY_BCASTCOMPOSITE2,
       CKEY_BCASTCOMPOSITE3,
+      NUM_CKEYS, 
     } ckeys_t;                     // context keystore keys    
 
     typedef enum

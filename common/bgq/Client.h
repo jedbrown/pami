@@ -132,7 +132,6 @@ namespace PAMI
       default:
         PAMI_abortf("Error: Do not know how to handle tSize=%u\n",tSize);
       }
-      PAMI_assertf(PAMI_GEOMETRY_NUMALGOLISTS >= result,"Mismatch num contexts %u/%zu\n",PAMI_GEOMETRY_NUMALGOLISTS,result);
 
       return result;
     }
@@ -392,16 +391,11 @@ namespace PAMI
       if (context)   // HACK! until no one calls completion with NULL context!
       {
         PAMI::Context *ctxt = (PAMI::Context *)context;
-
         /// \todo #warning must destroy the new geometry on error
         if (err == PAMI_SUCCESS)
         {
-          Client *thus = (Client *)ctxt->getClient();
-
-          for (size_t n = 0; n < thus->_ncontexts; n++)
-          {
-            thus->_contexts[n].analyze(n, gp, 1);
-          }
+          /// \todo remove context_id from analyze() don't need it and don't know it
+          ctxt->analyze(-1, gp, 1);
         }
       }
 
@@ -475,11 +469,8 @@ namespace PAMI
 
         TRACE_ERR((stderr, "(%8.8u)%s analyze %zu geometry %p\n",Kernel_ProcessorID(), __PRETTY_FUNCTION__, _ncontexts, new_geometry));
 
-        for (size_t n = 0; n < _ncontexts; n++)
-        {
-          TRACE_ERR((stderr, "(%8.8u)%s analyze %p geometry %p\n", Kernel_ProcessorID(),__PRETTY_FUNCTION__, &_contexts[n], new_geometry));
-          _contexts[n].analyze(n, new_geometry, 0);
-        }
+        /// \todo remove context_id from analyze() don't need it and don't know it
+        ctxt->analyze(-1, new_geometry, 0);
 
         *geometry = (pami_geometry_t) new_geometry;
 
@@ -547,11 +538,8 @@ namespace PAMI
 
         TRACE_ERR((stderr, "(%8.8u)%s analyze %zu geometry %p\n", Kernel_ProcessorID(),__PRETTY_FUNCTION__, _ncontexts, new_geometry));
 
-        for (size_t n = 0; n < _ncontexts; n++)
-        {
-          TRACE_ERR((stderr, "(%8.8u)%s analyze %p geometry %p\n", Kernel_ProcessorID(),__PRETTY_FUNCTION__, &_contexts[n], new_geometry));
-          _contexts[n].analyze(n, new_geometry, 0);
-        }
+        /// \todo remove context_id from analyze() don't need it and don't know it
+        ctxt->analyze(-1, new_geometry, 0);
 
         *geometry = (pami_geometry_t) new_geometry;
 
@@ -621,11 +609,8 @@ namespace PAMI
 
         TRACE_ERR((stderr, "(%8.8u)%s analyze %zu geometry %p\n", Kernel_ProcessorID(),__PRETTY_FUNCTION__, _ncontexts, new_geometry));
 
-        for (size_t n = 0; n < _ncontexts; n++)
-        {
-          TRACE_ERR((stderr, "(%8.8u)%s analyze %p geometry %p\n", Kernel_ProcessorID(),__PRETTY_FUNCTION__, &_contexts[n], new_geometry));
-          _contexts[n].analyze(n, new_geometry, 0);
-        }
+        /// \todo remove context_id from analyze() don't need it and don't know it
+        ctxt->analyze(-1, new_geometry, 0);
 
         *geometry = (pami_geometry_t) new_geometry;
 
@@ -698,10 +683,8 @@ namespace PAMI
       if (configuration[0].value.intval != 0) // Optimize
       {
         // First remove optimized algorithms in case it was previously optimized
-        for (size_t n = 0; n < _ncontexts; n++)
-        {
-          _contexts[n].analyze(n, (BGQGeometry *)geometry, -1);
-        }
+        /// \todo remove context_id from analyze() don't need it and don't know it
+        ctxt->analyze(-1, (BGQGeometry *)geometry, -1);
         gp->setCompletion(fn, cookie);
         gp->addCompletion();        // ensure completion doesn't happen until
         // all have been analyzed (_geom_opt_finish).
@@ -715,10 +698,8 @@ namespace PAMI
 
         if (rc == PAMI_SUCCESS)
         {
-          for (size_t n = 0; n < _ncontexts; n++)
-          {
-            _contexts[n].analyze(n, (BGQGeometry *)geometry, -1);
-          }
+          /// \todo remove context_id from analyze() don't need it and don't know it
+          ctxt->analyze(-1, (BGQGeometry *)geometry, -1);
         }
 
         if (fn)

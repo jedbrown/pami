@@ -692,10 +692,10 @@ namespace PAMI
                 rmw_shmem = Protocol::Rmw::RmwOverSend<ShmemPacketModel>::generate(_devices->_shmem[_contextid], __global.heap_mm);
               }
             else {
-	      // We need to decrement id if some nodes > 1 PPN and this 
-	      // node == 1 PPN or else the dispatch id gets out of sync.
-	      if(__global.mapping.tSize() > 1)
-		_dispatch.id--;
+              // We need to decrement id if some nodes > 1 PPN and this 
+              // node == 1 PPN or else the dispatch id gets out of sync.
+              if(__global.mapping.tSize() > 1)
+                _dispatch.id--;
               TRACE_STRING("topology does not support shmem");
             }
           }
@@ -774,6 +774,10 @@ namespace PAMI
         // Construct shmem native interface
         ///////////////////////////////////////////////////////////////
 
+#ifndef PAMI_ENABLE_COLLECTIVE_MULTICONTEXT
+        if (_contextid == 0) 
+#endif
+        {
         // Can't construct these models on single process nodes (no shmem)
         if ((__global.useshmem()) && (__global.topology_local.size() > 1))
         {
@@ -797,6 +801,7 @@ namespace PAMI
           _shmem_native_interface  = (AllSidedShmemNI*)_shmem_native_interface_storage;
           new (_shmem_native_interface_storage) AllSidedShmemNI(_shmemMcastModel, _shmemMsyncModel, _shmemMcombModel, _mid_protocol, client, (pami_context_t)this, id, clientid, &_dispatch.id);
         }
+        }
         TRACE_FORMAT( "<%p:%u>, dispatch.id %u", this,__LINE__, _dispatch.id);
 
         ///////////////////////////////////////////////////////////////
@@ -804,6 +809,10 @@ namespace PAMI
         ///////////////////////////////////////////////////////////////
         TRACE_FORMAT( "<%p> Register collectives(%p,%p,%zu,%zu", this, client, this, id, clientid);
 
+#ifndef PAMI_ENABLE_COLLECTIVE_MULTICONTEXT
+        if (_contextid == 0) 
+#endif
+        {
         // Register one PGAS (mu+shmem, mu, or shmem)
         if ((__global.useMU()) && (__global.useshmem()))
             _pgas_composite_registration = new(_pgas_composite_registration_storage) Composite_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _mid_protocol, Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid), _devices->_shmem[_contextid], &_dispatch.id, _geometry_map, true);
@@ -811,7 +820,7 @@ namespace PAMI
           _pgas_mu_registration = new(_pgas_mu_registration_storage) MU_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _mid_protocol, Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid),ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), &_dispatch.id, _geometry_map);
         else if ((__global.useshmem()) && (__global.topology_local.size() > 1))
           _pgas_shmem_registration = new(_pgas_shmem_registration_storage) Shmem_PGASCollreg(_client, (pami_context_t)this, _clientid, _contextid, _mid_protocol, ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), ShmemDevice::Factory::getDevice(_devices->_shmem, _clientid, _contextid), & _dispatch.id, _geometry_map);
-
+        }
         TRACE_FORMAT( "<%p:%u>, dispatch.id %u", this,__LINE__, _dispatch.id);
 
         // The multi registration will use shmem/mu if they are ctor'd above.
@@ -917,7 +926,6 @@ namespace PAMI
                                  _geometry_map,
                                  ni_factory_mudp);
           }
-        }
         // Can only use shmem pgas if the geometry is all local tasks, so check the topology
         if (_pgas_shmem_registration && ((PAMI::Topology*)_world_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->isLocal()) _pgas_shmem_registration->analyze(_contextid, _world_geometry, 0);
 
@@ -962,7 +970,7 @@ namespace PAMI
            // We know that _world_geometry is always "optimized" at create time.
            _multi_registration->analyze(_contextid, _world_geometry, 1);
         }
-
+        }
         TRACE_FN_EXIT();
       }
 
@@ -1412,12 +1420,12 @@ namespace PAMI
         TRACE_FN_EXIT();
       }
 
-      inline pami_result_t analyze(size_t         context_id,
+      inline pami_result_t analyze(size_t         dummy, /* unnecessary context_id,*/
                                    BGQGeometry    *geometry,
                                    int phase = 0)
       {
         TRACE_FN_ENTER();
-        TRACE_FORMAT("id %zu, registration %p, phase %d", context_id, geometry, phase);
+        TRACE_FORMAT("id %zu, registration %p, phase %d", _contextid, geometry, phase);
 	
         // Can only use shmem pgas if the geometry is all local tasks, so check the topology
         if (_pgas_shmem_registration && ((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->isLocal())
@@ -1432,31 +1440,31 @@ namespace PAMI
         if(_ccmi_registration_shmem)// && (((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
         {   
           geometry->resetUEBarrier(); // Reset so ccmi will select the UE barrier
-          _ccmi_registration_shmem->analyze(context_id, geometry, phase);
+          _ccmi_registration_shmem->analyze(_contextid, geometry, phase);
         }
         if(_ccmi_registration_mu)// && (((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
         {   
           geometry->resetUEBarrier(); // Reset so ccmi will select the UE barrier
-          _ccmi_registration_mu->analyze(context_id, geometry, phase);
+          _ccmi_registration_mu->analyze(_contextid, geometry, phase);
         }
         if(_ccmi_registration)// && (((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
         {   
           geometry->resetUEBarrier(); // Reset so ccmi will select the UE barrier
-          _ccmi_registration->analyze(context_id, geometry, phase);
+          _ccmi_registration->analyze(_contextid, geometry, phase);
         }
         if(_ccmi_registration_muam)
         {   
           geometry->resetUEBarrier(); // Reset so ccmi will select the UE barrier
-          _ccmi_registration_muam->analyze(context_id, geometry, phase);
+          _ccmi_registration_muam->analyze(_contextid, geometry, phase);
         }
 
 	if(_ccmi_registration_mudput) 
         {
-          _ccmi_registration_mudput->analyze(context_id, geometry, phase);
+          _ccmi_registration_mudput->analyze(_contextid, geometry, phase);
         }
 
         if(_multi_registration)// && (((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
-            _multi_registration->analyze(context_id, geometry, phase);
+            _multi_registration->analyze(_contextid, geometry, phase);
 
         TRACE_FN_EXIT();
         return PAMI_SUCCESS;

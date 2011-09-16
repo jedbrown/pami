@@ -576,7 +576,6 @@ namespace PAMI
 
         while ((ueb = (UnexpBarrierQueueElement *)ueb_queue->findAndDelete(_commid)) != NULL)
         {
-          /// \todo does NOT support multicontext keystore
           CCMI::Executor::Composite *c = (CCMI::Executor::Composite *) getKey((gkeys_t)ueb->getAlgorithm());
           c->notifyRecv (ueb->getComm(), ueb->getInfo(), NULL, NULL, NULL);
           ueb_allocator->returnObject(ueb);
@@ -623,12 +622,14 @@ namespace PAMI
       }
       inline void                      setKey_impl(gkeys_t key, void*value)
       {
+        PAMI_assert(key < NUM_GKEYS);
         TRACE_ERR((stderr, "<%p>Common::setKey(%d, %p)\n", this, key, value));
         _kvstore[key] = value;
       }
 
       inline void  * getKey_impl(gkeys_t key)
       {
+        PAMI_assert(key < NUM_GKEYS);
         void * value = _kvstore[key];
         TRACE_ERR((stderr, "<%p>Common::getKey(%d, %p)\n", this, key, value));
         return value;
@@ -638,9 +639,9 @@ namespace PAMI
 
       inline void                      setKey_impl(size_t context_id, ckeys_t key, void*value)
       {
-        PAMI_assert(PAMI_GEOMETRY_NUMALGOLISTS > context_id);
+        PAMI_assert(key < NUM_CKEYS);
         TRACE_ERR((stderr, "<%p>Common::setKey(%d, %p)\n", this, key, value));
-        _kvcstore[context_id][key] = value;
+        _kvcstore[key] = value;
       }
 
 
@@ -648,75 +649,73 @@ namespace PAMI
                                                                                  pami_xfer_type_t  colltype)
       {
         TRACE_ERR((stderr, "<%p>Common::algorithms_get_lists(%zu, %u)\n", this, context_id, colltype));
-        PAMI_assert(PAMI_GEOMETRY_NUMALGOLISTS > context_id);
-
         switch (colltype)
         {
         case PAMI_XFER_BROADCAST:
-          return &_broadcasts[context_id];
+          return &_broadcasts;
           break;
         case PAMI_XFER_ALLREDUCE:
-          return &_allreduces[context_id];
+          return &_allreduces;
           break;
         case PAMI_XFER_REDUCE:
-          return &_reduces[context_id];
+          return &_reduces;
           break;
         case PAMI_XFER_ALLGATHER:
-          return &_allgathers[context_id];
+          return &_allgathers;
           break;
         case PAMI_XFER_ALLGATHERV:
-          return &_allgathervs[context_id];
+          return &_allgathervs;
           break;
         case PAMI_XFER_ALLGATHERV_INT:
-          return &_allgatherv_ints[context_id];
+          return &_allgatherv_ints;
           break;
         case PAMI_XFER_SCATTER:
-          return &_scatters[context_id];
+          return &_scatters;
           break;
         case PAMI_XFER_SCATTERV:
-          return &_scattervs[context_id];
+          return &_scattervs;
           break;
         case PAMI_XFER_SCATTERV_INT:
-          return &_scatterv_ints[context_id];
+          return &_scatterv_ints;
           break;
         case PAMI_XFER_GATHER:
-          return &_gathers[context_id];
+          return &_gathers;
           break;
         case PAMI_XFER_GATHERV:
-          return &_gathervs[context_id];
+          return &_gathervs;
           break;
         case PAMI_XFER_GATHERV_INT:
-          return &_gatherv_ints[context_id];
+          return &_gatherv_ints;
           break;
         case PAMI_XFER_BARRIER:
-          return &_barriers[context_id];
+          return &_barriers;
           break;
         case PAMI_XFER_ALLTOALL:
-          return &_alltoalls[context_id];
+          return &_alltoalls;
           break;
         case PAMI_XFER_ALLTOALLV:
-          return &_alltoallvs[context_id];
+          return &_alltoallvs;
           break;
         case PAMI_XFER_ALLTOALLV_INT:
-          return &_alltoallv_ints[context_id];
+          return &_alltoallv_ints;
           break;
         case PAMI_XFER_SCAN:
-          return &_scans[context_id];
+          return &_scans;
           break;
         case PAMI_XFER_AMBROADCAST:
-          return &_ambroadcasts[context_id];
+          return &_ambroadcasts;
           break;
         case PAMI_XFER_AMSCATTER:
-          return &_amscatters[context_id];
+          return &_amscatters;
           break;
         case PAMI_XFER_AMGATHER:
-          return &_amgathers[context_id];
+          return &_amgathers;
           break;
         case PAMI_XFER_AMREDUCE:
-          return &_amreduces[context_id];
+          return &_amreduces;
           break;
         case PAMI_XFER_REDUCE_SCATTER:
-          return &_reduce_scatters[context_id];
+          return &_reduce_scatters;
           break;
         default:
           PAMI_abortf("colltype %u\n", colltype);
@@ -821,8 +820,8 @@ namespace PAMI
         pami_xfer_t cmd;
         cmd.cb_done = cb_done;
         cmd.cookie = cookie;
-        _barriers[ctxt_id]._algo_list[0]->setContext(context);
-        return _barriers[ctxt_id]._algo_list[0]->generate(&cmd);
+        _barriers._algo_list[0]->setContext(context);
+        return _barriers._algo_list[0]->generate(&cmd);
       }
 
       pami_result_t                    ue_barrier_impl(pami_event_function     cb_done,
@@ -871,37 +870,37 @@ namespace PAMI
 
 
     private:
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _allreduces[PAMI_GEOMETRY_NUMALGOLISTS];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _broadcasts[PAMI_GEOMETRY_NUMALGOLISTS];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _reduces[PAMI_GEOMETRY_NUMALGOLISTS];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _allgathers[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _allreduces;
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _broadcasts;
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _reduces;
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _allgathers;
 
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _allgathervs[PAMI_GEOMETRY_NUMALGOLISTS];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _allgatherv_ints[PAMI_GEOMETRY_NUMALGOLISTS];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _scatters[PAMI_GEOMETRY_NUMALGOLISTS];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _scattervs[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _allgathervs;
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _allgatherv_ints;
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _scatters;
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _scattervs;
 
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _scatterv_ints[PAMI_GEOMETRY_NUMALGOLISTS];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _gathers[PAMI_GEOMETRY_NUMALGOLISTS];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _gathervs[PAMI_GEOMETRY_NUMALGOLISTS];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _gatherv_ints[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _scatterv_ints;
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _gathers;
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _gathervs;
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _gatherv_ints;
 
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _alltoalls[PAMI_GEOMETRY_NUMALGOLISTS];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _alltoallvs[PAMI_GEOMETRY_NUMALGOLISTS];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _alltoallv_ints[PAMI_GEOMETRY_NUMALGOLISTS];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _reduce_scatters[PAMI_GEOMETRY_NUMALGOLISTS];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _ambroadcasts[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _alltoalls;
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _alltoallvs;
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _alltoallv_ints;
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _reduce_scatters;
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _ambroadcasts;
 
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _amscatters[PAMI_GEOMETRY_NUMALGOLISTS];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _amgathers[PAMI_GEOMETRY_NUMALGOLISTS];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _amreduces[PAMI_GEOMETRY_NUMALGOLISTS];
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _scans[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _amscatters;
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _amgathers;
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _amreduces;
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _scans;
 
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _barriers[PAMI_GEOMETRY_NUMALGOLISTS];
+      AlgoLists<Geometry<PAMI::Geometry::Common> >  _barriers;
       Algorithm<PAMI::Geometry::Common>             _ue_barrier;
 
       void *                                        _kvstore[NUM_GKEYS];  // global/geometry key store
-      std::map <int, void*>                         _kvcstore[PAMI_GEOMETRY_NUMALGOLISTS]; // per context key store
+      void *                                        _kvcstore[NUM_CKEYS];  // \todo 'context' key store is unnecessary, merge with global
       int                                           _commid;
       pami_client_t                                 _client;
       pami_task_t                                   _rank;
@@ -996,8 +995,8 @@ namespace PAMI
 
     void  * Common::getKey_impl(size_t context_id, ckeys_t key)
     {
-      PAMI_assert(PAMI_GEOMETRY_NUMALGOLISTS > context_id);
-      void * value = _kvcstore[context_id][key];
+      PAMI_assert(key < NUM_CKEYS);
+      void * value = _kvcstore[key];
       TRACE_ERR((stderr, "<%p>Common::getKey(%d, %p)\n", this, key, value));
       return value;
     }
