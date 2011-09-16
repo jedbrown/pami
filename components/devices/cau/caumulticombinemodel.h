@@ -188,13 +188,21 @@ namespace PAMI
               memcpy(msg->_reducePkt, earlymsg->_reducePkt, msg->_reducePktBytes);
               _device.freeMessage(earlymsg);
             }
-            pami_result_t res = msg->advance();
 
+            // put message on posted queue to handle any multicast packets
+            // that are dispatched during the reduce phase
+            gi->_postedRed.pushTail((MatchQueueElem*)msg);
+            pami_result_t res = msg->advance();
             if(res != PAMI_SUCCESS){
               msg->_isPosted = true;
-              gi->_postedRed.pushTail((MatchQueueElem*)msg);
               msg->_workfcn = _device.postWork(do_reduce, msg);
-
+            }
+            else
+            {
+              // message is not flagged as posted at this point
+              // and was not cleaned up in the handler
+              // delete from posted q
+              gi->_postedRed.deleteElem(msg);
             }
 
             return PAMI_SUCCESS;
