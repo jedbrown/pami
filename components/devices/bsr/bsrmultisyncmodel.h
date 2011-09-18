@@ -156,6 +156,15 @@ namespace PAMI
                                         pami_multisync_t *msync,
                                         void             *devinfo)
       {
+        PAMI::Topology               *topology = (PAMI::Topology*) msync->participants;
+        if(topology->size() == 1)
+        {
+          if(msync->cb_done.function)
+            msync->cb_done.function(_device.getContext(),
+                                    msync->cb_done.clientdata,
+                                    PAMI_SUCCESS);
+          return PAMI_SUCCESS;
+        }
         PAMI_assertf(devinfo != NULL, "postMulticast_impl() devinfo is NULL\n");
         BSRGeometryInfo  *bsrinfo        = (BSRGeometryInfo *)devinfo;
         T_Message        *msg            = new(state) T_Message(&_device,

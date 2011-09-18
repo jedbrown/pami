@@ -817,33 +817,42 @@ namespace PAMI
           PostedClassRoute  *classroute = (PostedClassRoute *)cookie;
           classroute->_done               = true;
         }
+      
+      static void _cr_done(pami_context_t context, void *cookie, pami_result_t result)
+        {
+          TRACE((stderr, "%p Classroute is done,barrier done, freeing\n", classroute));          
+          PostedClassRoute *classroute = (PostedClassRoute*)cookie;
+          classroute->_user_cb_done(context,
+                                    classroute->_user_cookie,
+                                    PAMI_SUCCESS);
+          if(classroute->_free_bitmask)
+            __global.heap_mm->free(classroute->_bitmask);
+          __global.heap_mm->free(cookie);
+        }
 
       static pami_result_t _do_classroute(pami_context_t context, void *cookie)
         {
           PostedClassRoute *classroute = (PostedClassRoute*)cookie;
+          Context          *ctxt       = (Context*) context;
+
           if(classroute->_started == false)
           {
             // Start the Allreduce
             TRACE((stderr, "%p Starting Allreduce\n", cookie));
-            Context             *ctxt = (Context*) context;
             classroute->startAllreduce(context, _allreduce_done, classroute);
             classroute->_started = true;
           }
           if(classroute->_done == true)
           {
-              classroute->_result_cb_done(context,
-                                          classroute->_result_cookie,
-                                          classroute->_bitmask,
-                                          classroute->_geometry,
-                                          PAMI_SUCCESS);
-              classroute->_user_cb_done(context,
-                                        classroute->_user_cookie,
+            TRACE((stderr, "%p Classroute is done, Dequeueing with barrier\n", classroute));
+            classroute->_result_cb_done(context,
+                                        classroute->_result_cookie,
+                                        classroute->_bitmask,
+                                        classroute->_geometry,
                                         PAMI_SUCCESS);
-              TRACE((stderr, "%p Classroute is done, Dequeueing\n", classroute));
-              if(classroute->_free_bitmask)
-                __global.heap_mm->free(classroute->_bitmask);
-              __global.heap_mm->free(cookie);
-              return PAMI_SUCCESS;
+            LAPIGeometry   *g = (LAPIGeometry *)classroute->_geometry;
+            g->default_barrier(_cr_done, classroute, ctxt->getId(), context);
+            return PAMI_SUCCESS;
           }
           else
           {
