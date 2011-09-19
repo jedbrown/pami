@@ -778,7 +778,143 @@ namespace PAMI
       ni->_allocator.returnObject(obj);
       TRACE_FN_EXIT();
     }
+
   };
+#if 1
+  template <class T_Device, class T_CNShmem>
+  class BGQNativeInterfaceCNShmem : public CCMI::Interfaces::NativeInterface
+  {
+    public:
+      /// \brief ctor that takes pointers to multi* objects
+      inline BGQNativeInterfaceCNShmem(T_CNShmem *cn_shmem_coll, pami_client_t client, pami_context_t context, size_t context_id, size_t client_id, int *dispatch_id):
+        CCMI::Interfaces::NativeInterface(__global.mapping.task(),
+            __global.mapping.size()),
+        _cn_shmem_coll(*cn_shmem_coll),
+        _dispatch(-1U),
+        _client(client),
+        _context(context),
+        _contextid(context_id),
+        _clientid(client_id),
+        _dispatch_id(dispatch_id)
+    {
+      TRACE_FN_ENTER();
+      DO_DEBUG((templateName<T_Device>()));
+      DO_DEBUG((templateName<T_CNShmem>()));
+      TRACE_FN_EXIT();
+    };
+
+      /// \brief ctor that constructs multi* objects internally
+      inline BGQNativeInterfaceCNShmem(T_Device &device,  pami_client_t client, pami_context_t context, size_t context_id, size_t client_id, int *dispatch_id):
+        CCMI::Interfaces::NativeInterface(__global.mapping.task(),
+            __global.mapping.size()),
+
+        _status(PAMI_SUCCESS),
+
+        _cn_shmem_coll(client, context, device, _status),
+        _dispatch(-1U),
+        _client(client),
+        _context(context),
+        _contextid(context_id),
+        _clientid(client_id),
+        _dispatch_id(dispatch_id)
+        {
+          TRACE_FN_ENTER();
+          DO_DEBUG((templateName<T_Device>()));
+          DO_DEBUG((templateName<T_CNShmem>()));
+          TRACE_FORMAT( "<%p>%s %d ", this, __PRETTY_FUNCTION__, _status);
+
+          CCMI::Interfaces::NativeInterface::_status = (pami_result_t) (_status);
+
+          TRACE_FN_EXIT();
+        };
+
+      /// Virtual interfaces (from base \see CCMI::Interfaces::NativeInterface)
+      virtual inline pami_result_t destroy      ( ) { return PAMI_SUCCESS; };
+      virtual inline pami_result_t multicast    (pami_multicast_t  *mcast, void *devinfo = NULL)
+      {
+        TRACE_FN_ENTER();
+
+        pami_result_t rc = _cn_shmem_coll.postMulticastImmediate(_clientid, _contextid, mcast, devinfo);
+        if (rc == PAMI_SUCCESS)
+        {
+          TRACE_FN_EXIT();
+          return rc;
+        }
+
+        TRACE_FN_EXIT();
+        return PAMI_SUCCESS;
+      }
+
+      virtual inline pami_result_t multisync    (pami_multisync_t  *msync, void *devinfo = NULL)
+      {
+        PAMI_abort();
+        return PAMI_ERROR;
+      }
+
+      virtual inline pami_result_t multicombine (pami_multicombine_t *mcomb, void *devinfo = NULL)
+      {
+        TRACE_FN_ENTER();
+
+        pami_result_t rc = _cn_shmem_coll.postMulticombineImmediate(_clientid, _contextid, mcomb, devinfo);
+        if (rc == PAMI_SUCCESS)
+        {
+          TRACE_FN_EXIT();
+          return rc;
+        }
+
+        TRACE_FN_EXIT();
+        return PAMI_SUCCESS;
+      }
+      virtual inline pami_result_t manytomany (pami_manytomany_t *, void *devinfo = NULL)
+      {
+        PAMI_abort();
+        return PAMI_ERROR;
+      }
+#if 0
+      // Model-specific interfaces
+      inline pami_result_t multicast    (uint8_t (&)[T_Mcast::sizeof_msg], pami_multicast_t    *, void *devinfo = NULL);
+      inline pami_result_t multisync    (uint8_t (&)[T_Msync::sizeof_msg], pami_multisync_t    *, void *devinfo = NULL);
+      inline pami_result_t multicombine (uint8_t (&)[T_Mcomb::sizeof_msg], pami_multicombine_t *, void *devinfo = NULL);
+
+      static const size_t multicast_sizeof_msg     = T_Mcast::sizeof_msg;
+      static const size_t multisync_sizeof_msg     = T_Msync::sizeof_msg;
+      static const size_t multicombine_sizeof_msg  = T_Mcomb::sizeof_msg;
+
+      inline T_Msync          & getMsyncModel () { return _msync; }
+
+      /// Allocation object to store state and user's callback
+      class allocObj
+      {
+        public:
+          union
+          {
+            uint8_t             _mcast[T_Mcast::sizeof_msg];
+            uint8_t             _msync[T_Msync::sizeof_msg];
+            uint8_t             _mcomb[T_Mcomb::sizeof_msg];
+          } _state;
+          BGQNativeInterfaceCNShmem *_ni;
+          pami_callback_t       _user_callback;
+      };
+
+      /// \brief NativeInterface done function - free allocation and call client's done
+      static void ni_client_done(pami_context_t  context,
+          void          *rdata,
+          pami_result_t   res);
+
+      T_Allocator &_allocator;  // Allocator
+#endif
+    protected:
+
+      pami_result_t              _status;
+      T_CNShmem                 _cn_shmem_coll;
+      unsigned                _dispatch;
+      pami_client_t           _client;
+      pami_context_t          _context;
+      size_t                  _contextid;
+      size_t                  _clientid;
+      int                    *_dispatch_id;
+  }; // class BGQNativeInterfaceCNShmem
+#endif
 };
 
 #undef DO_TRACE_ENTEREXIT

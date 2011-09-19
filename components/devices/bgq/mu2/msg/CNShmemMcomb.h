@@ -1,21 +1,21 @@
 ///
-/// \file components/devices/bgq/mu2/msg/CollectiveMcomb2Device.h
+/// \file components/devices/bgq/mu2/msg/CNShmemMcomb.h
 /// \brief ???
 ///
-#ifndef __components_devices_bgq_mu2_msg_CollectiveMcomb2Device_h__
-#define __components_devices_bgq_mu2_msg_CollectiveMcomb2Device_h__
+#ifndef __components_devices_bgq_mu2_msg_CNShmemMcomb_h__
+#define __components_devices_bgq_mu2_msg_CNShmemMcomb_h__
 
-#include "spi/include/mu/DescriptorBaseXX.h"
+/*#include "spi/include/mu/DescriptorBaseXX.h"
 #include "util/trace.h"
 #include "components/devices/bgq/mu2/InjChannel.h"
 #include "components/devices/bgq/mu2/msg/MessageQueue.h"
 #include "common/bgq/Mapping.h"
 #include "components/memory/MemoryAllocator.h"
+#include "math/a2qpx/Core_memcpy.h"
+#include "Memory.h"*/
+#include "components/devices/bgq/mu2/msg/CNShmemBase.h"
 #include "components/devices/shmem/msgs/CNShmemMessage.h"
 
-#include "math/a2qpx/Core_memcpy.h"
-
-#include "Memory.h"
 
 namespace PAMI
 {
@@ -24,12 +24,12 @@ namespace PAMI
     namespace MU
     {
       //This message class advances both the network and shared memory communication
-      class CollectiveDputMcomb2Device 
+      class CNShmemMcomb: public CNShmemBase 
       {
         public:
 
           ///Default dummy constructor
-          CollectiveDputMcomb2Device (): _context(*(MU::Context*)NULL),_shmsg() {}
+          CNShmemMcomb () {}
 
           ///
           /// \brief Inject descriptor(s) into a specific injection fifo
@@ -44,32 +44,23 @@ namespace PAMI
           /// \param[in] sizeoftype the size of the datatype
           /// \param[in] counterAddress address of the counter
           ///
-          CollectiveDputMcomb2Device (MU::Context         & context,
-                                      pami_event_function   fn,
-                                      void                * cookie,
-                                      PipeWorkQueue       * spwq,
-                                      PipeWorkQueue       * dpwq,
-                                      uint32_t              length,
-                                      uint32_t              op,
-                                      pami_op               opcode,
-                                      uint32_t              sizeoftype,
-                                      volatile uint64_t   * counterAddress,
-                                      PAMI::Device::Shmem::CNShmemDesc       *shmem_desc):
-              _context (context),
-              _injectedBytes (0),
-              _length (length),
-              _spwq (spwq),
-              _dpwq (dpwq),
-              _fn (fn),
-              _cookie (cookie),
+          CNShmemMcomb (MU::Context         & context,
+              pami_event_function   fn,
+              void                * cookie,
+              PipeWorkQueue       * spwq,
+              PipeWorkQueue       * dpwq,
+              uint32_t              length,
+              uint32_t              op,
+              pami_op               opcode,
+              uint32_t              sizeoftype,
+              volatile uint64_t   * counterAddress,
+              PAMI::Device::Shmem::CNShmemDesc       *shmem_desc):
+          CNShmemBase (context, fn, cookie, spwq, dpwq,length, counterAddress,shmem_desc),
               _op (op),
               _opcode(opcode),
               _sizeoftype(sizeoftype),
               _doneMULarge (false),
               _doneMUShort (false),
-              _cc (length),
-              _counterAddress (counterAddress),
-              _shmem_desc(shmem_desc),
               _doneShmemMcomb(0),
               _doneShmemMcombLarge(0),
               _doneShmemMcastLarge(0),
@@ -77,7 +68,7 @@ namespace PAMI
               _combineDone(false)
           { };
 
-          inline ~CollectiveDputMcomb2Device () {};
+          inline ~CNShmemMcomb () {};
 
           // Create all the physical and global virtual addresses used
           // for the operation
@@ -358,7 +349,6 @@ namespace PAMI
             if (_doneShmemMcastLarge) return true;
 
             pami_result_t res;
-      
 
             res = _shmsg.large_msg_multicast(_length, __global.mapping.tSize(), __global.mapping.t(), _counterAddress, _cc);
             if (res == PAMI_SUCCESS)
@@ -432,26 +422,14 @@ namespace PAMI
             return flag;
           }
 
-          MUSPI_DescriptorBase     _desc; 
 
         protected:
 
-          MU::Context            & _context;
-          uint32_t                 _injectedBytes;
-          uint32_t                 _length;        
-          PipeWorkQueue          * _spwq;
-          PipeWorkQueue          * _dpwq;
-          pami_event_function      _fn;
-          void                   * _cookie;
           uint32_t                 _op;
           pami_op                 _opcode;
           uint32_t                 _sizeoftype;
           bool                     _doneMULarge;
           bool                     _doneMUShort;
-          uint64_t                 _cc;
-          volatile uint64_t      * _counterAddress;
-
-          PAMI::Device::Shmem::CNShmemDesc          * _shmem_desc;
           bool                     _doneShmemMcomb;
           bool                     _doneShmemMcombLarge;
           bool                     _doneShmemMcastLarge;
@@ -459,9 +437,9 @@ namespace PAMI
           bool                      _combineDone;
           uint64_t                _shmbuf_phy;
 
-      }; // class     PAMI::Device::MU::CollectiveDputMcomb2Device
+      }; // class     PAMI::Device::MU::CNShmemMcomb
     };   // namespace PAMI::Device::MU
   };     // namespace PAMI::Device
 };       // namespace PAMI
 
-#endif // __components_devices_bgq_mu2_msg_CollectiveDputMcomb2Device_h__                     
+#endif // __components_devices_bgq_mu2_msg_CNShmemMcomb_h__                     

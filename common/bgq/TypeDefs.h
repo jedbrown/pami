@@ -86,7 +86,8 @@
 
 #include "components/devices/bgq/mu2/model/CollectiveMulticastDmaModel.h"
 #include "components/devices/bgq/mu2/model/CollectiveMulticombineDmaModel.h"
-#include "components/devices/bgq/mu2/model/CollectiveMcomb2Device.h"
+//#include "components/devices/bgq/mu2/model/CollectiveMcomb2Device.h"
+#include "components/devices/bgq/mu2/model/CNShmemColl.h"
 #include "components/devices/bgq/mu2/model/AMMulticastModel.h"
 #include "components/devices/bgq/mu2/model/MUMultisync.h"
 #include "components/devices/bgq/mu2/model/RectangleMultisyncModel.h"
@@ -125,12 +126,21 @@ namespace PAMI
   BigProtocolAllocator
   > MUGlobalDputNI;
 
-  typedef BGQNativeInterfaceAS < MUDevice,
+/*  typedef BGQNativeInterfaceAS < MUDevice,
   Device::MU::CollectiveMcast2Device,
   Device::MU::CollectiveMsync2Device,
   Device::MU::CollectiveMcomb2Device,
   BigProtocolAllocator
   > MUShmemGlobalDputNI;
+*/
+/*  typedef BGQNativeInterfaceAS < MUDevice,
+  Device::MU::CollectiveMcast2Device,
+  Device::MU::CollectiveMsync2Device,
+  Device::MU::CNShmemColl,
+  MidProtocolAllocator
+  > MUShmemGlobalDputNI;
+*/
+  typedef BGQNativeInterfaceCNShmem < MUDevice, Device::MU::CNShmemColl > MUShmemGlobalDputNI;
   
   //typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::Native> ShmemCollDesc;
   //typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::BGQ::IndirectL2> ShmemCollDesc;

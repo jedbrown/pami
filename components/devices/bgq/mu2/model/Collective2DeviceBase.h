@@ -11,7 +11,8 @@
 #include "components/memory/MemoryAllocator.h"
 #include "util/trace.h"
 #include "components/devices/bgq/mu2/Context.h"
-#include "components/devices/bgq/mu2/msg/CollectiveMcomb2Device.h"
+//#include "components/devices/bgq/mu2/msg/CollectiveMcomb2Device.h"
+#include "components/devices/shmem/CNShmemDesc.h"
 #include "sys/pami.h"
 #include "math/a2qpx/Core_memcpy.h"
 
@@ -25,6 +26,7 @@ namespace PAMI
       // Has all the intialization data structures including the model descriptors cloned into the
       // injection fifos. Also contains the counters and BAT ids used in the operation
       // Post methods construct the message and post to the generic device
+#define BYTES_ZERO 65536
       class Collective2DeviceBase
       {
 
@@ -109,6 +111,10 @@ namespace PAMI
             {
               _collstate.init(context, status);
               initDescBase();
+
+              _zeroBytes = BYTES_ZERO;
+              _zeroBuf =  malloc (_zeroBytes * sizeof(char));
+              memset (_zeroBuf, 0, _zeroBytes);
             }
 
             pami_result_t rc;
@@ -212,7 +218,7 @@ namespace PAMI
             _modeldesc.setMessageUnitPacketType (MUHWI_PACKET_TYPE_PUT);
             //TRACE_FN_EXIT();
           }
-
+#if 0
           ///contructing the message and posting to the generice device
           //Different advances are posted depending on the message size
           pami_result_t postCollective (uint32_t                   bytes,
@@ -314,18 +320,7 @@ namespace PAMI
 
             return PAMI_EAGAIN;
           }
-
-          static pami_result_t advance_large_64procs (pami_context_t     context,
-                                        void             * cookie)
-          {
-            CollectiveDputMcomb2Device *msg = (CollectiveDputMcomb2Device *) cookie;
-            bool done = msg->advance_large_64procs();
-
-            if (done)
-              return PAMI_SUCCESS;
-
-            return PAMI_EAGAIN;
-          }
+#endif
           static CollState                            _collstate;
 
         protected:
@@ -337,7 +332,10 @@ namespace PAMI
           MUSPI_DescriptorBase                       _modeldesc;         /// Model descriptor
           pami_work_t                                _swork;
           pami_work_t                                _work;
-          CollectiveDputMcomb2Device                 _mcomb_msg;
+          size_t                                      _myrank;
+          void                                     * _zeroBuf;
+          unsigned                                   _zeroBytes;
+//          CollectiveDputMcomb2Device                 _mcomb_msg;
       };
 
 
