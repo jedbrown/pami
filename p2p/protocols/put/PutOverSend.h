@@ -52,7 +52,7 @@ namespace PAMI
           typedef PutOverSend<T_Model> PutOverSendProtocol;
 
           typedef uint8_t model_state_t[T_Model::packet_model_state_bytes];
-          typedef uint8_t model_packet_t[T_Model::packet_model_state_bytes];
+          typedef uint8_t model_packet_t[T_Model::packet_model_payload_bytes];
 
 
 
@@ -78,6 +78,7 @@ namespace PAMI
             size_t                data_bytes;
             pami_endpoint_t       origin;
             size_t                type_bytes; // => 0 iff contiguous
+            size_t                machine_bytes;
           } metadata_header_t;
 
           typedef struct
@@ -99,8 +100,8 @@ namespace PAMI
           {
             struct
             {
-              void             * serialized_type;
-              size_t             serialized_bytes;
+              size_t             type_bytes;
+              size_t             machine_bytes;
               size_t             bytes_remaining;
             } type;
 
@@ -131,7 +132,7 @@ namespace PAMI
           typedef struct
           {
             uint8_t               machine[sizeof(Type::TypeMachine)];
-            uint8_t               type_obj[sizeof(Type::TypeCode)];
+            void                * type_buffer;
             size_t                bytes_remaining;
             void                * base_addr;
             bool                  is_contiguous;

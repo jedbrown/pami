@@ -30,6 +30,9 @@ namespace PAMI
     {
         public:
             TypeMachine(TypeCode *type);
+            TypeMachine(TypeCode *type, void *custom_stack_addr, size_t custom_stack_size);
+            TypeMachine(void *type_code_addr, size_t type_code_size,
+                        void *custom_stack_addr, size_t custom_stack_size);
             ~TypeMachine();
             void SetType(TypeCode *new_type);
 
@@ -52,6 +55,7 @@ namespace PAMI
             bool optimized;
             void  *cookie;
             TypeFunc::CopyFunction  copy_func;
+            uint8_t _type[sizeof(TypeCode)];
 
             struct Cursor {
                 size_t  pc;        // program counter for code
@@ -76,6 +80,7 @@ namespace PAMI
             Cursor small_stack[SMALL_STACK_DEPTH];
             Cursor *stack;
             size_t top;
+            bool deallocate_stack;
 
             void InternalMemCopy(void *to, void *from, size_t size);
             template <bool PACK, bool INTERNAL>
@@ -90,10 +95,13 @@ namespace PAMI
             void ExecuteShift(TypeCode::Op *op);
             void ExecuteEnd();
 
+
+        public:
+            static const size_t cursor_size = sizeof(Cursor);
     };
 
     inline TypeMachine::TypeMachine(TypeCode *atype)
-      : type(atype), optimized(false), cookie(NULL), copy_func(NULL), top(0)
+      : type(atype), optimized(false), cookie(NULL), copy_func(NULL), top(0), deallocate_stack(false)
     {
         assert(type->IsCompleted());
         type->AcquireReference();
@@ -109,10 +117,67 @@ namespace PAMI
         if (type->GetDepth() <= (unsigned)SMALL_STACK_DEPTH)
             stack = small_stack;
         else
+          {
             stack = new Cursor[type->GetDepth()];
+            deallocate_stack = true;
+          }
 
         stack[top] = Cursor(sizeof(TypeCode::Begin), 0, 0, 0, 0);
     }
+
+    inline TypeMachine::TypeMachine(TypeCode *atype, void *custom_stack_addr, size_t custom_stack_size)
+      : type(atype), optimized(false), cookie(NULL), copy_func(NULL), top(0), deallocate_stack(false)
+    {
+        assert(type->IsCompleted());
+        type->AcquireReference();
+
+        // Check the type and, if contiguous, change it to
+        // a max contiguous type
+        if (type->IsContiguous()) {
+            orig_type = type;
+            optimized = true;
+            type = PAMI_TYPE_CONTIG_MAX;
+        }
+
+        if (type->GetDepth() <= custom_stack_size/sizeof(Cursor))
+            stack = (Cursor *) custom_stack_addr;
+        else
+          {
+            stack = new Cursor[type->GetDepth()];
+            deallocate_stack = true;
+          }
+
+        stack[top] = Cursor(sizeof(TypeCode::Begin), 0, 0, 0, 0);
+    }
+
+    inline TypeMachine::TypeMachine(void *type_code_addr, size_t type_code_size,
+                                    void *custom_stack_addr, size_t custom_stack_size)
+      : type(NULL), optimized(false), cookie(NULL), copy_func(NULL), top(0), deallocate_stack(false)
+    {
+        new (_type) TypeCode(type_code_addr,type_code_size,false);
+        type = (TypeCode *) & _type;
+
+        type->AcquireReference();
+
+        // Check the type and, if contiguous, change it to
+        // a max contiguous type
+        if (type->IsContiguous()) {
+            orig_type = type;
+            optimized = true;
+            type = PAMI_TYPE_CONTIG_MAX;
+        }
+
+        if (type->GetDepth() <= custom_stack_size/sizeof(Cursor))
+            stack = (Cursor *) custom_stack_addr;
+        else
+          {
+            stack = new Cursor[type->GetDepth()];
+            deallocate_stack = true;
+          }
+
+        stack[top] = Cursor(sizeof(TypeCode::Begin), 0, 0, 0, 0);
+    }
+
 
     inline TypeMachine::~TypeMachine()
     {
@@ -122,7 +187,7 @@ namespace PAMI
             type = orig_type;
         }
         type->ReleaseReference();
-        if (stack != small_stack)
+        if (deallocate_stack)
             delete[] stack;
     }
 
@@ -152,9 +217,10 @@ namespace PAMI
         // adjust stack if new_type requires more
         size_t new_depth = new_type->GetDepth();
         if (new_depth > type->GetDepth() && new_depth > (unsigned)SMALL_STACK_DEPTH) {
-            if (stack != small_stack)
+            if (deallocate_stack)
                 delete[] stack;
             stack = new Cursor[new_depth];
+            deallocate_stack = true;
         }
 
         type = new_type;

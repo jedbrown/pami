@@ -103,7 +103,7 @@ namespace PAMI
             };
 
             TypeCode();
-            TypeCode(void *code_addr, size_t code_size);
+            TypeCode(void *code_addr, size_t code_size, bool resize_code_buffer = true);
             TypeCode(size_t code_size, primitive_type_t primitive);
             ~TypeCode();
 
@@ -248,13 +248,27 @@ namespace PAMI
         Push(Begin());
     }
 
-    inline TypeCode::TypeCode(void *code_addr, size_t code_size)
+    inline TypeCode::TypeCode(void *code_addr, size_t code_size, bool copy_code_buffer)
         : code(NULL), code_buf_size(0), prev_cursor(0), code_cursor(0),
         completed(true), primitive(PRIMITIVE_TYPE_COUNT)
     {
-        ResizeCodeBuffer(code_size);
-        memcpy(code, code_addr, code_size);
+      if (copy_code_buffer)
+        {
+          ResizeCodeBuffer(code_size);
+          memcpy(code, code_addr, code_size);
+        }
+      else
+        {
+          code = (char *)code_addr;
+          code_buf_size = code_size;
+
+          // Acquire an *extra* reference to the type so that the ReferenceCount
+          // parent class does not delete the storage for the type when it is
+          // destroyed.
+          AcquireReference();
+        }
     }
+
 
     inline TypeCode::TypeCode(size_t code_size, primitive_type_t primitive_type = PRIMITIVE_TYPE_COUNT)
         : code(NULL), code_buf_size(0), prev_cursor(0), code_cursor(0),

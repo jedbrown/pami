@@ -12,7 +12,7 @@
 VPATH		= @abs_srcdir@
 SUBDIRS         = 
 NOTBUILT        = 
-APPS            = simple_put_func.${EXTENSION}
+APPS            = simple_put_func.${EXTENSION} typed_put_func.${EXTENSION}
 
 include @abs_top_builddir@/Build.rules
 

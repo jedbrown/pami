@@ -76,15 +76,17 @@ inline void PutOverSend<T_Model>::send_envelope (pami_put_typed_t * parameters,
     
   state->origin.envelope.header.metadata.remote_addr =
     (uintptr_t) parameters->addr.remote;
-    
+
   state->origin.envelope.header.metadata.data_bytes =
     parameters->rma.bytes;
-    
+
   state->origin.envelope.header.metadata.origin = _origin;
-  
+
   Type::TypeCode * remote_type = (Type::TypeCode *) parameters->type.remote;
   state->origin.envelope.header.metadata.type_bytes = remote_type->GetCodeSize();
-  
+
+  state->origin.envelope.header.metadata.machine_bytes = Type::TypeMachine::cursor_size * remote_type->GetDepth();
+
   _header_model.postPacket (state->origin.envelope.header.state,
                               NULL, NULL,
                               task, offset,
@@ -123,10 +125,11 @@ int PutOverSend<T_Model>::dispatch_header (void   * metadata,
 
   metadata_header_t * mdata = (metadata_header_t *) payload;
   
-  TRACE_FORMAT("metadata.remote_addr = %p", (void *) mdata->remote_addr);
-  TRACE_FORMAT("metadata.data_bytes  = %zu", mdata->data_bytes);
-  TRACE_FORMAT("metadata.origin      = 0x%08x", mdata->origin);
-  TRACE_FORMAT("metadata.type_bytes  = %zu", mdata->type_bytes);
+  TRACE_FORMAT("metadata.remote_addr   = %p", (void *) mdata->remote_addr);
+  TRACE_FORMAT("metadata.data_bytes    = %zu", mdata->data_bytes);
+  TRACE_FORMAT("metadata.origin        = 0x%08x", mdata->origin);
+  TRACE_FORMAT("metadata.type_bytes    = %zu", mdata->type_bytes);
+  TRACE_FORMAT("metadata.machine_bytes = %zu", mdata->machine_bytes);
 
   // Allocate target state memory and set connection.
   state_t * state = (state_t *) protocol->_allocator.allocateObject();
@@ -135,16 +138,18 @@ int PutOverSend<T_Model>::dispatch_header (void   * metadata,
   PAMI_ENDPOINT_INFO(mdata->origin, task, offset);
   protocol->_header_model.device.setConnection ((void *) state, task, offset);
   
-  state->target.envelope.type.serialized_bytes = mdata->type_bytes;
+  state->target.envelope.type.machine_bytes    = mdata->machine_bytes;
+  state->target.envelope.type.type_bytes       = mdata->type_bytes;
   state->target.envelope.type.bytes_remaining  = mdata->type_bytes;
   state->target.data.bytes_remaining           = mdata->data_bytes;
   state->target.data.base_addr                 = (void *) mdata->remote_addr;
   state->target.data.is_contiguous             = (mdata->type_bytes == 0);
   
-  if (mdata->type_bytes > 0)
+  if (! state->target.data.is_contiguous)
     {
-      // Allocate memory to hold the serialized target type.
-      state->target.envelope.type.serialized_type = malloc (mdata->type_bytes);
+      // Allocate memory to hold the serialized target type and type machine
+      state->target.data.type_buffer = malloc (mdata->type_bytes +
+                                               mdata->machine_bytes);
     }
   
   TRACE_FN_EXIT();
@@ -169,8 +174,8 @@ int PutOverSend<T_Model>::dispatch_type (void   * metadata,
   state_t * state = (state_t *) protocol->_type_model.device.getConnection (task, offset);
 
   const size_t bytes_to_copy = MIN(bytes, state->target.envelope.type.bytes_remaining);
-  const size_t data_offset = state->target.envelope.type.serialized_bytes - state->target.envelope.type.bytes_remaining;
-  void * ptr = (void *)((uint8_t *) state->target.envelope.type.serialized_type + data_offset);
+  const size_t data_offset = state->target.envelope.type.type_bytes - state->target.envelope.type.bytes_remaining;
+  void * ptr = (void *)((uint8_t *) state->target.data.type_buffer + data_offset);
 
   if (T_Model::read_is_required_packet_model)
     protocol->_type_model.device.read (ptr, bytes_to_copy, cookie);
@@ -181,17 +186,12 @@ int PutOverSend<T_Model>::dispatch_type (void   * metadata,
   
   if (state->target.envelope.type.bytes_remaining == 0)
     {
-      // De-serialize the target type.
-      Type::TypeCode * type_obj = (Type::TypeCode *) state->target.data.type_obj;
-      new (type_obj) Type::TypeCode (state->target.envelope.type.serialized_type,
-                                     state->target.envelope.type.serialized_bytes);
-
       // Construct the type machine.
       Type::TypeCode * machine = (Type::TypeCode *) state->target.data.machine;
-      new (machine) Type::TypeMachine (type_obj);
-      
-      // Free the temporary serialized target type memory.
-      free (state->target.envelope.type.serialized_type);
+      new (machine) Type::TypeMachine (state->target.data.type_buffer,
+                                       state->target.envelope.type.type_bytes,
+                                       ((uint8_t *) state->target.data.type_buffer) + state->target.envelope.type.type_bytes,
+                                       state->target.envelope.type.machine_bytes);
     }
 
   TRACE_FN_EXIT();

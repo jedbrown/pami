@@ -83,7 +83,7 @@ namespace PAMI
           typedef EagerSimple<T_Model, T_Option> EagerSimpleProtocol;
 
           typedef uint8_t model_state_t[T_Model::packet_model_state_bytes];
-          typedef uint8_t model_packet_t[T_Model::packet_model_state_bytes];
+          typedef uint8_t model_packet_t[T_Model::packet_model_payload_bytes];
 
 
 

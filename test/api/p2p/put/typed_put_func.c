@@ -1,6 +1,6 @@
 /**
- * \file test/api/p2p/rput/typed_rput_func.c
- * \brief Simple point-to-point PAMI_Rput_typed() test
+ * \file test/api/p2p/put/typed_put_func.c
+ * \brief Simple point-to-point PAMI_Put() test
  *
  * This test depends on a functional PAMI_Send_immediate() function.
  */
@@ -25,7 +25,7 @@
 
 typedef struct
 {
-  pami_memregion_t mr;
+  uintptr_t        base;
   unsigned         active;
 } info_t;
 
@@ -62,14 +62,14 @@ static void dispatch_exchange (
   pami_endpoint_t      origin,       /**< IN: endpoint that originated the send */
   pami_recv_t        * recv)         /**< OUT: receive message structure */
 {
-
+  
   info_t * exchange = (info_t *) cookie;
 
   pami_task_t task;
   size_t offset;
   PAMI_Endpoint_query (origin, &task, &offset);
-
-  memcpy (&exchange[task].mr, pipe_addr, pipe_size);
+  
+  exchange[task].base   = *((uintptr_t *)pipe_addr);
   exchange[task].active = 1;
 
   return;
@@ -293,31 +293,18 @@ int main (int argc, char ** argv)
     PAMI_Type_complete (simple_type, sizeof(double));
 
 
-    /* Create a memory region for the local data buffer. */
-    size_t bytes;
-    result = PAMI_Memregion_create (context[0], (void *) data, BUFFERSIZE,
-                                    &bytes, &exchange[task_id].mr);
 
-    if (result != PAMI_SUCCESS)
-      {
-        fprintf (stderr, "Error. Unable to create memory region. result = %d\n", result);
-        return 1;
-      }
-    else if (bytes < BUFFERSIZE)
-      {
-        fprintf (stderr, "Error. Unable to create memory region of a large enough size. result = %d\n", result);
-        return 1;
-      }
-
-    /* Broadcast the memory region to all tasks - including self. */
+    /* Broadcast the memory buffer vaddr to all tasks - including self. */
     for (i = 0; i < num_tasks; i++)
       {
+        uintptr_t base = (uintptr_t) &data[0];
+        
         pami_send_immediate_t parameters;
         parameters.dispatch        = EXCHANGE_DISPATCH_ID;
-        parameters.header.iov_base = (void *) & bytes;
-        parameters.header.iov_len  = sizeof(size_t);
-        parameters.data.iov_base   = (void *) & exchange[task_id].mr;
-        parameters.data.iov_len    = sizeof(pami_memregion_t);
+        parameters.header.iov_base = NULL;
+        parameters.header.iov_len  = 0;
+        parameters.data.iov_base   = (void *) & base;
+        parameters.data.iov_len    = sizeof(uintptr_t);
         PAMI_Endpoint_create (client, i, 0, &parameters.dest);
 
         result = PAMI_Send_immediate (context[0], &parameters);
@@ -343,7 +330,7 @@ int main (int argc, char ** argv)
 
   volatile size_t active = 1;
 
-  pami_rput_typed_t parameters;
+  pami_put_typed_t parameters;
   parameters.rma.hints          = (pami_send_hint_t) {0};
   parameters.rma.cookie         = (void *) & active;
   parameters.rma.done_fn        = NULL;
@@ -355,18 +342,12 @@ int main (int argc, char ** argv)
       fprintf (stdout, "PAMI_Rput('typed') functional test %s\n", (ncontexts < 2) ? "" : "[crosstalk]");
       fprintf (stdout, "\n");
 
-      parameters.rdma.local.mr      = &exchange[0].mr;
-      parameters.rdma.remote.mr     = &exchange[num_tasks - 1].mr;
       PAMI_Endpoint_create (client, num_tasks - 1, ncontexts - 1, &parameters.rma.dest);
-
       PAMI_Endpoint_create (client, num_tasks - 1, ncontexts - 1, &notify.dest);
     }
   else
     {
-      parameters.rdma.local.mr      = &exchange[num_tasks - 1].mr;
-      parameters.rdma.remote.mr     = &exchange[0].mr;
       PAMI_Endpoint_create (client, 0, 0, &parameters.rma.dest);
-
       PAMI_Endpoint_create (client, 0, 0, &notify.dest);
     }
 
@@ -378,13 +359,13 @@ int main (int argc, char ** argv)
   /* ******************************************************************** */
   if (task_id == 0)
     {
-      parameters.rdma.local.offset  = 0;
-      parameters.rdma.remote.offset = 0;
+      parameters.addr.local         = (void *) exchange[0].base;
+      parameters.addr.remote        = (void *) exchange[num_tasks - 1].base;
       parameters.type.local         = PAMI_TYPE_DOUBLE;
       parameters.type.remote        = PAMI_TYPE_DOUBLE;
 
       active = 1;
-      PAMI_Rput_typed (context[0], &parameters);
+      PAMI_Put_typed (context[0], &parameters);
 
       while (active > 0)
         PAMI_Context_advance (context[0], 100);
@@ -408,13 +389,13 @@ int main (int argc, char ** argv)
   /* ******************************************************************** */
   if (task_id == num_tasks - 1)
     {
-      parameters.rdma.local.offset  = 0;
-      parameters.rdma.remote.offset = 4 * 1024;
+      parameters.addr.local         = (void *) exchange[num_tasks - 1].base;
+      parameters.addr.remote        = (uint8_t *) exchange[0].base + (4 * 1024);
       parameters.type.local         = PAMI_TYPE_DOUBLE;
       parameters.type.remote        = simple_type;
 
       active = 1;
-      PAMI_Rput_typed (context[ncontexts - 1], &parameters);
+      PAMI_Put_typed (context[ncontexts - 1], &parameters);
 
       while (active > 0)
         PAMI_Context_advance (context[ncontexts - 1], 100);
@@ -438,13 +419,13 @@ int main (int argc, char ** argv)
   /* ******************************************************************** */
   if (task_id == 0)
     {
-      parameters.rdma.local.offset  = 4 * 1024;
-      parameters.rdma.remote.offset = 4 * 1024;
+      parameters.addr.local         = (uint8_t *) exchange[0].base + (4 * 1024);
+      parameters.addr.remote        = (uint8_t *) exchange[num_tasks - 1].base + (4 * 1024);
       parameters.type.local         = simple_type;
       parameters.type.remote        = compound_type;
 
       active = 1;
-      PAMI_Rput_typed (context[0], &parameters);
+      PAMI_Put_typed (context[0], &parameters);
 
       while (active > 0)
         PAMI_Context_advance (context[0], 100);
@@ -468,13 +449,13 @@ int main (int argc, char ** argv)
   /* ******************************************************************** */
   if (task_id == num_tasks - 1)
     {
-      parameters.rdma.local.offset  = 4 * 1024;
-      parameters.rdma.remote.offset = 8 * 1024;
+      parameters.addr.local         = (uint8_t *) exchange[num_tasks - 1].base + (4 * 1024);
+      parameters.addr.remote        = (uint8_t *) exchange[0].base + (8 * 1024);
       parameters.type.local         = compound_type;
       parameters.type.remote        = PAMI_TYPE_DOUBLE;
 
       active = 1;
-      PAMI_Rput_typed (context[ncontexts - 1], &parameters);
+      PAMI_Put_typed (context[ncontexts - 1], &parameters);
 
       while (active > 0)
         PAMI_Context_advance (context[ncontexts - 1], 100);
