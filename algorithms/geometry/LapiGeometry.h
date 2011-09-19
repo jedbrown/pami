@@ -29,7 +29,7 @@
 
 #ifndef PAMI_GEOMETRY_NUMALGOLISTS
 /// \todo PAMI_GEOMETRY_NUMALGOLISTS == max number of contexts??
-#define PAMI_GEOMETRY_NUMALGOLISTS 64
+#define PAMI_GEOMETRY_NUMALGOLISTS 1
 #endif
 
 #include "algorithms/geometry/UnexpBarrierQueueElement.h"
@@ -613,6 +613,7 @@ namespace PAMI
                                                                                  pami_xfer_type_t  colltype)
         {
           TRACE_ERR((stderr, "<%p>Lapi::algorithms_get_lists()\n", this));
+          PAMI_assert(context_id == 0);
 
           switch (colltype)
             {
