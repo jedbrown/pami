@@ -226,7 +226,8 @@ namespace PAMI
               {
                 uint8_t stack[T_PacketModel::packet_model_payload_bytes];
                 protocol->_packet_device.read ((void *) & stack[0], bytes, cookie);
-                uintptr_t ptr = *((uintptr_t *) & stack[0]);
+                uintptr_t* tmp = (uintptr_t *) &stack[0];
+                uintptr_t  ptr = *tmp;
                 fence = (fence_state_t *) ptr;
               }
 

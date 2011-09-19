@@ -513,7 +513,7 @@ public:
         unsigned root = topo->index2Rank(0);
         CCMI_assert(cdata->_root == root);
 
-        T_Conn *cmgr;
+        T_Conn *cmgr = NULL;
         CCMI_assert(conn_id != -1U);
         unsigned key = getKey (root, conn_id, geometry, (ConnectionManager::BaseConnectionManager **) & cmgr);
         CCMI_assert(cmgr == NULL); // ? Why rely on getkey to null it?

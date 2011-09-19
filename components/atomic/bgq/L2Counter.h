@@ -160,10 +160,12 @@ namespace PAMI
               }
             else
               {
-                rc = __global.l2atomicFactory.__nodescoped_mm.memalign((void **) & _counter,
+                void * __counter = NULL;
+                rc = __global.l2atomicFactory.__nodescoped_mm.memalign(&__counter,
                                                                        sizeof(*_counter),
                                                                        sizeof(*_counter),
                                                                        key);
+                _counter = (volatile uint64_t *)__counter;
               }
 
             PAMI_assertf(rc == PAMI_SUCCESS, "Failed to allocate memory from mm %p with key \"%s\"", mm, key);

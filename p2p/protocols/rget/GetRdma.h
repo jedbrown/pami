@@ -150,8 +150,8 @@ namespace PAMI
             const size_t local_offset  = get->typed.local.offset;
             const size_t remote_offset = get->typed.remote.offset;
 
-            Type::TypeEnumerator & enumerator =
-              *((Type::TypeEnumerator *) get->typed.enumerator);
+            Type::TypeEnumerator * tmp = (Type::TypeEnumerator *) get->typed.enumerator;
+            Type::TypeEnumerator & enumerator = *tmp;
 
             size_t & bytes_remaining = get->typed.bytes_remaining;
 

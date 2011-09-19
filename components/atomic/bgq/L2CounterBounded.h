@@ -84,9 +84,14 @@ protected:
               rc = mm->memalign((void **)&_counter, 32, sizeof(*_counter), key,
                   IndirectL2Bounded::counter_initialize, NULL);
             } else {
-              rc = __global.l2atomicFactory.__nodescoped_mm.memalign(
-                  (void **)&_counter, 32, sizeof(*_counter), key,
-                  IndirectL2Bounded::counter_initialize, NULL);
+              void * __counter = NULL;
+              rc = __global.l2atomicFactory.__nodescoped_mm.memalign(&__counter,
+                                                                     32,
+                                                                     sizeof(*_counter),
+                                                                     key,
+                                                                     IndirectL2Bounded::counter_initialize,
+                                                                     NULL);
+              _counter = (L2BoundedCounter_t*)__counter;
             }
 
             PAMI_assertf(rc == PAMI_SUCCESS,

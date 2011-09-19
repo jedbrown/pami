@@ -168,10 +168,12 @@ namespace PAMI {
 	_privateq.init(mm, key);
 
 	uint64_t *buffer;
+	void *_buffer = NULL;
 	int rc = 0;
-	rc = __global.l2atomicFactory.__procscoped_mm.memalign((void **)&buffer,
+	rc = __global.l2atomicFactory.__procscoped_mm.memalign(&_buffer,
 							       L1D_CACHE_LINE_SIZE, L1D_CACHE_LINE_SIZE);
 	PAMI_assertf(rc == PAMI_SUCCESS, "Failed to allocate L2 Atomic Counter");
+	buffer = (uint64_t*)_buffer;
 	//Verify counter array is 32-byte aligned
 
 	//printf ("Array Based Queue Initialized, atomics at address %lx\n", (uint64_t)buffer);

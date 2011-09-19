@@ -58,7 +58,7 @@ public:
 
                 PAMI::Device::Generic::Device::Factory::init(_generics, 0, 0, NULL, (pami_context_t)1, &__global.mm, _generics);
                 T_MultisyncDevice::Factory::init(_dev, 0, 0, NULL, (pami_context_t)1, &mm, _generics);
-                _model = new (_mdlbuf) T_MultisyncModel(T_MultisyncDevice::Factory::getDevice(_dev, 0, 0), _status);
+                _model = new ((T_MultisyncModel*)_mdlbuf) T_MultisyncModel(T_MultisyncDevice::Factory::getDevice(_dev, 0, 0), _status);
         }
 
         ~Multisync() {}
