@@ -139,7 +139,9 @@ namespace PAMI
 		random_seed = PRIME_B*(_amhdr.srcidx+1) + PRIME_A; 
 		curidx = (random_seed + _next * PRIME_A) % _nranks;
 	      }
-
+	      
+	      size_t bytes_available = _pwq->bytesAvailableToConsume(0);
+	      	      
 	      size_t num_msgs_perfifo = 1;
 	      if(is_small)
 		num_msgs_perfifo = 16;
@@ -169,9 +171,26 @@ namespace PAMI
 		size_t *rfifo8_addr = (size_t*)((char *)d + 40 /*8b aligned start of rfifo id*/);
 		while (i < ndesc) {
 		  //Wait for data to arrive in pipeworkqueue
-		  size_t bytes_available = 0;
-		  bytes_available = _pwq->bytesAvailableToConsume(curidx);
-		  char *src = _pwq->bufferToConsume(curidx);
+		  if (!T_Single) {
+		    bytes_available = _pwq->bytesAvailableToConsume(curidx);
+		    if (bytes_available == 0) {		      
+		      --ndesc;
+		      ++_next;
+		      
+		      if (is_small) {
+			++curidx;
+			if (curidx >= _nranks)
+			  curidx = 0;
+		      }
+		      else
+			curidx = (random_seed + _next * PRIME_A) % _nranks;
+
+		      continue;
+		    }
+		  }
+
+		  //We know that we inject all data at one shot
+		  char *src = _pwq->getBufferBase(curidx);
 		  uint64_t paddr = (uint64_t)(paddr_base + (int64_t)src);
 		  
 		  //printf("%ld: Injecting descriptor to %d with offset %ld bytes %ld\n", __global.mapping.task(),
@@ -210,7 +229,7 @@ namespace PAMI
 		      curidx = 0;
 		  }
 		  else
-		    curidx = (random_seed + _next * PRIME_A) % _nranks;
+		    curidx = (random_seed + _next * PRIME_A) % _nranks;		  
 		  
 		}
 		
@@ -226,10 +245,11 @@ namespace PAMI
 		fifo ++;
 		if (fifo >= numInjFifos)
 		  fifo = 0;
-	      }	      
+	      }
+
 	      _doneSending = (_next == _nranks);	    
 	    }	    
-	    
+
 	    if (_doneSending) {
 	      size_t fifo   = 0;
 	      uint32_t done = 1;

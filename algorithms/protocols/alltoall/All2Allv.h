@@ -203,8 +203,17 @@ namespace CCMI
       }
       void startA2A()
       {
-        TRACE_ADAPTOR((stderr, "<%p>All2AllvProtocol::startA2A()\n", this));
-        _native->manytomany(&_m2m_info);
+        TRACE_ADAPTOR((stderr, "<%p>All2AllvProtocol::startA2A() nsend active %ld nrecv active %ld\n", this, _sendpwq.numActive(), _recvpwq.numActive()));
+	if (_sendpwq.numActive() > 0)
+	  _native->manytomany(&_m2m_info);
+	else
+	  done(NULL, PAMI_SUCCESS);
+
+	//If the processor doesnt receive any data we call the receive
+	//completion here.
+	if (_recvpwq.numActive() == 0) {
+	  done(NULL, PAMI_SUCCESS);
+	}
       }
       static void cb_barrier_done(pami_context_t context,
                                   void *arg,

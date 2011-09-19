@@ -176,7 +176,7 @@ namespace PAMI
           memset((void *)&pt2pt, 0, sizeof(pt2pt));
 
           pt2pt.Hints_ABCD = 0;
-          pt2pt.Skip       = 0;
+          pt2pt.Skip       = 8;
           pt2pt.Misc1 =
           MUHWI_PACKET_USE_DYNAMIC_ROUTING |
           MUHWI_PACKET_DO_NOT_DEPOSIT |
