@@ -71,6 +71,7 @@ inline void GetOverSend<T_Model>::send_data (state_t * state)
 
   const size_t bytes_remaining = state->target.data.bytes_remaining;
 
+  TRACE_FORMAT("bytes_remaining = %zu (%ld)", bytes_remaining, sizeof(model_packet_t));
   if (bytes_remaining <= sizeof(model_packet_t))
     {
       // "short", non-pipelined, pack-n-send
@@ -121,6 +122,7 @@ inline void GetOverSend<T_Model>::send_data (state_t * state)
   else
     {
       state->target.data.start_count = 2;
+      state->target.data.bytes_remaining -= sizeof(model_packet_t) * 2;
 
       // pack-n-send the first full pipeline width with a data pipeline
       // completion callback.
@@ -169,20 +171,20 @@ void GetOverSend<T_Model>::complete_data (pami_context_t   context,
 
   const size_t bytes_remaining = state->target.data.bytes_remaining;
 
+  TRACE_FORMAT("bytes_remaining = %zu", bytes_remaining);
+
   if (bytes_remaining == 0)
     {
       // No more data to send. clean up.
 
       if (! state->target.data.is_contiguous)
         {
-          // Destroy the target type and machine.
+          // Destroy the target type machine.
           Type::TypeMachine * machine = (Type::TypeMachine *) state->target.data.machine;
-          Type::TypeCode * type_obj = (Type::TypeCode *) state->target.data.type_obj;
-          type_obj->~TypeCode();
           machine->~TypeMachine();
 
           // Free the temporary serialized target type memory
-          free (state->target.envelope.serialized_type);
+          free (state->target.envelope.type_buffer);
         }
 
       // Return the target state object memory to the memory pool.
@@ -199,12 +201,15 @@ void GetOverSend<T_Model>::complete_data (pami_context_t   context,
 
   Type::TypeMachine * machine = (Type::TypeMachine *) state->target.data.machine;
 
+  TRACE_FORMAT("which = %zu", which);
   if (bytes_remaining <= sizeof(model_packet_t))
     {
       // pack-n-send the last pipeline width with a data completion callback.
       machine->Pack (state->target.data.packet[which],
                      state->target.data.base_addr,
                      bytes_remaining);
+
+      state->target.data.bytes_remaining -= bytes_remaining;
 
       protocol->_data_model.postMultiPacket (state->target.data.state[which],
                                              complete_data, state,
@@ -215,7 +220,7 @@ void GetOverSend<T_Model>::complete_data (pami_context_t   context,
                                              state->target.data.packet[which],
                                              bytes_remaining);
     }
-  else if (bytes_remaining <= (sizeof(model_packet_t) << 1))
+  else if (bytes_remaining <= (sizeof(model_packet_t) * 2))
     {
       // pack-n-send this next-to-last full pipeline width _without_ a
       // completion callback. This is allowed because the next pipeline width is
@@ -275,6 +280,7 @@ int GetOverSend<T_Model>::dispatch_data (void   * metadata,
   state_t * state = (state_t *) * ((uintptr_t *) metadata);
 
   TRACE_FORMAT("state = %p", state);
+  TRACE_FORMAT("state->origin.base_addr       = %p", state->origin.base_addr);
   TRACE_FORMAT("state->origin.bytes_remaining = %zu", state->origin.bytes_remaining);
   TRACE_FORMAT("state->origin.is_contiguous   = %d", state->origin.is_contiguous);
 

@@ -50,7 +50,7 @@ namespace PAMI
           typedef GetOverSend<T_Model> GetOverSendProtocol;
 
           typedef uint8_t model_state_t[T_Model::packet_model_state_bytes];
-          typedef uint8_t model_packet_t[T_Model::packet_model_state_bytes];
+          typedef uint8_t model_packet_t[T_Model::packet_model_payload_bytes];
 
 
 
@@ -60,13 +60,15 @@ namespace PAMI
             size_t                data_bytes;
             pami_endpoint_t       origin;
             size_t                type_bytes; // => 0 iff contiguous
+            size_t                machine_bytes;
             uintptr_t             origin_state;
           } metadata_header_t;
 
           typedef struct
           {
-            void                * serialized_type;
-            size_t                serialized_bytes;
+            void                * type_buffer;
+            size_t                machine_bytes;
+            size_t                type_bytes;
             size_t                bytes_remaining;
           } target_envelope_t;
 
@@ -75,7 +77,6 @@ namespace PAMI
             model_state_t         state[2];
             model_packet_t        packet[2];
             uint8_t               machine[sizeof(Type::TypeMachine)];
-            uint8_t               type_obj[sizeof(Type::TypeCode)];
             void                * base_addr;
             size_t                bytes_remaining;
             size_t                start_count;
@@ -283,18 +284,18 @@ namespace PAMI
             state_t * state = (state_t *) _allocator.allocateObject();
             TRACE_FORMAT("state = %p", state);
 
-            state->origin.bytes_remaining = parameters->rma.bytes;
-            state->origin.base_addr       = parameters->addr.local;
-            state->origin.done_fn         = parameters->rma.done_fn;
-            state->origin.cookie          = parameters->rma.cookie;
-            state->origin.is_contiguous   = false;
-
             // Construct the type machine.
             // The machine will be destroyed when the last data packet has
             // been received from the target endpoint.
             Type::TypeCode * type_obj = (Type::TypeCode *) parameters->type.local;
             Type::TypeCode * machine = (Type::TypeCode *) state->origin.machine;
             new (machine) Type::TypeMachine (type_obj);
+
+            state->origin.bytes_remaining = parameters->rma.bytes;
+            state->origin.base_addr       = parameters->addr.local;
+            state->origin.done_fn         = parameters->rma.done_fn;
+            state->origin.cookie          = parameters->rma.cookie;
+            state->origin.is_contiguous   = type_obj->IsContiguous();
 
             send_envelope (parameters, task, offset, state);
 

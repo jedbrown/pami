@@ -133,12 +133,6 @@ int main (int argc, char ** argv)
     task_id = configuration.value.intval;
     /*fprintf (stderr, "My task id = %d\n", task_id);*/
 
-    if (task_id == 0)
-      {
-        for (i = 0; i < 320; i++)
-          data[i] = PI;
-      }
-
     configuration.name = PAMI_CLIENT_NUM_TASKS;
     result = PAMI_Client_query(client, &configuration, 1);
 
@@ -152,6 +146,12 @@ int main (int argc, char ** argv)
 
     /*if (task_id == 0)
       fprintf (stderr, "Number of tasks = %zu\n", num_tasks);*/
+    if (task_id == num_tasks - 1)
+      {
+        for (i = 0; i < 320; i++)
+          data[i] = PI;
+      }
+
 
     if ((num_tasks < 2) || (num_tasks > MAX_TASKS))
       {
@@ -333,16 +333,15 @@ int main (int argc, char ** argv)
 
   volatile size_t active = 1;
 
-  pami_put_typed_t parameters;
+  pami_get_typed_t parameters;
   parameters.rma.hints          = (pami_send_hint_t) {0};
   parameters.rma.cookie         = (void *) & active;
-  parameters.rma.done_fn        = NULL;
-  parameters.put.rdone_fn       = decrement;
+  parameters.rma.done_fn        = decrement;
   parameters.rma.bytes          = 320 * sizeof(double);
 
   if (task_id == 0)
     {
-      fprintf (stdout, "PAMI_Rput('typed') functional test %s\n", (ncontexts < 2) ? "" : "[crosstalk]");
+      fprintf (stdout, "PAMI_Rget('typed') functional test %s\n", (ncontexts < 2) ? "" : "[crosstalk]");
       fprintf (stdout, "\n");
 
       PAMI_Endpoint_create (client, num_tasks - 1, ncontexts - 1, &parameters.rma.dest);
@@ -368,7 +367,7 @@ int main (int argc, char ** argv)
       parameters.type.remote        = PAMI_TYPE_DOUBLE;
 
       active = 1;
-      PAMI_Put_typed (context[0], &parameters);
+      PAMI_Get_typed (context[0], &parameters);
 
       while (active > 0)
         PAMI_Context_advance (context[0], 100);
@@ -392,13 +391,13 @@ int main (int argc, char ** argv)
   /* ******************************************************************** */
   if (task_id == num_tasks - 1)
     {
-      parameters.addr.local         = (void *) exchange[num_tasks - 1].base;
-      parameters.addr.remote        = (uint8_t *) exchange[0].base + (4 * 1024);
-      parameters.type.local         = PAMI_TYPE_DOUBLE;
-      parameters.type.remote        = simple_type;
+      parameters.addr.local         = (uint8_t *) exchange[num_tasks - 1].base + (4 * 1024);
+      parameters.addr.remote        = (void *) exchange[0].base;
+      parameters.type.local         = simple_type;
+      parameters.type.remote        = PAMI_TYPE_DOUBLE;
 
       active = 1;
-      PAMI_Put_typed (context[ncontexts - 1], &parameters);
+      PAMI_Get_typed (context[ncontexts - 1], &parameters);
 
       while (active > 0)
         PAMI_Context_advance (context[ncontexts - 1], 100);
@@ -424,11 +423,11 @@ int main (int argc, char ** argv)
     {
       parameters.addr.local         = (uint8_t *) exchange[0].base + (4 * 1024);
       parameters.addr.remote        = (uint8_t *) exchange[num_tasks - 1].base + (4 * 1024);
-      parameters.type.local         = simple_type;
-      parameters.type.remote        = compound_type;
+      parameters.type.local         = compound_type;
+      parameters.type.remote        = simple_type;
 
       active = 1;
-      PAMI_Put_typed (context[0], &parameters);
+      PAMI_Get_typed (context[0], &parameters);
 
       while (active > 0)
         PAMI_Context_advance (context[0], 100);
@@ -454,11 +453,11 @@ int main (int argc, char ** argv)
     {
       parameters.addr.local         = (uint8_t *) exchange[num_tasks - 1].base + (4 * 1024);
       parameters.addr.remote        = (uint8_t *) exchange[0].base + (8 * 1024);
-      parameters.type.local         = compound_type;
-      parameters.type.remote        = PAMI_TYPE_DOUBLE;
+      parameters.type.local         = PAMI_TYPE_DOUBLE;
+      parameters.type.remote        = compound_type;
 
       active = 1;
-      PAMI_Put_typed (context[ncontexts - 1], &parameters);
+      PAMI_Get_typed (context[ncontexts - 1], &parameters);
 
       while (active > 0)
         PAMI_Context_advance (context[ncontexts - 1], 100);
@@ -481,7 +480,7 @@ int main (int argc, char ** argv)
   /* VERIFY data buffers                                                  */
 
   /* ******************************************************************** */
-  if (task_id == 0)
+  if (task_id == num_tasks - 1)
     {
       if (task_id == 0)
         {
@@ -578,7 +577,7 @@ int main (int argc, char ** argv)
         return 1;
       }
 
-    if (task_id == 0)
+    if (task_id == num_tasks - 1)
       {
         if (errors)
           fprintf (stdout, "Test completed with errors (%zu)\n", errors);
