@@ -99,7 +99,7 @@ namespace PAMI
   typedef Geometry::Common                     BGQGeometry;
 
   typedef MemoryAllocator<152,  64, 1> ProtocolAllocator; /// \todo How much do we really need?  Is there a better way?
-  typedef MemoryAllocator<640, 64, 1> BigProtocolAllocator; /// \todo How much do we really need?  Is there a better way?
+  typedef MemoryAllocator<4160, 64, 1> BigProtocolAllocator; /// \todo How much do we really need?  Is there a better way?
   typedef MemoryAllocator<352,  64, 1> MidProtocolAllocator; /// \todo How much do we really need?  Is there a better way?
 
   typedef Device::MU::Context MUDevice;
@@ -108,7 +108,7 @@ namespace PAMI
   Device::MU::MulticastModel<true>, // all-sided
   Device::MU::MultisyncModel<false, false>,
     Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false>,
-  MidProtocolAllocator> MUGlobalNI;
+  BigProtocolAllocator> MUGlobalNI;
 
   typedef BGQNativeInterfaceAS < MUDevice,
     Device::MU::MulticastDmaModel,
@@ -122,14 +122,14 @@ namespace PAMI
   Device::MU::MUMultisyncModel,
   Device::MU::CollectiveMulticombineDmaModel,
   //Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false>
-  MidProtocolAllocator
+  BigProtocolAllocator
   > MUGlobalDputNI;
 
   typedef BGQNativeInterfaceAS < MUDevice,
   Device::MU::CollectiveMcast2Device,
   Device::MU::CollectiveMsync2Device,
   Device::MU::CollectiveMcomb2Device,
-  MidProtocolAllocator
+  BigProtocolAllocator
   > MUShmemGlobalDputNI;
   
   //typedef PAMI::Device::Shmem::ShmemCollDesc <PAMI::Counter::Native> ShmemCollDesc;
@@ -141,7 +141,7 @@ namespace PAMI
     //Device::MU::MulticombineModel<Device::MU::AllreducePacketModel, false, false>
     Device::MU::NullMultisyncModel,
     Device::MU::NullMulticombineModel,
-    MidProtocolAllocator
+    BigProtocolAllocator
     > MUAMMulticastNI;
 
   typedef Fifo::FifoPacket <32, 160> ShmemPacket;
@@ -229,7 +229,7 @@ namespace PAMI
   typedef PAMI::Device::Shmem::ShortMcombMessage <ShmemDevice> ShmemMcombMessage;
   
   typedef BGQNativeInterfaceAS <ShmemDevice, ShmemMcstModel, ShmemMsyncModel, ShmemMcombModel,
-  MidProtocolAllocator> AllSidedShmemNI;
+  BigProtocolAllocator> AllSidedShmemNI;
 
   typedef BGQNativeInterfaceM2M <MUDevice, Device::MU::ManytomanyModel<size_t, 1> > M2MNISingle;
   typedef BGQNativeInterfaceM2M <MUDevice, Device::MU::ManytomanyModel<size_t, 0> > M2MNIVectorLong;

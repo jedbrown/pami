@@ -89,6 +89,7 @@ namespace PAMI {
 
       result = PAMI_SUCCESS;
       // Construct the protocol(s) using the NI dispatch function and cookie
+      COMPILE_TIME_ASSERT(sizeof(T_NI) <= T_Allocator::objsize);
       ni = (CCMI::Interfaces::NativeInterface *) _allocator.allocateObject ();
       TRACE_FORMAT("<%p> ni %p", this,  ni);
       new ((void *)ni) T_NI (_device, _allocator, _client, _context, _context_id, _client_id, dispatch_id);
@@ -177,6 +178,7 @@ namespace PAMI {
       }
       
       // Construct the protocol(s) using the NI dispatch function and cookie
+      COMPILE_TIME_ASSERT(sizeof(T_NI) <= T_Allocator::objsize);
       ni = (CCMI::Interfaces::NativeInterface *) _allocator.allocateObject ();
       TRACE_FORMAT("<%p> ni %p", this,  ni);
       new ((void *)ni) T_NI (_client, _context, _context_id, _client_id, dispatch_id, _device, result);

@@ -1082,6 +1082,7 @@ namespace PAMI
   inline pami_result_t NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>::multicast (pami_multicast_t *mcast, void *devinfo)
   {
     TRACE_FN_ENTER();
+    PAMI_assert(sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj) <= _allocator.objsize);
     typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *req          = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *)_allocator.allocateObject();
     req->_type              = NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj::MULTICAST;
     req->_ni               = this;
@@ -1135,6 +1136,7 @@ namespace PAMI
   inline pami_result_t NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>::multisync(pami_multisync_t *msync, void *devinfo)
   {
     TRACE_FN_ENTER();
+    PAMI_assert(sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj) <= _allocator.objsize);
     typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *req          = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *)_allocator.allocateObject();
     req->_type              = NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj::MULTISYNC;
     req->_ni               = this;
@@ -1159,6 +1161,7 @@ namespace PAMI
   inline pami_result_t NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>::multicombine (pami_multicombine_t *mcomb, void *devinfo)
   {
     TRACE_FN_ENTER();
+    PAMI_assert(sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj) <= _allocator.objsize);
     typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *req          = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *)_allocator.allocateObject();
     req->_type              = NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj::MULTICOMBINE;
     req->_ni               = this;
@@ -1680,6 +1683,7 @@ namespace PAMI
   inline pami_result_t NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::multicast (pami_multicast_t *mcast, void *devinfo)
   {
     TRACE_FN_ENTER();
+    PAMI_assert(sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj) <= this->_allocator.objsize);
     typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *req          = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *)this->_allocator.allocateObject();
     req->_type              = NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj::MULTICAST;
     req->_ni               = this;
@@ -1707,6 +1711,7 @@ namespace PAMI
   inline pami_result_t NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::manytomany (pami_manytomany_t *m2m, void *devinfo)
   {
     TRACE_FN_ENTER();
+    PAMI_assert(sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj) <= this->_allocator.objsize);
     typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *req = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *)this->_allocator.allocateObject();
     typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_send_statedata_t* state_data = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_send_statedata_t*)req->_state._m2m;
 
@@ -1739,6 +1744,7 @@ namespace PAMI
   inline pami_result_t NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::multisync(pami_multisync_t *msync, void *devinfo)
   {
     TRACE_FN_ENTER();
+    PAMI_assert(sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj) <= this->_allocator.objsize);
     typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *req          = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *)this->_allocator.allocateObject();
     req->_type              = NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj::MULTISYNC;
     req->_ni               = this;
@@ -1763,6 +1769,7 @@ namespace PAMI
   inline pami_result_t NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::multicombine (pami_multicombine_t *mcomb, void *devinfo)
   {
     TRACE_FN_ENTER();
+    PAMI_assert(sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj) <= this->_allocator.objsize);
     typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *req          = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *)this->_allocator.allocateObject();
     req->_type              = NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj::MULTICOMBINE;
     req->_ni               = this;
@@ -2169,6 +2176,7 @@ namespace PAMI
       }
 
     // We have to intercept the callback to punch buttons on the rcv pwq.
+    PAMI_assert(sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj) <= this->_allocator.objsize);
     typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *req          = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *)this->_allocator.allocateObject();
 
     req->_type              = NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj::MULTICAST;
@@ -2222,6 +2230,7 @@ namespace PAMI
 
         PAMI_assert(this->_m2m_dispatch_function != NULL);
 
+        PAMI_assert(sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj) <= this->_allocator.objsize);
         typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *req = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *)this->_allocator.allocateObject();
         state = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_recv_statedata_t*)req->_state._m2m;
 

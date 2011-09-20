@@ -77,6 +77,8 @@ namespace PAMI {
 	pami_result_t result = PAMI_ERROR;
 	
 	// Construct the protocol(s) using the NI dispatch function and cookie
+	COMPILE_TIME_ASSERT(sizeof(T_NIAS) <= T_Allocator::objsize);
+	COMPILE_TIME_ASSERT(sizeof(T_NIAM) <= T_Allocator::objsize);
 	ni = (CCMI::Interfaces::NativeInterface *) _allocator.allocateObject ();
 	
 	if (ni_type == CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED)
@@ -254,6 +256,8 @@ namespace PAMI {
 	
 
 	// Get storage for the NI and construct it.
+	COMPILE_TIME_ASSERT(sizeof(T_NIAS) <= T_Allocator::objsize);
+	COMPILE_TIME_ASSERT(sizeof(T_NIAM) <= T_Allocator::objsize);
 	ni = (CCMI::Interfaces::NativeInterface *) _allocator.allocateObject ();
 	if (ni_type == CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED)
 	  new ((void*)ni) T_NIAS(_client, _context, _context_id, _client_id);	    

@@ -268,6 +268,8 @@ namespace PAMI
       }   
 
     if (T_Mcast::sizeof_msg > 0) {
+      PAMI_assertf(sizeof(allocObj) <= _allocator.objsize,"%zu <= %zu\n",sizeof(allocObj),_allocator.objsize);
+      COMPILE_TIME_ASSERT(sizeof(allocObj) <= T_Allocator::objsize);
       allocObj *req          = (allocObj *)_allocator.allocateObject();
       req->_ni               = this;
       req->_user_callback    = mcast->cb_done;
@@ -306,6 +308,8 @@ namespace PAMI
       }
 
     if (T_Msync::sizeof_msg > 0) {
+      PAMI_assertf(sizeof(allocObj) <= _allocator.objsize,"%zu <= %zu\n",sizeof(allocObj),_allocator.objsize);
+      COMPILE_TIME_ASSERT(sizeof(allocObj) <= T_Allocator::objsize);
       allocObj *req          = (allocObj *)_allocator.allocateObject();
       req->_ni               = this;
       req->_user_callback    = msync->cb_done;
@@ -339,6 +343,8 @@ namespace PAMI
       }
     
     if (T_Mcomb::sizeof_msg > 0) {
+      PAMI_assertf(sizeof(allocObj) <= _allocator.objsize,"%zu <= %zu\n",sizeof(allocObj),_allocator.objsize);
+      COMPILE_TIME_ASSERT(sizeof(allocObj) <= T_Allocator::objsize);
       allocObj *req          = (allocObj *)_allocator.allocateObject();
       req->_ni               = this;
       req->_user_callback    = mcomb->cb_done;
@@ -488,6 +494,7 @@ namespace PAMI
   {
     TRACE_FN_ENTER();
     TRACE_FORMAT( "<%p> status %u", this, _mcast2_status);
+    PAMI_assertf(sizeof(allocObj) <= _allocator.objsize,"%zu <= %zu\n",sizeof(allocObj),_allocator.objsize);
     COMPILE_TIME_ASSERT(T_Allocator::objsize >= sizeof(allocObjMD));
     this->CCMI::Interfaces::NativeInterface::_status = (pami_result_t) (this->CCMI::Interfaces::NativeInterface::_status | _mcast2_status);
     TRACE_FN_EXIT();
@@ -497,6 +504,8 @@ namespace PAMI
     inline pami_result_t BGQNativeInterfaceASMultiDevice<T_Device1, T_Device2, T_Mcast1, T_Mcast2, T_Msync, T_Mcomb, T_Allocator>::multicast (pami_multicast_t *mcast, void *devinfo)
   {
     TRACE_FN_ENTER();
+    PAMI_assertf(sizeof(allocObjMD) <= this->_allocator.objsize,"%zu <= %zu\n",sizeof(allocObjMD),this->_allocator.objsize);
+    COMPILE_TIME_ASSERT(sizeof(allocObjMD) <= T_Allocator::objsize);
     allocObjMD *req          = (allocObjMD *)(this->_allocator).allocateObject();
 
     req->_ni               = this;
@@ -732,6 +741,7 @@ namespace PAMI
 
     virtual pami_result_t manytomany (pami_manytomany_t *m2m, void *devinfo = NULL)
     {
+      PAMI_assertf(sizeof(allocObj) <= _allocator.objsize,"%zu <= %zu\n",sizeof(allocObj),_allocator.objsize);
       allocObj *req          = (allocObj *)_allocator.allocateObject();
       req->_ni               = this;
       req->_user_callback    = m2m->cb_done;

@@ -903,14 +903,14 @@ namespace PAMI
         {
           TRACE_FORMAT("<%p> usemu", this);
 
-          _mu_ni_msync          = new (_mu_ni_msync_storage         ) T_MUNativeInterface(_mu_device, _allocator, client, context, context_id, client_id, _dispatch_id);
-          _mu_ni_mcomb          = new (_mu_ni_mcomb_storage         ) T_MUNativeInterface(_mu_device, _allocator, client, context, context_id, client_id, _dispatch_id);
-          _mu_ni_mcast          = new (_mu_ni_mcast_storage         ) T_MUNativeInterface(_mu_device, _allocator, client, context, context_id, client_id, _dispatch_id);
-          _mu_ni_mcast3         = new (_mu_ni_mcast3_storage        ) T_MUNativeInterface(_mu_device, _allocator, client, context, context_id, client_id, _dispatch_id);
-          _mu_ni_msync2d        = new (_mu_ni_msync2d_storage       ) T_MUNativeInterface(_mu_device, _allocator, client, context, context_id, client_id, _dispatch_id);
-          _mu_ni_mcast2d        = new (_mu_ni_mcast2d_storage       ) T_MUNativeInterface(_mu_device, _allocator, client, context, context_id, client_id, _dispatch_id);
-          _mu_ni_mcomb2d        = new (_mu_ni_mcomb2d_storage       ) T_MUNativeInterface(_mu_device, _allocator, client, context, context_id, client_id, _dispatch_id);
-          _mu_ni_mcomb2dNP      = new (_mu_ni_mcomb2dNP_storage     ) T_MUNativeInterface(_mu_device, _allocator, client, context, context_id, client_id, _dispatch_id);
+          _mu_ni_msync          = new (_mu_ni_msync_storage         ) T_MUNativeInterface(_mu_device, _big_allocator, client, context, context_id, client_id, _dispatch_id);
+          _mu_ni_mcomb          = new (_mu_ni_mcomb_storage         ) T_MUNativeInterface(_mu_device, _big_allocator, client, context, context_id, client_id, _dispatch_id);
+          _mu_ni_mcast          = new (_mu_ni_mcast_storage         ) T_MUNativeInterface(_mu_device, _big_allocator, client, context, context_id, client_id, _dispatch_id);
+          _mu_ni_mcast3         = new (_mu_ni_mcast3_storage        ) T_MUNativeInterface(_mu_device, _big_allocator, client, context, context_id, client_id, _dispatch_id);
+          _mu_ni_msync2d        = new (_mu_ni_msync2d_storage       ) T_MUNativeInterface(_mu_device, _big_allocator, client, context, context_id, client_id, _dispatch_id);
+          _mu_ni_mcast2d        = new (_mu_ni_mcast2d_storage       ) T_MUNativeInterface(_mu_device, _big_allocator, client, context, context_id, client_id, _dispatch_id);
+          _mu_ni_mcomb2d        = new (_mu_ni_mcomb2d_storage       ) T_MUNativeInterface(_mu_device, _big_allocator, client, context, context_id, client_id, _dispatch_id);
+          _mu_ni_mcomb2dNP      = new (_mu_ni_mcomb2dNP_storage     ) T_MUNativeInterface(_mu_device, _big_allocator, client, context, context_id, client_id, _dispatch_id);
 
           _axial_mu_dput_ni     = new (_axial_mu_dput_ni_storage    ) T_AxialDputNativeInterface(_mu_device, _big_allocator, client, context, context_id, client_id, _dispatch_id);
 
@@ -919,11 +919,11 @@ namespace PAMI
           if (__global.mapping.t() == 0)
             //We can now construct this on any process (as long as
             //process 0 on each node in the job also calls it
-            _mu_global_dput_ni    = new (_mu_global_dput_ni_storage) MUGlobalDputNI (_mu_device, _allocator, client, context, context_id, client_id, _dispatch_id);
+            _mu_global_dput_ni    = new (_mu_global_dput_ni_storage) MUGlobalDputNI (_mu_device, _big_allocator, client, context, context_id, client_id, _dispatch_id);
 
-          _mu_shmem_global_dput_ni    = new (_mu_shmem_global_dput_ni_storage) MUShmemGlobalDputNI (_mu_device, _allocator, client, context, context_id, client_id, _dispatch_id);
+          _mu_shmem_global_dput_ni    = new (_mu_shmem_global_dput_ni_storage) MUShmemGlobalDputNI (_mu_device, _big_allocator, client, context, context_id, client_id, _dispatch_id);
 
-          _mu_ammulticast_ni    = new (_mu_ammulticast_ni_storage) MUAMMulticastNI (_mu_device, _allocator, client, context, context_id, client_id, _dispatch_id);
+          _mu_ammulticast_ni    = new (_mu_ammulticast_ni_storage) MUAMMulticastNI (_mu_device, _big_allocator, client, context, context_id, client_id, _dispatch_id);
 
           _mu_m2m_single_ni      = new (_mu_m2m_single_ni_storage) M2MNISingle (_mu_device, client, context, context_id, client_id, _dispatch_id);
 
@@ -1142,6 +1142,7 @@ namespace PAMI
             geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
                              (void*)opt_binomial);
 
+            COMPILE_TIME_ASSERT(sizeof(GeometryInfo<OptBinomialBarrierFactory>) <= ProtocolAllocator::objsize);
             GeometryInfo<OptBinomialBarrierFactory>    *gi = (GeometryInfo<OptBinomialBarrierFactory>*) _geom_allocator.allocateObject();
             new(gi) GeometryInfo<OptBinomialBarrierFactory>(_context, opt_binomial, &_geom_allocator);
 
@@ -1168,6 +1169,7 @@ namespace PAMI
               // Add Barriers
               geometry->addCollective(PAMI_XFER_BARRIER, &_shmem_msync_factory, _context_id);
 
+              COMPILE_TIME_ASSERT(sizeof(GeometryInfo<ShmemMultiSyncFactory>) <= ProtocolAllocator::objsize);
               GeometryInfo<ShmemMultiSyncFactory>    *gi = (GeometryInfo<ShmemMultiSyncFactory>*) _geom_allocator.allocateObject();
               new(gi) GeometryInfo<ShmemMultiSyncFactory>(_context, composite, &_geom_allocator);
               geometry->setCleanupCallback(cleanupCallback, gi);
@@ -1207,6 +1209,7 @@ namespace PAMI
               geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
                                (void*)opt_composite);
 
+              COMPILE_TIME_ASSERT(sizeof(GeometryInfo<MURectangleMultiSyncFactory>) <= ProtocolAllocator::objsize);
               GeometryInfo<MURectangleMultiSyncFactory>    *gi = (GeometryInfo<MURectangleMultiSyncFactory>*) _geom_allocator.allocateObject();
               new(gi) GeometryInfo<MURectangleMultiSyncFactory>(_context, opt_composite, &_geom_allocator);
               geometry->setCleanupCallback(cleanupCallback, gi);
@@ -1223,6 +1226,7 @@ namespace PAMI
               geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
                                (void*)opt_composite);
 
+              COMPILE_TIME_ASSERT(sizeof(GeometryInfo<MultiSync2DeviceRectangleFactory>) <= ProtocolAllocator::objsize);
               GeometryInfo<MultiSync2DeviceRectangleFactory>    *gi = (GeometryInfo<MultiSync2DeviceRectangleFactory>*) _geom_allocator.allocateObject();
               new(gi) GeometryInfo<MultiSync2DeviceRectangleFactory>(_context, opt_composite, &_geom_allocator);
               geometry->setCleanupCallback(cleanupCallback, gi);
@@ -1308,6 +1312,7 @@ namespace PAMI
                 // Add Barriers
                 geometry->addCollective(PAMI_XFER_BARRIER, _gi_msync_factory, _context_id);
 
+                COMPILE_TIME_ASSERT(sizeof(GeometryInfo<GIMultiSyncFactory>) <= ProtocolAllocator::objsize);
                 GeometryInfo<GIMultiSyncFactory>    *gi = (GeometryInfo<GIMultiSyncFactory>*) _geom_allocator.allocateObject();
                 new(gi) GeometryInfo<GIMultiSyncFactory>(_context, composite, &_geom_allocator);
                 geometry->setCleanupCallback(cleanupCallback, gi);
@@ -1321,6 +1326,7 @@ namespace PAMI
                 // Add Barriers
                 geometry->addCollective(PAMI_XFER_BARRIER, _mu_rectangle_msync_factory, _context_id); 
 
+                COMPILE_TIME_ASSERT(sizeof(GeometryInfo<MURectangleMultiSyncFactory>) <= ProtocolAllocator::objsize);
                 GeometryInfo<MURectangleMultiSyncFactory>    *gi = (GeometryInfo<MURectangleMultiSyncFactory>*) _geom_allocator.allocateObject();
                 new(gi) GeometryInfo<MURectangleMultiSyncFactory>(_context, composite, &_geom_allocator);
                 geometry->setCleanupCallback(cleanupCallback, gi);
@@ -1343,6 +1349,7 @@ namespace PAMI
                 geometry->addCollective(PAMI_XFER_BARRIER, _msync2d_gishm_composite_factory, _context_id);
                 PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE4)==composite);
 
+                COMPILE_TIME_ASSERT(sizeof(GeometryInfo<MultiSync2DeviceGIShmemFactory>) <= ProtocolAllocator::objsize);
                 GeometryInfo<MultiSync2DeviceGIShmemFactory>    *gi = (GeometryInfo<MultiSync2DeviceGIShmemFactory>*) _geom_allocator.allocateObject();
                 new(gi) GeometryInfo<MultiSync2DeviceGIShmemFactory>(_context, composite, &_geom_allocator);
                 geometry->setCleanupCallback(cleanupCallback, gi);
@@ -1360,6 +1367,7 @@ namespace PAMI
                 PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE6)==composite);
                 geometry->addCollective(PAMI_XFER_BARRIER, _msync2d_rectangle_composite_factory, _context_id);
 
+                COMPILE_TIME_ASSERT(sizeof(GeometryInfo<MultiSync2DeviceRectangleFactory>) <= ProtocolAllocator::objsize);
                 GeometryInfo<MultiSync2DeviceRectangleFactory>    *gi = (GeometryInfo<MultiSync2DeviceRectangleFactory>*) _geom_allocator.allocateObject();
                 new(gi) GeometryInfo<MultiSync2DeviceRectangleFactory>(_context, composite, &_geom_allocator);
                 geometry->setCleanupCallback(cleanupCallback, gi);
@@ -1428,6 +1436,7 @@ namespace PAMI
                 composite = _msync2d_composite_factory->generate(geometry, &xfer);
                 geometry->addCollective(PAMI_XFER_BARRIER, _msync2d_composite_factory, _context_id);
 
+                COMPILE_TIME_ASSERT(sizeof(GeometryInfo<MultiSync2DeviceFactory>) <= ProtocolAllocator::objsize);
                 GeometryInfo<MultiSync2DeviceFactory>    *gi = (GeometryInfo<MultiSync2DeviceFactory>*) _geom_allocator.allocateObject();
                 new(gi) GeometryInfo<MultiSync2DeviceFactory>(_context, composite, &_geom_allocator);
                 geometry->setCleanupCallback(cleanupCallback, gi);

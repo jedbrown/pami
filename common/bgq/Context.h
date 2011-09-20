@@ -212,11 +212,11 @@ namespace PAMI
   };
 
   // MU NI factory for MUNI_metadata<MUNI_AM>/MUNI_metadata<MUNI_AS>
-  typedef NativeInterfaceCommon::NativeInterfaceFactory <MidProtocolAllocator,  MUNI_metadata<MUNI_AM, MidProtocolAllocator>,  MUNI_metadata<MUNI_AS, MidProtocolAllocator>, MUEager, MUDevice> MUNIFactory;
+  typedef NativeInterfaceCommon::NativeInterfaceFactory <BigProtocolAllocator,  MUNI_metadata<MUNI_AM, BigProtocolAllocator>,  MUNI_metadata<MUNI_AS, MidProtocolAllocator>, MUEager, MUDevice> MUNIFactory;
 
   // MU NI factory for MUNI_metadata<MUAMMulticastNI,(512-16)> which will
   // override analyze to set query-required for (short) range metadata
-  class MUAMMulticastFactory : public BGQNativeInterfaceFactory < MidProtocolAllocator, MUNI_metadata<MUAMMulticastNI,MidProtocolAllocator, (512-16)>, MUDevice, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE>
+  class MUAMMulticastFactory : public BGQNativeInterfaceFactory < BigProtocolAllocator, MUNI_metadata<MUAMMulticastNI,BigProtocolAllocator, (512-16)>, MUDevice, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE>
   {
   public:
     MUAMMulticastFactory( pami_client_t       client,
@@ -224,8 +224,8 @@ namespace PAMI
                           size_t              clientid,
                           size_t              contextid,
                           MUDevice          & device,
-			  MidProtocolAllocator       & allocator) : 
-    BGQNativeInterfaceFactory <MidProtocolAllocator, MUNI_metadata<MUAMMulticastNI,MidProtocolAllocator, (512-16)>, MUDevice, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE>
+			  BigProtocolAllocator       & allocator) : 
+    BGQNativeInterfaceFactory <BigProtocolAllocator, MUNI_metadata<MUAMMulticastNI,BigProtocolAllocator, (512-16)>, MUDevice, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE>
         ( client,
           context,
           clientid,
@@ -799,7 +799,7 @@ namespace PAMI
 #endif  
 
           _shmem_native_interface  = (AllSidedShmemNI*)_shmem_native_interface_storage;
-          new (_shmem_native_interface_storage) AllSidedShmemNI(_shmemMcastModel, _shmemMsyncModel, _shmemMcombModel, _mid_protocol, client, (pami_context_t)this, id, clientid, &_dispatch.id);
+          new (_shmem_native_interface_storage) AllSidedShmemNI(_shmemMcastModel, _shmemMsyncModel, _shmemMcombModel, _big_protocol, client, (pami_context_t)this, id, clientid, &_dispatch.id);
         }
         }
         TRACE_FORMAT( "<%p:%u>, dispatch.id %u", this,__LINE__, _dispatch.id);
@@ -871,7 +871,7 @@ namespace PAMI
             TRACE_FORMAT("Allocator:  sizeof(MUNIFactory) %zu, ProtocolAllocator::objsize %zu",sizeof(MUNIFactory),ProtocolAllocator::objsize);
             CCMI::Interfaces::NativeInterfaceFactory *ni_factory_mu = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
             TRACE_FORMAT("MU CCMI NI %p, registration %p", ni_factory_mu,  _ccmi_registration_mu_storage);
-            new (ni_factory_mu) MUNIFactory (_client, _context, _clientid, _contextid, _devices->_mu[_contextid], _mid_protocol);
+            new (ni_factory_mu) MUNIFactory (_client, _context, _clientid, _contextid, _devices->_mu[_contextid], _big_protocol);
             _ccmi_registration_mu =  new((CCMIRegistration*)_ccmi_registration_mu_storage) 	
             CCMIRegistration(_client, _context, _contextid, _clientid, 
                              _protocol,
@@ -903,7 +903,7 @@ namespace PAMI
             TRACE_FORMAT("Allocator:  sizeof(MUAMMulticastFactory) %zu, ProtocolAllocator::objsize %zu",sizeof(MUAMMulticastFactory),ProtocolAllocator::objsize);
             CCMI::Interfaces::NativeInterfaceFactory *ni_factory_muam = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
             TRACE_FORMAT("MU AM CCMI NI %p, registration %p", ni_factory_muam,  _ccmi_registration_muam_storage);
-            new (ni_factory_muam) MUAMMulticastFactory (_client, _context, _clientid, _contextid, _devices->_mu[_contextid], _mid_protocol);
+            new (ni_factory_muam) MUAMMulticastFactory (_client, _context, _clientid, _contextid, _devices->_mu[_contextid], _big_protocol);
           
             _ccmi_registration_muam =  new((CCMIRegistrationKey2*)_ccmi_registration_muam_storage) 	
             CCMIRegistrationKey2(_client, _context, _contextid, _clientid, 
@@ -914,6 +914,7 @@ namespace PAMI
                                  _geometry_map,
                                  ni_factory_muam);
 
+            COMPILE_TIME_ASSERT(sizeof(MUDputNIFactory) <= ProtocolAllocator::objsize);
             CCMI::Interfaces::NativeInterfaceFactory *ni_factory_mudp = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
             new (ni_factory_mudp) MUDputNIFactory (_client, _context, _clientid, _contextid, _devices->_mu[_contextid], _big_protocol);
           
