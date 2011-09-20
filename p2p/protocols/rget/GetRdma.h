@@ -23,9 +23,11 @@
 
 #include "p2p/protocols/RGet.h"
 
-#ifndef TRACE_ERR
-#define TRACE_ERR(x) // fprintf x
-#endif
+#include "util/trace.h"
+#undef  DO_TRACE_ENTEREXIT
+#undef  DO_TRACE_DEBUG
+#define DO_TRACE_ENTEREXIT 0
+#define DO_TRACE_DEBUG     0
 
 namespace PAMI
 {
@@ -58,6 +60,8 @@ namespace PAMI
                                 void           * cookie,
                                 pami_result_t    result)
           {
+            TRACE_FN_ENTER();
+
             get_state_t * state = (get_state_t *) cookie;
 
             if (state->fn != NULL)
@@ -67,6 +71,7 @@ namespace PAMI
 
             state->protocol->_allocator.returnObject ((void *) state);
 
+            TRACE_FN_EXIT();
             return;
           }
 
@@ -78,7 +83,7 @@ namespace PAMI
                                      T_Allocator    & allocator,
                                      pami_result_t  & status)
           {
-            TRACE_ERR((stderr, ">> GetRdma::generate()\n"));
+            TRACE_FN_ENTER();
             COMPILE_TIME_ASSERT(sizeof(GetRdma) <= T_Allocator::objsize);
 
             GetRdma * get = (GetRdma *) allocator.allocateObject ();
@@ -90,7 +95,8 @@ namespace PAMI
                 get = NULL;
               }
 
-            TRACE_ERR((stderr, "<< GetRdma::generate(), get = %p, status = %d\n", get, status));
+            TRACE_FORMAT("get = %p, status = %d", get, status);
+            TRACE_FN_EXIT();
             return get;
           }
 
@@ -100,7 +106,9 @@ namespace PAMI
               _device (device),
               _context (context)
           {
+            TRACE_FN_ENTER();
             COMPILE_TIME_ASSERT(T_Model::dma_model_mr_supported == true);
+            TRACE_FN_EXIT();
           }
 
           ///
@@ -108,7 +116,8 @@ namespace PAMI
           ///
           inline pami_result_t simple (pami_rget_simple_t * parameters)
           {
-            TRACE_ERR((stderr, ">> GetRdma::simple()\n"));
+            TRACE_FN_ENTER();
+
             pami_task_t task;
             size_t offset;
             PAMI_ENDPOINT_INFO(parameters->rma.dest, task, offset);
@@ -116,7 +125,8 @@ namespace PAMI
             // Verify that this task is addressable by this dma device
             if (unlikely(_device.isPeer(task) == false)) return PAMI_ERROR;
 
-            TRACE_ERR((stderr, "   GetRdma::simple(), attempt an 'immediate' rget transfer.\n"));
+            TRACE_STRING("attempt an 'immediate' rget transfer.");
+
             if (_model.postDmaGet (task, offset,
                                    parameters->rma.bytes,
                                    (Memregion *) parameters->rdma.local.mr,
@@ -124,15 +134,16 @@ namespace PAMI
                                    (Memregion *) parameters->rdma.remote.mr,
                                    parameters->rdma.remote.offset))
               {
-                TRACE_ERR((stderr, "   GetRdma::simple(), 'immediate' rget transfer was successful, invoke callback.\n"));
+                TRACE_STRING("'immediate' rget transfer was successful, invoke callback.");
+
                 if (parameters->rma.done_fn)
                   parameters->rma.done_fn (_context, parameters->rma.cookie, PAMI_SUCCESS);
 
-                TRACE_ERR((stderr, "<< GetRdma::simple(), PAMI_SUCCESS\n"));
+                TRACE_FN_EXIT();
                 return PAMI_SUCCESS;
               }
 
-            TRACE_ERR((stderr, "   GetRdma::simple(), 'immediate' rget transfer was not successful, allocate rdma get state memory.\n"));
+            TRACE_STRING("'immediate' rget transfer was not successful, allocate rdma get state memory.");
 
             // Allocate memory to maintain the state of the get operation.
             get_state_t * state =
@@ -142,7 +153,7 @@ namespace PAMI
             state->cookie   = parameters->rma.cookie;
             state->protocol = this;
 
-            TRACE_ERR((stderr, "   GetRdma::simple(), attempt a 'non-blocking' rget transfer.\n"));
+            TRACE_STRING("attempt a 'non-blocking' rget transfer.");
             _model.postDmaGet (state->msg,
                                complete,
                                (void *) state,
@@ -153,7 +164,7 @@ namespace PAMI
                                (Memregion *) parameters->rdma.remote.mr,
                                parameters->rdma.remote.offset);
 
-            TRACE_ERR((stderr, "<< GetRdma::simple(), PAMI_SUCCESS\n"));
+            TRACE_FN_EXIT();
             return PAMI_SUCCESS;
           };
 
@@ -167,7 +178,9 @@ namespace PAMI
     };
   };
 };
-#undef TRACE_ERR
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
+
 #endif /* __p2p_protocols_rget_GetRdma_h__ */
 
 //
