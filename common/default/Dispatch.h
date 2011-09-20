@@ -465,8 +465,10 @@ namespace PAMI
       inline pami_result_t rget (pami_rget_typed_t * parameters)
       {
         TRACE_FN_ENTER();
+        pami_result_t result = _rget->typed (parameters);
+        TRACE_FORMAT("result = %d", result);
         TRACE_FN_EXIT();
-        return PAMI_UNIMPL;
+        return result;
       }
   };
 };

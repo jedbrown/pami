@@ -62,7 +62,7 @@ namespace PAMI
           ///
           /// \brief Start a new non-contiguous rget operation
           ///
-          //virtual pami_result_t typed (pami_rget_typed_t * parameters) = 0;
+          virtual pami_result_t typed (pami_rget_typed_t * parameters) = 0;
 
       }; // PAMI::Protocol::Get::RGet class
 
@@ -206,6 +206,25 @@ namespace PAMI
               }
 
             TRACE_ERR((stderr, "<< CompositeRGet::rget('simple')\n"));
+            return result;
+          };
+
+          ///
+          /// \brief Start a new contiguous rget operation
+          ///
+          virtual pami_result_t typed (pami_rget_typed_t * parameters)
+          {
+            TRACE_ERR((stderr, ">> CompositeRGet::rget('typed')\n"));
+            pami_result_t result = _primary->typed (parameters);
+            TRACE_ERR((stderr, "   CompositeRGet::rget('typed'), primary result = %d\n", result));
+
+            if (result != PAMI_SUCCESS)
+              {
+                result = _secondary->typed (parameters);
+                TRACE_ERR((stderr, "   CompositeRGet::rget('typed'), secondary result = %d\n", result));
+              }
+
+            TRACE_ERR((stderr, "<< CompositeRGet::rget('typed')\n"));
             return result;
           };
 

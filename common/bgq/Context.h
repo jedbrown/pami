@@ -1174,7 +1174,13 @@ namespace PAMI
 
       inline pami_result_t rget_typed (pami_rget_typed_t * parameters)
       {
-        return PAMI_UNIMPL;
+        TRACE_FN_ENTER();
+
+        pami_result_t rc = _dispatch.rget (parameters);
+
+        TRACE_FORMAT("rc = %d", rc);
+        TRACE_FN_EXIT();
+        return rc;
       }
 
       inline pami_result_t purge_totask (pami_endpoint_t *dest, size_t count)
