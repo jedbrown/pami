@@ -1498,10 +1498,13 @@ namespace PAMI
 
     if (--state_data->doneCountDown == 0)
       {
-        // call original done
-        if (state_data->cb_done.function)
-          (state_data->cb_done.function)(context,
-                                         state_data->cb_done.clientdata, PAMI_SUCCESS);
+        pami_callback_t        cb_done;
+        cb_done.function   = state_data->cb_done.function;
+        cb_done.clientdata = state_data->cb_done.clientdata;
+
+        state_data->~p2p_multicast_statedata_t();
+        if (cb_done.function)
+          (cb_done.function)(context,cb_done.clientdata, PAMI_SUCCESS);
       }
     TRACE_FN_EXIT();
   }
@@ -2338,10 +2341,14 @@ namespace PAMI
 
     if (--state_data->doneCountDown == 0)
       {
-        // call original done
-        if (state_data->cb_done.function)
-          (state_data->cb_done.function)(context,
-                                         state_data->cb_done.clientdata, PAMI_SUCCESS);
+        pami_callback_t        cb_done;
+        cb_done.function   = state_data->cb_done.function;
+        cb_done.clientdata = state_data->cb_done.clientdata;
+
+        state_data->~p2p_multicast_statedata_t();
+        if (cb_done.function)
+          (cb_done.function)(context,cb_done.clientdata, PAMI_SUCCESS);
+
       }
     TRACE_FN_EXIT();
   }
@@ -2359,10 +2366,13 @@ namespace PAMI
 
     if (--state_data->doneCountDown == 0)
       {
-        // call original done
-        if (state_data->cb_done.function)
-          (state_data->cb_done.function)(context,
-                                         state_data->cb_done.clientdata, PAMI_SUCCESS);
+        pami_callback_t        cb_done;
+        cb_done.function   = state_data->cb_done.function;
+        cb_done.clientdata = state_data->cb_done.clientdata;
+
+        state_data->~p2p_manytomany_send_statedata_t();
+        if (cb_done.function)
+          (cb_done.function)(context,cb_done.clientdata, PAMI_SUCCESS);
       }
     TRACE_FN_EXIT();
   }
@@ -2381,9 +2391,13 @@ namespace PAMI
     if (--state_data->doneCountDown == 0)
       {
       // call original done
-      if (state_data->cb_done.function)
-        (state_data->cb_done.function)(context,
-                                       state_data->cb_done.clientdata, PAMI_SUCCESS);
+        pami_callback_t        cb_done;
+        cb_done.function   = state_data->cb_done.function;
+        cb_done.clientdata = state_data->cb_done.clientdata;
+
+        state_data->~p2p_manytomany_recv_statedata_t();
+        if (cb_done.function)
+          (cb_done.function)(context,cb_done.clientdata, PAMI_SUCCESS);
       }
     TRACE_FN_EXIT();
   }
