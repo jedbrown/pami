@@ -137,14 +137,6 @@ namespace PAMI
             TRACE_FN_EXIT();
           };
 
-          static void temporary_workaround_for_null_callbacks (pami_context_t   context,
-                                                               void           * cookie,
-                                                               pami_result_t    result)
-          {
-            TRACE_FN_ENTER();
-            TRACE_FN_EXIT();
-          };
-
           inline bool next_pipeline (state_t * get)
           {
             TRACE_FN_ENTER();
@@ -186,7 +178,7 @@ namespace PAMI
                 if (likely(bytes_remaining > 0))
                   {
                     _model.postDmaGet (get->typed.state[pipeline][block],
-                                       temporary_workaround_for_null_callbacks, NULL,
+                                       NULL, NULL,
                                        task, offset, block_size,
                                        local_mr, local_offset + block_local,
                                        remote_mr, remote_offset + block_remote);

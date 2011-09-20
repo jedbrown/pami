@@ -91,6 +91,12 @@ namespace PAMI
             // Set the ABCD hint bits to zero, and the E hint bits to the caller's
             desc[0].setHints (0, hintsE);
 
+            if (unlikely(local_fn == NULL))
+              {
+                TRACE_FN_EXIT();
+                return sizeof(MUHWI_Descriptor_t);
+              }
+
             // ----------------------------------------------------------------
             // Initialize the "ack to self" descriptor in the rget payload
             // ----------------------------------------------------------------
