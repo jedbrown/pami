@@ -203,7 +203,13 @@ int main (int argc, char ** argv)
    * **************************************************************************/
   {
     active = 1;
-    unsigned long long value = 0x01 << data.slot0;
+    /*
+     * The value "0x01" has an implicit type of "signed int" by at least one
+     * compiler. This causes a left-shift of 31 or more bits to sign-extend
+     * *before* the assignment into the 'unsigned long long' variable .. hence,
+     * the need to cast.
+     */
+    unsigned long long value = ((unsigned long long) 0x01) << data.slot0;
   
     parameters.local     = (void *) & data.localbits1;
     parameters.remote    = (void *) (rmw[0] + offsetof(rmw_data_t, globalbits1));
@@ -283,10 +289,16 @@ int main (int argc, char ** argv)
    * This uses PAMI_ATOMIC_FETCH_COMPARE_XOR and PAMI_TYPE_UNSIGNED_LONG_LONG
    * **************************************************************************/
   {
-    unsigned long long value = 0x01 << data.slot0;
+    /*
+     * The value "0x01" has an implicit type of "signed int" by at least one
+     * compiler. This causes a left-shift of 31 or more bits to sign-extend
+     * *before* the assignment into the 'unsigned long long' variable .. hence,
+     * the need to cast.
+     */
+    unsigned long long value = ((unsigned long long) 0x01) << data.slot0;
     unsigned long long test  = ((unsigned long long) -1 ) >> (64 - data.slot0 - 1);
   
-    data.localbits3 = (unsigned long long) -1;
+    data.localbits3 = (unsigned long long) 0;
 
     parameters.local     = (void *) & data.localbits3;
     parameters.remote    = (void *) (rmw[0] + offsetof(rmw_data_t, globalbits1));
