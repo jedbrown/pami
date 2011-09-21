@@ -107,7 +107,7 @@ protected:
                         t[nt].setStatus(PAMI::Device::Ready);
                         t[nt]._wq = _rwq;
                         t[nt]._bytesLeft = _bytes;
-                        t[nt]._cycles = DCMF_PERSISTENT_ADVANCE;
+                        t[nt]._cycles = 3000;
                         __advanceRcp(&t[nt]);
                         ++nt;
                 }
@@ -173,8 +173,8 @@ protected:
                 return PAMI_EAGAIN;
         }
 
-        static inline bool __inject_msg(DCMF::Device::WorkQueue::SharedWorkQueue *swqs,
-                        DCMF::Device::WorkQueue::SharedWorkQueue *rwq,
+        static inline bool __inject_msg(PAMI::Device::WorkQueue::SharedWorkQueue *swqs,
+                        PAMI::Device::WorkQueue::SharedWorkQueue *rwq,
                         char **bufs, char *sbuf,
                         char *results, size_t bytes, size_t count,
                         coremath _func, unsigned peer, unsigned npeers, unsigned &ndone
@@ -223,8 +223,8 @@ protected:
                 return true;
         }
 
-        static inline bool __inject_msg_pre(DCMF::Device::WorkQueue::SharedWorkQueue *swqs,
-                        DCMF::Device::WorkQueue::SharedWorkQueue *rwq,
+        static inline bool __inject_msg_pre(PAMI::Device::WorkQueue::SharedWorkQueue *swqs,
+                        PAMI::Device::WorkQueue::SharedWorkQueue *rwq,
                         char **bufs, char *sbuf,
                         char *results, size_t bytes, size_t count,
                         coremath _func, unsigned peer, unsigned npeers, unsigned &ndone
@@ -273,8 +273,8 @@ protected:
                 return true;
         }
 
-        static inline bool __recept_msg(DCMF::Device::WorkQueue::SharedWorkQueue *swq,
-                        DCMF::Device::WorkQueue::SharedWorkQueue *rwq,
+        static inline bool __recept_msg(PAMI::Device::WorkQueue::SharedWorkQueue *swq,
+                        PAMI::Device::WorkQueue::SharedWorkQueue *rwq,
                         char *data, char *results, size_t bytes, unsigned peer,
                         unsigned dispatch_id, PAMI::Device::BGP::CNAllreduceSetup &tas,
                         bool &primed, bool doStore, bool doBcast) {
@@ -298,8 +298,8 @@ protected:
                 return true;
         }
 
-        static inline bool __recept_msg_post(DCMF::Device::WorkQueue::SharedWorkQueue *swq,
-                        DCMF::Device::WorkQueue::SharedWorkQueue *rwq,
+        static inline bool __recept_msg_post(PAMI::Device::WorkQueue::SharedWorkQueue *swq,
+                        PAMI::Device::WorkQueue::SharedWorkQueue *rwq,
                         char *data, char *results, size_t bytes, unsigned peer,
                         unsigned dispatch_id, PAMI::Device::BGP::CNAllreduceSetup &tas,
                         bool &primed, bool doStore, bool doBcast) {
@@ -323,8 +323,8 @@ protected:
         }
 
         /// This function does not return until done
-        static inline bool __local_msg(DCMF::Device::WorkQueue::SharedWorkQueue *swq,
-                        DCMF::Device::WorkQueue::SharedWorkQueue *rwq,
+        static inline bool __local_msg(PAMI::Device::WorkQueue::SharedWorkQueue *swq,
+                        PAMI::Device::WorkQueue::SharedWorkQueue *rwq,
                         char *data, char *results, size_t bytes, unsigned peer,
                         bool &primed, bool doStore) {
                 if (!primed) {
@@ -355,7 +355,7 @@ public:
 
         static const int MAX_SHORT_MSG = TREE_PKT_SIZE;
 
-        CNAllreduceShortModel(DCMF::SysDep *sysdep, pami_result_t &status) :
+        CNAllreduceShortModel(PAMI::SysDep *sysdep, pami_result_t &status) :
         Impl::MulticombineModelImpl(status),
         _swq(sysdep, NUM_CORES, MAX_SHORT_MSG)
         {
@@ -379,8 +379,8 @@ private:
         unsigned _npeers;
         unsigned _me_ix;
         unsigned _dispatch_id;
-        DCMF::Device::WorkQueue::SharedWorkQueue _swqs[NUM_CORES];
-        DCMF::Device::WorkQueue::SharedWorkQueue _rwq;
+        PAMI::Device::WorkQueue::SharedWorkQueue _swqs[NUM_CORES];
+        PAMI::Device::WorkQueue::SharedWorkQueue _rwq;
         char *_bufs[NUM_CORES];
         char _sbuffer[MAX_SHORT_MSG] __attribute__((__aligned__(16)));
         static inline void compile_time_assert () {
@@ -461,7 +461,7 @@ inline bool CNAllreduceShortModel::postMulticombine_impl(CNAllreduceShortMessage
                 // we should never get here... as it works now...
                 // otherwise, we need to take the context of the (partial) advance
                 // above and pass it to the message constructor.
-                DCMF_abort();
+                PAMI_abort();
         }
 
         // could try to complete allreduce before construction, but for now the code
@@ -482,7 +482,7 @@ inline bool CNAllreduceShortModel::postMulticombine_impl(CNAllreduceShortMessage
 };	// Device
 };	// PAMI
 
-#endif // __dcmf_cdi_bgp_cnallreduceshortmsg_h__
+#endif
 #error CNAllreduceShortMsg.h is not ready
 
 /**
@@ -518,14 +518,14 @@ public:
          */
         inline TreeAllreduceShortSendMessage(
                 PAMI::Device::Tree::Device    &TreeQS,
-                DCMF::Device::WorkQueue::SharedWorkQueue **swqs,
-                DCMF::Device::WorkQueue::SharedWorkQueue *rwq,
+                PAMI::Device::WorkQueue::SharedWorkQueue **swqs,
+                PAMI::Device::WorkQueue::SharedWorkQueue *rwq,
                 unsigned           root,
                 unsigned           peer,
                 unsigned           npeers,
                 coremath           func,
                 unsigned           bytes,
-                DCMF_Consistency   consistency,
+                PAMI_Consistency   consistency,
                 unsigned           classroute,
                 pami_callback_t    cb,
                 char             * sbuffer,
@@ -571,8 +571,8 @@ private:
                 return 0;
         }
 
-        DCMF::Device::WorkQueue::SharedWorkQueue **_swqs;
-        DCMF::Device::WorkQueue::SharedWorkQueue *_rwq;
+        PAMI::Device::WorkQueue::SharedWorkQueue **_swqs;
+        PAMI::Device::WorkQueue::SharedWorkQueue *_rwq;
         char *_ibuffer;
         char *_obuffer;
         unsigned _peer;
@@ -616,14 +616,14 @@ public:
          */
         inline TreeAllreduceShortSendPreMessage(
                 PAMI::Device::Tree::Device    &TreeQS,
-                DCMF::Device::WorkQueue::SharedWorkQueue **swqs,
-                DCMF::Device::WorkQueue::SharedWorkQueue *rwq,
+                PAMI::Device::WorkQueue::SharedWorkQueue **swqs,
+                PAMI::Device::WorkQueue::SharedWorkQueue *rwq,
                 unsigned           root,
                 unsigned           peer,
                 unsigned           npeers,
                 coremath           func,
                 unsigned           bytes,
-                DCMF_Consistency   consistency,
+                PAMI_Consistency   consistency,
                 unsigned           classroute,
                 pami_callback_t    cb,
                 char             * sbuffer,
@@ -669,8 +669,8 @@ private:
                 return 0;
         }
 
-        DCMF::Device::WorkQueue::SharedWorkQueue **_swqs;
-        DCMF::Device::WorkQueue::SharedWorkQueue *_rwq;
+        PAMI::Device::WorkQueue::SharedWorkQueue **_swqs;
+        PAMI::Device::WorkQueue::SharedWorkQueue *_rwq;
         char *_ibuffer;
         char *_obuffer;
         unsigned _peer;
@@ -712,14 +712,14 @@ public:
          */
         inline TreeAllreduceShortRecvMessage(
                 PAMI::Device::Tree::Device    &TreeQS,
-                DCMF::Device::WorkQueue::SharedWorkQueue *swq,
-                DCMF::Device::WorkQueue::SharedWorkQueue *rwq,
+                PAMI::Device::WorkQueue::SharedWorkQueue *swq,
+                PAMI::Device::WorkQueue::SharedWorkQueue *rwq,
                 unsigned           root,
                 unsigned           peer,
                 unsigned           npeers,
                 unsigned           bytes,
                 unsigned           pwidth,
-                DCMF_Consistency   consistency,
+                PAMI_Consistency   consistency,
                 pami_callback_t    cb,
                 char             * sbuffer,
                 char             * rbuffer,
@@ -754,8 +754,8 @@ private:
                 return 0;
         }
 
-        DCMF::Device::WorkQueue::SharedWorkQueue *_rwq;
-        DCMF::Device::WorkQueue::SharedWorkQueue *_swq;
+        PAMI::Device::WorkQueue::SharedWorkQueue *_rwq;
+        PAMI::Device::WorkQueue::SharedWorkQueue *_swq;
         char *_ibuffer;
         char *_obuffer;
         unsigned _peer;
@@ -794,14 +794,14 @@ public:
          */
         inline TreeAllreduceShortRecvPostMessage(
                 PAMI::Device::Tree::Device    &TreeQS,
-                DCMF::Device::WorkQueue::SharedWorkQueue *swq,
-                DCMF::Device::WorkQueue::SharedWorkQueue *rwq,
+                PAMI::Device::WorkQueue::SharedWorkQueue *swq,
+                PAMI::Device::WorkQueue::SharedWorkQueue *rwq,
                 unsigned           root,
                 unsigned           peer,
                 unsigned           npeers,
                 unsigned           bytes,
                 unsigned           pwidth,
-                DCMF_Consistency   consistency,
+                PAMI_Consistency   consistency,
                 pami_callback_t    cb,
                 char             * sbuffer,
                 char             * rbuffer,
@@ -835,8 +835,8 @@ private:
                 return 0;
         }
 
-        DCMF::Device::WorkQueue::SharedWorkQueue *_rwq;
-        DCMF::Device::WorkQueue::SharedWorkQueue *_swq;
+        PAMI::Device::WorkQueue::SharedWorkQueue *_rwq;
+        PAMI::Device::WorkQueue::SharedWorkQueue *_swq;
         char *_ibuffer;
         char *_obuffer;
         unsigned _peer;
@@ -872,14 +872,14 @@ public:
          */
         inline TreeAllreduceShortLocalMessage(
                 PAMI::Device::Tree::Device    &TreeQS,
-                DCMF::Device::WorkQueue::SharedWorkQueue *swq,
-                DCMF::Device::WorkQueue::SharedWorkQueue *rwq,
+                PAMI::Device::WorkQueue::SharedWorkQueue *swq,
+                PAMI::Device::WorkQueue::SharedWorkQueue *rwq,
                 unsigned           root,
                 unsigned           peer,
                 unsigned           npeers,
                 unsigned           bytes,
                 pami_callback_t    cb,
-                DCMF_Consistency   consistency,
+                PAMI_Consistency   consistency,
                 char             * sbuffer,
                 char             * rbuffer) :
         TreeMessage(TreeQS, cb, bytes),
@@ -908,8 +908,8 @@ private:
                 return 0;
         }
 
-        DCMF::Device::WorkQueue::SharedWorkQueue *_rwq;
-        DCMF::Device::WorkQueue::SharedWorkQueue *_swq;
+        PAMI::Device::WorkQueue::SharedWorkQueue *_rwq;
+        PAMI::Device::WorkQueue::SharedWorkQueue *_swq;
         char *_ibuffer;
         char *_obuffer;
         unsigned _peer;

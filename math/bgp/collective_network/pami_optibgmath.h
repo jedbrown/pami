@@ -12,15 +12,15 @@
  * \brief Optimized collective network math routines
  *
  * This file describes any optimized math routines and facilitates
- * plugging them into the core math routine inlines in dcmf_bg_math.h
+ * plugging them into the core math routine inlines in pami_bg_math.h
  *
  * Ordinarely, this file should not be included directly. Only
- * dcmf_bg_math.h should appear in source code #include's.
+ * pami_bg_math.h should appear in source code #include's.
  *
  * These routines are the ones used by the collective network to
  * process data for use on the tree. These are not public interfaces.
  *
- * Caution, this file should not be changed after building the DCMF
+ * Caution, this file should not be changed after building the PAMI
  * libraries.  Application compiles should see the same file as was
  * used for building the product.
  */
@@ -201,14 +201,14 @@ extern void _pami_core_uint8_pre_min_o(uint8_t *dst, const uint8_t *src, int cou
  *	...
  *
  * Where "N" is the number of input buffers, "<type>" is the datatype,
- * "<oper>" is the operand mnemonic, "dt" is the DCMF datatype, and "op"
- * is the DCMF operand.  Additionally, there must be a prototype
+ * "<oper>" is the operand mnemonic, "dt" is the PAMI datatype, and "op"
+ * is the PAMI operand.  Additionally, there must be a prototype
  * declaration for the optimized routine(s). More than one statement
  * may be present in the macro.
  *
  * Don't forget the backslashes at the end of each line.
  *
- * The code in dcmf_bg_math.h that uses these will
+ * The code in pami_bg_math.h that uses these will
  * be (note: no semicolon after macro):
  *
  * #define OPTIMATH_NSRC(dt,op,n,f) case n: \
@@ -224,18 +224,18 @@ extern void _pami_core_uint8_pre_min_o(uint8_t *dst, const uint8_t *src, int cou
  *	}
  * }
  *
- * These defines will also be used in dcmf_dat.c to build a table
+ * These defines will also be used in pami_dat.c to build a table
  * of optimized routines, by datatype, operand, and number of inputs.
  * (Note, nsrc will always be at least 2)
  *
  * #define OPTIMATH_NSRC(dt,op,n,f)	[dt][op][n-2] = f,
  *
- * void *dcmf_op_funcs[ndt][nop][nin] = {
+ * void *pami_op_funcs[ndt][nop][nin] = {
  * OPTIMIZED_<type>_<oper>
  * ...
  * };
  *
- * This table is accessed by using the DCMF_OP_FUNCS(dt,op,n) macro
+ * This table is accessed by using the PAMI_OP_FUNCS(dt,op,n) macro
  * (inline).
  */
 
@@ -253,12 +253,12 @@ extern void _pami_core_uint8_pre_min_o(uint8_t *dst, const uint8_t *src, int cou
  *	OPTIMATH_UNARY(dt,op,_pami_core_<type>_<oper>_o)
  *
  * Where "<type>" is the datatype,
- * "<oper>" is the operand mnemonic, "dt" is the DCMF datatype, and "op"
- * is the DCMF operand.  Additionally, there must be a prototype
+ * "<oper>" is the operand mnemonic, "dt" is the PAMI datatype, and "op"
+ * is the PAMI operand.  Additionally, there must be a prototype
  * declaration for the optimized routine. Only one statement
  * may be present in the macro.
  *
- * The code in dcmf_bg_math.h that uses these will
+ * The code in pami_bg_math.h that uses these will
  * be (note: no semicolon after macro):
  *
  * #define OPTIMATH_UNARY(dt,op,f) case 1: \
@@ -274,20 +274,20 @@ extern void _pami_core_uint8_pre_min_o(uint8_t *dst, const uint8_t *src, int cou
  *	}
  * }
  *
- * These defines will also be used in dcmf_bg_dat.c to build a table
+ * These defines will also be used in pami_bg_dat.c to build a table
  * of optimized routines, by datatype, operand, and number of inputs.
  * (Note, nsrc will always be at least 2) For unary routines the third
  * subscript will be either "0" (unoptimized) or "1" (optimized, if present).
  *
  * #define OPTIMATH_UNARY(dt,op,f)	[dt][op][1] = f,
  *
- * void *dcmf_pre_op_funcs[ndt][nop][2] = {
+ * void *pami_pre_op_funcs[ndt][nop][2] = {
  * OPTIMIZED_<type>_<oper>
  * ...
  * [dt][op][0] = _pami_core_<type>_<oper>,	// unoptimized
  * };
  *
- * This table is accessed by using the DCMF_PRE_OP_FUNCS(dt,op,n) macro
+ * This table is accessed by using the PAMI_PRE_OP_FUNCS(dt,op,n) macro
  * where "n" is a flag indicating whether optimized or unoptimized routine
  * is to be selected.
  *
