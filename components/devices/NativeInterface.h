@@ -192,7 +192,7 @@ namespace PAMI
                                                T_Mcomb>::multicast (pami_multicast_t *mcast,
                                                                     void             *devinfo)
     {
-      COMPILE_TIME_ASSERT(sizeof(allocObj) <= T_Allocator::objsize);
+      COMPILE_TIME_ASSERT((sizeof(allocObj) <= PAMI::MemoryAllocator < sizeof(allocObj), 16 >::objsize));
       allocObj *req          = (allocObj *)_allocator.allocateObject();
       req->_ni               = this;
       req->_user_callback    = mcast->cb_done;
@@ -214,7 +214,7 @@ namespace PAMI
                                                T_Mcomb>::multisync(pami_multisync_t *msync,
                                                                    void             *devinfo)
     {
-      COMPILE_TIME_ASSERT(sizeof(allocObj) <= T_Allocator::objsize);
+      COMPILE_TIME_ASSERT((sizeof(allocObj) <= PAMI::MemoryAllocator < sizeof(allocObj), 16 >::objsize));
       allocObj         *req   = (allocObj *)_allocator.allocateObject();
       req->_ni                = this;
       req->_user_callback     = msync->cb_done;
@@ -236,7 +236,7 @@ namespace PAMI
                                                T_Mcomb>::multicombine (pami_multicombine_t *mcomb,
                                                                        void                *devinfo)
     {
-      COMPILE_TIME_ASSERT(sizeof(allocObj) <= T_Allocator::objsize);
+      COMPILE_TIME_ASSERT((sizeof(allocObj) <= PAMI::MemoryAllocator < sizeof(allocObj), 16 >::objsize));
       allocObj            *req = (allocObj *)_allocator.allocateObject();
       req->_ni                 = this;
       req->_user_callback      = mcomb->cb_done;
@@ -264,7 +264,7 @@ namespace PAMI
                                                                                                            pami_multisync_t *msync,
                                                                                                            void             *devinfo)
     {
-      PAMI_assert(_msync_status == PAMI_SUCCESS);      
+      PAMI_assert(_msync_status == PAMI_SUCCESS);
       return _msync.postMultisync_impl(state, _clientid, _contextid, msync, devinfo);
     }
 
@@ -388,7 +388,7 @@ namespace PAMI
     inline pami_result_t CSNativeInterface<T_Model>::multicast (pami_multicast_t *mcast,
                                                                 void             *devinfo)
     {
-      COMPILE_TIME_ASSERT(sizeof(allocObj) <= T_Allocator::objsize);
+      COMPILE_TIME_ASSERT((sizeof(allocObj) <= PAMI::MemoryAllocator < sizeof(allocObj), 16 >::objsize));
       allocObj *req          = (allocObj *)_allocator.allocateObject();
       req->_ni               = this;
       req->_user_callback    = mcast->cb_done;
@@ -412,7 +412,7 @@ namespace PAMI
     inline pami_result_t CSNativeInterface<T_Model>::multisync(pami_multisync_t *msync,
                                                                void             *devinfo)
     {
-      COMPILE_TIME_ASSERT(sizeof(allocObj) <= T_Allocator::objsize);
+      COMPILE_TIME_ASSERT((sizeof(allocObj) <= PAMI::MemoryAllocator < sizeof(allocObj), 16 >::objsize));
       allocObj *req          = (allocObj *)_allocator.allocateObject();
       req->_ni               = this;
       req->_user_callback    = msync->cb_done;
@@ -435,7 +435,7 @@ namespace PAMI
     inline pami_result_t CSNativeInterface<T_Model>::multicombine (pami_multicombine_t *mcomb,
                                                                    void                *devinfo)
     {
-      COMPILE_TIME_ASSERT(sizeof(allocObj) <= T_Allocator::objsize);
+      COMPILE_TIME_ASSERT((sizeof(allocObj) <= PAMI::MemoryAllocator < sizeof(allocObj), 16 >::objsize));
       allocObj *req          = (allocObj *)_allocator.allocateObject();
       req->_ni               = this;
       req->_user_callback    = mcomb->cb_done;
