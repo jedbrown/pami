@@ -213,41 +213,52 @@ namespace PAMI
         {
           return true;
         }
-        typedef CCMI::Adaptor::Barrier::BarrierT
-        < CCMI::Schedule::TopoMultinomial,
-          Barrier::hybrid_analyze,
-          PAMI::Geometry::MASTER_TOPOLOGY_INDEX,
-          PAMI::Geometry::CKEY_BARRIERCOMPOSITE2 >
-        GlobalP2PBarrier;
+
+        template <PAMI::Geometry::ckeys_t T_Key>
+        class GlobalP2PBarrier
+        {
+        public:
+          typedef CCMI::Adaptor::Barrier::BarrierT
+          < CCMI::Schedule::TopoMultinomial,
+            Barrier::hybrid_analyze,
+            PAMI::Geometry::MASTER_TOPOLOGY_INDEX,
+            T_Key >
+          GlobalP2PBarrierType;
+        };
         
-        typedef CCMI::Adaptor::Barrier::BarrierFactoryT
-        < Barrier::GlobalP2PBarrier,
-          Barrier::GlobalP2PMetaData,
-          CCMI::ConnectionManager::SimpleConnMgr,
-          false,
-          PAMI::Geometry::CKEY_BARRIERCOMPOSITE2>
-        GlobalP2PBarrierFactory;
+        template <PAMI::Geometry::ckeys_t T_Key>
+        class GlobalP2PBarrierFactory
+        {
+        public:
+          typedef CCMI::Adaptor::Barrier::BarrierFactoryT
+          < typename Barrier::GlobalP2PBarrier<T_Key>::GlobalP2PBarrierType,
+            Barrier::GlobalP2PMetaData,
+            CCMI::ConnectionManager::SimpleConnMgr,
+            false,
+            T_Key >
+          GlobalP2PBarrierFactoryType;
+        };
 
         // Since templated typedefs aren't in the c++ compilers we are using
         // We need a templated class to build this type
-        template <class T_NativeInterface>
+        template <class T_NativeInterface, PAMI::Geometry::ckeys_t T_Key>
         class HybridBarrier
         {
         public:
           typedef CCMI::Adaptor::Barrier::HybridBarrierCompositeT
-          < GlobalP2PBarrierFactory,
-            GlobalP2PBarrier,
+          < typename GlobalP2PBarrierFactory<T_Key>::GlobalP2PBarrierFactoryType,
+            typename GlobalP2PBarrier<T_Key>::GlobalP2PBarrierType,
             T_NativeInterface>
           HybridBarrierType;
         };
-        template<class T_NativeInterface, CCMI::Adaptor::MetaDataFn get_metadata>
+        template<class T_NativeInterface, CCMI::Adaptor::MetaDataFn get_metadata, PAMI::Geometry::ckeys_t T_Key>
         class HybridBarrierFactory
         {
         public:
           typedef CCMI::Adaptor::Barrier::HybridBarrierFactoryT
-          <typename HybridBarrier<T_NativeInterface>::HybridBarrierType,
+          <typename HybridBarrier<T_NativeInterface,T_Key>::HybridBarrierType,
            get_metadata,
-           GlobalP2PBarrierFactory,
+           typename GlobalP2PBarrierFactory<T_Key>::GlobalP2PBarrierFactoryType,
            T_NativeInterface,
            PAMI::Geometry::GKEY_MSYNC_LOCAL_CLASSROUTEID>
           HybridBarrierFactoryType;
@@ -349,11 +360,24 @@ namespace PAMI
           T_LocalNI_AM                      *_ni;
           PAMI::Device::CAUGeometryInfo     *_cau_info;
           PAMI::Device::BSRGeometryInfo     *_bsr_info;
+          CCMI::Executor::Composite         *_bsr_p2p_composite;
+          CCMI::Executor::Composite         *_shm_p2p_composite;
           uint32_t                           _unique_key;
           uint64_t                           _ctlstr_offset;
         }GeometryInfo;
-      typedef typename Barrier::HybridBarrierFactory<T_LocalBSRNI,Barrier::HybridBSRMetaData>::HybridBarrierFactoryType    HybridBSRBarrierFactory;
-      typedef typename Barrier::HybridBarrierFactory<T_LocalNI_AM,Barrier::HybridSHMEMMetaData>::HybridBarrierFactoryType  HybridSHMEMBarrierFactory;
+        typedef typename Barrier::HybridBarrierFactory<T_LocalBSRNI,
+                                                       Barrier::HybridBSRMetaData,
+                                                       PAMI::Geometry::CKEY_BARRIERCOMPOSITE2 >::HybridBarrierFactoryType
+        HybridBSRBarrierFactory;
+
+        typedef typename Barrier::HybridBarrierFactory<T_LocalNI_AM,
+                                                       Barrier::HybridSHMEMMetaData,
+                                                       PAMI::Geometry::CKEY_BARRIERCOMPOSITE3>::HybridBarrierFactoryType
+        HybridSHMEMBarrierFactory;
+
+        typedef typename Barrier::GlobalP2PBarrierFactory<PAMI::Geometry::CKEY_BARRIERCOMPOSITE2>::GlobalP2PBarrierFactoryType GlobalBsrFactory;
+        typedef typename Barrier::GlobalP2PBarrierFactory<PAMI::Geometry::CKEY_BARRIERCOMPOSITE3>::GlobalP2PBarrierFactoryType GlobalSHMEMFactory;
+
       public:
         inline CAURegistration(pami_client_t                        client,
                                pami_context_t                       context,
@@ -442,13 +466,13 @@ namespace PAMI
               CAU_SETUPNI_P2P(_p2p_ni_shmem);
 
               _globalp2p_barrier_reg_bsr = new(&_globalp2p_barrier_reg_store0[0])
-                Barrier::GlobalP2PBarrierFactory(&_sconnmgr,
-                                                 _p2p_ni_bsr,
-                                                 Barrier::GlobalP2PBarrierFactory::cb_head);
+                GlobalBsrFactory(&_sconnmgr,
+                                 _p2p_ni_bsr,
+                                 GlobalBsrFactory::cb_head);
               _globalp2p_barrier_reg_shmem = new(&_globalp2p_barrier_reg_store1[0])
-                Barrier::GlobalP2PBarrierFactory(&_sconnmgr,
-                                                 _p2p_ni_shmem,
-                                                 Barrier::GlobalP2PBarrierFactory::cb_head);
+                GlobalSHMEMFactory(&_sconnmgr,
+                                   _p2p_ni_shmem,
+                                   GlobalSHMEMFactory::cb_head);
               _globalp2p_barrier_reg_bsr->setMapIdToGeometry(mapidtogeometry);
               _globalp2p_barrier_reg_shmem->setMapIdToGeometry(mapidtogeometry);
               _barrierbsrp2p_reg   = new(&_bsrp2p_reg_store[0])   HybridBSRBarrierFactory();
@@ -597,6 +621,8 @@ namespace PAMI
                   geometryInfo->_ni                              = NULL;
                   geometryInfo->_bsr_info                        = NULL;
                   geometryInfo->_cau_info                        = NULL;
+                  geometryInfo->_bsr_p2p_composite               = NULL;
+                  geometryInfo->_shm_p2p_composite               = NULL;
                   geometryInfo->_unique_key                      = unique_key;
 
                   // Word 1-->num_local_tasks setup
@@ -672,7 +698,7 @@ namespace PAMI
                   // likewise, "P2P" networks are always available and the "Hybrid"
                   // shared memory and P2P protocols will always be available.
                   //
-                  // We only set up communication channels for global devices if
+                  // We only set up communication channels for globalB devices if
                   // the task belongs to the master topology.  Also, we only add comm
                   // channels for local devices is there are more than one task.
                   PAMI::Device::CAUGeometryInfo *cau_gi      = NULL;
@@ -686,7 +712,8 @@ namespace PAMI
                   if(useBsr && num_local_tasks>1)
                     setup_bsr(geometry, &bsr_gi);
 
-                  Barrier::GlobalP2PBarrierFactory *f0 = NULL, *f1 = NULL;
+                  GlobalBsrFactory   *f0 = NULL;
+                  GlobalSHMEMFactory *f1 = NULL;
                   if(num_master_tasks>1 && participant)
                   {
                     f0 = _globalp2p_barrier_reg_bsr;
@@ -723,10 +750,29 @@ namespace PAMI
                     _barriershmemp2p_reg->setInfo(geometry, NULL, f1);
 
                   // Generate barrier composites
+                  // These composites are generated
+                  // early because global p2p barriers over CCMI
+                  // require this generation to handle early arrival
+                  // and are cached to avoid re-creation.
+                  // Note:  keys must match the template defnition
                   pami_xfer_t xfer = {0};
-                  if(f0) f0->generate(geometry, &xfer);
-                  if(f1) f1->generate(geometry, &xfer);
-                  
+                  if(f0)
+                  {
+                    geometryInfo->_bsr_p2p_composite = f0->generate(geometry, &xfer);
+                    geometry->setKey(context_id,
+                                     PAMI::Geometry::CKEY_BARRIERCOMPOSITE2,
+                                     (void*)geometryInfo->_bsr_p2p_composite);
+                  }
+                  if(f1)
+                  {
+                    geometryInfo->_shm_p2p_composite = f1->generate(geometry, &xfer);
+                    geometry->setKey(context_id,
+                                     PAMI::Geometry::CKEY_BARRIERCOMPOSITE3,
+                                     (void*)geometryInfo->_shm_p2p_composite);
+                  }
+
+
+
                   // ///////////////////////////////////////////////////////////
                   // Barrier Protocols
                   // ///////////////////////////////////////////////////////////
@@ -866,6 +912,12 @@ namespace PAMI
             if(gi->_bsr_info)
               gi->_registration->freeBsrInfo(gi->_bsr_info);
 
+            if(gi->_bsr_p2p_composite && ctxt)
+              GlobalBsrFactory::cleanup_done_fn(ctxt,gi->_bsr_p2p_composite,res);
+
+            if(gi->_shm_p2p_composite && ctxt)
+              GlobalSHMEMFactory::cleanup_done_fn(ctxt,gi->_shm_p2p_composite,res);
+
             gi->_registration->freeUniqueKey(gi->_unique_key);
 
             gi->_registration->freeSharedMemory(gi->_ctlstr_offset);
@@ -910,13 +962,13 @@ namespace PAMI
         T_NI_P2P                                                       *_p2p_ni_shmem;
         
         // Registrations, hybrid first
-        Barrier::GlobalP2PBarrierFactory                               *_globalp2p_barrier_reg_bsr;
-        Barrier::GlobalP2PBarrierFactory                               *_globalp2p_barrier_reg_shmem;
+        GlobalBsrFactory                                               *_globalp2p_barrier_reg_bsr;
+        GlobalSHMEMFactory                                             *_globalp2p_barrier_reg_shmem;
         HybridBSRBarrierFactory                                        *_barrierbsrp2p_reg;
         HybridSHMEMBarrierFactory                                      *_barriershmemp2p_reg;
 
-        char                                                            _globalp2p_barrier_reg_store0[sizeof(Barrier::GlobalP2PBarrierFactory)];
-        char                                                            _globalp2p_barrier_reg_store1[sizeof(Barrier::GlobalP2PBarrierFactory)];
+        char                                                            _globalp2p_barrier_reg_store0[sizeof(GlobalBsrFactory)];
+        char                                                            _globalp2p_barrier_reg_store1[sizeof(GlobalSHMEMFactory)];
         char                                                            _bsrp2p_reg_store[sizeof(HybridBSRBarrierFactory)];
         char                                                            _shmemp2p_reg_store[sizeof(HybridSHMEMBarrierFactory)];
         
