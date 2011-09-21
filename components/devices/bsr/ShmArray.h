@@ -18,7 +18,7 @@ class ShmArray : public SharedArray
 {
     public:
         ShmArray();
-	~ShmArray();
+       ~ShmArray();
         RC CheckInitDone(const unsigned int   mem_cnt, 
                          const unsigned int   job_key, 
                          const uint64_t       unique_key,

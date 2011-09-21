@@ -11,26 +11,12 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/ipc.h>
-#include <sys/time.h>
 #ifdef _LAPI_LINUX
 #include "lapi_linux.h"
 #endif
 #include "atomics.h"
 #include "SharedArray.h"
 #include "lapi_itrace.h"
-
-typedef struct timeval _timeval_t;
-
-static inline
-int ReadRealTime (_timeval_t* t) {
-    return gettimeofday(t, NULL);
-}
-
-static inline
-unsigned int TimeDiffInSec (const _timeval_t& end, const _timeval_t& start) {
-    // returns the difference in whole seconds
-    return ((end.tv_sec) - (start.tv_sec));
-}
 
 SharedArray::SETUP_STATE SharedArray::PosixShmAllAttached()
 {
@@ -147,8 +133,9 @@ SharedArray::RC SharedArray::PosixShmDestroy()
 {
     if (ctrl_block) {
         shm_seg = NULL;
-        // decrease ref_cnt
-        fetch_and_add((atomic_p)&ctrl_block->ref_cnt, -1);
+        // decrement ref_cnt can cause timing issue
+        // therefore should ***NOT*** be performed
+        // fetch_and_add((atomic_p)&ctrl_block->ref_cnt, -1);
         munmap(ctrl_block, shm_size);
         shm_size = 0;
         // if ctrl_block is not NULL; shm_unlink is called already
