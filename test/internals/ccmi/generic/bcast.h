@@ -53,10 +53,10 @@ void initialize(CCMI_Barrier_Protocol barrier_protocol,
 
   bcast_conf.protocol = bcast_protocol;
 
-  CCMI_Result dcmfResult;
+  CCMI_Result pamiResult;
 
-  if((dcmfResult = (CCMI_Result) CCMI_Broadcast_register (&bcast_reg, &bcast_conf)) != PAMI_SUCCESS)
-    if(rank == 0) fprintf(stderr,"CCMI_Bcast_register failed %d\n",dcmfResult);
+  if((pamiResult = (CCMI_Result) CCMI_Broadcast_register (&bcast_reg, &bcast_conf)) != PAMI_SUCCESS)
+    if(rank == 0) fprintf(stderr,"CCMI_Bcast_register failed %d\n",pamiResult);
 
   if(!CCMI_Geometry_analyze(&geometry, &bcast_reg))
   {

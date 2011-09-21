@@ -59,16 +59,16 @@ void send_general_init(int bufsize) {
 int setup_localpeers(pami_task_t *ranks, size_t nranks, pami_task_t *mine) {
         int i = 0;
 #if 0
-        size_t me = DCMF_Messager_rank();
+        size_t me = Messager_rank();
         size_t t, r;
         *mine = -1;
 
         PAMI_Coord_t addr;
         PAMI_Network network;
-        DCMF_Messager_rank2network(me, PAMI_TORUS_NETWORK, &addr);
+        Messager_rank2network(me, PAMI_TORUS_NETWORK, &addr);
         for (t = 0; t < nranks; ++t) {
                 addr.torus.t = t;
-                if (DCMF_Messager_network2rank(&addr, &r, &network) == PAMI_SUCCESS) {
+                if (Messager_network2rank(&addr, &r, &network) == PAMI_SUCCESS) {
                         if (r == me) *mine = i;
                         ranks[i++] = r;
                 }
@@ -226,17 +226,17 @@ int setup_netw(int netpro, pami_context_t context, size_t *dispatch_id,
 }
 
 #if 0 /* finish porting later... if needed... */
-void send(PAMI_Protocol_t *proto, char *buf, size_t sndlen, size_t targetrank, DCMF_Consistency consistency) {
+void send(PAMI_Protocol_t *proto, char *buf, size_t sndlen, size_t targetrank, Consistency consistency) {
         PAMIQuad msginfo;
         PAMI_Request_t sender;
 
         PAMI_Callback_t cb_info = { latency_senddone, (void *)0 };
 
         CRITICAL_SECTION_ENTER;
-        DCMF_Send(proto, &sender, cb_info, consistency, targetrank,
+        Send(proto, &sender, cb_info, consistency, targetrank,
                                         sndlen, buf, &msginfo, 1);
 
-        while (sendflag > 0) DCMF_Messager_advance();
+        while (sendflag > 0) Messager_advance();
 
         CRITICAL_SECTION_EXIT;
         sendflag = 1;
@@ -253,7 +253,7 @@ void recv(pami_context_t context, size_t dispatch_id, size_t bytes, bool verify)
         int x;
         if (verify && (x = check_buf(rbuf, bytes, curr_tag))) {
                 if (++recv_err < 5) {
-                        printf("%zu: recv corrupted (%zu bytes) @%d [%08x : %08x]\n", DCMF_Messager_rank(), bytes, x, curr_tag, *((unsigned *)&rbuf[x]));
+                        printf("%zu: recv corrupted (%zu bytes) @%d [%08x : %08x]\n", Messager_rank(), bytes, x, curr_tag, *((unsigned *)&rbuf[x]));
                 }
         }
 }

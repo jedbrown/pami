@@ -141,8 +141,6 @@ usage:
         results = (unsigned *)malloc(argc * n * sizeof(unsigned));
         if (me == 0) {
                 /*PAMI_Coord_t addr; */
-                /*DCMF_Hardware_t hw; */
-                /*DCMF_Hardware(&hw); */
                 size_t orig, *_orig;
 
                 fprintf(stdout, "#\n");
@@ -153,7 +151,7 @@ usage:
                         } else {
                                 _orig = &orig;
                         }
-                        /*DCMF_Messager_rank2network(*_orig, PAMI_TORUS_NETWORK, &addr); */
+                        /*rank2network(*_orig, PAMI_TORUS_NETWORK, &addr); */
                         /*fprintf(stdout, "# Rank %zu (%zu,%zu,%zu,%zu)\n", *_orig, */
                                 /*addr.torus.x, addr.torus.y, addr.torus.z, addr.torus.t); */
                         fprintf(stdout, "# Rank %zu\n", *_orig);

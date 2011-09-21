@@ -266,7 +266,6 @@ namespace PAMI
           ///
           /// \note The iov_base fields in the iovec structure will be \c NULL
           ///
-          /// \see DCMF::CDI::RecvFunction_t
           /// \see dispatch_data_read
           ///
           static int dispatch_send_read (void   * metadata,

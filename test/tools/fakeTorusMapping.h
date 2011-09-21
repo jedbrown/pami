@@ -17,7 +17,7 @@
 /*
  * Fake TorusMapping so we don't need a real blue-gene system.
  * This must be the first thing included (before any other CCMI
- * or DCMF includes, at least).
+ * includes, at least).
  */
 
 // Prevent the real TorusMapping.h from being included
