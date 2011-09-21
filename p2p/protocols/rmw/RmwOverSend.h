@@ -119,6 +119,15 @@ namespace PAMI
           {
             TRACE_FN_ENTER();
 
+            TRACE_FN_EXIT();
+          }
+
+          pami_result_t initialize (size_t          dispatch,
+                                    pami_endpoint_t origin,
+                                    pami_context_t  context)
+          {
+            TRACE_FN_ENTER();
+
             // ----------------------------------------------------------------
             // Compile-time assertions (begin)
             // ----------------------------------------------------------------
@@ -132,15 +141,6 @@ namespace PAMI
             // ----------------------------------------------------------------
             // Compile-time assertions (end)
             // ----------------------------------------------------------------
-
-            TRACE_FN_EXIT();
-          }
-
-          pami_result_t initialize (size_t          dispatch,
-                                    pami_endpoint_t origin,
-                                    pami_context_t  context)
-          {
-            TRACE_FN_ENTER();
 
             _origin      = origin;
             _context     = context;
@@ -287,6 +287,7 @@ namespace PAMI
             state->origin.envelope.state     = (uintptr_t) state;
 
             TRACE_FORMAT("state->origin.envelope.state = %p", (void *) state->origin.envelope.state);
+            TRACE_HEXDATA((void *) & state->origin.envelope, sizeof(envelope_t));
 
             // Initialize the iovec array for the packet payload
             state->origin.iov[0].iov_base = & (state->origin.envelope);
@@ -307,8 +308,7 @@ namespace PAMI
                                               fn, cookie,
                                               task, offset,
                                               NULL, NULL,
-                                              (struct iovec *) state->origin.iov,
-                                              2 + ((parameters->operation & PAMI_ATOMIC_COMPARE) >> 1));
+                                              state->origin.iov);
               }
             else if (t == PAMI_TYPE_UNSIGNED_INT)
               {
@@ -319,8 +319,7 @@ namespace PAMI
                                                 fn, cookie,
                                                 task, offset,
                                                 NULL, NULL,
-                                                (struct iovec *) state->origin.iov,
-                                                2 + ((parameters->operation & PAMI_ATOMIC_COMPARE) >> 1));
+                                                state->origin.iov);
               }
             else if (t == PAMI_TYPE_SIGNED_LONG)
               {
@@ -331,8 +330,7 @@ namespace PAMI
                                                fn, cookie,
                                                task, offset,
                                                NULL, NULL,
-                                               (struct iovec *) state->origin.iov,
-                                               2 + ((parameters->operation & PAMI_ATOMIC_COMPARE) >> 1));
+                                               state->origin.iov);
               }
             else if (t == PAMI_TYPE_UNSIGNED_LONG)
               {
@@ -343,8 +341,7 @@ namespace PAMI
                                                  fn, cookie,
                                                  task, offset,
                                                  NULL, NULL,
-                                                 (struct iovec *) state->origin.iov,
-                                                 2 + ((parameters->operation & PAMI_ATOMIC_COMPARE) >> 1));
+                                                 state->origin.iov);
               }
             else if (t == PAMI_TYPE_SIGNED_LONG_LONG)
               {
@@ -355,8 +352,7 @@ namespace PAMI
                                                     fn, cookie,
                                                     task, offset,
                                                     NULL, NULL,
-                                                    (struct iovec *) state->origin.iov,
-                                                    2 + ((parameters->operation & PAMI_ATOMIC_COMPARE) >> 1));
+                                                    state->origin.iov);
               }
             else if (t == PAMI_TYPE_UNSIGNED_LONG_LONG)
               {
@@ -367,8 +363,7 @@ namespace PAMI
                                                       fn, cookie,
                                                       task, offset,
                                                       NULL, NULL,
-                                                      (struct iovec *) state->origin.iov,
-                                                      2 + ((parameters->operation & PAMI_ATOMIC_COMPARE) >> 1));
+                                                      state->origin.iov);
               }
             else
               {
@@ -441,6 +436,7 @@ namespace PAMI
                   {
                     TRACE_STRING("modify op = PAMI_ATOMIC_OR");
                     *dst = original_value | input_value;
+                    //TRACE_FORMAT("sizeof(T) = %zu, original_value = %lld, input_value = %lld, new value = %lld", sizeof(T), (long long unsigned)original_value, (long long unsigned)input_value, (long long unsigned)*dst);
                   }
                 else if (tmp == PAMI_ATOMIC_AND)
                   {
