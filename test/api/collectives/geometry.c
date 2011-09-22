@@ -11,10 +11,9 @@
  * \brief Test for large geometry create counts
  */
 
-
-
-#define NITER   10000
-
+#define NITER   10000000
+#define DO_BCAST
+#define DO_BARRIER
 
 #include "../pami_util.h"
 
@@ -137,7 +136,9 @@ int main(int argc, char*argv[])
          
       /*  Query the sub geometry for bcast algorithms */
       pami_xfer_type_t     bcast_xfer = PAMI_XFER_BROADCAST;
+      pami_xfer_type_t     bar_xfer   = PAMI_XFER_BARRIER;
       pami_xfer_t          newbcast;
+      pami_xfer_t          newbar;
       rc |= query_geometry(client,
                            context[iContext],
                            newgeometry,
@@ -156,22 +157,33 @@ int main(int argc, char*argv[])
 
       int buf[256];
       memset(buf, 0xFF, sizeof(buf));
+
+      /*  Bcast Operation */
       pami_endpoint_t    root_ep;
       volatile unsigned    bcast_poll_flag = 0;
+      volatile unsigned    bar_poll_flag = 0;
+#ifdef DO_BCAST
       PAMI_Endpoint_create(client, task_zero, 0, &root_ep);
       newbcast.cmd.xfer_broadcast.root = root_ep;
       newbcast.cb_done                      = cb_done;
       newbcast.cookie                       = (void*) & bcast_poll_flag;
-#if 1
-      newbcast.algorithm                    = newbcast_algo[newbcast_num_algo[0]-1];
-#else      
       newbcast.algorithm                    = newbcast_algo[0];
-#endif      
       newbcast.cmd.xfer_broadcast.buf       = (char*)&buf[0];
       newbcast.cmd.xfer_broadcast.type      = PAMI_TYPE_BYTE;
       newbcast.cmd.xfer_broadcast.typecount = sizeof(buf);
+      newbcast.algorithm                    = newbcast_algo[(k%newbcast_num_algo[0])];
       blocking_coll(context[iContext], &newbcast, &bcast_poll_flag);
-
+#endif
+      
+#ifdef DO_BARRIER
+      /*  Barrier Operation */
+      newbar.cb_done                      = cb_done;
+      newbar.cookie                       = (void*) & bar_poll_flag;
+      newbar.algorithm                    = newbar_algo[0];
+      newbar.algorithm                    = newbar_algo[(k%newbar_num_algo[0])];
+      blocking_coll(context[iContext], &newbar, &bar_poll_flag);
+#endif
+      
       if(k==0 && task_id == task_zero)
          fprintf(stdout, "Destroying Geometry\n");
          
@@ -198,8 +210,9 @@ int main(int argc, char*argv[])
         timeIteration = timeElapsed;
         timeElapsed   = tf - ti;
         timeIteration = timeElapsed - timeIteration;
-        fprintf(stdout, "Done with iteration %d of %d timePerIteration=%f usec\n",
-                k, NITER, timeIteration/(double)(NITER/10.0));
+        fprintf(stdout, "Iteration %d of %d time=%f usec (numbcast=%d numbar=%d)\n",
+                k, NITER, timeIteration/(double)(NITER/10.0),
+                newbcast_num_algo[0],newbar_num_algo[0]);
       }
     }
 
