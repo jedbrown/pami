@@ -60,7 +60,7 @@ ShmArray::SHM_SETUP_STATE ShmArray::CheckShmDone()
 
             ITRC(IT_BSR, "ShmArray(FAILOVER): %s ShmSetup with key <%s> PASSED.\n",
                     (this->is_leader)?"LEADER":"FOLLOWER",
-                    this->shm_str->c_str());
+                    this->shm_str);
             return ST_SHM_DONE;
         case PROCESSING:
             return ST_SHM_PROCESSING;
@@ -68,7 +68,7 @@ ShmArray::SHM_SETUP_STATE ShmArray::CheckShmDone()
             ITRC(IT_BSR, "ShmArray(FAILOVER): %s ShmSetup with key <%s> FAILED"
                     " with rc %d.\n",
                     (this->is_leader)?"LEADER":"FOLLOWER",
-                    this->shm_str->c_str(), rc);
+                    this->shm_str, rc);
             return ST_FAIL;
     }
 }
@@ -77,11 +77,9 @@ ShmArray::SHM_SETUP_STATE ShmArray::CheckShmSetup(
         const unsigned int member_cnt, const unsigned int job_key, 
         const uint64_t unique_key, const bool is_leader)
 {
-    char tmp[64];
-    sprintf(tmp, "/SHM_%d_%llu", job_key, unique_key);
-    this->shm_str = new string(tmp);
+    sprintf(this->shm_str, "/SHM_%d_%llu", job_key, unique_key);
     ITRC(IT_BSR, "ShmArray(FAILOVER): Unique key string for POSIX shm setup <%s>\n",
-            this->shm_str->c_str());
+            this->shm_str);
 
     /// Main steps:
     this->is_leader  = is_leader;

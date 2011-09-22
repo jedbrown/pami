@@ -185,12 +185,12 @@ class SharedArray
         RC PosixShmDestroy();
 
         // Member variables
-        unsigned int  member_cnt; ///< Number of members on the local node.
-        bool          is_leader;  ///< Indicates if this is a leader task.
-        int           shm_id;     ///< The shm id for the created segment.
-        string       *shm_str;    ///< The shm string for POSIX shm
-        int           shm_size;   ///< The POSIX shm size
-        void*         shm_seg;    ///< Pointer to the SHM segment.
+        unsigned int  member_cnt;   ///< Number of members on the local node.
+        bool          is_leader;    ///< Indicates if this is a leader task.
+        int           shm_id;       ///< The shm id for the created segment.
+        int           shm_size;     ///< The POSIX shm size
+        void*         shm_seg;      ///< Pointer to the SHM segment.
+        char          shm_str[128]; ///< The shm string for POSIX shm
 
     private:
         enum SETUP_STATE {
@@ -213,7 +213,6 @@ inline SharedArray::SharedArray():
                   member_cnt(0),
                   is_leader(false),
                   shm_id(-1),
-                  shm_str(NULL),
                   shm_size(0),
                   shm_seg(NULL),
                   ctrl_block(NULL){};

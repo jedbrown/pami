@@ -42,7 +42,7 @@ SharedArray::SETUP_STATE SharedArray::PosixShmAllAttached()
         // shm_id is not needed; close it to prevent file descripter leak
         close(shm_id);
         shm_id = -1;
-        shm_unlink(this->shm_str->c_str());
+        shm_unlink(this->shm_str);
         return ST_PASSED;
     }
 }
@@ -58,25 +58,25 @@ SharedArray::SETUP_STATE SharedArray::PosixShmAttach(const unsigned int size)
         i_size + (size+CACHE_LINE_SZ-1)/CACHE_LINE_SZ*CACHE_LINE_SZ;
 
     // create shared memory or retrieve the existing one
-    shm_id = shm_open(shm_str->c_str(), O_RDWR|O_CREAT|O_EXCL, 0600);
+    shm_id = shm_open(shm_str, O_RDWR|O_CREAT|O_EXCL, 0600);
     if (shm_id != -1) {
         ITRC(IT_BSR, "SharedArray: as Posix SHM master (key=%s, id=%d)\n",
-                shm_str->c_str(), shm_id);
+                shm_str, shm_id);
     } else {
         if (EEXIST == errno) {
-            shm_id = shm_open(shm_str->c_str(), O_RDWR, 0600);
+            shm_id = shm_open(shm_str, O_RDWR, 0600);
             ITRC(IT_BSR, "SharedArray: as Posix SHM slave (key=%s, id=%d)\n",
-                    shm_str->c_str(), shm_id);
+                    shm_str, shm_id);
             if (shm_id == -1) {
                 ITRC(IT_BSR, "SharedArray: Posix shm_open failed with key <%s> (errno=%d)\n", 
-                        shm_str->c_str(), errno);
+                        shm_str, errno);
                 perror("shm_open as slave failed");
                 assert(0);
                 return ST_FAILED;
             }
         } else {
             ITRC(IT_BSR, "SharedArray: Posix shm_open failed with key <%s> (errno=%d)\n", 
-                    shm_str->c_str(), errno);
+                    shm_str, errno);
             perror("shm_open as master failed");
             assert(0);
             return ST_FAILED;
@@ -85,7 +85,7 @@ SharedArray::SETUP_STATE SharedArray::PosixShmAttach(const unsigned int size)
 
     if (ftruncate(shm_id, t_size) == -1) {
         close(shm_id);
-        shm_unlink(shm_str->c_str());
+        shm_unlink(shm_str);
         ITRC(IT_BSR, "SharedArray: Posix ftruncate failed, (errno=%d)\n", errno);
         perror("ftruncate failed");
         assert(0);
@@ -108,7 +108,7 @@ SharedArray::SETUP_STATE SharedArray::PosixShmAttach(const unsigned int size)
         // shm_id is not needed; close it to prevent file descripter leak
         close(shm_id);
         shm_id = -1;
-        shm_unlink(shm_str->c_str());
+        shm_unlink(shm_str);
         perror("mmap failed");
         assert(0);
         return ST_FAILED;
@@ -133,7 +133,7 @@ SharedArray::RC SharedArray::IsPosixShmSetupDone(const unsigned int size)
                 ITRC(IT_BSR, 
                         "SharedArray: Posix ShmSetup PASSED at %p with %u "
                         "members and key <%s>\n", 
-                        ctrl_block, member_cnt, shm_str->c_str());
+                        ctrl_block, member_cnt, shm_str);
                 return SUCCESS;
             case ST_FAILED:
                 return FAILED;
@@ -153,7 +153,7 @@ SharedArray::RC SharedArray::PosixShmDestroy()
         shm_size = 0;
         // if ctrl_block is not NULL; shm_unlink is called already
         ctrl_block = NULL;
-        ITRC(IT_BSR, "SharedArray: PosixShmDestroy <%s> finished\n", shm_str->c_str());
+        ITRC(IT_BSR, "SharedArray: PosixShmDestroy <%s> finished\n", shm_str);
     }
     ITRC(IT_BSR, "SharedArray: PosixShmDestroy finished without being initialized.\n");
     return SUCCESS;

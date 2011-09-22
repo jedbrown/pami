@@ -116,7 +116,6 @@ void Bsr::CleanUp()
 #ifdef _LAPI_LINUX
     if (bsr_addr) {
         assert(shm != NULL);
-
         if (is_leader) {
             (*__bsr_func.bsr_free)(bsr_id);
         }
@@ -362,7 +361,7 @@ Bsr::BSR_SETUP_STATE Bsr::CheckBootstrapSetup()
 
             ITRC(IT_BSR, "Bsr: %s Bootstrap_ShmSetup with key <%s> PASSED.\n",
                     (this->is_leader)?"LEADER":"FOLLOWER",
-                    shm_str->c_str());
+                    shm_str);
 
             return ST_BOOTSTRAP_DONE;
         case PROCESSING:
@@ -371,7 +370,7 @@ Bsr::BSR_SETUP_STATE Bsr::CheckBootstrapSetup()
             ITRC(IT_BSR, "Bsr: %s Bootstrap_ShmSetup with key <%s> FAILED with"
                     " rc %d\n",
                     (this->is_leader)?"LEADER":"FOLLOWER",
-                    shm_str->c_str(), rc);
+                    shm_str, rc);
             return ST_FAIL;
     }
 }
@@ -435,11 +434,9 @@ Bsr::BSR_SETUP_STATE Bsr::CheckBsrResource(const unsigned int mem_cnt,
     this->is_leader     = leader;
     this->member_cnt    = mem_cnt;
 
-    char tmp[128];
-    sprintf(tmp, "/BSR_shm_%d_%llu", job_key, unique_key);
-    shm_str = new string(tmp);
+    sprintf(&shm_str[0], "/BSR_shm_%d_%llu", job_key, unique_key);
     ITRC(IT_BSR, "Bsr::Init Unique key string for BSR bootstrap <%s>\n",
-            shm_str->c_str());
+         shm_str);
     return CheckBootstrapSetup();
 }
 
