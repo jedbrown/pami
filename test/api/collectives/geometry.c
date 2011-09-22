@@ -136,7 +136,7 @@ int main(int argc, char*argv[])
          
       /*  Query the sub geometry for bcast algorithms */
       pami_xfer_type_t     bcast_xfer = PAMI_XFER_BROADCAST;
-      pami_xfer_type_t     bar_xfer   = PAMI_XFER_BARRIER;
+      /*pami_xfer_type_t     bar_xfer   = PAMI_XFER_BARRIER;*/
       pami_xfer_t          newbcast;
       pami_xfer_t          newbar;
       rc |= query_geometry(client,
@@ -210,7 +210,7 @@ int main(int argc, char*argv[])
         timeIteration = timeElapsed;
         timeElapsed   = tf - ti;
         timeIteration = timeElapsed - timeIteration;
-        fprintf(stdout, "Iteration %d of %d time=%f usec (numbcast=%d numbar=%d)\n",
+        fprintf(stdout, "Iteration %d of %d time=%f usec (numbcast=%zu numbar=%zu)\n",
                 k, NITER, timeIteration/(double)(NITER/10.0),
                 newbcast_num_algo[0],newbar_num_algo[0]);
       }
