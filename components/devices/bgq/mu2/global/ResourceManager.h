@@ -755,6 +755,12 @@ fprintf(stderr, "%s\n", buf);
 		}
 	  }
 #endif // TRACE_CLASSROUTES
+	  _gi_init_to = 1000;
+	  s = getenv("PAMI_GI_INIT_TIMEOUT");
+	  if (s) {
+		uint64_t v = strtoul(s, NULL, 0);
+	  	if (v) _gi_init_to = v;
+	  }
 	  // do we need to place this rectangle someplace? like the "world geom" topology?
 
 	  // Now, we should be ready to get requests for classroutes...
@@ -773,6 +779,7 @@ fprintf(stderr, "%s\n", buf);
 	  bool master;
 	  unsigned geom_id;
 	  PAMI::Topology topo;
+	  CR_RECT_T rect;
 	  size_t   client;
 	  size_t   context;
 	  pami_multisync_t msync;
@@ -889,6 +896,7 @@ fprintf(stderr, "%s\n", buf);
 	  cookie->master = master;
 	  cookie->cb_done = (pami_callback_t){fn, clientdata};
 	  cookie->topo = node_topo;
+	  cookie->rect = rect1;
 	  cookie->cr_mtx_mdl = &_cr_mtx_mdls[clientid][contextid];
 	  cookie->client = clientid;
 	  cookie->context = contextid;
@@ -903,6 +911,14 @@ fprintf(stderr, "%s\n", buf);
 	  cookie->xfer.cmd.xfer_allreduce.rtype =  PAMI_TYPE_UNSIGNED_LONG_LONG;
 	  cookie->xfer.cmd.xfer_allreduce.rtypecount = sizeof(cookie->bbuf)/8;
 	  cookie->xfer.cmd.xfer_allreduce.op = PAMI_DATA_BAND;
+	  // offset rectangle by job corner...
+	  int d;
+	  for (d = 0; d < CR_NUM_DIMS; ++d) {
+		CR_COORD_DIM(CR_RECT_LL(&cookie->rect), d) +=
+					CR_COORD_DIM(CR_RECT_LL(&_communiv), d);
+		CR_COORD_DIM(CR_RECT_UR(&cookie->rect), d) +=
+					CR_COORD_DIM(CR_RECT_LL(&_communiv), d);
+	  }
 	  // tell geometry completion to wait for us...
 	  geom->addCompletion();
 	  start_over(context, cookie, PAMI_SUCCESS);
@@ -1044,21 +1060,19 @@ fprintf(stderr, "%s\n", buf);
 	  *crck->thus->_lowest_geom_id = crck->geom_id;
 
 	  // for now, this is only for true rectangles... (_nexcl == 0)
-	  CR_RECT_T rect;
-	  crck->topo.rectSeg(CR_RECT_LL(&rect), CR_RECT_UR(&rect));
 	  /// \todo #warning _cncrdata (_gicrdata) must be in shared memory!
 	  uint32_t mask1 = 0, mask2 = 0;
 
 	  void *val = crck->geom->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
 	  if (!val || val == PAMI_CR_GKEY_FAIL) {
 	    mask1 = MUSPI_GetClassrouteIds(PAMI_MU_CR_SPI_VC,
-	            &rect, &crck->thus->_cncrdata);
+	            &crck->rect, &crck->thus->_cncrdata);
 	  }
 	  val = crck->geom->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
 	  if (!val || val == PAMI_CR_GKEY_FAIL) {
 	    mask2 = MUSPI_GetClassrouteIds(PAMI_MU_CR_SPI_VC,
-	            &rect, &crck->thus->_gicrdata);
-	    crck->thus->CheckGICRConflicts(mask2, &rect);
+	            &crck->rect, &crck->thus->_gicrdata);
+	    crck->thus->CheckGICRConflicts(mask2, &crck->rect);
 	  }
 	  // is this true? can we be sure ALL nodes got the same result?
 	  // if so, and we are re-using existing classroute, then we can skip
@@ -1080,7 +1094,7 @@ fprintf(stderr, "%s\n", buf);
 #ifdef TRACE_CLASSROUTES
 	if (crck->thus->_trace_cr && __global.mapping.task() == 0) {
 		digraph = crck->thus->_digraph;
-		print_prefix(&crck->thus->_trace_cw, &rect);
+		print_prefix(&crck->thus->_trace_cw, &crck->rect);
 	}
 #endif // TRACE_CLASSROUTES
 	  // Now, must perform an "allreduce(&mask, 1, PAMI_LONGLONG, PAMI_AND)"
@@ -1153,10 +1167,8 @@ fprintf(stderr, "%s\n", buf);
 	  }
 #ifdef TRACE_CLASSROUTES
 	if (crck->thus->_trace_cr) {
-		CR_RECT_T rect;
-		crck->topo.rectSeg(CR_RECT_LL(&rect), CR_RECT_UR(&rect));
 		digraph = crck->thus->_digraph;
-		print_classroute(&crck->thus->_trace_cw, &rect, &crck->thus->_mycoord,
+		print_classroute(&crck->thus->_trace_cw, &crck->rect, &crck->thus->_mycoord,
 						&cr, (int)__global.mapping.task());
 	}
 #endif // TRACE_CLASSROUTES
@@ -1188,10 +1200,10 @@ fprintf(stderr, "%s\n", buf);
 	static void cr_gi_init_barrier_done(pami_context_t ctx, void *cookie, pami_result_t result)
 	{
 	  cr_cookie *crck = (cr_cookie *)cookie;
-	  int32_t irc = MUSPI_GIBarrierInitMU2(crck->id, 1000);
+	  int32_t irc = MUSPI_GIBarrierInitMU2(crck->id, crck->thus->_gi_init_to);
 	  if (irc != 0) {
-	    fprintf(stderr, "MUSPI_GIBarrierInitMU2(%d, %d) failed with %d\n",
-							crck->id, 1000, irc);
+	    fprintf(stderr, "MUSPI_GIBarrierInitMU2(%d, %ld) failed with %d\n",
+						crck->id, crck->thus->_gi_init_to, irc);
 	    cr_barrier_done(ctx, cookie, PAMI_ERROR);
 	    return;
 	  }
@@ -1240,15 +1252,13 @@ fprintf(stderr, "%s\n", buf);
 	  if (id)
 	  {
 	    --id; // ffs() returns bit# + 1
-	    CR_RECT_T rect;
-	    crck->topo.rectSeg(CR_RECT_LL(&rect), CR_RECT_UR(&rect));
 	    int first = MUSPI_SetClassrouteId(id, PAMI_MU_CR_SPI_VC,
-								&rect, envpp);
+								&crck->rect, envpp);
 	    // Note: need to detect if classroute was already programmed...
 	    if (crck->master && first)
 	    {
 	      if (!cr->input) {
-	        MUSPI_BuildNodeClassroute(&_refcomm, &_refroot, &_mycoord, &rect,
+	        MUSPI_BuildNodeClassroute(&_refcomm, &_refroot, &_mycoord, &crck->rect,
 							_map, _pri_dim, cr);
 	        cr->input |= BGQ_CLASS_INPUT_LINK_LOCAL;
 	        cr->input |= PAMI_MU_CR_SPI_VC;
@@ -1743,6 +1753,7 @@ fprintf(stderr, "%s\n", buf);
 	commworld_t _trace_cw;
 	unsigned _digraph;
 #endif // TRACE_CLASSROUTES
+	uint64_t _gi_init_to;
 	unsigned *_lowest_geom_id; // in shared memory! (protected by _cr_mtx)
 	void *_cncrdata; // used by MUSPI routines to keep track of
 	               // classroute assignments - persistent!
