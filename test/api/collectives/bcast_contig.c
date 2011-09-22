@@ -11,7 +11,8 @@
  * \brief Simple Bcast test on world geometry
  */
 
-#define COUNT     (1048576*8)   /* see envvar TEST_COUNT for overrides */
+/* This test allocates COUNT*16 unlike other bcast's,so reduce the default*/
+#define COUNT     (1048576*8/16)   /* see envvar TEST_COUNT for overrides */
 #define NITERLAT   10
 /*
 #define OFFSET     0
