@@ -102,6 +102,7 @@ namespace PAMI
         TRACE_ERR((stderr, "<%p>Common(ranklist)\n", this));
         // this creates the topology including all subtopologies
         new(&_topos[DEFAULT_TOPOLOGY_INDEX]) PAMI::Topology(_ranks, nranks);
+        //fprintf(stderr, "<%u><%p> geometry our _ranks %p\n", __LINE__,this,_ranks);
         buildSpecialTopologies();
 
         // Initialize remaining members
@@ -202,6 +203,7 @@ namespace PAMI
 
           _ranks_malloc = true;
           rc = __global.heap_mm->memalign((void **)&_ranks, 0, nranks * sizeof(pami_task_t));
+          //fprintf(stderr, "<%u><%p> geometry ranks_malloc true - %p\n", __LINE__,this,_ranks);
           PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _ranks");
 
           for (k = 0, i = 0; i < numranges; i++)
@@ -232,10 +234,12 @@ namespace PAMI
           _ranks_malloc = false;
         }
 #endif
-        if (_topos[LIST_TOPOLOGY_INDEX].type() == PAMI_LIST_TOPOLOGY)
+        if ((_topos[LIST_TOPOLOGY_INDEX].type() == PAMI_LIST_TOPOLOGY) && 
+            (_ranks_malloc == false)) /* Don't overwrite our original _ranks */
         {
           pami_result_t rc = PAMI_SUCCESS;
           rc = _topos[LIST_TOPOLOGY_INDEX].rankList(&_ranks);
+          //fprintf(stderr, "<%u><%p> geometry our _ranks %p\n", __LINE__,this,_ranks);
           PAMI_assert(rc == PAMI_SUCCESS);
         }
         // Initialize remaining members
@@ -283,8 +287,10 @@ namespace PAMI
         _topos[DEFAULT_TOPOLOGY_INDEX] = *topology;
 
         if (_topos[DEFAULT_TOPOLOGY_INDEX].type() == PAMI_LIST_TOPOLOGY)
+        {  
           _topos[DEFAULT_TOPOLOGY_INDEX].rankList(&_ranks);
-
+          //fprintf(stderr, "<%u><%p> geometry our _ranks %p\n", __LINE__,this,_ranks);
+        }
         buildSpecialTopologies();
 
         // Initialize remaining members
@@ -341,11 +347,17 @@ namespace PAMI
         DO_DEBUG(TRACE_ERR((stderr,"(%u)buildSpecialTopologies() COORDINATE_TOPOLOGY rankList %p\n", _topos[COORDINATE_TOPOLOGY_INDEX].rankList(&list), list)));
         DO_DEBUG(for (unsigned j = 0; j < _topos[COORDINATE_TOPOLOGY_INDEX].size(); ++j) TRACE_ERR((stderr, "buildSpecialTopologies() COORDINATE_TOPOLOGY[%u]=%zu, size %zu\n", j, (size_t)_topos[COORDINATE_TOPOLOGY_INDEX].index2Rank(j), _topos[COORDINATE_TOPOLOGY_INDEX].size())));
 
-        // If we have a rank list, set the special topology, otherwise leave it EMPTY unless needed
-        _topos[LIST_TOPOLOGY_INDEX] = _topos[DEFAULT_TOPOLOGY_INDEX];
-
+        // If we already have a rank list, set the special topology, otherwise 
+        // leave it EMPTY unless needed because it will require a new rank list allocation
         if (_topos[LIST_TOPOLOGY_INDEX].type() != PAMI_LIST_TOPOLOGY)
           new(&_topos[LIST_TOPOLOGY_INDEX]) PAMI::Topology();
+        else // Default is a list topology, use the same ranklist storage
+        {
+          pami_task_t  nranks = _topos[DEFAULT_TOPOLOGY_INDEX].size();
+          pami_task_t *ranks;
+          _topos[DEFAULT_TOPOLOGY_INDEX].rankList(&ranks);
+          new(&_topos[LIST_TOPOLOGY_INDEX]) PAMI::Topology(ranks, nranks);
+        }
       }
 
       inline bool                      isLocalMasterParticipant_impl()
@@ -368,11 +380,14 @@ namespace PAMI
         // We really only on-demand create the rank list topology.  All others are used as-is.
         if ((topo_num = LIST_TOPOLOGY_INDEX) && (_topos[LIST_TOPOLOGY_INDEX].type() != PAMI_LIST_TOPOLOGY))
         {
+          /* Assume/assert we don't already have a rank list or we would have set this up already.
+             We don't want to malloc more ranklist storage or overwrite _ranks. */
+          PAMI_assert((_topos[DEFAULT_TOPOLOGY_INDEX].type() != PAMI_LIST_TOPOLOGY));
           PAMI_assert(!_ranks_malloc);
           _topos[LIST_TOPOLOGY_INDEX] = _topos[DEFAULT_TOPOLOGY_INDEX];
           _topos[LIST_TOPOLOGY_INDEX].convertTopology(PAMI_LIST_TOPOLOGY);
           _topos[LIST_TOPOLOGY_INDEX].rankList(&_ranks);
-          _ranks_malloc = true;
+          //fprintf(stderr, "<%u><%p> geometry ranks_malloc NOT true - %p\n", __LINE__,this,_ranks);
         }
 
         return(pami_topology_t*)&_topos[topo_num];
@@ -484,6 +499,7 @@ namespace PAMI
       inline void                      freeAllocations_impl()
       {
         TRACE_FN_ENTER();
+        //fprintf(stderr, "<%u><%p>geometry freeallocations\n", __LINE__,this);
         int sz = _cleanupFcns.size();
         for (int i=0; i<sz; i++)
         {
@@ -492,6 +508,7 @@ namespace PAMI
           if (fn) fn(NULL, cd, PAMI_SUCCESS);
         }
 
+        //fprintf(stderr, "<%u><%p>geometry free ranklist now %p\n", __LINE__,this,_ranks);
         if (_ranks_malloc) __global.heap_mm->free(_ranks);
 
         _ranks = NULL;
