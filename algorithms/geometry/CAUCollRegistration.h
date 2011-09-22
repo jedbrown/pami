@@ -549,6 +549,11 @@ namespace PAMI
           {
             if(!_enabled || geometry->size() == 1)
             {
+              if(phase==0)
+              {
+                ITRC(IT_CAU, "CollReg(phase 0): group_id=%d: Disabled:  flag=%d sz=%d",
+                     _enabled,geometry->comm());
+              }
               return PAMI_SUCCESS;
             }
             switch(phase)
@@ -568,6 +573,8 @@ namespace PAMI
                   LapiImpl::Context *cp                = (LapiImpl::Context *)_Lapi_port[_lapi_handle];
                   bool               participant       = geometry->isLocalMasterParticipant();
 
+
+
                   // Word 0 reduction setup
                   // Generate a unique key and check for collisions
                   uint32_t unique_key=CAU::GenerateUniqueKey(_cau_uniqifier,
@@ -584,6 +591,7 @@ namespace PAMI
                                  "Error in geometry collision map\n");
                     _collision_map[unique_key]++;
                   }
+
                   // Success is 0
                   // Failure: key(cau resource) allocation failure bit 1 set
                   uint64_t result_mask = 0ULL;
@@ -612,9 +620,10 @@ namespace PAMI
 
                   // invert for bitwise AND
                   inout_val[0] = ~result_mask;
-                  
+
                   // Construct the geometry info object, so we can free our allocated objects later
                   GeometryInfo                     *geometryInfo = (GeometryInfo*)_geom_allocator.allocateObject();
+                  memset(geometryInfo, 0, sizeof(*geometryInfo));
                   geometryInfo->_registration                    = this;
                   geometryInfo->_geometry                        = geometry;
                   geometryInfo->_local_model                     = NULL;
@@ -624,6 +633,10 @@ namespace PAMI
                   geometryInfo->_bsr_p2p_composite               = NULL;
                   geometryInfo->_shm_p2p_composite               = NULL;
                   geometryInfo->_unique_key                      = unique_key;
+                  // Set the CAU registration per geometry info object in the geometry
+                  // And the cleanup callback
+                  geometry->setKey(Geometry::PAMI_GKEY_GEOMETRYINFO,geometryInfo);
+                  geometry->setCleanupCallback(cleanupCallback, geometryInfo);
 
                   // Word 1-->num_local_tasks setup
                   // prepare for collshmem device control structure address distribution
@@ -631,10 +644,6 @@ namespace PAMI
                                         &inout_val[1],
                                         &geometryInfo->_ctlstr_offset);
 
-                  // Set the CAU registration per geometry info object in the geometry
-                  // And the cleanup callback
-                  geometry->setKey(Geometry::PAMI_GKEY_GEOMETRYINFO,geometryInfo);                  
-                  geometry->setCleanupCallback(cleanupCallback, geometryInfo);
 
                   inout_nelem[0]    = inout_nelem[0];
                   ITRC(IT_CAU, "CollReg(phase 0): group_id=%d, unique_id=0x%x "
@@ -646,7 +655,7 @@ namespace PAMI
                        result_mask&2ULL,   // cau uniqifier
                        result_mask&4ULL,   // cau collision
                        result_mask&8ULL,   // bsr collision
-                       result_mask&16ULL); // affinity 
+                       result_mask&16ULL); // affinity
                   return PAMI_SUCCESS;
                 }
                 case 1:
@@ -762,16 +771,17 @@ namespace PAMI
                     geometry->setKey(context_id,
                                      PAMI::Geometry::CKEY_BARRIERCOMPOSITE2,
                                      (void*)geometryInfo->_bsr_p2p_composite);
+                    PAMI_assert(geometryInfo->_bsr_p2p_composite != NULL);
                   }
                   if(f1)
                   {
+
                     geometryInfo->_shm_p2p_composite = f1->generate(geometry, &xfer);
                     geometry->setKey(context_id,
                                      PAMI::Geometry::CKEY_BARRIERCOMPOSITE3,
                                      (void*)geometryInfo->_shm_p2p_composite);
+                    PAMI_assert(geometryInfo->_shm_p2p_composite != NULL);
                   }
-
-
 
                   // ///////////////////////////////////////////////////////////
                   // Barrier Protocols
@@ -885,14 +895,22 @@ namespace PAMI
           }
         inline void freeUniqueKey(uint32_t unique_key)
           {
-            _collision_map[unique_key]--;
-            if(_collision_map[unique_key]==0)
-              _collision_map.erase(unique_key);
+            typename std::map<uint32_t,uint32_t>::iterator findval;
+            findval=_collision_map.find(unique_key);
+            bool found_key = (findval == _collision_map.end())?false:true;
+            if(found_key)
+            {
+              _collision_map[unique_key]--;
+              if(_collision_map[unique_key]==0)
+                _collision_map.erase(unique_key);
+            }
           }
         
         static inline void cleanupCallback(pami_context_t ctxt, void *data, pami_result_t res)
           {
             GeometryInfo *gi = (GeometryInfo*) data;
+
+
             int commid = gi->_geometry->comm();
             ITRC(IT_CAU, "CollReg:  cleanupCallback:  ctxt=%p geometry id=%d key=%x cau_info=%p\n ",
                  ctxt, commid, gi->_unique_key, gi->_cau_info);
@@ -912,10 +930,10 @@ namespace PAMI
             if(gi->_bsr_info)
               gi->_registration->freeBsrInfo(gi->_bsr_info);
 
-            if(gi->_bsr_p2p_composite && ctxt)
+            if(gi->_bsr_p2p_composite)
               GlobalBsrFactory::cleanup_done_fn(ctxt,gi->_bsr_p2p_composite,res);
 
-            if(gi->_shm_p2p_composite && ctxt)
+            if(gi->_shm_p2p_composite)
               GlobalSHMEMFactory::cleanup_done_fn(ctxt,gi->_shm_p2p_composite,res);
 
             gi->_registration->freeUniqueKey(gi->_unique_key);
@@ -923,7 +941,6 @@ namespace PAMI
             gi->_registration->freeSharedMemory(gi->_ctlstr_offset);
             
             gi->_registration->freeGeomInfo(gi);
-
           }
       private:
         // Client, Context, and Utility variables

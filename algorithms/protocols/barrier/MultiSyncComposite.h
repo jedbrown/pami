@@ -302,8 +302,8 @@ namespace CCMI{namespace Adaptor{namespace Barrier{
         DO_DEBUG(for (unsigned j = 0; j < t_master->size(); ++j) TRACE_FORMAT("<%p>t_master[%u]=%#X, size %zu", t_master, j, t_master->index2Rank(j), t_master->size()));
         DO_DEBUG(for (unsigned j = 0; j < t_local->size(); ++j) TRACE_FORMAT("<%p>t_local[%u]=%zu, size %zu", t_local, j, (size_t)t_local->index2Rank(j), t_local->size()));
 
-        _cb_done                     = ((pami_xfer_t*)cmd)->cb_done;
-        _clientdata                  = ((pami_xfer_t*)cmd)->cookie;
+        _cb_done                     = fn;
+        _clientdata                  = cookie;
 
         _g_reset_cb                   = false;
         _l0_reset_cb                  = false;
