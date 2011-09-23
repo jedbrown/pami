@@ -115,7 +115,11 @@ namespace PAMI
                                                        pami_metadata_t   *mdata1,
                                                        size_t             num1);
 
-        inline pami_result_t geometry_destroy(pami_geometry_t geometry);
+        inline pami_result_t geometry_destroy(pami_geometry_t      geometry,
+                                              pami_context_t       context,
+                                              pami_event_function  fn,
+                                              void                *cookie);
+
         inline pami_geometry_t mapidtogeometry (int comm);
         inline void registerUnexpBarrier(unsigned     comm,
                                          pami_quad_t &info,
@@ -314,9 +318,15 @@ namespace PAMI
 
 
     template <class T_Client>
-    pami_result_t Client<T_Client>::geometry_destroy (pami_geometry_t geometry)
+    pami_result_t Client<T_Client>::geometry_destroy (pami_geometry_t      geometry,
+                                                      pami_context_t       context,
+                                                      pami_event_function  fn,
+                                                      void                *cookie)
     {
-      return static_cast<T_Client*>(this)->geometry_destroy_impl(geometry);
+      return static_cast<T_Client*>(this)->geometry_destroy_impl(geometry,
+                                                                 context,
+                                                                 fn,
+                                                                 cookie);
     }
     
     template <class T_Client>

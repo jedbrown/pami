@@ -228,11 +228,14 @@ extern "C" pami_result_t PAMI_Geometry_world (pami_client_t                clien
   return _client->geometry_world (world_geometry);
 }
 
-extern "C" pami_result_t PAMI_Geometry_destroy(pami_client_t    client,
-                                               pami_geometry_t *geometry)
+extern "C" pami_result_t PAMI_Geometry_destroy(pami_client_t          client,
+                                               pami_geometry_t      * geometry,
+                                               pami_context_t         context,
+                                               pami_event_function    fn,
+                                               void                 * cookie)
 {
   PAMI::Client * _client = (PAMI::Client *) client;
-  pami_result_t rc = _client->geometry_destroy (*geometry);
+  pami_result_t rc = _client->geometry_destroy (*geometry, context, fn, cookie);
   *geometry = NULL;
   return rc;
 }

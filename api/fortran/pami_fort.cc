@@ -226,11 +226,14 @@ extern "C" void pami_geometry_world (pami_client_t*               client,
     *result = PAMI_Geometry_world(*client, world_geometry);
 }
 
-extern "C" void pami_geometry_destroy(pami_client_t*   client,
-                                      pami_geometry_t* geometry,
-                                      pami_result_t*   result)
+extern "C" void pami_geometry_destroy(pami_client_t*       client,
+                                      pami_geometry_t*     geometry,
+                                      pami_context_t*      context,
+                                      pami_event_function  fn,
+                                      void                *cookie,
+                                      pami_result_t*       result)
 {
-    *result = PAMI_Geometry_destroy(*client, geometry);
+    *result = PAMI_Geometry_destroy(*client, geometry,*context, fn, cookie);
 }
 
 extern "C" void pami_collective (pami_context_t*  context,

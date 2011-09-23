@@ -1260,7 +1260,10 @@ namespace PAMI
 
     // The flow is commented below:
 
-    inline pami_result_t geometry_destroy_impl (pami_geometry_t geometry)
+    inline pami_result_t geometry_destroy_impl (pami_geometry_t      geometry,
+                                                pami_context_t       context,
+                                                pami_event_function  fn,
+                                                void                *cookie)
       {
         _contexts[0]->plock();
 
@@ -1320,6 +1323,7 @@ namespace PAMI
           _geometryCleanupList.pop_back();
         }
         _contexts[0]->punlock();
+        fn(context,cookie,PAMI_SUCCESS);
         return PAMI_SUCCESS;
       }
 

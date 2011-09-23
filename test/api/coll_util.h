@@ -133,6 +133,27 @@ int query_geometry_world(pami_client_t       client,
   return 0;
 }
 
+
+int destroy_geometry(pami_client_t    client,
+                     pami_context_t   context,
+                     pami_geometry_t *geometry)
+{
+  pami_result_t     rc             = PAMI_SUCCESS;
+  volatile unsigned geom_poll_flag = 1;
+  gContext = context;
+  rc = PAMI_Geometry_destroy(client,
+			     geometry,
+			     context,
+			     cb_done,
+			     (void*)&geom_poll_flag);
+  
+  while(geom_poll_flag)
+    rc = PAMI_Context_advance (context, 1);
+
+  return rc;
+}
+
+
 int query_geometry(pami_client_t       client,
                    pami_context_t      context,
                    pami_geometry_t     geometry,

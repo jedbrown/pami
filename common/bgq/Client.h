@@ -745,7 +745,11 @@ namespace PAMI
 
 
 
-    inline pami_result_t geometry_destroy_impl (pami_geometry_t geometry)
+    inline pami_result_t geometry_destroy_impl (pami_geometry_t      geometry,
+                                                pami_context_t       context,
+                                                pami_event_function  fn,
+                                                void                *cookie)
+
     {
       TRACE_FN_ENTER();
       TRACE_ERR((stderr, "(%8.8u)<%p:%zu>BGQ::Client::geometry_destroy_impl(geometry %p)\n", Kernel_ProcessorID(),this, _clientid, (BGQGeometry *)geometry));
@@ -755,6 +759,10 @@ namespace PAMI
       pami_result_t result = __MUGlobal.getMuRM().geomDeoptimize(gp);
       gp->~BGQGeometry();
       __global.heap_mm->free(gp);
+
+      if(fn)
+        fn(context, cookie, PAMI_SUCCESS);
+
       TRACE_FN_EXIT();
       return result;
     }

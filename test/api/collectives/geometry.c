@@ -39,7 +39,6 @@ int main(int argc, char*argv[])
   assert(gNum_contexts > 0);
   context = (pami_context_t*)malloc(sizeof(pami_context_t) * gNum_contexts);
 
-
   /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
                      context,        /* Context            */
@@ -186,10 +185,8 @@ int main(int argc, char*argv[])
       
       if(k==0 && task_id == task_zero)
          fprintf(stdout, "Destroying Geometry\n");
-         
-      rc |= PAMI_Geometry_destroy(client, &newgeometry);
-      if (rc == 1)
-        return 1;
+
+      destroy_geometry(client,context[iContext], &newgeometry);
 
       if(k==0 && task_id == task_zero)
          fprintf(stdout, "Done....entering iterative phase\n");
