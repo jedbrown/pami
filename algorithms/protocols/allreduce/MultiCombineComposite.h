@@ -141,6 +141,8 @@ namespace CCMI
             TRACE_FN_ENTER();
             TRACE_FN_EXIT();
           }
+
+	  void setContext (pami_context_t context) {}
       };
 
       /// \brief This is a factory for a 2 device MultiCombine

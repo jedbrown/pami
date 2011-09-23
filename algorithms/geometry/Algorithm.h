@@ -118,6 +118,9 @@ namespace PAMI
           _algo_list_store[_num_algo]._geometry = geometry;
           _algo_list[_num_algo]                 = &_algo_list_store[_num_algo];
           _num_algo++;
+
+	  geometry->setCleanupCallback(resetFactoryCache, factory);
+
           return PAMI_SUCCESS;
         }
         inline pami_result_t rmCollective(CCMI::Adaptor::CollectiveProtocolFactory *factory,
@@ -184,6 +187,16 @@ namespace PAMI
           lists_lengths[1] = _num_algo_check;
           return PAMI_SUCCESS;
         }
+
+	static void resetFactoryCache (pami_context_t   ctxt, 
+				       void           * factory,
+				       pami_result_t    result) 
+	{
+	  CCMI::Adaptor::CollectiveProtocolFactory *cf = 
+	    (CCMI::Adaptor::CollectiveProtocolFactory *) factory;
+	  cf->clearCache();
+	}
+
         int                     _num_algo;
         int                     _num_algo_check;
         Algorithm<T_Geometry>  *_algo_list[MAX_NUM_ALGO];

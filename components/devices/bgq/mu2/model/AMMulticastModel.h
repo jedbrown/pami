@@ -16,7 +16,7 @@
 #include "components/devices/MulticastModel.h"
 #include "components/devices/bgq/mu2/Context.h"
 #include "components/devices/bgq/mu2/msg/InjectAMMulticast.h"
-#include "math/Memcpy.x.h"
+#include "math/a2qpx/Core_memcpy.h"
 
 namespace PAMI {
   namespace Device {
@@ -180,15 +180,11 @@ namespace PAMI {
 	  if (rcvlen == 0)
 	    return PAMI_SUCCESS;
 	  
-	  //	  if (rcvlen > 0) {
-	  //PAMI_assert (pwqptr != NULL);
-	  //PAMI_assert (rcvlen <= amhdr->bytes);
-	  
 	  PipeWorkQueue *pwq = (PipeWorkQueue *)pwqptr;
-	  char *buf = pwq->bufferToProduce();
-	  memcpy(buf, (char *)payload + amhdr->metasize*sizeof(pami_quad_t), rcvlen);
+	  char *buf = pwq->bufferToProduce();	  
+	  char *src = (char *)payload + amhdr->metasize*sizeof(pami_quad_t);
+	  memcpy(buf, src, rcvlen);
 	  pwq->produceBytes(rcvlen);
-	  //}
 
 	  if (cb_done.function)
 	    cb_done.function(model->_ctxt, cb_done.clientdata, PAMI_SUCCESS);
@@ -344,11 +340,23 @@ namespace PAMI {
 	//get the payload of the last descriptor
 	_channel.getDescriptorPayload (desc + nranks - 1, vaddr, paddr);	  	  
 	prepareDesc (desc, paddr, bytes, metasize, connection_id);
-	
-	if (likely(metasize > 0)) 
-	  _int8Cpy (vaddr, metadata, metasize * sizeof(pami_quad_t));
-	if (bytes > 0) 
-	  memcpy ((char*)vaddr + metasize*sizeof(pami_quad_t), src, bytes);	  
+	uint16_t rfifo_base =  *(uint16_t *)(&desc->PacketHeader.messageUnitHeader.Packet_Types.Memory_FIFO);
+
+	//if (likely(metasize > 0)) 
+	//_int8Cpy (vaddr, metadata, metasize * sizeof(pami_quad_t));
+
+	if (likely(metasize == 1)) {
+	  uint64_t *sp = (uint64_t *) metadata;	    
+	  uint64_t *dp = (uint64_t *) vaddr;
+	  *dp ++ = *sp ++;
+	  *dp    = *sp;
+	}
+	else if (metasize > 1)
+	  memcpy(vaddr, metadata, metasize *sizeof(pami_quad_t)); 
+
+	char *dst = (char*)vaddr + metasize * sizeof(pami_quad_t);
+	if (bytes > 0)	  
+	  memcpy(dst, src, bytes);
 	
 	size_t cidx = 0;
 	MUHWI_Destination_t   dest;
@@ -361,8 +369,9 @@ namespace PAMI {
 			    map);	  
 	
 	// Initialize the injection fifo descriptor in-place.
-	desc->setDestination (dest);
-	desc->setRecFIFOId (rfifo);
+	desc->setDestination (dest.Destination.Destination);
+	//desc->setRecFIFOId (rfifo);
+	*(uint16_t *)(&desc->PacketHeader.messageUnitHeader.Packet_Types.Memory_FIFO) = rfifo_base | (rfifo << 6); 
 	desc->setTorusInjectionFIFOMap (map);
 	//fprintf(stderr, "Sending msg from payload pa %lx\n", paddr);
 	//MUSPI_DescriptorDumpHex ((char *)"Immediate Multicast", desc);
@@ -383,8 +392,10 @@ namespace PAMI {
 	  VECTOR_STORE_NU (memfifo, 32, fp1);
 	  //desc->clone(*memfifo);	  
 	  // Initialize the injection fifo descriptor in-place.
-	  memfifo->setDestination (dest);
-	  memfifo->setRecFIFOId (rfifo);
+	  memfifo->setDestination (dest.Destination.Destination);
+	  //memfifo->setRecFIFOId (rfifo);
+	  //Set the reception fifo without a load instruction
+	  *(uint16_t *)(&memfifo->PacketHeader.messageUnitHeader.Packet_Types.Memory_FIFO) = rfifo_base | (rfifo << 6); 	  
 	  memfifo->setTorusInjectionFIFOMap (map);
 	  //MUSPI_DescriptorDumpHex ((char *)"Immediate Multicast", memfifo);
 	}
@@ -431,9 +442,14 @@ namespace PAMI {
 	  uint64_t paddr = (uint64_t)memRegion.BasePa + ((uint64_t)msg->packetBuf() - (uint64_t)memRegion.BaseVa);
 	  
 	  prepareDesc (desc,  paddr, bytes, metasize, connection_id);
-	  if (metasize > 0)
-	    memcpy (msg->packetBuf(), metadata, metasize * sizeof(pami_quad_t));
-	  
+	  if (metasize == 1) {
+	    uint64_t *dst = (uint64_t *) msg->packetBuf();
+	    uint64_t *src = (uint64_t *) metadata;	    
+	    *dst ++ = *src ++;
+	    *dst    = *src;
+	  }
+	  else if (metasize > 1)
+	    memcpy(msg->packetBuf(), metadata, metasize *sizeof(pami_quad_t));	    
 	  bool done = msg->advance();
 	  
 	  if (!done) {

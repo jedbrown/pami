@@ -91,9 +91,11 @@ namespace PAMI
           //_reduce_val(0),
           _dispatch_id(dispatch_id),
           _allocator(allocator),
-          _binomial_barrier_composite(),
+          _binomial_barrier_composite(),	
           _cg_connmgr(65535),
           _color_connmgr(),
+	  _sconnmgr(),	  
+	  _sconnmgr1(1),	
           _rbconnmgr(),
           _csconnmgr(),
           _rsconnmgr(),
@@ -138,6 +140,7 @@ namespace PAMI
           _binomial_allreduce_factory(NULL),
           _binomial4_allreduce_factory(NULL),
           _binomial8_allreduce_factory(NULL),
+          _ring_allreduce_factory(NULL),
           _ascs_binomial_allreduce_factory(NULL),
           _ascs_binomial_reduce_factory(NULL),
           _active_binomial_amreduce_factory(NULL),
@@ -392,6 +395,10 @@ namespace PAMI
                   geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,
                                         _binomial8_allreduce_factory,
                                         _context_id);
+                if(_ring_allreduce_factory)
+                  geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,
+					       _ring_allreduce_factory,
+					       _context_id);
                 if(_ascs_binomial_allreduce_factory)
                   geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,
                                         _ascs_binomial_allreduce_factory,
@@ -419,6 +426,10 @@ namespace PAMI
                   geometry->addCollective(PAMI_XFER_ALLREDUCE,
                                         _binomial8_allreduce_factory,
                                         _context_id);
+		if(_ring_allreduce_factory)
+                  geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,
+					       _ring_allreduce_factory,
+					       _context_id);
                 if(_ascs_binomial_allreduce_factory)
                   geometry->addCollective(PAMI_XFER_ALLREDUCE,
                                         _ascs_binomial_allreduce_factory,
@@ -968,15 +979,30 @@ namespace PAMI
             // ----------------------------------------------------
             // Setup and Construct a binomial allreducefactory from active message ni and p2p protocol
             rc = setupFactory<CCMI::Adaptor::P2PAllreduce::Binomial::Factory>(ni,  _binomial_allreduce_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE);
-            if (rc == PAMI_SUCCESS) new ((void*)_binomial_allreduce_factory) CCMI::Adaptor::P2PAllreduce::Binomial::Factory(&_rbconnmgr, ni, CCMI::Adaptor::P2PAllreduce::Binomial::Composite::cb_receiveHead);
+            if (rc == PAMI_SUCCESS) {
+	      new ((void*)_binomial_allreduce_factory) CCMI::Adaptor::P2PAllreduce::Binomial::Factory(&_rbconnmgr, ni, CCMI::Adaptor::Allreduce::cb_async_OAT_receiveHead<CCMI::Adaptor::P2PAllreduce::Binomial::Composite, CCMI::Adaptor::P2PAllreduce::Binomial::Factory>);
+	      _binomial_allreduce_factory->setAsync();
+	    }
+
             // ----------------------------------------------------
             rc = setupFactory<CCMI::Adaptor::P2PAllreduce::Binomial::Factory4>(ni,  _binomial4_allreduce_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE);
-            if (rc == PAMI_SUCCESS) new ((void*)_binomial4_allreduce_factory) CCMI::Adaptor::P2PAllreduce::Binomial::Factory4(&_rbconnmgr, ni, CCMI::Adaptor::P2PAllreduce::Binomial::Composite4::cb_receiveHead);
+            if (rc == PAMI_SUCCESS) {
+	      new ((void*)_binomial4_allreduce_factory) CCMI::Adaptor::P2PAllreduce::Binomial::Factory4(&_rbconnmgr, ni, CCMI::Adaptor::Allreduce::cb_async_OAT_receiveHead<CCMI::Adaptor::P2PAllreduce::Binomial::Composite4, CCMI::Adaptor::P2PAllreduce::Binomial::Factory4>);
+	      _binomial4_allreduce_factory->setAsync();
+	    }
+
 
             // ----------------------------------------------------
             rc = setupFactory<CCMI::Adaptor::P2PAllreduce::Binomial::Factory8>(ni,  _binomial8_allreduce_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE);
-            if (rc == PAMI_SUCCESS) new ((void*)_binomial8_allreduce_factory) CCMI::Adaptor::P2PAllreduce::Binomial::Factory8(&_rbconnmgr, ni, CCMI::Adaptor::P2PAllreduce::Binomial::Composite8::cb_receiveHead);
+            if (rc == PAMI_SUCCESS) {
+	      new ((void*)_binomial8_allreduce_factory) CCMI::Adaptor::P2PAllreduce::Binomial::Factory8(&_rbconnmgr, ni, CCMI::Adaptor::Allreduce::cb_async_OAT_receiveHead<CCMI::Adaptor::P2PAllreduce::Binomial::Composite8, CCMI::Adaptor::P2PAllreduce::Binomial::Factory8>);
+	      _binomial8_allreduce_factory->setAsync();
+	    }
+	      
             // ----------------------------------------------------
+
+	    rc = setupFactory<CCMI::Adaptor::P2PAllreduce::Ring::Factory>(ni, _ring_allreduce_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED, 1);
+            if (rc == PAMI_SUCCESS) new ((void*)_ring_allreduce_factory) CCMI::Adaptor::P2PAllreduce::Ring::Factory(&_sconnmgr, ni, NULL, &_sconnmgr1);
 
             // ----------------------------------------------------
             // Setup and Construct an asynchronous, comm_id/seq_num binomial  allreduce factory from active message ni and p2p protocol
@@ -1129,6 +1155,7 @@ namespace PAMI
             if (_binomial_allreduce_factory)  _binomial_allreduce_factory->setMapIdToGeometry(mapidtogeometry);
             if (_binomial4_allreduce_factory)  _binomial4_allreduce_factory->setMapIdToGeometry(mapidtogeometry);
             if (_binomial8_allreduce_factory)  _binomial8_allreduce_factory->setMapIdToGeometry(mapidtogeometry);
+	    //Set mapid for ring allreduce??
             if (_ascs_binomial_allreduce_factory)  _ascs_binomial_allreduce_factory->setMapIdToGeometry(mapidtogeometry);
             if (_ascs_binomial_reduce_factory)  _ascs_binomial_reduce_factory->setMapIdToGeometry(mapidtogeometry);
             if (_active_binomial_amreduce_factory)  _active_binomial_amreduce_factory->setMapIdToGeometry(mapidtogeometry);
@@ -1183,8 +1210,9 @@ namespace PAMI
           // CCMI Connection Manager Class
           CCMI::ConnectionManager::ColorGeometryConnMgr                _cg_connmgr;
           CCMI::ConnectionManager::ColorConnMgr                        _color_connmgr;
-          CCMI::ConnectionManager::SimpleConnMgr                       _sconnmgr;
-          CCMI::ConnectionManager::RankBasedConnMgr                    _rbconnmgr;
+	  CCMI::ConnectionManager::SimpleConnMgr                       _sconnmgr;
+	  CCMI::ConnectionManager::SimpleConnMgr                       _sconnmgr1;  
+	  CCMI::ConnectionManager::RankBasedConnMgr                    _rbconnmgr;
           CCMI::ConnectionManager::CommSeqConnMgr                      _csconnmgr;
           CCMI::ConnectionManager::RankSeqConnMgr                      _rsconnmgr;
 
@@ -1241,6 +1269,8 @@ namespace PAMI
           CCMI::Adaptor::P2PAllreduce::Binomial::Factory                  *_binomial_allreduce_factory;
           CCMI::Adaptor::P2PAllreduce::Binomial::Factory4                 *_binomial4_allreduce_factory;
           CCMI::Adaptor::P2PAllreduce::Binomial::Factory8                 *_binomial8_allreduce_factory;
+
+	  CCMI::Adaptor::P2PAllreduce::Ring::Factory                      *_ring_allreduce_factory;
 
           // CCMI Async [All]Reduce
           CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomAllreduceFactory  *_ascs_binomial_allreduce_factory;

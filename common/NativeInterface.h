@@ -689,6 +689,16 @@ namespace PAMI
         return PAMI_ERROR;
       }
 
+      virtual void postWork (pami_context_t         context,
+			     int                    color,
+			     pami_work_t          * work, 
+			     pami_work_function    fn,
+			     void                 * clientdata) 
+      {
+	PAMI_Context_post(context, work, fn, clientdata);
+      }
+
+
       ///
       /// \brief Received a p2p dispatch from another root (member function).
       ///

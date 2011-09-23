@@ -24,6 +24,14 @@ namespace CCMI
         unsigned          _ntotalsrcranks;   //total number of source ranks across all phases
         unsigned          _ntotaldstranks;  //total number of destintation ranks across all phases
 
+	unsigned          _lastCombinePhase; //The last phase that
+					     //receives data before
+					     //the lastReducePhase
+
+	unsigned         *_nextActivePhaseVec; //The next phase that has
+	                                       //either a send or a
+	                                       //receive
+
         ///A vector of source topologies with one for each phase
         PAMI::Topology          ** _srctopologies;
 
@@ -33,8 +41,8 @@ namespace CCMI
         PAMI::Topology             _srcuniontopology; //The uninon of all sources
         PAMI::Topology             _dstuniontopology; //The union of all destinations
 
-        size_t                 * _srcranks;  //Cache buffer of source ranks
-        size_t                 * _dstranks;  //Cache buffer of destination ranks
+        pami_task_t             * _srcranks;  //Cache buffer of source ranks
+        pami_task_t             * _dstranks;  //Cache buffer of destination ranks
 
         ///Buffer to cache the schedule
         char                   * _cachebuf;
@@ -48,7 +56,6 @@ namespace CCMI
         unsigned             _operation;
         Interfaces::Schedule * _schedule;
 
-        static const size_t SC_MAXPHASES = 32;
         static const size_t SC_MAXRANKS  = 128;
 
         ///Allocate routing that allocates memory for src phases and dst
@@ -82,30 +89,36 @@ namespace CCMI
           _oldroot      = _root;
 
           int start, nph;
+	  _nextActivePhaseVec = NULL;
           _schedule->init (_root, _operation, start, nph);
           _start = start;
           _nphases = nph;
+	  _lastCombinePhase = (unsigned)-1;
 
           TRACE_SCHEDULE((stderr, "<%p>Executor::Barrier::ScheduleCache::init _start %d, nph %d\n",
                         this, _start, _nphases));
 
-          CCMI_assert(_start + _nphases  <=  SC_MAXPHASES);
-
           unsigned ntotal_src = 0, ntotal_dst = 0, count = 0;
+	  unsigned lastReducePhase = getLastReducePhase();
 
           for (count = _start; count < (_start + _nphases); count ++)
             {
-              size_t srcranks[SC_MAXRANKS], dstranks[SC_MAXRANKS];
-              PAMI::Topology src_topology((pami_task_t *)&srcranks, SC_MAXRANKS);
-              PAMI::Topology dst_topology((pami_task_t *)&dstranks, SC_MAXRANKS);
+              pami_task_t srcranks[SC_MAXRANKS], dstranks[SC_MAXRANKS];
+              PAMI::Topology src_topology(srcranks, SC_MAXRANKS);
+              PAMI::Topology dst_topology(dstranks, SC_MAXRANKS);
 
               _schedule->getSrcTopology(count, &src_topology);
               ntotal_src += src_topology.size();
 
+	      //Find the last phase that receives data before the
+	      //reductions are over
+	      if (src_topology.size() > 0 && count <= lastReducePhase)
+		_lastCombinePhase = count;
+
               _schedule->getDstTopology(count, &dst_topology);
               ntotal_dst += dst_topology.size();
 
-              TRACE_SCHEDULE((stderr, "Schedule Cache take_1 phase %d ndst %zu dstrank %u/%zu\n", count,
+              TRACE_SCHEDULE((stderr, "Schedule Cache take_1 phase %d ndst %zu dstrank %u/%u\n", count,
                               dst_topology.size(), dst_topology.index2Rank(0),  dstranks[0]));
             }
 
@@ -120,18 +133,26 @@ namespace CCMI
             {
               TRACE_SCHEDULE((stderr, "Schedule Cache : construct topology of size src %d dst %d\n", ntotal_src - srcindex, ntotal_dst - dstindex));
 
-              new (_srctopologies[count]) PAMI::Topology ((pami_task_t*)_srcranks + srcindex, ntotal_src - srcindex);
-              new (_dsttopologies[count]) PAMI::Topology ((pami_task_t*)_dstranks + dstindex, ntotal_dst - dstindex);
-
-              CCMI_assert (_srctopologies[count]->type() == PAMI_LIST_TOPOLOGY);
-              CCMI_assert (_dsttopologies[count]->type() == PAMI_LIST_TOPOLOGY);
+              new (_srctopologies[count]) PAMI::Topology (_srcranks + srcindex, ntotal_src - srcindex);
+              new (_dsttopologies[count]) PAMI::Topology (_dstranks + dstindex, ntotal_dst - dstindex);
 
               _schedule->getSrcTopology(count, _srctopologies[count]);
               _schedule->getDstTopology(count, _dsttopologies[count]);
               srcindex += _srctopologies[count]->size();
               dstindex += _dsttopologies[count]->size();
             }
-
+	  
+	  //Build the next active phase list
+	  unsigned endphase = _start + _nphases - 1;
+	  unsigned next_active = endphase;	  	  
+	  int p = 0;
+	  for (p = (int)endphase; p >= (int)_start; p--) {
+	    _nextActivePhaseVec[p] = next_active;
+	    if (getNumSrcRanks(p) > 0 || getNumDstRanks(p) > 0) 
+	      next_active = p; //Use current phase as active phase
+	                       //for previous phases
+	  }
+	  
           //_schedule->getSrcUnionTopology(&_srcuniontopology);
           //_schedule->getDstUnionTopology(&_dstuniontopology);
 
@@ -193,12 +214,21 @@ namespace CCMI
           return _start + _nphases - 1;
         }
 
+	unsigned getLastCombinePhase() {
+	  return _lastCombinePhase;  //-1U if no data is combined on this rank
+	}
+
         unsigned  getLastReducePhase()
         {
           unsigned p = _schedule->getLastReducePhase();
           // If the schedule doesn't support it (-1), hardcode to end phase
           return p==-1U?_start + _nphases - 1:p;
         }
+
+	unsigned getNextActivePhase(unsigned p) {
+	  CCMI_assert ((p >= _start) && (p < _start + _nphases));
+	  return _nextActivePhaseVec[p];
+	}
 
         void setRoot(int root)
         {
@@ -228,9 +258,9 @@ inline void CCMI::Executor::ScheduleCache::allocate
  unsigned             nsrc,
  unsigned             ndst)
 {
-  //Compute space for nsrcranks, srcoffsets, srcranks, srcsubstasks +
-  //ndstranks, dstoffsets, dstranks, dstsubstasks
-  unsigned buf_size = 2 * (sizeof(PAMI::Topology *) + sizeof(pami_topology_t)) * nphases + (nsrc + ndst) * sizeof(size_t);
+  //Compute space for Topology pointers and topologies, srcranks and dstranks,
+  //and next active phase vector
+  unsigned buf_size = 2 * (sizeof(PAMI::Topology *) + sizeof(pami_topology_t)) * nphases + (nsrc + ndst) * sizeof(pami_task_t) + nphases * sizeof(int);
 
   if (_cachesize < buf_size)
     {
@@ -262,11 +292,14 @@ inline void CCMI::Executor::ScheduleCache::allocate
       offset += sizeof(pami_topology_t);
     }
 
-  _srcranks   =  (size_t *)(_cachebuf + offset);
-  offset       += nsrc * sizeof(size_t);
+  _srcranks   =  (pami_task_t *)(_cachebuf + offset);
+  offset     += nsrc * sizeof(pami_task_t);
 
-  _dstranks   =  (size_t *)(_cachebuf + offset);
-  offset       += ndst * sizeof(size_t);
+  _dstranks   =  (pami_task_t *)(_cachebuf + offset);
+  offset     += ndst * sizeof(pami_task_t);
+
+  _nextActivePhaseVec = (unsigned *) (_cachebuf + offset);
+  offset     += nphases * sizeof(int);
 
   CCMI_assert (offset == buf_size);
 }

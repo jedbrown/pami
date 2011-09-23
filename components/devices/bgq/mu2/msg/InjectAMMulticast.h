@@ -91,7 +91,7 @@ namespace PAMI
 		return false;
 	      
 	      char *src = _pwq->bufferToConsume();
-	      memcpy (packetBuf() + _metasize*sizeof(pami_quad_t), src, _bytes);	  
+	      memcpy(packetBuf()+_metasize*sizeof(pami_quad_t),src,_bytes); 
 	    }
 
             size_t ndesc = _channel.getFreeDescriptorCountWithUpdate ();

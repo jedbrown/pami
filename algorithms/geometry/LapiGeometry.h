@@ -854,7 +854,7 @@ namespace PAMI
         }
 
       
-      void setCleanupCallback(pami_event_function fcn, void *data)
+      void setCleanupCallback_impl(pami_event_function fcn, void *data)
         {
           _cleanupFcns.push_back(fcn);
           _cleanupDatas.push_back(data);

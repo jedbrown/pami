@@ -151,6 +151,10 @@ namespace CCMI
         TRACE_FN_EXIT();
       }
 
+      T_Conn * connmgr () { return _cmgr; }
+      
+      void *allocateObject () { return _alloc.allocateObject(); }
+
       T_Conn                                     * _cmgr;
       PAMI::MemoryAllocator < sizeof(collObj), 16 >   _alloc;
     };//CollectiveProtocolFactoryT

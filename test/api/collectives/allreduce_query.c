@@ -222,11 +222,10 @@ int main(int argc, char*argv[])
               blocking_coll(context[0], &barrier, &bar_poll_flag);
 
               int rc_check;
-              rc |= rc_check = reduce_check_rcvbuf (rbuf, i, op, dt, task_id, num_tasks);
-
+	      rc |= rc_check = reduce_check_rcvbuf (rbuf, i, op, dt, task_id, num_tasks);	      
               if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
 
-              usec = (tf - ti) / (double)niter;
+             usec = (tf - ti) / (double)niter;
 
               if (task_id == task_zero)
               {

@@ -91,6 +91,19 @@ namespace CCMI
         ///
         virtual void metadata(pami_metadata_t *m, pami_xfer_type_t t) {/* no override */};
 
+	///
+	/// \brief post a work function to be executed on the
+        /// communication thread. The color identifier can choose the
+        /// commuication thread relative to the context parameter.
+	///
+	virtual void postWork (pami_context_t         context, 
+			       int                    color,
+			       pami_work_t          * work, 
+			       pami_work_function    fn,
+			       void                 * clientdata)
+	{
+	  CCMI_abort();
+	}	
     };
   };
 };

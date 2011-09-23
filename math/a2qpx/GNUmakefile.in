@@ -11,6 +11,6 @@
 
 VPATH		        = @abs_srcdir@
 SUBDIRS		        =
-@LIBNAME@-""-A2QPX_MATH_SOURCES	= qpx_copy.cc double_ops.cc int_ops.cc
+@LIBNAME@-""-A2QPX_MATH_SOURCES	= qpx_copy.cc double_ops.cc int_ops.cc qpx_math.cc
 DEVICENAME	        = @LIBNAME@-""-A2QPX_MATH
 include @abs_top_builddir@/Build.rules

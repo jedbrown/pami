@@ -165,6 +165,8 @@ public:
         return _cmgr;
     }
 
+    void setContext (pami_context_t context) {}
+
 }; //- AsyncAllreduceT
 
 template <class T_Composite, MetaDataFn get_metadata, class T_Conn, class T_reduce_type, ConnectionManager::GetKeyFn getKey>
@@ -300,6 +302,7 @@ public:
             a_composite->executor().setReduceConnectionManager(_cmgr);
             a_composite->executor().setBroadcastConnectionManager(_cmgr);
             a_composite->executor().setReduceInfo(a_xfer->stypecount, bytes, sizeOfType, func, (TypeCode *)a_xfer->stype, (TypeCode *)a_xfer->rtype, (pami_op)op, (pami_dt)dt);
+	    //a_composite->executor().reset();
         }
         /// not found posted CollOp object, create a new one and
         /// queue it in active queue
@@ -330,9 +333,9 @@ public:
         }
 
         geometry->asyncCollectivePostQ().pushTail(co);
-        DEBUG((stderr, "key = %d, start executor in generate()\n", key);)
-        a_composite->executor().start();
-
+        DEBUG((stderr, "key = %d, start executor in generate()\n", key););
+	a_composite->executor().start();
+		    
         return NULL;
     }
 

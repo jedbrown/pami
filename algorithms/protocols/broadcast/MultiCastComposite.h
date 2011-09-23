@@ -110,6 +110,8 @@ namespace CCMI
         TRACE_FN_EXIT();
         }
 
+        void setContext (pami_context_t context) {}
+
         virtual void start()
         {
           TRACE_FN_ENTER();

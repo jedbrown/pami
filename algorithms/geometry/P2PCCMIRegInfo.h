@@ -33,6 +33,7 @@
 #include "algorithms/protocols/broadcast/AsyncBroadcastT.h"
 #include "algorithms/protocols/ambcast/AMBroadcastT.h"
 #include "algorithms/protocols/allreduce/MultiColorCompositeT.h"
+#include "algorithms/protocols/allreduce/AsyncOATCompositeT.h"
 #include "algorithms/protocols/allreduce/ProtocolFactoryT.h"
 #include "algorithms/protocols/allreduce/AsyncAllreduceT.h"
 #include "algorithms/protocols/amcollectives/AMReduceT.h"
@@ -948,31 +949,29 @@ namespace CCMI
           new(m) PAMI::Geometry::Metadata("I0:Binomial:P2P:P2P");
         }
 
-        typedef CCMI::Adaptor::Allreduce::MultiColorCompositeT
-        < 1, CCMI::Executor::AllreduceBaseExec<CCMI::ConnectionManager::RankBasedConnMgr>,
-          CCMI::Schedule::TopoMultinomial,
-          CCMI::ConnectionManager::RankBasedConnMgr,
-          get_colors > Composite;
+        typedef CCMI::Adaptor::Allreduce::AsyncOATCompositeT
+	  < CCMI::Executor::AllreduceBaseExec<CCMI::ConnectionManager::RankBasedConnMgr, true>,
+	  CCMI::Schedule::TopoMultinomial,
+	  CCMI::ConnectionManager::RankBasedConnMgr > Composite;	
 
         typedef CCMI::Adaptor::Allreduce::ProtocolFactoryT
-        < Composite,
+	  < Composite,
           binomial_allreduce_metadata,
           CCMI::ConnectionManager::RankBasedConnMgr>
-        Factory;
+	  Factory;
 
         extern inline void binomial4_allreduce_metadata(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("X0:MultinomialRadix4:P2P:P2P");
         }
 
-        typedef CCMI::Adaptor::Allreduce::MultiColorCompositeT
-        < 1, CCMI::Executor::AllreduceBaseExec<CCMI::ConnectionManager::RankBasedConnMgr>,
+        typedef CCMI::Adaptor::Allreduce::AsyncOATCompositeT
+	< CCMI::Executor::AllreduceBaseExec<CCMI::ConnectionManager::RankBasedConnMgr>,
           CCMI::Schedule::TopoMultinomial4,
-          CCMI::ConnectionManager::RankBasedConnMgr,
-          get_colors > Composite4;
+          CCMI::ConnectionManager::RankBasedConnMgr > Composite4;
 
         typedef CCMI::Adaptor::Allreduce::ProtocolFactoryT
-        < Composite4,
+	< Composite4,
           binomial4_allreduce_metadata,
           CCMI::ConnectionManager::RankBasedConnMgr>
         Factory4;
@@ -982,11 +981,10 @@ namespace CCMI
           new(m) PAMI::Geometry::Metadata("X0:MultinomialRadix8:P2P:P2P");
         }
 
-        typedef CCMI::Adaptor::Allreduce::MultiColorCompositeT
-        < 1, CCMI::Executor::AllreduceBaseExec<CCMI::ConnectionManager::RankBasedConnMgr>,
-          CCMI::Schedule::TopoMultinomial8,
-          CCMI::ConnectionManager::RankBasedConnMgr,
-          get_colors > Composite8;
+        typedef CCMI::Adaptor::Allreduce::AsyncOATCompositeT
+	< CCMI::Executor::AllreduceBaseExec<CCMI::ConnectionManager::RankBasedConnMgr>,
+	  CCMI::Schedule::TopoMultinomial8,
+          CCMI::ConnectionManager::RankBasedConnMgr> Composite8;
 
         typedef CCMI::Adaptor::Allreduce::ProtocolFactoryT
         < Composite8,
@@ -1040,6 +1038,27 @@ namespace CCMI
          pami_reduce_t, getKey> AsyncCSBinomReduceFactory;
 
       };//Binomial
+
+      namespace Ring {
+	extern inline void ring_allreduce_metadata(pami_metadata_t *m)
+        {
+          new(m) PAMI::Geometry::Metadata("I0:Ring:P2P:P2P");
+        }
+
+        typedef CCMI::Adaptor::Allreduce::MultiColorCompositeT
+        < 1, CCMI::Executor::PipelinedAllreduce<CCMI::ConnectionManager::SimpleConnMgr>,
+          CCMI::Schedule::RingSchedule,
+          CCMI::ConnectionManager::SimpleConnMgr,
+          Binomial::get_colors,
+	  1 > Composite;
+
+        typedef CCMI::Adaptor::Allreduce::ProtocolFactoryT
+	< Composite,
+          ring_allreduce_metadata,
+          CCMI::ConnectionManager::SimpleConnMgr>
+	  Factory;
+      }; //Ring
+
     };//Allreduce
 
     namespace P2PAMReduce

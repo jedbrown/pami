@@ -209,6 +209,8 @@ public:
 		
     }
 
+    void setContext (pami_context_t context) {}	
+
     void setScatterExecutor (char *sbuf, char *rbuf, size_t *stypecounts, size_t myrank,
                              TypeCode * stype, unsigned counts, bool isRoot, unsigned root,
                              pami_callback_t  cb_done)
@@ -513,7 +515,7 @@ public:
         unsigned root = topo->index2Rank(0);
         CCMI_assert(cdata->_root == root);
 
-        T_Conn *cmgr = NULL;
+        T_Conn *cmgr;
         CCMI_assert(conn_id != -1U);
         unsigned key = getKey (root, conn_id, geometry, (ConnectionManager::BaseConnectionManager **) & cmgr);
         CCMI_assert(cmgr == NULL); // ? Why rely on getkey to null it?

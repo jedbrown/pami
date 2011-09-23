@@ -55,7 +55,9 @@ namespace CCMI
         CollectiveProtocolFactory (Interfaces::NativeInterface  * native):
           _cb_geometry(NULL),
           _context(NULL),
-          _native(native)
+          _native(native),
+	  _cached_commid((unsigned)-1),
+	  _cached_geometry(NULL)
         {
           TRACE_FN_ENTER();
           TRACE_FORMAT("<%p> native %p",this,native);
@@ -81,10 +83,21 @@ namespace CCMI
         {
           TRACE_FN_ENTER();
           TRACE_FORMAT("<%p>",this);
-          CCMI_assert (_cb_geometry != NULL);
-          TRACE_FN_EXIT();
-          return _cb_geometry (ctxt, id);  // -1, the function is scoped to the geometry
+
+	  if (id != _cached_commid) {
+	    _cached_commid = id;
+	    CCMI_assert (_cb_geometry != NULL);
+	    _cached_geometry =  _cb_geometry (ctxt, id);  
+	  }
+	  
+	  TRACE_FN_EXIT();
+	  return _cached_geometry;
         }
+
+	virtual void clearCache() {
+	  _cached_commid = (unsigned)-1;
+	  _cached_geometry = NULL;
+	}
 
         virtual ~CollectiveProtocolFactory ()
         {
@@ -148,10 +161,15 @@ namespace CCMI
           TRACE_FN_EXIT();
           return _context;
         }
+
+	Interfaces::NativeInterface *native() { return _native; }
+
       protected:
         pami_mapidtogeometry_fn              _cb_geometry;
         pami_context_t                       _context;
-        Interfaces::NativeInterface        * _native;
+        Interfaces::NativeInterface        * _native;	
+	unsigned                             _cached_commid;
+	pami_geometry_t                      _cached_geometry;
     };
   };
 };

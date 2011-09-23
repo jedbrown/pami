@@ -32,9 +32,9 @@ namespace CCMI
         /* This class is really just a place holder for future extensions.  */
         SimpleConnMgr (int conn = 0)
             : ConnectionManager<SimpleConnMgr>()
-            , _connid(0)
+            , _connid(conn)
         {
-          this->setNumConnections (conn == 0 ? 1 : conn );
+          this->setNumConnections (1);
         }
         ///
         /// \brief Virtual destructors make compilers happy.

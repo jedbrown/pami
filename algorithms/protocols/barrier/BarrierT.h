@@ -127,16 +127,17 @@ public:
 
         PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) this->getGeometry(ctxt, id);
         _cached_object =  (geometry) ? (geometry->getKey(0, T_Key)) : NULL;
-
-        //  Here we set the cached id back to the normal value
-        //  of -1 because the user may re-use geometry ids, and we may errantly
-        //  cache the id.  Set this to id if the user will not re-use
-        //  geometry id's in a create/destroy cycle.
-        // _cached_id     =  id;
-        _cached_id     =  -1;
+	_cached_id     =  id;
 
         return _cached_object;
     }
+
+    virtual void clearCache () {
+      CollectiveProtocolFactory::clearCache();
+      _cached_id = (unsigned) -1;
+      _cached_object = NULL;
+    }
+
 
     static void    cb_head   (pami_context_t         ctxt,
                               const pami_quad_t    * info,
@@ -301,6 +302,9 @@ public:
         return((AnalyzeFn) afn)(geometry);
     }
 
+    void setContext (pami_context_t context) {
+      _myexecutor.setContext(context);
+    }
 
     virtual void start()
     {

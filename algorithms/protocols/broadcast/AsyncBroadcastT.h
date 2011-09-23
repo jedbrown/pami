@@ -80,6 +80,8 @@ public:
         TRACE_FN_EXIT();
     }
 
+    void setContext (pami_context_t context) {}
+
     CCMI::Executor::BroadcastExec<T_Conn> &executor()
     {
         return _executor;

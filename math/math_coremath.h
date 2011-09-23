@@ -170,7 +170,7 @@ extern void *math_op_funcs[PAMI_OP_COUNT][PAMI_DT_COUNT][MATH_MAX_NSRC];
  * \param nsrc	Number of input buffers
  * \return	Pointer to coremath function
  */
-static inline coremath MATH_OP_FUNCS(pami_dt dt, pami_op op, int nsrc) {
+inline coremath MATH_OP_FUNCS(pami_dt dt, pami_op op, int nsrc) {
         PAMI_assert(nsrc < MATH_MAX_NSRC);
         int n = nsrc - 1;
         return (coremath)(math_op_funcs[op][dt][n] ?

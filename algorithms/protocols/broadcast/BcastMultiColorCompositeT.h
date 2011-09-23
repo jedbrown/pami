@@ -91,6 +91,8 @@ namespace CCMI
           TRACE_FN_EXIT();
         }
 
+        void setContext (pami_context_t context) {}
+
         void reset (pami_geometry_t                             g,
                     void                                     * cmd) 
         {

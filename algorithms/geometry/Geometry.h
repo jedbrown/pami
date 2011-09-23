@@ -95,7 +95,7 @@ namespace PAMI
       _ranks_malloc(false),
       _ranks(ranks),
       _geometry_map(geometry_map),
-      _allreduce_async_mode(0),
+      _allreduce_async_mode(1),
       _allreduce_iteration(0),
       _masterRank(-1),
       _cb_result(PAMI_EAGAIN)
@@ -143,7 +143,7 @@ namespace PAMI
       _ranks_malloc(false),
       _ranks(NULL),
       _geometry_map(geometry_map),
-      _allreduce_async_mode(0),
+      _allreduce_async_mode(1),
       _allreduce_iteration(0),
       _masterRank(-1),
       _cb_result(PAMI_EAGAIN)
@@ -278,7 +278,7 @@ namespace PAMI
       _ranks_malloc(false),
       _ranks(NULL), 
       _geometry_map(geometry_map),
-      _allreduce_async_mode(0),
+      _allreduce_async_mode(1),
       _allreduce_iteration(0),
       _masterRank(-1),
       _cb_result(PAMI_EAGAIN)
@@ -898,7 +898,7 @@ namespace PAMI
         return _client;
       }
 
-      void setCleanupCallback(pami_event_function fcn, void *data)
+      void setCleanupCallback_impl(pami_event_function fcn, void *data)
       {
         _cleanupFcns.push_back(fcn);
         _cleanupDatas.push_back(data);

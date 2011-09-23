@@ -34,16 +34,26 @@ namespace Allreduce
 template <class T_Composite, MetaDataFn get_metadata, class T_Conn>
 class ProtocolFactoryT: public CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>
 {
+  T_Conn                           *_bcmgr;
+  bool                              _isAsync;
+
 public:
-    ProtocolFactoryT (T_Conn                      *cmgr,
+    ProtocolFactoryT (T_Conn                      *rcmgr,
                       Interfaces::NativeInterface *native,
-                      pami_dispatch_multicast_function cb_head = NULL):
-        CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>(cmgr, native, cb_head)
+                      pami_dispatch_multicast_function cb_head = NULL,
+		      T_Conn                      *bcmgr=NULL):
+        CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>(rcmgr, native, cb_head)
     {
         TRACE_FN_ENTER();
         TRACE_FORMAT("%p", this);
+
+	_bcmgr = bcmgr;
+	_isAsync = false;
+
         TRACE_FN_EXIT();
     }
+
+    void setAsync () { _isAsync = true; }
 
     virtual ~ProtocolFactoryT ()
     {
@@ -63,19 +73,26 @@ public:
     {
         TRACE_FN_ENTER();
         PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)g;
-        T_Composite * arcomposite = (T_Composite *)geometry->getAllreduceComposite();
+	
+	unsigned iteration = 0;
+	if (_isAsync) 
+	  iteration = geometry->getAllreduceIteration();	
+
+	//fprintf (stderr, "Starting collective on iteration %d\n", iteration);
+
+        T_Composite * arcomposite = (T_Composite *)geometry->getAllreduceComposite(iteration);
         TRACE_FORMAT("%p composite %p", this,arcomposite);
 
         pami_xfer_t *allreduce = (pami_xfer_t *)cmd;
 
         ///If the allreduce algorithm was created by this factory before, just restart it
-        if (arcomposite != NULL  &&  arcomposite->getAlgorithmFactory() == this)
+        if (arcomposite != NULL && arcomposite->getAlgorithmFactory() == this)
         {
-            pami_result_t status =  (pami_result_t)arcomposite->restart(allreduce);
+            pami_result_t status = (pami_result_t)arcomposite->restart(allreduce);
 
             if (status == PAMI_SUCCESS)
             {
-                geometry->setAllreduceComposite(arcomposite);
+	        geometry->setAllreduceComposite(arcomposite, iteration);
                 TRACE_FN_EXIT();
                 return NULL;
             }
@@ -83,26 +100,34 @@ public:
 
         if (arcomposite != NULL) // Different factory?  Cleanup old executor.
         {
-            geometry->setAllreduceComposite(NULL);
-            arcomposite->~T_Composite(); //Call destructor
-            CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_alloc.returnObject(arcomposite);
+	  geometry->setAllreduceComposite(NULL, iteration);
+	  arcomposite->~T_Composite(); //Call destructor
+	  CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_alloc.returnObject(arcomposite);
         }
 
         T_Composite* obj = (T_Composite*)CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_alloc.allocateObject();
         TRACE_FORMAT("%p composite %p", this,arcomposite);
-        obj->setContext(this->_context);
-        geometry->setAllreduceComposite(obj);
-        new (obj) T_Composite(CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_native,  // Native interface
+        geometry->setAllreduceComposite(obj, iteration);
+        new (obj) T_Composite(this->_context,
+			      CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_native,  // Native interface
                               CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_cmgr,    // Connection Manager
+			      _bcmgr,
                               geometry,          // Geometry Object
                               (pami_xfer_t*) cmd, // Parameters
                               allreduce->cb_done,
                               allreduce->cookie);
+        obj->setContext(this->_context);
+	obj->setAlgorithmFactory(this);
+
+	if (_isAsync)
+	  geometry->incrementAllreduceIteration_impl();
 
         TRACE_FN_EXIT();
         return NULL;
     }
-};
+
+    T_Conn *getBcastConnMgr() { return _bcmgr; }
+ };
 };
 };
 }; //CCMI

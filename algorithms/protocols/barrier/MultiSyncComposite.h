@@ -94,7 +94,6 @@ namespace CCMI{namespace Adaptor{namespace Barrier{
         TRACE_FN_EXIT();
       }
 
-
     virtual Executor::Composite * generate(pami_geometry_t             geometry,
                                            void                      * cmd)
       {

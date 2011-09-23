@@ -49,23 +49,40 @@ namespace CCMI
       /// callback and the [all]reduce done callback to call the
       /// client done callback.
       ///
-      template <int NUMCOLORS, class T_Exec, class T_Sched, class T_Conn, Executor::GetColorsFn pwcfn>
+      template <int NUMCOLORS, class T_Exec, class T_Sched, class T_Conn, Executor::GetColorsFn pwcfn,int T_PostReceives = 0>
       class MultiColorCompositeT : public Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>
-      {
+	{
+	protected:
+	pami_work_t              _work;
+	PAMI_GEOMETRY_CLASS    * _geometry;
+	T_Conn                 * _bcmgr;
+
         public:
-          MultiColorCompositeT ()
+	  MultiColorCompositeT ()
           {
             CCMI_abort();
           }
 
-          MultiColorCompositeT (Interfaces::NativeInterface              * mf,
-                                T_Conn                                   * cmgr,
+	  MultiColorCompositeT (Interfaces::NativeInterface              * mf,
+				T_Conn                                   * rcmgr,
+				pami_geometry_t                             g,
+				void                                     * cmd,
+				pami_event_function                         fn,
+				void                                     * cookie)
+	  {
+	    CCMI_abort();
+	  }
+	
+	  MultiColorCompositeT (pami_context_t                             context,
+                                Interfaces::NativeInterface              * mf,
+				T_Conn                                   * rcmgr,
+				T_Conn                                   * bcmgr,
                                 pami_geometry_t                             g,
                                 void                                     * cmd,
                                 pami_event_function                         fn,
                                 void                                     * cookie):
               Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>
-              (cmgr,
+              (rcmgr,
                fn,
                cookie,
                mf,
@@ -73,12 +90,15 @@ namespace CCMI
           {
             TRACE_FN_ENTER();
             uintptr_t op, dt;
+	    _geometry = (PAMI_GEOMETRY_CLASS*) g;
             PAMI::Type::TypeFunc::GetEnums(((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype,
                                            ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.op,
                                            dt,op);
             TRACE_FORMAT( "<%p>Allreduce::MultiColorCompositeT::ctor() count %zu, dt %#X, op %#X\n", this, ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount,
                            (pami_dt)dt, (pami_op)op);
 
+	    this->_context = context;
+	    _bcmgr         = bcmgr;
 
             TypeCode * stype_obj = (TypeCode *)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype;
             TypeCode * rtype_obj = (TypeCode *)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rtype;
@@ -97,7 +117,7 @@ namespace CCMI
                         ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.sndbuf,
                         ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rcvbuf);
 
-            int iteration = ((PAMI_GEOMETRY_CLASS *)g)->getAllreduceIteration();
+	    int iteration = 0; //((PAMI_GEOMETRY_CLASS *)g)->getAllreduceIteration();
 
             for (unsigned c = 0; c < Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::_numColors; c++)
               {
@@ -108,12 +128,21 @@ namespace CCMI
                            (pami_dt)dt,(pami_op)op);
                 allreduce->reset();
                 allreduce->setIteration(iteration);
+
+		if (bcmgr)
+		  allreduce->setBroadcastConnectionManager(bcmgr);		
               }
 
+
+	    if (T_PostReceives) {
+	      postReceives();
+	      mf->postWork (this->_context, 0, &_work, static_advance, this);
+	    }	    
+	    
             PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)g;
             CCMI::Executor::Composite  *barrier =  (CCMI::Executor::Composite *)
                                                    geometry->getKey((size_t)0, /// \todo does NOT support multicontext
-                                                                    PAMI::Geometry::CKEY_BARRIERCOMPOSITE1);
+                                                                    PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE);
 
             Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::addBarrier(barrier);
             barrier->setDoneCallback(Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::cb_barrier_done, this);
@@ -121,6 +150,18 @@ namespace CCMI
             TRACE_FN_EXIT();
           }
 
+
+	void setContext (pami_context_t context) {
+	  this->_context = context;
+	}
+       
+	void postReceives () {
+	  for (unsigned c = 0; c < this->_numColors; c++)
+	  {
+	    T_Exec *allreduce = (T_Exec *)this->getExecutor(c);
+	    allreduce->postReceives();
+	  }       
+	}
 
           /// Default Destructor
           virtual ~MultiColorCompositeT()
@@ -195,13 +236,13 @@ namespace CCMI
             unsigned pwidth = min_pwidth;
 
             if (count * sizeOfType > 1024 * pwidth)
-              pwidth *= 32;
+	      pwidth *= 16;
             else if (count * sizeOfType > 256  * pwidth)
-              pwidth *= 16;
-            else if (count * sizeOfType > 64 * pwidth)
-              pwidth *= 8;
-            else if (count * sizeOfType > 16 * pwidth)
-              pwidth *= 4;
+	      pwidth *= 8;
+            else if (count * sizeOfType > 64  * pwidth)
+	      pwidth *= 4;            	
+	    else if (count * sizeOfType > 16  * pwidth)
+	      pwidth *= 2;
 
             TRACE_FORMAT( "<%p>Allreduce::MultiColorCompositeT::computePipelineWidth() pwidth %#X\n", this,
                            pwidth);
@@ -213,29 +254,52 @@ namespace CCMI
           /// \brief At this level we only support single color
           /// collectives
           ///
-          virtual unsigned restart   ( void *cmd )
+	  virtual unsigned restart   ( void *cmd )
           {
             TRACE_FN_ENTER();
-            TRACE_FORMAT( "<%p>", this);
+            TRACE_FORMAT( "<%p>", this);	    	    
 
+	    uintptr_t op, dt;
+	    PAMI::Type::TypeFunc::GetEnums(((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype,
+					   ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.op,
+					   dt,op);
+	    
+	    TypeCode * stype_obj = (TypeCode *)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype;
+            TypeCode * rtype_obj = (TypeCode *)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rtype;
+	    
+	    Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::
+	    reset (_geometry->comm(),
+		   (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX),
+		   (unsigned) - 1,/*((pami_allreduce_t *)cmd)->root,*/
+		   ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount,
+		   stype_obj,
+		   ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rtypecount,
+		   rtype_obj,
+		   ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.sndbuf,
+		   ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rcvbuf);
+
+	    int iteration = 0; //_geometry->getAllreduceIteration();
             for (unsigned c = 0; c <  Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::_numColors; c++)
               {
                 T_Exec *allreduce = Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::getExecutor(c);
-                uintptr_t op, dt;
-                PAMI::Type::TypeFunc::GetEnums(((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype,
-                                               ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.op,
-                                               dt,op);
                 initialize(allreduce,
                            ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount,
-                           (TypeCode *)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype,
-                           (TypeCode *)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rtype,
+			   stype_obj,
+			   rtype_obj,   
                            (pami_dt)dt,
                            (pami_op)op);
 
                 allreduce->reset();
+		allreduce->setIteration(iteration);
+
+		if (_bcmgr)
+		  allreduce->setBroadcastConnectionManager(_bcmgr);     
               }
 
-            Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::_doneCount = 0; // default to just a composite done needed
+	    if (T_PostReceives) {
+	      postReceives();	      
+	      this->_native->postWork(this->_context, 0, &_work, static_advance, this);
+	    }	    
 
             Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::restart(cmd);
             TRACE_FN_EXIT();
@@ -250,6 +314,21 @@ namespace CCMI
             TRACE_FN_EXIT();
             //Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::getExecutor(0)->start();
           }
+
+	  static pami_result_t static_advance (pami_context_t     context,
+					       void             * clientdata)
+	  {
+	    pami_result_t erc = PAMI_SUCCESS, rc = PAMI_SUCCESS;
+	    MultiColorCompositeT *composite = (MultiColorCompositeT*)clientdata;
+	    for (unsigned i = 0; i < composite->_numColors; ++i) {
+	      T_Exec *executor = composite->getExecutor(i);
+	      erc = executor->advance();
+	      if (erc != PAMI_SUCCESS)
+		rc = erc;
+	    }
+	    return rc;
+	  }
+
 
           ///
           /// \brief Generate a non-blocking allreduce message.
@@ -274,8 +353,8 @@ namespace CCMI
             CollectiveProtocolFactory *factory = (CollectiveProtocolFactory *) arg;
 
             Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn> *composite = (Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn> *)
-                ((PAMI_GEOMETRY_CLASS *)factory->getGeometry(ctxt, cdata->_comm))->getAllreduceComposite(cdata->_iteration);
-
+	    ((PAMI_GEOMETRY_CLASS *)factory->getGeometry(ctxt, cdata->_comm))->getAllreduceComposite(0 /*cdata->_iteration*/);
+	    
             CCMI_assert (composite != NULL);
             //Use color 0 for now
             T_Exec *executor = composite->getExecutor(0);

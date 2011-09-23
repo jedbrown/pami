@@ -220,8 +220,7 @@ namespace PAMI
                                              CCMI::Adaptor::CollectiveProtocolFactory  *factory,
                                              size_t                                     context_id);
 
-
-
+      inline void setCleanupCallback(pami_event_function fcn, void *data);
 
     }; // class Geometry
 
@@ -643,6 +642,12 @@ namespace PAMI
       return static_cast<T_Geometry*>(this)->rmCollectiveCheck_impl(xfer_type,factory,context_id);
     }
 
+    template <class T_Geometry>
+    inline void Geometry<T_Geometry>::setCleanupCallback(pami_event_function   fcn, 
+							 void                * data)
+    {
+      return static_cast<T_Geometry*>(this)->setCleanupCallback_impl (fcn, data);
+    }
 
   }; // namespace Geometry
 }; // namespace PAMI

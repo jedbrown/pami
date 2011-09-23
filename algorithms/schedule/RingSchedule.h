@@ -247,7 +247,10 @@ namespace CCMI
             }
             else if (_isTail)
             {
-              _bcastStart = _startPhase + 2 * (_nranks - 2 - _startPhase);
+	      if (_nranks > 2)
+		_bcastStart = _startPhase + 2 * (_nranks - 2 - _startPhase);
+	      else 
+		_bcastStart = _startPhase + 1;
               _nphases = _bcastStart + 1;
             }
             else //everyone else
@@ -285,20 +288,10 @@ namespace CCMI
         TRACE_FN_EXIT();
       }
 
-      virtual void
-      init(int root, int op, int &startphase, int &nphases, int &maxranks)
-      {
-        PAMI_abort();
-      }
-      virtual void getSrcPeList (unsigned  phase, unsigned *srcpes,
-                                 unsigned  &nsrc, unsigned *subtasks = NULL)
-      {
-        PAMI_abort();
-      }
-      virtual void getDstPeList (unsigned  phase, unsigned *dstpes,
-                                 unsigned  &ndst, unsigned *subtasks)
-      {
-        PAMI_abort();
+      virtual unsigned getLastReducePhase () {
+	if (_op == ALLREDUCE_OP)
+	  return _bcastStart - 1;
+	return -1;
       }
 
       /**

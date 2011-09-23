@@ -34,6 +34,8 @@
 #define FREE_SHMEM(memptr)	\
 	//mm->free(memptr)
 
+//#define ENABLE_WAKEUP
+
 #define WAKEUP(vector)	\
 	// _wakeupManager().wakeup(vector)
 
@@ -52,24 +54,24 @@ class PipeWorkQueue : public Interface::PipeWorkQueue<PAMI::PipeWorkQueue> {
 	struct workqueue_hdr_t {
 		volatile size_t producedBytes;
 		volatile size_t consumedBytes;
-		volatile void *producerWakeVec;
-		volatile void *consumerWakeVec;
-		volatile void *producerWord1;
-		volatile void *producerWord2;
-		volatile void *consumerWord1;
-		volatile void *consumerWord2;
+	  //volatile void *producerWakeVec;
+	  //volatile void *consumerWakeVec;
+	  //volatile void *producerWord1;
+	  //volatile void *producerWord2;
+	  //volatile void *consumerWord1;
+	  //volatile void *consumerWord2;
 	};
-	static const int PWQ_HDR_NQUADS = ((sizeof(struct workqueue_hdr_t) + sizeof(pami_quad_t) - 1) / sizeof(pami_quad_t));
+
 	///
 	/// \brief Work queue structure in shared memory
 	///
 	typedef struct workqueue_t {
-		union {
+	        union {
 			struct workqueue_hdr_t _s;
-			pami_quad_t _pad[PWQ_HDR_NQUADS];
+		  //	pami_quad_t _pad[PWQ_HDR_NQUADS];
 		} _u;
-		volatile char buffer[0]; ///< Producer-consumer buffer
-	} workqueue_t __attribute__((__aligned__(16)));
+	        //volatile char buffer[0]; ///< Producer-consumer buffer
+	} workqueue_t; // __attribute__((__aligned__(16)));
 
 	typedef struct export_t {
 		uint64_t bufPaddr;	// memregion?
@@ -99,7 +101,8 @@ public:
 		TRACE_ERR((stderr, "%s enter\n", __PRETTY_FUNCTION__));
 		ALLOC_SHMEM(_sharedqueue, 16, size, key);
 		PAMI_assert_debugf(_sharedqueue, "failed to allocate shared memory\n");
-		_buffer = &_sharedqueue->buffer[0];
+		//_buffer = &_sharedqueue->buffer[0];
+		_buffer = (char*)_sharedqueue + sizeof(workqueue_t);
 		PAMI_assert_debugf((_qsize & (_qsize - 1)) == 0, "workqueue size is not power of two\n");
 #ifdef OPTIMIZE_FOR_FLAT_WORKQUEUE
 		_pmask = 0; // nil mask
@@ -125,7 +128,7 @@ public:
 		TRACE_ERR((stderr, "%s enter\n", __PRETTY_FUNCTION__));
 		ALLOC_SHMEM(_sharedqueue, 16, size, key);
 		PAMI_assert_debugf(_sharedqueue, "failed to allocate shared memory\n");
-		_buffer = &_sharedqueue->buffer[0];
+		_buffer = (char*)_sharedqueue + sizeof(workqueue_t);
 		PAMI_assert_debugf((_qsize & (_qsize - 1)) == 0, "workqueue size is not power of two\n");
 		_pmask = _qsize - 1;
 	}
@@ -178,7 +181,7 @@ public:
 		_pmask = (unsigned)-1; // nil mask
 #endif /* !OPTIMIZE_FOR_FLAT_WORKQUEUE */
 		_prod_tm = _cons_tm = NULL;
-		if (prod_dt && !prod_dt->IsContiguous()) {
+		if (unlikely(prod_dt && !prod_dt->IsContiguous())) {
 			PAMI_assert_debugf(bufsize ==
 				(bufsize / prod_dt->GetExtent()) * prod_dt->GetExtent(),
 				"bufsize is not multiple of producer datatype extent");
@@ -191,7 +194,7 @@ public:
 			_qsize = (bufsize / prod_dt->GetExtent()) * prod_dt->GetDataSize();
 			_isize = (bufinit / prod_dt->GetExtent()) * prod_dt->GetDataSize();
 		}
-		if (cons_dt && !cons_dt->IsContiguous()) {
+		if (unlikely(cons_dt && !cons_dt->IsContiguous())) {
 			PAMI_assert_debugf(bufsize ==
 				(bufsize / cons_dt->GetExtent()) * cons_dt->GetExtent(),
 				"bufsize is not multiple of consumer datatype extent");
@@ -249,11 +252,26 @@ public:
 	inline void reset_impl() {
 		_sharedqueue->_u._s.producedBytes = _isize;
 		_sharedqueue->_u._s.consumedBytes = 0;
-		_sharedqueue->_u._s.producerWakeVec = NULL;
-		_sharedqueue->_u._s.consumerWakeVec = NULL;
-		if (_prod_tm) _prod_tm->MoveCursor(_isize);
-		if (_cons_tm) _cons_tm->MoveCursor(0);
-    Memory::sync();
+		//_sharedqueue->_u._s.producerWakeVec = NULL;
+		//_sharedqueue->_u._s.consumerWakeVec = NULL;
+		if (unlikely(_prod_tm != NULL)) _prod_tm->MoveCursor(_isize);
+		if (unlikely(_cons_tm != NULL)) _cons_tm->MoveCursor(0);
+		Memory::sync();
+	}
+
+	///
+	/// \brief Reset this shared memory work queue.
+	///
+	/// Sets the number of bytes produced and the number of bytes
+	/// consumed by each consumer to zero.
+	///
+	inline void reset_nosync_impl() {
+		_sharedqueue->_u._s.producedBytes = _isize;
+		_sharedqueue->_u._s.consumedBytes = 0;
+		//_sharedqueue->_u._s.producerWakeVec = NULL;
+		//_sharedqueue->_u._s.consumerWakeVec = NULL;
+		if (unlikely(_prod_tm != NULL)) _prod_tm->MoveCursor(_isize);
+		if (unlikely(_cons_tm != NULL)) _cons_tm->MoveCursor(0);
 	}
 
 	///
@@ -286,13 +304,13 @@ public:
 
 		fprintf(stderr, "%s dump(%p) _sharedqueue = %p, "
 			"size = %u, init size = %u, mask = 0x%08x, "
-			"wake p=%p c=%p, "
+			//"wake p=%p c=%p, "
 			"produced bytes = %zu (%zu) {tm: %zu %zu}, "
 			"consumed bytes = %zu (%zu) {tm: %zu %zu}\n",
 			prefix, this, _sharedqueue,
 			_qsize, _isize, _pmask,
-			_sharedqueue->_u._s.producerWakeVec,
-			_sharedqueue->_u._s.consumerWakeVec,
+			//_sharedqueue->_u._s.producerWakeVec,
+			//_sharedqueue->_u._s.consumerWakeVec,
 			pbytes0, bytesAvailableToProduce(),
 			_prod_tm ? _prod_tm->GetCursor() : 0,
 			_prod_tm ? _prod_tm->GetCursorDisp() : 0,
@@ -351,6 +369,7 @@ public:
 	/// \param[in] vec	Opaque wakeup vector parameter
 	///
 	inline void setConsumerWakeup_impl(void *vec) {
+#ifdef ENABLE_WAKEUP
 		_sharedqueue->_u._s.consumerWakeVec = vec;
 		// It's possible that bytes have already been produced.
 		// So we may need to do a wakeup manually.
@@ -358,6 +377,7 @@ public:
 		if (vec && _sharedqueue->_u._s.producedBytes != 0) {
 			WAKEUP(vec);
 		}
+#endif
 	}
 
 	/// \brief register a wakeup for the producer side of the PipeWorkQueue
@@ -365,9 +385,10 @@ public:
 	/// \param[in] vec	Opaque wakeup vector parameter
 	///
 	inline void setProducerWakeup_impl(void *vec) {
-		_sharedqueue->_u._s.producerWakeVec = vec;
+	       //_sharedqueue->_u._s.producerWakeVec = vec;
 	}
 
+#if 0
 	inline void setConsumerUserInfo_impl(void *word1, void *word2) {
 		_sharedqueue->_u._s.consumerWord1 = word1;
 		_sharedqueue->_u._s.consumerWord2 = word2;
@@ -387,6 +408,7 @@ public:
 		*word1 = (void *)_sharedqueue->_u._s.producerWord1;
 		*word2 = (void *)_sharedqueue->_u._s.producerWord2;
 	}
+#endif
 
 	///
 	/// \brief Return the maximum number of bytes that can be produced into this work queue.
@@ -549,12 +571,14 @@ public:
 		if (unlikely(_prod_tm != NULL)) {
 			_prod_tm->MoveCursor(_sharedqueue->_u._s.consumedBytes);
 		}
+#ifdef ENABLE_WAKEUP
 		// cast undoes "volatile"...
 		void *v = (void *)_sharedqueue->_u._s.consumerWakeVec;
 
 		if (unlikely((long)v != 0)) {
 			WAKEUP(v);
 		}
+#endif
 	}
 
 	/// \brief current position for consuming from buffer
@@ -589,11 +613,13 @@ public:
 		if (unlikely(_cons_tm != NULL)) {
 			_cons_tm->MoveCursor(_sharedqueue->_u._s.consumedBytes);
 		}
+#ifdef ENABLE_WAKEUP
 		// cast undoes "volatile"...
 		void *v = (void *)_sharedqueue->_u._s.producerWakeVec;
 		if (unlikely((long)v != 0)) {
 			WAKEUP(v);
 		}
+#endif
 	}
 
 	/// \brief is workqueue ready for action
@@ -615,9 +641,10 @@ private:
 	unsigned _pmask;
 	volatile char *_buffer;	///< physical data - unpacked if flat, packed if circ
 	workqueue_t *_sharedqueue;
+	workqueue_t __sq;	
 	PAMI::Type::TypeMachine *_prod_tm;	///< how to unpack producer data
 	PAMI::Type::TypeMachine *_cons_tm;	///< how to pack consumer data
-	workqueue_t __sq;
+
 }; // class PipeWorkQueue
 
 }; /* namespace PAMI */

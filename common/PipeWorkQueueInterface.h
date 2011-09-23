@@ -87,6 +87,7 @@ public:
 	/// consumed by each consumer to zero.
 	///
 	inline void reset();
+	inline void reset_nosync();
 	inline void barrier_reset(unsigned participants, bool master);
 
 	///
@@ -260,7 +261,12 @@ void PipeWorkQueue<T_PipeWorkQueue>::configure(PAMI::Memory::MemoryManager *mm,
 
 template <class T_PipeWorkQueue>
 void PipeWorkQueue<T_PipeWorkQueue>::reset() {
-	return static_cast<T_PipeWorkQueue *>(this)->reset_impl();
+        return static_cast<T_PipeWorkQueue *>(this)->reset_impl();
+}
+
+template <class T_PipeWorkQueue>
+void PipeWorkQueue<T_PipeWorkQueue>::reset_nosync() {
+        return static_cast<T_PipeWorkQueue *>(this)->reset_nosync_impl();
 }
 
 template <class T_PipeWorkQueue>

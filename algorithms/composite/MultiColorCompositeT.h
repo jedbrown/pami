@@ -200,13 +200,15 @@ namespace CCMI
         TRACE_FN_ENTER();
         TRACE_FORMAT("<%p> root %u, bytes %lu", this,root, stypecount * stype->GetDataSize());
         _doneCount = 0;
-
-        CCMI::Executor::CompositeT<NUMCOLORS, T_Bar, T_Exec>::reset();
-        if (_bytes != (stypecount * stype->GetDataSize()) || _root != root) {
-          _numColors = _numColorsMax;
-          initialize (comm, topology, root, stypecount, stype, rtypecount, rtype, src, dst);
-          return;
-        }
+	
+	if (_bytes != (stypecount * stype->GetDataSize()) || _root != root) {
+	  T_Bar *barrier = CompositeT<NUMCOLORS, T_Bar, T_Exec>::_barrier;
+	  CCMI::Executor::CompositeT<NUMCOLORS, T_Bar, T_Exec>::reset();
+	  addBarrier(barrier);
+	  _numColors = _numColorsMax;
+	  initialize (comm, topology, root, stypecount, stype, rtypecount, rtype, src, dst);
+	  return;
+	}
 
         unsigned c = 0;
         for (c = 0; c < _numColors; c++)
@@ -215,9 +217,9 @@ namespace CCMI
           exec->setBuffers (src + _bytecounts[0]*c,
                             dst + _bytecounts[0]*c,
                             _bytecounts[c], stype, rtype);
-          addExecutor(exec);
+	  exec->setDoneCallback (cb_composite_done, this);
         }
-
+	
         TRACE_FN_EXIT();	
       }
 

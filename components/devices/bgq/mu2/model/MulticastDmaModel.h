@@ -126,9 +126,10 @@ namespace PAMI
 	    _pwq = (PAMI::PipeWorkQueue *)mcast->dst;
 	    _fn = mcast->cb_done.function;
 	    _cookie = mcast->cb_done.clientdata;
+	    //_pwq->getConsumerUserInfo((void**)&_notify_fn, &_notify_cookie);
 	    TRACE_FN_EXIT();		    
 	  }
-
+	  
 	  void produceBytes (int bytes) {
 	    TRACE_FN_ENTER();
 	    _pwq->produceBytes (bytes);
@@ -138,8 +139,10 @@ namespace PAMI
 	  unsigned                _connid;
 	  unsigned                _inuse;
 	  PipeWorkQueue         * _pwq;
-	  pami_event_function     _fn;
+	  pami_event_function     _fn;	  
 	  void                  * _cookie; 
+	  //pami_event_function     _notify_fn;	  
+	  //void                  * _notify_cookie; 	  
 	};
 
 	static const size_t sizeof_msg = 0;
@@ -399,6 +402,10 @@ namespace PAMI
 		}
 	      }
 	      
+	      //fprintf (stderr, "MulticastDmaModel::advance() nsends %d nrecvs %d sends complete %d recvs complete %d\n", 
+	      //       model->_nActiveSends, model->_nActiveRecvs, 
+	      //       model->_nSendsComplete, model->_nRecvsComplete);
+
 	      if (model->_nActiveRecvs == 0 && model->_nActiveSends == 0) {
 		model->_polling = false;
 		return PAMI_SUCCESS;
@@ -419,10 +426,12 @@ namespace PAMI
 		uint64_t cc = _counterVec[cid];
 		uint64_t bytes = _counterShadowVec[i] - cc;
 		if (bytes > 0) {
-		  //mem_sync();
+		  ppc_msync();
 		  recv->produceBytes (bytes);
 		  _counterShadowVec[i] = cc;
 		  
+		  //if (recv->_notify_fn)
+		  //recv->_notify_fn(context, recv->_notify_cookie, PAMI_SUCCESS);		  
 		  //Trigger a send check on counter i??
 		  if (cc == 0) {
 		    recv->_inuse = 0;
@@ -445,6 +454,7 @@ namespace PAMI
 	    for (i=0; i < nrecvs; i++)  {
 	      MulticastDmaRecv *recv = &_recvs[i];
 	      _mucontext.setBatEntry (_b_batids[_recvs[i]._connid], 0);	      
+	      //fprintf(stderr, "Completing receive, calling cbdone for connid %d\n", _recvs[i]._connid);
 	      if (recv->_fn)
 		recv->_fn (context, recv->_cookie, PAMI_SUCCESS);
 	    }

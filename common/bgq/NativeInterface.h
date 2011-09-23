@@ -58,6 +58,16 @@ namespace PAMI
         return PAMI_ERROR;
       }
 
+      virtual void postWork (pami_context_t         context,
+			     int                    color,
+			     pami_work_t          * work, 
+			     pami_work_function    fn,
+			     void                 * clientdata) 
+      {
+	PAMI_Context_post(context, work, fn, clientdata);
+      }
+
+
       // Model-specific interfaces
       inline pami_result_t multicast    (uint8_t (&)[T_Mcast::sizeof_msg], pami_multicast_t    *, void *devinfo = NULL);
       inline pami_result_t multisync    (uint8_t (&)[T_Msync::sizeof_msg], pami_multisync_t    *, void *devinfo = NULL);
