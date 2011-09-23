@@ -217,8 +217,9 @@ namespace PAMI
             _ranks_malloc = false;
           }
 #endif
-          if (_topos[LIST_TOPOLOGY_INDEX].type() == PAMI_LIST_TOPOLOGY)
-          {
+        if ((_topos[LIST_TOPOLOGY_INDEX].type() == PAMI_LIST_TOPOLOGY) && 
+            (_ranks_malloc == false)) /* Don't overwrite our original _ranks */
+        {
             pami_result_t rc = PAMI_SUCCESS;
             rc = _topos[LIST_TOPOLOGY_INDEX].rankList(&_ranks);
             PAMI_assert(rc == PAMI_SUCCESS);
@@ -308,12 +309,18 @@ namespace PAMI
           if (_topos[COORDINATE_TOPOLOGY_INDEX].type() != PAMI_COORD_TOPOLOGY)
             _topos[COORDINATE_TOPOLOGY_INDEX].convertTopology(PAMI_COORD_TOPOLOGY);
 
-          // If we have a rank list, set the special topology, otherwise leave it EMPTY unless needed
-          _topos[LIST_TOPOLOGY_INDEX] = _topos[DEFAULT_TOPOLOGY_INDEX];
-
-          if (_topos[LIST_TOPOLOGY_INDEX].type() != PAMI_LIST_TOPOLOGY)
+        // If we already have a rank list, set the special topology, otherwise 
+        // leave it EMPTY unless needed because it will require a new rank list allocation
+          if (_topos[DEFAULT_TOPOLOGY_INDEX].type() != PAMI_LIST_TOPOLOGY)
             new(&_topos[LIST_TOPOLOGY_INDEX]) PAMI::Topology();
+        else // Default is a list topology, use the same ranklist storage
+        {
+          pami_task_t  nranks = _topos[DEFAULT_TOPOLOGY_INDEX].size();
+          pami_task_t *ranks;
+          _topos[DEFAULT_TOPOLOGY_INDEX].rankList(&ranks);
+          new(&_topos[LIST_TOPOLOGY_INDEX]) PAMI::Topology(ranks, nranks);
         }
+      }
 
         inline bool isLocalMasterParticipant_impl()
         {
@@ -335,11 +342,13 @@ namespace PAMI
           // We really only on-demand create the rank list topology.  All others are used as-is.
           if ((topo_num = LIST_TOPOLOGY_INDEX) && (_topos[LIST_TOPOLOGY_INDEX].type() != PAMI_LIST_TOPOLOGY))
             {
+          /* Assume/assert we don't already have a rank list or we would have set this up already.
+             We don't want to malloc more ranklist storage or overwrite _ranks. */
+          PAMI_assert((_topos[DEFAULT_TOPOLOGY_INDEX].type() != PAMI_LIST_TOPOLOGY));
               PAMI_assert(!_ranks_malloc);
               _topos[LIST_TOPOLOGY_INDEX] = _topos[DEFAULT_TOPOLOGY_INDEX];
               _topos[LIST_TOPOLOGY_INDEX].convertTopology(PAMI_LIST_TOPOLOGY);
               _topos[LIST_TOPOLOGY_INDEX].rankList(&_ranks);
-              _ranks_malloc = true;
             }
 
           return (pami_topology_t*)&_topos[topo_num];

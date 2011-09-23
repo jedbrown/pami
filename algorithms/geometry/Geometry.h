@@ -349,7 +349,7 @@ namespace PAMI
 
         // If we already have a rank list, set the special topology, otherwise 
         // leave it EMPTY unless needed because it will require a new rank list allocation
-        if (_topos[LIST_TOPOLOGY_INDEX].type() != PAMI_LIST_TOPOLOGY)
+        if (_topos[DEFAULT_TOPOLOGY_INDEX].type() != PAMI_LIST_TOPOLOGY)
           new(&_topos[LIST_TOPOLOGY_INDEX]) PAMI::Topology();
         else // Default is a list topology, use the same ranklist storage
         {
