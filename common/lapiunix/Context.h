@@ -422,6 +422,9 @@ namespace PAMI
         _dispatch_id(4095),
         _context((pami_context_t) this),
         _contextid (id),
+        _pgas_collreg(NULL),
+        _p2p_ccmi_collreg(NULL),
+        _cau_collreg(NULL),
         _devices(devices)
       {
       }
@@ -500,7 +503,8 @@ namespace PAMI
 
       inline pami_result_t destroy_impl ()
         {
-          _cau_collreg->invalidateContext();
+          if(_cau_collreg)
+              _cau_collreg->invalidateContext();
           LapiImpl::Context *ep = (LapiImpl::Context *)(lapi_state_t*)_lapi_state;
           int rc = LAPI__Term(ep->my_hndl);
           if (rc) {
