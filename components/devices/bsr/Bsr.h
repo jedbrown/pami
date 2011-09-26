@@ -9,6 +9,7 @@
  */
 
 #include <sys/shm.h>
+#include <sys/mman.h>
 #ifndef _LAPI_LINUX
 #include <sys/vminfo.h>
 #endif

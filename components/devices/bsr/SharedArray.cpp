@@ -46,23 +46,23 @@ SharedArray::SETUP_STATE SharedArray::PosixShmAttach(const unsigned int size)
     // create shared memory or retrieve the existing one
     shm_id = shm_open(shm_str, O_RDWR|O_CREAT|O_EXCL, 0600);
     if (shm_id != -1) {
-        ITRC(IT_BSR, "SharedArray: as Posix SHM master (key=%s, id=%d)\n",
-                shm_str, shm_id);
+        ITRC(IT_BSR, "SharedArray: as Posix SHM master (shm_id=%d)\n",
+                shm_id);
     } else {
         if (EEXIST == errno) {
             shm_id = shm_open(shm_str, O_RDWR, 0600);
-            ITRC(IT_BSR, "SharedArray: as Posix SHM slave (key=%s, id=%d)\n",
-                    shm_str, shm_id);
+            ITRC(IT_BSR, "SharedArray: as Posix SHM slave (shm_id=%d)\n",
+                    shm_id);
             if (shm_id == -1) {
-                ITRC(IT_BSR, "SharedArray: Posix shm_open failed with key <%s> (errno=%d)\n", 
-                        shm_str, errno);
+                ITRC(IT_BSR, "SharedArray: Posix shm_open failed (errno=%d)\n", 
+                        errno);
                 perror("shm_open as slave failed");
                 assert(0);
                 return ST_FAILED;
             }
         } else {
-            ITRC(IT_BSR, "SharedArray: Posix shm_open failed with key <%s> (errno=%d)\n", 
-                    shm_str, errno);
+            ITRC(IT_BSR, "SharedArray: Posix shm_open failed (errno=%d)\n", 
+                    errno);
             perror("shm_open as master failed");
             assert(0);
             return ST_FAILED;
@@ -117,9 +117,8 @@ SharedArray::RC SharedArray::IsPosixShmSetupDone(const unsigned int size)
                 break;
             case ST_PASSED:
                 ITRC(IT_BSR, 
-                        "SharedArray: Posix ShmSetup PASSED at %p with %u "
-                        "members and key <%s>\n", 
-                        ctrl_block, member_cnt, shm_str);
+                        "SharedArray: Posix ShmSetup PASSED at %p with %u members\n", 
+                        ctrl_block, member_cnt);
                 return SUCCESS;
             case ST_FAILED:
                 return FAILED;
@@ -140,7 +139,7 @@ SharedArray::RC SharedArray::PosixShmDestroy()
         shm_size = 0;
         // if ctrl_block is not NULL; shm_unlink is called already
         ctrl_block = NULL;
-        ITRC(IT_BSR, "SharedArray: PosixShmDestroy <%s> finished\n", shm_str);
+        ITRC(IT_BSR, "SharedArray: PosixShmDestroy finished\n");
     }
     ITRC(IT_BSR, "SharedArray: PosixShmDestroy finished without being initialized.\n");
     return SUCCESS;

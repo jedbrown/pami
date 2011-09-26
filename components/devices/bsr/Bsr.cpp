@@ -226,10 +226,10 @@ Bsr::BSR_SETUP_STATE Bsr::CheckBsrAttach(const unsigned int job_key)
                 bsr_id, bsr_stride);
         unsigned bsr_length;
         bsr_addr = (unsigned char *)(*(__bsr_func.bsr_map))(NULL, (unsigned)bsr_id, 0, 0, &bsr_length);
-        if (NULL == bsr_addr || bsr_length < this->member_cnt) {
+        if (NULL == bsr_addr || MAP_FAILED == bsr_addr || bsr_length < this->member_cnt) {
             shm->bsr_setup_state = ST_FAIL;
-            ITRC(IT_BSR, "BSR: (leader) bsr_map failed with bsr_id=%u bsr_length=%u\n",
-                    bsr_id, bsr_length);
+            ITRC(IT_BSR, "BSR: (leader) bsr_map failed with bsr_id=%u bsr_length=%u errno=%u\n",
+                    bsr_id, bsr_length, errno);
             /* clean up */
             (*(__bsr_func.bsr_free))((unsigned)bsr_id);
             return ST_FAIL;
@@ -249,11 +249,11 @@ Bsr::BSR_SETUP_STATE Bsr::CheckBsrAttach(const unsigned int job_key)
                 bsr_id = shm->bsr_id;
                 unsigned bsr_length;
                 bsr_addr = (unsigned char *)(*(__bsr_func.bsr_map))(NULL, (unsigned)bsr_id, 0, 0, &bsr_length);
-                if (NULL == bsr_addr || bsr_length < this->member_cnt) {
+                if (NULL == bsr_addr || MAP_FAILED == bsr_addr || bsr_length < this->member_cnt) {
                     shm->bsr_setup_state = ST_FAIL;
                     ITRC(IT_BSR, 
-                            "BSR: (non-leader) bsr_map failed with bsr_id=%u bsr_length=%u\n",
-                            bsr_id, bsr_length);
+                            "BSR: (non-leader) bsr_map failed with bsr_id=%u bsr_length=%u errno=%u\n",
+                            bsr_id, bsr_length, errno);
                     /* nothing need to be cleaned here */
                     /* bsr_id will be freed by leader */
                     return ST_FAIL;
@@ -278,7 +278,7 @@ Bsr::BSR_SETUP_STATE Bsr::CheckBsrAttach(const unsigned int job_key)
                 ITRC(IT_BSR, "Bsr: BSR master shmget passed with (BSR key=0x%x, BSR id=%d)\n",
                         bsr_key, bsr_id);
             } else {
-                ITRC(IT_BSR, "Bsr: BSR master shmget failed with (BSR key=0x%x, errno=%d)\n",
+                ITRC(IT_BSR, "Bsr: BSR master shmget failed with (BSR key=0x%x, errno=%u)\n",
                         bsr_key, errno);
                 shm->bsr_setup_state = ST_FAIL;
                 return ST_FAIL;
@@ -359,18 +359,15 @@ Bsr::BSR_SETUP_STATE Bsr::CheckBootstrapSetup()
             // attach the shared memory
             shm = (Shm *)shm_seg;
 
-            ITRC(IT_BSR, "Bsr: %s Bootstrap_ShmSetup with key <%s> PASSED.\n",
-                    (this->is_leader)?"LEADER":"FOLLOWER",
-                    shm_str);
+            ITRC(IT_BSR, "Bsr: %s Bootstrap_ShmSetup PASSED.\n",
+                    (this->is_leader)?"LEADER":"FOLLOWER");
 
             return ST_BOOTSTRAP_DONE;
         case PROCESSING:
             return ST_BOOTSTRAP_PROCESSING;
         default:
-            ITRC(IT_BSR, "Bsr: %s Bootstrap_ShmSetup with key <%s> FAILED with"
-                    " rc %d\n",
-                    (this->is_leader)?"LEADER":"FOLLOWER",
-                    shm_str, rc);
+            ITRC(IT_BSR, "Bsr: %s Bootstrap_ShmSetup FAILED with rc %d\n",
+                    (this->is_leader)?"LEADER":"FOLLOWER", rc);
             return ST_FAIL;
     }
 }
@@ -435,8 +432,9 @@ Bsr::BSR_SETUP_STATE Bsr::CheckBsrResource(const unsigned int mem_cnt,
     this->member_cnt    = mem_cnt;
 
     sprintf(&shm_str[0], "/BSR_shm_%d_%llu", job_key, unique_key);
-    ITRC(IT_BSR, "Bsr::Init Unique key string for BSR bootstrap <%s>\n",
-         shm_str);
+    ITRC(IT_BSR, 
+         "Bsr::Init Unique key string for BSR bootstrap </BSR_shm_%d_%llu>\n",
+         job_key, unique_key);
     return CheckBootstrapSetup();
 }
 
