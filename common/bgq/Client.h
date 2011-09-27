@@ -802,7 +802,8 @@ namespace PAMI
     /// \page env_vars Environment Variables
     ///
     /// PAMI_CLIENT_SHMEMSIZE - Size, bytes, of each Client shmem pool.
-    /// May use 'K' or 'M' suffix as multiplier. default: 2MB
+    /// May use 'K' or 'M' suffix as multiplier. defaults: 0 bytes (mu only),
+    /// otherwise 4MB
     ///
 
     inline void initializeMemoryManager ()
@@ -815,8 +816,11 @@ namespace PAMI
 #else
       size_t num_ctx = 64;
 #endif
-      // 18K * Ncontexts...
-      size_t bytes = (32*1024) * num_ctx; // 32k for each context in the client
+      size_t bytes = 0;
+      if (__global.useshmem())
+        {
+          bytes = (64*1024) * num_ctx; // 64k for each context in the client
+        }
 
       /// \page env_vars Environment Variables
       ///
