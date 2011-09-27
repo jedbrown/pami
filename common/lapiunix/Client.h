@@ -1296,7 +1296,11 @@ namespace PAMI
         // Do the work for the blocking barrier
         g->ue_barrier(geometry_destroy_done_fn, gc, 0, _contexts[0]);
         while(gc->_counter==1)
+        {
           _contexts[0]->advance(1,rc);
+          _contexts[0]->punlock();
+          _contexts[0]->plock();
+        }
 
         // This context advance is *required* because of an implementation
         // specific issue with the collective shared memory device.
@@ -1322,8 +1326,8 @@ namespace PAMI
           __global.heap_mm->free(cleanup_g);
           _geometryCleanupList.pop_back();
         }
-        _contexts[0]->punlock();
         fn(context,cookie,PAMI_SUCCESS);
+        _contexts[0]->punlock();
         return PAMI_SUCCESS;
       }
 
