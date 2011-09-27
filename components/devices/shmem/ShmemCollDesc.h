@@ -329,6 +329,9 @@ public:
 
         public:
 
+          static const size_t fifo_memory_size =
+            sizeof(ShmemRegion) * DESCRIPTOR_FIFO_SIZE;
+
           inline CollectiveFifo(): _head(0), _tail(0), _next_pending_match(0), _fifo_end(DESCRIPTOR_FIFO_SIZE), _local_rank(__global.topology_local.rank2Index(__global.mapping.task()))
           {
             TRACE_ERR((stderr, "Shmem::CollectiveFifo constructor called\n"));
@@ -340,12 +343,11 @@ public:
             char key[PAMI::Memory::MMKEYSIZE];
             sprintf(key, "/ShmemCollectiveFifo-%s", unique_device_string);
 
-
-            size_t total_size = sizeof(ShmemRegion) * DESCRIPTOR_FIFO_SIZE ;
+            //size_t total_size = sizeof(ShmemRegion) * DESCRIPTOR_FIFO_SIZE ;
             pami_result_t rc;
             rc = mm.memalign ((void **) & _shmem_region,
                               64,
-                              total_size,
+                              CollectiveFifo::fifo_memory_size,
                               key,
                               CollectiveFifo::shmem_region_initialize,
                               NULL);

@@ -18,8 +18,10 @@
 
 #include "components/memory/MemoryManager.h"
 #include "Arch.h"
+#include "Memory.h"
 #include "Memregion.h"
 
+#include "components/atomic/native/NativeMutex.h"
 #include "components/atomic/CounterInterface.h"
 #include "components/devices/BaseDevice.h"
 #include "components/devices/FactoryInterface.h"
@@ -74,10 +76,10 @@ namespace PAMI
     } match_dispatch_t;
 
     template < class T_Fifo,
-               class T_Atomic = Counter::Indirect<Counter::Native>,
-               class T_Shaddr = Shmem::NoShaddr,
-               unsigned T_FifoCount = 64,
-               unsigned T_SetCount = 512>
+    class T_Atomic = Counter::Indirect<Counter::Native>,
+    class T_Shaddr = Shmem::NoShaddr,
+    unsigned T_FifoCount = 64,
+    unsigned T_SetCount = 512 >
     class ShmemDevice : public Interface::BaseDevice< ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount, T_SetCount> >,
         public Interface::PacketDevice<ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount, T_SetCount> >
     {
@@ -87,17 +89,35 @@ namespace PAMI
 //        typedef Shmem::CollectiveFifo<Counter::Indirect<Counter::Native> >  CollectiveFifo;
 //#else
 //        typedef Shmem::CollectiveFifo<PAMI::Counter::BGQ::IndirectL2>  CollectiveFifo;
-//#endif      
+//#endif
 
         typedef Shmem::CollectiveFifo<T_Atomic> CollectiveFifo;
 
-        typedef Shmem::BaseMessage<ShmemDevice<T_Fifo,T_Atomic,T_Shaddr,T_FifoCount, T_SetCount> > BaseMessage;
+        typedef Shmem::BaseMessage<ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount, T_SetCount> > BaseMessage;
 
 
         // Inner factory class
         class Factory : public Interface::FactoryInterface<Factory, ShmemDevice, PAMI::Device::Generic::Device>
         {
           public:
+
+            static inline size_t getInstanceMemoryRequired_impl (size_t clientid,
+                                                                 Memory::MemoryManager & mm)
+            {
+              size_t npeers = 0;
+              __global.mapping.nodePeers (npeers);
+              return T_Fifo::fifo_memory_size * npeers + CollectiveFifo::fifo_memory_size;
+            };
+
+            static inline size_t getInstanceMaximum_impl (size_t clientid, Memory::MemoryManager & mm)
+            {
+              size_t npeers = 0;
+              __global.mapping.nodePeers (npeers);
+              size_t instance_maximum = T_FifoCount / npeers;
+
+              return instance_maximum;
+            };
+
             static inline ShmemDevice * generate_impl (size_t clientid,
                                                        size_t ncontexts,
                                                        Memory::MemoryManager & mm,
@@ -109,7 +129,7 @@ namespace PAMI
               // context in this task (from heap, not from shared memory)
               ShmemDevice * devices;
               pami_result_t mmrc;
-	      mmrc = __global.heap_mm->memalign((void **) & devices, 16, sizeof(*devices) * ncontexts);
+              mmrc = __global.heap_mm->memalign((void **) & devices, 16, sizeof(*devices) * ncontexts);
               PAMI_assertf(mmrc == PAMI_SUCCESS, "memalign failed for shared memory devices, rc=%d\n", mmrc);
 
               // Instantiate the shared memory devices
@@ -171,7 +191,7 @@ namespace PAMI
 
         {
           TRACE_ERR((stderr, "ShmemDevice() constructor\n"));
-          
+
           // Create a unique string, useful for memory manager alloaction, etc.
           snprintf(_unique_str, 15, "%2.2zu-%2.2zu", _clientid, _contextid);
 
@@ -189,14 +209,16 @@ namespace PAMI
           char fifokey[PAMI::Memory::MMKEYSIZE];
 
           for (i = 0; i < _npeers; i++)
-          {
-            for (j = 0; j < _ncontexts; j++)
             {
-              size_t fnum = (i * _ncontexts) + j;
-              snprintf (fifokey, PAMI::Memory::MMKEYSIZE - 1, "/device-shmem-client-%zu-fifo-%zu", _clientid, fnum);
-              _fifo[fnum].initialize (&mm, fifokey, _npeers, i);
+              for (j = 0; j < _ncontexts; j++)
+                {
+                  size_t fnum = (i * _ncontexts) + j;
+                  snprintf (fifokey, PAMI::Memory::MMKEYSIZE - 1, "/device-shmem-client-%zu-fifo-%zu", _clientid, fnum);
+                  bool result = false;
+                  result = _fifo[fnum].initialize (&mm, fifokey, _npeers, i);
+                  PAMI_assert (result == true);
+                }
             }
-          }
 
           // Initialize the reception fifo assigned to this context
           _rfifo.initialize (_fifo[fnum(_peer, _contextid)]);
@@ -212,7 +234,7 @@ namespace PAMI
 
           // Initialize the collective descriptor fifo
           _desc_fifo.init (mm, _unique_str);
-          
+
           // Initialize the deterministic packet connection array.
           for (i = 0; i < _nfifos; i++) _connection[i] = NULL;
         };
@@ -245,10 +267,10 @@ namespace PAMI
 
         /// \see PAMI::Device::Interface::PacketDevice::read()
         inline int read_impl (void * buf, size_t length, void * cookie);
-        
+
         /// \see PAMI::Device::Interface::PacketDevice::Deterministic::clearConnection()
         inline void clearConnection_impl (size_t task, size_t offset);
-              
+
         /// \see PAMI::Device::Interface::PacketDevice::Deterministic::getConnection()
         inline void * getConnection_impl (size_t task, size_t offset);
 
@@ -329,9 +351,9 @@ namespace PAMI
         inline size_t fnum (size_t peer, size_t offset);
 
         inline bool activePackets (size_t fnum);
-        
+
         inline char * getUniqueString ();
-        
+
         inline PAMI::Device::Generic::Device * getLocalProgressDevice ();
 
         pami_result_t getShmemWorldDesc(typename CollectiveFifo::Descriptor **my_desc);
@@ -363,7 +385,7 @@ namespace PAMI
 
         Shmem::Dispatch<Shmem::Packet<typename T_Fifo::Packet>, T_SetCount, 8 >  _dispatch;
         Shmem::Shaddr::System<T_Shaddr>                           shaddr;
-        
+
         // -------------------------------------------------------------
         // Collectives
         // -------------------------------------------------------------
@@ -371,17 +393,17 @@ namespace PAMI
 
         PAMI::Queue     _collectiveQ;
         inline void post_obj(BaseMessage *obj)
-            {_collectiveQ.enqueue(obj);}
-	PAMI::Queue::Iterator _Iter;
+        {_collectiveQ.enqueue(obj);}
+        PAMI::Queue::Iterator _Iter;
 
         match_dispatch_t  _match_dispatch[MATCH_DISPATCH_SIZE];
-        
+
         char _unique_str[16];
-        
+
         // -------------------------------------------------------------
         // Deterministic packet interface connection array
         // -------------------------------------------------------------
-        
+
         void * _connection[T_FifoCount];
     };
 
@@ -446,19 +468,19 @@ namespace PAMI
     {
       size_t index = task2peer_impl (task) + offset * _npeers;
       TRACE_ERR((stderr, "ShmemDevice::clearConnection_impl(%zu, %zu), _connection[%zu] = %p -> %p\n", task, offset, index, _connection[index], (void *) NULL));
-      
+
       PAMI_assert_debugf(_connection[index] != NULL, "Error. _connection[%zu] was not previously set.\n", index);
 
       _connection[index] = NULL;
     }
-              
+
     /// \see PAMI::Device::Interface::PacketDevice::Deterministic::getConnection()
     template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount, unsigned T_SetCount>
     void * ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount, T_SetCount>::getConnection_impl (size_t task, size_t offset)
     {
       size_t index = task2peer_impl (task) + offset * _npeers;
       TRACE_ERR((stderr, "ShmemDevice::getConnection_impl(%zu, %zu), _connection[%zu] = %p\n", task, offset, index, _connection[index]));
-      
+
       PAMI_assert_debugf(_connection[index] != NULL, "Error. _connection[%zu] was not previously set.\n", index);
 
       return _connection[index];
@@ -470,7 +492,7 @@ namespace PAMI
     {
       size_t index = task2peer_impl (task) + offset * _npeers;
       TRACE_ERR((stderr, "ShmemDevice::setConnection_impl(%zu, %zu), _connection[%zu] = %p -> %p\n", task, offset, index, _connection[index], value));
-      
+
       PAMI_assert_debugf(_connection[index] == NULL, "Error. _connection[%zu] was previously set.\n", index);
 
       _connection[index] = value;
@@ -480,10 +502,11 @@ namespace PAMI
     size_t ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount, T_SetCount>::advance ()
     {
       size_t events = 0;
+
       while (_rfifo.consumePacket(_dispatch))
-      {
-        events++;
-      }
+        {
+          events++;
+        }
 
       /*pami_result_t res = PAMI_EAGAIN;
         if (_adv_obj != NULL)
@@ -495,15 +518,19 @@ namespace PAMI
       pami_result_t res;
       BaseMessage *msg;
       _collectiveQ.iter_begin(&_Iter);
-      for (; _collectiveQ.iter_check(&_Iter); _collectiveQ.iter_end(&_Iter)) {
-        events++;
-        msg = (BaseMessage *)_collectiveQ.iter_current(&_Iter);
-        res = msg->__advance(_context,(void*)msg);
-        if (res != PAMI_EAGAIN){
-          _collectiveQ.iter_remove(&_Iter);
-          continue;
+
+      for (; _collectiveQ.iter_check(&_Iter); _collectiveQ.iter_end(&_Iter))
+        {
+          events++;
+          msg = (BaseMessage *)_collectiveQ.iter_current(&_Iter);
+          res = msg->__advance(_context, (void*)msg);
+
+          if (res != PAMI_EAGAIN)
+            {
+              _collectiveQ.iter_remove(&_Iter);
+              continue;
+            }
         }
-      }
 
 
       /* Releasing done descriptors for comm world communicators */

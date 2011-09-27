@@ -44,6 +44,36 @@ namespace PAMI
       {
         public:
 
+          static inline size_t getInstanceMemoryRequired_impl (size_t clientid,
+                                                               Memory::MemoryManager & mm)
+          {
+            return 0;
+          };
+
+          static inline size_t getInstanceMaximum_impl (size_t clientid, Memory::MemoryManager &mm)
+          {
+            /// \page env_vars Environment Variables
+            ///
+            /// PAMI_MU_RESOURCES - Determines if PAMI calculates the number
+            /// of available contexts based on an 'optimal' or a 'minimal'
+            /// allocation of MU resources to each context.
+            ///
+            /// Supported environment variable values are case insensitive
+            /// and include:
+            /// - "Optimal" (default)
+            /// - "Minimal"
+            ///
+            char *env = getenv("PAMI_MU_RESOURCES");
+
+            if (env)
+              {
+                if (env[0] == 'm' || env[0] == 'M')
+                  return __MUGlobal.getMuRM().getPerProcessMaxPamiResources (clientid);
+              }
+
+            return __MUGlobal.getMuRM().getPerProcessOptimalPamiResources (clientid);
+          };
+
           ///
           /// \copydoc Interface::Factory::generate
           ///
