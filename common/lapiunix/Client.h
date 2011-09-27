@@ -1213,31 +1213,33 @@ namespace PAMI
                                           num1,
                                           0);
       }
+
     class geomCleanup
     {
     public:
+      typedef  PAMI::Device::Generic::GenericThread     GenericThread;
       geomCleanup(LAPIGeometry        *geometry,
                   pami_event_function  user_done_cb,
                   void                *user_cookie):
         _geometry(geometry),
         _user_done_cb(user_done_cb),
-        _user_cookie(user_cookie)
+        _user_cookie(user_cookie),
+        _work(_do_geom_destroy, this)
         {
         }
       LAPIGeometry              *_geometry;
       pami_event_function        _user_done_cb;
       void                      *_user_cookie;
+      GenericThread              _work;
     };
-    static void geometry_destroy_done_fn(pami_context_t   context,
-                                         void           * cookie,
-                                         pami_result_t    result)
+    static pami_result_t _do_geom_destroy(pami_context_t context, void *cookie)
       {
         PAMI::Context *ctxt         = (PAMI::Context*)context;
         PAMI::Client  *clnt         = (PAMI::Client*)ctxt->getClient();
         geomCleanup   *gc           = (geomCleanup*)cookie;
         LAPIGeometry  *g            = gc->_geometry;
         int commid                  = g->comm();
-
+        
         clnt->_geometry_map[commid] = NULL;
         clnt->_geometry_map.erase(commid);
         g->~LAPIGeometry();        
@@ -1246,6 +1248,17 @@ namespace PAMI
           gc->_user_done_cb(context,gc->_user_cookie,PAMI_SUCCESS);
         __global.heap_mm->free(g);
         __global.heap_mm->free(gc);
+        return PAMI_SUCCESS;
+      }
+    static void geometry_destroy_done_fn(pami_context_t   context,
+                                         void           * cookie,
+                                         pami_result_t    result)
+      {
+        // Post this to the generic device to not re-enter lapi dispatcher
+        // when destroying CAU
+        PAMI::Context *ctxt         = (PAMI::Context*)context;
+        geomCleanup   *gc           = (geomCleanup*)cookie;
+        ctxt->_devices->_generics[ctxt->getId()].postThread(&gc->_work);
       }
 
     // This code destroys a geometry.
