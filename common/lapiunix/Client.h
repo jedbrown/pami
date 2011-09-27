@@ -1216,9 +1216,17 @@ namespace PAMI
     class geomCleanup
     {
     public:
+      geomCleanup(LAPIGeometry        *geometry,
+                  pami_event_function  user_done_cb,
+                  void                *user_cookie):
+        _geometry(geometry),
+        _user_done_cb(user_done_cb),
+        _user_cookie(user_cookie)
+        {
+        }
       LAPIGeometry              *_geometry;
-      volatile int               _counter;
-      std::vector<geomCleanup*> *_cleanup;
+      pami_event_function        _user_done_cb;
+      void                      *_user_cookie;
     };
     static void geometry_destroy_done_fn(pami_context_t   context,
                                          void           * cookie,
@@ -1229,9 +1237,15 @@ namespace PAMI
         geomCleanup   *gc           = (geomCleanup*)cookie;
         LAPIGeometry  *g            = gc->_geometry;
         int commid                  = g->comm();
-        gc->_counter                = 0;
+
         clnt->_geometry_map[commid] = NULL;
-        gc->_cleanup->push_back(gc);
+        clnt->_geometry_map.erase(commid);
+        g->~LAPIGeometry();        
+        
+        if(gc->_user_done_cb)
+          gc->_user_done_cb(context,gc->_user_cookie,PAMI_SUCCESS);
+        __global.heap_mm->free(g);
+        __global.heap_mm->free(gc);
       }
 
     // This code destroys a geometry.
@@ -1273,12 +1287,7 @@ namespace PAMI
         //     make this non-blocking if required.
         LAPIGeometry* g = (LAPIGeometry*)geometry;
         geomCleanup *gc  = (geomCleanup*)__global.heap_mm->malloc(sizeof(geomCleanup));
-        new(gc)geomCleanup();
-        gc->_geometry    = g;
-        gc->_counter     = 1;
-        gc->_cleanup     = &_geometryCleanupList;
-        pami_result_t    rc;
-
+        new(gc)geomCleanup(g,fn,cookie);
         // Start the ue barrier, the barrier callback will decrement the counter
         // indicating the barrier is complete.  It will also enqueue
         // the cleanup object for cleanup (for non-blocking).
@@ -1292,41 +1301,10 @@ namespace PAMI
 
         // We do not destroy the geometry object in the done callback because
         // The destroy is dependent on the dispatcher to de-regester a cau group.
-
-        // Do the work for the blocking barrier
         g->ue_barrier(geometry_destroy_done_fn, gc, 0, _contexts[0]);
-        while(gc->_counter==1)
-        {
-          _contexts[0]->advance(1,rc);
-          _contexts[0]->punlock();
-          _contexts[0]->plock();
-        }
-
-        // This context advance is *required* because of an implementation
-        // specific issue with the collective shared memory device.
-        // The collshm device delays synchornization until after the
-        // final operation may be complete and the user callback is called
-        // We need one advance here to finalize the synchronization.
-        // This is an artifact of calling generic device advance after
-        // the network advacne.
-        _contexts[0]->advance(1,rc);
-        // Check for any geometries that can be cleaned up
-        // and delete storage for the geometry and geometry cleanup object
-        int sz = _geometryCleanupList.size();
-        for(int i=0; i<sz; i++)
-        {
-          geomCleanup *cleanup_g = (geomCleanup*)_geometryCleanupList.back();
-
-          // This is where the geometry cleanup is called, including:
-          // 1.  releasing cau resources
-          // 2.  releaseing shared memory segments
-          // 3.  Deallocating protocols and protocol lists
-          cleanup_g->_geometry->~LAPIGeometry();
-          __global.heap_mm->free(cleanup_g->_geometry);
-          __global.heap_mm->free(cleanup_g);
-          _geometryCleanupList.pop_back();
-        }
-        fn(context,cookie,PAMI_SUCCESS);
+        pami_result_t rc;
+        _contexts[0]->advance(10,rc);
+        
         _contexts[0]->punlock();
         return PAMI_SUCCESS;
       }
@@ -1458,9 +1436,6 @@ namespace PAMI
 
     // Geometry Allocator
     MemoryAllocator<sizeof(LAPIGeometry),16>     _geometryAlloc;
-
-    // List of geometries to clean up
-    std::vector<geomCleanup*>                    _geometryCleanupList;
 
     //  Unexpected Barrier allocator
     MemoryAllocator <sizeof(PAMI::Geometry::UnexpBarrierQueueElement), 16> _ueb_allocator;
