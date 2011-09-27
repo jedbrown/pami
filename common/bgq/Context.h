@@ -333,6 +333,42 @@ namespace PAMI
           _atmmtx(NULL)
       { }
 
+      inline size_t maxContexts (size_t clientid, Memory::MemoryManager &mm)
+      {
+        size_t count, num = (size_t) -1;
+
+        // Determine how many devices can be constructed using the memory manager
+        size_t memory_required = 0;
+        if (__global.useshmem())
+          {
+            memory_required = ShmemDevice::Factory::getInstanceMemoryRequired (clientid, mm);
+          }
+        if (__global.useMU())
+          {
+            memory_required += Device::MU::Factory::getInstanceMemoryRequired (clientid, mm);
+          }
+
+        if (memory_required > 0)
+          {
+            count  = (mm.size() / memory_required);
+            num = MIN(num,count);
+          }
+
+        // Determine how many devices can be constructed using device-specific resources.
+        if (__global.useshmem())
+          {
+            count = ShmemDevice::Factory::getInstanceMaximum (clientid, mm);
+            num = MIN(num,count);
+          }
+        if (__global.useMU())
+          {
+            count = Device::MU::Factory::getInstanceMaximum (clientid, mm);
+            num = MIN(num,count);
+          }
+
+        return num;
+      };
+
       /**
        * \brief initialize this platform device list
        *

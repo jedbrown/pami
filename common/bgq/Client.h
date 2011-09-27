@@ -105,35 +105,7 @@ namespace PAMI
 
     inline size_t maxContexts_impl ()
     {
-      /// \todo #99 Remove this hack and replace with a device interface
-      size_t result;
-      unsigned tSize = __global.mapping.tSize();
-      switch (tSize)
-      {
-      // The following values are based on tests just running MPI_Init():
-      //    Date:      24 Mar 2011
-      //    Num nodes: 32
-      //    BG_SHAREDMEMSIZE=32
-      case 1:
-        result = 16;
-        break;
-      case 2:
-        result = 16;
-        break;
-      case 4:
-        result = 8;
-        break;
-      case 8:
-      case 16:
-      case 32:
-      case 64:
-        result = 64/tSize;
-        break;
-      default:
-        PAMI_abortf("Error: Do not know how to handle tSize=%u\n",tSize);
-      }
-
-      return result;
+      return _platdevs.maxContexts(_clientid, _mm);
     }
 
     inline char * getName_impl ()
@@ -147,7 +119,6 @@ namespace PAMI
                                              size_t                ncontexts)
     {
       TRACE_ERR((stderr, "(%8.8u)<%p:%zu>BGQ::Client::createContext_impl\n", Kernel_ProcessorID(),this, _clientid));
-      //_context_list->lock ();
       size_t n = ncontexts;
 
       if (_ncontexts != 0)
@@ -157,6 +128,7 @@ namespace PAMI
 
       if (ncontexts > maxContexts_impl())
       {
+        TRACE_ERR((stderr, "createContext_impl(), error, ncontexts (%zu) is greater than max_contexts (%zu)\n", ncontexts, maxContexts_impl()));
         return PAMI_INVAL;
       }
 
@@ -164,8 +136,8 @@ namespace PAMI
       rc = __global.heap_mm->memalign((void **)&_contexts, 16, sizeof(*_contexts) * n);
       PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for _contexts[%zu], errno=%d\n", n, errno);
       TRACE_ERR((stderr, "(%8.8u)BGQ::Client::createContext mm available %zu\n", Kernel_ProcessorID(),_mm.available()));
+
       _platdevs.generate(_clientid, n, _mm); // _mm is the client-scoped shared memory manager
-      // _platdevs.generate(_clientid, n, _mm, __global._wuRegion[_clientid]->_wu_mm);
 
       // This memset has been removed due to the amount of cycles it takes
       // on simulators.  Lower level initializers should be setting the
@@ -207,8 +179,6 @@ namespace PAMI
 #endif // USE_COMMTHREADS
         new (&_contexts[x]) PAMI::Context(this->getClient(), _clientid, x, n,
                                           &_platdevs, &_xmm, bytes, _world_geometry, &_geometry_map);
-        //_context_list->pushHead((QueueElem *)&context[x]);
-        //_context_list->unlock();
       }
 
       _ncontexts = (size_t)n;
@@ -867,9 +837,10 @@ namespace PAMI
       // Round up to the page size
       //size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
 
+      //fprintf (stderr, "initialize client shmem to %zu bytes\n", bytes);
       pami_result_t rc;
       rc = _mm.init(__global.shared_mm, bytes, 1, 1, 0, shmemfile);
-      PAMI_assertf(rc == PAMI_SUCCESS, "Failed to create \"%s\" mm for %zd bytes",
+      PAMI_assert_alwaysf(rc == PAMI_SUCCESS, "Failed to create \"%s\" mm for %zd bytes",
                    shmemfile, bytes);
       return;
     }
