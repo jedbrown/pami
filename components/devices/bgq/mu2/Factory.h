@@ -52,73 +52,75 @@ namespace PAMI
                                                      Memory::MemoryManager         & mm,
                                                      PAMI::Device::Generic::Device * devices)
           {
-	    int32_t rc;
-	    size_t myA, myB, myC, myD, myE, myT, T, tSize;
-	    myA = __global.mapping.a();
-	    myB = __global.mapping.b();
-	    myC = __global.mapping.c();
-	    myD = __global.mapping.d();
-	    myE = __global.mapping.e();
-	    myT = __global.mapping.t();
-	    tSize = __global.mapping.tSize();
-	    size_t addr[BGQ_TDIMS + BGQ_LDIMS];
-	    addr[0]=myA;
-	    addr[1]=myB;
-	    addr[2]=myC;
-	    addr[3]=myD;
-	    addr[4]=myE;
-	    // Note: addr[5] is the T coord and will be set later.
+            int32_t rc;
+            size_t myA, myB, myC, myD, myE, myT, T, tSize;
+            myA = __global.mapping.a();
+            myB = __global.mapping.b();
+            myC = __global.mapping.c();
+            myD = __global.mapping.d();
+            myE = __global.mapping.e();
+            myT = __global.mapping.t();
+            tSize = __global.mapping.tSize();
+            size_t addr[BGQ_TDIMS + BGQ_LDIMS];
+            addr[0] = myA;
+            addr[1] = myB;
+            addr[2] = myC;
+            addr[3] = myD;
+            addr[4] = myE;
+            // Note: addr[5] is the T coord and will be set later.
 
-	    // Set up a local barrier (needed below).
-	    bool master;
-	    size_t numLocalTasks = __global.topology_local.size();
-	    ( myT == __global.mapping.lowestT() ) ? master=true : master=false;
+            // Set up a local barrier (needed below).
+            bool master;
+            size_t numLocalTasks = __global.topology_local.size();
+            ( myT == __global.mapping.lowestT() ) ? master = true : master = false;
 
-	    TRACE((stderr, "MU::Context::generate_impl: myCoords=(%zu,%zu,%zu,%zu,%zu,%zu)\n", myA,myB,myC,myD,myE,myT));
-	    TRACE((stderr, "MU::Context::generate_impl: Initializing local barrier, size=%zu, master=%d\n", numLocalTasks, master));
+            TRACE((stderr, "MU::Context::generate_impl: myCoords=(%zu,%zu,%zu,%zu,%zu,%zu)\n", myA, myB, myC, myD, myE, myT));
+            TRACE((stderr, "MU::Context::generate_impl: Initializing local barrier, size=%zu, master=%d\n", numLocalTasks, master));
 
-      PAMI::Barrier::IndirectCounter<PAMI::Counter::Indirect<PAMI::Counter::Native> > barrier(numLocalTasks,master);
-	    char key[PAMI::Memory::MMKEYSIZE];
-	    sprintf(key, "/pami-mu2-rm%zd", id_client);
-	    barrier.init(&__global.mm, key);//,
+            PAMI::Barrier::IndirectCounter<PAMI::Counter::Indirect<PAMI::Counter::Native> > barrier(numLocalTasks, master);
+            char key[PAMI::Memory::MMKEYSIZE];
+            sprintf(key, "/pami-mu2-rm%zd", id_client);
+            barrier.init(&__global.mm, key);//,
 
-	    //
-	    // The MU resource manager requires that only one task on the local node
-	    // initialize their contexts at a time to prevent race conditions
-	    // in the MU SPIs.  To enforce this, loop through each task on the
-	    // local node performing a local barrier.  During each loop iteration,
-	    // only one task performs the init.
+            //
+            // The MU resource manager requires that only one task on the local node
+            // initialize their contexts at a time to prevent race conditions
+            // in the MU SPIs.  To enforce this, loop through each task on the
+            // local node performing a local barrier.  During each loop iteration,
+            // only one task performs the init.
 
-	    TRACE((stderr,"MU Factory: Entering local barrier before context create loop\n"));
-	    barrier.enter();
-	    TRACE((stderr,"MU Factory: Exiting  local barrier before context create loop\n"));
+            TRACE((stderr, "MU Factory: Entering local barrier before context create loop\n"));
+            barrier.enter();
+            TRACE((stderr, "MU Factory: Exiting  local barrier before context create loop\n"));
 
-	    for ( T=0; T<tSize; T++)
-	      {
-		// Check if current T exists.  If not, move to next T
-		pami_result_t rc;
-		size_t dummyTask;
-		addr[5] = T;
-		rc = __global.mapping.global2task ( addr, dummyTask );
-		if ( rc != PAMI_SUCCESS ) continue; // Move to next T...this one does not have a task.
+            for ( T = 0; T < tSize; T++)
+              {
+                // Check if current T exists.  If not, move to next T
+                pami_result_t rc;
+                size_t dummyTask;
+                addr[5] = T;
+                rc = __global.mapping.global2task ( addr, dummyTask );
 
-		// We found a T that has a task on it.  If it is our task, initialize it.
-		if ( myT == T ) // Is it my turn to initialize?
-		  {
-		    TRACE((stderr,"MU Factory: Initializing contexts for T=%zu\n",T));
-		    // Initialize the MU resources for all contexts for this client
-		    __MUGlobal.getMuRM().initializeContexts( id_client, id_count, devices );
-		  }
-		TRACE((stderr,"MU Factory: Entering local barrier. Initializing T=%zu\n",T));
-		barrier.enter();
-		TRACE((stderr,"MU Factory: Exiting  local barrier. Initializing T=%zu\n",T));
-	      }
+                if ( rc != PAMI_SUCCESS ) continue; // Move to next T...this one does not have a task.
+
+                // We found a T that has a task on it.  If it is our task, initialize it.
+                if ( myT == T ) // Is it my turn to initialize?
+                  {
+                    TRACE((stderr, "MU Factory: Initializing contexts for T=%zu\n", T));
+                    // Initialize the MU resources for all contexts for this client
+                    __MUGlobal.getMuRM().initializeContexts( id_client, id_count, devices );
+                  }
+
+                TRACE((stderr, "MU Factory: Entering local barrier. Initializing T=%zu\n", T));
+                barrier.enter();
+                TRACE((stderr, "MU Factory: Exiting  local barrier. Initializing T=%zu\n", T));
+              }
 
             // Allocate an array of mu contexts, one for each pami context
             // in this _task_ (from heap, not from shared memory)
             MU::Context * mu;
             pami_result_t res;
-            res = __global.heap_mm->memalign((void **)&mu, 64, sizeof(*mu) * id_count);
+            res = __global.heap_mm->memalign((void **) & mu, 64, sizeof(*mu) * id_count);
             PAMI_assertf(res == PAMI_SUCCESS, "alloc failed for mu[%zu]\n", id_count);
 
 // !!!!
@@ -127,67 +129,69 @@ namespace PAMI
             size_t id_offset, id_base = 0;
 
             // Instantiate the mu context objects
-	    for (id_offset = 0; id_offset < id_count; ++id_offset)
-	      {
-		new (&mu[id_offset])
-		  MU::Context (__global.mapping, id_base, id_offset, id_count);
-	      }
+            for (id_offset = 0; id_offset < id_count; ++id_offset)
+              {
+                new (&mu[id_offset])
+                MU::Context (__global.mapping, id_base, id_offset, id_count);
+              }
 
-	    // Barrier among all nodes to ensure that the resources for this client
-	    // are ready on all of the nodes.
-	    // - Barrier among the processes on this node
-	    // - Barrier among other nodes
-	    // - Barrier among the processes on this node
-	    TRACE((stderr,"MU Factory: Entering local barrier after creating contexts\n"));
-	    barrier.enter();
-	    TRACE((stderr,"MU Factory: Exiting  local barrier after creating contexts\n"));
+            // Barrier among all nodes to ensure that the resources for this client
+            // are ready on all of the nodes.
+            // - Barrier among the processes on this node
+            // - Barrier among other nodes
+            // - Barrier among the processes on this node
+            TRACE((stderr, "MU Factory: Entering local barrier after creating contexts\n"));
+            barrier.enter();
+            TRACE((stderr, "MU Factory: Exiting  local barrier after creating contexts\n"));
 
 
-	    // If multi-node, and master, need to barrier
-	    if ( master && (__global.mapping.numActiveNodes() > 1) )
-	      {
+            // If multi-node, and master, need to barrier
+            if ( master && (__global.mapping.numActiveNodes() > 1) )
+              {
 #ifdef ENABLE_MAMBO_WORKAROUNDS
-		if (!__global.personality._is_mambo)
+
+                if (!__global.personality._is_mambo)
 #endif
-		  {
-		    // Do an MU barrier
-		    uint32_t classRouteId = 0;
-		    MUSPI_GIBarrier_t commworld_barrier;
-		    rc = Kernel_GetGlobalBarrierUserClassRouteId( &classRouteId );
-		    PAMI_assert(rc==0);
-		    rc = MUSPI_GIBarrierInit ( &commworld_barrier,
-					       classRouteId );
-		    PAMI_assert(rc==0);
-		    TRACE((stderr,"MU Factory: enter global barrier on class route %u\n",classRouteId));
-		    rc = MUSPI_GIBarrierEnterAndWait ( &commworld_barrier );
-		    PAMI_assert(rc==0);
-		  }
+                  {
+                    // Do an MU barrier
+                    uint32_t classRouteId = 0;
+                    MUSPI_GIBarrier_t commworld_barrier;
+                    rc = Kernel_GetGlobalBarrierUserClassRouteId( &classRouteId );
+                    PAMI_assert(rc == 0);
+                    rc = MUSPI_GIBarrierInit ( &commworld_barrier,
+                                               classRouteId );
+                    PAMI_assert(rc == 0);
+                    TRACE((stderr, "MU Factory: enter global barrier on class route %u\n", classRouteId));
+                    rc = MUSPI_GIBarrierEnterAndWait ( &commworld_barrier );
+                    PAMI_assert(rc == 0);
+                  }
 #ifdef ENABLE_MAMBO_WORKAROUNDS
-		else
-		  {
-		    double seconds = 20; // wait 20 pseudo-seconds
-		    double dseconds = ((double)seconds) / 1000; //mambo seconds are loooong.
-		    double start = PAMI_Wtime (), d = 0;
-		    TRACE((stderr, "%s sleep - %.0f,start %f < %f\n", __PRETTY_FUNCTION__, d, start, start + dseconds));
+                else
+                  {
+                    double seconds = 20; // wait 20 pseudo-seconds
+                    double dseconds = ((double)seconds) / 1000; //mambo seconds are loooong.
+                    double start = PAMI_Wtime (), d = 0;
+                    TRACE((stderr, "%s sleep - %.0f,start %f < %f\n", __PRETTY_FUNCTION__, d, start, start + dseconds));
 
-		    while (PAMI_Wtime() < (start + dseconds))
-		      {
-			for (int i = 0; i < 200000; ++i) ++d;
+                    while (PAMI_Wtime() < (start + dseconds))
+                      {
+                        for (int i = 0; i < 200000; ++i) ++d;
 
-			TRACE((stderr, "%s sleep - %.0f, %f < %f\n", __PRETTY_FUNCTION__, d, PAMI_Wtime(), start + dseconds));
-		      }
+                        TRACE((stderr, "%s sleep - %.0f, %f < %f\n", __PRETTY_FUNCTION__, d, PAMI_Wtime(), start + dseconds));
+                      }
 
-		    TRACE((stderr, "%s sleep - %.0f, start %f, end %f\n", __PRETTY_FUNCTION__, d, start, PAMI_Wtime()));
-		  }
+                    TRACE((stderr, "%s sleep - %.0f, start %f, end %f\n", __PRETTY_FUNCTION__, d, start, PAMI_Wtime()));
+                  }
+
 #endif
-		TRACE((stderr,"MU Factory: exit global barier\n"));
-	      }
+                TRACE((stderr, "MU Factory: exit global barier\n"));
+              }
 
-	    TRACE((stderr, "MU Factory: Entering Local Barrier after global barrier\n"));
-	    barrier.enter();
-	    TRACE((stderr, "MU Factory: Exiting Local Barrier after global barrier\n"));
+            TRACE((stderr, "MU Factory: Entering Local Barrier after global barrier\n"));
+            barrier.enter();
+            TRACE((stderr, "MU Factory: Exiting Local Barrier after global barrier\n"));
 
-	    __mu_context_cache = mu;
+            __mu_context_cache = mu;
 
             return mu;
           };
