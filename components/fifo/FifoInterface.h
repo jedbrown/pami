@@ -77,6 +77,20 @@ namespace PAMI
         public:
 
           ///
+          /// \brief Number of bytes required from the memory manager
+          ///
+          /// The initialize() method will fail if not enough memory is provided.
+          ///
+          /// \attention All fifo interface implementation classes \b must
+          ///            contain a public static const data member named
+          ///            'size_t fifo_memory_size'.
+          ///
+          /// C++ code using templates to specify the fifo may safely access the
+          /// 'fifo_memory_size' static constant.
+          ///
+          static const size_t getFifoMemorySize ();
+
+          ///
           /// \brief Number of available bytes in each packet header for application data
           ///
           /// \attention All fifo interface implementation classes \b must
@@ -104,15 +118,23 @@ namespace PAMI
           /// \brief Initialize a fifo using a memory manager and unique key.
           ///
           /// The memory manager may be used by a fifo implementation to
-          /// construct the actual fifo packet array in a known location.
+          /// construct the actual fifo packet array in a known location and
+          /// must provide at least \c fifo_memory_size bytes.
           ///
-          /// After initialization the fifo is available for use.
+          /// After successful initialization the fifo is available for use.
           ///
-          /// \param [in] mm  Memory manager to allocate internal fifo objects
-          /// \param [in] key Unique key that identifies the fifo
+          /// \see getFifoMemorySize()
+          ///
+          /// \param [in] mm     Memory manager to allocate internal fifo objects
+          /// \param [in] key    Unique key that identifies the fifo
+          /// \param [in] npeers Number of fifo being constructed
+          /// \param [in] pid    Peer id of this fifo in the fifo set
+          ///
+          /// \retval true Successful initialization
+          /// \retval false Initialization failed; perhaps due to memory constraints
           ///
           template <class T_MemoryManager>
-          inline void initialize (T_MemoryManager * mm,
+          inline bool initialize (T_MemoryManager * mm,
                                   char            * key,
                                   size_t            npeers,
                                   size_t            pid);
@@ -190,6 +212,12 @@ namespace PAMI
       };
 
       template <class T_Fifo>
+      const size_t Fifo<T_Fifo>::getFifoMemorySize ()
+      {
+        return T_Fifo::fifo_memory_size;
+      }
+
+      template <class T_Fifo>
       const size_t Fifo<T_Fifo>::getPacketHeaderSize ()
       {
         return T_Fifo::packet_header_size;
@@ -203,12 +231,12 @@ namespace PAMI
 
       template <class T_Fifo>
       template <class T_MemoryManager>
-      void Fifo<T_Fifo>::initialize (T_MemoryManager * mm,
+      bool Fifo<T_Fifo>::initialize (T_MemoryManager * mm,
                                      char            * key,
                                      size_t            npeers,
                                      size_t            pid)
       {
-        static_cast<T_Fifo*>(this)->initialize_impl (mm, key, npeers, pid);
+        return static_cast<T_Fifo*>(this)->initialize_impl (mm, key, npeers, pid);
       }
 
       template <class T_Fifo>

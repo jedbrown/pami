@@ -48,6 +48,8 @@ namespace PAMI
         static const size_t mask = T_Size - 1;
         static const size_t packet_header_size = T_Packet::header_size;
         static const size_t packet_payload_size = T_Packet::payload_size;
+        static const size_t fifo_memory_size =
+          sizeof(T_Packet) * T_Size + sizeof(size_t) * 2;
 
         inline WrapFifo () :
             Interface::Fifo <WrapFifo <T_Packet, T_Atomic, T_Size, T_Wakeup> > (),
@@ -70,12 +72,18 @@ namespace PAMI
         // ---------------------------------------------------------------------
 
         template <class T_MemoryManager>
-        inline void initialize_impl (T_MemoryManager * mm,
+        inline bool initialize_impl (T_MemoryManager * mm,
                                      char            * key,
                                      size_t            npeers,
                                      size_t            pid)
         {
           TRACE_ERR((stderr, ">> WrapFifo::initialize_impl(%p, \"%s\")\n", mm, key));
+
+          if (mm->available() < WrapFifo::fifo_memory_size)
+            {
+              fprintf (stderr, "Not enough memory. required = %zu available = %zu\n", WrapFifo::fifo_memory_size, mm->available());
+              return false;
+            }
 
           // Initialize the tail atomic counter using the base key.
           char atomic_key[PAMI::Memory::MMKEYSIZE];
@@ -102,8 +110,7 @@ namespace PAMI
 
           mm->memalign ((void **)&_packet,
                         sizeof(T_Packet),
-                        sizeof(T_Packet) * T_Size +
-                        sizeof(size_t) * 2,
+                        WrapFifo::fifo_memory_size,
                         key,
                         WrapFifo::packet_initialize,
                         (void *)this);
@@ -114,6 +121,7 @@ namespace PAMI
           *(_head) = 0;
 
           TRACE_ERR((stderr, "<< WrapFifo::initialize_impl(%p, \"%s\"), _head = %p, *_head = %zu\n", mm, key, _head, *_head));
+          return true;
         };
 
         inline void initialize_impl (WrapFifo & fifo)
@@ -314,7 +322,6 @@ namespace PAMI
 
           fifo->_bounded_counter.bound_lower_clear();
           fifo->_bounded_counter.bound_upper_clear();
-
           size_t i;
 
           for (i = 0; i < T_Size; i++)

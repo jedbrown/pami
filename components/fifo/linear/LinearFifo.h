@@ -35,13 +35,13 @@ namespace PAMI
   namespace Fifo
   {
     template < class T_Packet, class T_Atomic, unsigned T_Size = 128, class T_Wakeup = Wakeup::Noop >
-    class LinearFifo : public 
-    PAMI::Fifo::Interface::Fifo 
-    <PAMI::Fifo::LinearFifo
-     <T_Packet,
-     T_Atomic,
-     T_Size,
-     T_Wakeup> >
+    class LinearFifo : public
+        PAMI::Fifo::Interface::Fifo
+        < PAMI::Fifo::LinearFifo
+        < T_Packet,
+        T_Atomic,
+        T_Size,
+        T_Wakeup > >
     {
       public:
 
@@ -54,6 +54,9 @@ namespace PAMI
         static const size_t packet_header_size = T_Packet::header_size;
 
         static const size_t packet_payload_size = T_Packet::payload_size;
+
+        static const size_t fifo_memory_size =
+          (sizeof(T_Packet) + sizeof(size_t)) * T_Size + sizeof(size_t) * 2;
 
         inline LinearFifo () :
             Interface::Fifo <LinearFifo <T_Packet, T_Atomic, T_Size, T_Wakeup> > (),
@@ -76,12 +79,15 @@ namespace PAMI
         // ---------------------------------------------------------------------
 
         template <class T_MemoryManager>
-        inline void initialize_impl (T_MemoryManager * mm,
+        inline bool initialize_impl (T_MemoryManager * mm,
                                      char            * key,
                                      size_t            peers,
                                      size_t            pid)
         {
           TRACE_ERR((stderr, ">> LinearFifo::initialize_impl(%p, \"%s\")\n", mm, key));
+
+          if (mm->available() < LinearFifo::fifo_memory_size)
+            return false;
 
           // Initialize the tail atomic counter using the base key.
           char atomic_key[PAMI::Memory::MMKEYSIZE];
@@ -91,7 +97,7 @@ namespace PAMI
           char wakeup_key[PAMI::Memory::MMKEYSIZE];
           snprintf (wakeup_key, PAMI::Memory::MMKEYSIZE - 1, "%s-wakeup", key);
           _wakeup = T_Wakeup::generate(peers, wakeup_key);
-          
+
           char active_key[PAMI::Memory::MMKEYSIZE];
           snprintf (active_key, PAMI::Memory::MMKEYSIZE - 1, "%s-active", key);
           _active.init (mm, active_key, T_Size, &_wakeup[pid]);
@@ -106,13 +112,12 @@ namespace PAMI
           // Allocation is for N packets, N active flags, 1 head counter,
           // and 1 wrap counter.
 
-          size_t total_size = (sizeof(T_Packet) + sizeof(size_t)) * T_Size + sizeof(size_t) * 2;
-          TRACE_ERR((stderr, "   LinearFifo::initialize_impl() before sync memalign, key = '%s', total size to allocate = %zu\n", key, total_size));
+          TRACE_ERR((stderr, "   LinearFifo::initialize_impl() before sync memalign, key = '%s', total size to allocate = %zu\n", key, LinearFifo::fifo_memory_size));
 
           pami_result_t rc;
           rc = mm->memalign ((void **) & _packet,
                              sizeof(T_Packet),
-                             total_size,
+                             LinearFifo::fifo_memory_size,
                              key,
                              LinearFifo::packet_initialize,
                              (void *) this);
@@ -120,10 +125,11 @@ namespace PAMI
 
           TRACE_ERR((stderr, "   LinearFifo::initialize_impl() after sync memalign\n"));
 
-          _head = (size_t *) &_packet[T_Size];
+          _head = (size_t *) & _packet[T_Size];
           *(_head) = 0;
 
           TRACE_ERR((stderr, "<< LinearFifo::initialize_impl(%p, \"%s\"), _head = %p, *_head = %zu\n", mm, key, _head, *_head));
+          return true;
         };
 
         inline void initialize_impl (LinearFifo<T_Packet, T_Atomic, T_Size, T_Wakeup> & fifo)
@@ -326,7 +332,7 @@ namespace PAMI
                                        void       * cookie)
         {
           TRACE_ERR((stderr, ">> LinearFifo::packet_initialize(%p, %zu, \"%s\", %d, %p)\n", memory, bytes, key, attributes, cookie));
-          T_Packet * packet = (T_Packet *) memory;          
+          T_Packet * packet = (T_Packet *) memory;
           LinearFifo * fifo = (LinearFifo *) cookie;
 
           size_t i;
@@ -336,7 +342,7 @@ namespace PAMI
               new (&packet[i]) T_Packet();
               fifo->_active[i] = 0;
             }
-            
+
           TRACE_ERR((stderr, "<< LinearFifo::packet_initialize(%p, %zu, \"%s\", %d, %p)\n", memory, bytes, key, attributes, cookie));
         }
 
