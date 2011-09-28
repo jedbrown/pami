@@ -56,6 +56,7 @@ all: checkdirs build/init.exe \
 build/init_coll.exe \
 build/client/configuration.exe \
 build/client/hello.exe \
+build/client/multi-client.exe \
 build/collectives/allgather.exe \
 build/collectives/allgather_contig.exe \
 build/collectives/allgather_subcomm.exe \

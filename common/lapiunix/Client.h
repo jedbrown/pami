@@ -156,8 +156,8 @@ namespace PAMI
 
         new(ctxt->_p2p_ccmi_collreg) P2PCCMICollreg(_client,
                                                     ctxt,
-                                                    ctxt->getId(),
                                                     _clientid,
+                                                    ctxt->getId(),                                                    
                                                     ctxt->_protocol,
                                                     numtasks,
                                                     numpeers,
