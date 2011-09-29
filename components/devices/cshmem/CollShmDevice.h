@@ -46,6 +46,10 @@ namespace PAMI
     namespace CollShm
     {
 
+//      static const int POLLCOUNT = 1073741824;
+      static const int POLLCOUNT = 2;
+      static const int INNERPOLLCOUNT = 5;
+
       typedef union
       {
         pami_multicast_t mcast;
@@ -667,7 +671,7 @@ namespace PAMI
                 pami_result_t rc = PAMI_SUCCESS;
                 BaseCollShmMessage *msg = (BaseCollShmMessage *)getMsg();
                 CollShmWindow  *window;
-                int pollcnt = 10;
+                int pollcnt = INNERPOLLCOUNT;
 
                 switch (_action)
                   {
@@ -686,7 +690,7 @@ namespace PAMI
                                   if (window->getSyncflag() == _sync_flag)
                                     {
                                       _partners ^= partner;
-                                      pollcnt = 10;
+                                      pollcnt = INNERPOLLCOUNT;
                                     }
                                   else
                                     break;
@@ -794,28 +798,15 @@ namespace PAMI
                       root   = _device->getTopo()->rank2Index(topo->index2Rank(0));
                       _len   = mcast->bytes;
                       _wlen  = 0;
+                      k      = 2;
                       TRACE_DBG((stderr, "CollShmThread::initThread() MultiCast topo->index2Rank(0) %d\n", (int)topo->index2Rank(0)));
-#if 0                      
-                      fprintf(stderr, "Multicasting, rootindex=%d, root=%d\n", root, topo->index2Rank(0));
-                      PAMI::Topology *topo2 =  (PAMI::Topology *)mcast->dst_participants;
-                      fprintf(stderr, "Dest Topo:  ");
-                      for(int i=0; i<topo2->size(); i++)
-                        fprintf(stderr, " %d", topo2->index2Rank(i));
-                      fprintf(stderr, "\n");
-
-                      topo2 =  (PAMI::Topology *)_device->getTopo();
-                      fprintf(stderr, "Local Dest Topo:  ");
-                      for(int i=0; i<topo2->size(); i++)
-                        fprintf(stderr, " %d", topo2->index2Rank(i));
-                      fprintf(stderr, "\n");
-#endif
-
                     } 
                       break;
                     case MultiCombine:
                       mcombine = (pami_multicombine_t *) static_cast<CollShmMessage<pami_multicombine_t, CollShmDevice> *>(_msg)->getMulti();
                       topo     = (PAMI::Topology *)mcombine->results_participants;
                       root     = _device->getTopo()->rank2Index(topo->index2Rank(0));
+                      _sync_flag = 0;
                       _len     = mcombine->count << pami_dt_shift[mcombine->dtype] ;
                       _wlen    = 0;
                       k        = 2; // binary for better latency
@@ -855,7 +846,7 @@ namespace PAMI
                 // PAMI_ASSERT(_sync_flag == 0);
                 // if (_sync_flag != _target_cntr)  rc = _device->sync(_idx, _sync_flag);
                 // return rc;
-                int pollcnt = 10;
+                int pollcnt = INNERPOLLCOUNT;
                 CollShmWindow *window;
 
                 if (_action == NOACTION)
@@ -876,7 +867,7 @@ namespace PAMI
                                 if (window->getSyncflag() == _sync_flag)
                                   {
                                     _partners ^= partner;
-                                    pollcnt = 10;
+                                    pollcnt = INNERPOLLCOUNT;
                                   }
                                 else
                                   break;
@@ -901,7 +892,7 @@ namespace PAMI
                     _step = 1;
                   }
 
-                pollcnt = 10;
+                pollcnt = INNERPOLLCOUNT;
                 window = _device->getWindow(0, 0, _idx);
 
                 while(window->getSyncflag() != _sync_flag && (pollcnt--));
@@ -934,7 +925,7 @@ namespace PAMI
                 int i, prank;
 
                 while (_len != 0)
-                  {
+                {
                     if (_role == CHILD)
                       {
                         TRACE_DBG((stderr, "<%p>CHILD  progressMulticombine msg %p\n", this));
@@ -951,7 +942,6 @@ namespace PAMI
                         _len  -= _wlen;
                         ++_step ;
                         rc = window->setAvail(_step, 2);
-
                         if (rc != PAMI_SUCCESS)
                           {
                             TRACE_DBG((stderr, "<%p>CHILD, SHAREWITH progressMulticombine msg %p, idx %d EAGAIN 2\n", this, msg, _idx));
@@ -1026,7 +1016,6 @@ namespace PAMI
                         _action = READFROM;
                         _setPartners();
                         collshm_mask_t partner = 0x1ULL;
-
                         for (int i = 0 ; i < _nranks; ++i, partner <<= 1ULL)
                           {
                             TRACE_DBG((stderr, "<%p>progressMulticombine msg %p, idx %d: _partners=%lX partner=%lX\n",
@@ -1066,7 +1055,6 @@ namespace PAMI
                         _device->decActiveMsg();
                       }
                   }
-
                 return rc;
               }
 
@@ -1492,7 +1480,6 @@ namespace PAMI
           {
             size_t x = msg->getContextId();
             PAMI::Device::Generic::Device *g = getGenerics();
-
             TRACE_DBG((stderr, "postMsg %p\n", msg));
 
             if (_isThreadAvailable())
@@ -1505,13 +1492,17 @@ namespace PAMI
                 incActiveMsg();
 
                 pami_result_t rc = thr->_advanceThread(g[x].getContext());
-
+                int pollcnt = POLLCOUNT;
+                while((rc == PAMI_EAGAIN) && pollcnt)
+                {
+                  pollcnt--;
+                  rc = thr->_advanceThread(g[x].getContext());
+                }
                 if (msg->getStatus() == PAMI::Device::Done)
                   {
                     msg->executeCallback(g[x].getContext());
-
-                    if (rc == PAMI_EAGAIN) g[x].postThread(thr);
-
+                    if (rc == PAMI_EAGAIN)
+                      g[x].postThread(thr);
                     return;
                   }
 
@@ -1522,7 +1513,6 @@ namespace PAMI
             else
               {
                 msg->setStatus(PAMI::Device::Initialized);
-
                 if (!_nactive && _threadm.getStatus() == PAMI::Device::Idle)
                   {
                     _threadm.setStatus(PAMI::Device::Ready);
@@ -1563,18 +1553,22 @@ namespace PAMI
                     thr->initThread(msg->getMsgType());
                     thr->setStatus(PAMI::Device::Ready);
                     pami_result_t rc = thr->_advanceThread(g[x].getContext());
+                    int pollcnt = POLLCOUNT;
+                    while((rc == PAMI_EAGAIN) && pollcnt)
+                    {
+                      pollcnt--;
+                      rc = thr->_advanceThread(g[x].getContext());
+                    }
 
                     if (msg->getStatus() == PAMI::Device::Done)
                       {
                         // setThreadAvail(thr->getIdx());
                         deleteElem(msg);
                         msg->executeCallback(g[x].getContext());
-
-                        if (rc == PAMI_EAGAIN) g[x].postThread(thr);
-
+                        if (rc == PAMI_EAGAIN)
+                          g[x].postThread(thr);
                         continue;
                       }
-
                     g[x].postMsg(msg);
                     g[x].postThread(thr);
                   }
