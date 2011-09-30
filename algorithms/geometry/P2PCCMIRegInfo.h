@@ -607,8 +607,7 @@ namespace CCMI
         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
         if (connid != (unsigned) - 1)
           {
-            ConnectionManager::BaseConnectionManager *tmp = *connmgr; //use this key as connection id
-            tmp = NULL;
+            *connmgr = NULL; //use this key as connection id
             return connid;
           }
 
@@ -662,8 +661,7 @@ namespace CCMI
         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
         if (connid != (unsigned) - 1)
           {
-            ConnectionManager::BaseConnectionManager *tmp = *connmgr; //use this key as connection id
-            tmp = NULL;
+            *connmgr = NULL; //use this key as connection id
             return connid;
           }
         return cm->updateConnectionId( geometry->comm() );
@@ -702,8 +700,7 @@ namespace CCMI
         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
         if (connid != (unsigned) - 1)
           {
-            ConnectionManager::BaseConnectionManager *tmp = *connmgr; //use this key as connection id
-            tmp = NULL;
+            *connmgr = NULL; //use this key as connection id
             return connid;
           }
         return cm->updateConnectionId( geometry->comm() );
@@ -741,8 +738,7 @@ namespace CCMI
         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
         if (connid != (unsigned) - 1)
           {
-            ConnectionManager::BaseConnectionManager *tmp = *connmgr; //use this key as connection id
-            tmp = NULL;
+            *connmgr = NULL; //use this key as connection id
             return connid;
           }
         return cm->updateConnectionId( geometry->comm() );
@@ -786,8 +782,7 @@ namespace CCMI
         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
         if (connid != (unsigned) - 1)
           {
-            ConnectionManager::BaseConnectionManager *tmp = *connmgr; //use this key as connection id
-            tmp = NULL;
+            *connmgr = NULL; //use this key as connection id
             return connid;
           }
         return cm->updateConnectionId( geometry->comm() );
@@ -838,8 +833,7 @@ namespace CCMI
         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
         if (connid != (unsigned) - 1)
           {
-            ConnectionManager::BaseConnectionManager *tmp = *connmgr; //use this key as connection id
-            tmp = NULL;
+            *connmgr = NULL; //use this key as connection id
             return connid;
           }
         return cm->updateConnectionId( geometry->comm() );
@@ -877,8 +871,7 @@ namespace CCMI
         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
         if (connid != (unsigned) - 1)
           {
-            ConnectionManager::BaseConnectionManager *tmp = *connmgr; //use this key as connection id
-            tmp = NULL;
+            *connmgr = NULL; //use this key as connection id
             return connid;
           }
         return cm->updateConnectionId( geometry->comm() );
@@ -1004,8 +997,7 @@ namespace CCMI
        {
          if (connid != (unsigned)-1)
          {
-           ConnectionManager::BaseConnectionManager *tmp = *connmgr; //use this key as connection id
-           tmp = NULL;
+           *connmgr = NULL; //use this key as connection id
            return connid;
          }
          ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
@@ -1056,8 +1048,7 @@ namespace CCMI
       {
         if (connid != (unsigned)-1)
         {
-          ConnectionManager::BaseConnectionManager *tmp = *connmgr; //use this key as connection id
-          tmp = NULL;
+          *connmgr = NULL; //use this key as connection id
           return connid;
         }
         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
@@ -1136,8 +1127,7 @@ namespace CCMI
       {
         if (connid != (unsigned)-1)
         {
-          ConnectionManager::BaseConnectionManager *tmp = *connmgr; //use this key as connection id
-          tmp = NULL;
+          *connmgr = NULL; //use this key as connection id
           return connid;
         }
         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
@@ -1200,8 +1190,7 @@ namespace CCMI
       {
         if (connid != (unsigned)-1)
         {
-          ConnectionManager::BaseConnectionManager *tmp = *connmgr; //use this key as connection id
-          tmp = NULL;
+          *connmgr = NULL; //use this key as connection id
           return connid;
         }
         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
@@ -1245,8 +1234,7 @@ namespace CCMI
       {
         if (connid != (unsigned)-1)
         {
-          ConnectionManager::BaseConnectionManager *tmp = *connmgr; //use this key as connection id
-          tmp = NULL;
+          *connmgr = NULL; //use this key as connection id
           return connid;
         }
         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
@@ -1338,8 +1326,7 @@ namespace CCMI
       {
         if (connid != (unsigned)-1)
         {
-          ConnectionManager::BaseConnectionManager *tmp = *connmgr; //use this key as connection id
-          tmp = NULL;
+          *connmgr = NULL; //use this key as connection id
           return connid;
         }
         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
@@ -1419,8 +1406,7 @@ namespace CCMI
         {
           if (connid != (unsigned)-1)
           {
-            ConnectionManager::BaseConnectionManager *tmp = *connmgr; //use this key as connection id
-            tmp = NULL;
+            *connmgr = NULL; //use this key as connection id
             return connid;
           }
           ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
@@ -1469,8 +1455,7 @@ namespace CCMI
         {
           if (connid != (unsigned)-1)
           {
-            ConnectionManager::BaseConnectionManager *tmp = *connmgr; //use this key as connection id
-            tmp = NULL;
+            *connmgr = NULL; //use this key as connection id
             return connid;
           }
           ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
@@ -1519,8 +1504,7 @@ namespace CCMI
         {
           if (connid != (unsigned)-1)
           {
-            ConnectionManager::BaseConnectionManager *tmp = *connmgr; //use this key as connection id
-            tmp = NULL;
+            *connmgr = NULL; //use this key as connection id
             return connid;
           }
           ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
@@ -1595,8 +1579,7 @@ namespace CCMI
         {
           if (connid != (unsigned)-1)
           {
-            ConnectionManager::BaseConnectionManager *tmp = *connmgr; //use this key as connection id
-            tmp = NULL;
+            *connmgr = NULL; //use this key as connection id
             return connid;
           }
           ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
