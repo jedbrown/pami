@@ -141,6 +141,8 @@ namespace CCMI
             _comm(-1),
             _sbuf(NULL),
             _rbuf(NULL),
+            _stype(NULL),
+            _rtype(NULL),
             _tmpbuf(NULL),
             _curphase(0),
             _nphases(0),
@@ -164,6 +166,8 @@ namespace CCMI
             _comm(comm),
             _sbuf(NULL),
             _rbuf(NULL),
+            _stype(NULL),
+            _rtype(NULL),
             _tmpbuf(NULL),
             _mrecvstr(NULL),
             _curphase(0),
@@ -299,9 +303,9 @@ namespace CCMI
             else
             {
                 buflen = _gtopology->size() * len;
-	            pami_result_t rc;
-	            rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
-	            PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
+                pami_result_t rc;
+                rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
+                PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
             }
           }
           else // setup PWQ
@@ -318,10 +322,10 @@ namespace CCMI
               size_t  buflen    = _srclens[0]  * _buflen;
               if (_mynphases > 1)
               {
-	            pami_result_t rc;
-	            rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
-	            PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
-                _pwq.configure (_tmpbuf, buflen, 0, _stype, _rtype);
+                pami_result_t rc;
+                rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
+                PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
+               _pwq.configure (_tmpbuf, buflen, 0, _stype, _rtype);
               }
               else
               {
@@ -344,6 +348,11 @@ namespace CCMI
           if (_native->myrank() == _root)
             {
               setGatherVectors<T_Gather_type>(xfer, (void *)&_disps, (void *)&_rcvcounts, &_stype, &_rtype);
+            }
+            else
+            {
+              _stype = (TypeCode *) xfer->stype;
+              _rtype = (TypeCode *) xfer->rtype;
             }
         }
 

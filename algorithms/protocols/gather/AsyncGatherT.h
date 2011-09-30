@@ -286,8 +286,7 @@ public:
             a_composite = co->getComposite();
             // update send buffer pointer and, at root, receive buffer pointers
             a_composite->executor().setVectors(g_xfer);// SSS: I need setVectors to setup the datatypes correctly
-			a_composite->executor().updateBuffers(g_xfer->sndbuf, g_xfer->rcvbuf, g_xfer->rtypecount * rtype->GetDataSize());
-            a_composite->executor().updatePWQ();
+            a_composite->executor().updateBuffers(g_xfer->sndbuf, g_xfer->rcvbuf, g_xfer->rtypecount * rtype->GetDataSize());
         }
         /// not found posted CollOp object, create a new one and
         /// queue it in active queue
