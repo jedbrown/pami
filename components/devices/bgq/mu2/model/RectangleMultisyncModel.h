@@ -123,6 +123,8 @@ namespace PAMI
 	      
 	      status = _counterstate.initialize(context, mucontext);	      
 	      _params = _counterstate._params;
+              pami_coord_t dummy;
+              __global.personality.jobRectangle(_jobLL, dummy);
 	    } 
 	  
 	  uint64_t getAllocationVector () { return _counterstate._crbitmap; }
@@ -193,6 +195,7 @@ namespace PAMI
 	  
 	protected:
 	  MultisyncParams          * _params;
+          pami_coord_t             _jobLL;
 
 	  static CounterState        _counterstate;
 	};
@@ -246,19 +249,19 @@ namespace PAMI
 	    {
 	      //positive direction
 	      if (ur->u.n_torus.coords[i] != self.u.n_torus.coords[i]) 
-		destinations[1] = dest | (ur->u.n_torus.coords[i] << dstidx);
+		destinations[1] = dest | ((ur->u.n_torus.coords[i] + _jobLL.u.n_torus.coords[i]) << dstidx);
 	      
 	      //negative direction
 	      if (ll->u.n_torus.coords[i] != self.u.n_torus.coords[i]) 
-		destinations[0] = dest | (ll->u.n_torus.coords[i] << dstidx);
+		destinations[0] = dest | ((ll->u.n_torus.coords[i] + _jobLL.u.n_torus.coords[i]) << dstidx);
 	    }                   
 	    else //Send along +ve dir
 	    {
 	      if (self.u.n_torus.coords[i] == ll->u.n_torus.coords[i])
-		destinations[1] = dest | (ur->u.n_torus.coords[i] << dstidx);
+		destinations[1] = dest | ((ur->u.n_torus.coords[i] + _jobLL.u.n_torus.coords[i]) << dstidx);
 	      else {
 		PAMI_assert (self.u.n_torus.coords[i] >= 1);
-		destinations[1] = dest | ((self.u.n_torus.coords[i]-1) << dstidx);
+		destinations[1] = dest | ((self.u.n_torus.coords[i]-1 + _jobLL.u.n_torus.coords[i]) << dstidx);
 	      }
 	    }
 	  }	  

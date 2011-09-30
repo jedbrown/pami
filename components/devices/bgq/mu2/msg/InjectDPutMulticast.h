@@ -57,6 +57,9 @@ namespace PAMI
 	  _localIdx(0)
 	    {
 	      //Default constructor
+
+              pami_coord_t dummy;
+              __global.personality.jobRectangle(_jobLL, dummy);
 	    }
 
 	///
@@ -282,6 +285,7 @@ namespace PAMI
 	uint8_t                  _localEnd;
 	uint8_t                  _localIdx;
 	uint64_t                 _lastCompletionSeqNo[NumTorusDims*2];
+        pami_coord_t             _jobLL;
       } __attribute__((__aligned__(32))); // class     PAMI::Device::MU::InjectDPutMulticast     
 
       void InjectDPutMulticast::advanceLocal (unsigned bytes_available)
@@ -361,14 +365,14 @@ namespace PAMI
 	      //positive direction
 	      if (ur->u.n_torus.coords[i] != ref->u.n_torus.coords[i]) {
 		//printf ("HERE %d %ld \n\n", i, ur->u.n_torus.coords[i]);
-		_destinations[ndest] = dest | (ur->u.n_torus.coords[i] << dstidx);
+		_destinations[ndest] = dest | ((ur->u.n_torus.coords[i] + _jobLL.u.n_torus.coords[i]) << dstidx);
 		_fifos[ndest] = pidx;
 		ndest ++;
 	      }		
 	      
 	      //negative direction
 	      if (ll->u.n_torus.coords[i] != ref->u.n_torus.coords[i]) {
-		_destinations[ndest] = dest | (ll->u.n_torus.coords[i] << dstidx);
+		_destinations[ndest] = dest | ((ll->u.n_torus.coords[i] + _jobLL.u.n_torus.coords[i]) << dstidx);
 		_fifos[ndest] = nidx;
 		ndest ++;
 	      }
@@ -378,7 +382,7 @@ namespace PAMI
 	      if (ref->u.n_torus.coords[i] == ll->u.n_torus.coords[i])
 		_destinations[ndest] = dest | (ur->u.n_torus.coords[i] << dstidx);
 	      else
-		_destinations[ndest] = dest | ((ref->u.n_torus.coords[i]-1) << dstidx);
+		_destinations[ndest] = dest | ((ref->u.n_torus.coords[i]-1 + _jobLL.u.n_torus.coords[i]) << dstidx);
 	      _fifos[ndest] = pidx;
 	      ndest ++;
 	    }
@@ -387,7 +391,7 @@ namespace PAMI
 	      if (ref->u.n_torus.coords[i] == ur->u.n_torus.coords[i]) 
 		_destinations[ndest] = dest | (ll->u.n_torus.coords[i] << dstidx);
 	      else
-		_destinations[ndest] = dest | ((ref->u.n_torus.coords[i]+1) << dstidx);
+		_destinations[ndest] = dest | ((ref->u.n_torus.coords[i]+1 + _jobLL.u.n_torus.coords[i]) << dstidx);
 	      _fifos[ndest] = nidx;
 	      ndest ++;
 	    }
