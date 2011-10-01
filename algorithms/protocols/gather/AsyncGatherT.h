@@ -144,7 +144,8 @@ public:
 
         DEBUG((stderr, "In GatherExec ctor, root = %d, sbuf = %x, rbuf = %x, bytes = %d\n", g_xfer->root, g_xfer->sndbuf, g_xfer->rcvbuf, bytes);)
         _executor.setVectors (g_xfer);
-        _executor.setBuffers (g_xfer->sndbuf, g_xfer->rcvbuf, bytes);
+        _executor.setBuffers (g_xfer->sndbuf, g_xfer->rcvbuf, bytes,
+                              (TypeCode *) g_xfer->stype, (TypeCode *) g_xfer->rtype);
         _executor.setDoneCallback (cb_done.function, cb_done.clientdata);
 
     }
@@ -285,8 +286,11 @@ public:
             TypeCode *rtype = (TypeCode *)g_xfer->rtype;
             a_composite = co->getComposite();
             // update send buffer pointer and, at root, receive buffer pointers
-            a_composite->executor().setVectors(g_xfer);// SSS: I need setVectors to setup the datatypes correctly
-            a_composite->executor().updateBuffers(g_xfer->sndbuf, g_xfer->rcvbuf, g_xfer->rtypecount * rtype->GetDataSize());
+            a_composite->executor().setVectors(g_xfer);
+            a_composite->executor().updateBuffers(g_xfer->sndbuf, g_xfer->rcvbuf,
+                                                  g_xfer->rtypecount * rtype->GetDataSize(),
+                                                  (TypeCode *) g_xfer->stype, (TypeCode *) g_xfer->rtype);
+            a_composite->executor().updatePWQ();
         }
         /// not found posted CollOp object, create a new one and
         /// queue it in active queue

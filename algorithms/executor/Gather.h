@@ -49,33 +49,27 @@ namespace CCMI
     };
 
     template <class T_Gather_type>
-    extern inline void setGatherVectors(T_Gather_type *xfer, void *disps, void *sndcounts, TypeCode **stype, TypeCode **rtype)
+    extern inline void setGatherVectors(T_Gather_type *xfer, void *disps, void *sndcounts)
     {
     }
 
     template<>
-    inline void setGatherVectors<pami_gather_t> (pami_gather_t *xfer, void *disps, void * rcvcounts, TypeCode **stype, TypeCode **rtype)
+    inline void setGatherVectors<pami_gather_t> (pami_gather_t *xfer, void *disps, void * rcvcounts)
     {
-       *stype = (TypeCode *)xfer->stype;
-       *rtype = (TypeCode *)xfer->rtype;
     }
 
     template<>
-    inline void setGatherVectors<pami_gatherv_t> (pami_gatherv_t *xfer, void *disps, void *rcvcounts, TypeCode **stype, TypeCode **rtype)
+    inline void setGatherVectors<pami_gatherv_t> (pami_gatherv_t *xfer, void *disps, void *rcvcounts)
     {
        *((size_t **)disps)     = xfer->rdispls;
        *((size_t **)rcvcounts) = xfer->rtypecounts;
-       *stype = (TypeCode *)xfer->stype;
-       *rtype = (TypeCode *)xfer->rtype;
     }
 
     template<>
-    inline void setGatherVectors<pami_gatherv_int_t> (pami_gatherv_int_t *xfer, void *disps, void *rcvcounts, TypeCode **stype, TypeCode **rtype)
+    inline void setGatherVectors<pami_gatherv_int_t> (pami_gatherv_int_t *xfer, void *disps, void *rcvcounts)
     {
        *((int **)disps)     = xfer->rdispls;
        *((int **)rcvcounts) = xfer->rtypecounts;
-       *stype = (TypeCode *)xfer->stype;
-       *rtype = (TypeCode *)xfer->rtype;
     }
 
 
@@ -259,27 +253,42 @@ namespace CCMI
           _mdata._root       = _root;
         }
 
-        void  updateBuffers(char *src, char *dst, int len)
+        void  updateBuffers(char *src, char *dst, int len, TypeCode *stype, TypeCode *rtype)
         {
           _buflen = len;
           _sbuf   = src;
           _rbuf   = dst;
+          _stype    = stype;
+          _rtype    = rtype;
         }
 
         void updatePWQ()
         {
-          _pwq.configure (_sbuf, _buflen, 0, _stype, _rtype);
-          _pwq.reset();
-          _pwq.produceBytes(_buflen);
+          if (_native->myrank() != _root)
+          {
+            size_t  buflen = _totallen * _buflen;
+            if (_mynphases > 1)
+            {
+              _pwq.configure (_tmpbuf, buflen, 0, _stype, _rtype);
+            }
+            else
+            {
+              _pwq.configure (_sbuf, buflen, 0, _stype, _rtype);
+            }
+            _pwq.reset();
+            _pwq.produceBytes(buflen);
+          }
         }
 
-        void  setBuffers (char *src, char *dst, int len)
+        void  setBuffers (char *src, char *dst, int len, TypeCode *stype, TypeCode *rtype)
         {
           TRACE_ADAPTOR((stderr, "<%p>Executor::GatherExec::setInfo() src %p, dst %p, len %d, _pwq %p\n", this, src, dst, len, &_pwq));
 
           _buflen   = len;
           _sbuf     = src;
           _rbuf     = dst;
+          _stype    = stype;
+          _rtype    = rtype;
 
           // ship data length info in the header for async protocols
           _mdata._count = len;
@@ -347,12 +356,7 @@ namespace CCMI
 
           if (_native->myrank() == _root)
             {
-              setGatherVectors<T_Gather_type>(xfer, (void *)&_disps, (void *)&_rcvcounts, &_stype, &_rtype);
-            }
-            else
-            {
-              _stype = (TypeCode *) xfer->stype;
-              _rtype = (TypeCode *) xfer->rtype;
+              setGatherVectors<T_Gather_type>(xfer, (void *)&_disps, (void *)&_rcvcounts);
             }
         }
 

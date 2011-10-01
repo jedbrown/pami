@@ -86,7 +86,8 @@ public:
         _gather_executor.setRoot(a_xfer->root);
         _gather_executor.setSchedule(&_gather_schedule);
         _gather_executor.setVectors(a_xfer);
-        _gather_executor.setBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount * stype->GetDataSize());
+        _gather_executor.setBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount * stype->GetDataSize(),
+                                    (TypeCode *) a_xfer->stype, (TypeCode *) a_xfer->rtype);
         _gather_executor.setDoneCallback (cb_done.function, cb_done.clientdata);
 
     }
@@ -235,8 +236,9 @@ public:
 
             a_composite = co->getComposite();
             // update send buffer pointer and, at root, receive buffer pointers
-            a_composite->getGatherExecutor().setVectors(a_xfer);// SSS: I need setVectors to setup the datatypes correctly
-            a_composite->getGatherExecutor().updateBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount * stype->GetDataSize());
+            a_composite->getGatherExecutor().setVectors(a_xfer);
+            a_composite->getGatherExecutor().updateBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount * stype->GetDataSize(),
+                                                           (TypeCode *) a_xfer->stype, (TypeCode *) a_xfer->rtype);
             a_composite->getGatherExecutor().updatePWQ();
 
             // setVectors is not needed since there is no early arrival at root for long gather
