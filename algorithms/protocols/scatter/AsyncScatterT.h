@@ -150,7 +150,8 @@ public:
         _executor.setSchedule (&_schedule);
 
         _executor.setVectors (s_xfer);
-        _executor.setBuffers (s_xfer->sndbuf, s_xfer->rcvbuf, bytes);
+        _executor.setBuffers (s_xfer->sndbuf, s_xfer->rcvbuf, bytes,
+                              (TypeCode *) s_xfer->stype, rtype);
         _executor.setDoneCallback (cb_done.function, cb_done.clientdata);
     }
 

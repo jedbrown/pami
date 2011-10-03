@@ -246,11 +246,11 @@ public:
 
         if (isRoot)
         {
-            _scatter_executor.setBuffers(_tmpbuf, _relbuf, bytes);
+            _scatter_executor.setBuffers(_tmpbuf, _relbuf, bytes, stype, stype);
         }
         else
         {
-            _scatter_executor.setBuffers(sbuf, rbuf, bytes);
+            _scatter_executor.setBuffers(sbuf, rbuf, bytes, stype, stype);
         }
 
 

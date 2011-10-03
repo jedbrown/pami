@@ -48,33 +48,27 @@ namespace CCMI
     };
 
     template <class T_Scatter_type>
-    extern inline void setScatterVectors(T_Scatter_type *xfer, void *disps, void *sndcounts, TypeCode **stype, TypeCode **rtype)
+    extern inline void setScatterVectors(T_Scatter_type *xfer, void *disps, void *sndcounts)
     {
     }
 
     template<>
-    inline void setScatterVectors<pami_scatter_t> (pami_scatter_t *xfer, void *disps, void * sndcounts, TypeCode **stype, TypeCode **rtype)
+    inline void setScatterVectors<pami_scatter_t> (pami_scatter_t *xfer, void *disps, void * sndcounts)
     {
-      *stype = (TypeCode *)xfer->stype;
-      *rtype = (TypeCode *)xfer->rtype;
     }
 
     template<>
-    inline void setScatterVectors<pami_scatterv_t> (pami_scatterv_t *xfer, void *disps, void * sndcounts, TypeCode **stype, TypeCode **rtype)
+    inline void setScatterVectors<pami_scatterv_t> (pami_scatterv_t *xfer, void *disps, void * sndcounts)
     {
       *((size_t **)disps)     = xfer->sdispls;
       *((size_t **)sndcounts) = xfer->stypecounts;
-      *stype = (TypeCode *)xfer->stype;
-      *rtype = (TypeCode *)xfer->rtype;
     }
 
     template<>
-    inline void setScatterVectors<pami_scatterv_int_t> (pami_scatterv_int_t *xfer, void *disps, void * sndcounts, TypeCode **stype, TypeCode **rtype)
+    inline void setScatterVectors<pami_scatterv_int_t> (pami_scatterv_int_t *xfer, void *disps, void * sndcounts)
     {
       *((int **)disps)     = xfer->sdispls;
       *((int **)sndcounts) = xfer->stypecounts;
-      *stype = (TypeCode *)xfer->stype;
-      *rtype = (TypeCode *)xfer->rtype;
     }
 
     template<class T_ConnMgr, class T_Schedule, typename T_Scatter_type>
@@ -139,6 +133,8 @@ namespace CCMI
             _sbuf(NULL),
             _rbuf(NULL),
             _tmpbuf(NULL),
+            _stype(NULL),
+            _rtype(NULL),
             _curphase(0),
             _nphases(0),
             _startphase(0),
@@ -160,6 +156,8 @@ namespace CCMI
             _sbuf(NULL),
             _rbuf(NULL),
             _tmpbuf(NULL),
+            _stype(NULL),
+            _rtype(NULL),
             _curphase(0),
             _nphases(0),
             _startphase(0),
@@ -254,11 +252,13 @@ namespace CCMI
           _mdata._root = root;
         }
 
-        void  setBuffers (char *src, char *dst, int len)
+        void  setBuffers (char *src, char *dst, int len, TypeCode *stype, TypeCode *rtype)
         {
           _buflen = len;
           _sbuf = src;
           _rbuf = dst;
+          _stype = stype;
+          _rtype = rtype;
 
           // ship data length info in the header for async protocols
           _mdata._count = len;
@@ -302,7 +302,7 @@ namespace CCMI
 
           if (_native->myrank() == _root)
             {
-              setScatterVectors<T_Scatter_type>(xfer, (void *)&_disps, (void *)&_sndcounts, &_stype, &_rtype);
+              setScatterVectors<T_Scatter_type>(xfer, (void *)&_disps, (void *)&_sndcounts);
             }
         }
 
