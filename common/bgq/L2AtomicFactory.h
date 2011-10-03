@@ -14,6 +14,8 @@
 #include "Topology.h"
 #include "components/memory/MemoryManager.h"
 #include "spi/include/kernel/memory.h"
+#include <sys/ioctl.h>
+#include "cnk/include/SPI_syscalls.h"
 
 #define BGQ_WACREGION_SIZE	(256)	// the number of L2 Atomics (uint64_t)
 
@@ -80,58 +82,11 @@ namespace BGQ {
                 pami_task_t __masterRank;
                 size_t __numProc;
                 bool __isMasterRank;
-        public:
-		PAMI::Memory::GenMemoryManager __nodescoped_mm;
-		PAMI::Memory::GenMemoryManager __procscoped_mm;
 
-                L2AtomicFactory() { }
-
-		/// \page env_vars Environment Variables
-		///
-		/// PAMI_PROC_L2ATOMICSIZE - Number of uint64_t in Process-scoped L2 Atomic pool
-		///
-		/// PAMI_NODE_L2ATOMICSIZE - Number of uint64_t in Node-scoped L2 Atomic pool
-		///
-
-		/// \brief Initialize the L2AtomicFactory
-		///
-		/// \param[in] mm	Shmem MemoryManager
-		/// \param[in] mapping	Mapping object
-		/// \param[in] local	Topology for tasks local to node
-		///
-                inline void init(PAMI::Memory::MemoryManager *shared_mm,
-                		PAMI::Memory::MemoryManager *heap_mm,
-                                PAMI::Mapping *mapping, PAMI::Topology *local) {
-                        pami_result_t rc;
+		inline void *get_heap_l2atomic(PAMI::Memory::MemoryManager *heap_mm,
+						size_t size) {
+			pami_result_t rc;
 			uint64_t krc;
-			char *s;
-
-                        // Must coordinate with all other processes on this node,
-                        // and arrive at a common chunk of physical address memory
-                        // which we all will use for allocating "L2Atomics" from.
-                        // One sure way to do this is to allocate shared memory.
-			size_t size;
-                        size_t t = local->size();
-
-                        size = L2A_MAX_NUMPROCL2ATOMIC;
-			/// \page env_vars Environment Variables
-			///
-			/// PAMI_BGQ_PROC_L2ATOMICSIZE - Size, uint64_t, proc-scoped
-			///	L2 Atomic region. May use 'K' or 'M' suffix as multiplier.
-			///	Default: 4K
-			///
-			/// PAMI_BGQ_NODE_L2ATOMICSIZE - Size, uint64_t, node-scoped
-			///	L2 Atomic region. May use 'K' or 'M' suffix as multiplier.
-			///	Default: 4K + nctx * nproc * 256
-			///	Includes WAC region (PAMI_BGQ_WU_*).
-			///
-			if ((s = getenv("PAMI_BGQ_PROC_L2ATOMICSIZE"))) {
-                		char *u = NULL;
-                		size = strtoull(s, &u, 0);
-                		if (*u == 'm' || *u == 'M') size *= 1024 * 1024;
-                		else if (*u == 'k' || *u == 'K') size *= 1024;
-			}
-
 			struct _l2maptry {
 				struct _l2maptry *next;
 			} *failed, *next;
@@ -179,21 +134,81 @@ namespace BGQ {
 				"Failed to map process L2 Atomic region "
 				"after %d tries, %p (%zd): %ld", tries,
 				try1, sizeof(uint64_t) * size, krc);
+			// debug message
+			if (tries) {
+				fprintf(stderr, "Got l2atomic heap memory %p size %zu "
+					"after %d tries\n",
+					try1, sizeof(uint64_t) * size, tries);
+			}
+			return try1;
+		}
 
-			rc = __procscoped_mm.init2(heap_mm, try1,
+		static int l2atomic_attr(int fd) {
+			uint64_t dummy = 1;
+			// dummy is ignored, the ioctl always sets the flag 'true'
+			return ioctl(fd, FIOBGQATOMIC, &dummy);
+		}
+
+        public:
+		PAMI::Memory::GenMemoryManager __nodescoped_mm;
+		PAMI::Memory::GenMemoryManager __procscoped_mm;
+
+                L2AtomicFactory() { }
+
+		/// \page env_vars Environment Variables
+		///
+		/// PAMI_PROC_L2ATOMICSIZE - Number of uint64_t in Process-scoped L2 Atomic pool
+		///
+		/// PAMI_NODE_L2ATOMICSIZE - Number of uint64_t in Node-scoped L2 Atomic pool
+		///
+
+		/// \brief Initialize the L2AtomicFactory
+		///
+		/// \param[in] mm	Shmem MemoryManager
+		/// \param[in] mapping	Mapping object
+		/// \param[in] local	Topology for tasks local to node
+		///
+                inline void init(PAMI::Memory::MemoryManager *shared_mm,
+                		PAMI::Memory::MemoryManager *heap_mm,
+                                PAMI::Mapping *mapping, PAMI::Topology *local) {
+                        pami_result_t rc;
+			char *s;
+
+                        // Must coordinate with all other processes on this node,
+                        // and arrive at a common chunk of physical address memory
+                        // which we all will use for allocating "L2Atomics" from.
+                        // One sure way to do this is to allocate shared memory.
+			size_t size;
+                        size_t t = local->size();
+
+                        size = L2A_MAX_NUMPROCL2ATOMIC;
+			/// \page env_vars Environment Variables
+			///
+			/// PAMI_BGQ_PROC_L2ATOMICSIZE - Size, uint64_t, proc-scoped
+			///	L2 Atomic region. May use 'K' or 'M' suffix as multiplier.
+			///	Default: 4K
+			///
+			/// PAMI_BGQ_NODE_L2ATOMICSIZE - Size, uint64_t, node-scoped
+			///	L2 Atomic region. May use 'K' or 'M' suffix as multiplier.
+			///	Default: 4K + nctx * nproc * 256
+			///	Includes WAC region (PAMI_BGQ_WU_*).
+			///
+			if ((s = getenv("PAMI_BGQ_PROC_L2ATOMICSIZE"))) {
+                		char *u = NULL;
+                		size = strtoull(s, &u, 0);
+                		if (*u == 'm' || *u == 'M') size *= 1024 * 1024;
+                		else if (*u == 'k' || *u == 'K') size *= 1024;
+			}
+			void *mem = get_heap_l2atomic(heap_mm, size);
+
+			rc = __procscoped_mm.init2(heap_mm, mem,
 					sizeof(uint64_t) * size,
 					"/L2AtomicFactory-priv",
 					sizeof(uint64_t),
 					PAMI::Memory::PAMI_MM_L2ATOMIC);
 			PAMI_assert_alwaysf(rc == PAMI_SUCCESS,
 				"Failed to init mm for _l2proc, %p size %zu",
-				try1, sizeof(uint64_t) * size);
-
-			if (tries) {
-				fprintf(stderr, "Got _l2proc memory %p size %zu "
-					"after %d tries\n",
-					try1, sizeof(uint64_t) * size, tries);
-			}
+				mem, sizeof(uint64_t) * size);
 
 #if 0
         size_t num_ctx = __MUGlobal.getMuRM().getPerProcessMaxPamiResources();
@@ -208,23 +223,28 @@ namespace BGQ {
                 		if (*u == 'm' || *u == 'M') size *= 1024 * 1024;
                 		else if (*u == 'k' || *u == 'K') size *= 1024;
 			}
+			if ((shared_mm->attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) != 0) {
+				rc = static_cast<PAMI::Memory::SharedMemoryManager *>(shared_mm)->
+					memalign_attrfn(&mem, sizeof(uint64_t),
+							sizeof(uint64_t) * size, 
+							"/L2AtomicFactory-shared",
+							PAMI::Memory::MemoryManager::memzero,
+							NULL, l2atomic_attr);
+                        	PAMI_assert_alwaysf(rc == PAMI_SUCCESS,
+                                	"Failed to get shmem for _l2node, asked size %zu",
+                                	sizeof(uint64_t) * size);
+			} else {
+				mem = get_heap_l2atomic(heap_mm, size);
+			}
 
-			rc = __nodescoped_mm.init(shared_mm,
+			rc = __nodescoped_mm.init2(shared_mm, mem,
 					sizeof(uint64_t) * size,
-					sizeof(uint64_t),
-					sizeof(uint64_t),
-					PAMI::Memory::PAMI_MM_L2ATOMIC,
 					"/L2AtomicFactory-shared",
-					PAMI::Memory::MemoryManager::memzero, NULL);
+					sizeof(uint64_t),
+					PAMI::Memory::PAMI_MM_L2ATOMIC);
                         PAMI_assert_alwaysf(rc == PAMI_SUCCESS,
-                                "Failed to get shmem for _l2node, asked size %zu",
-                                sizeof(uint64_t) * size);
-			krc = Kernel_L2AtomicsAllocate(__nodescoped_mm.base(),
-							__nodescoped_mm.size());
-                        PAMI_assert_alwaysf(krc == 0,
-				"Failed to map shared L2 Atomic region %p (%zd): %ld",
-				__nodescoped_mm.base(), __nodescoped_mm.size(), krc);
-
+                                "Failed to get init mm for _l2node, %p size %zu",
+                                mem, sizeof(uint64_t) * size);
 
 #if 0
 fprintf(stderr, "L2 Atomics, node=%zd @ %p (%zd), proc=%zd @ %p (%zd)\n",
