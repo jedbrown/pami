@@ -264,7 +264,11 @@ namespace PAMI
             PAMI_ENDPOINT_INFO(parameters->rma.dest, task, offset);
 
             // Verify that this task is addressable by this dma device
-            if (unlikely(_device.isPeer(task) == false)) return PAMI_ERROR;
+            if (unlikely(_device.isPeer(task) == false))
+              {
+                TRACE_FN_EXIT();
+                return PAMI_ERROR;
+              }
 
             TRACE_STRING("attempt an 'immediate' rget transfer.");
 

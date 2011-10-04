@@ -20,9 +20,9 @@
 #include "components/fifo/FifoInterface.h"
 #include "util/queue/CircularQueue.h"
 
-
-#undef TRACE_ERR
-#define TRACE_ERR(x) //fprintf x
+#include "util/trace.h"
+#define DO_TRACE_ENTEREXIT 0
+#define DO_TRACE_DEBUG     0
 
 namespace PAMI
 {
@@ -43,10 +43,14 @@ namespace PAMI
                   CircularQueue::Element (),
                   sequence (s)
               {
+                TRACE_FN_ENTER();
+
                 id = T_Packet::getDispatch (*packet);
                 bytes = T_Packet::payload_size;
                 memcpy ((void *) meta, T_Packet::getMetadata (*packet), T_Packet::header_size);
                 memcpy ((void *) data, packet->getPayload (), T_Packet::payload_size);
+
+                TRACE_FN_EXIT();
               };
 
               ///
@@ -58,6 +62,8 @@ namespace PAMI
                                      void   * recv_func_parm,
                                      void   * cookie)
               {
+                TRACE_FN_ENTER();
+
                 // The metadata is at the front of the packet.
                 T_Packet * pkt = (T_Packet *) metadata;
 
@@ -70,6 +76,7 @@ namespace PAMI
                 CircularQueue * q = (CircularQueue *) recv_func_parm;
                 q->enqueue ((CircularQueue::Element *) uepkt);
 
+                TRACE_FN_EXIT();
                 return 0;
               }
 
@@ -86,6 +93,8 @@ namespace PAMI
 
           inline Dispatch ()
           {
+            TRACE_FN_ENTER();
+
             COMPILE_TIME_ASSERT(T_SetCount*T_SetSize <= 65536); // 65536 == "UINT16_MAX"
 
             // Initialize the registered receive function array to unexpected().
@@ -96,6 +105,8 @@ namespace PAMI
                 _function[i]   = UnexpectedPacket::unexpected;
                 _clientdata[i] = (void *) & _ueQ[i/T_SetSize];
               }
+
+            TRACE_FN_EXIT();
           };
 
           inline ~Dispatch () {};
@@ -105,15 +116,15 @@ namespace PAMI
                                               void                      * clientdata,
                                               uint16_t                  & id)
           {
-            TRACE_ERR((stderr, ">> (%zu,%p) ShmemDevice::registerUserDispatch(%zu, %p, %p)\n", __global.mapping.task(), this, set, function, clientdata));
+            TRACE_FN_ENTER();
+
+            TRACE_FORMAT("set = %zu, function = %p, clientdata = %p", set, function, clientdata);
             if (set >= T_SetCount)
               {
-                TRACE_ERR((stderr, "<< (%zu,%p) ShmemDevice::registerUserDispatch(%zu, %p, %p), T_SetCount = %d, return PAMI_ERROR\n", __global.mapping.task(), this, set, function, clientdata, T_SetCount));
+                TRACE_FORMAT("T_SetCount = %d, return PAMI_ERROR\n", T_SetCount);
+                TRACE_FN_EXIT();
                 return PAMI_ERROR;
               }
-
-
-
 
             // Find the next available id for this dispatch set.
             bool found_free_slot = false;
@@ -121,7 +132,7 @@ namespace PAMI
 
             for (id = set * T_SetSize; id < n; id++)
               {
-                TRACE_ERR((stderr, "   (%zu,%p) ShmemDevice::registerUserDispatch(%zu, %p, %p), unexpected = %p, n = %zu, _function[%d] = %p\n", __global.mapping.task(), this, set, function, clientdata, UnexpectedPacket::unexpected, n, id, _function[id]));
+                TRACE_FORMAT("unexpected fn = %p, n = %zu, _function[%d] = %p", UnexpectedPacket::unexpected, n, id, _function[id]);
                 if (_function[id] == (Interface::RecvFunction_t) UnexpectedPacket::unexpected)
                   {
                     found_free_slot = true;
@@ -129,10 +140,11 @@ namespace PAMI
                   }
               }
 
-            PAMI_assert_debugf(found_free_slot == true, "(%zu,%p) ShmemDevice::registerUserDispatch(%zu, %p, %p), Unable to find a free dispatch slot. Was this dispatch set (%zu) previously registered?", __global.mapping.task(), this, set, function, clientdata, set);
+            PAMI_assert_debugf(found_free_slot == true, "Unable to find a free dispatch slot. Was this dispatch set (%zu) previously registered?", set);
             if (!found_free_slot)
               {
-                TRACE_ERR((stderr, "<< (%zu,%p) ShmemDevice::registerUserDispatch(%zu, %p, %p), found_free_slot = %d, return PAMI_ERROR\n", __global.mapping.task(), this, set, function, clientdata, found_free_slot));
+                TRACE_STRING("found_free_slot = false, return PAMI_ERROR");
+                TRACE_FN_EXIT();
                 return PAMI_ERROR;
               }
 
@@ -148,7 +160,7 @@ namespace PAMI
                 if (_function[uepkt->id] != UnexpectedPacket::unexpected)
                   {
                     // Invoke the registered dispatch function
-                    TRACE_ERR((stderr, "   (%zu,%p) ShmemDevice::registerUserDispatch() uepkt = %p, uepkt->id = %u\n", __global.mapping.task(), this, uepkt, uepkt->id));
+                    TRACE_FORMAT("uepkt = %p, uepkt->id = %u", uepkt, uepkt->id);
                     _function[uepkt->id] (uepkt->meta,
                                           uepkt->data,
                                           uepkt->bytes,
@@ -167,8 +179,8 @@ namespace PAMI
                   }
               }
 
-
-            TRACE_ERR((stderr, "<< (%zu,%p) ShmemDevice::registerUserDispatch(%zu) => %d\n", __global.mapping.task(), this, set, id));
+            TRACE_FORMAT("return %d", id);
+            TRACE_FN_EXIT();
             return PAMI_SUCCESS;
           };
 
@@ -176,6 +188,8 @@ namespace PAMI
                                                 void                      * clientdata,
                                                 uint16_t                  & id)
           {
+            TRACE_FN_ENTER();
+
             // Search in reverse order for an unregistered dispatch id and
             // assign this system dispatch function to it.
 
@@ -190,7 +204,11 @@ namespace PAMI
                   }
               }
 
-            if (!found_free_slot) return PAMI_ERROR;
+            if (!found_free_slot)
+              {
+                TRACE_FN_EXIT();
+                return PAMI_ERROR;
+              }
 
             _function[id]   = function;
             _clientdata[id] = clientdata;
@@ -214,12 +232,16 @@ namespace PAMI
                     free (uepkt);
                   }
               }
+
+            TRACE_FN_EXIT();
             return PAMI_SUCCESS;
           };
 
           void dispatch (uint16_t id, void * metadata, void * payload, size_t bytes)
           {
+            TRACE_FN_ENTER();
             _function[id] (metadata, payload, bytes, _clientdata[id], payload);
+            TRACE_FN_EXIT();
           };
 
         protected:
@@ -227,6 +249,8 @@ namespace PAMI
           template <class T_FifoPacket>
           inline bool consume_impl (T_FifoPacket & packet)
           {
+            TRACE_FN_ENTER();
+
             uint16_t id = T_Packet::getDispatch (packet);
             _function[id] (T_Packet::getMetadata (packet),
                            packet.getPayload (),
@@ -234,6 +258,7 @@ namespace PAMI
                            _clientdata[id],
                            packet.getPayload ());
 
+            TRACE_FN_EXIT();
             return true;
           };
 
@@ -247,8 +272,6 @@ namespace PAMI
     };
   };
 };
-#undef TRACE_ERR
-
 #endif // __components_devices_shmem_ShmemDispatch_h__
 
 //
