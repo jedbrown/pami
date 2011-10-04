@@ -2708,9 +2708,10 @@ extern "C"
 						   void                 * cookie,       /**< IN:  dispatch cookie */
 						   const void           * header_addr,  /**< IN:  header address  */
 						   size_t                 header_size,  /**< IN:  header size     */
+						   size_t                 data_size,    /**< IN:  number of bytes of message data */
 						   pami_endpoint_t        origin,       /**< IN:  root initiating endpoint */
 						   pami_geometry_t        geometry,     /**< IN:  Geometry */
-						   pami_recv_t          * send);        /**< OUT: send message structure, only needed if addr is non-NULL */
+						   pami_recv_t          * send);        /**< OUT: send message structure */
 
   /**
    * \brief Create and post a non-blocking active message reduce operation.
@@ -2759,6 +2760,7 @@ extern "C"
                                                    void                 * cookie,       /**< IN:  dispatch cookie */
                                                    const void           * header_addr,  /**< IN:  header address  */
                                                    size_t                 header_size,  /**< IN:  header size     */
+                                                   size_t                 data_size,    /**< IN:  number of bytes of message data */
                                                    pami_endpoint_t        origin,       /**< IN:  root initiating endpoint */
                                                    pami_geometry_t        geometry,     /**< IN:  Geometry */
                                                    pami_data_function   * op,           /**< OUT: PAMI math operation to perform on the datatype */
@@ -3428,6 +3430,7 @@ extern "C"
     pami_dispatch_p2p_function         p2p;
     pami_dispatch_ambroadcast_function ambroadcast;
     pami_dispatch_amscatter_function   amscatter;
+    pami_dispatch_amgather_function    amgather;
     pami_dispatch_amreduce_function    amreduce;
   } pami_dispatch_callback_function;
 

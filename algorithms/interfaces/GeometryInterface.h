@@ -76,6 +76,13 @@ namespace PAMI
       MAX_NUM_TOPOLOGIES          =  6   // Number of topologies stored
     } topologyIndex_t;             // indices into _topos[] for special topologies
 
+    struct DispatchInfo
+    {
+      pami_dispatch_callback_function  fn;
+      void                            *cookie;
+      pami_collective_hint_t           options;
+    };
+
     template <class T_Geometry>
       class Geometry
     {
@@ -172,8 +179,10 @@ namespace PAMI
       inline pami_task_t                 ordinal    ();
       inline pami_task_t                 ordinal    (int rank);
       inline pami_endpoint_t             endpoint   (pami_task_t ordinal);
+      inline void                       setDispatch(size_t key, DispatchInfo* value);
       inline void                       setKey(gkeys_t key, void*value);
       inline void                       setKey(size_t context_id, ckeys_t key, void*value);
+      inline DispatchInfo              *getDispatch(size_t key);
       inline void                      *getKey(gkeys_t key);
       inline void                      *getKey(size_t context_id, ckeys_t key);
       inline pami_result_t              ue_barrier(pami_event_function,void*,size_t,pami_context_t);
@@ -523,6 +532,11 @@ namespace PAMI
       return static_cast<T_Geometry*>(this)->endpoint_impl(ordinal);
     }
     template <class T_Geometry>
+    inline void                        Geometry<T_Geometry>::setDispatch (size_t key, DispatchInfo *value)
+    {
+      static_cast<T_Geometry*>(this)->setDispatch_impl(key, value);
+    }
+    template <class T_Geometry>
     inline void                        Geometry<T_Geometry>::setKey (gkeys_t key, void *value)
     {
       static_cast<T_Geometry*>(this)->setKey_impl(key, value);
@@ -531,6 +545,11 @@ namespace PAMI
     inline void                        Geometry<T_Geometry>::setKey (size_t context_id, ckeys_t key, void *value)
     {
       static_cast<T_Geometry*>(this)->setKey_impl(context_id, key, value);
+    }
+    template <class T_Geometry>
+    inline DispatchInfo*               Geometry<T_Geometry>::getDispatch (size_t key)
+    {
+      return static_cast<T_Geometry*>(this)->getDispatch_impl(key);
     }
     template <class T_Geometry>
     inline void*                       Geometry<T_Geometry>::getKey (gkeys_t key)

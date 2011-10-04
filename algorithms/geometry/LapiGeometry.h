@@ -79,6 +79,7 @@ namespace PAMI
                                            comm,
                                            nranks,
                                            ranks),
+            _dispatch(),
             _kvstore(),
             _commid(comm),
             _client(client),
@@ -122,6 +123,7 @@ namespace PAMI
                                            comm,
                                            numranges,
                                            rangelist),
+            _dispatch(),
             _kvstore(),
             _commid(comm),
             _client(client),
@@ -246,6 +248,7 @@ namespace PAMI
                                              mapping,
                                              comm,
                                              topology),
+            _dispatch(),
             _kvstore(),
             _commid(comm),
             _client(client),
@@ -593,6 +596,18 @@ namespace PAMI
           PAMI_Endpoint_create(_client, task, 0, &ep);
           return ep;
         }
+
+        inline void                       setDispatch_impl(size_t key, DispatchInfo *value)
+        {
+          _dispatch[key] = *value;
+        }
+
+        inline DispatchInfo              *getDispatch_impl(size_t key)
+        {
+          DispatchInfo * value = &_dispatch[key];
+          return value;
+        }
+
         inline void                       setKey_impl(gkeys_t key, void*value)
         {
           _kvstore[key] = value;
@@ -870,6 +885,7 @@ namespace PAMI
         AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _barriers[PAMI_GEOMETRY_NUMALGOLISTS];
         Algorithm<PAMI::Geometry::Lapi>             _ue_barrier;
 
+        std::map <size_t, DispatchInfo>             _dispatch;                             // AM Collective dispatch functions
         std::map <int, void*>                       _kvstore;                              // global/geometry key store
         std::map <int, void*>                       _kvcstore[PAMI_GEOMETRY_NUMALGOLISTS]; // per context key store
         int                                         _commid;

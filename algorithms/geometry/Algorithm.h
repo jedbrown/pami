@@ -71,9 +71,14 @@ namespace PAMI
                                           pami_collective_hint_t           options)
         {
           TRACE_ERR((stderr, "<%p>Algorithm::dispatch_set()\n", this));
-          _factory->setAsyncInfo(false,
-                                 fn,
-                                 mapidtogeometry);
+          DispatchInfo info;
+          info.fn = fn;
+          info.cookie = cookie;
+          info.options = options;
+          _geometry->setDispatch(dispatch, &info);
+//          _factory->setAsyncInfo(false,
+//                                 fn,
+//                                 mapidtogeometry);
 
           return PAMI_SUCCESS;
         }

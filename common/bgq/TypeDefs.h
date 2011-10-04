@@ -172,6 +172,11 @@ namespace PAMI
   // shmem allsided over p2p eager
   typedef PAMI::NativeInterfaceAllsided<ShmemEager> ShmemNI_AS;
 
+  // shmem active message over p2p eager
+  typedef PAMI::NativeInterfaceActiveMessage<ShmemEager, 2> ShmemNI_AM_AMC;
+  // shmem allsided over p2p eager
+  typedef PAMI::NativeInterfaceAllsided<ShmemEager, 2> ShmemNI_AS_AMC;
+
   typedef Protocol::Send::Eager <Device::MU::PacketModel> MUEagerBase;
   typedef PAMI::Protocol::Send::SendWrapperPWQ < MUEagerBase > MUEager;
 
@@ -180,10 +185,20 @@ namespace PAMI
   // MU allsided over p2p eager
   typedef PAMI::NativeInterfaceAllsided<MUEager> MUNI_AS;
 
+  // MU active message over p2p eager
+  typedef PAMI::NativeInterfaceActiveMessage<MUEager, 2> MUNI_AM_AMC;
+  // MU allsided over p2p eager
+  typedef PAMI::NativeInterfaceAllsided<MUEager, 2> MUNI_AS_AMC;
+
   // shmem + MU composite active message over p2p eager
   typedef PAMI::NativeInterfaceActiveMessage< PAMI::Protocol::Send::SendPWQ< Protocol::Send::Send> > CompositeNI_AM;
   // shmem + MU composite allsided over p2p eager
   typedef PAMI::NativeInterfaceAllsided< PAMI::Protocol::Send::SendPWQ< Protocol::Send::Send> > CompositeNI_AS;
+
+  // shmem + MU composite active message over p2p eager
+  typedef PAMI::NativeInterfaceActiveMessage< PAMI::Protocol::Send::SendPWQ< Protocol::Send::Send>, 2 > CompositeNI_AM_AMC;
+  // shmem + MU composite allsided over p2p eager
+  typedef PAMI::NativeInterfaceAllsided< PAMI::Protocol::Send::SendPWQ< Protocol::Send::Send>, 2 > CompositeNI_AS_AMC;
 
   // PGAS over MU
   typedef xlpgas::CollectiveManager<MUNI_AM> MU_NBCollManager;

@@ -637,6 +637,18 @@ namespace PAMI
         PAMI_Endpoint_create(_client, task, 0, &ep);
         return ep;
       }
+
+      inline void  setDispatch_impl(size_t key, DispatchInfo *value)
+      {
+        _dispatch[key] = *value;
+      }
+
+      inline DispatchInfo  * getDispatch_impl(size_t key)
+      {
+        DispatchInfo * value = &_dispatch[key];
+        return value;
+      }
+
       inline void                      setKey_impl(gkeys_t key, void*value)
       {
         PAMI_assert(key < NUM_GKEYS);
@@ -939,7 +951,7 @@ namespace PAMI
       GeomCompCtr                                   _comp;
       std::list<pami_event_function>                _cleanupFcns;
       std::list<void*>                              _cleanupDatas;
-
+      std::map <size_t, DispatchInfo>               _dispatch;            // AM Collective dispatch functions
 
     public:
       /// Blue Gene/Q Specific functions

@@ -71,7 +71,7 @@ namespace CCMI
       *((int **)sndcounts) = xfer->stypecounts;
     }
 
-    template<class T_ConnMgr, class T_Schedule, typename T_Scatter_type>
+    template<class T_ConnMgr, class T_Schedule, typename T_Scatter_type, typename T_Coll_header = CollHeaderData>
     class ScatterExec : public Interfaces::Executor
     {
       public:
@@ -114,7 +114,7 @@ namespace CCMI
         PAMI::Topology      _selftopology;
         PAMI::Topology      *_gtopology;
 
-        CollHeaderData      _mdata;
+        T_Coll_header       _mdata;
         SendStruct          *_msendstr;
 
         typedef typename ScatterVecType<T_Scatter_type>::base_type basetype;
@@ -227,10 +227,10 @@ namespace CCMI
             pami_quad_t *info      =  (pami_quad_t*)((void*) & _mdata);
             for (int i = 0; i <_maxdsts; ++i)
             {
-               _msendstr[i].msend.msginfo       =  info;
-               _msendstr[i].msend.msgcount      =  1;
-               _msendstr[i].msend.roles         = -1U;
-               _msendstr[i].msend.connection_id = connection_id;
+              _msendstr[i].msend.msginfo       =  info;
+              _msendstr[i].msend.msgcount      =  sizeof(T_Coll_header)/sizeof(pami_quad_t);
+              _msendstr[i].msend.roles         = -1U;
+              _msendstr[i].msend.connection_id = connection_id;
             }
           }
         }
@@ -311,6 +311,10 @@ namespace CCMI
           _connmgr = connmgr;
         }
 
+        void setCollHeader(const T_Coll_header &hdr)
+        {
+          _mdata = hdr;
+        }
         //------------------------------------------
         // -- Executor Virtual Methods
         //------------------------------------------
@@ -335,7 +339,7 @@ namespace CCMI
         static void notifySendDone (pami_context_t context, void *cookie, pami_result_t result)
         {
           TRACE_MSG ((stderr, "<%p>Executor::ScatterExec::notifySendDone()\n", cookie));
-          ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type> *exec =  (ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type> *) cookie;
+          ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type, T_Coll_header> *exec =  (ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type, T_Coll_header> *) cookie;
           exec->_donecount --;
           exec->_curphase  ++;
           exec->sendNext();
@@ -346,7 +350,7 @@ namespace CCMI
                                     pami_result_t    result )
         {
           TRACE_MSG ((stderr, "<%p>Executor::ScatterExec::notifyRecvDone()\n", cookie));
-          ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type> *exec =  (ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type> *) cookie;
+          ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type, T_Coll_header> *exec =  (ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type, T_Coll_header> *) cookie;
           exec->_curphase      =  exec->_startphase + 1;
           exec->sendNext();
         }
@@ -359,8 +363,8 @@ namespace CCMI
 ///
 /// \brief start sending scatter data. Only active on the root node
 ///
-template <class T_ConnMgr, class T_Schedule, typename T_Scatter_type>
-inline void  CCMI::Executor::ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type>::start ()
+template <class T_ConnMgr, class T_Schedule, typename T_Scatter_type, typename T_Coll_header>
+inline void  CCMI::Executor::ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type, T_Coll_header>::start ()
 {
   TRACE_ADAPTOR((stderr, "<%p>Executor::ScatterExec::start() count%d\n", this, _buflen));
 
@@ -372,8 +376,8 @@ inline void  CCMI::Executor::ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type>:
     }
 }
 
-template <class T_ConnMgr, class T_Schedule, typename T_Scatter_type>
-inline void  CCMI::Executor::ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type>::sendNext ()
+template <class T_ConnMgr, class T_Schedule, typename T_Scatter_type, typename T_Coll_header>
+inline void  CCMI::Executor::ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type, T_Coll_header>::sendNext ()
 {
   unsigned ndst = 0;
   unsigned size     = _gtopology->size();
@@ -447,8 +451,8 @@ inline void  CCMI::Executor::ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type>:
     }
 }
 
-template <class T_ConnMgr, class T_Schedule, typename T_Scatter_type>
-inline void  CCMI::Executor::ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type>::notifyRecv
+template <class T_ConnMgr, class T_Schedule, typename T_Scatter_type, typename T_Coll_header>
+inline void  CCMI::Executor::ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type, T_Coll_header>::notifyRecv
 (unsigned             src,
  const pami_quad_t   & info,
  PAMI::PipeWorkQueue ** pwq,

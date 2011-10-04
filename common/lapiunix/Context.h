@@ -235,7 +235,13 @@ namespace PAMI
   typedef PAMI::NativeInterfaceAllsided<ShmemEager>                   ShmemEagerNI_AS;
   typedef PAMI::NativeInterfaceActiveMessage< Protocol::Send::SendPWQ<Protocol::Send::Send> > CompositeNI_AM;
   typedef PAMI::NativeInterfaceAllsided< Protocol::Send::SendPWQ<Protocol::Send::Send> >      CompositeNI_AS;
-  
+  // For active message based collectives we need support for sending large headers 
+  typedef PAMI::NativeInterfaceActiveMessage<LAPISend, 2>                LAPISendNI_AM_AMC;
+  typedef PAMI::NativeInterfaceAllsided<LAPISend, 2>                     LAPISendNI_AS_AMC;
+  typedef PAMI::NativeInterfaceActiveMessage<ShmemEager, 2>              ShmemEagerNI_AM_AMC;
+  typedef PAMI::NativeInterfaceAllsided<ShmemEager, 2>                   ShmemEagerNI_AS_AMC;
+  typedef PAMI::NativeInterfaceActiveMessage< Protocol::Send::SendPWQ<Protocol::Send::Send>, 2 > CompositeNI_AM_AMC;
+  typedef PAMI::NativeInterfaceAllsided< Protocol::Send::SendPWQ<Protocol::Send::Send>, 2 >      CompositeNI_AS_AMC;
   // Geometry Typedefs
   typedef Geometry::Lapi                                              LAPIGeometry;
 
@@ -279,6 +285,20 @@ namespace PAMI
                                                                 ShmemDevice, 
                                                                 LAPISend, 
                                                                 DeviceWrapper> CompositeNIFactory;  
+
+  typedef NativeInterfaceCommon::NativeInterfaceFactory <ProtocolAllocator,
+                                                         LAPISendNI_AM_AMC,
+                                                         LAPISendNI_AS_AMC,
+                                                         LAPISend,
+                                                         DeviceWrapper>       LapiNIFactory_AMC;
+
+  typedef NativeInterfaceCommon::NativeInterfaceFactory2Device <ProtocolAllocator, 
+                                                                CompositeNI_AM_AMC, 
+                                                                CompositeNI_AS_AMC, 
+                                                                ShmemEager, 
+                                                                ShmemDevice, 
+                                                                LAPISend, 
+                                                                DeviceWrapper> CompositeNIFactory_AMC;  
 
   typedef CollRegistration::P2P::CCMIRegistration<LAPIGeometry,
                                                   ProtocolAllocator,

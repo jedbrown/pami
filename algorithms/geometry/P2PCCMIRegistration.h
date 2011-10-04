@@ -73,7 +73,8 @@ namespace PAMI
                                 size_t                               local_size,
                                 int                                 *dispatch_id,
                                 std::map<unsigned, pami_geometry_t> *geometry_map,
-                                CCMI::Interfaces::NativeInterfaceFactory *nifactory):
+                                CCMI::Interfaces::NativeInterfaceFactory *nifactory,
+                                CCMI::Interfaces::NativeInterfaceFactory *nifactory_amc):
               CollRegistration < PAMI::CollRegistration::P2P::CCMIRegistration < T_Geometry,
           T_Allocator, 
           T_BinomialBarrier,
@@ -86,6 +87,7 @@ namespace PAMI
           _client_id(client_id),
           _geometry_map(geometry_map),
           _ni_factory (nifactory),
+          _ni_factory_amc (nifactory_amc),
           //_reduce_val(0),
           _dispatch_id(dispatch_id),
           _allocator(allocator),
@@ -94,6 +96,7 @@ namespace PAMI
           _color_connmgr(),
           _rbconnmgr(),
           _csconnmgr(),
+          _rsconnmgr(),
           _binomial_barrier_factory(NULL),       
           _onetask_barrier_factory(NULL),
           //_onetask_fence_factory(NULL),
@@ -145,6 +148,7 @@ namespace PAMI
           _ascs_reduce_scatter_factory(NULL),
           _ascs_binomial_gather_factory(NULL),
           _ascs_flat_gather_factory(NULL),
+          _active_binomial_gather_factory(NULL),
           _ascs_gatherv_factory(NULL),
           _ascs_gatherv_int_factory(NULL),
           _ascs_binomial_allgather_factory(NULL),
@@ -276,12 +280,26 @@ namespace PAMI
             }//End if onetask geometry
             else//More than one task
             {
-              int flag=0;
+              int flag=0, flag_amc=0;
               unsigned op_query_needed = 0, all_query_needed=0;
+              unsigned op_query_needed_amc = 0, all_query_needed_amc=0;
+              pami_result_t result_amc = PAMI_UNIMPL;
               // Let the NI analyze the geometry and pass back flags
+              if(_ni_factory_amc) {
+                result_amc = _ni_factory_amc->analyze(context_id, geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX),phase,&flag_amc);
+                if(result_amc == PAMI_SUCCESS); // no analyze changes, all ok
+                else if(result_amc == PAMI_OTHER) // check flag for must-query protocol
+                {
+                  /// \todo define flags
+                  if(flag_amc == 1) op_query_needed_amc = 1; // only dt/op must query (reduce-like collectives)
+                  else op_query_needed_amc=all_query_needed_amc=1; // query all collectives
+                }
+                else PAMI_assertf(result_amc==PAMI_SUCCESS,"result %u, flag %u",result_amc,flag_amc); // undefined/unexpected
+                TRACE_FORMAT( "<%p>CCMIRegistration::analyze() add op_query_amc(%u)all_query_amc(%u)",this,op_query_needed_amc,all_query_needed_amc);
+              }
               pami_result_t result = _ni_factory->analyze(context_id, geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX),phase,&flag);
               if(result == PAMI_SUCCESS); // no analyze changes, all ok
-              else if(result == PAMI_UNIMPL) {TRACE_FN_EXIT(); return PAMI_SUCCESS;} // not supported, don't add algorithms
+              else if(result == PAMI_UNIMPL && result_amc == PAMI_UNIMPL) {TRACE_FN_EXIT(); return PAMI_SUCCESS;} // not supported, don't add algorithms
               else if(result == PAMI_OTHER) // check flag for must-query protocol
               {
                 /// \todo define flags
@@ -339,7 +357,7 @@ namespace PAMI
                 {
                   if(all_query_needed)
                     geometry->addCollectiveCheck();
-                  else
+                  else if(result == PAMI_SUCCESS)
                     geometry->addCollective(PAMI_XFER_BROADCAST,
                                           _rectangle_broadcast_factory,
                                           _context_id);
@@ -350,7 +368,7 @@ namespace PAMI
                     geometry->addCollectiveCheck(PAMI_XFER_BROADCAST,
                                             _rectangle_1color_broadcast_factory,
                                             _context_id);
-                  else
+                  else if(result == PAMI_SUCCESS)
                     geometry->addCollective(PAMI_XFER_BROADCAST,
                                             _rectangle_1color_broadcast_factory,
                                             _context_id);
@@ -385,7 +403,7 @@ namespace PAMI
                                        _ascs_reduce_scatter_factory,
                                        _context_id);
               }
-              else
+              else if(result == PAMI_SUCCESS)
               {
                 if(_binomial_allreduce_factory)
                   geometry->addCollective(PAMI_XFER_ALLREDUCE,
@@ -532,7 +550,7 @@ namespace PAMI
                                         _alltoallv_factory,
                                         _context_id);
               }
-              else
+              else if(result == PAMI_SUCCESS)
               {  
                 if(_binomial_broadcast_factory)
                   geometry->addCollective(PAMI_XFER_BROADCAST,
@@ -661,6 +679,21 @@ namespace PAMI
                                         _alltoallv_factory,
                                         _context_id);
               }
+
+              if(all_query_needed_amc)
+              {
+                if(_active_binomial_gather_factory)
+                  geometry->addCollectiveCheck(PAMI_XFER_AMGATHER,
+                                        _active_binomial_gather_factory,
+                                        _context_id);
+              }
+              else if(result_amc == PAMI_SUCCESS)
+              {
+                if(_active_binomial_gather_factory)
+                  geometry->addCollective(PAMI_XFER_AMGATHER,
+                                        _active_binomial_gather_factory,
+                                        _context_id);
+              }
             }
             TRACE_FN_EXIT();
             return PAMI_SUCCESS;
@@ -684,17 +717,32 @@ namespace PAMI
                                         T_Factory                                         *& factory, 
                                         CCMI::Interfaces::NativeInterfaceFactory::NISelect   niselect,
                                         CCMI::Interfaces::NativeInterfaceFactory::NIType     nitype,
-					size_t                                               nconnections=-1)
+                                        size_t                                               nconnections=-1,
+                                        bool                                                 is_amcoll_factory=false)
           {
             TRACE_FN_ENTER();
             DO_DEBUG((templateName<T_Factory>()));
             TRACE_FORMAT("<%p> ni factory %p", this, _ni_factory);            
             pami_result_t       result   = PAMI_ERROR;
-            result = _ni_factory->generate ( _dispatch_id, 
-                                             niselect,
-                                             nitype,
-					     nconnections,
-                                             ni);
+            if(is_amcoll_factory)
+            {
+              // If native interface factory is NULL, skip adding the AM Collective
+              if(_ni_factory_amc == NULL) return PAMI_INVAL;
+
+              result = _ni_factory_amc->generate ( _dispatch_id,
+                                                  niselect,
+                                                  nitype,
+                                                  nconnections,
+                                                  ni);
+            }
+            else
+            {
+              result = _ni_factory->generate ( _dispatch_id,
+                                               niselect,
+                                               nitype,
+                                               nconnections,
+                                               ni);
+            }
             
             //PAMI_assert(result == PAMI_SUCCESS);
             factory = NULL;
@@ -812,30 +860,30 @@ namespace PAMI
             // Setup and Construct a binomial broadcast factory from allsided ni and p2p protocol
             rc = setupFactory<CCMI::Adaptor::P2PBroadcast::BinomialBroadcastFactory>(ni, _binomial_broadcast_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED);
             if (rc == PAMI_SUCCESS) new ((void*)_binomial_broadcast_factory) CCMI::Adaptor::P2PBroadcast::BinomialBroadcastFactory(&_cg_connmgr, ni);
-	    else //Try single threaded if color geometry fails as it
-	         //has lesser resource requrements
-	    {	      
-	      // Setup and Construct a binomial broadcast factory
-	      // single threaded from allsided ni 
-	      rc = setupFactory<CCMI::Adaptor::P2PBroadcast::BinomialBroadcastSingleThFactory>(ni, _binomial_broadcast_singleth_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED, 1);
-	      if (rc == PAMI_SUCCESS) new ((void*)_binomial_broadcast_singleth_factory) CCMI::Adaptor::P2PBroadcast::BinomialBroadcastSingleThFactory(&_color_connmgr, ni);	      
-	    }
-	    
+            else //Try single threaded if color geometry fails as it
+              //has lesser resource requrements
+            {       
+              // Setup and Construct a binomial broadcast factory
+              // single threaded from allsided ni 
+              rc = setupFactory<CCMI::Adaptor::P2PBroadcast::BinomialBroadcastSingleThFactory>(ni, _binomial_broadcast_singleth_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED, 1);
+              if (rc == PAMI_SUCCESS) new ((void*)_binomial_broadcast_singleth_factory) CCMI::Adaptor::P2PBroadcast::BinomialBroadcastSingleThFactory(&_color_connmgr, ni);	      
+            }
+            
             // ----------------------------------------------------
             // Setup and Construct a ring broadcast factory from
             // allsided ni and p2p protocol
             rc = setupFactory<CCMI::Adaptor::P2PBroadcast::RingBroadcastFactory>(ni, _ring_broadcast_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED);
             if (rc == PAMI_SUCCESS) new ((void*)_ring_broadcast_factory) CCMI::Adaptor::P2PBroadcast::RingBroadcastFactory(&_cg_connmgr, ni);
-	    else  //Try single threaded if color geometry fails as it
-		  //has lesser resource requrements
-	    {	      
-	      // Setup and Construct a ring broadcast factory from allsided ni and p2p protocol
-	      rc = setupFactory<CCMI::Adaptor::P2PBroadcast::RingBroadcastSingleThFactory>(ni, _ring_broadcast_singleth_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED, 1);
-	      if (rc == PAMI_SUCCESS) new ((void*)_ring_broadcast_singleth_factory) CCMI::Adaptor::P2PBroadcast::RingBroadcastSingleThFactory(&_color_connmgr, ni); 
-	    }	    
+            else  //Try single threaded if color geometry fails as it
+              //has lesser resource requrements
+            {	      
+              // Setup and Construct a ring broadcast factory from allsided ni and p2p protocol
+              rc = setupFactory<CCMI::Adaptor::P2PBroadcast::RingBroadcastSingleThFactory>(ni, _ring_broadcast_singleth_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED, 1);
+              if (rc == PAMI_SUCCESS) new ((void*)_ring_broadcast_singleth_factory) CCMI::Adaptor::P2PBroadcast::RingBroadcastSingleThFactory(&_color_connmgr, ni); 
+            }	    
 
-	    //This scheme only works 
-	    rc = setupFactory<CCMI::Adaptor::P2PBroadcast::TwoNaryBroadcastFactory>(ni, _sync_2nary_broadcast_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED, 1);
+            //This scheme only works 
+            rc = setupFactory<CCMI::Adaptor::P2PBroadcast::TwoNaryBroadcastFactory>(ni, _sync_2nary_broadcast_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED, 1);
             if (rc == PAMI_SUCCESS) new ((void*)_sync_2nary_broadcast_factory) CCMI::Adaptor::P2PBroadcast::TwoNaryBroadcastFactory(&_color_connmgr, ni);
 
             // ----------------------------------------------------
@@ -969,6 +1017,12 @@ namespace PAMI
             // ----------------------------------------------------
 
             // ----------------------------------------------------
+            // Setup and Construct a rank based binomial active message broadcast factory from active message ni and p2p protocol
+            rc = setupFactory<CCMI::Adaptor::P2PAMGather::Binomial::Factory>(ni, _active_binomial_gather_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE, -1, true);
+            if (rc == PAMI_SUCCESS) new ((void*)_active_binomial_gather_factory) CCMI::Adaptor::P2PAMGather::Binomial::Factory(&_rsconnmgr, ni);
+            // ----------------------------------------------------
+
+            // ----------------------------------------------------
             // Setup and Construct an asynchronous, comm_id/seq_num gatherv factory from active message ni and p2p protocol
             rc = setupFactory<CCMI::Adaptor::P2PGatherv::Factory>(ni, _ascs_gatherv_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE);
             if (rc == PAMI_SUCCESS) new ((void*)_ascs_gatherv_factory) CCMI::Adaptor::P2PGatherv::Factory(&_csconnmgr, ni);
@@ -1050,6 +1104,7 @@ namespace PAMI
             if (_ascs_reduce_scatter_factory)  _ascs_reduce_scatter_factory->setMapIdToGeometry(mapidtogeometry);
             if (_ascs_binomial_gather_factory)  _ascs_binomial_gather_factory->setMapIdToGeometry(mapidtogeometry);
             if (_ascs_flat_gather_factory)  _ascs_flat_gather_factory->setMapIdToGeometry(mapidtogeometry);
+            if (_active_binomial_gather_factory)  _active_binomial_gather_factory->setMapIdToGeometry(mapidtogeometry);
             if (_ascs_gatherv_factory)  _ascs_gatherv_factory->setMapIdToGeometry(mapidtogeometry);
             if (_ascs_gatherv_int_factory)  _ascs_gatherv_int_factory->setMapIdToGeometry(mapidtogeometry);
             if (_ascs_binomial_allgather_factory)  _ascs_binomial_allgather_factory->setMapIdToGeometry(mapidtogeometry);
@@ -1073,6 +1128,7 @@ namespace PAMI
           uint64_t                                                     _reduce_val;
 
           CCMI::Interfaces::NativeInterfaceFactory                   * _ni_factory; //the native interface factory to build the native interfaces
+          CCMI::Interfaces::NativeInterfaceFactory                   * _ni_factory_amc; //the native interface factory for AM collectives 
 
           // This is a pointer to the current dispatch id of the context
           // This will be decremented by the ConstructNativeInterface routines
@@ -1093,6 +1149,7 @@ namespace PAMI
           CCMI::ConnectionManager::SimpleConnMgr                       _sconnmgr;
           CCMI::ConnectionManager::RankBasedConnMgr                    _rbconnmgr;
           CCMI::ConnectionManager::CommSeqConnMgr                      _csconnmgr;
+          CCMI::ConnectionManager::RankSeqConnMgr                      _rsconnmgr;
 
           // CCMI Barrier Interface
           T_BinomialBarrierFactory                                        *_binomial_barrier_factory;
@@ -1161,6 +1218,7 @@ namespace PAMI
           CCMI::Adaptor::P2PReduceScatter::AsyncCSReduceScatterFactory    *_ascs_reduce_scatter_factory;
           CCMI::Adaptor::P2PGather::Binomial::Factory                     *_ascs_binomial_gather_factory;
           CCMI::Adaptor::P2PGather::Flat::Factory                         *_ascs_flat_gather_factory;
+          CCMI::Adaptor::P2PAMGather::Binomial::Factory                   *_active_binomial_gather_factory;
           CCMI::Adaptor::P2PGatherv::Factory                              *_ascs_gatherv_factory;
           CCMI::Adaptor::P2PGatherv::IntFactory                           *_ascs_gatherv_int_factory;
           CCMI::Adaptor::P2PAllgather::Binomial::Factory                  *_ascs_binomial_allgather_factory;

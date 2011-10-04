@@ -137,28 +137,48 @@ namespace PAMI
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc P2PCCMICollreg");
 
         CCMI::Interfaces::NativeInterfaceFactory *ni_factory;
+        CCMI::Interfaces::NativeInterfaceFactory *ni_factory_amc;
         if (use_shm) //shmem is available so use composite local/global (shmem/lapi) NI
         {
           rc = __global.heap_mm->memalign((void **)&ni_factory,
                                           0,
                                           sizeof(CompositeNIFactory));
-          PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc P2PCCMICollreg");
+          PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc NativeInterfaceFactory");
 
           new (ni_factory) CompositeNIFactory (_client, ctxt, _clientid, ctxt->getId(),
                                                ctxt->_devices->_shmem[ctxt->getId()],
                                                ctxt->_lapi_device,
                                                ctxt->_protocol);
+          // NI Factory for AM Collectives
+          rc = __global.heap_mm->memalign((void **)&ni_factory_amc,
+                                          0,
+                                          sizeof(CompositeNIFactory_AMC));
+          PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc NativeInterfaceFactory");
+
+          new (ni_factory_amc) CompositeNIFactory_AMC (_client, ctxt, _clientid, ctxt->getId(),
+                                                       ctxt->_devices->_shmem[ctxt->getId()],
+                                                       ctxt->_lapi_device,
+                                                       ctxt->_protocol);
         }
         else // no shmem, use global (lapi) only
         {
           rc = __global.heap_mm->memalign((void **)&ni_factory,
                                           0,
                                           sizeof(LapiNIFactory));
-          PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc P2PCCMICollreg");
+          PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc NativeInterfaceFactory");
 
           new (ni_factory) LapiNIFactory (_client, ctxt, _clientid, ctxt->getId(),
                                           ctxt->_lapi_device,
                                           ctxt->_protocol);
+          // NI Factory for AM Collectives
+          rc = __global.heap_mm->memalign((void **)&ni_factory_amc,
+                                          0,
+                                          sizeof(LapiNIFactory_AMC));
+          PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc NativeInterfaceFactory");
+
+          new (ni_factory_amc) LapiNIFactory_AMC (_client, ctxt, _clientid, ctxt->getId(),
+                                                  ctxt->_lapi_device,
+                                                  ctxt->_protocol);
         }
 
         new(ctxt->_p2p_ccmi_collreg) P2PCCMICollreg(_client,
@@ -170,7 +190,8 @@ namespace PAMI
                                                     numpeers,
                                                     &ctxt->_dispatch_id,
                                                     &_geometry_map,
-                                                    ni_factory);
+                                                    ni_factory,
+                                                    ni_factory_amc);
 
         // Finish PGAS
         ctxt->_pgas_collreg->setGenericDevice(&ctxt->_devices->_generics[ctxt->getId()]);

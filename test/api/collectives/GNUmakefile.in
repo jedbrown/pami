@@ -25,6 +25,7 @@ APPS            += allreduce_contig.${EXTENSION}
 APPS            += reduce.${EXTENSION} reduce_query.${EXTENSION}  
 APPS            += reduce_subcomm.${EXTENSION} reduce_contig.${EXTENSION}
 APPS            += allgather.${EXTENSION} allgather_contig.${EXTENSION}
+APPS            += amgather.${EXTENSION} 
 APPS            += allgather_subcomm.${EXTENSION} 
 APPS            += allgatherv.${EXTENSION} allgatherv_contig.${EXTENSION}
 APPS            += allgatherv_int.${EXTENSION} 

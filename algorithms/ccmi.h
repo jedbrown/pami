@@ -125,6 +125,14 @@ typedef struct _cheader_data
   unsigned        _dt:8;         //datatype of the allreduce, otherwise unused
 } CollHeaderData  __attribute__((__aligned__(16)));
 
+typedef struct _amcheader_data : _cheader_data
+{
+  size_t          _data_size;    // Size of the payload for AM collective
+  size_t          _dispatch;     // Dispatch ID for AM collective
+#if !defined(__64BIT__)
+  unsigned        unused[2];     // Can be used for any other data in future
+#endif
+} AMCollHeaderData __attribute__((__aligned__(16)));
 
 #ifndef CCMI_Alloc
 #define CCMI_Alloc(p,x)  __global.heap_mm->memalign((void **)&p, 0, x)
