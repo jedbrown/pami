@@ -700,23 +700,28 @@ int main (int argc, char ** argv)
 	return 1;
       }
 
-    options.use_shmem = PAMI_HINT_INVALID;
-    if (debug) {
-      fprintf(stderr, "Before context %zu, ID 3 PAMI_Dispatch_set() ...&recv_active = %p, recv_active = %zu\n", i, &recv_active, recv_active);
-    }
-    result = PAMI_Dispatch_set (context,
-				3,
-				fn,
-				(void *)&recv_active,
-				options);
+    /* Commenting this section out, since calling PAMI_Dispatch_set with PAMI_HINT_INVALID is A) not supported and B) results in a seg fault */
+    /* From Mike Blocksome: */  
+    /* We don't error-check for 'invalid' hints .. so anything could happen I guess */
+    /* PAMI_HINT_INVALID is just there for enum completeness since we have two bits but only need 3 values */
 
-    if (result != PAMI_INVAL) {
+    /*    options.use_shmem = PAMI_HINT_INVALID;*/
+    /*    if (debug) {*/
+    /*      fprintf(stderr, "Before context %zu, ID 3 PAMI_Dispatch_set() ...&recv_active = %p, recv_active = %zu\n", i, &recv_active, recv_active);*/
+    /*    }*/
+    /*    result = PAMI_Dispatch_set (context,*/
+    /*				3,*/
+    /*				fn,*/
+    /*				(void *)&recv_active,*/
+    /*				options);*/
+
+    /*    if (result != PAMI_INVAL) {*/
       /* Make this a warning till it's implemented */
-      if (i == 0) {
-	fprintf(stderr, "WARNING (W): Should not be able to set use_shmem >= 3. result = %d\n", result);
-      }
+    /*      if (i == 0) {*/
+    /*	fprintf(stderr, "WARNING (W): Should not be able to set use_shmem >= 3. result = %d\n", result);*/
+    /*      }*/
       /*return 1; */
-    }
+    /*    }*/
   } /* end context loop */
 
   /* Setup hint vars */
