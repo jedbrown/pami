@@ -610,24 +610,14 @@ namespace PAMI
             // Set up completion notification if required
             if (likely(local_fn != NULL))
               {
-#ifndef OPTIMIZE_AGGREGATE_LATENCY // replace with a template parameter?
-                // Check if the descriptor is done.
-                if (likely(channel.checkDescComplete (sequence)))
-                  {
-                    local_fn (_context.getMuContextCookie(), cookie, PAMI_SUCCESS); // Descriptor is done...notify.
-                  }
-                else
-#endif
-                  {
-                    // The descriptor is not done (or was not checked). Save state
-                    // information so that the progress of the decriptor can be checked
-                    // later and the callback will be invoked when the descriptor is
-                    // complete.
+                // The descriptor is not done (or was not checked). Save state
+                // information so that the progress of the decriptor can be checked
+                // later and the callback will be invoked when the descriptor is
+                // complete.
 
-                    // Add a completion event for the sequence number associated with
-                    // the descriptor that was injected.
-                    channel.addCompletionEvent (state, local_fn, cookie, sequence);
-                  }
+                // Add a completion event for the sequence number associated with
+                // the descriptor that was injected.
+                channel.addCompletionEvent (state, local_fn, cookie, sequence);
               }
           }
         else
