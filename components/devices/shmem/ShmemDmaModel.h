@@ -520,33 +520,7 @@ namespace PAMI
               PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
 
             size_t fnum = _device.fnum (_device.task2peer(target_task), target_offset);
-            size_t bytes_copied = 0;
 
-            // If ordering dosn't matter, or if ordering does matter and the
-            // send queue is empty and there are no active packets injected
-            // from this device ... then do an "immediate" shared address read.
-            //
-            if ((T_Ordered == false) ||
-                ((_device.isSendQueueEmpty (fnum)) &&
-                 (_device.activePackets(fnum) == false)))
-              {
-                // No active packets from this device, therefore the read operation
-                // may proceed immediately and still preserve ordering - if ordering
-                // is required.
-                TRACE_ERR((stderr, "   Shmem::DmaModel<T_Ordered=%d>::postDmaGet_impl('non-blocking memregion'), do an 'unordered' shared address read.\n", T_Ordered));
-                bytes_copied =
-                  _device.shaddr.read (local_memregion, local_offset, remote_memregion, remote_offset, bytes);
-
-                if (likely(bytes_copied == bytes))
-                  {
-                    TRACE_ERR((stderr, "<< Shmem::DmaModel::postDmaGet_impl('non-blocking memregion'), return true\n"));
-                    return true;
-                  }
-              }
-
-            TRACE_ERR((stderr, "   Shmem::DmaModel<T_Ordered=%d>::postDmaGet_impl('non-blocking memregion'), do an 'ordered' shared address read.\n", T_Ordered));
-
-            // Unable to read all bytes, or an ordering condition failed.
             // Block at the head of the send queue, then perform a shared
             // address read operation.
             COMPILE_TIME_ASSERT(sizeof(DmaMessage<T_Device>) <= T_StateBytes);
@@ -558,10 +532,10 @@ namespace PAMI
                                             &_device,
                                             fnum,
                                             local_memregion,
-                                            local_offset + bytes_copied,
+                                            local_offset,
                                             remote_memregion,
-                                            remote_offset + bytes_copied,
-                                            bytes - bytes_copied,
+                                            remote_offset,
+                                            bytes,
                                             true);
             _device.post (fnum, msg);
 
