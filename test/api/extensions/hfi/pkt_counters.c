@@ -58,7 +58,7 @@ int main(int argc, char ** argv)
   if (hfi_counters == (void *)NULL)
   {
     fprintf (stderr, "Error. Failed to load %s function in %s\n",
-             sys_name, ext_name); 
+             sym_name, ext_name); 
     return 1;
   } 
   DBG_FPRINTF((stderr,"Loaded function %s in %s successfully.\n", 
