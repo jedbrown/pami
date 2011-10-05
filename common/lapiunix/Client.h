@@ -919,7 +919,7 @@ namespace PAMI
                                           &_geometry_map);
 
             PAMI::Topology *local_master_topology  = (PAMI::Topology *)new_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
-            to_reduce_count = 3 + local_master_topology->size();
+            to_reduce_count = 3 + 2*local_master_topology->size();
             rc = __global.heap_mm->memalign((void **)&to_reduce, 0,
                                             to_reduce_count * sizeof(uint64_t));
             PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc to_reduce");
@@ -1052,7 +1052,7 @@ namespace PAMI
                                           &_geometry_map);
 
             PAMI::Topology *local_master_topology  = (PAMI::Topology *)new_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
-            to_reduce_count = 3 + local_master_topology->size();
+            to_reduce_count = 3 + 2*local_master_topology->size();
             rc = __global.heap_mm->memalign((void **)&to_reduce, 0,
                                             to_reduce_count * sizeof(uint64_t));
             PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc to_reduce");

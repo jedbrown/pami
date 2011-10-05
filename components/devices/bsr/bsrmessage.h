@@ -31,7 +31,9 @@ namespace PAMI
     public:
       BSRGeometryInfo(int       geometry_id,
                       Topology *topology,
-                      uint64_t  shm_unique_key):
+                      uint64_t  shm_unique_key,
+                      void     *shm_buffer,
+                      size_t    shm_size):
         _geometry_id(geometry_id),
         _topology(topology),
         _in_barrier(false),

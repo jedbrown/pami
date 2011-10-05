@@ -364,6 +364,7 @@ namespace PAMI
           CCMI::Executor::Composite         *_shm_p2p_composite;
           uint32_t                           _unique_key;
           uint64_t                           _ctlstr_offset;
+          uint64_t                           _bsrstr_offset;
         }GeometryInfo;
         typedef typename Barrier::HybridBarrierFactory<T_LocalBSRNI,
                                                        Barrier::HybridBSRMetaData,
@@ -532,12 +533,17 @@ namespace PAMI
             geometry->setKey(PAMI::Geometry::GKEY_GEOMETRYCSNI, ni);
           }
         inline void setup_bsr(T_Geometry                     *geometry,
-                              PAMI::Device::BSRGeometryInfo **bsr_gi)
+                              PAMI::Device::BSRGeometryInfo **bsr_gi,
+                              void                           *shmem_addr)
           {
             PAMI::Topology *local_topo   = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX));
             GeometryInfo   *geometryInfo = (GeometryInfo*)geometry->getKey(Geometry::PAMI_GKEY_GEOMETRYINFO);
             *bsr_gi                      = (PAMI::Device::BSRGeometryInfo *)_bsr_geom_allocator.allocateObject();
-            new(*bsr_gi)PAMI::Device::BSRGeometryInfo(geometry->comm(),local_topo, geometryInfo->_unique_key);
+            new(*bsr_gi)PAMI::Device::BSRGeometryInfo(geometry->comm(),
+                                                      local_topo,
+                                                      geometryInfo->_unique_key,
+                                                      shmem_addr,
+                                                      _csmm._windowsz);
             geometry->setKey(Geometry::GKEY_MSYNC_LOCAL_CLASSROUTEID,*bsr_gi);
           }
 
@@ -568,12 +574,13 @@ namespace PAMI
                   //        non-leader tasks should never disable algorithms
                   PAMI::Topology    *topo              = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
                   PAMI::Topology    *master_topo       = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX));
+                  PAMI::Topology    *local_topo        = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX));
+                  uint               master_rank       = local_topo->index2Rank(0);
+                  uint               master_index      = master_topo->rank2Index(master_rank);
                   uint               numtasks          = topo->size();
                   uint               num_master_tasks  = master_topo->size();
                   LapiImpl::Context *cp                = (LapiImpl::Context *)_Lapi_port[_lapi_handle];
                   bool               participant       = geometry->isLocalMasterParticipant();
-
-
 
                   // Word 0 reduction setup
                   // Generate a unique key and check for collisions
@@ -644,6 +651,18 @@ namespace PAMI
                                         &inout_val[1],
                                         &geometryInfo->_ctlstr_offset);
 
+                  // Get a control structure for BSR
+                  // BSR uses the control structure as a scratchpad for emulation
+                  // or as a scratchpad for initialization
+                  uint64_t *inout_ptr    = &inout_val[1+num_master_tasks];
+                  memset(inout_ptr, 0xFF, num_master_tasks*sizeof(uint64_t));
+                  if(participant)
+                  {
+                    typename T_CSMemoryManager::ctlstr_t *str = _csmm.getCtrlStr(1);
+                    uint64_t  ctrlstr_off                     = _csmm.addr_to_offset(str);
+                    inout_ptr[master_index]                   = ctrlstr_off;
+                  }
+                  geometryInfo->_bsrstr_offset = inout_ptr[master_index];
 
                   inout_nelem[0]    = inout_nelem[0];
                   ITRC(IT_CAU, "CollReg(phase 0): group_id=%d, unique_id=0x%x "
@@ -719,8 +738,11 @@ namespace PAMI
                     setup_cau(geometry, &cau_gi);
 
                   if(useBsr && num_local_tasks>1)
-                    setup_bsr(geometry, &bsr_gi);
-
+                  {
+                    uint64_t *inout_ptr  = &inout_val[1+num_master_tasks];
+                    void     *shmem_addr = _csmm.offset_to_addr(inout_ptr[master_index]);
+                    setup_bsr(geometry, &bsr_gi,shmem_addr);
+                  }
                   GlobalBsrFactory   *f0 = NULL;
                   GlobalSHMEMFactory *f1 = NULL;
                   if(num_master_tasks>1 && participant)
@@ -889,9 +911,16 @@ namespace PAMI
             bsr_gi->~BSRGeometryInfo();
             _bsr_geom_allocator.returnObject(bsr_gi);
           }
-        inline void freeSharedMemory(uint64_t ctlstr_offset)
+        inline void freeSharedMemory(uint64_t ctlstr_offset,
+                                     uint64_t bsrstr_offset)
           {
             _csmm.returnSGCtrlStr(ctlstr_offset);
+            if(bsrstr_offset != 0xFFFFFFFFFFFFFFFFULL)
+            {
+              typename T_CSMemoryManager::ctlstr_t *ctlstr =
+                (typename T_CSMemoryManager::ctlstr_t *)_csmm.offset_to_addr(bsrstr_offset);
+              _csmm.returnCtrlStr(ctlstr);
+            }
           }
         inline void freeUniqueKey(uint32_t unique_key)
           {
@@ -938,7 +967,8 @@ namespace PAMI
 
             gi->_registration->freeUniqueKey(gi->_unique_key);
 
-            gi->_registration->freeSharedMemory(gi->_ctlstr_offset);
+            gi->_registration->freeSharedMemory(gi->_ctlstr_offset,
+                                                gi->_bsrstr_offset);
             
             gi->_registration->freeGeomInfo(gi);
           }
