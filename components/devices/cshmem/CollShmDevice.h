@@ -46,8 +46,9 @@ namespace PAMI
     namespace CollShm
     {
 
-//      static const int POLLCOUNT = 1073741824;
-      static const int POLLCOUNT = 2;
+//      static const int POLLCOUNT      = 1073741824;
+//      static const int INNERPOLLCOUNT = 1073741824;
+      static const int POLLCOUNT      = 2;
       static const int INNERPOLLCOUNT = 5;
 
       typedef union
@@ -293,7 +294,7 @@ namespace PAMI
               ///         -1 indicates there is no data buffer
               ///          associated with the window and no memory
               ///          manager specified, or no memory available
-              inline size_t produceData(PAMI::PipeWorkQueue &src, size_t length, T_MemoryManager *csmm)
+            inline size_t produceData(PAMI::PipeWorkQueue &src, size_t length, T_MemoryManager *csmm, bool do_consume=true)
               {
                 TRACE_DBG((stderr, "<%p>CollShmWindow::produceData() src %p/%p, trying length %zu :avail=%lu\n",
                            this, &src, src.bufferToConsume(), length, src.bytesAvailableToConsume()));
@@ -306,7 +307,8 @@ namespace PAMI
                   {
                     _len = reqbytes;
                     memcpy (_data.immediate_data, src.bufferToConsume(), _len);
-                    src.consumeBytes(_len);
+                    if(do_consume)
+                      src.consumeBytes(_len);
                     setContent(IMMEDIATE);
                   }
                 else if (reqbytes <= XMEM_THRESH)
@@ -324,7 +326,8 @@ namespace PAMI
                         }
                       }
                     memcpy (buf, src.bufferToConsume(), _len);
-                    src.consumeBytes(_len);
+                    if(do_consume)
+                      src.consumeBytes(_len);
                     setContent(COPYINOUT);
                   }
                 else
@@ -699,13 +702,11 @@ namespace PAMI
                         }
 
                       if (_partners) return PAMI_EAGAIN;
-
                       break;
                     case SHAREWITH:
                       window = _device->getWindow(0, _arank, _idx);
 
                       if (window->getCmpl() != 1) return PAMI_EAGAIN;
-
                       window->setCmpl();
 
                       if (window->getContent() == CollShmWindow::XMEMATT) window->returnBuffer(NULL);
@@ -734,7 +735,6 @@ namespace PAMI
                   }
 
                 TRACE_DBG((stderr, "<%p>CollShmThread::_advanceThread() msg %p\n", this, msg));
-
                 if (msg)
                   {
                     switch (msg->getMsgType())
@@ -756,7 +756,6 @@ namespace PAMI
                   }
 
                 if (rc == PAMI_SUCCESS) _device->setThreadAvail(getIdx());
-
                 return rc;
               }
               inline void _setPartners()
@@ -1086,7 +1085,6 @@ namespace PAMI
                         _len  -= _wlen;
                         ++_step ;
                         rc = window->setAvail(_step, _nchildren + 1);
-
                         if (rc != PAMI_SUCCESS)
                           {
                             _action = SHAREWITH;
@@ -1105,14 +1103,14 @@ namespace PAMI
                                                          PAMI_OP_COUNT, PAMI_DT_COUNT,
                                                          _device->getSysdep());
 
-                            if (_wlen == 0) return PAMI_EAGAIN;
+                            if (_wlen == 0)return PAMI_EAGAIN;
 
                             pwindow->setCmpl();
                             _len  -= _wlen;
 
                             if (_role == BOTH)
                               {
-                                size_t len = window->produceData(*(PAMI::PipeWorkQueue *)mcast->dst, _wlen, _device->getSysdep());
+                                size_t len = window->produceData(*(PAMI::PipeWorkQueue *)mcast->dst, _wlen, _device->getSysdep(),false);
                                 PAMI_ASSERT(len == _wlen);
                                 _action = SHAREWITH;
                                 rc = window->setAvail(_step, _nchildren + 1);
@@ -1134,7 +1132,6 @@ namespace PAMI
                           }
                       }
                   }
-
                 if (_len == 0)
                   {
                     if (rc == PAMI_SUCCESS || _wlen <= XMEM_THRESH)
@@ -1491,21 +1488,24 @@ namespace PAMI
                 msg->setStatus(PAMI::Device::Active);
                 incActiveMsg();
 
-                pami_result_t rc = thr->_advanceThread(g[x].getContext());
-                int pollcnt = POLLCOUNT;
+                pami_result_t rc      = thr->_advanceThread(g[x].getContext());
+                int           pollcnt = POLLCOUNT;
+                bool          done    = false;
                 while((rc == PAMI_EAGAIN) && pollcnt)
                 {
                   pollcnt--;
                   rc = thr->_advanceThread(g[x].getContext());
+                  if (msg->getStatus() == PAMI::Device::Done)
+                    done = true;
                 }
-                if (msg->getStatus() == PAMI::Device::Done)
-                  {
-                    msg->executeCallback(g[x].getContext());
-                    if (rc == PAMI_EAGAIN)
-                      g[x].postThread(thr);
-                    return;
-                  }
-
+                if (done || (msg->getStatus() == PAMI::Device::Done))
+                {
+                  msg->executeCallback(g[x].getContext());
+                  if (rc == PAMI_EAGAIN)
+                    g[x].postThread(thr);
+                  return;
+                }
+                
                 g[x].postMsg(msg);
                 g[x].postThread(thr);
                 TRACE_DBG((stderr, "message posted %p\n", this));
@@ -1552,23 +1552,24 @@ namespace PAMI
                     thr->setMsg(msg);
                     thr->initThread(msg->getMsgType());
                     thr->setStatus(PAMI::Device::Ready);
-                    pami_result_t rc = thr->_advanceThread(g[x].getContext());
-                    int pollcnt = POLLCOUNT;
+                    pami_result_t rc      = thr->_advanceThread(g[x].getContext());
+                    int           pollcnt = POLLCOUNT;
+                    bool          done    = false;
                     while((rc == PAMI_EAGAIN) && pollcnt)
                     {
                       pollcnt--;
                       rc = thr->_advanceThread(g[x].getContext());
+                      if (msg->getStatus() == PAMI::Device::Done)
+                        done = true;
                     }
-
-                    if (msg->getStatus() == PAMI::Device::Done)
-                      {
-                        // setThreadAvail(thr->getIdx());
-                        deleteElem(msg);
-                        msg->executeCallback(g[x].getContext());
-                        if (rc == PAMI_EAGAIN)
-                          g[x].postThread(thr);
-                        continue;
-                      }
+                    if(done || (msg->getStatus() == PAMI::Device::Done))
+                    {
+                      deleteElem(msg);
+                      msg->executeCallback(g[x].getContext());
+                      if (rc == PAMI_EAGAIN)
+                        g[x].postThread(thr);
+                      continue;
+                    }
                     g[x].postMsg(msg);
                     g[x].postThread(thr);
                   }
