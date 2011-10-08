@@ -69,7 +69,7 @@ namespace PAMI
     };
 
     // metadata check function for allreduce; one element only
-    metadata_result_t allreduce_metadata_function(struct pami_xfer_t *in) {
+      static inline metadata_result_t allreduce_metadata_function(struct pami_xfer_t *in) {
       metadata_result_t result;
       result.bitmask = 0;
       if(in->cmd.xfer_allreduce.stypecount > 1) result.check.range = 1;
