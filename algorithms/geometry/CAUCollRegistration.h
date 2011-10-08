@@ -903,9 +903,9 @@ namespace PAMI
             _csmm.returnSGCtrlStr(ctlstr_offset);
             if(bsrstr_offset != 0xFFFFFFFFFFFFFFFFULL)
             {
-              typename T_CSMemoryManager::ctlstr_t *ctlstr =
-                (typename T_CSMemoryManager::ctlstr_t *)_csmm.offset_to_addr(bsrstr_offset);
-              _csmm.returnCtrlStr(ctlstr);
+              size_t *buf = (size_t*)_csmm.offset_to_addr(bsrstr_offset);
+              *buf        = _csmm.shm_null_offset();
+              _csmm.returnCtrlStr((typename T_CSMemoryManager::ctlstr_t *)buf);
             }
             if(databuf_offset != 0xFFFFFFFFFFFFFFFFULL)
             {
