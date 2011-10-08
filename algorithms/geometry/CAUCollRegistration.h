@@ -495,11 +495,14 @@ namespace PAMI
             PAMI::Topology *local_topo   = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX));
             GeometryInfo   *geometryInfo = (GeometryInfo*)geometry->getKey(Geometry::PAMI_GKEY_GEOMETRYINFO);
             *bsr_gi                      = (PAMI::Device::BSRGeometryInfo *)_bsr_geom_allocator.allocateObject();
+            uint            member_id    = local_topo->rank2Index(_global_task);
             new(*bsr_gi)PAMI::Device::BSRGeometryInfo(geometry->comm(),
                                                       local_topo,
                                                       geometryInfo->_unique_key,
                                                       shmem_addr,
-                                                      _csmm._windowsz);
+                                                      _csmm._windowsz,
+                                                      _Lapi_env.MP_partition,
+                                                      member_id);
             geometry->setKey(Geometry::GKEY_MSYNC_LOCAL_CLASSROUTEID,*bsr_gi);
           }
 
@@ -620,6 +623,9 @@ namespace PAMI
                   if(participant)
                   {
                     typename T_CSMemoryManager::ctlstr_t *str = _csmm.getCtrlStr(1);
+                    // BSR expects this window to be cleared
+                    memset(str, 0, _csmm._windowsz);
+                    Memory::sync();
                     uint64_t  ctrlstr_off                     = _csmm.addr_to_offset(str);
                     inout_ptr[master_index]                   = ctrlstr_off;
                   }

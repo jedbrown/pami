@@ -33,7 +33,9 @@ namespace PAMI
                       Topology *topology,
                       uint64_t  shm_unique_key,
                       void     *shm_buffer,
-                      size_t    shm_size):
+                      size_t    shm_size,
+                      unsigned  partition_id,
+                      unsigned  member_id):
         _geometry_id(geometry_id),
         _topology(topology),
         _in_barrier(false),
