@@ -29,17 +29,18 @@ namespace PAMI
     class BSRGeometryInfo
     {
     public:
-      BSRGeometryInfo(int       geometry_id,
-                      Topology *topology,
-                      uint64_t  shm_unique_key,
-                      void     *shm_buffer,
-                      size_t    shm_size,
-                      unsigned  partition_id,
-                      unsigned  member_id):
+      BSRGeometryInfo(int          geometry_id,
+                      Topology    *topology,
+                      void        *shm_block,
+                      size_t       shm_block_sz,
+                      unsigned int job_key,
+                      unsigned int member_id):
         _geometry_id(geometry_id),
         _topology(topology),
         _in_barrier(false),
-        _shm_unique_key(shm_unique_key)
+        _shm_block(shm_block),
+        _shm_block_sz(shm_block_sz),
+        _sync_group(member_id, topology->size(), job_key, shm_block, shm_block_sz)
         {
         }
       SaOnNodeSyncGroup         _sync_group;
@@ -47,8 +48,9 @@ namespace PAMI
       Topology                 *_topology;
       bool                      _in_barrier;
       std::vector <void*>       _waiters_q;
-      uint64_t                  _shm_unique_key;
-
+      void                     *_shm_block;    // shared memory block passed
+                                               // from collective framework
+      size_t                    _shm_block_sz; // size of the shared memory buffer
     };
   };
 };

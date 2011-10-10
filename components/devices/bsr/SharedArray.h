@@ -27,7 +27,6 @@ class SharedArray
             SUCCESS = 0, ///< Operation successed.
             PROCESSING,  ///< Operation not finished.
             FAILED,      ///< Operation failed.
-            NOT_AVAILABLE///< Shared array is not available.
         };
 
         /**
@@ -35,15 +34,9 @@ class SharedArray
          *
          * This constructor initializes member variables to default values.
          */
-        SharedArray();
+        SharedArray(unsigned int mem_cnt, bool is_leader,
+                void* shm_block, size_t shm_block_sz, const char* name);
 
-        /**
-         * \brief Default destructor.
-         *
-         * The function frees all the resources that associate with
-         * this object.
-         *
-         */
         virtual ~SharedArray();
 
         /**
@@ -56,8 +49,6 @@ class SharedArray
          * \param member_cnt Number of members on the local node
          * \param job_key    Job key is used to communicate with PNSD and also
          *                   used to generate an unique SHM key 
-         * \param unique_key A unique number generated at the time the geometry
-         *                   is created to generate an unique SHM key
          * \param leader     Specifies if this is a leader member.
          * \param mem_id     Specifies the unique id (0 based) within the group
          *                   This is used by BSR priming only
@@ -66,10 +57,7 @@ class SharedArray
          *
          * \return SharedArray::SUCCESS, SharedArray::FAILED
          */
-        virtual RC CheckInitDone(const unsigned int   mem_cnt, 
-                                 const unsigned int   job_key, 
-                                 const uint64_t       unique_key,
-                                 const bool           leader, 
+        virtual RC CheckInitDone(const unsigned int   job_key, 
                                  const int            mem_id, 
                                  const unsigned char  init_val)=0;
 
@@ -150,74 +138,27 @@ class SharedArray
          */
         bool IsLeader() const;
 
+        const char*   name;
     protected:
-        /// Memory cache line size in bytes.
-        static const int CACHE_LINE_SZ = 128;
-
-        // Helper functions for derived classes:
-        /**
-         * \brief Helper function to setup shared memory segment.
-         *
-         * This SHM segment is used for internal communication.
-         * This protected function creates the SHM segment of the given
-         * size and attaches to it. If the function could not finish in
-         * the period of timeout, it returns FAILED.
-         *
-         * \param shm_key Shared memory key to use.
-         * \param size    Number of bytes to allocate.
-         * \param timeout Number of seconds to wait before ShmSetup returns
-         *                a failure.
-         *
-         * \return SharedArray::SUCCESS, SharedArray::FAILED
-         * \note This function must be called after the SharedArray::member_cnt is
-         *       set.
-         */
-        RC IsPosixShmSetupDone(const unsigned int size);
-
-        /**
-         * \brief Destroy the internal SHM segment
-         *
-         * This function detachs from the SHM segment and then remove the
-         * SHM id from system if it is called by SHM master.
-         *
-         * \return SharedArray::SUCCESS
-         */
-        RC PosixShmDestroy();
-
         // Member variables
         unsigned int  member_cnt;   ///< Number of members on the local node.
         bool          is_leader;    ///< Indicates if this is a leader task.
-        int           shm_id;       ///< The shm id for the created segment.
-        int           shm_size;     ///< The POSIX shm size
+        int           shm_size;     ///< The shm block size
         void*         shm_seg;      ///< Pointer to the SHM segment.
-        char          shm_str[128]; ///< The shm string for POSIX shm
-
-    private:
-        enum SETUP_STATE {
-            ST_NONE = 0,
-            ST_ATTACHED,
-            ST_PASSED,
-            ST_FAILED
-        } setup_state;
-        struct ShmCtrlBlock {
-            volatile unsigned int ref_cnt; // number of member currently attached
-        };
-        ShmCtrlBlock* ctrl_block;
-        SharedArray::SETUP_STATE PosixShmAllAttached();
-        SharedArray::SETUP_STATE PosixShmAttach(const unsigned int size);
-
 };
 
-inline SharedArray::SharedArray():
-                  setup_state(ST_NONE),
-                  member_cnt(0),
-                  is_leader(false),
-                  shm_id(-1),
-                  shm_size(0),
-                  shm_seg(NULL),
-                  ctrl_block(NULL){};
+inline SharedArray::SharedArray(unsigned int mem_cnt, bool is_leader,
+        void *shm_block, size_t shm_block_sz, const char *name):
+                  member_cnt(mem_cnt),
+                  is_leader(is_leader),
+                  shm_size(shm_block_sz),
+                  shm_seg(shm_block),
+                  name(name) {};
+
+inline SharedArray::~SharedArray() {};
 
 inline bool SharedArray::IsLeader() const {
     return this->is_leader;
 }
+
 #endif /* _SHAREDARRAY_H */

@@ -35,12 +35,9 @@
 class Bsr : public SharedArray
 {
     public:
-        Bsr();
+        Bsr(unsigned int mem_cnt, bool is_leader, void *shm_block, size_t shm_block_sz);
         ~Bsr();
-        RC CheckInitDone(const unsigned int   mem_cnt, 
-                         const unsigned int   job_key, 
-                         const uint64_t       unique_key,
-                         const bool           leader, 
+        RC CheckInitDone(const unsigned int   job_key, 
                          const int            mem_id, 
                          const unsigned char  init_val);
 
@@ -53,10 +50,11 @@ class Bsr : public SharedArray
         void Store4(const int byte_offset, const unsigned int val);
         void Store8(const int byte_offset, const unsigned long long val);
 
+        static size_t GetCtrlBlockSz(unsigned int mem_cnt) {
+            return (sizeof(Shm));
+        }
     private:
-        key_t                   bsr_key;        // BSR key
         int                     bsr_id;         // BSR id
-        size_t                  bsr_size;       // BSR region size
         unsigned char*          bsr_addr;       // BSR address
 #ifdef _LAPI_LINUX 
         uint32_t                smask;
@@ -64,35 +62,31 @@ class Bsr : public SharedArray
 #endif
         enum BSR_SETUP_STATE {
             ST_NONE = 0,
-            ST_BOOTSTRAP_PROCESSING,
-            ST_BOOTSTRAP_DONE,
-            ST_BSR_ATTACHED,
-            ST_BSR_CHECK_REF_CNT,
+            ST_BSR_ACQUIRED,   /* bsr_id acquired (on AIX, shmctl with SHM_BSR also succeeded) */
+            ST_BSR_WAIT_ATTACH,/* attached to BSR (primed and ref++) and wait for others */
             ST_SUCCESS,
-            ST_FAIL
-        } bsr_state;
+            ST_FAIL 
+        } bsr_state; // state on local task
 
         struct Shm {
-            // current state of BSR setup process
-            volatile BSR_SETUP_STATE bsr_setup_state;
             // ref count; number of successful bsr setup
-            volatile unsigned int bsr_setup_ref;
-            // BSR ID
+            volatile unsigned int setup_ref;
+            // BSR ID. Set by leader.
             volatile int          bsr_id;
-        };
-        Shm*                      shm; // shm block used to do internal
+            // Do we have BSR allocated? Updated by leader only
+            volatile bool         bsr_acquired;
+            // Do we need to abort BSR setup?
+            volatile bool         setup_failed;
+        }                        *shm; // shm block used to do internal
                                        // communication.
 
         // helper function
         void CleanUp();
-        int GetBsrUniqueKey(const unsigned int j_key);
-        Bsr::BSR_SETUP_STATE CheckBsrResource(const unsigned int mem_cnt,
-                const unsigned int job_key, const uint64_t unique_key,
-                const bool leader);
-        Bsr::BSR_SETUP_STATE CheckBootstrapSetup();
-        Bsr::BSR_SETUP_STATE CheckBsrAttach(const unsigned int job_key);
-        Bsr::BSR_SETUP_STATE CheckBsrRefCount(const int mem_id, 
-                                              const unsigned char init_val);
-        Bsr::BSR_SETUP_STATE CheckBsrReady();
+#ifndef _LAPI_LINUX
+        int  GetBsrUniqueKey(unsigned int j_key);
+#endif
+        bool GetBsrResource(unsigned int job_key);
+        bool AttachBsr(int mem_id, unsigned char init_val);
+        bool IsBsrReady();
 };
 #endif

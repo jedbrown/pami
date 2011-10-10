@@ -65,29 +65,19 @@ namespace PAMI
                 case UNINITIALIZED:
                 {
                   // Action:  Initialize
-                  if(!_bsrinfo->_sync_group.IsInitialized())
-                  {
-                    SaOnNodeSyncGroup::Param_t param = { false, false };
-                    size_t member_id = _bsrinfo->_topology->rank2Index(_device->taskid());
-                    SyncGroup::RC sg_rc =  _bsrinfo->_sync_group.CheckInitDone( 
-                                                    _bsrinfo->_topology->size(),
-                                                    _Lapi_env.MP_partition,
-                                                    _bsrinfo->_shm_unique_key,
-                                                    member_id,
-                                                    &param);
-                    switch (sg_rc) {
-                        case SyncGroup::SUCCESS:
-                            _state = ENTERING;
-                            break;
-                        case SyncGroup::PROCESSING:
-                            return PAMI_EAGAIN;
-                        default:
-                            assert(0);
-                            return PAMI_ERROR;
-                    }
+                  SyncGroup::RC sg_rc =  _bsrinfo->_sync_group.CheckInitDone();
+                  switch (sg_rc) {
+                    case SyncGroup::SUCCESS:
+                        _state = ENTERING;
+                        break;
+                    case SyncGroup::PROCESSING:
+                        return PAMI_EAGAIN;
+                    default:
+                        assert(0);
+                        return PAMI_ERROR;
                   }
-                  // no break, fallthrough
                 }
+                  // no break, fallthrough
                 case ENTERING:
                 {
                   // Action:  enter barrier

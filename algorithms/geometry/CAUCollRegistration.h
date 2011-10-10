@@ -493,16 +493,16 @@ namespace PAMI
                               void                           *shmem_addr)
           {
             PAMI::Topology *local_topo   = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX));
+
             GeometryInfo   *geometryInfo = (GeometryInfo*)geometry->getKey(Geometry::PAMI_GKEY_GEOMETRYINFO);
             *bsr_gi                      = (PAMI::Device::BSRGeometryInfo *)_bsr_geom_allocator.allocateObject();
             uint            member_id    = local_topo->rank2Index(_global_task);
             new(*bsr_gi)PAMI::Device::BSRGeometryInfo(geometry->comm(),
                                                       local_topo,
-                                                      geometryInfo->_unique_key,
                                                       shmem_addr,
                                                       _csmm._windowsz,
-                                                      _Lapi_env.MP_partition,
-                                                      member_id);
+                                                      _Lapi_env.MP_partition, // job_id
+                                                      member_id);             // member_id
             geometry->setKey(Geometry::GKEY_MSYNC_LOCAL_CLASSROUTEID,*bsr_gi);
           }
 
@@ -934,7 +934,7 @@ namespace PAMI
 
 
             int commid = gi->_geometry->comm();
-            ITRC(IT_CAU, "CollReg:  cleanupCallback:  ctxt=%p geometry id=%d key=%x cau_info=%p\n ",
+            ITRC(IT_CAU|IT_BSR, "CollReg:  cleanupCallback:  ctxt=%p geometry id=%d key=%x cau_info=%p\n",
                  ctxt, commid, gi->_unique_key, gi->_cau_info);
             if(gi->_cau_info)
             {

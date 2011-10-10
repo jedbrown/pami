@@ -6,9 +6,11 @@
 #define __components_devices_bsr_SaOnNodeSyncGroup_h__
 
 #include "SyncGroup.h"
-#include "SharedArray.h"
+#include "Bsr.h"
+#include "ShmArray.h"
 #include "lapi_assert.h"
 
+class ClassDump;
 /**
  * \brief SaOnNodeSyncGroup class
  *
@@ -17,102 +19,90 @@
  *
  */
 class SaOnNodeSyncGroup : public SyncGroup {
+    friend ClassDump & operator<< (ClassDump &dump, const SaOnNodeSyncGroup &s);
     public:
-        /**
-         * \brief Data structure to hold extra infomation (hints) to initialize
-         *        the object.
-         */
-        typedef struct {
-            bool multi_load;///< Flag to indicate if multi-byte load should be used.
-            bool use_shm_only;/**< Flag to indicate we want to use ShmArray only.
-                               * If it is set, no other method, e.g.
-                               * BSR, will be tried. */
-        } Param_t;
-
-        SaOnNodeSyncGroup();
+        SaOnNodeSyncGroup(unsigned int member_id, unsigned int mem_cnt,
+                unsigned int job_key, void* shm_block, size_t shm_block_sz);
         ~SaOnNodeSyncGroup();
         /**
          * \brief Check Initialization Status function.
-         * Initalize internal variables and allocate mempry spaces. Every member
-         * prcess that want to be in the group has to initialize the SaOnSyncGroup
-         * with the same \em member_cnt and \em group_id values.
-         *
-         * \param member_cnt Number of members will be in the group.
-         * \param job_key    Job key is used to communicate with PNSD and also
-         *                   used to generate an unique SHM key 
-         * \param unique_key A unique number generated at the time the geometry
-         *                   is created to generate an unique SHM key
-         * \param member_id  An unique id to identify the member who creates the
-         *                   object. The value should be in the range of
-         *                   [0..member_cnt)
-         * \param param      A pointer to SaOnNodeSyncGroup::Param structure.
-         *                   Required for SaOnNodeSyncGroup.
-         *
-         * \return SyncGroup::SUCCESS SyncGroup::FAILED
+         * \return SyncGroup::SUCCESS, SyncGroup::PROCESSING, SyncGroup::FAILED
          */
-        RC   CheckInitDone(const unsigned int   member_cnt,
-                           const unsigned int   job_key, 
-                           const uint64_t       unique_key,
-                           const unsigned int   member_id, 
-                           void*                param);
+        RC   CheckInitDone();
         void BarrierEnter();
         void BarrierExit();
         bool IsNbBarrierDone();/* to check if the non-blocking Barrier finishes */
-        //bool IsNbBarrierDone();/* to check if the non-blocking Barrier finishes */
-        void NbBarrier();     /* issue non-blocking barrier */
-        void _Dump() const;
-        void show_bsr(char*); /* for debugging purpose */
+        void NbBarrier();      /* issue non-blocking barrier */
 
     private:
+        // seq = 0, use mask[0] 
+        // seq = 1, use mask[1]
+        static const unsigned long long mask[2];
         enum SetupState {
             ORIG_ST = 0,
-            BSR_ST,
-            BSR_DONE_ST,
-            BSR_FAIL_ST,
-            SHM_ST,
-            SHM_DONE_ST,
+            BSR_ST,     // try to initialize BSR
+            SHM_ST,     // try to initialize ShmArray
             FAIL_ST,
             DONE_ST
         } s_state;
-        SaOnNodeSyncGroup::SetupState Init_bsr_step(const unsigned int  mem_cnt, 
-                                                    const unsigned int  job_key, 
-                                                    const uint64_t      unique_key,
-                                                    const unsigned int  mem_id, 
-                                                    void*               param);
-        SaOnNodeSyncGroup::SetupState Init_shm_step();
-        SaOnNodeSyncGroup::SetupState Init_shm();
-        SaOnNodeSyncGroup::SetupState Init_bsr();
+        template <class SA_TYPE>
+            SharedArray::RC InitSa(void* ctrl_block, size_t ctrl_block_sz);
         unsigned int  is_leader;
         unsigned int  job_key;
-        uint64_t      unique_key;
         unsigned int  seq;
-        SharedArray   *sa;      // could be BSRs, ShmArray
-        unsigned char mask[2][8];
-        bool          multi_load;
+        SharedArray  *sa;      // could be BSRs, ShmArray
         int           nb_barrier_stage; /* stages for non-blocking barrier.
                                          * (0) init stage
                                          * (1) for reduce done;
                                          * (2) for broadcast done */
-
+        void         *shm_block;        /* shared memory block passed
+                                         * from collective framework */
+        size_t        shm_block_sz;     // size of the shared memory buffer
+        void         *bsr_ctrl_block;
+        size_t        bsr_ctrl_block_sz;
+        void         *shmarray_ctrl_block;
+        size_t        shmarray_ctrl_block_sz;
 };
 
 inline
 void SaOnNodeSyncGroup::NbBarrier()
 {
-    assert(nb_barrier_stage == 2);
+    ASSERT(nb_barrier_stage == 2);
     nb_barrier_stage = 0;
 }
 
 inline
-SaOnNodeSyncGroup::SaOnNodeSyncGroup():
-    is_leader(0),
-    job_key(0),
-    unique_key(0),
+SaOnNodeSyncGroup::SaOnNodeSyncGroup(unsigned int mem_id, unsigned int mem_cnt,
+        unsigned int job_key, void* shm_block, size_t shm_block_sz):
+    SyncGroup(mem_id, mem_cnt),
+    is_leader(mem_id == 0),
+    job_key(job_key),
     seq(0),
     sa(NULL),
-    multi_load(false),
     nb_barrier_stage(2),
-    s_state(ORIG_ST)
+    s_state(ORIG_ST),
+    shm_block(shm_block),
+    shm_block_sz(shm_block_sz),
+    bsr_ctrl_block(NULL),
+    bsr_ctrl_block_sz(0),
+    shmarray_ctrl_block(NULL),
+    shmarray_ctrl_block_sz(0)
 {
+    assert(member_cnt > 0);
+    // modify seq, the init value is 0 for all tasks
+    // seq of leader remains 0 with seq of the rest of tasks turned to 1
+    seq = (is_leader)? seq : (!seq);
+
+    bsr_ctrl_block_sz      = Bsr::GetCtrlBlockSz(member_cnt);
+    shmarray_ctrl_block_sz = ShmArray::GetCtrlBlockSz(member_cnt);
+
+    assert (shm_block_sz >= (bsr_ctrl_block_sz + shmarray_ctrl_block_sz));
+
+    /* we need to separate these two control blocks, since it is hard to 
+     * reinitialize to zero if used */
+    bsr_ctrl_block         = shm_block;
+    shmarray_ctrl_block    = (void*)((char*)shm_block + bsr_ctrl_block_sz);
 };
+
 #endif /* _SAONNODESYNCGROUP_H_ */
+
