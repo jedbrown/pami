@@ -19,7 +19,10 @@ namespace PAMI
 
       typedef enum
       {
-        PAMI_ASYNC_ALL = 0
+        PAMI_ASYNC_ALL                = 0,
+        PAMI_ASYNC_RECV_INTERRUPT     = 1,
+        PAMI_ASYNC_TIMER              = 2,
+        PAMI_ASYNC_EXT                = 1000
       } pamix_async_t;
 
       ProgressExtension();

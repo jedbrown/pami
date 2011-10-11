@@ -73,31 +73,6 @@ extern "C"
    * \{
    */
 
-  typedef void (*pami_async_function) (pami_context_t  context, 
-                                       void *          cookie);
-
-  typedef enum {
-      PAMI_ASYNC_ALL                = 0,
-      PAMI_ASYNC_RECV_INTERRUPT     = 1,
-      PAMI_ASYNC_TIMER              = 2,
-      PAMI_ASYNC_EXT                = 1000
-  } pami_async_t;
-
-  typedef pami_result_t (*async_progress_register_fn) (
-          pami_context_t          context,
-          pami_async_function     progress_fn,
-          pami_async_function     suspend_fn,
-          pami_async_function     resume_fn,
-          void*                   cookie);
-
-  typedef pami_result_t (*async_progress_enable_fn) (
-          pami_context_t          context,
-          pami_async_t            event_type);
-
-  typedef pami_result_t (*async_progress_disable_fn) (
-          pami_context_t          context,
-          pami_async_t            event_type);
-
   /**
    * \brief PAMI asynchronous error handler
    *

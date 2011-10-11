@@ -535,12 +535,17 @@ namespace PAMI
       inline size_t advance_impl (size_t maximum, pami_result_t & result)
         {
           LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
-          (cp->*(cp->pLock))();
+          internal_rc_t rc = (cp->*(cp->pTryLock))();
+          if (ERR_EAGAIN == rc) {
+            result = PAMI_EAGAIN;
+            return 0;
+          }
+              
           size_t max_orig = maximum;
           while (maximum --)
            {
              size_t events = _devices->advance(_clientid, _contextid);
-             internal_rc_t rc = (cp->*(cp->pAdvance))(1);
+             rc = (cp->*(cp->pAdvance))(1);
              if (rc == 0 || events > 0) {
                result = PAMI_SUCCESS;
                (cp->*(cp->pUnlock))();

@@ -39,15 +39,6 @@ namespace PAMI
   template <>
   void * Extension::queryExtension<2000> (const char * name, void * cookie)
   {
-    if (strcasecmp (name, "async_register") == 0)
-      return (void *) PAMI::PeExtension::async_progress_register;
-
-    if (strcasecmp (name, "async_enable") == 0)
-      return (void *) PAMI::PeExtension::async_progress_enable;
-
-    if (strcasecmp (name, "async_disable") == 0)
-      return (void *) PAMI::PeExtension::async_progress_disable;
-
     if (strcasecmp (name, "itrace") == 0)
       return (void *) PAMI::PeExtension::itrace;
 

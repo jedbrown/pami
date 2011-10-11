@@ -3,7 +3,6 @@
  * \brief ???
  */
 #include "PeExtension.h"
-#include "../lapi/include/Context.h"
 
 PAMI::PamiActiveClients _pami_act_clients;
 
@@ -24,52 +23,6 @@ PAMI::PeExtension::global_query(pami_configuration_t    configs[],
     }
   }
   return result;
-}
-
-pami_result_t 
-PAMI::PeExtension::async_progress_register (
-                    pami_context_t          context,
-                    pami_async_function     progress_fn,
-                    pami_async_function     suspend_fn,
-                    pami_async_function     resume_fn,
-                    void*                   cookie)
-{
-  LapiImpl::Context* ctx = (LapiImpl::Context*)context;
-  // suspend func and resume func have to be either both NULL or both
-  // implemented
-  if (suspend_fn != NULL && resume_fn != NULL) {
-    ctx->suspend_func = suspend_fn;
-    ctx->resume_func = resume_fn;
-  } else  {
-    if (suspend_fn != NULL || resume_fn != NULL) 
-        return PAMI_INVAL;
-  }
-  if (cookie != NULL)
-    ctx->async_cookie = cookie;
-  if (progress_fn != NULL)
-    ctx->progress_func = progress_fn;
-
-  return PAMI_SUCCESS;
-}
-
-pami_result_t 
-PAMI::PeExtension::async_progress_enable (
-                    pami_context_t          context,
-                    pami_async_t            event_type)
-{
-  LapiImpl::Context* ctx = (LapiImpl::Context*)context;
-  ctx->UpdatePamiAsyncProgress(event_type, true);
-  return PAMI_SUCCESS;
-}
-
-pami_result_t 
-PAMI::PeExtension::async_progress_disable (
-                    pami_context_t          context,
-                    pami_async_t            event_type)
-{
-  LapiImpl::Context* ctx = (LapiImpl::Context*)context;
-  ctx->UpdatePamiAsyncProgress(event_type, false);
-  return PAMI_SUCCESS;
 }
 
 /* defined in lapi_itrace.c */
