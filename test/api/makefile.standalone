@@ -114,6 +114,7 @@ build/context/create.exe \
 build/context/lock.exe \
 build/context/multi-advance.exe \
 build/context/multi-create.exe \
+build/context/multi-create2.exe \
 build/context/post-multithreaded-perf.exe \
 build/context/post-multithreaded.exe \
 build/context/post-perf.exe \
