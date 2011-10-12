@@ -987,6 +987,7 @@ namespace PAMI
 
           _mushmemcollectivedputmulticombinefactory    = new (_mushmemcollectivedputmulticombinestorage ) MUShmemCollectiveDputMulticombineFactory(&_sconnmgr, _mu_shmem_global_dput_ni);       
 
+          TRACE_FORMAT("<%p> _axial_shmem_mu_dput_ni %p", this,_axial_shmem_mu_dput_ni);
           if (_axial_shmem_mu_dput_ni)
           {
             TRACE_FORMAT("<%p>  RectangleDput1ColorBroadcastFactory", this);
@@ -1096,6 +1097,7 @@ namespace PAMI
               //fprintf (stderr, "Calling configure with class route %ld, in 0x%lx", i, result);
               _axial_mu_dput_ni->getMsyncModel().configureClassRoute(i, (PAMI::Topology *)geometry->getTopology(PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX));
               geometry->setKey (PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID1, (void*)(i+1));
+              TRACE_FORMAT("<%p>(%u)GKEY_MSYNC_CLASSROUTEID1 %zu", this, __LINE__,(i+1));
               break;
             }
         }
@@ -1190,17 +1192,20 @@ namespace PAMI
           }
 
           // (Maybe) Add rectangle broadcasts
-          TRACE_FORMAT("<%p>Analyze Rectangle factories %p/%p, %p/%p, isLocal? %u", this,
+          TRACE_FORMAT("<%p>Analyze Rectangle factories %p/%p, %p/%p, isLocal? %u, rectangle_topo %u", this,
                       _mu_rectangle_1color_dput_broadcast_factory, _mu_rectangle_dput_broadcast_factory,
                       _shmem_mu_rectangle_1color_dput_broadcast_factory, _shmem_mu_rectangle_dput_broadcast_factory,
-                      topology->isLocal());
-
+                       topology->isLocal(),rectangle_topo);
           if (rectangle_topo)
           {
-            TRACE_FORMAT("<%p>Register Rectangle", this);
+#if 0
+            void *val;
+            val = geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID1);
+            TRACE_FORMAT("<%p>(%u)GKEY_MSYNC_CLASSROUTEID1 %p %s", this, __LINE__,val, val != PAMI_CR_GKEY_FAIL?" ":"PAMI_CR_GKEY_FAIL");
             if (_mu_rectangle_msync_factory && __global.topology_local.size() == 1 &&
-                geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID1))
+                (val && val != PAMI_CR_GKEY_FAIL))
             {
+              TRACE_FORMAT("<%p>Register MU Rectangle msync", this);
               //Set optimized barrier to rectangle. May override optimized barrier later  \TODO TWO GENERATES??
               pami_xfer_t xfer = {0};
               CCMI::Executor::Composite *opt_composite;
@@ -1216,8 +1221,9 @@ namespace PAMI
             }
             else if (_msync2d_rectangle_composite_factory && __global.topology_local.size() > 1 && 
                      __global.useMU() && __global.useshmem() &&               
-                     geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID1))
+                     (val && val != PAMI_CR_GKEY_FAIL))
             {
+              TRACE_FORMAT("<%p>Register 2D MU Rectangle msync", this);
               //Set optimized barrier to rectangle. May override optimized barrier later
               pami_xfer_t xfer = {0};
               CCMI::Executor::Composite *opt_composite; // \todo TWO GENERATES?
@@ -1231,7 +1237,7 @@ namespace PAMI
               new(gi) GeometryInfo<MultiSync2DeviceRectangleFactory>(_context, opt_composite, &_geom_allocator);
               geometry->setCleanupCallback(cleanupCallback, gi);
             }
-
+#endif
             // Add rectangle protocols:
             if ((_shmem_mu_rectangle_1color_dput_broadcast_factory)
 #ifndef PAMI_ENABLE_SHMEM_SUBNODE
@@ -1293,6 +1299,9 @@ namespace PAMI
           void *val;
           val = geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
           TRACE_FORMAT("<%p>GKEY_MSYNC_CLASSROUTEID %p", this, val);
+          void *valr;
+          valr = geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID1); // Rectangle 'class route'
+          TRACE_FORMAT("<%p>(%u)GKEY_MSYNC_CLASSROUTEID1 %p %s", this, __LINE__,valr, valr != PAMI_CR_GKEY_FAIL?" ":"PAMI_CR_GKEY_FAIL");
 
           if (val && val != PAMI_CR_GKEY_FAIL && rectangle_topo)// We have a class route
           {
@@ -1318,13 +1327,17 @@ namespace PAMI
                 geometry->setCleanupCallback(cleanupCallback, gi);
               }
 
-              if (_mu_rectangle_msync_factory) // \todo TWO GENERATES?
+              if ((_mu_rectangle_msync_factory) && 
+                  (valr && valr != PAMI_CR_GKEY_FAIL))
               {
+                TRACE_FORMAT("<%p>Register MU Rectangle msync 2", this);
                 CCMI::Executor::Composite* composite;
                 composite = _mu_rectangle_msync_factory->generate(geometry, &xfer);
                 PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE5)==composite);
                 // Add Barriers
                 geometry->addCollective(PAMI_XFER_BARRIER, _mu_rectangle_msync_factory, _context_id); 
+                geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
+                                 (void*)composite);
 
                 COMPILE_TIME_ASSERT(sizeof(GeometryInfo<MURectangleMultiSyncFactory>) <= ProtocolAllocator::objsize);
                 GeometryInfo<MURectangleMultiSyncFactory>    *gi = (GeometryInfo<MURectangleMultiSyncFactory>*) _geom_allocator.allocateObject();
@@ -1359,13 +1372,16 @@ namespace PAMI
               master.convertTopology(PAMI_COORD_TOPOLOGY);
               if ((master.type() == PAMI_COORD_TOPOLOGY) && 
                   (_msync2d_rectangle_composite_factory) && 
-                  (geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID1)) // \todo PAMI_CR_GKEY_FAIL?
+                  (valr && valr != PAMI_CR_GKEY_FAIL)
                  )
-              { // \todo TWO GENERATES?
+              { 
+                TRACE_FORMAT("<%p>Register 2D MU Rectangle msync 2", this);
                 CCMI::Executor::Composite *composite;
                 composite = _msync2d_rectangle_composite_factory->generate(geometry, &xfer);
                 PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE6)==composite);
                 geometry->addCollective(PAMI_XFER_BARRIER, _msync2d_rectangle_composite_factory, _context_id);
+                geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
+                                 (void*)composite);
 
                 COMPILE_TIME_ASSERT(sizeof(GeometryInfo<MultiSync2DeviceRectangleFactory>) <= ProtocolAllocator::objsize);
                 GeometryInfo<MultiSync2DeviceRectangleFactory>    *gi = (GeometryInfo<MultiSync2DeviceRectangleFactory>*) _geom_allocator.allocateObject();
