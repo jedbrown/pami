@@ -43,7 +43,7 @@
 #ifdef DEBUG_COMMTHREADS
 #define DEBUG_INIT()						\
 		char __dbgbuf[64];				\
-		sprintf(__dbgbuf, "xx %ld\n", pthread_self());	\
+		sprintf(__dbgbuf, "xx %ld %d\n", pthread_self(), Kernel_ProcessorID());	\
 		int __dbgbufl = strlen(__dbgbuf);
 
 #define DEBUG_WRITE(a,b)				\
@@ -370,6 +370,9 @@ private:
 		int min_pri = sched_get_priority_min(COMMTHREAD_SCHED);
 		int max_pri = sched_get_priority_max(COMMTHREAD_SCHED);
 DEBUG_INIT();
+		sigset_t sigset_usr1;
+		sigemptyset(&sigset_usr1);
+		sigaddset(&sigset_usr1, SIGUSR1);
 
 		pthread_setschedprio(self, max_pri);
 		struct sigaction sigact;
@@ -452,10 +455,14 @@ DEBUG_WRITE('w','u');
 
 				_ctxset->leaveContextSet(id); // id invalid now
 DEBUG_WRITE('s','a');
-
+				// The signal won't be handled until *after*
+				// we regain control anyway, so we need to block
+				// it to prevent deadlocks in pthread_setschedprio.
+				sigprocmask(SIG_BLOCK, &sigset_usr1, NULL);
 				pthread_setschedprio(self, min_pri);
 				//=== we get preempted here ===//
 				pthread_setschedprio(self, max_pri);
+				sigprocmask(SIG_UNBLOCK, &sigset_usr1, NULL);
 DEBUG_WRITE('s','b');
 
 				if (_shutdown) break;
@@ -682,6 +689,7 @@ Factory::~Factory() {
 //fprintf(stderr, "pthread_kill(%ld, SIGUSR1);\n", _commThreads[x]._thread);
 		pthread_kill(_commThreads[x]._thread, SIGUSR1);
 	}
+//fprintf(stderr, "all signalled\n");
 
 	// need to pthread_join() here? or is it too risky (might hang)?
 	size_t fwu = 0;
