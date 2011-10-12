@@ -312,6 +312,7 @@ namespace PAMI
           T_LocalModel                      *_local_model;
           T_LocalNI_AM                      *_ni;
           bool                               _use_cau;
+          bool                               _keyAllocated; 
           PAMI::Device::CAUGeometryInfo     *_cau_info;
           bool                               _use_bsr;
           PAMI::Device::BSRGeometryInfo     *_bsr_info;
@@ -538,10 +539,12 @@ namespace PAMI
                   uint               master_rank       = local_topo->index2Rank(0);
                   uint               master_index      = master_topo->rank2Index(master_rank);
                   uint               numtasks          = topo->size();
+                  uint               num_local_tasks   = local_topo->size();
                   uint               num_master_tasks  = master_topo->size();
                   LapiImpl::Context *cp                = (LapiImpl::Context *)_Lapi_port[_lapi_handle];
                   bool               participant       = geometry->isLocalMasterParticipant();
-
+                  bool               singleNode        = (num_local_tasks == numtasks);
+                  bool               useCau            = (participant && !singleNode);
                   // Word 0 reduction setup
                   // Generate a unique key and check for collisions
                   uint32_t unique_key=CAU::GenerateUniqueKey(_cau_uniqifier,
@@ -562,11 +565,15 @@ namespace PAMI
                   // Success is 0
                   // Failure: key(cau resource) allocation failure bit 1 set
                   uint64_t result_mask = 0ULL;
-                  if(participant)
-                    result_mask = (_csmm.allocateKey() == PAMI_SUCCESS)?0ULL:1ULL;
+                  bool     keyAllocated = false;
+                  if(useCau)
+                  {
+                    keyAllocated = (_csmm.allocateKey() == PAMI_SUCCESS);
+                    result_mask = keyAllocated?0ULL:1ULL;
+                  }
 
                   // Failure:  no cau uniqifier, bit 2 set
-                  if(participant && _cau_uniqifier==0)
+                  if(useCau && _cau_uniqifier==0)
                     result_mask |= 2ULL;
 
                   // Failure:  CAU collision, bit 3, or affinity settings wrong
@@ -598,7 +605,7 @@ namespace PAMI
                   geometryInfo->_geometry                        = geometry;
                   geometryInfo->_local_model                     = NULL;
                   geometryInfo->_ni                              = NULL;
-
+                  geometryInfo->_keyAllocated                    = keyAllocated;
                   geometryInfo->_bsr_info                        = NULL;
                   geometryInfo->_cau_info                        = NULL;
                   geometryInfo->_bsr_p2p_composite               = NULL;
@@ -643,10 +650,9 @@ namespace PAMI
                     inout_ptr[master_index]                    = databuf_off;
                   }
                   geometryInfo->_databuf_offset = inout_ptr[master_index];
-                  
                   inout_nelem[0]    = inout_nelem[0];
                   ITRC(IT_CAU, "CollReg(phase 0): group_id=%d, unique_id=0x%x "
-                       "reduceMask:0x%lx noGroup=0x%x noJobUniq=0x%x cau_collis=0x%x bsr_collis=0x%lx no_affinity=0x%llx\n",
+                       "reduceMask:0x%lx noGroup=0x%x noJobUniq=0x%x cau_collis=0x%x bsr_collis=0x%lx no_affinity=0x%llx ka=%d\n",
                        geometry->comm(),
                        unique_key,
                        result_mask,        // result mask
@@ -654,7 +660,8 @@ namespace PAMI
                        result_mask&2ULL,   // cau uniqifier
                        result_mask&4ULL,   // cau collision
                        result_mask&8ULL,   // bsr collision
-                       result_mask&16ULL); // affinity
+                       result_mask&16ULL,  // affinity
+                       geometryInfo->_keyAllocated);
                   return PAMI_SUCCESS;
                 }
                 case 1:
@@ -864,13 +871,11 @@ namespace PAMI
 
         inline void freeGroup(T_Geometry *g, int cau_group)
           {
-            ITRC(IT_CAU, "CollReg: Deleting group_id=%d\n", cau_group);
+            ITRC(IT_CAU, "CollReg: Deleting group_id=%d, valid_context=%d\n", cau_group, _valid_context);
             int rc = 0;
             if(_valid_context)
-            {
               rc = lapi_cau_group_destroy(_lapi_handle, cau_group);
-              _csmm.returnKey();
-            }
+            
             PAMI_assertf(rc == 0, "CAU Group Destory Failed on geometry=%d index=%d with rc=%d\n", g->comm(), cau_group, rc);
           }
         inline void freeLocalModel(T_LocalModel *m)
@@ -915,6 +920,12 @@ namespace PAMI
             }
             
           }
+
+        inline void freeShmUniqueKey()
+          {
+            _csmm.returnKey();
+          }
+        
         inline void freeUniqueKey(uint32_t unique_key)
           {
             typename std::map<uint32_t,uint32_t>::iterator findval;
@@ -934,15 +945,21 @@ namespace PAMI
 
 
             int commid = gi->_geometry->comm();
-            ITRC(IT_CAU|IT_BSR, "CollReg:  cleanupCallback:  ctxt=%p geometry id=%d key=%x cau_info=%p\n",
-                 ctxt, commid, gi->_unique_key, gi->_cau_info);
+            ITRC(IT_CAU|IT_BSR, "CollReg:  cleanupCallback:  ctxt=%p geometry id=%d key=%x cau_info=%p, gi->_keyAllocated=%d\n",
+                 ctxt, commid, gi->_unique_key, gi->_cau_info, gi->_keyAllocated);
             if(gi->_cau_info)
             {
               if(gi->_geometry->isLocalMasterParticipant())
+              {
+                PAMI_assert(gi->_keyAllocated);
                 gi->_registration->freeGroup(gi->_geometry, gi->_unique_key);
-
+              }
               gi->_registration->freeCauInfo(gi->_cau_info);
             }
+
+            if(gi->_keyAllocated)
+              gi->_registration->freeShmUniqueKey();
+            
             if(gi->_local_model)
               gi->_registration->freeLocalModel(gi->_local_model);
 
