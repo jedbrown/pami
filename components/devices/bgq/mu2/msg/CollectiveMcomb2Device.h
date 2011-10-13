@@ -358,6 +358,7 @@ namespace PAMI
             if (_doneShmemMcastLarge) return true;
 
             pami_result_t res;
+      
 
             res = _shmsg.large_msg_multicast(_length, __global.mapping.tSize(), __global.mapping.t(), _counterAddress, _cc);
             if (res == PAMI_SUCCESS)
@@ -398,6 +399,34 @@ namespace PAMI
                 flag = flag && advanceShmemMcastLarge();
               }
 
+            }
+            return flag;
+          }
+
+          bool advance_large_64procs()
+          {
+            bool flag;
+
+            flag = false;
+            //uint64_t  bytes_available =0;
+            //register  uint64_t  count = 0;
+
+            //while ((flag == false) && (++count < 1e5)){
+            while (flag == false){
+              if (__global.mapping.t() == 0)
+              {
+                advanceMULarge();
+                flag = advanceShmemMcastLarge() ;
+              }
+              else if (__global.mapping.t()%4 == 0)
+              {
+                flag =  advanceShmemMcombLarge(_length);
+                flag = flag && advanceShmemMcastLarge();
+              }
+              else
+              {   
+                flag = advanceShmemMcastLarge();
+              }
             }
             return flag;
           }

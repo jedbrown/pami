@@ -266,14 +266,27 @@ namespace PAMI
               return PAMI_SUCCESS;
             }
 
-            flag = msg->advance_large();
-
-            if (!flag)
+            if (__global.mapping.tSize() != 64)
             {
-              PAMI::Device::Generic::GenericThread *work = new (&_work) PAMI::Device::Generic::GenericThread(advance_large, msg);
-              _mucontext.getProgressDevice()->postThread(work);
-            }
+              flag = msg->advance_large();
 
+              if (!flag)
+              {
+                PAMI::Device::Generic::GenericThread *work = new (&_work) PAMI::Device::Generic::GenericThread(advance_large, msg);
+                _mucontext.getProgressDevice()->postThread(work);
+              }
+            }
+            else
+            {
+              flag = msg->advance_large_64procs();
+
+              if (!flag)
+              {
+                PAMI::Device::Generic::GenericThread *work = 
+                    new (&_work) PAMI::Device::Generic::GenericThread(advance_large_64procs, msg);
+                _mucontext.getProgressDevice()->postThread(work);
+              }
+            }
             return PAMI_SUCCESS;
           }
 
@@ -302,6 +315,17 @@ namespace PAMI
             return PAMI_EAGAIN;
           }
 
+          static pami_result_t advance_large_64procs (pami_context_t     context,
+                                        void             * cookie)
+          {
+            CollectiveDputMcomb2Device *msg = (CollectiveDputMcomb2Device *) cookie;
+            bool done = msg->advance_large_64procs();
+
+            if (done)
+              return PAMI_SUCCESS;
+
+            return PAMI_EAGAIN;
+          }
           static CollState                            _collstate;
 
         protected:

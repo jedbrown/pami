@@ -55,6 +55,17 @@ namespace PAMI
 #define Num16kChunks  21
 #define Num8kChunks  13
 
+#define MATH_16WAY(dst, src0, src1, src2, src3, src4, src5, src6, src7, src8, src9, src10, src11, src12, src13, src14, src15, dataSize)   \
+            quad_double_math_16way(dst + chunk* NumDblsPerChunk+offset_dbl, src0 +chunk*NumDblsPerChunk+offset_dbl,\
+                src1+chunk*NumDblsPerChunk+offset_dbl, src2+chunk*NumDblsPerChunk+offset_dbl,\
+                src3+chunk*NumDblsPerChunk+offset_dbl, src4+chunk*NumDblsPerChunk+offset_dbl,\
+                src5+chunk*NumDblsPerChunk+offset_dbl, src6+chunk*NumDblsPerChunk+offset_dbl,\
+                src7+chunk*NumDblsPerChunk+offset_dbl, src8+chunk*NumDblsPerChunk+offset_dbl,\
+                src9+chunk*NumDblsPerChunk+offset_dbl, src10+chunk*NumDblsPerChunk+offset_dbl,\
+                src11+chunk*NumDblsPerChunk+offset_dbl, src12+chunk*NumDblsPerChunk+offset_dbl, \
+                src13+chunk*NumDblsPerChunk+offset_dbl, src14+chunk*NumDblsPerChunk+offset_dbl,\
+                src15+chunk*NumDblsPerChunk+offset_dbl, dataSize, _opcode);
+
             inline void advance_4way_math(unsigned _local_rank, unsigned _npeers, size_t bytes, unsigned offset_dbl)
             {
               /* local ranks other than 0 do the following quad math */
@@ -213,6 +224,67 @@ namespace PAMI
             }
 
 
+            inline void advance_64way_math(unsigned _local_rank, unsigned _npeers, size_t bytes, unsigned offset_dbl)
+            {
+              /* local ranks other than 0 do the following quad sum */
+              unsigned chunk;
+
+              for (chunk=0; chunk < NumChunks(bytes)-1; chunk++){
+                if ((chunk%(_npeers-1) +1) == _local_rank){
+      
+                MATH_16WAY(_rcvbuf, G_Srcs(0),G_Srcs(1),G_Srcs(2),G_Srcs(3),G_Srcs(4),G_Srcs(5),G_Srcs(6),G_Srcs(7),G_Srcs(8),
+                            G_Srcs(9),G_Srcs(10),G_Srcs(11),G_Srcs(12),G_Srcs(13),G_Srcs(14),G_Srcs(15), NumDblsPerChunk);
+                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(16),G_Srcs(17),G_Srcs(18),G_Srcs(19),G_Srcs(20),G_Srcs(21),G_Srcs(22),G_Srcs(23),
+                            G_Srcs(24), G_Srcs(25),G_Srcs(26),G_Srcs(27),G_Srcs(28),G_Srcs(29),G_Srcs(30), NumDblsPerChunk);
+                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(31),G_Srcs(32),G_Srcs(33),G_Srcs(34),G_Srcs(35),G_Srcs(36),G_Srcs(37),G_Srcs(38),
+                            G_Srcs(39), G_Srcs(40),G_Srcs(41),G_Srcs(42),G_Srcs(43),G_Srcs(44),G_Srcs(45), NumDblsPerChunk);
+                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(46),G_Srcs(47),G_Srcs(48),G_Srcs(49),G_Srcs(50),G_Srcs(51),G_Srcs(52),G_Srcs(53),
+                            G_Srcs(54), G_Srcs(55),G_Srcs(56),G_Srcs(57),G_Srcs(58),G_Srcs(59),G_Srcs(60), NumDblsPerChunk);
+                quad_double_math_4way(_rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, _rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, 
+                G_Srcs(61)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(62)+chunk*NumDblsPerChunk+offset_dbl, 
+                G_Srcs(63)+chunk*NumDblsPerChunk+offset_dbl, NumDblsPerChunk, _opcode);
+                Memory::sync();
+
+                  _controlB->chunk_done[_local_rank] = chunk;
+                }
+              }
+
+              /* summing last chunk which can be of any size */
+              if ((chunk%(_npeers-1) +1) == _local_rank){
+                if (bytes%ChunkSize == 0)
+                {
+                MATH_16WAY(_rcvbuf, G_Srcs(0),G_Srcs(1),G_Srcs(2),G_Srcs(3),G_Srcs(4),G_Srcs(5),G_Srcs(6),G_Srcs(7),G_Srcs(8),
+                            G_Srcs(9),G_Srcs(10),G_Srcs(11),G_Srcs(12),G_Srcs(13),G_Srcs(14),G_Srcs(15), NumDblsPerChunk);
+                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(16),G_Srcs(17),G_Srcs(18),G_Srcs(19),G_Srcs(20),G_Srcs(21),G_Srcs(22),G_Srcs(23),
+                            G_Srcs(24), G_Srcs(25),G_Srcs(26),G_Srcs(27),G_Srcs(28),G_Srcs(29),G_Srcs(30), NumDblsPerChunk);
+                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(31),G_Srcs(32),G_Srcs(33),G_Srcs(34),G_Srcs(35),G_Srcs(36),G_Srcs(37),G_Srcs(38),
+                            G_Srcs(39), G_Srcs(40),G_Srcs(41),G_Srcs(42),G_Srcs(43),G_Srcs(44),G_Srcs(45), NumDblsPerChunk);
+                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(46),G_Srcs(47),G_Srcs(48),G_Srcs(49),G_Srcs(50),G_Srcs(51),G_Srcs(52),G_Srcs(53),
+                            G_Srcs(54), G_Srcs(55),G_Srcs(56),G_Srcs(57),G_Srcs(58),G_Srcs(59),G_Srcs(60), NumDblsPerChunk);
+                quad_double_math_4way(_rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, _rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, 
+                G_Srcs(61)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(62)+chunk*NumDblsPerChunk+offset_dbl, 
+                G_Srcs(63)+chunk*NumDblsPerChunk+offset_dbl, NumDblsPerChunk, _opcode);
+
+                }
+                else
+                {
+                MATH_16WAY(_rcvbuf, G_Srcs(0),G_Srcs(1),G_Srcs(2),G_Srcs(3),G_Srcs(4),G_Srcs(5),G_Srcs(6),G_Srcs(7),G_Srcs(8),
+                            G_Srcs(9),G_Srcs(10),G_Srcs(11),G_Srcs(12),G_Srcs(13),G_Srcs(14),G_Srcs(15), ((bytes%ChunkSize)/sizeof(double)));
+                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(16),G_Srcs(17),G_Srcs(18),G_Srcs(19),G_Srcs(20),G_Srcs(21),G_Srcs(22),G_Srcs(23),
+                            G_Srcs(24), G_Srcs(25),G_Srcs(26),G_Srcs(27),G_Srcs(28),G_Srcs(29),G_Srcs(30), ((bytes%ChunkSize)/sizeof(double)));
+                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(31),G_Srcs(32),G_Srcs(33),G_Srcs(34),G_Srcs(35),G_Srcs(36),G_Srcs(37),G_Srcs(38),
+                            G_Srcs(39), G_Srcs(40),G_Srcs(41),G_Srcs(42),G_Srcs(43),G_Srcs(44),G_Srcs(45), ((bytes%ChunkSize)/sizeof(double)));
+                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(46),G_Srcs(47),G_Srcs(48),G_Srcs(49),G_Srcs(50),G_Srcs(51),G_Srcs(52),G_Srcs(53),
+                            G_Srcs(54), G_Srcs(55),G_Srcs(56),G_Srcs(57),G_Srcs(58),G_Srcs(59),G_Srcs(60), ((bytes%ChunkSize)/sizeof(double)));
+                quad_double_math_4way(_rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, _rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, 
+                G_Srcs(61)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(62)+chunk*NumDblsPerChunk+offset_dbl, 
+                G_Srcs(63)+chunk*NumDblsPerChunk+offset_dbl, ((bytes%ChunkSize)/sizeof(double)), _opcode);
+                }
+                Memory::sync();
+                _controlB->chunk_done[_local_rank] = chunk;
+              }
+            }
+
 
             //The buffer is partitioned among "npeers" in a balanced manner depending on the "MinChunkSize", total_bytes
             // Used for short to medium messages
@@ -220,12 +292,24 @@ namespace PAMI
             inline  bool  get_partition_info(unsigned npeers, unsigned local_rank, unsigned total_bytes, unsigned* offset_b,
                 unsigned* chunk_size_b)
             {
+
+              if (npeers == 64)
+              {
+                if (local_rank%4 != 0)
+                  return false;
+                else  
+                {
+                  npeers  = 16;
+                  local_rank  /= 4;
+                } 
+              }
+
               unsigned num_min_chunks = total_bytes/MinChunkSize;
               unsigned end_bytes  = total_bytes%MinChunkSize;
               unsigned  rounds =  num_min_chunks/npeers; 
               unsigned remaining_chunks = num_min_chunks%npeers;
 
-              
+                  
               if (local_rank < remaining_chunks)
               {
                 *chunk_size_b= (rounds+1)*MinChunkSize;
@@ -348,7 +432,7 @@ namespace PAMI
 
               if (counter_curr)
                 return PAMI_EAGAIN;
-     
+                
               _my_desc->signal_done();
               if (local_rank == 0)
                 while (_my_desc->in_use()){};
@@ -368,6 +452,7 @@ namespace PAMI
               if (local_rank == 0)
               {
                 unsigned  count = total_bytes/sizeof(double);
+            
                 if (total_bytes <= 32)
                 {
                   double* shm_buf = (double*)(my_desc->get_buffer());
@@ -375,7 +460,6 @@ namespace PAMI
                   if (npeers == 4)
                   {
                     quad_double_math_4way( shm_buf, shm_buf, shm_buf+count, shm_buf+2*count, shm_buf+3*count, count,opcode); 
-                    //quad_double_max_4way( shm_buf, shm_buf, shm_buf+count, shm_buf+2*count, shm_buf+3*count, count); 
                   }
                   else if (npeers == 8)
                   {
@@ -388,10 +472,26 @@ namespace PAMI
                         shm_buf+4*count,  shm_buf+5*count,shm_buf+6*count,shm_buf+7*count, shm_buf+8*count,
                         shm_buf+9*count,shm_buf+10*count,  shm_buf+11*count, shm_buf+12*count,  
                         shm_buf+13*count, shm_buf+14*count, shm_buf+15*count, count, opcode); 
-                    /*quad_double_max_16way( shm_buf, shm_buf, shm_buf+count, shm_buf+2*count, shm_buf+3*count,
+                  }
+                  else if (npeers == 64)
+                  {
+                    quad_double_math_16way( shm_buf, shm_buf, shm_buf+count, shm_buf+2*count, shm_buf+3*count,
                         shm_buf+4*count,  shm_buf+5*count,shm_buf+6*count,shm_buf+7*count, shm_buf+8*count,
                         shm_buf+9*count,shm_buf+10*count,  shm_buf+11*count, shm_buf+12*count,  
-                        shm_buf+13*count, shm_buf+14*count, shm_buf+15*count, count);*/ 
+                        shm_buf+13*count, shm_buf+14*count, shm_buf+15*count, count, opcode); 
+                    quad_double_math_16way( shm_buf+16*count, shm_buf+16*count, shm_buf+17*count, shm_buf+18*count, shm_buf+19*count,
+                        shm_buf+20*count,  shm_buf+21*count,shm_buf+22*count,shm_buf+23*count, shm_buf+24*count,
+                        shm_buf+25*count,shm_buf+26*count,  shm_buf+27*count, shm_buf+28*count,  
+                        shm_buf+29*count, shm_buf+30*count, shm_buf+31*count, count, opcode); 
+                    quad_double_math_16way( shm_buf+32*count, shm_buf+32*count, shm_buf+33*count, shm_buf+34*count, shm_buf+35*count,
+                        shm_buf+36*count,  shm_buf+37*count,shm_buf+38*count,shm_buf+39*count, shm_buf+40*count,
+                        shm_buf+41*count,shm_buf+42*count,  shm_buf+43*count, shm_buf+44*count,  
+                        shm_buf+45*count, shm_buf+46*count, shm_buf+47*count, count, opcode); 
+                    quad_double_math_16way( shm_buf+48*count, shm_buf+48*count, shm_buf+49*count, shm_buf+50*count, shm_buf+51*count,
+                        shm_buf+52*count,  shm_buf+53*count,shm_buf+54*count,shm_buf+55*count, shm_buf+56*count,
+                        shm_buf+57*count,shm_buf+58*count,  shm_buf+59*count, shm_buf+60*count,  
+                        shm_buf+61*count, shm_buf+62*count, shm_buf+63*count, count, opcode); 
+                    quad_double_math_4way( shm_buf, shm_buf, shm_buf+16*count, shm_buf+32*count, shm_buf+48*count, count,opcode); 
                   }
                   else
                   {
@@ -403,7 +503,6 @@ namespace PAMI
                   if (npeers == 4)
                   {
                     quad_double_math_4way( S_Bufs(0), S_Bufs(0), S_Bufs(1), S_Bufs(2), S_Bufs(3), count, opcode); 
-                    //quad_double_max_4way( S_Bufs(0), S_Bufs(0), S_Bufs(1), S_Bufs(2), S_Bufs(3), count); 
                   }
                   else if (npeers == 8)
                   {
@@ -412,7 +511,14 @@ namespace PAMI
                   else if (npeers == 16)
                   {
                     quad_double_math_16way( S_Bufs(0), S_Bufs(0), S_Bufs(1), S_Bufs(2), S_Bufs(3), S_Bufs(4), S_Bufs(5), S_Bufs(6), S_Bufs(7), S_Bufs(8), S_Bufs(9), S_Bufs(10), S_Bufs(11), S_Bufs(12), S_Bufs(13), S_Bufs(14), S_Bufs(15), count, opcode); 
-                    //quad_double_max_16way( S_Bufs(0), S_Bufs(0), S_Bufs(1), S_Bufs(2), S_Bufs(3), S_Bufs(4), S_Bufs(5), S_Bufs(6), S_Bufs(7), S_Bufs(8), S_Bufs(9), S_Bufs(10), S_Bufs(11), S_Bufs(12), S_Bufs(13), S_Bufs(14), S_Bufs(15), count); 
+                  }
+                  else if (npeers == 64)
+                  {
+                    quad_double_math_16way( S_Bufs(0), S_Bufs(0), S_Bufs(1), S_Bufs(2), S_Bufs(3), S_Bufs(4), S_Bufs(5), S_Bufs(6), S_Bufs(7), S_Bufs(8), S_Bufs(9), S_Bufs(10), S_Bufs(11), S_Bufs(12), S_Bufs(13), S_Bufs(14), S_Bufs(15), count, opcode); 
+                    quad_double_math_16way( S_Bufs(16), S_Bufs(16), S_Bufs(17), S_Bufs(18), S_Bufs(19), S_Bufs(20), S_Bufs(21), S_Bufs(22), S_Bufs(23), S_Bufs(24), S_Bufs(25), S_Bufs(26), S_Bufs(27), S_Bufs(28), S_Bufs(29), S_Bufs(30), S_Bufs(31), count, opcode); 
+                    quad_double_math_16way( S_Bufs(32), S_Bufs(32), S_Bufs(33), S_Bufs(34), S_Bufs(35), S_Bufs(36), S_Bufs(37), S_Bufs(38), S_Bufs(39), S_Bufs(40), S_Bufs(41), S_Bufs(42), S_Bufs(43), S_Bufs(44), S_Bufs(45), S_Bufs(46), S_Bufs(47), count, opcode); 
+                    quad_double_math_16way( S_Bufs(48), S_Bufs(48), S_Bufs(49), S_Bufs(50), S_Bufs(51), S_Bufs(52), S_Bufs(53), S_Bufs(54), S_Bufs(55), S_Bufs(56), S_Bufs(57), S_Bufs(58), S_Bufs(59), S_Bufs(60), S_Bufs(61), S_Bufs(62), S_Bufs(63), count, opcode); 
+                    quad_double_math_4way( S_Bufs(0), S_Bufs(0), S_Bufs(16), S_Bufs(32), S_Bufs(48), count, opcode); 
                   }
                   else
                   {
@@ -446,8 +552,6 @@ namespace PAMI
                 if (is_participant)
                   quad_double_math_4way((double*)_controlB->buffer+ offset_dbl, G_Srcs(0)+offset_dbl, 
                       G_Srcs(1)+offset_dbl, G_Srcs(2)+offset_dbl, G_Srcs(3)+offset_dbl, chunk_size_dbl, _opcode);
-                  /*quad_double_max_4way((double*)_controlB->buffer+ offset_dbl, G_Srcs(0)+offset_dbl, 
-                      G_Srcs(1)+offset_dbl, G_Srcs(2)+offset_dbl, G_Srcs(3)+offset_dbl, chunk_size_dbl);*/
               }
               else if (npeers == 8)
               {
@@ -465,11 +569,34 @@ namespace PAMI
                       G_Srcs(5)+offset_dbl, G_Srcs(6)+offset_dbl, G_Srcs(7)+offset_dbl, G_Srcs(8)+offset_dbl,
                       G_Srcs(9)+offset_dbl, G_Srcs(10)+offset_dbl, G_Srcs(11)+offset_dbl, G_Srcs(12)+offset_dbl,
                       G_Srcs(13)+offset_dbl, G_Srcs(14)+offset_dbl, G_Srcs(15)+offset_dbl, chunk_size_dbl, _opcode);
-                  /*quad_double_max_16way((double*)_controlB->buffer+ offset_dbl, G_Srcs(0)+offset_dbl, 
+                }
+              }
+              else if (npeers == 64)
+              {
+                if (is_participant)
+                {
+                  quad_double_math_16way((double*)_controlB->buffer+ offset_dbl, G_Srcs(0)+offset_dbl, 
                       G_Srcs(1)+offset_dbl, G_Srcs(2)+offset_dbl, G_Srcs(3)+offset_dbl, G_Srcs(4)+offset_dbl,
                       G_Srcs(5)+offset_dbl, G_Srcs(6)+offset_dbl, G_Srcs(7)+offset_dbl, G_Srcs(8)+offset_dbl,
                       G_Srcs(9)+offset_dbl, G_Srcs(10)+offset_dbl, G_Srcs(11)+offset_dbl, G_Srcs(12)+offset_dbl,
-                      G_Srcs(13)+offset_dbl, G_Srcs(14)+offset_dbl, G_Srcs(15)+offset_dbl, chunk_size_dbl);*/
+                      G_Srcs(13)+offset_dbl, G_Srcs(14)+offset_dbl, G_Srcs(15)+offset_dbl, chunk_size_dbl, _opcode);
+                  quad_double_math_16way((double*)_controlB->buffer+ offset_dbl, (double*)_controlB->buffer+ offset_dbl, 
+                      G_Srcs(16)+offset_dbl, G_Srcs(17)+offset_dbl, G_Srcs(18)+offset_dbl, G_Srcs(19)+offset_dbl, 
+                      G_Srcs(20)+offset_dbl, G_Srcs(21)+offset_dbl, G_Srcs(22)+offset_dbl, G_Srcs(23)+offset_dbl, 
+                      G_Srcs(24)+offset_dbl, G_Srcs(25)+offset_dbl, G_Srcs(26)+offset_dbl, G_Srcs(27)+offset_dbl, 
+                      G_Srcs(28)+offset_dbl, G_Srcs(29)+offset_dbl, G_Srcs(30)+offset_dbl, chunk_size_dbl, _opcode);
+                  quad_double_math_16way((double*)_controlB->buffer+ offset_dbl, (double*)_controlB->buffer+ offset_dbl, 
+                      G_Srcs(31)+offset_dbl, G_Srcs(32)+offset_dbl, G_Srcs(33)+offset_dbl, G_Srcs(34)+offset_dbl, 
+                      G_Srcs(35)+offset_dbl, G_Srcs(36)+offset_dbl, G_Srcs(37)+offset_dbl, G_Srcs(38)+offset_dbl, 
+                      G_Srcs(39)+offset_dbl, G_Srcs(40)+offset_dbl, G_Srcs(41)+offset_dbl, G_Srcs(42)+offset_dbl, 
+                      G_Srcs(43)+offset_dbl, G_Srcs(44)+offset_dbl, G_Srcs(45)+offset_dbl, chunk_size_dbl, _opcode);
+                  quad_double_math_16way((double*)_controlB->buffer+ offset_dbl, (double*)_controlB->buffer+ offset_dbl, 
+                      G_Srcs(46)+offset_dbl, G_Srcs(47)+offset_dbl, G_Srcs(48)+offset_dbl, G_Srcs(49)+offset_dbl, 
+                      G_Srcs(50)+offset_dbl, G_Srcs(51)+offset_dbl, G_Srcs(52)+offset_dbl, G_Srcs(53)+offset_dbl, 
+                      G_Srcs(54)+offset_dbl, G_Srcs(55)+offset_dbl, G_Srcs(56)+offset_dbl, G_Srcs(57)+offset_dbl, 
+                      G_Srcs(58)+offset_dbl, G_Srcs(59)+offset_dbl, G_Srcs(60)+offset_dbl, chunk_size_dbl, _opcode);
+                  quad_double_math_4way((double*)_controlB->buffer+ offset_dbl, (double*)_controlB->buffer+ offset_dbl,
+                      G_Srcs(61)+offset_dbl, G_Srcs(62)+offset_dbl, G_Srcs(63)+offset_dbl, chunk_size_dbl, _opcode);
                 }
               }
               else
@@ -507,6 +634,8 @@ namespace PAMI
                 ((total_bytes == 32768)||(total_bytes == 16384)||(total_bytes == 8192))
                                          ?  advance_16way_math_16k(local_rank, npeers, ((total_bytes-4096) >> 10)+9):
                                         advance_16way_math(local_rank, npeers, total_bytes, offset_dbl);
+              else if (npeers == 64)
+                advance_64way_math((local_rank/4), 16, total_bytes, offset_dbl);
               else
               {
                 fprintf(stderr,"%s:%u npeers %u math not yet supported\n",__FILE__,__LINE__,npeers);
@@ -550,8 +679,13 @@ namespace PAMI
             //The master process gets the next chunk to inject into Collective network
             inline void* next_injection_buffer (uint64_t *bytes_available, unsigned total_bytes, unsigned npeers)
             {
-              unsigned  my_peer = (_chunk_for_injection)%(npeers-1)+1;
-              char* rbuf = (char*) P_Dsts(my_peer) + _cur_offset;
+            
+              //unsigned  my_peer = (_chunk_for_injection)%(npeers-1)+1;
+              //char* rbuf = (char*) P_Dsts(my_peer) + _cur_offset;
+              unsigned  my_peer;
+              my_peer = (npeers != 64) ? (_chunk_for_injection)%(npeers-1)+1 : (_chunk_for_injection)%(16-1)+1;
+              char* rbuf;
+              rbuf = (npeers != 64) ? ((char*) P_Dsts(my_peer) + _cur_offset):((char*) P_Dsts(my_peer*4) + _cur_offset);
 
               if (_controlB->chunk_done[my_peer] >= _chunk_for_injection)
               { 

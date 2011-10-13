@@ -180,6 +180,10 @@ namespace PAMI
                                      (pop == PAMI_MAX) ||
                                      (pop == PAMI_SUM))) ?0:1;
         TRACE_FORMAT("(dt %d,op %d) = %s", pdt, pop, result.check.datatype_op ? "true" : "false");
+	/// \todo TEMP: 64 PPN only supports double's
+	if((__global.topology_local.size() == 64) && (pdt != PAMI_DOUBLE)) 
+	  result.check.datatype_op = 1;
+        TRACE_FORMAT("(dt %d,op %d) = %s", pdt, pop, result.check.datatype_op ? "true" : "false");
         TRACE_FN_EXIT();
         return(result);
       }
@@ -1184,6 +1188,8 @@ namespace PAMI
               if ((__global.topology_local.size() ==  4) ||  
                   (__global.topology_local.size() ==  8) ||
                   (__global.topology_local.size() == 16))
+		//||  
+		//(__global.topology_local.size() == 64))
                 geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, &_shmem_mcomb_factory, _context_id);
 #else
               geometry->addCollective(PAMI_XFER_ALLREDUCE, &_shmem_mcomb_factory, _context_id);
@@ -1435,7 +1441,8 @@ namespace PAMI
 #ifdef PAMI_ENABLE_NEW_SHMEM   // limited support - 4/8/16 processes only
             if ((__global.topology_local.size() ==  4) ||  
                 (__global.topology_local.size() ==  8) ||
-                (__global.topology_local.size() == 16))
+                (__global.topology_local.size() == 16) || 
+                (__global.topology_local.size() == 64))
 #endif
 #ifndef PAMI_ENABLE_SHMEM_SUBNODE
               if (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
@@ -1455,7 +1462,7 @@ namespace PAMI
                   geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2dNP_composite_factory, _context_id);
 #endif
                 //  2 device protocols
-                if (_mcomb2d_dput_composite_factory)
+                if ((_mcomb2d_dput_composite_factory) && (__global.topology_local.size() != 64))
                   geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2d_dput_composite_factory, _context_id);
 
 #ifdef PAMI_ENABLE_X0_PROTOCOLS
