@@ -584,20 +584,7 @@ setupContext(unsigned &startph, unsigned &nph)
               }
             else
               {
-                //np = ffs(_map.getMyRank()) + 1 - st;
-                //_sendph = st + np - 1;
-
-                int distance = _map.getMyRank() + 1;
-                int n = 0, d = 1;
-
-                //We are computing Log(distance)
-                while (d < distance)
-                  {
-                    d *= _radix; //radix of the collective
-                    n ++;
-                  }
-
-                np -= n;  //np - n -1 ?
+                np = ffs(_map.getMyRank()) + 1 - st;
                 _sendph = st + np - 1;
                 _recvph = NOT_SEND_PHASE;
               }

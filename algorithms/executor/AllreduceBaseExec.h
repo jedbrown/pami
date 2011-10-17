@@ -482,7 +482,13 @@ namespace CCMI
         virtual void reset ()
         {
           _acache.setDstBuf (&_dstbuf);
-          bool flag = _scache.init(ALLREDUCE_OP);
+
+          bool flag;
+          if(_scache.getRoot() == -1)
+            flag = _scache.init(ALLREDUCE_OP);
+          else
+            flag = _scache.init(REDUCE_OP);
+
           _acache.reset (flag, false);
 
           _startPhase = _curPhase = _scache.getStartPhase();
@@ -493,7 +499,7 @@ namespace CCMI
 
           _firstCombinePhase = _scache.getStartPhase();
 
-          while (!_scache.getNumSrcRanks(_firstCombinePhase) && _firstCombinePhase <= _scache.getEndPhase())
+          while (_firstCombinePhase <= _scache.getEndPhase() && !_scache.getNumSrcRanks(_firstCombinePhase))
             _firstCombinePhase++;
 
           //Reduce might not have a combine phase (on non-roots)
