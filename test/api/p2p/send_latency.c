@@ -18,6 +18,7 @@
 #include <unistd.h>
 
 #include <pami.h>
+#include "../init_util.h"
 
 #define ITERATIONS 100
 #define POLL_CNT ((size_t)-1)
@@ -27,6 +28,15 @@
 #endif
 
 #define WARMUP
+
+#define RC(statement) \
+{ \
+    int rc = statement; \
+    if (rc != PAMI_SUCCESS) { \
+        printf(#statement " rc = %d, line %d\n", rc, __LINE__); \
+        exit(-1); \
+    } \
+}
 
 #undef TRACE_ERR
 #ifndef TRACE_ERR
@@ -39,10 +49,7 @@ volatile unsigned _recv_active = 1;
 volatile unsigned _recv_iteration;
 char              _recv_buffer[BUFSIZE] __attribute__ ((__aligned__(16)));
 
-size_t         _dispatch[100];
-unsigned       _dispatch_count;
-
-size_t _my_task;
+pami_task_t _my_task;
 
 typedef struct
 {
@@ -108,7 +115,7 @@ static void test_dispatch (
 
 void send_once (pami_context_t context, pami_send_t * parameters)
 {
-  PAMI_Send (context, parameters);
+  RC( PAMI_Send (context, parameters) );
   TRACE_ERR((stderr, "(%zu) send_once() Before advance\n", _my_task));
 
   while (_send_active) PAMI_Context_advance (context, POLL_CNT);
@@ -198,33 +205,35 @@ int main (int argc, char ** argv)
       hdrsize[arg] = (size_t) strtol (argv[arg], NULL, 10);
     }
 
-  char clientname[] = "TEST";
-  pami_client_t client;
-  TRACE_ERR((stderr, "... before PAMI_Client_create()\n"));
-  PAMI_Client_create (clientname, &client, NULL, 0);
-  TRACE_ERR((stderr, "...  after PAMI_Client_create()\n"));
-  pami_context_t context;
-  TRACE_ERR((stderr, "... before PAMI_Context_createv()\n"));
-  { size_t _n = 1; PAMI_Context_createv (client, NULL, 0, &context, _n); }
-  TRACE_ERR((stderr, "...  after PAMI_Context_createv()\n"));
+  pami_client_t         client;
+  pami_context_t        context;
+  size_t                num_contexts = 1;
+  size_t                num_tasks;
 
-  /* Register the protocols to test */
-  _dispatch_count = 0;
-
+  RC( pami_init (&client,        /* Client             */
+                 &context,       /* Context            */
+                 NULL,           /* Clientname=default */
+                 &num_contexts,  /* num_contexts       */
+                 NULL,           /* null configuration */
+                 0,              /* no configuration   */
+                 &_my_task,      /* task id            */
+                 &num_tasks) );  /* number of tasks    */
 
   pami_configuration_t configuration;
-  pami_result_t result;
 
-  configuration.name = PAMI_CLIENT_TASK_ID;
-  result = PAMI_Client_query(client, &configuration, 1);
-  _my_task = configuration.value.intval;
+  configuration.name = PAMI_CLIENT_NUM_LOCAL_TASKS;
+  RC( PAMI_Client_query(client, &configuration, 1) );
+  size_t num_local_tasks = configuration.value.intval;
 
-  configuration.name = PAMI_CLIENT_NUM_TASKS;
-  result = PAMI_Client_query(client, &configuration, 1);
-  size_t num_tasks = configuration.value.intval;
+  int num_dispatch = (num_tasks == num_local_tasks) ? 3 : 2;
+  if (_my_task == 0)
+      printf("%u dispatches will be tested (%d tasks:%d local tasks)\n",
+              num_dispatch,
+              num_tasks,
+              num_local_tasks);
 
   configuration.name = PAMI_CLIENT_WTICK;
-  result = PAMI_Client_query(client, &configuration, 1);
+  RC( PAMI_Client_query(client, &configuration, 1) );
   double tick = configuration.value.doubleval;
 
   /* Use task 0 to last task (arbitrary) */
@@ -232,8 +241,8 @@ int main (int argc, char ** argv)
   pami_task_t target_task = num_tasks - 1;
 
   pami_endpoint_t origin, target;
-  PAMI_Endpoint_create (client, origin_task, 0, &origin);
-  PAMI_Endpoint_create (client, target_task, 0, &target);
+  RC( PAMI_Endpoint_create (client, origin_task, 0, &origin) );
+  RC( PAMI_Endpoint_create (client, target_task, 0, &target) );
 
   typedef struct
   {
@@ -251,14 +260,13 @@ int main (int argc, char ** argv)
 
   dispatch[1].id = 11;
   dispatch[1].options = (pami_dispatch_hint_t) {0};
-  dispatch[1].name = "only shmem";
-  dispatch[1].options.use_shmem = PAMI_HINT_ENABLE;
-  dispatch[0].name = "  default ";
+  dispatch[1].name = " no shmem ";
+  dispatch[1].options.use_shmem = PAMI_HINT_DISABLE;
 
   dispatch[2].id = 12;
   dispatch[2].options = (pami_dispatch_hint_t) {0};
-  dispatch[2].name = " no shmem ";
-  dispatch[2].options.use_shmem = PAMI_HINT_DISABLE;
+  dispatch[2].name = "only shmem";
+  dispatch[2].options.use_shmem = PAMI_HINT_ENABLE;
 
   pami_dispatch_callback_function fn;
   fn.p2p = test_dispatch;
@@ -278,7 +286,7 @@ int main (int argc, char ** argv)
 
   sleep(1); /* work-around for ticket #385 */
 
-  for (i = 0; i < 3; i++)
+  for (i = 0; i < num_dispatch; i++)
     {
       if ((dispatch[i].result == PAMI_SUCCESS) &&
           (_my_task == origin_task || _my_task == target_task))
@@ -364,7 +372,7 @@ int main (int argc, char ** argv)
         {
           unsigned j;
 
-          for (j = 0; j < 3; j++)
+          for (j = 0; j < num_dispatch; j++)
             {
               if (dispatch[j].result == PAMI_SUCCESS)
                 {
@@ -386,7 +394,7 @@ int main (int argc, char ** argv)
         fprintf (stdout, "%s\n", str);
     }
 
-  PAMI_Client_destroy(&client);
+  RC( pami_shutdown(&client, &context, &num_contexts) );
 
   return 0;
 }
