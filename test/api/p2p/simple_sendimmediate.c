@@ -3,10 +3,18 @@
  * \brief Simple point-to-point PAMI_Send_immediate() test
  **/
 
-#include <pami.h>
 #include <stdio.h>
 
 #include "../init_util.h"
+
+#define RC(statement) \
+{ \
+    int rc = statement; \
+    if (rc != PAMI_SUCCESS) { \
+        printf(#statement " rc = %d, line %d\n", rc, __LINE__); \
+        exit(-1); \
+    } \
+}
 
 unsigned validate (const void * addr, size_t bytes)
 {
@@ -64,24 +72,20 @@ void test_dispatch (
 int main (int argc, char ** argv)
 {
   pami_client_t        client;
-  pami_context_t       context[2];
-  size_t               num_contexts = 2;
+  pami_context_t       context[1];
+  size_t               num_contexts = 1;
   pami_task_t          task_id;
   size_t               num_tasks;
   pami_result_t        result;
 
-  int rc = pami_init (&client,        /* Client             */
-                      context,        /* Context            */
-                      NULL,           /* Clientname=default */
-                      &num_contexts,  /* num_contexts       */
-                      NULL,           /* null configuration */
-                      0,              /* no configuration   */
-                      &task_id,       /* task id            */
-                      &num_tasks);    /* number of tasks    */
-
-  if (rc == 1)
-    return 1;
-
+  RC( pami_init (&client,        /* Client             */
+                 context,       /* Context            */
+                 NULL,           /* Clientname=default */
+                 &num_contexts,  /* num_contexts       */
+                 NULL,           /* null configuration */
+                 0,              /* no configuration   */
+                 &task_id,       /* task id            */
+                 &num_tasks) );  /* number of tasks    */
 
   /* [example dispatch set for all contexts] */
   volatile size_t recv_active[2];
@@ -132,12 +136,12 @@ int main (int argc, char ** argv)
       parameters.header.iov_len  = 4;
       parameters.data.iov_base   = data;
       parameters.data.iov_len    = 32;
-      PAMI_Endpoint_create (client, 1, target, &parameters.dest);
+      RC( PAMI_Endpoint_create (client, 1, target, &parameters.dest) );
 
       fprintf (stdout, "PAMI_Send_immediate() functional test [%scrosstalk]\n", (num_contexts == 1) ? "no " : "");
       fprintf (stdout, "\n");
 
-      result = PAMI_Send_immediate (context[0], &parameters);
+      RC( PAMI_Send_immediate (context[0], &parameters) );
 
       while (recv_active[0] != 0)
         {
@@ -175,7 +179,7 @@ int main (int argc, char ** argv)
       parameters.header.iov_len  = 4;
       parameters.data.iov_base   = data;
       parameters.data.iov_len    = 32;
-      PAMI_Endpoint_create (client, 0, 0, &parameters.dest);
+      RC( PAMI_Endpoint_create (client, 0, 0, &parameters.dest) );
 
       result = PAMI_Send_immediate (context[target], &parameters);
 
@@ -196,10 +200,7 @@ int main (int argc, char ** argv)
 
   /* [example 'pong' from task 1] */
 
-  rc = pami_shutdown(&client, context, &num_contexts);
-
-  if (rc == 1)
-    return 1;
+  RC( pami_shutdown(&client, context, &num_contexts) );
 
   return 0;
 };

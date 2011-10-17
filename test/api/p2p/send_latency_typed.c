@@ -17,7 +17,6 @@
 #include <assert.h>
 #include <unistd.h>
 
-#include <pami.h>
 #include "../init_util.h"
 
 #define ITERATIONS 100
