@@ -283,13 +283,25 @@ public:
             co->setXfer((pami_xfer_t*)cmd);
             co->setFlag(LocalPosted);
 
-            TypeCode *rtype = (TypeCode *)g_xfer->rtype;
+            // rtype is valid only at the root, use stype elsewhere
+            TypeCode *rtype;
+            size_t rtypecount;
+            if(_native->myrank() == g_xfer->root)
+            {
+              rtype = (TypeCode *)g_xfer->rtype;
+              rtypecount = g_xfer->rtypecount;
+            }
+            else
+            {
+              rtype =  (TypeCode *)g_xfer->stype;
+              rtypecount = g_xfer->stypecount;
+            }
             a_composite = co->getComposite();
             // update send buffer pointer and, at root, receive buffer pointers
             a_composite->executor().setVectors(g_xfer);
             a_composite->executor().updateBuffers(g_xfer->sndbuf, g_xfer->rcvbuf,
-                                                  g_xfer->rtypecount * rtype->GetDataSize(),
-                                                  (TypeCode *) g_xfer->stype, (TypeCode *) g_xfer->rtype);
+                                                  rtypecount * rtype->GetDataSize(),
+                                                  (TypeCode *) g_xfer->stype, rtype);
             a_composite->executor().updatePWQ();
         }
         /// not found posted CollOp object, create a new one and
