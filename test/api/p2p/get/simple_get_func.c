@@ -366,14 +366,7 @@ fprintf (stderr, "Before PAMI_Send_immediate()\n");
     /* wait for the 'ack' */
 fprintf (stderr, "Wait for 'ack', _ack_active = %zu\n", _ack_active);
     while (_ack_active != 0)
-    {
       result = PAMI_Context_advance (context[0], 100);
-      if (result != PAMI_SUCCESS)
-      {
-        fprintf (stderr, "Error. Unable to advance pami context. result = %d\n", result);
-        return 1;
-      }
-    }
 
     free (send_buffer);
 
@@ -405,14 +398,7 @@ fprintf (stderr, "Wait for 'ack', _ack_active = %zu\n", _ack_active);
     /* wait for the 'rts' */
 fprintf (stderr, "Wait for 'rts', _rts_active = %zu, contextid = %zu\n", _rts_active, contextid);
     while (_rts_active != 0)
-    {
       result = PAMI_Context_advance (context[contextid], 100);
-      if (result != PAMI_SUCCESS)
-      {
-        fprintf (stderr, "Error. Unable to advance pami context. result = %d\n", result);
-        return 1;
-      }
-    }
   }
 fprintf (stderr, "Test completed .. cleanup\n");
 

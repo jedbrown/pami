@@ -188,15 +188,7 @@ int main (int argc, char ** argv)
       fprintf (stderr, "Wait for 'ack', _done (%p) = %zu\n", &_done, _done);
 
       while (!_done)
-        {
           PAMI_Context_advance (context[0], 100);
-
-          if (result != PAMI_SUCCESS)
-            {
-              fprintf (stderr, "Error. Unable to advance pami context. result = %d\n", result);
-              return 1;
-            }
-        }
 
       unsigned n, loop = 0;
       unsigned offset = 0;
@@ -229,15 +221,7 @@ int main (int argc, char ** argv)
       fprintf (stderr, "Wait for message, _done = %zu, contextid = %zu\n", _done, ncontexts - 1);
 
       while (!_done)
-        {
           PAMI_Context_advance (context[ncontexts-1], 100);
-
-          if (result != PAMI_SUCCESS)
-            {
-              fprintf (stderr, "Error. Unable to advance pami context. result = %d\n", result);
-              return 1;
-            }
-        }
 
       unsigned i = 0;
 
@@ -273,15 +257,7 @@ int main (int argc, char ** argv)
         }
 
       while (active > 0)
-        {
           PAMI_Context_advance (context[ncontexts-1], 100);
-
-          if (result != PAMI_SUCCESS)
-            {
-              fprintf (stderr, "Error. Unable to advance pami context. result = %d\n", result);
-              return 1;
-            }
-        }
 
       /* put the 'ack' value to complete the test. */
       active++;
@@ -293,15 +269,7 @@ int main (int argc, char ** argv)
       PAMI_Put (context[ncontexts - 1], &parameters);
 
       while (active > 0)
-        {
           PAMI_Context_advance (context[ncontexts-1], 100);
-
-          if (result != PAMI_SUCCESS)
-            {
-              fprintf (stderr, "Error. Unable to advance pami context. result = %d\n", result);
-              return 1;
-            }
-        }
 
     }
 
