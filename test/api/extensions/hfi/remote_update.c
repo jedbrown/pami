@@ -139,7 +139,7 @@ int main(int argc, char ** argv)
     if (remote_update == (void *)NULL)
     {
         fprintf (stderr, "Error. Failed to load %s function in %s\n",
-                 sys_name, ext_name); 
+                 sym_name, ext_name); 
         return 1;
     } else {
         DBG_FPRINTF((stderr,"Loaded function %s in %s successfully.\n", 
