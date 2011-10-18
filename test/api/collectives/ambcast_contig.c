@@ -253,7 +253,7 @@ int main(int argc, char*argv[])
   if (rc == 1)
     return 1;
 
-  if (gNumRoots == -1) gNumRoots = num_tasks;
+  if (gNumRoots > num_tasks) gNumRoots = num_tasks;
 
   /*  Allocate buffer(s) */
   int err = 0;
