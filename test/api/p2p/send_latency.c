@@ -226,7 +226,7 @@ int main (int argc, char ** argv)
 
   int num_dispatch = (num_tasks == num_local_tasks) ? 3 : 2;
   if (_my_task == 0)
-      printf("%u dispatches will be tested (%d tasks:%d local tasks)\n",
+      printf("%u dispatches will be tested (%zu tasks:%zu local tasks)\n",
               num_dispatch,
               num_tasks,
               num_local_tasks);
