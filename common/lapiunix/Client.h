@@ -295,7 +295,7 @@ namespace PAMI
             _platdevs.generate(_clientid, _maxctxts, _mm, true);
             _platdevs.init(_clientid,0,_client,(pami_context_t)_contexts[0],&_mm,true);
             _contexts[0]->unlock();
-            return rc;
+            return initMoreContexts(configuration, count, contexts, ncontexts);
           }
 
         // Initialize the shared memory manager
