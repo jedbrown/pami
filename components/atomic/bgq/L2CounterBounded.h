@@ -135,7 +135,7 @@ protected:
 	// -------------------------------------------------------------------
 
 	inline size_t fetch_impl() {
-		return L2_AtomicLoad(&_counter->count);
+		return _counter->count;
 	}
 
 	inline void clear_impl() {
@@ -155,7 +155,7 @@ protected:
 	}
 
 	inline size_t bound_upper_fetch_impl() {
-		return L2_AtomicLoad(&_counter->upper);
+		return _counter->upper;
 	}
 
 	inline size_t bound_upper_fetch_and_inc_impl() {
@@ -171,7 +171,7 @@ protected:
 	}
 
 	inline size_t bound_lower_fetch_impl() {
-		return L2_AtomicLoad(&_counter->lower);
+		return _counter->lower;
 	}
 
 	inline size_t bound_lower_fetch_and_dec_impl() {

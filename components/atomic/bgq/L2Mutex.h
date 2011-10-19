@@ -86,7 +86,7 @@ namespace PAMI
 
           bool isLocked_impl()
           {
-            return (L2_AtomicLoad(&_counter) > 0) ? true : false;
+            return (_counter > 0) ? true : false;
           }
 
           uint64_t _counter;
@@ -203,7 +203,7 @@ namespace PAMI
 
           bool isLocked_impl()
           {
-            return (L2_AtomicLoad(_counter) > 0) ? true : false;
+            return (*_counter > 0) ? true : false;
           }
 
           // -------------------------------------------------------------------

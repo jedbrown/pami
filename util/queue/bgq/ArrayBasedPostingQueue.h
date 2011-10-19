@@ -263,7 +263,7 @@ namespace PAMI {
 
 		inline bool iter_begin_impl(Iterator *iter) {
 			// _overflow can only be !empty if _array_q is also !empty...
-			iter->tail = L2_AtomicLoad(&_array_q.Producer);
+			iter->tail = _array_q.Producer;
 			iter->head = _array_q.Consumer; // not needed?
 			if (iter->head < iter->tail) ppc_msync(); // conditional too much?
 			return (iter->head < iter->tail);

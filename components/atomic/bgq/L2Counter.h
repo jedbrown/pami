@@ -75,7 +75,7 @@ namespace PAMI
 
           inline size_t fetch_impl()
           {
-            return L2_AtomicLoad(&_counter);
+            return _counter;
           }
 
           inline size_t fetch_and_inc_impl()
@@ -206,7 +206,7 @@ namespace PAMI
 
           inline size_t fetch_impl()
           {
-            return L2_AtomicLoad(_counter);
+            return *_counter;
           }
 
           inline size_t fetch_and_inc_impl()
