@@ -63,6 +63,7 @@ class Bsr : public SharedArray
 #ifdef _LAPI_LINUX 
         uint32_t                smask;
         uint32_t                fmask;
+        unsigned int            bsr_length;     // the length returned from bsr_map
 #endif
         enum BSR_SETUP_STATE {
             ST_NONE = 0,

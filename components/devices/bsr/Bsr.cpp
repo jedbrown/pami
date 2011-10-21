@@ -34,6 +34,7 @@ typedef int   (*bsr_query_t) (unsigned*, uint32_t*, unsigned*, uint32_t*);
 typedef int   (*bsr_alloc_t) (unsigned, unsigned*, unsigned*);
 typedef int   (*bsr_free_t)  (unsigned);
 typedef void* (*bsr_map_t)   (void*, unsigned, int, int, unsigned*);
+typedef int   (*bsr_unmap_t) (void*, unsigned);
 
 // Internal helper function to display dynamic linking errors.
 static void show_dlerror(const char* msg) {
@@ -50,6 +51,7 @@ class BsrFunc {
             bsr_alloc_t bsr_alloc = NULL;
             bsr_free_t  bsr_free  = NULL;
             bsr_map_t   bsr_map   = NULL;
+            bsr_unmap_t bsr_unmap = NULL;
         };
         bool LoadFunc() {
             if (BsrFunc::loaded) return true;
@@ -82,6 +84,12 @@ class BsrFunc {
                 dlclose(hndl);
                 return false;
             }
+            bsr_unmap = (bsr_unmap_t) dlsym(hndl, "bsr_unmap");
+            if (NULL == bsr_unmap) {
+                show_dlerror("BsrFunc: dlsym bsr_unmap failed");
+                dlclose(hndl);
+                return false;
+            }
             loaded = true;
             return true;
         };
@@ -89,6 +97,7 @@ class BsrFunc {
         bsr_alloc_t bsr_alloc;
         bsr_free_t  bsr_free;
         bsr_map_t   bsr_map;
+        bsr_unmap_t bsr_unmap;
 } __bsr_func;
 bool BsrFunc::loaded = false;
 #endif /* _LAPI_LINUX */
@@ -114,6 +123,7 @@ Bsr::Bsr(unsigned int mem_cnt, bool is_leader, size_t done_mask,
     assert(((size_t)(&shm->setup_ref) & align_mask) == 0);
 #ifdef _LAPI_LINUX
     __bsr_func.LoadFunc();
+    bsr_length = 0;
 #endif 
     ITRC(IT_BSR,"BSR: in Bsr() shm=0x%p shm_block_sz=%lu shm->bsr_acquired=%d "
             "shm->setup_failed=%d shm->setup_ref=%u shm->bsr_id=%d\n",
@@ -148,15 +158,17 @@ void Bsr::ReleaseBsrResource()
 
 void Bsr::DetachBsr()
 {
-    ITRC(IT_BSR, "Bsr: DetachBsr()\n");
+    // detach from bsr, if attached before
     if (bsr_addr) {
 #ifdef _LAPI_LINUX
-        /* todo: maybe need to call bsr_unmap in the future */
-        
+        int libbsr_rc = (*(__bsr_func.bsr_unmap))(bsr_addr, bsr_length);
+        if (0 != libbsr_rc) {
+            ITRC(IT_BSR, "Bsr: bsr_unmap failed with rc=%d, addr=%p len=%u\n",
+                    libbsr_rc, bsr_addr, bsr_length);
+        }
 #else
         PAMI::Memory::sync();
         PAMI::Memory::sync<PAMI::Memory::instruction>();
-        // detach from bsr, if attached before
         shmdt(bsr_addr);
 #endif
         bsr_addr = NULL;
@@ -168,6 +180,8 @@ void Bsr::DetachBsr()
                 "BSR: DetachBsr() &setup_ref=%p setup_ref=%d->%d done_flag=%zu\n",
                 &shm->setup_ref, ref, ref-1, shm->done_flag);
         assert(ref > 0);
+    } else {
+        ITRC(IT_BSR, "Bsr: DetachBsr() bsr_addr=NULL no-op\n");
     }
 }
 
@@ -244,7 +258,6 @@ bool Bsr::AttachBsr(int mem_id, unsigned char init_val)
     bsr_id = shm->bsr_id;
     ASSERT(bsr_id != -1);
 #ifdef _LAPI_LINUX
-    unsigned bsr_length;
     bsr_addr = (unsigned char *)(*(__bsr_func.bsr_map))(NULL, (unsigned)bsr_id, 0, 0, &bsr_length);
     if (NULL == bsr_addr || MAP_FAILED == bsr_addr || bsr_length < member_cnt) {
         ITRC(IT_BSR, "BSR: %s bsr_map failed with bsr_id=%d bsr_length=%u errno=%u\n",
