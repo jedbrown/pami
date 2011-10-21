@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <new>
 #include <string.h>
+#include "atomics.h"
 #include "ClassDump.h"
 #include "lapi_itrace.h"
 #include "util/common.h"
@@ -24,7 +25,7 @@ SharedArray::RC SaOnNodeSyncGroup::InitSa(void* ctrl_block, size_t ctrl_block_sz
 {
     if (NULL == sa) {
         try {
-            sa = new SA_TYPE(member_cnt, is_leader, ctrl_block, ctrl_block_sz);
+            sa = new SA_TYPE(member_cnt, is_leader, done_mask, ctrl_block, ctrl_block_sz);
         } catch (std::bad_alloc e) {
             fprintf(stderr, "(%d)SaOnNodeSyncGroup(%s): Out of memory.\n", 
                     member_id, sa->name);
@@ -38,6 +39,8 @@ SharedArray::RC SaOnNodeSyncGroup::InitSa(void* ctrl_block, size_t ctrl_block_sz
                     member_id, sa->name);
             assert(0);
         }
+        ITRC(IT_BSR, "SaOnNodeSyncGroup::InitSa<%s> ctrl_bloc=%p ctrl_bloc_sz=%zu\n",
+                sa->name, ctrl_block, ctrl_block_sz);
     }
     return sa->CheckInitDone(job_key, member_id, seq);
 }
@@ -67,6 +70,7 @@ SyncGroup::RC SaOnNodeSyncGroup::CheckInitDone( )
                         member_id);
                 group_desc = "SharedArray:Bsr";
                 s_state = DONE_ST;
+                sa_type = SA_TYPE_BSR;
                 return SUCCESS;
             } else if (SharedArray::PROCESSING == sa_rc ) {
                 /* in progress */
@@ -87,6 +91,7 @@ SyncGroup::RC SaOnNodeSyncGroup::CheckInitDone( )
                         member_id);
                 group_desc = "SharedArray:ShmArray";
                 s_state = DONE_ST;
+                sa_type = SA_TYPE_SHMARRAY;
                 return SUCCESS;
             } else if (SharedArray::PROCESSING == sa_rc ) {
                 /* in progress */
@@ -121,8 +126,27 @@ SyncGroup::RC SaOnNodeSyncGroup::CheckInitDone( )
  */
 SaOnNodeSyncGroup::~SaOnNodeSyncGroup()
 {
-    ITRC(IT_BSR, "~SaOnNodeSyncGroup()\n");
+    ITRC(IT_BSR, "~SaOnNodeSyncGroup() sa_type=%s\n", 
+            (sa_type == SA_TYPE_BSR)?"SA_TYPE_BSR":
+            (sa_type == SA_TYPE_SHMARRAY)?"SA_TYPE_SHMARRAY":"SA_TYPE_NONE");
     delete sa;
+
+    volatile size_t flag;
+    switch (sa_type) {
+        case SA_TYPE_BSR:
+            flag = *((volatile size_t*)bsr_ctrl_block);
+            break;
+        case SA_TYPE_SHMARRAY:
+            flag = *((volatile size_t*)shmarray_ctrl_block);
+            break;
+        default:
+            flag = 0;
+    }
+    if (done_mask == flag || member_cnt == 1) {
+        /* Signal to remove the shared memory. No access is allowed after this point */
+        SetDoneFlag();
+        ITRC(IT_BSR, "~SaOnNodeSyncGroup() done_flag set to %zu\n", ctrl_block->done_flag);
+    }
 }
 
 void SaOnNodeSyncGroup::BarrierEnter()
@@ -216,7 +240,6 @@ bool SaOnNodeSyncGroup::IsNbBarrierDone()
     }
 
     if (nb_barrier_stage == 1) { /* enter broadcast stage */
-        //        show_bsr("stage 1");
         if (member_id == 0) {
             // need eieio to make sure correctness of BSR operations
             EIEIO;
@@ -228,7 +251,6 @@ bool SaOnNodeSyncGroup::IsNbBarrierDone()
                 return false;
         }
         nb_barrier_stage = 2;
-        //        show_bsr("stage 2");
         seq = !seq;
     }
 
@@ -246,11 +268,11 @@ ClassDump & operator<< (ClassDump &dump, const SaOnNodeSyncGroup &s) {
         << _F(seq)
         << _F(sa)
         << _F(nb_barrier_stage)
-        << _F(shm_block)
-        << _F(shm_block_sz)
+        << _F(ctrl_block)
         << _F(bsr_ctrl_block)
         << _F(bsr_ctrl_block_sz)
         << _F(shmarray_ctrl_block)
-        << _F(shmarray_ctrl_block_sz);
+        << _F(shmarray_ctrl_block_sz)
+        << _F(done_mask);
 #undef _F
 }

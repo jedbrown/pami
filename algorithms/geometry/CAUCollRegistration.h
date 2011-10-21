@@ -498,6 +498,7 @@ namespace PAMI
             GeometryInfo   *geometryInfo = (GeometryInfo*)geometry->getKey(Geometry::PAMI_GKEY_GEOMETRYINFO);
             *bsr_gi                      = (PAMI::Device::BSRGeometryInfo *)_bsr_geom_allocator.allocateObject();
             uint            member_id    = local_topo->rank2Index(_global_task);
+            Memory::sync();
             new(*bsr_gi)PAMI::Device::BSRGeometryInfo(geometry->comm(),
                                                       local_topo,
                                                       shmem_addr,
@@ -688,7 +689,8 @@ namespace PAMI
                   bool            no_affinity      = (result_mask&16ULL);
                   bool            useBsr           = !(collision || no_affinity);
                   
-                  ITRC(IT_CAU, "CollReg(phase 1) Receive: group_id=%d:  rmask:0x%lx noGroup=0x%lx "
+                  ITRC(IT_BSR|IT_CAU,
+                       "CollReg(phase 1) Receive: group_id=%d:  rmask:0x%lx noGroup=0x%lx "
                        "noUniq=0x%lx cau collis=0x%lx bsr collis=0x%lx no_affinity=0x%lx singleNode=%d\n",
                        groupid,
                        result_mask,        // result mask
@@ -729,6 +731,15 @@ namespace PAMI
                     uint64_t *inout_ptr  = &inout_val[1+num_master_tasks];
                     void     *shmem_addr = _csmm.offset_to_addr(inout_ptr[master_index]);
                     setup_bsr(geometry, &bsr_gi,shmem_addr);
+                    geometryInfo->_bsrstr_offset = inout_ptr[master_index];
+                  }
+                  else if (0xFFFFFFFFFFFFFFFFULL != geometryInfo->_bsrstr_offset)
+                  {
+                    /* Master sets the flag, so shm can be freed at the end of geometry destroy */
+                    uint    myid      = local_topo->rank2Index(_global_task);
+                    size_t  done_flag = myid + 1;
+                    size_t *buf       = (size_t*)_csmm.offset_to_addr(geometryInfo->_bsrstr_offset);
+                    *buf              = done_flag;
                   }
                   GlobalBsrFactory   *f0 = NULL;
                   GlobalSHMEMFactory *f1 = NULL;
@@ -901,16 +912,30 @@ namespace PAMI
             bsr_gi->~BSRGeometryInfo();
             _bsr_geom_allocator.returnObject(bsr_gi);
           }
-        inline void freeSharedMemory(uint64_t ctlstr_offset,
-                                     uint64_t bsrstr_offset,
-                                     uint64_t databuf_offset)
+        inline void freeSharedMemory(T_Geometry *g,
+                                     uint64_t    ctlstr_offset,
+                                     uint64_t    bsrstr_offset,
+                                     uint64_t    databuf_offset)
           {
             _csmm.returnSGCtrlStr(ctlstr_offset);
-            if(bsrstr_offset != 0xFFFFFFFFFFFFFFFFULL)
             {
+              /* Get BSR member id */
+              PAMI::Topology *local_topo =
+                (PAMI::Topology *) (g->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX));
+              uint            myid       = local_topo->rank2Index(_global_task);
+              /* Since zero is the initial value, we use non-zero values as the flag. */
+              size_t          done_flag  = myid + 1;
+
               size_t *buf = (size_t*)_csmm.offset_to_addr(bsrstr_offset);
-              *buf        = _csmm.shm_null_offset();
-              _csmm.returnCtrlStr((typename T_CSMemoryManager::ctlstr_t *)buf);
+              ITRC(IT_BSR,
+                      "freeSharedMemory() myid=%u done_flag=%zu bsrstr_offset=%llu buf=%p *buf=%zu\n",
+                      myid, done_flag, bsrstr_offset, buf, *buf);
+              /* The last guy call the function will set the 1st word to done_flag */
+              if (*buf == done_flag) {
+                ITRC(IT_BSR, "freeSharedMemroy() CtrlStr returned *buf=%zu\n", *buf);
+                *buf  = _csmm.shm_null_offset();
+                _csmm.returnCtrlStr((typename T_CSMemoryManager::ctlstr_t *)buf);
+              }
             }
             if(databuf_offset != 0xFFFFFFFFFFFFFFFFULL)
             {
@@ -977,7 +1002,8 @@ namespace PAMI
 
             gi->_registration->freeUniqueKey(gi->_unique_key);
 
-            gi->_registration->freeSharedMemory(gi->_ctlstr_offset,
+            gi->_registration->freeSharedMemory(gi->_geometry,
+                                                gi->_ctlstr_offset,
                                                 gi->_bsrstr_offset,
                                                 gi->_databuf_offset);
             

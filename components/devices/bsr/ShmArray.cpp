@@ -20,13 +20,19 @@
 /*!
  * \brief Default constructor.
  */
-ShmArray::ShmArray(unsigned int mem_cnt, bool is_leader, void *shm_block, size_t shm_block_sz):
+ShmArray::ShmArray(unsigned int mem_cnt, bool is_leader, size_t done_mask,
+        void *shm_block, size_t shm_block_sz):
     SharedArray(mem_cnt, is_leader, shm_block, shm_block_sz, "ShmArray"),
     shm((Shm*)shm_block),
     shm_size(shm_block_sz),
-    shm_state(ST_NONE)
+    shm_state(ST_NONE),
+    done_mask(done_mask)
 {
-    assert((sizeof(Shm)+member_cnt) <= shm_block_sz);
+    ASSERT(done_mask);
+    assert(GetCtrlBlockSz(member_cnt) <= shm_block_sz);
+    /* check alignment for variables that used by atomic */
+    size_t align_mask = (sizeof(size_t) - 1);
+    assert(((size_t)(&shm->ready_cnt) & align_mask) == 0);
 };
 
 /*!
@@ -74,7 +80,13 @@ SharedArray::RC ShmArray::CheckInitDone(const unsigned int   job_key,
  */
 ShmArray::~ShmArray()
 {
-    ITRC(IT_BSR, "ShmArray(FAILOVER): Destroyed\n");
+    int cnt = fetch_and_add((atomic_p)&(shm->ready_cnt), -1);
+    if (cnt == 1) {
+        SetDoneFlag();
+    }
+    ITRC(IT_BSR, "ShmArray(FAILOVER): Destroyed ready_cnt=%d->%d done_flag=%zu\n",
+            cnt, cnt-1, shm->done_flag);
+    assert(cnt > 0);
 }
 
 unsigned char      ShmArray::Load1(const int byte_offset) const

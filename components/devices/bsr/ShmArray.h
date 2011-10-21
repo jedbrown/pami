@@ -17,7 +17,8 @@
 class ShmArray : public SharedArray
 {
     public:
-        ShmArray(unsigned int mem_cnt, bool is_leader, void *shm_block, size_t shm_block_sz);
+        ShmArray(unsigned int mem_cnt, bool is_leader, size_t done_mask,
+                void *shm_block, size_t shm_block_sz);
        ~ShmArray();
         RC CheckInitDone(const unsigned int   job_key, 
                          const int            mem_id, 
@@ -36,16 +37,23 @@ class ShmArray : public SharedArray
             return (sizeof(Shm) + mem_cnt);
         }
     private:
+        size_t                     done_mask;
         enum SETUP_STATE {
             ST_NONE = 0,
             ST_SHM_CHECK_REF_CNT
         } shm_state;
 
         struct Shm {
-            volatile unsigned      ready_cnt;   // number of member has finished the init
+            volatile size_t        done_flag;
+            volatile int           ready_cnt;   // must be at the 1st 4 bytes;
+                                                // number of member has finished the init
             volatile unsigned char shm_data[0]; // byte array of shm data
         }                         *shm;
         unsigned int               shm_size;
+
+        void SetDoneFlag() {
+            shm->done_flag = done_mask;
+        }
 };
 
 #endif

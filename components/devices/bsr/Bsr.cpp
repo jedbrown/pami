@@ -23,6 +23,8 @@
 #include "dlpnsd_lib.h"
 #include "util/common.h"
 #include "lapi_assert.h"
+#include "lapi_base_type.h"
+#include "lapi_env.h"
 
 using namespace PNSDapi;
 
@@ -94,16 +96,22 @@ bool BsrFunc::loaded = false;
 /*!
  * \brief Default constructor.
  */
-Bsr::Bsr(unsigned int mem_cnt, bool is_leader, void *shm_block, size_t shm_block_sz) :
+Bsr::Bsr(unsigned int mem_cnt, bool is_leader, size_t done_mask, 
+        void *shm_block, size_t shm_block_sz) :
     SharedArray(mem_cnt, is_leader, shm_block, shm_block_sz, "BSR"),
+    done_mask(done_mask),
     bsr_id(-1),
     bsr_addr(NULL),
     bsr_state(ST_NONE),
     shm(NULL)
 {
+    ASSERT(done_mask); // cannot be zero
     ASSERT(shm_block_sz >= sizeof(Shm));
     shm = (Shm *)shm_seg;
     assert(NULL!=shm);
+    size_t align_mask = (sizeof(size_t) - 1);
+    /* check alignment for variables that used by atomic */
+    assert(((size_t)(&shm->setup_ref) & align_mask) == 0);
 #ifdef _LAPI_LINUX
     __bsr_func.LoadFunc();
 #endif 
@@ -117,36 +125,59 @@ Bsr::Bsr(unsigned int mem_cnt, bool is_leader, void *shm_block, size_t shm_block
  * \brief Default destructor.
  */
 Bsr::~Bsr() {
-    ITRC(IT_BSR, "Bsr: In ~Bsr()\n");
+    ITRC(IT_BSR, "BSR: In ~Bsr()\n");
     CleanUp();
 }
 
-void Bsr::CleanUp()
+void Bsr::ReleaseBsrResource()
 {
-    ITRC(IT_BSR, "Bsr: In CleanUp()\n");
-
+    ITRC(IT_BSR, "BSR: ReleaseBsrResource() setup_ref = %d\n", shm->setup_ref);
+    if (bsr_id != -1) {
+        if (shm->done_flag == done_mask) {
 #ifdef _LAPI_LINUX
-    if (bsr_addr) {
-        bsr_addr = NULL;
-    }
-    if (is_leader && bsr_id != -1) {
-        ITRC(IT_BSR, "Bsr: bsr_free() bsr_id=%d\n", bsr_id);
-        (*__bsr_func.bsr_free)(bsr_id);
-    }
+            ITRC(IT_BSR, "BSR: bsr_free() bsr_id=%d\n", bsr_id);
+            (*__bsr_func.bsr_free)(bsr_id);
 #else
+            ITRC(IT_BSR, "BSR: shmctl RMID bsr_id=%d\n", bsr_id);
+            shmctl(bsr_id, IPC_RMID, 0); 
+#endif
+        }
+        bsr_id = -1;
+    }
+}
+
+void Bsr::DetachBsr()
+{
+    ITRC(IT_BSR, "Bsr: DetachBsr()\n");
     if (bsr_addr) {
+#ifdef _LAPI_LINUX
+        /* todo: maybe need to call bsr_unmap in the future */
+        
+#else
         PAMI::Memory::sync();
         PAMI::Memory::sync<PAMI::Memory::instruction>();
         // detach from bsr, if attached before
         shmdt(bsr_addr);
-        bsr_addr = NULL;
-    }
-    if (is_leader && bsr_id != -1) {
-        shmctl(bsr_id, IPC_RMID, 0); 
-    }
 #endif
-    shm     = NULL;
-    bsr_id  = -1;
+        bsr_addr = NULL;
+        int ref = fetch_and_add ((atomic_p)&shm->setup_ref, -1);
+        if (ref == 1) { // I am the last member leave
+            SetDoneFlag();
+        }
+        ITRC(IT_BSR,
+                "BSR: DetachBsr() &setup_ref=%p setup_ref=%d->%d done_flag=%zu\n",
+                &shm->setup_ref, ref, ref-1, shm->done_flag);
+        assert(ref > 0);
+    }
+}
+
+void Bsr::CleanUp()
+{
+    ITRC(IT_BSR, "BSR: In CleanUp()\n");
+
+    DetachBsr();
+
+    ReleaseBsrResource();
 }
 
 #ifndef _LAPI_LINUX
@@ -164,21 +195,21 @@ key_t Bsr::GetBsrUniqueKey(unsigned int j_key)
 
     rc = papi_open(&pnsd_handle, flags);
     if( rc != 0 ) {
-        ITRC(IT_BSR, "Bsr::GetBsrUniqueKey() pnsd_api_open failed, rc = %d\n", rc);
+        ITRC(IT_BSR, "BSR::GetBsrUniqueKey() pnsd_api_open failed, rc = %d\n", rc);
         return bsr_key;
     }
 
     rc = papi_get_keys(pnsd_handle, j_key, name, 1, &key);
     if( rc != 0) {
-        ITRC(IT_BSR, "Bsr::GetBsrUniqueKey() pnsd_api_get_keys failed, rc = %d\n", rc);
+        ITRC(IT_BSR, "BSR::GetBsrUniqueKey() pnsd_api_get_keys failed, rc = %d\n", rc);
     } else {
-        ITRC(IT_BSR, "Bsr::GetBsrUniqueKey() pnsd_api_get_keys succeeded with key (0x%x)\n", key);
+        ITRC(IT_BSR, "BSR::GetBsrUniqueKey() pnsd_api_get_keys succeeded with key (0x%x)\n", key);
         bsr_key = (key_t)key;
     }
 
     rc = papi_close(pnsd_handle);
     if ( rc != 0 ) {
-        ITRC(IT_BSR, "Bsr::GetBsrUniqueKey() pnsd_api_close failed with rc = %d\n", rc);
+        ITRC(IT_BSR, "BSR::GetBsrUniqueKey() pnsd_api_close failed with rc = %d\n", rc);
     }
 
     return bsr_key;
@@ -190,14 +221,19 @@ bool Bsr::IsBsrReady()
     // Check if all tasks have update the reference count, or
     // if any task failed
     if (shm->bsr_acquired && member_cnt == shm->setup_ref) {
-        ITRC(IT_BSR, "BSR: %s setup passed (setup_ref=%d)\n",
+        ITRC(IT_BSR, "BSR: %s READY to use (setup_ref=%d)\n",
                 (is_leader?"LEADER":"FOLLOWER"), shm->setup_ref);
 #ifndef _LAPI_LINUX
+        /*
+         * All member attached, we don't need bsr_id anymore.
+         * Mark the Systemv Shared Memory to be freed.
+         */
         if (is_leader) {
+            ITRC(IT_BSR, "BSR: All attached. shmctl RMID bsr_id=%d\n", bsr_id);
             shmctl(bsr_id, IPC_RMID, 0); 
         }
-#endif /* _LAPI_LINUX */
-        ITRC(IT_BSR, "BSR: READY to use\n");
+        bsr_id = -1;
+#endif /* AIX */
         return true;
     } else 
         return false;
@@ -276,7 +312,7 @@ bool Bsr::GetBsrResource(unsigned int job_key)
         }
     }
 
-    ITRC(IT_BSR, "Bsr: request %d bytes with %u members %lu bytes available BSR memory\n",
+    ITRC(IT_BSR, "BSR: request %d bytes with %u members %lu bytes available BSR memory\n",
             bsr_size, member_cnt, avail);
     /* not enough bsr */
     if (bsr_size == 0)
@@ -296,7 +332,7 @@ bool Bsr::GetBsrResource(unsigned int job_key)
     // Check availability of BSR resources.
     struct vminfo bsr_info = {0};
     if (vmgetinfo(&bsr_info, VMINFO, sizeof(bsr_info)) != 0) {
-        ITRC(IT_BSR, "Bsr: vmgetinfo() failed\n");
+        ITRC(IT_BSR, "BSR: vmgetinfo() failed\n");
         perror("vmgetinfo() unexpectedly failed");
         return false;
     }
@@ -306,7 +342,7 @@ bool Bsr::GetBsrResource(unsigned int job_key)
         (member_cnt/PAGESIZE)*PAGESIZE+PAGESIZE : member_cnt;
 
     // Check availability of BSR memory and number of tasks
-    ITRC(IT_BSR, "Bsr: request %d bytes with %d members %lu bytes available BSR memory\n",
+    ITRC(IT_BSR, "BSR: request %d bytes with %d members %lu bytes available BSR memory\n",
             bsr_size, member_cnt, bsr_info.bsr_mem_free);
     if (bsr_info.bsr_mem_free < bsr_size) { 
         return false;
@@ -317,24 +353,24 @@ bool Bsr::GetBsrResource(unsigned int job_key)
     if (bsr_key != -1) {
         bsr_id = shmget(bsr_key, bsr_size, IPC_CREAT|IPC_EXCL|0600);
         if (bsr_id != -1) {
-            ITRC(IT_BSR, "Bsr: BSR master shmget passed with (BSR key=0x%x, BSR id=%d)\n",
+            ITRC(IT_BSR, "BSR: BSR master shmget passed with (BSR key=0x%x, BSR id=%d)\n",
                     bsr_key, bsr_id);
         } else {
-            ITRC(IT_BSR, "Bsr: BSR master shmget failed with (BSR key=0x%x, errno=%u)\n",
+            ITRC(IT_BSR, "BSR: BSR master shmget failed with (BSR key=0x%x, errno=%u)\n",
                     bsr_key, errno);
             return false;
         }
     } else {
-        ITRC(IT_BSR, "Bsr: BSR master failed to get key from PNSD\n");
+        ITRC(IT_BSR, "BSR: BSR master failed to get key from PNSD\n");
         return false;
     }
     // request BSR memory 
     if (shmctl(bsr_id, SHM_BSR, NULL)) {
-        ITRC(IT_BSR, "Bsr: shmctl(SHM_BSR) failed with errno=%u BSR id %d\n", 
+        ITRC(IT_BSR, "BSR: shmctl(SHM_BSR) failed with errno=%u BSR id %d\n", 
                 errno, bsr_id);
         return false;
     } else {
-        ITRC(IT_BSR, "Bsr: shmctl(SHM_BSR) passed with BSR id %u.\n", bsr_id);
+        ITRC(IT_BSR, "BSR: shmctl(SHM_BSR) passed with BSR id %u.\n", bsr_id);
     }
 #endif /* _LAPI_LINUX */
 
@@ -439,11 +475,11 @@ void Bsr::Store2(const int byte_offset, const unsigned short val)
 
 void Bsr::Store4(const int byte_offset, const unsigned int val)
 {
-    assert(0 && "Bsr::Store4() not supported");
+    assert(0 && "BSR::Store4() not supported");
 }
 
 void Bsr::Store8(const int byte_offset, const unsigned long long val)
 {
-    assert(0 && "Bsr::Store8() not supported");
+    assert(0 && "BSR::Store8() not supported");
 }
 

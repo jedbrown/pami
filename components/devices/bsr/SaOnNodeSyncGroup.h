@@ -55,13 +55,25 @@ class SaOnNodeSyncGroup : public SyncGroup {
                                          * (0) init stage
                                          * (1) for reduce done;
                                          * (2) for broadcast done */
-        void         *shm_block;        /* shared memory block passed
-                                         * from collective framework */
-        size_t        shm_block_sz;     // size of the shared memory buffer
         void         *bsr_ctrl_block;
         size_t        bsr_ctrl_block_sz;
         void         *shmarray_ctrl_block;
         size_t        shmarray_ctrl_block_sz;
+        size_t        done_mask;
+
+        enum SaType {
+            SA_TYPE_NONE = 0,
+            SA_TYPE_BSR,
+            SA_TYPE_SHMARRAY
+        }             sa_type;
+        /* for Checkpoint support */
+        struct CtrlBlock {
+            volatile size_t       done_flag;   // Flag to signal upper layer to clean up the shm
+        }                        *ctrl_block;
+        void SetDoneFlag() {
+            /* member_id + 1 is the contracted mask with CAURegistration */
+            ctrl_block->done_flag = done_mask;
+        }
 };
 
 inline
@@ -81,27 +93,35 @@ SaOnNodeSyncGroup::SaOnNodeSyncGroup(unsigned int mem_id, unsigned int mem_cnt,
     sa(NULL),
     nb_barrier_stage(2),
     s_state(ORIG_ST),
-    shm_block(shm_block),
-    shm_block_sz(shm_block_sz),
     bsr_ctrl_block(NULL),
     bsr_ctrl_block_sz(0),
     shmarray_ctrl_block(NULL),
-    shmarray_ctrl_block_sz(0)
+    shmarray_ctrl_block_sz(0),
+    sa_type(SA_TYPE_NONE),
+    done_mask(mem_id+1)
 {
     assert(member_cnt > 0);
     // modify seq, the init value is 0 for all tasks
     // seq of leader remains 0 with seq of the rest of tasks turned to 1
     seq = (is_leader)? seq : (!seq);
 
+    size_t ctrl_block_sz   =
+        (sizeof(CtrlBlock) + sizeof(size_t)-1) & ~(sizeof(size_t)-1); // padding to word size
     bsr_ctrl_block_sz      = Bsr::GetCtrlBlockSz(member_cnt);
     shmarray_ctrl_block_sz = ShmArray::GetCtrlBlockSz(member_cnt);
 
-    assert (shm_block_sz >= (bsr_ctrl_block_sz + shmarray_ctrl_block_sz));
+    assert (shm_block_sz >= (ctrl_block_sz + bsr_ctrl_block_sz + shmarray_ctrl_block_sz));
 
-    /* we need to separate these two control blocks, since it is hard to 
-     * reinitialize to zero if used */
-    bsr_ctrl_block         = shm_block;
-    shmarray_ctrl_block    = (void*)((char*)shm_block + bsr_ctrl_block_sz);
+    /*
+     * we need to separate these control blocks, since it is hard to 
+     * reinitialize to zero if used.
+     * -----------------------------------------------------
+     * [ ctrl_block | bsr_ctrl_block | shmarray_ctrl_block ]
+     * -----------------------------------------------------
+     */
+    ctrl_block             = (CtrlBlock*)shm_block;
+    bsr_ctrl_block         = (void*)((char*)ctrl_block + ctrl_block_sz);
+    shmarray_ctrl_block    = (void*)((char*)bsr_ctrl_block + bsr_ctrl_block_sz);
 };
 
 #endif /* _SAONNODESYNCGROUP_H_ */

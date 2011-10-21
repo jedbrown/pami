@@ -35,7 +35,8 @@
 class Bsr : public SharedArray
 {
     public:
-        Bsr(unsigned int mem_cnt, bool is_leader, void *shm_block, size_t shm_block_sz);
+        Bsr(unsigned int mem_cnt, bool is_leader, size_t done_mask,
+                void *shm_block, size_t shm_block_sz);
         ~Bsr();
         RC CheckInitDone(const unsigned int   job_key, 
                          const int            mem_id, 
@@ -51,9 +52,12 @@ class Bsr : public SharedArray
         void Store8(const int byte_offset, const unsigned long long val);
 
         static size_t GetCtrlBlockSz(unsigned int mem_cnt) {
-            return (sizeof(Shm));
+            /* need pad structure to natural word alignment */
+            size_t align_mask = (sizeof(size_t) - 1);
+            return ((sizeof(Shm) + align_mask) & ~(align_mask));
         }
     private:
+        size_t                  done_mask;      // non-zero value
         int                     bsr_id;         // BSR id
         unsigned char*          bsr_addr;       // BSR address
 #ifdef _LAPI_LINUX 
@@ -69,8 +73,11 @@ class Bsr : public SharedArray
         } bsr_state; // state on local task
 
         struct Shm {
+            // Flag to signal upper layer to clean up the shm
+            // Must be at the 1st word
+            volatile size_t       done_flag;
             // ref count; number of successful bsr setup
-            volatile unsigned int setup_ref;
+            volatile int          setup_ref;
             // BSR ID. Set by leader.
             volatile int          bsr_id;
             // Do we have BSR allocated? Updated by leader only
@@ -88,5 +95,12 @@ class Bsr : public SharedArray
         bool GetBsrResource(unsigned int job_key);
         bool AttachBsr(int mem_id, unsigned char init_val);
         bool IsBsrReady();
+
+        void ReleaseBsrResource(); // release bsr_id
+        void DetachBsr();          // detach BSR from bsr_addr
+
+        void SetDoneFlag() {
+            shm->done_flag = done_mask;
+        }
 };
 #endif
