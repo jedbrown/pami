@@ -255,6 +255,7 @@ bool Bsr::IsBsrReady()
 
 bool Bsr::AttachBsr(int mem_id, unsigned char init_val) 
 {
+    PAMI::Memory::sync();
     bsr_id = shm->bsr_id;
     ASSERT(bsr_id != -1);
 #ifdef _LAPI_LINUX
@@ -408,10 +409,12 @@ SharedArray::RC Bsr::CheckInitDone(const unsigned int   job_key,
                         ITRC(IT_BSR,"BSR: Got BSR resource\n");
                         bsr_state = ST_BSR_ACQUIRED;
                         ITRC(IT_BSR,"BSR: bsr_state moved from ST_NONE to ST_BSR_ACQUIRED\n");
+                        PAMI::Memory::sync();
                         shm->bsr_acquired = true;
                     } else {
                         ITRC(IT_BSR,"BSR: BSR resource is not available\n");
                         bsr_state = ST_FAIL;
+                        PAMI::Memory::sync();
                         shm->setup_failed = true;
                         ITRC(IT_BSR,"BSR: bsr_state moved from ST_NONE to ST_FAIL\n");
                     }
