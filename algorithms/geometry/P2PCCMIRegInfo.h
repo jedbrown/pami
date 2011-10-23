@@ -35,6 +35,7 @@
 #include "algorithms/protocols/allreduce/MultiColorCompositeT.h"
 #include "algorithms/protocols/allreduce/ProtocolFactoryT.h"
 #include "algorithms/protocols/allreduce/AsyncAllreduceT.h"
+#include "algorithms/protocols/amcollectives/AMReduceT.h"
 #include "algorithms/protocols/allreduce/AsyncReduceScatterT.h"
 #include "algorithms/protocols/scatter/AsyncScatterT.h"
 #include "algorithms/protocols/gather/AsyncGatherT.h"
@@ -1039,6 +1040,53 @@ namespace CCMI
 
       };//Binomial
     };//Allreduce
+
+    namespace P2PAMReduce
+    {
+      extern inline unsigned getKey(unsigned                     root,
+                      unsigned                                   connid,
+                      PAMI_GEOMETRY_CLASS                       *geometry,
+                      ConnectionManager::BaseConnectionManager **connmgr)
+      {
+        if (connid != (unsigned)-1)
+        {
+          *connmgr = NULL; //use this key as connection id
+          return connid;
+        }
+        ConnectionManager::RankSeqConnMgr *cm = (ConnectionManager::RankSeqConnMgr *)*connmgr;
+        return cm->updateConnectionId(root);
+      }
+      namespace Binomial
+      {
+        extern inline void am_reduce_metadata(pami_metadata_t *m)
+        {
+          new(m) PAMI::Geometry::Metadata("I0:Binomial:P2P:P2P");
+        }
+
+        extern inline void create_schedule(void                * buf,
+                                   unsigned                      size,
+                                   unsigned                      root,
+                                   Interfaces::NativeInterface * native,
+                                   PAMI_GEOMETRY_CLASS         * g)
+        {
+          new (buf) CCMI::Schedule::TopoMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0);
+        }
+
+        typedef CCMI::Adaptor::AMReduce::AMReduceT
+        < CCMI::Schedule::TopoMultinomial,
+          CCMI::Schedule::TopoMultinomial,
+          CCMI::ConnectionManager::RankSeqConnMgr,
+          create_schedule,
+          create_schedule > Composite;
+
+        typedef CCMI::Adaptor::AMReduce::AMReduceFactoryT
+        < Composite,
+          am_reduce_metadata,
+          CCMI::ConnectionManager::RankSeqConnMgr,
+          getKey >
+        Factory;
+      }//Binomial
+    }//AMReduce
 
     namespace P2PScatter
     {

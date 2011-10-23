@@ -22,7 +22,7 @@ namespace CCMI
      * link. With rectangular schedule it will lead to a one color
      * broadcast. Also implements pipelining.
      */
-    template<class T>
+    template<class T, typename T_Coll_header = CollHeaderData>
     class BroadcastExec : public Interfaces::Executor
     {
       protected:
@@ -30,7 +30,7 @@ namespace CCMI
         Interfaces::NativeInterface    * _native;
         T                              * _connmgr;
         bool                             _postReceives;
-        CollHeaderData                   _mdata;
+        T_Coll_header                    _mdata;
         pami_multicast_t                 _msend;
         PAMI::PipeWorkQueue              _pwq;
 
@@ -67,7 +67,7 @@ namespace CCMI
           //_buflen            =  0;
 	  pami_quad_t *info   =  (pami_quad_t*)((void*) & _mdata);
           _msend.msginfo     =  info;
-          _msend.msgcount    =  1; 
+          _msend.msgcount    = sizeof(T_Coll_header)/sizeof(pami_quad_t);
           _msend.roles       = -1U;
 	  _msend.src_participants  = (pami_topology_t *) & _selftopology;
 	  _msend.dst_participants  = (pami_topology_t *) & _dsttopology;
@@ -131,6 +131,11 @@ namespace CCMI
                          _pwq.bytesAvailableToConsume(), _pwq.bytesAvailableToProduce()));
         }
 
+        void setCollHeader(const T_Coll_header &hdr)
+        {
+          _mdata = hdr;
+        }
+
         //------------------------------------------
         // -- Executor Virtual Methods
         //------------------------------------------
@@ -187,7 +192,7 @@ namespace CCMI
                                     pami_result_t    result )
         {
           TRACE_MSG ((stderr, "<%p>Executor::BroadcastExec::notifyRecvDone()\n", cookie));
-          BroadcastExec<T> *exec =  (BroadcastExec<T> *) cookie;
+          BroadcastExec<T, T_Coll_header> *exec =  (BroadcastExec<T, T_Coll_header> *) cookie;
           exec->sendNext();
         }
 
@@ -199,8 +204,8 @@ namespace CCMI
 ///
 /// \brief start sending broadcast data. Only active on the root node
 ///
-template <class T>
-inline void  CCMI::Executor::BroadcastExec<T>::start ()
+template <class T, typename T_Coll_header>
+inline void  CCMI::Executor::BroadcastExec<T, T_Coll_header>::start ()
 {
   TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::start() count %zu\n", this, _msend.bytes));
 
@@ -210,8 +215,8 @@ inline void  CCMI::Executor::BroadcastExec<T>::start ()
     }
 }
 
-template <class T>
-inline void  CCMI::Executor::BroadcastExec<T>::sendNext ()
+template <class T, typename T_Coll_header>
+inline void  CCMI::Executor::BroadcastExec<T, T_Coll_header>::sendNext ()
 {
   //CCMI_assert (_dsttopology.size() != 0); //We have nothing to send
   if (_dsttopology.size() == 0)
@@ -249,8 +254,8 @@ inline void  CCMI::Executor::BroadcastExec<T>::sendNext ()
   _native->multicast(&_msend);
 }
 
-template <class T>
-inline void  CCMI::Executor::BroadcastExec<T>::notifyRecv
+template <class T, typename T_Coll_header>
+inline void  CCMI::Executor::BroadcastExec<T, T_Coll_header>::notifyRecv
 (unsigned             src,
  const pami_quad_t   & info,
  PAMI::PipeWorkQueue ** pwq,

@@ -2726,9 +2726,7 @@ extern "C"
    * internal buffering)
    *
    * \param[in]  dispatch     registered dispatch id to use
-   * \param[in]  geometry     Geometry to use for this collective operation.
-   *                          \c NULL indicates the global geometry.
-   * \param[in]  headers      metadata to send to destinations in the header
+   * \param[in]  user_header  metadata to send to destinations in the header
    * \param[in]  rcvbuf       target buffer of the reduce operation (size of geometry)
    * \param[in]  rtype        data layout of the incoming reduce
    * \param[in]  rtypecount   replication count of the incoming reduce
@@ -2746,7 +2744,6 @@ extern "C"
     void                      * rcvbuf;
     pami_type_t                 rtype;
     size_t                      rtypecount;
-    pami_data_function          op;
     void                      * data_cookie;
     int                         commutative;
   } pami_amreduce_t;

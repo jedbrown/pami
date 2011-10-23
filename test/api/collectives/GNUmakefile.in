@@ -22,6 +22,7 @@ APPS            += geometry.${EXTENSION}
 APPS            += allreduce.${EXTENSION} allreduce_query.${EXTENSION} 
 APPS            += allreduce_subcomm.${EXTENSION} allreduce_subcomm_query.${EXTENSION} 
 APPS            += allreduce_contig.${EXTENSION}
+APPS            += amreduce.${EXTENSION}
 APPS            += reduce.${EXTENSION} reduce_query.${EXTENSION}  
 APPS            += reduce_subcomm.${EXTENSION} reduce_contig.${EXTENSION}
 APPS            += allgather.${EXTENSION} allgather_contig.${EXTENSION}
