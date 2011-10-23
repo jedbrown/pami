@@ -99,7 +99,6 @@ namespace PAMI
             buildSpecialTopologies();
           
           // Initialize remaining members
-
           (*_geometry_map)[_commid] = this;
 
           _allreduce_storage[0] = _allreduce_storage[1] = NULL;
@@ -227,7 +226,6 @@ namespace PAMI
             PAMI_assert(rc == PAMI_SUCCESS);
           }
           // Initialize remaining members
-
           (*_geometry_map)[_commid] = this;
 
           _allreduce_storage[0] = _allreduce_storage[1] = NULL;
@@ -271,7 +269,6 @@ namespace PAMI
           buildSpecialTopologies();
 
           // Initialize remaining members
-
           (*_geometry_map)[_commid] = this;
 
           _allreduce_storage[0] = _allreduce_storage[1] = NULL;
@@ -477,6 +474,8 @@ namespace PAMI
           free(_allreduce_storage[0]);
           free(_allreduce_storage[1]);
           (*_geometry_map)[_commid] = NULL;
+          (*_geometry_map).erase(_commid);
+
           
           return;
         }

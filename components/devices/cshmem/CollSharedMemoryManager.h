@@ -106,7 +106,7 @@ namespace PAMI
           T_Counter           term_count;
           T_Mutex             ctlstr_pool_lock;
           T_Mutex             buffer_pool_lock;
-          volatile int64_t    clientdata_key;
+          T_Atomic            clientdata_key;
           size_t              ctlstr_offset;
           size_t              buffer_offset;
           volatile size_t     free_ctlstr_list_offset;
@@ -153,7 +153,7 @@ namespace PAMI
           _collshm->buffer_pool_offset      = addr_to_offset(((char *)(offset_to_addr(_collshm->ctlstr_pool_offset))
                                                          + (_size - sizeof(collshm_t)) / 2));
 
-          _collshm->clientdata_key          = _key;
+          _collshm->clientdata_key.set(_key);
           _collshm->ctlstr_offset           = (size_t)offset_to_addr(_collshm->ctlstr_pool_offset) - (size_t)_collshm;
           _collshm->buffer_offset           = (size_t)offset_to_addr(_collshm->buffer_pool_offset) - (size_t)_collshm;
 
@@ -233,22 +233,40 @@ namespace PAMI
         inline pami_result_t allocateKey()
         {
           pami_result_t rc = PAMI_SUCCESS;
-          _collshm->buffer_pool_lock.acquire();
-          if(_collshm->clientdata_key > 0)
-            _collshm->clientdata_key--;
-          else
-            rc = PAMI_ERROR;
 
-          PAMI_ASSERT(_collshm->clientdata_key>=0);
+          // Note that this lock is not required for correctness
+          // But we use it for consistency/error checking
+          // (the critical section allows us to fetch and dec atomically
+          // if the key is 0).
+          _collshm->buffer_pool_lock.acquire();
+          ssize_t cv, val = _collshm->clientdata_key.fetch_and_sub(1UL);
+          cv              = val - 1;
+          if(val < 1)
+          {
+            val = _collshm->clientdata_key.fetch_and_add(1UL);
+            cv  = val + 1;
+            rc  = PAMI_EAGAIN;
+          }
+          PAMI_assertf((cv >= 0 && cv <= _key),
+                       "allocateKey outside range:  %ld %ld \n",
+                       cv,
+                       _key);
           _collshm->buffer_pool_lock.release();
           return rc;
         }
         inline pami_result_t returnKey()
         {
           pami_result_t rc = PAMI_SUCCESS;
+
+          // Note that this lock is not required for correctness
+          // But we use it for consistency/error checking
           _collshm->buffer_pool_lock.acquire();
-          _collshm->clientdata_key++;
-          PAMI_ASSERT(_collshm->clientdata_key <= _key);
+          ssize_t cv, val = _collshm->clientdata_key.fetch_and_add(1UL);
+          cv              = val + 1;
+          PAMI_assertf((val >= 0 && val <= _key),
+                       "returnKey outside range: %ld %ld \n",
+                       val,
+                       _key);
           _collshm->buffer_pool_lock.release();
           return rc;
         }
@@ -430,7 +448,6 @@ namespace PAMI
       
         ctlstr_t * _get_ctrl_str_from_pool ()
         {
-
           // require implementation of check_lock and clear_lock in atomic class
           PAMI_ASSERT(&_collshm->ctlstr_pool_lock != NULL);
           _collshm->ctlstr_pool_lock.acquire();
@@ -459,7 +476,6 @@ namespace PAMI
           //COLLSHM_CLEAR_LOCK((atomic_p)&(_collshm->ctlstr_pool_lock),0);
           Memory::sync();
           _collshm->ctlstr_pool_lock.release();
-
           return ctlstr;
         }
 
@@ -543,9 +559,7 @@ namespace PAMI
         ///
         void returnCtrlStr (ctlstr_t *ctlstr)
         {
-
           PAMI_ASSERT(ctlstr != shm_null_ptr());
-
           ctlstr_t *tmp         = ctlstr;
           T_Atomic *ctlstr_list = (T_Atomic *) offset_to_addr(_collshm->ctlstr_list_offset);
 
@@ -562,7 +576,7 @@ namespace PAMI
           for(int i=0; i<cnt; i++)
           {
             ctlstr_t *next = (ctlstr_t*)offset_to_addr(cur->next_offset);
-            memset(((char*)cur)+sizeof(size_t), 0, sizeof(*cur)-sizeof(size_t));
+            memset(cur, 0, sizeof(*cur));
             Memory::sync();
             cur->next_offset = ctlstr_list->fetch();
             while(!ctlstr_list->bool_compare_and_swap(cur->next_offset, addr_to_offset(cur)))
@@ -572,7 +586,6 @@ namespace PAMI
             cur=next;
           }
           TRACE_DBG((stderr, "_nctrlstrs = %d\n", _nctrlstrs));
-
         }
 
         // get coll shmem control struture address for world geometry
@@ -624,7 +637,11 @@ namespace PAMI
           if(ctlstr_offset != 0xFFFFFFFFFFFFFFFFULL)
           {
             ctlstr_t *ctlstr = (ctlstr_t *)offset_to_addr(ctlstr_offset);
+            // Acquire this lock to return all elements at once without contention
+            // for the atomics
+            _collshm->ctlstr_pool_lock.acquire();
             returnCtrlStr(ctlstr);
+            _collshm->ctlstr_pool_lock.release();
           }
         }
       

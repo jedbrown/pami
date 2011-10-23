@@ -581,17 +581,13 @@ namespace PAMI
                   if((participant && _collision_map[unique_key]!=1))
                     result_mask |= 4ULL;
 
-                  // Failure:  BSR Collision, we don't need job unique key
-                  if((_collision_map[unique_key]!=1))
-                    result_mask |= 8ULL;
-                  
                   // Check to see if BSR is enabled on all tasks
                   // in the geometry.  Note that this is a global
                   // setting (currently), because bsr enablement
                   // is tied to affinity settings.  We still
                   // check affinity here
                   if(!_local_devs_bsr.isInit())
-                    result_mask |= 16ULL;
+                    result_mask |= 8ULL;
 
                   // invert for bitwise AND
                   inout_val[0] = ~result_mask;
@@ -653,15 +649,14 @@ namespace PAMI
                   geometryInfo->_databuf_offset = inout_ptr[master_index];
                   inout_nelem[0]    = inout_nelem[0];
                   ITRC(IT_CAU, "CollReg(phase 0): group_id=%d, unique_id=0x%x "
-                       "reduceMask:0x%lx noGroup=0x%x noJobUniq=0x%x cau_collis=0x%x bsr_collis=0x%lx no_affinity=0x%llx ka=%d\n",
+                       "reduceMask:0x%lx noGroup=0x%x noJobUniq=0x%x cau_collis=0x%x no_affinity=0x%llx ka=%d\n",
                        geometry->comm(),
                        unique_key,
                        result_mask,        // result mask
                        result_mask&1ULL,   // key allocated
                        result_mask&2ULL,   // cau uniqifier
                        result_mask&4ULL,   // cau collision
-                       result_mask&8ULL,   // bsr collision
-                       result_mask&16ULL,  // affinity
+                       result_mask&8ULL,   // affinity
                        geometryInfo->_keyAllocated);
                   return PAMI_SUCCESS;
                 }
@@ -684,21 +679,18 @@ namespace PAMI
                   void           *ctrlstr          = (void *)inout_val[master_index+1];
                   uint64_t        result_mask      = ~inout_val[0];
                   bool            singleNode       = (num_local_tasks == num_tasks);
-                  bool            useCau           = ((result_mask & (~16ULL)) == 0) && !singleNode;
-                  bool            collision        = (result_mask&8ULL);
-                  bool            no_affinity      = (result_mask&16ULL);
-                  bool            useBsr           = !(collision || no_affinity);
+                  bool            useCau           = ((result_mask & (~8ULL)) == 0) && !singleNode;
+                  bool            no_affinity      = (result_mask&8ULL);
+                  bool            useBsr           = !(no_affinity);
                   
-                  ITRC(IT_BSR|IT_CAU,
-                       "CollReg(phase 1) Receive: group_id=%d:  rmask:0x%lx noGroup=0x%lx "
-                       "noUniq=0x%lx cau collis=0x%lx bsr collis=0x%lx no_affinity=0x%lx singleNode=%d\n",
+                  ITRC(IT_BSR|IT_CAU, "CollReg(phase 1) Receive: group_id=%d:  rmask:0x%lx noGroup=0x%lx "
+                       "noUniq=0x%lx cau collis=0x%lx no_affinity=0x%lx singleNode=%d\n",
                        groupid,
                        result_mask,        // result mask
                        result_mask&1ULL,   // key allocated
                        result_mask&2ULL,   // cau uniqifier
                        result_mask&4ULL,   // cau collision
-                       result_mask&8ULL,   // bsr collision
-                       result_mask&16ULL,  // affinity 
+                       result_mask&8ULL,   // no affinity
                        singleNode);        // single node
                   
                   // Set up required communication channels based on reduction results
@@ -918,24 +910,23 @@ namespace PAMI
                                      uint64_t    databuf_offset)
           {
             _csmm.returnSGCtrlStr(ctlstr_offset);
+            // Get BSR member id
+            PAMI::Topology *local_topo =
+              (PAMI::Topology *) (g->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX));
+            uint            myid       = local_topo->rank2Index(_global_task);
+            // Since zero is the initial value, we use non-zero values as the flag.
+            // The "last guy out" will return the shared control struct
+            size_t          done_flag  = myid + 1;
+            size_t *buf = (size_t*)_csmm.offset_to_addr(bsrstr_offset);
+            ITRC(IT_BSR,
+                 "freeSharedMemory() myid=%u done_flag=%zu bsrstr_offset=%llu buf=%p *buf=%zu\n",
+                 myid, done_flag, bsrstr_offset, buf, *buf);
+            // The last guy call the function will set the 1st word to done_flag
+            if (*buf == done_flag)
             {
-              /* Get BSR member id */
-              PAMI::Topology *local_topo =
-                (PAMI::Topology *) (g->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX));
-              uint            myid       = local_topo->rank2Index(_global_task);
-              /* Since zero is the initial value, we use non-zero values as the flag. */
-              size_t          done_flag  = myid + 1;
-
-              size_t *buf = (size_t*)_csmm.offset_to_addr(bsrstr_offset);
-              ITRC(IT_BSR,
-                      "freeSharedMemory() myid=%u done_flag=%zu bsrstr_offset=%llu buf=%p *buf=%zu\n",
-                      myid, done_flag, bsrstr_offset, buf, *buf);
-              /* The last guy call the function will set the 1st word to done_flag */
-              if (*buf == done_flag) {
-                ITRC(IT_BSR, "freeSharedMemroy() CtrlStr returned *buf=%zu\n", *buf);
-                *buf  = _csmm.shm_null_offset();
-                _csmm.returnCtrlStr((typename T_CSMemoryManager::ctlstr_t *)buf);
-              }
+              ITRC(IT_BSR, "freeSharedMemroy() CtrlStr returned *buf=%zu\n", *buf);
+              *buf  = _csmm.shm_null_offset();
+              _csmm.returnCtrlStr((typename T_CSMemoryManager::ctlstr_t *)buf);
             }
             if(databuf_offset != 0xFFFFFFFFFFFFFFFFULL)
             {

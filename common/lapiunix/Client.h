@@ -445,13 +445,14 @@ namespace PAMI
     inline void cleanup_geometry() {
         /* clean up all existing geometries */
         std::map<unsigned, pami_geometry_t>::iterator g_it = _geometry_map.begin();
-        while (g_it != _geometry_map.end()) {
-          if (NULL != g_it->second) {
-            LAPIGeometry* g = (LAPIGeometry*)(g_it->second);
-            g->~Lapi();
-            g_it->second = NULL;
-          }
-          g_it++;
+        while (g_it != _geometry_map.end())
+        {
+          // It's ok to delete an element while traversing a map
+          // if you save a tmp ptr
+          // Destructor of the geometry deletes the map entry
+          std::map<unsigned, pami_geometry_t>::iterator tmp = g_it++;
+          LAPIGeometry* g = (LAPIGeometry*)(tmp->second);
+          g->~Lapi();
         }
     }
 
@@ -1235,8 +1236,6 @@ namespace PAMI
         LAPIGeometry  *g            = gc->_geometry;
         int commid                  = g->comm();
         
-        clnt->_geometry_map[commid] = NULL;
-        clnt->_geometry_map.erase(commid);
         g->~LAPIGeometry();        
         
         if(gc->_user_done_cb)
@@ -1319,9 +1318,11 @@ namespace PAMI
 
     inline pami_geometry_t mapidtogeometry_impl (int comm)
       {
-        pami_geometry_t g = _geometry_map[comm];
-        TRACE_ERR((stderr, "<%p>%s\n", g, __PRETTY_FUNCTION__));
-        return g;
+        std::map<unsigned, pami_geometry_t>::iterator iter = _geometry_map.find(comm);
+        if(iter == _geometry_map.end())
+          return (pami_geometry_t)NULL;
+        else
+          return iter->second;
       }
 
     inline void registerUnexpBarrier_impl (unsigned     comm,

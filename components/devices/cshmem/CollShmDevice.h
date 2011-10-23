@@ -238,7 +238,7 @@ namespace PAMI
               inline size_t getCmpl() { return _ctrl.cmpl_cntr.fetch(); }
               inline void setCmpl()
               {
-                PAMI_ASSERT(_ctrl.cmpl_cntr.fetch() >= 1);
+//                PAMI_ASSERT(_ctrl.cmpl_cntr.fetch() >= 1);
                 _ctrl.cmpl_cntr.fetch_and_sub(1);
               }
               inline pami_result_t setAvail(unsigned avail_value, unsigned cmpl_value)
@@ -246,10 +246,10 @@ namespace PAMI
                 TRACE_DBG((stderr, "<%p>CollShmWindow::setAvail() avail_value %u,cmpl_value %u\n",
                            this,
                            avail_value, cmpl_value));
-                PAMI_ASSERT(_ctrl.cmpl_cntr.fetch() == 0);
+//                PAMI_ASSERT(_ctrl.cmpl_cntr.fetch() == 0);
                 _ctrl.cmpl_cntr.fetch_and_add(cmpl_value);
                 Memory::sync();
-                PAMI_ASSERT(_ctrl.avail_flag != avail_value);
+//                PAMI_ASSERT(_ctrl.avail_flag != avail_value);
                 _ctrl.avail_flag = avail_value;
 
                 if (_ctrl.cmpl_cntr.fetch() == 1)
