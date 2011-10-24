@@ -48,6 +48,8 @@ namespace CCMI
           T_Gather_Schedule                      _gather_schedule;
 
         public:
+          size_t   _sndlen; // Size of buffer allocated for headers
+
           ///
           /// \brief Constructor
           ///
@@ -63,7 +65,8 @@ namespace CCMI
                      unsigned                                   root):
               Executor::Composite(),
               _scatter_executor (native, cmgr, geometry->comm(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)),
-              _gather_executor (native, cmgr, geometry->comm(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))
+              _gather_executor (native, cmgr, geometry->comm(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)),
+              _sndlen(0)
           {
             DEBUG((stderr, "<%p>AMGather::AMGatherT()\n", this));
             _scatter_executor.setRoot(root);
@@ -181,6 +184,8 @@ namespace CCMI
             co = _free_pool.allocate(key);
 
             PAMI::Geometry::DispatchInfo *dispatch = geometry->getDispatch(amg_xfer->dispatch);
+            PAMI_assertf(dispatch != NULL, "Invalid dispatch ID: %u\n", amg_xfer->dispatch);
+
             pami_recv_t send = {0,};
             TypeCode *rtype  = (TypeCode *) amg_xfer->rtype;
             unsigned bytes   = amg_xfer->rtypecount * rtype->GetDataSize();
@@ -319,7 +324,7 @@ namespace CCMI
                 co->setFactory (factory);
                 co->setGeometry(geometry);
                 co->setXfer(&a_xfer);
-
+                a_composite->_sndlen = sndlen;// Need this information to free/return buffer
                 a_composite->setContext (ctxt);
                 a_composite->scatterExecutor().setCollHeader (*amcdata);
                 a_composite->scatterExecutor().setBuffers ((char *)NULL,
@@ -375,6 +380,9 @@ namespace CCMI
 
                 PAMI::Geometry::DispatchInfo *dispatch =
                   co->getGeometry()->getDispatch(a_xfer->cmd.xfer_amgather.dispatch);
+                PAMI_assertf(dispatch != NULL, "Invalid dispatch ID: %u\n",
+                             a_xfer->cmd.xfer_amgather.dispatch);
+
                 dispatch->fn.amgather (
                  a_composite->getContext() ? a_composite->getContext() : factory->_context, // context
                  dispatch->cookie,                      // user cookie
@@ -388,8 +396,9 @@ namespace CCMI
                 // Set the completion callback and cookie passed in by the user
                 a_xfer->cb_done = send.local_fn;
                 a_xfer->cookie  = send.cookie;
-                factory->freeBuffer(a_xfer->cmd.xfer_amgather.headerlen,
-                                    (char *)a_xfer->cmd.xfer_amgather.headers);
+                if(a_xfer->cmd.xfer_amgather.headers)
+                  factory->freeBuffer(a_composite->_sndlen,
+                                      (char *)a_xfer->cmd.xfer_amgather.headers);
                 // Set the user provided source buffer/type & start the Gather operation
                 a_composite->gatherExecutor().updateBuffers((char *)send.addr,
                                                             (char *)NULL,

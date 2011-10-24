@@ -19,6 +19,7 @@
 #include "Mapping.h"
 #include "algorithms/interfaces/GeometryInterface.h"
 #include "algorithms/geometry/Algorithm.h"
+#include "util/common.h"
 #include <map>
 #include <list>
 
@@ -645,8 +646,14 @@ namespace PAMI
 
       inline DispatchInfo  * getDispatch_impl(size_t key)
       {
-        DispatchInfo * value = &_dispatch[key];
-        return value;
+        std::map<size_t, DispatchInfo>::iterator iter = _dispatch.find(key);
+
+        if(unlikely(iter == _dispatch.end()))
+        {
+          return (DispatchInfo *)NULL;
+        }
+
+        return &iter->second;
       }
 
       inline void                      setKey_impl(gkeys_t key, void*value)
