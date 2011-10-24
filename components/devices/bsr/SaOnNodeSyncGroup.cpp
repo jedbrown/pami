@@ -132,6 +132,8 @@ SaOnNodeSyncGroup::~SaOnNodeSyncGroup()
     delete sa;
 
     volatile size_t flag;
+    // No sync necessary because other threads/tasks will read the cleared value
+    // of 0, or will read the updated control block value
     switch (sa_type) {
         case SA_TYPE_BSR:
             flag = *((volatile size_t*)bsr_ctrl_block);
@@ -140,7 +142,8 @@ SaOnNodeSyncGroup::~SaOnNodeSyncGroup()
             flag = *((volatile size_t*)shmarray_ctrl_block);
             break;
         default:
-            flag = 0;
+          if(is_leader) flag = done_mask;
+          else          flag = 0;
     }
     if (done_mask == flag || member_cnt == 1) {
         /* Signal to remove the shared memory. No access is allowed after this point */

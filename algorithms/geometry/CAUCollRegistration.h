@@ -718,12 +718,11 @@ namespace PAMI
                   if(useCau && participant)
                     setup_cau(geometry, &cau_gi);
 
+                  uint64_t *inout_ptr  = &inout_val[1+num_master_tasks];
                   if(useBsr && num_local_tasks>1)
                   {
-                    uint64_t *inout_ptr  = &inout_val[1+num_master_tasks];
                     void     *shmem_addr = _csmm.offset_to_addr(inout_ptr[master_index]);
                     setup_bsr(geometry, &bsr_gi,shmem_addr);
-                    geometryInfo->_bsrstr_offset = inout_ptr[master_index];
                   }
                   else if (0xFFFFFFFFFFFFFFFFULL != geometryInfo->_bsrstr_offset)
                   {
@@ -732,7 +731,12 @@ namespace PAMI
                     size_t  done_flag = myid + 1;
                     size_t *buf       = (size_t*)_csmm.offset_to_addr(geometryInfo->_bsrstr_offset);
                     *buf              = done_flag;
+                    // No sync necessary because other threads/tasks will read the cleared value
+                    // of 0, or will read this value, so it doesn't matter, that task
+                    // will not return the shared memory in either case
                   }
+                  geometryInfo->_bsrstr_offset = inout_ptr[master_index];
+
                   GlobalBsrFactory   *f0 = NULL;
                   GlobalSHMEMFactory *f1 = NULL;
                   if(num_master_tasks>1 && participant)
