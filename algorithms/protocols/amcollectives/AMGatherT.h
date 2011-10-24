@@ -184,7 +184,7 @@ namespace CCMI
             co = _free_pool.allocate(key);
 
             PAMI::Geometry::DispatchInfo *dispatch = geometry->getDispatch(amg_xfer->dispatch);
-            PAMI_assertf(dispatch != NULL, "Invalid dispatch ID: %u\n", amg_xfer->dispatch);
+            PAMI_assertf(dispatch != NULL, "Invalid dispatch ID: %zu\n", amg_xfer->dispatch);
 
             pami_recv_t send = {0,};
             TypeCode *rtype  = (TypeCode *) amg_xfer->rtype;
@@ -380,7 +380,7 @@ namespace CCMI
 
                 PAMI::Geometry::DispatchInfo *dispatch =
                   co->getGeometry()->getDispatch(a_xfer->cmd.xfer_amgather.dispatch);
-                PAMI_assertf(dispatch != NULL, "Invalid dispatch ID: %u\n",
+                PAMI_assertf(dispatch != NULL, "Invalid dispatch ID: %zu\n",
                              a_xfer->cmd.xfer_amgather.dispatch);
 
                 dispatch->fn.amgather (
