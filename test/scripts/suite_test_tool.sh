@@ -3169,8 +3169,7 @@ while [ "${1}" != "" ]; do
         -g | --group )          shift
 	                        logGroup=$1
                                 ;;
-        -gpfs | --gpfs )        shift
-	                        gpfs=1
+        -gpfs | --gpfs )        gpfs=1
                                 ;;
         -gs | --group-scale )   groupScale=1
                                 ;;
