@@ -2821,7 +2821,7 @@ usage ()
     echo "-g | --group <name>          Provide group name for logXml.sh. Time stamp will atomatically be appended by this script."
     echo "                                      ex: -g foo"
     echo "" 
-    echo "-gpfs | --gpfs               Use gpfs file server (/gpfs/bgq0) for copy and run sections instead of default file server (/bgusr)."
+    echo "-gpfs | --gpfs               Use gpfs file server (/gpfs/ddn_sfa10k) for copy and run sections instead of default file server (/bgusr)."
     echo ""
     echo "-gs | --group-scale          Appends nodes and mode to group name provided with -g | --group parm.  For scaling runs, multiple groups will be created and populated"
     echo "                                      ex: -g foo --group-scale -nn 2"
@@ -3032,7 +3032,7 @@ copyHash="/tmp/${USER}_hashmap.copy.${timestamp}"       # avoid recopies
 # Exe vars
 gsa_base="/gsa/rchgsa/home/${USER:0:1}/${USER:1:1}/${USER}"
 bgusr_base="/bgusr/${USER}"
-gpfs_base="/gpfs/bgq0/${USER}"
+gpfs_base="/gpfs/ddn_sfa10k/${USER}"
 gpfs=0                           # 0 = default file server (bgusr_base), 1 = gpfs server (gpfs_base)
 sandbox=""
 common_exe_dir=""
