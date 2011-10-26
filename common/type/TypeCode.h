@@ -41,6 +41,7 @@ namespace PAMI
 
             typedef enum
             {
+              PRIMITIVE_TYPE_UNDEFINED=-1,
               PRIMITIVE_TYPE_BYTE=0,
 
               PRIMITIVE_TYPE_SIGNED_CHAR,
@@ -222,7 +223,6 @@ namespace PAMI
             size_t prev_cursor;
             size_t code_cursor;
             bool   completed;
-            // bool   to_optimize;
 
             void CheckCodeBuffer(size_t inc_code_size);
             void ResizeCodeBuffer(size_t new_size);
@@ -232,17 +232,19 @@ namespace PAMI
             void UpdateDepth(unsigned int call_depth);
             void AddNumBlocks(size_t inc_num_blocks);
             void UpdateUnit(size_t new_unit);
-            // void CopySubTypes();
             void SetContiguous(bool);
             void SetSimple(bool);
 
           protected:
             primitive_type_t   primitive;
+
+            void AddSimpleInternal(size_t bytes, size_t stride, size_t reps);
+            void AddTypedInternal(TypeCode *sub_type, size_t stride, size_t reps);
     };
 
     inline TypeCode::TypeCode()
         : code(NULL), code_buf_size(0), prev_cursor(0), code_cursor(0),
-        completed(false), primitive(PRIMITIVE_TYPE_COUNT)
+        completed(false), primitive(PRIMITIVE_TYPE_UNDEFINED)
     {
         ResizeCodeBuffer(sizeof(Begin) + sizeof(Copy)*4);
         Push(Begin());
@@ -250,7 +252,7 @@ namespace PAMI
 
     inline TypeCode::TypeCode(void *code_addr, size_t code_size, bool copy_code_buffer)
         : code(NULL), code_buf_size(0), prev_cursor(0), code_cursor(0),
-        completed(true), primitive(PRIMITIVE_TYPE_COUNT)
+        completed(true), primitive(PRIMITIVE_TYPE_UNDEFINED)
     {
       if (copy_code_buffer)
         {
@@ -268,7 +270,6 @@ namespace PAMI
           AcquireReference();
         }
     }
-
 
     inline TypeCode::TypeCode(size_t code_size, primitive_type_t primitive_type = PRIMITIVE_TYPE_COUNT)
         : code(NULL), code_buf_size(0), prev_cursor(0), code_cursor(0),
@@ -493,7 +494,7 @@ namespace PAMI
                     // COPY  bytes  stride  1   => COPY  bytes  stride+sift  1
                     ITRC(IT_TYPE, " AddShift(): this 0x%zx modify prev COPY\n", this);
                     Pop();
-                    AddSimple(prev_copy.bytes, prev_copy.stride + shift, 1);
+                    AddSimpleInternal(prev_copy.bytes, prev_copy.stride + shift, 1);
                     break;
                 }
             }
@@ -502,13 +503,13 @@ namespace PAMI
         } while (0);
     }
 
-    inline void TypeCode::AddSimple(size_t bytes, size_t stride, size_t reps)
+    inline void TypeCode::AddSimpleInternal(size_t bytes, size_t stride, size_t reps)
     {
         assert(!IsCompleted());
 
         Copy prev_copy;
 
-        ITRC(IT_TYPE, "AddSimple(): this 0x%zx bytes %zu stride %zd reps %zu\n", this, bytes, stride, reps);
+        ITRC(IT_TYPE, "AddSimpleInternal(): this 0x%zx bytes %zu stride %zd reps %zu\n", this, bytes, stride, reps);
 
         do {
             if (0 == reps) {
@@ -517,14 +518,14 @@ namespace PAMI
             }
             if (0 == bytes) {
                 // COPY  0  stride  reps        => SHIFT  stride*reps
-                ITRC(IT_TYPE, " AddSimple(): this 0x%zx add SHIFT\n", this);
+                ITRC(IT_TYPE, " AddSimpleInternal(): this 0x%zx add SHIFT\n", this);
                 AddShift(stride * reps);
                 break;
             }
             if ((bytes == stride) && (1<reps)) {
                 // COPY  bytes  bytes  reps     => COPY  bytes*reps  stride*reps  1
-                ITRC(IT_TYPE, " AddSimple(): this 0x%zx add modified COPY\n", this);
-                AddSimple(bytes * reps, stride * reps, 1);
+                ITRC(IT_TYPE, " AddSimpleInternal(): this 0x%zx add modified COPY\n", this);
+                AddSimpleInternal(bytes * reps, stride * reps, 1);
                 break;
             }
             if (Top(prev_copy)) {
@@ -532,17 +533,17 @@ namespace PAMI
                 if (prev_copy.bytes==prev_copy.stride && 1==reps) {
                     // COPY  bytes1  bytes1  1
                     // COPY  bytes2  stride  1   => COPY bytes1+bytes2  stride+bytes1  1
-                    ITRC(IT_TYPE, " AddSimple(): this 0x%zx modify prev COPY [1]\n", this);
+                    ITRC(IT_TYPE, " AddSimpleInternal(): this 0x%zx modify prev COPY [1]\n", this);
                     Pop();
-                    AddSimple(prev_copy.bytes + bytes, prev_copy.stride + stride, 1);
+                    AddSimpleInternal(prev_copy.bytes + bytes, prev_copy.stride + stride, 1);
                     break;
                 }
                 if (prev_copy.bytes==bytes && prev_copy.stride==stride) {
                     // COPY  bytes  stride  reps1
                     // COPY  bytes  stride  reps2   => COPY  bytes  stride  reps1+reps2
-                    ITRC(IT_TYPE, " AddSimple(): this 0x%zx modify previous COPY [2]\n", this);
+                    ITRC(IT_TYPE, " AddSimpleInternal(): this 0x%zx modify previous COPY [2]\n", this);
                     Pop();
-                    AddSimple(bytes, stride, prev_copy.reps + reps);
+                    AddSimpleInternal(bytes, stride, prev_copy.reps + reps);
                     break;
                 }
             }
@@ -551,14 +552,31 @@ namespace PAMI
         } while (0);
     }
 
-    inline void TypeCode::AddTyped(TypeCode *sub_type, size_t stride, size_t reps)
+    inline void TypeCode::AddSimple(size_t bytes, size_t stride, size_t reps)
+    {
+        assert(!IsCompleted());
+
+        ITRC(IT_TYPE, "AddSimple(): this 0x%zx bytes %zu stride %zd reps %zu\n", this, bytes, stride, reps);
+
+        if (0 != bytes) {
+            // set primitive value to user-defined
+            primitive = PRIMITIVE_TYPE_COUNT;
+            ITRC(IT_TYPE, "AddSimple(): this 0x%zx modified primitive type to %d\n", this, primitive);
+        }
+
+        // add the copy instruction
+        AddSimpleInternal(bytes, stride, reps);
+    }
+
+    inline void TypeCode::AddTypedInternal(TypeCode *sub_type, size_t stride, size_t reps)
     {
         assert(!IsCompleted());
         assert(sub_type->IsCompleted());
 
         Call prev_call;
+        Begin prev_begin;
 
-        ITRC(IT_TYPE, "AddTyped(): this 0x%zx sub_type 0x%zx stride %zd reps %zu\n", this, sub_type, stride, reps);
+        ITRC(IT_TYPE, "AddTypedInternal(): this 0x%zx sub_type 0x%zx stride %zd reps %zu\n", this, sub_type, stride, reps);
         sub_type->Show();
 
         do {
@@ -569,8 +587,8 @@ namespace PAMI
             if (sub_type->IsContiguous()) {
                 // CALL  subtye  stride  reps
                 // subtype is contiguous        => COPY  subtype->bytes  stride  reps
-                ITRC(IT_TYPE, " AddTyped(): this 0x%zx add COPY [1]\n", this);
-                AddSimple(sub_type->GetDataSize(), stride, reps);
+                ITRC(IT_TYPE, " AddTypedInternal(): this 0x%zx add COPY [1]\n", this);
+                AddSimpleInternal(sub_type->GetDataSize(), stride, reps);
                 break;
             }
             if (sub_type->IsSimple()) {
@@ -583,15 +601,15 @@ namespace PAMI
                 if (stride == sub_type->GetExtent()) {
                     // the Call's stride is equal to the subtype's extent
                     // COPY  bytes  stride2  reps2  => COPY  bytes  stride2  reps1*reps2
-                    ITRC(IT_TYPE, " AddTyped(): this 0x%zx add COPY [2]\n", this);
-                    AddSimple(sub_copy->bytes, sub_copy->stride, sub_copy->reps * reps);
+                    ITRC(IT_TYPE, " AddTypedInternal(): this 0x%zx add COPY [2]\n", this);
+                    AddSimpleInternal(sub_copy->bytes, sub_copy->stride, sub_copy->reps * reps);
                     break;
                 }
                 // the Call's stride is different from the subtype's extent
                 if (1 == sub_copy->reps) {
                     // the subtype consists of a single copy instruction w/no repeats
-                    ITRC(IT_TYPE, " AddTyped(): this 0x%zx add COPY [3]\n", this);
-                    AddSimple(sub_copy->bytes, stride, reps);
+                    ITRC(IT_TYPE, " AddTypedInternal(): this 0x%zx add COPY [3]\n", this);
+                    AddSimpleInternal(sub_copy->bytes, stride, reps);
                     break;
                 }
             }
@@ -601,13 +619,34 @@ namespace PAMI
                     // CALL  bytes  stride  reps1
                     // CALL  bytes  stride  reps2   => CALL  bytes  stride  reps1+reps2
                     Pop();
-                    AddTyped(sub_type, stride, prev_call.reps + reps);
+                    AddTypedInternal(sub_type, stride, prev_call.reps + reps);
                     break;
                 }
             }
             // No optimization yet: add a new CALL
             Push(Call((size_t)sub_type, stride, reps));
         } while (0);
+    }
+
+    inline void TypeCode::AddTyped(TypeCode *sub_type, size_t stride, size_t reps)
+    {
+        ITRC(IT_TYPE, "AddTyped(): this 0x%zx sub_type 0x%zx stride %zd reps %zu\n", this, sub_type, stride, reps);
+
+        // set the primitive value if undefined
+        if (PRIMITIVE_TYPE_UNDEFINED == primitive) {
+            // save the primitive type
+            primitive = sub_type->GetPrimitive();
+            ITRC(IT_TYPE, "AddTyped(): this 0x%zx modified primitive to %d [1]\n", this, primitive);
+        }
+
+        // add the sub-type
+        AddTypedInternal(sub_type, stride, reps);
+
+        // set primitive value to user-defined if primitive type inconsistency
+        if (sub_type->GetPrimitive() != primitive) {
+            primitive = PRIMITIVE_TYPE_COUNT;
+            ITRC(IT_TYPE, "AddTyped(): this 0x%zx modified primitive type to %d [2]\n", this, primitive);
+        }
     }
 
     inline void TypeCode::Complete()
@@ -698,8 +737,14 @@ namespace PAMI
             assert(1 == single_copy->reps);
         } while (0);
 
+        // check the primitive type
+        if (PRIMITIVE_TYPE_UNDEFINED == primitive) {
+            primitive = PRIMITIVE_TYPE_COUNT;
+            ITRC(IT_TYPE, "Complete(): this 0x%zx modified primitive type to %d\n", this, primitive);
+        }
+
         completed = true;
-        ITRC(IT_TYPE, "Complete(): this 0x%zx code = 0x%zx; code_buf_size = %zd; code_cursor = %zu; completed = %d\n", this, code, code_buf_size, code_cursor, completed);
+        ITRC(IT_TYPE, "Complete(): this 0x%zx code 0x%zx code_buf_size %zd code_cursor %zu completed %d primitive %d\n", this, code, code_buf_size, code_cursor, completed, primitive);
         Show();
     }
 
@@ -736,7 +781,7 @@ namespace PAMI
         assert(0<atom_size);
         primitive = PRIMITIVE_TYPE_BYTE;
         size_t prim_size = ULONG_MAX - ULONG_MAX%atom_size;
-        AddSimple(prim_size, prim_size, 1);
+        AddSimpleInternal(prim_size, prim_size, 1);
         Complete();
         SetAtomSize(atom_size);
         AcquireReference();
@@ -849,7 +894,7 @@ namespace PAMI
       };
 
 
-        AddSimple(primitive_atom, primitive_atom, 1);
+        AddSimpleInternal(primitive_atom, primitive_atom, 1);
         Complete();
         SetAtomSize(primitive_atom);
         AcquireReference();
