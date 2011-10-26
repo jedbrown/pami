@@ -104,7 +104,7 @@ namespace PAMI
 
               if (!flag)
               {
-                PAMI::Device::Generic::GenericThread *work = new (&_work) PAMI::Device::Generic::GenericThread(advance, msg);
+                PAMI::Device::Generic::GenericThread *work = new (&_work) PAMI::Device::Generic::GenericThread(advanceMcomb, msg);
                 _mucontext.getProgressDevice()->postThread(work);
               }
               return PAMI_SUCCESS;
@@ -135,10 +135,22 @@ namespace PAMI
             return PAMI_SUCCESS;
           }
 
-          static pami_result_t advance (pami_context_t     context,
+          static pami_result_t advanceMcomb (pami_context_t     context,
                                         void             * cookie)
           {
             CNShmemMcomb *msg = (CNShmemMcomb *) cookie;
+            bool done = msg->advance();
+
+            if (done)
+              return PAMI_SUCCESS;
+
+            return PAMI_EAGAIN;
+          }
+
+          static pami_result_t advanceMcast (pami_context_t     context,
+                                        void             * cookie)
+          {
+            CNShmemMcast *msg = (CNShmemMcast *) cookie;
             bool done = msg->advance();
 
             if (done)
@@ -230,7 +242,7 @@ namespace PAMI
 
             if (!flag)
             {
-              PAMI::Device::Generic::GenericThread *work = new (&_work) PAMI::Device::Generic::GenericThread(advance, msg);
+              PAMI::Device::Generic::GenericThread *work = new (&_work) PAMI::Device::Generic::GenericThread(advanceMcast, msg);
               _mucontext.getProgressDevice()->postThread(work);
             }
 
