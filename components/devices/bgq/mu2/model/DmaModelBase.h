@@ -613,8 +613,7 @@ namespace PAMI
                 // Check if the descriptor is done.
                 if (likely(channel.checkDescComplete (sequence)))
                   {
-                    //local_fn (_context, cookie, PAMI_SUCCESS); // Descriptor is done...notify.
-                    local_fn (NULL, cookie, PAMI_SUCCESS); // Descriptor is done...notify.
+                    local_fn (_context.getMuContextCookie(), cookie, PAMI_SUCCESS); // Descriptor is done...notify.
                   }
                 else
 #endif

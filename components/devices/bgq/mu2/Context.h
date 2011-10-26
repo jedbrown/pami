@@ -152,6 +152,8 @@ namespace PAMI
 
 	    _progressDevice = progress;
 
+	    _mu_context_cookie = mu_context_cookie;
+
             _id_client = id_client;
 
             // Map the PAMI client ID to the resource manager's client ID.
@@ -977,6 +979,16 @@ namespace PAMI
 	  {
 	    return _numInjFifos;
 	  }
+
+	  /// \brief Get the MU Context Cookie
+	  ///
+	  /// This is actually the pointer to the PAMI context
+	  ///
+	  inline void *getMuContextCookie()
+	  {
+	    return _mu_context_cookie;
+	  }
+
           RecChannel   receptionChannel; // Reception resources, public access
           InjGroup     injectionGroup __attribute__((__aligned__(16)));   // Injection resources, public access
 
@@ -1013,6 +1025,8 @@ namespace PAMI
 
 	  Generic::Device         *_progressDevice;
     
+	  void *            _mu_context_cookie;
+
         // -------------------------------------------------------------
         // Deterministic packet interface connection array
         // -------------------------------------------------------------
