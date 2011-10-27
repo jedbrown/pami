@@ -9,6 +9,8 @@
 #include <unistd.h>
 #include <stdlib.h>
 
+static const unsigned int MAXHEADERSIZE=1024*4;
+static const unsigned int MAXDATASIZE=1024;
 static const char *optString = "DdMSh?";
 
 char device_str[3][50] = {"DEFAULT", "SHMem", "MU"};
@@ -478,22 +480,24 @@ int main (int argc, char ** argv)
 
   size_t dispatch_recv_immediate_max[max_contexts][3];
   
-  uint8_t header[1024];
-  uint8_t data[1024];
+  uint8_t header[MAXHEADERSIZE];
+  uint8_t data[MAXDATASIZE];
 
-  for (i=0; i<1024; i++) {
+  for (i=0; i<MAXHEADERSIZE; i++) {
     header[i] = (uint8_t)i;
+  }
+  for (i=0; i<MAXDATASIZE; i++) {
     data[i]   = (uint8_t)i;
   }
 
   size_t h, hsize = 0;
-  size_t header_bytes[16];
+  size_t header_bytes[16] = {0};
+  size_t p, psize = 0;
+  size_t data_bytes[16] = {0};
+
   header_bytes[hsize++] = 0;
   header_bytes[hsize++] = 16;
   header_bytes[hsize++] = 32;
-
-  size_t p, psize = 0;
-  size_t data_bytes[16];
   /*data_bytes[psize++] = 0; */
   /*data_bytes[psize++] = 16; */
   /*data_bytes[psize++] = 32; */
@@ -502,7 +506,6 @@ int main (int argc, char ** argv)
   data_bytes[psize++] = 256;
   data_bytes[psize++] = 512;
   data_bytes[psize++] = 1024;
-
 
   /* PAMI_Dispatch_set */
 
@@ -596,6 +599,10 @@ int main (int argc, char ** argv)
 
   if (task_id == 0)
   {
+    for (h=0; h<hsize; h++) {  
+      printf("HEADERSIZE %zu:\t%zu\n", h, header_bytes[h]);
+    }
+
     for(hint = 0; hint < hint_limit; hint++) {               /* hint/device loop */
 
       /* Skip hints that are not under test */
