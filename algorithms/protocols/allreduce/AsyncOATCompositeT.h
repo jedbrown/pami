@@ -1,3 +1,15 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
+/**
+ * \file algorithms/protocols/allreduce/MultiColorCompositeT.h
+ * \brief CCMI composite adaptor for allreduce with barrier support
+ */
 
 #ifndef __algorithms_protocols_allreduce_AsyncOATCompositeT_h__
 #define __algorithms_protocols_allreduce_AsyncOATCompositeT_h__
@@ -110,11 +122,6 @@ namespace CCMI
 			    T_Conn                            * bcmgr,
 			    pami_geometry_t                     g,
 			    unsigned                            root,
-			    TypeCode                          * stype,
-			    TypeCode                          * rtype,
-			    unsigned                            count,
-			    pami_dt                             dt,
-			    pami_op                             op,	
 			    unsigned                            iteration):
 	  Executor::Composite(),
 	  _executor (mf, rcmgr, ((PAMI_GEOMETRY_CLASS*)g)->comm()),
@@ -128,16 +135,7 @@ namespace CCMI
 	  if (bcmgr)
 	    _executor.setBroadcastConnectionManager (bcmgr);
 	  
-	  initialize(NULL,
-		     NULL,
-		     count,
-		     stype, 
-		     rtype,
-		     dt,
-		     op);
-
 	  _executor.setDoneCallback(NULL, NULL);
-	  _executor.reset();
 	  _executor.setIteration(iteration);   	  
 	}	
 
@@ -176,6 +174,7 @@ namespace CCMI
 	{
 	  TRACE_FN_ENTER();
 
+	  unsigned old_count = _executor.getCount();
 	  _executor.setRoot ((unsigned)-1);
 	  _executor.setBuffers
 	    ( sndbuf,
@@ -185,10 +184,10 @@ namespace CCMI
 	      rtype );	  
 	  _executor.setSchedule (&_schedule);
   
-	  if ((op != _executor.getOp()) || (dtype != _executor.getDt()) 
-	      || (count != _executor.getCount()) || 
-	      (stype != _executor.getStype()))
-          {
+	  //Stype not available in early arrival packet
+	  if ( (op != _executor.getOp()) || (dtype != _executor.getDt()) 
+	       || (count != old_count) )
+	  {
 	    coremath func;
 	    unsigned sizeOfType;
 	    CCMI::Adaptor::Allreduce::getReduceFunction(dtype, op, 
@@ -279,8 +278,9 @@ namespace CCMI
 	  factory->getGeometry(ctxt, cdata->_comm);
 	T_Composite *composite = (T_Composite *) geometry->getAllreduceComposite(cdata->_iteration);
 	
-	if (likely(composite != NULL  &&  
-		   composite->getAlgorithmFactory() == factory)) {
+	if ( likely(composite != NULL  &&  
+		    composite->getAlgorithmFactory() == factory &&
+		    !composite->getExecutor()->earlyArrival()) ) {
 	  composite->getExecutor()->notifyRecvHead	    
 	    (info,      count,
 	     conn_id,   peer,
@@ -292,32 +292,39 @@ namespace CCMI
 	}
 	
 	//Composite from different old algorithm
-	if (composite != NULL) {
+	if (composite != NULL && 
+	    composite->getAlgorithmFactory() != factory) {
 	  geometry->setAllreduceComposite(NULL, cdata->_iteration);
 	  composite->~T_Composite(); //Call destructor
 	  factory->_alloc.returnObject(composite);
+	  composite = NULL;
 	}
-		
-	//Need to create a new composite
-        void *obj = factory->allocateObject();
-        geometry->setAllreduceComposite(obj, cdata->_iteration);
-        composite = new (obj) T_Composite
-	  ( ctxt,
-	    factory->native(), 
-	    factory->connmgr(),    // Connection Manager
-	    factory->getBcastConnMgr(),
-	    geometry,          // Geometry Object
-	    cdata->_root, 
-	    (TypeCode *) PAMI_TYPE_BYTE,
-	    (TypeCode *) PAMI_TYPE_BYTE,	   
-	    cdata->_count,
-	    (pami_dt)cdata->_dt,
-	    (pami_op)cdata->_op,
-	    cdata->_iteration );
-
+	
+	if (composite == NULL) {
+	  //Need to create a new composite
+	  void *obj = factory->allocateObject();
+	  geometry->setAllreduceComposite(obj, cdata->_iteration);
+	  composite = new (obj) T_Composite
+	    ( ctxt,
+	      factory->native(), 
+	      factory->connmgr(),    // Connection Manager
+	      factory->getBcastConnMgr(),
+	      geometry,          // Geometry Object
+	      cdata->_root, 
+	      cdata->_iteration );
+	}
+	
+	composite->initialize(NULL, 
+			      NULL, 
+			      cdata->_count, 
+			      (TypeCode *) PAMI_TYPE_BYTE,
+			      (TypeCode *) PAMI_TYPE_BYTE,	   
+			      (pami_dt)cdata->_dt,
+			      (pami_op)cdata->_op );
+	composite->getExecutor()->reset();
         composite->setContext(ctxt);
 	composite->setAlgorithmFactory(factory);		
-
+	
 	composite->getExecutor()->notifyRecvHead	    
 	  (info,      count,
 	   conn_id,   peer,

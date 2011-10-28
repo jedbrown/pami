@@ -144,6 +144,7 @@ public:
         // however, most probably, this constructor will be called on EA and stype will not be known so leave
         // sizeOfType as is here.
         unsigned bytes = dt_count * sizeOfType;
+
         _executor.setBuffers (sndbuf, rcvbuf, bytes, stype, rtype);
         _executor.setDoneCallback (cb_done.function, cb_done.clientdata);
 
@@ -291,8 +292,7 @@ public:
             unsigned bytes = a_xfer->stypecount * sizeOfType;
 
             DEBUG((stderr, "key = %d, found early arrival in unexpected queue\n", key);)
-
-            CCMI_assert(co->getFlags() & EarlyArrival);
+	    CCMI_assert(co->getFlags() & EarlyArrival);
 
             co->setXfer((pami_xfer_t*)cmd);
             co->setFlag(LocalPosted);
@@ -302,7 +302,7 @@ public:
             a_composite->executor().setReduceConnectionManager(_cmgr);
             a_composite->executor().setBroadcastConnectionManager(_cmgr);
             a_composite->executor().setReduceInfo(a_xfer->stypecount, bytes, sizeOfType, func, (TypeCode *)a_xfer->stype, (TypeCode *)a_xfer->rtype, (pami_op)op, (pami_dt)dt);
-	    //a_composite->executor().reset();
+	    a_composite->executor().reset();
         }
         /// not found posted CollOp object, create a new one and
         /// queue it in active queue

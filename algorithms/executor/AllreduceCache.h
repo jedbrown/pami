@@ -155,11 +155,12 @@ namespace CCMI
           TRACE_FORMAT("count %u, sizeOfType %u, op %u, dt %u, pipelineWidth %u",
                         count, sizeOfType, op, dt, pipelineWidth);
                         
+	  //Early arrival packets only have op, dt, count info with them
           if ((_pcache._pipewidth == pipelineWidth) &&
               (_pcache._sizeOfType    == sizeOfType) &&
               (_pcache._bytes         == count * sizeOfType) &&
-              (_pcache._stype         == stype) &&
-              (_pcache._rtype         == rtype))
+              (_pcache._op         == op) &&
+              (_pcache._dt         == dt))
             return;
 
           _pcache._op          = op;
@@ -171,7 +172,7 @@ namespace CCMI
           _pcache._rtype       = rtype;
           updatePipelineWidth(pipelineWidth);
 
-          //printf ("In AllreduceCache::init bytes = %x", _pcache._bytes);
+          TRACE_FORMAT("In AllreduceCache::init bytes = %x\n", _pcache._bytes);
         }
 
         void updatePipelineWidth (unsigned pw);

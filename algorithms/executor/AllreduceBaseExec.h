@@ -154,7 +154,9 @@ namespace CCMI
 
 	bool                _initialized;
 	bool                _isSendDone;
-	bool                _inAdvance;
+        bool                _inAdvance;
+        bool                _earlyArrival; //The local peer has not
+                                           //called reset
 
         const char        * _srcbuf;
         char              * _dstbuf;
@@ -211,6 +213,7 @@ namespace CCMI
             _curnsrc((unsigned)-1),
 	    _initialized (false), 
 	    _inAdvance(false),
+            _earlyArrival(false),
 	    _srcbuf (NULL), _dstbuf (NULL), _reducebuf(NULL),
 	    _src1 (NULL),
             _reduceFunc (NULL),
@@ -239,6 +242,7 @@ namespace CCMI
 	    _initialized (false), 
 	    _isSendDone  (false),
 	    _inAdvance   (false),
+            _earlyArrival(false),
 	    _srcbuf (NULL), _dstbuf (NULL), _reducebuf(NULL),
 	    _src1(NULL),
             _reduceFunc (NULL),
@@ -279,6 +283,8 @@ namespace CCMI
         //Advance for arbitrary nsrcranks
         pami_result_t advance_multiple ();
       
+        bool earlyArrival() { return _earlyArrival; }
+
         void setIteration (unsigned iteration)
         {
 	  _sndInfo._iteration = iteration;
@@ -478,7 +484,8 @@ namespace CCMI
 
 	  //Send done is only sent to true after the first send
 	  _isSendDone         = false;
-	  _inAdvance = false;
+	  _inAdvance          = false;
+	  _earlyArrival       = false;
           _curPhase = _scache.getStartPhase();
           _curIdx = 0;
           _endPhase = _scache.getEndPhase();
@@ -651,7 +658,8 @@ inline pami_result_t CCMI::Executor::AllreduceBaseExec<T_Conn, T_Single>::advanc
         {
 	  rc = PAMI_SUCCESS;
 	  _isSendDone = false; //Process an early arrival packet
-          // Call application done callback
+	  _initialized = false; //Call application done callback
+	  _earlyArrival = true; 
           if (_cb_done) 
             _cb_done (_context, _clientdata, PAMI_SUCCESS);
 
@@ -769,6 +777,9 @@ inline pami_result_t CCMI::Executor::AllreduceBaseExec<T_Conn, T_Single>::advanc
       if (_curPhase == _endPhase)
         {
 	  rc = PAMI_SUCCESS;
+	  _isSendDone = false; //Process an early arrival packet
+	  _initialized = false;
+	  _earlyArrival = true; 
           // Call application done callback
           if (_cb_done)
             _cb_done (_context, _clientdata, PAMI_SUCCESS);
@@ -858,13 +869,6 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn, T_Single>::start()
 
   CCMI_assert (_srcbuf != NULL);
   CCMI_assert (_dstbuf != NULL);
-
-  if ((this->_scache.getRoot() == -1) || (this->_scache.getRoot() == (int)_native->myrank()))
-    _reducebuf = _dstbuf;
-  else
-    //Reduce operation and I am not the root
-    _reducebuf = _acache.getTempBuf();	  
-  _src1 = (char *)_srcbuf;
 
   _initialized = true;
   _isSendDone = true;

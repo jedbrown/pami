@@ -35,7 +35,7 @@ namespace PAMI {
       public:
 
 	static const unsigned sizeof_msg      = sizeof(InjectAMMulticast);
-	static const size_t   immediate_bytes = MU::Context::immediate_payload_size;
+	static const size_t   immediate_bytes = 64; //MU::Context::immediate_payload_size;
 	static const unsigned channel_id = 0;
 	static const uint64_t alignment  = 32UL;
 	
