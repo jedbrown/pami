@@ -49,60 +49,60 @@
 ////////////////////////////////////////////////////////////////////////////////
 /// \page env_vars Environment Variables
 ///
-/// - MUSPI_NUMINJFIFOS - Number of injection fifos per process reserved for use
-///   by an MU SPI application.
-///   - Default is 0.
+/// MUSPI_NUMINJFIFOS - Number of injection fifos per process reserved for use
+/// by an MU SPI application.
+/// - Default is 0.
 ///
-/// - MUSPI_NUMRECFIFOS - Number of reception fifos per process reserved for use
-///   by an MU SPI application.
-///   - Default is 0.
+/// MUSPI_NUMRECFIFOS - Number of reception fifos per process reserved for use
+/// by an MU SPI application.
+/// - Default is 0.
 ///
-/// - MUSPI_NUMBATIDS - Number of base address table IDs per process reserved
-//    for use by an MU SPI application.
-///   - Default is 0.
+/// MUSPI_NUMBATIDS - Number of base address table IDs per process reserved
+/// for use by an MU SPI application.
+/// - Default is 0.
 ///
-/// - PAMI_NUMCLIENTS - The number of clients.
-///   - Default is 1.
+/// PAMI_NUMCLIENTS - The number of clients.
+/// - Default is 1.
 ///
-/// - PAMI_CLIENTNAMES - A comma-separated list of client names.  No spaces.
-///   For example, "PAMI_CLIENTNAMES=MPI,UPC".  The first client listed has
-///   exclusive use of the message unit's combining collective hardware for
-///   optimizing reduction operations.  The other clients will use algorithms
-///   that do not use the message unit's hardware.
-///   - Default is "PAMI_CLIENTNAMES=MPI".
+/// PAMI_CLIENTNAMES - A comma-separated list of client names.  No spaces.
+/// For example, "PAMI_CLIENTNAMES=MPI,UPC".  The first client listed has
+/// exclusive use of the message unit's combining collective hardware for
+/// optimizing reduction operations.  The other clients will use algorithms
+/// that do not use the message unit's hardware.
+/// - Default is "PAMI_CLIENTNAMES=MPI".
 ///
-/// - PAMI_CLIENTWEIGHTS - A comma-separated list of numeric client weights.
-///   No spaces.  For example, "PAMI_CLIENTWEIGHTS=60,40".  The weights
-///   correspond to the clients specified in PAMI_CLIENTNAMES.  Each weight
-///   value is the percentage of the resources that are to be given to that
-///   particular client.  Resources (such as the message unit) are divided up
-///   according to these weights.  In the example, the first client gets 60
-///   percent of the resources, while the second client gets 40 percent.  The
-///   weights must sum to 100.
-///   - Default is that all clients get an equal amount of resources.
+/// PAMI_CLIENTWEIGHTS - A comma-separated list of numeric client weights.
+/// No spaces.  For example, "PAMI_CLIENTWEIGHTS=60,40".  The weights
+/// correspond to the clients specified in PAMI_CLIENTNAMES.  Each weight
+/// value is the percentage of the resources that are to be given to that
+/// particular client.  Resources (such as the message unit) are divided up
+/// according to these weights.  In the example, the first client gets 60
+/// percent of the resources, while the second client gets 40 percent.  The
+/// weights must sum to 100.
+/// - Default is that all clients get an equal amount of resources.
 ///
-/// - MUSPI_RECFIFOSIZE - The size, in bytes, of each reception FIFO.  Incoming
-///   torus packets are stored in this fifo until software can process
-///   them.  Making this larger can reduce torus network congestion.  Making this
-///   smaller leaves more memory available to the application.
-///   PAMI Messaging uses one reception FIFO per context.
-///   - Default is 1048576 bytes (1 megabyte).
+/// MUSPI_RECFIFOSIZE - The size, in bytes, of each reception FIFO.  Incoming
+/// torus packets are stored in this fifo until software can process
+/// them.  Making this larger can reduce torus network congestion.  Making this
+/// smaller leaves more memory available to the application.
+/// PAMI Messaging uses one reception FIFO per context.
+/// - Default is 1048576 bytes (1 megabyte).
 ///
-/// - MUSPI_INJFIFOSIZE - The size, in bytes, of each injection FIFO.  These
-///   FIFOs store 64-byte descriptors, each describing a memory buffer to be
-///   sent on the torus.  Making this larger can reduce overhead when there are
-///   many outstanding messages.  Making this smaller can increase that overhead.
-///   PAMI Messaging optimally uses 10 injection FIFOs per context, although fewer
-///   could be used when resources are constrained.
-///   - Default is 65536 (64 kilobytes).
+/// MUSPI_INJFIFOSIZE - The size, in bytes, of each injection FIFO.  These
+/// FIFOs store 64-byte descriptors, each describing a memory buffer to be
+/// sent on the torus.  Making this larger can reduce overhead when there are
+/// many outstanding messages.  Making this smaller can increase that overhead.
+/// PAMI Messaging optimally uses 10 injection FIFOs per context, although fewer
+/// could be used when resources are constrained.
+/// - Default is 65536 (64 kilobytes).
 ///
-/// - PAMI_RGETINJFIFOSIZE - The size, in bytes, of each remote get FIFO.  These
-///   FIFOs store 64-byte descriptors, each describing a memory buffer to be
-///   sent on the torus, and are used to queue requests for data (remote gets).
-///   Making this larger can reduce torus network congestion and reduce overhead.
-///   Making this smaller can increase that congestion and overhead.
-///   PAMI Messaging uses 10 remote get FIFOs per node.
-///   - Default is 65536 (64 kilobytes).
+/// PAMI_RGETINJFIFOSIZE - The size, in bytes, of each remote get FIFO.  These
+/// FIFOs store 64-byte descriptors, each describing a memory buffer to be
+/// sent on the torus, and are used to queue requests for data (remote gets).
+/// Making this larger can reduce torus network congestion and reduce overhead.
+/// Making this smaller can increase that congestion and overhead.
+/// PAMI Messaging uses 10 remote get FIFOs per node.
+/// - Default is 65536 (64 kilobytes).
 
 
 namespace PAMI
