@@ -42,9 +42,30 @@ namespace PAMI
   ///
   /// 1.  The reserved bit is used by BGQ Mapping to indicate whether the
   ///     task is local to our node.  1=Local, 0=Not local.
-  /// 2.  The high-order bit of the A, B, C, and D dimensions is used to
+  /// 2.  The high-order bit of the A, B, C, and D coordinates is used to
   ///     produce a 4 bit value that contains the optimal MU injection fifo
   ///     number (see pinFifo).
+  /// 3.  The next highest-order bit of the D coordinate is used for rget
+  ///     pacing.  When set, it indicates that rgets should be paced
+  ///     to this destination.
+  ///
+  /// Here's a picture of the bits:
+  ///
+  /// Bit      Description
+  /// 0        E coordinate
+  /// 1        0=dest is not local to the node
+  ///          1=dest is local to the node
+  /// 2        First bit of the pinFifo value
+  /// 3-7      A coordinate
+  /// 8        Second bit of the pinFifo value
+  /// 9-13     B coordinate
+  /// 14       Third bit of the pinFifo value
+  /// 15-19    C coordinate
+  /// 20       Fourth bit of the pinFifo value
+  /// 21       0=rgets should not be paced to this dest
+  ///          1=rgets should be paced to this dest
+  /// 22-25    D coordinate
+  /// 26-31    T coordinate
   ///
   /// \see MUHWI_Destination_t
   ///

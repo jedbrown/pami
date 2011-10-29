@@ -261,6 +261,72 @@ namespace PAMI
 
     private:
 
+
+      ////////////////////////////////////////////////////////////////////////////////
+      /// \page env_vars Environment Variables
+      ///
+      /// PAMI_RGETPACING - Specifies whether or not to consider messages for
+      /// pacing.
+      /// - 0 means that no messages will be paced.
+      /// - 1 means that messages will be considered for pacing.
+      /// - Default is 1.
+      ///
+      /// PAMI_RGETPACINGHOPS - Messages between nodes that are more than this
+      /// many hops apart on the network will be considered for pacing.
+      /// - Default is 8.
+      ///
+      /// PAMI_RGETPACINGDIMS - Messages between nodes whose coordinates differ
+      /// in more than this many dimensions in ABCD are considered for pacing.  
+      /// For example, node A has ABCD coordinates (0,0,0,0) and node B has 
+      /// (3,2,1,0).  They differ in 3 dimensions (A, B, and C).  Specifying 2 
+      /// means that messages between these nodes will be considered for pacing.
+      /// - Default is 2.
+      ///
+      ////////////////////////////////////////////////////////////////////////////////
+
+      /// \brief Initialize Remote Get Pacing
+      ///
+      /// Fetch remote get pacing env vars
+      /// 
+      /// \param[out]  doRgetPacing   Indicates whether rget pacing should be done at all.
+      /// \param[out]  hops           If the distance between our node and the dest node
+      ///                             is greater than or equal to "hops", rgets may be
+      ///                             eligible for pacing.
+      /// \param[out]  dims           If our node and the dest coords differ in "dims" 
+      ///                             dimensions, rgets may be eliglble for pacing.
+      ///
+      /// \see paceRgets()
+      ///
+      inline void initializeRgetPacing ( bool   &doRgetPacing,
+					 size_t &hops,
+					 size_t &dims );
+
+      /// \brief Determine Whether to Pace Remote Gets
+      ///
+      /// Our node's ABCD coords are compared with the dest node's abcd coords
+      /// to determine if remote get pacing should be considered between these
+      /// two nodes.  The E coord is not considered.  
+      ///
+      /// - If the distance between our node and the dest node is greater than
+      ///   or equal to "hops", rgets may be eligible for pacing.
+      /// - If our node and the dest coords differ in "dims" dimensions or
+      ///   greater, rgets may be eliglble for pacing.
+      ///
+      /// \retval  true  Remote gets should be considered for pacing.
+      /// \retval  false Remote gets should not be considered for pacing.
+      ///
+      inline bool paceRgets( bool   doRgetPacing,
+			     size_t hops,
+			     size_t dims,
+			     size_t aCoord,
+			     size_t bCoord,
+			     size_t cCoord,
+			     size_t dCoord,
+			     size_t a,
+			     size_t b,
+			     size_t c,
+			     size_t d );
+
       bgq_mapcache_t   _mapcache;
       size_t           _size;
       bool _useshmem;
@@ -271,6 +337,88 @@ namespace PAMI
 #ifdef USE_COMMTHREADS
 extern PAMI::Device::CommThread::Factory __commThreads;
 #endif // USE_COMMTHREADS
+
+void PAMI::Global::initializeRgetPacing ( bool   &doRgetPacing,
+					  size_t &hops,
+					  size_t &dims )
+{
+  char *s;
+  unsigned long v;
+
+  // Set the defaults values.
+  doRgetPacing = true;
+  hops         = 8;
+  dims         = 2;
+
+  s = getenv( "BG_APPAGENT1" );
+  if ( s == NULL ) doRgetPacing = false;
+
+  s = getenv( "PAMI_RGETPACING" );
+  if ( s )
+    {
+      v = strtoul( s, 0, 10 );
+      if ( v == 0 ) doRgetPacing = false;
+    }
+
+  s = getenv( "PAMI_RGETPACINGHOPS" );
+  if ( s )
+    {
+      v = strtoul( s, 0, 10 );
+      hops = (size_t)v;
+    }
+
+  s = getenv( "PAMI_RGETPACINGDIMS" );
+  if ( s )
+    {
+      v = strtoul( s, 0, 10 );
+      dims = (size_t)v;
+    }
+  TRACE_ERR((stderr,"InitializeRgetPacing: doRgetPacing=%d, hops=%zu, dims=%zu\n",doRgetPacing,hops,dims));
+}
+
+
+bool PAMI::Global::paceRgets( bool   doRgetPacing,
+			      size_t hops,
+			      size_t dims,
+			      size_t aCoord,
+			      size_t bCoord,
+			      size_t cCoord,
+			      size_t dCoord,
+			      size_t a,
+			      size_t b,
+			      size_t c,
+			      size_t d )
+{
+  TRACE_ERR((stderr,"paceRgets: myCoords=(%zu,%zu,%zu,%zu), Dest=(%zu,%zu,%zu,%zu)\n",aCoord,bCoord,cCoord,dCoord,a,b,c,d));
+  // If the caller does not want rget pacing, return false.
+  if ( doRgetPacing == false ) return false;
+
+  // If the number of hops between our node and the dest node exceeds "hops", return true.
+  size_t actualHops = 0;
+  if ( aCoord > a ) actualHops += aCoord - a;
+  else              actualHops += a - aCoord;
+  if ( bCoord > b ) actualHops += bCoord - b;
+  else              actualHops += b - bCoord;
+  if ( cCoord > c ) actualHops += cCoord - c;
+  else              actualHops += c - cCoord;
+  if ( dCoord > d ) actualHops += dCoord - d;
+  else              actualHops += d - dCoord;
+  TRACE_ERR((stderr,"paceRgets: actualHops=%zu\n",actualHops));
+  if ( actualHops > hops ) return true;
+
+  // If the number of dimensions in ABCD that differ between our node and the dest node
+  // exceeds "dims", return true.
+  size_t actualDims = 0;
+  if ( aCoord != a ) actualDims++;
+  if ( bCoord != b ) actualDims++;
+  if ( cCoord != c ) actualDims++;
+  if ( dCoord != d ) actualDims++;
+  TRACE_ERR((stderr,"paceRgets: actualDims=%zu\n",actualDims));
+  if ( actualDims > dims ) return true;
+
+  return false;
+}
+
 
 // If 'mm' is NULL, compute total memory needed for mapcache and return (doing nothing else).
 size_t PAMI::Global::initializeMapCache (BgqJobPersonality  & personality,
@@ -436,6 +584,12 @@ size_t PAMI::Global::initializeMapCache (BgqJobPersonality  & personality,
       // If the syscall works, obtain info from the returned _mapcache.
       if (rc == 0)
         {
+	  /* Initialize for rget pacing analysis as the mapcache is being constructed below */
+	  bool   doRgetPacing;
+	  size_t rgetPacingHops;
+	  size_t rgetPacingDims;
+	  initializeRgetPacing( doRgetPacing, rgetPacingHops, rgetPacingDims );
+	  
           /* Obtain the following information from the _mapcache:
            * 1. Number of active ranks in the partition.
            * 2. Number of active compute nodes in the partition.
@@ -482,6 +636,18 @@ size_t PAMI::Global::initializeMapCache (BgqJobPersonality  & personality,
 		    lowestTCoordOnMyNode = t;
 
 		  mapcache->torus.task2coords[i].mapped.reserved = 1;
+		}
+	      else
+		{
+		  // The task is not local to our node.
+		  // Determine whether remote gets to this task should be paced.
+		  // If so, set the 2nd highest bit of the D coordinate.
+		  if ( paceRgets( doRgetPacing, rgetPacingHops, rgetPacingDims, 
+				  aCoord, bCoord, cCoord, dCoord, a, b, c, d ) )
+		    {
+		      TRACE_ERR((stderr,"Global::initializeMapCache(): Pacing rgets is true to this dest\n"));
+		      mapcache->torus.task2coords[i].raw |= 0x00000400;
+		    }
 		}
 
               // Set the bit corresponding to the physical node of this rank,

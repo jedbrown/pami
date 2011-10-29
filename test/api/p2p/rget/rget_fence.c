@@ -371,6 +371,12 @@ int main (int argc, char ** argv)
               PAMI_Endpoint_create (client, target[n].task, 0, &parameters.rma.dest);
 
 #ifdef WARMUP
+	      result = PAMI_Fence_begin (context);
+	      if (result != PAMI_SUCCESS)
+		{
+		  fprintf (stderr, "Error. PAMI_Fence_begin failed with result = %d\n", result);
+		  return 1;
+		}
 
               for (i = 0; i < ITERATIONS; i++)
                 {
@@ -378,12 +384,32 @@ int main (int argc, char ** argv)
                 }
 
               active = 1;
-              PAMI_Fence_endpoint (context, decrement, (void *) & active, parameters.rma.dest);
+              result = PAMI_Fence_endpoint (context, decrement, (void *) & active, parameters.rma.dest);
+	      if (result != PAMI_SUCCESS)
+		{
+		  fprintf (stderr, "Error. PAMI_Fence_endpoint failed with result = %d\n", result);
+		  return 1;
+		}
+
               while (active > 0)
                 PAMI_Context_advance (context, 100);
 
+	      result = PAMI_Fence_end (context);
+	      if (result != PAMI_SUCCESS)
+		{
+		  fprintf (stderr, "Error. PAMI_Fence_end failed with result = %d\n", result);
+		  return 1;
+		}
+
 #endif
               t0 = PAMI_Wtimebase (client);
+
+	      result = PAMI_Fence_begin (context);
+	      if (result != PAMI_SUCCESS)
+		{
+		  fprintf (stderr, "Error. PAMI_Fence_begin failed with result = %d\n", result);
+		  return 1;
+		}
 
               for (i = 0; i < ITERATIONS; i++)
                 {
@@ -391,9 +417,22 @@ int main (int argc, char ** argv)
                 }
                 
               active = 1;
-              PAMI_Fence_endpoint (context, decrement, (void *) & active, parameters.rma.dest);
+              result = PAMI_Fence_endpoint (context, decrement, (void *) & active, parameters.rma.dest);
+	      if (result != PAMI_SUCCESS)
+		{
+		  fprintf (stderr, "Error. PAMI_Fence_endpoint failed with result = %d\n", result);
+		  return 1;
+		}
+
               while (active > 0)
                 PAMI_Context_advance (context, 100);
+
+	      result = PAMI_Fence_end (context);
+	      if (result != PAMI_SUCCESS)
+		{
+		  fprintf (stderr, "Error. PAMI_Fence_end failed with result = %d\n", result);
+		  return 1;
+		}
 
               t1 = PAMI_Wtimebase(client);
 

@@ -107,7 +107,8 @@ namespace PAMI
               _id_base (id_base),
               _id_offset (id_offset),
  	      _id_count (id_count),
-	      _combiningInjFifo (combiningInjFifoIdNotSet)
+ 	      _combiningInjFifo (combiningInjFifoIdNotSet),
+	      _rgetPacingSize(__MUGlobal.getRgetPacingSize())
           {
             TRACE_FN_ENTER();
 
@@ -183,14 +184,20 @@ namespace PAMI
 					_numRecFifos * sizeof(*_recFifos));
 	    PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _recFifos failed");
 
+	    uint32_t *globalInjFifoIds;
+	    prc = __global.heap_mm->memalign((void **)&globalInjFifoIds, 0,
+					_numInjFifos * sizeof(*globalInjFifoIds));
+	    PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _globalInjFifoIds failed");
+
 	    prc = __global.heap_mm->memalign((void **)&_globalRecFifoIds, 0,
-					_numInjFifos * sizeof(*_globalRecFifoIds));
+					_numRecFifos * sizeof(*_globalRecFifoIds));
 	    PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _globalRecFifoIds failed");
 
             _rm.getInjFifosForContext( _rm_id_client,
                                        _id_offset,
                                        _numInjFifos,
-                                       _injFifos );
+                                       _injFifos,
+				       globalInjFifoIds );
 
             _rm.getRecFifosForContext( _rm_id_client,
                                        _id_offset,
@@ -232,6 +239,7 @@ namespace PAMI
               {
                 injectionGroup.initialize (fifo,
                                            _injFifos[fifo],
+					   globalInjFifoIds[fifo],
                                            (InjGroup::immediate_payload_t*)
                                            _lookAsidePayloadVAs[fifo],
                                            _lookAsidePayloadPAs[fifo],
@@ -269,7 +277,8 @@ namespace PAMI
 
 		injectionGroup.initialize (_combiningInjFifo,   /* fnum */
 					   _rm.getGlobalCombiningInjFifoPtr (),
-                                           (InjGroup::immediate_payload_t*)
+                                           _rm.getGlobalCombiningInjFifoId (),
+					   (InjGroup::immediate_payload_t*)
                                            globalCombiningInjFifoLookAsidePayloadVAs[0],
                                            globalCombiningInjFifoLookAsidePayloadPAs[0],
                                            globalCombiningInjFifoLookAsideCompletionFnPtrs[0],
@@ -278,6 +287,8 @@ namespace PAMI
 					   NULL ); /* channel_cookie */
 		TRACE_FORMAT("Context::init():  Context is controlling combining InjChannel.  Context-relative InjFifo Id = %u, t=%zu\n",_combiningInjFifo, _mapping.t());
 	      }
+	    
+	    free( globalInjFifoIds );
 
             // ----------------------------------------------------------------
             // Initialize the reception channel
@@ -535,6 +546,11 @@ namespace PAMI
 	    }
 
 	  ///
+	  /// \brief Get Remote Get Pacing Message Size
+	  ///
+	  inline size_t getRgetPacingSize() { return _rgetPacingSize; }
+
+	  ///
           /// \brief Pin Combining Fifo
           ///
           /// The pinCombiningFifo method is used to retrieve
@@ -625,6 +641,67 @@ namespace PAMI
             size_t tcoord = 0;
             uint32_t fifoPin = 0;
             _mapping.getMuDestinationTask( task, dest, tcoord, fifoPin );
+
+	    // Get the recFifo to use for this client, and the destination's
+	    // context and T coord.
+            rfifo = _rm.getPinRecFifo( _pinRecFifoHandle, offset, tcoord );
+            TRACE_FORMAT("client=%zu, context=%zu, tcoord=%zu, rfifo = %u", _id_client, offset, tcoord, rfifo);
+
+            map = _pinInfo->torusInjFifoMaps[fifoPin];
+
+            TRACE_FORMAT("(destTask %zu, destOffset %zu) -> dest = %08x, rfifo = %d, optimalFifoPin = %u, actualFifoPin = %u, map = %016lx, injFifoIds[]=%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u", task, offset, *((uint32_t *) &dest), rfifo, fifoPin, _pinInfo->injFifoIds[fifoPin], map, _pinInfo->injFifoIds[0], _pinInfo->injFifoIds[1], _pinInfo->injFifoIds[2], _pinInfo->injFifoIds[3], _pinInfo->injFifoIds[4], _pinInfo->injFifoIds[5], _pinInfo->injFifoIds[6], _pinInfo->injFifoIds[7], _pinInfo->injFifoIds[8], _pinInfo->injFifoIds[9], _pinInfo->injFifoIds[10], _pinInfo->injFifoIds[11], _pinInfo->injFifoIds[12], _pinInfo->injFifoIds[13], _pinInfo->injFifoIds[14], _pinInfo->injFifoIds[15] );
+            TRACE_FN_EXIT();
+
+            return  _pinInfo->injFifoIds[fifoPin];
+          }
+
+
+          ///
+          /// \brief Pin Fifo (from Self to Destination) With RgetPacing Indicator
+          ///
+          /// The pinFifo method is used for three purposes: to retrieve the
+          /// context-relative injection fifo identification number of the
+          /// injection fifo to which communication with the destination
+          /// task+offset is pinned, and to provide MUSPI information needed
+          /// to initialize and inject a descriptor, and to return an
+          /// indication whether rget pacing should be considered to this
+          /// destination.
+          ///
+          /// This is a "pinFromSelf" direction.  The data is assumed to
+          /// be travelling from ourself to the task/offset destination.
+          ///
+          /// \see MUHWI_MessageUnitHeader.Memory_FIFO.Rec_FIFO_Id
+          /// \see MUHWI_Descriptor_t.Torus_FIFO_Map
+          ///
+          /// \param[in]  task    Destination task identifier
+          /// \param[in]  offset  Destination task context offset identifier
+          /// \param[out] dest    Destination task node coordinates
+          /// \param[out] rfifo   Reception fifo id to address the task+offset
+          ///                     This is a global id that can be put into
+          ///                     the descriptor.
+          /// \param[out] map     Pinned MUSPI torus injection fifo map
+          /// \param[out] paceRgetsToThisDest True if rget pacing should
+          ///                     be considered to this destination.
+          ///
+          /// \return Context-relative injection fifo number pinned to the
+          ///         task+offset destination
+          ///
+          //template <pinfifo_algorithm_t T>
+          inline size_t pinFifo (size_t                task,
+                                 size_t                offset,
+                                 MUHWI_Destination_t & dest,
+                                 uint16_t            & rfifo,
+                                 uint64_t            & map,
+				 uint32_t            & paceRgetsToThisDest)
+          {
+            TRACE_FN_ENTER();
+
+            // Calculate the destination recpetion fifo identifier based on
+            // the destination task+offset.  This is important for
+            // multi-context support.
+            size_t tcoord = 0;
+            uint32_t fifoPin = 0;
+            _mapping.getMuDestinationTask( task, dest, tcoord, fifoPin, paceRgetsToThisDest );
 
 	    // Get the recFifo to use for this client, and the destination's
 	    // context and T coord.
@@ -939,6 +1016,17 @@ namespace PAMI
 	    return _rm.isCommAgentActive();
 	  }
 
+	  inline void commAgent_AllocateWorkRequest( CommAgent_WorkRequest_t **workPtrAddress,
+						     uint64_t                 *uniqueIDaddress )
+	  {
+	    _rm.commAgent_AllocateWorkRequest( workPtrAddress, uniqueIDaddress );
+	  }
+
+	  inline int commAgent_RemoteGetPacing_SubmitWorkRequest( CommAgent_RemoteGetPacing_WorkRequest_t *workPtr )
+	  {
+	    return _rm.commAgent_RemoteGetPacing_SubmitWorkRequest( workPtr );
+	  }
+
 	  /// \brief Get the Progress device to post pami work to
 	  ///
 	  /// \retval generic device pointer
@@ -1026,6 +1114,7 @@ namespace PAMI
 	  Generic::Device         *_progressDevice;
     
 	  void *            _mu_context_cookie;
+          size_t            _rgetPacingSize;
 
         // -------------------------------------------------------------
         // Deterministic packet interface connection array

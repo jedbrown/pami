@@ -1374,11 +1374,36 @@ fprintf(stderr, "%s\n", buf);
 	  return _commAgentActive;
 	}
 
+	inline void commAgent_AllocateWorkRequest( CommAgent_WorkRequest_t **workPtrAddress,
+						   uint64_t                 *uniqueIDaddress )
+	{
+	  int rc;
+	  do
+	    {
+	      rc = CommAgent_AllocateWorkRequest( _commAgentControl,
+						  workPtrAddress,
+						  uniqueIDaddress );
+	    } while (rc==EAGAIN);
+	  PAMI_assertf( rc == 0, "CommAgent work request allocation failed with rc=%d\n",rc );
+	}
+
+	inline int commAgent_RemoteGetPacing_SubmitWorkRequest( CommAgent_RemoteGetPacing_WorkRequest_t *workPtr )
+	{
+	  return CommAgent_RemoteGetPacing_SubmitWorkRequest( _commAgentControl,
+							      0, /* handle */
+							      workPtr );
+	}
+
 	inline MUSPI_InjFifo_t * getGlobalCombiningInjFifoPtr ()
 	{
 	  uint32_t subgroup = (_globalCombiningInjFifo.globalFifoIds[0] / BGQ_MU_NUM_INJ_FIFOS_PER_SUBGROUP) - 64;
 	  uint32_t fifoId   = _globalCombiningInjFifo.globalFifoIds[0] % BGQ_MU_NUM_INJ_FIFOS_PER_SUBGROUP;
 	  return &(_globalCombiningInjFifo.subgroups[subgroup]._injfifos[fifoId]);
+	}
+
+	inline uint32_t getGlobalCombiningInjFifoId ()
+	{
+	  return _globalCombiningInjFifo.globalFifoIds[0];
 	}
 
 	inline char **getGlobalCombiningLookAsidePayloadBufferVAs()
@@ -1650,7 +1675,8 @@ fprintf(stderr, "%s\n", buf);
 	inline void getInjFifosForContext( size_t            rmClientId,
 					   size_t            contextOffset,
 					   size_t            numInjFifos,
-					   MUSPI_InjFifo_t **injFifoPtrs );
+					   MUSPI_InjFifo_t **injFifoPtrs,
+					   uint32_t         *globalFifoIds );
 
 	inline void getRecFifosForContext( size_t            rmClientId,
 					   size_t            contextOffset,
@@ -3430,6 +3456,11 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalCommAgent()
     {
       rc = CommAgent_Init ( &_commAgentControl );
       PAMI_assertf(rc == 0, "CommAgent_Init failed with rc=%d\n",rc);
+
+      // Verify version number.
+      CommAgent_State_t version;
+      version = CommAgent_GetVersion ( _commAgentControl );
+      PAMI_assertf(version >= COMM_AGENT_STATE_INITIALIZED_VERSION_2, "BG_APPAGENT1 specifies an agent that has version %d, but version %d or later is required.  Upgrade to the latest agent.\n",version,COMM_AGENT_STATE_INITIALIZED_VERSION_2);
       
       rc = CommAgent_RemoteGetPacing_Init ( _commAgentControl,
 					    (CommAgent_RemoteGetPacing_SharedMemoryInfo_t *)NULL );
@@ -3888,7 +3919,8 @@ void PAMI::Device::MU::ResourceManager::getNumResourcesPerContext( size_t  rmCli
 void PAMI::Device::MU::ResourceManager::getInjFifosForContext( size_t            rmClientId,
 							       size_t            contextOffset,
 							       size_t            numInjFifos,
-							       MUSPI_InjFifo_t **injFifoPtrs )
+							       MUSPI_InjFifo_t **injFifoPtrs,
+							       uint32_t         *globalFifoIds )
 {
   PAMI_assert( numInjFifos <= _perContextMUResources[rmClientId].numInjFifos );
 
@@ -3908,6 +3940,8 @@ void PAMI::Device::MU::ResourceManager::getInjFifosForContext( size_t           
 	   injResources[contextOffset].
 	   subgroups[relativeSubgroup].
 	   _injfifos[relativeFifo] );
+
+      globalFifoIds[fifo] = globalFifoId;
 
       TRACE((stderr,"MU ResourceManager: getInjFifosForContext: context=%zu, globalFifoId=%u, globalSubgroup=%u, relativeSubgroup=%u, startingSubgroupId=%u, relativeFifo=%u, injFifoStructurePtr=%p, hwinjfifo=%p\n",contextOffset,globalFifoId,globalSubgroup,relativeSubgroup,_clientResources[rmClientId].startingSubgroupIds[contextOffset],relativeFifo,injFifoPtrs[fifo],injFifoPtrs[fifo]->hw_injfifo));
     }

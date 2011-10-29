@@ -81,6 +81,7 @@ namespace PAMI
           ///
           /// \param[in] fnum                Injection channel "fifo number"
           /// \param[in] f                   Injection fifo for this fifo number
+	  /// \param[in] globalFnum          Global injection fifo number
           /// \param[in] immediate_vaddr     Array of payload lookaside buffers
           /// \param[in] immediate_paddr     Physical address of the payload lookaside array
           /// \param[in] completion_function Array of completion functions
@@ -90,6 +91,7 @@ namespace PAMI
           ///
           inline void initialize (size_t                 fnum,
                                   MUSPI_InjFifo_t      * f,
+				  uint32_t               globalFnum,
                                   immediate_payload_t  * immediate_vaddr,
                                   uint64_t               immediate_paddr,
                                   pami_event_function  * completion_function,
@@ -101,7 +103,7 @@ namespace PAMI
 
             PAMI_assert_debugf(fnum < 11, "%s<%d>\n", __FILE__, __LINE__);
 
-            channel[fnum].initialize (f, immediate_vaddr, immediate_paddr,
+            channel[fnum].initialize (f, globalFnum, immediate_vaddr, immediate_paddr,
                                       completion_function, completion_cookie,
                                       n, channel_cookie);
             TRACE_FN_EXIT();

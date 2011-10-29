@@ -117,6 +117,78 @@ namespace PAMI
             return sizeof(MUHWI_Descriptor_t) * 2;
           };
 
+          inline void initializeRemoteGetPayload1ForCommAgent (MUSPI_DescriptorBase * desc,
+							       uint64_t              local_dst_pa,
+							       uint64_t              remote_src_pa,
+							       size_t                bytes,
+							       uint64_t              map)
+          {
+            TRACE_FN_ENTER();
+
+            // ----------------------------------------------------------------
+            // Initialize the "data mover" descriptor in the rget payload at "desc"
+            // ----------------------------------------------------------------
+
+            // Clone the remote direct put model descriptor into the payload
+            _rput.clone (*desc);
+
+            // Set the payload of the direct put descriptor to be the physical
+            // address of the source buffer on the remote node (from the user's
+            // memory region).
+            desc->setPayload (remote_src_pa, bytes);
+
+            // Set the destination buffer address for the remote direct put.
+            //
+            // The global BAT id is constant .. should only need to set
+            // the "offset" (second parameter) here.
+            desc->setRecPayloadBaseAddressInfo (_context.getGlobalBatId(), local_dst_pa);
+
+            // Set the pinned fifo/map information
+            desc->setTorusInjectionFIFOMap (map);
+          };
+
+	  // This builds a memfifo descriptor targeted for our node.
+	  // It is set up as a local transfer.
+          inline void initializeRemoteGetPayload2ForCommAgent (MUSPI_DescriptorBase * desc,
+							       pami_event_function   local_fn,
+							       void                * cookie)
+          {
+            TRACE_FN_ENTER();
+
+            // ----------------------------------------------------------------
+            // Initialize the "ack to self memfifo completion" descriptor in the rget payload
+            // ----------------------------------------------------------------
+            _completion.initializeNotifySelfDescriptor (*desc, local_fn, cookie);
+
+            // Set the pinned fifo/map information
+            desc->setTorusInjectionFIFOMap (MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1);
+
+            TRACE_FN_EXIT();
+          };
+
+	  // This builds a memfifo descriptor targeted for our node.
+	  // It is set up as a remote transfer.
+          inline void initializeRemoteGetPayload3ForCommAgent (MUSPI_DescriptorBase * desc,
+							       pami_event_function   local_fn,
+							       void                * cookie,
+							       uint64_t              map)
+          {
+            TRACE_FN_ENTER();
+
+            // ----------------------------------------------------------------
+            // Initialize the "ack to self memfifo completion" descriptor in the rget payload
+            // ----------------------------------------------------------------
+            _completion.initializeNotifySelfDescriptor (*desc, local_fn, cookie);
+
+            // Set the pinned fifo/map information
+            desc->setTorusInjectionFIFOMap (map);
+
+	    // Clear the hints
+	    desc->setHints (0, MUHWI_PACKET_HINT_E_NONE);
+
+            TRACE_FN_EXIT();
+          };
+
         protected:
 
           MemoryFifoCompletion _completion;

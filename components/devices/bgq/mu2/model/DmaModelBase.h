@@ -25,7 +25,6 @@
 
 #include <stdlib.h>
 
-
 #define SPLIT_E_CUTOFF 2048 // 4 packets
 
 #undef  DO_TRACE_ENTEREXIT
@@ -326,9 +325,11 @@ namespace PAMI
         base.Pre_Fetch_Only  = MUHWI_DESCRIPTOR_PRE_FETCH_ONLY_NO;
 
         _dput.setBaseFields (&base);
+
         _rput.setBaseFields (&base);
 
         base.Torus_FIFO_Map = MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_PRIORITY;
+	base.Message_Length = sizeof(MUHWI_Descriptor_t);
         _rget.setBaseFields (&base);
 
 
@@ -714,13 +715,14 @@ namespace PAMI
                                                    size_t                remote_offset)
       {
         TRACE_FN_ENTER();
-
         /* Local transfers are implemented as a 'reverse direct put'. */
         if ( unlikely ( __global.mapping.isLocal ( target_task ) ) )
-          return postDmaPut_impl (state, local_fn, cookie,
-                                  target_task, target_offset, bytes,
-                                  remote_memregion, remote_offset,
-                                  local_memregion, local_offset);
+	  {
+	    return postDmaPut_impl (state, local_fn, cookie,
+				    target_task, target_offset, bytes,
+				    remote_memregion, remote_offset,
+				    local_memregion, local_offset);
+	  }
 
         COMPILE_TIME_ASSERT(sizeof(get_state_t) <= T_StateBytes);
         get_state_t * get_state = (get_state_t *) state;
@@ -734,12 +736,14 @@ namespace PAMI
         MUHWI_Destination_t   dest;
         uint16_t              rfifo; // not needed for direct put ?
         uint64_t              map;
+	uint32_t              paceRgetsToThisDest;
 
         size_t fnum = _context.pinFifo (target_task,
                                         target_offset,
                                         dest,
                                         rfifo,
-                                        map);
+                                        map,
+					paceRgetsToThisDest);
 
         InjChannel & channel = _context.injectionGroup.channel[fnum];
 
@@ -749,7 +753,6 @@ namespace PAMI
         // linked via the two E links.
         if ( unlikely ( nearestNeighborInE ( dest ) &&	( bytes >= SPLIT_E_CUTOFF ) ) )
           { // Special E dimension case
-
             // Get pointers to 2 descriptor slots, if they are available.
             MUHWI_Descriptor_t * desc[2];
             uint64_t descNum = channel.getNextDescriptorMultiple ( 2, desc );
@@ -920,10 +923,140 @@ namespace PAMI
           } // End: Special E dimension case
         else
           { // Not special E dimension case
-            size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
+	    
+	    // If rget pacing is eligible between these two nodes,  route the rget requests 
+	    // to the agent for processing.  Because this is an "ordered" model, we must 
+	    // ensure that all rgets stay in order.  Thus, all rgets that are eligible for
+	    // pacing must go to the agent for processing.  The agent may decide, based on
+	    // the message length, whether or not to pace it.  But in any case, the agent
+	    // will process the requests in order, paced or not.
+	    if ( unlikely ( paceRgetsToThisDest ) )
+	      {
+		int rc;
+		// Need to pace this rget.  Prepare the descriptors in the 
+		// comm agent's queue and post them to the comm agent.
 
-            if (likely(channel.isSendQueueEmpty() && ndesc > 0))
-              {
+		// An rget is submitted to the agent that flows to the dest node.
+		// Its payload is a dput descriptor that gets injected in the
+		// dest node's rget inj fifo.  The data flows back to our node.
+		// There is no completion notification to anybody for this rget.
+		
+		// If there is a local_fn, the caller wants completion 
+		// notification.  To do this, a 2nd rget is submitted to the
+		// agent whose payload is a memfifo descriptor targeted for
+		// our local reception fifo.  When that memfifo descriptor
+		// arrives, it invokes the local_fn callback, notifying the
+		// caller of the completion.  This 2nd rget does not need
+		// to flow to the dest node.  Rather, it is a local transfer.
+		// This 2nd rget is marked with a "peerID" so the agent
+		// processes it after the 1st rget is complete...after its
+		// dput data has fully arrived.  So, the 2nd rget does not
+		// need to flow to the dest node.
+
+		// 1. Allocate a slot in the agent's queue for the DPut RGet
+		CommAgent_WorkRequest_t * workPtr;
+		uint64_t uniqueID;
+		_context.commAgent_AllocateWorkRequest( &workPtr, &uniqueID );
+
+                // 2. Clone the rget model descriptor into the work request
+                MUSPI_DescriptorBase * rget = (MUSPI_DescriptorBase *) &workPtr->request.rget.rgetDescriptor;
+                _rget.clone (*rget);
+
+                // 3. Initialize the rget descriptor in-place.
+                rget->setDestination (dest);
+
+                // 4. Determine the remote pinning information
+                size_t rfifo =
+                  _context.pinFifoToSelf (target_task, map);
+
+                // 5. Set the remote injection fifo identifier
+                rget->setRemoteGetInjFIFOId (rfifo);
+
+                /* MUSPI_DescriptorDumpHex((char *)"Remote Get (DPut)", (MUHWI_Descriptor_t*)rget); */
+
+                // 6. Initialize the DPut descriptor
+		//    The DPut descriptor goes into the work request
+		MUSPI_DescriptorBase * dput = 
+		  (MUSPI_DescriptorBase *)&workPtr->request.rget.payloadDescriptor;
+
+                static_cast<T_Model*>(this)->
+		  initializeRemoteGetPayload1ForCommAgent (dput,
+							   local_dst_pa,
+							   remote_src_pa,
+							   bytes,
+							   map);
+
+                /* MUSPI_DescriptorDumpHex((char *)"DPut (DPut)", (MUHWI_Descriptor_t*)dput); */
+
+		// 7. Set the uniqueID into the request so this request and the next (see below)
+		//    are tied together and processed sequentially.
+		workPtr->request.rget.peerID = uniqueID;
+
+		// 8. Set the global injection fifo ID into the request to be used by the agent
+		//    as part of a uniquifier to order requests.
+		uint32_t globalInjFifoId = channel.getGlobalFnum();
+		workPtr->request.rget.globalInjFifo = globalInjFifoId;
+
+		// 9. Post the rget with the dput descriptor to the comm agent.
+		rc = _context.commAgent_RemoteGetPacing_SubmitWorkRequest( &workPtr->request.rget );
+		PAMI_assert_debug ( rc == 0 );
+
+		// 10. If there is a callback function, post a second rget with a memory fifo
+		//     descriptor payload to handle the completion.
+		if ( likely ( (uint64_t)local_fn ) )
+		  {
+		    uint64_t dummyUniqueID;
+		    // 11. Allocate a slot in the agent's queue for the Memfifo RGet
+		    _context.commAgent_AllocateWorkRequest( &workPtr, &dummyUniqueID );
+
+		    // 12. Clone the rget model descriptor into the work request
+		    rget = (MUSPI_DescriptorBase *) &workPtr->request.rget.rgetDescriptor;
+		    _rget.clone (*rget);
+
+		    // 13. Initialize the rget descriptor in-place.
+		    rget->setDestination (*_myCoords);
+		    //     - Set the pinned fifo/map information to local
+		    rget->setTorusInjectionFIFOMap (MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1);
+
+		    // 14. Set the remote injection fifo identifier
+		    rget->setRemoteGetInjFIFOId (rfifo);
+		    
+		    /* MUSPI_DescriptorDumpHex((char *)"Remote Get (MemFifo)", (MUHWI_Descriptor_t*)rget); */
+		    
+		    // 15. Initialize the Memfifo descriptor
+		    //    The Memfifo descriptor goes into the work request
+		    MUSPI_DescriptorBase * memfifo = 
+		      (MUSPI_DescriptorBase *)&workPtr->request.rget.payloadDescriptor;
+
+		    static_cast<T_Model*>(this)->
+		      initializeRemoteGetPayload2ForCommAgent (memfifo,
+							       local_fn,
+							       cookie);
+
+		    /* MUSPI_DescriptorDumpHex((char *)"MemFifo", (MUHWI_Descriptor_t*)memfifo); */
+
+		    // 16. Set the uniqueID into the request so this request and the previous (see above)
+		    //    are tied together and processed sequentially.
+		    workPtr->request.rget.peerID = uniqueID;
+
+		    // 17. Set the global injection fifo ID into the request to be used by the agent
+		    //     as part of a uniquifier to order requests.
+		    workPtr->request.rget.globalInjFifo = globalInjFifoId;
+		
+		    // 18. Post the rget with the memfifo descriptor to the comm agent.
+		    rc = _context.commAgent_RemoteGetPacing_SubmitWorkRequest( &workPtr->request.rget );
+		    PAMI_assert_debug ( rc == 0 );
+		  }
+		
+                TRACE_FN_EXIT();
+                return false;
+	      } // End: Pacing this rget.
+	    else
+	      // Not pacing this rget.  Inject the rget descriptor ourselves.
+	      {
+	       size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
+	       if (likely(channel.isSendQueueEmpty() && ndesc > 0))
+	       {
                 // There is at least one descriptor slot available in the injection
                 // fifo before a fifo-wrap event.
                 MUHWI_Descriptor_t * desc = channel.getNextDescriptor ();
@@ -1026,6 +1159,7 @@ namespace PAMI
             // The completion callback was not invoked; return false.
             TRACE_FN_EXIT();
             return false;
+	   } // End: Not pacing this rget
           } // End: Not special E dimension case
       }
 
@@ -1059,12 +1193,14 @@ namespace PAMI
         MUHWI_Destination_t   dest;
         uint16_t              rfifo;
         uint64_t              map;
+	uint32_t              paceRgetsToThisDest;
 
         size_t fnum = _context.pinFifo (target_task,
                                         target_offset,
                                         dest,
                                         rfifo,
-                                        map);
+                                        map,
+					paceRgetsToThisDest);
 
         InjChannel & channel = _context.injectionGroup.channel[fnum];
 
@@ -1072,6 +1208,22 @@ namespace PAMI
 
         fence_state->multi.fn     = local_fn;
         fence_state->multi.cookie = cookie;
+
+	// We are expecting the following completion callbacks as a result of
+	// the fence activity:
+	// 1.  If dest is not nearestNeighborInE and not eligible for rget pacing,
+	//     1. Dput completion
+	//     2. Rget completion.
+	// 2.  If dest is nearestNeighborInE and not eligible for rget pacing,
+	//     1. Dput completion
+	//     2. Rget E+ completion
+	//     3. Rget E- completion
+	// 3.  If dest is not nearestNeighborInE, but is eligible for rget pacing,
+	//     1. Dput completion
+	//     2. Rget completion (via the agent).
+	//     If dest is eligible for rget pacing, it will not be a nearestNeighborInE.
+	// So, the following calculates how many completions are expected...
+
         fence_state->multi.active = 2 + is_nearest_neighbor_in_e;
 
         _remoteCompletion.inject( fence_state->memfifo_remote_completion_state,
@@ -1091,7 +1243,6 @@ namespace PAMI
         // linked via the two E links.
         if ( unlikely ( is_nearest_neighbor_in_e ) )
           { // Special E dimension case
-
             // Get pointers to 2 descriptor slots, if they are available.
             MUHWI_Descriptor_t * desc[2];
             uint64_t descNum = channel.getNextDescriptorMultiple ( 2, desc );
@@ -1222,8 +1373,67 @@ namespace PAMI
             return false;
           } // End: Special E dimension case
         else
-          { // Not special E dimension case
+          {// Not special E dimension case
+	   if ( unlikely ( paceRgetsToThisDest ) )
+	   {
+	     // If rget pacing is eligible between these two nodes,  route an rget request
+	     // to the agent for processing.  This rget request must be processed after
+	     // any previous rget requests in the same ordering have completed.  In order
+	     // to ensure this, this rget request must have the same attributes as the
+	     // previous rget requests.  Specifically, 
+	     // - The same global injection fifo ID
+	     // - The same remote rget fifo ID
+	     // - The same dest coords.
+	     // This means the rget must flow to the dest, and its memfifo payload 
+	     // descriptor will be injected in the same fifos as the previous rgets.
 
+	     CommAgent_WorkRequest_t * workPtr;
+	     uint64_t dummyUniqueID;
+
+	     // 1. Allocate a slot in the agent's queue for the Memfifo RGet
+	     _context.commAgent_AllocateWorkRequest( &workPtr, &dummyUniqueID );
+
+	     // 2. Clone the rget model descriptor into the work request
+	     MUSPI_DescriptorBase * rget = (MUSPI_DescriptorBase *) &workPtr->request.rget.rgetDescriptor;
+	     _rget.clone (*rget);
+
+	     // 3. Initialize the rget descriptor in-place.
+	     rget->setDestination (dest);
+
+	     // 4. Set the remote injection fifo identifier
+	     size_t rfifo = _context.pinFifoToSelf (target_task, map);
+	     rget->setRemoteGetInjFIFOId (rfifo);
+		    
+	     /* MUSPI_DescriptorDumpHex((char *)"Remote Get (MemFifo)", (MUHWI_Descriptor_t*)rget); */
+		    
+	     // 5. Initialize the Memfifo descriptor
+	     //    The Memfifo descriptor goes into the work request
+	     MUSPI_DescriptorBase * memfifo = 
+	       (MUSPI_DescriptorBase *)&workPtr->request.rget.payloadDescriptor;
+
+	     static_cast<T_Model*>(this)->
+	       initializeRemoteGetPayload3ForCommAgent (memfifo,
+							multiComplete, 
+							& fence_state->multi,
+							map);
+
+	     /* MUSPI_DescriptorDumpHex((char *)"MemFifo", (MUHWI_Descriptor_t*)memfifo); */
+
+	     // 6. Set the global injection fifo ID into the request to be used by the agent
+	     //     as part of a uniquifier to order requests.
+	     workPtr->request.rget.globalInjFifo =  channel.getGlobalFnum();
+		
+	     // 7. Post the rget with the memfifo descriptor to the comm agent.
+	     int rc;
+	     rc = _context.commAgent_RemoteGetPacing_SubmitWorkRequest( &workPtr->request.rget );
+	     PAMI_assert_debug ( rc == 0 );
+
+	     // The completion callback was not invoked; return false.
+	     TRACE_FN_EXIT();
+	     return false;
+	   }
+	   else
+	   {// Not eligible for rget pacing
             // Determine the remote pinning information
             size_t rfifo = _context.pinFifoToSelf (target_task, map);
 
@@ -1341,6 +1551,7 @@ namespace PAMI
             // The completion callback was not invoked; return false.
             TRACE_FN_EXIT();
             return false;
+	   } // End: Not eligible for rget pacing
           } // End: Not special E dimension case
 
         TRACE_FN_EXIT();

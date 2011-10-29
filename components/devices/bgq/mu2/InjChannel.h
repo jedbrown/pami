@@ -114,6 +114,7 @@ namespace PAMI
           /// object with this initialization method.
           ///
           /// \param[in] f                   An initialized injection fifo
+	  /// \param[in] globalFnum          Global injection fifo number
           /// \param[in] immediate_vaddr     Immediate payload lookaside array
           /// \param[in] immediate_paddr     Physical address of the immediate
           ///                                payload lookaside array
@@ -125,6 +126,7 @@ namespace PAMI
           ///                                a.k.a., "pami_context_t"
           ///
           inline void initialize (MUSPI_InjFifo_t      * f,
+				  uint32_t               globalFnum,
                                   immediate_payload_t  * immediate_vaddr,
                                   uint64_t               immediate_paddr,
                                   pami_event_function  * completion_function,
@@ -136,6 +138,7 @@ namespace PAMI
 
             _channel_cookie = channel_cookie;
             _ififo = f;
+	    _globalFnum = globalFnum;
             _immediate_vaddr = immediate_vaddr;
             _immediate_paddr = immediate_paddr;
             _n = n;
@@ -269,6 +272,7 @@ namespace PAMI
 
           PAMI::Queue            _completionq;
           size_t                 _n;                   // Number of elements in the arrays
+	  uint32_t               _globalFnum;          // Global fifo number
 
         public:
 
@@ -560,6 +564,9 @@ namespace PAMI
             _sendq.post (msg);
             TRACE_FN_EXIT();
           };
+
+	  inline uint32_t getGlobalFnum() { return _globalFnum; };
+
       }; // class     PAMI::Device::MU::InjChannel
     };   // namespace PAMI::Device::MU
   };     // namespace PAMI::Device
