@@ -133,7 +133,7 @@ namespace PAMI
           new(m) PAMI::Geometry::Metadata("I0:MultiSyncComposite:SHMEM:CAU");
           m->check_perf.values.hw_accel     = 1;
         }
-        typedef CCMI::Adaptor::Barrier::BarrierFactory2DeviceMsync < CCMI::Adaptor::Barrier::MultiSyncComposite2Device,
+        typedef CCMI::Adaptor::Barrier::BarrierFactory2DeviceMsync < CCMI::Adaptor::Barrier::MultiSyncComposite2Device<>,
                                                                      MsyncMetaData,
                                                                      CCMI::ConnectionManager::SimpleConnMgr,
                                                                      1>
@@ -144,7 +144,7 @@ namespace PAMI
           new(m) PAMI::Geometry::Metadata("I0:MultiSyncComposite:BSR:CAU");
           m->check_perf.values.hw_accel     = 1;
         }
-        typedef CCMI::Adaptor::Barrier::BarrierFactory2DeviceMsync < CCMI::Adaptor::Barrier::MultiSyncComposite2Device,
+        typedef CCMI::Adaptor::Barrier::BarrierFactory2DeviceMsync < CCMI::Adaptor::Barrier::MultiSyncComposite2Device<>,
                                                                      MsyncBSRMetaData,
                                                                      CCMI::ConnectionManager::SimpleConnMgr,
                                                                      1>

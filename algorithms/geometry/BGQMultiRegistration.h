@@ -331,7 +331,7 @@ namespace PAMI
     }
 
     typedef CCMI::Adaptor::Barrier::BarrierFactoryAllSidedT
-    <CCMI::Adaptor::Barrier::MultiSyncComposite<true, MUDputNI,PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX, PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID1>,
+    <CCMI::Adaptor::Barrier::MultiSyncComposite<true, MUDputNI,PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX, PAMI::Geometry::GKEY_RECTANGLE_CLASSROUTEID>,
     MURectangleMsyncMetaData,
     CCMI::ConnectionManager::SimpleConnMgr,
     PAMI::Geometry::CKEY_BARRIERCOMPOSITE5>
@@ -440,7 +440,7 @@ namespace PAMI
       m->check_perf.values.hw_accel     = 1;
     }
 
-    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryNCOT < CCMI::Adaptor::Barrier::MultiSyncComposite2Device,
+    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryNCOT < CCMI::Adaptor::Barrier::MultiSyncComposite2Device<>,
     Msync2DMetaData, CCMI::ConnectionManager::SimpleConnMgr >  MultiSync2DeviceFactory;
 
     //----------------------------------------------------------------------------
@@ -454,7 +454,7 @@ namespace PAMI
     }
 
     typedef CCMI::Adaptor::Barrier::BarrierFactoryAllSidedT
-    <CCMI::Adaptor::Barrier::MultiSyncComposite2Device,
+    <CCMI::Adaptor::Barrier::MultiSyncComposite2Device<>,
     Msync2DGIShmemMetaData,
     CCMI::ConnectionManager::SimpleConnMgr,
     PAMI::Geometry::CKEY_BARRIERCOMPOSITE4>
@@ -470,7 +470,7 @@ namespace PAMI
     }
 
     typedef CCMI::Adaptor::Barrier::BarrierFactoryAllSidedT
-    <CCMI::Adaptor::Barrier::MultiSyncComposite2Device,
+    <CCMI::Adaptor::Barrier::MultiSyncComposite2Device<PAMI::Geometry::GKEY_RECTANGLE_CLASSROUTEID>,
     Msync2DRectangleDputMetaData,
     CCMI::ConnectionManager::SimpleConnMgr,
     PAMI::Geometry::CKEY_BARRIERCOMPOSITE6>
@@ -1096,8 +1096,8 @@ namespace PAMI
             {
               //fprintf (stderr, "Calling configure with class route %ld, in 0x%lx", i, result);
               _axial_mu_dput_ni->getMsyncModel().configureClassRoute(i, (PAMI::Topology *)geometry->getTopology(PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX));
-              geometry->setKey (PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID1, (void*)(i+1));
-              TRACE_FORMAT("<%p>(%u)GKEY_MSYNC_CLASSROUTEID1 %zu", this, __LINE__,(i+1));
+              geometry->setKey (PAMI::Geometry::GKEY_RECTANGLE_CLASSROUTEID, (void*)(i+1));
+              TRACE_FORMAT("<%p>(%u)GKEY_RECTANGLE_CLASSROUTEID %zu", this, __LINE__,(i+1));
               break;
             }
         }
@@ -1198,46 +1198,6 @@ namespace PAMI
                        topology->isLocal(),rectangle_topo);
           if (rectangle_topo)
           {
-#if 0
-            void *val;
-            val = geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID1);
-            TRACE_FORMAT("<%p>(%u)GKEY_MSYNC_CLASSROUTEID1 %p %s", this, __LINE__,val, val != PAMI_CR_GKEY_FAIL?" ":"PAMI_CR_GKEY_FAIL");
-            if (_mu_rectangle_msync_factory && __global.topology_local.size() == 1 &&
-                (val && val != PAMI_CR_GKEY_FAIL))
-            {
-              TRACE_FORMAT("<%p>Register MU Rectangle msync", this);
-              //Set optimized barrier to rectangle. May override optimized barrier later  \TODO TWO GENERATES??
-              pami_xfer_t xfer = {0};
-              CCMI::Executor::Composite *opt_composite;
-              opt_composite =  _mu_rectangle_msync_factory->generate(geometry, &xfer); 
-              PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE5)==opt_composite);
-              geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
-                               (void*)opt_composite);
-
-              COMPILE_TIME_ASSERT(sizeof(GeometryInfo<MURectangleMultiSyncFactory>) <= ProtocolAllocator::objsize);
-              GeometryInfo<MURectangleMultiSyncFactory>    *gi = (GeometryInfo<MURectangleMultiSyncFactory>*) _geom_allocator.allocateObject();
-              new(gi) GeometryInfo<MURectangleMultiSyncFactory>(_context, opt_composite, &_geom_allocator);
-              geometry->setCleanupCallback(cleanupCallback, gi);
-            }
-            else if (_msync2d_rectangle_composite_factory && __global.topology_local.size() > 1 && 
-                     __global.useMU() && __global.useshmem() &&               
-                     (val && val != PAMI_CR_GKEY_FAIL))
-            {
-              TRACE_FORMAT("<%p>Register 2D MU Rectangle msync", this);
-              //Set optimized barrier to rectangle. May override optimized barrier later
-              pami_xfer_t xfer = {0};
-              CCMI::Executor::Composite *opt_composite; // \todo TWO GENERATES?
-              opt_composite = _msync2d_rectangle_composite_factory->generate(geometry, &xfer); 
-              PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE6)==opt_composite);
-              geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
-                               (void*)opt_composite);
-
-              COMPILE_TIME_ASSERT(sizeof(GeometryInfo<MultiSync2DeviceRectangleFactory>) <= ProtocolAllocator::objsize);
-              GeometryInfo<MultiSync2DeviceRectangleFactory>    *gi = (GeometryInfo<MultiSync2DeviceRectangleFactory>*) _geom_allocator.allocateObject();
-              new(gi) GeometryInfo<MultiSync2DeviceRectangleFactory>(_context, opt_composite, &_geom_allocator);
-              geometry->setCleanupCallback(cleanupCallback, gi);
-            }
-#endif
             // Add rectangle protocols:
             if ((_shmem_mu_rectangle_1color_dput_broadcast_factory)
 #ifndef PAMI_ENABLE_SHMEM_SUBNODE
@@ -1300,8 +1260,8 @@ namespace PAMI
           val = geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
           TRACE_FORMAT("<%p>GKEY_MSYNC_CLASSROUTEID %p", this, val);
           void *valr;
-          valr = geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID1); // Rectangle 'class route'
-          TRACE_FORMAT("<%p>(%u)GKEY_MSYNC_CLASSROUTEID1 %p %s", this, __LINE__,valr, valr != PAMI_CR_GKEY_FAIL?" ":"PAMI_CR_GKEY_FAIL");
+          valr = geometry->getKey(PAMI::Geometry::GKEY_RECTANGLE_CLASSROUTEID); // Rectangle 'class route'
+          TRACE_FORMAT("<%p>(%u)GKEY_RECTANGLE_CLASSROUTEID %p %s", this, __LINE__,valr, valr != PAMI_CR_GKEY_FAIL?" ":"PAMI_CR_GKEY_FAIL");
 
           if (val && val != PAMI_CR_GKEY_FAIL && rectangle_topo)// We have a class route
           {

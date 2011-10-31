@@ -210,6 +210,10 @@ namespace CCMI{namespace Adaptor{namespace Barrier{
     void                               * _deviceInfo;
   };
 
+
+  template < PAMI::Geometry::gkeys_t         T_Gkey           =PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID,
+             PAMI::Geometry::gkeys_t         T_Lkey           =PAMI::Geometry::GKEY_MSYNC_LOCAL_CLASSROUTEID
+             >
   class MultiSyncComposite2Device : public CCMI::Executor::Composite
   {
 
@@ -324,8 +328,8 @@ namespace CCMI{namespace Adaptor{namespace Barrier{
 
         // If the global "master" topology has only one rank, the local barrier will
         // suffice to implement the barrier
-        _deviceInfoG = _geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
-        _deviceInfoL = _geometry->getKey(PAMI::Geometry::GKEY_MSYNC_LOCAL_CLASSROUTEID);
+        _deviceInfoG = _geometry->getKey(T_Gkey);
+        _deviceInfoL = _geometry->getKey(T_Lkey);
         if (t_master->size() == 1 && t_local->size() != 1)
         {
           _minfo_l0.cb_done.function   =  NULL; //fn;
