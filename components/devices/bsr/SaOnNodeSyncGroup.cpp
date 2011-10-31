@@ -1,5 +1,6 @@
 #include "SaOnNodeSyncGroup.h"
 #include <stdlib.h>
+#include <unistd.h>
 #include <new>
 #include <string.h>
 #include "atomics.h"
@@ -12,6 +13,8 @@
 #else
 #define EIEIO
 #endif
+
+static volatile bool bsr_failover_informed = false;
 
 const unsigned long long SaOnNodeSyncGroup::mask[2] = { 0x0000000000000000LL,   // 8 bytes 0x00
                                                         0x0101010101010101LL }; // 8 bytes 0x01
@@ -89,6 +92,13 @@ SyncGroup::RC SaOnNodeSyncGroup::CheckInitDone( )
             if ( SharedArray::SUCCESS == sa_rc ) {
                 ITRC(IT_BSR, "(%d)SaOnNodeSyncGroup: Using ShmArray SHM_ST->DONE_ST\n", 
                         member_id);
+                if (!bsr_failover_informed && is_leader)
+                {
+                    char host[256] = "";
+                    gethostname(host, sizeof(host));
+                    fprintf(stderr, "WARNING: BSR resource is NOT ready on %s.\n", host);
+                    bsr_failover_informed = true;
+                }
                 group_desc = "SharedArray:ShmArray";
                 s_state = DONE_ST;
                 sa_type = SA_TYPE_SHMARRAY;
