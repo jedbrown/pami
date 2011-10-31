@@ -31,12 +31,12 @@ trap "cleanExit" EXIT
 hput ()
 {
 
-    putHashFile=$1
-    putKey=$2
-    putValue="${3}"
+    local putHashFile=$1
+    local putKey=$2
+    local putValue="${3}"
 
-    putLockFile="${putHashFile}.lock"
-    curValue=''
+    local putLockFile="${putHashFile}.lock"
+    local curValue=''
  
     # Lock the hash for parallel processes
     if [ $hashLock -eq 1 ]
@@ -79,19 +79,19 @@ hput ()
 # HASH GET VALUE 
 hget () 
 {
-    getHashFile=$1
-    getKey=$2
-    getValueVar=$3
+    local getHashFile=$1
+    local getKey=$2
+    local getValueVar=$3
 
-    getLockFile="${getHashFile}.lock"
-    nestedRead=0
+    local getLockFile="${getHashFile}.lock"
+    local nestedRead=0
     rc=0
 
     # Lock the hash for parallel processes
     if [ $hashLock -eq 1 ]
     then
 
-	grepAttempted=0
+	local grepAttempted=0
 
 	while ( ! ( set -o noclobber; (echo -e $mypid > "${getLockFile}")  >/dev/null 2>&1 ) )
 	do
@@ -129,10 +129,10 @@ hget ()
 
 hdelete ()
 {
-    delHashFile=$1
-    delKey=$2
+    local delHashFile=$1
+    local delKey=$2
 
-    delLockFile="${delHashFile}.lock"
+    local delLockFile="${delHashFile}.lock"
 
     # Lock the hash file for parallel processes
     if [ $hashLock -eq 1 ]
@@ -153,9 +153,9 @@ hdelete ()
 
 hdestroy ()
 {
-    destHashFile=$1
+    local destHashFile=$1
 
-    destLockFile="${destHashFile}.lock"
+    local destLockFile="${destHashFile}.lock"
     rc=0
 
     # Lock the hash file
@@ -187,9 +187,9 @@ hdestroy ()
 childKill ()
 {
     # send SIGTERM (15) signal to all child processes
-    childProcesses="/tmp/$ppid.children"
+    local childProcesses="/tmp/$ppid.children"
     pgrep -P $ppid > $childProcesses
-    children=$(wc -l < $childProcesses)
+    local children=$(wc -l < $childProcesses)
     
     if (( $children > 0 ))
     then
@@ -198,6 +198,8 @@ childKill ()
 
         # wait for all sub processes to exit
 	echo "Waiting for ${children} child processes to terminate ..."
+
+	local prevChildren=0
 
 	while (( $children > 0 ))
 	do
@@ -230,6 +232,7 @@ freeAllBlocks ()
 
     local index=0
     local notFree=0
+    local freeLog=""
     local freeCmd=""
     local freeRC=0
     local scaleNodes
@@ -535,10 +538,10 @@ cleanExit ()
 bgp_mode_TexttoNum ()
 {
 
-    alphaMode=$1
-    numModeVar=$2
+    local alphaMode=$1
+    local numModeVar=$2
 
-    TtN_rc=0
+    local TtN_rc=0
 
     # Turn on case-insensitive matching (-s set nocasematch)
     shopt -s nocasematch
@@ -573,10 +576,10 @@ bgp_mode_TexttoNum ()
 bgp_mode_NumtoText ()
 {
 
-    digiMode=$1
-    textModeVar=$2
+    local digiMode=$1
+    local textModeVar=$2
 
-    NtT_rc=0
+    local NtT_rc=0
 
     case $digiMode in
 	1 )
@@ -609,15 +612,17 @@ bgp_mode_NumtoText ()
 runEval ()
 {
 
-evalSA=$1
-runSubRC=$2
-runSig=$3
-testLog=$4
-outLogSigVar=$5
-outLogSumVar=$6
+local evalSA=$1
+local runSubRC=$2
+local runSig=$3
+local testLog=$4
+local outLogSigVar=$5
+local outLogSumVar=$6
 
-evalSignal=999
-evalSummary=""
+local evalSignal=999
+local rank=""
+local tempSummary=""
+local evalSummary=""
  
 # Verify standalone test
 if [ $evalSA -eq 1 ]
@@ -749,8 +754,8 @@ else
 	if [ -e $testLog ]
 	then
 	    # Get parms needed to determine passage
-	    nodes=$( grep -a "^NODES =" ${testLog} | awk '{print $3}')
-	    passCount=$( grep -a -c 'Software Test PASS' ${testLog} )
+	    local nodes=$( grep -a "^NODES =" ${testLog} | awk '{print $3}')
+	    local passCount=$( grep -a -c 'Software Test PASS' ${testLog} )
 
             # Use -ge since FPGA runs return more "passes" than nodes
 	    if (( $passCount >= $nodes ))  # BGQ binary passed
@@ -824,25 +829,27 @@ return 0
 
 #-------------------------------------------------------------------------------
 # runSA input parms
-# $1 - The working directory for the test
-# $2 - The executable/binary file to run
-# $3 - The log file
+# $1   - The working directory for the test
+# $2.1 - The executable/binary file to run
+# $2.2 - The exe hash index
+# $3   - The log file
 # $4.1 - Variable name to store the binary return code for this test
 # $4.2 - Variable name to store the elapsed time for this test
 #-------------------------------------------------------------------------------
 runSA ()
 {
     # Get the arguments
-    cwd=$1
-    exe=$2
-    logFile=$3
-    SASignalVar=$( echo $4 | awk '{print $1}' )
-    elapsed_time=$( echo $4 | awk '{print $2}' )
+    local cwd=$1
+    local exe=$( echo $2 | awk '{print $1}' )
+    local hashIndex=$( echo $2 | awk '{print $2}' )
+    local logFile=$3
+    local SASignalVar=$( echo $4 | awk '{print $1}' )
+    local elapsed_time=$( echo $4 | awk '{print $2}' )
 
-    runSA_rc=0
+    local runSA_rc=0
 
     # Save off the current directory
-    curDir=`pwd`
+    local curDir=`pwd`
 
     echo "SERVER ID = ${serverID}" >> $logFile
     echo ""  >> $logFile
@@ -856,10 +863,12 @@ runSA ()
 	return 1
     fi  
     
-    runCmd="./${exe}"
+    local runCmd="./${exe}"
 
     # Start time in Epoch time
-    before=$(date +%s)
+    local before=$(date +%s)
+
+    local runStatus=0
 
     if [ $quietly -eq 1 ]
     then
@@ -879,10 +888,10 @@ runSA ()
     fi
 
     # End time in Epoch time
-    after=$(date +%s)
+    local after=$(date +%s)
 
     # Run time in readable format
-    elapsed_seconds="$((${after} - ${before}))" # Needs to be a string
+    local elapsed_seconds="$((${after} - ${before}))" # Needs to be a string
     eval $elapsed_time=$(date -d "1970-01-01 ${elapsed_seconds} seconds" +%T)
 
     if [ $debug -eq 1 ]
@@ -921,53 +930,45 @@ runSA ()
 
 #-------------------------------------------------------------------------------
 # runHW input parms
-# $1 - The working directory for the test
-# $2 - The executable/binary file to run
-# $3 - Test scenario:  nodes, mode, NP
-# $4 - The options to pass to mpirun/runjob
-# $5 - block
-# $6 - The arguments to pass to the executable
-# $7 - The log file for this run
+# $1   - The working directory for the test
+# $2.1 - The executable/binary file to run
+# $2.2 - The exe hash index
+# $3   - Test scenario:  nodes, mode, NP, threads
+# $4   - The options to pass to mpirun/runjob
+# $5   - block
+# $6   - The arguments to pass to the executable
+# $7   - The log file for this run
 # $8.1 - Variable name to store the runfctest return code for this test
 # $8.2 - Variable name to store the elapsed time for this test
 #-------------------------------------------------------------------------------
 runHW ()
 {
     # Get the arguments
-    cwd=$1
-    exe=$2
-    HWNodes=$( echo $3 | awk '{print $1}' )
-    HWMode=$( echo $3 | awk '{print $2}' )
-    HWProcs=$( echo $3 | awk '{print $3}' )
-    opts=$4
-    HWBlock=$5
-    args=$6
-    logFile=$7
-    HWSignalVar=$( echo $8 | awk '{print $1}' )
-    elapsedTimeVar=$( echo $8 | awk '{print $2}' )
-
+    local cwd=$1
+    local exe=$( echo $2 | awk '{print $1}' )
+    local hashIndex=$( echo $2 | awk '{print $2}' )
+    local HWNodes=$( echo $3 | awk '{print $1}' )
+    local HWMode=$( echo $3 | awk '{print $2}' )
+    local HWProcs=$( echo $3 | awk '{print $3}' )
+    local threads=$( echo $3 | awk '{print $4}' )
+    local opts=$4
+    local HWBlock=$5
+    local args=$6
+    local logFile=$7
+    local HWSignalVar=$( echo $8 | awk '{print $1}' )
+    local elapsedTimeVar=$( echo $8 | awk '{print $2}' )
+    
     local pythonBin=""
     local pythonVer=0
     local runjob="${run_floor}/hlcs/bin/runjob"
     local runfctest="${run_floor}/scripts/runfctest.sh"
     local type='MMCS'
     local stdinFile=""
-
-    
-
-    runjobArgs=$( echo "${args}" | sed 's/ -/ --args -/g' | sed 's/"//g' ) # use "${args}" for when 1st arg is -n
-
-    if [[ "${exe}" =~ 'threadTest_omp' ]]
-    then
-	threads=16
-    else
-	threads=1
-    fi
-
+    local runjobArgs=$( echo "${args}" | sed 's/ -/ --args -/g' | sed 's/"//g' ) # use "${args}" for when 1st arg is -n
 
     # Set MMCS logfile
-    mmcslogfile=""
-    hostName=${serverID%%.*}
+    local mmcslogfile=""
+    local hostName=${serverID%%.*}
     if [ "${platform}" == 'bgp' ]
     then
 	mmcslogfile=`ls /bgsys/logs/BGP/*-bgdb0-mmcs_db_server-current.log`
@@ -976,10 +977,10 @@ runHW ()
         mmcslogfile=`ls /bgsys/logs/BGQ/*-mmcs_server.log`
     fi
 
-    runHW_rc=0
+    local runHW_rc=0
 
-    envs=""
-    runENVHash="/tmp/${USER}_${exe%%.*}_runenvhash.$(date +%Y%m%d-%H%M%S)"       # temp hash of ENV vars to set
+    local envs=""
+    local runENVHash="/tmp/${USER}_${exe%%.*}_runenvhash.$(date +%Y%m%d-%H%M%S)"       # temp hash of ENV vars to set
 
     # Put default ENV vars in a hash so they can be overwritten by testfile options (except for mode)
     if [ "${platform}" == 'bgq' ]
@@ -996,6 +997,10 @@ runHW ()
 
     # Parse mpirun/runjob options
     # Determine which ENV vars need to be saved, updated and documented
+    local env_name=""
+    local env_val=""
+    local temp_opts=""
+
     set -- $(echo "${opts}")
 
     while [ "${1}" != "" ]; do
@@ -1053,7 +1058,7 @@ runHW ()
 				      fi
 				      ;;
 	    --include )               shift # to get include file path
-		                      incFile=$1
+		                      local incFile=$1
 
 				      if [ -e $incFile ]
 				      then
@@ -1067,7 +1072,7 @@ runHW ()
 				      else
 					  echo "ERROR (E)::runHW:  --inlcude file: \"${incFile}\" DNE!!"
 					  runHW_rc=2
-				      fi
+				      fi  
 
 				      # Cut this out of the options text so we don't send it to runjob
 				      # Save off everything after "--include"
@@ -1085,7 +1090,7 @@ runHW ()
 				      shift # to next option
 				      ;;  
 	    --python )                shift # to get python version
-		                      pythonVer=$1
+		                      local pythonVer=$1
 
 				      # Cut this out of the options text so we don't send it to runjob
 				      # Save off everything after "--python"
@@ -1103,7 +1108,7 @@ runHW ()
 				      shift # to next option
 				      ;; 
 	    --stdin )                 shift # to get stdin file
-		                      stdinFile=$1
+		                      local stdinFile=$1
 
 				      # Verify file exists
                                       if [ ! -e "${cwd}/${stdinFile}" ]
@@ -1152,11 +1157,56 @@ runHW ()
 	shift
     done
 
+    # Update inputdeck that we copied earlier if this is an sppm run
+    if [[ "${exe}" =~ 'sppm' ]] && [ -e "${cwd}/inputdeck" ]
+    then
+	# Create temporary inputdeck file
+	local tempDeck="${cwd}/inputdeck.tmp"
+
+	local inputdeckArray=( nodelayout nthreads dtime checkpoint dtdump stoptime )
+
+	local parm=0
+	for (( parm=0; parm < ${#inputdeckArray[@]}; parm++ ))
+	do
+	    local deckValue=''
+	    hget $exeHash "${exe}:${hashIndex}:${inputdeckArray[${parm}]}" deckValue
+
+	    if [ "${deckValue}" == '' ]
+	    then
+		$( grep -a "${inputdeckArray[${parm}]}" "${cwd}/inputdeck" >> "${tempDeck}" )
+	    else
+		case ${inputdeckArray[${parm}]} in
+		    nodelayout )            $( echo "nodelayout ${deckValue}" >> "${tempDeck}" )
+			                    ;;
+		    nthreads )              $( echo "nthreads   ${deckValue}" >> "${tempDeck}" )
+			                    ;;
+		    dtime )                 $( echo "dtime      ${deckValue}" >> "${tempDeck}" )
+			                    ;;
+		    checkpoint )            $( echo "checkpoint ${deckValue}" >> "${tempDeck}" )
+			                    ;;
+		    dtdump )                $( echo "dtdump     ${deckValue}" >> "${tempDeck}" )
+			                    ;;
+		    stoptime )              $( echo "stoptime   ${deckValue}" >> "${tempDeck}" )
+		esac
+	    fi            
+	done
+
+	mv "${tempDeck}" "${cwd}/inputdeck"
+
+	if [ $? -ne 0 ]
+	then
+	  runHW_rc=$?
+	  echo "ERROR (E):  move of ${tempDeck} to ${cwd}/inputdeck FAILED!!"
+	fi
+    fi # end if sppm
+
     # Separate out individual block pieces
     # BGP sub block
-    HWLocation=$( echo $HWBlock | sed "s|:| |" | awk '{print $2}' )    
+    local HWLocation=$( echo $HWBlock | sed "s|:| |" | awk '{print $2}' )    
 
     # BGQ Shape
+    local HWShape=""
+
     if [ "${cmdlineShape}" == '' ]
     then
 	HWShape=$( echo $HWBlock | sed "s|:| |g" | awk '{print $3}' )
@@ -1165,6 +1215,8 @@ runHW ()
     fi
 
     # BGQ Corner
+    local HWCorner=""
+
 #    if [ "${corner}" == '' ]
  #   then
 	HWCorner=$( echo $HWBlock | sed "s|:| |g" | awk '{print $2}' ) 
@@ -1240,7 +1292,7 @@ runHW ()
     fi
 
     # Save off the current directory
-    curDir=`pwd`
+    local curDir=`pwd`
 
     # Echo useful info and ENV VARs to logfile
     {
@@ -1296,6 +1348,8 @@ runHW ()
     fi
 
     # Create platform-specific run command
+    local runCmd=""
+
     if [ "${platform}" == 'bgp' ]
     then # Create BGP run command
 	runCmd="mpirun -cwd ${cwd} -exe ${exe} -np ${HWProcs} -mode ${HWMode} -partition ${HWBlock}"
@@ -1360,10 +1414,12 @@ runHW ()
     fi
 
     # Start time in Epoch time
-    before=$(date +%s)
+    local before=$(date +%s)
 
     # Make sure we don't lose any error return codes due to piping
 #    set -o pipefail
+
+    local runStatus=0
 
     if [ $quietly -eq 1 ]
     then
@@ -1383,10 +1439,10 @@ runHW ()
     fi
 
     # End time in Epoch time
-    after=$(date +%s)
+    local after=$(date +%s)
 
     # Run time in readable format
-    elapsed_seconds="$((${after} - ${before}))" # Needs to be a string
+    local elapsed_seconds="$((${after} - ${before}))" # Needs to be a string
     eval $elapsedTimeVar=$(date -d "1970-01-01 ${elapsed_seconds} seconds" +%T)
 
     if [ $debug -eq 1 ]
@@ -1446,14 +1502,14 @@ runHW ()
 	fi
 
         # check for any core files and tuck them away in a sub-directory
-	num_cores=0
-	corelocs=""
-	thisdir=`pwd`
-	corefiles=`ls core.* 2>/dev/null`
+	local num_cores=0
+	local corelocs=""
+	local thisdir=`pwd`
+	local corefiles=`ls core.* 2>/dev/null`
 	if [[ A != "A$corefiles" ]]; then
 
             # Get block location info    
-	    locateFile="${bootBlock}.locate"
+	    local locateFile="${bootBlock}.locate"
 
 	    if [ $serviceNode -eq 1 ]
 	    then
@@ -1464,8 +1520,8 @@ runHW ()
 
 	    num_cores=`echo $corefiles | wc -w`
 	    mkdir run.$jobid.cores
-	    core_num=0
-	    max_cores=16
+	    local core_num=0
+	    local max_cores=16
 	    for corefile in $corefiles; do
 		getLocFromCore $bootBlock $corefile $locateFile
 		corelocs="$corelocs $loc"
@@ -1488,7 +1544,7 @@ runHW ()
 	    fi
 	fi
 
-	now=`date +"%D %T"`
+	local now=`date +"%D %T"`
 	echo "$now Job $jobid on $HWBlock $PassFail with Exit status = $ExitStatus, $num_cores corefiles, and $NumRasEvents RAS events after $elapsed_seconds seconds." | tee -a $logFile
 
 	if [[ 0 < $num_cores ]]; then
@@ -1510,11 +1566,11 @@ runHW ()
 	# Get jobid if necessary
 	if [ $roysTools -ne 1 ]
 	then
-	    jobid=`grep -a -i "ibm.runjob.client.job: job" $logFile | head -1 | sed "s|  *$||" | sed -e "s|.*job ||g" | cut -d " " -f1`
+	    local jobid=`grep -a -i "ibm.runjob.client.job: job" $logFile | head -1 | sed "s|  *$||" | sed -e "s|.*job ||g" | cut -d " " -f1`
 	fi
 
 	# Build snapbug command
-	sbCmd="${snapbugScript} --output=${cwd}"
+	local sbCmd="${snapbugScript} --output=${cwd}"
 
 	# Use block if jobid DNE
 	if [ "${jobid}" == '' ]
@@ -1568,37 +1624,37 @@ runHW ()
 #-------------------------------------------------------------------------------
 exe_preProcessing ()
 {
-    orgNodes=$( echo $1 | awk '{print $1}' )
-    orgMode=$( echo $1 | awk '{print $2}' )
-    orgNP=$( echo $1 | awk '{print $3}' )
-    orgThreads=$( echo $1 | awk '{print $4}' )
-    bin=$2
-    opts=$3
-    args=$4
-    finalNodesVar=$( echo $5 | awk '{print $1}' )
-    finalModeVar=$( echo $5 | awk '{print $2}' )
-    finalNPVar=$( echo $5 | awk '{print $3}' )
-    finalThreadsVar=$( echo $5 | awk '{print $4}' )
-    finalOptsVar=$( echo $5 | awk '{print $5}' )
-    overrideVar=$( echo $5 | awk '{print $6}' )
-    maxNPVar=$( echo $5 | awk '{print $7}' )
-    maxRPNVar=$( echo $5 | awk '{print $8}' )
+    local orgNodes=$( echo $1 | awk '{print $1}' )
+    local orgMode=$( echo $1 | awk '{print $2}' )
+    local orgNP=$( echo $1 | awk '{print $3}' )
+    local orgThreads=$( echo $1 | awk '{print $4}' )
+    local bin=$2
+    local opts=$3
+    local args=$4
+    local finalNodesVar=$( echo $5 | awk '{print $1}' )
+    local finalModeVar=$( echo $5 | awk '{print $2}' )
+    local finalNPVar=$( echo $5 | awk '{print $3}' )
+    local finalThreadsVar=$( echo $5 | awk '{print $4}' )
+    local finalOptsVar=$( echo $5 | awk '{print $5}' )
+    local overrideVar=$( echo $5 | awk '{print $6}' )
+    local maxNPVar=$( echo $5 | awk '{print $7}' )
+    local maxRPNVar=$( echo $5 | awk '{print $8}' )
 
-    eppNodes=$orgNodes
-    eppMode=$orgMode
-    eppNP=$orgNP
-    eppThreads=$orgThreads
+    local eppNodes=$orgNodes
+    local eppMode=$orgMode
+    local eppNP=$orgNP
+    local eppThreads=$orgThreads
 
-    OpenMP=0
-    eppMaxNP=0
-    eppMaxRPN=0
-    npOverride=0
-    eppOverride='N'
+    local OpenMP=0
+    local eppMaxNP=0
+    local eppMaxRPN=0
+    local npOverride=0
+    local eppOverride='N'
 
-    runjob="${run_floor}/hlcs/bin/runjob"
-    runfctest="${run_floor}/scripts/runfctest.sh"
+    local runjob="${run_floor}/hlcs/bin/runjob"
+    local runfctest="${run_floor}/scripts/runfctest.sh"
 
-    runScript='mpirun'
+    local runScript='mpirun'
 
     if [ "${platform}" == 'bgq' ]
     then
@@ -1630,9 +1686,9 @@ exe_preProcessing ()
 	return 1
     fi
 
-    env_name=""
-    env_val=""
-    temp_opts=""
+    local env_name=""
+    local env_val=""
+    local temp_opts=""
 
     # Parse "runjob" options
     # Replace command-line positional parameters with $opts values
@@ -1896,6 +1952,8 @@ exe_preProcessing ()
 		                      if [[ "${1}" =~ "^-" ]] # option
 				      then
 	
+					  local found=""
+
                                           # Check against *run* help text
 					  if [ "${platform}" == 'bgp' ]
 					  then
@@ -1992,52 +2050,53 @@ exe_preProcessing ()
 
 #-------------------------------------------------------------------------------
 # runSim input parms
-# $1 - type of sim (runMambo, runFpga or runMmcsLite) 
-# $2 - The working directory for the test
-# $3 - The executable/binary file to run
-# $4 - Test scenario:  nodes, mode, NP
-# $5 - The options to pass to runjob
-# $6 - The arguments to pass to the executable
-# $7 - The log file for this run
+# $1   - type of sim (runMambo, runFpga or runMmcsLite) 
+# $2   - The working directory for the test
+# $3.1 - The executable/binary file to run
+# $3.2 - The exe hash index
+# $4   - Test scenario:  nodes, mode, NP
+# $5   - The options to pass to runjob
+# $6   - The arguments to pass to the executable
+# $7   - The log file for this run
 # $8.1 - Variable name to store the runfctest return code for this test
 # $8.2 - Variable name to store the elapsed time for this test
-# $9 - block (last since not needed for FPGA)
+# $9   - block (last since not needed for FPGA)
 #-------------------------------------------------------------------------------
 runSim ()
 {
     # Get the arguments
-    type=$1
-    cwd=$2
-    exe=$3
-    simNodes=$( echo $4 | awk '{print $1}' )
-    simMode=$( echo $4 | awk '{print $2}' )
-    simProcs=$( echo $4 | awk '{print $3}' )
-    opts=$5
-    args=$6
-    logFile=$7
-    simSignalVar=$( echo $8 | awk '{print $1}' )
-    elapsedTimeVar=$( echo $8 | awk '{print $2}' )
-    simBlock=$9
+    local type=$1
+    local cwd=$2
+    local exe=$( echo $3 | awk '{print $1}' )
+    local hashIndex=$( echo $3 | awk '{print $2}' )
+    local simNodes=$( echo $4 | awk '{print $1}' )
+    local simMode=$( echo $4 | awk '{print $2}' )
+    local simProcs=$( echo $4 | awk '{print $3}' )
+    local opts=$5
+    local args=$6
+    local logFile=$7
+    local simSignalVar=$( echo $8 | awk '{print $1}' )
+    local elapsedTimeVar=$( echo $8 | awk '{print $2}' )
+    local simBlock=$9
 
-    runfctest="${run_floor}/scripts/runfctest.sh"
+    local runfctest="${run_floor}/scripts/runfctest.sh"
 
+    local threads=1 
     if [[ "${exe}" =~ 'threadTest_omp' ]]
     then
 	threads=16
-    else
-	threads=1
     fi
 
-    runSim_rc=0
+    local runSim_rc=0
 
     declare -a ENV_VAR_ARRAY          # array of ENV VAR names
     declare -a ENV_VAL_ARRAY          # array of new ENV VAR values
     declare -a ENV_PREVAL_ARRAY       # array of PREvious ENV VAR VALues
 
-    element=0
-    env_name=""
-    env_val=""
-    temp_opts=""
+    local element=0
+    local env_name=""
+    local env_val=""
+    local temp_opts=""
 
     # Parse "runjob" options
     # Replace command-line positional parameters with $opts values
@@ -2194,7 +2253,7 @@ runSim ()
     fi
 
     # Save off the current directory
-    curDir=`pwd`
+    local curDir=`pwd`
 
     # Make sure we don't lose any error return codes due to piping
 #    set -o pipefail
@@ -2231,10 +2290,12 @@ runSim ()
 	return 1
     fi  
 
+    local runCmd=""
+
     if [ "${type}" == 'runMmcsLite' ]
     then
 	    
-	sub_block=$( echo $simBlock | sed "s|:| |" | cut -d " " -s -f2 )
+	local sub_block=$( echo $simBlock | sed "s|:| |" | cut -d " " -s -f2 )
 	simBlock=$( echo $simBlock | sed "s|:.*||g" )
 
 	runCmd="${runfctest} --script ${type} ${opts} --location ${simBlock} --program ${exe} -- ${args}"
@@ -2243,7 +2304,9 @@ runSim ()
     fi
 
     # Start time in Epoch time
-    before=$(date +%s)
+    local before=$(date +%s)
+
+    local runStatus=0
 
     if [ $quietly -eq 1 ]
     then
@@ -2263,10 +2326,10 @@ runSim ()
     fi
 
     # End time in Epoch time
-    after=$(date +%s)
+    local after=$(date +%s)
 
     # Run time in readable format
-    elapsed_seconds="$((${after} - ${before}))" # Needs to be a string
+    local elapsed_seconds="$((${after} - ${before}))" # Needs to be a string
     eval $elapsedTimeVar=$(date -d "1970-01-01 ${elapsed_seconds} seconds" +%T)
 
     if [ $debug -eq 1 ]
@@ -2275,7 +2338,7 @@ runSim ()
 	if [ "${type}" == 'runFpga' ]
 	then
 
-	    fctestDir="${cwd}/FCTest.dummy.${exe%.*}.$(date +%Y%m%d-%H%M%S)"
+	    local fctestDir="${cwd}/FCTest.dummy.${exe%.*}.$(date +%Y%m%d-%H%M%S)"
 
 	    while [ -e "${fctestDir}" ]; do
 		fctestDir="${cwd}/FCTest.dummy.${exe%.*}.$(date +%Y%m%d-%H%M%S)"
@@ -2350,11 +2413,11 @@ runSim ()
 
 llJobs ()
 {
-    action=$1
+    local action=$1
     
-    old_queue=$fpga_queue   # Use this to see if we've made any progress
+    local old_queue=$fpga_queue   # Use this to see if we've made any progress
 
-    llJobs_rc=0
+    local llJobs_rc=0
 
     if [ "${action}" != 'query' ] && [ "${action}" != 'cancel' ]
     then
@@ -2374,20 +2437,22 @@ llJobs ()
     IFS=$'\n'
 
     # Read all jobids into an array
-    jobidArray=($(llq | grep -a $USER | awk '{print $1}'))
+    local jobidArray=($(llq | grep -a $USER | awk '{print $1}'))
 
     # Read all job stati into an array
-    jobSTArray=($(llq | grep -a $USER | awk '{print $5}'))
+    local jobSTArray=($(llq | grep -a $USER | awk '{print $5}'))
 
     # Restore IFS
     IFS=$OLDIFS
-
+    
+    local jobid=0
     for ((jobid=0; jobid < ${#jobidArray[@]}; jobid++))
       do
 
       # Chop off the step name from the llq jobid
       jobidArray[$jobid]=${jobidArray[$jobid]%.*}
 
+      local test=0
       for ((test=0; test < ${#TEST_ARRAY[@]}; test++))
       do
 	for numNodes in ${nodeArray[@]}
@@ -2395,6 +2460,7 @@ llJobs ()
 	  for mode in ${modeArray[@]}
 	  do
 	    
+	    local numProcs=0
 	    if [ $forceNP -eq 0 ]
 	    then
 		numProcs=$(( $numNodes * $mode ))
@@ -2446,20 +2512,20 @@ llJobs ()
 # =========================================================
 logToWeb ()
 {
-    ltwAbsPath=$( echo $1 | awk '{print $1}' ) # build or exe abs path
-    ltwRelPath=$( echo $1 | awk '{print $2}' ) 
-    ltwTest=$( echo $1 | awk '{print $3}' )
-    ltwNP=$( echo $2 | awk '{print $1}' )
-    ltwMode=$( echo $2 | awk '{print $2}' )
-    ltwThreads=$( echo $2 | awk '{print $3}' )
-    scaleNodes=$( echo $3 | awk '{print $1}' ) # Used for auto group name creation
-    scaleMode=$( echo $3 | awk '{print $2}' )  # Used for auto group name creation
-    ltwOverallStatus=$4 
-    ltwTestStatus=$5                           
-    ltwTestSignal=$6
-    ltwTestSummary=$7                          # individual summary of exe'd tests, else = overall status
-    ltwTestLog=$8                              # make or exe log 
-    xmlStatusVar=$9
+    local ltwAbsPath=$( echo $1 | awk '{print $1}' ) # build or exe abs path
+    local ltwRelPath=$( echo $1 | awk '{print $2}' ) 
+    local ltwTest=$( echo $1 | awk '{print $3}' )
+    local ltwNP=$( echo $2 | awk '{print $1}' )
+    local ltwMode=$( echo $2 | awk '{print $2}' )
+    local ltwThreads=$( echo $2 | awk '{print $3}' )
+    local scaleNodes=$( echo $3 | awk '{print $1}' ) # Used for auto group name creation
+    local scaleMode=$( echo $3 | awk '{print $2}' )  # Used for auto group name creation
+    local ltwOverallStatus=$4 
+    local ltwTestStatus=$5                           
+    local ltwTestSignal=$6
+    local ltwTestSummary=$7                          # individual summary of exe'd tests, else = overall status
+    local ltwTestLog=$8                              # make or exe log 
+    local xmlStatusVar=$9
 
     
     if [ "$logAction" == 'skip' ]
@@ -2470,11 +2536,11 @@ logToWeb ()
 
     echo -e "\nLogging results to ${upperFamily} Test History webpage ..."
 
-    logSummary=""
-    xmlStatus=""
+    local logSummary=""
+    local xmlStatus=""
 
     # Create test name to be displayed in DB
-    testName=""
+    local testName=""
 
     if [ "${testNameLength}" == 'short' ]
     then # use name only
@@ -2486,7 +2552,7 @@ logToWeb ()
     # Determine compile driver level from binary if it exists
     if [ "${codeFamily}" == 'sst' ] && [ $mpich -eq 0 ] && [ -e "${ltwAbsPath}/${ltwTest}" ]
     then
-	comp_drv=$( strings "${ltwAbsPath}/${ltwTest}" | grep -a -m 1 "SST_COMPILE_DRIVER" )
+	local comp_drv=$( strings "${ltwAbsPath}/${ltwTest}" | grep -a -m 1 "SST_COMPILE_DRIVER" )
 	comp_drv=${comp_drv##*=}
     fi
 
@@ -2494,13 +2560,13 @@ logToWeb ()
     if [[ "${ltwOverallStatus}" =~ ^[0-9] ]] 
     then
 	# Determine run driver level (2nd to last dir in floor)
-	run_drv=${run_floor%/*} # Get rid of last dir
+	local run_drv=${run_floor%/*} # Get rid of last dir
 	run_drv=${run_drv##*/} # Only keep newest last dir (driver)
 
     fi
 
     # Create logXML command
-    logCmd="${logXml} -e ${testName} -n ${ltwNP} -p ${ltwMode} -t ${ltwThreads} -r ${ltwTestSignal} -u ${USER} -m ${serverID}"
+    local logCmd="${logXml} -e ${testName} -n ${ltwNP} -p ${ltwMode} -t ${ltwThreads} -r ${ltwTestSignal} -u ${USER} -m ${serverID}"
 
     if [ "${ltwTestLog}" != "" ]
     then
@@ -2523,7 +2589,7 @@ logToWeb ()
     fi
 
     # Format group name 
-    groupMode="${scaleMode}m" # Default
+    local groupMode="${scaleMode}m" # Default
 
     # Get text version of BGP mode
     if [ "${platform}" == 'bgp' ]
@@ -2537,6 +2603,8 @@ logToWeb ()
     fi
 
     # Group name was specified
+    local tempGroup=""
+
     if [ "${logGroup}" != "" ]
     then
 	if [ $append -eq 1 ] # Appending to a group created by a previous run
@@ -2555,7 +2623,7 @@ logToWeb ()
 
     elif [ $autoGroup -eq 1 ] # Generate group name w/ scaling info
     then
-	input=$( basename $inputFile )
+	local input=$( basename $inputFile )
 	tempGroup="${input/.*/}_${groupDev}_${scaleNodes}n_${groupMode}.${timestamp}"
 	logCmd="${logCmd} -g ${tempGroup}"
     fi
@@ -2597,8 +2665,8 @@ logToWeb ()
 
 changeDir ()
 {
-    dir=$1
-    cDir_rc=0
+    local dir=$1
+    local cDir_rc=0
 
     if [ -e $dir ]
     then
@@ -2619,17 +2687,17 @@ changeDir ()
 
 reConfig ()
 {
-    configDir=$1
-    level=$2
-    tar=$3
-    type=$4
-    configFamily=$5
-    configCmd=
-    new_floor=
-    config_rc=0
+    local configDir=$1
+    local level=$2
+    local tar=$3
+    local type=$4
+    local configFamily=$5
+    local configCmd=""
+    local new_floor=""
+    local config_rc=0
 
     # Save current dir
-    curDir=`pwd`
+    local curDir=`pwd`
 
     # cd to bgq dir
     changeDir $configDir
@@ -3909,7 +3977,72 @@ while read xtest xopts
       hput $exeHash "${TEST_ARRAY[$element]}:$element:notes" ''
   fi
 
-  # Is this test compile only?
+  # Go thru and pull out specific sppm parm values if they exist
+
+  # Init sppm single-value parm array 
+  sppmSVParmArray=( make problemsize iq nthreads dtime checkpoint )
+
+  # sppm single-value parm loop
+  for ((parmIndex=0; parmIndex < ${#sppmSVParmArray[@]}; parmIndex++))
+  do
+      if [[ "${tempOpts}" =~ "-${sppmSVParmArray[${parmIndex}]} " ]]
+      then      
+      # Get value
+	  value=$( echo ${tempOpts##*-${sppmSVParmArray[${parmIndex}]}} | awk '{ print $1 }' ) 
+
+      # Update hash entry for this test
+	  hput $exeHash "${TEST_ARRAY[$element]}:$element:${sppmSVParmArray[${parmIndex}]}" "${value}"
+
+      # Remove parm from $tempOpts
+      # Save off everything after parm
+	  postParm=${tempOpts##*--${sppmSVParmArray[${parmIndex}]}}
+
+      # Set tempOpts = everything before parm
+	  tempOpts=${tempOpts%%--${sppmSVParmArray[${parmIndex}]}*}
+
+      # Final opts string with parm val removed
+	  if [[ "${postParm}" =~ '--' ]]
+	  then					 
+	      tempOpts="${tempOpts}--${postParm#*--}"
+	  fi
+      fi
+  done
+
+  # Init sppm multi-value parm array 
+  sppmMVParmArray=( nodelayout dtdump stoptime )
+
+  # sppm multi-value parm loop
+  for ((parmIndex=0; parmIndex < ${#sppmMVParmArray[@]}; parmIndex++))
+  do
+      if [[ "${tempOpts}" =~ "-${sppmMVParmArray[${parmIndex}]} " ]]
+      then      
+          # Get value
+	  value=$( echo ${tempOpts##*-${sppmMVParmArray[${parmIndex}]}} | awk -F\" '{ print $2 }' ) 
+
+          # Update hash entry for this test
+	  hput $exeHash "${TEST_ARRAY[$element]}:$element:${sppmMVParmArray[${parmIndex}]}" "${value}"
+
+          # Remove parm from $tempOpts
+          # Save off everything after parm
+	  postParm=${tempOpts##*--${sppmMVParmArray[${parmIndex}]}}
+
+          # Get rid of everything up to opening parm "
+	  postParm=${postParm#*\"}
+          # Get rid of everything up to closing parm "
+	  postParm=${postParm#*\"}
+
+          # Set tempOpts = everything before parm
+	  tempOpts=${tempOpts%%--${sppmMVParmArray[${parmIndex}]}*}
+
+          # Final opts string with parm val removed
+	  if [[ "${postParm}" =~ '--' ]]
+	  then					 
+	      tempOpts="${tempOpts}--${postParm#*--}"
+	  fi
+      fi
+  done
+
+# Is this test compile only?
   if [[ "${tempOpts}" =~ 'compile-only' ]]
   then
       hput $exeHash "${TEST_ARRAY[$element]}:$element:compileOnly" 1
@@ -4260,6 +4393,27 @@ then
 	    eval $makeCmd
 	fi
 	
+	# Clean diags/exercisers tree if it exists in testfile
+	diagsExists=$( grep -a -m 1 -c "^../../diags" $inputFile ) 
+	if (( $diagsExists > 0 )) && [ "${codeFamily}" == 'sst' ]
+	then 
+	    echo -e "\nINFO (I):  Performing make -s ${cleanType} in:  ${abs_bgq_dir}/diags/src/oncore/mst/exercisers\n"
+	    
+	    changeDir "${abs_bgq_dir}/diags/src/oncore/mst/exercisers"
+	    if [ $? -ne 0 ]
+	    then
+		echo "ERROR (E):  changeDir FAILED!! Exiting."
+		exit 1
+	    fi
+
+	    echo $makeCmd
+	    
+	    if [ $debug -eq 0 ]
+	    then
+		eval $makeCmd
+	    fi
+	fi
+
 	# Clean performance applications tree if it exists in testfile
 	appExists=$( grep -a -m 1 -c "^../applications" $inputFile ) 
 	if (( $appExists > 0 )) && [ "${codeFamily}" == 'sst' ]
@@ -4344,9 +4498,109 @@ then
 
 	    hput $exeHash "${TEST_ARRAY[$test]}:$test:logCompile" "${compileLog}"
 
-	    echo -e "\nCompiling test ${TEST_ARRAY[$test]} ..."
+	    makeBinary="${TEST_ARRAY[$test]}"
 
-	    makeCmd="make -j ${MAKECPUS} ${TEST_ARRAY[$test]} BGQ_INSTALL_DIR=${compile_floor}"
+	    if [[ "${TEST_ARRAY[$test]}" =~ 'sppm' ]]
+	    then
+		hget $exeHash "${TEST_ARRAY[$test]}:$test:make" makeBinary
+
+		# Edit iq.h file according to user specs in testfile
+		if [ -e 'Makefile' ]
+		then
+		    # Find sppm/mono_sppm version
+		    if [[ "${makeBinary}" =~ 'mono' ]]
+		    then
+			ver=$( grep -a -m 1 'MONO_SPPM_VER' 'Makefile' | awk '{ print $3 }' )
+		    else
+			ver=$( grep -a -m 1 'SPPM_VER' 'Makefile' | awk '{ print $3 }' )
+		    fi
+
+		    # See if version dir exists
+		    if [ ! -e "${ver}" ]
+		    then
+			if [ $debug -eq 1 ]
+			then
+
+		            # Create a dummy dir and iq.h
+			    mkdir ${ver}
+
+			    echo "define(IQX, 192)" > "${ver}/iq.h"
+			    echo "define(IQY, 192)" > "${ver}/iq.h"
+			    echo "define(IQZ, 192)" > "${ver}/iq.h"
+			    echo -e "\ndefine(IQ, 192)" > "${ver}/iq.h"
+			else
+
+			    makeCmd="make ${ver}"
+
+	                    # Execute make
+			    if [ $quietly -eq 1 ]
+			    then
+				echo $makeCmd >> $compileLog 2>&1
+				if [ $debug -eq 0 ]
+				then
+				    eval $makeCmd >> $compileLog 2>&1
+				fi
+			    else
+				echo $makeCmd 2>&1 | tee -a $compileLog
+				if [ $debug -eq 0 ]
+				then
+				    eval $makeCmd 2>&1 | tee -a $compileLog
+				fi
+			    fi
+			fi			
+		    fi # end if ver dir exists
+
+		    iqh="${ver}/iq.h"
+		    
+		    if [ -e "${iqh}" ]
+		    then
+
+			hget $exeHash "${TEST_ARRAY[$test]}:$test:problemsize" problemSize
+			hget $exeHash "${TEST_ARRAY[$test]}:$test:nodelayout" nodeLayout
+			IQ=''
+			hget $exeHash "${TEST_ARRAY[$test]}:$test:iq" IQ
+		    
+			processArray=( X Y Z )
+			maxTileSize=0
+
+			
+			echo "Building ${makeBinary} with a ${problemSize}-cubed total problem size for a ${nodeLayout} node layout:" 2>&1 | tee -a $compileLog
+		
+
+			for ((dir=0; dir < ${#processArray[@]}; dir++))
+			do
+			    if [[ "${TEST_ARRAY[$test]}" =~ 'mono' ]] || [[ "${TEST_ARRAY[$test]}" =~ 'nompi' ]]
+			    then
+				tileSize=${problemSize}
+			    else # sppm
+				processes=$( echo "${nodeLayout}" | awk -v N=${dir} '{ print $(N+1) }' )
+				tileSize=$(( ${problemSize} / ${processes} ))
+			    fi
+
+			    echo "IQ${processArray[${dir}]} = ${tileSize}" 2>&1 | tee -a $compileLog
+#			    echo "dir = ${processArray[${dir}]}, processes = ${processes}, tilesize = ${tileSize}"
+			    sed -i -e "s/IQ${processArray[${dir}]}, \([0-9]\+\)/IQ${processArray[${dir}]}, ${tileSize}/" "${iqh}"
+			    if (( ${tileSize} > ${maxTileSize} ))
+			    then
+				maxTileSize=${tileSize}
+			    fi
+			done
+
+			if [ "${IQ}" == '' ]
+			then
+			    IQ=${maxTileSize}
+			fi
+
+			sed -i -e "s/IQ, \([0-9]\+\)/IQ, ${IQ}/" "${iqh}"
+			echo -e "IQ  = ${IQ}\n" 2>&1 | tee -a $compileLog
+		    else
+			echo "ERROR (E): ${iqh} DNE!!"  
+		    fi # end if iq.h exists
+		fi # end if Makefile exists
+	    fi # end if sppm test
+
+	    echo -e "\nCompiling test ${makeBinary} ..."
+	    makeCmd="make -j ${MAKECPUS} ${makeBinary} BGQ_INSTALL_DIR=${compile_floor}"
 
 	    # Execute make
 	    if [ $quietly -eq 1 ]
@@ -4370,9 +4624,9 @@ then
 	    then
 		
 		# Create a dummy binary if one DNE
-		if [ ! -e "${TEST_ARRAY[$test]}" ]
+		if [ ! -e "${makeBinary}" ]
 		then
-		    echo "dummy exe" > ${TEST_ARRAY[$test]}
+		    echo "dummy exe" > ${makeBinary}
 		fi
 
 		declare -a makeStatus; makeStatus[0]=0; makeStatus[1]=0
@@ -4383,7 +4637,7 @@ then
 
             # Check status of make
 	    overallStatus=""
-	    if [ ${makeStatus[0]} -ne 0 ] || [ ! -e "${TEST_ARRAY[$test]}" ]
+	    if [ ${makeStatus[0]} -ne 0 ] || [ ! -e "${makeBinary}" ]
 	    then
 		overallStatus='Compile FAILED'
 		hput $exeHash "${TEST_ARRAY[$test]}:$test:status" "${overallStatus}"
@@ -4393,9 +4647,31 @@ then
 		hput $exeHash "${TEST_ARRAY[$test]}:$test:exe" 0
 
 	    else # Make passed
+
 		overallStatus='Compiled'
 		hput $exeHash "${TEST_ARRAY[$test]}:$test:status" "${overallStatus}"
 		hput $compileHash "${TEST_ARRAY[$test]}" "${compileLog}" # Don't build this test again
+
+		# Copy sppm make exe to sppm run exe
+		if [[ "${TEST_ARRAY[$test]}" =~ 'sppm' ]]
+		then
+		    echo "Copying ${makeBinary} to ${TEST_ARRAY[$test]}" 2>&1 | tee -a $compileLog
+		    cp "${makeBinary}" "${TEST_ARRAY[$test]}" 2>&1 | tee -a $compileLog
+		    signal=$?
+
+		    if [ $? -ne 0 ] || [ ! -e "${TEST_ARRAY[$test]}" ]
+			then
+			overallStatus='Compile FAILED'
+			hput $exeHash "${TEST_ARRAY[$test]}:$test:status" "${overallStatus}"
+			echo "ERROR (E):  copy of ${makeBinary} to ${TEST_ARRAY[$test]} FAILED!!"
+
+      	                # Disable this test for the rest of this run
+			hput $exeHash "${TEST_ARRAY[$test]}:$test:exe" 0
+
+			# Delete this test from the compile hash
+			hdelete $compileHash "${TEST_ARRAY[$test]}"
+		    fi
+		fi	
 
 		# Let's check the log
 		if [[ $quietly -eq 0 && ${makeStatus[1]} -ne 0 ]] || [ ! -e "${compileLog}" ]
@@ -4996,17 +5272,67 @@ then
 	  maxNP=0            # Maximum valid NP value for for this test
 	  maxRPN=0           # Maximum valid RPN value for for this test
 
-	  if [[ "${TEST_ARRAY[$test]}" =~ 'threadTest_omp' ]]
-	  then
-	      exeThreads=16
-	  fi
-
 	  # Get parms for this test
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:exeDir" exeDir
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:stub" stub
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:runOpts" runOpts
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:exeArgs" exeArgs
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:notes" notes
+
+	  # Update thread value
+	  if [[ "${TEST_ARRAY[$test]}" =~ 'threadTest_omp' ]]
+	  then
+	      exeThreads=16
+	  elif [[ "${TEST_ARRAY[$test]}" =~ 'sppm' ]]
+	  then
+	      nThreads=''
+	      hget $exeHash "${TEST_ARRAY[$test]}:$test:nthreads" nThreads
+
+	      if [ "${nThreads}" != '' ]
+	      then
+		  exeThreads=${nThreads}
+	      else # set threads to value in inputdeck
+		  inputdeck=$( echo "${tempOpts##*-include}" | awk '{ print $1 }' )
+
+		  if [ -e "${inputdeck}" ]
+		  then
+		      exeThreads=$( grep -a 'nthreads' "${inputdeck}" | awk '{ print $2 }' )
+		  else
+		      echo "ERROR (E): Cannot determine number of sPPM threads to run with!!"
+		      echo "ERROR (E): ${inputdeck} DNE!!"
+
+	              # Amend overall status
+		      overallStatus='Skipped (Bad run* Parm)'
+		      hput $exeHash "${TEST_ARRAY[$test]}:$test:status" "${overallStatus}"
+
+	              # Disable test
+		      hput $exeHash "${TEST_ARRAY[$test]}:$test:exe" 0
+
+		      # Log to web
+		      if [ "${notes}" != '' ]
+		      then
+			  testSummary="${overallStatus} ${notes}"
+		      else
+			  testSummary="${overallStatus}"
+		      fi
+		      
+		      logToWeb "${exeDir} ${stub} ${TEST_ARRAY[$test]}" "0 0 0" "${nodeArray[0]} ${modeArray[0]}" "${overallStatus}" "" 999 "${testSummary}" "" xmlStat
+
+	              # Determine NP value for saving XML status
+		      keyNP=0
+		      if [ $forceNP -eq 0 ]
+		      then
+			  keyNP=$(( ${nodeArray[0]} * ${modeArray[0]} ))
+		      else
+			  keyNP=$forceNP
+		      fi
+
+		      hput $exeHash "${TEST_ARRAY[$test]}:$test:xml_n${nodeArray[0]}_m${modeArray[0]}_p${keyNP}" "${xmlStat}"
+
+		      continue # to next test
+		  fi # end if inputdeck exists
+	      fi # end if sppm nthreads in testfile
+	  fi # end if update thread
 
 	  # Determine final values for nodes, mode & NP
 	  hget $exeHash "${TEST_ARRAY[$test]}:$test:standAlone" standAlone
@@ -5723,12 +6049,12 @@ then
               # Call correct run script
 	      if [ $standAlone -eq 1 ]
 	      then
-		  runSA "${swtDir}" "${TEST_ARRAY[$test]}" "${runLog}" "exeSignal exeRuntime"
+		  runSA "${swtDir}" "${TEST_ARRAY[$test]} ${test}" "${runLog}" "exeSignal exeRuntime"
 	      elif [ "${run_type}" != 'hw' ]
 	      then
-		  runSim $run_type "${swtDir}" "${TEST_ARRAY[$test]}" "${exeNodes} ${exeInputMode} ${exeNP}" "${exeOpts}" "${exeArgs}" "${runLog}" "exeSignal exeRuntime" $runBlock
+		  runSim $run_type "${swtDir}" "${TEST_ARRAY[$test]} ${test}" "${exeNodes} ${exeInputMode} ${exeNP} ${exeThreads}" "${exeOpts}" "${exeArgs}" "${runLog}" "exeSignal exeRuntime" $runBlock
 	      else 
-		  runHW "${swtDir}" "${TEST_ARRAY[$test]}" "${exeNodes} ${exeInputMode} ${exeNP}" "${exeOpts}" $runBlock "${exeArgs}" "${runLog}" "exeSignal exeRuntime"
+		  runHW "${swtDir}" "${TEST_ARRAY[$test]} ${test}" "${exeNodes} ${exeInputMode} ${exeNP} ${exeThreads}" "${exeOpts}" $runBlock "${exeArgs}" "${runLog}" "exeSignal exeRuntime"
 	      fi
 
 	      exeRC=$?
