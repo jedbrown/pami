@@ -168,7 +168,7 @@ public:
         broadcast.cmd.xfer_ambroadcast.user_header  = NULL;
         broadcast.cmd.xfer_ambroadcast.headerlen    = 0;
         pami_type_t pt = PAMI_TYPE_BYTE;
-        broadcast.cmd.xfer_ambroadcast.stype = &pt;
+        broadcast.cmd.xfer_ambroadcast.stype = pt;
 
         pami_recv_t recv = {0};
         factory->_cb_ambcast
