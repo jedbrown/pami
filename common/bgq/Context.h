@@ -980,19 +980,23 @@ namespace PAMI
                                  ni_factory_muam,
                                  NULL);
 
-            COMPILE_TIME_ASSERT(sizeof(MUDputNIFactory) <= ProtocolAllocator::objsize);
-            CCMI::Interfaces::NativeInterfaceFactory *ni_factory_mudp = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
-            new (ni_factory_mudp) MUDputNIFactory (_client, _context, _clientid, _contextid, _devices->_mu[_contextid], _big_protocol);
+            PAMI_assert(__global.topology_local.size() == __global.local_size());
+            if(__global.local_size()!=64) /// \todo Not enough resources for MU Dput at 64 PPN, maybe fix this.
+            {
+	      COMPILE_TIME_ASSERT(sizeof(MUDputNIFactory) <= ProtocolAllocator::objsize);
+	      CCMI::Interfaces::NativeInterfaceFactory *ni_factory_mudp = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
+	      new (ni_factory_mudp) MUDputNIFactory (_client, _context, _clientid, _contextid, _devices->_mu[_contextid], _big_protocol);
           
-            _ccmi_registration_mudput =  new((CCMIRegistrationKey2*)_ccmi_registration_mudput_storage) 	
-            CCMIRegistrationKey2(_client, _context, _contextid, _clientid, 
-                                 _protocol,
-                                 __global.topology_global.size(), 
-                                 __global.topology_local.size(), 
-                                 &_dispatch.id, 
-                                 _geometry_map,
-                                 ni_factory_mudp,
-                                 NULL);
+	      _ccmi_registration_mudput =  new((CCMIRegistrationKey2*)_ccmi_registration_mudput_storage) 	
+		CCMIRegistrationKey2(_client, _context, _contextid, _clientid, 
+				     _protocol,
+				     __global.topology_global.size(), 
+				     __global.topology_local.size(), 
+				     &_dispatch.id, 
+				     _geometry_map,
+				     ni_factory_mudp,
+				     NULL);
+	    }
           }
         // Can only use shmem pgas if the geometry is all local tasks, so check the topology
         if (_pgas_shmem_registration && ((PAMI::Topology*)_world_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->isLocal()) _pgas_shmem_registration->analyze(_contextid, _world_geometry, 0);
