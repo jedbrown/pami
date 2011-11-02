@@ -1227,7 +1227,9 @@ namespace PAMI
             if (_mu_rectangle_dput_broadcast_factory)
               geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_rectangle_dput_broadcast_factory, _context_id);
 
-            //if (_mucollectivedputmulticastfactory && __global.topology_local.size() == 1)
+#ifndef PAMI_ENABLE_SHMEM_SUBNODE
+            if(__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
+#endif
               geometry->addCollective(PAMI_XFER_BROADCAST,  _mucollectivedputmulticastfactory, _context_id);
 
             if (_mucollectivedputmulticombinefactory && __global.topology_local.size() == 1)
