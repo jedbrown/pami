@@ -102,8 +102,6 @@ namespace PAMI
 
         struct CollSharedMemory
         {
-          T_Counter           ready_count;
-          T_Counter           term_count;
           T_Mutex             ctlstr_pool_lock;
           T_Mutex             buffer_pool_lock;
           T_Atomic            clientdata_key;
@@ -143,20 +141,38 @@ namespace PAMI
 
           // both shm_open and shmget should guarantee initial
           // content of the shared memory to be zero
-          // _collshm->ready_count = 0;
-          // _collshm->term_count  = 0;
           // _collshm->buffer_pool_lock = 0;
           // _collshm->ctlstr_pool_lock = 0;
 
-          _collshm->ctlstr_pool_offset      = addr_to_offset(((char  *)_collshm + sizeof(collshm_t)));
+          typedef union coll_block_t
+          {
+            char _collshmblob[sizeof(collshm_t)];
+            char _cacheline[CACHEBLOCKSZ];
+          }coll_block_t;
+          // Assert that the shmem lists fit in a cache line
+          COMPILE_TIME_ASSERT(sizeof(coll_block_t) == CACHEBLOCKSZ);
+          // Assert that the control structures are cache line sized
+          COMPILE_TIME_ASSERT((sizeof(ctlstr_t)%CACHEBLOCKSZ) == 0);
+
+          // Control struct pool starts after the shmem lists
+          _collshm->ctlstr_pool_offset      = addr_to_offset(((char  *)_collshm + sizeof(coll_block_t)));
           _collshm->ctlstr_pool_init_offset = _collshm->ctlstr_pool_offset;
-          _collshm->buffer_pool_offset      = addr_to_offset(((char *)(offset_to_addr(_collshm->ctlstr_pool_offset))
-                                                         + (_size - sizeof(collshm_t)) / 2));
+
+          // Data buffer pool starts after COLLSHM_INIT_CTLCNT of control structs
+          // Rest of the space for data bufs
+          _collshm->buffer_pool_offset      = _collshm->ctlstr_pool_offset+(sizeof(ctlstr_t)*COLLSHM_INIT_CTLCNT);
+
+          // Compile time error checking
+          const int numCtl           = COLLSHM_INIT_CTLCNT;
+          const int ctlSize          = sizeof(ctlstr_t)*COLLSHM_INIT_CTLCNT;
+          const int numBufs          = (_size - sizeof(coll_block_t) - ctlSize)/sizeof(databuf_t);
+          const int bufSize          = numBufs*sizeof(databuf_t);
+          COMPILE_TIME_ASSERT(ctlSize < _size);
+          COMPILE_TIME_ASSERT((ctlSize+bufSize+sizeof(coll_block_t)) < T_SegSz);
 
           _collshm->clientdata_key.set(_key);
-          _collshm->ctlstr_offset           = (size_t)offset_to_addr(_collshm->ctlstr_pool_offset) - (size_t)_collshm;
-          _collshm->buffer_offset           = (size_t)offset_to_addr(_collshm->buffer_pool_offset) - (size_t)_collshm;
-
+          _collshm->ctlstr_offset           = (size_t)offset_to_addr(_collshm->ctlstr_pool_offset);
+          _collshm->buffer_offset           = (size_t)offset_to_addr(_collshm->buffer_pool_offset);
           _collshm->free_ctlstr_list_offset = addr_to_offset(_get_ctrl_str_from_pool());
           _collshm->ctlstr_list_offset      = (size_t)addr_to_offset(new (offset_to_addr(_collshm->free_ctlstr_list_offset)) T_Atomic());
           _collshm->free_buffer_list_offset = addr_to_offset(_get_data_buf_from_pool());
@@ -194,7 +210,7 @@ namespace PAMI
           {
             PAMI_assertf(T_Counter::checkCtorMm(_mm), "Memory type incorrect for T_Counter class");
             PAMI_assertf(T_Mutex::checkCtorMm(_mm), "Memory type incorrect for T_Mutex class");            
-            rc = _mm->memalign((void **)&_collshm, 16, _size, "/pami-collshmem",
+            rc = _mm->memalign((void **)&_collshm, CACHEBLOCKSZ, _size, "/pami-collshmem",
                                _collshminit, (void *)this);
             _start = (void*)_collshm;
             _end   = (void*)((char*)_collshm + _size);
@@ -220,15 +236,7 @@ namespace PAMI
         {
           // placeholder for other cleanup work
           if (_collshm != NULL)
-            {
-              _mm->free(_collshm);
-              /// \todo this should be a barrier, if needed at all.
-              _collshm->term_count.fetch_and_inc();
-
-              //COLLSHM_FETCH_AND_ADD((atomic_p)&_collshm->term_count, 1);
-              while (_collshm->term_count.fetch() < _localsize);
-            }
-
+            _mm->free(_collshm);
         }
         inline pami_result_t allocateKey()
         {
@@ -297,6 +305,7 @@ namespace PAMI
             {
               new_bufs->next_offset = addr_to_offset(new_bufs + 1);
               new_bufs              = (databuf_t*)offset_to_addr(new_bufs->next_offset);
+              PAMI_ASSERT(((uintptr_t)new_bufs&(CACHEBLOCKSZ-1UL)) == 0);
             }
           new_bufs->next_offset = shm_null_offset();
           _collshm->buffer_pool_offset += (COLLSHM_INIT_BUFCNT*sizeof(databuf_t));
@@ -455,12 +464,12 @@ namespace PAMI
           Memory::sync<Memory::instruction>();
           ctlstr_t *ctlstr   = (ctlstr_t*)offset_to_addr(_collshm->ctlstr_pool_offset);
           ctlstr_t *tmp      = ctlstr;
-          size_t    offset   = (size_t)offset_to_addr(_collshm->buffer_pool_offset) - (size_t)_collshm;
+          size_t    end      = (size_t)offset_to_addr(_collshm->buffer_pool_offset);
 
-          if ((char *)(ctlstr + COLLSHM_INIT_CTLCNT) > ((char *)_collshm + offset))
+          if ((char *)(ctlstr + COLLSHM_INIT_CTLCNT) > ((char *)_collshm + end))
             {
               fprintf(stderr, "Run out of shm ctrl structs: base=%p, ctrl_offset=%lu, boundary=%p, end=%p\n",
-                      _collshm, _collshm->ctlstr_offset, (char *)_collshm + offset,
+                      _collshm, _collshm->ctlstr_offset, (char *)_collshm + end,
                       (char *)(ctlstr + COLLSHM_INIT_CTLCNT));
               PAMI_ASSERT(0);
               return (ctlstr_t*)shm_null_ptr();
@@ -469,6 +478,7 @@ namespace PAMI
             {
               tmp->next_offset = addr_to_offset(tmp + 1);
               tmp              = (ctlstr_t*)offset_to_addr(tmp->next_offset);
+              PAMI_ASSERT(((uintptr_t)tmp&(CACHEBLOCKSZ-1UL)) == 0);
             }
           tmp->next_offset = shm_null_offset();
 

@@ -1206,6 +1206,8 @@ namespace PAMI
 
             void * str = (char*)csmm->getCollShmAddr() + (size_t)in_str;
             PAMI_ASSERT(str != csmm->shm_null_ptr());
+            COMPILE_TIME_ASSERT(T_MemoryManager::_windowsz>=sizeof(collshm_wgroup_t));
+
             collshm_wgroup_t *ctlstr = (collshm_wgroup_t *)str;
 
             for (unsigned i = 0;  i < _numchannels; ++i)
@@ -1293,9 +1295,12 @@ namespace PAMI
           ///
           inline unsigned _advanceHead()
           {
-            int      head      = (_head >> _syncbits) & ( _numsyncs - 1); //int head  = (_head / _synccounts) % _numsyncs;
-            bool     cur_round = head < (_tail >> _syncbits);        //bool     cur_round = head < (_tail / _synccounts);
-            unsigned round = cur_round ? _round : ((_round + 1) & 0x1); // unsigned round     = cur_round ? _round : (_round+1)% 2;
+            //int      head      = (_head >> _syncbits) & ( _numsyncs - 1);
+            int head  = (_head / _synccounts) % _numsyncs;
+            //bool     cur_round = head < (_tail >> _syncbits);
+            bool     cur_round = head < (_tail / _synccounts);
+            //unsigned round = cur_round ? _round : ((_round + 1) & 0x1);
+            unsigned round     = cur_round ? _round : (_round+1)% 2;
             int      increment  = _increments[round];
             unsigned adv   = 0;
 
@@ -1413,7 +1418,8 @@ namespace PAMI
           inline void setThreadAvail(int channel_id)
           {
             _threads[channel_id].setStatus(PAMI::Device::Idle);
-            unsigned idx = channel_id >> _syncbits; //unsigned idx       = channel_id / _synccounts;
+            //unsigned idx = channel_id >> _syncbits;
+            unsigned idx       = channel_id / _synccounts;
             bool     cur_round = channel_id < _tail;
             unsigned round     = cur_round ? _round : ((_round + 1) & 0x1);
 

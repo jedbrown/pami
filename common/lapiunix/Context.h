@@ -255,8 +255,13 @@ namespace PAMI
   typedef Atomic::NativeAtomic                                                   LAPICSAtomic;
   typedef Counter::Native                                                        LAPICSCounter;
   typedef Mutex::YieldingNative                                                  LAPICSMutex;
-  typedef PAMI::Memory::CollSharedMemoryManager<LAPICSAtomic,LAPICSMutex,LAPICSCounter,COLLSHM_SEGSZ,COLLSHM_PAGESZ,
-                                    COLLSHM_WINGROUPSZ,COLLSHM_BUFSZ>            LAPICSMemoryManager;
+  typedef PAMI::Memory::CollSharedMemoryManager<LAPICSAtomic,
+                                                LAPICSMutex,
+                                                LAPICSCounter,
+                                                COLLSHM_SEGSZ,
+                                                COLLSHM_PAGESZ,
+                                                COLLSHM_WINGROUPSZ,
+                                                COLLSHM_BUFSZ>            LAPICSMemoryManager;
 
 
   // PGAS RT Typedefs/Coll Registration
