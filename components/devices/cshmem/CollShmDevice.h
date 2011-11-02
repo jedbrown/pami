@@ -797,7 +797,10 @@ namespace PAMI
                       root   = _device->getTopo()->rank2Index(topo->index2Rank(0));
                       _len   = mcast->bytes;
                       _wlen  = 0;
-                      k      = 2;
+                      // Todo:  non-flat n-ary trees give incorrect results
+                      // for bcast > COLLSHM_BUFSZ
+                      if(_len <= COLLSHM_BUFSZ)
+                        k      = 2;
                       TRACE_DBG((stderr, "CollShmThread::initThread() MultiCast topo->index2Rank(0) %d\n", (int)topo->index2Rank(0)));
                     } 
                       break;
