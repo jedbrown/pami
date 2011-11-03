@@ -48,7 +48,7 @@ SharedArray::RC SaOnNodeSyncGroup::InitSa(void* ctrl_block, size_t ctrl_block_sz
     return sa->CheckInitDone(job_key, member_id, seq);
 }
 
-SyncGroup::RC SaOnNodeSyncGroup::CheckInitDone( )
+SyncGroup::RC SaOnNodeSyncGroup::CheckInitDone(SaType *dev_type)
 {
     SharedArray::RC sa_rc;
     switch (s_state) {
@@ -73,7 +73,7 @@ SyncGroup::RC SaOnNodeSyncGroup::CheckInitDone( )
                         member_id);
                 group_desc = "SharedArray:Bsr";
                 s_state = DONE_ST;
-                sa_type = SA_TYPE_BSR;
+                *dev_type = sa_type = SA_TYPE_BSR;
                 return SUCCESS;
             } else if (SharedArray::PROCESSING == sa_rc ) {
                 /* in progress */
@@ -96,12 +96,12 @@ SyncGroup::RC SaOnNodeSyncGroup::CheckInitDone( )
                 {
                     char host[256] = "";
                     gethostname(host, sizeof(host));
-                    fprintf(stderr, "WARNING: BSR resource is NOT ready on %s.\n", host);
+                    fprintf(stderr, "ATTENTION: BSR resource is NOT ready on %s.\n", host);
                     bsr_failover_informed = true;
                 }
                 group_desc = "SharedArray:ShmArray";
                 s_state = DONE_ST;
-                sa_type = SA_TYPE_SHMARRAY;
+                *dev_type = sa_type = SA_TYPE_SHMARRAY;
                 return SUCCESS;
             } else if (SharedArray::PROCESSING == sa_rc ) {
                 /* in progress */

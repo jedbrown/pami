@@ -24,11 +24,18 @@ class SaOnNodeSyncGroup : public SyncGroup {
         SaOnNodeSyncGroup(unsigned int member_id, unsigned int mem_cnt,
                 unsigned int job_key, void* shm_block, size_t shm_block_sz);
         ~SaOnNodeSyncGroup();
+
+        typedef enum {
+          SA_TYPE_NONE = 0,   ///< NO device is ready
+          SA_TYPE_BSR,        ///< BSR device is ready
+          SA_TYPE_SHMARRAY    ///< SHM (BSR failover) device is ready
+        } SaType;
+
         /**
          * \brief Check Initialization Status function.
          * \return SyncGroup::SUCCESS, SyncGroup::PROCESSING, SyncGroup::FAILED
          */
-        RC   CheckInitDone();
+        RC   CheckInitDone(SaType *dev_type);
         void BarrierEnter();
         void BarrierExit();
         bool IsNbBarrierDone();/* to check if the non-blocking Barrier finishes */
@@ -61,11 +68,8 @@ class SaOnNodeSyncGroup : public SyncGroup {
         size_t        shmarray_ctrl_block_sz;
         size_t        done_mask;
 
-        enum SaType {
-            SA_TYPE_NONE = 0,
-            SA_TYPE_BSR,
-            SA_TYPE_SHMARRAY
-        }             sa_type;
+        SaType        sa_type;
+
         /* for Checkpoint support */
         struct CtrlBlock {
             volatile size_t       done_flag;   // Flag to signal upper layer to clean up the shm

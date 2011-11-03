@@ -54,7 +54,8 @@ namespace PAMI
           _device(device),
           _bsrinfo(bsrinfo),
           _done_fn(done_fn),
-          _cookie(cookie)
+          _cookie(cookie),
+          _ready_dev_type(SaOnNodeSyncGroup::SA_TYPE_NONE)
           {
           }
 
@@ -65,9 +66,20 @@ namespace PAMI
                 case UNINITIALIZED:
                 {
                   // Action:  Initialize
-                  SyncGroup::RC sg_rc =  _bsrinfo->_sync_group.CheckInitDone();
+                  SyncGroup::RC sg_rc =
+                      _bsrinfo->_sync_group.CheckInitDone(&_ready_dev_type);
                   switch (sg_rc) {
                     case SyncGroup::SUCCESS:
+                        switch (_ready_dev_type) {
+                            case SaOnNodeSyncGroup::SA_TYPE_BSR:
+                                ((LapiImpl::Context*)(_device->_context))->bsr_counter ++;
+                                break;
+                            case SaOnNodeSyncGroup::SA_TYPE_SHMARRAY:
+                                ((LapiImpl::Context*)(_device->_context))->bsr_emu_counter ++;
+                                break;
+                            default:
+                                PAMI_assertf(0, "Device type should be either BSR or SHM.");
+                        }
                         _state = ENTERING;
                         break;
                     case SyncGroup::PROCESSING:
@@ -104,12 +116,13 @@ namespace PAMI
             PAMI_assertf(0, "BSR Message, unreached state 2");
             return PAMI_ERROR;            
           }
-        bsr_state_t             _state;
-        BSRDevice              *_device;
-        BSRGeometryInfo        *_bsrinfo;
-        pami_event_function     _done_fn;
-        void                   *_cookie;
-        Generic::GenericThread *_workfcn;
+        bsr_state_t                 _state;
+        BSRDevice                  *_device;
+        BSRGeometryInfo            *_bsrinfo;
+        pami_event_function         _done_fn;
+        void                       *_cookie;
+        Generic::GenericThread     *_workfcn;
+        SaOnNodeSyncGroup::SaType   _ready_dev_type;
       };
 
       class BSRMcastMessage
