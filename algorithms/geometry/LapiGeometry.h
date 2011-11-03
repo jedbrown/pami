@@ -88,7 +88,7 @@ namespace PAMI
             _ranks_malloc(false),
             _ranks(ranks),
             _geometry_map(geometry_map),
-            _allreduce_async_mode(0),
+            _allreduce_async_mode(1),
             _allreduce_iteration(0),
             _masterRank(-1),
             _destroyed(false)
@@ -131,7 +131,7 @@ namespace PAMI
             _ranks_malloc(false),
             _ranks(NULL),
             _geometry_map(geometry_map),
-            _allreduce_async_mode(0),
+            _allreduce_async_mode(1),
             _allreduce_iteration(0),
             _masterRank(-1),
             _destroyed(false)
@@ -255,7 +255,7 @@ namespace PAMI
             _ranks_malloc(false),
             _ranks(NULL), 
             _geometry_map(geometry_map),
-            _allreduce_async_mode(0),
+            _allreduce_async_mode(1),
             _allreduce_iteration(0),
             _masterRank(-1),
             _destroyed(false)

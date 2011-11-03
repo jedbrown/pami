@@ -867,8 +867,7 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn, T_Single>::start()
   TRACE_FN_ENTER();
   TRACE_FORMAT("<%p>", this);
 
-  CCMI_assert (_srcbuf != NULL);
-  CCMI_assert (_dstbuf != NULL);
+  //CCMI_assert (_srcbuf != NULL);
 
   _initialized = true;
   _isSendDone = true;

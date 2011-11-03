@@ -676,7 +676,8 @@ inline void  CCMI::Executor::AllreduceCache<T_Conn>::setupReceives(bool infoRequ
               CCMI_assert (_phaseVec[p].recvBufs[scount] != NULL);
               PAMI::PipeWorkQueue *pwq = &_phaseVec[p].pwqs[scount];
               new (pwq) PAMI::PipeWorkQueue();
-              pwq->configure (_phaseVec[p].recvBufs[scount], _pcache._bytes, 0, _pcache._stype, _pcache._rtype);
+	      //early arrival callback does not have correct send/recv types
+              pwq->configure (_phaseVec[p].recvBufs[scount],_pcache._bytes,0);
               pwq->reset();
               CCMI_assert (pwq->bufferToProduce() != NULL);
 

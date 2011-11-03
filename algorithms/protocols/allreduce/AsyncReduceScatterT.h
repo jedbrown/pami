@@ -430,6 +430,8 @@ public:
             a_composite->getReduceExecutor().setBroadcastConnectionManager(cmgr);
             a_composite->getReduceExecutor().setReduceInfo(a_xfer->stypecount, bytes, sizeOfType, func, stype, rtype, (pami_op)op, (pami_dt)reduce_dt);
 
+	    a_composite->getReduceExecutor().reset();
+
             pami_callback_t  cb_exec_done;
             cb_exec_done.function   = scatter_exec_done;
             cb_exec_done.clientdata = co;

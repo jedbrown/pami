@@ -93,6 +93,9 @@ public:
             if (status == PAMI_SUCCESS)
             {
 	        geometry->setAllreduceComposite(arcomposite, iteration);
+		if (_isAsync)
+		  geometry->incrementAllreduceIteration_impl();
+		
                 TRACE_FN_EXIT();
                 return NULL;
             }
