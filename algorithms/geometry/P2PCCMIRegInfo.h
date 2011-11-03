@@ -765,7 +765,7 @@ namespace CCMI
 
       extern inline void sync_2nary_broadcast_metadata(pami_metadata_t *m)
       {
-        new(m) PAMI::Geometry::Metadata("I0:2-nary:P2P:P2P");
+        new(m) PAMI::Geometry::Metadata("I0:Sync2-nary:P2P:P2P");
       }
 
       extern inline void create_schedule_2nary(void                        * buf,
