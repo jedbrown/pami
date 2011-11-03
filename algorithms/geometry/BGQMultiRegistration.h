@@ -357,7 +357,7 @@ namespace PAMI
     CCMI::ConnectionManager::SimpleConnMgr > MUMultiCombineFactory;
 
     //----------------------------------------------------------------------------
-    // 'Pure' MU allsided dput multicast
+    // 'Pure' SHMEM/MU allsided dput multicast over multicombine OR
     //----------------------------------------------------------------------------
     extern inline void MUMcastCollectiveDputMetaData(pami_metadata_t *m)
     {
@@ -369,9 +369,12 @@ namespace PAMI
     /*typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite<true, MUGlobalDputNI>,
     MUMcastCollectiveDputMetaData,
     CCMI::ConnectionManager::SimpleConnMgr > MUCollectiveDputMulticastFactory;*/
-    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite<true, MUShmemGlobalDputNI>,
-    MUMcastCollectiveDputMetaData,
-    CCMI::ConnectionManager::SimpleConnMgr > MUCollectiveDputMulticastFactory;
+    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < 
+      CCMI::Adaptor::Broadcast::MultiCastComposite< true, 
+                                                    MUShmemGlobalDputNI,
+                                                    PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID>, //Mcast over Mcomb (key)
+      MUMcastCollectiveDputMetaData,
+      CCMI::ConnectionManager::SimpleConnMgr > MUCollectiveDputMulticastFactory;
 
     //----------------------------------------------------------------------------
     // 'Pure' MU allsided dput multicombine
@@ -1192,8 +1195,8 @@ namespace PAMI
               if ((__global.topology_local.size() ==  4) ||  
                   (__global.topology_local.size() ==  8) ||
                   (__global.topology_local.size() == 16))
-		//||  
-		//(__global.topology_local.size() == 64))
+                //||  
+                //(__global.topology_local.size() == 64))
                 geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, &_shmem_mcomb_factory, _context_id);
 #else
               geometry->addCollective(PAMI_XFER_ALLREDUCE, &_shmem_mcomb_factory, _context_id);
@@ -1227,22 +1230,13 @@ namespace PAMI
             if (_mu_rectangle_dput_broadcast_factory)
               geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_rectangle_dput_broadcast_factory, _context_id);
 
-#ifndef PAMI_ENABLE_SHMEM_SUBNODE
-            if(__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
-#endif
-              geometry->addCollective(PAMI_XFER_BROADCAST,  _mucollectivedputmulticastfactory, _context_id);
-
             if (_mucollectivedputmulticombinefactory && __global.topology_local.size() == 1)
               geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,  _mucollectivedputmulticombinefactory, _context_id);
-
-#if 1  // allgatherv hangs 
 
             if (((master_sub_topology->size() == 1) || (local_sub_topology->size() < 32)) && (_shmem_mu_rectangle_dput_allgather_factory))
               geometry->addCollective(PAMI_XFER_ALLGATHERV,  _shmem_mu_rectangle_dput_allgather_factory, _context_id);
             else if (_mu_rectangle_dput_allgather_factory)
               geometry->addCollective(PAMI_XFER_ALLGATHERV,  _mu_rectangle_dput_allgather_factory, _context_id);
-
-#endif
           }
 
         }
@@ -1455,8 +1449,18 @@ namespace PAMI
 #endif
               {
                 // New optimized MU+Shmem protocol requires a class route
-                if ((_mushmemcollectivedputmulticombinefactory) && (val && val != PAMI_CR_GKEY_FAIL && rectangle_topo))
-                  geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,  _mushmemcollectivedputmulticombinefactory, _context_id);
+                if (val && val != PAMI_CR_GKEY_FAIL && rectangle_topo)
+                {
+                  if (_mushmemcollectivedputmulticombinefactory)
+                    geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,  _mushmemcollectivedputmulticombinefactory, _context_id);
+                  if((_mucollectivedputmulticastfactory)
+#ifndef PAMI_ENABLE_SHMEM_SUBNODE
+                     && (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
+#endif
+                    )
+                    geometry->addCollective(PAMI_XFER_BROADCAST, _mucollectivedputmulticastfactory, _context_id);
+                }
+
 
 #ifdef PAMI_ENABLE_X0_PROTOCOLS
                 // NP (non-pipelining) 2 device protocols

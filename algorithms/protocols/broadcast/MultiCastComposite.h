@@ -43,7 +43,11 @@ namespace CCMI
       /// \brief An all-sided multicast composite built on an all-sided
       /// multicast.
       ///
-      template < bool T_inline = false, class T_Native = Interfaces::NativeInterface >
+      template < 
+        bool T_inline                   = false, 
+        class T_Native                  = Interfaces::NativeInterface,
+        PAMI::Geometry::gkeys_t T_Gkey  = PAMI::Geometry::GKEY_MCAST_CLASSROUTEID
+        >
       class MultiCastComposite : public CCMI::Executor::Composite
       {
       protected:
@@ -64,7 +68,7 @@ namespace CCMI
           TRACE_FORMAT( "<%p> type %#zX, count %zu, root %zu", this, (size_t)cmd->cmd.xfer_broadcast.type, cmd->cmd.xfer_broadcast.typecount, (size_t)cmd->cmd.xfer_broadcast.root);
 
           PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)g;
-          void *deviceInfo                  = geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
+          void *deviceInfo                  = geometry->getKey(T_Gkey);
           PAMI::Topology *destinations = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
 
 
