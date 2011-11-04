@@ -174,7 +174,8 @@ static pami_result_t SendLongHandoff(pami_context_t   context,
   pami_endpoint_t dest;
   PAMI_Endpoint_create(client, remote_task, remote_context, &dest);
 
-  pami_send_t parameters = { {{0,0}, {0,0}}, {0} };
+  pami_send_t parameters;
+  bzero(&parameters, sizeof(pami_send_t));
   parameters.send.dispatch        = LONG_DISPATCH;
 /*parameters.send.hints           = {0}; */
   parameters.send.dest            = dest;
@@ -291,7 +292,9 @@ static void *advance(void* c)
 static void init()
 {
   pami_configuration_t query;
-  pami_dispatch_hint_t options = {consistency:PAMI_HINT_ENABLE};
+  pami_dispatch_hint_t options;
+  bzero(&options, sizeof(pami_dispatch_hint_t));
+  options.consistency = PAMI_HINT_ENABLE;
 
   PAMI_Client_create("TEST", &client, NULL, 0);
 
