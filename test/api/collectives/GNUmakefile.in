@@ -35,6 +35,7 @@ APPS            += gatherv.${EXTENSION} gatherv_contig.${EXTENSION}
 APPS            += gatherv_int.${EXTENSION} gatherv_int_contig.${EXTENSION}
 APPS            += scatter.${EXTENSION} scatter_contig.${EXTENSION}
 APPS            += scatter_subcomm.${EXTENSION} 
+APPS            += amscatter.${EXTENSION} 
 APPS            += scatterv.${EXTENSION}
 APPS            += scatterv_int.${EXTENSION} 
 APPS            += scan.${EXTENSION} scan_contig.${EXTENSION}

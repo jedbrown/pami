@@ -145,6 +145,7 @@ namespace PAMI
           _ascs_flat_scatter_factory(NULL),
           _ascs_scatterv_factory(NULL),
           _ascs_scatterv_int_factory(NULL),
+          _active_binomial_amscatter_factory(NULL),
           _ascs_binomial_scan_factory(NULL),
           _ascs_reduce_scatter_factory(NULL),
           _ascs_binomial_gather_factory(NULL),
@@ -700,12 +701,20 @@ namespace PAMI
                   geometry->addCollectiveCheck(PAMI_XFER_AMGATHER,
                                         _active_binomial_gather_factory,
                                         _context_id);
+                if(_active_binomial_amscatter_factory)
+                  geometry->addCollectiveCheck(PAMI_XFER_AMSCATTER,
+                                        _active_binomial_amscatter_factory,
+                                        _context_id);
               }
               else if(result_amc == PAMI_SUCCESS)
               {
                 if(_active_binomial_gather_factory)
                   geometry->addCollective(PAMI_XFER_AMGATHER,
                                         _active_binomial_gather_factory,
+                                        _context_id);
+                if(_active_binomial_amscatter_factory)
+                  geometry->addCollective(PAMI_XFER_AMSCATTER,
+                                        _active_binomial_amscatter_factory,
                                         _context_id);
               }
             }
@@ -982,7 +991,7 @@ namespace PAMI
             // ----------------------------------------------------
 
             // ----------------------------------------------------
-            // Setup and Construct an asynchronous, comm_id/seq_num binomial active message allreduce factory from active message ni and p2p protocol
+            // Setup and Construct a rank based binomial active message reduce factory from active message ni and p2p protocol
             rc = setupFactory<CCMI::Adaptor::P2PAMReduce::Binomial::Factory>(ni, _active_binomial_amreduce_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE, -1, true);
             if (rc == PAMI_SUCCESS) new ((void*)_active_binomial_amreduce_factory) CCMI::Adaptor::P2PAMReduce::Binomial::Factory(&_rsconnmgr, ni);
             // ----------------------------------------------------
@@ -1012,6 +1021,12 @@ namespace PAMI
             // ----------------------------------------------------
 
             // ----------------------------------------------------
+            // Setup and Construct a rank based binomial active message scatter factory from active message ni and p2p protocol
+            rc = setupFactory<CCMI::Adaptor::P2PAMScatter::Binomial::Factory>(ni, _active_binomial_amscatter_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE, -1, true);
+            if (rc == PAMI_SUCCESS) new ((void*)_active_binomial_amscatter_factory) CCMI::Adaptor::P2PAMScatter::Binomial::Factory(&_rsconnmgr, ni);
+            // ----------------------------------------------------
+
+            // ----------------------------------------------------
             // Setup and Construct an asynchronous, comm_id/seq_num scan factory from active message ni and p2p protocol
             rc = setupFactory<CCMI::Adaptor::P2PScan::Binomial::Factory>(ni, _ascs_binomial_scan_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE);
             if (rc == PAMI_SUCCESS) new ((void*)_ascs_binomial_scan_factory) CCMI::Adaptor::P2PScan::Binomial::Factory(&_csconnmgr, ni);
@@ -1037,7 +1052,7 @@ namespace PAMI
             // ----------------------------------------------------
 
             // ----------------------------------------------------
-            // Setup and Construct a rank based binomial active message broadcast factory from active message ni and p2p protocol
+            // Setup and Construct a rank based binomial active message gather factory from active message ni and p2p protocol
             rc = setupFactory<CCMI::Adaptor::P2PAMGather::Binomial::Factory>(ni, _active_binomial_gather_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE, -1, true);
             if (rc == PAMI_SUCCESS) new ((void*)_active_binomial_gather_factory) CCMI::Adaptor::P2PAMGather::Binomial::Factory(&_rsconnmgr, ni);
             // ----------------------------------------------------
@@ -1121,6 +1136,7 @@ namespace PAMI
             if (_ascs_flat_scatter_factory)  _ascs_flat_scatter_factory->setMapIdToGeometry(mapidtogeometry);
             if (_ascs_scatterv_factory)  _ascs_scatterv_factory->setMapIdToGeometry(mapidtogeometry);
             if (_ascs_scatterv_int_factory)  _ascs_scatterv_int_factory->setMapIdToGeometry(mapidtogeometry);
+            if (_active_binomial_amscatter_factory)  _active_binomial_amscatter_factory->setMapIdToGeometry(mapidtogeometry);
             if (_ascs_binomial_scan_factory)  _ascs_binomial_scan_factory->setMapIdToGeometry(mapidtogeometry);
             if (_ascs_reduce_scatter_factory)  _ascs_reduce_scatter_factory->setMapIdToGeometry(mapidtogeometry);
             if (_ascs_binomial_gather_factory)  _ascs_binomial_gather_factory->setMapIdToGeometry(mapidtogeometry);
@@ -1236,6 +1252,7 @@ namespace PAMI
           CCMI::Adaptor::P2PScatter::Flat::Factory                        *_ascs_flat_scatter_factory;
           CCMI::Adaptor::P2PScatterv::Factory                             *_ascs_scatterv_factory;
           CCMI::Adaptor::P2PScatterv::IntFactory                          *_ascs_scatterv_int_factory;
+          CCMI::Adaptor::P2PAMScatter::Binomial::Factory                  *_active_binomial_amscatter_factory;
           CCMI::Adaptor::P2PScan::Binomial::Factory                       *_ascs_binomial_scan_factory;
           CCMI::Adaptor::P2PReduceScatter::AsyncCSReduceScatterFactory    *_ascs_reduce_scatter_factory;
           CCMI::Adaptor::P2PGather::Binomial::Factory                     *_ascs_binomial_gather_factory;

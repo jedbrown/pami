@@ -79,6 +79,7 @@ build/collectives/ambcast.exe \
 build/collectives/ambcast_contig.exe \
 build/collectives/amgather.exe \
 build/collectives/amreduce.exe \
+build/collectives/amscatter.exe \
 build/collectives/barrier.exe \
 build/collectives/barrier_query.exe \
 build/collectives/barrier_subcomm.exe \

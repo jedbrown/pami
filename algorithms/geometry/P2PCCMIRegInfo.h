@@ -38,6 +38,7 @@
 #include "algorithms/protocols/amcollectives/AMReduceT.h"
 #include "algorithms/protocols/allreduce/AsyncReduceScatterT.h"
 #include "algorithms/protocols/scatter/AsyncScatterT.h"
+#include "algorithms/protocols/amcollectives/AMScatterT.h"
 #include "algorithms/protocols/gather/AsyncGatherT.h"
 #include "algorithms/protocols/gather/AsyncLongGatherT.h"
 #include "algorithms/protocols/amcollectives/AMGatherT.h"
@@ -1273,6 +1274,51 @@ namespace CCMI
          AsyncCSReduceScatterFactory;
 
     } // P2PReduceScatter
+
+    namespace P2PAMScatter
+    {
+      extern inline unsigned getKey(unsigned                     root,
+                      unsigned                                   connid,
+                      PAMI_GEOMETRY_CLASS                       *geometry,
+                      ConnectionManager::BaseConnectionManager **connmgr)
+      {
+        if (connid != (unsigned)-1)
+        {
+          *connmgr = NULL; //use this key as connection id
+          return connid;
+        }
+        ConnectionManager::RankSeqConnMgr *cm = (ConnectionManager::RankSeqConnMgr *)*connmgr;
+        return cm->updateConnectionId(root);
+      }
+      namespace Binomial
+      {
+        extern inline void am_scatter_metadata(pami_metadata_t *m)
+        {
+          new(m) PAMI::Geometry::Metadata("I0:Binomial:P2P:P2P");
+        }
+
+        extern inline void create_scatter_schedule(void        * buf,
+                                   unsigned                      size,
+                                   unsigned                      root,
+                                   Interfaces::NativeInterface * native,
+                                   PAMI_GEOMETRY_CLASS         * g)
+        {
+          new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,2> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
+        }
+
+        typedef CCMI::Adaptor::AMScatter::AMScatterT
+        < CCMI::Schedule::GenericTreeSchedule<1, 1, 2>,
+          CCMI::ConnectionManager::RankSeqConnMgr,
+          create_scatter_schedule > Composite;
+
+        typedef CCMI::Adaptor::AMScatter::AMScatterFactoryT
+        < Composite,
+          am_scatter_metadata,
+          CCMI::ConnectionManager::RankSeqConnMgr,
+          getKey >
+        Factory;
+      }//Binomial
+    }//AMScatter
 
     namespace P2PGather
     {
