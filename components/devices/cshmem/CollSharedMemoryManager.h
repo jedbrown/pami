@@ -167,6 +167,10 @@ namespace PAMI
           const int ctlSize          = sizeof(ctlstr_t)*COLLSHM_INIT_CTLCNT;
           const int numBufs          = (_size - sizeof(coll_block_t) - ctlSize)/sizeof(databuf_t);
           const int bufSize          = numBufs*sizeof(databuf_t);
+
+          TRACE_DBG((stderr, "DEBUG:numCtl=%d ctlSize=%d numBufs=%d bufSize=%d ctrl pool_offset=%ld buf_pool_offset=%d\n",
+              numCtl, ctlSize, numBufs, bufSize, _collshm->ctlstr_pool_offset, _collshm->buffer_pool_offset));
+
           COMPILE_TIME_ASSERT(ctlSize < _size);
           COMPILE_TIME_ASSERT((ctlSize+bufSize+sizeof(coll_block_t)) < T_SegSz);
 
@@ -464,7 +468,7 @@ namespace PAMI
           Memory::sync<Memory::instruction>();
           ctlstr_t *ctlstr   = (ctlstr_t*)offset_to_addr(_collshm->ctlstr_pool_offset);
           ctlstr_t *tmp      = ctlstr;
-          size_t    end      = (size_t)offset_to_addr(_collshm->buffer_pool_offset);
+          size_t    end      = _collshm->buffer_pool_offset;
 
           if ((char *)(ctlstr + COLLSHM_INIT_CTLCNT) > ((char *)_collshm + end))
             {
