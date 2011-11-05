@@ -523,6 +523,7 @@ namespace CCMI
                                     sizeOfType, func,
                                     (TypeCode *)send.type, (TypeCode *)send.type,
                                     (pami_op)op, (pami_dt)dt);
+                rexec.reset();
               }
               rexec.start();
           }

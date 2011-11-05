@@ -227,7 +227,7 @@ public:
         _sdispls[0] = 0;
         _scounts[0] = stypecounts[0];
 
-        for (unsigned i = 0; i < counts; ++i)
+        for (unsigned i = 0; i < counts-1; ++i)
         {
             _scounts[i+1] = stypecounts[i+1];
             _sdispls[i+1] = _sdispls[i] + stypecounts[i] * sizeOfType;
