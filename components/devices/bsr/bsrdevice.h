@@ -66,19 +66,21 @@ namespace PAMI
                 case UNINITIALIZED:
                 {
                   // Action:  Initialize
-                  SyncGroup::RC sg_rc =
+                  if (!_bsrinfo->_sync_group.IsInitialized())
+                  {
+                    SyncGroup::RC sg_rc =
                       _bsrinfo->_sync_group.CheckInitDone(&_ready_dev_type);
-                  switch (sg_rc) {
-                    case SyncGroup::SUCCESS:
+                    switch (sg_rc) {
+                      case SyncGroup::SUCCESS:
                         switch (_ready_dev_type) {
-                            case SaOnNodeSyncGroup::SA_TYPE_BSR:
-                                ((LapiImpl::Context*)(_device->_context))->bsr_counter ++;
-                                break;
-                            case SaOnNodeSyncGroup::SA_TYPE_SHMARRAY:
-                                ((LapiImpl::Context*)(_device->_context))->bsr_emu_counter ++;
-                                break;
-                            default:
-                                PAMI_assertf(0, "Device type should be either BSR or SHM.");
+                          case SaOnNodeSyncGroup::SA_TYPE_BSR:
+                            ((LapiImpl::Context*)(_device->_context))->bsr_counter ++;
+                            break;
+                          case SaOnNodeSyncGroup::SA_TYPE_SHMARRAY:
+                            ((LapiImpl::Context*)(_device->_context))->bsr_emu_counter ++;
+                            break;
+                          default:
+                            PAMI_assertf(0, "Device type should be either BSR or SHM.");
                         }
                         _state = ENTERING;
                         break;
@@ -87,6 +89,9 @@ namespace PAMI
                     default:
                         assert(0);
                         return PAMI_ERROR;
+                  }
+                  } else {
+                    _state = ENTERING;
                   }
                 }
                   // no break, fallthrough

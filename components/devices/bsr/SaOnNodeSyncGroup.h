@@ -40,6 +40,7 @@ class SaOnNodeSyncGroup : public SyncGroup {
         void BarrierExit();
         bool IsNbBarrierDone();/* to check if the non-blocking Barrier finishes */
         void NbBarrier();      /* issue non-blocking barrier */
+        bool IsInitialized();  /* if s_state == DONE_ST */
 
     private:
         // seq = 0, use mask[0] 
@@ -128,5 +129,10 @@ SaOnNodeSyncGroup::SaOnNodeSyncGroup(unsigned int mem_id, unsigned int mem_cnt,
     shmarray_ctrl_block    = (void*)((char*)bsr_ctrl_block + bsr_ctrl_block_sz);
 };
 
+inline 
+bool SaOnNodeSyncGroup::IsInitialized()
+{
+    return (s_state == DONE_ST);
+}
 #endif /* _SAONNODESYNCGROUP_H_ */
 
