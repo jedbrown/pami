@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-static const char *optString = "DdMSh?";
+static const char *optString = "DdfFMpPSh?";
 
 char device_str[3][50] = {"DEFAULT", "SHMem", "MU"};
 char hint_str[3][50] = {"PAMI_HINT_DEFAULT", "PAMI_HINT_ENABLE", "PAMI_HINT_DISABLE"};
@@ -233,10 +233,14 @@ void display_usage( void )
   printf("\n");
   printf("The user can also select a subset of the available hints by using the parms below:\n");
   printf("-D | --D PAMI_HINT_DEFAULT\n");
+  printf("-F | --F Skip tests that should fail\n");
   printf("-M | --M PAMI_HINT_DISABLE\n");
+  printf("-P | --P Skip tests that should pass\n");
   printf("-S | --S PAMI_HINT_ENABLE\n");
   printf("\n");
+  printf("-f | --f Only run tests that should fail\n");
   printf("-d | --debug Enable error tracing messages to stderr for debug.\n");
+  printf("-p | --p Only run tests that should pass\n");
   printf("\n");
   printf("Parms can be provided separately or together.\n");
   printf("\tex:  immediate_send_overflow.cnk -D -S --debug\n");
@@ -254,7 +258,7 @@ int main (int argc, char ** argv)
   size_t available_hints = 7; /* (bit 0 = Default, bit 1 = S, bit 2 = M) */
   size_t hints_to_test = 0;   /* (bit 0 = Default, bit 1 = S, bit 2 = M) */
   size_t i, hint, n = 0;
-
+  size_t tests = 3; /* 11: run passing tests = 1, run send fail tests = 1 */
   volatile size_t recv_active = 1;
 
   __data_errors = 0;
@@ -273,7 +277,15 @@ int main (int argc, char ** argv)
     case 'D':
       hints_to_test = hints_to_test | 1;	  
       break;
+  
+    case 'f': /* only run tests that should fail */
+      tests = 1;
+      break;
                 
+    case 'F': /* don't run tests that should fail */
+      tests = tests & 2;
+      break;
+              
     case 'd':
       debug = 1;
       break;
@@ -281,7 +293,15 @@ int main (int argc, char ** argv)
     case 'M':
       hints_to_test = hints_to_test | 4;
       break;
+
+    case 'p': /* only run tests that should pass */
+      tests = 2;
+      break;
                 
+    case 'P': /* don't run tests that should pass */
+      tests = tests & 1;
+      break;                
+
     case 'S':
       hints_to_test = hints_to_test | 2;
       break;
@@ -615,119 +635,220 @@ int main (int argc, char ** argv)
   im_parameters.data.iov_base   = data;
 
   /* ======== Combinations of header and payload sizes that should pass  ======== */
- 
-  if (_my_task == 0)
-  {
+  if ( (tests >> 1) & 1 ) { 
+    if (_my_task == 0)
+      {
 
-    fprintf(stdout, "====== Combinations of header and payload sizes that should pass ======\n");
+	fprintf(stdout, "====== Combinations of header and payload sizes that should pass ======\n");
 
-    for(hint = 0; hint < hint_limit; hint++) {             /* hint/device loop */
+	for(hint = 0; hint < hint_limit; hint++) {             /* hint/device loop */
 
-      /* Skip hints that are not under test */
-      if ( ! ((hints_to_test >> hint) & 1) ) {
-	continue;
-      }
+	  /* Skip hints that are not under test */
+	  if ( ! ((hints_to_test >> hint) & 1) ) {
+	    continue;
+	  }
 
-      im_parameters.dispatch = hint;
+	  im_parameters.dispatch = hint;
 
-      for(xtalk = 0; xtalk < num_contexts; xtalk++) {      /* xtalk loop */
+	  for(xtalk = 0; xtalk < num_contexts; xtalk++) {      /* xtalk loop */
 
-	/* Determine max message size */
-	if ( dispatch_send_immediate_max[xtalk][hint] < dispatch_recv_immediate_max[xtalk][hint] ) {
-	  max_msg_size = dispatch_send_immediate_max[xtalk][hint];
-	} else {
-	  max_msg_size = dispatch_recv_immediate_max[xtalk][hint];
+	    /* Determine max message size */
+	    if ( dispatch_send_immediate_max[xtalk][hint] < dispatch_recv_immediate_max[xtalk][hint] ) {
+	      max_msg_size = dispatch_send_immediate_max[xtalk][hint];
+	    } else {
+	      max_msg_size = dispatch_recv_immediate_max[xtalk][hint];
+	    }
+
+	    /* Run the following scenarios:            */
+	    /* header = 0             payload = max    */
+	    /* header = max/2         payload = max/2  */
+	    /* header = max           payload = 0      */
+
+	    /* Populate header and payload size arrays */
+	    scenarios = 0;
+	    header_bytes[scenarios++] = 0;
+	    header_bytes[scenarios++] = max_msg_size/2;
+	    header_bytes[scenarios++] = max_msg_size;
+
+	    scenarios = 0;
+	    data_bytes[scenarios++] = max_msg_size;
+	    data_bytes[scenarios++] = max_msg_size/2;
+	    data_bytes[scenarios++] = 0;
+
+	    for (index=0; index < scenarios; index++) {         /* scenario loop */
+	      im_parameters.header.iov_len = header_bytes[index];
+	      im_parameters.data.iov_len = data_bytes[index];
+	    
+	      /* Communicate with each task */
+	      for (n = 1; n < num_tasks; n++) {
+
+		/* Skip sends to tasks that are unaddressable by rank 0 with current hint value */
+		if ( addressable_by_me[hint][n] != 1 ) {
+
+		  /* If this is first send, inform user of skip */
+		  if ( ! ( xtalk || index ) ) {
+		    fprintf(stderr, "WARNING (W):  Rank %zu is unaddressable by Rank %zu when use_shmem = %s. Skipping until next use_shmem hint ...\n", n, _my_task, &hint_str[hint][0]);
+		  }
+
+		  /* Determine reset value  */
+		  /* reset value = 0 for even scenarios, 255 for odd scenarios */
+
+		  if (n == (num_tasks - 1)) { /* index is going to increment */ 
+		    /* base reset value on next index value */
+		    if (index == (scenarios - 1)) { /* index is going to reset */
+		      r = 0;
+		    } else { 
+		      r = (index+1) % 2; 
+		    }
+		  } else {
+		    r = index % 2; /* base reset value on current index value */
+		  }
+
+		  /* Reset __recv_buffer for next payload */
+		  for (i = 0; i < 2048; i++) {
+		    __recv_buffer[i] = reset_value[r];
+		  }
+
+		  continue;
+
+		}
+
+		result = PAMI_Endpoint_create (client, n, xtalk, &im_parameters.dest);
+		if (result != PAMI_SUCCESS) {
+		  fprintf (stderr, "ERROR (E):  PAMI_Endpoint_create failed for task ID %zu, context %zu with %d.\n", n, xtalk, result);
+		  return 1;
+		}
+
+		fprintf (stderr, "===== PAMI_Send_immediate() FUNCTIONAL Test [%s][%s][+/-1 bit = %d] %zu %zu (%zu, 0) -> (%zu, %zu) =====\n\n", &device_str[hint][0], &xtalk_str[xtalk][0], __recv_buffer[0], header_bytes[index], data_bytes[index], _my_task, n, xtalk);
+
+		if (debug) {
+		  fprintf (stderr, "before PAMI_Send_immediate ...\n");
+		}
+
+		result = PAMI_Send_immediate (context[0], &im_parameters);
+		
+		if (debug) {
+		  fprintf (stderr, "... after PAMI_Send_immediate.\n");
+		}
+
+		if (result != PAMI_SUCCESS) {
+		  fprintf (stderr, "ERROR (E):  PAMI_Send_immediate failed with rc = %d\n", result);
+		  return 1;
+		}
+
+
+		if (debug) {
+		  fprintf (stderr, "before recv advance loop ... &recv_active = %p\n", &recv_active);
+		}
+
+		while (recv_active) {
+		  result = PAMI_Context_advance (context[0], 100);
+
+		  if ( (result != PAMI_SUCCESS) && (result != PAMI_EAGAIN) ) {
+		    fprintf (stderr, "ERROR (E):  Unable to advance pami context 0. result = %d\n", result);
+		    return 1;
+		  }
+		}
+
+		if (debug) {
+		  fprintf (stderr, "... after recv advance loop\n");
+		}
+
+		if (recv_active == 0) {
+
+		  /* Determine reset value  */
+		  /* reset value = 0 for even scenarios, 255 for odd scenarios */
+		  if (n == (num_tasks - 1)) { /* index is going to increment */
+		    /* base reset value on next index value */
+		    if (index == (scenarios - 1)) { /* index is going to reset */
+		      r = 0;
+		    } else { 
+		      r = (index+1) % 2; 
+		    }
+		  } else {
+		    r = index % 2; /* base reset value on current p value */
+		  }
+
+		  /* Reset __recv_buffer for next payload */
+		  for (i = 0; i < 2048; i++) {
+		    __recv_buffer[i] = reset_value[r];
+		  }
+		    
+		  recv_active = 1;
+		}
+	      } /* end task id loop */
+	    } /* end scenario loop */
+	  } /* end xtalk loop */
+	} /* end device loop */
+      } /* end task = 0 */
+    else {
+      for(hint = 0; hint < hint_limit; hint++) {      /* hint/device loop */
+
+	/* Skip hints that are not under test */
+	if ( ! ((hints_to_test >> hint) & 1) ) {
+	  continue;
 	}
 
-	/* Run the following scenarios:            */
-	/* header = 0             payload = max    */
-	/* header = max/2         payload = max/2  */
-	/* header = max           payload = 0      */
+	/* Skip sends to task 0 that are unaddressable by current rank with current hint value */
+	if ( addressable_by_me[hint][0] != 1 ) {
+	  if (debug) {
+	    fprintf(stderr, "WARNING (W):  Rank 0 is unaddressable by Rank %zu when use_shmem = %s. Skipping to next use_shmem hint ...\n", _my_task, &hint_str[hint][0]);
+	  }
+	  continue;
+	}
 
-	/* Populate header and payload size arrays */
-	scenarios = 0;
-	header_bytes[scenarios++] = 0;
-	header_bytes[scenarios++] = max_msg_size/2;
-	header_bytes[scenarios++] = max_msg_size;
+	im_parameters.dispatch = hint;
 
-	scenarios = 0;
-	data_bytes[scenarios++] = max_msg_size;
-	data_bytes[scenarios++] = max_msg_size/2;
-	data_bytes[scenarios++] = 0;
+	for(xtalk = 0; xtalk < num_contexts; xtalk++) {        /* xtalk loop */
 
-	for (index=0; index < scenarios; index++) {         /* scenario loop */
-	  im_parameters.header.iov_len = header_bytes[index];
-	  im_parameters.data.iov_len = data_bytes[index];
-	    
-	  /* Communicate with each task */
-	  for (n = 1; n < num_tasks; n++) {
+	  result = PAMI_Endpoint_create (client, 0, 0, &im_parameters.dest);
+	  if (result != PAMI_SUCCESS) {
+	    fprintf (stderr, "ERROR (E):  PAMI_Endpoint_create failed for task ID 0, context 0 with %d.\n", result);
+	    return 1;
+	  }
+	       
 
-	    /* Skip sends to tasks that are unaddressable by rank 0 with current hint value */
-	    if ( addressable_by_me[hint][n] != 1 ) {
+	  /* Determine max message size */
+	  if ( dispatch_send_immediate_max[xtalk][hint] < dispatch_recv_immediate_max[xtalk][hint] ) {
+	    max_msg_size = dispatch_send_immediate_max[xtalk][hint];
+	  } else {
+	    max_msg_size = dispatch_recv_immediate_max[xtalk][hint];
+	  }
 
-	      /* If this is first send, inform user of skip */
-	      if ( ! ( xtalk || index ) ) {
-		fprintf(stderr, "WARNING (W):  Rank %zu is unaddressable by Rank %zu when use_shmem = %s. Skipping until next use_shmem hint ...\n", n, _my_task, &hint_str[hint][0]);
-	      }
+	  /* Run the following scenarios:            */
+	  /* header = 0             payload = max    */
+	  /* header = max/2         payload = max/2  */
+	  /* header = max           payload = 0      */
 
-	      /* Determine reset value  */
-	      /* reset value = 0 for even scenarios, 255 for odd scenarios */
+	  /* Populate header and payload size arrays */
+	  scenarios = 0;
+	  header_bytes[scenarios++] = 0;
+	  header_bytes[scenarios++] = max_msg_size/2;
+	  header_bytes[scenarios++] = max_msg_size;
 
-	      if (n == (num_tasks - 1)) { /* index is going to increment */ 
-		/* base reset value on next index value */
-		if (index == (scenarios - 1)) { /* index is going to reset */
-		  r = 0;
-		} else { 
-		  r = (index+1) % 2; 
-		}
-	      } else {
-		r = index % 2; /* base reset value on current index value */
-	      }
+	  scenarios = 0;
+	  data_bytes[scenarios++] = max_msg_size;
+	  data_bytes[scenarios++] = max_msg_size/2;
+	  data_bytes[scenarios++] = 0;
 
-	      /* Reset __recv_buffer for next payload */
-	      for (i = 0; i < 2048; i++) {
-		__recv_buffer[i] = reset_value[r];
-	      }
+	  for (index=0; index < scenarios; index++) {         /* test loop */
+	    im_parameters.header.iov_len = header_bytes[index];
+	    im_parameters.data.iov_len = data_bytes[index];
 
-	      continue;
-
-	    }
-
-	    result = PAMI_Endpoint_create (client, n, xtalk, &im_parameters.dest);
-	    if (result != PAMI_SUCCESS) {
-	      fprintf (stderr, "ERROR (E):  PAMI_Endpoint_create failed for task ID %zu, context %zu with %d.\n", n, xtalk, result);
-	      return 1;
-	    }
-
-	    fprintf (stderr, "===== PAMI_Send_immediate() FUNCTIONAL Test [%s][%s][+/-1 bit = %d] %zu %zu (%zu, 0) -> (%zu, %zu) =====\n\n", &device_str[hint][0], &xtalk_str[xtalk][0], __recv_buffer[0], header_bytes[index], data_bytes[index], _my_task, n, xtalk);
-
-	    if (debug) {
-	      fprintf (stderr, "before PAMI_Send_immediate ...\n");
-	    }
-
-	    result = PAMI_Send_immediate (context[0], &im_parameters);
-		
-	    if (debug) {
-	      fprintf (stderr, "... after PAMI_Send_immediate.\n");
-	    }
-
-	    if (result != PAMI_SUCCESS) {
-	      fprintf (stderr, "ERROR (E):  PAMI_Send_immediate failed with rc = %d\n", result);
-	      return 1;
-	    }
-
+	    uint8_t task0_buffer_default = __recv_buffer[0]; /* save for later */
 
 	    if (debug) {
 	      fprintf (stderr, "before recv advance loop ... &recv_active = %p\n", &recv_active);
 	    }
 
-	    while (recv_active) {
-	      result = PAMI_Context_advance (context[0], 100);
-
+	    while (recv_active != 0) {
+	      result = PAMI_Context_advance (context[xtalk], 100);
 	      if ( (result != PAMI_SUCCESS) && (result != PAMI_EAGAIN) ) {
-		fprintf (stderr, "ERROR (E):  Unable to advance pami context 0. result = %d\n", result);
+		fprintf (stderr, "ERROR (E):  Unable to advance pami context %zu. result = %d\n", xtalk, result);
 		return 1;
 	      }
+	    
+	      /*fprintf (stderr, "------ recv advance loop ... &recv_active = %p\n", &recv_active);*/
 	    }
 
 	    if (debug) {
@@ -736,215 +857,181 @@ int main (int argc, char ** argv)
 
 	    if (recv_active == 0) {
 
-	      /* Determine reset value  */
+	      /* Determine reset value */
 	      /* reset value = 0 for even scenarios, 255 for odd scenarios */
-	      if (n == (num_tasks - 1)) { /* index is going to increment */
-		/* base reset value on next index value */
-		if (index == (scenarios - 1)) { /* index is going to reset */
-		  r = 0;
-		} else { 
-		  r = (index+1) % 2; 
-		}
-	      } else {
-		r = index % 2; /* base reset value on current p value */
+	      if (index == (scenarios - 1)) { /* index is going to reset */
+		r = 0;
+	      } else { 
+		r = (index+1) % 2; /* base reset value on next index value */
 	      }
-
+	      
 	      /* Reset __recv_buffer for next payload */
 	      for (i = 0; i < 2048; i++) {
 		__recv_buffer[i] = reset_value[r];
 	      }
-		    
+
 	      recv_active = 1;
 	    }
-	  } /* end task id loop */
-	} /* end scenario loop */
-      } /* end xtalk loop */
-    } /* end device loop */
-  } /* end task = 0 */
-  else {
-    for(hint = 0; hint < hint_limit; hint++) {      /* hint/device loop */
 
-      /* Skip hints that are not under test */
-      if ( ! ((hints_to_test >> hint) & 1) ) {
-	continue;
-      }
-
-      /* Skip sends to task 0 that are unaddressable by current rank with current hint value */
-      if ( addressable_by_me[hint][0] != 1 ) {
-	if (debug) {
-	  fprintf(stderr, "WARNING (W):  Rank 0 is unaddressable by Rank %zu when use_shmem = %s. Skipping to next use_shmem hint ...\n", _my_task, &hint_str[hint][0]);
-	}
-	continue;
-      }
-
-      im_parameters.dispatch = hint;
-
-      for(xtalk = 0; xtalk < num_contexts; xtalk++) {        /* xtalk loop */
-
-	result = PAMI_Endpoint_create (client, 0, 0, &im_parameters.dest);
-	if (result != PAMI_SUCCESS) {
-	  fprintf (stderr, "ERROR (E):  PAMI_Endpoint_create failed for task ID 0, context 0 with %d.\n", result);
-	  return 1;
-	}
-	       
-
-	/* Determine max message size */
-	if ( dispatch_send_immediate_max[xtalk][hint] < dispatch_recv_immediate_max[xtalk][hint] ) {
-	  max_msg_size = dispatch_send_immediate_max[xtalk][hint];
-	} else {
-	  max_msg_size = dispatch_recv_immediate_max[xtalk][hint];
-	}
-
-	/* Run the following scenarios:            */
-	/* header = 0             payload = max    */
-	/* header = max/2         payload = max/2  */
-	/* header = max           payload = 0      */
-
-	/* Populate header and payload size arrays */
-	scenarios = 0;
-	header_bytes[scenarios++] = 0;
-	header_bytes[scenarios++] = max_msg_size/2;
-	header_bytes[scenarios++] = max_msg_size;
-
-	scenarios = 0;
-	data_bytes[scenarios++] = max_msg_size;
-	data_bytes[scenarios++] = max_msg_size/2;
-	data_bytes[scenarios++] = 0;
-
-	for (index=0; index < scenarios; index++) {         /* test loop */
-	  im_parameters.header.iov_len = header_bytes[index];
-	  im_parameters.data.iov_len = data_bytes[index];
-
-	  uint8_t task0_buffer_default = __recv_buffer[0]; /* save for later */
-
-	  if (debug) {
-	    fprintf (stderr, "before recv advance loop ... &recv_active = %p\n", &recv_active);
-	  }
-
-	  while (recv_active != 0) {
-	    result = PAMI_Context_advance (context[xtalk], 100);
-	    if ( (result != PAMI_SUCCESS) && (result != PAMI_EAGAIN) ) {
-	      fprintf (stderr, "ERROR (E):  Unable to advance pami context %zu. result = %d\n", xtalk, result);
-	      return 1;
-	    }
-	    
-	    /*fprintf (stderr, "------ recv advance loop ... &recv_active = %p\n", &recv_active);*/
-	  }
-
-	  if (debug) {
-	    fprintf (stderr, "... after recv advance loop\n");
-	  }
-
-	  if (recv_active == 0) {
-
-	    /* Determine reset value */
-	    /* reset value = 0 for even scenarios, 255 for odd scenarios */
-	    if (index == (scenarios - 1)) { /* index is going to reset */
-	      r = 0;
-	    } else { 
-	      r = (index+1) % 2; /* base reset value on next index value */
-	    }
-	      
-	    /* Reset __recv_buffer for next payload */
-	    for (i = 0; i < 2048; i++) {
-	      __recv_buffer[i] = reset_value[r];
-	    }
-
-	    recv_active = 1;
-	  }
-
-	  fprintf (stderr, "===== PAMI_Send_immediate() FUNCTIONAL Test [%s][%s][+/-1 bit = %d] %zu %zu (%zu, %zu) -> (0, 0) =====\n\n", &device_str[hint][0], &xtalk_str[xtalk][0], task0_buffer_default, header_bytes[index], data_bytes[index], _my_task, xtalk);
-
-	  if (debug) {
-	    fprintf (stderr, "before PAMI_Send_immediate ...\n");
-	  }
-
-	  result = PAMI_Send_immediate (context[xtalk], &im_parameters);
-
-	  if (debug) {
-	    fprintf (stderr, "... after PAMI_Send_immediate.\n");
-	  }
-
-	  if (result != PAMI_SUCCESS) {
-	    fprintf (stderr, "ERROR (E):  PAMI_Send_immediate failed with rc = %d\n", result);
-	    return 1;
-
-	  }
-	} /* end scenario loop */
-      } /* end xtalk loop */
-    } /* end device loop */
-  } /* end task id != 0 */
-
-
-  /* ======== Combinations of header and payload sizes that should result in send FAILS  ======== */
-
-  pami_result_t send_fail = PAMI_INVAL; /* In case it changes, only have to change it here */
-
-  if (_my_task == 0)
-  {
-
-    fprintf(stdout, "====== Combinations of header and payload sizes that should result in send FAILS ======\n");
-
-    for(hint = 0; hint < hint_limit; hint++) {             /* hint/device loop */
-
-      /* Skip hints that are not under test */
-      if ( ! ((hints_to_test >> hint) & 1) ) {
-	continue;
-      }
-
-      im_parameters.dispatch = hint;
-
-      for(xtalk = 0; xtalk < num_contexts; xtalk++) {      /* xtalk loop */
-
-	/* Run the following scenarios:               */
-	/* header = 0             payload = max + 1   */
-	/* header = max/2         payload = max/2 + 1 */
-	/* header = max + 1       payload = 0         */
-
-	/* Populate header and payload size arrays */
-	scenarios = 0;
-	header_bytes[scenarios++] = 0;
-	header_bytes[scenarios++] = dispatch_send_immediate_max[xtalk][hint]/2;
-	header_bytes[scenarios++] = dispatch_send_immediate_max[xtalk][hint] + 1;
-
-	scenarios = 0;
-	data_bytes[scenarios++] = dispatch_send_immediate_max[xtalk][hint] + 1;
-	data_bytes[scenarios++] = dispatch_send_immediate_max[xtalk][hint]/2 + 1;
-	data_bytes[scenarios++] = 0;
-
-	for (index=0; index < scenarios; index++) {         /* scenario loop */
-	  im_parameters.header.iov_len = header_bytes[index];
-	  im_parameters.data.iov_len = data_bytes[index];
-	    
-	  /* Communicate with each task */
-	  for (n = 1; n < num_tasks; n++) {
-
-	    /* Skip sends to tasks that are unaddressable by rank 0 with current hint value */
-	    if ( addressable_by_me[hint][n] != 1 ) {
-
-	      /* If this is first send, inform user of skip */
-	      if ( ! ( xtalk || index ) ) {
-		fprintf(stderr, "WARNING (W):  Rank %zu is unaddressable by Rank %zu when use_shmem = %s. Skipping until next use_shmem hint ...\n", n, _my_task, &hint_str[hint][0]);
-	      }
-
-	      continue;
-
-	    }
-
-	    result = PAMI_Endpoint_create (client, n, xtalk, &im_parameters.dest);
-	    if (result != PAMI_SUCCESS) {
-	      fprintf (stderr, "ERROR (E):  PAMI_Endpoint_create failed for task ID %zu, context %zu with %d.\n", n, xtalk, result);
-	      return 1;
-	    }
-
-	    fprintf (stderr, "===== PAMI_Send_immediate() FUNCTIONAL Test [%s][%s] %zu %zu (%zu, 0) -> (%zu, %zu) =====\n\n", &device_str[hint][0], &xtalk_str[xtalk][0], header_bytes[index], data_bytes[index], _my_task, n, xtalk);
+	    fprintf (stderr, "===== PAMI_Send_immediate() FUNCTIONAL Test [%s][%s][+/-1 bit = %d] %zu %zu (%zu, %zu) -> (0, 0) =====\n\n", &device_str[hint][0], &xtalk_str[xtalk][0], task0_buffer_default, header_bytes[index], data_bytes[index], _my_task, xtalk);
 
 	    if (debug) {
 	      fprintf (stderr, "before PAMI_Send_immediate ...\n");
 	    }
 
-	    result = PAMI_Send_immediate (context[0], &im_parameters);
+	    result = PAMI_Send_immediate (context[xtalk], &im_parameters);
+
+	    if (debug) {
+	      fprintf (stderr, "... after PAMI_Send_immediate.\n");
+	    }
+
+	    if (result != PAMI_SUCCESS) {
+	      fprintf (stderr, "ERROR (E):  PAMI_Send_immediate failed with rc = %d\n", result);
+	      return 1;
+
+	    }
+	  } /* end scenario loop */
+	} /* end xtalk loop */
+      } /* end device loop */
+    } /* end task id != 0 */
+  } /* end run tests expected to pass */
+
+  /* ======== Combinations of header and payload sizes that should result in send FAILS  ======== */
+  if ( tests & 1 ) { 
+    pami_result_t send_fail = PAMI_INVAL; /* In case it changes, only have to change it here */
+
+    if (_my_task == 0)
+      {
+
+	fprintf(stdout, "====== Combinations of header and payload sizes that should result in send FAILS ======\n");
+
+	for(hint = 0; hint < hint_limit; hint++) {             /* hint/device loop */
+
+	  /* Skip hints that are not under test */
+	  if ( ! ((hints_to_test >> hint) & 1) ) {
+	    continue;
+	  }
+
+	  im_parameters.dispatch = hint;
+
+	  for(xtalk = 0; xtalk < num_contexts; xtalk++) {      /* xtalk loop */
+
+	    /* Run the following scenarios:               */
+	    /* header = 0             payload = max + 1   */
+	    /* header = max/2         payload = max/2 + 1 */
+	    /* header = max + 1       payload = 0         */
+
+	    /* Populate header and payload size arrays */
+	    scenarios = 0;
+	    header_bytes[scenarios++] = 0;
+	    header_bytes[scenarios++] = dispatch_send_immediate_max[xtalk][hint]/2;
+	    header_bytes[scenarios++] = dispatch_send_immediate_max[xtalk][hint] + 1;
+
+	    scenarios = 0;
+	    data_bytes[scenarios++] = dispatch_send_immediate_max[xtalk][hint] + 1;
+	    data_bytes[scenarios++] = dispatch_send_immediate_max[xtalk][hint]/2 + 1;
+	    data_bytes[scenarios++] = 0;
+
+	    for (index=0; index < scenarios; index++) {         /* scenario loop */
+	      im_parameters.header.iov_len = header_bytes[index];
+	      im_parameters.data.iov_len = data_bytes[index];
+	    
+	      /* Communicate with each task */
+	      for (n = 1; n < num_tasks; n++) {
+
+		/* Skip sends to tasks that are unaddressable by rank 0 with current hint value */
+		if ( addressable_by_me[hint][n] != 1 ) {
+
+		  /* If this is first send, inform user of skip */
+		  if ( ! ( xtalk || index ) ) {
+		    fprintf(stderr, "WARNING (W):  Rank %zu is unaddressable by Rank %zu when use_shmem = %s. Skipping until next use_shmem hint ...\n", n, _my_task, &hint_str[hint][0]);
+		  }
+
+		  continue;
+
+		}
+
+		result = PAMI_Endpoint_create (client, n, xtalk, &im_parameters.dest);
+		if (result != PAMI_SUCCESS) {
+		  fprintf (stderr, "ERROR (E):  PAMI_Endpoint_create failed for task ID %zu, context %zu with %d.\n", n, xtalk, result);
+		  return 1;
+		}
+
+		fprintf (stderr, "===== PAMI_Send_immediate() FUNCTIONAL Test [%s][%s] %zu %zu (%zu, 0) -> (%zu, %zu) =====\n\n", &device_str[hint][0], &xtalk_str[xtalk][0], header_bytes[index], data_bytes[index], _my_task, n, xtalk);
+
+		if (debug) {
+		  fprintf (stderr, "before PAMI_Send_immediate ...\n");
+		}
+
+		result = PAMI_Send_immediate (context[0], &im_parameters);
 		
+		if (debug) {
+		  fprintf (stderr, "... after PAMI_Send_immediate.\n");
+		}
+
+		if (result != send_fail) {
+		  fprintf (stderr, "ERROR (E):  PAMI_Send_immediate passed with rc = %d ...should have FAILED with rc = %d!!\n", result, send_fail);
+		  return 1;
+		}
+	      } /* end task id loop */
+	    } /* end scenario loop */
+	  } /* end xtalk loop */
+	} /* end device loop */
+      } /* end task = 0 */
+    else {
+      for(hint = 0; hint < hint_limit; hint++) {      /* hint/device loop */
+
+	/* Skip hints that are not under test */
+	if ( ! ((hints_to_test >> hint) & 1) ) {
+	  continue;
+	}
+
+	/* Skip sends to task 0 that are unaddressable by current rank with current hint value */
+	if ( addressable_by_me[hint][0] != 1 ) {
+	  if (debug) {
+	    fprintf(stderr, "WARNING (W):  Rank 0 is unaddressable by Rank %zu when use_shmem = %s. Skipping to next use_shmem hint ...\n", _my_task, &hint_str[hint][0]);
+	  }
+	  continue;
+	}
+
+	im_parameters.dispatch = hint;
+
+	for(xtalk = 0; xtalk < num_contexts; xtalk++) {        /* xtalk loop */
+
+	  result = PAMI_Endpoint_create (client, 0, 0, &im_parameters.dest);
+	  if (result != PAMI_SUCCESS) {
+	    fprintf (stderr, "ERROR (E):  PAMI_Endpoint_create failed for task ID 0, context 0 with %d.\n", result);
+	    return 1;
+	  }
+	       
+	  /* Run the following scenarios:               */
+	  /* header = 0             payload = max + 1   */
+	  /* header = max/2         payload = max/2 + 1 */
+	  /* header = max + 1       payload = 0         */
+
+	  /* Populate header and payload size arrays */
+	  scenarios = 0;
+	  header_bytes[scenarios++] = 0;
+	  header_bytes[scenarios++] = dispatch_send_immediate_max[xtalk][hint]/2;
+	  header_bytes[scenarios++] = dispatch_send_immediate_max[xtalk][hint] + 1;
+
+	  scenarios = 0;
+	  data_bytes[scenarios++] = dispatch_send_immediate_max[xtalk][hint] + 1;
+	  data_bytes[scenarios++] = dispatch_send_immediate_max[xtalk][hint]/2 + 1;
+	  data_bytes[scenarios++] = 0;
+
+	  for (index=0; index < scenarios; index++) {         /* test loop */
+	    im_parameters.header.iov_len = header_bytes[index];
+	    im_parameters.data.iov_len = data_bytes[index];
+
+	    fprintf (stderr, "===== PAMI_Send_immediate() FUNCTIONAL Test [%s][%s] %zu %zu (%zu, %zu) -> (0, 0) =====\n\n", &device_str[hint][0], &xtalk_str[xtalk][0], header_bytes[index], data_bytes[index], _my_task, xtalk);
+
+	    if (debug) {
+	      fprintf (stderr, "before PAMI_Send_immediate ...\n");
+	    }
+
+	    result = PAMI_Send_immediate (context[xtalk], &im_parameters);
+
 	    if (debug) {
 	      fprintf (stderr, "... after PAMI_Send_immediate.\n");
 	    }
@@ -953,78 +1040,11 @@ int main (int argc, char ** argv)
 	      fprintf (stderr, "ERROR (E):  PAMI_Send_immediate passed with rc = %d ...should have FAILED with rc = %d!!\n", result, send_fail);
 	      return 1;
 	    }
-	  } /* end task id loop */
-	} /* end scenario loop */
-      } /* end xtalk loop */
-    } /* end device loop */
-  } /* end task = 0 */
-  else {
-    for(hint = 0; hint < hint_limit; hint++) {      /* hint/device loop */
-
-      /* Skip hints that are not under test */
-      if ( ! ((hints_to_test >> hint) & 1) ) {
-	continue;
-      }
-
-      /* Skip sends to task 0 that are unaddressable by current rank with current hint value */
-      if ( addressable_by_me[hint][0] != 1 ) {
-	if (debug) {
-	  fprintf(stderr, "WARNING (W):  Rank 0 is unaddressable by Rank %zu when use_shmem = %s. Skipping to next use_shmem hint ...\n", _my_task, &hint_str[hint][0]);
-	}
-	continue;
-      }
-
-      im_parameters.dispatch = hint;
-
-      for(xtalk = 0; xtalk < num_contexts; xtalk++) {        /* xtalk loop */
-
-	result = PAMI_Endpoint_create (client, 0, 0, &im_parameters.dest);
-	if (result != PAMI_SUCCESS) {
-	  fprintf (stderr, "ERROR (E):  PAMI_Endpoint_create failed for task ID 0, context 0 with %d.\n", result);
-	  return 1;
-	}
-	       
-	/* Run the following scenarios:               */
-	/* header = 0             payload = max + 1   */
-	/* header = max/2         payload = max/2 + 1 */
-	/* header = max + 1       payload = 0         */
-
-	/* Populate header and payload size arrays */
-	scenarios = 0;
-	header_bytes[scenarios++] = 0;
-	header_bytes[scenarios++] = dispatch_send_immediate_max[xtalk][hint]/2;
-	header_bytes[scenarios++] = dispatch_send_immediate_max[xtalk][hint] + 1;
-
-	scenarios = 0;
-	data_bytes[scenarios++] = dispatch_send_immediate_max[xtalk][hint] + 1;
-	data_bytes[scenarios++] = dispatch_send_immediate_max[xtalk][hint]/2 + 1;
-	data_bytes[scenarios++] = 0;
-
-	for (index=0; index < scenarios; index++) {         /* test loop */
-	  im_parameters.header.iov_len = header_bytes[index];
-	  im_parameters.data.iov_len = data_bytes[index];
-
-	  fprintf (stderr, "===== PAMI_Send_immediate() FUNCTIONAL Test [%s][%s] %zu %zu (%zu, %zu) -> (0, 0) =====\n\n", &device_str[hint][0], &xtalk_str[xtalk][0], header_bytes[index], data_bytes[index], _my_task, xtalk);
-
-	  if (debug) {
-	    fprintf (stderr, "before PAMI_Send_immediate ...\n");
-	  }
-
-	  result = PAMI_Send_immediate (context[xtalk], &im_parameters);
-
-	  if (debug) {
-	    fprintf (stderr, "... after PAMI_Send_immediate.\n");
-	  }
-
-	  if (result != send_fail) {
-	    fprintf (stderr, "ERROR (E):  PAMI_Send_immediate passed with rc = %d ...should have FAILED with rc = %d!!\n", result, send_fail);
-	    return 1;
-	  }
-	} /* end scenario loop */
-      } /* end xtalk loop */
-    } /* end device loop */
-  } /* end task id != 0 */
-
+	  } /* end scenario loop */
+	} /* end xtalk loop */
+      } /* end device loop */
+    } /* end task id != 0 */
+  } /* end run tests expected to fail */
   /* ====== CLEANUP ====== */
 
   result = PAMI_Context_destroyv(context, num_contexts);
