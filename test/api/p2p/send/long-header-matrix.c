@@ -25,6 +25,8 @@
 
 uint8_t _garbage[1024];
 
+unsigned int long_header_size = 0;
+
 static void recv_done (pami_context_t   context,
                        void           * cookie,
                        pami_result_t    result)
@@ -51,7 +53,7 @@ static void test_dispatch (
     recv_done (context, cookie, PAMI_SUCCESS);
     return;
   }
-  else if (pipe_size > 1024)
+  else if (pipe_size > long_header_size)
   {
     TRACE((stderr, "... dispatch function.  Too much data! pipe_size = %zu\n", pipe_size));
     exit(1);
@@ -160,6 +162,7 @@ int main (int argc, char ** argv)
   pami_dispatch_hint_t options;
   pami_dispatch_callback_function fn;
   fn.p2p = test_dispatch;
+  size_t max_user_hdr_size[2];
 
   options.long_header = PAMI_HINT_ENABLE;
   TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
@@ -170,7 +173,7 @@ int main (int argc, char ** argv)
                              options);
   if (result != PAMI_SUCCESS)
   {
-    fprintf(stderr, "Error. Unable register pami dispatch. result = %d\n", result);
+    fprintf(stderr, "Error. Unable register pami dispatch 0. result = %d\n", result);
     return 1;
   }
 
@@ -183,20 +186,67 @@ int main (int argc, char ** argv)
                              options);
   if (result != PAMI_SUCCESS)
   {
-    fprintf(stderr, "Error. Unable register pami dispatch. result = %d\n", result);
+    fprintf(stderr, "Error. Unable register pami dispatch 3. result = %d\n", result);
     return 1;
   }
+
+  configuration.name = PAMI_DISPATCH_RECV_IMMEDIATE_MAX;
+  for (int i = 0; i < 2; i ++) {
+    result = PAMI_Dispatch_query(context,i,&configuration,1);
+    if (result != PAMI_SUCCESS) {
+      fprintf(stderr, "Error. Unable to do dispatch query. result = %d\n", result);
+      return 1;
+    }
+    max_user_hdr_size[i] = configuration.value.intval;
+  }
+
+  /* Create task unique dispatch sets 1 & 2 */
+  /* dispatch ID 1: task 0 no_long_header = 0, task n no_long_header = 1 */
+  options.long_header = (task_id == 0) ? PAMI_HINT_ENABLE : PAMI_HINT_DISABLE;
+  TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
+  result = PAMI_Dispatch_set (context,
+                              1,
+                              fn,
+                              (void *)&recv_active,
+                              options);
+  if (result != PAMI_SUCCESS)
+  {
+    fprintf(stderr, "Error. Unable register pami dispatch 1. result = %d\n", result);
+    return 1;
+  }
+
+  /* dispatch ID 2: task 0 no_long_header = 1, task n no_long_header = 0 */
+  options.long_header = (task_id == 0) ? PAMI_HINT_DISABLE : PAMI_HINT_ENABLE;
+  TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
+  result = PAMI_Dispatch_set (context,
+                              2,
+                              fn,
+                              (void *)&recv_active,
+                              options);
+  if (result != PAMI_SUCCESS)
+  {
+    fprintf(stderr, "Error. Unable register pami dispatch 2. result = %d\n", result);
+    return 1;
+  }
+
   size_t n = 0;                              /* controls task loop */
   size_t send_hard_hint = 0;                 /* hard hint value of sending task */
   size_t send_soft_hint = 0;                 /* soft hint value of sending task */
   size_t recv_hard_hint = 0;                 /* hard hint value of receiving task */
 
   /* Create header parms */
+  long_header_size = (max_user_hdr_size[0] > max_user_hdr_size[1])?
+      (max_user_hdr_size[0]+32):(max_user_hdr_size[1]+32);
   uint8_t short_header[128];
-  uint8_t long_header[1024];
+  uint8_t* long_header = (uint8_t*) malloc(long_header_size * sizeof(uint8_t));
+  if (long_header == NULL)
+  {
+    fprintf(stderr, "Can't allocate long header of size %u\n", long_header_size);
+    return 1;
+  }
   size_t h = 0;                              /* controls header pointer and header size arrays */
   uint8_t * header_ary[2] = {short_header, long_header};
-  size_t header_size_ary[2] = {128, 1024};
+  size_t header_size_ary[2] = {128, long_header_size};
   char header_type_str[2][50] = {"short header", "long header"};
 
   size_t testcase = 0;
@@ -217,34 +267,6 @@ int main (int argc, char ** argv)
 
     fprintf(stderr, "====== Combinations of header sizes and no_long_header hints that should pass ======\n");
 
-    /* Create task unique dispatch sets 1 & 2 */
-    /* dispatch ID 1: task 0 no_long_header = 0, task n no_long_header = 1 */
-    options.long_header = PAMI_HINT_ENABLE;
-    TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
-    result = PAMI_Dispatch_set (context,
-				1,
-				fn,
-				(void *)&recv_active,
-				options);
-    if (result != PAMI_SUCCESS)
-    {
-      fprintf(stderr, "Error. Unable register pami dispatch. result = %d\n", result);
-      return 1;
-    }
-
-    /* dispatch ID 2: task 0 no_long_header = 1, task n no_long_header = 0 */
-    options.long_header = PAMI_HINT_DISABLE;
-    TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
-    result = PAMI_Dispatch_set (context,
-				2,
-				fn,
-				(void *)&recv_active,
-				options);
-    if (result != PAMI_SUCCESS)
-    {
-      fprintf(stderr, "Error. Unable register pami dispatch. result = %d\n", result);
-      return 1;
-    }
 
     for (testcase = 0; testcase < 6; testcase++) {
 
@@ -271,6 +293,7 @@ int main (int argc, char ** argv)
 	  result = PAMI_Endpoint_create (client, n, 0, &parameters.send.dest);
 	  if (result != PAMI_SUCCESS) {
 	    fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
+            free(long_header);
 	    return 1;
 	  }
 
@@ -283,6 +306,7 @@ int main (int argc, char ** argv)
 	  if (result != PAMI_SUCCESS)
 	  {
 	    fprintf(stderr, "Error. Sent a %s (%zu bytes) from task %zu (no_long_header hard hint = %zu, soft hint = %zu) to task %zu (no_long_header hard hint = %zu) and FAILED wth rc = %d\n", &header_type_str[h][0], header_size_ary[h], task_id, send_hard_hint, send_soft_hint, n, recv_hard_hint, result);
+            free(long_header);
 	    return 1;
 	  }
 
@@ -293,6 +317,7 @@ int main (int argc, char ** argv)
 	    if ( (result != PAMI_SUCCESS) && (result != PAMI_EAGAIN) )
 	      {
 		fprintf(stderr, "Error. Unable to advance pami context. result = %d\n", result);
+                free(long_header);
 		return 1;
 	      }
 	  }
@@ -306,38 +331,11 @@ int main (int argc, char ** argv)
   else /* task id > 0 */
   {
 
-    /* Create task unique dispatch sets 1 & 2 */
-    /* dispatch ID 1: task n no_long_header = 1, task 0 no_long_header = 0 */
-    options.long_header = PAMI_HINT_DISABLE;
-    TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
-    result = PAMI_Dispatch_set (context,
-				1,
-				fn,
-				(void *)&recv_active,
-				options);
-    if (result != PAMI_SUCCESS)
-    {
-      fprintf(stderr, "Error. Unable register pami dispatch. result = %d\n", result);
-      return 1;
-    }
-
-    /* dispatch ID 2: task n no_long_header = 0, task 0 no_long_header = 1 */
-    options.long_header = PAMI_HINT_ENABLE;
-    TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
-    result = PAMI_Dispatch_set (context,
-				2,
-				fn,
-				(void *)&recv_active,
-				options);
-    if (result != PAMI_SUCCESS)
-    {
-      fprintf(stderr, "Error. Unable register pami dispatch. result = %d\n", result);
-      return 1;
-    }
 
     result = PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
     if (result != PAMI_SUCCESS) {
       fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
+      free(long_header);
       return 1;
     }
 
@@ -366,6 +364,7 @@ int main (int argc, char ** argv)
 	  if ( (result != PAMI_SUCCESS) && (result != PAMI_EAGAIN) )
 	    {
 	      fprintf(stderr, "Error. Unable to advance pami context. result = %d\n", result);
+              free(long_header);
 	      return 1;
 	    }
 	}
@@ -384,6 +383,7 @@ int main (int argc, char ** argv)
 	if (result != PAMI_SUCCESS)
 	{
 	  fprintf(stderr, "Error. Sent a %s (%zu bytes) from task %zu (no_long_header hard hint = %zu, soft hint = %zu) to task 0 (no_long_header hard hint = %zu) and FAILED wth rc = %d\n", &header_type_str[h][0], header_size_ary[h], task_id, send_hard_hint, send_soft_hint, recv_hard_hint, result);
+          free(long_header);
 	  return 1;
 	}
 
@@ -394,6 +394,7 @@ int main (int argc, char ** argv)
 	  if ( (result != PAMI_SUCCESS) && (result != PAMI_EAGAIN) )
 	    {
 	      fprintf(stderr, "Error. Unable to advance pami context. result = %d\n", result);
+              free(long_header);
 	      return 1;
 	    }
 	}
@@ -432,17 +433,21 @@ int main (int argc, char ** argv)
 	result = PAMI_Endpoint_create (client, n, 0, &parameters.send.dest);
 	if (result != PAMI_SUCCESS) {
 	  fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
+          free(long_header);
 	  return 1;
 	}
 
-	fprintf(stderr, "Sending %s (%zu bytes) from task %zu -> %zu:\n\t\ttask %zu no_long_header hard hint = %zu\n\t\ttask %zu no_long_header soft hint = %zu\n\t\ttask %zu no_long_header hard hint = %zu\n", &header_type_str[h][0], header_size_ary[h], task_id, n, task_id, send_hard_hint, task_id, send_soft_hint, n, recv_hard_hint);
+	fprintf(stderr, "Testcase %u Sending %s (%zu bytes) from task %zu -> %zu:\n\t\ttask %zu no_long_header hard hint = %zu\n\t\ttask %zu no_long_header soft hint = %zu\n\t\ttask %zu no_long_header hard hint = %zu\n", testcase, &header_type_str[h][0], header_size_ary[h], task_id, n, task_id, send_hard_hint, task_id, send_soft_hint, n, recv_hard_hint);
 
 	result = PAMI_Send (context, &parameters);
 	if (result != PAMI_INVAL)
 	{
-	  fprintf(stderr, "Error. Sent a %s (%zu bytes) from task %zu (no_long_header hard hint = %zu, soft hint = %zu) to task %zu (no_long_header hard hint = %zu).  Expected rc = %d, but got rc = %d\n", &header_type_str[h][0], header_size_ary[h], task_id, send_hard_hint, send_soft_hint, n, recv_hard_hint, PAMI_INVAL, result);
+	  fprintf(stderr, "Testcase %u Error. Sent a %s (%zu bytes) from task %zu (no_long_header hard hint = %zu, soft hint = %zu) to task %zu (no_long_header hard hint = %zu).  Expected rc = %d, but got rc = %d\n", testcase, &header_type_str[h][0], header_size_ary[h], task_id, send_hard_hint, send_soft_hint, n, recv_hard_hint, PAMI_INVAL, result);
+          free(long_header);
 	  return 1;
-	}
+	} else {
+          fprintf(stderr, "PAMI Send failed as expected in Testcase %u.\n", testcase);
+        }
 	TRACE((stderr, "... after send.\n"));
       } /* end task id loop */
     } /* end testcase loop */
@@ -522,6 +527,7 @@ int main (int argc, char ** argv)
 	  result = PAMI_Endpoint_create (client, n, 0, &parameters.send.dest);
 	  if (result != PAMI_SUCCESS) {
 	    fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
+            free(long_header);
 	    return 1;
 	  }
 
@@ -530,6 +536,7 @@ int main (int argc, char ** argv)
 	  result = PAMI_Send (context, &parameters);
 	  if (result != PAMI_SUCCESS) {
 	    fprintf(stderr, "Error. Sent a %s (%zu bytes) from task %zu (no_long_header hard hint = %zu, soft hint = %zu) to task %zu (no_long_header hard hint = %zu) and FAILED with rc = %d\n", &header_type_str[h][0], header_size_ary[h], task_id, send_hard_hint, send_soft_hint, n, recv_hard_hint, result);
+            free(long_header);
 	    return 1;
 	  }
 	  TRACE((stderr, "... after send.\n"));
@@ -539,6 +546,7 @@ int main (int argc, char ** argv)
 	    result = PAMI_Context_advance (context, 100);
 	    if ( (result != PAMI_SUCCESS) && (result != PAMI_EAGAIN) ) {
 	      fprintf(stderr, "Error. Unable to advance pami context. result = %d\n", result);
+              free(long_header);
 	      return 1;
 	    }
 	  }
@@ -558,6 +566,7 @@ int main (int argc, char ** argv)
       result = PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
       if (result != PAMI_SUCCESS) {
 	fprintf (stderr, "ERROR:  PAMI_Endpoint_create failed with %d.\n", result);
+        free(long_header);
 	return 1;
       }
 
@@ -573,6 +582,7 @@ int main (int argc, char ** argv)
 	  result = PAMI_Context_advance (context, 100);
 	  if ( (result != PAMI_SUCCESS) && (result != PAMI_EAGAIN) ) {
 	    fprintf(stderr, "Error. Unable to advance pami context. result = %d\n", result);
+            free(long_header);
 	    return 1;
 	  }
 	}
@@ -595,6 +605,7 @@ int main (int argc, char ** argv)
 	result = PAMI_Send (context, &parameters);
 	if (result != PAMI_SUCCESS) {
 	  fprintf(stderr, "Error. Sent a %s (%zu bytes) from task %zu (no_long_header hard hint = %zu, soft hint = %zu) to task 0 (no_long_header hard hint = %zu) and FAILED with rc = %d\n", &header_type_str[h][0], header_size_ary[h], task_id, send_hard_hint, send_soft_hint, recv_hard_hint, result);
+          free(long_header);
 	  return 1;
 	}
 	TRACE((stderr, "... after send.\n"));
@@ -604,6 +615,7 @@ int main (int argc, char ** argv)
 	  result = PAMI_Context_advance (context, 100);
 	  if ( (result != PAMI_SUCCESS) && (result != PAMI_EAGAIN) ) {
 	    fprintf(stderr, "Error. Unable to advance pami context. result = %d\n", result);
+            free(long_header);
 	    return 1;
 	  }
 	}
@@ -619,6 +631,7 @@ int main (int argc, char ** argv)
   if (result != PAMI_SUCCESS)
   {
     fprintf(stderr, "Error. Unable to destroy pami context. result = %d\n", result);
+    free(long_header);
     return 1;
   }
 
@@ -626,8 +639,10 @@ int main (int argc, char ** argv)
   if (result != PAMI_SUCCESS)
   {
     fprintf(stderr, "Error. Unable to finalize pami client. result = %d\n", result);
+    free(long_header);
     return 1;
   }
 
+  free(long_header);
   return 0;
 }
