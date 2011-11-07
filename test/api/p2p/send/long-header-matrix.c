@@ -191,7 +191,7 @@ int main (int argc, char ** argv)
   }
 
   configuration.name = PAMI_DISPATCH_RECV_IMMEDIATE_MAX;
-  for (int i = 0; i < 2; i ++) {
+  for (i = 0; i < 2; i ++) {
     result = PAMI_Dispatch_query(context,i,&configuration,1);
     if (result != PAMI_SUCCESS) {
       fprintf(stderr, "Error. Unable to do dispatch query. result = %d\n", result);
@@ -437,17 +437,17 @@ int main (int argc, char ** argv)
 	  return 1;
 	}
 
-	fprintf(stderr, "Testcase %u Sending %s (%zu bytes) from task %zu -> %zu:\n\t\ttask %zu no_long_header hard hint = %zu\n\t\ttask %zu no_long_header soft hint = %zu\n\t\ttask %zu no_long_header hard hint = %zu\n", testcase, &header_type_str[h][0], header_size_ary[h], task_id, n, task_id, send_hard_hint, task_id, send_soft_hint, n, recv_hard_hint);
+	fprintf(stderr, "Testcase %zu Sending %s (%zu bytes) from task %zu -> %zu:\n\t\ttask %zu no_long_header hard hint = %zu\n\t\ttask %zu no_long_header soft hint = %zu\n\t\ttask %zu no_long_header hard hint = %zu\n", testcase, &header_type_str[h][0], header_size_ary[h], task_id, n, task_id, send_hard_hint, task_id, send_soft_hint, n, recv_hard_hint);
 
 	result = PAMI_Send (context, &parameters);
 	if (result != PAMI_INVAL)
 	{
-	  fprintf(stderr, "Testcase %u Error. Sent a %s (%zu bytes) from task %zu (no_long_header hard hint = %zu, soft hint = %zu) to task %zu (no_long_header hard hint = %zu).  Expected rc = %d, but got rc = %d\n", testcase, &header_type_str[h][0], header_size_ary[h], task_id, send_hard_hint, send_soft_hint, n, recv_hard_hint, PAMI_INVAL, result);
+	  fprintf(stderr, "Testcase %zu Error. Sent a %s (%zu bytes) from task %zu (no_long_header hard hint = %zu, soft hint = %zu) to task %zu (no_long_header hard hint = %zu).  Expected rc = %d, but got rc = %d\n", testcase, &header_type_str[h][0], header_size_ary[h], task_id, send_hard_hint, send_soft_hint, n, recv_hard_hint, PAMI_INVAL, result);
           free(long_header);
 	  return 1;
 	} else {
-          fprintf(stderr, "PAMI Send failed as expected in Testcase %u.\n", testcase);
-        }
+      fprintf(stderr, "PAMI Send failed as expected in Testcase %zu.\n", testcase);
+    }
 	TRACE((stderr, "... after send.\n"));
       } /* end task id loop */
     } /* end testcase loop */
