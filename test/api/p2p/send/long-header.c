@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 
-/*#define ENABLE_TRACE */
+/*#define ENABLE_TRACE*/ 
 
 #ifdef ENABLE_TRACE
 #define TRACE(x) fprintf x
@@ -92,6 +92,24 @@ int main (int argc, char ** argv)
 {
   volatile size_t send_active = 2;
   volatile size_t recv_active = 1;
+
+  size_t i = 0;
+  size_t tests = 3; /* 11: run passing tests = 1, run send fail tests = 1 */ 
+
+  for (i = 1; i < argc; i++){ /* Skip argv[0] (program name). */
+    if ( (strcmp(argv[i], "-p") == 0) || (strcmp(argv[i], "--pass-only") == 0) ) {
+      tests = 2;
+    }
+    if ( (strcmp(argv[i], "-np") == 0) || (strcmp(argv[i], "--no-pass") == 0) ) {
+      tests = tests & 1;
+    }
+    if ( (strcmp(argv[i], "-sf") == 0) || (strcmp(argv[i], "--send-fail-only") == 0) ) {
+      tests = 1;
+    }
+    if ( (strcmp(argv[i], "-nsf") == 0) || (strcmp(argv[i], "--no-send-fail") == 0) ) {
+      tests = tests & 2;
+    }
+  }
 
 
   pami_client_t client;
@@ -182,85 +200,94 @@ int main (int argc, char ** argv)
   parameters.events.local_fn      = send_done_local;
   parameters.events.remote_fn     = send_done_remote;
 
-  if (task_id == 0)
-  {
-    TRACE((stderr, "before send ...\n"));
-    PAMI_Endpoint_create (client, 1, 0, &parameters.send.dest);
-    result = PAMI_Send (context, &parameters);
-    if (result != PAMI_SUCCESS)
-    {
-        fprintf(stderr, "Error. Send using dispatch configured to enable long header support failed. result = %d\n", result);
-        return 1;
-    }
-    TRACE((stderr, "... after send.\n"));
-
-    TRACE((stderr, "before send-recv advance loop ...\n"));
-    while (send_active || recv_active)
-    {
-      result = PAMI_Context_advance (context, 100);
-      if ( (result != PAMI_SUCCESS) && (result != PAMI_EAGAIN) )
+  if ( (tests >> 1) & 1 ) {
+    if (task_id == 0)
       {
-        fprintf(stderr, "Error. Unable to advance pami context. result = %d\n", result);
-        return 1;
-      }
-    }
-    TRACE((stderr, "... after send-recv advance loop\n"));
-  }
-  else
-  {
-    TRACE((stderr, "before recv advance loop ...\n"));
-    while (recv_active != 0)
-    {
-      result = PAMI_Context_advance (context, 100);
-      if ( (result != PAMI_SUCCESS) && (result != PAMI_EAGAIN) )
-      {
-        fprintf(stderr, "Error. Unable to advance pami context. result = %d\n", result);
-        return 1;
-      }
-    }
-    TRACE((stderr, "... after recv advance loop\n"));
 
-    TRACE((stderr, "before send ...\n"));
-    PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
-    result = PAMI_Send (context, &parameters);
-    if (result != PAMI_SUCCESS)
-    {
-        fprintf(stderr, "Error. Send using dispatch configured to enable long header support failed. result = %d\n", result);
-        return 1;
-    }
-    TRACE((stderr, "... after send.\n"));
+	fprintf(stderr, "Testing good path ...\n");
 
-    TRACE((stderr, "before send advance loop ...\n"));
-    while (send_active)
-    {
-      result = PAMI_Context_advance (context, 100);
-      if ( (result != PAMI_SUCCESS) && (result != PAMI_EAGAIN) )
-      {
-        fprintf(stderr, "Error. Unable to advance pami context. result = %d\n", result);
-        return 1;
+	TRACE((stderr, "before send ...\n"));
+	PAMI_Endpoint_create (client, 1, 0, &parameters.send.dest);
+	result = PAMI_Send (context, &parameters);
+	if (result != PAMI_SUCCESS)
+	  {
+	    fprintf(stderr, "Error. Send using dispatch configured to enable long header support failed. result = %d\n", result);
+	    return 1;
+	  }
+	TRACE((stderr, "... after send.\n"));
+
+	TRACE((stderr, "before send-recv advance loop ...\n"));
+	while (send_active || recv_active)
+	  {
+	    result = PAMI_Context_advance (context, 100);
+	    if ( (result != PAMI_SUCCESS) && (result != PAMI_EAGAIN) )
+	      {
+		fprintf(stderr, "Error. Unable to advance pami context. result = %d\n", result);
+		return 1;
+	      }
+	  }
+	TRACE((stderr, "... after send-recv advance loop\n"));
       }
-    }
-    TRACE((stderr, "... after send advance loop\n"));
-  }
+    else /* task id > 0 */
+      {
+	TRACE((stderr, "before recv advance loop ...\n"));
+	while (recv_active != 0)
+	  {
+	    result = PAMI_Context_advance (context, 100);
+	    if ( (result != PAMI_SUCCESS) && (result != PAMI_EAGAIN) )
+	      {
+		fprintf(stderr, "Error. Unable to advance pami context. result = %d\n", result);
+		return 1;
+	      }
+	  }
+	TRACE((stderr, "... after recv advance loop\n"));
+
+	TRACE((stderr, "before send ...\n"));
+	PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
+	result = PAMI_Send (context, &parameters);
+	if (result != PAMI_SUCCESS)
+	  {
+	    fprintf(stderr, "Error. Send using dispatch configured to enable long header support failed. result = %d\n", result);
+	    return 1;
+	  }
+	TRACE((stderr, "... after send.\n"));
+
+	TRACE((stderr, "before send advance loop ...\n"));
+	while (send_active)
+	  {
+	    result = PAMI_Context_advance (context, 100);
+	    if ( (result != PAMI_SUCCESS) && (result != PAMI_EAGAIN) )
+	      {
+		fprintf(stderr, "Error. Unable to advance pami context. result = %d\n", result);
+		return 1;
+	      }
+	  }
+	TRACE((stderr, "... after send advance loop\n"));
+      }
+  } /* end run passing tests */
 
   /* ********************
    * Test error path .. dispatch configured without long header support used
    * to send a long header message.
    * *******************/
-  if (task_id == 0)
-  {
-    TRACE((stderr, "before send ...\n"));
-    PAMI_Endpoint_create (client, 1, 0, &parameters.send.dest);
-    parameters.send.dispatch = 1;
-    result = PAMI_Send (context, &parameters);
-    if (result != PAMI_INVAL)
-    {
-        fprintf(stderr, "Error. Long header send using dispatch configured to disable long header support did not return an error as expected. result = %d\n", result);
-        return 1;
-    }
-    TRACE((stderr, "... after send.\n"));
-  }
+  if ( tests & 1 ) {
+    if (task_id == 0)
+      {
 
+	fprintf(stderr, "Testing error path ...\n");
+
+	TRACE((stderr, "before send ...\n"));
+	PAMI_Endpoint_create (client, 1, 0, &parameters.send.dest);
+	parameters.send.dispatch = 1;
+	result = PAMI_Send (context, &parameters);
+	if (result != PAMI_INVAL)
+	  {
+	    fprintf(stderr, "Error. Long header send using dispatch configured to disable long header support did not return an error as expected. result = %d\n", result);
+	    return 1;
+	  }
+	TRACE((stderr, "... after send.\n"));
+      }
+  } /* end run error path */
 
   result = PAMI_Context_destroyv(&context, 1);
   if (result != PAMI_SUCCESS)
