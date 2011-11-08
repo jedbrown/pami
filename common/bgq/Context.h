@@ -553,8 +553,8 @@ namespace PAMI
           _pgas_mu_registration(NULL),
           _pgas_shmem_registration(NULL),
           _pgas_composite_registration(NULL),
-          _dummy_disable(false),
-          _dummy_disabled(false),
+          _dummy_disable(true),
+          _dummy_disabled(true),
           _no_rmw (),
           _dispatch (_context)
       {
@@ -1447,7 +1447,7 @@ namespace PAMI
           {
             _dummy_disable = _dummy_disabled = false;
           }
-        else if (enqueue)
+        else if (enqueue && _dummy_disabled)
           {
             _dummy_disable = _dummy_disabled = false;
             PAMI::Device::Generic::GenericThread *work = new (&_dummy_work)
