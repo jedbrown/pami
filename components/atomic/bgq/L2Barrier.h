@@ -117,7 +117,8 @@ namespace PAMI
           {
             uint64_t lockup;
             Memory::sync();
-            lockup = *(_barrier.controlPtr());
+	    // Caution! L2_AtomicLoad() is not wake-able.
+            lockup = L2_AtomicLoad(_barrier.controlPtr());
             L2_AtomicLoadIncrement(_barrier.lockPtr(lockup));
             _data = (void*)lockup;
             _active = true;
@@ -129,7 +130,8 @@ namespace PAMI
             uint64_t lockup, value;
             lockup = (uint64_t)_data;
 
-            if (*(_barrier.lockPtr(lockup)) < _barrier._nparties)
+	    // Caution! L2_AtomicLoad() is not wake-able.
+            if (L2_AtomicLoad(_barrier.lockPtr(lockup)) < _barrier._nparties)
               {
                 return true; // barrier is still active ...
               }
@@ -141,7 +143,8 @@ namespace PAMI
 
             do
               {
-                value = *(_barrier.lockPtr(lockup));
+	        // Caution! L2_AtomicLoad() is not wake-able.
+                value = L2_AtomicLoad(_barrier.lockPtr(lockup));
               }
             while (value > 0 && value < (unsigned)(2 * _barrier._nparties));
 
@@ -162,7 +165,8 @@ namespace PAMI
             else
               {
                 // wait until master releases the barrier by clearing the lock
-                while (*(_barrier.lockPtr(lockup)) > 0);
+	        // Caution! L2_AtomicLoad() is not wake-able.
+                while (L2_AtomicLoad(_barrier.lockPtr(lockup)) > 0);
               }
 
             _active = false;
