@@ -177,9 +177,9 @@ static void get_done (pami_context_t   context,
   /* Destroy the local memory region */
   PAMI_Memregion_destroy (context, &(info->memregion));
 
+  --*(info->value);
   free (cookie);
 
-  --*(info->value);
   fprintf (stderr, "<< 'get_done' callback\n");
 }
 

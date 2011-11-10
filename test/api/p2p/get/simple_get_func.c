@@ -173,9 +173,9 @@ static void get_done (pami_context_t   context,
   parameters.hints           = null_send_hint;
   PAMI_Send_immediate (context, &parameters);
 
+  --*(info->value);
   free (cookie);
 
-  --*(info->value);
   TRACE_ERR((stderr, "<< get_done()\n"));
 }
 
