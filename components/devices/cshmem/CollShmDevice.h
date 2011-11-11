@@ -909,7 +909,6 @@ namespace PAMI
                     Memory::sync<Memory::instruction>(); //isync();
                     msg->setStatus(PAMI::Device::Done);
                     setMsg(NULL);
-                    _device->decActiveMsg();
                     TRACE_DBG((stderr, "shm_sync, _sync_flag =%d\n", _sync_flag));
                     return PAMI_SUCCESS;
                   }
@@ -1054,7 +1053,6 @@ namespace PAMI
                       {
                         msg->setStatus(PAMI::Device::Done);
                         setMsg(NULL);
-                        _device->decActiveMsg();
                       }
                   }
                 return rc;
@@ -1114,6 +1112,7 @@ namespace PAMI
                             if (_role == BOTH)
                               {
                                 size_t len = window->produceData(*(PAMI::PipeWorkQueue *)mcast->dst, _wlen, _device->getSysdep(),false);
+                                                            
                                 PAMI_ASSERT(len == _wlen);
                                 _action = SHAREWITH;
                                 rc = window->setAvail(_step, _nchildren + 1);
@@ -1141,7 +1140,6 @@ namespace PAMI
                       {
                         msg->setStatus(PAMI::Device::Done);
                         setMsg(NULL);
-                        _device->decActiveMsg();
                       }
                   }
 
@@ -1181,6 +1179,7 @@ namespace PAMI
           static pami_result_t advanceQueue(pami_context_t context, void *dev)
           {
             CollShmDevice *d = (CollShmDevice *)dev;
+            
             return d->_advanceQueue(context);
           }
 
@@ -1196,7 +1195,6 @@ namespace PAMI
             _gid(gid),
             _ntasks(topo->size()),
             _tid(topo->rank2Index(__global.mapping.task())),
-            _nactive(0),
             _syncbits(0),
             _head(_numchannels),
             _tail(0),
@@ -1298,11 +1296,12 @@ namespace PAMI
           ///
           inline unsigned _advanceHead()
           {
+            // BITWISE OPTIMIZATION (disabled)
             //int      head      = (_head >> _syncbits) & ( _numsyncs - 1);
-            int head  = (_head / _synccounts) % _numsyncs;
             //bool     cur_round = head < (_tail >> _syncbits);
-            bool     cur_round = head < (_tail / _synccounts);
             //unsigned round = cur_round ? _round : ((_round + 1) & 0x1);
+            int      head      = (_head / _synccounts) % _numsyncs;
+            bool     cur_round = head < (_tail / _synccounts);
             unsigned round     = cur_round ? _round : (_round+1)% 2;
             int      increment  = _increments[round];
             unsigned adv   = 0;
@@ -1316,7 +1315,10 @@ namespace PAMI
                   {
                     ++adv;
                     _completions[round][head] = 0;
-                    head = (head + 1) & (_numsyncs - 1); // head = (head+1) % _numsyncs;
+
+                    // BITWISE OPTIMIZATION(disabled)
+                    // head = (head + 1) & (_numsyncs - 1);
+                    head = (head+1) % _numsyncs;
 
                     if (head == 0)
                       {
@@ -1421,6 +1423,7 @@ namespace PAMI
           inline void setThreadAvail(int channel_id)
           {
             _threads[channel_id].setStatus(PAMI::Device::Idle);
+            // BITWISE OPTIMIZATION(disabled)
             //unsigned idx = channel_id >> _syncbits;
             unsigned idx       = channel_id / _synccounts;
             bool     cur_round = channel_id < _tail;
@@ -1495,7 +1498,6 @@ namespace PAMI
                 thr->initThread(msg->getMsgType());
                 thr->setStatus(PAMI::Device::Ready);
                 msg->setStatus(PAMI::Device::Active);
-                incActiveMsg();
 
                 pami_result_t rc      = thr->_advanceThread(g[x].getContext());
                 int           pollcnt = POLLCOUNT;
@@ -1522,13 +1524,13 @@ namespace PAMI
             else
               {
                 msg->setStatus(PAMI::Device::Initialized);
-                if (!_nactive && _threadm.getStatus() == PAMI::Device::Idle)
+                if (_threadm.getStatus() == PAMI::Device::Idle)
                   {
                     _threadm.setStatus(PAMI::Device::Ready);
                     g[x].postThread(&_threadm);
                   }
 
-                TRACE_DBG((stderr, "%d message initalized %p\n", _nactive, this));
+                TRACE_DBG((stderr, "message initalized %p\n",this));
               }
 
             enqueue(msg);
@@ -1555,7 +1557,6 @@ namespace PAMI
                     size_t x = msg->getContextId();
                     PAMI::Device::Generic::Device *g = getGenerics();
                     msg->setStatus(PAMI::Device::Active);
-                    incActiveMsg();
 
                     CollShmThread *thr = getAvailThread();
                     thr->setMsg(msg);
@@ -1589,8 +1590,6 @@ namespace PAMI
             return NULL;
           }
 
-          inline void incActiveMsg() { ++_nactive; }
-          inline void decActiveMsg() { --_nactive; }
           inline size_t getRank() { return _tid; }
           inline size_t getSize() { return _ntasks; }
           inline PAMI::Topology *getTopo() {return _topo;}
@@ -1605,17 +1604,15 @@ namespace PAMI
           // it is a pure work item making sure enqueued message gets
           // a chance to run
 
-          unsigned         _gid;     // id for the geometry
-          unsigned         _ntasks;  // number of tasks sharing the device
-          unsigned         _tid;     // task idndex in the device
-          unsigned         _nactive; // number of posted messages in pending queue
-
-          unsigned  char   _syncbits;
-          unsigned  char   _head;    // logical index to the next unavailable channel
-          unsigned  char   _tail;    // index of the oldest in-use channel
-          unsigned  char   _round;   // wrap around count
-          unsigned  char   _completions[2][_numsyncs]; // counters for local completions
-          int              _increments [2];             // increment values for updating
+          unsigned     _gid;     // id for the geometry
+          unsigned     _ntasks;  // number of tasks sharing the device
+          unsigned     _tid;     // task idndex in the device
+          unsigned     _syncbits;
+          unsigned     _head;    // logical index to the next unavailable channel
+          unsigned     _tail;    // index of the oldest in-use channel
+          unsigned     _round;   // wrap around count
+          unsigned     _completions[2][_numsyncs]; // counters for local completions
+          int          _increments [2];             // increment values for updating
           // counters of local completions
           collshm_wgroup_t *_wgroups[PAMI_MAX_PROC_PER_NODE]; // pointer to the shm channels
       }; // class CollShmDevice

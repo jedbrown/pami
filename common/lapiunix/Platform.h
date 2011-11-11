@@ -34,13 +34,13 @@ extern "C" {
 #endif
 
 #define COLLSHM_DEVICE_NUMSYNCS 2
-#define COLLSHM_DEVICE_SYNCCOUNT 16
+#define COLLSHM_DEVICE_SYNCCOUNT 64
 #define COLLSHM_SEGSZ 0x10000000
 #define COLLSHM_PAGESZ 4096
 #define COLLSHM_WINGROUPSZ ((COLLSHM_DEVICE_NUMSYNCS * COLLSHM_DEVICE_SYNCCOUNT + 1) * CACHEBLOCKSZ)
 #define COLLSHM_BUFSZ  32768
 #define COLLSHM_INIT_BUFCNT 128
-#define COLLSHM_INIT_CTLCNT 16384
+#define COLLSHM_INIT_CTLCNT 8192
 
 // P2P Shared memory settings
 // This is a bit of magic to construct the shared memory window for p2p
