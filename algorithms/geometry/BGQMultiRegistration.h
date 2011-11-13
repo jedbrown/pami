@@ -1453,11 +1453,7 @@ namespace PAMI
                 {
                   if (_mushmemcollectivedputmulticombinefactory)
                     geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,  _mushmemcollectivedputmulticombinefactory, _context_id);
-                  if((_mucollectivedputmulticastfactory)
-#ifndef PAMI_ENABLE_SHMEM_SUBNODE
-                     && (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
-#endif
-                    )
+                  if(_mucollectivedputmulticastfactory)
                     geometry->addCollective(PAMI_XFER_BROADCAST, _mucollectivedputmulticastfactory, _context_id);
                 }
 
@@ -1493,6 +1489,7 @@ namespace PAMI
 
           geometry->rmCollective(PAMI_XFER_BROADCAST,      _mu_mcast_factory,                         _context_id);
           geometry->rmCollective(PAMI_XFER_BROADCAST,      _mcast2d_dput_composite_factory,           _context_id);
+          geometry->rmCollective(PAMI_XFER_BROADCAST,      _mucollectivedputmulticastfactory,         _context_id);
 
           geometry->rmCollective(PAMI_XFER_BARRIER,        _mu_rectangle_msync_factory,               _context_id); 
           geometry->rmCollective(PAMI_XFER_BARRIER,        _gi_msync_factory,                         _context_id);
@@ -1662,7 +1659,7 @@ namespace PAMI
       MUCollectiveDputMulticombineFactory            *_mucollectivedputmulticombinefactory;
       uint8_t                                         _mucollectivedputmulticombinestorage[sizeof(MUCollectiveDputMulticombineFactory)];
 
-      MUShmemCollectiveDputMulticombineFactory            *_mushmemcollectivedputmulticombinefactory;
+      MUShmemCollectiveDputMulticombineFactory       *_mushmemcollectivedputmulticombinefactory;
       uint8_t                                         _mushmemcollectivedputmulticombinestorage[sizeof(MUShmemCollectiveDputMulticombineFactory)];
 
       MURectangleDput1ColorBroadcastFactory          *_mu_rectangle_1color_dput_broadcast_factory;
