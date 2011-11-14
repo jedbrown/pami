@@ -46,6 +46,7 @@
 #endif
 #define TRACE(x) //fprintf x
 
+
 ////////////////////////////////////////////////////////////////////////////////
 /// \page env_vars Environment Variables
 ///
@@ -61,25 +62,66 @@
 /// for use by an MU SPI application.
 /// - Default is 0.
 ///
-/// PAMI_NUMCLIENTS - The number of clients.
-/// - Default is 1.
+/// PAMI_CLIENTS - A comma-separated ordered list of clients (no spaces).
+/// The complete syntax is 
+/// - PAMI_CLIENTS=[name][:repeat][/weight][,[name][:repeat][/weight]]*
+/// 
+/// Each client has the form [name][:repeat][/weight], where
+/// - "name" is the name of the client.  For example, the BGQ MPICH2 client's
+///   name is MPICH2.  The default value for this option is the null string.
+/// - ":repeat" is the repetition factor, where repeat is the number of clients
+///   having this same name.  The default value for this option is 1.
+/// - "/weight" is the relative weight assigned to the client, where weight is
+//    the weight value.  The default value for this option is 1.  The weight is
+///   used to determine the portion of the messaging resources that are given to
+///   the client, relative to the other clients.
 ///
-/// PAMI_CLIENTNAMES - A comma-separated list of client names.  No spaces.
-/// For example, "PAMI_CLIENTNAMES=MPI,UPC".  The first client listed has
-/// exclusive use of the message unit's combining collective hardware for
-/// optimizing reduction operations.  The other clients will use algorithms
-/// that do not use the message unit's hardware.
-/// - Default is "PAMI_CLIENTNAMES=MPI".
+/// When middleware calls PAMI_Client_create, it provides the client's name.
+/// PAMI searches through the PAMI_CLIENTS in the order they are specified,
+/// looking for an exact name match.  If there is not an exact name match with
+/// any of the PAMI_CLIENTS, PAMI searches through the PAMI_CLIENTS again,
+/// looking for a client with a null name string.  The null name string is a
+/// wildcard, and matches any client name.  If there are exact or wildcard name
+/// matches, the first match that doesn't already have an active client is used,
+/// and that client's weight determines the percentage of the available
+/// resources that are allocated to the client.  If there are no available
+/// and matching clients, the PAMI client is not created.
+/// 
+/// The default value of the PAMI_CLIENTS environment variable is ":1/1" which
+/// means that all resources are assigned to the first client created, regardless
+/// of the client name, and all subsequent attempts to create a client will fail
+/// due to insufficient resources.
 ///
-/// PAMI_CLIENTWEIGHTS - A comma-separated list of numeric client weights.
-/// No spaces.  For example, "PAMI_CLIENTWEIGHTS=60,40".  The weights
-/// correspond to the clients specified in PAMI_CLIENTNAMES.  Each weight
-/// value is the percentage of the resources that are to be given to that
-/// particular client.  Resources (such as the message unit) are divided up
-/// according to these weights.  In the example, the first client gets 60
-/// percent of the resources, while the second client gets 40 percent.  The
-/// weights must sum to 100.
-/// - Default is that all clients get an equal amount of resources.
+/// If any of the clients specified on PAMI_CLIENTS are unnamed, or more than
+/// one client has the same name, the order in which the clients are created
+/// must be the same on all processes in the job.
+///   
+/// The first client listed has exclusive use of the message unit combining
+/// collective hardware for optimizing reduction operations.  The other clients
+/// will use algorithms that do not use the message unit combining collective
+/// hardware.
+///
+/// Examples:
+/// - "PAMI_CLIENTS=MPICH2,ARMCI" means up to two clients can use PAMI, one must
+///   be MPICH2 and the other must be ARMCI.  The MPICH2 client is assigned the
+///   message unit combining collective hardware, and the two clients evenly
+///   split the remaining messaging resources.
+/// - "PAMI_CLIENTS=MPICH2:3,ARMCI/2,UPC:2/3" means up to seven clients can use
+///   PAMI.  Three can be MPICH2, one can be ARMCI, and two can be UPC.
+///   Each MPICH2 client has weight 1, ARMCI has weight 2, and each UPC client
+///   has weight 3.  In this example each UPC client gets 3 times the amount of
+///   resources as each MPICH2 client, and the first MPICH2 client created is
+///   assigned the message unit combining collective hardware.
+/// - "PAMI_CLIENTS=MPICH2/3,/2," means up to three clients can use PAMI.  Two of
+///   the clients are unnamed, meaning they can be any of the PAMI clients, and
+///   one client can only be MPICH2.  The first MPICH2 client created has
+///   resource weight 3 and is assigned the message unit combining collective
+///   hardware, the first non-MPICH2 client created (or possibly the
+///   second MPICH2 client created) has resource weight 2, and the second
+///   non-MPICH2 client created (or possibly the second or third MPICH2
+///   client created) has resource weight 1.
+/// - "PAMI_CLIENTS" is not specified.  This means there can only be one
+///   client, with any name, and it is assigned all of the resources.
 ///
 /// MUSPI_RECFIFOSIZE - The size, in bytes, of each reception FIFO.  Incoming
 /// torus packets are stored in this fifo until software can process
@@ -111,7 +153,9 @@ namespace PAMI
   const size_t numSpiUserRecFifosPerProcessDefault = 0;
   const size_t numSpiUserBatIdsPerProcessDefault   = 0;
   const size_t numClientsDefault         = 1;
-  const char   defaultClientName[]       = "MPI";
+  const char   defaultClientName[]       = "";  // Null string indicates no name specified.
+  const char   defaultClientWeight       = 1;
+  const char   defaultClientRepeat       = 1;
   const size_t rgetInjFifoSizeDefault    = 65536;
   const size_t injFifoSizeDefault        = 65536;
   const size_t recFifoSizeDefault        = 1024*1024;
@@ -119,6 +163,12 @@ namespace PAMI
   class ResourceManager
   {
     public:
+
+      typedef enum clientStatus
+      {
+	RESOURCE_MANAGER_CLIENT_STATUS_DEALLOCATED = 0,
+	RESOURCE_MANAGER_CLIENT_STATUS_ALLOCATED
+      } clientStatus_t;
 
       //////////////////////////////////////////////////////////////////////////
       ///
@@ -146,17 +196,30 @@ namespace PAMI
 
       inline size_t getClientWeight( size_t RmClientId )    { return _clientWeights[RmClientId]; }
 
-      /// \brief Map the PAMI client Id into a Resource Manager Client Id
+      /// \brief Allocate a Client With The Specified Name
       ///
-      /// The PAMI client Ids are assigned in order of PAMI_Client_initialize() invocations.
-      /// The Resource Manager client Ids are assigned in the order the clients are
-      /// specified on the PAMI_CLIENTNAMES environment variable.
-      inline size_t mapClientIdToRmClientId ( size_t clientId );
+      /// \param[in]  clientName  Pointer to the null-terminated client name
+      /// \param[out] clientId    Pointer to a size_t where the client ID is returned.
+      ///
+      /// \retval  PAMI_SUCCESS  The client ID is returned.
+      /// \retval  PAMI_INVAL    Failure.  The client is not found.
+      ///
+      inline pami_result_t allocateClient( char   *clientName,
+					   size_t *clientId );
+
+      /// \brief Deallocate a Client With The Specified ID
+      ///
+      /// \param[in]  clientId  The ID of the client to be deallocated
+      ///
+      /// \retval PAMI_SUCCESS  The client has been deallocated
+      /// \retval PAMI_INVAL    The client is invalid, e.g. already deallocated
+      ///
+      inline pami_result_t deallocateClient( size_t clientId );
 
       /// \brief Return Whether The Specified Client Can Use MU Hardware Optimization
       ///        for Combining Collectives
       ///
-      /// The first client specified on the PAMI_CLIENTNAMES env var can use MU hardware
+      /// The first client specified on the PAMI_CLIENTS env var can use MU hardware
       /// optmization for combining collectives.  The other clients cannot.
       ///
       inline bool   doesClientOptimizeCombiningCollectivesInMU( size_t RmClientId )
@@ -190,17 +253,11 @@ namespace PAMI
 
       inline char * getConfigValueString( const char *configName );
 
+      inline void   getClients( const char *clientsConfigValueString );
 
-      inline void   getSubStringsFromConfigValueString( const char   *configName,
-							const char   *configValueString,
-							char        **configValueStringCopy,
-							const char ***subStringConfigValuePtrs,
-							size_t        numSubStringConfigValues,
-							const char   *defaultSubStringConfigValue );
+      inline size_t getNumClientsInternal();
 
-      inline void   getClientNames( const char *clientNamesConfigValueString );
-
-      inline void   getClientWeights( const char *clientWeightsConfigValueString );
+      inline void   initClientStatus();
 
       inline void   getConfig();
 
@@ -216,9 +273,10 @@ namespace PAMI
       size_t       _numSpiUserRecFifosPerProcess;
       size_t       _numSpiUserBatIdsPerProcess;
       size_t       _numClients;
-      char        *_clientNamesConfigValueStringCopy;
+      char        *_clientsConfigValueStringCopy;
       const char **_clientNamesPtrs;
       size_t      *_clientWeights;
+      clientStatus_t *_clientStatus;
       size_t       _rgetInjFifoSize;
       size_t       _injFifoSize;
       size_t       _recFifoSize;
@@ -294,165 +352,252 @@ char * PAMI::ResourceManager::getConfigValueString( const char *configName )
 } // End: getConfigValueString()
 
 
-void PAMI::ResourceManager::getSubStringsFromConfigValueString(
-						 const char   *configName,
-						 const char   *configValueString,
-						 char        **configValueStringCopy,
-						 const char ***subStringConfigValuePtrs,
-						 size_t        numSubStringConfigValues,
-						 const char   *defaultSubStringConfigValue )
+void PAMI::ResourceManager::getClients( const char *clientsConfigValueString )
 {
-  char        *myConfigValueStringCopy = NULL;
-  const char **mySubStringConfigValuePtrs;
   size_t       i;
 
   // Allocate space for _numClients pointers, to point to the client names.
   pami_result_t prc;
-  prc = __global.heap_mm->memalign((void **)&mySubStringConfigValuePtrs, 0,
-			numSubStringConfigValues * sizeof(*mySubStringConfigValuePtrs));
-  PAMI_assertf(prc == PAMI_SUCCESS, "alloc of mySubStringConfigValuePtrs failed");
-
-  // If the env var is not specified, fill the pointers with the default value.
-  if ( configValueString == NULL )
-    {
-      for (i=0; i<numSubStringConfigValues; i++)
-	mySubStringConfigValuePtrs[i] = defaultSubStringConfigValue;
-    }
-  else // Env var specifies numSubStringConfigValues values
-    {
-      // Find out how long the env var string is, so we can make a copy of it
-      unsigned int configValueStringLen = 0;
-      while ( configValueString[configValueStringLen++] != '\0' );
-
-      // Allocate space for a copy of the comma-delimited list of values
-      pami_result_t prc;
-      prc = __global.heap_mm->memalign((void **)&myConfigValueStringCopy, 0,
-						configValueStringLen);
-      PAMI_assertf(prc == PAMI_SUCCESS, "alloc of myConfigValueStringCopy failed");
-
-      // Copy the env var string into our writeable copy
-      for ( i=0; i<configValueStringLen; i++ )
-	myConfigValueStringCopy[i] = configValueString[i];
-
-      // First name is the start of the env var value
-      mySubStringConfigValuePtrs[0] = myConfigValueStringCopy;
-
-      char *currentChar = myConfigValueStringCopy;
-
-      for ( i=1; i<=numSubStringConfigValues; i++ )
-	{
-	  // Scan the env var value for the next name (after the comma)
-	  while ( ( *currentChar != ','  ) &&
-		  ( *currentChar != '\0' ) )
-	    currentChar++;
-
-	  if ( *currentChar != '0' )
-	    {
-	      *currentChar = '\0'; // Change delimiter to NULL
-	      currentChar++; // Skip past delimiter
-	    }
-
-	  if ( i<numSubStringConfigValues ) // Still expecting a name?
-	    {
-	      PAMI_assertf( *currentChar != '\0', "%s does not have enough names specified\n",configName );
-	      mySubStringConfigValuePtrs[i] = currentChar;
-	    }
-	}
-      *configValueStringCopy = myConfigValueStringCopy;
-    }
-  *subStringConfigValuePtrs = mySubStringConfigValuePtrs;
-
-} // End: getSubStringsFromConfigValueString()
-
-
-void PAMI::ResourceManager::getClientNames( const char *clientNamesConfigValueString )
-{
-  // If PAMI_CLIENTNAMES is not specified, then there must be only one client.
-  if ( clientNamesConfigValueString == NULL )
-    {
-      PAMI_assertf( _numClients == 1, "Multiple clients requires PAMI_CLIENTNAMES to be specified\n" );
-    }
-
-  getSubStringsFromConfigValueString ( "PAMI_CLIENTNAMES",
-				       clientNamesConfigValueString,
-				       &_clientNamesConfigValueStringCopy,
-				       &_clientNamesPtrs,
-				       _numClients,
-				       defaultClientName );
-} // End: getClientNames()
-
-
-void PAMI::ResourceManager::getClientWeights( const char *clientWeightsConfigValueString )
-{
-  size_t i;
-  size_t sum;
+  prc = __global.heap_mm->memalign((void **)&_clientNamesPtrs, 0,
+				   _numClients * sizeof(*_clientNamesPtrs));
+  PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _clientNamesPtrs failed");
 
   // Allocate space for _numClients weights.
-  pami_result_t prc;
   prc = __global.heap_mm->memalign((void **)&_clientWeights, 0,
 				_numClients * sizeof(*_clientWeights));
   PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _clientWeights failed");
 
-  // If PAMI_CLIENTWEIGHTS is not specified, then the weights are evenly
-  // distributed among the clients.  For example, 3 clients would be 34,33,33,
-  // since the weights add up to 100, and the first few clients get 1 extra.
-  if ( clientWeightsConfigValueString == NULL )
+  // If the PAMI_CLIENTS env var is not specified, fill with the default values.
+  if ( clientsConfigValueString == NULL )
     {
-      size_t defaultWeight = 100 / _numClients;
-      sum = 0;
-      for ( i=0; i<_numClients; i++ )
-	{
-	  _clientWeights[i] = defaultWeight;
-	  sum += defaultWeight;
-	}
-      if ( sum < 100 )
-	{
-	  sum = 100 - sum; // Calculate amount left over
-	  for ( i=0; (sum > 0) && (i<_numClients); i++ )
-	    {
-	      _clientWeights[i] += 1;
-	      sum--;
-	    }
-	}
-    }
-  else
-    {
-      char *configValueStringCopy; // Temporary...not needed afterwards.
-      const char **subStringConfigValuePtrs; // Temporary strings of weights.
-                                             // Not needed afterwards.
-
-      // Get substrings containing weights, one for each client.
-      getSubStringsFromConfigValueString ( "PAMI_CLIENTWEIGHTS",
-					   clientWeightsConfigValueString,
-					   &configValueStringCopy,
-					   &subStringConfigValuePtrs,
-					   _numClients,
-					   NULL );
-
-      // Convert the substrings into size_t values.
-      sum = 0;
       for (i=0; i<_numClients; i++)
 	{
-	  TRACE((stderr,"PAMI ResourceManager: Weight[%zu] = %s\n",i,subStringConfigValuePtrs[i]));
-#ifdef __FWEXT__
-
-	  _clientWeights[i] = (size_t)fwext_strtoul( subStringConfigValuePtrs[i], 0, 10 );
-
-#else
-
-	  _clientWeights[i] = (size_t)strtoul( subStringConfigValuePtrs[i], 0, 10 );
-
-#endif
-	  sum += _clientWeights[i];
+	  _clientNamesPtrs[i] = defaultClientName;
+	  _clientWeights[i]   = defaultClientWeight;
 	}
-
-      PAMI_assertf ( sum == 100, "The PAMI_CLIENTWEIGHTS do not add up to 100.\n" );
-
-      // Free temporary arrays.
-      __global.heap_mm->free( subStringConfigValuePtrs );
-      __global.heap_mm->free( configValueStringCopy    );
     }
-} // End: getClientWeights()
+  else // PAMI_CLIENTS env var specified.
+    {
+      // Find out how long the env var string is, so we can make a copy of it
+      unsigned int configValueStringLen = 0;
+      while ( clientsConfigValueString[configValueStringLen++] != '\0' );
+
+      // Allocate space for a copy of the comma-delimited list of values
+      pami_result_t prc;
+      prc = __global.heap_mm->memalign((void **)&_clientsConfigValueStringCopy, 0,
+						configValueStringLen);
+      PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _clientsConfigValueStringCopy failed");
+
+      // Copy the env var string into our writeable copy
+      for ( i=0; i<configValueStringLen; i++ )
+	_clientsConfigValueStringCopy[i] = clientsConfigValueString[i];
+      
+      char *currentChar = _clientsConfigValueStringCopy;
+      size_t client = 0;
+      int nameLen;
+
+      for ( ; client < _numClients ; )
+	{
+	  char delimiter;
+	  unsigned int r = defaultClientRepeat; // Repeat factor
+	  unsigned int w = defaultClientWeight; // Weight
+	  const char *clientNamePtr;
+
+	  // Handle the client name.
+	  clientNamePtr = currentChar; // Point to first character of the name.
+	  nameLen = 0;
+	  while ( ( *currentChar != ','  ) &&
+		  ( *currentChar != ':'  ) &&
+		  ( *currentChar != '/'  ) &&
+		  ( *currentChar != '\0' ) )
+	    {
+	      currentChar++;
+	      nameLen++;
+	    }
+	  if ( nameLen == 0 ) // Null name?  Point this client's name to the default (null) name.
+	    clientNamePtr = defaultClientName;
+	  delimiter = *currentChar; // Save the delimiter that we just hit.
+	  *currentChar = '\0';      // Null terminate the name.
+
+	  // Handle the :r and /w specifications.
+	  while (  ( delimiter == ':' ) || ( delimiter == '/' ) )
+	    {
+	      // Handle the :r specification
+	      if ( delimiter == ':' )
+		{
+		  r = defaultClientRepeat; // Init to default, in case r value not specified.
+		  currentChar++; // Skip past the ':'
+		  char *rPtr = currentChar;
+		  while ( ( *currentChar != ','  ) &&
+			  ( *currentChar != ':'  ) &&
+			  ( *currentChar != '/'  ) &&
+			  ( *currentChar != '\0' ) )
+		    {
+		      currentChar++;
+		    }
+		  delimiter = *currentChar; // Save ending delimiter.
+		  if ( *rPtr != delimiter )
+		    {
+		      *currentChar = '\0'; // Replace it with a null delimiter.
+		      r = atoi( rPtr );    // If the value string is null, just use default.
+		    }
+		}
+	      else
+		{
+		  // Handle the :w specification
+		  if ( delimiter == '/' )
+		    {
+		      w = defaultClientWeight; // Init to default, in case w value not specified.
+		      currentChar++; // Skip past the '/'
+		      char *wPtr = currentChar;
+		      while ( ( *currentChar != ','  ) &&
+			      ( *currentChar != ':'  ) &&
+			      ( *currentChar != '/'  ) &&
+			      ( *currentChar != '\0' ) )
+			{
+			  currentChar++;
+			}
+		      delimiter = *currentChar; // Save ending delimiter.
+		      if ( *wPtr != delimiter ) 
+			{
+			  *currentChar = '\0';      // Replace it with a null delimiter.
+			  w = atoi( wPtr ); // If the value string is null, just use default.
+			}
+		    }
+		}
+	    }
+
+	  // We are done with the name, r, and w specifications.
+	  // Process the repetition, saving the name ptr and w for each repeated client.
+	  for ( i=0; i<r; i++ )
+	    {
+	      _clientNamesPtrs[client] = clientNamePtr;
+	      _clientWeights[client]   = w;
+	      TRACE((stderr,"GetClients: Client %zu name=%s, w=%u\n",client,clientNamePtr,w));
+	      client++;
+	    }
+
+	  if ( delimiter == '\0' ) break;
+	  currentChar++;
+	}
+    }
+
+  // Change the client weights to percentages.
+  size_t sum=0;
+  for ( i=0; i<_numClients; i++ ) // Sum the weights.
+    {
+      sum += _clientWeights[i];
+    }
+  for ( i=0; i<_numClients; i++ ) // Convert to percentages.
+    {
+      _clientWeights[i] = _clientWeights[i] * 100 / sum;
+    }
+  sum = 0;
+  for ( i=0; i<_numClients; i++ ) // Sum the percentages.
+    {
+      sum += _clientWeights[i];
+    }
+  if ( sum < 100 ) // Due to rounding, distribute left overs.
+    {
+      sum = 100 - sum; // Calculate amount left over
+      for ( i=0; (sum > 0) && (i<_numClients); i++ )
+	{
+	  _clientWeights[i] += 1;
+	  sum--;
+	}
+    }
+  for ( i=0; i<_numClients; i++ )
+    {
+      TRACE((stderr,"WeightPercentage[%zu] = %zu\n",i,_clientWeights[i]));
+    }
+
+} // End: getClients()
+
+
+void PAMI::ResourceManager::initClientStatus( )
+{
+  size_t i;
+
+  // Allocate space for _clientStatus.
+  pami_result_t prc;
+  prc = __global.heap_mm->memalign((void **)&_clientStatus, 0,
+				_numClients * sizeof(*_clientStatus));
+  PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _clientStatus failed");
+
+  // Set the status of each client to "deallocated".
+  for ( i=0; i<_numClients; i++ )
+    _clientStatus[i] = RESOURCE_MANAGER_CLIENT_STATUS_DEALLOCATED;
+}
+
+/// \brief Get Number of Clients from PAMI_CLIENTS
+/// 
+/// Scan the PAMI_CLIENTS env var, counting commas.
+/// Then, process :r specifications, increasing the number of clients by r-1, for each r.
+///
+size_t PAMI::ResourceManager::getNumClientsInternal()
+{
+  char *clientsConfigValueString;
+  int i,j;
+  size_t numClients;
+
+  // Get PAMI_CLIENTS
+  clientsConfigValueString = getConfigValueString( "PAMI_CLIENTS" );
+
+  // If PAMI_CLIENTS is not specified, there must be 1 client.
+  if ( clientsConfigValueString == NULL )
+    return numClientsDefault;
+
+  // Count the comma separators to find out how many client entries are specified.
+  numClients = 1;
+  for ( i=0; ; i++ )
+    {
+      if ( clientsConfigValueString[i] == '\0' ) break; // Done.
+
+      if ( clientsConfigValueString[i] == ',' ) numClients++;
+    }
+
+  // Find each :r occurrence, convert r to a number, and add r-1 to the numClients count.
+  i=0;
+  int r=-1; // Init to "not specified".
+
+  for ( ; ; )
+    {
+      if ( ( clientsConfigValueString[i] == '\0' ) ||
+	   ( clientsConfigValueString[i] == ',' ) )
+	{
+	  if ( r != -1 ) numClients += (r-1); // Take the last r value and apply it to numClients.
+	  r = -1; // Start over with no r value.
+	  if ( clientsConfigValueString[i] == '\0' ) break;
+	}
+      
+      if ( clientsConfigValueString[i] == ':' ) // Found a :r specification?
+	{
+	  r = defaultClientRepeat; // Init to default, in case r value not specified.
+	  i++; // Skip past the ':'
+	  for ( j=i; ; j++ ) // Find end of "r".
+	    {
+	      if ( ( clientsConfigValueString[j] == ',' ) ||
+		   ( clientsConfigValueString[j] == ':' ) ||
+		   ( clientsConfigValueString[j] == '/' ) ||
+		   ( clientsConfigValueString[j] == '\0' ) ) break;
+	    }
+	  if ( i != j ) // Is there an 'r' value?
+	    {
+	      char ending;
+	      ending = clientsConfigValueString[j]; // Save ending delimiter.
+	      clientsConfigValueString[j] = '\0';   // Replace it with a null delimiter.
+	      r = atoi( &clientsConfigValueString[i] );
+	      PAMI_assertf(r > 0, "PAMI_CLIENTS :%d specification must be greater than zero.\n",r);
+	      clientsConfigValueString[j] = ending; // Restore ending delimiter.
+	      i = j; // Move past :r specification.
+	    }
+	}
+      else
+	i++;
+    }
+
+  return numClients;
+}
 
 
 void PAMI::ResourceManager::getProcessInfo()
@@ -481,9 +626,7 @@ void PAMI::ResourceManager::getProcessInfo()
 
 void PAMI::ResourceManager::getConfig()
 {
-  char *clientNamesConfigValueString;
-  char *clientWeightsConfigValueString;
-  size_t i;
+  char *clientsConfigValueString;
 
   // Get MUSPI_NUMINJFIFOS
   _numSpiUserInjFifosPerProcess    = getConfigValueSize_t( "MUSPI_NUMINJFIFOS",
@@ -497,28 +640,18 @@ void PAMI::ResourceManager::getConfig()
   _numSpiUserBatIdsPerProcess    = getConfigValueSize_t( "MUSPI_NUMBATIDS",
 							   numSpiUserBatIdsPerProcessDefault );
 
-  // Get PAMI_NUMCLIENTS
-  _numClients            = getConfigValueSize_t( "PAMI_NUMCLIENTS",
-						 numClientsDefault );
+  // Get the number of clients
+  _numClients = getNumClientsInternal();
 
   TRACE((stderr,"PAMI ResourceManager: numSpiUserInjFifosPerProcess=%zu, numSpiUserRecFifosPerProcess=%zu, numClients=%zu\n",_numSpiUserInjFifosPerProcess,_numSpiUserRecFifosPerProcess,_numClients));
 
-  PAMI_assertf( _numClients > 0, "PAMI_NUMCLIENTS must be greater than zero.\n" );
+  // Get PAMI_CLIENTS
+  clientsConfigValueString = getConfigValueString( "PAMI_CLIENTS" );
 
-  // Get PAMI_CLIENTNAMES
-  clientNamesConfigValueString = getConfigValueString( "PAMI_CLIENTNAMES" );
+  getClients( clientsConfigValueString );
 
-  getClientNames( clientNamesConfigValueString );
-
-  // Get PAMI_CLIENTWEIGHTS
-  clientWeightsConfigValueString = getConfigValueString( "PAMI_CLIENTWEIGHTS" );
-
-  getClientWeights( clientWeightsConfigValueString );
-
-  for (i=0; i<_numClients; i++)
-    {
-      TRACE((stderr,"PAMI ResourceManager: ClientName[%zu]=%s, Weight=%lu\n",i,_clientNamesPtrs[i],_clientWeights[i]));
-    }
+  // Set the status of each client to "deallocated".
+  initClientStatus();
 
   // Get PAMI_RGETINJFIFOSIZE
   _rgetInjFifoSize = getConfigValueSize_t( "PAMI_RGETINJFIFOSIZE",
@@ -537,30 +670,73 @@ void PAMI::ResourceManager::getConfig()
 
 } // End: getConfig()
 
-
-// \todo Map input clientId to the client name, and lookup the name, returning
-//       the clientId used by the RM as the RmClientId.  For now, assume the
-//       input clientId matches the RmClientId.
-size_t PAMI::ResourceManager::mapClientIdToRmClientId ( size_t clientId )
+/// \brief Allocate a Client With The Specified Name
+///
+/// \param[in]  clientName  Pointer to the null-terminated client name
+/// \param[out] clientId    Pointer to a size_t where the client ID is returned.
+///
+/// \retval  PAMI_SUCCESS  The client ID is returned.
+/// \retval  PAMI_INVAL    Failure.  The client is not found.
+///
+pami_result_t PAMI::ResourceManager::allocateClient( char   *clientName,
+						     size_t *clientId )
 {
-#if 1
-  return clientId;
-#else
-  char *nameForClientId = ???  // Get clientId's name
-    size_t client;
-  size_t numClients = getNumClients();
-  for ( client=0; client<numClients; client++ )
-    {
-      char *clientName = getClientName( client );
-      if ( strcmp( clientName, nameForClientId) == 0 )
-	return client;
-    }
-  // The client names specified on PAMI_CLIENTNAMES don't match the
-  // specified client name.
-  PAMI_assertf( 0, "Client name %s specified on PAMI_Client_create() does not match any of the client names specified on PAMI_CLIENTNAMES.\n", nameForClientId );
-#endif
+  size_t i;
 
-} // End: mapClientIdToRmClientId()
+  // Scan the client names for a match with the specified clientName.
+  for ( i=0; i<_numClients; i++ )
+    {
+      if ( ( strcmp ( clientName, getClientName(i) ) == 0 ) && // Match?
+	   ( _clientStatus[i] != RESOURCE_MANAGER_CLIENT_STATUS_ALLOCATED ) ) // AND Not allocated?
+	{
+	  // A matching client name was found and it is not allocated.
+	  _clientStatus[i] = RESOURCE_MANAGER_CLIENT_STATUS_ALLOCATED; // Mark client allocated.
+	  *clientId = i; // Return the client ID.
+	  TRACE((stderr,"allocateClient: Client %s successfully allocated with ID %zu\n",clientName,i));
+	  return PAMI_SUCCESS;
+	}
+    }
+
+  // If we get to here, the specified client name does not match anything we have stored.
+  // If there is an unallocated client with a NULL name (not specified), allocate it.  Otherwise, return invalid.
+
+  for ( i=0; i<_numClients; i++ )
+    {
+      if ( ( strcmp ( "", getClientName(i) ) == 0 ) && // Configured client name is NULL?
+	   ( _clientStatus[i] != RESOURCE_MANAGER_CLIENT_STATUS_ALLOCATED ) ) // Client not allocated?
+	{
+	  _clientStatus[i] = RESOURCE_MANAGER_CLIENT_STATUS_ALLOCATED; // Mark client allocated.
+	  *clientId = i; // Return the client ID.
+	  TRACE((stderr,"allocateClient: Client %s matches wildcard client with ID %zu\n",clientName,i));
+	  return PAMI_SUCCESS;
+	}
+    }
+
+  TRACE((stderr,"allocateClient: Client %s does not match any configured client or too many clients allocated.\n",clientName));
+
+  return PAMI_INVAL;
+}
+
+/// \brief Deallocate a Client With The Specified ID
+///
+/// \param[in]  clientId  The ID of the client to be deallocated
+///
+/// \retval PAMI_SUCCESS  The client has been deallocated
+/// \retval PAMI_INVAL    The client is invalid, e.g. already deallocated
+///
+pami_result_t PAMI::ResourceManager::deallocateClient( size_t clientId )
+{
+  if ( _clientStatus[clientId] == RESOURCE_MANAGER_CLIENT_STATUS_ALLOCATED )
+    {
+      TRACE((stderr,"deallocateClient: Client %zu successfully deallocated\n",clientId));
+      _clientStatus[clientId] = RESOURCE_MANAGER_CLIENT_STATUS_DEALLOCATED;
+      return PAMI_SUCCESS;
+    }
+
+  TRACE((stderr,"deallocateClient: Client %zu is not allocated...failed to deallocate\n",clientId));
+  
+  return PAMI_INVAL;
+}
 
 
 #undef TRACE

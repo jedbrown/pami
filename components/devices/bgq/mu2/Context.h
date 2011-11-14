@@ -162,7 +162,7 @@ namespace PAMI
             // basis PAMI_Client_create() is called.  We need an ID that
             // corresponds to the clients named on PAMI_CLIENTNAMES so the
             // resource manager knows which client we are talking about.
-            _rm_id_client = _pamiRM.mapClientIdToRmClientId ( id_client );
+            _rm_id_client = id_client;
 
             // Need to find a way to break this dependency...
             //_client = client;

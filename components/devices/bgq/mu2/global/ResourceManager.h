@@ -1544,8 +1544,6 @@ fprintf(stderr, "%s\n", buf);
 					       uint16_t  globalBatId,
 					       uint64_t  value );
 
-	inline size_t mapClientIdToRmClientId ( size_t clientId );
-
 	inline void initializeContexts( size_t rmClientId,
 				 size_t numContexts,
                                  PAMI::Device::Generic::Device * devices );

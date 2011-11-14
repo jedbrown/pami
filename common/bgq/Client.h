@@ -29,6 +29,8 @@
 #define DO_TRACE_DEBUG     0
 
 #include "algorithms/geometry/GeometryOptimizer.h"
+#include "common/bgq/ResourceManager.h"
+extern PAMI::ResourceManager __pamiRM;
 
 namespace PAMI
 {
@@ -43,31 +45,44 @@ namespace PAMI
     _world_geometry((BGQGeometry*)_world_geometry_storage),
     _mm ()
     {
-      static size_t next_client_id = 0;
+      pami_result_t rc;
+
       // Set the client name string.
       memset ((void *)_name, 0x00, sizeof(_name));
       strncpy (_name, name, sizeof(_name) - 1);
 
-      _clientid = next_client_id++;
-      TRACE_ERR((stderr, "(%8.8u)<%p:%zu>BGQ::Client() %s\n", Kernel_ProcessorID(),this, _clientid, _name));
-      // PAMI_assert(_clientid < PAMI_MAX_NUM_CLIENTS);
+      // "allocate" the client.  This makes sure the specified client name is one of the valid
+      // names configured on PAMI_CLIENTNAMES, that the name has not already been allocated,
+      // and returns the proper clientId that matches the order of the client names specified on
+      // the PAMI_CLIENTNAMES env var.
+      rc = __pamiRM.allocateClient( _name,
+				    &_clientid );
 
-      // Get some shared memory for this client
-      initializeMemoryManager ();
+      TRACE_ERR((stderr, "(%8.8u)<%p:%zu>BGQ::Client() %s, allocate rc=%d\n", Kernel_ProcessorID(),this, _clientid, _name, rc));
 
-      _world_range.lo = 0;
-      _world_range.hi = __global.mapping.size() - 1;
-      /// \todo This should be using the global topology and NOT de-optimize to a range!
-      /// new(_world_geometry_storage) BGQGeometry(_client, NULL, &__global.mapping, 0, &__global.topology_global);
-      new(_world_geometry_storage) BGQGeometry(_client, NULL, &__global.mapping, 0, 1, &_world_range, &_geometry_map);
-      // This must return immediately (must not enqueue non-blocking ops).
-      // Passing a NULL context should ensure that.
-      __MUGlobal.getMuRM().geomOptimize(_world_geometry, _clientid, 0, NULL, NULL, NULL);
-      // Now, subsequent 'analyze' done on this geom will know that MU Coll is avail.
+      if ( rc == PAMI_SUCCESS )
+	{
+	  // PAMI_assert(_clientid < PAMI_MAX_NUM_CLIENTS);
 
-      _geomopt = NULL;
+	  // Get some shared memory for this client
+	  initializeMemoryManager ();
+	  
+	  _world_range.lo = 0;
+	  _world_range.hi = __global.mapping.size() - 1;
+	  /// \todo This should be using the global topology and NOT de-optimize to a range!
+	  /// new(_world_geometry_storage) BGQGeometry(_client, NULL, &__global.mapping, 0, &__global.topology_global);
+	  new(_world_geometry_storage) BGQGeometry(_client, NULL, &__global.mapping, 0, 1, &_world_range, &_geometry_map);
+	  // This must return immediately (must not enqueue non-blocking ops).
+	  // Passing a NULL context should ensure that.
+	  __MUGlobal.getMuRM().geomOptimize(_world_geometry, _clientid, 0, NULL, NULL, NULL);
+	  // Now, subsequent 'analyze' done on this geom will know that MU Coll is avail.
+	  
+	  _geomopt = NULL;
 
-      result = PAMI_SUCCESS;
+	  result = PAMI_SUCCESS;
+	}
+      else
+	result = rc;
     }
 
     inline ~Client ()
@@ -98,9 +113,16 @@ namespace PAMI
     {
       TRACE_ERR((stderr, "(%8.8u)<%p>BGQ::Client::destroy_impl\n", Kernel_ProcessorID(),client));
       PAMI::Client *clt = (PAMI::Client *)client;
-      // ensure contexts are destroyed first???
-      clt->~Client();
-      __global.heap_mm->free((void *)client);
+
+      // Deallocate this client
+      pami_result_t rc;
+      rc = __pamiRM.deallocateClient( clt->getClientId() );
+      if ( rc == PAMI_SUCCESS )
+	{
+	  // ensure contexts are destroyed first???
+	  clt->~Client();
+	  __global.heap_mm->free((void *)client);
+	}
     }
 
     inline size_t maxContexts_impl ()
