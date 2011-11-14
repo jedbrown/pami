@@ -9,6 +9,8 @@
 #include "Bsr.h"
 #include "ShmArray.h"
 #include "lapi_assert.h"
+#include "lapi_itrace.h"
+#include "atomics.h"
 
 class ClassDump;
 /**
@@ -53,11 +55,11 @@ class SaOnNodeSyncGroup : public SyncGroup {
             FAIL_ST,
             DONE_ST
         } s_state;
-        template <class SA_TYPE>
-            SharedArray::RC InitSa(void* ctrl_block, size_t ctrl_block_sz);
         unsigned int  is_leader;
         unsigned int  job_key;
         unsigned int  seq;
+        Bsr          *bsr_sa;
+        ShmArray     *shm_sa;  // for failover use
         SharedArray  *sa;      // could be BSRs, ShmArray
         int           nb_barrier_stage; /* stages for non-blocking barrier.
                                          * (0) init stage
@@ -71,14 +73,14 @@ class SaOnNodeSyncGroup : public SyncGroup {
 
         SaType        sa_type;
 
+        void AllocSa();
+        void SetDoneFlag();
+
         /* for Checkpoint support */
         struct CtrlBlock {
             volatile size_t       done_flag;   // Flag to signal upper layer to clean up the shm
+            volatile int          ref_cnt;
         }                        *ctrl_block;
-        void SetDoneFlag() {
-            /* member_id + 1 is the contracted mask with CAURegistration */
-            ctrl_block->done_flag = done_mask;
-        }
 };
 
 inline
@@ -96,6 +98,8 @@ SaOnNodeSyncGroup::SaOnNodeSyncGroup(unsigned int mem_id, unsigned int mem_cnt,
     job_key(job_key),
     seq(0),
     sa(NULL),
+    bsr_sa(NULL),
+    shm_sa(NULL),
     nb_barrier_stage(2),
     s_state(ORIG_ST),
     bsr_ctrl_block(NULL),
@@ -127,12 +131,68 @@ SaOnNodeSyncGroup::SaOnNodeSyncGroup(unsigned int mem_id, unsigned int mem_cnt,
     ctrl_block             = (CtrlBlock*)shm_block;
     bsr_ctrl_block         = (void*)((char*)ctrl_block + ctrl_block_sz);
     shmarray_ctrl_block    = (void*)((char*)bsr_ctrl_block + bsr_ctrl_block_sz);
+
+    /* allocate bsr_sa and shm_sa */
+    AllocSa();
+
+    /* increment reference count */
+    int ref = fetch_and_add((atomic_p)&ctrl_block->ref_cnt, 1);
+    ASSERT(ref <= member_cnt);
 };
 
 inline 
 bool SaOnNodeSyncGroup::IsInitialized()
 {
     return (s_state == DONE_ST);
+}
+
+/*!
+ * \brief Default destructor.
+ */
+inline
+SaOnNodeSyncGroup::~SaOnNodeSyncGroup()
+{
+    ITRC(IT_BSR, "~SaOnNodeSyncGroup() sa_type=%s bsr_sa=0x%p shm_sa=0x%p\n", 
+            (sa_type == SA_TYPE_BSR)?"SA_TYPE_BSR":
+            (sa_type == SA_TYPE_SHMARRAY)?"SA_TYPE_SHMARRAY":"SA_TYPE_NONE",
+            bsr_sa, shm_sa);
+    delete bsr_sa; bsr_sa = NULL;
+    delete shm_sa; shm_sa = NULL;
+    sa = NULL;
+
+    int ref = fetch_and_add ((atomic_p)&ctrl_block->ref_cnt, -1);
+    if (ref == 1) {
+        /* The last guy to leave has to set done flag */
+        /* Signal to remove the shared memory. No access is allowed after this point */
+        SetDoneFlag();
+        ITRC(IT_BSR, "~SaOnNodeSyncGroup() done_flag set to %zu\n", ctrl_block->done_flag);
+    }
+    ASSERT(ref > 0);
+}
+
+inline
+void SaOnNodeSyncGroup::AllocSa()
+{
+    try {
+        bsr_sa = new Bsr(member_cnt, is_leader, bsr_ctrl_block, bsr_ctrl_block_sz);
+        shm_sa = new ShmArray(member_cnt, is_leader, shmarray_ctrl_block, shmarray_ctrl_block_sz);
+    } catch (std::bad_alloc e) {
+        fprintf(stderr, "SaOnNodeSyncGroup: Out of memory.\n");
+        ITRC(IT_BSR, "SaOnNodeSyncGroup: Out of memory.\n");
+        assert(0);
+    } catch (...) {
+        fprintf(stderr, "SaOnNodeSyncGroup: Unexpected exception caught.\n");
+        ITRC(IT_BSR, "SaOnNodeSyncGroup: Unexpected exception caught.\n");
+        assert(0);
+    }
+    ITRC(IT_BSR, "SaOnNodeSyncGroup::InitSa() bsr_sa=0x%p shm_sa=0x%p\n",
+            bsr_sa, shm_sa);
+}
+
+inline
+void SaOnNodeSyncGroup::SetDoneFlag() {
+    /* member_id + 1 is the contracted mask with CAURegistration */
+    ctrl_block->done_flag = done_mask;
 }
 #endif /* _SAONNODESYNCGROUP_H_ */
 

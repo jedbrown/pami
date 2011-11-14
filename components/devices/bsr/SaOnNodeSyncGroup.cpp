@@ -3,9 +3,7 @@
 #include <unistd.h>
 #include <new>
 #include <string.h>
-#include "atomics.h"
 #include "ClassDump.h"
-#include "lapi_itrace.h"
 #include "util/common.h"
 
 #ifdef POWER_ARCH
@@ -18,35 +16,6 @@ static volatile bool bsr_failover_informed = false;
 
 const unsigned long long SaOnNodeSyncGroup::mask[2] = { 0x0000000000000000LL,   // 8 bytes 0x00
                                                         0x0101010101010101LL }; // 8 bytes 0x01
-template 
-SharedArray::RC SaOnNodeSyncGroup::InitSa<Bsr>(void* ctrl_block, size_t ctrl_block_sz);
-template
-SharedArray::RC SaOnNodeSyncGroup::InitSa<ShmArray>(void* ctrl_block, size_t ctrl_block_sz);
-
-template <class SA_TYPE>
-SharedArray::RC SaOnNodeSyncGroup::InitSa(void* ctrl_block, size_t ctrl_block_sz)
-{
-    if (NULL == sa) {
-        try {
-            sa = new SA_TYPE(member_cnt, is_leader, done_mask, ctrl_block, ctrl_block_sz);
-        } catch (std::bad_alloc e) {
-            fprintf(stderr, "(%d)SaOnNodeSyncGroup(%s): Out of memory.\n", 
-                    member_id, sa->name);
-            ITRC(IT_BSR, "(%d)SaOnNodeSyncGroup(%s): Out of memory.\n", 
-                    member_id, sa->name);
-            assert(0);
-        } catch (...) {
-            fprintf(stderr, "(%d)SaOnNodeSyncGroup(%s): Unexpected exception caught.\n",
-                    member_id, sa->name);
-            ITRC(IT_BSR, "(%d)SaOnNodeSyncGroup(%s): Unexpected exception caught.\n",
-                    member_id, sa->name);
-            assert(0);
-        }
-        ITRC(IT_BSR, "SaOnNodeSyncGroup::InitSa<%s> ctrl_bloc=%p ctrl_bloc_sz=%zu\n",
-                sa->name, ctrl_block, ctrl_block_sz);
-    }
-    return sa->CheckInitDone(job_key, member_id, seq);
-}
 
 SyncGroup::RC SaOnNodeSyncGroup::CheckInitDone(SaType *dev_type)
 {
@@ -62,36 +31,52 @@ SyncGroup::RC SaOnNodeSyncGroup::CheckInitDone(SaType *dev_type)
                 s_state = DONE_ST;
                 return SUCCESS;
             }
-            ITRC(IT_BSR, "SaOnNodeSyncGroup(BSR): ORIG_ST->BSR_ST\n");
-            s_state = BSR_ST;
+            ITRC(IT_BSR, "SaOnNodeSyncGroup: ORIG_ST->SHM_ST is_leader=%d "
+                    "job_key=%u mem_id=%d seq=%u\n",
+                    is_leader, job_key, member_id, seq);
+            s_state = SHM_ST;
             // fall through
-        case BSR_ST:
-            ASSERT(s_state == BSR_ST);
-            sa_rc = InitSa<Bsr>(bsr_ctrl_block, bsr_ctrl_block_sz);
+        case SHM_ST:
+            /*
+             * Initialize ShmArray first. It can be used for failover or checkpoint
+             * support. This should not fail. If fails, there is nothing we can do
+             * but return FAIL.
+             */
+            sa_rc = shm_sa->CheckInitDone(job_key, member_id, seq);
             if ( SharedArray::SUCCESS == sa_rc ) {
-                ITRC(IT_BSR, "(%d)SaOnNodeSyncGroup: Using Bsr BSR_ST->DONE_ST\n", 
-                        member_id);
+                ITRC(IT_BSR,
+                        "SaOnNodeSyncGroup: shm_sa init done; try Bsr init SHM_ST->BSR_ST\n");
+                /* try initialize Bsr next */
+                s_state = BSR_ST;
+                // fall through
+            } else if (SharedArray::PROCESSING == sa_rc ) {
+                /* in progress */
+                break;
+            } else if (SharedArray::FAILED == sa_rc ) {
+                ITRC(IT_BSR, "SaOnNodeSyncGroup: ShmArray init failed SHM_ST->FAIL_ST\n");
+                s_state = FAIL_ST;
+                break;
+            } else { assert(0 && "Should not be here"); }
+        case BSR_ST:
+            sa_rc = bsr_sa->CheckInitDone(job_key, member_id, seq);
+            if ( SharedArray::SUCCESS == sa_rc ) {
+                ITRC(IT_BSR, "SaOnNodeSyncGroup(%s): bsr_sa init done BSR_ST->DONE_ST\n",
+                        (is_leader)?"LEADER":"FOLLOWER");
                 group_desc = "SharedArray:Bsr";
-                s_state = DONE_ST;
+                sa      = bsr_sa;
                 *dev_type = sa_type = SA_TYPE_BSR;
+                s_state = DONE_ST;
+                ITRC(IT_BSR, "SaOnNodeSyncGroup: using BSR\n");
                 return SUCCESS;
             } else if (SharedArray::PROCESSING == sa_rc ) {
                 /* in progress */
                 break;
             } else if (SharedArray::FAILED == sa_rc ) {
-                ITRC(IT_BSR, "(%d)SaOnNodeSyncGroup: BSR setup failed BSR_ST->SHM_ST\n",
-                        member_id);
-                /* try use ShmArray */
-                s_state = SHM_ST;
-                delete sa;
-                sa = NULL;
-                // fall through 
-            } else { assert(0 && "Should not be here"); }
-        case SHM_ST:
-            sa_rc = InitSa<ShmArray>(shmarray_ctrl_block, shmarray_ctrl_block_sz);
-            if ( SharedArray::SUCCESS == sa_rc ) {
-                ITRC(IT_BSR, "(%d)SaOnNodeSyncGroup: Using ShmArray SHM_ST->DONE_ST\n", 
-                        member_id);
+                ITRC(IT_BSR, "SaOnNodeSyncGroup(%s): bsr_sa init failed BSR_ST->DONE_ST\n",
+                        (is_leader)?"LEADER":"FOLLOWER");
+                /* clean up bsr_sa */
+                delete bsr_sa;
+                bsr_sa = NULL;
                 if (!bsr_failover_informed && is_leader)
                 {
                     char host[256] = "";
@@ -100,26 +85,17 @@ SyncGroup::RC SaOnNodeSyncGroup::CheckInitDone(SaType *dev_type)
                     bsr_failover_informed = true;
                 }
                 group_desc = "SharedArray:ShmArray";
-                s_state = DONE_ST;
+                sa      = shm_sa;
                 *dev_type = sa_type = SA_TYPE_SHMARRAY;
+                s_state = DONE_ST;
+                ITRC(IT_BSR, "SaOnNodeSyncGroup: using ShmArray\n");
                 return SUCCESS;
-            } else if (SharedArray::PROCESSING == sa_rc ) {
-                /* in progress */
-                break;
-            } else if (SharedArray::FAILED == sa_rc ) {
-                ITRC(IT_BSR, "(%d)SaOnNodeSyncGroup: ShmArray setup failed SHM_ST->FAIL_ST\n",
-                        member_id);
-                /* try use ShmArray */
-                s_state = FAIL_ST;
-                // fall through 
             } else { assert(0 && "Should not be here"); }
         case FAIL_ST:
-            delete sa;
             sa = NULL;
             // No SharedArray object available for using.
             ITRC(IT_BSR, 
-                    "(%d)SaOnNodeSyncGroup: Cannot create SharedArray obj\n",
-                    member_id);
+                    "SaOnNodeSyncGroup: Cannot create SharedArray obj\n");
             return FAILED;
         case DONE_ST:
             return SUCCESS;
@@ -129,37 +105,6 @@ SyncGroup::RC SaOnNodeSyncGroup::CheckInitDone(SaType *dev_type)
     }
 
     return PROCESSING;
-}
-
-/*!
- * \brief Default destructor.
- */
-SaOnNodeSyncGroup::~SaOnNodeSyncGroup()
-{
-    ITRC(IT_BSR, "~SaOnNodeSyncGroup() sa_type=%s\n", 
-            (sa_type == SA_TYPE_BSR)?"SA_TYPE_BSR":
-            (sa_type == SA_TYPE_SHMARRAY)?"SA_TYPE_SHMARRAY":"SA_TYPE_NONE");
-    delete sa;
-
-    volatile size_t flag;
-    // No sync necessary because other threads/tasks will read the cleared value
-    // of 0, or will read the updated control block value
-    switch (sa_type) {
-        case SA_TYPE_BSR:
-            flag = *((volatile size_t*)bsr_ctrl_block);
-            break;
-        case SA_TYPE_SHMARRAY:
-            flag = *((volatile size_t*)shmarray_ctrl_block);
-            break;
-        default:
-          if(is_leader) flag = done_mask;
-          else          flag = 0;
-    }
-    if (done_mask == flag || member_cnt == 1) {
-        /* Signal to remove the shared memory. No access is allowed after this point */
-        SetDoneFlag();
-        ITRC(IT_BSR, "~SaOnNodeSyncGroup() done_flag set to %zu\n", ctrl_block->done_flag);
-    }
 }
 
 void SaOnNodeSyncGroup::BarrierEnter()

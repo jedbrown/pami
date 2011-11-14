@@ -20,15 +20,13 @@
 /*!
  * \brief Default constructor.
  */
-ShmArray::ShmArray(unsigned int mem_cnt, bool is_leader, size_t done_mask,
-        void *shm_block, size_t shm_block_sz):
+ShmArray::ShmArray(unsigned int mem_cnt, bool is_leader, void *shm_block, size_t shm_block_sz):
     SharedArray(mem_cnt, is_leader, shm_block, shm_block_sz, "ShmArray"),
     shm((Shm*)shm_block),
     shm_size(shm_block_sz),
     shm_state(ST_NONE),
-    done_mask(done_mask)
+    is_last(false)
 {
-    ASSERT(done_mask);
     assert(GetCtrlBlockSz(member_cnt) <= shm_block_sz);
     /* check alignment for variables that used by atomic */
     size_t align_mask = (sizeof(size_t) - 1);
@@ -47,7 +45,7 @@ SharedArray::RC ShmArray::CheckInitDone(const unsigned int   job_key,
         case ST_NONE:
             /// Main steps:
             ITRC(IT_BSR, 
-                    "ShmArray(FAILOVER): member_cnt:%u is_leader:%d job_key:%u\n",
+                    "ShmArray: member_cnt:%u is_leader:%d job_key:%u\n",
                     member_cnt, is_leader, job_key);
             ASSERT(shm_size >= sizeof(Shm)+member_cnt);
             shm = (Shm *)shm_seg;
@@ -58,7 +56,7 @@ SharedArray::RC ShmArray::CheckInitDone(const unsigned int   job_key,
             // fall through
         case ST_SHM_CHECK_REF_CNT:
             if (shm->ready_cnt == this->member_cnt) {
-                ITRC(IT_BSR, "ShmArray(FAILOVER): Ready to use\n");
+                ITRC(IT_BSR, "ShmArray: Ready to use\n");
                 return SUCCESS;
             } else {
                 return PROCESSING;
@@ -82,10 +80,10 @@ ShmArray::~ShmArray()
 {
     int cnt = fetch_and_add((atomic_p)&(shm->ready_cnt), -1);
     if (cnt == 1) {
-        SetDoneFlag();
+        is_last = true;
     }
-    ITRC(IT_BSR, "ShmArray(FAILOVER): Destroyed ready_cnt=%d->%d done_flag=%zu\n",
-            cnt, cnt-1, shm->done_flag);
+    ITRC(IT_BSR, "ShmArray: Destroyed ready_cnt=%d->%d is_last=%d\n",
+            cnt, cnt-1, is_last);
     assert(cnt > 0);
 }
 

@@ -105,16 +105,14 @@ bool BsrFunc::loaded = false;
 /*!
  * \brief Default constructor.
  */
-Bsr::Bsr(unsigned int mem_cnt, bool is_leader, size_t done_mask, 
-        void *shm_block, size_t shm_block_sz) :
+Bsr::Bsr(unsigned int mem_cnt, bool is_leader, void *shm_block, size_t shm_block_sz) :
     SharedArray(mem_cnt, is_leader, shm_block, shm_block_sz, "BSR"),
-    done_mask(done_mask),
     bsr_id(-1),
     bsr_addr(NULL),
     bsr_state(ST_NONE),
-    shm(NULL)
+    shm(NULL),
+    is_last(false)
 {
-    ASSERT(done_mask); // cannot be zero
     ASSERT(shm_block_sz >= sizeof(Shm));
     shm = (Shm *)shm_seg;
     assert(NULL!=shm);
@@ -143,7 +141,7 @@ void Bsr::ReleaseBsrResource()
 {
     ITRC(IT_BSR, "BSR: ReleaseBsrResource() setup_ref = %d\n", shm->setup_ref);
     if (bsr_id != -1) {
-        if (shm->done_flag == done_mask) {
+        if (is_last) {
 #ifdef _LAPI_LINUX
             ITRC(IT_BSR, "BSR: bsr_free() bsr_id=%d\n", bsr_id);
             (*__bsr_func.bsr_free)(bsr_id);
@@ -174,11 +172,11 @@ void Bsr::DetachBsr()
         bsr_addr = NULL;
         int ref = fetch_and_add ((atomic_p)&shm->setup_ref, -1);
         if (ref == 1) { // I am the last member leave
-            SetDoneFlag();
+            is_last = true;
         }
         ITRC(IT_BSR,
-                "BSR: DetachBsr() &setup_ref=%p setup_ref=%d->%d done_flag=%zu\n",
-                &shm->setup_ref, ref, ref-1, shm->done_flag);
+                "BSR: DetachBsr() &setup_ref=%p setup_ref=%d->%d is_last=%d\n",
+                &shm->setup_ref, ref, ref-1, is_last);
         assert(ref > 0);
     } else {
         ITRC(IT_BSR, "Bsr: DetachBsr() bsr_addr=NULL no-op\n");
@@ -261,12 +259,12 @@ bool Bsr::AttachBsr(int mem_id, unsigned char init_val)
 #ifdef _LAPI_LINUX
     bsr_addr = (unsigned char *)(*(__bsr_func.bsr_map))(NULL, (unsigned)bsr_id, 0, 0, &bsr_length);
     if (NULL == bsr_addr || MAP_FAILED == bsr_addr || bsr_length < member_cnt) {
-        ITRC(IT_BSR, "BSR: %s bsr_map failed with bsr_id=%d bsr_length=%u errno=%u\n",
+        ITRC(IT_BSR, "BSR: %s bsr_map failed with bsr_id=%u bsr_length=%u errno=%u\n",
                 (is_leader)?"LEADER":"FOLLOWER", bsr_id, bsr_length, errno);
         return false;
     }
-    ITRC(IT_BSR, "BSR: %s bsr_map returns bsr_addr=%p bsr_length=%u\n",
-            (is_leader)?"LEADER":"FOLLOWER", bsr_addr, bsr_length);
+    ITRC(IT_BSR, "BSR: %s bsr_map w/ bsr_id=%d returns bsr_addr=%p bsr_length=%u\n",
+            (is_leader)?"LEADER":"FOLLOWER", bsr_id, bsr_addr, bsr_length);
 #else  /* AIX flow */
     // attach to BSR shm region
     bsr_addr = (unsigned char*)shmat(bsr_id, 0, 0);
