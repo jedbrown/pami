@@ -35,6 +35,12 @@ class ShmArray : public SharedArray
         static size_t GetCtrlBlockSz(unsigned int mem_cnt) {
             return (sizeof(Shm) + mem_cnt);
         }
+
+        /* for Checkpoint support */
+        bool Checkpoint(int byte_offset) { return true; } // nothing needed
+        bool Restart   (int byte_offset) { return true; } // nothing needed
+        bool Resume    (int byte_offset) { return true; } // nothing needed
+
     private:
         bool                       is_last;
         enum SETUP_STATE {

@@ -84,12 +84,11 @@ namespace PAMI
                         }
                         _state = ENTERING;
                         break;
-                    case SyncGroup::PROCESSING:
+                      case SyncGroup::PROCESSING:
                         return PAMI_EAGAIN;
-                    default:
-                        assert(0);
-                        return PAMI_ERROR;
-                  }
+                      default:
+                       assert(0);
+                    }
                   } else {
                     _state = ENTERING;
                   }

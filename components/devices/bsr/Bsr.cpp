@@ -139,7 +139,9 @@ Bsr::~Bsr() {
 
 void Bsr::ReleaseBsrResource()
 {
-    ITRC(IT_BSR, "BSR: ReleaseBsrResource() setup_ref = %d\n", shm->setup_ref);
+    ITRC(IT_BSR, "BSR: ReleaseBsrResource() setup_ref = %d bsr_id=%d\n",
+            shm->setup_ref, bsr_id);
+    /* bsr_id maybe set to -1 already (on AIX when all tasks attached) */
     if (bsr_id != -1) {
         if (is_last) {
 #ifdef _LAPI_LINUX
@@ -152,6 +154,18 @@ void Bsr::ReleaseBsrResource()
         }
         bsr_id = -1;
     }
+    if (is_last && ckpt_info.in_checkpoint) {
+        PAMI::Memory::sync();
+        /*
+         * Reset bsr_id and bsr_acquired in control block.
+         * Note that we don't reset the shm->setup_failed field.
+         */ 
+        shm->bsr_id       = 0; // every thing in control block is init to zero
+        shm->bsr_acquired = false;
+        PAMI::Memory::sync();
+        ITRC(IT_BSR, "BSR: reset shm->bsr_id and shm->bsr_acquired for checkpoint\n");
+    }
+    bsr_state = ST_NONE;
 }
 
 void Bsr::DetachBsr()
@@ -175,8 +189,8 @@ void Bsr::DetachBsr()
             is_last = true;
         }
         ITRC(IT_BSR,
-                "BSR: DetachBsr() &setup_ref=%p setup_ref=%d->%d is_last=%d\n",
-                &shm->setup_ref, ref, ref-1, is_last);
+                "BSR: DetachBsr() &setup_ref=%p setup_ref=%d->%d is_last=%d in_ckpt=%d\n",
+                &shm->setup_ref, ref, ref-1, is_last, ckpt_info.in_checkpoint);
         assert(ref > 0);
     } else {
         ITRC(IT_BSR, "Bsr: DetachBsr() bsr_addr=NULL no-op\n");
@@ -240,6 +254,9 @@ bool Bsr::IsBsrReady()
          * All member attached, we don't need bsr_id anymore.
          * Mark the Systemv Shared Memory to be freed.
          */
+        /* TODO: Remove this part by adding shm id tracking on AIX.
+         *       Adding shm id bookkeeping can avoid shm leak in abnormal case
+         *       and enable checkpoint failover. */
         if (is_leader) {
             ITRC(IT_BSR, "BSR: All attached. shmctl RMID bsr_id=%d\n", bsr_id);
             shmctl(bsr_id, IPC_RMID, 0); 
@@ -256,6 +273,7 @@ bool Bsr::AttachBsr(int mem_id, unsigned char init_val)
     PAMI::Memory::sync();
     bsr_id = shm->bsr_id;
     ASSERT(bsr_id != -1);
+    ASSERT(shm->bsr_acquired);
 #ifdef _LAPI_LINUX
     bsr_addr = (unsigned char *)(*(__bsr_func.bsr_map))(NULL, (unsigned)bsr_id, 0, 0, &bsr_length);
     if (NULL == bsr_addr || MAP_FAILED == bsr_addr || bsr_length < member_cnt) {
@@ -380,6 +398,9 @@ bool Bsr::GetBsrResource(unsigned int job_key)
     if (shmctl(bsr_id, SHM_BSR, NULL)) {
         ITRC(IT_BSR, "BSR: shmctl(SHM_BSR) failed with errno=%u BSR id %d\n", 
                 errno, bsr_id);
+        ITRC(IT_BSR, "BSR: shmctl RMID bsr_id=%d\n", bsr_id);
+        shmctl(bsr_id, IPC_RMID, 0); 
+        bsr_id = -1;
         return false;
     } else {
         ITRC(IT_BSR, "BSR: shmctl(SHM_BSR) passed with BSR id %u.\n", bsr_id);
@@ -438,7 +459,7 @@ SharedArray::RC Bsr::CheckInitDone(const unsigned int   job_key,
             case ST_BSR_WAIT_ATTACH:
                 if ( IsBsrReady() ) {
                     bsr_state = ST_SUCCESS;
-                    ITRC(IT_BSR,"BSR: bsr_state moved from ST_BSR_WAIT_WATCH to ST_SUCCESS\n");
+                    ITRC(IT_BSR,"BSR: bsr_state moved from ST_BSR_WAIT_ATTACH to ST_SUCCESS\n");
                 }
                 advance = (bsr_state != ST_BSR_WAIT_ATTACH);
                 break;
@@ -495,5 +516,64 @@ void Bsr::Store4(const int byte_offset, const unsigned int val)
 void Bsr::Store8(const int byte_offset, const unsigned long long val)
 {
     assert(0 && "BSR::Store8() not supported");
+}
+
+bool Bsr::Checkpoint(int byte_offset)
+{
+    assert(!ckpt_info.in_checkpoint);
+    ckpt_info.in_checkpoint = true;
+    ckpt_info.prev_state    = bsr_state;
+    /*
+     * Need to save the bsr byte when BSR is attached.
+     */ 
+    if (bsr_addr)
+        ckpt_info.byte_data = Load1(byte_offset);
+
+    /* release BSR resource */
+    DetachBsr();
+
+    /* remove bsr_id */
+    ReleaseBsrResource();
+
+    int ret = fetch_and_add((atomic_p)&(shm->ckpt_ref), 1);
+    return true;
+}
+
+bool Bsr::Resume(int byte_offset)
+{
+    assert(ckpt_info.in_checkpoint);
+    assert(shm->ckpt_ref <= member_cnt);
+    /*
+     * Resume from a unsuccessful checkpoint, is handled by following code
+     * as well. In that case, the bsr_id is not freed.
+     * We need to reattach to the BSR with the same shm->bsr_id, to
+     * failover from the failed checkpoint.
+     */
+    PAMI::Memory::sync(); // This sync() is needed for trigger based ckpt emulation
+    if (ckpt_info.prev_state == ST_FAIL) 
+        bsr_state = ckpt_info.prev_state;
+    else
+        bsr_state = ST_NONE;
+
+    /* reinitialize BSR (blocking) */
+    SharedArray::RC init_rc = PROCESSING;
+    while (PROCESSING == init_rc && bsr_state != ckpt_info.prev_state) {
+        init_rc = CheckInitDone(
+                _Lapi_env.MP_partition, /* Job id may change after restart */
+                byte_offset,
+                ckpt_info.byte_data);
+    }
+
+    int ret = fetch_and_add((atomic_p)&(shm->ckpt_ref), -1);
+    assert(ret > 0);
+    ckpt_info.in_checkpoint = false;
+
+    return (FAILED != init_rc);
+}
+
+bool Bsr::Restart(int byte_offset)
+{
+    /* same as Resume() now */
+    return Resume(byte_offset);
 }
 

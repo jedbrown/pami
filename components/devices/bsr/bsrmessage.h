@@ -38,19 +38,30 @@ namespace PAMI
         _geometry_id(geometry_id),
         _topology(topology),
         _in_barrier(false),
-        _shm_block(shm_block),
-        _shm_block_sz(shm_block_sz),
         _sync_group(member_id, topology->size(), job_key, shm_block, shm_block_sz)
         {
         }
+
+      bool Checkpoint()
+        {
+          return _sync_group.Checkpoint();
+        }
+
+      bool Restart()
+        {
+          return _sync_group.Restart();
+        }
+
+      bool Resume()
+        {
+          return _sync_group.Resume();
+        }
+
       SaOnNodeSyncGroup         _sync_group;
       int                       _geometry_id;
       Topology                 *_topology;
       bool                      _in_barrier;
       std::vector <void*>       _waiters_q;
-      void                     *_shm_block;    // shared memory block passed
-                                               // from collective framework
-      size_t                    _shm_block_sz; // size of the shared memory buffer
     };
   };
 };

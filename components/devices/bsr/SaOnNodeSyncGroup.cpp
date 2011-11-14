@@ -55,7 +55,7 @@ SyncGroup::RC SaOnNodeSyncGroup::CheckInitDone(SaType *dev_type)
             } else if (SharedArray::FAILED == sa_rc ) {
                 ITRC(IT_BSR, "SaOnNodeSyncGroup: ShmArray init failed SHM_ST->FAIL_ST\n");
                 s_state = FAIL_ST;
-                break;
+                return FAILED;
             } else { assert(0 && "Should not be here"); }
         case BSR_ST:
             sa_rc = bsr_sa->CheckInitDone(job_key, member_id, seq);
@@ -92,16 +92,11 @@ SyncGroup::RC SaOnNodeSyncGroup::CheckInitDone(SaType *dev_type)
                 return SUCCESS;
             } else { assert(0 && "Should not be here"); }
         case FAIL_ST:
-            sa = NULL;
-            // No SharedArray object available for using.
-            ITRC(IT_BSR, 
-                    "SaOnNodeSyncGroup: Cannot create SharedArray obj\n");
-            return FAILED;
+            assert(0 && "should not be in FAIL_ST");
         case DONE_ST:
-            return SUCCESS;
+            assert(0 && "should not be in DONE_ST");
         default:
             assert(0 && "Invalid state for SaOnNodeSyncGroup");
-            return SUCCESS;
     }
 
     return PROCESSING;
@@ -234,3 +229,127 @@ ClassDump & operator<< (ClassDump &dump, const SaOnNodeSyncGroup &s) {
         << _F(done_mask);
 #undef _F
 }
+
+bool SaOnNodeSyncGroup::Checkpoint() {
+    assert (false == ckpt_info.in_checkpoint);
+    ckpt_info.in_checkpoint = true;
+    int last_cnt = fetch_and_add((atomic_p)&(ctrl_block->ckpt_ref_cnt), 1);
+    ITRC(IT_INITTERM,
+            "SaOnNodeSyncGroup::Checkpoint() cnt=%d state=%d in_term=%d "
+            "sa=%p bsr_sa=%p shm_sa=%p mem_id=%d\n",
+            last_cnt+1, s_state, ctrl_block->in_term, sa, bsr_sa, shm_sa, member_id);
+
+    bool rc = true;
+    /* save the s_state */
+    ckpt_info.ckpt_state = s_state;
+
+    if (bsr_sa) {
+        /* When sa_type is set to SA_TYPE_BSR, it means bsr_sa is ready to use */
+        if (s_state == DONE_ST) {
+            ASSERT(SA_TYPE_BSR == sa_type);
+            /* Save bsr_sa byte to shm_sa for failover */
+            unsigned char byte = bsr_sa->Load1(member_id);
+            shm_sa->Store1(member_id, byte);
+        }
+        rc = bsr_sa->Checkpoint(member_id);
+        PAMI::Memory::sync();
+    }
+
+    /* Don't need worry about shm_sa */
+
+    /* sa should be set at resume/restart */
+    sa = NULL;
+    return rc;
+}
+
+template <bool FOR_RESUME>
+void SaOnNodeSyncGroup::ReInitSa() {
+    const char *action = (FOR_RESUME)?"Resume":"Restart";
+    if (bsr_sa) {
+        if (ctrl_block->in_term) {
+            /*
+             * If some member has called destructor before checkpoint, it is not able to
+             * re-initialze Bsr due to missing members. We would use shm_sa only.
+             */
+            ITRC(IT_INITTERM|IT_BSR,
+                    "SaOnNodeSyncGroup::%s(), in termination using shm_sa\n",
+                    action);
+            sa_type = SA_TYPE_SHMARRAY;
+            sa      = shm_sa;
+        } else {
+            /* Re-initialize Bsr */
+            bool rc;
+            if (FOR_RESUME)
+                rc = bsr_sa->Resume(member_id);
+            else
+                rc = bsr_sa->Restart(member_id);
+
+            if (true == rc) {
+                sa      = bsr_sa;
+            } else {
+                delete bsr_sa;
+                bsr_sa = NULL;
+                /* Bsr_sa failed to reinitialize, use shm_sa */
+                ITRC(IT_INITTERM|IT_BSR, "SaOnNodeSyncGroup::%s() bsr_sa->%s() "
+                        "failed using shm_sa instead\n", action, action);
+                sa_type = SA_TYPE_SHMARRAY;
+                sa      = shm_sa;
+            }
+        }
+    } else {
+        ASSERT(s_state == DONE_ST);
+        ASSERT(sa_type == SA_TYPE_SHMARRAY);
+        sa = shm_sa;
+    }
+}
+
+bool SaOnNodeSyncGroup::Resume() {
+    ITRC(IT_INITTERM|IT_BSR,
+            "SaOnNodeSyncGroup::Resume() Enters state=%d in_term=%d "
+            "sa=%p bsr_sa=%p shm_sa=%p mem_id=%d\n",
+             s_state, ctrl_block->in_term, sa, bsr_sa, shm_sa, member_id);
+    assert (ckpt_info.in_checkpoint);
+    assert (s_state == ckpt_info.ckpt_state);
+
+    ReInitSa<true>();
+
+    ckpt_info.in_checkpoint = false;
+    int last_cnt = fetch_and_add((atomic_p)&(ctrl_block->ckpt_ref_cnt), -1);
+    assert (last_cnt > 0);
+
+    ITRC(IT_INITTERM|IT_BSR,
+            "SaOnNodeSyncGroup::Resume() remaining cnt=%d\n", last_cnt - 1);
+
+    PAMI::Memory::sync();
+    /* Wait everybody finishes the resume */
+    while (ctrl_block->ckpt_ref_cnt);
+    ITRC(IT_INITTERM|IT_BSR, "SaOnNodeSyncGroup::Resume() Exists\n");
+
+    return true;
+}
+
+bool SaOnNodeSyncGroup::Restart() {
+    ITRC(IT_INITTERM|IT_BSR,
+            "SaOnNodeSyncGroup::Restart() Enters state=%d in_term=%d "
+            "sa=%p bsr_sa=%p shm_sa=%p mem_id=%d\n",
+             s_state, ctrl_block->in_term, sa, bsr_sa, shm_sa, member_id);
+    assert (ckpt_info.in_checkpoint);
+    assert (s_state == ckpt_info.ckpt_state);
+
+    ReInitSa<false>();
+
+    ckpt_info.in_checkpoint = false;
+    int last_cnt = fetch_and_add((atomic_p)&(ctrl_block->ckpt_ref_cnt), -1);
+    assert (last_cnt > 0);
+
+    ITRC(IT_INITTERM|IT_BSR,
+            "SaOnNodeSyncGroup::Restart() cnt=%d\n", last_cnt - 1);
+
+    PAMI::Memory::sync();
+    /* Wait everybody finishes the restart */
+    while (ctrl_block->ckpt_ref_cnt);
+    ITRC(IT_INITTERM|IT_BSR, "SaOnNodeSyncGroup::Restart() Exists\n");
+
+    return true;
+}
+

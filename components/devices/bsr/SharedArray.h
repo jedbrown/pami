@@ -138,6 +138,11 @@ class SharedArray
          */
         bool IsLeader() const;
 
+        /* for Checkpoint support */
+        virtual bool Checkpoint(int byte_offset) = 0;
+        virtual bool Restart   (int byte_offset) = 0;
+        virtual bool Resume    (int byte_offset) = 0;
+
         const char*   name;
     protected:
         // Member variables

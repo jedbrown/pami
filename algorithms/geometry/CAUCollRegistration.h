@@ -612,6 +612,10 @@ namespace PAMI
                   // And the cleanup callback
                   geometry->setKey(Geometry::PAMI_GKEY_GEOMETRYINFO,geometryInfo);
                   geometry->setCleanupCallback(cleanupCallback, geometryInfo);
+                  geometry->setCkptCallback(ckptCallback,
+                                            resumeCallback,
+                                            restartCallback,
+                                            geometryInfo);
 
                   // Word 1-->num_local_tasks setup
                   // prepare for collshmem device control structure address distribution
@@ -959,6 +963,48 @@ namespace PAMI
             }
           }
         
+        static inline bool ckptCallback(void* data)
+          {
+            bool rc = true;
+            ITRC(IT_INITTERM|IT_BSR|IT_CAU,
+                    "Enter ckptrCallback() for CAU/BSR on geo_info=%p\n", data);
+            GeometryInfo *gi = (GeometryInfo*) data;
+            Device::BSRGeometryInfo *bsr_info = gi->_bsr_info;
+            if (bsr_info)
+              rc = bsr_info->Checkpoint();
+            ITRC(IT_INITTERM|IT_BSR|IT_CAU,
+                    "Done ckptCallback() for CAU/BSR on geo_info=%p\n", data);
+            return rc;
+          }
+
+        static inline bool resumeCallback(void* data)
+          {
+            bool rc = true;
+            ITRC(IT_INITTERM|IT_BSR|IT_CAU,
+                    "Enter resumeCallback() for CAU/BSR on geo_info=%p\n", data);
+            GeometryInfo *gi = (GeometryInfo*) data;
+            Device::BSRGeometryInfo *bsr_info = gi->_bsr_info;
+            if (bsr_info)
+              rc = bsr_info->Resume();
+            ITRC(IT_INITTERM|IT_BSR|IT_CAU,
+                    "Done resumeCallback() for CAU/BSR on geo_info=%p\n", data);
+            return rc;
+          }
+
+        static inline bool restartCallback(void* data)
+          {
+            bool rc = true;
+            ITRC(IT_INITTERM|IT_BSR|IT_CAU,
+                    "Enter restartCallback() for CAU/BSR on geo_info=%p\n", data);
+            GeometryInfo *gi = (GeometryInfo*) data;
+            Device::BSRGeometryInfo *bsr_info = gi->_bsr_info;
+            if (bsr_info)
+              rc = bsr_info->Restart();
+            ITRC(IT_INITTERM|IT_BSR|IT_CAU,
+                    "Done restartCallback() for CAU/BSR on geo_info=%p\n", data);
+            return rc;
+          }
+
         static inline void cleanupCallback(pami_context_t ctxt, void *data, pami_result_t res)
           {
             GeometryInfo *gi = (GeometryInfo*) data;

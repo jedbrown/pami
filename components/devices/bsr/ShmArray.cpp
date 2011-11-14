@@ -78,13 +78,17 @@ SharedArray::RC ShmArray::CheckInitDone(const unsigned int   job_key,
  */
 ShmArray::~ShmArray()
 {
-    int cnt = fetch_and_add((atomic_p)&(shm->ready_cnt), -1);
-    if (cnt == 1) {
-        is_last = true;
+    if (ST_NONE != shm_state) {
+        int cnt = fetch_and_add((atomic_p)&(shm->ready_cnt), -1);
+        if (cnt == 1) {
+            is_last = true;
+        }
+        ITRC(IT_BSR, "ShmArray: Destroyed ready_cnt=%d->%d is_last=%d\n",
+                cnt, cnt-1, is_last);
+        assert(cnt > 0);
+    } else {
+        ITRC(IT_BSR, "ShmArray: Destroyed (ST_NONE)\n");
     }
-    ITRC(IT_BSR, "ShmArray: Destroyed ready_cnt=%d->%d is_last=%d\n",
-            cnt, cnt-1, is_last);
-    assert(cnt > 0);
 }
 
 unsigned char      ShmArray::Load1(const int byte_offset) const

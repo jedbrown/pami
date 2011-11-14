@@ -57,9 +57,6 @@ namespace PAMI
           return g;
         }
 
-
-
-
         inline ~Lapi ()
         {
           PAMI_assert(_destroyed == false);
@@ -258,7 +255,8 @@ namespace PAMI
             _allreduce_async_mode(1),
             _allreduce_iteration(0),
             _masterRank(-1),
-            _destroyed(false)
+            _destroyed(false),
+            _checkpointed(false)
         {
           TRACE_ERR((stderr, "<%p>Lapi(topology)\n", this));
 
@@ -860,7 +858,97 @@ namespace PAMI
           _cleanupDatas.push_back(data);
         }
 
-      
+
+      typedef bool (*CheckpointCb)(void *data);
+
+      struct CheckpointFunctions {
+          CheckpointCb  checkpoint_fn;
+          CheckpointCb  resume_fn;
+          CheckpointCb  restart_fn;
+          void         *cookie;
+          CheckpointFunctions(CheckpointCb ckpt,
+                              CheckpointCb resume,
+                              CheckpointCb restart,
+                              void *data):
+            checkpoint_fn(ckpt),
+            resume_fn(resume),
+            restart_fn(restart),
+            cookie(data) {};
+      };
+
+      void setCkptCallback(CheckpointCb ckptfcn, CheckpointCb resumefcn,
+              CheckpointCb restartfcn, void *data)
+        {
+          ITRC(IT_INITTERM, "LapiGeometry 0x%p setCkptCallback()\n", this);
+          _ckptFcns.push_back(CheckpointFunctions(ckptfcn, resumefcn, restartfcn, data));
+        }
+
+      bool Checkpoint()
+        {
+          ITRC(IT_INITTERM, "LapiGeometry 0x%p _commid=%u: Checkpoint() enters ckptFncs.size()=%d\n",
+                  this, _commid, _ckptFcns.size());
+
+          std::list<CheckpointFunctions>::iterator itFcn = _ckptFcns.begin();
+
+          /* invoke all registered checkpoint callbacks */
+          for (; itFcn != _ckptFcns.end(); itFcn++)
+            {
+              CheckpointCb cb   = itFcn->checkpoint_fn;
+              void        *data = itFcn->cookie;
+
+              bool rc = (*cb)(data);
+              if (!rc)
+                return false;
+            }
+
+          ITRC(IT_INITTERM, "LapiGeometry 0x%p _commid=%u: Checkpoint() exits\n", this, _commid);
+          _checkpointed = true;
+          return true;
+        }
+
+      bool Restart()
+        {
+          ITRC(IT_INITTERM, "LapiGeometry 0x%p _commid=%u: Restart() enters _ckptFcns.size()=%d\n",
+                  this, _commid, _ckptFcns.size());
+          assert(_checkpointed);
+          std::list<CheckpointFunctions>::iterator itFcn = _ckptFcns.begin();
+
+          /* invoke all registered restart callbacks */
+          for (; itFcn != _ckptFcns.end(); itFcn++)
+            {
+              CheckpointCb cb   = itFcn->restart_fn;
+              void        *data = itFcn->cookie;
+
+              bool rc = (*cb)(data);
+              if (!rc)
+                return false;
+            }
+          ITRC(IT_INITTERM, "LapiGeometry 0x%p _commid=%u: Restart() exits\n", this, _commid);
+          _checkpointed = false;
+          return true;
+        }
+
+      bool Resume()
+        {
+          ITRC(IT_INITTERM, "LapiGeometry 0x%p _commid=%u: Resume() enters\n", this, _commid);
+          assert(_checkpointed);
+          std::list<CheckpointFunctions>::iterator itFcn = _ckptFcns.begin();
+
+          /* invoke all registered resume callbacks */
+          for (; itFcn != _ckptFcns.end(); itFcn++)
+            {
+              CheckpointCb cb   = itFcn->resume_fn;
+              void        *data = itFcn->cookie;
+
+              bool rc = (*cb)(data);
+              if (!rc)
+                return false;
+            }
+          ITRC(IT_INITTERM, "LapiGeometry 0x%p _commid=%u: Resume() exits\n", this, _commid);
+          _checkpointed = false;
+          return true;
+        }
+
       private:
         AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _allreduces[PAMI_GEOMETRY_NUMALGOLISTS];
         AlgoLists<Geometry<PAMI::Geometry::Lapi> >  _broadcasts[PAMI_GEOMETRY_NUMALGOLISTS];
@@ -911,6 +999,8 @@ namespace PAMI
         pami_task_t                                 _masterRank;
         std::list<pami_event_function>              _cleanupFcns;
         std::list<void*>                            _cleanupDatas;
+        std::list<CheckpointFunctions>              _ckptFcns;
+        bool                                        _checkpointed;
         bool                                        _destroyed;
     }; // class Geometry
   };  // namespace Geometry

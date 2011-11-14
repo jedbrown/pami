@@ -54,6 +54,131 @@ namespace PAMI
   {
   public:
 
+    /* Glue code to PAMI::LapiImpl::Client */
+    static bool CheckpointEvent(void* cookie)
+      {
+          Client *client = (Client *) cookie;
+          return client->Checkpoint();
+      }
+
+    static bool RestartEvent(void* cookie)
+      {
+          Client *client = (Client *) cookie;
+          return client->Restart();
+      }
+
+    static bool ResumeEvent(void* cookie)
+      {
+          Client *client = (Client *) cookie;
+          return client->Resume();
+      }
+
+    inline bool Checkpoint()
+      {
+        bool rc = false;
+        ITRC(IT_INITTERM, "PAMI::Clinet 0x%p: Checkpoint() enters\n", this);
+        if (_Lapi_env.MP_infolevel > 2)
+          fprintf(stderr, "PAMI::Clinet 0x%p: Checkpoint() enters\n", this);
+        /* loop through all geometries */
+        std::map<unsigned, pami_geometry_t>::iterator g_it = _geometry_map.begin();
+        while(g_it != _geometry_map.end()) {
+          LAPIGeometry *g = (LAPIGeometry*)(g_it->second);
+          if (g) {
+            rc = g->Checkpoint();
+            if (!rc) {
+              /* Checkpoint failed. */ 
+              /*
+               * TODO: Resume all previously checkpointed geometry.
+               *       Is that doable?
+               */
+              if (_Lapi_env.MP_infolevel > 2)
+                fprintf(stderr, "PAMI::Client 0x%p: FAILED to Checkpoint "
+                        "LAPIGeometry 0x%p\n", this, g);
+              return false;
+            }
+          }
+          g_it++;
+        }
+        ITRC(IT_INITTERM, "PAMI::Clinet 0x%p: Checkpoint() exits\n", this);
+        if (_Lapi_env.MP_infolevel > 2)
+          fprintf(stderr, "PAMI::Clinet 0x%p: Checkpoint() exits\n", this);
+
+        return rc;
+      }
+
+    inline bool Restart()
+      {                                                        
+        bool rc = false;
+        ITRC(IT_INITTERM, "PAMI::Clinet 0x%p: Restart() enters\n", this);
+        if (_Lapi_env.MP_infolevel > 2)
+          fprintf(stderr, "PAMI::Clinet 0x%p: Restart() enters\n", this);
+        /* loop through all geometries */
+        std::map<unsigned, pami_geometry_t>::iterator g_it = _geometry_map.begin();
+        while(g_it != _geometry_map.end()) {
+          LAPIGeometry *g = (LAPIGeometry*)(g_it->second);
+          if (g) {
+            rc = g->Restart();
+            if (!rc) {
+              ITRC(IT_INITTERM,
+                "PAMI::Clinet 0x%p: FAILED to Restart LAPIGeometry 0x%p\n", this, g);
+              if (_Lapi_env.MP_infolevel > 2)
+                fprintf(stderr,
+                  "PAMI::Clinet 0x%p: FAILED to Restart LAPIGeometry 0x%p\n", this, g);
+              /*
+               * Restart failed we have no choice but return error to upper level.
+               * Upper level should hangle this error (maybe print message and
+               * terminate the job)
+               */
+              return false;
+            }
+          }
+          g_it++;
+        }
+
+        ITRC(IT_INITTERM, "PAMI::Clinet 0x%p: Restart() exits\n", this);   
+        if (_Lapi_env.MP_infolevel > 2)
+          fprintf(stderr, "PAMI::Clinet 0x%p: Restart() exits\n", this);   
+        return rc;
+      }
+
+    inline bool Resume()
+      {
+        bool rc = false;
+        ITRC(IT_INITTERM, "PAMI::Clinet 0x%p: Resume() enters\n", this);
+        if (_Lapi_env.MP_infolevel > 2)
+          fprintf(stderr, "PAMI::Clinet 0x%p: Resume() enters\n", this);
+
+        /* loop through all geometries */
+        std::map<unsigned, pami_geometry_t>::iterator g_it = _geometry_map.begin();
+        while(g_it != _geometry_map.end()) {
+          LAPIGeometry *g = (LAPIGeometry*)(g_it->second);
+          if (g) {
+            rc = g->Resume();
+            if (!rc) {                                         
+              ITRC(IT_INITTERM,
+                "PAMI::Clinet 0x%p: FAILED to Resume LAPIGeometry 0x%p\n", this, g);
+              if (_Lapi_env.MP_infolevel > 2)
+                fprintf(stderr,
+                  "PAMI::Clinet 0x%p: FAILED to Resume LAPIGeometry 0x%p\n", this, g);
+
+              /*
+               * Resume failed we have no choice but return error to upper level.
+               * Upper level should hangle this error (maybe print message and
+               * terminate the job)                                      
+               */
+              return false;
+            }
+          }
+          g_it++;
+        }
+
+        ITRC(IT_INITTERM, "PAMI::Clinet 0x%p: Resume() exits\n", this);
+        if (_Lapi_env.MP_infolevel > 2)
+          fprintf(stderr, "PAMI::Clinet 0x%p: Resume() exits\n", this);
+
+        return rc;
+      }
+
     static void decrement_done_fn(pami_context_t   context,
                                   void           * cookie,
                                   pami_result_t    result)
@@ -612,6 +737,10 @@ namespace PAMI
         if (res != PAMI_SUCCESS)
           return res;
         *client = (pami_client_t) clientp;
+
+        // Register checkpoint related event functions
+        ((LapiImpl::Client *) clientp)->RegisterCheckpointEvents(
+          CheckpointEvent, RestartEvent, ResumeEvent, clientp);
 
         // Store newly created client into global structure
         res = _pami_act_clients.AddClient(*client);
@@ -1459,7 +1588,6 @@ namespace PAMI
     unsigned                                     _cau_uniqifier;
   }; // end class PAMI::Client
 }; // end namespace PAMI
-
 
 #endif
 // __pami_lapi_lapiclient_h__

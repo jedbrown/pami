@@ -55,6 +55,12 @@ class Bsr : public SharedArray
             size_t align_mask = (sizeof(size_t) - 1);
             return ((sizeof(Shm) + align_mask) & ~(align_mask));
         }
+
+        /* for Checkpoint support */
+        bool Checkpoint(int byte_offset);
+        bool Restart   (int byte_offset);
+        bool Resume    (int byte_offset);
+
     private:
         bool                    is_last;        // Is the last guy to leave?
         int                     bsr_id;         // BSR id
@@ -75,6 +81,8 @@ class Bsr : public SharedArray
         struct Shm {
             // ref count; number of successful bsr setup
             volatile int          setup_ref;
+            // ref count for checkpoint
+            volatile int          ckpt_ref;
             // BSR ID. Set by leader.
             volatile int          bsr_id;
             // Do we have BSR allocated? Updated by leader only
@@ -83,6 +91,14 @@ class Bsr : public SharedArray
             volatile bool         setup_failed;
         }                        *shm; // shm block used to do internal
                                        // communication.
+
+        /* for Checkpoint support */
+        struct CkptInfo {
+            CkptInfo(): byte_data(0), in_checkpoint(false), prev_state(ST_NONE){};
+            unsigned int          byte_data;
+            BSR_SETUP_STATE       prev_state; // state before checkpoint
+            bool                  in_checkpoint;
+        }                         ckpt_info;
 
         // helper function
         void CleanUp();

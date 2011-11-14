@@ -44,14 +44,19 @@ class SaOnNodeSyncGroup : public SyncGroup {
         void NbBarrier();      /* issue non-blocking barrier */
         bool IsInitialized();  /* if s_state == DONE_ST */
 
+        /* for Checkpoint support */
+        bool Checkpoint();
+        bool Restart();
+        bool Resume();
+
     private:
         // seq = 0, use mask[0] 
         // seq = 1, use mask[1]
         static const unsigned long long mask[2];
         enum SetupState {
             ORIG_ST = 0,
-            BSR_ST,     // try to initialize BSR
             SHM_ST,     // try to initialize ShmArray
+            BSR_ST,     // try to initialize BSR
             FAIL_ST,
             DONE_ST
         } s_state;
@@ -75,13 +80,37 @@ class SaOnNodeSyncGroup : public SyncGroup {
 
         void AllocSa();
         void SetDoneFlag();
+        template <bool> void ReInitSa();
 
-        /* for Checkpoint support */
+        /*
+         * All data in this structure would be zero initially.
+         * The structure is on shared memory
+         */
         struct CtrlBlock {
             volatile size_t       done_flag;   // Flag to signal upper layer to clean up the shm
+                                               // done_flag has to be the 1st word
             volatile int          ref_cnt;
+            volatile int          ckpt_ref_cnt;// num. of member in checkpoint (on shm)
+            volatile bool         in_term;     // some member called ~SaOnNodeSyncGroup()
+                                               // used for checkpoint/restart
         }                        *ctrl_block;
+        class CheckpointInfo {
+            public:
+                CheckpointInfo():
+                    in_checkpoint(false),
+                    ckpt_state(ORIG_ST){};
+
+                bool          in_checkpoint;
+                SetupState    ckpt_state; // s_state before checkpoint
+        };
+        CheckpointInfo        ckpt_info;
 };
+
+inline
+bool SaOnNodeSyncGroup::IsInitialized()
+{
+    return (s_state == DONE_ST);
+}
 
 inline
 void SaOnNodeSyncGroup::NbBarrier()
@@ -140,12 +169,6 @@ SaOnNodeSyncGroup::SaOnNodeSyncGroup(unsigned int mem_id, unsigned int mem_cnt,
     ASSERT(ref <= member_cnt);
 };
 
-inline 
-bool SaOnNodeSyncGroup::IsInitialized()
-{
-    return (s_state == DONE_ST);
-}
-
 /*!
  * \brief Default destructor.
  */
@@ -167,6 +190,7 @@ SaOnNodeSyncGroup::~SaOnNodeSyncGroup()
         SetDoneFlag();
         ITRC(IT_BSR, "~SaOnNodeSyncGroup() done_flag set to %zu\n", ctrl_block->done_flag);
     }
+    ctrl_block->in_term = true;
     ASSERT(ref > 0);
 }
 
