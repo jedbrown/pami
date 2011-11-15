@@ -15,6 +15,7 @@
 
 #include "api/extension/Extension.h"
 #include "HfiExtension.h"
+#include "lapi_env.h"
 
 namespace PAMI
 {
@@ -23,14 +24,22 @@ namespace PAMI
                                          const char    * name,
                                          pami_result_t & result)
   {
-    PAMI::HfiExtension * x;
-    pami_result_t rc;
-    rc = __global.heap_mm->memalign((void **)&x, 0, sizeof(*x));
-    PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PAMI::HfiExtension");
-    new (x) PAMI::HfiExtension();
+    if (_Lapi_env.use_hfi) {
+      PAMI::HfiExtension * x;
+      pami_result_t rc;
+      rc = __global.heap_mm->memalign((void **)&x, 0, sizeof(*x));
+      PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PAMI::HfiExtension");
+      new (x) PAMI::HfiExtension();
 
-    result = PAMI_SUCCESS;
-    return (void *) x;
+      result = PAMI_SUCCESS;
+      return (void *) x;
+    } else {
+      if (_Lapi_env.MP_s_enable_err_print) {
+        printf("ERROR: HFI extension cannot be used for non-HFI job\n");
+      }
+      result = PAMI_UNIMPL;
+      return NULL;
+    }
   }
 
   ///
