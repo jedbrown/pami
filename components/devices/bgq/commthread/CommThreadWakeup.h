@@ -57,6 +57,29 @@
 extern PAMI::Device::CommThread::Factory __commThreads;
 #endif // !COMMTHREAD_LAYOUT_TESTING
 
+////////////////////////////////////////////////////////////////////////////////
+/// \envs{pami,commthread,Commthread}
+/// This is some general documentation about the commthread
+/// environment variables.
+///
+/// \env{commthread,PAMI_MAX_COMMTHREADS"
+/// Maximum number of commthreads to use.
+/// Note: this must be based on number of processes per node.
+/// \default BG_PROCESSESPERNODE - 1
+///
+/// \env{commthread,PAMI_COMMTHREAD_MAX_LOOPS}
+/// Maximum number of loops through advance done by
+/// a commthread before checking status for possible sleep or preemption.
+/// Must be >= PAMI_COMMTHREAD_MIN_LOOPS.
+/// \default 100
+///
+/// \env{commthread,PAMI_COMMTHREAD_MIN_LOOPS}
+/// Minimum number of loops through advance done by
+/// a commthread before checking status for possible sleep or preemption.
+/// Must be <= PAMI_COMMTHREAD_MAX_LOOPS.
+/// \default 10
+////////////////////////////////////////////////////////////////////////////////
+
 namespace PAMI {
 namespace Device {
 namespace CommThread {
@@ -543,22 +566,6 @@ _commThreads(NULL)
 
 	// config param may also affect this?
 
-	/// \page env_vars Environment Variables
-	///
-	/// PAMI_MAX_COMMTHREADS - Maximum number of commthreads to use.
-	/// Note: this must be based on number of processes per node.
-	/// Default: BG_PROCESSESPERNODE - 1
-	///
-	/// PAMI_COMMTHREAD_MAX_LOOPS - Maximum number of loops through advance done by
-	/// a commthread before checking status for possible sleep or preemption.
-	/// Must be >= PAMI_COMMTHREAD_MIN_LOOPS.
-	/// Default: 100
-	///
-	/// PAMI_COMMTHREAD_MIN_LOOPS - Minimum number of loops through advance done by
-	/// a commthread before checking status for possible sleep or preemption.
-	/// Must be <= PAMI_COMMTHREAD_MAX_LOOPS.
-	/// Default: 10
-	///
 	char *env = getenv("PAMI_MAX_COMMTHREADS");
 	if (env) {
 		x = strtoul(env, NULL, 0);

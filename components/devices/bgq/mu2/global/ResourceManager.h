@@ -79,6 +79,28 @@ typedef PAMI::Device::SharedAtomicMutexMdl<MUCR_mutex_t> MUCR_mutex_model_t;
 #define abs_x(x) ((x^(x>>31)) - (x>>31))
 #endif
 
+////////////////////////////////////////////////////////////////////////////////
+/// \env{mudevice,PAMI_TRACE_CLASSROUTES}
+///
+/// Enables tracing for the
+/// collective network classroutes, if compiled-in.
+/// Presence of variable enables tracing, with value
+/// 'g' causing output in DOT graph format, 'R' using
+/// ranks instead of coords in graph, and 'B' adding
+/// links for both directions. Any combination may be
+/// used, however 'g' is implied by all.
+///
+/// \env{mudevice,PAMI_GI_INIT_TIMEOUT}
+///
+/// Specifies timeout value,
+/// in cycles, for the MU GI Barrier Init, second phase.
+/// This phase essentially waits for all members of
+/// the classroute to complete initialization of the GI.
+/// If all members do not complete init by the specified
+/// number of cycles, an error is reported and the operation
+/// aborts.
+////////////////////////////////////////////////////////////////////////////////
+
 namespace PAMI
 {
   namespace Device
@@ -427,17 +449,7 @@ namespace PAMI
 			uint32_t N;
 			uint32_t nresv = 0;
 
-			/// \page env_vars Environment Variables
-			///
-			/// PAMI_RESV_CLASSROUTES - The number of classroutes
-			/// to leave free. PAMI will take all other available
-			/// classroutes. Note, setting this does not guarantee
-			/// a given number of classroutes, only that PAMI will
-			/// not take them.  The user must still employ the SPIs
-			/// to determine just how many, and which, classroutes
-			/// are available.
-			///
-			char *s = getenv("PAMI_RESV_CLASSROUTES");
+			char *s = getenv("MUSPI_NUMCLASSROUTES");
 			if (s) {
 				nresv = strtoul(s, NULL, 0);
 			}
@@ -738,16 +750,7 @@ fprintf(stderr, "%s\n", buf);
 #ifdef TRACE_CLASSROUTES
 	  _digraph = 0;
 	  _trace_cr = 0;
-	  /// \page env_vars Environment Variables
-	  ///
-	  /// PAMI_TRACE_CLASSROUTES - Enables tracing for the
-	  /// collective network classroutes, if compiled-in.
-	  /// Presence of variable enables tracing, with value
-	  /// 'g' causing output in DOT graph format, 'R' using
-	  /// ranks instead of coords in graph, and 'B' adding
-	  /// links for both directions. Any combination may be
-	  /// used, however 'g' is implied by all.
-	  ///
+
 	  s = getenv("PAMI_TRACE_CLASSROUTES");
 	  if (s) {
 		_trace_cw.rect = _refcomm;
@@ -766,16 +769,6 @@ fprintf(stderr, "%s\n", buf);
 	  }
 #endif // TRACE_CLASSROUTES
 	  _gi_init_to = 1000;
-	  /// \page env_vars Environment Variables
-	  ///
-	  /// PAMI_GI_INIT_TIMEOUT - Specifies timeout value,
-	  /// in cycles, for the MU GI Barrier Init, second phase.
-	  /// This phase essentially waits for all members of
-	  /// the classroute to complete initialization of the GI.
-	  /// If all members do not complete init by the specified
-	  /// number of cycles, an error is reported and the operation
-	  /// aborts.
-	  ///
 	  s = getenv("PAMI_GI_INIT_TIMEOUT");
 	  if (s) {
 		uint64_t v = strtoul(s, NULL, 0);

@@ -42,15 +42,15 @@
 
 
 ////////////////////////////////////////////////////////////////////////////////
-/// \page env_vars Environment Variables
+/// \env{rgetpacing,PAMI_RGETPACINGSIZE}
 ///
-/// PAMI_RGETPACINGSIZE - Messages exceeding this size in bytes are
+/// Messages exceeding this size in bytes are
 /// considered for pacing.  With pacing, the message is broken up into
 /// smaller sub-messages, and there is a limit on the number of sub-messages
 /// that can be in the network at one time from a given node.  Specifying a
 /// very large size (e.g. 999999999) turns off pacing.
-/// - Default is 8192 bytes.
 ///
+/// \default 8192
 ////////////////////////////////////////////////////////////////////////////////
 
 

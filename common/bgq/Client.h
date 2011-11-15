@@ -135,6 +135,15 @@ namespace PAMI
       return _name;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
+    /// \env{pami,PAMI_CONTEXT_SHMEMSIZE}
+    /// Number of bytes allocated from shared memory to every context in each
+    /// client. May use the 'K' and 'k' suffix as a 1024 multiplier, or the
+    /// 'M' and 'm' suffix as a 1024*1024 multiplier.
+    ///
+    /// \default 135K
+    ////////////////////////////////////////////////////////////////////////////
+
     inline pami_result_t createContext_impl (pami_configuration_t   configuration[],
                                              size_t                count,
                                              pami_context_t       * context,
@@ -168,11 +177,6 @@ namespace PAMI
       //memset((void *)_contexts, 0, sizeof(PAMI::Context) * n);
       size_t bytes = 135 * 1024;
 
-      /// \page env_vars Environment Variables
-      ///
-      /// PAMI_CONTEXT_SHMEMSIZE - Size, bytes, of each Context's shmem pool.
-      /// May use 'K' or 'M' suffix as multiplier. default: 135K
-      ///
       char *env = getenv("PAMI_CONTEXT_SHMEMSIZE");
       if (env)
       {
@@ -821,13 +825,14 @@ namespace PAMI
     MatchQueue                                                             _ueb_queue;
     Geometry::GeometryOptimizer<BGQGeometry>                             * _geomopt;
 
-    /// \page env_vars Environment Variables
+    ////////////////////////////////////////////////////////////////////////////
+    /// \env{pami,PAMI_CLIENT_SHMEMSIZE}
+    /// Number of bytes allocated from shared memory to each client. May use
+    /// the 'K' and 'k' suffix as a 1024 multiplier, or the 'M' and 'm' suffix
+    /// as a 1024*1024 multiplier.
     ///
-    /// PAMI_CLIENT_SHMEMSIZE - Size, bytes, of each Client shmem pool.
-    /// May use 'K' or 'M' suffix as multiplier. defaults: 0 bytes (mu only),
-    /// otherwise 4MB
-    ///
-
+    /// \default 4M if more than one task is on the node; otherwise 0
+    ////////////////////////////////////////////////////////////////////////////
     inline void initializeMemoryManager ()
     {
       TRACE_ERR((stderr, "(%8.8u)<%p:%zu>BGQ::Client::initializeMemoryManager\n", Kernel_ProcessorID(),this, _clientid));
@@ -844,11 +849,6 @@ namespace PAMI
           bytes = (64*1024) * num_ctx; // 64k for each context in the client
         }
 
-      /// \page env_vars Environment Variables
-      ///
-      /// PAMI_CLIENT_SHMEMSIZE - Size, bytes, per-Client shared memory.
-      /// May use 'K' or 'M' suffix as multiplier. default: 8800 * maxnctx * nproc;
-      ///
       char *env = getenv("PAMI_CLIENT_SHMEMSIZE");
       if (env)
       {

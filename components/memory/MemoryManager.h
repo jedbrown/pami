@@ -32,6 +32,24 @@
 // need a "name" for each MemoryManager, in order to debug effectively.
 // But HeapMemoryManager and SharedMemoryManager debug is still useful.
 
+////////////////////////////////////////////////////////////////////////////////
+/// \env{pami,PAMI_MM_DEBUG}
+/// Enable collection and display of MemoryManager
+/// statistics. Statistics and allocations are dumped on exit
+/// (when MemoryManager destructor(s) are called). Some allocation
+/// failures also result in a dump.
+///
+/// - "1"     - dump statistics of all MemoryManagers.
+/// - "2"     - dump statistics and (remaining) allocations.
+/// - [level:]pattern - (see fnmatch(3)) dump MemoryManagers
+///           that match pattern (by name, i.e. key used to init()),
+///           occording to level as previously described.
+///           Default level is "1".
+///
+/// \todo add more debug levels to pattern syntax
+////////////////////////////////////////////////////////////////////////////////
+
+
 namespace PAMI {
 namespace Memory {
 
@@ -749,22 +767,6 @@ public:
 protected:
 #ifdef MM_DEBUG
 	inline long setup_debug() {
-		/// \page env_vars Environment Variables
-		///
-		/// PAMI_MM_DEBUG - Enable collection and display of MemoryManager
-		/// statistics. Statistics and allocations are dumped on exit
-		/// (when MemoryManager destructor(s) are called). Some allocation
-		/// failures also result in a dump.
-		///
-		/// "1"     - dump statistics of all MemoryManagers.
-		/// "2"     - dump statistics and (remaining) allocations.
-		/// [level:]pattern - (see fnmatch(3)) dump MemoryManagers
-		///           that match pattern (by name, i.e. key used to init()),
-		///           occording to level as previously described.
-		///           Default level is "1".
-		///
-		/// \todo add more debug levels to pattern syntax
-		///
 		char *s = getenv("PAMI_MM_DEBUG");
 		if (!s) return 0;
 		char *t;

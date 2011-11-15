@@ -47,6 +47,14 @@
 #include "components/atomic/BarrierInterface.h"
 #include <pami.h>
 
+////////////////////////////////////////////////////////////////////////////////
+/// \env{pami,PAMI_ATOMICBARRIER_LOOPS}
+/// Number of attempts to complete barrier
+/// in each pass.
+///
+/// \default 32
+////////////////////////////////////////////////////////////////////////////////
+
 namespace PAMI {
 namespace Device {
 
@@ -157,11 +165,6 @@ public:
 		_queue.__init(_gd->clientId(), _gd->contextId(), NULL, _gd->getContext(),
 						_gd->getMM(), _gd->getAllDevs());
 
-		/// \page env_vars Environment Variables
-		///
-		/// PAMI_ATOMICBARRIER_LOOPS - Number of attempts to complete barrier
-		/// in each pass. Default: 32
-		///
 		char *s = getenv("PAMI_ATOMICBARRIER_LOOPS");
 		if (s) {
 			_loops = strtoul(s, NULL, 0);

@@ -40,6 +40,8 @@
 ///  Notes:  This is currently indended for use only by the lock manager
 ///
 ////////////////////////////////////////////////////////////////////////
+
+
 namespace PAMI {
 namespace Atomic {
 namespace BGQ {
@@ -155,12 +157,25 @@ namespace BGQ {
 
                 L2AtomicFactory() { }
 
-		/// \page env_vars Environment Variables
-		///
-		/// PAMI_PROC_L2ATOMICSIZE - Number of uint64_t in Process-scoped L2 Atomic pool
-		///
-		/// PAMI_NODE_L2ATOMICSIZE - Number of uint64_t in Node-scoped L2 Atomic pool
-		///
+      ////////////////////////////////////////////////////////////////////////////////
+      /// \envs{pami,bgq,BGQ L2 Atomics and Wakeup}
+      /// This is some general documentation about the L2 atomics and wakeup
+      /// environment variables.
+      ///
+      /// \env{bgq,PAMI_BGQ_PROC_L2ATOMICSIZE}
+      /// Size, uint64_t, proc-scoped
+      /// L2 Atomic region. May use 'K' or 'M' suffix as multiplier.
+      /// \default 4K
+      ///
+      /// \env{bgq,PAMI_BGQ_NODE_L2ATOMICSIZE}
+      /// Size, uint64_t, node-scoped
+      /// L2 Atomic region. May use 'K' or 'M' suffix as multiplier.
+      /// Includes WAC region (PAMI_BGQ_WU_*).
+      /// \default 4K + nctx * nproc * 256
+      /// \see \ref PAMI_BGQ_WU_BASELINE
+      /// \see \ref PAMI_BGQ_WU_CONTEXT_COST
+      /// \see \ref PAMI_BGQ_WU_PROC_DISCOUNT
+      ////////////////////////////////////////////////////////////////////////////////
 
 		/// \brief Initialize the L2AtomicFactory
 		///
@@ -182,17 +197,6 @@ namespace BGQ {
                         size_t t = local->size();
 
                         size = L2A_MAX_NUMPROCL2ATOMIC;
-			/// \page env_vars Environment Variables
-			///
-			/// PAMI_BGQ_PROC_L2ATOMICSIZE - Size, uint64_t, proc-scoped
-			///	L2 Atomic region. May use 'K' or 'M' suffix as multiplier.
-			///	Default: 4K
-			///
-			/// PAMI_BGQ_NODE_L2ATOMICSIZE - Size, uint64_t, node-scoped
-			///	L2 Atomic region. May use 'K' or 'M' suffix as multiplier.
-			///	Default: 4K + nctx * nproc * 256
-			///	Includes WAC region (PAMI_BGQ_WU_*).
-			///
 			if ((s = getenv("PAMI_BGQ_PROC_L2ATOMICSIZE"))) {
                 		char *u = NULL;
                 		size = strtoull(s, &u, 0);

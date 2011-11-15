@@ -48,35 +48,21 @@
 
 
 ////////////////////////////////////////////////////////////////////////////////
-/// \page env_vars Environment Variables
-///
-/// MUSPI_NUMINJFIFOS - Number of injection fifos per process reserved for use
-/// by an MU SPI application.
-/// - Default is 0.
-///
-/// MUSPI_NUMRECFIFOS - Number of reception fifos per process reserved for use
-/// by an MU SPI application.
-/// - Default is 0.
-///
-/// MUSPI_NUMBATIDS - Number of base address table IDs per process reserved
-/// for use by an MU SPI application.
-/// - Default is 0.
-///
-/// PAMI_CLIENTS - A comma-separated ordered list of clients (no spaces).
-/// The complete syntax is 
-/// - PAMI_CLIENTS=[name][:repeat][/weight][,[name][:repeat][/weight]]*
+/// \env{pami,PAMI_CLIENTS}
+/// A comma-separated ordered list of clients (no spaces).
+/// The complete syntax is <tt> [name][:repeat][/weight][,[name][:repeat][/weight]]* </tt>
 /// 
-/// Each client has the form [name][:repeat][/weight], where
+/// Each client has the form <tt>[name][:repeat][/weight]</tt>, where
 /// - "name" is the name of the client.  For example, the BGQ MPICH2 client's
 ///   name is MPICH2.  The default value for this option is the null string.
 /// - ":repeat" is the repetition factor, where repeat is the number of clients
 ///   having this same name.  The default value for this option is 1.
 /// - "/weight" is the relative weight assigned to the client, where weight is
-//    the weight value.  The default value for this option is 1.  The weight is
+///   the weight value.  The default value for this option is 1.  The weight is
 ///   used to determine the portion of the messaging resources that are given to
 ///   the client, relative to the other clients.
 ///
-/// When middleware calls PAMI_Client_create, it provides the client's name.
+/// When middleware calls PAMI_Client_create(), it provides the client's name.
 /// PAMI searches through the PAMI_CLIENTS in the order they are specified,
 /// looking for an exact name match.  If there is not an exact name match with
 /// any of the PAMI_CLIENTS, PAMI searches through the PAMI_CLIENTS again,
@@ -101,50 +87,28 @@
 /// will use algorithms that do not use the message unit combining collective
 /// hardware.
 ///
-/// Examples:
-/// - "PAMI_CLIENTS=MPICH2,ARMCI" means up to two clients can use PAMI, one must
-///   be MPICH2 and the other must be ARMCI.  The MPICH2 client is assigned the
-///   message unit combining collective hardware, and the two clients evenly
-///   split the remaining messaging resources.
-/// - "PAMI_CLIENTS=MPICH2:3,ARMCI/2,UPC:2/3" means up to seven clients can use
-///   PAMI.  Three can be MPICH2, one can be ARMCI, and two can be UPC.
-///   Each MPICH2 client has weight 1, ARMCI has weight 2, and each UPC client
-///   has weight 3.  In this example each UPC client gets 3 times the amount of
-///   resources as each MPICH2 client, and the first MPICH2 client created is
-///   assigned the message unit combining collective hardware.
-/// - "PAMI_CLIENTS=MPICH2/3,/2," means up to three clients can use PAMI.  Two of
-///   the clients are unnamed, meaning they can be any of the PAMI clients, and
-///   one client can only be MPICH2.  The first MPICH2 client created has
-///   resource weight 3 and is assigned the message unit combining collective
-///   hardware, the first non-MPICH2 client created (or possibly the
-///   second MPICH2 client created) has resource weight 2, and the second
-///   non-MPICH2 client created (or possibly the second or third MPICH2
-///   client created) has resource weight 1.
-/// - "PAMI_CLIENTS" is not specified.  This means there can only be one
-///   client, with any name, and it is assigned all of the resources.
+/// \default :1/1
 ///
-/// MUSPI_RECFIFOSIZE - The size, in bytes, of each reception FIFO.  Incoming
-/// torus packets are stored in this fifo until software can process
-/// them.  Making this larger can reduce torus network congestion.  Making this
-/// smaller leaves more memory available to the application.
-/// PAMI Messaging uses one reception FIFO per context.
-/// - Default is 1048576 bytes (1 megabyte).
+/// \note PAMI uses one reception FIFO per context and, optimally, uses 10
+///       injection FIFOs per context, although fewer injection FIFOs could be
+///       used when resources are constrained.
 ///
-/// MUSPI_INJFIFOSIZE - The size, in bytes, of each injection FIFO.  These
-/// FIFOs store 64-byte descriptors, each describing a memory buffer to be
-/// sent on the torus.  Making this larger can reduce overhead when there are
-/// many outstanding messages.  Making this smaller can increase that overhead.
-/// PAMI Messaging optimally uses 10 injection FIFOs per context, although fewer
-/// could be used when resources are constrained.
-/// - Default is 65536 (64 kilobytes).
+/// \see \ref MUSPI_NUMBATIDS
+/// \see \ref MUSPI_NUMCLASSROUTES
+/// \see \ref MUSPI_NUMINJFIFOS
+/// \see \ref MUSPI_NUMRECFIFOS
+/// \see \ref MUSPI_INJFIFOSIZE
+/// \see \ref MUSPI_RECFIFOSIZE
+/// \see \ref PAMI_MU_RESOURCES
 ///
-/// PAMI_RGETINJFIFOSIZE - The size, in bytes, of each remote get FIFO.  These
+/// \env{mudevice,PAMI_RGETINJFIFOSIZE}
+/// The size, in bytes, of each remote get FIFO.  These
 /// FIFOs store 64-byte descriptors, each describing a memory buffer to be
 /// sent on the torus, and are used to queue requests for data (remote gets).
 /// Making this larger can reduce torus network congestion and reduce overhead.
 /// Making this smaller can increase that congestion and overhead.
 /// PAMI Messaging uses 10 remote get FIFOs per node.
-/// - Default is 65536 (64 kilobytes).
+/// \default 65536
 
 
 namespace PAMI

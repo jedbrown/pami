@@ -31,6 +31,27 @@
 #define WU_CONTEXT_COST		104
 #define WU_PROC_DISCOUNT	8
 
+////////////////////////////////////////////////////////////////////////////////
+/// \env{bgq,PAMI_BGQ_WU_BASELINE}
+/// Size, bytes, of baseline WAC region.
+/// size = PAMI_BGQ_WU_BASELINE + PAMI_BGQ_WU_CONTEXT_COST * nctx -
+///			PAMI_BGQ_WU_PROC_DISCOUNT * nproc;
+/// Minimum: PAMI_BGQ_WU_BASELINE;
+/// \default 256
+///
+/// \env{bgq,PAMI_BGQ_WU_CONTEXT_COST}
+/// Size, bytes, per-context WAC memory.
+/// size = PAMI_BGQ_WU_BASELINE + PAMI_BGQ_WU_CONTEXT_COST * nctx -
+///			PAMI_BGQ_WU_PROC_DISCOUNT * nproc;
+/// \default 104
+///
+/// \env{bgq,PAMI_BGQ_WU_PROC_DISCOUNT}
+/// Size, bytes, per-proc WAC savings.
+/// size = PAMI_BGQ_WU_BASELINE + PAMI_BGQ_WU_CONTEXT_COST * nctx -
+///			PAMI_BGQ_WU_PROC_DISCOUNT * nproc;
+/// \default 8
+////////////////////////////////////////////////////////////////////////////////
+
 namespace PAMI {
 namespace Device {
 namespace CommThread {
@@ -60,6 +81,7 @@ public:
 	~BgqWakeupRegion() {
 	}
 
+
 	/// \brief Initialize Wakeup Region for client
 	///
 	/// \param[in] nctx	Number of contexts being created for client
@@ -74,24 +96,6 @@ public:
 		// of power-of-two with same address alignment. Assuming phy address
 		// alignment will match virt address alignment.
 
-		/// \page env_vars Environment Variables
-		///
-		/// PAMI_BGQ_WU_BASELINE - Size, bytes, of baseline WAC region.
-		/// default: 256
-		/// size = PAMI_BGQ_WU_BASELINE + PAMI_BGQ_WU_CONTEXT_COST * nctx -
-		///			PAMI_BGQ_WU_PROC_DISCOUNT * nproc;
-		/// Minimum: PAMI_BGQ_WU_BASELINE;
-		///
-		/// PAMI_BGQ_WU_CONTEXT_COST - Size, bytes, per-context WAC memory.
-		/// default: 104
-		/// size = PAMI_BGQ_WU_BASELINE + PAMI_BGQ_WU_CONTEXT_COST * nctx -
-		///			PAMI_BGQ_WU_PROC_DISCOUNT * nproc;
-		///
-		/// PAMI_BGQ_WU_PROC_DISCOUNT - Size, bytes, per-proc WAC savings.
-		/// default: 8
-		/// size = PAMI_BGQ_WU_BASELINE + PAMI_BGQ_WU_CONTEXT_COST * nctx -
-		///			PAMI_BGQ_WU_PROC_DISCOUNT * nproc;
-		///
 		char *env;
 		size_t wu_baseline = WU_BASELINE;
 		if ((env = getenv("PAMI_BGQ_WU_BASELINE"))) {

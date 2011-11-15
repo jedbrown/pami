@@ -6,6 +6,24 @@
 #include "config.h"
 #endif //PAMI_LAPI_IMPL
 
+////////////////////////////////////////////////////////////////////////////////
+/// \addtogroup env_vars_ Environment Variables
+/// \envs{,pami,PAMI}
+///
+/// \internal
+/// Environment variable documentation uses the custom doxygen tags "\envs",
+/// "\env", and "\default". These tags are defined as the following ALIASES in
+/// the Doxyfile:
+///
+/// \code
+///   ALIASES  = default="\n \par Default:\n"
+///   ALIASES += envs{3}="\addtogroup env_vars_\2 \3 \n \ingroup env_vars_\1"
+///   ALIASES += env{2}="\addtogroup env_vars_\1 \n \anchor \2 \section \2 "
+/// \endcode
+///
+/// \endinternal
+////////////////////////////////////////////////////////////////////////////////
+
 #include "Global.h"
 #include "Client.h"
 #include "Context.h"

@@ -52,17 +52,28 @@ namespace PAMI
 
           static inline size_t getInstanceMaximum_impl (size_t clientid, Memory::MemoryManager &mm)
           {
-            /// \page env_vars Environment Variables
+            ////////////////////////////////////////////////////////////////////////////////
+            /// \envs{pami,mudevice,MU Device}
             ///
-            /// PAMI_MU_RESOURCES - Determines if PAMI calculates the number
+            /// \env{mudevice,PAMI_MU_RESOURCES}
+            /// Determines if PAMI calculates the number
             /// of available contexts based on an 'optimal' or a 'minimal'
             /// allocation of MU resources to each context.
             ///
-            /// Supported environment variable values are case insensitive
-            /// and include:
-            /// - "Optimal" (default)
-            /// - "Minimal"
+            /// - An \e optimial allocation of MU resources to each context will
+            ///   limit the maximum number contexts that may be created, and
+            ///   each context will be allocated sufficient MU resources to
+            ///   fully utilize the MU hardware and torus network.
+            /// - A \e minimal allocation of MU resources to each context will
+            ///   allow the \e maximum number of contexts to be created regardless
+            ///   of MU hardware and torus network considerations.
             ///
+            /// Supported environment variable values are case insensitive
+            /// and include
+            /// - Optimal
+            /// - Minimal
+            ///
+            /// \default Optimal
             char *env = getenv("PAMI_MU_RESOURCES");
 
             if (env)

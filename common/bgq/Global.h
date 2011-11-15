@@ -64,11 +64,15 @@
 #define DUMP_HEXDATA(s,b,n) //globalDumpHexData(s,b,n)
 void globalDumpHexData(const char * pstring, const uint32_t *buffer, size_t n_ints);
 
-/// \page env_vars Environment Variables
+////////////////////////////////////////////////////////////////////////////////
+/// \env{pami,PAMI_GLOBAL_SHMEMSIZE}
+/// Number of bytes allocated from shared memory for global information
+/// such as the mapcache.
+/// May use the 'K' and 'k' suffix as a 1024 multiplier, or the
+/// 'M' and 'm' suffix as a 1024*1024 multiplier.
 ///
-/// PAMI_GLOBAL_SHMEMSIZE - Size, MB, Global shmem pool
-/// default: sizeof(mapcache) + Node-L2Atomics
-///
+/// \default 4M
+////////////////////////////////////////////////////////////////////////////////
 
 namespace PAMI
 {
@@ -152,13 +156,7 @@ namespace PAMI
 	bytes = 1024*1024*4;
 #endif
 
-	/// \page env_vars Environment Variables
-	///
-	/// PAMI_GLOBAL_SHMEMSIZE - Size, bytes, Global shared memory region.
-	/// May use 'K' or 'M' suffix as multiplier.
-	/// Default: 12000 + 5800 * maxctx + 2500 * nproc;
-	///
-	char *env = getenv("PAMI_GLOBAL_SHMEMSIZE");
+  char *env = getenv("PAMI_GLOBAL_SHMEMSIZE");
 	if (env) {
                 char *s = NULL;
                 bytes = strtoull(env, &s, 0);
@@ -262,26 +260,44 @@ namespace PAMI
     private:
 
 
+
       ////////////////////////////////////////////////////////////////////////////////
-      /// \page env_vars Environment Variables
+      /// \envs{pami,rgetpacing,Remote Get Pacing}
+      /// PAMI remote get pacing interacts with the communication agent to
+      /// complete the entire pacing operation.  The communication agent can be
+      /// individually configured which will affect the behavior of the PAMI
+      /// remote get functions.
+
+      ////////////////////////////////////////////////////////////////////////////////
+      /// \env{rgetpacing,PAMI_RGETPACING}
+      /// Specifies whether or not to consider messages for pacing.
       ///
-      /// PAMI_RGETPACING - Specifies whether or not to consider messages for
-      /// pacing.
+      /// A pacing request will be posted to the communication agent to
+      /// complete the pacing operation only if the message satisfies the PAMI
+      /// pacing criteria. The communication agent may, or may not, pace
+      /// the message depending on the communication agent configuration.
+      ///
       /// - 0 means that no messages will be paced.
       /// - 1 means that messages will be considered for pacing.
-      /// - Default is 1.
+      /// \default 1
       ///
-      /// PAMI_RGETPACINGHOPS - Messages between nodes that are more than this
+      /// \see \ref COMMAGENT_RGETPACING
+      /// \see \ref COMMAGENT_RGETPACINGSIZE
+      ///
+      /// \env{rgetpacing,PAMI_RGETPACINGHOPS}
+      /// Messages between nodes that are more than this
       /// many hops apart on the network will be considered for pacing.
-      /// - Default is 8.
       ///
-      /// PAMI_RGETPACINGDIMS - Messages between nodes whose coordinates differ
+      /// \default 8
+      ///
+      /// \env{rgetpacing,PAMI_RGETPACINGDIMS}
+      /// Messages between nodes whose coordinates differ
       /// in more than this many dimensions in ABCD are considered for pacing.  
       /// For example, node A has ABCD coordinates (0,0,0,0) and node B has 
       /// (3,2,1,0).  They differ in 3 dimensions (A, B, and C).  Specifying 2 
       /// means that messages between these nodes will be considered for pacing.
-      /// - Default is 2.
       ///
+      /// \default 2
       ////////////////////////////////////////////////////////////////////////////////
 
       /// \brief Initialize Remote Get Pacing
