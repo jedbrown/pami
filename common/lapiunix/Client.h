@@ -1499,7 +1499,7 @@ namespace PAMI
         if(((LapiImpl::Context*)_contexts[0])->coll_use_shm)
           {
             char   shmemfile[PAMI::Memory::MMKEYSIZE];
-            size_t bytes     = COLLSHM_SEGSZ +      // Shmem used by collshm
+            size_t bytes     =  PAMI::LAPICSMemoryManager::_size +      // Shmem used by collshm
               P2PSHM_MEMSIZE;      // Shmem used by p2pshm
             size_t pagesize  = COLLSHM_PAGESZ;
 

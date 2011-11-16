@@ -29,6 +29,7 @@
 }
 #endif
 
+#define PGAS_SHMEM_CTRL_STRUCT 32768 // the size of ctrl structure for pgas hybrid algos
 
 namespace xlpgas{
   template <class T_NI>
@@ -275,21 +276,27 @@ class CAUReduce: public CollExchange<T_NI>
 	  size_t mem_sz = 3 * local_tasks * state_sz;
           //typically the shmbufsz is 32k; if more space is required
           //by a large number of threads we disable shmem collectives
-	  if(mem_sz >= mm->_shmbufsz) {
+	  if(mem_sz >= PGAS_SHMEM_CTRL_STRUCT) {
 	    //memory required for all threads is bigger than the
 	    //amount allocated; hybrid collectives will be disabled;
 	    bfs._valid = false;
 	    return;
 	  }
-
+         
+          if(data_offset == mm->shm_null_offset()){
+            //there were no more buffers; disable shared memory
+            bfs._valid = false;
+            return;
+          }
+ 
 	  uintptr_t pgas_shmem = (uintptr_t)mm->offset_to_addr(data_offset);
           
           // set the buffers starting at the address computed above
 	  bfs._reduce_buf      = (void*)(pgas_shmem);
 	  bfs._bcast_buf       = (void*)(pgas_shmem + local_tasks*state_sz);
 	  bfs._large_bcast_buf = (void*)(pgas_shmem + 2 * local_tasks*state_sz);
-          bfs._large_bcast_data_buf = (void*)(pgas_shmem + mm->_shmbufsz/2 );
-	  bfs._bcast_buf_sz    = mm->_shmbufsz / 2;
+          bfs._large_bcast_data_buf = (void*)(pgas_shmem + PGAS_SHMEM_CTRL_STRUCT );
+	  bfs._bcast_buf_sz    = mm->_lgbufsz - PGAS_SHMEM_CTRL_STRUCT;
 
           bfs._valid = true;
 	}
@@ -340,7 +347,6 @@ class CAUReduce: public CollExchange<T_NI>
       _lapi_handle(lapi_handle),
       _geometry(geometry) {
       //set up the shared memory buffers
-      //fprintf(stderr, "==== CAU_GROUP = %d \n", cau_group);
       allocate_shmem_buf<T_NI,T_CSMemoryManager>(_bfs,geometry,mm,lapi_handle,data_offset);
       _my_rank = _geometry->rank();
     }

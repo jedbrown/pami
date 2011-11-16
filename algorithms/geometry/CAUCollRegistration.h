@@ -644,9 +644,11 @@ namespace PAMI
                   // But CAU registration will manage the storage
                   inout_ptr    = &inout_val[1+2*num_master_tasks];
                   memset(inout_ptr, 0xFF, num_master_tasks*sizeof(uint64_t));
-                  if(participant)
+
+                  if(participant && topo->size() == __global.mapping.size())
                   {
-                    typename T_CSMemoryManager::databuf_t *str = _csmm.getDataBuffer(1);
+                    //for now pgas hybrid algorithms are restricted to world geometries
+                    typename T_CSMemoryManager::large_databuf_t *str = _csmm.getLargeDataBuffer(1);
                     uint64_t  databuf_off                      = _csmm.addr_to_offset(str);
                     inout_ptr[master_index]                    = databuf_off;
                   }
@@ -938,9 +940,9 @@ namespace PAMI
             }
             if(databuf_offset != 0xFFFFFFFFFFFFFFFFULL)
             {
-              size_t *buf = (size_t*)_csmm.offset_to_addr(databuf_offset);
-              *buf        = _csmm.shm_null_offset();
-              _csmm.returnDataBuffer((typename T_CSMemoryManager::databuf_t *)buf);
+              size_t *rbuf = (size_t*)_csmm.offset_to_addr(databuf_offset);
+              *rbuf        = _csmm.shm_null_offset();
+              _csmm.returnLargeDataBuffer((typename T_CSMemoryManager::large_databuf_t *)rbuf);
             }
             
           }

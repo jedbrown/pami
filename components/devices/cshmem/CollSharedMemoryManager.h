@@ -60,15 +60,29 @@ namespace PAMI
 
 
 
-    template <class T_Atomic, class T_Mutex, class T_Counter, unsigned T_SegSz, unsigned T_PageSz, unsigned T_WindowSz, unsigned T_ShmBufSz>
+    template <class T_Atomic, class T_Mutex, class T_Counter, 
+      unsigned T_CtlCnt,
+      unsigned T_BufCnt,
+      unsigned T_LgBufCnt,
+      unsigned T_WindowSz,//ctrl structure size
+      unsigned T_ShmBufSz,
+      unsigned T_ShmLgBufSz>
     class CollSharedMemoryManager
     {
       public:
 
-        static const size_t _size     = T_SegSz;
-        static const size_t _pgsize   = T_PageSz;
+        static const size_t _size     = CACHEBLOCKSZ + 
+                                        T_CtlCnt   * T_WindowSz + 
+                                        T_BufCnt   * T_ShmBufSz + 
+                                        T_LgBufCnt * T_ShmLgBufSz;
+
+        static const size_t _ctl_cnt    = T_CtlCnt;
+        static const size_t _buf_cnt    = T_BufCnt;
+        static const size_t _lg_buf_cnt = T_LgBufCnt;
+
         static const size_t _windowsz = T_WindowSz;
         static const size_t _shmbufsz = T_ShmBufSz;
+        static const size_t _lgbufsz  = T_ShmLgBufSz;
 
         inline size_t addr_to_offset(void *addr)
         {
@@ -100,13 +114,25 @@ namespace PAMI
         } __attribute__ ((__aligned__ (CACHEBLOCKSZ)));
         typedef shm_data_buf_t databuf_t;
 
+        union shm_large_data_buf_t
+        {
+          char           data[_lgbufsz];
+          size_t         next_offset;
+        } __attribute__ ((__aligned__ (CACHEBLOCKSZ)));
+        typedef shm_large_data_buf_t large_databuf_t;
+
+        /*
+          The shared memory available in pami is split in three
+          regions: control structures pool, large data buffers pool
+          (pgas hybryd algos) and data buffer pool;
+         */
         struct CollSharedMemory
         {
-          T_Mutex             ctlstr_pool_lock;
-          T_Mutex             buffer_pool_lock;
+          T_Mutex             pool_lock;
           T_Atomic            clientdata_key;
           size_t              ctlstr_offset;
           size_t              buffer_offset;
+          size_t              large_buffer_offset;
           volatile size_t     free_ctlstr_list_offset;
           size_t              ctlstr_list_offset;
           size_t              ctlstr_pool_offset;
@@ -114,13 +140,16 @@ namespace PAMI
           volatile size_t     free_buffer_list_offset;
           size_t              buffer_list_offset;
           size_t              buffer_pool_offset;
-
+          volatile size_t     free_large_buffer_list_offset;
+          size_t              large_buffer_list_offset;
+          size_t              large_buffer_pool_offset;
         } __attribute__ ((__aligned__ (CACHEBLOCKSZ)));
         typedef CollSharedMemory collshm_t;
 
         CollSharedMemoryManager (Memory::MemoryManager *mm) :
           _nctrlstrs(0),
           _ndatabufs(0),
+          _nlargedatabufs(0),
           _start(NULL),
           _end(NULL),
           _collshm (NULL),
@@ -141,8 +170,7 @@ namespace PAMI
 
           // both shm_open and shmget should guarantee initial
           // content of the shared memory to be zero
-          // _collshm->buffer_pool_lock = 0;
-          // _collshm->ctlstr_pool_lock = 0;
+          // _collshm->pool_lock = 0;
 
           typedef union coll_block_t
           {
@@ -158,29 +186,27 @@ namespace PAMI
           _collshm->ctlstr_pool_offset      = addr_to_offset(((char  *)_collshm + sizeof(coll_block_t)));
           _collshm->ctlstr_pool_init_offset = _collshm->ctlstr_pool_offset;
 
-          // Data buffer pool starts after COLLSHM_INIT_CTLCNT of control structs
+          // Large Data buffer pool starts after _init_ctl_cnt of control structs
+          _collshm->large_buffer_pool_offset      = _collshm->ctlstr_pool_offset+(sizeof(ctlstr_t)*_ctl_cnt);
+
+          // Data buffer pool starts after large data buffer allocation
           // Rest of the space for data bufs
-          _collshm->buffer_pool_offset      = _collshm->ctlstr_pool_offset+(sizeof(ctlstr_t)*COLLSHM_INIT_CTLCNT);
-
-          // Compile time error checking
-          const int numCtl           = COLLSHM_INIT_CTLCNT;
-          const int ctlSize          = sizeof(ctlstr_t)*COLLSHM_INIT_CTLCNT;
-          const int numBufs          = (_size - sizeof(coll_block_t) - ctlSize)/sizeof(databuf_t);
-          const int bufSize          = numBufs*sizeof(databuf_t);
-
-          TRACE_DBG((stderr, "DEBUG:numCtl=%d ctlSize=%d numBufs=%d bufSize=%d ctrl pool_offset=%ld buf_pool_offset=%d\n",
-              numCtl, ctlSize, numBufs, bufSize, _collshm->ctlstr_pool_offset, _collshm->buffer_pool_offset));
-
-          COMPILE_TIME_ASSERT(ctlSize < _size);
-          COMPILE_TIME_ASSERT((ctlSize+bufSize+sizeof(coll_block_t)) < T_SegSz);
+          _collshm->buffer_pool_offset      = _collshm->ctlstr_pool_offset+(sizeof(ctlstr_t)*_ctl_cnt) + (sizeof(large_databuf_t)*_lg_buf_cnt);
 
           _collshm->clientdata_key.set(_key);
           _collshm->ctlstr_offset           = (size_t)offset_to_addr(_collshm->ctlstr_pool_offset);
+          _collshm->large_buffer_offset     = (size_t)offset_to_addr(_collshm->large_buffer_pool_offset);
           _collshm->buffer_offset           = (size_t)offset_to_addr(_collshm->buffer_pool_offset);
+
           _collshm->free_ctlstr_list_offset = addr_to_offset(_get_ctrl_str_from_pool());
           _collshm->ctlstr_list_offset      = (size_t)addr_to_offset(new (offset_to_addr(_collshm->free_ctlstr_list_offset)) T_Atomic());
+
           _collshm->free_buffer_list_offset = addr_to_offset(_get_data_buf_from_pool());
           _collshm->buffer_list_offset      = addr_to_offset(new (offset_to_addr(_collshm->free_buffer_list_offset)) T_Atomic());
+
+          _collshm->free_large_buffer_list_offset = addr_to_offset(_get_large_data_buf_from_pool());
+          _collshm->large_buffer_list_offset      = addr_to_offset(new (offset_to_addr(_collshm->free_large_buffer_list_offset)) T_Atomic());
+
 
           TRACE_DBG((stderr, "_collshm                  %p,    "
                      "getSGCtrlStrVec() _localsize      %lu, "
@@ -250,7 +276,7 @@ namespace PAMI
           // But we use it for consistency/error checking
           // (the critical section allows us to fetch and dec atomically
           // if the key is 0).
-          _collshm->buffer_pool_lock.acquire();
+          _collshm->pool_lock.acquire();
           ssize_t cv, val = _collshm->clientdata_key.fetch_and_sub(1UL);
           cv              = val - 1;
           if(val < 1)
@@ -263,7 +289,7 @@ namespace PAMI
                        "allocateKey outside range:  %ld %ld \n",
                        cv,
                        _key);
-          _collshm->buffer_pool_lock.release();
+          _collshm->pool_lock.release();
           return rc;
         }
         inline pami_result_t returnKey()
@@ -272,16 +298,145 @@ namespace PAMI
 
           // Note that this lock is not required for correctness
           // But we use it for consistency/error checking
-          _collshm->buffer_pool_lock.acquire();
+          _collshm->pool_lock.acquire();
           ssize_t cv, val = _collshm->clientdata_key.fetch_and_add(1UL);
           cv              = val + 1;
           PAMI_assertf((val >= 0 && val <= _key),
                        "returnKey outside range: %ld %ld \n",
                        val,
                        _key);
-          _collshm->buffer_pool_lock.release();
+          _collshm->pool_lock.release();
           return rc;
         }
+
+        // Large data buffers pool management
+
+        large_databuf_t * _get_large_data_buf_from_pool ()
+        {
+          _collshm->pool_lock.acquire();
+          Memory::sync<Memory::instruction>();
+          large_databuf_t *new_bufs = (large_databuf_t*) offset_to_addr(_collshm->large_buffer_pool_offset);
+          large_databuf_t *bufs     = new_bufs;
+          size_t    end      = _collshm->buffer_pool_offset;//the end for large buffer is where normal buffers start
+
+          if ((char *)(new_bufs + _lg_buf_cnt) > ((char *)_collshm + end))
+            {
+              TRACE_ERR((stderr, "Run out of shm data bufs, base=%p, buffer_offset=%lu, boundary=%p, end=%p\n",
+                         _collshm, _collshm->large_buffer_offset, (char *)_collshm + _size,
+                         (char *)(new_bufs + 1)));
+              Memory::sync();
+              _collshm->pool_lock.release();
+              return (large_databuf_t*)shm_null_ptr();
+            }
+
+          for (int i = 0; i < _lg_buf_cnt - 1; ++i)
+            {
+              new_bufs->next_offset = addr_to_offset(new_bufs + 1);
+              new_bufs              = (large_databuf_t*)offset_to_addr(new_bufs->next_offset);
+              PAMI_ASSERT(((uintptr_t)new_bufs&(CACHEBLOCKSZ-1UL)) == 0);
+            }
+          new_bufs->next_offset = shm_null_offset();
+          _collshm->large_buffer_pool_offset += (_lg_buf_cnt*sizeof(large_databuf_t));
+
+          Memory::sync();
+          _collshm->pool_lock.release();
+          return bufs;
+        }
+
+
+        large_databuf_t *getLargeDataBuffer (unsigned count)
+        {
+          PAMI_ASSERT(count <= _lg_buf_cnt);
+          unsigned buf_count = 0;
+          large_databuf_t *cur;
+          large_databuf_t *next, *tmp, *buffers = (large_databuf_t*)shm_null_ptr();
+
+          T_Atomic *large_buffer_list = (T_Atomic*)offset_to_addr(_collshm->large_buffer_list_offset);
+          while (buf_count < count)
+            {
+              cur = (large_databuf_t *)offset_to_addr(large_buffer_list->fetch());
+              if (cur == shm_null_ptr())
+                {
+                  tmp   = _get_large_data_buf_from_pool();   // Allocate a whold chunk of INIT_BUFCNT new buffers from the pool
+                  if (tmp == (large_databuf_t*)shm_null_ptr()){
+                    //no more space; we return the null ptr 
+                    return tmp;
+                  }
+                  cur   = tmp + count - buf_count - 1; // End of the list satisfying the requirement
+                  next  = (large_databuf_t*)offset_to_addr(cur->next_offset);   // Extra buffers that should be put into free list
+
+                  cur->next_offset = addr_to_offset(buffers);                 // Merge with buffers already allocated
+                  buffers = tmp;
+
+                  cur = tmp + _lg_buf_cnt - 1;            // End of the newly allocated chunk
+                  // Merge with free list
+                  cur->next_offset = large_buffer_list->fetch();
+
+                  while(!large_buffer_list->bool_compare_and_swap(cur->next_offset, addr_to_offset(next)))
+                    {
+                      cur->next_offset = large_buffer_list->fetch();
+                    }
+
+                  buf_count = count;
+                  TRACE_DBG((stderr, "new buffer is %p\n", buffers));
+                  continue;
+                }
+
+              next = (large_databuf_t*)offset_to_addr(cur->next_offset);
+              TRACE_DBG((stderr, "start: cur = %p, cur->next = %p and _collshm->free_buffer_list_offset = %lu\n",
+                         cur, next, _collshm->free_large_buffer_list_offset));
+
+              while (!large_buffer_list->bool_compare_and_swap(addr_to_offset(cur), addr_to_offset(next)))
+                {
+                  TRACE_DBG((stderr, "entry cur = %p, cur->next = %p and _collshm->free_buffer_list_offset = %lu\n",
+                             cur, next, _collshm->free_buffer_list_offset));
+
+                  cur = (large_databuf_t*)offset_to_addr(large_buffer_list->fetch());
+                  if (cur == shm_null_ptr())
+                    next = (large_databuf_t*)shm_null_ptr();  // take care of the case in which free list becomes empty
+                  else
+                    next = (large_databuf_t*)offset_to_addr(cur->next_offset);
+                  TRACE_DBG((stderr, "exit cur = %p, cur->next = %p and _collshm->large_free_buffer_list_offset = %lu\n",
+                             cur, next, _collshm->large_free_buffer_list_offset));
+                }
+
+              if (cur == shm_null_ptr()) continue;  // may need to start over
+
+              TRACE_DBG((stderr, "end cur = %p\n", cur));
+              cur->next_offset = addr_to_offset(buffers);
+              buffers = (large_databuf_t *)cur;
+              buf_count ++;
+            }
+
+          if(buffers != (large_databuf_t*)shm_null_ptr()) _nlargedatabufs += count;
+          TRACE_DBG((stderr, "_nlargedatabufs = %zu\n", _nlargedatabufs));
+          return buffers;
+        }
+
+
+        ///
+        /// \brief Return a list of shm data buf to the free list
+        ///
+        /// \param data_buf pointer to data bufs returned
+        ///
+        void returnLargeDataBuffer (large_databuf_t *data_buf)
+        {
+          PAMI_ASSERT(data_buf != shm_null_ptr());
+          large_databuf_t *tmp = data_buf;
+          T_Atomic  *large_buffer_list = (T_Atomic*)offset_to_addr(_collshm->large_buffer_list_offset);
+          while (tmp->next_offset != shm_null_offset())
+            {
+              tmp = (large_databuf_t*)offset_to_addr(tmp->next_offset);
+              --_nlargedatabufs;
+            }
+          tmp->next_offset = large_buffer_list->fetch();
+          while(!large_buffer_list->bool_compare_and_swap(tmp->next_offset, addr_to_offset(tmp)))
+            {
+              tmp->next_offset = large_buffer_list->fetch();
+            }
+          TRACE_DBG((stderr, "_nlargedatabufs = %d\n", _nlargedatabufs));
+        }
+
         ///
         /// \brief Get a whole chunk of INIT_BUFCNT new data buffers from the pool
         ///        Hold buffer pool lock.
@@ -291,31 +446,31 @@ namespace PAMI
 
         databuf_t * _get_data_buf_from_pool ()
         {
-          _collshm->buffer_pool_lock.acquire();
+          _collshm->pool_lock.acquire();
           Memory::sync<Memory::instruction>();
           databuf_t *new_bufs = (databuf_t*) offset_to_addr(_collshm->buffer_pool_offset);
-          databuf_t *bufs     = new_bufs;;
+          databuf_t *bufs     = new_bufs;
 
-          if ((char *)(new_bufs + COLLSHM_INIT_BUFCNT) > ((char *)_collshm + _size))
+          if ((char *)(new_bufs + _buf_cnt) > ((char *)_collshm + _size))
             {
-              TRACE_ERR((stderr, "Run out of shm data bufs, base=%p, buffer_offset=%lu, boundary=%p, end=%p\n",
+              fprintf(stderr, "Run out of shm data bufs, base=%p, buffer_offset=%lu, boundary=%p, end=%p\n",
                          _collshm, _collshm->buffer_offset, (char *)_collshm + _size,
-                         (char *)(new_bufs + COLLSHM_INIT_BUFCNT)));
+                         (char *)(new_bufs + _buf_cnt));
               PAMI_ASSERT(0);
               return (databuf_t*)shm_null_ptr();
             }
 
-          for (int i = 0; i < COLLSHM_INIT_BUFCNT - 1; ++i)
+          for (int i = 0; i < _buf_cnt - 1; ++i)
             {
               new_bufs->next_offset = addr_to_offset(new_bufs + 1);
               new_bufs              = (databuf_t*)offset_to_addr(new_bufs->next_offset);
               PAMI_ASSERT(((uintptr_t)new_bufs&(CACHEBLOCKSZ-1UL)) == 0);
             }
           new_bufs->next_offset = shm_null_offset();
-          _collshm->buffer_pool_offset += (COLLSHM_INIT_BUFCNT*sizeof(databuf_t));
+          _collshm->buffer_pool_offset += (_buf_cnt*sizeof(databuf_t));
 
           Memory::sync();
-          _collshm->buffer_pool_lock.release();
+          _collshm->pool_lock.release();
           return bufs;
         }
 
@@ -332,8 +487,7 @@ namespace PAMI
 
         databuf_t *getDataBuffer (unsigned count)
         {
-          PAMI_ASSERT(count <= COLLSHM_INIT_BUFCNT);
-
+          PAMI_ASSERT(count <= _buf_cnt);
           unsigned buf_count = 0;
           databuf_t *cur;
           databuf_t *next, *tmp, *buffers = (databuf_t*)shm_null_ptr();
@@ -351,7 +505,7 @@ namespace PAMI
                   cur->next_offset = addr_to_offset(buffers);                 // Merge with buffers already allocated
                   buffers = tmp;
 
-                  cur = tmp + COLLSHM_INIT_BUFCNT - 1;            // End of the newly allocated chunk
+                  cur = tmp + _buf_cnt - 1;            // End of the newly allocated chunk
                   // Merge with free list
                   cur->next_offset = buffer_list->fetch();
 
@@ -405,7 +559,6 @@ namespace PAMI
 
         void returnDataBuffer (databuf_t *data_buf)
         {
-
           PAMI_ASSERT(data_buf != shm_null_ptr());
 
           databuf_t *tmp = data_buf;
@@ -437,13 +590,13 @@ namespace PAMI
           ctlstr_t *ctlstr = (ctlstr_t*)in;
 
           if(addr_to_offset(ctlstr) >=
-             _collshm->ctlstr_pool_init_offset+(COLLSHM_INIT_CTLCNT*sizeof(*ctlstr)))
+             _collshm->ctlstr_pool_init_offset+(_ctl_cnt*sizeof(*ctlstr)))
           {
             fprintf(stderr, "Control String=%p too large(offset=%ld), start=%ld end=%ld\n",
                     in,
                     addr_to_offset(ctlstr),
                     _collshm->ctlstr_pool_init_offset,
-                    _collshm->ctlstr_pool_init_offset+(COLLSHM_INIT_CTLCNT*sizeof(*ctlstr)));            
+                    _collshm->ctlstr_pool_init_offset+(_ctl_cnt*sizeof(*ctlstr)));            
           }
           if(addr_to_offset(ctlstr) < _collshm->ctlstr_pool_init_offset)
           {
@@ -451,10 +604,10 @@ namespace PAMI
                     ctlstr,
                     addr_to_offset(ctlstr),
                     _collshm->ctlstr_pool_init_offset,
-                    _collshm->ctlstr_pool_init_offset+(COLLSHM_INIT_CTLCNT*sizeof(*ctlstr)));
+                    _collshm->ctlstr_pool_init_offset+(_ctl_cnt*sizeof(*ctlstr)));
           }
           PAMI_ASSERT(addr_to_offset(ctlstr) <
-                      _collshm->ctlstr_pool_init_offset+(COLLSHM_INIT_CTLCNT*sizeof(*ctlstr)));
+                      _collshm->ctlstr_pool_init_offset+(_ctl_cnt*sizeof(*ctlstr)));
           PAMI_ASSERT(addr_to_offset(ctlstr) > _collshm->ctlstr_pool_init_offset);
           
         }
@@ -462,23 +615,23 @@ namespace PAMI
         ctlstr_t * _get_ctrl_str_from_pool ()
         {
           // require implementation of check_lock and clear_lock in atomic class
-          PAMI_ASSERT(&_collshm->ctlstr_pool_lock != NULL);
-          _collshm->ctlstr_pool_lock.acquire();
+          PAMI_ASSERT(&_collshm->pool_lock != NULL);
+          _collshm->pool_lock.acquire();
           // is Memory::sync<Memory::instruction>() equivalent to isync() on PERCS ?
           Memory::sync<Memory::instruction>();
           ctlstr_t *ctlstr   = (ctlstr_t*)offset_to_addr(_collshm->ctlstr_pool_offset);
           ctlstr_t *tmp      = ctlstr;
-          size_t    end      = _collshm->buffer_pool_offset;
+          size_t    end      = _collshm->large_buffer_pool_offset;
 
-          if ((char *)(ctlstr + COLLSHM_INIT_CTLCNT) > ((char *)_collshm + end))
+          if ((char *)(ctlstr + _ctl_cnt) > ((char *)_collshm + end))
             {
               fprintf(stderr, "Run out of shm ctrl structs: base=%p, ctrl_offset=%lu, boundary=%p, end=%p\n",
                       _collshm, _collshm->ctlstr_offset, (char *)_collshm + end,
-                      (char *)(ctlstr + COLLSHM_INIT_CTLCNT));
+                      (char *)(ctlstr + _ctl_cnt));
               PAMI_ASSERT(0);
               return (ctlstr_t*)shm_null_ptr();
             }
-          for (int i = 0; i < COLLSHM_INIT_CTLCNT - 1; ++i)
+          for (int i = 0; i < _ctl_cnt - 1; ++i)
             {
               tmp->next_offset = addr_to_offset(tmp + 1);
               tmp              = (ctlstr_t*)offset_to_addr(tmp->next_offset);
@@ -486,10 +639,10 @@ namespace PAMI
             }
           tmp->next_offset = shm_null_offset();
 
-          _collshm->ctlstr_pool_offset += (COLLSHM_INIT_CTLCNT*sizeof(ctlstr_t));
-          //COLLSHM_CLEAR_LOCK((atomic_p)&(_collshm->ctlstr_pool_lock),0);
+          _collshm->ctlstr_pool_offset += (_ctl_cnt*sizeof(ctlstr_t));
+          //COLLSHM_CLEAR_LOCK((atomic_p)&(_collshm->pool_lock),0);
           Memory::sync();
-          _collshm->ctlstr_pool_lock.release();
+          _collshm->pool_lock.release();
           return ctlstr;
         }
 
@@ -505,8 +658,7 @@ namespace PAMI
 
         ctlstr_t *getCtrlStr (unsigned count)
         {
-          PAMI_ASSERT(count <= COLLSHM_INIT_CTLCNT);
-
+          PAMI_ASSERT(count <= _ctl_cnt);
           unsigned ctlstr_count = 0;
           ctlstr_t * cur;
           ctlstr_t *next, *tmp, *ctlstr = (ctlstr_t*)shm_null_ptr();
@@ -527,7 +679,7 @@ namespace PAMI
                   cur->next_offset = addr_to_offset(ctlstr);                    // Merge with ctrl structs already allocated
                   ctlstr   = tmp;
 
-                  cur = tmp + COLLSHM_INIT_CTLCNT - 1;             // End of the newly allocated chunk
+                  cur = tmp + _ctl_cnt - 1;             // End of the newly allocated chunk
                   // Merge with free list
                   cur->next_offset = ctlstr_list->fetch();
 
@@ -653,15 +805,16 @@ namespace PAMI
             ctlstr_t *ctlstr = (ctlstr_t *)offset_to_addr(ctlstr_offset);
             // Acquire this lock to return all elements at once without contention
             // for the atomics
-            _collshm->ctlstr_pool_lock.acquire();
+            _collshm->pool_lock.acquire();
             returnCtrlStr(ctlstr);
-            _collshm->ctlstr_pool_lock.release();
+            _collshm->pool_lock.release();
           }
         }
       
       protected:
         size_t                    _nctrlstrs;
         size_t                    _ndatabufs;
+        size_t                    _nlargedatabufs;
         void                     *_start;
         void                     *_end;
         collshm_t                *_collshm;       // base pointer of the shared memory segment

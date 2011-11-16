@@ -258,10 +258,8 @@ namespace PAMI
   typedef PAMI::Memory::CollSharedMemoryManager<LAPICSAtomic,
                                                 LAPICSMutex,
                                                 LAPICSCounter,
-                                                COLLSHM_SEGSZ,
-                                                COLLSHM_PAGESZ,
-                                                COLLSHM_WINGROUPSZ,
-                                                COLLSHM_BUFSZ>            LAPICSMemoryManager;
+    COLLSHM_CTLCNT,COLLSHM_BUFCNT,COLLSHM_LGBUFCNT,
+    COLLSHM_WINGROUPSZ,COLLSHM_BUFSZ,COLLSHM_LGBUFSZ>            LAPICSMemoryManager;
 
 
   // PGAS RT Typedefs/Coll Registration
@@ -318,8 +316,8 @@ namespace PAMI
   typedef PAMI::Memory::CollSharedMemoryManager<LAPICSAtomic,
                                                 LAPICSMutex,
                                                 LAPICSCounter,
-                                                COLLSHM_SEGSZ,COLLSHM_PAGESZ,
-                                                COLLSHM_WINGROUPSZ,COLLSHM_BUFSZ> LAPICSMemoryManager;
+    COLLSHM_CTLCNT,COLLSHM_BUFCNT,COLLSHM_LGBUFCNT,
+    COLLSHM_WINGROUPSZ,COLLSHM_BUFSZ,COLLSHM_LGBUFSZ> LAPICSMemoryManager;
 
   typedef PAMI::Device::CollShm::CollShmDevice<LAPICSAtomic,
                                                LAPICSMemoryManager,
