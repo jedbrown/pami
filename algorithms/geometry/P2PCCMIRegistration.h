@@ -127,7 +127,7 @@ namespace PAMI
           _ring_broadcast_factory(NULL),          
           _binomial_broadcast_singleth_factory(NULL),         
           _ring_broadcast_singleth_factory(NULL),          
-	  _sync_2nary_broadcast_factory(NULL),
+          _sync_2nary_broadcast_factory(NULL),
           _asrb_binomial_broadcast_factory(NULL),
           _ascs_binomial_broadcast_factory(NULL),
           _2nomial_broadcast_factory(NULL),
@@ -452,12 +452,12 @@ namespace PAMI
                                         _context_id);
                 if(_ring_broadcast_factory)
                   geometry->addCollectiveCheck(PAMI_XFER_BROADCAST,
-					       _ring_broadcast_factory,
-					       _context_id);
+                                               _ring_broadcast_factory,
+                                               _context_id);
                 if(_sync_2nary_broadcast_factory)
                   geometry->addCollectiveCheck(PAMI_XFER_BROADCAST,
-					       _sync_2nary_broadcast_factory,
-					       _context_id);
+                                               _sync_2nary_broadcast_factory,
+                                               _context_id);
                 if(_ascs_binomial_broadcast_factory)
                   geometry->addCollectiveCheck(PAMI_XFER_BROADCAST,
                                         _ascs_binomial_broadcast_factory,
@@ -567,26 +567,26 @@ namespace PAMI
               {  
                 if(_binomial_broadcast_factory)
                   geometry->addCollective(PAMI_XFER_BROADCAST,
-					  _binomial_broadcast_factory,
-					  _context_id);
-		else if(_binomial_broadcast_singleth_factory)
-		  geometry->addCollective(PAMI_XFER_BROADCAST,
-					  _binomial_broadcast_singleth_factory,
-					  _context_id);		
-		
+                                          _binomial_broadcast_factory,
+                                          _context_id);
+                if(_binomial_broadcast_singleth_factory)
+                  geometry->addCollective(PAMI_XFER_BROADCAST,
+                                          _binomial_broadcast_singleth_factory,
+                                          _context_id);
+
                 if(_ring_broadcast_factory)
                   geometry->addCollective(PAMI_XFER_BROADCAST,
-					  _ring_broadcast_factory,
-					  _context_id);
-		else if(_ring_broadcast_singleth_factory)
-		  geometry->addCollective(PAMI_XFER_BROADCAST,
-					  _ring_broadcast_singleth_factory,
-					  _context_id);		
+                                          _ring_broadcast_factory,
+                                          _context_id);
+                if(_ring_broadcast_singleth_factory)
+                  geometry->addCollective(PAMI_XFER_BROADCAST,
+                                          _ring_broadcast_singleth_factory,
+                                          _context_id);		
 
                 if(_sync_2nary_broadcast_factory)
                   geometry->addCollective(PAMI_XFER_BROADCAST,
-					  _sync_2nary_broadcast_factory,
-					  _context_id);
+                                          _sync_2nary_broadcast_factory,
+                                          _context_id);
                 if(_ascs_binomial_broadcast_factory)
                   geometry->addCollective(PAMI_XFER_BROADCAST,
                                         _ascs_binomial_broadcast_factory,
@@ -894,29 +894,28 @@ namespace PAMI
             // Setup and Construct a binomial broadcast factory from allsided ni and p2p protocol
             rc = setupFactory<CCMI::Adaptor::P2PBroadcast::BinomialBroadcastFactory>(ni, _binomial_broadcast_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED);
             if (rc == PAMI_SUCCESS) new ((void*)_binomial_broadcast_factory) CCMI::Adaptor::P2PBroadcast::BinomialBroadcastFactory(&_cg_connmgr, ni);
-            else //Try single threaded if color geometry fails as it
-              //has lesser resource requrements
-            {       
-              // Setup and Construct a binomial broadcast factory
-              // single threaded from allsided ni 
-              rc = setupFactory<CCMI::Adaptor::P2PBroadcast::BinomialBroadcastSingleThFactory>(ni, _binomial_broadcast_singleth_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED, 1);
-              if (rc == PAMI_SUCCESS) new ((void*)_binomial_broadcast_singleth_factory) CCMI::Adaptor::P2PBroadcast::BinomialBroadcastSingleThFactory(&_color_connmgr, ni);	      
-            }
+            // ----------------------------------------------------
+
+            // ----------------------------------------------------
+            // Setup and Construct a binomial broadcast factory
+            // single threaded from allsided ni 
+            rc = setupFactory<CCMI::Adaptor::P2PBroadcast::BinomialBroadcastSingleThFactory>(ni, _binomial_broadcast_singleth_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED, 1);
+            if (rc == PAMI_SUCCESS) new ((void*)_binomial_broadcast_singleth_factory) CCMI::Adaptor::P2PBroadcast::BinomialBroadcastSingleThFactory(&_color_connmgr, ni);	      
+            // ----------------------------------------------------
             
             // ----------------------------------------------------
             // Setup and Construct a ring broadcast factory from
             // allsided ni and p2p protocol
             rc = setupFactory<CCMI::Adaptor::P2PBroadcast::RingBroadcastFactory>(ni, _ring_broadcast_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED);
             if (rc == PAMI_SUCCESS) new ((void*)_ring_broadcast_factory) CCMI::Adaptor::P2PBroadcast::RingBroadcastFactory(&_cg_connmgr, ni);
-            else  //Try single threaded if color geometry fails as it
-              //has lesser resource requrements
-            {	      
-              // Setup and Construct a ring broadcast factory from allsided ni and p2p protocol
-              rc = setupFactory<CCMI::Adaptor::P2PBroadcast::RingBroadcastSingleThFactory>(ni, _ring_broadcast_singleth_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED, 1);
-              if (rc == PAMI_SUCCESS) new ((void*)_ring_broadcast_singleth_factory) CCMI::Adaptor::P2PBroadcast::RingBroadcastSingleThFactory(&_color_connmgr, ni); 
-            }	    
+            // ----------------------------------------------------
 
-            //This scheme only works 
+            // ----------------------------------------------------
+            // Setup and Construct a ring broadcast factory from allsided ni and p2p protocol
+            rc = setupFactory<CCMI::Adaptor::P2PBroadcast::RingBroadcastSingleThFactory>(ni, _ring_broadcast_singleth_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED, 1);
+            if (rc == PAMI_SUCCESS) new ((void*)_ring_broadcast_singleth_factory) CCMI::Adaptor::P2PBroadcast::RingBroadcastSingleThFactory(&_color_connmgr, ni); 
+
+            //This scheme only works ...??
             rc = setupFactory<CCMI::Adaptor::P2PBroadcast::TwoNaryBroadcastFactory>(ni, _sync_2nary_broadcast_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED, 1);
             if (rc == PAMI_SUCCESS) new ((void*)_sync_2nary_broadcast_factory) CCMI::Adaptor::P2PBroadcast::TwoNaryBroadcastFactory(&_color_connmgr, ni);
 
@@ -1251,10 +1250,10 @@ namespace PAMI
           CCMI::Adaptor::P2PBroadcast::BinomialBroadcastFactory           *_binomial_broadcast_factory;
           CCMI::Adaptor::P2PBroadcast::RingBroadcastFactory               *_ring_broadcast_factory;          
 
-	  CCMI::Adaptor::P2PBroadcast::BinomialBroadcastSingleThFactory   *_binomial_broadcast_singleth_factory;
-	  CCMI::Adaptor::P2PBroadcast::RingBroadcastSingleThFactory       *_ring_broadcast_singleth_factory;          
+          CCMI::Adaptor::P2PBroadcast::BinomialBroadcastSingleThFactory   *_binomial_broadcast_singleth_factory;
+          CCMI::Adaptor::P2PBroadcast::RingBroadcastSingleThFactory       *_ring_broadcast_singleth_factory;          
 
-	  CCMI::Adaptor::P2PBroadcast::TwoNaryBroadcastFactory            *_sync_2nary_broadcast_factory;
+          CCMI::Adaptor::P2PBroadcast::TwoNaryBroadcastFactory            *_sync_2nary_broadcast_factory;
           CCMI::Adaptor::P2PBroadcast::AsyncRBBinomialBroadcastFactory    *_asrb_binomial_broadcast_factory;
           CCMI::Adaptor::P2PBroadcast::AsyncCSBinomialBroadcastFactory    *_ascs_binomial_broadcast_factory;
           CCMI::Adaptor::P2PBroadcast::Async2nomialBroadcastFactory       *_2nomial_broadcast_factory;

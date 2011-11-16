@@ -177,7 +177,7 @@ namespace PAMI
     {
         TRACE_FN_ENTER();
         if(T_Range_Hi) 
-	  niName="-:ShortMU";
+          niName="-:ShortMU";
         else niName = "-:MU";
         TRACE_FORMAT("<%p>%s,%d",this,niName,T_Range_Hi);
         TRACE_FN_EXIT();
@@ -259,7 +259,7 @@ namespace PAMI
   MUDputNI_metadata(MUDevice &device, BigProtocolAllocator &allocator, pami_client_t client, pami_context_t context, size_t context_id, size_t client_id, int *dispatch_id) :
     MUNI_metadata<MUDputNI, BigProtocolAllocator>(device, allocator, client, context, context_id, client_id, dispatch_id)
       {
-	this->niName="-:MUDput";
+        this->niName="-:MUDput";
       }
   };
 
