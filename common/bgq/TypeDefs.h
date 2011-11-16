@@ -244,7 +244,7 @@ namespace PAMI
   Composite_NBCollManager, void > Composite_PGASCollreg;
 
 
-  typedef PAMI::Barrier::IndirectCounter<PAMI::Counter::BGQ::IndirectL2> Barrier_Type;
+  typedef PAMI::Barrier::IndirectCounter<PAMI::Counter::BGQ::IndirectL2NoWakeup> Barrier_Type;
 //typedef PAMI::Barrier::Indirect<PAMI::Barrier::Counter<PAMI::Counter::BGQ::L2> > Barrier_Type;
 
   typedef PAMI::Device::AtomicBarrierMdl<Barrier_Type>                           ShmemMsyncModel;

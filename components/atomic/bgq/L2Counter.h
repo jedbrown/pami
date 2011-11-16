@@ -102,6 +102,13 @@ namespace PAMI
 
       }; // class PAMI::Counter::BGQ::L2
 
+      // 
+      // Use of this class in a wakeup address compare (WAC) range
+      // is supported.  It uses normal loads to primt the L1 cache
+      // for the wakeup unit.  If this counter is not in the
+      // WAC range, use class IndirectL2NoWakeup, which uses L2
+      // atomic loads and should be faster.
+      //
       class IndirectL2 : public PAMI::Counter::Interface<IndirectL2>,
           public PAMI::Atomic::Indirect<IndirectL2>
       {
@@ -206,6 +213,10 @@ namespace PAMI
 
           inline size_t fetch_impl()
           {
+            // A normal load of this counter performs slower than an 
+            // L2_AtomicLoad.  But, a normal load is needed to prime the L1
+            // cache line for the wakeup unit when this counter is in
+            // the Wakeup Address Compare (WAC) range.
             return *_counter;
           }
 
@@ -251,6 +262,74 @@ namespace PAMI
           volatile uint64_t * _counter;
 
       }; // class     PAMI::Counter::BGQ::IndirectL2
+
+      // CAUTION: Use of this class in a wakeup address compare (WAC) range
+      // is not supported.  The fetch_impl() function does a L2 atomic
+      // load which is faster than a normal load, but it doesn't 
+      // prime the L1 cache with the counter, so it will not wake up.
+      // If wakeup is needed, use the IndirectL2 class.
+      class IndirectL2NoWakeup : public PAMI::Counter::BGQ::IndirectL2
+      {
+        public:
+
+          inline IndirectL2NoWakeup () :
+  	      PAMI::Counter::BGQ::IndirectL2 ()
+          {};
+
+          inline ~IndirectL2NoWakeup() {};
+
+        protected:
+
+          // -------------------------------------------------------------------
+          // PAMI::Atomic::Indirect<T> implementation
+          // -------------------------------------------------------------------
+
+          template <class T_MemoryManager, unsigned T_Num>
+            static void init_impl (T_MemoryManager * mm,
+                const char      * key,
+                IndirectL2NoWakeup (&atomic)[T_Num])
+            {
+              volatile uint64_t * array;
+
+              pami_result_t rc;
+              rc = __global.l2atomicFactory.__nodescoped_mm.memalign ((void **) & array,
+                  sizeof(volatile uint64_t),
+                  sizeof(volatile uint64_t)*T_Num,
+                  key);
+
+              PAMI_assertf (rc == PAMI_SUCCESS, "Failed to allocate memory from l2 atomic node-scoped memory manager with key (\"%s\")", key);
+
+
+              unsigned i;
+              for (i=0; i<T_Num; i++)
+              {
+                atomic[i]._counter = (volatile uint64_t *) &array[i];
+              }
+            };
+
+
+          inline void clone_impl (IndirectL2NoWakeup & atomic)
+          {
+            _counter = atomic._counter;
+          };
+
+          // -------------------------------------------------------------------
+          // PAMI::Counter::Interface<T> implementation
+          // -------------------------------------------------------------------
+
+          inline size_t fetch_impl()
+          {
+            // A normal load of this counter performs slower than an 
+            // L2_AtomicLoad.  A normal load is needed to prime the L1
+            // cache line for the wakeup unit when this counter is in
+            // the Wakeup Address Compare (WAC) range.
+            // This class is not for use with wakeup, so we can safely
+            // use an L2 atomic load to improve performance.
+            return L2_AtomicLoad(_counter);
+          }
+
+      }; // class     PAMI::Counter::BGQ::IndirectL2NoWakeup
+
     };   // namespace PAMI::Counter::BGQ
   };     // namespace PAMI::Counter
 };       // namespace PAMI
