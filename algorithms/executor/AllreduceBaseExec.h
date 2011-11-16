@@ -31,7 +31,7 @@
 
 #ifdef CCMI_TRACE_ALL
   #define DO_TRACE_ENTEREXIT 1
-  #define DO_TRACE_ENTEREXIT 1
+  #define DO_TRACE_DEBUG     1
 #else
   #define DO_TRACE_ENTEREXIT 0
   #define DO_TRACE_DEBUG     0
