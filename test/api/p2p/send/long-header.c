@@ -88,29 +88,40 @@ static void send_done_remote (pami_context_t   context,
   (*active)--;
 }
 
+static void usage ()
+{
+  fprintf(stdout, "long-header.cnk tests the no_long_header hint between task 0 and task 1 using a long header size.\n");
+
+  fprintf(stdout, "\nNOTE:  Hints are read as \"assert <hint>\" when the hint is \'1\' .. if it is \'0\' then it is considered \"unspecified\" (as opposed to \"unset\").  In other words, the only hard hints and soft hints that matter are 1\'s. Only sends can have soft hints.\n");
+
+  fprintf(stdout, "Passing SEND scenario:\n");
+  fprintf(stdout, "  send hints       recv hints     header\n");
+  fprintf(stdout, "no long header | no long header    size    dispatch ID\n");
+  fprintf(stdout, "============== | ============== | ====== | ===========\n");
+  fprintf(stdout, "   0 (hard)    |    0 (hard)    |  long  |      0\n");
+  fprintf(stdout, "\n");
+  fprintf(stdout, "Failing SEND scenario:\n");
+  fprintf(stdout, "  send hints       recv hints     header\n");
+  fprintf(stdout, "no long header | no long header    size    dispatch ID\n");
+  fprintf(stdout, "============== | ============== | ====== | ===========\n");
+  fprintf(stdout, "   1 (hard)    |    1 (hard)    |  long  |      1\n");
+  fprintf(stdout, "\n");
+  fprintf(stdout, "Default is to run both the PASSING and FAILING SEND scenarios.\n\n");
+  fprintf(stdout, "Testcase options:\n");
+  fprintf(stdout, "-h   | --help            This help text.\n\n");
+  fprintf(stdout, "-p   | --pass-only       Only run passing send scenarios.\n\n");
+  fprintf(stdout, "-np  | --no-pass         Skip passing send scenarios.\n\n");
+  fprintf(stdout, "-sf  | --send-fail-only  Only run failing send scenarios.\n\n");
+  fprintf(stdout, "-nsf | --no-send-fail    Skip failing send scenarios.\n\n");
+  exit(0);
+}
+
 int main (int argc, char ** argv)
 {
   volatile size_t send_active = 2;
   volatile size_t recv_active = 1;
 
   size_t i = 0;
-  size_t tests = 3; /* 11: run passing tests = 1, run send fail tests = 1 */ 
-
-  for (i = 1; i < argc; i++){ /* Skip argv[0] (program name). */
-    if ( (strcmp(argv[i], "-p") == 0) || (strcmp(argv[i], "--pass-only") == 0) ) {
-      tests = 2;
-    }
-    if ( (strcmp(argv[i], "-np") == 0) || (strcmp(argv[i], "--no-pass") == 0) ) {
-      tests = tests & 1;
-    }
-    if ( (strcmp(argv[i], "-sf") == 0) || (strcmp(argv[i], "--send-fail-only") == 0) ) {
-      tests = 1;
-    }
-    if ( (strcmp(argv[i], "-nsf") == 0) || (strcmp(argv[i], "--no-send-fail") == 0) ) {
-      tests = tests & 2;
-    }
-  }
-
 
   pami_client_t client;
   pami_context_t context;
@@ -156,6 +167,30 @@ int main (int argc, char ** argv)
   {
     fprintf(stderr, "Error. This test requires 2 tasks. Number of tasks in this job: %zu\n", num_tasks);
     return 1;
+  }
+
+  size_t tests = 3; /* 11: run passing tests = 1, run send fail tests = 1 */ 
+
+  for (i = 1; i < argc; i++) { /* Skip argv[0] (program name). */
+    if ( (strcmp(argv[i], "-p") == 0) || (strcmp(argv[i], "--pass-only") == 0) ) {
+      tests = 2;
+    }
+    if ( (strcmp(argv[i], "-np") == 0) || (strcmp(argv[i], "--no-pass") == 0) ) {
+      tests = tests & 1;
+    }
+    if ( (strcmp(argv[i], "-sf") == 0) || (strcmp(argv[i], "--send-fail-only") == 0) ) {
+      tests = 1;
+    }
+    if ( (strcmp(argv[i], "-nsf") == 0) || (strcmp(argv[i], "--no-send-fail") == 0) ) {
+      tests = tests & 2;
+    }
+    if ( (strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0) ) {
+      if (task_id == 0) {
+	usage();
+      } else {
+	exit(0);
+      }
+    }
   }
 
   pami_dispatch_hint_t options;
