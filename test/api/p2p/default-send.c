@@ -657,7 +657,7 @@ int main (int argc, char ** argv)
 		  fprintf (stderr, "before PAMI_Send ...\n");
 		}
 
-		result = PAMI_Send (context[0], &parameters);
+		result = PAMI_Send (context[xtalk], &parameters);
 		
 		if (debug) {
 		  fprintf (stderr, "... after PAMI_Send.\n");
@@ -714,7 +714,7 @@ int main (int argc, char ** argv)
 
       for(xtalk = 0; xtalk < num_contexts; xtalk++) {        /* xtalk loop */
 
-	result = PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
+	result = PAMI_Endpoint_create (client, 0, xtalk, &parameters.send.dest);
 	if (result != PAMI_SUCCESS) {
 	  fprintf (stderr, "ERROR (E):  PAMI_Endpoint_create failed for task_id 0, context 0 with %d.\n", result);
 	  return 1;
