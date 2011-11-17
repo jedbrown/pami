@@ -1042,7 +1042,7 @@ namespace CCMI
       namespace Ring {
 	extern inline void ring_allreduce_metadata(pami_metadata_t *m)
         {
-          new(m) PAMI::Geometry::Metadata("I0:Ring:P2P:P2P");
+          new(m) PAMI::Geometry::Metadata("X0:Ring:P2P:P2P");
         }
 
         typedef CCMI::Adaptor::Allreduce::MultiColorCompositeT
