@@ -1451,7 +1451,8 @@ namespace PAMI
                 // New optimized MU+Shmem protocol requires a class route
                 if (val && val != PAMI_CR_GKEY_FAIL && rectangle_topo)
                 {
-                  if (_mushmemcollectivedputmulticombinefactory)
+                  if (_mushmemcollectivedputmulticombinefactory && 
++                    (__global.topology_local.size() == __global.mapping.tSize())) /// \todo temp until the protocol is fixed
                     geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,  _mushmemcollectivedputmulticombinefactory, _context_id);
                   if(_mucollectivedputmulticastfactory && 
                      (__global.topology_local.size() == __global.mapping.tSize())) /// \todo temp until the protocol is fixed
