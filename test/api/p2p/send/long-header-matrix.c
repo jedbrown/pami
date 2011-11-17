@@ -136,6 +136,7 @@ static void usage ()
   fprintf(stdout, "\n");
   fprintf(stdout, "Default is to only run the PASSING and FAILING SEND scenarios (skip failing recv scenarios).\n\n");
   fprintf(stdout, "Testcase options:\n");
+  fprintf(stdout, "-h   | --help            This help text.\n\n");
   fprintf(stdout, "-p   | --pass-only       Only run passing send scenarios.\n\n");
   fprintf(stdout, "-np  | --no-pass         Skip passing send scenarios.\n\n");
   fprintf(stdout, "-sf  | --send-fail-only  Only run failing send scenarios.\n\n");
@@ -225,6 +226,8 @@ int main (int argc, char ** argv)
     if ( (strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0) ) {
       if (task_id == 0) {
 	usage();
+      } else {
+	exit(0);
       }
     }
   }
