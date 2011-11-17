@@ -268,15 +268,38 @@ namespace PAMI
       // load which is faster than a normal load, but it doesn't 
       // prime the L1 cache with the counter, so it will not wake up.
       // If wakeup is needed, use the IndirectL2 class.
-      class IndirectL2NoWakeup : public PAMI::Counter::BGQ::IndirectL2
+      class IndirectL2NoWakeup : public PAMI::Counter::Interface<IndirectL2NoWakeup>,
+          public PAMI::Atomic::Indirect<IndirectL2NoWakeup>
       {
         public:
 
+          friend class PAMI::Counter::Interface<IndirectL2NoWakeup>;
+          friend class PAMI::Atomic::Indirect<IndirectL2NoWakeup>;
+
+          static const bool indirect = true;
+
           inline IndirectL2NoWakeup () :
-  	      PAMI::Counter::BGQ::IndirectL2 ()
+              PAMI::Counter::Interface<IndirectL2NoWakeup> (),
+              _counter(NULL)
           {};
 
           inline ~IndirectL2NoWakeup() {};
+
+          static inline bool checkCtorMm(PAMI::Memory::MemoryManager *mm)
+          {
+            // must not be shared memory.
+            return ((mm->attrs() & PAMI::Memory::PAMI_MM_NODESCOPE) == 0);
+          }
+
+          static inline bool checkDataMm(PAMI::Memory::MemoryManager *mm)
+          {
+            return ((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0);
+          }
+
+          inline void set (volatile uint64_t * addr)
+          {
+            _counter = addr;
+          };
 
         protected:
 
@@ -284,10 +307,40 @@ namespace PAMI
           // PAMI::Atomic::Indirect<T> implementation
           // -------------------------------------------------------------------
 
+          ///
+          /// \brief Initialize the indirect L2 atomic counter
+          ///
+          /// Does not use the memory manager from the user, but instead uses
+          /// the BGQ-specific L2 Atomic Factory to access the L2 Memory Manager
+          /// to allocate the memory.
+          ///
+          template <class T_MemoryManager>
+          inline void init_impl(T_MemoryManager *mm, const char *key)
+          {
+            pami_result_t rc;
+
+            if ((mm->attrs() & PAMI::Memory::PAMI_MM_L2ATOMIC) != 0)
+              {
+                rc = mm->memalign((void **) & _counter, sizeof(*_counter),
+                                  sizeof(*_counter), key);
+              }
+            else
+              {
+                void * __counter = NULL;
+                rc = __global.l2atomicFactory.__nodescoped_mm.memalign(&__counter,
+                                                                       sizeof(*_counter),
+                                                                       sizeof(*_counter),
+                                                                       key);
+                _counter = (volatile uint64_t *)__counter;
+              }
+
+            PAMI_assertf(rc == PAMI_SUCCESS, "Failed to allocate memory from mm %p with key \"%s\"", mm, key);
+          };
+
           template <class T_MemoryManager, unsigned T_Num>
             static void init_impl (T_MemoryManager * mm,
                 const char      * key,
-                IndirectL2NoWakeup (&atomic)[T_Num])
+                IndirectL2NoWakeup        (&atomic)[T_Num])
             {
               volatile uint64_t * array;
 
@@ -326,7 +379,49 @@ namespace PAMI
             // This class is not for use with wakeup, so we can safely
             // use an L2 atomic load to improve performance.
             return L2_AtomicLoad(_counter);
+            /* return *_counter; */
           }
+
+          inline size_t fetch_and_inc_impl()
+          {
+            return L2_AtomicLoadIncrement(_counter);
+          }
+
+          inline size_t fetch_and_dec_impl()
+          {
+            return L2_AtomicLoadDecrement(_counter);
+          }
+
+          inline size_t fetch_and_clear_impl()
+          {
+            return L2_AtomicLoadClear(_counter);
+          }
+
+          inline void clear_impl()
+          {
+            L2_AtomicLoadClear(_counter);
+          }
+
+          // -------------------------------------------------------------------
+          // Memory manager counter initialization function
+          // -------------------------------------------------------------------
+
+          ///
+          /// \brief Initialize the counter resources
+          ///
+          /// \see PAMI::Memory::MM_INIT_FN
+          ///
+          static void counter_initialize (void       * memory,
+                                          size_t       bytes,
+                                          const char * key,
+                                          unsigned     attributes,
+                                          void       * cookie)
+          {
+            volatile uint64_t * counter = (volatile uint64_t *) memory;
+            L2_AtomicLoadClear(counter);
+          };
+
+          volatile uint64_t * _counter;
 
       }; // class     PAMI::Counter::BGQ::IndirectL2NoWakeup
 
