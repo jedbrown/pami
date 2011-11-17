@@ -107,8 +107,7 @@ namespace PAMI
               _id_base (id_base),
               _id_offset (id_offset),
  	      _id_count (id_count),
- 	      _combiningInjFifo (combiningInjFifoIdNotSet),
-	      _rgetPacingSize(__MUGlobal.getRgetPacingSize())
+ 	      _combiningInjFifo (combiningInjFifoIdNotSet)
           {
             TRACE_FN_ENTER();
 
@@ -544,11 +543,6 @@ namespace PAMI
 	      else
 		return false;
 	    }
-
-	  ///
-	  /// \brief Get Remote Get Pacing Message Size
-	  ///
-	  inline size_t getRgetPacingSize() { return _rgetPacingSize; }
 
 	  ///
           /// \brief Pin Combining Fifo
@@ -1114,7 +1108,6 @@ namespace PAMI
 	  Generic::Device         *_progressDevice;
     
 	  void *            _mu_context_cookie;
-          size_t            _rgetPacingSize;
 
         // -------------------------------------------------------------
         // Deterministic packet interface connection array
