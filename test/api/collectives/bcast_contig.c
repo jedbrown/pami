@@ -154,6 +154,8 @@ int main(int argc, char*argv[])
 
   /* Bcast variables */
   size_t               bcast_num_algorithm[2];
+  pami_algorithm_t    *next_algo = NULL;
+  pami_metadata_t     *next_md= NULL;
   pami_algorithm_t    *bcast_always_works_algo = NULL;
   pami_metadata_t     *bcast_always_works_md   = NULL;
   pami_algorithm_t    *bcast_must_query_algo   = NULL;
@@ -161,7 +163,7 @@ int main(int argc, char*argv[])
   pami_xfer_type_t     bcast_xfer = PAMI_XFER_BROADCAST;
   volatile unsigned    bcast_poll_flag = 0;
 
-  int                  nalg= 0;
+  int                  nalg= 0, total_alg;
   double               ti, tf, usec;
   pami_xfer_t          barrier;
   pami_xfer_t          broadcast;
@@ -236,17 +238,31 @@ int main(int argc, char*argv[])
     barrier.algorithm = bar_always_works_algo[0];
     blocking_coll(context[iContext], &barrier, &bar_poll_flag);
 
-    for (nalg = 0; nalg < bcast_num_algorithm[0]; nalg++)
+    total_alg = bcast_num_algorithm[0]+bcast_num_algorithm[1];
+    for (nalg = 0; nalg < total_alg; nalg++)
     {
-
+      metadata_result_t result = {0};
+      unsigned query_protocol;
+      if(nalg < bcast_num_algorithm[0])
+      {  
+        query_protocol = 0;
+        next_algo = &bcast_always_works_algo[nalg];
+        next_md  = &bcast_always_works_md[nalg];
+      }
+      else
+      {  
+        query_protocol = 1;
+        next_algo = &bcast_must_query_algo[nalg-bcast_num_algorithm[0]];
+        next_md  = &bcast_must_query_md[nalg-bcast_num_algorithm[0]];
+      }
       broadcast.cb_done                      = cb_done;
       broadcast.cookie                       = (void*) & bcast_poll_flag;
-      broadcast.algorithm                    = bcast_always_works_algo[nalg];
+      broadcast.algorithm                    = *next_algo;
       broadcast.cmd.xfer_broadcast.buf       = buf;
       broadcast.cmd.xfer_broadcast.type      = PAMI_TYPE_BYTE;
       broadcast.cmd.xfer_broadcast.typecount = 0;
 
-      gProtocolName = bcast_always_works_md[nalg].name;
+      gProtocolName = next_md->name;
 
       int k;
       for (k=0; k< gNumRoots; k++)
@@ -257,16 +273,22 @@ int main(int argc, char*argv[])
         broadcast.cmd.xfer_broadcast.root = root_ep;
         if (task_id == root_task)
         {
-          printf("# Broadcast Bandwidth Test -- context = %d, root = %d  protocol: %s\n",
-                 iContext, root_task, gProtocolName);
+          printf("# Broadcast Bandwidth Test -- context = %d, root = %d  protocol: %s, Metadata: range %zu <-> %zd, mask %#X\n",
+                 iContext, root_task, gProtocolName,
+                 next_md->range_lo,(ssize_t)next_md->range_hi,
+                 next_md->check_correct.bitmask_correct);
           printf("# Size(bytes)           cycles    bytes/sec    usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
         }
 
-        if (((strstr(bcast_always_works_md[nalg].name,gSelected) == NULL) && gSelector) ||
-            ((strstr(bcast_always_works_md[nalg].name,gSelected) != NULL) && !gSelector))  continue;
+        if (((strstr(next_md->name, gSelected) == NULL) && gSelector) ||
+            ((strstr(next_md->name, gSelected) != NULL) && !gSelector))  continue;
 
         int i, j;
+
+        unsigned checkrequired = next_md->check_correct.values.checkrequired; /*must query every time */
+        assert(!checkrequired || next_md->check_fn); /* must have function if checkrequired. */
+
         int dt,op=4/*SUM*/;
 
         for (dt = 0; dt < dt_count; dt++)
@@ -293,12 +315,36 @@ int main(int argc, char*argv[])
                   initialize_sndbuf (buf, i, root_task, dt);
                 else
                   memset(buf, 0xFF, i);
+                if(query_protocol)
+                {  
+                  result = check_metadata(*next_md,
+                                          broadcast,
+                                          dt_array[dt],
+                                          dataSent, /* metadata uses bytes i, */
+                                          broadcast.cmd.xfer_broadcast.buf,
+                                          PAMI_TYPE_BYTE,
+                                          dataSent,
+                                          broadcast.cmd.xfer_broadcast.buf);
+                  if (next_md->check_correct.values.nonlocal)
+                  {
+                    /* \note We currently ignore check_correct.values.nonlocal
+                      because these tests should not have nonlocal differences (so far). */
+                    result.check.nonlocal = 0;
+                  }
+
+                  if (result.bitmask) continue;
+                }
 
                 blocking_coll(context[iContext], &barrier, &bar_poll_flag);
                 ti = timer();
 
                 for (j = 0; j < niter; j++)
                 {
+                  if (checkrequired) /* must query every time */
+                  {
+                    result = next_md->check_fn(&broadcast);
+                    if (result.bitmask) continue;
+                  }
                   blocking_coll (context[iContext], &broadcast, &bcast_poll_flag);
                 }
 

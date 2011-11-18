@@ -41,6 +41,8 @@ int main(int argc, char*argv[])
 
   /* Allreduce variables */
   size_t               allreduce_num_algorithm[2];
+  pami_algorithm_t    *next_algo = NULL;
+  pami_metadata_t     *next_md= NULL;
   pami_algorithm_t    *allreduce_always_works_algo = NULL;
   pami_metadata_t     *allreduce_always_works_md = NULL;
   pami_algorithm_t    *allreduce_must_query_algo = NULL;
@@ -48,7 +50,7 @@ int main(int argc, char*argv[])
   pami_xfer_type_t     allreduce_xfer = PAMI_XFER_ALLREDUCE;
   volatile unsigned    allreduce_poll_flag = 0;
 
-  int                  i, j, nalg = 0;
+  int                  i, j, nalg = 0, total_alg;
   double               ti, tf, usec;
   pami_xfer_t          barrier;
   pami_xfer_t          allreduce;
@@ -122,25 +124,44 @@ int main(int argc, char*argv[])
 
     if (rc == 1)
       return 1;
-
-    for (nalg = 0; nalg < allreduce_num_algorithm[0]; nalg++)
+    total_alg = allreduce_num_algorithm[0]+allreduce_num_algorithm[1];
+    for (nalg = 0; nalg < total_alg; nalg++)
     {
+      metadata_result_t result = {0};
+      unsigned query_protocol;
+      if(nalg < allreduce_num_algorithm[0])
+      {  
+        query_protocol = 0;
+        next_algo = &allreduce_always_works_algo[nalg];
+        next_md  = &allreduce_always_works_md[nalg];
+      }
+      else
+      {  
+        query_protocol = 1;
+        next_algo = &allreduce_must_query_algo[nalg-allreduce_num_algorithm[0]];
+        next_md  = &allreduce_must_query_md[nalg-allreduce_num_algorithm[0]];
+      }
       if (task_id == task_zero)
       {
-        printf("# Allreduce Bandwidth Test -- context = %d, protocol: %s\n",
-               iContext, allreduce_always_works_md[nalg].name);
+        printf("# Allreduce Bandwidth Test -- context = %d, protocol: %s, Metadata: range %zu <-> %zd, mask %#X\n",
+               iContext, next_md->name,
+               next_md->range_lo,(ssize_t)next_md->range_hi,
+               next_md->check_correct.bitmask_correct);
         printf("# Size(bytes)           cycles    bytes/sec    usec\n");
         printf("# -----------      -----------    -----------    ---------\n");
       }
 
-      if (((strstr(allreduce_always_works_md[nalg].name, gSelected) == NULL) && gSelector) ||
-          ((strstr(allreduce_always_works_md[nalg].name, gSelected) != NULL) && !gSelector))  continue;
+      if (((strstr(next_md->name, gSelected) == NULL) && gSelector) ||
+          ((strstr(next_md->name, gSelected) != NULL) && !gSelector))  continue;
 
-      gProtocolName = allreduce_always_works_md[nalg].name;
+      gProtocolName = next_md->name;
+
+      unsigned checkrequired = next_md->check_correct.values.checkrequired; /*must query every time */
+      assert(!checkrequired || next_md->check_fn); /* must have function if checkrequired. */
 
       allreduce.cb_done   = cb_done;
       allreduce.cookie    = (void*) & allreduce_poll_flag;
-      allreduce.algorithm = allreduce_always_works_algo[nalg];
+      allreduce.algorithm = *next_algo;
       allreduce.cmd.xfer_allreduce.sndbuf    = sbuf;
       allreduce.cmd.xfer_allreduce.rcvbuf    = rbuf;
       allreduce.cmd.xfer_allreduce.rtype     = PAMI_TYPE_BYTE;
@@ -174,6 +195,26 @@ int main(int argc, char*argv[])
               allreduce.cmd.xfer_allreduce.stype = dt_array[dt];
               allreduce.cmd.xfer_allreduce.op    = op_array[op];
 
+              if(query_protocol)
+              {  
+                result = check_metadata(*next_md,
+                                      allreduce,
+                                      dt_array[dt],
+                                      dataSent, /* metadata uses bytes i, */
+                                      allreduce.cmd.xfer_allreduce.sndbuf,
+                                      PAMI_TYPE_BYTE,
+                                      dataSent,
+                                      allreduce.cmd.xfer_allreduce.rcvbuf);
+                if (next_md->check_correct.values.nonlocal)
+                {
+                  /* \note We currently ignore check_correct.values.nonlocal
+                     because these tests should not have nonlocal differences (so far). */
+                  result.check.nonlocal = 0;
+                }
+
+                if (result.bitmask) continue;
+              }
+
               reduce_initialize_sndbuf (sbuf, i, op, dt, task_id, num_tasks);
 
               /* We aren't testing barrier itself, so use context 0. */
@@ -182,6 +223,11 @@ int main(int argc, char*argv[])
 
               for (j = 0; j < niter; j++)
               {
+                if (checkrequired) /* must query every time */
+                {
+                  result = next_md->check_fn(&allreduce);
+                  if (result.bitmask) continue;
+                }
                 blocking_coll(context[iContext], &allreduce, &allreduce_poll_flag);
               }
 

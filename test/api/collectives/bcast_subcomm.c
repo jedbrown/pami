@@ -240,7 +240,7 @@ int main(int argc, char*argv[])
           int l = 0;
 
           root_task = root_zero;
-          if (gNumRoots == -1) gNumRoots = subgeometry_num_tasks;
+          if (gNumRoots > num_tasks) gNumRoots = subgeometry_num_tasks;
           for (l=0; l< gNumRoots; l++)
           {
             pami_endpoint_t    root_ep;
