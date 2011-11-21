@@ -15,7 +15,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file algorithms/protocols/allreduce/MultiColorCompositeT.h
+ * \file algorithms/protocols/allreduce/AsyncOATCompositeT.h
  * \brief CCMI composite adaptor for allreduce with barrier support
  */
 
@@ -25,7 +25,6 @@
 #include "algorithms/executor/Barrier.h"
 #include "math/math_coremath.h"
 #include "algorithms/executor/AllreduceBaseExec.h"
-#include "algorithms/composite/MultiColorCompositeT.h"
 
 #include "util/trace.h"
 

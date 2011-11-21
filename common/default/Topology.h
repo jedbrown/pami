@@ -1074,36 +1074,40 @@ namespace PAMI
 
         case PAMI_AXIAL_TOPOLOGY:
 
-          c0 = topo_axial_center;
+	  c0 = topo_axial_center;	  
 
-
-          for(x = 0; x < mapping->globalDims() && ix > 0; x++)
+	  for (x = 0; x < mapping->globalDims() && ix > 0; x++)
           {
-            unsigned ll = topo_axial_lldim(x);
-            unsigned ur = topo_axial_urdim(x);
-            unsigned nn = ur - topo_axial_center.net_coord(x);
+	    unsigned ll = topo_axial_lldim(x);
+	    unsigned ur = topo_axial_urdim(x);
+	    unsigned nn = (mapping->torusSize(x) + ur - topo_axial_center.net_coord(x)) % mapping->torusSize(x);
+	    
+	    //printf("ix %ld dim %d ll %d ur %d center %ld nn %d\n", ix, x, ll, 
+	    //   ur, topo_axial_center.net_coord(x), nn);
 
-            if(ix <= nn)
+	    if (ix <= nn)
             {
-              c0.net_coord(x) += ix;
-              break;
-            }
-            else
-              ix -= nn;
-
-            nn = topo_axial_center.net_coord(x) - ll;
-            if(ix <= nn)
-            {
-              c0.net_coord(x) -= ix;
-              break;
-            }
-            else
-              ix -= nn;
-          }
-
-          rc = COORDS2RANK(&c0, &rank);
-          return rank;
-          break;
+	      c0.net_coord(x) = (c0.net_coord(x) + ix) % mapping->torusSize(x);
+	      break;
+	    }
+	    else
+	      ix -= nn;
+	    
+	    nn = (mapping->torusSize(x) + topo_axial_center.net_coord(x) - ll) %
+	      mapping->torusSize(x);
+	    if (ix <= nn)
+	    {
+	      c0.net_coord(x) = (mapping->torusSize(x) + c0.net_coord(x) - ix)
+		% mapping->torusSize(x);
+	      break;
+	    }
+	    else
+	      ix -= nn;
+	  }
+	  
+	  rc = COORDS2RANK(&c0, &rank);
+	  return rank;
+	  break;
 
         case PAMI_COORD_TOPOLOGY:
           // probably not used?

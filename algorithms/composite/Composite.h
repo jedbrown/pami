@@ -202,7 +202,7 @@ namespace CCMI
 
           _numExecutors = 0;
         }
-        /// NOTE: This is required to make "C" programs link successfully with virtual destructors
+        ///NOTE: This is required to make "C" programs link successfully with virtual destructors
         inline void operator delete(void * p)
         {
           CCMI_abort();
@@ -235,7 +235,7 @@ namespace CCMI
           TRACE_FN_ENTER();
           TRACE_FORMAT("<%p>",this);
           _barrier = NULL;
-          for (int count = 0; count < NUM_EXECUTORS; count ++)
+          for (unsigned count = 0; count < NUM_EXECUTORS; count ++) 
             _executors[count] = NULL;	  
           _numExecutors = 0;
           TRACE_FN_EXIT();

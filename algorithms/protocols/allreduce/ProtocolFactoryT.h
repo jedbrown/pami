@@ -104,11 +104,11 @@ public:
         void* ptr = NULL;
         if(arcomposite)
           ptr = arcomposite->getAlgorithmFactory();
-
+	
         ///If the allreduce algorithm was created by this factory before, just restart it
         if (arcomposite != NULL && arcomposite->getAlgorithmFactory() == this)
         {
-
+	    //fprintf(stderr, "Call composite %p restart\n", arcomposite);
             pami_result_t status = (pami_result_t)arcomposite->restart(allreduce);
 
             if (status == PAMI_SUCCESS)
@@ -130,7 +130,7 @@ public:
         }
 
         T_Composite* obj = (T_Composite*)CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn, T_XFER_TYPE >::_alloc.allocateObject();
-        TRACE_FORMAT("%p composite %p", this,arcomposite);
+        //fprintf(stderr, "%p composite %p\n", this, obj);
         geometry->setAllreduceComposite(contextid,obj, iteration);
 
         new (obj) T_Composite(this->_context,

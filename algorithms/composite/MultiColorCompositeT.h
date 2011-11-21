@@ -74,7 +74,7 @@ namespace CCMI
       unsigned                                      _bytecounts [NUMCOLORS];
       unsigned                                      _strides [NUMCOLORS];
 
-      static const uint32_t alignment = 0x40; //64 byte aligment
+      static const uint32_t alignment = 0x200; //512 byte aligment
       static const uint32_t alignment_mask = ~(alignment-1); //the mask for sizes
     public:
       MultiColorCompositeT () : CompositeT<NUMCOLORS, T_Bar, T_Exec>(), 
@@ -186,9 +186,9 @@ namespace CCMI
           CCMI_assert (c < NUMCOLORS);
 
           T_Exec *exec  =
-          new (& _executors[c]) T_Exec (_native,
-                                        _cmgr,
-                                        comm);
+	    new (& _executors[c]) T_Exec (_native,
+					  _cmgr,
+					  comm);
 
           exec->setRoot (root);
 
@@ -227,13 +227,18 @@ namespace CCMI
 	
 	if (_bytes != (stypecount * stype->GetDataSize()) || _root != root) {
 	  T_Bar *barrier = CompositeT<NUMCOLORS, T_Bar, T_Exec>::_barrier;
+	  //Free memory allocated by executors
+	  for (unsigned count = 0; count < this->getNumExecutors(); count++)
+	    if (getExecutor(count))
+	      getExecutor(count)->~T_Exec();
+	  
 	  CCMI::Executor::CompositeT<NUMCOLORS, T_Bar, T_Exec>::reset();
 	  addBarrier(barrier);
 	  _numColors = _numColorsMax;
 	  initialize (comm, topology, root, stypecount, stype, rtypecount, rtype, src, dst);
 	  return;
 	}
-
+	
         unsigned c = 0;
         for (c = 0; c < _numColors; c++)
         {

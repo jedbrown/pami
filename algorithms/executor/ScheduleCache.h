@@ -138,8 +138,7 @@ namespace CCMI
               _schedule->getDstTopology(count, &dst_topology,&dstranks[0]);
               ntotal_dst += dst_topology.size();
 
-              TRACE_SCHEDULE((stderr, "Schedule Cache take_1 phase %d ndst %zu dstrank %u/%u\n", count,
-                              dst_topology.size(), dst_topology.index2Rank(0),  dstranks[0]));
+	      TRACE_SCHEDULE((stderr, "Schedule Cache take_1 phase %d ndst %zu dst %u nsrc %zu src %u\n", count, dst_topology.size(), dst_topology.index2Rank(0), src_topology.size(), src_topology.index2Rank(0)));
             }
 
           _ntotalsrcranks = ntotal_src;
@@ -160,6 +159,8 @@ namespace CCMI
               _schedule->getDstTopology(count, _dsttopologies[count],_dstranks+dstindex);
               srcindex += _srctopologies[count]->size();
               dstindex += _dsttopologies[count]->size();
+
+	      TRACE_SCHEDULE((stderr, "Schedule Cache take_2 phase %d ndst %zu dst %u nsrc %zu src %u\n", count, _dsttopologies[count]->size(), _dsttopologies[count]->index2Rank(0), _srctopologies[count]->size(), _srctopologies[count]->index2Rank(0)));
             }
 
           //Build the next active phase list
@@ -210,6 +211,8 @@ namespace CCMI
         {
           //if ((phase < _start) || (phase >= _start + _nphases))
           TRACE_SCHEDULE ((stderr, "<%p>phase %u, range %u, %u\n", this, phase, _start, _start + _nphases));
+          //printf("phase %u start %u nphases %u end %u\n",
+	  //     phase, _start, _nphases, _start+_nphases-1);
           CCMI_assert ((phase >= _start) && (phase < _start + _nphases));
           return _srctopologies[phase];
         }

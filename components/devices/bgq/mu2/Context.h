@@ -175,6 +175,12 @@ namespace PAMI
 
             _id_client = id_client;
 
+	    if (_id_offset != id_context)
+	      printf("id_offset and id_context are different %ld %ld\n",
+		     _id_offset, id_context);
+
+	    _progressDevices = progress;
+
             // Map the PAMI client ID to the resource manager's client ID.
             // The PAMI client ID is assigned on a first-come-first-served
             // basis PAMI_Client_create() is called.  We need an ID that
@@ -447,8 +453,8 @@ namespace PAMI
           ///
           inline size_t getContextOffset_impl ()
           {
-            PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
-            return 0;
+            //PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+            return _id_offset;
           }
 
           ///
@@ -1254,6 +1260,16 @@ else
 	  ///
 	  inline Generic::Device *getProgressDevice() { return _progressDevice; }
 
+
+	  /// \brief Get the Progress device to post pami work to
+	  ///
+	  /// \retval generic device pointer
+	  ///
+	  inline Generic::Device *getProgressDevice(size_t id) {
+	    if (id >= _id_count) //use modulo to wrap the ids
+	      id = id % _id_count;	    	    
+	    return &(Generic::Device::Factory::getDevice (_progressDevices, _id_client, id)); }
+
 	  /// \brief Get the Core Affinity for this Context
 	  ///
 	  /// \retval  coreId  The core number that this context is affiliated with.
@@ -1344,7 +1360,10 @@ else
         bool _enable_eager_connection_memory_optimization;
 	
         CounterPool *_counterPool;
-        size_t       _numCounterPools;
+        size_t       _numCounterPools;	
+
+	//Vector of generic devices
+	Generic::Device       *_progressDevices;
 
       }; // class     PAMI::Device::MU::Context
     };   // namespace PAMI::Device::MU

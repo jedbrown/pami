@@ -373,6 +373,8 @@ namespace PAMI
 
         inline PAMI::Device::Generic::Device * getLocalProgressDevice ();
 
+        inline PAMI::Device::Generic::Device * getProgressDevice (size_t id);
+
         pami_result_t getShmemWorldDesc(typename CollectiveFifo::Descriptor **my_desc);
         pami_result_t registerMatchDispatch (Interface::MatchFunction_t   match_func, void * recv_func_parm, uint16_t &id);
 
@@ -582,6 +584,12 @@ namespace PAMI
 
     template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount, unsigned T_SetCount>
     inline PAMI::Device::Generic::Device * ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount, T_SetCount>::getLocalProgressDevice ()
+    {
+      return _local_progress_device;
+    }
+
+    template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount, unsigned T_SetCount>
+    inline PAMI::Device::Generic::Device * ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount, T_SetCount>::getProgressDevice (size_t id)
     {
       return _local_progress_device;
     }

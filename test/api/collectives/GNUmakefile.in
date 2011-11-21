@@ -30,6 +30,7 @@ APPS            += allgatherv_int.${EXTENSION}
 APPS            += allgatherv_int_contig.${EXTENSION}
 APPS            += allgatherv_multiep.${EXTENSION}
 APPS            += allreduce.${EXTENSION}
+APPS            += allreduce_commthr.${EXTENSION}
 APPS            += allreduce_contig.${EXTENSION}
 APPS            += allreduce_noncontig.${EXTENSION}
 APPS            += allreduce_multiep.${EXTENSION}

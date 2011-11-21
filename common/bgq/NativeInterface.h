@@ -30,8 +30,8 @@
 #include "components/devices/MulticastModel.h"
 #include "components/devices/MultisyncModel.h"
 #include "components/devices/MulticombineModel.h"
-
 #include "components/memory/MemoryAllocator.h"
+#include "components/devices/generic/Device.h"
 
 #include "util/trace.h"
 
@@ -80,7 +80,11 @@ namespace PAMI
 			     pami_work_function    fn,
 			     void                 * clientdata) 
       {
-	PAMI_Context_post(context, work, fn, clientdata);
+	//PAMI_Context_post(context, work, fn, clientdata);
+	Device::Generic::Device *gd = _device.getProgressDevice(color);
+        Device::Generic::GenericThread *thread;
+	thread = new (work) Device::Generic::GenericThread(fn, clientdata);
+	gd->postThread(thread);
       }
 
 
@@ -130,6 +134,7 @@ namespace PAMI
       size_t                  _contextid;
       size_t                  _clientid;
       int                    *_dispatch_id;
+      T_Device               &_device;
   }; // class BGQNativeInterfaceAS
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, class T_Allocator>
@@ -165,7 +170,8 @@ namespace PAMI
       _context(context),
       _contextid(context_id),
       _clientid(client_id),
-      _dispatch_id(dispatch_id)
+      _dispatch_id(dispatch_id),
+      _device(*(T_Device*)NULL)
   {
     TRACE_FN_ENTER();
     COMPILE_TIME_ASSERT(T_Allocator::objsize >= sizeof(allocObj));
@@ -177,8 +183,8 @@ namespace PAMI
   };
 
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, class T_Allocator>
-  BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb, T_Allocator>::BGQNativeInterfaceAS(T_Device      &device,
-										  T_Allocator   &allocator,
+  BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb, T_Allocator>::BGQNativeInterfaceAS(T_Device      &device, 
+      T_Allocator   &allocator,
       pami_client_t  client,
       pami_context_t context,
       size_t         context_id,
@@ -200,7 +206,8 @@ namespace PAMI
       _context(context),
       _contextid(context_id),
       _clientid(client_id),
-      _dispatch_id(dispatch_id)
+      _dispatch_id(dispatch_id),
+      _device(device)
   {
     TRACE_FN_ENTER();
     DO_DEBUG((templateName<T_Device>()));
@@ -545,7 +552,7 @@ namespace PAMI
     this->_mcast.disableAdvance();
     this->_mcast2.disableAdvance();
     
-    new (&_work) PAMI::Device::Generic::GenericThread(advance, this);
+    new (&_work) Device::Generic::GenericThread(advance, this);
 
     TRACE_FN_EXIT();
   }

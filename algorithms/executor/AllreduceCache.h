@@ -256,6 +256,19 @@ namespace CCMI
           return  _phaseVec[index].recvBufs[jindex];
         }
 	
+	//Get the pointer to a vector of recvbufs
+	char      **getAllrecvBufs () 
+	{
+	  return _all_recvBufs;
+	}
+
+	//Get the ridx'th pipeworkqueue
+	PAMI::PipeWorkQueue *getPipeWorkQueueByIdx(unsigned ridx) 
+	{
+	  CCMI_assert(ridx < _scache->getNumTotalSrcRanks());
+	  return &_all_pwqs[ridx];
+	}
+
         char     **getPhaseRecvBufsVec(unsigned index)
         {
           return  _phaseVec[index].recvBufs;
@@ -350,10 +363,10 @@ namespace CCMI
 
           // Do minimal setup if the config hasn't changed.
           if (_isConfigChanged)
-            {
-              constructPhaseData();
-              setupReceives(infoRequired);
-            }
+	    {
+	      constructPhaseData();
+	      setupReceives(infoRequired);
+	    }
           TRACE_FN_EXIT();
         }
 
@@ -370,10 +383,10 @@ namespace CCMI
         void setDstBuf(char* pdstbuf)
         {
           TRACE_FN_ENTER();
-          if ((_scache->getRoot() == -1) | (_scache->getRoot() == (int)_myrank))
-            _dstbuf = pdstbuf;
-          else
-            _dstbuf = _tempBuf;
+	  if ((_scache->getRoot() == -1)||(_scache->getRoot() == (int)_myrank))
+	    _dstbuf = pdstbuf;
+	  else
+	    _dstbuf = _tempBuf;
 
           TRACE_FN_EXIT();
         }
@@ -442,6 +455,8 @@ inline void CCMI::Executor::AllreduceCache<T_Conn>::updatePipelineWidth
 (unsigned pwidth)
 {
   TRACE_FN_ENTER();
+  if (pwidth > _pcache._bytes)
+    pwidth = _pcache._bytes;
   _pcache._pipewidth = pwidth;
   unsigned bytes = _pcache._bytes;
 
@@ -554,7 +569,7 @@ inline void CCMI::Executor::AllreduceCache<T_Conn>::constructPhaseData()
                   if (i <= _scache->getLastReducePhase())
                     connID = _rconnmgr->getRecvConnectionId (_commid, _scache->getRoot(), srcrank, i, _color);
                   else
-                    connID = _bconnmgr->getRecvConnectionId (_commid, _scache->getRoot(), srcrank, i, _color);
+                    connID = _bconnmgr->getRecvConnectionId (_commid, _scache->getRoot(), -1 /*srcrank*/, i, _color);
                 }
               indexSrcPe += _scache->getNumSrcRanks(i);
             }
@@ -572,14 +587,20 @@ inline void CCMI::Executor::AllreduceCache<T_Conn>::constructPhaseData()
       if (_scache->getNumDstRanks(i) > 0)
         {
           PAMI::Topology * topology = _scache->getDstTopology(i);
-          if (i <= _scache->getLastReducePhase())
-            //Use the broadcast connection manager
-            _phaseVec[i].sconnId = _rconnmgr->getConnectionId (_commid, _scache->getRoot(), _color, i,
-                                                               topology->index2Endpoint(0));
+          if (i <= _scache->getLastReducePhase()) {
+	    pami_task_t dst_id = topology->index2Endpoint(0);
+	    if (dst_id == _myrank && topology->type() == PAMI_AXIAL_TOPOLOGY) {
+	      dst_id = 	topology->index2Endpoint(1); 
+	      //printf("phase %d axial topology idx 1 dst %d\n", i, dst_id);
+	    }       
+	    CCMI_assert(dst_id != _myrank);
+	    
+            //Use the reduction  connection manager
+            _phaseVec[i].sconnId = _rconnmgr->getConnectionId (_commid, _scache->getRoot(), _color, i, dst_id);
+	  }
           else
-            //Use the reduction connection manager
-            _phaseVec[i].sconnId = _bconnmgr->getConnectionId (_commid, _scache->getRoot(), _color, i,
-                                                               topology->index2Endpoint(0));
+            //Use the bcast connection manager
+            _phaseVec[i].sconnId = _bconnmgr->getConnectionId (_commid, _scache->getRoot(), _color, i, -1);
         }
     }
   TRACE_FN_EXIT();
@@ -591,31 +612,23 @@ inline void  CCMI::Executor::AllreduceCache<T_Conn>::setupReceives(bool infoRequ
   TRACE_FN_ENTER();
   TRACE_FORMAT( "<%p>Receive data being reset", this);
 
-  // setup/allocate receive request objects and bufs
-
-  /// \todo not sure this alignment is needed anymore but leaving it.
-  COMPILE_TIME_ASSERT((sizeof(PAMI_Request_t) % 16) == 0);     // Need 16 byte alignment?
-  /// \todo not sure this alignment is needed anymore, and it's removed because it doesn't compile in 64 bit
-
   // How many requests might we receive per srcPe?  "infoRequired" indicates we
   // are using recv head callback and need 1 per chunk per srcPE.  Otherwise we're doing postReceive
-  // processing which means only one postReceive per srcPE.
-
-  unsigned alignedBytes = ((_pcache._bytes + 15) / 16) * 16; // Buffers need to be 16 byte aligned
+  // processing which means only one postReceive per srcPE.    
+  unsigned alignedBytes = ((_pcache._bytes + 63) / 64) * 64; // Buffers need to be 32/64 byte aligned
 
   /// \todo maybe one too many mallocs?  for the final non-combine receive buf?
   unsigned allocationNewSize =
+    //align to optimize L2 slice conflicts
     (_scache->getNumTotalSrcRanks() * alignedBytes) +                                   // _bufs
-    (((_scache->getRoot() == -1) | (_scache->getRoot() == (int)_myrank)) ? 0 : alignedBytes); // We need a temp buffer on non-root nodes
+    (((_scache->getRoot() == -1) || (_scache->getRoot() == (int)_myrank)) ? 0 : alignedBytes); // We need a temp buffer on non-root nodes
 
 
   /// \todo only grows, never shrinks?  runtime vs memory efficiency?
   if (allocationNewSize > _receiveAllocationSize)
     {
       if (_receiveAllocation) CCMI_Free(_receiveAllocation);
-
       CCMI_Alloc(_receiveAllocation, allocationNewSize);
-
       CCMI_assert(_receiveAllocation);
 
       _receiveAllocationSize = allocationNewSize;
@@ -634,7 +647,7 @@ inline void  CCMI::Executor::AllreduceCache<T_Conn>::setupReceives(bool infoRequ
         // See if the current allocation supports the buffer size.  If not, adjust buffer size.
         unsigned maxAllocationSize =
           (_scache->getNumTotalSrcRanks() * _sizeOfBuffers) +                                   // _bufs
-          (((_scache->getRoot() == -1) | (_scache->getRoot() == (int)_myrank)) ? 0 : _sizeOfBuffers); // We need a temp buffer on non-root nodes
+          (((_scache->getRoot() == -1) || (_scache->getRoot() == (int)_myrank)) ? 0 : _sizeOfBuffers); // We need a temp buffer on non-root nodes
 
         if (maxAllocationSize > _receiveAllocationSize)
           _sizeOfBuffers = alignedBytes;
@@ -643,7 +656,7 @@ inline void  CCMI::Executor::AllreduceCache<T_Conn>::setupReceives(bool infoRequ
   _bufs = (char *)_receiveAllocation; 
 
   // We allocated a temp buffer only on non-root nodes
-  if ((_scache->getRoot() == -1) | (_scache->getRoot() == (int)_myrank))
+  if ((_scache->getRoot() == -1) || (_scache->getRoot() == (int)_myrank))
     _tempBuf = NULL;
   else
     _tempBuf = (char*) _bufs + (_scache->getNumTotalSrcRanks() * _sizeOfBuffers);

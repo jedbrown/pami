@@ -22,6 +22,44 @@
 /* see setup_env() for environment variable overrides               */
 #include "../pami_util.h"
 
+int async_progress_init (pami_client_t     client,
+			 pami_context_t  * contexts,
+			 int               ncontexts);
+
+int async_progress_finalize (pami_client_t     client,
+			     pami_context_t  * contexts,
+			     int               ncontexts);
+
+pami_result_t async_coll_handoff(pami_context_t context, void *cookie)
+{
+  pami_xfer_t *coll = (pami_xfer_t *)cookie;
+  pami_result_t rc = PAMI_Collective (context, coll);
+  return rc;
+}
+
+void async_cb_done (void *ctxt, void * clientdata, pami_result_t err)
+{
+  int * active = (int *) clientdata;
+  (*active)--;
+}
+
+int async_blocking_coll (pami_context_t      context,
+			 pami_xfer_t        *coll,
+			 volatile unsigned  *active)
+{
+  pami_result_t result;
+  gContext = context;
+  (*active)++;
+
+  pami_work_t work;
+  result = PAMI_Context_post(context, &work, async_coll_handoff, coll);
+  
+  while (*active);  //wait for collective to finish
+  gContext = NULL;
+  return 0;
+}
+
+
 int main(int argc, char*argv[])
 {
   pami_client_t        client;
@@ -93,16 +131,18 @@ int main(int argc, char*argv[])
                              &bar_must_query_algo,
                              &bar_must_query_md);
 
-    if (rc != PAMI_SUCCESS)
+  if (rc != PAMI_SUCCESS)
     return 1;
 
-  barrier.cb_done   = cb_done;
+  async_progress_init(client, context, gNum_contexts);
+
+  barrier.cb_done   = async_cb_done;
   barrier.cookie    = (void*) & bar_poll_flag;
   barrier.algorithm = bar_always_works_algo[0];
 
   unsigned iContext = 0;
 
-  for (; iContext < gNum_contexts; ++iContext)
+  for (; iContext < 1 /*gNum_contexts*/; ++iContext)
   {
 
     if (task_id == 0)
@@ -137,9 +177,9 @@ int main(int argc, char*argv[])
                                &allreduce_must_query_algo,
                                &allreduce_must_query_md);
 
-      if (rc != PAMI_SUCCESS)
+    if (rc != PAMI_SUCCESS)
       return 1;
-
+    
     for (nalg = 0; nalg < allreduce_num_algorithm[0]; nalg++)
     {
       if (task_id == task_zero)
@@ -155,7 +195,7 @@ int main(int argc, char*argv[])
 
       gProtocolName = allreduce_always_works_md[nalg].name;
 
-      allreduce.cb_done   = cb_done;
+      allreduce.cb_done   = async_cb_done;
       allreduce.cookie    = (void*) & allreduce_poll_flag;
       allreduce.algorithm = allreduce_always_works_algo[nalg];
       allreduce.cmd.xfer_allreduce.sndbuf    = sbuf;
@@ -183,7 +223,7 @@ int main(int argc, char*argv[])
               if (dataSent < CUTOFF)
                 niter = gNiterlat;
               else
-                niter = NITERBW;
+                niter = (gNiterlat/10) ? (gNiterlat/10) : 1;
 
               allreduce.cmd.xfer_allreduce.stypecount = i;
               allreduce.cmd.xfer_allreduce.rtypecount = dataSent;
@@ -193,19 +233,28 @@ int main(int argc, char*argv[])
               reduce_initialize_sndbuf (sbuf, i, op, dt, task_id, num_tasks);
 
               /* We aren't testing barrier itself, so use context 0. */
-              blocking_coll(context[0], &barrier, &bar_poll_flag);
+              async_blocking_coll(context[0], &barrier, &bar_poll_flag);
+
+              for (j = 0; j < niter; j++)
+              {
+                async_blocking_coll(context[0], &allreduce, &allreduce_poll_flag);
+              }
+
+              /* We aren't testing barrier itself, so use context 0. */
+              async_blocking_coll(context[0], &barrier, &bar_poll_flag);
+
               ti = timer();
 
               for (j = 0; j < niter; j++)
               {
-                blocking_coll_advance_all(0 /*iContext*/, context, &allreduce, &allreduce_poll_flag);
+                async_blocking_coll(context[0], &allreduce, &allreduce_poll_flag);
               }
 
               tf = timer();
               /* We aren't testing barrier itself, so use context 0. */
-              blocking_coll(context[0], &barrier, &bar_poll_flag);
+              async_blocking_coll(context[0], &barrier, &bar_poll_flag);
 
-              int rc_check;
+              int rc_check = 0;
               rc |= rc_check = reduce_check_rcvbuf (rbuf, i, op, dt, task_id, num_tasks);
 
               if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
@@ -240,13 +289,78 @@ int main(int argc, char*argv[])
   free(bar_must_query_algo);
   free(bar_must_query_md);
 
-
-
   sbuf = (char*)sbuf - gBuffer_offset;
   free(sbuf);
   rbuf = (char*)rbuf - gBuffer_offset;
   free(rbuf);
+  
+  async_progress_finalize(client, context, gNum_contexts);
 
   rc |= pami_shutdown(&client, context, &gNum_contexts);
   return rc;
+}
+
+
+typedef void (*pamix_progress_function) (pami_context_t context, void *cookie);
+typedef pami_result_t (*pamix_progress_register_fn) 
+  (pami_context_t            context,
+   pamix_progress_function   progress_fn,
+   pamix_progress_function   suspend_fn,
+   pamix_progress_function   resume_fn,
+   void                     * cookie);
+typedef pami_result_t (*pamix_progress_enable_fn)(pami_context_t   context,
+						  int              event_type);
+typedef pami_result_t (*pamix_progress_disable_fn)(pami_context_t  context,
+						   int             event_type);
+#define PAMI_EXTENSION_OPEN(client, name, ext)  \
+({                                              \
+  pami_result_t rc;                             \
+  rc = PAMI_Extension_open(client, name, ext);  \
+  assert (rc == PAMI_SUCCESS);      \
+})
+#define PAMI_EXTENSION_FUNCTION(type, name, ext)        \
+({                                                      \
+  void* fn;                                             \
+  fn = PAMI_Extension_symbol(ext, name);                \
+  assert (fn != NULL);				\
+  (type)fn;                                             \
+})
+
+pami_extension_t            coll_ext_progress;
+pamix_progress_register_fn  coll_progress_register;
+pamix_progress_enable_fn    coll_progress_enable;
+pamix_progress_disable_fn   coll_progress_disable;
+
+int async_progress_init (pami_client_t     client,
+			 pami_context_t  * contexts,
+			 int               ncontexts) 
+{
+  PAMI_EXTENSION_OPEN(client,"EXT_async_progress",&coll_ext_progress);
+  coll_progress_register = PAMI_EXTENSION_FUNCTION(pamix_progress_register_fn, "register",coll_ext_progress);
+  coll_progress_enable   = PAMI_EXTENSION_FUNCTION(pamix_progress_enable_fn,   "enable",  coll_ext_progress);
+  coll_progress_disable  = PAMI_EXTENSION_FUNCTION(pamix_progress_disable_fn,  "disable", coll_ext_progress);
+  
+  int i = 0;
+  for (i = 0; i < ncontexts; ++i) {
+    //fprintf(stderr, "Enabling progress on context %d\n", i);
+    coll_progress_register (contexts[i], 
+			    NULL, 
+			    NULL, 
+			    NULL, NULL);
+    coll_progress_enable   (contexts[i], 0 /*progress all*/);  
+  }
+
+  return 0;
+}
+
+int async_progress_finalize (pami_client_t     client,
+			    pami_context_t  * contexts,
+			    int               ncontexts) 
+{
+  int i = 0;
+  for (i = 0; i < ncontexts; ++i) 
+    coll_progress_disable  (contexts[i], 0 /*progress all*/);    
+  PAMI_Extension_close (coll_ext_progress);
+
+  return 0;
 }

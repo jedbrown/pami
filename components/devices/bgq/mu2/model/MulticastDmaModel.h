@@ -29,8 +29,9 @@
 #include "components/devices/bgq/mu2/msg/InjectDPutMulticast.h"
 #include "components/devices/bgq/mu2/msg/InjectDPutListMulticast.h"
 
-#define MAX_COUNTERS 12
-#define MAX_VEC_SIZE 16
+#define MIN_COUNTERS 12
+#define MAX_COUNTERS 26
+#define MAX_VEC_SIZE 32
 
 #ifndef L1_DCACHE_LINE_SIZE
 #define L1_DCACHE_LINE_SIZE   64
@@ -58,22 +59,25 @@ namespace PAMI
       class MUCounterSet {
       public:
 	bool            _initialized;
+	int             _ncounters;
 	uint16_t        _b_batids[MAX_VEC_SIZE];  /// The base address table id for payload
 	uint32_t        _c_batid;
 	volatile uint64_t      _counterVec[MAX_VEC_SIZE] __attribute__((__aligned__(L1_DCACHE_LINE_SIZE)));
 
-	MUCounterSet () : _initialized(false) {}
+	MUCounterSet () : _initialized(false), _ncounters(0) {}
 
 	void initialize(MU::Context     & device, 
 			int               ncounters, 
 			pami_result_t   & status) 
 	{
 	  if (_initialized) {
-	    status = PAMI_SUCCESS;
+	    if (_ncounters <= ncounters)
+	      status = PAMI_SUCCESS;
+	    else
+	      status = PAMI_ERROR;
 	    return;
 	  }
 
-	  _initialized = true;
 	  if (ncounters > MAX_VEC_SIZE) {
 	    status = PAMI_ERROR;
 	    return;
@@ -87,15 +91,19 @@ namespace PAMI
 	    status = PAMI_ERROR;
 	    return;
 	  }
-	  
+	  _ncounters = ncounters;
+
 	  uint16_t batid = 0;
 	  rcBAT = device.allocateBatIds (1, &batid);  
 	  if (rcBAT == -1)
 	  {
+	    //release allocated batids
+	    device.freeBatIds(ncounters, _b_batids);
 	    status = PAMI_ERROR;
 	    return;
 	  }
 	  _c_batid = batid;	  
+	  _initialized = true;
 
 	  int rc = 0;
 	  memset ((void *)_counterVec, 0, sizeof(_counterVec));
@@ -206,9 +214,17 @@ namespace PAMI
 	    
 	    ///// Get the BAT IDS ///////////////
 	    //// Setup CounterVec in BAT 
+	    _ncounters = MAX_COUNTERS;
+	    //First try MAX_COUNTERS
 	    _mu_counterset.initialize (device, MAX_COUNTERS, status);
-	    if (status != PAMI_SUCCESS)
-	      return;	      
+	    if (status != PAMI_SUCCESS) {
+	      _ncounters = MIN_COUNTERS;
+	      _mu_counterset.initialize (device, MIN_COUNTERS, status);
+	      
+	      //Min failed return failure
+	      if (status != PAMI_SUCCESS)
+		return;	      
+	    }
 	    _counterVec = _mu_counterset.getCounters();
 	    _mu_counterset.getBatIDs(_b_batids, _c_batid);
 
@@ -262,7 +278,7 @@ namespace PAMI
 	  {
 	    TRACE_FN_ENTER();
 	    size_t length = mcast->bytes;
-	    PAMI_assert (mcast->connection_id < MAX_COUNTERS);
+	    PAMI_assert (mcast->connection_id < _ncounters);
 	    PAMI::Topology *dst_topology = (PAMI::Topology *)mcast->dst_participants;
 	    PipeWorkQueue *pwq = (PAMI::PipeWorkQueue *)mcast->src;
 	    size_t idx = _nActiveSends++;
@@ -334,10 +350,10 @@ namespace PAMI
 	  {
 	    TRACE_FN_ENTER();
 	    int connid = mcast->connection_id;
-	    PAMI_assert(connid < MAX_COUNTERS);	
+	    PAMI_assert(connid < (int)_ncounters);	
 	    
 	    int idx = _nActiveRecvs ++;
-	    PAMI_assert (_nActiveRecvs <= MAX_COUNTERS);
+	    PAMI_assert (_nActiveRecvs <= _ncounters);
 	    PAMI_assert(_recvs[idx]._inuse == 0);
 
 	    //printf ("In process recv connid %d, idx %d, length %d\n", 
@@ -500,6 +516,7 @@ namespace PAMI
 	  unsigned                                   _nActiveSends;
 	  unsigned                                   _nRecvsComplete;
 	  unsigned                                   _nSendsComplete;
+	  unsigned                                   _ncounters;
 	  bool                                       _callConsumeBytes;
 	  bool                                       _localMulticast;
 	  bool                                       _polling;

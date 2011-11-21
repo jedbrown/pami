@@ -39,11 +39,15 @@
 #include "algorithms/connmgr/ColorGeometryConnMgr.h"
 #include "algorithms/connmgr/ColorConnMgr.h"
 #include "algorithms/connmgr/ColorMapConnMgr.h"
+#include "algorithms/connmgr/TorusConnMgr.h"
 #include "algorithms/protocols/broadcast/BcastMultiColorCompositeT.h"
 #include "algorithms/schedule/TorusRect.h"
 #include "common/NativeInterface.h"
 #include "algorithms/protocols/allgather/AllgatherOnBroadcastT.h"
 #include "algorithms/protocols/CachedAllSidedFactoryT.h"
+
+#include "algorithms/protocols/allreduce/MultiColorCompositeT.h"
+#include "algorithms/protocols/allreduce/ThreadedMultiColorCompositeT.h"
 
 #include "algorithms/geometry/P2PCCMIRegInfo.h"
 
@@ -712,6 +716,42 @@ namespace PAMI
       TRACE_FN_EXIT();
     }
 
+    extern inline void get_rect_ared_colors (PAMI::Topology         * t,
+					     unsigned                bytes,
+					     unsigned              * colors,
+					     unsigned              & ncolors)
+    {
+      TRACE_FN_ENTER();
+      unsigned max = 0, ideal = 0;
+      unsigned _colors[10];
+      CCMI::Schedule::TorusRect::getColors (t, ideal, max, _colors);
+      TRACE_FORMAT("bytes %u, ncolors %u, ideal %u, max %u", bytes, ncolors, ideal, max);
+
+      if (bytes <= 4096) //16 packets
+        ideal = 1;
+      else if (bytes <= 16384 && ideal >= 2)
+        ideal = 2;
+      else if (bytes <= 65536 && ideal >= 3)
+        ideal = 3;
+      else if (bytes <= 262144 && ideal >= 4)
+        ideal = 4;
+      else if (bytes <= 524288 && ideal >= 5)
+        ideal = 5;
+      else if (bytes <= 1048576 && ideal >= 7)
+        ideal = 7;
+
+      if (ideal < ncolors)
+        ncolors = ideal;  //Reduce the number of colors to the relavant colors
+
+      //Disable multiple colors when ppn > 1
+      if (__global.mapping.tSize() > 1)
+	ncolors = 1;
+
+      TRACE_FORMAT("ncolors %u, ideal %u", ncolors, ideal);
+      memcpy (colors, _colors, ncolors * sizeof(int));
+      TRACE_FN_EXIT();
+    }
+
     extern inline void rectangle_dput_1color_broadcast_metadata(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:RectangleDput1Color:SHMEM:MU");
@@ -754,7 +794,7 @@ namespace PAMI
     PAMI::Geometry::CKEY_BCASTCOMPOSITE3,
     PAMI_XFER_BROADCAST >
     MURectangleDput1ColorBroadcastFactory;
-
+    
     extern inline void rectangle_dput_broadcast_metadata(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:RectangleDput:SHMEM:MU");
@@ -871,6 +911,31 @@ namespace PAMI
     PAMI_XFER_ALLGATHERV_INT >
     RectangleDputAllgatherVFactory;
 
+    //--------------------------------------------------
+    //-------- Rectangle Allreduce ---------------------
+    //--------------------------------------------------
+        
+    extern inline void rectangle_allreduce_metadata(pami_metadata_t *m)
+    {
+      new(m) PAMI::Geometry::Metadata("X0:Rectangle:-:MUDput");
+    }
+
+    typedef CCMI::Adaptor::Allreduce::ThreadedMultiColorCompositeT
+      < 10, CCMI::Executor::PipelinedAllreduce<CCMI::ConnectionManager::TorusConnMgr>,
+      CCMI::Schedule::TorusRect,
+      CCMI::ConnectionManager::TorusConnMgr,
+      get_rect_ared_colors,
+      PAMI::Mutex::BGQ::IndirectL2,
+      1,
+      PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX> 
+      RectangleDputAllreduceComposite;
+    
+    typedef CCMI::Adaptor::Allreduce::ProtocolFactoryT
+      < RectangleDputAllreduceComposite,
+      rectangle_allreduce_metadata,
+      CCMI::ConnectionManager::TorusConnMgr>
+      RectangleDputAllreduceFactory;
+    
     //----------------------------------------------------------------------------
     /// \brief The BGQ Multi* registration class for Shmem and MU.
     //----------------------------------------------------------------------------
@@ -933,6 +998,7 @@ namespace PAMI
       _cg_connmgr(65535),
       _color_connmgr(),
       _color_map_connmgr(),
+      _torus_connmgr(),
       _shmem_device(shmem_device),
       _shmem_ni(shmem_ni),
       _shmem_msync_factory(_context,_context_id,mapidtogeometry,&_sconnmgr, _shmem_ni),
@@ -971,7 +1037,8 @@ namespace PAMI
       _shmem_mu_rectangle_1color_dput_broadcast_factory(NULL),
       _shmem_mu_rectangle_dput_broadcast_factory(NULL),
       _rectangle_dput_allgather_factory(NULL),      
-      _rectangle_dput_allgatherv_factory(NULL)
+      _rectangle_dput_allgatherv_factory(NULL),
+      _mu_rectangle_dput_allreduce_factory(NULL)
       {
         TRACE_FN_ENTER();
         TRACE_FORMAT("<%p>", this);
@@ -1108,6 +1175,7 @@ namespace PAMI
             _mu_rectangle_dput_broadcast_factory = new (_mu_rectangle_dput_broadcast_factory_storage) MURectangleDputBroadcastFactory(_context,_context_id,mapidtogeometry,&_color_connmgr, _axial_mu_dput_ni);
 
             _rectangle_dput_allgather_factory = new (_rectangle_dput_allgather_factory_storage) RectangleDputAllgatherFactory(_context,_context_id,mapidtogeometry,&_color_map_connmgr, _axial_mu_dput_ni);
+	    _mu_rectangle_dput_allreduce_factory = new (_mu_rectangle_dput_allreduce_factory_storage) RectangleDputAllreduceFactory(_context, _context_id, mapidtogeometry, &_torus_connmgr, _axial_mu_dput_ni);
 
             _rectangle_dput_allgatherv_factory = new (_rectangle_dput_allgatherv_factory_storage) RectangleDputAllgatherVFactory(_context,_context_id,mapidtogeometry,&_color_map_connmgr, _axial_mu_dput_ni);
           }
@@ -1333,6 +1401,10 @@ namespace PAMI
 	      if (_rectangle_dput_allgatherv_factory)
 		geometry->addCollective(PAMI_XFER_ALLGATHERV_INT,  _rectangle_dput_allgatherv_factory, _context, _context_id);
 	    }
+
+	    if (_mu_rectangle_dput_allreduce_factory)
+              geometry->addCollective(PAMI_XFER_ALLREDUCE,  _mu_rectangle_dput_allreduce_factory, _context,  _context_id);	   
+
           }
           geometry->setKey(_context_id, PAMI::Geometry::CKEY_PHASE_1_DONE,(void*)0); /* Phase 1 not done */
         }
@@ -1667,6 +1739,7 @@ namespace PAMI
       CCMI::ConnectionManager::ColorGeometryConnMgr   _cg_connmgr;
       CCMI::ConnectionManager::ColorConnMgr           _color_connmgr;
       CCMI::ConnectionManager::ColorMapConnMgr        _color_map_connmgr;
+      CCMI::ConnectionManager::TorusConnMgr           _torus_connmgr;
 
       //* SHMEM interfaces:
       // Shmem Device
@@ -1814,6 +1887,11 @@ namespace PAMI
 
       RectangleDputAllgatherVFactory                 *_rectangle_dput_allgatherv_factory;
       uint8_t                                         _rectangle_dput_allgatherv_factory_storage[sizeof(RectangleDputAllgatherVFactory)];
+
+      //Rectangle Dput Allreduce
+      RectangleDputAllreduceFactory                  *_mu_rectangle_dput_allreduce_factory;
+      uint8_t                                         _mu_rectangle_dput_allreduce_factory_storage[sizeof(RectangleDputAllreduceFactory)];
+      
 
       // Alltoall
       All2AllFactory                                *_alltoall_factory;

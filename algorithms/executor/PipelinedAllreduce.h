@@ -91,7 +91,7 @@ namespace CCMI
 	//fprintf(stderr, "In process done %d\n", _donecount);		
         if(_donecount <= 0 && this->_cb_done)
         {
-	  //fprintf(stderr, "All Done\n");
+	  //fprintf(stderr, "All Done for color %d\n", this->_acache.getColor());
 	  this->_isSendDone = false; //Process an early arrival packet
 	  this->_initialized = false; //Call application done callback
           this->_cb_done (this->_context, this->_clientdata, PAMI_SUCCESS); 
@@ -101,17 +101,19 @@ namespace CCMI
       //static const unsigned _pipelineWidth = 1024;
 
       //Squeeze local state in one cache line
-      unsigned         _curRecvPhase;
+      unsigned         _curRecvIdx;
       unsigned         _curRecvChunk;
       unsigned         _donecount;
       unsigned         _firstRecvPhase;   
+      unsigned         _nSums;
       PAMI::PipeWorkQueue *_dstpwq;
+      coremath             _reduceFunc4;
 
     public: 
 
       /// Default Constructor
       PipelinedAllreduce<T_Conn>() : AllreduceBaseExec<T_Conn, true>(),
-	_curRecvPhase ((unsigned) -1), _curRecvChunk((unsigned) -1),
+	_curRecvIdx ((unsigned) -1), _curRecvChunk((unsigned) -1),
 	_firstRecvPhase((unsigned) -1)
       {
         _donecount = 0;
@@ -123,11 +125,19 @@ namespace CCMI
 				 T_Conn                         * connmgr,
 				 const unsigned                   commID):
 	AllreduceBaseExec<T_Conn, true>(native, connmgr, commID, true),
-      _curRecvPhase ((unsigned) -1), _curRecvChunk((unsigned) -1), 
+      _curRecvIdx ((unsigned) -1), _curRecvChunk((unsigned) -1), 
       _donecount (0),_firstRecvPhase((unsigned) -1)
       {
+	//fprintf(stderr, "PipelinedAllreduce Constructor\n");
 	this->_postReceives = true;
 	this->_enablePipelining = true;
+      }
+
+      virtual ~PipelinedAllreduce<T_Conn> () 
+      {
+	TRACE_FN_ENTER();
+	//fprintf(stderr, "Pipelined Allreduce destructor\n");
+	TRACE_FN_EXIT();
       }
 
       pami_result_t advance (); // __attribute__((noinline));
@@ -140,19 +150,20 @@ namespace CCMI
         AllreduceBaseExec<T_Conn, true>::reset ();
 
         this->_initialized = false; 
-        _curRecvPhase = this->_scache.getStartPhase();
+        _curRecvIdx   = 0;
         _curRecvChunk = 0;    
 	
-	_firstRecvPhase = this->_scache.getStartPhase();
-	while (!this->_scache.getNumSrcRanks(_firstRecvPhase) && 
-	       _firstRecvPhase <= this->_endPhase)
+	unsigned start_phase = _firstRecvPhase = this->_scache.getStartPhase();
+
+	while (_firstRecvPhase <= this->_endPhase &&
+               !this->_scache.getNumSrcRanks(_firstRecvPhase))
 	  _firstRecvPhase++;
 	
 	//Reduce might not have a combine phase (on non-roots)
 	if ((this->_scache.getRoot() != -1) && 
 	    (_firstRecvPhase > this->_endPhase))
 	  _firstRecvPhase = this->_scache.getStartPhase();
-	
+	//printf("first %u and end %u\n", _firstRecvPhase,this->_endPhase);
 	CCMI_assert (_firstRecvPhase <= this->_endPhase);
 	
 	_donecount = 0;
@@ -160,12 +171,66 @@ namespace CCMI
 	    || _firstRecvPhase > this->_lastReducePhase)
 	  _curRecvChunk = this->_acache.getLastChunk() + 1;
 	
+	unsigned p = start_phase;
+	_nSums = 1; //local sum
+	while (p <= this->_lastReducePhase) {
+	  if (this->_scache.getNumSrcRanks(p) > 0)
+	    _nSums ++;
+	  p ++;
+	}
 	_dstpwq = NULL;
 
 	coremath  reduce_func = MATH_OP_FUNCS(this->_acache.getDt(), this->_acache.getOp(), 2);
 	//Update with optimized math function if its available
 	if (reduce_func != NULL)
 	  this->_reduceFunc = reduce_func; 
+	
+	reduce_func = MATH_OP_FUNCS(this->_acache.getDt(), this->_acache.getOp(), 4);
+	//Update with optimized math function if its available
+	if (reduce_func != NULL)
+	  _reduceFunc4 = reduce_func; 
+      }
+
+      ///
+      /// \brief compute an n-way sum
+      /// \param [inout] summed buffer
+      /// \param [in]    App src buf
+      /// \param [in]    vector of network buffers
+      /// \param [in]    Offset from start
+      /// \param [in]    sum count
+      /// \param [in]    network sums
+      ///
+      void nway_sum           (char          * dstbuf, 
+			       const char    * srcbuf, 
+			       char         ** buflist,
+			       size_t          bufoffset,  
+			       size_t          count, 
+			       unsigned        nsum) 
+      {
+	CCMI_assert (this->_reduceFunc != NULL);
+	char *buf[4]; //we use max 4-way sums
+	char *dst = dstbuf + bufoffset;	
+	unsigned start = 0;
+
+	buf[0] = (char *)srcbuf + bufoffset;
+	if (nsum >= 4 && _reduceFunc4 != NULL) {
+	  buf[1] = buflist[0] + bufoffset;
+	  buf[2] = buflist[1] + bufoffset;
+	  buf[3] = buflist[2] + bufoffset;
+	  _reduceFunc4(dst, (void**)buf, 4, count);
+	  start = 3;
+	}
+	else {
+	  buf[1] = buflist[0] + bufoffset;
+	  this->_reduceFunc(dst, (void**)buf, 2, count);
+	  start = 1;
+	}
+
+	buf[0] = dst;
+	for (unsigned i = start; i < nsum-1; ++i) {
+	  buf[1] = buflist[i] + bufoffset;
+	  this->_reduceFunc(dst, (void**)buf, 2, count);
+	}
       }
 
       void postReceives ();
@@ -190,11 +255,10 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Conn>::start()
   if (_firstRecvPhase <= this->_lastReducePhase) {
     reducebuf = this->_reducebuf;
   }
-    
+  
   //O(Phase) loop may lead to startup overheads !!
   for (unsigned p = this->_scache.getStartPhase(); p <= this->_scache.getEndPhase(); ++p) {
     unsigned ndstranks = this->_scache.getNumDstRanks (p);
-    //printf("phase %d, ndstranks %d\n", p, ndstranks);    
 
     if (ndstranks > 0)
     {
@@ -210,17 +274,24 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Conn>::start()
       
       _donecount ++;
       PAMI::Topology *dst_topology   = this->_scache.getDstTopology(p);
+
+      //      printf("phase %d, ndstranks %d dstrank[0] %d\n", p, ndstranks,
+      //     dst_topology->index2Endpoint(0));    
       sendMessage (reducebuf, this->_acache.getBytes(), dst_topology, p);
     }
   }
-  CCMI_assert (_dstpwq != NULL);
   
   //Process the notify recvs we got before start
   if(_curRecvChunk <= this->_acache.getLastChunk())
     advance();  
-  else 
+  //if not root send my src buf
+  else if (this->_native->endpoint() != (size_t)this->_scache.getRoot())
+  {
+    CCMI_assert (_dstpwq != NULL);
     _dstpwq->produceBytes (this->_acache.getBytes());
+  }
 
+  //fprintf(stderr, "After PipelinedAllreduce::start()\n");
   TRACE_FN_EXIT();
 }
 
@@ -238,18 +309,38 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Conn>::sendMessage
   TRACE_FN_ENTER();
   //Request buffer and callback set in setSendState !!
   CCMI_assert (dst_topology->size() > 0);
-  
+
+#if 0
   T_Conn *connmgr = this->_rconnmgr;
-  if (sphase > this->_lastReducePhase) 
-    connmgr = this->_bconnmgr;        
-  
-  this->_msend.connection_id = connmgr->getConnectionId
-    ( this->_acache.getCommID(), 
-      this->_scache.getRoot(), 
-      dst_topology->index2Endpoint(0),
-      sphase,
-      this->_acache.getColor() );
-  
+  if (sphase > this->_lastReducePhase) {
+    connmgr = this->_bconnmgr;          
+    this->_msend.connection_id = connmgr->getConnectionId
+      ( this->_acache.getCommID(), 
+	this->_scache.getRoot(), 
+	this->_acache.getColor(),
+	sphase,
+	(unsigned) -1 //Notify bcast
+	);
+  }
+  else {
+    //Axial topology skip self rank
+    pami_task_t dst_id = dst_topology->index2Endpoint(0);
+    if (dst_id == this->_native->endpoint() && 
+	dst_topology->type() == PAMI_AXIAL_TOPOLOGY)
+      dst_id = 	dst_topology->index2Endpoint(1);        
+    CCMI_assert(dst_id != this->_native->endpoint());
+
+    this->_msend.connection_id = connmgr->getConnectionId
+      ( this->_acache.getCommID(), 
+	this->_scache.getRoot(), 
+	this->_acache.getColor(),
+	sphase,
+	dst_id);    
+  }
+#else  
+  this->_msend.connection_id = this->_acache.getPhaseSendConnectionId(sphase);
+#endif
+
   this->_msend.bytes         = bytes;
 
   PAMI::PipeWorkQueue *pwq = NULL;  
@@ -260,8 +351,9 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Conn>::sendMessage
   
   pwq->configure((char *)buf, bytes, 0);
 
-  //fprintf (stderr, "send pwq %p phase %d connid %d\n", pwq, sphase, this->_msend.connection_id);
-
+  //if (this->_native->endpoint() == 0)
+  //printf ("send pwq %p buf %p phase %d connid %d color %d\n", pwq, buf, sphase, this->_msend.connection_id, this->_acache.getColor());
+  
   this->_msend.src           = (pami_pipeworkqueue_t *) pwq;
   this->_msend.dst           = NULL;
   this->_msend.src_participants = (pami_topology_t *) & this->_selftopology;
@@ -269,6 +361,19 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Conn>::sendMessage
 
   this->_msend.cb_done.function =  staticPipeNotifySendDone;
   this->_msend.cb_done.clientdata = this;  
+
+#if 0
+  PAMI::Topology *topo = this->_scache.getDstTopology(sphase);
+  if (topo->type() != PAMI_AXIAL_TOPOLOGY)
+    printf ("Phase %d Sending to %d, lrp %d conn %d\n", sphase, 
+	    (int)topo->index2Endpoint(0), this->_lastReducePhase,
+	    this->_msend.connection_id);
+  else
+    printf ("Axial Topo Phase %d Sending to %d ranks lrp %d conn %d\n", 
+	    sphase, (int)topo->size(), this->_lastReducePhase,
+	    this->_msend.connection_id);    
+#endif
+
   this->_native->multicast (&this->_msend);
   TRACE_FN_EXIT();
 }
@@ -292,15 +397,10 @@ inline pami_result_t CCMI::Executor::PipelinedAllreduce<T_Conn>::advance()
   }
 
   pami_result_t rc = PAMI_SUCCESS;
-  const char *mysrcbuf = this->_srcbuf;
-  char *mydstbuf = this->_reducebuf;
-  unsigned bufOffset;
-
   unsigned count = this->_acache.getFullChunkCount(); 
   unsigned last_chunk = this->_acache.getLastChunk();
   unsigned pipe_width = this->_acache.getPipelineWidth(); 
   unsigned min_bytes = (_curRecvChunk) * pipe_width;
-  unsigned bytes_produced = 0;
   unsigned cur_bytes = pipe_width;
   
   if (_curRecvChunk >= last_chunk) {
@@ -310,62 +410,34 @@ inline pami_result_t CCMI::Executor::PipelinedAllreduce<T_Conn>::advance()
   min_bytes += cur_bytes;
 
   while (_curRecvChunk <= last_chunk) {
-    while (_curRecvPhase <= this->_lastReducePhase) {
-      //Does this phase receive data
-      if (likely(this->_acache.isPhaseRecvActive(_curRecvPhase))) {
-	if (likely(this->_acache.getPhasePipeWorkQueues(_curRecvPhase,0)->bytesAvailableToConsume() >= min_bytes))
-	  {
-	    CCMI_assert (mysrcbuf != NULL); 	    
-	    bufOffset = _curRecvChunk * pipe_width;	    
-	    void *bufs[2] = {
-	      (void *)(mysrcbuf + bufOffset),
-	    this->_acache.getPhaseRecvBufs (_curRecvPhase, 0) + bufOffset,
-	    };
-#if 0	    
-	    if (((uint64_t)mysrcbuf & 0x1F) !=0)
-	      printf ("Unaligned Source\n");
-
-	    if (((uint64_t)bufs[1] & 0x1F) !=0)
-	      printf ("Unaligned phase recv buf phase=%d\n", _curRecvPhase);	    
-
-	    if (((uint64_t)mydstbuf & 0x1F) !=0)
-	      printf ("Unaligned mydstbuf\n");	 
-#endif
-
-	    this->_reduceFunc( mydstbuf+bufOffset, bufs, 2, count);
-	    mysrcbuf = this->_reducebuf; 
-	  }
-	else {
-	  if (bytes_produced > 0) { //If we are here we did some math in this function
-	    //fprintf(stderr, "Producing %d bytes into dstpwq\n", bytes_produced);
-	    _dstpwq->produceBytes(bytes_produced);
-	  }	  
-	  TRACE_FN_EXIT();
-	  return PAMI_EAGAIN;
-	}
-      }            
-      _curRecvPhase = this->_scache.getNextActivePhase (_curRecvPhase);
+    while (_curRecvIdx < _nSums - 1) {
+      if (this->_acache.getPipeWorkQueueByIdx(_curRecvIdx)->bytesAvailableToConsume() < min_bytes)
+      {
+	TRACE_FN_EXIT();
+	return PAMI_EAGAIN;
+      }
+      _curRecvIdx ++;
     }
     
+    nway_sum (this->_reducebuf, this->_srcbuf, this->_acache.getAllrecvBufs(), _curRecvChunk * pipe_width, count, _nSums);
+    
     _curRecvChunk ++;      
-    bytes_produced += cur_bytes;
+
+    //If we are here we did some math, update pwqs
+    PAMI::Memory::sync(); //ppc_msync();
+    _dstpwq->produceBytes(cur_bytes);
+
     cur_bytes = pipe_width; 
     if (_curRecvChunk >= last_chunk) {
       count = this->_acache.getLastChunkCount();    
       cur_bytes = this->_acache.getBytes() - min_bytes;
     }
     min_bytes += cur_bytes; 
-    _curRecvPhase = this->_scache.getStartPhase();
-    mysrcbuf = this->_srcbuf;
+    _curRecvIdx = 0; 
   }
 
   rc = PAMI_SUCCESS;  
-  //If we are here we did some math in this function
-  //fprintf(stderr, "Producing %d bytes into dstpwq\n", bytes_produced);
-  _dstpwq->produceBytes(bytes_produced);
-  
-  //fprintf (stderr, "After advance phase %d, chunk %d\n", _curRecvPhase, _curRecvChunk);
-  
+
   TRACE_FN_EXIT();
   return rc;
 }
@@ -395,26 +467,39 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Conn>::postReceives()
       PAMI::PipeWorkQueue *pwq = this->_acache.getPhasePipeWorkQueues(p, 0);
       if (p > this->_lastReducePhase)
 	pwq->configure(this->_dstbuf, this->_acache.getBytes(), 0); 
+      pwq->reset_nosync();
+
+      assert (pwq->bufferToProduce() != NULL);
 
       mrecv.dst = (pami_pipeworkqueue_t *) pwq;
-      
-      T_Conn *connmgr = this->_rconnmgr;
-      if (p > this->_lastReducePhase) 
-	connmgr = this->_bconnmgr;      
 
-      //fprintf (stderr, "Post receive pwq %p, phase %d\n", pwq, p);
+      //fprintf (stderr, "Post receive pwq %p, phase %d\n", pwq, 
       
+      T_Conn *connmgr = this->_bconnmgr;
+      int src_id = -1;
+      
+      if (p <= this->_lastReducePhase) {
+	src_id = this->_scache.getSrcTopology(p)->index2Endpoint(0);
+	connmgr = this->_rconnmgr;      
+      }      
+
       mrecv.connection_id = connmgr->getRecvConnectionId
 	( this->_acache.getCommID(), 
 	  this->_scache.getRoot(), 
-	  this->_scache.getSrcTopology(p)->index2Endpoint(0),
+	  src_id,
 	  p,
 	  this->_acache.getColor() );
       
-      pami_topology_t *srct  = (pami_topology_t *) this->_scache.getSrcTopology(p);
-      CCMI_assert (srct != NULL);
-      mrecv.src_participants = srct;
+      mrecv.src_participants = NULL; 
       mrecv.dst_participants = (pami_topology_t *) & this->_selftopology;      
+      
+      //printf ("posting recv check conn %d\n", 
+      //      mrecv.connection_id);
+      
+      //printf ("posting recv on conn %d phase %d color %d src %d\n", 
+      //      mrecv.connection_id,
+      //      p,
+      //      this->_acache.getColor(), src_id);
       
       this->_native->multicast(&mrecv);
     }
