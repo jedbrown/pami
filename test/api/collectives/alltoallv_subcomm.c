@@ -44,7 +44,7 @@ void initialize_sndbuf( pami_geometry_range_t  * range,
     nranks += cur_range;
   }
 
-  printf("init: r = %zu rank %zu\n", r, rank);
+  if(gVerbose==2) printf("init: r = %zu rank %zu\n", r, rank);
 
   for (k = 0; k < sndlens[r]; k++)
   {

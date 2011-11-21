@@ -11,7 +11,7 @@
  * \brief Simple Allgather test on world geometry (only gathers bytes)
  */
 
-#define COUNT     (524288)
+#define COUNT     (524288/16)
 /*
 #define OFFSET     0
 #define NITERLAT   1
