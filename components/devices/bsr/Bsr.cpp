@@ -293,6 +293,9 @@ bool Bsr::AttachBsr(int mem_id, unsigned char init_val)
         ITRC(IT_BSR, "BSR: %s BSR attatch with BSR id %u failed "
                 "at 0x%p with errno %d\n", 
                 (is_leader)?"LEADER":"FOLLOWER", bsr_id, bsr_addr, errno);
+
+        // to ensure proper handling at CleanUp()
+        bsr_addr = NULL; 
         return false;
     }
 #endif /* _LAPI_LINUX */
