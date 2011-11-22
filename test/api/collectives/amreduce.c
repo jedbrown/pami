@@ -276,7 +276,7 @@ int main(int argc, char*argv[])
 
       if (my_task_id == root_task)
       {
-        printf("# AMGather Bandwidth Test -- context = %d, root = %d, protocol: %s\n",
+        printf("# AMReduce Bandwidth Test -- context = %d, root = %d, protocol: %s\n",
                iContext, root_task, amreduce_always_works_md[nalg].name);
         printf("# Size(bytes)           cycles    bytes/sec    usec\n");
         printf("# -----------      -----------    -----------    ---------\n");
