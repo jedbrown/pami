@@ -54,7 +54,7 @@
 /// 
 /// Each client has the form <tt>[name][:repeat][/weight]</tt>, where
 /// - "name" is the name of the client.  For example, the BGQ MPICH2 client's
-///   name is MPICH2.  The default value for this option is the null string.
+///   name is MPI.  The default value for this option is the null string.
 /// - ":repeat" is the repetition factor, where repeat is the number of clients
 ///   having this same name.  The default value for this option is 1.
 /// - "/weight" is the relative weight assigned to the client, where weight is
@@ -86,6 +86,28 @@
 /// collective hardware for optimizing reduction operations.  The other clients
 /// will use algorithms that do not use the message unit combining collective
 /// hardware.
+///
+/// Examples:
+/// - "PAMI_CLIENTS=MPI,ARMCI" means up to two clients can use PAMI, one must
+///   be MPI and the other must be ARMCI.  The MPI client is assigned the
+///   message unit combining collective hardware, and the two clients evenly
+///   split the remaining messaging resources.
+/// - "PAMI_CLIENTS=MPI:3,ARMCI/2,UPC:2/3" means up to seven clients can use
+///   PAMI.  Three can be MPI, one can be ARMCI, and two can be UPC.
+///   Each MPI client has weight 1, ARMCI has weight 2, and each UPC client
+///   has weight 3.  In this example each UPC client gets 3 times the amount of
+///   resources as each MPI client, and the first MPI client created is
+///   assigned the message unit combining collective hardware.
+/// - "PAMI_CLIENTS=MPI/3,/2," means up to three clients can use PAMI.  Two of
+///   the clients are unnamed, meaning they can be any of the PAMI clients, and
+///   one client can only be MPI.  The first MPI client created has
+///   resource weight 3 and is assigned the message unit combining collective
+///   hardware, the first non-MPI client created (or possibly the
+///   second MPI client created) has resource weight 2, and the second
+///   non-MPI client created (or possibly the second or third MPI
+///   client created) has resource weight 1.
+/// - "PAMI_CLIENTS" is not specified.  This means there can only be one
+///   client, with any name, and it is assigned all of the resources.
 ///
 /// \default :1/1
 ///
