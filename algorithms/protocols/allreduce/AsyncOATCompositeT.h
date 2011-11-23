@@ -108,10 +108,9 @@ namespace CCMI
 
 	  _executor.setDoneCallback(fn, cookie);
 
-	  _executor.reset();
 	  int iteration = _geometry->getAllreduceIteration();
 	  _executor.setIteration(iteration);   	  
-	  _executor.start();
+	  _executor.reset();
 
 	  TRACE_FN_EXIT();
 	}
@@ -234,8 +233,8 @@ namespace CCMI
 	  
 	  _executor.setDoneCallback(((pami_xfer_t *)cmd)->cb_done,
 				    ((pami_xfer_t *)cmd)->cookie);
-	  _executor.reset();
 	  _executor.setIteration(_geometry->getAllreduceIteration());
+	  _executor.reset();
 	  _executor.start();	
 
 	  return PAMI_SUCCESS;
@@ -245,7 +244,7 @@ namespace CCMI
 	{
 	  TRACE_FN_ENTER();
 	  TRACE_FORMAT( "<%p>", this);
-	  CCMI_abort();
+	  _executor.start();
 	  TRACE_FN_EXIT();
 	}
 	
@@ -276,12 +275,12 @@ namespace CCMI
 	
 	PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)
 	  factory->getGeometry(ctxt, cdata->_comm);
-	T_Composite *composite = (T_Composite *) geometry->getAllreduceComposite(cdata->_iteration);
+	CCMI::Executor::Composite *bcomposite = (CCMI::Executor::Composite *) geometry->getAllreduceComposite(cdata->_iteration);
 	
-	if ( likely(composite != NULL  &&  
-		    composite->getAlgorithmFactory() == factory &&
-		    !composite->getExecutor()->earlyArrival()) ) {
-	  composite->getExecutor()->notifyRecvHead	    
+	if ( likely(bcomposite != NULL  &&  
+		    bcomposite->getAlgorithmFactory() == factory &&
+		    !((T_Composite *)bcomposite)->getExecutor()->earlyArrival()) ) {
+	  ((T_Composite*)bcomposite)->getExecutor()->notifyRecvHead	    
 	    (info,      count,
 	     conn_id,   peer,
 	     sndlen,    arg,
@@ -292,14 +291,15 @@ namespace CCMI
 	}
 	
 	//Composite from different old algorithm
-	if (composite != NULL && 
-	    composite->getAlgorithmFactory() != factory) {
+	if (bcomposite != NULL && 
+	    bcomposite->getAlgorithmFactory() != factory) {
 	  geometry->setAllreduceComposite(NULL, cdata->_iteration);
-	  composite->~T_Composite(); //Call destructor
-	  factory->_alloc.returnObject(composite);
-	  composite = NULL;
+	  bcomposite->cleanup(); //Call destructor
+	  factory->_alloc.returnObject(bcomposite);
+	  bcomposite = NULL;
 	}
 	
+	T_Composite *composite = (T_Composite *)bcomposite;	
 	if (composite == NULL) {
 	  //Need to create a new composite
 	  void *obj = factory->allocateObject();
@@ -312,6 +312,7 @@ namespace CCMI
 	      geometry,          // Geometry Object
 	      cdata->_root, 
 	      cdata->_iteration );
+	  composite->setAlgorithmFactory(factory); 
 	}
 	
 	composite->initialize(NULL, 
@@ -323,7 +324,6 @@ namespace CCMI
 			      (pami_op)cdata->_op );
 	composite->getExecutor()->reset();
         composite->setContext(ctxt);
-	composite->setAlgorithmFactory(factory);		
 	
 	composite->getExecutor()->notifyRecvHead	    
 	  (info,      count,

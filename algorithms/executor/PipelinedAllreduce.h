@@ -76,6 +76,8 @@ namespace CCMI
         if(_donecount <= 0 && this->_cb_done)
         {
 	  //fprintf(stderr, "All Done\n");
+	  this->_isSendDone = false; //Process an early arrival packet
+	  this->_initialized = false; //Call application done callback
           this->_cb_done (this->_context, this->_clientdata, PAMI_SUCCESS); 
         }
       }

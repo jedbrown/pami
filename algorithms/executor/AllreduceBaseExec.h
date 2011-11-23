@@ -1,3 +1,4 @@
+
 /* begin_generated_IBM_copyright_prolog                             */
 /*                                                                  */
 /* ---------------------------------------------------------------- */
@@ -60,7 +61,7 @@ namespace CCMI
           AllreduceBaseExec<T_Conn, T_Single> *exec = (AllreduceBaseExec<T_Conn, T_Single> *)cd;
           TRACE_FORMAT("<%p>", exec);
 	  
-	  if (exec->_isSendDone  /*&&  //send has finished
+	  if (exec->_isSendDone  && !exec->_inAdvance /*&&  //send has finished
 				   exec->_initialized*/)
 	    exec->advance();
 	  
@@ -463,6 +464,9 @@ namespace CCMI
 	  PAMI::Memory::sync();
           _acache.setDstBuf (_dstbuf);
 
+	  //Make sure we are not reseting a live executor
+	  CCMI_assert (_initialized == false);
+
           bool flag;
           if(_scache.getRoot() == -1)
             flag = _scache.init(ALLREDUCE_OP);
@@ -550,6 +554,7 @@ namespace CCMI
 
 template <class T_Conn, bool T_Single>
   inline pami_result_t CCMI::Executor::AllreduceBaseExec<T_Conn, T_Single>::advance () {  
+
   if (T_Single)
     return advance_single();
   else 
@@ -663,7 +668,7 @@ inline pami_result_t CCMI::Executor::AllreduceBaseExec<T_Conn, T_Single>::advanc
           if (_cb_done) 
             _cb_done (_context, _clientdata, PAMI_SUCCESS);
 
-          break;
+          return rc;
         }
 
       TRACE_FORMAT("<%p>_curPhase %d,_endPhase %d,_curIdx %d nsrcranks %d", this, _curPhase, _scache.getEndPhase(), _curIdx, nsrcranks);

@@ -133,6 +133,10 @@ namespace CCMI
           return _context;
         }
 
+	void cleanup () {
+	  this->~Composite();  //Call the destructor and avoid namespace issues
+	}
+
       protected:
         ///
         ///  \brief Callback to call when the barrier has finished

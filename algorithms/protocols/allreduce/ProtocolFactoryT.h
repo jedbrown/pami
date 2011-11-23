@@ -80,7 +80,7 @@ public:
 
 	//fprintf (stderr, "Starting collective on iteration %d\n", iteration);
 
-        T_Composite * arcomposite = (T_Composite *)geometry->getAllreduceComposite(iteration);
+        CCMI::Executor::Composite * arcomposite = (CCMI::Executor::Composite *) geometry->getAllreduceComposite(iteration);
         TRACE_FORMAT("%p composite %p", this,arcomposite);
 
         pami_xfer_t *allreduce = (pami_xfer_t *)cmd;
@@ -104,7 +104,7 @@ public:
         if (arcomposite != NULL) // Different factory?  Cleanup old executor.
         {
 	  geometry->setAllreduceComposite(NULL, iteration);
-	  arcomposite->~T_Composite(); //Call destructor
+	  arcomposite->cleanup(); //Call destructor
 	  CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_alloc.returnObject(arcomposite);
         }
 
@@ -124,6 +124,8 @@ public:
 
 	if (_isAsync)
 	  geometry->incrementAllreduceIteration_impl();
+
+        obj->start();
 
         TRACE_FN_EXIT();
         return NULL;

@@ -310,7 +310,6 @@ namespace CCMI
           {
             TRACE_FN_ENTER();
             TRACE_FORMAT( "<%p>", this);
-            CCMI_abort();
             TRACE_FN_EXIT();
             //Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::getExecutor(0)->start();
           }
