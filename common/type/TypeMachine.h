@@ -250,7 +250,11 @@ namespace PAMI
     {
         const uintptr_t fn = (const uintptr_t) new_copy_func;
 
-        if ((type->primitive == TypeCode::PRIMITIVE_TYPE_COUNT) ||
+        TypeCode * t = type;
+        if (orig_type != NULL)
+          t = orig_type;
+
+        if ((t->primitive == TypeCode::PRIMITIVE_TYPE_COUNT) ||
             (fn >= TypeFunc::PRIMITIVE_FUNC_COUNT))
         {
           copy_func = new_copy_func;
@@ -258,7 +262,7 @@ namespace PAMI
         }
         else
         {
-          copy_func = TypeFunc::GetCopyFunction (type->primitive, (TypeFunc::primitive_func_t) fn);
+          copy_func = TypeFunc::GetCopyFunction (t->primitive, (TypeFunc::primitive_func_t) fn);
         }
     }
 
