@@ -41,8 +41,9 @@ extern "C"
     PAMI_ACTIVE_CLIENT             /**<  Q : pami_active_client_t : N/A : retrieve all active clients */
         = PAMI_EXT_ATTR,
 
-    PAMI_CLIENT_THREAD_SAFE        /**< CQ : bool : true : run in thread-safe mode */
+    PAMI_CLIENT_RESERVED1          /**<  Q : N/A : N/A : Reserved */
         = PAMI_EXT_ATTR + 100,
+    PAMI_CLIENT_THREAD_SAFE,       /**< CQ : bool : true : run in thread-safe mode */
     PAMI_CLIENT_PROTOCOL_NAME,     /**<  Q : string : N/A : retrieve protocol name of the client*/
     PAMI_CLIENT_ACTIVE_CONTEXT,    /**<  Q : pami_active_context_t : N/A : retrieve all active contexts in the client */
 
