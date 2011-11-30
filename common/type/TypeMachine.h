@@ -52,7 +52,6 @@ namespace PAMI
         private:
             TypeCode  *type;
             TypeCode  *orig_type;
-            bool optimized;
             void  *cookie;
             TypeFunc::CopyFunction  copy_func;
             uint8_t _type[sizeof(TypeCode)];
@@ -101,7 +100,7 @@ namespace PAMI
     };
 
     inline TypeMachine::TypeMachine(TypeCode *atype)
-      : type(atype), optimized(false), cookie(NULL), copy_func(NULL), top(0), deallocate_stack(false)
+      : type(atype), orig_type(NULL), cookie(NULL), copy_func(NULL), top(0), deallocate_stack(false)
     {
         assert(type->IsCompleted());
         type->AcquireReference();
@@ -110,7 +109,6 @@ namespace PAMI
         // a max contiguous type
         if (type->IsContiguous()) {
             orig_type = type;
-            optimized = true;
             type = PAMI_TYPE_CONTIG_MAX;
         }
 
@@ -126,7 +124,7 @@ namespace PAMI
     }
 
     inline TypeMachine::TypeMachine(TypeCode *atype, void *custom_stack_addr, size_t custom_stack_size)
-      : type(atype), optimized(false), cookie(NULL), copy_func(NULL), top(0), deallocate_stack(false)
+      : type(atype), orig_type(NULL), cookie(NULL), copy_func(NULL), top(0), deallocate_stack(false)
     {
         assert(type->IsCompleted());
         type->AcquireReference();
@@ -135,7 +133,6 @@ namespace PAMI
         // a max contiguous type
         if (type->IsContiguous()) {
             orig_type = type;
-            optimized = true;
             type = PAMI_TYPE_CONTIG_MAX;
         }
 
@@ -152,7 +149,7 @@ namespace PAMI
 
     inline TypeMachine::TypeMachine(void *type_code_addr, size_t type_code_size,
                                     void *custom_stack_addr, size_t custom_stack_size)
-      : type(NULL), optimized(false), cookie(NULL), copy_func(NULL), top(0), deallocate_stack(false)
+      : type(NULL), orig_type(NULL), cookie(NULL), copy_func(NULL), top(0), deallocate_stack(false)
     {
         new (_type) TypeCode(type_code_addr,type_code_size,false);
         type = (TypeCode *) & _type;
@@ -163,7 +160,6 @@ namespace PAMI
         // a max contiguous type
         if (type->IsContiguous()) {
             orig_type = type;
-            optimized = true;
             type = PAMI_TYPE_CONTIG_MAX;
         }
 
@@ -182,9 +178,9 @@ namespace PAMI
     inline TypeMachine::~TypeMachine()
     {
         // recover the original type if optimized
-        if (optimized) {
-            assert(orig_type);
+        if (orig_type) {
             type = orig_type;
+            orig_type = (TypeCode *)NULL;
         }
         type->ReleaseReference();
         if (deallocate_stack)
@@ -198,10 +194,9 @@ namespace PAMI
         new_type->AcquireReference();
 
         // recover the initial object if optimized
-        if (optimized) {
+        if (orig_type) {
             type = orig_type;
             orig_type = (TypeCode *)NULL;
-            optimized = false;
         }
 
         type->ReleaseReference();
@@ -210,7 +205,6 @@ namespace PAMI
         // the max contiguous type
         if (new_type->IsContiguous()) {
             orig_type = new_type;
-            optimized = true;
             new_type = PAMI_TYPE_CONTIG_MAX;
         }
 		
@@ -239,10 +233,9 @@ namespace PAMI
 
     inline TypeCode *TypeMachine::GetType() const
     {
-        if (optimized) {
-            assert(orig_type);
+        if (orig_type) 
             return orig_type;
-        }
+
         return type;
     }
 
@@ -252,7 +245,7 @@ namespace PAMI
 
         TypeCode * t = type;
         if (orig_type != NULL)
-          t = orig_type;
+            t = orig_type;
 
         if ((t->primitive == TypeCode::PRIMITIVE_TYPE_COUNT) ||
             (fn >= TypeFunc::PRIMITIVE_FUNC_COUNT))
