@@ -198,6 +198,23 @@ extern "C" void pami_geometry_create_tasklist (pami_client_t*              clien
             fn, cookie);
 }
 
+extern "C" void pami_geometry_create_endpointlist (pami_client_t             * client,
+                                                   pami_configuration_t        configuration[],
+                                                   size_t                    * num_configs,
+                                                   pami_geometry_t           * geometry,
+                                                   unsigned                  * id,
+                                                   pami_endpoint_t           * endpoints,
+                                                   size_t                    * endpoint_count,
+                                                   pami_context_t            * context,
+                                                   pami_event_function         fn,
+                                                   void                      * cookie,
+                                                   pami_result_t             * result )
+{
+    *result = PAMI_Geometry_create_endpointlist(*client, configuration,
+            *num_configs, geometry, *id, endpoints, *endpoint_count, *context,
+            fn, cookie);
+}
+
 
 extern "C" void pami_geometry_query (pami_geometry_t*      geometry,
                                      pami_configuration_t  configuration[],
