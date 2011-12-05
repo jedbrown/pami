@@ -670,7 +670,7 @@ int main (int argc, char ** argv)
 		fprintf (stderr, "before PAMI_Send_immediate ...\n");
 	      }
 
-	      result = PAMI_Send_immediate (context[0], &im_parameters);
+	      result = PAMI_Send_immediate (context[xtalk], &im_parameters);
 		
 	      if (debug) {
 		fprintf (stderr, "... after PAMI_Send_immediate.\n");
@@ -687,7 +687,7 @@ int main (int argc, char ** argv)
 	      }
 
 	      while (recv_active) {
-		result = PAMI_Context_advance (context[0], 100);
+		result = PAMI_Context_advance (context[xtalk], 100);
 
 		if ( (result != PAMI_SUCCESS) && (result != PAMI_EAGAIN) ) {
 		  fprintf (stderr, "ERROR (E):  Unable to advance pami context 0. result = %d\n", result);
@@ -747,7 +747,7 @@ int main (int argc, char ** argv)
 
       for(xtalk = 0; xtalk < num_contexts; xtalk++) {        /* xtalk loop */
 
-	result = PAMI_Endpoint_create (client, 0, 0, &im_parameters.dest);
+	result = PAMI_Endpoint_create (client, 0, xtalk, &im_parameters.dest);
 	if (result != PAMI_SUCCESS) {
 	  fprintf (stderr, "ERROR (E):  PAMI_Endpoint_create failed for task ID 0, context 0 with %d.\n", result);
 	  return 1;

@@ -674,7 +674,7 @@ int main (int argc, char ** argv)
 		}
 
 		while (send_active || recv_active) {
-		  result = PAMI_Context_advance (context[0], 100);
+		  result = PAMI_Context_advance (context[xtalk], 100);
 
 		  if ( (result != PAMI_SUCCESS) && (result != PAMI_EAGAIN) ) {
 		    fprintf (stderr, "ERROR (E):  Unable to advance pami context 0. result = %d\n", result);

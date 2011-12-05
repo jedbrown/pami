@@ -9,6 +9,8 @@
 #include <unistd.h>
 #include <stdlib.h>
 
+static const unsigned int MAX_HDR_SIZE=1024*4;
+static const unsigned int MAX_DATA_SIZE=1024;
 static const char *optString = "DdMSh?";
 
 char device_str[3][50] = {"DEFAULT", "SHMem", "MU"};
@@ -67,8 +69,8 @@ unsigned validate (const void * addr, size_t bytes, size_t test_n_plus_minus1)
     /* Verify current value */
     if (byte[i] != expected_value) {
 
-      if(status != 1)
-      fprintf (stderr, "ERROR (E):validate(%p,%zu):  byte[%zu] != %d (&byte[%zu] = %p, value is %d)\n", addr, total_bytes, i, expected_value, i, &byte[i], byte[i]);
+      if (status != 1)
+        fprintf (stderr, "ERROR (E):validate(%p,%zu):  byte[%zu] != %d (&byte[%zu] = %p, value is %d)\n", addr, total_bytes, i, expected_value, i, &byte[i], byte[i]);
 
       status = 1;
     }
@@ -526,11 +528,14 @@ int main (int argc, char ** argv)
 
   size_t dispatch_recv_immediate_max[max_contexts][3];
   
-  uint8_t header[1024];
-  uint8_t data[1024];
+  uint8_t header[MAX_HDR_SIZE];
+  uint8_t data[MAX_DATA_SIZE];
 
-  for (i=0; i<1024; i++) {
+  for (i=0; i<MAX_HDR_SIZE; i++) {
     header[i] = (uint8_t)i;
+  }
+
+  for (i=0; i<MAX_DATA_SIZE; i++) {
     data[i]   = (uint8_t)i;
   }
 
@@ -705,7 +710,7 @@ int main (int argc, char ** argv)
 		    fprintf (stderr, "before send ...\n");
 		  }
 
-		  result = PAMI_Send (context[0], &parameters);
+		  result = PAMI_Send (context[xtalk], &parameters);
 		
 		  if (debug) {
 		    fprintf (stderr, "... after send.\n");
@@ -722,7 +727,7 @@ int main (int argc, char ** argv)
 		  }
 
 		  while (send_active || recv_active) {
-		    result = PAMI_Context_advance (context[0], 100);
+		    result = PAMI_Context_advance (context[xtalk], 100);
 
 		    if ( (result != PAMI_SUCCESS) && (result != PAMI_EAGAIN) ) {
 		      fprintf (stderr, "ERROR (E):  Unable to advance pami context 0. result = %d\n", result);
@@ -782,7 +787,7 @@ int main (int argc, char ** argv)
 
       for(xtalk = 0; xtalk < num_contexts; xtalk++) {        /* xtalk loop */
 
-	result = PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
+	result = PAMI_Endpoint_create (client, 0, xtalk, &parameters.send.dest);
 	if (result != PAMI_SUCCESS) {
 	  fprintf (stderr, "ERROR (E):  PAMI_Endpoint_create failed for task ID 0, context 0 with %d.\n", result);
 	  return 1;
