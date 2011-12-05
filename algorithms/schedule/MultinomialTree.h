@@ -212,7 +212,7 @@ namespace CCMI
          * \param[in] nranks  Number of ranks in list
          * \param[in] ranks Ranks list
          */
-        MultinomialTreeT (unsigned myrank, PAMI::Topology *topo, unsigned c = 0);
+        MultinomialTreeT (unsigned myendpoint, PAMI::Topology *topo, unsigned c = 0);
 
 
         /**
@@ -221,7 +221,7 @@ namespace CCMI
          * \param[in] ranks Ranks list
          * \param[in] nranks  Number of ranks in list
          */
-        MultinomialTreeT (unsigned myrank, size_t *ranks, unsigned nranks);
+        MultinomialTreeT (unsigned endpoint, size_t *ranks, unsigned nranks);
 
         virtual void
         init(int root, int op, int &startphase, int &nphases, int &maxranks)
@@ -251,35 +251,24 @@ namespace CCMI
          * \param[in] phase Phase to work on
          * \param[INOUT] srcranks are filled in the topology
          */
-        virtual void getSrcTopology(unsigned phase, PAMI::Topology *topology)
+        virtual void getSrcTopology(unsigned phase, PAMI::Topology *topology, pami_endpoint_t *src_eps)
         {
-          unsigned *srcranks;
-          pami_result_t rc;
-          rc = topology->rankList(&srcranks);
-          CCMI_assert (rc == PAMI_SUCCESS);
-          CCMI_assert(srcranks != NULL);
-
           unsigned nsrc = 0;
-
           if ((phase >= 1 && phase <= _nphbino && (_recvph == ALL_PHASES ||
                                                    (_recvph == NOT_SEND_PHASE && phase != _sendph) ||
                                                    phase == _recvph)) || phase == _auxrecvph)
             {
-              NEXT_NODES(PARENT, phase, srcranks, nsrc);
+              NEXT_NODES(PARENT, phase, src_eps, nsrc);
             }
-
-          CCMI_assert (nsrc <= topology->size());
-
           TRACE_SCHEDULE ((stderr, "<%p> getSrcTopology() phase %u, nsrc %u\n", this, phase, nsrc));
-
           for (unsigned count = 0; count < nsrc; count ++)
             {
-              TRACE_SCHEDULE ((stderr, "<%p> getSrcTopology() srcranks %u/%u\n", this, srcranks[count], _map.getGlobalRank(srcranks[count])));
-              srcranks[count] = _map.getGlobalRank(srcranks[count]);
+              TRACE_SCHEDULE ((stderr, "<%p> getSrcTopology() src_eps %u/%u\n", this, src_eps[count], _map.getGlobalRank(src_eps[count])));
+              src_eps[count] = _map.getGlobalRank(src_eps[count]);
             }
 
-          //Convert to a list topology
-          new (topology) PAMI::Topology (srcranks, nsrc);
+          //Convert to a endpoint list topology
+          new (topology) PAMI::Topology (src_eps, nsrc, PAMI::tag_eplist());
         }
 
         /**
@@ -288,50 +277,36 @@ namespace CCMI
          * \param[in] phase Phase to work on
          * \param[INOUT] dstranks are filled in the topology
          */
-        virtual void getDstTopology(unsigned phase, PAMI::Topology *topology)
+        virtual void getDstTopology(unsigned phase, PAMI::Topology *topology, pami_endpoint_t *dst_eps)
         {
-          unsigned *dstranks;
-          pami_result_t rc;
-          rc = topology->rankList(&dstranks);
-          CCMI_assert (rc == PAMI_SUCCESS);
-          CCMI_assert(dstranks != NULL);
-
           unsigned ndst = 0;
 
           if ((phase >= 1 && phase <= _nphbino && (_sendph == ALL_PHASES ||
                                                    (_sendph == NOT_RECV_PHASE && phase != _recvph) ||
                                                    phase == _sendph)) || phase == _auxsendph)
             {
-              NEXT_NODES(CHILD, phase, dstranks, ndst);
+              NEXT_NODES(CHILD, phase, dst_eps, ndst);
             }
-
-          CCMI_assert (ndst <= topology->size());
-
           TRACE_SCHEDULE((stderr, "<%p> getDstTopology() phase %u, ndst %u\n", this, phase, ndst));
 
           for (unsigned count = 0; count < ndst; count ++)
             {
-              TRACE_SCHEDULE((stderr, "<%p> getDstTopology() dstranks %u/%u\n", this, dstranks[count], _map.getGlobalRank(dstranks[count])));
-              dstranks[count]   = _map.getGlobalRank(dstranks[count]);
-              TRACE_SCHEDULE((stderr, "%d: phase %d, index %d node %d\n", _map.getMyRank(), phase, count, dstranks[count]));
+              TRACE_SCHEDULE((stderr, "<%p> getDstTopology() dst_eps %u/%u\n", this, dst_eps[count], _map.getGlobalRank(dst_eps[count])));
+              dst_eps[count]   = _map.getGlobalRank(dst_eps[count]);
+              TRACE_SCHEDULE((stderr, "%d: phase %d, index %d node %d\n", _map.getMyRank(), phase, count, dst_eps[count]));
             }
 
           //Convert to a list topology of the accurate size
-          new (topology) PAMI::Topology (dstranks, ndst);
+          new (topology) PAMI::Topology (dst_eps, ndst, PAMI::tag_eplist());
         }
 
         /**
          * \brief Get the union of all sources across all phases
          * \param[INOUT] topology : the union of all sources
          */
-        virtual pami_result_t getSrcUnionTopology (PAMI::Topology *topology)
+        virtual pami_result_t getSrcUnionTopology (PAMI::Topology  *topology,
+                                                   pami_endpoint_t *src_eps)
         {
-          unsigned *srcranks;
-          pami_result_t rc;
-          rc = topology->rankList(&srcranks);
-          CCMI_assert (rc == PAMI_SUCCESS);
-          CCMI_assert(srcranks != NULL);
-
           unsigned ntotal_src = 0;
 
           for (unsigned phase = _startphase; phase < _startphase + _nphases; phase++)
@@ -342,23 +317,19 @@ namespace CCMI
                                                        (_recvph == NOT_SEND_PHASE && phase != _sendph) ||
                                                        phase == _recvph)) || phase == _auxrecvph)
                 {
-                  NEXT_NODES(PARENT, phase, srcranks + ntotal_src, nsrc);
+                  NEXT_NODES(PARENT, phase, src_eps + ntotal_src, nsrc);
                   ntotal_src += nsrc;
                 }
-
-              CCMI_assert (ntotal_src <= topology->size());
             }
 
           TRACE_SCHEDULE ((stderr, "<%p> getSrcUnionTopology() ntotal_src %u\n", this, ntotal_src));
-
           for (unsigned count = 0; count < ntotal_src; count ++)
             {
-              TRACE_SCHEDULE ((stderr, "<%p> getSrcUnionTopology() srcranks %u/%u\n", this, srcranks[count], _map.getGlobalRank(srcranks[count])));
-              srcranks[count] = _map.getGlobalRank(srcranks[count]);
+              TRACE_SCHEDULE ((stderr, "<%p> getSrcUnionTopology() src_eps %u/%u\n", this, src_eps[count], _map.getGlobalRank(src_eps[count])));
+              src_eps[count] = _map.getGlobalRank(src_eps[count]);
             }
-
           //Convert to a list topology
-          new (topology) PAMI::Topology (srcranks, ntotal_src);
+          new (topology) PAMI::Topology (src_eps, ntotal_src, PAMI::tag_eplist());
           return PAMI_SUCCESS;
         }
 
@@ -366,14 +337,10 @@ namespace CCMI
          * \brief Get the union of all destinations across all phases
          * \param[INOUT] topology : the union of all sources
          */
-        virtual pami_result_t getDstUnionTopology (PAMI::Topology *topology)
+        pami_result_t getDstUnionTopology (PAMI::Topology  *topology,
+                                           pami_endpoint_t *dst_eps)
         {
-          unsigned *dstranks;
-          pami_result_t rc;
-          rc = topology->rankList(&dstranks);
-          CCMI_assert (rc == PAMI_SUCCESS);
-          CCMI_assert(dstranks != NULL);
-
+          CCMI_assert(dst_eps != NULL);
           unsigned ntotal_dst = 0;
           unsigned phase;
 
@@ -385,24 +352,20 @@ namespace CCMI
                                                        (_sendph == NOT_RECV_PHASE && phase != _recvph) ||
                                                        phase == _sendph)) || phase == _auxsendph)
                 {
-                  NEXT_NODES(CHILD, phase, dstranks + ntotal_dst, ndst);
+                  NEXT_NODES(CHILD, phase, dst_eps + ntotal_dst, ndst);
                 }
-
               ntotal_dst += ndst;
-              CCMI_assert (ntotal_dst <= topology->size());
             }
-
           TRACE_SCHEDULE ((stderr, "<%p> getDstUnionTopology() ntotal_dst %u\n", this, ntotal_dst));
 
           for (unsigned count = 0; count < ntotal_dst; count ++)
             {
-              TRACE_SCHEDULE ((stderr, "<%p> getDstUnionTopology() dstranks %u/%u\n", this, dstranks[count], _map.getGlobalRank(dstranks[count])));
-              dstranks[count]   = _map.getGlobalRank(dstranks[count]);
-              TRACE_SCHEDULE ((stderr, "%d: phase %d, index %d node %d\n", _map.getMyRank(), phase, count, dstranks[count]));
+              TRACE_SCHEDULE ((stderr, "<%p> getDstUnionTopology() dst_eps %u/%u\n", this, dst_eps[count], _map.getGlobalRank(dst_eps[count])));
+              dst_eps[count]   = _map.getGlobalRank(dst_eps[count]);
+              TRACE_SCHEDULE ((stderr, "%d: phase %d, index %d node %d\n", _map.getMyRank(), phase, count, dst_eps[count]));
             }
-
           //Convert to a list topology of the accurate size
-          new (topology) PAMI::Topology (dstranks, ntotal_dst);
+          new (topology) PAMI::Topology (dst_eps, ntotal_dst,PAMI::tag_eplist());
           return PAMI_SUCCESS;
         }
 
@@ -448,16 +411,19 @@ namespace CCMI
 /**
  * \brief Constructor for list of ranks
  *
- * \param[in] myrank  My rank in COMM_WORLD
+ * \param[in] myendpoint  My rank in COMM_WORLD
  * \param[in] topology  topology across which the binomial must be performed
  */
 template <class M, int T_MaxRadix>
   inline CCMI::Schedule::MultinomialTreeT<M, T_MaxRadix>::
-MultinomialTreeT(unsigned myrank, PAMI::Topology *topology, unsigned c): _map(topology->rank2Index(myrank), topology)
+MultinomialTreeT(unsigned        myendpoint,
+                 PAMI::Topology *topology,
+                 unsigned        c):
+  _map(myendpoint, topology)
 {
-  TRACE_SCHEDULE((stderr,  "<%p>MultinomialTreeT(unsigned myrank, PAMI::Topology *topology, unsigned c): _map(myrank, topology) myrank %u, nranks %zu, c %u\n", this, myrank, topology->size(), c));
+  TRACE_SCHEDULE((stderr,  "<%p>MultinomialTreeT(unsigned myendpoint, PAMI::Topology *topology, unsigned c): _map(myendpoint, topology) myendpoint %u, index %zu, nranks %zu, c %u\n", this, myendpoint, topology->endpoint2Index(myendpoint), topology->size(), c));
 
-  DO_DEBUG(for (unsigned i = 0; i < topology->size(); ++i) fprintf(stderr, "<%p> topology[%u] = %u\n", this, i, topology->index2Rank(i)););
+  DO_DEBUG(for (unsigned i = 0; i < topology->size(); ++i) fprintf(stderr, "<%p> topology[%u] = %u\n", this, i, topology->index2Endpoint(i)););
 
   initBinoSched();
 }
@@ -466,21 +432,23 @@ MultinomialTreeT(unsigned myrank, PAMI::Topology *topology, unsigned c): _map(to
 /**
  * \brief Constructor for list of ranks
  *
- * \param[in] myrank  My rank in COMM_WORLD
+ * \param[in] myendpoint  My rank in COMM_WORLD
  * \param[in] nranks  Number of ranks in list
  * \param[in] ranks Ranks list
  */
 template <class M, int T_MaxRadix>
   inline CCMI::Schedule::MultinomialTreeT<M, T_MaxRadix>::
-MultinomialTreeT(unsigned myrank, size_t *ranks, unsigned nranks): _topology(ranks, nranks), _map()
+MultinomialTreeT(unsigned       myendpoint,
+                 size_t        *ranks,
+                 unsigned       nranks): _topology(ranks, nranks), _map()
 {
-  TRACE_SCHEDULE((stderr,  "<%p> MultinomialTreeT(unsigned myrank, size_t *ranks, unsigned nranks): _topology(ranks, nranks), _map() myrank %u, nranks %u\n", this, myrank, nranks));
+  TRACE_SCHEDULE((stderr,  "<%p> MultinomialTreeT(unsigned myendpoint, size_t *ranks, unsigned nranks): _topology(ranks, nranks), _map() myendpoint %u, nranks %u\n", this, myendpoint, nranks));
 
   DO_DEBUG(for (unsigned i = 0; i < _topology.size(); ++i) fprintf(stderr, "<%p> topology[%u] = %u\n", this, i, _topology.index2Rank(i)););
 
   CCMI_assert (_topology.type() == PAMI_LIST_TOPOLOGY);
 
-  new (&_map) M (_topology.rank2Index(myrank), &_topology);
+  new (&_map) M (myendpoint, &_topology);
   initBinoSched();
 }
 
@@ -646,6 +614,7 @@ template <class M, int T_MaxRadix>
   void CCMI::Schedule::MultinomialTreeT<M, T_MaxRadix>::
 init(int root, int comm_op, int &start, int &nph)
 {
+  TRACE_SCHEDULE ((stderr, "<%p> init() root %d, comm_op %d, start %d, nph %d\n", this, root, comm_op, _startphase, _nphases));
   CCMI_assert(comm_op == BARRIER_OP ||
               comm_op == ALLREDUCE_OP ||
               comm_op == REDUCE_OP ||

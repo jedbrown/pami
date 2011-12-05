@@ -45,7 +45,6 @@ namespace CCMI
           CCMI::Executor::ScatterExec<T_Conn, T_Scatter_Schedule, pami_scatter_t>                      _data_scatter_executor __attribute__((__aligned__(16)));
           T_Scatter_Schedule                     _hdr_scatter_schedule;
           T_Scatter_Schedule                     _data_scatter_schedule;
-
         public:
           size_t   _sndlen; // Size of buffer allocated for headers
 
@@ -56,7 +55,9 @@ namespace CCMI
           {
           }
 
-          AMScatterT (Interfaces::NativeInterface              * native,
+          AMScatterT (pami_context_t                ctxt,
+                      size_t                        ctxt_id,
+                      Interfaces::NativeInterface * native,
                      T_Conn                                   * cmgr,
                      pami_callback_t                            cb_hdr_scatter_done,
                      pami_callback_t                            cb_data_scatter_done,
@@ -125,12 +126,17 @@ namespace CCMI
           PAMI::MemoryAllocator < sizeof(EADescriptor), 16 > _ead_allocator;
 
           T_Conn                         *_cmgr;
+          Interfaces::NativeInterface    *_native;
 
         public:
-          AMScatterFactoryT (T_Conn                      *cmgr,
+        AMScatterFactoryT (pami_context_t                ctxt,
+                           size_t                        ctxt_id,
+                           pami_mapidtogeometry_fn       cb_geometry,
+                           T_Conn                       *cmgr,
                             Interfaces::NativeInterface *native):
-              CollectiveProtocolFactory(native),
-              _cmgr(cmgr)
+              CollectiveProtocolFactory(ctxt,ctxt_id,cb_geometry),
+              _cmgr(cmgr),
+              _native(native)
           {
             native->setMulticastDispatch(cb_head, this);
           }
@@ -149,7 +155,7 @@ namespace CCMI
           {
             DO_DEBUG((templateName<MetaDataFn>()));
             get_metadata(mdata);
-            CollectiveProtocolFactory::metadata(mdata, PAMI_XFER_AMSCATTER);
+            if(_native) _native->metadata(mdata,PAMI_XFER_AMSCATTER);
           }
 
           char *allocateHeader (unsigned size)
@@ -204,7 +210,7 @@ namespace CCMI
             PAMI::Topology *topo = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
             T_Conn *cmgr = _cmgr;
             DEBUG((stderr, "AMScatterFactoryT::generate()\n"));
-            unsigned key = getKey(_native->myrank(),
+            unsigned key = getKey(this->_native->endpoint(),
                                   (unsigned) - 1,
                                   geometry,
                                   (ConnectionManager::BaseConnectionManager**) & cmgr);
@@ -221,11 +227,11 @@ namespace CCMI
             dispatch->fn.amscatter (
                  _context,              // context
                  dispatch->cookie,      // user cookie
-                 (char *)ams_xfer->headers + topo->rank2Index(_native->myrank()) * ams_xfer->headerlen, // User header
+                 (char *)ams_xfer->headers + topo->endpoint2Index(this->_native->endpoint()) * ams_xfer->headerlen, // User header
                  ams_xfer->headerlen,   // User header size
                  NULL,
                  bytes,                 // Number of bytes of message data
-                 _native->myrank(),     // origin (root)
+                 this->_native->endpoint(),     // origin (root)
                  g,                     // Geometry
                  &recv);                // recv info
 
@@ -242,12 +248,14 @@ namespace CCMI
             cb_scatter_data_done.clientdata = co;
 
             composite = new (co->getComposite())
-            T_Composite ( _native,
+            T_Composite ( _context,
+                          _context_id,
+                          this->_native,
                           cmgr,
                           cb_scatter_header_done,
                           cb_scatter_data_done,
                           geometry,
-                          _native->myrank());
+                          this->_native->endpoint());
 
             co->setXfer((pami_xfer_t *)cmd);
             co->setFactory(this);
@@ -256,7 +264,7 @@ namespace CCMI
 
             // Use a custom Collective header as we need to send the data size (for scatter operation)
             AMCollHeaderData hdr;
-            hdr._root  = _native->myrank();
+            hdr._root  = this->_native->endpoint();
             hdr._comm  = geometry->comm();
             hdr._count = -1;
             hdr._phase = 0;
@@ -266,7 +274,7 @@ namespace CCMI
             composite->setContext (_context);
             composite->headerExecutor().setCollHeader (hdr);
             composite->headerExecutor().setBuffers ((char *)ams_xfer->headers,
-                                                    (char *)ams_xfer->headers + topo->rank2Index(_native->myrank()) * ams_xfer->headerlen, // src==dst in final memcpy
+                                                    (char *)ams_xfer->headers + topo->endpoint2Index(this->_native->endpoint()) * ams_xfer->headerlen, // src==dst in final memcpy
                                                     ams_xfer->headerlen,
                                                     (TypeCode *) PAMI_TYPE_BYTE, (TypeCode *) PAMI_TYPE_BYTE);
             composite->dataExecutor().setBuffers ((char *)ams_xfer->sndbuf,
@@ -281,7 +289,7 @@ namespace CCMI
                 composite->dataExecutor().setConnectionID(key);
               }
 
-            geometry->asyncCollectivePostQ().pushTail(co);
+            geometry->asyncCollectivePostQ(_native->contextid()).pushTail(co);
             composite->headerExecutor().start();
             return NULL;
           }
@@ -308,7 +316,7 @@ namespace CCMI
             unsigned key;
             key = getKey (cdata->_root, conn_id, geometry, (ConnectionManager::BaseConnectionManager **) & cmgr);
             CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *co =
-              (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *) geometry->asyncCollectivePostQ().find(key);
+              (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *) geometry->asyncCollectivePostQ(factory->_native->contextid()).find(key);
 
             DEBUG((stderr, "AMScatterFactoryT::cb_head() quad_count=%u sndlen=%zu cdata->_count=%u cdata->_root=%u peer=%zu conn_id=%u\n",
                    count, sndlen, cdata->_count, cdata->_root, peer, conn_id));
@@ -326,7 +334,9 @@ namespace CCMI
                 cb_scatter_data_done.clientdata = co;
 
                 composite = new (co->getComposite())
-                T_Composite ( factory->_native,
+                T_Composite ( ctxt,
+                              -1,  // Fill in real context id
+                              factory->_native,
                               cmgr,
                               cb_scatter_header_done,
                               cb_scatter_data_done,
@@ -342,7 +352,7 @@ namespace CCMI
                   // Header message - Complete the scatter operation (user header)
                   composite->_sndlen = sndlen;
                   prepareHeaderExecutor(co, (AMCollHeaderData *)cdata, co->getXfer());
-                  geometry->asyncCollectivePostQ().pushTail(co);
+                  geometry->asyncCollectivePostQ(factory->_native->contextid()).pushTail(co);
                   composite->headerExecutor().start();
                   composite->headerExecutor().notifyRecv(peer, *info, (PAMI::PipeWorkQueue **)rcvpwq, cb_done);
                 }
@@ -351,7 +361,7 @@ namespace CCMI
                   // Early arrival - data arrived before header
                   DEBUG((stderr, "AMScatterFactoryT::cb_async() : Early arrival - Data arrived before header. key = %u\n", co->key()));
                   prepareDataExecutor(co, cdata, sndlen);
-                  geometry->asyncCollectivePostQ().pushTail(co);
+                  geometry->asyncCollectivePostQ(factory->_native->contextid()).pushTail(co);
                   composite->dataExecutor().notifyRecv(peer, *info, (PAMI::PipeWorkQueue **)rcvpwq, cb_done);
                 }
               }
@@ -450,7 +460,7 @@ namespace CCMI
 
             unsigned root = composite->headerExecutor().getRoot();
             // Invoke the user callback (root has already done this)
-            if (factory->_native->myrank() != root)
+            if (factory->_native->endpoint() != root)
               {
                 pami_xfer_t *a_xfer = co->getXfer();
                 pami_recv_t recv = {0,};
@@ -505,7 +515,7 @@ namespace CCMI
                         a_xfer->cb_done(composite->getContext()?composite->getContext():factory->_context,
                                         a_xfer->cookie, PAMI_SUCCESS);
 
-                    co->getGeometry()->asyncCollectivePostQ().deleteElem(co);
+                    co->getGeometry()->asyncCollectivePostQ(factory->_native->contextid()).deleteElem(co);
                     factory->_free_pool.free(co);
                   }
                   else
@@ -577,7 +587,7 @@ namespace CCMI
                               xfer->cookie, PAMI_SUCCESS);
 
               // must be on the posted queue, dequeue it
-              geometry->asyncCollectivePostQ().deleteElem(co);
+              geometry->asyncCollectivePostQ(factory->_native->contextid()).deleteElem(co);
 
               // free the CollOp object
               factory->_free_pool.free(co);

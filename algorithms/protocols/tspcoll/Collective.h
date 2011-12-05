@@ -216,12 +216,13 @@ namespace xlpgas
 
       virtual void setGenericDevice(PAMI::Device::Generic::Device *dev) { _dev = dev;}
 
-      pami_task_t ordinal(void) const {
-        return _my_rank;
+      // With the support for endpoints this is not the _my_rank but _my_index
+      size_t ordinal(void) const {
+        return _my_index;
       }
 
-      pami_task_t rank(void) const {
-        return this->_p2p_iface->myrank();
+      pami_endpoint_t rank(void) const {
+        return this->_p2p_iface->endpoint();
       }
 
     protected:
@@ -236,6 +237,7 @@ namespace xlpgas
       PAMI::Device::Generic::Device * _dev;
       void                    * _device_info;
       pami_task_t               _my_rank;
+      size_t                    _my_index;
       DECL_MUTEX(_mutex);
     };
 

@@ -652,7 +652,7 @@ CCMI::Schedule::MCRect::getBroadcastDstTopology(unsigned phase,
     if (phase == (unsigned) ndims && _peers > 1)
       setupLocal(topo);
   }
-  if ((topo->size() == 1) && (topo->index2Rank(0) == _map->task()))
+  if ((topo->size() == 1) && (topo->index2Endpoint(0) == _map->task()))
     new (topo) PAMI::Topology();
   TRACE_FN_EXIT();
   return PAMI_SUCCESS;
@@ -819,7 +819,7 @@ CCMI::Schedule::MCRect::getDstUnionTopology(PAMI::Topology *topology)
       new (topology) PAMI::Topology(&low, &high, &_self, torus_link);
     }
   }
-  if((topology->size() == 1) && (topology->index2Rank(0) == _map->task()))
+  if((topology->size() == 1) && (topology->index2Endpoint(0) == _map->task()))
     new (topology) PAMI::Topology();
 
   TRACE_FN_EXIT();

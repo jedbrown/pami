@@ -40,8 +40,8 @@
 #include <pami.h>
 
 
-#define SSIZE 4    /**< This is the size (in bytes) of the small send */
-#define LSIZE 2345 /**< This is the size (in bytes) of the long  send */
+#define SSIZE 4     /**< This is the size (in bytes) of the small send */
+#define LSIZE 1*1024*1024 /**< This is the size (in bytes) of the long  send */
 
 
 static pami_client_t client;
@@ -289,7 +289,7 @@ static void *advance(void* c)
  * checks that each process has the same max number of contexts.  It
  * then creates the contexts initializes the dispatch tables.
  */
-static void init()
+static int init()
 {
   pami_configuration_t query;
   pami_dispatch_hint_t options;
@@ -305,7 +305,7 @@ static void init()
   query.name = PAMI_CLIENT_NUM_TASKS;
   PAMI_Client_query (client, &query,1);
   size = query.value.intval;
-  assert(size > 1);
+  if(size <= 1) return 0;
 
   query.name = PAMI_CLIENT_NUM_CONTEXTS;
   PAMI_Client_query (client, &query,1);
@@ -344,6 +344,7 @@ static void init()
   }
 
   printf("Task=%zu Size=%zu    <PAMI Initialized> thread-level=%d\n", task, size, 13);
+  return 1;
 }
 
 /**
@@ -359,7 +360,12 @@ int main()
   sbuf[0] = 0xaaaaa;
   lbuf[0] = 0xbbbbb;
 
-  init();
+  int rc = init();
+  if(rc == 0)
+    {
+      fprintf(stderr, "This test requires more than one task\n");
+      return 0; /* num tasks not supported */
+    }
 
   if (task < 2)
     {

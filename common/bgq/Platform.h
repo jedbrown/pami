@@ -34,7 +34,12 @@
 //#define PAMI_ENABLE_X0_PROTOCOLS
 
 #define PAMI_ALGOLISTS_MAX_NUM 32 // Maximum number of algorithms per collective per geometry
-#define PAMI_GEOMETRY_NUMALGOLISTS 1// Maximum number of algorithm lists
 
+
+/** \todo set the client information in the endpoint opaque type */
+#define PAMI_ENDPOINT_INIT(client,task,offset) ((offset << 23) | task)
+#define PAMI_ENDPOINT_INFO(endpoint,task,offset) { task = endpoint & 0x007fffff; offset = (endpoint >> 23) & 0x03f; }
+
+#define MAX_CONTEXTS        (64)
 
 #endif // __common_bgq_platform_h__

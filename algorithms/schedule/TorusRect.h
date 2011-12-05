@@ -145,10 +145,10 @@ namespace CCMI
       }
  
       virtual void init(int root, int op, int &start, int &nphases);
-      virtual pami_result_t getSrcUnionTopology(PAMI::Topology *topo);
-      virtual pami_result_t getDstUnionTopology(PAMI::Topology *topology);
-      virtual void getSrcTopology(unsigned phase, PAMI::Topology *topology);
-      virtual void getDstTopology(unsigned phase, PAMI::Topology *topology);
+      virtual pami_result_t getSrcUnionTopology(PAMI::Topology *topo, pami_endpoint_t *src_eps=NULL);
+      virtual pami_result_t getDstUnionTopology(PAMI::Topology *topology,pami_endpoint_t *dst_eps=NULL);
+      virtual void getSrcTopology(unsigned phase, PAMI::Topology *topology, pami_endpoint_t *src_eps=NULL);
+      virtual void getDstTopology(unsigned phase, PAMI::Topology *topology, pami_endpoint_t *dst_eps=NULL);
 
       unsigned color()
       {
@@ -177,29 +177,29 @@ namespace CCMI
         size_t torus_dims, sizes[PAMI_MAX_DIMS];
 
         torus_dims = __global.mapping.torusDims();
-	PAMI_assertf(rect->type() == PAMI_COORD_TOPOLOGY, "Type %u",rect->type());
+        PAMI_assertf(rect->type() == PAMI_COORD_TOPOLOGY, "Type %u",rect->type());
         rect->rectSeg(&ll, &ur, &torus_link);
 
         for (i = 0; i < torus_dims; i++)
-	{
-	  sizes[i] = ur->u.n_torus.coords[i] - ll->u.n_torus.coords[i] + 1;
+        {
+          sizes[i] = ur->u.n_torus.coords[i] - ll->u.n_torus.coords[i] + 1;
           if (sizes[i] > 1)
-	  {  
+          {
             TRACE_FORMAT("color[%u]=%u", ideal, i);
             colors[ideal++] = i;
           }
-	}
+        }
         max = ideal;
 
 #if 1 //enable +ve colors
         for (i = 0; i < torus_dims; i++) {
           if (sizes[i] > 1 && torus_link[i])
-	    {  
-	      TRACE_FORMAT("color[%u]=%zu",  max, i + torus_dims);
-	      colors[max++] = i+torus_dims;
-	    }
-	}
-	
+          {
+            TRACE_FORMAT("color[%u]=%zu",  max, i + torus_dims);
+            colors[max++] = i+torus_dims;
+          }
+        }
+
         if (max == 2 * ideal)
           ideal = max;
 #endif
@@ -208,6 +208,7 @@ namespace CCMI
           ideal = max = 1;
           colors[0] = 0;
         }
+        TRACE_FN_EXIT();
       }
     protected:
       unsigned             _ndims;
@@ -301,14 +302,15 @@ CCMI::Schedule::TorusRect::init(int root,
 
 
 inline pami_result_t
-CCMI::Schedule::TorusRect::getSrcUnionTopology(PAMI::Topology *topo)
+CCMI::Schedule::TorusRect::getSrcUnionTopology(PAMI::Topology *topo, pami_endpoint_t *src_eps)
 {
   printf("no need to implement\n");
   return PAMI_SUCCESS;
 }
 inline void
 CCMI::Schedule::TorusRect::getSrcTopology(unsigned phase,
-                                          PAMI::Topology *topo)
+                                          PAMI::Topology *topo,
+                                          pami_endpoint_t *src_eps)
 {
   printf("no need to implement\n");
 }
@@ -369,7 +371,8 @@ CCMI::Schedule::TorusRect::getDstTopology_internal(unsigned  phase,
    */
 inline void
 CCMI::Schedule::TorusRect::getDstTopology(unsigned phase,
-                                          PAMI::Topology *topo)
+                                          PAMI::Topology *topo,
+                                          pami_endpoint_t *dst_eps)
 {
   TRACE_FN_ENTER();
   CCMI_assert (phase >= _start_phase);
@@ -395,7 +398,7 @@ CCMI::Schedule::TorusRect::getDstTopology(unsigned phase,
   //We have nothing to do, create dummy topo
   else  new (topo) PAMI::Topology();
 
-  if ((topo->size() == 1) && (topo->index2Rank(0) == __global.mapping.task()))
+  if ((topo->size() == 1) && (topo->index2Endpoint(0) == __global.mapping.task()))
     new (topo) PAMI::Topology();
 
   TRACE_FN_EXIT();
@@ -569,7 +572,7 @@ CCMI::Schedule::TorusRect::setupLocal(int     & raxis,
 
 
 inline pami_result_t
-CCMI::Schedule::TorusRect::getDstUnionTopology(PAMI::Topology *topology)
+CCMI::Schedule::TorusRect::getDstUnionTopology(PAMI::Topology *topology,pami_endpoint_t *dst_eps)
 {
   TRACE_FN_ENTER();
   unsigned char torus_link[PAMI_MAX_DIMS] = {0};
@@ -602,7 +605,7 @@ CCMI::Schedule::TorusRect::getDstUnionTopology(PAMI::Topology *topology)
 
   // make an axial topology
   new (topology) PAMI::Topology(&low, &high, &_self_coord, torus_link);  
-  if((topology->size() == 1) /*&& (topology->index2Rank(0) == __global.mapping.task())*/)
+  if((topology->size() == 1) /*&& (topology->index2Endpoint(0) == __global.mapping.task())*/)
     new (topology) PAMI::Topology();
 
   TRACE_FN_EXIT();

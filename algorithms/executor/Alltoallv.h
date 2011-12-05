@@ -141,6 +141,9 @@ namespace CCMI
 
         int                 _senddone;
         int                 _recvdone [MAX_PARALLEL];
+        pami_endpoint_t     _self_ep;
+        pami_endpoint_t     _par_ep;
+
         PAMI::Topology      _partopology;
         PAMI::Topology      _selftopology;
         PAMI::Topology      *_gtopology;
@@ -195,8 +198,9 @@ namespace CCMI
             _nphases(0),
             _startphase(0),
             _rphase(gtopology->size()),
+            _self_ep(mf->endpoint()),
             _partopology(),
-            _selftopology(mf->myrank()),
+	    _selftopology(&_self_ep,1,PAMI::tag_eplist()),
             _gtopology(gtopology),
             _sdisps(NULL),
             _scounts(NULL),
@@ -255,7 +259,7 @@ namespace CCMI
           _curphase   = -1;
           _lphase     = 0;
 
-          _myindex  = _gtopology->rank2Index(_native->myrank());
+          _myindex  = _gtopology->endpoint2Index(_native->endpoint());
           _parindex = getPartnerIndex(0, _gtopology->size(), _myindex);
 
           unsigned connection_id = (unsigned) - 1;
@@ -505,8 +509,8 @@ inline void  CCMI::Executor::AlltoallvExec<T_ConnMgr, T_Type>::sendNext ()
 
       _parindex         = getPartnerIndex(_curphase, _gtopology->size(), _myindex);
     }
-
-  new (&_partopology) PAMI::Topology(_gtopology->index2Rank(_parindex));
+  _par_ep = _gtopology->index2Endpoint(_parindex);
+  new (&_partopology) PAMI::Topology(&_par_ep, 1, PAMI::tag_eplist());
 
   // send buffer available msg to left neighbor
   if (_lphase == _curphase)
@@ -528,7 +532,7 @@ inline void  CCMI::Executor::AlltoallvExec<T_ConnMgr, T_Type>::sendNext ()
 #endif
       _native->multicast(&_mlsend);
 
-      EXECUTOR_DEBUG((stderr, "phase %d, send buffer available msg to %d\n", _curphase, _partopology.index2Rank(0));)
+      EXECUTOR_DEBUG((stderr, "phase %d, send buffer available msg to %d\n", _curphase, _partopology.index2Endpoint(0));)
     }
 
   if (_rphase.get(_parindex)) // buffer available at the right neighbor
@@ -550,7 +554,7 @@ inline void  CCMI::Executor::AlltoallvExec<T_ConnMgr, T_Type>::sendNext ()
 #endif
       _native->multicast(&_mrsend);
 
-      EXECUTOR_DEBUG((stderr, "phase %d, send data msg to %d\n", _curphase, _partopology.index2Rank(0));)
+      EXECUTOR_DEBUG((stderr, "phase %d, send data msg to %d\n", _curphase, _partopology.index2Endpoint(0));)
     }
 
   return;
@@ -571,17 +575,17 @@ inline void  CCMI::Executor::AlltoallvExec<T_ConnMgr, T_Type>::notifyRecv
 #if ASSERT_LEVEL > 0
       unsigned pindex  = getPartnerIndex(cdata->_phase - 1, _gtopology->size(), _myindex);
       CCMI_assert(pindex != (unsigned) - 1);
-      EXECUTOR_DEBUG((stderr, "notifyRecv - phase = %d, src = %d, expected %d\n", cdata->_phase - 1, src, _gtopology->index2Rank(pindex));)
-      CCMI_assert(src == _gtopology->index2Rank(pindex));
+      EXECUTOR_DEBUG((stderr, "notifyRecv - phase = %d, src = %d, expected %d\n", cdata->_phase - 1, src, _gtopology->index2Endpoint(pindex));)
+      CCMI_assert(src == _gtopology->index2Endpoint(pindex));
 #endif
-    _rphase.set(_gtopology->rank2Index(src));
+    _rphase.set(_gtopology->endpoint2Index(src));
     *pwq = NULL;
     cb_done->function   = notifyAvailRecvDone;
     cb_done->clientdata = this;
   } else {
-    EXECUTOR_DEBUG((stderr, "notifyRecv - data phase = %d, src = %d, expected %d\n", _curphase, src, _gtopology->index2Rank(_parindex));)
+    EXECUTOR_DEBUG((stderr, "notifyRecv - data phase = %d, src = %d, expected %d\n", _curphase, src, _gtopology->index2Endpoint(_parindex));)
     CCMI_assert(cdata->_count == 0);
-    CCMI_assert(src == _gtopology->index2Rank(_parindex));
+    CCMI_assert(src == _gtopology->index2Endpoint(_parindex));
     CCMI_assert(cdata->_phase == (unsigned)_curphase);
     *pwq = getRecvPWQ(_parindex, _curphase);
     cb_done->function   = notifyRecvDone;

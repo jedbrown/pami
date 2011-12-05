@@ -56,14 +56,16 @@ namespace CCMI
 	pami_work_t              _work;
 	PAMI_GEOMETRY_CLASS    * _geometry;
 	T_Conn                 * _bcmgr;
-
+        size_t                   _contextid;
         public:
 	  MultiColorCompositeT ()
           {
             CCMI_abort();
           }
 
-	  MultiColorCompositeT (Interfaces::NativeInterface              * mf,
+	  MultiColorCompositeT (pami_context_t                             context,
+                                size_t                                     ctxt_id,
+                                Interfaces::NativeInterface              * mf,
 				T_Conn                                   * rcmgr,
 				pami_geometry_t                             g,
 				void                                     * cmd,
@@ -74,9 +76,11 @@ namespace CCMI
 	  }
 	
 	  MultiColorCompositeT (pami_context_t                             context,
+                                size_t                                     ctxt_id,
                                 Interfaces::NativeInterface              * mf,
 				T_Conn                                   * rcmgr,
 				T_Conn                                   * bcmgr,
+                                void                                     * algorithmFactory,
                                 pami_geometry_t                             g,
                                 void                                     * cmd,
                                 pami_event_function                         fn,
@@ -86,7 +90,8 @@ namespace CCMI
                fn,
                cookie,
                mf,
-               NUMCOLORS)
+               NUMCOLORS),
+              _contextid(ctxt_id)
           {
             TRACE_FN_ENTER();
             uintptr_t op, dt;
@@ -98,6 +103,7 @@ namespace CCMI
                            (pami_dt)dt, (pami_op)op);
 
 	    this->_context = context;
+            this->setAlgorithmFactory(algorithmFactory);
 	    _bcmgr         = bcmgr;
 
             TypeCode * stype_obj = (TypeCode *)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype;
@@ -352,7 +358,8 @@ namespace CCMI
             CollectiveProtocolFactory *factory = (CollectiveProtocolFactory *) arg;
 
             Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn> *composite = (Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn> *)
-	    ((PAMI_GEOMETRY_CLASS *)factory->getGeometry(ctxt, cdata->_comm))->getAllreduceComposite(0 /*cdata->_iteration*/);
+	    ((PAMI_GEOMETRY_CLASS *)factory->getGeometry(ctxt, cdata->_comm))->getAllreduceComposite(composite->_context_id,
+                                                                                                     0 /*cdata->_iteration*/);
 	    
             CCMI_assert (composite != NULL);
             //Use color 0 for now

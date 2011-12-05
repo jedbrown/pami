@@ -22,7 +22,7 @@ int main(int argc, char*argv[])
 {
   pami_client_t        client;
   pami_context_t      *context;
-  pami_task_t          task_id, local_task_id, root = 0;
+  pami_task_t          task_id, local_task_id=0, root = 0;
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
 

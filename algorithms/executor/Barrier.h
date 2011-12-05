@@ -75,6 +75,7 @@ namespace CCMI
         ///
         void resetVector()
         {
+          TRACE_FN_ENTER();
           CCMI_assert(_phase == _start + _nphases);
           _phase     =   _start;
           _iteration ++;  //1 bit itertation count that can wrap
@@ -88,15 +89,18 @@ namespace CCMI
             }
 
           _senddone  =   false;
+          TRACE_FN_EXIT();
         }
 
         /// Static function to be passed into the done of multisend
         static void staticNotifySendDone(pami_context_t context, void *cd, pami_result_t err)
         {
+          TRACE_FN_ENTER();
           TRACE_FORMAT( "<%p>", cd);
 
           BarrierExec *barrier = (BarrierExec *) cd;
           barrier->internalNotifySendDone();
+          TRACE_FN_EXIT();
         }
 
       public:
@@ -115,9 +119,10 @@ namespace CCMI
                     Interfaces::NativeInterface *ninterface):
             Interfaces::Executor(),
             _native(ninterface),
-          _srctopology(ninterface->myrank()),
+            _srctopology(ninterface->endpoint()),
           _context (NULL)
         {
+          TRACE_FN_ENTER();
           TRACE_FORMAT( "<%p>(comm %X,connid %d)",
                       this, comm, connid);
           _start          =  0;
@@ -138,10 +143,13 @@ namespace CCMI
           _minfo.src_participants  = (pami_topology_t *) & _srctopology;
           _minfo.connection_id     = connid;
           _iteration           = 0;
+          TRACE_FN_EXIT();
         }
 
         void setCommSchedule(Interfaces::Schedule *sch)
         {
+          TRACE_FN_ENTER();
+          TRACE_FORMAT( "<%p>",this);
           //_cache.init (sch);
           _cache.setSchedule (sch);
           _cache.setRoot (-1);
@@ -150,7 +158,9 @@ namespace CCMI
           _start     =   _cache.getStartPhase();
           _nphases   =   _cache.getNumPhases();
           _phase     =   _start + _nphases;    //so that the resetVector assert passes
+          TRACE_FORMAT( "<%p>_start %u + _nphases %u  <=  CCMI_BARRIER_MAXPHASES %u",this,_start,_nphases,CCMI_BARRIER_MAXPHASES);
           CCMI_assert(_start + _nphases  <=  CCMI_BARRIER_MAXPHASES);
+          TRACE_FN_EXIT();
         }
 
         void setContext (pami_context_t context) { _context = context; }
@@ -178,6 +188,7 @@ namespace CCMI
 
 inline void CCMI::Executor::BarrierExec::sendNext()
 {
+  TRACE_FN_ENTER();
   CCMI_assert(_phase <= (_start + _nphases));
   TRACE_FORMAT( "<%p> _phase %d, _start %d, _nphases %d",
               this, _phase, _start, _nphases);
@@ -191,6 +202,7 @@ inline void CCMI::Executor::BarrierExec::sendNext()
 
       _senddone = false;
 
+      TRACE_FN_EXIT();
       return;
     }
 
@@ -205,11 +217,9 @@ inline void CCMI::Executor::BarrierExec::sendNext()
 #ifdef CCMI_DEBUG
       TRACE_FORMAT( "<%p>_phase %d, ndest %zd,connid %d, _clientdata %p", this, _phase, topology->size(), _minfo.connection_id, _clientdata);
       for (size_t count = 0; count < topology->size(); count++)
-        TRACE_FORMAT( "<%p>_dstranks[%zu] %u", this, count, topology->index2Rank(count));
+        TRACE_FORMAT( "<%p>_dstranks[%zu] %u/%u", this, count, topology->index2Endpoint(count),topology->index2Rank(count));
 
-      CCMI_assert (topology->type() == PAMI_LIST_TOPOLOGY);
 #endif
-
       _minfo.connection_id = _phase; //set connection id to phase
       _cdata._phase     = _phase;
       _cdata._iteration = _iteration;  //Send the last bit of iteration
@@ -236,14 +246,17 @@ inline void CCMI::Executor::BarrierExec::sendNext()
       //nothing to do, skip this phase
       internalNotifySendDone();
     }
+  TRACE_FN_EXIT();
 }
 
 /// Entry function called to start the barrier
 inline void  CCMI::Executor::BarrierExec::start()
 {
+  TRACE_FN_ENTER();
   TRACE_FORMAT( "<%p>", this);
   resetVector();
   sendNext();
+  TRACE_FN_EXIT();
 }
 
 
@@ -258,17 +271,21 @@ inline void  CCMI::Executor::BarrierExec::notifyRecv  (unsigned             src,
                                                        PAMI::PipeWorkQueue ** pwq,
                                                        pami_callback_t      * cb_done)
 {
+  TRACE_FN_ENTER();
   CollHeaderData *hdr = (CollHeaderData *) (& info);
   CCMI_assert (hdr->_iteration <= 1);
   //Process this message by incrementing the phase vec
   _phasevec[hdr->_phase][hdr->_iteration] --;
-
+  //fprintf(stderr,"CCMI RECEIVED from %d\n", src);
   TRACE_FORMAT( "<%p>phase %d/%d(%d,%d), vec %d expected vec %zu", this,
               hdr->_phase, _phase, _start, _nphases, _phasevec[hdr->_phase][hdr->_iteration],  _cache.getSrcTopology(hdr->_phase)->size());
 
   //Start has not been called, just record recv and return
   if (unlikely(_phase == _start + _nphases))
-    return;
+    {
+      TRACE_FN_EXIT();
+      return;
+    }
 
   ///Check the current iteration's number of messages received. Have we received all messages
   if ( (_phasevec[_phase][_iteration] <= 0) && _senddone )
@@ -276,6 +293,7 @@ inline void  CCMI::Executor::BarrierExec::notifyRecv  (unsigned             src,
       _phase ++;
       sendNext();
     }
+  TRACE_FN_EXIT();
 }
 
 
@@ -284,6 +302,7 @@ inline void  CCMI::Executor::BarrierExec::notifyRecv  (unsigned             src,
 ///
 inline void CCMI::Executor::BarrierExec::internalNotifySendDone( )
 {
+  TRACE_FN_ENTER();
   TRACE_FORMAT( "<%p>phase %d, vec %d", this, _phase, _phasevec[_phase][_iteration]);
 
   _senddone = true;
@@ -294,6 +313,7 @@ inline void CCMI::Executor::BarrierExec::internalNotifySendDone( )
       _phase ++;
       sendNext();
     }
+  TRACE_FN_EXIT();
 }
 
 #endif

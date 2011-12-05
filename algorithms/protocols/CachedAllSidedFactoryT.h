@@ -37,10 +37,14 @@ namespace Adaptor
 template < class T_Composite, MetaDataFn get_metadata, class T_Conn, PAMI::Geometry::ckeys_t T_Key >
 class CachedAllSidedFactoryT : public AllSidedCollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>
 {
+protected:
 public:
-    CachedAllSidedFactoryT(T_Conn                      *cmgr,
+  CachedAllSidedFactoryT(pami_context_t ctxt,
+                         size_t         ctxt_id,
+                         pami_mapidtogeometry_fn cb_geometry,
+                         T_Conn                      *cmgr,
                            Interfaces::NativeInterface *native):
-        AllSidedCollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>(cmgr, native)
+    AllSidedCollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>(ctxt,ctxt_id,cb_geometry,cmgr, native)
     {
         TRACE_FN_ENTER();
         TRACE_FORMAT( "%p",this);
@@ -70,8 +74,8 @@ public:
 
         pami_xfer_t *xfer = (pami_xfer_t *)cmd;
         composite->setDoneCallback(xfer->cb_done, xfer->cookie);
-        return composite;
         TRACE_FN_EXIT();
+        return composite;
     }
 };
 };

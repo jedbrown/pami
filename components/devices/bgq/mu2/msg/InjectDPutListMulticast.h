@@ -31,10 +31,10 @@ namespace PAMI
 	  _length(0),	
 	  _consumedBytes(0),
 	  _pwq(NULL),
+		_pami_context(NULL),
 	  _fn (NULL),
 	  _cookie (NULL),
-	  _ranks(NULL),
-	  _nranks(0)
+		_topology(NULL)
 	    {
 	      //Default constructor
 	    }
@@ -53,26 +53,26 @@ namespace PAMI
 	/// \param[in] length the totaly number of bytes to be transfered
 	/// \param[in] localMultcast : should this message do local sends
 	///
-	void initialize (pami_event_function   fn,
+	void initialize (pami_context_t     context,
+			 pami_event_function   fn,
 			 void                * cookie,	    
-			 pami_task_t         * ranks,
-			 size_t                nranks,
+			Topology             * topology,
 			 PipeWorkQueue       * pwq,
 			 uint64_t              length,
 			 uint32_t              localMulticast) 
 	{
 	  TRACE_FN_ENTER();	 
 	  _nextdst          = 0;
-	  _ndestinations    = nranks;
+	  _ndestinations    = topology->size();
 	  _processInjection = true;
 	  this->_doneCompletion   = false;
 	  _length           = length;	
 	  _consumedBytes    = 0;
 	  _pwq              = pwq;
+		_pami_context     = context;
 	  _fn               = fn;
 	  _cookie           = cookie;
-	  _ranks            = ranks;
-	  _nranks           = nranks;
+		_topology         = topology;
 
 	  for (unsigned fnum = 0; fnum < NUM_FIFOS; fnum++)
 	    _lastCompletionSeqNo[fnum] = UNDEFINED_SEQ_NO;
@@ -129,13 +129,14 @@ namespace PAMI
 	      uint cid = muh_model->Packet_Types.Direct_Put.Rec_Counter_Base_Address_Id;	      
 	      
 	      do { 
-		bool islocal = __global.mapping.isPeer(__global.mapping.task(), _ranks[_nextdst]);
+					pami_task_t            rank = _topology->index2Rank(_nextdst);
+		bool islocal = __global.mapping.isPeer(__global.mapping.task(), rank);
 		if (!islocal || _localMulticast) {
 		  MUHWI_Destination_t   dest;
 		  uint64_t              map;
 		  size_t                tcoord;
 		  uint32_t              fnum;
-		  fnum = _context.pinFifo (_ranks[_nextdst],
+		  fnum = _context.pinFifo (rank,
 					   0,
 					   dest,
 					   tcoord,
@@ -187,7 +188,7 @@ namespace PAMI
 
 	  if (done && _fn) {
 	    //printf ("Done completion \n");
-	    _fn (NULL, _cookie, PAMI_SUCCESS);
+	    _fn (_pami_context, _cookie, PAMI_SUCCESS);
 	  }
 	  
 	  //TRACE_FN_EXIT();
@@ -211,6 +212,8 @@ namespace PAMI
 
 	inline uint32_t ndestinations() { return _ndestinations; }
 
+	static const size_t SC_MAXRANKS  = 128; // arbitrarily based on CCMI::Executor::ScheduleCache::SC_MAXRANKS
+
 	//The descriptor is setup externally and contains batids, sndbuffer base and msg length
 	MUSPI_DescriptorBase     _desc __attribute__((__aligned__(32))); 
 
@@ -223,10 +226,10 @@ namespace PAMI
 	uint64_t                 _length;        //Number of bytes to transfer
 	uint64_t                 _consumedBytes;
 	PipeWorkQueue          * _pwq;
+	pami_context_t           _pami_context;
 	pami_event_function      _fn;
 	void                   * _cookie;
-	pami_task_t            * _ranks;
-	size_t                   _nranks;	  
+	Topology               * _topology;
 	uint8_t                  _fifos[NUM_FIFOS];
 	uint32_t                 _destinations[NUM_FIFOS];
 	uint64_t                 _lastCompletionSeqNo[NUM_FIFOS];

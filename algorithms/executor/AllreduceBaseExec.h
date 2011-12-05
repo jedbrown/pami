@@ -176,6 +176,7 @@ namespace CCMI
         T_Conn * _bconnmgr;  ///Broadcast connction manager
 
 	pami_context_t                    _context;
+        pami_endpoint_t                   _self_ep;
         PAMI::Topology                    _selftopology;
         ScheduleCache                     _scache;
         AllreduceCache<T_Conn>            _acache;	
@@ -252,9 +253,10 @@ namespace CCMI
 	    _enablePipelining(false),
 	    _rconnmgr (connmgr),
             _bconnmgr(connmgr),
-            _selftopology(native->myrank()),
+            _self_ep(native->endpoint()),
+            _selftopology(&_self_ep, 1,PAMI::tag_eplist()),
             _scache(),
-            _acache(&_scache, native->myrank())
+            _acache(&_scache, native->endpoint())
         {
           TRACE_FN_ENTER();
           TRACE_FORMAT("<%p>", this);
@@ -369,7 +371,6 @@ namespace CCMI
                           TypeCode       * stype,
                           TypeCode       * rtype)
         {
-          //printf ("%d: srcbuf = %x, dstbuf %x", _native->myrank(), srcbuf, dstbuf);
           _srcbuf        = (char *) srcbuf;
           _dstbuf        = (char *) dstbuf;
 	  
@@ -497,7 +498,7 @@ namespace CCMI
 	  _lastReducePhase = _scache.getLastReducePhase();
 	  _curnsrc = _scache.getNumSrcRanks(_curPhase);
 
-	  if ((this->_scache.getRoot() == -1) || (this->_scache.getRoot() == (int)_native->myrank()))
+	  if ((this->_scache.getRoot() == -1) || (this->_scache.getRoot() == (int)_native->endpoint()))
 	    _reducebuf = _dstbuf;
 	  else
 	    //Reduce operation and I am not the root
@@ -568,12 +569,11 @@ inline pami_result_t CCMI::Executor::AllreduceBaseExec<T_Conn, T_Single>::advanc
   TRACE_FN_ENTER();
   TRACE_FORMAT("<%p>_curPhase %d,_endPhase %d, lastReducePhase %d, _curIdx %d, nsrcranks %u", this,
                   _curPhase, _endPhase,_scache.getLastReducePhase(), _curIdx, _scache.getNumSrcRanks(_curPhase));
-
   CCMI_assert_debug (_initialized);
   pami_result_t  rc = PAMI_EAGAIN;
 
   _inAdvance = true;
-  
+
   CCMI_assert (_reducebuf != NULL);
   char * reducebuf = _reducebuf;  
   size_t msg_bytes = _acache.getBytes();
@@ -582,7 +582,6 @@ inline pami_result_t CCMI::Executor::AllreduceBaseExec<T_Conn, T_Single>::advanc
   unsigned count = _acache.getCount();
   TRACE_FORMAT("<%p>op %u, dt %u, count %u", this,
 	       op, dt, count);
-  
   CCMI_assert (_src1 != NULL);
   void *src1 = _src1;
   unsigned nsrcranks = _curnsrc; 
@@ -778,7 +777,7 @@ inline pami_result_t CCMI::Executor::AllreduceBaseExec<T_Conn, T_Single>::advanc
 	
 	pwq->reset_nosync();
       }
-      
+
       if (_curPhase == _endPhase)
         {
 	  rc = PAMI_SUCCESS;
@@ -787,7 +786,9 @@ inline pami_result_t CCMI::Executor::AllreduceBaseExec<T_Conn, T_Single>::advanc
 	  _earlyArrival = true; 
           // Call application done callback
           if (_cb_done)
-            _cb_done (_context, _clientdata, PAMI_SUCCESS);
+            {
+              _cb_done (_context, _clientdata, PAMI_SUCCESS);
+            }
 
           break;
         }
@@ -843,17 +844,13 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn, T_Single>::sendMessage
   _isSendDone = false;
   _sndInfo._phase     = sphase;
   
-#ifdef CCMI_DEBUG
-  pami_task_t *dstranks = NULL;
-  dst_topology->rankList(&dstranks);
-
   TRACE_FORMAT("<%p>connid %#X curphase:%#X "
-              "bytes:%#X destPe:%#X ndst %zu cData:%p ",
-              this,
-              _acache.getPhaseSendConnectionId (sphase),
-              sphase, bytes, dstranks[0], dst_topology->size(),
-              &_sndInfo);
-#endif
+               "bytes:%#X destPe:%#X ndst %zu cData:%p ",
+               this,
+               _acache.getPhaseSendConnectionId (sphase),
+               sphase, bytes, dst_topology->index2Endpoint(0), dst_topology->size(),
+               &_sndInfo);
+
 
   _native->multicast (&_msend);
   TRACE_FN_EXIT();
@@ -905,7 +902,7 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn, T_Single>::notifyRecv
   CollHeaderData *cdata = (CollHeaderData*) &info;
   CCMI_assert_debug(cdata);
 
-  TRACE_FORMAT ("<%p> phase:%u root:%u local root:%u src %u,_state->getBytes():%u _state->getPipelineWidth():%u \n",
+  TRACE_FORMAT ("notifyRecv:<%p> phase:%u root:%u local root:%u src %u,_state->getBytes():%u _state->getPipelineWidth():%u \n",
 		this,
 		cdata->_phase, 
 		(int) cdata->_root,
@@ -913,7 +910,7 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn, T_Single>::notifyRecv
 		peer,
 		_acache.getBytes(),
 		_acache.getPipelineWidth());
-  
+
   CCMI_assert_debug(cdata->_comm == _sndInfo._comm);
   CCMI_assert_debug(cdata->_root == (unsigned) _scache.getRoot());
   CCMI_assert_debug(cdata->_phase >= (unsigned)_scache.getStartPhase());
@@ -948,7 +945,7 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn, T_Single>::notifyRecv
     srcPeIndex = 0;
   else {
     PAMI::Topology *srctopology = _scache.getSrcTopology(cdata->_phase);
-    srcPeIndex = srctopology->rank2Index (peer);  
+    srcPeIndex = srctopology->endpoint2Index (peer);
     CCMI_assert (srcPeIndex >= 0);
   }
 
@@ -969,7 +966,7 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn, T_Single>::notifySendDone 
   // update state
   TRACE_FORMAT("<%p>cur phase %#X",
 	       this, _curPhase);
-  
+
   _isSendDone = true;
   //Call advance
   if (!_inAdvance)

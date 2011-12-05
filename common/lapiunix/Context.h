@@ -23,7 +23,7 @@
 #include "components/memory/MemoryManager.h"
 
 // Geometry
-#include "algorithms/geometry/LapiGeometry.h"
+#include "algorithms/geometry/Geometry.h"
 
 // Components
 #include "components/devices/generic/Device.h"
@@ -243,7 +243,7 @@ namespace PAMI
   typedef PAMI::NativeInterfaceActiveMessage< Protocol::Send::SendPWQ<Protocol::Send::Send>, 2 > CompositeNI_AM_AMC;
   typedef PAMI::NativeInterfaceAllsided< Protocol::Send::SendPWQ<Protocol::Send::Send>, 2 >      CompositeNI_AS_AMC;
   // Geometry Typedefs
-  typedef Geometry::Lapi                                              LAPIGeometry;
+  typedef Geometry::Common                                            PEGeometry;
 
   // Protocol Typedefs
 
@@ -264,7 +264,7 @@ namespace PAMI
 
   // PGAS RT Typedefs/Coll Registration
   typedef xlpgas::CollectiveManager<CompositeNI_AM> LAPINBCollManager;
-  typedef CollRegistration::PGASRegistration<LAPIGeometry,
+  typedef CollRegistration::PGASRegistration<PEGeometry,
                                              CompositeNI_AM,
                                              ProtocolAllocator,
                                              LAPISend,
@@ -303,7 +303,7 @@ namespace PAMI
                                                                 LAPISend, 
                                                                 DeviceWrapper> CompositeNIFactory_AMC;  
 
-  typedef CollRegistration::P2P::CCMIRegistration<LAPIGeometry,
+  typedef CollRegistration::P2P::CCMIRegistration<PEGeometry,
                                                   ProtocolAllocator,
                                                   CCMI::Adaptor::P2PBarrier::BinomialBarrier,
                                                   CCMI::Adaptor::P2PBarrier::BinomialBarrierFactory > P2PCCMICollreg;
@@ -339,7 +339,7 @@ namespace PAMI
                                               BSRMulticombineModel>   BSRNativeInterface;
 
 
-  typedef CollRegistration::CAU::CAURegistration<LAPIGeometry,
+  typedef CollRegistration::CAU::CAURegistration<PEGeometry,
                                                  PAMI::Device::Generic::Device,
                                                  BSRDevice,
                                                  CAUDevice,
@@ -353,7 +353,7 @@ namespace PAMI
                                                  LAPISend,
                                                  LAPICSMemoryManager>  CAUCollreg;
 
-  typedef Geometry::ClassRouteId<LAPIGeometry> LAPIClassRouteId;
+  typedef Geometry::ClassRouteId<PEGeometry> LAPIClassRouteId;
 
 
 
@@ -870,10 +870,9 @@ namespace PAMI
     inline pami_result_t collective_impl (pami_xfer_t * parameters)
         {
           pami_result_t rc;
-          Geometry::Algorithm<LAPIGeometry> *algo = (Geometry::Algorithm<LAPIGeometry> *)parameters->algorithm;
+          Geometry::Algorithm<PEGeometry> *algo = (Geometry::Algorithm<PEGeometry> *)parameters->algorithm;
           plock();
-          algo->setContext((pami_context_t) this);
-          rc = algo->generate(parameters);
+          rc = algo[_contextid].generate(parameters);
           punlock();
           return rc;
         }
@@ -884,7 +883,7 @@ namespace PAMI
                                                     void                     * cookie,
                                                     pami_collective_hint_t      options)
         {
-        Geometry::Algorithm<LAPIGeometry> *algo = (Geometry::Algorithm<LAPIGeometry> *)algorithm;
+        Geometry::Algorithm<PEGeometry> *algo = (Geometry::Algorithm<PEGeometry> *)algorithm;
         return algo->dispatch_set(dispatch, fn, cookie, options);
         }
 
@@ -1000,7 +999,16 @@ namespace PAMI
             }
           return result;
         }
-
+      inline void registerUnexpBarrier_impl (unsigned     comm,
+                                             pami_quad_t &info,
+                                             unsigned     peer,
+                                             unsigned     algorithm)
+      {
+        Geometry::UnexpBarrierQueueElement *ueb =
+          (Geometry::UnexpBarrierQueueElement *) _ueb_allocator.allocateObject();
+        new (ueb) Geometry::UnexpBarrierQueueElement (comm, _contextid, info, peer, algorithm);
+        _ueb_queue.pushTail(ueb);
+      }
     private:
       /*  Lapi State Object.  use this for direct access        */
       /*  Warning!  do not put any variables before this        */
@@ -1042,6 +1050,12 @@ namespace PAMI
 
       lapi_handle_t                          _lapi_handle;
       PlatformDeviceList                    *_devices;
+
+      //  Unexpected Barrier match queue
+      MatchQueue                             _ueb_queue;
+
+      //  Unexpected Barrier allocator
+      MemoryAllocator <sizeof(PAMI::Geometry::UnexpBarrierQueueElement), 16> _ueb_allocator;
   private:
     }; // end PAMI::Context
 }; // end namespace PAMI

@@ -33,7 +33,7 @@
 
 #undef TRACE_ERR
 #ifndef TRACE_ERR
-#define TRACE_ERR(x) //fprintf x
+#define TRACE_ERR(x)
 #endif
 
 extern void registerunexpbarrier(pami_context_t context,
@@ -58,15 +58,18 @@ template < class T_Composite, MetaDataFn get_metadata, class T_Conn, bool T_Unex
 class BarrierFactoryT : public CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>
 {
 public:
-    BarrierFactoryT(T_Conn                      *cmgr,
+    BarrierFactoryT(pami_context_t               ctxt,
+                    size_t                       ctxt_id,
+                    pami_mapidtogeometry_fn      cb_geometry,
+                    T_Conn                      *cmgr,
                     Interfaces::NativeInterface *native,
                     pami_dispatch_multicast_function cb_head = NULL):
-        CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>(cmgr, native, cb_head)
+        CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>(ctxt,ctxt_id,cb_geometry,cmgr, native, cb_head),
+        _cached_id((unsigned) -1),
+        _cached_object(NULL)
     {
         TRACE_FN_ENTER();
         TRACE_FORMAT( "%p",this);
-        _cached_object = NULL;
-        _cached_id     = (unsigned) -1;
         TRACE_FN_EXIT();
     }
     ~BarrierFactoryT()
@@ -82,25 +85,26 @@ public:
         // Use the cached barrier or generate a new one if the cached barrier doesn't exist
         TRACE_FN_ENTER();
         PAMI_GEOMETRY_CLASS  *g = ( PAMI_GEOMETRY_CLASS *)geometry;
-        Executor::Composite *composite = (Executor::Composite *) g->getKey((size_t)0, /// \todo does NOT support multicontext
+        TRACE_ERR((stderr,"Generating Barrier with key=%d, ctxt_id=%ld\n", T_Key, this->_context_id));
+        Executor::Composite *composite = (Executor::Composite *) g->getKey(this->_context_id,
                                          T_Key);
 
-        TRACE_ERR((stderr,"(%8.8u)<%p>generate composite %p geometry %p, T_Key %u\n",Kernel_ProcessorID(),this,composite, geometry, T_Key));
+        TRACE_ERR((stderr,"<%p>generate composite %p geometry %p, T_Key %u\n",this,composite, geometry, T_Key));
         if (!composite)
         {
             composite = CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::generate(geometry, cmd);
             TRACE_FORMAT( "<%p> composite %p",this,composite);
-            g->setKey((size_t)0, /// \todo does NOT support multicontext
+            g->setKey(this->_context_id,
                       T_Key,
                       (void*)composite);
-            TRACE_ERR((stderr,"(%8.8u)<%p>generate composite %p geometry %p, T_Key %u\n",Kernel_ProcessorID(),this,composite, geometry, T_Key));
+            TRACE_ERR((stderr,"<%p>generate composite %p geometry %p, T_Key %u\n",this,composite, geometry, T_Key));
         }
 
         pami_xfer_t *xfer = (pami_xfer_t *)cmd;
         composite->setDoneCallback(xfer->cb_done, xfer->cookie);
         pami_metadata_t mdata;
         this->metadata(&mdata);
-        TRACE_ERR((stderr,"(%8.8u)<%p>generate composite %p geometry %p, T_Key %u, name %s\n",Kernel_ProcessorID(),this,composite, geometry, T_Key, mdata.name));
+        TRACE_ERR((stderr,"<%p>generate composite %p geometry %p, T_Key %u, name %s\n",this,composite, geometry, T_Key, mdata.name));
         TRACE_FN_EXIT();
         return composite;
     }
@@ -122,13 +126,21 @@ public:
     ///
     void * getGeometryObject (pami_context_t ctxt, unsigned id)
     {
+        TRACE_FN_ENTER();
+        TRACE_FORMAT( "<%p> cached_object %p, ctxt %p,id %u, cached_id %u",this,_cached_object,ctxt,id,_cached_id);
         if (likely(_cached_object && id  == _cached_id))
+        {
+            TRACE_FORMAT( "<%p> cached_object %p",this,_cached_object);
+            TRACE_FN_EXIT();
             return _cached_object;
+        }
 
         PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) this->getGeometry(ctxt, id);
-        _cached_object =  (geometry) ? (geometry->getKey(0, T_Key)) : NULL;
+        _cached_object =  (geometry) ? (geometry->getKey(this->_context_id, T_Key)) : NULL;
 	_cached_id     =  id;
 
+        TRACE_FORMAT( "<%p> cached_object %p",this,_cached_object);
+        TRACE_FN_EXIT();
         return _cached_object;
     }
 
@@ -153,8 +165,7 @@ public:
         TRACE_FN_ENTER();
         CollHeaderData  *cdata = (CollHeaderData *) info;
         BarrierFactoryT *factory = (BarrierFactoryT *) arg;
-        TRACE_FORMAT( "<%p>cdata %p",factory,cdata);
-
+        TRACE_FORMAT( "<%p>cdata %p, _comm %u, _count %u, _dt %u, _iteration %u, _op %u, _phase %u,_root %u",factory,cdata, cdata->_comm, cdata->_count, cdata->_dt, cdata->_iteration, cdata->_op, cdata->_phase,cdata->_root);
         *rcvlen    = 0;
         *recvpwq   = 0;
         cb_done->function   = NULL;
@@ -163,7 +174,7 @@ public:
         PAMI_assert (factory != NULL);
         //PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry (ctxt, cdata->_comm);
         void *object = factory->getGeometryObject(ctxt, cdata->_comm);
-        TRACE_ERR((stderr,"(%8.8u)<%p>cb_head composite %p, T_Unexp %u, T_Key %u\n",Kernel_ProcessorID(),factory, object, T_Unexp, T_Key));
+        TRACE_FORMAT("<%p>composite %p, T_Unexp %u, T_Key %u",factory, object, T_Unexp, T_Key);
         if (T_Unexp) {
             if (object == NULL)
             {
@@ -172,14 +183,14 @@ public:
                                      cdata->_comm,
                                      (pami_quad_t&)*info,
                                      peer,
-                                     (unsigned) PAMI::Geometry::GKEY_UEBARRIERCOMPOSITE1);
+                                     T_Key);
                 TRACE_FN_EXIT();
                 return;
             }
         }
 
         T_Composite *composite = (T_Composite*) object;
-        TRACE_FORMAT("<%p>CCMI::Adaptor::Barrier::BarrierFactoryT::cb_head(%d,%p)",
+        TRACE_FORMAT("<%p>comm %d composite %p)",
                     factory, cdata->_comm, composite);
 
         //Override poly morphism
@@ -203,17 +214,23 @@ template < class T_Composite, MetaDataFn get_metadata, class T_Conn, PAMI::Geome
 class BarrierFactoryAllSidedT : public AllSidedCollectiveProtocolFactoryNCOT<T_Composite, get_metadata, T_Conn>
 {
 public:
-    BarrierFactoryAllSidedT(T_Conn                      *cmgr,
+    BarrierFactoryAllSidedT(pami_context_t               ctxt,
+                            size_t                       ctxt_id,
+                            pami_mapidtogeometry_fn      cb_geometry,
+                            T_Conn                      *cmgr,
                             Interfaces::NativeInterface *native):
-        AllSidedCollectiveProtocolFactoryNCOT<T_Composite, get_metadata, T_Conn>(cmgr, native)
+      AllSidedCollectiveProtocolFactoryNCOT<T_Composite, get_metadata, T_Conn>(ctxt,ctxt_id,cb_geometry,cmgr, native)
     {
         TRACE_FN_ENTER();
         TRACE_FORMAT( "%p",this);
         TRACE_FN_EXIT();
     }
-    BarrierFactoryAllSidedT(T_Conn                       *cmgr,
+    BarrierFactoryAllSidedT(pami_context_t               ctxt,
+                            size_t                       ctxt_id,
+                            pami_mapidtogeometry_fn      cb_geometry,
+                            T_Conn                       *cmgr,
                             Interfaces::NativeInterface **native):
-        AllSidedCollectiveProtocolFactoryNCOT<T_Composite, get_metadata, T_Conn>(cmgr, native)
+      AllSidedCollectiveProtocolFactoryNCOT<T_Composite, get_metadata, T_Conn>(ctxt,ctxt_id,cb_geometry,cmgr, native)
     {
         TRACE_FN_ENTER();
         TRACE_FORMAT( "%p",this);
@@ -228,13 +245,13 @@ public:
         TRACE_FORMAT( "%p",this);
         PAMI_GEOMETRY_CLASS  *g = ( PAMI_GEOMETRY_CLASS *)geometry;
         /// \todo does NOT support multicontext
-        Executor::Composite *composite = (Executor::Composite *) g->getKey((size_t)0,
+        Executor::Composite *composite = (Executor::Composite *) g->getKey(this->_context_id,
                                          T_Key);
 
         if (!composite)
         {
             composite = AllSidedCollectiveProtocolFactoryNCOT<T_Composite, get_metadata, T_Conn>::generate(geometry, cmd);
-            g->setKey((size_t)0, /// \todo does NOT support multicontext
+            g->setKey(this->_context_id,
                       T_Key,
                       (void*)composite);
         }
@@ -270,7 +287,9 @@ public:
     /// \param[in] mInterface  The multicast Interface
     /// \param[in] geometry    Geometry object
     ///
-    BarrierT  (Interfaces::NativeInterface          * mInterface,
+    BarrierT  (pami_context_t                         ctxt,
+               size_t                                 ctxt_id,
+               Interfaces::NativeInterface          * mInterface,
                ConnectionManager::SimpleConnMgr     * cmgr,
                pami_geometry_t                         geometry,
                void                                 * cmd,
@@ -279,10 +298,11 @@ public:
         _myexecutor(((PAMI_GEOMETRY_CLASS *)geometry)->comm(),
                     0,                                        // connection id?
                     mInterface),
-        _myschedule (__global.mapping.task(), (PAMI::Topology *)((PAMI_GEOMETRY_CLASS *)geometry)->getTopology(T_Geometry_Index))
+        _myschedule (mInterface->endpoint(),(PAMI::Topology *)((PAMI_GEOMETRY_CLASS *)geometry)->getTopology(T_Geometry_Index))
     {
         TRACE_FN_ENTER();
-        TRACE_FORMAT( "%p",this);
+        DO_DEBUG((templateName<BarrierT>()));
+        TRACE_FORMAT( "%p, endpoint %u, topo %p",this,mInterface->endpoint(),(PAMI::Topology *)((PAMI_GEOMETRY_CLASS *)geometry)->getTopology(T_Geometry_Index));
         _myexecutor.setCommSchedule (&_myschedule);
         this->_collObj = cookie;//SSS: cookie is the collObj that contains this composite. I need to set it here so I can free it later.
         TRACE_FN_EXIT();

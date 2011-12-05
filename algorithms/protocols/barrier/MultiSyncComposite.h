@@ -56,10 +56,13 @@ namespace CCMI{namespace Adaptor{namespace Barrier{
       T_Composite                          _obj;
     };
 
-    BarrierFactory2DeviceMsync (T_Conn                      * cmgr,
+    BarrierFactory2DeviceMsync (pami_context_t                ctxt,
+                                size_t                        ctxt_id,
+                                pami_mapidtogeometry_fn       cb_geometry,
+                                T_Conn                      * cmgr,
                                 Interfaces::NativeInterface * nativeL,
                                 Interfaces::NativeInterface * nativeG):
-      CollectiveProtocolFactory(),
+      CollectiveProtocolFactory(ctxt,ctxt_id,cb_geometry),
       _cmgr(cmgr),
       _nativeL(nativeL),
       _nativeG(nativeG)
@@ -128,7 +131,6 @@ namespace CCMI{namespace Adaptor{namespace Barrier{
         TRACE_FN_ENTER();
         TRACE_FORMAT("mdata=%p",mdata);
         get_metadata(mdata);
-        CollectiveProtocolFactory::metadata(mdata,PAMI_XFER_BARRIER);
         TRACE_FN_EXIT();
       }
 
@@ -158,8 +160,8 @@ namespace CCMI{namespace Adaptor{namespace Barrier{
   template < bool                            T_inline         =false,
              class                           T_Native         =Interfaces::NativeInterface,
              PAMI::Geometry::topologyIndex_t T_Geometry_Index =PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX,
-             PAMI::Geometry::gkeys_t         T_Gkey           =PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID,
-             PAMI::Geometry::gkeys_t         T_Lkey           =PAMI::Geometry::GKEY_MSYNC_LOCAL_CLASSROUTEID
+             PAMI::Geometry::ckeys_t         T_Gkey           =PAMI::Geometry::CKEY_MSYNC_CLASSROUTEID,
+             PAMI::Geometry::ckeys_t         T_Lkey           =PAMI::Geometry::CKEY_MSYNC_LOCAL_CLASSROUTEID
              >
 
   class MultiSyncComposite : public CCMI::Executor::Composite
@@ -176,7 +178,7 @@ namespace CCMI{namespace Adaptor{namespace Barrier{
         TRACE_FN_ENTER();
 
         PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)g;
-        _deviceInfo          = geometry->getKey(T_Gkey);
+        _deviceInfo          = geometry->getKey(0, T_Gkey); //todo:  fix for multicontext
         TRACE_FORMAT( "_devinfo %p",_deviceInfo);
 
         _minfo.cb_done.function   = NULL;
@@ -210,8 +212,8 @@ namespace CCMI{namespace Adaptor{namespace Barrier{
   };
 
 
-  template < PAMI::Geometry::gkeys_t         T_Gkey           =PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID,
-             PAMI::Geometry::gkeys_t         T_Lkey           =PAMI::Geometry::GKEY_MSYNC_LOCAL_CLASSROUTEID
+  template < PAMI::Geometry::ckeys_t         T_Gkey           =PAMI::Geometry::CKEY_MSYNC_CLASSROUTEID,
+             PAMI::Geometry::ckeys_t         T_Lkey           =PAMI::Geometry::CKEY_MSYNC_LOCAL_CLASSROUTEID
              >
   class MultiSyncComposite2Device : public CCMI::Executor::Composite
   {
@@ -302,8 +304,8 @@ namespace CCMI{namespace Adaptor{namespace Barrier{
         PAMI::Topology  *t_master    = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
         PAMI::Topology  *t_local     = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
 
-        DO_DEBUG(for (unsigned j = 0; j < t_master->size(); ++j) TRACE_FORMAT("<%p>t_master[%u]=%#X, size %zu", t_master, j, t_master->index2Rank(j), t_master->size()));
-        DO_DEBUG(for (unsigned j = 0; j < t_local->size(); ++j) TRACE_FORMAT("<%p>t_local[%u]=%zu, size %zu", t_local, j, (size_t)t_local->index2Rank(j), t_local->size()));
+        DO_DEBUG(for (unsigned j = 0; j < t_master->size(); ++j) TRACE_FORMAT("<%p>t_master[%u]=%#X, size %zu", t_master, j, t_master->index2Endpoint(j), t_master->size()));
+        DO_DEBUG(for (unsigned j = 0; j < t_local->size(); ++j) TRACE_FORMAT("<%p>t_local[%u]=%zu, size %zu", t_local, j, (size_t)t_local->index2Endpoint(j), t_local->size()));
 
         _cb_done                     = fn;
         _clientdata                  = cookie;
@@ -327,8 +329,8 @@ namespace CCMI{namespace Adaptor{namespace Barrier{
 
         // If the global "master" topology has only one rank, the local barrier will
         // suffice to implement the barrier
-        _deviceInfoG = _geometry->getKey(T_Gkey);
-        _deviceInfoL = _geometry->getKey(T_Lkey);
+        _deviceInfoG = _geometry->getKey(0,T_Gkey);
+        _deviceInfoL = _geometry->getKey(0,T_Lkey);
         if (t_master->size() == 1 && t_local->size() != 1)
         {
           _minfo_l0.cb_done.function   =  NULL; //fn;
@@ -436,8 +438,5 @@ namespace CCMI{namespace Adaptor{namespace Barrier{
 
 #undef DO_TRACE_ENTEREXIT 
 #undef DO_TRACE_DEBUG     
-
-#undef DO_DEBUG
-#define DO_DEBUG(x) 
 
 #endif

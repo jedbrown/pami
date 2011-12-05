@@ -60,6 +60,7 @@ namespace PAMI
         inline pami_result_t geometry_world (pami_geometry_t * world_geometry);
 
         inline pami_result_t geometry_create_taskrange(pami_geometry_t       *geometry,
+                                                       size_t                 context_offset,
                                                        pami_configuration_t   configuration[],
                                                        size_t                 num_configs,
                                                        pami_geometry_t        parent,
@@ -71,6 +72,7 @@ namespace PAMI
                                                        void                  *cookie);
 
         inline pami_result_t geometry_create_tasklist(pami_geometry_t       *geometry,
+                                                      size_t                 context_offset,
                                                       pami_configuration_t   configuration[],
                                                       size_t                 num_configs,
                                                       pami_geometry_t        parent,
@@ -80,6 +82,17 @@ namespace PAMI
                                                       pami_context_t         context,
                                                       pami_event_function    fn,
                                                       void                  *cookie);
+
+        inline pami_result_t geometry_create_endpointlist(pami_geometry_t       *geometry,
+                                                          pami_configuration_t   configuration[],
+                                                          size_t                 num_configs,
+                                                          unsigned               id,
+                                                          pami_endpoint_t       *endpoints,
+                                                          size_t                 endpoint_count,
+                                                          pami_context_t         context,
+                                                          pami_event_function    fn,
+                                                          void                  *cookie);
+
 
         inline pami_result_t geometry_create_topology(pami_geometry_t       *geometry,
                                                       pami_configuration_t   configuration[],
@@ -101,30 +114,12 @@ namespace PAMI
 					     pami_context_t        context,
 					     pami_event_function   fn,
 					     void                 *cookie);
-
-        inline pami_result_t geometry_algorithms_num (pami_geometry_t   geometry,
-                                                      pami_xfer_type_t  ctype,
-                                                      size_t           *lists_lengths);
-
-        inline pami_result_t geometry_algorithms_info (pami_geometry_t    geometry,
-                                                       pami_xfer_type_t   colltype,
-                                                       pami_algorithm_t  *algs0,
-                                                       pami_metadata_t   *mdata0,
-                                                       size_t             num0,
-                                                       pami_algorithm_t  *algs1,
-                                                       pami_metadata_t   *mdata1,
-                                                       size_t             num1);
-
         inline pami_result_t geometry_destroy(pami_geometry_t      geometry,
                                               pami_context_t       context,
                                               pami_event_function  fn,
                                               void                *cookie);
 
         inline pami_geometry_t mapidtogeometry (int comm);
-        inline void registerUnexpBarrier(unsigned     comm,
-                                         pami_quad_t &info,
-                                         unsigned     peer,
-                                         unsigned     algorithm);
         inline double wtime();      
         inline unsigned long long wtimebase();      
     }; // end class PAMI::Client::Client
@@ -192,6 +187,7 @@ namespace PAMI
 
     template <class T_Client>
     pami_result_t Client<T_Client>::geometry_create_taskrange (pami_geometry_t       *geometry,
+                                                               size_t                 context_offset,
                                                                pami_configuration_t   configuration[],
                                                                size_t                 num_configs,
                                                                pami_geometry_t        parent,
@@ -203,6 +199,7 @@ namespace PAMI
                                                                void                  *cookie)
     {
       return static_cast<T_Client*>(this)->geometry_create_taskrange_impl(geometry,
+                                                                          context_offset,
                                                                           configuration,
                                                                           num_configs,
                                                                           parent,
@@ -216,6 +213,7 @@ namespace PAMI
 
     template <class T_Client>
     pami_result_t Client<T_Client>::geometry_create_tasklist (pami_geometry_t       *geometry,
+                                                              size_t                 context_offset,
                                                               pami_configuration_t   configuration[],
                                                               size_t                 num_configs,
                                                               pami_geometry_t        parent,
@@ -227,6 +225,7 @@ namespace PAMI
                                                               void                  *cookie)
     {
       return static_cast<T_Client*>(this)->geometry_create_tasklist_impl(geometry,
+                                                                         context_offset,
                                                                          configuration,
                                                                          num_configs,
                                                                          parent,
@@ -236,6 +235,28 @@ namespace PAMI
                                                                          context,
                                                                          fn,
                                                                          cookie);
+    }
+
+    template <class T_Client>
+    pami_result_t Client<T_Client>::geometry_create_endpointlist (pami_geometry_t       *geometry,
+                                                                  pami_configuration_t   configuration[],
+                                                                  size_t                 num_configs,
+                                                                  unsigned               id,
+                                                                  pami_endpoint_t       *endpoints,
+                                                                  size_t                 endpoint_count,
+                                                                  pami_context_t         context,
+                                                                  pami_event_function    fn,
+                                                                  void                  *cookie)
+    {
+      return static_cast<T_Client*>(this)->geometry_create_endpointlist_impl(geometry,
+                                                                             configuration,
+                                                                             num_configs,
+                                                                             id,
+                                                                             endpoints,
+                                                                             endpoint_count,
+                                                                             context,
+                                                                             fn,
+                                                                             cookie);
     }
 
     template <class T_Client>
@@ -287,37 +308,6 @@ namespace PAMI
     }
 
     template <class T_Client>
-    pami_result_t Client<T_Client>::geometry_algorithms_num (pami_geometry_t geometry,
-                                                              pami_xfer_type_t coll_type,
-                                                              size_t *lists_lengths)
-    {
-      return static_cast<T_Client*>(this)->geometry_algorithms_num_impl(geometry,
-                                                                         coll_type,
-                                                                         lists_lengths);
-    }
-
-    template <class T_Client>
-    pami_result_t Client<T_Client>::geometry_algorithms_info (pami_geometry_t geometry,
-                                                              pami_xfer_type_t   colltype,
-                                                              pami_algorithm_t  *algs0,
-                                                              pami_metadata_t   *mdata0,
-                                                              size_t             num0,
-                                                              pami_algorithm_t  *algs1,
-                                                              pami_metadata_t   *mdata1,
-                                                              size_t             num1)
-    {
-      return static_cast<T_Client*>(this)->geometry_algorithms_info_impl(geometry,
-                                                                         colltype,
-                                                                         algs0,
-                                                                         mdata0,
-                                                                         num0,
-                                                                         algs1,
-                                                                         mdata1,
-                                                                         num1);
-    }
-
-
-    template <class T_Client>
     pami_result_t Client<T_Client>::geometry_destroy (pami_geometry_t      geometry,
                                                       pami_context_t       context,
                                                       pami_event_function  fn,
@@ -333,18 +323,6 @@ namespace PAMI
     pami_geometry_t Client<T_Client>::mapidtogeometry (int comm)
     {
       return static_cast<T_Client*>(this)->mapidtogeometry_impl(comm);
-    }
-
-    template <class T_Client>
-    inline void Client<T_Client>::registerUnexpBarrier (unsigned     comm,
-                                                        pami_quad_t &info,
-                                                        unsigned     peer,
-                                                        unsigned     algorithm)
-    {
-      static_cast<T_Client*>(this)->registerUnexpBarrier_impl(comm,
-                                                              info,
-                                                              peer,
-                                                              algorithm);      
     }
 
     template <class T_Client>

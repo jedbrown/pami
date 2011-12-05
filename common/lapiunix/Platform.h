@@ -56,4 +56,9 @@ extern "C" {
 #define P2PSHM_ALLOCATION   ((((P2PSHM_TOTALPKTSIZE + sizeof(size_t))*P2PSHM_FIFOSIZE) + (2*sizeof(size_t)))*MAX_CONTEXTS)
 #define P2PSHM_METADATA     (sizeof(size_t)*MAX_CONTEXTS)
 #define P2PSHM_MEMSIZE      (P2PSHM_ALLOCATION + P2PSHM_METADATA)
+
+#define PAMI_ENDPOINT_INIT(client,task,offset) ((task << _Lapi_env.endpoints_shift) + offset)
+#define PAMI_ENDPOINT_INFO(endpoint,task,offset) { task   = endpoint >> _Lapi_env.endpoints_shift;             \
+                                                   offset = endpoint - (task << _Lapi_env.endpoints_shift); }  \
+
 #endif // __common_lapiunix_platform_h__

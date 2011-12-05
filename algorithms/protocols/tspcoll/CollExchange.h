@@ -267,6 +267,7 @@ inline void xlpgas::CollExchange<T_NI>::kick()
 	this->_postrcv[_phase](this, _phase);
       }
     }
+
   TRACE((stderr, "%d:%p: FINI tag=%d ctr=%d phase=%d/%d sendcmplt=%d\n",
 	 XLPGAS_MYNODE, this->_pami_ctxt, _header[_phase].tag, _counter,
 	 _phase, _numphases, _sendcomplete));

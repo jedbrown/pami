@@ -21,8 +21,6 @@
 #include "algorithms/geometry/PGASWrapper.h"
 #include "common/NativeInterface.h"
 
-                
-
 #define SETUPNI_P2P_SHMEM(NI_PTR) result =                                      \
   NativeInterfaceCommon::constructNativeInterface                               \
   <T_Allocator, T_NI, T_Protocol1, T_Device_P2P, T_Protocol2, T_Device_SHMEM,   \
@@ -51,7 +49,6 @@
                                          _client_id,                            \
                                          _dispatch_id)
 
-
 #define SETUPNI_P2P(NI_PTR) result =                                            \
   NativeInterfaceCommon::constructNativeInterface                               \
   <T_Allocator, T_NI, T_Protocol1, T_Device_P2P,                                \
@@ -64,7 +61,6 @@
                                          _context_id,                           \
                                          _client_id,                            \
                                          _dispatch_id)
-
 
 namespace PAMI
 {
@@ -541,62 +537,74 @@ namespace PAMI
 	    ScanFactory           *_scan_reg           = (ScanFactory*)_allocator.allocateObject();           _gi->_f_list.push_back((Factories*)_scan_reg);
 	    ShortAllreduceFactory *_shortallreduce_reg = (ShortAllreduceFactory*)_allocator.allocateObject(); _gi->_f_list.push_back((Factories*)_shortallreduce_reg);
 
-	    new(_barrier_reg)        BarrierFactory(&_dev_p2p, _barrier, _nb_barrier, BarrierString);
-	    new(_broadcast_reg)      BroadcastFactory(&_dev_p2p, _broadcast, _nb_broadcast, BroadcastString);
-	    new(_allgather_reg)      AllgatherFactory(&_dev_p2p, _allgather, _nb_allgather, AllgatherString);
-	    new(_allgatherv_reg)     AllgathervFactory(&_dev_p2p, _allgatherv, _nb_allgatherv, AllgathervString);
-	    new(_scatter_reg)        ScatterFactory(&_dev_p2p, _scatter_s, _nb_scatter, ScatterString, _nb_barrier, _scatter_b);
-	    new(_gather_reg)         GatherFactory(&_dev_p2p, _gather_s, _nb_gather, GatherString, _nb_barrier, _gather_b);
-	    new(_alltoall_reg)       AlltoallFactory(&_dev_p2p, _alltoall_s, _nb_alltoall, AlltoallString, _nb_barrier, _alltoall_b);
-	    new(_alltoallv_reg)      AlltoallvFactory(&_dev_p2p, _alltoallv_s, _nb_alltoallv, AlltoallvString, _nb_barrier, _alltoallv_b);
-	    new(_allreduce_reg)      AllreduceFactory(&_dev_p2p, _allreduce, _nb_long_allreduce, AllreduceString);
-	    new(_scan_reg)           ScanFactory(&_dev_p2p, _scan, _nb_scan, ScanString);
-	    new(_shortallreduce_reg) ShortAllreduceFactory(&_dev_p2p, _shortallreduce,_nb_short_allreduce, ShortAllreduceString);
+            assert(_context !=NULL);
+	    new(_barrier_reg)        BarrierFactory(_context,_context_id,mapidtogeometry,&_dev_p2p, _barrier, _nb_barrier, BarrierString);
+	    new(_broadcast_reg)      BroadcastFactory(_context,_context_id,mapidtogeometry,&_dev_p2p, _broadcast, _nb_broadcast, BroadcastString);
+	    new(_allgather_reg)      AllgatherFactory(_context,_context_id,mapidtogeometry,&_dev_p2p, _allgather, _nb_allgather, AllgatherString);
+	    new(_allgatherv_reg)     AllgathervFactory(_context,_context_id,mapidtogeometry,&_dev_p2p, _allgatherv, _nb_allgatherv, AllgathervString);
+	    new(_scatter_reg)        ScatterFactory(_context,_context_id,mapidtogeometry,&_dev_p2p, _scatter_s, _nb_scatter, ScatterString, _nb_barrier, _scatter_b);
+	    new(_gather_reg)         GatherFactory(_context,_context_id,mapidtogeometry,&_dev_p2p, _gather_s, _nb_gather, GatherString, _nb_barrier, _gather_b);
+	    new(_alltoall_reg)       AlltoallFactory(_context,_context_id,mapidtogeometry,&_dev_p2p, _alltoall_s, _nb_alltoall, AlltoallString, _nb_barrier, _alltoall_b);
+	    new(_alltoallv_reg)      AlltoallvFactory(_context,_context_id,mapidtogeometry,&_dev_p2p, _alltoallv_s, _nb_alltoallv, AlltoallvString, _nb_barrier, _alltoallv_b);
+	    new(_allreduce_reg)      AllreduceFactory(_context,_context_id,mapidtogeometry,&_dev_p2p, _allreduce, _nb_long_allreduce, AllreduceString);
+	    new(_scan_reg)           ScanFactory(_context,_context_id,mapidtogeometry,&_dev_p2p, _scan, _nb_scan, ScanString);
+	    new(_shortallreduce_reg) ShortAllreduceFactory(_context,_context_id,mapidtogeometry,&_dev_p2p, _shortallreduce,_nb_short_allreduce, ShortAllreduceString);
 
 
 	    geometry->addCollective(PAMI_XFER_BARRIER,
 				    (CCMI::Adaptor::CollectiveProtocolFactory*)_barrier_reg,
+                                    _context,
 				    _context_id);
 
 	    geometry->addCollective(PAMI_XFER_BROADCAST,
 				    (CCMI::Adaptor::CollectiveProtocolFactory*)_broadcast_reg,
+                                    _context,
 				    _context_id);
 
 	    geometry->addCollective(PAMI_XFER_ALLGATHER,
 				    (CCMI::Adaptor::CollectiveProtocolFactory*)_allgather_reg,
+                                    _context,
 				    _context_id);
 
 	    geometry->addCollective(PAMI_XFER_ALLGATHERV,
 				    (CCMI::Adaptor::CollectiveProtocolFactory*)_allgatherv_reg,
+                                    _context,
 				    _context_id);
 #if 0
 	    // Scatter broken now in pgas rt
 	    geometry->addCollective(PAMI_XFER_SCATTER,
 				    (CCMI::Adaptor::CollectiveProtocolFactory*)_scatter_reg,
+                                    _context,
 				    _context_id);
 	    // Gather broken now in pgas rt
 	    geometry->addCollective(PAMI_XFER_GATHER,
 				    (CCMI::Adaptor::CollectiveProtocolFactory*)_gather_reg,
+                                    _context,
 				    _context_id);
 #endif
 	    geometry->addCollective(PAMI_XFER_ALLTOALL,
 				    (CCMI::Adaptor::CollectiveProtocolFactory*)_alltoall_reg,
+                                    _context,
 				    _context_id);
 
 	    geometry->addCollective(PAMI_XFER_ALLTOALLV,
 				    (CCMI::Adaptor::CollectiveProtocolFactory*)_alltoallv_reg,
+                                    _context,
 				    _context_id);
 
 	    geometry->addCollective(PAMI_XFER_ALLREDUCE,
 				    (CCMI::Adaptor::CollectiveProtocolFactory*)_allreduce_reg,
+                                    _context,
 				    _context_id);
 
 	    geometry->addCollective(PAMI_XFER_SCAN,
 				    (CCMI::Adaptor::CollectiveProtocolFactory*)_scan_reg,
+                                    _context,
 				    _context_id);
 
 	    geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,
 					 (CCMI::Adaptor::CollectiveProtocolFactory*)_shortallreduce_reg,
+                                         _context,
 					 _context_id);
 
 	    geometry->setCleanupCallback(cleanupCallback, _gi);
@@ -616,12 +624,14 @@ namespace PAMI
             lapi_handle_t l_lapi_handle = *((lapi_handle_t*)_comm_handle);
 
             //set the cau group info
-            bool *p_use_cau = ((bool*)geometry->getKey(Geometry::GKEY_GEOMETRYUSECAU));
+            bool *p_use_cau = ((bool*)geometry->getKey(_context_id,
+                                                       Geometry::CKEY_GEOMETRYUSECAU));
             bool use_cau;
             PAMI::Device::CAUGeometryInfo *cau_gi;
             if(p_use_cau != NULL){
               use_cau = *p_use_cau;
-              cau_gi = (PAMI::Device::CAUGeometryInfo *)(geometry->getKey(Geometry::GKEY_MCAST_CLASSROUTEID));
+              cau_gi = (PAMI::Device::CAUGeometryInfo *)(geometry->getKey(_context_id,
+                                                                          Geometry::CKEY_MCAST_CLASSROUTEID));
               if(cau_gi == NULL) _cau_group = -1;
               else _cau_group = cau_gi->_cau_id;
             }
@@ -631,14 +641,15 @@ namespace PAMI
             }
 
             //set the shared memory allocator; it can be null if not avail;
-            _mm = (T_CSMemoryManager*)(geometry->getKey(Geometry::GKEY_GEOMETRYSHMEM));
+            _mm = (T_CSMemoryManager*)(geometry->getKey(_context_id,
+                                                        Geometry::CKEY_GEOMETRYSHMEM));
 
             //get the offset of the shared memory buffer to be used;
             //this is the result of a reduction and it is found inside
             //inout_val arg
             PAMI::Topology *local_master_topo = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX));
             uint num_master_tasks  = local_master_topo->size();
-            uint master_rank   = ((PAMI::Topology *)geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX))->index2Rank(0);
+            uint master_rank   = ((PAMI::Topology *)geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX))->index2Endpoint(0);
             uint master_index  = local_master_topo->rank2Index(master_rank);
 
             //marking in the geometry the shared memory region to be used by pgas hybrid
@@ -692,19 +703,21 @@ namespace PAMI
 	      
 	      //create allreduce factory and add to the list of collectives
 	      _hybrid_shortallreduce_reg    = (HybridAllreduceFactory*)_allocator.allocateObject(); _gi->_f_list.push_back((Factories*)_hybrid_shortallreduce_reg);
-	      new(_hybrid_shortallreduce_reg) HybridAllreduceFactory(&_dev_p2p, _hybrid_shortallreduce,_nb_hybrid_short_allreduce, HybridAllreduceString);
+	      new(_hybrid_shortallreduce_reg) HybridAllreduceFactory(_context,_context_id,mapidtogeometry,&_dev_p2p, _hybrid_shortallreduce,_nb_hybrid_short_allreduce, HybridAllreduceString);
 
 	      geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,
 					   (CCMI::Adaptor::CollectiveProtocolFactory*)_hybrid_shortallreduce_reg,
+                                           _context,
 					   _context_id);
 
 	      //add bcast only if there is shared memory left outside of the control structures
 	      if(device_info->shm_buffers()._bcast_buf_sz > 0)
 		{
 		_hybrid_broadcast_reg    = (HybridBroadcastFactory*)_allocator.allocateObject(); _gi->_f_list.push_back((Factories*)_hybrid_broadcast_reg);
-		new(_hybrid_broadcast_reg) HybridBroadcastFactory(&_dev_p2p, _hybrid_pipelined_bcast,_nb_hybrid_pipelined_bcast, HybridBroadcastString);
+		new(_hybrid_broadcast_reg) HybridBroadcastFactory(_context,_context_id,mapidtogeometry,&_dev_p2p, _hybrid_pipelined_bcast,_nb_hybrid_pipelined_bcast, HybridBroadcastString);
 		geometry->addCollective(PAMI_XFER_BROADCAST,
 					(CCMI::Adaptor::CollectiveProtocolFactory*)_hybrid_broadcast_reg,
+					_context,
 					_context_id);
 	      }
 

@@ -51,7 +51,7 @@ extern "C"
   extern pami_geometry_t  PAMI_GEOMETRY_NULL;
   extern pami_algorithm_t PAMI_ALGORITHM_NULL;
   extern pami_endpoint_t  PAMI_ENDPOINT_NULL;
-
+  extern size_t           PAMI_ALL_CONTEXTS;
   /**
    * \brief Event callback function signature of application functions used to
    *        process message events on a communication context
@@ -1850,6 +1850,8 @@ extern "C"
    *        in the geometry.  All tasks in the create API must use the same context_offset.
    *        This effectively selects a single endpoint (associated with this "primary" context)
    *        per task that will be a participant in the collective communication.
+   *        PAMI_ALL_CONTEXTS can be passed as the context_offset to select all endpoints
+   *        in the task.  Parent must be PAMI_GEOMETRY_NULL if all contexts are selected
    *
    *        Note that this does not effect the advance rules, which state that the user
    *        must advance all contexts unless the multicontext hint is disabled for the
@@ -1914,6 +1916,8 @@ extern "C"
    *        in the geometry.  All tasks in the create API must use the same context_offset.
    *        This effectively selects a single endpoint (associated with this "primary" context)
    *        per task that will be a participant in the collective communication.
+   *        PAMI_ALL_CONTEXTS can be passed as the context_offset to select all endpoints
+   *        in the task.  Parent must be PAMI_GEOMETRY_NULL if all contexts are selected
    *
    *        Note that this does not effect the advance rules, which state that the user
    *        must advance all contexts unless the multicontext hint is disabled for the
@@ -1951,6 +1955,67 @@ extern "C"
                                                pami_context_t              context,
                                                pami_event_function         fn,
                                                void                      * cookie);
+
+  /**
+   * \brief Initialize an endpoint based geometry
+   *
+   *        This call creates and initializes an "endpoint based" geometry.
+   *        An endopint based geometry is scoped to a pami client, and is created
+   *        with a list of endpoints that represent the contexts that will participate
+   *        in the collective operation.  This allows the PAMI library to identify
+   *        multiple participants per task in a collective operation.  Note that this
+   *        is a generalization of PAMI_Geometry_create_tasklist and
+   *        PAMI_Geometry_create_taskrange, both of which only allow one endpoint per task
+   *        to be specified, if PAMI_ALL_CONTEXTS is not specified as the context offset.
+   *
+   *        A unique geometry id is required to give each task described by
+   *        a geometry a unique communication context/channel to the other tasks in
+   *        that geometry.  Many higher level api's have code to manage the creation of
+   *        unique geometry id's.  PAMI defers the unique geometry id assignment to these
+   *        higher level API's
+   *
+   *        This operation is nonblocking, and thus must be posted to a context.  The call
+   *        to create the geometry is made only by a single call per task.  This means that
+   *        multiple calls per task are not allowed, although multiple endpoints per task
+   *        may be specified in the endpoint list.
+   *
+   *        Note that the context this operation is posted to is not necessarily contained
+   *        in the endpoint list.  Completion will be delivered to the context specified
+   *        in the create call.
+   *
+   *        All contexts associated with the endpoints in the geometry list and the context
+   *        the work is posted to must be advanced until the geometry completion callback(fn)
+   *        has been called.  For simplicity, advancing all contexts is sufficient to
+   *        accomplish this.
+   *
+   *        The same endpoint cannot be specified more than once in the endpoint list
+   *
+   * \param[in]  client          pami client
+   * \param[in]  configuration   List of configurable attributes and values
+   * \param[in]  num_configs     The number of configuration elements
+   * \param[out] geometry        Opaque geometry object to initialize
+   * \param[in]  id              Identifier for this geometry(must be > 0)
+   *                             which uniquely represents this lgeometry(if tasks overlap)
+   * \param[in]  endpoints       Array of endpoints to build the geometry list
+   *                             User must keep the endpoint list in memory for the
+   *                             duration of the geometry's existence
+   * \param[in]  endpoint_count  Number of endpoints participating in the geometry
+   * \param[in]  context         context to deliver async callback to
+   * \param[in]  fn              event function to call when geometry has been created
+   * \param[in]  cookie          user cookie to deliver with the callback
+   */
+
+  pami_result_t PAMI_Geometry_create_endpointlist (pami_client_t               client,
+                                                   pami_configuration_t        configuration[],
+                                                   size_t                      num_configs,
+                                                   pami_geometry_t           * geometry,
+                                                   unsigned                    id,
+                                                   pami_endpoint_t           * endpoints,
+                                                   size_t                      endpoint_count,
+                                                   pami_context_t              context,
+                                                   pami_event_function         fn,
+                                                   void                      * cookie);
+
 
   /**
    * \brief Return a pointer to the world geometry
@@ -2789,6 +2854,15 @@ extern "C"
     pami_reduce_scatter_t   xfer_reduce_scatter;
     } pami_collective_t;
 
+  /**
+   * \brief Collective operation arguments
+   *
+   *  cb_done    callback to call on collective completion
+   *  cookie     cookie to deliver to cb_done function
+   *  algorithm  algorithm object from PAMI_Geometry_algorithms_query
+   *  options    collective hints and options
+   *  cmd        collective specific arguments
+   */
   typedef struct pami_xfer_t
   {
     pami_event_function       cb_done;
@@ -2798,6 +2872,19 @@ extern "C"
     pami_collective_t         cmd;
   } pami_xfer_t;
 
+
+  /**
+   * \brief Start a collective on a context
+   *
+   * For each endpoint specified in the geometry, a call to PAMI_Collective must
+   * be made to the corresponding context.
+   *
+   * It is illegal to post a collective via PAMI_Collective() to a context
+   * that is not accociated with an endpoint in the geometry
+   *
+   * \param[in]  context         context to deliver async callback
+   * \param[in]  cmd             Collective operation arguments
+   */
   pami_result_t PAMI_Collective (pami_context_t context, pami_xfer_t *cmd);
 
   /*****************************************************************************/

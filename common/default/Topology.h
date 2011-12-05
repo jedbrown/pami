@@ -41,6 +41,8 @@ static pami_network __dummy_net; // never really used
 #define IS_LOCAL_PEER(rank)	mapping->isPeer(mapping->task(), rank)
 
 namespace PAMI {
+  class tag_eplist{};
+
   class Topology : public Interface::Topology<PAMI::Topology> {
     static PAMI::Mapping *mapping;
     static pami_coord_t my_coords;
@@ -80,6 +82,8 @@ namespace PAMI {
 
       pami_task_t *_ranklist;  ///< PAMI_LIST_TOPOLOGY - the rank array
 
+      pami_endpoint_t *_eplist; ///< PAMI_EPLIST_TOPOLOGY
+
       rectseg _rectseg;   ///< PAMI_COORD_TOPOLOGY
 
       struct              ///< PAMI_AXIAL_TOPOLOGY
@@ -96,6 +100,8 @@ namespace PAMI {
 #define topo_range(n)	  __topo._rankrange._first + n
 #define topo_ranklist 	  __topo._ranklist
 #define topo_list(n)	  __topo._ranklist[n]
+#define topo_endplist	  __topo._eplist
+#define topo_eplist(n)	  __topo._eplist[n]
 #define topo_llcoord	  __topo._rectseg._llcorner
 #define topo_urcoord	  __topo._rectseg._urcorner
 #define topo_istorus	  __topo._rectseg._istorus
@@ -218,8 +224,12 @@ namespace PAMI {
           size_t s = 0;
           size_t z;
           mapping->nodePeers(z);
-          pami_task_t *rl;
+          pami_task_t *rl=NULL;
 	  pami_result_t rc;
+
+          //if endpoint list topology; here we generate the list of endpoints
+          pami_endpoint_t *epl=NULL;
+
 	  rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
 						(void **)&rl, 0, z * sizeof(*rl));
 	  PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", z);
@@ -241,6 +251,41 @@ namespace PAMI {
               }
             }
           }
+          else if( __type == PAMI_EPLIST_TOPOLOGY) {
+            // for endpoint list topologies; it uses the locality of the
+            // tasks of the endpoints;
+            z = 0;
+            //first count how many endpoints
+            for (size_t i = 0; i < __size; ++i) {
+              pami_task_t    task; size_t          offset;
+              PAMI_Endpoint_query (topo_eplist(i), &task, &offset);
+              if (IS_LOCAL_PEER(task)) {
+                ++z;
+              }
+            }
+            //alloc space for the new ep list
+            rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+                                           (void **)&epl, 0, z * sizeof(*epl));
+            PAMI_assertf(rc == PAMI_SUCCESS, "temp eplist[%zd] alloc failed", z);
+            //pami_endpoint_t *ep_iter = epl;
+            for (size_t i = 0; i < __size; ++i) {
+              pami_task_t    task; size_t          offset;
+              PAMI_Endpoint_query (topo_eplist(i), &task, &offset);
+              if (IS_LOCAL_PEER(task)) {
+                *epl++ = topo_eplist(i);
+              }
+            }
+          }//end build endpoints
+          if(epl != NULL){
+            //build endpoints topology
+            _new->__type = PAMI_EPLIST_TOPOLOGY;
+            _new->__size          = z;
+            _new->__free_ranklist = true;
+            _new->topo_endplist   = epl;
+            _new->__offset        = 0;
+            _new->__all_contexts  = false;
+            return;
+          }
           if (s) {
             // convert "rl" to range if possible.
             // ...or even coords?
@@ -248,6 +293,9 @@ namespace PAMI {
             _new->__size = s;
             _new->__free_ranklist =true;
             _new->topo_ranklist = rl;
+            //added for endpoints/multicontext
+            _new->__offset = this->__offset;             //endpoints per task
+            _new->__all_contexts = this->__all_contexts;
             return;
           } else {
             PAMI::Memory::MemoryManager::heap_mm->free(rl);
@@ -577,6 +625,8 @@ namespace PAMI {
       __type = PAMI_EMPTY_TOPOLOGY;
       __size = 0;
       __free_ranklist = false;
+      __offset = 0;
+      __all_contexts = false;
     }
 
     /// \brief rectangular segment with torus (PAMI_COORD_TOPOLOGY)
@@ -600,6 +650,8 @@ namespace PAMI {
       }
       __size = __sizeRange(ll, ur, mapping->globalDims());
       __free_ranklist =false;
+      __offset = 0;
+      __all_contexts = false;
     }
 
     /// \brief Construct axial neighborhood (PAMI_AXIAL_TOPOLOGY)
@@ -637,6 +689,8 @@ namespace PAMI {
           __size += (mapping->torusSize(i) + topo_axial_urdim(i) - topo_axial_lldim(i)) % mapping->torusSize(i);
         }
         __free_ranklist =false;
+        __offset = 0;
+        __all_contexts = false;
       }
     /// \brief single rank constructor (PAMI_SINGLE_TOPOLOGY)
     ///
@@ -647,6 +701,8 @@ namespace PAMI {
       __size = 1;
       __topo._rank = rank;
       __free_ranklist =false;
+      __offset = 0;
+      __all_contexts = false;
     }
 
 
@@ -662,8 +718,35 @@ namespace PAMI {
       __topo._rankrange._first = rank0;
       __topo._rankrange._last = rankn;
       __free_ranklist =false;
+      __offset = 0;
+      __all_contexts = false;
       // should we do this automatically, or let caller?
       // (void)__analyzeCoordsRange();
+    }
+
+    /// --------------------------------------------------------- ADDED FOR EP
+    /// \brief rank range constructor (PAMI_EPRANGE_TOPOLOGY)
+    ///
+    /// \param[in] rank0	first rank in range
+    /// \param[in] rankn	last rank in range
+    /// \param[in] ncontexts	the number of contexts per task
+    ///  This topology will consist of nranks*ncontexts endpoints;
+    Topology(pami_task_t rank0, pami_task_t rankn, size_t context_offset, size_t ncontexts) {
+      __type = PAMI_RANGE_TOPOLOGY;
+      __size = rankn - rank0 + 1;
+      __topo._rankrange._first = rank0;
+      __topo._rankrange._last = rankn;
+      __free_ranklist =false;
+
+      if(context_offset==PAMI_ALL_CONTEXTS){
+        __all_contexts = true;//this is flagging that for all tasks in the topology
+                              // we will have __offset contexts
+        __offset = ncontexts;
+      }
+      else {
+        __all_contexts = false;
+        __offset = context_offset;
+      }
     }
 
     /// \brief rank list constructor (PAMI_LIST_TOPOLOGY)
@@ -675,14 +758,44 @@ namespace PAMI {
     ///
     /// \todo create destructor to free list, or establish rules
     ///
-    Topology(pami_task_t *ranks, size_t nranks) {
+    Topology(pami_task_t *ranks, size_t nranks, size_t context_offset=0, size_t ncontexts=1) {
+      ////    FIXME  toproperly consider PAMI_ALL_CONTEXTS
       __type = PAMI_LIST_TOPOLOGY;
       __size = nranks;
       topo_ranklist = ranks;
       __free_ranklist =false;
+
+      if(context_offset==PAMI_ALL_CONTEXTS){
+        __all_contexts = true;//this is flagging that for all tasks in the topology
+                              // we will have __offset contexts
+        __offset = ncontexts;
+      }
+      else {
+        __all_contexts = false;
+        __offset = context_offset;
+      }
       // should we do this automatically, or let caller?
       // (void)__analyzeCoordsList();
     }
+
+    /// ------------------------------------------------------- ADDED for EP LIST
+    /// \brief rank list constructor (PAMI_LIST_TOPOLOGY)
+    ///
+    /// caller must not free eplist[]!
+    ///
+    /// \param[in] eplist	array of end points
+    /// \param[in] nranks	size of array
+    ///
+    /// \todo create destructor to free list, or establish rules
+    ///
+    Topology(pami_endpoint_t *eps, size_t neps, tag_eplist tag) {
+      __type = PAMI_EPLIST_TOPOLOGY;
+      __size = neps;
+      topo_endplist = eps;
+      __free_ranklist =false;
+      __offset = 0;
+      __all_contexts = false;
+   }
 
     /// \brief clone constructor (all)
     ///
@@ -701,6 +814,14 @@ namespace PAMI {
         PAMI_assertf(rc == PAMI_SUCCESS, "ranklist[%zd] alloc failed", __size);
         memcpy(topo_ranklist, topo->topo_ranklist, __size * sizeof(*topo_ranklist));
         __free_ranklist =true;
+      }
+      if (topo->__type == PAMI_EPLIST_TOPOLOGY) {
+        pami_result_t rc;
+        rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+          (void **)&topo_endplist, 0, __size * sizeof(*topo_endplist));
+        PAMI_assertf(rc == PAMI_SUCCESS, "eplist[%zd] alloc failed", __size);
+        memcpy(topo_endplist, topo->topo_endplist, __size * sizeof(*topo_endplist));
+        __free_ranklist =true;//though it is called ranklist th eeplist use the same flag to free mem
       }
     }
     /// \brief Copy constructor (all)
@@ -722,6 +843,14 @@ namespace PAMI {
         memcpy(topo_ranklist, topo->topo_ranklist, __size * sizeof(*topo_ranklist));
         __free_ranklist =true;
       }
+      if (topo->__type == PAMI_EPLIST_TOPOLOGY) {
+        pami_result_t rc;
+        rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+          (void **)&topo_endplist, 0, __size * sizeof(*topo_endplist));
+        PAMI_assertf(rc == PAMI_SUCCESS, "eplist[%zd] alloc failed", __size);
+        memcpy(topo_endplist, topo->topo_endplist, __size * sizeof(*topo_endplist));
+        __free_ranklist =true;//though it is called ranklist th eeplist use the same flag to free mem
+      }
     }
     /// \brief Assignment operator (all)
     ///
@@ -742,6 +871,14 @@ namespace PAMI {
         memcpy(topo_ranklist, topo->topo_ranklist, __size * sizeof(*topo_ranklist));
         __free_ranklist =true;
       }
+      if (topo->__type == PAMI_EPLIST_TOPOLOGY) {
+        pami_result_t rc;
+        rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+          (void **)&topo_endplist, 0, __size * sizeof(*topo_endplist));
+        PAMI_assertf(rc == PAMI_SUCCESS, "eplist[%zd] alloc failed", __size);
+        memcpy(topo_endplist, topo->topo_endplist, __size * sizeof(*topo_endplist));
+        __free_ranklist =true;
+      }
       return(*this);
     }
 
@@ -751,7 +888,10 @@ namespace PAMI {
 
     /// \brief number of ranks in topology
     /// \return	number of ranks
-    size_t size_impl() { return __size; }
+    size_t size_impl() {
+      if(__all_contexts) return __size * __offset;
+      else return __size;
+    }
 
     /// \brief type of topology
     /// \return	topology type
@@ -768,7 +908,20 @@ namespace PAMI {
       pami_result_t rc;
       unsigned x;
 
+      pami_task_t   task;
+      size_t        offset;
+      pami_result_t result ;
+
+      if(__all_contexts && __type != PAMI_EPLIST_TOPOLOGY) {
+        ix = ix / __offset;
+      }
+
       if (ix < __size) switch (__type) {
+
+      case PAMI_EPLIST_TOPOLOGY:
+        result = PAMI_Endpoint_query (topo_eplist(ix),&task,&offset);
+        return task;
+        break;
       case PAMI_SINGLE_TOPOLOGY:
         return topo_rank;
         break;
@@ -960,6 +1113,13 @@ namespace PAMI {
       else if(__type == PAMI_SINGLE_TOPOLOGY)
       {
         *list = &topo_rank;
+      }
+      else if(__type == PAMI_EPLIST_TOPOLOGY)
+      {
+        fprintf(stderr, "Topology::rankList_impl() -- Probably not good -- requesting rank list from ep list\n");
+        PAMI_abort();
+        *list = NULL;
+        return PAMI_UNIMPL;
       }
       else
       {
@@ -1195,6 +1355,12 @@ namespace PAMI {
       return PAMI_SUCCESS; 
     }
 
+    bool isEndpointMember_impl(pami_endpoint_t endpoint)
+    {
+      // Todo, is this OK?
+      return isRankMember(endpoint);
+    }
+
     /// \brief is rank in topology
     ///
     /// \param[in] rank	Rank to test
@@ -1265,9 +1431,67 @@ namespace PAMI {
       if (likely(__type == PAMI_COORD_TOPOLOGY)) {
         __subTopologyNthGlobal(_new, n);
         // may produce empty topology, if "n" is out of range.
-      } else {
+      }
+      else if(__type == PAMI_EPLIST_TOPOLOGY) {
+        //igtanase:: nth endpoint in each task
+        //similar with the existing code for rank list topolgy  below
+        _new->__offset       = 0;
+        _new->__all_contexts = false;
+        size_t s = __size;
+	typedef size_t tb_t[2];
+	pami_endpoint_t *epl;
+	tb_t  *tb;
+	pami_result_t rc;
+	rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+						(void **)&epl, 0, s * sizeof(*epl));
+	PAMI_assertf(rc == PAMI_SUCCESS, "temp eplist[%zd] alloc failed", s);
+	rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+						(void **)&tb, 0, s * sizeof(*tb));
+	PAMI_assertf(rc == PAMI_SUCCESS, "temp tb-list[%zd] alloc failed (endpoints)", s);
+	memset(tb, 0, s * sizeof(tb_t));
+        size_t k = 0;
+        pami_endpoint_t ep_r;
+        pami_task_t r;
+        size_t         offset;
+        PAMI::Interface::Mapping::nodeaddr_t a;
+        size_t i, j, l = 0;
+        for (i = 0; i < s; ++i) {
+          ep_r = index2Endpoint(i);
+          PAMI_Endpoint_query (ep_r, &r, &offset);
+          // PAMI_assert(r != -1);
+          mapping->task2node(r, a);
+	  for (j = 0; j <= l; ++j) {
+            if (j == l) {
+              tb[j][0] = a.global;
+              ++l;
+            }
+            if (a.global == tb[j][0]) {
+              if (tb[j][1] == (size_t)n) {
+                epl[k++] = ep_r;
+              }
+              ++tb[j][1];
+              break;
+            }
+	  }
+        }
+	PAMI::Memory::MemoryManager::heap_mm->free(tb);
+        if (k > 1) {
+          _new->__type = PAMI_LIST_TOPOLOGY;
+          _new->topo_ranklist = epl;
+          _new->__size = k;
+          _new->__free_ranklist = true;
+          return;
+        }
+        //here something not quite right;
+        _new->__type = PAMI_EMPTY_TOPOLOGY;
+        _new->__size = 0;
+        _new->__free_ranklist =false;
+        PAMI::Memory::MemoryManager::heap_mm->free(epl);
+      }
+      else {
         // the hard way... impractical?
-
+        _new->__offset = 0;
+        _new->__all_contexts=false;
         size_t s = __size;
 	typedef size_t tb_t[2];
 	pami_task_t *rl;
@@ -1372,7 +1596,16 @@ namespace PAMI {
         for (x = 0; x < __size && x < max; ++x) {
           ranks[x] = topo_list(x);
         }
-      } else if (__type == PAMI_COORD_TOPOLOGY) {
+      }
+      else if (likely(__type == PAMI_EPLIST_TOPOLOGY)) {
+        // Expect odd results if __all_contexts or truly an ep list, we're
+        // not going to try to eliminate dup ranks here...
+        unsigned x;
+        for (x = 0; x < __size && x < max; ++x) {
+          ranks[x]=index2Rank_impl(x);
+        }
+      }
+      else if (__type == PAMI_COORD_TOPOLOGY) {
         // the hard way...
         pami_coord_t c0;
         pami_task_t rank = 0;
@@ -2195,16 +2428,59 @@ namespace PAMI {
       __client = c;
     }
 
-    pami_endpoint_t endpoint(pami_task_t ordinal){
+#define __topo_unused_for_assert(x) ((void)x)
+    size_t endpoint2Index_impl(const pami_endpoint_t& ep){
+      size_t x;
+      switch (__type) {
+      case PAMI_EPLIST_TOPOLOGY:
+	//printf("BBB\n");
+        for (x = 0; x < __size; ++x) {
+          if (ep == topo_eplist(x)) {
+            return x;
+          }
+        }
+        break;
+      default:
+        pami_task_t    task;
+        size_t          offset;
+        pami_result_t result  = PAMI_Endpoint_query (ep, &task, &offset);
+        __topo_unused_for_assert(result); // remove if result is used
+        PAMI_assert(result == PAMI_SUCCESS);
+        if(__all_contexts) {
+          return rank2Index_impl(task) * __offset + offset;
+        }
+        else return rank2Index_impl(task);
+      }
+      return -1;
+    }
+
+    pami_endpoint_t index2Endpoint_impl(size_t ordinal){
+      if(__type == PAMI_EPLIST_TOPOLOGY) {
+        //if we store explicitly the list of endpoints
+        return __topo._eplist[ordinal];
+      }
       pami_task_t task = this->index2Rank_impl(ordinal);
       pami_endpoint_t ep;
-      PAMI_Endpoint_create(__client, task, 0, &ep);
+      if(__all_contexts) {
+        size_t offset = ordinal % __offset;
+        PAMI_Endpoint_create(__client, task, offset, &ep);
+      }
+      else
+        PAMI_Endpoint_create(__client, task, __offset, &ep);
+      return ep;
+    }
+
+    pami_endpoint_t rankContext2Endpoint_impl(pami_task_t task, size_t offset){
+      pami_endpoint_t ep;
+      PAMI_Endpoint_create(__client, task, offset, &ep);
       return ep;
     }
 
   private:
-    size_t	__size;		///< number of ranks in this topology
+    size_t           __size;		///< number of endpoints in this topology
     pami_topology_type_t __type;	///< type of topology this is
+    size_t           __offset; ///< context offset or number of contexts
+    bool             __all_contexts; ///< flag to specify single or all contexts.
     union topology_u __topo;///< topoloy info
     bool             __free_ranklist;
     pami_client_t    __client;

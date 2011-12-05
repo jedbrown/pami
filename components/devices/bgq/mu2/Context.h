@@ -636,8 +636,8 @@ namespace PAMI
             uint32_t fifoPin = 0;
             _mapping.getMuDestinationTask( task, dest, tcoord, fifoPin );
 
-	    // Get the recFifo to use for this client, and the destination's
-	    // context and T coord.
+            // Get the recFifo to use for this client, and the destination's
+            // context and T coord.
             rfifo = _rm.getPinRecFifo( _pinRecFifoHandle, offset, tcoord );
             TRACE_FORMAT("client=%zu, context=%zu, tcoord=%zu, rfifo = %u", _id_client, offset, tcoord, rfifo);
 

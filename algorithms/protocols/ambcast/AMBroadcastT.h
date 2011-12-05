@@ -35,15 +35,18 @@ class AMBroadcastT : public CCMI::Executor::Composite
 protected:
     CCMI::Executor::BroadcastExec<T_Conn>  _executor __attribute__((__aligned__(16)));
     T_Schedule                             _schedule;
-    unsigned                               _root;
+    pami_endpoint_t                        _root;
     Interfaces::NativeInterface           *_native;
     PAMI_GEOMETRY_CLASS                   *_geometry;
-
+    pami_context_t                         _ctxt;
+    size_t                                 _ctxt_id;
 public:
     ///
     /// \brief Constructor
     ///
-    AMBroadcastT (Interfaces::NativeInterface              * native,
+    AMBroadcastT (pami_context_t                             ctxt,
+                  size_t                                     ctxt_id,
+                  Interfaces::NativeInterface              * native,
                   T_Conn                                   * cmgr,
                   pami_geometry_t                            g,
                   pami_xfer_t                              * cmd,
@@ -51,9 +54,11 @@ public:
                   void                                     * cookie):
         Executor::Composite(),
         _executor (native, cmgr, ((PAMI_GEOMETRY_CLASS *)g)->comm()),
-        _root(native->myrank()), //On the initiating node
+        _root(native->endpoint()), //On the initiating node
         _native(native),
-        _geometry((PAMI_GEOMETRY_CLASS *)g)
+        _geometry((PAMI_GEOMETRY_CLASS *)g),
+        _ctxt(ctxt),
+        _ctxt_id(ctxt_id)
     {
         TRACE_ADAPTOR ((stderr, "<%p>Broadcast::AMBroadcastT() \n", this));
         _executor.setRoot (_root);
@@ -92,9 +97,12 @@ protected:
     pami_dispatch_ambroadcast_function _cb_ambcast;
 
 public:
-    AMBroadcastFactoryT (T_Conn                      *cmgr,
+    AMBroadcastFactoryT (pami_context_t               ctxt,
+                         size_t                       ctxt_id,
+                         pami_mapidtogeometry_fn      cb_geometry,
+                         T_Conn                      *cmgr,
                          Interfaces::NativeInterface *native):
-        CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>(cmgr, native, cb_head)
+      CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>(ctxt,ctxt_id,cb_geometry,cmgr, native, cb_head)
     {
     }
 
@@ -120,7 +128,9 @@ public:
             CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_alloc.allocateObject();
 
         new (cobj) typename CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::collObj
-        (CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_native,  // Native interface
+          (this->_context,
+           this->_context_id,
+           CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_native,  // Native interface
          CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_cmgr,    // Connection Manager
          g,                 // Geometry Object
          pcmd, // Parameters
@@ -194,9 +204,9 @@ public:
         typename CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::collObj *cobj =
             (typename CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::collObj *)
             factory->CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_alloc.allocateObject();
-
+        //FIXME:: pass proper context/context id for endpoint
         new (cobj) typename CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::collObj
-        (factory->CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_native,  // Native interface
+          (ctxt,0,factory->CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_native,  // Native interface
          factory->CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_cmgr,    // Connection Manager
          (pami_geometry_t)geometry,  // Geometry
          &broadcast, // Parameters

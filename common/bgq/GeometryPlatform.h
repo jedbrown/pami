@@ -14,10 +14,10 @@
 #define __common_bgq_GeometryPlatform_h__
 
 /// \brief Extensions to enum keys_t
-#define PAMI_GKEY_PLATEXTENSIONS \
-GKEY_RECTANGLE_CLASSROUTEID,
+#define PAMI_CKEY_PLATEXTENSIONS \
+CKEY_RECTANGLE_CLASSROUTEID,
 
 /// \brief The value used to indicate no classroute, diff from not yet optimized
-#define PAMI_CR_GKEY_FAIL	((void *)0xbadc0ffee0ddf00d)
+#define PAMI_CR_CKEY_FAIL	((void *)0xbadc0ffee0ddf00d)
 
 #endif // __common_bgq_GeometryPlatform_h__

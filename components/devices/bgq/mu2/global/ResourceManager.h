@@ -820,8 +820,8 @@ fprintf(stderr, "%s\n", buf);
 	  // we always try to optimize, since this is called only once
 	  // per geometry (per change in PAMI_GEOMETRY_OPTIMIZE config)
 	  // however, if already fully optimized, don't bother.
-	  if (geom->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID) &&
-	  	geom->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID))
+	  if (geom->getKey(0,PAMI::Geometry::CKEY_MCAST_CLASSROUTEID) &&
+		geom->getKey(0,PAMI::Geometry::CKEY_MSYNC_CLASSROUTEID))
 	  {
 	    if (fn) fn(context, clientdata, PAMI_SUCCESS);
 	    return PAMI_SUCCESS;
@@ -830,11 +830,11 @@ fprintf(stderr, "%s\n", buf);
 	  // check for comm-world and just use well-known classroute id "0"...
 
 	  // simple check - works for all numbers of processes-per-node
-	  if (geom->nranks() == __global.topology_global.size())
+	  if (geom->size() == __global.topology_global.size())
 	  {
-	    geom->setKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID, (void *)(0 + 1));
-	    geom->setKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID, (void *)(0 + 1));
-	    geom->setKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID, (void *)(0 + 1));
+	    geom->setKey(0,PAMI::Geometry::CKEY_MCAST_CLASSROUTEID, (void *)(0 + 1));
+	    geom->setKey(0,PAMI::Geometry::CKEY_MCOMB_CLASSROUTEID, (void *)(0 + 1));
+	    geom->setKey(0,PAMI::Geometry::CKEY_MSYNC_CLASSROUTEID, (void *)(0 + 1));
 	    if (fn) fn(context, clientdata, PAMI_SUCCESS);
 	    return PAMI_SUCCESS;
 	  }
@@ -880,9 +880,9 @@ fprintf(stderr, "%s\n", buf);
 	  _node_topo.rectSeg(CR_RECT_LL(&rect2), CR_RECT_UR(&rect2));
 	  if (__MUSPI_rect_compare(&rect1, &rect2) == 0) {
 	    // this topo includes all the same nodes as GEOMETRY_WORLD.
-	    geom->setKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID, (void *)(0 + 1));
-	    geom->setKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID, (void *)(0 + 1));
-	    geom->setKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID, (void *)(0 + 1));
+	    geom->setKey(0,PAMI::Geometry::CKEY_MCAST_CLASSROUTEID, (void *)(0 + 1));
+	    geom->setKey(0,PAMI::Geometry::CKEY_MCOMB_CLASSROUTEID, (void *)(0 + 1));
+	    geom->setKey(0,PAMI::Geometry::CKEY_MSYNC_CLASSROUTEID, (void *)(0 + 1));
 	    if (fn) fn(context, clientdata, PAMI_SUCCESS);
 	    return PAMI_SUCCESS;
 	  }
@@ -942,8 +942,8 @@ fprintf(stderr, "%s\n", buf);
 	// but, do we need the MU Coll device mutex? (_cr_mtx)
 	inline pami_result_t geomDeoptimize(PAMI::Geometry::Common *geom)
 	{
-	  void *val = geom->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
-	  if (val && val != PAMI_CR_GKEY_FAIL)
+	  void *val = geom->getKey(0,PAMI::Geometry::CKEY_MCAST_CLASSROUTEID);
+	  if (val && val != PAMI_CR_CKEY_FAIL)
 	  {
 	    int id = (int)((uintptr_t)val & 0xffffffff) - 1;
 	    if (id != 0) // never free classroute 0 - a.k.a. comm-world
@@ -968,8 +968,8 @@ fprintf(stderr, "%s\n", buf);
 	      }
 	    }
 	  }
-	  val = geom->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
-	  if (val && val != PAMI_CR_GKEY_FAIL)
+	  val = geom->getKey(0,PAMI::Geometry::CKEY_MSYNC_CLASSROUTEID);
+	  if (val && val != PAMI_CR_CKEY_FAIL)
 	  {
 	    int id = (int)((uintptr_t)val & 0xffffffff) - 1;
 	    if (id != 0) // never free classroute 0 - a.k.a. comm-world
@@ -996,9 +996,9 @@ fprintf(stderr, "%s\n", buf);
 	      }
 	    }
 	  }
-	  geom->setKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID, NULL);
-	  geom->setKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID, NULL);
-	  geom->setKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID, NULL);
+	  geom->setKey(0,PAMI::Geometry::CKEY_MCAST_CLASSROUTEID, NULL);
+	  geom->setKey(0,PAMI::Geometry::CKEY_MCOMB_CLASSROUTEID, NULL);
+	  geom->setKey(0,PAMI::Geometry::CKEY_MSYNC_CLASSROUTEID, NULL);
 	  return PAMI_SUCCESS;
 	}
 
@@ -1076,13 +1076,13 @@ fprintf(stderr, "%s\n", buf);
 	  /// \todo #warning _cncrdata (_gicrdata) must be in shared memory!
 	  uint32_t mask1 = 0, mask2 = 0;
 
-	  void *val = crck->geom->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
-	  if (!val || val == PAMI_CR_GKEY_FAIL) {
+	  void *val = crck->geom->getKey(0,PAMI::Geometry::CKEY_MCAST_CLASSROUTEID);
+	  if (!val || val == PAMI_CR_CKEY_FAIL) {
 	    mask1 = MUSPI_GetClassrouteIds(PAMI_MU_CR_SPI_VC,
 	            &crck->rect, &crck->thus->_cncrdata);
 	  }
-	  val = crck->geom->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
-	  if (!val || val == PAMI_CR_GKEY_FAIL) {
+	  val = crck->geom->getKey(0,PAMI::Geometry::CKEY_MSYNC_CLASSROUTEID);
+	  if (!val || val == PAMI_CR_CKEY_FAIL) {
 	    mask2 = MUSPI_GetClassrouteIds(PAMI_MU_CR_SPI_VC,
 	            &crck->rect, &crck->thus->_gicrdata);
 	    crck->thus->CheckGICRConflicts(mask2, &crck->rect);
@@ -1170,9 +1170,9 @@ fprintf(stderr, "%s\n", buf);
 	  ClassRoute_t cr = {0};
 	  int irc = 0;
 	  irc += crck->thus->set_classroute(crck->bbuf[0] & 0x0000ffff, crck, NULL, &cr,
-					PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
+					PAMI::Geometry::CKEY_MCAST_CLASSROUTEID);
 	  irc += crck->thus->set_classroute((crck->bbuf[0] >> 32) & 0x0000ffff, crck, &fn, &cr,
-					PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
+					PAMI::Geometry::CKEY_MSYNC_CLASSROUTEID);
 	  if (irc) {
 	    // message already printed...
 	    fn(ctx, cookie, PAMI_ERROR);
@@ -1258,9 +1258,9 @@ fprintf(stderr, "%s\n", buf);
 
 	// Only holder of mutex calls this... thread safe in process.
 	inline int set_classroute(uint32_t mask, cr_cookie *crck, pami_event_function *fn,
-					ClassRoute_t *cr, PAMI::Geometry::gkeys_t key) {
+					ClassRoute_t *cr, PAMI::Geometry::ckeys_t key) {
 	  uint32_t id = ffs(mask);
-	  bool gi = (key == PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
+	  bool gi = (key == PAMI::Geometry::CKEY_MSYNC_CLASSROUTEID);
 	  void **envpp = (gi ? &_gicrdata : &_cncrdata);
 	  if (id)
 	  {
@@ -1311,9 +1311,9 @@ fprintf(stderr, "%s\n", buf);
 	        }
 	      }
 	    }
-	    crck->geom->setKey(key, (void *)(id + 1));
+	    crck->geom->setKey(0,key, (void *)(id + 1));
 	    if (!gi) {
-	      crck->geom->setKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID, (void *)(id + 1));
+	      crck->geom->setKey(0,PAMI::Geometry::CKEY_MCOMB_CLASSROUTEID, (void *)(id + 1));
 	    }
 	  }
 	  return 0;

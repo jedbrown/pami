@@ -169,7 +169,7 @@ namespace CCMI{namespace Adaptor{namespace Barrier
              MetaDataFn              get_metadata,
              class                   T_GlobalFactory,
              class                   T_NativeInterface,
-             PAMI::Geometry::gkeys_t T_Local_DevInfoKey = PAMI::Geometry::GKEY_MSYNC_LOCAL_CLASSROUTEID>
+             PAMI::Geometry::ckeys_t T_Local_DevInfoKey = PAMI::Geometry::CKEY_MSYNC_LOCAL_CLASSROUTEID>
   class HybridBarrierFactoryT : public CollectiveProtocolFactory
   {
   public:
@@ -179,8 +179,10 @@ namespace CCMI{namespace Adaptor{namespace Barrier
         f->freeComposite(composite);
       }
 
-    inline HybridBarrierFactoryT():
-      CollectiveProtocolFactory()
+    inline HybridBarrierFactoryT(pami_context_t          ctxt,
+                                 size_t                  ctxt_id,
+                                 pami_mapidtogeometry_fn cb_geometry):
+      CollectiveProtocolFactory(ctxt,ctxt_id,cb_geometry)
       {
       }
 
@@ -209,7 +211,8 @@ namespace CCMI{namespace Adaptor{namespace Barrier
                                            void            *cmd)
 
       {
-        void        *device_info = ((PAMI_GEOMETRY_CLASS*)geometry)->getKey(T_Local_DevInfoKey);
+        void        *device_info = ((PAMI_GEOMETRY_CLASS*)geometry)->getKey(_context_id,
+                                                                            T_Local_DevInfoKey);
         T_Composite *composite   = (T_Composite*)_composite_allocator.allocateObject();
         pami_xfer_t *c           = (pami_xfer_t *) cmd;
         return new(composite) T_Composite(*c,

@@ -18,23 +18,34 @@
 /* #define PAMI_TEST_STRICT     */
 
 #include<assert.h>
+#include<pthread.h>
 #include "init_util.h"
 
+#define THREAD_LOCAL __thread
 char *gProtocolName = (char*)""; /* Global protocol name, some tests set it for error msgs   */
 static size_t get_type_size(pami_type_t intype);
-pami_context_t      gContext=NULL;
+THREAD_LOCAL pami_context_t      gContext;
+THREAD_LOCAL int                 gThreadId;
 
 /* Docs09:  Done/Decrement call */
 void cb_done (void *ctxt, void * clientdata, pami_result_t err)
 {
   if(gVerbose)
   {
-    if(!ctxt) fprintf(stderr, "%s: Error. Null context received on cb_done.\n",gProtocolName);
-    if(gContext != ctxt) fprintf(stderr, "%s: Error. Unexpected context received on cb_done %p != %p.\n",gProtocolName,gContext,ctxt);
-#ifdef PAMI_TEST_STRICT
-    assert(context);
+    if(!ctxt) fprintf(stderr,
+                      "%s: Error(tid=%d). Null context received on cb_done.\n",
+                      gProtocolName,
+                      gThreadId);
+    if(gContext != ctxt) fprintf(stderr,
+                                 "%s: Context Error(tid=%d/%d) want:%p got:%p\n",
+                                 gProtocolName,
+                                 (int)pthread_self(),
+                                 gThreadId,
+                                 gContext,
+                                 ctxt);
+    assert(ctxt);
     assert(gContext==ctxt);
-#endif
+
     pami_configuration_t configs;
     configs.name         = PAMI_CONTEXT_DISPATCH_ID_MAX;
     configs.value.intval = -1;
@@ -73,6 +84,7 @@ int blocking_coll (pami_context_t      context,
   gContext = NULL;
   return 0;
 }
+
 /* Docs08:  Blocking Collective Call */
 
 int query_geometry_world(pami_client_t       client,
@@ -199,6 +211,49 @@ int query_geometry(pami_client_t       client,
 }
 
 
+int create_all_ctxt_geometry(pami_client_t           client,
+                             pami_context_t         *contexts,
+                             size_t                  num_contexts,
+                             pami_geometry_t         parent_geometry,
+                             pami_geometry_t        *new_geometry,
+                             pami_geometry_range_t  *range,
+                             unsigned                numranges,
+                             unsigned                id)
+{
+  pami_result_t result;
+  int           geom_init=1;
+  gContext = contexts[0];
+
+  pami_configuration_t config;
+  config.name = PAMI_GEOMETRY_OPTIMIZE;
+
+  result = PAMI_Geometry_create_taskrange (client,
+                                           PAMI_ALL_CONTEXTS,
+                                           &config, /*NULL*/
+                                           1, /*0, */
+                                           new_geometry,
+                                           parent_geometry,
+                                           id,
+                                           range,
+                                           numranges,
+                                           contexts[0],
+                                           cb_done,
+                                           &geom_init);
+    if (result != PAMI_SUCCESS)
+    {
+      fprintf (stderr, "Error. Unable to create a new geometry. result = %d\n", result);
+      return 1;
+    }
+    unsigned long long cnt=0;
+    while (geom_init)
+    {
+      result = PAMI_Context_advance (contexts[cnt%num_contexts], 1);
+      cnt++;
+    }
+    gContext = NULL;
+    return 0;
+}
+
 
 
 int create_and_query_geometry(pami_client_t           client,
@@ -224,7 +279,7 @@ int create_and_query_geometry(pami_client_t           client,
   config.name = PAMI_GEOMETRY_OPTIMIZE;
   
   result = PAMI_Geometry_create_taskrange (client,
-                                           0,
+                                           0, /** \todo WRONG not always context id 0 */
                                            &config, /*NULL*/
                                            1, /*0, */
                                            new_geometry,

@@ -61,14 +61,16 @@ public:
     /// \brief Constructor
     ///
     AsyncReduceScatterT () {};
-    AsyncReduceScatterT (Interfaces::NativeInterface   * native,
+    AsyncReduceScatterT (pami_context_t               ctxt,
+                         size_t                       ctxt_id,
+                         Interfaces::NativeInterface   * native,
                          T_Conn                        * cmgr,
                          pami_callback_t                  cb_done,
                          PAMI_GEOMETRY_CLASS            * geometry,
                          void                           *cmd) :
         Executor::Composite(),
         _reduce_executor (native, cmgr, geometry->comm()),
-        _reduce_schedule (native->myrank(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0),
+        _reduce_schedule (native->endpoint(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0),
         _scatter_executor (native, cmgr, geometry->comm(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)),
         _cmgr(cmgr),
         _sdispls(NULL),
@@ -80,7 +82,7 @@ public:
         TRACE_ADAPTOR ((stderr, "<%p>Allreduce::AsyncReduceScatterT() \n", this));
 
         PAMI::Topology *topo = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
-        unsigned root = topo->index2Rank(0);
+        unsigned root = topo->index2Endpoint(0);
         coremath func;
         unsigned sizeOfType;
         pami_reduce_scatter_t *a_xfer = (pami_reduce_scatter_t *) & (((pami_xfer_t *)cmd)->cmd.xfer_reduce_scatter);
@@ -103,7 +105,7 @@ public:
 
         _reduce_executor.setRoot(root);
 
-        prepReduceBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, bytes, native->myrank() == root, stype, rtype);
+        prepReduceBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, bytes, native->endpoint() == root, stype, rtype);
 
         _reduce_executor.setDoneCallback (cb_done.function, cb_done.clientdata);
 
@@ -121,7 +123,9 @@ public:
     }
 
 
-    AsyncReduceScatterT (Interfaces::NativeInterface    * native,
+    AsyncReduceScatterT (pami_context_t               ctxt,
+                         size_t                       ctxt_id,
+                         Interfaces::NativeInterface    * native,
                          T_Conn                         * cmgr,
                          pami_callback_t                  cb_done,
                          PAMI_GEOMETRY_CLASS            * geometry,
@@ -134,7 +138,7 @@ public:
                          TypeCode                       * rtype) :
         Executor::Composite(),
         _reduce_executor (native, cmgr, geometry->comm()),
-        _reduce_schedule (native->myrank(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0),
+        _reduce_schedule (native->endpoint(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0),
         _scatter_executor (native, cmgr, geometry->comm(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)),
         _cmgr(cmgr),
         _sdispls(NULL),
@@ -147,7 +151,7 @@ public:
         unsigned sizeOfType;
         coremath func;
         PAMI::Topology *topo = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
-        unsigned root = topo->index2Rank(0);
+        unsigned root = topo->index2Endpoint(0);
 
         _reduce_executor.setRoot(root);
 
@@ -211,7 +215,7 @@ public:
 
     void setContext (pami_context_t context) {}	
 
-    void setScatterExecutor (char *sbuf, char *rbuf, size_t *stypecounts, size_t myrank,
+    void setScatterExecutor (char *sbuf, char *rbuf, size_t *stypecounts, size_t endpointoffset,
                              TypeCode * stype, unsigned counts, bool isRoot, unsigned root,
                              pami_callback_t  cb_done)
     {
@@ -240,7 +244,7 @@ public:
 
 
 
-        unsigned bytes = sizeOfType * stypecounts[myrank];
+        unsigned bytes = sizeOfType * stypecounts[endpointoffset];
         _scatter_executor.setConnmgr(_cmgr);
         _scatter_executor.setRoot (root);
         _scatter_executor.setSchedule (&_scatter_schedule);
@@ -308,12 +312,16 @@ protected:
     PAMI::MemoryAllocator<32768, 16>                 _eab_allocator;
 
     T_Conn                                        * _cmgr;
-
+    Interfaces::NativeInterface                   * _native;
 public:
-    AsyncReduceScatterFactoryT (T_Conn                      *cmgr,
+     AsyncReduceScatterFactoryT (pami_context_t               ctxt,
+                                 size_t                       ctxt_id,
+                                 pami_mapidtogeometry_fn      cb_geometry,
+                                 T_Conn                      *cmgr,
                                 Interfaces::NativeInterface *native):
-        CollectiveProtocolFactory(native),
-        _cmgr(cmgr)
+        CollectiveProtocolFactory(ctxt, ctxt_id, cb_geometry),
+        _cmgr(cmgr),
+        _native(native)
     {
         native->setMulticastDispatch(cb_async, this);
     }
@@ -333,7 +341,7 @@ public:
         // TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
         DO_DEBUG((templateName<MetaDataFn>()));
         get_metadata(mdata);
-        CollectiveProtocolFactory::metadata(mdata,PAMI_XFER_REDUCE_SCATTER);
+        if(_native) _native->metadata(mdata,PAMI_XFER_REDUCE_SCATTER);
     }
 
     T_Conn *getConnMgr()
@@ -381,8 +389,8 @@ public:
         CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *co = NULL;
         pami_reduce_scatter_t *a_xfer = (pami_reduce_scatter_t *) & (((pami_xfer_t *)cmd)->cmd.xfer_reduce_scatter);
         PAMI::Topology *topo = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
-        unsigned root = topo->index2Rank(0);
-        size_t indexInTopo = topo->rank2Index(_native->myrank());
+        unsigned root = topo->index2Endpoint(0);
+        size_t indexInTopo = topo->endpoint2Index(_native->endpoint());
         size_t numRanksInTopo = topo->size();
         TypeCode * stype = (TypeCode *)a_xfer->stype;
         TypeCode * rtype = (TypeCode *)a_xfer->rtype;
@@ -394,8 +402,7 @@ public:
         key = key << 1;
         cmgr = new T_Conn(key);
 
-        //fprintf (stderr, "%d: Using Key %d\n", _native->myrank(), key);
-        co = (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)geometry->asyncCollectiveUnexpQ().findAndDelete(key);
+        co = (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)geometry->asyncCollectiveUnexpQ(_native->contextid()).findAndDelete(key);
 
         /// Try to match in unexpected queue
         if (co)
@@ -417,7 +424,7 @@ public:
             CCMI::Adaptor::Allreduce::getReduceFunction((pami_dt)reduce_dt, (pami_op)op, sizeOfType, func);
             sizeOfType = stype->GetDataSize();
             unsigned bytes = sizeOfType * a_xfer->stypecount;
-            a_composite->prepReduceBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, bytes, _native->myrank() == root, stype, rtype);
+            a_composite->prepReduceBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, bytes, _native->endpoint() == root, stype, rtype);
 
 
             // previous connection manager may need cleanup
@@ -436,7 +443,7 @@ public:
             cb_exec_done.function   = scatter_exec_done;
             cb_exec_done.clientdata = co;
 
-            a_composite->setScatterExecutor(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->rcounts, indexInTopo, rtype, numRanksInTopo, _native->myrank() == root, root, cb_exec_done);
+            a_composite->setScatterExecutor(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->rcounts, indexInTopo, rtype, numRanksInTopo, _native->endpoint() == root, root, cb_exec_done);
             a_composite->getScatterExecutor().setConnectionID(key + 1);
         }
         /// not found posted CollOp object, create a new one and
@@ -451,7 +458,9 @@ public:
             cb_exec_done.clientdata = co;
 
             a_composite = new (co->getComposite())
-            T_Composite ( _native,
+            T_Composite ( this->_context,
+                          this->_context_id,
+                          _native,
                           cmgr,
                           cb_exec_done,
                           (PAMI_GEOMETRY_CLASS *)g,
@@ -459,7 +468,7 @@ public:
             cb_exec_done.function = scatter_exec_done;
 
 
-            a_composite->setScatterExecutor(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->rcounts, indexInTopo, rtype, numRanksInTopo, _native->myrank() == root, root, cb_exec_done);
+            a_composite->setScatterExecutor(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->rcounts, indexInTopo, rtype, numRanksInTopo, _native->endpoint() == root, root, cb_exec_done);
 
             co->setXfer((pami_xfer_t*)cmd);
             co->setFlag(LocalPosted);
@@ -474,9 +483,9 @@ public:
 
         }
 
-        geometry->asyncCollectivePostQ().pushTail(co);
+        geometry->asyncCollectivePostQ(_native->contextid()).pushTail(co);
 
-        if (root != _native->myrank())
+        if (root != _native->endpoint())
         {
             DEBUG((stderr, "key = %d, start scatter executor in generate()\n", key);)
             a_composite->getScatterExecutor().start();
@@ -505,7 +514,6 @@ public:
         conn_id = (conn_id >> 1) << 1;
 
         AsyncReduceScatterFactoryT *factory = (AsyncReduceScatterFactoryT *) arg;
-        //fprintf(stderr, "%d: <%#.8X>Allreduce::AsyncReduceScatterFactoryT::cb_async() connid %d\n",factory->_native->myrank(), (int)factory, conn_id);
 
         CollHeaderData *cdata = (CollHeaderData *) info;
         T_Composite* a_composite = NULL;
@@ -514,7 +522,7 @@ public:
         PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry (ctxt, comm);
 
         PAMI::Topology *topo = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
-        unsigned root = topo->index2Rank(0);
+        unsigned root = topo->index2Endpoint(0);
         CCMI_assert(cdata->_root == root);
 
         T_Conn *cmgr;
@@ -523,13 +531,13 @@ public:
         CCMI_assert(cmgr == NULL); // ? Why rely on getkey to null it?
 
         CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *co =
-            (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *) geometry->asyncCollectivePostQ().find(key);
+          (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *) geometry->asyncCollectivePostQ(factory->_native->contextid()).find(key);
 
         if (!co)
         {
             // it is still possible that there are other early arrivals
             DEBUG((stderr, "key = %d, no local post, try early arrival\n", key);)
-            co = (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)geometry->asyncCollectiveUnexpQ().find(key);
+            co = (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)geometry->asyncCollectiveUnexpQ(factory->_native->contextid()).find(key);
         }
 
         if (!co)
@@ -544,7 +552,9 @@ public:
             cb_exec_done.clientdata = co;
 
             a_composite = new (co->getComposite())
-            T_Composite ( factory->_native,
+            T_Composite ( ctxt,
+                          factory->getContextId(),
+                          factory->_native,
                           cmgr,
                           cb_exec_done,
                           geometry,
@@ -559,7 +569,7 @@ public:
             co->setFactory (factory);
             co->setGeometry(geometry);
 
-            geometry->asyncCollectiveUnexpQ().pushTail(co);
+            geometry->asyncCollectiveUnexpQ(factory->_native->contextid()).pushTail(co);
         }
         else
         {
@@ -592,8 +602,6 @@ public:
         CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> * co =
             (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)cd;
 
-        //fprintf (stderr, "%d: exec_done for key %d\n", ((AsyncReduceScatterFactoryT *)co->getFactory())->_native->myrank(), co->key());
-
         DEBUG((stderr, "key = %d, reduce execution done, clean up\n", co->key());)
 
         T_Composite * a_composite = co->getComposite();
@@ -611,9 +619,9 @@ public:
 
         PAMI_GEOMETRY_CLASS *geometry = co->getGeometry();
         PAMI::Topology *topo = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
-        unsigned root = topo->index2Rank(0);
+        unsigned root = topo->index2Endpoint(0);
 
-        if (factory->_native->myrank() == root)
+        if (factory->_native->endpoint() == root)
             a_composite->getScatterExecutor().start();
 
         return;
@@ -667,7 +675,7 @@ public:
                           xfer->cookie, PAMI_SUCCESS);
 
         // must be on the posted queue, dequeue it
-        geometry->asyncCollectivePostQ().deleteElem(co);
+        geometry->asyncCollectivePostQ(factory->_native->contextid()).deleteElem(co);
 
         // connection manager may need cleanup
         CCMI_assert(co->getComposite()->connmgr() != factory->getConnMgr());

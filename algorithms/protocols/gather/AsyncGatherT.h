@@ -121,7 +121,9 @@ public:
     /// \brief Constructor
     ///
     AsyncGatherT () {};
-    AsyncGatherT (Interfaces::NativeInterface   * native,
+    AsyncGatherT (pami_context_t               ctxt,
+                  size_t                       ctxt_id,
+                  Interfaces::NativeInterface   * native,
                   T_Conn                        * cmgr,
                   pami_callback_t                  cb_done,
                   PAMI_GEOMETRY_CLASS            * geometry,
@@ -189,12 +191,16 @@ protected:
     PAMI::MemoryAllocator<32768, 16>                 _eab_allocator;
 
     T_Conn                                        * _cmgr;
-
+    Interfaces::NativeInterface                   * _native;
 public:
-    AsyncGatherFactoryT (T_Conn                      *cmgr,
+    AsyncGatherFactoryT (pami_context_t               ctxt,
+                         size_t                       ctxt_id,
+                         pami_mapidtogeometry_fn      cb_geometry,
+                         T_Conn                      *cmgr,
                          Interfaces::NativeInterface *native):
-        CollectiveProtocolFactory(native),
-        _cmgr(cmgr)
+        CollectiveProtocolFactory(ctxt, ctxt_id, cb_geometry),
+        _cmgr(cmgr),
+        _native(native)
     {
         native->setMulticastDispatch(cb_async, this);
     }
@@ -214,25 +220,13 @@ public:
         // TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
         DO_DEBUG((templateName<MetaDataFn>()));
         get_metadata(mdata);
-        CollectiveProtocolFactory::metadata(mdata,PAMI_XFER_ALLGATHER);
+        if(_native) _native->metadata(mdata,PAMI_XFER_GATHER);
     }
 
     T_Conn *getConnMgr()
     {
         return _cmgr;
     }
-
-    //Override the connection manager in this call
-    /*
-    unsigned getKey   (unsigned                 root,
-     unsigned                 connid,
-     PAMI_GEOMETRY_CLASS    * geometry,
-     T_Conn                ** connmgr)
-    {
-    CCMI_abort();
-    return root;
-    }
-    */
 
     char *allocateBuffer (unsigned size)
     {
@@ -269,8 +263,8 @@ public:
         unsigned key;
         key = getKey(g_xfer->root, (unsigned) - 1, (PAMI_GEOMETRY_CLASS*)g, (ConnectionManager::BaseConnectionManager **) & cmgr);
 
-        DEBUG((stderr, "%d: Using Key %d\n", _native->myrank(), key);)
-        co = (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)geometry->asyncCollectiveUnexpQ().findAndDelete(key);
+        DEBUG((stderr, "%d: Using Key %d\n", _native->endpoint(), key);)
+        co = (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)geometry->asyncCollectiveUnexpQ(_native->contextid()).findAndDelete(key);
 
         /// Try to match in unexpected queue
         if (co)
@@ -286,7 +280,7 @@ public:
             // rtype is valid only at the root, use stype elsewhere
             TypeCode *rtype;
             size_t rtypecount;
-            if(_native->myrank() == g_xfer->root)
+            if(_native->endpoint() == g_xfer->root)
             {
               rtype = (TypeCode *)g_xfer->rtype;
               rtypecount = g_xfer->rtypecount;
@@ -316,7 +310,9 @@ public:
             cb_exec_done.clientdata = co;
 
             a_composite = new (co->getComposite())
-            T_Composite ( _native,
+            T_Composite ( this->_context,
+                          this->_context_id,
+                          _native,
                           cmgr,
                           cb_exec_done,
                           (PAMI_GEOMETRY_CLASS *)g,
@@ -333,7 +329,7 @@ public:
 
         }
 
-        geometry->asyncCollectivePostQ().pushTail(co);
+        geometry->asyncCollectivePostQ(_native->contextid()).pushTail(co);
         DEBUG((stderr, "key = %d, start executor in generate()\n", key);)
         a_composite->executor().start();
 
@@ -370,13 +366,13 @@ public:
         CCMI_assert(cmgr == NULL); // ? Why rely on getkey to null it?
 
         CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *co =
-            (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *) geometry->asyncCollectivePostQ().find(key);
+          (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *) geometry->asyncCollectivePostQ(factory->_native->contextid()).find(key);
 
         if (!co)
         {
             // it is still possible that there are other early arrivals
             DEBUG((stderr, "key = %d, no local post, try early arrival\n", key);)
-            co = (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)geometry->asyncCollectiveUnexpQ().find(key);
+              co = (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)geometry->asyncCollectiveUnexpQ(factory->_native->contextid()).find(key);
         }
 
         if (!co)
@@ -396,7 +392,9 @@ public:
             g_xfer->stypecount = cdata->_count;
 
             a_composite = new (co->getComposite())
-            T_Composite ( factory->_native,
+            T_Composite ( ctxt,
+                          factory->getContextId(),
+                          factory->_native,
                           cmgr,
                           cb_exec_done,
                           geometry,
@@ -409,7 +407,7 @@ public:
             if (cmgr == NULL)
                 a_composite->executor().setConnectionID(key);
 
-            geometry->asyncCollectiveUnexpQ().pushTail(co);
+            geometry->asyncCollectiveUnexpQ(factory->_native->contextid()).pushTail(co);
         }
         else
         {
@@ -434,8 +432,6 @@ public:
         CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> * co =
             (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)cd;
 
-        //fprintf (stderr, "%d: exec_done for key %d\n", ((AsyncGatherFactoryT *)co->getFactory())->_native->myrank(), co->key());
-
         DEBUG((stderr, "key = %d, execution done, clean up\n", co->key());)
 
         PAMI_GEOMETRY_CLASS *geometry = co->getGeometry();
@@ -453,7 +449,7 @@ public:
                           xfer->cookie, PAMI_SUCCESS);
 
         // must be on the posted queue, dequeue it
-        geometry->asyncCollectivePostQ().deleteElem(co);
+        geometry->asyncCollectivePostQ(factory->_native->contextid()).deleteElem(co);
 
         // free the CollOp object
         factory->_free_pool.free(co);

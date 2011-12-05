@@ -57,7 +57,9 @@ namespace CCMI
           TRACE_FN_EXIT();
         };
 
-        AllgatherOnBroadcastT (Interfaces::NativeInterface              * native,
+        AllgatherOnBroadcastT (pami_context_t               ctxt,
+                               size_t                       ctxt_id,
+                               Interfaces::NativeInterface              * native,
                                T_Conn                                   * cmgr,
                                pami_geometry_t                             g,
                                void                                     * cmd,
@@ -76,10 +78,10 @@ namespace CCMI
           TRACE_FN_ENTER();
           TRACE_FORMAT("<%p> _nranks %u, geometry %p, native %p", this, _nranks, g, native);
           // allgatherv requires a ranklist, so make sure it's been created.
-          _geometry->createTopology(PAMI::Geometry::LIST_TOPOLOGY_INDEX);
+          //_geometry->createTopology(PAMI::Geometry::LIST_TOPOLOGY_INDEX);
           for (unsigned i = 0; i < _nranks; i++)
           {
-            if (_geometry->ranks()[i] == _native->myrank())
+            if (((PAMI::Topology*)_geometry->getTopology(T_Geometry_Index))->index2Endpoint(i) == _native->endpoint())
             {
               PAMI::Type::TypeCode * rtype = (PAMI::Type::TypeCode *)_cmd.rtype;
               char *dst = _cmd.rcvbuf + _cmd.rdispls[i];
@@ -109,7 +111,7 @@ namespace CCMI
             PAMI::Type::TypeCode * rtype;
 
             rtypecounts = _cmd.rtypecounts[ncomplete];
-            root        = _geometry->ranks()[ncomplete];
+            root        = ((PAMI::Topology*)_geometry->getTopology(T_Geometry_Index))->index2Endpoint(ncomplete);
             dst         = _cmd.rcvbuf + _cmd.rdispls[ncomplete];
             src         = dst;        //For non-inplace allgvs the src has been copied to dst on root
             rtype       = (PAMI::Type::TypeCode *)_cmd.rtype;

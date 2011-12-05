@@ -503,7 +503,7 @@ namespace CCMI
 
       extern inline void ring_broadcast_metadata(pami_metadata_t *m)
       {
-        new(m) PAMI::Geometry::Metadata("I0:Ring:P2P:P2P");
+        new(m) PAMI::Geometry::Metadata("X0:Ring:P2P:P2P");
       }
 
       typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
@@ -524,13 +524,13 @@ namespace CCMI
         CCMI::Schedule::RingSchedule,
         CCMI::ConnectionManager::ColorGeometryConnMgr,
         get_colors >
-	RingBroadcastComposite;
+        RingBroadcastComposite;
 
       typedef CCMI::Adaptor::CollectiveProtocolFactoryT
       < RingBroadcastComposite,
         ring_broadcast_metadata,
         CCMI::ConnectionManager::ColorGeometryConnMgr>
-	RingBroadcastFactory;
+        RingBroadcastFactory;
       
       extern inline void binomial_broadcast_metadata_singleth(pami_metadata_t *m)
       {
@@ -539,7 +539,7 @@ namespace CCMI
 
       extern inline void ring_broadcast_metadata_singleth(pami_metadata_t *m)
       {
-        new(m) PAMI::Geometry::Metadata("I0:RingSingleTh:P2P:P2P");
+        new(m) PAMI::Geometry::Metadata("X0:RingSingleTh:P2P:P2P");
       }      
 
       typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
@@ -584,7 +584,9 @@ namespace CCMI
                            Interfaces::NativeInterface * native,
                            PAMI_GEOMETRY_CLASS         * g)
       {
-        new (buf) CCMI::Schedule::TopoMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0);
+        new (buf) CCMI::Schedule::TopoMultinomial(native->endpoint(),
+                                                  (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX),
+                                                  0);
       }
 
       extern inline unsigned getKey(unsigned                                                root,
@@ -601,7 +603,7 @@ namespace CCMI
                               Interfaces::NativeInterface * native,
                               PAMI_GEOMETRY_CLASS          * g)
       {
-        new (buf) CCMI::Schedule::TopoMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0);
+        new (buf) CCMI::Schedule::TopoMultinomial(native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0);
       }
 
       extern inline unsigned getKey_as(unsigned                                   root,
@@ -655,7 +657,7 @@ namespace CCMI
                                                   Interfaces::NativeInterface * native,
                                                   PAMI_GEOMETRY_CLASS          * g)
       {
-        new (buf) CCMI::Schedule::KnomialBcastSchedule<2>(native->myrank(),
+        new (buf) CCMI::Schedule::KnomialBcastSchedule<2>(native->endpoint(),
                                                           ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)));
           }
       extern inline unsigned getKey_2nomial(unsigned                                   root,
@@ -694,7 +696,7 @@ namespace CCMI
                                                   Interfaces::NativeInterface * native,
                                                   PAMI_GEOMETRY_CLASS          * g)
       {
-        new (buf) CCMI::Schedule::KnomialBcastSchedule<3>(native->myrank(),
+        new (buf) CCMI::Schedule::KnomialBcastSchedule<3>(native->endpoint(),
                                                           ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)));
           }
       extern inline unsigned getKey_3nomial(unsigned                                   root,
@@ -732,7 +734,7 @@ namespace CCMI
                                                   Interfaces::NativeInterface * native,
                                                   PAMI_GEOMETRY_CLASS          * g)
       {
-        new (buf) CCMI::Schedule::KnomialBcastSchedule<4>(native->myrank(),
+        new (buf) CCMI::Schedule::KnomialBcastSchedule<4>(native->endpoint(),
                                                           ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)));
           }
       extern inline unsigned getKey_4nomial(unsigned                                   root,
@@ -776,7 +778,7 @@ namespace CCMI
                                                   Interfaces::NativeInterface * native,
                                                   PAMI_GEOMETRY_CLASS          * g)
       {
-        new (buf) CCMI::Schedule::KnaryBcastSchedule<2>(native->myrank(),
+        new (buf) CCMI::Schedule::KnaryBcastSchedule<2>(native->endpoint(),
                                                           ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)));
       }
       extern inline unsigned getKey_2nary(unsigned                                   root,
@@ -827,7 +829,7 @@ namespace CCMI
                                                   Interfaces::NativeInterface * native,
                                                   PAMI_GEOMETRY_CLASS          * g)
       {
-        new (buf) CCMI::Schedule::KnaryBcastSchedule<3>(native->myrank(),
+        new (buf) CCMI::Schedule::KnaryBcastSchedule<3>(native->endpoint(),
                                                         ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)));
       }
       extern inline unsigned getKey_3nary(unsigned                                   root,
@@ -865,7 +867,7 @@ namespace CCMI
                                                   Interfaces::NativeInterface * native,
                                                   PAMI_GEOMETRY_CLASS          * g)
       {
-        new (buf) CCMI::Schedule::KnaryBcastSchedule<4>(native->myrank(),
+        new (buf) CCMI::Schedule::KnaryBcastSchedule<4>(native->endpoint(),
                                                           ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)));
           }
       extern inline unsigned getKey_4nary(unsigned                                   root,
@@ -906,7 +908,7 @@ namespace CCMI
                            Interfaces::NativeInterface * native,
                            PAMI_GEOMETRY_CLASS          * g)
       {
-        new (buf) CCMI::Schedule::TopoMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0);
+        new (buf) CCMI::Schedule::TopoMultinomial(native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0);
       }
 
       typedef CCMI::Adaptor::AMBroadcast::AMBroadcastT
@@ -1040,7 +1042,7 @@ namespace CCMI
       };//Binomial
 
       namespace Ring {
-	extern inline void ring_allreduce_metadata(pami_metadata_t *m)
+        extern inline void ring_allreduce_metadata(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("X0:Ring:P2P:P2P");
         }
@@ -1050,13 +1052,13 @@ namespace CCMI
           CCMI::Schedule::RingSchedule,
           CCMI::ConnectionManager::SimpleConnMgr,
           Binomial::get_colors,
-	  1 > Composite;
+          1 > Composite;
 
         typedef CCMI::Adaptor::Allreduce::ProtocolFactoryT
-	< Composite,
+          < Composite,
           ring_allreduce_metadata,
           CCMI::ConnectionManager::SimpleConnMgr>
-	  Factory;
+          Factory;
       }; //Ring
 
     };//Allreduce
@@ -1089,7 +1091,7 @@ namespace CCMI
                                    Interfaces::NativeInterface * native,
                                    PAMI_GEOMETRY_CLASS         * g)
         {
-          new (buf) CCMI::Schedule::TopoMultinomial(native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0);
+          new (buf) CCMI::Schedule::TopoMultinomial(native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0);
         }
 
         typedef CCMI::Adaptor::AMReduce::AMReduceT
@@ -1134,7 +1136,7 @@ namespace CCMI
                              Interfaces::NativeInterface * native,
                              PAMI_GEOMETRY_CLASS          * g)
         {
-          new (buf) CCMI::Schedule::GenericTreeSchedule<>(native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
+          new (buf) CCMI::Schedule::GenericTreeSchedule<>(native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
         extern inline void binomial_scatter_metadata(pami_metadata_t *m)
@@ -1164,7 +1166,7 @@ namespace CCMI
                              Interfaces::NativeInterface * native,
                              PAMI_GEOMETRY_CLASS          * g)
         {
-          new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
+          new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
         extern inline void flat_scatter_metadata(pami_metadata_t *m)
@@ -1211,7 +1213,7 @@ namespace CCMI
                              Interfaces::NativeInterface * native,
                              PAMI_GEOMETRY_CLASS          * g)
         {
-          new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
+          new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
         extern inline void scatterv_metadata(pami_metadata_t *m)
@@ -1274,7 +1276,7 @@ namespace CCMI
                            Interfaces::NativeInterface * native,
                            PAMI_GEOMETRY_CLASS          * g)
       {
-        new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
+        new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
       }
 
 
@@ -1322,7 +1324,7 @@ namespace CCMI
                                    Interfaces::NativeInterface * native,
                                    PAMI_GEOMETRY_CLASS         * g)
         {
-          new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,2> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
+          new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,2> (native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
         typedef CCMI::Adaptor::AMScatter::AMScatterT
@@ -1365,7 +1367,7 @@ namespace CCMI
                              Interfaces::NativeInterface * native,
                              PAMI_GEOMETRY_CLASS          * g)
         {
-          new (buf) CCMI::Schedule::GenericTreeSchedule<> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
+          new (buf) CCMI::Schedule::GenericTreeSchedule<> (native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
         extern inline void binomial_gather_metadata(pami_metadata_t *m)
@@ -1396,7 +1398,7 @@ namespace CCMI
                                     Interfaces::NativeInterface * native,
                                     PAMI_GEOMETRY_CLASS          * g)
         {
-          new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
+          new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
         extern inline void create_bcast_schedule(void                        * buf,
@@ -1405,7 +1407,7 @@ namespace CCMI
                                    Interfaces::NativeInterface * native,
                                    PAMI_GEOMETRY_CLASS          * g)
         {
-          new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,2> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
+          new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,2> (native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
         extern inline void flat_gather_metadata(pami_metadata_t *m)
@@ -1459,7 +1461,7 @@ namespace CCMI
                                    Interfaces::NativeInterface * native,
                                    PAMI_GEOMETRY_CLASS         * g)
         {
-          new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,2> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
+          new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,2> (native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
         extern inline void create_gather_schedule(void   * buf,
@@ -1468,7 +1470,7 @@ namespace CCMI
                              Interfaces::NativeInterface * native,
                              PAMI_GEOMETRY_CLASS         * g)
         {
-          new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,2> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
+          new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,2> (native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
         typedef CCMI::Adaptor::AMGather::AMGatherT
@@ -1511,7 +1513,7 @@ namespace CCMI
                                      Interfaces::NativeInterface * native,
                                      PAMI_GEOMETRY_CLASS          * g)
         {
-          new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
+          new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
         extern inline void create_bcast_schedule(void                        * buf,
@@ -1520,7 +1522,7 @@ namespace CCMI
                                    Interfaces::NativeInterface * native,
                                    PAMI_GEOMETRY_CLASS          * g)
         {
-          new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,2> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
+          new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,2> (native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
         extern inline void gatherv_metadata(pami_metadata_t *m)
@@ -1590,7 +1592,7 @@ namespace CCMI
                              Interfaces::NativeInterface * native,
                              PAMI_GEOMETRY_CLASS          * g)
         {
-          new (buf) CCMI::Schedule::GenericTreeSchedule<> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
+          new (buf) CCMI::Schedule::GenericTreeSchedule<> (native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
         extern inline void binomial_scan_metadata(pami_metadata_t *m)
@@ -1620,9 +1622,9 @@ namespace CCMI
       {
 
         extern inline unsigned getKey(unsigned                                   root,
-                        unsigned                                   connid,
-                        PAMI_GEOMETRY_CLASS                      * geometry,
-                        ConnectionManager::BaseConnectionManager **connmgr)
+                                      unsigned                                   connid,
+                                      PAMI_GEOMETRY_CLASS                      * geometry,
+                                      ConnectionManager::BaseConnectionManager **connmgr)
         {
           if (connid != (unsigned)-1)
           {
@@ -1634,12 +1636,13 @@ namespace CCMI
         }
 
         extern inline void create_schedule(void                        * buf,
-                             unsigned                      size,
-                             unsigned                      root,
-                             Interfaces::NativeInterface * native,
-                             PAMI_GEOMETRY_CLASS          * g)
+                                           unsigned                      size,
+                                           unsigned                      root,
+                                           Interfaces::NativeInterface * native,
+                                           PAMI_GEOMETRY_CLASS          * g)
         {
-          new (buf) CCMI::Schedule::GenericTreeSchedule<> (native->myrank(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
+          new (buf) CCMI::Schedule::GenericTreeSchedule<> (native->endpoint(),
+                                                           (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
         extern inline void binomial_allgather_metadata(pami_metadata_t *m)

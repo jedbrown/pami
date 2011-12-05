@@ -213,7 +213,7 @@ namespace PAMI
            get_metadata,
            typename GlobalP2PBarrierFactory<T_Key>::GlobalP2PBarrierFactoryType,
            T_NativeInterface,
-           PAMI::Geometry::GKEY_MSYNC_LOCAL_CLASSROUTEID>
+           PAMI::Geometry::CKEY_MSYNC_LOCAL_CLASSROUTEID>
           HybridBarrierFactoryType;
         };
       };
@@ -377,20 +377,20 @@ namespace PAMI
           _local_devs(ldev),
           _local_devs_bsr(ldevbsr),
           _global_dev(gdev),
-          _l_barrierbsr_ni(_local_devs_bsr,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
-          _g_barrier_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
-          _g_broadcast_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
-          _g_allreduce_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
-          _g_reduce_ni(_global_dev,client,context,context_id,client_id,_global_task,_global_size,dispatch_id),
+          _l_barrierbsr_ni(_local_devs_bsr,client,context,context_id,client_id,dispatch_id),
+          _g_barrier_ni(_global_dev,client,context,context_id,client_id,dispatch_id),
+          _g_broadcast_ni(_global_dev,client,context,context_id,client_id,dispatch_id),
+          _g_allreduce_ni(_global_dev,client,context,context_id,client_id,dispatch_id),
+          _g_reduce_ni(_global_dev,client,context,context_id,client_id,dispatch_id),
           _dev_p2p(dev_p2p),
           _proto_alloc(proto_alloc),
           _barrierbsrp2p_reg(NULL),
           _barriershmemp2p_reg(NULL),
-          _barrier_reg(&_sconnmgr,NULL, &_g_barrier_ni),
-          _barrierbsr_reg(&_sconnmgr,&_l_barrierbsr_ni, &_g_barrier_ni),
-          _broadcast_reg(&_sconnmgr,NULL, false,&_g_broadcast_ni,false),
-          _allreduce_reg(&_sconnmgr,NULL, &_g_allreduce_ni),
-          _reduce_reg(&_sconnmgr,NULL, &_g_reduce_ni),
+          _barrier_reg(context,context_id,mapidtogeometry,&_sconnmgr,NULL, &_g_barrier_ni),
+          _barrierbsr_reg(context,context_id,mapidtogeometry,&_sconnmgr,&_l_barrierbsr_ni, &_g_barrier_ni),
+          _broadcast_reg(context,context_id,mapidtogeometry,&_sconnmgr,NULL, false,&_g_broadcast_ni,false),
+          _allreduce_reg(context,context_id,mapidtogeometry,&_sconnmgr,NULL, &_g_allreduce_ni),
+          _reduce_reg(context,context_id,mapidtogeometry,&_sconnmgr,NULL, &_g_reduce_ni),
           _csmm(mm),
           _valid_context(true)
           {
@@ -424,17 +424,21 @@ namespace PAMI
               CAU_SETUPNI_P2P(_p2p_ni_shmem);
 
               _globalp2p_barrier_reg_bsr = new(&_globalp2p_barrier_reg_store0[0])
-                GlobalBsrFactory(&_sconnmgr,
+                GlobalBsrFactory(_context,
+                                 _context_id,
+                                 mapidtogeometry,
+                                 &_sconnmgr,
                                  _p2p_ni_bsr,
                                  GlobalBsrFactory::cb_head);
               _globalp2p_barrier_reg_shmem = new(&_globalp2p_barrier_reg_store1[0])
-                GlobalSHMEMFactory(&_sconnmgr,
+                GlobalSHMEMFactory(_context,
+                                   _context_id,
+                                   mapidtogeometry,
+                                   &_sconnmgr,
                                    _p2p_ni_shmem,
                                    GlobalSHMEMFactory::cb_head);
-              _globalp2p_barrier_reg_bsr->setMapIdToGeometry(mapidtogeometry);
-              _globalp2p_barrier_reg_shmem->setMapIdToGeometry(mapidtogeometry);
-              _barrierbsrp2p_reg   = new(&_bsrp2p_reg_store[0])   HybridBSRBarrierFactory();
-              _barriershmemp2p_reg = new(&_shmemp2p_reg_store[0]) HybridSHMEMBarrierFactory();
+              _barrierbsrp2p_reg   = new(&_bsrp2p_reg_store[0])   HybridBSRBarrierFactory(_context,_context_id,mapidtogeometry);
+              _barriershmemp2p_reg = new(&_shmemp2p_reg_store[0]) HybridSHMEMBarrierFactory(_context,_context_id,mapidtogeometry);
             }
             else
               _enabled = false;
@@ -452,7 +456,7 @@ namespace PAMI
             PAMI::Topology *master_topo       = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX));
             uint            num_master_tasks  = master_topo->size();
             bool            participant       = geometry->isLocalMasterParticipant();
-            GeometryInfo   *geometryInfo      = (GeometryInfo*)geometry->getKey(Geometry::PAMI_GKEY_GEOMETRYINFO);
+            GeometryInfo   *geometryInfo      = (GeometryInfo*)geometry->getKey(_context_id,Geometry::PAMI_CKEY_GEOMETRYINFO);
             pami_task_t    *rl    = NULL;
             pami_result_t   rc    = master_topo->rankList(&rl);
             uint           *tasks = (uint*)rl;
@@ -462,9 +466,9 @@ namespace PAMI
                                                           tasks);
             *cau_gi = (PAMI::Device::CAUGeometryInfo *)_cau_geom_allocator.allocateObject();
             new(*cau_gi)PAMI::Device::CAUGeometryInfo(geometryInfo->_unique_key,geometry->comm());
-            geometry->setKey(Geometry::GKEY_MCAST_CLASSROUTEID,*cau_gi);
-            geometry->setKey(Geometry::GKEY_MCOMB_CLASSROUTEID,*cau_gi);
-            geometry->setKey(Geometry::GKEY_MSYNC_CLASSROUTEID,*cau_gi);
+            geometry->setKey(0,Geometry::CKEY_MCAST_CLASSROUTEID,*cau_gi);
+            geometry->setKey(0,Geometry::CKEY_MCOMB_CLASSROUTEID,*cau_gi);
+            geometry->setKey(0,Geometry::CKEY_MSYNC_CLASSROUTEID,*cau_gi);
           }
 
         inline void setup_shm(T_Geometry                    *geometry,
@@ -474,7 +478,7 @@ namespace PAMI
           
           {
             PAMI::Topology *master_topo   = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX));
-            GeometryInfo   *geometryInfo  = (GeometryInfo*)geometry->getKey(Geometry::PAMI_GKEY_GEOMETRYINFO);
+            GeometryInfo   *geometryInfo  = (GeometryInfo*)geometry->getKey(_context_id,Geometry::PAMI_CKEY_GEOMETRYINFO);
             PAMI::Topology *local_topo    = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX));
             *local_model  = (T_LocalModel*)_model_allocator.allocateObject();
             new(*local_model)T_LocalModel(&_local_devs, geometry->comm(), local_topo, &_csmm, ctrlstr);
@@ -487,7 +491,7 @@ namespace PAMI
                                  local_topo->rank2Index(_global_task),
                                  local_topo->size());
             // Add the geometry info to the geometry
-            geometry->setKey(PAMI::Geometry::GKEY_GEOMETRYCSNI, ni);
+            geometry->setKey(0,PAMI::Geometry::CKEY_GEOMETRYCSNI, ni);
           }
         inline void setup_bsr(T_Geometry                     *geometry,
                               PAMI::Device::BSRGeometryInfo **bsr_gi,
@@ -495,7 +499,7 @@ namespace PAMI
           {
             PAMI::Topology *local_topo   = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX));
 
-            GeometryInfo   *geometryInfo = (GeometryInfo*)geometry->getKey(Geometry::PAMI_GKEY_GEOMETRYINFO);
+            GeometryInfo   *geometryInfo = (GeometryInfo*)geometry->getKey(_context_id, Geometry::PAMI_CKEY_GEOMETRYINFO);
             *bsr_gi                      = (PAMI::Device::BSRGeometryInfo *)_bsr_geom_allocator.allocateObject();
             uint            member_id    = local_topo->rank2Index(_global_task);
             Memory::sync();
@@ -505,7 +509,7 @@ namespace PAMI
                                                       _csmm._windowsz,
                                                       _Lapi_env.MP_partition, // job_id
                                                       member_id);             // member_id
-            geometry->setKey(Geometry::GKEY_MSYNC_LOCAL_CLASSROUTEID,*bsr_gi);
+            geometry->setKey(0,Geometry::CKEY_MSYNC_LOCAL_CLASSROUTEID,*bsr_gi);
           }
 
 
@@ -537,7 +541,7 @@ namespace PAMI
                   PAMI::Topology    *topo              = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
                   PAMI::Topology    *master_topo       = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX));
                   PAMI::Topology    *local_topo        = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX));
-                  uint               master_rank       = local_topo->index2Rank(0);
+                  uint               master_rank       = local_topo->index2Endpoint(0);
                   uint               master_index      = master_topo->rank2Index(master_rank);
                   uint               numtasks          = topo->size();
                   uint               num_local_tasks   = local_topo->size();
@@ -593,7 +597,7 @@ namespace PAMI
                   inout_val[0] = ~result_mask;
 
                   //Make the geometry aware of the shared memory allocator object
-                  geometry->setKey(Geometry::GKEY_GEOMETRYSHMEM,(void*)(&_csmm));
+                  geometry->setKey(0,Geometry::CKEY_GEOMETRYSHMEM,(void*)(&_csmm));
 
                   // Construct the geometry info object, so we can free our allocated objects later
                   GeometryInfo                     *geometryInfo = (GeometryInfo*)_geom_allocator.allocateObject();
@@ -610,7 +614,7 @@ namespace PAMI
                   geometryInfo->_unique_key                      = unique_key;
                   // Set the CAU registration per geometry info object in the geometry
                   // And the cleanup callback
-                  geometry->setKey(Geometry::PAMI_GKEY_GEOMETRYINFO,geometryInfo);
+                  geometry->setKey(0,Geometry::PAMI_CKEY_GEOMETRYINFO,geometryInfo);
                   geometry->setCleanupCallback(cleanupCallback, geometryInfo);
                   geometry->setCkptCallback(ckptCallback,
                                             resumeCallback,
@@ -679,8 +683,8 @@ namespace PAMI
                   uint            num_local_tasks  = local_topo->size();
                   uint            groupid          = geometry->comm();
                   bool            participant      = geometry->isLocalMasterParticipant();
-                  GeometryInfo   *geometryInfo     = (GeometryInfo*)geometry->getKey(Geometry::PAMI_GKEY_GEOMETRYINFO);
-                  uint            master_rank      = ((PAMI::Topology *)geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX))->index2Rank(0);
+                  GeometryInfo   *geometryInfo     = (GeometryInfo*)geometry->getKey(_context_id, Geometry::PAMI_CKEY_GEOMETRYINFO);
+                  uint            master_rank      = ((PAMI::Topology *)geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX))->index2Endpoint(0);
                   uint            master_index     = master_topo->rank2Index(master_rank);
                   void           *ctrlstr          = (void *)inout_val[master_index+1];
                   uint64_t        result_mask      = ~inout_val[0];
@@ -762,8 +766,8 @@ namespace PAMI
                   geometryInfo->_use_bsr                         = useBsr;
                   geometryInfo->_bsr_info                        = bsr_gi;
 
-                  geometry->setKey(Geometry::GKEY_GEOMETRYUSECAU,(void*)(&(geometryInfo->_use_cau)));
-                  geometry->setKey(Geometry::GKEY_GEOMETRYUSEBSR,(void*)(&(geometryInfo->_use_bsr)));
+                  geometry->setKey(0,Geometry::CKEY_GEOMETRYUSECAU,(void*)(&(geometryInfo->_use_cau)));
+                  geometry->setKey(0,Geometry::CKEY_GEOMETRYUSEBSR,(void*)(&(geometryInfo->_use_bsr)));
 
                   _barrier_reg.setNI(geometry, ni, &_g_barrier_ni);
                   _barrierbsr_reg.setNI(geometry, &_l_barrierbsr_ni, &_g_barrier_ni);
@@ -818,12 +822,14 @@ namespace PAMI
                     ITRC(IT_CAU, "CollReg(phase 1): group_id=%d adding CAU/SHM Barrier collective to list\n",groupid);
                     geometry->addCollective(PAMI_XFER_BARRIER,
                                             &_barrier_reg,
-                                            context_id);
+                                            _context,
+                                            _context_id);
                   }
 
                   ITRC(IT_CAU, "CollReg(phase 1): group_id=%d adding SHM/P2P Barrier collective to list\n",groupid);
                   geometry->addCollective(PAMI_XFER_BARRIER,
                                           _barriershmemp2p_reg,
+                                          _context,
                                           _context_id);
 
                   if(useBsr && useCau)
@@ -831,7 +837,8 @@ namespace PAMI
                     ITRC(IT_CAU, "CollReg(phase 1): group_id=%d adding CAU/BSR Barrier collective to list\n", groupid);
                     geometry->addCollective(PAMI_XFER_BARRIER,
                                             &_barrierbsr_reg,
-                                            context_id);
+                                            _context,
+                                            _context_id);
                   }
 
                   if(useBsr)
@@ -839,6 +846,7 @@ namespace PAMI
                     ITRC(IT_CAU, "CollReg(phase 1): group_id=%d adding BSR/P2P Barrier collective to list\n",groupid);
                     geometry->addCollective(PAMI_XFER_BARRIER,
                                             _barrierbsrp2p_reg,
+                                            _context,
                                             _context_id);
                   }
 
@@ -848,12 +856,12 @@ namespace PAMI
                   if(useCau)
                   {
                     ITRC(IT_CAU, "CollReg(phase 1): group_id=%d adding CAU/SHM Broadcast collective to list\n", groupid);
-                    geometry->addCollective(PAMI_XFER_BROADCAST,&_broadcast_reg,context_id);
+                    geometry->addCollective(PAMI_XFER_BROADCAST,&_broadcast_reg,_context, _context_id);
                   }
                   else if(singleNode)
                   {
                     ITRC(IT_CAU, "CollReg(phase 1): group_id=%d adding CAU/SHM Broadcast collective to list (singlenode)\n", groupid);
-                    geometry->addCollective(PAMI_XFER_BROADCAST,&_broadcast_reg,context_id);
+                    geometry->addCollective(PAMI_XFER_BROADCAST,&_broadcast_reg,_context, _context_id);
 
                   }
                   
@@ -865,14 +873,14 @@ namespace PAMI
                   if(useCau)
                   {
                     ITRC(IT_CAU, "CollReg(phase 1): group_id=%d adding CAU/SHM Reduce/Allreduce collective to must-check list\n", groupid);
-                    geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,&_allreduce_reg,context_id);
-                    geometry->addCollectiveCheck(PAMI_XFER_REDUCE,&_reduce_reg,context_id);
+                    geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,&_allreduce_reg,_context,_context_id);
+                    geometry->addCollectiveCheck(PAMI_XFER_REDUCE,&_reduce_reg,_context, _context_id);
                   }
                   else if(singleNode)
                   {
                     ITRC(IT_CAU, "CollReg(phase 1): group_id=%d adding CAU/SHM Reduce/Allreduce collective to always works list(singlenode)\n", groupid);
-                    geometry->addCollective(PAMI_XFER_ALLREDUCE,&_allreduce_reg,context_id);
-                    geometry->addCollective(PAMI_XFER_REDUCE,&_reduce_reg,context_id);
+                    geometry->addCollective(PAMI_XFER_ALLREDUCE,&_allreduce_reg,_context, _context_id);
+                    geometry->addCollective(PAMI_XFER_REDUCE,&_reduce_reg,_context, _context_id);
                   }
                   return PAMI_SUCCESS;
                 }
@@ -1058,6 +1066,7 @@ namespace PAMI
         pami_context_t                                                  _context;
         size_t                                                          _context_id;
         size_t                                                          _client_id;
+
         int                                                            *_dispatch_id;
         std::map<unsigned, pami_geometry_t>                            *_geometry_map;
         std::map<uint32_t,uint32_t>                                     _collision_map;

@@ -39,7 +39,7 @@ Broadcast (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset,T_NI*
   for (int i=0; i< this->_numphases; i++)
     {
       int destindex = (this->ordinal()+2*this->_comm->size()-(1<<i))%this->_comm->size();
-      this->_dest[i] = this->_comm->endpoint(destindex);
+      this->_dest[i] = this->_comm->index2Endpoint(destindex);
       this->_sbuf[i] = &this->_dummy;
       this->_rbuf[i] = &this->_dummy;
       this->_sbufln[i] = 1;
@@ -88,7 +88,7 @@ void xlpgas::Broadcast<T_NI>::reset (int rootindex,
       bool dosend     = ((myrelrank&sendmask)==0)&&(destrelrank<(int)this->_comm->size());
       bool dorecv     = ((srcrelrank&sendmask)==0)&&(srcrelrank>=0);
       int  destindex  = (destrelrank + rootindex)%this->_comm->size();
-      this->_dest[phase]    = this->_comm->endpoint(destindex);
+      this->_dest[phase]    = this->_comm->index2Endpoint(destindex);
       this->_sbuf[phase]    = dosend ? dbuf : NULL;
       this->_sbufln[phase]  = dosend ? nbytes : 0;
       this->_rbuf[phase]    = dorecv ? dbuf : NULL;
@@ -121,13 +121,13 @@ void xlpgas::Broadcast<T_NI>::reset (int rootindex,
       bool dorecv     = ((srcrelrank&sendmask)==0)&&(srcrelrank>=0);
       int  destindex  = (destrelrank + rootindex)%_comm->size();
 
-      //_dest[phase]    = _comm->endpoint(destindex);
+      //_dest[phase]    = _comm->index2Endpoint(destindex);
       //_sbuf[phase]    = dosend ? dbuf : NULL;
       //_sbufln[phase]  = dosend ? nbytes : 0;
       //_rbuf[phase]    = dorecv ? dbuf : NULL;
 
       //ask permision
-      //_dest[phase]    = _comm->endpoint(destindex);
+      //_dest[phase]    = _comm->index2Endpoint(destindex);
       //_sbuf[phase]    = dosend ? &_dummy : NULL;
       //_sbufln[phase]  = dosend ? 1 : 0;
       //_rbuf[phase]    = dorecv ? &_dummy : NULL;
@@ -137,7 +137,7 @@ void xlpgas::Broadcast<T_NI>::reset (int rootindex,
       //phase++;
 
       //broadcast data
-      _dest[phase]    = _comm->endpoint(destindex);
+      _dest[phase]    = _comm->index2Endpoint(destindex);
       _sbuf[phase]    = dosend ? dbuf : NULL;
       _sbufln[phase]  = dosend ? nbytes : 0;
       _rbuf[phase]    = dorecv ? dbuf : NULL;

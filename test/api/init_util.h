@@ -306,7 +306,7 @@ size_t   gNum_contexts   = 1;
 size_t** gValidTable     = NULL;
 unsigned gSelector       = 1;
 char*    gSelected       ;
-unsigned gParentless     = 0; /*Not parentless*/
+unsigned gParentless     = 1;
 
 void setup_op_dt(size_t ** validTable,char* sDt, char* sOp);
 
@@ -378,7 +378,7 @@ void setup_env()
   gValidTable = alloc2DContig(op_count, dt_count);
   setup_op_dt(gValidTable,sDt,sOp);
 
-  /* \note Test environment variable" TEST_PARENTLESS=0 or 1, defaults to 0.
+  /* \note Test environment variable" TEST_PARENTLESS=0 or 1, defaults to 1.
      0 - world_geometry is the parent
      1 - parentless                                                      */
   char* sParentless = getenv("TEST_PARENTLESS");

@@ -14,63 +14,43 @@
 #ifndef __algorithms_geometry_Algorithm_h__
 #define __algorithms_geometry_Algorithm_h__
 
-#include <map>
+#include <vector>
 #include "algorithms/protocols/CollectiveProtocolFactory.h"
 #include "components/memory/MemoryAllocator.h"
 #include "algorithms/geometry/UnexpBarrierQueueElement.h"
 
-#undef TRACE_ERR
-#define TRACE_ERR(x) //fprintf x
-
-#undef TRACE_ERR2
-#define TRACE_ERR2(x) //fprintf x
-
-
 extern pami_geometry_t mapidtogeometry (pami_context_t context, int comm);
 
-namespace PAMI
-{
-  namespace Geometry
-  {
+namespace PAMI{namespace Geometry{
+  typedef CCMI::Adaptor::CollectiveProtocolFactory Factory;
+
     // This class manages "Algorithms", which consist of a geometry
     // object and an algorithm to go along with that object
     template <class T_Geometry>
     class Algorithm
     {
       public:
-        Algorithm<T_Geometry>() {}
-
+    Algorithm<T_Geometry>(Factory        *factory,
+                          T_Geometry     *geometry):
+      _factory(factory),
+      _geometry(geometry)
+      {}
         inline void metadata(pami_metadata_t   *mdata)
         {
-          TRACE_ERR((stderr, "<%p>Algorithm::metadata() factory %p\n", this , _factory));
           _factory->metadata(mdata);
         }
-        inline void setContext(pami_context_t ctxt) {_context = ctxt;}
         inline pami_result_t generate(pami_xfer_t *xfer)
         {
-          TRACE_ERR((stderr, "<%p>Algorithm::generate() factory %p context %p\n", this, _factory, _context));
-          _factory->setContext(_context);
           CCMI::Executor::Composite *exec = _factory->generate((pami_geometry_t)_geometry,
                                                                (void*) xfer);
-
-          //As, the factories may override completion callbacks,  
-          //so we dont reset completion callback here. Factory
-          //responsible to call the application callback.
-          if (exec)
-          {
-            //  exec->setDoneCallback(xfer->cb_done, xfer->cookie);
-            exec->setContext(_context);
-            exec->start();
-          }
+        if (exec)exec->start();
           return PAMI_SUCCESS;
         }
-
         inline pami_result_t dispatch_set(size_t                           dispatch,
                                           pami_dispatch_callback_function  fn,
                                           void                            *cookie,
                                           pami_collective_hint_t           options)
         {
-          TRACE_ERR((stderr, "<%p>Algorithm::dispatch_set()\n", this));
           DispatchInfo info;
           info.fn = fn;
           info.cookie = cookie;
@@ -79,133 +59,158 @@ namespace PAMI
 //          _factory->setAsyncInfo(false,
 //                                 fn,
 //                                 mapidtogeometry);
-
           return PAMI_SUCCESS;
         }
-        CCMI::Adaptor::CollectiveProtocolFactory                    *_factory;
+
+    Factory          *_factory;
         T_Geometry                                                  *_geometry;
-        pami_context_t                                               _context;
     };
 
     // This class manages lists of algorithms
+  // It assumes the order of insertion into the list is:
+  // All algorithms from context 0 are added
+  // Then all algorithms from context 1.
+  // We can make this more general by implementing a dynamically
+  // growing 2d array of algorithm objects
     template <class T_Geometry>
     class AlgoLists
     {
-#ifndef PAMI_ALGOLISTS_MAX_NUM
-      static const int MAX_NUM_ALGO = 19;
-#else
-      static const int MAX_NUM_ALGO = PAMI_ALGOLISTS_MAX_NUM;
-#endif
+    typedef std::vector<Algorithm<T_Geometry> *> Alist;
       public:
-        AlgoLists():
-            _num_algo(0),
-            _num_algo_check(0)
+    inline AlgoLists(size_t num_contexts):
+      _num_contexts(num_contexts),
+      _cur_count(0),
+      _total_count(0),
+      _cur_count_check(0),
+      _total_count_check(0)
         {
-          TRACE_ERR2((stderr, "<%p>AlgoLists()\n", this));
-          // Clear the algorithm list
-          memset(&_algo_list[0], 0, sizeof(_algo_list));
-          memset(&_algo_list_check[0], 0, sizeof(_algo_list_check));
-          memset(&_algo_list_store[0], 0, sizeof(_algo_list_store));
-          memset(&_algo_list_check_store[0], 0, sizeof(_algo_list_check_store));
-        }
-        inline pami_result_t addCollective(CCMI::Adaptor::CollectiveProtocolFactory *factory,
-                                           T_Geometry                               *geometry,
-                                           size_t                                    context_id)
-        {
-          TRACE_ERR((stderr, "<%p>AlgoLists::addCollective() _num_algo=%u, factory=%p, geometry=%p\n", this, _num_algo, factory, geometry));
-          PAMI_assertf(MAX_NUM_ALGO>_num_algo,"MAX_NUM_ALGO(%u)>_num_algo(%u)",MAX_NUM_ALGO,_num_algo);
-          _algo_list_store[_num_algo]._factory  = factory;
-          _algo_list_store[_num_algo]._geometry = geometry;
-          _algo_list[_num_algo]                 = &_algo_list_store[_num_algo];
-          _num_algo++;
-
-	  geometry->setCleanupCallback(resetFactoryCache, factory);
-
-          return PAMI_SUCCESS;
-        }
-        inline pami_result_t rmCollective(CCMI::Adaptor::CollectiveProtocolFactory *factory,
-                                           T_Geometry                               *geometry,
-                                           size_t                                    context_id)
-        {
-          int i;
-          for (i = 0; i < _num_algo; ++i)
+      }
+    ~AlgoLists()
+      {
+        typename Alist::iterator it;
+        for(it=_algo_array.begin(); it<_algo_array.end(); it++)
           {
-            if (_algo_list[i]->_factory == factory)
-            {
-              PAMI_assertf(_algo_list_store[i]._factory == factory,
-                           "Internal consistency error on algorithm list");
-              size_t n = _num_algo - i - 1;
-              if (n)
-              {
-                // We can leave _algo_list[i] == & _algo_list_store[i] and just move store.
-                memcpy(&_algo_list_store[i], &_algo_list_store[i + 1], n * sizeof(_algo_list_store[0]));
-              }
-              --_num_algo;
-            }
-
+            __global.heap_mm->free(*it);
           }
+
+        for(it=_algo_array_check.begin(); it<_algo_array_check.end();it++)
+          {
+            __global.heap_mm->free(*it);
+          }
+      }
+
+    static void resetFactoryCache (pami_context_t   ctxt,
+                                   void           * factory,
+                                   pami_result_t    result)
+    {
+      CCMI::Adaptor::CollectiveProtocolFactory *cf =
+        (CCMI::Adaptor::CollectiveProtocolFactory *) factory;
+      cf->clearCache();
+        }
+
+    inline pami_result_t addCollectiveList(Alist                 &theList,
+                                           size_t                 context_id,
+                                           Factory               *factory,
+                                           T_Geometry                               *geometry,
+                                           size_t                &cur_count,
+                                           size_t                &total_count)
+        {
+        size_t idx;
+        if(context_id == 0)
+          {
+          idx                         = total_count++;
+          Algorithm<T_Geometry> *p;
+          pami_result_t rc = __global.heap_mm->memalign((void**)&p,
+                                                        0,
+                                                        sizeof(Algorithm<T_Geometry>)*_num_contexts);
+          if(rc != PAMI_SUCCESS || p == NULL)
+            return rc;
+          theList.push_back(p);
+        }
+        else
+              {
+          idx                         = cur_count%total_count;
+          cur_count++;
+              }
+        Algorithm<T_Geometry> *elem = &theList[idx][context_id];
+        new(elem) Algorithm<T_Geometry>(factory,geometry);
+        geometry->setCleanupCallback(resetFactoryCache, factory);
+        return PAMI_SUCCESS;
+            }
+    inline pami_result_t rmCollectiveList(Alist      *theList,
+                                          Factory    *factory,
+                                          T_Geometry *geometry)
+      {
+        typename Alist::iterator it;
+        for(it=theList->begin(); it<theList->end();it++)
+        {
+          if ((*it)->_factory == factory)
+          {
+            theList->erase(it);
+            break;
+          }
+        }
+        if(it == theList->end())
+          return PAMI_ERROR;
+        else
           return PAMI_SUCCESS;
         }
-        inline pami_result_t addCollectiveCheck(CCMI::Adaptor::CollectiveProtocolFactory  *factory,
+    inline pami_result_t addCollective(Factory        *factory,
                                                 T_Geometry                                *geometry,
+                                       pami_context_t  context,
                                                 size_t                                     context_id)
         {
-          TRACE_ERR((stderr, "<%p>AlgoLists::addCollectiveCheck() _num_algo_check=%u, factory=%p, geometry=%p\n", this, _num_algo_check, factory, geometry));
-          PAMI_assertf(MAX_NUM_ALGO>_num_algo_check,"MAX_NUM_ALGO(%u)>_num_algo(%u)",MAX_NUM_ALGO,_num_algo_check);
-          _algo_list_check_store[_num_algo_check]._factory  = factory;
-          _algo_list_check_store[_num_algo_check]._geometry = geometry;
-          _algo_list_check[_num_algo_check]                 = &_algo_list_check_store[_num_algo_check];
-          _num_algo_check++;
-          return PAMI_SUCCESS;
+        return addCollectiveList(_algo_array,
+                                 context_id,
+                                 factory,
+                                 geometry,
+                                 _cur_count,
+                                 _total_count);
         }
-        inline pami_result_t rmCollectiveCheck(CCMI::Adaptor::CollectiveProtocolFactory *factory,
+    inline pami_result_t addCollectiveCheck(Factory        *factory,
                                                T_Geometry                               *geometry,
+                                            pami_context_t  context,
                                                size_t                                    context_id)
         {
-          int i;
-          for (i = 0; i < _num_algo_check; ++i)
-          {
-            if (_algo_list_check[i]->_factory == factory)
-            {
-              PAMI_assertf(_algo_list_check_store[i]._factory == factory,
-                           "Internal consistency error on algorithm list");
-              size_t n = _num_algo_check - i - 1;
-              if (n)
-              {
-                // We can leave _algo_list_check[i] == & _algo_list_check_store[i] and just move store.
-                memcpy(&_algo_list_check_store[i], &_algo_list_check_store[i + 1], n * sizeof(_algo_list_check_store[0]));
-              }
-              --_num_algo_check;
+        return addCollectiveList(_algo_array_check,
+                                 context_id,
+                                 factory,
+                                 geometry,
+                                 _cur_count_check,
+                                 _total_count_check);
             }
+    inline pami_result_t rmCollective(Factory        *factory,
+                                      T_Geometry     *geometry)
+      {
+        return rmCollectiveList(&_algo_array,
+				factory,
+                                geometry);
           }
-          return PAMI_SUCCESS;
+    inline pami_result_t rmCollectiveCheck(Factory        *factory,
+                                           T_Geometry     *geometry)
+      {
+        return rmCollectiveList(&_algo_array_check,
+				factory,
+                                geometry);
         }
         inline pami_result_t lengths(size_t             *lists_lengths)
         {
-          TRACE_ERR((stderr, "<%p>AlgoLists::lengths() _num_algo %d, _num_algo_check %d\n", this, _num_algo,_num_algo_check));
-          lists_lengths[0] = _num_algo;
-          lists_lengths[1] = _num_algo_check;
+        // all lists should have the same size
+        lists_lengths[0] = _algo_array.size();
+        lists_lengths[1] = _algo_array_check.size();
           return PAMI_SUCCESS;
         }
+    Alist                  _algo_array;
+    Alist                  _algo_array_check;
+    size_t                 _num_contexts;
+    size_t                 _cur_count;
+    size_t                 _total_count;
+    size_t                 _cur_count_check;
+    size_t                 _total_count_check;
 
-	static void resetFactoryCache (pami_context_t   ctxt, 
-				       void           * factory,
-				       pami_result_t    result) 
-	{
-	  CCMI::Adaptor::CollectiveProtocolFactory *cf = 
-	    (CCMI::Adaptor::CollectiveProtocolFactory *) factory;
-	  cf->clearCache();
-	}
-
-        int                     _num_algo;
-        int                     _num_algo_check;
-        Algorithm<T_Geometry>  *_algo_list[MAX_NUM_ALGO];
-        Algorithm<T_Geometry>  *_algo_list_check[MAX_NUM_ALGO];
-        Algorithm<T_Geometry>   _algo_list_store[MAX_NUM_ALGO];
-        Algorithm<T_Geometry>   _algo_list_check_store[MAX_NUM_ALGO];
-    };
-  };
 };
+
+};}; //namespaces
 
 
 

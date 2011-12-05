@@ -79,6 +79,7 @@ namespace CCMI
         struct SendStruct
         {
           pami_multicast_t    msend;
+          pami_endpoint_t     ep;
           PAMI::PipeWorkQueue pwq;
           PAMI::Topology      dsttopology;
         } ;
@@ -89,7 +90,7 @@ namespace CCMI
         T_ConnMgr                      * _connmgr;
 
         int                 _comm;
-        unsigned            _root;
+        pami_endpoint_t     _root;
 
         unsigned            _rootindex;
         unsigned            _myindex;
@@ -111,6 +112,7 @@ namespace CCMI
         int                 _maxdsts;
         pami_task_t         _dstranks [MAX_CONCURRENT];
         unsigned            _dstlens  [MAX_CONCURRENT];
+        pami_endpoint_t     _self_ep;
         PAMI::Topology      _selftopology;
         PAMI::Topology      *_gtopology;
 
@@ -161,7 +163,8 @@ namespace CCMI
             _curphase(0),
             _nphases(0),
             _startphase(0),
-            _selftopology(mf->myrank()),
+            _self_ep(mf->endpoint()),
+            _selftopology(&_self_ep, 1,PAMI::tag_eplist()),
             _gtopology(gtopology),
             _msendstr(NULL),
             _disps(NULL),
@@ -185,7 +188,7 @@ namespace CCMI
         {
            /// Todo: convert this to allocator ?
            if (_maxdsts) __global.heap_mm->free(_msendstr);
-           if (_native->myrank() != _root || (_root != 0 && _gtopology->size() != (unsigned)_nphases+1)) __global.heap_mm->free(_tmpbuf);
+           if (_native->endpoint() != _root || (_root != 0 && _gtopology->size() != (unsigned)_nphases+1)) __global.heap_mm->free(_tmpbuf);
         }
 
         /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -203,15 +206,9 @@ namespace CCMI
           _comm_schedule->init (_root, CCMI::Schedule::SCATTER, _startphase, _nphases, _maxdsts);
           CCMI_assert(_maxdsts <= MAX_CONCURRENT);
           // overwrite _nphase since we only care about my own number of phases
-          _nphases = _comm_schedule->getMyNumPhases();
-
-          //fprintf(stderr, "_nphases = %d, _startphase = %d, _maxdsts = %d\n", _nphases, _startphase, _maxdsts);
-
-          //CCMI_assert(_comm_schedule != NULL);
-          //_comm_schedule->getDstUnionTopology (&_dsttopology);
-
-          _myindex    = _gtopology->rank2Index(_native->myrank());
-          _rootindex  = _gtopology->rank2Index(_root);
+          _nphases    = _comm_schedule->getMyNumPhases();
+          _myindex    = _gtopology->endpoint2Index(_native->endpoint());
+          _rootindex  = _gtopology->endpoint2Index(_root);
 
           unsigned connection_id = (unsigned) - 1;
           if (_connmgr)
@@ -266,7 +263,7 @@ namespace CCMI
           CCMI_assert(_comm_schedule != NULL);
 
           // setup PWQ
-          if (_native->myrank() == _root)
+          if (_native->endpoint() == _root)
           {
             if ((unsigned)_nphases == _gtopology->size() - 1 || _root == 0)
               _tmpbuf = src;
@@ -300,7 +297,7 @@ namespace CCMI
         void setVectors(T_Scatter_type *xfer)
         {
 
-          if (_native->myrank() == _root)
+          if (_native->endpoint() == _root)
             {
               setScatterVectors<T_Scatter_type>(xfer, (void *)&_disps, (void *)&_sndcounts);
             }
@@ -370,7 +367,7 @@ inline void  CCMI::Executor::ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type, 
 
   _curphase  = 0;
 
-  if (_native->myrank() == _root)
+  if (_native->endpoint() == _root)
     {
       sendNext ();
     }
@@ -388,12 +385,16 @@ inline void  CCMI::Executor::ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type, 
   if (_curphase == _startphase + _nphases)
     {
       // all parents copy from send buffer to application destination buffer
+      char *sndbuf = _rbuf;
       if (_disps && _sndcounts)
-        memcpy(_rbuf, _sbuf + _disps[_myindex], _buflen);
-      else if (_native->myrank() == _root)
-        memcpy(_rbuf, _sbuf + _myindex * _buflen, _buflen);
+        sndbuf = _sbuf + _disps[_myindex];
+      else if (_native->endpoint() == _root)
+        sndbuf = _sbuf + _myindex * _buflen;
       else if (_nphases > 1)
-        memcpy(_rbuf, _tmpbuf, _buflen);
+        sndbuf = _tmpbuf;
+
+      if(sndbuf != _rbuf)
+        memcpy(_rbuf, sndbuf, _buflen);
 
       if (_cb_done) _cb_done (NULL, _clientdata, PAMI_SUCCESS);
 
@@ -409,22 +410,21 @@ inline void  CCMI::Executor::ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type, 
 
       SendStruct *sendstr = &(_msendstr[i]);
       pami_multicast_t *msend = &sendstr->msend;
-      //new (&sendstr->dsttopology) PAMI::Topology(_gtopology->index2Rank(_dstranks[i]));
-      new (&sendstr->dsttopology) PAMI::Topology(_dstranks[i]);
-
-      unsigned dstindex = _gtopology->rank2Index(_dstranks[i]);
+      sendstr->ep             = _dstranks[i];
+      new (&sendstr->dsttopology) PAMI::Topology(&sendstr->ep, 1, PAMI::tag_eplist());
+      unsigned dstindex = _gtopology->endpoint2Index(_dstranks[i]);
       size_t buflen;
       unsigned offset;
 
       if (_disps && _sndcounts)
         {
-          CCMI_assert(_native->myrank() == _root);
+          CCMI_assert(_native->endpoint() == _root);
           CCMI_assert(ndst == 1);
           buflen   =  _sndcounts[dstindex] * _stype->GetDataSize();
           offset   =  _disps[dstindex];
           _mdata._count = buflen;
         }
-      else if ((unsigned)_nphases == _native->numranks() - 1)
+      else if ((unsigned)_nphases == _gtopology->size() - 1)
         {
           buflen   = _buflen;
           offset   = dstindex * _buflen;

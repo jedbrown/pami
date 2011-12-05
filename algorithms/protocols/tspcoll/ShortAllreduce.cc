@@ -44,9 +44,9 @@ Short (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset,T_NI* ni)
 
   if (nonBF > 0)
     {
-      //xlpgas_endpoint_t rdest = comm->endpoint (comm->ordinal() - maxBF);
+      //xlpgas_endpoint_t rdest = comm->index2Endpoint (comm->ordinal() - maxBF);
       //_dest    [phase] = (this->ordinal() >= maxBF) ? rdest : -1;
-      this->_dest    [phase] = comm->endpoint (this->ordinal() - maxBF);
+      this->_dest    [phase] = comm->index2Endpoint (this->ordinal() - maxBF);
       this->_sbuf    [phase] = NULL;    /* unknown */
       this->_rbuf    [phase] = ((int)this->ordinal() < nonBF)  ? this->_phasebuf[phase][0] : NULL;
       this->_cb_rcvhdr[phase] = ((int)this->ordinal() < nonBF)  ? cb_switchbuf : NULL;
@@ -64,9 +64,9 @@ Short (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset,T_NI* ni)
 
   for (int i=0; i<_logMaxBF; i++)
     {
-      //unsigned rdest   = comm->endpoint (this->ordinal() ^ (1<<i));
+      //unsigned rdest   = comm->index2Endpoint (this->ordinal() ^ (1<<i));
       //_dest    [phase] = ((int)this->ordinal() < maxBF) ? rdest : -1;
-      this->_dest [phase] = comm->endpoint (this->ordinal() ^ (1<<i));
+      this->_dest [phase] = comm->index2Endpoint (this->ordinal() ^ (1<<i));
       this->_sbuf    [phase] = NULL;     /* unknown */
       this->_rbuf    [phase] = ((int)this->ordinal() < maxBF) ? this->_phasebuf[phase][0] : NULL;
       this->_cb_rcvhdr[phase] = ((int)this->ordinal() < maxBF) ? cb_switchbuf : NULL;
@@ -84,9 +84,9 @@ Short (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset,T_NI* ni)
 
   if (nonBF > 0)
     {
-      ///unsigned rdest   = comm->endpoint (this->ordinal() + maxBF);
+      ///unsigned rdest   = comm->index2Endpoint (this->ordinal() + maxBF);
       //_dest    [phase] = ((int)this->ordinal() < nonBF)  ? rdest : -1;
-      this->_dest    [phase] = comm->endpoint (this->ordinal() + maxBF);
+      this->_dest    [phase] = comm->index2Endpoint (this->ordinal() + maxBF);
       this->_sbuf    [phase] = NULL;     /* unknown */
       this->_rbuf    [phase] = NULL;     /* unknown */
       this->_cb_rcvhdr[phase] = NULL;

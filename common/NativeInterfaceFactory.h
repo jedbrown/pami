@@ -82,10 +82,10 @@ namespace PAMI {
 	ni = (CCMI::Interfaces::NativeInterface *) _allocator.allocateObject ();
 	
 	if (ni_type == CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED)
-	  new ((void*)ni) T_NIAS(_client, _context, _context_id, _client_id);	    
+	  new ((void*)ni) T_NIAS(_client, _context, _context_id, _client_id);
 	else
-	  new ((void*)ni) T_NIAM(_client, _context, _context_id, _client_id);	    
-	
+	  new ((void*)ni) T_NIAM(_client, _context, _context_id, _client_id);
+
 	pami_endpoint_t            origin   = PAMI_ENDPOINT_INIT(_client_id, __global.mapping.task(), _context_id);
 	
 	pami_dispatch_p2p_function fn;
@@ -260,9 +260,9 @@ namespace PAMI {
 	COMPILE_TIME_ASSERT(sizeof(T_NIAM) <= T_Allocator::objsize);
 	ni = (CCMI::Interfaces::NativeInterface *) _allocator.allocateObject ();
 	if (ni_type == CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED)
-	  new ((void*)ni) T_NIAS(_client, _context, _context_id, _client_id);	    
+	  new ((void*)ni) T_NIAS(_client, _context, _context_id, _client_id);
 	else
-	  new ((void*)ni) T_NIAM(_client, _context, _context_id, _client_id);	    
+	  new ((void*)ni) T_NIAM(_client, _context, _context_id, _client_id);
 	
 	pami_endpoint_t origin = PAMI_ENDPOINT_INIT(_client_id, __global.mapping.task(), _context_id);
 	

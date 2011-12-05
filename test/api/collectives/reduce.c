@@ -199,16 +199,31 @@ int main(int argc, char*argv[])
               /* We aren't testing barrier itself, so use context 0. */
               blocking_coll(context[0], &barrier, &bar_poll_flag);
 
-              if(task_id < niter) /* only validate tasks which were roots in niter loop */
-              {
-                int rc_check;
-                rc |= rc_check = reduce_check_rcvbuf (rbuf, i, op, dt, task_id, num_tasks);
-  
-                if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
-              }
+              /* Correctness */
+              reduce_initialize_sndbuf (sbuf, i, op, dt, task_id, num_tasks);
+              memset(rbuf, 0xFF, dataSent);
+              root = 0;
+              for (j = 0; j < num_tasks; j++)
+                {
+                  pami_endpoint_t root_ep;
+                  PAMI_Endpoint_create(client, root, 0, &root_ep);
+                  reduce.cmd.xfer_reduce.root    = root_ep;
+
+                  if (task_id == root)
+                    reduce.cmd.xfer_reduce.rcvbuf    = rbuf;
+                  else
+                    reduce.cmd.xfer_reduce.rcvbuf    = NULL;
+
+                  blocking_coll(context[iContext], &reduce, &reduce_poll_flag);
+
+                  root = (root + 1) % num_tasks;
+                }
+              int rc_check;
+              rc |= rc_check = reduce_check_rcvbuf (rbuf, i, op, dt, task_id, num_tasks);
+
+              if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
 
               usec = (tf - ti) / (double)niter;
-
               if (task_id == root)
               {
                 printf("  %11lld %16d %14.1f %12.2f\n",

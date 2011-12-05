@@ -192,6 +192,11 @@ namespace PAMI
                                        size_t               length)
           {
             TRACE_ERR((stderr, ">> PacketModel::postPacket_impl(0)\n"));
+
+            pami_task_t    t_task;
+            size_t         t_offset;
+            PAMI_Endpoint_query (target_task, &t_task, &t_offset);
+
             size_t fnum = device.fnum (device.task2peer(target_task), target_offset);
             PacketWriter<void> writer (_dispatch_id);
             writer.setMetadata (metadata, metasize);

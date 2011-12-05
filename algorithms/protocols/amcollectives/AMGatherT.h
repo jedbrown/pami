@@ -17,7 +17,7 @@
 #include "algorithms/ccmi.h"
 #include "algorithms/executor/Gather.h"
 #include "algorithms/connmgr/CommSeqConnMgr.h"
-#include "algorithms/protocols/CollectiveProtocolFactory.h"
+#include "algorithms/protocols/CollectiveProtocolFactoryT.h"
 #include "algorithms/protocols/CollOpT.h"
 
 #if defined DEBUG
@@ -57,7 +57,9 @@ namespace CCMI
           {
           }
 
-          AMGatherT (Interfaces::NativeInterface              * native,
+          AMGatherT (pami_context_t                         ctxt,
+                     size_t                                 ctxt_id,
+                     Interfaces::NativeInterface              * native,
                      T_Conn                                   * cmgr,
                      pami_callback_t                            cb_scatter_done,
                      pami_callback_t                            cb_gather_done,
@@ -117,12 +119,15 @@ namespace CCMI
           PAMI::MemoryAllocator<8192, 16> _header_allocator;
 
           T_Conn                         *_cmgr;
-
+          Interfaces::NativeInterface    *_native;
         public:
-          AMGatherFactoryT (T_Conn                      *cmgr,
+          AMGatherFactoryT (pami_context_t               ctxt,
+                            size_t                       ctxt_id,
+                            pami_mapidtogeometry_fn      cb_geometry,
+                            T_Conn                      *cmgr,
                             Interfaces::NativeInterface *native):
-              CollectiveProtocolFactory(native),
-              _cmgr(cmgr)
+            CollectiveProtocolFactory(ctxt, ctxt_id, cb_geometry),
+            _cmgr(cmgr), _native(native)
           {
             native->setMulticastDispatch(cb_head, this);
           }
@@ -141,7 +146,7 @@ namespace CCMI
           {
             DO_DEBUG((templateName<MetaDataFn>()));
             get_metadata(mdata);
-            CollectiveProtocolFactory::metadata(mdata, PAMI_XFER_AMGATHER);
+            if(_native) _native->metadata(mdata,PAMI_XFER_AMGATHER);
           }
 
           char *allocateBuffer (unsigned size)
@@ -176,7 +181,7 @@ namespace CCMI
             PAMI::Topology *topo = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
             T_Conn *cmgr = _cmgr;
             DEBUG((stderr, "AMGatherFactoryT::generate()\n"));
-            unsigned key = getKey(_native->myrank(),
+            unsigned key = getKey(this->_native->endpoint(),
                                   (unsigned) - 1,
                                   geometry,
                                   (ConnectionManager::BaseConnectionManager**) & cmgr);
@@ -191,12 +196,12 @@ namespace CCMI
             unsigned bytes   = amg_xfer->rtypecount * rtype->GetDataSize();
             // Invoke the dispatch function 
             dispatch->fn.amgather (
-                 _context,              // context
+                 this->_context,              // context
                  dispatch->cookie,      // user cookie
-                 (char *)amg_xfer->headers + topo->rank2Index(_native->myrank()) * amg_xfer->headerlen, // User header
+                 (char *)amg_xfer->headers + topo->endpoint2Index(this->_native->endpoint()) * amg_xfer->headerlen, // User header
                  amg_xfer->headerlen,   // User header size
                  bytes,                 // Number of bytes of message data
-                 _native->myrank(),     // origin (root)
+                 this->_native->endpoint(),     // origin (root)
                  g,                     // Geometry
                  &send);                // recv info
 
@@ -212,12 +217,14 @@ namespace CCMI
             cb_gather_exec_done.clientdata = co;
 
             a_composite = new (co->getComposite())
-            T_Composite ( _native,
+            T_Composite ( this->_context,
+                          this->_context_id,
+                          this->_native,
                           cmgr,
                           cb_scatter_exec_done,
                           cb_gather_exec_done,
                           geometry,
-                          _native->myrank());
+                          this->_native->endpoint());
 
             co->setXfer((pami_xfer_t *)cmd);
             co->setFactory(this);
@@ -225,17 +232,17 @@ namespace CCMI
 
             // Use a custom Collective header as we need to send the data size (for gather operation)
             AMCollHeaderData hdr;
-            hdr._root  = _native->myrank();
+            hdr._root  = this->_native->endpoint();
             hdr._comm  = geometry->comm();
             hdr._count = -1;
             hdr._phase = 0;
             hdr._data_size  = bytes;
             hdr._dispatch   = amg_xfer->dispatch;
 
-            a_composite->setContext (_context);
+            a_composite->setContext (this->_context);
             a_composite->scatterExecutor().setCollHeader (hdr);
             a_composite->scatterExecutor().setBuffers ((char *)amg_xfer->headers,
-                                                       (char *)amg_xfer->headers + topo->rank2Index(_native->myrank()) * amg_xfer->headerlen, // src==dst in final memcpy
+                                                       (char *)amg_xfer->headers + topo->endpoint2Index(this->_native->endpoint()) * amg_xfer->headerlen, // src==dst in final memcpy
                                                        amg_xfer->headerlen,
                                                        (TypeCode *) PAMI_TYPE_BYTE, (TypeCode *) PAMI_TYPE_BYTE);
             a_composite->gatherExecutor().setBuffers ((char *)send.addr,
@@ -251,7 +258,7 @@ namespace CCMI
                 a_composite->gatherExecutor().setConnectionID(key);
               }
 
-            geometry->asyncCollectivePostQ().pushTail(co);
+            geometry->asyncCollectivePostQ(_native->contextid()).pushTail(co);
             a_composite->scatterExecutor().start();
             a_composite->gatherExecutor().start();
             return NULL;
@@ -279,7 +286,7 @@ namespace CCMI
             unsigned key;
             key = getKey (cdata->_root, conn_id, geometry, (ConnectionManager::BaseConnectionManager **) & cmgr);
             CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *co =
-              (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *) geometry->asyncCollectivePostQ().find(key);
+              (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *) geometry->asyncCollectivePostQ(factory->_native->contextid()).find(key);
 
             DEBUG((stderr, "AMGatherFactoryT::cb_head() quad_count=%u sndlen=%zu cdata->_count=%u cdata->_root=%u conn_id=%u\n",
                    count, sndlen, cdata->_count, cdata->_root, conn_id));
@@ -314,7 +321,9 @@ namespace CCMI
                 cb_gather_exec_done.clientdata = co;
 
                 a_composite = new (co->getComposite())
-                T_Composite ( factory->_native,
+                T_Composite ( ctxt,
+                              factory->getContextId(),
+                              factory->_native,
                               cmgr,
                               cb_scatter_exec_done,
                               cb_gather_exec_done,
@@ -345,7 +354,7 @@ namespace CCMI
                     a_composite->gatherExecutor().setConnectionID(key);
                   }
 
-                geometry->asyncCollectivePostQ().pushTail(co);
+                geometry->asyncCollectivePostQ(factory->_native->contextid()).pushTail(co);
                 a_composite->start();
                 a_composite->scatterExecutor().notifyRecv(peer, *info, (PAMI::PipeWorkQueue **)rcvpwq, cb_done);
               }
@@ -373,7 +382,7 @@ namespace CCMI
 
             unsigned root = a_composite->scatterExecutor().getRoot();
             // Invoke the user callback (root has already done this)
-            if (factory->_native->myrank() != root)
+            if (factory->_native->endpoint() != root)
               {
                 pami_xfer_t *a_xfer = co->getXfer();
                 pami_recv_t send = {0,};
@@ -426,7 +435,7 @@ namespace CCMI
                             xfer->cookie, PAMI_SUCCESS);
 
             // must be on the posted queue, dequeue it
-            geometry->asyncCollectivePostQ().deleteElem(co);
+            geometry->asyncCollectivePostQ(factory->_native->contextid()).deleteElem(co);
 
             // free the CollOp object
             factory->_free_pool.free(co);

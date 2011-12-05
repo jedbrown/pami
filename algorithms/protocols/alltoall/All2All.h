@@ -55,7 +55,6 @@ public:
         PAMI::Topology * all = (PAMI::Topology *)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
         size_t topo_size = all->size();
         TRACE_ADAPTOR((stderr, "<%p>All2AllProtocol size %zu, stypecount %zu, rtypecount %zu\n", this, topo_size, coll->cmd.xfer_alltoall.stypecount, coll->cmd.xfer_alltoall.rtypecount));
-        //_my_index = all->rank2Index(self);
 
         TypeCode * stype = (TypeCode *)coll->cmd.xfer_alltoall.stype;
         TypeCode * rtype = (TypeCode *)coll->cmd.xfer_alltoall.rtype;
@@ -142,8 +141,8 @@ public:
 
         // Start the barrier. When it completes, it will start the m2m
         CCMI::Executor::Composite *barrier = (CCMI::Executor::Composite *)
-                                             _geometry->getKey((size_t)0, /// \todo does NOT support multicontext
-                                                     PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE);
+          _geometry->getKey(_native->contextid(),
+                            PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE);
         CCMI_assert(barrier != NULL);
         barrier->setDoneCallback (cb_barrier_done, this);
         //barrier->setConsistency (consistency);
@@ -210,15 +209,19 @@ template <class T_Composite, MetaDataFn get_metadata, class T_Conn>
 class All2AllFactoryT: public CollectiveProtocolFactory
 {
 protected:
-    pami_mapidtogeometry_fn _cb_geometry;
     T_Conn *_cmgr;
     pami_dispatch_manytomany_function _fn;
+    Interfaces::NativeInterface       *_native;
     CCMI::Adaptor::CollOpPoolT<pami_xfer_t, T_Composite> _free_pool;
 public:
-    All2AllFactoryT(T_Conn *cmgr,
+    All2AllFactoryT(pami_context_t               ctxt,
+                    size_t                       ctxt_id,
+                    pami_mapidtogeometry_fn      cb_geometry,
+                    T_Conn                      *cmgr,
                     Interfaces::NativeInterface *native):
-        CollectiveProtocolFactory(native),
-        _cmgr(cmgr)
+        CollectiveProtocolFactory(ctxt,ctxt_id,cb_geometry),
+        _cmgr(cmgr),
+        _native(native)
     {
         TRACE_ADAPTOR((stderr, "<%p>All2AllFactoryT\n", this));
         _fn = cb_manytomany;
@@ -244,7 +247,7 @@ public:
     virtual void metadata(pami_metadata_t *mdata)
     {
         get_metadata(mdata);
-        CollectiveProtocolFactory::metadata(mdata,PAMI_XFER_ALLTOALL);
+        if(_native) _native->metadata(mdata,PAMI_XFER_ALLTOALL);
     }
 
     virtual Executor::Composite * generate(pami_geometry_t g,
@@ -272,7 +275,7 @@ public:
         coll_object->setXfer((pami_xfer_t *)op);
         coll_object->setFlag(LocalPosted);
         coll_object->setFactory(this);
-        geometry->asyncCollectivePostQ().pushTail(coll_object);
+        geometry->asyncCollectivePostQ(_native->contextid()).pushTail(coll_object);
         TRACE_ADAPTOR((stderr, "<%p>All2AllFactoryT::generate() key %u, coll_object %p, a2a %p\n", this, key, coll_object, a2a));
         return a2a;
     }
@@ -299,7 +302,7 @@ public:
 
         CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *coll_object =
             (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)
-            geometry->asyncCollectivePostQ().findAndDelete(key);
+          geometry->asyncCollectivePostQ(factory->_native->contextid()).findAndDelete(key);
         a2a = (T_Composite *) coll_object->getComposite();
         TRACE_ADAPTOR((stderr, "<%p>All2AllFactoryT::cb_manytomany() key %u, coll_object %p, a2a %p\n", arg, key, coll_object, a2a));
         a2a->notifyRecv(recv, cb_done);

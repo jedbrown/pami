@@ -122,7 +122,9 @@ public:
     ~AsyncScatterT ()
     {
     };
-    AsyncScatterT (Interfaces::NativeInterface   * native,
+    AsyncScatterT (pami_context_t               ctxt,
+                   size_t                       ctxt_id,
+                   Interfaces::NativeInterface   * native,
                    T_Conn                        * cmgr,
                    pami_callback_t                  cb_done,
                    PAMI_GEOMETRY_CLASS            * geometry,
@@ -189,12 +191,16 @@ protected:
     PAMI::MemoryAllocator<32768, 16>                 _eab_allocator;
 
     T_Conn                                        * _cmgr;
-
+    Interfaces::NativeInterface                   * _native;
 public:
-    AsyncScatterFactoryT (T_Conn                      *cmgr,
+    AsyncScatterFactoryT (pami_context_t               ctxt,
+                          size_t                       ctxt_id,
+                          pami_mapidtogeometry_fn      cb_geometry,
+                          T_Conn                      *cmgr,
                           Interfaces::NativeInterface *native):
-        CollectiveProtocolFactory(native),
-        _cmgr(cmgr)
+        CollectiveProtocolFactory(ctxt,ctxt_id,cb_geometry),
+        _cmgr(cmgr),
+        _native(native)
     {
         native->setMulticastDispatch(cb_async, this);
     }
@@ -226,7 +232,7 @@ public:
         TRACE_ADAPTOR((stderr, "<%p>AsyncScatterFactoryT::metadata()\n", this));
         DO_DEBUG((templateName<MetaDataFn>()));
         get_metadata(mdata);
-        CollectiveProtocolFactory::metadata(mdata,PAMI_XFER_SCATTER);
+        if(_native) _native->metadata(mdata,PAMI_XFER_SCATTER);
     }
 
     char *allocateBuffer (unsigned size)
@@ -267,7 +273,7 @@ public:
                               (PAMI_GEOMETRY_CLASS*)g,
                               (ConnectionManager::BaseConnectionManager**) & cmgr);
 
-        if (_native->myrank() == scatter_xfer->root)
+        if (_native->endpoint() == scatter_xfer->root)
         {
             co = _free_pool.allocate(key);
             pami_callback_t  cb_exec_done;
@@ -275,7 +281,9 @@ public:
             cb_exec_done.clientdata = co;
 
             a_scatter = new (co->getComposite())
-            T_Composite ( _native,
+            T_Composite ( this->_context,
+                          this->_context_id,
+                          _native,
                           cmgr,
                           cb_exec_done,
                           (PAMI_GEOMETRY_CLASS *)g,
@@ -294,7 +302,7 @@ public:
         }
         else
         {
-            co = (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)geometry->asyncCollectiveUnexpQ().findAndDelete(key);
+            co = (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)geometry->asyncCollectiveUnexpQ(_native->contextid()).findAndDelete(key);
 
             /// Try to match in active queue
             if (co)
@@ -352,7 +360,9 @@ public:
                 cb_exec_done.clientdata = co;
 
                 a_scatter = new (co->getComposite())
-                T_Composite ( _native,
+                T_Composite ( this->_context,
+                              this->_context_id,
+                              _native,
                               cmgr,
                               cb_exec_done,
                               (PAMI_GEOMETRY_CLASS *)g,
@@ -366,7 +376,7 @@ public:
                 if (cmgr == NULL)
                     a_scatter->executor().setConnectionID(key);
 
-                geometry->asyncCollectivePostQ().pushTail(co);
+                geometry->asyncCollectivePostQ(_native->contextid()).pushTail(co);
             }
 
             //dev->unlock();
@@ -398,7 +408,7 @@ public:
         T_Conn *cmgr = factory->_cmgr;
         unsigned key = factory->myGetKey (cdata->_root, conn_id, geometry, &cmgr);
         CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *co =
-            (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *) geometry->asyncCollectivePostQ().findAndDelete(key);
+          (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *) geometry->asyncCollectivePostQ(factory->_native->contextid()).findAndDelete(key);
 
         if (!co)
         {
@@ -430,8 +440,11 @@ public:
             scatter_xfer->rtypecount = ead->bytes;
             scatter_xfer->rtype      = PAMI_TYPE_BYTE;
 
+            CCMI_assert ( ctxt == factory->getContext() );//FIXME:: This need to be true
             a_scatter = new (co->getComposite())
-            T_Composite ( factory->_native,
+            T_Composite ( ctxt,
+                          factory->getContextId(),
+                          factory->_native,
                           cmgr,
                           cb_exec_done,
                           geometry,
@@ -444,7 +457,7 @@ public:
             if (cmgr == NULL)
                 a_scatter->executor().setConnectionID(key);
 
-            geometry->asyncCollectiveUnexpQ().pushTail(co);
+            geometry->asyncCollectiveUnexpQ(factory->_native->contextid()).pushTail(co);
         }
         else
         {

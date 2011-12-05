@@ -100,6 +100,10 @@ namespace PAMI
         {
           return _context;
         }
+      size_t getContextId()
+        {
+          return _context_id;
+        }
       pami_context_t getClient()
         {
           return _client;

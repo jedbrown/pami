@@ -67,7 +67,6 @@ namespace CCMI
 
       static const uint32_t alignment = 0x40; //64 byte aligment
       static const uint32_t alignment_mask = ~(alignment-1); //the mask for sizes
-
     public:
       MultiColorCompositeT () : CompositeT<NUMCOLORS, T_Bar, T_Exec>(), 
         _doneCount(0), _nComplete(0)
@@ -178,7 +177,7 @@ namespace CCMI
 
         for (c = 0; c < _numColors; c++) 
         {
-          T_Sched *schedule = new (&_schedules[c]) T_Sched(_native->myrank(), topology, _colors[c]);
+          T_Sched *schedule = new (&_schedules[c]) T_Sched(_native->endpoint(), topology, _colors[c]);
           T_Exec *exec  = (T_Exec *) (&_executors[c]);
           exec->setSchedule (schedule, _colors[c]);
         }
@@ -264,7 +263,7 @@ namespace CCMI
         TRACE_FN_ENTER();
         MultiColorCompositeT * composite = (MultiColorCompositeT *) me;
         TRACE_FORMAT("<%p> %d: numcolors %u, donecount %u, complete count %u bytes %d\n", me, 
-                     composite->_native->myrank(), composite->_numColors, 
+                     composite->_native->endpoint(), composite->_numColors,
                      composite->_doneCount, composite->_nComplete, composite->_bytes);
         CCMI_assert (composite != NULL);
 
@@ -279,7 +278,7 @@ namespace CCMI
 
         if (composite->_doneCount == composite->_nComplete) // call users done function
         {
-          TRACE_FORMAT ("%d: Composite Done from barrier bytes %d\n", composite->_native->myrank(), composite->_bytes);
+          TRACE_FORMAT ("%d: Composite Done from barrier bytes %d\n", composite->_native->endpoint(), composite->_bytes);
           composite->_cb_done(composite->_context, composite->_clientdata, PAMI_SUCCESS);
         }
         TRACE_FN_EXIT();
@@ -297,7 +296,7 @@ namespace CCMI
 
         if (composite->_doneCount == composite->_nComplete) // call users done function
         {
-          TRACE_FORMAT ("%d: Composite Done from collective, bytes %d context %p/%p\n", composite->_native->myrank(), composite->_bytes, context,composite->_context);
+          TRACE_FORMAT ("%d: Composite Done from collective, bytes %d context %p/%p\n", composite->_native->endpoint(), composite->_bytes, context,composite->_context);
           composite->_cb_done(context?context:composite->_context, composite->_clientdata, PAMI_SUCCESS);
         }
         TRACE_FN_EXIT();

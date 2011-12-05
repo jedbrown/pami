@@ -13,6 +13,9 @@
 
 #define MAX_PARALLEL 20
 
+//#define TRACE_ADAPTOR(x) fprintf x
+//#define TRACE_MSG(x) fprintf x
+
 namespace CCMI
 {
   namespace Executor
@@ -34,7 +37,9 @@ namespace CCMI
         pami_multicast_t                 _msend;
         PAMI::PipeWorkQueue              _pwq;
 
-        pami_task_t             _dstranks [MAX_PARALLEL];
+        pami_endpoint_t         _dst_eps [MAX_PARALLEL];
+        pami_endpoint_t         _self_ep;
+        pami_endpoint_t         _root_ep;
         PAMI::Topology          _dsttopology;
         PAMI::Topology          _selftopology;
         PAMI::Topology          _roottopology;
@@ -59,8 +64,9 @@ namespace CCMI
             _native(mf),
 	    _connmgr(connmgr),
 	    _postReceives (false),
-            _dsttopology((pami_task_t *)&_dstranks, MAX_PARALLEL),
-	    _selftopology(mf->myrank())
+            _self_ep(mf->endpoint()),
+            _dsttopology(),
+	    _selftopology(&_self_ep,1,PAMI::tag_eplist())
         {
           TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec(...)\n", this));
           //_root              =  (unsigned) - 1;
@@ -97,7 +103,7 @@ namespace CCMI
           int nph, phase;
           _comm_schedule->init (_mdata._root, BROADCAST_OP, phase, nph);
           CCMI_assert(_comm_schedule != NULL);
-          _comm_schedule->getDstUnionTopology (&_dsttopology);
+          _comm_schedule->getDstUnionTopology (&_dsttopology, _dst_eps);
 
           if (_connmgr)
             _msend.connection_id = _connmgr->getConnectionId(_mdata._comm, _mdata._root, color, (unsigned) - 1, (unsigned) - 1);
@@ -113,7 +119,8 @@ namespace CCMI
         {
           TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::setRoot() root %u\n", this, root));
           _mdata._root = root;
-          new (&_roottopology) PAMI::Topology(root);
+          _root_ep     = root;
+          new (&_roottopology) PAMI::Topology(&_root_ep, 1, PAMI::tag_eplist());
         }
 
         void  setBuffers (char *src, char *dst, int len, TypeCode *stype, TypeCode *rtype)
@@ -123,7 +130,7 @@ namespace CCMI
 
           //Setup pipework queue. This depends on setRoot so it better be correct
           size_t bufinit = 0;
-          if (_native->myrank() == _mdata._root)
+          if (_native->endpoint() == _mdata._root)
             bufinit = len;
           _pwq.configure (src, len, bufinit, stype, rtype);
           _pwq.reset();
@@ -159,7 +166,7 @@ namespace CCMI
 
         void postReceives ()
         {
-          if (_native->myrank() == _mdata._root) return;
+          if (_native->endpoint() == _mdata._root) return;
 
           pami_multicast_t mrecv;
           //memcpy (&mrecv, &_msend, sizeof(pami_multicast_t));
@@ -167,7 +174,8 @@ namespace CCMI
 	  mrecv.msgcount = _msend.msgcount;
 	  mrecv.connection_id = _msend.connection_id;
 
-          TRACE_MSG((stderr, "<%p>Executor::BroadcastExec::postReceives ndest %zu, bytes %zu, rank %u, root %u\n", this, _dsttopology.size(), _msend.bytes, _selftopology.index2Rank(0),_roottopology.index2Rank(0)));
+          TRACE_MSG((stderr, "<%p>Executor::BroadcastExec::postReceives ndest %zu, bytes %zu, rank %u, root %u\n",
+                     this, _dsttopology.size(), _msend.bytes, _selftopology.index2Endpoint(0),_roottopology.index2Endpoint(0)));
           mrecv.src_participants   = (pami_topology_t *) & _roottopology; 
           mrecv.dst_participants   = (pami_topology_t *) & _selftopology;
 
@@ -209,7 +217,7 @@ inline void  CCMI::Executor::BroadcastExec<T, T_Coll_header>::start ()
 {
   TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::start() count %zu\n", this, _msend.bytes));
 
-  if (_native->myrank() == _mdata._root || _postReceives)
+  if (_native->endpoint() == _mdata._root || _postReceives)
     {
       sendNext ();
     }
@@ -235,7 +243,7 @@ inline void  CCMI::Executor::BroadcastExec<T, T_Coll_header>::sendNext ()
 
   for (unsigned i = 0; i < _dsttopology.size(); ++i)
     {
-      sprintf(tbuf, " dstrank[%d] = %d/%d ", i, _dstranks[i], _dsttopology.index2Rank(i));
+      sprintf(tbuf, " me: 0x%x dstrank[%d] = %d/%d ", _native->endpoint(),i, _dst_eps[i], _dsttopology.index2Endpoint(i));
       strcat (sbuf, tbuf);
     }
 

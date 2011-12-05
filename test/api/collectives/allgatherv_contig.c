@@ -1,3 +1,11 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
 /**
  * \file test/api/collectives/allgatherv.c
  */
@@ -14,6 +22,15 @@ void initialize_sndbuf (void *sbuf, int count, pami_task_t task, int dt)
   if (dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
   {
     unsigned int *ibuf = (unsigned int *)  sbuf;
+
+    for (i = 0; i < count; i++)
+    {
+      ibuf[i] = task;
+    }
+  }
+  else if (dt_array[dt] == PAMI_TYPE_SIGNED_INT)
+  {
+    int *ibuf = (int *)  sbuf;
 
     for (i = 0; i < count; i++)
     {
@@ -61,6 +78,23 @@ int check_rcvbuf (void *rbuf, int count, size_t ntasks, int dt)
       for(i=j*count; i<(j+1)*count; i++)
       {
         if (rcvbuf[i] != (unsigned) j)
+        {
+          fprintf(stderr, "%s:Check %s(%d) failed rcvbuf[%d] %u != %u\n", gProtocolName, dt_array_str[dt], count, i, rcvbuf[1], j);
+          err = -1;
+          return err;
+        }
+      }
+    }
+  }
+  else if (dt_array[dt] == PAMI_TYPE_SIGNED_INT)
+  {
+    int *rcvbuf = (int *)  rbuf;
+
+    for (j = 0; j < ntasks; j++)
+    {
+      for(i=j*count; i<(j+1)*count; i++)
+      {
+        if (rcvbuf[i] !=  j)
         {
           fprintf(stderr, "%s:Check %s(%d) failed rcvbuf[%d] %u != %u\n", gProtocolName, dt_array_str[dt], count, i, rcvbuf[1], j);
           err = -1;
@@ -214,8 +248,18 @@ int main (int argc, char ** argv)
     return 1;
 
 
-  char   *buf       = (char*)malloc(MAXBUFSIZE * num_tasks);
-  char   *rbuf      = (char*)malloc(MAXBUFSIZE * num_tasks);
+  /*  Allocate buffer(s) */
+  int err = 0;
+  void* buf = NULL;
+  err = posix_memalign(&buf, 128, (MAXBUFSIZE * num_tasks) + gBuffer_offset);
+  assert(err == 0);
+  buf = (char*)buf + gBuffer_offset;
+
+  void* rbuf = NULL;
+  err = posix_memalign(&rbuf, 128, (MAXBUFSIZE * num_tasks) + gBuffer_offset);
+  assert(err == 0);
+  rbuf = (char*)rbuf + gBuffer_offset;
+
   size_t *lengths   = (size_t*)malloc(num_tasks * sizeof(size_t));
   size_t *displs    = (size_t*)malloc(num_tasks * sizeof(size_t));
   barrier.cb_done   = cb_done;

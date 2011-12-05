@@ -48,7 +48,7 @@ PrefixSums (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, T_N
     {
       /* send permission chits to senders */
       int left = this->ordinal() - (1<<i);
-      this->_dest    [phase] = this->_comm->endpoint (left);
+      this->_dest    [phase] = this->_comm->index2Endpoint (left);
       this->_sbuf    [phase] = (left >= 0) ? &this->_dummy : NULL;
       int right = this->ordinal() + (1<<i);
       this->_rbuf    [phase] = (right < (int)this->_comm->size()) ? &this->_dummy : NULL;
@@ -60,7 +60,7 @@ PrefixSums (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, T_N
       phase ++;
 
       /* send data */
-      this->_dest    [phase] = ( right < (int)this->_comm->size() ) ? this->_comm->endpoint(right) : this->_comm->endpoint(0);
+      this->_dest    [phase] = ( right < (int)this->_comm->size() ) ? this->_comm->index2Endpoint(right) : this->_comm->index2Endpoint(0);
       this->_sbuf    [phase] = NULL; /* send buffer not available */
       this->_rbuf    [phase] = NULL; /* receive buffer not available */
       this->_postrcv [phase] = (left >= 0) ? cb_prefixsums : NULL;

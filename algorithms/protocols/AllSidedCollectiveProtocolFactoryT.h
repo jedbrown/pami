@@ -41,7 +41,9 @@ namespace CCMI
       class collObj
       {
       public:
-        collObj(Interfaces::NativeInterface             * native,
+        collObj(pami_context_t                            ctxt,
+                size_t                                    ctxt_id,
+                Interfaces::NativeInterface             * native,
                 T_Conn                                  * cmgr,
                 pami_geometry_t                           geometry,
                 pami_xfer_t                             * cmd,
@@ -51,7 +53,7 @@ namespace CCMI
         _factory(factory),
         _user_done_fn(cmd->cb_done),
         _user_cookie(cmd->cookie),
-        _obj(native,cmgr,geometry,cmd,fn,cookie)
+        _obj(ctxt, ctxt_id, native, cmgr, geometry, cmd, fn, cookie)
         {
           TRACE_FN_ENTER();
           TRACE_FORMAT("<%p>",this);
@@ -62,16 +64,20 @@ namespace CCMI
         AllSidedCollectiveProtocolFactoryT * _factory;
         pami_event_function                  _user_done_fn;
         void                               * _user_cookie;
-        T_Composite                                    _obj;
+        T_Composite                          _obj;
       };
 
 
     public:
-      AllSidedCollectiveProtocolFactoryT (T_Conn              * cmgr,
+      AllSidedCollectiveProtocolFactoryT (pami_context_t ctxt,
+					  size_t         ctxt_id,
+					  pami_mapidtogeometry_fn     cb_geometry,
+					  T_Conn              * cmgr,
                                           Interfaces::NativeInterface * native):
-      CollectiveProtocolFactory(native),
+      CollectiveProtocolFactory(ctxt, ctxt_id, cb_geometry),
       _cmgr(cmgr),
-      _pnative(native)
+      _pnative(native),
+      _native(native)
       {
         TRACE_FN_ENTER();
         TRACE_FORMAT("<%p> native %p",this, native);
@@ -82,7 +88,8 @@ namespace CCMI
                                           Interfaces::NativeInterface ** native):
       CollectiveProtocolFactory(),
       _cmgr(cmgr),
-      _pnative((Interfaces::NativeInterface *)native) /// \todo fix the NI array ctor's
+      _pnative((Interfaces::NativeInterface *)native), /// \todo fix the NI array ctor's
+      _native(NULL)
       {
         TRACE_FN_ENTER();
         TRACE_FORMAT("<%p> native %p",this, native);
@@ -137,7 +144,9 @@ namespace CCMI
         TRACE_FN_ENTER();
         collObj *cobj = (collObj*)  _alloc.allocateObject();
         TRACE_FORMAT("<%p> cobj %p",this, cobj);
-        new(cobj) collObj(_pnative,          // Native interface
+        new(cobj) collObj(this->_context,
+                          this->_context_id,
+                          _pnative,          // Native interface
                           _cmgr,            // Connection Manager
                           geometry,         // Geometry Object
                           (pami_xfer_t*)cmd,// Parameters
@@ -158,12 +167,13 @@ namespace CCMI
         DO_DEBUG((templateName<MetaDataFn>()));
         get_metadata(mdata);
         // We don't know the xfter so use arbitrary PAMI_XFER_COUNT. \todo something better
-        CollectiveProtocolFactory::metadata(mdata,PAMI_XFER_COUNT);
+        if(_native) _native->metadata(mdata,PAMI_XFER_COUNT);
         TRACE_FN_EXIT();
       }
     private:
       T_Conn                                     * _cmgr;
       Interfaces::NativeInterface                * _pnative;
+      Interfaces::NativeInterface                * _native;
       PAMI::MemoryAllocator<sizeof(collObj), 16>   _alloc;
     };//AllSidedCollectiveProtocolFactoryT
 

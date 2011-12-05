@@ -335,7 +335,7 @@ namespace PAMI
     }
 
     typedef CCMI::Adaptor::Barrier::BarrierFactoryAllSidedT
-    <CCMI::Adaptor::Barrier::MultiSyncComposite<true, MUDputNI,PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX, PAMI::Geometry::GKEY_RECTANGLE_CLASSROUTEID>,
+    <CCMI::Adaptor::Barrier::MultiSyncComposite<true, MUDputNI,PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX, PAMI::Geometry::CKEY_RECTANGLE_CLASSROUTEID>,
     MURectangleMsyncMetaData,
     CCMI::ConnectionManager::SimpleConnMgr,
     PAMI::Geometry::CKEY_BARRIERCOMPOSITE5>
@@ -372,7 +372,7 @@ namespace PAMI
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < 
       CCMI::Adaptor::Broadcast::MultiCastComposite< true, 
                                                     MUShmemGlobalDputNI,
-                                                    PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID>, //Mcast over Mcomb (key)
+                                                    PAMI::Geometry::CKEY_MCOMB_CLASSROUTEID>, //Mcast over Mcomb (key)
       MUMcastCollectiveDputMetaData,
       CCMI::ConnectionManager::SimpleConnMgr > MUCollectiveDputMulticastFactory;
 
@@ -480,7 +480,7 @@ namespace PAMI
     }
 
     typedef CCMI::Adaptor::Barrier::BarrierFactoryAllSidedT
-    <CCMI::Adaptor::Barrier::MultiSyncComposite2Device<PAMI::Geometry::GKEY_RECTANGLE_CLASSROUTEID>,
+    <CCMI::Adaptor::Barrier::MultiSyncComposite2Device<PAMI::Geometry::CKEY_RECTANGLE_CLASSROUTEID>,
     Msync2DRectangleDputMetaData,
     CCMI::ConnectionManager::SimpleConnMgr,
     PAMI::Geometry::CKEY_BARRIERCOMPOSITE6>
@@ -856,9 +856,9 @@ namespace PAMI
       _color_connmgr(),
       _shmem_device(shmem_device),
       _shmem_ni(shmem_ni),
-      _shmem_msync_factory(&_sconnmgr, _shmem_ni),
-      _shmem_mcast_factory(&_sconnmgr, _shmem_ni),
-      _shmem_mcomb_factory(&_sconnmgr, _shmem_ni),
+      _shmem_msync_factory(_context,_context_id,mapidtogeometry,&_sconnmgr, _shmem_ni),
+      _shmem_mcast_factory(_context,_context_id,mapidtogeometry,&_sconnmgr, _shmem_ni),
+      _shmem_mcomb_factory(_context,_context_id,mapidtogeometry,&_sconnmgr, _shmem_ni),
       _mu_device(mu_device),
       _mu_ni_msync(NULL),
       _mu_ni_mcomb(NULL),
@@ -906,7 +906,6 @@ namespace PAMI
         if (__global.useshmem())// && (__global.topology_local.size() > 1))
         {
           TRACE_FORMAT("<%p> useshmem", this);
-          _shmem_msync_factory.setMapIdToGeometry(mapidtogeometry);
         }
 
         if (__global.useMU())
@@ -957,77 +956,71 @@ namespace PAMI
 
           _gi_msync_factory = NULL;
           if (_mu_global_dput_ni)
-            _gi_msync_factory     = new (_gi_msync_factory_storage    ) GIMultiSyncFactory(&_sconnmgr, _mu_global_dput_ni);
-          _mu_mcomb_factory     = new (_mu_mcomb_factory_storage    ) MUMultiCombineFactory(&_sconnmgr, _mu_ni_mcomb);
+            _gi_msync_factory     = new (_gi_msync_factory_storage    ) GIMultiSyncFactory(_context,_context_id,mapidtogeometry,&_sconnmgr, _mu_global_dput_ni);
+          _mu_mcomb_factory     = new (_mu_mcomb_factory_storage    ) MUMultiCombineFactory(_context,_context_id,mapidtogeometry,&_sconnmgr, _mu_ni_mcomb);
 
           _mu_rectangle_msync_factory = NULL;
           if (_axial_mu_dput_ni)
-            _mu_rectangle_msync_factory = new (_mu_rectangle_msync_factory_storage) MURectangleMultiSyncFactory(&_sconnmgr, _axial_mu_dput_ni);
+            _mu_rectangle_msync_factory = new (_mu_rectangle_msync_factory_storage) MURectangleMultiSyncFactory(_context,_context_id,mapidtogeometry,&_sconnmgr, _axial_mu_dput_ni);
 
           _binomial_barrier_factory = NULL;
           if (_mu_ammulticast_ni)
           {
-            _binomial_barrier_factory = new (_binomial_barrier_factory_storage)  OptBinomialBarrierFactory (&_sconnmgr, _mu_ammulticast_ni, OptBinomialBarrierFactory::cb_head);
-            _binomial_barrier_factory->setMapIdToGeometry(mapidtogeometry);
+            _binomial_barrier_factory = new (_binomial_barrier_factory_storage)  OptBinomialBarrierFactory (_context,_context_id,mapidtogeometry,&_sconnmgr, _mu_ammulticast_ni, OptBinomialBarrierFactory::cb_head);
           }
 
           _alltoall_factory = NULL;
           if (_mu_m2m_single_ni)
           {
-            _alltoall_factory = new (_alltoall_factory_storage) All2AllFactory(&_csconnmgr, _mu_m2m_single_ni);
-            _alltoall_factory->setMapIdToGeometry(mapidtogeometry);
+            _alltoall_factory = new (_alltoall_factory_storage) All2AllFactory(_context,_context_id,mapidtogeometry,&_csconnmgr, _mu_m2m_single_ni);
           }
 
           _alltoallv_factory = NULL;
           if (_mu_m2m_vector_long_ni)
           {
-            _alltoallv_factory = new (_alltoallv_factory_storage) All2AllvFactory(&_csconnmgr, _mu_m2m_vector_long_ni);
-            _alltoallv_factory->setMapIdToGeometry(mapidtogeometry);
+            _alltoallv_factory = new (_alltoallv_factory_storage) All2AllvFactory(_context,_context_id,mapidtogeometry,&_csconnmgr, _mu_m2m_vector_long_ni);
           }
 
           _alltoallv_int_factory = NULL;
           if (_mu_m2m_vector_int_ni)
           {
-            _alltoallv_int_factory = new (_alltoallv_int_factory_storage) All2AllvFactory_int(&_csconnmgr, _mu_m2m_vector_int_ni);
-            _alltoallv_int_factory->setMapIdToGeometry(mapidtogeometry);
+            _alltoallv_int_factory = new (_alltoallv_int_factory_storage) All2AllvFactory_int(_context,_context_id,mapidtogeometry,&_csconnmgr, _mu_m2m_vector_int_ni);
           }
 
           /*_mucollectivedputmulticastfactory    = new (_mucollectivedputmulticaststorage ) MUCollectiveDputMulticastFactory(&_sconnmgr, _mu_global_dput_ni);*/
-          _mucollectivedputmulticastfactory    = new (_mucollectivedputmulticaststorage ) MUCollectiveDputMulticastFactory(&_sconnmgr, _mu_shmem_global_dput_ni);
-          _mucollectivedputmulticombinefactory    = new (_mucollectivedputmulticombinestorage ) MUCollectiveDputMulticombineFactory(&_sconnmgr, _mu_global_dput_ni);        
+          _mucollectivedputmulticastfactory    = new (_mucollectivedputmulticaststorage ) MUCollectiveDputMulticastFactory(_context,_context_id,mapidtogeometry,&_sconnmgr, _mu_shmem_global_dput_ni);
+          _mucollectivedputmulticombinefactory    = new (_mucollectivedputmulticombinestorage ) MUCollectiveDputMulticombineFactory(_context,_context_id,mapidtogeometry,&_sconnmgr, _mu_global_dput_ni);
 
-          _mushmemcollectivedputmulticombinefactory    = new (_mushmemcollectivedputmulticombinestorage ) MUShmemCollectiveDputMulticombineFactory(&_sconnmgr, _mu_shmem_global_dput_ni);       
+          _mushmemcollectivedputmulticombinefactory    = new (_mushmemcollectivedputmulticombinestorage ) MUShmemCollectiveDputMulticombineFactory(_context,_context_id,mapidtogeometry,&_sconnmgr, _mu_shmem_global_dput_ni);
 
           TRACE_FORMAT("<%p> _axial_shmem_mu_dput_ni %p", this,_axial_shmem_mu_dput_ni);
           if (_axial_shmem_mu_dput_ni)
           {
             TRACE_FORMAT("<%p>  RectangleDput1ColorBroadcastFactory", this);
-            _shmem_mu_rectangle_1color_dput_broadcast_factory = new (_shmem_mu_rectangle_1color_dput_broadcast_factory_storage) RectangleDput1ColorBroadcastFactory(&_color_connmgr, _axial_shmem_mu_dput_ni);
+            _shmem_mu_rectangle_1color_dput_broadcast_factory = new (_shmem_mu_rectangle_1color_dput_broadcast_factory_storage) RectangleDput1ColorBroadcastFactory(_context,_context_id,mapidtogeometry,&_color_connmgr, _axial_shmem_mu_dput_ni);
 
             TRACE_FORMAT("<%p>  RectangleDputBroadcastFactory", this);
-            _shmem_mu_rectangle_dput_broadcast_factory = new (_shmem_mu_rectangle_dput_broadcast_factory_storage) RectangleDputBroadcastFactory(&_color_connmgr, _axial_shmem_mu_dput_ni);
+            _shmem_mu_rectangle_dput_broadcast_factory = new (_shmem_mu_rectangle_dput_broadcast_factory_storage) RectangleDputBroadcastFactory(_context,_context_id,mapidtogeometry,&_color_connmgr, _axial_shmem_mu_dput_ni);
 
-            _shmem_mu_rectangle_dput_allgather_factory = new (_shmem_mu_rectangle_dput_allgather_factory_storage) RectangleDputAllgatherFactory(&_color_connmgr, _axial_shmem_mu_dput_ni);
+            _shmem_mu_rectangle_dput_allgather_factory = new (_shmem_mu_rectangle_dput_allgather_factory_storage) RectangleDputAllgatherFactory(_context,_context_id,mapidtogeometry,&_color_connmgr, _axial_shmem_mu_dput_ni);
           }
 
           if (_axial_mu_dput_ni)
           {
             TRACE_FORMAT("<%p> MURectangleDput1ColorBroadcastFactory", this);
-            _mu_rectangle_1color_dput_broadcast_factory = new (_mu_rectangle_1color_dput_broadcast_factory_storage) MURectangleDput1ColorBroadcastFactory(&_color_connmgr, _axial_mu_dput_ni);
+            _mu_rectangle_1color_dput_broadcast_factory = new (_mu_rectangle_1color_dput_broadcast_factory_storage) MURectangleDput1ColorBroadcastFactory(_context,_context_id,mapidtogeometry,&_color_connmgr, _axial_mu_dput_ni);
 
             TRACE_FORMAT("<%p>  MURectangleDputBroadcastFactory", this);
-            _mu_rectangle_dput_broadcast_factory = new (_mu_rectangle_dput_broadcast_factory_storage) MURectangleDputBroadcastFactory(&_color_connmgr, _axial_mu_dput_ni);
+            _mu_rectangle_dput_broadcast_factory = new (_mu_rectangle_dput_broadcast_factory_storage) MURectangleDputBroadcastFactory(_context,_context_id,mapidtogeometry,&_color_connmgr, _axial_mu_dput_ni);
 
-            _mu_rectangle_dput_allgather_factory = new (_mu_rectangle_dput_allgather_factory_storage) RectangleDputAllgatherFactory(&_color_connmgr, _axial_mu_dput_ni);
+            _mu_rectangle_dput_allgather_factory = new (_mu_rectangle_dput_allgather_factory_storage) RectangleDputAllgatherFactory(_context,_context_id,mapidtogeometry,&_color_connmgr, _axial_mu_dput_ni);
           }
 
-          if (_gi_msync_factory)
-            _gi_msync_factory->setMapIdToGeometry(mapidtogeometry);
 
           // Can't be ctor'd unless the NI was created
-          _mu_mcast_factory  = new (_mu_mcast_factory_storage ) MUMultiCastFactory(&_sconnmgr, _mu_ni_mcast);
+          _mu_mcast_factory  = new (_mu_mcast_factory_storage ) MUMultiCastFactory(_context,_context_id,mapidtogeometry,&_sconnmgr, _mu_ni_mcast);
 #ifdef PAMI_ENABLE_X0_PROTOCOLS
-          _mu_mcast3_factory = new (_mu_mcast3_factory_storage) MUMultiCast3Factory(&_sconnmgr, _mu_ni_mcast3);
+          _mu_mcast3_factory = new (_mu_mcast3_factory_storage) MUMultiCast3Factory(_context,_context_id,mapidtogeometry,&_sconnmgr, _mu_ni_mcast3);
 #endif
         }
 
@@ -1037,20 +1030,17 @@ namespace PAMI
           _ni_array[1] = _mu_ni_msync2d;
           _ni_array[2] = _shmem_ni;
           _ni_array[3] = _mu_ni_mcomb2dNP;
-          _msync2d_composite_factory = new (_msync2d_composite_factory_storage) MultiSync2DeviceFactory(&_sconnmgr, &_ni_array[0]);
-          _msync2d_composite_factory->setMapIdToGeometry(mapidtogeometry);
+          _msync2d_composite_factory = new (_msync2d_composite_factory_storage) MultiSync2DeviceFactory(_context,_context_id,mapidtogeometry,&_sconnmgr, &_ni_array[0]);
 
           _ni_array[4] = _shmem_ni;
           _ni_array[5] = _mu_global_dput_ni;
-          _msync2d_gishm_composite_factory = new (_msync2d_gishm_composite_factory_storage) MultiSync2DeviceGIShmemFactory(&_sconnmgr, &_ni_array[4]);
-          _msync2d_gishm_composite_factory->setMapIdToGeometry(mapidtogeometry);
+          _msync2d_gishm_composite_factory = new (_msync2d_gishm_composite_factory_storage) MultiSync2DeviceGIShmemFactory(_context, _context_id,mapidtogeometry,&_sconnmgr, &_ni_array[4]);
 
           _ni_array[6] = _shmem_ni;
           _ni_array[7] = _axial_mu_dput_ni;
-          _msync2d_rectangle_composite_factory = new (_msync2d_rectangle_composite_factory_storage) MultiSync2DeviceRectangleFactory(&_sconnmgr, &_ni_array[6]);
-          _msync2d_rectangle_composite_factory->setMapIdToGeometry(mapidtogeometry);
+          _msync2d_rectangle_composite_factory = new (_msync2d_rectangle_composite_factory_storage) MultiSync2DeviceRectangleFactory(_context,_context_id,mapidtogeometry,&_sconnmgr, &_ni_array[6]);
 
-          _mcomb2d_dput_composite_factory = new (_mcomb2d_dput_composite_factory_storage) MultiCombine2DeviceDputFactory(&_sconnmgr, _shmem_ni, _mu_global_dput_ni);
+          _mcomb2d_dput_composite_factory = new (_mcomb2d_dput_composite_factory_storage) MultiCombine2DeviceDputFactory(_context,_context_id,mapidtogeometry,&_sconnmgr, _shmem_ni, _mu_global_dput_ni);
 #ifdef PAMI_ENABLE_X0_PROTOCOLS
           _mcomb2dNP_dput_composite_factory = new (_mcomb2dNP_dput_composite_factory_storage) MultiCombine2DeviceDputFactoryNP(&_sconnmgr,  &_ni_array[4]);
 #endif
@@ -1058,7 +1048,7 @@ namespace PAMI
 #ifdef PAMI_ENABLE_X0_PROTOCOLS
           _mcast2d_composite_factory = new (_mcast2d_composite_factory_storage) MultiCast2DeviceFactory(&_sconnmgr, _shmem_ni, false, _mu_ni_mcast2d,  _mu_ni_mcast2d ? true : false);
 #endif
-          _mcast2d_dput_composite_factory = new (_mcast2d_dput_composite_factory_storage) MultiCast2DeviceDputFactory(&_sconnmgr, _shmem_ni, false, _mu_global_dput_ni,  false);
+          _mcast2d_dput_composite_factory = new (_mcast2d_dput_composite_factory_storage) MultiCast2DeviceDputFactory(_context,_context_id,mapidtogeometry,&_sconnmgr, _shmem_ni, false, _mu_global_dput_ni,  false);
 
 #ifdef PAMI_ENABLE_X0_PROTOCOLS
           _mcomb2d_composite_factory = new (_mcomb2d_composite_factory_storage) MultiCombine2DeviceFactory(&_sconnmgr, _shmem_ni, _mu_ni_mcomb2d);
@@ -1107,8 +1097,8 @@ namespace PAMI
             {
               //fprintf (stderr, "Calling configure with class route %ld, in 0x%lx", i, result);
               _axial_mu_dput_ni->getMsyncModel().configureClassRoute(i, (PAMI::Topology *)geometry->getTopology(PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX));
-              geometry->setKey (PAMI::Geometry::GKEY_RECTANGLE_CLASSROUTEID, (void*)(i+1));
-              TRACE_FORMAT("<%p>(%u)GKEY_RECTANGLE_CLASSROUTEID %zu", this, __LINE__,(i+1));
+              geometry->setKey(context_id,PAMI::Geometry::CKEY_RECTANGLE_CLASSROUTEID, (void*)(i+1));
+              TRACE_FORMAT("<%p>(%u)CKEY_MSYNC_CLASSROUTEID %zu", this, __LINE__,(i+1));
               break;
             }
         }
@@ -1139,7 +1129,7 @@ namespace PAMI
 
         TRACE_FORMAT("<%p>topology: size() %zu, isLocal() %u/%zu, isGlobal #u/%zu, is rectangle %u", this, topology->size(),  topology->isLocalToMe(), local_sub_topology->size(), master_sub_topology->size(),rectangle_topo);
 
-        //DO_DEBUG(for (unsigned i = 0; i < topology->size(); ++i) fprintf(stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() topology[%u] = %u", this, i, topology->index2Rank(i)););
+        //DO_DEBUG(for (unsigned i = 0; i < topology->size(); ++i) fprintf(stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() topology[%u] = %u", this, i, topology->index2Endpoint(i)););
 
         if (phase == 0)
         {
@@ -1180,7 +1170,7 @@ namespace PAMI
               composite = _shmem_msync_factory.generate(geometry, &xfer);
               PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE7)==composite);
               // Add Barriers
-              geometry->addCollective(PAMI_XFER_BARRIER, &_shmem_msync_factory, _context_id);
+              geometry->addCollective(PAMI_XFER_BARRIER, &_shmem_msync_factory, _context, _context_id);
 
               COMPILE_TIME_ASSERT(sizeof(GeometryInfo<ShmemMultiSyncFactory>) <= ProtocolAllocator::objsize);
               GeometryInfo<ShmemMultiSyncFactory>    *gi = (GeometryInfo<ShmemMultiSyncFactory>*) _geom_allocator.allocateObject();
@@ -1188,7 +1178,7 @@ namespace PAMI
               geometry->setCleanupCallback(cleanupCallback, gi);
 
               // Add Broadcasts
-              geometry->addCollective(PAMI_XFER_BROADCAST, &_shmem_mcast_factory, _context_id);
+              geometry->addCollective(PAMI_XFER_BROADCAST, &_shmem_mcast_factory, _context, _context_id);
 
               // Add Allreduces
 #ifdef PAMI_ENABLE_NEW_SHMEM   // limited support - 4/8/16 processes only
@@ -1197,9 +1187,9 @@ namespace PAMI
                   (__global.topology_local.size() == 16))
                 //||  
                 //(__global.topology_local.size() == 64))
-                geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, &_shmem_mcomb_factory, _context_id);
+                geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, &_shmem_mcomb_factory, _context, _context_id);
 #else
-              geometry->addCollective(PAMI_XFER_ALLREDUCE, &_shmem_mcomb_factory, _context_id);
+              geometry->addCollective(PAMI_XFER_ALLREDUCE, &_shmem_mcomb_factory, _context, _context_id);
 #endif
             }
           }
@@ -1217,26 +1207,26 @@ namespace PAMI
                 && (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
 #endif
                )
-              geometry->addCollective(PAMI_XFER_BROADCAST,  _shmem_mu_rectangle_1color_dput_broadcast_factory, _context_id);
+              geometry->addCollective(PAMI_XFER_BROADCAST,  _shmem_mu_rectangle_1color_dput_broadcast_factory, _context, _context_id);
             if (_mu_rectangle_1color_dput_broadcast_factory)
-              geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_rectangle_1color_dput_broadcast_factory, _context_id);
+              geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_rectangle_1color_dput_broadcast_factory, _context, _context_id);
 
             if ((_shmem_mu_rectangle_dput_broadcast_factory) 
 #ifndef PAMI_ENABLE_SHMEM_SUBNODE
                 && (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
 #endif
                )
-              geometry->addCollective(PAMI_XFER_BROADCAST,  _shmem_mu_rectangle_dput_broadcast_factory, _context_id);
+              geometry->addCollective(PAMI_XFER_BROADCAST,  _shmem_mu_rectangle_dput_broadcast_factory, _context, _context_id);
             if (_mu_rectangle_dput_broadcast_factory)
-              geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_rectangle_dput_broadcast_factory, _context_id);
+              geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_rectangle_dput_broadcast_factory, _context, _context_id);
 
             if (_mucollectivedputmulticombinefactory && __global.topology_local.size() == 1)
-              geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,  _mucollectivedputmulticombinefactory, _context_id);
+              geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,  _mucollectivedputmulticombinefactory, _context, _context_id);
 
             if (((master_sub_topology->size() == 1) || (local_sub_topology->size() < 32)) && (_shmem_mu_rectangle_dput_allgather_factory))
-              geometry->addCollective(PAMI_XFER_ALLGATHERV,  _shmem_mu_rectangle_dput_allgather_factory, _context_id);
+              geometry->addCollective(PAMI_XFER_ALLGATHERV,  _shmem_mu_rectangle_dput_allgather_factory, _context, _context_id);
             else if (_mu_rectangle_dput_allgather_factory)
-              geometry->addCollective(PAMI_XFER_ALLGATHERV,  _mu_rectangle_dput_allgather_factory, _context_id);
+              geometry->addCollective(PAMI_XFER_ALLGATHERV,  _mu_rectangle_dput_allgather_factory, _context, _context_id);
           }
 
         }
@@ -1250,26 +1240,26 @@ namespace PAMI
 
           // Add optimized binomial barrier
           if (_binomial_barrier_factory)
-            geometry->addCollective(PAMI_XFER_BARRIER, _binomial_barrier_factory, _context_id);
+            geometry->addCollective(PAMI_XFER_BARRIER, _binomial_barrier_factory, _context, _context_id);
 
           if (_alltoall_factory)
-            geometry->addCollective(PAMI_XFER_ALLTOALL, _alltoall_factory, _context_id);
+            geometry->addCollective(PAMI_XFER_ALLTOALL, _alltoall_factory, _context, _context_id);
 
           if (_alltoallv_factory)
-            geometry->addCollective(PAMI_XFER_ALLTOALLV, _alltoallv_factory, _context_id);
+            geometry->addCollective(PAMI_XFER_ALLTOALLV, _alltoallv_factory, _context, _context_id);
 
           if (_alltoallv_int_factory)
-            geometry->addCollective(PAMI_XFER_ALLTOALLV_INT, _alltoallv_int_factory, _context_id);
+            geometry->addCollective(PAMI_XFER_ALLTOALLV_INT, _alltoallv_int_factory, _context, _context_id);
 
           // Check for class routes before enabling MU collective network protocols
           void *val;
-          val = geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID);
-          TRACE_FORMAT("<%p>GKEY_MSYNC_CLASSROUTEID %p", this, val);
+          val = geometry->getKey(_context_id,PAMI::Geometry::CKEY_MSYNC_CLASSROUTEID);
+          TRACE_FORMAT("<%p>CKEY_MSYNC_CLASSROUTEID %p", this, val);
           void *valr;
-          valr = geometry->getKey(PAMI::Geometry::GKEY_RECTANGLE_CLASSROUTEID); // Rectangle 'class route'
-          TRACE_FORMAT("<%p>(%u)GKEY_RECTANGLE_CLASSROUTEID %p %s", this, __LINE__,valr, valr != PAMI_CR_GKEY_FAIL?" ":"PAMI_CR_GKEY_FAIL");
+          valr = geometry->getKey(_context_id, PAMI::Geometry::CKEY_RECTANGLE_CLASSROUTEID); // Rectangle 'class route'
+          TRACE_FORMAT("<%p>(%u)CKEY_RECTANGLE_CLASSROUTEID %p %s", this, __LINE__,valr, valr != PAMI_CR_CKEY_FAIL?" ":"PAMI_CR_CKEY_FAIL");
 
-          if (val && val != PAMI_CR_GKEY_FAIL && rectangle_topo)// We have a class route
+          if (val && val != PAMI_CR_CKEY_FAIL && rectangle_topo)// We have a class route
           {
             // If we can use pure MU composites, add them
             if (usePureMu)
@@ -1285,7 +1275,7 @@ namespace PAMI
                 PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE3)==composite);
 
                 // Add Barriers
-                geometry->addCollective(PAMI_XFER_BARRIER, _gi_msync_factory, _context_id);
+                geometry->addCollective(PAMI_XFER_BARRIER, _gi_msync_factory, _context, _context_id);
 
                 COMPILE_TIME_ASSERT(sizeof(GeometryInfo<GIMultiSyncFactory>) <= ProtocolAllocator::objsize);
                 GeometryInfo<GIMultiSyncFactory>    *gi = (GeometryInfo<GIMultiSyncFactory>*) _geom_allocator.allocateObject();
@@ -1294,14 +1284,14 @@ namespace PAMI
               }
 
               if ((_mu_rectangle_msync_factory) && 
-                  (valr && valr != PAMI_CR_GKEY_FAIL))
+                  (valr && valr != PAMI_CR_CKEY_FAIL))
               {
                 TRACE_FORMAT("<%p>Register MU Rectangle msync 2", this);
                 CCMI::Executor::Composite* composite;
                 composite = _mu_rectangle_msync_factory->generate(geometry, &xfer);
                 PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE5)==composite);
                 // Add Barriers
-                geometry->addCollective(PAMI_XFER_BARRIER, _mu_rectangle_msync_factory, _context_id); 
+                geometry->addCollective(PAMI_XFER_BARRIER, _mu_rectangle_msync_factory, _context, _context_id);
                 geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
                                  (void*)composite);
 
@@ -1312,7 +1302,7 @@ namespace PAMI
               }
             }
           }
-          if ((val && val != PAMI_CR_GKEY_FAIL) || // We have a class route or
+          if ((val && val != PAMI_CR_CKEY_FAIL) || // We have a class route or
               (topology->isLocalToMe()))           // It's all local - we might use 2 device protocol in shmem-only mode
           {
             // Add 2 device composite protocols
@@ -1325,7 +1315,7 @@ namespace PAMI
                 geometry->setKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE4, NULL);
                 CCMI::Executor::Composite* composite;
                 composite = _msync2d_gishm_composite_factory->generate(geometry, &xfer);
-                geometry->addCollective(PAMI_XFER_BARRIER, _msync2d_gishm_composite_factory, _context_id);
+                geometry->addCollective(PAMI_XFER_BARRIER, _msync2d_gishm_composite_factory, _context, _context_id);
                 PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE4)==composite);
 
                 COMPILE_TIME_ASSERT(sizeof(GeometryInfo<MultiSync2DeviceGIShmemFactory>) <= ProtocolAllocator::objsize);
@@ -1338,14 +1328,14 @@ namespace PAMI
               master.convertTopology(PAMI_COORD_TOPOLOGY);
               if ((master.type() == PAMI_COORD_TOPOLOGY) && 
                   (_msync2d_rectangle_composite_factory) && 
-                  (valr && valr != PAMI_CR_GKEY_FAIL)
+                  (valr && valr != PAMI_CR_CKEY_FAIL)
                  )
               { 
                 TRACE_FORMAT("<%p>Register 2D MU Rectangle msync 2", this);
                 CCMI::Executor::Composite *composite;
                 composite = _msync2d_rectangle_composite_factory->generate(geometry, &xfer);
                 PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE6)==composite);
-                geometry->addCollective(PAMI_XFER_BARRIER, _msync2d_rectangle_composite_factory, _context_id);
+                geometry->addCollective(PAMI_XFER_BARRIER, _msync2d_rectangle_composite_factory, _context, _context_id);
                 geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
                                  (void*)composite);
 
@@ -1357,10 +1347,10 @@ namespace PAMI
             }
           }
 
-          val = geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
-          TRACE_FORMAT("<%p>GKEY_MCAST_CLASSROUTEID %p", this, val);
+          val = geometry->getKey(context_id,PAMI::Geometry::CKEY_MCAST_CLASSROUTEID);
+          TRACE_FORMAT("<%p>CKEY_MCAST_CLASSROUTEID %p", this, val);
 
-          if ((val && val != PAMI_CR_GKEY_FAIL && rectangle_topo) || // We have a class route or
+          if ((val && val != PAMI_CR_CKEY_FAIL && rectangle_topo) || // We have a class route or
               (topology->isLocalToMe()))           // It's all local - we might use 2 device protocol in shmem-only mode
           {
             // If we can use pure MU composites, add them
@@ -1371,9 +1361,9 @@ namespace PAMI
               {
                 TRACE_FORMAT("<%p>Register MU bcast", this);
                 // Add Broadcasts
-                geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_mcast_factory,  _context_id);
+                geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_mcast_factory, _context,  _context_id);
 #ifdef PAMI_ENABLE_X0_PROTOCOLS
-                geometry->addCollectiveCheck(PAMI_XFER_BROADCAST,  _mu_mcast3_factory, _context_id);
+                geometry->addCollectiveCheck(PAMI_XFER_BROADCAST,  _mu_mcast3_factory, _context, _context_id);
 #endif
               }
             }
@@ -1390,24 +1380,24 @@ namespace PAMI
                 if (_mcast2d_composite_factory)
                 {
                   TRACE_FORMAT("<%p>Register mcast 2D", this);
-                  geometry->addCollectiveCheck(PAMI_XFER_BROADCAST, _mcast2d_composite_factory, _context_id);
+                  geometry->addCollectiveCheck(PAMI_XFER_BROADCAST, _mcast2d_composite_factory, _context, _context_id);
                 }
 #endif
                 if (_mcast2d_dput_composite_factory)
                 {
                   TRACE_FORMAT("<%p>Register mcast dput 2D", this);
-                  geometry->addCollective(PAMI_XFER_BROADCAST, _mcast2d_dput_composite_factory, _context_id);
+                  geometry->addCollective(PAMI_XFER_BROADCAST, _mcast2d_dput_composite_factory, _context, _context_id);
                 }
               }
           }
 
-          val = geometry->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
-          TRACE_FORMAT("<%p>GKEY_MCOMB_CLASSROUTEID %p", this, val);
+          val = geometry->getKey(context_id,PAMI::Geometry::CKEY_MCOMB_CLASSROUTEID);
+          TRACE_FORMAT("<%p>CKEY_MCOMB_CLASSROUTEID %p", this, val);
 
-          if ((val && val != PAMI_CR_GKEY_FAIL && rectangle_topo) || // We have a class route or
+          if ((val && val != PAMI_CR_CKEY_FAIL && rectangle_topo) || // We have a class route or
               (topology->isLocalToMe()))           // It's all local - we might use 2 device protocol in shmem-only mode
           {
-            // Add 2 device msync over mcombine (thus using GKEY_MCOMB_CLASSROUTEID not GKEY_MSYNC_CLASSROUTEID) composite protocol
+            // Add 2 device msync over mcombine (thus using CKEY_MCOMB_CLASSROUTEID not CKEY_MSYNC_CLASSROUTEID) composite protocol
 #ifndef PAMI_ENABLE_SHMEM_SUBNODE
             if (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
 #endif
@@ -1416,7 +1406,7 @@ namespace PAMI
               {
                 CCMI::Executor::Composite* composite;
                 composite = _msync2d_composite_factory->generate(geometry, &xfer);
-                geometry->addCollective(PAMI_XFER_BARRIER, _msync2d_composite_factory, _context_id);
+                geometry->addCollective(PAMI_XFER_BARRIER, _msync2d_composite_factory, _context, _context_id);
 
                 COMPILE_TIME_ASSERT(sizeof(GeometryInfo<MultiSync2DeviceFactory>) <= ProtocolAllocator::objsize);
                 GeometryInfo<MultiSync2DeviceFactory>    *gi = (GeometryInfo<MultiSync2DeviceFactory>*) _geom_allocator.allocateObject();
@@ -1433,7 +1423,7 @@ namespace PAMI
               {
                 // Add Allreduces
                 TRACE_FORMAT("<%p>Register MU allreduce", this);
-                geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mu_mcomb_factory, _context_id);
+                geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mu_mcomb_factory, _context, _context_id);
               }
             }
 
@@ -1449,33 +1439,33 @@ namespace PAMI
 #endif
               {
                 // New optimized MU+Shmem protocol requires a class route
-                if (val && val != PAMI_CR_GKEY_FAIL && rectangle_topo)
+                if (val && val != PAMI_CR_CKEY_FAIL && rectangle_topo)
                 {
                   if (_mushmemcollectivedputmulticombinefactory && 
 +                    (__global.topology_local.size() == __global.mapping.tSize())) /// \todo temp until the protocol is fixed
-                    geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,  _mushmemcollectivedputmulticombinefactory, _context_id);
+                    geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,  _mushmemcollectivedputmulticombinefactory, _context,_context_id);
                   if(_mucollectivedputmulticastfactory && 
                      (__global.topology_local.size() == __global.mapping.tSize())) /// \todo temp until the protocol is fixed
-                    geometry->addCollective(PAMI_XFER_BROADCAST, _mucollectivedputmulticastfactory, _context_id);
+                    geometry->addCollective(PAMI_XFER_BROADCAST, _mucollectivedputmulticastfactory, _context,_context_id);
                 }
 
 
 #ifdef PAMI_ENABLE_X0_PROTOCOLS
                 // NP (non-pipelining) 2 device protocols
                 if ((_mcomb2dNP_dput_composite_factory) && (master_sub_topology->size() > 1))  // \todo Simple NP protocol doesn't like 1 master - fix it later
-                  geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2dNP_dput_composite_factory, _context_id);
+                  geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2dNP_dput_composite_factory, _context, _context_id);
 #endif
 #ifdef PAMI_ENABLE_X0_PROTOCOLS
                 if ((_mcomb2dNP_composite_factory) && (master_sub_topology->size() > 1))  // \todo Simple NP protocol doesn't like 1 master - fix it later
-                  geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2dNP_composite_factory, _context_id);
+                  geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2dNP_composite_factory, _context, _context_id);
 #endif
                 //  2 device protocols
                 if ((_mcomb2d_dput_composite_factory) && (__global.topology_local.size() != 64))
-                  geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2d_dput_composite_factory, _context_id);
+                  geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2d_dput_composite_factory, _context, _context_id);
 
 #ifdef PAMI_ENABLE_X0_PROTOCOLS
                 if (_mcomb2d_composite_factory)
-                  geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2d_composite_factory, _context_id);
+                  geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2d_composite_factory, _context, _context_id);
 #endif
               }
           }
@@ -1483,33 +1473,33 @@ namespace PAMI
         else if (phase == -1)
         {
           /// \todo remove MU collectives algorithms... TBD... only remove phase 1 algorithms??
-          geometry->rmCollective(PAMI_XFER_ALLREDUCE,      _mu_mcomb_factory,                         _context_id);
+          geometry->rmCollective(PAMI_XFER_ALLREDUCE,      _mu_mcomb_factory,                         _context, _context_id);
 
-          geometry->rmCollective(PAMI_XFER_ALLTOALLV_INT,  _alltoallv_int_factory,                    _context_id);
-          geometry->rmCollective(PAMI_XFER_ALLTOALLV,      _alltoallv_factory,                        _context_id);
-          geometry->rmCollective(PAMI_XFER_ALLTOALL,       _alltoall_factory,                         _context_id);
+          geometry->rmCollective(PAMI_XFER_ALLTOALLV_INT,  _alltoallv_int_factory,                    _context, _context_id);
+          geometry->rmCollective(PAMI_XFER_ALLTOALLV,      _alltoallv_factory,                        _context, _context_id);
+          geometry->rmCollective(PAMI_XFER_ALLTOALL,       _alltoall_factory,                         _context, _context_id);
 
-          geometry->rmCollective(PAMI_XFER_BROADCAST,      _mu_mcast_factory,                         _context_id);
-          geometry->rmCollective(PAMI_XFER_BROADCAST,      _mcast2d_dput_composite_factory,           _context_id);
-          geometry->rmCollective(PAMI_XFER_BROADCAST,      _mucollectivedputmulticastfactory,         _context_id);
+          geometry->rmCollective(PAMI_XFER_BROADCAST,      _mu_mcast_factory,                         _context, _context_id);
+          geometry->rmCollective(PAMI_XFER_BROADCAST,      _mcast2d_dput_composite_factory,           _context, _context_id);
+          geometry->rmCollective(PAMI_XFER_BROADCAST,      _mucollectivedputmulticastfactory,         _context, _context_id);
 
-          geometry->rmCollective(PAMI_XFER_BARRIER,        _mu_rectangle_msync_factory,               _context_id); 
-          geometry->rmCollective(PAMI_XFER_BARRIER,        _gi_msync_factory,                         _context_id);
-          geometry->rmCollective(PAMI_XFER_BARRIER,        _binomial_barrier_factory,                 _context_id);
-          geometry->rmCollective(PAMI_XFER_BARRIER,        _msync2d_composite_factory,                _context_id);
-          geometry->rmCollective(PAMI_XFER_BARRIER,        _msync2d_gishm_composite_factory,          _context_id);
-          geometry->rmCollective(PAMI_XFER_BARRIER,        _msync2d_rectangle_composite_factory,      _context_id);
+          geometry->rmCollective(PAMI_XFER_BARRIER,        _mu_rectangle_msync_factory,               _context, _context_id);
+          geometry->rmCollective(PAMI_XFER_BARRIER,        _gi_msync_factory,                         _context, _context_id);
+          geometry->rmCollective(PAMI_XFER_BARRIER,        _binomial_barrier_factory,                 _context, _context_id);
+          geometry->rmCollective(PAMI_XFER_BARRIER,        _msync2d_composite_factory,                _context, _context_id);
+          geometry->rmCollective(PAMI_XFER_BARRIER,        _msync2d_gishm_composite_factory,          _context, _context_id);
+          geometry->rmCollective(PAMI_XFER_BARRIER,        _msync2d_rectangle_composite_factory,      _context, _context_id);
 
-          geometry->rmCollectiveCheck(PAMI_XFER_ALLREDUCE, _mushmemcollectivedputmulticombinefactory, _context_id);
-          geometry->rmCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2d_dput_composite_factory,           _context_id);
+          geometry->rmCollectiveCheck(PAMI_XFER_ALLREDUCE, _mushmemcollectivedputmulticombinefactory, _context, _context_id);
+          geometry->rmCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2d_dput_composite_factory,           _context, _context_id);
 
 #ifdef PAMI_ENABLE_X0_PROTOCOLS
-          geometry->rmCollectiveCheck(PAMI_XFER_BROADCAST, _mu_mcast3_factory,                _context_id);
-          geometry->rmCollectiveCheck(PAMI_XFER_BROADCAST, _mcast2d_composite_factory,        _context_id);
+          geometry->rmCollectiveCheck(PAMI_XFER_BROADCAST, _mu_mcast3_factory,                _context, _context_id);
+          geometry->rmCollectiveCheck(PAMI_XFER_BROADCAST, _mcast2d_composite_factory,        _context, _context_id);
 
-          geometry->rmCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2dNP_dput_composite_factory, _context_id);
-          geometry->rmCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2d_composite_factory,        _context_id);
-          geometry->rmCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2dNP_composite_factory,      _context_id);
+          geometry->rmCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2dNP_dput_composite_factory, _context, _context_id);
+          geometry->rmCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2d_composite_factory,        _context, _context_id);
+          geometry->rmCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2dNP_composite_factory,      _context, _context_id);
 #endif
 
         }

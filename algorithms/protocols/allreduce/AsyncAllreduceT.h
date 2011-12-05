@@ -74,14 +74,16 @@ public:
     /// \brief Constructor
     ///
     AsyncAllreduceT () {};
-    AsyncAllreduceT (Interfaces::NativeInterface   * native,
+    AsyncAllreduceT (pami_context_t               ctxt,
+                     size_t                       ctxt_id,
+                     Interfaces::NativeInterface   * native,
                      T_Conn                        * cmgr,
                      pami_callback_t                  cb_done,
                      PAMI_GEOMETRY_CLASS            * geometry,
                      void                           *cmd) :
         Executor::Composite(),
         _executor (native, cmgr, geometry->comm()),
-        _schedule (native->myrank(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0),
+        _schedule (native->endpoint(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0),
         _cmgr(cmgr)
     {
         TRACE_ADAPTOR ((stderr, "<%p>Allreduce::AsyncAllreduceT() \n", this));
@@ -115,7 +117,9 @@ public:
         _executor.reset();
     }
 
-    AsyncAllreduceT (Interfaces::NativeInterface  * native,
+    AsyncAllreduceT (pami_context_t                 ctxt,
+                     size_t                         ctxt_id,
+                     Interfaces::NativeInterface  * native,
                      T_Conn                       * cmgr,
                      pami_callback_t                cb_done,
                      PAMI_GEOMETRY_CLASS          * geometry,
@@ -129,7 +133,7 @@ public:
                      TypeCode                     * rtype) :
         Executor::Composite(),
         _executor (native, cmgr, geometry->comm()),
-        _schedule (native->myrank(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0),
+        _schedule (native->endpoint(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0),
         _cmgr(cmgr)
     {
         TRACE_ADAPTOR ((stderr, "<%p>Allreduce::AsyncAllreduceT() \n", this));
@@ -195,12 +199,17 @@ protected:
     PAMI::MemoryAllocator<32768, 16>                 _eab_allocator;
 
     T_Conn                                        * _cmgr;
+    Interfaces::NativeInterface                   * _native;
 
 public:
-    AsyncAllreduceFactoryT (T_Conn                      *cmgr,
+  AsyncAllreduceFactoryT (pami_context_t               ctxt,
+                          size_t                       ctxt_id,
+                          pami_mapidtogeometry_fn      cb_geometry,
+                          T_Conn                      *cmgr,
                             Interfaces::NativeInterface *native):
-        CollectiveProtocolFactory(native),
-        _cmgr(cmgr)
+        CollectiveProtocolFactory(ctxt,ctxt_id,cb_geometry),
+        _cmgr(cmgr),
+        _native(native)
     {
         native->setMulticastDispatch(cb_async, this);
     }
@@ -220,7 +229,7 @@ public:
         // TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
         DO_DEBUG((templateName<MetaDataFn>()));
         get_metadata(mdata);
-        CollectiveProtocolFactory::metadata(mdata,PAMI_XFER_ALLREDUCE);
+        if(_native) _native->metadata(mdata,PAMI_XFER_ALLREDUCE);
     }
 
     T_Conn *getConnMgr()
@@ -274,8 +283,7 @@ public:
         unsigned key;
         key = getKey(root, (unsigned) - 1, (PAMI_GEOMETRY_CLASS*)g, (ConnectionManager::BaseConnectionManager **) & cmgr);
 
-        //fprintf (stderr, "%d: Using Key %d\n", _native->myrank(), key);
-        co = (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)geometry->asyncCollectiveUnexpQ().findAndDelete(key);
+        co = (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)geometry->asyncCollectiveUnexpQ(_native->contextid()).findAndDelete(key);
 
         /// Try to match in unexpected queue
         if (co)
@@ -316,7 +324,9 @@ public:
             cb_exec_done.clientdata = co;
 
             a_composite = new (co->getComposite())
-            T_Composite ( _native,
+            T_Composite ( this->_context,
+                          this->_context_id,
+                          _native,
                           cmgr,
                           cb_exec_done,
                           (PAMI_GEOMETRY_CLASS *)g,
@@ -332,7 +342,7 @@ public:
 
         }
 
-        geometry->asyncCollectivePostQ().pushTail(co);
+        geometry->asyncCollectivePostQ(_native->contextid()).pushTail(co);
         DEBUG((stderr, "key = %d, start executor in generate()\n", key););
 	a_composite->executor().start();
 		    
@@ -374,13 +384,13 @@ public:
         CCMI_assert(cmgr == NULL); // ? Why rely on getkey to null it?
 
         CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *co =
-            (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *) geometry->asyncCollectivePostQ().find(key);
+          (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *) geometry->asyncCollectivePostQ(factory->_native->contextid()).find(key);
 
         if (!co)
         {
             // it is still possible that there are other early arrivals
             DEBUG((stderr, "key = %d, no local post, try early arrival\n", key);)
-            co = (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)geometry->asyncCollectiveUnexpQ().find(key);
+              co = (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)geometry->asyncCollectiveUnexpQ(factory->_native->contextid()).find(key);
         }
 
         if (!co)
@@ -394,8 +404,11 @@ public:
             cb_exec_done.function = exec_done;
             cb_exec_done.clientdata = co;
 
+            CCMI_assert ( ctxt == factory->getContext() );//FIXME:: This need to be true
             a_composite = new (co->getComposite())
-            T_Composite ( factory->_native,
+            T_Composite ( ctxt,
+                          factory->getContextId(),
+                          factory->_native,
                           cmgr,
                           cb_exec_done,
                           geometry,
@@ -411,7 +424,7 @@ public:
             co->setFactory (factory);
             co->setGeometry(geometry);
 
-            geometry->asyncCollectiveUnexpQ().pushTail(co);
+            geometry->asyncCollectiveUnexpQ(factory->_native->contextid()).pushTail(co);
         }
         else
         {
@@ -450,7 +463,7 @@ public:
                           xfer->cookie, PAMI_SUCCESS);
 
         // must be on the posted queue, dequeue it
-        geometry->asyncCollectivePostQ().deleteElem(co);
+        geometry->asyncCollectivePostQ(factory->_native->contextid()).deleteElem(co);
 
         // connection manager may need cleanup because we ctor it in cb_async
         if (flag & EarlyArrival)

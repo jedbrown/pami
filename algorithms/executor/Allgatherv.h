@@ -143,6 +143,8 @@ namespace CCMI
         int                 _recvdone;
         pami_task_t         _src;
         pami_task_t         _dst;
+        pami_endpoint_t     _self_ep;
+
         PAMI::Topology      _dsttopology;
         PAMI::Topology      _srctopology;
         PAMI::Topology      _selftopology;
@@ -196,9 +198,10 @@ namespace CCMI
             _curphase(-1),
             _nphases(0),
             _startphase(0),
+            _self_ep(mf->endpoint()),
             _dsttopology(),
             _srctopology(),
-            _selftopology(mf->myrank()),
+	    _selftopology(&_self_ep,1,PAMI::tag_eplist()),
             _gtopology(gtopology),
             _disps(NULL),
             _rcvcounts(NULL)
@@ -257,15 +260,15 @@ namespace CCMI
           _lphase     = 0;
           _rphase     = -1;
 
-          _myindex  = _gtopology->rank2Index(_native->myrank());
+          _myindex  = _gtopology->endpoint2Index(_native->endpoint());
 
           unsigned dstindex = (_myindex + 1) % _gtopology->size();
-          _dst              = _gtopology->index2Rank(dstindex);
-          new (&_dsttopology) PAMI::Topology(_dst);
+          _dst              = _gtopology->index2Endpoint(dstindex);
+          new (&_dsttopology) PAMI::Topology(&_dst, 1, PAMI::tag_eplist());
 
           unsigned srcindex = (_myindex + _gtopology->size() - 1) % _gtopology->size();
-          _src              = _gtopology->index2Rank(srcindex);
-          new (&_srctopology) PAMI::Topology(_src);
+          _src              = _gtopology->index2Endpoint(srcindex);
+          new (&_srctopology) PAMI::Topology(&_src, 1, PAMI::tag_eplist());
 
 
           unsigned connection_id = (unsigned) - 1;
@@ -521,7 +524,7 @@ inline void  CCMI::Executor::AllgathervExec<T_ConnMgr, T_Type>::sendNext ()
 #else
       _mlsend.connection_id      = _lconnid;
 #endif
-      EXECUTOR_DEBUG((stderr, "key %d, phase %d, send to %d\n", _mlsend.connection_id, _curphase, _srctopology.index2Rank(0));)
+      EXECUTOR_DEBUG((stderr, "key %d, phase %d, send to %d\n", _mlsend.connection_id, _curphase, _srctopology.index2Endpoint(0));)
       _native->multicast(&_mlsend);
     }
 
@@ -541,7 +544,7 @@ inline void  CCMI::Executor::AllgathervExec<T_ConnMgr, T_Type>::sendNext ()
 #else
       _mrsend.connection_id      = _rconnid;
 #endif
-      EXECUTOR_DEBUG((stderr, "key %d, data phase %d, send to %d\n", _mrsend.connection_id, _curphase, _dsttopology.index2Rank(0));)
+      EXECUTOR_DEBUG((stderr, "key %d, data phase %d, send to %d\n", _mrsend.connection_id, _curphase, _dsttopology.index2Endpoint(0));)
       _native->multicast(&_mrsend);
     }
 

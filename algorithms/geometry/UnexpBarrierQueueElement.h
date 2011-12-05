@@ -24,22 +24,26 @@ namespace PAMI
     {
     public:
       UnexpBarrierQueueElement (unsigned     comm,
+                                size_t       context_id,
                                 pami_quad_t &info,
                                 unsigned     src,
                                 unsigned     algorithm):
         PAMI::MatchQueueElem(comm),
         _comm (comm),
+        _context_id(context_id),
         _info(info),
         _srcrank(src),
         _algorithm(algorithm)
         {
         }
       unsigned       getComm()      { return _comm;      }
+      unsigned       getContextId() { return _context_id;}
       pami_quad_t  & getInfo()      { return _info;      }
       unsigned       getSrcRank()   { return _srcrank;   }
       unsigned       getAlgorithm() { return _algorithm; }
     private:
       unsigned          _comm;
+      size_t            _context_id;
       pami_quad_t       _info;
       unsigned          _srcrank;
       unsigned          _algorithm;

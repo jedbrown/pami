@@ -11,7 +11,7 @@
  * \brief Test for large geometry create counts
  */
 
-#define NITER   10000000
+#define NITER   10000
 #define DO_BCAST
 #define DO_BARRIER
 
@@ -21,7 +21,7 @@ int main(int argc, char*argv[])
 {
   pami_client_t        client;
   pami_context_t      *context;
-  pami_task_t          task_id, local_task_id, task_real_zero=0, task_zero=0;
+  pami_task_t          task_id, local_task_id=0, task_real_zero=0, task_zero=0;
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
 

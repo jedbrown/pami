@@ -41,7 +41,7 @@ void xlpgas::Scatter<T_NI>::kick    (){
 
       for(int i=0;i<(int)this->_comm->size();++i){
 	if(i != (int)_root){
-	  xlpgas_endpoint_t dst = this->_comm->endpoint (i);
+	  xlpgas_endpoint_t dst = this->_comm->index2Endpoint (i);
 //	  ((AMHeader&)(_header->hdr)).dest_ctxt = dst.ctxt;
           pami_send_t p_send;
           pami_send_event_t   events;

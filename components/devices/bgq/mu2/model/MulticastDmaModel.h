@@ -152,6 +152,7 @@ namespace PAMI
 			   MU::Context                 & device, 
 			   pami_result_t               & status) : 
 	  Interface::MulticastModel<MulticastDmaModel, MU::Context, 0> (device, status), 
+		_context(context),
 	  _mucontext(device),
 	  _nActiveRecvs(0),
 	  _nActiveSends(0),
@@ -257,7 +258,7 @@ namespace PAMI
 	    MUSPI_DescriptorBase * dput = NULL;
 	    if (dst_topology->type() == PAMI_AXIAL_TOPOLOGY) {
 
-	      //printf ("Process Send with axial topo\n"); 
+	      TRACE_STRING("Process Send with axial topo");
 
 	      pami_coord_t *ll=NULL;
 	      pami_coord_t *ur=NULL;
@@ -270,7 +271,8 @@ namespace PAMI
 	      
 	      msg = (InjectDPutBase *) &_sends_axial[idx];
 	      dput = &_sends_axial[idx]._desc;
-	      _sends_axial[idx].initialize ( mcast->cb_done.function,
+	      _sends_axial[idx].initialize ( _context,
+					     mcast->cb_done.function,
 					     mcast->cb_done.clientdata,	 
 					     &_me, 
 					     ref, 
@@ -281,19 +283,16 @@ namespace PAMI
 					     length,
 					     _localMulticast );	    
 	    }
-	    else if (dst_topology->type() == PAMI_LIST_TOPOLOGY){
-	      //printf ("Process Send with list topo\n"); 
-	      pami_task_t  *ranks;
-	      dst_topology->rankList(&ranks);
-	      size_t nranks = dst_topology->size();
+	    else {
+	      TRACE_STRING("Process Send with topology");
 	      
 	      msg  = (InjectDPutBase *) &_sends_list[idx];
 	      dput = &_sends_list[idx]._desc;
 
-	      _sends_list[idx].initialize ( mcast->cb_done.function,
+	      _sends_list[idx].initialize ( _context,
+					    mcast->cb_done.function,
 					    mcast->cb_done.clientdata,	 
-					    ranks,
-					    nranks,
+					    dst_topology,
 					    pwq,
 					    length,
 					    _localMulticast );	    
@@ -364,6 +363,7 @@ namespace PAMI
 
 	    // Get the source data buffer/length and validate (assert) inputs
 	    PAMI::Topology *root_topo = (PAMI::Topology*)mcast->src_participants;
+			TRACE_FORMAT("root_topo %p/%zu, root %u, mytask %u", root_topo,  root_topo?root_topo->size():-1,root_topo?root_topo->index2Rank(0):-1,_mytask);
 	    if ((root_topo != NULL)  && (root_topo->index2Rank(0) == _mytask))
 	      processSend (mcast, devinfo);
 	    else
@@ -481,6 +481,7 @@ namespace PAMI
 
 	  
       protected:
+	  pami_context_t                             _context;
 	  MU::Context                              & _mucontext;
 	  unsigned                                   _nActiveRecvs;
 	  unsigned                                   _nActiveSends;

@@ -139,8 +139,7 @@ namespace PAMI
   ///////////////////////////////////////////////////////////////////////////////
   template <class T_Device, class T_Mcast, class T_Msync, class T_Mcomb, class T_Allocator>
     inline BGQNativeInterfaceAS<T_Device, T_Mcast, T_Msync, T_Mcomb, T_Allocator>::BGQNativeInterfaceAS(T_Mcast *mcast, T_Msync *msync, T_Mcomb *mcomb, T_Allocator &allocator, pami_client_t client, pami_context_t context, size_t context_id, size_t client_id, int *dispatch_id):
-      CCMI::Interfaces::NativeInterface(__global.mapping.task(),
-                                        __global.mapping.size()),
+      CCMI::Interfaces::NativeInterface(context_id,PAMI_ENDPOINT_INIT(client,__global.mapping.task(),context_id)),
       _allocator(allocator),
       _mcast(*mcast),
       _msync(*msync),
@@ -169,8 +168,7 @@ namespace PAMI
       size_t         context_id,
       size_t         client_id,
       int           *dispatch_id):
-      CCMI::Interfaces::NativeInterface(__global.mapping.task(),
-                                        __global.mapping.size()),
+      CCMI::Interfaces::NativeInterface(context_id,PAMI_ENDPOINT_INIT(client,__global.mapping.task(),context_id)),
       _allocator(allocator),
 
       _mcast_status(PAMI_SUCCESS),
@@ -545,9 +543,9 @@ namespace PAMI
 
     PAMI::Topology *root_topo = (PAMI::Topology*)mcast->src_participants;
     PAMI_assert(root_topo);
-    TRACE_FORMAT( "<%p> root %p/%u myrank %u", this, root_topo, root_topo ? root_topo->index2Rank(0) : -1, this->myrank());
+    TRACE_FORMAT( "<%p> root %p/%u myrank %u", this, root_topo, root_topo ? root_topo->index2Rank(0) : -1, this->endpoint());
 
-    if (root_topo->index2Rank(0) == this->myrank())
+    if (root_topo->index2Rank(0) == this->endpoint())
       {
         req->is_master = 1;
         req->total_bytes = mcast->bytes;
@@ -701,8 +699,7 @@ namespace PAMI
   public:
 
     BGQNativeInterfaceM2M<T_Device, T_Model> (T_Device &device, pami_client_t client, pami_context_t context, size_t context_id, size_t client_id, int *dispatch_id):
-    CCMI::Interfaces::NativeInterface(__global.mapping.task(),
-				      __global.mapping.size()),
+    CCMI::Interfaces::NativeInterface(context_id,PAMI_ENDPOINT_INIT(client,__global.mapping.task(),context_id)),
       _m2m_status(PAMI_SUCCESS),
       _model(client, context, device, _m2m_status),
       _dispatch(-1U),
@@ -787,8 +784,7 @@ namespace PAMI
     public:
       /// \brief ctor that takes pointers to multi* objects
       inline BGQNativeInterfaceCNShmem(T_CNShmem *cn_shmem_coll, pami_client_t client, pami_context_t context, size_t context_id, size_t client_id, int *dispatch_id):
-        CCMI::Interfaces::NativeInterface(__global.mapping.task(),
-            __global.mapping.size()),
+        CCMI::Interfaces::NativeInterface(context_id,PAMI_ENDPOINT_INIT(client,__global.mapping.task(),context_id)),
         _cn_shmem_coll(*cn_shmem_coll),
         _dispatch(-1U),
         _client(client),
@@ -805,11 +801,8 @@ namespace PAMI
 
       /// \brief ctor that constructs multi* objects internally
       inline BGQNativeInterfaceCNShmem(T_Device &device,  pami_client_t client, pami_context_t context, size_t context_id, size_t client_id, int *dispatch_id):
-        CCMI::Interfaces::NativeInterface(__global.mapping.task(),
-            __global.mapping.size()),
-
+        CCMI::Interfaces::NativeInterface(context_id,PAMI_ENDPOINT_INIT(client,__global.mapping.task(),context_id)),
         _status(PAMI_SUCCESS),
-
         _cn_shmem_coll(client, context, device, _status),
         _dispatch(-1U),
         _client(client),

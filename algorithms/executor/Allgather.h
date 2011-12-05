@@ -78,6 +78,8 @@ namespace CCMI
         unsigned            _dstlens  [MAX_CONCURRENT];
         pami_task_t         _srcranks [MAX_CONCURRENT];
         unsigned            _srclens  [MAX_CONCURRENT];
+
+        pami_endpoint_t     _self_ep;
         PAMI::Topology      _selftopology;
         PAMI::Topology      _dsttopology [MAX_CONCURRENT];
         PAMI::Topology      *_gtopology;
@@ -120,7 +122,8 @@ namespace CCMI
             _curphase(0),
             _nphases(0),
             _startphase(0),
-            _selftopology(mf->myrank()),
+            _self_ep(mf->endpoint()),
+	    _selftopology(&_self_ep,1,PAMI::tag_eplist()),
             _gtopology(gtopology)
         {
           TRACE_ADAPTOR((stderr, "<%p>Executor::AllgatherExec(...)\n", this));
@@ -148,7 +151,7 @@ namespace CCMI
           TRACE_ADAPTOR((stderr, "<%p>Executor::AllgatherExec::setSchedule()\n", this));
           _comm_schedule = ct;
           // initialize schedule as if everybody is root
-          _comm_schedule->init (_native->myrank(), CCMI::Schedule::SCATTER, _startphase, _nphases, _maxsrcs);
+          _comm_schedule->init (_native->endpoint(), CCMI::Schedule::SCATTER, _startphase, _nphases, _maxsrcs);
           CCMI_assert(_startphase == 0);
           CCMI_assert(_maxsrcs != 0);
           CCMI_assert(_maxsrcs <= MAX_CONCURRENT);
@@ -178,8 +181,7 @@ namespace CCMI
               _msend[i].msgcount      =  1;
               _msend[i].roles         = -1U;
             }
-
-          _myindex    = _gtopology->rank2Index(_native->myrank());
+          _myindex    = _gtopology->endpoint2Index(_native->endpoint());
 
           if (_connmgr)
             _connection_id = _connmgr->getConnectionId(_comm, (unsigned) - 1, 0, (unsigned) - 1, (unsigned) - 1);
@@ -222,7 +224,7 @@ namespace CCMI
           _rtype  = rtype;
 
           CCMI_assert(_comm_schedule != NULL);
-          size_t buflen = _native->numranks() * len;
+          size_t buflen = _gtopology->size() * len;
           pami_result_t rc;
           rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
           PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
@@ -331,7 +333,6 @@ inline void  CCMI::Executor::AllgatherExec<T_ConnMgr, T_Schedule>::sendNext ()
     {
 
       unsigned ndsts, nsrcs;
-      // _comm_schedule->getList(_curphase, &_srcranks[0], nsrcs, &_dstranks[0], ndsts, &_srclens[0], &_dstlens[0]);
       _comm_schedule->getRList(_nphases - _curphase - 1, &_srcranks[0], nsrcs, &_srclens[0]);
       _donecount = ndsts = nsrcs;
 
@@ -342,7 +343,7 @@ inline void  CCMI::Executor::AllgatherExec<T_ConnMgr, T_Schedule>::sendNext ()
           for (unsigned i = 0; i < nsrcs; ++i)
             {
               size_t buflen       = _srclens[i] * _buflen;
-              srcindex            = _gtopology->rank2Index(_srcranks[i]);
+              srcindex            = _gtopology->endpoint2Index(_srcranks[i]);
               dist                = (srcindex + _gtopology->size() - _myindex) % _gtopology->size();
               RecvStruct *recvstr = &_mrecvstr[_curphase].recvstr[i];
               recvstr->pwq.configure (_tmpbuf + dist * _buflen, buflen, 0, _stype, _rtype);
@@ -357,15 +358,14 @@ inline void  CCMI::Executor::AllgatherExec<T_ConnMgr, T_Schedule>::sendNext ()
 
       for (unsigned i = 0; i < nsrcs; ++i)
         {
-          srcindex     = _gtopology->rank2Index(_srcranks[i]);
+          srcindex     = _gtopology->endpoint2Index(_srcranks[i]);
           dist         = (srcindex + _gtopology->size() - _myindex) % _gtopology->size();
           dstindex     = (_myindex + _gtopology->size() - dist) % _gtopology->size();
 
-          _dstranks[i] = _gtopology->index2Rank(dstindex);
+          _dstranks[i] = _gtopology->index2Endpoint(dstindex);
           _dstlens[i]  = _srclens[i];
 
-          new (&_dsttopology[i]) PAMI::Topology(_dstranks[i]);
-
+          new (&_dsttopology[i]) PAMI::Topology(&_dstranks[i], 1, PAMI::tag_eplist());
           size_t buflen = _dstlens[i] * _buflen;
           _pwq[i].configure (_tmpbuf, buflen, 0, _stype, _rtype);
           _pwq[i].reset();
@@ -418,7 +418,7 @@ inline void  CCMI::Executor::AllgatherExec<T_ConnMgr, T_Schedule>::notifyRecv
         {
           size_t buflen       = _srclens[i] * _buflen;
           EXECUTOR_DEBUG((stderr, "phase  = %d, buflen = %d, _srclens[%d] = %d, _srcranks[%d] = %d\n", cdata->_phase, _buflen, i, _srclens[i], i, _srcranks[i]);)
-          unsigned srcindex   = _gtopology->rank2Index(_srcranks[i]);
+          unsigned srcindex   = _gtopology->endpoint2Index(_srcranks[i]);
           unsigned dist       = (srcindex + _gtopology->size() - _myindex) % _gtopology->size();
           RecvStruct *recvstr = &_mrecvstr[cdata->_phase].recvstr[i];
           recvstr->pwq.configure (_tmpbuf + dist * _buflen, buflen, 0, _stype, _rtype);
@@ -427,10 +427,7 @@ inline void  CCMI::Executor::AllgatherExec<T_ConnMgr, T_Schedule>::notifyRecv
           recvstr->rank    = _srcranks[i];
 
           if (_srcranks[i] == src)
-            {
-              sindex = i;
-              // fprintf(stderr, "found index %d, for src %d\n", i, src);
-            }
+            sindex = i;
         }
 
       _mrecvstr[cdata->_phase].exec       = this;

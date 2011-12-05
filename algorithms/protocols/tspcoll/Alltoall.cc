@@ -53,7 +53,7 @@ void xlpgas::Alltoall<T_NI>::kick    () {
       }
     else {
       MUTEX_UNLOCK(&this->_mutex);
-//      _headers[i].dest_ctxt = _comm->endpoint(i).ctxt;
+//      _headers[i].dest_ctxt = _comm->index2Endpoint(i).ctxt;
       pami_send_t p_send;/*This should go once we make sure sendPWQ works*/
 	  pami_send_event_t   events;
       p_send.send.header.iov_base  = &(_headers[i]);
@@ -62,13 +62,13 @@ void xlpgas::Alltoall<T_NI>::kick    () {
       p_send.send.data.iov_len     = this->_len;
       p_send.send.dispatch         = -1;
       memset(&p_send.send.hints, 0, sizeof(p_send.send.hints));
-      p_send.send.dest             = this->_comm->endpoint (i);
+      p_send.send.dest             = this->_comm->index2Endpoint (i);
       events.cookie         = this;
       events.local_fn       = this->cb_senddone;
       events.remote_fn      = NULL;
       _pwq.configure((char *)_sbuf + i * _len, this->_len, this->_len, _stype, _rtype);
       _pwq.reset();
-      this->_p2p_iface->sendPWQ(this->_pami_ctxt, this->_comm->endpoint (i), sizeof(_headers[i]),&_headers[i],this->_len, &_pwq, &events);
+      this->_p2p_iface->sendPWQ(this->_pami_ctxt, this->_comm->index2Endpoint (i), sizeof(_headers[i]),&_headers[i],this->_len, &_pwq, &events);
       //this->_p2p_iface->send(&p_send);
     }
 }

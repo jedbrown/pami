@@ -124,11 +124,6 @@ void cb_amreduce_send(pami_context_t         context,      /**< IN:  communicati
   {
     check_context(context);
   }
-  validation_t *v = _g_val_buffer + origin;
-  v->cookie = cookie;
-  v->bytes  = data_size;
-  v->op     = hdr->op;
-  v->dt     = hdr->dt;
 
   pami_task_t     task;
   size_t          offset;
@@ -136,6 +131,11 @@ void cb_amreduce_send(pami_context_t         context,      /**< IN:  communicati
                               &task,
                               &offset);
 
+  validation_t *v = _g_val_buffer + task;
+  v->cookie = cookie;
+  v->bytes  = data_size;
+  v->op     = hdr->op;
+  v->dt     = hdr->dt;
   v->root = task;
 
   send->cookie      = (void*)v;

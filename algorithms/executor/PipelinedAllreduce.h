@@ -227,7 +227,7 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Conn>::sendMessage
   this->_msend.connection_id = connmgr->getConnectionId
     ( this->_acache.getCommID(), 
       this->_scache.getRoot(), 
-      dst_topology->index2Rank(0),
+      dst_topology->index2Endpoint(0),
       sphase,
       this->_acache.getColor() );
   
@@ -390,7 +390,7 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Conn>::postReceives()
       mrecv.connection_id = connmgr->getRecvConnectionId
 	( this->_acache.getCommID(), 
 	  this->_scache.getRoot(), 
-	  this->_scache.getSrcTopology(p)->index2Rank(0),
+	  this->_scache.getSrcTopology(p)->index2Endpoint(0),
 	  p,
 	  this->_acache.getColor() );
       

@@ -61,7 +61,9 @@ namespace CCMI
           //void                               * _deviceInfo;
 
         public:
-          MultiCombineComposite (Interfaces::NativeInterface          * native,
+          MultiCombineComposite (pami_context_t               ctxt,
+                                 size_t                       ctxt_id,
+                                 Interfaces::NativeInterface          * native,
                                  ConnectionManager::SimpleConnMgr     * cmgr,
                                  pami_geometry_t                        g,
                                  pami_xfer_t                          * cmd,
@@ -80,7 +82,7 @@ namespace CCMI
                           cmd->cmd.xfer_allreduce.stypecount, cmd->cmd.xfer_allreduce.rtypecount, (pami_op)op, (pami_dt)dt);
 
             PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS*)g;
-            void *deviceInfo                  = geometry->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
+            void *deviceInfo                  = geometry->getKey(0,PAMI::Geometry::CKEY_MCOMB_CLASSROUTEID);
 
             TypeCode * stype_obj = (TypeCode *)cmd->cmd.xfer_allreduce.stype;
             TypeCode * rtype_obj = (TypeCode *)cmd->cmd.xfer_allreduce.rtype;
@@ -181,10 +183,13 @@ namespace CCMI
               unsigned                              _connection_id;
           };
         public:
-          MultiCombineComposite2DeviceFactoryT (T_Connmgr                   *cmgr,
+          MultiCombineComposite2DeviceFactoryT (pami_context_t               ctxt,
+                                                size_t                       ctxt_id,
+                                                pami_mapidtogeometry_fn      cb_geometry,
+                                                T_Connmgr                   *cmgr,
                                                 Interfaces::NativeInterface *native_l,
                                                 Interfaces::NativeInterface *native_g):
-              CollectiveProtocolFactory(),
+            CollectiveProtocolFactory(ctxt,ctxt_id,cb_geometry),
               _cmgr(cmgr),
               _native_l(native_l),
               _native_g(native_g)
@@ -197,7 +202,6 @@ namespace CCMI
           virtual void metadata(pami_metadata_t *mdata)
           {
             get_metadata(mdata);
-            CollectiveProtocolFactory::metadata(mdata,PAMI_XFER_ALLREDUCE);
           }
           static void done_fn(pami_context_t  context,
                               void           *clientdata,
@@ -303,7 +307,7 @@ namespace CCMI
             PAMI::Topology  *t_local     = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
             PAMI::Topology  *t_my_master = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_MASTER_TOPOLOGY_INDEX);
             bool             amMaster    = _geometry->isLocalMasterParticipant();
-            _deviceInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
+            _deviceInfo                  = _geometry->getKey(0,PAMI::Geometry::CKEY_MCOMB_CLASSROUTEID);
             // todo:  shared mem may need its own devinfo
             unsigned        typesize;
             coremath        func;
@@ -565,7 +569,7 @@ namespace CCMI
             bool             amMaster       = _geometry->isLocalMasterParticipant();
             bool             amRoot         = _geometry->rank() == cmd->cmd.xfer_reduce.root;
             bool             sameNodeAsRoot = false;
-            _deviceInfo                     = _geometry->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
+            _deviceInfo                     = _geometry->getKey(0,PAMI::Geometry::CKEY_MCOMB_CLASSROUTEID);
             unsigned        typesize;
             coremath        func;
             uintptr_t op, dt;
@@ -635,7 +639,7 @@ namespace CCMI
             total  = t_master->size();
             for(count=0; count<total; count++)
             {
-              size_t rank = t_master->index2Rank(count);
+              size_t rank = t_master->index2Endpoint(count);
               if(__global.mapping.isPeer(rank, cmd->cmd.xfer_reduce.root))
               {
                 masterNode = rank;
@@ -681,7 +685,7 @@ namespace CCMI
             total = t_local->size();
             for(count=0; count<total; count++)
             {
-              if(t_local->index2Rank(count) == cmd->cmd.xfer_reduce.root)
+              if(t_local->index2Endpoint(count) == cmd->cmd.xfer_reduce.root)
               {
                 sameNodeAsRoot = true;
                 break;
@@ -1078,9 +1082,9 @@ namespace CCMI
                           cmd->cmd.xfer_allreduce.stypecount, cmd->cmd.xfer_allreduce.rtypecount,
                           op, dt);
 
-            DO_DEBUG(for (unsigned j = 0; j < _topology_l->size(); ++j) TRACE_FORMAT("_topology_l[%u]=%zu, size %zu", j, (size_t)_topology_l->index2Rank(j), _topology_l->size()));
+            DO_DEBUG(for (unsigned j = 0; j < _topology_l->size(); ++j) TRACE_FORMAT("_topology_l[%u]=%zu, size %zu", j, (size_t)_topology_l->index2Endpoint(j), _topology_l->size()));
 
-            DO_DEBUG(for (unsigned j = 0; j < _topology_g->size(); ++j) TRACE_FORMAT("_topology_g[%u]=%zu, size %zu", j, (size_t)_topology_g->index2Rank(j), _topology_g->size()));
+            DO_DEBUG(for (unsigned j = 0; j < _topology_g->size(); ++j) TRACE_FORMAT("_topology_g[%u]=%zu, size %zu", j, (size_t)_topology_g->index2Endpoint(j), _topology_g->size()));
 
             DO_DEBUG(for (unsigned j = 0; j < _topology_lm.size(); ++j) TRACE_FORMAT("_topology_lm[%u]=%zu, size %zu", j, (size_t)_topology_lm.index2Rank(j), _topology_lm.size()));
 
@@ -1104,8 +1108,8 @@ namespace CCMI
             numLocals = numLocals;
             numMasters = numMasters; // silence warnings when ASSERTS=0
 
-            _deviceMcombInfo = _geometry->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
-            _deviceMcastInfo = _geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
+            _deviceMcombInfo = _geometry->getKey(0,PAMI::Geometry::CKEY_MCOMB_CLASSROUTEID);
+            _deviceMcastInfo = _geometry->getKey(0,PAMI::Geometry::CKEY_MCAST_CLASSROUTEID);
 
             _pwq_src.configure(
                                cmd->cmd.xfer_allreduce.sndbuf,  // buffer

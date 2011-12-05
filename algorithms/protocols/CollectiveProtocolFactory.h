@@ -14,16 +14,10 @@
 #ifndef __algorithms_protocols_CollectiveProtocolFactory_h__
 #define __algorithms_protocols_CollectiveProtocolFactory_h__
 
-//#include "TypeDefs.h"
 #include  "algorithms/interfaces/Executor.h"
 #include  "algorithms/composite/Composite.h"
-
-#include "algorithms/interfaces/NativeInterface.h"
-
-
 #include "util/ccmi_debug.h"
 #include "util/ccmi_util.h"
-
 #include "util/trace.h"
 
 #ifdef CCMI_TRACE_ALL
@@ -35,32 +29,18 @@
 #endif
 
 
-namespace CCMI
-{
-  namespace Adaptor
-  {
-
+namespace CCMI{namespace Adaptor{
     class CollectiveProtocolFactory
     {
       public:
         CollectiveProtocolFactory ():
           _cb_geometry(NULL),
           _context(NULL),
-          _native(NULL)
+          _cached_commid((unsigned)-1),
+          _cached_geometry(NULL)
         {
           TRACE_FN_ENTER();
           TRACE_FORMAT("<%p>",this);
-          TRACE_FN_EXIT();
-        }
-        CollectiveProtocolFactory (Interfaces::NativeInterface  * native):
-          _cb_geometry(NULL),
-          _context(NULL),
-          _native(native),
-	  _cached_commid((unsigned)-1),
-	  _cached_geometry(NULL)
-        {
-          TRACE_FN_ENTER();
-          TRACE_FORMAT("<%p> native %p",this,native);
           TRACE_FN_EXIT();
         }
         static void cleanup_done_fn(pami_context_t  context,
@@ -70,30 +50,38 @@ namespace CCMI
           PAMI_abort();
         }
 
-        void setMapIdToGeometry(pami_mapidtogeometry_fn     cb_geometry)
-        {
-          TRACE_FN_ENTER();
-          TRACE_FORMAT("<%p> cb_geometry %p",this,cb_geometry);
-          _cb_geometry = cb_geometry;
-          TRACE_FN_EXIT();
-        }
 
-
-        pami_geometry_t getGeometry(pami_context_t ctxt, unsigned id)
+      inline CollectiveProtocolFactory (pami_context_t          ctxt,
+                                        size_t                  ctxt_id,
+                                        pami_mapidtogeometry_fn cb_geometry):
+        _cb_geometry(cb_geometry),
+        _context(ctxt),
+        _context_id(ctxt_id),
+        _cached_commid((unsigned) -1),
+        _cached_geometry(NULL)
         {
           TRACE_FN_ENTER();
           TRACE_FORMAT("<%p>",this);
-
-	  if (id != _cached_commid) {
-	    _cached_commid = id;
-	    CCMI_assert (_cb_geometry != NULL);
-	    _cached_geometry =  _cb_geometry (ctxt, id);  
-	  }
-	  
-	  TRACE_FN_EXIT();
-	  return _cached_geometry;
+          TRACE_FN_EXIT();
         }
 
+      pami_geometry_t getGeometry(pami_context_t ctxt,
+                                  unsigned       id)
+        {
+          TRACE_FN_ENTER();
+          TRACE_FORMAT("<%p> ctxt %p, id %u, cached id %u, cached geometry %p",this,ctxt,id,_cached_commid,_cached_geometry);
+
+          if (id != _cached_commid) {
+            _cached_commid = id;
+            CCMI_assert (_cb_geometry != NULL);
+            _cached_geometry =  _cb_geometry (ctxt, id);
+            if(_cached_geometry == NULL) // likely parentless and early/unexpected, so clear the cache
+              _cached_commid = (unsigned)-1;
+          }
+          TRACE_FORMAT("<%p> geometry %p",this,_cached_geometry);
+          TRACE_FN_EXIT();
+          return _cached_geometry;
+        }
 	virtual void clearCache() {
 	  _cached_commid = (unsigned)-1;
 	  _cached_geometry = NULL;
@@ -105,7 +93,6 @@ namespace CCMI
           TRACE_FORMAT("<%p>",this);
           TRACE_FN_EXIT();
         }
-
         /// NOTE: This is required to make "C" programs link successfully with virtual destructors
         void operator delete(void * p)
         {
@@ -116,19 +103,6 @@ namespace CCMI
                                                void                      * cmd) = 0;
 
         virtual void metadata(pami_metadata_t *mdata)=0;
-        inline void metadata(pami_metadata_t *m, pami_xfer_type_t t)
-        {
-          TRACE_FN_ENTER();
-          // trace input
-          TRACE_FORMAT("<%p:%p> %s  metatadata %p, type %u",this,_native,m->name,m,t);
-          TRACE_HEXDATA(m, sizeof(*m));
-          if(_native) _native->metadata(m,t);
-          // trace overrides
-          TRACE_FORMAT("<%p:%p> %s  metatadata %p, type %u",this,_native,m->name,m,t);
-          TRACE_HEXDATA(m, sizeof(*m));
-          TRACE_FN_EXIT();
-        }
-
         virtual void setAsyncInfo (bool                          is_buffered,
                                    pami_dispatch_callback_function cb_async,
                                    pami_mapidtogeometry_fn        cb_geometry)
@@ -138,36 +112,24 @@ namespace CCMI
           TRACE_FN_EXIT();
           PAMI_abort();
         };
-
-        pami_mapidtogeometry_fn getMapIdToGeometry()
-        {
-          TRACE_FN_ENTER();
-          TRACE_FORMAT("<%p> _cb_geometry %p",this,_cb_geometry);
-          TRACE_FN_EXIT();
-          return _cb_geometry;
-        }
-
-        inline void setContext(pami_context_t ctxt) 
-        {
-          TRACE_FN_ENTER();
-          _context=ctxt;
-          TRACE_FORMAT("<%p> _context %p",this,_context);
-          TRACE_FN_EXIT();
-        }
-        inline pami_context_t getContext() 
+      inline pami_context_t getContext()
         {
           TRACE_FN_ENTER();
           TRACE_FORMAT("<%p> _context %p",this,_context);
           TRACE_FN_EXIT();
           return _context;
         }
-
-	Interfaces::NativeInterface *native() { return _native; }
-
+      inline size_t getContextId()
+        {
+          TRACE_FN_ENTER();
+          TRACE_FORMAT("<%p> _context_id %ld",this,_context_id);
+          TRACE_FN_EXIT();
+          return _context_id;
+        }
       protected:
         pami_mapidtogeometry_fn              _cb_geometry;
         pami_context_t                       _context;
-        Interfaces::NativeInterface        * _native;	
+      size_t                               _context_id;
 	unsigned                             _cached_commid;
 	pami_geometry_t                      _cached_geometry;
     };

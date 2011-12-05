@@ -91,7 +91,7 @@ namespace CCMI
         T_ConnMgr                      * _connmgr;
 
         int                 _comm;
-        unsigned            _root;
+        pami_endpoint_t     _root;
         int                 _buflen;
         int                 _totallen;
         char                *_sbuf;
@@ -114,6 +114,7 @@ namespace CCMI
         int                 _maxsrcs;
         pami_task_t         _srcranks [MAX_CONCURRENT];
         unsigned            _srclens  [MAX_CONCURRENT];
+        pami_endpoint_t     _tmp_ep;
         PAMI::Topology      _dsttopology;
         PAMI::Topology      _selftopology;
         PAMI::Topology      *_gtopology;
@@ -170,7 +171,7 @@ namespace CCMI
             _donecount (-1),
             _mynphases(0),
             _dsttopology(),
-            _selftopology(mf->myrank()),
+            _selftopology(mf->endpoint()),
             _gtopology(gtopology),
             _disps(NULL),
             _rcvcounts(NULL)
@@ -216,8 +217,8 @@ namespace CCMI
 
           _mynphases = _comm_schedule->getMyNumPhases();
 
-          _myindex    = _gtopology->rank2Index(_native->myrank());
-          _rootindex  = _gtopology->rank2Index(_root);
+          _myindex    = _gtopology->endpoint2Index(_native->endpoint());
+          _rootindex  = _gtopology->endpoint2Index(_root);
 
           unsigned connection_id = (unsigned) - 1;
 
@@ -264,7 +265,7 @@ namespace CCMI
 
         void updatePWQ()
         {
-          if (_native->myrank() != _root)
+          if (_native->endpoint() != _root)
           {
             size_t  buflen = _totallen * _buflen;
             if (_mynphases > 1)
@@ -295,7 +296,7 @@ namespace CCMI
 
           CCMI_assert(_comm_schedule != NULL);
 
-          if (_native->myrank() == _root)
+          if (_native->endpoint() == _root)
           {
             _donecount = _gtopology->size();
             size_t buflen = 0;
@@ -319,13 +320,15 @@ namespace CCMI
           }
           else // setup PWQ
           {
-
               unsigned ndst;
               _comm_schedule->getLList(_startphase, &_srcranks[0], ndst, &_srclens[0]);
               CCMI_assert(ndst == 1);
 
-              //new (&_dsttopology) PAMI::Topology(_gtopology->index2Rank(_srcranks[0]));
-              new (&_dsttopology) PAMI::Topology(_srcranks[0]);
+              // We make a copy of this endpoint
+              // because the src_ranks list must not be
+              // overwritten
+              _tmp_ep = _srcranks[0];
+              new (&_dsttopology) PAMI::Topology(&_tmp_ep, 1, PAMI::tag_eplist());
 
               _donecount        = _srclens[0];
               size_t  buflen    = _srclens[0]  * _buflen;
@@ -346,15 +349,12 @@ namespace CCMI
               _totallen = _srclens[0];
 
           }
-
-          //TRACE_ADAPTOR((stderr, "<%p>Executor::GatherExec::setInfo() _pwq %p, bytes available %zu/%zu\n", this, &_pwq, _pwq.bytesAvailableToConsume(), _pwq.bytesAvailableToProduce()));
-
         }
 
         void setVectors(T_Gather_type *xfer)
         {
 
-          if (_native->myrank() == _root)
+          if (_native->endpoint() == _root)
             {
               setGatherVectors<T_Gather_type>(xfer, (void *)&_disps, (void *)&_rcvcounts);
             }
@@ -421,7 +421,7 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::s
 
   _curphase  = _startphase;
 
-  if (_native->myrank() == _root)
+  if (_native->endpoint() == _root)
     {
       if (_disps && _rcvcounts)
         memcpy(_rbuf + _disps[_rootindex], _sbuf, _rcvcounts[_rootindex] * _rtype->GetDataSize());
@@ -442,7 +442,7 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::s
   CCMI_assert(_donecount  == 0);
 
   // TODO: needs to add noncontiguous datatype handling
-  if (_native->myrank() == _root)
+  if (_native->endpoint() == _root)
     {
       if (!(_disps && _rcvcounts))
         {
@@ -471,7 +471,7 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::s
   _msend.dst                = NULL;
   _msend.bytes              = _totallen * _buflen;
 
-  EXECUTOR_DEBUG((stderr, "GatherExec::sendNext() to %d, totalcnt = %d, buflen = %d, multicast address %p, %p\n", _dsttopology.index2Rank(0), _totallen, _buflen, &_msend, &_mdata);)
+  EXECUTOR_DEBUG((stderr, "GatherExec::sendNext() to %d, totalcnt = %d, buflen = %d, multicast address %p, %p\n", _dsttopology.index2Endpoint(0), _totallen, _buflen, &_msend, &_mdata);)
   _native->multicast(&_msend);
 }
 
@@ -490,13 +490,11 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::n
   _comm_schedule->getRList(cdata->_phase, &_srcranks[0], nsrcs, &_srclens[0]);
 
   for (i = 0; i < nsrcs; ++i)
-
-    //if (_srcranks[i] == _gtopology->rank2Index(src)) break;
     if (_srcranks[i] == src) break;
 
   CCMI_assert(i < nsrcs);
 
-  unsigned srcindex = _gtopology->rank2Index(_srcranks[i]);
+  unsigned srcindex = _gtopology->endpoint2Index(_srcranks[i]);
   unsigned size     = _gtopology->size();
 
   size_t      buflen;
@@ -504,7 +502,7 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::n
 
   if (_disps && _rcvcounts)
     {
-      CCMI_assert(_native->myrank() == _root);
+      CCMI_assert(_native->endpoint() == _root);
       _srclens[i] = 1;
       buflen    =  _rcvcounts[srcindex] * _rtype->GetDataSize();
       offset    =  _disps[srcindex];

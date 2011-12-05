@@ -18,14 +18,6 @@
 
 namespace CCMI
 {
-#if 0
-  typedef void      (*ScheduleFn)   (void                        * buf,
-                                     unsigned                      size,
-                                     unsigned                      root,
-                                     Interfaces::NativeInterface * native,
-                                     PAMI_GEOMETRY_CLASS         * g);
-#endif
-
   template<class T_Geometry>
     struct SFunc
   {
@@ -93,7 +85,7 @@ namespace CCMI
        * \param[INOUT] topology : the topolgy that sends messages to me in this phase
        */
       virtual void
-      getSrcTopology (unsigned phase, PAMI::Topology *topology)=0;
+      getSrcTopology (unsigned phase, PAMI::Topology *topology, pami_endpoint_t *src_eps)=0;
 
       /**
        * \brief Get the downstream processors to send data to.
@@ -101,21 +93,23 @@ namespace CCMI
        * \param[INOUT] topology : The topology to send messages to in this phase
        */
       virtual void
-      getDstTopology (unsigned phase, PAMI::Topology *topology)=0;
+      getDstTopology (unsigned phase, PAMI::Topology *topology, pami_endpoint_t *dst_eps)=0;
 
       /**
        * \brief Get the union of all sources across all phases
        * \param[INOUT] topology : the union of all sources
        */
       virtual pami_result_t
-      getSrcUnionTopology (PAMI::Topology *topology)=0;
+      getSrcUnionTopology (PAMI::Topology  *topology,
+                           pami_endpoint_t *src_eps)=0;
 
       /**
        * \brief Get the union of all destinations across all phases
        * \param[INOUT] topology : the union of all sources
        */
       virtual pami_result_t
-      getDstUnionTopology (PAMI::Topology *topology)=0;
+      getDstUnionTopology (PAMI::Topology *topology,
+                           pami_endpoint_t *dst_eps=NULL)=0;
 
       /**
        * \brief Get the last reduce phase

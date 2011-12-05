@@ -75,7 +75,7 @@ int main (int argc, char ** argv)
   TRACE_ERR((stderr, "Start test ...\n"));
 
   pami_client_t client;
-  char clientname[]="PAMI";
+  char clientname[]="TEST";
   TRACE_ERR((stderr, "... before PAMI_Client_create()\n"));
   PAMI_Client_create (clientname, &client, NULL, 0);
   TRACE_ERR((stderr, "...  after PAMI_Client_create()\n"));

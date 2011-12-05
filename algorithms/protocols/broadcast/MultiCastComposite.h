@@ -46,7 +46,7 @@ namespace CCMI
       template < 
         bool T_inline                   = false, 
         class T_Native                  = Interfaces::NativeInterface,
-        PAMI::Geometry::gkeys_t T_Gkey  = PAMI::Geometry::GKEY_MCAST_CLASSROUTEID
+        PAMI::Geometry::ckeys_t T_Gkey  = PAMI::Geometry::CKEY_MCAST_CLASSROUTEID
         >
       class MultiCastComposite : public CCMI::Executor::Composite
       {
@@ -55,7 +55,9 @@ namespace CCMI
         PAMI::PipeWorkQueue                  _pwq;
 
       public:
-        MultiCastComposite (Interfaces::NativeInterface            * native,
+        MultiCastComposite (pami_context_t               ctxt,
+                            size_t                       ctxt_id,
+                            Interfaces::NativeInterface            * native,
                             ConnectionManager::SimpleConnMgr     * cmgr,
                             pami_geometry_t                        g,
                             pami_xfer_t                          * cmd,
@@ -68,7 +70,7 @@ namespace CCMI
           TRACE_FORMAT( "<%p> type %#zX, count %zu, root %zu", this, (size_t)cmd->cmd.xfer_broadcast.type, cmd->cmd.xfer_broadcast.typecount, (size_t)cmd->cmd.xfer_broadcast.root);
 
           PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)g;
-          void *deviceInfo                  = geometry->getKey(T_Gkey);
+          void *deviceInfo                  = geometry->getKey(0, T_Gkey);
           PAMI::Topology *destinations = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
 
 
@@ -178,8 +180,8 @@ namespace CCMI
           unsigned        sizeOfType = type_obj->GetDataSize();
           _bytes = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
 
-          _deviceMcastInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
-          _deviceMsyncInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID); 
+          _deviceMcastInfo                  = _geometry->getKey(0,PAMI::Geometry::CKEY_MCAST_CLASSROUTEID);
+          _deviceMsyncInfo                  = _geometry->getKey(0,PAMI::Geometry::CKEY_MSYNC_CLASSROUTEID);
 
           _all = *(PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
           _all.subtractTopology(&_destinations,  &_root);
@@ -355,7 +357,7 @@ namespace CCMI
           bool             amRoot      = (root == _geometry->rank());
           bool             amMaster    = _geometry->isLocalMasterParticipant();
           bool             isRootLocal = t_local->isRankMember(root);
-          void *deviceInfo             = _geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
+          void *deviceInfo             = _geometry->getKey(0,PAMI::Geometry::CKEY_MCAST_CLASSROUTEID);
           PAMI::Type::TypeCode *tc     = (PAMI::Type::TypeCode*)cmd->cmd.xfer_broadcast.type;
           size_t           bytes       = cmd->cmd.xfer_broadcast.typecount * tc->GetDataSize();
           size_t           numMasters  = t_master->size();
@@ -713,7 +715,7 @@ namespace CCMI
           bool             amRoot      = (root == _geometry->rank());
           bool             amMaster    = _geometry->isLocalMasterParticipant();
           bool             isRootLocal = t_local->isRankMember(root);
-          _deviceInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
+          _deviceInfo                  = _geometry->getKey(0,PAMI::Geometry::CKEY_MCAST_CLASSROUTEID);
           PAMI::Type::TypeCode *tc     = (PAMI::Type::TypeCode*)cmd->cmd.xfer_broadcast.type;
           size_t           bytes       = cmd->cmd.xfer_broadcast.typecount * tc->GetDataSize();
           size_t           numMasters  = t_master->size();
@@ -721,11 +723,11 @@ namespace CCMI
           TRACE_FORMAT( "MultiCastComposite2Device:  In Composite Constructor, setting up PWQ's %p %p, bytes=%ld buf=%p",
                          &_pwq0, &_pwq1, bytes, cmd->cmd.xfer_broadcast.buf);
 
-          DO_DEBUG(for (unsigned j = 0; j < numMasters; ++j) fprintf(stderr, "MultiCastComposite2Device() <%p>localMasterTopo[%u]=%zu, size %zu\n", t_master, j, (size_t)t_master->index2Rank(j), numMasters));
+          DO_DEBUG(for (unsigned j = 0; j < numMasters; ++j) fprintf(stderr, "MultiCastComposite2Device() <%p>localMasterTopo[%u]=%zu, size %zu\n", t_master, j, (size_t)t_master->index2Endpoint(j), numMasters));
 
-          DO_DEBUG(for (unsigned j = 0; j < numLocal; ++j) fprintf(stderr, "MultiCastComposite2Device() <%p>localTopo[%u]=%zu, size %zu\n", t_local, j, (size_t)t_local->index2Rank(j), numLocal));
+          DO_DEBUG(for (unsigned j = 0; j < numLocal; ++j) fprintf(stderr, "MultiCastComposite2Device() <%p>localTopo[%u]=%zu, size %zu\n", t_local, j, (size_t)t_local->index2Endpoint(j), numLocal));
 
-          DO_DEBUG(for (unsigned j = 0; j < t_my_master->size(); ++j) fprintf(stderr, "MultiCastComposite2Device() <%p>myMasterTopo[%u]=%zu, size %zu\n", t_my_master, j, (size_t)t_my_master->index2Rank(j), t_my_master->size()));
+          DO_DEBUG(for (unsigned j = 0; j < t_my_master->size(); ++j) fprintf(stderr, "MultiCastComposite2Device() <%p>myMasterTopo[%u]=%zu, size %zu\n", t_my_master, j, (size_t)t_my_master->index2Endpoint(j), t_my_master->size()));
 
           if (bytes == 0)
           {
@@ -1006,7 +1008,7 @@ namespace CCMI
 
           if (T_Sync)
           {
-            _deviceMsyncInfo          = _geometry->getKey(PAMI::Geometry::GKEY_MSYNC_CLASSROUTEID); 
+            _deviceMsyncInfo          = _geometry->getKey(0,PAMI::Geometry::CKEY_MSYNC_CLASSROUTEID);
             // Initialize the msync
             _msync.cb_done.function   = cb_msync_done;
             _msync.cb_done.clientdata = this;
@@ -1204,12 +1206,15 @@ namespace CCMI
         }
 
       public:
-        MultiCastComposite2DeviceFactoryT (T_Connmgr                   *cmgr,
+        MultiCastComposite2DeviceFactoryT (pami_context_t               ctxt,
+                                           size_t                       ctxt_id,
+                                           pami_mapidtogeometry_fn      cb_geometry,
+                                           T_Connmgr                   *cmgr,
                                            Interfaces::NativeInterface *native_l,
                                            bool                         active_message_l,
                                            Interfaces::NativeInterface *native_g,
                                            bool                         active_message_g):
-        CollectiveProtocolFactory(),
+        CollectiveProtocolFactory(ctxt,ctxt_id,cb_geometry),
         _cmgr(cmgr),
         _native_l(native_l),
         _native_g(native_g)
@@ -1359,7 +1364,7 @@ namespace CCMI
           unsigned        sizeOfType = type_obj->GetDataSize();
           _bytes = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
 
-          _deviceInfo                  = _geometry->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
+          _deviceInfo                  = _geometry->getKey(0,PAMI::Geometry::CKEY_MCOMB_CLASSROUTEID);
 
           _all = *(PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
 

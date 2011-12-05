@@ -34,6 +34,15 @@ void initialize_sndbuf (void *sbuf, int count, pami_task_t task, int dt)
       ibuf[i] = task;
     }
   }
+  else if (dt_array[dt] == PAMI_TYPE_SIGNED_INT)
+  {
+    int *ibuf = (int *)  sbuf;
+
+    for (i = 0; i < count; i++)
+    {
+      ibuf[i] = task;
+    }
+  }
   else if (dt_array[dt] == PAMI_TYPE_DOUBLE)
   {
     double *dbuf = (double *)  sbuf;
@@ -75,6 +84,23 @@ int check_rcvbuf (void *rbuf, int count, size_t ntasks, int dt)
       for(i=j*count; i<(j+1)*count; i++)
       {
         if (rcvbuf[i] != (unsigned) j)
+        {
+          fprintf(stderr, "%s:Check %s(%d) failed rcvbuf[%d] %u != %u\n", gProtocolName, dt_array_str[dt], count, i, rcvbuf[1], j);
+          err = -1;
+          return err;
+        }
+      }
+    }
+  }
+  else if (dt_array[dt] == PAMI_TYPE_SIGNED_INT)
+  {
+    int *rcvbuf = (int *)  rbuf;
+
+    for (j = 0; j < ntasks; j++)
+    {
+      for(i=j*count; i<(j+1)*count; i++)
+      {
+        if (rcvbuf[i] != (int) j)
         {
           fprintf(stderr, "%s:Check %s(%d) failed rcvbuf[%d] %u != %u\n", gProtocolName, dt_array_str[dt], count, i, rcvbuf[1], j);
           err = -1;

@@ -168,7 +168,7 @@ void AMExchange<AMHeader,Derived, T_NI>::kick   () {
     bool dosend     = ((myrelrank&sendmask)==0)&&(destrelrank < (int)this->_comm->size());
     if(dosend){
       int  destindex  = (destrelrank + _root)%this->_comm->size();
-      xlpgas_endpoint_t dst = this->_comm->endpoint (destindex);
+      xlpgas_endpoint_t dst = this->_comm->index2Endpoint (destindex);
       ((AMHeader&)(_header->hdr)).dest_ctxt = dst.ctxt;
 
       this->_header->len = this->_slen;
@@ -197,7 +197,7 @@ void AMExchange<AMHeader,Derived, T_NI>::kick   () {
       //if leaf; send info up to the parent; Intermediate children will send
       //in the completion handler of the AM received from children
       if(_parent != -1){
-	xlpgas_endpoint_t dst = this->_comm->endpoint (this->_parent);
+	xlpgas_endpoint_t dst = this->_comm->index2Endpoint (this->_parent);
 	((AMHeader&)(_header->hdr)).dest_ctxt = dst.ctxt;
 	_header->hdr.handler   = XLPGAS_TSP_AMREDUCE_CREQ;
 	this->_header->parent_state  = this->_parent_state;
@@ -382,7 +382,7 @@ void AMExchange<AMHeader,Derived, T_NI>::cb_c_recvcomplete (void * unused, void 
     //when I got all results
     self->merge_data();
     if(self->_parent != -1){
-      xlpgas_endpoint_t dst = self->_comm->endpoint (self->_parent);
+      xlpgas_endpoint_t dst = self->_comm->index2Endpoint (self->_parent);
 // #warning, removed this line
 //      ((AMHeader&)(self->_header->hdr)).dest_ctxt = dst.ctxt;
       self->_header->parent_state = self->_parent_state;

@@ -17,7 +17,7 @@
 #include "algorithms/ccmi.h"
 #include "algorithms/executor/AllreduceBaseExec.h"
 #include "algorithms/connmgr/CommSeqConnMgr.h"
-#include "algorithms/protocols/CollectiveProtocolFactory.h"
+#include "algorithms/protocols/CollectiveProtocolFactoryT.h"
 #include "algorithms/protocols/CollOpT.h"
 
 #if defined DEBUG
@@ -56,7 +56,9 @@ namespace CCMI
           {
           }
 
-          AMReduceT (Interfaces::NativeInterface              * native,
+          AMReduceT (pami_context_t                         ctxt,
+                     size_t                                 ctxt_id,
+                     Interfaces::NativeInterface              * native,
                      pami_callback_t                            cb_done,
                      PAMI_GEOMETRY_CLASS                      * geometry,
                      unsigned                                   root,
@@ -120,11 +122,15 @@ namespace CCMI
 
           T_Conn                         *_cmgr;
 
+          Interfaces::NativeInterface    *_native;
         public:
-          AMReduceFactoryT (T_Conn                      *cmgr,
+          AMReduceFactoryT (pami_context_t               ctxt,
+                            size_t                       ctxt_id,
+                            pami_mapidtogeometry_fn      cb_geometry,
+                            T_Conn                      *cmgr,
                             Interfaces::NativeInterface *native):
-              CollectiveProtocolFactory(native),
-              _cmgr(cmgr)
+            CollectiveProtocolFactory(ctxt, ctxt_id, cb_geometry),
+            _cmgr(cmgr),_native(native)
           {
             native->setMulticastDispatch(cb_head, this);
           }
@@ -143,7 +149,7 @@ namespace CCMI
           {
             DO_DEBUG((templateName<MetaDataFn>()));
             get_metadata(mdata);
-            CollectiveProtocolFactory::metadata(mdata, PAMI_XFER_AMREDUCE);
+            if(_native) _native->metadata(mdata,PAMI_XFER_AMREDUCE);
           }
 
           char *allocateBuffer (unsigned size)
@@ -177,7 +183,7 @@ namespace CCMI
             PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)g;
             T_Conn *cmgr = _cmgr;
             DEBUG((stderr, "AMReduceFactoryT::generate()\n"));
-            unsigned key = getKey(_native->myrank(),
+            unsigned key = getKey(this->_native->endpoint(),
                                   (unsigned) - 1,
                                   geometry,
                                   (ConnectionManager::BaseConnectionManager**) & cmgr);
@@ -197,12 +203,12 @@ namespace CCMI
             pami_data_function reduce_fn;
             // Invoke the dispatch function
             dispatch->fn.amreduce (
-                 _context,              // context
+                 this->_context,              // context
                  dispatch->cookie,      // user cookie
                  amr_xfer->user_header, // User header
                  amr_xfer->headerlen,   // User header size
                  bytes,                 // Number of bytes of message data
-                 _native->myrank(),     // origin (root)
+                 this->_native->endpoint(),     // origin (root)
                  g,                     // Geometry
                  &reduce_fn,            // PAMI math operation to perform on the datatype
                  &send);                // recv info
@@ -212,10 +218,12 @@ namespace CCMI
             xfer->cookie  = send.cookie;
 
             a_composite = new (co->getComposite())
-            T_Composite ( _native,
+            T_Composite ( this->_context,
+                          this->_context_id,
+                          this->_native,
                           cb_exec_done,
                           geometry,
-                          _native->myrank(),
+                          this->_native->endpoint(),
                           key);
 
             co->setXfer((pami_xfer_t *)cmd);
@@ -228,7 +236,7 @@ namespace CCMI
                                            dt, op);
             // Use a custom Collective header as we need to send the data size (for reduce operation)
             AMCollHeaderData hdr;
-            hdr._root  = _native->myrank();
+            hdr._root  = this->_native->endpoint();
             hdr._comm  = geometry->comm();
             hdr._count = amr_xfer->headerlen; // Broadcast executor does not set count, so set manually
             hdr._phase = 0;
@@ -237,7 +245,7 @@ namespace CCMI
             hdr._dt    = (pami_dt) dt;
             hdr._op    = (pami_op) op;
 
-            a_composite->setContext (_context);
+            a_composite->setContext (this->_context);
             CCMI::Executor::BroadcastExec<T_Conn, AMCollHeaderData> &bexec = a_composite->broadcastExecutor();
             bexec.setCollHeader(hdr);
             bexec.setBuffers ((char *)amr_xfer->user_header,
@@ -269,7 +277,7 @@ namespace CCMI
                 bexec.setConnectionID(key);
               }
 
-            geometry->asyncCollectivePostQ().pushTail(co);
+            geometry->asyncCollectivePostQ(_native->contextid()).pushTail(co);
             // Broadcast followed by Reduce
             bexec.start();
             return NULL;
@@ -297,7 +305,7 @@ namespace CCMI
             unsigned key;
             key = getKey (cdata->_root, conn_id, geometry, (ConnectionManager::BaseConnectionManager **) & cmgr);
             CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *co =
-              (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *) geometry->asyncCollectivePostQ().find(key);
+              (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *) geometry->asyncCollectivePostQ(factory->_native->contextid()).find(key);
 
             DEBUG((stderr, "AMReduceFactoryT::cb_head() quad_count=%u sndlen=%zu cdata->_count=%u cdata->_root=%u conn_id=%u\n",
                    count, sndlen, cdata->_count, cdata->_root, conn_id));
@@ -313,7 +321,9 @@ namespace CCMI
                 cb_exec_done.clientdata = co;
 
                 composite = new (co->getComposite())
-                T_Composite ( factory->_native,
+                T_Composite ( ctxt,
+                              factory->getContextId(),
+                              factory->_native,
                               cb_exec_done,
                               geometry,
                               cdata->_root,
@@ -336,7 +346,7 @@ namespace CCMI
                   {
                     composite->broadcastExecutor().setConnectionID(key);
                   }
-                  geometry->asyncCollectivePostQ().pushTail(co);
+                  geometry->asyncCollectivePostQ(factory->_native->contextid()).pushTail(co);
                   composite->broadcastExecutor().start();
                   composite->broadcastExecutor().notifyRecv(peer, *info, (PAMI::PipeWorkQueue **)rcvpwq, cb_done);
                 }
@@ -344,7 +354,7 @@ namespace CCMI
                 {
                   // We received an early Reduce header
                   prepareReduceExecutor(co, cdata, cdata->_count, false);
-                  geometry->asyncCollectivePostQ().pushTail(co);
+                  geometry->asyncCollectivePostQ(factory->_native->contextid()).pushTail(co);
                   composite->reduceExecutor().notifyRecvHead(info, count, conn_id,
                                                              peer, sndlen, arg, rcvlen,
                                                              rcvpwq, cb_done);
@@ -470,7 +480,7 @@ namespace CCMI
             CCMI::Executor::AllreduceBaseExec<T_Conn> &rexec = a_composite->reduceExecutor();
             unsigned root = rexec.getRoot();
             // Invoke the user callback (root has already done this)
-            if (factory->_native->myrank() != root)
+            if (factory->_native->endpoint() != root)
               {
                 pami_data_function reduce_fn;
                 pami_xfer_t *a_xfer = co->getXfer();
@@ -544,7 +554,7 @@ namespace CCMI
                             xfer->cookie, PAMI_SUCCESS);
 
             // must be on the posted queue, dequeue it
-            geometry->asyncCollectivePostQ().deleteElem(co);
+            geometry->asyncCollectivePostQ(factory->_native->contextid()).deleteElem(co);
 
             // free the CollOp object
             factory->_free_pool.free(co);

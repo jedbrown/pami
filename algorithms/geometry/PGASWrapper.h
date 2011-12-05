@@ -90,12 +90,16 @@ namespace PAMI
                 T_P2P_NI,
                 T_Device,
                 T_Exec,
-                T_TSPCollBarrier>(T_Device         *dev,
+                T_TSPCollBarrier>(pami_context_t           ctxt,
+                                  size_t                   ctxt_id,
+                                  pami_mapidtogeometry_fn  cb_geometry,
+                                  T_Device                *dev,
                                   T_P2P_NI          *model,
                                   T_TSPColl        *coll,
 				  const char *string,
                                   T_TSPCollBarrier *collbarrier = NULL,
                                   T_P2P_NI          *barmodel    = NULL  ):
+        CollectiveProtocolFactory(ctxt,ctxt_id,cb_geometry),
         _coll(coll),
         _dev(dev),
         _model(model),
@@ -118,6 +122,7 @@ namespace PAMI
 	  CCMI::Executor::Composite *composite = (CCMI::Executor::Composite*)&_exec;
 	  pami_xfer_t *xfer = (pami_xfer_t *)cmd;
 	  composite->setDoneCallback(xfer->cb_done, xfer->cookie);
+          composite->setContext(_context);
           return composite; 
         }
 
@@ -222,7 +227,7 @@ namespace PAMI
           if (!this->_collexch->isdone()) this->_dev->advance();
 		  PAMI::Type::TypeCode * sndType = (PAMI::Type::TypeCode *)this->_cmd->cmd.xfer_scatter.stype;
 		  PAMI::Type::TypeCode * rcvType = (PAMI::Type::TypeCode *)this->_cmd->cmd.xfer_scatter.rtype;
-          this->_collexch->reset (this->_geometry->virtrankof(this->_cmd->cmd.xfer_scatter.root),
+          this->_collexch->reset (this->_geometry->ordinal(this->_cmd->cmd.xfer_scatter.root),
                                   this->_cmd->cmd.xfer_scatter.sndbuf,
                                   this->_cmd->cmd.xfer_scatter.rcvbuf,
                                   sndType,
@@ -252,7 +257,7 @@ namespace PAMI
           if (!this->_collexch->isdone()) this->_dev->advance();
 		  PAMI::Type::TypeCode * sndType = (PAMI::Type::TypeCode *)this->_cmd->cmd.xfer_gather.stype;
 		  PAMI::Type::TypeCode * rcvType = (PAMI::Type::TypeCode *)this->_cmd->cmd.xfer_gather.rtype;
-          this->_collexch->reset (this->_geometry->virtrankof(this->_cmd->cmd.xfer_gather.root),
+          this->_collexch->reset (this->_geometry->ordinal(this->_cmd->cmd.xfer_gather.root),
                                   this->_cmd->cmd.xfer_gather.sndbuf,
                                   this->_cmd->cmd.xfer_gather.rcvbuf,
                                   sndType,
@@ -342,7 +347,7 @@ namespace PAMI
           if (!this->_collexch->isdone()) this->_dev->advance();
 		  PAMI::Type::TypeCode * sndType = (PAMI::Type::TypeCode *)this->_cmd->cmd.xfer_scatterv.stype;
 		  PAMI::Type::TypeCode * rcvType = (PAMI::Type::TypeCode *)this->_cmd->cmd.xfer_scatterv.rtype;
-          this->_collexch->reset (this->_geometry->virtrankof(this->_cmd->cmd.xfer_scatterv.root),
+          this->_collexch->reset (this->_geometry->ordinal(this->_cmd->cmd.xfer_scatterv.root),
                                   this->_cmd->cmd.xfer_scatterv.sndbuf,
                                   this->_cmd->cmd.xfer_scatterv.rcvbuf,
 								  sndType,
@@ -416,9 +421,9 @@ namespace PAMI
         {
           PAMI::Type::TypeCode * bcastType = (PAMI::Type::TypeCode *)this->_cmd->cmd.xfer_broadcast.type;
           while (!this->_collexch->isdone()) this->_dev->advance();
+          this->_collexch->setContext(this->_context);
           this->_collexch->setComplete(this->_cmd->cb_done, this->_cmd->cookie);
-          this->_collexch->setContext(this->_context);//don't move after reset
-          this->_collexch->reset (this->_geometry->virtrankof(this->_cmd->cmd.xfer_broadcast.root),
+          this->_collexch->reset (this->_geometry->ordinal(this->_cmd->cmd.xfer_broadcast.root),
                                   this->_cmd->cmd.xfer_broadcast.buf,
                                   this->_cmd->cmd.xfer_broadcast.buf,
                                   bcastType,

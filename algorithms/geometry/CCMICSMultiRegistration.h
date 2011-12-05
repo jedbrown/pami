@@ -135,7 +135,7 @@ namespace PAMI
         PAMI::Topology *local_master_topo = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX));
         PAMI::Topology *local_topo        = (PAMI::Topology *)geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
 
-        uint master_rank   = local_topo->index2Rank(0);
+        uint master_rank   = local_topo->index2Endpoint(0);
         uint master_index  = local_master_topo->rank2Index(master_rank);
         void *ctrlstr      = (void *)in[master_index];
         if (ctrlstr == NULL) ctrlstr = (void *)_csmm.getWGCtrlStr();

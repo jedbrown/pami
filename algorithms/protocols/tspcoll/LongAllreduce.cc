@@ -48,7 +48,7 @@ Long (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, T_NI* ni)
     {
       /* send permission chits to potential senders */
 
-      this->_dest    [phase] = this->_comm->endpoint (this->ordinal() + maxBF);
+      this->_dest    [phase] = this->_comm->index2Endpoint (this->ordinal() + maxBF);
       this->_sbuf    [phase] = ((int)this->ordinal() <  nonBF) ? &this->_dummy : NULL;
       this->_rbuf    [phase] = ((int)this->ordinal() >= maxBF) ? &this->_dummy : NULL;
       this->_postrcv [phase] = NULL;
@@ -60,7 +60,7 @@ Long (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, T_NI* ni)
 
       /* send data */
 
-      this->_dest    [phase] = this->_comm->endpoint (this->ordinal() - maxBF);
+      this->_dest    [phase] = this->_comm->index2Endpoint (this->ordinal() - maxBF);
       this->_sbuf    [phase] = NULL; /* send buffer not available */
       this->_rbuf    [phase] = NULL; /* receive buffer not available */
       this->_postrcv [phase] = ((int)this->ordinal() < nonBF)  ? cb_allreduce : NULL;
@@ -79,7 +79,7 @@ Long (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, T_NI* ni)
     {
       /* send permission chits to senders */
 
-      this->_dest    [phase] = this->_comm->endpoint (this->ordinal() ^ (1<<i));
+      this->_dest    [phase] = this->_comm->index2Endpoint (this->ordinal() ^ (1<<i));
       this->_sbuf    [phase] = ((int)this->ordinal() < maxBF) ? &this->_dummy : NULL;
       this->_rbuf    [phase] = ((int)this->ordinal() < maxBF) ? &this->_dummy : NULL;
       this->_postrcv [phase] = NULL;
@@ -92,7 +92,7 @@ Long (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, T_NI* ni)
 
       /* send data */
 
-      this->_dest    [phase] = this->_comm->endpoint (this->ordinal() ^ (1<<i));
+      this->_dest    [phase] = this->_comm->index2Endpoint (this->ordinal() ^ (1<<i));
       this->_sbuf    [phase] = NULL; /* send buffer not available */
       this->_rbuf    [phase] = NULL; /* receive buffer not available */
       this->_postrcv [phase] = ((int)this->ordinal() < maxBF) ? cb_allreduce : NULL;
@@ -111,7 +111,7 @@ Long (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, T_NI* ni)
     {
       /* send permission slips */
 
-      this->_dest    [phase] = this->_comm->endpoint (this->ordinal() - maxBF);
+      this->_dest    [phase] = this->_comm->index2Endpoint (this->ordinal() - maxBF);
       this->_sbuf    [phase] = ((int)this->ordinal() >= maxBF) ? &this->_dummy : NULL;
       this->_rbuf    [phase] = ((int)this->ordinal() < nonBF)  ? &this->_dummy : NULL;
       this->_postrcv [phase] = NULL;
@@ -123,7 +123,7 @@ Long (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, T_NI* ni)
 
       /* send data */
 
-      this->_dest    [phase] = this->_comm->endpoint ((int)this->ordinal() + maxBF);
+      this->_dest    [phase] = this->_comm->index2Endpoint ((int)this->ordinal() + maxBF);
       this->_sbuf    [phase] = NULL; /* send buffer not available */
       this->_rbuf    [phase] = NULL; /* receive buffer not available */
       this->_postrcv [phase] = NULL;

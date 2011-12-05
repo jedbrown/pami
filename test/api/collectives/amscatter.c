@@ -147,18 +147,17 @@ void cb_amscatter_recv(pami_context_t        context,      /**< IN:  communicati
     check_context(context);
   }
 
-  validation_t *v = _g_val_buffer + origin;
-  v->rbuf   = _g_recv_buffer;
-  v->cookie = cookie;
-  v->bytes  = data_size;
-
   pami_task_t     task;
   size_t          offset;
   _gRc |= PAMI_Endpoint_query (origin,
                               &task,
                               &offset);
 
-  v->root = task;
+  validation_t *v = _g_val_buffer + task;
+  v->rbuf   = _g_recv_buffer;
+  v->cookie = cookie;
+  v->bytes  = data_size;
+  v->root   = task;
 
   recv->cookie      = (void*)v;
   recv->local_fn    = cb_amscatter_done;

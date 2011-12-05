@@ -39,6 +39,7 @@ typedef enum
   PAMI_AXIAL_TOPOLOGY,     /**< topology is a axial neighborhood --
                                represented by a rectangular seqment, a
                                reference task, and optional torus flags */
+  PAMI_EPLIST_TOPOLOGY,    /**< topology is an unordered list of endpoints */
   PAMI_TOPOLOGY_COUNT
 } pami_topology_type_t;
 

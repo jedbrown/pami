@@ -981,7 +981,7 @@ namespace PAMI
                                  NULL);
 
             PAMI_assert(__global.topology_local.size() == __global.local_size());
-            if(__global.local_size()!=64) /// \todo Not enough resources for MU Dput at 64 PPN, maybe fix this.
+            if(__global.mapping.tSize()!=64) /// \todo Not enough resources for MU Dput at 64 PPN, maybe fix this.
             {
 	      COMPILE_TIME_ASSERT(sizeof(MUDputNIFactory) <= ProtocolAllocator::objsize);
 	      CCMI::Interfaces::NativeInterfaceFactory *ni_factory_mudp = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
@@ -1009,22 +1009,22 @@ namespace PAMI
 
         if(_ccmi_registration_shmem) 
         {
-            _world_geometry->resetUEBarrier(); // Reset so ccmi will select the UE barrier
+            _world_geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
             _ccmi_registration_shmem->analyze(_contextid, _world_geometry, 0);
         }
         if(_ccmi_registration_mu) 
         {
-            _world_geometry->resetUEBarrier(); // Reset so ccmi will select the UE barrier
+            _world_geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
             _ccmi_registration_mu->analyze(_contextid, _world_geometry, 0);
         }
         if(_ccmi_registration) 
         {
-            _world_geometry->resetUEBarrier(); // Reset so ccmi will select the UE barrier
+            _world_geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
             _ccmi_registration->analyze(_contextid, _world_geometry, 0);
         }
         if(_ccmi_registration_muam) 
         {
-          _world_geometry->resetUEBarrier(); // Reset so ccmi will select the UE barrier
+          _world_geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
           _ccmi_registration_muam->analyze(_contextid, _world_geometry, 0);
         }
 	
@@ -1296,7 +1296,6 @@ namespace PAMI
         TRACE_FN_ENTER();
         Geometry::Algorithm<BGQGeometry> *algo = (Geometry::Algorithm<BGQGeometry> *)parameters->algorithm;
         TRACE_FORMAT("algorithm %p, context %p",algo,this);
-        algo->setContext((pami_context_t) this);
         TRACE_FN_EXIT();
         return algo->generate(parameters);
       }
@@ -1498,10 +1497,11 @@ namespace PAMI
         TRACE_FN_EXIT();
       }
 
-      inline pami_result_t analyze(size_t         dummy, /* unnecessary context_id,*/
+      inline pami_result_t analyze(size_t         dummy, /** \todo remove unnecessary context_id,*/
                                    BGQGeometry    *geometry,
                                    int phase = 0)
       {
+        PAMI_assert_debug(_contextid==dummy); /// \todo this is dumb
         TRACE_FN_ENTER();
         TRACE_FORMAT("id %zu, registration %p, phase %d", _contextid, geometry, phase);
 	
@@ -1517,22 +1517,22 @@ namespace PAMI
 
         if(_ccmi_registration_shmem)// && (((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
         {   
-          geometry->resetUEBarrier(); // Reset so ccmi will select the UE barrier
+          geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
           _ccmi_registration_shmem->analyze(_contextid, geometry, phase);
         }
         if(_ccmi_registration_mu)// && (((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
         {   
-          geometry->resetUEBarrier(); // Reset so ccmi will select the UE barrier
+          geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
           _ccmi_registration_mu->analyze(_contextid, geometry, phase);
         }
         if(_ccmi_registration)// && (((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
         {   
-          geometry->resetUEBarrier(); // Reset so ccmi will select the UE barrier
+          geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
           _ccmi_registration->analyze(_contextid, geometry, phase);
         }
         if(_ccmi_registration_muam)
         {   
-          geometry->resetUEBarrier(); // Reset so ccmi will select the UE barrier
+          geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
           _ccmi_registration_muam->analyze(_contextid, geometry, phase);
         }
 
@@ -1588,6 +1588,17 @@ namespace PAMI
                                        size_t                num_configs)
       {
         return PAMI_INVAL;
+      }
+
+      inline void registerUnexpBarrier_impl (unsigned     comm,
+                                             pami_quad_t &info,
+                                             unsigned     peer,
+                                             unsigned     algorithm)
+      {
+        Geometry::UnexpBarrierQueueElement *ueb =
+          (Geometry::UnexpBarrierQueueElement *) _ueb_allocator.allocateObject();
+        new (ueb) Geometry::UnexpBarrierQueueElement (comm, _contextid, info, peer, algorithm);
+        _ueb_queue.pushTail(ueb);
       }
 
       inline size_t getClientId ()
@@ -1675,8 +1686,10 @@ namespace PAMI
       PAMI::Device::Generic::GenericThread _dummy_work;
       
       Protocol::Rmw::Error        _no_rmw;
-
       Dispatch<256> _dispatch;
+  public:
+      MemoryAllocator <sizeof(PAMI::Geometry::UnexpBarrierQueueElement), 16> _ueb_allocator;
+      MatchQueue                                                             _ueb_queue;
   }; // end PAMI::Context
 }; // end namespace PAMI
 

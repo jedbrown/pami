@@ -151,16 +151,11 @@ void cb_amgather_send(pami_context_t         context,      /**< IN:  communicati
 {
   DEBUG((stderr,"cb_amgather_send(): header_addr=%p  header_size=%zu dst_rank=%u cookie=%p\n",
          header_addr, header_size,((user_header_t *)header_addr)->dst_rank, cookie));
+
   if(gVerbose)
   {
     check_context(context);
   }
-
-  validation_t *v = _g_val_buffer + origin;
-  v->sbuf   = _g_send_buffer;
-  v->cookie = cookie;
-  v->bytes  = data_size;
-  initialize_sndbuf(my_task_id, v->sbuf, v->bytes);
 
   pami_task_t     task;
   size_t          offset;
@@ -168,7 +163,12 @@ void cb_amgather_send(pami_context_t         context,      /**< IN:  communicati
                               &task,
                               &offset);
 
+  validation_t *v = _g_val_buffer + task;
+  v->sbuf   = _g_send_buffer;
+  v->cookie = cookie;
+  v->bytes  = data_size;
   v->root = task;
+  initialize_sndbuf(my_task_id, v->sbuf, v->bytes);
 
   send->cookie      = (void*)v;
   send->local_fn    = cb_amgather_done;
@@ -290,9 +290,9 @@ int main(int argc, char*argv[])
     if (rc == 1)
       return 1;
 
-    _g_recv_buffer = rbuf;
-    _g_send_buffer = sbuf;
-    _g_val_buffer  = validation;
+    _g_recv_buffer = (char *) rbuf;
+    _g_send_buffer = (char *) sbuf;
+    _g_val_buffer  = (validation_t *) validation;
 
 
     barrier.cb_done     = cb_done;

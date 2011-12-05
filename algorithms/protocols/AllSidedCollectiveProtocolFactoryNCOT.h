@@ -40,9 +40,13 @@ namespace CCMI
     {
 
     public:
-      AllSidedCollectiveProtocolFactoryNCOT (T_Conn              * cmgr,
+      AllSidedCollectiveProtocolFactoryNCOT (pami_context_t ctxt,
+                                             size_t         ctxt_id,
+                                             pami_mapidtogeometry_fn     cb_geometry,
+                                             T_Conn              * cmgr,
                                              Interfaces::NativeInterface * native):
-      CollectiveProtocolFactory(native),
+      CollectiveProtocolFactory(ctxt,ctxt_id,cb_geometry),
+      _native(native),
       _cmgr(cmgr),
       _pnative(native)
       {
@@ -51,9 +55,13 @@ namespace CCMI
         DO_DEBUG((templateName<MetaDataFn>()));
         TRACE_FN_EXIT();
       }
-      AllSidedCollectiveProtocolFactoryNCOT (T_Conn              * cmgr,
+      AllSidedCollectiveProtocolFactoryNCOT (pami_context_t ctxt,
+                                             size_t         ctxt_id,
+                                             pami_mapidtogeometry_fn     cb_geometry,
+                                             T_Conn              * cmgr,
                                              Interfaces::NativeInterface ** native):
-      CollectiveProtocolFactory(),
+      CollectiveProtocolFactory(ctxt,ctxt_id,cb_geometry),
+      _native(NULL),
       _cmgr(cmgr),
       _pnative((Interfaces::NativeInterface *)native) /// \todo fix the NI array ctor's
       {
@@ -92,7 +100,7 @@ namespace CCMI
         TRACE_FN_ENTER();
         T_Composite *p;
         pami_result_t rc;
-	rc = __global.heap_mm->memalign((void **)&p,16,sizeof(T_Composite));
+        rc = __global.heap_mm->memalign((void **)&p,16,sizeof(T_Composite));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
         TRACE_FORMAT("<%p> composite %p",this, p);
         new(p) T_Composite(_pnative,_cmgr,geometry,(pami_xfer_t*)cmd,((pami_xfer_t*)cmd)->cb_done,((pami_xfer_t*)cmd)->cookie );
@@ -107,10 +115,11 @@ namespace CCMI
         DO_DEBUG((templateName<MetaDataFn>()));
         get_metadata(mdata);
         // We don't know the xfter so use arbitrary PAMI_XFER_COUNT. \todo something better
-        CollectiveProtocolFactory::metadata(mdata,PAMI_XFER_COUNT);
+        if(_native) _native->metadata(mdata,PAMI_XFER_COUNT);
         TRACE_FN_EXIT();
       }
     private:
+      Interfaces::NativeInterface                * _native;
       T_Conn                                     * _cmgr;
       Interfaces::NativeInterface                * _pnative;
       PAMI::MemoryAllocator<sizeof(T_Composite), 16>   _alloc;

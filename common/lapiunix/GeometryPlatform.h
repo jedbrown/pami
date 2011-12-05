@@ -14,11 +14,11 @@
 #define __common_lapiunix_GeometryPlatform_h__
 
 /// \brief Extensions to enum keys_t
-#define PAMI_GKEY_PLATEXTENSIONS \
-PAMI_GKEY_GEOMETRYINFO, \
-GKEY_GEOMETRYCSNI,      \
-GKEY_GEOMETRYSHMEM,     \
-GKEY_GEOMETRYUSECAU,\
-GKEY_GEOMETRYUSEBSR,
+#define PAMI_CKEY_PLATEXTENSIONS \
+PAMI_CKEY_GEOMETRYINFO, \
+CKEY_GEOMETRYCSNI,      \
+CKEY_GEOMETRYSHMEM,     \
+CKEY_GEOMETRYUSECAU,\
+CKEY_GEOMETRYUSEBSR,
 
 #endif // __common_default_GeometryPlatform_h__

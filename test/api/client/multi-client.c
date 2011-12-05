@@ -14,15 +14,16 @@ int main (int argc, char ** argv)
   pami_result_t result = PAMI_ERROR;
   char         cl_string[] = "TEST";
   
-  int max_clients=MAX_CLIENTS,i;
+  int max_clients=MAX_CLIENTS,i, active_clients=0;
   for(i=0;i<max_clients;i++)
   {
     fprintf (stdout, "Creating Client %d of %d\n", i, max_clients);
     result = PAMI_Client_create (cl_string, &client[i], NULL, 0);
     if(result!=PAMI_SUCCESS)
       fprintf(stderr, "--->error creating client %d\n", i);
+    else active_clients++;
   }
-  for(i=0;i<max_clients;i++)
+  for(i=0;i<active_clients;i++)
   {
     fprintf (stdout, "Destroying Client %d of %d\n", i, max_clients);
     result = PAMI_Client_destroy(&client[i]);

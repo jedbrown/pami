@@ -24,6 +24,5 @@
 // somewhat arbitrary...
 #define PAMI_MAX_PROC_PER_NODE   128
 #define PAMI_MAX_THREAD_PER_PROC 32
-#define MATH_MAX_NSRC 2
-
+#define MATH_MAX_NSRC 4
 #endif // __pami_arch_ppc64_h__

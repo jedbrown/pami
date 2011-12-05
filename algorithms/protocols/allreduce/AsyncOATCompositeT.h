@@ -42,17 +42,19 @@ namespace CCMI
       protected:
 	T_Exec                   _executor __attribute__((__aligned__(32)));
 	T_Sched                  _schedule;
-
 	PAMI_GEOMETRY_CLASS    * _geometry;
 	T_Conn                 * _bcmgr;
-	
+	unsigned                 _contextid;
+
       public:
 	AsyncOATCompositeT ()
         {
 	  CCMI_abort();
 	}
 	
-	AsyncOATCompositeT (Interfaces::NativeInterface       * mf,
+	AsyncOATCompositeT (pami_context_t                      context,
+                            size_t                              ctxt_id,
+                            Interfaces::NativeInterface       * mf,
 			    T_Conn                            * rcmgr,
 			    pami_geometry_t                     g,
 			    void                              * cmd,
@@ -62,23 +64,26 @@ namespace CCMI
 	    CCMI_abort();
 	  }
 
-	
 	AsyncOATCompositeT (pami_context_t                      context,
+                            size_t                              ctxt_id,
 			    Interfaces::NativeInterface       * mf,
 			    T_Conn                            * rcmgr,
 			    T_Conn                            * bcmgr,
+                            void                              * algorithmFactory,
 			    pami_geometry_t                     g,
 			    void                              * cmd,
 			    pami_event_function                 fn,
 			    void                              * cookie):
 	  Executor::Composite(),
 	  _executor (mf, rcmgr, ((PAMI_GEOMETRY_CLASS*)g)->comm()),
-	  _schedule (mf->myrank(), (PAMI::Topology*)((PAMI_GEOMETRY_CLASS *)g)->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0)
+	  _schedule (mf->endpoint(), (PAMI::Topology*)((PAMI_GEOMETRY_CLASS *)g)->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0),
+          _contextid(ctxt_id)
         {
 	  TRACE_FN_ENTER();
 	  uintptr_t op, dt;
 	  _geometry = (PAMI_GEOMETRY_CLASS*) g;	  
 	  this->_context = context;
+          this->setAlgorithmFactory(algorithmFactory);
 	  _executor.setContext(context);
 	  _bcmgr = bcmgr;
 
@@ -108,7 +113,7 @@ namespace CCMI
 
 	  _executor.setDoneCallback(fn, cookie);
 
-	  int iteration = _geometry->getAllreduceIteration();
+	  int iteration = _geometry->getAllreduceIteration(mf->contextid());
 	  _executor.setIteration(iteration);   	  
 	  _executor.reset();
 
@@ -116,6 +121,7 @@ namespace CCMI
 	}
 
 	AsyncOATCompositeT (pami_context_t                      context,
+                            size_t                              ctxt_id,
 			    Interfaces::NativeInterface       * mf,
 			    T_Conn                            * rcmgr,
 			    T_Conn                            * bcmgr,
@@ -124,7 +130,7 @@ namespace CCMI
 			    unsigned                            iteration):
 	  Executor::Composite(),
 	  _executor (mf, rcmgr, ((PAMI_GEOMETRY_CLASS*)g)->comm()),
-	  _schedule (mf->myrank(), (PAMI::Topology*)((PAMI_GEOMETRY_CLASS *)g)->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0)
+	  _schedule (mf->endpoint(), (PAMI::Topology*)((PAMI_GEOMETRY_CLASS *)g)->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0)
 	{
 	  _geometry = (PAMI_GEOMETRY_CLASS*) g;	  
 	  this->_context = context;
@@ -233,7 +239,7 @@ namespace CCMI
 	  
 	  _executor.setDoneCallback(((pami_xfer_t *)cmd)->cb_done,
 				    ((pami_xfer_t *)cmd)->cookie);
-	  _executor.setIteration(_geometry->getAllreduceIteration());
+	  _executor.setIteration(_geometry->getAllreduceIteration(this->_contextid));
 	  _executor.reset();
 	  _executor.start();	
 
@@ -268,14 +274,12 @@ namespace CCMI
       {
 	TRACE_FN_ENTER();
 	CollHeaderData  *cdata = (CollHeaderData *) info;
-	
-	//fprintf (stderr, "In cb_async from %ld on iteration %d\n", peer, cdata->_iteration);
-	
 	T_Factory *factory = (T_Factory *) arg;
 	
 	PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)
 	  factory->getGeometry(ctxt, cdata->_comm);
-	CCMI::Executor::Composite *bcomposite = (CCMI::Executor::Composite *) geometry->getAllreduceComposite(cdata->_iteration);
+          CCMI::Executor::Composite *bcomposite = (CCMI::Executor::Composite *) geometry->getAllreduceComposite(factory->native()->contextid(),
+                                                                                                                cdata->_iteration);
 	
 	if ( likely(bcomposite != NULL  &&  
 		    bcomposite->getAlgorithmFactory() == factory &&
@@ -293,7 +297,7 @@ namespace CCMI
 	//Composite from different old algorithm
 	if (bcomposite != NULL && 
 	    bcomposite->getAlgorithmFactory() != factory) {
-	  geometry->setAllreduceComposite(NULL, cdata->_iteration);
+	  geometry->setAllreduceComposite(factory->native()->contextid(),NULL, cdata->_iteration);
 	  bcomposite->cleanup(); //Call destructor
 	  factory->_alloc.returnObject(bcomposite);
 	  bcomposite = NULL;
@@ -303,9 +307,10 @@ namespace CCMI
 	if (composite == NULL) {
 	  //Need to create a new composite
 	  void *obj = factory->allocateObject();
-	  geometry->setAllreduceComposite(obj, cdata->_iteration);
+	  geometry->setAllreduceComposite(factory->native()->contextid(),obj, cdata->_iteration);
 	  composite = new (obj) T_Composite
 	    ( ctxt,
+              factory->native()->contextid(),
 	      factory->native(), 
 	      factory->connmgr(),    // Connection Manager
 	      factory->getBcastConnMgr(),
@@ -314,7 +319,7 @@ namespace CCMI
 	      cdata->_iteration );
 	  composite->setAlgorithmFactory(factory); 
 	}
-	
+
 	composite->initialize(NULL, 
 			      NULL, 
 			      cdata->_count, 

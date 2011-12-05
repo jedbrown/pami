@@ -30,12 +30,16 @@
 #define DO_TRACE_DEBUG     0
 #endif
 
-
+#if 0
+// This CHECK_ROOT code cannot check the root
+// It needs the endpoint, which geometry does not provide
 #define CHECK_ROOT    {                      \
    pami_task_t me = (pami_task_t)xfer->root; \
    if( me != _geometry->rank())              \
      return PAMI_ERROR;                      \
 }
+#endif
+#define CHECK_ROOT
 
 
 namespace CCMI
@@ -55,10 +59,13 @@ template < class T_Composite, MetaDataFn get_metadata, class T_Conn >
 class OneTaskFactoryT : public CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>
 {
 public:
-    OneTaskFactoryT(T_Conn                      *cmgr,
+    OneTaskFactoryT(pami_context_t               ctxt,
+                    size_t                       ctxt_id,
+                    pami_mapidtogeometry_fn      cb_geometry,
+                    T_Conn                      *cmgr,
                     Interfaces::NativeInterface *native,
                     pami_dispatch_multicast_function cb_head = NULL):
-        CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>(cmgr, native, cb_head)
+      CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>(ctxt,ctxt_id,cb_geometry,cmgr, native, cb_head)
     {
       TRACE_FN_ENTER();
       TRACE_FORMAT( "<%p> ni %p",this, native);
@@ -297,7 +304,9 @@ public:
     ///
     /// \param[in] geometry    Geometry object
     ///
-    OneTaskT ( Interfaces::NativeInterface          * mInterface,
+    OneTaskT ( pami_context_t               ctxt,
+               size_t                       ctxt_id,
+               Interfaces::NativeInterface          * mInterface,
                ConnectionManager::SimpleConnMgr     * cmgr,
                pami_geometry_t                         geometry,
                void                                 * cmd,

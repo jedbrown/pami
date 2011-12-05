@@ -229,6 +229,13 @@ namespace PAMI
       ///
       inline bool isRankMember(pami_task_t rank);
 
+      /// \brief is endpoint in topology
+      ///
+      /// \param[in] endpoint Endpoint to test
+      /// \return boolean indicating endpoint is in topology
+      ///
+      inline bool isEndpointMember(pami_endpoint_t endpoint);
+
       /// \brief is coordinate in topology
       ///
       /// \param[in] c0 Coord to test
@@ -334,9 +341,14 @@ namespace PAMI
       /// Associate a client with the topology
       void setClient(pami_client_t);
 
-      ///returns an endpoint corresponding to the input ordinal
-      pami_endpoint_t endpoint(pami_task_t ordinal);
+      ///returns an endpoint corresponding to the given index
+      pami_endpoint_t index2Endpoint(size_t ordinal);
 
+      ///returns the index corresponding to the given endpoint
+      size_t endpoint2Index(const pami_endpoint_t& ep);
+
+      ///returns an endpoint corresponding to the given rank and offset index
+      pami_endpoint_t rankContext2Endpoint(pami_task_t task, size_t offset);
     }; // end class PAMI::Interface::Topology
 
     template <class T_Topology>
@@ -455,6 +467,12 @@ namespace PAMI
     }
 
     template <class T_Topology>
+      bool Topology<T_Topology>::isEndpointMember(pami_endpoint_t endpoint)
+    {
+      return static_cast<T_Topology*>(this)->isEndpointMember_impl(endpoint);
+    }
+
+    template <class T_Topology>
       bool Topology<T_Topology>::isCoordMember(pami_coord_t *c0)
     {
       return static_cast<T_Topology*>(this)->isCoordMember_impl(c0);
@@ -521,9 +539,21 @@ namespace PAMI
     }
 
     template <class T_Topology>
-      pami_endpoint_t Topology<T_Topology>::endpoint(pami_task_t ordinal)
+    pami_endpoint_t Topology<T_Topology>::index2Endpoint(size_t ordinal)
     {
-      return static_cast<T_Topology*>(this)->endpoint_impl(ordinal);
+      return static_cast<T_Topology*>(this)->index2Endpoint_impl(ordinal);
+    }
+
+    template <class T_Topology>
+    size_t Topology<T_Topology>::endpoint2Index(const pami_endpoint_t& ep)
+    {
+      return static_cast<T_Topology*>(this)->endpoint2Index_impl(ep);
+    }
+
+    template <class T_Topology>
+    pami_endpoint_t Topology<T_Topology>::rankContext2Endpoint(pami_task_t task, size_t offset)
+    {
+      return static_cast<T_Topology*>(this)->rankContext2Endpoint_impl(task,offset);
     }
 
   }; // end namespace Interface

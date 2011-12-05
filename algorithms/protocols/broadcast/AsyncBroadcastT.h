@@ -56,7 +56,9 @@ public:
     AsyncBroadcastT ()
     {
     };
-    AsyncBroadcastT (Interfaces::NativeInterface   * native,
+    AsyncBroadcastT (pami_context_t                  ctxt,
+                     size_t                          ctxt_id,
+                     Interfaces::NativeInterface   * native,
                      T_Conn                        * cmgr,
                      pami_callback_t                 cb_done,
                      PAMI_GEOMETRY_CLASS           * geometry,
@@ -79,8 +81,6 @@ public:
         _executor.setSchedule (&_schedule, 0);
         TRACE_FN_EXIT();
     }
-
-    void setContext (pami_context_t context) {}
 
     CCMI::Executor::BroadcastExec<T_Conn> &executor()
     {
@@ -114,12 +114,17 @@ protected:
     PAMI::MemoryAllocator<32768, 16>                 _eab_allocator;
 
     T_Conn                                        * _cmgr;
+    Interfaces::NativeInterface                   * _native;
 
 public:
-    AsyncBroadcastFactoryT (T_Conn                      *cmgr,
+  AsyncBroadcastFactoryT (pami_context_t               ctxt,
+                          size_t                       ctxt_id,
+                          pami_mapidtogeometry_fn      cb_geometry,
+                          T_Conn                      *cmgr,
                             Interfaces::NativeInterface *native):
-        CollectiveProtocolFactory(native),
-        _cmgr(cmgr)
+        CollectiveProtocolFactory(ctxt,ctxt_id,cb_geometry),
+        _cmgr(cmgr),
+        _native(native)
     {
         TRACE_FN_ENTER();
         TRACE_FORMAT("<%p> nativeinterface %p", this, native);
@@ -156,7 +161,7 @@ public:
     {
         DO_DEBUG((templateName<MetaDataFn>()));
         get_metadata(mdata);
-        CollectiveProtocolFactory::metadata(mdata,PAMI_XFER_BROADCAST);
+        if(_native) _native->metadata(mdata,PAMI_XFER_BROADCAST);
     }
 
     char *allocateBuffer (unsigned size)
@@ -209,9 +214,7 @@ public:
                               (ConnectionManager::BaseConnectionManager**) & cmgr);
 
         TRACE_FORMAT("<%p> key %u", this,key);
-        //fprintf (stderr, "%d: Using Key %d\n", _native->myrank(), key);
-
-        if (_native->myrank() == bcast_xfer->root)
+        if (_native->endpoint() == bcast_xfer->root)
         {
             co = _free_pool.allocate(key);
             pami_callback_t  cb_exec_done;
@@ -219,7 +222,9 @@ public:
             cb_exec_done.clientdata = co;
 
             a_bcast = new (co->getComposite())
-            T_Composite ( _native,
+            T_Composite ( this->_context,
+                          this->_context_id,
+                          _native,
                           cmgr,
                           cb_exec_done,
                           (PAMI_GEOMETRY_CLASS *)g,
@@ -241,7 +246,8 @@ public:
         }
         else
         {
-            co = (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)geometry->asyncCollectiveUnexpQ().findAndDelete(key);
+            co = (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)
+              geometry->asyncCollectiveUnexpQ(_native->contextid()).findAndDelete(key);
             TRACE_FORMAT("<%p> non-root found coll %p", this,co);
 
             /// Try to match in active queue
@@ -297,7 +303,9 @@ public:
                 cb_exec_done.clientdata = co;
 
                 a_bcast = new (co->getComposite())
-                T_Composite ( _native,
+                T_Composite ( this->_context,
+                              this->_context_id,
+                              _native,
                               cmgr,
                               cb_exec_done,
                               (PAMI_GEOMETRY_CLASS *)g,
@@ -316,7 +324,7 @@ public:
                 if (cmgr == NULL)
                     a_bcast->executor().setConnectionID(key);
 
-                geometry->asyncCollectivePostQ().pushTail(co);
+                geometry->asyncCollectivePostQ(_native->contextid()).pushTail(co);
             }
 
             //dev->unlock();
@@ -341,7 +349,7 @@ public:
         AsyncBroadcastFactoryT *factory = (AsyncBroadcastFactoryT *) arg;
         TRACE_FN_ENTER();
         TRACE_FORMAT("<%p> count %u, conn_id %u, peer %zu, sndlen %zu", arg,count,conn_id,peer,sndlen);
-        //fprintf(stderr, "%d: <%#.8X>Broadcast::AsyncBroadcastFactoryT::cb_async() connid %d\n",factory->_native->myrank(), (int)factory, conn_id);
+        CCMI_assert ( ctxt == factory->getContext() );
 
         CollHeaderData *cdata = (CollHeaderData *) info;
         T_Composite* a_bcast = NULL;
@@ -352,7 +360,8 @@ public:
         T_Conn *cmgr = factory->_cmgr;
         unsigned key = factory->myGetKey (cdata->_root, conn_id, geometry, &cmgr);
         CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *co =
-            (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *) geometry->asyncCollectivePostQ().findAndDelete(key);
+            (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)
+          geometry->asyncCollectivePostQ(factory->_native->contextid()).findAndDelete(key);
         TRACE_FORMAT("<%p> found coll %p", arg,co);
 
         if (!co)
@@ -373,7 +382,9 @@ public:
             }
 
             a_bcast = new (co->getComposite())
-            T_Composite ( factory->_native,
+            T_Composite ( ctxt,
+                          factory->getContextId(),
+                          factory->_native,
                           cmgr,
                           cb_exec_done,
                           geometry,
@@ -391,7 +402,7 @@ public:
             if (cmgr == NULL)
                 a_bcast->executor().setConnectionID(key);
 
-            geometry->asyncCollectiveUnexpQ().pushTail(co);
+            geometry->asyncCollectiveUnexpQ(factory->_native->contextid()).pushTail(co);
         }
         else
         {
@@ -419,10 +430,7 @@ public:
         TRACE_FN_ENTER();
         TRACE_FORMAT("<%p>", co);
 
-        //fprintf (stderr, "%d: exec_done for key %d\n", ((AsyncBroadcastFactoryT *)co->getFactory())->_native->myrank(), co->key());
-
         unsigned     flag = co->getFlags();
-
         if (flag & LocalPosted)
         {
             pami_xfer_t *xfer = co->getXfer();
@@ -453,8 +461,11 @@ public:
             }
 
             if (xfer->cb_done)
+              {
+                PAMI_assert(context == factory->_context);
                 xfer->cb_done(co->getComposite()->getContext()?co->getComposite()->getContext():factory->_context,
                               xfer->cookie, PAMI_SUCCESS);
+              }
 
             factory->_free_pool.free(co);
         }

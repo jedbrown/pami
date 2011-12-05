@@ -53,7 +53,8 @@ namespace PAMI
           int                              seqno = hdr->seqno;
           CAUMulticastModel               *mc    = (CAUMulticastModel*) CAUDevice::getClientData(did);
           PAMI_GEOMETRY_CLASS             *g     = (PAMI_GEOMETRY_CLASS*)mc->_device.geometrymap(gid);
-          CAUGeometryInfo                 *gi    = (CAUGeometryInfo*) g->getKey(PAMI::Geometry::GKEY_MCAST_CLASSROUTEID);
+          CAUGeometryInfo                 *gi    = (CAUGeometryInfo*) g->getKey(mc->_device.getContextId(),
+                                                                                PAMI::Geometry::CKEY_MCAST_CLASSROUTEID);
           T_Message                       *msg   = (T_Message *)gi->_postedBcast.find(seqno);
           lapi_return_info_t              *ri    = (lapi_return_info_t *) retinfo;
           PAMI_assert(ri->udata_one_pkt_ptr);

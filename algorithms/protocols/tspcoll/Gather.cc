@@ -44,7 +44,7 @@ void xlpgas::Gather<T_NI>::kick    () {
 	this->_cb_complete (this->_pami_ctxt,this->_arg, PAMI_SUCCESS);
     }
   else {
-    xlpgas_endpoint_t dst = this->_comm->endpoint (this->_root);
+    xlpgas_endpoint_t dst = this->_comm->index2Endpoint (this->_root);
 //    ((AMHeader&)(_header->hdr)).dest_ctxt = dst.ctxt;
     pami_send_t p_send;
     pami_send_event_t   events;

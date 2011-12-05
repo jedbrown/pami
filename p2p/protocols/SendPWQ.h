@@ -21,6 +21,8 @@
 
 #include "util/ccmi_debug.h"
 
+ #undef DO_TRACE_ENTEREXIT
+ #undef DO_TRACE_DEBUG
 #ifdef CCMI_TRACE_ALL
  #define DO_TRACE_ENTEREXIT 1
  #define DO_TRACE_DEBUG     1
@@ -36,7 +38,7 @@ namespace PAMI
   {
     namespace Send
     {
-      static char trace_once = DO_TRACE_ENTEREXIT;
+      static char send_trace_once = DO_TRACE_ENTEREXIT;
       ///
       /// \brief Template class to extend point-to-point send with PWQ support.
       ///
@@ -105,6 +107,7 @@ namespace PAMI
           size_t                    clientid;
         } sendpwq_t;
 
+
         ///
         /// \brief Async work function. Try to resend the data in the pwq if it's ready
         ///
@@ -114,9 +117,10 @@ namespace PAMI
         static pami_result_t work_function(pami_context_t context, void *cookie)
         {
           pami_result_t result = PAMI_EAGAIN;
-          if(trace_once) TRACE_FN_ENTER();
+          if(send_trace_once) TRACE_FN_ENTER();
           sendpwq_t * state = (sendpwq_t*)cookie;
-          if(trace_once) TRACE_FORMAT( "<%p> context %p, cookie %p",state->pthis,context, cookie);
+
+          if(send_trace_once) TRACE_FORMAT( "<%p> context %p, cookie %p",state->pthis,context, cookie);
 
           if (state->type == sendpwq_t::IMMEDIATE)
           {
@@ -130,8 +134,8 @@ namespace PAMI
 //              return PAMI_EAGAIN; // this doesn't actually re-queue the work?
             result = state->pthis->simplePWQ(state, context);
           }
-          if(trace_once) TRACE_FORMAT( "<%p> context %p, cookie %p",state->pthis,context, cookie);
-          if(trace_once) TRACE_FN_EXIT();
+          if(send_trace_once) TRACE_FORMAT( "<%p> context %p, cookie %p",state->pthis,context, cookie);
+          if(send_trace_once) TRACE_FN_EXIT();
           return PAMI_SUCCESS;
         }
         ///
@@ -158,28 +162,34 @@ namespace PAMI
         ///
         pami_result_t immediatePWQ(sendpwq_t* state, pami_context_t context)
         {
-          if(trace_once) TRACE_FN_ENTER();
+          if(send_trace_once) TRACE_FN_ENTER();
           pami_result_t result = PAMI_EAGAIN;
           pami_send_immediate_t * parameters = &state->send.immediate;
 
           PAMI::PipeWorkQueue * pwq = state->pwq;
 
-          if(trace_once) TRACE_FORMAT( "<%p> state %p, context %p, parameters %p, pwq %p, ndest %zu",this, state, context, parameters, pwq, state->dst_participants.size());
+          if(send_trace_once) TRACE_FORMAT( "<%p> state %p, context %p, parameters %p, pwq %p, ndest %zu",this, state, context, parameters, pwq, state->dst_participants.size());
           size_t length = pwq? pwq->bytesAvailableToConsume() : 0;
           void* payload = pwq?(void*)pwq->bufferToConsume(): NULL;
-          if(trace_once) TRACE_FORMAT( "<%p> length %zd/%zd, payload %p  data[%.2u..%.2u]",this, length,(size_t)parameters->data.iov_len, payload, *(char*)payload,*(char*)((char*)payload+length-1));
+          if(send_trace_once) TRACE_FORMAT( "<%p> length %zd/%zd, payload %p  data[%.2u..%.2u]",this, length,(size_t)parameters->data.iov_len, payload, *(char*)payload,*(char*)((char*)payload+length-1));
 
           // send it now if there is enough data in the pwq
           if (length >= parameters->data.iov_len)
           {
-            if(!trace_once) TRACE_FN_ENTER();
-            if(!trace_once) TRACE_FORMAT( "<%p> state %p, context %p, parameters %p, pwq %p, ndest %zu",this, state, context, parameters, pwq, state->dst_participants.size());
-            if(!trace_once) TRACE_FORMAT( "<%p> length %zd/%zd, payload %p data[%.2u..%.2u]",this, length,(size_t)parameters->data.iov_len, payload, payload?*(char*)payload:-1,payload?*(char*)((char*)payload+length-1):-1);
+            if(!send_trace_once) TRACE_FN_ENTER();
+            if(!send_trace_once) TRACE_FORMAT( "<%p> state %p, context %p, parameters %p, pwq %p, ndest %zu",this, state, context, parameters, pwq, state->dst_participants.size());
+            if(!send_trace_once) TRACE_FORMAT( "<%p> length %zd/%zd, payload %p data[%.2u..%.2u]",this, length,(size_t)parameters->data.iov_len, payload, payload?*(char*)payload:-1,payload?*(char*)((char*)payload+length-1):-1);
             parameters->data.iov_base = payload;
             parameters->data.iov_len = length;
             size_t size = state->dst_participants.size();
             for (unsigned i = 0; i < size; ++i)
             {
+              //FIXME:: to be discussed
+              //it relies on the fact the the topology is now endpoint aware;
+              parameters->dest = state->dst_participants.index2Endpoint(i);
+              //fprintf(stderr, "CCMI:: Immediate send to EP%d\n", parameters->dest);
+
+              /*
               pami_task_t task = state->dst_participants.index2Rank(i);
 
               if(task == __global.mapping.task()) /// \todo don't use global? remove myself from topo in caller?
@@ -189,23 +199,25 @@ namespace PAMI
                                              task,
                                              state->contextid, /// \todo what context do I target?
                                              &parameters->dest);
+              */
 
-              TRACE_FORMAT( "<%p> send(%u(%zu,%zu))", this, parameters->dest, (size_t) task, state->contextid);
+              //TRACE_FORMAT( "<%p> send(%u(%zu,%zu))", this, parameters->dest, (size_t) task, state->contextid);
               result = this->immediate (parameters);
               TRACE_FORMAT( "<%p> result %u", this, result);
 
             }
-            TRACE_FN_EXIT(); trace_once = DO_TRACE_ENTEREXIT;
+            TRACE_FN_EXIT(); send_trace_once = DO_TRACE_ENTEREXIT;
             return result;
 
           }
           // not enough data to send yet, post it to the context work queue for later processing
-          if(trace_once) TRACE_FORMAT( "<%p> queue it on context %p",this,context);
+          if(send_trace_once) TRACE_FORMAT( "<%p> queue it on context %p",this,context);
           state->type = sendpwq_t::IMMEDIATE;
           state->pthis = this;
 
           /// \todo Pass in a generic/work device so we can directly post
-          if(trace_once) TRACE_FN_EXIT(); trace_once = 0;
+
+          if(send_trace_once) TRACE_FN_EXIT(); send_trace_once = 0;
           PAMI_Context_post (context,(pami_work_t*)state, work_function, (void *) state);
           return result;
 
@@ -257,6 +269,7 @@ namespace PAMI
             s.send.data.iov_base = payload;
             s.send.data.iov_len = length;
             TRACE_FORMAT( "<%p> send(%u(%p))", this, s.send.dest, context);
+            //fprintf(stderr, "CCMI:: SHORT send to EP%d\n", dest);
             result =  this->simple(&s);
             TRACE_FORMAT( "<%p> result %u", this, result);
             TRACE_FN_EXIT();
@@ -291,28 +304,34 @@ namespace PAMI
         ///
         pami_result_t simplePWQ (sendpwq_t* state, pami_context_t context)
         {
-          if(trace_once) TRACE_FN_ENTER();
+          if(send_trace_once) TRACE_FN_ENTER();
           pami_result_t result = PAMI_EAGAIN;
           pami_send_t * parameters = &state->send.simple;
 
           PAMI::PipeWorkQueue * pwq = state->pwq;
 
-          if(trace_once) TRACE_FORMAT( "<%p> state %p, context %p, parameters %p, pwq %p, ndest %zu",this, state, context, parameters, pwq, state->dst_participants.size());
+          if(send_trace_once) TRACE_FORMAT( "<%p> state %p, context %p, parameters %p, pwq %p, ndest %zu",this, state, context, parameters, pwq, state->dst_participants.size());
           size_t length = pwq? pwq->bytesAvailableToConsume() : 0;
           void* payload = pwq?(void*)pwq->bufferToConsume(): NULL;
-          if(trace_once) TRACE_FORMAT( "<%p> length %zd/%zd, payload %p  data[%.2u..%.2u]",this, length,(size_t)parameters->send.data.iov_len, payload, payload?*(char*)payload:-1,payload?*(char*)((char*)payload+length-1):-1);
+          if(send_trace_once) TRACE_FORMAT( "<%p> length %zd/%zd, payload %p  data[%.2u..%.2u]",this, length,(size_t)parameters->send.data.iov_len, payload, payload?*(char*)payload:-1,payload?*(char*)((char*)payload+length-1):-1);
 
           // send it now if there is enough data in the pwq
           if (length >= parameters->send.data.iov_len)
           {
-            if(!trace_once) TRACE_FN_ENTER();
-            if(!trace_once) TRACE_FORMAT( "<%p> state %p, context %p, parameters %p, pwq %p, ndest %zu",this, state, context, parameters, pwq, state->dst_participants.size());
-            if(!trace_once) TRACE_FORMAT( "<%p> length %zd/%zd, payload %p  data[%.2u..%.2u]",this, length,(size_t)parameters->send.data.iov_len, payload, *(char*)payload,*(char*)((char*)payload+length-1));
+            if(!send_trace_once) TRACE_FN_ENTER();
+            if(!send_trace_once) TRACE_FORMAT( "<%p> state %p, context %p, parameters %p, pwq %p, ndest %zu",this, state, context, parameters, pwq, state->dst_participants.size());
+            if(!send_trace_once) TRACE_FORMAT( "<%p> length %zd/%zd, payload %p  data[%.2u..%.2u]",this, length,(size_t)parameters->send.data.iov_len, payload, *(char*)payload,*(char*)((char*)payload+length-1));
             parameters->send.data.iov_base = payload;
             parameters->send.data.iov_len = length;
             size_t size = state->dst_participants.size();
             for (unsigned i = 0; i < size; ++i)
             {
+              parameters->send.dest = state->dst_participants.index2Endpoint(i);
+
+              //fprintf(stderr, "%p]CCMI:: send to EP%d\n", (void*)context, parameters->send.dest);
+
+              //FIXME: discuss next
+              /*
               pami_task_t task = state->dst_participants.index2Rank(i);
 
               if(task == __global.mapping.task()) /// \todo don't use global? remove myself from topo in caller?
@@ -322,23 +341,24 @@ namespace PAMI
                                              task,
                                              state->contextid, /// \todo what context do I target?
                                              &parameters->send.dest);
+              */
+              //TRACE_FORMAT( "<%p> send(%u(%zu,%zu))", this, parameters->send.dest, (size_t) task, state->contextid);
 
-              TRACE_FORMAT( "<%p> send(%u(%zu,%zu))", this, parameters->send.dest, (size_t) task, state->contextid);
               result =  this->simple (parameters);
               TRACE_FORMAT( "<%p> result %u", this, result);
-
             }
-             TRACE_FN_EXIT();trace_once = DO_TRACE_ENTEREXIT;
+            TRACE_FN_EXIT();send_trace_once = DO_TRACE_ENTEREXIT;
             return result;
+
 
           }
           // not enough data to send yet, post it to the context work queue for later processing
-          if(trace_once) TRACE_FORMAT( "<%p> queue it on context %p",this, context);
+          if(send_trace_once) TRACE_FORMAT( "<%p> queue it on context %p",this, context);
           state->type = sendpwq_t::SIMPLE;
           state->pthis = this;
 
           /// \todo Pass in a generic/work device so we can directly post
-          if(trace_once) TRACE_FN_EXIT(); trace_once = 0;
+          if(send_trace_once) TRACE_FN_EXIT(); send_trace_once = 0;
           PAMI_Context_post (context, (pami_work_t*)state, work_function, (void *) state);
           return result;
           // circular header dependencies if I try to use Context
@@ -356,6 +376,8 @@ namespace PAMI
     }; // PAMI::Protocol::Send namespace
   };   // PAMI::Protocol namespace
 };     // PAMI namespace
+ #undef DO_TRACE_ENTEREXIT
+ #undef DO_TRACE_DEBUG
 
 #endif // __pami_p2p_protocols_SendPWQ_h__
 //

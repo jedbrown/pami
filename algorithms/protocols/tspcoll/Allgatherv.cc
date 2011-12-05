@@ -31,7 +31,7 @@ Allgatherv (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset,T_NI
       //this first part of the collective makes a barrier;
       //int destindex = (this->ordinal()+2*this->_comm->size()-(1<<i))%this->_comm->size();
       int destindex = (this->ordinal()+(1<<i))%comm->size();
-      this->_dest[i] = this->_comm->endpoint(destindex);
+      this->_dest[i] = this->_comm->index2Endpoint(destindex);
       this->_sbuf[i] = &this->_dummy;
       this->_rbuf[i] = &this->_dummy;
       this->_sbufln[i] = 1;
@@ -71,7 +71,7 @@ void xlpgas::Allgatherv<T_NI>::reset (const void         * sbuf,
   for (int i=0, phase=this->_numphases/3; i<this->_numphases/3; i++, phase+=2)
     {
       int destindex = (this->ordinal()+2*this->_comm->size()-(1<<i))%this->_comm->size();
-      this->_dest[phase]   =  this->_comm->endpoint (destindex);
+      this->_dest[phase]   =  this->_comm->index2Endpoint (destindex);
       this->_dest[phase+1]   = this->_dest[phase];
       this->_sbuf[phase]   = (char *)rbuf + rdispls[this->ordinal()];
       this->_sbuf[phase+1]   = (char *)rbuf;

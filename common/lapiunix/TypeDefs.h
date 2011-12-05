@@ -14,8 +14,8 @@
 #ifndef __common_lapiunix_TypeDefs_h__
 #define __common_lapiunix_TypeDefs_h__
 
-#include "algorithms/geometry/LapiGeometry.h"
+#include "algorithms/geometry/Geometry.h"
 
-#define PAMI_GEOMETRY_CLASS    PAMI::Geometry::Lapi
+#define PAMI_GEOMETRY_CLASS    PAMI::Geometry::Common
 
 #endif

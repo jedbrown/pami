@@ -470,7 +470,7 @@ int __internal_tspcoll_split  (int ctxt,
   /* prepare destination buffer for allgather operation             */
   /* -------------------------------------------------------------- */
   Split * dstbuf = (Split *) __global.heap_mm->malloc (sizeof(Split) * team->size());
-  Split   sndbuf(color, rank, team->ordinal(), team->endpoint().node, team->endpoint().ctxt);
+  Split   sndbuf(color, rank, team->ordinal(), team->index2Endpoint().node, team->index2Endpoint().ctxt);
   if (!dstbuf) xlpgas_fatalerror (-1, "comm_split: allocation error");
 
   /* -------------------------------------------------------------- */
@@ -519,8 +519,8 @@ extern "C" void xlpgas_tspcoll_split   (int            ctxt,
   int nsize = __internal_tspcoll_split(ctxt, teamID, color, rank, plist);
 
   int mynewrank = -1;
-  for (int i=0; i<nsize; i++) if (plist[i].node == team->endpoint().node &&
-				  plist[i].ctxt == team->endpoint().ctxt) mynewrank=i;
+  for (int i=0; i<nsize; i++) if (plist[i].node == team->index2Endpoint().node &&
+				  plist[i].ctxt == team->index2Endpoint().ctxt) mynewrank=i;
   if (mynewrank<0) xlpgas_fatalerror(-1, "team_setup: Invalid process list");
 
   /* ---------------------------------------------------- */

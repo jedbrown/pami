@@ -55,9 +55,9 @@ namespace CCMI
         TRACE_FN_EXIT();
       }
 
-      RingSchedule (unsigned myrank, PAMI::Topology *topology, unsigned c = 0);
+      RingSchedule (pami_endpoint_t my_ep, PAMI::Topology *topology, unsigned c = 0);
 
-      void configure (unsigned myrank, unsigned nranks);
+      void configure (pami_endpoint_t my_ep, unsigned nranks);
 
       //Ring broadcast: Send to next and recv from prev
       void getBroadcastSources (unsigned  phase, unsigned *srcpes,
@@ -139,17 +139,17 @@ namespace CCMI
       unsigned idxToRank (unsigned idx)
       {
         TRACE_FN_ENTER();
-        TRACE_FORMAT("<%p>index %u-> rank %u", this, idx, _topology->index2Rank(idx));
+        TRACE_FORMAT("<%p>index %u-> rank %u", this, idx, _topology->index2Endpoint(idx));
         TRACE_FN_EXIT();
-        return _topology->index2Rank(idx);
+        return _topology->index2Endpoint(idx);
       }
 
       unsigned myIdx ()
       {
         TRACE_FN_ENTER();
-        TRACE_FORMAT("<%p> rank %d, index %zu", this,_myrank,_topology->rank2Index(_myrank));
+        TRACE_FORMAT("<%p> rank %d, index %zu", this,_my_ep,_topology->endpoint2Index(_my_ep));
         TRACE_FN_EXIT();
-        return _topology->rank2Index(_myrank);
+        return _topology->endpoint2Index(_my_ep);
       }
 
       ///
@@ -159,9 +159,9 @@ namespace CCMI
       unsigned headIdx ()
       {
         TRACE_FN_ENTER();
-        TRACE_FORMAT("<%p> rank %d, index %zu", this,_root,_topology->rank2Index(_myrank));
+        TRACE_FORMAT("<%p> rank %d, index %zu", this,_root,_topology->endpoint2Index(_my_ep));
         TRACE_FN_EXIT();
-        return _topology->rank2Index(_root);
+        return _topology->endpoint2Index(_root);
       }
 
       unsigned prevIdx ()
@@ -300,31 +300,25 @@ namespace CCMI
        * \param [in] phase  : phase of the collective
        */
 
-      virtual void getSrcTopology (unsigned phase, PAMI::Topology *topology)
+      virtual void getSrcTopology (unsigned phase, PAMI::Topology *topology,pami_endpoint_t *src_eps)
       {
         TRACE_FN_ENTER();
-        unsigned *srcranks;
-        pami_result_t rc;
-        rc = topology->rankList(&srcranks);
-        CCMI_assert (rc == PAMI_SUCCESS);
-        CCMI_assert(srcranks != NULL);
-
         unsigned nranks = 0;
 
         switch (_op)
         {
         case REDUCE_OP:
-          getReduceSources (phase, srcranks, nranks);
+          getReduceSources (phase, src_eps, nranks);
           break;
         case BROADCAST_OP:
-          getBroadcastSources (phase, srcranks, nranks);
+          getBroadcastSources (phase, src_eps, nranks);
           break;
         case ALLREDUCE_OP:
 
           if (phase < _bcastStart)
-            getReduceSources (phase, srcranks, nranks);
+            getReduceSources (phase, src_eps, nranks);
           else
-            getBroadcastSources (phase, srcranks, nranks);
+            getBroadcastSources (phase, src_eps, nranks);
 
           break;
 
@@ -334,12 +328,12 @@ namespace CCMI
         }
 
         //Convert to a list topology
-        new (topology) PAMI::Topology (srcranks, nranks);
+        new (topology) PAMI::Topology (src_eps, nranks, PAMI::tag_eplist());
 #if DO_DEBUG(1)+0
         TRACE_FORMAT("<%p>topology size %zu",this, topology->size());
         for (unsigned j = 0;  j < topology->size(); ++j)
         {
-          TRACE_FORMAT("<%p>topology[%d]=%u",this, j, topology->index2Rank(j));
+          TRACE_FORMAT("<%p>topology[%d]=%u",this, j, topology->index2Endpoint(j));
         }
 #endif
         TRACE_FN_EXIT();
@@ -349,31 +343,25 @@ namespace CCMI
        * \brief Get the downstream processors to send data to.
        * \param phase : phase of the collective
        */
-      virtual void getDstTopology(unsigned phase, PAMI::Topology *topology)
+      virtual void getDstTopology(unsigned phase, PAMI::Topology *topology, pami_endpoint_t *dst_ep)
       {
         TRACE_FN_ENTER();
-        unsigned *dstranks;
-        pami_result_t rc;
-        rc = topology->rankList(&dstranks);
-        CCMI_assert (rc == PAMI_SUCCESS);
-        CCMI_assert(dstranks != NULL);
-
         unsigned ndst = 0;
 
         switch (_op)
         {
         case REDUCE_OP:
-          getReduceDestinations (phase, dstranks, ndst);
+          getReduceDestinations (phase, dst_ep, ndst);
           break;
         case BROADCAST_OP:
-          getBroadcastDestinations (phase, dstranks, ndst);
+          getBroadcastDestinations (phase, dst_ep, ndst);
           break;
         case ALLREDUCE_OP:
 
           if (phase < _bcastStart)
-            getReduceDestinations (phase, dstranks, ndst);
+            getReduceDestinations (phase, dst_ep, ndst);
           else
-            getBroadcastDestinations (phase, dstranks, ndst);
+            getBroadcastDestinations (phase, dst_ep, ndst);
 
           break;
 
@@ -383,12 +371,12 @@ namespace CCMI
         }
 
         //Convert to a list topology
-        new (topology) PAMI::Topology (dstranks, ndst);
+        new (topology) PAMI::Topology (dst_ep, ndst,PAMI::tag_eplist());
 #if DO_DEBUG(1)+0
         TRACE_FORMAT("<%p>topology size %zu",this, topology->size());
         for (unsigned j = 0;  j < topology->size(); ++j)
         {
-          TRACE_FORMAT("<%p>topology[%d]=%u",this, j, topology->index2Rank(j));
+          TRACE_FORMAT("<%p>topology[%d]=%u",this, j, topology->index2Endpoint(j));
         }
 #endif
         TRACE_FN_EXIT();
@@ -399,14 +387,11 @@ namespace CCMI
        * \brief Get the union of all sources across all phases
        * \param[INOUT] topology : the union of all sources
        */
-      virtual pami_result_t getSrcUnionTopology (PAMI::Topology *topology)
+      virtual pami_result_t getSrcUnionTopology (PAMI::Topology *topology,
+                                                 pami_endpoint_t *src_ep)
       {
         TRACE_FN_ENTER();
-        unsigned *srcranks;
-        pami_result_t rc;
-        rc = topology->rankList(&srcranks);
-        CCMI_assert (rc == PAMI_SUCCESS);
-        CCMI_assert(srcranks != NULL);
+        CCMI_assert(src_ep != NULL);
 
         unsigned nranks = 0, ntotal_ranks = 0;
 
@@ -415,17 +400,17 @@ namespace CCMI
           switch (_op)
           {
           case REDUCE_OP:
-            getReduceSources (p, srcranks + ntotal_ranks, nranks);
+            getReduceSources (p, src_ep + ntotal_ranks, nranks);
             break;
           case BROADCAST_OP:
-            getBroadcastSources (p, srcranks + ntotal_ranks, nranks);
+            getBroadcastSources (p, src_ep + ntotal_ranks, nranks);
             break;
           case ALLREDUCE_OP:
 
             if (p < _bcastStart)
-              getReduceSources (p, srcranks + ntotal_ranks, nranks);
+              getReduceSources (p, src_ep + ntotal_ranks, nranks);
             else
-              getBroadcastSources (p, srcranks + ntotal_ranks, nranks);
+              getBroadcastSources (p, src_ep + ntotal_ranks, nranks);
 
             break;
 
@@ -440,12 +425,12 @@ namespace CCMI
         }
 
         //Convert to a list topology
-        new (topology) PAMI::Topology (srcranks, ntotal_ranks);
+        new (topology) PAMI::Topology (src_ep, ntotal_ranks);
 #if DO_DEBUG(1)+0
         TRACE_FORMAT("<%p>topology size %zu",this, topology->size());
         for (unsigned j = 0;  j < topology->size(); ++j)
         {
-          TRACE_FORMAT("<%p>topology[%d]=%u",this, j, topology->index2Rank(j));
+          TRACE_FORMAT("<%p>topology[%d]=%u",this, j, topology->index2Endpoint(j));
         }
 #endif
         TRACE_FN_EXIT();
@@ -457,14 +442,11 @@ namespace CCMI
        * \brief Get the union of all sources across all phases
        * \param[INOUT] topology : the union of all sources
        */
-      virtual pami_result_t getDstUnionTopology (PAMI::Topology *topology)
+      virtual pami_result_t getDstUnionTopology (PAMI::Topology  *topology,
+                                                 pami_endpoint_t *dst_eps)
       {
         TRACE_FN_ENTER();
-        unsigned *dstranks;
-        pami_result_t rc;
-        rc = topology->rankList(&dstranks);
-        CCMI_assert (rc == PAMI_SUCCESS);
-        CCMI_assert(dstranks != NULL);
+        CCMI_assert(dst_eps != NULL);
 
         unsigned nranks = 0, ntotal_ranks = 0;
 
@@ -473,17 +455,17 @@ namespace CCMI
           switch (_op)
           {
           case REDUCE_OP:
-            getReduceDestinations (p, dstranks + ntotal_ranks, nranks);
+            getReduceDestinations (p, dst_eps + ntotal_ranks, nranks);
             break;
           case BROADCAST_OP:
-            getBroadcastDestinations (p, dstranks + ntotal_ranks, nranks);
+            getBroadcastDestinations (p, dst_eps + ntotal_ranks, nranks);
             break;
           case ALLREDUCE_OP:
 
             if (p < _bcastStart)
-              getReduceDestinations (p, dstranks + ntotal_ranks, nranks);
+              getReduceDestinations (p, dst_eps + ntotal_ranks, nranks);
             else
-              getBroadcastDestinations (p, dstranks + ntotal_ranks, nranks);
+              getBroadcastDestinations (p, dst_eps + ntotal_ranks, nranks);
 
             break;
 
@@ -491,19 +473,17 @@ namespace CCMI
           default:
             CCMI_abort();
           }
-
           ntotal_ranks += nranks;
-          CCMI_assert (ntotal_ranks <= topology->size());
           nranks = 0;
         }
 
         //Convert to a list topology
-        new (topology) PAMI::Topology (dstranks, ntotal_ranks);
+        new (topology) PAMI::Topology (dst_eps, ntotal_ranks,PAMI::tag_eplist());
 #if DO_DEBUG(1)+0
         TRACE_FORMAT("<%p>topology size %zu",this, topology->size());
         for (unsigned j = 0;  j < topology->size(); ++j)
         {
-          TRACE_FORMAT("<%p>topology[%d]=%u",this, j, topology->index2Rank(j));
+          TRACE_FORMAT("<%p>topology[%d]=%u",this, j, topology->index2Endpoint(j));
         }
 #endif
         TRACE_FN_EXIT();
@@ -560,29 +540,29 @@ namespace CCMI
       unsigned           _prev;
       PAMI::Topology    *_topology;
       unsigned           _nranks;
-      unsigned           _myrank;
+      pami_endpoint_t    _my_ep;
       unsigned           _dir;
     };
   };
 };
 
 inline CCMI::Schedule::RingSchedule::RingSchedule
-(unsigned myrank, PAMI::Topology *topology, unsigned c)
+(pami_endpoint_t my_ep, PAMI::Topology *topology, unsigned c)
 {
   TRACE_FN_ENTER();
   _topology = topology;
-  configure (myrank, topology->size());
+  configure (my_ep, topology->size());
   TRACE_FN_EXIT();
 }
 
 
 inline void CCMI::Schedule::RingSchedule::configure
-(unsigned        myrank,
+(pami_endpoint_t my_ep,
  unsigned        nranks)
 {
   TRACE_FN_ENTER();
-  TRACE_FORMAT("myrank %d, nranks %d", myrank,  nranks);
-  _myrank  = myrank;
+  TRACE_FORMAT("my_ep %d, nranks %d", my_ep,  nranks);
+  _my_ep  = my_ep;
   _isHead  = false;
   _isTail  = false;
   _nranks  = nranks;

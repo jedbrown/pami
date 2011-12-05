@@ -62,7 +62,8 @@ namespace PAMI
           int                              seqno = hdr->seqno;
           CAUMulticombineModel            *mc    = (CAUMulticombineModel*) CAUDevice::getClientData(did);
           PAMI_GEOMETRY_CLASS             *g     = (PAMI_GEOMETRY_CLASS*)mc->_device.geometrymap(gid);
-          CAUGeometryInfo                 *gi    = (CAUGeometryInfo*) g->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
+          CAUGeometryInfo                 *gi    = (CAUGeometryInfo*) g->getKey(mc->_device.getContextId(),
+                                                                                PAMI::Geometry::CKEY_MCOMB_CLASSROUTEID);
           T_Message                       *msg   = (T_Message *)gi->_postedRed.find(seqno);
           lapi_return_info_t              *ri    = (lapi_return_info_t *) retinfo;
           memcpy(msg->_resultPkt, ri->udata_one_pkt_ptr,hdr->pktsize);
@@ -98,7 +99,8 @@ namespace PAMI
           int                              seqno = hdr->seqno;
           CAUMulticombineModel            *mc    = (CAUMulticombineModel*) CAUDevice::getClientData(did);
           PAMI_GEOMETRY_CLASS             *g     = (PAMI_GEOMETRY_CLASS*)mc->_device.geometrymap(gid);
-          CAUGeometryInfo                 *gi    = (CAUGeometryInfo*) g->getKey(PAMI::Geometry::GKEY_MCOMB_CLASSROUTEID);
+          CAUGeometryInfo                 *gi    = (CAUGeometryInfo*) g->getKey(mc->_device.getContextId(),
+                                                                                PAMI::Geometry::CKEY_MCOMB_CLASSROUTEID);
           T_Message                       *msg   = (T_Message *)gi->_postedRed.find(seqno);
           lapi_return_info_t              *ri    = (lapi_return_info_t *) retinfo;
 

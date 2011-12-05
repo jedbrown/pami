@@ -38,11 +38,14 @@ class ProtocolFactoryT: public CollectiveProtocolFactoryT<T_Composite, get_metad
   bool                              _isAsync;
 
 public:
-    ProtocolFactoryT (T_Conn                      *rcmgr,
+    ProtocolFactoryT (pami_context_t               ctxt,
+                      size_t                       ctxt_id,
+                      pami_mapidtogeometry_fn      cb_geometry,
+                      T_Conn                      *rcmgr,
                       Interfaces::NativeInterface *native,
                       pami_dispatch_multicast_function cb_head = NULL,
 		      T_Conn                      *bcmgr=NULL):
-        CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>(rcmgr, native, cb_head)
+      CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>(ctxt,ctxt_id,cb_geometry,rcmgr, native, cb_head)
     {
         TRACE_FN_ENTER();
         TRACE_FORMAT("%p", this);
@@ -53,6 +56,10 @@ public:
         TRACE_FN_EXIT();
     }
 
+    Interfaces::NativeInterface * native()
+    {
+      return CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_native;
+    }
     void setAsync () { _isAsync = true; }
 
     virtual ~ProtocolFactoryT ()
@@ -75,15 +82,20 @@ public:
         PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)g;
 	
 	unsigned iteration = 0;
-	if (_isAsync) 
-	  iteration = geometry->getAllreduceIteration();	
+        size_t contextid = CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_native->contextid();
+	if (_isAsync)
+          iteration = geometry->getAllreduceIteration(contextid);
 
 	//fprintf (stderr, "Starting collective on iteration %d\n", iteration);
 
-        CCMI::Executor::Composite * arcomposite = (CCMI::Executor::Composite *) geometry->getAllreduceComposite(iteration);
+        CCMI::Executor::Composite * arcomposite = (CCMI::Executor::Composite *) geometry->getAllreduceComposite(contextid,iteration);
         TRACE_FORMAT("%p composite %p", this,arcomposite);
 
         pami_xfer_t *allreduce = (pami_xfer_t *)cmd;
+
+        void* ptr = NULL;
+        if(arcomposite)
+          ptr = arcomposite->getAlgorithmFactory();
 
         ///If the allreduce algorithm was created by this factory before, just restart it
         if (arcomposite != NULL && arcomposite->getAlgorithmFactory() == this)
@@ -92,10 +104,10 @@ public:
 
             if (status == PAMI_SUCCESS)
             {
-	        geometry->setAllreduceComposite(arcomposite, iteration);
+	        geometry->setAllreduceComposite(contextid,arcomposite, iteration);
 		if (_isAsync)
-		  geometry->incrementAllreduceIteration_impl();
-		
+                  geometry->incrementAllreduceIteration(contextid);
+
                 TRACE_FN_EXIT();
                 return NULL;
             }
@@ -103,27 +115,26 @@ public:
 
         if (arcomposite != NULL) // Different factory?  Cleanup old executor.
         {
-	  geometry->setAllreduceComposite(NULL, iteration);
+	  geometry->setAllreduceComposite(contextid,NULL, iteration);
 	  arcomposite->cleanup(); //Call destructor
 	  CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_alloc.returnObject(arcomposite);
         }
 
         T_Composite* obj = (T_Composite*)CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_alloc.allocateObject();
         TRACE_FORMAT("%p composite %p", this,arcomposite);
-        geometry->setAllreduceComposite(obj, iteration);
+        geometry->setAllreduceComposite(contextid,obj, iteration);
         new (obj) T_Composite(this->_context,
+                              this->_context_id,
 			      CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_native,  // Native interface
                               CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_cmgr,    // Connection Manager
 			      _bcmgr,
+                              this,
                               geometry,          // Geometry Object
                               (pami_xfer_t*) cmd, // Parameters
                               allreduce->cb_done,
                               allreduce->cookie);
-        obj->setContext(this->_context);
-	obj->setAlgorithmFactory(this);
-
 	if (_isAsync)
-	  geometry->incrementAllreduceIteration_impl();
+          geometry->incrementAllreduceIteration(contextid);
 
         obj->start();
 

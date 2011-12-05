@@ -67,6 +67,7 @@ unsigned validate (const void * addr, size_t bytes, size_t test_n_plus_minus1)
     /* Verify current value */
     if (byte[i] != expected_value) {
 
+      if(status != 1)
       fprintf (stderr, "ERROR (E):validate(%p,%zu):  byte[%zu] != %d (&byte[%zu] = %p, value is %d)\n", addr, total_bytes, i, expected_value, i, &byte[i], byte[i]);
 
       status = 1;
@@ -291,7 +292,7 @@ int main (int argc, char ** argv)
     case '?':
       if (_my_task == 0) {
 	display_usage();
-	return 1;
+	return 0;
       }
     break;
                 

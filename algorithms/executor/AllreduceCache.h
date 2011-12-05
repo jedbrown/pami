@@ -509,14 +509,12 @@ inline void CCMI::Executor::AllreduceCache<T_Conn>::constructPhaseData()
   PAMI::PipeWorkQueue *dpwq = &_destpwq;
   new (dpwq) PAMI::PipeWorkQueue();
   dpwq->configure (_dstbuf, _pcache._bytes, 0);
-
   // configure per phase state info structures
   /// \todo How about some data layout diagrams?
   unsigned indexSrcPe = 0;
   for (unsigned i = _scache->getStartPhase(); i <= _scache->getEndPhase(); i++)
     {
       unsigned connID   =  (unsigned) - 1;
-
       // Don't index past our allocation
       if (indexSrcPe < _scache->getNumTotalSrcRanks())
         {
@@ -536,21 +534,16 @@ inline void CCMI::Executor::AllreduceCache<T_Conn>::constructPhaseData()
 		CCMI_assert (_scache->getNumSrcRanks(i) == 1);
 		_phaseVec[i].pwqs       = &_bcastpwq;
 	      }	      
-
               for (unsigned scount = 0; scount < _scache->getNumSrcRanks(i); scount ++)
                 {
                   PAMI::Topology *topology = _scache->getSrcTopology(i);
-                  pami_task_t *ranks = NULL;
-                  topology->rankList(&ranks);
-
-                  unsigned srcrank  =  ranks[scount];
+                  pami_endpoint_t srcrank = topology->index2Endpoint(scount);
 
                   if (i <= _scache->getLastReducePhase())
                     connID = _rconnmgr->getRecvConnectionId (_commid, _scache->getRoot(), srcrank, i, _color);
                   else
                     connID = _bconnmgr->getRecvConnectionId (_commid, _scache->getRoot(), srcrank, i, _color);
                 }
-
               indexSrcPe += _scache->getNumSrcRanks(i);
             }
           else // No source/receive processing this phase.
@@ -567,17 +560,14 @@ inline void CCMI::Executor::AllreduceCache<T_Conn>::constructPhaseData()
       if (_scache->getNumDstRanks(i) > 0)
         {
           PAMI::Topology * topology = _scache->getDstTopology(i);
-          pami_task_t *dstranks = NULL;
-          topology->rankList(&dstranks);
-
           if (i <= _scache->getLastReducePhase())
             //Use the broadcast connection manager
             _phaseVec[i].sconnId = _rconnmgr->getConnectionId (_commid, _scache->getRoot(), _color, i,
-                                                               dstranks[0]);
+                                                               topology->index2Endpoint(0));
           else
             //Use the reduction connection manager
             _phaseVec[i].sconnId = _bconnmgr->getConnectionId (_commid, _scache->getRoot(), _color, i,
-                                                               dstranks[0]);
+                                                               topology->index2Endpoint(0));
         }
     }
   TRACE_FN_EXIT();

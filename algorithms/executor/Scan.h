@@ -83,6 +83,8 @@ namespace CCMI
         unsigned            _dstlens  [MAX_CONCURRENT_SCAN];
         pami_task_t         _srcranks [MAX_CONCURRENT_SCAN];
         unsigned            _srclens  [MAX_CONCURRENT_SCAN];
+        pami_endpoint_t     _tmp_ep   [MAX_CONCURRENT_SCAN];
+        pami_endpoint_t     _self_ep;
         PAMI::Topology      _selftopology;
         PAMI::Topology      _dsttopology [MAX_CONCURRENT_SCAN];
         PAMI::Topology      *_gtopology;
@@ -132,7 +134,8 @@ namespace CCMI
             _startphase(0),
             _endphase(-1),
             _exclusive(0),
-            _selftopology(mf->myrank()),
+            _self_ep(mf->endpoint()),
+            _selftopology(&_self_ep, 1,PAMI::tag_eplist()),
             _gtopology(gtopology)
         {
           EXECUTOR_DEBUG((stderr, "<%p>Executor::ScanExec(...)\n", this);)
@@ -160,7 +163,7 @@ namespace CCMI
           EXECUTOR_DEBUG((stderr, "<%p>Executor::ScanExec::setSchedule()\n", this);)
           _comm_schedule = ct;
           // initialize schedule as if everybody is root
-          _comm_schedule->init (_native->myrank(), CCMI::Schedule::SCATTER, _startphase, _nphases, _maxsrcs);
+          _comm_schedule->init (_native->endpoint(), CCMI::Schedule::SCATTER, _startphase, _nphases, _maxsrcs);
           CCMI_assert(_startphase == 0);
           CCMI_assert(_maxsrcs != 0);
           CCMI_assert(_maxsrcs <= MAX_CONCURRENT_SCAN);
@@ -190,7 +193,7 @@ namespace CCMI
               _msend[i].roles         = -1U;
             }
 
-          _myindex    = _gtopology->rank2Index(_native->myrank());
+          _myindex    = _gtopology->endpoint2Index(_native->endpoint());
 
           for (unsigned i = 1; i < _gtopology->size(); i *= 2)
             {
@@ -320,7 +323,7 @@ namespace CCMI
         //------------------------------------------
         void           getSource(unsigned *src, unsigned *nsrc, unsigned *srclen)
         {
-          *src    = _gtopology->index2Rank((_myindex + _gtopology->size() - (1U << _curphase)) % _gtopology->size());
+          *src    = _gtopology->index2Endpoint((_myindex + _gtopology->size() - (1U << _curphase)) % _gtopology->size());
           *nsrc   = 1;
           *srclen = _buflen;
         }
@@ -426,7 +429,7 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::sendNext ()
 
           for (unsigned i = 0; i < nsrcs; ++i)
             {
-              srcindex            = _gtopology->rank2Index(_srcranks[i]);
+              srcindex            = _gtopology->endpoint2Index(_srcranks[i]);
 
               if (srcindex < _myindex)
                 {
@@ -448,15 +451,16 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::sendNext ()
 
       for (unsigned i = 0; i < nsrcs; ++i)
         {
-          srcindex     = _gtopology->rank2Index(_srcranks[i]);
+          srcindex     = _gtopology->endpoint2Index(_srcranks[i]);
           dist         = (_myindex + _gtopology->size() - srcindex) % _gtopology->size();
           dstindex     = (_myindex + _gtopology->size() + dist) % _gtopology->size();
 
           if (dstindex > _myindex)
             {
-              _dstranks[i] = _gtopology->index2Rank(dstindex);
+              _dstranks[i] = _gtopology->index2Endpoint(dstindex);
 
-              new (&_dsttopology[i]) PAMI::Topology(_dstranks[i]);
+              _tmp_ep[i] = _dstranks[i];
+              new (&_dsttopology[i]) PAMI::Topology(&_tmp_ep[i], 1, PAMI::tag_eplist());
 
               size_t buflen = _buflen;
               _pwq[i].configure (_tmpbuf, buflen, 0, _stype, _rtype);
@@ -545,7 +549,7 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::notifyRecv
 			          " phase  = %d, _buflen = %d, _srclens[%d] = %d, _srcranks[%d] = %d\n",
                           cdata->_phase, _buflen, i, _srclens[i], i, _srcranks[i]);)
 #if ASSERT_LEVEL > 0
-          unsigned srcindex = _gtopology->rank2Index(_srcranks[i]);
+          unsigned srcindex = _gtopology->endpoint2Index(_srcranks[i]);
           unsigned dist     = (_myindex + _gtopology->size() - srcindex) % _gtopology->size();
           CCMI_assert(_myindex - dist  >= 0);
 #endif

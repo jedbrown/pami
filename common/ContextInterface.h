@@ -108,6 +108,10 @@ namespace PAMI
       inline pami_result_t update(pami_configuration_t  configuration[],
                                   size_t                num_configs);
 
+      inline void registerUnexpBarrier (unsigned     comm,
+                                        pami_quad_t &info,
+                                        unsigned     peer,
+                                        unsigned     algorithm);
     }; // end class PAMI::Context::Context
 
     template <class T_Context>
@@ -352,6 +356,19 @@ namespace PAMI
       return static_cast<T_Context*>(this)->update_impl(configuration,
                                                         num_configs);
     }
+
+    template <class T_Context>
+    void Context<T_Context>::registerUnexpBarrier (unsigned     comm,
+                                                   pami_quad_t &info,
+                                                   unsigned     peer,
+                                                   unsigned     algorithm)
+    {
+      static_cast<T_Context*>(this)->registerUnexpBarrier_impl(comm,
+                                                               info,
+                                                               peer,
+                                                               algorithm);
+    }
+
 
   }; // end namespace Interface
 }; // end namespace PAMI

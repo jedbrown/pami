@@ -117,10 +117,18 @@ namespace CCMI
       public:
         TopologyMap () {}
 
-        TopologyMap (unsigned myrank, PAMI::Topology *topology) : _myindex(myrank), _topology(topology)
+        TopologyMap (pami_endpoint_t  myendpoint,
+                     PAMI::Topology  *topology):
+          _topology(topology)
         {
           unsigned nph = 0;
-
+          //_my_ep       = myendpoint;
+          _myindex = topology->endpoint2Index ( myendpoint );
+          TRACE_SCHEDULE((stderr,  "<%p>TopologyMap myindex %zu ,myep %u\n", this,_myindex,myendpoint));
+          //for (unsigned i =0;i< topology->size(); i++ )
+          //  {
+          //  TRACE_SCHEDULE((stderr,  "<%p> size %zu, topology[%u] rank=%u, ep=%u, index = %zu/%zu\n", this,topology->size(), i, topology->index2Rank(i), topology->index2Endpoint(i),topology->rank2Index(topology->index2Rank(i)), topology->endpoint2Index(topology->index2Endpoint(i))));
+          //  }
           for (unsigned i = topology->size(); i > 1; i >>= 1)
             {
               nph++;
@@ -128,6 +136,7 @@ namespace CCMI
 
           _hnranks = 1 << nph;
           _rootindex = 0;
+          TRACE_SCHEDULE((stderr,  "<%p>TopologyMap(%u,%p) myindex %zu ,nph %u\n", this,myendpoint,topology,_myindex,nph));
         }
 
         ~TopologyMap () {}
@@ -139,7 +148,8 @@ namespace CCMI
 
         void setRoot (unsigned gr)
         {
-          _rootindex = _topology->rank2Index((pami_task_t)gr);
+          _rootindex = _topology->endpoint2Index((pami_task_t)gr);
+          TRACE_SCHEDULE((stderr,  "<%p>TopologyMap::setRoot(unsigned %u) %zu \n", this,gr,_rootindex));
         }
 
         ///
@@ -195,12 +205,13 @@ namespace CCMI
         /// \brief Convert the rank to the global rank for the msend
         ///        interface
         ///
-        unsigned getGlobalRank (unsigned relrank)
+        pami_endpoint_t getGlobalRank (unsigned relrank)
         {
           relrank += _rootindex;
          if (relrank >= _topology->size())
            relrank -= _topology->size();
-          return _topology->index2Rank(relrank);
+          TRACE_SCHEDULE((stderr,  "<%p>TopologyMap::getGlobalRank(unsigned %u) %u \n", this,relrank,_topology->index2Endpoint(relrank)));
+          return _topology->index2Endpoint(relrank);
         }
 
         ///
@@ -208,6 +219,7 @@ namespace CCMI
         ///
         unsigned getMyRank ()
         {
+          TRACE_SCHEDULE((stderr,  "<%p>TopologyMap::getMyRank() myindex %zu, size %zu, root %zu, my rank = %zu \n", this,_myindex,_topology->size(),_rootindex,_myindex >= _rootindex? _myindex - _rootindex:_myindex + _topology->size() - _rootindex));
           if (_myindex >= _rootindex)
             return _myindex - _rootindex;
 
@@ -221,85 +233,31 @@ namespace CCMI
         size_t              _rootindex; /** Index of the root */
         size_t              _myindex;   /** Index of my node */
         PAMI::Topology      * _topology;
+        //pami_endpoint_t      _my_ep;
     };
 
     class NodeOptTopoMap : public MultinomialMap<NodeOptTopoMap>
     {
       public:
         NodeOptTopoMap () {}
-
-        NodeOptTopoMap (unsigned myindex, PAMI::Topology *topology) : _myindex(myindex), _topology(topology)
+        NodeOptTopoMap (unsigned        myindex,
+                        pami_endpoint_t myendpoint,
+                        PAMI::Topology *all_topology,
+                        PAMI::Topology *local_topology,
+                        PAMI::Topology *master_topology) :
+          _myindex(myindex),
+          _myendpoint(myendpoint),
+          _all_topology(all_topology),
+          _master_topology(master_topology),
+          _local_topology(local_topology)
         {
           unsigned nph = 0;
-          _topology->subTopologyLocalToMe(&_local_topology);
-	  
-	  ////////////////--- Begin Build Master Topology ----- ////////////////
-	  
-	  pami_task_t *tmp_ranks = (pami_task_t *)malloc (topology->size() * sizeof(pami_task_t));
-
-	  if (topology->type() == PAMI_LIST_TOPOLOGY) {
-	    pami_task_t *ranks = NULL;
-	    topology->rankList(&ranks);
-	    
-	    PAMI_assert (ranks != NULL);
-	    PAMI_assert (topology != NULL);	    
-	    memcpy (tmp_ranks, ranks, topology->size() * sizeof(pami_task_t));
-	  }
-	  else if(topology->type() == PAMI_RANGE_TOPOLOGY) {
-	    pami_task_t start, end;
-	    topology->rankRange(&start, &end);
-	    for (size_t i = 0;  i < topology->size(); i++) {
-	      tmp_ranks[i] = start + i;
-	    }	   
-	  }
-	  else 
-	    //Unsupported topology
-	    CCMI_abort();
-	    
-	  /// Do an O(N^2) search where the first rank on a node is
-	  /// treated as master
-	  size_t i = 0, j = 0;
-	  for (i = 0; i < topology->size(); i ++) 
-	    //Verify that this rank is not peer for a past rank
-	    if (tmp_ranks[i] != (pami_task_t)-1)	      
-	      for (j = i+1; j < topology->size(); j ++)
-		//Verify this rank is not peer of some other node
-		if (tmp_ranks[j] != (pami_task_t)-1)
-		  if (__global.mapping.isPeer (tmp_ranks[i], tmp_ranks[j]))
-		    tmp_ranks[j] = (pami_task_t)-1;
-	  
-	  size_t n_masters = 0;
-	  for (i = 0; i < topology->size(); i ++) 
-	    if (tmp_ranks[i] != (pami_task_t)-1)
-	      n_masters ++;
-	  
-	  pami_task_t *masters = (pami_task_t *)malloc (n_masters * sizeof(pami_task_t));
-	  n_masters = 0;
-	  for (i = 0; i < topology->size(); i ++) 
-	    if (tmp_ranks[i] != (pami_task_t)-1) {
-	      masters[n_masters ++] = tmp_ranks[i];
-	      //fprintf (stderr,"Master Topology member %ld %d\n", n_masters, tmp_ranks[i]);
-	    }
-
-	  new (&_master_topology) PAMI::Topology (masters, n_masters);
-	  free (tmp_ranks);
-
-	  ////////////////--- End Build Master Topology ----- ////////////////
-
-	  pami_task_t *local_ranks = NULL;
-	  _local_topology.rankList(&local_ranks);
-
-	  _myrank = __global.mapping.task();
-	  _local_master = local_ranks[0];
-	  _master_index = _master_topology.rank2Index(_local_master);
-	  //fprintf (stderr, "My rank %ld Local Master %ld Master Index %ld\n", _myrank, _local_master, _master_index);
-
-          for (unsigned i = _master_topology.size(); i > 1; i >>= 1)
-          {
+	  _local_master = _local_topology->index2Endpoint(0);
+	  _master_index = _master_topology->endpoint2Index(_local_master);
+          for (unsigned i = _master_topology->size(); i > 1; i >>= 1)
 	    nph++;
-	  }
 	  //Current we do not support non powers of two
-	  PAMI_assert (_master_topology.size() == (size_t)(1 << nph));	  
+	  PAMI_assert (_master_topology->size() == (size_t)(1 << nph));
 	  _hnranks = 1 << nph;
 	  _rootindex = 0;
         }
@@ -307,13 +265,13 @@ namespace CCMI
         ~NodeOptTopoMap () {}
 
 	bool hasAuxPhases () {
-	  return (_master_topology.size() != _topology->size());
+	  return (_master_topology->size() != _all_topology->size());
 	}
 
         void setRoot (unsigned gr)
         {
 	  CCMI_abort(); //Currently, we only support barrier and allreduce
-          _rootindex = _topology->rank2Index((pami_task_t)gr);
+          _rootindex = _all_topology->endpoint2Index((pami_task_t)gr);
         }
 
         ///
@@ -322,7 +280,7 @@ namespace CCMI
         ///
         bool isAuxProc   ()
         {
-          if (_myrank != _local_master)
+          if (_myendpoint != _local_master)
             return true;
 
           return false;
@@ -338,7 +296,7 @@ namespace CCMI
         ///
         bool isPeerProc  ()
         {
-          if (_myrank == _local_master && _local_topology.size() > 1)
+          if (_myendpoint == _local_master && _local_topology->size() > 1)
             return true;
 	  
           return false;
@@ -352,9 +310,9 @@ namespace CCMI
         void  getAuxForPeer (unsigned *ranks, unsigned &nranks)
         {
 	  nranks = 0;
-          for (size_t i = 1; i < _local_topology.size(); i++) 
+          for (size_t i = 1; i < _local_topology->size(); i++)
 	    //1 ... master_size -1 is for the binomial tree and the rest are peer ranks
-	    ranks[nranks ++] = (unsigned)(_master_topology.size() + i);	  
+	    ranks[nranks ++] = (unsigned)(_master_topology->size() + i);
         }
 
         ///
@@ -374,10 +332,10 @@ namespace CCMI
         unsigned getGlobalRank (unsigned relrank)
         {
 	  unsigned grank = 0;
-	  if (relrank < _master_topology.size())
-	    grank = _master_topology.index2Rank((size_t)relrank);
+	  if (relrank < _master_topology->size())
+	    grank = _master_topology->index2Rank((size_t)relrank);
 	  else
-	    grank = _local_topology.index2Rank((size_t)relrank - _master_topology.size());
+	    grank = _local_topology->index2Rank((size_t)relrank - _master_topology->size());
 
 	  //fprintf(stderr, "Global rank %d = %d\n", relrank, grank);
 	  return grank;
@@ -391,18 +349,18 @@ namespace CCMI
           return _master_index;
         }
 
-        unsigned getNumRanks () { return _master_topology.size(); }
+        unsigned getNumRanks () { return _master_topology->size(); }
 
       protected:
         unsigned            _hnranks;   /** Nearest power of 2 */
         unsigned            _rootindex; /** Index of the root */
         unsigned            _myindex;   /** Index of my node */
-        size_t              _myrank;    /** Global rank of my node */
+        pami_endpoint_t     _myendpoint;    /** Global rank of my node */
 	size_t              _master_index;  /** Index of the master task */
-	size_t              _local_master;  /*  Global rank of this task's master*/
-        PAMI::Topology    * _topology;
-	PAMI::Topology      _master_topology;
-	PAMI::Topology      _local_topology;
+        pami_endpoint_t     _local_master;  /*  Global rank of this task's master*/
+        PAMI::Topology    * _all_topology;
+	PAMI::Topology    * _master_topology;
+	PAMI::Topology    * _local_topology;
     };
   };
 };

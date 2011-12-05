@@ -229,7 +229,6 @@ namespace PAMI
                                                   size_t              context_id,
                                                   size_t              client_id,
                                                   int                *dispatch_id)
-
     {
       TRACE_FN_ENTER();
       DO_DEBUG((templateName<T_NativeInterface>()));
@@ -246,7 +245,6 @@ namespace PAMI
       // Get storage for the NI and construct it.
       ni = (T_NativeInterface*) allocator.allocateObject ();
       new ((void*)ni) T_NativeInterface(client, context, context_id, client_id);
-
       pami_endpoint_t origin = PAMI_ENDPOINT_INIT(client_id, __global.mapping.task(), context_id);
 
       // Construct the protocols using the NI dispatch function and cookie
@@ -425,9 +423,9 @@ namespace PAMI
       static const size_t model_bytes_max          = (uint32_t) - 1; /// \todo arbitrary - figure it out from protocol max header
       static const size_t model_connection_id_max  = (uint32_t) - 1; /// \todo arbitrary - figure it out from protocol max header
 
-      inline NativeInterfaceBase():
-          CCMI::Interfaces::NativeInterface(__global.mapping.task(),
-                                            __global.mapping.size())
+      inline NativeInterfaceBase(size_t          context_id,
+                                 pami_endpoint_t endpoint):
+      CCMI::Interfaces::NativeInterface(context_id, endpoint)
       {
         TRACE_FN_ENTER();
         DO_DEBUG((templateName<T_Protocol>()));
@@ -542,6 +540,7 @@ namespace PAMI
 
       /// \brief ctor
       inline NativeInterfaceAllsided(pami_client_t client, pami_context_t context, size_t context_id, size_t client_id);
+
       ~NativeInterfaceAllsided();
       /// Virtual interfaces (from base \see CCMI::Interfaces::NativeInterface)
       virtual inline pami_result_t destroy      ( );
@@ -796,6 +795,7 @@ namespace PAMI
 
       /// \brief ctor
       inline NativeInterfaceActiveMessage(pami_client_t client, pami_context_t context, size_t context_id, size_t client_id);
+
       ~NativeInterfaceActiveMessage();
       /// Virtual interfaces (from base \see CCMI::Interfaces::NativeInterfaceActiveMessage)
       virtual inline pami_result_t destroy      ( );
@@ -973,10 +973,10 @@ namespace PAMI
   //
   template <class T_Protocol, int T_Max_Msgcount>
   inline NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>::NativeInterfaceAllsided(pami_client_t  client,
-      pami_context_t context,
-      size_t         context_id,
-      size_t         client_id):
-      NativeInterfaceBase<T_Protocol, T_Max_Msgcount>(),
+                                                                                      pami_context_t context,
+                                                                                      size_t         context_id,
+                                                                                      size_t         client_id):
+      NativeInterfaceBase<T_Protocol, T_Max_Msgcount>(context_id,PAMI_ENDPOINT_INIT(client,__global.mapping.task(),context_id)),
       _allocator(),
       _mcast_protocol(NULL), /// must be set by setMcastProtocol() before using the NI.
       _send_protocol(NULL), /// must be set by setMcastProtocol() before using the NI.
@@ -1258,7 +1258,7 @@ namespace PAMI
     PAMI_assert(T_Max_Msgcount >= mcast->msgcount);
 
     state_data->meta.connection_id = mcast->connection_id;
-    state_data->meta.root = this->myrank();
+    state_data->meta.root = this->endpoint();
     state_data->meta.sndlen = length;
     state_data->meta.msgcount = mcast->msgcount;
 
@@ -1292,7 +1292,7 @@ namespace PAMI
     state_data->doneCountDown = state_data->sendpwq.dst_participants.size();
 
     // Am I a destination?  Handle it.
-    if (state_data->sendpwq.dst_participants.isRankMember(this->myrank())) /// \todo change semantics here? ticket #31
+    if (state_data->sendpwq.dst_participants.isEndpointMember(this->endpoint())) /// \todo change semantics here? ticket #31
       {
         state_data->doneCountDown--;// don't send to myself
         PAMI::PipeWorkQueue *rcvpwq = (PAMI::PipeWorkQueue *)mcast->dst;
@@ -1565,8 +1565,11 @@ namespace PAMI
 //}
 
   template <class T_Protocol, int T_Max_Msgcount>
-  inline NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::NativeInterfaceActiveMessage(pami_client_t client, pami_context_t context, size_t context_id, size_t client_id):
-      NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>(client, context, context_id, client_id)
+  inline NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::NativeInterfaceActiveMessage(pami_client_t   client,
+                                                                                                pami_context_t  context,
+                                                                                                size_t          context_id,
+                                                                                                size_t          client_id):
+    NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>(client,context,context_id,client_id)
   {
     TRACE_FN_ENTER();
     DO_DEBUG((templateName<T_Protocol>()));
@@ -1866,7 +1869,7 @@ namespace PAMI
     PAMI_assert(T_Max_Msgcount >= mcast->msgcount);
 
     state_data->meta.connection_id = mcast->connection_id;
-    state_data->meta.root = this->myrank();
+    state_data->meta.root = this->endpoint();
     state_data->meta.sndlen = length;
     state_data->meta.msgcount = mcast->msgcount;
     memcpy(state_data->meta.msginfo, msgdata, mcast->msgcount * sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t::metadata_t().msginfo));
@@ -1881,7 +1884,7 @@ namespace PAMI
     state_data->doneCountDown = state_data->sendpwq.dst_participants.size();
 
     // Am I a destination?  Handle it.
-    if (state_data->sendpwq.dst_participants.isRankMember(this->myrank())) /// \todo change semantics here? ticket #31
+    if (state_data->sendpwq.dst_participants.isEndpointMember(this->endpoint())) /// \todo change semantics here? ticket #31
       {
         state_data->doneCountDown--;// don't send to myself
         PAMI::PipeWorkQueue *rcvpwq = (PAMI::PipeWorkQueue *)mcast->dst;
@@ -1982,7 +1985,7 @@ namespace PAMI
     for (size_t i = 0; i < ndestinations; ++i)
       {
         size_t index = topology->index2PermutedIndex(i);
-        pami_task_t task = topology->index2Rank(index);
+        pami_endpoint_t endpoint = topology->index2Endpoint(index);
 
         if (m2m->send.type == M2M_SINGLE) {
           parameters.send.data.iov_base = spwq->bufferToConsume(index);
@@ -1999,12 +2002,9 @@ namespace PAMI
 
         pami_result_t result = PAMI_SUCCESS;
 
-        result = PAMI_Endpoint_create ((pami_client_t) this->_client, /// \todo client is ignored on the endpoint?  client isn't a pami_client_t
-                                       task,
-                                       this->_contextid,        /// \todo what context do I target?
-                                       &parameters.send.dest);
+        parameters.send.dest = endpoint;
 
-        TRACE_FORMAT( "<%p> simple(nd(%u(%u,%zu)) length %zd, payload %p", this, parameters.send.dest, task, this->_contextid, parameters.send.data.iov_len, parameters.send.data.iov_base);
+        TRACE_FORMAT( "<%p> simple(nd(%u(%u,%zu)) length %zd, payload %p", this, parameters.send.dest, endpoint, this->_contextid, parameters.send.data.iov_len, parameters.send.data.iov_base);
         result = this->_m2m_protocol->simple(&parameters);
         TRACE_FORMAT( "<%p> simple result %u", this, result);
       }
@@ -2274,9 +2274,7 @@ namespace PAMI
     PAMI::M2MPipeWorkQueueT<int, 0>    *ipwq = (PAMI::M2MPipeWorkQueueT<int, 0> *)   state->recv->buffer;
 
     PAMI::Topology           *topology = state->recv->participants;
-    pami_task_t               originTask;
-    PAMI_ENDPOINT_INFO(origin, originTask, this->_contextid);
-    size_t                    originIndex  = topology->rank2Index(originTask);
+    size_t                    originIndex  = topology->endpoint2Index(origin);
 
     size_t                    bytesToProduce;
     char                     *buffer; 

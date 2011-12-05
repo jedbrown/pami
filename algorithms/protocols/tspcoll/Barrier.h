@@ -66,7 +66,7 @@ inline xlpgas::Barrier<T_NI>::Barrier (int               ctxt,
 
     for (int i=0; i<this->_numphases; i++)
     {
-      this->_dest[i]      = comm->endpoint((this->ordinal()+(1<<i))%comm->size());
+      this->_dest[i]      = comm->index2Endpoint((this->ordinal()+(1<<i))%comm->size());
       TRACE((stderr, "%d: Barrier constructor: dest[%d]=%d \n",XLPGAS_MYNODE,i ,this->_dest[i]));
 
       this->_sbuf[i]      = &this->_dummy;

@@ -246,7 +246,7 @@ int main (int argc, char ** argv)
     case '?':
       if (task_id == 0) {
 	display_usage();
-	return 1;
+	return 0;
       }
     break;
                 

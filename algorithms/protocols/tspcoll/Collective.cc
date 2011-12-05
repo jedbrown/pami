@@ -29,7 +29,8 @@ xlpgas::Collective<T_NI>::Collective (int                     ctxt,
   _arg         (arg),
   _p2p_iface   (ni)
 {
-  _my_rank = _comm->rank2Index(_p2p_iface->myrank());
+  _my_rank  = _p2p_iface->endpoint();
+  _my_index = _comm->endpoint2Index(_my_rank);
   _dev = NULL;
 }
 

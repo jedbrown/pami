@@ -35,7 +35,7 @@ int main(int argc, char ** argv)
   pami_context_t context;
   pami_result_t status = PAMI_ERROR;
 
-  status = PAMI_Client_create("extension", &client, NULL, 0);
+  status = PAMI_Client_create("TEST", &client, NULL, 0);
   if(status != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", status);

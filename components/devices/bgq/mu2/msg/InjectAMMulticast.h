@@ -41,8 +41,7 @@ namespace PAMI
 
           InjectAMMulticast (MU::Context         & context,
 			     InjChannel          & channel,
-			     pami_task_t         * ranks,
-			     size_t                nranks,
+           Topology            * topology,
 			     PipeWorkQueue       * pwq,
 			     unsigned              bytes,
 			     unsigned              msgcount,
@@ -50,8 +49,8 @@ namespace PAMI
 			     void                * cookie) :
 	  _context (context),
 	  _channel (channel),
-	  _ranks (ranks),
-	  _nranks (nranks),
+	  _topology (topology),
+	  _nranks (topology->size()),
 	  _next (0),
 	  _pwq(pwq),
 	  _bytes(bytes),
@@ -60,6 +59,7 @@ namespace PAMI
 	  _cookie (cookie)
           {
             TRACE_FN_ENTER();
+            TRACE_FORMAT("topology  %p, nranks %zu,bytes %u",topology, _nranks, bytes);
             TRACE_FN_EXIT();
           };
 
@@ -108,7 +108,8 @@ namespace PAMI
 		MUHWI_Destination_t   dest;
 		uint16_t              rfifo;
 		uint64_t              map;
-		_context.pinFifo (_ranks[_next + i],
+    pami_task_t           rank = _topology->index2Rank(_next + i);
+		_context.pinFifo (rank,
 				  0,
 				  dest,
 				  rfifo,
@@ -151,8 +152,8 @@ namespace PAMI
         protected:
 	  MU::Context         & _context;
           InjChannel          & _channel;
-	  pami_task_t         * _ranks;
-	  size_t                _nranks;
+          Topology            * _topology;
+          size_t                _nranks;
           size_t                _next;
 	  PipeWorkQueue       * _pwq;
 	  unsigned              _bytes;

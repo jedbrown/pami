@@ -65,7 +65,6 @@ namespace PAMI
           ar.cmd.xfer_allreduce.rtype             = PAMI_TYPE_BYTE;
           ar.cmd.xfer_allreduce.rtypecount        = 8*_count;
           ar.cmd.xfer_allreduce.op                = PAMI_DATA_BAND;
-          _ar_algo->setContext(context);
           _ar_algo->generate(&ar);
         }
     protected:

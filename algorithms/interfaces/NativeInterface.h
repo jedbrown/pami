@@ -14,99 +14,118 @@
 #include "components/devices/MulticombineModel.h"
 #include "components/devices/ManytomanyModel.h"
 
-namespace CCMI
+#include "util/trace.h"
+
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
+
+#ifdef CCMI_TRACE_ALL
+#define DO_TRACE_ENTEREXIT 1
+#define DO_TRACE_DEBUG     1
+#else
+#define DO_TRACE_ENTEREXIT 0
+#define DO_TRACE_DEBUG     0
+#endif
+
+namespace CCMI{namespace Interfaces{
+
+class NativeInterface
 {
-  namespace Interfaces
-  {
-
-
-    class NativeInterface
+public:
+  NativeInterface(size_t          context_id,
+                  pami_endpoint_t endpoint):
+    _endpoint(endpoint),
+    _context_id(context_id),
+    _status(PAMI_SUCCESS)
     {
-      protected:
-        unsigned         _myrank;
-        unsigned         _numranks;
-        pami_result_t    _status;
+        TRACE_FN_ENTER();
+        TRACE_FORMAT( "<%p> context %zu, endpoint %u",this,_context_id, _endpoint);
+        TRACE_FN_EXIT();
+    }
+  ///
+  /// \brief Virtual destructors make compilers happy.
+  ///
+  virtual inline ~NativeInterface() {};
+  inline pami_endpoint_t endpoint()    { return _endpoint;     }
+  inline size_t          contextid()   { return _context_id;   }
+  inline pami_result_t   status()      { return _status;       }
 
-      public:
-        NativeInterface(unsigned myrank,
-                        unsigned numranks): _myrank(myrank), _numranks(numranks), _status(PAMI_SUCCESS) {}
-        ///
-        /// \brief Virtual destructors make compilers happy.
-        ///
-        virtual inline ~NativeInterface() {};
-
-        unsigned myrank()   { return _myrank; }
-        unsigned numranks() { return _numranks; }
-        pami_result_t status() { return _status; }
-
-        /// \brief this call is called when an active message native interface is initialized and
-        /// is not supported on all sided native interfaces
-        virtual pami_result_t setMulticastDispatch(pami_dispatch_multicast_function fn,
-                                                   void *cookie)
-        {
-          //PAMI_abort();
-          return PAMI_ERROR;
-        }
-        virtual pami_result_t setManytomanyDispatch(pami_dispatch_manytomany_function fn,
-                                                    void *cookie)
-        {
-          //PAMI_abort();
-          return PAMI_ERROR;
-        }
-        virtual pami_result_t setSendDispatch(pami_dispatch_p2p_function fn,
+  /// \brief this call is called when an active message native interface is initialized and
+  /// is not supported on all sided native interfaces
+  virtual pami_result_t setMulticastDispatch(pami_dispatch_multicast_function fn,
+                                             void *cookie)
+    {
+      //PAMI_abort();
+      return PAMI_ERROR;
+    }
+  virtual pami_result_t setManytomanyDispatch(pami_dispatch_manytomany_function fn,
                                               void *cookie)
-        {
-          //PAMI_abort();
-          return PAMI_ERROR;
-        }
-        virtual pami_result_t setSendPWQDispatch(pami_dispatch_p2p_function fn,
-                                                 void *cookie)
-        {
-          //PAMI_abort();
-          return PAMI_ERROR;
-        }
-        virtual pami_result_t destroy () = 0;
-        virtual pami_result_t multicast(pami_multicast_t *mcast, void *devinfo = NULL) = 0;
-        virtual pami_result_t multisync(pami_multisync_t *msync, void *devinfo = NULL) = 0;
-        virtual pami_result_t multicombine(pami_multicombine_t *mcombine, void *devinfo = NULL) = 0;
-        virtual pami_result_t manytomany(pami_manytomany_t *m2minfo, void *devinfo = NULL) = 0;
-        virtual pami_result_t send (pami_send_t * parameters)
-        {
-          PAMI_abort();
-          return PAMI_ERROR;
-        }
-        virtual pami_result_t sendPWQ(pami_context_t       context,
-                                           pami_endpoint_t      dest,
-                                           size_t               header_length,
-                                           void                *header,
-                                           size_t               length,
-                                           PAMI::PipeWorkQueue *pwq,
-                                           pami_send_event_t   *events)
-        {
-          PAMI_abort();
-          return PAMI_ERROR;
-        }
-        ///
-        /// \brief NI hook to override metadata for collective
-        ///
-        virtual void metadata(pami_metadata_t *m, pami_xfer_type_t t) {/* no override */};
+    {
+      //PAMI_abort();
+      return PAMI_ERROR;
+    }
+  virtual pami_result_t setSendDispatch(pami_dispatch_p2p_function fn,
+                                        void *cookie)
+    {
+      //PAMI_abort();
+      return PAMI_ERROR;
+    }
+  virtual pami_result_t setSendPWQDispatch(pami_dispatch_p2p_function fn,
+                                           void *cookie)
+    {
+      //PAMI_abort();
+      return PAMI_ERROR;
+    }
+  virtual pami_result_t destroy () = 0;
+  virtual pami_result_t multicast(pami_multicast_t *mcast, void *devinfo = NULL) = 0;
+  virtual pami_result_t multisync(pami_multisync_t *msync, void *devinfo = NULL) = 0;
+  virtual pami_result_t multicombine(pami_multicombine_t *mcombine, void *devinfo = NULL) = 0;
+  virtual pami_result_t manytomany(pami_manytomany_t *m2minfo, void *devinfo = NULL) = 0;
+  virtual pami_result_t send (pami_send_t * parameters)
+    {
+      PAMI_abort();
+      return PAMI_ERROR;
+    }
+  virtual pami_result_t sendPWQ(pami_context_t       context,
+                                pami_endpoint_t      dest,
+                                size_t               header_length,
+                                void                *header,
+                                size_t               length,
+                                PAMI::PipeWorkQueue *pwq,
+                                pami_send_event_t   *events)
+    {
+      PAMI_abort();
+      return PAMI_ERROR;
+    }
+  ///
+  /// \brief NI hook to override metadata for collective
+  ///
+  virtual void metadata(pami_metadata_t *m, pami_xfer_type_t t) {/* no override */};
 
-	///
-	/// \brief post a work function to be executed on the
-        /// communication thread. The color identifier can choose the
-        /// commuication thread relative to the context parameter.
-	///
-	virtual void postWork (pami_context_t         context, 
-			       int                    color,
-			       pami_work_t          * work, 
-			       pami_work_function    fn,
-			       void                 * clientdata)
-	{
-	  CCMI_abort();
-	}	
-    };
-  };
+  ///
+  /// \brief post a work function to be executed on the
+  /// communication thread. The color identifier can choose the
+  /// commuication thread relative to the context parameter.
+  ///
+  virtual void postWork (pami_context_t         context,
+                         int                    color,
+                         pami_work_t          * work,
+                         pami_work_function     fn,
+                         void                 * clientdata)
+    {
+      CCMI_abort();
+    }
+protected:
+  pami_endpoint_t  _endpoint;
+  size_t           _context_id;
+  pami_result_t    _status;
 };
+
+};
+};
+
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
 
 #endif
 //

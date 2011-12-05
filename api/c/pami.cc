@@ -38,6 +38,7 @@ extern "C"
   pami_context_t   PAMI_CONTEXT_NULL  =0;
   pami_geometry_t  PAMI_GEOMETRY_NULL =0;
   pami_algorithm_t PAMI_ALGORITHM_NULL=0;
+  size_t           PAMI_ALL_CONTEXTS  =(size_t) -1;
 #ifndef PAMI_ENDPOINT_NULL
   pami_endpoint_t PAMI_ENDPOINT_NULL = (size_t) -1;
 #endif
@@ -90,11 +91,7 @@ extern "C" pami_result_t PAMI_Endpoint_create (pami_client_t     client,
                                                pami_endpoint_t * endpoint)
 {
   pami_result_t rc = PAMI_SUCCESS;
-#ifdef PAMI_LAPI_IMPL
-  *endpoint = (task << _Lapi_env.endpoints_shift) + offset;
-#else
-  PAMI_ENDPOINT_INIT(client,task,offset);
-#endif
+  *endpoint = PAMI_ENDPOINT_INIT(client,task,offset);
   return rc;
 }
 #endif
@@ -105,12 +102,7 @@ extern "C" pami_result_t PAMI_Endpoint_query (pami_endpoint_t   endpoint,
                                               size_t          * offset)
 {
   pami_result_t rc = PAMI_SUCCESS;
-#ifdef PAMI_LAPI_IMPL
-  *task   = endpoint >> _Lapi_env.endpoints_shift;
-  *offset = endpoint - (*task << _Lapi_env.endpoints_shift);
-#else
   PAMI_ENDPOINT_INFO(endpoint,*task,*offset);
-#endif
   return rc;
 }
 #endif
@@ -180,6 +172,7 @@ extern "C" pami_result_t PAMI_Geometry_create_taskrange (pami_client_t          
 {
   PAMI::Client * _client = (PAMI::Client *) client;
   return _client->geometry_create_taskrange (geometry,
+                                             context_offset,
                                              configuration,
                                              num_configs,
                                              parent,
@@ -206,6 +199,7 @@ extern "C" pami_result_t PAMI_Geometry_create_tasklist (pami_client_t           
 {
   PAMI::Client * _client = (PAMI::Client *) client;
   return _client->geometry_create_tasklist (geometry,
+                                            context_offset,
                                             configuration,
                                             num_configs,
                                             parent,
@@ -215,6 +209,29 @@ extern "C" pami_result_t PAMI_Geometry_create_tasklist (pami_client_t           
                                             context,
                                             fn,
                                             cookie);
+}
+
+extern "C" pami_result_t PAMI_Geometry_create_endpointlist (pami_client_t               client,
+                                                            pami_configuration_t        configuration[],
+                                                            size_t                      num_configs,
+                                                            pami_geometry_t           * geometry,
+                                                            unsigned                    id,
+                                                            pami_endpoint_t           * endpoints,
+                                                            size_t                      endpoint_count,
+                                                            pami_context_t              context,
+                                                            pami_event_function         fn,
+                                                            void                      * cookie)
+{
+  PAMI::Client * _client = (PAMI::Client *) client;
+  return _client->geometry_create_endpointlist (geometry,
+                                                configuration,
+                                                num_configs,
+                                                id,
+                                                endpoints,
+                                                endpoint_count,
+                                                context,
+                                                fn,
+                                                cookie);
 }
 
 
@@ -270,10 +287,7 @@ extern "C" pami_result_t PAMI_Geometry_algorithms_num (pami_geometry_t  geometry
                                                        size_t           lists_lengths[2])
 {
   PAMI_GEOMETRY_CLASS *_geometry = (PAMI_GEOMETRY_CLASS *) geometry;
-  PAMI::Client        *_client   = (PAMI::Client*)         _geometry->getClient ();
-  return _client->geometry_algorithms_num (geometry,
-                                           coll_type,
-                                           lists_lengths);
+  return _geometry->algorithms_num(coll_type,lists_lengths);
 }
 
 extern "C"  pami_result_t PAMI_Geometry_algorithms_query (pami_geometry_t geometry,
@@ -286,9 +300,7 @@ extern "C"  pami_result_t PAMI_Geometry_algorithms_query (pami_geometry_t geomet
                                                           size_t               num1)
 {
   PAMI_GEOMETRY_CLASS *_geometry = (PAMI_GEOMETRY_CLASS *) geometry;
-  PAMI::Client        *_client   = (PAMI::Client*)         _geometry->getClient ();
-  return _client->geometry_algorithms_info (geometry,
-                                            colltype,
+  return _geometry->algorithms_info(colltype,
                                             algs0,
                                             mdata0,
                                             num0,
@@ -306,7 +318,6 @@ pami_geometry_t mapidtogeometry (pami_context_t context, int comm)
   PAMI::Client  * client = (PAMI::Client *)  ctx->getClient ();
   return client->mapidtogeometry(comm);
 }
-
 void registerunexpbarrier(pami_context_t context,
                           unsigned       comm,
                           pami_quad_t   &info,
@@ -314,10 +325,8 @@ void registerunexpbarrier(pami_context_t context,
                           unsigned       algorithm)
 {
   PAMI::Context * ctx    = (PAMI::Context *) context;
-  PAMI::Client  * client = (PAMI::Client *)  ctx->getClient ();
-  client->registerUnexpBarrier(comm,info,peer,algorithm);
+  ctx->registerUnexpBarrier(comm,info,peer,algorithm);
 }
-
 
 ///
 

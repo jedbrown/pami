@@ -1,3 +1,11 @@
+/* begin_generated_IBM_copyright_prolog                             */
+/*                                                                  */
+/* ---------------------------------------------------------------- */
+/* (C)Copyright IBM Corp.  2009, 2010                               */
+/* IBM CPL License                                                  */
+/* ---------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
 /**
    \file test/api/collectives/gather.c
    \brief Simple gather test
@@ -21,6 +29,15 @@ void initialize_sndbuf (void *sbuf, int count, int taskid, int dt)
   {
     unsigned int *ibuf = (unsigned int *)  sbuf;
     unsigned int u = taskid;
+    for (; i; i--)
+    {
+      ibuf[i-1] = (u++);
+    }
+  }
+  else if (dt_array[dt] == PAMI_TYPE_SIGNED_INT)
+  {
+    int *ibuf = (int *)  sbuf;
+    int u = taskid;
     for (; i; i--)
     {
       ibuf[i-1] = (u++);
@@ -66,6 +83,22 @@ int check_rcvbuf (size_t num_tasks, void *buf, int counts, int dt)
     {
       unsigned int *ibuf = (unsigned int *)  buf + j * counts;
       unsigned int u = j;
+      int i = counts;
+      for (; i; i--)
+      {
+        if (ibuf[i-1] != u)
+        {
+          fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2u != %.2u \n", gProtocolName, counts, buf, i - 1, ibuf[i-1], u);
+          return -1;
+        }
+
+        u++;
+      }
+    }
+    else if (dt_array[dt] == PAMI_TYPE_SIGNED_INT)
+    {
+      int *ibuf = (int *)  buf + j * counts;
+      int u = j;
       int i = counts;
       for (; i; i--)
       {
@@ -305,7 +338,7 @@ int main(int argc, char*argv[])
               blocking_coll(context[iContext], &gather, &gather_poll_flag);
 
               if (task_id == root_zero)
-                check_rcvbuf(task_id, rbuf, i, dt);
+                assert(check_rcvbuf(task_id, rbuf, i, dt)==0);
             }
 
             tf = timer();

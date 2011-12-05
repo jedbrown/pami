@@ -18,6 +18,12 @@
 #include "components/devices/bgq/mu2/msg/InjectAMMulticast.h"
 #include "math/a2qpx/Core_memcpy.h"
 
+#include "util/trace.h"
+#undef  DO_TRACE_ENTEREXIT
+#undef  DO_TRACE_DEBUG
+#define DO_TRACE_ENTEREXIT 0
+#define DO_TRACE_DEBUG     0
+
 namespace PAMI {
   namespace Device {
     namespace MU {
@@ -32,6 +38,7 @@ namespace PAMI {
 	  uint64_t     connection_id; /* Permit a 64 bit connection id */
 	};
 
+	static const size_t SC_MAXRANKS  = 128; // arbitrarily based on CCMI::Executor::ScheduleCache::SC_MAXRANKS
       public:
 
 	static const unsigned sizeof_msg      = sizeof(InjectAMMulticast);
@@ -223,8 +230,7 @@ namespace PAMI {
 				     unsigned                 connection_id) __attribute__((noinline, weak));	
 	
 	pami_result_t postLong (uint8_t               (&state)[sizeof_msg],
-				pami_task_t            * ranks,
-				size_t                   nranks,
+													Topology            * topology,
 				PipeWorkQueue          * src,
 				size_t                   bytes,
 				const pami_quad_t      * metadata,
@@ -238,11 +244,23 @@ namespace PAMI {
 						  pami_multicast_t    * mcast,
 						  void                * devinfo=NULL) 
 	{
-	  pami_task_t *ranks = NULL;
+		TRACE_FN_ENTER();
+
+		/// \todo stop using rank lists directly
+		pami_task_t rank_storage[SC_MAXRANKS];
+	  pami_task_t *ranks = rank_storage;
 	  Topology *dst_topology = (Topology *)mcast->dst_participants;
-	  dst_topology->rankList(&ranks);
-	  size_t nranks = dst_topology->size();
-	  
+		TRACE_FORMAT("dst_topology %p",dst_topology);
+	  size_t nranks = dst_topology->size(),sranks;
+		PAMI_assert(SC_MAXRANKS>=nranks); /// \todo allocate when > SC_MAXRANKS?
+	  dst_topology->getRankList(nranks,ranks,&sranks);
+		PAMI_assert(sranks==nranks);
+		TRACE_FORMAT("nranks %zu, ranks %p",nranks, ranks);
+		if (DO_TRACE_DEBUG)
+		for(size_t i=0;i<nranks;++i) {
+			TRACE_FORMAT( "%zu:rank[%zu]=%zu/%zu/%zu",nranks, i,(size_t) ranks? ranks[i]: (size_t)-1,(size_t)dst_topology->index2Endpoint(i),(size_t)dst_topology->index2Rank(i));
+		}
+
 	  //PAMI_assert(ranks[0] == __global.mapping.task());	  
 	  PipeWorkQueue *spwq = (PipeWorkQueue *) mcast->src;
 	  char *src = NULL;
@@ -267,6 +285,7 @@ namespace PAMI {
 				mcast->connection_id);	     
 	  }
 
+		TRACE_FN_EXIT();
 	  return rc;
 	}
 
@@ -276,17 +295,13 @@ namespace PAMI {
 					 pami_multicast_t    * mcast,
 					 void                * devinfo=NULL) 
 	{
-	  pami_task_t *ranks = NULL;
+		/// \todo stop using rank lists directly
 	  Topology *dst_topology = (Topology *)mcast->dst_participants;
-	  dst_topology->rankList(&ranks);
-	  size_t nranks = dst_topology->size();
-	  
 	  //PAMI_assert(ranks[0] == __global.mapping.task());	  
 	  PipeWorkQueue *spwq = (PipeWorkQueue *) mcast->src;
 	  
 	  return postLong (state,
-			   ranks,
-			   nranks,
+			   dst_topology,
 			   spwq,
 			   mcast->bytes,
 			   mcast->msginfo,
@@ -373,7 +388,7 @@ namespace PAMI {
 	//desc->setRecFIFOId (rfifo);
 	*(uint16_t *)(&desc->PacketHeader.messageUnitHeader.Packet_Types.Memory_FIFO) = rfifo_base | (rfifo << 6); 
 	desc->setTorusInjectionFIFOMap (map);
-	//fprintf(stderr, "Sending msg from payload pa %lx\n", paddr);
+	//TRACE_ERR(stderr, "Sending msg from payload pa %lx\n", paddr);
 	//MUSPI_DescriptorDumpHex ((char *)"Immediate Multicast", desc);
 
 	register double fp0 asm("fr0");
@@ -410,8 +425,7 @@ namespace PAMI {
       
 
       pami_result_t ShortAMMulticastModel::postLong (uint8_t               (&state)[sizeof_msg],
-						     pami_task_t            * ranks,
-						     size_t                   nranks,
+																										 Topology            * topology,
 						     PipeWorkQueue          * spwq,
 						     size_t                   bytes,
 						     const pami_quad_t      * metadata,
@@ -423,11 +437,10 @@ namespace PAMI {
 	  if (metasize*sizeof(pami_quad_t) + bytes > MU::Context::packet_payload_size)
 	    return PAMI_ERROR;
 	
-	  //fprintf (stderr, "Long Multicast\n");
+	  //TRACE_ERR (stderr, "Long Multicast\n");
 	  InjectAMMulticast *msg = new (state) InjectAMMulticast (_mucontext,
 								  _channel,
-								  ranks,
-								  nranks,
+								  topology,
 								  spwq,
 								  bytes,
 								  metasize,
@@ -464,4 +477,6 @@ namespace PAMI {
     };
   };
 };
+#undef  DO_TRACE_ENTEREXIT
+#undef  DO_TRACE_DEBUG
 #endif

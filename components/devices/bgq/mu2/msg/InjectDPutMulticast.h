@@ -49,6 +49,7 @@ namespace PAMI
 	  _length(0),	
 	  _consumedBytes(0),
 	  _pwq(NULL),
+	  _pami_context(NULL),
 	  _fn (NULL),
 	  _cookie (NULL),
 	  _localStart(0),
@@ -76,7 +77,8 @@ namespace PAMI
 	/// \param[in] length the totaly number of bytes to be transfered
 	/// \param[in] localMultcast : should this message do local sends
 	///
-	void initialize (pami_event_function   fn,
+	void initialize (pami_context_t     context,
+			 pami_event_function   fn,
 			 void                * cookie,					  
 			 MUHWI_Destination_t * me, 
 			 pami_coord_t        * ref, 
@@ -96,6 +98,7 @@ namespace PAMI
 	  _length           = length;	
 	  _consumedBytes    = 0;
 	  _pwq              = pwq;
+		_pami_context     = context;
 	  _fn               = fn;
 	  _cookie           = cookie;
 	  _startfnum        = 0;
@@ -236,7 +239,7 @@ namespace PAMI
 	  this->_doneCompletion = done;
 	  
 	  if (done && _fn)
-	    _fn (NULL, _cookie, PAMI_SUCCESS);
+	    _fn (_pami_context, _cookie, PAMI_SUCCESS);
 	  
 	  //TRACE_FN_EXIT();
 	  return this->_doneCompletion;
@@ -276,6 +279,7 @@ namespace PAMI
 	uint64_t                 _length;        //Number of bytes to transfer
 	uint64_t                 _consumedBytes;
 	PipeWorkQueue          * _pwq;
+	pami_context_t           _pami_context;
 	pami_event_function      _fn;
 	void                   * _cookie;
 	uint8_t                  _fifos[NumTorusDims*2];

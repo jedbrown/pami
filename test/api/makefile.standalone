@@ -1,10 +1,10 @@
 # Change these parameters for your platform
 PAMI_INCLUDE   := /usr/include
 PAMI_LIB       := /usr/lib
-PAMI_LIBNAME   := -lpami_r
-C_COMPILER     := mpcc
-CXX_COMPILER   := mpCC
-LINKER         := mpcc
+PAMI_LIBNAME   := -lpami
+C_COMPILER     := mpcc -q64
+CXX_COMPILER   := mpCC -q64
+LINKER         := mpcc -q64
 
 ##### You shouldn't have to edit under this line ######
 CC        := ${C_COMPILER}  -O0 -g -I${PAMI_INCLUDE}  -I${PAMI_INCLUDE}/default
@@ -24,6 +24,8 @@ OBJ       += $(patsubst %.c,build/%.o,$(SRC))
 OBJ       += $(patsubst %.cc,build/%.o,$(SRC))
 
 EXE       := $(patsubst %.o,build/%.exe,$(OBJ))
+
+OUT       := $(patsubst %.exe,build/%.out,$(EXE))
 
 INCLUDES  := $(addprefix -I,$(SRC_DIR))
 
@@ -52,11 +54,22 @@ endef
 
 .PHONY: all checkdirs clean
 
-all: checkdirs build/init.exe \
-build/init_coll.exe \
-build/client/configuration.exe \
-build/client/hello.exe \
-build/client/multi-client.exe \
+COLLECTIVES_MULTIEP_TESTS = build/collectives/allgather_multiep.exe \
+build/collectives/allgatherv_multiep.exe \
+build/collectives/allreduce_multiep.exe \
+build/collectives/alltoall_multiep.exe \
+build/collectives/alltoallv_multiep.exe \
+build/collectives/barrier_multiep.exe \
+build/collectives/bcast_multiep.exe \
+build/collectives/gather_multiep.exe \
+build/collectives/gatherv_multiep.exe \
+build/collectives/reduce_multiep.exe \
+build/collectives/reduce_scatter_multiep.exe \
+build/collectives/scan_multiep.exe \
+build/collectives/scatter_multiep.exe \
+build/collectives/scatterv_multiep.exe
+
+COLLECTIVES_TESTS = ${COLLECTIVES_MULTIEP_TESTS} \
 build/collectives/allgather.exe \
 build/collectives/allgather_contig.exe \
 build/collectives/allgather_subcomm.exe \
@@ -88,7 +101,6 @@ build/collectives/bcast.exe \
 build/collectives/bcast_contig.exe \
 build/collectives/bcast_query.exe \
 build/collectives/bcast_subcomm.exe \
-build/collectives/bcast_subcomm_noparent.exe \
 build/collectives/bcast_subcomm_query.exe \
 build/collectives/gather.exe \
 build/collectives/gather_contig.exe \
@@ -112,7 +124,16 @@ build/collectives/scatter.exe \
 build/collectives/scatter_contig.exe \
 build/collectives/scatter_subcomm.exe \
 build/collectives/scatterv.exe \
-build/context/advance.exe \
+build/collectives/scatterv_int.exe
+
+BASE_TESTS = build/init.exe \
+build/init_coll.exe
+
+CLIENT_TESTS = build/client/configuration.exe \
+build/client/hello.exe \
+build/client/multi-client.exe
+
+CONTEXT_TESTS = build/context/advance.exe \
 build/context/create.exe \
 build/context/lock.exe \
 build/context/multi-advance.exe \
@@ -122,9 +143,11 @@ build/context/post-multithreaded-perf.exe \
 build/context/post-multithreaded.exe \
 build/context/post-perf.exe \
 build/context/post.exe \
-build/context/post-stress.exe \
-build/endpoint/endpoint_table.exe \
-build/p2p/send/send_immediate_pingpong_ring.exe \
+build/context/post-stress.exe
+
+ENDPOINT_TESTS = build/endpoint/endpoint_table.exe
+
+P2P_TESTS = build/p2p/send/send_immediate_pingpong_ring.exe \
 build/p2p/send_latency.exe \
 build/p2p/send_latency_typed.exe \
 build/p2p/sendimmediate_latency.exe \
@@ -149,12 +172,17 @@ build/p2p/send/send_to_self_perf/send_to_self_perf.exe \
 build/p2p/send/send_unexpected_func.exe \
 build/p2p/send/shmem-matrix.exe \
 build/p2p/send/sqmr.exe \
-build/p2p/simple-send-immediate.exe \
-build/time/tick.exe \
+build/p2p/simple-send-immediate.exe
+
+TIME_TESTS = build/time/tick.exe \
 build/time/time.exe \
 build/time/timebase.exe \
-build/extensions/test/extension_test.exe \
+
+EXTENSION_TESTS = build/extensions/test/extension_test.exe \
 build/extensions/torus/extension_torus.exe 
+
+TESTS = ${COLLECTIVES_TESTS} ${BASE_TESTS} ${CLIENT_TESTS} ${CONTEXT_TESTS} \
+        ${ENDPOINT_TESTS} ${P2P_TESTS} ${TIME_TESTS} ${EXTENSION_TESTS}
 
 ## These don't build
 # build/p2p/send/eager_concurrency.exe
@@ -171,7 +199,15 @@ build/extensions/torus/extension_torus.exe
 # build/extensions/multisend/multisync_global.exe \
 # build/extensions/topology/topology.exe
 
+
+all: checkdirs ${TESTS}
 checkdirs: $(BUILD_DIR)
+
+run: ${TESTS}
+	@runtests $^ 2>&1 | tee "run.`date +'%y.%m.%d.%H:%M:%S'`.out"
+
+runmultiep: ${COLLECTIVES_MULTIEP_TESTS}
+	@runtests $^ 2>&1 | tee "run.`date +'%y.%m.%d.%H:%M:%S'`.out"
 
 $(BUILD_DIR):
 	@mkdir -p $@

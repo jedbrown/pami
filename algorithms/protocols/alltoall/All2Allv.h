@@ -96,12 +96,9 @@ namespace CCMI
         xfer_union_t *xfer_union;
         xfer_union = (xfer_union_t *)&coll->cmd.xfer_alltoallv;
 
-        //pami_task_t self = __global.mapping.task();
         PAMI::Topology * all = (PAMI::Topology *)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
         size_t topo_size = all->size();
         TRACE_ADAPTOR((stderr, "<%p>All2AllvProtocol size %zu\n", this, topo_size));
-        //_my_index = all->rank2Index(self);
-
 
         _my_cb_done.function = a2aDone;
         _my_cb_done.clientdata = this;
@@ -193,7 +190,7 @@ namespace CCMI
 
         // Start the barrier. When it completes, it will start the m2m
         CCMI::Executor::Composite *barrier = (CCMI::Executor::Composite *)
-                                             _geometry->getKey((size_t)0, /// \todo does NOT support multicontext
+                                             _geometry->getKey(_native->contextid(),
                                                                PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE);
         CCMI_assert(barrier != NULL);
         barrier->setDoneCallback (cb_barrier_done, this);
@@ -272,15 +269,19 @@ namespace CCMI
     class All2AllvFactoryT: public CollectiveProtocolFactory
     {
     protected:
-      pami_mapidtogeometry_fn _cb_geometry;
       T_Conn *_cmgr;
+      Interfaces::NativeInterface       *_native;
       pami_dispatch_manytomany_function _fn;
       CCMI::Adaptor::CollOpPoolT<pami_xfer_t, T_Composite> _free_pool;
     public:
-      All2AllvFactoryT(T_Conn *cmgr,
+      All2AllvFactoryT(pami_context_t               ctxt,
+                       size_t                       ctxt_id,
+                       pami_mapidtogeometry_fn      cb_geometry,
+                       T_Conn                      *cmgr,
                        Interfaces::NativeInterface *native):
-      CollectiveProtocolFactory(native),
-      _cmgr(cmgr)
+      CollectiveProtocolFactory(ctxt,ctxt_id,cb_geometry),
+      _cmgr(cmgr),
+      _native(native)
       {
         TRACE_ADAPTOR((stderr, "<%p>All2AllvFactoryT\n", this));
         _fn = cb_manytomany;
@@ -306,7 +307,7 @@ namespace CCMI
       virtual void metadata(pami_metadata_t *mdata)
       {
         get_metadata(mdata);
-        CollectiveProtocolFactory::metadata(mdata,PAMI_XFER_ALLTOALLV);
+        if(_native) _native->metadata(mdata,PAMI_XFER_ALLTOALLV);
       }
 
       virtual Executor::Composite * generate(pami_geometry_t g,
@@ -334,7 +335,7 @@ namespace CCMI
         coll_object->setXfer((pami_xfer_t *)op);
         coll_object->setFlag(LocalPosted);
         coll_object->setFactory(this);
-        geometry->asyncCollectivePostQ().pushTail(coll_object);
+        geometry->asyncCollectivePostQ(_native->contextid()).pushTail(coll_object);
         TRACE_ADAPTOR((stderr, "<%p>All2AllvFactoryT::generate() key %u, coll_object %p, a2a %p\n", this, key, coll_object, a2a));
         return a2a;
       }
@@ -360,7 +361,7 @@ namespace CCMI
 
         CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *coll_object =
         (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)
-        geometry->asyncCollectivePostQ().findAndDelete(key);
+        geometry->asyncCollectivePostQ(factory->_native->contextid()).findAndDelete(key);
         a2a = (T_Composite *) coll_object->getComposite();
         TRACE_ADAPTOR((stderr, "<%p>All2AllvFactoryT::cb_manytomany() key %u, coll_object %p, a2a %p\n", arg, key, coll_object, a2a));
         a2a->notifyRecv(recv, cb_done);

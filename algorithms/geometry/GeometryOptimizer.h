@@ -144,7 +144,7 @@ namespace PAMI
           rc = __global.heap_mm->memalign((void **)&_input, 16, _total_nelem *sizeof(uint64_t));
           PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for _input %zd", _total_nelem*sizeof(*_result));
 
-          if (this->geometry()->nranks() == 1)
+          if (this->geometry()->size() == 1)
           {
             for (size_t i = 0; i < _vector_elem.size(); ++i)
               _result[i] = _vector_elem[i];
@@ -168,7 +168,6 @@ namespace PAMI
             ar.cmd.xfer_allreduce.rtype             = PAMI_TYPE_UNSIGNED_LONG_LONG;
             ar.cmd.xfer_allreduce.rtypecount        = _total_nelem;
             ar.cmd.xfer_allreduce.op                = PAMI_DATA_BAND;
-            _ar_algo->setContext(_context);
             _ar_algo->generate(&ar);    
           }
         }

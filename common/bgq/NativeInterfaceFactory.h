@@ -85,7 +85,10 @@ namespace PAMI {
       }
       
       if (NCONN > 0 && nconnections > NCONN)
-	return result;
+      {
+        TRACE_FN_EXIT();
+        return result;
+      }
 
       result = PAMI_SUCCESS;
       // Construct the protocol(s) using the NI dispatch function and cookie
@@ -168,7 +171,7 @@ namespace PAMI {
       if (T_Sel != ni_select)
       {
         TRACE_FN_EXIT();
-            return result;
+        return result;
       }
 
       if (T_Type != ni_type)

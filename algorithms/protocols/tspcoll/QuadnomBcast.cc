@@ -34,7 +34,7 @@ QuadnomBcast (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset) :
   for (int i=0; i< _logN; i++)
     {
       int destindex = (_comm->ordinal()+2*_comm->size()-(1<<i))%_comm->size();
-      _dest[i][0] = _comm->endpoint(destindex);
+      _dest[i][0] = _comm->index2Endpoint(destindex);
       _dest[i][1].node = -1;
       _dest[i][2].node = -1;
       _sbuf[i] = &_dummy;
@@ -88,13 +88,13 @@ void xlpgas::QuadnomBcast<T_NI>::reset (int                  rootindex,
 	{
 	  int destrelrank1 = myrelrank + step;
 	  int destindex1 = (destrelrank1+rootindex)%N;
-	  if (destrelrank1<N) _dest[phase][0] = _comm->endpoint(destindex1);
+	  if (destrelrank1<N) _dest[phase][0] = _comm->index2Endpoint(destindex1);
 	  int destrelrank2 = myrelrank + 2* step;
 	  int destindex2 = (destrelrank2+rootindex)%N;
-	  if (destrelrank2<N) _dest[phase][1] = _comm->endpoint(destindex2);
+	  if (destrelrank2<N) _dest[phase][1] = _comm->index2Endpoint(destindex2);
 	  int destrelrank3 = myrelrank + 3* step;
 	  int destindex3 = (destrelrank3+rootindex)%N;
-	  if (destrelrank3<N) _dest[phase][2] = _comm->endpoint(destindex3);
+	  if (destrelrank3<N) _dest[phase][2] = _comm->index2Endpoint(destindex3);
 	}
     }
   xlpgas::CollExchangeX<T_NI,3>::reset();
