@@ -168,6 +168,7 @@ namespace PAMI
           _ascs_ring_allgatherv_int_factory(NULL),
           _ascs_pairwise_alltoall_factory(NULL),
           _ascs_pairwise_alltoallv_int_factory(NULL),
+          _ascs_pairwise_alltoallv_factory(NULL),
           _alltoall_factory(NULL),
           _alltoallv_factory(NULL)
         {
@@ -624,6 +625,11 @@ namespace PAMI
                                         _ascs_pairwise_alltoallv_int_factory,
                                                _context,
                                         _context_id);
+                if(_ascs_pairwise_alltoallv_factory)
+                  geometry->addCollectiveCheck(PAMI_XFER_ALLTOALLV,
+                                        _ascs_pairwise_alltoallv_factory,
+                                               _context,
+                                        _context_id);
                 if(_alltoall_factory)
                   geometry->addCollectiveCheck(PAMI_XFER_ALLTOALL,
                                         _alltoall_factory,
@@ -783,6 +789,11 @@ namespace PAMI
                 if(_ascs_pairwise_alltoallv_int_factory)
                   geometry->addCollective(PAMI_XFER_ALLTOALLV_INT,
                                         _ascs_pairwise_alltoallv_int_factory,
+                                          _context,
+                                        _context_id);
+                if(_ascs_pairwise_alltoallv_factory)
+                  geometry->addCollective(PAMI_XFER_ALLTOALLV,
+                                        _ascs_pairwise_alltoallv_factory,
                                           _context,
                                         _context_id);
                 if(_alltoall_factory)
@@ -1243,6 +1254,12 @@ namespace PAMI
             if (rc == PAMI_SUCCESS) new ((void*)_ascs_pairwise_alltoallv_int_factory) CCMI::Adaptor::P2PAlltoallv::Pairwise::AlltoallvIntFactory(_context,_context_id,mapidtogeometry,&_csconnmgr, ni);
             // ----------------------------------------------------
 
+            // ----------------------------------------------------
+            // Setup and Construct an asynchronous, comm_id/seq_num alltoallv factory from active message ni and p2p protocol
+            rc = setupFactory<CCMI::Adaptor::P2PAlltoallv::Pairwise::AlltoallvFactory>(ni, _ascs_pairwise_alltoallv_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE);
+            if (rc == PAMI_SUCCESS) new ((void*)_ascs_pairwise_alltoallv_factory) CCMI::Adaptor::P2PAlltoallv::Pairwise::AlltoallvFactory(_context,_context_id,mapidtogeometry,&_csconnmgr, ni);
+            // ----------------------------------------------------
+
             // Setup and Construct an alltoall factory from active message ni and p2p protocol
             rc = setupFactory<CCMI::Adaptor::P2PAlltoall::All2AllFactory>(ni, _alltoall_factory, CCMI::Interfaces::NativeInterfaceFactory::MANYTOMANY, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE);
             if (rc == PAMI_SUCCESS) new ((void*)_alltoall_factory) CCMI::Adaptor::P2PAlltoall::All2AllFactory(_context,_context_id,mapidtogeometry,&_csconnmgr, ni);
@@ -1373,6 +1390,7 @@ namespace PAMI
           CCMI::Adaptor::P2PAllgatherv::Ring::AllgathervIntFactory        *_ascs_ring_allgatherv_int_factory;
           CCMI::Adaptor::P2PAlltoallv::Pairwise::AlltoallFactory          *_ascs_pairwise_alltoall_factory;
           CCMI::Adaptor::P2PAlltoallv::Pairwise::AlltoallvIntFactory      *_ascs_pairwise_alltoallv_int_factory;
+          CCMI::Adaptor::P2PAlltoallv::Pairwise::AlltoallvFactory         *_ascs_pairwise_alltoallv_factory;
 
           // CCMI Alltoall
           CCMI::Adaptor::P2PAlltoall::All2AllFactory                      *_alltoall_factory;

@@ -1770,6 +1770,11 @@ namespace CCMI
           new(m) PAMI::Geometry::Metadata("I0:Pairwise:P2P:P2P");
         }
 
+        extern inline void pairwise_alltoallv_metadata(pami_metadata_t *m)
+        {
+          new(m) PAMI::Geometry::Metadata("I0:Pairwise:P2P:P2P");
+        }
+
         typedef CCMI::Adaptor::Alltoallv::AsyncAlltoallvT
         < CCMI::ConnectionManager::CommSeqConnMgr,
           pami_alltoall_t > AlltoallComposite;
@@ -1793,6 +1798,18 @@ namespace CCMI
           CCMI::ConnectionManager::CommSeqConnMgr,
           getKey >
         AlltoallvIntFactory;
+
+        typedef CCMI::Adaptor::Alltoallv::AsyncAlltoallvT
+        < CCMI::ConnectionManager::CommSeqConnMgr,
+          pami_alltoallv_t > AlltoallvComposite;
+
+        typedef CCMI::Adaptor::Alltoallv::AsyncAlltoallvFactoryT
+        < pami_alltoallv_t,
+          AlltoallvComposite,
+          pairwise_alltoallv_metadata,
+          CCMI::ConnectionManager::CommSeqConnMgr,
+          getKey >
+        AlltoallvFactory;
 
       }// Pairwise
     }// P2PAlltoallv
