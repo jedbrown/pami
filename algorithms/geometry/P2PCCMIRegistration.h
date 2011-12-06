@@ -170,7 +170,8 @@ namespace PAMI
           _ascs_pairwise_alltoallv_int_factory(NULL),
           _ascs_pairwise_alltoallv_factory(NULL),
           _alltoall_factory(NULL),
-          _alltoallv_factory(NULL)
+          _alltoallv_factory(NULL),
+          _alltoallv_factory_int(NULL)
         {
           TRACE_FN_ENTER();
           TRACE_FORMAT( "<%p>NI Factory %p, local_size %zu, global_size %zu", this, nifactory, local_size, global_size);
@@ -640,6 +641,11 @@ namespace PAMI
                                         _alltoallv_factory,
                                                _context,
                                         _context_id);
+                if(_alltoallv_factory_int)
+                  geometry->addCollectiveCheck(PAMI_XFER_ALLTOALLV_INT,
+                                        _alltoallv_factory_int,
+                                               _context,
+                                        _context_id);
               }
               else if(result == PAMI_SUCCESS)
               {  
@@ -804,6 +810,11 @@ namespace PAMI
                 if(_alltoallv_factory)
                   geometry->addCollective(PAMI_XFER_ALLTOALLV,
                                         _alltoallv_factory,
+                                          _context,
+                                        _context_id);
+                if(_alltoallv_factory_int)
+                  geometry->addCollective(PAMI_XFER_ALLTOALLV_INT,
+                                        _alltoallv_factory_int,
                                           _context,
                                         _context_id);
               }
@@ -1270,6 +1281,11 @@ namespace PAMI
             if (rc == PAMI_SUCCESS) new ((void*)_alltoallv_factory) CCMI::Adaptor::P2PAlltoallv::All2AllvFactory(_context,_context_id,mapidtogeometry,&_csconnmgr, ni);
             // ----------------------------------------------------
 
+            // Setup and Construct an alltoall factory from active message ni and p2p protocol
+            rc = setupFactory<CCMI::Adaptor::P2PAlltoallv::All2AllvFactory_int>(ni, _alltoallv_factory_int, CCMI::Interfaces::NativeInterfaceFactory::MANYTOMANY, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE);
+            if (rc == PAMI_SUCCESS) new ((void*)_alltoallv_factory_int) CCMI::Adaptor::P2PAlltoallv::All2AllvFactory_int(_context,_context_id,mapidtogeometry,&_csconnmgr, ni);
+            // ----------------------------------------------------
+
             TRACE_FN_EXIT();
           }
 
@@ -1396,6 +1412,7 @@ namespace PAMI
           CCMI::Adaptor::P2PAlltoall::All2AllFactory                      *_alltoall_factory;
           // CCMI Alltoallv
           CCMI::Adaptor::P2PAlltoallv::All2AllvFactory                    *_alltoallv_factory;
+          CCMI::Adaptor::P2PAlltoallv::All2AllvFactory_int                *_alltoallv_factory_int;
       };
     }; // P2P
   }; // CollRegistration

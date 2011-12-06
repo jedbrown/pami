@@ -1833,6 +1833,9 @@ namespace CCMI
       typedef CCMI::Adaptor::All2AllvProtocolLong All2AllProtocolv;
       typedef CCMI::Adaptor::All2AllvFactoryT <All2AllProtocolv, getAlltoallvMetaData, CCMI::ConnectionManager::CommSeqConnMgr> All2AllvFactory;
 
+      typedef CCMI::Adaptor::All2AllvProtocolInt All2AllProtocolv_int;
+      typedef CCMI::Adaptor::All2AllvFactoryT <All2AllProtocolv_int, getAlltoallvMetaData, CCMI::ConnectionManager::CommSeqConnMgr> All2AllvFactory_int;
+
     };//P2PAlltoallv
 
 
