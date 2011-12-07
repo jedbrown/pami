@@ -19,6 +19,7 @@
 #include "components/devices/DmaInterface.h"
 #include "components/devices/bgq/mu2/Context.h"
 #include "components/devices/bgq/mu2/model/MemoryFifoRemoteCompletion.h"
+#include "components/devices/bgq/mu2/CounterPool.h"
 
 #include "util/trace.h"
 #include "components/memory/MemoryAllocator.h"
@@ -51,6 +52,9 @@ namespace PAMI
             pami_event_function     fn;
             void                  * cookie;
             uint32_t                active;
+            void                  * toBeFreed; // Pointer to storage to be freed
+                                               // when "active" hits zero.
+            PAMI::Memory::MemoryManager *mm;   // Pointer to memory manager for the free.
           } multi_complete_t;
 
           typedef struct
@@ -89,6 +93,12 @@ namespace PAMI
                 uint64_t payload[(sizeof(MUSPI_DescriptorBase) >> 3) + 1];
               };
             };
+            // Array of fence structures, one per counter pool.  Each structure may be
+            // added to its corresponding CounterPool to 1) snapshot the current counter
+            // state, 2) monitor that state until the counters have completed, and
+            // 3) invoke the multiComplete fn when each CounterPool has finished 
+            // its monitoring.
+            CounterPool::fenceInfo_t *counterPoolInfo;
           } fence_state_t;
 
           typedef union
@@ -261,6 +271,12 @@ namespace PAMI
 
             if ( state->active == 0 )
               {
+                // If there is storage to be freed, do it now.
+                if ( state->toBeFreed )
+                {
+                  state->mm->free ( state->toBeFreed );
+                }
+
                 if ( state->fn != NULL)
                   {
                     state->fn (context, state->cookie, PAMI_SUCCESS);
@@ -741,6 +757,9 @@ namespace PAMI
         // two rgets, and flow one DPut in the E+ and the other in the E- to
         // optimize bandwidth.  This is possible because dest and our node are
         // linked via the two E links.
+        // Note: For E-dimension transfers, there is no need for dynamic routing,
+        // so the DPut is deterministically routed and the original memory fifo 
+        // completion is used.
         if ( unlikely ( nearestNeighborInE ( dest ) &&	( bytes >= SPLIT_E_CUTOFF ) ) )
           { // Special E dimension case
             // Get pointers to 2 descriptor slots, if they are available.
@@ -774,6 +793,7 @@ namespace PAMI
                 multiCookie->fn                = local_fn;
                 multiCookie->cookie            = cookie;
                 multiCookie->active            = 2;
+                multiCookie->toBeFreed         = NULL; // Nothing to free.
 
                 // Initialize the rget payload descriptor(s) for the E- rget
                 void * vaddr;
@@ -852,6 +872,7 @@ namespace PAMI
             multiCookie->fn                = local_fn;
             multiCookie->cookie            = cookie;
             multiCookie->active            = 2;
+            multiCookie->toBeFreed         = NULL; // Nothing to free.
 
             // Initialize the rget payload descriptor(s) for the E- rget
             void * e_minus_payload_vaddr = (void *) get_state->e_minus_payload;
@@ -920,6 +941,8 @@ namespace PAMI
 	    // pacing must go to the agent for processing.  The agent may decide, based on
 	    // the message length, whether or not to pace it.  But in any case, the agent
 	    // will process the requests in order, paced or not.
+	    // Note: When rgets are sent to the agent for processing, they will be
+	    // dynamically routed.  So, the normal memory fifo completion is used.
 	    if ( unlikely ( paceRgetsToThisDest ) )
 	      {
 		int rc;
@@ -1042,7 +1065,16 @@ namespace PAMI
                 return false;
 	      } // End: Pacing this rget.
 	    else
-	      // Not pacing this rget.  Inject the rget descriptor ourselves.
+              // Not pacing this rget.  Inject the rget descriptor ourselves.
+              // This will use a hybrid form of routing and completion as follows:
+              // 1. If there is no space in the inj fifo, a deterministically 
+              //    routed DPut with memory fifo completion is queued.
+              // 2. If there is space in the inj fifo,
+              //    a. If there is no counter available, or this is DD1 hardware
+              //       which doesn't support dynamic routing, the DPut is built with
+              //       deterministic routing and memory fifo completion.
+              //    b. If there is a counter available,, or this is DD2 hardware, 
+              //       the DPut is built with dynamic routing and counter completion.
 	      {
 	       size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
 	       if (likely(channel.isSendQueueEmpty() && ndesc > 0))
@@ -1072,7 +1104,7 @@ namespace PAMI
                 uint64_t paddr;
                 channel.getDescriptorPayload (desc, vaddr, paddr);
                 size_t pbytes = static_cast<T_Model*>(this)->
-                                initializeRemoteGetPayload (vaddr,
+                          initializeRemoteGetPayloadHybrid (vaddr,
                                                             local_dst_pa,
                                                             remote_src_pa,
                                                             bytes,
@@ -1082,9 +1114,9 @@ namespace PAMI
                                                             cookie);
 
                 rget->setPayload (paddr, pbytes);
-                /*             MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Rget",desc); */
-                /*             MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Dput",(MUHWI_Descriptor_t*)vaddr); */
-                /*             MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Memfifo-Completion",((MUHWI_Descriptor_t*)vaddr)+1); */
+                            /* MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Rget",desc); */
+                            /* MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Dput",(MUHWI_Descriptor_t*)vaddr); */
+                            /* MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Memfifo-Completion",((MUHWI_Descriptor_t*)vaddr)+1); */
 
                 // Finally, advance the injection fifo tail pointer. This action
                 // completes the injection operation.
@@ -1196,23 +1228,27 @@ namespace PAMI
 
         const bool is_nearest_neighbor_in_e = nearestNeighborInE (dest);
 
-        fence_state->multi.fn     = local_fn;
-        fence_state->multi.cookie = cookie;
+        fence_state->multi.fn        = local_fn;
+        fence_state->multi.cookie    = cookie;
+        fence_state->multi.toBeFreed = NULL;
+        fence_state->counterPoolInfo = NULL;
 
-	// We are expecting the following completion callbacks as a result of
-	// the fence activity:
-	// 1.  If dest is not nearestNeighborInE and not eligible for rget pacing,
-	//     1. Dput completion
-	//     2. Rget completion.
-	// 2.  If dest is nearestNeighborInE and not eligible for rget pacing,
-	//     1. Dput completion
-	//     2. Rget E+ completion
-	//     3. Rget E- completion
-	// 3.  If dest is not nearestNeighborInE, but is eligible for rget pacing,
-	//     1. Dput completion
-	//     2. Rget completion (via the agent).
-	//     If dest is eligible for rget pacing, it will not be a nearestNeighborInE.
-	// So, the following calculates how many completions are expected...
+        // We are expecting the following completion callbacks as a result of
+        // the fence activity:
+        // 1.  If dest is not nearestNeighborInE and not eligible for rget pacing,
+        //     1. Dput completion
+        //     2. Rget completion
+        //        a. memory fifo completion
+        //        b. counter completion, added in later if necessary
+        // 2.  If dest is nearestNeighborInE and not eligible for rget pacing,
+        //     1. Dput completion
+        //     2. Rget E+ completion (memory fifo completion only)
+        //     3. Rget E- completion (memory fifo completion only)
+        // 3.  If dest is not nearestNeighborInE, but is eligible for rget pacing,
+        //     1. Dput completion
+        //     2. Rget completion (via the agent).
+        //     If dest is eligible for rget pacing, it will not be a nearestNeighborInE.
+        // So, the following calculates how many completions are expected...
 
         fence_state->multi.active = 2 + is_nearest_neighbor_in_e;
 
@@ -1424,6 +1460,42 @@ namespace PAMI
 	   }
 	   else
 	   {// Not eligible for rget pacing
+            
+            // Set up to monitor counter completion, if there are any counters
+            // waiting for completion.  Do this by 
+            // 1. Allocating space for CounterPool fence state structures
+            // 2. Adding those structures to the appropriate CounterPool object
+            //    so it can monitor for completion of the active counters
+            // 3. Incrementing the number of calls to multiComplete that are
+            //    expected (only when there are counters waiting for completion).
+            pami_result_t prc;
+            uint64_t numCounterPools = _context.getNumCounterPools();
+
+            // If CounterPools exist, monitor for any messages using counters.
+            if ( numCounterPools )
+            {
+              prc = __global.heap_mm->memalign((void **)&fence_state->counterPoolInfo, 0,
+                                               numCounterPools * sizeof(*fence_state->counterPoolInfo));
+              PAMI_assertf(prc == PAMI_SUCCESS, "Not enough memory for fence state objects");
+
+              uint64_t poolID;
+              int rc2;
+              for ( poolID=0; poolID<numCounterPools; poolID++)
+              {
+                // Register this fence operation with this CounterPool.
+                rc2 = _context.addFenceOperation ( poolID,
+                                                   &fence_state->counterPoolInfo[poolID],
+                                                   multiComplete, 
+                                                   & fence_state->multi );
+                // If there are active counters in this pool, increment the number
+                // of active fence sub-operations being monitored.
+                if ( rc2 == 0 ) fence_state->multi.active++;
+              }
+              // Remember to free the fence_state counterPoolInfo.
+              fence_state->multi.toBeFreed = fence_state->counterPoolInfo;
+              fence_state->multi.mm        = __global.heap_mm;
+            }
+
             // Determine the remote pinning information
             size_t rfifo = _context.pinFifoToSelf (target_task, map);
 

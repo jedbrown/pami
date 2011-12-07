@@ -32,6 +32,7 @@
 #include "components/devices/bgq/mu2/InjChannel.h"
 #include "components/devices/bgq/mu2/InjGroup.h"
 #include "components/devices/bgq/mu2/RecChannel.h"
+#include "components/devices/bgq/mu2/CounterPool.h"
 
 #include "util/trace.h"
 #define DO_TRACE_ENTEREXIT 0
@@ -107,7 +108,9 @@ namespace PAMI
               _id_base (id_base),
               _id_offset (id_offset),
  	      _id_count (id_count),
- 	      _combiningInjFifo (combiningInjFifoIdNotSet)
+	      _combiningInjFifo (combiningInjFifoIdNotSet),
+              _counterPool(NULL),
+              _numCounterPools(1)
           {
             TRACE_FN_ENTER();
 
@@ -326,6 +329,74 @@ namespace PAMI
 
             for (i = 0; i < num_endpoints; i++) _connection[i] = NULL;
 
+            // ----------------------------------------------------------------
+            // Initialize the MU Counter Pools for this context.
+            // 1. Determine how many pools we need based on the number of
+            //    counters requested via env var.
+            // 2. Allocate space from the heap for these pools.
+            // 3. Construct each pool.
+            // ----------------------------------------------------------------
+            
+////////////////////////////////////////////////////////////////////////////////
+/// \env{bgq,PAMI_NUMDYNAMICROUTING}
+/// Number of simultaneous dynamically routed messages per context.  If more
+/// than this many messages are being transferred, the additional messages are
+/// deterministically routed.  Dynamic routing can be faster than deterministic
+/// routing.  However, dynamically routed messages require more storage to
+/// track their progress, hence the reason for this option.  This number
+/// should be specified in increments of 64.  A value of 0 forces all messages
+/// to be deterministically routed.
+/// \default 64
+////////////////////////////////////////////////////////////////////////////////
+            
+////////////////////////////////////////////////////////////////////////////////
+/// \env{bgq,PAMI_DYNAMICROUTINGZONE}
+/// The zone routing to be used for dynamically routed messages.  There are
+/// four zones: 0, 1, 2, and 3.
+/// \default 3
+////////////////////////////////////////////////////////////////////////////////
+
+            unsigned long numDynamicRouting = 64;
+            char *env;
+            if ((env = getenv("PAMI_NUMDYNAMICROUTING"))) 
+            {
+              numDynamicRouting = strtoul(env, NULL, 0);
+            }
+
+            unsigned long dynamicRoutingZone = 3;
+            if ((env = getenv("PAMI_DYNAMICROUTINGZONE"))) 
+            {
+              dynamicRoutingZone = strtoul(env, NULL, 0);
+            }
+            PAMI_assertf( dynamicRoutingZone < 4, "PAMI_DYNAMICROUTINGZONE is %zu. Must be 0, 1, 2, or 3.\n", dynamicRoutingZone);
+            _dynamicRoutingZone = (dynamicRoutingZone==0) ? MUHWI_PACKET_ZONE_ROUTING_0 :
+                                  (dynamicRoutingZone==1) ? MUHWI_PACKET_ZONE_ROUTING_1 :
+                                  (dynamicRoutingZone==2) ? MUHWI_PACKET_ZONE_ROUTING_2 :
+                                  MUHWI_PACKET_ZONE_ROUTING_3;
+
+            if ( numDynamicRouting == 0 )
+            {
+              _numCounterPools = 0;
+              _counterPool     = NULL;
+            }
+            else
+            {
+              _numCounterPools = numDynamicRouting / 64;
+              if ( _numCounterPools == 0 ) _numCounterPools = 1;
+              
+              mmrc = __global.heap_mm->memalign((void **) & _counterPool, 
+                                                8, 
+                                                _numCounterPools*sizeof(CounterPool));
+              PAMI_assertf(mmrc == PAMI_SUCCESS, "memalign failed for mu counter pool, rc=%d\n", mmrc);
+              
+              uint64_t poolID;
+              for ( poolID=0; poolID<_numCounterPools; poolID++ )
+              {
+                new ( &_counterPool[poolID] ) CounterPool( (pami_context_t)mu_context_cookie,
+                                                           progress );
+              }
+            }
+
             TRACE_FN_EXIT();
             return PAMI_SUCCESS;
           }
@@ -441,7 +512,6 @@ namespace PAMI
 					 injectionGroup.getInterruptMask() );
 	    size_t events  = injectionGroup.advance ();
 	    events += receptionChannel.advance ();
-
 //            TRACE_FN_EXIT();
 
 	    return events;
@@ -860,6 +930,49 @@ namespace PAMI
             TRACE_FN_EXIT();
           }
 
+          inline int64_t allocateCounter( uint64_t poolID )
+          {
+            return _counterPool[poolID].allocate();
+          }
+
+          inline void setCounter ( uint64_t             poolID,
+                                   int64_t              counterNum,
+                                   uint64_t             value,
+                                   pami_event_function  fn,
+                                   void                *cookie )
+	  {
+            _counterPool[poolID].setCounter ( counterNum,
+                                              value,
+                                              fn,
+                                              cookie );
+          }
+
+          inline uint64_t getCounterAtomicOffset ( uint64_t poolID,
+                                                   int64_t  counterNum )
+          {
+            return _counterPool[poolID].getCounterAtomicOffset ( counterNum );
+          }
+
+          inline int addFenceOperation ( uint64_t                  poolID,
+                                         CounterPool::fenceInfo_t *fenceInfoPtr,
+                                         pami_event_function       fn,
+                                         void                     *cookie )
+          {
+            return _counterPool[poolID].addFenceOperation ( fenceInfoPtr,
+                                                            fn,
+                                                            cookie );
+          }
+
+          inline uint64_t getNumCounterPools ()
+          {
+            return _numCounterPools;
+          }
+
+          inline uint8_t getDynamicRoutingZone ()
+          {
+            return _dynamicRoutingZone;
+          }
+
           inline uint32_t getGlobalBatId ()
           {
             return _rm.getGlobalBatId();
@@ -1114,6 +1227,11 @@ namespace PAMI
         // -------------------------------------------------------------
         
         void ** _connection;
+	
+        CounterPool *_counterPool;
+        size_t       _numCounterPools;
+        uint8_t      _dynamicRoutingZone;
+
       }; // class     PAMI::Device::MU::Context
     };   // namespace PAMI::Device::MU
   };     // namespace PAMI::Device
