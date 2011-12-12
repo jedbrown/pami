@@ -707,6 +707,25 @@ namespace PAMI
         ITRC(IT_CAU, "Client Disable SHM Discovery: [in]=0x%llx [out]=0x%llx\n",
              deviceCheck[2], deviceCheckResult[2]);
 
+        // Error check and print a message if CAU is requested
+        // But unavailable to the user
+        char *collGroups = getenv("MP_COLLECTIVE_GROUPS");
+        if(collGroups && __global.mapping.task() == 0)
+          {
+            if(deviceCheckResult[1] == 0ULL)
+              fprintf(stderr, "ATTENTION: (MP_COLLECTIVE_GROUPS) CAU common index resource not available.  (CAU requested but unavailable)\n");
+            else if(deviceCheckResult[2])
+              {
+                if(_Lapi_env.mp_shared_memory)
+                  fprintf(stderr, "ATTENTION: (MP_COLLECTIVE_GROUPS) Collective SHM(MP_SHARED_MEMORY=%s)"
+                    " resources requested but unavailable.  (CAU requested but disabled)\n",
+                    _Lapi_env.mp_shared_memory==true?"yes":"no");
+                else
+                  fprintf(stderr, "ATTENTION: (MP_COLLECTIVE_GROUPS) Collective SHM(MP_SHARED_MEMORY=%s)"
+                    " resources not requested but required by CAU.  (CAU requested but disabled)\n",
+                    _Lapi_env.mp_shared_memory==true?"yes":"no");
+              }
+          }
         return (deviceCheckResult[0] == 1);
       }
 
