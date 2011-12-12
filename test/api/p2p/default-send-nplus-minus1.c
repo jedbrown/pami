@@ -9,11 +9,9 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-static const unsigned int MAX_HDR_SIZE=1024*4;
-static const unsigned int MAX_DATA_SIZE=1024;
-static const char *optString = "DdMSh?";
+static const char *optString = "DdSXh?";
 
-char device_str[3][50] = {"DEFAULT", "SHMem", "MU"};
+/* char device_str[3][50] = {"DEFAULT", "SHMem", "MU"}; */
 char hint_str[3][50] = {"PAMI_HINT_DEFAULT", "PAMI_HINT_ENABLE", "PAMI_HINT_DISABLE"};
 char xtalk_str[2][50] = {"no crosstalk", "crosstalk"};
 char callback_str[2][50] = {"no callback", "callback"};
@@ -69,8 +67,7 @@ unsigned validate (const void * addr, size_t bytes, size_t test_n_plus_minus1)
     /* Verify current value */
     if (byte[i] != expected_value) {
 
-      if (status != 1)
-        fprintf (stderr, "ERROR (E):validate(%p,%zu):  byte[%zu] != %d (&byte[%zu] = %p, value is %d)\n", addr, total_bytes, i, expected_value, i, &byte[i], byte[i]);
+      fprintf (stderr, "ERROR (E):validate(%p,%zu):  byte[%zu] != %d (&byte[%zu] = %p, value is %d)\n", addr, total_bytes, i, expected_value, i, &byte[i], byte[i]);
 
       status = 1;
     }
@@ -227,23 +224,25 @@ void display_usage( void )
 {
     
   printf("This is the help text for default-send_nplus-minus1.c:\n");
-  printf("default-send-nplus-minus1.c by default will attempt to pass messages of varying header and payload sizes between rank 0 and all other ranks (requires >= 2 ranks) using all available use_shmem hint values.  Available use_shmem hint values vary based on PAMI_DEVICE value.\n");
-  printf("PAMI_DEVICE\tAvailable use_shmem values\n");
-  printf("===========\t==========================\n");
-  printf("B or unset\tPAMI_HINT_DEFAULT, PAMI_HINT_ENABLE & PAMI_HINT_DISABLE\n");
-  printf("M\t\tPAMI_HINT_DEFAULT & PAMI_HINT_DISABLE\n");
-  printf("S\t\tPAMI_HINT_DEFAULT & PAMI_HINT_ENABLE\n");
+  printf("default-send-nplus-minus1.c by default will attempt to pass messages of varying header and payload sizes between rank 0 and all other ranks (requires >= 2 ranks) using all available use_shmem hint values.\n");
   printf("\n");
-  printf("The user can also select a subset of the available hints by using the parms below:\n");
+  printf("The user can select a subset of the available hints by using the parms below:\n");
   printf("-D | --D PAMI_HINT_DEFAULT\n");
-  printf("-M | --M PAMI_HINT_DISABLE\n");
   printf("-S | --S PAMI_HINT_ENABLE\n");
+  printf("-X | --X PAMI_HINT_DISABLE\n");
   printf("\n");
-  printf("-d | --debug Enable error tracing messages to stderr for debug.\n");
+  /*  printf("NOTE:  For BGQ, available use_shmem hint values also vary based on PAMI_DEVICE value.\n");
+  printf("\tPAMI_DEVICE\tAvailable use_shmem values\n");
+  printf("\t===========\t==========================\n");
+  printf("\tB or unset\tPAMI_HINT_DEFAULT, PAMI_HINT_ENABLE & PAMI_HINT_DISABLE\n");
+  printf("\tM\t\tPAMI_HINT_DEFAULT & PAMI_HINT_DISABLE (BGQ)\n");
+  printf("\tS\t\tPAMI_HINT_DEFAULT & PAMI_HINT_ENABLE\n");
+  printf("\n");*/
+  printf("-d | --d Enable error tracing messages to stderr for debug.\n");
   printf("\n");
   printf("Parms can be provided separately or together.\n");
   printf("\tex:  default-send-nplus-minus1.cnk -D -S --debug\n");
-  printf("\tex:  default-send-nplus-minus1.cnk --MS\n");
+  printf("\tex:  default-send-nplus-minus1.cnk --XS\n");
   printf("\n");
 }
 /* --------------------------------------------------------------- */
@@ -282,19 +281,19 @@ int main (int argc, char ** argv)
       debug = 1;
       break;
                 
-    case 'M':
-      hints_to_test = hints_to_test | 4;
-      break;
-                
     case 'S':
       hints_to_test = hints_to_test | 2;
       break;
-                
+              
+    case 'X':
+      hints_to_test = hints_to_test | 4;
+      break;
+  
     case 'h':   /* fall-through is intentional */
     case '?':
       if (_my_task == 0) {
 	display_usage();
-	return 0;
+	return 1;
       }
     break;
                 
@@ -373,7 +372,7 @@ int main (int argc, char ** argv)
   }
 
   /* Create an array for storing device addressabilty based on hint value*/
-  /* row 0 (DEFAULT), row 1 (SHMem) and row 2 (MU) */
+  /* row 0 (DEFAULT), row 1 (SHMem) and row 2 (SHMem disabled) */
   size_t addressable_by_me[3][num_tasks]; 
 
   /* Init device addressability array */
@@ -381,7 +380,7 @@ int main (int argc, char ** argv)
     for ( n = 0; n < num_tasks; n++ ) {
       if ( hint == 1) { /* SHMem */	
 	addressable_by_me[hint][n] = 0;
-      } else { /* hint = 0 (DEFAULT) or 2 (MU) */
+      } else { /* hint = 0 (DEFAULT) or 2 (SHMem disabled) */
 	addressable_by_me[hint][n] = 1;
       }
     }
@@ -430,7 +429,7 @@ int main (int argc, char ** argv)
   }
 
   /* Determine which Device(s) are initialized based on PAMI_DEVICE env var */
-
+  /*
   char * device;  
 
   if (debug) {
@@ -439,10 +438,10 @@ int main (int argc, char ** argv)
 
   device = getenv("PAMI_DEVICE");
   
-  if ( device != NULL ) { /* Passing NULL to strcmp will result in a segfault */
-    if ( strcmp(device, "M") == 0 ) {
+  if ( device != NULL ) {*/ /* Passing NULL to strcmp will result in a segfault */
+  /*    if (strcmp(device, "M") == 0) {
       if (_my_task == 0) {
-	fprintf (stdout, "Only the MU device is initialized.\n");
+	fprintf (stdout, "Only the %s device is initialized.\n", &device_str[2][0]);
       }
       available_hints = 5;
     } else if ( strcmp(device, "S") == 0 ) {
@@ -452,23 +451,25 @@ int main (int argc, char ** argv)
       available_hints = 3;
     } else if ( strcmp(device, "B") == 0 ) {
       if (_my_task == 0) {
-	fprintf (stdout, "Both the MU and SHMem devices are initialized.\n");
+	fprintf (stdout, "Both the %s and SHMem devices are initialized.\n", &device_str[2][0]);
       }
     } else {
       if (_my_task == 0) {
-	fprintf (stderr, "ERROR (E):  PAMI_DEVICE = %s is unsupported. Valid values are:  M (MU only), S (SHMem only) & [ B | unset ] (both MU & SHMem)\n", device);
+	fprintf (stderr, "ERROR (E):  PAMI_DEVICE = %s is unsupported. Valid values are:  M (%s only), S (SHMem only) & [ B | unset ] (both %s & SHMem)\n", device, &device_str[2][0], &device_str[2][0]);
       }
       return 1;
     } 
   } else {
     if (_my_task == 0) {
-      fprintf (stderr, "Both the MU and SHMem devices are initialized.\n");
+      fprintf (stderr, "Both the %s and SHMem devices are initialized.\n", &device_str[2][0]);
     }
   }
-  
+ 
+
   if (debug) {
     fprintf (stderr, "After device check ...\n");
   }
+  */
 
   /* Default to test all available hints */
   if ( hints_to_test == 0 ) {
@@ -478,6 +479,7 @@ int main (int argc, char ** argv)
   }
 
   /* Print table of available hints and if they'll be tested */
+  
   if (_my_task == 0) {
     fprintf (stdout, "use_shmem Value(s)\tAVAILABLE\tUNDER TEST\n"); 
     for  (hint = 0; hint < 3; hint++) {
@@ -496,7 +498,7 @@ int main (int argc, char ** argv)
       }
     }
   }
-
+ 
   /* Create 3 dispatch_info_t structures (1 for each use_shmem hint value) */
   typedef struct
   {
@@ -510,17 +512,17 @@ int main (int argc, char ** argv)
 
   dispatch[0].id = 0;
   dispatch[0].options = (pami_dispatch_hint_t) {0};
-  dispatch[0].name = "  default ";
+  dispatch[0].name = "  DEFAULT ";
   dispatch[0].options.use_shmem = PAMI_HINT_DEFAULT;
 
   dispatch[1].id = 1;
   dispatch[1].options = (pami_dispatch_hint_t) {0};
-  dispatch[1].name = "only shmem";
+  dispatch[1].name = "ONLY SHMEM";
   dispatch[1].options.use_shmem = PAMI_HINT_ENABLE;
 
   dispatch[2].id = 2;
   dispatch[2].options = (pami_dispatch_hint_t) {0};
-  dispatch[2].name = " no shmem ";
+  dispatch[2].name = " NO SHMEM ";
   dispatch[2].options.use_shmem = PAMI_HINT_DISABLE;
 
   pami_dispatch_callback_function fn;
@@ -528,14 +530,11 @@ int main (int argc, char ** argv)
 
   size_t dispatch_recv_immediate_max[max_contexts][3];
   
-  uint8_t header[MAX_HDR_SIZE];
-  uint8_t data[MAX_DATA_SIZE];
+  uint8_t header[1024];
+  uint8_t data[1024];
 
-  for (i=0; i<MAX_HDR_SIZE; i++) {
+  for (i=0; i<1024; i++) {
     header[i] = (uint8_t)i;
-  }
-
-  for (i=0; i<MAX_DATA_SIZE; i++) {
     data[i]   = (uint8_t)i;
   }
 
@@ -567,7 +566,7 @@ int main (int argc, char ** argv)
     /* For each context: */
     /* Set up dispatch ID 0 for DEFAULT (use_shmem = 0 | PAMI_HINT_DEFAULT) */
     /* Set up dispatch ID 1 for SHMEM   (use_shmem = 1 | PAMI_HINT_ENABLE)  */
-    /* Set up dispatch ID 2 for MU      (use_shmem = 2 | PAMI_HINT_DISABLE) */
+    /* Set up dispatch ID 2 for HFI/MU  (use_shmem = 2 | PAMI_HINT_DISABLE) */
 
     for (hint = 0; hint < hint_limit; hint++) {
       
@@ -700,7 +699,7 @@ int main (int argc, char ** argv)
 		    return 1;
 		  }
 
-		  fprintf (stderr, "===== PAMI_Send() FUNCTIONAL Test [%s][%s][%s][+/-1 bit = %d][%s] %zu %zu (%zu, 0) -> (%zu, %zu) =====\n\n", &device_str[hint][0], &xtalk_str[xtalk][0], &callback_str[remote_cb][0], __recv_buffer[0], &longheader_str[header_bytes[h]>dispatch_recv_immediate_max[0][hint]][0], header_bytes[h], data_bytes[p], _my_task, n, xtalk);
+		  fprintf (stderr, "===== PAMI_Send() FUNCTIONAL Test [use_shmem=%s][%s][%s][+/-1 bit = %d][%s] %zu %zu (%zu, 0) -> (%zu, %zu) =====\n\n", &hint_str[hint][0], &xtalk_str[xtalk][0], &callback_str[remote_cb][0], __recv_buffer[0], &longheader_str[header_bytes[h]>dispatch_recv_immediate_max[0][hint]][0], header_bytes[h], data_bytes[p], _my_task, n, xtalk);
 
 		  if (remote_cb) {
 		    send_active++;
@@ -710,7 +709,7 @@ int main (int argc, char ** argv)
 		    fprintf (stderr, "before send ...\n");
 		  }
 
-		  result = PAMI_Send (context[xtalk], &parameters);
+		  result = PAMI_Send (context[0], &parameters);
 		
 		  if (debug) {
 		    fprintf (stderr, "... after send.\n");
@@ -727,7 +726,7 @@ int main (int argc, char ** argv)
 		  }
 
 		  while (send_active || recv_active) {
-		    result = PAMI_Context_advance (context[xtalk], 100);
+		    result = PAMI_Context_advance (context[0], 100);
 
 		    if ( (result != PAMI_SUCCESS) && (result != PAMI_EAGAIN) ) {
 		      fprintf (stderr, "ERROR (E):  Unable to advance pami context 0. result = %d\n", result);
@@ -787,7 +786,7 @@ int main (int argc, char ** argv)
 
       for(xtalk = 0; xtalk < num_contexts; xtalk++) {        /* xtalk loop */
 
-	result = PAMI_Endpoint_create (client, 0, xtalk, &parameters.send.dest);
+	result = PAMI_Endpoint_create (client, 0, 0, &parameters.send.dest);
 	if (result != PAMI_SUCCESS) {
 	  fprintf (stderr, "ERROR (E):  PAMI_Endpoint_create failed for task ID 0, context 0 with %d.\n", result);
 	  return 1;
@@ -847,7 +846,7 @@ int main (int argc, char ** argv)
 		  fprintf (stderr, "... after recv advance loop\n");
 		}
 
-		fprintf (stderr, "===== PAMI_Send() FUNCTIONAL Test [%s][%s][%s][+/-1 bit = %d][%s] %zu %zu (%zu, %zu) -> (0, 0) =====\n\n", &device_str[hint][0], &xtalk_str[xtalk][0], &callback_str[remote_cb][0], task0_buffer_default, &longheader_str[header_bytes[h]>dispatch_recv_immediate_max[xtalk][hint]][0], header_bytes[h], data_bytes[p], _my_task, xtalk);
+		fprintf (stderr, "===== PAMI_Send() FUNCTIONAL Test [use_shmem=%s][%s][%s][+/-1 bit = %d][%s] %zu %zu (%zu, %zu) -> (0, 0) =====\n\n", &hint_str[hint][0], &xtalk_str[xtalk][0], &callback_str[remote_cb][0], task0_buffer_default, &longheader_str[header_bytes[h]>dispatch_recv_immediate_max[xtalk][hint]][0], header_bytes[h], data_bytes[p], _my_task, xtalk);
 
 		if (remote_cb) {
 		  send_active++;
