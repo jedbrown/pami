@@ -100,7 +100,7 @@ static void send_done_remote (pami_context_t   context,
 
 static void usage ()
 {
-  fprintf(stdout, "long-header-matrix.cnk tests all combinations of the no_long_header hint between task 0 and all other tasks using varying header sizes (short & long) and varying PAMI device settings (DEFAULT, SHMEM and MU).\n");
+  fprintf(stdout, "long-header-matrix.cnk tests all combinations of the no_long_header hint between task 0 and all other tasks using varying header sizes (short & long).\n");
 
   fprintf(stdout, "\nNOTE:  Hints are read as \"assert <hint>\" when the hint is \'1\' .. if it is \'0\' then it is considered \"unspecified\" (as opposed to \"unset\").  In other words, the only hard hints and soft hints that matter are 1\'s. Only sends can have soft hints.\n");
 
