@@ -398,7 +398,7 @@ namespace CCMI
                 _mcast_l.cb_done.clientdata      = this;
                 _mcast_l.connection_id           = _geometry->comm();
                 _mcast_l.roles                   = -1U;
-                _mcast_l.bytes                   = xfer->rtypecount*rtype->GetDataSize();
+                _mcast_l.bytes                   = xfer->stypecount*stype->GetDataSize();
                 _mcast_l.src                     = (pami_pipeworkqueue_t*) & _pwq_inter0;
                 _mcast_l.src_participants        = (pami_topology_t*)t_my_master;
                 _mcast_l.dst                     = (pami_pipeworkqueue_t*) & _pwq_dest;
@@ -479,7 +479,7 @@ namespace CCMI
                 _mcast_l.cb_done.clientdata      = this;
                 _mcast_l.connection_id           = _geometry->comm();
                 _mcast_l.roles                   = -1U;
-                _mcast_l.bytes                   = xfer->rtypecount * rtype->GetDataSize();
+                _mcast_l.bytes                   = xfer->stypecount * stype->GetDataSize();
                 _mcast_l.src                     = NULL;
                 _mcast_l.src_participants        = (pami_topology_t*)t_my_master;
                 _mcast_l.dst                     = (pami_pipeworkqueue_t*) & _pwq_dest;
@@ -537,7 +537,7 @@ namespace CCMI
             _mcast_l.cb_done.clientdata      = this;
             _mcast_l.connection_id           = _geometry->comm();
             _mcast_l.roles                   = -1U;
-            _mcast_l.bytes                   = xfer->rtypecount * rtype->GetDataSize();
+            _mcast_l.bytes                   = xfer->stypecount * stype->GetDataSize();
             _mcast_l.src                     = (pami_pipeworkqueue_t*) & _pwq_inter1;
             _mcast_l.src_participants        = (pami_topology_t*)t_my_master;  // me!
             _mcast_l.dst                     = (pami_pipeworkqueue_t*) & _pwq_dest;
@@ -736,7 +736,7 @@ namespace CCMI
                   _mcast_l.cb_done.clientdata      = this;
                   _mcast_l.connection_id           = _geometry->comm();
                   _mcast_l.roles                   = -1U;
-                  _mcast_l.bytes                   = cmd->cmd.xfer_reduce.rtypecount * rtype->GetDataSize();
+                  _mcast_l.bytes                   = cmd->cmd.xfer_reduce.stypecount * stype->GetDataSize();
                   _mcast_l.src_participants        = (pami_topology_t*)t_my_master;
                   if(amRoot)
                     _mcast_l.dst                   = (pami_pipeworkqueue_t*)&_pwq_dest;
@@ -838,7 +838,7 @@ namespace CCMI
               _mcast_l.cb_done.clientdata      = this;
               _mcast_l.connection_id           = _geometry->comm();
               _mcast_l.roles                   = -1U;
-              _mcast_l.bytes                   = cmd->cmd.xfer_reduce.rtypecount * rtype->GetDataSize();
+              _mcast_l.bytes                   = cmd->cmd.xfer_reduce.stypecount * stype->GetDataSize();
               _mcast_l.src                     = (pami_pipeworkqueue_t*) & _pwq_inter1;
               _mcast_l.src_participants        = (pami_topology_t*)t_my_master;  // me!
               _mcast_l.dst                     = (pami_pipeworkqueue_t*) & _pwq_inter2;
