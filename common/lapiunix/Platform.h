@@ -22,7 +22,8 @@ extern "C" {
 #include "zcmem.h"
 }
 #endif
-
+#include "../lapi/include/lapi_base_type.h"
+#include "../lapi/include/lapi_env.h"
 
 // Collective shared memory settings
 #define CACHEBLOCKSZ 128

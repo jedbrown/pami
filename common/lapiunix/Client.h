@@ -201,11 +201,9 @@ namespace PAMI
         rc = __global.heap_mm->memalign((void **)&ctxt->_pgas_collreg, 0,
                                         sizeof(*ctxt->_pgas_collreg));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PGASCollreg");
-        pami_endpoint_t ep;
-        PAMI_Endpoint_create((pami_client_t) this,
-                             __global.mapping.task(),
-                             ctxt->getId(),
-                             &ep);
+        pami_endpoint_t ep = PAMI_ENDPOINT_INIT((pami_client_t)this,
+                                                __global.mapping.task(),
+                                                ctxt->getId());
         new(ctxt->_pgas_collreg) PGASCollreg(this,
                                              ctxt,
                                              _clientid,
@@ -236,12 +234,9 @@ namespace PAMI
         rc = __global.heap_mm->memalign((void **)&ctxt->_cau_collreg, 0,
                                         sizeof(*ctxt->_cau_collreg));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc CAUCollreg");
-        pami_endpoint_t ep;
-        PAMI_Endpoint_create((pami_client_t) this,
-                             __global.mapping.task(),
-                             ctxt->getId(),
-                             &ep);
-
+        pami_endpoint_t ep = PAMI_ENDPOINT_INIT((pami_client_t)this,
+                                                __global.mapping.task(),
+                                                ctxt->getId());
         new(ctxt->_cau_collreg) CAUCollreg(_client,
                                            ctxt,
                                            ctxt->getId(),

@@ -258,7 +258,7 @@ namespace PAMI {
             //first count how many endpoints
             for (size_t i = 0; i < __size; ++i) {
               pami_task_t    task; size_t          offset;
-              PAMI_Endpoint_query (topo_eplist(i), &task, &offset);
+              PAMI_ENDPOINT_INFO(topo_eplist(i),task,offset);
               if (IS_LOCAL_PEER(task)) {
                 ++z;
               }
@@ -270,7 +270,7 @@ namespace PAMI {
             //pami_endpoint_t *ep_iter = epl;
             for (size_t i = 0; i < __size; ++i) {
               pami_task_t    task; size_t          offset;
-              PAMI_Endpoint_query (topo_eplist(i), &task, &offset);
+              PAMI_ENDPOINT_INFO(topo_eplist(i),task,offset);
               if (IS_LOCAL_PEER(task)) {
                 *epl++ = topo_eplist(i);
               }
@@ -919,7 +919,7 @@ namespace PAMI {
       if (ix < __size) switch (__type) {
 
       case PAMI_EPLIST_TOPOLOGY:
-        result = PAMI_Endpoint_query (topo_eplist(ix),&task,&offset);
+        PAMI_ENDPOINT_INFO(topo_eplist(ix),task,offset);
         return task;
         break;
       case PAMI_SINGLE_TOPOLOGY:
@@ -1457,7 +1457,7 @@ namespace PAMI {
         size_t i, j, l = 0;
         for (i = 0; i < s; ++i) {
           ep_r = index2Endpoint(i);
-          PAMI_Endpoint_query (ep_r, &r, &offset);
+          PAMI_ENDPOINT_INFO(ep_r,r,offset);
           // PAMI_assert(r != -1);
           mapping->task2node(r, a);
 	  for (j = 0; j <= l; ++j) {
@@ -2428,7 +2428,6 @@ namespace PAMI {
       __client = c;
     }
 
-#define __topo_unused_for_assert(x) ((void)x)
     size_t endpoint2Index_impl(const pami_endpoint_t& ep){
       size_t x;
       switch (__type) {
@@ -2443,9 +2442,7 @@ namespace PAMI {
       default:
         pami_task_t    task;
         size_t          offset;
-        pami_result_t result  = PAMI_Endpoint_query (ep, &task, &offset);
-        __topo_unused_for_assert(result); // remove if result is used
-        PAMI_assert(result == PAMI_SUCCESS);
+        PAMI_ENDPOINT_INFO(ep,task,offset);
         if(__all_contexts) {
           return rank2Index_impl(task) * __offset + offset;
         }
@@ -2463,16 +2460,16 @@ namespace PAMI {
       pami_endpoint_t ep;
       if(__all_contexts) {
         size_t offset = ordinal % __offset;
-        PAMI_Endpoint_create(__client, task, offset, &ep);
+        ep = PAMI_ENDPOINT_INIT(__client,task,offset);
       }
       else
-        PAMI_Endpoint_create(__client, task, __offset, &ep);
+        ep = PAMI_ENDPOINT_INIT(__client,task,__offset);
       return ep;
     }
 
     pami_endpoint_t rankContext2Endpoint_impl(pami_task_t task, size_t offset){
       pami_endpoint_t ep;
-      PAMI_Endpoint_create(__client, task, offset, &ep);
+      ep = PAMI_ENDPOINT_INIT(__client,task,offset);
       return ep;
     }
 
