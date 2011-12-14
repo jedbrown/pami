@@ -910,7 +910,6 @@ namespace PAMI {
 
       pami_task_t   task;
       size_t        offset;
-      pami_result_t result ;
 
       if(__all_contexts && __type != PAMI_EPLIST_TOPOLOGY) {
         ix = ix / __offset;
