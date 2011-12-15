@@ -503,12 +503,14 @@ extern "C" pami_result_t PAMI_Context_advancev (pami_context_t context[],
   pami_result_t result = PAMI_SUCCESS;
   size_t events = 0;
 
-  for (m=0; m<maximum && events==0 && result==PAMI_SUCCESS; m++)
+  for (m=0; m<maximum && events==0; m++)
   {
-    for (c=0; c<count && result==PAMI_SUCCESS; c++)
+    for (c=0; c<count; c++)
     {
       ctx = (PAMI::Context *) context[c];
       events += ctx->advance (1, result);
+      if (result != PAMI_SUCCESS && result != PAMI_EAGAIN)
+         return result;
     }
   }
 
