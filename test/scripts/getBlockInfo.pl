@@ -21,6 +21,30 @@ sub quitConsole {
 	$e->send("quit\n");
 }
 
+#===============================================================================
+# Start up a new DB/2 session
+sub startDB2 {
+	$dbName = "BGDB0";
+	$dbUserName = "bgqsysdb";
+	$dbPassword = "db24bgq";
+
+	# Start DB/2
+	$e->spawn("db2")
+		or die "Error: cannot start db2\n";
+	$e->expect(5, "db2 =\>")
+		or die "Error: did not get db2 prompt\n";
+	$e->send("connect to $dbName user $dbUserName using $dbPassword\n");
+	$e->expect(3, "Database Connection Information")
+		or die "Error: unable to connec to $dbName\n";
+}
+
+#===============================================================================
+# Quite the DB/2 session
+sub quitDB2 {
+	# Quit DB/2
+	$e->send("quit\n");
+}
+
 # Perl trim function to remove whitespace from the start and end of the string
 sub trim($) {
 	my $string = shift();
@@ -39,18 +63,22 @@ GetOptions("h!"=>\$help,
            "locate=s"=>\$locate_blockName,
            "ioLinks=s"=>\$ioLinks_blockName,
            "ioBlocks=s"=>\$ioBlocks_blockName,
+           "blockShape=s"=>\$blockShape_blockName,
+           "midplaneCorners=s"=>\$midplaneCorners_blockName,
            "hasJobs=s"=>\$hasJobs_blockName);
 if ($help) {
 	print	"Retrieve information about a block\n";
 	print   "\tgetBlockInfo.pl [options]\n";
 	print	" Options: \n";
-	print	"\t-h			Displays help text\n";
-	print	"\t-isBlock [block-name]	Returns 0 if the block exists, 1 if it does not\n";
-	print	"\t-numNodes [block-name]	Prints out the number of nodes in the block\n";
-	print	"\t-locate [block-name]	Prints out the 'locate' information for the block\n";
-	print	"\t-ioLinks [block-name]	Prints out a list of the IO links used by the block\n";
-	print	"\t-ioBlocks [block-name]	Prints out a list of the currently booted IO blocks used by the CN block\n";
-	print	"\t-hasJobs [block-name]	Returns 0 if the block has any running jobs, 1 if it does not\n";
+	print	"\t-h					Displays help text\n";
+	print	"\t-isBlock [block-name]		Returns 0 if the block exists, 1 if it does not\n";
+	print	"\t-numNodes [block-name]		Prints out the number of nodes in the block\n";
+	print	"\t-locate [block-name]			Prints out the 'locate' information for the block\n";
+	print	"\t-ioLinks [block-name]		Prints out a list of the IO links used by the block\n";
+	print	"\t-ioBlocks [block-name]		Prints out a list of the currently booted IO blocks used by the CN block\n";
+	print	"\t-blockShape [block-name]		Prints out the shape of the block (AxBxCxDxE)\n";
+	print	"\t-midplaneCorners [block-name]	Prints out the midplanes for the block with associated corner nodes\n";
+	print	"\t-hasJobs [block-name]		Returns 0 if the block has any running jobs, 1 if it does not\n";
 	exit 1;
 }
 
@@ -111,6 +139,77 @@ if ($ioLinks_blockName ne "") {
 	$output = $e->exp_after();
 	print "$output";
 	quitConsole();
+}
+
+# Get the size of the block
+if ($blockShape_blockName ne "") {
+	$e->log_stdout(0);
+	startConsole();
+	$e->send("list bgqblock $blockShape_blockName\n");
+	$e->expect(3, "OK")
+		or die "Error: unable to run list bgqblock\n";
+	$output = $e->exp_after();
+	$aSize = trim(`echo "$output" | grep "_sizea" | awk '{ print \$3 }'`);
+	$bSize = trim(`echo "$output" | grep "_sizeb" | awk '{ print \$3 }'`);
+	$cSize = trim(`echo "$output" | grep "_sizec" | awk '{ print \$3 }'`);
+	$dSize = trim(`echo "$output" | grep "_sized" | awk '{ print \$3 }'`);
+	$eSize = trim(`echo "$output" | grep "_sizee" | awk '{ print \$3 }'`);
+	print "${aSize}x${bSize}x${cSize}x${dSize}x${eSize}\n";
+	quitConsole();
+}
+
+# Get the midplanes and associated corner nodes of the block
+# Output will be in the form:
+#     "midplane1 midplane2 ..." "corner-node"
+#     "R00-M0 R00-M1" "N00"
+if ($midplaneCorners_blockName ne "") {
+	$e->log_stdout(0);
+	startDB2();
+	$e->send("select bpid from bgqbpblockmap where blockid = '$midplaneCorners_blockName'\n");
+	$e->expect(3, "BPID")
+		or die "Error: unable to query bgqbpblockmap table\n";
+	$output = $e->exp_after();
+        if ($output =~ /0 record\(s\) selected/) {
+		# This is a small block - query the small block table
+		$e->send("select posinmachine, nodecardpos from bgqsmallblock where blockid = '$midplaneCorners_blockName' order by nodecardpos asc\n");
+		$e->expect(3, "POSINMACHINE")
+			or die "Error: unable to query bgqsmallblock table\n";
+		$output = $e->exp_after();
+        	if ($output =~ /0 record\(s\) selected/) {
+			die "Error: small block does not exist";
+		}
+		@lines = `echo "$output" | grep -v "POSINMACHINE" | grep -v "NODECARDPOS" | grep -v "record\(s\) selected" | grep -v "db2"`;
+		@midplanes = ();
+		@cornerNodes = ();
+		foreach $line (@lines) {
+			$line = trim($line);
+			if ($line ne "" && $line !~ "---") {
+				$midplanesSize = $#midplanes + 1;
+				if ($midplanesSize eq 0) {
+					# The first entry will be the corner since this is a small block
+					@midplanes[0] = trim(`echo "$line" | awk '{ print \$1 }'`);
+					@cornerNodes[0] = trim(`echo "$line" | awk '{ print \$2 }'`);
+					break;
+				}
+			}
+		}
+	} else {
+		# This is a base partition or large block
+		@lines = `echo "$output" | grep -v "BPID" | grep -v "record\(s\) selected" | grep -v "db2"`;
+		@midplanes = ();
+		@cornerNodes = ("N00");		# All midplanes have a corner at N00
+		$i = 0;
+		foreach $line (@lines) {
+			$line = trim($line);
+			if ($line ne "" && $line !~ "---") {
+				@midplanes[$i] = $line;
+				$i++;
+			}
+		}
+	}
+
+	print "\"@midplanes\" \"@cornerNodes\"\n";
+	quitDB2();
 }
 
 # Get the IO link information for the block
