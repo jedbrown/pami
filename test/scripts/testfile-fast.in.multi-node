@@ -31,7 +31,7 @@ api/collectives/bcast_query.cnk
 api/collectives/bcast_subcomm.cnk
 # bcast_subcomm2 is currently an invalid test
 # api/collectives/bcast_subcomm2.cnk --timelimit 480 --compile-only +++ REMOVED FROM MAKEFILE +++
-api/collectives/bcast_subcomm_noparent.cnk
+# api/collectives/bcast_subcomm_noparent.cnk                +++ REMOVED FROM MAKEFILE +++ 
 api/collectives/bcast_subcomm_query.cnk
 api/collectives/gather.cnk
 api/collectives/gatherv.cnk
@@ -175,7 +175,7 @@ api/time/timebase.cnk
 #internals/pamihello.cnk                         +++ REMOVED FROM MAKEFILE +++
 #
 #=== internals/BG/bgq SUBDIR ===
-internals/BG/bgq/mc-rect.cnk
+# internals/BG/bgq/mc-rect.cnk                   +++ REMOVED FROM MAKEFILE +++ 
 #
 #=== internals/BG/bgq/classroutes SUBDIR ===     +++ classroutes SUBDIR REMOVED FROM bgq MAKEFILE +++
 #internals/BG/bgq/classroutes/classroute_test.cnk 
