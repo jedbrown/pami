@@ -136,7 +136,7 @@ namespace PAMI
                     return -1;
                   }
               }
-            while (endBase < startBase);
+            while (endBase <= startBase);
 
             return (uint64_t) (ticks / (sampleTime*1e-6));
           }
