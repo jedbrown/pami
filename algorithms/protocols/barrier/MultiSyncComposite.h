@@ -360,7 +360,8 @@ namespace CCMI{namespace Adaptor{namespace Barrier{
         // local, local flow.
         if (t_master->size() > 1 && t_local->size() > 1)
         {
-          if (_geometry->isLocalMasterParticipant())
+          bool participant = t_master->isEndpointMember(mInterfaceG->endpoint());
+          if (participant)
           {
             _minfo_l0.cb_done.function   = local_done_fn;
             _minfo_l0.cb_done.clientdata = this;

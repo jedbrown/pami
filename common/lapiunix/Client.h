@@ -241,6 +241,7 @@ namespace PAMI
                                            ctxt,
                                            ctxt->getId(),
                                            _clientid,
+                                           _ncontexts,
                                            *ctxt->_devices->_generics,
                                            ctxt->_bsr_device,
                                            ctxt->_cau_device,

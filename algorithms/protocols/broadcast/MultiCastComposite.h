@@ -51,7 +51,8 @@ namespace CCMI
       class MultiCastComposite : public CCMI::Executor::Composite
       {
       protected:
-        PAMI::Topology                       _root;
+        pami_endpoint_t                      _root_ep;
+        PAMI::Topology                       _root_topo;
         PAMI::PipeWorkQueue                  _pwq;
 
       public:
@@ -64,7 +65,8 @@ namespace CCMI
                             pami_event_function                    fn,
                             void                                 * cookie) :
         Composite(),
-        _root(cmd->cmd.xfer_broadcast.root)
+        _root_ep(cmd->cmd.xfer_broadcast.root),
+        _root_topo(&_root_ep,1,PAMI::tag_eplist())
         {
           TRACE_FN_ENTER();
           TRACE_FORMAT( "<%p> type %#zX, count %zu, root %zu", this, (size_t)cmd->cmd.xfer_broadcast.type, cmd->cmd.xfer_broadcast.typecount, (size_t)cmd->cmd.xfer_broadcast.root);
@@ -84,7 +86,7 @@ namespace CCMI
           size_t bytes = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
           size_t pbytes = 0;
 
-          if (cmd->cmd.xfer_broadcast.root == __global.mapping.task())
+          if (cmd->cmd.xfer_broadcast.root == native->endpoint())
             pbytes = bytes;
 
           _pwq.configure(cmd->cmd.xfer_broadcast.buf, bytes, pbytes, type_obj, type_obj);
@@ -98,7 +100,7 @@ namespace CCMI
           minfo.connection_id      = 0; /// \todo ?
           minfo.roles              = -1U;
           minfo.dst_participants   = (pami_topology_t *) destinations;
-          minfo.src_participants   = (pami_topology_t *) & _root;
+          minfo.src_participants   = (pami_topology_t *) & _root_topo;
           minfo.src                = (pami_pipeworkqueue_t *) & _pwq;
           minfo.dst                = (pami_pipeworkqueue_t *) & _pwq;
           minfo.msgcount           = 0;
@@ -140,8 +142,9 @@ namespace CCMI
         Interfaces::NativeInterface        * _native;
         PAMI_GEOMETRY_CLASS                * _geometry;
         pami_broadcast_t                     _xfer_broadcast;
+        pami_endpoint_t                      _root_ep;
         PAMI::Topology                       _all;
-        PAMI::Topology                       _root;
+        PAMI::Topology                       _root_topo;
         PAMI::Topology                       _destinations;
         PAMI::PipeWorkQueue                  _src;
         PAMI::PipeWorkQueue                  _dst;
@@ -167,7 +170,8 @@ namespace CCMI
                              pami_event_function                    fn,
                              void                                 * cookie) :
         Composite(), _native(mInterface), _geometry((PAMI_GEOMETRY_CLASS*)g),
-        _xfer_broadcast(cmd->cmd.xfer_broadcast), _root(cmd->cmd.xfer_broadcast.root),
+        _xfer_broadcast(cmd->cmd.xfer_broadcast), _root_ep(cmd->cmd.xfer_broadcast.root),
+        _root_topo(&_root_ep,1,PAMI::tag_eplist()),
         _buffer(NULL)
         {
           TRACE_FN_ENTER();
@@ -184,15 +188,15 @@ namespace CCMI
           _deviceMsyncInfo                  = _geometry->getKey(0,PAMI::Geometry::CKEY_MSYNC_CLASSROUTEID);
 
           _all = *(PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
-          _all.subtractTopology(&_destinations,  &_root);
+          _all.subtractTopology(&_destinations,  &_root_topo);
 
-          DO_DEBUG(for (unsigned j = 0; j < _root.size(); ++j) fprintf(stderr, "root[%u]=%zu, size %zu\n", j, (size_t)_root.index2Rank(j), _root.size()));
+          DO_DEBUG(for (unsigned j = 0; j < _root.size(); ++j) fprintf(stderr, "root[%u]=%zu, size %zu\n", j, (size_t)_root.index2Endpoint(j), _root.size()));
 
-          DO_DEBUG(for (unsigned j = 0; j < _destinations.size(); ++j) fprintf(stderr, "destinations[%u]=%zu, size %zu\n", j, (size_t)_destinations.index2Rank(j), _destinations.size()));
+          DO_DEBUG(for (unsigned j = 0; j < _destinations.size(); ++j) fprintf(stderr, "destinations[%u]=%zu, size %zu\n", j, (size_t)_destinations.index2Endpoint(j), _destinations.size()));
 
-          DO_DEBUG(for (unsigned j = 0; j < _all.size(); ++j) fprintf(stderr, "all[%u]=%zu, size %zu\n", j, (size_t)_all.index2Rank(j), _all.size()));
+          DO_DEBUG(for (unsigned j = 0; j < _all.size(); ++j) fprintf(stderr, "all[%u]=%zu, size %zu\n", j, (size_t)_all.index2Endpoint(j), _all.size()));
 
-          if (cmd->cmd.xfer_broadcast.root == __global.mapping.task())
+          if (cmd->cmd.xfer_broadcast.root == mInterface->endpoint())
           {
             _src.configure(cmd->cmd.xfer_broadcast.buf, _bytes, _bytes, type_obj, type_obj);
             /// \todo unless the device lets me toss unwanted data, we need a dummy buffer to receive.
@@ -219,7 +223,7 @@ namespace CCMI
           _minfo.connection_id      =  cmgr->updateConnectionId(comm);
           _minfo.roles              = -1U;
           _minfo.dst_participants   = (pami_topology_t *) & _destinations;
-          _minfo.src_participants   = (pami_topology_t *) & _root;
+          _minfo.src_participants   = (pami_topology_t *) & _root_topo;
           _minfo.src                = (pami_pipeworkqueue_t *) & _src;
           _minfo.dst                = (pami_pipeworkqueue_t *) & _dst;
           _minfo.msgcount           = 0;
@@ -258,7 +262,7 @@ namespace CCMI
           TRACE_FN_ENTER();
           TRACE_FORMAT( "<%p>", this);
 
-          if (_xfer_broadcast.root == __global.mapping.task())
+          if (_xfer_broadcast.root == _native->endpoint())
             _native->multicast(&_minfo, _deviceMcastInfo);
           TRACE_FN_EXIT();
         }
@@ -340,8 +344,10 @@ namespace CCMI
                                      PAMI::Queue                       *posted):
         Composite(),
         _geometry((PAMI_GEOMETRY_CLASS*)g),
-        _root_topo(cmd->cmd.xfer_broadcast.root),
-        _justme_topo(((PAMI_GEOMETRY_CLASS*)g)->rank()),
+        _root_ep(cmd->cmd.xfer_broadcast.root),
+        _justme_ep(native_g->endpoint()),
+        _root_topo(&_root_ep,1,PAMI::tag_eplist()),
+        _justme_topo(&_justme_ep,1,PAMI::tag_eplist()),
         _count(0)
         {
           TRACE_FN_ENTER();
@@ -354,9 +360,9 @@ namespace CCMI
 
           // Discover the root node and intereesting topology information
           size_t           root        = cmd->cmd.xfer_broadcast.root;
-          bool             amRoot      = (root == _geometry->rank());
-          bool             amMaster    = _geometry->isLocalMasterParticipant();
-          bool             isRootLocal = t_local->isRankMember(root);
+          bool             amRoot      = (root == native_g->endpoint());
+          bool             amMaster    = t_master->isEndpointMember(native_g->endpoint());
+          bool             isRootLocal = t_local->isEndpointMember(root);
           void *deviceInfo             = _geometry->getKey(0,PAMI::Geometry::CKEY_MCAST_CLASSROUTEID);
           PAMI::Type::TypeCode *tc     = (PAMI::Type::TypeCode*)cmd->cmd.xfer_broadcast.type;
           size_t           bytes       = cmd->cmd.xfer_broadcast.typecount * tc->GetDataSize();
@@ -608,6 +614,8 @@ namespace CCMI
         PAMI_GEOMETRY_CLASS               * _geometry;
         PAMI::PipeWorkQueue                 _pwq0;
         PAMI::PipeWorkQueue                 _pwq1;
+        pami_endpoint_t                     _root_ep;
+        pami_endpoint_t                     _justme_ep;
         PAMI::Topology                      _root_topo;
         PAMI::Topology                      _justme_topo;
         pami_callback_t                     _master_done;
@@ -698,8 +706,10 @@ namespace CCMI
         _native_g(native_g),
         _geometry((PAMI_GEOMETRY_CLASS*)g),
         _deviceInfo(NULL),
-        _root_topo(cmd->cmd.xfer_broadcast.root),
-        _justme_topo(_geometry->rank()),
+        _root_ep(cmd->cmd.xfer_broadcast.root),
+        _justme_ep(native_g->endpoint()),
+        _root_topo(&_root_ep,1,PAMI::tag_eplist()),
+        _justme_topo(&_justme_ep,1,PAMI::tag_eplist()),
         _pwqBuf(0),
         _activePwqBuf(NULL)
         {
@@ -712,9 +722,9 @@ namespace CCMI
 
           // Discover the root node and intereesting topology information
           size_t           root        = cmd->cmd.xfer_broadcast.root;
-          bool             amRoot      = (root == _geometry->rank());
-          bool             amMaster    = _geometry->isLocalMasterParticipant();
-          bool             isRootLocal = t_local->isRankMember(root);
+          bool             amRoot      = (root == native_g->endpoint());
+          bool             amMaster    = t_master->isEndpointMember(native_g->endpoint());
+          bool             isRootLocal = t_local->isEndpointMember(root);
           _deviceInfo                  = _geometry->getKey(0,PAMI::Geometry::CKEY_MCAST_CLASSROUTEID);
           PAMI::Type::TypeCode *tc     = (PAMI::Type::TypeCode*)cmd->cmd.xfer_broadcast.type;
           size_t           bytes       = cmd->cmd.xfer_broadcast.typecount * tc->GetDataSize();
@@ -1085,6 +1095,8 @@ namespace CCMI
         pami_multicast_t                    _minfo_g;
         PAMI::PipeWorkQueue                 _pwq0;
         PAMI::PipeWorkQueue                 _pwq1;
+        pami_endpoint_t                     _root_ep;
+        pami_endpoint_t                     _justme_ep;
         PAMI::Topology                      _root_topo;
         PAMI::Topology                      _justme_topo;
         pami_callback_t                     _master_done;
@@ -1368,9 +1380,9 @@ namespace CCMI
 
           _all = *(PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
 
-          DO_DEBUG(for (unsigned j = 0; j < _all.size(); ++j) fprintf(stderr, "all[%u]=%zu, size %zu\n", j, (size_t)_all.index2Rank(j), _all.size()));
+          DO_DEBUG(for (unsigned j = 0; j < _all.size(); ++j) fprintf(stderr, "all[%u]=%zu, size %zu\n", j, (size_t)_all.index2Endpoint(j), _all.size()));
 
-          if (cmd->cmd.xfer_broadcast.root == __global.mapping.task())
+          if (cmd->cmd.xfer_broadcast.root == mInterface->endpoint())
           {
             _buffer_size = _bytes;
             _buffer = (char*) malloc(_buffer_size);
@@ -1435,7 +1447,7 @@ namespace CCMI
             _buffer = (char*) malloc(_buffer_size);
           }
 
-          if (cmd->cmd.xfer_broadcast.root == __global.mapping.task())
+          if (cmd->cmd.xfer_broadcast.root == _native->endpoint())
           {
             _data.configure(cmd->cmd.xfer_broadcast.buf, _bytes, _bytes, type_obj, type_obj);
             _results.configure(_buffer, _bytes, 0, type_obj, type_obj);

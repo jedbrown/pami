@@ -122,8 +122,6 @@ namespace PAMI
       // These methods were originally from the CCMI Geometry class
       inline unsigned                   comm();
       inline pami_topology_t           *getTopology(topologyIndex_t topo_num);
-      inline pami_task_t                localMasterParticipant();
-      inline bool                       isLocalMasterParticipant();
       inline pami_client_t		getClient();
 /** \todo  need to replace by attributes */
       inline void                       incrementAllreduceIteration(size_t context_id);
@@ -197,18 +195,6 @@ namespace PAMI
     inline pami_topology_t* Geometry<T_Geometry>::getTopology(topologyIndex_t topo_num)
     {
       return static_cast<T_Geometry*>(this)->getTopology_impl(topo_num);
-    }
-
-    template <class T_Geometry>
-    inline bool Geometry<T_Geometry>::isLocalMasterParticipant()
-    {
-      return static_cast<T_Geometry*>(this)->isLocalMasterParticipant_impl();
-    }
-
-    template <class T_Geometry>
-    inline pami_task_t Geometry<T_Geometry>::localMasterParticipant()
-    {
-      return static_cast<T_Geometry*>(this)->localMasterParticipant_impl();
     }
 
     template <class T_Geometry>

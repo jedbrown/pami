@@ -599,16 +599,6 @@ namespace PAMI
         }
       }
 
-      inline bool                      isLocalMasterParticipant_impl()
-      {
-        return _masterRank == _rank;
-      }
-
-      inline pami_task_t               localMasterParticipant_impl()
-      {
-        return _masterRank;
-      }
-
       inline pami_topology_t*          getTopology_impl(topologyIndex_t topo_num)
       {
         return(pami_topology_t*)&_topos[topo_num];

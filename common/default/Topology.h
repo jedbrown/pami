@@ -1356,8 +1356,10 @@ namespace PAMI {
 
     bool isEndpointMember_impl(pami_endpoint_t endpoint)
     {
-      // Todo, is this OK?
-      return isRankMember(endpoint);
+      for(unsigned i=0; i<__size; i++)
+        if(endpoint == index2Endpoint(i))
+          return true;
+      return false;
     }
 
     /// \brief is rank in topology

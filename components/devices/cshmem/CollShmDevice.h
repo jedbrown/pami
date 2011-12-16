@@ -794,27 +794,28 @@ namespace PAMI
                     {
                       mcast  = (pami_multicast_t *) static_cast<CollShmMessage<pami_multicast_t, CollShmDevice> *>(_msg)->getMulti();
                       topo   = (PAMI::Topology *)mcast->src_participants;
-                      root   = _device->getTopo()->rank2Index(topo->index2Rank(0));
+                      root   = _device->getTopo()->endpoint2Index(topo->index2Endpoint(0));
+                      PAMI::Topology *t = _device->getTopo();
                       _len   = mcast->bytes;
                       _wlen  = 0;
                       // Todo:  non-flat n-ary trees give incorrect results
                       // for bcast > COLLSHM_BUFSZ
                       if(_len <= COLLSHM_BUFSZ)
                         k      = 2;
-                      TRACE_DBG((stderr, "CollShmThread::initThread() MultiCast topo->index2Rank(0) %d\n", (int)topo->index2Rank(0)));
+                      TRACE_DBG((stderr, "CollShmThread::initThread() MultiCast topo->index2Endpoint(0) %d\n", (int)topo->index2Endpoint(0)));
                     } 
                       break;
                     case MultiCombine:
                       mcombine = (pami_multicombine_t *) static_cast<CollShmMessage<pami_multicombine_t, CollShmDevice> *>(_msg)->getMulti();
                       topo     = (PAMI::Topology *)mcombine->results_participants;
-                      root     = _device->getTopo()->rank2Index(topo->index2Rank(0));
+                      root     = _device->getTopo()->endpoint2Index(topo->index2Endpoint(0));
                       _sync_flag = 0;
                       _len     = mcombine->count << pami_dt_shift[mcombine->dtype] ;
                       _wlen    = 0;
                       k        = 2; // binary for better latency
-                      TRACE_DBG((stderr, "CollShmThread::initThread, Multicombine() topo=%p topo->index2Rank(0) %d size=%ld:\n",
+                      TRACE_DBG((stderr, "CollShmThread::initThread, Multicombine() topo=%p topo->index2Endpoint(0) %d size=%ld:\n",
                                  mcombine->results_participants,
-                                 (int)topo->index2Rank(0),
+                                 (int)topo->index2Endpoint(0),
                                  (int)topo->size()));
                       break;
                     case MultiSync:
@@ -830,8 +831,8 @@ namespace PAMI
 
                 _rrank           = (_arank + _nranks - root) % _nranks;
                 uint8_t rootcast = (uint8_t)root;
-                TRACE_DBG((stderr, "rootcast = %d, _root = %d, arank=%d nranks=%d\n",
-                           (int)rootcast, (int)_root, _arank, _nranks));
+                TRACE_DBG((stderr, "rootcast = %d, _root = %d, arank=%d nranks=%d rrank=%d\n",
+                           (int)rootcast, (int)_root, _arank, _nranks, _rrank));
                 if (rootcast != _root)
                   {
                     _root = rootcast;
@@ -1063,7 +1064,7 @@ namespace PAMI
               ///
               inline pami_result_t progressMulticast( CollShmMessage<pami_multicast_t, CollShmDevice> *msg)
               {
-                TRACE_DBG((stderr, "<%p>CollShmThread::progressMulticast() msg %p, idx %u\n", this, msg, _idx));
+                TRACE_DBG((stderr, "<%p>CollShmThread::progressMulticast() msg=%p _arank=%d _idx=%d\n", this, msg, _arank, _idx));
                 pami_result_t rc = PAMI_SUCCESS;
                 pami_multicast_t *mcast = msg->getMulti();
                 CollShmWindow *window = _device->getWindow(0, _arank, _idx);
@@ -1074,7 +1075,10 @@ namespace PAMI
                   {
                     if (_role == PARENT)
                       {
+                        TRACE_DBG((stderr, "<%p>CSM::PARENT(), produceData msg=%p _role=%d _arank=%d _idx=%d window=%p mcast=%p, mc->src=%p\n",
+                                   this, msg, _role, _arank, _idx, window, mcast, mcast->src));
                         _wlen = window->produceData(*(PAMI::PipeWorkQueue *)mcast->src, _len, _device->getSysdep());
+                        TRACE_DBG((stderr, "<%p>CSM::PARENT() produceData Done\n"));
 
                         if (_wlen == 0)
                           {
@@ -1185,6 +1189,7 @@ namespace PAMI
 
           CollShmDevice(PAMI::Device::Generic::Device *devices,
                         unsigned                       gid,
+                        pami_endpoint_t                my_endpoint,
                         PAMI::Topology                *topo,
                         T_MemoryManager               *csmm,
                         void                          *in_str) :
@@ -1194,7 +1199,7 @@ namespace PAMI
             _generics(devices),
             _gid(gid),
             _ntasks(topo->size()),
-            _tid(topo->rank2Index(__global.mapping.task())),
+            _tid(topo->endpoint2Index(my_endpoint)),
             _syncbits(0),
             _head(_numchannels),
             _tail(0),
@@ -1639,13 +1644,14 @@ namespace PAMI
           static const size_t sizeof_multicombine_msg = sizeof(CollShmMessage<pami_multicombine_t, T_CollShmDevice>);
 
           //CollShmModel(PAMI::Device::Generic::Device *device, unsigned commid, PAMI::Topology *topology, T_MemoryManager *csmm) :
-          CollShmModel(PAMI::Device::Generic::Device *device, unsigned commid, PAMI::Topology *topology, T_MemoryManager *csmm, void *ctrlstr) :
+          CollShmModel(PAMI::Device::Generic::Device *device, unsigned commid, pami_endpoint_t my_endpoint,
+                       PAMI::Topology *topology, T_MemoryManager *csmm, void *ctrlstr) :
             PAMI::Device::Interface::MulticastModel<CollShmModel, NillCollShmDevice, sizeof_msg>(*device, _status),
             PAMI::Device::Interface::MultisyncModel<CollShmModel, NillCollShmDevice, sizeof_msg>(*device, _status),
             PAMI::Device::Interface::MulticombineModel<CollShmModel, NillCollShmDevice, sizeof_msg>(*device, _status),
-            _peer(topology->rank2Index(__global.mapping.task())),
+            _peer(topology->endpoint2Index(my_endpoint)),
             _npeers(topology->size()),
-            _csdevice(device, commid, topology, csmm, ctrlstr)
+            _csdevice(device, commid, my_endpoint, topology, csmm, ctrlstr)
           {
             TRACE_DBG((stderr, "<%p>CollShmModel()\n", this));
             _csdevice.getWindow(0, 0, 0); // just simple checking
@@ -1691,8 +1697,6 @@ namespace PAMI
           pami_multicast_t *mcast,
           void             *devinfo)
       {
-        // PAMI::Topology *src_topo = (PAMI::Topology *)mcast->src_participants;
-        // unsigned rootpeer = __global.topology_local.rank2Index(src_topo->index2Rank(0));
         CollShmMessage<pami_multicast_t, T_CollShmDevice> *msg =
           new (&state) CollShmMessage<pami_multicast_t, T_CollShmDevice> (&_csdevice, client, context, mcast);
         _csdevice.postMsg(msg);
@@ -1719,8 +1723,6 @@ namespace PAMI
           pami_multicombine_t *mcombine,
           void             *devinfo)
       {
-        // PAMI::Topology *src_topo = (PAMI::Topology *)mcombine->data_participants;
-        // unsigned rootpeer = __global.topology_local.rank2Index(src_topo->index2Rank(0));
         TRACE_DBG((stderr, "POSTING MULTICOMBINE\n"));
         CollShmMessage<pami_multicombine_t, T_CollShmDevice> *msg =
           new (&state) CollShmMessage<pami_multicombine_t, T_CollShmDevice> (&_csdevice, client, context, mcombine);
