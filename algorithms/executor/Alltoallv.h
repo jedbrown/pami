@@ -453,9 +453,21 @@ namespace CCMI
                                          void           * cookie,
                                          pami_result_t    result )
         {
-          TRACE_MSG ((stderr, "<%p>Executor::AlltoallvExec::notifyRecvDone()\n", cookie));
+          TRACE_MSG ((stderr, "<%p>Executor::AlltoallvExec::notifyAvailRecvDone()\n", cookie));
           AlltoallvExec<T_ConnMgr, T_Type> *exec =  (AlltoallvExec<T_ConnMgr, T_Type> *) cookie;
           EXECUTOR_DEBUG((stderr, "notifyAvailRecvDone for phase %d\n", exec->_curphase);)
+
+          if (exec->_curphase >= exec->_startphase)
+            exec->sendNext();
+        }
+
+        static void notifyAvailSendDone( pami_context_t   context,
+                                         void           * cookie,
+                                         pami_result_t    result )
+        {
+          TRACE_MSG ((stderr, "<%p>Executor::AlltoallvExec::notifyAvailSendDone()\n", cookie));
+          AlltoallvExec<T_ConnMgr, T_Type> *exec =  (AlltoallvExec<T_ConnMgr, T_Type> *) cookie;
+          EXECUTOR_DEBUG((stderr, "notifyAvailSendDone for phase %d\n", exec->_curphase);)
 
           if (exec->_curphase >= exec->_startphase)
             exec->sendNext();
@@ -520,8 +532,8 @@ inline void  CCMI::Executor::AlltoallvExec<T_ConnMgr, T_Type>::sendNext ()
       _mldata._count             = -1;
       _mlsend.src_participants   = (pami_topology_t *) & _selftopology;
       _mlsend.dst_participants   = (pami_topology_t *) & _partopology;
-      _mlsend.cb_done.function   = NULL;
-      _mlsend.cb_done.clientdata = 0;
+      _mlsend.cb_done.function   = notifyAvailSendDone;
+      _mlsend.cb_done.clientdata = this;
       _mlsend.src                = NULL;
       _mlsend.dst                = NULL;
       _mlsend.bytes              = 0;
@@ -534,8 +546,7 @@ inline void  CCMI::Executor::AlltoallvExec<T_ConnMgr, T_Type>::sendNext ()
 
       EXECUTOR_DEBUG((stderr, "phase %d, send buffer available msg to %d\n", _curphase, _partopology.index2Endpoint(0));)
     }
-
-  if (_rphase.get(_parindex)) // buffer available at the right neighbor
+  else if (_rphase.get(_parindex)) // buffer available at the right neighbor
     {
       _rphase.clear(_parindex);
       _mrdata._phase             = _curphase;
