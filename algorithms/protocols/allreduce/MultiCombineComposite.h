@@ -306,7 +306,7 @@ namespace CCMI
             PAMI::Topology  *t_master    = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
             PAMI::Topology  *t_local     = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
             PAMI::Topology  *t_my_master = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_MASTER_TOPOLOGY_INDEX);
-            bool             amMaster    = t_master->isEndpointMember(native_g->endpoint());
+            bool             amMaster    = t_master->isEndpointMember(native_l->endpoint());
             _deviceInfo                  = _geometry->getKey(0,PAMI::Geometry::CKEY_MCOMB_CLASSROUTEID);
             // todo:  shared mem may need its own devinfo
             unsigned        typesize;
@@ -330,7 +330,7 @@ namespace CCMI
             if(root != 0xFFFFFFFF)
             {
               _root_ep    = root;
-              amRoot      = (native_g->endpoint() == root);
+              amRoot      = (native_l->endpoint() == root);
               new(&_t_root) PAMI::Topology(&_root_ep, 1, PAMI::tag_eplist());
               PAMI_assert(rc == PAMI_SUCCESS);
             }
@@ -567,8 +567,8 @@ namespace CCMI
             PAMI::Topology  *t_master       = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
             PAMI::Topology  *t_local        = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
             PAMI::Topology  *t_my_master    = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_MASTER_TOPOLOGY_INDEX);
-            bool             amMaster       = t_master->isEndpointMember(native_g->endpoint());
-            bool             amRoot         = native_g->endpoint() == cmd->cmd.xfer_reduce.root;
+            bool             amMaster       = t_master->isEndpointMember(native_l->endpoint());
+            bool             amRoot         = native_l->endpoint() == cmd->cmd.xfer_reduce.root;
             bool             sameNodeAsRoot = false;
             _deviceInfo                     = _geometry->getKey(0,PAMI::Geometry::CKEY_MCOMB_CLASSROUTEID);
             unsigned        typesize;
@@ -589,11 +589,11 @@ namespace CCMI
 
             // TODO:  fix for multi-ep
             new(&_t_root) PAMI::Topology(cmd->cmd.xfer_reduce.root);
-            new(&_t_me)   PAMI::Topology(native_g->endpoint());
+            new(&_t_me)   PAMI::Topology(native_l->endpoint());
 
             TRACE_FORMAT( "setting up PWQ's %p %p, sbytes=%ld buf=%p:  root=%d, me=%u, amRoot=%d _t_root=%d _t_me=%d _t_root=%p _t_me=%p",
                           &_pwq_src, &_pwq_dest, sbytes, cmd->cmd.xfer_reduce.sndbuf,
-                          cmd->cmd.xfer_reduce.root, native_g->endpoint(), amRoot,
+                          cmd->cmd.xfer_reduce.root, native_l->endpoint(), amRoot,
                           _t_root.index2Endpoint(0),_t_me.index2Endpoint(0),
                           &_t_root, &_t_me);
 
@@ -1160,7 +1160,7 @@ namespace CCMI
                                 rtype_obj);
             _pwq_temp.reset();
 
-            _amMaster       = _topology_g->isEndpointMember(_native_g->endpoint());
+            _amMaster       = _topology_g->isEndpointMember(_native_l->endpoint());
             _mcomb_l.connection_id        = 0;
             _mcomb_l.roles                = -1U;
             _mcomb_l.data_participants    = (pami_topology_t*)_topology_l;

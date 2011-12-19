@@ -345,7 +345,7 @@ namespace CCMI
         Composite(),
         _geometry((PAMI_GEOMETRY_CLASS*)g),
         _root_ep(cmd->cmd.xfer_broadcast.root),
-        _justme_ep(native_g->endpoint()),
+        _justme_ep(native_l->endpoint()),
         _root_topo(&_root_ep,1,PAMI::tag_eplist()),
         _justme_topo(&_justme_ep,1,PAMI::tag_eplist()),
         _count(0)
@@ -360,8 +360,8 @@ namespace CCMI
 
           // Discover the root node and intereesting topology information
           size_t           root        = cmd->cmd.xfer_broadcast.root;
-          bool             amRoot      = (root == native_g->endpoint());
-          bool             amMaster    = t_master->isEndpointMember(native_g->endpoint());
+          bool             amRoot      = (root == native_l->endpoint());
+          bool             amMaster    = t_master->isEndpointMember(native_l->endpoint());
           bool             isRootLocal = t_local->isEndpointMember(root);
           void *deviceInfo             = _geometry->getKey(0,PAMI::Geometry::CKEY_MCAST_CLASSROUTEID);
           PAMI::Type::TypeCode *tc     = (PAMI::Type::TypeCode*)cmd->cmd.xfer_broadcast.type;
@@ -707,7 +707,7 @@ namespace CCMI
         _geometry((PAMI_GEOMETRY_CLASS*)g),
         _deviceInfo(NULL),
         _root_ep(cmd->cmd.xfer_broadcast.root),
-        _justme_ep(native_g->endpoint()),
+        _justme_ep(native_l->endpoint()),
         _root_topo(&_root_ep,1,PAMI::tag_eplist()),
         _justme_topo(&_justme_ep,1,PAMI::tag_eplist()),
         _pwqBuf(0),
@@ -722,8 +722,8 @@ namespace CCMI
 
           // Discover the root node and intereesting topology information
           size_t           root        = cmd->cmd.xfer_broadcast.root;
-          bool             amRoot      = (root == native_g->endpoint());
-          bool             amMaster    = t_master->isEndpointMember(native_g->endpoint());
+          bool             amRoot      = (root == native_l->endpoint());
+          bool             amMaster    = t_master->isEndpointMember(native_l->endpoint());
           bool             isRootLocal = t_local->isEndpointMember(root);
           _deviceInfo                  = _geometry->getKey(0,PAMI::Geometry::CKEY_MCAST_CLASSROUTEID);
           PAMI::Type::TypeCode *tc     = (PAMI::Type::TypeCode*)cmd->cmd.xfer_broadcast.type;
