@@ -68,9 +68,8 @@ namespace PAMI
           {
             TRACE_FN_ENTER();
             pami_result_t rc = PAMI_ERROR;
-            pami_task_t *ranks = NULL;
-            ((Topology *)mcast->src_participants)->rankList(&ranks);
-            bool isroot = (ranks[0] == _myrank);
+            pami_task_t rank_0 =((Topology *)mcast->src_participants)->index2Rank(0);
+            bool isroot = (rank_0 == _myrank);
 
             unsigned classroute = 0;
 
