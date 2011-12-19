@@ -1387,6 +1387,20 @@ namespace PAMI {
             }
           }
           return false;
+        } else if(__type == PAMI_EPLIST_TOPOLOGY) 
+        { // this is dumb, find a rank in an ep list?
+          pami_endpoint_t ep;
+          if(__all_contexts) {
+            ep = PAMI_ENDPOINT_INIT(__client,rank,0);
+          }
+          else
+            ep = PAMI_ENDPOINT_INIT(__client,rank,__offset);
+          unsigned i;
+          for (i = 0; i < __size; ++i) {
+            if (ep == topo_eplist(i)) {
+              return true;
+            }
+          }
         }
       }
       // i.e. PAMI_EMPTY_TOPOLOGY
