@@ -1284,7 +1284,7 @@ namespace CCMI
 
           collObj *cobj = (collObj*) _alloc.allocateObject();
           TRACE_FORMAT( "<%p>MultiCastComposite2DeviceFactoryT::generate()", cobj);
-          new(cobj) collObj(_native_l,          // Native interface local
+          new(cobj) collObj(_native_l?_native_l:_native_g,// Native interface local (use global is local is null)
                             _native_g,          // Native Interface global
                             _cmgr,              // Connection Manager
                             geometry,           // Geometry Object
