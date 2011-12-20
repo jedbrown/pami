@@ -153,8 +153,8 @@ namespace PAMI
           _start(NULL),
           _end(NULL),
           _collshm (NULL),
-          _localrank (__global.mapping.task()), // hacking for now, only support single node job
-          _localsize (__global.mapping.size()), // hacking for now, only support single node job
+          _localrank(-1),
+          _localsize(-1),
           _key(0),
           _mm(mm)
         { }
@@ -765,6 +765,7 @@ namespace PAMI
         // fill in a vector of coll shmem control structure address offsets for sub-geometries
         // perform allreduce on the vector during geometry analyze()
         void getSGCtrlStrVec(pami_geometry_t geo,
+                             pami_endpoint_t my_ep,
                              uint64_t       *vec,
                              uint64_t       *ctlstr_offset)
         {
@@ -773,11 +774,11 @@ namespace PAMI
           PAMI::Topology *local_topo    = (PAMI::Topology *)geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
           PAMI::Topology *lm_topo       = (PAMI::Topology *)geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
 
-          uint master_rank              =  local_topo->index2Rank(0);
+          uint master_rank              =  local_topo->index2Endpoint(0);
           uint master_size              =  lm_topo->size();
-          uint master_index             =  lm_topo->rank2Index(master_rank);
+          uint master_index             =  lm_topo->endpoint2Index(master_rank);
           uint local_size               =  local_topo->size();
-          uint local_index              =  local_topo->rank2Index(__global.mapping.task());
+          uint local_index              =  local_topo->endpoint2Index(my_ep);
           TRACE_DBG((stderr, "getSGCtrlStrVec() geometry %p, master_rank %u, master_size %u, master_index %u, local_size %u, local_index %u\n",
                      geo, master_rank, master_size, master_index, local_size, local_index));
 

@@ -165,6 +165,29 @@ int destroy_geometry(pami_client_t    client,
   return rc;
 }
 
+int update_geometry(pami_client_t    client,
+                    pami_context_t   context,
+                    pami_geometry_t  geometry,
+                    pami_configuration_t  configuration[],
+                    size_t                num_configs)
+{
+  pami_result_t     rc             = PAMI_SUCCESS;
+  volatile unsigned geom_poll_flag = 1;
+  gContext = context;
+  rc = PAMI_Geometry_update (geometry,
+                             configuration,
+                             num_configs,
+                             context,
+                             cb_done,
+                             (void*)&geom_poll_flag);
+  if(rc) ; /* failed */
+  else  
+    while(geom_poll_flag)
+      PAMI_Context_advance (context, 1);
+
+  return rc;
+}
+
 
 int query_geometry(pami_client_t       client,
                    pami_context_t      context,

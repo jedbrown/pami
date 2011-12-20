@@ -188,6 +188,7 @@ namespace PAMI
                                              size_t                                     context_id);
 
       inline void setCleanupCallback(pami_event_function fcn, void *data);
+      inline void resetCleanupCallback(pami_event_function fcn, void *data);
 
     }; // class Geometry
 
@@ -416,6 +417,13 @@ namespace PAMI
 							 void                * data)
     {
       return static_cast<T_Geometry*>(this)->setCleanupCallback_impl (fcn, data);
+    }
+
+    template <class T_Geometry>
+    inline void Geometry<T_Geometry>::resetCleanupCallback(pami_event_function   fcn, 
+							 void                * data)
+    {
+      return static_cast<T_Geometry*>(this)->resetCleanupCallback_impl (fcn, data);
     }
 
   }; // namespace Geometry

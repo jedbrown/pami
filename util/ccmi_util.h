@@ -63,4 +63,35 @@ inline void templateName()
   fprintf(stderr, "%s\n", __PRETTY_FUNCTION__);
 }
 
+
+
+// Jenkin's one at a time hash
+static inline void init_hash(uint32_t *hash)
+{
+  (*hash) = 0;
+}
+static inline void update_hash(uint32_t *hash,
+                               char     *key,
+                               uint32_t len)
+{
+  uint32_t   i;
+  for (i=0; i<len; ++i)
+    {
+      (*hash) += key[i];
+      (*hash) += ((*hash) << 10);
+      (*hash) ^= ((*hash) >> 6);
+    }
+}
+static inline void finalize_hash(uint32_t *hash)
+{
+  uint32_t mask = 0x1FFFFF;
+  (*hash) += ((*hash) << 3);
+  (*hash) ^= ((*hash) >> 11);
+  (*hash) += ((*hash) << 15);
+  // 27 bit value good for CAU group id
+  (*hash) = ((*hash) & mask);        
+}
+
+
+
 #endif

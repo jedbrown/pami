@@ -949,13 +949,16 @@ namespace PAMI
       
       static void _cr_done(pami_context_t context, void *cookie, pami_result_t result)
         {
-          TRACE((stderr, "%p Classroute is done,barrier done, freeing\n", classroute));          
+          TRACE((stderr, "%p Classroute is done,barrier done, freeing\n", classroute));
           PostedClassRoute *classroute = (PostedClassRoute*)cookie;
-          if(context == classroute->_master_context)
-          classroute->_user_cb_done(context,
-                                    classroute->_user_cookie,
-                                    PAMI_SUCCESS);
-            __global.heap_mm->free(classroute->_bitmask);
+          if(classroute == classroute->getMasterCr())
+            {
+              classroute->_user_cb_done(context,
+                                        classroute->_user_cookie,
+                                        PAMI_SUCCESS);
+
+            }
+          __global.heap_mm->free(classroute->_bitmask);
           __global.heap_mm->free(cookie);
         }
 
@@ -971,16 +974,25 @@ namespace PAMI
             classroute->startAllreduce(context, _allreduce_done, classroute);
             classroute->_started = true;
           }
-          if(classroute->_done == true)
+          if(classroute->_done)
           {
-            TRACE((stderr, "%p Classroute is done, Dequeueing with barrier\n", classroute));
-            classroute->_result_cb_done(context,
-                                        classroute->_result_cookie,
-                                        classroute->_bitmask,
-                                        classroute->_geometry,
-                                        PAMI_SUCCESS);
-            PEGeometry   *g = (PEGeometry *)classroute->_geometry;
-            g->default_barrier(_cr_done, classroute, ctxt->getId(), context);
+            // This serializes the initialization of the contexts after the allreduce
+            if(classroute == classroute->_master_cr ||
+               classroute->getMasterCr()->_done_master==ctxt->getId())
+              {
+                classroute->_result_cb_done(context,
+                                            classroute->_result_cookie,
+                                            classroute->_bitmask,
+                                            classroute->_geometry,
+                                            PAMI_SUCCESS);
+                TRACE((stderr, "%p Classroute is done, Dequeueing with barrier\n", classroute));
+                PEGeometry   *g = (PEGeometry *)classroute->_geometry;
+                g->default_barrier(_cr_done, classroute, ctxt->getId(), context);
+              }            
+            else
+              return PAMI_EAGAIN;
+            
+            classroute->getMasterCr()->_done_master++;
             return PAMI_SUCCESS;
           }
           else
@@ -1001,6 +1013,7 @@ namespace PAMI
         PostedClassRoute<PEGeometry> *classroute = (PostedClassRoute<PEGeometry> *)cookie;
         //FIXME: discuss Charles
         PAMI::Context* ctxt = (PAMI::Context*)context;
+
         ctxt->_pgas_collreg->receive_global(0,classroute->_geometry,
                                                             &reduce_result[0],1);
         ctxt->_p2p_ccmi_collreg->receive_global(0,classroute->_geometry,
@@ -1027,14 +1040,15 @@ namespace PAMI
                        void                *result_cookie,
                        pami_event_function  user_cb_done,
                        void                *user_cookie,
-                       pami_context_t       master_context):
+                       PostedClassRoute    *master_cr):
         ClassRouteId(ar_algo, geometry, bitmask, count,
                      result_cb_done, result_cookie, user_cb_done,
                      user_cookie),
         _started(false),
         _done(false),
+        _done_master(0),
         _work(_do_classroute, this),
-        _master_context(master_context)
+        _master_cr(master_cr)
         {
         }
       inline PEGeometry *getGeometry()
@@ -1045,12 +1059,14 @@ namespace PAMI
         {
           context->_devices->_generics[context->getId()].postThread(&_work);
         }
-      volatile bool   _started;
-      volatile bool   _done;
-      GenericThread   _work;
-      pami_work_t     _barrier_work;
-      int             _count;
-      pami_context_t  _master_context;
+      PostedClassRoute * getMasterCr() {return (PostedClassRoute*) _master_cr; }
+      volatile bool    _started;
+      volatile bool    _done;
+      volatile int     _done_master;
+      GenericThread    _work;
+      pami_work_t      _barrier_work;
+      int              _count;
+      void            *_master_cr;
     };
 
     static pami_result_t _do_ue_barrier(pami_context_t context, void *cookie)
@@ -1118,7 +1134,7 @@ namespace PAMI
               {
                 rc = __global.heap_mm->memalign((void **)&to_reduce[n], 0,
                                             to_reduce_count * sizeof(uint64_t));
-            PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc to_reduce");
+                PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc to_reduce");
 		int nc = 0;
 		int ncur = 0;
                 _contexts[n]->_pgas_collreg->register_local(n,new_geometry,&to_reduce[n][0], ncur);
@@ -1155,10 +1171,10 @@ namespace PAMI
                                           NULL,
                                           0);
 
-            Geometry::Algorithm<PEGeometry> *ar_algo = (Geometry::Algorithm<PEGeometry> *)alg;
             PostedClassRoute<PEGeometry>    *cr[nctxt];
-            for(size_t n=start_off; n<nctxt; n++,ar_algo++)
+            for(size_t n=start_off; n<nctxt; n++)
             {
+              Geometry::Algorithm<PEGeometry> *ar_algo = &(*((std::map<size_t,Geometry::Algorithm<PEGeometry> > *)alg))[n];
               to_reduce[n][0]               = 0;
               to_reduce[n][1]               = 0;
               rc = __global.heap_mm->memalign((void **)&cr[n],0,sizeof(PostedClassRoute<PEGeometry>)*nctxt);
@@ -1171,7 +1187,7 @@ namespace PAMI
                                                      cr[n],
                                                      fn,
                                                      cookie,
-                                                     (pami_context_t)ctxt);
+                                                     cr[0]);
             }
             TRACE((stderr, "Allocated Classroutes:  %ld %p\n", n, cr[n]));
             if(bargeom)
@@ -1286,15 +1302,15 @@ namespace PAMI
                                           NULL,
                                           NULL,
                                           0);
-            Geometry::Algorithm<PEGeometry> *ar_algo = (Geometry::Algorithm<PEGeometry> *)alg;
             PostedClassRoute<PEGeometry>    *cr[nctxt];
             for(size_t n=start_off; n<nctxt; n++)
             {
+              Geometry::Algorithm<PEGeometry> *ar_algo = &(*((std::map<size_t,Geometry::Algorithm<PEGeometry> > *)alg))[n];
               rc = __global.heap_mm->memalign((void **)&cr[n], 0, sizeof(PostedClassRoute<PEGeometry>));
               PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PostedClassRoute<PEGeometry>");
               to_reduce[n][0] = 0;
               to_reduce[n][1] = 0;
-              new(cr[n])PostedClassRoute<PEGeometry>(&(ar_algo[n]),
+              new(cr[n])PostedClassRoute<PEGeometry>(ar_algo,
                                                      new_geometry,
                                                      to_reduce[n],
                                                      to_reduce_count,
@@ -1302,7 +1318,7 @@ namespace PAMI
                                                      cr[n],
                                                      fn,
                                                      cookie,
-                                                     (pami_context_t)ctxt);
+                                                     cr[0]);
             }
             if(bargeom)
             {
@@ -1394,15 +1410,15 @@ namespace PAMI
                                       NULL,
                                       NULL,
                                       0);
-        Geometry::Algorithm<PEGeometry> *ar_algo = (Geometry::Algorithm<PEGeometry> *)alg;
         for(size_t n=0; n<nctxt;n++)
         {
+          Geometry::Algorithm<PEGeometry> *ar_algo = &(*((std::map<size_t,Geometry::Algorithm<PEGeometry> > *)alg))[n];
           PostedClassRoute<PEGeometry>    *cr;
           rc = __global.heap_mm->memalign((void **)&cr, 0, sizeof(PostedClassRoute<PEGeometry>));
           PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PostedClassRoute<PEGeometry>");
           to_reduce[0] = 0;
           to_reduce[1] = 0;
-          new(cr)PostedClassRoute<PEGeometry>(&(ar_algo[n]),
+          new(cr)PostedClassRoute<PEGeometry>(ar_algo,
                                               new_geometry,
                                               to_reduce[n],
                                               to_reduce_count,
@@ -1410,7 +1426,7 @@ namespace PAMI
                                               cr,
                                               fn,
                                               cookie,
-                                              (pami_context_t)ctxt);
+                                              &cr[0]);
           _contexts[n]->post(&cr->_barrier_work,
                              _do_ue_barrier,
                              cr);

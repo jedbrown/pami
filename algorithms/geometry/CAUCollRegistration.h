@@ -47,34 +47,6 @@ namespace PAMI
   {
     namespace CAU
     {
-
-      // Implement Jenkin's one at a time hash
-      static inline void init_hash(uint32_t *hash)
-      {
-        (*hash) = 0;
-      }
-      static inline void update_hash(uint32_t *hash,
-                                     char     *key,
-                                     uint32_t len)
-      {
-        uint32_t   i;
-        for (i=0; i<len; ++i)
-        {
-          (*hash) += key[i];
-          (*hash) += ((*hash) << 10);
-          (*hash) ^= ((*hash) >> 6);
-        }
-      }
-      static inline void finalize_hash(uint32_t *hash)
-      {
-        uint32_t mask = 0x1FFFFF;
-        (*hash) += ((*hash) << 3);
-        (*hash) ^= ((*hash) >> 11);
-        (*hash) += ((*hash) << 15);
-        // 27 bit value good for CAU group id
-        (*hash) = ((*hash) & mask);        
-      }
-
       // 27 bit cau value generator
       // 6 bits job uniqifier
       // 21 bits hash
@@ -359,7 +331,6 @@ namespace PAMI
           _dispatch_id(dispatch_id),
           _geometry_map(geometry_map),
           _global_task(mapping.task()),
-          _global_size(mapping.size()),
           _lapi_handle(lapi_handle),
           _local_devs(ldev),
           _local_devs_bsr(ldevbsr),
@@ -457,9 +428,9 @@ namespace PAMI
                                                           tasks);
             *cau_gi = (PAMI::Device::CAUGeometryInfo *)_cau_geom_allocator.allocateObject();
             new(*cau_gi)PAMI::Device::CAUGeometryInfo(geometryInfo->_unique_key,geometry->comm());
-            geometry->setKey(0,Geometry::CKEY_MCAST_CLASSROUTEID,*cau_gi);
-            geometry->setKey(0,Geometry::CKEY_MCOMB_CLASSROUTEID,*cau_gi);
-            geometry->setKey(0,Geometry::CKEY_MSYNC_CLASSROUTEID,*cau_gi);
+            geometry->setKey(_context_id,Geometry::CKEY_MCAST_CLASSROUTEID,*cau_gi);
+            geometry->setKey(_context_id,Geometry::CKEY_MCOMB_CLASSROUTEID,*cau_gi);
+            geometry->setKey(_context_id,Geometry::CKEY_MSYNC_CLASSROUTEID,*cau_gi);
           }
 
         inline void setup_shm(T_Geometry                    *geometry,
@@ -479,10 +450,10 @@ namespace PAMI
                                  _client_id,
                                  _context,
                                  _context_id,
-                                 local_topo->endpoint2Index(_global_task),
+                                 local_topo->endpoint2Index(_my_endpoint),
                                  local_topo->size());
             // Add the geometry info to the geometry
-            geometry->setKey(0,PAMI::Geometry::CKEY_GEOMETRYCSNI, ni);
+            geometry->setKey(_context_id,PAMI::Geometry::CKEY_GEOMETRYCSNI, ni);
           }
         inline void setup_bsr(T_Geometry                     *geometry,
                               PAMI::Device::BSRGeometryInfo **bsr_gi,
@@ -492,7 +463,7 @@ namespace PAMI
 
             GeometryInfo   *geometryInfo = (GeometryInfo*)geometry->getKey(_context_id, Geometry::PAMI_CKEY_GEOMETRYINFO);
             *bsr_gi                      = (PAMI::Device::BSRGeometryInfo *)_bsr_geom_allocator.allocateObject();
-            uint            member_id    = local_topo->endpoint2Index(_global_task);
+            uint            member_id    = local_topo->endpoint2Index(_my_endpoint);
             Memory::sync();
             new(*bsr_gi)PAMI::Device::BSRGeometryInfo(geometry->comm(),
                                                       local_topo,
@@ -500,7 +471,7 @@ namespace PAMI
                                                       _csmm._windowsz,
                                                       _Lapi_env.MP_partition, // job_id
                                                       member_id);             // member_id
-            geometry->setKey(0,Geometry::CKEY_MSYNC_LOCAL_CLASSROUTEID,*bsr_gi);
+            geometry->setKey(_context_id,Geometry::CKEY_MSYNC_LOCAL_CLASSROUTEID,*bsr_gi);
           }
 
 
@@ -617,6 +588,7 @@ namespace PAMI
                   // Word 1-->num_local_tasks setup
                   // prepare for collshmem device control structure address distribution
                   _csmm.getSGCtrlStrVec(geometry,
+                                        _my_endpoint,
                                         &inout_val[1],
                                         &geometryInfo->_ctlstr_offset);
 
@@ -729,7 +701,7 @@ namespace PAMI
                   else if (0xFFFFFFFFFFFFFFFFULL != geometryInfo->_bsrstr_offset)
                   {
                     /* Master sets the flag, so shm can be freed at the end of geometry destroy */
-                    uint    myid      = local_topo->endpoint2Index(_global_task);
+                    uint    myid      = local_topo->endpoint2Index(_my_endpoint);
                     size_t  done_flag = myid + 1;
                     size_t *buf       = (size_t*)_csmm.offset_to_addr(geometryInfo->_bsrstr_offset);
                     *buf              = done_flag;
@@ -758,8 +730,8 @@ namespace PAMI
                   geometryInfo->_use_bsr                         = useBsr;
                   geometryInfo->_bsr_info                        = bsr_gi;
 
-                  geometry->setKey(0,Geometry::CKEY_GEOMETRYUSECAU,(void*)(&(geometryInfo->_use_cau)));
-                  geometry->setKey(0,Geometry::CKEY_GEOMETRYUSEBSR,(void*)(&(geometryInfo->_use_bsr)));
+                  geometry->setKey(_context_id,Geometry::CKEY_GEOMETRYUSECAU,(void*)(&(geometryInfo->_use_cau)));
+                  geometry->setKey(_context_id,Geometry::CKEY_GEOMETRYUSEBSR,(void*)(&(geometryInfo->_use_bsr)));
 
                   _barrier_reg.setNI(geometry, ni, &_g_barrier_ni);
                   _barrierbsr_reg.setNI(geometry, &_l_barrierbsr_ni, &_g_barrier_ni);
@@ -791,7 +763,7 @@ namespace PAMI
                   if(f0)
                   {
                     geometryInfo->_bsr_p2p_composite = f0->generate(geometry, &xfer);
-                    geometry->setKey(context_id,
+                    geometry->setKey(_context_id,
                                      PAMI::Geometry::CKEY_BARRIERCOMPOSITE2,
                                      (void*)geometryInfo->_bsr_p2p_composite);
                     PAMI_assert(geometryInfo->_bsr_p2p_composite != NULL);
@@ -800,7 +772,7 @@ namespace PAMI
                   {
 
                     geometryInfo->_shm_p2p_composite = f1->generate(geometry, &xfer);
-                    geometry->setKey(context_id,
+                    geometry->setKey(_context_id,
                                      PAMI::Geometry::CKEY_BARRIERCOMPOSITE3,
                                      (void*)geometryInfo->_shm_p2p_composite);
                     PAMI_assert(geometryInfo->_shm_p2p_composite != NULL);
@@ -817,7 +789,6 @@ namespace PAMI
                                             _context,
                                             _context_id);
                   }
-
                   ITRC(IT_CAU, "CollReg(phase 1): group_id=%d adding SHM/P2P Barrier collective to list\n",groupid);
                   geometry->addCollective(PAMI_XFER_BARRIER,
                                           _barriershmemp2p_reg,
@@ -847,14 +818,13 @@ namespace PAMI
                   // ///////////////////////////////////////////////////////////
                   if(useCau)
                   {
-                    ITRC(IT_CAU, "CollReg(phase 1): group_id=%d adding CAU/SHM Broadcast collective to list\n", groupid);
+                    ITRC(IT_CAU, "CollReg(phase 1): group_id=%d adding CAU/SHM Broadcast collective to list\n", groupid); 
                     geometry->addCollective(PAMI_XFER_BROADCAST,&_broadcast_reg,_context, _context_id);
                   }
                   else if(singleNode)
                   {
                     ITRC(IT_CAU, "CollReg(phase 1): group_id=%d adding CAU/SHM Broadcast collective to list (singlenode)\n", groupid);
                     geometry->addCollective(PAMI_XFER_BROADCAST,&_broadcast_reg,_context, _context_id);
-
                   }
                   
                   // ///////////////////////////////////////////////////////////
@@ -923,7 +893,7 @@ namespace PAMI
             // Get BSR member id
             PAMI::Topology *local_topo =
               (PAMI::Topology *) (g->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX));
-            uint            myid       = local_topo->endpoint2Index(_global_task);
+            uint            myid       = local_topo->endpoint2Index(_my_endpoint);
             // Since zero is the initial value, we use non-zero values as the flag.
             // The "last guy out" will return the shared control struct
             size_t          done_flag  = myid + 1;
@@ -1064,7 +1034,6 @@ namespace PAMI
         std::map<uint32_t,uint32_t>                                     _collision_map;
         pami_endpoint_t                                                 _my_endpoint;
         pami_task_t                                                     _global_task;
-        size_t                                                          _global_size;
         lapi_handle_t                                                   _lapi_handle;
         bool                                                            _enabled;
         // Connection Manager

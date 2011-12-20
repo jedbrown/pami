@@ -1294,10 +1294,11 @@ namespace PAMI
       inline pami_result_t collective_impl (pami_xfer_t * parameters)
       {
         TRACE_FN_ENTER();
-        Geometry::Algorithm<BGQGeometry> *algo = (Geometry::Algorithm<BGQGeometry> *)parameters->algorithm;
+        std::map<size_t,Geometry::Algorithm<BGQGeometry> > *algo =
+          (std::map<size_t,Geometry::Algorithm<BGQGeometry> > *)parameters->algorithm;
         TRACE_FORMAT("algorithm %p, context %p",algo,this);
         TRACE_FN_EXIT();
-        return algo->generate(parameters);
+        return (*algo)[_contextid].generate(parameters);
       }
 
       inline pami_result_t amcollective_dispatch_impl (pami_algorithm_t            algorithm,
@@ -1306,8 +1307,12 @@ namespace PAMI
                                                        void                     * cookie,
                                                        pami_collective_hint_t      options)
       {
-        Geometry::Algorithm<BGQGeometry> *algo = (Geometry::Algorithm<BGQGeometry> *)algorithm;
-        return algo->dispatch_set(dispatch, fn, cookie, options);
+        TRACE_FN_ENTER();
+        std::map<size_t,Geometry::Algorithm<BGQGeometry> > *algo =
+          (std::map<size_t,Geometry::Algorithm<BGQGeometry> > *)algorithm;
+        TRACE_FORMAT("algorithm %p, context %p, dispatch %zu, cookie %p, options %#X",algo,this,dispatch,cookie,*(unsigned*)&options);
+        TRACE_FN_EXIT();
+        return (*algo)[0].dispatch_set(dispatch, fn, cookie, options);
       }
 
       inline pami_result_t dispatch_impl (size_t                          id,

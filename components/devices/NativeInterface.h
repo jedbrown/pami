@@ -138,7 +138,7 @@ namespace PAMI
                                                                                                 size_t          context_id,
                                                                                                 size_t          client_id,
                                                                                                 int            *dispatch_id):
-      CCMI::Interfaces::NativeInterface(context_id, PAMI_ENDPOINT_INIT(_client, __global.mapping.task(), _context_id)),
+      CCMI::Interfaces::NativeInterface(context_id, PAMI_ENDPOINT_INIT(client, __global.mapping.task(), context_id)),
       _allocator(),
       _mcast_status(PAMI_SUCCESS),
       _msync_status(PAMI_SUCCESS),
@@ -342,7 +342,7 @@ namespace PAMI
                                                          size_t            context_id,
                                                          pami_task_t       task_id,
                                                          size_t            num_tasks):
-      CCMI::Interfaces::NativeInterface(context_id, PAMI_ENDPOINT_INIT(_client, __global.mapping.task(), _context_id)),
+      CCMI::Interfaces::NativeInterface(context_id, PAMI_ENDPOINT_INIT(client, __global.mapping.task(), context_id)),
       _allocator(),
       _model(model),
       _client(client),

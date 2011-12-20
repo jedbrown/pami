@@ -80,7 +80,24 @@ int main(int argc, char*argv[])
                      &task_id,       /* task id            */
                      &num_tasks);    /* number of tasks    */
 
-  if (rc == 1)
+  if (rc != PAMI_SUCCESS)
+    return 1;
+  int o;
+  for(o = -1; o <= gOptimize ; o++) /* -1 = default, 0 = de-optimize, 1 = optimize */
+  {
+
+    pami_configuration_t configuration[1];
+    configuration[0].name = PAMI_GEOMETRY_OPTIMIZE;
+    configuration[0].value.intval = o; /* de/optimize */
+    if(o == -1) ; /* skip update, use defaults */
+    else
+      rc |= update_geometry(client,
+                            context[0],
+                            world_geometry,
+                            configuration,
+                            1);
+
+    if (rc != PAMI_SUCCESS)
     return 1;
 
   /*  Query the world geometry for barrier algorithms */
@@ -94,7 +111,7 @@ int main(int argc, char*argv[])
                              &bar_must_query_algo,
                              &bar_must_query_md);
 
-  if (rc == 1)
+    if (rc != PAMI_SUCCESS)
     return 1;
 
   barrier.cb_done   = cb_done;
@@ -120,7 +137,7 @@ int main(int argc, char*argv[])
                                &allreduce_must_query_algo,
                                &allreduce_must_query_md);
 
-    if (rc == 1)
+      if (rc != PAMI_SUCCESS)
       return 1;
 
     for (nalg = 0; nalg < allreduce_num_algorithm[1]; nalg++)
@@ -129,8 +146,8 @@ int main(int argc, char*argv[])
 
       if (task_id == task_zero)
       {
-        printf("# Allreduce Bandwidth Test -- context = %d, protocol: %s, Metadata: range %zu <-> %zd, mask %#X\n",
-               iContext, allreduce_must_query_md[nalg].name,
+          printf("# Allreduce Bandwidth Test -- context = %d, optimize = %d, protocol: %s, Metadata: range %zu <-> %zd, mask %#X\n",
+                 iContext, o, allreduce_must_query_md[nalg].name,
                allreduce_must_query_md[nalg].range_lo,(ssize_t)allreduce_must_query_md[nalg].range_hi,
                allreduce_must_query_md[nalg].check_correct.bitmask_correct);
         printf("# Size(bytes)           cycles    bytes/sec    usec\n");
@@ -253,6 +270,8 @@ int main(int argc, char*argv[])
   free(bar_always_works_md);
   free(bar_must_query_algo);
   free(bar_must_query_md);
+
+  }
 
   sbuf = (char*)sbuf - gBuffer_offset;
   free(sbuf);

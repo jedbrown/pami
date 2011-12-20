@@ -72,7 +72,7 @@ namespace CCMI
           TRACE_FORMAT( "<%p> type %#zX, count %zu, root %zu", this, (size_t)cmd->cmd.xfer_broadcast.type, cmd->cmd.xfer_broadcast.typecount, (size_t)cmd->cmd.xfer_broadcast.root);
 
           PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)g;
-          void *deviceInfo                  = geometry->getKey(0, T_Gkey);
+          void *deviceInfo                  = geometry->getKey(ctxt_id, T_Gkey);
           PAMI::Topology *destinations = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
 
 
@@ -184,8 +184,8 @@ namespace CCMI
           unsigned        sizeOfType = type_obj->GetDataSize();
           _bytes = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
 
-          _deviceMcastInfo                  = _geometry->getKey(0,PAMI::Geometry::CKEY_MCAST_CLASSROUTEID);
-          _deviceMsyncInfo                  = _geometry->getKey(0,PAMI::Geometry::CKEY_MSYNC_CLASSROUTEID);
+          _deviceMcastInfo                  = _geometry->getKey(mInterface->contextid(),PAMI::Geometry::CKEY_MCAST_CLASSROUTEID);
+          _deviceMsyncInfo                  = _geometry->getKey(mInterface->contextid(),PAMI::Geometry::CKEY_MSYNC_CLASSROUTEID);
 
           _all = *(PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
           _all.subtractTopology(&_destinations,  &_root_topo);
@@ -363,7 +363,7 @@ namespace CCMI
           bool             amRoot      = (root == native_l->endpoint());
           bool             amMaster    = t_master->isEndpointMember(native_l->endpoint());
           bool             isRootLocal = t_local->isEndpointMember(root);
-          void *deviceInfo             = _geometry->getKey(0,PAMI::Geometry::CKEY_MCAST_CLASSROUTEID);
+          void *deviceInfo             = _geometry->getKey(native_l->contextid(),PAMI::Geometry::CKEY_MCAST_CLASSROUTEID);
           PAMI::Type::TypeCode *tc     = (PAMI::Type::TypeCode*)cmd->cmd.xfer_broadcast.type;
           size_t           bytes       = cmd->cmd.xfer_broadcast.typecount * tc->GetDataSize();
           size_t           numMasters  = t_master->size();
@@ -725,7 +725,7 @@ namespace CCMI
           bool             amRoot      = (root == native_l->endpoint());
           bool             amMaster    = t_master->isEndpointMember(native_l->endpoint());
           bool             isRootLocal = t_local->isEndpointMember(root);
-          _deviceInfo                  = _geometry->getKey(0,PAMI::Geometry::CKEY_MCAST_CLASSROUTEID);
+          _deviceInfo                  = _geometry->getKey(native_l->contextid(),PAMI::Geometry::CKEY_MCAST_CLASSROUTEID);
           PAMI::Type::TypeCode *tc     = (PAMI::Type::TypeCode*)cmd->cmd.xfer_broadcast.type;
           size_t           bytes       = cmd->cmd.xfer_broadcast.typecount * tc->GetDataSize();
           size_t           numMasters  = t_master->size();
@@ -778,6 +778,7 @@ namespace CCMI
           {
             // Participate in local and global multicast as the source
             TRACE_STRING( "MultiCastComposite2Device:  Root/Master");
+            
 
             if (numLocal > 1)
             {
@@ -1018,7 +1019,7 @@ namespace CCMI
 
           if (T_Sync)
           {
-            _deviceMsyncInfo          = _geometry->getKey(0,PAMI::Geometry::CKEY_MSYNC_CLASSROUTEID);
+            _deviceMsyncInfo          = _geometry->getKey(native_l->contextid(),PAMI::Geometry::CKEY_MSYNC_CLASSROUTEID);
             // Initialize the msync
             _msync.cb_done.function   = cb_msync_done;
             _msync.cb_done.clientdata = this;
@@ -1376,7 +1377,7 @@ namespace CCMI
           unsigned        sizeOfType = type_obj->GetDataSize();
           _bytes = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
 
-          _deviceInfo                  = _geometry->getKey(0,PAMI::Geometry::CKEY_MCOMB_CLASSROUTEID);
+          _deviceInfo                  = _geometry->getKey(mInterface->contextid(),PAMI::Geometry::CKEY_MCOMB_CLASSROUTEID);
 
           _all = *(PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
 

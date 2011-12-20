@@ -180,7 +180,7 @@ namespace CCMI{namespace Adaptor{namespace Barrier{
         TRACE_FN_ENTER();
 
         PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)g;
-        _deviceInfo          = geometry->getKey(0, T_Gkey); //todo:  fix for multicontext
+        _deviceInfo          = geometry->getKey(native->contextid(), T_Gkey);
         TRACE_FORMAT( "_devinfo %p",_deviceInfo);
 
         _minfo.cb_done.function   = NULL;
@@ -331,8 +331,8 @@ namespace CCMI{namespace Adaptor{namespace Barrier{
 
         // If the global "master" topology has only one rank, the local barrier will
         // suffice to implement the barrier
-        _deviceInfoG = _geometry->getKey(0,T_Gkey);
-        _deviceInfoL = _geometry->getKey(0,T_Lkey);
+        _deviceInfoG = mInterfaceG? _geometry->getKey(mInterfaceG->contextid(),T_Gkey):NULL;
+        _deviceInfoL = mInterfaceL? _geometry->getKey(mInterfaceL->contextid(),T_Lkey):NULL;
         if (t_master->size() == 1 && t_local->size() != 1)
         {
           _minfo_l0.cb_done.function   =  NULL; //fn;

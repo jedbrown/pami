@@ -67,6 +67,14 @@ namespace PAMI
         __global.heap_mm->free(array[i]);
       __global.heap_mm->free(array);
     }
+    static void resetFactoryCache (pami_context_t   ctxt,
+                                   void           * factory,
+                                   pami_result_t    result)
+    {
+      CCMI::Adaptor::CollectiveProtocolFactory *cf =
+        (CCMI::Adaptor::CollectiveProtocolFactory *) factory;
+      cf->clearCache();
+    }
 
     class Common :
     public Geometry<PAMI::Geometry::Common>
@@ -106,28 +114,6 @@ namespace PAMI
                                        comm,
                                        nranks,
                                        ranks),
-      _allreduces(ncontexts),
-      _broadcasts(ncontexts),
-      _reduces(ncontexts),
-      _allgathers(ncontexts),
-      _allgathervs(ncontexts),
-      _allgatherv_ints(ncontexts),
-      _scatters(ncontexts),
-      _scattervs(ncontexts),
-      _scatterv_ints(ncontexts),
-      _gathers(ncontexts),
-      _gathervs(ncontexts),
-      _gatherv_ints(ncontexts),
-      _alltoalls(ncontexts),
-      _alltoallvs(ncontexts),
-      _alltoallv_ints(ncontexts),
-      _reduce_scatters(ncontexts),
-      _ambroadcasts(ncontexts),
-      _amscatters(ncontexts),
-      _amgathers(ncontexts),
-      _amreduces(ncontexts),
-      _scans(ncontexts),
-      _barriers(ncontexts),
       _ue_barrier(NULL),
       _commid(comm),
       _client(client),
@@ -142,7 +128,6 @@ namespace PAMI
         TRACE_ERR((stderr, "<%p>Common(ranklist)\n", this));
         // this creates the topology including all subtopologies
         new(&_topos[DEFAULT_TOPOLOGY_INDEX]) PAMI::Topology(_ranks, nranks);
-        //fprintf(stderr, "<%u><%p> geometry our _ranks %p\n", __LINE__,this,_ranks);
         buildSpecialTopologies();
 
         // Initialize remaining members
@@ -210,28 +195,6 @@ namespace PAMI
                                        comm,
                                        neps,
                                        eps),
-       _allreduces(ncontexts),
-      _broadcasts(ncontexts),
-      _reduces(ncontexts),
-      _allgathers(ncontexts),
-      _allgathervs(ncontexts),
-      _allgatherv_ints(ncontexts),
-      _scatters(ncontexts),
-      _scattervs(ncontexts),
-      _scatterv_ints(ncontexts),
-      _gathers(ncontexts),
-      _gathervs(ncontexts),
-      _gatherv_ints(ncontexts),
-      _alltoalls(ncontexts),
-      _alltoallvs(ncontexts),
-      _alltoallv_ints(ncontexts),
-      _reduce_scatters(ncontexts),
-      _ambroadcasts(ncontexts),
-      _amscatters(ncontexts),
-      _amgathers(ncontexts),
-      _amreduces(ncontexts),
-      _scans(ncontexts),
-      _barriers(ncontexts),
       _ue_barrier(NULL),
       _commid(comm),
       _client(client),
@@ -246,7 +209,6 @@ namespace PAMI
         TRACE_ERR((stderr, "<%p>Common(endpointlist)\n", this));
         // this creates the topology including all subtopologies
         new(&_topos[DEFAULT_TOPOLOGY_INDEX]) PAMI::Topology(_endpoints, neps, true);
-        //fprintf(stderr, "<%u><%p> geometry our _ranks %p\n", __LINE__,this, _endpoints);
         buildSpecialTopologies();
 
         // Initialize remaining members
@@ -311,28 +273,6 @@ namespace PAMI
                                        comm,
                                        numranges,
                                        rangelist),
-      _allreduces(ncontexts),
-      _broadcasts(ncontexts),
-      _reduces(ncontexts),
-      _allgathers(ncontexts),
-      _allgathervs(ncontexts),
-      _allgatherv_ints(ncontexts),
-      _scatters(ncontexts),
-      _scattervs(ncontexts),
-      _scatterv_ints(ncontexts),
-      _gathers(ncontexts),
-      _gathervs(ncontexts),
-      _gatherv_ints(ncontexts),
-      _alltoalls(ncontexts),
-      _alltoallvs(ncontexts),
-      _alltoallv_ints(ncontexts),
-      _reduce_scatters(ncontexts),
-      _ambroadcasts(ncontexts),
-      _amscatters(ncontexts),
-      _amgathers(ncontexts),
-      _amreduces(ncontexts),
-      _scans(ncontexts),
-      _barriers(ncontexts),
       _ue_barrier(NULL),
       _commid(comm),
       _client(client),
@@ -368,7 +308,6 @@ namespace PAMI
 
           _ranks_malloc = true;
           rc = __global.heap_mm->memalign((void **)&_ranks, 0, nranks * sizeof(pami_task_t));
-          //fprintf(stderr, "<%u><%p> geometry ranks_malloc true - %p\n", __LINE__,this,_ranks);
           PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _ranks");
 
           for (k = 0, i = 0; i < numranges; i++)
@@ -395,7 +334,6 @@ namespace PAMI
         {
           pami_result_t rc = PAMI_SUCCESS;
           rc = _topos[LIST_TOPOLOGY_INDEX].rankList(&_ranks);
-          //fprintf(stderr, "<%u><%p> geometry our _ranks %p\n", __LINE__,this,_ranks);
           PAMI_assert(rc == PAMI_SUCCESS);
         }
         // Initialize remaining members
@@ -458,28 +396,6 @@ namespace PAMI
                                        mapping,
                                        comm,
                                        topology),
-      _allreduces(ncontexts),
-      _broadcasts(ncontexts),
-      _reduces(ncontexts),
-      _allgathers(ncontexts),
-      _allgathervs(ncontexts),
-      _allgatherv_ints(ncontexts),
-      _scatters(ncontexts),
-      _scattervs(ncontexts),
-      _scatterv_ints(ncontexts),
-      _gathers(ncontexts),
-      _gathervs(ncontexts),
-      _gatherv_ints(ncontexts),
-      _alltoalls(ncontexts),
-      _alltoallvs(ncontexts),
-      _alltoallv_ints(ncontexts),
-      _reduce_scatters(ncontexts),
-      _ambroadcasts(ncontexts),
-      _amscatters(ncontexts),
-      _amgathers(ncontexts),
-      _amreduces(ncontexts),
-      _scans(ncontexts),
-      _barriers(ncontexts),
       _ue_barrier(NULL),
       _commid(comm),
       _client(client),
@@ -498,7 +414,6 @@ namespace PAMI
         if (_topos[DEFAULT_TOPOLOGY_INDEX].type() == PAMI_LIST_TOPOLOGY)
         {  
           _topos[DEFAULT_TOPOLOGY_INDEX].rankList(&_ranks);
-          //fprintf(stderr, "<%u><%p> geometry our _ranks %p\n", __LINE__,this,_ranks);
         }
         buildSpecialTopologies();
 
@@ -631,7 +546,6 @@ namespace PAMI
       inline void                      freeAllocations_impl()
       {
         TRACE_FN_ENTER();
-        //fprintf(stderr, "<%u><%p>geometry freeallocations\n", __LINE__,this);
         int sz = _cleanupFcns.size();
         for (int i=0; i<sz; i++)
         {
@@ -640,7 +554,6 @@ namespace PAMI
           if (fn) fn(NULL, cd, PAMI_SUCCESS);
         }
 
-        //fprintf(stderr, "<%u><%p>geometry free ranklist now %p\n", __LINE__,this,_ranks);
         if (_ranks_malloc) __global.heap_mm->free(_ranks);
 
         _ranks = NULL;
@@ -754,115 +667,40 @@ namespace PAMI
         _kvcstore[key][context_id] = value;
       }
 
-
-      inline AlgoLists<Geometry<PAMI::Geometry::Common> > * algorithms_get_lists(pami_xfer_type_t  colltype)
-      {
-        TRACE_ERR((stderr, "<%p>Common::algorithms_get_lists(%u)\n", this, colltype));
-        switch (colltype)
-        {
-        case PAMI_XFER_BROADCAST:
-          return &_broadcasts;
-          break;
-        case PAMI_XFER_ALLREDUCE:
-          return &_allreduces;
-          break;
-        case PAMI_XFER_REDUCE:
-          return &_reduces;
-          break;
-        case PAMI_XFER_ALLGATHER:
-          return &_allgathers;
-          break;
-        case PAMI_XFER_ALLGATHERV:
-          return &_allgathervs;
-          break;
-        case PAMI_XFER_ALLGATHERV_INT:
-          return &_allgatherv_ints;
-          break;
-        case PAMI_XFER_SCATTER:
-          return &_scatters;
-          break;
-        case PAMI_XFER_SCATTERV:
-          return &_scattervs;
-          break;
-        case PAMI_XFER_SCATTERV_INT:
-          return &_scatterv_ints;
-          break;
-        case PAMI_XFER_GATHER:
-          return &_gathers;
-          break;
-        case PAMI_XFER_GATHERV:
-          return &_gathervs;
-          break;
-        case PAMI_XFER_GATHERV_INT:
-          return &_gatherv_ints;
-          break;
-        case PAMI_XFER_BARRIER:
-          return &_barriers;
-          break;
-        case PAMI_XFER_ALLTOALL:
-          return &_alltoalls;
-          break;
-        case PAMI_XFER_ALLTOALLV:
-          return &_alltoallvs;
-          break;
-        case PAMI_XFER_ALLTOALLV_INT:
-          return &_alltoallv_ints;
-          break;
-        case PAMI_XFER_SCAN:
-          return &_scans;
-          break;
-        case PAMI_XFER_AMBROADCAST:
-          return &_ambroadcasts;
-          break;
-        case PAMI_XFER_AMSCATTER:
-          return &_amscatters;
-          break;
-        case PAMI_XFER_AMGATHER:
-          return &_amgathers;
-          break;
-        case PAMI_XFER_AMREDUCE:
-          return &_amreduces;
-          break;
-        case PAMI_XFER_REDUCE_SCATTER:
-          return &_reduce_scatters;
-          break;
-        default:
-          PAMI_abortf("colltype %u\n", colltype);
-          return NULL;
-          break;
-        }
-      }
-
-      inline pami_result_t             addCollective_impl(pami_xfer_type_t                            colltype,
+      inline pami_result_t             addCollective_impl(pami_xfer_type_t  colltype,
                                                           Factory          *factory,
                                                           pami_context_t    context,
-                                                          size_t                                     context_id)
+                                                          size_t            context_id)
       {
-        TRACE_ERR((stderr, "<%p>Common::addCollective_impl()\n", this));
-        AlgoLists<Geometry<PAMI::Geometry::Common> > * alist = algorithms_get_lists(colltype);
-        alist->addCollective(factory, this, context, context_id);
+        uint32_t hash = factory->nameHash();
+        Algorithm<Geometry<PAMI::Geometry::Common> >*elem = &_algoTable[colltype][hash][context_id];
+        new(elem) Algorithm<Geometry<PAMI::Geometry::Common> >(factory, this);
+        setCleanupCallback(resetFactoryCache, factory);
         return PAMI_SUCCESS;
       }
 
-      inline pami_result_t             rmCollective_impl(pami_xfer_type_t                            colltype,
+      inline pami_result_t             rmCollective_impl(pami_xfer_type_t  colltype,
                                                          Factory          *factory,
                                                          pami_context_t    context,
-                                                         size_t                                     context_id)
+                                                         size_t            context_id)
       {
-        TRACE_ERR((stderr, "<%p>Common::rmCollective_impl()\n", this));
-        AlgoLists<Geometry<PAMI::Geometry::Common> > * alist = algorithms_get_lists(colltype);
-        alist->rmCollective(factory, this);
+        if(!factory) return PAMI_SUCCESS;
+        resetCleanupCallback(resetFactoryCache, factory);
+        uint32_t hash = factory->nameHash();
+        _algoTable[colltype][hash].erase(context_id);
+        _algoTable[colltype].erase(hash);
         return PAMI_SUCCESS;
       }
 
-      inline pami_result_t             rmCollectiveCheck_impl(pami_xfer_type_t                            colltype,
+      inline pami_result_t             rmCollectiveCheck_impl(pami_xfer_type_t  colltype,
                                                               Factory          *factory,
                                                               pami_context_t    context,
-                                                              size_t                                     context_id)
+                                                              size_t            context_id)
       {
-        TRACE_ERR((stderr, "<%p>Common::rmCollectiveCheck_impl()\n", this));
-        AlgoLists<Geometry<PAMI::Geometry::Common> > * alist = algorithms_get_lists(colltype);
-        alist->rmCollectiveCheck(factory, this);
+        resetCleanupCallback(resetFactoryCache, factory);
+        uint32_t hash = factory->nameHash();
+        _algoTableCheck[colltype][hash].erase(context_id);
+        _algoTableCheck[colltype].erase(hash);
         return PAMI_SUCCESS;
       }
 
@@ -871,18 +709,18 @@ namespace PAMI
                                                                pami_context_t    context,
                                                                size_t                                     context_id)
       {
-        TRACE_ERR((stderr, "<%p>Common::addCollectiveCheck_impl()\n", this));
-        AlgoLists<Geometry<PAMI::Geometry::Common> > * alist = algorithms_get_lists(colltype);
-        alist->addCollectiveCheck(factory, this, context, context_id);
+        uint32_t hash = factory->nameHash();
+        Algorithm<Geometry<PAMI::Geometry::Common> >*elem = &_algoTableCheck[colltype][hash][context_id];
+        new(elem) Algorithm<Geometry<PAMI::Geometry::Common> >(factory, this);
+        setCleanupCallback(resetFactoryCache, factory);
         return PAMI_SUCCESS;
       }
 
       pami_result_t                    algorithms_num_impl(pami_xfer_type_t  colltype,
                                                            size_t             *lengths)
       {
-        TRACE_ERR((stderr, "<%p>Common::algorithms_num_impl()\n", this));
-        AlgoLists<Geometry<PAMI::Geometry::Common> > * alist = algorithms_get_lists(colltype);
-        alist->lengths(lengths);
+        lengths[0] = _algoTable[colltype].size();
+        lengths[1] = _algoTableCheck[colltype].size();
         return PAMI_SUCCESS;
       }
 
@@ -894,34 +732,33 @@ namespace PAMI
                                                              pami_metadata_t   *mdata1,
                                                              size_t             num1)
       {
-        TRACE_ERR((stderr, "<%p>Common::algorithms_info_impl(), algs0=%p, num0=%zu, mdata0=%p, algs1=%p, num1=%zu, mdata1=%p\n", this, algs0, num0, mdata0, algs1, num1, mdata1));
-        AlgoLists<Geometry<PAMI::Geometry::Common> > * alist = algorithms_get_lists(colltype);
-
-        for (size_t i = 0; i < num0; i++)
-        {
-          TRACE_ERR((stderr, "<%p> alist->_algo_array[%zu]=%p, mdata0[%zu]=%p\n", this, i, alist->_algo_array[i], i, mdata0 ? &mdata0[i] : NULL));
-
-          if (algs0)
-            algs0[i]   = (pami_algorithm_t) alist->_algo_array[i];
-
-          if (mdata0)
-            alist->_algo_array[i][0].metadata(&mdata0[i]);
-        }
-
-        for (size_t i = 0; i < num1; i++)
-        {
-          TRACE_ERR((stderr, "<%p> alist->_algo_array_check[%zu]=%p, mdata1[%zu]=%p\n", this, i, alist->_algo_array_check[i], i, mdata1 ? &mdata1[i] : NULL));
-
-          if (algs1)
-            algs1[i] = (pami_algorithm_t) alist->_algo_array_check[i];
-
-          if (mdata1)
-            alist->_algo_array_check[i][0].metadata(&mdata1[i]);
-        }
-
+        std::map<uint32_t,std::map<size_t, Algorithm<Geometry<PAMI::Geometry::Common> > > > *m = &_algoTable[colltype];
+        std::map<uint32_t,std::map<size_t, Algorithm<Geometry<PAMI::Geometry::Common> > > >::iterator iter;
+        size_t i;
+        for(i=0,iter=m->begin();iter!=m->end() && i<num0;iter++,i++)
+          {
+            if(algs0)
+              algs0[i] = (pami_algorithm_t) &iter->second;
+            if(mdata0)
+              {
+                Algorithm<Geometry<PAMI::Geometry::Common> >*tmp_a = &((iter->second)[0]);
+                tmp_a[0].metadata(&mdata0[i]);
+              }
+          }
+        m = &_algoTableCheck[colltype];
+        for(i=0,iter=m->begin();iter!=m->end() && i<num1;iter++,i++)
+          {
+            if(algs1)
+              algs1[i] = (pami_algorithm_t) &iter->second;
+            if(mdata1)
+              {
+                Algorithm<Geometry<PAMI::Geometry::Common> >*tmp_a = &((iter->second)[0]);
+                tmp_a[0].metadata(&mdata1[i]);
+              }
+          }
         return PAMI_SUCCESS;
       }
-
+      
       pami_result_t                    default_barrier(pami_event_function       cb_done,
                                                        void                   * cookie,
                                                        size_t                   ctxt_id,
@@ -930,8 +767,11 @@ namespace PAMI
         TRACE_ERR((stderr, "<%p>Common::default_barrier()\n", this));
         pami_xfer_t cmd;
         cmd.cb_done = cb_done;
-        cmd.cookie = cookie;
-        return _barriers._algo_array[0][ctxt_id].generate(&cmd);
+        cmd.cookie  = cookie;
+        std::map<uint32_t,std::map<size_t, Algorithm<Geometry<PAMI::Geometry::Common> > > >::iterator iter
+          = _algoTable[PAMI_XFER_BARRIER].begin();
+        Algorithm<Geometry<PAMI::Geometry::Common> >*alg = &((iter->second)[ctxt_id]);
+        return alg->generate(&cmd);
       }
 
       pami_result_t                    ue_barrier_impl(pami_event_function     cb_done,
@@ -944,9 +784,6 @@ namespace PAMI
         pami_xfer_t cmd;
         cmd.cb_done = cb_done;
         cmd.cookie = cookie;
-//        pami_metadata_t mdata;
-//        _ue_barrier._factory->metadata(&mdata);
-//        fprintf(stderr, "ue_barrier <%s>\n", mdata.name);
         return _ue_barrier[ctxt_id].generate(&cmd);
       }
 
@@ -984,6 +821,27 @@ namespace PAMI
         _cleanupFcns.push_back(fcn);
         _cleanupDatas.push_back(data);
       }
+      void resetCleanupCallback_impl(pami_event_function fcn, void *data)
+      {
+        std::list<pami_event_function>::iterator itFcn = _cleanupFcns.begin();
+        std::list<void*>::iterator itData = _cleanupDatas.begin();
+
+        /* search for the fn/data to reset */
+        for (; (itFcn != _cleanupFcns.end()) && (itData != _cleanupDatas.end()); itFcn++,itData++)
+          {
+            pami_event_function  fn = *itFcn;
+            void                *cd = *itData;
+
+            if((cd == data) && (fn == fcn))
+            {  
+              if (fn) fn(NULL, cd, PAMI_SUCCESS);
+              _cleanupFcns.erase(itFcn);
+              _cleanupDatas.erase(itData);
+              return;
+            }
+          }
+      }
+
 
       typedef bool (*CheckpointCb)(void *data);
 
@@ -1076,33 +934,8 @@ namespace PAMI
       }
 
     private:
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _allreduces;
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _broadcasts;
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _reduces;
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _allgathers;
-
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _allgathervs;
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _allgatherv_ints;
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _scatters;
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _scattervs;
-
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _scatterv_ints;
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _gathers;
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _gathervs;
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _gatherv_ints;
-
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _alltoalls;
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _alltoallvs;
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _alltoallv_ints;
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _reduce_scatters;
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _ambroadcasts;
-
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _amscatters;
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _amgathers;
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _amreduces;
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _scans;
-
-      AlgoLists<Geometry<PAMI::Geometry::Common> >  _barriers;
+      std::map<uint32_t, std::map<uint32_t,std::map<size_t, Algorithm<Geometry<PAMI::Geometry::Common> > > > > _algoTable;
+      std::map<uint32_t, std::map<uint32_t,std::map<size_t, Algorithm<Geometry<PAMI::Geometry::Common> > > > > _algoTableCheck;
       Algorithm<PAMI::Geometry::Common>            *_ue_barrier;
 
       void ***                                      _kvcstore;

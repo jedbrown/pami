@@ -307,6 +307,7 @@ size_t** gValidTable     = NULL;
 unsigned gSelector       = 1;
 char*    gSelected       ;
 unsigned gParentless     = 1;
+int      gOptimize       = -1; /* default, no de/optimize */
 
 void setup_op_dt(size_t ** validTable,char* sDt, char* sOp);
 
@@ -384,6 +385,14 @@ void setup_env()
   char* sParentless = getenv("TEST_PARENTLESS");
 
   if (sParentless) gParentless = atoi(sParentless);
+
+  /* \note Test environment variable" TEST_OPTIMIZE=-1, 0, 1; defaults to -1.
+     -1 = default optimization only
+     0 - default, then deoptimize 
+     1 - default, deoptimize, optimize                                    */
+  char* sOptimize   = getenv("TEST_OPTIMIZE");
+
+  if (sOptimize) gOptimize = atoi(sOptimize);
 
 
 }

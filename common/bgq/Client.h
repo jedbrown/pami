@@ -445,6 +445,11 @@ namespace PAMI
       TRACE_FN_ENTER();
       TRACE_ERR((stderr, "(%8.8u)<%p:%zu>BGQ::Client::geometry_create_taskrange_impl  geometry %p/%p\n", Kernel_ProcessorID(),this, _clientid, geometry, *geometry));
 
+      /// \todo EP geometry support:
+      size_t         nctxt     = (PAMI_ALL_CONTEXTS == context_offset)?_ncontexts:1;
+      size_t         start_off = (PAMI_ALL_CONTEXTS == context_offset)? 0 : context_offset;
+      PAMI_assertf(PAMI_ALL_CONTEXTS != context_offset,"No support for PAMI_ALL_CONTEXTS");
+
       // simple for now: only PAMI_GEOMETRY_OPTIMIZE
       if (num_configs != 0 && (num_configs > 1 || configuration[0].name != PAMI_GEOMETRY_OPTIMIZE))
       {
@@ -469,12 +474,12 @@ namespace PAMI
                                        slice_count,
                                        rank_slices,
                                        &_geometry_map,
-                                       context_offset,
-                                       _ncontexts);
+                                       start_off,
+                                       nctxt);
 
-        TRACE_ERR((stderr, "(%8.8u)%s analyze %zu geometry %p\n",Kernel_ProcessorID(), __PRETTY_FUNCTION__, _ncontexts, new_geometry));
+        TRACE_ERR((stderr, "(%8.8u)%s analyze %zu - %zu/%zu geometry %p\n",Kernel_ProcessorID(), __PRETTY_FUNCTION__, start_off, nctxt,_ncontexts, new_geometry));
 
-        for (size_t n = 0; n < _ncontexts; n++)
+        for (size_t n = start_off; n < nctxt; n++)
         {
           TRACE_ERR((stderr, "(%8.8u)%s analyze %p geometry %p\n", Kernel_ProcessorID(),__PRETTY_FUNCTION__, &_contexts[n], new_geometry));
           _contexts[n].analyze(n, new_geometry, 0);
@@ -520,6 +525,13 @@ namespace PAMI
       TRACE_FN_ENTER();
       TRACE_ERR((stderr, "(%8.8u)<%p:%zu>BGQ::Client::geometry_create_topology_impl geometry %p/%p\n", Kernel_ProcessorID(),this, _clientid, geometry, *geometry));
 
+      /// \todo EP geometry support:
+      //size_t         nctxt     = (PAMI_ALL_CONTEXTS == context_offset)?_ncontexts:1;
+      size_t         nctxt     = _ncontexts; /// \todo How many contexts in the topology?  This is an extension create fn.
+      //size_t         start_off = (PAMI_ALL_CONTEXTS == context_offset)? 0 : context_offset;
+      size_t         start_off = 0;
+      //PAMI_assertf(PAMI_ALL_CONTEXTS != context_offset,"No support for PAMI_ALL_CONTEXTS");
+
       // simple for now: only PAMI_GEOMETRY_OPTIMIZE
       if (num_configs != 0 && (num_configs > 1 || configuration[0].name != PAMI_GEOMETRY_OPTIMIZE))
       {
@@ -543,12 +555,12 @@ namespace PAMI
                                        id,
                                        (PAMI::Topology *)topology,
                                        &_geometry_map,
-				       0,
-				       _ncontexts);
+                                       start_off,
+                                       nctxt);
 
-        TRACE_ERR((stderr, "(%8.8u)%s analyze %zu geometry %p\n", Kernel_ProcessorID(),__PRETTY_FUNCTION__, _ncontexts, new_geometry));
+        TRACE_ERR((stderr, "(%8.8u)%s analyze %zu - %zu/%zu geometry %p\n", Kernel_ProcessorID(),__PRETTY_FUNCTION__, start_off, nctxt,_ncontexts, new_geometry));
 
-        for (size_t n = 0; n < _ncontexts; n++)
+        for (size_t n = start_off; n < nctxt; n++)
         {
           TRACE_ERR((stderr, "(%8.8u)%s analyze %p geometry %p\n", Kernel_ProcessorID(),__PRETTY_FUNCTION__, &_contexts[n], new_geometry));
           _contexts[n].analyze(n, new_geometry, 0);
@@ -596,6 +608,11 @@ namespace PAMI
       TRACE_FN_ENTER();
       TRACE_ERR((stderr, "(%8.8u)<%p:%zu>BGQ::Client::geometry_create_tasklist_impl geometry %p/%p\n", Kernel_ProcessorID(),this, _clientid, geometry, *geometry));
 
+      /// \todo EP geometry support:
+      size_t         nctxt     = (PAMI_ALL_CONTEXTS == context_offset)?_ncontexts:1;
+      size_t         start_off = (PAMI_ALL_CONTEXTS == context_offset)? 0 : context_offset;
+      PAMI_assertf(PAMI_ALL_CONTEXTS != context_offset,"No support for PAMI_ALL_CONTEXTS");
+
       // simple for now: only PAMI_GEOMETRY_OPTIMIZE
       if (num_configs != 0 && (num_configs > 1 || configuration[0].name != PAMI_GEOMETRY_OPTIMIZE))
       {
@@ -620,12 +637,13 @@ namespace PAMI
                                        task_count,
                                        tasks,
                                        &_geometry_map,
-				       context_offset,
-				       _ncontexts);
+                                       start_off,
+                                       nctxt);
 
-        TRACE_ERR((stderr, "(%8.8u)%s analyze %zu geometry %p\n", Kernel_ProcessorID(),__PRETTY_FUNCTION__, _ncontexts, new_geometry));
+        TRACE_ERR((stderr, "(%8.8u)%s analyze %zu - %zu/%zu geometry %p\n", Kernel_ProcessorID(),__PRETTY_FUNCTION__, start_off, nctxt, _ncontexts, new_geometry));
 
-        for (size_t n = 0; n < _ncontexts; n++)
+/// \todo        for(size_t n=start_off; n<nctxt; n++)
+        for (size_t n = start_off; n < nctxt; n++)
         {
           TRACE_ERR((stderr, "(%8.8u)%s analyze %p geometry %p\n", Kernel_ProcessorID(),__PRETTY_FUNCTION__, &_contexts[n], new_geometry));
           _contexts[n].analyze(n, new_geometry, 0);
@@ -667,8 +685,8 @@ namespace PAMI
                                                            pami_event_function     fn,
                                                            void                  * cookie)
       {
-
-
+        /// \todo EP geometry support:
+        PAMI_abortf("No support for geometry_create_endpointlist");
         return PAMI_SUCCESS;
       }
 
@@ -913,7 +931,7 @@ namespace PAMI
                                     0);
       TRACE_ERR((stderr, "(%8.8u)<%p>BGQ::Client::start_barrier() algorithm %s\n", Kernel_ProcessorID(),this, mdata.name));
 
-      Geometry::Algorithm<BGQGeometry> *ar_algo = (Geometry::Algorithm<BGQGeometry> *)alg;
+      Geometry::Algorithm<BGQGeometry> *ar_algo = &(*((std::map<size_t,Geometry::Algorithm<BGQGeometry> > *)alg))[context_id];
 
 
       pami_event_function done_fn = _geom_newopt_finish;

@@ -103,6 +103,17 @@ namespace CCMI{namespace Adaptor{
                                                void                      * cmd) = 0;
 
         virtual void metadata(pami_metadata_t *mdata)=0;
+        virtual uint32_t nameHash()
+        {
+          uint32_t hash =0;          
+          pami_metadata_t md;
+          metadata(&md);
+          size_t len = strlen(md.name);
+          init_hash(&hash);
+          update_hash(&hash,md.name,len);
+          finalize_hash(&hash);
+          return hash;          
+        }
         virtual void setAsyncInfo (bool                          is_buffered,
                                    pami_dispatch_callback_function cb_async,
                                    pami_mapidtogeometry_fn        cb_geometry)

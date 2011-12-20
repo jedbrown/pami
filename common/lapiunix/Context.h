@@ -258,8 +258,9 @@ namespace PAMI
   typedef PAMI::Memory::CollSharedMemoryManager<LAPICSAtomic,
                                                 LAPICSMutex,
                                                 LAPICSCounter,
-    COLLSHM_CTLCNT,COLLSHM_BUFCNT,COLLSHM_LGBUFCNT,
-    COLLSHM_WINGROUPSZ,COLLSHM_BUFSZ,COLLSHM_LGBUFSZ>            LAPICSMemoryManager;
+                                                COLLSHM_CTLCNT,COLLSHM_BUFCNT,COLLSHM_LGBUFCNT,
+                                                COLLSHM_WINGROUPSZ,COLLSHM_BUFSZ,COLLSHM_LGBUFSZ>
+  LAPICSMemoryManager;
 
 
   // PGAS RT Typedefs/Coll Registration
@@ -316,8 +317,8 @@ namespace PAMI
   typedef PAMI::Memory::CollSharedMemoryManager<LAPICSAtomic,
                                                 LAPICSMutex,
                                                 LAPICSCounter,
-    COLLSHM_CTLCNT,COLLSHM_BUFCNT,COLLSHM_LGBUFCNT,
-    COLLSHM_WINGROUPSZ,COLLSHM_BUFSZ,COLLSHM_LGBUFSZ> LAPICSMemoryManager;
+                                                COLLSHM_CTLCNT,COLLSHM_BUFCNT,COLLSHM_LGBUFCNT,
+                                                COLLSHM_WINGROUPSZ,COLLSHM_BUFSZ,COLLSHM_LGBUFSZ> LAPICSMemoryManager;
 
   typedef PAMI::Device::CollShm::CollShmDevice<LAPICSAtomic,
                                                LAPICSMemoryManager,
@@ -870,9 +871,10 @@ namespace PAMI
     inline pami_result_t collective_impl (pami_xfer_t * parameters)
         {
           pami_result_t rc;
-          Geometry::Algorithm<PEGeometry> *algo = (Geometry::Algorithm<PEGeometry> *)parameters->algorithm;
+          std::map<size_t,Geometry::Algorithm<PEGeometry> > *algo =
+            (std::map<size_t,Geometry::Algorithm<PEGeometry> > *)parameters->algorithm;
           plock();
-          rc = algo[_contextid].generate(parameters);
+          rc = (*algo)[_contextid].generate(parameters);
           punlock();
           return rc;
         }
@@ -883,8 +885,9 @@ namespace PAMI
                                                     void                     * cookie,
                                                     pami_collective_hint_t      options)
         {
-        Geometry::Algorithm<PEGeometry> *algo = (Geometry::Algorithm<PEGeometry> *)algorithm;
-        return algo->dispatch_set(dispatch, fn, cookie, options);
+          std::map<size_t,Geometry::Algorithm<PEGeometry> > *algo =
+            (std::map<size_t,Geometry::Algorithm<PEGeometry> > *)algorithm;
+          return (*algo)[0].dispatch_set(dispatch, fn, cookie, options);
         }
 
 
