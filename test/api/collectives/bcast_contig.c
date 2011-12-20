@@ -317,13 +317,14 @@ int main(int argc, char*argv[])
                   memset(buf, 0xFF, i);
                 if(query_protocol)
                 {  
+                  size_t sz=get_type_size(dt_array[dt])*i;
                   result = check_metadata(*next_md,
                                           broadcast,
                                           dt_array[dt],
-                                          dataSent, /* metadata uses bytes i, */
+                                          sz, /* metadata uses bytes i, */
                                           broadcast.cmd.xfer_broadcast.buf,
                                           PAMI_TYPE_BYTE,
-                                          dataSent,
+                                          sz,
                                           broadcast.cmd.xfer_broadcast.buf);
                   if (next_md->check_correct.values.nonlocal)
                   {

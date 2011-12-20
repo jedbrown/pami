@@ -95,13 +95,12 @@ int main(int argc, char*argv[])
   pami_xfer_t          barrier;
   pami_xfer_t          reduce_scatter;
 
-  size_t rcounts[32];
+  size_t *rcounts;
   /* Process environment variables and setup globals */
   setup_env();
 
   assert(gNum_contexts > 0);
   context = (pami_context_t*)malloc(sizeof(pami_context_t) * gNum_contexts);
-
   /*  Allocate buffer(s) */
   int err = 0;
   void* sbuf = NULL;
@@ -125,6 +124,8 @@ int main(int argc, char*argv[])
 
   if (rc==1)
     return 1;
+
+  rcounts = (size_t*)malloc(sizeof(size_t) * num_tasks);
 
   /*  Query the world geometry for barrier algorithms */
   rc |= query_geometry_world(client,
@@ -266,7 +267,7 @@ int main(int argc, char*argv[])
   free(sbuf);
   rbuf = (char*)rbuf - gBuffer_offset;
   free(rbuf);
-
+  free(rcounts);
   rc |= pami_shutdown(&client, context, &gNum_contexts);
   return rc;
 }

@@ -10,7 +10,7 @@
  * \file test/api/collectives/allgatherv.c
  */
 
-#define BUFSIZE 524288
+#define BUFSIZE 524288/16
 
 #include "../pami_util.h"
 
@@ -303,7 +303,7 @@ int main (int argc, char ** argv)
             if (task_id == task_zero)
               printf("Running Allgatherv: %s\n", dt_array_str[dt]);
 
-            for (i = 1; i <= BUFSIZE/get_type_size(dt_array[dt]); i *= 2)
+              for (i = 1; i <= gMax_count; i *= 2)
             {
               long long dataSent = i;
               unsigned  niter    = 100;

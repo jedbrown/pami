@@ -197,13 +197,14 @@ int main(int argc, char*argv[])
 
               if(query_protocol)
               {  
+                size_t sz=get_type_size(dt_array[dt])*i;
                 result = check_metadata(*next_md,
                                       allreduce,
                                       dt_array[dt],
-                                      dataSent, /* metadata uses bytes i, */
+                                      sz, /* metadata uses bytes i, */
                                       allreduce.cmd.xfer_allreduce.sndbuf,
-                                      PAMI_TYPE_BYTE,
-                                      dataSent,
+                                      dt_array[dt],
+                                      sz,
                                       allreduce.cmd.xfer_allreduce.rcvbuf);
                 if (next_md->check_correct.values.nonlocal)
                 {

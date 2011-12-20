@@ -114,6 +114,11 @@ int main(int argc, char*argv[])
   if (rc == 1)
     return 1;
 
+  if(num_tasks > 32)
+  {
+    fprintf(stderr, "Fix the hardcoded size_t rcounts[32]; before running > 32 tasks\n");
+    abort();
+  }
   num_ep = num_tasks *gNum_contexts;
 
   assert(task_id >= 0);

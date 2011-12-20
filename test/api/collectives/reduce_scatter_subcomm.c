@@ -96,7 +96,7 @@ int main(int argc, char*argv[])
   pami_xfer_t          barrier;
   pami_xfer_t          reduce_scatter;
 
-  size_t rcounts[32];
+  size_t *rcounts;
   /* Process environment variables and setup globals */
   setup_env();
 
@@ -125,6 +125,8 @@ int main(int argc, char*argv[])
                      &num_tasks);    /* number of tasks    */
   if (rc==1)
     return 1;
+
+  rcounts = (size_t*)malloc(sizeof(size_t) * num_tasks);
 
   if (num_tasks == 1)
   {
@@ -343,6 +345,7 @@ int main(int argc, char*argv[])
   free(sbuf);
   rbuf = (char*)rbuf - gBuffer_offset;
   free(rbuf);
+  free(rcounts);
 
   rc |= pami_shutdown(&client, context, &gNum_contexts);
   return rc;
