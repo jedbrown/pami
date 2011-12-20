@@ -279,7 +279,8 @@ namespace PAMI
       ///
       /// - 0 means that no messages will be paced.
       /// - 1 means that messages will be considered for pacing.
-      /// \default 1
+      /// \default 0 if the block size is 1 rack (1024 nodes) or smaller.
+      ///          1 if the block size is larger than 1 rack.
       ///
       /// \see \ref COMMAGENT_RGETPACING
       /// \see \ref COMMAGENT_RGETPACINGSIZE
@@ -304,6 +305,7 @@ namespace PAMI
       ///
       /// Fetch remote get pacing env vars
       /// 
+      /// \param[in]   blockSize      Number of nodes in the block
       /// \param[out]  doRgetPacing   Indicates whether rget pacing should be done at all.
       /// \param[out]  hops           If the distance between our node and the dest node
       ///                             is greater than or equal to "hops", rgets may be
@@ -313,7 +315,8 @@ namespace PAMI
       ///
       /// \see paceRgets()
       ///
-      inline void initializeRgetPacing ( bool   &doRgetPacing,
+      inline void initializeRgetPacing ( size_t blockSize,
+                                         bool   &doRgetPacing,
 					 size_t &hops,
 					 size_t &dims );
 
@@ -354,15 +357,20 @@ namespace PAMI
 extern PAMI::Device::CommThread::Factory __commThreads;
 #endif // USE_COMMTHREADS
 
-void PAMI::Global::initializeRgetPacing ( bool   &doRgetPacing,
+void PAMI::Global::initializeRgetPacing ( size_t blockSize,
+                                          bool   &doRgetPacing,
 					  size_t &hops,
 					  size_t &dims )
 {
   char *s;
   unsigned long v;
 
-  // Set the defaults values.
-  doRgetPacing = true;
+  // Set the default values.
+  // Default the pacing flag based on the block size...more than 1 rack 
+  // defaults to pacing=ON...less than or equal to 1 rack defaults to
+  // pacing=OFF.  If PAMI_RGETPACING is specified, then the
+  // value of that flag determines whether or not pacing is ON.
+  doRgetPacing = (blockSize > 1024) ? true : false;
   hops         = 8;
   dims         = 2;
 
@@ -374,6 +382,7 @@ void PAMI::Global::initializeRgetPacing ( bool   &doRgetPacing,
     {
       v = strtoul( s, 0, 10 );
       if ( v == 0 ) doRgetPacing = false;
+      else doRgetPacing = true;
     }
 
   s = getenv( "PAMI_RGETPACINGHOPS" );
@@ -600,11 +609,15 @@ size_t PAMI::Global::initializeMapCache (BgqJobPersonality  & personality,
       // If the syscall works, obtain info from the returned _mapcache.
       if (rc == 0)
         {
-	  /* Initialize for rget pacing analysis as the mapcache is being constructed below */
+	  /* Initialize for rget pacing analysis as the mapcache is being constructed below.
+           * The number of nodes in the block (first parameter) is used to determine whether
+           * or not to pace.
+           */
 	  bool   doRgetPacing;
 	  size_t rgetPacingHops;
 	  size_t rgetPacingDims;
-	  initializeRgetPacing( doRgetPacing, rgetPacingHops, rgetPacingDims );
+	  initializeRgetPacing( aSize * bSize * cSize * dSize * eSize,
+                                doRgetPacing, rgetPacingHops, rgetPacingDims );
 	  
           /* Obtain the following information from the _mapcache:
            * 1. Number of active ranks in the partition.
