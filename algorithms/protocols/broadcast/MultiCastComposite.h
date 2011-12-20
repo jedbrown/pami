@@ -190,7 +190,7 @@ namespace CCMI
           _all = *(PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
           _all.subtractTopology(&_destinations,  &_root_topo);
 
-          DO_DEBUG(for (unsigned j = 0; j < _root.size(); ++j) fprintf(stderr, "root[%u]=%zu, size %zu\n", j, (size_t)_root.index2Endpoint(j), _root.size()));
+          DO_DEBUG(for (unsigned j = 0; j < _root_topo.size(); ++j) fprintf(stderr, "root[%u]=%zu, size %zu\n", j, (size_t)_root_topo.index2Endpoint(j), _root_topo.size()));
 
           DO_DEBUG(for (unsigned j = 0; j < _destinations.size(); ++j) fprintf(stderr, "destinations[%u]=%zu, size %zu\n", j, (size_t)_destinations.index2Endpoint(j), _destinations.size()));
 
