@@ -149,7 +149,7 @@ SHMLargeBcast (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, 
      this->ordinal(),
      XLPGAS_SHM_ROOT,
      ((device_info_type*)device_info)->shm_buffers(), 
-     128)//fl
+     comm->size())//fl
 {
   CNT        = 0;
 }

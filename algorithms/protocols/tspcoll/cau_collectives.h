@@ -233,7 +233,7 @@ class CAUReduce: public CollExchange<T_NI>
 
   struct _State
   {
-    unsigned char buffer [60];
+    unsigned char buffer [124];
     int32_t counter;                   /*   4 bytes */
   }
   __attribute__((__aligned__(16)));
