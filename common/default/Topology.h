@@ -1356,7 +1356,7 @@ namespace PAMI {
 
     bool isEndpointMember_impl(pami_endpoint_t endpoint)
     {
-      for(unsigned i=0; i<__size; i++)
+      for(unsigned i=0; i<size(); i++)
         if(endpoint == index2Endpoint(i))
           return true;
       return false;
@@ -1507,7 +1507,7 @@ namespace PAMI {
         // the hard way... impractical?
         _new->__offset = 0;
         _new->__all_contexts=false;
-        size_t s = __size;
+        size_t s = size();
 	typedef size_t tb_t[2];
 	pami_task_t *rl;
 	tb_t *tb;
@@ -1525,7 +1525,6 @@ namespace PAMI {
         size_t i, j, l = 0;
         for (i = 0; i < s; ++i) {
           r = index2Rank(i);
-          // PAMI_assert(r != -1);
           mapping->task2node(r, a);
 	  for (j = 0; j <= l; ++j) {
 		if (j == l) {
