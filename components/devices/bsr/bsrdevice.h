@@ -108,7 +108,7 @@ namespace PAMI
                     return PAMI_EAGAIN;
                   else
                   {
-                    _state = NOTREACHED;                    
+                    _state = NOTREACHED;
                     _done_fn(_device->_context, _cookie, PAMI_SUCCESS);
                     return PAMI_SUCCESS;
                   }
@@ -155,6 +155,7 @@ namespace PAMI
         {
           _client     = client;
           _context    = context;
+          _context_id = context_id;
           _my_task_id = my_task_id;
           // Check whether to enable BSR
           _initialized = affinity_checked;
