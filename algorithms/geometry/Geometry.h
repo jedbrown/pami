@@ -470,10 +470,8 @@ namespace PAMI
         _topos[DEFAULT_TOPOLOGY_INDEX].subTopologyNthGlobal(&_topos[MASTER_TOPOLOGY_INDEX], 0);
         _topos[DEFAULT_TOPOLOGY_INDEX].subTopologyLocalToMe(&_topos[LOCAL_TOPOLOGY_INDEX]);
         _topos[MASTER_TOPOLOGY_INDEX].subTopologyLocalToMe(&_topos[LOCAL_MASTER_TOPOLOGY_INDEX]);
-        // Find master participant on the tree/cau network
-        size_t            num_master_tasks = _topos[MASTER_TOPOLOGY_INDEX].size();
-        size_t            num_local_tasks = _topos[LOCAL_TOPOLOGY_INDEX].size();
 
+        // Find master participant on the tree/cau network
         DO_DEBUGg(TRACE_ERR((stderr,"(%u)buildSpecialTopologies() MASTER_TOPOLOGY_INDEX rankList %p\n", _topos[MASTER_TOPOLOGY_INDEX].rankList(&list), list)));
         DO_DEBUGg(for (unsigned j = 0; j < _topos[MASTER_TOPOLOGY_INDEX].size(); ++j) TRACE_ERR((stderr, "buildSpecialTopologies() MASTER_TOPOLOGY[%u]=%zu, size %zu\n", j, (size_t)_topos[MASTER_TOPOLOGY_INDEX].index2Endpoint(j), _topos[MASTER_TOPOLOGY_INDEX].size())));
         DO_DEBUGg(TRACE_ERR((stderr,"(%u)buildSpecialTopologies() LOCAL_TOPOLOGY rankList %p\n", _topos[LOCAL_TOPOLOGY_INDEX].rankList(&list), list)));
