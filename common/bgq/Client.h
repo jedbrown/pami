@@ -920,8 +920,9 @@ namespace PAMI
                        pami_attribute_name_t optimize)
     {
       //Assume algorithm 0 always works
-      pami_algorithm_t  alg;
+      pami_algorithm_t  alg   = PAMI_ALGORITHM_NULL;
       pami_metadata_t   mdata;
+      memset(&mdata, 0, sizeof(mdata));
       new_geometry->algorithms_info(PAMI_XFER_ALLREDUCE,
                                     &alg,
                                     &mdata,
