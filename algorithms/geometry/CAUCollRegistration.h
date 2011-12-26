@@ -271,6 +271,7 @@ namespace PAMI
           bool                               _use_cau;
           bool                               _keyAllocated; 
           PAMI::Device::CAUGeometryInfo     *_cau_info;
+          uint32_t                          *_cau_task_list;
           bool                               _use_bsr;
           PAMI::Device::BSRGeometryInfo     *_bsr_info;
           CCMI::Executor::Composite         *_bsr_p2p_composite;
@@ -419,13 +420,20 @@ namespace PAMI
             uint            num_master_tasks  = master_topo->size();
             bool            participant       = master_topo->isEndpointMember(_my_endpoint);
             GeometryInfo   *geometryInfo      = (GeometryInfo*)geometry->getKey(_context_id,Geometry::PAMI_CKEY_GEOMETRYINFO);
-            pami_task_t    *rl    = NULL;
-            pami_result_t   rc    = master_topo->rankList(&rl);
-            uint           *tasks = (uint*)rl;
+            pami_result_t rc = __global.heap_mm->memalign((void **)&geometryInfo->_cau_task_list, 16, num_master_tasks*sizeof(uint32_t));
+            PAMI_assertf(rc == PAMI_SUCCESS && geometryInfo->_cau_task_list!= NULL,
+                         "Fatal:  Unable to allocate CAU task list\n");
+            for(int i=0;i<num_master_tasks;i++)
+              {
+                pami_task_t task; size_t offset;
+                pami_endpoint_t ep = master_topo->index2Endpoint(i);
+                PAMI_ENDPOINT_INFO(ep, task, offset);
+                geometryInfo->_cau_task_list[i] = ep;
+              }
             int             myrc  = lapi_cau_group_create(_lapi_handle,
                                                           geometryInfo->_unique_key,
                                                           num_master_tasks,
-                                                          tasks);
+                                                          geometryInfo->_cau_task_list);
             *cau_gi = (PAMI::Device::CAUGeometryInfo *)_cau_geom_allocator.allocateObject();
             new(*cau_gi)PAMI::Device::CAUGeometryInfo(geometryInfo->_unique_key,geometry->comm());
             geometry->setKey(_context_id,Geometry::CKEY_MCAST_CLASSROUTEID,*cau_gi);
@@ -572,6 +580,7 @@ namespace PAMI
                   geometryInfo->_keyAllocated                    = keyAllocated;
                   geometryInfo->_bsr_info                        = NULL;
                   geometryInfo->_cau_info                        = NULL;
+                  geometryInfo->_cau_task_list                   = NULL;
                   geometryInfo->_bsr_p2p_composite               = NULL;
                   geometryInfo->_shm_p2p_composite               = NULL;
                   geometryInfo->_unique_key                      = unique_key;
@@ -852,12 +861,15 @@ namespace PAMI
             return PAMI_SUCCESS;
           }
 
-        inline void freeGroup(T_Geometry *g, int cau_group)
+        inline void freeGroup(GeometryInfo *gi, T_Geometry *g, int cau_group)
           {
             ITRC(IT_CAU, "CollReg: Deleting group_id=%d, valid_context=%d\n", cau_group, _valid_context);
             int rc = 0;
             if(_valid_context)
-              rc = lapi_cau_group_destroy(_lapi_handle, cau_group);
+              {
+                rc = lapi_cau_group_destroy(_lapi_handle, cau_group);
+                __global.heap_mm->free(gi->_cau_task_list);
+              }
             
             PAMI_assertf(rc == 0, "CAU Group Destory Failed on geometry=%d index=%d with rc=%d\n", g->comm(), cau_group, rc);
           }
@@ -990,7 +1002,7 @@ namespace PAMI
               if(gi->_participant)
               {
                 PAMI_assert(gi->_keyAllocated);
-                gi->_registration->freeGroup(gi->_geometry, gi->_unique_key);
+                gi->_registration->freeGroup(gi, gi->_geometry, gi->_unique_key);
               }
               gi->_registration->freeCauInfo(gi->_cau_info);
             }

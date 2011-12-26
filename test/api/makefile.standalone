@@ -57,6 +57,7 @@ endef
 COLLECTIVES_MULTIEP_TESTS = build/collectives/allgather_multiep.exe \
 build/collectives/allgatherv_multiep.exe \
 build/collectives/allreduce_multiep.exe \
+build/collectives/allreduce_query_multiep.exe \
 build/collectives/alltoall_multiep.exe \
 build/collectives/alltoallv_multiep.exe \
 build/collectives/barrier_multiep.exe \
@@ -64,6 +65,7 @@ build/collectives/bcast_multiep.exe \
 build/collectives/gather_multiep.exe \
 build/collectives/gatherv_multiep.exe \
 build/collectives/reduce_multiep.exe \
+build/collectives/reduce_query_multiep.exe \
 build/collectives/reduce_scatter_multiep.exe \
 build/collectives/scan_multiep.exe \
 build/collectives/scatter_multiep.exe \
