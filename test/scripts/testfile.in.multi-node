@@ -222,13 +222,13 @@ internals/misc/math.cnk
 #=== internals/multisend SUBDIR ===
 internals/multisend/multicast.cnk --numnodes 1 --ranks-per-node 2 --envs BG_SHAREDMEMSIZE=64 --timelimit 120
 internals/multisend/multicombine.cnk --numnodes 1 --ranks-per-node 2 --envs BG_SHAREDMEMSIZE=64 --timelimit 120
-internals/multisend/multisync.cnk
-internals/multisend/multisync_perf.cnk
+internals/multisend/multisync.cnk --numnodes 1 --ranks-per-node 2 --envs BG_SHAREDMEMSIZE=64
+internals/multisend/multisync_perf.cnk --numnodes 1 --ranks-per-node 2 --envs BG_SHAREDMEMSIZE=64
 #
 #=== internals/multisend/bgq SUBDIR ===
 #internals/multisend/bgq/NativeInterface.cnk              +++ COMMENTED OUT OF MAKEFILE +++
-internals/multisend/bgq/bgqmultisync.cnk
-internals/multisend/bgq/bgqmultisync_perf.cnk
+internals/multisend/bgq/bgqmultisync.cnk --numnodes 1 --ranks-per-node 2 --envs BG_SHAREDMEMSIZE=64
+internals/multisend/bgq/bgqmultisync_perf.cnk --numnodes 1 --ranks-per-node 2 --envs BG_SHAREDMEMSIZE=64
 #internals/multisend/bgq/local_multicast.cnk              +++ REMOVED FROM MAKEFILE +++
 #internals/multisend/bgq/local_multicombine.cnk           +++ REMOVED FROM MAKEFILE +++
 #
