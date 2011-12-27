@@ -96,15 +96,15 @@ static void usage ()
 
   fprintf(stdout, "Passing SEND scenario:\n");
   fprintf(stdout, "  send hints       recv hints     header\n");
-  fprintf(stdout, "no long header | no long header    size    dispatch ID\n");
+  fprintf(stdout, "  long header  |   long header     size    dispatch ID\n");
   fprintf(stdout, "============== | ============== | ====== | ===========\n");
-  fprintf(stdout, "   0 (hard)    |    0 (hard)    |  long  |      0\n");
+  fprintf(stdout, "   1 (hard)    |    1 (hard)    |  long  |      0\n");
   fprintf(stdout, "\n");
   fprintf(stdout, "Failing SEND scenario:\n");
   fprintf(stdout, "  send hints       recv hints     header\n");
-  fprintf(stdout, "no long header | no long header    size    dispatch ID\n");
+  fprintf(stdout, "  long header  |   long header     size    dispatch ID\n");
   fprintf(stdout, "============== | ============== | ====== | ===========\n");
-  fprintf(stdout, "   1 (hard)    |    1 (hard)    |  long  |      1\n");
+  fprintf(stdout, "   2 (hard)    |    2 (hard)    |  long  |      1\n");
   fprintf(stdout, "\n");
   fprintf(stdout, "Default is to run both the PASSING and FAILING SEND scenarios.\n\n");
   fprintf(stdout, "Testcase options:\n");
