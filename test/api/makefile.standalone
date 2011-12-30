@@ -9,7 +9,7 @@ LINKER         := mpcc -q64
 ##### You shouldn't have to edit under this line ######
 CC        := ${C_COMPILER}  -O0 -g -I${PAMI_INCLUDE}  -I${PAMI_INCLUDE}/default
 CXX       := ${CXX_COMPILER} -O0 -g -I${PAMI_INCLUDE} -I${PAMI_INCLUDE}/default
-LD        := ${LINKER}    -L${PAMI_LIB} ${PAMI_LIBNAME}
+LD        := ${LINKER}    -L${PAMI_LIB} ${PAMI_LIBNAME} -lpthread -lrt
 ECHO      := echo
 
 MODULES   := p2p client collectives context endpoint extensions p2p/send p2p/get p2p/put p2p/rget p2p/rput \
@@ -112,6 +112,7 @@ build/collectives/gatherv_contig.exe \
 build/collectives/gatherv_int.exe \
 build/collectives/gatherv_int_contig.exe \
 build/collectives/geometry.exe \
+build/collectives/geom_bomb.exe \
 build/collectives/reduce.exe \
 build/collectives/reduce_contig.exe \
 build/collectives/reduce_query.exe \

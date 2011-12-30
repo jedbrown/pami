@@ -83,10 +83,6 @@ namespace PAMI
       static  Common * get (int ctxt, int geometryID)
       {
         assert(0);
-        //assert(_ncontexts * teamID + ctxt < MAX_COMMS);
-        // return _instances[_ncontexts * teamID + ctxt];
-
-        // #warning "Return Geometry map"
         Common * g =NULL;
         return g;
       }
@@ -146,7 +142,7 @@ namespace PAMI
 
         _kvcstore = allocKVS(NUM_CKEYS,ncontexts);
 
-        size_t nctxt     = (PAMI_ALL_CONTEXTS == context_offset)?_ncontexts:1;
+        size_t nctxt     = (PAMI_ALL_CONTEXTS == context_offset)?ncontexts:1;
         size_t start_off = (PAMI_ALL_CONTEXTS == context_offset)? 0 : context_offset;
         pami_result_t rc = __global.heap_mm->memalign((void **)&_ue_barrier,
                                                       0,
@@ -176,19 +172,17 @@ namespace PAMI
         }
       }
 
-        /**
-            Construct a geometry based on a list of endpoints
-         */
+      /**
+         Construct a geometry based on a list of endpoints
+      */
       inline Common (pami_client_t                        client,
                      Geometry<PAMI::Geometry::Common>    *parent,
                      Mapping                             *mapping,
                      unsigned                             comm,
-                      pami_endpoint_t                   neps,
-                      pami_endpoint_t                  *eps,
-                      std::map<unsigned, pami_geometry_t> *geometry_map,
-                      size_t                            context_offset,
-                      size_t                            ncontexts,
-                      bool):
+                     pami_endpoint_t                      neps,
+                     pami_endpoint_t                     *eps,
+                     std::map<unsigned, pami_geometry_t> *geometry_map,
+                     bool):
       Geometry<PAMI::Geometry::Common>(parent,
                                        mapping,
                                        comm,
@@ -206,11 +200,44 @@ namespace PAMI
       {
         TRACE_ERR((stderr, "<%p>Common(endpointlist)\n", this));
         // this creates the topology including all subtopologies
-        new(&_topos[DEFAULT_TOPOLOGY_INDEX]) PAMI::Topology(_endpoints, neps, true);
+        new(&_topos[DEFAULT_TOPOLOGY_INDEX]) PAMI::Topology(_endpoints, neps, PAMI::tag_eplist());
+
         buildSpecialTopologies();
+#if 0
+        fprintf(stderr, "EP DEFAULT Topology sz=%d:\n", _topos[DEFAULT_TOPOLOGY_INDEX].size());
+        for(int i=0; i< _topos[DEFAULT_TOPOLOGY_INDEX].size(); i++)
+          {
+            pami_endpoint_t ep    = _topos[DEFAULT_TOPOLOGY_INDEX].index2Endpoint(i);
+            pami_task_t     task;
+            size_t          offset;
+            PAMI_ENDPOINT_INFO(ep, task, offset);
+            fprintf(stderr, "   --->(ep=%d task=%d offset=%ld)\n", ep, task, offset);
+          }
+
+        fprintf(stderr, "EP LOCAL Topology sz=%d:\n", _topos[LOCAL_TOPOLOGY_INDEX].size());
+        for(int i=0; i< _topos[LOCAL_TOPOLOGY_INDEX].size(); i++)
+          {
+            pami_endpoint_t ep    = _topos[LOCAL_TOPOLOGY_INDEX].index2Endpoint(i);
+            pami_task_t     task;
+            size_t          offset;
+            PAMI_ENDPOINT_INFO(ep, task, offset);
+            fprintf(stderr, "   --->(ep=%d task=%d offset=%ld)\n", ep, task, offset);
+          }
+
+        fprintf(stderr, "EP MASTER Topology: sz=%d\n", _topos[MASTER_TOPOLOGY_INDEX].size());
+        for(int i=0; i< _topos[MASTER_TOPOLOGY_INDEX].size(); i++)
+          {
+            pami_endpoint_t ep    = _topos[MASTER_TOPOLOGY_INDEX].index2Endpoint(i);
+            pami_task_t     task;
+            size_t          offset;
+            PAMI_ENDPOINT_INFO(ep, task, offset);
+            fprintf(stderr, "   --->(ep=%d task=%d offset=%ld)\n", ep, task, offset);
+          }
+#endif
+
+
 
         // Initialize remaining members
-
         (*_geometry_map)[_commid] = this;
 
         for(size_t n=0; n<MAX_CONTEXTS; n++)
@@ -225,37 +252,34 @@ namespace PAMI
           NULL, NULL
         };
 
-        _kvcstore = allocKVS(NUM_CKEYS,ncontexts);
-
-        size_t nctxt     = (PAMI_ALL_CONTEXTS == context_offset)?_ncontexts:1;
-        size_t start_off = (PAMI_ALL_CONTEXTS == context_offset)? 0 : context_offset;
+        _kvcstore = allocKVS(NUM_CKEYS,MAX_CONTEXTS);
         pami_result_t rc = __global.heap_mm->memalign((void **)&_ue_barrier,
                                                       0,
-                                                      nctxt*sizeof(*_ue_barrier));
+                                                      MAX_CONTEXTS*sizeof(*_ue_barrier));
         (void)rc; //unused warnings in assert case
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
 
         // Allocate per context UE queues
         rc = __global.heap_mm->memalign((void **)&_ue,
                                         0,
-                                        nctxt*sizeof(MatchQueue));
+                                        MAX_CONTEXTS*sizeof(MatchQueue));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
 
         // Allocate per context Posted queues
         rc = __global.heap_mm->memalign((void **)&_post,
                                         0,
-                                        nctxt*sizeof(MatchQueue));
+                                        MAX_CONTEXTS*sizeof(MatchQueue));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
 
 
-        for(size_t n=start_off; n<nctxt; n++)
+        for(size_t n=0; n<MAX_CONTEXTS; n++)
         {
           new(&_ue_barrier[n]) Algorithm<PAMI::Geometry::Common>(NULL,NULL);
           new(&_ue[n]) MatchQueue();
           new(&_post[n]) MatchQueue();
           resetUEBarrier_impl(n);
-          }
         }
+      }
 
       inline Common (pami_client_t                        client,
                      Geometry<PAMI::Geometry::Common>    *parent,
@@ -279,20 +303,18 @@ namespace PAMI
       _ranks(NULL),
       _geometry_map(geometry_map),
       _checkpointed(false),
-      _cb_result(PAMI_EAGAIN),
-      _context_offset(context_offset),
-      _ncontexts(ncontexts)
+      _cb_result(PAMI_EAGAIN)
       {
         TRACE_ERR((stderr, "<%p>Common(ranges)\n", this));
         pami_result_t rc;
           if (numranges == 1)
         {
           // this creates the topology from a (single) range
-          if(_context_offset==0) {
+          if(context_offset==0) {
           new(&_topos[DEFAULT_TOPOLOGY_INDEX]) PAMI::Topology(rangelist[0].lo, rangelist[0].hi);
         }
           else {
-            new(&_topos[DEFAULT_TOPOLOGY_INDEX]) PAMI::Topology(rangelist[0].lo, rangelist[0].hi,_context_offset, _ncontexts);
+            new(&_topos[DEFAULT_TOPOLOGY_INDEX]) PAMI::Topology(rangelist[0].lo, rangelist[0].hi,context_offset, ncontexts);
           }
         }
         else // build a rank list from N ranges
@@ -316,11 +338,11 @@ namespace PAMI
           }
 
           // this creates the topology 
-          if(_context_offset==0) {
+          if(context_offset==0) {
           new(&_topos[DEFAULT_TOPOLOGY_INDEX]) PAMI::Topology(_ranks, nranks);
         }
           else{
-            new(&_topos[DEFAULT_TOPOLOGY_INDEX]) PAMI::Topology(_ranks, nranks,_context_offset,_ncontexts);
+            new(&_topos[DEFAULT_TOPOLOGY_INDEX]) PAMI::Topology(_ranks, nranks,context_offset,ncontexts);
           }
         }
 
@@ -351,7 +373,7 @@ namespace PAMI
 
         _kvcstore = allocKVS(NUM_CKEYS,ncontexts);
 
-        size_t nctxt     = (PAMI_ALL_CONTEXTS == context_offset)?_ncontexts:1;
+        size_t nctxt     = (PAMI_ALL_CONTEXTS == context_offset)?ncontexts:1;
         size_t start_off = (PAMI_ALL_CONTEXTS == context_offset)? 0 : context_offset;
         rc               = __global.heap_mm->memalign((void **)&_ue_barrier,
                                                       0,
@@ -431,7 +453,7 @@ namespace PAMI
 
         _kvcstore = allocKVS(NUM_CKEYS,ncontexts);
 
-        size_t nctxt     = (PAMI_ALL_CONTEXTS == context_offset)?_ncontexts:1;
+        size_t nctxt     = (PAMI_ALL_CONTEXTS == context_offset)?ncontexts:1;
         size_t start_off = (PAMI_ALL_CONTEXTS == context_offset)? 0 : context_offset;
         pami_result_t rc = __global.heap_mm->memalign((void **)&_ue_barrier,
                                                       0,
@@ -946,9 +968,6 @@ namespace PAMI
       std::list<void*>                              _cleanupDatas;
       std::list<CheckpointFunctions>                _ckptFcns;
       std::map <size_t, DispatchInfo>               _dispatch;            // AM Collective dispatch functions
-      size_t                                        _context_offset;
-      size_t                                        _ncontexts;
-
     public:
       /// Blue Gene/Q Specific functions
 

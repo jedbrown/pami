@@ -266,13 +266,14 @@ namespace PAMI {
             //alloc space for the new ep list
             rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
                                            (void **)&epl, 0, z * sizeof(*epl));
+            pami_endpoint_t *epl_iter=epl;
             PAMI_assertf(rc == PAMI_SUCCESS, "temp eplist[%zd] alloc failed", z);
             //pami_endpoint_t *ep_iter = epl;
             for (size_t i = 0; i < __size; ++i) {
               pami_task_t    task; size_t          offset;
               PAMI_ENDPOINT_INFO(topo_eplist(i),task,offset);
               if (IS_LOCAL_PEER(task)) {
-                *epl++ = topo_eplist(i);
+                *epl_iter++ = topo_eplist(i);
               }
             }
           }//end build endpoints
@@ -1009,23 +1010,18 @@ namespace PAMI {
       pami_coord_t c0;
       pami_result_t rc;
 
-      //printf("Query for %d\n", rank);
-
       switch (__type) {
       case PAMI_SINGLE_TOPOLOGY:
         if (topo_rank == rank) {
-	  //printf("LLL\n");
           return 0;
         }
         break;
       case PAMI_RANGE_TOPOLOGY:
         if (rank >= topo_first && rank <= topo_last) {
-	  //printf("REturn [%d %d] %d\n", rank, topo_first, rank-topo_first);
           return rank - topo_first;
         }
         break;
       case PAMI_LIST_TOPOLOGY:
-	//printf("BBB\n");
         for (x = 0; x < __size; ++x) {
           if (rank == topo_list(x)) {
             return x;
@@ -1034,7 +1030,6 @@ namespace PAMI {
         break;
 
       case PAMI_AXIAL_TOPOLOGY:
-	//printf("CCC\n");
         rc = RANK2COORDS(rank, &c0);
         ix = 0;
         nn = 0;
@@ -1058,7 +1053,6 @@ namespace PAMI {
         break;
 
       case PAMI_COORD_TOPOLOGY:
-	//printf("DDD\n");
         // probably not used?
         // assume last dim is least-significant
         rc = RANK2COORDS(rank, &c0);
@@ -1077,7 +1071,6 @@ namespace PAMI {
         return ix;
         break;
       case PAMI_EMPTY_TOPOLOGY:
-	//printf("CACA\n");
       default:
         break;
       }
@@ -1455,15 +1448,19 @@ namespace PAMI {
         size_t s = __size;
 	typedef size_t tb_t[2];
 	pami_endpoint_t *epl;
-	tb_t  *tb;
+	tb_t  *tb, *tb_iter;
 	pami_result_t rc;
+
+        PAMI_assert(s != 0);
 	rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
 						(void **)&epl, 0, s * sizeof(*epl));
 	PAMI_assertf(rc == PAMI_SUCCESS, "temp eplist[%zd] alloc failed", s);
 	rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
 						(void **)&tb, 0, s * sizeof(*tb));
 	PAMI_assertf(rc == PAMI_SUCCESS, "temp tb-list[%zd] alloc failed (endpoints)", s);
-	memset(tb, 0, s * sizeof(tb_t));
+
+        tb_iter = tb;
+	memset(tb_iter, 0, s * sizeof(*tb));
         size_t k = 0;
         pami_endpoint_t ep_r;
         pami_task_t r;
@@ -1477,21 +1474,21 @@ namespace PAMI {
           mapping->task2node(r, a);
 	  for (j = 0; j <= l; ++j) {
             if (j == l) {
-              tb[j][0] = a.global;
+              tb_iter[j][0] = a.global;
               ++l;
             }
-            if (a.global == tb[j][0]) {
-              if (tb[j][1] == (size_t)n) {
+            if (a.global == tb_iter[j][0]) {
+              if (tb_iter[j][1] == (size_t)n) {
                 epl[k++] = ep_r;
               }
-              ++tb[j][1];
+              ++tb_iter[j][1];
               break;
             }
 	  }
         }
 	PAMI::Memory::MemoryManager::heap_mm->free(tb);
-        if (k > 1) {
-          _new->__type = PAMI_LIST_TOPOLOGY;
+        if (k > 0) {
+          _new->__type = PAMI_EPLIST_TOPOLOGY;
           _new->topo_ranklist = epl;
           _new->__size = k;
           _new->__free_ranklist = true;
@@ -2446,7 +2443,6 @@ namespace PAMI {
       size_t x;
       switch (__type) {
       case PAMI_EPLIST_TOPOLOGY:
-	//printf("BBB\n");
         for (x = 0; x < __size; ++x) {
           if (ep == topo_eplist(x)) {
             return x;

@@ -64,6 +64,7 @@ APPS            += gatherv_int.${EXTENSION}
 APPS            += gatherv_int_contig.${EXTENSION}
 APPS            += gatherv_multiep.${EXTENSION}
 APPS            += geometry.${EXTENSION}
+APPS            += geom_bomb.${EXTENSION}
 APPS            += reduce.${EXTENSION}
 APPS            += reduce_contig.${EXTENSION}
 APPS            += reduce_multiep.${EXTENSION}
