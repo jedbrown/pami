@@ -250,12 +250,10 @@ static void create_random_geometry(thread_data_t   *td,
   /* Pick one thread to create the geometry */
   if(td->thread_id == 0)
     {
-      int          sz            = td->logical_size;
-      int          rank          = td->logical_rank;
       int         *task_array    = (int*)malloc(td->num_tasks*sizeof(int));
       int         *context_array = (int*)malloc(td->contexts_per_task*sizeof(int));
-
-      int i=0;
+      int          i             = 0;
+      
       for(i=0; i<td->num_tasks; i++)
         task_array[i] = i;
       for(i=0; i<td->contexts_per_task; i++)
@@ -311,6 +309,7 @@ static void create_random_geometry(thread_data_t   *td,
                                                  td->context,
                                                  cb_geometry_create_done,
                                                  &cd);
+      assert(rc == PAMI_SUCCESS);
       while(g->create_id != td->geometry_id)
         PAMI_Context_advance (td->context, 1);
       free(task_array);
