@@ -79,7 +79,7 @@ advance(void* arg)
   TRACE_ERR("context=%p\n", context);
   for (;;) {
     rc = PAMI_Context_advance(context, (size_t)-1);
-    assert(rc == PAMI_SUCCESS);
+    assert((rc == PAMI_SUCCESS) || (rc == PAMI_EAGAIN));
   }
   return NULL;
 }
@@ -377,6 +377,10 @@ main(int argc, char **argv)
     worker();
   else
     ;
+   for (int i=0; i<ncontexts; i++) {
+      pami_context_t context = (pami_context_t) contexts[i];
+       PAMI_Fence_all(context, NULL, NULL) ;
+    }
 
 #if defined(__pami_target_bgq__) || !defined(USE_THREADS)
   pami_result_t rc;
