@@ -3576,14 +3576,14 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalResources()
       // If the MU Rec Fifo Interrupt Threshold has not been set yet (by a non-PAMI user),
       // then set it.  We want it such that if the free space drops below this
       // threshold, an interrupt will fire so the packets can be processed.
-      // Set it to two-thirds the size of the rec fifo (in units of number of descriptors).
+      // Set it to two-thirds the size of the rec fifo (in units of number of 32-byte chunks).
 
       rc = Kernel_GetRecFifoThreshold( &threshold );
       PAMI_assertf( rc == 0, "Kernel_GetRecFifoThresholds failed with rc=%d\n",rc);
       
       if ( threshold == 0 ) // Not set yet?
 	{
-	  threshold = (_pamiRM.getRecFifoSize() * 2) / (3 * sizeof(MUHWI_Descriptor_t));
+	  threshold = (_pamiRM.getRecFifoSize() * 2) / (3 * 32);
 	  rc = Kernel_ConfigureRecFifoThreshold( threshold );
 	  PAMI_assertf( rc == 0, "Kernel_ConfigureRecFifoThreshold failed with rc=%d\n",rc);
 	}
