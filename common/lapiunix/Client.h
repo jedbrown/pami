@@ -930,7 +930,6 @@ namespace PAMI
         return PAMI_SUCCESS;
       }
 
-
     template <class T_Geometry>
     class PostedClassRoute : public PAMI::Geometry::ClassRouteId<T_Geometry>
     {
@@ -977,19 +976,14 @@ namespace PAMI
                 return PAMI_EAGAIN;
                 break;
               case 2:
-                TRACE((stderr, "t:%d c:%p cid:%d cr:%p --> classroute done\n",
+                TRACE((stderr, "t:%d c:%p cid:%d cr:%p --> delivering allreduce results\n",
                        pthread_self(),ctxt, ctxt->getId(), classroute));
-                if(classroute == master)
-                  {
-                    TRACE((stderr, "t:%d c:%p cid:%d cr:%p --> am master classroute\n",
-                           pthread_self(),ctxt, ctxt->getId(), classroute));
-                    classroute->_result_cb_done(context,
-                                                classroute->_result_cookie,
-                                                classroute->_bitmask,
-                                                classroute->_geometry,
-                                                PAMI_SUCCESS);
-                  }
-                TRACE((stderr, "t:%d c:%p cid:%d cr:%p --> starting barrier\n",
+                classroute->_result_cb_done(context,
+                                            classroute->_result_cookie,
+                                            classroute->_bitmask,
+                                            classroute->_geometry,
+                                            PAMI_SUCCESS);
+                TRACE((stderr, "t:%d c:%p cid:%d cr:%p --> starting post allreduce barrier\n",
                        pthread_self(),ctxt, ctxt->getId(), classroute));
                 classroute->_state = 3;
                 g->default_barrier(_cr_done, classroute, ctxt->getId(), context);
@@ -1037,7 +1031,7 @@ namespace PAMI
     static void cr_func(pami_context_t  context,
                         void           *cookie,
                         uint64_t       *reduce_result,
-                        PEGeometry   *g,
+                        PEGeometry     *g,
                         pami_result_t   result )
       {
         TRACE((stderr, "%p CR FUNC 1\n", cookie));
@@ -1226,8 +1220,8 @@ namespace PAMI
                                                      cookie,
                                                      cr[0],
                                                      nctxt);
+            TRACE((stderr, "Allocated Classroutes:  %ld %p\n", n, cr[n]));              
             }
-            TRACE((stderr, "Allocated Classroutes:  %ld %p\n", n, cr[n]));
             if(bargeom)
             {
               PAMI_assertf(nctxt == 1, "Parent Geometry not allowed for multi-endpoint geometries");
