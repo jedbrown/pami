@@ -706,7 +706,7 @@ namespace PAMI
         // Error check and print a message if CAU is requested
         // But unavailable to the user
         char *collGroups = getenv("MP_COLLECTIVE_GROUPS");
-        if(collGroups && __global.mapping.task() == 0)
+        if(collGroups && __global.mapping.task() == 0 && (atoi(collGroups)!=0))
           {
             if(deviceCheckResult[1] == 0ULL)
               fprintf(stderr, "ATTENTION: (MP_COLLECTIVE_GROUPS) CAU common index resource not available.  (CAU requested but unavailable)\n");
