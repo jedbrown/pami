@@ -1040,16 +1040,26 @@ namespace PAMI
         TRACE((stderr, "%p CR FUNC 1\n", cookie));
         int count = 1;
         PostedClassRoute<PEGeometry> *classroute = (PostedClassRoute<PEGeometry> *)cookie;
-        //FIXME: discuss Charles
-        PAMI::Context* ctxt = (PAMI::Context*)context;
+        PAMI::Context *ctxt   = (PAMI::Context*)context;
+        PAMI::Client  *client = (PAMI::Client*)ctxt->getClient();
 
-        ctxt->_pgas_collreg->receive_global(0,classroute->_geometry,
-                                                            &reduce_result[0],1);
+        client->lock();
+        ctxt->_pgas_collreg->receive_global(0,
+                                            classroute->_geometry,
+                                            &reduce_result[0],
+                                            1);
         ctxt->_p2p_ccmi_collreg->receive_global(0,classroute->_geometry,
-                                                                &reduce_result[1],1);
-        ctxt->_cau_collreg->analyze(0,classroute->_geometry,
-                                                    &reduce_result[2],&count,1);
-        ctxt->_pgas_collreg->analyze(0,classroute->_geometry,1,&reduce_result[2]);
+                                                &reduce_result[1],
+                                                1);
+        ctxt->_cau_collreg->analyze(0,
+                                    classroute->_geometry,
+                                    &reduce_result[2],&count,
+                                    1);
+        ctxt->_pgas_collreg->analyze(0,
+                                     classroute->_geometry,
+                                     1,
+                                     &reduce_result[2]);
+        client->unlock();
       }
       
     static void create_classroute(pami_context_t context, void *cookie, pami_result_t result)
@@ -1550,13 +1560,19 @@ namespace PAMI
         geomCleanup   *gc           = (geomCleanup*)cookie;
         PEGeometry    *g            = gc->_geometry;
         int commid                  = g->comm();
+        clnt->lock();
         clnt->_geometry_map[commid] = NULL;
         clnt->_geometry_map.erase(commid);
         g->~PEGeometry();
         if(gc->_user_done_cb)
-          gc->_user_done_cb(context,gc->_user_cookie,PAMI_SUCCESS);
+          {
+            clnt->unlock();
+            gc->_user_done_cb(context,gc->_user_cookie,PAMI_SUCCESS);
+            clnt->lock();
+          }
         __global.heap_mm->free(g);
         __global.heap_mm->free(gc);
+        clnt->unlock();
         return PAMI_SUCCESS;
       }
     static void geometry_destroy_done_fn(pami_context_t   context,
@@ -1695,6 +1711,15 @@ namespace PAMI
               return __global.time.timebase();
           }
       }
+    inline void lock()
+      {
+        _lock.acquire();
+      }
+    inline void unlock()
+      {
+        _lock.release();
+      }
+
 
   protected:
 
@@ -1791,6 +1816,9 @@ namespace PAMI
 
     // Unique, shared cau index to identify cau resources across jobs
     unsigned                                     _cau_uniqifier;
+
+    // Client Lock, to lock resources for the client
+    LAPICSMutex                                  _lock;
   }; // end class PAMI::Client
 }; // end namespace PAMI
 
