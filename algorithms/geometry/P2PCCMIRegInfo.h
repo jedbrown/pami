@@ -31,7 +31,7 @@
 #include "algorithms/protocols/broadcast/BcastMultiColorCompositeT.h"
 #include "algorithms/protocols/barrier/BarrierT.h"
 #include "algorithms/protocols/broadcast/AsyncBroadcastT.h"
-#include "algorithms/protocols/ambcast/AMBroadcastT.h"
+#include "algorithms/protocols/amcollectives/AMBroadcastT.h"
 #include "algorithms/protocols/allreduce/MultiColorCompositeT.h"
 #include "algorithms/protocols/allreduce/AsyncOATCompositeT.h"
 #include "algorithms/protocols/allreduce/ProtocolFactoryT.h"
@@ -897,33 +897,49 @@ namespace CCMI
 
     namespace P2PAMBroadcast
     {
-      extern inline void am_broadcast_metadata(pami_metadata_t *m)
+      extern inline unsigned getKey(unsigned                     root,
+                      unsigned                                   connid,
+                      PAMI_GEOMETRY_CLASS                       *geometry,
+                      ConnectionManager::BaseConnectionManager **connmgr)
       {
-        new(m) PAMI::Geometry::Metadata("I0:Binomial:P2P:P2P");
+        if (connid != (unsigned)-1)
+        {
+          *connmgr = NULL; //use this key as connection id
+          return connid;
+        }
+        ConnectionManager::RankSeqConnMgr *cm = (ConnectionManager::RankSeqConnMgr *)*connmgr;
+        return cm->updateConnectionId(root);
       }
 
-      extern inline void create_schedule(void                        * buf,
-                           unsigned                      size,
-                           unsigned                      root,
-                           Interfaces::NativeInterface * native,
-                           PAMI_GEOMETRY_CLASS          * g)
+      namespace Binomial
       {
-        new (buf) CCMI::Schedule::TopoMultinomial(native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0);
+        extern inline void am_broadcast_metadata(pami_metadata_t *m)
+        {
+          new(m) PAMI::Geometry::Metadata("I0:Binomial:P2P:P2P");
+        }
+
+        extern inline void create_schedule(void                        * buf,
+                                           unsigned                      size,
+                                           unsigned                      root,
+                                           Interfaces::NativeInterface * native,
+                                           PAMI_GEOMETRY_CLASS          * g)
+        {
+          new (buf) CCMI::Schedule::TopoMultinomial(native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0);
+        }
+
+        typedef CCMI::Adaptor::AMBroadcast::AMBroadcastT
+        < CCMI::Schedule::TopoMultinomial,
+          CCMI::ConnectionManager::RankSeqConnMgr,
+          create_schedule>
+        Composite;
+
+        typedef CCMI::Adaptor::AMBroadcast::AMBroadcastFactoryT
+        < Composite,
+          am_broadcast_metadata,
+          CCMI::ConnectionManager::RankSeqConnMgr,
+          getKey>
+        Factory;
       }
-
-      typedef CCMI::Adaptor::AMBroadcast::AMBroadcastT
-      < CCMI::Schedule::TopoMultinomial,
-        CCMI::ConnectionManager::RankBasedConnMgr,
-        create_schedule>
-      AMBinomialBroadcastComposite;
-
-
-      typedef CCMI::Adaptor::AMBroadcast::AMBroadcastFactoryT
-      < AMBinomialBroadcastComposite,
-        am_broadcast_metadata,
-        CCMI::ConnectionManager::RankBasedConnMgr>
-      AMBinomialBroadcastFactory;
-
     }//AMBroadcast
 
     namespace P2PAllreduce

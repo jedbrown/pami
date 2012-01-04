@@ -546,11 +546,6 @@ namespace PAMI
                                         _asrb_binomial_broadcast_factory,
                                                _context,
                                         _context_id);
-                if(_active_binomial_broadcast_factory)
-                  geometry->addCollectiveCheck(PAMI_XFER_AMBROADCAST,
-                                        _active_binomial_broadcast_factory,
-                                               _context,
-                                        _context_id);
                 if(_ascs_binomial_scatter_factory)
                   geometry->addCollectiveCheck(PAMI_XFER_SCATTER,
                                         _ascs_binomial_scatter_factory,
@@ -717,11 +712,6 @@ namespace PAMI
                                         _asrb_binomial_broadcast_factory,
                                           _context,
                                         _context_id);
-                if(_active_binomial_broadcast_factory)
-                  geometry->addCollective(PAMI_XFER_AMBROADCAST,
-                                        _active_binomial_broadcast_factory,
-                                          _context,
-                                        _context_id);
                 if(_ascs_binomial_scatter_factory)
                   geometry->addCollective(PAMI_XFER_SCATTER,
                                         _ascs_binomial_scatter_factory,
@@ -838,27 +828,37 @@ namespace PAMI
               {
                 if(_active_binomial_gather_factory)
                   geometry->addCollectiveCheck(PAMI_XFER_AMGATHER,
-                                        _active_binomial_gather_factory,
+                                               _active_binomial_gather_factory,
                                                _context,
-                                        _context_id);
+                                               _context_id);
                 if(_active_binomial_amscatter_factory)
                   geometry->addCollectiveCheck(PAMI_XFER_AMSCATTER,
-                                        _active_binomial_amscatter_factory,
+                                               _active_binomial_amscatter_factory,
                                                _context,
-                                        _context_id);
+                                               _context_id);
+                if(_active_binomial_broadcast_factory)
+                  geometry->addCollectiveCheck(PAMI_XFER_AMBROADCAST,
+                                               _active_binomial_broadcast_factory,
+                                               _context,
+                                               _context_id);
               }
               else if(result_amc == PAMI_SUCCESS)
               {
                 if(_active_binomial_gather_factory)
                   geometry->addCollective(PAMI_XFER_AMGATHER,
-                                        _active_binomial_gather_factory,
+                                          _active_binomial_gather_factory,
                                           _context,
-                                        _context_id);
+                                          _context_id);
                 if(_active_binomial_amscatter_factory)
                   geometry->addCollective(PAMI_XFER_AMSCATTER,
-                                        _active_binomial_amscatter_factory,
+                                          _active_binomial_amscatter_factory,
                                           _context,
-                                        _context_id);
+                                          _context_id);
+                if(_active_binomial_broadcast_factory)
+                  geometry->addCollective(PAMI_XFER_AMBROADCAST,
+                                          _active_binomial_broadcast_factory,
+                                          _context,
+                                          _context_id);
               }
             }
             TRACE_FN_EXIT();
@@ -1106,8 +1106,8 @@ namespace PAMI
 
             // ----------------------------------------------------
             // Setup and Construct a rank based binomial active message broadcast factory from active message ni and p2p protocol
-            rc = setupFactory<CCMI::Adaptor::P2PAMBroadcast::AMBinomialBroadcastFactory>(ni, _active_binomial_broadcast_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE);
-            if (rc == PAMI_SUCCESS) new ((void*)_active_binomial_broadcast_factory) CCMI::Adaptor::P2PAMBroadcast::AMBinomialBroadcastFactory(_context,_context_id,mapidtogeometry,&_rbconnmgr, ni);
+            rc = setupFactory<CCMI::Adaptor::P2PAMBroadcast::Binomial::Factory>(ni, _active_binomial_broadcast_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE, -1, true);
+            if (rc == PAMI_SUCCESS) new ((void*)_active_binomial_broadcast_factory) CCMI::Adaptor::P2PAMBroadcast::Binomial::Factory(_context, _context_id, mapidtogeometry, &_rsconnmgr, ni);
             // ----------------------------------------------------
 
             // ----------------------------------------------------
@@ -1372,7 +1372,7 @@ namespace PAMI
           CCMI::Adaptor::P2PBroadcast::Async2naryBroadcastFactory         *_2nary_broadcast_factory;
           CCMI::Adaptor::P2PBroadcast::Async3naryBroadcastFactory         *_3nary_broadcast_factory;
           CCMI::Adaptor::P2PBroadcast::Async4naryBroadcastFactory         *_4nary_broadcast_factory;
-          CCMI::Adaptor::P2PAMBroadcast::AMBinomialBroadcastFactory       *_active_binomial_broadcast_factory;
+          CCMI::Adaptor::P2PAMBroadcast::Binomial::Factory                *_active_binomial_broadcast_factory;
 
           // CCMI Binomial Allreduce
           CCMI::Adaptor::P2PAllreduce::Binomial::Factory                  *_binomial_allreduce_factory;

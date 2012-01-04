@@ -8,10 +8,10 @@
 /* end_generated_IBM_copyright_prolog                               */
 /**
  * \file test/api/collectives/ambcast.c
- * \brief Simple AMBcast test on world geometry
+ * \brief Simple AMBroadcast test on world geometry
  */
 
-#define COUNT      262144
+#define COUNT      524288
 #define NITERLAT   100
 /*
 #define OFFSET     0
@@ -21,7 +21,34 @@
 
 #include "../pami_util.h"
 
-pami_context_t      lgContext=NULL;
+#define AMDEBUG 0
+
+#if AMDEBUG == 1
+#define DEBUG(x) fprintf x
+#else
+#define DEBUG(x) 
+#endif
+
+typedef struct
+{
+  void *rbuf;
+  void *cookie;
+  int bytes;
+  int root;
+} validation_t;
+
+typedef struct
+{
+  unsigned cookie;
+} user_header_t;
+
+pami_context_t      lgContext = NULL;
+pami_task_t         my_task_id;
+size_t              num_tasks;
+int                 _gRc = PAMI_SUCCESS;
+
+char                   *_g_buffer;
+validation_t           *_g_val_buffer;
 
 void initialize_sndbuf (void *sbuf, int bytes, int root)
 {
@@ -55,107 +82,91 @@ int check_rcvbuf (void *rbuf, int bytes, int root)
   return 0;
 }
 
-volatile unsigned       _g_total_broadcasts=0;
-char                   *_g_recv_buffer;
-int                     _gRc = PAMI_SUCCESS;
-typedef struct 
+/**
+ *  Check if we have a valid context
+ */
+void check_context(pami_context_t context)
 {
-  void *rbuf;
-  int bytes;
-  int root;
-  char buffer;
-} validation_t;
+  if(!context)
+    fprintf(stderr, "%s: Error. Null context received in callback.\n",gProtocolName);
+  if(lgContext != context)
+    fprintf(stderr, "%s: Error. Unexpected context received in callback %p != %p.\n",gProtocolName,lgContext,context);
+#ifdef PAMI_TEST_STRICT
+  assert(context);
+  assert(lgContext==context);
+#endif
 
+  pami_configuration_t configs;
+  configs.name         = PAMI_CONTEXT_DISPATCH_ID_MAX;
+  configs.value.intval = -1;
+
+  pami_result_t rc;
+  rc = PAMI_Context_query (context,&configs,1);
+
+  if(rc != PAMI_SUCCESS && rc != PAMI_INVAL)
+    fprintf(stderr,"%s: Error. Could not query the context(%u).\n",gProtocolName,rc);
+#ifdef PAMI_TEST_STRICT
+  assert(rc == PAMI_SUCCESS || rc == PAMI_INVAL);
+#endif
+}
+
+/**
+ *  Completion callback
+ */
 void cb_ambcast_done (void *context, void * clientdata, pami_result_t err)
 {
-  if(gVerbose)
-  {
-    if(!context) fprintf(stderr, "%s: Error. Null context received on cb_done.\n",gProtocolName);
-    if(lgContext != context) fprintf(stderr, "%s: Error. Unexpected context received on cb_done %p != %p.\n",gProtocolName,lgContext,context);
-#ifdef PAMI_TEST_STRICT
-    assert(context);
-    assert(lgContext==context);
-#endif
-
-    pami_configuration_t configs;
-    configs.name         = PAMI_CONTEXT_DISPATCH_ID_MAX;
-    configs.value.intval = -1;
-
-    pami_result_t rc;
-    rc = PAMI_Context_query (context,&configs,1);
-
-    if(rc != PAMI_SUCCESS && rc != PAMI_INVAL) fprintf(stderr,"%s: Error. Could not query the context(%u).\n",gProtocolName,rc);
-#ifdef PAMI_TEST_STRICT
-    assert(rc == PAMI_SUCCESS || rc == PAMI_INVAL);
-#endif
-  }
-
-  _g_total_broadcasts++;
-  int rc_check;
   validation_t *v = (validation_t*)clientdata;
-
-  _gRc |= rc_check = check_rcvbuf (v->rbuf, v->bytes, v->root);
-  if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
-  /*fprintf(stderr,"cb_ambcast_done root %u, bytes %u\n",v->root, v->bytes); */
-  free(clientdata);
-}
- 
-void cb_ambcast_recv(pami_context_t         context,      /**< IN:  communication context which invoked the dispatch function */
-                     void                 * cookie,       /**< IN:  dispatch cookie */
-                     const void           * header_addr,  /**< IN:  header address  */
-                     size_t                 header_size,  /**< IN:  header size     */
-                     const void           * pipe_addr,    /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
-                     size_t                 data_size,    /**< IN:  number of bytes of message data */
-                     pami_endpoint_t        origin,       /**< IN:  root initiating endpoint */
-                     pami_geometry_t        geometry,     /**< IN:  Geometry */
-                     pami_recv_t          * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
-{
+  volatile unsigned *active = (volatile unsigned *) v->cookie;
+  DEBUG((stderr, "cb_ambcast_done(): cookie= %p value=%u\n", active, *active));
   if(gVerbose)
   {
-    if(!context) fprintf(stderr, "%s: Error. Null context received on cb_done.\n",gProtocolName);
-    if(lgContext != context) fprintf(stderr, "%s: Error. Unexpected context received on cb_done %p != %p.\n",gProtocolName,lgContext,context);
-#ifdef PAMI_TEST_STRICT
-    assert(context);
-    assert(lgContext==context);
-#endif
-
-    pami_configuration_t configs;
-    configs.name         = PAMI_CONTEXT_DISPATCH_ID_MAX;
-    configs.value.intval = -1;
-
-    pami_result_t rc;
-    rc = PAMI_Context_query (context,&configs,1);
-
-    if(rc != PAMI_SUCCESS && rc != PAMI_INVAL) fprintf(stderr,"%s: Error. Could not query the context(%u).\n",gProtocolName,rc);
-#ifdef PAMI_TEST_STRICT
-    assert(rc == PAMI_SUCCESS || rc == PAMI_INVAL);
-#endif
-
+    check_context((pami_context_t) context);
   }
 
-  validation_t *v =  malloc(data_size+sizeof(validation_t));
+  if(my_task_id != v->root)
+  {
+    int rc_check;
+    _gRc |= rc_check = check_rcvbuf (_g_buffer, v->bytes, v->root);
+    if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
+  }
 
-  void* rcvbuf = v->rbuf = &v->buffer;
-  v->bytes = data_size;
+  (*active)++;
+}
+/**
+ *  User dispatch function
+ */
+void cb_ambcast_recv(pami_context_t        context,      /**< IN:  communication context which invoked the dispatch function */
+                      void                 * cookie,       /**< IN:  dispatch cookie */
+                      const void           * header_addr,  /**< IN:  header address  */
+                      size_t                 header_size,  /**< IN:  header size     */
+                      const void           * pipe_addr,    /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
+                      size_t                 data_size,    /**< IN:  data size       */
+                      pami_endpoint_t        origin,       /**< IN:  root initiating endpoint */
+                      pami_geometry_t        geometry,     /**< IN:  Geometry */
+                      pami_recv_t          * recv)         /**< OUT: receive message structure */
+{
+  DEBUG((stderr,"cb_ambcast_recv(): header_addr=%p  header_size=%zu header_val=%u cookie=%p\n",
+         header_addr, header_size,((user_header_t *)header_addr)->cookie, cookie));
+  if(gVerbose)
+  {
+    check_context(context);
+  }
+
   pami_task_t     task;
   size_t          offset;
   _gRc |= PAMI_Endpoint_query (origin,
                               &task,
                               &offset);
 
-  v->root = task;
-
-  /*fprintf(stderr,"cb_ambcast_recv root %u, bytes %u, recv %p\n",v->root, v->bytes, recv);*/
-
-  if (!recv)
-  {
-    memcpy(rcvbuf, pipe_addr, data_size);
-    return;
-  }
+  validation_t *v = _g_val_buffer + task;
+  v->rbuf   = _g_buffer;
+  v->cookie = cookie;
+  v->bytes  = data_size;
+  v->root   = task;
 
   recv->cookie      = (void*)v;
   recv->local_fn    = cb_ambcast_done;
-  recv->addr        = rcvbuf;
+  recv->addr        = v->rbuf;
   recv->type        = PAMI_TYPE_BYTE;
   recv->offset      = 0;
   recv->data_fn     = PAMI_DATA_COPY;
@@ -166,10 +177,8 @@ int main(int argc, char*argv[])
 {
   pami_client_t        client;
   pami_context_t      *context;
-  pami_result_t        result = PAMI_ERROR;
-  pami_task_t          task_id;
-  size_t               num_tasks;
   pami_geometry_t      world_geometry;
+  pami_task_t root_task = 0;
 
   /* Barrier variables */
   size_t               barrier_num_algorithm[2];
@@ -188,10 +197,10 @@ int main(int argc, char*argv[])
   pami_algorithm_t    *ambcast_must_query_algo = NULL;
   pami_metadata_t     *ambcast_must_query_md = NULL;
   pami_xfer_type_t     ambcast_xfer = PAMI_XFER_AMBROADCAST;
-  pami_xfer_t          ambroadcast;
-  volatile unsigned    ambcast_poll_flag = 0;
+  pami_xfer_t          ambcast;
+  volatile unsigned    ambcast_total_count = 0;
 
-  int                  nalg= 0;
+  int                  nalg = 0, i;
   double               ti, tf, usec;
 
   /* Process environment variables and setup globals */
@@ -200,14 +209,19 @@ int main(int argc, char*argv[])
   assert(gNum_contexts > 0);
   context = (pami_context_t*)malloc(sizeof(pami_context_t) * gNum_contexts);
 
+  /* \note Test environment variable" TEST_ROOT=N, defaults to 0.*/
+  char* sRoot = getenv("TEST_ROOT");
+  /* Override ROOT */
+  if (sRoot) root_task = (pami_task_t) atoi(sRoot);
+
   /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
                      context,        /* Context            */
                      NULL,           /* Clientname=default */
-                     &gNum_contexts, /* gNum_contexts       */
+                     &gNum_contexts, /* gNum_contexts      */
                      NULL,           /* null configuration */
                      0,              /* no configuration   */
-                     &task_id,       /* task id            */
+                     &my_task_id,    /* task id            */
                      &num_tasks);    /* number of tasks    */
 
   if (rc == 1)
@@ -217,18 +231,22 @@ int main(int argc, char*argv[])
 
   /*  Allocate buffer(s) */
   int err = 0;
-  void* buf = NULL;
+  void *buf = NULL;
   err = posix_memalign(&buf, 128, gMax_count + gBuffer_offset);
   assert(err == 0);
   buf = (char*)buf + gBuffer_offset;
 
+  void *validation = NULL;
+  err = posix_memalign((void **)&validation, 128, (num_tasks * sizeof(validation_t)) + gBuffer_offset);
+  validation = (char*)validation + gBuffer_offset;
+
+  user_header_t header;
+  header.cookie = 100;
 
   unsigned iContext = 0;
-
   for (; iContext < gNum_contexts; ++iContext)
   {
-
-    if (task_id == 0)
+    if (my_task_id == 0)
       printf("# Context: %u\n", iContext);
 
     /*  Query the world geometry for barrier algorithms */
@@ -245,7 +263,7 @@ int main(int argc, char*argv[])
     if (rc == 1)
       return 1;
 
-    /*  Query the world geometry for ambroadcast algorithms */
+    /*  Query the world geometry for ambcast algorithms */
     rc |= query_geometry_world(client,
                                context[iContext],
                                &world_geometry,
@@ -259,7 +277,8 @@ int main(int argc, char*argv[])
     if (rc == 1)
       return 1;
 
-    _g_recv_buffer = buf;
+    _g_buffer = (char *)buf;
+    _g_val_buffer  = (validation_t *)validation;
 
 
     barrier.cb_done     = cb_done;
@@ -268,99 +287,104 @@ int main(int argc, char*argv[])
     blocking_coll(context[iContext], &barrier, &bar_poll_flag);
 
 
-    ambroadcast.cb_done   = cb_done;
-    ambroadcast.cookie    = (void*) & ambcast_poll_flag;
-    ambroadcast.algorithm = ambcast_always_works_algo[0];
-    ambroadcast.cmd.xfer_ambroadcast.user_header  = NULL;
-    ambroadcast.cmd.xfer_ambroadcast.headerlen    = 0;
-    ambroadcast.cmd.xfer_ambroadcast.sndbuf       = buf;
-    ambroadcast.cmd.xfer_ambroadcast.stype        = PAMI_TYPE_BYTE;
-    ambroadcast.cmd.xfer_ambroadcast.stypecount   = 0;
+    validation_t v;
+    v.root   = my_task_id;
+    v.cookie = (void *)&ambcast_total_count;
+    ambcast.cb_done = cb_ambcast_done;
+    ambcast.cookie  = &v;
+    ambcast.algorithm = ambcast_always_works_algo[0];
+    ambcast.cmd.xfer_ambroadcast.user_header  = &header;
+    ambcast.cmd.xfer_ambroadcast.headerlen    = sizeof(user_header_t);
+    ambcast.cmd.xfer_ambroadcast.sndbuf       = buf;
+    ambcast.cmd.xfer_ambroadcast.stype        = PAMI_TYPE_BYTE;
+    ambcast.cmd.xfer_ambroadcast.stypecount   = 0;
 
     for (nalg = 0; nalg < ambcast_num_algorithm[0]; nalg++)
     {
       gProtocolName = ambcast_always_works_md[nalg].name;
 
-      int k;
-      for (k=0; k< gNumRoots; k++)
+      if (my_task_id == root_task)
       {
-        pami_task_t root_task = (pami_task_t)k;
-        if (task_id == root_task)
+        printf("# AMBroadcast Bandwidth Test -- context = %d, root = %d, protocol: %s\n",
+               iContext, root_task, ambcast_always_works_md[nalg].name);
+        printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+        printf("# -----------      -----------    -----------    ---------\n");
+        fflush(stdout);
+      }
+
+      if (((strstr(ambcast_always_works_md[nalg].name,gSelected) == NULL) && gSelector) ||
+          ((strstr(ambcast_always_works_md[nalg].name,gSelected) != NULL) && !gSelector))  continue;
+
+      int j;
+      pami_collective_hint_t h = {0};
+      pami_dispatch_callback_function fn;
+      lgContext = context[iContext];
+      fn.ambroadcast = cb_ambcast_recv;
+      PAMI_AMCollective_dispatch_set(context[iContext],
+                                     ambcast_always_works_algo[nalg],
+                                     root_task,/* Set the dispatch id, can be any arbitrary value */
+                                     fn,
+                                     (void*) &ambcast_total_count,
+                                     h);
+      ambcast.cmd.xfer_ambroadcast.dispatch = root_task;
+      ambcast.algorithm = ambcast_always_works_algo[nalg];
+
+      volatile unsigned *nbcast = &ambcast_total_count;
+      for (i = 1; i <= gMax_count; i *= 2)
+      {
+        size_t  dataSent = i;
+        int     niter;
+        pami_result_t result;
+
+        if (dataSent < CUTOFF)
+          niter = gNiterlat;
+        else
+          niter = NITERBW;
+
+        *nbcast = 0;
+        memset(buf, 0xFF, i);
+        root_task = (root_task + num_tasks - 1) % num_tasks;
+        if (my_task_id == root_task)
+          initialize_sndbuf (buf, i, root_task);
+
+        blocking_coll(context[iContext], &barrier, &bar_poll_flag);
+        ti = timer();
+
+        for (j = 0; j < niter; j++)
         {
-          printf("# Broadcast Bandwidth Test -- context = %d, root = %d, protocol: %s\n", 
-                 iContext, root_task, ambcast_always_works_md[nalg].name);
-          printf("# Size(bytes)           cycles    bytes/sec    usec\n");
-          printf("# -----------      -----------    -----------    ---------\n");
+          /*root_task = (root_task + num_tasks - 1) % num_tasks;*/
+          if (my_task_id == root_task)
+          {
+            ambcast.cmd.xfer_ambroadcast.stypecount = i;
+            result = PAMI_Collective(context[iContext], &ambcast);
+            if (result != PAMI_SUCCESS)
+              {
+                fprintf (stderr, "Error. Unable to issue collective. result = %d\n", result);
+                return 1;
+              }
+          }
+          while (*nbcast <= j)
+            result = PAMI_Context_advance (context[iContext], 1);
+
+          rc |= _gRc; /* validation return code done in cb_ambcast_done */
         }
 
-        if (((strstr(ambcast_always_works_md[nalg].name,gSelected) == NULL) && gSelector) ||
-            ((strstr(ambcast_always_works_md[nalg].name,gSelected) != NULL) && !gSelector))  continue;
-
-        int i, j;
-        pami_collective_hint_t h = {0};
-        pami_dispatch_callback_function fn;
-        lgContext = context[iContext];
-        fn.ambroadcast = cb_ambcast_recv;
-        PAMI_AMCollective_dispatch_set(context[iContext],
-                                       ambcast_always_works_algo[nalg],
-                                       k,
-                                       fn,
-                                       NULL,
-                                       h);
-        ambroadcast.algorithm = ambcast_always_works_algo[nalg];
-        memset(buf, 0xFF, gMax_count);
+        assert(*nbcast == niter);
+        tf = timer();
         blocking_coll(context[iContext], &barrier, &bar_poll_flag);
 
-        for (i = 1; i <= gMax_count; i *= 2)
+        usec = (tf - ti) / (double)niter;
+        if(my_task_id == root_task)
         {
-          size_t  dataSent = i;
-          int          niter;
-
-          if (dataSent < CUTOFF)
-            niter = gNiterlat;
-          else
-            niter = NITERBW;
-
-          if (task_id == root_task)
-          {
-            initialize_sndbuf (buf, i, root_task);
-            ti = timer();
-
-            for (j = 0; j < niter; j++)
-            {
-              ambroadcast.cmd.xfer_ambroadcast.stypecount = i;
-              /*fprintf(stderr,"ambcast root %u, bytes %u\n",task_id, i);*/
-              blocking_coll (context[iContext], &ambroadcast, &ambcast_poll_flag);
-            }
-
-            while (ambcast_poll_flag)
-              result = PAMI_Context_advance (context[iContext], 1);
-
-            blocking_coll(context[iContext], &barrier, &bar_poll_flag);
-            tf = timer();
-            usec = (tf - ti) / (double)niter;
-            printf("  %11lld %16lld %14.1f %12.2f\n",
-                   (long long)dataSent,
-                   0LL,
-                   (double)1e6*(double)dataSent / (double)usec,
-                   usec);
-            fflush(stdout);
-          }
-          else
-          {
-            /*fprintf(stderr,"ambcast non-root %u, bytes %u\n",task_id, i);*/
-             while (_g_total_broadcasts < niter)
-              result = PAMI_Context_advance (context[iContext], 1);
-
-
-            rc |= _gRc; /* validation return code done in cb_ambcast_done */
-
-            _g_total_broadcasts = 0;
-            blocking_coll(context[iContext], &barrier, &bar_poll_flag);
-          }
+          printf("  %11lld %16d %14.1f %12.2f\n",
+                 (long long)dataSent,
+                 niter,
+                 (double)1e6*(double)dataSent / (double)usec,
+                 usec);
+          fflush(stdout);
         }
-        lgContext = NULL;
       }
+      lgContext = NULL;
     }
     free(bar_always_works_algo);
     free(bar_always_works_md);
@@ -369,10 +393,14 @@ int main(int argc, char*argv[])
     free(ambcast_always_works_algo);
     free(ambcast_always_works_md);
     free(ambcast_must_query_algo);
+    free(ambcast_must_query_md);
   } /*for(unsigned iContext = 0; iContext < gNum_contexts; ++iContexts)*/
 
   buf = (char*)buf - gBuffer_offset;
   free(buf);
+
+  validation = (char*)validation - gBuffer_offset;
+  free(validation);
 
   rc |= pami_shutdown(&client, context, &gNum_contexts);
   return rc;
