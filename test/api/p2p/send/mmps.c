@@ -367,7 +367,8 @@ main(int argc, char **argv)
     worker();
   else
     ;
-   for (int i=0; i<ncontexts; i++) {
+  int i=0;
+   for (i=0; i<ncontexts; i++) {
       pami_context_t context = (pami_context_t) contexts[i];
        PAMI_Fence_all(context, NULL, NULL) ;
     }
