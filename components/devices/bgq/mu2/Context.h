@@ -346,7 +346,7 @@ namespace PAMI
 /// track their progress, hence the reason for this option.  This number
 /// should be specified in increments of 64.  A value of 0 forces all messages
 /// to be deterministically routed.
-/// \default 64
+/// \default 0
 ////////////////////////////////////////////////////////////////////////////////
             
 ////////////////////////////////////////////////////////////////////////////////
@@ -356,7 +356,7 @@ namespace PAMI
 /// \default 3
 ////////////////////////////////////////////////////////////////////////////////
 
-            unsigned long numDynamicRouting = 64;
+            unsigned long numDynamicRouting = 0;
             char *env;
             if ((env = getenv("PAMI_NUMDYNAMICROUTING"))) 
             {
