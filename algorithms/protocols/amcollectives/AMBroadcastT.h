@@ -206,7 +206,6 @@ namespace CCMI
             pami_ambroadcast_t *amb_xfer = &(xfer->cmd.xfer_ambroadcast);
 
             PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)g;
-            PAMI::Topology *topo = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
             T_Conn *cmgr = _cmgr;
             DEBUG((stderr, "AMBroadcastFactoryT::generate()\n"));
             unsigned key = getKey(this->_native->endpoint(),
