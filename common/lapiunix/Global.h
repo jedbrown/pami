@@ -65,6 +65,6 @@ namespace PAMI
   };   // class Global
 };     // namespace PAMI
 
-extern PAMI::Global __global;
+extern PAMI::Global &__global;
 
 #endif // __pami_common_lapiunix_global_h__

@@ -14,7 +14,7 @@
 #include "Global.h"
 #include "Topology.h" // need to make static members...
 
-PAMI::Global __global;
+PAMI::Global &__global = *new PAMI::Global;
 
 PAMI::Mapping *PAMI::Topology::mapping = NULL;
 pami_coord_t PAMI::Topology::my_coords;

@@ -30,8 +30,6 @@
  #define DO_TRACE_DEBUG     0
 #endif
 
-extern PAMI::Global __global;
-
 namespace PAMI
 {
 
