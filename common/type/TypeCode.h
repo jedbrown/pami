@@ -41,38 +41,38 @@ namespace PAMI
 
             typedef enum
             {
-              PRIMITIVE_TYPE_UNDEFINED=-1,
-              PRIMITIVE_TYPE_BYTE=0,
+                PRIMITIVE_TYPE_BYTE=0,
 
-              PRIMITIVE_TYPE_SIGNED_CHAR,
-              PRIMITIVE_TYPE_SIGNED_SHORT,
-              PRIMITIVE_TYPE_SIGNED_INT,
-              PRIMITIVE_TYPE_SIGNED_LONG,
-              PRIMITIVE_TYPE_SIGNED_LONG_LONG,
+                PRIMITIVE_TYPE_SIGNED_CHAR,
+                PRIMITIVE_TYPE_SIGNED_SHORT,
+                PRIMITIVE_TYPE_SIGNED_INT,
+                PRIMITIVE_TYPE_SIGNED_LONG,
+                PRIMITIVE_TYPE_SIGNED_LONG_LONG,
 
-              PRIMITIVE_TYPE_UNSIGNED_CHAR,
-              PRIMITIVE_TYPE_UNSIGNED_SHORT,
-              PRIMITIVE_TYPE_UNSIGNED_INT,
-              PRIMITIVE_TYPE_UNSIGNED_LONG,
-              PRIMITIVE_TYPE_UNSIGNED_LONG_LONG,
+                PRIMITIVE_TYPE_UNSIGNED_CHAR,
+                PRIMITIVE_TYPE_UNSIGNED_SHORT,
+                PRIMITIVE_TYPE_UNSIGNED_INT,
+                PRIMITIVE_TYPE_UNSIGNED_LONG,
+                PRIMITIVE_TYPE_UNSIGNED_LONG_LONG,
 
-              PRIMITIVE_TYPE_FLOAT,
-              PRIMITIVE_TYPE_DOUBLE,
-              PRIMITIVE_TYPE_LONG_DOUBLE,
+                PRIMITIVE_TYPE_FLOAT,
+                PRIMITIVE_TYPE_DOUBLE,
+                PRIMITIVE_TYPE_LONG_DOUBLE,
 
-              PRIMITIVE_TYPE_LOGICAL,
+                PRIMITIVE_TYPE_LOGICAL,
 
-              PRIMITIVE_TYPE_SINGLE_COMPLEX,
-              PRIMITIVE_TYPE_DOUBLE_COMPLEX,
+                PRIMITIVE_TYPE_SINGLE_COMPLEX,
+                PRIMITIVE_TYPE_DOUBLE_COMPLEX,
 
-              PRIMITIVE_TYPE_LOC_2INT,
-              PRIMITIVE_TYPE_LOC_2FLOAT,
-              PRIMITIVE_TYPE_LOC_2DOUBLE,
-              PRIMITIVE_TYPE_LOC_SHORT_INT,
-              PRIMITIVE_TYPE_LOC_FLOAT_INT,
-              PRIMITIVE_TYPE_LOC_DOUBLE_INT,
+                PRIMITIVE_TYPE_LOC_2INT,
+                PRIMITIVE_TYPE_LOC_2FLOAT,
+                PRIMITIVE_TYPE_LOC_2DOUBLE,
+                PRIMITIVE_TYPE_LOC_SHORT_INT,
+                PRIMITIVE_TYPE_LOC_FLOAT_INT,
+                PRIMITIVE_TYPE_LOC_DOUBLE_INT,
 
-              PRIMITIVE_TYPE_COUNT,
+                PRIMITIVE_TYPE_COUNT,
+                PRIMITIVE_TYPE_UNDEFINED,
             } primitive_type_t;
 
             typedef unsigned primitive_logical_t; // PRIMITIVE_TYPE_LOGICAL
@@ -84,8 +84,8 @@ namespace PAMI
             template <typename T>
             struct primitive_complex_t
             {
-              T real;
-              T imaginary;
+                T real;
+                T imaginary;
             };
 
             //
@@ -99,13 +99,13 @@ namespace PAMI
             template <typename T_Value, typename T_Index>
             struct primitive_loc_t
             {
-              T_Value value;
-              T_Index index;
+                T_Value value;
+                T_Index index;
             };
 
             TypeCode();
+            TypeCode(size_t code_size);
             TypeCode(void *code_addr, size_t code_size, bool resize_code_buffer = true);
-            TypeCode(size_t code_size, primitive_type_t primitive);
             ~TypeCode();
 
             void AddShift(size_t shift);
@@ -148,6 +148,7 @@ namespace PAMI
             struct Begin : Op {
                 unsigned int contiguous:1;
                 unsigned int simple:1;
+                unsigned int primitive:6;
                 unsigned int depth;
                 size_t  code_size;
                 size_t  data_size;
@@ -161,9 +162,9 @@ namespace PAMI
                     data_size(0), extent(0), num_blocks(0), unit(0), atom_size(0) { }
 
                 void Show(int pc) const {
-                    ITRC(IT_TYPE, "%d: Begin: contiguous %d simple %d code_size %zu depth %u "
-                            "data_size %zu extent %zu num_blocks %zu unit %zu atom_size %zu\n",
-                            pc, contiguous, simple, code_size, depth, data_size, extent,
+                    ITRC(IT_TYPE, "%d: Begin: contiguous %d simple %d primitive %d code_size %zu "
+                            "depth %u data_size %zu extent %zu num_blocks %zu unit %zu atom_size %zu\n",
+                            pc, contiguous, simple, primitive, code_size, depth, data_size, extent,
                             num_blocks, unit, atom_size);
                 }
             };
@@ -236,45 +237,40 @@ namespace PAMI
             void SetSimple(bool);
 
           protected:
-            primitive_type_t   primitive;
-
+            void SetPrimitive(primitive_type_t);
             void AddSimpleInternal(size_t bytes, size_t stride, size_t reps);
             void AddTypedInternal(TypeCode *sub_type, size_t stride, size_t reps);
     };
 
     inline TypeCode::TypeCode()
-        : code(NULL), code_buf_size(0), prev_cursor(0), code_cursor(0),
-        completed(false), primitive(PRIMITIVE_TYPE_UNDEFINED)
+        : code(NULL), code_buf_size(0), prev_cursor(0), code_cursor(0), completed(false)
     {
         ResizeCodeBuffer(sizeof(Begin) + sizeof(Copy)*4);
         Push(Begin());
+        SetPrimitive(PRIMITIVE_TYPE_UNDEFINED);
     }
 
     inline TypeCode::TypeCode(void *code_addr, size_t code_size, bool copy_code_buffer)
-        : code(NULL), code_buf_size(0), prev_cursor(0), code_cursor(0),
-        completed(true), primitive(PRIMITIVE_TYPE_UNDEFINED)
+        : code(NULL), code_buf_size(0), prev_cursor(0), code_cursor(0), completed(true)
     {
-      if (copy_code_buffer)
-        {
-          ResizeCodeBuffer(code_size);
-          memcpy(code, code_addr, code_size);
-        }
-      else
-        {
-          code = (char *)code_addr;
-          code_buf_size = code_size;
+        if (copy_code_buffer) {
+            ResizeCodeBuffer(code_size);
+            memcpy(code, code_addr, code_size);
+        } else {
+            code = (char *)code_addr;
+            code_buf_size = code_size;
 
-          // Acquire an *extra* reference to the type so that the ReferenceCount
-          // parent class does not delete the storage for the type when it is
-          // destroyed.
-          AcquireReference();
+            // Acquire an *extra* reference to the type so that the ReferenceCount
+            // parent class does not delete the storage for the type when it is
+            // destroyed.
+            AcquireReference();
         }
     }
 
-    inline TypeCode::TypeCode(size_t code_size, primitive_type_t primitive_type = PRIMITIVE_TYPE_COUNT)
-        : code(NULL), code_buf_size(0), prev_cursor(0), code_cursor(0),
-        completed(true), primitive(primitive_type)
+    inline TypeCode::TypeCode(size_t code_size)
+        : code(NULL), code_buf_size(0), prev_cursor(0), code_cursor(0), completed(true)
     {
+        assert(code_size);
         ResizeCodeBuffer(code_size);
     }
 
@@ -390,7 +386,7 @@ namespace PAMI
 
     inline TypeCode::primitive_type_t TypeCode::GetPrimitive() const
     {
-      return primitive;
+      return (primitive_type_t)((Begin *)code)->primitive;
     }
 
     inline void   TypeCode::SetAtomSize(size_t atom_size)
@@ -407,6 +403,11 @@ namespace PAMI
     inline void TypeCode::SetSimple(bool is_simple)
     {
         ((Begin *)code)->simple = is_simple;
+    }
+
+    inline void TypeCode::SetPrimitive(primitive_type_t primitive)
+    {
+        ((Begin *)code)->primitive = primitive;
     }
 
     inline bool TypeCode::IsSimple() const
@@ -426,7 +427,7 @@ namespace PAMI
 
     inline bool TypeCode::IsPrimitive() const
     {
-        return (primitive < PRIMITIVE_TYPE_COUNT);
+        return (GetPrimitive() < PRIMITIVE_TYPE_COUNT);
     }
 
     inline void TypeCode::AddCodeSize(size_t inc_code_size)
@@ -560,8 +561,8 @@ namespace PAMI
 
         if (0 != bytes) {
             // set primitive value to user-defined
-            primitive = PRIMITIVE_TYPE_COUNT;
-            ITRC(IT_TYPE, "AddSimple(): this 0x%zx modified primitive type to %d\n", this, primitive);
+            SetPrimitive(PRIMITIVE_TYPE_COUNT);
+            ITRC(IT_TYPE, "AddSimple(): this 0x%zx modified primitive type to %d\n", this, GetPrimitive());
         }
 
         // add the copy instruction
@@ -633,19 +634,19 @@ namespace PAMI
         ITRC(IT_TYPE, "AddTyped(): this 0x%zx sub_type 0x%zx stride %zd reps %zu\n", this, sub_type, stride, reps);
 
         // set the primitive value if undefined
-        if (PRIMITIVE_TYPE_UNDEFINED == primitive) {
+        if (PRIMITIVE_TYPE_UNDEFINED == GetPrimitive()) {
             // save the primitive type
-            primitive = sub_type->GetPrimitive();
-            ITRC(IT_TYPE, "AddTyped(): this 0x%zx modified primitive to %d [1]\n", this, primitive);
+            SetPrimitive(sub_type->GetPrimitive());
+            ITRC(IT_TYPE, "AddTyped(): this 0x%zx modified primitive to %d [1]\n", this, GetPrimitive());
         }
 
         // add the sub-type
         AddTypedInternal(sub_type, stride, reps);
 
         // set primitive value to user-defined if primitive type inconsistency
-        if (sub_type->GetPrimitive() != primitive) {
-            primitive = PRIMITIVE_TYPE_COUNT;
-            ITRC(IT_TYPE, "AddTyped(): this 0x%zx modified primitive type to %d [2]\n", this, primitive);
+        if (sub_type->GetPrimitive() != GetPrimitive()) {
+            SetPrimitive(PRIMITIVE_TYPE_COUNT);
+            ITRC(IT_TYPE, "AddTyped(): this 0x%zx modified primitive type to %d [2]\n", this, GetPrimitive());
         }
     }
 
@@ -738,13 +739,13 @@ namespace PAMI
         } while (0);
 
         // check the primitive type
-        if (PRIMITIVE_TYPE_UNDEFINED == primitive) {
-            primitive = PRIMITIVE_TYPE_COUNT;
-            ITRC(IT_TYPE, "Complete(): this 0x%zx modified primitive type to %d\n", this, primitive);
+        if (PRIMITIVE_TYPE_UNDEFINED == GetPrimitive()) {
+            SetPrimitive(PRIMITIVE_TYPE_COUNT);
+            ITRC(IT_TYPE, "Complete(): this 0x%zx modified primitive type to %d\n", this, GetPrimitive());
         }
 
         completed = true;
-        ITRC(IT_TYPE, "Complete(): this 0x%zx code 0x%zx code_buf_size %zd code_cursor %zu completed %d primitive %d\n", this, code, code_buf_size, code_cursor, completed, primitive);
+        ITRC(IT_TYPE, "Complete(): this 0x%zx code 0x%zx code_buf_size %zd code_cursor %zu completed %d primitive %d\n", this, code, code_buf_size, code_cursor, completed, GetPrimitive());
         Show();
     }
 
@@ -779,8 +780,8 @@ namespace PAMI
         : TypeCode()
     {
         assert(0<atom_size);
-        primitive = PRIMITIVE_TYPE_BYTE;
         size_t prim_size = ULONG_MAX - ULONG_MAX%atom_size;
+        SetPrimitive(PRIMITIVE_TYPE_BYTE);
         AddSimpleInternal(prim_size, prim_size, 1);
         Complete();
         SetAtomSize(atom_size);
@@ -788,112 +789,111 @@ namespace PAMI
     }
 
     inline TypeContig::TypeContig(primitive_type_t primitive_type)
+        : TypeCode()
     {
-      primitive = primitive_type;
+        size_t primitive_atom = 0;
 
-      size_t primitive_atom = 0;
+        switch (primitive_type)
+        {
+            case PRIMITIVE_TYPE_BYTE:
+                primitive_atom = sizeof(uint8_t);
+                break;
 
-      switch (primitive_type)
-      {
-        case PRIMITIVE_TYPE_BYTE:
-          primitive_atom = sizeof(uint8_t);
-          break;
+            case PRIMITIVE_TYPE_SIGNED_CHAR:
+                primitive_atom = sizeof(signed char);
+                break;
 
-        case PRIMITIVE_TYPE_SIGNED_CHAR:
-          primitive_atom = sizeof(signed char);
-          break;
+            case PRIMITIVE_TYPE_SIGNED_SHORT:
+                primitive_atom = sizeof(signed short);
+                break;
 
-        case PRIMITIVE_TYPE_SIGNED_SHORT:
-          primitive_atom = sizeof(signed short);
-          break;
+            case PRIMITIVE_TYPE_SIGNED_INT:
+                primitive_atom = sizeof(signed int);
+                break;
 
-        case PRIMITIVE_TYPE_SIGNED_INT:
-          primitive_atom = sizeof(signed int);
-          break;
+            case PRIMITIVE_TYPE_SIGNED_LONG:
+                primitive_atom = sizeof(signed long);
+                break;
 
-        case PRIMITIVE_TYPE_SIGNED_LONG:
-          primitive_atom = sizeof(signed long);
-          break;
+            case PRIMITIVE_TYPE_SIGNED_LONG_LONG:
+                primitive_atom = sizeof(signed long long);
+                break;
 
-        case PRIMITIVE_TYPE_SIGNED_LONG_LONG:
-          primitive_atom = sizeof(signed long long);
-          break;
+            case PRIMITIVE_TYPE_UNSIGNED_CHAR:
+                primitive_atom = sizeof(unsigned char);
+                break;
 
-        case PRIMITIVE_TYPE_UNSIGNED_CHAR:
-          primitive_atom = sizeof(unsigned char);
-          break;
+            case PRIMITIVE_TYPE_UNSIGNED_SHORT:
+                primitive_atom = sizeof(unsigned short);
+                break;
 
-        case PRIMITIVE_TYPE_UNSIGNED_SHORT:
-          primitive_atom = sizeof(unsigned short);
-          break;
+            case PRIMITIVE_TYPE_UNSIGNED_INT:
+                primitive_atom = sizeof(unsigned int);
+                break;
 
-        case PRIMITIVE_TYPE_UNSIGNED_INT:
-          primitive_atom = sizeof(unsigned int);
-          break;
+            case PRIMITIVE_TYPE_UNSIGNED_LONG:
+                primitive_atom = sizeof(unsigned long);
+                break;
 
-        case PRIMITIVE_TYPE_UNSIGNED_LONG:
-          primitive_atom = sizeof(unsigned long);
-          break;
+            case PRIMITIVE_TYPE_UNSIGNED_LONG_LONG:
+                primitive_atom = sizeof(unsigned long long);
+                break;
 
-        case PRIMITIVE_TYPE_UNSIGNED_LONG_LONG:
-          primitive_atom = sizeof(unsigned long long);
-          break;
+            case PRIMITIVE_TYPE_FLOAT:
+                primitive_atom = sizeof(float);
+                break;
 
-        case PRIMITIVE_TYPE_FLOAT:
-          primitive_atom = sizeof(float);
-          break;
+            case PRIMITIVE_TYPE_DOUBLE:
+                primitive_atom = sizeof(double);
+                break;
 
-        case PRIMITIVE_TYPE_DOUBLE:
-          primitive_atom = sizeof(double);
-          break;
+            case PRIMITIVE_TYPE_LONG_DOUBLE:
+                primitive_atom = sizeof(long double);
+                break;
 
-        case PRIMITIVE_TYPE_LONG_DOUBLE:
-          primitive_atom = sizeof(long double);
-          break;
+            case PRIMITIVE_TYPE_LOGICAL:
+                primitive_atom = sizeof(primitive_logical_t);
+                break;
 
-        case PRIMITIVE_TYPE_LOGICAL:
-          primitive_atom = sizeof(primitive_logical_t);
-          break;
+            case PRIMITIVE_TYPE_SINGLE_COMPLEX:
+                primitive_atom = sizeof(primitive_complex_t<float>);
+                break;
 
-        case PRIMITIVE_TYPE_SINGLE_COMPLEX:
-          primitive_atom = sizeof(primitive_complex_t<float>);
-          break;
+            case PRIMITIVE_TYPE_DOUBLE_COMPLEX:
+                primitive_atom = sizeof(primitive_complex_t<double>);
+                break;
 
-        case PRIMITIVE_TYPE_DOUBLE_COMPLEX:
-          primitive_atom = sizeof(primitive_complex_t<double>);
-          break;
+            case PRIMITIVE_TYPE_LOC_2INT:
+                primitive_atom = sizeof(primitive_loc_t<int,int>);
+                break;
 
-        case PRIMITIVE_TYPE_LOC_2INT:
-          primitive_atom = sizeof(primitive_loc_t<int,int>);
-          break;
+            case PRIMITIVE_TYPE_LOC_2FLOAT:
+                primitive_atom = sizeof(primitive_loc_t<float,float>);
+                break;
 
-        case PRIMITIVE_TYPE_LOC_2FLOAT:
-          primitive_atom = sizeof(primitive_loc_t<float,float>);
-          break;
+            case PRIMITIVE_TYPE_LOC_2DOUBLE:
+                 primitive_atom = sizeof(primitive_loc_t<double,double>);
+                break;
 
-        case PRIMITIVE_TYPE_LOC_2DOUBLE:
-          primitive_atom = sizeof(primitive_loc_t<double,double>);
-          break;
+            case PRIMITIVE_TYPE_LOC_SHORT_INT:
+                primitive_atom = sizeof(primitive_loc_t<short,int>);
+                break;
 
-        case PRIMITIVE_TYPE_LOC_SHORT_INT:
-          primitive_atom = sizeof(primitive_loc_t<short,int>);
-          break;
+            case PRIMITIVE_TYPE_LOC_FLOAT_INT:
+                primitive_atom = sizeof(primitive_loc_t<float,int>);
+                break;
 
-        case PRIMITIVE_TYPE_LOC_FLOAT_INT:
-          primitive_atom = sizeof(primitive_loc_t<float,int>);
-          break;
+            case PRIMITIVE_TYPE_LOC_DOUBLE_INT:
+                primitive_atom = sizeof(primitive_loc_t<double,int>);
+                break;
 
-        case PRIMITIVE_TYPE_LOC_DOUBLE_INT:
-          primitive_atom = sizeof(primitive_loc_t<double,int>);
-          break;
+            default:
+                // Bad!!!
+                abort();
+                break;
+        };
 
-        default:
-          // Bad!!!
-          abort();
-          break;
-      };
-
-
+        SetPrimitive(primitive_type);
         AddSimpleInternal(primitive_atom, primitive_atom, 1);
         Complete();
         SetAtomSize(primitive_atom);
@@ -914,36 +914,36 @@ extern PAMI::Type::TypeContig *PAMI_TYPE_CONTIG_MAX;
 
 typedef enum
 {
-  PAMI_BYTE               = PAMI::Type::TypeCode::PRIMITIVE_TYPE_BYTE,
+    PAMI_BYTE               = PAMI::Type::TypeCode::PRIMITIVE_TYPE_BYTE,
 
-  PAMI_SIGNED_CHAR        = PAMI::Type::TypeCode::PRIMITIVE_TYPE_SIGNED_CHAR,
-  PAMI_SIGNED_SHORT       = PAMI::Type::TypeCode::PRIMITIVE_TYPE_SIGNED_SHORT,
-  PAMI_SIGNED_INT         = PAMI::Type::TypeCode::PRIMITIVE_TYPE_SIGNED_INT,
-  PAMI_SIGNED_LONG        = PAMI::Type::TypeCode::PRIMITIVE_TYPE_SIGNED_LONG,
-  PAMI_SIGNED_LONG_LONG   = PAMI::Type::TypeCode::PRIMITIVE_TYPE_SIGNED_LONG_LONG,
+    PAMI_SIGNED_CHAR        = PAMI::Type::TypeCode::PRIMITIVE_TYPE_SIGNED_CHAR,
+    PAMI_SIGNED_SHORT       = PAMI::Type::TypeCode::PRIMITIVE_TYPE_SIGNED_SHORT,
+    PAMI_SIGNED_INT         = PAMI::Type::TypeCode::PRIMITIVE_TYPE_SIGNED_INT,
+    PAMI_SIGNED_LONG        = PAMI::Type::TypeCode::PRIMITIVE_TYPE_SIGNED_LONG,
+    PAMI_SIGNED_LONG_LONG   = PAMI::Type::TypeCode::PRIMITIVE_TYPE_SIGNED_LONG_LONG,
 
-  PAMI_UNSIGNED_CHAR      = PAMI::Type::TypeCode::PRIMITIVE_TYPE_UNSIGNED_CHAR,
-  PAMI_UNSIGNED_SHORT     = PAMI::Type::TypeCode::PRIMITIVE_TYPE_UNSIGNED_SHORT,
-  PAMI_UNSIGNED_INT       = PAMI::Type::TypeCode::PRIMITIVE_TYPE_UNSIGNED_INT,
-  PAMI_UNSIGNED_LONG      = PAMI::Type::TypeCode::PRIMITIVE_TYPE_UNSIGNED_LONG,
-  PAMI_UNSIGNED_LONG_LONG = PAMI::Type::TypeCode::PRIMITIVE_TYPE_UNSIGNED_LONG_LONG,
+    PAMI_UNSIGNED_CHAR      = PAMI::Type::TypeCode::PRIMITIVE_TYPE_UNSIGNED_CHAR,
+    PAMI_UNSIGNED_SHORT     = PAMI::Type::TypeCode::PRIMITIVE_TYPE_UNSIGNED_SHORT,
+    PAMI_UNSIGNED_INT       = PAMI::Type::TypeCode::PRIMITIVE_TYPE_UNSIGNED_INT,
+    PAMI_UNSIGNED_LONG      = PAMI::Type::TypeCode::PRIMITIVE_TYPE_UNSIGNED_LONG,
+    PAMI_UNSIGNED_LONG_LONG = PAMI::Type::TypeCode::PRIMITIVE_TYPE_UNSIGNED_LONG_LONG,
 
-  PAMI_FLOAT              = PAMI::Type::TypeCode::PRIMITIVE_TYPE_FLOAT,
-  PAMI_DOUBLE             = PAMI::Type::TypeCode::PRIMITIVE_TYPE_DOUBLE,
-  PAMI_LONG_DOUBLE        = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LONG_DOUBLE,
+    PAMI_FLOAT              = PAMI::Type::TypeCode::PRIMITIVE_TYPE_FLOAT,
+    PAMI_DOUBLE             = PAMI::Type::TypeCode::PRIMITIVE_TYPE_DOUBLE,
+    PAMI_LONG_DOUBLE        = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LONG_DOUBLE,
 
-  PAMI_LOGICAL            = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LOGICAL,
+    PAMI_LOGICAL            = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LOGICAL,
 
-  PAMI_SINGLE_COMPLEX     = PAMI::Type::TypeCode::PRIMITIVE_TYPE_SINGLE_COMPLEX,
-  PAMI_DOUBLE_COMPLEX     = PAMI::Type::TypeCode::PRIMITIVE_TYPE_DOUBLE_COMPLEX,
+    PAMI_SINGLE_COMPLEX     = PAMI::Type::TypeCode::PRIMITIVE_TYPE_SINGLE_COMPLEX,
+    PAMI_DOUBLE_COMPLEX     = PAMI::Type::TypeCode::PRIMITIVE_TYPE_DOUBLE_COMPLEX,
 
-  PAMI_LOC_2INT           = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LOC_2INT,
-  PAMI_LOC_2FLOAT         = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LOC_2FLOAT,
-  PAMI_LOC_2DOUBLE        = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LOC_2DOUBLE,
-  PAMI_LOC_SHORT_INT      = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LOC_SHORT_INT,
-  PAMI_LOC_FLOAT_INT      = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LOC_FLOAT_INT,
-  PAMI_LOC_DOUBLE_INT     = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LOC_DOUBLE_INT,
-  PAMI_DT_COUNT           = PAMI::Type::TypeCode::PRIMITIVE_TYPE_COUNT
+    PAMI_LOC_2INT           = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LOC_2INT,
+    PAMI_LOC_2FLOAT         = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LOC_2FLOAT,
+    PAMI_LOC_2DOUBLE        = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LOC_2DOUBLE,
+    PAMI_LOC_SHORT_INT      = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LOC_SHORT_INT,
+    PAMI_LOC_FLOAT_INT      = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LOC_FLOAT_INT,
+    PAMI_LOC_DOUBLE_INT     = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LOC_DOUBLE_INT,
+    PAMI_DT_COUNT           = PAMI::Type::TypeCode::PRIMITIVE_TYPE_COUNT
 } pami_dt;
 
 #endif // _PAMI_TYPE_CODE_H

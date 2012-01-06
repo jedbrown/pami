@@ -247,7 +247,7 @@ namespace PAMI
         if (orig_type != NULL)
             t = orig_type;
 
-        if ((t->primitive == TypeCode::PRIMITIVE_TYPE_COUNT) ||
+        if ((t->GetPrimitive() == TypeCode::PRIMITIVE_TYPE_COUNT) ||
             (fn >= TypeFunc::PRIMITIVE_FUNC_COUNT))
         {
           copy_func = new_copy_func;
@@ -255,7 +255,7 @@ namespace PAMI
         }
         else
         {
-          copy_func = TypeFunc::GetCopyFunction (t->primitive, (TypeFunc::primitive_func_t) fn);
+          copy_func = TypeFunc::GetCopyFunction (t->GetPrimitive(), (TypeFunc::primitive_func_t) fn);
         }
     }
 
