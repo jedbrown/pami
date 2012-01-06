@@ -34,12 +34,11 @@
 #include "algorithms/geometry/UnexpBarrierQueueElement.h"
 #include "components/atomic/native/NativeCounter.h"
 #include "components/memory/MemoryAllocator.h"
-typedef PAMI::Counter::Native GeomCompCtr;
-
 #include "util/trace.h"
+
 #undef  DO_TRACE_ENTEREXIT
 #define DO_TRACE_ENTEREXIT 0
-#undef  DO_TRACE_DEBUG    
+#undef  DO_TRACE_DEBUG
 #define DO_TRACE_DEBUG     0
 
 namespace PAMI
@@ -76,18 +75,41 @@ namespace PAMI
       cf->clearCache();
     }
 
-    class Common :
-    public Geometry<PAMI::Geometry::Common>
+    typedef bool (*CheckpointCb)(void *data);
+    class CheckpointFunction
     {
     public:
-      static  Common * get (int ctxt, int geometryID)
+      CheckpointFunction(CheckpointCb ckpt,
+                         CheckpointCb resume,
+                         CheckpointCb restart,
+                         void *data):
+        _checkpoint_fn(ckpt),
+        _resume_fn(resume),
+        _restart_fn(restart),
+        _cookie(data)
       {
-        assert(0);
-        Common * g =NULL;
-        return g;
-      }
+      };
+      CheckpointCb  _checkpoint_fn;
+      CheckpointCb  _resume_fn;
+      CheckpointCb  _restart_fn;
+      void         *_cookie;
+    };
 
-
+    class Common :
+    public Geometry<Common>
+    {
+    public:
+      typedef Algorithm<Geometry<Common> >        AlgorithmT;
+      typedef std::map<size_t, AlgorithmT>        ContextMap;
+      typedef std::map<uint32_t, ContextMap>      HashMap;
+      typedef std::map<uint32_t, HashMap>         AlgoMap;
+      typedef std::list<ContextMap*>              AlgoList;
+      typedef std::map<unsigned, pami_geometry_t> GeometryMap;
+      typedef PAMI::Counter::Native               GeomCompCtr;
+      typedef std::list<pami_event_function>      CleanupFunctions;
+      typedef std::list<void*>                    CleanupDatas;
+      typedef std::list<CheckpointFunction>       CheckpointFunctions;
+      typedef std::map <size_t, DispatchInfo>     DispatchMap;
 
       inline ~Common()
       {
@@ -96,21 +118,23 @@ namespace PAMI
         TRACE_FN_EXIT();
       }
 
-      inline Common(pami_client_t                     client,
-                    Geometry<PAMI::Geometry::Common> *parent,
-                    Mapping                          *mapping,
-                    unsigned                          comm,
-                    pami_task_t                       nranks,
-                    pami_task_t                      *ranks,
-                    std::map<unsigned, pami_geometry_t> *geometry_map,
-                    size_t                               context_offset,
-                    size_t                               ncontexts):
-      Geometry<PAMI::Geometry::Common>(parent,
-                                       mapping,
-                                       comm,
-                                       nranks,
-                                       ranks),
+      inline Common(pami_client_t  client,
+                    Common        *parent,
+                    Mapping       *mapping,
+                    unsigned       comm,
+                    pami_task_t    nranks,
+                    pami_task_t   *ranks,
+                    GeometryMap   *geometry_map,
+                    size_t         context_offset,
+                    size_t         ncontexts):
+      Geometry<Common>(parent,
+                       mapping,
+                       comm,
+                       nranks,
+                       ranks),
+      _generation_id(0),
       _ue_barrier(NULL),
+      _default_barrier(NULL),
       _commid(comm),
       _client(client),
       _rank(mapping->task()),
@@ -148,6 +172,11 @@ namespace PAMI
                                                       0,
                                                       nctxt*sizeof(*_ue_barrier));
         (void)rc; //unused warnings in assert case
+        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _ue_barier");
+
+        rc = __global.heap_mm->memalign((void **)&_default_barrier,
+                                        0,
+                                        nctxt*sizeof(*_default_barrier));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
 
         // Allocate per context UE queues
@@ -165,7 +194,8 @@ namespace PAMI
 
         for(size_t n=start_off; n<nctxt; n++)
         {
-          new(&_ue_barrier[n]) Algorithm<PAMI::Geometry::Common>(NULL,NULL);
+          new(&_ue_barrier[n]) AlgorithmT(NULL,NULL);
+          new(&_default_barrier[n]) AlgorithmT(NULL,NULL);
           new(&_ue[n]) MatchQueue();
           new(&_post[n]) MatchQueue();
           resetUEBarrier_impl(n);
@@ -175,20 +205,22 @@ namespace PAMI
       /**
          Construct a geometry based on a list of endpoints
       */
-      inline Common (pami_client_t                        client,
-                     Geometry<PAMI::Geometry::Common>    *parent,
-                     Mapping                             *mapping,
-                     unsigned                             comm,
-                     pami_endpoint_t                      neps,
-                     pami_endpoint_t                     *eps,
-                     std::map<unsigned, pami_geometry_t> *geometry_map,
+      inline Common (pami_client_t    client,
+                     Common          *parent,
+                     Mapping         *mapping,
+                     unsigned         comm,
+                     pami_endpoint_t  neps,
+                     pami_endpoint_t *eps,
+                     GeometryMap     *geometry_map,
                      bool):
-      Geometry<PAMI::Geometry::Common>(parent,
-                                       mapping,
-                                       comm,
-                                       neps,
-                                       eps),
+      Geometry<Common>(parent,
+                       mapping,
+                       comm,
+                       neps,
+                       eps),
+      _generation_id(0),
       _ue_barrier(NULL),
+      _default_barrier(NULL),
       _commid(comm),
       _client(client),
       _rank(mapping->task()),
@@ -257,7 +289,12 @@ namespace PAMI
                                                       0,
                                                       MAX_CONTEXTS*sizeof(*_ue_barrier));
         (void)rc; //unused warnings in assert case
-        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
+        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _ue_barrier");
+
+        rc = __global.heap_mm->memalign((void **)&_default_barrier,
+                                        0,
+                                        MAX_CONTEXTS*sizeof(*_default_barrier));
+        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _default_barrier");
 
         // Allocate per context UE queues
         rc = __global.heap_mm->memalign((void **)&_ue,
@@ -274,28 +311,31 @@ namespace PAMI
 
         for(size_t n=0; n<MAX_CONTEXTS; n++)
         {
-          new(&_ue_barrier[n]) Algorithm<PAMI::Geometry::Common>(NULL,NULL);
+          new(&_ue_barrier[n]) AlgorithmT(NULL,NULL);
+          new(&_default_barrier[n]) AlgorithmT(NULL,NULL);
           new(&_ue[n]) MatchQueue();
           new(&_post[n]) MatchQueue();
           resetUEBarrier_impl(n);
         }
       }
 
-      inline Common (pami_client_t                        client,
-                     Geometry<PAMI::Geometry::Common>    *parent,
-                     Mapping                             *mapping,
-                     unsigned                             comm,
-                     int                                  numranges,
-                     pami_geometry_range_t                rangelist[],
-                     std::map<unsigned, pami_geometry_t> *geometry_map,
-                     size_t                               context_offset,
-                     size_t                               ncontexts):
-      Geometry<PAMI::Geometry::Common>(parent,
-                                       mapping,
-                                       comm,
-                                       numranges,
-                                       rangelist),
+      inline Common (pami_client_t          client,
+                     Common                *parent,
+                     Mapping               *mapping,
+                     unsigned               comm,
+                     int                    numranges,
+                     pami_geometry_range_t  rangelist[],
+                     GeometryMap           *geometry_map,
+                     size_t                 context_offset,
+                     size_t                 ncontexts):
+      Geometry<Common>(parent,
+                       mapping,
+                       comm,
+                       numranges,
+                       rangelist),
+      _generation_id(0),
       _ue_barrier(NULL),
+      _default_barrier(NULL),
       _commid(comm),
       _client(client),
       _rank(mapping->task()),
@@ -337,7 +377,7 @@ namespace PAMI
               _ranks[k] = rangelist[i].lo + j;
           }
 
-          // this creates the topology 
+          // this creates the topology
           if(context_offset==0) {
           new(&_topos[DEFAULT_TOPOLOGY_INDEX]) PAMI::Topology(_ranks, nranks);
         }
@@ -348,7 +388,7 @@ namespace PAMI
 
         buildSpecialTopologies();
 
-        if ((_topos[LIST_TOPOLOGY_INDEX].type() == PAMI_LIST_TOPOLOGY) && 
+        if ((_topos[LIST_TOPOLOGY_INDEX].type() == PAMI_LIST_TOPOLOGY) &&
             (_ranks_malloc == false)) /* Don't overwrite our original _ranks */
         {
           pami_result_t rc = PAMI_SUCCESS;
@@ -378,7 +418,12 @@ namespace PAMI
         rc               = __global.heap_mm->memalign((void **)&_ue_barrier,
                                                       0,
                                                       nctxt*sizeof(*_ue_barrier));
-        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
+        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _ue_barrier");
+
+        rc               = __global.heap_mm->memalign((void **)&_default_barrier,
+                                                      0,
+                                                      nctxt*sizeof(*_default_barrier));
+        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _default_barrier");
 
 
         // Allocate per context UE queues
@@ -396,31 +441,34 @@ namespace PAMI
 
         for(size_t n=start_off; n<nctxt; n++)
         {
-          new(&_ue_barrier[n]) Algorithm<PAMI::Geometry::Common>(NULL,NULL);
+          new(&_ue_barrier[n]) AlgorithmT(NULL,NULL);
+          new(&_ue_barrier[n]) AlgorithmT(NULL,NULL);
           new(&_ue[n]) MatchQueue();
           new(&_post[n]) MatchQueue();
           resetUEBarrier_impl(n);
         }
       }
 
-      inline Common (pami_client_t                    client,
-                     Geometry<PAMI::Geometry::Common> *parent,
-                     Mapping                         *mapping,
-                     unsigned                         comm,
-                     PAMI::Topology                  *topology,
-                     std::map<unsigned, pami_geometry_t> *geometry_map,
-                     size_t                               context_offset,
-                     size_t                               ncontexts):
-      Geometry<PAMI::Geometry::Common>(parent,
-                                       mapping,
-                                       comm,
-                                       topology),
+      inline Common (pami_client_t   client,
+                     Common         *parent,
+                     Mapping        *mapping,
+                     unsigned        comm,
+                     PAMI::Topology *topology,
+                     GeometryMap    *geometry_map,
+                     size_t          context_offset,
+                     size_t          ncontexts):
+      Geometry<Common>(parent,
+                       mapping,
+                       comm,
+                       topology),
+      _generation_id(0),
       _ue_barrier(NULL),
+      _default_barrier(NULL),
       _commid(comm),
       _client(client),
       _rank(mapping->task()),
       _ranks_malloc(false),
-      _ranks(NULL), 
+      _ranks(NULL),
       _geometry_map(geometry_map),
       _checkpointed(false),
       _cb_result(PAMI_EAGAIN)
@@ -430,7 +478,7 @@ namespace PAMI
         _topos[DEFAULT_TOPOLOGY_INDEX] = *topology;
 
         if (_topos[DEFAULT_TOPOLOGY_INDEX].type() == PAMI_LIST_TOPOLOGY)
-        {  
+        {
           _topos[DEFAULT_TOPOLOGY_INDEX].rankList(&_ranks);
         }
         buildSpecialTopologies();
@@ -458,8 +506,13 @@ namespace PAMI
         pami_result_t rc = __global.heap_mm->memalign((void **)&_ue_barrier,
                                                       0,
                                                       nctxt*sizeof(*_ue_barrier));
-        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
+        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _ue_barrier");
         (void)rc; //to avoid unused warnings in non-assert
+
+        rc = __global.heap_mm->memalign((void **)&_default_barrier,
+                                        0,
+                                        nctxt*sizeof(*_default_barrier));
+        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _default_barrier");
 
         // Allocate per context UE queues
         rc = __global.heap_mm->memalign((void **)&_ue,
@@ -476,7 +529,8 @@ namespace PAMI
 
         for(size_t n=start_off; n<nctxt; n++)
         {
-          new(&_ue_barrier[n]) Algorithm<PAMI::Geometry::Common>(NULL,NULL);
+          new(&_ue_barrier[n]) AlgorithmT(NULL,NULL);
+          new(&_default_barrier[n]) AlgorithmT(NULL,NULL);
           new(&_ue[n]) MatchQueue();
           new(&_post[n]) MatchQueue();
           resetUEBarrier_impl(n);
@@ -508,7 +562,7 @@ namespace PAMI
         DO_DEBUGg(TRACE_ERR((stderr,"(%u)buildSpecialTopologies() COORDINATE_TOPOLOGY rankList %p\n", _topos[COORDINATE_TOPOLOGY_INDEX].rankList(&list), list)));
         DO_DEBUGg(for (unsigned j = 0; j < _topos[COORDINATE_TOPOLOGY_INDEX].size(); ++j) TRACE_ERR((stderr, "buildSpecialTopologies() COORDINATE_TOPOLOGY[%u]=%zu, size %zu\n", j, (size_t)_topos[COORDINATE_TOPOLOGY_INDEX].index2Endpoint(j), _topos[COORDINATE_TOPOLOGY_INDEX].size())));
 
-        // If we already have a rank list, set the special topology, otherwise 
+        // If we already have a rank list, set the special topology, otherwise
         // leave it EMPTY unless needed because it will require a new rank list allocation
         if (_topos[DEFAULT_TOPOLOGY_INDEX].type() != PAMI_LIST_TOPOLOGY)
           new(&_topos[LIST_TOPOLOGY_INDEX]) PAMI::Topology();
@@ -566,6 +620,7 @@ namespace PAMI
         _ranks = NULL;
         _ranks_malloc = false;
         __global.heap_mm->free(_ue_barrier);
+        __global.heap_mm->free(_default_barrier);
         __global.heap_mm->free(_ue);
         __global.heap_mm->free(_post);
         freeKVS(_kvcstore, NUM_CKEYS);
@@ -647,7 +702,7 @@ namespace PAMI
 
       inline DispatchInfo  * getDispatch_impl(size_t key)
       {
-        std::map<size_t, DispatchInfo>::iterator iter = _dispatch.find(key);
+        DispatchMap::iterator iter = _dispatch.find(key);
 
         if(unlikely(iter == _dispatch.end()))
         {
@@ -679,10 +734,19 @@ namespace PAMI
                                                           pami_context_t    context,
                                                           size_t            context_id)
       {
-        uint32_t hash = factory->nameHash();
-        Algorithm<Geometry<PAMI::Geometry::Common> >*elem = &_algoTable[colltype][hash][context_id];
-        new(elem) Algorithm<Geometry<PAMI::Geometry::Common> >(factory, this);
+        uint32_t hash = factory->nameHash(_generation_id++);
+        Algorithm<Geometry<Common> >*elem = &_algoTable[colltype][hash][context_id];
+        new(elem) Algorithm<Geometry<Common> >(factory, this);
         setCleanupCallback(resetFactoryCache, factory);
+#if DO_TRACE_DEBUG
+//        if(PAMI_XFER_ALLREDUCE == colltype)
+        {
+          pami_metadata_t m;
+          factory->metadata(&m);
+          fprintf(stderr,"addCollective %s\n",m.name);
+          fprintf(stderr,"num algorithms %zu\n",_algoTable[colltype].size());
+        }
+#endif
         return PAMI_SUCCESS;
       }
 
@@ -696,6 +760,15 @@ namespace PAMI
         uint32_t hash = factory->nameHash();
         _algoTable[colltype][hash].erase(context_id);
         _algoTable[colltype].erase(hash);
+#if DO_TRACE_DEBUG
+//        if(PAMI_XFER_ALLREDUCE == colltype)
+        {
+          pami_metadata_t m;
+          factory->metadata(&m);
+          fprintf(stderr,"rmCollective %s\n",m.name);
+          fprintf(stderr,"num algorithms %zu\n",_algoTable[colltype].size());
+        }
+#endif
         return PAMI_SUCCESS;
       }
 
@@ -708,6 +781,15 @@ namespace PAMI
         uint32_t hash = factory->nameHash();
         _algoTableCheck[colltype][hash].erase(context_id);
         _algoTableCheck[colltype].erase(hash);
+#if DO_TRACE_DEBUG
+//        if(PAMI_XFER_ALLREDUCE == colltype)
+        {
+          pami_metadata_t m;
+          factory->metadata(&m);
+          fprintf(stderr,"rmCollectiveCheck %s\n",m.name);
+          fprintf(stderr,"num algorithms %zu\n",_algoTableCheck[colltype].size());
+        }
+#endif
         return PAMI_SUCCESS;
       }
 
@@ -716,10 +798,19 @@ namespace PAMI
                                                                pami_context_t    context,
                                                                size_t                                     context_id)
       {
-        uint32_t hash = factory->nameHash();
-        Algorithm<Geometry<PAMI::Geometry::Common> >*elem = &_algoTableCheck[colltype][hash][context_id];
-        new(elem) Algorithm<Geometry<PAMI::Geometry::Common> >(factory, this);
+        uint32_t hash = factory->nameHash(_generation_id++);
+        Algorithm<Geometry<Common> >*elem = &_algoTableCheck[colltype][hash][context_id];
+        new(elem) Algorithm<Geometry<Common> >(factory, this);
         setCleanupCallback(resetFactoryCache, factory);
+#if DO_TRACE_DEBUG
+//        if(PAMI_XFER_ALLREDUCE == colltype)
+        {
+          pami_metadata_t m;
+          factory->metadata(&m);
+          fprintf(stderr,"addCollectiveCheck %s\n",m.name);
+          fprintf(stderr,"num algorithms %zu\n",_algoTableCheck[colltype].size());
+        }
+#endif
         return PAMI_SUCCESS;
       }
 
@@ -731,54 +822,100 @@ namespace PAMI
         return PAMI_SUCCESS;
       }
 
+      static bool compare(ContextMap *cm0, ContextMap *cm1)
+        {
+          // Sort the list based on context 0
+          if(cm0 == NULL || cm1 == NULL) return true;
+          AlgorithmT a0 = (*cm0)[0];
+          AlgorithmT a1 = (*cm1)[0];
+          if(a0._factory->getGenerationId() < a1._factory->getGenerationId())
+            return true;
+          else
+            return false;
+        }
+
       inline pami_result_t             algorithms_info_impl (pami_xfer_type_t   colltype,
                                                              pami_algorithm_t  *algs0,
                                                              pami_metadata_t   *mdata0,
-                                                             size_t               num0,
+                                                             size_t             num0,
                                                              pami_algorithm_t  *algs1,
                                                              pami_metadata_t   *mdata1,
                                                              size_t             num1)
       {
-        std::map<uint32_t,std::map<size_t, Algorithm<Geometry<PAMI::Geometry::Common> > > > *m = &_algoTable[colltype];
-        std::map<uint32_t,std::map<size_t, Algorithm<Geometry<PAMI::Geometry::Common> > > >::iterator iter;
+        HashMap *m = &_algoTable[colltype];
+        HashMap::iterator iter;
         size_t i;
+
+        // Sort the algorithm list in insertion order
+        AlgoList v0, v1;
         for(i=0,iter=m->begin();iter!=m->end() && i<num0;iter++,i++)
-          {
-            if(algs0)
-              algs0[i] = (pami_algorithm_t) &iter->second;
-            if(mdata0)
-              {
-                Algorithm<Geometry<PAMI::Geometry::Common> >*tmp_a = &((iter->second)[0]);
-                tmp_a[0].metadata(&mdata0[i]);
-              }
-          }
+          v0.push_back(&iter->second);
+
         m = &_algoTableCheck[colltype];
         for(i=0,iter=m->begin();iter!=m->end() && i<num1;iter++,i++)
+          v1.push_back(&iter->second);
+
+        v0.sort(compare);
+        v1.sort(compare);
+
+        AlgoList::iterator alist_iter;
+        AlgoList          *al = &v0;
+        for(i=0,alist_iter=al->begin();alist_iter!=al->end() && i<num0;alist_iter++,i++)
           {
+            ContextMap *cm = (*alist_iter);
+            if(algs0)
+              algs0[i] = (pami_algorithm_t) cm;
+            if(mdata0)
+              {
+                AlgorithmT *tmp_a = &((*cm)[0]);
+                tmp_a->metadata(&mdata0[i]);
+                TRACE_ERR((stderr,"sorted algorithms_info() %zu out of %zu/%zu %s\n",i,al->size(),num0,mdata0[i].name));
+              }
+          }
+        al = &v1;
+        for(i=0,alist_iter=al->begin();alist_iter!=al->end() && i<num1;alist_iter++,i++)
+          {
+            ContextMap *cm = (*alist_iter);
             if(algs1)
-              algs1[i] = (pami_algorithm_t) &iter->second;
+              algs1[i] = (pami_algorithm_t) cm;
             if(mdata1)
               {
-                Algorithm<Geometry<PAMI::Geometry::Common> >*tmp_a = &((iter->second)[0]);
-                tmp_a[0].metadata(&mdata1[i]);
+                AlgorithmT *tmp_a = &((*cm)[0]);
+                tmp_a->metadata(&mdata1[i]);
+                TRACE_ERR((stderr,"sorted algorithms_info(check) %zu out of %zu/%zu %s\n",i,al->size(),num1,mdata1[i].name));
               }
           }
         return PAMI_SUCCESS;
       }
-      
-      pami_result_t                    default_barrier(pami_event_function       cb_done,
-                                                       void                   * cookie,
-                                                       size_t                   ctxt_id,
-                                                       pami_context_t            context)
+
+      pami_result_t default_barrier_impl(pami_event_function  cb_done,
+                                         void                *cookie,
+                                         size_t               ctxt_id,
+                                         pami_context_t       context)
       {
-        TRACE_ERR((stderr, "<%p>Common::default_barrier()\n", this));
+        PAMI_assert (_default_barrier[ctxt_id]._factory != NULL);
         pami_xfer_t cmd;
         cmd.cb_done = cb_done;
         cmd.cookie  = cookie;
-        std::map<uint32_t,std::map<size_t, Algorithm<Geometry<PAMI::Geometry::Common> > > >::iterator iter
-          = _algoTable[PAMI_XFER_BARRIER].begin();
-        Algorithm<Geometry<PAMI::Geometry::Common> >*alg = &((iter->second)[ctxt_id]);
-        return alg->generate(&cmd);
+        return _default_barrier[ctxt_id].generate(&cmd);
+      }
+
+      void resetDefaultBarrier_impl(size_t ctxt_id)
+      {
+        _default_barrier[ctxt_id]._factory  = (Factory*)NULL;
+        _default_barrier[ctxt_id]._geometry = (Common*)NULL;
+      }
+
+      pami_result_t setDefaultBarrier_impl(Factory *f,
+                                      size_t   ctxt_id)
+      {
+        if (_default_barrier[ctxt_id]._factory == (Factory*)NULL)
+        {
+          _default_barrier[ctxt_id]._factory  = f;
+          _default_barrier[ctxt_id]._geometry = this;
+          return PAMI_SUCCESS;
+        }
+        return PAMI_EAGAIN;  // can't set again unless you reset first.
       }
 
       pami_result_t                    ue_barrier_impl(pami_event_function     cb_done,
@@ -797,7 +934,7 @@ namespace PAMI
       void resetUEBarrier_impl(size_t ctxt_id)
       {
         _ue_barrier[ctxt_id]._factory  = (Factory*)NULL;
-        _ue_barrier[ctxt_id]._geometry = (PAMI::Geometry::Common*)NULL;
+        _ue_barrier[ctxt_id]._geometry = (Common*)NULL;
       }
 
       pami_result_t setUEBarrier_impl(Factory *f,
@@ -830,17 +967,15 @@ namespace PAMI
       }
       void resetCleanupCallback_impl(pami_event_function fcn, void *data)
       {
-        std::list<pami_event_function>::iterator itFcn = _cleanupFcns.begin();
-        std::list<void*>::iterator itData = _cleanupDatas.begin();
-
-        /* search for the fn/data to reset */
+        CleanupFunctions::iterator itFcn  = _cleanupFcns.begin();
+        CleanupDatas::iterator     itData = _cleanupDatas.begin();
         for (; (itFcn != _cleanupFcns.end()) && (itData != _cleanupDatas.end()); itFcn++,itData++)
           {
             pami_event_function  fn = *itFcn;
             void                *cd = *itData;
 
             if((cd == data) && (fn == fcn))
-            {  
+            {
               if (fn) fn(NULL, cd, PAMI_SUCCESS);
               _cleanupFcns.erase(itFcn);
               _cleanupDatas.erase(itData);
@@ -848,44 +983,24 @@ namespace PAMI
             }
           }
       }
-
-
-      typedef bool (*CheckpointCb)(void *data);
-
-      struct CheckpointFunctions {
-        CheckpointCb  checkpoint_fn;
-        CheckpointCb  resume_fn;
-        CheckpointCb  restart_fn;
-        void         *cookie;
-        CheckpointFunctions(CheckpointCb ckpt,
-                            CheckpointCb resume,
-                            CheckpointCb restart,
-                            void *data):
-          checkpoint_fn(ckpt),
-          resume_fn(resume),
-          restart_fn(restart),
-          cookie(data) {};
-      };
-
       void setCkptCallback(CheckpointCb ckptfcn, CheckpointCb resumefcn,
                            CheckpointCb restartfcn, void *data)
       {
         ITRC(IT_INITTERM, "LapiGeometry 0x%p setCkptCallback()\n", this);
-        _ckptFcns.push_back(CheckpointFunctions(ckptfcn, resumefcn, restartfcn, data));
+        _ckptFcns.push_back(CheckpointFunction(ckptfcn, resumefcn, restartfcn, data));
       }
 
       bool Checkpoint()
       {
         ITRC(IT_INITTERM, "LapiGeometry 0x%p _commid=%u: Checkpoint() enters ckptFncs.size()=%d\n",
              this, _commid, _ckptFcns.size());
-
-        std::list<CheckpointFunctions>::iterator itFcn = _ckptFcns.begin();
+        CheckpointFunctions::iterator itFcn = _ckptFcns.begin();
 
         /* invoke all registered checkpoint callbacks */
         for (; itFcn != _ckptFcns.end(); itFcn++)
           {
-            CheckpointCb cb   = itFcn->checkpoint_fn;
-            void        *data = itFcn->cookie;
+            CheckpointCb cb   = itFcn->_checkpoint_fn;
+            void        *data = itFcn->_cookie;
 
             bool rc = (*cb)(data);
             if (!rc)
@@ -902,13 +1017,13 @@ namespace PAMI
         ITRC(IT_INITTERM, "LapiGeometry 0x%p _commid=%u: Restart() enters _ckptFcns.size()=%d\n",
              this, _commid, _ckptFcns.size());
         assert(_checkpointed);
-        std::list<CheckpointFunctions>::iterator itFcn = _ckptFcns.begin();
+        CheckpointFunctions::iterator itFcn = _ckptFcns.begin();
 
         /* invoke all registered restart callbacks */
         for (; itFcn != _ckptFcns.end(); itFcn++)
           {
-            CheckpointCb cb   = itFcn->restart_fn;
-            void        *data = itFcn->cookie;
+            CheckpointCb cb   = itFcn->_restart_fn;
+            void        *data = itFcn->_cookie;
 
             bool rc = (*cb)(data);
             if (!rc)
@@ -923,13 +1038,13 @@ namespace PAMI
       {
         ITRC(IT_INITTERM, "LapiGeometry 0x%p _commid=%u: Resume() enters\n", this, _commid);
         assert(_checkpointed);
-        std::list<CheckpointFunctions>::iterator itFcn = _ckptFcns.begin();
+        CheckpointFunctions::iterator itFcn = _ckptFcns.begin();
 
         /* invoke all registered resume callbacks */
         for (; itFcn != _ckptFcns.end(); itFcn++)
           {
-            CheckpointCb cb   = itFcn->resume_fn;
-            void        *data = itFcn->cookie;
+            CheckpointCb cb   = itFcn->_resume_fn;
+            void        *data = itFcn->_cookie;
 
             bool rc = (*cb)(data);
             if (!rc)
@@ -941,33 +1056,33 @@ namespace PAMI
       }
 
     private:
-      std::map<uint32_t, std::map<uint32_t,std::map<size_t, Algorithm<Geometry<PAMI::Geometry::Common> > > > > _algoTable;
-      std::map<uint32_t, std::map<uint32_t,std::map<size_t, Algorithm<Geometry<PAMI::Geometry::Common> > > > > _algoTableCheck;
-      Algorithm<PAMI::Geometry::Common>            *_ue_barrier;
-
-      void ***                                      _kvcstore;
-      int                                           _commid;
-      pami_client_t                                 _client;
-      pami_task_t                                   _rank;
-      MatchQueue                                   *_ue;
-      MatchQueue                                   *_post;
-      bool                                          _ranks_malloc;
-      pami_task_t                                  *_ranks;
-      pami_task_t                                  *_endpoints;
-      std::map<unsigned, pami_geometry_t>          *_geometry_map;
-      void                                         *_allreduce[MAX_CONTEXTS][2];
-      unsigned                                      _allreduce_async_mode[MAX_CONTEXTS];
-      unsigned                                      _allreduce_iteration[MAX_CONTEXTS];
-      PAMI::Topology                                _topos[MAX_NUM_TOPOLOGIES];
-      bool                                          _checkpointed;
-      /// Blue Gene/Q Specific members
-      pami_callback_t                               _cb_done;
-      pami_result_t                                 _cb_result;
-      GeomCompCtr                                   _comp;
-      std::list<pami_event_function>                _cleanupFcns;
-      std::list<void*>                              _cleanupDatas;
-      std::list<CheckpointFunctions>                _ckptFcns;
-      std::map <size_t, DispatchInfo>               _dispatch;            // AM Collective dispatch functions
+      AlgoMap                _algoTable;
+      AlgoMap                _algoTableCheck;
+      int                    _generation_id;
+      AlgorithmT            *_ue_barrier;
+      AlgorithmT            *_default_barrier;
+      void                ***_kvcstore;
+      int                    _commid;
+      pami_client_t          _client;
+      pami_task_t            _rank;
+      MatchQueue            *_ue;
+      MatchQueue            *_post;
+      bool                   _ranks_malloc;
+      pami_task_t           *_ranks;
+      pami_task_t           *_endpoints;
+      GeometryMap           *_geometry_map;
+      void                  *_allreduce[MAX_CONTEXTS][2];
+      unsigned               _allreduce_async_mode[MAX_CONTEXTS];
+      unsigned               _allreduce_iteration[MAX_CONTEXTS];
+      PAMI::Topology         _topos[MAX_NUM_TOPOLOGIES];
+      bool                   _checkpointed;
+      pami_callback_t        _cb_done;
+      pami_result_t          _cb_result;
+      GeomCompCtr            _comp;
+      CleanupFunctions       _cleanupFcns;
+      CleanupDatas           _cleanupDatas;
+      CheckpointFunctions    _ckptFcns;
+      DispatchMap            _dispatch;
     public:
       /// Blue Gene/Q Specific functions
 
@@ -982,7 +1097,7 @@ namespace PAMI
       ///
       static void                      _done_cb(pami_context_t ctx, void *cookie, pami_result_t result)
       {
-        PAMI::Geometry::Common *thus = (PAMI::Geometry::Common *)cookie;
+        Common *thus = (Common *)cookie;
         thus->rmCompletion(ctx, result);
       }
 
@@ -1035,13 +1150,13 @@ namespace PAMI
         }
       }
 
-    }; // class Geometry    
+    }; // class Geometry
   };  // namespace Geometry
 }; // namespace PAMI
 
 #undef TRACE_ERR
 #undef TRACE_ERR2
 #undef  DO_TRACE_ENTEREXIT
-#undef  DO_TRACE_DEBUG    
+#undef  DO_TRACE_DEBUG
 
 #endif

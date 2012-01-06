@@ -36,6 +36,8 @@ namespace CCMI{namespace Adaptor{
         CollectiveProtocolFactory ():
           _cb_geometry(NULL),
           _context(NULL),
+          _context_id(-1UL),
+          _generation_id(-1),
           _cached_commid((unsigned)-1),
           _cached_geometry(NULL)
         {
@@ -103,7 +105,7 @@ namespace CCMI{namespace Adaptor{
                                                void                      * cmd) = 0;
 
         virtual void metadata(pami_metadata_t *mdata)=0;
-        virtual uint32_t nameHash()
+        virtual uint32_t nameHash(int generation_id=-1)
         {
           uint32_t hash =0;          
           pami_metadata_t md;
@@ -112,8 +114,14 @@ namespace CCMI{namespace Adaptor{
           init_hash(&hash);
           update_hash(&hash,md.name,len);
           finalize_hash(&hash);
+          if(generation_id != -1)
+            _generation_id = generation_id;
           return hash;          
         }
+        virtual int getGenerationId()
+          {
+            return _generation_id;
+          }
         virtual void setAsyncInfo (bool                          is_buffered,
                                    pami_dispatch_callback_function cb_async,
                                    pami_mapidtogeometry_fn        cb_geometry)
@@ -140,7 +148,8 @@ namespace CCMI{namespace Adaptor{
       protected:
         pami_mapidtogeometry_fn              _cb_geometry;
         pami_context_t                       _context;
-      size_t                               _context_id;
+        size_t                               _context_id;
+        int                                  _generation_id;
 	unsigned                             _cached_commid;
 	pami_geometry_t                      _cached_geometry;
     };

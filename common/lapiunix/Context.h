@@ -871,10 +871,9 @@ namespace PAMI
     inline pami_result_t collective_impl (pami_xfer_t * parameters)
         {
           pami_result_t rc;
-          std::map<size_t,Geometry::Algorithm<PEGeometry> > *algo =
-            (std::map<size_t,Geometry::Algorithm<PEGeometry> > *)parameters->algorithm;
           plock();
-          rc = (*algo)[_contextid].generate(parameters);
+          PEGeometry::ContextMap *cm = (PEGeometry::ContextMap*)parameters->algorithm;
+          rc = (*cm)[_contextid].generate(parameters);
           punlock();
           return rc;
         }

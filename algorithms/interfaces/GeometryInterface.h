@@ -59,8 +59,8 @@ namespace PAMI
       CKEY_MSYNC_CLASSROUTEID1,    // Multisync class route id1
       CKEY_MSYNC_LOCAL_CLASSROUTEID, //Multisync id for local hw accel barriers
       PAMI_CKEY_PLATEXTENSIONS
-      NUM_CKEYS, 
-    } ckeys_t;                     // context keystore keys    
+      NUM_CKEYS,
+    } ckeys_t;                     // context keystore keys
 
     typedef enum
     {
@@ -149,10 +149,12 @@ namespace PAMI
       inline void                       setDispatch(size_t key, DispatchInfo* value);
       inline DispatchInfo              *getDispatch(size_t key);
       inline void                      *getKey(size_t context_id, ckeys_t key);
+      inline pami_result_t              default_barrier(pami_event_function,void*,size_t,pami_context_t);
+      inline void                       resetDefaultBarrier(size_t ctxt_id);
+      inline pami_result_t              setDefaultBarrier(Factory *f, size_t ctxt_id);
       inline pami_result_t              ue_barrier(pami_event_function,void*,size_t,pami_context_t);
       inline void                       resetUEBarrier(size_t ctxt_id);
       inline pami_result_t              setUEBarrier(Factory *f, size_t ctxt_id);
-
 
       // API support
       inline pami_result_t algorithms_num(pami_xfer_type_t  colltype,
@@ -327,6 +329,27 @@ namespace PAMI
     {
       return static_cast<T_Geometry*>(this)->getKey_impl(context_id, key);
     }
+    template <class T_Geometry>
+    inline pami_result_t               Geometry<T_Geometry>::default_barrier(pami_event_function      cb_done,
+                                                                             void               *cookie,
+                                                                             size_t              ctxt_id,
+                                                                             pami_context_t      context)
+    {
+      return static_cast<T_Geometry*>(this)->default_barrier_impl(cb_done, cookie, ctxt_id, context);
+    }
+
+    template <class T_Geometry>
+    inline void                        Geometry<T_Geometry>::resetDefaultBarrier(size_t ctxt_id)
+    {
+      return static_cast<T_Geometry*>(this)->resetDefaultBarrier_impl(ctxt_id);
+    }
+
+    template <class T_Geometry>
+    inline pami_result_t               Geometry<T_Geometry>::setDefaultBarrier(Factory *f,
+                                                                               size_t   ctxt_id)
+    {
+      return static_cast<T_Geometry*>(this)->setDefaultBarrier_impl(f, ctxt_id);
+    }
 
     template <class T_Geometry>
     inline pami_result_t               Geometry<T_Geometry>::ue_barrier(pami_event_function      cb_done,
@@ -413,14 +436,14 @@ namespace PAMI
     }
 
     template <class T_Geometry>
-    inline void Geometry<T_Geometry>::setCleanupCallback(pami_event_function   fcn, 
+    inline void Geometry<T_Geometry>::setCleanupCallback(pami_event_function   fcn,
 							 void                * data)
     {
       return static_cast<T_Geometry*>(this)->setCleanupCallback_impl (fcn, data);
     }
 
     template <class T_Geometry>
-    inline void Geometry<T_Geometry>::resetCleanupCallback(pami_event_function   fcn, 
+    inline void Geometry<T_Geometry>::resetCleanupCallback(pami_event_function   fcn,
 							 void                * data)
     {
       return static_cast<T_Geometry*>(this)->resetCleanupCallback_impl (fcn, data);

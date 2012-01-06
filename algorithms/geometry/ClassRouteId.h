@@ -50,9 +50,9 @@ namespace PAMI
         _user_cookie(user_cookie)
         {
         }
-      void startAllreduce(pami_context_t context,
-                          pami_event_function cb_done,
-                          void *cookie)
+      void startAllreduce(pami_context_t       context,
+                          pami_event_function  cb_done,
+                          void                *cookie)
         {
           pami_xfer_t                             ar;
           ar.cb_done                              = cb_done;

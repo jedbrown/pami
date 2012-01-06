@@ -968,7 +968,7 @@ namespace PAMI
           Context          *ctxt       = (Context*) context;
           PEGeometry       *g          = (PEGeometry *)classroute->_geometry;
           PostedClassRoute *master     = classroute->getMasterCr();
-            switch(classroute->_state)
+          switch(classroute->_state)
             {
               case 0:
                 // Start the Allreduce
@@ -1000,13 +1000,15 @@ namespace PAMI
               case 5:
                 if(master->_syncup.fetch() == master->_num_locals)
                   {
-                    master->_syncdown.fetch_and_sub(1);
-                    classroute->_state = 6;
+                    if(classroute == master)
+                      classroute->_state = 6;
+                    else
+                      classroute->_state = 7;
                   }
                 return PAMI_EAGAIN;
                 break;
               case 6:
-                if(master->_syncdown.fetch() == 0L)
+                if(master->_syncdown.fetch() == 1L)
                   classroute->_state = 7;
                 return PAMI_EAGAIN;
                 break;
@@ -1023,11 +1025,12 @@ namespace PAMI
                        pthread_self(),ctxt, ctxt->getId(), classroute, classroute->_bitmask, cookie));
                 __global.heap_mm->free(classroute->_bitmask);
                 __global.heap_mm->free(cookie);
+                master->_syncdown.fetch_and_sub(1);
                 return PAMI_SUCCESS;
                 break;
               default:
-                TRACE((stderr, "t:%d c:%p cid:%d cr:%p --> busy waiting for allreduce\n",
-                       pthread_self(),ctxt, ctxt->getId(), classroute));
+                TRACE((stderr, "t:%d c:%p cid:%d cr:%p --> busy waiting, state=%d\n",
+                       pthread_self(),ctxt, ctxt->getId(), classroute, classroute->_state));
                 return PAMI_EAGAIN;
             }
         }
@@ -1044,18 +1047,19 @@ namespace PAMI
         PAMI::Client  *client = (PAMI::Client*)ctxt->getClient();
 
         client->lock();
-        ctxt->_pgas_collreg->receive_global(0,
+        ctxt->_pgas_collreg->receive_global(ctxt->getId(),
                                             classroute->_geometry,
                                             &reduce_result[0],
                                             1);
-        ctxt->_p2p_ccmi_collreg->receive_global(0,classroute->_geometry,
+        ctxt->_p2p_ccmi_collreg->receive_global(ctxt->getId(),
+                                                classroute->_geometry,
                                                 &reduce_result[1],
                                                 1);
-        ctxt->_cau_collreg->analyze(0,
+        ctxt->_cau_collreg->analyze(ctxt->getId(),
                                     classroute->_geometry,
                                     &reduce_result[2],&count,
                                     1);
-        ctxt->_pgas_collreg->analyze(0,
+        ctxt->_pgas_collreg->analyze(ctxt->getId(),
                                      classroute->_geometry,
                                      1,
                                      &reduce_result[2]);
@@ -1424,9 +1428,10 @@ namespace PAMI
         PAMI::Topology *master_topology = (PAMI::Topology *)new_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
         PAMI::Topology *local_topology  = (PAMI::Topology *)new_geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
         // Find endpoints that are in my task to calculate the total number of contexts participating
-        // as well as the indexes of thos contexts
+        // as well as the indexes of those contexts
         int index_array[MAX_CONTEXTS];
-        int num_local_ep = 0;
+        int num_local_ep       = 0;
+        int master_context_idx = -1;
         for(size_t n=0; n<local_topology->size(); n++)
           {
             pami_endpoint_t ep    = local_topology->index2Endpoint(n);
@@ -1434,25 +1439,32 @@ namespace PAMI
             size_t          offset;
             PAMI_ENDPOINT_INFO(ep, task, offset);
             if(task == __global.mapping.task())
-              index_array[num_local_ep++] = offset;
+              {
+                if(ctxt->getId() == offset)
+                  master_context_idx = num_local_ep;
+                index_array[num_local_ep++] = offset;
+              }
           }
+        PAMI_assertf(master_context_idx != -1, "Fatal:  Geometry create posted context is not represented in the endpoint list");
 
+        // Find the master context index
         uint64_t       *to_reduce[num_local_ep];
         uint to_reduce_count = 3 + 3*master_topology->size();
         for(size_t n=0; n<num_local_ep;n++)
         {
+          size_t idx = index_array[n];
           rc = __global.heap_mm->memalign((void **)&to_reduce[n], 0,
                                           to_reduce_count * sizeof(uint64_t));
           PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc to_reduce");
           int nc   = 0;
           int ncur = 0;
-          _contexts[index_array[n]]->_pgas_collreg->register_local(n,new_geometry,&to_reduce[n][0], ncur);
+          _contexts[idx]->_pgas_collreg->register_local(idx,new_geometry,&to_reduce[n][0], ncur);
           nc+=ncur;
           ncur=0;
-          _contexts[index_array[n]]->_p2p_ccmi_collreg->register_local(n,new_geometry,&to_reduce[n][1], ncur);
+          _contexts[idx]->_p2p_ccmi_collreg->register_local(idx,new_geometry,&to_reduce[n][1], ncur);
           nc+=ncur;
           ncur=0;
-          _contexts[index_array[n]]->_cau_collreg->analyze(n,new_geometry,&to_reduce[n][2], &ncur, 0);
+          _contexts[idx]->_cau_collreg->analyze(idx,new_geometry,&to_reduce[n][2], &ncur, 0);
         }
         *geometry=(PEGeometry*) new_geometry;
 
@@ -1468,12 +1480,16 @@ namespace PAMI
                                       0);
         PostedClassRoute<PEGeometry>    *cr[num_local_ep];
         for(size_t n=0; n<num_local_ep;n++)
+          {
+            rc = __global.heap_mm->memalign((void **)&cr[n], 0, sizeof(PostedClassRoute<PEGeometry>));
+            PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PostedClassRoute<PEGeometry>");
+            to_reduce[n][0] = 0;
+            to_reduce[n][1] = 0;
+          }
+        for(size_t n=0; n<num_local_ep;n++)
         {
-          Geometry::Algorithm<PEGeometry> *ar_algo = &(*((std::map<size_t,Geometry::Algorithm<PEGeometry> > *)alg))[n];
-          rc = __global.heap_mm->memalign((void **)&cr[n], 0, sizeof(PostedClassRoute<PEGeometry>));
-          PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PostedClassRoute<PEGeometry>");
-          to_reduce[n][0] = 0;
-          to_reduce[n][1] = 0;
+          size_t idx = _contexts[index_array[n]]->getId();
+          Geometry::Algorithm<PEGeometry> *ar_algo = &(*((std::map<size_t,Geometry::Algorithm<PEGeometry> > *)alg))[idx];
           new(cr[n])PostedClassRoute<PEGeometry>(ar_algo,
                                                  new_geometry,
                                                  to_reduce[n],
@@ -1482,7 +1498,7 @@ namespace PAMI
                                                  cr[n],
                                                  fn,
                                                  cookie,
-                                                 cr[0],
+                                                 cr[master_context_idx],
                                                  num_local_ep);
         }
         for(size_t n=0; n<num_local_ep;n++)
@@ -1537,129 +1553,126 @@ namespace PAMI
       typedef  PAMI::Device::Generic::GenericThread     GenericThread;
       geomCleanup(PEGeometry          *geometry,
                   pami_event_function  user_done_cb,
-                  void                *user_cookie):
+                  void                *user_cookie,
+                  int                  num_locals,
+                  geomCleanup         *master_cleanup):
+        _state(0),
         _geometry(geometry),
         _user_done_cb(user_done_cb),
         _user_cookie(user_cookie),
-        _work(_do_geom_destroy, this),
-        _master_context(NULL)
+        _work(do_destroy_geometry, this),
+        _num_locals(num_locals),
+        _master_cleanup(master_cleanup)
         {
+          _syncup.set(0);
+          _syncdown.set(num_locals);
+          TRACE((stderr, "geomCleanup:  this=%p master=%p num=%d\n",
+                 this, master_cleanup, _num_locals));
         }
-      PEGeometry                *_geometry;
-      pami_event_function        _user_done_cb;
-      void                      *_user_cookie;
-      GenericThread              _work;
-      pami_context_t             _master_context;
-      pami_work_t                _barrier_work[MAX_CONTEXTS];
+      volatile int          _state;
+      PEGeometry           *_geometry;
+      pami_event_function   _user_done_cb;
+      void                 *_user_cookie;
+      GenericThread         _work;
+      pami_work_t           _barrier_work;
+      int                   _num_locals;
+      geomCleanup          *_master_cleanup;
+      Atomic::NativeAtomic  _syncup;
+      Atomic::NativeAtomic  _syncdown;
     };
 
-    static pami_result_t _do_geom_destroy(pami_context_t context, void *cookie)
-      {
-        PAMI::Context *ctxt         = (PAMI::Context*)context;
-        PAMI::Client  *clnt         = (PAMI::Client*)ctxt->getClient();
-        geomCleanup   *gc           = (geomCleanup*)cookie;
-        PEGeometry    *g            = gc->_geometry;
-        int commid                  = g->comm();
-        clnt->lock();
-        clnt->_geometry_map[commid] = NULL;
-        clnt->_geometry_map.erase(commid);
-        g->~PEGeometry();
-        if(gc->_user_done_cb)
-          {
-            clnt->unlock();
-            gc->_user_done_cb(context,gc->_user_cookie,PAMI_SUCCESS);
-            clnt->lock();
-          }
-        __global.heap_mm->free(g);
-        __global.heap_mm->free(gc);
-        clnt->unlock();
-        return PAMI_SUCCESS;
-      }
-    static void geometry_destroy_done_fn(pami_context_t   context,
-                                         void           * cookie,
-                                         pami_result_t    result)
-      {
-        // Post this to the generic device to not re-enter lapi dispatcher
-        // when destroying CAU
-        PAMI::Context *ctxt         = (PAMI::Context*)context;
-        geomCleanup   *gc           = (geomCleanup*)cookie;
-        if(context == gc->_master_context)
-          ctxt->_devices->_generics[ctxt->getId()].postThread(&gc->_work);
-      }
-
-    static pami_result_t _do_ue_barrier2(pami_context_t context, void *cookie)
+    static void geom_barrier_done(pami_context_t context, void *cookie, pami_result_t res)
     {
       Context                      *my_ctxt      = (Context*) context;
       geomCleanup                  *gc           = (geomCleanup*)cookie;
+      geomCleanup                  *master       = gc->_master_cleanup;
       PEGeometry                   *g            = (PEGeometry*)gc->_geometry;
-
-      g->processUnexpBarrier(&my_ctxt->_ueb_queue,
-                             &my_ctxt->_ueb_allocator);
-      g->ue_barrier(geometry_destroy_done_fn,
-                    gc,
-                    my_ctxt->getId(),
-                    context);
-      return PAMI_SUCCESS;
+      gc->_state                                 = 2;
     }
+    static pami_result_t do_destroy_geometry(pami_context_t context, void *cookie)
+      {
+        PAMI::Context    *ctxt   = (PAMI::Context *)context;
+        geomCleanup      *gc     = (geomCleanup*)cookie;
+        PEGeometry       *g      = (PEGeometry*)gc->_geometry;
+        geomCleanup      *master = gc->_master_cleanup;
 
-    // This code destroys a geometry.
-    // For this context, the destroy of a geometry can have many race conditions
-    // In particular, shared memory segments must be freed in the geometry destroy.
-    // Other tasks may still be using the shared memory control structures, while
-    // the leader allocator task is freeing the structure.
-    // Therefore,  a barrier is necessary to ensure that all tasks are done using the strucure.
+        TRACE((stderr, "%d: state=%d gc=%p master=%p\n",
+               ctxt->getId(), gc->_state, gc, master));
+        switch(gc->_state)
+          {
+            case 0:
+              gc->_state = 1;
+              g->ue_barrier(geom_barrier_done, gc, ctxt->getId(), context);
+              return PAMI_EAGAIN;
+              break;
+            case 2:
+              gc->_state = 3;
+              master->_syncup.fetch_and_add(1);
+              return PAMI_EAGAIN;
+              break;
+            case 3:
+              TRACE((stderr, "ms=%ld nl=%d gc=%p master=%p\n",
+                     master->_syncup.fetch(),
+                     master->_num_locals,
+                     gc, master));
+              if(master->_syncup.fetch() == master->_num_locals)
+                {
+                  if(gc == master)
+                    gc->_state = 4;
+                  else
+                    gc->_state = 5;
+                }
+              return PAMI_EAGAIN;
+              break;
+            case 4:
+              if(master->_syncdown.fetch() == 1L)
+                gc->_state = 5;
+              return PAMI_EAGAIN;
+              break;
+            case 5:
+              if(gc == master)
+                {
+                  PAMI::Client  *clnt         = (PAMI::Client*)ctxt->getClient();
+                  clnt->lock();
+                  clnt->_geometry_map[g->comm()] = NULL;
+                  clnt->_geometry_map.erase(g->comm());
+                  g->~PEGeometry();
+                  TRACE((stderr, "Destroy, delivering geometry done!\n"));
 
-    // We cannot free the geometry in the advance loop because CAU group creation calls advance
-    // and the geometry is destroyed in the geometry destructor.
-    // In addition, we must guarantee that an incoming geometry create request (via unexpected barrier)
-    // with the same geometry id as the geometry being destroyed cannot be looked up in the
-    // geometry map object, that maps geometry id's to geometry objects.
-
-    // Note:  This operation is **blocking**, which may be a violation of the API for geometry destroy.
-    // Some clarification of the API is necessary.  The code below assumes that we can defer the geometry
-    // destruction by not blocking in advance.  However, we cannot destroy the geometry because
-    // the barrier uses the rank list, which is provided by the user.
-
-    // Our options are
-    // a)  copy the rank list(topology), and create a protocol that uses the new ranklist/native interfaces
-    // b)  block in this call
-
-    // We chose to block because of it's simplicity.
-
-    // The flow is commented below:
+                  if(gc->_user_done_cb)
+                    {
+                      clnt->unlock();
+                      gc->_user_done_cb(context,
+                                        gc->_user_cookie,
+                                        PAMI_SUCCESS);
+                      clnt->lock();
+                    }
+                  __global.heap_mm->free(gc);
+                  clnt->unlock();
+                  return PAMI_SUCCESS;
+                }
+              __global.heap_mm->free(gc);
+              master->_syncdown.fetch_and_sub(1);
+              return PAMI_SUCCESS;
+              break;
+            default:
+              return PAMI_EAGAIN;
+              break;
+          }
+      }
 
     inline pami_result_t geometry_destroy_impl (pami_geometry_t      geometry,
                                                 pami_context_t       context,
                                                 pami_event_function  fn,
                                                 void                *cookie)
       {
-        PAMI::Context    *ctxt    = (PAMI::Context *)context;
+        PAMI::Context    *ctxt           = (PAMI::Context *)context;
+        PEGeometry       *g              = (PEGeometry*)geometry;
+        PAMI::Topology   *local_topology = (PAMI::Topology *)g->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
         ctxt->plock();
-
-        // Create a geometry cleanup object
-        // 1)  Cleanup object has a flag, the geometry, and the allocation list
-        //     for the object.  We keep this code so that we can eventually
-        //     make this non-blocking if required.
-        PEGeometry* g = (PEGeometry*)geometry;
-        geomCleanup *gc  = (geomCleanup*)__global.heap_mm->malloc(sizeof(geomCleanup));
-        new(gc)geomCleanup(g,fn,cookie);
-        // Start the ue barrier, the barrier callback will decrement the counter
-        // indicating the barrier is complete.  It will also enqueue
-        // the cleanup object for cleanup (for non-blocking).
-
-        // It also clears the geometry map for the current id so an incoming
-        // ue barrier with the same geometry id will not reference the current
-        // object.  This really happens, because advance may process multiple messages
-        // and the timing is highly dependent on the exit fromt eh barrier....it can
-        // be "staggered" across tasks, meaning that some task may race ahead and
-        // send a subsequent geometry create packet.
-
-        // We do not destroy the geometry object in the done callback because
-        // The destroy is dependent on the dispatcher to de-regester a cau group.
-
-        PAMI::Topology *local_topology  = (PAMI::Topology *)g->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
         int index_array[MAX_CONTEXTS];
         int num_local_ep = 0;
+        int master_context_idx = -1;
         for(size_t n=0; n<local_topology->size(); n++)
           {
             pami_endpoint_t ep    = local_topology->index2Endpoint(n);
@@ -1667,15 +1680,29 @@ namespace PAMI
             size_t          offset;
             PAMI_ENDPOINT_INFO(ep, task, offset);
             if(task == __global.mapping.task())
-              index_array[num_local_ep++] = offset;
+              {
+                if(ctxt->getId() == offset)
+                  master_context_idx = num_local_ep;
+                index_array[num_local_ep++] = offset;
+              }
           }
-//        gc->_master_context = _contexts[index_array[0]];
-        gc->_master_context = context;
+        PAMI_assertf(master_context_idx != -1,
+                     "Fatal:  Geometry destroy posted context is not represented in the endpoint list");
+        geomCleanup *gc[num_local_ep];
+        for(size_t n=0; n<num_local_ep; n++)
+          gc[n]  = (geomCleanup*)__global.heap_mm->malloc(sizeof(geomCleanup));
+
+
+        TRACE((stderr, "Client.h:  Destroying geometry for %d ep  mci=%d\n",
+               num_local_ep, master_context_idx));
+        for(size_t n=0; n<num_local_ep; n++)
+          new(gc[n])geomCleanup(g,fn,cookie,num_local_ep, gc[master_context_idx]);
+
         for(size_t n=0; n<num_local_ep; n++)
           {
-            _contexts[index_array[n]]->post(&gc->_barrier_work[n],
-                                            _do_ue_barrier2,
-                                            gc);
+            _contexts[index_array[n]]->post(&gc[n]->_barrier_work,
+                                            do_destroy_geometry,
+                                            gc[n]);
           }
         pami_result_t rc;
         ctxt->advance(10,rc);

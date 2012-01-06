@@ -58,9 +58,8 @@ public:
     _geometry->setDispatch(dispatch, &info);
     return PAMI_SUCCESS;
   }
-
-  Factory          *_factory;
-  T_Geometry                                                  *_geometry;
+  Factory    *_factory;
+  T_Geometry *_geometry;
 };
 
 };}; //namespaces

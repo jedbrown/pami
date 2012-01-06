@@ -178,7 +178,7 @@ namespace PAMI
 
       public:
       /// \brief The one device (p2p) pgas constructor.
-      /// 
+      ///
       /// It takes two devices because this class uses references to the device so *something* has
       /// to be passed in even if it's ignored.
       ///
@@ -425,7 +425,7 @@ namespace PAMI
                 SETUPNI_P2P_P2P(_hybrid_pipelined_bcast);
 #endif
               }
-            
+
             _mgr.Initialize(1,&_mgr); // Initialize for 1 context
             _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::AllgatherKind,      _allgather);
             _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::AllgathervKind,     _allgatherv);
@@ -490,6 +490,7 @@ namespace PAMI
 
         inline pami_result_t analyze_impl(size_t context_id,T_Geometry *geometry, int phase, uint64_t *inout_val=NULL)
         {
+          PAMI_assertf(context_id == _context_id, "FATAL:  pgas registration analyze:  want=%ld, got=%ld\n", _context_id, context_id);
 	  //in phase 0 we init all but hybrid collectives which
 	  //requires a shared memory region available only in phase 1
           if (phase == 0) {
@@ -551,6 +552,7 @@ namespace PAMI
 	    new(_shortallreduce_reg) ShortAllreduceFactory(_context,_context_id,mapidtogeometry,&_dev_p2p, _shortallreduce,_nb_short_allreduce, ShortAllreduceString);
 
 
+            geometry->setDefaultBarrier(_barrier_reg,context_id);
 	    geometry->addCollective(PAMI_XFER_BARRIER,
 				    (CCMI::Adaptor::CollectiveProtocolFactory*)_barrier_reg,
                                     _context,
@@ -700,7 +702,7 @@ namespace PAMI
 	      _gi->_nbcoll_list.push_back(_nb_hybrid_short_allreduce);
               _gi->_nbcoll_list.push_back(_nb_hybrid_bcast);
               _gi->_nbcoll_list.push_back(_nb_hybrid_pipelined_bcast);
-	      
+
 	      //create allreduce factory and add to the list of collectives
 	      _hybrid_shortallreduce_reg    = (HybridAllreduceFactory*)_allocator.allocateObject(); _gi->_f_list.push_back((Factories*)_hybrid_shortallreduce_reg);
 	      new(_hybrid_shortallreduce_reg) HybridAllreduceFactory(_context,_context_id,mapidtogeometry,&_dev_p2p, _hybrid_shortallreduce,_nb_hybrid_short_allreduce, HybridAllreduceString);
@@ -771,8 +773,8 @@ namespace PAMI
       int                         _cau_group;
 #endif
       // Map of geometry id's to geometry for this client
-      std::map<unsigned, pami_geometry_t> *_geometry_map; 
- 
+      std::map<unsigned, pami_geometry_t> *_geometry_map;
+
       // Native Interface
       T_Device_P2P               &_dev_p2p;
       T_Device_SHMEM             &_dev_shmem;
