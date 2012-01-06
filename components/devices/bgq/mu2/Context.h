@@ -153,7 +153,8 @@ namespace PAMI
           {
             TRACE_FN_ENTER();
 
-	    _progressDevice = progress;
+            // Select the generic device for this context.
+	    _progressDevice = &(Generic::Device::Factory::getDevice (progress, id_client, id_context));
 
 	    _mu_context_cookie = mu_context_cookie;
 
@@ -393,7 +394,7 @@ namespace PAMI
               for ( poolID=0; poolID<_numCounterPools; poolID++ )
               {
                 new ( &_counterPool[poolID] ) CounterPool( (pami_context_t)mu_context_cookie,
-                                                           progress );
+                                                           _progressDevice );
               }
             }
 
