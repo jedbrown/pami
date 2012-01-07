@@ -21,7 +21,6 @@
 
 #include "../pami_util.h"
 
-int g_ambcast_dt;
 
 void initialize_sndbuf (void *sbuf, int count, int root, int dt)
 {
@@ -161,23 +160,23 @@ void cb_ambcast_done (void *context, void * clientdata, pami_result_t err)
 }
 
 void cb_ambcast_recv  (pami_context_t         context,      /**< IN:  communication context which invoked the dispatch function */
-                     void                 * cookie,       /**< IN:  dispatch cookie */
-                     const void           * header_addr,  /**< IN:  header address  */
-                     size_t                 header_size,  /**< IN:  header size     */
-                     const void           * pipe_addr,    /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
-                     size_t                 data_size,    /**< IN:  number of bytes of message data */
-                     pami_endpoint_t        origin,       /**< IN:  root initiating endpoint */
-                     pami_geometry_t        geometry,     /**< IN:  Geometry */
-                     pami_recv_t          * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
+                       void                 * cookie,       /**< IN:  dispatch cookie */
+                       const void           * header_addr,  /**< IN:  header address  */
+                       size_t                 header_size,  /**< IN:  header size     */
+                       const void           * pipe_addr,    /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
+                       size_t                 data_size,    /**< IN:  number of bytes of message data */
+                       pami_endpoint_t        origin,       /**< IN:  root initiating endpoint */
+                       pami_geometry_t        geometry,     /**< IN:  Geometry */
+                       pami_recv_t          * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
 {
   if (gVerbose && !context)
     fprintf(stderr, "Error. Null context received on cb_done.\n");
 
-
-  validation_t *v =  malloc(data_size+sizeof(validation_t));
+  validation_t *v =  (validation_t *)malloc(data_size+sizeof(validation_t));
 
   void* rcvbuf = v->rbuf = &v->buffer;
-  v->count = data_size/get_type_size(dt_array[g_ambcast_dt]);
+  v->dt    = *((int *)header_addr);
+  v->count = data_size/get_type_size(dt_array[v->dt]);
   pami_task_t     task;
   size_t          offset;
   _gRc |= PAMI_Endpoint_query (origin,
@@ -185,7 +184,6 @@ void cb_ambcast_recv  (pami_context_t         context,      /**< IN:  communicat
                               &offset);
 
   v->root = task;
-  v->dt   = g_ambcast_dt;
 
   if (!recv)
   {
@@ -299,7 +297,7 @@ int main(int argc, char*argv[])
     if (rc == 1)
       return 1;
 
-    _g_recv_buffer = buf;
+    _g_recv_buffer = (char *)buf;
 
 
     barrier.cb_done     = cb_done;
@@ -348,6 +346,7 @@ int main(int argc, char*argv[])
                                        NULL,
                                        h);
         ambroadcast.algorithm = ambcast_always_works_algo[nalg];
+        ambroadcast.cmd.xfer_ambroadcast.dispatch = k;
         memset(buf, 0xFF, gMax_count);
         blocking_coll(context[iContext], &barrier, &bar_poll_flag);
 
@@ -359,7 +358,11 @@ int main(int argc, char*argv[])
           {
               if (task_id == 0)
                 printf("Running Broadcast: %s\n", dt_array_str[dt]);
-		      g_ambcast_dt = dt;
+              
+              ambroadcast.cmd.xfer_ambroadcast.stype = dt_array[dt];
+              ambroadcast.cmd.xfer_ambroadcast.user_header = &dt;
+              ambroadcast.cmd.xfer_ambroadcast.headerlen   = sizeof(int);
+
               for (i = 1; i <= gMax_count; i *= 2)
               {
                 size_t  dataSent = i;
@@ -372,13 +375,12 @@ int main(int argc, char*argv[])
 
                 if (task_id == root_task)
                 {
+                  ambroadcast.cmd.xfer_ambroadcast.stypecount = i;
                   initialize_sndbuf (buf, i, root_task, dt);
                   ti = timer();
 
                   for (j = 0; j < niter; j++)
                   {
-                    ambroadcast.cmd.xfer_ambroadcast.stypecount = i;
-                    ambroadcast.cmd.xfer_ambroadcast.stype = dt_array[dt];
                     blocking_coll (context[iContext], &ambroadcast, &ambcast_poll_flag);
                   }
 
@@ -398,7 +400,7 @@ int main(int argc, char*argv[])
                 else
                 {
                   while (_g_total_broadcasts < niter)
-                  result = PAMI_Context_advance (context[iContext], 1);
+                    result = PAMI_Context_advance (context[iContext], 1);
 
                   rc |= _gRc; /* validation return code done in cb_ambcast_done */
 
