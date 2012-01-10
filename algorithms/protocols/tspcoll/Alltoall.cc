@@ -34,6 +34,21 @@ void xlpgas::Alltoall<T_NI>::reset (const void        * s,
 template<class T_NI>
 void xlpgas::Alltoall<T_NI>::kick    () {
   MUTEX_LOCK(&this->_mutex);
+  if(_headers==NULL)
+  {
+    _headers = (struct AMHeader *)__global.heap_mm->malloc (sizeof(struct AMHeader) * this->_comm->size());
+    assert (_headers != NULL);
+
+    for (int i=0; i<(int)this->_comm->size(); i++)
+    {
+      _headers[i].hdr.handler   = XLPGAS_TSP_AMSEND_COLLA2A;
+      _headers[i].hdr.headerlen = sizeof (struct AMHeader);
+      _headers[i].kind          = this->_kind;
+      _headers[i].tag           = this->_tag;
+      _headers[i].offset        = _offset;
+      _headers[i].senderID      = this->ordinal();
+    }
+  }
   for (int i=0; i < (int)this->_comm->size(); i++)
     if (i == (int)this->ordinal())
       {

@@ -24,24 +24,14 @@ namespace xlpgas
     void * operator new (size_t, void * addr) { return addr; }
 
     Alltoall (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, T_NI* ni) :
-      Collective<T_NI> (ctxt, comm, kind, tag, NULL, NULL, ni)
+      Collective<T_NI> (ctxt, comm, kind, tag, NULL, NULL, ni),
+      _offset(offset),
+      _headers(NULL)
       {
 	_sndcount[0] = comm->size(); _sndcount[1] = comm->size();
 	_rcvcount[0] = comm->size(); _rcvcount[1] = comm->size();
 	_odd = 1;
 
-	_headers = (struct AMHeader *)__global.heap_mm->malloc (sizeof(struct AMHeader) * comm->size());
-	assert (_headers != NULL);
-
-	for (int i=0; i<(int)comm->size(); i++)
-	  {
-	    _headers[i].hdr.handler   = XLPGAS_TSP_AMSEND_COLLA2A;
-	    _headers[i].hdr.headerlen = sizeof (struct AMHeader);
-	    _headers[i].kind          = kind;
-	    _headers[i].tag           = tag;
-	    _headers[i].offset        = offset;
-	    _headers[i].senderID      = this->ordinal();
-	  }
       }
 
     ~Alltoall()
@@ -84,7 +74,7 @@ namespace xlpgas
     TypeCode            * _rtype;        /* Single datatype of the recv buffer */
     PAMI::PipeWorkQueue   _pwq;
 
-    int             _sndcount[2], _rcvcount[2], _odd;
+    int             _sndcount[2], _rcvcount[2], _odd, _offset;
 
     struct AMHeader
     {

@@ -25,10 +25,6 @@ namespace xlpgas
     Alltoallv (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, T_NI* ni) :
       Alltoall<T_NI> (ctxt, comm, kind, tag, offset,ni)
       {
-	for (int i=0; i<(int)comm->size(); i++)
-	  {
-	    this->_headers[i].hdr.handler   = XLPGAS_TSP_AMSEND_COLLA2AV;
-	  }
       }
 
     virtual void reset (const void   *sbuf,
