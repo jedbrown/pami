@@ -200,7 +200,7 @@ int main (int argc, char ** argv)
   options.long_header = PAMI_HINT_ENABLE;
   TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
   result = PAMI_Dispatch_set (context,
-                             0,
+                             1,
                              fn,
                              (void *)&recv_active,
                              options);
@@ -213,7 +213,7 @@ int main (int argc, char ** argv)
   options.long_header = PAMI_HINT_DISABLE;
   TRACE((stderr, "Before PAMI_Dispatch_set() .. &recv_active = %p, recv_active = %zu\n", &recv_active, recv_active));
   result = PAMI_Dispatch_set (context,
-                             1,
+                             2,
                              fn,
                              (void *)&recv_active,
                              options);
@@ -226,7 +226,7 @@ int main (int argc, char ** argv)
   uint8_t header[10240];
 
   pami_send_t parameters;
-  parameters.send.dispatch        = 0;
+  parameters.send.dispatch        = 1;
   parameters.send.header.iov_base = (void *) header;
   parameters.send.header.iov_len  = 10240;
   parameters.send.data.iov_base   = NULL;
@@ -313,7 +313,7 @@ int main (int argc, char ** argv)
 
 	TRACE((stderr, "before send ...\n"));
 	PAMI_Endpoint_create (client, 1, 0, &parameters.send.dest);
-	parameters.send.dispatch = 1;
+	parameters.send.dispatch = 2;
 	result = PAMI_Send (context, &parameters);
 	if (result != PAMI_INVAL)
 	  {
