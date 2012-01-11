@@ -1,5 +1,8 @@
 #!/usr/bin/perl
 
+# This script will allocate the specified block.
+# Returns 0 if block was allocated, 2 if it was already allocated, any other value is an error.
+
 # Use the expect perl module to simulate interactive use
 use Expect;
 use Getopt::Long;
@@ -12,16 +15,8 @@ sub trim($) {
 	return $string;
 }
 
-sub cleanup {
-	$e->send("free $block\n");
-	$e->expect(300, "OK", ["FAIL" => sub { die "Error: unable to free block\n"; } ]) or die "Error: unable to free block\n";
-	exit 1;
-}
-
 # Parse options
 GetOptions("h!"=>\$help,
-           "io!"=>\$io,
-           "noCleanup!"=>\$io,
            "block=s"=>\$block);
 if ($help) {
 	print	"Allocate and boot a block\n";
@@ -29,8 +24,6 @@ if ($help) {
 	print	" Options: \n";
 	print	"\t-h			Displays help text\n";
 	print	"\t-block [block-name]	Specifies the name of the block to boot\n";
-	print	"\t-io			Boot the block as an I/O block (default is CNK)\n";
-	print	"\t-noCleanup		Don't free the block if the allocation fails\n";
 	exit 1;
 }
 if ($block eq "") {
@@ -48,10 +41,10 @@ $e->expect(60, "mmcs\$")
 # Check if the Block is already booted
 $e->log_stdout(0);
 $e->send("list_blocks\n");
-$e->expect(3, "OK")
+$e->expect(10, "OK")
 	or die "Error: unable to run list_blcoks\n";
 $output = $e->exp_after();
-$blockStatus = `echo "$output" | grep "$block" | awk '{ print \$2 }'`;
+$blockStatus = `echo "$output" | grep "$block " | awk '{ print \$2 }'`;
 $blockStatus = trim($blockStatus);
 if ($blockStatus eq "I") {
 	print "Info: block is already initialized\n";
@@ -61,62 +54,13 @@ if ($blockStatus eq "I") {
 $e->log_stdout(1);
 
 # Allocate the block
-$e->send("allocate_block $block\n");
-$e->expect(60, "OK", ["Block is not free" => sub { print "Info: block already allocated\n"; } ],
+$e->send("allocate $block\n");
+$e->expect(1200, "OK", ["Block is not free" => sub { print "Info: block already allocated\n"; exit 2; } ],
 	["FAIL" => sub { die "Error: unable to allocate block\n"; } ])
 	or die "Error: unable to allocate block\n";
-
-# Select the block (in case it was already allocated)
-$e->send("select_block $block\n");
-$e->expect(30, "OK", ["FAIL" => sub { $error = 1; } ])
-	or $error = 1;
-if ($error == 1) {
-	print "Error: unable to select block\n";
-	if (!$noCleanup) {
-		cleanup();
-	}
-}
-
-# Boot the block
-$error = 0;
-$rc = 0;
-if ($io) {
-	$e->send("boot_block\n");
-	$e->expect(300, "OK", ["invalid block state: I" => sub { print "Info: block is already booted\n"; $rc = 2; } ],
-		["FAIL" => sub { $error = 1; } ])
-		or $error = 1;
-	if ($error == 1) {
-		print "Error: unable to boot block\n";
-		if (!$noCleanup) {
-			cleanup();
-		}
-	}
-} else {
-	$e->send("boot_block\n");
-	$e->expect(300, "OK", ["invalid block state: I" => sub { print "Info: block is already booted\n"; $rc = 2; } ],
-		["FAIL" => sub { $error = 1; } ])
-		or $error = 1;
-	if ($error == 1) {
-		print "Error: unable to boot block\n";
-		if (!$noCleanup) {
-			cleanup();
-		}
-	}
-}
-
-# Wait until the block is booted
-$e->send("wait_boot 3\n");
-$e->expect(300, "OK", ["FAIL" => sub { $error = 1; } ])
-	or $error = 1;
-if ($error == 1) {
-	print "Error: error while waiting for the block to finish booting\n";
-	if (!$noCleanup) {
-		cleanup();
-	}
-}
 
 # Quit the console
 $e->send("quit\n");
 
-# Return 0 if block was allocated, 2 if it was already allocated
-exit $rc
+# If we get here, we successfully allocated the block
+exit 0;
