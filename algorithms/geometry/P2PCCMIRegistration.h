@@ -119,6 +119,10 @@ namespace PAMI
           _onetask_alltoallv_int_factory(NULL),
           _onetask_scan_factory(NULL),
           _onetask_reduce_scatter_factory(NULL),
+          _onetask_ambroadcast_factory(NULL),
+          _onetask_amscatter_factory(NULL),
+          _onetask_amgather_factory(NULL),
+          _onetask_amreduce_factory(NULL),
 #ifdef ENABLE_X0_PROTOCOLS // Experimental (X0:) protocols
           _rectangle_broadcast_factory(NULL),
           _rectangle_1color_broadcast_factory(NULL),
@@ -305,6 +309,22 @@ namespace PAMI
                                       _context_id);
               geometry->addCollective(PAMI_XFER_REDUCE_SCATTER,
                                       _onetask_reduce_scatter_factory,
+                                      _context,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_AMBROADCAST,
+                                      _onetask_ambroadcast_factory,
+                                      _context,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_AMSCATTER,
+                                      _onetask_amscatter_factory,
+                                      _context,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_AMGATHER,
+                                      _onetask_amgather_factory,
+                                      _context,
+                                      _context_id);
+              geometry->addCollective(PAMI_XFER_AMREDUCE,
+                                      _onetask_amreduce_factory,
                                       _context,
                                       _context_id);
             }//End if onetask geometry
@@ -998,6 +1018,24 @@ namespace PAMI
 
             setupFactory<CCMI::Adaptor::P2POneTask::OneTaskReduceScatterFactory>(_onetask_reduce_scatter_factory);
             new ((void*)_onetask_reduce_scatter_factory) CCMI::Adaptor::P2POneTask::OneTaskReduceScatterFactory(_context,_context_id,mapidtogeometry,NULL,NULL);
+
+
+            // OneTaskAMFactory needs a native interface, so that we have access to the endpoint
+            // So create one NI and use it across all OneTaskAMFactory instances
+            CCMI::Interfaces::NativeInterface  *ni = NULL;
+            pami_result_t rc;
+            rc = setupFactory<CCMI::Adaptor::P2POneTask::OneTaskAMBroadcastFactory>(ni, _onetask_ambroadcast_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE);
+            if(rc == PAMI_SUCCESS) new ((void*)_onetask_ambroadcast_factory) CCMI::Adaptor::P2POneTask::OneTaskAMBroadcastFactory(_context,_context_id,mapidtogeometry,NULL,ni);
+
+            setupFactory<CCMI::Adaptor::P2POneTask::OneTaskAMScatterFactory>(_onetask_amscatter_factory);
+            if(rc == PAMI_SUCCESS) new ((void*)_onetask_amscatter_factory) CCMI::Adaptor::P2POneTask::OneTaskAMScatterFactory(_context,_context_id,mapidtogeometry,NULL,ni);
+
+            setupFactory<CCMI::Adaptor::P2POneTask::OneTaskAMGatherFactory>(_onetask_amgather_factory);
+            if(rc == PAMI_SUCCESS) new ((void*)_onetask_amgather_factory) CCMI::Adaptor::P2POneTask::OneTaskAMGatherFactory(_context,_context_id,mapidtogeometry,NULL,ni);
+
+            setupFactory<CCMI::Adaptor::P2POneTask::OneTaskAMReduceFactory>(_onetask_amreduce_factory);
+            if(rc == PAMI_SUCCESS) new ((void*)_onetask_amreduce_factory) CCMI::Adaptor::P2POneTask::OneTaskAMReduceFactory(_context,_context_id,mapidtogeometry,NULL,ni);
+
             TRACE_FN_EXIT();
           }
 
@@ -1349,6 +1387,10 @@ namespace PAMI
           CCMI::Adaptor::P2POneTask::OneTaskAlltoallvIntFactory           *_onetask_alltoallv_int_factory;
           CCMI::Adaptor::P2POneTask::OneTaskScanFactory                   *_onetask_scan_factory;
           CCMI::Adaptor::P2POneTask::OneTaskReduceScatterFactory          *_onetask_reduce_scatter_factory;
+          CCMI::Adaptor::P2POneTask::OneTaskAMBroadcastFactory            *_onetask_ambroadcast_factory;
+          CCMI::Adaptor::P2POneTask::OneTaskAMScatterFactory              *_onetask_amscatter_factory;
+          CCMI::Adaptor::P2POneTask::OneTaskAMGatherFactory               *_onetask_amgather_factory;
+          CCMI::Adaptor::P2POneTask::OneTaskAMReduceFactory               *_onetask_amreduce_factory;
 
           // CCMI Broadcasts
 #ifdef PAMI_ENABLE_X0_PROTOCOLS // Experimental (X0:) protocols

@@ -367,6 +367,50 @@ namespace CCMI
         CCMI::ConnectionManager::SimpleConnMgr >
       OneTaskReduceScatterFactory;
 
+      extern inline void onetask_ambroadcast_md(pami_metadata_t *m)
+      {
+        new(m) PAMI::Geometry::Metadata("I0:OneTaskAMBroadcast:OneTask:OneTask");
+      }
+
+      typedef CCMI::Adaptor::OneTask::OneTaskAMFactoryT
+      < pami_ambroadcast_t,
+        onetask_ambroadcast_md,
+        CCMI::ConnectionManager::SimpleConnMgr >
+      OneTaskAMBroadcastFactory;
+
+      extern inline void onetask_amscatter_md(pami_metadata_t *m)
+      {
+        new(m) PAMI::Geometry::Metadata("I0:OneTaskAMScatter:OneTask:OneTask");
+      }
+
+      typedef CCMI::Adaptor::OneTask::OneTaskAMFactoryT
+      < pami_amscatter_t,
+        onetask_amscatter_md,
+        CCMI::ConnectionManager::SimpleConnMgr >
+      OneTaskAMScatterFactory;
+
+      extern inline void onetask_amgather_md(pami_metadata_t *m)
+      {
+        new(m) PAMI::Geometry::Metadata("I0:OneTaskAMGather:OneTask:OneTask");
+      }
+
+      typedef CCMI::Adaptor::OneTask::OneTaskAMFactoryT
+      < pami_amgather_t,
+        onetask_amgather_md,
+        CCMI::ConnectionManager::SimpleConnMgr >
+      OneTaskAMGatherFactory;
+
+      extern inline void onetask_amreduce_md(pami_metadata_t *m)
+      {
+        new(m) PAMI::Geometry::Metadata("I0:OneTaskAMReduce:OneTask:OneTask");
+      }
+
+      typedef CCMI::Adaptor::OneTask::OneTaskAMFactoryT
+      < pami_amreduce_t,
+        onetask_amreduce_md,
+        CCMI::ConnectionManager::SimpleConnMgr >
+      OneTaskAMReduceFactory;
+
     };
 
     namespace P2PBarrier

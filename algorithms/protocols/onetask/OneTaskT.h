@@ -140,8 +140,160 @@ inline pami_result_t copyData (void               * src_addr,
     return PAMI_SUCCESS;
 }
 
+template <class T_Collective_type>
+inline void doDispatch(pami_xfer_t                  *xfer,
+                       pami_context_t                ctxt,
+                       pami_endpoint_t               endpoint,
+                       pami_geometry_t               g,
+                       pami_recv_t                  *recv)
+{
+     COMPILE_TIME_ASSERT(0 == 1);
+}
 
+template <>
+inline void doDispatch<pami_ambroadcast_t>(pami_xfer_t                  *xfer,
+                                           pami_context_t                ctxt,
+                                           pami_endpoint_t               endpoint,
+                                           pami_geometry_t               g,
+                                           pami_recv_t                  *recv)
+{
+  recv->local_fn = xfer->cb_done;
+  recv->cookie   = xfer->cookie;
+}
 
+template <>
+inline void doDispatch<pami_amscatter_t>(pami_xfer_t                  *xfer,
+                                         pami_context_t                ctxt,
+                                         pami_endpoint_t               endpoint,
+                                         pami_geometry_t               g,
+                                         pami_recv_t                  *recv)
+{
+  PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)g;
+  pami_amscatter_t *ams_xfer = &(xfer->cmd.xfer_amscatter);
+  PAMI::Geometry::DispatchInfo *dispatch = geometry->getDispatch(ams_xfer->dispatch);
+  PAMI_assertf(dispatch != NULL, "Invalid dispatch ID: %zu\n", ams_xfer->dispatch);
+
+  PAMI::Topology *topo = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
+  TypeCode *stype  = (TypeCode *) ams_xfer->stype;
+  size_t bytes     = ams_xfer->stypecount * stype->GetDataSize();
+
+  // Invoke the dispatch function 
+  dispatch->fn.amscatter (
+       ctxt,                     // context
+       dispatch->cookie,         // user cookie
+       (char *)ams_xfer->headers + topo->endpoint2Index(endpoint) * ams_xfer->headerlen, // User header
+       ams_xfer->headerlen,      // User header size
+       NULL,
+       bytes,                    // Number of bytes of message data
+       endpoint,                 // origin (root)
+       g,                        // Geometry
+       recv);                    // recv info
+
+  TypeCode *rtype = (TypeCode*)recv->type;
+  copyData((void*)ams_xfer->sndbuf, stype, (void*)recv->addr, rtype, bytes/rtype->GetDataSize(), 0, 0);
+}
+
+template <>
+inline void doDispatch<pami_amgather_t>(pami_xfer_t                  *xfer,
+                                        pami_context_t                ctxt,
+                                        pami_endpoint_t               endpoint,
+                                        pami_geometry_t               g,
+                                        pami_recv_t                  *send)
+{
+  PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)g;
+  pami_amgather_t *amg_xfer = &(xfer->cmd.xfer_amgather);
+  PAMI::Geometry::DispatchInfo *dispatch = geometry->getDispatch(amg_xfer->dispatch);
+  PAMI_assertf(dispatch != NULL, "Invalid dispatch ID: %zu\n", amg_xfer->dispatch);
+
+  PAMI::Topology *topo = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
+  TypeCode *rtype  = (TypeCode *) amg_xfer->rtype;
+  size_t bytes     = amg_xfer->rtypecount * rtype->GetDataSize();
+
+  // Invoke the dispatch function 
+  dispatch->fn.amgather (
+       ctxt,                     // context
+       dispatch->cookie,         // user cookie
+       (char *)amg_xfer->headers + topo->endpoint2Index(endpoint) * amg_xfer->headerlen, // User header
+       amg_xfer->headerlen,      // User header size
+       bytes,                    // Number of bytes of message data
+       endpoint,                 // origin (root)
+       g,                        // Geometry
+       send);                    // recv info
+
+  copyData((void*)send->addr, (TypeCode*)send->type, (void*)amg_xfer->rcvbuf, rtype, amg_xfer->rtypecount, 0, 0);
+}
+
+template <>
+inline void doDispatch<pami_amreduce_t>(pami_xfer_t                  *xfer,
+                                        pami_context_t                ctxt,
+                                        pami_endpoint_t               endpoint,
+                                        pami_geometry_t               g,
+                                        pami_recv_t                  *send)
+{
+  PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)g;
+  pami_amreduce_t *amr_xfer = &(xfer->cmd.xfer_amreduce);
+  PAMI::Geometry::DispatchInfo *dispatch = geometry->getDispatch(amr_xfer->dispatch);
+  PAMI_assertf(dispatch != NULL, "Invalid dispatch ID: %zu\n", amr_xfer->dispatch);
+
+  pami_data_function reduce_fn;
+  TypeCode *rtype  = (TypeCode *) amr_xfer->rtype;
+  size_t bytes     = amr_xfer->rtypecount * rtype->GetDataSize();
+
+  // Invoke the dispatch function 
+  dispatch->fn.amreduce (
+       ctxt,                     // context
+       dispatch->cookie,         // user cookie
+       (char *)amr_xfer->user_header, // User header
+       amr_xfer->headerlen,      // User header size
+       bytes,                    // Number of bytes of message data
+       endpoint,                 // origin (root)
+       g,                        // Geometry
+       &reduce_fn,               // PAMI math operation
+       send);                    // recv info
+
+  copyData((void*)send->addr, (TypeCode*)send->type, (void*)amr_xfer->rcvbuf, rtype, amr_xfer->rtypecount, 0, 0);
+}
+
+// OneTask Active Message Factory
+template < typename T_Collective_type, MetaDataFn get_metadata, class T_Conn >
+class OneTaskAMFactoryT : public CollectiveProtocolFactory
+{
+protected:
+    Interfaces::NativeInterface    *_native;
+
+public:
+    OneTaskAMFactoryT(pami_context_t             ctxt,
+                    size_t                       ctxt_id,
+                    pami_mapidtogeometry_fn      cb_geometry,
+                    T_Conn                      *cmgr,
+                    Interfaces::NativeInterface *native):
+      CollectiveProtocolFactory(ctxt,ctxt_id,cb_geometry),
+      _native(native)
+    {
+      TRACE_FN_ENTER();
+      TRACE_FORMAT( "<%p> ni %p",this, native);
+      TRACE_FN_EXIT();
+    }
+
+    virtual void metadata(pami_metadata_t *mdata)
+    {
+      DO_DEBUG((templateName<MetaDataFn>()));
+      get_metadata(mdata);
+      // Use arbitrary PAMI_XFER_COUNT
+      if(_native) _native->metadata(mdata,PAMI_XFER_COUNT);
+    }
+
+    virtual Executor::Composite * generate(pami_geometry_t              g,
+                                           void                      * cmd)
+    {
+      pami_recv_t recv = {0,};
+      doDispatch<T_Collective_type>((pami_xfer_t *)cmd, _context, _native->endpoint(), g, &recv);
+      if(recv.local_fn)
+        recv.local_fn (_context, recv.cookie, PAMI_SUCCESS);
+
+      return NULL;
+    }
+};
 
 template <class T_Collective_type>
 inline pami_result_t doAction(T_Collective_type *xfer, PAMI_GEOMETRY_CLASS *_geometry)
@@ -156,13 +308,6 @@ inline pami_result_t doAction<pami_barrier_t>(pami_barrier_t *xfer, PAMI_GEOMETR
    //no op
    return PAMI_SUCCESS;
 }
-
-//template <>
-//inline pami_result_t doAction<pami_fence_t>(pami_fence_t *xfer, PAMI_GEOMETRY_CLASS *_geometry)
-//{
-   //no op
-//   return PAMI_SUCCESS;
-//}
 
 template <>
 inline pami_result_t doAction<pami_allreduce_t>(pami_allreduce_t *xfer, PAMI_GEOMETRY_CLASS *_geometry)
@@ -290,7 +435,6 @@ inline pami_result_t doAction<pami_reduce_scatter_t>(pami_reduce_scatter_t *xfer
    return copyData((void*)xfer->sndbuf, (TypeCode*)xfer->stype, (void*)xfer->rcvbuf, (TypeCode*)xfer->rtype, xfer->rcounts[0], 0, 0);
 }
 
-
 ///
 /// \brief OneTaskT class
 ///
@@ -361,6 +505,7 @@ protected:
     pami_result_t        _res;
     void                *_collObj;
 }; //-OneTaskT
+
 
 //////////////////////////////////////////////////////////////////////////////
 };
