@@ -111,12 +111,26 @@ namespace PAMI
     {
       TRACE_FN_ENTER();
       TRACE_FORMAT("<%p> %s type %u",this,m->name,t);
-      char* s = strstr(m->name,"P2P");
-      PAMI_assertf(sizeof(name) >= (s-m->name)+strlen(niName)+1,"%zu >= %zu",sizeof(name),(s-m->name)+strlen(niName)+1);
-      memcpy(name,m->name,(s-m->name));
-      name[(s-m->name)] = 0x00;
-      strcat(name,niName);
-      m->name = name;
+      // Following assumes that the string is "XXX:NAME:DEVICE:DEVICE" ! 
+      // We'll replace DEVICE:DEVICE with our override string or leave 
+      // it alone if our assumption is obviously wrong (strstr() fails)
+      char* s = strstr(m->name,":"); // Find  :NAME:DEVICE:DEVICE
+      if(s)
+      {
+        s++; s = strstr(s,":"); // Find  :DEVICE:DEVICE
+        if(s)
+        {
+          s++; // Find  DEVICE:DEVICE
+          if(sizeof(name) >= (s-m->name)+strlen(niName)+1) // Is it reasonable?
+          {
+            //PAMI_assertf(sizeof(name) >= (s-m->name)+strlen(niName)+1,"%zu >= %zu",sizeof(name),(s-m->name)+strlen(niName)+1);
+            memcpy(name,m->name,(s-m->name));
+            name[(s-m->name)] = 0x00;
+            strcat(name,niName);
+            m->name = name;
+          }
+        }
+      }
       TRACE_FORMAT("<%p> %s",this,m->name);
       TRACE_FN_EXIT();
     };
@@ -198,19 +212,35 @@ namespace PAMI
     void metadata(pami_metadata_t *m, pami_xfer_type_t t) 
     {
       TRACE_FN_ENTER();
-      //printf("<%p> %s type %u cur niName %s",this,m->name,t, niName);
-      char* s = strstr(m->name,"P2P");
-      PAMI_assertf(sizeof(name) >= (s-m->name)+strlen(niName)+1,"%zu >= %zu",sizeof(name),(s-m->name)+strlen(niName)+1);
-      memcpy(name,m->name,(s-m->name));
-      name[(s-m->name)] = 0x00;
-      strcat(name,niName);
-      m->name = name;
+      TRACE_FORMAT("<%p> %s type %u",this,m->name,t);
+      // Following assumes that the string is "XXX:NAME:DEVICE:DEVICE" ! 
+      // We'll replace DEVICE:DEVICE with our override string or leave 
+      // it alone if our assumption is obviously wrong (strstr() fails)
+      char* s = strstr(m->name,":"); // Find  :NAME:DEVICE:DEVICE
+      if(s)
+      {
+        s++; s = strstr(s,":"); // Find  :DEVICE:DEVICE
+        if(s)
+        {
+          s++; // Find  DEVICE:DEVICE
+          if(sizeof(name) >= (s-m->name)+strlen(niName)+1) // Is it reasonable?
+          {
+            //PAMI_assertf(sizeof(name) >= (s-m->name)+strlen(niName)+1,"%zu >= %zu",sizeof(name),(s-m->name)+strlen(niName)+1);
+            memcpy(name,m->name,(s-m->name));
+            name[(s-m->name)] = 0x00;
+            strcat(name,niName);
+            m->name = name;
+          }
+        }
+      }
+      TRACE_FORMAT("<%p> %s",this,m->name);
       if(T_Range_Hi)
       {
         m->check_correct.values.rangeminmax = 1;
         m->range_hi                         = T_Range_Hi;
       }
-      TRACE_FORMAT("<%p> %s",this,m->name);
+      TRACE_FORMAT("<%p> %s, rangeminmax %u, range_hi %zu",this,m->name,
+                   m->check_correct.values.rangeminmax,m->range_hi);
       TRACE_FN_EXIT();
     };
   };
@@ -293,12 +323,26 @@ namespace PAMI
     {
       TRACE_FN_ENTER();
       TRACE_FORMAT("<%p> %s type %u",this,m->name,t);
-      char* s = strstr(m->name,"P2P");
-      PAMI_assertf(sizeof(name) >= (s-m->name)+strlen(niName)+1,"%zu >= %zu",sizeof(name),(s-m->name)+strlen(niName)+1);
-      memcpy(name,m->name,(s-m->name));
-      name[(s-m->name)] = 0x00;
-      strcat(name,niName);
-      m->name = name;
+      // Following assumes that the string is "XXX:NAME:DEVICE:DEVICE" ! 
+      // We'll replace DEVICE:DEVICE with our override string or leave 
+      // it alone if our assumption is obviously wrong (strstr() fails)
+      char* s = strstr(m->name,":"); // Find  :NAME:DEVICE:DEVICE
+      if(s)
+      {
+        s++; s = strstr(s,":"); // Find  :DEVICE:DEVICE
+        if(s)
+        {
+          s++; // Find  DEVICE:DEVICE
+          if(sizeof(name) >= (s-m->name)+strlen(niName)+1) // Is it reasonable?
+          {
+            //PAMI_assertf(sizeof(name) >= (s-m->name)+strlen(niName)+1,"%zu >= %zu",sizeof(name),(s-m->name)+strlen(niName)+1);
+            memcpy(name,m->name,(s-m->name));
+            name[(s-m->name)] = 0x00;
+            strcat(name,niName);
+            m->name = name;
+          }
+        }
+      }
       TRACE_FORMAT("<%p> %s",this,m->name);
       TRACE_FN_EXIT();
     };
@@ -983,20 +1027,20 @@ namespace PAMI
             PAMI_assert(__global.topology_local.size() == __global.local_size());
             if(__global.mapping.tSize()!=64) /// \todo Not enough resources for MU Dput at 64 PPN, maybe fix this.
             {
-	      COMPILE_TIME_ASSERT(sizeof(MUDputNIFactory) <= ProtocolAllocator::objsize);
-	      CCMI::Interfaces::NativeInterfaceFactory *ni_factory_mudp = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
-	      new (ni_factory_mudp) MUDputNIFactory (_client, _context, _clientid, _contextid, _devices->_mu[_contextid], _big_protocol);
+              COMPILE_TIME_ASSERT(sizeof(MUDputNIFactory) <= ProtocolAllocator::objsize);
+              CCMI::Interfaces::NativeInterfaceFactory *ni_factory_mudp = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
+              new (ni_factory_mudp) MUDputNIFactory (_client, _context, _clientid, _contextid, _devices->_mu[_contextid], _big_protocol);
           
-	      _ccmi_registration_mudput =  new((CCMIRegistrationKey2*)_ccmi_registration_mudput_storage) 	
-		CCMIRegistrationKey2(_client, _context, _contextid, _clientid, 
-				     _protocol,
-				     __global.topology_global.size(), 
-				     __global.topology_local.size(), 
-				     &_dispatch.id, 
-				     _geometry_map,
-				     ni_factory_mudp,
-				     NULL);
-	    }
+              _ccmi_registration_mudput =  new((CCMIRegistrationKey2*)_ccmi_registration_mudput_storage) 	
+              CCMIRegistrationKey2(_client, _context, _contextid, _clientid, 
+                                   _protocol,
+                                   __global.topology_global.size(), 
+                                   __global.topology_local.size(), 
+                                   &_dispatch.id, 
+                                   _geometry_map,
+                                   ni_factory_mudp,
+                                   NULL);
+            }
           }
         // Can only use shmem pgas if the geometry is all local tasks, so check the topology
         if (_pgas_shmem_registration && ((PAMI::Topology*)_world_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->isLocal()) _pgas_shmem_registration->analyze(_contextid, _world_geometry, 0);
