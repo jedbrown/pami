@@ -64,6 +64,9 @@ namespace PAMI
 	{
 	  // PAMI_assert(_clientid < PAMI_MAX_NUM_CLIENTS);
 
+          // Call the MU resource manager to perform init before creating any clients
+          __MUGlobal.getMuRM().initClient( _clientid );
+
 	  // Get some shared memory for this client
 	  initializeMemoryManager ();
 	  

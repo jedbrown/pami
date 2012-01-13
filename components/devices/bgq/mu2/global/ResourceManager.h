@@ -543,11 +543,6 @@ if (rc) fprintf(stderr, "Kernel_AllocateGlobalInterruptClassRoute(%d) failed %d 
 	  // For each task, cache the optimal fifo pin in the mapcache.
 	  initFifoPin();
 
-	  // Calculate the following for each client
-	  calculatePerProcessMaxPamiResources();
-	  calculatePerProcessOptimalPamiResources();
-	  calculatePerCorePerProcessPerClientMUResources();
-
 	  // Set up the global resources
 	  allocateGlobalResources();
 	  TRACE((stderr,"MU ResourceManager: Done allocating global resources\n"));
@@ -1321,6 +1316,10 @@ fprintf(stderr, "%s\n", buf);
 
       public:
 
+        // \brief Initialize for a Client
+        // This occurs before any contexts are created.
+	inline void initClient( size_t RmClientId );
+
         // \brief Get Per Process PAMI Max Number of Contexts For A Client
 	inline size_t getPerProcessMaxPamiResources ( size_t RmClientId )
 	{ return _perProcessMaxPamiResources[RmClientId].numContexts; }
@@ -1866,6 +1865,21 @@ fprintf(stderr, "%s\n", buf);
     }; // MU     namespace
   };   // Device namespace
 };     // PAMI   namespace
+
+
+// \brief Initialize for a Client
+// This occurs before any contexts are created.
+void PAMI::Device::MU::ResourceManager::initClient( size_t RmClientId )
+{
+  // If this is the first client, perform init.
+  if ( _perProcessMaxPamiResources == NULL ) /* First client to initialize? */
+  {
+    // Calculate the following for each client
+    calculatePerProcessMaxPamiResources();
+    calculatePerProcessOptimalPamiResources();
+    calculatePerCorePerProcessPerClientMUResources();
+  }
+}
 
 
 /// \brief Choose Fifo
