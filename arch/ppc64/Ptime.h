@@ -47,7 +47,7 @@ namespace PAMI
   {
     struct timeval tv;
     gettimeofday( &tv, 0 );
-    return tv.tv_sec * 1000ULL + tv.tv_usec / 1000ULL;
+    return tv.tv_sec * 1000000ULL + tv.tv_usec;
   }
 
   class Time : public Interface::Time<Time>
@@ -65,7 +65,7 @@ namespace PAMI
       ///
       inline pami_result_t init_impl (uint64_t dummy)
       {
-        _clockMHz      = (uint64_t) (clockMHz() / 1000000000ULL);
+        _clockMHz      = clockMHz();
         _sec_per_cycle = 1.0 / ((double)_clockMHz * 1000000.0);
 
         if (_clockMHz == -1ULL)
@@ -138,7 +138,7 @@ namespace PAMI
               }
             while (endBase <= startBase);
 
-            return (uint64_t) (ticks / (sampleTime*1e-6));
+            return (uint64_t) (ticks / sampleTime);
           }
         else
           return _clockMHz;
