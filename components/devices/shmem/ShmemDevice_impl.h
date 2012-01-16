@@ -12,6 +12,7 @@
 #ifndef __components_devices_shmem_ShmemDevice_impl_h__
 #define __components_devices_shmem_ShmemDevice_impl_h__
 
+#include "Platform.h"
 #include "Global.h"
 
 #ifndef TRACE_ERR
@@ -127,17 +128,19 @@ namespace PAMI
       return PAMI_SUCCESS;
     };
 
+#ifdef SHM_USE_COLLECTIVE_FIFO
     template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount, unsigned T_SetCount>
     char * ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount, T_SetCount>::getUniqueString ()
     {
       return _unique_str;
     };
+#endif
 
 
 
 
 
-
+#ifdef SHM_USE_COLLECTIVE_FIFO
     template <class T_Fifo, class T_Atomic, class T_Shaddr, unsigned T_FifoCount, unsigned T_SetCount>
     pami_result_t ShmemDevice<T_Fifo, T_Atomic, T_Shaddr, T_FifoCount, T_SetCount>::getShmemWorldDesc
     (typename CollectiveFifo::Descriptor ** desc)
@@ -156,7 +159,7 @@ namespace PAMI
         }
         return PAMI_EAGAIN;
       };
-
+#endif
 
 
 

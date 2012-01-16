@@ -186,15 +186,19 @@ namespace PAMI
             _progress (progress),
             _local_progress_device (&(Generic::Device::Factory::getDevice (progress, 0, contextid))),
             _dispatch (),
+#ifdef SHM_USE_COLLECTIVE_FIFO
             shaddr (this),
             _desc_fifo ()
-
+#else
+            shaddr (this)
+#endif
         {
           TRACE_ERR((stderr, "ShmemDevice() constructor\n"));
 
+#ifdef SHM_USE_COLLECTIVE_FIFO
           // Create a unique string, useful for memory manager alloaction, etc.
           snprintf(_unique_str, 15, "%2.2zu-%2.2zu", _clientid, _contextid);
-
+#endif
           // Get the peer information for this task
           _peer = 0;
           PAMI::Interface::Mapping::nodeaddr_t address;
@@ -233,7 +237,9 @@ namespace PAMI
             }
 
           // Initialize the collective descriptor fifo
+#ifdef SHM_USE_COLLECTIVE_FIFO
           _desc_fifo.init (mm, _unique_str);
+#endif
 
           // Initialize the deterministic packet connection array.
           for (i = 0; i < _nfifos; i++) _connection[i] = NULL;
@@ -389,17 +395,15 @@ namespace PAMI
         // -------------------------------------------------------------
         // Collectives
         // -------------------------------------------------------------
+#ifdef SHM_USE_COLLECTIVE_FIFO
         CollectiveFifo  _desc_fifo;
-
         PAMI::Queue     _collectiveQ;
         inline void post_obj(BaseMessage *obj)
         {_collectiveQ.enqueue(obj);}
         PAMI::Queue::Iterator _Iter;
-
         match_dispatch_t  _match_dispatch[MATCH_DISPATCH_SIZE];
-
         char _unique_str[16];
-
+#endif
         // -------------------------------------------------------------
         // Deterministic packet interface connection array
         // -------------------------------------------------------------
@@ -514,7 +518,7 @@ namespace PAMI
         res = _adv_obj->__advance(_context, (void*)_adv_obj);
         if (res == PAMI_SUCCESS) _adv_obj = NULL;
         }*/
-
+#ifdef SHM_USE_COLLECTIVE_FIFO
       pami_result_t res;
       BaseMessage *msg;
       _collectiveQ.iter_begin(&_Iter);
@@ -540,7 +544,7 @@ namespace PAMI
           _desc_fifo.release_done_descriptors();
           events++;
         }
-
+#endif
 #ifdef TRAP_ADVANCE_DEADLOCK
       static size_t iteration = 0;
       TRACE_ERR((stderr, "(%zu) ShmemDevice::advance() iteration %zu \n", __global.mapping.task(), iteration));

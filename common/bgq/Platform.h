@@ -35,6 +35,7 @@
 
 #define PAMI_ALGOLISTS_MAX_NUM 32 // Maximum number of algorithms per collective per geometry
 
+#define SHM_USE_COLLECTIVE_FIFO // Enable shared memory collectives
 
 /** \todo set the client information in the endpoint opaque type */
 #define PAMI_ENDPOINT_INIT(client,task,offset) ((offset << 23) | task)
