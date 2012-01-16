@@ -43,13 +43,13 @@ void xlpgas::Alltoallv<T_NI>::kick    () {
   size_t datawidth = this->_stype->GetDataSize();
   if(this->_headers==NULL)
   {
-    this->_headers = (struct AMHeader *)__global.heap_mm->malloc (sizeof(struct AMHeader) * this->_comm->size());
+    this->_headers = (struct Alltoall<T_NI>::AMHeader *)__global.heap_mm->malloc (sizeof(struct Alltoall<T_NI>::AMHeader) * this->_comm->size());
     assert (this->_headers != NULL);
 
     for (int i=0; i<(int)this->_comm->size(); i++)
     {
       this->_headers[i].hdr.handler   = XLPGAS_TSP_AMSEND_COLLA2AV;
-      this->_headers[i].hdr.headerlen = sizeof (struct AMHeader);
+      this->_headers[i].hdr.headerlen = sizeof (struct Alltoall<T_NI>::AMHeader);
       this->_headers[i].kind          = this->_kind;
       this->_headers[i].tag           = this->_tag;
       this->_headers[i].offset        = this->_offset;
