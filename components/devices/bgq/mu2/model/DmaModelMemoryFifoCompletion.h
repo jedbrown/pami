@@ -48,6 +48,16 @@ namespace PAMI
               MU::DmaModelBase<DmaModelMemoryFifoCompletion> (context, status),
               _completion (context)
           {
+            // Determine if this is running on DD2 hardware
+            uint32_t pvr; // Processor version register
+            int rc;
+            rc = Kernel_GetPVR( &pvr );
+            assert(rc==0);
+            if ( pvr == SPRN_PVR_DD1 )
+              _isDD2 = false;
+            else
+              _isDD2 = true;
+
             COMPILE_TIME_ASSERT((sizeof(MUSPI_DescriptorBase)*2) <= MU::Context::immediate_payload_size);
           };
 
@@ -160,14 +170,8 @@ namespace PAMI
             uint64_t poolID = 0;
             int64_t  counterNum = -1;
 
-            // Determine if this is running on DD2 hardware
-            uint32_t pvr; // Processor version register
-            int rc;
-            rc = Kernel_GetPVR( &pvr );
-            assert(rc==0);
-
             // DD2 hardware and CounterPools exist, allocate a counter.
-            if ( ( likely ( ( pvr != SPRN_PVR_DD1 ) &&  
+            if ( ( likely ( ( _isDD2 ) &&  
                             ( numCounterPools != 0 ) ) ) )
             {
               // It is DD2 hardware.  Try to get a MU counter.
@@ -343,6 +347,7 @@ namespace PAMI
         protected:
 
           MemoryFifoCompletion _completion;
+          bool                 _isDD2;
 
       }; // PAMI::Device::MU::DmaModelMemoryFifoCompletion class
     };   // PAMI::Device::MU namespace
