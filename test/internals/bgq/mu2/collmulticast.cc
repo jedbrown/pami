@@ -138,11 +138,11 @@ int main(int argc, char ** argv)
     mcast.dst_participants = (pami_topology_t *)&dstt;
 
     srcp.produceBytes (MAX_BUF_SIZE);
-    model.postMulticastImmediate (0, 0, &mcast, NULL);
+    model.postMulticastImmediate (0, 0, &mcast,(void*)1);
   }
   else  {
     //fprintf (stderr, "Calling Post Multicast");
-    model.postMulticastImmediate (0, 0, &mcast, NULL);
+    model.postMulticastImmediate (0, 0, &mcast,(void*)1);
   }
   
   while (done_count) {
@@ -160,7 +160,7 @@ int main(int argc, char ** argv)
   for (int i = 0; i < MAX_ITER; i++) {
     done_count = 1;
     srcp.reset();
-    model.postMulticastImmediate (0, 0, &mcast, NULL);
+    model.postMulticastImmediate (0, 0, &mcast, (void*)1);
     
     while (done_count) {
       if (myrank == 0 && (srcp.getBytesProduced() < MAX_BUF_SIZE)) {
@@ -181,7 +181,7 @@ int main(int argc, char ** argv)
     if (myrank == 0)
       srcp.produceBytes (SHORT_BUF_SIZE);
     
-    model.postMulticastImmediate (0, 0, &mcast, NULL);
+    model.postMulticastImmediate (0, 0, &mcast, (void*)1);
     
     while (done_count) 
       PAMI_Context_advancev(&context, 1, 1);
@@ -199,7 +199,7 @@ int main(int argc, char ** argv)
     if (myrank == 0)
       srcp.produceBytes (MAX_BUF_SIZE);
     
-    model.postMulticastImmediate (0, 0, &mcast, NULL);
+    model.postMulticastImmediate (0, 0, &mcast,(void*)1);
     
     while (done_count) 
       PAMI_Context_advancev(&context, 1, 1);
