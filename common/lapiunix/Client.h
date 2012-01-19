@@ -383,7 +383,7 @@ namespace PAMI
               rc = createOneContext(&_contexts[i],i);
               if(rc) RETURN_ERR_PAMI(PAMI_ERROR, "createOneContext failed with rc %d\n", rc);
 
-              rc = _contexts[i]->initP2P(&myrank, &mysize, &t_lhandle);
+              rc = _contexts[i]->initP2P(configuration, count, &myrank, &mysize, &t_lhandle);
               if(rc) RETURN_ERR_PAMI(PAMI_ERROR, "initP2P failed with rc %d\n", rc);
             }
 

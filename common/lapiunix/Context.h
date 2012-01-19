@@ -463,14 +463,16 @@ namespace PAMI
       {
       }
 
-      inline pami_result_t initP2P(size_t        *out_myrank,
+      inline pami_result_t initP2P(pami_configuration_t cxt_config[],
+                                   size_t         num_configs,
+                                   size_t        *out_myrank,
                                    size_t        *out_mysize,
                                    lapi_handle_t *out_lapi_handle)
         {
           LapiImpl::Client* lp_client = (LapiImpl::Client*)_client;
 
           //TODO: need to get context configuration
-          LapiImpl::Context::Config config(lp_client->GetConfig(), NULL, 0);
+          LapiImpl::Context::Config config(lp_client->GetConfig(), cxt_config, num_configs);
 
           pami_result_t rc = PAMI_SUCCESS;
 
