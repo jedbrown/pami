@@ -96,11 +96,13 @@ namespace PAMI
             // primitive_loc_t<float,int> ..... PRIMITIVE_TYPE_LOC_FLOAT_INT
             // primitive_loc_t<double,int> .... PRIMITIVE_TYPE_LOC_DOUBLE_INT
             //
-            template <typename T_Value, typename T_Index>
+            template <typename T_Value, typename T_Index, int T_Pad0 = 0, int T_Pad1 = 0>
             struct primitive_loc_t
             {
                 T_Value value;
+                char    pad0[T_Pad0];
                 T_Index index;
+                char    pad1[T_Pad1];
             };
 
             TypeCode();
@@ -876,7 +878,7 @@ namespace PAMI
                 break;
 
             case PRIMITIVE_TYPE_LOC_SHORT_INT:
-                primitive_atom = sizeof(primitive_loc_t<short,int>);
+                primitive_atom = sizeof(primitive_loc_t<short,int,2>);
                 break;
 
             case PRIMITIVE_TYPE_LOC_FLOAT_INT:
@@ -884,7 +886,7 @@ namespace PAMI
                 break;
 
             case PRIMITIVE_TYPE_LOC_DOUBLE_INT:
-                primitive_atom = sizeof(primitive_loc_t<double,int>);
+                primitive_atom = sizeof(primitive_loc_t<double,int, 0, 4>);
                 break;
 
             default:

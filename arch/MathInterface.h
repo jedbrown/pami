@@ -263,7 +263,10 @@ namespace PAMI
 
       for (i = 0; i < count; i++)
         if (src[i].value < dst[i].value)
-          dst[i] = src[i];
+        {
+          dst[i].value = src[i].value;
+          dst[i].index = src[i].index;
+        }
     }
 
     template <typename T, unsigned N>
@@ -274,7 +277,10 @@ namespace PAMI
 
       for (i = 0; i < N; i++)
         if (src[i].value < dst[i].value)
-          dst[i] = src[i];
+        {
+          dst[i].value = src[i].value;
+          dst[i].index = src[i].index;
+        }
     }
 
     template <typename T>
@@ -285,7 +291,10 @@ namespace PAMI
 
       for (i = 0; i < count; i++)
         if (src[i].value > dst[i].value)
-          dst[i] = src[i];
+        {
+          dst[i].value = src[i].value;
+          dst[i].index = src[i].index;
+        }
     }
 
     template <typename T, unsigned N>
@@ -296,7 +305,10 @@ namespace PAMI
 
       for (i = 0; i < N; i++)
         if (src[i].value > dst[i].value)
-          dst[i] = src[i];
+        {
+          dst[i].value = src[i].value;
+          dst[i].index = src[i].index;
+        }
     }
 
   };  // namespace Math

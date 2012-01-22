@@ -575,8 +575,8 @@ namespace PAMI
               Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_BAND
               Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_BOR
               Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_BXOR
-              Type::Func::maxloc<TypeCode::primitive_loc_t<short, int> >,    // TypeFunc::PRIMITIVE_FUNC_MAXLOC
-              Type::Func::minloc<TypeCode::primitive_loc_t<short, int> >     // TypeFunc::PRIMITIVE_FUNC_MINLOC
+              Type::Func::maxloc<TypeCode::primitive_loc_t<short, int, 2> >,    // TypeFunc::PRIMITIVE_FUNC_MAXLOC
+              Type::Func::minloc<TypeCode::primitive_loc_t<short, int, 2> >     // TypeFunc::PRIMITIVE_FUNC_MINLOC
             },
 
             // --------------------------------- TypeCode::PRIMITIVE_TYPE_LOC_FLOAT_INT
@@ -599,7 +599,7 @@ namespace PAMI
 
             // --------------------------------- TypeCode::PRIMITIVE_TYPE_LOC_DOUBLE_INT
             {
-              Type::Func::copy<TypeCode::primitive_loc_t<double, int> >,     // TypeFunc::PRIMITIVE_FUNC_COPY
+              Type::Func::copy<TypeCode::primitive_loc_t<double, int, 0, 4> >,     // TypeFunc::PRIMITIVE_FUNC_COPY
               Type::Func::noop,                                // TypeFunc::PRIMITIVE_FUNC_NOOP
               Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_MAX
               Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_MIN
@@ -611,8 +611,8 @@ namespace PAMI
               Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_BAND
               Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_BOR
               Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_BXOR
-              Type::Func::maxloc<TypeCode::primitive_loc_t<double, int> >,   // TypeFunc::PRIMITIVE_FUNC_MAXLOC
-              Type::Func::minloc<TypeCode::primitive_loc_t<double, int> >    // TypeFunc::PRIMITIVE_FUNC_MINLOC
+              Type::Func::maxloc<TypeCode::primitive_loc_t<double, int, 0, 4> >,   // TypeFunc::PRIMITIVE_FUNC_MAXLOC
+              Type::Func::minloc<TypeCode::primitive_loc_t<double, int, 0, 4> >    // TypeFunc::PRIMITIVE_FUNC_MINLOC
             }
           };
 
