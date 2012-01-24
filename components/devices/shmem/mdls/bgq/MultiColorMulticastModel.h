@@ -45,7 +45,7 @@ namespace PAMI
   {
     namespace Shmem
     {
-      static const size_t mcolor_state_bytes = 0;
+      static const size_t mcolor_state_bytes = 1;
       template <class T_Device, class T_Atomic>
         class MultiColorMulticastModel : public Interface::MulticastModel < MultiColorMulticastModel<T_Device, T_Atomic>, T_Device, mcolor_state_bytes >
       {

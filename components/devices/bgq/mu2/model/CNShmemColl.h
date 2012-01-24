@@ -35,7 +35,7 @@ namespace PAMI
     namespace MU
     {
       //Model classes to do the two device protocol..
-      static const size_t cn_shmem_state_bytes = 0;
+      static const size_t cn_shmem_state_bytes = 1;
       class CNShmemColl: public Collective2DeviceBase,
           public Interface::MulticombineModel < CNShmemColl, MU::Context, cn_shmem_state_bytes >,
           public Interface::MulticastModel < CNShmemColl, MU::Context, cn_shmem_state_bytes >

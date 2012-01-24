@@ -46,7 +46,7 @@ namespace PAMI
   {
     namespace MU
     {
-      static const size_t  msync_bytes     = 0;
+      static const size_t  msync_bytes     = 1;
       static const size_t  NumClassRoutes  = 16;
       static const size_t  cw_classroute   = 0; 
       class MUMultisyncModel : public Interface::MultisyncModel<MUMultisyncModel, MU::Context, msync_bytes>
@@ -183,7 +183,7 @@ namespace PAMI
         CompletionMsg              _completionmsg;
       };
 
-      extern inline bool  MUMultisyncModel::CompletionMsg::advance ()
+      inline bool  MUMultisyncModel::CompletionMsg::advance ()
       {
         int rc = MUSPI_GIBarrierPoll (barrier);
 

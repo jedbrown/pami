@@ -31,16 +31,16 @@ namespace PAMI
   {
     namespace MU
     {
-      class NullMultisyncModel: public Interface::MultisyncModel <NullMultisyncModel, MU::Context, 0>
+      class NullMultisyncModel: public Interface::MultisyncModel <NullMultisyncModel, MU::Context, 1>
       {
       public:
-	static const size_t   sizeof_msg      =  0;
+	static const size_t   sizeof_msg      =  1;
 	  
 	NullMultisyncModel (pami_client_t     client,
 			    pami_context_t    context,
 			    MU::Context     & mucontext,
 			    pami_result_t   & status):
-	Interface::MultisyncModel <NullMultisyncModel, MU::Context, 0> (mucontext, status)
+	Interface::MultisyncModel <NullMultisyncModel, MU::Context, sizeof_msg> (mucontext, status)
 	{
 	}
 

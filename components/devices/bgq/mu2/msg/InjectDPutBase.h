@@ -55,7 +55,7 @@ namespace PAMI
 	InjectDPutBase (): _doneCompletion (false) {}
 
 	inline bool done () { return _doneCompletion; }
-	virtual bool advance() { PAMI_abort(); }	
+	virtual bool advance() { PAMI_abort(); return false; }	
       };  //-- InjectDPutBase
     };  //-- MU
   };  //-- Device

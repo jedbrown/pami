@@ -38,7 +38,7 @@ namespace PAMI
   {
     namespace MU
     {
-      static const size_t mcomb_state_bytes = 0;
+      static const size_t mcomb_state_bytes = 1;
       class CollectiveMulticombineDmaModel: public CollectiveDmaModelBase,
           public Interface::MulticombineModel < CollectiveMulticombineDmaModel, MU::Context, mcomb_state_bytes >
       {

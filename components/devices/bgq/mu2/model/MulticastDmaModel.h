@@ -124,7 +124,7 @@ namespace PAMI
       ///
       /// \brief MulticastDmaModel to inject dput p2p multicasts on the network
       //
-      class MulticastDmaModel : public Interface::MulticastModel < MulticastDmaModel, MU::Context, 0 > {
+      class MulticastDmaModel : public Interface::MulticastModel < MulticastDmaModel, MU::Context, 1 > {
       public:
 	struct MulticastDmaRecv {	  	  
 	  void initialize (pami_multicast_t *mcast) {
@@ -153,13 +153,13 @@ namespace PAMI
 	  //void                  * _notify_cookie; 	  
 	};
 
-	static const size_t sizeof_msg = 0;
+	static const size_t sizeof_msg = 1;
 
 	MulticastDmaModel (pami_client_t    client,
 			   pami_context_t   context,
 			   MU::Context                 & device, 
 			   pami_result_t               & status) : 
-	  Interface::MulticastModel<MulticastDmaModel, MU::Context, 0> (device, status), 
+	  Interface::MulticastModel<MulticastDmaModel, MU::Context, 1> (device, status), 
 		_context(context),
 	  _mucontext(device),
 	  _nActiveRecvs(0),

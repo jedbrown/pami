@@ -39,7 +39,7 @@ namespace PAMI
     {
 #define ZERO_BYTES 65536
 
-      static const size_t mcast_state_bytes = 0;
+      static const size_t mcast_state_bytes = 1;
       class CollectiveMulticastDmaModel: public CollectiveDmaModelBase,
           public Interface::MulticastModel < CollectiveMulticastDmaModel, MU::Context, mcast_state_bytes >
       {
