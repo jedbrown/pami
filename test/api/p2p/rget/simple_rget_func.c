@@ -4,6 +4,8 @@
  *
  * This test implements a very simple "rendezvous" communication and
  * depends on a functional PAMI_Send_immediate() function.
+ *
+ * Note: This example only works when RDMA is used.
  */
 
 #include <pami.h>
@@ -213,7 +215,11 @@ pami_recv_t        * recv)        /**< OUT: receive message structure */
 
   /* Create a memregion for the data buffer. */
   size_t bytes = 0;
-  PAMI_Memregion_create (context, get->buffer, 12*4, &bytes, &(get->memregion));
+  pami_result_t pami_rc = PAMI_Memregion_create (context, get->buffer, 12*4, &bytes, &(get->memregion));
+  if (PAMI_SUCCESS != pami_rc) {
+      fprintf (stderr, "PAMI_Memregion_create failed with rc = %d\n", pami_rc) ;
+      exit(1);
+  }
 
   /* Perform the rdma get operation */
   pami_rget_simple_t parameters;
@@ -373,7 +379,12 @@ int main (int argc, char ** argv)
 
     /* Create a memory region for this memoru buffer */
     size_t bytes = 0;
-    PAMI_Memregion_create (context[0], send_buffer, BUFFERSIZE, &bytes, &(rts_info.memregion));
+    pami_result_t pami_rc = PAMI_Memregion_create (context[0], send_buffer, BUFFERSIZE, &bytes, &(rts_info.memregion));
+
+    if (PAMI_SUCCESS != pami_rc) {
+      fprintf (stderr, "PAMI_Memregion_create failed with rc = %d\n", pami_rc) ;
+      exit(1);
+    }
 
     parameters.dispatch        = DISPATCH_ID_RTS;
     parameters.header.iov_base = &rts_info;

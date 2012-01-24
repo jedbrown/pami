@@ -4,6 +4,8 @@
  *
  * This test implements a very simple "rendezvous" communication and
  * depends on a functional PAMI_Send_immediate() function.
+ *
+ * Note: This example only works when RDMA is used.
  */
 
 #include <pami.h>
