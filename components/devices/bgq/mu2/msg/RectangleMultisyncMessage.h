@@ -93,8 +93,8 @@ namespace PAMI
 				  size_t         counter_offset,
 				  unsigned       iteration) 
 	  {
-	    register double fp0 asm("fr0");
-	    register double fp1 asm("fr1");
+      register double fp0  FP_REGISTER(0);
+      register double fp1  FP_REGISTER(1);
 	    VECTOR_LOAD_NU (&_params->_modeldesc,  0, fp0);
 	    VECTOR_LOAD_NU (&_params->_modeldesc, 32, fp1);		  	    
 	    

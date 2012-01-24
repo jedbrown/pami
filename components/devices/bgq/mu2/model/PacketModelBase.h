@@ -301,8 +301,8 @@ namespace PAMI
         InjChannel & channel = device.injectionGroup.channel[fnum];
         bool isfree = channel.hasFreeSpaceWithUpdate ();
 
-	register double f0 asm("fr0");
-	register double f1 asm("fr1");
+        register double f0  FP_REGISTER(0);
+        register double f1  FP_REGISTER(1);
         VECTOR_LOAD_NU (&_singlepkt,  0, f0);  /* Load first 32 bytes to reg 0*/
         VECTOR_LOAD_NU (&_singlepkt, 32, f1);  /* Load second 32 bytes to reg 1*/
 

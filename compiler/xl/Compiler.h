@@ -15,6 +15,9 @@
 #define __compiler_xl_Compiler_h__
 
 // Here go things specific to this compiler family
+
+#define FP_REGISTER(n) asm("f" #n)
+
 /**
  * \todo I am not convinced this is the right way to handle gcc in xl - too much questionable casting.
  * plus, these XL instrinsics are specific to type and GCC are not. We need to

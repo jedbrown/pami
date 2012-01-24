@@ -22,18 +22,18 @@ size_t quad_copy_1024n( char* dest, char* src, size_t num )
   if (num < 1024)
     goto short_msg;
 
-  register double f0  __asm__("fr0");
-  register double f1  __asm__("fr1");
-  register double f2  __asm__("fr2");
-  register double f3  __asm__("fr3");
-  register double f4  __asm__("fr4");
-  register double f5  __asm__("fr5");
-  register double f6  __asm__("fr6");
-  register double f7  __asm__("fr7");
-  register double f8  __asm__("fr8");
-  register double f9  __asm__("fr9");
-  register double f10 __asm__("fr10");
-  register double f11 __asm__("fr11");
+  register double f0  FP_REGISTER(0);
+  register double f1  FP_REGISTER(1);
+  register double f2  FP_REGISTER(2);
+  register double f3  FP_REGISTER(3);
+  register double f4  FP_REGISTER(4);
+  register double f5  FP_REGISTER(5);
+  register double f6  FP_REGISTER(6);
+  register double f7  FP_REGISTER(7);
+  register double f8  FP_REGISTER(8);
+  register double f9  FP_REGISTER(9);
+  register double f10 FP_REGISTER(10);
+  register double f11 FP_REGISTER(11);
 
   nb = num & ~(1023L);
 

@@ -21,8 +21,8 @@ static inline size_t quad_copy_128( char* dest, char* src ) {
     register double *fpp1_1;
     register double *fpp2_1;
     
-    register double f0 asm("fr0");
-    register double f1 asm("fr1");
+    register double f0  FP_REGISTER(0);
+    register double f1  FP_REGISTER(1);
 
     int r0;
     int r1;
@@ -60,14 +60,14 @@ static inline size_t quad_copy_512( char* dest, char* src ) {
     register double *fpp1_1, *fpp1_2;
     register double *fpp2_1, *fpp2_2;
 
-    register double f0 asm("fr0");
-    register double f1 asm("fr1");
-    register double f2 asm("fr2");
-    register double f3 asm("fr3");
-    register double f4 asm("fr4");
-    register double f5 asm("fr5");
-    register double f6 asm("fr6");
-    register double f7 asm("fr7");
+    register double f0  FP_REGISTER(0);
+    register double f1  FP_REGISTER(1);
+    register double f2  FP_REGISTER(2);
+    register double f3  FP_REGISTER(3);
+    register double f4  FP_REGISTER(4);
+    register double f5  FP_REGISTER(5);
+    register double f6  FP_REGISTER(6);
+    register double f7  FP_REGISTER(7);
 
     int r0;
     int r1;

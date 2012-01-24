@@ -14,26 +14,26 @@ void _pami_core_double_sum_4way(double* dst, double* src0, double *src1, double*
 
 inline unsigned _quad_double_sum_4way_align64B(double* dst, double* src0, double *src1, double* src2, double* src3, unsigned num_dbls)
 {
-  register double f0  __asm__("fr0");
-  register double f1  __asm__("fr1");
-  register double f2  __asm__("fr2");
-  register double f3  __asm__("fr3");
-  register double f4  __asm__("fr4");
-  register double f5  __asm__("fr5");
-  register double f6  __asm__("fr6");
-  register double f7  __asm__("fr7");
-  register double f8  __asm__("fr8");
-  register double f9  __asm__("fr9");
-  register double f10 __asm__("fr10");
-  register double f11 __asm__("fr11");
-  register double f12 __asm__("fr12");
-  register double f13 __asm__("fr13");
-  register double f14 __asm__("fr14");
-  register double f15 __asm__("fr15");
-  register double f18 __asm__("fr18");
-  register double f21 __asm__("fr21");
-  register double f24 __asm__("fr24");
-  register double f27 __asm__("fr27");
+  register double f0  FP_REGISTER(0) = 0.0;
+  register double f1  FP_REGISTER(1) = 0.0;
+  register double f2  FP_REGISTER(2) = 0.0;
+  register double f3  FP_REGISTER(3) = 0.0;
+  register double f4  FP_REGISTER(4) = 0.0;
+  register double f5  FP_REGISTER(5) = 0.0;
+  register double f6  FP_REGISTER(6) = 0.0;
+  register double f7  FP_REGISTER(7) = 0.0;
+  register double f8  FP_REGISTER(8) = 0.0;
+  register double f9  FP_REGISTER(9) = 0.0;
+  register double f10 FP_REGISTER(10) = 0.0;
+  register double f11 FP_REGISTER(11) = 0.0;
+  register double f12 FP_REGISTER(12) = 0.0;
+  register double f13 FP_REGISTER(13) = 0.0;
+  register double f14 FP_REGISTER(14) = 0.0;
+  register double f15 FP_REGISTER(15) = 0.0;
+  register double f18 FP_REGISTER(18) = 0.0;
+  register double f21 FP_REGISTER(21) = 0.0;
+  register double f24 FP_REGISTER(24) = 0.0;
+  register double f27 FP_REGISTER(27) = 0.0;
 
   double *src0_1, *src0_2, *src1_1, *src1_2, *src2_1, *src2_2, *src3_1, *src3_2;
   double *dst_1, *dst_2;
@@ -181,11 +181,11 @@ inline unsigned _quad_double_sum_4way_align64B(double* dst, double* src0, double
 //alteast 32B (4 Dbls) expected
 inline unsigned _quad_double_sum_4way_align32B_short(double* dst, double* src0, double *src1, double* src2, double* src3, unsigned num_dbls)
 {
-  register double f0  __asm__("fr0");
-  register double f1  __asm__("fr1");
-  register double f2  __asm__("fr2");
-  register double f3  __asm__("fr3");
-  register double f29 __asm__("fr29");
+  register double f0  FP_REGISTER(0) = 0.0;
+  register double f1  FP_REGISTER(1) = 0.0;
+  register double f2  FP_REGISTER(2) = 0.0;
+  register double f3  FP_REGISTER(3) = 0.0;
+  register double f29 FP_REGISTER(29) = 0.0;
 
   double *src0_1, *src1_1, *src2_1, *src3_1;
   double *dst_1;

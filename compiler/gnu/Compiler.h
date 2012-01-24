@@ -16,4 +16,8 @@
 
 // Here go things specific to this compiler family
 
+
+#define FP_REGISTER(n) asm("fr" #n)
+
+
 #endif // __pami_compiler_gnu_h__
