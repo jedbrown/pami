@@ -66,7 +66,9 @@ namespace PAMI {
   ///
   ///
   template <class T_Mutex>
-    class ArrayBasedQueue : public PAMI::Interface::DequeInterface<ArrayBasedQueue<T_Mutex>,
+    class
+      __attribute__((__aligned__(L1D_CACHE_LINE_SIZE))) // xl requires the attribute after the class keyword for some reason; still works for gnu
+    ArrayBasedQueue : public PAMI::Interface::DequeInterface<ArrayBasedQueue<T_Mutex>,
     Queue::Element >,
     public PAMI::Interface::QueueInfoInterface<ArrayBasedQueue<T_Mutex>,
     Queue::Element >,
@@ -430,7 +432,8 @@ namespace PAMI {
     volatile uint64_t                                _wakeup;
     volatile uint64_t                              * _atomicCounters;
 
-  } __attribute__((__aligned__(L1D_CACHE_LINE_SIZE))); // class PAMI::ArrayBasedQueue
+//  } __attribute__((__aligned__(L1D_CACHE_LINE_SIZE))); // class PAMI::ArrayBasedQueue
+  } ; // class PAMI::ArrayBasedQueue
 }; // namespace PAMI
 
 #endif // __util_queue_queue_h__

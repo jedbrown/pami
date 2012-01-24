@@ -67,7 +67,9 @@ namespace PAMI {
 
 	// T_Queue must be thread-safe!
 	template <class T_Mutex, class T_Queue>
-	class ArrayBasedPostingQueue :
+	class
+    __attribute__((__aligned__(L1D_CACHE_LINE_SIZE))) // xl requires the attribute after the class keyword for some reason; still works for gnu
+  ArrayBasedPostingQueue :
 		public PAMI::Interface::DequeInterface<
 				ArrayBasedPostingQueue<T_Mutex, T_Queue>,
 				Queue::Element >,
@@ -356,7 +358,7 @@ namespace PAMI {
 		T_Queue _overflow;
 		volatile Element * volatile *_array;
 
-	} __attribute__((__aligned__(L1D_CACHE_LINE_SIZE))); // class PAMI::ArrayBasedPostingQueue
+	}; // class PAMI::ArrayBasedPostingQueue
 }; // namespace PAMI
 
 #endif // __util_queue_bgq_ArrayBasedPostingQueue_h__
