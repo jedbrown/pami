@@ -161,6 +161,7 @@ namespace PAMI
 	  _callConsumeBytes (true),
 	  _localMulticast(true),
 	  _polling(false),
+	  _advanceFlag(true),
 	  _mytask(__global.mapping.task())	    
 	  //_curBaseAddress(0)
 	  {	    
@@ -217,6 +218,10 @@ namespace PAMI
 	  
 	  void callConsumeBytesOnMaster (bool val) {
 	    _callConsumeBytes = val;
+	  }
+
+	  void disableAdvance() {
+	    _advanceFlag = false;
 	  }
 
 	  void initModels() {
@@ -305,7 +310,7 @@ namespace PAMI
 	    _msg_vec[idx] = msg;
 	    //printf ("Calling msg advance\n");
 	    bool done = msg->advance();	    
-	    if (!done && !_polling) {
+	    if (!done && !_polling && _advanceFlag) {
 	      _polling = true;
 	      PAMI::Device::Generic::GenericThread *work = (PAMI::Device::Generic::GenericThread *)&_work;
 	      _mucontext.getProgressDevice()->postThread(work);
@@ -345,7 +350,7 @@ namespace PAMI
 	    //printf ("Calling Set Bat Entry %d, %lx\n",(int)_b_batids[connid], paddr);
 	    _mucontext.setBatEntry (_b_batids[connid], paddr);
 
-	    if (!_polling) {
+	    if (!_polling && _advanceFlag) {
 	      _polling = true;
 	      PAMI::Device::Generic::GenericThread *work = (PAMI::Device::Generic::GenericThread *)&_work;
 	      _mucontext.getProgressDevice()->postThread(work);
@@ -490,6 +495,7 @@ namespace PAMI
 	  bool                                       _callConsumeBytes;
 	  bool                                       _localMulticast;
 	  bool                                       _polling;
+	  bool                                       _advanceFlag;
 	  pami_task_t                                _mytask;
 	  uint32_t                                   _c_batid;                 /// The base address table id for counter
 	  uint16_t                                 * _b_batids;  /// The base address table id for payload

@@ -52,7 +52,10 @@ namespace PAMI
 
         public:
           //Shmem Multicast Model
-          ShmemColorMcstModel (T_Device &device, pami_result_t &status) :
+	  ShmemColorMcstModel (pami_client_t                client,
+			       pami_context_t               context,
+			       T_Device                   & device, 
+			       pami_result_t              & status) :
             Interface::MulticastModel < ShmemColorMcstModel<T_Device>, T_Device, sizeof(Shmem::BaseMessage<T_Device>) > (device, status),
             _device(device),
             _mytask(__global.mapping.task()),
@@ -199,7 +202,6 @@ namespace PAMI
             }
 
           }
- 
 
       };  // PAMI::Device::Shmem::ShmemColorMcstModel class
 

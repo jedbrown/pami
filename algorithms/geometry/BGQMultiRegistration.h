@@ -777,7 +777,7 @@ namespace PAMI
       memcpy (colors, _colors, ncolors * sizeof(int));
     }
 
-    typedef CCMI::Adaptor::Allgather::AllgatherOnBroadcastT < 1, 10,
+    typedef CCMI::Adaptor::Allgather::AllgatherOnBroadcastT < 10, 10,
     CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
     < 10,
     CCMI::Schedule::TorusRect,
@@ -947,12 +947,14 @@ namespace PAMI
           if (_mu_m2m_vector_long_ni->status() != PAMI_SUCCESS) _mu_m2m_vector_long_ni = NULL;
           if (_mu_m2m_vector_int_ni->status() != PAMI_SUCCESS) _mu_m2m_vector_int_ni = NULL;
 
-          if (__global.useshmem())
+          if (__global.useshmem() && __global.mapping.tSize() < 64)
           {
             _axial_shmem_mu_dput_ni     = new (_axial_shmem_mu_dput_ni_storage    ) T_AxialShmemDputNativeInterface(_mu_device, _shmem_device, _big_allocator, client, context, context_id, client_id, _dispatch_id);
 
             if (_axial_shmem_mu_dput_ni->status() != PAMI_SUCCESS) _axial_shmem_mu_dput_ni = NULL; // Not enough resources?
           }
+	  else 
+	    _axial_shmem_mu_dput_ni = NULL;
 
           _gi_msync_factory = NULL;
           if (_mu_global_dput_ni)

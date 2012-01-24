@@ -141,11 +141,12 @@ namespace CCMI
         }
 
         /// \brief initialize routing for allgatherv
-        unsigned initialize (size_t                                  root,
-                             size_t                                  typecount,
-                             PAMI::Type::TypeCode                  * type,
-                             char                                  * src,
-                             char                                  * dst)
+        unsigned initialize (size_t                       root,
+                             size_t                       typecount,
+                             PAMI::Type::TypeCode       * type,
+                             char                       * src,
+                             char                       * dst,
+			     int                          max_colors=NUMCOLORS)
         {
           TRACE_FN_ENTER();
           TRACE_FORMAT( "<%p>",this);
@@ -161,8 +162,11 @@ namespace CCMI
            src,
            dst );//SSS: send type and recv type are the same for bcast
 
-          SyncBcastPost();
+	  if (this->getNumColors() > (unsigned)max_colors)
+	    return -1;
 
+          SyncBcastPost();
+	  
           TRACE_FN_EXIT();
           return 0;
         }

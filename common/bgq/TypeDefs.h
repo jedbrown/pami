@@ -83,6 +83,7 @@
 #include "components/devices/shmem/mdls/ShmemMcstModelWorld.h"
 //#include "components/devices/shmem/ShmemCollDesc.h"
 #include "components/devices/shmem/mdls/ShmemColorMcstModel.h"
+#include "components/devices/shmem/mdls/bgq/MultiColorMulticastModel.h"
 
 #include "components/devices/bgq/mu2/model/CollectiveMulticastDmaModel.h"
 #include "components/devices/bgq/mu2/model/CollectiveMulticombineDmaModel.h"
@@ -168,14 +169,26 @@ namespace PAMI
 
   typedef PAMI::Device::Shmem::ShmemColorMcstModel<ShmemDevice> ShaddrMcstModel;
 
+  typedef PAMI::Device::Shmem::MultiColorMulticastModel<ShmemDevice, PAMI::Counter::BGQ::IndirectL2> ShaddrMultiColorMulticastModel;
+
   typedef  PAMI::BGQNativeInterfaceASMultiDevice < MUDevice,
   ShmemDevice,
   Device::MU::MulticastDmaModel,
-  ShaddrMcstModel,
+    /*ShaddrMcstModel,*/
+  ShaddrMultiColorMulticastModel,
   Device::MU::MultisyncModel<false, false>,
-  Device::MU::MulticombineModel<PAMI::Device::MU::AllreducePacketModel, false, false>,
+  //Device::MU::MulticombineModel<PAMI::Device::MU::AllreducePacketModel, false, false>,
+  Device::MU::NullMulticombineModel,  
   BigProtocolAllocator > MUShmemAxialDputNI;
 
+  typedef BGQNativeInterfaceASMultiDevice < MUDevice,
+    ShmemDevice,
+    Device::MU::MulticastDmaModel,
+    ShaddrMultiColorMulticastModel,
+    Device::MU::NullMultisyncModel,
+    Device::MU::NullMulticombineModel,
+    BigProtocolAllocator,
+    false> MUShmemDputNI;
 
   // shmem active message over p2p eager
   typedef PAMI::NativeInterfaceActiveMessage<ShmemEager> ShmemNI_AM;

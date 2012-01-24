@@ -90,7 +90,7 @@ namespace PAMI
 	  _desc.setPayload (paddr, 0); 
 	  _desc.setRecPutOffset(0);
 
-	  //_localMulticast = localMulticast;
+	  _localMulticast = localMulticast;
 	  TRACE_FN_EXIT();
 	};
 	  

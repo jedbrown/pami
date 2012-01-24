@@ -111,43 +111,28 @@ namespace PAMI {
     }  
   };
 
-
-#if 0
-  template <class T_Allocator, class T_NI, class T_Device1, class T_Device2, CCMI::Interfaces::NativeInterface::NISelect T_Sel, CCMI::Interfaces::NativeInterface::NIType T_Type>
-    class BGQNativeInterfaceFactory2Device : public CCMI::Interfaces::NativeInterfaceFactory {
+  template <class T_Allocator, class T_NI, class T_Device1, class T_Device2, CCMI::Interfaces::NativeInterfaceFactory::NISelect T_Sel, CCMI::Interfaces::NativeInterfaceFactory::NIType T_Type, size_t NCONN=-1>
+    class BGQNativeInterfaceFactory2Device : public BGQNativeInterfaceFactory <T_Allocator, T_NI, T_Device1, T_Sel, T_Type, NCONN> {
   protected:
-    pami_client_t       _client;
-    pami_context_t      _context;
-    size_t              _client_id;	
-    size_t              _context_id;
-    T_Device1         & _device1;
     T_Device2         & _device2;
-    T_Allocator       & _allocator;
     
-  public:
+  public:    
+    BGQNativeInterfaceFactory2Device ( pami_client_t       client,
+				       pami_context_t      context,
+				       size_t              clientid,
+				       size_t              contextid,
+				       T_Device1         & device1,
+				       T_Device2         & device2,
+				       T_Allocator       & allocator) : 
+    BGQNativeInterfaceFactory<T_Allocator, T_NI, T_Device1, T_Sel, T_Type, NCONN> (client, context, clientid, contextid, device1, allocator),
+    _device2(device2)
+    {	
+      COMPILE_TIME_ASSERT(sizeof(T_NI) <= T_Allocator::objsize);
+      TRACE_FN_ENTER();
+      TRACE_FORMAT("Allocator:  sizeof(T_NI) %zu, T_Allocator::objsize %zu",sizeof(T_NI),T_Allocator::objsize);
+      TRACE_FN_EXIT();
+    }
     
-    NativeInterfaceFactory ( pami_client_t       client,
-			     pami_context_t      context,
-			     size_t              clientid,
-			     size_t              contextid,
-			     T_Device1         & device1,
-			     T_Device2         & device2,
-			     T_Allocator       & allocator) : 
-    CCMI::Interfaces::NativeInterfaceFactory(),
-      _client (client),
-      _context (context),
-      _client_id  (clientid),
-      _context_id (contextid),
-      _device(device),
-      _allocator(allocator)
-      {	
-        COMPILE_TIME_ASSERT(sizeof(T_NI) <= T_Allocator::objsize);
-        TRACE_FN_ENTER();
-        TRACE_FORMAT("Allocator:  sizeof(T_NI) %zu, T_Allocator::objsize %zu",sizeof(T_NI),T_Allocator::objsize);
-        TRACE_FN_EXIT();
-      }
-    
-
     /// \brief Construct a P2p Native Interface
     /// \details
     ///
@@ -169,31 +154,50 @@ namespace PAMI {
       pami_result_t result = PAMI_ERROR;
       ni = NULL;           
       if (T_Sel != ni_select)
-      {
-        TRACE_FN_EXIT();
-        return result;
+      {  
+	TRACE_FN_EXIT();
+	return result;
       }
-
+    
       if (T_Type != ni_type)
+      {  
+        TRACE_FN_EXIT();
+        return result;
+      }
+    
+      if (NCONN > 0 && nconnections > NCONN)
       {
         TRACE_FN_EXIT();
         return result;
       }
-      
+    
+      result = PAMI_SUCCESS;
       // Construct the protocol(s) using the NI dispatch function and cookie
       COMPILE_TIME_ASSERT(sizeof(T_NI) <= T_Allocator::objsize);
-      ni = (CCMI::Interfaces::NativeInterface *) _allocator.allocateObject ();
+      ni = (CCMI::Interfaces::NativeInterface *) this->_allocator.allocateObject ();
       TRACE_FORMAT("<%p> ni %p", this,  ni);
-      new ((void *)ni) T_NI (_client, _context, _context_id, _client_id, dispatch_id, _device, result);
+      new ((void *)ni) T_NI (this->_device, _device2, 
+			     this->_allocator, this->_client, this->_context, 
+			     this->_context_id, this->_client_id, 
+			     dispatch_id);
       
       TRACE_FN_EXIT();
       return result;
     }
   
+    virtual pami_result_t  analyze(size_t context_id, pami_topology_t *topology, int phase, int* flag)
+    {
+      TRACE_FN_ENTER();
+      *flag = 0; 
+      TRACE_FORMAT("<%p> result %u/%u",this,PAMI_OTHER,*flag);
+      TRACE_FN_EXIT();     
+      return PAMI_SUCCESS;// query required (short metadata)
+    }  
+  
   };
-#endif
 
 };
+
 
 #undef DO_TRACE_ENTEREXIT
 #undef DO_TRACE_DEBUG

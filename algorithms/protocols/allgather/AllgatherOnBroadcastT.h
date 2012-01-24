@@ -38,6 +38,7 @@ namespace CCMI
         uint32_t                      _ncomplete;
         uint32_t                      _nranks;
         uint32_t                      _cur_nbcast;
+	uint32_t                      _nIterDone;
         pami_event_function           _fn;
         void                        * _cookie;
         PAMI_GEOMETRY_CLASS         * _geometry;
@@ -45,6 +46,8 @@ namespace CCMI
         T_Conn                        _cmgr[NBCAST];
         pami_allgatherv_t             _cmd;
         T_Bcast                       _bcast[NBCAST];
+	pami_context_t                _context;
+	pami_work_t                   _work;
 
       public:
         ///
@@ -73,7 +76,8 @@ namespace CCMI
         _cookie (cookie),
         _geometry((PAMI_GEOMETRY_CLASS *)g),
         _native(native),
-        _cmd (((pami_xfer_t *)cmd)->cmd.xfer_allgatherv)
+	_cmd (((pami_xfer_t *)cmd)->cmd.xfer_allgatherv),
+	_context(ctxt)
         {
           TRACE_FN_ENTER();
           TRACE_FORMAT("<%p> _nranks %u, geometry %p, native %p", this, _nranks, g, native);
@@ -116,20 +120,26 @@ namespace CCMI
             src         = dst;        //For non-inplace allgvs the src has been copied to dst on root
             rtype       = (PAMI::Type::TypeCode *)_cmd.rtype;
 
-            TRACE_FORMAT("<%p> _cmgr[%u]=%p, _bcast[%u]=%p", this,i,&_cmgr[i],i,&_bcast[i]);
             new (&_cmgr[i]) T_Conn (nc);
             new (&_bcast[i]) T_Bcast(_native, &_cmgr[i], _geometry, done, this);
-            _bcast[i].initialize (root, rtypecounts, rtype, src, dst);
-            nc += _bcast[i].getNumColors();
+            int rc = _bcast[i].initialize (root, rtypecounts, rtype, src, 
+					   dst, NCOLORS-nc);
+	    if (rc != 0)
+	      break;
+            
+	    int c = _bcast[i].getNumColors();
+	    nc += c;
+	    TRACE_FORMAT("<%p> nextStep _cmgr[%u]=%p, _bcast[%u]=%p numcolors %d cur colors %d\n", this,i,&_cmgr[i],i,&_bcast[i], nc, c);	    
             if (nc > NCOLORS)
               break;
           }
           _cur_nbcast = i;
+	  _nIterDone  = i;
 
           //if (T_BARRIER) {
           CCMI::Executor::Composite  *barrier =  (CCMI::Executor::Composite *)
                                                  _geometry->getKey((size_t)0, /// \todo does NOT support multicontext
-                                                                   PAMI::Geometry::CKEY_BARRIERCOMPOSITE1);
+                                                                   PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE);
           barrier->setDoneCallback(cb_barrier_done, this);
           barrier->start();
           //}
@@ -163,9 +173,12 @@ namespace CCMI
         {
           TRACE_FN_ENTER();
           AllgatherOnBroadcastT<NBCAST, NCOLORS, T_Bcast, T_Conn, T_Geometry_Index> *allg = (AllgatherOnBroadcastT<NBCAST, NCOLORS, T_Bcast, T_Conn, T_Geometry_Index> *) cookie;
-          TRACE_FORMAT("<%p>", allg);
+	  //fprintf (stderr, "cb_barrier_done\n");
           for (unsigned i = 0; i < allg->_cur_nbcast; i++)
-            allg->_bcast[i].start();
+	    //Calls cb_barrier_done in the composite 
+	    //via external barrier path
+            allg->_bcast[i].start(); 
+	  
           TRACE_FN_EXIT();
         }
 
@@ -175,23 +188,33 @@ namespace CCMI
         {
           TRACE_FN_ENTER();
           AllgatherOnBroadcastT<NBCAST, NCOLORS, T_Bcast, T_Conn, T_Geometry_Index> *allg = (AllgatherOnBroadcastT<NBCAST, NCOLORS, T_Bcast, T_Conn, T_Geometry_Index> *) cookie;
-          TRACE_FORMAT("<%p> ncomplete %d, nranks %d _fn %p", allg, allg->_ncomplete, allg->_nranks, allg->_fn);
-          //	    printf ("<%p> In AllgatherOnBroadast::done 
+          //fprintf(stderr, "<%p> ncomplete %d, nranks %d _fn %p\n", allg, allg->_ncomplete, allg->_nranks, allg->_fn);
 
           ++allg->_ncomplete;
-          --allg->_cur_nbcast;
+          --allg->_nIterDone;
 
-          if (allg->_cur_nbcast > 0)
+	  if (allg->_nIterDone > 0)
             return;
 
-          if (allg->_ncomplete < allg->_nranks)
-            allg->nextStep();
+          if (allg->_ncomplete < allg->_nranks) 
+	  {
+            //allg->nextStep();
+	    allg->_native->postWork(allg->_context, 0, &allg->_work,
+				    advanceNext, allg);
+	  }
           else
-          {
             allg->_fn (context, allg->_cookie, PAMI_SUCCESS);
-          }
           TRACE_FN_EXIT();
         }
+
+	static pami_result_t advanceNext (pami_context_t     context,
+					  void             * cookie) 
+	{
+	  AllgatherOnBroadcastT<NBCAST, NCOLORS, T_Bcast, T_Conn, T_Geometry_Index> *allg = (AllgatherOnBroadcastT<NBCAST, NCOLORS, T_Bcast, T_Conn, T_Geometry_Index> *) cookie;
+	  
+	  allg->nextStep();
+	  return PAMI_SUCCESS;
+	}
       };
     };
   };

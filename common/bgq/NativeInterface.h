@@ -413,62 +413,96 @@ namespace PAMI
   }
 
 
-  template <class T_Device1, class T_Device2, class T_Mcast1, class T_Mcast2, class T_Msync, class T_Mcomb, class T_Allocator>
+  template <class T_Device1, class T_Device2, class T_Mcast1, class T_Mcast2, class T_Msync, class T_Mcomb, class T_Allocator, bool T_Axial=true>
     class BGQNativeInterfaceASMultiDevice : public BGQNativeInterfaceAS <T_Device1, T_Mcast1, T_Msync, T_Mcomb, T_Allocator>
   {
-
       /// Allocation object to store state and user's callback
       class allocObjMD
       {
-        public:
-          struct _state
-          {
-            uint8_t             _mcast1[T_Mcast1::sizeof_msg];
-            uint8_t             _mcast2[T_Mcast2::sizeof_msg];
-          } _state;
-          BGQNativeInterfaceASMultiDevice *_ni;
-          pami_callback_t       _user_callback;
+      public:
+	int                                done_count;
+	int                                completion_count;
+	unsigned                           total_bytes;
+	PAMI::PipeWorkQueue             *  src;
+	BGQNativeInterfaceASMultiDevice * _ni;
+	pami_callback_t                   _user_callback;	  
 
-          int done_count;
-          int completion_count;
-          unsigned total_bytes;
-          unsigned  is_master;
-          PAMI::PipeWorkQueue *src;
-          PAMI::Topology       _src_topo_local;
-          PAMI::Topology       _dst_topo_local;
+	struct _state
+	{
+	  uint8_t             _mcast1[T_Mcast1::sizeof_msg];
+	  uint8_t             _mcast2[T_Mcast2::sizeof_msg];
+	} _state;
       };
 
-      /// \brief NativeInterface done function - free allocation and call client's done
+      /// \brief NativeInterface done function - free allocation and
+      /// call client's done
       static void ni_multi_client_done(pami_context_t  context,
                                        void          *rdata,
                                        pami_result_t   res);
 
+      bool                       _advanceLocal;
+      bool                       _advanceNetwork;
+      bool                       _polling;
       pami_result_t              _mcast2_status;
-      T_Mcast2                 _mcast2;
+      T_Device1                & _device1;
+      T_Mcast2                   _mcast2;
+      pami_work_t                _work;
 
     public:
 
       BGQNativeInterfaceASMultiDevice(T_Device1      &device1,
-                                      T_Device2      &device2,                                                   
+                                      T_Device2      &device2,  
 				      T_Allocator    &allocator,
 				      pami_client_t  client,
                                       pami_context_t context,
                                       size_t         context_id,
                                       size_t         client_id,
                                       int           *dispatch_id);
-#if 0
+
       BGQNativeInterfaceASMultiDevice(T_Device1      &device1,
-                                      pami_client_t  client,
+				      T_Allocator    &allocator,
+				      pami_client_t  client,
                                       pami_context_t context,
                                       size_t         context_id,
                                       size_t         client_id,
-                                      int           *dispatch_id);
-#endif
+                                      int           *dispatch_id):
+      BGQNativeInterfaceAS<T_Device1, T_Mcast1, T_Msync, T_Mcomb, T_Allocator>(device1, allocator, client, context, context_id, client_id, dispatch_id), 
+      _device1(device1),
+      _mcast2(client, context, *(T_Device2*)NULL, _mcast2_status)
+      {
+	//TRACE_FORMAT( "Dummy constructor\n");
+      }
+
       virtual pami_result_t multicast (pami_multicast_t *mcast, void *devinfo);
+
+      static pami_result_t advance (pami_context_t     context,
+				    void             * cookie) 
+      {
+	BGQNativeInterfaceASMultiDevice *ni = 
+	  (BGQNativeInterfaceASMultiDevice *) cookie;
+
+	int rc = 0;	
+	for (int i = 0; i < 4; ++i) {
+	  if (ni->_advanceNetwork) 
+	    rc |= (int)T_Mcast1::advance (context, &ni->_mcast);	  
+	  if (ni->_advanceLocal)
+	    rc |= (int)T_Mcast2::advance(context, &ni->_mcast2);
+	  
+	  if (rc == (int)PAMI_SUCCESS) {
+	    ni->_polling        = false;
+	    ni->_advanceLocal   = false;
+	    ni->_advanceNetwork = false;
+	    break;
+	  }	  
+	}
+	
+	return (pami_result_t)rc;
+      }
+
   };
 
-  template <class T_Device1, class T_Device2, class T_Mcast1, class T_Mcast2, class T_Msync, class T_Mcomb, class T_Allocator>
-  BGQNativeInterfaceASMultiDevice<T_Device1, T_Device2, T_Mcast1, T_Mcast2, T_Msync, T_Mcomb, T_Allocator>::
+  template <class T_Device1, class T_Device2, class T_Mcast1, class T_Mcast2, class T_Msync, class T_Mcomb, class T_Allocator, bool T_Axial>
+    BGQNativeInterfaceASMultiDevice<T_Device1, T_Device2, T_Mcast1, T_Mcast2, T_Msync, T_Mcomb, T_Allocator, T_Axial>::
   BGQNativeInterfaceASMultiDevice(T_Device1      &device1,
                                   T_Device2      &device2,     
 				  T_Allocator    &allocator,
@@ -478,172 +512,163 @@ namespace PAMI
                                   size_t         client_id,
                                   int           *dispatch_id)
     : BGQNativeInterfaceAS<T_Device1, T_Mcast1, T_Msync, T_Mcomb, T_Allocator>(device1, allocator, client, context, context_id, client_id, dispatch_id),
+      _advanceLocal(false),
+      _advanceNetwork(false),
+      _polling(false),
       _mcast2_status(PAMI_SUCCESS),
-      _mcast2(device2, _mcast2_status)
+      _device1(device1),
+      _mcast2(client, context, device2, _mcast2_status)
   {
     TRACE_FN_ENTER();
     TRACE_FORMAT( "<%p> status %u", this, _mcast2_status);
+    this->_mcast.setLocalMulticast(false);    
+    this->_mcast.callConsumeBytesOnMaster(false);
+
     this->CCMI::Interfaces::NativeInterface::_status = (pami_result_t) (this->CCMI::Interfaces::NativeInterface::_status | _mcast2_status);
+
+    this->_mcast.disableAdvance();
+    this->_mcast2.disableAdvance();
+    
+    new (&_work) PAMI::Device::Generic::GenericThread(advance, this);
+
     TRACE_FN_EXIT();
   }
 
-#if 0
-  template <class T_Device1, class T_Device2, class T_Mcast1, class T_Mcast2, class T_Msync, class T_Mcomb, class T_Allocator>
-  BGQNativeInterfaceASMultiDevice<T_Device1, T_Device2, T_Mcast1, T_Mcast2, T_Msync, T_Mcomb, T_Allocator>::
-  BGQNativeInterfaceASMultiDevice(T_Device1      &device1,
-                                  pami_client_t  client,
-                                  pami_context_t context,
-                                  size_t         context_id,
-                                  size_t         client_id,
-                                  int           *dispatch_id)
-    : BGQNativeInterfaceAS<T_Device1, T_Mcast1, T_Msync, T_Mcomb, T_Allocator>(device1, client, context, context_id, client_id, dispatch_id),
-      _mcast2_status(PAMI_SUCCESS),
-      _mcast2(*(device1.getProgressDevice()), _mcast2_status)
-  {
-    TRACE_FN_ENTER();
-    TRACE_FORMAT( "<%p> status %u", this, _mcast2_status);
-    PAMI_assertf(sizeof(allocObj) <= _allocator.objsize,"%zu <= %zu\n",sizeof(allocObj),_allocator.objsize);
-    COMPILE_TIME_ASSERT(T_Allocator::objsize >= sizeof(allocObjMD));
-    this->CCMI::Interfaces::NativeInterface::_status = (pami_result_t) (this->CCMI::Interfaces::NativeInterface::_status | _mcast2_status);
-    TRACE_FN_EXIT();
-  }
-#endif
-  template <class T_Device1, class T_Device2, class T_Mcast1, class T_Mcast2, class T_Msync, class T_Mcomb, class T_Allocator>
-    inline pami_result_t BGQNativeInterfaceASMultiDevice<T_Device1, T_Device2, T_Mcast1, T_Mcast2, T_Msync, T_Mcomb, T_Allocator>::multicast (pami_multicast_t *mcast, void *devinfo)
+  template <class T_Device1, class T_Device2, class T_Mcast1, class T_Mcast2, class T_Msync, class T_Mcomb, class T_Allocator, bool T_Axial>
+    inline pami_result_t BGQNativeInterfaceASMultiDevice<T_Device1, T_Device2, T_Mcast1, T_Mcast2, T_Msync, T_Mcomb, T_Allocator, T_Axial>::multicast (pami_multicast_t *mcast, void *devinfo)
   {
     TRACE_FN_ENTER();
     PAMI_assertf(sizeof(allocObjMD) <= this->_allocator.objsize,"%zu <= %zu\n",sizeof(allocObjMD),this->_allocator.objsize);
     COMPILE_TIME_ASSERT(sizeof(allocObjMD) <= T_Allocator::objsize);
-    allocObjMD *req          = (allocObjMD *)(this->_allocator).allocateObject();
-
-    req->_ni               = this;
-    req->_user_callback    = mcast->cb_done;
-    req->done_count = 0;
-    TRACE_FORMAT( "<%p> %p/%p connection id %u, msgcount %u, bytes %zu, devinfo %p", this, mcast, req, mcast->connection_id, mcast->msgcount, mcast->bytes, devinfo);
+    TRACE_FORMAT( "<%p> %p/%p connection id %u, msgcount %u, bytes %zu, devinfo %p", this, mcast, (void*)0, mcast->connection_id, mcast->msgcount, mcast->bytes, devinfo);
     DO_DEBUG((templateName<T_Mcast1>()));
     DO_DEBUG((templateName<T_Mcast2>()));
 
-
-    pami_multicast_t  m_local     = *mcast;
-    pami_multicast_t  m_global    = *mcast;
-    m_local.dispatch = m_global.dispatch =  this->_dispatch; // \todo ? Not really used in C++ objects?
-    //m_local.client   = m_global.dispatch =  this->_clientid;   // \todo ? Why doesn't caller set this?
-    //m_local.context  = m_global.context =   this->_contextid;// \todo ? Why doesn't caller set this?
-
-    m_local.cb_done.function     = m_global.cb_done.function =  ni_multi_client_done;
-    m_local.cb_done.clientdata   = m_global.cb_done.clientdata =  req;
-
-    //fprintf(stderr, "src pwq:%p recv pwq:%p passed in native interface\n", mcast->src, mcast->dst);
-
-
-    //fprintf(stderr,"posting multicast from the native interface\n");
-    //if (local_root == __global.mapping.task()) /* master */
-
     /* Check for the master/root */
-
     PAMI::Topology *root_topo = (PAMI::Topology*)mcast->src_participants;
     PAMI_assert(root_topo);
     TRACE_FORMAT( "<%p> root %p/%u myrank %u", this, root_topo, root_topo ? root_topo->index2Rank(0) : -1, this->endpoint());
 
-    if (root_topo->index2Rank(0) == this->endpoint())
-      {
-        req->is_master = 1;
-        req->total_bytes = mcast->bytes;
-        req->src = (PAMI::PipeWorkQueue*) mcast->src;
+    pami_task_t root = root_topo->index2Rank(0);
+    pami_multicast_t  m_global;
 
-        unsigned any_local_dst_procs = 0, any_nw_dst_procs = 0;
+    if (root == this->endpoint())
+    {      
+      unsigned any_local_dst_procs = 0, any_nw_dst_procs = 0;
+      PAMI::Topology *dst_topology = (PAMI::Topology *)mcast->dst_participants;
 
-        PAMI::Topology *dst_topology = (PAMI::Topology *)mcast->dst_participants;
-
-        if (dst_topology == NULL)
-          {
-            any_local_dst_procs = any_nw_dst_procs = 0;
-          }
-        else
-          {
-            PAMI_assert (dst_topology->type() == PAMI_AXIAL_TOPOLOGY);
-
-            pami_coord_t *ll = NULL;
-            pami_coord_t *ur = NULL;
-            pami_coord_t *ref = NULL;
-            unsigned char *isTorus = NULL;
-
-            pami_result_t result = PAMI_SUCCESS;
-            result = dst_topology->axial(&ll, &ur, &ref, &isTorus);
-            PAMI_assert(result == PAMI_SUCCESS);
-
-
-            if ((ur->u.n_torus.coords[LOCAL_DIM] - ll->u.n_torus.coords[LOCAL_DIM]) > 0)
-              any_local_dst_procs  = 1;
-
-            if ((ll->u.n_torus.coords[0] == ur->u.n_torus.coords[0]) &&
-                (ll->u.n_torus.coords[1] == ur->u.n_torus.coords[1]) &&
-                (ll->u.n_torus.coords[2] == ur->u.n_torus.coords[2]) &&
-                (ll->u.n_torus.coords[3] == ur->u.n_torus.coords[3]) &&
-                (ll->u.n_torus.coords[4] == ur->u.n_torus.coords[4]))
-              any_nw_dst_procs = 0;
-            else
-              any_nw_dst_procs = 1;
-
-          }
-
-        //fprintf(stderr,"any_nw_dst_procs:%d any_local_dst_pocs:%d\n", any_local_dst_procs, any_nw_dst_procs);
-
-        this->_mcast.setLocalMulticast(false);
-        this->_mcast.callConsumeBytesOnMaster(false);
-
-
-        req->completion_count = 0;
-
-        if (any_local_dst_procs)
-          {
-            //fprintf(stderr,"[%zu]master posting local multicast\n", __global.mapping.task());
-            req->completion_count++;
-            _mcast2.postMulticast_impl(req->_state._mcast2, this->_clientid, this->_contextid, &m_local, devinfo);
-          }
-
-        if (any_nw_dst_procs)
-          {
-            //fprintf(stderr,"[%zu] master posting nw multicast\n", __global.mapping.task());
-            req->completion_count++;
-            //this->_mcast.callConsumeBytesOnMaster(false);
-            this->_mcast.postMulticastImmediate_impl(this->_clientid, this->_contextid, &m_global, devinfo);
-          }
-
-        //this->_mcast.setLocalMulticast(false);
+      pami_multicast_t *nmcast = mcast;      
+      if (T_Axial) {
+	PAMI_assert (dst_topology->type() == PAMI_AXIAL_TOPOLOGY);
+	
+	pami_coord_t *ll = NULL;
+	pami_coord_t *ur = NULL;
+	pami_coord_t *ref = NULL;
+	unsigned char *isTorus = NULL;
+	
+	pami_result_t result = PAMI_SUCCESS;
+	result = dst_topology->axial(&ll, &ur, &ref, &isTorus);
+	PAMI_assert(result == PAMI_SUCCESS);
+	
+	size_t local_size = ur->u.n_torus.coords[LOCAL_DIM] - 
+	  ll->u.n_torus.coords[LOCAL_DIM] + 1;      
+	//check for -ve numbers
+	any_local_dst_procs  = (1 - local_size) >> 63;	 
+	//check for -ve numbers
+	any_nw_dst_procs = (local_size - dst_topology->size()) >> 63;       
+	
       }
+      else {
+	//PAMI_assert (dst_topology->type() == PAMI_LIST_TOPOLOGY);	
+	pami_task_t  rlist[128];
+	size_t nranks;
+	dst_topology->getRankList(128, rlist, &nranks);	 
+
+	for (size_t r = 0; r < nranks; ++r) {
+	  if (__global.mapping.isPeer(__global.mapping.task(), rlist[r]))
+	    any_local_dst_procs = 1;
+	  else
+	    any_nw_dst_procs = 1;
+	}
+      }	
+
+      int ncomplete = any_nw_dst_procs + any_local_dst_procs;  
+
+      if (ncomplete == 2) {
+	allocObjMD *req = (allocObjMD *)(this->_allocator).allocateObject(); 
+	req->_ni               = this;
+	req->_user_callback    = mcast->cb_done;
+	req->done_count = 0;
+	req->total_bytes = mcast->bytes;
+	req->src = (PAMI::PipeWorkQueue*) mcast->src;
+	req->completion_count = 2;  
+	m_global    = *mcast;
+	m_global.dispatch =  this->_dispatch;       
+	m_global.cb_done.function =  ni_multi_client_done;
+	m_global.cb_done.clientdata =  req;
+	nmcast = &m_global;
+      }
+
+      if (any_nw_dst_procs)
+      {
+	_advanceNetwork = true;
+	this->_mcast.postMulticastImmediate_impl(this->_clientid, 
+						 this->_contextid, 
+						 nmcast, devinfo);
+      }
+
+      if (any_local_dst_procs)
+      {
+	_advanceLocal = true;
+	_mcast2.postMulticastImmediate_impl(this->_clientid, 
+					    this->_contextid, 
+					    nmcast, 
+					    devinfo);	      
+      }      
+    }
     else /* is not the master/root */
-      {
-        req->completion_count = 1;
-        req->is_master = 0;
-        req->src = NULL;
+    {
+      size_t      root_coord[6];
+      bool nw_flag = true;
 
-        //pami_task_t root[1];
-        pami_task_t root;
-        pami_coord_t root_coord;
-        root = root_topo->index2Rank(0);
-        __global.mapping.task2network(root, &root_coord, PAMI_N_TORUS_NETWORK);
-
-        if (root_coord.u.n_torus.coords[5] == __global.mapping.t()) //network receiver is the same peer as root
-          {
-            //fprintf (stderr,"[%zu] non master posting MU Multicast \n", __global.mapping.task());
-            this->_mcast.postMulticastImmediate_impl(this->_clientid, this->_contextid, &m_global, devinfo);
-
-          }
-        else //shmem
-          {
-            //fprintf (stderr,"[%zu] non master posting Local Multicast \n", __global.mapping.task());
-            _mcast2.postMulticast_impl(req->_state._mcast2, this->_clientid, this->_contextid, &m_local, devinfo);
-          }
+      if (T_Axial) {
+	__global.mapping.task2global(root, root_coord);      
+	nw_flag = (root_coord[5] == __global.mapping.t());
       }
+      else 
+	nw_flag = !(__global.mapping.isPeer(__global.mapping.task(),
+					    root));	
+      if (nw_flag)
+      {
+	_advanceNetwork = true;
+	this->_mcast.postMulticastImmediate_impl(this->_clientid, 
+						 this->_contextid, 
+						 mcast, 
+						 devinfo);	
+      }
+      else //shmem
+      {
+	_advanceLocal = true;
+	_mcast2.postMulticastImmediate_impl(this->_clientid, 
+					    this->_contextid, 
+					    mcast, 
+					    devinfo);	      
+      }
+    }
+
+    if (!_polling) {
+      _polling = true;
+      PAMI::Device::Generic::GenericThread *work = (PAMI::Device::Generic::GenericThread *)&_work;
+      _device1.getProgressDevice()->postThread(work);    
+    }
 
     TRACE_FN_EXIT();
     return PAMI_SUCCESS;
   }
 
 
-  template <class T_Device1, class T_Device2, class T_Mcast1, class T_Mcast2, class T_Msync, class T_Mcomb, class T_Allocator>
-    inline void BGQNativeInterfaceASMultiDevice<T_Device1, T_Device2, T_Mcast1, T_Mcast2, T_Msync, T_Mcomb, T_Allocator>::ni_multi_client_done(pami_context_t  context,
+  template <class T_Device1, class T_Device2, class T_Mcast1, class T_Mcast2, class T_Msync, class T_Mcomb, class T_Allocator, bool T_Axial>
+    inline void BGQNativeInterfaceASMultiDevice<T_Device1, T_Device2, T_Mcast1, T_Mcast2, T_Msync, T_Mcomb, T_Allocator, T_Axial>::ni_multi_client_done(pami_context_t  context,
       void          *rdata,
       pami_result_t   res)
   {
@@ -656,17 +681,18 @@ namespace PAMI
                   obj->_user_callback.function, obj->_user_callback.clientdata);
 
     ++obj->done_count;
-    //printf("calling ni_multi_client_done:%d\n", obj->done_count);
-
+    TRACE_FORMAT("calling ni_multi_client_done:%d, %d\n", 
+		 obj->done_count, obj->completion_count);
+    
     if (obj->done_count == obj->completion_count)
       {
         //Call pipework queue consume bytes
         if (obj->src) obj->src->consumeBytes(obj->total_bytes);
 
         if (obj->_user_callback.function)
-          obj->_user_callback.function(context,
-                                       obj->_user_callback.clientdata,
-                                       res);
+	  obj->_user_callback.function(context,
+				       obj->_user_callback.clientdata,
+				       res);
 
         ni->_allocator.returnObject(obj);
       }

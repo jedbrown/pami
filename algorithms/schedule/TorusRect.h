@@ -304,7 +304,8 @@ CCMI::Schedule::TorusRect::init(int root,
 inline pami_result_t
 CCMI::Schedule::TorusRect::getSrcUnionTopology(PAMI::Topology *topo, pami_endpoint_t *src_eps)
 {
-  printf("no need to implement\n");
+  //  printf("no need to implement\n");
+  new (topo) PAMI::Topology(_root);
   return PAMI_SUCCESS;
 }
 inline void

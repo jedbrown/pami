@@ -245,6 +245,50 @@ namespace PAMI
     };
   };
 
+  // MU NI class that overrides the metadata name and possibly the range (templatized)
+  template<class T_Parent, class T_Allocator>
+  class MUNI_2Device_metadata : public T_Parent
+  {
+   protected:
+    char name[48];
+    const char* niName;
+   public:
+   MUNI_2Device_metadata(MUDevice &device, ShmemDevice &device2, T_Allocator &allocator, pami_client_t client, pami_context_t context, size_t context_id, size_t client_id, int *dispatch_id) :
+   T_Parent(device,device2,allocator,client,context,context_id,client_id,dispatch_id)
+    {
+        TRACE_FN_ENTER();
+        niName = "SHMEM:MU";
+        TRACE_FORMAT("<%p>%s",this,niName);
+        TRACE_FN_EXIT();
+    }
+
+   MUNI_2Device_metadata(MUDevice &device, T_Allocator &allocator, pami_client_t client, pami_context_t context, size_t context_id, size_t client_id, int *dispatch_id) :
+   T_Parent(device,allocator,client,context,context_id,client_id,dispatch_id)
+    {
+        TRACE_FN_ENTER();
+        niName = "SHMEM:MU";
+        TRACE_FORMAT("<%p>%s",this,niName);
+        TRACE_FN_EXIT();
+    }
+
+    ///
+    /// \brief NI hook to override metadata for collective
+    ///
+    void metadata(pami_metadata_t *m, pami_xfer_type_t t) 
+    {
+      TRACE_FN_ENTER();
+      //printf("<%p> %s type %u cur niName %s",this,m->name,t, niName);
+      char* s = strstr(m->name,"P2P");
+      PAMI_assertf(sizeof(name) >= (s-m->name)+strlen(niName)+1,"%zu >= %zu",sizeof(name),(s-m->name)+strlen(niName)+1);
+      memcpy(name,m->name,(s-m->name));
+      name[(s-m->name)] = 0x00;
+      strcat(name,niName);
+      m->name = name;
+      TRACE_FORMAT("<%p> %s",this,m->name);
+      TRACE_FN_EXIT();
+    }
+  }; 
+
   // MU NI factory for MUNI_metadata<MUNI_AM>/MUNI_metadata<MUNI_AS>
   typedef NativeInterfaceCommon::NativeInterfaceFactory <BigProtocolAllocator,  MUNI_metadata<MUNI_AM, BigProtocolAllocator>,  MUNI_metadata<MUNI_AS, MidProtocolAllocator>, MUEager, MUDevice> MUNIFactory;
   typedef NativeInterfaceCommon::NativeInterfaceFactory <BigProtocolAllocator,  MUNI_metadata<MUNI_AM_AMC, BigProtocolAllocator>,  MUNI_metadata<MUNI_AS_AMC, MidProtocolAllocator>, MUEager, MUDevice> MUNIFactory_AMC;
@@ -293,12 +337,38 @@ namespace PAMI
       }
   };
 
+  // MUShmemDputNI class that overrides the metadata name and possibly the range (templatized)
+  class MUShmemDputNI_metadata : public MUNI_2Device_metadata<MUShmemDputNI, BigProtocolAllocator>
+  {
+  public:
+    MUShmemDputNI_metadata(MUDevice &device, ShmemDevice &device2, BigProtocolAllocator &allocator, pami_client_t client, pami_context_t context, size_t context_id, size_t client_id, int *dispatch_id) :
+    MUNI_2Device_metadata<MUShmemDputNI, BigProtocolAllocator>(device, device2, allocator, client, context, context_id, client_id, dispatch_id)      {
+	this->niName="Shmem:MUDput";
+      }
+
+    MUShmemDputNI_metadata(MUDevice &device, BigProtocolAllocator &allocator, pami_client_t client, pami_context_t context, size_t context_id, size_t client_id, int *dispatch_id) :
+      MUNI_2Device_metadata<MUShmemDputNI, BigProtocolAllocator>(device, allocator, client, context, context_id, client_id, dispatch_id)
+      {
+	this->niName="Shmem:MUDput";
+      }	
+  };
+
   // MU NI factory for MUNI_metadata<MUNI_AM>/MUNI_metadata<MUNI_AS>
   typedef BGQNativeInterfaceFactory <BigProtocolAllocator,  
     MUDputNI_metadata,
     MUDevice, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, 
     CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED, 16> 
     MUDputNIFactory;
+
+
+  // MUShmemDput NI factory
+  typedef BGQNativeInterfaceFactory2Device <BigProtocolAllocator,  
+    MUShmemDputNI_metadata,
+    MUDevice, 
+    ShmemDevice, 
+    CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, 
+    CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED, 16> 
+    MUShmemDputNIFactory;
   
   // Composite (MU/SHMEM) NI class that overrides the metadata name
   template<class T_Parent>
@@ -1025,23 +1095,41 @@ namespace PAMI
                                  NULL);
 
             PAMI_assert(__global.topology_local.size() == __global.local_size());
-            if(__global.mapping.tSize()!=64) /// \todo Not enough resources for MU Dput at 64 PPN, maybe fix this.
+            if(__global.mapping.tSize() < 64) /// \todo Not enough resources for MU Dput at 64 PPN, maybe fix this.
             {
-              COMPILE_TIME_ASSERT(sizeof(MUDputNIFactory) <= ProtocolAllocator::objsize);
-              CCMI::Interfaces::NativeInterfaceFactory *ni_factory_mudp = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
-              new (ni_factory_mudp) MUDputNIFactory (_client, _context, _clientid, _contextid, _devices->_mu[_contextid], _big_protocol);
-          
-              _ccmi_registration_mudput =  new((CCMIRegistrationKey2*)_ccmi_registration_mudput_storage) 	
-              CCMIRegistrationKey2(_client, _context, _contextid, _clientid, 
-                                   _protocol,
-                                   __global.topology_global.size(), 
-                                   __global.topology_local.size(), 
-                                   &_dispatch.id, 
-                                   _geometry_map,
-                                   ni_factory_mudp,
-                                   NULL);
-            }
-          }
+	      if (__global.mapping.tSize() == 1 || !__global.useshmem()) {
+		COMPILE_TIME_ASSERT(sizeof(MUDputNIFactory) <= ProtocolAllocator::objsize);
+		CCMI::Interfaces::NativeInterfaceFactory *ni_factory_mudp = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
+		new (ni_factory_mudp) MUDputNIFactory (_client, _context, _clientid, _contextid, _devices->_mu[_contextid], _big_protocol);
+	      
+		_ccmi_registration_mudput =  new((CCMIRegistrationKey2*)_ccmi_registration_mudput_storage) 	
+		  CCMIRegistrationKey2(_client, _context, _contextid, _clientid, 
+				       _protocol,
+				       __global.topology_global.size(), 
+				       __global.topology_local.size(), 
+				       &_dispatch.id, 
+				       _geometry_map,
+				       ni_factory_mudp,
+				       NULL);
+	      }
+	      else {
+		COMPILE_TIME_ASSERT(sizeof(MUShmemDputNIFactory) <= ProtocolAllocator::objsize);
+		CCMI::Interfaces::NativeInterfaceFactory *ni_factory_mudp = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
+		new (ni_factory_mudp) MUShmemDputNIFactory (_client, _context, _clientid, _contextid, _devices->_mu[_contextid], _devices->_shmem[_contextid], _big_protocol);
+		
+		_ccmi_registration_mudput =  new((CCMIRegistrationKey2*)_ccmi_registration_mudput_storage)
+		  CCMIRegistrationKey2(_client, _context, _contextid, _clientid, 
+				       _protocol,
+				       __global.topology_global.size(), 
+				       __global.topology_local.size(), 
+				       &_dispatch.id, 
+				       _geometry_map,
+				       ni_factory_mudp,
+				       NULL);
+	      }
+	    }
+	  }	
+
         // Can only use shmem pgas if the geometry is all local tasks, so check the topology
         if (_pgas_shmem_registration && ((PAMI::Topology*)_world_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->isLocal()) _pgas_shmem_registration->analyze(_contextid, _world_geometry, 0);
 

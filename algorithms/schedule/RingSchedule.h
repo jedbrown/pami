@@ -421,7 +421,7 @@ namespace CCMI
 
           ntotal_ranks += nranks;
           nranks = 0;
-          CCMI_assert (ntotal_ranks <= topology->size());
+          //CCMI_assert (ntotal_ranks <= topology->size());
         }
 
         //Convert to a list topology

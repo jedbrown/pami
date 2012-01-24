@@ -38,9 +38,11 @@ namespace CCMI
         PAMI::PipeWorkQueue              _pwq;
 
         pami_endpoint_t         _dst_eps [MAX_PARALLEL];
+        pami_endpoint_t         _src_eps;
         pami_endpoint_t         _self_ep;
         pami_endpoint_t         _root_ep;
         PAMI::Topology          _dsttopology;
+        PAMI::Topology          _srctopology;
         PAMI::Topology          _selftopology;
         PAMI::Topology          _roottopology;
 
@@ -107,6 +109,17 @@ namespace CCMI
 
           if (_connmgr)
             _msend.connection_id = _connmgr->getConnectionId(_mdata._comm, _mdata._root, color, (unsigned) - 1, (unsigned) - 1);
+
+#if 1
+	  pami_endpoint_t srcranks[MAX_PARALLEL];
+          _comm_schedule->getSrcUnionTopology (&_srctopology, srcranks);   
+	  //fprintf(stderr, "Src rank %d, topo size %d\n", 
+	  //  (int)_srctopology.index2Rank(0), 
+	  //  (int)_srctopology.size());
+
+	  CCMI_assert (_srctopology.size() <= 1);
+          _comm_schedule->getSrcUnionTopology (&_srctopology, &_src_eps); 
+#endif
         }
 
         void setConnectionID (unsigned cid)
@@ -176,7 +189,8 @@ namespace CCMI
 
           TRACE_MSG((stderr, "<%p>Executor::BroadcastExec::postReceives ndest %zu, bytes %zu, rank %u, root %u\n",
                      this, _dsttopology.size(), _msend.bytes, _selftopology.index2Endpoint(0),_roottopology.index2Endpoint(0)));
-          mrecv.src_participants   = (pami_topology_t *) & _roottopology; 
+          //mrecv.src_participants   = (pami_topology_t *) & _roottopology; 
+	  mrecv.src_participants   = (pami_topology_t *) & _srctopology; 
           mrecv.dst_participants   = (pami_topology_t *) & _selftopology;
 
           if (_dsttopology.size() == 0)

@@ -128,13 +128,9 @@ namespace PAMI
           _rectangle_1color_broadcast_factory(NULL),
 #endif
           _binomial_broadcast_factory(NULL),         
-#ifdef ENABLE_X0_PROTOCOLS // Experimental (X0:) protocols
           _ring_broadcast_factory(NULL),          
-#endif
           _binomial_broadcast_singleth_factory(NULL),         
-#ifdef ENABLE_X0_PROTOCOLS // Experimental (X0:) protocols
           _ring_broadcast_singleth_factory(NULL),          
-#endif
           _sync_2nary_broadcast_factory(NULL),
           _asrb_binomial_broadcast_factory(NULL),
           _ascs_binomial_broadcast_factory(NULL),
@@ -148,9 +144,7 @@ namespace PAMI
           _binomial_allreduce_factory(NULL),
           _binomial4_allreduce_factory(NULL),
           _binomial8_allreduce_factory(NULL),
-#ifdef ENABLE_X0_PROTOCOLS // Experimental (X0:) protocols
           _ring_allreduce_factory(NULL),
-#endif
           _ascs_binomial_allreduce_factory(NULL),
           _ascs_binomial_reduce_factory(NULL),
           _active_binomial_amreduce_factory(NULL),
@@ -443,13 +437,13 @@ namespace PAMI
                                         _binomial8_allreduce_factory,
                                                _context,
                                         _context_id);
-#ifdef ENABLE_X0_PROTOCOLS // Experimental (X0:) protocols
+
                 if(_ring_allreduce_factory)
                   geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,
                                                _ring_allreduce_factory,
                                                _context,
                                                _context_id);
-#endif
+
                 if(_ascs_binomial_allreduce_factory)
                   geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,
                                         _ascs_binomial_allreduce_factory,
@@ -483,13 +477,13 @@ namespace PAMI
                                         _binomial8_allreduce_factory,
                                           _context,
                                         _context_id);
-#ifdef ENABLE_X0_PROTOCOLS // Experimental (X0:) protocols
+
                 if(_ring_allreduce_factory)
                   geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,
                                                _ring_allreduce_factory,
                                                _context,
                                                _context_id);
-#endif
+
                 if(_ascs_binomial_allreduce_factory)
                   geometry->addCollective(PAMI_XFER_ALLREDUCE,
                                         _ascs_binomial_allreduce_factory,
@@ -514,13 +508,11 @@ namespace PAMI
                                         _binomial_broadcast_factory,
                                                _context,
                                         _context_id);
-#ifdef ENABLE_X0_PROTOCOLS // Experimental (X0:) protocols
                 if(_ring_broadcast_factory)
                   geometry->addCollectiveCheck(PAMI_XFER_BROADCAST,
                                                _ring_broadcast_factory,
                                                _context,
                                                _context_id);
-#endif
                 if(_sync_2nary_broadcast_factory)
                   geometry->addCollectiveCheck(PAMI_XFER_BROADCAST,
                                                _sync_2nary_broadcast_factory,
@@ -675,7 +667,6 @@ namespace PAMI
                                           _context,
                                           _context_id);
 
-#ifdef ENABLE_X0_PROTOCOLS // Experimental (X0:) protocols
                 if(_ring_broadcast_factory)
                   geometry->addCollective(PAMI_XFER_BROADCAST,
                                           _ring_broadcast_factory,
@@ -686,7 +677,6 @@ namespace PAMI
                                           _ring_broadcast_singleth_factory,
                                           _context,
                                           _context_id);		
-#endif
                 if(_sync_2nary_broadcast_factory)
                   geometry->addCollective(PAMI_XFER_BROADCAST,
                                           _sync_2nary_broadcast_factory,
@@ -1075,7 +1065,6 @@ namespace PAMI
             rc = setupFactory<CCMI::Adaptor::P2PBroadcast::BinomialBroadcastSingleThFactory>(ni, _binomial_broadcast_singleth_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED, 1);
             if (rc == PAMI_SUCCESS) new ((void*)_binomial_broadcast_singleth_factory) CCMI::Adaptor::P2PBroadcast::BinomialBroadcastSingleThFactory(_context,_context_id,mapidtogeometry,&_color_connmgr, ni);
             // ----------------------------------------------------
-#ifdef ENABLE_X0_PROTOCOLS // Experimental (X0:) protocols
             // ----------------------------------------------------
             // Setup and Construct a ring broadcast factory from
             // allsided ni and p2p protocol
@@ -1087,7 +1076,7 @@ namespace PAMI
             // Setup and Construct a ring broadcast factory from allsided ni and p2p protocol
             rc = setupFactory<CCMI::Adaptor::P2PBroadcast::RingBroadcastSingleThFactory>(ni, _ring_broadcast_singleth_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED, 1);
             if (rc == PAMI_SUCCESS) new ((void*)_ring_broadcast_singleth_factory) CCMI::Adaptor::P2PBroadcast::RingBroadcastSingleThFactory(_context,_context_id,mapidtogeometry,&_color_connmgr, ni);
-#endif
+
             //This scheme only works ...??
             rc = setupFactory<CCMI::Adaptor::P2PBroadcast::TwoNaryBroadcastFactory>(ni, _sync_2nary_broadcast_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED, 1);
             if (rc == PAMI_SUCCESS) new ((void*)_sync_2nary_broadcast_factory) CCMI::Adaptor::P2PBroadcast::TwoNaryBroadcastFactory(_context,_context_id, mapidtogeometry, &_color_connmgr, ni);
@@ -1172,10 +1161,8 @@ namespace PAMI
 	    }
 	      
             // ----------------------------------------------------
-#ifdef ENABLE_X0_PROTOCOLS // Experimental (X0:) protocols
             rc = setupFactory<CCMI::Adaptor::P2PAllreduce::Ring::Factory>(ni, _ring_allreduce_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED, 1);
             if (rc == PAMI_SUCCESS) new ((void*)_ring_allreduce_factory) CCMI::Adaptor::P2PAllreduce::Ring::Factory(_context,_context_id,mapidtogeometry,&_sconnmgr, ni, NULL, &_sconnmgr1);
-#endif
             // ----------------------------------------------------
             // Setup and Construct an asynchronous, comm_id/seq_num binomial  allreduce factory from active message ni and p2p protocol
             rc = setupFactory<CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomAllreduceFactory>(ni, _ascs_binomial_allreduce_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE);
@@ -1398,13 +1385,9 @@ namespace PAMI
           CCMI::Adaptor::P2PBroadcast::Rectangle1ColorBroadcastFactory    *_rectangle_1color_broadcast_factory;
 #endif
           CCMI::Adaptor::P2PBroadcast::BinomialBroadcastFactory           *_binomial_broadcast_factory;
-#ifdef ENABLE_X0_PROTOCOLS // Experimental (X0:) protocols
           CCMI::Adaptor::P2PBroadcast::RingBroadcastFactory               *_ring_broadcast_factory;          
-#endif
           CCMI::Adaptor::P2PBroadcast::BinomialBroadcastSingleThFactory   *_binomial_broadcast_singleth_factory;
-#ifdef ENABLE_X0_PROTOCOLS // Experimental (X0:) protocols
           CCMI::Adaptor::P2PBroadcast::RingBroadcastSingleThFactory       *_ring_broadcast_singleth_factory;          
-#endif
           CCMI::Adaptor::P2PBroadcast::TwoNaryBroadcastFactory            *_sync_2nary_broadcast_factory;
           CCMI::Adaptor::P2PBroadcast::AsyncRBBinomialBroadcastFactory    *_asrb_binomial_broadcast_factory;
           CCMI::Adaptor::P2PBroadcast::AsyncCSBinomialBroadcastFactory    *_ascs_binomial_broadcast_factory;
@@ -1421,9 +1404,8 @@ namespace PAMI
           CCMI::Adaptor::P2PAllreduce::Binomial::Factory4                 *_binomial4_allreduce_factory;
           CCMI::Adaptor::P2PAllreduce::Binomial::Factory8                 *_binomial8_allreduce_factory;
 
-#ifdef ENABLE_X0_PROTOCOLS // Experimental (X0:) protocols
           CCMI::Adaptor::P2PAllreduce::Ring::Factory                      *_ring_allreduce_factory;
-#endif
+
           // CCMI Async [All]Reduce
           CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomAllreduceFactory  *_ascs_binomial_allreduce_factory;
           CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomReduceFactory     *_ascs_binomial_reduce_factory;
