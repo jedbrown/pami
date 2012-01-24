@@ -21,13 +21,15 @@ namespace PAMI
   {
     namespace MU
     {
-      class DmaModel : public MU::DmaModelBase<DmaModel>
+      class DmaModel : public MU::DmaModelBase<DmaModel,sizeof(MUSPI_DescriptorBase)>
       {
         public :
 
+          static const bool dma_model_fence_supported = false;
+
           /// \see PAMI::Device::Interface::DmaModel::DmaModel
           inline DmaModel (MU::Context & device, pami_result_t & status) :
-              MU::DmaModelBase<DmaModel> (device, status)
+              MU::DmaModelBase<DmaModel,sizeof(MUSPI_DescriptorBase)> (device, status)
           {};
 
           /// \see PAMI::Device::Interface::DmaModel::~DmaModel

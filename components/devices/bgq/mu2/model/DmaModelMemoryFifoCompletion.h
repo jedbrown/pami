@@ -31,21 +31,18 @@ namespace PAMI
   {
     namespace MU
     {
-      class DmaModelMemoryFifoCompletion : public MU::DmaModelBase<DmaModelMemoryFifoCompletion>
+      class DmaModelMemoryFifoCompletion : public MU::DmaModelBase<DmaModelMemoryFifoCompletion,sizeof(MUSPI_DescriptorBase)*2>
       {
-        protected:
-        
-          static const bool fence_supported = true;
-        
         public :
 
-          friend class MU::DmaModelBase<DmaModelMemoryFifoCompletion>;
+          friend class MU::DmaModelBase<DmaModelMemoryFifoCompletion,sizeof(MUSPI_DescriptorBase)*2>;
 
+          static const bool dma_model_fence_supported = true;
           static const size_t payload_size = sizeof(MUSPI_DescriptorBase)*2;
 
           /// \see PAMI::Device::Interface::DmaModel::DmaModel
           inline DmaModelMemoryFifoCompletion (MU::Context & context, pami_result_t & status) :
-              MU::DmaModelBase<DmaModelMemoryFifoCompletion> (context, status),
+              MU::DmaModelBase<DmaModelMemoryFifoCompletion,sizeof(MUSPI_DescriptorBase)*2> (context, status),
               _completion (context)
           {
             // Determine if this is running on DD2 hardware

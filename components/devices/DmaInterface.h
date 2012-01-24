@@ -56,16 +56,16 @@ namespace PAMI
         public:
 
           /// \see getVirtualAddressSupported()
-          static const bool dma_model_va_supported = T::dma_model_va_supported_impl;
+          static const bool dma_model_va_supported = false;
 
           /// \see getMemoryRegionSupported()
-          static const bool dma_model_mr_supported = T::dma_model_mr_supported_impl;
+          static const bool dma_model_mr_supported = false;
 
           /// \see getFenceSupported()
-          static const bool dma_model_fence_supported = T::dma_model_fence_supported_impl;
+          static const bool dma_model_fence_supported = false;
 
           /// \see getDmaTransferStateBytes()
-          static const size_t dma_model_state_bytes = T::dma_model_state_bytes_impl;
+          static const size_t dma_model_state_bytes = 1;
 
           ///
           /// \brief Returns the virtual address dma attribute of this model.

@@ -39,8 +39,8 @@ namespace PAMI
   {
     namespace MU
     {
-      template <class T_Model>
-      class DmaModelBase : public Interface::DmaModel < MU::DmaModelBase<T_Model> >
+      template <class T_Model, unsigned T_PayloadSize>
+      class DmaModelBase : public Interface::DmaModel < MU::DmaModelBase<T_Model,T_PayloadSize> >
       {
         private :
 
@@ -69,16 +69,16 @@ namespace PAMI
               uint64_t msg1[(sizeof(InjectDescriptorMessage<1, false>) >> 3) + 1];
               uint64_t msg2[(sizeof(InjectDescriptorMessage<2, false>) >> 3) + 1];
             };
-            uint8_t e_minus_payload[T_Model::payload_size];
-            uint8_t e_plus_payload[T_Model::payload_size];
+            uint8_t e_minus_payload[T_PayloadSize];
+            uint8_t e_plus_payload[T_PayloadSize];
             multi_complete_t split_e_state;
           } get_state_t;
 
           typedef struct
           {
             uint64_t msg[(sizeof(InjectDescriptorMessage<2, false>) >> 3) + 1];
-            uint8_t e_minus_payload[sizeof(MUHWI_Descriptor_t)];
-            uint8_t e_plus_payload[sizeof(MUHWI_Descriptor_t)];
+            uint8_t e_minus_payload[T_PayloadSize];
+            uint8_t e_plus_payload[T_PayloadSize];
           } split_t;
 
           typedef struct
@@ -125,7 +125,7 @@ namespace PAMI
           //
           /////////////////////////////////////////////////////////////////////
 
-          friend class Interface::DmaModel < MU::DmaModelBase<T_Model> >;
+          friend class Interface::DmaModel < MU::DmaModelBase<T_Model,T_PayloadSize> >;
 
           /// \see PAMI::Device::Interface::DmaModel::DmaModel
           /// \todo set base address table information int he direct put descriptor(s)
@@ -134,16 +134,20 @@ namespace PAMI
           /// \see PAMI::Device::Interface::DmaModel::DmaModel
           ~DmaModelBase ();
 
+        public:
+
           /// \see Device::Interface::DmaModel::getVirtualAddressSupported
-          static const bool dma_model_va_supported_impl = false;
+          static const bool dma_model_va_supported = false;
 
           /// \see Device::Interface::DmaModel::getMemoryRegionSupported
-          static const bool dma_model_mr_supported_impl = true;
+          static const bool dma_model_mr_supported = true;
 
           /// \see Device::Interface::DmaModel::getDmaTransferStateBytes
-          static const size_t dma_model_state_bytes_impl  = sizeof(state_t);
+          static const size_t dma_model_state_bytes  = sizeof(state_t);
 
-          static const bool dma_model_fence_supported_impl = T_Model::fence_supported;
+          static const bool dma_model_fence_supported = false;
+
+       protected:
 
           inline bool postDmaPut_impl (size_t                target_task,
                                        size_t                target_offset,
@@ -312,9 +316,9 @@ namespace PAMI
 
       };
 
-      template <class T_Model>
-      DmaModelBase<T_Model>::DmaModelBase (MU::Context & device, pami_result_t & status) :
-          Interface::DmaModel < MU::DmaModelBase<T_Model> > (device, status),
+      template <class T_Model, unsigned T_PayloadSize>
+      DmaModelBase<T_Model,T_PayloadSize>::DmaModelBase (MU::Context & device, pami_result_t & status) :
+          Interface::DmaModel < MU::DmaModelBase<T_Model,T_PayloadSize> > (device, status),
           _remoteCompletion (device),
           _context (device)
       {
@@ -422,13 +426,13 @@ namespace PAMI
         _rput.setMessageUnitPacketType (MUHWI_PACKET_TYPE_PUT);
       };
 
-      template <class T_Model>
-      DmaModelBase<T_Model>::~DmaModelBase ()
+      template <class T_Model, unsigned T_PayloadSize>
+      DmaModelBase<T_Model,T_PayloadSize>::~DmaModelBase ()
       {
       };
 
-      template <class T_Model>
-      inline size_t DmaModelBase<T_Model>::initializeRemoteGetPayload (
+      template <class T_Model, unsigned T_PayloadSize>
+      inline size_t DmaModelBase<T_Model,T_PayloadSize>::initializeRemoteGetPayload (
         void                * vaddr,
         uint64_t              local_dst_pa,
         uint64_t              remote_src_pa,
@@ -471,8 +475,8 @@ namespace PAMI
 
 
 
-      template <class T_Model>
-      bool DmaModelBase<T_Model>::postDmaPut_impl (size_t                target_task,
+      template <class T_Model, unsigned T_PayloadSize>
+      bool DmaModelBase<T_Model,T_PayloadSize>::postDmaPut_impl (size_t                target_task,
                                                    size_t                target_offset,
                                                    size_t                bytes,
                                                    void                * local,
@@ -482,9 +486,9 @@ namespace PAMI
         return false;
       }
 
-      template <class T_Model>
+      template <class T_Model, unsigned T_PayloadSize>
       template <unsigned T_StateBytes>
-      bool DmaModelBase<T_Model>::postDmaPut_impl (uint8_t               (&state)[T_StateBytes],
+      bool DmaModelBase<T_Model,T_PayloadSize>::postDmaPut_impl (uint8_t               (&state)[T_StateBytes],
                                                    pami_event_function   local_fn,
                                                    void                * cookie,
                                                    size_t                target_task,
@@ -497,8 +501,8 @@ namespace PAMI
         return false;
       }
 
-      template <class T_Model>
-      bool DmaModelBase<T_Model>::postDmaPut_impl (size_t                target_task,
+      template <class T_Model, unsigned T_PayloadSize>
+      bool DmaModelBase<T_Model,T_PayloadSize>::postDmaPut_impl (size_t                target_task,
                                                    size_t                target_offset,
                                                    size_t                bytes,
                                                    Memregion           * local_memregion,
@@ -514,9 +518,9 @@ namespace PAMI
         return false;
       }
 
-      template <class T_Model>
+      template <class T_Model, unsigned T_PayloadSize>
       template <unsigned T_StateBytes>
-      bool DmaModelBase<T_Model>::postDmaPut_impl (uint8_t               (&state)[T_StateBytes],
+      bool DmaModelBase<T_Model,T_PayloadSize>::postDmaPut_impl (uint8_t               (&state)[T_StateBytes],
                                                    pami_event_function   local_fn,
                                                    void                * cookie,
                                                    size_t                target_task,
@@ -671,8 +675,8 @@ namespace PAMI
         return true;
       };
 
-      template <class T_Model>
-      bool DmaModelBase<T_Model>::postDmaGet_impl (size_t                target_task,
+      template <class T_Model, unsigned T_PayloadSize>
+      bool DmaModelBase<T_Model,T_PayloadSize>::postDmaGet_impl (size_t                target_task,
                                                    size_t                target_offset,
                                                    size_t                bytes,
                                                    void                * local,
@@ -682,9 +686,9 @@ namespace PAMI
         return false;
       }
 
-      template <class T_Model>
+      template <class T_Model, unsigned T_PayloadSize>
       template <unsigned T_StateBytes>
-      bool DmaModelBase<T_Model>::postDmaGet_impl (uint8_t               (&state)[T_StateBytes],
+      bool DmaModelBase<T_Model,T_PayloadSize>::postDmaGet_impl (uint8_t               (&state)[T_StateBytes],
                                                    pami_event_function   local_fn,
                                                    void                * cookie,
                                                    size_t                target_task,
@@ -697,8 +701,8 @@ namespace PAMI
         return false;
       }
 
-      template <class T_Model>
-      bool DmaModelBase<T_Model>::postDmaGet_impl (size_t                target_task,
+      template <class T_Model, unsigned T_PayloadSize>
+      bool DmaModelBase<T_Model,T_PayloadSize>::postDmaGet_impl (size_t                target_task,
                                                    size_t                target_offset,
                                                    size_t                bytes,
                                                    Memregion           * local_memregion,
@@ -710,9 +714,9 @@ namespace PAMI
         return false;
       }
 
-      template <class T_Model>
+      template <class T_Model, unsigned T_PayloadSize>
       template <unsigned T_StateBytes>
-      bool DmaModelBase<T_Model>::postDmaGet_impl (uint8_t               (&state)[T_StateBytes],
+      bool DmaModelBase<T_Model,T_PayloadSize>::postDmaGet_impl (uint8_t               (&state)[T_StateBytes],
                                                    pami_event_function   local_fn,
                                                    void                * cookie,
                                                    size_t                target_task,
@@ -1188,9 +1192,9 @@ namespace PAMI
           } // End: Not special E dimension case
       }
 
-      template <class T_Model>
+      template <class T_Model, unsigned T_PayloadSize>
       template <unsigned T_StateBytes>
-      bool DmaModelBase<T_Model>::postDmaFence_impl (uint8_t              (&state)[T_StateBytes],
+      bool DmaModelBase<T_Model,T_PayloadSize>::postDmaFence_impl (uint8_t              (&state)[T_StateBytes],
                                                      pami_event_function   local_fn,
                                                      void                * cookie,
                                                      size_t                target_task,

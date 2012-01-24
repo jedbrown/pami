@@ -119,14 +119,16 @@ namespace PAMI
           // PAMI::Interface::DmaModel interface implementation -- BEGIN
           //
           /////////////////////////////////////////////////////////////////////
-
           friend class Interface::DmaModel < DmaModel<T_Device, T_Ordered> >;
 
-          static const size_t dma_model_state_bytes_impl = sizeof(DmaModelState<T_Device>);
-          static const bool dma_model_va_supported_impl  = T_Device::shaddr_va_supported;
-          static const bool dma_model_mr_supported_impl  = T_Device::shaddr_mr_supported;
-          
-          static const bool dma_model_fence_supported_impl = T_Ordered;
+        public:
+
+          static const size_t dma_model_state_bytes = sizeof(DmaModelState<T_Device>);
+          static const bool dma_model_va_supported  = T_Device::shaddr_va_supported;
+          static const bool dma_model_mr_supported  = T_Device::shaddr_mr_supported;
+          static const bool dma_model_fence_supported = T_Ordered;
+
+        protected:
           
 
           inline bool postDmaPut_impl (size_t   task,
