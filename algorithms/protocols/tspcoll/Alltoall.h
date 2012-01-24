@@ -25,18 +25,23 @@ namespace xlpgas
 
     Alltoall (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, T_NI* ni) :
       Collective<T_NI> (ctxt, comm, kind, tag, NULL, NULL, ni),
-      _offset(offset),
-      _headers(NULL)
+      _offset(offset)
       {
 	_sndcount[0] = comm->size(); _sndcount[1] = comm->size();
 	_rcvcount[0] = comm->size(); _rcvcount[1] = comm->size();
 	_odd = 1;
 
+	_header.hdr.handler    = XLPGAS_TSP_AMSEND_COLLA2A;
+	_header.hdr.headerlen = sizeof (struct AMHeader);
+	_header.kind          = this->_kind;
+	_header.tag           = this->_tag;
+	_header.offset        = _offset;
+	_header.senderID      = this->ordinal();
+
       }
 
     ~Alltoall()
       {
-          __global.heap_mm->free(_headers);
       }
 
     static  void  amsend_reg       (xlpgas_AMHeaderReg_t amsend_regnum) {
@@ -86,7 +91,7 @@ namespace xlpgas
       int                 phase;
       int                 dest_ctxt;
       int senderID;
-    } * _headers;
+    }  _header;
 
   }; /* Alltoall */
 } /* Xlpgas */

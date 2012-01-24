@@ -41,22 +41,6 @@ template<class T_NI>
 void xlpgas::Alltoallv<T_NI>::kick    () {
   MUTEX_LOCK(&this->_mutex);
   size_t datawidth = this->_stype->GetDataSize();
-  if(this->_headers==NULL)
-  {
-    this->_headers = (struct Alltoall<T_NI>::AMHeader *)__global.heap_mm->malloc (sizeof(struct Alltoall<T_NI>::AMHeader) * this->_comm->size());
-    assert (this->_headers != NULL);
-
-    for (int i=0; i<(int)this->_comm->size(); i++)
-    {
-      this->_headers[i].hdr.handler   = XLPGAS_TSP_AMSEND_COLLA2AV;
-      this->_headers[i].hdr.headerlen = sizeof (struct Alltoall<T_NI>::AMHeader);
-      this->_headers[i].kind          = this->_kind;
-      this->_headers[i].tag           = this->_tag;
-      this->_headers[i].offset        = this->_offset;
-      this->_headers[i].senderID      = this->ordinal();
-    }
-  }
-
   for (int i=0; i < (int)this->_comm->size(); i++)
     if (i == (int)this->ordinal())
       {
@@ -76,11 +60,11 @@ void xlpgas::Alltoallv<T_NI>::kick    () {
       }
     else {
       MUTEX_UNLOCK(&this->_mutex);
-//      _headers[i].dest_ctxt = _comm->index2Endpoint(i).ctxt;
+      //      _header.dest_ctxt = _comm->index2Endpoint(i).ctxt;
       pami_send_t p_send;
-	  pami_send_event_t   events;
-      p_send.send.header.iov_base  = &(this->_headers[i]);
-      p_send.send.header.iov_len   = sizeof(this->_headers[i]);
+      pami_send_event_t   events;
+      p_send.send.header.iov_base  = &(this->_header);
+      p_send.send.header.iov_len   = sizeof(this->_header);
       p_send.send.data.iov_base    = (char*) this->_sbuf + this->_sdispls[i];
       p_send.send.data.iov_len     = this->_scnts[i] * datawidth;
       p_send.send.dispatch         = -1;
@@ -91,7 +75,7 @@ void xlpgas::Alltoallv<T_NI>::kick    () {
       events.remote_fn      = NULL;
       this->_pwq.configure((char*) this->_sbuf + this->_sdispls[i], this->_scnts[i] * datawidth, this->_scnts[i] * datawidth, this->_stype, this->_rtype);
       this->_pwq.reset();
-      this->_p2p_iface->sendPWQ(this->_pami_ctxt, this->_comm->index2Endpoint (i), sizeof(this->_headers[i]),&this->_headers[i],this->_scnts[i] * datawidth, &this->_pwq, &events);
+      this->_p2p_iface->sendPWQ(this->_pami_ctxt, this->_comm->index2Endpoint (i), sizeof(this->_header),&this->_header,this->_scnts[i] * datawidth, &this->_pwq, &events);
       //this->_p2p_iface->send(&p_send);
     }
 }
@@ -113,7 +97,6 @@ inline void xlpgas::Alltoallv<T_NI>::cb_incoming_v(pami_context_t    context,
   //unused:   int ctxt = header->dest_ctxt;
   CollectiveManager<T_NI> *mc = (CollectiveManager<T_NI>*) cookie;
   void * base0 =  mc->find (header->kind, header->tag);
-
 
   if (base0 == NULL)
     xlpgas_fatalerror (-1, "%d: Alltoallv<T_NI>/v: <%d,%d> is undefined",

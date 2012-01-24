@@ -329,6 +329,7 @@ namespace PAMI
           _client(client),
           _context(context),
           _context_id(context_id),
+	  _num_contexts(num_contexts),
           _client_id(client_id),
           _dispatch_id(dispatch_id),
           _geometry_map(geometry_map),
@@ -374,7 +375,7 @@ namespace PAMI
             _my_endpoint = PAMI_ENDPOINT_INIT(_client_id, _global_task, _context_id);
             mapping.task2peer(_global_task, peer);
             mapping.nodePeers(numpeers);
-
+	    
             size_t    total_endpoints = num_contexts*numpeers;
             unsigned  my_ep_index     = peer*num_contexts + _context_id;
 
@@ -623,7 +624,7 @@ namespace PAMI
                   inout_ptr    = &inout_val[1+2*num_master_tasks];
                   memset(inout_ptr, 0xFF, num_master_tasks*sizeof(uint64_t));
 
-                  if(participant && topo->size() == __global.mapping.size())
+                  if(participant && topo->size() == (__global.mapping.size() * _num_contexts))
                   {
                     //for now pgas hybrid algorithms are restricted to world geometries
                     typename T_CSMemoryManager::large_databuf_t *str = _csmm.getLargeDataBuffer(1);
@@ -631,6 +632,7 @@ namespace PAMI
                     inout_ptr[master_index]                    = databuf_off;
                   }
                   geometryInfo->_databuf_offset = inout_ptr[master_index];
+
                   inout_nelem[0]    = inout_nelem[0];
                   ITRC(IT_CAU, "CollReg(phase 0): group_id=%d, unique_id=0x%x "
                        "reduceMask:0x%lx noGroup=0x%x noJobUniq=0x%x cau_collis=0x%x no_affinity=0x%llx ka=%d\n",
@@ -1040,6 +1042,7 @@ namespace PAMI
         pami_client_t                                                   _client;
         pami_context_t                                                  _context;
         size_t                                                          _context_id;
+	size_t                                                          _num_contexts;
         size_t                                                          _client_id;
 
         int                                                            *_dispatch_id;

@@ -65,7 +65,7 @@ void xlpgas::SHMReduce<T_NI>::kick (void) {
   if(!fl.isdone()) {
     //repost
     PAMI::Device::Generic::GenericThread *work = new ((void*)(&_work_pami)) PAMI::Device::Generic::GenericThread(repost_function<T_NI>, (void*)this);
-    this->_dev[this->_ctxt].postThread(work);
+    this->_dev[0].postThread(work);
   }
 }
 
@@ -128,7 +128,7 @@ void xlpgas::SHMBcast<T_NI>::kick (void) {
   if(!fl.isdone()) {
     //repost
     PAMI::Device::Generic::GenericThread *work = new ((void*)(&_work_pami)) PAMI::Device::Generic::GenericThread(repost_bcast_function<T_NI>, (void*)this);
-    this->_dev[this->_ctxt].postThread(work);
+    this->_dev[0].postThread(work);
   }
 }
 
@@ -207,6 +207,6 @@ void xlpgas::SHMLargeBcast<T_NI>::kick () {
     CNT++;
     PAMI::Device::Generic::GenericThread *work = new ((void*)(&_work_pami)) PAMI::Device::Generic::GenericThread(repost_lgbcast_function<T_NI>, (void*)this);
     work->setStatus(PAMI::Device::Ready);
-    this->_dev[this->_ctxt].postThread(work);
+    this->_dev[0].postThread(work);
   }
 }

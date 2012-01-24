@@ -6,6 +6,7 @@
 #define __algorithms_protocols_tspcoll_Collective_h__
 
 #include <stdio.h>
+#include <vector>
 #include "algorithms/protocols/tspcoll/Array.h"
 #include "algorithms/ccmi.h"
 #include "sys/pami.h"
@@ -238,6 +239,7 @@ namespace xlpgas
       void                    * _device_info;
       pami_task_t               _my_rank;
       size_t                    _my_index;
+      bool                      _is_leader;//caching the is leader information
       DECL_MUTEX(_mutex);
     };
 
@@ -257,14 +259,16 @@ namespace xlpgas
       /* ---------------- */
 
       static void Initialize (int ncontexts, CollectiveManager<T_NI>*);
-      static CollectiveManager * instance(int ctxt) { return _instances[ctxt];}
+      static CollectiveManager * instance(int ctxt) { 
+	return _instances[ctxt];
+      }
 
       Collective<T_NI> * find (CollectiveKind kind, int tag);
 
       template <class CollDefs>
       Collective<T_NI> * allocate (Team* comm, CollectiveKind kind, int id, void* device_info, T_NI* ni){
 	assert (0 <= kind && kind < MAXKIND);
-//	int nextID = _kindlist[kind]->len();
+	//int nextID = _kindlist[kind]->len();
         int nextID = id;
 	Collective<T_NI> * b;
 	switch (kind)
@@ -726,7 +730,7 @@ namespace xlpgas
 
       CollArray_t              * _kindlist[MAXKIND];
       int                        _ctxt;
-      static CollectiveManager ** _instances;
+      static std::vector<CollectiveManager*> _instances;
       PAMI::Device::Generic::Device *_genericDevice;
     private:
       /* ------------ */
@@ -735,7 +739,6 @@ namespace xlpgas
     public:
       CollectiveManager (int ctxt);
       void * operator new (size_t, void * addr) { return addr; }
-      Collective<T_NI>* collective(CollectiveKind kind){ return (*_kindlist[kind])[0];}
       PAMI::Device::Generic::Device* device() {return _genericDevice;}
     };
 }

@@ -28,6 +28,15 @@ namespace xlpgas
     ShmCauAllReduce (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, void* device_info, T_NI* ni) :
       Collective<T_NI> (ctxt, comm, kind, tag, NULL, NULL, ni) {
       this->_device_info = device_info;
+      //here cache the is leader information and the required topologies;
+      typedef xlpgas::cau_device_info<T_NI> device_info_type;
+      PAMI_GEOMETRY_CLASS* geometry = ((device_info_type*)(this->_device_info))->geometry();
+      team        = (PAMI::Topology*)(geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
+      local_team  = (PAMI::Topology*)(geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX));
+      leader_team = (PAMI::Topology*)(geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX));
+      //the text topology we don't cache for now; used only to extract the is leader info
+      PAMI::Topology* my_master_team = (PAMI::Topology*)(geometry->getTopology(PAMI::Geometry::LOCAL_MASTER_TOPOLOGY_INDEX));
+      this->_is_leader = my_master_team->isEndpointMember(this->rank());
     }
     virtual void reset (const void         * sbuf, 
 			void               * dbuf, 
@@ -44,12 +53,23 @@ namespace xlpgas
     virtual void setComplete (xlpgas_LCompHandler_t cb,
 			      void *arg);
     virtual void setContext (pami_context_t ctxt);
+
+    void set_internal_coll(xlpgas::Collective<T_NI>* shm_red, 
+			   xlpgas::Collective<T_NI>* shm_b,
+			   xlpgas::Collective<T_NI>* cau_red, 
+			   xlpgas::Collective<T_NI>* cau_b){
+      shm_reduce = shm_red;
+      shm_bcast = shm_b;
+      cau_reduce = cau_red;
+      cau_bcast = cau_b;
+    }
   public:
+    PAMI::Topology *team, *local_team, *leader_team;
     xlpgas::Collective<T_NI> *shm_reduce, *shm_bcast, *cau_reduce, *cau_bcast;
     int64_t s;
     int64_t tmp;
     int64_t tmp_cau;
-
+    
   }; /* ShmCauAllReduce */
 } /* Xlpgas */
 

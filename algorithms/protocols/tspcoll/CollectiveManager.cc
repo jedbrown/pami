@@ -3,27 +3,18 @@
  * \brief ???
  */
 #include "algorithms/protocols/tspcoll/Collective.h"
+
 template <class T_NI>
-xlpgas::CollectiveManager<T_NI> ** xlpgas::CollectiveManager<T_NI>::_instances = NULL;
+std::vector<xlpgas::CollectiveManager<T_NI>*> xlpgas::CollectiveManager<T_NI>::_instances;
 
 /* ************************************************************************ */
 /*            Initialize the collective manager singleton                   */
 /* ************************************************************************ */
 template <class T_NI>
-void xlpgas::CollectiveManager<T_NI>::Initialize (int ncontexts, xlpgas::CollectiveManager<T_NI>* cmgr)
+void xlpgas::CollectiveManager<T_NI>::Initialize (int context_id, xlpgas::CollectiveManager<T_NI>* cmgr)
 {
-  _instances = (CollectiveManager<T_NI> **)
-    __global.heap_mm->malloc (sizeof(CollectiveManager<T_NI>*)*ncontexts);
-  assert (_instances);
-
-  _instances[0] = cmgr;
-
-  //for (int i=0; i<ncontexts; i++)
-  //  {
-  //    _instances[i] = (CollectiveManager<T_NI> *)__global.heap_mm->malloc (sizeof(CollectiveManager<T_NI>));
-  //    assert (_instances[i]);
-  //    new (_instances[i]) CollectiveManager<T_NI>(i);
-  //  }
+  assert(context_id == _instances.size());
+  _instances.push_back(cmgr);
 }
 
 /* ************************************************************************ */

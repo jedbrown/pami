@@ -70,7 +70,7 @@ void* xlpgas::CAUReduce<T_NI>::recv_reduce(lapi_handle_t *hndl, void *uhdr, uint
     ++(b->reduce_received); //reduce_hdr.seq;
     int64_t *data = (int64_t *)ret_info.udata_one_pkt_ptr;
     b->temp_reduce_data = *data;
-    //fprintf(stderr, "L%d reduce CB invoked  %d %d \n",this->ordinal(),reduce_received, instance_id);
+    //fprintf(stderr, "L%d reduce CB invoked  %d %d \n",b->ordinal(),b->reduce_received, b->instance_id);
     if (b->reduce_received <= b->instance_id){
       //data already arrived
       xlpgas::reduce_op(b->mcast_data, &(b->temp_reduce_data), reduce_hdr.op);
@@ -94,7 +94,7 @@ void  xlpgas::CAUReduce<T_NI>::kick(void){
   unsigned int ROOT=0;
   int data_size = 1;
   if(this->ordinal() != ROOT) {
-    //fprintf(stderr, "Non Root sends cg=%d handle=%d DID=%d\n",base_group_id,lapi_handle, _dispatch_id);
+    //fprintf(stderr, "Non Root sends DID=%d\n", _dispatch_id);
     reduce_hdr.op     = cau_op;
     reduce_hdr.kind    = this->_header[0].kind;
     reduce_hdr.tag    = this->_header[0].tag;
@@ -108,7 +108,7 @@ void  xlpgas::CAUReduce<T_NI>::kick(void){
   }
 
   if(this->ordinal() == ROOT) {
-    //fprintf(stderr, "L%d Reduce root wait for results cg=%d handle=%d DID=%d\n", this->ordinal(), base_group_id, lapi_handle, _dispatch_id);
+    //fprintf(stderr, "L%d Reduce root wait for results cg DID=%d\n", this->ordinal(), _dispatch_id);
     //Root receives
     bool exec_cb=false;
     MUTEX_LOCK(&this->_mutex);

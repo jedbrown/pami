@@ -50,12 +50,6 @@ void xlpgas::ShmCauAllReduce<T_NI,T_Device>::reset (const void         * sbuf,
                                                     user_func_t        * uf
 				     ) {
   assert(nelems == 1);
-  typedef xlpgas::cau_device_info<T_NI> device_info_type;
-  PAMI_GEOMETRY_CLASS* geometry = ((device_info_type*)(this->_device_info))->geometry();
-  PAMI::Topology* team        = (PAMI::Topology*)(geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
-  PAMI::Topology* local_team  = (PAMI::Topology*)(geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX));
-  PAMI::Topology* leader_team = (PAMI::Topology*)(geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX));
-
   uintptr_t i_op, i_dt;
   PAMI::Type::TypeFunc::GetEnums((void*)sdt,
                                  ( void (*)(void*, void*, size_t, void*) )op,
@@ -70,12 +64,10 @@ void xlpgas::ShmCauAllReduce<T_NI,T_Device>::reset (const void         * sbuf,
   int leader = 0; //ordinal zero in the current group
   
   //allocate shm bcast
-  shm_bcast = xlpgas::CollectiveManager<T_NI>::instance(0)->collective(xlpgas::SHMBcastKind);
   assert (shm_bcast != NULL);
   shm_bcast->reset (leader, &tmp_cau, rbuf, nelems * sdt->GetDataSize() );
 
   //allocate shm reduce
-  shm_reduce = xlpgas::CollectiveManager<T_NI>::instance(0)->collective(xlpgas::SHMReduceKind);
   assert (shm_reduce != NULL);
   if(!finish_early)
     shm_reduce->reset (leader, &s, &tmp, (pami_op)i_op, (pami_dt)i_dt, nelems, uf);
@@ -83,15 +75,13 @@ void xlpgas::ShmCauAllReduce<T_NI,T_Device>::reset (const void         * sbuf,
     shm_reduce->reset (leader, &s, &tmp_cau, (pami_op)i_op, (pami_dt)i_dt, nelems, uf);
 
   if(!finish_early){
-    if(leader_team->isRankMember(this->ordinal())){
+    if(this->_is_leader){
       //allocate caureduce
-       cau_reduce = xlpgas::CollectiveManager<T_NI>::instance(0)->collective(xlpgas::CAUReduceKind);
       assert (cau_reduce != NULL);
       cau_reduce->reset (leader, &tmp, &tmp_cau, (pami_op)i_op, (pami_dt)i_dt, nelems, uf);
       shm_reduce->setComplete(&next_phase<T_NI>,cau_reduce);
 
       //allocate cau bcast
-      cau_bcast = xlpgas::CollectiveManager<T_NI>::instance(0)->collective(xlpgas::CAUBcastKind);
       assert (cau_bcast != NULL);
       cau_bcast->reset (leader, &tmp_cau, &tmp_cau, nelems * sdt->GetDataSize() );
       cau_reduce->setComplete(&next_phase<T_NI>,cau_bcast);

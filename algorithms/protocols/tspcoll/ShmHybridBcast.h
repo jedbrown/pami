@@ -62,13 +62,20 @@ namespace xlpgas
 			size_t               typecount);
     virtual void kick(); 
 
+    void set_internal_coll(xlpgas::Broadcast<T_NI>* ld_coll, 
+			   xlpgas::Collective<T_NI>* shm_coll){
+      p2p_bcast  = ld_coll;
+      shm_bcast = shm_coll;
+    }
+
   protected:
+    PAMI::Topology *team, *local_team, *leader_team;
     ARGS                      args; //arguments passed for continuation
     xlpgas::Broadcast<T_NI>  *p2p_bcast;
     xlpgas::Collective<T_NI> *shm_bcast;
-    PAMI::Topology           *team, *local_team, *leader_team;
     size_t                   _buf_size;
     int                      _root;
+    pami_endpoint_t _root_endpoint;
   }; /* ShmHybridBcast */
 
 
@@ -114,7 +121,13 @@ namespace xlpgas
     void set_done(){
       _flag = true;
     }
+
+    void set_internal_coll(ShmHybridBcast<T_NI,T_Device>  * coll){
+      _onebuf_bcast = coll;
+    }
+ 
   protected:
+    
     ARGS args;
     bool _flag;
     ShmHybridBcast<T_NI,T_Device>  *_onebuf_bcast;

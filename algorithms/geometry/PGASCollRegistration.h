@@ -271,7 +271,7 @@ namespace PAMI
 	    SETUPNI_P2P_P2P(_hybrid_bcast);
             SETUPNI_P2P_P2P(_hybrid_pipelined_bcast);
 #endif
-            _mgr.Initialize(1,&_mgr); // Initialize for 1 context
+            _mgr.Initialize(context_id,&_mgr); // Initialize for 1 context
             _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::AllgatherKind,      _allgather);
             _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::AllgathervKind,     _allgatherv);
             _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::ScatterKind,        _scatter_s);
@@ -426,7 +426,7 @@ namespace PAMI
 #endif
               }
 
-            _mgr.Initialize(1,&_mgr); // Initialize for 1 context
+            _mgr.Initialize(context_id,&_mgr); // Initialize for 1 context
             _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::AllgatherKind,      _allgather);
             _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::AllgathervKind,     _allgatherv);
             _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::ScatterKind,        _scatter_s);
@@ -619,10 +619,29 @@ namespace PAMI
             //for right now the hybrid collectives are restricted to
             //the global geometry only; the algorithms should work on
             //subgeometries as well but it needs to be tested first;
-            if(_team->size() != __global.mapping.size()) return PAMI_SUCCESS;
+	    // the shared memory region is initialized only for complete geometries in CAUCollRegistration; we use the data offset as a flag;
+	    
+	    //set the shared memory allocator; it can be null if not avail;
+            _mm = (T_CSMemoryManager*)(geometry->getKey(_context_id,
+                                                        Geometry::CKEY_GEOMETRYSHMEM));
 
-	    //shared memory buffers for hybrid pgas collectives; partial template specialization such that BG/P,Q don't initialize this
-	    //xlpgas::pgas_shm_buffers bfs;
+            //get the offset of the shared memory buffer to be used;
+            //this is the result of a reduction and it is found inside
+            //inout_val arg
+            PAMI::Topology *local_master_topo = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX));
+            uint num_master_tasks  = local_master_topo->size();
+            uint master_rank   = ((PAMI::Topology *)geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX))->index2Endpoint(0);
+            uint master_index  = local_master_topo->rank2Index(master_rank);
+
+            //marking in the geometry the shared memory region to be used by pgas hybrid
+            uint64_t data_offset = inout_val[master_index+1+2*num_master_tasks];
+	    uint64_t invalid_offset;
+	    memset(&invalid_offset, 0xFF, sizeof(uint64_t));
+	    //if data offset not valid that we disable pgas hybrid colllectives
+	    if(data_offset  ==  invalid_offset){
+	      return PAMI_SUCCESS;
+	    }
+
             lapi_handle_t l_lapi_handle = *((lapi_handle_t*)_comm_handle);
 
             //set the cau group info
@@ -641,21 +660,6 @@ namespace PAMI
               use_cau = false;
               cau_gi = NULL;
             }
-
-            //set the shared memory allocator; it can be null if not avail;
-            _mm = (T_CSMemoryManager*)(geometry->getKey(_context_id,
-                                                        Geometry::CKEY_GEOMETRYSHMEM));
-
-            //get the offset of the shared memory buffer to be used;
-            //this is the result of a reduction and it is found inside
-            //inout_val arg
-            PAMI::Topology *local_master_topo = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX));
-            uint num_master_tasks  = local_master_topo->size();
-            uint master_rank   = ((PAMI::Topology *)geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX))->index2Endpoint(0);
-            uint master_index  = local_master_topo->rank2Index(master_rank);
-
-            //marking in the geometry the shared memory region to be used by pgas hybrid
-            uint64_t data_offset = inout_val[master_index+1+2*num_master_tasks];
 
             // set the shared mem buf to be properly deallocated;
             // this is done by only one thred in teh local topology
@@ -692,8 +696,19 @@ namespace PAMI
 	      _nb_leaders_bcast   = (xlpgas::Broadcast<T_NI>*)_mgr.template allocate<xlpgas::base_coll_defs<T_NI, T_Device_P2P> > (_leaders_team, xlpgas::LeadersBcastKind, geometry->comm(), (void*)device_info,_leaders_bcast);
 
 	      _nb_hybrid_short_allreduce= (xlpgas::ShmCauAllReduce<T_NI,T_Device_P2P>*)_mgr.template allocate<xlpgas::base_coll_defs<T_NI, T_Device_P2P> > (_team, xlpgas::ShmCauAllReduceKind, geometry->comm(),(void*)device_info,_hybrid_shortallreduce);
+	      //set internal collectives used by the hybrid algo
+	      _nb_hybrid_short_allreduce->set_internal_coll(_nb_shm_short_reduce,
+							    _nb_shm_short_bcast,
+							    _nb_cau_short_reduce,
+							    _nb_cau_short_bcast);
+
 	      _nb_hybrid_bcast = (xlpgas::ShmHybridBcast<T_NI,T_Device_P2P>*)_mgr.template allocate<xlpgas::base_coll_defs<T_NI, T_Device_P2P> > (_team, xlpgas::ShmHybridBcastKind, geometry->comm(), (void*)device_info,_hybrid_bcast);
+	      //next we set the internal collectives used by the hybrid algo
+	      _nb_hybrid_bcast->set_internal_coll(_nb_leaders_bcast,  _nb_shm_large_bcast);
+
 	      _nb_hybrid_pipelined_bcast = (xlpgas::ShmHybridPipelinedBcast<T_NI,T_Device_P2P>*)_mgr.template allocate<xlpgas::base_coll_defs<T_NI, T_Device_P2P> > (_team, xlpgas::ShmHybridPipelinedBcastKind, geometry->comm(), (void*)device_info,_hybrid_pipelined_bcast);
+	      // set internal collective to be used; 
+	      _nb_hybrid_pipelined_bcast->set_internal_coll(_nb_hybrid_bcast);
 
 	      _gi->_nbcoll_list.push_back(_nb_shm_short_reduce);
 	      _gi->_nbcoll_list.push_back(_nb_shm_short_bcast);

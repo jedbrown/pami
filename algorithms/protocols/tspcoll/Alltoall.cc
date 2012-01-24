@@ -34,21 +34,6 @@ void xlpgas::Alltoall<T_NI>::reset (const void        * s,
 template<class T_NI>
 void xlpgas::Alltoall<T_NI>::kick    () {
   MUTEX_LOCK(&this->_mutex);
-  if(_headers==NULL)
-  {
-    _headers = (struct AMHeader *)__global.heap_mm->malloc (sizeof(struct AMHeader) * this->_comm->size());
-    assert (_headers != NULL);
-
-    for (int i=0; i<(int)this->_comm->size(); i++)
-    {
-      _headers[i].hdr.handler   = XLPGAS_TSP_AMSEND_COLLA2A;
-      _headers[i].hdr.headerlen = sizeof (struct AMHeader);
-      _headers[i].kind          = this->_kind;
-      _headers[i].tag           = this->_tag;
-      _headers[i].offset        = _offset;
-      _headers[i].senderID      = this->ordinal();
-    }
-  }
   for (int i=0; i < (int)this->_comm->size(); i++)
     if (i == (int)this->ordinal())
       {
@@ -68,11 +53,11 @@ void xlpgas::Alltoall<T_NI>::kick    () {
       }
     else {
       MUTEX_UNLOCK(&this->_mutex);
-//      _headers[i].dest_ctxt = _comm->index2Endpoint(i).ctxt;
+      //      _headers[i].dest_ctxt = _comm->index2Endpoint(i).ctxt;// not used anymore; if this would be the case multiple headers would be required
       pami_send_t p_send;/*This should go once we make sure sendPWQ works*/
-	  pami_send_event_t   events;
-      p_send.send.header.iov_base  = &(_headers[i]);
-      p_send.send.header.iov_len   = sizeof(_headers[i]);
+      pami_send_event_t   events;
+      p_send.send.header.iov_base  = &(_header);
+      p_send.send.header.iov_len   = sizeof(_header);
       p_send.send.data.iov_base    = (char*) _sbuf + i * _len;
       p_send.send.data.iov_len     = this->_len;
       p_send.send.dispatch         = -1;
@@ -83,7 +68,7 @@ void xlpgas::Alltoall<T_NI>::kick    () {
       events.remote_fn      = NULL;
       _pwq.configure((char *)_sbuf + i * _len, this->_len, this->_len, _stype, _rtype);
       _pwq.reset();
-      this->_p2p_iface->sendPWQ(this->_pami_ctxt, this->_comm->index2Endpoint (i), sizeof(_headers[i]),&_headers[i],this->_len, &_pwq, &events);
+      this->_p2p_iface->sendPWQ(this->_pami_ctxt, this->_comm->index2Endpoint (i), sizeof(_header),&_header,this->_len, &_pwq, &events);
       //this->_p2p_iface->send(&p_send);
     }
 }
