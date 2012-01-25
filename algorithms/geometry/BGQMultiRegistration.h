@@ -1796,7 +1796,7 @@ namespace PAMI
         //if(opt_barrier_composite) OptBinomialBarrierFactory::cleanup_done_fn(ctxt, opt_barrier_composite, res);
         //opt_barrier_composite->_factory->_alloc.returnObject(opt_barrier_composite);
 
-        gi->~GeometryInfo();
+        gi->~GeometryInfo<CCMI::Adaptor::CollectiveProtocolFactory>();
         geom_allocator->returnObject(gi);
 
         TRACE_FN_EXIT();

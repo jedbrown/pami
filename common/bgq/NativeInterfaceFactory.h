@@ -19,7 +19,7 @@
 
 namespace PAMI {
 
-  template <class T_Allocator, class T_NI, class T_Device, CCMI::Interfaces::NativeInterfaceFactory::NISelect T_Sel, CCMI::Interfaces::NativeInterfaceFactory::NIType T_Type, size_t NCONN=-1>
+  template <class T_Allocator, class T_NI, class T_Device, CCMI::Interfaces::NativeInterfaceFactory::NISelect T_Sel, CCMI::Interfaces::NativeInterfaceFactory::NIType T_Type, size_t NCONN=(size_t)-1>
     class BGQNativeInterfaceFactory : public CCMI::Interfaces::NativeInterfaceFactory {
   protected:
     pami_client_t       _client;
