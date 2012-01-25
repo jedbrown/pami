@@ -197,17 +197,19 @@ namespace PAMI
           {
             union
             {
+              short_header_t        single;
+              long_header_t         multi;
+            } envelope;
+            data_t                  data;
+          } eager_t;
+
+          typedef struct
+          {
+            union
+            {
               immediate_t           immediate;
               packed_t              packed;
-              struct
-              {
-                union
-                {
-                  short_header_t    single;
-                  long_header_t     multi;
-                } envelope;
-                data_t              data;
-              } eager;
+              eager_t               eager;
               ack_t                 ack;
             };
 

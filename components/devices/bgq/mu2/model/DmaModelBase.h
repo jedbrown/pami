@@ -76,22 +76,25 @@ namespace PAMI
 
           typedef struct
           {
+            uint64_t msg[(sizeof(InjectDescriptorMessage<2, false>) >> 3) + 1];
+            uint8_t e_minus_payload[T_Model::payload_size];
+            uint8_t e_plus_payload[T_Model::payload_size];
+          } split_t;
+
+          typedef struct
+          {
+            uint64_t msg[(sizeof(InjectDescriptorMessage<1, false>) >> 3) + 1];
+            uint64_t payload[(sizeof(MUSPI_DescriptorBase) >> 3) + 1];
+          } single_t;
+
+          typedef struct
+          {
             multi_complete_t multi;
             uint8_t memfifo_remote_completion_state[sizeof(MemoryFifoRemoteCompletion::state_t)];
             union
             {
-              struct
-              {
-                uint64_t msg[(sizeof(InjectDescriptorMessage<2, false>) >> 3) + 1];
-                uint8_t e_minus_payload[T_Model::payload_size];
-                uint8_t e_plus_payload[T_Model::payload_size];
-              } split;
-
-              struct
-              {
-                uint64_t msg[(sizeof(InjectDescriptorMessage<1, false>) >> 3) + 1];
-                uint64_t payload[(sizeof(MUSPI_DescriptorBase) >> 3) + 1];
-              };
+              split_t  split;
+              single_t single;
             };
             // Array of fence structures, one per counter pool.  Each structure may be
             // added to its corresponding CounterPool to 1) snapshot the current counter
@@ -1560,7 +1563,7 @@ namespace PAMI
             //COMPILE_TIME_ASSERT((sizeof(InjectDescriptorMessage<1, false>) + T_Model::payload_size) <= T_StateBytes);
 
             InjectDescriptorMessage<1, false> * msg =
-              (InjectDescriptorMessage<1, false> *) fence_state->msg;
+              (InjectDescriptorMessage<1, false> *) fence_state->single.msg;
             new (msg) InjectDescriptorMessage<1, false> (channel);
 
             // Clone the remote inject model descriptor into the message
@@ -1573,7 +1576,7 @@ namespace PAMI
             //MUSPI_DescriptorDumpHex((char *)"Remote Get", rget);
 
             // Initialize the rget payload descriptor(s)
-            void * vaddr = (void *) fence_state->payload;
+            void * vaddr = (void *) fence_state->single.payload;
 
             // The "immediate" payload contains the remote descriptor
             MUSPI_DescriptorBase * memfifo = (MUSPI_DescriptorBase *) vaddr;

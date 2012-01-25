@@ -152,15 +152,9 @@ namespace PAMI
 
           typedef struct
           {
-            union
-            {
-              origin_packed_t       packed;
-              struct
-              {
-                origin_envelope_t   envelope;
-                origin_data_t       data;
-              };
-            };
+            origin_packed_t         packed;
+            origin_envelope_t       envelope;
+            origin_data_t           data;
             pami_event_function     done_fn;
             pami_event_function     rdone_fn;
             void                  * cookie;
