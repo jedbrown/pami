@@ -135,7 +135,7 @@ inline void PutOverSend<T_Model>::send_packed (pami_put_typed_t * parameters,
       state->origin.packed.metadata.data_bytes  = parameters->rma.bytes;
       state->origin.packed.metadata.type_bytes  = remote_type->GetCodeSize();
       
-      struct iovec iov[2];
+      struct iovec iov[3];
       iov[0].iov_base = &(state->origin.packed.metadata);
       iov[0].iov_len  = sizeof(metadata_packed_t);
       iov[1].iov_base = remote_type->GetCodeAddr();
