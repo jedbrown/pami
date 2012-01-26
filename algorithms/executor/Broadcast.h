@@ -44,7 +44,6 @@ namespace CCMI
         PAMI::Topology          _dsttopology;
         PAMI::Topology          _srctopology;
         PAMI::Topology          _selftopology;
-        PAMI::Topology          _roottopology;
 
         //Private method
         void             sendNext ();
@@ -133,7 +132,6 @@ namespace CCMI
           TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::setRoot() root %u\n", this, root));
           _mdata._root = root;
           _root_ep     = root;
-          new (&_roottopology) PAMI::Topology(&_root_ep, 1, PAMI::tag_eplist());
         }
 
         void  setBuffers (char *src, char *dst, int len, TypeCode *stype, TypeCode *rtype)
@@ -188,9 +186,8 @@ namespace CCMI
 	  mrecv.connection_id = _msend.connection_id;
 
           TRACE_MSG((stderr, "<%p>Executor::BroadcastExec::postReceives ndest %zu, bytes %zu, rank %u, root %u\n",
-                     this, _dsttopology.size(), _msend.bytes, _selftopology.index2Endpoint(0),_roottopology.index2Endpoint(0)));
-          //mrecv.src_participants   = (pami_topology_t *) & _roottopology; 
-	  mrecv.src_participants   = (pami_topology_t *) & _srctopology; 
+                     this, _dsttopology.size(), _msend.bytes, _selftopology.index2Endpoint(0),_srctopology.index2Endpoint(0)));
+          mrecv.src_participants   = (pami_topology_t *) & _srctopology; 
           mrecv.dst_participants   = (pami_topology_t *) & _selftopology;
 
           if (_dsttopology.size() == 0)

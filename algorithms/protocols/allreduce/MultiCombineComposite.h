@@ -306,7 +306,7 @@ namespace CCMI
             PAMI::Topology  *t_master    = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
             PAMI::Topology  *t_local     = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
             PAMI::Topology  *t_my_master = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_MASTER_TOPOLOGY_INDEX);
-            bool             amMaster    = t_master->isEndpointMember(native_l->endpoint());
+            bool             amMaster    = t_my_master->isEndpointMember(native_l->endpoint());
             _deviceInfo                  = _geometry->getKey(0,PAMI::Geometry::CKEY_MCOMB_CLASSROUTEID);
             // todo:  shared mem may need its own devinfo
             unsigned        typesize;
@@ -567,7 +567,7 @@ namespace CCMI
             PAMI::Topology  *t_master       = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
             PAMI::Topology  *t_local        = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
             PAMI::Topology  *t_my_master    = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_MASTER_TOPOLOGY_INDEX);
-            bool             amMaster       = t_master->isEndpointMember(native_l->endpoint());
+            bool             amMaster       = t_my_master->isEndpointMember(native_l->endpoint());
             bool             amRoot         = native_l->endpoint() == cmd->cmd.xfer_reduce.root;
             bool             sameNodeAsRoot = false;
             _deviceInfo                     = _geometry->getKey(0,PAMI::Geometry::CKEY_MCOMB_CLASSROUTEID);
@@ -1160,7 +1160,7 @@ namespace CCMI
                                 rtype_obj);
             _pwq_temp.reset();
 
-            _amMaster       = _topology_g->isEndpointMember(_native_l->endpoint());
+            _amMaster       = _topology_lm.isEndpointMember(_native_l->endpoint());
             _mcomb_l.connection_id        = 0;
             _mcomb_l.roles                = -1U;
             _mcomb_l.data_participants    = (pami_topology_t*)_topology_l;

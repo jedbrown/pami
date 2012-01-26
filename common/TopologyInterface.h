@@ -129,6 +129,13 @@ namespace PAMI
       ///
       inline pami_result_t rankList(pami_task_t **list);
 
+      /// \brief return internal list (rank or endpoint)
+      ///
+      /// \param[out] list  pointer to list stored here
+      /// \return PAMI_SUCCESS, or PAMI_UNIMPL if not a list topology
+      ///
+      inline pami_result_t list(void **list);
+
       /// \brief return axial neighborhood
       ///
       /// Warning! This returns pointers to the Topology internals!
@@ -397,6 +404,12 @@ namespace PAMI
       pami_result_t Topology<T_Topology>::rankList(pami_task_t **list)
     {
       return static_cast<T_Topology*>(this)->rankList_impl(list);
+    }
+
+    template <class T_Topology>
+      pami_result_t Topology<T_Topology>::list(void **list)
+    {
+      return static_cast<T_Topology*>(this)->list_impl(list);
     }
 
     template <class T_Topology>

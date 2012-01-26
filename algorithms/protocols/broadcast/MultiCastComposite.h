@@ -309,7 +309,7 @@ namespace CCMI
       };
 
 
-      template < class T_Geometry, bool T_Sync = false >
+      template < class T_Geometry, bool T_Endpoint_support = true, bool T_Sync = false >
       class MultiCastComposite2DeviceAS : public CCMI::Executor::Composite
       {
       public:
@@ -346,11 +346,16 @@ namespace CCMI
         _geometry((PAMI_GEOMETRY_CLASS*)g),
         _root_ep(cmd->cmd.xfer_broadcast.root),
         _justme_ep(native_l->endpoint()),
-        _root_topo(&_root_ep,1,PAMI::tag_eplist()),
-        _justme_topo(&_justme_ep,1,PAMI::tag_eplist()),
+        _root_topo(_root_ep),    // assume !T_Endpoint_support so a single ep/rank topology
+        _justme_topo(_justme_ep),// assume !T_Endpoint_support so a single ep/rank topology
         _count(0)
         {
           TRACE_FN_ENTER();
+          if(T_Endpoint_support) // replace assumption above with ep_list topology
+          {
+            new (&_root_topo)   PAMI::Topology(&_root_ep,1,PAMI::tag_eplist());
+            new (&_justme_topo) PAMI::Topology(&_justme_ep,1,PAMI::tag_eplist());
+          }
           pami_multicast_t                    minfo_g;
           pami_multicast_t                    minfo_l;
 
@@ -359,10 +364,19 @@ namespace CCMI
           PAMI::Topology  *t_my_master = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_MASTER_TOPOLOGY_INDEX);
 
           // Discover the root node and intereesting topology information
-          size_t           root        = cmd->cmd.xfer_broadcast.root;
-          bool             amRoot      = (root == native_l->endpoint());
-          bool             amMaster    = t_master->isEndpointMember(native_l->endpoint());
-          bool             isRootLocal = t_local->isEndpointMember(root);
+          bool             amRoot      = (_root_ep == native_l->endpoint());
+          bool             amMaster    = false;
+          bool             isRootLocal = false;
+          if(T_Endpoint_support) 
+          {  
+            amMaster    = t_my_master->isEndpointMember(native_l->endpoint());
+            isRootLocal = t_local->isEndpointMember(_root_ep);
+          }
+          else
+          {
+            amMaster    = t_my_master->isRankMember((pami_task_t)native_l->endpoint());
+            isRootLocal = t_local->isRankMember((pami_task_t)_root_ep);
+          }
           void *deviceInfo             = _geometry->getKey(native_l->contextid(),PAMI::Geometry::CKEY_MCAST_CLASSROUTEID);
           PAMI::Type::TypeCode *tc     = (PAMI::Type::TypeCode*)cmd->cmd.xfer_broadcast.type;
           size_t           bytes       = cmd->cmd.xfer_broadcast.typecount * tc->GetDataSize();
@@ -723,7 +737,7 @@ namespace CCMI
           // Discover the root node and intereesting topology information
           size_t           root        = cmd->cmd.xfer_broadcast.root;
           bool             amRoot      = (root == native_l->endpoint());
-          bool             amMaster    = t_master->isEndpointMember(native_l->endpoint());
+          bool             amMaster    = t_my_master->isEndpointMember(native_l->endpoint());
           bool             isRootLocal = t_local->isEndpointMember(root);
           _deviceInfo                  = _geometry->getKey(native_l->contextid(),PAMI::Geometry::CKEY_MCAST_CLASSROUTEID);
           PAMI::Type::TypeCode *tc     = (PAMI::Type::TypeCode*)cmd->cmd.xfer_broadcast.type;

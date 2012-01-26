@@ -1121,6 +1121,32 @@ namespace PAMI {
       return PAMI_SUCCESS;
     }
 
+    /// \brief return internal list (rank or endpoint)
+    ///
+    /// \param[out] list	pointer to list stored here
+    /// \return	PAMI_SUCCESS, or PAMI_UNIMPL if not a list topology
+    ///
+    pami_result_t list_impl(void **list) {
+      if(__type == PAMI_EPLIST_TOPOLOGY)
+      {
+        *list = (void *)topo_endplist;
+      }
+      else if (__type == PAMI_LIST_TOPOLOGY)
+      {
+        *list = (void *)topo_ranklist;
+      }
+      else if(__type == PAMI_SINGLE_TOPOLOGY)
+      {
+        *list = (void *)&topo_rank;
+      }
+      else 
+      {
+        *list = (void *)NULL;
+        return PAMI_UNIMPL;
+      }
+      return PAMI_SUCCESS;
+    }
+
     /// \brief return axial neighborhood
     ///
     /// Warning! This returns pointers to the Topology internals!

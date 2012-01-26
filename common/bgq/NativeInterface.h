@@ -580,9 +580,14 @@ namespace PAMI
       }
       else {
 	//PAMI_assert (dst_topology->type() == PAMI_LIST_TOPOLOGY);	
-	pami_task_t  rlist[128];
-	size_t nranks;
-	dst_topology->getRankList(128, rlist, &nranks);	 
+	pami_task_t  rstorage[128], *rlist=rstorage;
+	size_t nranks = dst_topology->size();
+  dst_topology->list((void**)&rlist);	 // endpoint or ranks, don't care since always context 0
+  if(rlist==NULL)
+  {
+    PAMI_assert(128>=dst_topology->size());
+    dst_topology->getRankList(128, rlist, &nranks);	 
+  }
 
 	for (size_t r = 0; r < nranks; ++r) {
 	  if (__global.mapping.isPeer(__global.mapping.task(), rlist[r]))

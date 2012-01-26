@@ -251,10 +251,15 @@ namespace PAMI {
 	  pami_task_t *ranks = rank_storage;
 	  Topology *dst_topology = (Topology *)mcast->dst_participants;
 		TRACE_FORMAT("dst_topology %p",dst_topology);
-	  size_t nranks = dst_topology->size(),sranks;
-		PAMI_assert(SC_MAXRANKS>=nranks); /// \todo allocate when > SC_MAXRANKS?
-	  dst_topology->getRankList(nranks,ranks,&sranks);
-		PAMI_assert(sranks==nranks);
+	  size_t nranks = dst_topology->size();
+		dst_topology->list((void**)&ranks);	 // endpoint or ranks, don't care since always context 0
+		if(ranks==NULL)
+		{
+			size_t sranks;
+			PAMI_assert(SC_MAXRANKS>=nranks); /// \todo allocate when > SC_MAXRANKS?
+			dst_topology->getRankList(nranks,ranks,&sranks);
+			PAMI_assert(sranks==nranks);
+		}
 		TRACE_FORMAT("nranks %zu, ranks %p",nranks, ranks);
 		if (DO_TRACE_DEBUG)
 		for(size_t i=0;i<nranks;++i) {

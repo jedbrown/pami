@@ -440,6 +440,21 @@ namespace PAMI {
                         return PAMI_SUCCESS;
                 }
 
+                /// \brief return list
+                ///
+                /// \param[out] list	pointer to list stored here
+                /// \return	PAMI_SUCCESS, or PAMI_UNIMPL if not a list topology
+                ///
+                pami_result_t list_impl(pami_task_t **list) {
+                        if (__type != PAMI_LIST_TOPOLOGY)
+                        {
+                                *list = NULL;
+                                return PAMI_UNIMPL;
+                        }
+                        *list = topo_ranklist;
+                        return PAMI_SUCCESS;
+                }
+
                 /// \brief return rectangular segment coordinates
                 ///
                 /// Warning! This returns pointers to the Topology internals!
