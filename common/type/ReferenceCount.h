@@ -6,9 +6,7 @@
 #define __common_type_ReferenceCount_h__
 
 #include <assert.h>
-#ifdef _AIX
-#include "compiler/xl/Compiler.h"
-#endif
+#include "Compiler.h"
 
 namespace PAMI
 {
