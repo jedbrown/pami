@@ -57,7 +57,6 @@ namespace PAMI
 {
   namespace CollRegistration
   {
-
     /// 
     /// Metadata functions
     /// 
@@ -361,20 +360,36 @@ namespace PAMI
     //----------------------------------------------------------------------------
     extern inline void MUMcastCollectiveDputMetaData(pami_metadata_t *m)
     {
+      new(m) PAMI::Geometry::Metadata("I0:MulticastDput:-:MU");
+      m->check_perf.values.hw_accel     = 1;
+    }
+
+    extern inline void MUMcastShmemCollectiveDputMetaData(pami_metadata_t *m)
+    {
       new(m) PAMI::Geometry::Metadata("I0:MulticastDput:SHMEM:MU");
       m->check_perf.values.hw_accel     = 1;
     }
 
-
-    /*typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite<true, MUGlobalDputNI>,
-    MUMcastCollectiveDputMetaData,
-    CCMI::ConnectionManager::SimpleConnMgr > MUCollectiveDputMulticastFactory;*/
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < 
-      CCMI::Adaptor::Broadcast::MultiCastComposite< true, 
-                                                    MUShmemGlobalDputNI,
-                                                    PAMI::Geometry::CKEY_MCOMB_CLASSROUTEID>, //Mcast over Mcomb (key)
+      CCMI::Adaptor::Broadcast::MultiCastComposite<true, 
+      MUGlobalDputNI,
+      PAMI::Geometry::CKEY_MCOMB_CLASSROUTEID>, //Mcast over Mcomb (key)
       MUMcastCollectiveDputMetaData,
       CCMI::ConnectionManager::SimpleConnMgr > MUCollectiveDputMulticastFactory;
+
+    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < 
+      CCMI::Adaptor::Broadcast::MultiCastComposite< true, 
+      MUShmemGlobalDputNI,
+      PAMI::Geometry::CKEY_MCOMB_CLASSROUTEID>, //Mcast over Mcomb (key)
+      MUMcastShmemCollectiveDputMetaData,
+      CCMI::ConnectionManager::SimpleConnMgr > MUShmemCollectiveDputMulticastFactory;
+
+    struct  MUCollDputMcastBuf {
+      union {
+	char _bufdput  [sizeof(MUCollectiveDputMulticastFactory)];
+	char _bufsdput [sizeof(MUShmemCollectiveDputMulticastFactory)];
+      };
+    };
 
     //----------------------------------------------------------------------------
     // 'Pure' MU allsided dput multicombine
@@ -988,13 +1003,22 @@ namespace PAMI
           {
             _alltoallv_int_factory = new (_alltoallv_int_factory_storage) All2AllvFactory_int(_context,_context_id,mapidtogeometry,&_csconnmgr, _mu_m2m_vector_int_ni);
           }
-
-          /*_mucollectivedputmulticastfactory    = new (_mucollectivedputmulticaststorage ) MUCollectiveDputMulticastFactory(&_sconnmgr, _mu_global_dput_ni);*/
-          _mucollectivedputmulticastfactory    = new (_mucollectivedputmulticaststorage ) MUCollectiveDputMulticastFactory(_context,_context_id,mapidtogeometry,&_sconnmgr, _mu_shmem_global_dput_ni);
-          _mucollectivedputmulticombinefactory    = new (_mucollectivedputmulticombinestorage ) MUCollectiveDputMulticombineFactory(_context,_context_id,mapidtogeometry,&_sconnmgr, _mu_global_dput_ni);
-
-          _mushmemcollectivedputmulticombinefactory    = new (_mushmemcollectivedputmulticombinestorage ) MUShmemCollectiveDputMulticombineFactory(_context,_context_id,mapidtogeometry,&_sconnmgr, _mu_shmem_global_dput_ni);
-
+	  
+	  _mucollectivedputmulticastfactory         = NULL;	 
+	  _mucollectivedputmulticombinefactory      = NULL;	
+	  _mushmemcollectivedputmulticastfactory    = NULL;	 
+	  _mushmemcollectivedputmulticombinefactory = NULL;	
+	  if (__global.mapping.tSize() == 1) {
+	    _mucollectivedputmulticastfactory    = new (_mucolldputmcastbuf._bufdput ) MUCollectiveDputMulticastFactory(_context, _context_id, mapidtogeometry, &_sconnmgr, _mu_global_dput_ni);
+	    
+	    _mucollectivedputmulticombinefactory    = new (_mucollectivedputmulticombinestorage ) MUCollectiveDputMulticombineFactory(_context,_context_id,mapidtogeometry,&_sconnmgr, _mu_global_dput_ni);
+	  }
+	  else {
+	    _mushmemcollectivedputmulticastfactory    = new (_mucolldputmcastbuf._bufsdput ) MUShmemCollectiveDputMulticastFactory(_context,_context_id,mapidtogeometry,&_sconnmgr, _mu_shmem_global_dput_ni);
+	    
+	    _mushmemcollectivedputmulticombinefactory    = new (_mushmemcollectivedputmulticombinestorage ) MUShmemCollectiveDputMulticombineFactory(_context,_context_id,mapidtogeometry,&_sconnmgr, _mu_shmem_global_dput_ni);
+	  }
+	    
           TRACE_FORMAT("<%p> _axial_shmem_mu_dput_ni %p", this,_axial_shmem_mu_dput_ni);
           if (_axial_shmem_mu_dput_ni)
           {
@@ -1222,6 +1246,9 @@ namespace PAMI
             if (_mu_rectangle_dput_broadcast_factory)
               geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_rectangle_dput_broadcast_factory, _context, _context_id);
 
+            if (_mucollectivedputmulticastfactory && __global.topology_local.size() == 1)
+	      geometry->addCollective(PAMI_XFER_BROADCAST,  _mucollectivedputmulticastfactory, _context, _context_id);
+
             if (_mucollectivedputmulticombinefactory && __global.topology_local.size() == 1)
               geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,  _mucollectivedputmulticombinefactory, _context, _context_id);
 
@@ -1446,9 +1473,9 @@ namespace PAMI
                   if (_mushmemcollectivedputmulticombinefactory && 
 +                    (__global.topology_local.size() == __global.mapping.tSize())) /// \todo temp until the protocol is fixed
                     geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,  _mushmemcollectivedputmulticombinefactory, _context,_context_id);
-                  if(_mucollectivedputmulticastfactory && 
+                  if(_mushmemcollectivedputmulticastfactory && 
                      (__global.topology_local.size() == __global.mapping.tSize())) /// \todo temp until the protocol is fixed
-                    geometry->addCollective(PAMI_XFER_BROADCAST, _mucollectivedputmulticastfactory, _context,_context_id);
+                    geometry->addCollective(PAMI_XFER_BROADCAST, _mushmemcollectivedputmulticastfactory, _context,_context_id);
                 }
 
 
@@ -1483,7 +1510,10 @@ namespace PAMI
 
           geometry->rmCollective(PAMI_XFER_BROADCAST,      _mu_mcast_factory,                         _context, _context_id);
           geometry->rmCollective(PAMI_XFER_BROADCAST,      _mcast2d_dput_composite_factory,           _context, _context_id);
-          geometry->rmCollective(PAMI_XFER_BROADCAST,      _mucollectivedputmulticastfactory,         _context, _context_id);
+
+	  if (_mushmemcollectivedputmulticastfactory && 
+	      __global.mapping.tSize() > 1)
+	    geometry->rmCollective(PAMI_XFER_BROADCAST,      _mushmemcollectivedputmulticastfactory,         _context, _context_id);
 
           geometry->rmCollective(PAMI_XFER_BARRIER,        _mu_rectangle_msync_factory,               _context, _context_id);
           geometry->rmCollective(PAMI_XFER_BARRIER,        _gi_msync_factory,                         _context, _context_id);
@@ -1647,8 +1677,9 @@ namespace PAMI
       uint8_t                                         _mcomb2dNP_dput_composite_factory_storage[sizeof(MultiCombine2DeviceDputFactoryNP)];
 #endif
 
-      MUCollectiveDputMulticastFactory               *_mucollectivedputmulticastfactory;
-      uint8_t                                         _mucollectivedputmulticaststorage[sizeof(MUCollectiveDputMulticastFactory)];
+      MUCollectiveDputMulticastFactory          *_mucollectivedputmulticastfactory;      
+      MUShmemCollectiveDputMulticastFactory     *_mushmemcollectivedputmulticastfactory;
+      MUCollDputMcastBuf                         _mucolldputmcastbuf;
 
       MUCollectiveDputMulticombineFactory            *_mucollectivedputmulticombinefactory;
       uint8_t                                         _mucollectivedputmulticombinestorage[sizeof(MUCollectiveDputMulticombineFactory)];
