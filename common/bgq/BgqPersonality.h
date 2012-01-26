@@ -45,8 +45,6 @@
 #include <hwi/include/bqc/nd_500_dcr.h>
 #endif
 
-#define COORD_INIT(c...) (pami_coord_t){ network: PAMI_N_TORUS_NETWORK, u: { n_torus: {{ c }} } }
-
 namespace PAMI
 {
   class BgqJobPersonality : private Personality_t
@@ -113,8 +111,8 @@ namespace PAMI
 
         TRACE_ERR((stderr, "BGQPersonality() _blkTorus[0] %d, _blkTorus[1] %d, _blkTorus[2] %d, _blkTorus[3] %d, _blkTorus[4] %d\n", _blkTorus[0], _blkTorus[1], _blkTorus[2], _blkTorus[3], _blkTorus[4]));
 
-	_blkLL = COORD_INIT( 0,0,0,0,0,0 );
-	_blkUR = COORD_INIT(
+  init_coord(_blkLL, 0,0,0,0,0,0 );
+	init_coord(_blkUR,
 		Network_Config.Anodes - 1,
 		Network_Config.Bnodes - 1,
 		Network_Config.Cnodes - 1,
@@ -122,7 +120,7 @@ namespace PAMI
 		Network_Config.Enodes - 1,
 		_tSize - 1
 	);
-	_blkCoord = COORD_INIT(
+	init_coord(_blkCoord,
 		Network_Config.Acoord,
 		Network_Config.Bcoord,
 		Network_Config.Ccoord,
@@ -138,7 +136,7 @@ namespace PAMI
 	_isSubBlockJob = subblk.isSubBlock;
 	if (_isSubBlockJob) {
 		PAMI_assertf(subblk.shape.core == 16, "Sub-node jobs not supported");
-		_jobLL = COORD_INIT(
+		init_coord(_jobLL,
 			subblk.corner.a,
 			subblk.corner.b,
 			subblk.corner.c,
@@ -146,7 +144,7 @@ namespace PAMI
 			subblk.corner.e,
 			0
 		);
-		_jobUR = COORD_INIT(
+		init_coord(_jobUR,
 			subblk.corner.a + subblk.shape.a - 1,
 			subblk.corner.b + subblk.shape.b - 1,
 			subblk.corner.c + subblk.shape.c - 1,
@@ -162,7 +160,7 @@ namespace PAMI
 				_jobLL.u.n_torus.coords[x] == _blkLL.u.n_torus.coords[x] &&
 				_jobUR.u.n_torus.coords[x] == _blkUR.u.n_torus.coords[x]);
 		}
-		_jobCoord = COORD_INIT(
+		init_coord(_jobCoord,
 			Network_Config.Acoord - _jobLL.u.n_torus.coords[0],
 			Network_Config.Bcoord - _jobLL.u.n_torus.coords[1],
 			Network_Config.Ccoord - _jobLL.u.n_torus.coords[2],
@@ -170,7 +168,7 @@ namespace PAMI
 			Network_Config.Ecoord - _jobLL.u.n_torus.coords[4],
 			_tCoord
 		);
-		_jobSize = COORD_INIT(
+		init_coord(_jobSize,
 			subblk.shape.a,
 			subblk.shape.b,
 			subblk.shape.c,
@@ -183,7 +181,7 @@ namespace PAMI
 		_jobUR = _blkUR;
 		memcpy(&_jobTorus, &_blkTorus, sizeof(_jobTorus));
 		_jobCoord = _blkCoord;
-		_jobSize = COORD_INIT(
+		init_coord(_jobSize,
 			Network_Config.Anodes,
 			Network_Config.Bnodes,
 			Network_Config.Cnodes,
@@ -483,6 +481,23 @@ _jobTorus[4]);
       }
 
     protected:
+
+      void init_coord (pami_coord_t & coord,
+                       size_t a,
+                       size_t b,
+                       size_t c,
+                       size_t d,
+                       size_t e,
+                       size_t t)
+      {
+        coord.network = PAMI_N_TORUS_NETWORK;
+        coord.u.n_torus.coords[0] = a;
+        coord.u.n_torus.coords[1] = b;
+        coord.u.n_torus.coords[2] = c;
+        coord.u.n_torus.coords[3] = d;
+        coord.u.n_torus.coords[4] = e;
+        coord.u.n_torus.coords[5] = t;
+      }
 
       size_t _tCoord;
       size_t _tSize;
