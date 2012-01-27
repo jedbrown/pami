@@ -101,8 +101,27 @@ int main(int argc, char*argv[])
                      &task_id,       /* task id            */
                      &num_tasks);    /* number of tasks    */
 
-  if (rc == 1)
+  if (rc != PAMI_SUCCESS)
     return 1;
+  int o;
+  for(o = -1; o <= gOptimize ; o++) /* -1 = default, 0 = de-optimize, 1 = optimize */
+  {
+
+    pami_configuration_t configuration[1];
+    configuration[0].name = PAMI_GEOMETRY_OPTIMIZE;
+    configuration[0].value.intval = o; /* de/optimize */
+    if(o == -1) ; /* skip update, use defaults */
+    else
+      rc |= update_geometry(client,
+                            context[0],
+                            world_geometry,
+                            configuration,
+                            1);
+
+    if (rc != PAMI_SUCCESS)
+    return 1;
+
+  if(gNumRoots > num_tasks) gNumRoots = num_tasks;
 
   /*  Allocate buffer(s) */
   int err = 0;
@@ -131,7 +150,7 @@ int main(int argc, char*argv[])
                                &bar_must_query_algo,
                                &bar_must_query_md);
 
-    if (rc == 1)
+    if (rc != PAMI_SUCCESS)
       return 1;
 
     /*  Query the world geometry for broadcast algorithms */
@@ -145,7 +164,7 @@ int main(int argc, char*argv[])
                                &bcast_must_query_algo,
                                &bcast_must_query_md);
 
-    if (rc == 1)
+      if (rc != PAMI_SUCCESS)
       return 1;
 
     barrier.cb_done   = cb_done;
@@ -166,15 +185,18 @@ int main(int argc, char*argv[])
 
       metadata_result_t result = {0};
 
+      int k;
+      for (k=0; k< gNumRoots; k++)
+      {
       pami_endpoint_t   root_ep;
-      pami_task_t root_task = (pami_task_t)0;
+        pami_task_t root_task = (pami_task_t)k;
       PAMI_Endpoint_create(client, root_task, 0, &root_ep);
       broadcast.cmd.xfer_broadcast.root = root_ep;
 
       if (task_id == root_task)
       {
-        printf("# Broadcast Bandwidth Test -- context = %d, root = %d  protocol: %s, Metadata: range %zu <-> %zd, mask %#X\n",
-               iContext, root_task, gProtocolName,
+        printf("# Broadcast Bandwidth Test -- context = %d, optimize = %d, root = %d  protocol: %s, Metadata: range %zu <-> %zd, mask %#X\n",
+               iContext, o, root_task, gProtocolName,
                bcast_must_query_md[nalg].range_lo, bcast_must_query_md[nalg].range_hi,
                bcast_must_query_md[nalg].check_correct.bitmask_correct);
         printf("# Size(bytes)           cycles    bytes/sec    usec\n");
@@ -258,6 +280,7 @@ int main(int argc, char*argv[])
         }
       }
     }
+    }
 
     free(bar_always_works_algo);
     free(bar_always_works_md);
@@ -269,9 +292,9 @@ int main(int argc, char*argv[])
     free(bcast_must_query_md);
 
   } /*for(unsigned iContext = 0; iContext < gNum_contexts; ++iContexts)*/
-
   buf = (char*)buf - gBuffer_offset;
   free(buf);
+  } // optimize loop
 
   rc |= pami_shutdown(&client, context, &gNum_contexts);
   return rc;
