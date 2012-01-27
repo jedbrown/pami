@@ -208,7 +208,7 @@ namespace PAMI
             TRACE_FORMAT("Inject: state=%p, sizeof(state)=%zu, fn=%p, cookie=%p, map=0x%lx, dest=0x%08x\n", &state, sizeof(state), fn, cookie, torusFIFOMap, dest);
 
             /// \todo Remove this check when the comm agent is always started.
-            PAMI_assertf(_context.isCommAgentActive(), "Aborting:  Cannot complete one-sided-put-fence operation because the Messaging App Agent is not running.  Specify environment variable 'BG_APPAGENT1=/bgsys/drivers/ppcfloor/agents/bin/comm.elf' to run it.\n");
+            PAMI_assertf(_context.isCommAgentActive(), "Aborting:  Cannot complete one-sided-put-fence operation because the Messaging App Agent (Comm Agent) is not running.\n");
 
             size_t ndesc = channel.getFreeDescriptorCountWithUpdate ();
             TRACE_FORMAT("MemoryFifoRemoteCompletion: inject(): ndesc = %zu", ndesc);
