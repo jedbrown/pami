@@ -1852,7 +1852,7 @@ fprintf(stderr, "%s\n", buf);
 	MUSPI_BaseAddressTableSubGroup_t  *_globalBatSubGroups;     // BAT Subgroups 64 and 64.
 	uint32_t                          *_globalBatIds;           // BAT ids.
 
-	CommAgent_Control_t                _commAgentControl;       // Comm Agent control struct.
+        CommAgent_Control_t                _commAgentControl;       // Comm Agent control struct.
 	bool                               _commAgentActive;        // Indicates whether the comm
                                                                     // agent is active.
 	uint32_t                           _globalCommAgentRecFifoId; // Comm Agent's global
@@ -3454,35 +3454,23 @@ TRACE((stderr,"MU ResourceManager: allocateLookasideResources: lookAsidePayloadM
 void PAMI::Device::MU::ResourceManager::allocateGlobalCommAgent()
 {
   int rc;
-  char *envVarString;
 
-  envVarString = getenv( "BG_APPAGENT1" );
-  if ( envVarString ) // Is App agent specified?
-    {
-      rc = CommAgent_Init ( &_commAgentControl );
-      PAMI_assertf(rc == 0, "CommAgent_Init failed with rc=%d\n",rc);
+  _commAgentActive  = __global.isCommAgentRunning();
 
-      // Verify version number.
-      CommAgent_State_t version;
-      version = CommAgent_GetVersion ( _commAgentControl );
-      PAMI_assertf(version >= COMM_AGENT_STATE_INITIALIZED_VERSION_2, "BG_APPAGENT1 specifies an agent that has version %d, but version %d or later is required.  Upgrade to the latest agent.\n",version,COMM_AGENT_STATE_INITIALIZED_VERSION_2);
+  _commAgentControl = __global.getCommAgentControlStruct();
+
+  if ( _commAgentActive )
+  {
+    rc = CommAgent_RemoteGetPacing_Init ( _commAgentControl,
+                                          (CommAgent_RemoteGetPacing_SharedMemoryInfo_t *)NULL );
+    PAMI_assertf(rc == 0, "CommAgent_RemoteGetPacing_Init failed with rc=%d\n",rc);
       
-      rc = CommAgent_RemoteGetPacing_Init ( _commAgentControl,
-					    (CommAgent_RemoteGetPacing_SharedMemoryInfo_t *)NULL );
-      PAMI_assertf(rc == 0, "CommAgent_RemoteGetPacing_Init failed with rc=%d\n",rc);
-      
-      rc = CommAgent_Fence_Init ( _commAgentControl );
-      PAMI_assertf(rc == 0, "CommAgent_Fence_Init failed with rc=%d\n",rc);
-      
-      // Save away the comm agent's reception fifo ID.
-      _globalCommAgentRecFifoId = CommAgent_GetRecFifoId( _commAgentControl );
-      _commAgentActive = true;
-    }
-  else
-    {
-      TRACE((stderr,"Warning:  The Messaging App Agent is not running.  Specify environment variable 'BG_APPAGENT1=/bgsys/drivers/ppcfloor/agents/bin/comm.elf' to run it.  Messaging will continue to run, but has the following limitations:  1) Remote Get Pacing is not available (potentially causing network congestion, reducing performance), and 2) One-sided-put-fence operations will abort.\n"));
-      _commAgentActive = false;
-    }
+    rc = CommAgent_Fence_Init ( _commAgentControl );
+    PAMI_assertf(rc == 0, "CommAgent_Fence_Init failed with rc=%d\n",rc);
+    
+    // Save away the comm agent's reception fifo ID.
+    _globalCommAgentRecFifoId = CommAgent_GetRecFifoId( _commAgentControl );
+  }
 }
 
 

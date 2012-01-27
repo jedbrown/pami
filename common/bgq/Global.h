@@ -35,6 +35,7 @@
 #include "Mapping.h"
 #include "Topology.h"
 #include "common/bgq/L2AtomicFactory.h"
+#include <agents/include/comm/commagent.h>
 
 #ifndef PAMI_MAX_NUM_CLIENTS
 /** \todo PAMI_MAX_NUM_CLIENTS needs to be setup by pami.h */
@@ -241,6 +242,28 @@ namespace PAMI
         _useMU = flag;
         return oldFlag;
       }
+
+
+      /// \brief Get Comm Agent Control Structure
+      ///
+      /// \retval  struct  The comm agent control structure used on
+      ///                  functions that work with the comm agent.
+      ///
+      inline CommAgent_Control_t getCommAgentControlStruct()
+      {
+        return _commAgentControl;
+      }
+
+
+      /// \brief Is Comm Agent Running
+      ///
+      /// \retval  true  Comm Agent is running.
+      ///          false Comm Agent is not running.
+      ///
+      inline bool isCommAgentRunning()
+      {
+        return _isCommAgentRunning;
+      }
     private:
 
       inline size_t initializeMapCache (BgqJobPersonality  & personality,
@@ -301,6 +324,17 @@ namespace PAMI
       /// \default 2
       ////////////////////////////////////////////////////////////////////////////////
 
+
+      /// \brief Initialize Comm Agent
+      ///
+      /// Initialize the comm agent.  The comm agent is loaded (by default) by CNK.
+      /// It runs in a thread on the 17th core.  This initialization will wait for
+      /// it to start.  If it does not start within a timeout period, a message
+      /// will be printed and messaging will run without it.
+      ///
+      inline void initializeCommAgent();
+
+
       /// \brief Initialize Remote Get Pacing
       ///
       /// Fetch remote get pacing env vars
@@ -350,12 +384,42 @@ namespace PAMI
       size_t           _size;
       bool _useshmem;
       bool _useMU;
+      bool _isCommAgentRunning;
+      CommAgent_Control_t _commAgentControl;       // Comm Agent control struct.
   }; // PAMI::Global
 };     // PAMI
 
 #ifdef USE_COMMTHREADS
 extern PAMI::Device::CommThread::Factory __commThreads;
 #endif // USE_COMMTHREADS
+
+void PAMI::Global::initializeCommAgent()
+{
+  int rc;
+
+  _isCommAgentRunning = false;
+
+  // Try to init the comm agent.
+  // If it is not there, this will return with rc=2 (ENOENT).
+  rc = CommAgent_Init ( &_commAgentControl );
+  
+  if ( rc == 0 )
+  {
+    // Verify version number.
+    CommAgent_State_t version;
+    version = CommAgent_GetVersion ( _commAgentControl );
+    PAMI_assertf(version >= COMM_AGENT_STATE_INITIALIZED_VERSION_2, "The Messaging App Agent (Comm Agent) has version %d, but version %d or later is required.  Upgrade to the latest agent.\n",version,COMM_AGENT_STATE_INITIALIZED_VERSION_2);
+    _isCommAgentRunning = true;
+  }
+  else
+  {
+    if ( rc == ENOENT )
+    {
+      printf("Warning:  The Messaging App Agent (Comm Agent) is not running.  Messaging will continue to run, but has the following limitations:  1) Remote Get Pacing is not available (potentially causing network congestion, reducing performance), and 2) One-sided-put-fence operations will abort.\n");
+    }
+    else PAMI_assertf(rc==0, "Messaging App Agent (Comm Agent) failed to initialize, rc=%d\n",rc);
+  }
+}
 
 void PAMI::Global::initializeRgetPacing ( size_t blockSize,
                                           bool   &doRgetPacing,
@@ -374,9 +438,6 @@ void PAMI::Global::initializeRgetPacing ( size_t blockSize,
   hops         = 8;
   dims         = 2;
 
-  s = getenv( "BG_APPAGENT1" );
-  if ( s == NULL ) doRgetPacing = false;
-
   s = getenv( "PAMI_RGETPACING" );
   if ( s )
     {
@@ -384,6 +445,8 @@ void PAMI::Global::initializeRgetPacing ( size_t blockSize,
       if ( v == 0 ) doRgetPacing = false;
       else doRgetPacing = true;
     }
+
+  if ( _isCommAgentRunning == false ) doRgetPacing = false;
 
   s = getenv( "PAMI_RGETPACINGHOPS" );
   if ( s )
@@ -493,6 +556,8 @@ size_t PAMI::Global::initializeMapCache (BgqJobPersonality  & personality,
   size_t dSize  = personality.dSize ();
   size_t eSize  = personality.eSize ();
   size_t tSize  = personality.tSize ();
+
+  initializeCommAgent();
 
   TRACE_ERR( (stderr, "Global::initializeMapCache() .. myCoords{%zu %zu %zu %zu %zu %zu} size{%zu %zu %zu %zu %zu %zu}\n", aCoord, bCoord, cCoord, dCoord, eCoord, tCoord, aSize, bSize, cSize, dSize, eSize, tSize));
 
