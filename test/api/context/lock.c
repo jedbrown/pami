@@ -3,104 +3,138 @@
  * \brief Simple PAMI_Context_lock() test
  */
 
+#include <pthread.h>
 #include <pami.h>
 #include <stdio.h>
 
+#define MAX_THREAD_NUM 16
+// common data
+volatile int keys = 0;
+
+void* thread_routine(void* input)
+{
+    pami_result_t           res = PAMI_ERROR;
+    pami_context_t          ctx = (pami_context_t)input;
+    int                     my_key;
+
+    // get the lock
+    do {
+        res = PAMI_Context_trylock (ctx);
+    } while (res != PAMI_SUCCESS);
+    
+    // modify the common data
+    my_key = keys;
+#if DBG
+    fprintf (stderr, 
+             "%d: changed common data from %d to %d\n",
+             pthread_self(), my_key, my_key+1);
+#endif
+    my_key ++;
+    keys = my_key;
+
+    // release the lock
+    res = PAMI_Context_unlock (ctx);
+    if (res != PAMI_SUCCESS)
+    {
+        fprintf (stderr, 
+                "Error. Unable to unlock the pami context. result = %d\n", 
+                res);
+    }
+
+    pthread_exit(NULL);
+}
+
 int main (int argc, char ** argv)
 {
-  pami_client_t client;
-  pami_context_t context;
-  pami_configuration_t * configuration = NULL;
-  char                  cl_string[] = "TEST";
-  pami_result_t result = PAMI_ERROR;
+    pami_client_t           client;
+    pami_context_t          context;
+    pami_result_t           result = PAMI_ERROR;
+    pami_configuration_t*   configuration = NULL;
+    char                    cl_string[] = "TEST";
+    pthread_t               threads[MAX_THREAD_NUM];
+    int                     i, rc;
 
-  result = PAMI_Client_create (cl_string, &client, NULL, 0);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", result);
-    return 1;
-  }
+    result = PAMI_Client_create (cl_string, &client, NULL, 0);
+    if (result != PAMI_SUCCESS)
+    {
+        fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", result);
+        return 1;
+    }
 
-        {  result = PAMI_Context_createv(client, configuration, 0, &context, 1); }
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable to create the pami context. result = %d\n", result);
-    return 1;
-  }
+    result = PAMI_Context_createv(client, configuration, 0, &context, 1);
+    if (result != PAMI_SUCCESS)
+    {
+        fprintf (stderr, "Error. Unable to create the pami context. result = %d\n", result);
+        return 1;
+    }
 
+    /* Test a context lock */
+    result = PAMI_Context_lock (context);
+    if (result != PAMI_SUCCESS)
+    {
+        fprintf (stderr, "Error. Unable to lock the pami context. result = %d\n", result);
+        return 1;
+    }
 
-  /* Test a context lock */
-  result = PAMI_Context_lock (context);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable to lock the pami context. result = %d\n", result);
-    return 1;
-  }
+    /* Test a context unlock */
+    result = PAMI_Context_unlock (context);
+    if (result != PAMI_SUCCESS)
+    {
+        fprintf (stderr, "Error. Unable to unlock the pami context. result = %d\n", result);
+        return 1;
+    }
 
-  /* Test a context unlock */
-  result = PAMI_Context_unlock (context);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable to unlock the pami context. result = %d\n", result);
-    return 1;
-  }
+    // test context trylock with multiple threads
+    for (i = 0; i < MAX_THREAD_NUM; i ++) {
+        rc = pthread_create(&threads[i], NULL, thread_routine, (void*)context);
+        if (rc) {
+            fprintf (stderr, 
+                    "Error. Unable to create %d-th thread with rc %d\n",
+                    i, rc);
+            return 1;
+        }
+    }
 
-  /* Test a context trylock */
-  result = PAMI_Context_trylock (context);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable to aquire a context lock via trylock() on an uncontested lock. result = %d\n", result);
-    return 1;
-  }
+    // join all the created threads
+    for (i = 0; i < MAX_THREAD_NUM; i ++) {
+        do {
+            rc = pthread_join(threads[i], NULL);
+            if (rc) {
+                fprintf (stderr, 
+                         "Error. Unable to join %d-th thread with rc %d\n",
+                         i, rc);
+            }
+        } while (0 != rc);
+    }
 
-  /* Test a context trylock .. should return PAMI_EAGAIN. */
-  result = PAMI_Context_trylock (context);
-  if (result == PAMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. trylock was 'successful' when it should have failed. result = %d\n", result);
-    return 1;
-  }
-  if (result != PAMI_EAGAIN)
-  {
-    fprintf (stderr, "Error. trylock did not return PAMI_EAGAIN. result = %d\n", result);
-    return 1;
-  }
+    // check the common data
+    if ( MAX_THREAD_NUM == keys ) {
+        fprintf (stderr, 
+                 "Trylock with multiple threads passed. %d (%d expected)\n",
+                 keys, MAX_THREAD_NUM);
+    } else {
+        fprintf (stderr, 
+                 "Error. Trylock with multiple threads failed. %d (%d expected)\n",
+                 keys, MAX_THREAD_NUM);
+    }
 
-  /* Test a context unlock */
-  result = PAMI_Context_unlock (context);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable to unlock the pami context. result = %d\n", result);
-    return 1;
-  }
+    /* Destroy the context */
+    result = PAMI_Context_destroyv(&context, 1);
+    if (result != PAMI_SUCCESS)
+    {
+        fprintf (stderr, "Error. Unable to destroy the pami context. result = %d\n", result);
+        return 1;
+    }
 
+    /* Finalize (destroy) the client */
+    result = PAMI_Client_destroy(&client);
+    if (result != PAMI_SUCCESS)
+    {
+        fprintf (stderr, "Error. Unable to finalize pami client. result = %d\n", result);
+        return 1;
+    }
 
+    fprintf (stderr, "Success.\n");
 
-  /* ----------------------------------------------------------------------- */
-  /* Need multiple threads to test PAMI_Context_lock () when the lock is      */
-  /* already aqcuired. PAMI_Context_lock () will block until it acquires the  */
-  /* lock.                                                                   */
-  /* ----------------------------------------------------------------------- */
-
-
-
-  /* Destroy the context */
-  result = PAMI_Context_destroyv(&context, 1);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable to destroy the pami context. result = %d\n", result);
-    return 1;
-  }
-
-  /* Finalize (destroy) the client */
-  result = PAMI_Client_destroy(&client);
-  if (result != PAMI_SUCCESS)
-  {
-    fprintf (stderr, "Error. Unable to finalize pami client. result = %d\n", result);
-    return 1;
-  }
-
-  fprintf (stderr, "Success.\n");
-
-  return 0;
+    return 0;
 };
