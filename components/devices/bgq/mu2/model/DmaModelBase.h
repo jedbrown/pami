@@ -77,8 +77,8 @@ namespace PAMI
           typedef struct
           {
             uint64_t msg[(sizeof(InjectDescriptorMessage<2, false>) >> 3) + 1];
-            uint8_t e_minus_payload[T_Model::payload_size];
-            uint8_t e_plus_payload[T_Model::payload_size];
+            uint8_t e_minus_payload[sizeof(MUHWI_Descriptor_t)];
+            uint8_t e_plus_payload[sizeof(MUHWI_Descriptor_t)];
           } split_t;
 
           typedef struct
