@@ -10,8 +10,8 @@
 
 #include "../../init_util.h"
 
-#define ITERATIONS 1100
-#define BUFFERSIZE 50000000
+#define ITERATIONS 100
+#define BUFFERSIZE 10240*32
 #define TEST_START_NBYTES 512
 #define WARMUP
 #define TEST_COMPLETE_DISPATCH_ID 10
@@ -411,24 +411,12 @@ int main (int argc, char ** argv)
 		  return 1;
 		}
 
-              for (i = 0; i < 33; i++)
+              for (i = 0; i < ITERATIONS; i++)
                 {
                   PAMI_Rget (context, &parameters);
                 }
                 
-              active = 2;
-              result = PAMI_Fence_endpoint (context, decrement, (void *) & active, parameters.rma.dest);
-	      if (result != PAMI_SUCCESS)
-		{
-		  fprintf (stderr, "Error. PAMI_Fence_endpoint failed with result = %d\n", result);
-		  return 1;
-		}
-
-              for (i = 33; i < ITERATIONS; i++)
-                {
-                  PAMI_Rget (context, &parameters);
-                }
-                
+              active = 1;
               result = PAMI_Fence_endpoint (context, decrement, (void *) & active, parameters.rma.dest);
 	      if (result != PAMI_SUCCESS)
 		{
