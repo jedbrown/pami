@@ -9,6 +9,7 @@
 void _pami_core_int_min_2way(int* dst, int* src0, int *src1, unsigned num_ints);
 void _pami_core_int_max_2way(int* dst, int* src0, int *src1, unsigned num_ints);
 void _pami_core_int_sum_2way(int* dst, int* src0, int *src1, unsigned num_ints);
+inline unsigned convertToCount(unsigned bytes,pami_dt dt);
 
 inline unsigned int_math_2way(int* dst, int* src0, int *src1, unsigned num_ints, pami_op opcode)
 {
@@ -35,12 +36,19 @@ inline unsigned int_math_2way(int* dst, int* src0, int *src1, unsigned num_ints,
     case PAMI_BAND:
     case PAMI_BOR:
     case PAMI_BXOR:
+    {
+      signed int* srcs[2] = {src0,src1};
+      coremath func = MATH_OP_FUNCS(PAMI_SIGNED_INT, opcode, 2);
+      func(dst, (void**)srcs,  2, num_ints);
+      break;
+    }
     case PAMI_MAXLOC:
     case PAMI_MINLOC:
     case PAMI_OP_COUNT:
-      printf("not supported\n");
-      exit(0);
-    break;
+    {
+      PAMI_abortf("not supported\n");
+      break;
+    }
   } 
   return num_ints;
 }
@@ -73,12 +81,19 @@ inline unsigned int_math_4way(int* dst, int* src0, int *src1, int* src2, int* sr
     case PAMI_BAND:
     case PAMI_BOR:
     case PAMI_BXOR:
+    {
+      signed int* srcs[4] = {src0,src1,src2,src3};
+      coremath func = MATH_OP_FUNCS(PAMI_SIGNED_INT, opcode, 4);
+      func(dst, (void**)srcs,  4, num_ints);
+      break;
+    }
     case PAMI_MAXLOC:
     case PAMI_MINLOC:
     case PAMI_OP_COUNT:
-      printf("not supported\n");
-      exit(0);
-    break;
+    {
+      PAMI_abortf("not supported\n");
+      break;
+    }
   } 
   return num_ints;
 
@@ -117,12 +132,19 @@ inline unsigned int_math_8way(int* dst, int* src0, int *src1, int* src2, int* sr
     case PAMI_BAND:
     case PAMI_BOR:
     case PAMI_BXOR:
+    {
+      signed int* srcs[8] = {src0,src1,src2,src3,src4,src5,src6,src7};
+      coremath func = MATH_OP_FUNCS(PAMI_SIGNED_INT, opcode, 8);
+      func(dst, (void**)srcs,  8, num_ints);
+      break;
+    }
     case PAMI_MAXLOC:
     case PAMI_MINLOC:
     case PAMI_OP_COUNT:
-      printf("not supported\n");
-      exit(0);
-    break;
+    {
+      PAMI_abortf("not supported\n");
+      break;
+    }
   } 
   return num_ints;
 
@@ -166,12 +188,19 @@ inline unsigned int_math_16way(int* dst, int* src0, int *src1, int* src2, int* s
     case PAMI_BAND:
     case PAMI_BOR:
     case PAMI_BXOR:
+    {
+      signed int* srcs[16] = {src0,src1,src2,src3,src4,src5,src6,src7,src8,src9,src10,src11,src12,src13,src14,src15};
+      coremath func = MATH_OP_FUNCS(PAMI_SIGNED_INT, opcode, 16);
+      func(dst, (void**)srcs,  16, num_ints);
+      break;
+    }
     case PAMI_MAXLOC:
     case PAMI_MINLOC:
     case PAMI_OP_COUNT:
-      printf("not supported\n");
-      exit(0);
-    break;
+    {
+      PAMI_abortf("not supported\n");
+      break;
+    }
   } 
   return num_ints;
 
@@ -206,12 +235,19 @@ inline unsigned uint_math_2way(unsigned* dst, unsigned* src0, unsigned* src1, un
     case PAMI_BAND:
     case PAMI_BOR:
     case PAMI_BXOR:
+    {
+      unsigned int* srcs[2] = {src0,src1};
+      coremath func = MATH_OP_FUNCS(PAMI_UNSIGNED_INT, opcode, 2);
+      func(dst, (void**)srcs,  2, num_ints);
+      break;
+    }
     case PAMI_MAXLOC:
     case PAMI_MINLOC:
     case PAMI_OP_COUNT:
-      printf("not supported\n");
-      exit(0);
-    break;
+    {
+      PAMI_abortf("not supported\n");
+      break;
+    }
   } 
   return num_ints;
 }
@@ -244,12 +280,19 @@ inline unsigned uint_math_4way(unsigned* dst, unsigned* src0, unsigned* src1, un
     case PAMI_BAND:
     case PAMI_BOR:
     case PAMI_BXOR:
+    {
+      unsigned int* srcs[4] = {src0,src1,src2,src3};
+      coremath func = MATH_OP_FUNCS(PAMI_UNSIGNED_INT, opcode, 4);
+      func(dst, (void**)srcs,  4, num_ints);
+      break;
+    }
     case PAMI_MAXLOC:
     case PAMI_MINLOC:
     case PAMI_OP_COUNT:
-      printf("not supported\n");
-      exit(0);
-    break;
+    {
+      PAMI_abortf("not supported\n");
+      break;
+    }
   } 
   return num_ints;
 
@@ -288,12 +331,19 @@ inline unsigned uint_math_8way(unsigned* dst, unsigned* src0, unsigned* src1, un
     case PAMI_BAND:
     case PAMI_BOR:
     case PAMI_BXOR:
+    {
+      unsigned int* srcs[8] = {src0,src1,src2,src3,src4,src5,src6,src7};
+      coremath func = MATH_OP_FUNCS(PAMI_UNSIGNED_INT, opcode, 8);
+      func(dst, (void**)srcs,  8, num_ints);
+      break;
+    }
     case PAMI_MAXLOC:
     case PAMI_MINLOC:
     case PAMI_OP_COUNT:
-      printf("not supported\n");
-      exit(0);
-    break;
+    {
+      PAMI_abortf("not supported\n");
+      break;
+    }
   } 
   return num_ints;
 
@@ -333,12 +383,19 @@ inline unsigned uint_math_16way(unsigned* dst, unsigned* src0, unsigned* src1, u
     case PAMI_BAND:
     case PAMI_BOR:
     case PAMI_BXOR:
+    {
+      unsigned int* srcs[16] = {src0,src1,src2,src3,src4,src5,src6,src7,src8,src9,src10,src11,src12,src13,src14,src15};
+      coremath func = MATH_OP_FUNCS(PAMI_UNSIGNED_INT, opcode, 16);
+      func(dst, (void**)srcs,  16, num_ints);
+      break;
+    }
     case PAMI_MAXLOC:
     case PAMI_MINLOC:
     case PAMI_OP_COUNT:
-      printf("not supported\n");
-      exit(0);
-    break;
+    {
+      PAMI_abortf("not supported\n");
+      break;
+    }
   } 
   return num_ints;
 
@@ -361,13 +418,21 @@ inline unsigned bgq_math_16way(char* dst, char* src0, char *src1, char* src2, ch
     (int*) src4, (int*) src5, (int*) src6, (int*) src7, (int*) src8, (int*)src9, (int*) src10, (int*) src11,
     (int*) src12, (int*) src13, (int*) src14, (int*) src15, bytes/sizeof(int), opcode);
   }
-  else
+  else if (dt == PAMI_UNSIGNED_INT)
   {
     return uint_math_16way((unsigned*) dst, (unsigned*) src0, (unsigned*)src1, (unsigned*) src2, (unsigned*) src3,
     (unsigned*) src4, (unsigned*) src5, (unsigned*) src6, (unsigned*) src7, (unsigned*) src8, (unsigned*)src9, (unsigned*) src10, 
     (unsigned*) src11, (unsigned*) src12, (unsigned*) src13, (unsigned*) src14, (unsigned*) src15, bytes/sizeof(unsigned), opcode);
+  } 
+  else // un-optimized dt/op math
+  {
+    char* srcs[16] = {src0,src1,src2,src3,src4,src5,src6,src7,src8,src9,src10,src11,src12,src13,src14,src15};
+    coremath func = MATH_OP_FUNCS(dt, opcode, 16);
+    PAMI_assertf(func!=NULL,"Unsupported dt %X, op %X\n", dt, opcode);
+    unsigned count = convertToCount(bytes,dt);
+    func(dst, (void**)srcs,  16, count);
+    return count;
   }
-
 }
 
 inline unsigned bgq_math_8way(char* dst, char* src0, char *src1, char* src2, char* src3,
@@ -384,12 +449,20 @@ inline unsigned bgq_math_8way(char* dst, char* src0, char *src1, char* src2, cha
     return int_math_8way((int*) dst, (int*) src0, (int*)src1, (int*) src2, (int*) src3,
     (int*) src4, (int*) src5, (int*) src6, (int*) src7, bytes/sizeof(int), opcode);
   }
-  else
+  else if (dt == PAMI_UNSIGNED_INT)
   {
     return uint_math_8way((unsigned*) dst, (unsigned*) src0, (unsigned*)src1, (unsigned*) src2, (unsigned*) src3,
     (unsigned*) src4, (unsigned*) src5, (unsigned*) src6, (unsigned*) src7, bytes/sizeof(unsigned), opcode);
   }
-
+  else // un-optimized dt/op math
+  {
+    char* srcs[8] = {src0,src1,src2,src3,src4,src5,src6,src7};
+    coremath func = MATH_OP_FUNCS(dt, opcode, 8);
+    PAMI_assertf(func!=NULL,"Unsupported dt %X, op %X\n", dt, opcode);
+    unsigned count = convertToCount(bytes,dt);
+    func(dst, (void**)srcs,  8, count);
+    return count;
+  }
 }
 
 inline unsigned bgq_math_4way(char* dst, char* src0, char *src1, char* src2, char* src3, unsigned bytes, pami_op opcode, pami_dt dt)
@@ -403,10 +476,96 @@ inline unsigned bgq_math_4way(char* dst, char* src0, char *src1, char* src2, cha
   {
     return int_math_4way((int*) dst, (int*) src0, (int*)src1, (int*) src2, (int*) src3, bytes/sizeof(int), opcode);
   }
-  else
+  else if (dt == PAMI_UNSIGNED_INT)
   {
     return uint_math_4way((unsigned*) dst, (unsigned*) src0, (unsigned*)src1, (unsigned*) src2, (unsigned*) src3, bytes/sizeof(unsigned), opcode);
   }
-
+  else // un-optimized dt/op math
+  {
+    char* srcs[4] = {src0,src1,src2,src3}; 
+    coremath func = MATH_OP_FUNCS(dt, opcode, 4);
+    PAMI_assertf(func!=NULL,"Unsupported dt %X, op %X\n", dt, opcode);
+    unsigned count = convertToCount(bytes,dt);
+    func(dst, (void**)srcs,  4, count);
+    return count;
+  }
 }
+inline unsigned convertToCount(unsigned bytes,pami_dt dt)
+{
+  unsigned count;
+  switch (dt)
+  {
+   case PAMI_BYTE:
+   case PAMI_SIGNED_CHAR:
+     count = bytes/sizeof(char);
+     break;
+   case PAMI_UNSIGNED_CHAR:
+     count = bytes/sizeof(unsigned char);
+     break;
+   case PAMI_SIGNED_SHORT:
+     count = bytes/sizeof(short);
+     break;
+   case PAMI_UNSIGNED_SHORT:
+     count = bytes/sizeof(unsigned short);
+     break;
+   case PAMI_SIGNED_INT:
+     count = bytes/sizeof(int);
+     break;
+   case PAMI_UNSIGNED_INT:
+     count = bytes/sizeof(unsigned int);
+     break;
+   case PAMI_SIGNED_LONG:
+     count = bytes/sizeof(signed long);
+     break;
+   case PAMI_UNSIGNED_LONG:
+     count = bytes/sizeof(unsigned long);
+     break;
+   case PAMI_SIGNED_LONG_LONG:
+     count = bytes/sizeof(long long);
+     break;
+   case PAMI_UNSIGNED_LONG_LONG:
+     count = bytes/sizeof(unsigned long long);
+     break;
+   case PAMI_FLOAT:
+     count = bytes/sizeof(float);
+     break;
+   case PAMI_DOUBLE:
+     count = bytes/sizeof(double);
+     break;
+   case PAMI_LONG_DOUBLE:
+     count = bytes/sizeof(long double);
+     break;
+   case PAMI_LOGICAL:
+     count = bytes/sizeof(unsigned int);
+     break;
+   case PAMI_SINGLE_COMPLEX:
+     count = bytes/sizeof(fp32_fp32_t);
+     break;
+   case PAMI_DOUBLE_COMPLEX:
+     count = bytes/sizeof(fp64_fp64_t);
+     break;
+   case PAMI_LOC_2INT:
+     count = bytes/sizeof(int32_int32_t);
+     break;
+   case PAMI_LOC_SHORT_INT:
+     count = bytes/sizeof(int16_int32_t);
+     break;
+   case PAMI_LOC_FLOAT_INT:
+     count = bytes/sizeof(fp32_int32_t);
+     break;
+   case PAMI_LOC_DOUBLE_INT:
+     count = bytes/sizeof(fp64_int32_t);
+     break;
+   case PAMI_LOC_2FLOAT:
+     count = bytes/sizeof(fp32_fp32_t);
+     break;
+   case PAMI_LOC_2DOUBLE:
+     count = bytes/sizeof(fp64_fp64_t);
+     break;
+   default:
+     PAMI_abortf("Unsupported dt %X\n", dt);
+  }
+  return count;
+}
+
 #endif

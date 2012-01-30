@@ -42,12 +42,19 @@ inline unsigned quad_double_math_2way(double* dst, double* src0, double *src1, u
     case PAMI_BAND:
     case PAMI_BOR:
     case PAMI_BXOR:
+    {
+      double* srcs[16] = {src0,src1};
+      coremath func = MATH_OP_FUNCS(PAMI_DOUBLE, opcode, 2);
+      func(dst, (void**)srcs,  2, num_dbls);
+      break;
+    }
     case PAMI_MAXLOC:
     case PAMI_MINLOC:
     case PAMI_OP_COUNT:
-      PAMI_abortf("opcode <%u> not supported\n",opcode);
-      exit(0);
-    break;
+    {
+      PAMI_abortf("not supported\n");
+      break;
+    }
   } 
   return num_dbls;
 }
@@ -77,12 +84,19 @@ inline unsigned quad_double_math_4way(double* dst, double* src0, double *src1, d
     case PAMI_BAND:
     case PAMI_BOR:
     case PAMI_BXOR:
+    {
+      double* srcs[4] = {src0,src1,src2,src3};
+      coremath func = MATH_OP_FUNCS(PAMI_DOUBLE, opcode, 4);
+      func(dst, (void**)srcs,  4, num_dbls);
+      break;
+    }
     case PAMI_MAXLOC:
     case PAMI_MINLOC:
     case PAMI_OP_COUNT:
-      PAMI_abortf("opcode <%u> not supported\n",opcode);
-      exit(0);
-    break;
+    {
+      PAMI_abortf("not supported\n");
+      break;
+    }
   } 
   return num_dbls;
 
@@ -114,12 +128,19 @@ inline unsigned quad_double_math_8way(double* dst, double* src0, double *src1, d
     case PAMI_BAND:
     case PAMI_BOR:
     case PAMI_BXOR:
+    {
+      double* srcs[8] = {src0,src1,src2,src3,src4,src5,src6,src7};
+      coremath func = MATH_OP_FUNCS(PAMI_DOUBLE, opcode, 8);
+      func(dst, (void**)srcs,  8, num_dbls);
+      break;
+    }
     case PAMI_MAXLOC:
     case PAMI_MINLOC:
     case PAMI_OP_COUNT:
-      PAMI_abortf("opcode <%u> not supported\n",opcode);
-      exit(0);
-    break;
+    {
+      PAMI_abortf("not supported\n");
+      break;
+    }
   } 
   return num_dbls;
 
@@ -153,12 +174,19 @@ inline unsigned quad_double_math_16way(double* dst, double* src0, double *src1, 
     case PAMI_BAND:
     case PAMI_BOR:
     case PAMI_BXOR:
+    {
+      double* srcs[16] = {src0,src1,src2,src3,src4,src5,src6,src7,src8,src9,src10,src11,src12,src13,src14,src15};
+      coremath func = MATH_OP_FUNCS(PAMI_DOUBLE, opcode, 16);
+      func(dst, (void**)srcs,  16, num_dbls);
+      break;
+    }
     case PAMI_MAXLOC:
     case PAMI_MINLOC:
     case PAMI_OP_COUNT:
-      PAMI_abortf("opcode <%u> not supported\n",opcode);
-      exit(0);
-    break;
+    {
+      PAMI_abortf("not supported\n");
+      break;
+    }
   } 
   return num_dbls;
 

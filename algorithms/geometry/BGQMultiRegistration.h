@@ -151,12 +151,50 @@ namespace PAMI
                                        op);
         TRACE_FORMAT("(dt %p/%d,op %p/%d) = %s", in->cmd.xfer_allreduce.stype,(pami_dt)dt, in->cmd.xfer_allreduce.op,(pami_op)op, support[dt][op] ? "true" : "false");
         result.check.datatype_op = support[dt][op]?0:1;
+        pami_dt pdt = (pami_dt) dt;
+        pami_op pop = (pami_op) op;
+        /// \todo TEMP: 64 PPN only supports double's
+        if((__global.topology_local.size() == 64) && (pdt != PAMI_DOUBLE)) 
+          result.check.datatype_op = 1;
+        TRACE_FORMAT("(dt %d,op %d) = %s", pdt, pop, result.check.datatype_op ? "true" : "false");
         TRACE_FN_EXIT();
         return(result);
       }
     }
 
 #ifdef PAMI_ENABLE_NEW_SHMEM
+    namespace Shmem_Optimized // ONLY SUPPORTS DOUBLES?!
+    {
+      extern inline metadata_result_t op_dt_metadata_function(struct pami_xfer_t *in)
+      {
+        TRACE_FN_ENTER();
+        metadata_result_t result = {0};
+        uintptr_t op;
+        uintptr_t dt;
+        if (((uintptr_t)in->cmd.xfer_allreduce.stype >= PAMI::Type::TypeCode::PRIMITIVE_TYPE_COUNT) || ((uintptr_t)in->cmd.xfer_allreduce.op >= PAMI::Type::TypeFunc::PRIMITIVE_FUNC_COUNT))
+          result.check.datatype_op = 1; // No user-defined dt/op's
+
+        PAMI::Type::TypeFunc::GetEnums(in->cmd.xfer_allreduce.stype,
+                                       in->cmd.xfer_allreduce.op,
+                                       dt,
+                                       op);
+        pami_dt pdt = (pami_dt) dt;
+        pami_op pop = (pami_op) op;
+        result.check.datatype_op = ((pdt == PAMI_DOUBLE) && 
+                                    ((pop == PAMI_MIN)  ||
+                                     (pop == PAMI_MAX)  ||
+                                     (pop == PAMI_SUM)  ||
+                                     (pop == PAMI_LAND) ||
+                                     (pop == PAMI_LOR ) ||
+                                     (pop == PAMI_LXOR) ||
+                                     (pop == PAMI_BAND) ||
+                                     (pop == PAMI_BOR ) ||
+                                     (pop == PAMI_BXOR))) ?0:1;
+        TRACE_FORMAT("(dt %d,op %d) = %s", pdt, pop, result.check.datatype_op ? "true" : "false");
+        TRACE_FN_EXIT();
+        return(result);
+      }
+    }
     namespace Shmem
     {
       extern inline metadata_result_t op_dt_metadata_function(struct pami_xfer_t *in)
@@ -174,15 +212,18 @@ namespace PAMI
                                        op);
         pami_dt pdt = (pami_dt) dt;
         pami_op pop = (pami_op) op;
-        result.check.datatype_op = (((pdt == PAMI_DOUBLE)||(pdt == PAMI_SIGNED_INT) || (pdt == PAMI_UNSIGNED_INT)) && 
-                                    ((pop == PAMI_MIN) ||
-                                     (pop == PAMI_MAX) ||
-                                     (pop == PAMI_SUM))) ?0:1;
+	// No MATH_OP_FUNCS() for logical or complex or LOCs?
+        result.check.datatype_op = ((pdt != PAMI_LOGICAL) && 
+				    (pdt != PAMI_SINGLE_COMPLEX) && 
+				    (pdt != PAMI_DOUBLE_COMPLEX) && 
+				    (pop != PAMI_MAXLOC) && 
+				    (pop != PAMI_MINLOC) && 
+                                    (pop < PAMI_OP_COUNT)) ?0:1;
         TRACE_FORMAT("(dt %d,op %d) = %s", pdt, pop, result.check.datatype_op ? "true" : "false");
-	/// \todo TEMP: 64 PPN only supports double's
-	if((__global.topology_local.size() == 64) && (pdt != PAMI_DOUBLE)) 
-	  result.check.datatype_op = 1;
-        TRACE_FORMAT("(dt %d,op %d) = %s", pdt, pop, result.check.datatype_op ? "true" : "false");
+        /// \todo TEMP: 64 PPN only supports double's
+//        if((__global.topology_local.size() == 64) && (pdt != PAMI_DOUBLE)) 
+//          result.check.datatype_op = 1;
+//        TRACE_FORMAT("(dt %d,op %d) = %s", pdt, pop, result.check.datatype_op ? "true" : "false");
         TRACE_FN_EXIT();
         return(result);
       }
@@ -420,7 +461,7 @@ namespace PAMI
 //    m->send_min_align                     = 64;
 //    m->recv_min_align                     = 64;
 //    m->check_fn                           = align_metadata_function<1,64,1,64,Shmem::op_dt_metadata_function>;
-      m->check_fn                           = Shmem::op_dt_metadata_function;
+      m->check_fn                           = Shmem_Optimized::op_dt_metadata_function;
       m->check_perf.values.hw_accel         = 1;
 #else
       m->check_correct.values.alldtop       = 0;
@@ -558,7 +599,7 @@ namespace PAMI
       m->check_correct.values.nonlocal      = 1;
       m->send_min_align                     = 32;
       m->recv_min_align                     = 32;
-      m->check_fn                           = align_metadata_function<1,32,1,32,Shmem::op_dt_metadata_function>;
+      m->check_fn                           = align_metadata_function<1,32,1,32,MU::op_dt_metadata_function>;
       m->check_perf.values.hw_accel         = 1;
 #else
       m->check_correct.values.alldtop       = 0;
