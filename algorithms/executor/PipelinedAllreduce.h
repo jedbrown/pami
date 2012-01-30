@@ -394,7 +394,7 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Conn>::postReceives()
 	  p,
 	  this->_acache.getColor() );
       
-      mrecv.src_participants = NULL; //(pami_topology_t *) this->_scache.getSrcTopology(p);
+      mrecv.src_participants = (pami_topology_t *) this->_scache.getSrcTopology(p);
       mrecv.dst_participants = (pami_topology_t *) & this->_selftopology;      
       
       this->_native->multicast(&mrecv);

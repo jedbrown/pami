@@ -36,15 +36,15 @@ void cb_done (void *ctxt, void * clientdata, pami_result_t err)
                       "%s: Error(tid=%d). Null context received on cb_done.\n",
                       gProtocolName,
                       gThreadId);
-    if(gContext != ctxt) fprintf(stderr,
-                                 "%s: Context Error(tid=%d/%d) want:%p got:%p\n",
-                                 gProtocolName,
-                                 (int)pthread_self(),
-                                 gThreadId,
-                                 gContext,
-                                 ctxt);
+    //if(gContext != ctxt) fprintf(stderr,
+      //                           "%s: Context Error(tid=%d/%d) want:%p got:%p\n",
+        //                         gProtocolName,
+          //                       (int)pthread_self(),
+          //                       gThreadId,
+          //                       gContext,
+          //                       ctxt);
     assert(ctxt);
-    assert(gContext==ctxt);
+    //assert(gContext==ctxt);
 
     pami_configuration_t configs;
     configs.name         = PAMI_CONTEXT_DISPATCH_ID_MAX;
