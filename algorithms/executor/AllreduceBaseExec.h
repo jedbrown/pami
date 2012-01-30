@@ -224,6 +224,7 @@ namespace CCMI
             _enablePipelining (false),
 	    _rconnmgr (NULL),
             _bconnmgr(NULL),
+            _context(NULL),
             _selftopology(),
             _scache(),
             _acache(NULL, (unsigned) - 1)
@@ -253,6 +254,7 @@ namespace CCMI
 	    _enablePipelining(false),
 	    _rconnmgr (connmgr),
             _bconnmgr(connmgr),
+            _context(NULL),
             _self_ep(native->endpoint()),
             _selftopology(&_self_ep, 1,PAMI::tag_eplist()),
             _scache(),

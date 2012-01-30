@@ -274,15 +274,18 @@ namespace PAMI
     ///
     /// \brief NI hook to override metadata for collective
     ///
-    void metadata(pami_metadata_t *m, pami_xfer_type_t t) 
+    void metadata(pami_metadata_t *m, pami_xfer_type_t t)      
     {
       TRACE_FN_ENTER();
       //printf("<%p> %s type %u cur niName %s",this,m->name,t, niName);
-      char* s = strstr(m->name,"P2P");
+      char *s = strstr(m->name,"P2P");
       PAMI_assertf(sizeof(name) >= (s-m->name)+strlen(niName)+1,"%zu >= %zu",sizeof(name),(s-m->name)+strlen(niName)+1);
       memcpy(name,m->name,(s-m->name));
       name[(s-m->name)] = 0x00;
       strcat(name,niName);
+      s = strstr(m->name, "X0");
+      if (s != NULL)
+	name[s-m->name] = 'I';   //Make optimized algorithms I0:      
       m->name = name;
       TRACE_FORMAT("<%p> %s",this,m->name);
       TRACE_FN_EXIT();
@@ -335,6 +338,14 @@ namespace PAMI
       {
         this->niName="-:MUDput";
       }
+
+    void metadata(pami_metadata_t *m, pami_xfer_type_t t) {
+      MUNI_metadata<MUDputNI, BigProtocolAllocator>::metadata(m, t);
+      char *s = strstr(m->name, "X0");
+      if (s != NULL)
+	m->name[s-m->name] = 'I';   //Make optimized algorithms I0:      
+    }
+
   };
 
   // MUShmemDputNI class that overrides the metadata name and possibly the range (templatized)
