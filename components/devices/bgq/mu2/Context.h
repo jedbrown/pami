@@ -22,9 +22,14 @@
 #include <spi/include/mu/DescriptorWrapperXX.h>
 #include <spi/include/mu/Pt2PtMemoryFIFODescriptorXX.h>
 #include <spi/include/kernel/MU.h>
+#include "spi/include/kernel/gi.h"
+#include "spi/include/mu/GIBarrier.h"
 
 #include "Mapping.h"
 
+#include "components/atomic/native/NativeCounter.h"
+#include "components/atomic/counter/CounterBarrier.h"
+#include "components/atomic/indirect/IndirectBarrier.h"
 #include "components/devices/BaseDevice.h"
 #include "components/devices/PacketInterface.h"
 #include "components/devices/generic/Device.h"
@@ -559,6 +564,57 @@ namespace PAMI
             PAMI_assert_debugf(_connection[index] == NULL, "Error. _connection[%zu] was previously set.\n", index);
 
             _connection[index] = value;
+          }
+
+          inline pami_result_t destroy ()
+          {
+            // Set up a local barrier (needed below).
+            bool   master;
+            size_t numLocalTasks;
+            size_t myT;
+
+            myT = __global.mapping.t();
+            numLocalTasks = __global.topology_local.size();
+            ( myT == __global.mapping.lowestT() ) ? master = true : master = false;
+
+            TRACE_FORMAT("MU::Context::generate_impl: Initializing local barrier, size=%zu, master=%d\n", numLocalTasks, master);
+
+            PAMI::Barrier::IndirectCounter<PAMI::Counter::Indirect<PAMI::Counter::Native> > barrier(numLocalTasks, master);
+            char key[PAMI::Memory::MMKEYSIZE];
+            sprintf(key, "/pami-mu2-rm%zd", _id_client);
+            barrier.init(&__global.mm, key);
+
+            // Barrier among all nodes to ensure that the communications for this client
+            // is quiesced.
+            // - Barrier among the processes on this node
+            // - Barrier among other nodes
+            // - Barrier among the processes on this node
+            TRACE_FORMAT("MU Context: Entering local barrier in context destroy, client=%zu\n",_id_client);
+            barrier.enter();
+            TRACE_FORMAT("MU Context: Exiting  local barrier in context destroy, client=%zu\n",_id_client);
+
+            // If multi-node, and master, need to barrier across the nodes
+            if ( master && (__global.mapping.numActiveNodes() > 1) )
+            {
+              // Do an MU barrier
+              int rc;
+              uint32_t classRouteId = 0;
+              MUSPI_GIBarrier_t commworld_barrier;
+              rc = Kernel_GetGlobalBarrierUserClassRouteId( &classRouteId );
+              PAMI_assert(rc == 0);
+              rc = MUSPI_GIBarrierInit ( &commworld_barrier,
+                                         classRouteId );
+              PAMI_assert(rc == 0);
+              TRACE_FORMAT("MU Context: enter global barrier on class route %u\n", classRouteId);
+              rc = MUSPI_GIBarrierEnterAndWait ( &commworld_barrier );
+              PAMI_assert(rc == 0);
+              TRACE_FORMAT("MU Context: exit global barier, client=%zu\n",_id_client);
+            }
+            TRACE_FORMAT("MU Context: Entering local barrier in context destroy, client=%zu\n",_id_client);
+            barrier.enter();
+            TRACE_FORMAT("MU Context: Exiting  local barrier in context destroy, client=%zu\n",_id_client);
+
+            return PAMI_SUCCESS;
           }
 
           // ------------------------------------------------------------------
