@@ -415,7 +415,7 @@ void PAMI::Global::initializeCommAgent()
   {
     if ( rc == ENOENT )
     {
-      printf("Warning:  The Messaging App Agent (Comm Agent) is not running.  Messaging will continue to run, but has the following limitations:  1) Remote Get Pacing is not available (potentially causing network congestion, reducing performance), and 2) One-sided-put-fence operations will abort.\n");
+      printf("Warning:  The Messaging App Agent (Comm Agent) is not running.  Redirecting the mmcs console output for the block (redirect_block on) and re-running may show error messages.  Messaging will continue to run, but has the following limitations:  1) Remote Get Pacing is not available (potentially causing network congestion, reducing performance), and 2) One-sided-put-fence operations will abort.\n");
     }
     else PAMI_assertf(rc==0, "Messaging App Agent (Comm Agent) failed to initialize, rc=%d\n",rc);
   }
