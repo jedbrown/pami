@@ -38,6 +38,8 @@
   #define DO_TRACE_DEBUG     0
 #endif
 
+#define MAX_IMATH_COUNT  64
+
 namespace CCMI
 {
   namespace Executor
@@ -612,7 +614,7 @@ inline pami_result_t CCMI::Executor::AllreduceBaseExec<T_Conn, T_Single>::advanc
                   src1 = reducebuf; 
 		}
             }
-          else if (op == PAMI_SUM && dt == PAMI_DOUBLE)
+          else if (op == PAMI_SUM && dt == PAMI_DOUBLE && count < MAX_IMATH_COUNT)
             {
 	      for (idx = 0; idx < nsrcranks; ++idx)
                 {
@@ -620,7 +622,7 @@ inline pami_result_t CCMI::Executor::AllreduceBaseExec<T_Conn, T_Single>::advanc
                   src1 = reducebuf;
                 }
 	    }
-          else if (op == PAMI_MAX && dt == PAMI_DOUBLE)
+          else if (op == PAMI_MAX && dt == PAMI_DOUBLE && count < MAX_IMATH_COUNT)
             {
 	      for (idx = 0; idx < nsrcranks; ++idx)
                 {
@@ -628,7 +630,7 @@ inline pami_result_t CCMI::Executor::AllreduceBaseExec<T_Conn, T_Single>::advanc
                   src1 = reducebuf;
                 }
             }
-          else if (op == PAMI_MIN && dt == PAMI_DOUBLE)
+          else if (op == PAMI_MIN && dt == PAMI_DOUBLE && count < MAX_IMATH_COUNT)
             {
 	      for (idx = 0; idx < nsrcranks; ++idx)
                 {
@@ -747,17 +749,17 @@ inline pami_result_t CCMI::Executor::AllreduceBaseExec<T_Conn, T_Single>::advanc
 	      inline_math_isum (reducebuf, src1, src2, count);
 	      src1 = reducebuf; 
             }
-          else if (op == PAMI_SUM && dt == PAMI_DOUBLE)
+          else if (op == PAMI_SUM && dt == PAMI_DOUBLE && count < MAX_IMATH_COUNT)
             {
 	      inline_math_dsum (reducebuf, src1, src2, count);
 	      src1 = reducebuf;
 	    }
-          else if (op == PAMI_MAX && dt == PAMI_DOUBLE)
+          else if (op == PAMI_MAX && dt == PAMI_DOUBLE && count < MAX_IMATH_COUNT)
             {
 	      inline_math_dmax (reducebuf, src1, src2, count);
 	      src1 = reducebuf;
 	    }
-          else if (op == PAMI_MIN && dt == PAMI_DOUBLE)
+          else if (op == PAMI_MIN && dt == PAMI_DOUBLE && count < MAX_IMATH_COUNT)
             {
 	      inline_math_dmin (reducebuf, src1, src2, count);
 	      src1 = reducebuf;
