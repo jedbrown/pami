@@ -146,7 +146,10 @@ namespace CCMI
 	
 	_dstpwq = NULL;
 
-	this->_reduceFunc = MATH_OP_FUNCS(this->_acache.getDt(), this->_acache.getOp(), 2);
+	coremath  reduce_func = MATH_OP_FUNCS(this->_acache.getDt(), this->_acache.getOp(), 2);
+	//Update with optimized math function if its available
+	if (reduce_func != NULL)
+	  this->_reduceFunc = reduce_func; 
       }
 
       void postReceives ();
