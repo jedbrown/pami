@@ -110,6 +110,7 @@ namespace PAMI
         extern inline void HybridBSRMetaData(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("I0:Hybrid:BSR:P2P");
+          m->check_perf.values.hw_accel     = 1;
         }
         extern inline void HybridSHMEMMetaData(pami_metadata_t *m)
         {
