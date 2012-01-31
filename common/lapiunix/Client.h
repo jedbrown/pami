@@ -839,13 +839,11 @@ namespace PAMI
         pami_result_t rc = PAMI_SUCCESS;
 	for (i = 0; i < _ncontexts; ++i)
 	  {
-            context[i]       = NULL;
-            PAMI::Context *c = _contexts[i];
-            _contexts[i]     = NULL;
-            pami_result_t r  = c->destroy();
-	    if (r != PAMI_SUCCESS) rc = r;            
-            _contextAlloc.returnObject((void *)c);
-          }
+        pami_result_t r  = _contexts[i]->destroy();
+        if (r != PAMI_SUCCESS) rc = r;            
+        _contextAlloc.returnObject((void *)(_contexts[i]));
+        _contexts[i]     = NULL;
+      }
 	_ncontexts = 0;        
         return rc;
       }
