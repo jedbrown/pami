@@ -339,7 +339,7 @@ int main(int argc, char*argv[])
       amgather.algorithm = amgather_always_works_algo[nalg];
 
       volatile unsigned *ngather = &amgather_total_count;
-      for (i = 1; i <= gMax_count; i *= 2)
+      for (i = gMin_count; i <= gMax_count; i *= 2)
       {
         size_t  dataSent = i;
         int     niter;

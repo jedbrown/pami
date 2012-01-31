@@ -273,7 +273,7 @@ static void * reduce_test(void* p)
             if (my_ep == zero_ep)
               printf("Running Reduce: %s, %s\n", dt_array_str[dt], op_array_str[op]);
             int i;
-            for (i = 1; i <= gMax_count; i *= 2)
+            for (i = gMin_count; i <= gMax_count; i *= 2)
             {
               size_t sz=get_type_size(dt_array[dt]);
               size_t  dataSent = i * sz;

@@ -317,7 +317,7 @@ static void * gatherv_test(void* p) {
 
       size_t i, j;
 
-      for (i = 1; i <= gMax_count; i *= 2)
+      for (i = gMin_count; i <= gMax_count; i *= 2)
       {
         size_t  dataSent = i;
         int          niter;

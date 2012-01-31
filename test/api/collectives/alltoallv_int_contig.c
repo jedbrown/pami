@@ -288,7 +288,7 @@ int main(int argc, char*argv[])
             if (task_id == 0)
               printf("Running Alltoallv: %s\n", dt_array_str[dt]);
 
-            for (i = 1; i <= gMax_count/get_type_size(dt_array[dt]); i *= 2)
+            for (i = gMin_count; i <= gMax_count/get_type_size(dt_array[dt]); i *= 2)
             {
               size_t  dataSent = i;
               int          niter;

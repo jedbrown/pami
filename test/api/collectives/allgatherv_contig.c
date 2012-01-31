@@ -303,7 +303,7 @@ int main (int argc, char ** argv)
             if (task_id == task_zero)
               printf("Running Allgatherv: %s\n", dt_array_str[dt]);
 
-              for (i = 1; i <= gMax_count; i *= 2)
+              for (i = gMin_count; i <= gMax_count; i *= 2)
             {
               long long dataSent = i;
               unsigned  niter    = 100;

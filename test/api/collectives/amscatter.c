@@ -333,7 +333,7 @@ int main(int argc, char*argv[])
       amscatter.algorithm = amscatter_always_works_algo[nalg];
 
       volatile unsigned *nscatter = &amscatter_total_count;
-      for (i = 1; i <= gMax_count; i *= 2)
+      for (i = gMin_count; i <= gMax_count; i *= 2)
       {
         size_t  dataSent = i;
         int     niter;

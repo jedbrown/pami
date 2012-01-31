@@ -185,7 +185,7 @@ int main(int argc, char*argv[])
 
       int i, j,k;
 
-      for (i = 1; i <= gMax_count; i *= 2)
+      for (i = gMin_count; i <= gMax_count; i *= 2)
       {
         size_t  dataSent = i;
         int          niter;

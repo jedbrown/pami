@@ -300,6 +300,7 @@ int pami_shutdown(pami_client_t        * client,          /* in/out:  client    
 unsigned gNumRoots       = -1; /* use num_tasks */
 unsigned gFull_test      = FULL_TEST;
 unsigned gMax_count      = COUNT;
+unsigned gMin_count      = 1;
 unsigned gBuffer_offset  = OFFSET;
 unsigned gNiterlat       = NITERLAT;
 size_t   gNum_contexts   = 1;
@@ -357,6 +358,12 @@ void setup_env()
 
   /* Override COUNT */
   if (sCount) gMax_count = atoi(sCount);
+
+  /* \note Test environment variable" TEST_COUNT_ONLY=N only count     */
+  char* sCountOnly = getenv("TEST_COUNT_ONLY");
+
+  /* Override COUNT */
+  if (sCountOnly) gMin_count = gMax_count = atoi(sCountOnly);
 
   /* \note Test environment variable" TEST_OFFSET=N buffer offset/alignment*/
   char* sOffset = getenv("TEST_OFFSET");
