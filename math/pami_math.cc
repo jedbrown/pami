@@ -121,6 +121,11 @@ class MathOpsInit
 public:
   MathOpsInit(void *table[PAMI_OP_COUNT][PAMI_DT_COUNT][MATH_MAX_NSRC])
   {
+#if defined(__64BIT__)
+    COMPILE_TIME_ASSERT(sizeof(unsigned long) == 8);
+#else
+    COMPILE_TIME_ASSERT(sizeof(unsigned long) == 4);
+#endif
     memset(table, 0, sizeof(table));
     OPTIMIZED_int8_max;
     OPTIMIZED_uint8_max;
@@ -244,6 +249,13 @@ public:
     table[PAMI_MAX][PAMI_UNSIGNED_SHORT][0] =	(void*)_pami_core_uint16_max;
     table[PAMI_MAX][PAMI_SIGNED_INT][0] =	(void*)_pami_core_int32_max;
     table[PAMI_MAX][PAMI_UNSIGNED_INT][0] =	(void*)_pami_core_uint32_max;
+#if defined(__64BIT__)
+    table[PAMI_MAX][PAMI_SIGNED_LONG][0] =	(void*)_pami_core_int64_max;
+    table[PAMI_MAX][PAMI_UNSIGNED_LONG][0] =(void*)_pami_core_uint64_max;
+#else
+    table[PAMI_MAX][PAMI_SIGNED_LONG][0] =	(void*)_pami_core_int32_max;
+    table[PAMI_MAX][PAMI_UNSIGNED_LONG][0] =(void*)_pami_core_uint32_max;
+#endif
     table[PAMI_MAX][PAMI_SIGNED_LONG_LONG][0] =	(void*)_pami_core_int64_max;
     table[PAMI_MAX][PAMI_UNSIGNED_LONG_LONG][0] =(void*)_pami_core_uint64_max;
     table[PAMI_MAX][PAMI_FLOAT][0] =		(void*)_pami_core_fp32_max;
@@ -256,6 +268,13 @@ public:
     table[PAMI_MIN][PAMI_UNSIGNED_SHORT][0] =	(void*)_pami_core_uint16_min;
     table[PAMI_MIN][PAMI_SIGNED_INT][0] =	(void*)_pami_core_int32_min;
     table[PAMI_MIN][PAMI_UNSIGNED_INT][0] =	(void*)_pami_core_uint32_min;
+#if defined(__64BIT__)
+    table[PAMI_MIN][PAMI_SIGNED_LONG][0] =	(void*)_pami_core_int64_min;
+    table[PAMI_MIN][PAMI_UNSIGNED_LONG][0] =(void*)_pami_core_uint64_min;
+#else
+    table[PAMI_MIN][PAMI_SIGNED_LONG][0] =	(void*)_pami_core_int32_min;
+    table[PAMI_MIN][PAMI_UNSIGNED_LONG][0] =(void*)_pami_core_uint32_min;
+#endif
     table[PAMI_MIN][PAMI_SIGNED_LONG_LONG][0] =	(void*)_pami_core_int64_min;
     table[PAMI_MIN][PAMI_UNSIGNED_LONG_LONG][0] =(void*)_pami_core_uint64_min;
     table[PAMI_MIN][PAMI_FLOAT][0] =		(void*)_pami_core_fp32_min;
@@ -268,6 +287,13 @@ public:
     table[PAMI_SUM][PAMI_UNSIGNED_SHORT][0] =	(void*)_pami_core_uint16_sum;
     table[PAMI_SUM][PAMI_SIGNED_INT][0] =	(void*)_pami_core_int32_sum;
     table[PAMI_SUM][PAMI_UNSIGNED_INT][0] =	(void*)_pami_core_uint32_sum;
+#if defined(__64BIT__)
+    table[PAMI_SUM][PAMI_SIGNED_LONG][0] =	(void*)_pami_core_int64_sum;
+    table[PAMI_SUM][PAMI_UNSIGNED_LONG][0] =(void*)_pami_core_uint64_sum;
+#else
+    table[PAMI_SUM][PAMI_SIGNED_LONG][0] =	(void*)_pami_core_int32_sum;
+    table[PAMI_SUM][PAMI_UNSIGNED_LONG][0] =(void*)_pami_core_uint32_sum;
+#endif
     table[PAMI_SUM][PAMI_SIGNED_LONG_LONG][0] =	(void*)_pami_core_int64_sum;
     table[PAMI_SUM][PAMI_UNSIGNED_LONG_LONG][0] =(void*)_pami_core_uint64_sum;
     table[PAMI_SUM][PAMI_FLOAT][0] =		(void*)_pami_core_fp32_sum;
@@ -280,6 +306,13 @@ public:
     table[PAMI_PROD][PAMI_UNSIGNED_SHORT][0] =	(void*)_pami_core_uint16_prod;
     table[PAMI_PROD][PAMI_SIGNED_INT][0] =	(void*)_pami_core_int32_prod;
     table[PAMI_PROD][PAMI_UNSIGNED_INT][0] =	(void*)_pami_core_uint32_prod;
+#if defined(__64BIT__)
+    table[PAMI_PROD][PAMI_SIGNED_LONG][0] =	(void*)_pami_core_int64_prod;
+    table[PAMI_PROD][PAMI_UNSIGNED_LONG][0] =(void*)_pami_core_uint64_prod;
+#else
+    table[PAMI_PROD][PAMI_SIGNED_LONG][0] =	(void*)_pami_core_int32_prod;
+    table[PAMI_PROD][PAMI_UNSIGNED_LONG][0] =(void*)_pami_core_uint32_prod;
+#endif
     table[PAMI_PROD][PAMI_SIGNED_LONG_LONG][0] =	(void*)_pami_core_int64_prod;
     table[PAMI_PROD][PAMI_UNSIGNED_LONG_LONG][0] =(void*)_pami_core_uint64_prod;
     table[PAMI_PROD][PAMI_FLOAT][0] =		(void*)_pami_core_fp32_prod;
@@ -294,6 +327,13 @@ public:
     table[PAMI_LAND][PAMI_UNSIGNED_SHORT][0] =	(void*)_pami_core_uint16_land;
     table[PAMI_LAND][PAMI_SIGNED_INT][0] =	(void*)_pami_core_int32_land;
     table[PAMI_LAND][PAMI_UNSIGNED_INT][0] =	(void*)_pami_core_uint32_land;
+#if defined(__64BIT__)
+    table[PAMI_LAND][PAMI_SIGNED_LONG][0] =	(void*)_pami_core_int64_land;
+    table[PAMI_LAND][PAMI_UNSIGNED_LONG][0] =(void*)_pami_core_uint64_land;
+#else
+    table[PAMI_LAND][PAMI_SIGNED_LONG][0] =	(void*)_pami_core_int32_land;
+    table[PAMI_LAND][PAMI_UNSIGNED_LONG][0] =(void*)_pami_core_uint32_land;
+#endif
     table[PAMI_LAND][PAMI_SIGNED_LONG_LONG][0] =	(void*)_pami_core_int64_land;
     table[PAMI_LAND][PAMI_UNSIGNED_LONG_LONG][0] =(void*)_pami_core_uint64_land;
     table[PAMI_LAND][PAMI_FLOAT][0] =		(void*)_pami_core_fp32_land;
@@ -305,6 +345,13 @@ public:
     table[PAMI_LOR][PAMI_UNSIGNED_SHORT][0] =	(void*)_pami_core_uint16_lor;
     table[PAMI_LOR][PAMI_SIGNED_INT][0] =	(void*)_pami_core_int32_lor;
     table[PAMI_LOR][PAMI_UNSIGNED_INT][0] =	(void*)_pami_core_uint32_lor;
+#if defined(__64BIT__)
+    table[PAMI_LOR][PAMI_SIGNED_LONG][0] =	(void*)_pami_core_int64_lor;
+    table[PAMI_LOR][PAMI_UNSIGNED_LONG][0] =(void*)_pami_core_uint64_lor;
+#else
+    table[PAMI_LOR][PAMI_SIGNED_LONG][0] =	(void*)_pami_core_int32_lor;
+    table[PAMI_LOR][PAMI_UNSIGNED_LONG][0] =(void*)_pami_core_uint32_lor;
+#endif
     table[PAMI_LOR][PAMI_SIGNED_LONG_LONG][0] =	(void*)_pami_core_int64_lor;
     table[PAMI_LOR][PAMI_UNSIGNED_LONG_LONG][0] =(void*)_pami_core_uint64_lor;
     table[PAMI_LOR][PAMI_FLOAT][0] =		(void*)_pami_core_fp32_lor;
@@ -316,6 +363,13 @@ public:
     table[PAMI_LXOR][PAMI_UNSIGNED_SHORT][0] =	(void*)_pami_core_uint16_lxor;
     table[PAMI_LXOR][PAMI_SIGNED_INT][0] =	(void*)_pami_core_int32_lxor;
     table[PAMI_LXOR][PAMI_UNSIGNED_INT][0] =	(void*)_pami_core_uint32_lxor;
+#if defined(__64BIT__)
+    table[PAMI_LXOR][PAMI_SIGNED_LONG][0] =	(void*)_pami_core_int64_lxor;
+    table[PAMI_LXOR][PAMI_UNSIGNED_LONG][0] =(void*)_pami_core_uint64_lxor;
+#else
+    table[PAMI_LXOR][PAMI_SIGNED_LONG][0] =	(void*)_pami_core_int32_lxor;
+    table[PAMI_LXOR][PAMI_UNSIGNED_LONG][0] =(void*)_pami_core_uint32_lxor;
+#endif
     table[PAMI_LXOR][PAMI_SIGNED_LONG_LONG][0] =	(void*)_pami_core_int64_lxor;
     table[PAMI_LXOR][PAMI_UNSIGNED_LONG_LONG][0] =(void*)_pami_core_uint64_lxor;
     table[PAMI_LXOR][PAMI_FLOAT][0] =		(void*)_pami_core_fp32_lxor;
@@ -327,6 +381,13 @@ public:
     table[PAMI_BAND][PAMI_UNSIGNED_SHORT][0] =	(void*)_pami_core_uint16_band;
     table[PAMI_BAND][PAMI_SIGNED_INT][0] =	(void*)_pami_core_int32_band;
     table[PAMI_BAND][PAMI_UNSIGNED_INT][0] =	(void*)_pami_core_uint32_band;
+#if defined(__64BIT__)
+    table[PAMI_BAND][PAMI_SIGNED_LONG][0] =	(void*)_pami_core_int64_band;
+    table[PAMI_BAND][PAMI_UNSIGNED_LONG][0] =(void*)_pami_core_uint64_band;
+#else
+    table[PAMI_BAND][PAMI_SIGNED_LONG][0] =	(void*)_pami_core_int32_band;
+    table[PAMI_BAND][PAMI_UNSIGNED_LONG][0] =(void*)_pami_core_uint32_band;
+#endif
     table[PAMI_BAND][PAMI_SIGNED_LONG_LONG][0] =	(void*)_pami_core_int64_band;
     table[PAMI_BAND][PAMI_UNSIGNED_LONG_LONG][0] =(void*)_pami_core_uint64_band;
     table[PAMI_BAND][PAMI_FLOAT][0] =		(void*)_pami_core_fp32_band;
@@ -338,6 +399,13 @@ public:
     table[PAMI_BOR][PAMI_UNSIGNED_SHORT][0] =	(void*)_pami_core_uint16_bor;
     table[PAMI_BOR][PAMI_SIGNED_INT][0] =	(void*)_pami_core_int32_bor;
     table[PAMI_BOR][PAMI_UNSIGNED_INT][0] =	(void*)_pami_core_uint32_bor;
+#if defined(__64BIT__)
+    table[PAMI_BOR][PAMI_SIGNED_LONG][0] =	(void*)_pami_core_int64_bor;
+    table[PAMI_BOR][PAMI_UNSIGNED_LONG][0] =(void*)_pami_core_uint64_bor;
+#else
+    table[PAMI_BOR][PAMI_SIGNED_LONG][0] =	(void*)_pami_core_int32_bor;
+    table[PAMI_BOR][PAMI_UNSIGNED_LONG][0] =(void*)_pami_core_uint32_bor;
+#endif
     table[PAMI_BOR][PAMI_SIGNED_LONG_LONG][0] =	(void*)_pami_core_int64_bor;
     table[PAMI_BOR][PAMI_UNSIGNED_LONG_LONG][0] =(void*)_pami_core_uint64_bor;
     table[PAMI_BOR][PAMI_FLOAT][0] =		(void*)_pami_core_fp32_bor;
@@ -349,6 +417,13 @@ public:
     table[PAMI_BXOR][PAMI_UNSIGNED_SHORT][0] =	(void*)_pami_core_uint16_bxor;
     table[PAMI_BXOR][PAMI_SIGNED_INT][0] =	(void*)_pami_core_int32_bxor;
     table[PAMI_BXOR][PAMI_UNSIGNED_INT][0] =	(void*)_pami_core_uint32_bxor;
+#if defined(__64BIT__)
+    table[PAMI_BXOR][PAMI_SIGNED_LONG][0] =	(void*)_pami_core_int64_bxor;
+    table[PAMI_BXOR][PAMI_UNSIGNED_LONG][0] =(void*)_pami_core_uint64_bxor;
+#else
+    table[PAMI_BXOR][PAMI_SIGNED_LONG][0] =	(void*)_pami_core_int32_bxor;
+    table[PAMI_BXOR][PAMI_UNSIGNED_LONG][0] =(void*)_pami_core_uint32_bxor;
+#endif
     table[PAMI_BXOR][PAMI_SIGNED_LONG_LONG][0] =	(void*)_pami_core_int64_bxor;
     table[PAMI_BXOR][PAMI_UNSIGNED_LONG_LONG][0] =(void*)_pami_core_uint64_bxor;
     table[PAMI_BXOR][PAMI_FLOAT][0] =		(void*)_pami_core_fp32_bxor;
