@@ -495,7 +495,7 @@ namespace PAMI
                   }
                   else
                   {
-                    fprintf(stderr,"%s:%u npeers %u math not yet supported\n",__FILE__,__LINE__,npeers);
+                    PAMI_abortf("%s:%u npeers %u math not yet supported\n",__FILE__,__LINE__,npeers);
                   }
                 }
                 else
@@ -522,7 +522,7 @@ namespace PAMI
                   }
                   else
                   {
-                    fprintf(stderr,"%s:%u npeers %u sum not yet supported\n",__FILE__,__LINE__,npeers);
+                    PAMI_abortf("%s:%u npeers %u sum not yet supported\n",__FILE__,__LINE__,npeers);
                   }
 
                 }
@@ -601,7 +601,7 @@ namespace PAMI
               }
               else
               {
-                fprintf(stderr,"%s:%u npeers %u math not yet supported\n",__FILE__,__LINE__,npeers);
+                PAMI_abortf("%s:%u npeers %u math not yet supported\n",__FILE__,__LINE__,npeers);
               }
 
               _my_desc->signal_done();
@@ -638,8 +638,7 @@ namespace PAMI
                 advance_64way_math((local_rank/4), 16, total_bytes, offset_dbl);
               else
               {
-                fprintf(stderr,"%s:%u npeers %u math not yet supported\n",__FILE__,__LINE__,npeers);
-                exit(0);
+                PAMI_abortf("%s:%u npeers %u math not yet supported\n",__FILE__,__LINE__,npeers);
               }
 
               return PAMI_SUCCESS;

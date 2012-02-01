@@ -880,14 +880,8 @@ namespace PAMI
         TRACE_FN_ENTER();
 
         pami_result_t rc = _cn_shmem_coll.postMulticombineImmediate(_clientid, _contextid, mcomb, devinfo);
-        if (rc == PAMI_SUCCESS)
-        {
-          TRACE_FN_EXIT();
-          return rc;
-        }
-
         TRACE_FN_EXIT();
-        return PAMI_SUCCESS;
+        return rc;
       }
       virtual inline pami_result_t manytomany (pami_manytomany_t *, void *devinfo = NULL)
       {

@@ -46,7 +46,8 @@ namespace PAMI
 
             //op = mu_collective_op_table[PAMI_DOUBLE][PAMI_MAX];
             if (op == unsupported_operation)
-              return PAMI_ERROR; //Unsupported operation
+              PAMI_abortf("Unsupported operation %X\n", mcombine->optor);
+              //return PAMI_ERROR; //Unsupported operation
 
             unsigned classroute = 0;
 
