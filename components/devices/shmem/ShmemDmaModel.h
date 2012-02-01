@@ -521,6 +521,32 @@ namespace PAMI
 
             size_t fnum = _device.fnum (_device.task2peer(target_task), target_offset);
 
+            // If ordering dosn't matter, or if ordering does matter and the
+            // send queue is empty and there are no active packets injected
+            // from this device ... then do an "immediate" shared address read.
+            //
+            if ((T_Ordered == false) ||
+                ((_device.isSendQueueEmpty (fnum)) &&
+                 (_device.activePackets(fnum) == false)))
+              {
+                TRACE_ERR((stderr, "   Shmem::DmaModel<T_Ordered=%d>::postDmaGet_impl('memregion'), do an 'unordered' shared address read.\n", T_Ordered));
+                size_t bytes_copied =
+                  _device.shaddr.read (local_memregion, local_offset, remote_memregion, remote_offset, bytes);
+
+                if (likely(bytes_copied == bytes))
+                  {
+                    if (local_fn) local_fn (_context, cookie, PAMI_SUCCESS);
+                    TRACE_ERR((stderr, "<< Shmem::DmaModel::postDmaGet_impl('non-blocking memregion'), return true\n"));
+                    return true;
+                  }
+                else
+                  {
+                    bytes         -= bytes_copied;
+                    local_offset  += bytes_copied;
+                    remote_offset += bytes_copied;
+                  }
+              }
+
             // Block at the head of the send queue, then perform a shared
             // address read operation.
             COMPILE_TIME_ASSERT(sizeof(DmaMessage<T_Device>) <= T_StateBytes);

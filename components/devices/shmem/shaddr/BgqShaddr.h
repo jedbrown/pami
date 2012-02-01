@@ -20,7 +20,7 @@
 
 #include "components/fifo/FifoInterface.h"
 
-#define SHMEM_COPY_BLOCK_SIZE	65536
+#define SHMEM_COPY_BLOCK_SIZE	2048*1024
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) // fprintf x
