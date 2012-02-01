@@ -2221,7 +2221,7 @@ extern "C"
    * \param[in]  sndbuf       Source buffer.
    * \param[in]  stype        Source buffer type and datatype of the operation
    * \param[in]  stypecount   Source buffer type count
-   * \param[in]  rcvbuf       Receive buffer.
+   * \param[out]  rcvbuf       Receive buffer.
    * \param[in]  rtype        Receive buffer layout
    * \param[in]  rtypecount   Receive buffer type count
    * \param[in]  op           Reduce operation
@@ -2300,11 +2300,10 @@ extern "C"
    * The allgather
    *
    * \param[in]  cb_done      Callback to invoke when message is complete.
-   * \param[in]  geometry     Geometry to use for this collective operation.
-   * \param[in]  src          Source buffer to send
+   * \param[in]  srcbuf       Source buffer to send
    * \param[in]  stype        data layout of send buffer
    * \param[in]  stypecount   replication count of the type
-   * \param[in]  rcv          Source buffer to receive the data
+   * \param[out]  rcvbuf      Source buffer to receive the data
    * \param[in]  rtype        data layout of each receive buffer
    * \param[in]  rtypecount   replication count of the type
    *
@@ -2323,7 +2322,7 @@ extern "C"
 
 
   /**
-   * \brief Create and post a non-blocking allgather
+   * \brief Create and post a non-blocking gather
    *
    * The gather
    *
@@ -2331,7 +2330,7 @@ extern "C"
    * \param[in]  sndbuf       Source buffer to send
    * \param[in]  stype        data layout of send buffer
    * \param[in]  stypecount   replication count of the type
-   * \param[in]  rcvbuf       Source buffer to receive the data
+   * \param[out]  rcvbuf       Source buffer to receive the data
    * \param[in]  rtype        data layout of each receive buffer
    * \param[in]  rtypecount   replication count of the type
    *
@@ -2351,7 +2350,7 @@ extern "C"
   } pami_gather_t;
 
   /**
-   * \brief Create and post a non-blocking gatherv
+   * \brief Create and post a non-blocking gatherv with size_t-type arrays
    *
    * The gatherv
    *
@@ -2381,7 +2380,7 @@ extern "C"
   } pami_gatherv_t;
 
   /**
-   * \brief Create and post a non-blocking gatherv
+   * \brief Create and post a non-blocking gatherv with integer-type arrays
    *
    * The gatherv_int routine
    *
@@ -2412,7 +2411,7 @@ extern "C"
 
 
   /**
-   * \brief Create and post a non-blocking allgatherv
+   * \brief Create and post a non-blocking allgatherv with size_t-type arrays
    *
    * The allgatherv
    *
@@ -2442,7 +2441,7 @@ extern "C"
   } pami_allgatherv_t;
 
   /**
-   * \brief Create and post a non-blocking allgatherv
+   * \brief Create and post a non-blocking allgatherv with integer-type arrays
    *
    * The allgatherv_int
    *
