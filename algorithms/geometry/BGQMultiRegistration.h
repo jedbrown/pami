@@ -836,12 +836,13 @@ namespace PAMI
     typedef CCMI::Adaptor::Allgather::AllgatherOnBroadcastT < 10, 10,
     CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
     < 10,
-    CCMI::Schedule::TorusRect,
-    CCMI::ConnectionManager::ColorConnMgr,
-    get_rect_allgv_colors,
-    PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX > ,
-    CCMI::ConnectionManager::ColorConnMgr,
-    PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX > RectangleDputAllgather;
+      CCMI::Schedule::TorusRect,
+      CCMI::ConnectionManager::ColorConnMgr,
+      get_rect_allgv_colors,
+      PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX > ,
+      CCMI::ConnectionManager::ColorConnMgr,
+      PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX,
+      true, true> RectangleDputAllgather;
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT
     < RectangleDputAllgather,
@@ -1288,9 +1289,9 @@ namespace PAMI
               geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_rectangle_dput_broadcast_factory, _context, _context_id);
 
             if (((master_sub_topology->size() == 1) || (local_sub_topology->size() < 32)) && (_shmem_mu_rectangle_dput_allgather_factory))
-              geometry->addCollective(PAMI_XFER_ALLGATHERV,  _shmem_mu_rectangle_dput_allgather_factory, _context, _context_id);
+              geometry->addCollective(PAMI_XFER_ALLGATHERV_INT,  _shmem_mu_rectangle_dput_allgather_factory, _context, _context_id);
             else if (_mu_rectangle_dput_allgather_factory)
-              geometry->addCollective(PAMI_XFER_ALLGATHERV,  _mu_rectangle_dput_allgather_factory, _context, _context_id);
+              geometry->addCollective(PAMI_XFER_ALLGATHERV_INT,  _mu_rectangle_dput_allgather_factory, _context, _context_id);
           }
 
         }

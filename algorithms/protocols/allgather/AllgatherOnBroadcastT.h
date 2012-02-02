@@ -31,7 +31,7 @@ namespace CCMI
       ///
       /// \brief Asyc Allgather Composite.
       ///
-      template <int NBCAST, int NCOLORS, class T_Bcast, class T_Conn,  PAMI::Geometry::topologyIndex_t T_Geometry_Index>
+      template <int NBCAST, int NCOLORS, class T_Bcast, class T_Conn,  PAMI::Geometry::topologyIndex_t T_Geometry_Index, bool T_Allgv=true, bool T_Int=false>
       class AllgatherOnBroadcastT: public Executor::Composite
       {
       protected:
@@ -44,7 +44,7 @@ namespace CCMI
         PAMI_GEOMETRY_CLASS         * _geometry;
         Interfaces::NativeInterface * _native;
         T_Conn                        _cmgr[NBCAST];
-        pami_allgatherv_t             _cmd;
+	pami_xfer_t                   _cmd;
         T_Bcast                       _bcast[NBCAST];
 	pami_context_t                _context;
 	pami_work_t                   _work;
@@ -76,7 +76,7 @@ namespace CCMI
         _cookie (cookie),
         _geometry((PAMI_GEOMETRY_CLASS *)g),
         _native(native),
-	_cmd (((pami_xfer_t *)cmd)->cmd.xfer_allgatherv),
+	_cmd (*(pami_xfer_t *)cmd),
 	_context(ctxt)
         {
           TRACE_FN_ENTER();
@@ -87,18 +87,58 @@ namespace CCMI
           {
             if (((PAMI::Topology*)_geometry->getTopology(T_Geometry_Index))->index2Endpoint(i) == _native->endpoint())
             {
-              PAMI::Type::TypeCode * rtype = (PAMI::Type::TypeCode *)_cmd.rtype;
-              char *dst = _cmd.rcvbuf + _cmd.rdispls[i];
-              char *src = _cmd.sndbuf; 
-              unsigned bytes = _cmd.rtypecounts[i] * rtype->GetDataSize();
+	      size_t rtypecounts;
+              PAMI::Type::TypeCode * rtype;
+	      char *src, *dst;
+	      getAllgatherInfo (i, rtypecounts, &dst, &rtype);
+	      src = getSrcBuf();
 
+	      unsigned bytes = rtypecounts * rtype->GetDataSize();
               if (src && (src != (char *)ALLGV_IN_PLACE))
-                Core_memcpy(dst, src, bytes);
+		Core_memcpy(dst, src, bytes);
             }
           }
 
           nextStep();
           TRACE_FN_EXIT();
+        }
+
+        char *getSrcBuf () 
+        {
+	  if (T_Allgv && !T_Int) {
+	    return _cmd.cmd.xfer_allgatherv.sndbuf;
+	  } 
+	  else if (T_Allgv) {
+	    return _cmd.cmd.xfer_allgatherv_int.sndbuf;
+	  }
+	  else {
+	    return _cmd.cmd.xfer_allgather.sndbuf;
+	  }
+	}
+
+        void getAllgatherInfo ( size_t      index,
+			        size_t    & rtypecounts,  
+				char     ** dst,
+				PAMI::Type::TypeCode ** rtype ) 
+        {
+	  if (T_Allgv && !T_Int) {
+	    rtypecounts = _cmd.cmd.xfer_allgatherv.rtypecounts[index];
+            *dst        = _cmd.cmd.xfer_allgatherv.rcvbuf + 
+	    _cmd.cmd.xfer_allgatherv.rdispls[index];
+	    //For non-inplace allgvs the src has been copied to dst on root
+            *rtype      = (PAMI::Type::TypeCode *)_cmd.cmd.xfer_allgatherv.rtype;
+	  }
+	  else if (T_Allgv) {
+	    rtypecounts = _cmd.cmd.xfer_allgatherv_int.rtypecounts[index];
+            *dst      = _cmd.cmd.xfer_allgatherv_int.rcvbuf + 
+	    _cmd.cmd.xfer_allgatherv_int.rdispls[index];
+            *rtype    = (PAMI::Type::TypeCode *)_cmd.cmd.xfer_allgatherv_int.rtype;
+	  }
+	  else {
+	    rtypecounts = _cmd.cmd.xfer_allgather.rtypecount;
+            *dst      = _cmd.cmd.xfer_allgather.rcvbuf + rtypecounts * index;
+            *rtype    = (PAMI::Type::TypeCode *)_cmd.cmd.xfer_allgather.rtype;
+	  }
         }
 
         void nextStep ()
@@ -113,13 +153,9 @@ namespace CCMI
             size_t root, rtypecounts;
             char *src, *dst;
             PAMI::Type::TypeCode * rtype;
-
-            rtypecounts = _cmd.rtypecounts[ncomplete];
+	    getAllgatherInfo (ncomplete, rtypecounts, &dst, &rtype);
+	    src = dst;
             root        = ((PAMI::Topology*)_geometry->getTopology(T_Geometry_Index))->index2Endpoint(ncomplete);
-            dst         = _cmd.rcvbuf + _cmd.rdispls[ncomplete];
-            src         = dst;        //For non-inplace allgvs the src has been copied to dst on root
-            rtype       = (PAMI::Type::TypeCode *)_cmd.rtype;
-
             new (&_cmgr[i]) T_Conn (nc);
             new (&_bcast[i]) T_Bcast(_native, &_cmgr[i], _geometry, done, this);
             int rc = _bcast[i].initialize (root, rtypecounts, rtype, src, 
@@ -166,13 +202,13 @@ namespace CCMI
           nextStep();
           TRACE_FN_EXIT();
         }
-
+      
         static void cb_barrier_done (pami_context_t   context,
                                      void           * cookie,
                                      pami_result_t    result) 
         {
           TRACE_FN_ENTER();
-          AllgatherOnBroadcastT<NBCAST, NCOLORS, T_Bcast, T_Conn, T_Geometry_Index> *allg = (AllgatherOnBroadcastT<NBCAST, NCOLORS, T_Bcast, T_Conn, T_Geometry_Index> *) cookie;
+          AllgatherOnBroadcastT<NBCAST, NCOLORS, T_Bcast, T_Conn, T_Geometry_Index, T_Allgv, T_Int> *allg = (AllgatherOnBroadcastT<NBCAST, NCOLORS, T_Bcast, T_Conn, T_Geometry_Index, T_Allgv, T_Int> *) cookie;
 	  //fprintf (stderr, "cb_barrier_done\n");
           for (unsigned i = 0; i < allg->_cur_nbcast; i++)
 	    //Calls cb_barrier_done in the composite 
@@ -187,7 +223,7 @@ namespace CCMI
                           pami_result_t    result) 
         {
           TRACE_FN_ENTER();
-          AllgatherOnBroadcastT<NBCAST, NCOLORS, T_Bcast, T_Conn, T_Geometry_Index> *allg = (AllgatherOnBroadcastT<NBCAST, NCOLORS, T_Bcast, T_Conn, T_Geometry_Index> *) cookie;
+          AllgatherOnBroadcastT<NBCAST, NCOLORS, T_Bcast, T_Conn, T_Geometry_Index, T_Allgv, T_Int> *allg = (AllgatherOnBroadcastT<NBCAST, NCOLORS, T_Bcast, T_Conn, T_Geometry_Index, T_Allgv, T_Int> *) cookie;
           //fprintf(stderr, "<%p> ncomplete %d, nranks %d _fn %p\n", allg, allg->_ncomplete, allg->_nranks, allg->_fn);
 
           ++allg->_ncomplete;
@@ -210,7 +246,7 @@ namespace CCMI
 	static pami_result_t advanceNext (pami_context_t     context,
 					  void             * cookie) 
 	{
-	  AllgatherOnBroadcastT<NBCAST, NCOLORS, T_Bcast, T_Conn, T_Geometry_Index> *allg = (AllgatherOnBroadcastT<NBCAST, NCOLORS, T_Bcast, T_Conn, T_Geometry_Index> *) cookie;
+	  AllgatherOnBroadcastT<NBCAST, NCOLORS, T_Bcast, T_Conn, T_Geometry_Index, T_Allgv, T_Int> *allg = (AllgatherOnBroadcastT<NBCAST, NCOLORS, T_Bcast, T_Conn, T_Geometry_Index, T_Allgv, T_Int> *) cookie;
 	  
 	  allg->nextStep();
 	  return PAMI_SUCCESS;
