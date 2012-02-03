@@ -33,7 +33,7 @@ namespace CCMI
     namespace Broadcast
     {
 
-      class BcastQueueElem : public PAMI::MatchQueueElem
+      class BcastQueueElem : public PAMI::MatchQueueElem<>
       {
         protected:
           //matchq
@@ -53,7 +53,7 @@ namespace CCMI
           ///
           /// \brief Default constructor
           ///
-          BcastQueueElem (CCMI::Executor::Composite *c = NULL, unsigned root = -1) : PAMI::MatchQueueElem (root),
+          BcastQueueElem (CCMI::Executor::Composite *c = NULL, unsigned root = -1) : PAMI::MatchQueueElem<> (root),
               _isFinished (false),
               _composite (c)
           {
@@ -68,7 +68,7 @@ namespace CCMI
             _cb_done.function = NULL;
             _cb_done.clientdata = NULL;
 
-            CCMI_assert(bytes > 0);
+            CCMI_assert(bytes > 0);//SSS ???
           }
 
           void initPostMsg (unsigned bytes, char *rcvbuf, PAMI_Callback_t &cb)

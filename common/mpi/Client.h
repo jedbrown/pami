@@ -705,7 +705,7 @@ namespace PAMI
     MemoryAllocator <sizeof(PAMI::Geometry::UnexpBarrierQueueElement), 16> _ueb_allocator;
 
     //  Unexpected Barrier match queue
-    MatchQueue                                                             _ueb_queue;
+    MatchQueue<>                                                           _ueb_queue;
 
     
     inline void initializeMemoryManager ()

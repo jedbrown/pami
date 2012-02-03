@@ -109,7 +109,7 @@ namespace CCMI
 
         int                 _comm;
         pami_endpoint_t     _root;
-        int                 _buflen;
+        int                 _bufcnt;
         int                 _totallen;
         char                *_sbuf;
         char                *_rbuf;
@@ -196,7 +196,7 @@ namespace CCMI
           TRACE_ADAPTOR((stderr, "<%p>Executor::GatherExec(...)\n", this));
           _clientdata        =  0;
           _root              =  (unsigned) - 1;
-          _buflen            =  0;
+          _bufcnt            =  0;
 
           _mdata._comm       = _comm;
           _mdata._root       = _root;
@@ -271,66 +271,66 @@ namespace CCMI
           _mdata._root       = _root;
         }
 
-        void  updateBuffers(char *src, char *dst, int len, TypeCode *stype, TypeCode *rtype)
+        void  updateBuffers(char *src, char *dst, int count, TypeCode *stype, TypeCode *rtype)
         {
-          _buflen = len;
+          _bufcnt = count;
           _sbuf   = src;
           _rbuf   = dst;
-          _stype    = stype;
-          _rtype    = rtype;
+          _stype  = stype;
+          _rtype  = rtype;
+
         }
 
         void updatePWQ()
         {
           if (_native->endpoint() != _root)
           {
-            size_t  buflen = _totallen * _buflen;
+            size_t  bufstride = _totallen * _bufcnt * _stype->GetExtent();
+            size_t  buflen    = _totallen * _bufcnt * _stype->GetDataSize();
             if (_mynphases > 1)
             {
-              _pwq.configure (_tmpbuf, buflen, 0, _stype, _rtype);
+              _pwq.configure (_tmpbuf, buflen, buflen);
             }
             else
             {
-              _pwq.configure (_sbuf, buflen, 0, _stype, _rtype);
+              _pwq.configure (_sbuf, bufstride, bufstride, _rtype, _stype);
             }
-            _pwq.produceBytes(buflen);
           }
         }
 
-        void  setBuffers (char *src, char *dst, int len, TypeCode *stype, TypeCode *rtype)
+        void  setBuffers (char *src, char *dst, int count, TypeCode *stype, TypeCode *rtype)
         {
-          TRACE_ADAPTOR((stderr, "<%p>Executor::GatherExec::setInfo() src %p, dst %p, len %d, _pwq %p\n", this, src, dst, len, &_pwq));
+          TRACE_ADAPTOR((stderr, "<%p>Executor::GatherExec::setInfo() src %p, dst %p, count %d, _pwq %p\n", this, src, dst, count, &_pwq));
 
-          _buflen   = len;
+          _bufcnt   = count;
           _sbuf     = src;
           _rbuf     = dst;
           _stype    = stype;
           _rtype    = rtype;
 
           // ship data length info in the header for async protocols
-          _mdata._count = len;
-
+          _mdata._count = _bufcnt * _stype->GetDataSize();
           CCMI_assert(_comm_schedule != NULL);
 
           if (_native->endpoint() == _root)
           {
             _donecount = _gtopology->size();
-            size_t buflen = 0;
+            size_t bufcnt = 0;
             if (_disps && _rcvcounts)
             {
                 for (unsigned i = 0; i < _gtopology->size() ; ++i)
                 {
-                  buflen += _rcvcounts[i]*_rtype->GetDataSize();
+                  bufcnt += _rcvcounts[i];
                   if (_rcvcounts[i] == 0 && i != _rootindex) _donecount--;
                 }
-                _buflen = buflen;
+                _bufcnt = bufcnt;
                 _tmpbuf = _rbuf;
             }
             else
             {
-                buflen = _gtopology->size() * len;
+                bufcnt = _gtopology->size() * count;
                 pami_result_t rc;
-                rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
+                rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, bufcnt * _rtype->GetDataSize());
                 PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
             }
           }
@@ -347,19 +347,18 @@ namespace CCMI
               new (&_dsttopology) PAMI::Topology(&_tmp_ep, 1, PAMI::tag_eplist());
 
               _donecount        = _srclens[0];
-              size_t  buflen    = _srclens[0]  * _buflen;
+              size_t  bufcnt    = _srclens[0]  * _bufcnt;
               if (_mynphases > 1)
               {
                 pami_result_t rc;
-                rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
+                rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, bufcnt * _stype->GetDataSize());
                 PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
-               _pwq.configure (_tmpbuf, buflen, 0, _stype, _rtype);
+               _pwq.configure (_tmpbuf, bufcnt * _stype->GetDataSize(), bufcnt * _stype->GetDataSize());
               }
               else
               {
-                _pwq.configure (src, buflen, 0, _stype, _rtype);
+                _pwq.configure (src, bufcnt * _stype->GetExtent(), bufcnt * _stype->GetExtent(), _rtype, _stype);
               }
-              _pwq.produceBytes(buflen);
 
               _totallen = _srclens[0];
 
@@ -407,7 +406,6 @@ namespace CCMI
 
           EXECUTOR_DEBUG((stderr, "GatherExec::notifyRecvDone, donecount = %d, subsize = %d\n", exec->_donecount, mrecv->subsize);)
           exec->_donecount -= mrecv->subsize;
-
           if (exec->_donecount == 0) exec->sendNext();
         }
 
@@ -422,13 +420,13 @@ namespace CCMI
 template <class T_ConnMgr, class T_Schedule, typename T_Gather_type>
 inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::start ()
 {
-  TRACE_ADAPTOR((stderr, "<%p>Executor::GatherExec::start() count%d\n", this, _buflen));
+  TRACE_ADAPTOR((stderr, "<%p>Executor::GatherExec::start() count%d\n", this, _bufcnt));
 
   EXECUTOR_DEBUG((stderr, "GatherExec::start, mynphases = %d, buflen = %d, donecount = %d\n",
-                  _mynphases, _buflen, _donecount);)
+                  _mynphases, _bufcnt, _donecount);)
 
   // Nothing to gather? We're done. What if in Gatherv ?
-  if ((_buflen == 0) && _cb_done)
+  if ((_bufcnt == 0) && _cb_done)
     {
       _cb_done (NULL, _clientdata, PAMI_SUCCESS);
       return;
@@ -439,11 +437,23 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::s
   if (_native->endpoint() == _root)
     {
       if (_disps && _rcvcounts)
-        memcpy(_rbuf + _disps[_rootindex] * _rtype->GetExtent(), _sbuf, _rcvcounts[_rootindex] * _rtype->GetDataSize());
+        PAMI_Type_transform_data((void*)_sbuf,
+                            _stype, 0,
+                            _rbuf + _disps[_rootindex] * _rtype->GetExtent(),
+                            _rtype, 0,
+                            _rcvcounts[_rootindex] * _rtype->GetDataSize(),
+                            PAMI_DATA_COPY, NULL);
       else
-        memcpy(_rbuf + _rootindex * _buflen, _sbuf, _buflen);
+        PAMI_Type_transform_data((void*)_sbuf,
+                            _stype, 0,
+                            _rbuf + _rootindex * _bufcnt * _rtype->GetExtent(),
+                            _rtype, 0,
+                            _bufcnt * _rtype->GetDataSize(),
+                            PAMI_DATA_COPY, NULL);
     }
-  else if (_mynphases > 1)  memcpy(_tmpbuf, _sbuf, _buflen);
+  else if (_mynphases > 1)  PAMI_Type_transform_data((void*)_sbuf, _stype, 0, _tmpbuf,
+                                                 PAMI_TYPE_BYTE, 0, _bufcnt * _stype->GetDataSize(),
+                                                 PAMI_DATA_COPY, NULL);
 
   --_donecount;
 
@@ -463,12 +473,20 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::s
         {
           if (_rootindex != 0)
             {
-              memcpy (_rbuf + ((_myindex + 1) % _gtopology->size()) * _buflen, _tmpbuf + _buflen, (_gtopology->size() - _myindex - 1) * _buflen);
-              memcpy (_rbuf, _tmpbuf + (_gtopology->size() - _myindex) * _buflen, _myindex * _buflen);
+              PAMI_Type_transform_data((void*)(_tmpbuf + _bufcnt * _rtype->GetDataSize()), PAMI_TYPE_BYTE, 0,
+                                  _rbuf + ((_myindex + 1) % _gtopology->size()) * _bufcnt * _rtype->GetExtent(),
+                                  _rtype, 0, (_gtopology->size() - _myindex - 1) * _bufcnt * _rtype->GetDataSize(),
+                                  PAMI_DATA_COPY, NULL);
+              PAMI_Type_transform_data((void*)(_tmpbuf + (_gtopology->size() - _myindex) * _bufcnt * _rtype->GetDataSize()),
+                                  PAMI_TYPE_BYTE, 0, _rbuf, _rtype, 0, _myindex * _bufcnt * _rtype->GetDataSize(),
+                                  PAMI_DATA_COPY, NULL);
             }
           else
             {
-              memcpy (_rbuf + _buflen, _tmpbuf + _buflen, (_gtopology->size() - 1) * _buflen);
+              PAMI_Type_transform_data((void*)(_tmpbuf + _bufcnt * _rtype->GetDataSize()),
+                                  PAMI_TYPE_BYTE, 0, _rbuf + _bufcnt * _rtype->GetExtent(),
+                                  _rtype, 0, (_gtopology->size() - 1) * _bufcnt * _rtype->GetDataSize(),
+                                  PAMI_DATA_COPY, NULL);
             }
         }
 
@@ -484,9 +502,9 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::s
   _msend.cb_done.clientdata = _clientdata;
   _msend.src                = (pami_pipeworkqueue_t *) & _pwq;
   _msend.dst                = NULL;
-  _msend.bytes              = _totallen * _buflen;
+  _msend.bytes              = _totallen * _bufcnt * _stype->GetDataSize();
 
-  EXECUTOR_DEBUG((stderr, "GatherExec::sendNext() to %d, totalcnt = %d, buflen = %d, multicast address %p, %p\n", _dsttopology.index2Endpoint(0), _totallen, _buflen, &_msend, &_mdata);)
+  EXECUTOR_DEBUG((stderr, "GatherExec::sendNext() to %d, totalcnt = %d, buflen = %d, multicast address %p, %p\n", _dsttopology.index2Endpoint(0), _totallen, _bufcnt, &_msend, &_mdata);)
   _native->multicast(&_msend);
 }
 
@@ -514,18 +532,20 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::n
 
   size_t      buflen;
   unsigned    offset;
-
+  TypeCode  * tmpbufType;
   if (_disps && _rcvcounts)
     {
       CCMI_assert(_native->endpoint() == _root);
       _srclens[i] = 1;
-      buflen    =  _rcvcounts[srcindex] * _rtype->GetDataSize();
+      buflen      =  _rcvcounts[srcindex] * _rtype->GetExtent();
       offset      =  _disps[srcindex] * _rtype->GetExtent();
+      tmpbufType  =  _rtype;
     }
   else
     {
-      buflen   = _srclens[i] * _buflen;
-      offset   = ((srcindex + size - _myindex) % size) * _buflen;
+      buflen      = _srclens[i] * _bufcnt  * _rtype->GetDataSize();
+      offset      = ((srcindex + size - _myindex) % size) * _bufcnt * _rtype->GetDataSize();
+      tmpbufType  = (TypeCode *)PAMI_TYPE_BYTE;
     }
 
   // CCMI_assert (buflen == cdata->_count);
@@ -533,13 +553,12 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::n
   char    *tmpbuf   = _tmpbuf + offset;
   unsigned ind      = (_nphases - cdata->_phase - 1) * _maxsrcs + i;
   *pwq = &_mrecvstr[ind].pwq;
-  (*pwq)->configure (tmpbuf, buflen, 0, _stype, _rtype);
+  (*pwq)->configure (tmpbuf, buflen, 0, tmpbufType);
   // (*pwq)->produceBytes(buflen);
   _mrecvstr[ind].subsize  = _srclens[i];
   _mrecvstr[ind].exec     = this;
 
   EXECUTOR_DEBUG((stderr, "GatherExec::notifyRecv - src = %d, offset = %d, lenth = %d, phase = %d\n", src, offset, buflen, cdata->_phase);)
-
   cb_done->function    = notifyRecvDone;
   cb_done->clientdata  = &_mrecvstr[ind];
 }

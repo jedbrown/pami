@@ -193,7 +193,7 @@ public:
 		_pmask = (unsigned)-1; // nil mask
 #endif /* !OPTIMIZE_FOR_FLAT_WORKQUEUE */
 		_prod_tm = _cons_tm = NULL;
-		if (likely(prod_dt && !prod_dt->IsContiguous())) {
+		if (unlikely(prod_dt && !prod_dt->IsContiguous())) {
 			PAMI_assert_debugf(bufsize ==
 				(bufsize / prod_dt->GetExtent()) * prod_dt->GetExtent(),
 				"bufsize is not multiple of producer datatype extent");
@@ -206,7 +206,7 @@ public:
 			_qsize = (bufsize / prod_dt->GetExtent()) * prod_dt->GetDataSize();
 			_isize = (bufinit / prod_dt->GetExtent()) * prod_dt->GetDataSize();
 		}
-		if (likely(cons_dt && !cons_dt->IsContiguous())) {
+		if (unlikely(cons_dt && !cons_dt->IsContiguous())) {
 			PAMI_assert_debugf(bufsize ==
 				(bufsize / cons_dt->GetExtent()) * cons_dt->GetExtent(),
 				"bufsize is not multiple of consumer datatype extent");
@@ -223,8 +223,8 @@ public:
 		_sharedqueue->_u._s.consumedBytes = 0;
 		//_sharedqueue->_u._s.producerWakeVec = NULL;
 		//_sharedqueue->_u._s.consumerWakeVec = NULL;
-		if (likely(_prod_tm != NULL)) _prod_tm->MoveCursor(_isize);
-		if (likely(_cons_tm != NULL)) _cons_tm->MoveCursor(0);
+		if (unlikely(_prod_tm != NULL)) _prod_tm->MoveCursor(_isize);
+		if (unlikely(_cons_tm != NULL)) _cons_tm->MoveCursor(0);
 	}
 
 	///
@@ -590,7 +590,7 @@ public:
 	inline void produceBytes_impl(size_t bytes) {
 		_sharedqueue->_u._s.producedBytes += bytes;
 		if (unlikely(_prod_tm != NULL)) {
-			_prod_tm->MoveCursor(_sharedqueue->_u._s.consumedBytes);
+			_prod_tm->MoveCursor(_sharedqueue->_u._s.producedBytes);
 		}
 #ifdef ENABLE_WAKEUP
 		// cast undoes "volatile"...

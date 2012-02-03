@@ -84,7 +84,7 @@ namespace CCMI
 
     template <>
     inline void setAllgatherVec<pami_allgather_t> (pami_allgather_t *xfer,
-                                                   int *buflen, char **sbuf, char **rbuf, void *rdisps, void *rcounts, TypeCode **stype, TypeCode **rtype)
+                                                   int *bufcnt, char **sbuf, char **rbuf, void *rdisps, void *rcounts, TypeCode **stype, TypeCode **rtype)
     {
       (void)rdisps;(void)rcounts;
       TRACE_ADAPTOR((stderr, "Executor::AllgathervExec::setAllgatherVec(%p %p)\n", xfer->sndbuf, xfer->rcvbuf));
@@ -92,18 +92,18 @@ namespace CCMI
       *rbuf   = xfer->rcvbuf;
       *stype  = (TypeCode *)xfer->stype;
       *rtype  = (TypeCode *)xfer->rtype;
-      *buflen = xfer->rtypecount * (*rtype)->GetDataSize();
+      *bufcnt = xfer->rtypecount;
       return;
     }
 
     template <>
     inline void setAllgatherVec<pami_allgatherv_t> (pami_allgatherv_t *xfer,
-                                                    int *buflen, char **sbuf, char **rbuf, void *rdisps, void *rcounts, TypeCode **stype, TypeCode **rtype)
+                                                    int *bufcnt, char **sbuf, char **rbuf, void *rdisps, void *rcounts, TypeCode **stype, TypeCode **rtype)
     {
       TRACE_ADAPTOR((stderr, "Executor::AllgathervExec::setAllgatherVec(%p %p %p %p) size_t\n",xfer->sndbuf, xfer->rcvbuf,xfer->rdispls,xfer->rtypecounts));
       *sbuf = xfer->sndbuf;
       *rbuf = xfer->rcvbuf;
-      *buflen = 0;
+      *bufcnt = 0;
       *((size_t **)rdisps)   = xfer->rdispls;
       *((size_t **)rcounts)  = xfer->rtypecounts;
       *stype  = (TypeCode *)xfer->stype;
@@ -113,12 +113,12 @@ namespace CCMI
 
     template <>
     inline void setAllgatherVec<pami_allgatherv_int_t> (pami_allgatherv_int_t *xfer,
-                                                        int *buflen, char **sbuf, char **rbuf, void *rdisps, void *rcounts, TypeCode **stype, TypeCode **rtype)
+                                                        int *bufcnt, char **sbuf, char **rbuf, void *rdisps, void *rcounts, TypeCode **stype, TypeCode **rtype)
     {
       TRACE_ADAPTOR((stderr, "Executor::AllgathervExec::setAllgatherVec(%p %p %p %p) int\n", xfer->sndbuf, xfer->rcvbuf,xfer->rdispls,xfer->rtypecounts));
       *sbuf = xfer->sndbuf;
       *rbuf = xfer->rcvbuf;
-      *buflen = 0;
+      *bufcnt = 0;
       *((int **)rdisps)   = xfer->rdispls;
       *((int **)rcounts)  = xfer->rtypecounts;
       *stype  = (TypeCode *)xfer->stype;
@@ -137,7 +137,7 @@ namespace CCMI
         T_ConnMgr                      * _connmgr;
 
         int                 _comm;
-        int                 _buflen;
+        int                 _bufcnt;
         char                *_sbuf;
         char                *_rbuf;
         TypeCode            *_stype;
@@ -225,7 +225,7 @@ namespace CCMI
         {
           TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec(...)\n", this));
           _clientdata        =  0;
-          _buflen            =  0;
+          _bufcnt            =  0;
 
           _in_send_next      = 0;
 
@@ -315,20 +315,20 @@ namespace CCMI
 #endif
         }
 
-        void  updateBuffers(char *src, char *dst, int len)
+        void  updateBuffers(char *src, char *dst, int cnt)
         {
-          _buflen = len;
+          _bufcnt = cnt;
           _sbuf   = src;
           _rbuf   = dst;
         }
 
-        void  setBuffers (char *src, char *dst, int len)
+        void  setBuffers (char *src, char *dst, int cnt)
         {
           // TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::setInfo() src %p, dst %p, len %d, _pwq %p\n", this, src, dst, len, &_pwq));
 
-          _buflen = len;
-          _sbuf = src;
-          _rbuf = dst;
+          _bufcnt = cnt;
+          _sbuf   = src;
+          _rbuf   = dst;
 
         }
 
@@ -342,54 +342,65 @@ namespace CCMI
         void setVectors(T_Type *xfer)
         {
           TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::setVectors\n",this));
-          setAllgatherVec<T_Type> (xfer, &_buflen, &_sbuf, &_rbuf, &_disps, &_rcvcounts, &_stype, &_rtype);
+          setAllgatherVec<T_Type> (xfer, &_bufcnt, &_sbuf, &_rbuf, &_disps, &_rcvcounts, &_stype, &_rtype);
         }
 
         void  updateVectors(T_Type *xfer)
         {
           TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::updateVectors\n",this));
-          setAllgatherVec<T_Type> (xfer, &_buflen, &_sbuf, &_rbuf, &_disps, &_rcvcounts, &_stype, &_rtype);
+          setAllgatherVec<T_Type> (xfer, &_bufcnt, &_sbuf, &_rbuf, &_disps, &_rcvcounts, &_stype, &_rtype);
         }
 
 
         size_t getSendLength(int phase)
         {
           int index = (_myindex + _gtopology->size() - phase) % _gtopology->size();
-          return (_rcvcounts) ? (_rcvcounts[index]*_rtype->GetDataSize()) : _buflen;
+          return (_rcvcounts) ? (_rcvcounts[index] * _rtype->GetDataSize()) : _bufcnt * _rtype->GetDataSize();
         }
 
         size_t getRecvLength(int phase)
         {
           int index = (_myindex + _gtopology->size() -  phase - 1) % _gtopology->size();
-          return (_rcvcounts) ? (_rcvcounts[index]*_rtype->GetDataSize()) : _buflen;
+          return (_rcvcounts) ? (_rcvcounts[index] * _rtype->GetDataSize()) : _bufcnt * _rtype->GetDataSize();
+        }
+
+        size_t getSendPWQLength(int phase)
+        {
+          int index = (_myindex + _gtopology->size() - phase) % _gtopology->size();
+          return (_rcvcounts) ? (_rcvcounts[index] * _rtype->GetExtent()) : _bufcnt * _rtype->GetExtent();
+        }
+
+        size_t getRecvPWQLength(int phase)
+        {
+          int index = (_myindex + _gtopology->size() -  phase - 1) % _gtopology->size();
+          return (_rcvcounts) ? (_rcvcounts[index] * _rtype->GetExtent()) : _bufcnt * _rtype->GetExtent();
         }
 
         size_t getSendDisp(int phase)
         {
           int index = (_myindex + _gtopology->size() - phase) % _gtopology->size();
-          return (_disps) ? _disps[index] * _rtype->GetExtent() : index * _buflen;
+          return (_disps) ? _disps[index] * _rtype->GetExtent() : index * _bufcnt * _rtype->GetExtent();
         }
 
         size_t getRecvDisp(int phase)
         {
           int index = (_myindex + _gtopology->size() -  phase - 1) % _gtopology->size();
-          return (_disps) ? _disps[index] * _rtype->GetExtent() : index * _buflen;
+          return (_disps) ? _disps[index] * _rtype->GetExtent() : index * _bufcnt * _rtype->GetExtent();
         }
 
         PAMI::PipeWorkQueue *getSendPWQ(int phase)
         {
-          size_t sleng = getSendLength(phase);
-          size_t sdisp = getSendDisp(phase);
-          _pwq.configure (_rbuf + sdisp, sleng, 0, _stype, _rtype);
-          _pwq.produceBytes(sleng);
+          size_t spwqleng = getSendPWQLength(phase);
+          size_t sdisp    = getSendDisp(phase);
+          _pwq.configure (_rbuf + sdisp, spwqleng, spwqleng, NULL, _rtype);
           return &_pwq;
         }
 
         PAMI::PipeWorkQueue *getRecvPWQ(int phase)
         {
-          size_t rleng = getRecvLength(phase);
-          size_t rdisp = getRecvDisp(phase);
-          _rpwq.configure (_rbuf + rdisp, rleng, 0, _stype, _rtype);
+          size_t rpwqleng = getRecvPWQLength(phase);
+          size_t rdisp    = getRecvDisp(phase);
+          _rpwq.configure (_rbuf + rdisp, rpwqleng, 0, _rtype);
           return &_rpwq;
         }
 
@@ -477,7 +488,7 @@ namespace CCMI
 template <class T_ConnMgr, class T_Type>
 inline void  CCMI::Executor::AllgathervExec<T_ConnMgr, T_Type>::start ()
 {
-  TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::start() count %d\n", this, _buflen));
+  TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::start() count %d\n", this, _bufcnt));
 
   _curphase  = _startphase;
 
@@ -490,19 +501,29 @@ inline void  CCMI::Executor::AllgathervExec<T_ConnMgr, T_Type>::start ()
     {
       // We are in Allgather
       // Nothing to gather? Invoke the callback and return
-      if ((_buflen == 0) && _cb_done)
+      if ((_bufcnt == 0) && _cb_done)
         {
           _cb_done (NULL, _clientdata, PAMI_SUCCESS);
           return;
         }
-      TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::start() _rbuf %p,_sbuf %p,_buflen %d\n", this,_rbuf,_sbuf,_buflen));
-      memcpy(_rbuf + _myindex * _buflen, _sbuf, _buflen);
+      TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::start() _rbuf %p,_sbuf %p,_buflen %d\n", this,_rbuf,_sbuf,_bufcnt));
+      PAMI_Type_transform_data((void*)_sbuf,
+                          _stype, 0,
+                          _rbuf + _myindex * _bufcnt * _rtype->GetExtent(),
+                          _rtype, 0,
+                          _bufcnt * _rtype->GetDataSize(),
+                          PAMI_DATA_COPY, NULL);
     }
   else
     {
       TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::start()_rbuf %p,_disps %p, _sbuf %p, _rcvcounts %p\n", this,_rbuf,_disps,_sbuf, _rcvcounts));
       TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::start()_rbuf %p,_disps[%zu] %zu, _rbuf + _disps[_myindex] %p, _sbuf %p, _rcvcounts[_myindex] %zu\n", this,_rbuf,(size_t)_myindex, (size_t)_disps[_myindex], _rbuf + _disps[_myindex], _sbuf, (size_t)_rcvcounts[_myindex]));
-      memcpy(_rbuf + _disps[_myindex] * _rtype->GetExtent(), _sbuf, _rcvcounts[_myindex]*_rtype->GetDataSize());
+      PAMI_Type_transform_data((void*)_sbuf,
+                          _stype, 0,
+                          _rbuf + _disps[_myindex] * _rtype->GetExtent(),
+                          _rtype, 0,
+                          _rcvcounts[_myindex] * _rtype->GetDataSize(),
+                          PAMI_DATA_COPY, NULL);
     }
 
   sendNext ();

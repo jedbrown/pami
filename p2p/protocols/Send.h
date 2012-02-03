@@ -74,6 +74,20 @@ namespace PAMI
           }
 
           ///
+          /// \brief Set the pointer to the mem allocator used by PWQ
+          ///
+          /// SendPWQ uses this memory allocator. Since SendPWQ class
+          /// can't be constructed, we construct the allocator in NI and
+          /// pass it to SendPWQ class through the composite.
+          ///
+          virtual void setPWQAllocator(void * allocator) = 0;
+
+          ///
+          /// \brief Return a pointer to the mem allocator used by PWQ
+          ///
+          virtual void * getPWQAllocator() = 0;
+
+          ///
           /// \brief Query the value of one or more attributes
           ///
           /// \param [in,out] configuration  The configuration attribute(s) of interest
@@ -115,6 +129,21 @@ namespace PAMI
         public:
           inline Error () {};
           virtual ~Error () {};
+          virtual void setPWQAllocator(void * allocator)
+          {
+            TRACE_FN_ENTER();
+            TRACE_FORMAT( "return PAMI_ERROR (%d)", PAMI_ERROR);
+            TRACE_FN_EXIT();
+          };
+
+          virtual void * getPWQAllocator()
+          {
+            TRACE_FN_ENTER();
+            TRACE_FORMAT( "return PAMI_ERROR (%d)", PAMI_ERROR);
+            TRACE_FN_EXIT();
+            return NULL;
+          };
+
           virtual pami_result_t getAttributes (pami_configuration_t  configuration[],
                                                size_t                num_configs)
           {

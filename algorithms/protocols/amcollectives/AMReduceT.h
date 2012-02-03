@@ -263,12 +263,14 @@ namespace CCMI
             bexec.setBuffers ((char *)amr_xfer->user_header,
                               (char *)amr_xfer->user_header,
                               amr_xfer->headerlen,
+                              amr_xfer->headerlen,
                               (TypeCode *) PAMI_TYPE_BYTE,
                               (TypeCode *) PAMI_TYPE_BYTE);
 
             CCMI::Executor::AllreduceBaseExec<T_Conn> &rexec = a_composite->reduceExecutor();
             rexec.setBuffers((char *)send.addr,
                              (char *)amr_xfer->rcvbuf,
+                             bytes,
                              bytes,
                              (TypeCode *) send.type,
                              rtype);
@@ -434,6 +436,7 @@ namespace CCMI
             bexec.setBuffers ((char *)a_xfer->cmd.xfer_amreduce.user_header,
                               (char *)a_xfer->cmd.xfer_amreduce.user_header,
                               a_xfer->cmd.xfer_amreduce.headerlen,
+                              a_xfer->cmd.xfer_amreduce.headerlen,
                               (TypeCode *) PAMI_TYPE_BYTE,
                               (TypeCode *) PAMI_TYPE_BYTE);
           }
@@ -468,6 +471,7 @@ namespace CCMI
             }
             rexec.setBuffers((char *)NULL,
                              (char *)NULL,
+                             bytes,
                              bytes,
                              (TypeCode *) PAMI_TYPE_BYTE,
                              (TypeCode *) PAMI_TYPE_BYTE);
@@ -522,6 +526,7 @@ namespace CCMI
                 // Set the user provided source buffer/type & start the Reduce operation
                 rexec.setBuffers((char *)send.addr,
                                  (char *)NULL,
+                                 a_xfer->cmd.xfer_amreduce.rtypecount,
                                  a_xfer->cmd.xfer_amreduce.rtypecount,
                                  (TypeCode *) send.type,
                                  (TypeCode *) a_xfer->cmd.xfer_amreduce.rtype);

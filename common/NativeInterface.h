@@ -31,6 +31,7 @@
 #include "components/devices/MultisyncModel.h"
 #include "components/devices/MulticombineModel.h"
 #include "p2p/protocols/SendPWQ.h"
+#include "p2p/protocols/RecvPWQ.h"
 #include "components/memory/MemoryAllocator.h"
 
 #include "util/trace.h"
@@ -147,6 +148,8 @@ namespace PAMI
       pami_dispatch_p2p_function fn;
       size_t                     dispatch;
       T_Protocol                *protocol;
+      pami_configuration_t       config;
+      config.name = PAMI_DISPATCH_SEND_IMMEDIATE_MAX;
 
       if(T_Select == ALL || T_Select == MULTICAST_ONLY)
       {
@@ -163,7 +166,10 @@ namespace PAMI
 						      (pami_dispatch_hint_t){0},
 						      __global.heap_mm,
 						      result);
+        protocol->setPWQAllocator(ni->getSendPWQAllocator());
+
         ni->setMcastProtocol(dispatch, protocol);
+        protocol->getAttributes(&config, 1);
       }
 
       if(T_Select == ALL || T_Select == MANYTOMANY_ONLY)
@@ -180,7 +186,10 @@ namespace PAMI
                                                        (pami_dispatch_hint_t){0},
                                                        __global.heap_mm,
                                                        result);
+        protocol->setPWQAllocator(ni->getSendPWQAllocator());
+
         ni->setM2mProtocol(dispatch, protocol);
+        protocol->getAttributes(&config, 1);
       }
 
       if(T_Select == ALL || T_Select == P2P_ONLY)
@@ -197,6 +206,8 @@ namespace PAMI
                                                        (pami_dispatch_hint_t){0},
                                                        __global.heap_mm,
                                                        result);
+        protocol->setPWQAllocator(ni->getSendPWQAllocator());
+
         ni->setSendProtocol(dispatch, protocol);
 
         // Construct the p2p pwq protocol using the NI dispatch function and cookie
@@ -211,14 +222,17 @@ namespace PAMI
                                                        (pami_dispatch_hint_t){0},
                                                        __global.heap_mm,
                                                        result);
+        protocol->setPWQAllocator(ni->getSendPWQAllocator());
+
         ni->setSendPWQProtocol(dispatch, protocol);
+        protocol->getAttributes(&config, 1);
       }
 
 
       // Workaround:  This gets rid of an unused warning with gcc
 //      if (0)
 //        getNextDispatch();
-
+      Protocol::Send::SendPWQ<Protocol::Send::Send>::setImmSendSize(config.value.intval);
       // Return
       TRACE_FN_EXIT();
       return result;
@@ -271,6 +285,8 @@ namespace PAMI
       T_Protocol1               *protocol1;
       T_Protocol2               *protocol2;
       Protocol::Send::SendPWQ<Protocol::Send::Send>* composite;
+      pami_configuration_t       config;
+      config.name = PAMI_DISPATCH_SEND_IMMEDIATE_MAX;
 
       if(T_Select == ALL || T_Select == MULTICAST_ONLY)
       {
@@ -286,6 +302,7 @@ namespace PAMI
                                               (pami_dispatch_hint_t){0},
                                               __global.heap_mm,
                                               result);
+        protocol1->setPWQAllocator(ni->getSendPWQAllocator());
         protocol2 = (T_Protocol2*) T_Protocol2::generate(dispatch,
                                               fn,
                                               (void*) ni,
@@ -295,15 +312,19 @@ namespace PAMI
                                               (pami_dispatch_hint_t){0},
                                               __global.heap_mm,
                                               result);
-
+        protocol2->setPWQAllocator(ni->getSendPWQAllocator());
         // Construct the composite from the two protocols
         composite = (Protocol::Send::SendPWQ<Protocol::Send::Send>*)
           Protocol::Send::Factory::generate(protocol1,
                                             protocol2,
                                             __global.heap_mm,
                                             result);
+
+        composite->setPWQAllocator(ni->getSendPWQAllocator());
         // Set the composite protocol into the NI
         ni->setMcastProtocol(dispatch, composite);
+        composite->getAttributes(&config, 1);
+
       }
 
       if(T_Select == ALL || T_Select == MANYTOMANY_ONLY)
@@ -320,6 +341,7 @@ namespace PAMI
 							 (pami_dispatch_hint_t){0},
 							 __global.heap_mm,
 							 result);
+        protocol1->setPWQAllocator(ni->getSendPWQAllocator());
         protocol2 = (T_Protocol2*) T_Protocol2::generate(dispatch,
 							 fn,
 							 (void*) ni,
@@ -329,14 +351,19 @@ namespace PAMI
 							 (pami_dispatch_hint_t){0},
 							 __global.heap_mm,
 							 result);
+        protocol2->setPWQAllocator(ni->getSendPWQAllocator());
         // Construct the composite from the two protocols
         composite = (Protocol::Send::SendPWQ<Protocol::Send::Send>*)
           Protocol::Send::Factory::generate(protocol1,
                                             protocol2,
                                             __global.heap_mm,
                                             result);
+
+        composite->setPWQAllocator(ni->getSendPWQAllocator());
         // Set the composite protocol into the NI
         ni->setM2mProtocol(dispatch, composite);
+        composite->getAttributes(&config, 1);
+
       }
 
       if(T_Select == ALL || T_Select == P2P_ONLY)
@@ -353,6 +380,7 @@ namespace PAMI
                                                                                     (pami_dispatch_hint_t){0},
                                                                                     __global.heap_mm,
                                                                                     result);
+        protocol1->setPWQAllocator(ni->getSendPWQAllocator());
         protocol2 = (T_Protocol2*) T_Protocol2::generate(dispatch,
                                                                                     fn,
                                                                                     (void*) ni,
@@ -362,12 +390,15 @@ namespace PAMI
                                                                                     (pami_dispatch_hint_t){0},
                                                                                     __global.heap_mm,
                                                                                     result);
+        protocol2->setPWQAllocator(ni->getSendPWQAllocator());
         // Construct the composite from the two protocols
         composite = (Protocol::Send::SendPWQ<Protocol::Send::Send>*)
           Protocol::Send::Factory::generate(protocol1,
                                             protocol2,
                                             __global.heap_mm,
                                             result);
+
+        composite->setPWQAllocator(ni->getSendPWQAllocator());
         // Set the composite protocol into the NI
         ni->setSendProtocol(dispatch, composite);
 
@@ -383,6 +414,7 @@ namespace PAMI
                                                                                     (pami_dispatch_hint_t){0},
                                                                                     __global.heap_mm,
                                                                                     result);
+        protocol1->setPWQAllocator(ni->getSendPWQAllocator());
         protocol2 = (T_Protocol2*) T_Protocol2::generate(dispatch,
                                                                                     fn,
                                                                                     (void*) ni,
@@ -392,17 +424,21 @@ namespace PAMI
                                                                                     (pami_dispatch_hint_t){0},
                                                                                     __global.heap_mm,
                                                                                     result);
+        protocol2->setPWQAllocator(ni->getSendPWQAllocator());
         // Construct the composite from the two protocols
         composite = (Protocol::Send::SendPWQ<Protocol::Send::Send>*)
           Protocol::Send::Factory::generate(protocol1,
                                             protocol2,
                                             __global.heap_mm,
                                             result);
+
+        composite->setPWQAllocator(ni->getSendPWQAllocator());
         // Set the composite protocol into the NI
         ni->setSendPWQProtocol(dispatch, composite);
+        composite->getAttributes(&config, 1);
+
       }
-
-
+      Protocol::Send::SendPWQ<Protocol::Send::Send>::setImmSendSize(config.value.intval);
       // Return
       TRACE_FN_EXIT();
       return result;
@@ -584,6 +620,7 @@ namespace PAMI
       virtual inline pami_result_t send (pami_send_t * parameters);
       virtual inline pami_result_t sendPWQ(pami_context_t       context,
                                            pami_endpoint_t      dest,
+                                           unsigned             connection_Id,
                                            size_t               header_length,
                                            void                *header,
                                            size_t               length,
@@ -599,7 +636,7 @@ namespace PAMI
       }
       virtual inline pami_result_t setSendDispatch(pami_dispatch_p2p_function fn,
                                                    void                      *cookie);
-      virtual inline pami_result_t setSendPWQDispatch(pami_dispatch_p2p_function fn,
+      virtual inline pami_result_t setSendPWQDispatch(pami_dispatch_pwq_function fn,
                                                       void                      *cookie);
 
       /// \brief Multicast model constants/attributes
@@ -699,6 +736,11 @@ namespace PAMI
         TRACE_FN_EXIT();
       }
 
+      inline void *getSendPWQAllocator()
+      {
+        return &_send_pwq_allocator;
+      }
+
     private:
       ///
       /// \brief common internal impl of postMulticast over p2p
@@ -735,7 +777,7 @@ namespace PAMI
                         const void         * data,
                         size_t               data_size,
                         pami_endpoint_t      origin,
-                        pami_recv_t        * recv);
+                        pami_pwq_recv_t    * recv);
 
       void handle_m2m  (pami_context_t       context_hdl,
                         const void         * header,
@@ -777,35 +819,43 @@ namespace PAMI
     protected:
 
       PAMI::MemoryAllocator < sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj), 16 > _allocator; // Allocator
+      Protocol::Send::SendPWQ<Protocol::Send::Send>::sendpwqAllocators_t                                       _send_pwq_allocator;
 
-      T_Protocol                           *_mcast_protocol;
-      pami_dispatch_multicast_function      _mcast_dispatch_function;
-      void                                * _mcast_dispatch_arg;
-      size_t                                _mcast_dispatch;
+      T_Protocol                                   * _mcast_protocol;
+      pami_dispatch_multicast_function               _mcast_dispatch_function;
+      void                                         * _mcast_dispatch_arg;
+      size_t                                         _mcast_dispatch;
 
-      T_Protocol                           *_m2m_protocol;
-      pami_dispatch_manytomany_function     _m2m_dispatch_function;
-      void                                * _m2m_dispatch_arg;
-      size_t                                _m2m_dispatch;
+      T_Protocol                                   * _m2m_protocol;
+      pami_dispatch_manytomany_function              _m2m_dispatch_function;
+      void                                         * _m2m_dispatch_arg;
+      size_t                                         _m2m_dispatch;
 
-      T_Protocol                           *_send_protocol;
-      pami_dispatch_p2p_function            _send_dispatch_function;
-      void                                * _send_dispatch_arg;
-      size_t                                _send_dispatch;
+      T_Protocol                                   * _send_protocol;
+      pami_dispatch_p2p_function                     _send_dispatch_function;
+      void                                         * _send_dispatch_arg;
+      size_t                                         _send_dispatch;
 
-      T_Protocol                           *_send_pwq_protocol;
-      pami_dispatch_p2p_function            _send_pwq_dispatch_function;
-      void                                * _send_pwq_dispatch_arg;
-      size_t                                _send_pwq_dispatch;
+      T_Protocol                                   * _send_pwq_protocol;
+      pami_dispatch_pwq_function                     _send_pwq_dispatch_function;
+      void                                         * _send_pwq_dispatch_arg;
+      size_t                                         _send_pwq_dispatch;
+      //A map of maps of dispatch IDs per rank. A map of
+      //dispatch IDs hold MatchQueues of PWQMessages that
+      //match based on connection IDs.
+      std::map<pami_endpoint_t, std::map<size_t, MatchQueue<unsigned long long> *> * >       _pwq_ranks_map;
+      PAMI::MemoryAllocator<sizeof(PWQMessage),16>                                           _pwq_msg_allocator;
+      PAMI::MemoryAllocator<sizeof(std::map<size_t, MatchQueue<unsigned long long> *>), 16>  _pwq_dispatch_map_allocator;
+      PAMI::MemoryAllocator<sizeof(MatchQueue<unsigned long long>), 16>                      _pwq_matchqueue_allocator;
 
-      Queue                                 _mcastQ;
-      Queue                                 _m2mSendQ;
-      Queue                                 _m2mRecvQ;
+      Queue                                          _mcastQ;
+      Queue                                          _m2mSendQ;
+      Queue                                          _m2mRecvQ;
 
-      pami_client_t                         _client;
-      pami_context_t                        _context;
-      size_t                                _contextid;
-      size_t                                _clientid;
+      pami_client_t                                  _client;
+      pami_context_t                                 _context;
+      size_t                                         _contextid;
+      size_t                                         _clientid;
   }; // class NativeInterfaceAllsided
 
   //
@@ -835,6 +885,7 @@ namespace PAMI
       virtual inline pami_result_t send (pami_send_t * parameters);
       virtual inline pami_result_t sendPWQ(pami_context_t       context,
                                            pami_endpoint_t      dest,
+                                           unsigned             connection_Id,
                                            size_t               header_length,
                                            void                *header,
                                            size_t               length,
@@ -849,7 +900,7 @@ namespace PAMI
                                                          void                        *cookie);
       virtual inline pami_result_t setSendDispatch(pami_dispatch_p2p_function fn,
                                                    void                 *cookie);
-      virtual inline pami_result_t setSendPWQDispatch(pami_dispatch_p2p_function fn,
+      virtual inline pami_result_t setSendPWQDispatch(pami_dispatch_pwq_function fn,
                                                       void                 *cookie);
 
       /// \brief Multicast model constants/attributes
@@ -972,7 +1023,7 @@ namespace PAMI
                         const void         * data,
                         size_t               data_size,
                         pami_endpoint_t      origin,
-                        pami_recv_t        * recv);
+                        pami_pwq_recv_t    * recv);
       void handle_m2m  (pami_context_t       context_hdl,
                         const void         * header,
                         size_t               header_size,
@@ -1101,7 +1152,7 @@ namespace PAMI
   }
 
   template <class T_Protocol, int T_Max_Msgcount>
-  inline pami_result_t NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>::setSendPWQDispatch (pami_dispatch_p2p_function fn, void *cookie)
+  inline pami_result_t NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>::setSendPWQDispatch (pami_dispatch_pwq_function fn, void *cookie)
   {
     TRACE_FN_ENTER();
     this->_send_pwq_dispatch_arg      = cookie;
@@ -1232,6 +1283,7 @@ namespace PAMI
   inline pami_result_t NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>::sendPWQ(
       pami_context_t       context,
       pami_endpoint_t      dest,
+      unsigned             connection_Id,
       size_t               header_length,
       void                *header,
       size_t               length,
@@ -1334,9 +1386,16 @@ namespace PAMI
     state_data->sendpwq.send.simple.events.local_fn = sendMcastDone;
     state_data->sendpwq.send.simple.events.remote_fn = NULL;
 
-    state_data->sendpwq.client    = _client;
-    state_data->sendpwq.clientid  = _clientid;
-    state_data->sendpwq.contextid = _contextid;
+    state_data->sendpwq.client        = _client;
+    state_data->sendpwq.connection_id = state_data->meta.connection_id;
+    PAMI_assert(state_data->sendpwq.connection_id != -1U);
+    state_data->sendpwq.contextid     = _contextid;
+    state_data->sendpwq.userEvents    = state_data->sendpwq.send.simple.events;
+    state_data->sendpwq.tmpbuf        = NULL;
+    state_data->sendpwq.allocatedHdr  = 0;
+    state_data->sendpwq.totalSndln    = length;
+    state_data->sendpwq.work_posted   = 0;
+    state_data->sendpwq.work_counter  = 0;
 
     TRACE_FORMAT( "<%p> %p data %zu, header %zu", this, _mcast_protocol, state_data->sendpwq.send.simple.send.data.iov_len, state_data->sendpwq.send.simple.send.header.iov_len);
 
@@ -1367,13 +1426,180 @@ namespace PAMI
     TRACE_FN_ENTER();
     TRACE_FORMAT( "<%p> context %p, header/size %p/%zu, data/size %p/%zu, origin %u, recv %p", cookie, context_hdl, header, header_size, data, data_size, origin, recv);
     NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount> *p = (NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount> *)cookie;
-    p->handle_mcast(context_hdl,
-                    header,
-                    header_size,
-                    data,
-                    data_size,
-                    origin,
-                    recv);
+    //SSS: Getting pwqHdr info and extracting usrHdr
+    pami_pwq_recv_t       local_recv;
+    unsigned              connectionId;
+    unsigned              msgId;
+    unsigned              seqNo;
+    unsigned              contig;//If contig data, we avoid lengthy code path of non-contig
+
+    char             * pHdr = (char*)header;
+    connectionId   = *((unsigned *)pHdr);
+    pHdr          += sizeof(unsigned);
+    msgId          = *((unsigned *)pHdr);
+    pHdr          += sizeof(unsigned);
+    contig         = (*((unsigned *)pHdr)) & 0xF0000000;
+    seqNo          = (*((unsigned *)pHdr)) & 0x0FFFFFFF;
+    pHdr          += sizeof(unsigned);
+
+    local_recv.connectionId = ((((unsigned long long) connectionId) << (sizeof(unsigned))) | (((unsigned long long) msgId) & 0x00000000FFFFFFFF));
+
+    TRACE_FORMAT( "<%p> contig %#X, seqNo %#X, connectionId %u, msgId %u", cookie, contig, seqNo, connectionId, msgId);
+
+    if(likely(contig))
+    {
+      p->handle_mcast(context_hdl,
+                      (void *) pHdr,
+                      header_size,
+                      data,
+                      data_size,
+                      origin,
+                      &local_recv);
+
+      PipeWorkQueue  * rcvpwq = local_recv.rcvpwq;
+      // SSS: Since we are in the contig case, the total I am expecting should be equal to what I am getting here.. assert
+      PAMI_assert_debugf(local_recv.totalRcvln == data_size, "bytes %zu == %zu data_size", local_recv.totalRcvln, data_size);
+      /******************************************************/
+      /* SSS: Recving a contig msg into a non-contig buffer (another special handling :(( ) */
+      TRACE_FORMAT( "<%p> rcvpwq->bytesAvailableToProduce() %zu data_size %zu", cookie, rcvpwq->bytesAvailableToProduce(), data_size);
+      if(rcvpwq && rcvpwq->bytesAvailableToProduce() < data_size)
+      {
+
+        PWQMessage * msg = (PWQMessage*)p->_pwq_msg_allocator.allocateObject();
+        new(msg) PWQMessage(rcvpwq, local_recv.totalRcvln, local_recv.cb_done,
+                            NULL, &p->_pwq_msg_allocator, NULL,
+                            NULL, p->_mcast_dispatch, origin, local_recv.connectionId);
+
+        if(data)
+        {
+          char *tmpbuf = NULL;
+          posix_memalign((void**)&tmpbuf, 128, data_size);
+          memcpy(tmpbuf, data, data_size);
+          msg->enqueuePacket(data_size, 0, seqNo, tmpbuf);
+          PWQMessage::RecvPWQ(context_hdl, msg, PAMI_SUCCESS);
+        }
+        else if(recv)
+        {
+          char *tmpbuf = NULL;
+          posix_memalign((void**)&tmpbuf, 128, data_size);
+          msg->enqueuePacket(data_size, 0, seqNo, tmpbuf);
+          recv->cookie        = msg;
+          recv->local_fn      = PWQMessage::RecvPWQ;
+          recv->addr          = (char*)tmpbuf;
+          recv->type          = PAMI_TYPE_BYTE;
+          recv->offset        = 0;
+          recv->data_fn       = PAMI_DATA_COPY;
+          recv->data_cookie   = (void*)NULL;
+        }
+        TRACE_FN_EXIT();
+        return;
+      }
+      /******************************************************/
+      /* SSS: Now a contig message into a contig buffer */
+      PAMI_assert_debugf(local_recv.totalRcvln == data_size, "bytes %zu == %zu data_size", local_recv.totalRcvln, data_size);
+
+      if(likely(data_size && data))
+      {
+        PAMI_assertf(rcvpwq->bytesAvailableToProduce() >= data_size, "dst %zu >= data_size %zu\n", rcvpwq->bytesAvailableToProduce(), data_size);
+        memcpy(rcvpwq->bufferToProduce(), data, data_size);
+        if (local_recv.cb_done.function)
+          (local_recv.cb_done.function)(context_hdl, local_recv.cb_done.clientdata, PAMI_SUCCESS);
+      }
+      else if(recv)
+      {
+        PAMI_assertf(rcvpwq->bytesAvailableToProduce() >= data_size, "dst %zu >= data_size %zu\n", rcvpwq->bytesAvailableToProduce(), data_size);
+        recv->cookie        = local_recv.cb_done.clientdata;
+        recv->local_fn      = local_recv.cb_done.function;
+        recv->addr          = (char*)rcvpwq->bufferToProduce();
+        recv->type          = PAMI_TYPE_BYTE;
+        recv->offset        = 0;
+        recv->data_fn       = PAMI_DATA_COPY;
+        recv->data_cookie   = (void*)NULL;
+      }
+      else //SSS: Handling the 0 byte message case
+      {
+        if (local_recv.cb_done.function)
+          (local_recv.cb_done.function)(context_hdl, local_recv.cb_done.clientdata, PAMI_SUCCESS);
+      }
+    }
+    else
+    {
+      MatchQueue<unsigned long long> * pwq_msg_queue;
+      std::map<size_t, MatchQueue<unsigned long long> *>            * dispatch_map;
+      std::map<size_t, MatchQueue<unsigned long long> *>::iterator    dispatch_map_it;
+      std::map<pami_endpoint_t, std::map<size_t, MatchQueue<unsigned long long> *> *>::iterator ranks_map_it;
+      ranks_map_it = p->_pwq_ranks_map.find(origin);
+      if(ranks_map_it == p->_pwq_ranks_map.end())//We don't have a map for this rank
+      {
+        dispatch_map = (std::map<size_t, MatchQueue<unsigned long long> *> *) p->_pwq_dispatch_map_allocator.allocateObject();
+        new (dispatch_map)std::map<size_t, MatchQueue<unsigned long long> *>();
+        pwq_msg_queue = (MatchQueue<unsigned long long> *) p->_pwq_matchqueue_allocator.allocateObject();
+        new (pwq_msg_queue) MatchQueue<unsigned long long>();
+        (*dispatch_map)[p->_mcast_dispatch] = pwq_msg_queue;
+        p->_pwq_ranks_map[origin] = dispatch_map;
+      }
+      else
+      {
+        dispatch_map = ranks_map_it->second;
+        dispatch_map_it = dispatch_map->find(p->_mcast_dispatch);
+        if(dispatch_map_it == dispatch_map->end())
+        {
+          pwq_msg_queue = (MatchQueue<unsigned long long> *) p->_pwq_matchqueue_allocator.allocateObject();
+          new (pwq_msg_queue) MatchQueue<unsigned long long>();
+          (*dispatch_map)[p->_mcast_dispatch] = pwq_msg_queue;
+        }
+        else
+        {
+          pwq_msg_queue = dispatch_map_it->second;
+        }
+      }
+      PWQMessage * msg = (PWQMessage*)pwq_msg_queue->find(local_recv.connectionId);
+
+      if(!msg)
+      {
+        p->handle_mcast(context_hdl,
+                       (void *) pHdr,
+                       header_size,
+                       data,
+                       data_size,
+                       origin,
+                       &local_recv);
+        PipeWorkQueue  * rcvpwq = local_recv.rcvpwq;
+        msg = (PWQMessage*)p->_pwq_msg_allocator.allocateObject();
+        new(msg) PWQMessage(rcvpwq, local_recv.totalRcvln, local_recv.cb_done,
+                            &p->_pwq_ranks_map, &p->_pwq_msg_allocator, &p->_pwq_dispatch_map_allocator,
+                            &p->_pwq_matchqueue_allocator, p->_mcast_dispatch, origin, local_recv.connectionId);
+
+        pwq_msg_queue->pushTail((MatchQueueElem<unsigned long long>*)msg);
+      }
+
+
+      if(data)
+      {
+        char *tmpbuf = NULL;
+        posix_memalign((void**)&tmpbuf, 128, data_size);
+        memcpy(tmpbuf, data, data_size);
+        msg->enqueuePacket(data_size, 0, seqNo, tmpbuf);
+        PWQMessage::RecvPWQ(context_hdl, msg, PAMI_SUCCESS);
+      }
+      else if(recv)
+      {
+        char *tmpbuf = NULL;
+        posix_memalign((void**)&tmpbuf, 128, data_size);
+        msg->enqueuePacket(data_size, 0, seqNo, tmpbuf);
+        recv->cookie        = msg;
+        recv->local_fn      = PWQMessage::RecvPWQ;
+        recv->addr          = (char*)tmpbuf;
+        recv->type          = PAMI_TYPE_BYTE;
+        recv->offset        = 0;
+        recv->data_fn       = PAMI_DATA_COPY;
+        recv->data_cookie   = (void*)NULL;
+      }
+      else //SSS: Handling the 0 byte message case .. Should never happen in non-contig though
+      {
+        PWQMessage::RecvPWQ(context_hdl, msg, PAMI_SUCCESS);
+      }
+    }
     TRACE_FN_EXIT();
   }
 
@@ -1437,14 +1663,13 @@ namespace PAMI
                                                                                 const void         * data,         /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
                                                                                 size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
                                                                                 pami_endpoint_t      origin,       /**< IN:  Endpoint that originated the transfer */
-                                                                                pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
+                                                                                pami_pwq_recv_t    * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
   {
     TRACE_FN_ENTER();
     unsigned connection_id = ((typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t::metadata_t*)header)->connection_id;
     size_t bytes           = ((typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t::metadata_t*)header)->sndlen;
     //size_t root            = ((NativeInterfaceBase<T_Protocol,T_Max_Msgcount>::p2p_multicast_statedata_t::metadata_t*)header)->root;
-    PAMI::PipeWorkQueue   *rcvpwq;
-    pami_callback_t       cb_done;
+
     TRACE_FORMAT( "<%p>  header size %zu, data size %zu/%zu, connection_id %u, root %u, origin %u, recv %p", this, header_size, data_size, bytes, connection_id, ((typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t::metadata_t*)header)->root, origin, recv);
 
     typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t* receive_state = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t*)_mcastQ.peekHead();
@@ -1455,60 +1680,13 @@ namespace PAMI
 
     PAMI_assert(receive_state); // all-sided and sync'd by MU so this shouldn't be unexpected data
 
-    bytes   = receive_state->bytes;
-    rcvpwq  = receive_state->rcvpwq;
-    cb_done = receive_state->cb_done;
+    recv->cb_done           = receive_state->cb_done;
+    recv->totalRcvln        = receive_state->bytes;
+    recv->rcvpwq            = receive_state->rcvpwq;
+
     TRACE_FORMAT( "<%p>  header size %zu, data size %zu/%zu, connection_id %u, root %u, recv %p, receive_state %p", this, header_size, data_size, bytes, connection_id, ((typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t::metadata_t*)header)->root, recv, receive_state);
 
     _mcastQ.deleteElem(receive_state);
-
-    // I don't think send/recv lets us receive less than was sent, so assert they gave us enough buffer/pwq...
-    PAMI_assert_debugf(bytes == data_size, "bytes %zu == %zu data_size", bytes, data_size);
-
-    // No data or immediate data? We're done.
-    if ((bytes == 0) || (recv == NULL) || (data != NULL))
-      {
-        TRACE_FORMAT( "<%p> immediate", this);
-
-        if (data && bytes)
-          {
-            /// \todo An assertion probably isn't the best choice...
-            TRACE_FORMAT( "<%p>NativeInterfaceAllsided<%d>::handle_mcast()  pwq<%p>", this, __LINE__, rcvpwq);
-            PAMI_assertf(rcvpwq->bytesAvailableToProduce() >= data_size, "dst %zu >= data_size %zu\n", rcvpwq->bytesAvailableToProduce(), data_size);
-            memcpy(rcvpwq->bufferToProduce(), data, bytes);
-//        rcvpwq->produceBytes(data_size);
-          }
-
-        // call original done
-        /** \todo fix or remove this hack */
-        if (cb_done.function)
-          (cb_done.function)(context_hdl,
-                             cb_done.clientdata, PAMI_SUCCESS);
-
-// #warning \todo if it's 0 byte, no recv structure should be delivered 
-        if (recv != NULL)
-        {  
-          memset(recv, 0, sizeof(*recv));
-          recv->type = PAMI_TYPE_BYTE;
-          recv->data_fn = PAMI_DATA_COPY;
-        }
-
-        TRACE_FN_EXIT();
-        return;
-      }
-
-    // model_available_buffers_only semantics: If you're receiving data then the pwq must be available
-    TRACE_FORMAT( "<%p>NativeInterfaceAllsided<%d>::handle_mcast() pwq<%p> rcvpwq->bytesAvailableToProduce() %zd, cbdone %p/%p", 
-                  this, __LINE__, rcvpwq,rcvpwq->bytesAvailableToProduce(),cb_done.function,cb_done.clientdata);
-    PAMI_assert(model_available_buffers_only && (rcvpwq->bytesAvailableToProduce() >= data_size));
-
-    recv->cookie   = cb_done.clientdata;
-    recv->local_fn = cb_done.function;
-    recv->addr     = rcvpwq->bufferToProduce();
-    recv->type     = PAMI_TYPE_BYTE;
-    recv->offset   = 0;
-    recv->data_fn  = PAMI_DATA_COPY;
-    recv->data_cookie = (void*)NULL;
 
     TRACE_FN_EXIT();
   }
@@ -1691,7 +1869,7 @@ namespace PAMI
   }
 
   template <class T_Protocol, int T_Max_Msgcount>
-  inline pami_result_t NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::setSendPWQDispatch (pami_dispatch_p2p_function fn, void *cookie)
+  inline pami_result_t NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::setSendPWQDispatch (pami_dispatch_pwq_function fn, void *cookie)
   {
     TRACE_FN_ENTER();
     this->_send_pwq_dispatch_arg      = cookie;
@@ -1831,6 +2009,7 @@ namespace PAMI
     inline pami_result_t NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::sendPWQ(
       pami_context_t       context,
       pami_endpoint_t      dest,
+      unsigned             connection_Id,
       size_t               header_length,
       void                *header,
       size_t               length,
@@ -1838,7 +2017,7 @@ namespace PAMI
       pami_send_event_t   *events
       )
   {
-    return this->_send_pwq_protocol->simplePWQ(context,dest,header_length,header,length,pwq,events,this->_send_pwq_dispatch);
+    return this->_send_pwq_protocol->simplePWQ(context,dest,connection_Id,header_length,header,length,pwq,events,this->_send_pwq_dispatch);
   }
 
 
@@ -1912,9 +2091,16 @@ namespace PAMI
     state_data->sendpwq.send.simple.events.local_fn = sendMcastDone;
     state_data->sendpwq.send.simple.events.remote_fn = NULL;
 
-    state_data->sendpwq.client    = this->_client;
-    state_data->sendpwq.clientid  = this->_clientid;
-    state_data->sendpwq.contextid = this->_contextid;
+    state_data->sendpwq.client        = this->_client;
+    state_data->sendpwq.connection_id = state_data->meta.connection_id;
+    PAMI_assert(state_data->sendpwq.connection_id != -1U);
+    state_data->sendpwq.contextid     = this->_contextid;
+    state_data->sendpwq.userEvents    = state_data->sendpwq.send.simple.events;
+    state_data->sendpwq.tmpbuf        = NULL;
+    state_data->sendpwq.allocatedHdr  = 0;
+    state_data->sendpwq.totalSndln    = length;
+    state_data->sendpwq.work_posted   = 0;
+    state_data->sendpwq.work_counter  = 0;
 
     TRACE_FORMAT( "<%p> %p, data %zu, header %zu", this, this->_mcast_protocol, state_data->sendpwq.send.simple.send.data.iov_len, state_data->sendpwq.send.simple.send.header.iov_len);
 
@@ -2109,13 +2295,191 @@ namespace PAMI
     TRACE_FN_ENTER();
     TRACE_FORMAT( "<%p> context %p, header/size %p/%zu, data/size %p/%zu, origin %u, recv %p", cookie, context_hdl, header, header_size, data, data_size, origin, recv);
     NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount> *p = (NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount> *)cookie;
-    p->handle_mcast(context_hdl,
-                    header,
-                    header_size,
-                    data,
-                    data_size,
-                    origin,
-                    recv);
+    //SSS: Getting pwqHdr info and extracting usrHdr
+    pami_pwq_recv_t       local_recv;
+    unsigned              connectionId;
+    unsigned              msgId;
+    unsigned              seqNo;
+    unsigned              contig;//If contig data, we avoid lengthy code path of non-contig
+
+    char             * pHdr = (char*)header;
+    connectionId   = *((unsigned *)pHdr);
+    pHdr          += sizeof(unsigned);
+    msgId          = *((unsigned *)pHdr);
+    pHdr          += sizeof(unsigned);
+    contig         = (*((unsigned *)pHdr)) & 0xF0000000;
+    seqNo          = (*((unsigned *)pHdr)) & 0x0FFFFFFF;
+    pHdr          += sizeof(unsigned);
+
+    local_recv.connectionId = ((((unsigned long long) connectionId) << (sizeof(unsigned))) | (((unsigned long long) msgId) & 0x00000000FFFFFFFF));
+
+    if(likely(contig))
+    {
+      p->handle_mcast(context_hdl,
+                      (void *) pHdr,
+                      header_size,
+                      data,
+                      data_size,
+                      origin,
+                      &local_recv);
+
+      PipeWorkQueue  * rcvpwq = local_recv.rcvpwq;
+
+      // SSS: Since we are in the contig case, the total I am expecting should be equal to what I am getting here.. assert
+      PAMI_assert_debugf(local_recv.totalRcvln == data_size, "bytes %zu == %zu data_size", local_recv.totalRcvln, data_size);
+      /******************************************************/
+      /* SSS: Recving a contig msg into a non-contig buffer (another special handling :(( ) */
+      if(rcvpwq && rcvpwq->bytesAvailableToProduce() < data_size) // NJ: rcvpwq can be NULL for barrier */
+      {
+
+        PWQMessage * msg = (PWQMessage*)p->_pwq_msg_allocator.allocateObject();
+        new(msg) PWQMessage(rcvpwq, local_recv.totalRcvln, local_recv.cb_done,
+                            NULL, &p->_pwq_msg_allocator, NULL,
+                            NULL, p->_mcast_dispatch, origin, local_recv.connectionId);
+
+        if(data)
+        {
+          char *tmpbuf = NULL;
+          posix_memalign((void**)&tmpbuf, 128, data_size);
+          memcpy(tmpbuf, data, data_size);
+          msg->enqueuePacket(data_size, 0, seqNo, tmpbuf);
+          PWQMessage::RecvPWQ(context_hdl, msg, PAMI_SUCCESS);
+        }
+        else if(recv)
+        {
+          char *tmpbuf = NULL;
+          posix_memalign((void**)&tmpbuf, 128, data_size);
+          msg->enqueuePacket(data_size, 0, seqNo, tmpbuf);
+          recv->cookie        = msg;
+          recv->local_fn      = PWQMessage::RecvPWQ;
+          recv->addr          = (char*)tmpbuf;
+          recv->type          = PAMI_TYPE_BYTE;
+          recv->offset        = 0;
+          recv->data_fn       = PAMI_DATA_COPY;
+          recv->data_cookie   = (void*)NULL;
+        }
+        TRACE_FN_EXIT();
+        return;
+      }
+      /******************************************************/
+      /* SSS: Now a contig message into a contig buffer */
+      if(likely(data_size && data))
+      {
+        PAMI_assertf(rcvpwq->bytesAvailableToProduce() >= data_size, "dst %zu >= data_size %zu\n", rcvpwq->bytesAvailableToProduce(), data_size);
+        memcpy(rcvpwq->bufferToProduce(), data, data_size);
+        rcvpwq->produceBytes(data_size);
+        if (local_recv.cb_done.function)
+          (local_recv.cb_done.function)(context_hdl, local_recv.cb_done.clientdata, PAMI_SUCCESS);
+      }
+      else if(recv)
+      {
+        // We have to intercept the callback to punch buttons on the rcv pwq.
+        typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *req          = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *)p->_allocator.allocateObject();
+
+        req->_type              = NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj::MULTICAST;
+        req->_ni                = p;
+        req->_user_callback     = local_recv.cb_done;
+
+        typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t *state = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t*)req->_state._mcast;
+        state->bytes       = local_recv.totalRcvln;
+        state->rcvpwq      = rcvpwq;
+        state->sendpwq.pwq = NULL;
+
+        PAMI_assertf(rcvpwq->bytesAvailableToProduce() >= data_size, "dst %zu >= data_size %zu\n", rcvpwq->bytesAvailableToProduce(), data_size);
+
+        recv->cookie   = req;
+        recv->local_fn = ni_client_done;
+        recv->addr     = rcvpwq->bufferToProduce();
+        recv->type     = PAMI_TYPE_BYTE;
+        recv->offset   = 0;
+        recv->data_fn  = PAMI_DATA_COPY;
+        recv->data_cookie = (void*)NULL;
+      }
+      else //SSS: Handling the 0 byte message case
+      {
+        if (local_recv.cb_done.function)
+          (local_recv.cb_done.function)(context_hdl, local_recv.cb_done.clientdata, PAMI_SUCCESS);
+      }
+    }
+    /* SSS: The complicated case.. a non-contig message into a non-contig buffer */
+    else
+    {
+      MatchQueue<unsigned long long> * pwq_msg_queue;
+      std::map<size_t, MatchQueue<unsigned long long> *>            * dispatch_map;
+      std::map<size_t, MatchQueue<unsigned long long> *>::iterator    dispatch_map_it;
+      std::map<pami_endpoint_t, std::map<size_t, MatchQueue<unsigned long long> *> *>::iterator ranks_map_it;
+      ranks_map_it = p->_pwq_ranks_map.find(origin);
+      if(ranks_map_it == p->_pwq_ranks_map.end())//We don't have a map for this rank
+      {
+        dispatch_map = (std::map<size_t, MatchQueue<unsigned long long> *> *) p->_pwq_dispatch_map_allocator.allocateObject();
+        new (dispatch_map)std::map<size_t, MatchQueue<unsigned long long> *>();
+        pwq_msg_queue = (MatchQueue<unsigned long long> *) p->_pwq_matchqueue_allocator.allocateObject();
+        new (pwq_msg_queue) MatchQueue<unsigned long long>();
+        (*dispatch_map)[p->_mcast_dispatch] = pwq_msg_queue;
+        p->_pwq_ranks_map[origin] = dispatch_map;
+      }
+      else
+      {
+        dispatch_map = ranks_map_it->second;
+        dispatch_map_it = dispatch_map->find(p->_mcast_dispatch);
+        if(dispatch_map_it == dispatch_map->end())
+        {
+          pwq_msg_queue = (MatchQueue<unsigned long long> *) p->_pwq_matchqueue_allocator.allocateObject();
+          new (pwq_msg_queue) MatchQueue<unsigned long long>();
+          (*dispatch_map)[p->_mcast_dispatch] = pwq_msg_queue;
+        }
+        else
+        {
+          pwq_msg_queue = dispatch_map_it->second;
+        }
+      }
+      PWQMessage * msg = (PWQMessage*)pwq_msg_queue->find(local_recv.connectionId);
+
+      if(!msg)
+      {
+        p->handle_mcast(context_hdl,
+                       (void *) pHdr,
+                       header_size,
+                       data,
+                       data_size,
+                       origin,
+                       &local_recv);
+        PipeWorkQueue  * rcvpwq = local_recv.rcvpwq;
+        msg = (PWQMessage*)p->_pwq_msg_allocator.allocateObject();
+        new(msg) PWQMessage(rcvpwq, local_recv.totalRcvln, local_recv.cb_done,
+                            &p->_pwq_ranks_map, &p->_pwq_msg_allocator, &p->_pwq_dispatch_map_allocator,
+                            &p->_pwq_matchqueue_allocator, p->_mcast_dispatch, origin, local_recv.connectionId);
+
+        pwq_msg_queue->pushTail((MatchQueueElem<unsigned long long>*)msg);
+      }
+
+
+      if(data)
+      {
+        char *tmpbuf = NULL;
+        posix_memalign((void**)&tmpbuf, 128, data_size);
+        memcpy(tmpbuf, data, data_size);
+        msg->enqueuePacket(data_size, 0, seqNo, tmpbuf);
+        PWQMessage::RecvPWQ(context_hdl, msg, PAMI_SUCCESS);
+      }
+      else if(recv)
+      {
+        char *tmpbuf = NULL;
+        posix_memalign((void**)&tmpbuf, 128, data_size);
+        msg->enqueuePacket(data_size, 0, seqNo, tmpbuf);
+        recv->cookie        = msg;
+        recv->local_fn      = PWQMessage::RecvPWQ;
+        recv->addr          = (char*)tmpbuf;
+        recv->type          = PAMI_TYPE_BYTE;
+        recv->offset        = 0;
+        recv->data_fn       = PAMI_DATA_COPY;
+        recv->data_cookie   = (void*)NULL;
+      }
+      else //SSS: Handling the 0 byte message case .. Should never happen in non-contig though
+      {
+        PWQMessage::RecvPWQ(context_hdl, msg, PAMI_SUCCESS);
+      }
+    }
     TRACE_FN_EXIT();
   }
 
@@ -2179,14 +2543,140 @@ namespace PAMI
     TRACE_FN_ENTER();
     TRACE_FORMAT( "<%p> context %p, header/size %p/%zu, data/size %p/%zu, origin %u, recv %p", cookie, context_hdl, header, header_size, data, data_size, origin, recv);
     NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount> *p = (NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount> *)cookie;
-    p->_send_pwq_dispatch_function(context_hdl,
-                               p->_send_pwq_dispatch_arg,
-                               header,
-                               header_size,
-                               data,
-                               data_size,
-                               origin,
-                               recv);
+
+    pami_pwq_recv_t       local_recv;
+    unsigned              connectionId;
+    unsigned              msgId;
+    unsigned              seqNo;
+    unsigned              contig;//If contig data, we avoid length code path of non-contig
+
+
+    char                * pHdr = (char*)header;
+    connectionId = *((unsigned *)pHdr);
+    pHdr += sizeof(unsigned);
+    msgId        = *((unsigned *)pHdr);
+    pHdr += sizeof(unsigned);
+    contig       = (*((unsigned *)pHdr)) & 0xF0000000;
+    seqNo        = (*((unsigned *)pHdr)) & 0x0FFFFFFF;
+    pHdr += sizeof(unsigned);
+
+    local_recv.connectionId = ((((unsigned long long) connectionId) << (sizeof(unsigned))) | (((unsigned long long) msgId) & 0x00000000FFFFFFFF));
+
+    if(contig)//Take the shorter code path
+    {
+       p->_send_pwq_dispatch_function(context_hdl,
+                             p->_send_pwq_dispatch_arg,
+                             (void*)pHdr,
+                             header_size - (sizeof(unsigned)*3),
+                             data,
+                             data_size,
+                             origin,
+                             &local_recv);
+      PipeWorkQueue  * rcvpwq = local_recv.rcvpwq;
+      if(data_size && data)
+      {
+        PAMI_assertf(rcvpwq->bytesAvailableToProduce() >= data_size, "dst %zu >= data_size %zu\n", rcvpwq->bytesAvailableToProduce(), data_size);
+        memcpy(rcvpwq->bufferToProduce(), data, data_size);
+        if (local_recv.cb_done.function)
+          (local_recv.cb_done.function)(context_hdl, local_recv.cb_done.clientdata, PAMI_SUCCESS);
+      }
+      else if(recv)
+      {
+        PAMI_assertf(rcvpwq->bytesAvailableToProduce() >= data_size, "dst %zu >= data_size %zu\n", rcvpwq->bytesAvailableToProduce(), data_size);
+        recv->cookie        = local_recv.cb_done.clientdata;
+        recv->local_fn      = local_recv.cb_done.function;
+        recv->addr          = (char*)rcvpwq->bufferToProduce();
+        recv->type          = PAMI_TYPE_BYTE;
+        recv->offset        = 0;
+        recv->data_fn       = PAMI_DATA_COPY;
+        recv->data_cookie   = (void*)NULL;
+      }
+      else //SSS: Handling the 0 byte message case
+      {
+        if (local_recv.cb_done.function)
+          (local_recv.cb_done.function)(context_hdl, local_recv.cb_done.clientdata, PAMI_SUCCESS);
+      }
+    }
+    else
+    {
+      MatchQueue<unsigned long long> * pwq_msg_queue;
+      std::map<size_t, MatchQueue<unsigned long long> *>            * dispatch_map;
+      std::map<size_t, MatchQueue<unsigned long long> *>::iterator    dispatch_map_it;
+      std::map<pami_endpoint_t, std::map<size_t, MatchQueue<unsigned long long> *> *>::iterator ranks_map_it;
+      ranks_map_it = p->_pwq_ranks_map.find(origin);
+
+      if(ranks_map_it == p->_pwq_ranks_map.end())//We don't have a map for this rank
+      {
+        dispatch_map = (std::map<size_t, MatchQueue<unsigned long long> *> *) p->_pwq_dispatch_map_allocator.allocateObject();
+        new (dispatch_map)std::map<size_t, MatchQueue<unsigned long long> *>();
+        pwq_msg_queue = (MatchQueue<unsigned long long> *) p->_pwq_matchqueue_allocator.allocateObject();
+        new (pwq_msg_queue) MatchQueue<unsigned long long>();
+        (*dispatch_map)[p->_send_pwq_dispatch] = pwq_msg_queue;
+        p->_pwq_ranks_map[origin] = dispatch_map;
+      }
+      else
+      {
+        dispatch_map = ranks_map_it->second;
+        dispatch_map_it = dispatch_map->find(p->_send_pwq_dispatch);
+        if(dispatch_map_it == dispatch_map->end())
+        {
+          pwq_msg_queue = (MatchQueue<unsigned long long> *) p->_pwq_matchqueue_allocator.allocateObject();
+          new (pwq_msg_queue) MatchQueue<unsigned long long>();
+          (*dispatch_map)[p->_send_pwq_dispatch] = pwq_msg_queue;
+        }
+        else
+        {
+          pwq_msg_queue = dispatch_map_it->second;
+        }
+      }
+      PWQMessage * msg = (PWQMessage*)pwq_msg_queue->find(local_recv.connectionId);
+
+      if(!msg)
+      {
+        p->_send_pwq_dispatch_function(context_hdl,
+                                   p->_send_pwq_dispatch_arg,
+                                   (void*)pHdr,
+                                   header_size - (sizeof(unsigned)*3),
+                                   data,
+                                   data_size,
+                                   origin,
+                                   &local_recv);
+        PipeWorkQueue  * rcvpwq = local_recv.rcvpwq;
+        msg = (PWQMessage*)p->_pwq_msg_allocator.allocateObject();
+        new(msg) PWQMessage(rcvpwq, local_recv.totalRcvln, local_recv.cb_done,
+                            &p->_pwq_ranks_map, &p->_pwq_msg_allocator, &p->_pwq_dispatch_map_allocator,
+                            &p->_pwq_matchqueue_allocator, p->_send_pwq_dispatch, origin, local_recv.connectionId);
+
+        pwq_msg_queue->pushTail((MatchQueueElem<unsigned long long>*)msg);
+      }
+
+
+      if(data)
+      {
+        char *tmpbuf = NULL;
+        posix_memalign((void**)&tmpbuf, 128, data_size);
+        memcpy(tmpbuf, data, data_size);
+        msg->enqueuePacket(data_size, 0, seqNo, tmpbuf);
+        PWQMessage::RecvPWQ(context_hdl, msg, PAMI_SUCCESS);
+      }
+      else if(recv)
+      {
+        char *tmpbuf = NULL;
+        posix_memalign((void**)&tmpbuf, 128, data_size);
+        msg->enqueuePacket(data_size, 0, seqNo, tmpbuf);
+        recv->cookie        = msg;
+        recv->local_fn      = PWQMessage::RecvPWQ;
+        recv->addr          = (char*)tmpbuf;
+        recv->type          = PAMI_TYPE_BYTE;
+        recv->offset        = 0;
+        recv->data_fn       = PAMI_DATA_COPY;
+        recv->data_cookie   = (void*)NULL;
+      }
+      else //SSS: Handling the 0 byte message case .. Should never happen in non-contig though
+      {
+        PWQMessage::RecvPWQ(context_hdl, msg, PAMI_SUCCESS);
+      }
+    }
     TRACE_FN_EXIT();
   }
 
@@ -2202,7 +2692,7 @@ namespace PAMI
       const void         * data,         /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
       size_t               data_size,    /**< IN:  number of byts of message data, valid regarldless of message type */
       pami_endpoint_t      origin,       /**< IN:  Endpoint that originated the transfer */
-      pami_recv_t        * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
+      pami_pwq_recv_t    * recv)         /**< OUT: receive message structure, only needed if addr is non-NULL */
   {
     TRACE_FN_ENTER();
 
@@ -2226,67 +2716,9 @@ namespace PAMI
 
     TRACE_FORMAT( "<%p> requested bytes %zu", this, bytes);
 
-    // I don't think send/recv lets us receive less than was sent, so assert they gave us enough buffer/pwq...
-    PAMI_assert_debugf(bytes == data_size, "bytes %zu == %zu data_size", bytes, data_size);
-
-    // No data or immediate data? We're done.
-    if ((bytes == 0) || (recv == NULL) || (data != NULL))
-      {
-        TRACE_FORMAT( "<%p> immediate", this);
-
-        if (data && bytes)
-          {
-            TRACE_FORMAT( "<%p>NativeInterfaceActiveMessage<%d>::handle_mcast()  pwq<%p>", this, __LINE__, rcvpwq);
-            // A debug only assertion, otherwise handle it by ignoring unexpected data
-            PAMI_assert_debugf(rcvpwq->bytesAvailableToProduce() >= data_size, "dst %zu >= data_size %zu\n", rcvpwq->bytesAvailableToProduce(), data_size);
-            if(rcvpwq->bytesAvailableToProduce() >= data_size)
-            {
-              memcpy(rcvpwq->bufferToProduce(), data, bytes);
-              rcvpwq->produceBytes(data_size);
-            }
-          }
-
-        // call original done
-        /** \todo fix or remove this hack */
-        TRACE_FORMAT( "<%p> done<%p>, cookie<%p>", this, cb_done.function, cb_done.clientdata);
-
-        if (cb_done.function)
-          (cb_done.function)(context_hdl,
-                             cb_done.clientdata, PAMI_SUCCESS);
-
-// #warning \todo if it's 0 byte, no recv structure should be delivered 
-        if (recv != NULL)
-        {  
-          memset(recv, 0, sizeof(*recv));
-          recv->type = PAMI_TYPE_BYTE;
-          recv->data_fn = PAMI_DATA_COPY;
-        }
-        TRACE_FN_EXIT();
-        return;
-      }
-
-    // We have to intercept the callback to punch buttons on the rcv pwq.
-    PAMI_assert(sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj) <= this->_allocator.objsize);
-    typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *req          = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj *)this->_allocator.allocateObject();
-
-    req->_type              = NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj::MULTICAST;
-    req->_ni               = this;
-    req->_user_callback    = cb_done;
-
-    typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t *state = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t*)req->_state._mcast;
-    state->bytes       = bytes;
-    state->rcvpwq      = rcvpwq;
-    state->sendpwq.pwq = NULL;
-
-    TRACE_FORMAT( "<%p> %p connection id %u, bytes %zu", this, req, connection_id, bytes);
-
-    recv->cookie   = req;
-    recv->local_fn = ni_client_done;
-    recv->addr     = rcvpwq->bufferToProduce();
-    recv->type     = PAMI_TYPE_BYTE;
-    recv->offset   = 0;
-    recv->data_fn  = PAMI_DATA_COPY;
-    recv->data_cookie = (void*)NULL;
+    recv->cb_done           = cb_done;
+    recv->totalRcvln        = bytes;
+    recv->rcvpwq            = rcvpwq;
 
     TRACE_FN_EXIT();
   }

@@ -79,14 +79,14 @@ namespace xlpgas
     virtual void kick    ();
     virtual bool isdone  (void) const;
 
-    static inline void cb_incoming(pami_context_t    context,
-                                   void            * cookie,
-                                   const void      * header_addr,
-                                   size_t            header_size,
-                                   const void      * pipe_addr,
-                                   size_t            data_size,
-                                   pami_endpoint_t   origin,
-                                   pami_recv_t     * recv);
+    static inline void cb_incoming(pami_context_t          context,
+                                   void                  * cookie,
+                                   const void            * header_addr,
+                                   size_t                  header_size,
+                                   const void            * pipe_addr,
+                                   size_t                  data_size,
+                                   pami_endpoint_t         origin,
+                                   pami_pwq_recv_t       * recv);
 
     static void cb_recvcomplete (void * unused, void * arg, pami_result_t result);
 
@@ -95,7 +95,12 @@ namespace xlpgas
     char               * _rbuf;         /* receive buffer */
     size_t               _len;          /* msg length     */
     size_t               _root;
-    PAMI::PipeWorkQueue  _pwq;
+    size_t               _spwqln;
+    size_t               _rpwqln;
+    PAMI::PipeWorkQueue  _sndpwq;
+    PAMI::PipeWorkQueue  _rcvpwq;
+    TypeCode           * _stype;
+    TypeCode           * _rtype;
     int                  _rcvcount;
 
     struct AMHeader

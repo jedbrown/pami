@@ -105,13 +105,21 @@ namespace CCMI
             {
               size_t rtypecounts;
               PAMI::Type::TypeCode * rtype;
+              PAMI::Type::TypeCode * stype;
+              getAllgatherInfo (&stype);
               char *src, *dst;
               getAllgatherInfo (i, rtypecounts, &dst, &rtype);
               src = getSrcBuf();
 
               unsigned bytes = rtypecounts * rtype->GetDataSize();
               if (src && (src != (char *)ALLGV_IN_PLACE))
-                Core_memcpy(dst, src, bytes);
+                //Core_memcpy(dst, src, bytes);
+                PAMI_Type_transform_data((void*)src,
+                          stype, 0,
+                          dst,
+                          rtype, 0,
+                          bytes,
+                          PAMI_DATA_COPY, NULL);
             }
           }
 
@@ -159,6 +167,19 @@ namespace CCMI
           }
         }
 
+        void getAllgatherInfo (PAMI::Type::TypeCode ** stype )
+        {
+          if (T_Allgv && !T_Int) {
+            *stype      = (PAMI::Type::TypeCode *)_cmd.cmd.xfer_allgatherv.stype;
+          }
+          else if (T_Allgv) {
+            *stype    = (PAMI::Type::TypeCode *)_cmd.cmd.xfer_allgatherv_int.stype;
+          }
+          else {
+            *stype    = (PAMI::Type::TypeCode *)_cmd.cmd.xfer_allgather.stype;
+          }
+        }
+
         void nextStep ()
         {
           TRACE_FN_ENTER();
@@ -181,11 +202,11 @@ namespace CCMI
             getAllgatherInfo (ncomplete, rtypecounts, &dst, &rtype);
             src = dst;
             root        = ((PAMI::Topology*)_geometry->getTopology(T_Geometry_Index))->index2Endpoint(ncomplete);
-	    //fprintf(stderr, "Starting collective on color %d\n", nc);
+            //fprintf(stderr, "Starting collective on color %d\n", nc);
 	    
 #if 0
-	    //Since executors are not mallicious and only use specified colors
-	    //We dont need to reset the colormap
+           //Since executors are not mallicious and only use specified colors
+           //We dont need to reset the colormap
             _cmgr[i].reset();
 #endif
             new (&_bcast[i]) T_Bcast(_native,&_cmgr[i],_geometry, done, this);
@@ -247,10 +268,10 @@ namespace CCMI
         {
           TRACE_FN_ENTER();
           AllgatherOnBroadcastT<NBCAST, NCOLORS, T_Bcast, T_Conn, T_Geometry_Index, T_Allgv, T_Int> *allg = (AllgatherOnBroadcastT<NBCAST, NCOLORS, T_Bcast, T_Conn, T_Geometry_Index, T_Allgv, T_Int> *) cookie;
-	  //fprintf (stderr, "cb_barrier_done\n");
+          //fprintf (stderr, "cb_barrier_done\n");
           for (unsigned i = 0; i < allg->_cur_nbcast; i++)
-	    //Calls cb_barrier_done in the composite 
-	    //via external barrier path
+          //Calls cb_barrier_done in the composite
+          //via external barrier path
             allg->_bcast[i].start(); 
 	  
           TRACE_FN_EXIT();
@@ -273,7 +294,7 @@ namespace CCMI
           if (allg->_ncomplete < allg->_nranks) 
           {
             //allg->nextStep();
-           allg->_native->postWork(allg->_context, 0, &allg->_work,
+            allg->_native->postWork(allg->_context, 0, &allg->_work,
 				    advanceNext, allg);
           }
           else

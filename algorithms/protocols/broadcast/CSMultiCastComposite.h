@@ -63,16 +63,18 @@ namespace CCMI
             assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
 
             unsigned        sizeOfType = type_obj->GetDataSize();
+            unsigned      strideOfType = type_obj->GetExtent();
 
-            unsigned bytes = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
+            unsigned bytes  = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
+            unsigned stride = cmd->cmd.xfer_broadcast.typecount * strideOfType;
 
             if (cmd->cmd.xfer_broadcast.root == __global.mapping.task())
               {
-                _pwq.configure(cmd->cmd.xfer_broadcast.buf, bytes, bytes, type_obj, type_obj);
+                _pwq.configure(cmd->cmd.xfer_broadcast.buf, stride, stride, NULL, type_obj);
               }
             else
               {
-                _pwq.configure(cmd->cmd.xfer_broadcast.buf, bytes, 0, type_obj, type_obj);
+                _pwq.configure(cmd->cmd.xfer_broadcast.buf, stride, 0, type_obj);
               }
 
 

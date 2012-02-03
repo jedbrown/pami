@@ -107,14 +107,14 @@ namespace CCMI
         unsigned            _receiveAllocationSize;
 
         /// pointers into the receive allocation
-	char              * _tempBuf;
-	char              * _dstbuf;
+        char              * _tempBuf;
+        char              * _dstbuf;
         char              * _bufs;
 
         /// buffer space for all phases (pointers into schedule allocation)
         char               ** _all_recvBufs;
         PAMI::PipeWorkQueue  * _all_pwqs;
-	PAMI::PipeWorkQueue    _destpwq; // Destination pipe work queue
+        PAMI::PipeWorkQueue    _destpwq; // Destination pipe work queue
         PAMI::PipeWorkQueue    _bcastpwq;
 
         /// global state information
@@ -153,7 +153,7 @@ namespace CCMI
         void setIteration(unsigned iteration) { _iteration = iteration; }
 
         void init(unsigned         count,
-                  unsigned         sizeOfType,/*SSS: This has to be type->GetDataSize() not the size of primitive type*/
+                  unsigned         sizeOfType,
                   pami_op          op,
                   pami_dt          dt,
                   TypeCode        *stype,
@@ -169,7 +169,11 @@ namespace CCMI
               (_pcache._bytes         == count * sizeOfType) &&
               (_pcache._op         == op) &&
               (_pcache._dt         == dt))
+          {
+            _pcache._stype       = stype;
+            _pcache._rtype       = rtype;
             return;
+          }
 
           _pcache._op          = op;
           _pcache._dt          = dt;
@@ -252,14 +256,14 @@ namespace CCMI
           return  _phaseVec[index].recvBufs[jindex];
         }
 	
-	char     **getPhaseRecvBufsVec(unsigned index)
-	{
-	  return  _phaseVec[index].recvBufs;
-	}
+        char     **getPhaseRecvBufsVec(unsigned index)
+        {
+          return  _phaseVec[index].recvBufs;
+        }
 
-	bool  isPhaseRecvActive(unsigned phase) {
-	  return (_phaseVec[phase].recvBufs != NULL);	  
-	}
+        bool  isPhaseRecvActive(unsigned phase) {
+          return (_phaseVec[phase].recvBufs != NULL);
+        }
 
         unsigned               getPhaseSendConnectionId (unsigned index)
         {
@@ -268,17 +272,17 @@ namespace CCMI
 
         PAMI::PipeWorkQueue  *getPhasePipeWorkQueues (unsigned index, unsigned jindex)
         {
-	  return  &_phaseVec[index].pwqs[jindex];
+          return  &_phaseVec[index].pwqs[jindex];
         }
 
         PAMI::PipeWorkQueue  *getDestPipeWorkQueue ()
-	{
-	  return  &_destpwq; 
-	}
+        {
+          return  &_destpwq;
+        }
 	
-	PAMI::PipeWorkQueue  *getBcastPipeWorkQueue () 
-	{
-	  return  &_bcastpwq;
+        PAMI::PipeWorkQueue  *getBcastPipeWorkQueue ()
+        {
+          return  &_bcastpwq;
         }
 
         unsigned getIteration() { return _iteration; }
@@ -313,7 +317,7 @@ namespace CCMI
           _bconnmgr = connmgr;
         }
 
-	unsigned getCommID () { return _commid; }
+        unsigned getCommID () { return _commid; }
 
         /// \brief set the communicator id
         void setCommID (unsigned  commid)
@@ -321,7 +325,7 @@ namespace CCMI
           _commid = commid;
         }
 
-	unsigned getColor () { return _color; }
+        unsigned getColor () { return _color; }
 
         /// \brief set the color of the collective
         void setColor (unsigned  color)
@@ -366,10 +370,10 @@ namespace CCMI
         void setDstBuf(char* pdstbuf)
         {
           TRACE_FN_ENTER();
-	  if ((_scache->getRoot() == -1) | (_scache->getRoot() == (int)_myrank))
-	    _dstbuf = pdstbuf;
-	  else
-	    _dstbuf = _tempBuf;
+          if ((_scache->getRoot() == -1) | (_scache->getRoot() == (int)_myrank))
+            _dstbuf = pdstbuf;
+          else
+            _dstbuf = _tempBuf;
 
           TRACE_FN_EXIT();
         }
@@ -530,18 +534,18 @@ inline void CCMI::Executor::AllreduceCache<T_Conn>::constructPhaseData()
           TRACE_FORMAT( "<%p>_phaseVec[%u].recvBufs %p",
                       this, i, _phaseVec[i].recvBufs);
           _phaseVec[i].recvBufs   = &_all_recvBufs[indexSrcPe];
-	  _phaseVec[i].pwqs       = NULL;
+          _phaseVec[i].pwqs       = NULL;
 		    
           // If there was a src pe, increment our src index into the
           // allocated storage
           if (_scache->getNumSrcRanks(i) > 0)
             {
 	      if (i <= _scache->getLastReducePhase())
-		_phaseVec[i].pwqs       = _all_pwqs    + indexSrcPe;
+            _phaseVec[i].pwqs       = _all_pwqs    + indexSrcPe;
 	      else {
-		CCMI_assert (_scache->getNumSrcRanks(i) == 1);
-		_phaseVec[i].pwqs       = &_bcastpwq;
-	      }	      
+            CCMI_assert (_scache->getNumSrcRanks(i) == 1);
+            _phaseVec[i].pwqs       = &_bcastpwq;
+          }
               for (unsigned scount = 0; scount < _scache->getNumSrcRanks(i); scount ++)
                 {
                   PAMI::Topology *topology = _scache->getSrcTopology(i);
@@ -596,7 +600,7 @@ inline void  CCMI::Executor::AllreduceCache<T_Conn>::setupReceives(bool infoRequ
   // How many requests might we receive per srcPe?  "infoRequired" indicates we
   // are using recv head callback and need 1 per chunk per srcPE.  Otherwise we're doing postReceive
   // processing which means only one postReceive per srcPE.
-    
+
   unsigned alignedBytes = ((_pcache._bytes + 15) / 16) * 16; // Buffers need to be 16 byte aligned
 
   /// \todo maybe one too many mallocs?  for the final non-combine receive buf?

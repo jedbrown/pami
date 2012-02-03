@@ -265,11 +265,11 @@ namespace CCMI
             composite->headerExecutor().setCollHeader (hdr);
             composite->headerExecutor().setBuffers ((char *)amb_xfer->user_header,
                                                     (char *)amb_xfer->user_header,
-                                                    amb_xfer->headerlen,
+                                                    amb_xfer->headerlen, amb_xfer->headerlen,
                                                     (TypeCode *) PAMI_TYPE_BYTE, (TypeCode *) PAMI_TYPE_BYTE);
             composite->dataExecutor().setBuffers ((char *)amb_xfer->sndbuf,
                                                   (char *)amb_xfer->sndbuf,
-                                                  bytes, stype, stype);
+                                                  bytes, bytes, stype, stype);
 
             // Use the Key as the connection ID
             if (cmgr == NULL)
@@ -405,6 +405,7 @@ namespace CCMI
             composite->headerExecutor().setBuffers ((char *)a_xfer->cmd.xfer_ambroadcast.user_header,
                                                     (char *)a_xfer->cmd.xfer_ambroadcast.user_header,
                                                     a_xfer->cmd.xfer_ambroadcast.headerlen,
+                                                    a_xfer->cmd.xfer_ambroadcast.headerlen,
                                                     (TypeCode *) PAMI_TYPE_BYTE,
                                                     (TypeCode *) PAMI_TYPE_BYTE);
             composite->headerExecutor().setConnectionID(co->key());
@@ -433,7 +434,7 @@ namespace CCMI
               co->getEAQ()->pushTail(ead);
               co->setFlag(EarlyArrival);
 
-              composite->dataExecutor().setBuffers (ead->buf, ead->buf, sndlen,
+              composite->dataExecutor().setBuffers (ead->buf, ead->buf, sndlen, sndlen,
                                                     (TypeCode *) PAMI_TYPE_BYTE,
                                                     (TypeCode *) PAMI_TYPE_BYTE);
             }
@@ -520,6 +521,7 @@ namespace CCMI
                   // Set the user provided source buffer/type
                   composite->dataExecutor().setBuffers((char *)recv.addr,
                                                        (char *)recv.addr,
+                                                       a_xfer->cmd.xfer_ambroadcast.stypecount,
                                                        a_xfer->cmd.xfer_ambroadcast.stypecount,
                                                        (TypeCode *) recv.type,
                                                        (TypeCode *) a_xfer->cmd.xfer_ambroadcast.stype);

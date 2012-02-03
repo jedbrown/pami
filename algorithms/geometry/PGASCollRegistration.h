@@ -762,7 +762,7 @@ namespace PAMI
 		{
 		_hybrid_broadcast_reg    = (HybridBroadcastFactory*)_allocator.allocateObject(); _gi->_f_list.push_back((Factories*)_hybrid_broadcast_reg);
 		new(_hybrid_broadcast_reg) HybridBroadcastFactory(_context,_context_id,mapidtogeometry,&_dev_p2p, _hybrid_pipelined_bcast,_nb_hybrid_pipelined_bcast, HybridBroadcastString);
-		geometry->addCollective(PAMI_XFER_BROADCAST,
+		geometry->addCollectiveCheck(PAMI_XFER_BROADCAST,
 					(CCMI::Adaptor::CollectiveProtocolFactory*)_hybrid_broadcast_reg,
 					_context,
 					_context_id);

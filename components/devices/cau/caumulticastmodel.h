@@ -77,7 +77,7 @@ public:
             TRACE((stderr, "   is a first packet seqno=%d msg=%p\n", seqno, msg));
             mc->_device.allocMessage(&msg);
             new(msg) T_Message(&mc->_device, gi, did, mc->_device.getHdl(), mc->_device.getContext(), seqno); // Construct, but don't init this message
-            gi->_ueBcast.pushTail((MatchQueueElem*)msg);
+            gi->_ueBcast.pushTail((MatchQueueElem<>*)msg);
           }
       }
 
@@ -156,7 +156,7 @@ public:
     if(rc == PAMI_EAGAIN)
       {
         msg->_isPosted = true;
-        gi->_postedBcast.pushTail((MatchQueueElem*)msg);
+        gi->_postedBcast.pushTail((MatchQueueElem<>*)msg);
         msg->_workfcn = _device.postWork(do_bcast, msg);
       }
 

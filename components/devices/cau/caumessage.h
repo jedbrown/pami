@@ -66,21 +66,21 @@ public:
   int             _cau_id;
   int             _geometry_id;
   unsigned        _seqno;
-  MatchQueue      _ueBar;
-  MatchQueue      _postedBar;
+  MatchQueue<>    _ueBar;
+  MatchQueue<>    _postedBar;
 
   unsigned        _seqnoRed;
-  MatchQueue      _ueRed;
-  MatchQueue      _postedRed;
+  MatchQueue<>    _ueRed;
+  MatchQueue<>    _postedRed;
 
   unsigned        _seqnoBcast;
-  MatchQueue      _postedBcast;
-  MatchQueue      _ueBcast;
+  MatchQueue<>    _postedBcast;
+  MatchQueue<>    _ueBcast;
 
 //      PAMI::Topology *_topo;
 };
 
-class CAUMsyncMessage : public MatchQueueElem
+class CAUMsyncMessage : public MatchQueueElem<>
 {
 public:
 
@@ -145,7 +145,7 @@ public:
                   int                  dispatch_red_id,
                   lapi_handle_t        lapi_handle,
                   void                *toFree):
-    MatchQueueElem(geometryInfo->_seqno),
+    MatchQueueElem<>(geometryInfo->_seqno),
     _geometryInfo(geometryInfo),
     _reduce_val(init_val),
     _red(red),
@@ -174,7 +174,7 @@ public:
 };
 
 // CAU Multicombine Message Class
-class CAUMcombineMessage : public MatchQueueElem
+class CAUMcombineMessage : public MatchQueueElem<>
 {
 public:
   class               Header
@@ -358,7 +358,7 @@ public:
                      lapi_handle_t    lapi_hdl,
                      pami_context_t   context,
                      int              searchKey = -1):
-    MatchQueueElem(searchKey),
+    MatchQueueElem<>(searchKey),
     _geometryInfo(geometryInfo),
     _isInit(false),
     _isPosted(false),
@@ -604,7 +604,7 @@ public:
   pami_context_t          _context;
 };
 
-class CAUMcastMessage : public MatchQueueElem
+class CAUMcastMessage : public MatchQueueElem<>
 {
 public:
   class               Header
@@ -642,7 +642,7 @@ public:
                   lapi_handle_t    lapi_hdl,
                   pami_context_t   context,
                   int              searchKey = -1):
-    MatchQueueElem(searchKey),
+    MatchQueueElem<>(searchKey),
     _geometryInfo(geometryInfo),
     _isInit(false),
     _isPosted(false),

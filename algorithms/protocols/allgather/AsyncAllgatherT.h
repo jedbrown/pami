@@ -80,7 +80,7 @@ public:
         COMPILE_TIME_ASSERT(sizeof(_schedule) >= sizeof(T_Schedule));
         create_schedule(&_schedule, sizeof(_schedule), (unsigned) - 1, native, geometry);
         _executor.setSchedule (&_schedule);
-        _executor.setBuffers (a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount * stype->GetDataSize(), stype, rtype);
+        _executor.setBuffers (a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->rtypecount, stype, rtype);
         _executor.setDoneCallback (cb_done.function, cb_done.clientdata);
     }
 
@@ -107,7 +107,7 @@ public:
         COMPILE_TIME_ASSERT(sizeof(_schedule) >= sizeof(T_Schedule));
         create_schedule(&_schedule, sizeof(_schedule), (unsigned) - 1, native, geometry);
         _executor.setSchedule (&_schedule);
-        _executor.setBuffers (sndbuf, rcvbuf, rtypecount * rcvtype->GetDataSize(), sndtype, rcvtype);
+        _executor.setBuffers (sndbuf, rcvbuf, rtypecount, sndtype, rcvtype);
         _executor.setDoneCallback (cb_done.function, cb_done.clientdata);
 
     }
@@ -234,7 +234,7 @@ public:
 
             a_composite = co->getComposite();
             // update send buffer pointer and, at root, receive buffer pointers
-            a_composite->executor().updateBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->rtypecount * rtype->GetDataSize(), stype, rtype);
+            a_composite->executor().updateBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->rtypecount, stype, rtype);
         }
         /// not found posted CollOp object, create a new one and
         /// queue it in active queue

@@ -58,8 +58,9 @@ void xlpgas::Alltoallv<T_NI,CntType>::reset (const void * s, void * d,
 template<class T_NI, class CntType>
 void xlpgas::Alltoallv<T_NI,CntType>::kick_internal    () {
   MUTEX_LOCK(&this->_mutex);
-  size_t sdatawidth = this->_stype->GetDataSize();
-  size_t rdatawidth = this->_rtype->GetDataSize();
+  size_t datawidth  = this->_rtype->GetDataSize();
+  size_t dataextent = this->_rtype->GetExtent();
+
   int j = this->_sndstartedcount[this->_odd];
   for (; j < (int)this->_comm->size(); j++) {
     //if the buffer is full then we give the system some time to
@@ -69,10 +70,13 @@ void xlpgas::Alltoallv<T_NI,CntType>::kick_internal    () {
       break;
     }
 
-    if (this->_current == this->ordinal()) {
-	memcpy (this->_rbuf + this->_rdispls[this->_current] * rdatawidth,
-		this->_sbuf + this->_sdispls[this->_current] * sdatawidth,
-		this->_scnts[this->_current]*sdatawidth);
+    void * sbuf = (void *)(this->_sbuf + this->_sdispls[this->_current] * this->_stype->GetExtent());
+    void * rbuf = this->_rbuf + this->_rdispls[this->_current] * dataextent;
+    if (this->_current == this->ordinal())
+    {
+      PAMI_Type_transform_data(sbuf, this->_stype, 0, rbuf, this->_rtype,
+                               0, this->_rcnts[this->_current]*datawidth, PAMI_DATA_COPY, NULL);
+
 
 	this->_sndcount[this->_odd]++;
 	this->_sndstartedcount[this->_odd]++;
@@ -88,21 +92,14 @@ void xlpgas::Alltoallv<T_NI,CntType>::kick_internal    () {
     else {
       MUTEX_UNLOCK(&this->_mutex);
       this->_sndstartedcount[this->_odd]++;
-      pami_send_t p_send;
+      unsigned connection_Id = this->_header.tag;
+//      _headers[i].dest_ctxt = _comm->endpoint(i).ctxt;
       pami_send_event_t   events;
-      p_send.send.header.iov_base  = &(this->_header);
-      p_send.send.header.iov_len   = sizeof(this->_header);
-      p_send.send.data.iov_base    = (char*) this->_sbuf + this->_sdispls[this->_current] * sdatawidth;
-      p_send.send.data.iov_len     = this->_scnts[this->_current] * sdatawidth;
-      p_send.send.dispatch         = -1;
-      memset(&p_send.send.hints, 0, sizeof(p_send.send.hints));
-      p_send.send.dest             = this->_comm->index2Endpoint (this->_current);
       events.cookie         = this;
       events.local_fn       = this->cb_senddone;
       events.remote_fn      = NULL;
-      this->_pwq.configure((char*) this->_sbuf + this->_sdispls[this->_current] * sdatawidth, this->_scnts[this->_current] * sdatawidth, this->_scnts[this->_current] * sdatawidth, this->_stype, this->_rtype);
-      this->_p2p_iface->sendPWQ(this->_pami_ctxt, this->_comm->index2Endpoint (this->_current), sizeof(this->_header),&this->_header,this->_scnts[this->_current] * sdatawidth, &this->_pwq, &events);
-      //this->_p2p_iface->send(&p_send);
+      this->_sndpwq[this->_current].configure((char*) sbuf, this->_scnts[this->_current] * dataextent, this->_scnts[this->_current] * dataextent, NULL, this->_stype);
+      this->_p2p_iface->sendPWQ(this->_pami_ctxt, this->_comm->index2Endpoint (this->_current), connection_Id, sizeof(this->_header),&this->_header,this->_scnts[this->_current] * this->_stype->GetDataSize(), &this->_sndpwq[this->_current], &events);
     }
 
     // increment current wrapping arround
@@ -143,14 +140,14 @@ void xlpgas::Alltoallv<T_NI,CntType>::kick    () {
 /*               reception header handler                           */
 /* **************************************************************** */
 template<class T_NI, class CntType>
-inline void xlpgas::Alltoallv<T_NI,CntType>::cb_incoming_v(pami_context_t    context,
-                                                   void            * cookie,
-                                                   const void      * hdr,
-                                                   size_t            header_size,
-                                                   const void      * pipe_addr,
-                                                   size_t            data_size,
-                                                   pami_endpoint_t   origin,
-                                                   pami_recv_t     * recv)
+inline void xlpgas::Alltoallv<T_NI,CntType>::cb_incoming_v(pami_context_t          context,
+                                                   void                  * cookie,
+                                                   const void            * hdr,
+                                                   size_t                  header_size,
+                                                   const void            * pipe_addr,
+                                                   size_t                  data_size,
+                                                   pami_endpoint_t         origin,
+                                                   pami_pwq_recv_t       * recv)
 {
   struct Alltoall<T_NI>::AMHeader * header = (struct Alltoall<T_NI>::AMHeader *) hdr;
   //unused:   int ctxt = header->dest_ctxt;
@@ -164,22 +161,16 @@ inline void xlpgas::Alltoallv<T_NI,CntType>::cb_incoming_v(pami_context_t    con
   TRACE((stderr, "%d: ALLTOALL: <%d,%d> INCOMING base=%p ptr=%p len=%d\n",
          XLPGAS_MYNODE, header->tag, header->kind, base0, s, s->_len));
 
-  char * rbuf =  s->_rbuf + s->_rdispls[header->senderID] * s->_rtype->GetDataSize();
-  if (pipe_addr)
-    memcpy(rbuf, pipe_addr, data_size);
-  else if (recv)
-  {
-    recv->cookie        = s;
-    recv->local_fn      = Alltoallv<T_NI,CntType>::cb_recvcomplete;
-    recv->addr          = rbuf;
-    recv->type          = PAMI_TYPE_BYTE;
-    recv->offset        = 0;
-    recv->data_fn       = PAMI_DATA_COPY;
-    recv->data_cookie   = (void*)NULL;
-    TRACE((stderr, "ALLTOALLV: <%d,%d> INCOMING RETURING base=%p ptr=%p\n",
-           header->tag, header->id, base0, s));
-    return;
-  }
-  Alltoallv::cb_recvcomplete(context, s, PAMI_SUCCESS);
+
+  char * rbuf =  s->_rbuf + s->_rdispls[header->senderID] * s->_rtype->GetExtent();
+
+  s->_rcvpwq[header->senderID].configure(rbuf, s->_rcnts[header->senderID] * s->_rtype->GetExtent(), 0, s->_rtype);
+  s->_rcvpwq[header->senderID].reset();
+  PAMI::PipeWorkQueue * z = &s->_rcvpwq[header->senderID];
+
+  recv->rcvpwq                     = z;
+  recv->cb_done.function           = Alltoallv<T_NI,CntType>::cb_recvcomplete;
+  recv->cb_done.clientdata         = s;
+  recv->totalRcvln                 = s->_rcnts[header->senderID] * s->_rtype->GetDataSize();
   return;
 }

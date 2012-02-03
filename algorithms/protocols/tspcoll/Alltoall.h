@@ -48,20 +48,25 @@ namespace xlpgas
       Collective<T_NI> (ctxt, comm, kind, tag, NULL, NULL, ni),
       _offset(offset)
       {
-	_sndcount[0] = comm->size(); _sndcount[1] = comm->size();
-	_rcvcount[0] = comm->size(); _rcvcount[1] = comm->size();
-	_odd = 1;
+        _sndcount[0] = comm->size(); _sndcount[1] = comm->size();
+	    _rcvcount[0] = comm->size(); _rcvcount[1] = comm->size();
+	    _odd = 1;
 
-	_header.hdr.handler    = XLPGAS_TSP_AMSEND_COLLA2A;
-	_header.hdr.headerlen = sizeof (struct AMHeader);
-	_header.kind          = this->_kind;
-	_header.tag           = this->_tag;
-	_header.offset        = _offset;
-	_header.senderID      = this->ordinal();
+	    _header.hdr.handler    = XLPGAS_TSP_AMSEND_COLLA2A;
+	    _header.hdr.headerlen = sizeof (struct AMHeader);
+	    _header.kind          = this->_kind;
+	    _header.tag           = this->_tag;
+	    _header.offset        = _offset;
+	    _header.senderID      = this->ordinal();
+
+        _sndpwq  = (PAMI::PipeWorkQueue *)__global.heap_mm->malloc (sizeof(PAMI::PipeWorkQueue)* comm->size());
+        _rcvpwq  = (PAMI::PipeWorkQueue *)__global.heap_mm->malloc (sizeof(PAMI::PipeWorkQueue)* comm->size());
       }
 
     ~Alltoall()
       {
+          __global.heap_mm->free(_sndpwq);
+          __global.heap_mm->free(_rcvpwq);
       }
 
     static  void  amsend_reg       (xlpgas_AMHeaderReg_t amsend_regnum) {
@@ -83,14 +88,15 @@ namespace xlpgas
     virtual bool isdone  (void) const;
     bool buffer_full  (void) const;
     bool all_sent  (void) const;
-    static inline void cb_incoming(pami_context_t    context,
-                                   void            * cookie,
-                                   const void      * header_addr,
-                                   size_t            header_size,
-                                   const void      * pipe_addr,
-                                   size_t            data_size,
-                                   pami_endpoint_t   origin,
-                                   pami_recv_t     * recv);
+
+    static inline void cb_incoming(pami_context_t          context,
+                                   void                  * cookie,
+                                   const void            * header_addr,
+                                   size_t                  header_size,
+                                   const void            * pipe_addr,
+                                   size_t                  data_size,
+                                   pami_endpoint_t         origin,
+                                   pami_pwq_recv_t       * recv);
 
     static void cb_recvcomplete (void * unused, void * arg, pami_result_t result);
 
@@ -98,12 +104,17 @@ namespace xlpgas
     const char          * _sbuf;         /* send buffer    */
     char                * _rbuf;         /* receive buffer */
     size_t                _len;          /* msg length     */
+    size_t                _spwqlen;      /* msg send pwq length     */
+    size_t                _rpwqlen;      /* msg recv pwq length     */
     TypeCode            * _stype;        /* Single datatype of the send buffer */
     TypeCode            * _rtype;        /* Single datatype of the recv buffer */
-    PAMI::PipeWorkQueue   _pwq;
+    PAMI::PipeWorkQueue * _sndpwq;       /* An array of pwqs per destination. A2A doesn't use phases, so in one phase */
+    PAMI::PipeWorkQueue * _rcvpwq;       /* multiple messages may arrive from different origins each requiring its own pwq */
+
     pami_work_t           _work_pami;     /* work to be reposted if not finished */
     int                   _sndcount[2], _sndstartedcount[2], _rcvcount[2], _odd, _offset;
     size_t                _current;
+
     struct AMHeader
     {
       xlpgas_AMHeader_t    hdr;

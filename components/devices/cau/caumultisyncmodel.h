@@ -156,7 +156,7 @@ class CAUMultisyncModel : public Interface::MultisyncModel<CAUMultisyncModel<T_D
                          ms->_dispatch_red_id,
                          ms->_device.getHdl(),
                          ms);
-        gi->_ueBar.pushTail((MatchQueueElem*)m);
+        gi->_ueBar.pushTail((MatchQueueElem<>*)m);
       }
     else
       {
@@ -287,7 +287,7 @@ public:
     gi->_seqno++;
     // First task in the topology is the root
     TRACE((stderr, "CAU:  endpointid = %d, pushing tail\n", _device.endpoint()));
-    gi->_postedBar.pushTail((MatchQueueElem*)m);
+    gi->_postedBar.pushTail((MatchQueueElem<>*)m);
 
     if(!amRoot)
       {

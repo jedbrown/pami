@@ -36,8 +36,13 @@ void xlpgas::Scatter<T_NI>::reset (int root, const void * s, void * d,
   _rcvcount       = 0;
   _rbuf           = (char *)d;
   _sbuf           = (const char *)s;
-  _len            = stype->GetDataSize() * stypecount;
-  _pwq.configure((char *)this->_sbuf, this->_len, this->_len, stype, rtype);
+  _len            = rtype->GetDataSize() * rtypecount;
+  _spwqln         = stype->GetExtent() * stypecount;
+  _rpwqln         = rtype->GetExtent() * rtypecount;
+  _stype          = stype;
+  _rtype          = rtype;
+  _sndpwq.configure((char *)this->_sbuf, this->_spwqln, this->_spwqln, NULL, stype);
+  _rcvpwq.configure((char *)this->_rbuf, this->_rpwqln, 0, rtype);
 }
 
 /* **************************************************************** */
@@ -47,9 +52,9 @@ template<class T_NI>
 void xlpgas::Scatter<T_NI>::kick    (){
   if (_root == this->ordinal())
     {
-      memcpy (_rbuf,
-	      _sbuf + _root*_len,
-	      _len);
+      unsigned connection_Id = _header->tag;
+      PAMI_Type_transform_data((char *)_sbuf + _root*_spwqln, _stype, 0, _rbuf, _rtype,
+                               0, _len, PAMI_DATA_COPY, NULL);
 
       _rcvcount++;
       /* UNLOCK */
@@ -58,19 +63,11 @@ void xlpgas::Scatter<T_NI>::kick    (){
 	if(i != (int)_root){
 	  xlpgas_endpoint_t dst = this->_comm->index2Endpoint (i);
 //	  ((AMHeader&)(_header->hdr)).dest_ctxt = dst.ctxt;
-          pami_send_t p_send;
           pami_send_event_t   events;
-          p_send.send.header.iov_base  = this->_header;
-          p_send.send.header.iov_len   = sizeof(*this->_header);
-          p_send.send.data.iov_base    = (char*)(this->_sbuf + i * this->_len);
-          p_send.send.data.iov_len     = this->_len;
-          p_send.send.dispatch         = -1;
-          memset(&p_send.send.hints, 0, sizeof(p_send.send.hints));
-          p_send.send.dest             = dst;
           events.cookie         = this;
           events.local_fn       = this->cb_senddone;
           events.remote_fn      = NULL;
-          this->_p2p_iface->sendPWQ(this->_pami_ctxt, dst,sizeof(*this->_header),this->_header, this->_len, &_pwq, &events);
+          this->_p2p_iface->sendPWQ(this->_pami_ctxt, dst,connection_Id,sizeof(*this->_header),this->_header, this->_len, &_sndpwq, &events);
           //this->_p2p_iface->send(&p_send);
 	}
       }
@@ -112,14 +109,14 @@ void xlpgas::Scatter<T_NI>::cb_senddone (void * ctxt, void * arg, pami_result_t 
 /*               reception header handler                           */
 /* **************************************************************** */
 template<class T_NI>
-inline void xlpgas::Scatter<T_NI>::cb_incoming(pami_context_t    context,
-                                               void            * cookie,
-                                               const void      * hdr,
-                                               size_t            header_size,
-                                               const void      * pipe_addr,
-                                               size_t            data_size,
-                                               pami_endpoint_t   origin,
-                                               pami_recv_t     * recv)
+inline void xlpgas::Scatter<T_NI>::cb_incoming(pami_context_t          context,
+                                               void                  * cookie,
+                                               const void            * hdr,
+                                               size_t                  header_size,
+                                               const void            * pipe_addr,
+                                               size_t                  data_size,
+                                               pami_endpoint_t         origin,
+                                               pami_pwq_recv_t       * recv)
 {
   struct AMHeader * header = (struct AMHeader *) hdr;
 
@@ -134,23 +131,14 @@ inline void xlpgas::Scatter<T_NI>::cb_incoming(pami_context_t    context,
   TRACE((stderr, "%d: Scatter<T_NI>: <%d,%d> INCOMING base=%p ptr=%p len=%d\n",
          XLPGAS_MYNODE, header->tag, header->kind, base0, s, s->_len));
 
-  if (pipe_addr)
-    memcpy(s->_rbuf, pipe_addr, data_size);
-  else if (recv)
-  {
-    recv->cookie        = s;
-    recv->local_fn      = &Scatter::cb_recvcomplete;
-    recv->addr          = s->_rbuf;
-    recv->type          = PAMI_TYPE_BYTE;
-    recv->offset        = 0;
-    recv->data_fn       = PAMI_DATA_COPY;
-    recv->data_cookie   = (void*)NULL;
-    TRACE((stderr, "SCATTER: <%d,%d> INCOMING RETURING base=%p ptr=%p\n",
-           header->tag, header->id, base0, s));
-    return;
-  }
+  PAMI::PipeWorkQueue * z = &s->_rcvpwq;
 
-  Scatter::cb_recvcomplete(context, s, PAMI_SUCCESS);
+
+  recv->rcvpwq                     = z;
+  recv->cb_done.function           = Scatter::cb_recvcomplete;
+  recv->cb_done.clientdata         = s;
+  recv->totalRcvln                 = s->_len;
+
   return;
 }
 

@@ -46,11 +46,12 @@ xlpgas::Allreduce::Long<T_NI>::
 Long (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, T_NI* ni) :
   CollExchange<T_NI> (ctxt, comm, kind, tag, offset, ni)
 {
-  pami_type_t allreducetype = PAMI_TYPE_BYTE;
   this->_tmpbuf = NULL;
+  this->_tmpredbuf = NULL;
   this->_tmpbuflen = 0;
   this->_dbuf = NULL;
   this->_nelems = 0;
+  this->_contig = 1;//SSS: Default is contiguous.
   for (this->_logMaxBF = 0; (1<<(this->_logMaxBF+1)) <= (int)this->_comm->size(); this->_logMaxBF++) ;
   int maxBF  = 1<<this->_logMaxBF;
   int nonBF  = this->_comm->size() - maxBF;
@@ -69,7 +70,9 @@ Long (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, T_NI* ni)
       this->_rbuf    [phase] = ((int)this->ordinal() >= maxBF) ? &this->_dummy : NULL;
       this->_postrcv [phase] = NULL;
       this->_sbufln  [phase] = 1;
-      this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], (TypeCode *)allreducetype, (TypeCode *)allreducetype);
+      this->_rbufln  [phase] = 1;
+      this->_sndpwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase]);
+      this->_rcvpwq[phase].configure((char *)this->_rbuf[phase], this->_rbufln[phase], 0);
       //printf("%d: in phase %d will send to  %d \n", XLPGAS_MYNODE, phase, _dest[phase].node);
       phase ++;
 
@@ -80,7 +83,9 @@ Long (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, T_NI* ni)
       this->_rbuf    [phase] = NULL; /* receive buffer not available */
       this->_postrcv [phase] = ((int)this->ordinal() < nonBF)  ? cb_allreduce : NULL;
       this->_sbufln  [phase] = 0;    /* data length not available */
-      this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], (TypeCode *)allreducetype, (TypeCode *)allreducetype);
+      this->_rbufln  [phase] = 0;
+      this->_sndpwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase]);
+      this->_rcvpwq[phase].configure((char *)this->_rbuf[phase], this->_rbufln[phase], 0);
       //sprintf("%d: in phase %d will send to  %d \n", XLPGAS_MYNODE, phase, _dest[phase].node);
       phase ++;
     }
@@ -98,8 +103,9 @@ Long (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, T_NI* ni)
       this->_rbuf    [phase] = ((int)this->ordinal() < maxBF) ? &this->_dummy : NULL;
       this->_postrcv [phase] = NULL;
       this->_sbufln  [phase] = 1;
-      this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], (TypeCode *)allreducetype, (TypeCode *)allreducetype);
-
+      this->_rbufln  [phase] = 1;
+      this->_sndpwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase]);
+      this->_rcvpwq[phase].configure((char *)this->_rbuf[phase], this->_rbufln[phase], 0);
       //printf("%d: in phase %d will send to  %d \n", XLPGAS_MYNODE, phase, _dest[phase].node);
       phase ++;
 
@@ -110,7 +116,9 @@ Long (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, T_NI* ni)
       this->_rbuf    [phase] = NULL; /* receive buffer not available */
       this->_postrcv [phase] = ((int)this->ordinal() < maxBF) ? cb_allreduce : NULL;
       this->_sbufln  [phase] = 0;    /* data length not available */
-      this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], (TypeCode *)allreducetype, (TypeCode *)allreducetype);
+      this->_rbufln  [phase] = 0;
+      this->_sndpwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase]);
+      this->_rcvpwq[phase].configure((char *)this->_rbuf[phase], this->_rbufln[phase], 0);
       //printf("%d: in phase %d will send to  %d \n", XLPGAS_MYNODE, phase, _dest[phase].node);
       phase ++;
     }
@@ -128,7 +136,9 @@ Long (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, T_NI* ni)
       this->_rbuf    [phase] = ((int)this->ordinal() < nonBF)  ? &this->_dummy : NULL;
       this->_postrcv [phase] = NULL;
       this->_sbufln  [phase] = 1;
-      this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], (TypeCode *)allreducetype, (TypeCode *)allreducetype);
+      this->_rbufln  [phase] = 1;
+      this->_sndpwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase]);
+      this->_rcvpwq[phase].configure((char *)this->_rbuf[phase], this->_rbufln[phase], 0);
       //printf("%d: in phase %d will send to  %d \n", XLPGAS_MYNODE, phase, _dest[phase].node);
       phase ++;
 
@@ -139,7 +149,9 @@ Long (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, T_NI* ni)
       this->_rbuf    [phase] = NULL; /* receive buffer not available */
       this->_postrcv [phase] = NULL;
       this->_sbufln  [phase] = 0; /* data length not available */
-      this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], (TypeCode *)allreducetype, (TypeCode *)allreducetype);
+      this->_rbufln  [phase] = 0;
+      this->_sndpwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase]);
+      this->_rcvpwq[phase].configure((char *)this->_rbuf[phase], this->_rbufln[phase], 0);
       //printf("%d: in phase %d will send to  %d \n", XLPGAS_MYNODE, phase, _dest[phase].node);
       phase ++;
     }
@@ -161,8 +173,23 @@ cb_allreduce (CollExchange<T_NI> *coll, unsigned phase)
   //  int * dbuf   = (int *) ar->_dbuf;
   //  int * pbuf   = (int *) ar->_tmpbuf;
   //printf("%d: Add %d to already existent%d in phase %d\n", XLPGAS_MYNODE, pbuf[0], dbuf[0], phase);
-  void * inputs[] = {ar->_dbuf, ar->_tmpbuf};
-  ar->_cb_allreduce (ar->_dbuf, inputs, 2, ar->_nelems);
+  if(ar->_contig)
+  {
+    void * inputs[] = {ar->_dbuf, ar->_tmpbuf};
+    ar->_cb_allreduce (ar->_dbuf, inputs, 2, ar->_nelems);
+  }
+  else
+  {
+    PAMI_Type_transform_data((void*)ar->_dbuf, ar->_rdt, 0,
+                                             ar->_tmpredbuf, PAMI_TYPE_BYTE, 0, ar->_nelems * ar->_sdt->GetDataSize(),
+                                             PAMI_DATA_COPY, NULL);
+
+    void * inputs[] = {ar->_tmpredbuf, ar->_tmpbuf};
+    ar->_cb_allreduce (ar->_tmpredbuf, inputs, 2, ar->_nelems);
+    PAMI_Type_transform_data((void*)ar->_tmpredbuf, PAMI_TYPE_BYTE, 0,
+                                             ar->_dbuf, ar->_rdt, 0, ar->_nelems * ar->_sdt->GetDataSize(),
+                                             PAMI_DATA_COPY, NULL);
+  }
 }
 
 /* ************************************************************************* */
@@ -171,12 +198,12 @@ cb_allreduce (CollExchange<T_NI> *coll, unsigned phase)
 #define MAXOF(a,b) (((a)>(b))?(a):(b))
 template <class T_NI>
 void xlpgas::Allreduce::Long<T_NI>::reset (const void         * sbuf,
-				     void               * dbuf,
-				     pami_data_function   op,
-				     TypeCode           * sdt,
-				     size_t               nelems,
-                                     TypeCode           * rdt,
-				     user_func_t        * uf)
+                     void               * dbuf,
+                     pami_data_function   op,
+                     TypeCode           * sdt,
+                     size_t               nelems,
+                     TypeCode           * rdt,
+                     user_func_t        * uf)
 {
   assert (sbuf != NULL);
   assert (dbuf != NULL);
@@ -196,20 +223,30 @@ void xlpgas::Allreduce::Long<T_NI>::reset (const void         * sbuf,
 	 nelems
 	 );
   */
+  size_t rdataWidth  = rdt->GetDataSize();
+  size_t rdataExtent = rdt->GetExtent();
+  if(rdataExtent != rdataWidth || sdt->GetDataSize() != sdt->GetExtent()) this->_contig = 0;
+  _sdt    = sdt;
+  _rdt    = rdt;
   _dbuf   = dbuf;
-  _nelems = nelems;
-  size_t datawidth = sdt->GetDataSize();
-  if (sbuf != dbuf) memcpy (dbuf, sbuf, nelems * datawidth);
+  _nelems = (nelems * rdataWidth) / sdt->GetDataSize();// NJ: Number of elements of send type
+
+  if (sbuf != dbuf) PAMI_Type_transform_data((void*)sbuf, sdt, 0,
+                                             dbuf, rdt, 0, nelems * rdataWidth,
+                                             PAMI_DATA_COPY, NULL);
 
   /* need more memory in temp buffer? */
-  if (_tmpbuflen < nelems * datawidth)
-    {
-      if (_tmpbuf) {
-	__global.heap_mm->free (_tmpbuf);
-	_tmpbuf = NULL;
+  /* SSS: We allocate double the buffer size instead of allocating twice.
+          We use the second half of the allocated buffer to pack _dbuf
+          in case of non contig data for reduction. */
+  if (_tmpbuflen < nelems * rdataWidth * 2)
+  {
+    if (_tmpbuf) {
+      __global.heap_mm->free (_tmpbuf);
+      _tmpbuf = NULL;
 	//printf("L%d: AR __global.heap_mm->free null \n",XLPGAS_MYNODE);
-      }
-      assert (nelems * datawidth > 0);
+    }
+    assert (nelems * rdataWidth > 0);
 
       /*
 #if TRANSPORT == bgp
@@ -219,16 +256,18 @@ void xlpgas::Allreduce::Long<T_NI>::reset (const void         * sbuf,
       //printf("L%d: AR bgp alment=%d sz=%d %d \n",XLPGAS_MYNODE, alignment,nelems*datawidth,rc);
 #else
       */
-      _tmpbuf = __global.heap_mm->malloc (nelems * datawidth);
-      int rc = 0;
+    _tmpbuf = __global.heap_mm->malloc (nelems * rdataWidth * 2);
+    int rc = 0;
 
       //#endif
 
 
-      if (rc || !_tmpbuf)
-	xlpgas_fatalerror (-1, "Allreduce: memory allocation error, rc=%d", rc);
-      _tmpbuflen = nelems * datawidth;
-    }
+    if (rc || !_tmpbuf)
+      xlpgas_fatalerror (-1, "Allreduce: memory allocation error, rc=%d", rc);
+    _tmpbuflen = nelems * rdataWidth * 2;
+
+    _tmpredbuf = (void*)((char *)_tmpbuf + (nelems * rdataWidth));
+  }
 
   /* --------------------------------------------------- */
   /*  set source and destination buffers and node ids    */
@@ -244,8 +283,10 @@ void xlpgas::Allreduce::Long<T_NI>::reset (const void         * sbuf,
       phase ++;
       this->_sbuf    [phase] = ((int)this->ordinal() >= maxBF) ? this->_dbuf : NULL;
       this->_rbuf    [phase] = ((int)this->ordinal() < nonBF)  ? this->_tmpbuf : NULL;
-      this->_sbufln  [phase] = nelems * datawidth;
-      this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], sdt, rdt);
+      this->_sbufln  [phase] = this->_rbufln  [phase] = nelems * rdataWidth;
+      this->_spwqln  [phase] = nelems * rdataExtent;
+      this->_sndpwq[phase].configure((char *)this->_sbuf[phase], this->_spwqln[phase], this->_spwqln[phase], NULL, rdt);
+      this->_rcvpwq[phase].configure((char *)this->_rbuf[phase], this->_rbufln[phase], 0);
       phase ++;
     }
 
@@ -254,8 +295,10 @@ void xlpgas::Allreduce::Long<T_NI>::reset (const void         * sbuf,
       phase ++;
       this->_sbuf    [phase] = ((int)this->ordinal() < maxBF) ? this->_dbuf : NULL;
       this->_rbuf    [phase] = ((int)this->ordinal() < maxBF) ? this->_tmpbuf : NULL;
-      this->_sbufln  [phase] = nelems * datawidth;
-      this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], sdt, rdt);
+      this->_sbufln  [phase] = this->_rbufln  [phase] = nelems * rdataWidth;
+      this->_spwqln  [phase] = nelems * rdataExtent;
+      this->_sndpwq[phase].configure((char *)this->_sbuf[phase], this->_spwqln[phase], this->_spwqln[phase], NULL, rdt);
+      this->_rcvpwq[phase].configure((char *)this->_rbuf[phase], this->_rbufln[phase], 0);
       phase ++;
     }
 
@@ -264,11 +307,13 @@ void xlpgas::Allreduce::Long<T_NI>::reset (const void         * sbuf,
       phase ++;
       this->_sbuf    [phase] = ((int)this->ordinal() < nonBF)  ? this->_dbuf  : NULL;
       this->_rbuf    [phase] = ((int)this->ordinal() >= maxBF) ? this->_dbuf  : NULL;
-      this->_sbufln  [phase] = nelems * datawidth;
-      this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], sdt, rdt);
+      this->_sbufln  [phase] = this->_rbufln  [phase] = nelems * rdataWidth;
+      this->_spwqln  [phase] = nelems * rdataExtent;
+      this->_sndpwq[phase].configure((char *)this->_sbuf[phase], this->_spwqln[phase], this->_spwqln[phase], NULL, rdt);
+      this->_rcvpwq[phase].configure((char *)this->_rbuf[phase], this->_spwqln[phase], 0, rdt);
       phase ++;
     }
 
   assert (phase == this->_numphases);
-  this->_cb_allreduce = getcallback (op, sdt);
+  this->_cb_allreduce = getcallback (op, sdt);// NJ: Math op is done based on send type
 }

@@ -87,17 +87,19 @@ namespace CCMI
           PAMI::Type::TypeCode * type_obj = (PAMI::Type::TypeCode *)cmd->cmd.xfer_broadcast.type;
 
           /// \todo Support non-contiguous
-          PAMI_assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
+          //assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
 
-          unsigned        sizeOfType = type_obj->GetDataSize();
+          unsigned        sizeOfType   = type_obj->GetDataSize();
+          unsigned        strideOfType = type_obj->GetExtent();
 
-          size_t bytes = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
+          size_t bytes  = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
+          size_t stride = cmd->cmd.xfer_broadcast.typecount * strideOfType;
           size_t pbytes = 0;
 
           if (cmd->cmd.xfer_broadcast.root == native->endpoint())
-            pbytes = bytes;
+            pbytes = stride;
 
-          _pwq.configure(cmd->cmd.xfer_broadcast.buf, bytes, pbytes, type_obj, type_obj);
+          _pwq.configure(cmd->cmd.xfer_broadcast.buf, stride, pbytes, type_obj, type_obj);
 
           pami_multicast_t minfo;
           minfo.cb_done.function   = fn;     //_cb_done;
@@ -186,10 +188,12 @@ namespace CCMI
           PAMI::Type::TypeCode * type_obj = (PAMI::Type::TypeCode *)cmd->cmd.xfer_broadcast.type;
 
           /// \todo Support non-contiguous
-          PAMI_assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
+          //assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
 
-          unsigned        sizeOfType = type_obj->GetDataSize();
-          _bytes = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
+          unsigned        sizeOfType   = type_obj->GetDataSize();
+          unsigned        strideOfType = type_obj->GetExtent();
+          _bytes                       = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
+          size_t          stride       = cmd->cmd.xfer_broadcast.typecount * strideOfType;
 
           _deviceMcastInfo                  = _geometry->getKey(mInterface->contextid(),PAMI::Geometry::CKEY_MCAST_CLASSROUTEID);
           _deviceMsyncInfo                  = _geometry->getKey(mInterface->contextid(),PAMI::Geometry::CKEY_MSYNC_CLASSROUTEID);
@@ -205,18 +209,18 @@ namespace CCMI
 
           if (cmd->cmd.xfer_broadcast.root == mInterface->endpoint())
           {
-            _src.configure(cmd->cmd.xfer_broadcast.buf, _bytes, _bytes, type_obj, type_obj);
+            _src.configure(cmd->cmd.xfer_broadcast.buf, stride, stride, type_obj, type_obj);
             /// \todo unless the device lets me toss unwanted data, we need a dummy buffer to receive.
             pami_result_t prc;
-            prc = __global.heap_mm->memalign((void **) & _buffer, 0, _bytes);
+            prc = __global.heap_mm->memalign((void **) & _buffer, 0, stride);
             PAMI_assertf(prc == PAMI_SUCCESS, "alloc of _buffer failed");
-            _dst.configure(_buffer, _bytes, 0, type_obj, type_obj);
+            _dst.configure(_buffer, stride, 0, type_obj, type_obj);
           }
           else
           {
             //_buffer = (char*) & _bytes; // dummy buffer - unused
             _src.configure((char*)NULL, 0, 0);
-            _dst.configure(cmd->cmd.xfer_broadcast.buf, _bytes, 0, type_obj, type_obj);
+            _dst.configure(cmd->cmd.xfer_broadcast.buf, stride, 0, type_obj, type_obj);
           }
 
           // Initialize the mcast
@@ -397,6 +401,7 @@ namespace CCMI
           _deviceInfo             = _geometry->getKey(native_l->contextid(),PAMI::Geometry::CKEY_MCAST_CLASSROUTEID);
           PAMI::Type::TypeCode *tc     = (PAMI::Type::TypeCode*)cmd->cmd.xfer_broadcast.type;
           size_t           bytes       = cmd->cmd.xfer_broadcast.typecount * tc->GetDataSize();
+          size_t           stride      = cmd->cmd.xfer_broadcast.typecount * tc->GetExtent();
           size_t           numMasters  = t_master->size();
           size_t           numLocal    = t_local->size();
 
@@ -416,21 +421,21 @@ namespace CCMI
 
           size_t           initBytes;   
           if (amRoot)
-            initBytes = bytes;
+            initBytes = stride;
           else
             initBytes = 0;
 
           // Create a "flat pwq" for the send buffer
           _pwq0.configure(
                          cmd->cmd.xfer_broadcast.buf,     // buffer
-                         bytes,                           // buffer bytes
+                         stride,                          // buffer bytes
                          initBytes,                       // amount initially in buffer
                          tc,
                          tc);
 
           _pwq1.configure(
                          cmd->cmd.xfer_broadcast.buf,     // buffer
-                         bytes,                           // buffer bytes
+                         stride,                          // buffer bytes
                          initBytes,                       // amount initially in buffer
                          tc,
                          tc);
@@ -768,6 +773,7 @@ namespace CCMI
           _deviceInfo                  = _geometry->getKey(native_l->contextid(),PAMI::Geometry::CKEY_MCAST_CLASSROUTEID);
           PAMI::Type::TypeCode *tc     = (PAMI::Type::TypeCode*)cmd->cmd.xfer_broadcast.type;
           size_t           bytes       = cmd->cmd.xfer_broadcast.typecount * tc->GetDataSize();
+          size_t           stride      = cmd->cmd.xfer_broadcast.typecount * tc->GetExtent();
           size_t           numMasters  = t_master->size();
           size_t           numLocal    = t_local->size();
           TRACE_FORMAT( "MultiCastComposite2Device:  In Composite Constructor, setting up PWQ's %p %p, bytes=%zd buf=%p",
@@ -789,21 +795,21 @@ namespace CCMI
           size_t           initBytes;
 
           if (amRoot)
-            initBytes = bytes;
+            initBytes = stride;
           else
             initBytes = 0;
 
           // Create a "flat pwq" for the send buffer
           _pwq0.configure(
                          cmd->cmd.xfer_broadcast.buf,     // buffer
-                         bytes,                           // buffer bytes
+                         stride,                          // buffer bytes
                          initBytes,                       // amount initially in buffer
                          tc,
                          tc);
 
           _pwq1.configure(
                          cmd->cmd.xfer_broadcast.buf,     // buffer
-                         bytes,                           // buffer bytes
+                         stride,                          // buffer bytes
                          initBytes,                       // amount initially in buffer
                          tc,
                          tc);
@@ -991,7 +997,7 @@ namespace CCMI
                 TRACE_FORMAT( "MultiCastComposite2Device:  Found in UE queue queue:  target_pwq=%p",
                                &pwqBuf->_ue_pwq);
                 pwqBuf->_target_pwq           = &pwqBuf->_ue_pwq;
-                pwqBuf->_ue_pwq.configure(cmd->cmd.xfer_broadcast.buf, bytes, 0, tc, tc);
+                pwqBuf->_ue_pwq.configure(cmd->cmd.xfer_broadcast.buf, stride, 0, tc, tc);
                 _minfo_l.src                = (pami_pipeworkqueue_t*) & pwqBuf->_ue_pwq;
                 _activePwqBuf                 = pwqBuf;
 
@@ -1407,10 +1413,12 @@ namespace CCMI
           PAMI::Type::TypeCode * type_obj = (PAMI::Type::TypeCode *)cmd->cmd.xfer_broadcast.type;
 
           /// \todo Support non-contiguous
-          PAMI_assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
+          //assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
 
           unsigned        sizeOfType = type_obj->GetDataSize();
-          _bytes = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
+          _bytes        = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
+          //SSS: This is probably not needed since type is CHAR but we will modify here for consistency
+          size_t stride = cmd->cmd.xfer_broadcast.typecount * type_obj->GetExtent();
 
           _deviceInfo                  = _geometry->getKey(mInterface->contextid(),PAMI::Geometry::CKEY_MCOMB_CLASSROUTEID);
 
@@ -1420,17 +1428,17 @@ namespace CCMI
 
           if (cmd->cmd.xfer_broadcast.root == mInterface->endpoint())
           {
-            _buffer_size = _bytes;
+            _buffer_size = stride;
             _buffer = (char*) malloc(_buffer_size);
-            _data.configure(cmd->cmd.xfer_broadcast.buf, _bytes, _bytes, type_obj, type_obj);
-            _results.configure(_buffer, _bytes, 0, type_obj, type_obj);
+            _data.configure(cmd->cmd.xfer_broadcast.buf, stride, stride, type_obj, type_obj);
+            _results.configure(_buffer, stride, 0, type_obj, type_obj);
           }
           else
           {
             /// \todo consume/produce from one buffer and avoid the temp _buffer -does this work everywhere?
-            memset(cmd->cmd.xfer_broadcast.buf,  0x00,  _bytes);
-            _data.configure(cmd->cmd.xfer_broadcast.buf, _bytes, _bytes, type_obj, type_obj);
-            _results.configure(cmd->cmd.xfer_broadcast.buf, _bytes, 0, type_obj, type_obj);
+            memset(cmd->cmd.xfer_broadcast.buf,  0x00,  stride);
+            _data.configure(cmd->cmd.xfer_broadcast.buf, stride, stride, type_obj, type_obj);
+            _results.configure(cmd->cmd.xfer_broadcast.buf, stride, 0, type_obj, type_obj);
           }
 
           //_minfo.cb_done.function   = _cb_done;
@@ -1468,29 +1476,30 @@ namespace CCMI
           PAMI::Type::TypeCode * type_obj = (PAMI::Type::TypeCode *)cmd->cmd.xfer_broadcast.type;
 
           /// \todo Support non-contiguous
-          PAMI_assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
+          //assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
 
           unsigned        sizeOfType = type_obj->GetDataSize();
-          _bytes = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
+          _bytes        = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
+          size_t stride = cmd->cmd.xfer_broadcast.typecount * type_obj->GetExtent();
 
-          if (_buffer_size < _bytes)
+          if (_buffer_size < stride)
           {
             free(_buffer);
-            _buffer_size = _bytes;
+            _buffer_size = stride;
             _buffer = (char*) malloc(_buffer_size);
           }
 
           if (cmd->cmd.xfer_broadcast.root == _native->endpoint())
           {
-            _data.configure(cmd->cmd.xfer_broadcast.buf, _bytes, _bytes, type_obj, type_obj);
-            _results.configure(_buffer, _bytes, 0, type_obj, type_obj);
+            _data.configure(cmd->cmd.xfer_broadcast.buf, stride, stride, type_obj, type_obj);
+            _results.configure(_buffer, stride, 0, type_obj, type_obj);
           }
           else
           {
             /// \todo would be nice to consume/produce from one buffer and avoid the temp _buffer
-            memset(_buffer,  0x00,  _bytes);
-            _data.configure(_buffer, _bytes, _bytes, type_obj, type_obj);
-            _results.configure(cmd->cmd.xfer_broadcast.buf, _bytes, 0, type_obj, type_obj);
+            memset(_buffer,  0x00,  stride);
+            _data.configure(_buffer, stride, stride, type_obj, type_obj);
+            _results.configure(cmd->cmd.xfer_broadcast.buf, stride, 0, type_obj, type_obj);
           }
 
           //_minfo.cb_done.function   = _cb_done;

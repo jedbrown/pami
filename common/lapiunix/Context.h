@@ -172,12 +172,28 @@ namespace PAMI
         // No error code conversion required for typed send
         return (cp->*(cp->pSendTyped))(typed);
       }
+    inline void setPWQAllocator(void * allocator)
+      {
+        _pwqAllocator = allocator;
+      }
+    inline void * getPWQAllocator()
+       {
+         return _pwqAllocator;
+       }
     inline pami_result_t getAttributes (pami_configuration_t  configuration[],
                                         size_t                num_configs)
       {
-        (void)configuration;(void)num_configs;
-        PAMI_abort();
-        return PAMI_INVAL;
+        LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
+        pami_result_t result = PAMI_SUCCESS;
+        size_t i;
+        for(i=0; i<num_configs; i++)
+        {
+           internal_rc_t rc;
+           rc = (cp->*(cp->pConfigQuery))(configuration);
+           if(rc != SUCCESS)
+             result = PAMI_INVAL;
+        }
+        return result;
       }
 
 
@@ -205,6 +221,7 @@ namespace PAMI
       }
   private:
     lapi_state_t                          *_lapi_state;
+    void                                  *_pwqAllocator;
   };
 
   // Device Typedefs
@@ -1071,7 +1088,7 @@ namespace PAMI
       PlatformDeviceList                    *_devices;
 
       //  Unexpected Barrier match queue
-      MatchQueue                             _ueb_queue;
+      MatchQueue<>                           _ueb_queue;
 
       //  Unexpected Barrier allocator
       MemoryAllocator <sizeof(PAMI::Geometry::UnexpBarrierQueueElement), 16> _ueb_allocator;

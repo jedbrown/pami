@@ -198,13 +198,13 @@ namespace PAMI
         // Allocate per context UE queues
         rc = __global.heap_mm->memalign((void **)&_ue,
                                         0,
-                                        ctxt_arr_sz*sizeof(MatchQueue));
+                                        ctxt_arr_sz*sizeof(MatchQueue<>));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
 
         // Allocate per context Posted queues
         rc = __global.heap_mm->memalign((void **)&_post,
                                         0,
-                                        ctxt_arr_sz*sizeof(MatchQueue));
+                                        ctxt_arr_sz*sizeof(MatchQueue<>));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
 
         // Allocate per context active message dispatch information
@@ -219,8 +219,8 @@ namespace PAMI
         {
           new(&_ue_barrier[n]) AlgorithmT(NULL,NULL);
           new(&_default_barrier[n]) AlgorithmT(NULL,NULL);
-          new(&_ue[n]) MatchQueue();
-          new(&_post[n]) MatchQueue();
+          new(&_ue[n]) MatchQueue<>();
+          new(&_post[n]) MatchQueue<>();
           new(&_dispatch[n]) DispatchMap();
           resetUEBarrier_impl(n);
         }
@@ -334,13 +334,13 @@ namespace PAMI
         // Allocate per context UE queues
         rc = __global.heap_mm->memalign((void **)&_ue,
                                         0,
-                                        MAX_CONTEXTS*sizeof(MatchQueue));
+                                        MAX_CONTEXTS*sizeof(MatchQueue<>));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
 
         // Allocate per context Posted queues
         rc = __global.heap_mm->memalign((void **)&_post,
                                         0,
-                                        MAX_CONTEXTS*sizeof(MatchQueue));
+                                        MAX_CONTEXTS*sizeof(MatchQueue<>));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
 
         // Allocate per context active message dispatch information
@@ -354,8 +354,8 @@ namespace PAMI
         {
           new(&_ue_barrier[n]) AlgorithmT(NULL,NULL);
           new(&_default_barrier[n]) AlgorithmT(NULL,NULL);
-          new(&_ue[n]) MatchQueue();
-          new(&_post[n]) MatchQueue();
+          new(&_ue[n]) MatchQueue<>();
+          new(&_post[n]) MatchQueue<>();
           new(&_dispatch[n]) DispatchMap();
           resetUEBarrier_impl(n);
         }
@@ -465,13 +465,13 @@ namespace PAMI
         // Allocate per context UE queues
         rc = __global.heap_mm->memalign((void **)&_ue,
                                         0,
-                                        ctxt_arr_sz*sizeof(MatchQueue));
+                                        ctxt_arr_sz*sizeof(MatchQueue<>));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
 
         // Allocate per context Posted queues
         rc = __global.heap_mm->memalign((void **)&_post,
                                         0,
-                                        ctxt_arr_sz*sizeof(MatchQueue));
+                                        ctxt_arr_sz*sizeof(MatchQueue<>));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
 
         // Allocate per context active message dispatch information
@@ -485,8 +485,8 @@ namespace PAMI
         {
           new(&_ue_barrier[n]) AlgorithmT(NULL,NULL);
           new(&_default_barrier[n]) AlgorithmT(NULL,NULL);
-          new(&_ue[n]) MatchQueue();
-          new(&_post[n]) MatchQueue();
+          new(&_ue[n]) MatchQueue<>();
+          new(&_post[n]) MatchQueue<>();
           new(&_dispatch[n]) DispatchMap();
           resetUEBarrier_impl(n);
         }
@@ -561,13 +561,13 @@ namespace PAMI
         // Allocate per context UE queues
         rc = __global.heap_mm->memalign((void **)&_ue,
                                         0,
-                                        ctxt_arr_sz*sizeof(MatchQueue));
+                                        ctxt_arr_sz*sizeof(MatchQueue<>));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
 
         // Allocate per context Posted queues
         rc = __global.heap_mm->memalign((void **)&_post,
                                         0,
-                                        ctxt_arr_sz*sizeof(MatchQueue));
+                                        ctxt_arr_sz*sizeof(MatchQueue<>));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
 
         // Allocate per context active message dispatch information
@@ -581,8 +581,8 @@ namespace PAMI
         {
           new(&_ue_barrier[n]) AlgorithmT(NULL,NULL);
           new(&_default_barrier[n]) AlgorithmT(NULL,NULL);
-          new(&_ue[n]) MatchQueue();
-          new(&_post[n]) MatchQueue();
+          new(&_ue[n]) MatchQueue<>();
+          new(&_post[n]) MatchQueue<>();
           new(&_dispatch[n]) DispatchMap();
           resetUEBarrier_impl(n);
         }
@@ -695,13 +695,13 @@ namespace PAMI
         // Allocate per context UE queues
         rc = __global.heap_mm->memalign((void **)&_ue,
                                         0,
-                                        ctxt_arr_sz*sizeof(MatchQueue));
+                                        ctxt_arr_sz*sizeof(MatchQueue<>));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
 
         // Allocate per context Posted queues
         rc = __global.heap_mm->memalign((void **)&_post,
                                         0,
-                                        ctxt_arr_sz*sizeof(MatchQueue));
+                                        ctxt_arr_sz*sizeof(MatchQueue<>));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
 
         // Allocate per context active message dispatch information
@@ -715,8 +715,8 @@ namespace PAMI
         {
           new(&_ue_barrier[n]) AlgorithmT(NULL,NULL);
           new(&_default_barrier[n]) AlgorithmT(NULL,NULL);
-          new(&_ue[n]) MatchQueue();
-          new(&_post[n]) MatchQueue();
+          new(&_ue[n]) MatchQueue<>();
+          new(&_post[n]) MatchQueue<>();
           new(&_dispatch[n]) DispatchMap();
           resetUEBarrier_impl(n);
         }
@@ -861,11 +861,11 @@ namespace PAMI
         TRACE_FN_EXIT();
         return;
       }
-      inline MatchQueue               &asyncCollectivePostQ_impl(size_t context_id)
+      inline MatchQueue<>             &asyncCollectivePostQ_impl(size_t context_id)
       {
         return _post[context_id];
       }
-      inline MatchQueue               &asyncCollectiveUnexpQ_impl(size_t context_id)
+      inline MatchQueue<>             &asyncCollectiveUnexpQ_impl(size_t context_id)
       {
         return _ue[context_id];
       }
@@ -894,7 +894,7 @@ namespace PAMI
         return _allreduce[context_id][_allreduce_iteration[context_id]];
       }
 
-      inline void                      processUnexpBarrier_impl (MatchQueue * ueb_queue,
+      inline void                      processUnexpBarrier_impl (MatchQueue<> * ueb_queue,
                                                                  MemoryAllocator < sizeof(PAMI::Geometry::UnexpBarrierQueueElement), 16 > *ueb_allocator)
       {
         UnexpBarrierQueueElement *ueb = NULL;
@@ -1309,8 +1309,8 @@ namespace PAMI
       int                    _commid;
       pami_client_t          _client;
       pami_task_t            _rank;
-      MatchQueue            *_ue;
-      MatchQueue            *_post;
+      MatchQueue<>          *_ue;
+      MatchQueue<>          *_post;
       bool                   _ranks_malloc;
       pami_task_t           *_ranks;
       pami_task_t           *_endpoints;

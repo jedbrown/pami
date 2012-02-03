@@ -307,13 +307,14 @@ namespace PAMI
                 TRACE_DBG((stderr, "<%p>CollShmWindow::produceData() src %p/%p, trying length %zu :avail=%lu\n",
                            this, &src, src.bufferToConsume(), length, src.bytesAvailableToConsume()));
 
-                if (src.bytesAvailableToConsume() < MIN(length, COLLSHM_BUFSZ) ) return 0;
-
+                //SSS: This if statement would disable non-contig data
+                //if (src.bytesAvailableToConsume() < MIN(length, COLLSHM_BUFSZ) ) return 0;
                 size_t reqbytes = MIN (length, src.bytesAvailableToConsume());
 
                 if (reqbytes < IMMEDIATE_CHANNEL_DATA_SIZE)
                   {
                     _len = reqbytes;
+
                     memcpy (_data.immediate_data, src.bufferToConsume(), _len);
                     if(do_consume)
                       src.consumeBytes(_len);
@@ -367,7 +368,6 @@ namespace PAMI
               inline size_t produceData(char *src, size_t length, T_MemoryManager *csmm)
               {
                 TRACE_DBG((stderr, "<%p>CollShmWindow::produceData() src %p, length %zu\n", this, src, length));
-
                 if (length < IMMEDIATE_CHANNEL_DATA_SIZE)
                   {
                     _len = length;
@@ -421,7 +421,6 @@ namespace PAMI
               inline size_t consumeData(PAMI::PipeWorkQueue &dest, size_t length, int combine_flag, pami_op op, pami_dt dt,T_MemoryManager *csmm)
               {
                 TRACE_DBG((stderr, "<%p>CollShmWindow::consumeData() dest %p/%p, length %zu\n", this, &dest, dest.bufferToConsume(), length));
-
                 if (dest.bytesAvailableToProduce() < MIN(length, _len)) return 0;
 
                 size_t reqbytes = MIN (length, dest.bytesAvailableToProduce());
@@ -1079,7 +1078,6 @@ namespace PAMI
                 CollShmWindow *window = _device->getWindow(0, _arank, _idx);
                 int prank;
 
-
                 while (_len != 0)
                   {
                     if (_role == PARENT)
@@ -1124,7 +1122,11 @@ namespace PAMI
 
                             if (_role == BOTH)
                               {
+                                /// \todo Resolve SSS's conflict here with CJA's fix
+                                //SSS: We need to set do_consume to true for correctness in non-contig data cases.
+                                //     If do_consume is false, only first chunk is consumed repeatedly.
                                 size_t len = window->produceData(*(PAMI::PipeWorkQueue *)mcast->dst, _wlen, _device->getSysdep(),false);(void)len;
+
                                 PAMI_ASSERT(len == _wlen);
                                 _action = SHAREWITH;
                                 rc = window->setAvail(_step, _nchildren + 1);

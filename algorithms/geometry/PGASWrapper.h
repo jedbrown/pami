@@ -420,7 +420,7 @@ namespace PAMI
                                   this->_cmd->cmd.xfer_allreduce.rcvbuf,
                                   this->_cmd->cmd.xfer_allreduce.op,
                                   allreducesType,
-                                  this->_cmd->cmd.xfer_allreduce.stypecount,
+                                  this->_cmd->cmd.xfer_allreduce.rtypecount,
                                   allreducerType,
                                   &fn);
           this->_collexch->setContext(this->_context);
@@ -438,12 +438,14 @@ namespace PAMI
         {
           if (!this->_collexch->isdone()) this->_dev->advance();
           this->_collexch->setExclusive(this->_cmd->cmd.xfer_scan.exclusive);
-          PAMI::Type::TypeCode * scanType = (PAMI::Type::TypeCode *)this->_cmd->cmd.xfer_scan.stype;
+          PAMI::Type::TypeCode * scansType = (PAMI::Type::TypeCode *)this->_cmd->cmd.xfer_scan.stype;
+          PAMI::Type::TypeCode * scanrType = (PAMI::Type::TypeCode *)this->_cmd->cmd.xfer_scan.rtype;
           this->_collexch->reset (this->_cmd->cmd.xfer_scan.sndbuf,
                                   this->_cmd->cmd.xfer_scan.rcvbuf,
                                   this->_cmd->cmd.xfer_scan.op,
-                                  scanType,
-                                  this->_cmd->cmd.xfer_scan.stypecount);
+                                  scansType,
+                                  scanrType,
+                                  this->_cmd->cmd.xfer_scan.rtypecount);
           this->_collexch->setContext(this->_context);
           this->_collexch->setComplete(this->_cmd->cb_done, this->_cmd->cookie);
           this->_collexch->kick();

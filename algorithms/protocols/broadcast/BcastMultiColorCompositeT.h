@@ -168,7 +168,7 @@ namespace CCMI
            typecount,
            type,
            src,
-           dst );//SSS: send type and recv type are the same for bcast
+           dst );
 
 	  if (this->getNumColors() > (unsigned)max_colors)
 	    return -1;

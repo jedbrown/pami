@@ -259,7 +259,7 @@ namespace CCMI
                                                        (TypeCode *) PAMI_TYPE_BYTE, (TypeCode *) PAMI_TYPE_BYTE);
             a_composite->gatherExecutor().setBuffers ((char *)send.addr,
                                                       (char *)amg_xfer->rcvbuf,
-                                                      bytes,
+                                                      amg_xfer->rtypecount,
                                                       (TypeCode *) send.type,
                                                       rtype);
 
@@ -307,6 +307,7 @@ namespace CCMI
               {
                 // Phase 1 - Complete the scatter operation (user header)
                 AMCollHeaderData *amcdata = (AMCollHeaderData *) cdata;
+
                 DEBUG((stderr, "AMGatherFactoryT::cb_head() : Phase 1, key=%u _data_size=%zu _dispatch=%zu\n",
                        key, amcdata->_data_size, amcdata->_dispatch));
                 co = factory->_free_pool.allocate(key);
@@ -403,13 +404,14 @@ namespace CCMI
                   co->getGeometry()->getDispatch(factory->_context_id, a_xfer->cmd.xfer_amgather.dispatch);
                 PAMI_assertf(dispatch != NULL, "Invalid dispatch ID: %zu\n",
                              a_xfer->cmd.xfer_amgather.dispatch);
-
+                TypeCode *rtype  = (TypeCode *) a_xfer->cmd.xfer_amgather.rtype;
+                unsigned bytes   = a_xfer->cmd.xfer_amgather.rtypecount * rtype->GetDataSize();
                 dispatch->fn.amgather (
                  a_composite->getContext() ? a_composite->getContext() : factory->_context, // context
                  dispatch->cookie,                      // user cookie
                  a_xfer->cmd.xfer_amgather.headers,     // User header
                  a_xfer->cmd.xfer_amgather.headerlen,   // User header size
-                 a_xfer->cmd.xfer_amgather.rtypecount,  // Number of bytes of message data
+                 bytes,                                 // Number of bytes of message data
                  root,                                  // origin (root)
                  co->getGeometry(),                     // Geometry
                  &send);                                // recv info

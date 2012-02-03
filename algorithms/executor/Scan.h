@@ -77,6 +77,11 @@ namespace CCMI
         char                *_tmpbuf;
         TypeCode            *_stype;
         TypeCode            *_rtype;
+        char                *_usrrcvbuf;   //SSS: A pointer to save the _dstbuf in
+        char                *_tmpsndbuf;   //SSS: A temp buf to pack user send data
+        int                  _alloctmpsnd; //SSS: Temp send buffer is allocated or not
+        char                *_tmprcvbuf;   //SSS: A temp buf to pack user rcvd data
+        int                  _alloctmprcv; //SSS: Temp recv buffer is allocated or not
 
         coremath            _reduceFunc;
         unsigned            _sizeOfType;
@@ -121,6 +126,9 @@ namespace CCMI
             _sbuf(NULL),
             _rbuf(NULL),
             _tmpbuf(NULL),
+            _usrrcvbuf(NULL),
+            _alloctmpsnd(0),
+            _alloctmprcv(0),
             _reduceFunc(NULL),
             _curphase(0),
             _nphases(0),
@@ -143,6 +151,9 @@ namespace CCMI
             _sbuf(NULL),
             _rbuf(NULL),
             _tmpbuf(NULL),
+            _usrrcvbuf(NULL),
+            _alloctmpsnd(0),
+            _alloctmprcv(0),
             _reduceFunc(NULL),
             _mrecvstr(NULL),
             _curphase(0),
@@ -164,6 +175,8 @@ namespace CCMI
           /// Todo: convert this to allocator ?
           __global.heap_mm->free (_mrecvstr);
           __global.heap_mm->free (_tmpbuf);
+          if(_alloctmprcv)__global.heap_mm->free(_tmprcvbuf);
+          if(_alloctmpsnd)__global.heap_mm->free(_tmpsndbuf);
         }
 
         /// NOTE: This is required to make "C" programs link successfully with virtual destructors
@@ -255,6 +268,39 @@ namespace CCMI
           _stype         = stype;
           _rtype         = rtype;
 
+          if(!stype->IsContiguous() || !rtype->IsContiguous())
+          {
+            pami_result_t rc;
+            unsigned bytes = count * stype->GetDataSize();
+            if(!stype->IsContiguous())
+            {
+              if(_alloctmpsnd) __global.heap_mm->free(_tmpsndbuf);
+              rc = __global.heap_mm->memalign((void **)&_tmpsndbuf, 0, bytes);
+              _alloctmpsnd = 1;//SSS: Indicating that _tmpsndbuf is allocated.
+              PAMI_Type_transform_data((void*)_sbuf, stype, 0,
+                                             _tmpsndbuf, PAMI_TYPE_BYTE, 0, bytes, PAMI_DATA_COPY, NULL);
+            }
+            else
+              _tmpsndbuf = (char*)_sbuf;
+
+            if(!rtype->IsContiguous())
+            {
+              if(_alloctmprcv) __global.heap_mm->free(_tmprcvbuf);
+              rc = __global.heap_mm->memalign((void **)&_tmprcvbuf, 0, bytes);
+              _alloctmprcv = 1;
+              _usrrcvbuf = _rbuf;
+            }
+            else
+              _tmprcvbuf = _rbuf;
+
+
+
+            _sbuf    = _tmpsndbuf;
+            _rbuf    = _tmprcvbuf;
+          }
+          else
+            _usrrcvbuf = NULL;
+
           for (int i = 0; i < _maxsrcs; ++i)
             {
               _mdata[i]._dt      = dt;
@@ -277,6 +323,39 @@ namespace CCMI
           _sizeOfType    = sizeOfType;
           _stype         = stype;
           _rtype         = rtype;
+
+          if(!stype->IsContiguous() || !rtype->IsContiguous())
+          {
+            pami_result_t rc;
+            unsigned bytes = count * stype->GetDataSize();
+            if(!stype->IsContiguous())
+            {
+              if(_alloctmpsnd) __global.heap_mm->free(_tmpsndbuf);
+              rc = __global.heap_mm->memalign((void **)&_tmpsndbuf, 0, bytes);
+              _alloctmpsnd = 1;//SSS: Indicating that _tmpsndbuf is allocated.
+              PAMI_Type_transform_data((void*)_sbuf, stype, 0,
+                                             _tmpsndbuf, PAMI_TYPE_BYTE, 0, bytes, PAMI_DATA_COPY, NULL);
+            }
+            else
+              _tmpsndbuf = (char*)_sbuf;
+
+            if(!rtype->IsContiguous())
+            {
+              if(_alloctmprcv) __global.heap_mm->free(_tmprcvbuf);
+              rc = __global.heap_mm->memalign((void **)&_tmprcvbuf, 0, bytes);
+              _alloctmprcv = 1;
+              _usrrcvbuf = _rbuf;
+            }
+            else
+              _tmprcvbuf = _rbuf;
+
+
+
+            _sbuf    = _tmpsndbuf;
+            _rbuf    = _tmprcvbuf;
+          }
+          else
+            _usrrcvbuf = NULL;
 
           for (int i = 0; i < _maxsrcs; ++i)
             {
@@ -450,7 +529,7 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::sendNext ()
               if (srcindex < _myindex)
                 {
                   RecvStruct *recvstr = &_mrecvstr[_curphase].recvstr[i];
-                  recvstr->pwq.configure (_tmpbuf + (_curphase + 1)* _buflen, _buflen, 0, _stype, _rtype);
+                  recvstr->pwq.configure (_tmpbuf + (_curphase + 1)* _buflen, _buflen, 0);
                   recvstr->subsize    = _buflen;
                   recvstr->rank       = _srcranks[i];
                 }
@@ -478,7 +557,7 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::sendNext ()
               new (&_dsttopology[i]) PAMI::Topology(&_tmp_ep[i], 1, PAMI::tag_eplist());
 
               size_t buflen = _buflen;
-              _pwq[i].configure (_tmpbuf, buflen, 0, _stype, _rtype);
+              _pwq[i].configure (_tmpbuf, buflen, 0);
               _pwq[i].produceBytes(buflen);
 
 
@@ -527,6 +606,13 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::sendNext ()
       memcpy(_rbuf, _tmpbuf, _buflen);
     }
 
+    if(_usrrcvbuf)//SSS: rtype is not contig
+    {
+       PAMI_Type_transform_data(_tmprcvbuf, PAMI_TYPE_BYTE, 0,
+                                _usrrcvbuf, _rtype, 0,
+                                _buflen, PAMI_DATA_COPY, NULL);
+    }
+
   if (_cb_done) _cb_done (NULL, _clientdata, PAMI_SUCCESS);
 
   return;
@@ -563,7 +649,7 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::notifyRecv
 			          " phase  = %d, _buflen = %d, _srclens[%d] = %d, _srcranks[%d] = %d\n",
                           cdata->_phase, _buflen, i, _srclens[i], i, _srcranks[i]);)
           RecvStruct *recvstr = &_mrecvstr[cdata->_phase].recvstr[i];
-          recvstr->pwq.configure (_tmpbuf + (cdata->_phase + 1) * _buflen, buflen, 0, _stype, _rtype);
+          recvstr->pwq.configure (_tmpbuf + (cdata->_phase + 1) * _buflen, buflen, 0);
           recvstr->subsize = buflen;
           recvstr->rank    = _srcranks[i];
 

@@ -144,17 +144,14 @@ public:
         T_Gather_type *g_xfer;
         getGatherXfer<T_Gather_type>(&g_xfer, &((pami_xfer_t *)cmd)->cmd);
 
-        TypeCode *stype = (TypeCode *)g_xfer->stype;
-        unsigned bytes = g_xfer->stypecount * stype->GetDataSize();
-
         COMPILE_TIME_ASSERT(sizeof(_schedule) >= sizeof(T_Schedule));
         create_schedule(&_schedule, sizeof(_schedule), g_xfer->root, native, geometry);
         _executor.setRoot(g_xfer->root);
         _executor.setSchedule (&_schedule);
 
-        DEBUG((stderr, "In GatherExec ctor, root = %d, sbuf = %x, rbuf = %x, bytes = %d\n", g_xfer->root, g_xfer->sndbuf, g_xfer->rcvbuf, bytes);)
+        DEBUG((stderr, "In GatherExec ctor, root = %d, sbuf = %x, rbuf = %x, counts = %d\n", g_xfer->root, g_xfer->sndbuf, g_xfer->rcvbuf, g_xfer->stypecount);)
         _executor.setVectors (g_xfer);
-        _executor.setBuffers (g_xfer->sndbuf, g_xfer->rcvbuf, bytes,
+        _executor.setBuffers (g_xfer->sndbuf, g_xfer->rcvbuf, g_xfer->stypecount,
                               (TypeCode *) g_xfer->stype, (TypeCode *) g_xfer->rtype);
         _executor.setDoneCallback (cb_done.function, cb_done.clientdata);
 
@@ -302,7 +299,7 @@ public:
             // update send buffer pointer and, at root, receive buffer pointers
             a_composite->executor().setVectors(g_xfer);
             a_composite->executor().updateBuffers(g_xfer->sndbuf, g_xfer->rcvbuf,
-                                                  rtypecount * rtype->GetDataSize(),
+                                                  rtypecount,
                                                   (TypeCode *) g_xfer->stype, rtype);
             a_composite->executor().updatePWQ();
         }

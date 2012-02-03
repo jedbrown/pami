@@ -42,18 +42,18 @@ namespace xlpgas
     Permute (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset,T_NI* ni) :
       Collective<T_NI> (ctxt, comm, kind, tag, NULL, NULL, ni)
       {
-	_rcvcount = 1;
+        _rcvcount = 1;
 
-	_header = (struct AMHeader *)__global.heap_mm->malloc (sizeof(struct AMHeader) );
-	assert (_header != NULL);
+        _header = (struct AMHeader *)__global.heap_mm->malloc (sizeof(struct AMHeader) );
+        assert (_header != NULL);
 
-	_header->hdr.handler   = XLPGAS_TSP_AMSEND_PERM;
-	_header->hdr.headerlen = sizeof (struct AMHeader);
-	_header->kind          = kind;
-	_header->tag           = tag;
-	_header->offset        = offset;
-	_header->senderID      = this->ordinal();
-	_header->dest_ctxt     = -1;
+        _header->hdr.handler   = XLPGAS_TSP_AMSEND_PERM;
+        _header->hdr.headerlen = sizeof (struct AMHeader);
+        _header->kind          = kind;
+        _header->tag           = tag;
+        _header->offset        = offset;
+        _header->senderID      = this->ordinal();
+        _header->dest_ctxt     = -1;
       }
 
     ~Permute()
@@ -78,14 +78,15 @@ namespace xlpgas
     virtual void kick    ();
     virtual bool isdone  (void) const;
 
-    static inline void cb_incoming(pami_context_t    context,
-                                   void            * cookie,
-                                   const void      * header_addr,
-                                   size_t            header_size,
-                                   const void      * pipe_addr,
-                                   size_t            data_size,
-                                   pami_endpoint_t   origin,
-                                   pami_recv_t     * recv);
+
+    static inline void cb_incoming(pami_context_t     context,
+                                   void             * cookie,
+                                   const void       * header_addr,
+                                   size_t             header_size,
+                                   const void       * pipe_addr,
+                                   size_t             data_size,
+                                   pami_endpoint_t    origin,
+                                   pami_pwq_recv_t  * recv);
 
     static void cb_recvcomplete (void * unused, void * arg, pami_result_t result);
 
@@ -93,8 +94,11 @@ namespace xlpgas
     const char    * _sbuf;         /* send buffer    */
     char          * _rbuf;         /* receive buffer */
     size_t          _len;          /* msg length     */
+    size_t          _spwqlen;
+    size_t          _rpwqlen;
     size_t          _dest;
-    PAMI::PipeWorkQueue  _pwq;
+    PAMI::PipeWorkQueue  _sndpwq;
+    PAMI::PipeWorkQueue  _rcvpwq;
     int             _rcvcount;
 
     struct AMHeader

@@ -267,7 +267,11 @@ pami_result_t PAMI_Type_transform_data (void               * src_addr,
         RETURN_ERR_PAMI(PAMI_INVAL, "Using incomplete type.\n");
     }
 
-    if (src_type_obj->IsContiguous()) {
+    if (likely(src_type_obj->IsContiguous() && dst_type_obj->IsContiguous()))
+    {
+        memcpy((char *)dst_addr+dst_offset,(char*)src_addr+src_offset,size); 
+    }
+    else if (src_type_obj->IsContiguous()) {
         // unpacking: contiguous to non-contiguous (or contiguous)
         TypeMachine unpacker(dst_type_obj);
         unpacker.SetCopyFunc(data_fn, cookie);

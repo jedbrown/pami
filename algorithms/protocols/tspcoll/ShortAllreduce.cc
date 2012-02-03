@@ -46,14 +46,12 @@ xlpgas::Allreduce::Short<T_NI>::
 Short (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset,T_NI* ni) :
   CollExchange<T_NI> (ctxt, comm, kind, tag, offset, ni)
 {
-  pami_type_t allreducetype = PAMI_TYPE_BYTE;
   this->_dbuf = NULL;
   this->_nelems = 0;
   for (this->_logMaxBF = 0; (1<<(this->_logMaxBF+1)) <= (int)this->_comm->size(); this->_logMaxBF++) ;
   int maxBF  = 1<<this->_logMaxBF;
   int nonBF  = this->_comm->size() - maxBF;
   int phase  = 0;
-
   /* -------------------------------------------- */
   /* phase 0: gather buffers from ordinals > n2prev  */
   /* -------------------------------------------- */
@@ -66,10 +64,12 @@ Short (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset,T_NI* ni)
       this->_sbuf    [phase] = NULL;    /* unknown */
       this->_rbuf    [phase] = ((int)this->ordinal() < nonBF)  ? this->_phasebuf[phase][0] : NULL;
       this->_cb_rcvhdr[phase] = ((int)this->ordinal() < nonBF)  ? cb_switchbuf : NULL;
-      this->_postrcv [phase] = ((int)this->ordinal() < nonBF)  ? cb_allreduce : NULL;
-      this->_sbufln  [phase] = 0;       /* unknown */
-      this->_bufctr  [phase] = 0;
-      this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], (TypeCode *)allreducetype, (TypeCode *)allreducetype);
+      this->_postrcv [phase]  = ((int)this->ordinal() < nonBF)  ? cb_allreduce : NULL;
+      this->_sbufln  [phase]  = 0;       /* unknown */
+      this->_rbufln  [phase]  = 0;
+      this->_bufctr  [phase]  = 0;
+      this->_sndpwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase]);
+      this->_rcvpwq[phase].configure((char *)this->_rbuf[phase], this->_rbufln[phase], 0);
       phase ++;
     }
 
@@ -85,10 +85,12 @@ Short (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset,T_NI* ni)
       this->_sbuf    [phase] = NULL;     /* unknown */
       this->_rbuf    [phase] = ((int)this->ordinal() < maxBF) ? this->_phasebuf[phase][0] : NULL;
       this->_cb_rcvhdr[phase] = ((int)this->ordinal() < maxBF) ? cb_switchbuf : NULL;
-      this->_postrcv [phase] = ((int)this->ordinal() < maxBF) ? cb_allreduce : NULL;
-      this->_sbufln  [phase] = 0;        /* unknown */
-      this->_bufctr  [phase] = 0;
-      this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], (TypeCode *)allreducetype, (TypeCode *)allreducetype);
+      this->_postrcv [phase]  = ((int)this->ordinal() < maxBF) ? cb_allreduce : NULL;
+      this->_sbufln  [phase]  = 0;        /* unknown */
+      this->_rbufln  [phase]  = 0;
+      this->_bufctr  [phase]  = 0;
+      this->_sndpwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase]);
+      this->_rcvpwq[phase].configure((char *)this->_rbuf[phase], this->_rbufln[phase], 0);
       phase ++;
     }
 
@@ -104,10 +106,12 @@ Short (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset,T_NI* ni)
       this->_sbuf    [phase] = NULL;     /* unknown */
       this->_rbuf    [phase] = NULL;     /* unknown */
       this->_cb_rcvhdr[phase] = NULL;
-      this->_postrcv [phase] = NULL;
-      this->_sbufln  [phase] = 0;        /* unknown */
-      this->_bufctr  [phase] = 0;
-      this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], (TypeCode *)allreducetype, (TypeCode *)allreducetype);
+      this->_postrcv [phase]  = NULL;
+      this->_sbufln  [phase]  = 0;        /* unknown */
+      this->_rbufln  [phase]  = 0;
+      this->_bufctr  [phase]  = 0;
+      this->_sndpwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase]);
+      this->_rcvpwq[phase].configure((char *)this->_rbuf[phase], this->_rbufln[phase], 0);
       phase ++;
     }
 
@@ -134,13 +138,19 @@ cb_allreduce (CollExchange<T_NI> *coll, unsigned phase)
   void * inputs[] = {ar->_dbuf, ar->_phasebuf[phase][c]};
   ar->_cb_allreduce (ar->_dbuf, inputs, 2, ar->_nelems);
 }
+
 template <class T_NI>
-xlpgas_local_addr_t xlpgas::Allreduce::Short<T_NI>::
-cb_switchbuf (CollExchange<T_NI> * coll, unsigned phase, unsigned counter)
+PAMI::PipeWorkQueue * xlpgas::Allreduce::Short<T_NI>::
+cb_switchbuf (CollExchange<T_NI> * coll, unsigned phase, unsigned counter, size_t data_size)
 {
   xlpgas::Allreduce::Short<T_NI> * ar = (xlpgas::Allreduce::Short<T_NI> *) coll;
   int c = (counter+1) & 1;
-  return (xlpgas_local_addr_t) (ar->_phasebuf[phase][c]);
+  PAMI::PipeWorkQueue * rcvpwq = &(ar->_rcvpwq[phase]);
+  //SSS: Setting the pwq length to the size of the data coming in since we may
+  //     have an early arrival. This protocol doesn't support non-contig data
+  //     so we are ok with setting the length based on incoming contig data.
+  rcvpwq->configure(ar->_phasebuf[phase][c], data_size, 0, ar->_rtype);
+  return rcvpwq;
 }
 
 /* ************************************************************************* */
@@ -173,11 +183,15 @@ void xlpgas::Allreduce::Short<T_NI>::reset (const void         * sbuf,
 	 nelems
 	 );
   */
+  size_t rdataWidth  = rdt->GetDataSize();
+  size_t rdataExtent = rdt->GetExtent();
   _dbuf   = dbuf;
-  _nelems = nelems;
-  size_t datawidth = sdt->GetDataSize();
-  if (sbuf != dbuf) memcpy (dbuf, sbuf, nelems * datawidth);
+  _nelems = (nelems * rdataWidth) / sdt->GetDataSize();// NJ: Number of elements of send type
+  _rtype  = rdt;
 
+  if (sbuf != dbuf) PAMI_Type_transform_data((void*)sbuf, sdt, 0,
+                                             dbuf, rdt, 0, nelems * rdataWidth,
+                                             PAMI_DATA_COPY, NULL);
   /* --------------------------------------------------- */
   /*  set source and destination buffers and node ids    */
   /* We deal with non-power-of-2 nodes                   */
@@ -190,8 +204,9 @@ void xlpgas::Allreduce::Short<T_NI>::reset (const void         * sbuf,
   if (nonBF > 0)   /* phase 0: gather buffers from ordinals > n2prev */
     {
       this->_sbuf    [phase] = ((int)this->ordinal() >= maxBF) ? dbuf  : NULL;
-      this->_sbufln  [phase] = nelems * datawidth;
-      this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], sdt, rdt);
+      this->_sbufln  [phase] = this->_rbufln  [phase] = nelems * rdataWidth;
+      this->_spwqln  [phase] = nelems * rdataExtent;
+      this->_sndpwq[phase].configure((char *)this->_sbuf[phase], this->_spwqln[phase], this->_spwqln[phase], NULL, rdt);
       phase ++;
     }
 
@@ -202,8 +217,9 @@ void xlpgas::Allreduce::Short<T_NI>::reset (const void         * sbuf,
   for (int i=0; i<this->_logMaxBF; i++)   /* middle phases: butterfly pattern */
     {
       this->_sbuf    [phase] = ((int)this->ordinal() < maxBF) ? dbuf  : NULL;
-      this->_sbufln  [phase] = nelems * datawidth;
-      this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], sdt, rdt);
+      this->_sbufln  [phase] = this->_rbufln  [phase] = nelems * rdataWidth;
+      this->_spwqln  [phase] = nelems * rdataExtent;
+      this->_sndpwq[phase].configure((char *)this->_sbuf[phase], this->_spwqln[phase], this->_spwqln[phase], NULL, rdt);
       phase ++;
     }
 
@@ -216,10 +232,12 @@ void xlpgas::Allreduce::Short<T_NI>::reset (const void         * sbuf,
     {
       this->_sbuf    [phase] = ((int)this->ordinal() < nonBF)  ? dbuf  : NULL;
       this->_rbuf    [phase] = ((int)this->ordinal() >= maxBF) ? dbuf  : NULL;
-      this->_sbufln  [phase] = nelems * datawidth;
-      this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], sdt, rdt);
+      this->_sbufln  [phase] = this->_rbufln  [phase] = nelems * rdataWidth;
+      this->_spwqln  [phase] = nelems * rdataExtent;
+      this->_sndpwq[phase].configure((char *)this->_sbuf[phase], this->_spwqln[phase], this->_spwqln[phase], NULL, rdt);
+      this->_rcvpwq[phase].configure((char *)this->_rbuf[phase], this->_spwqln[phase], 0, rdt);
       phase ++;
     }
   assert (phase == this->_numphases);
-  this->_cb_allreduce = getcallback (op, sdt);
+  this->_cb_allreduce = getcallback (op, sdt);// NJ: Math op is done based on send type
 }

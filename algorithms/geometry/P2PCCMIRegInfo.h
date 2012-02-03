@@ -593,6 +593,8 @@ namespace CCMI
       extern inline void binomial_broadcast_metadata_singleth(pami_metadata_t *m)
       {
         new(m) PAMI::Geometry::Metadata("I0:BinomialSingleTh:P2P:P2P");
+        m->check_correct.values.contigsflags = 1;
+        m->check_correct.values.contigrflags = 1;
       }
 
       extern inline void ring_broadcast_metadata_singleth(pami_metadata_t *m)

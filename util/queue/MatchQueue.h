@@ -28,25 +28,26 @@
 
 namespace PAMI
 {
+  template <class T_KeyType = unsigned>
   class MatchQueueElem  : public Queue::Element
   {
     protected:
-      unsigned               _key;       ///The key to insert and search elements
+      T_KeyType               _key;       ///The key to insert and search elements
 
     public:
       ///Constructor
-      MatchQueueElem (unsigned key) : Queue::Element (), _key(key)
+      MatchQueueElem (T_KeyType key) : Queue::Element (), _key(key)
       {
       }
 
       ///Get the key
-      unsigned    key()
+      T_KeyType    key()
       {
         return _key;
       }
   };
 
-
+  template <class T_KeyType = unsigned>
   class MatchQueue
   {
     protected:
@@ -61,35 +62,35 @@ namespace PAMI
       }
 
       ///\brief Inserts an element at the head of the queue
-      void pushHead (MatchQueueElem  * elem)
+      void pushHead (MatchQueueElem<T_KeyType>  * elem)
       {
-        unsigned qid = (elem->key()) % NUMQS;
+        T_KeyType qid = (elem->key()) % NUMQS;
 
         _localQ[qid].pushHead (elem);
       }
 
       ///\brief Inserts an element at the head of the queue
-      void pushTail (MatchQueueElem  * elem)
+      void pushTail (MatchQueueElem<T_KeyType>  * elem)
       {
-        unsigned qid = (elem->key()) % NUMQS;
+        T_KeyType qid = (elem->key()) % NUMQS;
 
         _localQ[qid].pushTail (elem);
       }
 
       ///\brief Deletes the element at the queue
-      void deleteElem (MatchQueueElem   * elem)
+      void deleteElem (MatchQueueElem<T_KeyType>   * elem)
       {
-        unsigned qid = (elem->key()) % NUMQS;
+        T_KeyType qid = (elem->key()) % NUMQS;
 
         _localQ[qid].deleteElem (elem);
       }
 
       ///\brief Find the first the element that has the key
-      MatchQueueElem   *findAndDelete (unsigned key)
+      MatchQueueElem<T_KeyType>   *findAndDelete (T_KeyType key)
       {
-        unsigned qid = key % NUMQS;
+        T_KeyType qid = key % NUMQS;
         Queue &queue = _localQ[qid];
-        MatchQueueElem *head = (MatchQueueElem *) queue.peekHead();
+        MatchQueueElem<T_KeyType> *head = (MatchQueueElem<T_KeyType> *) queue.peekHead();
 
         while (head != NULL)
           {
@@ -100,28 +101,39 @@ namespace PAMI
                 return  head;
               }
 
-            head =  (MatchQueueElem *) head->next();
+            head =  (MatchQueueElem<T_KeyType> *) head->next();
           }
 
         return NULL;
       }
 
-      MatchQueueElem   *find (unsigned key)
+      MatchQueueElem<T_KeyType>   *find (T_KeyType key)
       {
-	unsigned qid = key % NUMQS;
-	PAMI::Queue &queue = _localQ[qid];
-	MatchQueueElem *head = (MatchQueueElem *) queue.peekHead();
+        T_KeyType qid = key % NUMQS;
+        PAMI::Queue &queue = _localQ[qid];
+        MatchQueueElem<T_KeyType> *head = (MatchQueueElem<T_KeyType> *) queue.peekHead();
 
-	while (head != NULL)
-	{
-	  if (head->key() == key)
-	  {
-	    ///Element was found in posted queue
-	    return  head;
-	  }
-	  head =  (MatchQueueElem *) head->next();
-	}
-	return NULL;
+        while (head != NULL)
+        {
+          if (head->key() == key)
+          {
+            ///Element was found in posted queue
+            return  head;
+          }
+          head =  (MatchQueueElem<T_KeyType> *) head->next();
+        }
+        return NULL;
+      }
+
+      size_t  size ()
+      {
+        size_t totalSize = 0;
+        T_KeyType qid = 0;
+        for(; qid < NUMQS; qid++)
+        {
+          totalSize += _localQ[qid].size();
+        }
+        return totalSize;
       }
 
   };  //- MatchQueue

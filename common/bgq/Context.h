@@ -267,7 +267,11 @@ namespace PAMI
         if(T_Range_Hi)
         {
           s = strstr(m->name, "I0:Binomial:-:ShortMU");
-
+          if (s != NULL)
+          {
+            m->check_correct.values.contigsflags = 1;
+            m->check_correct.values.contigrflags = 1;
+          }
           // These only work for very small msg/number of ranks
           if ((s != NULL) &&
               ((t == PAMI_XFER_ALLGATHER       ) ||
@@ -350,6 +354,10 @@ namespace PAMI
 
         m->name = name;
         TRACE_FORMAT("<%p> %s", this, m->name);
+
+        m->check_correct.values.contigsflags = 1;
+        m->check_correct.values.contigrflags = 1;
+
         TRACE_FN_EXIT();
       }
   };
@@ -412,6 +420,9 @@ namespace PAMI
           m->check_correct.values.rangeminmax = 1;
           m->range_lo                         = 64 * 1024; //Bandwidth protocol (arbitrarily limit to >64k)
         }
+
+        m->check_correct.values.contigsflags = 1;
+        m->check_correct.values.contigrflags = 1;
       }
   };
 
@@ -428,27 +439,98 @@ namespace PAMI
       MUShmemDputNI_metadata(MUDevice &device, BigProtocolAllocator &allocator, pami_client_t client, pami_context_t context, size_t context_id, size_t client_id, int *dispatch_id) :
         MUNI_2Device_metadata<MUShmemDputNI, BigProtocolAllocator>(device, allocator, client, context, context_id, client_id, dispatch_id)
       {
-        this->niName = "Shmem:MUDput";
-      }
+        this->niName="Shmem:MUDput";
+      }	
   };
 
-  // MU NI factory for MUNI_metadata<MUNI_AM>/MUNI_metadata<MUNI_AS>
-  typedef BGQNativeInterfaceFactory < BigProtocolAllocator,
-          MUDputNI_metadata,
-          MUDevice, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST,
-          CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED, 16 >
-          MUDputNIFactory;
+  // MU NI factory for MUNI_metadata<MUNI_AM>/MUNI_metadata<MUNI_AS> which will
+  // override analyze to set querynnn-required for non-contig
+  class MUDputNIFactory : public BGQNativeInterfaceFactory < BigProtocolAllocator, 
+          MUDputNI_metadata, 
+          MUDevice, 
+          CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, 
+          CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED, 16>
+  {
+  public:
+    MUDputNIFactory( pami_client_t       client,
+                     pami_context_t      context,
+                     size_t              clientid,
+                     size_t              contextid,
+                     MUDevice          & device,
+                     BigProtocolAllocator       & allocator) :
+    BGQNativeInterfaceFactory < BigProtocolAllocator, 
+        MUDputNI_metadata, 
+        MUDevice, 
+        CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, 
+        CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED, 16>
+        ( client,
+          context,
+          clientid,
+          contextid,
+          device,
+          allocator)
+      {
+        TRACE_FN_ENTER();
+        TRACE_FORMAT("<%p>",this);
+        TRACE_FN_EXIT();
+      };
+    pami_result_t  analyze(size_t context_id, pami_topology_t *topology, int phase, int* flag)
+      {
+        TRACE_FN_ENTER();
+        *flag = 0;
+        TRACE_FORMAT("<%p> result %u/%u",this,PAMI_OTHER,*flag);
+        TRACE_FN_EXIT();
+        return PAMI_OTHER;// query required (non-contig)
+      };
+  };
 
 
-  // MUShmemDput NI factory
-  typedef BGQNativeInterfaceFactory2Device < BigProtocolAllocator,
-          MUShmemDputNI_metadata,
-          MUDevice,
-          ShmemDevice,
-          CCMI::Interfaces::NativeInterfaceFactory::MULTICAST,
-          CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED, 16 >
-          MUShmemDputNIFactory;
+  // MUShmemDput NI factory which will
+  // override analyze to set query-required for non-contig
+  class MUShmemDputNIFactory : public BGQNativeInterfaceFactory2Device <BigProtocolAllocator,
+        MUShmemDputNI_metadata,
+        MUDevice,
+        ShmemDevice,
+        CCMI::Interfaces::NativeInterfaceFactory::MULTICAST,
+        CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED, 16>
+  {
+  public:
+    MUShmemDputNIFactory( pami_client_t          client,
+                          pami_context_t         context,
+                          size_t                 clientid,
+                          size_t                 contextid,
+                          MUDevice             & device1,
+                          ShmemDevice          & device2,
+                          BigProtocolAllocator & allocator):
+    BGQNativeInterfaceFactory2Device <BigProtocolAllocator,
+    MUShmemDputNI_metadata,
+    MUDevice,
+    ShmemDevice,
+    CCMI::Interfaces::NativeInterfaceFactory::MULTICAST,
+    CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED, 16>
+        ( client,
+          context,
+          clientid,
+          contextid,
+          device1,
+          device2,
+          allocator)
+    {
+      TRACE_FN_ENTER();
+      TRACE_FORMAT("<%p>",this);
+      TRACE_FN_EXIT();
+    };
+    pami_result_t  analyze(size_t context_id, pami_topology_t *topology, int phase, int* flag)
+    {
+      TRACE_FN_ENTER();
+      *flag = 0;
+      TRACE_FORMAT("<%p> result %u/%u",this,PAMI_OTHER,*flag);
+      TRACE_FN_EXIT();
+      return PAMI_OTHER;// query required (non-contig)
+    };
+  };
 
+  
   // Composite (MU/SHMEM) NI class that overrides the metadata name
   template<class T_Parent>
   class CompositeNI_metadata : public T_Parent
@@ -1964,7 +2046,7 @@ namespace PAMI
       Dispatch<256> _dispatch;
     public:
       MemoryAllocator <sizeof(PAMI::Geometry::UnexpBarrierQueueElement), 16> _ueb_allocator;
-      MatchQueue                                                             _ueb_queue;
+      MatchQueue<>                                                           _ueb_queue;
   }; // end PAMI::Context
 }; // end namespace PAMI
 

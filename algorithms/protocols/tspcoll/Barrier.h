@@ -51,7 +51,6 @@ namespace xlpgas
              T_NI              * ni);
     void reset () { CollExchange<T_NI>::reset(); }
   private:
-    pami_type_t _type;
     char        _dummy;
   };
 }
@@ -66,8 +65,7 @@ inline xlpgas::Barrier<T_NI>::Barrier (int               ctxt,
                                        int               tag,
                                        int               offset,
                                        T_NI             *ni) :
-  CollExchange<T_NI> (ctxt, comm, kind, tag, offset, ni),
-  _type(PAMI_TYPE_BYTE)
+  CollExchange<T_NI> (ctxt, comm, kind, tag, offset, ni)
 {
   TRACE((stderr, "%d: Barrier constructor: rank=%d of %d\n",
 	 XLPGAS_MYNODE, this->_comm->rank(), this->_comm->size()));
@@ -86,9 +84,10 @@ inline xlpgas::Barrier<T_NI>::Barrier (int               ctxt,
       TRACE((stderr, "%d: Barrier constructor: dest[%d]=%d \n",XLPGAS_MYNODE,i ,this->_dest[i]));
 
       this->_sbuf[i]      = &this->_dummy;
-      this->_sbufln[i]    = 1;
-      this->_pwq[i].configure((char *)this->_sbuf[i], this->_sbufln[i], this->_sbufln[i], (TypeCode *)_type, (TypeCode *)_type);
+      this->_sbufln[i]    = this->_rbufln[i] = 1;
+      this->_sndpwq[i].configure((char *)this->_sbuf[i], this->_sbufln[i], this->_sbufln[i]);
       this->_rbuf[i]      = &this->_dummy;
+      this->_rcvpwq[i].configure((char *)this->_rbuf[i], this->_rbufln[i], 0);
     }
 }
 

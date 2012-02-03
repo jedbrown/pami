@@ -72,6 +72,7 @@ namespace CCMI
       uint8_t                                       _schedules [NUMCOLORS][sizeof(T_Sched)] __attribute__((__aligned__(16)));
       unsigned                                      _colors [NUMCOLORS];
       unsigned                                      _bytecounts [NUMCOLORS];
+      unsigned                                      _strides [NUMCOLORS];
 
       static const uint32_t alignment = 0x40; //64 byte aligment
       static const uint32_t alignment_mask = ~(alignment-1); //the mask for sizes
@@ -98,6 +99,7 @@ namespace CCMI
         T_Exec *exe = (T_Exec *) executor;
         TRACE_FORMAT( "<%p>", (int)exe);
         exe->notifyRecv ((unsigned) - 1, *info, NULL, exe->getPwidth());
+
         TRACE_FN_EXIT();
       }
 
@@ -155,20 +157,26 @@ namespace CCMI
         _bytes = stypecount * stype->GetDataSize();
 
         _bytecounts[0] = stypecount * stype->GetDataSize();
-        unsigned aligned_bytes = 0;
+        _strides   [0] = stypecount * stype->GetExtent();
+        unsigned aligned_bytes  = 0;
+        unsigned aligned_stride = 0;
 
         if (_numColors > 1)
         {
-          aligned_bytes = ((stypecount * stype->GetDataSize()) / _numColors) & alignment_mask;
+          aligned_bytes  = ((stypecount * stype->GetDataSize()) / _numColors) & alignment_mask;
+          aligned_stride = ((stypecount * stype->GetExtent()  ) / _numColors) & alignment_mask;
           _bytecounts[0] =  aligned_bytes;
+          _strides   [0] =  aligned_stride;
 
           for (unsigned c = 1; c < _numColors; ++c)
           {
             _bytecounts[c] = aligned_bytes;
+            _strides   [c] = aligned_stride;
             TRACE_FORMAT("<%p> bytecounts[%u] %u", this,c,_bytecounts[c]);
           }
 
-          _bytecounts[_numColors-1]  = (stypecount * stype->GetDataSize()) - (aligned_bytes * (_numColors - 1));
+          _bytecounts[_numColors-1]  = (stypecount * stype->GetDataSize()) - (aligned_bytes  * (_numColors - 1));
+          _strides   [_numColors-1]  = (stypecount * stype->GetExtent  ()) - (aligned_stride * (_numColors - 1));
           TRACE_FORMAT("<%p> bytecounts[%u] %u", this,_numColors-1,_bytecounts[_numColors-1]);
         }
 
@@ -183,9 +191,10 @@ namespace CCMI
                                         comm);
 
           exec->setRoot (root);
-          exec->setBuffers (src + aligned_bytes*c,
-                            dst + aligned_bytes*c,
-                            _bytecounts[c], stype, rtype);//SSS: In the case of broadcast, stype and rtype are the same. In case of allreduce they will be different
+
+          exec->setBuffers (src + aligned_stride*c,
+                            dst + aligned_stride*c,
+                            _bytecounts[c], _strides[c], stype, rtype);//SSS: In the case of broadcast, stype and rtype are the same. In case of allreduce they will be different
           exec->setDoneCallback (cb_composite_done, this);
 
           addExecutor(exec);
@@ -229,9 +238,9 @@ namespace CCMI
         for (c = 0; c < _numColors; c++)
         {
           T_Exec *exec  = (T_Exec *) (&_executors[c]);
-          exec->setBuffers (src + _bytecounts[0]*c,
-                            dst + _bytecounts[0]*c,
-                            _bytecounts[c], stype, rtype);
+          exec->setBuffers (src + _strides[0]*c,
+                            dst + _strides[0]*c,
+                            _bytecounts[c], _strides[c], stype, rtype);
 	  exec->setDoneCallback (cb_composite_done, this);
         }
 	

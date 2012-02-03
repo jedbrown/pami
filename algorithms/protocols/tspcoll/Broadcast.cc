@@ -46,7 +46,6 @@ xlpgas::Broadcast<T_NI>::
 Broadcast (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset,T_NI* ni) :
   CollExchange<T_NI> (ctxt, comm, kind, tag, offset, ni)
 {
-  pami_type_t bcasttype = PAMI_TYPE_BYTE;
   this->_tmpbuf = NULL;
   this->_tmpbuflen = 0;
   this->_dbuf = NULL;
@@ -59,7 +58,9 @@ Broadcast (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset,T_NI*
       this->_sbuf[i] = &this->_dummy;
       this->_rbuf[i] = &this->_dummy;
       this->_sbufln[i] = 1;
-      this->_pwq[i].configure((char *)this->_sbuf[i], this->_sbufln[i], this->_sbufln[i], (TypeCode *)bcasttype, (TypeCode *)bcasttype);/*The root doesn't need to send to itself*/
+      this->_rbufln[i] = 1;
+      this->_sndpwq[i].configure((char *)this->_sbuf[i], this->_sbufln[i], this->_sbufln[i]);
+      this->_rcvpwq[i].configure((char *)this->_rbuf[i], this->_rbufln[i], 0);
     }
   this->_numphases   *= 2;
   this->_phase        = this->_numphases;
@@ -82,7 +83,8 @@ void xlpgas::Broadcast<T_NI>::reset (int rootindex,
   }
 
   assert (dbuf != NULL);
-  size_t nbytes = type->GetDataSize() * typecount;
+  size_t nbytes  = type->GetDataSize() * typecount;
+  size_t nstride = type->GetExtent() * typecount;
   if (rootindex >= (int)this->_comm->size())
     xlpgas_fatalerror (-1, "Invalid root index in Bcast");
 
@@ -90,7 +92,7 @@ void xlpgas::Broadcast<T_NI>::reset (int rootindex,
   /* --------------------------------------------------- */
 
   if (rootindex == (int)this->ordinal() && sbuf != dbuf){
-    memcpy (dbuf, sbuf, nbytes);
+    PAMI_Type_transform_data((void*)sbuf, type, 0, dbuf, type, 0, nbytes, PAMI_DATA_COPY, NULL);
   }
 
   int myrelrank = (this->ordinal() + this->_comm->size() - rootindex) % this->_comm->size();
@@ -104,10 +106,14 @@ void xlpgas::Broadcast<T_NI>::reset (int rootindex,
       bool dorecv     = ((srcrelrank&sendmask)==0)&&(srcrelrank>=0);
       int  destindex  = (destrelrank + rootindex)%this->_comm->size();
       this->_dest[phase]    = this->_comm->index2Endpoint(destindex);
-      this->_sbuf[phase]    = dosend ? dbuf : NULL;
-      this->_sbufln[phase]  = dosend ? nbytes : 0;
-      this->_rbuf[phase]    = dorecv ? dbuf : NULL;
-      this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], type, type);/*The root doesn't need to send to itself*/
+      this->_sbuf[phase]    = dosend ? dbuf    : NULL;
+      this->_sbufln[phase]  = dosend ? nbytes  : 0;
+      this->_spwqln[phase]  = dosend ? nstride : 0;
+      this->_rbuf[phase]    = dorecv ? dbuf    : NULL;
+      this->_rbufln[phase]  = dorecv ? nbytes  : 0;
+      this->_rpwqln[phase]  = dorecv ? nstride : 0;
+      this->_sndpwq[phase].configure((char *)this->_sbuf[phase], this->_spwqln[phase], this->_spwqln[phase], NULL, type);
+      this->_rcvpwq[phase].configure((char *)this->_rbuf[phase], this->_rpwqln[phase], 0, type);
     }
   xlpgas::CollExchange<T_NI>::reset();
   return;

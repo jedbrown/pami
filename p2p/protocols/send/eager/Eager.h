@@ -81,7 +81,8 @@ namespace PAMI
                                 pami_result_t              & status) :
                   PAMI::Protocol::Send::Send (),
                   _primary (device0),
-                  _secondary (device1)
+                  _secondary (device1),
+                  _pwqAllocator (NULL)
               {
                 TRACE_FN_ENTER();
                 status = _primary.initialize (dispatch, dispatch_fn, cookie, origin, context, hint);
@@ -101,6 +102,30 @@ namespace PAMI
               inline void operator delete(void * p)
               {
                 PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+              }
+
+              ///
+              /// \brief Set the pointer to the mem allocator used by PWQ
+              ///
+              /// SendPWQ uses this memory allocator. Since SendPWQ class
+              /// can't be constructed, we construct the allocator in NI and
+              /// pass it to SendPWQ class through the composite.
+              ///
+              /// \see PAMI::Protocol::Send::setPWQAllocator
+              ///
+              virtual void setPWQAllocator(void * allocator)
+              {
+                 _pwqAllocator = allocator;
+              }
+
+              ///
+              /// \brief Return a pointer to the mem allocator used by PWQ
+              ///
+              /// \see PAMI::Protocol::Send::getPWQAllocator
+              ///
+              virtual void * getPWQAllocator()
+              {
+                return _pwqAllocator;
               }
 
               ///
@@ -218,6 +243,7 @@ namespace PAMI
 
               EagerSimple<T_ModelPrimary, T_Option>   _primary;
               EagerSimple<T_ModelSecondary, T_Option> _secondary;
+              void *                                  _pwqAllocator;
 
           }; // PAMI::Protocol::Send::EagerImpl class
 

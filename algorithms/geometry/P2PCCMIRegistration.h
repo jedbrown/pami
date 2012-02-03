@@ -294,15 +294,15 @@ namespace PAMI
                                       _onetask_gatherv_int_factory,
                                       _context,
                                       _context_id);
-              geometry->addCollective(PAMI_XFER_ALLTOALL,
+              geometry->addCollectiveCheck(PAMI_XFER_ALLTOALL,
                                       _onetask_alltoall_factory,
                                       _context,
                                       _context_id);
-              geometry->addCollective(PAMI_XFER_ALLTOALLV,
+              geometry->addCollectiveCheck(PAMI_XFER_ALLTOALLV,
                                       _onetask_alltoallv_factory,
                                       _context,
                                       _context_id);
-              geometry->addCollective(PAMI_XFER_ALLTOALLV_INT,
+              geometry->addCollectiveCheck(PAMI_XFER_ALLTOALLV_INT,
                                       _onetask_alltoallv_int_factory,
                                       _context,
                                       _context_id);
@@ -685,7 +685,7 @@ namespace PAMI
                                           _context,
                                           _context_id);
                 if(_binomial_broadcast_singleth_factory)
-                  geometry->addCollective(PAMI_XFER_BROADCAST,
+                  geometry->addCollectiveCheck(PAMI_XFER_BROADCAST,
                                           _binomial_broadcast_singleth_factory,
                                           _context,
                                           _context_id);
@@ -811,32 +811,32 @@ namespace PAMI
                                           _context,
                                         _context_id);
                 if(_ascs_pairwise_alltoall_factory)
-                  geometry->addCollective(PAMI_XFER_ALLTOALL,
+                  geometry->addCollectiveCheck(PAMI_XFER_ALLTOALL,
                                         _ascs_pairwise_alltoall_factory,
                                           _context,
                                         _context_id);
                 if(_ascs_pairwise_alltoallv_int_factory)
-                  geometry->addCollective(PAMI_XFER_ALLTOALLV_INT,
+                  geometry->addCollectiveCheck(PAMI_XFER_ALLTOALLV_INT,
                                         _ascs_pairwise_alltoallv_int_factory,
                                           _context,
                                         _context_id);
                 if(_ascs_pairwise_alltoallv_factory)
-                  geometry->addCollective(PAMI_XFER_ALLTOALLV,
+                  geometry->addCollectiveCheck(PAMI_XFER_ALLTOALLV,
                                         _ascs_pairwise_alltoallv_factory,
                                           _context,
                                         _context_id);
                 if(_alltoall_factory)
-                  geometry->addCollective(PAMI_XFER_ALLTOALL,
+                  geometry->addCollectiveCheck(PAMI_XFER_ALLTOALL,
                                         _alltoall_factory,
                                           _context,
                                         _context_id);
                 if(_alltoallv_factory)
-                  geometry->addCollective(PAMI_XFER_ALLTOALLV,
+                  geometry->addCollectiveCheck(PAMI_XFER_ALLTOALLV,
                                         _alltoallv_factory,
                                           _context,
                                         _context_id);
                 if(_alltoallv_factory_int)
-                  geometry->addCollective(PAMI_XFER_ALLTOALLV_INT,
+                  geometry->addCollectiveCheck(PAMI_XFER_ALLTOALLV_INT,
                                         _alltoallv_factory_int,
                                           _context,
                                         _context_id);

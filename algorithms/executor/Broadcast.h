@@ -88,17 +88,17 @@ namespace CCMI
           TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec(...)\n", this));
           //_root              =  (unsigned) - 1;
           //_buflen            =  0;
-	  pami_quad_t *info   =  (pami_quad_t*)((void*) & _mdata);
+          pami_quad_t *info   =  (pami_quad_t*)((void*) & _mdata);
           _msend.msginfo     =  info;
           _msend.msgcount    = sizeof(T_Coll_header)/sizeof(pami_quad_t);
           _msend.roles       = -1U;
-	  _msend.src_participants  = (pami_topology_t *) & _selftopology;
-	  _msend.dst_participants  = (pami_topology_t *) & _dsttopology;
-	  _msend.src               = (pami_pipeworkqueue_t *) & _pwq;
-	  _msend.dst               =   NULL;	  
-	  _mdata._comm       =  comm;
-	  _mdata._count = -1; // not used on broadcast
-	  _mdata._phase = 0;
+          _msend.src_participants  = (pami_topology_t *) & _selftopology;
+          _msend.dst_participants  = (pami_topology_t *) & _dsttopology;
+          _msend.src               = (pami_pipeworkqueue_t *) & _pwq;
+          _msend.dst               =   NULL;
+          _mdata._comm       =  comm;
+          _mdata._count = -1; // not used on broadcast
+          _mdata._phase = 0;
         }
 
         void setPostReceives ()
@@ -146,16 +146,22 @@ namespace CCMI
           _root_ep     = root;
         }
 
-        void  setBuffers (char *src, char *dst, int len, TypeCode *stype, TypeCode *rtype)
+        void  setBuffers (char *src, char *dst, int bytes, int stride, TypeCode *stype, TypeCode *rtype)
         {
-          TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::setBuffers() src %p, dst %p, len %d, _pwq %p\n", this, src, dst, len, &_pwq));
-          _msend.bytes = len;
+          TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::setBuffers() src %p, dst %p, len %d/%d, _pwq %p\n", this, src, dst, bytes,stride, &_pwq));
+          _msend.bytes = bytes;
 
           //Setup pipework queue. This depends on setRoot so it better be correct
-          size_t bufinit = 0;
+          size_t buflen = stride;
+
           if (_native->endpoint() == _mdata._root)
-            bufinit = len;
-          _pwq.configure (src, len, bufinit, stype, rtype);
+          {
+            _pwq.configure (src, buflen, buflen, rtype, stype);
+          }
+          else
+          {
+            _pwq.configure (dst, buflen, 0, rtype, stype);
+          }
           TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::setBuffers() _pwq %p, bytes available %zu/%zu\n", this, &_pwq,
                          _pwq.bytesAvailableToConsume(), _pwq.bytesAvailableToProduce()));
         }
@@ -192,9 +198,9 @@ namespace CCMI
 
           pami_multicast_t mrecv;
           //memcpy (&mrecv, &_msend, sizeof(pami_multicast_t));
-	  mrecv.msginfo  = _msend.msginfo;
-	  mrecv.msgcount = _msend.msgcount;
-	  mrecv.connection_id = _msend.connection_id;
+          mrecv.msginfo  = _msend.msginfo;
+          mrecv.msgcount = _msend.msgcount;
+          mrecv.connection_id = _msend.connection_id;
 
           TRACE_MSG((stderr, "<%p>Executor::BroadcastExec::postReceives ndest %zu, bytes %zu, rank %u, root %u\n",
                      this, _dsttopology.size(), _msend.bytes, _selftopology.index2Endpoint(0),_srctopology.index2Endpoint(0)));
@@ -215,6 +221,7 @@ namespace CCMI
           mrecv.dst    =  (pami_pipeworkqueue_t *) & _pwq;
           mrecv.src    =  NULL;
           mrecv.bytes  = _msend.bytes;
+
           _native->multicast(&mrecv);
         }
         static void notifyRecvDone( pami_context_t   context,
@@ -281,6 +288,7 @@ inline void  CCMI::Executor::BroadcastExec<T, T_Coll_header>::sendNext ()
   _msend.cb_done.function   = _cb_done;
   _msend.cb_done.clientdata = _clientdata;
   //_msend.bytes  = _msend.bytes;
+
   _native->multicast(&_msend);
 }
 

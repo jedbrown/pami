@@ -30,7 +30,8 @@
 #include "algorithms/protocols/CollOpT.h"
 
 #include "util/trace.h"
-
+#undef DO_TRACE_ENTEREXIT
+#undef DO_TRACE_DEBUG
 #ifdef CCMI_TRACE_ALL
  #define DO_TRACE_ENTEREXIT 1
  #define DO_TRACE_DEBUG     1
@@ -78,10 +79,9 @@ public:
         _executor (native, cmgr, geometry->comm())
     {
         TRACE_FN_ENTER();
-        unsigned bytes = counts * type->GetDataSize();
-        TRACE_FORMAT("<%p> root %u, bytes %u", this,root,bytes);
+        TRACE_FORMAT("<%p> root %u, counts %u", this,root,counts);
         _executor.setRoot (root);
-        _executor.setBuffers (src, src, bytes, type, type);
+        _executor.setBuffers (src, src, counts * type->GetDataSize(), counts * type->GetExtent(), type, type);
         _executor.setDoneCallback (cb_done.function, cb_done.clientdata);
 
         COMPILE_TIME_ASSERT(sizeof(_schedule) >= sizeof(T_Schedule));
@@ -193,7 +193,7 @@ public:
     void freeBuffer (unsigned size, char *buf)
     {
         TRACE_FN_ENTER();
-        TRACE_FORMAT("<%p>", this);
+        TRACE_FORMAT("<%p> buf %p", this, buf);
         if (size <= 32768)
         {
             TRACE_FN_EXIT();
@@ -264,6 +264,7 @@ public:
                 CCMI_assert(co->getFlags() & EarlyArrival);
 
                 EADescriptor *ead = (EADescriptor *) co->getEAQ()->peekTail();
+                TRACE_FORMAT("<%p> ead %p", this,ead);
                 CCMI_assert(ead != NULL);
                 CCMI_assert(ead->bytes == (bcast_xfer->typecount * type->GetDataSize()));
                 CCMI_assert(ead->cdata._root == bcast_xfer->root);
@@ -274,7 +275,10 @@ public:
                     {
                         char *eab = ead->buf;
                         CCMI_assert(eab != NULL);
-                        memcpy (bcast_xfer->buf, eab, bcast_xfer->typecount*type->GetDataSize());
+                        //memcpy (bcast_xfer->buf, eab, bcast_xfer->typecount*type->GetDataSize());
+                        PAMI_Type_transform_data((void *)eab, PAMI_TYPE_BYTE, 0,
+                                                 bcast_xfer->buf, type, 0,
+                                                 bcast_xfer->typecount*type->GetDataSize(), PAMI_DATA_COPY, NULL);
                         freeBuffer(bcast_xfer->typecount*type->GetDataSize(), eab);
                         //_eab_allocator.returnObject(eab);
                     }
@@ -356,6 +360,7 @@ public:
     {
         AsyncBroadcastFactoryT *factory = (AsyncBroadcastFactoryT *) arg;
         TRACE_FN_ENTER();
+        TRACE_HEXDATA(info, sizeof(CollHeaderData));
         TRACE_FORMAT("<%p> count %u, conn_id %u, peer %zu, sndlen %zu", arg,count,conn_id,peer,sndlen);
         CCMI_assert ( ctxt == factory->getContext() );
 
@@ -367,6 +372,7 @@ public:
 
         T_Conn *cmgr = factory->_cmgr;
         unsigned key = factory->myGetKey (cdata->_root, conn_id, geometry, &cmgr);
+        TRACE_FORMAT("<%p> root %d, comm %d, count %d, geometry %p, key %u",factory,cdata->_root, comm,cdata->_count,geometry,key);
         CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *co =
             (CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *)
           geometry->asyncCollectivePostQ(factory->_native->contextid()).findAndDelete(key);
@@ -455,7 +461,10 @@ public:
                 {
                     char *eab = ead->buf;
                     CCMI_assert(eab != NULL);
-                    memcpy (bcast_xfer->buf, eab, bcast_xfer->typecount * type->GetDataSize());
+                    //memcpy (bcast_xfer->buf, eab, bcast_xfer->typecount * type->GetDataSize());
+                    PAMI_Type_transform_data((void *)eab, PAMI_TYPE_BYTE, 0,
+                                             bcast_xfer->buf, type, 0,
+                                             bcast_xfer->typecount*type->GetDataSize(), PAMI_DATA_COPY, NULL);
                     factory->freeBuffer(bcast_xfer->typecount * type->GetDataSize(), eab); //_eab_allocator.returnObject(eab);
                 }
 

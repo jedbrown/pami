@@ -109,10 +109,10 @@ public:
                                        dt,op);
 
         CCMI::Adaptor::Allreduce::getReduceFunction((pami_dt)dt, (pami_op)op, sizeOfType, func);
-        sizeOfType = ((TypeCode *)a_xfer->stype)->GetDataSize();
+        sizeOfType = ((TypeCode *)a_xfer->stype)->GetAtomSize();
         unsigned bytes = a_xfer->stypecount * sizeOfType;
         // unsigned bytes = sizeOfType * a_xfer->stypecount;
-        _executor.setBuffers (a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount, (TypeCode *)a_xfer->stype, (TypeCode *)a_xfer->rtype);
+        _executor.setBuffers (a_xfer->sndbuf, a_xfer->rcvbuf, a_xfer->stypecount, a_xfer->stypecount, (TypeCode *)a_xfer->stype, (TypeCode *)a_xfer->rtype);
         _executor.setDoneCallback (cb_done.function, cb_done.clientdata);
 
         COMPILE_TIME_ASSERT(sizeof(_schedule) >= sizeof(T_Schedule));
@@ -156,8 +156,7 @@ public:
         // however, most probably, this constructor will be called on EA and stype will not be known so leave
         // sizeOfType as is here.
         unsigned bytes = dt_count * sizeOfType;
-
-        _executor.setBuffers (sndbuf, rcvbuf, bytes, stype, rtype);
+        _executor.setBuffers (sndbuf, rcvbuf, bytes, bytes, stype, rtype);
         _executor.setDoneCallback (cb_done.function, cb_done.clientdata);
 
         COMPILE_TIME_ASSERT(sizeof(_schedule) >= sizeof(T_Schedule));
@@ -304,21 +303,21 @@ public:
                                            dt,op);
 
             CCMI::Adaptor::Allreduce::getReduceFunction((pami_dt)dt, (pami_op)op, sizeOfType, func);
-            sizeOfType = ((TypeCode *)a_xfer->stype)->GetDataSize();
+            sizeOfType = ((TypeCode *)a_xfer->stype)->GetAtomSize();
             unsigned bytes = a_xfer->stypecount * sizeOfType;
 
             DEBUG((stderr, "key = %d, found early arrival in unexpected queue\n", key);)
-	    CCMI_assert(co->getFlags() & EarlyArrival);
+            CCMI_assert(co->getFlags() & EarlyArrival);
 
             co->setXfer((pami_xfer_t*)cmd);
             co->setFlag(LocalPosted);
 
             a_composite = co->getComposite();
-            a_composite->executor().setBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, 0, (TypeCode *)a_xfer->stype, (TypeCode *)a_xfer->rtype); // need number of bytes ???
+            a_composite->executor().setBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, 0, 0, (TypeCode *)a_xfer->stype, (TypeCode *)a_xfer->rtype); // need number of bytes ???
             a_composite->executor().setReduceConnectionManager(_cmgr);
             a_composite->executor().setBroadcastConnectionManager(_cmgr);
             a_composite->executor().setReduceInfo(a_xfer->stypecount, bytes, sizeOfType, func, (TypeCode *)a_xfer->stype, (TypeCode *)a_xfer->rtype, (pami_op)op, (pami_dt)dt);
-	    a_composite->executor().reset();
+            a_composite->executor().reset();
         }
         /// not found posted CollOp object, create a new one and
         /// queue it in active queue
@@ -352,7 +351,7 @@ public:
 
         geometry->asyncCollectivePostQ(_native->contextid()).pushTail(co);
         DEBUG((stderr, "key = %d, start executor in generate()\n", key););
-	a_composite->executor().start();
+        a_composite->executor().start();
 		    
         return NULL;
     }

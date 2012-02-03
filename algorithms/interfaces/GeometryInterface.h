@@ -145,15 +145,15 @@ namespace PAMI
       inline void                       freeAllocations ();
       inline void                       setGlobalContext(bool context);
       inline void                       setNumColors(unsigned numcolors);
-      inline MatchQueue                &asyncCollectivePostQ(size_t context_id);
-      inline MatchQueue                &asyncCollectiveUnexpQ(size_t context_id);
+      inline MatchQueue<>              &asyncCollectivePostQ(size_t context_id);
+      inline MatchQueue<>              &asyncCollectiveUnexpQ(size_t context_id);
       inline COMPOSITE_TYPE             getAllreduceComposite(size_t context_id,unsigned i);
       inline COMPOSITE_TYPE             getAllreduceComposite(size_t context_id);
       inline void                       setAllreduceComposite(size_t context_id,COMPOSITE_TYPE c);
       inline void                       setAllreduceComposite(size_t context_id,
                                                               COMPOSITE_TYPE c,
                                                               unsigned i);
-      inline void                       processUnexpBarrier(MatchQueue * ueb_queue,
+      inline void                       processUnexpBarrier(MatchQueue<> * ueb_queue,
                                                             MemoryAllocator <sizeof(PAMI::Geometry::UnexpBarrierQueueElement), 16> *ueb_allocator);
       // These methods were originally from the PGASRT Communicator class
       inline pami_task_t                 size       (void);
@@ -258,13 +258,13 @@ namespace PAMI
     }
 
     template <class T_Geometry>
-    inline MatchQueue &Geometry<T_Geometry>::asyncCollectivePostQ(size_t context_id)
+    inline MatchQueue<> &Geometry<T_Geometry>::asyncCollectivePostQ(size_t context_id)
     {
       return static_cast<T_Geometry*>(this)->asyncCollectivePostQ_impl(context_id);
     }
 
     template <class T_Geometry>
-    inline MatchQueue &Geometry<T_Geometry>::asyncCollectiveUnexpQ(size_t context_id)
+    inline MatchQueue<> &Geometry<T_Geometry>::asyncCollectiveUnexpQ(size_t context_id)
     {
       return static_cast<T_Geometry*>(this)->asyncCollectiveUnexpQ_impl(context_id);
     }
@@ -298,7 +298,7 @@ namespace PAMI
     }
 
     template <class T_Geometry>
-    inline void Geometry<T_Geometry>::processUnexpBarrier(MatchQueue * ueb_queue,
+    inline void Geometry<T_Geometry>::processUnexpBarrier(MatchQueue<> * ueb_queue,
                                                           MemoryAllocator <sizeof(PAMI::Geometry::UnexpBarrierQueueElement), 16> *ueb_allocator)
     {
       return static_cast<T_Geometry*>(this)->processUnexpBarrier_impl(ueb_queue,ueb_allocator);

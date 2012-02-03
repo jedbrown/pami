@@ -108,16 +108,17 @@ public:
         ///If the allreduce algorithm was created by this factory before, just restart it
         if (arcomposite != NULL && arcomposite->getAlgorithmFactory() == this)
         {
+
             pami_result_t status = (pami_result_t)arcomposite->restart(allreduce);
 
             if (status == PAMI_SUCCESS)
             {
-	        geometry->setAllreduceComposite(contextid,arcomposite, iteration);
-		if (_isAsync)
+              geometry->setAllreduceComposite(contextid,arcomposite, iteration);
+              if (_isAsync)
                   geometry->incrementAllreduceIteration(contextid);
 
-                TRACE_FN_EXIT();
-                return NULL;
+              TRACE_FN_EXIT();
+              return NULL;
             }
         }
 
@@ -131,6 +132,7 @@ public:
         T_Composite* obj = (T_Composite*)CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn, T_XFER_TYPE >::_alloc.allocateObject();
         TRACE_FORMAT("%p composite %p", this,arcomposite);
         geometry->setAllreduceComposite(contextid,obj, iteration);
+
         new (obj) T_Composite(this->_context,
                               this->_context_id,
 			      CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn, T_XFER_TYPE >::_native,  // Native interface
@@ -141,7 +143,7 @@ public:
                               (pami_xfer_t*) cmd, // Parameters
                               allreduce->cb_done,
                               allreduce->cookie);
-	if (_isAsync)
+        if (_isAsync)
           geometry->incrementAllreduceIteration(contextid);
 
         obj->start();

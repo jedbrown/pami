@@ -95,7 +95,8 @@ namespace PAMI
                             pami_result_t & status) :
               PAMI::Protocol::Send::Send (),
               _primary (primary),
-              _secondary (secondary)
+              _secondary (secondary),
+              _pwqAllocator (NULL)
           {
             status = PAMI_SUCCESS;
           };
@@ -107,6 +108,30 @@ namespace PAMI
           inline void operator delete(void * p)
           {
             PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
+          }
+
+          ///
+          /// \brief Set the pointer to the mem allocator used by PWQ
+          ///
+          /// SendPWQ uses this memory allocator. Since SendPWQ class
+          /// can't be constructed, we construct the allocator in NI and
+          /// pass it to SendPWQ class through the composite.
+          ///
+          /// \see PAMI::Protocol::Send::setPWQAllocator
+          ///
+          virtual void setPWQAllocator(void * allocator)
+          {
+            _pwqAllocator = allocator;
+          }
+
+          ///
+          /// \brief Return a pointer to the mem allocator used by PWQ
+          ///
+          /// \see PAMI::Protocol::Send::getPWQAllocator
+          ///
+          virtual void * getPWQAllocator()
+          {
+            return _pwqAllocator;
           }
 
           ///
@@ -216,6 +241,7 @@ namespace PAMI
 
           T_Primary   * _primary;
           T_Secondary * _secondary;
+          void        * _pwqAllocator;
 
       };  // PAMI::Protocol::Send::Composite class
     };    // PAMI::Protocol::Send namespace

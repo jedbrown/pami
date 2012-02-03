@@ -146,6 +146,19 @@ build/collectives/scatter.exe \
 build/collectives/scatter_contig.exe \
 build/collectives/scatter_subcomm.exe \
 build/collectives/scatterv.exe \
+build/collectives/allgather_noncontig.exe \
+build/collectives/allreduce_noncontig.exe \
+build/collectives/alltoall_noncontig.exe \
+build/collectives/bcast_noncontig.exe \
+build/collectives/allgatherv_noncontig.exe \
+build/collectives/alltoallv_noncontig.exe \
+build/collectives/gather_noncontig.exe \
+build/collectives/gatherv_noncontig.exe \
+build/collectives/reduce_noncontig.exe \
+build/collectives/reduce_scatter_noncontig.exe \
+build/collectives/scan_noncontig.exe \
+build/collectives/scatter_noncontig.exe \
+build/context/advance.exe \
 build/collectives/scatterv_int.exe
 
 BASE_TESTS = build/init.exe \

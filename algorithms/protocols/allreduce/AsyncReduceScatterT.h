@@ -107,13 +107,13 @@ public:
           CCMI::Adaptor::Allreduce::getReduceFunction((pami_dt)dt, (pami_op)op, sizeOfType, func);
 
         //SSS: I actually need size of type to be based on size of stype not size of dt for non-contigous support
-        sizeOfType = stype->GetDataSize();
+        sizeOfType = stype->GetAtomSize();
 
         unsigned bytes = sizeOfType * a_xfer->stypecount;
 
         _reduce_executor.setRoot(root);
 
-        prepReduceBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, bytes, native->endpoint() == root, stype, rtype);
+        prepReduceBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, stype->GetExtent() * a_xfer->stypecount, native->endpoint() == root, stype, rtype);
 
         _reduce_executor.setDoneCallback (cb_done.function, cb_done.clientdata);
 
@@ -168,7 +168,7 @@ public:
         // however, most probably, this constructor will be called on EA and stype will not be known so leave
         // sizeOfType as is here.
         unsigned bytes = dt_count * sizeOfType;
-        _reduce_executor.setBuffers (sndbuf, rcvbuf, bytes, stype, rtype);
+        _reduce_executor.setBuffers (sndbuf, rcvbuf, bytes, bytes, stype, rtype);
         _reduce_executor.setDoneCallback (cb_done.function, cb_done.clientdata);
 
         COMPILE_TIME_ASSERT(sizeof(_reduce_schedule) >= sizeof(T_Reduce_Schedule));
@@ -211,12 +211,12 @@ public:
             rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, bytes);
             PAMI_assertf(rc == PAMI_SUCCESS, "Failed to allocate %zu reduce buffers\n",bytes);
             _relbuf = rcvbuf;
-            _reduce_executor.setBuffers (sndbuf, _tmpbuf, bytes, stype, rtype);
+            _reduce_executor.setBuffers (sndbuf, _tmpbuf, bytes, bytes, stype, rtype);
 			
         }
         else
         {
-            _reduce_executor.setBuffers(sndbuf, rcvbuf, bytes, stype, rtype);
+            _reduce_executor.setBuffers(sndbuf, rcvbuf, bytes, bytes, stype, rtype);
         }
 		
     }
@@ -229,7 +229,6 @@ public:
     {
 
         pami_scatterv_t s_xfer;
-        unsigned sizeOfType = stype->GetDataSize();
 
         pami_result_t rc;
         rc = __global.heap_mm->memalign((void **)&_sdispls, 0, counts * sizeof(*_sdispls));
@@ -252,7 +251,6 @@ public:
 
 
 
-        unsigned bytes = sizeOfType * stypecounts[endpointoffset];
         _scatter_executor.setConnmgr(_cmgr);
         _scatter_executor.setRoot (root);
         _scatter_executor.setSchedule (&_scatter_schedule);
@@ -260,11 +258,11 @@ public:
 
         if (isRoot)
         {
-            _scatter_executor.setBuffers(_tmpbuf, _relbuf, bytes, stype, stype);
+            _scatter_executor.setBuffers(_tmpbuf, _relbuf, stypecounts[endpointoffset], stype, stype);
         }
         else
         {
-            _scatter_executor.setBuffers(sbuf, rbuf, bytes, stype, stype);
+            _scatter_executor.setBuffers(sbuf, rbuf, stypecounts[endpointoffset], stype, stype);
         }
 
 
@@ -430,9 +428,9 @@ public:
                                            reduce_dt,op);
             unsigned sizeOfType;
             CCMI::Adaptor::Allreduce::getReduceFunction((pami_dt)reduce_dt, (pami_op)op, sizeOfType, func);
-            sizeOfType = stype->GetDataSize();
+            sizeOfType = stype->GetAtomSize();
             unsigned bytes = sizeOfType * a_xfer->stypecount;
-            a_composite->prepReduceBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, bytes, _native->endpoint() == root, stype, rtype);
+            a_composite->prepReduceBuffers(a_xfer->sndbuf, a_xfer->rcvbuf, stype->GetExtent() * a_xfer->stypecount, _native->endpoint() == root, stype, rtype);
 
 
             // previous connection manager may need cleanup
@@ -445,7 +443,7 @@ public:
             a_composite->getReduceExecutor().setBroadcastConnectionManager(cmgr);
             a_composite->getReduceExecutor().setReduceInfo(a_xfer->stypecount, bytes, sizeOfType, func, stype, rtype, (pami_op)op, (pami_dt)reduce_dt);
 
-	    a_composite->getReduceExecutor().reset();
+            a_composite->getReduceExecutor().reset();
 
             pami_callback_t  cb_exec_done;
             cb_exec_done.function   = scatter_exec_done;

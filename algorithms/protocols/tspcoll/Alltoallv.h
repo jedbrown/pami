@@ -59,14 +59,14 @@ namespace xlpgas
       xlpgas_tsp_amsend_reg (amsend_regnum, Alltoallv::cb_incoming_v);
     }
 
-    static inline void cb_incoming_v(pami_context_t    context,
-                                     void            * cookie,
-                                     const void      * header_addr,
-                                     size_t            header_size,
-                                     const void      * pipe_addr,
-                                     size_t            data_size,
-                                     pami_endpoint_t   origin,
-                                     pami_recv_t     * recv);
+    static inline void cb_incoming_v(pami_context_t          context,
+                                     void                  * cookie,
+                                     const void            * header_addr,
+                                     size_t                  header_size,
+                                     const void            * pipe_addr,
+                                     size_t                  data_size,
+                                     pami_endpoint_t         origin,
+                                     pami_pwq_recv_t       * recv);
 
   private:
     const CntType    * _scnts;      /* send counts    */

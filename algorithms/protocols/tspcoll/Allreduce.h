@@ -60,11 +60,15 @@ namespace xlpgas
 	  size_t        _nelems;
 	  int           _logMaxBF;
 	  void        * _dbuf;
+      TypeCode    * _sdt;
+      TypeCode    * _rdt;
 	  coremath      _cb_allreduce;
 	  char          _dummy;
 	  void        * _tmpbuf;
+      void        * _tmpredbuf;
 	  size_t        _tmpbuflen;
-	  user_func_t* _uf;
+	  user_func_t*  _uf;
+      int           _contig;
 	}; /* Long Allreduce */
 
     template <class T_NI>
@@ -83,7 +87,7 @@ namespace xlpgas
                   user_func_t*        uf);
 
     protected:
-      static xlpgas_local_addr_t cb_switchbuf (CollExchange<T_NI> *, unsigned phase, unsigned counter);
+      static PAMI::PipeWorkQueue * cb_switchbuf (CollExchange<T_NI> *, unsigned phase, unsigned counter, size_t data_size);
       static void cb_allreduce (CollExchange<T_NI> *, unsigned phase);
 
     protected:
@@ -97,6 +101,7 @@ namespace xlpgas
       typedef char PhaseBufType[MAXBUF] __attribute__((__aligned__(16)));
       PhaseBufType  _phasebuf[CollExchange<T_NI>::MAX_PHASES][2];
       int           _bufctr  [CollExchange<T_NI>::MAX_PHASES]; /* 0 or 1 */
+      TypeCode     *_rtype;
     }; /* Short Allreduce */
 
   }//end Allreduce

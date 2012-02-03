@@ -28,7 +28,7 @@ namespace PAMI
 {
   namespace Geometry
   {
-    class UnexpBarrierQueueElement : public PAMI::MatchQueueElem
+    class UnexpBarrierQueueElement : public PAMI::MatchQueueElem<>
     {
     public:
       UnexpBarrierQueueElement (unsigned     comm,
@@ -36,7 +36,7 @@ namespace PAMI
                                 pami_quad_t &info,
                                 unsigned     src,
                                 unsigned     algorithm):
-        PAMI::MatchQueueElem(comm),
+        PAMI::MatchQueueElem<>(comm),
         _comm (comm),
         _context_id(context_id),
         _info(info),

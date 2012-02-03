@@ -151,8 +151,7 @@ public:
 
         /// \todo add datatype support !
         // CCMI_assert(s_xfer->stypecount == s_xfer->rtypecount);
-        TypeCode * rtype = (TypeCode *)s_xfer->rtype;
-        unsigned bytes = s_xfer->rtypecount * rtype->GetDataSize();
+
 
         COMPILE_TIME_ASSERT(sizeof(_schedule) >= sizeof(T_Schedule));
         create_schedule(&_schedule, sizeof(_schedule), s_xfer->root, native, geometry);
@@ -160,8 +159,8 @@ public:
         _executor.setSchedule (&_schedule);
 
         _executor.setVectors (s_xfer);
-        _executor.setBuffers (s_xfer->sndbuf, s_xfer->rcvbuf, bytes,
-                              (TypeCode *) s_xfer->stype, rtype);
+        _executor.setBuffers (s_xfer->sndbuf, s_xfer->rcvbuf, s_xfer->rtypecount,
+                              (TypeCode *) s_xfer->stype, (TypeCode *) s_xfer->rtype);
         _executor.setDoneCallback (cb_done.function, cb_done.clientdata);
     }
 
@@ -330,7 +329,12 @@ public:
                     {
                         char *eab = ead->buf;
                         CCMI_assert(eab != NULL);
-                        memcpy (scatter_xfer->rcvbuf, eab, scatter_xfer->rtypecount * rtype->GetDataSize());
+                        PAMI_Type_transform_data((void*)eab,
+                                       PAMI_TYPE_BYTE, 0,
+                                       scatter_xfer->rcvbuf,
+                                       rtype, 0,
+                                       scatter_xfer->rtypecount * rtype->GetDataSize(),
+                                       PAMI_DATA_COPY, NULL);
                         freeBuffer(scatter_xfer->rtypecount * rtype->GetDataSize(), eab);
                         //_eab_allocator.returnObject(eab);
                     }
@@ -516,6 +520,12 @@ public:
                     char *eab = ead->buf;
                     CCMI_assert(eab != NULL);
                     memcpy (scatter_xfer->rcvbuf, eab, scatter_xfer->rtypecount * ((TypeCode *)scatter_xfer->rtype)->GetDataSize());
+                    PAMI_Type_transform_data((void*)eab,
+                                   PAMI_TYPE_BYTE, 0,
+                                   scatter_xfer->rcvbuf,
+                                   ((TypeCode *)scatter_xfer->rtype), 0,
+                                   scatter_xfer->rtypecount * ((TypeCode *)scatter_xfer->rtype)->GetDataSize(),
+                                   PAMI_DATA_COPY, NULL);
                     factory->freeBuffer(scatter_xfer->rtypecount * ((TypeCode *)scatter_xfer->rtype)->GetDataSize(), eab); //_eab_allocator.returnObject(eab);
                 }
 

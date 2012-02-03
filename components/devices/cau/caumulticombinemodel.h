@@ -114,7 +114,7 @@ public:
       {
         mc->_device.allocMessage(&msg);
         new(msg) T_Message(&mc->_device, gi, did, gid, mc->_device.getHdl(), mc->_device.getContext(), seqno); // Construct, but don't init this message
-        gi->_ueRed.pushTail((MatchQueueElem*)msg);
+        gi->_ueRed.pushTail((MatchQueueElem<>*)msg);
       }
 
     // In either case, copy the packet and packet size into the message
@@ -195,7 +195,7 @@ public:
 
     // put message on posted queue to handle any multicast packets
     // that are dispatched during the reduce phase
-    gi->_postedRed.pushTail((MatchQueueElem*)msg);
+    gi->_postedRed.pushTail((MatchQueueElem<>*)msg);
     pami_result_t res = msg->advance();
 
     if(res != PAMI_SUCCESS)

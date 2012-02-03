@@ -70,11 +70,9 @@ namespace CCMI
           TRACE_FN_ENTER();
           AllreduceBaseExec<T_Conn, T_Single> *exec = (AllreduceBaseExec<T_Conn, T_Single> *)cd;
           TRACE_FORMAT("<%p>", exec);
-	  
-	  if (exec->_isSendDone  && !exec->_inAdvance /*&&  //send has finished
+          if (exec->_isSendDone  && !exec->_inAdvance /*&&  //send has finished
 				   exec->_initialized*/)
-	    exec->advance();
-	  
+            exec->advance();
           TRACE_FN_EXIT();
         }
 
@@ -159,33 +157,38 @@ namespace CCMI
         /// State variables in order of access frequency
         unsigned            _curPhase;
         unsigned            _curIdx;
-	unsigned            _endPhase;
-	unsigned            _lastReducePhase;
+        unsigned            _endPhase;
+        unsigned            _lastReducePhase;
         unsigned            _curnsrc;
 
-	bool                _initialized;
-	bool                _isSendDone;
+        bool                _initialized;
+        bool                _isSendDone;
         bool                _inAdvance;
         bool                _earlyArrival; //The local peer has not
                                            //called reset
 
         const char        * _srcbuf;
         char              * _dstbuf;
-	char              * _reducebuf;
-	char              * _src1;  //The current first summing buffer
+        char              * _reducebuf;
+        char              * _src1;  //The current first summing buffer
+        char              * _usrrcvbuf;   //SSS: A pointer to save the _dstbuf in
+        char              * _tmpsndbuf;   //SSS: A temp buf to pack user send data
+        int                 _alloctmpsnd; //SSS: Temp send buffer is allocated or not
+        char              * _tmprcvbuf;   //SSS: A temp buf to pack user rcvd data
+        int                 _alloctmprcv; //SSS: Temp recv buffer is allocated or not
         coremath            _reduceFunc;
 
 	Interfaces::NativeInterface     * _native;
 	pami_multicast_t                  _msend;
 	ExtCollHeaderData                 _sndInfo __attribute__((__aligned__(16)));
 
-	bool                _postReceives;
+        bool                _postReceives;
         bool                _enablePipelining;
 
         T_Conn * _rconnmgr;  ///Reduce connection manager
         T_Conn * _bconnmgr;  ///Broadcast connction manager
 
-	pami_context_t                    _context;
+        pami_context_t                    _context;
         pami_endpoint_t                   _self_ep;
         PAMI::Topology                    _selftopology;
         ScheduleCache                     _scache;
@@ -197,12 +200,14 @@ namespace CCMI
         virtual ~AllreduceBaseExec ()
         {
           TRACE_FN_ENTER();
+          if(_alloctmprcv)__global.heap_mm->free(_tmprcvbuf);
+          if(_alloctmpsnd)__global.heap_mm->free(_tmpsndbuf);
 #ifdef CCMI_DEBUG
           _curPhase = (unsigned) - 1;
           _curIdx = (unsigned) - 1;
           _endPhase = (unsigned) - 1;
           _lastReducePhase = (unsigned) - 1;
-	  _initialized = false;
+          _initialized = false;
           _postReceives = false;
           _enablePipelining = false;
           _srcbuf = NULL;
@@ -221,18 +226,21 @@ namespace CCMI
             Interfaces::Executor (),
             _curPhase ((unsigned) - 1),
             _curIdx ((unsigned) - 1),
-	    _lastReducePhase((unsigned) - 1),
+            _lastReducePhase((unsigned) - 1),
             _curnsrc((unsigned)-1),
-	    _initialized (false), 
-	    _inAdvance(false),
+            _initialized (false),
+            _inAdvance(false),
             _earlyArrival(false),
-	    _srcbuf (NULL), _dstbuf (NULL), _reducebuf(NULL),
-	    _src1 (NULL),
+            _srcbuf (NULL), _dstbuf (NULL), _reducebuf(NULL),
+            _src1 (NULL),
+            _usrrcvbuf(NULL),
+            _alloctmpsnd(0),
+            _alloctmprcv(0),
             _reduceFunc (NULL),
             _native (NULL),
-	    _postReceives (false),
+            _postReceives (false),
             _enablePipelining (false),
-	    _rconnmgr (NULL),
+            _rconnmgr (NULL),
             _bconnmgr(NULL),
             _context(NULL),
             _selftopology(),
@@ -249,20 +257,23 @@ namespace CCMI
         AllreduceBaseExec(Interfaces::NativeInterface    * native,
                           T_Conn                         * connmgr,
                           const unsigned                   commID,
-			  bool                             enable_pipe=false):
-	  Interfaces::Executor(),
-	    _curPhase ((unsigned) - 1), _curIdx ((unsigned) - 1),
-	    _initialized (false), 
-	    _isSendDone  (false),
-	    _inAdvance   (false),
+                          bool                             enable_pipe=false):
+            Interfaces::Executor(),
+            _curPhase ((unsigned) - 1), _curIdx ((unsigned) - 1),
+            _initialized (false),
+            _isSendDone  (false),
+            _inAdvance   (false),
             _earlyArrival(false),
-	    _srcbuf (NULL), _dstbuf (NULL), _reducebuf(NULL),
-	    _src1(NULL),
+            _srcbuf (NULL), _dstbuf (NULL), _reducebuf(NULL),
+            _src1(NULL),
+            _usrrcvbuf(NULL),
+            _alloctmpsnd(0),
+            _alloctmprcv(0),
             _reduceFunc (NULL),
             _native (native),
-	    _postReceives (false),
-	    _enablePipelining(false),
-	    _rconnmgr (connmgr),
+            _postReceives (false),
+            _enablePipelining(false),
+            _rconnmgr (connmgr),
             _bconnmgr(connmgr),
             _context(NULL),
             _self_ep(native->endpoint()),
@@ -276,12 +287,12 @@ namespace CCMI
           _msend.msginfo     = NULL;
           _msend.msgcount    = 0;
           _msend.roles       = -1U;
-	  _msend.src_participants = (pami_topology_t *) & _selftopology;
-	  _msend.dst              = NULL;
+          _msend.src_participants = (pami_topology_t *) & _selftopology;
+          _msend.dst              = NULL;
           _msend.cb_done.function   = staticNotifySendDone;
-	  _msend.cb_done.clientdata = this;
+          _msend.cb_done.clientdata = this;
 
-	  _sndInfo._comm     = commID;
+          _sndInfo._comm     = commID;
 
           _acache.setReduceConnectionManager (connmgr);
           _acache.setBroadcastConnectionManager (connmgr);
@@ -302,13 +313,13 @@ namespace CCMI
 
         void setIteration (unsigned iteration)
         {
-	  _sndInfo._iteration = iteration;
+          _sndInfo._iteration = iteration;
           _acache.setIteration(iteration);
         }
 
-	void setContext (pami_context_t context) {
-	  _context = context;
-	}
+        void setContext (pami_context_t context) {
+          _context = context;
+        }
 
         void setSchedule (Interfaces::Schedule *schedule, unsigned color = 0)
         {
@@ -329,10 +340,10 @@ namespace CCMI
         }
 
         ///entry method
-	void notifySendDone ( );
+        void notifySendDone ( );
 
         ///entry method
-	virtual void   notifyRecv  ( unsigned             src,
+        virtual void   notifyRecv  ( unsigned             src,
                                      const pami_quad_t   & info,
                                      PAMI::PipeWorkQueue ** pwq,
                                      pami_callback_t      * cb_done );
@@ -359,7 +370,7 @@ namespace CCMI
         /// \param[out]  pipeWidth  pipeline width
         /// \param[out]  cb_done    receive callback function
         ///
-	PAMI_Request_t *   notifyRecvHead(const pami_quad_t     * info,
+        PAMI_Request_t *   notifyRecvHead(const pami_quad_t     * info,
 					  unsigned               count,
 					  unsigned               conn_id,
 					  unsigned               peer,
@@ -380,6 +391,7 @@ namespace CCMI
         void setBuffers ( void           * srcbuf,
                           void           * dstbuf,
                           unsigned         bytes,
+                          unsigned         strides,
                           TypeCode       * stype,
                           TypeCode       * rtype)
         {
@@ -417,8 +429,49 @@ namespace CCMI
           if (!_enablePipelining)
             pipelineWidth = count * sizeOfType;
 
-          _acache.init(count, sizeOfType, op, dt, stype, rtype, pipelineWidth);//sizeOfType is based on stype/rtype size on dt size
 
+          if(!stype->IsContiguous() || !rtype->IsContiguous())
+          {
+            pami_result_t rc;
+            unsigned bytes = count * stype->GetDataSize();//SSS: DataSize may be different from AtomSize.
+            if(!stype->IsContiguous())
+            {
+              if(stype != getStype() || bytes != _acache.getBytes())
+              {
+                if(_alloctmpsnd) __global.heap_mm->free(_tmpsndbuf);
+                rc = __global.heap_mm->memalign((void **)&_tmpsndbuf, 0, bytes);
+                _alloctmpsnd = 1;//SSS: Indicating that _tmpsndbuf is allocated.
+                PAMI_Type_transform_data((void*)_srcbuf, stype, 0,
+                                             _tmpsndbuf, PAMI_TYPE_BYTE, 0, bytes, PAMI_DATA_COPY, NULL);
+              }
+            }
+            else
+              _tmpsndbuf = (char*)_srcbuf;
+
+            if(!rtype->IsContiguous())
+            {
+              if(rtype != getRtype() || bytes != _acache.getBytes())
+              {
+                if(_alloctmprcv) __global.heap_mm->free(_tmprcvbuf);
+                rc = __global.heap_mm->memalign((void **)&_tmprcvbuf, 0, bytes);
+                _alloctmprcv = 1;
+                _usrrcvbuf = _dstbuf;
+              }
+            }
+            else
+              _tmprcvbuf = _dstbuf;
+
+
+
+            _srcbuf    = _tmpsndbuf;
+            _dstbuf    = _tmprcvbuf;
+
+            count      = bytes / sizeOfType;
+          }
+          else
+            _usrrcvbuf = NULL;
+
+          _acache.init(count, sizeOfType, op, dt, stype, rtype, pipelineWidth);
           TRACE_FN_EXIT();
         }
 
@@ -474,11 +527,11 @@ namespace CCMI
 
         virtual void reset ()
         {
-	  PAMI::Memory::sync();
+          PAMI::Memory::sync();
           _acache.setDstBuf (_dstbuf);
 
-	  //Make sure we are not reseting a live executor
-	  CCMI_assert (_initialized == false);
+          //Make sure we are not reseting a live executor
+          CCMI_assert (_initialized == false);
 
           bool flag;
           if(_scache.getRoot() == -1)
@@ -488,21 +541,21 @@ namespace CCMI
 
           _acache.reset (flag, false);
 
-	  _msend.bytes        = _acache.getBytes();
-	  _sndInfo._count     = _acache.getCount();
-	  _sndInfo._dt        = _acache.getDt();
-	  _sndInfo._op        = _acache.getOp();
-	  _sndInfo._root      = (unsigned)_scache.getRoot();
+          _msend.bytes        = _acache.getBytes();
+          _sndInfo._count     = _acache.getCount();
+          _sndInfo._dt        = _acache.getDt();
+          _sndInfo._op        = _acache.getOp();
+          _sndInfo._root      = (unsigned)_scache.getRoot();
 
-	  if (!_postReceives) {
-	    _msend.msginfo  =  (pami_quad_t *) &_sndInfo;
-	    _msend.msgcount =  1;
-	  }
+          if (!_postReceives) {
+           _msend.msginfo  =  (pami_quad_t *) &_sndInfo;
+           _msend.msgcount =  1;
+          }
 
-	  //Send done is only sent to true after the first send
-	  _isSendDone         = false;
-	  _inAdvance          = false;
-	  _earlyArrival       = false;
+          //Send done is only sent to true after the first send
+          _isSendDone         = false;
+          _inAdvance          = false;
+          _earlyArrival       = false;
           _curPhase = _scache.getStartPhase();
           _curIdx = 0;
           _endPhase = _scache.getEndPhase();
@@ -595,91 +648,102 @@ inline pami_result_t CCMI::Executor::AllreduceBaseExec<T_Conn, T_Single>::advanc
 	       op, dt, count);
   CCMI_assert (_src1 != NULL);
   void *src1 = _src1;
+
   unsigned nsrcranks = _curnsrc; 
   char **src2 = NULL;
+
   while (_curPhase <= _endPhase)
     {      
       PAMI::PipeWorkQueue *pwq = NULL;
       for (; _curIdx < nsrcranks; _curIdx ++) {
-	pwq = _acache.getPhasePipeWorkQueues(_curPhase, _curIdx);
-	if (pwq->bytesAvailableToConsume() < msg_bytes) 
-	  {
-	    TRACE_FN_EXIT();
-	    goto fn_end;
-	  }
+        pwq = _acache.getPhasePipeWorkQueues(_curPhase, _curIdx);
+        if (pwq->bytesAvailableToConsume() < msg_bytes)
+        {
+          TRACE_FN_EXIT();
+          goto fn_end;
+        }
       }
       
       size_t idx = 0;
       src2 = _acache.getPhaseRecvBufsVec (_curPhase);
       if (_curPhase <= _lastReducePhase)
+      {
+        if (op == PAMI_SUM && dt == PAMI_SIGNED_INT)
         {
-          if (op == PAMI_SUM && dt == PAMI_SIGNED_INT)
+            for (idx = 0; idx < nsrcranks; ++idx)
             {
-	      for (idx = 0; idx < nsrcranks; ++idx)
-                {
-                  inline_math_isum (reducebuf, src1, src2[idx], count);
-                  src1 = reducebuf; 
-		}
+              inline_math_isum (reducebuf, src1, src2[idx], count);
+              src1 = reducebuf;
             }
-          else if (op == PAMI_SUM && dt == PAMI_DOUBLE && count < MAX_IMATH_COUNT)
-            {
+        }
+        else if (op == PAMI_SUM && dt == PAMI_DOUBLE && count < MAX_IMATH_COUNT)
+        {
 	      for (idx = 0; idx < nsrcranks; ++idx)
-                {
-                  inline_math_dsum (reducebuf, src1, src2[idx], count);
-                  src1 = reducebuf;
-                }
-	    }
-          else if (op == PAMI_MAX && dt == PAMI_DOUBLE && count < MAX_IMATH_COUNT)
-            {
+          {
+            inline_math_dsum (reducebuf, src1, src2[idx], count);
+            src1 = reducebuf;
+          }
+        }
+        else if (op == PAMI_MAX && dt == PAMI_DOUBLE && count < MAX_IMATH_COUNT)
+        {
 	      for (idx = 0; idx < nsrcranks; ++idx)
                 {
                   inline_math_dmax (reducebuf, src1, src2[idx], count);
                   src1 = reducebuf;
                 }
-            }
-          else if (op == PAMI_MIN && dt == PAMI_DOUBLE && count < MAX_IMATH_COUNT)
-            {
+        }
+        else if (op == PAMI_MIN && dt == PAMI_DOUBLE && count < MAX_IMATH_COUNT)
+        {
 	      for (idx = 0; idx < nsrcranks; ++idx)
-                {
-                  inline_math_dmin (reducebuf, src1, src2[idx], count);
-                  src1 = reducebuf;
-                }
-            }
-          else
-            {
+          {
+            inline_math_dmin (reducebuf, src1, src2[idx], count);
+            src1 = reducebuf;
+          }
+        }
+        else
+        {
 	      for (idx = 0; idx < nsrcranks; ++idx)
-                {
-                  void * bufs[2];
-                  bufs[0] = src1;
-                  bufs[1] = src2[idx];
-		  
-                  TRACE_HEXDATA((char*)bufs[0], count*_acache.getSizeOfType());
-                  TRACE_HEXDATA((char*)bufs[1], count*_acache.getSizeOfType());
-                  TRACE_HEXDATA((char*)reducebuf, 1); // Just to trace the input pointer
-                  _reduceFunc( reducebuf, bufs, 2, count);
+          {
+            void * bufs[2];
+            bufs[0] = src1;
+            bufs[1] = src2[idx];
 
-                  TRACE_HEXDATA((char*)reducebuf, count*_acache.getSizeOfType());
-                  src1 = reducebuf;
-                }
-            }
-        } 
+            TRACE_HEXDATA((char*)bufs[0], count*_acache.getSizeOfType());
+            TRACE_HEXDATA((char*)bufs[1], count*_acache.getSizeOfType());
+            TRACE_HEXDATA((char*)reducebuf, 1); // Just to trace the input pointer
+            _reduceFunc( reducebuf, bufs, 2, count);
+
+            TRACE_HEXDATA((char*)reducebuf, count*_acache.getSizeOfType());
+            src1 = reducebuf;
+          }
+        }
+      }
 
       for (idx = 0; idx < nsrcranks; idx ++) {
-	pwq = _acache.getPhasePipeWorkQueues(_curPhase, idx);
-	pwq->reset_nosync();
+        pwq = _acache.getPhasePipeWorkQueues(_curPhase, idx);
+        pwq->reset_nosync();
       }
       
       if (_curPhase == _endPhase)
+      {
+        if(_usrrcvbuf)//SSS: rtype is not contig
         {
-	  rc = PAMI_SUCCESS;
-	  _isSendDone = false; //Process an early arrival packet
-	  _initialized = false; //Call application done callback
-	  _earlyArrival = true; 
-          if (_cb_done) 
-            _cb_done (_context, _clientdata, PAMI_SUCCESS);
-
-          return rc;
+          PAMI_Type_transform_data(_tmprcvbuf, PAMI_TYPE_BYTE, 0,
+                                   _usrrcvbuf, getRtype(), 0,
+                                   _acache.getBytes(), PAMI_DATA_COPY, NULL);
         }
+
+        rc = PAMI_SUCCESS;
+
+        _isSendDone = false; //Process an early arrival packet
+        _initialized = false; //Call application done callback
+        _earlyArrival = true;
+
+        if (_cb_done)
+          _cb_done (_context, _clientdata, PAMI_SUCCESS);
+
+        return rc;
+      }
 
       TRACE_FORMAT("<%p>_curPhase %d,_endPhase %d,_curIdx %d nsrcranks %d", this, _curPhase, _scache.getEndPhase(), _curIdx, nsrcranks);
 
@@ -689,15 +753,15 @@ inline pami_result_t CCMI::Executor::AllreduceBaseExec<T_Conn, T_Single>::advanc
 
       PAMI::Topology *dst_topology   = _scache.getDstTopology(_curPhase); 
       if (dst_topology->size() > 0)
-	{
-          sendMessage (reducebuf, _acache.getBytes(), dst_topology,
+      {
+        sendMessage (reducebuf, _acache.getBytes(), dst_topology,
                        _curPhase);
 	  
-	  //If the send has not immediately completed wait for it to
-	  //complete
-	  if (!_isSendDone)
-	    break;
-	}
+        //If the send has not immediately completed wait for it to
+        //complete
+        if (!_isSendDone)
+          break;
+      }
     }
   
  fn_end:
@@ -729,96 +793,106 @@ inline pami_result_t CCMI::Executor::AllreduceBaseExec<T_Conn, T_Single>::advanc
 	       op, dt, count);
   
   void *src1 = _src1;
-  unsigned nsrcranks = _curnsrc; 
+  unsigned nsrcranks = _curnsrc;
+
   while (_curPhase <= _endPhase)
-    {
-      PAMI::PipeWorkQueue *pwq = NULL;
+  {
+    PAMI::PipeWorkQueue *pwq = NULL;
 
-      if (nsrcranks > 0) {
-	pwq = _acache.getPhasePipeWorkQueues(_curPhase, 0);
+    if (nsrcranks > 0) {
+      pwq = _acache.getPhasePipeWorkQueues(_curPhase, 0);
 	
-	//fprintf (stderr, "bytes available %ld bytes expected %ld phase %d\n", 
-	// pwq->bytesAvailableToConsume(),
-	// msg_bytes,
-	// _curPhase);
 
-	if (pwq->bytesAvailableToConsume() < msg_bytes) 
-	  {
-	    TRACE_FN_EXIT();
-	    goto fn_end;
-	  }
-	
-	char *src2 = _acache.getPhaseRecvBufs (_curPhase, 0);
-	if (_curPhase <= _lastReducePhase)
-        {
-          if (op == PAMI_SUM && dt == PAMI_SIGNED_INT)
-            {
-	      inline_math_isum (reducebuf, src1, src2, count);
-	      src1 = reducebuf; 
-            }
-          else if (op == PAMI_SUM && dt == PAMI_DOUBLE && count < MAX_IMATH_COUNT)
-            {
-	      inline_math_dsum (reducebuf, src1, src2, count);
-	      src1 = reducebuf;
-	    }
-          else if (op == PAMI_MAX && dt == PAMI_DOUBLE && count < MAX_IMATH_COUNT)
-            {
-	      inline_math_dmax (reducebuf, src1, src2, count);
-	      src1 = reducebuf;
-	    }
-          else if (op == PAMI_MIN && dt == PAMI_DOUBLE && count < MAX_IMATH_COUNT)
-            {
-	      inline_math_dmin (reducebuf, src1, src2, count);
-	      src1 = reducebuf;
-            }
-          else
-            {
-	      void * bufs[2];
-	      bufs[0] = src1;
-	      bufs[1] = src2;
-	      TRACE_HEXDATA((char*)bufs[0], count*_acache.getSizeOfType());
-	      TRACE_HEXDATA((char*)bufs[1], count*_acache.getSizeOfType());
-	      TRACE_HEXDATA((char*)reducebuf, 1); // Just to trace the input pointer
-	      _reduceFunc( reducebuf, bufs, 2, count);
-	      
-	      TRACE_HEXDATA((char*)reducebuf, count*_acache.getSizeOfType());
-	      src1 = reducebuf;
-            }
-        } 
-	
-	pwq->reset_nosync();
+      //fprintf (stderr, "bytes available %ld bytes expected %ld phase %d\n",
+      // pwq->bytesAvailableToConsume(),
+      // msg_bytes,
+      // _curPhase);
+
+      if (pwq->bytesAvailableToConsume() < msg_bytes)
+      {
+        TRACE_FN_EXIT();
+        goto fn_end;
       }
 
-      if (_curPhase == _endPhase)
+
+      char *src2 = _acache.getPhaseRecvBufs (_curPhase, 0);
+      if (_curPhase <= _lastReducePhase)
+      {
+        if (op == PAMI_SUM && dt == PAMI_SIGNED_INT)
         {
-	  rc = PAMI_SUCCESS;
-	  _isSendDone = false; //Process an early arrival packet
-	  _initialized = false;
-	  _earlyArrival = true; 
-          // Call application done callback
-          if (_cb_done)
-            {
-              _cb_done (_context, _clientdata, PAMI_SUCCESS);
-            }
-
-          break;
+          inline_math_isum (reducebuf, src1, src2, count);
+          src1 = reducebuf;
         }
+        else if (op == PAMI_SUM && dt == PAMI_DOUBLE && count < MAX_IMATH_COUNT)
+        {
+          inline_math_dsum (reducebuf, src1, src2, count);
+          src1 = reducebuf;
+        }
+        else if (op == PAMI_MAX && dt == PAMI_DOUBLE && count < MAX_IMATH_COUNT)
+        {
+          inline_math_dmax (reducebuf, src1, src2, count);
+          src1 = reducebuf;
+        }
+        else if (op == PAMI_MIN && dt == PAMI_DOUBLE && count < MAX_IMATH_COUNT)
+        {
+          inline_math_dmin (reducebuf, src1, src2, count);
+          src1 = reducebuf;
+        }
+        else
+        {
+          void * bufs[2];
+          bufs[0] = src1;
+          bufs[1] = src2;
+          TRACE_HEXDATA((char*)bufs[0], count*_acache.getSizeOfType());
+          TRACE_HEXDATA((char*)bufs[1], count*_acache.getSizeOfType());
+          TRACE_HEXDATA((char*)reducebuf, 1); // Just to trace the input pointer
+          _reduceFunc( reducebuf, bufs, 2, count);
 
-      nsrcranks = _scache.getNumSrcRanks(_curPhase + 1); 
-      _curPhase ++;
+          TRACE_HEXDATA((char*)reducebuf, count*_acache.getSizeOfType());
+          src1 = reducebuf;
+        }
+      }
 
-      PAMI::Topology *dst_topology   = _scache.getDstTopology(_curPhase); 
-      if (dst_topology->size() > 0)
-	{
-          sendMessage (reducebuf, _acache.getBytes(), dst_topology,
+      pwq->reset_nosync();
+    }
+
+    if (_curPhase == _endPhase)
+    {
+      if(_usrrcvbuf)//SSS: rtype is not contig
+      {
+        PAMI_Type_transform_data(_tmprcvbuf, PAMI_TYPE_BYTE, 0,
+                                 _usrrcvbuf, getRtype(), 0,
+                                 _acache.getBytes(), PAMI_DATA_COPY, NULL);
+      }
+      rc = PAMI_SUCCESS;
+      _isSendDone = false; //Process an early arrival packet
+      _initialized = false;
+      _earlyArrival = true;
+
+      // Call application done callback
+      if (_cb_done)
+      {
+        _cb_done (_context, _clientdata, PAMI_SUCCESS);
+      }
+
+      break;
+    }
+
+    nsrcranks = _scache.getNumSrcRanks(_curPhase + 1);
+    _curPhase ++;
+
+    PAMI::Topology *dst_topology   = _scache.getDstTopology(_curPhase);
+    if (dst_topology->size() > 0)
+    {
+      sendMessage (reducebuf, _acache.getBytes(), dst_topology,
                        _curPhase);
 	  
-	  //If the send has not immediately completed wait for it to
-	  //complete
-	  if (!_isSendDone)
-	    break;
-	}
+      //If the send has not immediately completed wait for it to
+      //complete
+      if (!_isSendDone)
+        break;
     }
+  }
   
  fn_end:
   _src1 = (char *)src1;
@@ -880,7 +954,6 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn, T_Single>::start()
   TRACE_FORMAT("<%p>", this);
 
   //CCMI_assert (_srcbuf != NULL);
-
   _initialized = true;
   _isSendDone = true;
   CCMI_assert_debug (_curPhase != (unsigned) -1);
@@ -890,7 +963,6 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn, T_Single>::start()
     ++ _curPhase;
 
   unsigned ndstranks = _scache.getNumDstRanks (_curPhase);
-
   if (ndstranks) {
     PAMI::Topology *dst_topology   = _scache.getDstTopology(_curPhase);
     sendMessage ((char*)_srcbuf, _acache.getBytes(), dst_topology, _curPhase);
@@ -963,6 +1035,7 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn, T_Single>::notifyRecv
   //pwq->reset(); //reset in AllreuceBaseExec::advance
 
   * rcvpwq    = pwq;
+
   cb_done->function   =  staticNotifyReceiveDone;
   cb_done->clientdata = this;
 

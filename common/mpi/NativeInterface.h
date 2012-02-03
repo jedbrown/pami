@@ -71,7 +71,7 @@ namespace PAMI
         PAMI_abort();
         return PAMI_ERROR;
       }
-    virtual inline pami_result_t setSendPWQDispatch(pami_dispatch_p2p_function fn,
+    virtual inline pami_result_t setSendPWQDispatch(pami_dispatch_pwq_function fn,
                                                     void *cookie)
       {
         PAMI_abort();
@@ -93,6 +93,7 @@ namespace PAMI
       }
     virtual inline pami_result_t sendPWQ(pami_context_t       context,
                                            pami_endpoint_t      dest,
+                                           unsigned             connection_Id,
                                            size_t               header_length,
                                            void                *header,
                                            size_t               length,

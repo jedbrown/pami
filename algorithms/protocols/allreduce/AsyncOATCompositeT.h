@@ -56,7 +56,7 @@ namespace CCMI
 
       public:
 	AsyncOATCompositeT ()
-        {
+	{
 	  CCMI_abort();
 	}
 	
@@ -73,42 +73,42 @@ namespace CCMI
 	  }
 
 	AsyncOATCompositeT (pami_context_t                      context,
-                            size_t                              ctxt_id,
-			    Interfaces::NativeInterface       * mf,
-			    T_Conn                            * rcmgr,
-			    T_Conn                            * bcmgr,
-                            void                              * algorithmFactory,
-			    pami_geometry_t                     g,
-			    void                              * cmd,
-			    pami_event_function                 fn,
-			    void                              * cookie):
+                        size_t                              ctxt_id,
+                        Interfaces::NativeInterface       * mf,
+                        T_Conn                            * rcmgr,
+                        T_Conn                            * bcmgr,
+                        void                              * algorithmFactory,
+                        pami_geometry_t                     g,
+                        void                              * cmd,
+                        pami_event_function                 fn,
+                        void                              * cookie):
 	  Executor::Composite(),
 	  _executor (mf, rcmgr, ((PAMI_GEOMETRY_CLASS*)g)->comm()),
 	  _schedule (mf->endpoint(), (PAMI::Topology*)((PAMI_GEOMETRY_CLASS *)g)->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0),
           _contextid(ctxt_id)
         {
-	  TRACE_FN_ENTER();
-	  uintptr_t op, dt;
-	  _geometry = (PAMI_GEOMETRY_CLASS*) g;	  
-	  this->_context = context;
+          TRACE_FN_ENTER();
+          uintptr_t op, dt;
+          _geometry = (PAMI_GEOMETRY_CLASS*) g;
+          this->_context = context;
           this->setAlgorithmFactory(algorithmFactory);
-	  _executor.setContext(context);
-	  _bcmgr = bcmgr;
+          _executor.setContext(context);
+          _bcmgr = bcmgr;
 
-	  PAMI::Type::TypeFunc::GetEnums
-	    (((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype,
-	     ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.op,
-	     dt, op);
+          PAMI::Type::TypeFunc::GetEnums
+           (((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype,
+           ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.op,
+           dt, op);
 	  
-	  TypeCode * stype_obj = 
-	    (TypeCode *)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype;
-	  TypeCode * rtype_obj = 
-	    (TypeCode *)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rtype;
+          TypeCode * stype_obj =
+           (TypeCode *)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype;
+          TypeCode * rtype_obj =
+           (TypeCode *)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rtype;
 
-	  /// \todo Support non-contiguous
-	  CCMI_assert(stype_obj->IsContiguous() &&  stype_obj->IsPrimitive());
+          /// \todo Support non-contiguous
+          //CCMI_assert(stype_obj->IsContiguous() &&  stype_obj->IsPrimitive());
 
-	  initialize(((pami_xfer_t *)cmd)->cmd.xfer_allreduce.sndbuf,
+          initialize(((pami_xfer_t *)cmd)->cmd.xfer_allreduce.sndbuf,
 		     ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rcvbuf,
 		     ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount,
 		     stype_obj, 
@@ -116,17 +116,18 @@ namespace CCMI
 		     (pami_dt)dt,
 		     (pami_op)op);
 	  
-	  if (bcmgr)
-	    _executor.setBroadcastConnectionManager (bcmgr);
+          if (bcmgr)
+            _executor.setBroadcastConnectionManager (bcmgr);
 
-	  _executor.setDoneCallback(fn, cookie);
+          _executor.setDoneCallback(fn, cookie);
 
-	  int iteration = _geometry->getAllreduceIteration(mf->contextid());
-	  _executor.setIteration(iteration);   	  
-	  _executor.reset();
+          int iteration = _geometry->getAllreduceIteration(mf->contextid());
+          _executor.setIteration(iteration);
 
-	  TRACE_FN_EXIT();
-	}
+          _executor.reset();
+
+          TRACE_FN_EXIT();
+        }
 
 	AsyncOATCompositeT (pami_context_t                      context,
                             size_t                              ctxt_id,
@@ -187,29 +188,23 @@ namespace CCMI
 	{
 	  TRACE_FN_ENTER();
 
-	  unsigned old_count = _executor.getCount();
 	  _executor.setRoot ((unsigned)-1);
 	  _executor.setBuffers
 	    ( sndbuf,
 	      rcvbuf,
 	      count,
+	      count,
 	      stype,
 	      rtype );	  
 	  _executor.setSchedule (&_schedule);
   
-	  //Stype not available in early arrival packet
-	  if ( (op != _executor.getOp()) || (dtype != _executor.getDt()) 
-	       || (count != old_count) )
-	  {
-	    coremath func;
-	    unsigned sizeOfType;
-	    CCMI::Adaptor::Allreduce::getReduceFunction(dtype, op, 
+	  coremath func;
+	  unsigned sizeOfType;
+	  CCMI::Adaptor::Allreduce::getReduceFunction(dtype, op,
 							sizeOfType, func);
-	    unsigned pwidth = count * sizeOfType;
-	    
-	    _executor.setReduceInfo ( count, pwidth, sizeOfType, 
+	  unsigned pwidth = count * sizeOfType;
+	  _executor.setReduceInfo ( count, pwidth, sizeOfType,
 				      func, stype, rtype, op, dtype );
-	  }
 
 	  TRACE_FN_EXIT();
 	}
@@ -233,7 +228,7 @@ namespace CCMI
 	    (TypeCode *)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stype;
 	  TypeCode * rtype_obj = 
 	    (TypeCode *)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rtype;
-	  	  
+
 	  initialize(((pami_xfer_t *)cmd)->cmd.xfer_allreduce.sndbuf,
 		     ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rcvbuf,
 		     ((pami_xfer_t *)cmd)->cmd.xfer_allreduce.stypecount,
@@ -248,6 +243,7 @@ namespace CCMI
 	  _executor.setDoneCallback(((pami_xfer_t *)cmd)->cb_done,
 				    ((pami_xfer_t *)cmd)->cookie);
 	  _executor.setIteration(_geometry->getAllreduceIteration(this->_contextid));
+
 	  _executor.reset();
 	  _executor.start();	
 

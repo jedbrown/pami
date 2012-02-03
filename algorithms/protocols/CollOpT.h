@@ -48,7 +48,7 @@ namespace CCMI
     enum {TS_INPROGRESS = 1};
 
     template <typename T_xfer, typename T_composite>
-      class CollOpT : public PAMI::MatchQueueElem
+      class CollOpT : public PAMI::MatchQueueElem<>
       {
       protected:
 
@@ -69,7 +69,7 @@ namespace CCMI
         ~CollOpT()
         {
         }
-        CollOpT(unsigned key) : PAMI::MatchQueueElem (key),
+        CollOpT(unsigned key) : PAMI::MatchQueueElem<> (key),
         _composite(),
         _ntokens(0),
         _flags(0),
