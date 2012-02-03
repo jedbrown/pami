@@ -298,7 +298,7 @@ static void * gather_test(void* p) {
       gProtocolName = gather_always_works_md[nalg].name;
       if (my_ep == zero_ep)
         {
-          printf("# Gather Bandwidth Test -- context = %d, protocol: %s\n",
+          printf("# Gather Bandwidth Test(size:%zu) -- context = %d, protocol: %s\n",num_tasks,
                  td->tid, gProtocolName);
           printf("# Size(bytes)           cycles    bytes/sec    usec\n");
           printf("# -----------      -----------    -----------    ---------\n");

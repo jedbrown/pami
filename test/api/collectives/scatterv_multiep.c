@@ -299,7 +299,7 @@ static void * scatterv_test(void* p) {
 
       if (my_ep == root_ep)
       {
-        printf("# Scatterv Bandwidth Test -- context = %d, protocol: %s\n",
+        printf("# Scatterv Bandwidth Test(size:%zu) -- context = %d, protocol: %s\n",num_tasks,
                td->tid, gProtocolName);
         printf("# Size(bytes)           cycles    bytes/sec    usec\n");
         printf("# -----------      -----------    -----------    ---------\n");

@@ -174,7 +174,7 @@ int main(int argc, char*argv[])
 
       if (task_id == task_zero)
       {
-        printf("# Allgather Bandwidth Test -- context = %d, protocol: %s\n",
+        printf("# Allgatherv_int Bandwidth Test(size:%zu) -- context = %d, protocol: %s\n",num_tasks,
                iContext, gProtocolName);
         printf("# Size(bytes)           cycles    bytes/sec    usec\n");
         printf("# -----------      -----------    -----------    ---------\n");

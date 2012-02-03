@@ -192,7 +192,7 @@ int main(int argc, char*argv[])
   /*  Allocate buffer(s) */
   int err = 0;
   void* buf = NULL;
-  err = posix_memalign(&buf, 128, MAXBUFSIZE + gBuffer_offset);
+  err = posix_memalign(&buf, 128, gMax_count + gBuffer_offset);
   assert(err == 0);
   buf = (char*)buf + gBuffer_offset;
 
@@ -273,7 +273,7 @@ int main(int argc, char*argv[])
         broadcast.cmd.xfer_broadcast.root = root_ep;
         if (task_id == root_task)
         {
-          printf("# Broadcast Bandwidth Test -- context = %d, root = %d  protocol: %s, Metadata: range %zu <-> %zd, mask %#X\n",
+          printf("# Broadcast Bandwidth Test(size:%zu) -- context = %d, root = %d  protocol: %s, Metadata: range %zu <-> %zd, mask %#X\n",num_tasks,
                  iContext, root_task, gProtocolName,
                  next_md->range_lo,(ssize_t)next_md->range_hi,
                  next_md->check_correct.bitmask_correct);
@@ -298,7 +298,7 @@ int main(int argc, char*argv[])
               if (task_id == 0)
                 printf("Running Broadcast: %s\n", dt_array_str[dt]);
 
-              for (i = gMin_count; i <= gMax_count; i *= 2)
+              for (i = gMin_count; i <= gMax_count/get_type_size(dt_array[dt]); i *= 2)
               {
                 size_t  dataSent = i;
                 int          niter;

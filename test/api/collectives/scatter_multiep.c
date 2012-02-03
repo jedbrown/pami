@@ -297,7 +297,7 @@ static void * scatter_test(void* p) {
 
       if (my_ep == root_ep)
       {
-        printf("# Scatter Bandwidth Test -- context = %d, protocol: %s\n",
+        printf("# Scatter Bandwidth Test(size:%zu) -- context = %d, protocol: %s\n",num_tasks,
                td->tid, gProtocolName);
         printf("# Size(bytes)           cycles    bytes/sec    usec\n");
         printf("# -----------      -----------    -----------    ---------\n");

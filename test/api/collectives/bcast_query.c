@@ -195,7 +195,7 @@ int main(int argc, char*argv[])
 
       if (task_id == root_task)
       {
-        printf("# Broadcast Bandwidth Test -- context = %d, optimize = %d, root = %d  protocol: %s, Metadata: range %zu <-> %zd, mask %#X\n",
+        printf("# Broadcast Bandwidth Test(size:%zu) -- context = %d, optimize = %d, root = %d  protocol: %s, Metadata: range %zu <-> %zd, mask %#X\n",num_tasks,
                iContext, o, root_task, gProtocolName,
                bcast_must_query_md[nalg].range_lo, bcast_must_query_md[nalg].range_hi,
                bcast_must_query_md[nalg].check_correct.bitmask_correct);

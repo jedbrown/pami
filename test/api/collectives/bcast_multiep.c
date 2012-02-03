@@ -284,7 +284,7 @@ static void * bcast_test(void* p) {
               broadcast.cmd.xfer_broadcast.root = root_ep;
               if (my_ep == root_ep)
                 {
-                  printf("# Broadcast Bandwidth Test -- context = %d, root_task=%d root_ctxt=%d  protocol: %s\n",
+                  printf("# Broadcast Bandwidth Test(size:%zu) -- context = %d, root_task=%d root_ctxt=%d  protocol: %s\n",num_tasks,
                          td->tid, root_task, ctxt_offset,gProtocolName);
                   printf("# Size(bytes)           cycles    bytes/sec    usec\n");
                   printf("# -----------      -----------    -----------    ---------\n");

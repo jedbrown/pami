@@ -305,7 +305,7 @@ static void * gatherv_test(void* p) {
 
       if (my_ep == zero_ep)
       {
-        printf("# Gatherv Bandwidth Test -- context = %d, protocol: %s\n",
+        printf("# Gatherv Bandwidth Test(size:%zu) -- context = %d, protocol: %s\n",num_tasks,
                td->tid, gProtocolName);
         printf("# Size(bytes)           cycles    bytes/sec    usec\n");
         printf("# -----------      -----------    -----------    ---------\n");

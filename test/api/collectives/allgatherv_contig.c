@@ -251,12 +251,12 @@ int main (int argc, char ** argv)
   /*  Allocate buffer(s) */
   int err = 0;
   void* buf = NULL;
-  err = posix_memalign(&buf, 128, (MAXBUFSIZE * num_tasks) + gBuffer_offset);
+  err = posix_memalign(&buf, 128, (gMax_count * num_tasks) + gBuffer_offset);
   assert(err == 0);
   buf = (char*)buf + gBuffer_offset;
 
   void* rbuf = NULL;
-  err = posix_memalign(&rbuf, 128, (MAXBUFSIZE * num_tasks) + gBuffer_offset);
+  err = posix_memalign(&rbuf, 128, (gMax_count * num_tasks) + gBuffer_offset);
   assert(err == 0);
   rbuf = (char*)rbuf + gBuffer_offset;
 
@@ -274,7 +274,7 @@ int main (int argc, char ** argv)
     {
       if (task_id == 0)
       {
-        printf("# Allgatherv Bandwidth Test -- protocol: %s\n", allgatherv_always_works_md[nalg].name);
+        printf("# Allgatherv Bandwidth Test(size:%zu) -- protocol: %s\n", num_tasks,allgatherv_always_works_md[nalg].name);
         printf("# Size(bytes)           cycles    bytes/sec    usec\n");
         printf("# -----------      -----------    -----------    ---------\n");
       }
@@ -303,7 +303,7 @@ int main (int argc, char ** argv)
             if (task_id == task_zero)
               printf("Running Allgatherv: %s\n", dt_array_str[dt]);
 
-              for (i = gMin_count; i <= gMax_count; i *= 2)
+              for (i = gMin_count; i <= gMax_count/get_type_size(dt_array[dt]); i *= 2)
             {
               long long dataSent = i;
               unsigned  niter    = 100;

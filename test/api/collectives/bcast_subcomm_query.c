@@ -244,7 +244,7 @@ int main(int argc, char*argv[])
         {
           if (task_id == root_zero)
           {
-            printf("# Broadcast Bandwidth Test -- context = %d, root = %d  protocol: %s, Metadata: range %zu <-> %zd, mask %#X\n",
+            printf("# Broadcast Bandwidth Test(size:%zu) -- context = %d, root = %d  protocol: %s, Metadata: range %zu <-> %zd, mask %#X\n",num_tasks,
                    iContext, root_zero, gProtocolName,
                    q_newbcast_md[nalg].range_lo, q_newbcast_md[nalg].range_hi,
                    q_newbcast_md[nalg].check_correct.bitmask_correct);

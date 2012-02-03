@@ -282,7 +282,7 @@ static void * allgather_test(void* p)
 
       if (my_ep == zero_ep)
         {
-          printf("# Allgather Bandwidth Test -- context = %d, protocol: %s\n",
+          printf("# Allgather Bandwidth Test(size:%zu) -- context = %d, protocol: %s\n",num_tasks,
                  td->tid, gProtocolName);
           printf("# Size(bytes)           cycles    bytes/sec    usec\n");
           printf("# -----------      -----------    -----------    ---------\n");

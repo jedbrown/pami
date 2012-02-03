@@ -256,7 +256,7 @@ int main(int argc, char*argv[])
   /*  Allocate buffer(s) */
   int err = 0;
   void* buf = NULL;
-  err = posix_memalign(&buf, 128, MAXBUFSIZE + gBuffer_offset);
+  err = posix_memalign(&buf, 128, gMax_count + gBuffer_offset);
   assert(err == 0);
   buf = (char*)buf + gBuffer_offset;
 
@@ -325,7 +325,7 @@ int main(int argc, char*argv[])
         pami_task_t root_task = (pami_task_t)k;
         if (task_id == root_task)
         {
-          printf("# Broadcast Bandwidth Test -- context = %d, root = %d, protocol: %s\n",
+          printf("# AMBroadcast Bandwidth Test(size:%zu) -- context = %d, root = %d, protocol: %s\n",num_tasks,
                  iContext, root_task, ambcast_always_works_md[nalg].name);
           printf("# Size(bytes)           cycles    bytes/sec    usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
@@ -363,7 +363,7 @@ int main(int argc, char*argv[])
               ambroadcast.cmd.xfer_ambroadcast.user_header = &dt;
               ambroadcast.cmd.xfer_ambroadcast.headerlen   = sizeof(int);
 
-              for (i = gMin_count; i <= gMax_count; i *= 2)
+              for (i = gMin_count; i <= gMax_count/get_type_size(dt_array[dt]); i *= 2)
               {
                 size_t  dataSent = i;
                 int          niter;

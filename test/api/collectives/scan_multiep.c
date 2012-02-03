@@ -258,11 +258,11 @@ static void * scan_test(void* p)
   /*  Allocate buffer(s) */
   int err = 0;
   void* sbuf = NULL;
-  err = posix_memalign(&sbuf, 128, MAXBUFSIZE + gBuffer_offset);
+  err = posix_memalign(&sbuf, 128, gMax_count + gBuffer_offset);
   assert(err == 0);
   sbuf = (char*)sbuf + gBuffer_offset;
   void* rbuf = NULL;
-  err = posix_memalign(&rbuf, 128, MAXBUFSIZE + gBuffer_offset);
+  err = posix_memalign(&rbuf, 128, gMax_count + gBuffer_offset);
   assert(err == 0);
   rbuf = (char*)rbuf + gBuffer_offset;
 
@@ -308,8 +308,8 @@ static void * scan_test(void* p)
         {
           if (my_ep == zero_ep)
             {
-              printf("# %s Scan Bandwidth Test -- context = %d, task_id = %d protocol: %s\n",
-                     scan_type, td->tid, task_id, scan_always_works_md[nalg].name);
+              printf("# %s Scan Bandwidth Test(size:%zu) -- context = %d, task_id = %d protocol: %s\n",
+                     scan_type,num_tasks, td->tid, task_id, scan_always_works_md[nalg].name);
               printf("# Size(bytes)           cycles    bytes/sec    usec\n");
               printf("# -----------      -----------    -----------    ---------\n");
             }
@@ -339,7 +339,7 @@ static void * scan_test(void* p)
                       if (my_ep == zero_ep)
                         printf("Running Scan: %s, %s\n",dt_array_str[dt], op_array_str[op]);
                       int i;
-                      for (i = gMin_count; i <= gMax_count; i *= 2)
+                      for (i = gMin_count; i <= gMax_count/get_type_size(dt_array[dt]); i *= 2)
                         {
                           size_t sz=get_type_size(dt_array[dt]);
                           size_t  dataSent = i * sz;

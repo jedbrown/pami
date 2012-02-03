@@ -308,7 +308,7 @@ int main(int argc, char*argv[])
 
       if (my_task_id == root_task)
       {
-        printf("# AMScatter Bandwidth Test -- context = %d, root = %d, protocol: %s\n",
+        printf("# AMScatter Bandwidth Test(size:%zu) -- context = %d, root = %d, protocol: %s\n",num_tasks,
                iContext, root_task, amscatter_always_works_md[nalg].name);
         printf("# Size(bytes)           cycles    bytes/sec    usec\n");
         printf("# -----------      -----------    -----------    ---------\n");

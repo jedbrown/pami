@@ -194,7 +194,7 @@ int main(int argc, char*argv[])
 
         if (task_id == root_task)
         {
-          printf("# Broadcast Bandwidth Test -- context = %d, optimize = %d, root = %d  protocol: %s\n",
+          printf("# Broadcast Bandwidth Test(size:%zu) -- context = %d, optimize = %d, root = %d  protocol: %s\n",num_tasks,
                  iContext, o, root_task, gProtocolName);
           printf("# Size(bytes)           cycles    bytes/sec    usec\n");
           printf("# -----------      -----------    -----------    ---------\n");

@@ -62,11 +62,11 @@ int main(int argc, char*argv[])
   /*  Allocate buffer(s) */
   int err = 0;
   void* sbuf = NULL;
-  err = posix_memalign(&sbuf, 128, MAXBUFSIZE + gBuffer_offset);
+  err = posix_memalign(&sbuf, 128, gMax_count + gBuffer_offset);
   assert(err == 0);
   sbuf = (char*)sbuf + gBuffer_offset;
   void* rbuf = NULL;
-  err = posix_memalign(&rbuf, 128, MAXBUFSIZE + gBuffer_offset);
+  err = posix_memalign(&rbuf, 128, gMax_count + gBuffer_offset);
   assert(err == 0);
   rbuf = (char*)rbuf + gBuffer_offset;
 
@@ -144,7 +144,7 @@ int main(int argc, char*argv[])
     {
       if (task_id == task_zero)
       {
-        printf("# Allreduce Bandwidth Test -- context = %d, optimize = %d, protocol: %s\n",
+        printf("# Allreduce Bandwidth Test(size:%zu) -- context = %d, optimize = %d, protocol: %s\n",num_tasks,
                iContext, o, allreduce_always_works_md[nalg].name);
         printf("# Size(bytes)           cycles    bytes/sec    usec\n");
         printf("# -----------      -----------    -----------    ---------\n");
@@ -174,7 +174,7 @@ int main(int argc, char*argv[])
             if (task_id == task_zero)
               printf("Running Allreduce: %s, %s\n", dt_array_str[dt], op_array_str[op]);
 
-            for (i = gMin_count; i <= gMax_count; i *= 2)
+            for (i = gMin_count; i <= gMax_count/get_type_size(dt_array[dt]); i *= 2)
             {
               size_t sz=get_type_size(dt_array[dt]);
               size_t  dataSent = i * sz;

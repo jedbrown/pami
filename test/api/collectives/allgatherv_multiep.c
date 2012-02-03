@@ -288,7 +288,7 @@ static void * allgatherv_test(void* p)
 
       if (my_ep == zero_ep)
         {
-          printf("# Allgatherv Bandwidth Test -- context = %d, protocol: %s\n",
+          printf("# Allgatherv Bandwidth Test(size:%zu) -- context = %d, protocol: %s\n",num_tasks,
                  td->tid, gProtocolName);
           printf("# Size(bytes)           cycles    bytes/sec    usec\n");
           printf("# -----------      -----------    -----------    ---------\n");

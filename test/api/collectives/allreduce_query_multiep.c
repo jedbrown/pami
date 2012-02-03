@@ -199,11 +199,11 @@ static void * allreduce_test(void* p)
   /*  Allocate buffer(s) */
   int err = 0;
   void* sbuf = NULL;
-  err = posix_memalign(&sbuf, 128, MAXBUFSIZE + gBuffer_offset);
+  err = posix_memalign(&sbuf, 128, gMax_count + gBuffer_offset);
   assert(err == 0);
   sbuf = (char*)sbuf + gBuffer_offset;
   void* rbuf = NULL;
-  err = posix_memalign(&rbuf, 128, MAXBUFSIZE + gBuffer_offset);
+  err = posix_memalign(&rbuf, 128, gMax_count + gBuffer_offset);
   assert(err == 0);
   rbuf = (char*)rbuf + gBuffer_offset;
 
@@ -245,7 +245,7 @@ static void * allreduce_test(void* p)
 
       if (my_ep == zero_ep)
       {
-          printf("# Allreduce Bandwidth Test -- context = %d, optimize = %d, protocol: %s, Metadata: range %zu <-> %zd, mask %#X\n",
+          printf("# Allreduce Bandwidth Test(size:%zu) -- context = %d, optimize = %d, protocol: %s, Metadata: range %zu <-> %zd, mask %#X\n",num_tasks,
                  td->tid, 0, allreduce_must_query_md[nalg].name,
                  allreduce_must_query_md[nalg].range_lo,(ssize_t)allreduce_must_query_md[nalg].range_hi,
                  allreduce_must_query_md[nalg].check_correct.bitmask_correct);
@@ -279,7 +279,7 @@ static void * allreduce_test(void* p)
             if (my_ep == zero_ep)
               printf("Running Allreduce: %s, %s\n", dt_array_str[dt], op_array_str[op]);
 
-            for (i = gMin_count; i <= gMax_count; i *= 2)
+            for (i = gMin_count; i <= gMax_count/get_type_size(dt_array[dt]); i *= 2)
             {
               size_t sz=get_type_size(dt_array[dt]);
               size_t  dataSent = i * sz;

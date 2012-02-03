@@ -251,7 +251,7 @@ int main(int argc, char*argv[])
         {
           if (task_id == root)
           {
-            printf("# Scatter Bandwidth Test -- context = %d, root = %d, protocol: %s\n",
+            printf("# Scatter Bandwidth Test(size:%zu) -- context = %d, root = %d, protocol: %s\n",num_tasks,
                    iContext, root, gProtocolName);
             printf("# Size(bytes)           cycles    bytes/sec    usec\n");
             printf("# -----------      -----------    -----------    ---------\n");

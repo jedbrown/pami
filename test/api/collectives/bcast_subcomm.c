@@ -248,7 +248,7 @@ int main(int argc, char*argv[])
             newbcast.cmd.xfer_broadcast.root = root_ep;
             if (task_id == root_task)
             {
-              printf("# Broadcast Bandwidth Test -- context = %d, root_task = %d  protocol: %s\n",
+              printf("# Broadcast Bandwidth Test(size:%zu) -- context = %d, root_task = %d  protocol: %s\n",num_tasks,
                      iContext, root_task, gProtocolName);
               printf("# Size(bytes)           cycles    bytes/sec    usec\n");
               printf("# -----------      -----------    -----------    ---------\n");
