@@ -7,7 +7,7 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/api/collectives/allgatherv_contig.c
+ * \file test/api/collectives/allgatherv_int_contig.c
  */
 
 #define BUFSIZE 524288/16
@@ -176,21 +176,21 @@ int main (int argc, char ** argv)
   volatile unsigned    bar_poll_flag = 0;
 
   /* Allgatherv variables */
-  size_t               allgatherv_num_algorithm[2];
+  size_t               allgatherv_int_num_algorithm[2];
   pami_algorithm_t    *next_algo = NULL;
   pami_metadata_t     *next_md= NULL;
-  pami_algorithm_t    *allgatherv_always_works_algo = NULL;
-  pami_metadata_t     *allgatherv_always_works_md = NULL;
-  pami_algorithm_t    *allgatherv_must_query_algo = NULL;
-  pami_metadata_t     *allgatherv_must_query_md = NULL;
-  pami_xfer_type_t     allgatherv_xfer = PAMI_XFER_ALLGATHERV;
+  pami_algorithm_t    *allgatherv_int_always_works_algo = NULL;
+  pami_metadata_t     *allgatherv_int_always_works_md = NULL;
+  pami_algorithm_t    *allgatherv_int_must_query_algo = NULL;
+  pami_metadata_t     *allgatherv_int_must_query_md = NULL;
+  pami_xfer_type_t     allgatherv_int_xfer = PAMI_XFER_ALLGATHERV_INT;
 
-  volatile unsigned    allgatherv_poll_flag = 0;
+  volatile unsigned    allgatherv_int_poll_flag = 0;
 
   int                  nalg= 0, total_alg;
   double               ti, tf, usec;
   pami_xfer_t          barrier;
-  pami_xfer_t          allgatherv;
+  pami_xfer_t          allgatherv_int;
 
   setup_env();
 
@@ -222,16 +222,16 @@ int main (int argc, char ** argv)
   if (rc == 1)
     return 1;
 
-  /*  Query the world geometry for allgatherv algorithms */
+  /*  Query the world geometry for allgatherv_int algorithms */
   rc |= query_geometry_world(client,
                             context,
                             &world_geometry,
-                            allgatherv_xfer,
-                            allgatherv_num_algorithm,
-                            &allgatherv_always_works_algo,
-                            &allgatherv_always_works_md,
-                            &allgatherv_must_query_algo,
-                            &allgatherv_must_query_md);
+                            allgatherv_int_xfer,
+                            allgatherv_int_num_algorithm,
+                            &allgatherv_int_always_works_algo,
+                            &allgatherv_int_always_works_md,
+                            &allgatherv_int_must_query_algo,
+                            &allgatherv_int_must_query_md);
 
   if (rc == 1)
     return 1;
@@ -249,47 +249,47 @@ int main (int argc, char ** argv)
   assert(err == 0);
   rbuf = (char*)rbuf + gBuffer_offset;
 
-  size_t *lengths   = (size_t*)malloc(num_tasks * sizeof(size_t));
-  size_t *displs    = (size_t*)malloc(num_tasks * sizeof(size_t));
+  int *lengths   = (int*)malloc(num_tasks * sizeof(int));
+  int *displs    = (int*)malloc(num_tasks * sizeof(int));
   barrier.cb_done   = cb_done;
   barrier.cookie    = (void*) & bar_poll_flag;
   barrier.algorithm = bar_always_works_algo[0];
   blocking_coll(context, &barrier, &bar_poll_flag);
 
   {
-    total_alg = allgatherv_num_algorithm[0]+allgatherv_num_algorithm[1];
+    total_alg = allgatherv_int_num_algorithm[0]+allgatherv_int_num_algorithm[1];
 
     for (nalg = 0; nalg < total_alg; nalg++)
     {
       metadata_result_t result = {0};
       unsigned query_protocol;
-      if(nalg < allgatherv_num_algorithm[0])
+      if(nalg < allgatherv_int_num_algorithm[0])
       {  
         query_protocol = 0;
-        next_algo = &allgatherv_always_works_algo[nalg];
-        next_md  = &allgatherv_always_works_md[nalg];
+        next_algo = &allgatherv_int_always_works_algo[nalg];
+        next_md  = &allgatherv_int_always_works_md[nalg];
       }
       else
       {  
         query_protocol = 1;
-        next_algo = &allgatherv_must_query_algo[nalg-allgatherv_num_algorithm[0]];
-        next_md  = &allgatherv_must_query_md[nalg-allgatherv_num_algorithm[0]];
+        next_algo = &allgatherv_int_must_query_algo[nalg-allgatherv_int_num_algorithm[0]];
+        next_md  = &allgatherv_int_must_query_md[nalg-allgatherv_int_num_algorithm[0]];
       }
-      allgatherv.cb_done    = cb_done;
-      allgatherv.cookie     = (void*) & allgatherv_poll_flag;
-      allgatherv.algorithm  = allgatherv_always_works_algo[nalg];
-      allgatherv.cmd.xfer_allgatherv.sndbuf     = buf;
-      allgatherv.cmd.xfer_allgatherv.stype      = PAMI_TYPE_BYTE;
-      allgatherv.cmd.xfer_allgatherv.stypecount = 0;
-      allgatherv.cmd.xfer_allgatherv.rcvbuf     = rbuf;
-      allgatherv.cmd.xfer_allgatherv.rtype      = PAMI_TYPE_BYTE;
-      allgatherv.cmd.xfer_allgatherv.rtypecounts = 0;
+      allgatherv_int.cb_done    = cb_done;
+      allgatherv_int.cookie     = (void*) & allgatherv_int_poll_flag;
+      allgatherv_int.algorithm  = allgatherv_int_always_works_algo[nalg];
+      allgatherv_int.cmd.xfer_allgatherv_int.sndbuf     = buf;
+      allgatherv_int.cmd.xfer_allgatherv_int.stype      = PAMI_TYPE_BYTE;
+      allgatherv_int.cmd.xfer_allgatherv_int.stypecount = 0;
+      allgatherv_int.cmd.xfer_allgatherv_int.rcvbuf     = rbuf;
+      allgatherv_int.cmd.xfer_allgatherv_int.rtype      = PAMI_TYPE_BYTE;
+      allgatherv_int.cmd.xfer_allgatherv_int.rtypecounts = 0;
 
       gProtocolName = next_md->name;
 
       if (task_id == 0)
       {
-        printf("# Allgatherv Bandwidth Test(size:%zu) -- protocol: %s, Metadata: range %zu <-> %zd, mask %#X\n",num_tasks,
+        printf("# Allgatherv_int Bandwidth Test(size:%zu) -- protocol: %s, Metadata: range %zu <-> %zd, mask %#X\n",num_tasks,
                gProtocolName,
                next_md->range_lo,(ssize_t)next_md->range_hi,
                next_md->check_correct.bitmask_correct);
@@ -302,16 +302,16 @@ int main (int argc, char ** argv)
       unsigned checkrequired = next_md->check_correct.values.checkrequired; /*must query every time */
       assert(!checkrequired || next_md->check_fn); /* must have function if checkrequired. */
 
-      allgatherv.cb_done    = cb_done;
-      allgatherv.cookie     = (void*) & allgatherv_poll_flag;
-      allgatherv.algorithm  = allgatherv_always_works_algo[nalg];
-      allgatherv.cmd.xfer_allgatherv.sndbuf     = buf;
-      allgatherv.cmd.xfer_allgatherv.stype      = PAMI_TYPE_BYTE;
-      allgatherv.cmd.xfer_allgatherv.stypecount = 0;
-      allgatherv.cmd.xfer_allgatherv.rcvbuf     = rbuf;
-      allgatherv.cmd.xfer_allgatherv.rtype      = PAMI_TYPE_BYTE;
-      allgatherv.cmd.xfer_allgatherv.rtypecounts = lengths;
-      allgatherv.cmd.xfer_allgatherv.rdispls     = displs;
+      allgatherv_int.cb_done    = cb_done;
+      allgatherv_int.cookie     = (void*) & allgatherv_int_poll_flag;
+      allgatherv_int.algorithm  = allgatherv_int_always_works_algo[nalg];
+      allgatherv_int.cmd.xfer_allgatherv_int.sndbuf     = buf;
+      allgatherv_int.cmd.xfer_allgatherv_int.stype      = PAMI_TYPE_BYTE;
+      allgatherv_int.cmd.xfer_allgatherv_int.stypecount = 0;
+      allgatherv_int.cmd.xfer_allgatherv_int.rcvbuf     = rbuf;
+      allgatherv_int.cmd.xfer_allgatherv_int.rtype      = PAMI_TYPE_BYTE;
+      allgatherv_int.cmd.xfer_allgatherv_int.rtypecounts = lengths;
+      allgatherv_int.cmd.xfer_allgatherv_int.rdispls     = displs;
 
       unsigned i, j, k;
 
@@ -332,9 +332,9 @@ int main (int argc, char ** argv)
               for (k = 0; k < num_tasks; k++)lengths[k] = i;
               for (k = 0; k < num_tasks; k++)displs[k]  = k*i*get_type_size(dt_array[dt]);
 
-              allgatherv.cmd.xfer_allgatherv.stypecount       = i;
-              allgatherv.cmd.xfer_allgatherv.stype            = dt_array[dt];
-              allgatherv.cmd.xfer_allgatherv.rtype            = dt_array[dt];
+              allgatherv_int.cmd.xfer_allgatherv_int.stypecount       = i;
+              allgatherv_int.cmd.xfer_allgatherv_int.stype            = dt_array[dt];
+              allgatherv_int.cmd.xfer_allgatherv_int.rtype            = dt_array[dt];
 
               initialize_sndbuf (buf, i, task_id, dt);
               memset(rbuf, 0xFF, i);
@@ -342,13 +342,13 @@ int main (int argc, char ** argv)
                 {  
                   size_t sz=get_type_size(dt_array[dt])*i;
                   result = check_metadata(*next_md,
-                                          allgatherv,
+                                          allgatherv_int,
                                           dt_array[dt],
                                           sz, /* metadata uses bytes i, */
-                                          allgatherv.cmd.xfer_allgatherv.sndbuf,
+                                          allgatherv_int.cmd.xfer_allgatherv_int.sndbuf,
                                           dt_array[dt],
                                           sz,
-                                          allgatherv.cmd.xfer_allgatherv.rcvbuf);
+                                          allgatherv_int.cmd.xfer_allgatherv_int.rcvbuf);
                   if (next_md->check_correct.values.nonlocal)
                   {
                     /* \note We currently ignore check_correct.values.nonlocal
@@ -365,10 +365,10 @@ int main (int argc, char ** argv)
               {
                 if (checkrequired) /* must query every time */
                 {
-                  result = next_md->check_fn(&allgatherv);
+                  result = next_md->check_fn(&allgatherv_int);
                   if (result.bitmask) continue;
                 }
-                blocking_coll(context, &allgatherv, &allgatherv_poll_flag);
+                blocking_coll(context, &allgatherv_int, &allgatherv_int_poll_flag);
               }
 
               tf = timer();
@@ -400,10 +400,10 @@ int main (int argc, char ** argv)
   free(bar_always_works_md);
   free(bar_must_query_algo);
   free(bar_must_query_md);
-  free(allgatherv_always_works_algo);
-  free(allgatherv_always_works_md);
-  free(allgatherv_must_query_algo);
-  free(allgatherv_must_query_md);
+  free(allgatherv_int_always_works_algo);
+  free(allgatherv_int_always_works_md);
+  free(allgatherv_int_must_query_algo);
+  free(allgatherv_int_must_query_md);
 
   return rc;
 };

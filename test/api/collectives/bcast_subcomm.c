@@ -240,7 +240,7 @@ int main(int argc, char*argv[])
           int l = 0;
 
           root_task = root_zero;
-          if (gNumRoots > num_tasks) gNumRoots = subgeometry_num_tasks;
+          if (gNumRoots > subgeometry_num_tasks) gNumRoots = subgeometry_num_tasks;
           for (l=0; l< gNumRoots; l++)
           {
             pami_endpoint_t    root_ep;
@@ -248,7 +248,7 @@ int main(int argc, char*argv[])
             newbcast.cmd.xfer_broadcast.root = root_ep;
             if (task_id == root_task)
             {
-              printf("# Broadcast Bandwidth Test(size:%zu) -- context = %d, root_task = %d  protocol: %s\n",num_tasks,
+              printf("# Broadcast Bandwidth Test(size:%zu) -- context = %d, root_task = %d  protocol: %s\n",subgeometry_num_tasks,
                      iContext, root_task, gProtocolName);
               printf("# Size(bytes)           cycles    bytes/sec    usec\n");
               printf("# -----------      -----------    -----------    ---------\n");

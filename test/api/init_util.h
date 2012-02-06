@@ -556,7 +556,7 @@ void get_split_method(size_t *num_tasks,            /* input number of tasks/out
   {
     unsigned i = 0;
     int iter = 0;;
-    
+
     if ((task_id % 2) == 0)
     {
       for (i = 0; i < *num_tasks; i++)
@@ -651,6 +651,11 @@ void get_split_method(size_t *num_tasks,            /* input number of tasks/out
   else
   {
     half = atoi(method);
+    if(*num_tasks <= half)
+    {
+      fprintf(stderr, "assert(*num_tasks > half)");
+      assert(*num_tasks > half);
+    }
     if (task_id < half)
     {
       range[0].lo = 0;

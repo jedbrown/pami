@@ -85,7 +85,7 @@ int check_rcvbuf (void *rbuf, int count, size_t ntasks, int dt)
       {
         if (rcvbuf[i] != (unsigned) j)
         {
-          fprintf(stderr, "%s:Check %s(%d) failed rcvbuf[%d] %u != %u\n", gProtocolName, dt_array_str[dt], count, i, rcvbuf[1], j);
+          fprintf(stderr, "%s:Check %s(%d) failed rcvbuf[%d] %u != %u\n", gProtocolName, dt_array_str[dt], count, i, rcvbuf[i], j);
           err = -1;
           return err;
         }
@@ -102,7 +102,7 @@ int check_rcvbuf (void *rbuf, int count, size_t ntasks, int dt)
       {
         if (rcvbuf[i] != (int) j)
         {
-          fprintf(stderr, "%s:Check %s(%d) failed rcvbuf[%d] %u != %u\n", gProtocolName, dt_array_str[dt], count, i, rcvbuf[1], j);
+          fprintf(stderr, "%s:Check %s(%d) failed rcvbuf[%d] %u != %u\n", gProtocolName, dt_array_str[dt], count, i, rcvbuf[i], j);
           err = -1;
           return err;
         }
@@ -119,7 +119,7 @@ int check_rcvbuf (void *rbuf, int count, size_t ntasks, int dt)
       {
         if (rcvbuf[i] != (double) j)
         {
-          fprintf(stderr, "%s:Check %s(%d) failed rcvbuf[%d] %f != %f\n", gProtocolName, dt_array_str[dt], count, i, rcvbuf[1], (double)j);
+          fprintf(stderr, "%s:Check %s(%d) failed rcvbuf[%d] %f != %f\n", gProtocolName, dt_array_str[dt], count, i, rcvbuf[i], (double)j);
           err = -1;
           return err;
         }
@@ -136,7 +136,7 @@ int check_rcvbuf (void *rbuf, int count, size_t ntasks, int dt)
       {
         if (rcvbuf[i] != (float) j)
         {
-          fprintf(stderr, "%s:Check %s(%d) failed rcvbuf[%d] %f != %f\n", gProtocolName, dt_array_str[dt], count, i, rcvbuf[1], (float)j);
+          fprintf(stderr, "%s:Check %s(%d) failed rcvbuf[%d] %f != %f\n", gProtocolName, dt_array_str[dt], count, i, rcvbuf[i], (float)j);
           err = -1;
           return err;
         }
@@ -182,6 +182,8 @@ int main(int argc, char*argv[])
 
   /* Allgather variables */
   size_t               allgather_num_algorithm[2];
+  pami_algorithm_t    *next_algo = NULL;
+  pami_metadata_t     *next_md= NULL;
   pami_algorithm_t    *allgather_always_works_algo = NULL;
   pami_metadata_t     *allgather_always_works_md = NULL;
   pami_algorithm_t    *allgather_must_query_algo = NULL;
@@ -189,7 +191,7 @@ int main(int argc, char*argv[])
   pami_xfer_type_t     allgather_xfer = PAMI_XFER_ALLGATHER;
   volatile unsigned    allgather_poll_flag = 0;
 
-  int                  nalg = 0;
+  int                  nalg= 0, total_alg;
   double               ti, tf, usec;
   pami_xfer_t          barrier;
   pami_xfer_t          allgather;
@@ -268,8 +270,23 @@ int main(int argc, char*argv[])
     barrier.algorithm = bar_always_works_algo[0];
     blocking_coll(context[iContext], &barrier, &bar_poll_flag);
 
-    for (nalg = 0; nalg < allgather_num_algorithm[0]; nalg++)
+    total_alg = allgather_num_algorithm[0]+allgather_num_algorithm[1];
+    for (nalg = 0; nalg < total_alg; nalg++)
     {
+      metadata_result_t result = {0};
+      unsigned query_protocol;
+      if(nalg < allgather_num_algorithm[0])
+      {  
+        query_protocol = 0;
+        next_algo = &allgather_always_works_algo[nalg];
+        next_md  = &allgather_always_works_md[nalg];
+      }
+      else
+      {  
+        query_protocol = 1;
+        next_algo = &allgather_must_query_algo[nalg-allgather_num_algorithm[0]];
+        next_md  = &allgather_must_query_md[nalg-allgather_num_algorithm[0]];
+      }
       allgather.cb_done    = cb_done;
       allgather.cookie     = (void*) & allgather_poll_flag;
       allgather.algorithm  = allgather_always_works_algo[nalg];
@@ -280,20 +297,25 @@ int main(int argc, char*argv[])
       allgather.cmd.xfer_allgather.rtype      = PAMI_TYPE_BYTE;
       allgather.cmd.xfer_allgather.rtypecount = 0;
 
-      gProtocolName = allgather_always_works_md[nalg].name;
+      gProtocolName = next_md->name;
 
       if (task_id == task_zero)
       {
-        printf("# Allgather Bandwidth Test(size:%zu) -- context = %d, protocol: %s\n",num_tasks,
-               iContext, gProtocolName);
+        printf("# Allgather Bandwidth Test(size:%zu) -- context = %d, protocol: %s, Metadata: range %zu <-> %zd, mask %#X\n",num_tasks,
+               iContext, gProtocolName,
+               next_md->range_lo,(ssize_t)next_md->range_hi,
+               next_md->check_correct.bitmask_correct);
         printf("# Size(bytes)           cycles    bytes/sec    usec\n");
         printf("# -----------      -----------    -----------    ---------\n");
       }
 
-      if (((strstr(allgather_always_works_md[nalg].name,gSelected) == NULL) && gSelector) ||
-          ((strstr(allgather_always_works_md[nalg].name,gSelected) != NULL) && !gSelector))  continue;
+      if (((strstr(next_md->name, gSelected) == NULL) && gSelector) ||
+          ((strstr(next_md->name, gSelected) != NULL) && !gSelector))  continue;
 
       int i, j;
+
+      unsigned checkrequired = next_md->check_correct.values.checkrequired; /*must query every time */
+      assert(!checkrequired || next_md->check_fn); /* must have function if checkrequired. */
 
       int dt,op=4/*SUM*/;
 
@@ -321,12 +343,37 @@ int main(int argc, char*argv[])
 
                 initialize_sndbuf (buf, i, task_id, dt);
                 memset(rbuf, 0xFF, i);
+                if(query_protocol)
+                {  
+                  size_t sz=get_type_size(dt_array[dt])*i;
+                  result = check_metadata(*next_md,
+                                          allgather,
+                                          dt_array[dt],
+                                          sz, /* metadata uses bytes i, */
+                                          allgather.cmd.xfer_allgather.sndbuf,
+                                          dt_array[dt],
+                                          sz,
+                                          allgather.cmd.xfer_allgather.rcvbuf);
+                  if (next_md->check_correct.values.nonlocal)
+                  {
+                    /* \note We currently ignore check_correct.values.nonlocal
+                      because these tests should not have nonlocal differences (so far). */
+                    result.check.nonlocal = 0;
+                  }
+
+                  if (result.bitmask) continue;
+                }
 
                 blocking_coll(context[iContext], &barrier, &bar_poll_flag);
                 ti = timer();
 
                 for (j = 0; j < niter; j++)
                 {
+                  if (checkrequired) /* must query every time */
+                  {
+                    result = next_md->check_fn(&allgather);
+                    if (result.bitmask) continue;
+                  }
                   blocking_coll (context[iContext], &allgather, &allgather_poll_flag);
                 }
 
