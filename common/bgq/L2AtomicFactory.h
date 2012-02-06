@@ -136,12 +136,14 @@ namespace BGQ {
 				"Failed to map process L2 Atomic region "
 				"after %d tries, %p (%zd): %ld", tries,
 				try1, sizeof(uint64_t) * size, krc);
+#if 0
 			// debug message
 			if (tries) {
 				fprintf(stderr, "Got l2atomic heap memory %p size %zu "
 					"after %d tries\n",
 					try1, sizeof(uint64_t) * size, tries);
 			}
+#endif
 			return try1;
 		}
 
