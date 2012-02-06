@@ -116,6 +116,14 @@ namespace CCMI
         return _numColors;
       }
 
+      void getColors (PAMI::Topology     * topology,
+		      unsigned             bytes,
+		      unsigned           * colors, 
+		      unsigned           & ncolors) 
+      {
+	pwcfn (topology, bytes, colors, ncolors);
+      }
+
       void initialize (unsigned                                comm,
                        PAMI::Topology                        * topology,
                        unsigned                                root,

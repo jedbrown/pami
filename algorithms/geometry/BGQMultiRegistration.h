@@ -30,6 +30,7 @@
 
 #include "algorithms/connmgr/ColorGeometryConnMgr.h"
 #include "algorithms/connmgr/ColorConnMgr.h"
+#include "algorithms/connmgr/ColorMapConnMgr.h"
 #include "algorithms/protocols/broadcast/BcastMultiColorCompositeT.h"
 #include "algorithms/schedule/MCRect.h"
 #include "algorithms/schedule/TorusRect.h"
@@ -837,18 +838,35 @@ namespace PAMI
     CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
     < 10,
       CCMI::Schedule::TorusRect,
-      CCMI::ConnectionManager::ColorConnMgr,
+      CCMI::ConnectionManager::ColorMapConnMgr,
       get_rect_allgv_colors,
       PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX > ,
-      CCMI::ConnectionManager::ColorConnMgr,
+      CCMI::ConnectionManager::ColorMapConnMgr,
       PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX,
-      true, true> RectangleDputAllgather;
+      false, false> RectangleDputAllgather;
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT
     < RectangleDputAllgather,
-    rectangle_dput_allgather_metadata,
-    CCMI::ConnectionManager::ColorConnMgr >
-    RectangleDputAllgatherFactory;
+      rectangle_dput_allgather_metadata,
+      CCMI::ConnectionManager::ColorMapConnMgr >
+      RectangleDputAllgatherFactory;
+
+    typedef CCMI::Adaptor::Allgather::AllgatherOnBroadcastT < 10, 10,
+    CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
+    < 10,
+      CCMI::Schedule::TorusRect,
+      CCMI::ConnectionManager::ColorMapConnMgr,
+      get_rect_allgv_colors,
+      PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX > ,
+      CCMI::ConnectionManager::ColorMapConnMgr,
+      PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX,
+      true, true> RectangleDputAllgatherV;
+
+    typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT
+    < RectangleDputAllgatherV,
+      rectangle_dput_allgather_metadata,
+      CCMI::ConnectionManager::ColorMapConnMgr >
+      RectangleDputAllgatherVFactory;
 
     //----------------------------------------------------------------------------
     /// \brief The BGQ Multi* registration class for Shmem and MU.
@@ -911,6 +929,7 @@ namespace PAMI
       _csconnmgr(),
       _cg_connmgr(65535),
       _color_connmgr(),
+      _color_map_connmgr(),
       _shmem_device(shmem_device),
       _shmem_ni(shmem_ni),
       _shmem_msync_factory(_context,_context_id,mapidtogeometry,&_sconnmgr, _shmem_ni),
@@ -946,10 +965,10 @@ namespace PAMI
 #endif
       _mu_rectangle_1color_dput_broadcast_factory(NULL),
       _mu_rectangle_dput_broadcast_factory(NULL),
-      _mu_rectangle_dput_allgather_factory(NULL),
       _shmem_mu_rectangle_1color_dput_broadcast_factory(NULL),
       _shmem_mu_rectangle_dput_broadcast_factory(NULL),
-      _shmem_mu_rectangle_dput_allgather_factory(NULL)
+      _rectangle_dput_allgather_factory(NULL),      
+      _rectangle_dput_allgatherv_factory(NULL)
       {
         TRACE_FN_ENTER();
         TRACE_FORMAT("<%p>", this);
@@ -1070,7 +1089,9 @@ namespace PAMI
             TRACE_FORMAT("<%p>  RectangleDputBroadcastFactory", this);
             _shmem_mu_rectangle_dput_broadcast_factory = new (_shmem_mu_rectangle_dput_broadcast_factory_storage) RectangleDputBroadcastFactory(_context,_context_id,mapidtogeometry,&_color_connmgr, _axial_shmem_mu_dput_ni);
 
-            _shmem_mu_rectangle_dput_allgather_factory = new (_shmem_mu_rectangle_dput_allgather_factory_storage) RectangleDputAllgatherFactory(_context,_context_id,mapidtogeometry,&_color_connmgr, _axial_shmem_mu_dput_ni);
+            _rectangle_dput_allgather_factory = new (_rectangle_dput_allgather_factory_storage) RectangleDputAllgatherFactory(_context,_context_id,mapidtogeometry,&_color_map_connmgr, _axial_shmem_mu_dput_ni);
+
+            _rectangle_dput_allgatherv_factory = new (_rectangle_dput_allgatherv_factory_storage) RectangleDputAllgatherVFactory(_context,_context_id,mapidtogeometry,&_color_map_connmgr, _axial_shmem_mu_dput_ni);
           }
 
           if (_axial_mu_dput_ni)
@@ -1081,9 +1102,10 @@ namespace PAMI
             TRACE_FORMAT("<%p>  MURectangleDputBroadcastFactory", this);
             _mu_rectangle_dput_broadcast_factory = new (_mu_rectangle_dput_broadcast_factory_storage) MURectangleDputBroadcastFactory(_context,_context_id,mapidtogeometry,&_color_connmgr, _axial_mu_dput_ni);
 
-            _mu_rectangle_dput_allgather_factory = new (_mu_rectangle_dput_allgather_factory_storage) RectangleDputAllgatherFactory(_context,_context_id,mapidtogeometry,&_color_connmgr, _axial_mu_dput_ni);
-          }
+            _rectangle_dput_allgather_factory = new (_rectangle_dput_allgather_factory_storage) RectangleDputAllgatherFactory(_context,_context_id,mapidtogeometry,&_color_map_connmgr, _axial_mu_dput_ni);
 
+            _rectangle_dput_allgatherv_factory = new (_rectangle_dput_allgatherv_factory_storage) RectangleDputAllgatherVFactory(_context,_context_id,mapidtogeometry,&_color_map_connmgr, _axial_mu_dput_ni);
+          }
 
           // Can't be ctor'd unless the NI was created
           _mu_mcast_factory  = new (_mu_mcast_factory_storage ) MUMultiCastFactory(_context,_context_id,mapidtogeometry,&_sconnmgr, _mu_ni_mcast);
@@ -1288,12 +1310,13 @@ namespace PAMI
             if (_mu_rectangle_dput_broadcast_factory)
               geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_rectangle_dput_broadcast_factory, _context, _context_id);
 
-            if (((master_sub_topology->size() == 1) || (local_sub_topology->size() < 32)) && (_shmem_mu_rectangle_dput_allgather_factory))
-              geometry->addCollective(PAMI_XFER_ALLGATHERV_INT,  _shmem_mu_rectangle_dput_allgather_factory, _context, _context_id);
-            else if (_mu_rectangle_dput_allgather_factory)
-              geometry->addCollective(PAMI_XFER_ALLGATHERV_INT,  _mu_rectangle_dput_allgather_factory, _context, _context_id);
+            if (local_sub_topology->size() < 32) {
+	      if(_rectangle_dput_allgather_factory)
+		geometry->addCollective(PAMI_XFER_ALLGATHER,  _rectangle_dput_allgather_factory, _context, _context_id);	      
+	      if (_rectangle_dput_allgatherv_factory)
+		geometry->addCollective(PAMI_XFER_ALLGATHERV_INT,  _rectangle_dput_allgatherv_factory, _context, _context_id);
+	    }
           }
-
         }
         else if (phase == 1)
         {
@@ -1602,6 +1625,7 @@ namespace PAMI
       CCMI::ConnectionManager::CommSeqConnMgr         _csconnmgr;
       CCMI::ConnectionManager::ColorGeometryConnMgr   _cg_connmgr;
       CCMI::ConnectionManager::ColorConnMgr           _color_connmgr;
+      CCMI::ConnectionManager::ColorMapConnMgr        _color_map_connmgr;
 
       //* SHMEM interfaces:
       // Shmem Device
@@ -1738,17 +1762,17 @@ namespace PAMI
       MURectangleDputBroadcastFactory                *_mu_rectangle_dput_broadcast_factory;
       uint8_t                                         _mu_rectangle_dput_broadcast_factory_storage[sizeof(MURectangleDputBroadcastFactory)];
 
-      RectangleDputAllgatherFactory                  *_mu_rectangle_dput_allgather_factory;
-      uint8_t                                         _mu_rectangle_dput_allgather_factory_storage[sizeof(RectangleDputAllgatherFactory)];
-
       RectangleDput1ColorBroadcastFactory            *_shmem_mu_rectangle_1color_dput_broadcast_factory;
       uint8_t                                         _shmem_mu_rectangle_1color_dput_broadcast_factory_storage[sizeof(RectangleDput1ColorBroadcastFactory)];
 
       RectangleDputBroadcastFactory                  *_shmem_mu_rectangle_dput_broadcast_factory;
       uint8_t                                         _shmem_mu_rectangle_dput_broadcast_factory_storage[sizeof(RectangleDputBroadcastFactory)];
 
-      RectangleDputAllgatherFactory                  *_shmem_mu_rectangle_dput_allgather_factory;
-      uint8_t                                         _shmem_mu_rectangle_dput_allgather_factory_storage[sizeof(RectangleDputAllgatherFactory)];
+      RectangleDputAllgatherFactory                  *_rectangle_dput_allgather_factory;
+      uint8_t                                         _rectangle_dput_allgather_factory_storage[sizeof(RectangleDputAllgatherFactory)];
+
+      RectangleDputAllgatherVFactory                 *_rectangle_dput_allgatherv_factory;
+      uint8_t                                         _rectangle_dput_allgatherv_factory_storage[sizeof(RectangleDputAllgatherVFactory)];
 
       // Alltoall
       All2AllFactory                                *_alltoall_factory;

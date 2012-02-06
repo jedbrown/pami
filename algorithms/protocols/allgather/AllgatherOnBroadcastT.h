@@ -146,6 +146,13 @@ namespace CCMI
           TRACE_FN_ENTER();
           unsigned i = 0, nc = 0;
           unsigned ncomplete = _ncomplete;
+	  unsigned connids[NCOLORS];
+	  unsigned colors[NCOLORS];
+
+	  for (i = 0; i < NCOLORS; ++i)
+	    connids[i] = i;
+
+	  //fprintf (stderr, "Start next step\n");
 
           //Allow each bcast to have atleast 3 colors
           for (i = 0; (i < NBCAST) && (ncomplete < _nranks) && nc < NCOLORS; i++, ncomplete++)
@@ -156,18 +163,31 @@ namespace CCMI
 	    getAllgatherInfo (ncomplete, rtypecounts, &dst, &rtype);
 	    src = dst;
             root        = ((PAMI::Topology*)_geometry->getTopology(T_Geometry_Index))->index2Endpoint(ncomplete);
-            new (&_cmgr[i]) T_Conn (nc);
-            new (&_bcast[i]) T_Bcast(_native, &_cmgr[i], _geometry, done, this);
+	    //fprintf(stderr, "Starting collective on color %d\n", nc);
+	    
+#if 0
+	    //Since executors are not mallicious and only use specified colors
+	    //We dont need to reset the colormap
+            _cmgr[i].reset();
+#endif
+            new (&_bcast[i]) T_Bcast(_native,&_cmgr[i],_geometry, done, this);
+	    unsigned c = NCOLORS - nc;
+	    _bcast[i].getColors
+	      ((PAMI::Topology*)_geometry->getTopology(T_Geometry_Index), 
+	       rtypecounts * rtype->GetDataSize(),
+	       colors,
+	       c);
+	    _cmgr[i].setConnections(colors, &connids[nc], c);
+	    
             int rc = _bcast[i].initialize (root, rtypecounts, rtype, src, 
 					   dst, NCOLORS-nc);
 	    if (rc != 0)
 	      break;
             
-	    int c = _bcast[i].getNumColors();
-	    nc += c;
+	    c = _bcast[i].getNumColors();
+	    nc += c;	    
+	    
 	    TRACE_FORMAT("<%p> nextStep _cmgr[%u]=%p, _bcast[%u]=%p numcolors %d cur colors %d\n", this,i,&_cmgr[i],i,&_bcast[i], nc, c);	    
-            if (nc > NCOLORS)
-              break;
           }
           _cur_nbcast = i;
 	  _nIterDone  = i;
