@@ -64,7 +64,7 @@ int main(int argc, char*argv[])
   pami_client_t        client;
   pami_context_t      *context;
   pami_task_t          task_id, local_task_id=0, root_zero=0;
-  size_t               num_tasks;
+  size_t               num_tasks,subgeometry_num_tasks;
   pami_geometry_t      world_geometry;
 
   /* Barrier variables */
@@ -107,7 +107,7 @@ int main(int argc, char*argv[])
                      0,              /* no configuration   */
                      &task_id,       /* task id            */
                      &num_tasks);    /* number of tasks    */
-
+  subgeometry_num_tasks = num_tasks;
   if (rc == 1)
     return 1;
 
@@ -125,7 +125,7 @@ int main(int argc, char*argv[])
   buf = (char*)buf + gBuffer_offset;
 
   void* rbuf = NULL;
-  err = posix_memalign(&rbuf, 128, (gMax_count * num_tasks) + gBuffer_offset);
+  err = posix_memalign(&rbuf, 128, (gMax_count * subgeometry_num_tasks) + gBuffer_offset);
   assert(err == 0);
   rbuf = (char*)rbuf + gBuffer_offset;
 
@@ -170,7 +170,7 @@ int main(int argc, char*argv[])
   range     = (pami_geometry_range_t *)malloc(((num_tasks + 1) / 2) * sizeof(pami_geometry_range_t));
 
   int unused_non_root[2];
-  get_split_method(&num_tasks, task_id, &rangecount, range, &local_task_id, set, &id, &root_zero,unused_non_root);
+  get_split_method(&subgeometry_num_tasks, task_id, &rangecount, range, &local_task_id, set, &id, &root_zero,unused_non_root);
 
   for (; iContext < gNum_contexts; ++iContext)
   {
@@ -250,7 +250,7 @@ int main(int argc, char*argv[])
         {
           if (task_id == root_zero)
           {
-            printf("# Gather Bandwidth Test(size:%zu) -- context = %d, protocol: %s\n",num_tasks,
+            printf("# Gather Bandwidth Test(size:%zu) -- context = %d, protocol: %s\n",subgeometry_num_tasks,
                    iContext, gProtocolName);
             printf("# Size(bytes)           cycles    bytes/sec    usec\n");
             printf("# -----------      -----------    -----------    ---------\n");
@@ -279,25 +279,24 @@ int main(int argc, char*argv[])
             gather.cmd.xfer_gather.stypecount = i;
             gather.cmd.xfer_gather.rtypecount = i;
 
+            pami_endpoint_t root_ep;
             for (j = 0; j < niter; j++)
             {
-              root_zero = root_zero + (root_zero + 1) % num_tasks;
-              pami_endpoint_t root_ep;
               PAMI_Endpoint_create(client, root_zero, 0, &root_ep);
               gather.cmd.xfer_gather.root       = root_ep;
 
               initialize_sndbuf (local_task_id, buf, i);
               if (task_id == root_zero)
-                memset(rbuf, 0xFF, i*num_tasks);
+                memset(rbuf, 0xFF, i*subgeometry_num_tasks);
               blocking_coll(context[iContext], &gather, &gather_poll_flag);
 
               if (task_id == root_zero)
               {
                 int rc_check;
-                rc |= rc_check =check_rcvbuf(num_tasks, rbuf, i);
+                rc |= rc_check =check_rcvbuf(subgeometry_num_tasks, rbuf, i);
                 if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
               }
-
+              get_next_root(num_tasks, &root_zero);
             }
 
             tf = timer();
