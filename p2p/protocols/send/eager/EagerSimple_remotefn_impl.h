@@ -117,7 +117,7 @@ inline int EagerSimple<T_Model, T_Option>::dispatch_remotefn (void   * metadata,
                                     complete_remotefn, (void *) state,
                                     task, offset,
                                     NULL, 0,
-                                    payload,
+                                    &(state->origin.ack.metadata),
                                     sizeof(ack_metadata_t));
     }
 
