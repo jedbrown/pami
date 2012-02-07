@@ -198,7 +198,7 @@ internals/bgq/personality.cnk
 internals/bgq/memtest/memtest-pami.cnk
 #
 #=== internals/bgq/mu2 SUBDIR ===
-internals/bgq/mu2/ammulticast-pami.cnk --timelimit 120
+#internals/bgq/mu2/ammulticast-pami.cnk --timelimit 120 +++ OBSOLETE SEE TRAC 488 +++
 internals/bgq/mu2/collmulticast-pami.cnk
 internals/bgq/mu2/geom_classroutes-pami.cnk
 internals/bgq/mu2/manytomany-pami.cnk
