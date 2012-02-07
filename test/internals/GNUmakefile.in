@@ -10,8 +10,8 @@
 # end_generated_IBM_copyright_prolog                               #
 
 VPATH		= @abs_srcdir@
-SUBDIRS         = multisend progressfunc topology queue misc atomics \
-			pwq fifo $(TARGET) #wakeup
+SUBDIRS         = progressfunc topology queue misc atomics \
+			pwq fifo $(TARGET) #wakeup 
 NOTBUILT        =
 APPS            =
 
