@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/api/collectives/barrier_multiep.c
- * \brief Simple Barrier test on sub-geometries
+ * \file test/api/collectives/scan_multiep.c
+ * \brief Simple Scan test on sub-geometries
  */
 
 #define COUNT     (524288)   /* see envvar TEST_COUNT for overrides */

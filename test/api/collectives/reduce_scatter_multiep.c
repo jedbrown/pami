@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/api/collectives/barrier_multiep.c
- * \brief Simple Barrier test on sub-geometries
+ * \file test/api/collectives/reduce_scatter_multiep.c
+ * \brief Simple Reduce_scatter test on sub-geometries
  */
 
 #define MAX_THREADS 128

@@ -283,9 +283,13 @@ namespace PAMI
       memcpy(name,m->name,(s-m->name));
       name[(s-m->name)] = 0x00;
       strcat(name,niName);
-      s = strstr(m->name, "X0");
+      s = strstr(m->name, "X0:Ring");
       if (s != NULL)
-	name[s-m->name] = 'I';   //Make optimized algorithms I0:      
+      {  
+        name[s-m->name] = 'I';   //Make optimized algorithms I0:      
+        m->check_correct.values.rangeminmax = 1;
+        m->range_lo                         = 64*1024; //Bandwidth protocol (arbitrarily limit to >64k)
+      }
       m->name = name;
       TRACE_FORMAT("<%p> %s",this,m->name);
       TRACE_FN_EXIT();
@@ -341,11 +345,14 @@ namespace PAMI
 
     void metadata(pami_metadata_t *m, pami_xfer_type_t t) {
       MUNI_metadata<MUDputNI, BigProtocolAllocator>::metadata(m, t);
-      char *s = strstr(m->name, "X0");
+      char* s = strstr(m->name, "X0:Ring");
       if (s != NULL)
-	m->name[s-m->name] = 'I';   //Make optimized algorithms I0:      
+      {  
+        name[s-m->name] = 'I';   //Make optimized algorithms I0:      
+        m->check_correct.values.rangeminmax = 1;
+        m->range_lo                         = 64*1024; //Bandwidth protocol (arbitrarily limit to >64k)
+      }
     }
-
   };
 
   // MUShmemDputNI class that overrides the metadata name and possibly the range (templatized)

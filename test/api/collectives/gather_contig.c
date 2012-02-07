@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
-   \file test/api/collectives/gather.c
-   \brief Simple gather test
+   \file test/api/collectives/gather_contig.c
+   \brief Simple gather test on world geometry with contiguous datatypes
 */
 
 #define COUNT     (524288)
@@ -183,6 +183,8 @@ int main(int argc, char*argv[])
 
   /* Gather variables */
   size_t               gather_num_algorithm[2];
+  pami_algorithm_t    *next_algo = NULL;
+  pami_metadata_t     *next_md= NULL;
   pami_algorithm_t    *gather_always_works_algo = NULL;
   pami_metadata_t     *gather_always_works_md = NULL;
   pami_algorithm_t    *gather_must_query_algo = NULL;
@@ -190,7 +192,7 @@ int main(int argc, char*argv[])
   pami_xfer_type_t     gather_xfer = PAMI_XFER_GATHER;
   volatile unsigned    gather_poll_flag = 0;
 
-  int                  nalg = 0;
+  int                  nalg= 0, total_alg;
   double               ti, tf, usec;
   pami_xfer_t          barrier;
   pami_xfer_t          gather;
@@ -269,13 +271,29 @@ int main(int argc, char*argv[])
     barrier.algorithm = bar_always_works_algo[0];
     blocking_coll(context[iContext], &barrier, &bar_poll_flag);
 
-    for (nalg = 0; nalg < gather_num_algorithm[0]; nalg++)
+    total_alg = gather_num_algorithm[0]+gather_num_algorithm[1];
+    for (nalg = 0; nalg < total_alg; nalg++)
     {
+      metadata_result_t result = {0};
+      unsigned query_protocol;
+      if(nalg < gather_num_algorithm[0])
+      {  
+        query_protocol = 0;
+        next_algo = &gather_always_works_algo[nalg];
+        next_md  = &gather_always_works_md[nalg];
+      }
+      else
+      {  
+        query_protocol = 1;
+        next_algo = &gather_must_query_algo[nalg-gather_num_algorithm[0]];
+        next_md  = &gather_must_query_md[nalg-gather_num_algorithm[0]];
+      }
+
       root_zero = 0;
 
       gather.cb_done    = cb_done;
       gather.cookie     = (void*) & gather_poll_flag;
-      gather.algorithm  = gather_always_works_algo[nalg];
+      gather.algorithm  = *next_algo;
 
       gather.cmd.xfer_gather.sndbuf     = buf;
       gather.cmd.xfer_gather.stype      = PAMI_TYPE_BYTE;
@@ -284,21 +302,26 @@ int main(int argc, char*argv[])
       gather.cmd.xfer_gather.rtype      = PAMI_TYPE_BYTE;
       gather.cmd.xfer_gather.rtypecount = 0;
 
-      gProtocolName = gather_always_works_md[nalg].name;
+      gProtocolName = next_md->name;
 
       if (task_id == root_zero)
       {
-        printf("# Gather Bandwidth Test(size:%zu) -- context = %d, protocol: %s\n",num_tasks,
-               iContext, gProtocolName);
+        printf("# Gather Bandwidth Test(size:%zu) -- context = %d, protocol: %s, Metadata: range %zu <-> %zd, mask %#X\n",num_tasks,
+               iContext, gProtocolName,
+               next_md->range_lo,(ssize_t)next_md->range_hi,
+               next_md->check_correct.bitmask_correct);
         printf("# Size(bytes)      iterations     bytes/sec      usec\n");
         printf("# -----------      -----------    -----------    ---------\n");
       }
 
-      if (((strstr(gather_always_works_md[nalg].name,gSelected) == NULL) && gSelector) ||
-          ((strstr(gather_always_works_md[nalg].name,gSelected) != NULL) && !gSelector))  continue;
-
+      if (((strstr(next_md->name, gSelected) == NULL) && gSelector) ||
+          ((strstr(next_md->name, gSelected) != NULL) && !gSelector))  continue;
 
       int i, j;
+
+      unsigned checkrequired = next_md->check_correct.values.checkrequired; /*must query every time */
+      assert(!checkrequired || next_md->check_fn); /* must have function if checkrequired. */
+
       int dt,op=4/*SUM*/;
 
       for (dt = 0; dt < dt_count; dt++)
@@ -317,13 +340,35 @@ int main(int argc, char*argv[])
             else
               niter = NITERBW;
 
-            blocking_coll(context[iContext], &barrier, &bar_poll_flag);
-            ti = timer();
-
             gather.cmd.xfer_gather.stypecount = i;
             gather.cmd.xfer_gather.stype      = dt_array[dt];
             gather.cmd.xfer_gather.rtypecount = i;
             gather.cmd.xfer_gather.rtype      = dt_array[dt];
+
+
+                if(query_protocol)
+                {  
+                  size_t sz=get_type_size(dt_array[dt])*i;
+                  result = check_metadata(*next_md,
+                                          gather,
+                                          dt_array[dt],
+                                          sz, /* metadata uses bytes i, */
+                                          gather.cmd.xfer_gather.sndbuf,
+                                          dt_array[dt],
+                                          sz,
+                                          gather.cmd.xfer_gather.rcvbuf);
+                  if (next_md->check_correct.values.nonlocal)
+                  {
+                    /* \note We currently ignore check_correct.values.nonlocal
+                      because these tests should not have nonlocal differences (so far). */
+                    result.check.nonlocal = 0;
+                  }
+
+                  if (result.bitmask) continue;
+                }
+
+            blocking_coll(context[iContext], &barrier, &bar_poll_flag);
+            ti = timer();
 
             for (j = 0; j < niter; j++)
             {
@@ -335,6 +380,11 @@ int main(int argc, char*argv[])
               initialize_sndbuf (buf, i, task_id, dt);
               if (task_id == root_zero)
                 memset(rbuf, 0xFF, i*num_tasks);
+              if (checkrequired) /* must query every time */
+              {
+                result = next_md->check_fn(&gather);
+                if (result.bitmask) continue;
+              }
               blocking_coll(context[iContext], &gather, &gather_poll_flag);
 
               if (task_id == root_zero)

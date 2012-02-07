@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/api/collectives/bcast.c
- * \brief Simple Bcast test on world geometry
+ * \file test/api/collectives/bcast_contig.c
+ * \brief Simple Bcast test on world geometry with contiguous datatypes
  */
 
 /* This test allocates COUNT*16 unlike other bcast's,so reduce the default*/

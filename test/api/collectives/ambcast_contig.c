@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/api/collectives/ambcast.c
- * \brief Simple AMBcast test on world geometry
+ * \file test/api/collectives/ambcast_contig.c
+ * \brief Simple AMBcast test on world geometry with contiguous datatypes
  */
 
 #define COUNT      262144
@@ -220,6 +220,8 @@ int main(int argc, char*argv[])
   volatile unsigned    bar_poll_flag = 0;
 
   /* Ambcast variables */
+  pami_algorithm_t    *next_algo = NULL;
+  pami_metadata_t     *next_md= NULL;
   size_t               ambcast_num_algorithm[2];
   pami_algorithm_t    *ambcast_always_works_algo = NULL;
   pami_metadata_t     *ambcast_always_works_md = NULL;
@@ -229,7 +231,7 @@ int main(int argc, char*argv[])
   pami_xfer_t          ambroadcast;
   volatile unsigned    ambcast_poll_flag = 0;
 
-  int                  nalg= 0;
+  int                  nalg= 0, total_alg;
   double               ti, tf, usec;
 
   /* Process environment variables and setup globals */
@@ -308,16 +310,31 @@ int main(int argc, char*argv[])
 
     ambroadcast.cb_done   = cb_done;
     ambroadcast.cookie    = (void*) & ambcast_poll_flag;
-    ambroadcast.algorithm = ambcast_always_works_algo[0];
     ambroadcast.cmd.xfer_ambroadcast.user_header  = NULL;
     ambroadcast.cmd.xfer_ambroadcast.headerlen    = 0;
     ambroadcast.cmd.xfer_ambroadcast.sndbuf       = buf;
     ambroadcast.cmd.xfer_ambroadcast.stype        = PAMI_TYPE_BYTE;
     ambroadcast.cmd.xfer_ambroadcast.stypecount   = 0;
 
-    for (nalg = 0; nalg < ambcast_num_algorithm[0]; nalg++)
+    total_alg = ambcast_num_algorithm[0]+ambcast_num_algorithm[1];
+    for (nalg = 0; nalg < total_alg; nalg++)
     {
-      gProtocolName = ambcast_always_works_md[nalg].name;
+      metadata_result_t mresult = {0};
+      unsigned query_protocol;
+      if(nalg < ambcast_num_algorithm[0])
+      {  
+        query_protocol = 0;
+        next_algo = &ambcast_always_works_algo[nalg];
+        next_md  = &ambcast_always_works_md[nalg];
+      }
+      else
+      {  
+        query_protocol = 1;
+        next_algo = &ambcast_must_query_algo[nalg-ambcast_num_algorithm[0]];
+        next_md  = &ambcast_must_query_md[nalg-ambcast_num_algorithm[0]];
+      }
+
+      gProtocolName = next_md->name;
 
       int k;
       for (k=0; k< gNumRoots; k++)
@@ -325,27 +342,31 @@ int main(int argc, char*argv[])
         pami_task_t root_task = (pami_task_t)k;
         if (task_id == root_task)
         {
-          printf("# AMBroadcast Bandwidth Test(size:%zu) -- context = %d, root = %d, protocol: %s\n",num_tasks,
-                 iContext, root_task, ambcast_always_works_md[nalg].name);
+          printf("# AMBroadcast Bandwidth Test(size:%zu) -- context = %d, root = %d  protocol: %s, Metadata: range %zu <-> %zd, mask %#X\n",num_tasks,
+                 iContext, root_task, gProtocolName,
+                 next_md->range_lo,(ssize_t)next_md->range_hi,
+                 next_md->check_correct.bitmask_correct);
           printf("# Size(bytes)      iterations     bytes/sec      usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
         }
 
+        if (((strstr(next_md->name, gSelected) == NULL) && gSelector) ||
+            ((strstr(next_md->name, gSelected) != NULL) && !gSelector))  continue;
 
-        if (((strstr(ambcast_always_works_md[nalg].name,gSelected) == NULL) && gSelector) ||
-            ((strstr(ambcast_always_works_md[nalg].name,gSelected) != NULL) && !gSelector))  continue;
+        unsigned checkrequired = next_md->check_correct.values.checkrequired; /*must query every time */
+        assert(!checkrequired || next_md->check_fn); /* must have function if checkrequired. */
 
         int i, j;
         pami_collective_hint_t h = {0};
         pami_dispatch_callback_function fn;
         fn.ambroadcast = cb_ambcast_recv;
         PAMI_AMCollective_dispatch_set(context[iContext],
-                                       ambcast_always_works_algo[nalg],
+                                       *next_algo,
                                        k,
                                        fn,
                                        NULL,
                                        h);
-        ambroadcast.algorithm = ambcast_always_works_algo[nalg];
+        ambroadcast.algorithm = *next_algo;
         ambroadcast.cmd.xfer_ambroadcast.dispatch = k;
         memset(buf, 0xFF, gMax_count);
         blocking_coll(context[iContext], &barrier, &bar_poll_flag);
@@ -373,6 +394,29 @@ int main(int argc, char*argv[])
                 else
                   niter = NITERBW;
 
+                ambroadcast.cmd.xfer_ambroadcast.stypecount = i;
+
+                if(query_protocol)
+                {  
+                  size_t sz=get_type_size(dt_array[dt])*i;
+                  mresult = check_metadata(*next_md,
+                                          ambroadcast,
+                                          dt_array[dt],
+                                          sz, /* metadata uses bytes i, */
+                                          ambroadcast.cmd.xfer_ambroadcast.sndbuf,
+                                          PAMI_TYPE_BYTE,
+                                          sz,
+                                          ambroadcast.cmd.xfer_ambroadcast.sndbuf);
+                  if (next_md->check_correct.values.nonlocal)
+                  {
+                    /* \note We currently ignore check_correct.values.nonlocal
+                      because these tests should not have nonlocal differences (so far). */
+                    mresult.check.nonlocal = 0;
+                  }
+
+                  if (mresult.bitmask) continue;
+                }
+
                 if (task_id == root_task)
                 {
                   ambroadcast.cmd.xfer_ambroadcast.stypecount = i;
@@ -381,6 +425,13 @@ int main(int argc, char*argv[])
 
                   for (j = 0; j < niter; j++)
                   {
+                    if (checkrequired) /* must query every time */
+                    {
+                      mresult = next_md->check_fn(&ambroadcast);
+                      /* \todo  This is a problem since destinations will expect niter bcasts...
+                        if we had an example protocol that had checkrequired... */
+                      if (mresult.bitmask) continue;
+                    }
                     blocking_coll (context[iContext], &ambroadcast, &ambcast_poll_flag);
                   }
 

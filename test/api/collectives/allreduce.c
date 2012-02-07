@@ -239,7 +239,7 @@ int main(int argc, char*argv[])
   free(bar_must_query_algo);
   free(bar_must_query_md);
 
-  } // optimize loop
+  } /* optimize loop */
 
 
   sbuf = (char*)sbuf - gBuffer_offset;

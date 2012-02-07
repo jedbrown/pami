@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/api/collectives/allreduce.c
- * \brief Simple Allreduce on world geometry
+ * \file test/api/collectives/allreduce_contig.c
+ * \brief Simple Allreduce on world geometry with contiguous datatypes
  */
 
 /* see setup_env() for environment variable overrides

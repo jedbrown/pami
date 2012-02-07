@@ -8,6 +8,7 @@
 /* end_generated_IBM_copyright_prolog                               */
 /**
  * \file test/api/collectives/allgatherv_contig.c
+ * \brief Simple Allgatherv test on world geometry with contiguous datatypes
  */
 
 #define BUFSIZE 524288/16

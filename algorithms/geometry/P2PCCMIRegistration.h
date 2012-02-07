@@ -668,12 +668,12 @@ namespace PAMI
                                           _context_id);
 
                 if(_ring_broadcast_factory)
-                  geometry->addCollective(PAMI_XFER_BROADCAST,
+                  geometry->addCollectiveCheck(PAMI_XFER_BROADCAST,
                                           _ring_broadcast_factory,
                                           _context,
                                           _context_id);
                 if(_ring_broadcast_singleth_factory)
-                  geometry->addCollective(PAMI_XFER_BROADCAST,
+                  geometry->addCollectiveCheck(PAMI_XFER_BROADCAST,
                                           _ring_broadcast_singleth_factory,
                                           _context,
                                           _context_id);		

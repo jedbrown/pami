@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/api/collectives/reduce.c
- * \brief Simple reduce on world geometry
+ * \file test/api/collectives/reduce_contig.c
+ * \brief Simple reduce on world geometry with contiguous datatypes
  */
 
 /* see setup_env() for environment variable overrides
@@ -38,6 +38,8 @@ int main(int argc, char*argv[])
   volatile unsigned    bar_poll_flag = 0;
 
   /* Reduce variables */
+  pami_algorithm_t    *next_algo = NULL;
+  pami_metadata_t     *next_md= NULL;
   size_t               reduce_num_algorithm[2];
   pami_algorithm_t    *reduce_always_works_algo = NULL;
   pami_metadata_t     *reduce_always_works_md = NULL;
@@ -46,7 +48,7 @@ int main(int argc, char*argv[])
   pami_xfer_type_t     reduce_xfer = PAMI_XFER_REDUCE;
   volatile unsigned    reduce_poll_flag = 0;
 
-  int                  i, j, nalg = 0;
+  int                  i, j, nalg = 0, total_alg;
   double               ti, tf, usec;
   pami_xfer_t          barrier;
   pami_xfer_t          reduce;
@@ -120,25 +122,44 @@ int main(int argc, char*argv[])
 
     if (rc == 1)
       return 1;
-
-    for (nalg = 0; nalg < reduce_num_algorithm[0]; nalg++)
+    total_alg = reduce_num_algorithm[0]+reduce_num_algorithm[1];
+    for (nalg = 0; nalg < total_alg; nalg++)
     {
+      metadata_result_t result = {0};
+      unsigned query_protocol;
+      if(nalg < reduce_num_algorithm[0])
+      {  
+        query_protocol = 0;
+        next_algo = &reduce_always_works_algo[nalg];
+        next_md  = &reduce_always_works_md[nalg];
+      }
+      else
+      {  
+        query_protocol = 1;
+        next_algo = &reduce_must_query_algo[nalg-reduce_num_algorithm[0]];
+        next_md  = &reduce_must_query_md[nalg-reduce_num_algorithm[0]];
+      }
       if (task_id == 0) /* root not set yet */
       {
-        printf("# Reduce Bandwidth Test(size:%zu) -- context = %d, root varies, protocol: %s\n",num_tasks,
-               iContext, reduce_always_works_md[nalg].name);
+        printf("# Reduce Bandwidth Test(size:%zu) -- context = %d, protocol: %s, Metadata: range %zu <-> %zd, mask %#X\n",num_tasks,
+               iContext, next_md->name,
+               next_md->range_lo,(ssize_t)next_md->range_hi,
+               next_md->check_correct.bitmask_correct);
         printf("# Size(bytes)      iterations     bytes/sec      usec\n");
         printf("# -----------      -----------    -----------    ---------\n");
       }
 
-      if (((strstr(reduce_always_works_md[nalg].name, gSelected) == NULL) && gSelector) ||
-          ((strstr(reduce_always_works_md[nalg].name, gSelected) != NULL) && !gSelector))  continue;
+      if (((strstr(next_md->name, gSelected) == NULL) && gSelector) ||
+          ((strstr(next_md->name, gSelected) != NULL) && !gSelector))  continue;
 
-      gProtocolName = reduce_always_works_md[nalg].name;
+      gProtocolName = next_md->name;
+
+      unsigned checkrequired = next_md->check_correct.values.checkrequired; /*must query every time */
+      assert(!checkrequired || next_md->check_fn); /* must have function if checkrequired. */
 
       reduce.cb_done   = cb_done;
       reduce.cookie    = (void*) & reduce_poll_flag;
-      reduce.algorithm = reduce_always_works_algo[nalg];
+      reduce.algorithm = *next_algo;
       reduce.cmd.xfer_reduce.sndbuf    = sbuf;
       reduce.cmd.xfer_reduce.rcvbuf    = rbuf;
       reduce.cmd.xfer_reduce.rtype     = PAMI_TYPE_BYTE;
@@ -172,6 +193,27 @@ int main(int argc, char*argv[])
               reduce.cmd.xfer_reduce.rtype      = dt_array[dt];
               reduce.cmd.xfer_reduce.op         = op_array[op];
 
+              if(query_protocol)
+              {  
+                size_t sz=get_type_size(dt_array[dt])*i;
+                result = check_metadata(*next_md,
+                                      reduce,
+                                      dt_array[dt],
+                                      sz, /* metadata uses bytes i, */
+                                      reduce.cmd.xfer_reduce.sndbuf,
+                                      dt_array[dt],
+                                      sz,
+                                      reduce.cmd.xfer_reduce.rcvbuf);
+                if (next_md->check_correct.values.nonlocal)
+                {
+                  /* \note We currently ignore check_correct.values.nonlocal
+                     because these tests should not have nonlocal differences (so far). */
+                  result.check.nonlocal = 0;
+                }
+
+                if (result.bitmask) continue;
+              }
+
               reduce_initialize_sndbuf (sbuf, i, op, dt, task_id, num_tasks);
               memset(rbuf, 0xFF, dataSent);
 
@@ -190,6 +232,12 @@ int main(int argc, char*argv[])
                   reduce.cmd.xfer_reduce.rcvbuf    = rbuf;
                 else
                   reduce.cmd.xfer_reduce.rcvbuf    = NULL;
+
+                if (checkrequired) /* must query every time */
+                {
+                  result = next_md->check_fn(&reduce);
+                  if (result.bitmask) continue;
+                }
 
                 blocking_coll(context[iContext], &reduce, &reduce_poll_flag);
 

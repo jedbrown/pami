@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/api/collectives/allgather.c
- * \brief Simple Allgather test on world geometry (only gathers bytes)
+ * \file test/api/collectives/allgather_contig.c
+ * \brief Simple Allgather test on world geometry with contiguous datatypes
  */
 
 #define COUNT     (524288/16)

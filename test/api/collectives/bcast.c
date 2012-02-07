@@ -264,7 +264,7 @@ int main(int argc, char*argv[])
   } /*for(unsigned iContext = 0; iContext < gNum_contexts; ++iContexts)*/
   buf = (char*)buf - gBuffer_offset;
   free(buf);
-  } // optimize loop
+  } /* optimize loop */
 
   rc |= pami_shutdown(&client, context, &gNum_contexts);
   return rc;

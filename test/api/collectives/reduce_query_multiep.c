@@ -327,7 +327,7 @@ static void * reduce_test(void* p)
 
                       pami_task_t root_task    = 0;
                       int         j, ctxt_id   = 0;
-                      // Performance run
+                      /* Performance run */
                       for (j = 0; j < niter; j++)
                         {
                           if (checkrequired) /* must query every time */

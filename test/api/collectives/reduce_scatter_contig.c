@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/api/collectives/reduce_scatter.c
- * \brief Simple reduce_scatter on world geometry
+ * \file test/api/collectives/reduce_scatter_contig.c
+ * \brief Simple reduce_scatter on world geometry with contiguous datatypes
  */
 
 /* see setup_env() for environment variable overrides
@@ -82,6 +82,8 @@ int main(int argc, char*argv[])
   volatile unsigned    bar_poll_flag=0;
 
   /* reduce scatter variables */
+  pami_algorithm_t    *next_algo = NULL;
+  pami_metadata_t     *next_md= NULL;
   size_t               reduce_scatter_num_algorithm[2];
   pami_algorithm_t    *reduce_scatter_always_works_algo = NULL;
   pami_metadata_t     *reduce_scatter_always_works_md = NULL;
@@ -90,7 +92,7 @@ int main(int argc, char*argv[])
   pami_xfer_type_t     reduce_scatter_xfer = PAMI_XFER_REDUCE_SCATTER;
   volatile unsigned    reduce_scatter_poll_flag=0;
 
-  int                  i, j, nalg = 0;
+  int                  i, j, nalg = 0, total_alg;
   double               ti, tf, usec;
   pami_xfer_t          barrier;
   pami_xfer_t          reduce_scatter;
@@ -166,25 +168,44 @@ int main(int argc, char*argv[])
                                &reduce_scatter_must_query_md);
     if (rc==1)
       return 1;
-
-    for (nalg = 0; nalg < reduce_scatter_num_algorithm[0]; nalg++)
+    total_alg = reduce_scatter_num_algorithm[0]+reduce_scatter_num_algorithm[1];
+    for (nalg = 0; nalg < total_alg; nalg++)
     {
+      metadata_result_t result = {0};
+      unsigned query_protocol;
+      if(nalg < reduce_scatter_num_algorithm[0])
+      {  
+        query_protocol = 0;
+        next_algo = &reduce_scatter_always_works_algo[nalg];
+        next_md  = &reduce_scatter_always_works_md[nalg];
+      }
+      else
+      {  
+        query_protocol = 1;
+        next_algo = &reduce_scatter_must_query_algo[nalg-reduce_scatter_num_algorithm[0]];
+        next_md  = &reduce_scatter_must_query_md[nalg-reduce_scatter_num_algorithm[0]];
+      }
       if (task_id == task_zero) /* root not set yet */
       {
-        printf("# Reduce Scatter Bandwidth Test(size:%zu) -- context = %d, task_zero = %d protocol: %s\n",num_tasks,
-               iContext, task_zero, reduce_scatter_always_works_md[nalg].name);
+        printf("# Reduce Scatter Bandwidth Test(size:%zu) -- context = %d, protocol: %s, Metadata: range %zu <-> %zd, mask %#X\n",num_tasks,
+               iContext, next_md->name,
+               next_md->range_lo,(ssize_t)next_md->range_hi,
+               next_md->check_correct.bitmask_correct);
         printf("# Size(bytes)      iterations     bytes/sec      usec\n");
         printf("# -----------      -----------    -----------    ---------\n");
       }
 
-      if (((strstr(reduce_scatter_always_works_md[nalg].name, gSelected) == NULL) && gSelector) ||
-          ((strstr(reduce_scatter_always_works_md[nalg].name, gSelected) != NULL) && !gSelector))  continue;
+      if (((strstr(next_md->name, gSelected) == NULL) && gSelector) ||
+          ((strstr(next_md->name, gSelected) != NULL) && !gSelector))  continue;
 
-      gProtocolName = reduce_scatter_always_works_md[nalg].name;
+      gProtocolName = next_md->name;
+
+      unsigned checkrequired = next_md->check_correct.values.checkrequired; /*must query every time */
+      assert(!checkrequired || next_md->check_fn); /* must have function if checkrequired. */
 
       reduce_scatter.cb_done   = cb_done;
       reduce_scatter.cookie    = (void*)&reduce_scatter_poll_flag;
-      reduce_scatter.algorithm = reduce_scatter_always_works_algo[nalg];
+      reduce_scatter.algorithm = *next_algo;
       reduce_scatter.cmd.xfer_reduce_scatter.sndbuf    = sbuf;
       reduce_scatter.cmd.xfer_reduce_scatter.stype     = PAMI_TYPE_BYTE;
       reduce_scatter.cmd.xfer_reduce_scatter.stypecount= 0;
@@ -220,12 +241,39 @@ int main(int argc, char*argv[])
               reduce_scatter.cmd.xfer_reduce_scatter.op=op_array[op];
               reduce_scatter.cmd.xfer_reduce_scatter.rcounts=&rcounts[0];
 
+              if(query_protocol)
+              {  
+                size_t sz=get_type_size(dt_array[dt])*i;
+                result = check_metadata(*next_md,
+                                      reduce_scatter,
+                                      dt_array[dt],
+                                      sz, /* metadata uses bytes i, */
+                                      reduce_scatter.cmd.xfer_reduce_scatter.sndbuf,
+                                      dt_array[dt],
+                                      sz,
+                                      reduce_scatter.cmd.xfer_reduce_scatter.rcvbuf);
+                if (next_md->check_correct.values.nonlocal)
+                {
+                  /* \note We currently ignore check_correct.values.nonlocal
+                     because these tests should not have nonlocal differences (so far). */
+                  result.check.nonlocal = 0;
+                }
+
+                if (result.bitmask) continue;
+              }
+
               initialize_sndbuf (sbuf, i, op, dt, task_id);
 
               blocking_coll(context[0], &barrier, &bar_poll_flag);
               ti = timer();
               for (j=0; j<niter; j++)
               {
+                if (checkrequired) /* must query every time */
+                {
+                  result = next_md->check_fn(&reduce_scatter);
+                  if (result.bitmask) continue;
+                }
+
                 blocking_coll(context[iContext], &reduce_scatter, &reduce_scatter_poll_flag);
               }
               tf = timer();

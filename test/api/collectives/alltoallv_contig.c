@@ -7,8 +7,8 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/api/collectives/alltoallv.c
- * \brief ???
+ * \file test/api/collectives/alltoallv_contig.c
+ * \brief Simple Alltoallv test on world geometry with contiguous datatypes
  */
 
 #define COUNT     (4096)
