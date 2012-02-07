@@ -124,7 +124,7 @@ int main(int argc, char*argv[])
                iContext,root, reduce_must_query_md[nalg].name,
                reduce_must_query_md[nalg].range_lo,(ssize_t)reduce_must_query_md[nalg].range_hi,
                reduce_must_query_md[nalg].check_correct.bitmask_correct);
-        printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+        printf("# Size(bytes)      iterations     bytes/sec      usec\n");
         printf("# -----------      -----------    -----------    ---------\n");
       }
       if (((strstr(reduce_must_query_md[nalg].name,gSelected) == NULL) && gSelector) ||

@@ -204,7 +204,7 @@ int main(int argc, char*argv[])
           {
             printf("# Allreduce Bandwidth Test(size:%zu) -- context = %d, task = %d, protocol: %s\n",num_tasks,
                    iContext, task_zero, allreduce_always_works_md[nalg].name);
-            printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+            printf("# Size(bytes)      iterations     bytes/sec      usec\n");
             printf("# -----------      -----------    -----------    ---------\n");
           }
 

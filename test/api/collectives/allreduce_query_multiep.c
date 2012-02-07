@@ -249,7 +249,7 @@ static void * allreduce_test(void* p)
                  td->tid, 0, allreduce_must_query_md[nalg].name,
                  allreduce_must_query_md[nalg].range_lo,(ssize_t)allreduce_must_query_md[nalg].range_hi,
                  allreduce_must_query_md[nalg].check_correct.bitmask_correct);
-          printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+          printf("# Size(bytes)      iterations     bytes/sec      usec\n");
         printf("# -----------      -----------    -----------    ---------\n");
       }
 

@@ -294,7 +294,7 @@ static void * alltoall_test(void* p)
       {
         printf("# Alltoall Bandwidth Test(size:%zu) %p, protocol: %s\n",
                num_ep, cb_done, alltoall_always_works_md[nalg].name);
-        printf("# Size(bytes)       iterations    bytes/sec      usec\n");
+        printf("# Size(bytes)  iterations    bytes/sec      usec\n");
         printf("# -----------      -----------    -----------    ---------\n");
       }
 

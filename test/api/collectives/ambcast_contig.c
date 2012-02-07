@@ -327,7 +327,7 @@ int main(int argc, char*argv[])
         {
           printf("# AMBroadcast Bandwidth Test(size:%zu) -- context = %d, root = %d, protocol: %s\n",num_tasks,
                  iContext, root_task, ambcast_always_works_md[nalg].name);
-          printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+          printf("# Size(bytes)      iterations     bytes/sec      usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
         }
 

@@ -191,7 +191,7 @@ int main(int argc, char*argv[])
       {
         printf("# Gatherv_int Bandwidth Test(size:%zu) -- context = %d, protocol: %s\n",num_tasks,
                iContext, gProtocolName);
-        printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+        printf("# Size(bytes)      iterations     bytes/sec      usec\n");
         printf("# -----------      -----------    -----------    ---------\n");
       }
 

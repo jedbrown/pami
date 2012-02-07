@@ -310,7 +310,7 @@ static void * scan_test(void* p)
             {
               printf("# %s Scan Bandwidth Test(size:%zu) -- context = %d, task_id = %d protocol: %s\n",
                      scan_type,num_tasks, td->tid, task_id, scan_always_works_md[nalg].name);
-              printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+              printf("# Size(bytes)      iterations     bytes/sec      usec\n");
               printf("# -----------      -----------    -----------    ---------\n");
             }
 

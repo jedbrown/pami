@@ -250,7 +250,7 @@ int main(int argc, char*argv[])
             {
               printf("# Broadcast Bandwidth Test(size:%zu) -- context = %d, root_task = %d  protocol: %s\n",subgeometry_num_tasks,
                      iContext, root_task, gProtocolName);
-              printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+              printf("# Size(bytes)      iterations     bytes/sec      usec\n");
               printf("# -----------      -----------    -----------    ---------\n");
             }
 

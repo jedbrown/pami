@@ -168,6 +168,8 @@ int main(int argc, char*argv[])
 
   /* Alltoall variables */
   size_t               alltoall_num_algorithm[2];
+  pami_algorithm_t    *next_algo = NULL;
+  pami_metadata_t     *next_md= NULL;
   pami_algorithm_t    *alltoall_always_works_algo = NULL;
   pami_metadata_t     *alltoall_always_works_md = NULL;
   pami_algorithm_t    *alltoall_must_query_algo = NULL;
@@ -175,7 +177,7 @@ int main(int argc, char*argv[])
   pami_xfer_type_t     alltoall_xfer = PAMI_XFER_ALLTOALL;
   volatile unsigned    alltoall_poll_flag = 0;
 
-  int                  nalg = 0;
+  int                  nalg= 0, total_alg;
   double               ti, tf, usec;
   pami_xfer_t          barrier;
   pami_xfer_t          alltoall;
@@ -254,21 +256,44 @@ int main(int argc, char*argv[])
     alltoall.cookie     = (void*) & alltoall_poll_flag;
 
 
-    for (nalg = 0; nalg < alltoall_num_algorithm[0]; nalg++)
+    total_alg = alltoall_num_algorithm[0]+alltoall_num_algorithm[1];
+    for (nalg = 0; nalg < total_alg; nalg++)
     {
       size_t i, j;
-      gProtocolName = alltoall_always_works_md[nalg].name;
+      metadata_result_t result = {0};
+      unsigned query_protocol;
+      if(nalg < alltoall_num_algorithm[0])
+      {  
+        query_protocol = 0;
+        next_algo = &alltoall_always_works_algo[nalg];
+        next_md  = &alltoall_always_works_md[nalg];
+      }
+      else
+      {  
+        query_protocol = 1;
+        next_algo = &alltoall_must_query_algo[nalg-alltoall_num_algorithm[0]];
+        next_md  = &alltoall_must_query_md[nalg-alltoall_num_algorithm[0]];
+      }
+
+      gProtocolName = next_md->name;
+
       if (task_id == 0)
       {
-        printf("# Alltoall Bandwidth Test(size:%zu) %p, protocol: %s\n", num_tasks, cb_done, alltoall_always_works_md[nalg].name);
-        printf("# Size(bytes)       iterations    bytes/sec      usec\n");
+        printf("# Alltoall Bandwidth Test(size:%zu) -- context = %d, protocol: %s, Metadata: range %zu <-> %zd, mask %#X\n",num_tasks,
+               iContext, gProtocolName,
+               next_md->range_lo,(ssize_t)next_md->range_hi,
+               next_md->check_correct.bitmask_correct);
+        printf("# Size(bytes)  iterations    bytes/sec      usec\n");
         printf("# -----------      -----------    -----------    ---------\n");
       }
 
-      if (((strstr(alltoall_always_works_md[nalg].name, gSelected) == NULL) && gSelector) ||
-          ((strstr(alltoall_always_works_md[nalg].name, gSelected) != NULL) && !gSelector))  continue;
+      if (((strstr(next_md->name, gSelected) == NULL) && gSelector) ||
+          ((strstr(next_md->name, gSelected) != NULL) && !gSelector))  continue;
 
-      alltoall.algorithm  = alltoall_always_works_algo[nalg];
+      alltoall.algorithm  = *next_algo;
+
+      unsigned checkrequired = next_md->check_correct.values.checkrequired; /*must query every time */
+      assert(!checkrequired || next_md->check_fn); /* must have function if checkrequired. */
 
       int dt,op=4/*SUM*/;
 
@@ -294,9 +319,6 @@ int main(int argc, char*argv[])
                 init_bufs(i, j , dt);
               }
 
-              blocking_coll(context[iContext], &barrier, &bar_poll_flag);
-
-              /* Warmup */
               alltoall.cmd.xfer_alltoall.sndbuf        = sbuf;
               alltoall.cmd.xfer_alltoall.stype         = dt_array[dt];
               alltoall.cmd.xfer_alltoall.stypecount    = i;
@@ -304,7 +326,26 @@ int main(int argc, char*argv[])
               alltoall.cmd.xfer_alltoall.rtype         = dt_array[dt];
               alltoall.cmd.xfer_alltoall.rtypecount    = i;
 
-              blocking_coll(context[iContext], &alltoall, &alltoall_poll_flag);
+              if(query_protocol)
+              {  
+                size_t sz=get_type_size(dt_array[dt])*i;
+                result = check_metadata(*next_md,
+                                        alltoall,
+                                        dt_array[dt],
+                                        sz, /* metadata uses bytes i, */
+                                        alltoall.cmd.xfer_alltoall.sndbuf,
+                                        dt_array[dt],
+                                        sz,
+                                        alltoall.cmd.xfer_alltoall.rcvbuf);
+                if (next_md->check_correct.values.nonlocal)
+                {
+                  /* \note We currently ignore check_correct.values.nonlocal
+                        because these tests should not have nonlocal differences (so far). */
+                  result.check.nonlocal = 0;
+                }
+
+                if (result.bitmask) continue;
+              }
 
               blocking_coll(context[iContext], &barrier, &bar_poll_flag);
 
@@ -312,12 +353,11 @@ int main(int argc, char*argv[])
 
               for (j = 0; j < niter; j++)
               {
-                alltoall.cmd.xfer_alltoall.sndbuf        = sbuf;
-                alltoall.cmd.xfer_alltoall.stype         = dt_array[dt];
-                alltoall.cmd.xfer_alltoall.stypecount    = i;
-                alltoall.cmd.xfer_alltoall.rcvbuf        = rbuf;
-                alltoall.cmd.xfer_alltoall.rtype         = dt_array[dt];
-                alltoall.cmd.xfer_alltoall.rtypecount    = i;
+                if (checkrequired) /* must query every time */
+                {
+                  result = next_md->check_fn(&alltoall);
+                  if (result.bitmask) continue;
+                }
                 blocking_coll(context[iContext], &alltoall, &alltoall_poll_flag);
               }
 

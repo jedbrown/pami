@@ -154,7 +154,7 @@ int main(int argc, char*argv[])
       {
         printf("# Scatterv Bandwidth Test(size:%zu) -- context = %d, protocol: %s\n",num_tasks,
                iContext, gProtocolName);
-        printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+        printf("# Size(bytes)      iterations     bytes/sec      usec\n");
         printf("# -----------      -----------    -----------    ---------\n");
       }
 

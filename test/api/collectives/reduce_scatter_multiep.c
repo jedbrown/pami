@@ -295,7 +295,7 @@ static void * reduce_scatter_test(void* p)
       {
         printf("# Reduce Scatter Bandwidth Test(size:%zu) -- context = %d,protocol: %s\n",num_tasks,
                td->tid, reduce_scatter_always_works_md[nalg].name);
-        printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+        printf("# Size(bytes)      iterations     bytes/sec      usec\n");
         printf("# -----------      -----------    -----------    ---------\n");
       }
 

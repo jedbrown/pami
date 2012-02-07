@@ -289,7 +289,7 @@ int main(int argc, char*argv[])
       }
       allgather.cb_done    = cb_done;
       allgather.cookie     = (void*) & allgather_poll_flag;
-      allgather.algorithm  = allgather_always_works_algo[nalg];
+      allgather.algorithm  = *next_algo;
       allgather.cmd.xfer_allgather.sndbuf     = buf;
       allgather.cmd.xfer_allgather.stype      = PAMI_TYPE_BYTE;
       allgather.cmd.xfer_allgather.stypecount = 0;
@@ -305,7 +305,7 @@ int main(int argc, char*argv[])
                iContext, gProtocolName,
                next_md->range_lo,(ssize_t)next_md->range_hi,
                next_md->check_correct.bitmask_correct);
-        printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+        printf("# Size(bytes)      iterations     bytes/sec      usec\n");
         printf("# -----------      -----------    -----------    ---------\n");
       }
 

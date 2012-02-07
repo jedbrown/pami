@@ -170,7 +170,7 @@ int main(int argc, char*argv[])
       {
         printf("# Scan Bandwidth Test(size:%zu) -- context = %d, task_zero = %d protocol: %s\n",num_tasks,
                iContext, task_zero, scan_always_works_md[nalg].name);
-        printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+        printf("# Size(bytes)      iterations     bytes/sec      usec\n");
         printf("# -----------      -----------    -----------    ---------\n");
       }
 

@@ -300,7 +300,7 @@ static void * gather_test(void* p) {
         {
           printf("# Gather Bandwidth Test(size:%zu) -- context = %d, protocol: %s\n",num_tasks,
                  td->tid, gProtocolName);
-          printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+          printf("# Size(bytes)      iterations     bytes/sec      usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
         }
 

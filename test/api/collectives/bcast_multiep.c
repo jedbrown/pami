@@ -286,7 +286,7 @@ static void * bcast_test(void* p) {
                 {
                   printf("# Broadcast Bandwidth Test(size:%zu) -- context = %d, root_task=%d root_ctxt=%d  protocol: %s\n",num_tasks,
                          td->tid, root_task, ctxt_offset,gProtocolName);
-                  printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+                  printf("# Size(bytes)      iterations     bytes/sec      usec\n");
                   printf("# -----------      -----------    -----------    ---------\n");
                 }
 

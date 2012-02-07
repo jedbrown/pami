@@ -307,7 +307,7 @@ static void * alltoallv_test(void* p)
         {
           printf("# Alltoallv Bandwidth Test(size:%zu) -- context = %d, protocol: %s\n",
                  num_ep, td->tid, gProtocolName);
-          printf("# Size(bytes)           cycles    bytes/sec      usec\n");
+          printf("# Size(bytes)      iterations    bytes/sec      usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
         }
 

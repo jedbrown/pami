@@ -244,7 +244,7 @@ static void * allreduce_test(void* p)
       {
         printf("# Allreduce Bandwidth Test(size:%zu) -- context = %d, protocol: %s\n",num_tasks,
                td->tid, allreduce_always_works_md[nalg].name);
-        printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+        printf("# Size(bytes)      iterations     bytes/sec      usec\n");
         printf("# -----------      -----------    -----------    ---------\n");
       }
 

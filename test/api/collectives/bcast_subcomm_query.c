@@ -248,7 +248,7 @@ int main(int argc, char*argv[])
                    iContext, root_zero, gProtocolName,
                    q_newbcast_md[nalg].range_lo, q_newbcast_md[nalg].range_hi,
                    q_newbcast_md[nalg].check_correct.bitmask_correct);
-            printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+            printf("# Size(bytes)      iterations     bytes/sec      usec\n");
             printf("# -----------      -----------    -----------    ---------\n");
           }
 

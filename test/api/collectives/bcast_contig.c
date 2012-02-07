@@ -277,7 +277,7 @@ int main(int argc, char*argv[])
                  iContext, root_task, gProtocolName,
                  next_md->range_lo,(ssize_t)next_md->range_hi,
                  next_md->check_correct.bitmask_correct);
-          printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+          printf("# Size(bytes)      iterations     bytes/sec      usec\n");
           printf("# -----------      -----------    -----------    ---------\n");
         }
 

@@ -253,7 +253,7 @@ int main(int argc, char*argv[])
           {
             printf("# Scatter Bandwidth Test(size:%zu) -- context = %d, root = %d, protocol: %s\n",num_tasks,
                    iContext, root, gProtocolName);
-            printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+            printf("# Size(bytes)      iterations     bytes/sec      usec\n");
             printf("# -----------      -----------    -----------    ---------\n");
           }
 

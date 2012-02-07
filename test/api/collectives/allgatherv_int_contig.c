@@ -277,7 +277,7 @@ int main (int argc, char ** argv)
       }
       allgatherv_int.cb_done    = cb_done;
       allgatherv_int.cookie     = (void*) & allgatherv_int_poll_flag;
-      allgatherv_int.algorithm  = allgatherv_int_always_works_algo[nalg];
+      allgatherv_int.algorithm  = *next_algo;
       allgatherv_int.cmd.xfer_allgatherv_int.sndbuf     = buf;
       allgatherv_int.cmd.xfer_allgatherv_int.stype      = PAMI_TYPE_BYTE;
       allgatherv_int.cmd.xfer_allgatherv_int.stypecount = 0;
@@ -293,7 +293,7 @@ int main (int argc, char ** argv)
                gProtocolName,
                next_md->range_lo,(ssize_t)next_md->range_hi,
                next_md->check_correct.bitmask_correct);
-        printf("# Size(bytes)           cycles    bytes/sec    usec\n");
+        printf("# Size(bytes)      iterations     bytes/sec      usec\n");
         printf("# -----------      -----------    -----------    ---------\n");
       }
       if (((strstr(next_md->name, gSelected) == NULL) && gSelector) ||
