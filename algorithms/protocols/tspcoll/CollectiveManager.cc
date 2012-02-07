@@ -13,7 +13,7 @@ std::vector<xlpgas::CollectiveManager<T_NI>*> xlpgas::CollectiveManager<T_NI>::_
 template <class T_NI>
 void xlpgas::CollectiveManager<T_NI>::Initialize (int context_id, xlpgas::CollectiveManager<T_NI>* cmgr)
 {
-  assert(context_id == _instances.size());
+  assert((unsigned)context_id == _instances.size());
   _instances.push_back(cmgr);
 }
 
